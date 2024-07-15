@@ -4,6 +4,7 @@
 {{- $release_requires_sec_cap:= or (hasPrefix "ussuri" (default .Values.imageVersion .Values.imageVersionServerAPI)) (hasPrefix "yoga" (default .Values.imageVersion .Values.imageVersionServerAPI)) -}}
 {{ range $az_long, $apods := .Values.global.apods }}
 {{ range $k, $apod := $apods }}
+{{- if not (has $apod ($.Values.disabled_network_agents | default list )) }}
 {{- $az := trimPrefix $.Values.global.region $az_long }}
 ---
 apiVersion: apps/v1
@@ -41,10 +42,17 @@ spec:
         k8s.v1.cni.cncf.io/networks: '[{ "name": "cbr1-bridge", "interface":"{{$.Values.cp_network_interface}}" }]'
         configmap-etc-hash: {{ include (print $.Template.BasePath "/configmap-etc.yaml") $ | sha256sum }}
         configmap-etc-apod-hash: {{ include (print $.Template.BasePath "/configmap-etc-apod.yaml") $ | sha256sum }}
+        {{- include "utils.linkerd.pod_and_service_annotation" $ | indent 8 }}
+        config.linkerd.io/skip-inbound-ports: "22,53,80,443"
+        config.linkerd.io/skip-outbound-ports: "22,53,80,443"
       labels:
         name: neutron-network-agent-{{ $apod }}
 {{ tuple $ "neutron" "agent" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
     spec:
+      {{- if index $.Values.pod.tolerations $apod }}
+      tolerations:
+        {{- toYaml (index $.Values.pod.tolerations $apod) | nindent 8 }}
+      {{- end }}
       affinity:
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
@@ -89,7 +97,7 @@ spec:
         - name: neutron-dhcp-agent
           image: {{$.Values.global.registry}}/loci-neutron:{{$.Values.imageVersionNetworkAgentDHCP | default $.Values.imageVersionNetworkAgent | default $.Values.imageVersion | required "Please set neutron.imageVersionNetworkAgentDHCP or similar"}}
           imagePullPolicy: IfNotPresent
-          command: ["dumb-init", "neutron-dhcp-agent", "--config-file", "/etc/neutron/neutron.conf", "--config-file", "/etc/neutron/dhcp-agent.ini", "--config-file", "/etc/neutron/linux-bridge.ini", "--config-file", "/etc/neutron/az-{{ $az }}.conf"]
+          command: ["dumb-init", "neutron-dhcp-agent", "--config-file", "/etc/neutron/neutron.conf", "--config-dir", "/etc/neutron/secrets", "--config-file", "/etc/neutron/dhcp-agent.ini", "--config-file", "/etc/neutron/linux-bridge.ini", "--config-file", "/etc/neutron/az-{{ $az }}.conf"]
           env:
             - name: SENTRY_DSN
               valueFrom:
@@ -105,7 +113,7 @@ spec:
             {{- include "utils.trust_bundle.env" $ | indent 12 }}
           readinessProbe:
             exec:
-              command: ["neutron-dhcp-readiness", "-config-file", "/etc/neutron/neutron.conf"]
+              command: ["neutron-dhcp-readiness", "-config-file", "/etc/neutron/neutron.conf", "--config-file", "/etc/neutron/secrets/neutron-common-secrets.conf"]
             initialDelaySeconds: 30
             periodSeconds: 60
             timeoutSeconds: 10
@@ -133,7 +141,7 @@ spec:
         - name: neutron-linuxbridge-agent
           image: {{$.Values.global.registry}}/loci-neutron:{{$.Values.imageVersionNetworkAgentLinuxBridge | default $.Values.imageVersionNetworkAgent | default $.Values.imageVersion | required "Please set neutron.imageVersionNetworkAgentLinuxBridge or similar"}}
           imagePullPolicy: IfNotPresent
-          command: ["dumb-init", "neutron-linuxbridge-agent", "--config-file", "/etc/neutron/neutron.conf", "--config-file", "/etc/neutron/plugins/ml2/ml2_conf.ini", "--config-file", "/etc/neutron/linux-bridge.ini", "--config-file", "/etc/neutron/apod-{{ $apod }}.conf"]
+          command: ["dumb-init", "neutron-linuxbridge-agent", "--config-file", "/etc/neutron/neutron.conf", "--config-dir", "/etc/neutron/secrets", "--config-file", "/etc/neutron/plugins/ml2/ml2_conf.ini", "--config-file", "/etc/neutron/linux-bridge.ini", "--config-file", "/etc/neutron/apod-{{ $apod }}.conf"]
           env:
             - name: SENTRY_DSN
               valueFrom:
@@ -147,7 +155,7 @@ spec:
             {{- include "utils.trust_bundle.env" $ | indent 12 }}
           readinessProbe:
             exec:
-              command: ["neutron-linuxbridge-readiness", "-config-file", "/etc/neutron/neutron.conf"]
+              command: ["neutron-linuxbridge-readiness", "-config-file", "/etc/neutron/neutron.conf", "--config-file", "/etc/neutron/secrets/neutron-common-secrets.conf"]
             initialDelaySeconds: 30
             periodSeconds: 60
             timeoutSeconds: 10
@@ -178,7 +186,7 @@ spec:
         - name: neutron-metadata-agent
           image: {{$.Values.global.registry}}/loci-neutron:{{$.Values.imageVersionNetworkAgentMetadata | default $.Values.imageVersionNetworkAgent | default $.Values.imageVersion | required "Please set neutron.imageVersionNetworkAgentMetadata or similar"}}
           imagePullPolicy: IfNotPresent
-          command: ["dumb-init", "neutron-metadata-agent", "--config-file", "/etc/neutron/neutron.conf", "--config-file", "/etc/neutron/metadata-agent.ini"]
+          command: ["dumb-init", "neutron-metadata-agent", "--config-file", "/etc/neutron/neutron.conf", "--config-dir", "/etc/neutron/secrets","--config-file", "/etc/neutron/metadata-agent.ini"]
           env:
             - name: SENTRY_DSN
               valueFrom:
@@ -237,6 +245,11 @@ spec:
                   path: dhcp-agent.ini
                 - key: az-{{$az}}.conf
                   path: az-{{$az}}.conf
+            - secret:
+                name: neutron-common-secrets
+                items:
+                  - key: neutron-common-secrets.conf
+                    path: secrets/neutron-common-secrets.conf
         - name: etc-neutron-linuxbridge-agent
           projected:
             defaultMode: 420
@@ -259,6 +272,11 @@ spec:
                 items:
                 - key: apod-{{ $apod }}.conf
                   path: apod-{{ $apod }}.conf
+            - secret:
+                name: neutron-common-secrets
+                items:
+                  - key: neutron-common-secrets.conf
+                    path: secrets/neutron-common-secrets.conf
         - name: etc-neutron-metadata-agent
           projected:
             defaultMode: 420
@@ -272,7 +290,18 @@ spec:
                   path: logging.conf
                 - key: metadata-agent.ini
                   path: metadata-agent.ini
+            - secret:
+                name: neutron-common-secrets
+                items:
+                  - key: neutron-common-secrets.conf
+                    path: secrets/neutron-common-secrets.conf
+            - secret:
+                name: neutron-metadata-secrets
+                items:
+                  - key: neutron-metadata-secrets.conf
+                    path: secrets/neutron-metadata-secrets.conf
         {{- include "utils.trust_bundle.volumes" $ | indent 8 }}
+{{- end }}
 {{- end }}
 {{- end }}
 {{- end }}

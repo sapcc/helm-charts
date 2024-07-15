@@ -47,15 +47,19 @@ spec:
                 path: nova.conf
               - key:  logging.ini
                 path: logging.ini
-              {{- if .Values.cell2.enabled }}
-              - key:  nova-cell2.conf
-                path: nova-cell2.conf
-              {{- end }}
           - secret:
               name: nova-etc
               items:
-              - key: db.conf
-                path: nova.conf.d/db.conf
+              - key: api-db.conf
+                path: nova.conf.d/api-db.conf
+              - key: cell1.conf
+                path: nova-cell1.conf
+              {{- if .Values.cell2.enabled }}
+              - key:  {{ .Values.cell2.name }}.conf
+                path: nova-{{ .Values.cell2.name }}.conf
+              {{- end }}
+              - key: keystoneauth-secrets.conf
+                path: nova.conf.d/keystoneauth-secrets.conf
       - name: container-init
         configMap:
           name: nova-bin

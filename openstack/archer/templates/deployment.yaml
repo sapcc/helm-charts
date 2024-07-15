@@ -69,6 +69,23 @@ spec:
               value: "0.0.0.0"
             - name: PORT
               value: "{{ .Values.service.port }}"
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: archer-pguser-archer
+                  key: postgres-password
+            - name: OS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: archer-secret
+                  key: service_user_password
+            {{- if .Values.audit.enabled }}
+            - name: AUDIT_TRANSPORT_URL
+              valueFrom:
+                secretKeyRef:
+                  name: archer-secret
+                  key: audit_transport_url
+            {{- end }}
           ports:
             - name: http
               containerPort: {{ .Values.service.port }}

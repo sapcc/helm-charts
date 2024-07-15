@@ -1,4 +1,4 @@
-<filter kubernetes.var.log.containers.elk-k8s-event-exporter**>
+<filter kubernetes.var.log.containers.logs-k8s-event-exporter**>
   @type parser
   @id json_parser
   key_name log
@@ -42,6 +42,22 @@
   <parse>
     @type grok
     grok_pattern %{IP:remote_addr} %{NOTSPACE:ident} %{NOTSPACE:auth} \[%{HTTPDATE:timestamp}\] "%{WORD:request_method} %{NOTSPACE:request_path} %{NOTSPACE:httpversion}" %{NUMBER:response} %{NUMBER:content_length:integer} "(?<referer>[^\"]{,255}).*?" "%{DATA:user_agent}" %{NUMBER:request_length:integer} %{BASE10NUM:request_time:float}( \[%{NOTSPACE:service}\])? ?(\[\])? %{IP:upstream_addr}\:%{NUMBER:upstream_port} %{NUMBER:upstream_response_length:integer} %{BASE10NUM:upstream_response_time:float} %{NOTSPACE:upstream_status}
+  </parse>
+</filter>
+
+<filter kubernetes.var.log.containers.opensearch**>
+  @type parser
+  key_name log
+  reserve_data true
+  <parse>
+    @type grok
+    grok_failure_key grok_opensearch_parser
+    <grok>
+      pattern .*\[internal:coordination\/fault_detection\/%{WORD:fault_detection}\], node \[{%{USERNAME:opensearch_name}
+    </grok>
+    <grok>
+      pattern Caused by: org.opensearch.transport.RemoteTransportException: \[%{USERNAME:opensearch_name}\]\[%{IP}:%{NUMBER}\]\[internal:coordination/fault_detection/%{WORD:fault_detection}\]
+    </grok>
   </parse>
 </filter>
 
@@ -90,9 +106,9 @@
     template_file /fluentd/etc/{{.Values.opensearch.indexname}}.json
     template_overwrite false
   {{- end }}
-    hosts {{.Values.opensearch.http.endpoint}}
+    hosts {{.Values.global.opensearch.host}}
     scheme https
-    port {{.Values.opensearch.http_port}}
+    port {{.Values.global.opensearch.port}}
     user "#{ENV['USER']}"
     password "#{ENV['PASSWORD']}"
     ssl_verify false

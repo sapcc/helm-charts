@@ -19,58 +19,26 @@ absent-metrics-operator:
 
 kube-state-metrics:
   image:
-    repository: keppel.global.cloud.sap/ccloud-quay-mirror/coreos/kube-state-metrics
-    tag: v1.9.7
-
-  podSecurityPolicy:
-    enabled: false
-
-  prometheusScrape: false
-
-  collectors:
-    certificatesigningrequests: false
-    configmaps: false
-    cronjobs: true
-    daemonsets: true
-    deployments: true
-    endpoints: true
-    horizontalpodautoscalers: true
-    ingresses: false
-    jobs: true
-    limitranges: true
-    mutatingwebhookconfigurations: false
-    namespaces: true
-    networkpolicies: true
-    nodes: true
-    persistentvolumeclaims: true
-    persistentvolumes: true
-    poddisruptionbudgets: true
-    pods: true
-    replicasets: true
-    replicationcontrollers: true
-    resourcequotas: true
-    secrets: false
-    services: true
-    statefulsets: true
-    storageclasses: true
-    validatingwebhookconfigurations: false
-    verticalpodautoscalers: true
-    volumeattachments: true
+    registry: keppel.global.cloud.sap/ccloud-registry-k8s-io-mirror
+    repository: kube-state-metrics/kube-state-metrics
+  rbac:
+    create: true
 
   customLabels:
     app: kube-state-metrics
-
-  prometheus:
-    monitor:
-      enabled: false
-      honorLabels: true
-      additionalLabels:
-        prometheus: kubernetes
 
   resources:
     requests:
       memory: 150Mi
       cpu: 100m
+
+  # Allow all labels from nodes to be exported.
+  metricLabelsAllowlist:
+    - nodes=[*]
+    - namespaces=[*]
+
+  selfMonitor:
+    enabled: true
 
 # Deploy basic set of Prometheus alert and aggregation rules for monitoring Kubernetes.
 prometheus-kubernetes-rules:
@@ -120,6 +88,8 @@ http-keep-alive-monitor:
   alert:
     ignore_ingress_names:
       - cfm
+  image:
+    repository: keppel.global.cloud.sap/ccloud/http-keep-alive-monitor
 
 falco:
   enabled: false
@@ -158,3 +128,19 @@ falco:
   falco:
     rules_file:
       - /etc/falco/rules.d
+
+x509-certificate-exporter:
+  enabled: false
+  secretsExporter:
+    podAnnotations:
+      prometheus.io/port: "9793"
+      prometheus.io/scrape: "true"
+      prometheus.io/targets: kubernetes
+  hostPathsExporter:
+    daemonSets: null
+  service:
+    create: false
+  prometheusServiceMonitor:
+    create: false
+  prometheusRules:
+    create: false

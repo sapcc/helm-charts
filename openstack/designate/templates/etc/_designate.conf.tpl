@@ -196,7 +196,7 @@ project_name = {{.Values.global.keystone_service_project | default "service"}}
 project_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}
 region_name = {{.Values.global.region}}
 {{- if .Values.global_setup }}
-memcached_servers = {{.Release.Name}}-memcached.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.db_region}}.{{.Values.global.tld}}:{{.Values.global.memcached_port_public | default 11211}}
+memcached_servers = "{{ include "helm-toolkit.utils.joinListWithComma" .Values.memcached.server_ips_ports }}"
 {{- else }}
 memcached_servers = {{.Release.Name}}-memcached.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.global.memcached_port_public | default 11211}}
 {{- end }}
@@ -363,7 +363,7 @@ enabled = {{.Values.worker_enabled}}
 workers = 2
 
 # Number of Worker greenthreads to spawn
-threads = 1000
+threads = 200
 
 # The percentage of servers requiring a successful update for a zone change
 # to be considered active
@@ -380,8 +380,11 @@ poll_retry_interval = {{ .Values.worker_poll_retry_interval }}
 # response from a server
 poll_max_retries = {{ .Values.worker_poll_max_retries }}
 
+# The maximum times to consider PENDING zone as stale and try recovery
+poll_max_prop_time = {{ .Values.worker_poll_max_prop_time }}
+
 # The time to wait before sending the first request to a server
-poll_delay = 2
+poll_delay = {{ .Values.worker_poll_delay }}
 
 # Whether to allow worker to send NOTIFYs. NOTIFY requests to mdns will noop
 notify = {{ .Values.worker_notify }}
@@ -397,7 +400,7 @@ all_tcp = {{ .Values.worker_all_tcp }}
 {{- if eq .Values.global_setup false }}
 endpoints = {{ .Values.global.region }}|https://network-3.{{ .Values.global.region }}.{{ .Values.global.tld }}
 endpoint_type = publicURL
-timeout = 20
+timeout = 30
 insecure = True
 {{- end }}
 
@@ -495,13 +498,7 @@ disable_by_file_path = /etc/designate/healthcheck_disable
 ########################
 ## Coordination
 ########################
-[coordination]
-# URL for the coordination backend to use.
-{{- if .Values.global_setup }}
-backend_url = memcached://{{.Release.Name}}-memcached.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.db_region}}.{{.Values.global.tld}}:{{.Values.global.memcached_port_public | default 11211}}
-{{- else }}
-backend_url = memcached://{{.Release.Name}}-memcached.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.global.memcached_port_public | default 11211}}
-{{- end }}
+{{ include "ini_sections.coordination" . }}
 
 ########################
 ## Hook Points

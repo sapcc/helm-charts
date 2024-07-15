@@ -5,7 +5,7 @@ config:
   auth_url: {{ required "$root.Values.thanosSeeds.swiftStorageConfig.authURL missing" $root.Values.thanosSeeds.swiftStorageConfig.authURL | quote }}
   username: {{ include "swift.userName" (list $name $root) }}
   domain_name: {{ required "$root.Values.thanosSeeds.swiftStorageConfig.userDomainName missing" $root.Values.thanosSeeds.swiftStorageConfig.userDomainName | quote }}
-  password: {{ required "$root.Values.thanosSeeds.swiftStorageConfig.password missing" $root.Values.thanosSeeds.swiftStorageConfig.password | quote }}
+  password: "{{ required "$root.Values.thanosSeeds.swiftStorageConfig.password missing" $root.Values.thanosSeeds.swiftStorageConfig.password }}"
   project_name: {{ include "thanos.projectName" $root }}
   project_domain_name: {{ include "thanos.projectDomainName" $root }}
   region_name: {{ required "$root.Values.global.region missing" $root.Values.global.region }}

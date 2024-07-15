@@ -66,7 +66,7 @@ groups:
 
       # Scraping will fail on shares in state "offline" because their size is always reported as 0.
       - record: netapp_volume_exclusion_reason_offline
-        expr: count(netapp_volume_total_bytes{project_id!="",share_id!="",volume_state="offline"}) by (project_id, share_id) > 0
+        expr: count(netapp_volume_total_bytes{project_id!="", share_id!="", volume_state="offline"}) by (project_id, share_id) unless (count(netapp_volume_total_bytes{volume_state="online"}) by (project_id, share_id))
       - record: manila_share_exclusion_reasons_for_castellum
         expr: label_replace(netapp_volume_exclusion_reason_offline, "reason", "volume_state = offline", "share_id", ".*")
 

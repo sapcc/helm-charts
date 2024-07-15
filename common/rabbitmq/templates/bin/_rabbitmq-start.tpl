@@ -4,6 +4,10 @@ set -euo pipefail
 {{- if and .Values.metrics.enabled (not .Values.metrics.sidecar.enabled) .Values.metrics.port }}
 echo "prometheus.tcp.port = {{ .Values.metrics.port }}" >> /etc/rabbitmq/conf.d/10-defaults.conf
 {{- end}}
+{{- if .Values.addDevUser }}
+echo "loopback_users.dev = true" >> /etc/rabbitmq/conf.d/10-defaults.conf
+{{- end}}
+
 LOCKFILE=/var/lib/rabbitmq/rabbitmq-server.lock
 echo "Starting RabbitMQ with lock ${LOCKFILE}"
 exec 9>${LOCKFILE}
@@ -45,6 +49,10 @@ rabbitmq-plugins enable rabbitmq_tracing
 rabbitmqctl trace_on
 {{- end }}
 
+{{- if and .Values.enableAllFeatureFlags .Values.persistence.enabled }}
+rabbitmqctl enable_feature_flag all
+{{- end }}
+
 eval $(timeout 5.0 rabbitmqctl list_users -q | awk '{printf "users[\"%s\"]=\"%s\"\n", $1, substr($2, 2, length($2)-2)}')
 
 {{- range $k, $v := .Values.users }}
@@ -54,7 +62,13 @@ eval $(timeout 5.0 rabbitmqctl list_users -q | awk '{printf "users[\"%s\"]=\"%s\
 {{- if and .Values.metrics.enabled (not .Values.users.metrics) }}
 {{ list ".Values.metrics" .Values.metrics | include "rabbitmq.upsert_user" }} monitoring
 {{- end }}
-upsert_user guest {{ .Values.users.default.password | include "rabbitmq.shell_quote" }} monitoring
+{{- $guestUser := dict "user" "guest" "password" .Values.users.default.password "tag" "monitoring" }}
+{{ list "guest" $guestUser | include "rabbitmq.upsert_user" }}
+
+{{- if .Values.addDevUser }}
+# if set in values file add temporary dev user for development purposes
+upsert_user dev dev monitoring
+{{- end}}
 
 wait $(jobs -rp) || true
 sleep inf

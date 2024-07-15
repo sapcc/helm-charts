@@ -38,6 +38,9 @@ spec:
           imagePullPolicy: IfNotPresent
           args:
             - "-config=/cronus-updater/config.yaml"
+          envFrom:
+            - secretRef:
+                name: cronus-updater-secret
           volumeMounts:
             - name: cronus-updater-config
               mountPath: "/cronus-updater/config.yaml"
@@ -49,6 +52,9 @@ spec:
       restartPolicy: Always
       volumes:
         - name: cronus-updater-config
-          secret:
-            secretName: cronus-updater-config
+          configMap:
+            name: cronus-updater-config
+            items:
+              - key: config.yaml
+                path: config.yaml
 {{ end -}}

@@ -27,6 +27,7 @@ spec:
         configmap-etc-apod-hash: {{ include (print $.Template.BasePath "/configmap-etc-apod.yaml") $ | sha256sum }}
         prometheus.io/scrape: "true"
         prometheus.io/targets: {{ required "$.Values.metrics.prometheus missing" $.Values.metrics.prometheus }}
+        {{- include "utils.linkerd.pod_and_service_annotation" $ | indent 8 }}
       labels:
         name: neutron-swift-injector-{{ $apod }}
 {{ tuple $ "neutron" "swift-injector" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
@@ -75,9 +76,15 @@ spec:
             - name: OS_DOMAIN_NAME
               value: {{ $.Values.global.keystone_service_domain | default "Default" }}
             - name: OS_USERNAME
-              value: {{ $.Values.global.neutron_service_user | default "neutron" | replace "$" "$$" }}
+              valueFrom:
+                secretKeyRef:
+                  name: neutron-swift-injector-secrets
+                  key: OS_USERNAME
             - name: OS_PASSWORD
-              value: {{ $.Values.global.neutron_service_password | default "" | replace "$" "$$" }}
+              valueFrom:
+                secretKeyRef:
+                  name: neutron-swift-injector-secrets
+                  key: OS_PASSWORD
             - name: OS_REGION_NAME
               value: {{ $.Values.global.region }}
             - name: OS_TENANT_NAME
@@ -103,7 +110,7 @@ spec:
         - name: neutron-linuxbridge-agent
           image: {{$.Values.global.registry}}/loci-neutron:{{$.Values.imageVersionNetworkAgentLinuxBridge | default $.Values.imageVersionNetworkAgent | default $.Values.imageVersion | required "Please set neutron.imageVersionNetworkAgentLinuxBridge or similar"}}
           imagePullPolicy: IfNotPresent
-          command: ["dumb-init", "neutron-linuxbridge-agent", "--config-file", "/etc/neutron/neutron.conf", "--config-file", "/etc/neutron/plugins/ml2/ml2_conf.ini", "--config-file", "/etc/neutron/linux-bridge.ini", "--config-file", "/etc/neutron/apod-{{ $apod }}.conf"]
+          command: ["dumb-init", "neutron-linuxbridge-agent", "--config-file", "/etc/neutron/neutron.conf", "--config-dir", "/etc/neutron/secrets", "--config-file", "/etc/neutron/plugins/ml2/ml2_conf.ini", "--config-file", "/etc/neutron/linux-bridge.ini", "--config-file", "/etc/neutron/apod-{{ $apod }}.conf"]
           env:
             - name: SENTRY_DSN
               valueFrom:
@@ -117,7 +124,7 @@ spec:
             {{- include "utils.trust_bundle.env" $ | indent 12 }}
           readinessProbe:
             exec:
-              command: ["neutron-agent-liveness", "-config-file", "/etc/neutron/neutron.conf", "-agent-type", "Linux bridge agent"]
+              command: ["neutron-agent-liveness", "--config-file", "/etc/neutron/neutron.conf",  "--config-file", "/etc/neutron/secrets/neutron-common-secrets.conf", "-agent-type", "Linux bridge agent"]
             initialDelaySeconds: 30
             periodSeconds: 60
             timeoutSeconds: 10
@@ -189,6 +196,11 @@ spec:
                 items:
                 - key: apod-{{ $apod }}.conf
                   path: apod-{{ $apod }}.conf
+            - secret:
+                name: neutron-common-secrets
+                items:
+                  - key: neutron-common-secrets.conf
+                    path: secrets/neutron-common-secrets.conf
         {{- include "utils.trust_bundle.volumes" $ | indent 8 }}
 {{- end }}
 {{- end }}

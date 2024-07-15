@@ -22,7 +22,6 @@ spec:
       labels:
         component: logstash
       annotations:
-        checksum/logstash-etc-configmap.yaml: {{ include "hermes/templates/logstash-etc-configmap.yaml" . | sha256sum }}
         kubectl.kubernetes.io/default-container: "logstash"
         {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
         linkerd.io/inject: enabled
@@ -32,8 +31,12 @@ spec:
         zone: farm
       volumes:
         - name: hermes-etc
-          configMap:
-            name: logstash-etc
+          projected:
+            sources:
+            - secret:
+                name: logstash-secret
+            - configMap:
+                name: logstash-etc
       containers:
         - name: logstash
           image: {{.Values.global.registry}}/hermes-logstash:{{.Values.hermes_image_version_logstash}}
@@ -56,13 +59,6 @@ spec:
                   fieldPath: metadata.namespace
             - name: LS_JAVA_OPTS
               value: {{.Values.logstash.javaopts}}
-            {{ if .Values.logstash.audit -}}
-            - name: METIS_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: logstash-secret
-                  key: METIS_PASSWORD
-            {{- end}}
             - name: CONFIG_HASH
               valueFrom:
                 fieldRef:

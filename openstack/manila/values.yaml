@@ -14,8 +14,7 @@ global:
   metrics_port: 9102
   domain_seeds:
     skip_hcm_domain: false
-
-  linkerd_requested: false
+  linkerd_requested: true
 
 loci:
   imageNamespace: monsoon
@@ -24,6 +23,9 @@ api_port_internal: '8786'
 api_backdoor: false
 debug: "True"
 rpc_ping_enabled: true
+
+# manager config options
+server_migration_driver_continue_update_interval: 300
 
 # better debugging experience; enable it only in QA
 pyreloader_enabled: false
@@ -135,7 +137,7 @@ mysql_metrics:
       query: |
         SELECT
           coalesce(share_instances.share_type_id, 'N/A') AS share_type_id,
-          availability_zones.name AS availability_zone_name,
+          coalesce(availability_zones.name, 'N/A') AS availability_zone_name,
           share_instances.host AS manila_host,
           shares.project_id,
           shares.id,
@@ -144,7 +146,7 @@ mysql_metrics:
           COUNT(*) AS count_gauge
         FROM shares
         JOIN share_instances ON shares.id=share_instances.share_id
-        JOIN availability_zones ON share_instances.availability_zone_id=availability_zones.id
+        LEFT OUTER JOIN availability_zones ON share_instances.availability_zone_id=availability_zones.id
         WHERE share_instances.deleted = 'False'
         AND share_instances.replica_state='active'
         GROUP BY
@@ -170,7 +172,7 @@ mysql_metrics:
       query: |
         SELECT
           coalesce(share_instances.share_type_id, 'N/A') AS share_type_id,
-          availability_zones.name AS availability_zone_name,
+          coalesce(availability_zones.name, 'N/A') AS availability_zone_name,
           share_instances.host AS manila_host,
           shares.project_id,
           shares.id,
@@ -180,8 +182,8 @@ mysql_metrics:
           SUM(size) size_gauge
         FROM shares
         JOIN share_instances ON shares.id=share_instances.share_id
-        JOIN availability_zones ON share_instances.availability_zone_id=availability_zones.id
-        LEFT JOIN share_metadata ON shares.id=share_metadata.share_id AND share_metadata.key='snapmirror'
+        LEFT OUTER JOIN availability_zones ON share_instances.availability_zone_id=availability_zones.id
+        LEFT OUTER JOIN share_metadata ON shares.id=share_metadata.share_id AND share_metadata.key='snapmirror'
         WHERE share_instances.deleted = 'False'
         AND share_instances.replica_state='active'
         GROUP BY
@@ -209,12 +211,12 @@ mysql_metrics:
           snap.id as id,
           si.status as status,
           coalesce(share_instances.share_type_id, 'N/A') AS share_type_id,
-          availability_zones.name AS availability_zone_name,
+          coalesce(availability_zones.name, 'N/A') AS availability_zone_name,
           COUNT(*) AS count_gauge
         FROM share_snapshots AS snap
         INNER JOIN share_snapshot_instances AS si ON snap.id=si.snapshot_id
         INNER JOIN share_instances ON si.share_instance_id=share_instances.id
-        INNER JOIN availability_zones ON share_instances.availability_zone_id=availability_zones.id
+        LEFT OUTER JOIN availability_zones ON share_instances.availability_zone_id=availability_zones.id
         WHERE snap.deleted = 'False'
         AND (share_instances.replica_state='active' OR share_instances.replica_state IS NULL)
         GROUP BY
@@ -249,12 +251,12 @@ mysql_metrics:
           share_snapshots.id,
           share_snapshot_instances.status,
           coalesce(share_instances.share_type_id, 'N/A') AS share_type_id,
-          availability_zones.name AS availability_zone_name,
+          coalesce(availability_zones.name, 'N/A') AS availability_zone_name,
           SUM(share_snapshots.size) size_gauge
         FROM share_snapshots
         INNER JOIN share_snapshot_instances ON share_snapshots.id=share_snapshot_instances.snapshot_id
         INNER JOIN share_instances ON share_snapshot_instances.share_instance_id=share_instances.id
-        INNER JOIN availability_zones ON share_instances.availability_zone_id=availability_zones.id
+        LEFT OUTER JOIN availability_zones ON share_instances.availability_zone_id=availability_zones.id
         WHERE share_snapshots.deleted = 'False'
         AND (share_instances.replica_state='active' OR share_instances.replica_state IS NULL)
         GROUP BY
@@ -279,7 +281,7 @@ mysql_metrics:
       query: |
         SELECT
           coalesce(replicas.share_type_id, 'N/A') AS share_type_id,
-          availability_zones.name AS availability_zone_name,
+          coalesce(availability_zones.name, 'N/A') AS availability_zone_name,
           replicas.host AS manila_host,
           shares.project_id,
           replicas.id,
@@ -288,7 +290,7 @@ mysql_metrics:
           replicas.replica_state,
           COUNT(*) AS count_gauge
         FROM share_instances AS replicas
-        JOIN availability_zones ON replicas.availability_zone_id=availability_zones.id
+        LEFT OUTER JOIN availability_zones ON replicas.availability_zone_id=availability_zones.id
         JOIN shares ON replicas.share_id=shares.id
         WHERE replicas.deleted = 'False' AND replicas.replica_state IS NOT NULL
         GROUP BY
@@ -316,7 +318,7 @@ mysql_metrics:
       query: |
         SELECT
           coalesce(replicas.share_type_id, 'N/A') AS share_type_id,
-          availability_zones.name AS availability_zone_name,
+          coalesce(availability_zones.name, 'N/A') AS availability_zone_name,
           replicas.host AS manila_host,
           shares.project_id,
           replicas.id,
@@ -325,7 +327,7 @@ mysql_metrics:
           replicas.replica_state,
           SUM(shares.size) size_gauge
         FROM share_instances AS replicas
-        JOIN availability_zones ON replicas.availability_zone_id=availability_zones.id
+        LEFT OUTER JOIN availability_zones ON replicas.availability_zone_id=availability_zones.id
         JOIN shares ON replicas.share_id=shares.id
         WHERE replicas.deleted = 'False' AND replicas.replica_state IS NOT NULL
         GROUP BY
@@ -419,7 +421,10 @@ mysql_metrics:
         COUNT(*) AS count_gauge
         FROM share_snapshots
         INNER JOIN share_snapshot_instances ON share_snapshots.id=share_snapshot_instances.snapshot_id
-        WHERE share_snapshot_instances.status in ('deleting','creating') AND (COALESCE(share_snapshot_instances.updated_at, share_snapshot_instances.created_at) < DATE_SUB(now(), INTERVAL 15 MINUTE))
+        WHERE
+          share_snapshots.deleted = 'False'
+          AND share_snapshot_instances.status in ('deleting','creating')
+          AND (COALESCE(share_snapshot_instances.updated_at, share_snapshot_instances.created_at) < DATE_SUB(now(), INTERVAL 15 MINUTE))
         GROUP BY
           share_snapshots.id,
           share_snapshots.project_id,
@@ -444,7 +449,10 @@ mysql_metrics:
           MAX(UNIX_TIMESTAMP(NOW()) - UNIX_TIMESTAMP(COALESCE(share_snapshot_instances.updated_at, share_snapshot_instances.created_at))) AS max_duration_gauge
         FROM share_snapshots
         INNER JOIN share_snapshot_instances ON share_snapshots.id=share_snapshot_instances.snapshot_id
-        WHERE share_snapshot_instances.status in ('deleting','creating') AND (COALESCE(share_snapshot_instances.updated_at, share_snapshot_instances.created_at) < DATE_SUB(now(), INTERVAL 15 MINUTE))
+        WHERE
+          share_snapshots.deleted = 'False'
+          AND share_snapshot_instances.status in ('deleting','creating')
+          AND (COALESCE(share_snapshot_instances.updated_at, share_snapshot_instances.created_at) < DATE_SUB(now(), INTERVAL 15 MINUTE))
         GROUP BY
           share_snapshots.id,
           share_snapshots.project_id,
@@ -608,7 +616,9 @@ mariadb:
   query_cache_size: "1M"
   query_cache_type: "1"
   name: manila
-  initdb_configmap: manila-initdb
+  initdb_secret: true
+  ccroot_user:
+    enabled: true
   databases:
   - manila
   users:
@@ -622,6 +632,8 @@ mariadb:
   resources:
     requests:
       memory: 6144Mi
+  vpa:
+    set_main_container: true
   backup_v2:
     enabled: true
     databases:
@@ -657,11 +669,14 @@ rabbitmq:
     rabbit_queue_length: 10
     support_group: compute-storage-api
   persistence:
-    enabled: false
+    enabled: true
   metrics:
     enabled: true
     sidecar:
       enabled: false
+  enableDetailedMetrics: false
+  enablePerObjectMetrics: false
+
 sentry:
   enabled: true
 seeds:

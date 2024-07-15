@@ -10,6 +10,8 @@ spec:
     matchLabels:
       app: secrets-injector
   replicas: {{ .Values.replicaCount }}
+  strategy:
+    type: Recreate
   template:
     metadata:
       labels:
@@ -26,7 +28,7 @@ spec:
       containers:
       - image: "{{required ".Values.global.registry is missing" .Values.global.registry }}/{{ .Values.image.repository }}:{{required ".Values.image.tag is missing" .Values.image.tag }}"
         imagePullPolicy: {{ .Values.image.pullPolicy }}
-        name: secret-injector
+        name: secrets-injector
         command: ["/secrets-injector"]
         args:
         - -cert-path=/certs

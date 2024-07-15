@@ -94,7 +94,7 @@
       # import any tenant-specific metric, except for those which already have been imported
       - '{__name__=~"^castellum_aggregated_.+",project_id!=""}'
       - '{__name__=~"^openstack_.+",project_id!=""}'
-      - '{__name__=~"^limes_(?:project|domain)_(?:quota|usage)$"}'
+      - '{__name__=~"^limes_(?:project|domain)_(?:quota|usage|committed_per_az|usage_per_az)$"}'
       - '{__name__=~"^limes_swift_.+",project_id!=""}'
       - '{__name__=~"^keppel_.+",project_id!=""}'
 
@@ -210,10 +210,11 @@
     key_file: /etc/prometheus/secrets/prometheus-auth-sso-cert/sso.key
   static_configs:
     - targets:
-      - "prometheus-infra.scaleout.{{ .Values.global.region }}.cloud.sap"
+      - "prometheus-infra-internal.scaleout.{{ .Values.global.region }}.cloud.sap"
   metrics_path: '/federate'
   params:
     'match[]':
+      - '{__name__="aws_sending_counter_cronus_provider"}'
       - '{__name__="aws_sending_cronus_provider"}'
       - '{__name__="aws_receiving_cronus_provider"}'
       - '{__name__="aws_ses_cronus_provider_bounce"}'

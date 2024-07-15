@@ -1,7 +1,6 @@
 Defaults:
   auth_style: basic_auth
-  username: {{ .Values.global.netapp_exporter_user }}
-  password: {{ .Values.global.netapp_exporter_password }}
+  credentials_file: /opt/harvest/credentials.yaml
   use_insecure_tls: true
   exporters:
     - prom1
@@ -12,8 +11,8 @@ Exporters:
     port: 13000
 Pollers:{{`
   {{ .Name }}:
-    {{- if (eq .Name "stnpca1-bb097") }}
-    addr: stnpca1-bb097a.cc.qa-de-1.cloud.sap 
+    {{- if .Ip }}
+    addr: {{ .Ip }}
     {{- else }}
     addr: {{ .Host }}
     {{- end }}

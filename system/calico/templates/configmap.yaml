@@ -15,8 +15,10 @@ data:
   # By default, MTU is auto-detected, and explicitly setting this field should not be required.
   # You can override auto-detection by providing a non-zero value.
   veth_mtu: "{{ .Values.config.veth_mtu }}"
-
+  
+  {{ if .Values.bgp.enabled }}
   enable_bgp: "true"
+  {{ end }}
 
   # The CNI network configuration to install on each node. The special
   # values in this config will be automatically populated.
@@ -27,7 +29,7 @@ data:
       "name": "k8s-pod-network",
       "type": "multus-cni",
       "cniVersion": "0.3.1",
-      "kubeconfig": "/var/lib/kubelet/kubeconfig",
+      "kubeconfig": {{ .Values.config.kubeConfig | quote }},
       "log_file_path": "/var/lib/cni/multus.log",
       "log_level": "error",
       "delegates": [

@@ -14,7 +14,6 @@ nova_metadata_host = {{include "nova_api_metadata_endpoint_host_internal" .}}
 nova_metadata_protocol = {{.Values.global.nova_api_endpoint_protocol_internal | default "http"}}
 nova_metadata_port = {{ .Values.global.nova_metadata_port_internal | default 8775 }}
 
-metadata_proxy_shared_secret = {{required "A valid .Values.global.nova_metadata_secret required!" .Values.global.nova_metadata_secret}}
 {{- if .Values.agent.multus | default false }}
 metadata_proxy_socket = /run/metadata_proxy/metadata_proxy
 {{- else }}

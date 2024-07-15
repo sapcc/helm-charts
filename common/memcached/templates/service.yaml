@@ -8,6 +8,7 @@ metadata:
     release: "{{ .Release.Name }}"
     heritage: "{{ .Release.Service }}"
     component: memcached
+    {{- include "sharedservices.labels" . | indent 4 }}
   annotations:
     {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
     linkerd.io/inject: enabled
@@ -18,9 +19,13 @@ metadata:
     prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
     {{- end }}
 spec:
+  selector:
+    app: {{ template "fullname" . }}
   ports:
   - name: memcache
     port: {{ default "11211" .Values.memcached.port }}
     targetPort: memcache
-  selector:
-    app: {{ template "fullname" . }}
+{{- if .Values.external_ip }}
+  externalIPs:
+    - {{ .Values.external_ip }}
+{{- end }}

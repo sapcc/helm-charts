@@ -27,7 +27,14 @@ spec:
              - mountPath: /ai-cloud-guard/appliance_config
                name: ai-cloud-guard-config
                readOnly: true
+             - mountPath: /mnt
+               name: aicloudguard-pvc
       volumes:
         - configMap:
             name: {{ .Release.Name }}-config
           name: {{ .Release.Name }}-config
+        - name: aicloudguard-pvc
+          persistentVolumeClaim:
+            claimName: aicloudguard
+  strategy:
+    type: Recreate

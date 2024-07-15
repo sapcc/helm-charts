@@ -6,6 +6,9 @@ owner-info:
     - Sandro Jäckel
   helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/system/gatekeeper
 
+global:
+  linkerd_requested: true
+
 # documentation for this section: <https://github.com/open-policy-agent/gatekeeper/tree/master/charts/gatekeeper>
 gatekeeper-upstream:
   createNamespace: false
@@ -29,9 +32,19 @@ gatekeeper-upstream:
   # We have our own Gatekeeper policy to replace PodSecurityPolicy.
   psp:
     enabled: false
+
+  # Override container images with our local mirrors and disable jobs that are incompatible with our setup.
+  image:
+    repository: keppel.global.cloud.sap/ccloud-dockerhub-mirror/openpolicyagent/gatekeeper
+    crdRepository: keppel.global.cloud.sap/ccloud-dockerhub-mirror/openpolicyagent/gatekeeper-crds
   postInstall:
     labelNamespace:
       enabled: false
+      image:
+        repository: keppel.global.cloud.sap/ccloud-dockerhub-mirror/openpolicyagent/gatekeeper-crds
+    probeWebhook:
+      image:
+        repository: keppel.global.cloud.sap/ccloud-dockerhub-mirror/curlimages/curl
   postUpgrade:
     labelNamespace:
       enabled: false
@@ -45,8 +58,6 @@ gatekeeper-upstream:
         cpu: 500m
         memory: 256Mi
 
-  podLabels:
-    alert-tier: k8s
   podAnnotations:
     prometheus.io/scrape: "true"
     prometheus.io/targets: kubernetes

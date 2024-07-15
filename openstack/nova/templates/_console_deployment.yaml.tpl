@@ -60,16 +60,13 @@ spec:
                 path: nova.conf
               - key:  logging.ini
                 path: logging.ini
-          {{- if $is_cell2 }}
-              - key: nova-cell2.conf
-                path: nova.conf.d/cell2.conf
-          {{- else }}
           - secret:
               name: nova-etc
               items:
-              - key: db.conf
-                path: nova.conf.d/db.conf
-          {{- end }}
+              - key: api-db.conf
+                path: nova.conf.d/api-db.conf
+              - key: {{ $cell_name }}.conf
+                path: nova.conf.d/{{ $cell_name }}.conf
           - configMap:
               name: nova-console
               items:
@@ -95,16 +92,6 @@ spec:
 {{- if .Values.python_warnings }}
         - name: PYTHONWARNINGS
           value: {{ .Values.python_warnings | quote }}
-{{- end }}
-{{- if $config.inject_nova_credentials }}
-        - name: OS_USERNAME
-          value: {{ .Values.global.nova_service_user | default "nova" }}
-        - name: OS_PASSWORD
-          value: {{ required ".Values.global.nova_service_password is missing" .Values.global.nova_service_password }}
-        - name: OS_PROJECT_NAME
-          value: {{.Values.global.keystone_service_project | default "service" }}
-        - name: OS_AUTH_URL
-          value: {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
 {{- end }}
         ports:
         - name: {{ $type }}

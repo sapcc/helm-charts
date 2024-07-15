@@ -1,0 +1,54 @@
+
+groups:
+  - name: manila-maia
+    rules:
+
+    - record: netapp_volume_size_total:manila
+      expr: netapp_volume_size_total{app="netapp-harvest-exporter-manila"}
+
+    - record: netapp_volume_size_used:manila
+      expr: netapp_volume_size_used{app="netapp-harvest-exporter-manila"}
+
+    - record: netapp_volume_size_available:manila
+      expr: netapp_volume_size_available{app="netapp-harvest-exporter-manila"}
+
+    - record: netapp_volume_space_logical_used:manila
+      expr: netapp_volume_space_logical_used{app="netapp-harvest-exporter-manila"}
+
+    # sum available_bytes and logical_used_bytes when only space reporting is enabled
+    # details see https://operations.global.cloud.sap/docs/operation/storage/manila/300-logical-space/
+    - record: netapp_volume_total_bytes:maia2
+      expr: (
+        (netapp_volume_size_available:manila + netapp_volume_space_logical_used) * on (app, aggr, svm, volume) group_left()
+        netapp_volume_labels{is_space_reporting_logical="true", is_space_enforcement_logical="false"}
+        ) or netapp_volume_size_total:manila
+
+    # use logical used bytes when logical space reporting is enabled
+    - record: netapp_volume_used_bytes:maia2
+      expr: (
+        netapp_volume_space_logical_used:manila * on (app, aggr, svm, volume) group_left() netapp_volume_labels{is_space_reporting_logical="true"}
+        ) or netapp_volume_size_used:manila
+
+    - record: netapp_volume_available_bytes:maia2
+      expr: netapp_volume_total_bytes:maia2 - netapp_volume_used_bytes:maia2
+
+    - record: netapp_volume_used_percentage:maia2
+      expr: round(netapp_volume_used_bytes:maia2 / netapp_volume_total_bytes:maia2 * 100)
+
+    - record: netapp_volume_snapshot_reserved_bytes:maia2
+      expr: netapp_volume_snapshot_reserve_size{app="netapp-harvest-exporter-manila"}
+
+    - record: netapp_volume_snapshot_available_bytes:maia2
+      expr: netapp_volume_snapshot_reserve_available{app="netapp-harvest-exporter-manila"}
+
+    - record: netapp_volume_snapshot_used_bytes:maia2
+      expr: netapp_volume_snapshots_size_used{app="netapp-harvest-exporter-manila"}
+
+    - record: netapp_volume_inode_files_total:maia2
+      expr: netapp_volume_inode_files_total{app="netapp-harvest-exporter-manila"}
+
+    - record: netapp_volume_inode_files_used:maia2
+      expr: netapp_volume_inode_files_used{app="netapp-harvest-exporter-manila"}
+
+    - record: netapp_volume_inode_files_used_percentage:maia2
+      expr: netapp_volume_inode_files_used_percent{app="netapp-harvest-exporter-manila"}

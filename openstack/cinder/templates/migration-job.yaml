@@ -8,6 +8,9 @@ metadata:
     component: cinder
 spec:
   template:
+    metadata:
+      annotations:
+        {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
     spec:
       restartPolicy: OnFailure
       {{- include "utils.proxysql.job_pod_settings" . | nindent 6 }}
@@ -22,7 +25,7 @@ spec:
             - -c
             - |
               cinder-manage db sync
-              {{ include "utils.proxysql.proxysql_signal_stop_script" . | trim }}
+              {{- include "utils.script.job_finished_hook" . | nindent 14 }}
           volumeMounts:
             - name: etccinder
               mountPath: /etc/cinder
@@ -30,6 +33,8 @@ spec:
               mountPath: /etc/cinder/cinder.conf
               subPath: cinder.conf
               readOnly: true
+            - name: cinder-etc-confd
+              mountPath: /etc/cinder/cinder.conf.d
             - name: cinder-etc
               mountPath: /etc/cinder/api-paste.ini
               subPath: api-paste.ini
@@ -50,4 +55,7 @@ spec:
         - name: cinder-etc
           configMap:
             name: cinder-etc
+        - name: cinder-etc-confd
+          secret:
+            secretName: {{ .Release.Name }}-secrets
       {{- include "utils.proxysql.volumes" . | indent 8 }}

@@ -39,6 +39,7 @@ spec:
         kubectl.kubernetes.io/default-container: manila-share-netapp-{{$share.name}}
         configmap-etc-hash: {{ include (print .Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
         configmap-netapp-hash: {{ list . $share | include "share_netapp_configmap" | sha256sum }}
+        secrets-hash: {{ include (print .Template.BasePath "/secrets.yaml") . | sha256sum }}
         {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
     spec:
 {{ tuple . $availability_zone | include "utils.kubernetes_pod_az_affinity" | indent 6 }}
@@ -67,7 +68,11 @@ spec:
             - --config-file
             - /etc/manila/manila.conf
             - --config-file
+            - /etc/manila/manila.conf.d/secrets.conf
+            - --config-file
             - /etc/manila/backend.conf
+            - --config-file
+            - /etc/manila/backend-secret.conf
           env:
             {{- if .Values.sentry.enabled }}
             - name: SENTRY_DSN_SSL
@@ -93,13 +98,15 @@ spec:
               mountPath: /etc/manila/logging.ini
               subPath: logging.ini
               readOnly: true
-            - name: manila-etc
-              mountPath: /etc/manila/healthz
-              subPath: healthz
-              readOnly: true
+            - name: manila-etc-confd
+              mountPath: /etc/manila/manila.conf.d
             - name: backend-config
               mountPath: /etc/manila/backend.conf
               subPath: backend.conf
+              readOnly: true
+            - name: backend-secret
+              mountPath: /etc/manila/backend-secret.conf
+              subPath: backend-secret.conf
               readOnly: true
             {{- include "utils.proxysql.volume_mount" . | indent 12 }}
             {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
@@ -119,7 +126,7 @@ spec:
             exec:
               command:
               - sh
-              - /etc/manila/healthz
+              - /etc/manila/manila.conf.d/healthz
             timeoutSeconds: 10
             periodSeconds: 5
             initialDelaySeconds: 5
@@ -154,9 +161,15 @@ spec:
         - name: manila-etc
           configMap:
             name: {{ .Release.Name }}-etc
+        - name: manila-etc-confd
+          secret:
+            secretName: {{ .Release.Name }}-secrets
         - name: backend-config
           configMap:
             name: {{ .Release.Name }}-share-netapp-{{$share.name}}
+        - name: backend-secret
+          secret:
+            secretName: {{ .Release.Name }}-share-netapp-{{$share.name}}-secret
         {{- include "utils.proxysql.volumes" . | indent 8 }}
         {{- include "utils.trust_bundle.volumes" . | indent 8 }}
 {{ end }}

@@ -3,6 +3,40 @@ Rabbitmq CHANGELOG
 
 This file is used to list changes made in each version of the common chart rabbitmq.
 
+0.7.3
+-----
+- add option enableAllFeatureFlags to enable all stable feature flags after service has started
+
+0.7.2
+-----
+- Fix RabbitMQRPCUnackTotal alert to support both old and new unack metric name
+
+0.7.1
+------
+birk.bohne@sap.com
+- `app.kubernetes.io/component` label fixed by using the `.Chart.Name` variable instead of a hardcoded value
+- defined functions are shared between all (sub)charts and because of that hardcoded values will cause unexpected behavior
+
+0.6.13
+------
+dusan.dordevic@sap.com
+-Adding standardized labels to all objects, according to https://kubernetes.io/docs/concepts/overview/working-with-objects/common-labels/#labels and https://helm.sh/docs/chart_best_practices/labels/
+
+0.6.9
+-----
+b.alkhateeb@sap.com
+- update rabbitMQ to version 3.13.0-management
+
+0.6.8
+-----
+dusan.dordevic@sap.com
+- Add /metric/detailed and /metrics/per-object prometheus endpoints. They can be enabled/disabled from values.yaml, metrics section
+
+0.6.7
+-----
+dusan.dordevic@sap.com
+- add switch in values.yaml that allows creating user: dev / pass: dev that should be used for development only
+
 0.6.6
 -----
 maurice.escher@sap.com

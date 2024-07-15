@@ -10,7 +10,10 @@ metadata:
   annotations:
     prometheus.io/scrape: "true"
     prometheus.io/port: "{{ .Values.listen_port }}"
-    prometheus.io/targets: "{{ .Values.alerts.prometheus }}"
+    prometheus.io/targets: "{{ .Values.metrics.prometheus }}"
+    {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+    linkerd.io/inject: enabled
+    {{- end }}
 spec:
   selector:
     component: octobus-query-exporter-global

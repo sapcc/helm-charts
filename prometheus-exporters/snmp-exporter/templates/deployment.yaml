@@ -29,7 +29,10 @@ spec:
         checksum/configmap.yaml: {{ include  (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
         prometheus.io/scrape: "true"
         prometheus.io/targets: infra-collector
-        prometheus.io/port: "9116"
+        {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+        linkerd.io/inject: enabled
+        {{- end }}
+        kubectl.kubernetes.io/default-container: "snmp-exporter"
     spec:
       nodeSelector:
         zone: farm
@@ -41,10 +44,317 @@ spec:
         - name: snmp-exporter
           image: {{ .Values.global.registry }}/snmp-exporter-generator:{{ .Values.snmp_exporter.image_version }}
           imagePullPolicy: IfNotPresent
-          command:
-            - /gopath/snmp_exporter/snmp_exporter
-          args:
-            - --config.file=/snmp-exporter-etc/*.yaml
+          env:
+          - name: ASA_V3_USERNAME
+            valueFrom:
+              secretKeyRef:
+                name: snmp-exporter-secrets
+                key: ASA_V3_USERNAME
+          - name: ASA_V3_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: snmp-exporter-secrets
+                key: ASA_V3_PASSWORD
+          - name: ASA_V3_PRIV_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: snmp-exporter-secrets
+                key: ASA_V3_PRIV_PASSWORD
+          - name: ASR_V3_USERNAME
+            valueFrom:
+              secretKeyRef:
+                name: snmp-exporter-secrets
+                key: ASR_V3_USERNAME
+          - name: ASR_V3_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: snmp-exporter-secrets
+                key: ASR_V3_PASSWORD
+          - name: ASR_V3_PRIV_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: snmp-exporter-secrets
+                key: ASR_V3_PRIV_PASSWORD
+          - name: F5_V3_USERNAME
+            valueFrom:
+              secretKeyRef:
+                name: snmp-exporter-secrets
+                key: F5_V3_USERNAME
+          - name: F5_V3_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: snmp-exporter-secrets
+                key: F5_V3_PASSWORD
+          - name: F5_V3_PRIV_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: snmp-exporter-secrets
+                key: F5_V3_PRIV_PASSWORD
+          - name: ASR03_V3_USERNAME
+            valueFrom:
+              secretKeyRef:
+                name: snmp-exporter-secrets
+                key: ASR03_V3_USERNAME
+          - name: ASR03_V3_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: snmp-exporter-secrets
+                key: ASR03_V3_PASSWORD
+          - name: ASR03_V3_PRIV_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: snmp-exporter-secrets
+                key: ASR03_V3_PRIV_PASSWORD
+          - name: COREASR9K_V3_USERNAME
+            valueFrom:
+              secretKeyRef:
+                name: snmp-exporter-secrets
+                key: COREASR9K_V3_USERNAME
+          - name: COREASR9K_V3_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: snmp-exporter-secrets
+                key: COREASR9K_V3_PASSWORD
+          - name: COREASR9K_V3_PRIV_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: snmp-exporter-secrets
+                key: COREASR9K_V3_PRIV_PASSWORD
+          - name: N3K_V3_USERNAME
+            valueFrom:
+              secretKeyRef:
+                name: snmp-exporter-secrets
+                key: N3K_V3_USERNAME
+          - name: N3K_V3_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: snmp-exporter-secrets
+                key: N3K_V3_PASSWORD
+          - name: N3K_V3_PRIV_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: snmp-exporter-secrets
+                key: N3K_V3_PRIV_PASSWORD
+          - name: PXGENERIC_V3_USERNAME
+            valueFrom:
+              secretKeyRef:
+                name: snmp-exporter-secrets
+                key: PXGENERIC_V3_USERNAME
+          - name: PXGENERIC_V3_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: snmp-exporter-secrets
+                key: PXGENERIC_V3_PASSWORD
+          - name: PXGENERIC_V3_PRIV_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: snmp-exporter-secrets
+                key: PXGENERIC_V3_PRIV_PASSWORD
+          - name: PXDLROUTERGENERIC_V3_USERNAME
+            valueFrom:
+              secretKeyRef:
+                name: snmp-exporter-secrets
+                key: PXDLROUTERGENERIC_V3_USERNAME
+          - name: PXDLROUTERGENERIC_V3_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: snmp-exporter-secrets
+                key: PXDLROUTERGENERIC_V3_PASSWORD
+          - name: PXDLROUTERGENERIC_V3_PRIV_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: snmp-exporter-secrets
+                key: PXDLROUTERGENERIC_V3_PRIV_PASSWORD
+          - name: PXDLROUTERIOSXE_V3_USERNAME
+            valueFrom:
+              secretKeyRef:
+                name: snmp-exporter-secrets
+                key: PXDLROUTERIOSXE_V3_USERNAME
+          - name: PXDLROUTERIOSXE_V3_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: snmp-exporter-secrets
+                key: PXDLROUTERIOSXE_V3_PASSWORD
+          - name: PXDLROUTERIOSXE_V3_PRIV_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: snmp-exporter-secrets
+                key: PXDLROUTERIOSXE_V3_PRIV_PASSWORD
+          - name: PXDLROUTERIOSXR_V3_USERNAME
+            valueFrom:
+              secretKeyRef:
+                name: snmp-exporter-secrets
+                key: PXDLROUTERIOSXR_V3_USERNAME
+          - name: PXDLROUTERIOSXR_V3_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: snmp-exporter-secrets
+                key: PXDLROUTERIOSXR_V3_PASSWORD
+          - name: PXDLROUTERIOSXR_V3_PRIV_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: snmp-exporter-secrets
+                key: PXDLROUTERIOSXR_V3_PRIV_PASSWORD
+          - name: ACILEAF_V3_USERNAME
+            valueFrom:
+              secretKeyRef:
+                name: snmp-exporter-secrets
+                key: ACILEAF_V3_USERNAME
+          - name: ACILEAF_V3_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: snmp-exporter-secrets
+                key: ACILEAF_V3_PASSWORD
+          - name: ACILEAF_V3_PRIV_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: snmp-exporter-secrets
+                key: ACILEAF_V3_PRIV_PASSWORD
+          - name: N9KPX_V3_USERNAME
+            valueFrom:
+              secretKeyRef:
+                name: snmp-exporter-secrets
+                key: N9KPX_V3_USERNAME
+          - name: N9KPX_V3_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: snmp-exporter-secrets
+                key: N9KPX_V3_PASSWORD
+          - name: N9KPX_V3_PRIV_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: snmp-exporter-secrets
+                key: N9KPX_V3_PRIV_PASSWORD
+          - name: IPN_V3_USERNAME
+            valueFrom:
+              secretKeyRef:
+                name: snmp-exporter-secrets
+                key: IPN_V3_USERNAME
+          - name: IPN_V3_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: snmp-exporter-secrets
+                key: IPN_V3_PASSWORD
+          - name: IPN_V3_PRIV_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: snmp-exporter-secrets
+                key: IPN_V3_PRIV_PASSWORD
+          - name: ACISPINE_V3_USERNAME
+            valueFrom:
+              secretKeyRef:
+                name: snmp-exporter-secrets
+                key: ACISPINE_V3_USERNAME
+          - name: ACISPINE_V3_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: snmp-exporter-secrets
+                key: ACISPINE_V3_PASSWORD
+          - name: ACISPINE_V3_PRIV_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: snmp-exporter-secrets
+                key: ACISPINE_V3_PRIV_PASSWORD
+          - name: ACISTRETCH_V2_COMMUNITY
+            valueFrom:
+              secretKeyRef:
+                name: snmp-exporter-secrets
+                key: ACISTRETCH_V2_COMMUNITY
+          - name: UCS_V3_USERNAME
+            valueFrom:
+              secretKeyRef:
+                name: snmp-exporter-secrets
+                key: UCS_V3_USERNAME
+          - name: UCS_V3_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: snmp-exporter-secrets
+                key: UCS_V3_PASSWORD
+          - name: UCS_V3_PRIV_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: snmp-exporter-secrets
+                key: UCS_V3_PRIV_PASSWORD
+          - name: HSM_V3_USERNAME
+            valueFrom:
+              secretKeyRef:
+                name: snmp-exporter-secrets
+                key: HSM_V3_USERNAME
+          - name: HSM_V3_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: snmp-exporter-secrets
+                key: HSM_V3_PASSWORD
+          - name: HSM_V3_PRIV_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: snmp-exporter-secrets
+                key: HSM_V3_PRIV_PASSWORD
+          - name: ARISTA_V3_USERNAME
+            valueFrom:
+              secretKeyRef:
+                name: snmp-exporter-secrets
+                key: ARISTA_V3_USERNAME
+          - name: ARISTA_V3_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: snmp-exporter-secrets
+                key: ARISTA_V3_PASSWORD
+          - name: ARISTA_V3_PRIV_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: snmp-exporter-secrets
+                key: ARISTA_V3_PRIV_PASSWORD
+          - name: ARISTA_V2_COMMUNITY
+            valueFrom:
+              secretKeyRef:
+                name: snmp-exporter-secrets
+                key: ARISTA_V2_COMMUNITY
+          - name: ARISTAEVPN_V3_USERNAME
+            valueFrom:
+              secretKeyRef:
+                name: snmp-exporter-secrets
+                key: ARISTAEVPN_V3_USERNAME
+          - name: ARISTAEVPN_V3_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: snmp-exporter-secrets
+                key: ARISTAEVPN_V3_PASSWORD
+          - name: ARISTAEVPN_V3_PRIV_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: snmp-exporter-secrets
+                key: ARISTAEVPN_V3_PRIV_PASSWORD
+          - name: FORTINET_V3_USERNAME
+            valueFrom:
+              secretKeyRef:
+                name: snmp-exporter-secrets
+                key: FORTINET_V3_USERNAME
+          - name: FORTINET_V3_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: snmp-exporter-secrets
+                key: FORTINET_V3_PASSWORD
+          - name: FORTINET_V3_PRIV_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: snmp-exporter-secrets
+                key: FORTINET_V3_PRIV_PASSWORD
+          - name: ARISTASPINE_V3_USERNAME
+            valueFrom:
+              secretKeyRef:
+                name: snmp-exporter-secrets
+                key: ARISTASPINE_V3_USERNAME
+          - name: ARISTASPINE_V3_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: snmp-exporter-secrets
+                key: ARISTASPINE_V3_PASSWORD
+          - name: ARISTASPINE_V3_PRIV_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: snmp-exporter-secrets
+                key: ARISTASPINE_V3_PRIV_PASSWORD
           volumeMounts:
             - mountPath: /snmp-exporter-etc
               name: snmp-exporter-etc

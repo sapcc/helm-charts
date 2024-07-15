@@ -26,10 +26,6 @@ spec:
         component: "{{ .Values.postgresDatabase }}"
         name: {{ template "fullname" . }} # just to make the ci pipeline easier, not actually used anywhere
         type: database
-        {{- if .Values.alerts.enabled }}
-        alert-tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
-        alert-service: {{ include "alerts.service" . }}
-        {{- end }}
       annotations:
         kubectl.kubernetes.io/default-container: postgres
         checksum/secrets: {{ include (print $.Template.BasePath  "/secrets.yaml") . | sha256sum }}

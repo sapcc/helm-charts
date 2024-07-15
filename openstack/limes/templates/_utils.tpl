@@ -20,7 +20,10 @@
       name: limes-secret
       key: rabbitmq_password
 - name: LIMES_AUDIT_RABBITMQ_USERNAME
-  value: "{{ default "rabbitmq" .Values.limes.passwords.ccloud.rabbitmq_user }}"
+  valueFrom:
+    secretKeyRef:
+      name: limes-secret
+      key: rabbitmq_username
 {{- end }}
 - name: LIMES_AUTHORITATIVE
   value: "true"
@@ -39,10 +42,6 @@
   value: "limes-postgresql.{{ .Release.Namespace }}.svc"
 - name: LIMES_DB_CONNECTION_OPTIONS
   value: "sslmode=disable"
-- name: LIMES_COLLECTOR_DATA_METRICS_EXPOSE
-  value: "true"
-- name: LIMES_COLLECTOR_DATA_METRICS_SKIP_ZERO
-  value: "true"
 - name: OS_AUTH_URL
   value: "http://keystone.{{ $.Values.global.keystoneNamespace }}.svc.kubernetes.{{ $.Values.global.region }}.{{ $.Values.global.tld }}:5000/v3"
 - name: OS_INTERFACE

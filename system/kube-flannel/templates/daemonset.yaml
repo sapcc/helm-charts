@@ -24,6 +24,13 @@ spec:
         scheduler.alpha.kubernetes.io/critical-pod: ''
 {{- end }}
     spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernikus.cloud.sap/cni
+                operator: DoesNotExist
 {{- if (semverCompare ">= 1.10-0" .Capabilities.KubeVersion.GitVersion) }} 
       priorityClassName: system-node-critical
 {{- end }}

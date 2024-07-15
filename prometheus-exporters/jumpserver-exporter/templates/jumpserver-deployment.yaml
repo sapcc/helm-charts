@@ -3,6 +3,8 @@ apiVersion: apps/v1
 metadata:
   name: jumpserver-exporter 
   namespace: infra-monitoring
+  annotations:
+    vpa-butler.cloud.sap/update-mode: Auto
 spec:
   selector:
     matchLabels:
@@ -18,6 +20,7 @@ spec:
         {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
         linkerd.io/inject: enabled
         {{- end }}
+        kubectl.kubernetes.io/default-container: jumpserver-exporter
     spec:
       containers:
          - name: jumpserver-exporter
@@ -36,6 +39,9 @@ spec:
            - name: REGION
              value: {{ .Values.jumpserver.region }}
            - name: RADIUS_SECRET
-             value: {{ required "jumpserver.radius_secret variable is missing" .Values.jumpserver.radius_secret }}
+             valueFrom:
+               secretKeyRef:
+                 name: jumpserver-exporter
+                 key: radius
            - name: EXPORT_PORT
              value: {{ .Values.jumpserver.port_number | quote }}

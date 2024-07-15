@@ -1,17 +1,30 @@
 apps:
   apod:
     enabled: false
+    objects:
+      Volume: volume.yaml
   cinder:
     enabled: false
+    objects:
+      Lun: lun.yaml
+      ISCSISession: iscsi_session.yaml
+      Volume: volume.yaml
   manila:
     enabled: false
+    objects:
+      NFSClients: nfs_clients.yaml
+      SnapMirror: snapmirror.yaml
+      Snapshot: custom_snapshot.yaml
+      Volume: custom_volume.yaml
 
 harvest:
   image:
     repository: rahulguptajss/harvest
     tag: 23.11.0-1
   loglevel: 2
-  promPort: 13000
+  ports:
+    liveness: 8080
+    metrics: 13000
   resources:
     requests:
       cpu: 100m
@@ -23,7 +36,9 @@ harvest:
 netappsd:
   image:
     repository: netappsd
-    tag: v2-20240219134301
+    tag: v2-20240621125225
+  ports:
+    metrics: 8000
   resources:
     requests:
       cpu: 100m

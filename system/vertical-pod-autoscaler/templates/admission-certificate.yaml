@@ -1,11 +1,8 @@
-{{- if .Values.admission.enabled }}
 apiVersion: cert-manager.io/v1
 kind: Issuer
 metadata:
   name: vpa-admission
   namespace: {{ .Release.Namespace }}
-  annotations:
-    "helm.sh/hook": pre-install,pre-upgrade
 spec:
   selfSigned: {}
 ---
@@ -14,9 +11,8 @@ kind: Certificate
 metadata:
   name: vpa-admission
   namespace: {{ .Release.Namespace }}
-  annotations:
-    "helm.sh/hook": pre-install,pre-upgrade
 spec:
+  duration: {{ .Values.admission.certificate.duration | quote }}
   dnsNames:
     - vpa-webhook.{{ .Release.Namespace }}.svc
     - vpa-webhook.{{ .Release.Namespace }}.svc.cluster.local
@@ -24,4 +20,3 @@ spec:
     kind: Issuer
     name: vpa-admission
   secretName: vpa-admission-tls-certs
-{{ end -}}

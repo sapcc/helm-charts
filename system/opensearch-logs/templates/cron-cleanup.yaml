@@ -17,9 +17,15 @@ spec:
             command: ["/bin/bash", "/scripts/index_cleanup.sh"]
             env:
             - name: ADMIN_USER
-              value: "{{.Values.global.users.admin.name}}"
-            - name: ADMIN_PW
-              value: "{{.Values.global.users.admin.password}}"
+              valueFrom:
+                secretKeyRef:
+                  name: cron-secrets
+                  key: ADMIN_USER
+            - name: ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: cron-secrets
+                  key: ADMIN_PASSWORD
             volumeMounts:
             - mountPath: /scripts
               name: config

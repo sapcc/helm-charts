@@ -30,6 +30,7 @@ spec:
       labels:
         app: {{ .Release.Name }}-api
       annotations:
+        kubectl.kubernetes.io/default-container: designate-api
         configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
         configmap-bin-hash: {{ include (print $.Template.BasePath "/bin-configmap.yaml") . | sha256sum }}
         secrets-hash: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
@@ -160,14 +161,12 @@ spec:
             - configMap:
                 name: designate-etc
             - secret:
-                name: designate-secrets
+                name: {{ .Release.Name }}-secrets
                 items:
                   - key: secrets.conf
                     path: secrets.conf
-{{- range $rndc := .Values.rndc_keys }}
-                  - key: {{ $rndc.name }}.key
-                    path: {{ $rndc.name }}.key
-{{- end }}
+            - secret:
+                name: {{ .Release.Name }}-secrets-rndc
         - name: designate-etc-wsgi
           configMap:
             name: designate-etc-wsgi

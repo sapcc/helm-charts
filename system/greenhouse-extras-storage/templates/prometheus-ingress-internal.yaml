@@ -1,0 +1,46 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    disco: "true"
+    kubernetes.io/tls-acme: "true"
+
+    ingress.kubernetes.io/auth-tls-secret: {{ required ".Values.prometheus.auth.tlsSecret missing" .Values.prometheus.auth.tlsSecret | quote }}
+    nginx.ingress.kubernetes.io/auth-tls-secret: {{ required ".Values.prometheus.auth.tlsSecret missing" .Values.prometheus.auth.tlsSecret | quote }}
+    ingress.kubernetes.io/auth-tls-verify-depth: {{ required ".Values.prometheus.auth.tlsVerifyDepth missing" .Values.prometheus.auth.tlsVerifyDepth | quote }}
+    nginx.ingress.kubernetes.io/auth-tls-verify-depth: {{ required ".Values.prometheus.auth.tlsVerifyDepth missing" .Values.prometheus.auth.tlsVerifyDepth | quote }}
+    ingress.kubernetes.io/auth-tls-verify-client: {{ required ".Values.prometheus.auth.tlsVerifyClient missing" .Values.prometheus.auth.tlsVerifyClient | quote }}
+    nginx.ingress.kubernetes.io/auth-tls-verify-client: {{ required ".Values.prometheus.auth.tlsVerifyClient missing" .Values.prometheus.auth.tlsVerifyClient | quote }}
+  name: prometheus-internal
+  namespace: {{ required ".Values.prometheus.namespace is unset" .Values.prometheus.namespace }}
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: prometheus-internal.st1.{{ .Values.global.region }}.cloud.sap
+    http:
+      paths:
+      - backend:
+          service:
+            name: kube-monitoring-{{ .Values.global.cluster }}-prometheus
+            port:
+              number: 9090
+        path: /-/healthy
+        pathType: ImplementationSpecific
+      - backend:
+          service:
+            name: kube-monitoring-{{ .Values.global.cluster }}-prometheus
+            port:
+              number: 9090
+        path: /api
+        pathType: ImplementationSpecific
+      - backend:
+          service:
+            name: kube-monitoring-{{ .Values.global.cluster }}-prometheus
+            port:
+              number: 9090
+        path: /federate
+        pathType: ImplementationSpecific
+  tls:
+  - hosts:
+    - prometheus-internal.st1.{{ .Values.global.region }}.cloud.sap
+    secretName: tls-prometheus-internal-{{ .Values.global.cluster }}-cloud-sap

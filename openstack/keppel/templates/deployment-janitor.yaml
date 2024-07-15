@@ -16,8 +16,6 @@ spec:
     metadata:
       labels:
         name: keppel-janitor
-        alert-tier: os
-        alert-service: keppel
       annotations:
         checksum/configmap: {{ include "keppel/templates/configmap.yaml" . | sha256sum }}
         checksum/secret: {{ include "keppel/templates/secret.yaml" . | sha256sum }}
@@ -62,13 +60,13 @@ spec:
               port: 80
             timeoutSeconds: 5
             periodSeconds: 5
-          # NOTE: observed resource usage in eu-de-1 (as of 2021-08)
-          # - CPU: 100m-200m, very spiky
-          # - RAM: starts off around 150Mi, leaks about 200Mi per day (but one OOM kill per day is acceptable IMO)
+          # NOTE: observed resource usage in eu-de-1 (as of 2024-07)
+          # - CPU: 100m-500m, spiky
+          # - RAM: settles at about 250Mi after a few hours, leaks about 200Mi per day (but one OOM kill per day is acceptable IMO)
           resources:
             requests:
               cpu: "1"
-              memory: "400Mi"
+              memory: "600Mi"
             limits:
               cpu: "1"
-              memory: "400Mi"
+              memory: "600Mi"

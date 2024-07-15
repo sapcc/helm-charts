@@ -39,7 +39,8 @@ template: |
           datacenter: {= availability_zone =}
         annotations:
           configmap-etc-hash: {{ include (print .Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
-          configmap-cinder-volume-hash: {= "vcenter_datacenter/{{ .Release.Namespace }}/vcenter-datacenter-cinder-configmap.yaml.j2" | render | sha256sum =}
+          configmap-cinder-volume-hash: {= "vcenter_datacenter/{{ .Release.Namespace }}/vcenter-datacenter-cinder-secret.yaml.j2" | render | sha256sum =}
+          secrets-hash: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
           {{- if .Values.proxysql.mode }}
           prometheus.io/scrape: "true"
           prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
@@ -73,7 +74,7 @@ template: |
             value: 'ignore:Unverified HTTPS request'
           livenessProbe:
             exec:
-              command: ["openstack-agent-liveness", "--component", "cinder", "--config-file", "/etc/cinder/cinder.conf"]
+              command: ["openstack-agent-liveness", "--component", "cinder", "--config-file", "/etc/cinder/cinder.conf", "--config-file", "/etc/cinder/cinder.conf.d/secrets.conf"]
             initialDelaySeconds: 60
             periodSeconds: 60
             timeoutSeconds: 20
@@ -88,6 +89,8 @@ template: |
             mountPath: /etc/cinder/cinder.conf
             subPath: cinder.conf
             readOnly: true
+          - name: cinder-etc-confd
+            mountPath: /etc/cinder/cinder.conf.d
           - name: cinder-etc
             mountPath: /etc/cinder/policy.json
             subPath: policy.json
@@ -122,9 +125,12 @@ template: |
         - name: cinder-etc
           configMap:
             name: cinder-etc
+        - name: cinder-etc-confd
+          secret:
+            secretName: {{ .Release.Name }}-secrets
         - name: volume-config
-          configMap:
-            name:  volume-vmware-{= name =}
+          secret:
+            secretName: volume-vmware-{= name =}
         {{- include "utils.proxysql.volumes" . | indent 8 }}
         {{- include "utils.coordination.volumes" . | indent 8 }}
 {{- end }}

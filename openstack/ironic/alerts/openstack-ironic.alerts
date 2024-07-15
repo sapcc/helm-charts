@@ -102,19 +102,19 @@ groups:
       description: 'Node {{ $labels.name }} is in clean failed state due to {{ $labels.last_error }}'
       summary: 'Openstack Ironic Node In Clean Failed State'
 
-  - alert: OpenstackIronicApiUp
+  - alert: OpenstackIronicApiDown
     expr: up{application="ironic",component="api"} == 0
     for: 5m
     labels:
       severity: info
       context: availability
       dashboard: ironic
-      meta: "a ironic instance went down on {{ $labels.instance }}"
+      meta: "an ironic instance went down on {{ $labels.instance }}"
       service: ironic
       tier: os
       support_group: foundation
     annotations:
-      description: "A ironic-api pod on {{ $labels.instance }} is DOWN. The remaining ones should keep the service up."
+      description: "An ironic-api pod on {{ $labels.instance }} is DOWN. The remaining ones should keep the service up."
       summary: "An ironic server is DOWN"
 
   - alert: OpenstackIronicConductorUp
@@ -131,8 +131,8 @@ groups:
       description: "A ironic-api pod on {{ $labels.instance }} is DOWN. The remaining ones should keep the service up."
       summary: "An ironic server is DOWN"
 
-  - alert: OpenstackIronicDatabaseUp
-    expr: count(up{app="ironic-mariadb"} == 0) == count(up{app="ironic-mariadb"})
+  - alert: OpenstackIronicDatabaseDown
+    expr: count(up{app="ironic-mariadb"} == 0) by (instance) == count(up{app="ironic-mariadb"}) by (instance)
     for: 5m
     labels:
       severity: critical

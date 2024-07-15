@@ -20,14 +20,12 @@ spec:
       labels:
         name: castellum-worker
         app: castellum-worker
-        alert-tier: os
-        alert-service: castellum
       annotations:
         checksum/configmap: {{ include "castellum/templates/configmap.yaml" $ | sha256sum }}
         checksum/secrets: {{ include "castellum/templates/secret.yaml" $ | sha256sum }}
         kubectl.kubernetes.io/default-container: worker
         prometheus.io/scrape: "true"
-        prometheus.io/targets: {{ quote .Values.alerts.prometheus.openstack }}
+        prometheus.io/targets: openstack
     spec:
       volumes:
         - name: config
@@ -39,7 +37,7 @@ spec:
       containers:
         - name: worker
           image: {{ include "castellum_image" . }}
-          imagePullPolicy: {{ .Values.castellum.image_pull_policy }}
+          imagePullPolicy: IfNotPresent
           args:
             - worker
             - /etc/castellum/castellum.yaml

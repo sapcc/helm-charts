@@ -20,8 +20,6 @@ spec:
       labels:
         name: castellum-api
         app: castellum-api
-        alert-tier: os
-        alert-service: castellum
       annotations:
         checksum/configmap: {{ include "castellum/templates/configmap.yaml" $ | sha256sum }}
         checksum/secrets: {{ include "castellum/templates/secret.yaml" $ | sha256sum }}
@@ -49,7 +47,7 @@ spec:
       containers:
         - name: api
           image: {{ include "castellum_image" . }}
-          imagePullPolicy: {{ .Values.castellum.image_pull_policy }}
+          imagePullPolicy: IfNotPresent
           args:
             - api
             - /etc/castellum/castellum.yaml

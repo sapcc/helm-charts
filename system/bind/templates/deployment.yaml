@@ -75,6 +75,14 @@ spec:
             containerPort: {{ .Values.zabbix.port | default 10050 }}
             protocol: TCP
 {{- end }}
+{{- if .Values.sshd.enabled }}
+          - name: sshd-tcp
+            containerPort: {{ .Values.sshd.port | default 22 }}
+            protocol: TCP
+          - name: sshd-6c-tcp
+            containerPort: {{ .Values.sshd.port | default 5487 }}
+            protocol: TCP
+{{- end }}
         {{ if .Values.extra_env }}
 {{ toYaml .Values.extra_env | indent 8 }}
         {{ end }}
@@ -149,7 +157,24 @@ spec:
             mountPath: "/etc/zabbix/zabbix_agentd.d/"
           - name: persistent-storage
             mountPath: {{ .Values.storage_mountpoint | default "/var/lib/bind" }}
-          - name: bind-rndc-keys
+          - name: bind-rndc-key
+            mountPath: "/etc/bind/rndc.key"
+            subPath: rndc.key
+{{ end }}
+{{ if .Values.sshd.enabled }}
+      - name: sshd
+        image: {{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{.Values.image_sshd}}:{{ .Values.image_sshd_tag }}
+        imagePullPolicy: {{ .Values.image_pullPolicy }}
+        resources:
+{{ toYaml .Values.resources.sshd | indent 10 }}
+        env:
+{{ toYaml .Values.sshd.env | indent 10 }}
+        volumeMounts:
+          - name: persistent-storage
+            mountPath: {{ .Values.storage_mountpoint | default "/var/lib/bind" }}
+          - name: sshd-persistent-storage
+            mountPath: "/etc/ssh/keys"
+          - name: bind-rndc-key
             mountPath: "/etc/bind/rndc.key"
             subPath: rndc.key
 {{ end }}
@@ -192,7 +217,14 @@ spec:
           items:
           - key: zabbix-bind.conf
             path: zabbix-bind.conf
-      - name: bind-rndc-keys
+      {{- end }}
+      {{- if or .Values.zabbix.enabled .Values.sshd.enabled }}
+      - name: bind-rndc-key
         secret:
-          secretName: {{ .Release.Name }}-zabbix-secrets
+          secretName: {{ .Release.Name }}-rndc-key
+      {{- end }}
+      {{- if .Values.sshd.enabled }}
+      - name: sshd-persistent-storage
+        persistentVolumeClaim:
+          claimName: {{ .Release.Name }}-sshd
       {{- end }}

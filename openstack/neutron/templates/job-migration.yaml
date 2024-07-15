@@ -41,8 +41,8 @@ spec:
             - -c
             - |
               set -euo pipefail
-              neutron-db-manage upgrade head
-{{ include "utils.proxysql.proxysql_signal_stop_script" . | trim | indent 14 }}
+              neutron-db-manage --config-file /etc/neutron/neutron.conf --config-file /etc/neutron/secrets/neutron-server-secrets.conf upgrade head
+              {{- include "utils.script.job_finished_hook" . | nindent 14 }}
           env:
             - name: PGAPPNAME
               valueFrom:
@@ -68,5 +68,10 @@ spec:
                 - key: ml2-conf.ini
                   path: plugins/ml2/ml2-conf.ini
                 name: neutron-etc
+            - secret:
+                name: neutron-server-secrets
+                items:
+                  - key: neutron-server-secrets.conf
+                    path: secrets/neutron-server-secrets.conf
         {{- include "utils.proxysql.volumes" . | indent 8 }}
         {{- include "utils.trust_bundle.volumes" . | indent 8 }}

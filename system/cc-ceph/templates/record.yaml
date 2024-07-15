@@ -1,0 +1,22 @@
+{{- range $key, $record := .Values.objectstore.gateway.dnsNames }}
+---
+apiVersion: disco.stable.sap.cc/v1
+kind: Record
+metadata:
+  name: "{{ $record }}"
+spec:
+  type: A
+  record: {{ $.Values.objectstore.service.externalIP }}
+  hosts:
+    - "{{ $record }}."
+---
+apiVersion: disco.stable.sap.cc/v1
+kind: Record
+metadata:
+  name: "{{ $record }}-wildcard"
+spec:
+  type: CNAME
+  record: "{{ $record }}."
+  hosts:
+    - "*.{{ $record }}."
+{{- end }}

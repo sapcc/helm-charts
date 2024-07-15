@@ -15,7 +15,15 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
 {{- printf "%s-%s" .Release.Name $name | trunc 63 | replace "_" "-" | trimSuffix "-" -}}
 {{- end -}}
 
-{{ define "metrics_db_host"}}{{- if eq .Values.db_type "pxc" }}{{.Release.Name}}-percona-pxc.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.db_region}}.{{.Values.global.tld}}{{ else }}{{.Release.Name}}-mariadb.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{- end -}}{{end}}
+{{- define "metrics_db_host" -}}
+{{- if eq .Values.db_type "pxc" -}}
+{{.Release.Name}}-percona-pxc.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.db_region}}.{{.Values.global.tld}}
+{{- else if eq .Values.db_type "galera" -}}
+{{.Release.Name}}-mariadb-galera.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}
+{{- else -}}
+{{.Release.Name}}-mariadb.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}
+{{- end -}}
+{{end}}
 
 {{- define "mysql_metrics.db_password" -}}
 {{ .Values.global.dbPassword }}

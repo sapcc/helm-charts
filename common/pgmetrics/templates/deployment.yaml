@@ -1,7 +1,7 @@
-{{- $mirror  := .Values.global.quayIoMirror | required "missing value for .Values.global.quayIoMirror" -}}
-{{- $db_name := .Values.db_name             | default .Release.Name -}}
-{{- $db_host := .Values.db_host             | default (printf "%s-postgresql" .Release.Name) -}}
-{{- $db_host = printf "%s.%s.svc" $db_host .Release.Namespace -}}
+{{- $registry := .Values.global.registry | required "missing value for .Values.global.registry" -}}
+{{- $db_name  := .Values.db_name         | default .Release.Name -}}
+{{- $db_host  := .Values.db_host         | default (printf "%s-postgresql" .Release.Name) -}}
+{{- $db_host  = printf "%s.%s.svc" $db_host .Release.Namespace -}}
 
 kind: Deployment
 apiVersion: apps/v1
@@ -21,10 +21,6 @@ spec:
         app: {{ .Release.Name }}-pgmetrics
         component: {{ $db_name }}
         type: metrics
-        {{- if .Values.alerts.enabled }}
-        alert-tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
-        alert-service: {{ .Values.alerts.service | default .Release.Name }}
-        {{- end }}
       annotations:
         kubectl.kubernetes.io/default-container: metrics
         configmap-etc-hash: {{ include (print $.Template.BasePath "/configmap-etc.yaml") . | sha256sum }}
@@ -36,7 +32,7 @@ spec:
     spec:
       containers:
       - name: metrics
-        image: "{{ $mirror }}/{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        image: "{{ $registry }}/{{ .Values.image.repository }}:{{ .Values.image.tag }}"
         imagePullPolicy: IfNotPresent
         env:
         - name: DATA_SOURCE_URI
@@ -73,9 +69,11 @@ spec:
           limits:
             cpu:    {{ quote .Values.resources.limits.cpu }}
             memory: {{ quote .Values.resources.limits.memory }}
+          {{- if not (.Values.global.region | regexMatch "^qa-de-[2-6]$") }}
           requests:
             cpu:    {{ quote .Values.resources.requests.cpu }}
             memory: {{ quote .Values.resources.requests.memory }}
+          {{- end }}
       volumes:
       - name: custom-metrics
         configMap:

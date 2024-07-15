@@ -1,3 +1,13 @@
+{{- if .Values.crontab }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "postgres.fullname" . }}-crontab
+data:
+  root: |
+    {{ .Values.crontab }}
+{{- end }}
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -38,11 +48,17 @@ data:
       {{- $users := merge $users (dict "metrics" (dict)) }}
     {{- end }}
 
+    {{- if hasKey .Values.extensions "pg_stat_statements" }}
+    CREATE EXTENSION IF NOT EXISTS pg_stat_statements;
+    {{- end }}
+
     SET password_encryption = '{{ if ge ($.Values.postgresVersion | int) 12 }}scram-sha-256{{ else }}md5{{ end }}';
 
     {{- if lt ($.Values.postgresVersion | int) 14 }}
     SELECT 'CREATE ROLE "poor_mans_pg_read_all_data"' where not exists (select rolname from pg_authid where rolname = 'poor_mans_pg_read_all_data')\gexec
     {{- else }}
+    SELECT 'REASSIGN OWNED BY poor_mans_pg_read_all_data TO pg_read_all_data' where exists (SELECT rolname FROM pg_roles WHERE rolname='poor_mans_pg_read_all_data')\gexec
+    SELECT 'DROP OWNED BY poor_mans_pg_read_all_data' where exists (SELECT rolname FROM pg_roles WHERE rolname='poor_mans_pg_read_all_data')\gexec
     DROP ROLE IF EXISTS poor_mans_pg_read_all_data;
     {{- end }}
 
@@ -75,6 +91,9 @@ data:
 
     {{- if eq $user "metrics" }}
     GRANT pg_monitor to metrics;
+    {{- if ge ($.Values.postgresVersion | int) 16 }}
+    GRANT pg_use_reserved_connections to metrics;
+    {{- end }}
     -- pg_read_all_data is required for custom metrics
     {{- if ge ($.Values.postgresVersion | int) 14 }}
     GRANT pg_read_all_data to metrics;

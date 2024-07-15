@@ -37,6 +37,9 @@ spec:
         - name: manila-etc
           configMap:
             name: manila-etc
+        - name: manila-etc-secrets
+          secret:
+            secretName: manila-secrets
         - name: manila-netapp-filers
           configMap:
             name: manila-netapp-filers
@@ -68,7 +71,7 @@ spec:
             - {{ include "envDependencyService" . | nindent 14 | trim }}
             {{- include "envSentry" . | nindent 12 }}
           volumeMounts:
-            - {{ include "mountManilaConfig" . | nindent 14 | trim }}
+            {{- include "mountManilaConfig" . | nindent 12 }}
           resources:
             {{- .Values.nannies.db_purge.resources | default .Values.resources | toYaml | nindent 12 }}
           {{ include "promPort" .Values.nannies.db_purge | nindent 10 | trim }}
@@ -89,13 +92,15 @@ spec:
               value: {{ .Values.nannies.quota_sync.dry_run | quote }}
             - name: MANILA_NANNY_INTERVAL
               value: {{ .Values.nannies.quota_sync.interval | default .Values.interval | quote }}
+            - name: MANILA_NANNY_PROMETHEUS_PORT
+              value: {{ .Values.nannies.quota_sync.prometheus_port | quote }}
             - name: PYTHONUNBUFFERED
               value: "1"
             - {{ include "envNamespace" . | nindent 14 | trim  }}
             - {{ include "envDependencyService" . | nindent 14 | trim }}
             {{- include "envSentry" . | nindent 12 }}
           volumeMounts:
-            - {{ include "mountManilaConfig" . | nindent 14 | trim }}
+            {{- include "mountManilaConfig" . | nindent 12 }}
           resources:
             {{- .Values.nannies.quota_sync.resources | default .Values.resources | toYaml | nindent 12 }}
           {{ include "promPort" .Values.nannies.quota_sync | nindent 10 | trim }}
@@ -120,7 +125,7 @@ spec:
               value: "1"
             {{- include "envSentry" . | nindent 12 }}
           volumeMounts:
-            - {{ include "mountManilaConfig" . | nindent 14 | trim }}
+            {{- include "mountManilaConfig" . | nindent 12 }}
           resources:
             {{- .Values.nannies.db_cleanup.resources | default .Values.resources | toYaml | nindent 12 }}
           {{ include "promPort" .Values.nannies.db_cleanup | nindent 10 | trim }}
@@ -173,7 +178,7 @@ spec:
             - {{ include "envDependencyService" . | nindent 14 | trim }}
             {{- include "envSentry" . | nindent 12 }}
           volumeMounts:
-            - {{ include "mountManilaConfig" . | nindent 14 | trim }}
+           {{- include "mountManilaConfig" . | nindent 12 }}
           resources:
             {{- .Values.nannies.share_sync.resources | default .Values.resources | toYaml | nindent 12 }}
           {{ include "promPort" .Values.nannies.share_sync | nindent 10 | trim }}
@@ -200,7 +205,7 @@ spec:
             - {{ include "envDependencyService" . | nindent 14 | trim }}
             {{- include "envSentry" . | nindent 12 }}
           volumeMounts:
-            - {{ include "mountManilaConfig" . | nindent 14 | trim }}
+            {{- include "mountManilaConfig" . | nindent 12 }}
           resources:
             {{- .Values.nannies.share_server.resources | default .Values.resources | toYaml | nindent 12 }}
           {{ include "promPort" .Values.nannies.share_server | nindent 10 | trim }}
@@ -231,7 +236,7 @@ spec:
             - {{ include "envDependencyService" . | indent 14 | trim  }}
             {{- include "envSentry" . | nindent 12 }}
           volumeMounts:
-            - {{ include "mountManilaConfig" . | nindent 14 | trim }}
+            {{- include "mountManilaConfig" . | nindent 12 }}
           resources:
             {{- .Values.nannies.snapshot.resources | default .Values.resources | toYaml | nindent 12 }}
           {{ include "promPort" .Values.nannies.snapshot | nindent 10 | trim }}
@@ -246,10 +251,6 @@ spec:
           env:
             - name: COMMAND
               value: {{ include "shellCommand" (merge (dict "script" "manila-missing-snapshot.sh") .) | quote }}
-            - name: MANILA_NANNY_CONFIG
-              value: /manila-etc/manila.conf
-            - name: MANILA_NANNY_NETAPP_FILERS
-              value: /manila-etc/netapp-filers.yaml
             - name: MANILA_NANNY_INTERVAL
               value: {{ .Values.nannies.snapshot_missing.interval | default .Values.interval | quote }}
             - name: MANILA_NANNY_PROMETHEUS_PORT
@@ -270,12 +271,7 @@ spec:
             - {{ include "envDependencyService" . | nindent 14 | trim }}
             {{- include "envSentry" . | nindent 12 }}
           volumeMounts:
-            - name: manila-etc
-              mountPath: /manila-etc/manila.conf
-              subPath: manila.conf
-            - name: manila-netapp-filers
-              mountPath: /manila-etc/netapp-filers.yaml
-              subPath: netapp-filers.yaml
+            {{- include "mountManilaConfig" . | nindent 12 }}
             - name: secret-volume
               mountPath: /etc/secret-volume
           resources:
@@ -292,8 +288,6 @@ spec:
           env:
             - name: COMMAND
               value: "pyreloader /scripts/manila-check-affinity.py"
-            - name: MANILA_NANNY_CONFIG
-              value: /manila-etc/manila.conf
             - name: MANILA_NANNY_INTERVAL
               value: {{ .Values.nannies.affinity.interval | default .Values.interval | quote }}
             - name: MANILA_NANNY_PROMETHEUS_PORT
@@ -304,7 +298,7 @@ spec:
             - {{ include "envDependencyService" . | indent 14 | trim  }}
             {{- include "envSentry" . | nindent 12 }}
           volumeMounts:
-            - {{ include "mountManilaConfig" . | nindent 14 | trim }}
+            {{- include "mountManilaConfig" . | nindent 12 }}
           resources:
             {{- .Values.nannies.affinity.resources | default .Values.resources | toYaml | nindent 12 }}
           {{ include "promPort" .Values.nannies.affinity | nindent 10 | trim }}

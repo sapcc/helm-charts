@@ -1,7 +1,7 @@
 apiVersion: "openstack.stable.sap.cc/v1"
 kind: "OpenstackSeed"
 metadata:
-  name: {{ .Release.Name }}-seed
+  name: "{{ .Release.Name }}-seed"
   labels:
     component: designate
     app: {{ template "fullname" . }}
@@ -20,6 +20,7 @@ spec:
   - {{ .Release.Namespace }}/domain-cc3test-seed
   - {{ .Release.Namespace }}/domain-ccadmin-seed
   - {{ .Release.Namespace }}/domain-bs-seed
+  - {{ .Release.Namespace }}/domain-btp-fp-seed
   - {{ .Release.Namespace }}/domain-cis-seed
   - {{ .Release.Namespace }}/domain-cp-seed
   - {{ .Release.Namespace }}/domain-fsn-seed
@@ -279,6 +280,54 @@ spec:
     - name: BS_SERVICE_DESK
       role_assignments:
       - domain: bs
+        role: cloud_dns_ops
+        inherited: true
+    role_assignments:
+    - user: admin@Default
+      role: cloud_dns_admin
+      inherited: true
+
+  - name: btp_fp
+    groups:
+    - name: BTP_FP_DOMAIN_DNS_SUPPORT
+      role_assignments:
+      - domain: btp_fp
+        role: cloud_dns_support
+        inherited: true
+    - name: BTP_FP_DOMAIN_DNS_OPS
+      role_assignments:
+      - domain: btp_fp
+        role: cloud_dns_ops
+        inherited: true
+      - domain: btp_fp
+        role: role_viewer
+        inherited: true
+      - domain: btp_fp
+        role: audit_viewer
+        inherited: true
+    - name: BTP_FP_API_SUPPORT
+      role_assignments:
+      - domain: btp_fp
+        role: cloud_dns_admin
+        inherited: true
+    - name: BTP_FP_COMPUTE_SUPPORT
+      role_assignments:
+      - domain: btp_fp
+        role: cloud_dns_ops
+        inherited: true
+    - name: BTP_FP_NETWORK_SUPPORT
+      role_assignments:
+      - domain: btp_fp
+        role: cloud_dns_ops
+        inherited: true
+    - name: BTP_FP_STORAGE_SUPPORT
+      role_assignments:
+      - domain: btp_fp
+        role: cloud_dns_ops
+        inherited: true
+    - name: BTP_FP_SERVICE_DESK
+      role_assignments:
+      - domain: btp_fp
         role: cloud_dns_ops
         inherited: true
     role_assignments:
@@ -957,22 +1006,20 @@ spec:
 {{- end }}
 
   domains:
-  - name: "{{ required "missing user in .Values.designate_nanny.credentials.designate_api.project_user_domain_name" .Values.designate_nanny.credentials.designate_api.project_user_domain_name}}"
+  - name: {{ required "missing user domain in .Values.designate_nanny.credentials.designate_api.project_user_domain_name" .Values.designate_nanny.credentials.designate_api.project_user_domain_name }}
     users:
-    - name: "{{ required "missing user in .Values.designate_nanny.credentials.designate_api.user" .Values.designate_nanny.credentials.designate_api.user}}"
+    - name: {{ required "missing user in .Values.designate_nanny.credentials.designate_api.user" .Values.designate_nanny.credentials.designate_api.user }}
       description: Designate Nanny
-      password: {{ required "missing password in .Values.designate_nanny.credentials.designate_api.password" .Values.designate_nanny.credentials.designate_api.password }}
-
-  - name: "{{ required "missing user in .Values.designate_nanny.credentials.designate_api.project_domain_name" .Values.designate_nanny.credentials.designate_api.project_domain_name}}"
+      password: {{ required "missing initial password in .Values.designate_nanny.credentials.designate_api.seeder_password" .Values.designate_nanny.credentials.designate_api.seeder_password }}
+  - name: {{ required "missing project domain name in .Values.designate_nanny.credentials.designate_api.project_domain_name" .Values.designate_nanny.credentials.designate_api.project_domain_name }}
     projects:
-    - name: "{{ required "missing user in .Values.designate_nanny.credentials.designate_api.project_name" .Values.designate_nanny.credentials.designate_api.project_name}}"
+    - name: {{ required "missing project name in .Values.designate_nanny.credentials.designate_api.project_name" .Values.designate_nanny.credentials.designate_api.project_name }}
       role_assignments:
-      - user: "{{ .Values.designate_nanny.credentials.designate_api.user}}@{{.Values.designate_nanny.credentials.designate_api.project_user_domain_name}}"
+      - user: {{ .Values.designate_nanny.credentials.designate_api.user}}@{{.Values.designate_nanny.credentials.designate_api.project_user_domain_name }}
         role: cloud_dns_viewer
-
     - name: master
       role_assignments:
-      - user: "{{ .Values.designate_nanny.credentials.designate_api.user}}@{{.Values.designate_nanny.credentials.designate_api.project_user_domain_name}}"
+      - user: {{ .Values.designate_nanny.credentials.designate_api.user}}@{{.Values.designate_nanny.credentials.designate_api.project_user_domain_name }}
         role: objectstore_admin
 
 {{- end }}

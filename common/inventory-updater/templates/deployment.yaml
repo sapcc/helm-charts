@@ -6,6 +6,7 @@ metadata:
   labels:
     chart: "{{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}"
     release: {{ .Release.Name }}
+    app: {{ include "fullname" . }}
 spec:
   replicas: {{ required ".Values.updater.replicas missing" .Values.updater.replicas }}
   selector:
@@ -32,6 +33,18 @@ spec:
 
         image: {{ required ".Values.global.registry missing" .Values.global.registry }}/{{ required ".Values.updater.image.name missing" .Values.updater.image.name }}:{{ required ".Values.updater.image.tag missing" .Values.updater.image.tag  }}
 
+        env:
+        - name: REDFISH_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "fullname" . }}
+              key: redfish_username
+        - name: REDFISH_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "fullname" . }}
+              key: redfish_password
+
         command:
           - /usr/bin/python3
 
@@ -55,6 +68,18 @@ spec:
 
         image: {{ required ".Values.global.registry missing" .Values.global.registry }}/{{ required ".Values.updater.image.name missing" .Values.updater.image.name }}:{{ required ".Values.updater.image.tag missing" .Values.updater.image.tag  }}
 
+        env:
+        - name: REDFISH_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "fullname" . }}
+              key: redfish_username
+        - name: REDFISH_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "fullname" . }}
+              key: redfish_password
+
         command:
           - /usr/bin/python3
 
@@ -73,7 +98,7 @@ spec:
 {{ toYaml .Values.resources | indent 10 }}
 
         ports:
-          - name: {{ include "fullname" . }}
+          - name: http
             containerPort: {{ required ".Values.updater.api.port missing" .Values.updater.api.port }}
             protocol: TCP
 {{ end -}}

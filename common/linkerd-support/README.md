@@ -14,7 +14,7 @@ $ cat Chart.yaml
 dependencies:
   - name: linkerd-support
     repository: oci://keppel.eu-de-1.cloud.sap/ccloud-helm
-    version: 0.1.3
+    version: ~1
 ```
 
 Run `helm dep up` in the chart's root directory to generate the `Chart.lock` file.

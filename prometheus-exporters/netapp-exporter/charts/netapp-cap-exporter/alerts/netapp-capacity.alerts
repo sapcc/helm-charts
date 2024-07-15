@@ -7,7 +7,7 @@ groups:
         labels:
           severity: warning
           tier: storage
-          support_group: compute-storage-api
+          support_group: storage
           service: netapp-exporter
           context: exporter-health
           no_alert_on_absence: "true"
@@ -22,7 +22,7 @@ groups:
         labels:
           severity: info
           tier: storage
-          support_group: compute-storage-api
+          support_group: storage
           service: netapp-exporter
           context: exporter-health
           no_alert_on_absence: "true"
@@ -107,26 +107,11 @@ groups:
           description: '{{ $labels.availability_zone }} has less than 5% capacity for new shares'
           summary: '{{ $labels.availability_zone }} usage above 60%'
 
-      - alert: ManilaShareInodeUsageHigh
-        expr: max_over_time(netapp_volume_inode_files_used_percentage{app="netapp-capacity-exporter-manila",volume_type!="dp"}[1h]) > 0.85
-        for: 1h
-        labels:
-            severity: info
-            tier: os
-            support_group: compute-storage-api
-            service: manila
-            context: netapp-volume-inode-usage
-            support_component: manila_netapp
-            playbook: 'docs/support/playbook/manila/share_inode_usage'
-        annotations:
-            summary: 'inode usage above 85%'
-            description: 'inode usage of Manila share {{ $labels.share_id }} is high'
-
       - alert: ManilaShareInodeUsageVeryHigh
         expr: max_over_time(netapp_volume_inode_files_used_percentage{app="netapp-capacity-exporter-manila"}[1h]) > 0.95
-        for: 1h
+        for: 2d
         labels:
-            severity: warning
+            severity: info
             tier: os
             support_group: compute-storage-api
             service: manila
@@ -203,7 +188,7 @@ groups:
           service: manila
           severity: warning
           tier: os
-          support_group: compute-storage-api
+          support_group: storage
           meta: netapp volume logical space reporting is enabled but logical space enforcement is disabled
           playbook: 'docs/support/playbook/manila/netapp_volume_logical_setting'
         annotations:

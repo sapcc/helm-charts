@@ -35,8 +35,6 @@ netapp_storage_family=ontap_cluster
 netapp_server_hostname={{$share.host}}
 netapp_server_port={{ $share.port | default 443 }}
 netapp_transport_type={{ $share.protocol | default "https" }}
-netapp_login={{$share.username}}
-netapp_password={{$share.password}}
 netapp_mtu={{$share.mtu | default 9000 }}
 netapp_enabled_share_protocols={{$share.enabled_protocols | default "nfs3, nfs4.1" }}
 
@@ -64,13 +62,8 @@ netapp_volume_snapshot_reserve_percent = {{ $share.netapp_volume_snapshot_reserv
 # Enable logical space reporting
 netapp_enable_logical_space_reporting = False
 
-# Set the last transfer size limit to 1 GB (1024 * 1024 KB). We need to find a sweet
-# spot for this value. Our goal is to alert customers about large data copies occurring,
-# allowing them to take preventive actions before replica promotion. While 1GB is a
-# relatively high value, it helps to avoid too many 'out-of-sync' replicas. We could
-# also consider lowering this value to 512MB, but we need to be careful about the
-# impact.
-netapp_snapmirror_last_transfer_size_limit = 1048576
+# Set last transfer size limit to 1 PB (1024 * 1024 * 1024 * 1024 KB), effectively disabling that setting
+netapp_snapmirror_last_transfer_size_limit = 1099511627776
 
 # Set asynchronous SnapMirror schedule to one hour, and configure the waiting time for
 # snapmirror to complete on replica promote to be double of this value, alligning with
@@ -95,10 +88,10 @@ reserved_share_extend_percentage = 100
 reserved_share_extend_percentage = {{ $share.reserved_share_extend_percentage | default 25 }}
 {{- end }}
 
-{{- if eq 100 (int $share.reserved_snapshot_percentage)}}
-reserved_snapshot_percentage = 100
+{{- if eq 100 (int $share.reserved_share_from_snapshot_percentage)}}
+reserved_share_from_snapshot_percentage = 100
 {{- else }}
-reserved_snapshot_percentage = {{ $share.reserved_snapshot_percentage | default 25 }}
+reserved_share_from_snapshot_percentage = {{ $share.reserved_share_from_snapshot_percentage | default 25 }}
 {{- end }}
 
 # Time to kepp deleted volumes in recovery queue until space is reclaimed
@@ -114,7 +107,7 @@ netapp_delete_retention_hours = {{ $context.Values.delete_retention_hours | defa
 max_over_subscription_ratio = {{ $share.max_over_subscription_ratio | default $context.Values.max_over_subscription_ratio | default 3.0 }}
 
 # maximum number of volumes created in a SVM
-max_shares_per_share_server = {{ $share.max_shares_per_share_server | default $context.Values.max_shares_per_share_server | default 20 }}
+max_shares_per_share_server = {{ $share.max_shares_per_share_server | default $context.Values.max_shares_per_share_server | default 50 }}
 # maximum sum of gigabytes a SVM can have considering all its share instances and snapshots
 max_share_server_size  = {{ $share.max_share_server_size | default $context.Values.max_share_server_size | default 10240 }}
 

@@ -30,6 +30,7 @@ spec:
       labels:
         app: designate-producer
       annotations:
+        kubectl.kubernetes.io/default-container: designate-producer
         configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
         configmap-bin-hash: {{ include (print $.Template.BasePath "/bin-configmap.yaml") . | sha256sum }}
         secrets-hash: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
@@ -63,11 +64,11 @@ spec:
               value: {{ .Release.Namespace }}
             - name: DEPENDENCY_SERVICE
 {{- if .Values.percona_cluster.enabled }}
-              value: "{{ .Release.Name }}-percona-pxc,{{ .Release.Name }}-rabbitmq,{{ .Release.Name }}-memcached"
+              value: "{{ .Release.Name }}-percona-pxc,{{ .Release.Name }}-rabbitmq"
 {{- else if .Values.rabbitmq_cluster.enabled }}
-              value: "{{ .Release.Name }}-mariadb,{{ .Release.Name }}-rabbitmq-cluster,{{ .Release.Name }}-memcached"
+              value: "{{ .Release.Name }}-mariadb,{{ .Release.Name }}-rabbitmq-cluster"
 {{- else }}
-              value: "{{ .Release.Name }}-mariadb,{{ .Release.Name }}-rabbitmq,{{ .Release.Name }}-memcached"
+              value: "{{ .Release.Name }}-mariadb,{{ .Release.Name }}-rabbitmq"
 {{- end }}
             - name: DEBUG_CONTAINER
               value: "false"
@@ -100,6 +101,7 @@ spec:
               name: container-init
             {{- include "utils.proxysql.volume_mount" . | indent 12 }}
             {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
+            {{- include "utils.coordination.volume_mount" . | indent 12 }}
         {{- include "utils.proxysql.container" . | indent 8 }}
       volumes:
         - name: designate-etc
@@ -108,18 +110,17 @@ spec:
             - configMap:
                 name: designate-etc
             - secret:
-                name: designate-secrets
+                name: {{ .Release.Name }}-secrets
                 items:
                   - key: secrets.conf
                     path: secrets.conf
-{{- range $rndc := .Values.rndc_keys }}
-                  - key: {{ $rndc.name }}.key
-                    path: {{ $rndc.name }}.key
-{{- end }}
+            - secret:
+                name: {{ .Release.Name }}-secrets-rndc
         - name: container-init
           configMap:
             name: designate-bin
             defaultMode: 0755
+        {{- include "utils.coordination.volumes" . | indent 8 }}
         {{- include "utils.proxysql.volumes" . | indent 8 }}
         {{- include "utils.trust_bundle.volumes" . | indent 8 }}
 {{- end }}

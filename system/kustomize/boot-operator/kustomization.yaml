@@ -1,0 +1,19 @@
+# Adds namespace to all resources.
+namespace: boot-operator-system
+
+# Value of this field is prepended to the
+# names of all resources, e.g. a deployment named
+# "wordpress" becomes "alices-wordpress".
+# Note that it should also match with the prefix (text before '-') of the namespace
+# field above.
+namePrefix: boot-operator-
+
+patches:
+- path: ./kustomize/boot-operator/patch-operator-deployment.yaml
+- target:
+    kind: Deployment
+    name: controller-manager
+  patch: |-
+    - op: replace
+      path: /spec/template/spec/containers/1/ports/0/containerPort
+      value: 8446

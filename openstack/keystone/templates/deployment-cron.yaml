@@ -32,6 +32,8 @@ spec:
         chart-version: {{.Chart.Version}}
         configmap-etc-hash: {{ include (print $.Template.BasePath "/configmap-etc.yaml") . | sha256sum }}
         configmap-bin-hash: {{ include (print $.Template.BasePath "/configmap-bin.yaml") . | sha256sum }}
+        secrets-bin-hash: {{ include (print $.Template.BasePath "/secret-bin.yaml") . | sha256sum }}
+        secrets-hash: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
         {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
     spec:
 {{- if .Values.rbac.enabled }}
@@ -101,6 +103,8 @@ spec:
             - mountPath: /etc/keystone/keystone.conf
               subPath: keystone.conf
               name: keystone-etc
+            - mountPath: /etc/keystone/keystone.conf.d
+              name: keystone-etc-confd
             - mountPath: /etc/keystone/logging.conf
               subPath: logging.conf
               name: keystone-etc
@@ -123,9 +127,20 @@ spec:
         - name: keystone-etc
           configMap:
             name: keystone-etc
+        - name: keystone-etc-confd
+          secret:
+            secretName: {{ .Release.Name }}-secrets
+            defaultMode: 0444
         - name: keystone-bin
-          configMap:
-            name: keystone-bin
+          projected:
+            sources:
+            - configMap:
+                name: keystone-bin
+            - secret:
+                name: keystone-bin-secrets
+                items:
+                  - key: bootstrap
+                    path: bootstrap
         - name: fernet
           secret:
             secretName: keystone-fernet
