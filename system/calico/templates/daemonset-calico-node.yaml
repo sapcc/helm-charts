@@ -43,9 +43,9 @@ spec:
       priorityClassName: system-node-critical
       initContainers:
         {{- if eq .Values.config.ipam.type "calico" }}
-        # This container performs upgrade from host-local IPAM to calico-ipam.
-        # It can be deleted if this is a fresh installation, or if you have already
-        # upgraded to use calico-ipam.
+        # This container checks if the node's spec.podcidr is set
+        # If the subnet is missing, it will fail so that calico won't start with an empty podcidr, which is known to cause issues
+        # When the podcidr is populated by the nodeCIDR controller, the calico container can start
         {{- if eq .Values.calico.waitforpodcidr.enabled "true" }}
         - name: wait-for-podcidr
           image: {{ $.Values.images.kubelet.image }}:{{ $.Values.images.kubelet.tag }}"
@@ -57,6 +57,9 @@ spec:
               fieldRef:
                 fieldPath: spec.nodeName
         {{- end }}
+        # This container performs upgrade from host-local IPAM to calico-ipam.
+        # It can be deleted if this is a fresh installation, or if you have already
+        # upgraded to use calico-ipam.
         - name: upgrade-ipam
           image: "{{ required ".Values.global.dockerHubMirrorAlternateRegion is missing" $.Values.global.dockerHubMirrorAlternateRegion }}/{{ $.Values.images.calicoCni.image }}:{{ $.Values.images.calicoCni.tag }}"
           imagePullPolicy: IfNotPresent
