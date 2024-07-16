@@ -66,17 +66,19 @@ groups:
 
       # Scraping will fail on shares in state "offline" because their size is always reported as 0.
       - record: netapp_volume_exclusion_reason_offline
-        expr: count(netapp_volume_total_bytes{project_id!="", share_id!="", volume_state="offline"}) by (project_id, share_id) unless (count(netapp_volume_total_bytes{volume_state="online"}) by (project_id, share_id))
+        expr: count(netapp_volume_total_bytes{project_id!="", share_id!="", volume_state="offline", volume=~"share_[0-9a-f]{8}_[0-9a-f]{4}_[0-9a-f]{4}_[0-9a-f]{4}_[0-9a-f]{12}"}) by (project_id, share_id) unless (count(netapp_volume_total_bytes{volume_state="online", volume=~"share_[0-9a-f]{8}_[0-9a-f]{4}_[0-9a-f]{4}_[0-9a-f]{4}_[0-9a-f]{12}"}) by (project_id, share_id))
       - record: manila_share_exclusion_reasons_for_castellum
         expr: label_replace(netapp_volume_exclusion_reason_offline, "reason", "volume_state = offline", "share_id", ".*")
 
-      # We want to ignore "shares" that are actually snapmirror targets. It's possible that we have both metrics with
-      # volume_type="dp" and other volume_type values, in which case Castellum will only use the non-dp metrics.
-      # This check is specifically about excluding shares that are *only* snapmirrors.
+      # We want to ignore "shares" that are actually snapmirror targets.
+      # It's possible that we have metrics with both volume_type="dp" and other volume_type values for same share (e.g. share with multiple replicas).
+      # In this case Castellum will only use the non-dp metrics. This check is specifically about excluding shares that are *only* snapmirrors.
       #
       # NOTE: Not having any useful metrics at all is not a valid reason for ignoring the share.
       # If we lack metrics about a share, we want to be alerted by the failing scrape.
+      #
+      # NOTE: Explicitly requiring the volume label to match the share_id regex to avoid missing shares that have other volumes tagged with the same share_id.
       - record: netapp_volume_exclusion_reason_dponly
-        expr: (count(netapp_volume_total_bytes{project_id!="",share_id!="",volume_type="dp"}) by (project_id, share_id) > 0) unless (count(netapp_volume_total_bytes{project_id!="",share_id!="",volume_type!="dp"}) by (project_id, share_id) > 0)
+        expr: (count(netapp_volume_total_bytes{project_id!="",share_id!="",volume_type="dp",volume=~"share_[0-9a-f]{8}_[0-9a-f]{4}_[0-9a-f]{4}_[0-9a-f]{4}_[0-9a-f]{12}"}) by (project_id, share_id) > 0) unless (count(netapp_volume_total_bytes{project_id!="",share_id!="",volume_type!="dp",volume=~"share_[0-9a-f]{8}_[0-9a-f]{4}_[0-9a-f]{4}_[0-9a-f]{4}_[0-9a-f]{12}"}) by (project_id, share_id) > 0)
       - record: manila_share_exclusion_reasons_for_castellum
         expr: label_replace(netapp_volume_exclusion_reason_dponly, "reason", "volume_type = dp", "share_id", ".*")
