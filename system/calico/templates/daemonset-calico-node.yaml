@@ -42,20 +42,20 @@ spec:
       terminationGracePeriodSeconds: 0
       priorityClassName: system-node-critical
       initContainers:
-        # This container checks if the node's spec.podcidr is set
-        # If the subnet is missing, it will fail so that calico won't start with an empty podcidr, which is known to cause issues
-        # When the podcidr is populated by the nodeCIDR controller, the calico container can start
-        {{- if .Values.waitforpodcidr.enabled }}
-        - name: wait-for-podcidr
-          image: "{{ required ".Values.global.registryAlternateRegion is missing" $.Values.global.registryAlternateRegion }}/{{ $.Values.images.kubelet.image }}:{{ $.Values.images.kubelet.tag }}"
-          command: ["/bin/sh","-c"]
-          args: ["podCIDR=$(kubectl get node $NODE_NAME -ojsonpath={\".spec.podCIDR\"}); [ -z \"$podCIDR\" ] && { sleep 2; exit 1; }"]
-          env:
-          - name: NODE_NAME
-            valueFrom:
-              fieldRef:
-                fieldPath: spec.nodeName
-        {{- end }}
+        # # This container checks if the node's spec.podcidr is set
+        # # If the subnet is missing, it will fail so that calico won't start with an empty podcidr, which is known to cause issues
+        # # When the podcidr is populated by the nodeCIDR controller, the calico container can start
+        # {{- if .Values.waitforpodcidr.enabled }}
+        # - name: wait-for-podcidr
+        #   image: "{{ required ".Values.global.registryAlternateRegion is missing" $.Values.global.registryAlternateRegion }}/{{ $.Values.images.kubelet.image }}:{{ $.Values.images.kubelet.tag }}"
+        #   command: ["/bin/sh","-c"]
+        #   args: ["podCIDR=$(kubectl get node $NODE_NAME -ojsonpath={\".spec.podCIDR\"}); [ -z \"$podCIDR\" ] && { sleep 2; exit 1; }"]
+        #   env:
+        #   - name: NODE_NAME
+        #     valueFrom:
+        #       fieldRef:
+        #         fieldPath: spec.nodeName
+        # {{- end }}
         {{- if eq .Values.config.ipam.type "calico" }}
         # This container performs upgrade from host-local IPAM to calico-ipam.
         # It can be deleted if this is a fresh installation, or if you have already
