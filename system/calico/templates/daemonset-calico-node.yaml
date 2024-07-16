@@ -48,7 +48,7 @@ spec:
         # When the podcidr is populated by the nodeCIDR controller, the calico container can start
         {{- if eq .Values.calico.waitforpodcidr.enabled "true" }}
         - name: wait-for-podcidr
-          image: {{ $.Values.images.kubelet.image }}:{{ $.Values.images.kubelet.tag }}"
+          image: "{{ required ".Values.global.dockerHubMirrorAlternateRegion is missing" $.Values.global.dockerHubMirrorAlternateRegion }}/{{ $.Values.images.kubelet.image }}:{{ $.Values.images.kubelet.tag }}"
           command: ["/bin/sh","-c"]
           args: ["podCIDR=$(kubectl get node $NODE_NAME -ojsonpath={\".spec.podCIDR\"}); [ -z \"$podCIDR\" ] && { sleep 2; exit 1; }"]
           env:
