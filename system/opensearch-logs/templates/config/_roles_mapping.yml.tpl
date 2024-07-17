@@ -62,6 +62,11 @@ otellogs:
   users:
   - "otellogs"
 
+otelstorage:
+  reserved: false
+  users:
+  - "otelstorage"
+
 jaeger:
   reserved: false
   users:
