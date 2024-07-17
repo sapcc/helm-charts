@@ -45,7 +45,7 @@ otellogs:
   - "otellogs"
 
 otelstorage:
-  hash: "{{ .Values.users.otellogs.hash }}"
+  hash: "{{ .Values.users.otelstorage.hash }}"
   reserved: true
   backend_roles:
   - "otelstorage"
