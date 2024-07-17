@@ -3,6 +3,11 @@ Rabbitmq CHANGELOG
 
 This file is used to list changes made in each version of the common chart rabbitmq.
 
+0.7.4
+-----
+nathan.oyler@sap.com
+- remove shared service tags for statefulsets, statefulsets are immutable.
+
 0.7.3
 -----
 - add option enableAllFeatureFlags to enable all stable feature flags after service has started
