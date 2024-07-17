@@ -431,8 +431,11 @@ rabbitmq:
     accessMode: ReadWriteOnce
     size: 10Gi
   metrics:
-    enabled: false
-
+    enabled: true
+    sidecar:
+      enabled: false
+    enableDetailedMetrics: true
+    enablePerObjectMetrics: true
 rhea:
   enabled: false
   server:
@@ -441,6 +444,7 @@ rhea:
   queue:
     maxTTL: 0s
     maxTries: 5
+    maxMessages: 0
   tls:
     serverTlsName: tls-secret-rhea
     clientTlsAuth: VerifyClientCertIfGiven
@@ -510,7 +514,12 @@ rhea_rabbitmq:
     accessMode: ReadWriteOnce
     size: 10Gi
   metrics:
-    enabled: false
+    enabled: true
+    sidecar:
+      enabled: false
+    enableDetailedMetrics: true
+    enablePerObjectMetrics: true
+
 poller: # service that handles received emails
   enabled: false
   # all below can be used only with a deployment style
@@ -626,7 +635,10 @@ poller: # service that handles received emails
   prometheus: 2112 # relevant for action: simulator
   charSet: UTF-8 # relevant for action: simulator
   period: 60 # in seconds, relevant for action: simulator
-
+  cors:
+    enabled: false
+    allowedOrigins:
+    allowedHeaders:
 notifier:
   enabled: false
   host: test
@@ -668,7 +680,6 @@ postfix:
       - top
       - x-sap-ccloudProject
       - x-sap-eMailSystem
-
 
 #Chart dependecies
 maillog:

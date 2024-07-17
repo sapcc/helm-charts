@@ -30,8 +30,12 @@ db_performance_schema_instrument: # Enabling performance schema instruments.
   enabled: false
 
 root_password: null
-initdb_configmap: null
-custom_initdb_configmap: null
+initdb_secret: null
+custom_initdb_secret: null
+
+# if enabled create 'ccroot'@'127.0.0.1' with all privileges to allow passwordless local connections
+# if disabled, the user will be dropped from the DB if existing
+ccroot_user.enabled: false
 
 databases:
 # - example
@@ -115,7 +119,7 @@ backup_v2:
   enabled: false
   backup_dir: "./backup"
   image: maria-back-me-up
-  image_version: "20230623092741"
+  image_version: "20240708140352"
   full_backup_cron_schedule: "0 0 * * *"
   incremental_backup_in_minutes: 5
   purge_binlog_after_minutes: 60
@@ -184,3 +188,14 @@ linkerd:
     #linkerd annotation for the backup pod (true/false)
     enabled: true
 global: {}
+
+tcp_keepalive:
+  # Timeout, in seconds, with no activity until the first TCP keep-alive packet is sent. If set to 0, a system dependent default is used https://mariadb.com/kb/en/server-system-variables/#tcp_keepalive_time
+  # default is 0
+  time:
+  # The number of unacknowledged probes to send before considering the connection dead and notifying the application layer. If set to 0, a system dependent default is used https://mariadb.com/kb/en/server-system-variables/#tcp_keepalive_probes
+  # default is 0
+  probes:
+  # Time between retries of unacknowledged keepalive packets. If set to 0, the system dependent default is used https://mariadb.com/kb/en/server-system-variables/#tcp_keepalive_interval
+  # default is 0
+  interval:

@@ -1,7 +1,6 @@
 Defaults:
   auth_style: basic_auth
-  username: {{ .Values.global.netapp_exporter_user }}
-  password: {{ .Values.global.netapp_exporter_password }}
+  credentials_file: /opt/harvest/credentials.yaml
   use_insecure_tls: true
   exporters:
     - prom1
@@ -9,18 +8,23 @@ Exporters:
   prom1:
     exporter: Prometheus
     global_prefix: netapp_
+    port: 13000
 Pollers:{{`
   {{ .Name }}:
+    {{- if .Ip }}
+    addr: {{ .Ip }}
+    {{- else }}
     addr: {{ .Host }}
+    {{- end }}
     datacenter: {{ .AvailabilityZone }}
     labels:
       - availability_zone: {{ .AvailabilityZone }}
-      - cluster: {{ .Name }} 
+      - filer: {{ .Name }}`}}
     collectors:
-      - Zapi:
+      - Rest:
         - limited.yaml
-      - ZapiPerf:
-        - limited.yaml`}}
+      - RestPerf:
+        - limited.yaml
       {{- if eq .Values.global.region "qa-de-1" }}
-      - ems
+      - Ems
       {{- end }}

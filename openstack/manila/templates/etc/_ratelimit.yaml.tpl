@@ -1,7 +1,12 @@
 {{ if .Values.api_rate_limit.enabled -}}
-{{ if .Values.api_rate_limit.project_whitelist -}}
-# List of whitelisted scopes keys (domainName/projectName).
-whitelist: {{ .Values.api_rate_limit.project_whitelist }}
+{{ if or .Values.api_rate_limit.project_whitelist_default .Values.api_rate_limit.project_whitelist -}}
+whitelist:
+{{- if .Values.api_rate_limit.project_whitelist_default }}
+  {{- toYaml .Values.api_rate_limit.project_whitelist_default | nindent 2 }}
+{{- end }}
+{{- if .Values.api_rate_limit.project_whitelist }}
+  {{- toYaml .Values.api_rate_limit.project_whitelist | nindent 2 }}
+{{- end }}
 {{- end }}
 {{- end }}
 

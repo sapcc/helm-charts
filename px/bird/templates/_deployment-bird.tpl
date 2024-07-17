@@ -25,7 +25,7 @@ containers:
     mountPath: /var/run/bird
   livenessProbe:
     exec:
-      command: ["bird-command", "--liveness"]
+      command: ["px", "status"]
     initialDelaySeconds: 5
     periodSeconds: 5
   resources:

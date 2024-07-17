@@ -1,11 +1,21 @@
 global:
+  linkerd_requested: true
   clusterType: local
   users:
     admin:
       name: admin
+  aggregations:
+    prometheus: infra-frontend
+  data_stream:
+    enabled: false
+  index:
+    ism_indexes: "logstash"
+    schema_version: "1"
+    
 
 owner-info:
   support-group: observability
+  service: logs
   maintainers:
     - "Vi Truchsess"
     - "Olaf Heydorn"
@@ -15,8 +25,6 @@ qalogs:
   enabled: false
 scaleout:
   enabled: false
-prim_term: 1
-seq_num: 0
 
 alerts:
   enabled: false
@@ -29,7 +37,7 @@ opensearch_master:
   nodeGroup: "master"
   masterService: "opensearch-logs-master"
   image:
-    tag: 2.11.0
+    tag: 2.14.0
   roles:
     - master
   replicas: 3
@@ -56,12 +64,12 @@ opensearch_master:
   plugins:
     enabled: true
     installList:
-      - https://github.com/aiven/prometheus-exporter-plugin-for-opensearch/releases/download/2.11.0.0/prometheus-exporter-2.11.0.0.zip
+      - https://github.com/Aiven-Open/prometheus-exporter-plugin-for-opensearch/releases/download/2.14.0.0/prometheus-exporter-2.14.0.0.zip
 
 opensearch_client:
   enabled: false
   image:
-    tag: 2.11.0
+    tag: 2.14.0
   replicas: 3
   nameOverride: "opensearch-logs-client"
   fullnameOverride: "opensearch-logs-client"
@@ -102,12 +110,12 @@ opensearch_client:
   plugins:
     enabled: true
     installList:
-      - https://github.com/aiven/prometheus-exporter-plugin-for-opensearch/releases/download/2.11.0.0/prometheus-exporter-2.11.0.0.zip
+      - https://github.com/Aiven-Open/prometheus-exporter-plugin-for-opensearch/releases/download/2.14.0.0/prometheus-exporter-2.14.0.0.zip
 
 opensearch_data:
   enabled: false
   image:
-    tag: 2.11.0
+    tag: 2.14.0
   nameOverride: "opensearch-logs-data"
   fullnameOverride: "opensearch-logs-data"
   nodeGroup: "data"
@@ -131,17 +139,20 @@ opensearch_data:
   plugins:
     enabled: true
     installList:
-      - https://github.com/aiven/prometheus-exporter-plugin-for-opensearch/releases/download/2.11.0.0/prometheus-exporter-2.11.0.0.zip
+      - https://github.com/Aiven-Open/prometheus-exporter-plugin-for-opensearch/releases/download/2.14.0.0/prometheus-exporter-2.14.0.0.zip
   securityConfig:
     path: "/usr/share/opensearch/config/opensearch-security"
     enabled: true
     config:
       securityConfigSecret: "security-config"
+  extraEnvs:
+    - name: DISABLE_INSTALL_DEMO_CONFIG
+      value: "true"
 
 opensearch_ml:
   enabled: false
   image:
-    tag: 2.11.0
+    tag: 2.14.0
   replicas: 2
   nameOverride: "opensearch-logs-ml"
   fullnameOverride: "opensearch-logs-ml"
@@ -182,12 +193,12 @@ opensearch_ml:
   plugins:
     enabled: true
     installList:
-      - https://github.com/aiven/prometheus-exporter-plugin-for-opensearch/releases/download/2.11.0.0/prometheus-exporter-2.11.0.0.zip
+      - https://github.com/Aiven-Open/prometheus-exporter-plugin-for-opensearch/releases/download/2.14.0.0/prometheus-exporter-2.14.0.0.zip
 
 opensearch_dashboards:
   enabled: false
   image:
-    tag: "2.11.0"
+    tag: "2.14.0"
   fullnameOverride: opensearch-logs-dashboards
   nameOverride: opensearch-logs-dashboards
   serviceAccount:
@@ -199,15 +210,18 @@ opensearch_dashboards:
     enabled: false
   logs_endpoint:
     enabled: false
+  resources: {}
+  envFrom:
+    - secretRef:
+        name: openid-secrets
 
-elastic_manager:
+manager:
   enabled: false
   port_internal: '9000'
   http_port: 9200
   cluster_port: 9301
-  endpoint_host_internal: es-client.elk
-  endpoint_host_public: elastic-manager.scaleout
-  image_elastic_manager: lmenezes/cerebro:0.9.4
+  endpoint_host_public: opensearch-logs-manager.scaleout
+  image_manager: elk-elasticsearch-manager:20240214094510
   opensearch:
     enabled: false
 

@@ -18,6 +18,8 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
 {{- define "db_host" -}}
 {{- if .Values.global.clusterDomain -}}
 {{.Release.Name}}-mariadb.{{.Release.Namespace}}.svc.{{.Values.global.clusterDomain}}
+{{- else if and .Values.mariadb_galera.enabled .Values.databaseKind (eq .Values.databaseKind "galera") -}}
+{{.Release.Name}}-mariadb.{{.Release.Namespace}}
 {{- else -}}
 {{.Release.Name}}-mariadb.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}
 {{- end -}}

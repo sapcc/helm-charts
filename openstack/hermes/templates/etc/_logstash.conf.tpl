@@ -4,12 +4,12 @@ input {
 {{- $user := $value.user | default $.Values.hermes.rabbitmq.user }}
 {{- $host := printf "%s-rabbitmq.monsoon3.svc.kubernetes.%s.%s" $key $.Values.global.region $.Values.global.tld}}
 rabbitmq {
-    id => {{ printf "logstash_hermes_%s" $key | quote }}
-    host => {{ $value.host | default (printf $.Values.hermes.rabbitmq.host_template $key) | quote }}
-    user => {{ $user | quote }}
-    password => {{ $value.password | quote }}
+    id => "{{ printf "logstash_hermes_%s" $key }}"
+    host => "{{ $value.host | default (printf $.Values.hermes.rabbitmq.host_template $key) }}"
+    user => "{{ $user }}"
+    password => "{{ $value.password }}"
     port => {{ $.Values.hermes.rabbitmq.port }}
-    queue => {{ $value.queue_name | default $.Values.hermes.rabbitmq.queue_name | quote }}
+    queue => "{{ $value.queue_name | default $.Values.hermes.rabbitmq.queue_name }}"
     subscription_retry_interval_seconds => 60
     automatic_recovery => true
     connection_timeout => 1000
@@ -22,6 +22,13 @@ rabbitmq {
 
 
 filter {
+  # Drop events with action "read/list"
+  # Barbican records reads, but has multiple events per read. 
+  # This will keep it to one event per action 
+  if ([action] == "read/list" or [action] == "read/get") {
+    drop { }
+  }
+
   # unwrap messagingv2 envelope
   if [oslo.message] {
     json {
@@ -69,12 +76,12 @@ filter {
   if ![initiator][project_id] and ![initiator][domain_id] {
     if [project] {
       mutate {
-        add_field => { "%{[initiator][project_id]}" => "%{[project]}" }
+        add_field => { "%{[project]}" => "%{[initiator][project_id]}"  }
         id => "f06a_mutate_initiator_project_id"
         }
     } else if [domain] {
       mutate {
-        add_field => { "%{[initiator][domain_id]}" => "%{[domain]}" }
+        add_field => { "%{[domain]}" => "%{[initiator][domain_id]}"}
         id => "f06b_mutate_initiator_domain_id"
       }
     }
@@ -163,7 +170,7 @@ filter {
   }
 
   # Enrich keystone events with domain mapping from Metis
-  {{ if .Values.logstash.audit -}}
+  {{- if .Values.logstash.audit }}
   # Fill in lookup fields with "unavailable" to provide the lookup with a field so it doesn't error
   # pipeline shutsdown if a lookup field is not available.
 
@@ -254,8 +261,8 @@ filter {
     ]
     staging_directory => "/tmp/logstash/jdbc_static/import_data"
     loader_schedule => "{{ .Values.logstash.jdbc.schedule }}"
-    jdbc_user => "{{ .Values.global.metis.user }}"
-    jdbc_password => "${METIS_PASSWORD}"
+    jdbc_user => "{{ .Values.global.metis.user | default "default" }}"
+    jdbc_password => "{{ .Values.global.metis.password | default "default" }}"
     jdbc_driver_class => "com.mysql.cj.jdbc.Driver"
     jdbc_driver_library => ""
     jdbc_connection_string => "jdbc:mysql://{{ .Values.logstash.jdbc.service }}.{{ .Values.logstash.jdbc.namespace }}:3306/{{ .Values.logstash.jdbc.db }}"
@@ -355,32 +362,33 @@ filter {
         }
       }
     }
+
     # Cleanup
     mutate {
       id => "f20d_removing_domain_mapping"
       remove_field => ["[domain_mapping]"]
     }
+  }
 
-    # Cleanup unavailable entries
-    if [initiator][project_id] == "unavailable" {
-      mutate {
-        id => "f20e_removing_initiator_project_id"
-        remove_field => ["[initiator][project_id]"]
-      }
+  # Cleanup unavailable entries
+  if [initiator][project_id] == "unavailable" {
+    mutate {
+      id => "f20e_removing_initiator_project_id"
+      remove_field => ["[initiator][project_id]"]
     }
+  }
 
-    if [target][project_id] == "unavailable" {
-      mutate {
-        id => "f20f_removing_target_project_id"
-        remove_field => ["[target][project_id]"]
-      }
+  if [target][project_id] == "unavailable" {
+    mutate {
+      id => "f20f_removing_target_project_id"
+      remove_field => ["[target][project_id]"]
     }
+  }
 
-    if [initiator][id] == "unavailable" {
-      mutate {
-        id => "f20g_removing_initiator_id"
-        remove_field => ["[initiator][id]"]
-      }
+  if [initiator][id] == "unavailable" {
+    mutate {
+      id => "f20g_removing_initiator_id"
+      remove_field => ["[initiator][id]"]
     }
   }
   {{- end}}
@@ -401,25 +409,32 @@ filter {
       add_field => { "[@metadata][index]" => "%{[initiator][project_id]}" }
       id => "f22a_calculate_index_name_primary_project_id"
     }
+  } else if [target][project_id] and ![initiator][project_id] {
+    mutate {
+      add_field => { "[@metadata][index]" => "%{[target][project_id]}" }
+      id => "f22b_calculate_index_name_primary_target_project_id"
+    }
   } else if [initiator][domain_id] {
     mutate {
       add_field => { "[@metadata][index]" => "%{[initiator][domain_id]}" }
-      id => "f22b_calculate_index_name_primary_domain_id"
+      id => "f22c_calculate_index_name_primary_domain_id"
     }
   }
 
   # secondary index
-  if [target][project_id] {
+  # Only add the secondary index if it's different from the primary index
+  if [target][project_id] and [@metadata][index] != "%{[target][project_id]}" {
     mutate {
       add_field => { "[@metadata][index2]" => "%{[target][project_id]}" }
       id => "f23a_calculate_index_name_secondary_project_id"
     }
-  } else if [target][domain_id] {
+  } else if [target][domain_id] and [@metadata][index] != "%{[target][domain_id]}" {
     mutate {
       add_field => { "[@metadata][index2]" => "%{[target][domain_id]}" }
       id => "f23b_calculate_index_name_secondary_domain_id"
     }
   }
+
 
   # remove keystone specific fields after they have been mapped to standard attachments
   mutate {
@@ -504,13 +519,13 @@ output {
         }
   }
 
-  {{ if .Values.logstash.swift -}}
+  {{- if .Values.logstash.swift }}
   if [type] == 'clone_for_swift' {
     s3 {
       id => "output_s3_for_swift"
       endpoint => "{{.Values.logstash.endpoint}}"
-      access_key_id => "{{.Values.logstash.access_key_id}}"
-      secret_access_key => "{{.Values.logstash.secret_access_key}}"
+      access_key_id => "{{.Values.logstash.access_key_id_conf}}"
+      secret_access_key => "{{.Values.logstash.secret_access_key_conf}}"
       region => "{{.Values.logstash.region}}"
       bucket => "{{.Values.logstash.bucket}}"
       prefix => "{{.Values.logstash.prefix}}"
@@ -525,12 +540,12 @@ output {
   }
   {{- end}}
 
-  {{ if .Values.logstash.audit -}}
+  {{- if .Values.logstash.audit }}
   if [type] == 'audit' {
     if (([initiator][domain] == 'Default' and [initiator][name] == 'admin') or [initiator][domain] == 'ccadmin' or [target][project_domain_name] == 'ccadmin' or [initiator][project_domain_name] == 'ccadmin') or ([observer][typeURI] == 'service/security' and [action] == "authenticate" and [outcome] == 'failure') or ([observer][typeURI] == 'service/security' and ([action] == 'create/user') or [action] == 'delete/user') {
       http {
         id => "output_octobus_audit"
-        cacert => "/usr/share/logstash/config/ca.pem"
+        ssl_certificate_authorities => "/usr/share/logstash/config/ca.pem"
         url => "https://{{ .Values.global.forwarding.audit.host }}"
         format => "json"
         http_method => "post"

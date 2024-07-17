@@ -111,28 +111,6 @@ groups:
         summary: "Resource scrapes are failing!"
 
     ############################################################################
-    # alerts concerning data collection for the observer in castellum-netapp-scout
-
-    - alert: OpenstackCastellumNetappScoutNotWorking
-      expr: max(time() - castellum_netapp_scout_data_collected_at) / 60 >= 5
-      for: 3m
-      labels:
-        context: asset-scouting
-        service: castellum
-        severity: warning
-        support_group: containers
-        tier: os
-        dashboard: castellum
-        meta: "No successful data collection from NetApp metrics in the last 5 minutes!"
-      annotations:
-        summary: Data collection from NetApp metrics not working
-        description: |
-          Castellum could not retrieve NetApp metrics from prometheus-infra in the last 5 minutes.
-          We need these metrics to decide when to autoscale Manila shares.
-          Please check the logs of castellum-netapp-scout for details and error messages.
-          If no NetApp metrics can be collected at all, the regional prometheus-storage might be broken.
-
-    ############################################################################
     # alerts concerning asset scraping in castellum-observer
 
     - alert: OpenstackCastellumNotScrapingAnyAssets

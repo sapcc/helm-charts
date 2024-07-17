@@ -19,8 +19,11 @@ spec:
     metadata:
       labels:
         name: doop-image-checker
-        alert-tier: k8s
-        alert-service: gatekeeper
+      annotations:
+        kubectl.kubernetes.io/default-container: parser
+        {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+        linkerd.io/inject: enabled
+        {{- end }}
     spec:
       automountServiceAccountToken: false
       enableServiceLinks: false

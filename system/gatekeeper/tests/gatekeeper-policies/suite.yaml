@@ -116,20 +116,6 @@ tests:
 ################################################################################
 # policy tests
 
-- name: deprecated-api-version-k8s1.26
-  template: ../rendered-chart/gatekeeper/templates/constrainttemplate-deprecated-api-version.yaml
-  constraint: ../rendered-chart/gatekeeper-config/templates/constraint-deprecated-api-version-k8s1.26.yaml
-  cases:
-  - name: helm-release-deprecated-api-version-1.26
-    object: fixtures/deprecated-api-version/helm-release-deprecated-1.26.out.yaml
-    assertions:
-    - violations: 1
-      message: '^\{"support_group":"foo-group","service":"dummy"\} >> FlowSchema dummy declared with deprecated API version: flowcontrol.apiserver.k8s.io/v1beta1 \(will break in k8s v1.26\)$'
-  - name: helm-release-clean
-    object: fixtures/deprecated-api-version/helm-release-clean.out.yaml
-    assertions:
-    - violations: no
-
 - name: deprecated-api-version-k8s1.27
   template: ../rendered-chart/gatekeeper/templates/constrainttemplate-deprecated-api-version.yaml
   constraint: ../rendered-chart/gatekeeper-config/templates/constraint-deprecated-api-version-k8s1.27.yaml
@@ -153,6 +139,20 @@ tests:
     assertions:
     - violations: 1
       message: '^\{"support_group":"foo-group","service":"dummy"\} >> FlowSchema dummy declared with deprecated API version: flowcontrol.apiserver.k8s.io/v1beta2 \(will break in k8s v1.29\)$'
+  - name: helm-release-clean
+    object: fixtures/deprecated-api-version/helm-release-clean.out.yaml
+    assertions:
+    - violations: no
+
+- name: deprecated-api-version-k8s1.32
+  template: ../rendered-chart/gatekeeper/templates/constrainttemplate-deprecated-api-version.yaml
+  constraint: ../rendered-chart/gatekeeper-config/templates/constraint-deprecated-api-version-k8s1.32.yaml
+  cases:
+  - name: helm-release-deprecated-api-version-1.32
+    object: fixtures/deprecated-api-version/helm-release-deprecated-1.32.out.yaml
+    assertions:
+    - violations: 1
+      message: '^\{"support_group":"foo-group","service":"dummy"\} >> FlowSchema dummy declared with deprecated API version: flowcontrol.apiserver.k8s.io/v1beta3 \(will break in k8s v1.32\)$'
   - name: helm-release-clean
     object: fixtures/deprecated-api-version/helm-release-clean.out.yaml
     assertions:
@@ -409,6 +409,10 @@ tests:
     object: fixtures/pod-security/audit-logs-fluent-systemd.yaml
     assertions:
     - violations: no
+  - name: pod-security-accept-calico-apiserver
+    object: fixtures/pod-security/calico-apiserver.yaml
+    assertions:
+    - violations: no
   - name: pod-security-accept-cinder-volume-vmware
     object: fixtures/pod-security/cinder-volume-vmware.yaml
     assertions:
@@ -417,8 +421,20 @@ tests:
     object: fixtures/pod-security/cloudprober.yaml
     assertions:
     - violations: no
+  - name: pod-security-accept-cni-nanny
+    object: fixtures/pod-security/cni-nanny.yaml
+    assertions:
+    - violations: no
+  - name: pod-security-accept-cni-nanny-bgp-peer-discovery-job
+    object: fixtures/pod-security/cni-nanny-bgp-peer-discovery-job.yaml
+    assertions:
+    - violations: no
   - name: pod-security-accept-concourse-kubernetes-ingress
     object: fixtures/pod-security/concourse-kubernetes-ingress.yaml
+    assertions:
+    - violations: no
+  - name: pod-security-accept-concourse-kubernetes-ingress-job
+    object: fixtures/pod-security/concourse-kubernetes-ingress-job.yaml
     assertions:
     - violations: no
   - name: pod-security-accept-concourse-worker
@@ -433,8 +449,8 @@ tests:
     object: fixtures/pod-security/opensearch-hermes.yaml
     assertions:
     - violations: no
-  - name: pod-security-accept-elastiflow-data
-    object: fixtures/pod-security/elastiflow-data.yaml
+  - name: pod-security-accept-opensearch-hermes-master
+    object: fixtures/pod-security/opensearch-hermes-master.yaml
     assertions:
     - violations: no
   - name: pod-security-accept-falco
@@ -459,6 +475,22 @@ tests:
     - violations: no
   - name: pod-security-accept-kubernikus-apiserver
     object: fixtures/pod-security/kubernikus-apiserver.yaml
+    assertions:
+    - violations: no
+  - name: pod-security-accept-linkerd-destination
+    object: fixtures/pod-security/linkerd-destination.yaml
+    assertions:
+    - violations: no
+  - name: pod-security-accept-linkerd-identity
+    object: fixtures/pod-security/linkerd-identity.yaml
+    assertions:
+    - violations: no
+  - name: pod-security-accept-linkerd-proxy-injector
+    object: fixtures/pod-security/linkerd-proxy-injector.yaml
+    assertions:
+    - violations: no
+  - name: pod-security-accept-linkerd-sidecar
+    object: fixtures/pod-security/linkerd-sidecar.yaml
     assertions:
     - violations: no
   - name: pod-security-accept-logs-fluent
@@ -672,6 +704,13 @@ tests:
       message: '^\{"support_group":"foo-group","service":"dummy"\} >> image keppel.example.com/vulnerability:medium for container "dummymedium" has "X-Keppel-Vulnerability-Status: Medium"$'
     - violations: 1
       message: '^\{"support_group":"foo-group","service":"dummy"\} >> image keppel.example.com/vulnerability:high for container "starter" has "X-Keppel-Vulnerability-Status: High"$'
+  - name: pod-vulnerable-in-linkerd
+    object: fixtures/vulnerable-images/pod-vulnerable-in-linkerd.yaml
+    assertions:
+    - violations: 1
+      message: '^\{"support_group":"containers","service":"linkerd"\} >> image keppel.example.com/ccloud/servicemesh/proxy:low for container "linkerd-proxy" has "X-Keppel-Vulnerability-Status: Low"$'
+    - violations: 1
+      message: '^\{"support_group":"containers","service":"linkerd"\} >> image keppel.example.com/ccloud/servicemesh/proxy-init:high for container "linkerd-init" has "X-Keppel-Vulnerability-Status: High"$'
   - name: pod-unclear
     object: fixtures/vulnerable-images/pod-unclear.yaml
     assertions:

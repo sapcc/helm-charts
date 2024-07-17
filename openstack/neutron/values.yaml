@@ -9,6 +9,7 @@ osprofiler:
   enabled: false
 
 global:
+  neutron_service_user: neutron
   dbUser: neutron
   # dbPassword:
   # imageRegistry:
@@ -16,6 +17,7 @@ global:
   rpc_response_timeout: 60
   domain_seeds:
     skip_hcm_domain: false
+  linkerd_requested: false
 
 api_workers: 12
 rpc_workers: 5
@@ -23,6 +25,7 @@ rpc_state_workers: 5
 
 owner-info:
   support-group: network-api
+  service: neutron
   maintainers:
     - Sebastian Lohff
     - Sebastian Wagner
@@ -43,6 +46,7 @@ pod:
         rolling_update:
           max_unavailable: 10%
           max_surge: 25%
+  tolerations: {}
   debug:
     server: false
     dhcp_agent: false
@@ -50,7 +54,6 @@ pod:
     aci_agent: false
     asr_agent: false
     f5_agent: false
-    cisco_ml2_ucsm_bm: false
   resources:
     metadata_agent:
       requests:
@@ -105,13 +108,6 @@ pod:
       limits:
         cpu: "4000m"
         memory: "3Gi"
-    cisco_ml2_ucsm_bm:
-      requests:
-        cpu: "256m"
-        memory: "512Mi"
-      limits:
-        cpu: "500m"
-        memory: "1024Mi"
     sftp_backup:
       requests:
         cpu: "256m"
@@ -174,7 +170,6 @@ imageNameNetworkAgentDHCPInit: alpine
 # imageVersionCCFabric:
 # imageVersionASR1kML2:
 # imageVersionASR1k:
-# imageVersionUCSM:
 # imageVersionNSXv3:
 # imageVersionNSXTExporter:
 # imageVersionNetworkAgent:
@@ -192,6 +187,7 @@ api:
   # minimum number of workers to keep at all times
   cheaper: 0
   uwsgi: false
+  uwsgi_enable_harakiri_graceful_signal: true
   # time to cache the OwnerCheck's result in seconds
   # 0/nil/null results in not setting the config option at all and thus using
   # the default from Neutron
@@ -205,6 +201,7 @@ aci:
   apic_application_profile: converged_cloud_openstack
   support_remote_mac_clear: 'True'
   sync_allocations: 'True'
+  sync_allocations_done_file_path: "/tmp/aci-sync-allocations-done"
   # apic_hosts: null
   # apic_user: null
   # apic_password: null
@@ -266,6 +263,7 @@ hypervisors_vmware: []
 # SFTP-swift bridge (e.g. for nsx-t backups in control-plane)
 sftp:
   enabled: false
+  server_key:
   externalIPs: []
   user: db_backup
   logins:
@@ -292,13 +290,7 @@ drivers:
         nsxv3_policy_migration_limit: 6
         nsxv3_remove_orphan_ports_after: 2
         nsxv3_default_policy_infrastructure_rules: true
-
-# cisco_ucsm_bm:
-#  example.com:
-#    user:
-#    password:
-#    physical_network:
-#    vnic_paths:
+        nsxv3_transport_zone_id_cache_time: 86400
 
 logging:
   formatters:
@@ -365,7 +357,11 @@ mariadb:
   buffer_pool_size: "4096M"
   log_file_size: "1024M"
   name: neutron
-  initdb_configmap: neutron-initdb
+  initdb_secret: true
+  vpa:
+    set_main_container: true
+  ccroot_user:
+    enabled: true
   persistence_claim:
     name: db-neutron-pvclaim
   backup:
@@ -538,6 +534,7 @@ mysql_metrics:
           host AS hostgroup,
           COUNT(*) AS value
         FROM aci_port_binding_allocations
+        JOIN (SELECT physical_network pn FROM ml2_vlan_allocations GROUP BY pn) AS mva ON mva.pn = host
         GROUP BY host;
       values:
       - "value"
@@ -550,6 +547,7 @@ mysql_metrics:
           host AS hostgroup,
           SUM(segment_id IS NULL) AS value
         FROM aci_port_binding_allocations
+        JOIN (SELECT physical_network pn FROM ml2_vlan_allocations GROUP BY pn) AS mva ON mva.pn = host
         GROUP BY host;
       values:
       - "value"
@@ -617,9 +615,135 @@ rate_limit:
   whitelist:
     - Default/service
     - Default/admin
+    - ccadmin/cloud_admin
   whitelist_users: null
   blacklist: null
   blacklist_users: null
+  groups:
+    write:
+      - delete
+      - update
+  rates:
+    default:
+      address-scopes:
+        - action: read/list
+          limit: 100r/m
+      agents:
+        - action: read/list
+          limit: 300r/m
+      agents/agent/*:
+        - action: read
+          limit: 200r/m
+      extensions:
+        - action: read/list
+          limit: 100r/m
+      extensions/extension:
+        - action: read
+          limit: 100r/m
+      floatingips:
+        - action: read/list
+          limit: 500r/m
+        - action: create
+          limit: 100r/m
+      floatingips.json:
+        - action: read
+          limit: 300r/m
+      floatingips/floatingip:
+        - action: read
+          limit: 100r/m
+        - action: write
+          limit: 100r/m
+      network-ip-availabilities/network-ip-availability:
+        - action: read
+          limit: 100r/m
+      networks:
+        - action: read/list
+          limit: 200r/m
+        - action: create
+          limit: 200r/m
+      networks/default:
+        - action: read
+          limit: 200r/m
+      networks/network:
+        - action: read
+          limit: 300r/m
+      ports:
+        - action: read/list
+          limit: 3100r/m
+        - action: create
+          limit: 100r/m
+      ports.json:
+        - action: read
+          limit: 300r/m
+      ports/port:
+        - action: read
+          limit: 3100r/m
+        - action: write
+          limit: 100r/m
+      ports/port/*:
+        - action: read
+          limit: 100r/m
+      quotas/quota:
+        - action: read
+          limit: 100r/m
+        - action: write
+          limit: 100r/m
+      quotas/quota/*:
+        - action: read
+          limit: 100r/m
+      resource_type/resource/*:
+        - action: write
+          limit: 100r/m
+      routers:
+        - action: read/list
+          limit: 200r/m
+        - action: create
+          limit: 200r/m
+      routers/router:
+        - action: read
+          limit: 700r/m
+        - action: write
+          limit: 200r/m
+      routers/router/*:
+        - action: write
+          limit: 200r/m
+      security-group-rules:
+        - action: create
+          limit: 100r/m
+        - action: read/list
+          limit: 7700r/m
+      security-group-rules/security-group-rule:
+        - action: read
+          limit: 7700r/m
+        - action: write
+          limit: 100r/m
+      security-groups:
+        - action: read/list
+          limit: 2100r/m
+        - action: create
+          limit: 100r/m
+      security-groups/default:
+        - action: read
+          limit: 100r/m
+      security-groups/security-group:
+        - action: read
+          limit: 2100r/m
+      subnetpools:
+        - action: read/list
+          limit: 100r/m
+      subnetpools/subnetpool:
+        - action: write
+          limit: 100r/m
+      subnets:
+        - action: create
+          limit: 300r/m
+        - action: read/list
+          limit: 300r/m
+      subnets/subnet:
+        - action: read
+          limit: 300r/m
+        - action: write
+          limit: 100r/m
 
 unittest:
   enabled: false
@@ -658,3 +782,13 @@ dnsmasq:
 memcached:
   alerts:
     support_group: network-api
+
+utils:
+  trust_bundle:
+    enable: false
+
+vpa:
+  # https://github.com/sapcc/vpa_butler
+  # The maximum available capacity is split evenly across containers specified in the Deployment, StatefulSet or DaemonSet to derive the upper recommendation bound. This does not work out for pods with a single resource-hungry container with several sidecar containers
+  # Annotate the Deployment, StatefulSet or DaemonSet with vpa-butler.cloud.sap/main-container=$MAIN_CONTAINER. That will distribute 75% of the maximum available capacity to the main container and the rest evenly across all others
+  set_main_container: true

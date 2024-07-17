@@ -1,3 +1,4 @@
+{{- if .Values.snmp_exporter.f5.enabled }}
 apiVersion: monitoring.coreos.com/v1alpha1
 kind: ScrapeConfig
 metadata:
@@ -8,7 +9,7 @@ metadata:
     app.kubernetes.io/name: snmp-exporter-f5physical
 spec:
   httpSDConfigs:
-    - url: {{ .Values.global.http_sd_configs.netbox_url }}/devices/?custom_labels=__param_module=f5physical&manufacturer=f5&status=active&region={{ .Values.global.region }}&tag=cc-net-f5-host
+    - url: {{ .Values.global.http_sd_configs.netbox_url }}/devices/?custom_labels=__param_module=f5physical;__param_auth=f5_v3&manufacturer=f5&status=active&region={{ .Values.global.region }}&tag=cc-net-f5-host
       refreshInterval: {{ .Values.global.http_sd_configs.refresh_interval }}
   metricsPath: /snmp
   scrapeInterval: 60s
@@ -22,6 +23,8 @@ spec:
       replacement: snmp-exporter:{{.Values.snmp_exporter.listen_port}}
     - targetLabel: module
       replacement: f5physical
+    - targetLabel: __param_auth
+      replacement: f5_v3
   metricRelabelings:
     - sourceLabels: [name]
       targetLabel:  devicename
@@ -37,3 +40,4 @@ spec:
       regex: 'snmp_f5_sysProductVersion;(.*)'
       replacement: '$1'
       targetLabel: image_version
+{{- end }}

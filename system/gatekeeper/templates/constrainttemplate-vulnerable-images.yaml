@@ -78,7 +78,7 @@ spec:
           check.error != ""
         }
 
-        violation[{"msg": add_support_labels.from_k8s_object(iro, msg)}] {
+        violation[{"msg": add_support_labels_with_overrides(iro, check, msg)}] {
           check := checks[_]
           check.error == ""
           status := trim_space(object.get(check.headers, input.parameters.vulnStatusHeader, "Unclear"))
@@ -91,4 +91,22 @@ spec:
             "image %s for container %q has \"%s: %s\"",
             [check.containerImage, check.containerName, input.parameters.vulnStatusHeader, status]
           )
+        }
+
+        # extend add_support_labels.from_k8s_object() with some special cases for this specific policy
+        add_support_labels_with_overrides(iro, check, msg) = result {
+          # default behavior
+          not is_linkerd_sidecar_pod(check)
+          result := add_support_labels.from_k8s_object(iro, msg)
+        }
+        add_support_labels_with_overrides(iro, check, msg) = result {
+          # vulns in linkerd sidecar pods are not actionable for the actual pod owner until linkerd is updated centrally
+          is_linkerd_sidecar_pod(check)
+          result := sprintf("{\"support_group\":\"containers\",\"service\":\"linkerd\"} >> %s", [msg])
+        }
+
+        default is_linkerd_sidecar_pod(check) = false
+        is_linkerd_sidecar_pod(check) = true {
+          regex.match("^keppel\\.[^/]*/ccloud/servicemesh/proxy", check.containerImage)
+          regex.match("^linkerd-", check.containerName)
         }

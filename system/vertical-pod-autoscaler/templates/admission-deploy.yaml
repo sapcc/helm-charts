@@ -18,6 +18,10 @@ spec:
         {{- if .Values.additionalPodAnnotations }}
         {{- toYaml .Values.additionalPodAnnotations | nindent 8 -}}
         {{ end }}
+        {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+        linkerd.io/inject: enabled
+        {{- end }}
+        checksum/certificate: {{ include (print $.Template.BasePath "/admission-certificate.yaml") . | sha256sum }}
     spec:
       serviceAccountName: vpa-admission-controller
       securityContext:
@@ -40,6 +44,13 @@ spec:
             - --client-ca-file=/etc/tls-certs/ca.crt
             - --tls-cert-file=/etc/tls-certs/tls.crt
             - --tls-private-key=/etc/tls-certs/tls.key
+            - --register-webhook=false
+            # https://github.com/kubernetes-sigs/controller-runtime/pull/365/files
+            - --kube-api-qps=20.0
+            - --kube-api-burst=30.0
+            {{- if .Values.admission.certificate.reload }}
+            - --reload-cert=true
+            {{- end }}
           env:
             - name: NAMESPACE
               valueFrom:

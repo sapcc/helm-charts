@@ -9,9 +9,14 @@ metadata:
     release: "{{ .Release.Name }}"
     heritage: "{{ .Release.Service }}"
     component: rabbitmq
+    {{- include "sharedservices.labels" . | indent 4 }}
   annotations:
   {{- if .Values.persistence.storageClass }}
     volume.beta.kubernetes.io/storage-class: {{ .Values.persistence.storageClass | quote }}
+  {{- end }}
+  {{- if .Values.alerts.support_group }}
+    ccloud/support-group: {{  .Values.alerts.support_group }}
+    ccloud/service: {{ include "alerts.service" . }}
   {{- end }}
 spec:
   accessModes:

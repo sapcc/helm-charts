@@ -39,17 +39,6 @@ template: |
       statsd_enabled = {{ .Values.compute.defaults.default.rpc_statsd_enabled }}
 
       scheduler_instance_sync_interval = {{ .Values.scheduler.scheduler_instance_sync_interval }}
-      {% if cells is defined and 'cell-' + availability_zone in cells %}
-      transport_url = {= cells['cell-' + availability_zone].transport_url | quote =}
-
-      [database]
-      connection = {= cells['cell-' + availability_zone].database_connection | quote =}
-      {% elif cells is defined and 'cell-' + vcenter_name in cells %}
-      transport_url = {= cells['cell-' + vcenter_name].transport_url | quote =}
-
-      [database]
-      connection = {= cells['cell-' + vcenter_name].database_connection | quote =}
-      {% endif %}
 
       [filter_scheduler]
       # Needs to be same on hypervisor and scheduler
@@ -59,13 +48,6 @@ template: |
       # integration_bridge = {= bridge | quote =}
       cache_prefix= "{= name | ini_escape =}-images"
       host_ip = {= host =}
-      {{- if .Values.compute.defaults.host_username | default "" }}
-      host_username = {{ .Values.compute.defaults.host_username }}
-      host_password = {= "{{ .Values.compute.defaults.host_username }}" | derive_password | quote =}
-      {{- else }}
-      host_username = {= username | quote =}
-      host_password = {= password | quote =}
-      {{- end }}
       cluster_name = {= cluster_name | quote =}
       {{- range $key, $value := .Values.compute.defaults.vmware }}
       {{ $key }} = {{ $value }}

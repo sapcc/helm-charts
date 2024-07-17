@@ -8,6 +8,10 @@ metadata:
     system: openstack
     type: backend
     component: neutron
+  {{- if .Values.vpa.set_main_container }}
+  annotations:
+    vpa-butler.cloud.sap/main-container: neutron-nsxv3-logstash
+  {{- end }}
 spec:
   replicas: {{ .Values.logger.logstash.replicas | default 3 }}
   revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revision_history }}
@@ -22,6 +26,7 @@ spec:
         name: neutron-nsxv3-logstash
       annotations:
         configmap-logger-hash: {{ include (print .Template.BasePath "/configmap-nsxv3-logstash.yaml") . | sha256sum }}
+        {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
     spec:
       {{- if .Values.logger.persistence.enabled }}
       initContainers:
@@ -50,14 +55,26 @@ spec:
             timeoutSeconds: 30
             periodSeconds: 60
           env:
+          - name: NEUTRON_DB_USER
+            valueFrom:
+              secretKeyRef:
+                name: neutron-nsxv3-logstash-secret
+                key: NEUTRON_DB_USER
+          - name: NEUTRON_DB_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: neutron-nsxv3-logstash-secret
+                key: NEUTRON_DB_PASSWORD
           - name: XPACK_MONITORING_ENABLED
             value: "false"
+          {{- include "utils.trust_bundle.env" . | indent 10 }}
           ports:
           - containerPort: 5514
           volumeMounts:
           - mountPath: /usr/share/logstash/pipeline/logstash.conf
             subPath: pipeline.conf
             name: logger-config
+          {{- include "utils.trust_bundle.volume_mount" . | indent 10 }}
         {{- if .Values.logger.persistence.enabled }}
           - name: logstash-data
             mountPath: /data
@@ -88,4 +105,5 @@ spec:
           persistentVolumeClaim:
             claimName: neutron-nsxv3-logstash
         {{- end }}
+        {{- include "utils.trust_bundle.volumes" . | indent 8 }}
 {{- end -}}

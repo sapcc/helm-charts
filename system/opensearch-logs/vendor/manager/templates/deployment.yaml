@@ -1,0 +1,75 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: manager
+  namespace: opensearch-logs
+  labels:
+    component: opensearch
+    role: manager
+spec:
+  selector:
+    matchLabels:
+      component: opensearch
+      role: manager
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        component: opensearch
+        role: manager
+      annotations:
+        checksum/application.conf: {{ include  (print $.Template.BasePath "/_application.conf.tpl") . | sha256sum }}
+        kubectl.kubernetes.io/default-container: "manager"
+        {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+        linkerd.io/inject: enabled
+        {{- end }}
+    spec:
+      nodeSelector:
+        ccloud.sap.com/nodepool: payload
+      volumes:
+        - name: manager-etc
+          configMap:
+            name: manager-etc
+        - name: manager-secrets
+          secret:
+            defaultMode: 420
+            secretName: manager-secrets
+        - name: opensearch-certs
+          secret:
+            defaultMode: 420
+            secretName: opensearch-certs
+      containers:
+      - name: manager
+        image: {{.Values.global.registry}}/{{.Values.image_manager}}
+        imagePullPolicy: IfNotPresent
+        command:
+          - /opt/cerebro/bin/cerebro
+        args:
+          - -Dconfig.file=/manager-etc/application.conf
+          - -Dlogback.configurationFile=/manager-etc/logback.xml
+          - -Dlogger.file=/manager-etc/logback.xml
+          - -Dcom.sun.jndi.ldap.object.disableEndpointIdentification=true
+          - -Des.networkaddress.cache.ttl=20
+          - -Des.networkaddress.cache.negative.ttl=10
+        env:
+          - name: NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+        volumeMounts:
+          - mountPath: /manager-etc/logback.xml
+            name: manager-etc
+            subPath: logback.xml
+          - mountPath: /manager-etc/application.conf
+            name: manager-secrets
+            subPath: application.conf
+          - mountPath: /opt/certs
+            name: opensearch-certs
+        ports:
+          - name: manager
+            containerPort: {{.Values.port_internal}}

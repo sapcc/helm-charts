@@ -10,6 +10,7 @@ global:
   dbUser: barbican
   domain_seeds:
     skip_hcm_domain: false
+  linkerd_requested: false
 
 owner-info:
   support-group: identity
@@ -36,7 +37,7 @@ statsd:
   port: 9102
   image:
     repository:  prom/statsd-exporter
-    tag: v0.24.0
+    tag: v0.26.0
   resources:
     enabled: true
     limits:
@@ -57,7 +58,9 @@ proxysql:
 mariadb:
   enabled: true
   name: barbican
-  initdb_configmap: barbican-initdb
+  initdb_secret: barbican-initdb
+  ccroot_user:
+    enabled: true
   databases:
   - barbican
   users:
@@ -287,7 +290,7 @@ alerts:
 hsm:
   enabled: false
   luna:
-    image: lunaclient-r5
+    image: lunaclient-r7
   multistore:
     enabled: false
   ha:
@@ -300,3 +303,18 @@ hsm:
     requests:
       memory: 500Mi
       cpu: 300m
+
+utils:
+  trust_bundle:
+    enabled: true
+
+# barbican nanny
+barbican_nanny:
+  replicas: 1
+  enabled: false
+  # debug mode - no script run in the containers, just a sleep loop
+  debug: false
+  # Sleep time in minutes between runs
+  interval: 1
+  db_secret_move:
+    enabled: false

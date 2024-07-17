@@ -7,6 +7,7 @@ metadata:
     system: openstack
     type: database
     component: {{ .Values.name }}
+    {{- include "sharedservices.labels" . | indent 4 }}
 spec:
   replicas: 1
   revisionHistoryLimit: 5
@@ -20,6 +21,7 @@ spec:
       labels:
         app: {{ include "fullName" . }}-verification
         name: {{ template "fullName" . }}-verification
+        {{- include "sharedservices.labels" . | indent 8 }}
       annotations:
 {{- if .Values.metrics.enabled }}
         prometheus.io/scrape: "true"
@@ -49,6 +51,6 @@ spec:
             readOnly: true
       volumes:
         - name: mariadb-backup-etc
-          configMap:
-            name:  mariadb-backup-{{.Values.name}}-etc
+          secret:
+            secretName:  mariadb-backup-{{.Values.name}}-etc
 {{- end }}

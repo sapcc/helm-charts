@@ -12,6 +12,7 @@ groups:
       service: swift
       severity: info
       support_group: storage
+      playbook: 'docs/operation/storage/swift/swift_health'
       tier: os
       meta: first byte timing for {{ $labels.type }} in {{ $labels.os_cluster }} increased
     annotations:
@@ -28,6 +29,7 @@ groups:
       service: swift
       severity: warning
       support_group: storage
+      playbook: 'docs/operation/storage/swift/swift_health'
       tier: os
       meta: 503 responses from Swift in {{ $labels.os_cluster }}
     annotations:
@@ -104,8 +106,8 @@ groups:
       service: swift
       severity: warning
       support_group: storage
+      playbook: 'docs/operation/storage/swift/swift_health'
       tier: os
-      playbook: 'docs/support/playbook/swift/healthcheck'
       meta: some health checks for Swift are failing
     annotations:
       description: Swift health check failures. Run `kubectl logs -l component=swift-health-exporter -c collector` and `kubectl logs -l component=swift-proxy-cluster-3 -c collector` to get details
@@ -120,6 +122,7 @@ groups:
       service: swift
       severity: info
       support_group: storage
+      playbook: 'docs/operation/storage/swift/swift_health'
       tier: os
       meta: 'Swift dispersion is reporting {{ $value }} errors'
     annotations:
@@ -135,8 +138,8 @@ groups:
       service: swift
       severity: warning
       support_group: storage
+      playbook: 'docs/operation/storage/swift/swift_ring'
       tier: os
-      playbook: 'docs/support/playbook/swift/rings'
       meta: Rings are not equal on all Swift nodes
     annotations:
       description: Rings are not equal on all nodes
@@ -167,7 +170,7 @@ groups:
       severity: warning
       support_group: storage
       tier: os
-      playbook: 'docs/support/playbook/swift/node_error'
+      playbook: 'docs/operation/storage/swift/swift_node_error'
       meta: Swift node {{ $labels.storage_ip }} not reachable
     annotations:
       description: Swift node error. Node with IP {{ $labels.storage_ip }} is not reachable.
@@ -201,7 +204,7 @@ groups:
       support_group: storage
       tier: metal
       meta: '{{ $value }} Swift drive failures'
-      playbook: 'docs/support/playbook/swift/disk_failures'
+      playbook: 'docs/operation/storage/swift/swift_broken_disks'
     annotations:
       description: Swift drive failures. Run swift-recon --driveaudit to get details
       summary: swift disk failures on the server IP {{ $labels.storage_ip }}
@@ -280,33 +283,33 @@ groups:
       description: 'Swift storage usage above {{ $value }}%'
       summary: 'Swift storage usage above {{ $value }}%'
 
-  - alert: OpenstackSwiftGrantedQuota125
-    expr: floor(sum(global:limes_consolidated_domain_quota{full_resource="object-store/capacity"}) by (region, full_resource) / max(global:limes_consolidated_cluster_capacity{full_resource="object-store/capacity"}) by (region, full_resource) * 100) > 125
-    for: 1d
-    labels:
-      context: grantedquota
-      service: swift
-      severity: info
-      support_group: storage
-      tier: os
-      meta: 'Swift storage is overbooked: {{ $value }}%'
-    annotations:
-      description: 'Swift storage is overbooked: {{ $value }}%'
-      summary: 'Swift storage is overbooked: {{ $value }}%'
+ # - alert: OpenstackSwiftGrantedQuota125
+ #   expr: floor(sum(global:limes_consolidated_domain_quota{full_resource="object-store/capacity"}) by (region, full_resource) / max(global:limes_consolidated_cluster_capacity{full_resource="object-store/capacity"}) by (region, full_resource) * 100) > 125
+ #   for: 1d
+ #   labels:
+ #     context: grantedquota
+ #     service: swift
+ #     severity: info
+ #     support_group: storage
+ #     tier: os
+ #     meta: 'Swift storage is overbooked: {{ $value }}%'
+ #   annotations:
+ #     description: 'Swift storage is overbooked: {{ $value }}%'
+ #     summary: 'Swift storage is overbooked: {{ $value }}%'
 
-  - alert: OpenstackSwiftGrantedQuota150
-    expr: floor(sum(global:limes_consolidated_domain_quota{full_resource="object-store/capacity"}) by (region, full_resource) / max(global:limes_consolidated_cluster_capacity{full_resource="object-store/capacity"}) by (region, full_resource) * 100) > 150
-    for: 1d
-    labels:
-      context: grantedquota
-      service: swift
-      severity: warning
-      support_group: storage
-      tier: os
-      meta: 'Swift storage is overbooked: {{ $value }}%'
-    annotations:
-      description: 'Swift storage is overbooked: {{ $value }}%'
-      summary: 'Swift storage is overbooked: {{ $value }}%'
+ # - alert: OpenstackSwiftGrantedQuota150
+ #   expr: floor(sum(global:limes_consolidated_domain_quota{full_resource="object-store/capacity"}) by (region, full_resource) / max(global:limes_consolidated_cluster_capacity{full_resource="object-store/capacity"}) by (region, full_resource) * 100) > 150
+ #   for: 1d
+ #   labels:
+ #     context: grantedquota
+ #     service: swift
+ #     severity: warning
+ #     support_group: storage
+ #     tier: os
+ #     meta: 'Swift storage is overbooked: {{ $value }}%'
+ #   annotations:
+ #     description: 'Swift storage is overbooked: {{ $value }}%'
+ #     summary: 'Swift storage is overbooked: {{ $value }}%'
 
   - alert: OpenstackSwiftDriveAutopilotConsistencyCheck
     expr: irate(swift_drive_autopilot_events{type="consistency-check"}[5m]) < 0.02

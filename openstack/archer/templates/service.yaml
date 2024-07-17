@@ -4,6 +4,10 @@ metadata:
   name: {{ include "archer.fullname" . }}
   labels:
     {{- include "archer.labels" . | nindent 4 }}
+  annotations:
+    {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+    linkerd.io/inject: enabled
+    {{- end }}
 spec:
   type: {{ .Values.service.type }}
   ports:

@@ -9,6 +9,10 @@ metadata:
     system: openstack
     type: backend
     component: nova
+  {{- if .Values.vpa.set_main_container }}
+  annotations:
+    vpa-butler.cloud.sap/main-container: nova-compute
+  {{- end }}
 spec:
   replicas: 1
   revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revision_history }}
@@ -102,6 +106,11 @@ spec:
               name: nova-etc
               subPath: rootwrap.conf
               readOnly: true
+            - mountPath: /etc/nova/nova.conf.d/keystoneauth-secrets.conf
+              name: nova-etc-secret
+              subPath: keystoneauth-secrets.conf
+              readOnly: true
+            {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
         - name: nova-libvirt
           image: {{ tuple . "libvirt" | include "container_image_nova" }}
           imagePullPolicy: IfNotPresent
@@ -150,6 +159,11 @@ spec:
               readOnly: true
             - mountPath: /container.init
               name: nova-container-init
+            - mountPath: /etc/nova/nova.conf.d/keystoneauth-secrets.conf
+              name: nova-etc-secret
+              subPath: keystoneauth-secrets.conf
+              readOnly: true
+            {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
         - name: nova-virtlog
           image: {{ tuple . "libvirt" | include "container_image_nova" }}
           imagePullPolicy: IfNotPresent
@@ -198,6 +212,11 @@ spec:
               readOnly: true
             - mountPath: /container.init
               name: nova-container-init
+            - mountPath: /etc/nova/nova.conf.d/keystoneauth-secrets.conf
+              name: nova-etc-secret
+              subPath: keystoneauth-secrets.conf
+              readOnly: true
+            {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
         - name: neutron-openvswitch-agent
           image: {{ required ".Values.global.registry is missing" .Values.global.registry}}/loci-neutron:{{.Values.imageVersionNeutron | required "Please set nova.imageVersionNeutron or similar" }}
           imagePullPolicy: IfNotPresent
@@ -215,6 +234,7 @@ spec:
               name: neutron-etc
             - mountPath: /container.init
               name: neutron-container-init
+            {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
         - name: ovs
           image: {{ required ".Values.global.registry is missing" .Values.global.registry}}/ubuntu-source-openvswitch-vswitchd:{{ .Values.imageVersionOpenvswitchVswitchd | default .Values.imageVersionNova | default .Values.imageVersion | required "Please set .imageVersion" }}
           imagePullPolicy: IfNotPresent
@@ -230,6 +250,7 @@ spec:
               readOnly: true
             - mountPath: /container.init
               name: neutron-container-init
+            {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
         - name: ovs-db
           image: {{ required ".Values.global.registry is missing" .Values.global.registry}}/ubuntu-source-openvswitch-db-server:{{ .Values.imageVersionOpenvswitchDbServer | default .Values.imageVersionNova | default .Values.imageVersion | required "Please set .imageVersion" }}
           imagePullPolicy: IfNotPresent
@@ -244,6 +265,7 @@ spec:
               name: modules
             - mountPath: /container.init
               name: neutron-container-init
+            {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
       volumes:
         - name: instances
           persistentVolumeClaim:
@@ -270,6 +292,9 @@ spec:
         - name: nova-etc
           configMap:
             name: nova-etc
+        - name: nova-etc-secret
+          secret:
+            name: nova-etc
         - name: nova-patches
           configMap:
             name: nova-patches
@@ -284,5 +309,6 @@ spec:
           configMap:
             name: neutron-bin
             defaultMode: 0755
+        {{- include "utils.trust_bundle.volumes" . | indent 8 }}
 {{- end }}
 {{- end }}

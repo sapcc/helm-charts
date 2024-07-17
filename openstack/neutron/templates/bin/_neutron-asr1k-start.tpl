@@ -19,7 +19,7 @@ function process_config {
 
 
 function _start_application {
-    exec asr1k-l3-agent --config-file /etc/neutron/asr1k.conf --config-file /etc/neutron/neutron.conf --config-file /etc/neutron/asr1k-global.ini
+    exec asr1k-l3-agent --config-file /etc/neutron/asr1k.conf --config-dir /etc/neutron/secrets --config-file /etc/neutron/neutron.conf --config-file /etc/neutron/asr1k-global.ini
 }
 
 

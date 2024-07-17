@@ -1,3 +1,6 @@
+{{- $vbase  := .Values.global.vaultBaseURL | required "missing value for .Values.global.vaultBaseURL" -}}
+{{- $region := .Values.global.region       | required "missing value for .Values.global.region"       -}}
+
 {{- $domains := list "ccadmin" "bs" "cis" "cp" "fsn" "hcp03" "hec" "monsoon3" "neo" "s4" "wbs"}}
 {{- if not .Values.global.domain_seeds.skip_hcm_domain -}}
   {{- $domains = append $domains "hcm" }}
@@ -12,9 +15,7 @@ spec:
     {{- range $domains }}
     - monsoon3/domain-{{ . | lower }}-seed
     {{- end }}
-    {{- if .Values.cc3testBilling }}
     - monsoon3/domain-cc3test-seed
-    {{- end }}
     - swift/swift-seed
     - limes/limes-seed
 
@@ -36,36 +37,44 @@ spec:
   domains:
   - name: Default
     users:
-    - name: billing
+    - name: billing # service user for the billing API itself
       description: 'Billing Service'
-      password: {{ .Values.billingServicePassword | quote }}
+      password: {{ printf "%s/%s/billing/keystone-user/service/password" $vbase $region | quote }}
       role_assignments:
       - project: service
         role: service
-    - name: masterdata_scanner
+    - name: masterdata_scanner # service user for a data quality check job
       description: 'Masterdata Scanner (Data Quality Validation)'
-      password: {{ .Values.masterdataScannerServicePassword | quote }}
+      password: {{ printf "%s/%s/billing/keystone-user/masterdata-scanner/password" $vbase $region | quote }}
 
   - name: cc3test
     role_assignments:
     - user: masterdata_scanner@Default
       role: masterdata_admin
       inherited: true
-  {{- if .Values.cc3testBilling }}
-    - user: {{ .Values.cc3testBillingDomainAdmUser | quote }}
+  {{- if eq $region "qa-de-1" }}
+    {{- if not .Values.cc3test }}
+      {{- fail "missing values in .Values.cc3test" }}
+    {{- end }}
+    {{- $domainAdmin  := .Values.cc3test.domainAdmin  | required "missing value for .Values.cc3test.domainAdmin"  }}
+    {{- $domainUser   := .Values.cc3test.domainUser   | required "missing value for .Values.cc3test.domainUser"   }}
+    {{- $projectAdmin := .Values.cc3test.projectAdmin | required "missing value for .Values.cc3test.projectAdmin" }}
+    {{- $projectUser  := .Values.cc3test.projectUser  | required "missing value for .Values.cc3test.projectUser"  }}
+
+    - user: {{ quote $domainAdmin }}
       role: admin
-    - user: {{ .Values.cc3testBillingDomainUsrUser | quote }}
+    - user: {{ quote $domainUser }}
       role: member
 
     projects:
     - name: billing_test
       description: 'project for used for testing the billing service'
       role_assignments:
-      - user: {{ .Values.cc3testBillingProjectAdmUser | quote }}
+      - user: {{ quote $projectAdmin }}
         role: admin
-      - user: {{ .Values.cc3testBillingProjectUsrUser | quote }}
+      - user: {{ quote $projectUser }}
         role: member
-      - user: {{ .Values.cc3testBillingProjectUsrUser | quote }}
+      - user: {{ quote $projectUser }}
         role: objectstore_admin
 
     groups:
@@ -96,6 +105,10 @@ spec:
       role_assignments:
         - user: masterdata_scanner@Default
           role: cloud_identity_viewer
+        {{- if ($.Values.global.region | contains "qa" | not) }}
+        - user: {{ $.Values.ccadmin.readonlyUserForIBP }}@ccadmin
+          role: cloud_resource_viewer
+        {{- end }}
     {{- end }}
     groups:
     {{- if eq . "monsoon3" }}

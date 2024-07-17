@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "provider-ipam.fullname" . }}-webhook-service
+  labels:
+    cluster.x-k8s.io/provider: ipam-in-cluster
+  {{- include "provider-ipam.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.webhookService.type }}
+  selector:
+    cluster.x-k8s.io/provider: ipam-in-cluster
+  {{- include "provider-ipam.selectorLabels" . | nindent 4 }}
+  ports:
+	{{- .Values.webhookService.ports | toYaml | nindent 2 }}

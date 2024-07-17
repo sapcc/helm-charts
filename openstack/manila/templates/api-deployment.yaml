@@ -5,12 +5,16 @@ metadata:
   name: {{ .Release.Name }}-api
   labels:
     app: {{ template "fullname" . }}
-    chart: {{ .Chart.Name }}-{{ .Chart.Version }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
     system: openstack
     component: manila
     type: api
+  {{- if .Values.vpa.set_main_container }}
+  annotations:
+    vpa-butler.cloud.sap/main-container: manila-api
+  {{- end }}
 spec:
   replicas: {{ .Values.pod.replicas.api }}
   revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revision_history }}
@@ -35,7 +39,13 @@ spec:
       annotations:
         configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
         configmap-bin-hash: {{ include (print $.Template.BasePath "/bin-configmap.yaml") . | sha256sum }}
+        secrets-hash: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
         kubectl.kubernetes.io/default-container: manila-api
+        {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
+        {{- if .Values.proxysql.mode }}
+        prometheus.io/scrape: "true"
+        prometheus.io/targets: {{ required ".Values.alerts.prometheus.openstack missing" .Values.alerts.prometheus.openstack | quote }}
+        {{- end }}
     spec:
       {{- tuple . "manila" "api" | include "kubernetes_pod_anti_affinity" | nindent 6 }}
       {{- tuple . (dict "name" (print .Release.Name "-api")) | include "utils.topology.constraints" | indent 6 }}
@@ -73,7 +83,7 @@ spec:
           env:
           {{- if .Values.api_backdoor }}
             - name: COMMAND
-              value: "manila-api --config-file /etc/manila/manila.conf"
+              value: "manila-api --config-file /etc/manila/manila.conf --config-file /etc/manila/manila.conf.d/secrets.conf"
           {{- else }}
             - name: OS_OSLO_MESSAGING_RABBIT__HEARTBEAT_IN_PTHREAD
               value: "true"
@@ -127,6 +137,8 @@ spec:
               mountPath: /etc/manila/manila.conf
               subPath: manila.conf
               readOnly: true
+            - name: manila-etc-confd
+              mountPath: /etc/manila/manila.conf.d
             {{- if not .Values.api_backdoor }}
             - name: wsgi-manila
               mountPath: /var/www/cgi-bin/manila
@@ -172,6 +184,7 @@ spec:
               readOnly: true
             {{- include "utils.coordination.volume_mount" . | indent 12 }}
             {{- include "utils.proxysql.volume_mount" . | indent 12 }}
+            {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
           {{- if .Values.pod.resources.api }}
           resources:
             {{ toYaml .Values.pod.resources.api | nindent 13 }}
@@ -209,9 +222,13 @@ spec:
         - name: manila-etc
           configMap:
             name: {{ .Release.Name }}-etc
+        - name: manila-etc-confd
+          secret:
+            secretName: {{ .Release.Name }}-secrets
         - name: manila-bin
           configMap:
             name: {{ .Release.Name }}-bin
             defaultMode: 0555
         {{- include "utils.coordination.volumes" . | indent 8 }}
         {{- include "utils.proxysql.volumes" . | indent 8 }}
+        {{- include "utils.trust_bundle.volumes" . | indent 8 }}

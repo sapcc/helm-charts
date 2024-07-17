@@ -8,8 +8,12 @@ metadata:
   labels:
     system: openstack
     component: manila
+  {{- if .Values.vpa.set_main_container }}
+  annotations:
+    vpa-butler.cloud.sap/main-container: reexport
+  {{- end }}
 spec:
-  replicas: 1
+  replicas: {{ .Values.pod.replicas.ensure }}
   revisionHistoryLimit: 2
   strategy:
     type: RollingUpdate
@@ -28,7 +32,10 @@ spec:
       annotations:
         configmap-etc-hash: {{ include (print .Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
         configmap-netapp-hash: {{ list . $share | include "share_netapp_configmap" | sha256sum }}
+        kubectl.kubernetes.io/default-container: reexport
         netapp_deployment-hash: {{ list . $share | include "share_netapp" | sha256sum }}
+        secrets-hash: {{ include (print .Template.BasePath "/secrets.yaml") . | sha256sum }}
+        {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
     spec:
       affinity:
         podAffinity:
@@ -57,7 +64,11 @@ spec:
             - --config-file
             - /etc/manila/manila.conf
             - --config-file
+            - /etc/manila/manila.conf.d/secrets.conf
+            - --config-file
             - /etc/manila/backend.conf
+            - --config-file
+            - /etc/manila/backend-secret.conf
             - --reexport
           env:
             {{- if .Values.sentry.enabled }}
@@ -74,6 +85,8 @@ spec:
               name: manila-etc
             - name: etcmanila
               mountPath: /etc/manila
+            - name: manila-etc-confd
+              mountPath: /etc/manila/manila.conf.d
             - name: manila-etc
               mountPath: /etc/manila/manila.conf
               subPath: manila.conf
@@ -86,7 +99,12 @@ spec:
               mountPath: /etc/manila/backend.conf
               subPath: backend.conf
               readOnly: true
+            - name: backend-secret
+              mountPath: /etc/manila/backend-secret.conf
+              subPath: backend-secret.conf
+              readOnly: true
             {{- include "utils.proxysql.volume_mount" . | indent 12 }}
+            {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
           {{- if .Values.pod.resources.share_ensure }}
           resources:
             {{ toYaml .Values.pod.resources.share_ensure | nindent 13 }}
@@ -115,9 +133,16 @@ spec:
         - name: manila-etc
           configMap:
             name: manila-etc
+        - name: manila-etc-confd
+          secret:
+            secretName: {{ .Release.Name }}-secrets
         - name: backend-config
           configMap:
             name: {{ .Release.Name }}-share-netapp-{{$share.name}}
+        - name: backend-secret
+          secret:
+            secretName: {{ .Release.Name }}-share-netapp-{{$share.name}}-secret
         {{- include "utils.proxysql.volumes" . | indent 8 }}
+        {{- include "utils.trust_bundle.volumes" . | indent 8 }}
 {{ end }}
 {{- end -}}

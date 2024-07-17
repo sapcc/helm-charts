@@ -1,0 +1,16 @@
+{{ $chartName := .Chart.Name }}
+{{ range $teamName, $team := .Values.teams }}
+---
+apiVersion: greenhouse.sap/v1alpha1
+kind: Team
+metadata:
+  name: {{ required "Team name missing" $teamName | lower }}
+  namespace: {{ $chartName }}
+{{ if $team.isSupportGroup }}
+  labels:
+    greenhouse.sap/support-group: "true"
+{{ end -}}
+spec:
+  description: {{ $team.description | default (printf "Team %s" $teamName) }}
+  mappedIdPGroup: {{ required "Team mappedGroupID is missing" $team.mappedIdPGroup | quote }}
+{{- end }}

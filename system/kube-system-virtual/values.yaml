@@ -28,6 +28,21 @@ kube-proxy:
     nanny:      false
     ipmasq:     false
 
+kube-proxy-capi:
+  selector:   false
+  toleration: false
+  images:
+    proxy: 
+      repository: sapcc/hyperkube
+      tag: v1.15.2
+  clusterCIDR: 10.180.0.0/17
+
+  sidecars:
+    parrot:     false
+    externalip: false
+    nanny:      false
+    ipmasq:     false
+  
 kube-flannel:
   image:
     repository: quay.io/coreos/flannel
@@ -48,8 +63,8 @@ disco:
 cert-manager:
   installCRDs: true
   image:
-    repository: keppel.global.cloud.sap/ccloud/cert-manager-controller
-    tag: v1.5.5-p1
+    repository: keppel.global.cloud.sap/ccloud-quay-mirror/jetstack/cert-manager-controller
+    tag: v1.13.3
   webhook:
     image:
       repository: keppel.global.cloud.sap/ccloud-quay-mirror/jetstack/cert-manager-webhook
@@ -63,7 +78,7 @@ cert-manager:
       repository: keppel.global.cloud.sap/ccloud-quay-mirror/jetstack/cert-manager-ctl
   ingressShim:
     defaultIssuerName: digicert-issuer
-    defaultIssuerKind: DigicertIssuer
+    defaultIssuerKind: ClusterIssuer
     defaultIssuerGroup: certmanager.cloud.sap
   prometheus:
     enabled: true
@@ -71,9 +86,6 @@ cert-manager:
     prometheus.io/targets: kubernetes
   extraArgs:
     - --enable-certificate-owner-ref=true
-
-digicert-issuer:
-  enableLeaderElection: "false"
 
 # For now enabled via regional values.
 maintenance-controller:
@@ -107,9 +119,11 @@ owner-info:
 velero:
   enabled: false
 
-  podAnnotations:
-    prometheus.io/scrape: "true"
-    prometheus.io/path: "/metrics"
+  metrics:
+    podAnnotations:
+      prometheus.io/scrape: "true"
+      prometheus.io/path: "/metrics"
+      prometheus.io/port: null
 
   image:
     repository: keppel.global.cloud.sap/ccloud-dockerhub-mirror/velero/velero
@@ -150,3 +164,11 @@ velero:
       template:
         ttl: "720h"
         storageLocation: swift
+        excludedResources:
+        - events
+        - pods
+        - nodeleases
+        - endpoints
+
+secrets-injector:
+  enabled: false

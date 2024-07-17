@@ -1,8 +1,13 @@
 [uwsgi]
 # This is running standalone
 master = true
-pyargv = --config-file /etc/neutron/neutron.conf --config-file /etc/neutron/plugins/ml2/ml2-conf.ini --config-file /etc/neutron/plugins/ml2/ml2-conf-aci.ini --config-file /etc/neutron/plugins/ml2/ml2-conf-manila.ini --config-file /etc/neutron/plugins/ml2/ml2-conf-arista.ini --config-file /etc/neutron/plugins/ml2/ml2-conf-asr1k.ini --config-file /etc/neutron/plugins/asr1k-global.ini {{- if .Values.bgp_vpn.enabled }} --config-file /etc/neutron/networking-bgpvpn.conf{{- end }}{{- if .Values.interconnection.enabled }} --config-file /etc/neutron/networking-interconnection.conf{{- end }}{{- if .Values.fwaas.enabled }} --config-file /etc/neutron/neutron-fwaas.ini{{- end }}{{- if .Values.cc_fabric.enabled }} --config-file /etc/neutron/plugins/ml2/ml2_conf_cc-fabric.ini {{- end }}
+pyargv = --config-file /etc/neutron/neutron.conf --config-dir /etc/neutron/secrets --config-file /etc/neutron/plugins/ml2/ml2-conf.ini --config-file /etc/neutron/plugins/ml2/ml2-conf-aci.ini --config-file /etc/neutron/plugins/ml2/ml2-conf-manila.ini --config-file /etc/neutron/plugins/ml2/ml2-conf-arista.ini --config-file /etc/neutron/plugins/ml2/ml2-conf-asr1k.ini --config-file /etc/neutron/plugins/asr1k-global.ini {{- if .Values.bgp_vpn.enabled }} --config-file /etc/neutron/networking-bgpvpn.conf{{- end }}{{- if .Values.interconnection.enabled }} --config-file /etc/neutron/networking-interconnection.conf{{- end }}{{- if .Values.fwaas.enabled }} --config-file /etc/neutron/neutron-fwaas.ini{{- end }}{{- if .Values.cc_fabric.enabled }} --config-file /etc/neutron/plugins/ml2/ml2_conf_cc-fabric.ini {{- end }}
+{{- if .Values.api.uwsgi }}
+venv = /var/lib/openstack/
+eval = from neutron.server import boot_server; from neutron.server.api_eventlet import eventlet_api_server; application = boot_server(eventlet_api_server)
+{{- else }}
 wsgi-file = /var/lib/openstack/bin/neutron-api
+{{- end }}
 enable-threads = true
 processes = {{.Values.api.processes}}
 auto-procname = true
@@ -40,9 +45,17 @@ stats-push = dogstatsd:127.0.0.1:9125
 dogstatsd-all-gauges = true
 memory-report = true
 
+# HTTP-Socket Timeout
+http-timeout = 120
+
 # Limits, Kill requests after 120 seconds
 harakiri = 120
 harakiri-verbose = true
+{{ if .Values.api.uwsgi_enable_harakiri_graceful_signal -}}
+# Send SIGWINCH signal to trigger guru_meditation report creation
+harakiri-graceful-signal = 28
+harakiri-graceful-timeout = 5
+{{ end -}}
 post-buffering = 4096
 backlog-status = true
 py-tracebacker = /var/lib/neutron/uwsgi_pytracebacker.

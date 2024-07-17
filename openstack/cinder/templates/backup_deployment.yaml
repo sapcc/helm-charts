@@ -38,14 +38,19 @@ template: |
         annotations:
           vcenter: {= host =}
           datacenter: {= availability_zone =}
+          configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
+          secrets-hash: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
           {{- if .Values.proxysql.mode }}
           prometheus.io/scrape: "true"
           prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
           {{- end }}
+          {{- include "utils.linkerd.pod_and_service_annotation" . | indent 10 }}
       spec:
         hostname: cinder-volume-backup-vmware-{= name =}
         {{- include "utils.proxysql.pod_settings" . | nindent 8 }}
         {{- tuple . "{= availability_zone =}" | include "utils.kubernetes_pod_az_affinity" | nindent 8 }}
+        initContainers:
+        {{- tuple . (dict "service" (print .Release.Name "-mariadb," .Release.Name "-rabbitmq") "jobs" (include "cinder.migration_job_name" .)) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 8 }}
         containers:
         - name: cinder-volume-backup-vmware-{= name =}
           image: {{required ".Values.global.registry is missing" .Values.global.registry}}/loci-cinder:{{.Values.imageVersionCinderVolumeBackup | default .Values.imageVersion | required "Please set cinder.imageVersion or similar" }}
@@ -55,21 +60,15 @@ template: |
               add: ["SYS_ADMIN"]
           command:
           - dumb-init
-          - kubernetes-entrypoint
+          - cinder-backup
           env:
-          - name: COMMAND
-            value: 'cinder-backup'
-          - name: NAMESPACE
-            value: {= namespace =}
           - name: SENTRY_DSN
             value: {{ .Values.sentry_dsn | quote }}
           - name: PYTHONWARNINGS
             value: 'ignore:Unverified HTTPS request'
-          - name: PGAPPNAME
-            value: cinder-volume-backup-vmware-{= name =}
           livenessProbe:
             exec:
-              command: ["openstack-agent-liveness", "--component", "cinder", "--config-file", "/etc/cinder/cinder.conf", "--config-file", "/etc/cinder/cinder-backup.conf"]
+              command: ["openstack-agent-liveness", "--component", "cinder", "--config-file", "/etc/cinder/cinder.conf", "--config-file", "/etc/cinder/cinder-backup.conf", "--config-file", "/etc/cinder/cinder.conf.d/secrets.conf"]
             initialDelaySeconds: 60
             periodSeconds: 60
             timeoutSeconds: 20
@@ -80,6 +79,8 @@ template: |
             mountPath: /etc/cinder/cinder.conf
             subPath: cinder.conf
             readOnly: true
+          - name: cinder-etc-confd
+            mountPath: /etc/cinder/cinder.conf.d
           - name: cinder-etc
             mountPath: /etc/cinder/policy.json
             subPath: policy.json
@@ -114,6 +115,9 @@ template: |
         - name: cinder-etc
           configMap:
             name: cinder-etc
+        - name: cinder-etc-confd
+          secret:
+            secretName: {{ .Release.Name }}-secrets
         - name: backup-config
           configMap:
             name:  backup-vmware-{= name =}

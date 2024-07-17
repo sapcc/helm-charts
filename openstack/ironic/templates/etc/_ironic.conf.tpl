@@ -21,8 +21,6 @@ versioned_notifications_topics = {{ .Values.versioned_notifications_topics  | de
 rpc_response_timeout = {{ .Values.rpc_response_timeout | default .Values.global.rpc_response_timeout | default 100 }}
 executor_thread_pool_size = {{ .Values.rpc_workers | default .Values.global.rpc_workers | default 64 }}
 
-{{- include "ini_sections.oslo_messaging_rabbit" .}}
-
 # time to live in sec of idle connections in the pool:
 conn_pool_ttl = {{ .Values.rpc_conn_pool_ttl | default 600 }}
 rpc_conn_pool_size = {{ .Values.rpc_conn_pool_size | default .Values.global.rpc_conn_pool_size | default 100 }}
@@ -55,8 +53,6 @@ public_endpoint = https://{{ include "ironic_api_endpoint_host_public" .}}
 api_workers = {{ .Values.api.api_workers }}
 
 [database]
-#connection = mysql+pymysql://ironic:{{.Values.global.dbPassword}}@ironic-mariadb.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}/ironic?charset=utf8
-connection = {{ include "db_url_mysql" . }}
 {{- include "ini_sections.database_options_mysql" . }}
 
 [keystone]
@@ -70,8 +66,6 @@ auth_version = v3
 www_authenticate_uri = https://{{include "keystone_api_endpoint_host_public" .}}/v3
 auth_url = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
 user_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}
-username = {{ .Values.global.ironicServiceUser }}{{ .Values.global.user_suffix }}
-password = {{ required ".Values.global.ironicServicePassword is missing" .Values.global.ironicServicePassword }}
 project_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}
 project_name = {{.Values.global.keystone_service_project | default "service"}}
 region_name = {{ .Values.global.region }}
@@ -92,8 +86,6 @@ auth_version = v3
 www_authenticate_uri = https://{{include "keystone_api_endpoint_host_public" .}}/v3
 auth_url = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
 user_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}
-username = {{ .Values.global.ironicServiceUser }}{{ .Values.global.user_suffix }}
-password = {{ required ".Values.global.ironicServicePassword is missing" .Values.global.ironicServicePassword }}
 project_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}
 project_name = {{.Values.global.keystone_service_project | default "service"}}
 insecure = True
@@ -104,15 +96,6 @@ swift_temp_url_duration = 3600
 # No terminal slash, it will break the url signing scheme
 swift_endpoint_url = {{ .Values.global.swift_endpoint_protocol | default "https" }}://{{ include "swift_endpoint_host" . }}:{{ .Values.global.swift_api_port_public | default 443 }}
 swift_api_version = v1
-{{- if .Values.swift_store_multi_tenant }}
-swift_store_multi_tenant = True
-{{- else}}
-    {{- if .Values.swift_multi_tenant }}
-swift_store_multiple_containers_seed = 32
-    {{- end }}
-swift_temp_url_key = {{required "A valid .Values.swift_tempurl required!" .Values.swift_tempurl }}
-swift_account = {{required "A valid .Values.swift_account required!" .Values.swift_account }}
-{{- end }}
 
 [swift]
 auth_section = service_catalog
@@ -152,7 +135,6 @@ ignore_req_list = GET, HEAD
 record_payloads = {{ if .Values.audit.record_payloads -}}True{{- else -}}False{{- end }}
 metrics_enabled = {{ if .Values.audit.metrics_enabled -}}True{{- else -}}False{{- end }}
 
-{{- include "ini_sections.audit_middleware_notifications" . }}
 {{- end }}
 
 {{- include "osprofiler" . }}

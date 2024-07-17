@@ -19,8 +19,6 @@ spec:
     metadata:
       labels:
         name: keppel-api
-        alert-tier: os
-        alert-service: keppel
       annotations:
         checksum/configmap: {{ include "keppel/templates/configmap.yaml" . | sha256sum }}
         checksum/secret: {{ include "keppel/templates/secret.yaml" . | sha256sum }}
@@ -72,13 +70,13 @@ spec:
               port: 80
             timeoutSeconds: 5
             periodSeconds: 5
-          # NOTE: observed resource usage in eu-de-1 (as of 2021-12)
-          # - CPU: 150m with 6 replicas was running into throttling, so give plenty headroom
+          # NOTE: observed resource usage in eu-de-1 (as of 2024-05)
+          # - CPU: 400m with 6 replicas was running into throttling, so give plenty headroom
           # - RAM: levels off around 50 Mi
           resources:
             requests:
-              cpu: "400m"
+              cpu: "500m"
               memory: "128Mi"
             limits:
-              cpu: "400m"
+              cpu: "500m"
               memory: "128Mi"

@@ -8,6 +8,8 @@ set -x
 function cleanup_tempest_leftovers() {
 
   echo " ============ Running cleanup ============ "
+  # Reset PENDIING_* statuses of all stuck loadbalancers
+  kubectl exec -it deploy/octavia-mariadb -c mariadb -- mysql -sN octavia -e "UPDATE load_balancer SET provisioning_status='ACTIVE' WHERE provisioning_status LIKE 'PENDING_%' and name LIKE 'tempest-%';"
   # Delete loadbalancers, lb flavors, pools, members for Admin
   export OS_USERNAME='neutron-tempestadmin1'
   export OS_TENANT_NAME='neutron-tempest-admin1'

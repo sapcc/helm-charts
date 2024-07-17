@@ -1,3 +1,6 @@
+global:
+  linkerd_requested: true
+
 owner-info:
   service: prometheus
   support-group: observability
@@ -14,10 +17,16 @@ thanos:
     hosts:
       - metrics.metal
       - thanos-metal
+  internalIngress:
+    enabled: true
+    hosts:
+      - metrics-internal.metal
+      - thanos-internal-metal
   grpcIngress:
     enabled: true
     hosts:
-      - thanos-metal
+      - thanos-metal-grpc
+
   queryDiscovery: true
 
   query:
@@ -48,17 +57,30 @@ regional_thanos:
       - metrics
       - thanos
 
+  internalIngress:
+    enabled: true
+    hosts:
+      - metrics-internal
+      - thanos-internal
+
   queryDiscovery: false
 
   query:
     replicas: 5
+    extraArgs:
+      - --query.promql-engine=thanos
 
   authentication:
     enabled: true
 
-  clusterTypes:
-    - metal
+  queryStoreAPIs:
+    # scaleout includes prometheus-infra, kubernetes-scaleout, vmware-*-*
+    # Regional secrets may override the list of store APIs
     - scaleout
+    - openstack
+    - infra-collector
+    - storage
+    - kubernetes-metal
     - kubernetes-virtual
     - kubernetes-admin
     - kubernetes-kubernikus

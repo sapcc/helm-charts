@@ -1,0 +1,23 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  labels:
+    prometheus: kubernetes
+    app: secrets-injector
+  name: secrets-injector-alerts
+  namespace: {{ .Release.Namespace }}
+spec:
+  groups:
+  - name: secrets-injector.alerts
+    rules:
+    - alert: SecretsInjectorNetworkErrors
+      annotations:
+        description: secrets-injector cannot reach vault. Check the logs in the {{ .Release.Namespace }} and the health of vault.
+        summary: secrets-injector has network errors.
+      expr: rate(secrets_injector_network_error_count[5m]) > 0
+      for: 10m
+      labels:
+        context: secrets-injector
+        service: secrets-injector
+        severity: warning
+        support_group: containers

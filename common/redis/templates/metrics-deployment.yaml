@@ -1,4 +1,10 @@
 {{- if .Values.metrics.enabled }}
+
+{{- $dockerHubMirror := .Values.global.dockerHubMirror | required ".Values.global.dockerHubMirror missing" -}}
+{{- if .Values.useAlternateRegion -}}
+  {{- $dockerHubMirror = .Values.global.dockerHubMirrorAlternateRegion | required ".Values.global.dockerHubMirrorAlternateRegion missing" -}}
+{{- end -}}
+
 kind: Deployment
 apiVersion: apps/v1
 
@@ -28,10 +34,6 @@ spec:
         chart: "{{ .Chart.Name }}-1.0.1"
         release: "{{ .Release.Name }}"
         heritage: "Tiller"
-        {{- if .Values.alerts.enabled }}
-        alert-tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
-        alert-service: {{ include "alerts.service" . }}
-        {{- end }}
       annotations:
         kubectl.kubernetes.io/default-container: {{ template "redis.fullname" . }}
         checksum/secret: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
@@ -43,8 +45,8 @@ spec:
     spec:
       containers:
         - name: metrics
-          image: {{ template "redis.metrics.image" . }}
-          imagePullPolicy: {{ .Values.metrics.image.pullPolicy | quote }}
+          image: {{ $dockerHubMirror }}/oliver006/redis_exporter:{{ .Values.metrics.image.tag }}
+          imagePullPolicy: Always
           env:
             - name: REDIS_ADDR
               value: {{ printf "%s:%d" ( include "redis.fullname" . ) (int .Values.redisPort) | quote }}

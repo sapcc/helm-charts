@@ -28,12 +28,12 @@ postgresql+psycopg2://{{$user}}:{{$password | urlquery}}@{{.Chart.Name}}-postgre
             {{- $user := get .Values.mariadb.users $db | required (printf ".Values.mariadb.%v.name & .password are required (key comes from first database in .Values.mariadb.databases)" $db) }}
             {{- $user.name | required (printf ".Values.mariadb.%v.name is required!" $db ) }}:{{ $user.password | required (printf ".Values.mariadb.%v.password is required!" $db ) }}
         {{- else }}
-            {{- coalesce .Values.dbUser .Values.global.dbUser "root" }}:{{ coalesce .Values.dbPassword .Values.global.dbPassword .Values.mariadb.root_password | required ".Values.mariadb.root_password is required!" | urlquery }}
+            {{- coalesce .Values.dbUser .Values.global.dbUser "root" }}:{{ coalesce .Values.dbPassword .Values.global.dbPassword .Values.mariadb.root_password | required ".Values.mariadb.root_password is required!" }}
         {{- end }}
     {{- else }}
         {{- $user := index . 2 }}
         {{- $password := index . 3 }}
-        {{- $user }}:{{ $password | urlquery }}
+        {{- $user }}:{{ $password }}
     {{- end }}
 {{- end }}
 
@@ -165,7 +165,7 @@ mysql+pymysql://{{ include "db_credentials" . }}@
 {{define "octavia_api_endpoint_host_internal"}}octavia-api.{{ include "svc_fqdn" . }}{{end}}
 {{define "octavia_api_endpoint_host_public"}}loadbalancer-3.{{ include "host_fqdn" . }}{{end}}
 
-{{define "andromeda_api_endpoint_public"}}andromeda.{{ include "host_fqdn" . }}{{end}}
+{{define "andromeda_api_endpoint_public"}}gtm-3.{{ include "host_fqdn" . }}{{end}}
 {{define "arc_api_endpoint_host_public"}}arc.{{ include "host_fqdn" . }}{{end}}
 {{define "archer_api_endpoint_public"}}archer.{{ include "host_fqdn" . }}{{end}}
 {{define "lyra_api_endpoint_host_public"}}lyra.{{ include "host_fqdn" . }}{{end}}
@@ -187,7 +187,7 @@ mysql+pymysql://{{ include "db_credentials" . }}@
     {{- $host := index . 0 }}
     {{- $user := index . 1 }}
     {{- $password := index . 2 -}}
-https://{{ $user }}:{{ $password | urlquery }}@{{ $host }}
+https://{{ $user }}:{{ $password }}@{{ $host }}
 {{- end }}
 
 {{- define "utils.bigip_url" }}

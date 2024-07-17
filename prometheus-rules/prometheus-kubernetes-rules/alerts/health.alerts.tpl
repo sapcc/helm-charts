@@ -7,9 +7,9 @@ groups:
     for: 1h
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
-      service: k8s
+      support_group: {{ required ".Values.supportGroup missing" .Values.supportGroup }}
+      service: {{ required ".Values.service missing" .Values.service }}
       severity: critical
-      support_group: containers
       context: node
       meta: "{{`{{ $value }}`}} nodes NotReady"
       dashboard: kubernetes-health
@@ -23,9 +23,9 @@ groups:
     for: 1h
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
-      service: k8s
+      support_group: {{ required ".Values.supportGroup missing" .Values.supportGroup }}
+      service: {{ required ".Values.service missing" .Values.service }}
       severity: warning
-      support_group: containers
       context: node
       meta: "{{`{{ $labels.node }}`}} is NotReady"
       dashboard: nodes?var-server={{`{{$labels.node}}`}}
@@ -40,9 +40,9 @@ groups:
     for: 1h
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
-      service: k8s
+      support_group: {{ required ".Values.supportGroup missing" .Values.supportGroup }}
+      service: {{ required ".Values.service missing" .Values.service }}
       severity: warning
-      support_group: containers
       context: node
       meta: "{{`{{ $labels.node }}`}}"
       dashboard: "nodes?var-server={{`{{$labels.node}}`}}"
@@ -51,13 +51,13 @@ groups:
       description: Node {{`{{ $labels.node }}`}} is flapping between Ready and NotReady
 
   - alert: KubernetesKubeStateMetricsScrapeFailed
-    expr: absent(up{app="kube-state-metrics"})
+    expr: up{job=~".*kube-state-metrics.*"} == 0 or absent(up{job=~".*kube-state-metrics.*"})
     for: 1h
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
-      service: k8s
+      support_group: {{ required ".Values.supportGroup missing" .Values.supportGroup }}
+      service: {{ required ".Values.service missing" .Values.service }}
       severity: warning
-      support_group: containers
       context: node
       dashboard: kubernetes-health
     annotations:
@@ -70,21 +70,36 @@ groups:
     labels:
       tier: {{ include "alertTierLabelOrDefault" .Values.tier }}
       service: {{ include "serviceFromLabelsOrDefault" "k8s" }}
-      support_group: {{ include "supportGroupFromLabelsOrDefault" "containers" }}
+      support_group: {{ include "supportGroupFromLabelsOrDefault" .Values.supportGroup }}
       severity: warning
       context: pod
       meta: "Pod {{`{{ $labels.namespace }}`}}/{{`{{ $labels.pod }}`}} is restarting constantly"
+      playbook: docs/support/playbook/kubernetes/k8s_pod_restarting
     annotations:
       description: Container {{`{{ $labels.container }}`}} of pod {{`{{ $labels.namespace }}`}}/{{`{{ $labels.pod }}`}} is restarting constantly.{{`{{ if eq $labels.support_group "containers"}}`}} Is `owner-info` set --> Contact respective service owner! If not, try finding him/her and make sure, `owner-info` is set!{{`{{ end }}`}}
       summary: Pod is in a restart loop
+
+  - alert: KubernetesPodCannotPullImage
+    expr: label_replace((sum by(pod_name, namespace) (rate(kube_pod_image_pull_backoff_total[15m]))), "pod", "$1", "pod_name", "(.*)") * on (pod) group_left(label_alert_tier, label_alert_service, label_ccloud_support_group, label_ccloud_service) (max without (uid) (kube_pod_labels)) > 0
+    for: 1h
+    labels:
+      tier: {{ include "alertTierLabelOrDefault" .Values.tier }}
+      service: {{ include "serviceFromLabelsOrDefault" "k8s" }}
+      support_group: {{ include "supportGroupFromLabelsOrDefault" .Values.supportGroup }}
+      severity: warning
+      context: pod
+      meta: "Pod {{`{{ $labels.namespace }}`}}/{{`{{ $labels.pod }}`}} cannot pull all images"
+    annotations:
+      description: The pod {{`{{ $labels.namespace }}`}}/{{`{{ $labels.pod }}`}} cannot pull all images.{{`{{ if eq $labels.support_group "containers"}}`}} Is `owner-info` set --> Contact respective service owner! If not, try finding him/her and make sure, `owner-info` is set!{{`{{ end }}`}}
+      summary: Pod cannot pull all iamges
 
   - alert: KubernetesTooManyOpenFiles
     expr: 100*process_open_fds{job=~"kubernetes-kubelet|kubernetes-apiserver"} / process_max_fds > 50
     for: 10m
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
-      service: k8s
-      support_group: containers
+      support_group: {{ required ".Values.supportGroup missing" .Values.supportGroup }}
+      service: {{ required ".Values.service missing" .Values.service }}
       severity: warning
       context: system
       meta: "{{`{{ $labels.node }}`}}"
@@ -99,7 +114,7 @@ groups:
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
       service: {{ include "serviceFromLabelsOrDefault" "k8s" }}
-      support_group: {{ include "supportGroupFromLabelsOrDefault" "containers" }}
+      support_group: {{ include "supportGroupFromLabelsOrDefault" .Values.supportGroup }}
       severity: warning
       context: deployment
       meta: "{{`{{ $labels.namespace }}`}}/{{`{{ $labels.deployment }}`}} has insufficient replicas"
@@ -114,7 +129,7 @@ groups:
     labels:
       tier: {{ include "alertTierLabelOrDefault" .Values.tier }}
       service: {{ include "serviceFromLabelsOrDefault" "k8s" }}
-      support_group: {{ include "supportGroupFromLabelsOrDefault" "containers" }}
+      support_group: {{ include "supportGroupFromLabelsOrDefault" .Values.supportGroup }}
       severity: info
     annotations:
       description: "The pod {{`{{ $labels.namespace }}`}}/{{`{{ $labels.pod }}`}} is not ready for more then 2h."
@@ -126,7 +141,7 @@ groups:
     labels:
       tier: {{ include "alertTierLabelOrDefault" .Values.tier }}
       service: {{ include "serviceFromLabelsOrDefault" "k8s" }}
-      support_group: {{ include "supportGroupFromLabelsOrDefault" "containers" }}
+      support_group: {{ include "supportGroupFromLabelsOrDefault" .Values.supportGroup }}
       severity: warning
       playbook: docs/support/playbook/kubernetes/target_scraped_multiple_times
       meta: 'Prometheus is scraping {{`{{ $labels.pod }}`}} pods more than once.'

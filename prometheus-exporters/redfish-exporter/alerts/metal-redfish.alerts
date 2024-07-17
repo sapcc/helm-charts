@@ -1,6 +1,6 @@
 groups:
 - name: metal-redfish.alerts
-  rules:      
+  rules:   
   - alert: MetalDiskRedfishWarning
     expr: count(max_over_time(redfish_health{job!="redfish-bb", type=~"(disk|storage|chassis)"}[30m]) == 1) by (server_name, type, exported_name, serial)
     for: 10m
@@ -15,11 +15,12 @@ groups:
     annotations:
       description: "Server {{ $labels.server_name }} hardware error. Type: {{ $labels.type }} / Name: {{ $labels.exported_name }} /  Serial: {{ $labels.serial }}"
       summary: "Hardware error for server: {{ $labels.server_name }}"
+
   - alert: MetalRedfishDownWarning
-    expr: count(redfish_up == 0) by (host, instance, manufacturer)
+    expr: count(max_over_time(redfish_up[10m]) == 0) by (host, instance, manufacturer)
     for: 1h
     labels:
-      severity: warning
+      severity: info
       tier: metal
       service: baremetal
       support_group: compute
@@ -29,3 +30,31 @@ groups:
     annotations:
       description: "Server {{ $labels.host }} remote board connectivity error. Instance: {{ $labels.instance }} Manufacturer: {{ $labels.manufacturer }}"
       summary: "Remote board connectivity error for server: {{ $labels.host }}"
+
+  - alert: MetalRedfishCertWarning
+    expr: count(max_over_time(redfish_certificate_valid_days[10m]) < 7) by (host, not_after)
+    for: 1h
+    labels:
+      severity: warning
+      tier: metal
+      service: baremetal
+      support_group: foundation
+      context: "{{ $labels.host }}"
+      meta: "The certificate of the Remote Board of Server {{ $labels.host }} will expire on {{ $labels.not_after }}."
+    annotations:
+      description: "The certificate of the Remote Board of Server {{ $labels.host }} will expire on {{ $labels.not_after }}."
+      summary: "Remote Board Certificate expiration for server {{ $labels.host }}."
+
+  - alert: MetalRedfishCertInfo
+    expr: count(max_over_time(redfish_certificate_valid_days[10m]) < 10) by (host, not_after)
+    for: 1h
+    labels:
+      severity: info
+      tier: metal
+      service: baremetal
+      support_group: foundation
+      context: "{{ $labels.host }}"
+      meta: "The certificate of the Remote Board of Server {{ $labels.host }} will expire on {{ $labels.not_after }}."
+    annotations:
+      description: "The certificate of the Remote Board of Server {{ $labels.host }} will expire on {{ $labels.not_after }}."
+      summary: "Remote Board Certificate expiration for server {{ $labels.host }}."
