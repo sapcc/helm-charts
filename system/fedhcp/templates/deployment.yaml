@@ -18,7 +18,8 @@ spec:
       {{- include "fedhcp.selectorLabels" . | nindent 8 }}
     spec:
       containers:
-      - env:
+      - args: {{- toYaml .Values.fedhcp.fedhcp.args | nindent 8 }}
+        env:
         - name: KUBERNETES_CLUSTER_DOMAIN
           value: {{ quote .Values.kubernetesClusterDomain }}
         image: {{ .Values.fedhcp.fedhcp.image.repository }}:{{ .Values.fedhcp.fedhcp.image.tag
@@ -33,6 +34,7 @@ spec:
         volumeMounts:
         - mountPath: /coredhcp
           name: config
+      hostNetwork: true
       serviceAccountName: {{ include "fedhcp.fullname" . }}-fedhcp
       volumes:
       - configMap:

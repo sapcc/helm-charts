@@ -111,7 +111,7 @@ build-fedhcp:
 	$(call build-chart,fedhcp,https://github.com/ironcore-dev/fedhcp//config/default,$(FEDHCP_VERSION))
 	@yq -i '.controllerManager.manager.image.tag="$(FEDHCP_VERSION)"' fedhcp/values.yaml
 	@yq -i '.fullnameOverride="fedhcp"' fedhcp/values.yaml
-	@yq -i '.version="0.0.1"' fedhcp/Chart.yaml
+	@yq -i '.version="0.0.2"' fedhcp/Chart.yaml
 
 # chart name, source url, tag
 define build-chart
