@@ -1,0 +1,38 @@
+#!/var/lib/openstack/bin/python3
+import pathlib
+import os
+import platform
+import textwrap
+import uuid
+
+import requests
+import yaml
+
+def get_hostname():
+    node = platform.node().split(".", 1)[0]
+    # Is the hostname already matching our pattern
+    if not node.startswith("shoot--"):
+        return node
+
+    try:
+        mac = uuid.getnode()
+        query = f'{{ interface_list(mac_address: "{mac:012x}") {{ device {{ name }} }} }}'
+
+        response = requests.post(
+            "https://netbox.global.cloud.sap/graphql/", json={"query": query}
+        )
+
+        response.raise_for_status()
+        json = response.json()
+        name = json['data']['interface_list'][0]['device']['name'].split(".", 1)[0]
+        return "kvm-" + name
+    except (IndexError, KeyError):
+        return node
+
+
+hostname = get_hostname()
+
+pathlib.Path('hostname.conf').write_text(textwrap.dedent(f"""\
+    [DEFAULT]
+    host={hostname}
+    """))
