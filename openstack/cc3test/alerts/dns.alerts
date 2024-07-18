@@ -19,6 +19,23 @@ groups:
       description: 'Openstack Designate API is down'
       summary: 'Openstack Designate API is down'
 
+  - alert: OpenstackDesignateGlobalApiDown
+    expr: |
+        cc3test_status{service="designate-global", type="api", phase="call"} == 0
+    for: 16m
+    labels:
+      severity: warning
+      support_group: network-api
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      meta: 'Openstack Designate Global API is down'
+      playbook: 'docs/support/playbook/designate/alerts/cc3test-alert-api/'
+      report: 'cc3test/admin/object-storage/swift/containers/cc3test/objects/{{ $labels.base64path }}'
+    annotations:
+      description: 'Openstack Designate Global API is down'
+      summary: 'Openstack Designate Global API is down'
+
   - alert: OpenstackDesignateApiFlapping
     expr: |
         changes(cc3test_status{service="designate", type="api", phase="call"}[30m]) > 8
