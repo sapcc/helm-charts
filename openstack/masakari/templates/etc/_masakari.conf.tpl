@@ -2,6 +2,7 @@
 [DEFAULT]
 log_config_append = /etc/masakari/logging.ini
 state_path = /var/lib/masakari
+masakari_api_listen_port = {{ .Values.masakariApiPortInternal }}
 
 memcache_servers = {{ .Chart.Name }}-memcached.{{ include "svc_fqdn" . }}:{{ .Values.memcached.memcached.port | default 11211 }}
 
@@ -45,3 +46,6 @@ policy_file = /etc/masakari/policy.yaml
 {{- include "ini_sections.cache" . }}
 
 {{- include "util.helpers.valuesToIni" .Values.masakari_conf }}
+
+[wsgi]
+api_paste_config = /var/lib/openstack/etc/masakari/api-paste.ini
