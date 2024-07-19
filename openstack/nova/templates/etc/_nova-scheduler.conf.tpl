@@ -34,4 +34,5 @@ hv_ram_class_weight_multiplier = {{ .Values.scheduler.hv_ram_class_weight_multip
 hv_ram_class_weights_gib = {{ .Values.scheduler.hv_ram_class_weights_gib }}
 decommissioning_weight_multiplier = {{ .Values.scheduler.decommissioning_weight_multiplier }}
 sapphire_rapids_weight_multiplier = {{ .Values.scheduler.sapphire_rapids_weight_multiplier }}
+aggregate_multi_tenancy_isolation_weight_multiplier = {{ .Values.scheduler.aggregate_multi_tenancy_isolation_weight_multiplier }}
 image_properties_default_architecture = {{ .Values.scheduler.image_properties_default_architecture }}
