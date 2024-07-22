@@ -107,7 +107,7 @@ spec:
             containerPort: {{ default "5672" .Values.ports.public }}
           - name: management
             containerPort: {{ default "15672" .Values.ports.management }}
-{{- if and (not .Values.metrics.sidecar.enabled) .Values.metrics.enabled }}
+{{- if .Values.metrics.enabled }}
           - name: metrics
             containerPort: {{ default "15692" .Values.metrics.port }}
 {{- end }}
@@ -121,25 +121,6 @@ spec:
             name: rabbitmq-custom-config
             subPath: 20-custom.conf
         {{- end }}
-{{- if and .Values.metrics.sidecar.enabled .Values.metrics.enabled }}
-      - name: metrics
-        image: {{include "dockerHubMirror" .}}/{{ .Values.metrics.image }}:{{ .Values.metrics.imageTag }}
-        imagePullPolicy: {{ default "IfNotPresent" .Values.metrics.imagePullPolicy | quote }}
-        env:
-          - name: PUBLISH_PORT
-            value: {{ default "9150" .Values.metrics.port | quote }}
-          - name: RABBIT_USER
-            value: {{ .Values.metrics.user | quote }}
-          - name: RABBIT_PASSWORD
-            value: {{ required ".Values.metrics.password missing" .Values.metrics.password | quote }}
-          - name: RABBIT_URL
-            value: "http://127.0.0.1:{{.Values.ports.management}}"
-        resources:
-{{ toYaml .Values.metrics.resources | indent 10 }}
-        ports:
-          - name: metrics
-            containerPort: {{ default "9150" .Values.metrics.port }}
-{{- end }}
       priorityClassName: {{ default "openstack-service-critical" .Values.priority_class | quote }}
       volumes:
       {{- if not .Values.persistence.enabled }}
