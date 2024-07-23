@@ -1,8 +1,8 @@
 
 ---
 checksums:
-  my.cnf: &mycnf "d1f8dff8524a5085f82a47d181816a2d202f0d6d4b5f0fe721632348c8fa587a"
-  configmap: &configmap "562ce7be760b7627c65c10c35dfdf0dd4e25953c822baeb018d1ac4a8facfb84"
+  my.cnf: &mycnf "0eaa7b13cf7aa2687ee8fce35ee15a3a4e5ce6b167113da1d8b9092c76d457db"
+  configmap: &configmap "55d0ce4878c8ac8e8828b03079a498e9b9559b1e95b4c1ebd5111c2395ada4ba"
 
 suite: statefulset-mariadb
 values:
@@ -1010,20 +1010,33 @@ tests:
           value: "TCP"
       - equal:
           path: spec.template.spec.containers[0].ports[2].name
-          value: "sst"
+          value: "mysql"
       - equal:
           path: spec.template.spec.containers[0].ports[2].containerPort
-          value: 4444
+          value: 3306
       - equal:
           path: spec.template.spec.containers[0].ports[2].protocol
           value: "TCP"
-      - notExists:
+      - equal:
           path: spec.template.spec.containers[0].ports[3].name
+          value: "sst"
+      - equal:
+          path: spec.template.spec.containers[0].ports[3].containerPort
+          value: 4444
+      - equal:
+          path: spec.template.spec.containers[0].ports[3].protocol
+          value: "TCP"
+      - notExists:
+          path: spec.template.spec.containers[0].ports[4].name
 
   - it: set db container ports
     template: statefulset-mariadb.yaml
     set:
       mariadb.galera.clustername: "testclustername"
+      services.database.backend.ports.mysql:
+        port: 3300
+        targetPort: 3300
+        protocol: "UDP"
       services.database.backend.ports.galera:
         port: 4444
         targetPort: 4445
@@ -1061,24 +1074,33 @@ tests:
           value: "UDP"
       - equal:
           path: spec.template.spec.containers[0].ports[2].name
-          value: "sst"
+          value: "mysql"
       - equal:
           path: spec.template.spec.containers[0].ports[2].containerPort
-          value: 6667
+          value: 3300
       - equal:
           path: spec.template.spec.containers[0].ports[2].protocol
           value: "UDP"
       - equal:
           path: spec.template.spec.containers[0].ports[3].name
-          value: "test"
+          value: "sst"
       - equal:
           path: spec.template.spec.containers[0].ports[3].containerPort
-          value: 7776
+          value: 6667
       - equal:
           path: spec.template.spec.containers[0].ports[3].protocol
+          value: "UDP"
+      - equal:
+          path: spec.template.spec.containers[0].ports[4].name
+          value: "test"
+      - equal:
+          path: spec.template.spec.containers[0].ports[4].containerPort
+          value: 7776
+      - equal:
+          path: spec.template.spec.containers[0].ports[4].protocol
           value: "TCP"
       - notExists:
-          path: spec.template.spec.containers[0].ports[4].name
+          path: spec.template.spec.containers[0].ports[5].name
 
   - it: default db startup propes
     template: statefulset-mariadb.yaml
