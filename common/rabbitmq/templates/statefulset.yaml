@@ -29,7 +29,8 @@ spec:
 {{- if and (and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested) $.Values.linkerd.enabled }}
         linkerd.io/inject: enabled
 {{- end }}
-        checksum/container.init: {{ include (print $.Template.BasePath "/bin-secret.yaml") . | sha256sum }}
+        checksum/container.init: {{ include (print $.Template.BasePath "/bin-configmap.yaml") . | sha256sum }}
+        checksum/users: {{ include (print $.Template.BasePath "/users-secret.yaml") . | sha256sum }}
 {{- if .Values.customConfig }}
         checksum/custom.conf: {{ include (print .Template.BasePath "/etc/_rabbitmq-custom-config.tpl") . | sha256sum }}
 {{- end }}
@@ -116,6 +117,8 @@ spec:
             name: rabbitmq-persistent-storage
           - mountPath: /container.init
             name: container-init
+          - mountPath: /etc/rabbitmq/secrets
+            name: rabbitmq-users-config
         {{- if .Values.customConfig }}
           - mountPath: /etc/rabbitmq/conf.d/20-custom.conf
             name: rabbitmq-custom-config
@@ -128,8 +131,13 @@ spec:
           emptyDir: {}
       {{- end }}
         - name: container-init
-          secret:
-            secretName: {{ template "fullname" . }}-bin
+          configMap:
+            name: {{ template "fullname" . }}-bin
+        - name: rabbitmq-users-config
+          projected:
+            sources:
+            - secret:
+                name: {{ template "fullname" . }}-users
       {{- if .Values.customConfig }}
         - name: rabbitmq-custom-config
           configMap:
