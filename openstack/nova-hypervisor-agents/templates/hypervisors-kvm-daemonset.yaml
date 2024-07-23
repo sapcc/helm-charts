@@ -56,6 +56,31 @@ spec:
             name: bin
           - mountPath: /etc/nova/nova-compute.conf.d
             name: nova-compute-etc
+      {{- if and .Values.hypervisor_on_host .Values.defaults.hypervisor.kvm.instance_nfs_share }}
+      - name: setup-nfs
+        image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/{{ .Values.imageName }}:{{ .Values.imageVersion | required "Please set imageVersion similar" }}
+        imagePullPolicy: IfNotPresent
+        securityContext:
+          privileged: true
+          runAsUser: 0
+        command:
+        - bash
+        - -c
+        - |
+          set -euxo pipefail
+          DIR=/var/lib/nova/instances
+          mount -t nfs -o {{ dig "config_file" "libvirt" "nfs_mount_options" "defaults" $hypervisor }} {{ .Values.defaults.hypervisor.kvm.instance_nfs_share }} "$DIR"
+          sudo chgrp 64055 "$DIR"
+          sudo chown 42436 "$DIR"
+        volumeMounts:
+        - mountPath: /var/lib/nfs
+          name: nfs
+        - mountPath: /sys
+          name: sys
+        - mountPath: /var/lib/nova/instances
+          mountPropagation: Bidirectional
+          name: instances
+      {{- end }}
       {{- if not .Values.hypervisor_on_host }}
       - name: load-kernel-mod
         image: {{ required ".Values.global.dockerHubMirror is missing" .Values.global.dockerHubMirror }}/library/busybox
@@ -72,7 +97,7 @@ spec:
         volumeMounts:
         - mountPath: /var/lib/nova/instances
           name: instances
-{{- end }}
+      {{- end }}
       containers:
         - name: nova-compute
           image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/{{ .Values.imageName }}:{{ .Values.imageVersion | required "Please set imageVersion similar" }}
