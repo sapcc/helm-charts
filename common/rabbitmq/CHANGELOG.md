@@ -3,6 +3,13 @@ Rabbitmq CHANGELOG
 
 This file is used to list changes made in each version of the common chart rabbitmq.
 
+0.8.0
+-----
+- Remove support of the insecure rabbitmq-exporter sidecar container
+  1. Sidecar uses plaintext credentials in environment variables
+  2. Sidecar utilises Management API metrics
+  3. Management API metrics will not be supported in future RabbitMQ releases
+
 0.7.5
 -----
 - remove shared service labels from volumeClaimTemplates, because it's immutable
