@@ -1,0 +1,17 @@
+groups:
+  - name: netapp-storage.alerts
+    rules:
+      # NetApp LIFs limit is 1024 per HA pair (from ONTAP 9.13 onwards)
+      - alert: ManilaStorageNetworkInterfaceUsageHigh
+        expr: max_over_time(count by (filer) (netapp_lif_labels{app="netapp-harvest-exporter-manila"})[2h:5m]) > 950
+        for: 1h
+        labels:
+          severity: info
+          context: netapp-usage
+          service: manila
+          tier: os
+          support_group: compute-storage-api
+          support_component: manila_netapp
+        annotations:
+          description: 'Number of NetApp LIFs in use is above 950'
+          summary: 'High NetApp LIF Usage on filer {{$labels.filer}}'
