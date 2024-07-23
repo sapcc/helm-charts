@@ -105,6 +105,13 @@ promrole:
   backend_roles:
   - CC_IAS_OPERATIONS_UI_KIBANA_SUPPORT
 
+oraboskvmrole:
+  reserved: false
+  users:
+  - "oraboskvm"
+  backend_roles:
+  - CC_IAS_OPERATIONS_UI_KIBANA_SUPPORT
+
 jupyterhub:
   reserved: false
   users:
