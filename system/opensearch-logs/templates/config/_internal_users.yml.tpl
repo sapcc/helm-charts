@@ -32,6 +32,12 @@ compute:
   backend_roles:
   - "compute"
 
+oraboskvm:
+  hash: "{{ .Values.users.oraboskvm.hash }}"
+  reserved: true
+  backend_roles:
+  - "oraboskvm"
+
 otel:
   hash: "{{ .Values.users.otel.hash }}"
   reserved: true
