@@ -45,8 +45,6 @@ namePrefix:
   # **CRITICAL**: *Enabling or changing this setting after the Galera cluster has been rolled out will cause (temporary) data loss, because pods with new names and new persistant volumes will be created*
   # @default -- false
   includeClusterName:
-# -- only useful for benchmarking [www.kernel.org drop_caches](https://www.kernel.org/doc/html/latest/admin-guide/sysctl/vm.html?highlight=drop_caches#drop-caches)
-cleanOsCacheAtStartup: false
 scripts:
   # -- how many times should script functions retry before failing
   # @default -- 10
@@ -850,25 +848,11 @@ image:
     pullSecret:
 
 initContainers:
-  increaseMapCount:
-    securityContext:
-      # -- (bool) required to configure `/proc/sys/vm/max_map_count` in the init phase
-      privileged: true
-      # -- (int) required to configure `/proc/sys/vm/max_map_count` in the init phase
-      # @default -- 0
-      runAsUser:
   tcpKeepAlive:
     securityContext:
       # -- (bool) required to configure `net.ipv4.tcp_keepalive_time` in the init phase
       privileged: true
       # -- (int) required to configure `net.ipv4.tcp_keepalive_time` in the init phase
-      # @default -- 0
-      runAsUser:
-  cleanoscache:
-    securityContext:
-      # -- (bool) required to configure `/proc/sys/vm/drop_caches` in the init phase
-      privileged: true
-      # -- (int) required to configure `/proc/sys/vm/drop_caches` in the init phase
       # @default -- 0
       runAsUser:
   fixMariaDBFsPermissions:

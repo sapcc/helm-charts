@@ -46,7 +46,7 @@ Docker images and Helm chart to deploy a [MariaDB](https://mariadb.com/kb/en/get
 ## Metadata
 | chart version | app version | type | url |
 |:--------------|:-------------|:-------------|:-------------|
-| 0.29.3 | 10.5.25 | application | [Git repo](https://github.com/sapcc/helm-charts/tree/master/common/mariadb-galera) |
+| 0.29.4 | 10.5.25 | application | [Git repo](https://github.com/sapcc/helm-charts/tree/master/common/mariadb-galera) |
 
 | Name | Email | Url |
 | ---- | ------ | --- |
@@ -166,13 +166,12 @@ docker build --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=22.
   ```
 * [push](https://helm.sh/docs/topics/registries/#the-push-subcommand) the chart to the registry
   ```shell
-  helm push mariadb-galera-0.29.3.tgz oci://keppel.eu-de-1.cloud.sap/ccloud-helm/
+  helm push mariadb-galera-0.29.4.tgz oci://keppel.eu-de-1.cloud.sap/ccloud-helm/
   ```
 
 ### values description
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
-| cleanOsCacheAtStartup | bool | `false` | only useful for benchmarking [www.kernel.org drop_caches](https://www.kernel.org/doc/html/latest/admin-guide/sysctl/vm.html?highlight=drop_caches#drop-caches) |
 | env.COLLECT_INFO_SCHEMA_INNODB_TABLESPACES.containerType[0] | string | `"monitoring"` |  |
 | env.COLLECT_INFO_SCHEMA_INNODB_TABLESPACES.value | string | `"enable"` |  |
 | env.GALERA_SST_PASSWORD.containerType | list | `["database","databasecfgjob","proxysql"]` | for which containers this environment variable will be used |
@@ -311,14 +310,10 @@ docker build --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=22.
 | image.pullSecrets.secretname.credential | string | `nil` | the combined username & password string that is valid for the container registry |
 | image.pullSecrets.secretname.enabled | bool | `nil` | enable this [Kubernetes pull secret](https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/) |
 | image.pullSecrets.secretname.registry | string | `nil` | the hostname of the container registry that should be used for the pull secret |
-| initContainers.cleanoscache.securityContext.privileged | bool | `true` | required to configure `/proc/sys/vm/drop_caches` in the init phase |
-| initContainers.cleanoscache.securityContext.runAsUser | int | 0 | required to configure `/proc/sys/vm/drop_caches` in the init phase |
 | initContainers.fixMariaDBFsPermissions.securityContext.privileged | bool | `true` | required to fix FS permissions of mariadb persistent volumes in the init phase |
 | initContainers.fixMariaDBFsPermissions.securityContext.runAsUser | int | 0 | required to fix FS permissions of mariadb persistent volumes in the init phase |
 | initContainers.fixProxysqlFsPermissions.securityContext.privileged | bool | `true` | required to fix FS permissions of porxysql persistent volumes in the init phase |
 | initContainers.fixProxysqlFsPermissions.securityContext.runAsUser | int | 0 | required to fix FS permissions of porxysql persistent volumes in the init phase |
-| initContainers.increaseMapCount.securityContext.privileged | bool | `true` | required to configure `/proc/sys/vm/max_map_count` in the init phase |
-| initContainers.increaseMapCount.securityContext.runAsUser | int | 0 | required to configure `/proc/sys/vm/max_map_count` in the init phase |
 | initContainers.tcpKeepAlive.securityContext.privileged | bool | `true` | required to configure `net.ipv4.tcp_keepalive_time` in the init phase |
 | initContainers.tcpKeepAlive.securityContext.runAsUser | int | 0 | required to configure `net.ipv4.tcp_keepalive_time` in the init phase |
 | livenessProbe.failureThreshold.database | int | 4 | How many [retries](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) are allowed before the liveness probe for the MariaDB Galera pods are marked as failed |
@@ -625,6 +620,9 @@ docker build --build-arg BASE_SOFT_NAME=ubuntu --build-arg BASE_SOFT_VERSION=22.
 | services.database.backend.ports.ist.port | int | `4568` | exposed Galera [incremental state transfer port](http://galeracluster.com/library/documentation/galera-parameters.html#ist-recv-addr) |
 | services.database.backend.ports.ist.protocol | string | `"TCP"` | Galera [incremental state transfer port](http://galeracluster.com/library/documentation/galera-parameters.html#ist-recv-addr) protocol |
 | services.database.backend.ports.ist.targetPort | int | `4568` | Galera [incremental state transfer port](http://galeracluster.com/library/documentation/galera-parameters.html#ist-recv-addr) configured in the container |
+| services.database.backend.ports.mysql.port | int | `3306` | exposed MariaDB [SQL port](https://mariadb.com/kb/en/connecting-to-mariadb/#port) |
+| services.database.backend.ports.mysql.protocol | string | `"TCP"` | MariaDB [SQL port](https://mariadb.com/kb/en/connecting-to-mariadb/#port) protocol |
+| services.database.backend.ports.mysql.targetPort | int | `3306` | MariaDB [SQL port](https://mariadb.com/kb/en/connecting-to-mariadb/#port) configured in the container |
 | services.database.backend.ports.sst.port | int | `4444` | exposed Galera [state snapshot transfer port](https://mariadb.com/kb/en/introduction-to-state-snapshot-transfers-ssts/) |
 | services.database.backend.ports.sst.protocol | string | `"TCP"` | Galera [state snapshot transfer port](https://mariadb.com/kb/en/introduction-to-state-snapshot-transfers-ssts/) protocol |
 | services.database.backend.ports.sst.targetPort | int | `4444` | Galera [state snapshot transfer port](https://mariadb.com/kb/en/introduction-to-state-snapshot-transfers-ssts/) configured in the container |

@@ -97,16 +97,6 @@ spec:
         securityContext:
           privileged: {{ $.Values.initContainers.tcpKeepAlive.securityContext.privileged | default true }}
           runAsUser: {{ $.Values.initContainers.tcpKeepAlive.securityContext.runAsUser | default 0 | int }}
-      - name: increase-map-count
-        image: "{{ $.Values.image.os.registry }}/{{ $.Values.image.os.project }}/{{ $.Values.image.os.softwarename }}:{{ $.Values.image.os.softwareversion }}-{{ $.Values.image.os.imageversion | int }}"
-        imagePullPolicy: {{ $.Values.image.os.pullPolicy | default "IfNotPresent" | quote }}
-        command:
-        - sh
-        - -c
-        - 'echo 262144 > /proc/sys/vm/max_map_count'
-        securityContext:
-          privileged: {{ $.Values.initContainers.increaseMapCount.securityContext.privileged | default true }}
-          runAsUser: {{ $.Values.initContainers.increaseMapCount.securityContext.runAsUser | default 0 | int }}
       {{- if $.Values.proxy.proxysql.fixFsPermissions}}
       - name: fix-proxysql-fs-permissions
         image: "{{ $.Values.image.os.registry }}/{{ $.Values.image.os.project }}/{{ $.Values.image.os.softwarename }}:{{ $.Values.image.os.softwareversion }}-{{ $.Values.image.os.imageversion | int }}"
@@ -116,6 +106,7 @@ spec:
         - -c
         - 'chown -R {{ $.Values.userId.proxy | default 3100 | int }}:{{ $.Values.groupId.proxy | default 3100 | int }} /mnt/*'
         securityContext:
+          privileged: {{ $.Values.initContainers.fixProxysqlFsPermissions.securityContext.privileged }}
           runAsUser: {{ $.Values.initContainers.fixProxysqlFsPermissions.securityContext.runAsUser | default 0 | int }}
         volumeMounts:
         {{- range $volumeMountsKey, $volumeMountsValue := $.Values.volumeMounts.proxy.proxysql }}

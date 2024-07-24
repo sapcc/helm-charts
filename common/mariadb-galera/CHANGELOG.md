@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.29.4 - 2024/07/23
+* init containers to set `vm.max_map_count` and `vm.drop_caches` removed
+  * because both settings are not required for the related components
+  * unit tests updated
+* chart version bumped
+
 ## v0.29.3 - 2024/07/23
 * mysql port `3306` added to the list of backend service ports
 * chart version bumped
