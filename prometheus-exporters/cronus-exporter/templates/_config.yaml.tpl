@@ -1,6 +1,7 @@
 {{- if .Values.exporter.enabled -}}
 exporter:
   duration: {{ .Values.exporter.duration }}
+  nebulaEndpoint: {{ .Values.simulator.nebulaApiEndpoint }}
   prometheusPort: {{ .Values.exporter.prometheusPort }}
   period: {{ .Values.exporter.period }}
   multicloudEndpoint: {{ .Values.config.multiCloud.endpoint }}
