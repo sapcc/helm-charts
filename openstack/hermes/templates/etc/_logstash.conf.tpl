@@ -463,7 +463,7 @@ output {
     if ([@metadata][index]) {
       opensearch {
           id => "output_opensearch_clone_for_audit_1"
-          index => "audit-%{[@metadata][index]}-%{+YYYY.MM}"
+          index => "audit-%{[@metadata][index]}"
           template => "/hermes-etc/audit.json"
           template_name => "audit"
           template_overwrite => true
@@ -481,7 +481,7 @@ output {
     } else {
       opensearch {
           id => "output_opensearch_clone_for_audit_2"
-          index => "audit-default-%{+YYYY.MM}"
+          index => "audit-default"
           template => "/hermes-etc/audit.json"
           template_name => "audit"
           template_overwrite => true
@@ -502,7 +502,7 @@ output {
   if ([@metadata][index2] and [@metadata][index2] != [@metadata][index] and [type] == 'clone_for_cc') {
     opensearch {
         id => "output_opensearch_clone_for_cc"
-        index => "audit-%{[@metadata][index2]}-%{+YYYY.MM}"
+        index => "audit-%{[@metadata][index2]}"
         template => "/hermes-etc/audit.json"
         template_name => "audit"
         template_overwrite => true
