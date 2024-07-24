@@ -25,29 +25,18 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
 rabbit://{{ default "" $envAll.Values.global.user_suffix | print $rabbitmq.users.default.user }}:{{ required "$rabbitmq.users.default.password missing" $rabbitmq.users.default.password }}@{{ include "rabbitmq.release_host" $envAll }}:{{ $rabbitmq.port | default 5672 }}{{ $rabbitmq.virtual_host | default "/" }}
 {{- end}}
 
-{{- define "rabbitmq.shell_quote" -}}
-"{{ replace `\` `\\` . | replace `"` `\"` | replace `$` `\$` | replace "`" "\\`" }}"
-{{- end }}
-
-{{- define "rabbitmq.upsert_user" -}}
-    {{- $path := index . 0 -}}
-    {{- $v := index . 1 -}}
-    {{- if not $v.user }}
-        {{- fail (printf "%v.user missing" $path) }}
-    {{- else if hasPrefix "-" $v.user }}
-        {{- fail (printf "%v.user starts with hypen" $path) }}
-    {{- else if not $v.password }}
-        {{- fail (printf "%v.password missing" $path) }}
-    {{- else if hasPrefix "-" $v.password }}
-        {{- fail (printf "%v.password starts with hypen" $path) }}
-    {{- else if or (contains "vault+kvv2" $v.password) (contains "vault+kvv2" $v.user)}}
-        {{- printf "%s %s %s" "upsert_user" $v.user $v.password }}
-        {{- if $v.tag }} {{ $v.tag | include "rabbitmq.shell_quote" }}
-        {{- end }}
-    {{- else -}}
-        upsert_user {{ $v.user | include "rabbitmq.shell_quote" }} {{ $v.password | include "rabbitmq.shell_quote" }}
-        {{- if $v.tag }} {{ $v.tag | include "rabbitmq.shell_quote" }}
-        {{- end }}
+{{- define "rabbitmq._validate_users" -}}
+    {{- $users := . -}}
+    {{- range $path, $v := $users }}
+      {{- if not $v.user }}
+          {{- fail (printf "%v.user missing" $path) }}
+      {{- else if hasPrefix "-" $v.user }}
+          {{- fail (printf "%v.user starts with hypen" $path) }}
+      {{- else if not $v.password }}
+          {{- fail (printf "%v.password missing" $path) }}
+      {{- else if hasPrefix "-" $v.password }}
+          {{- fail (printf "%v.password starts with hypen" $path) }}
+      {{- end }}
     {{- end }}
 {{- end }}
 

@@ -3,6 +3,12 @@ Rabbitmq CHANGELOG
 
 This file is used to list changes made in each version of the common chart rabbitmq.
 
+0.9.0
+-----
+- add pythonic escaping of special characters in the startup script
+- move secrets from the startup script to /etc/rabbitmq/secrets
+- disable guest user completely
+
 0.8.0
 -----
 - Remove support of the insecure rabbitmq-exporter sidecar container
