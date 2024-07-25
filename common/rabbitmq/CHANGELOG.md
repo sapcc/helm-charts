@@ -3,6 +3,10 @@ Rabbitmq CHANGELOG
 
 This file is used to list changes made in each version of the common chart rabbitmq.
 
+0.10.0
+-----
+- add ability to change service type and set externalTrafficPolicy
+
 0.9.0
 -----
 - add pythonic escaping of special characters in the startup script
