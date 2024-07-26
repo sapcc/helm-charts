@@ -3,6 +3,10 @@ Rabbitmq CHANGELOG
 
 This file is used to list changes made in each version of the common chart rabbitmq.
 
+0.10.1
+-----
+- add urlquery escaped transport function to the helpers to be used while switching to secret-injector
+
 0.10.0
 -----
 - add ability to change service type and set externalTrafficPolicy
