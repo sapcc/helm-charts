@@ -7,6 +7,9 @@ log_config_append = /etc/octavia/logging.ini
 # Plugin options are hot_plug_plugin (Hot-pluggable controller plugin)
 octavia_plugins = f5_plugin
 
+# oslo_messaging rpc timeout
+rpc_response_timeout = {{ .Values.global.rpc_response_timeout }}
+
 # Tracing
 {{- include "osprofiler" . }}
 
