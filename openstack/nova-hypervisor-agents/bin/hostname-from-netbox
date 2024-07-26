@@ -1,12 +1,14 @@
 #!/var/lib/openstack/bin/python3
-import pathlib
+import json
 import os
+import pathlib
 import platform
+import subprocess
 import textwrap
 import uuid
 
 import requests
-import yaml
+
 
 def get_hostname():
     node = platform.node().split(".", 1)[0]
@@ -16,15 +18,17 @@ def get_hostname():
 
     try:
         mac = uuid.getnode()
-        query = f'{{ interface_list(mac_address: "{mac:012x}") {{ device {{ name }} }} }}'
+        query = (
+            f'{{ interface_list(mac_address: "{mac:012x}") {{ device {{ name }} }} }}'
+        )
 
         response = requests.post(
             "https://netbox.global.cloud.sap/graphql/", json={"query": query}
         )
 
         response.raise_for_status()
-        json = response.json()
-        name = json['data']['interface_list'][0]['device']['name'].split(".", 1)[0]
+        data = response.json()["data"]
+        name = data["interface_list"][0]["device"]["name"].split(".", 1)[0]
         return "kvm-" + name
     except (IndexError, KeyError):
         return node
@@ -32,7 +36,24 @@ def get_hostname():
 
 hostname = get_hostname()
 
-pathlib.Path('hostname.conf').write_text(textwrap.dedent(f"""\
+routes = json.loads(subprocess.check_output(
+    ["/usr/bin/ip", "--json", "route", "get", "10.245.0.1"],
+))
+
+source = routes[0]['prefsrc']
+
+pathlib.Path("hostname.conf").write_text(
+    textwrap.dedent(f"""\
     [DEFAULT]
     host={hostname}
-    """))
+
+    [libvirt]
+    live_migration_inbound_addr={source}
+
+    [vnc]
+    server_proxyclient_address={source}
+
+    [spice]
+    server_proxyclient_address={source}
+    """)
+)
