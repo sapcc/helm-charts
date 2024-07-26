@@ -8,7 +8,7 @@ log_config_append = /etc/octavia/logging.ini
 octavia_plugins = f5_plugin
 
 # oslo_messaging rpc timeout
-rpc_response_timeout = {{ .Values.global.rpc_response_timeout }}
+rpc_response_timeout = {{ .Values.rpc_response_timeout | default .Values.global.rpc_response_timeout | default 60 }}
 
 # Tracing
 {{- include "osprofiler" . }}
