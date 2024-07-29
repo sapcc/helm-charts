@@ -14,5 +14,5 @@
 
 
 {{- define "masakari_api_endpoint_host_public" -}}
-masakari.{{.Values.global.region}}.{{.Values.global.tld}}
+instance-ha.{{.Values.global.region}}.{{.Values.global.tld}}
 {{- end }}
