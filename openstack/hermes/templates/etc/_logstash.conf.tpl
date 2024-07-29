@@ -87,6 +87,15 @@ filter {
     }
   }
 
+  # Keystone condition for target id and typeURI moving to project_id for consistency and enrichment
+  if [target][id] and [target][typeURI] == "data/security/project" {
+    mutate {
+      id => "f06c_move_target_id_to_project_id"
+      add_field => { "[target][project_id]" => "%{[target][id]}" }
+      remove_field => [ "[target][id]" ]
+    }
+  }
+
   # rename initiator user_id into the 'id' field for consistency
   if [initiator][user_id] {
     mutate {
