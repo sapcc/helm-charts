@@ -2,12 +2,17 @@ global:
   alerts:
     prometheus: infra-frontend
 simulator:
+  sesUsername: username
+  sesSecret: secretkey
+  smtpPassword: smtppassword
   poller: # service that handles received emails 
     enabled: false
     prometheusPort: 2112
     prometheus: :2112
     charSet: UTF-8
     period: 60
+    certPem: abcd
+    keyPem: abcd
     service:
       type: ClusterIP
     # all below can be used only with a deployment style
@@ -49,6 +54,10 @@ simulator:
     retry: # retry settings for failed connections
       maxConnectionRetries: 5 # 5 retries per connection
       retryInterval: 0.5s # 500ms to wait after each try, e.g. in total 2.5 seconds
+    rhea:
+      enabled: false
+      queueName: incoming
+      domainMode: false
     endpoint: 
       enabled: false
       name: http://localhost:5000 # override cronus endpoint URL - REMOVE IF NOT NEEDED
@@ -99,6 +108,39 @@ simulator:
     alerts:
       enabled: false
       prometheus: infra-frontend
+    emailPassVerdicts:
+      spam:
+        - PASS
+      virus:
+        - PASS
+      spf:
+        - PASS
+      dkim:
+        - PASS
+        - GRAY
+      dmarc:
+        - PASS
+        - GRAY
+    simulatorTests:
+    - test:
+      enabled: false
+      envelopeFrom: sender@postfix-eude1.cronus-simulator.ccloud.sap-test.de
+      headerFrom: sender@postfix-eude1.cronus-simulator.ccloud.sap-test.de
+      isExpectedReceived: true
+      isTls: true
+      port: 465
+      recipients: [receiving-test@postfix-eude1.cronus-simulator.ccloud.sap-test.de]
+      region: eu-de-1
+      testName: smtpTls
+    - test:
+      enabled: false
+      envelopeFrom: sender@postfix-eude1.cronus-simulator.ccloud.sap-test.de
+      headerFrom: sender@postfix-eude1.cronus-simulator.ccloud.sap-test.de
+      isExpectedReceived: true
+      port: 587
+      recipients: [receiving-test@postfix-eude1.cronus-simulator.ccloud.sap-test.de]
+      region: eu-de-1
+      testName: smtpStls
 
 owner-info:
   helm-chart-url: 'https://github.com/sapcc/helm-charts/tree/master/prometheus-exporters/poller-simulator'
