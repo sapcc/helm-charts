@@ -2,7 +2,8 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.14.0
+    cert-manager.io/inject-ca-from: metal-operator-system/metal-operator-serving-cert
+    controller-gen.kubebuilder.io/version: v0.15.0
   name: servers.metal.ironcore.dev
 spec:
   group: metal.ironcore.dev
@@ -64,30 +65,47 @@ spec:
           metadata:
             type: object
           spec:
-            description: ServerSpec defines the desired state of Server
+            description: ServerSpec defines the desired state of a Server.
             properties:
               bmc:
+                description: |-
+                  BMC contains the access details for the BMC.
+                  This field is optional and can be omitted if no BMC access is specified.
                 properties:
                   bmcSecretRef:
                     description: |-
-                      LocalObjectReference contains enough information to let you locate the
-                      referenced object inside the same namespace.
+                      BMCSecretRef is a reference to the Kubernetes Secret object that contains the credentials
+                      required to access the BMC. This secret includes sensitive information such as usernames and passwords.
                     properties:
                       name:
+                        default: ""
                         description: |-
                           Name of the referent.
-                          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                          This field is effectively required, but due to backwards compatibility is
+                          allowed to be empty. Instances of this type with an empty value here are
+                          almost certainly wrong.
                           TODO: Add other useful fields. apiVersion, kind, uid?
+                          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                          TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                         type: string
                     type: object
                     x-kubernetes-map-type: atomic
                   endpoint:
+                    description: Endpoint is the address of the BMC endpoint.
                     type: string
                   protocol:
+                    description: Protocol specifies the protocol to be used for communicating
+                      with the BMC.
                     properties:
                       name:
+                        description: |-
+                          Name specifies the name of the protocol.
+                          This could be a protocol such as "IPMI", "Redfish", etc.
                         type: string
                       port:
+                        description: |-
+                          Port specifies the port number used for communication.
+                          This port is used by the specified protocol to establish connections.
                         format: int32
                         type: integer
                     required:
@@ -101,36 +119,27 @@ spec:
                 type: object
               bmcRef:
                 description: |-
-                  LocalObjectReference contains enough information to let you locate the
-                  referenced object inside the same namespace.
+                  BMCRef is a reference to the BMC object associated with this server.
+                  This field is optional and can be omitted if no BMC is associated with this server.
                 properties:
                   name:
+                    default: ""
                     description: |-
                       Name of the referent.
-                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                      This field is effectively required, but due to backwards compatibility is
+                      allowed to be empty. Instances of this type with an empty value here are
+                      almost certainly wrong.
                       TODO: Add other useful fields. apiVersion, kind, uid?
+                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                      TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                     type: string
                 type: object
                 x-kubernetes-map-type: atomic
               bootConfigurationRef:
                 description: |-
-                  ObjectReference contains enough information to let you inspect or modify the referred object.
-                  ---
-                  New uses of this type are discouraged because of difficulty describing its usage when embedded in APIs.
-                   1. Ignored fields.  It includes many fields which are not generally honored.  For instance, ResourceVersion and FieldPath are both very rarely valid in actual usage.
-                   2. Invalid usage help.  It is impossible to add specific help for individual usage.  In most embedded usages, there are particular
-                      restrictions like, "must refer only to types A and B" or "UID not honored" or "name must be restricted".
-                      Those cannot be well described when embedded.
-                   3. Inconsistent validation.  Because the usages are different, the validation rules are different by usage, which makes it hard for users to predict what will happen.
-                   4. The fields are both imprecise and overly precise.  Kind is not a precise mapping to a URL. This can produce ambiguity
-                      during interpretation and require a REST mapping.  In most cases, the dependency is on the group,resource tuple
-                      and the version of the actual struct is irrelevant.
-                   5. We cannot easily change it.  Because this type is embedded in many locations, updates to this type
-                      will affect numerous schemas.  Don't make new APIs embed an underspecified API type they do not control.
-
-
-                  Instead of using this type, create a locally provided and used type that is well-focused on your reference.
-                  For example, ServiceReferences for admission registration: https://github.com/kubernetes/api/blob/release-1.17/admissionregistration/v1/types.go#L533 .
+                  BootConfigurationRef is a reference to a BootConfiguration object that specifies
+                  the boot configuration for this server. This field is optional and can be omitted
+                  if no boot configuration is specified.
                 properties:
                   apiVersion:
                     description: API version of the referent.
@@ -174,29 +183,16 @@ spec:
                 type: object
                 x-kubernetes-map-type: atomic
               indicatorLED:
-                description: IndicatorLED represents LED indicator states
+                description: IndicatorLED specifies the desired state of the server's
+                  indicator LED.
                 type: string
               power:
+                description: Power specifies the desired power state of the server.
                 type: string
               serverClaimRef:
                 description: |-
-                  ObjectReference contains enough information to let you inspect or modify the referred object.
-                  ---
-                  New uses of this type are discouraged because of difficulty describing its usage when embedded in APIs.
-                   1. Ignored fields.  It includes many fields which are not generally honored.  For instance, ResourceVersion and FieldPath are both very rarely valid in actual usage.
-                   2. Invalid usage help.  It is impossible to add specific help for individual usage.  In most embedded usages, there are particular
-                      restrictions like, "must refer only to types A and B" or "UID not honored" or "name must be restricted".
-                      Those cannot be well described when embedded.
-                   3. Inconsistent validation.  Because the usages are different, the validation rules are different by usage, which makes it hard for users to predict what will happen.
-                   4. The fields are both imprecise and overly precise.  Kind is not a precise mapping to a URL. This can produce ambiguity
-                      during interpretation and require a REST mapping.  In most cases, the dependency is on the group,resource tuple
-                      and the version of the actual struct is irrelevant.
-                   5. We cannot easily change it.  Because this type is embedded in many locations, updates to this type
-                      will affect numerous schemas.  Don't make new APIs embed an underspecified API type they do not control.
-
-
-                  Instead of using this type, create a locally provided and used type that is well-focused on your reference.
-                  For example, ServiceReferences for admission registration: https://github.com/kubernetes/api/blob/release-1.17/admissionregistration/v1/types.go#L533 .
+                  ServerClaimRef is a reference to a ServerClaim object that claims this server.
+                  This field is optional and can be omitted if no claim is associated with this server.
                 properties:
                   apiVersion:
                     description: API version of the referent.
@@ -240,14 +236,17 @@ spec:
                 type: object
                 x-kubernetes-map-type: atomic
               uuid:
+                description: UUID is the unique identifier for the server.
                 type: string
             required:
             - uuid
             type: object
           status:
-            description: ServerStatus defines the observed state of Server
+            description: ServerStatus defines the observed state of Server.
             properties:
               conditions:
+                description: Conditions represents the latest available observations
+                  of the server's current state.
                 items:
                   description: "Condition contains details for one aspect of the current
                     state of this API Resource.\n---\nThis struct is intended for
@@ -317,18 +316,28 @@ spec:
                   type: object
                 type: array
               indicatorLED:
-                description: IndicatorLED represents LED indicator states
+                description: IndicatorLED specifies the current state of the server's
+                  indicator LED.
                 type: string
               manufacturer:
+                description: Manufacturer is the name of the server manufacturer.
                 type: string
               networkInterfaces:
+                description: NetworkInterfaces is a list of network interfaces associated
+                  with the server.
                 items:
+                  description: NetworkInterface defines the details of a network interface.
                   properties:
                     ip:
+                      description: |-
+                        IP is the IP address assigned to the network interface.
+                        The type is specified as string and is schemaless.
                       type: string
                     macAddress:
+                      description: MACAddress is the MAC address of the network interface.
                       type: string
                     name:
+                      description: Name is the name of the network interface.
                       type: string
                   required:
                   - ip
@@ -337,12 +346,17 @@ spec:
                   type: object
                 type: array
               powerState:
+                description: PowerState represents the current power state of the
+                  server.
                 type: string
               serialNumber:
+                description: SerialNumber is the serial number of the server.
                 type: string
               sku:
+                description: SKU is the stock keeping unit identifier for the server.
                 type: string
               state:
+                description: State represents the current state of the server.
                 type: string
             type: object
         type: object

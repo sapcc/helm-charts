@@ -2,7 +2,8 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.14.0
+    cert-manager.io/inject-ca-from: metal-operator-system/metal-operator-serving-cert
+    controller-gen.kubebuilder.io/version: v0.15.0
   name: serverbootconfigurations.metal.ironcore.dev
 spec:
   group: metal.ironcore.dev
@@ -54,33 +55,45 @@ spec:
             type: object
           spec:
             description: ServerBootConfigurationSpec defines the desired state of
-              ServerBootConfiguration
+              ServerBootConfiguration.
             properties:
               ignitionSecretRef:
                 description: |-
-                  LocalObjectReference contains enough information to let you locate the
-                  referenced object inside the same namespace.
+                  IgnitionSecretRef is a reference to the Kubernetes Secret object that contains
+                  the ignition configuration for the server. This field is optional and can be omitted if not specified.
                 properties:
                   name:
+                    default: ""
                     description: |-
                       Name of the referent.
-                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                      This field is effectively required, but due to backwards compatibility is
+                      allowed to be empty. Instances of this type with an empty value here are
+                      almost certainly wrong.
                       TODO: Add other useful fields. apiVersion, kind, uid?
+                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                      TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                     type: string
                 type: object
                 x-kubernetes-map-type: atomic
               image:
+                description: |-
+                  Image specifies the boot image to be used for the server.
+                  This field is optional and can be omitted if not specified.
                 type: string
               serverRef:
-                description: |-
-                  LocalObjectReference contains enough information to let you locate the
-                  referenced object inside the same namespace.
+                description: ServerRef is a reference to the server for which this
+                  boot configuration is intended.
                 properties:
                   name:
+                    default: ""
                     description: |-
                       Name of the referent.
-                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                      This field is effectively required, but due to backwards compatibility is
+                      allowed to be empty. Instances of this type with an empty value here are
+                      almost certainly wrong.
                       TODO: Add other useful fields. apiVersion, kind, uid?
+                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                      TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                     type: string
                 type: object
                 x-kubernetes-map-type: atomic
@@ -89,9 +102,10 @@ spec:
             type: object
           status:
             description: ServerBootConfigurationStatus defines the observed state
-              of ServerBootConfiguration
+              of ServerBootConfiguration.
             properties:
               state:
+                description: State represents the current state of the boot configuration.
                 type: string
             type: object
         type: object
