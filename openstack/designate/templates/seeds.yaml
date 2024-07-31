@@ -986,6 +986,11 @@ spec:
     - user: admin@Default
       role: cloud_dns_admin
       inherited: true
+{{- if .Values.nanny_enabled }}
+    - user: {{ required "missing user for designate_nanny in .Values.designate_nanny.credentials.designate_api.user" .Values.designate_nanny.credentials.designate_api.user}}@{{.Values.designate_nanny.credentials.designate_api.project_user_domain_name }}
+      role: cloud_dns_viewer
+      inherited: true
+{{- end }}
 {{- end }}
 
 {{- if .Values.nanny_enabled }}
