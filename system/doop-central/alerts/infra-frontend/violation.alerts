@@ -5,7 +5,14 @@ groups:
     rules:
       # general alert for Critical and Rotten images
       - alert: GkSignificantVulnerableImages
-        expr: 'sum by (support_group, service) (max_over_time(doop_raw_violations{template_kind="GkVulnerableImages",cluster!~".*qa.*",status=~"Critical|Rotten"}[10m])) > 0'
+        # NOTE 1: The max_over_time() ensures that the alert does not flap when doop-central is restarted.
+        # (There appear to be gaps in the metrics for one or two minutes on each deployment.)
+        #
+        # NOTE 2: label_join(..., "the_service", ",", "service") effectively renames the label "service" to "the_service". This is necessary because:
+        # 1. We want multiple alerts for the same support group to be grouped together in Alertmanager to avoid Slack spam.
+        # 2. BUT having different "service" labels would force no grouping.
+        # 3. BUT ALSO we cannot just take away the "service" label entirely because we want to refer to the affected service in the alert description.
+        expr: 'sum by (support_group, the_service) (label_join(max_over_time(doop_raw_violations{template_kind="GkVulnerableImages",cluster!~".*qa.*",status=~"Critical|Rotten"}[10m]), "the_service", ",", "service")) > 0'
         for: 15m
         labels:
           context: GkSignificantVulnerableImages
@@ -20,8 +27,6 @@ groups:
 
       # alert for vulnerable images in productive deployments of workgroup "Storage & Resource Services"
       - alert: GkVulnerableImagesForSRS
-        # NOTE: The max_over_time() ensures that the alert does not flap when doop-central is restarted.
-        # (There appear to be gaps in the metrics for one or two minutes on each deployment.)
         expr: 'sum by (template_kind, service) (max_over_time(doop_raw_violations{template_kind="GkVulnerableImages",cluster!~".*qa.*",support_group="containers",service=~"backup|castellum|gatekeeper|hubcopter|keppel|limes|repo|tenso"}[10m])) > 0'
         for: 1h # When new images are deployed, we sometimes see a false positive because GkVulnerableImages sees vulnerability status "Pending".
         labels:
