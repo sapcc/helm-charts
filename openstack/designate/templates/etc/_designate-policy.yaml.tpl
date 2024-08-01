@@ -174,7 +174,7 @@ delete_zone_transfer_accept: rule:admin
 create_zone_import: rule:context_is_dns_ops
 create_force_zone_import: rule:context_is_zonemaster
 find_zone_imports: rule:context_is_dns_ops
-get_zone_import: rule:context_is_dns_ops
+get_zone_import: rule:context_is_zonemaster
 update_zone_import: rule:context_is_dns_ops
 delete_zone_import: rule:context_is_dns_ops
 
