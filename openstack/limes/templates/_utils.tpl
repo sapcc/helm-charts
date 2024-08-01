@@ -42,6 +42,10 @@
   value: "limes-postgresql.{{ .Release.Namespace }}.svc"
 - name: LIMES_DB_CONNECTION_OPTIONS
   value: "sslmode=disable"
+{{ include "limes_openstack_envvars" . }}
+{{- end -}}
+
+{{- define "limes_openstack_envvars" }}
 - name: OS_AUTH_URL
   value: "http://keystone.{{ $.Values.global.keystoneNamespace }}.svc.kubernetes.{{ $.Values.global.region }}.{{ $.Values.global.tld }}:5000/v3"
 - name: OS_INTERFACE
