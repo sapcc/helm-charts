@@ -88,9 +88,12 @@ build-baremetal-operator:
 build-metal-operator:
 	@cat kustomize/metal-operator/kustomization.yaml >> kustomization.yaml
 	$(call build-chart,metal-operator-core,https://github.com/ironcore-dev/metal-operator//config/default,$(METAL_OPERATOR_VERSION))
+	$(call fix-crds,metal-operator-core)
+	@find metal-operator-core/crds -type f -exec $(SED) -i -e 's#metal-operator-metal-operator-#metal-#g' {} \;
+	@find metal-operator-core/crds -type f -exec $(SED) -i -e 's#metal-operator-system/metal-operator-serving-cert#metal-operator-system/metal-serving-cert#g' {} \;
 	@yq -i '.controllerManager.manager.image.tag="$(METAL_OPERATOR_VERSION)"' metal-operator-core/values.yaml
 	@yq -i '.fullnameOverride="metal-operator"' metal-operator-core/values.yaml
-	@yq -i '.version="1.0.2"' metal-operator-core/Chart.yaml
+	@yq -i '.version="1.0.3"' metal-operator-core/Chart.yaml
 
 build-boot-operator:
 	@cat kustomize/boot-operator/kustomization.yaml >> kustomization.yaml
