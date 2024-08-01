@@ -92,9 +92,10 @@ build-metal-operator:
 	@find metal-operator-core/crds -type f -exec $(SED) -i -e 's#metal-operator-metal-operator-#metal-#g' {} \;
 	@find metal-operator-core/crds -type f -exec $(SED) -i -e 's#metal-operator-system/metal-operator-serving-cert#metal-operator-system/metal-serving-cert#g' {} \;
 	@find metal-operator-core/templates -type f -exec $(SED) -i -e 's#-metal-operator-webhook-service#-webhook-service#g' {} \;
+	@find metal-operator-core/templates -type f -exec $(SED) -i -e 's#-metal-operator-serving-cert#-serving-cert#g' {} \;
 	@yq -i '.controllerManager.manager.image.tag="$(METAL_OPERATOR_VERSION)"' metal-operator-core/values.yaml
 	@yq -i '.fullnameOverride="metal-operator"' metal-operator-core/values.yaml
-	@yq -i '.version="1.0.4"' metal-operator-core/Chart.yaml
+	@yq -i '.version="1.0.5"' metal-operator-core/Chart.yaml
 
 build-boot-operator:
 	@cat kustomize/boot-operator/kustomization.yaml >> kustomization.yaml
