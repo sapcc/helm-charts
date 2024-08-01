@@ -1,5 +1,6 @@
 {{- $vbase  := .Values.global.vaultBaseURL | required "missing value for .Values.global.vaultBaseURL" -}}
 {{- $region := .Values.global.region       | required "missing value for .Values.global.region"       -}}
+{{- $tld    := .Values.global.tld          | required "missing value for .Values.global.tld"          -}}
 
 {{- $domains := list "bs" "btp_fp" "cc3test" "cp" "cis" "fsn" "hcm" "hcp03" "hda" "hec" "kyma" "monsoon3" "neo" "s4" "wbs" -}}
 {{- /* WARNING: When adding a new domain, also increment the domain count in the OpenstackLimesUnexpectedCloudDnsAdminRoleAssignments alert. */ -}}
@@ -65,6 +66,22 @@ spec:
           interface: internal
           enabled:   true
           url:       'http://limes-api-ccloud.{{.Release.Namespace}}.svc/rates'
+
+    {{- range $name := keys .Values.limes.local_liquids }}
+    - name:        liquid-{{ $name }}
+      type:        liquid-{{ $name }}
+      description: 'Limes integration for {{ title $name }} <https://pkg.go.dev/github.com/sapcc/go-api-declarations/liquid>'
+      enabled:     true
+      endpoints:
+        - region:    '{{ $region }}'
+          interface: public
+          enabled:   true
+          url:       'https://liquid-{{ $name }}.{{ $region }}.{{ $tld }}/'
+        - region:    '{{ $region }}'
+          interface: internal
+          enabled:   true
+          url:       'http://liquid-swift.{{ $.Release.Namespace }}.svc/'
+    {{- end }}
 
   domains:
     - name: Default
