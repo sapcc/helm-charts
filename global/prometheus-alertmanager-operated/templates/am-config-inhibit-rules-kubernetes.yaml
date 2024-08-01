@@ -1,0 +1,40 @@
+apiVersion: monitoring.coreos.com/v1alpha1
+kind: AlertmanagerConfig
+metadata:
+  name: inhibit-rules-k8s
+  labels:
+    alertmanager: {{ include "alertmanagerRelease.name" . }}
+spec:
+  inhibitRules:
+    - sourceMatch:
+        - matchType: "=~"
+          name: alertname
+          value: '.*KubeletDown'
+      targetMatch:
+        - matchType: "=~"
+          name: alertname
+          value: 'PodNotReady|ManyPodsNotReadyOnNode'
+      equal:
+        - 'node'
+    # If the alert NodeInMaintenance is firing other alerts with the label inhibited-by: node-maintenance are being inhibited on the same node.
+    - sourceMatch:
+       - matchType: "="
+         name: alertname
+         value: NodeInMaintenance
+      targetMatch:
+        - matchType: "="
+          name: inhibited_by
+          value: node-maintenance
+      equal:
+        - 'node'
+     # If the alert NodeInMaintenance is firing other alerts with the label inhibited-by: cluster-maintenance are being      inhibited on the same cluster.
+    - sourceMatch:
+       - matchType: "="
+         name: alertname
+         value: NodeInMaintenance
+      targetMatch:
+        - matchType: "="
+          name: inhibited_by
+          value: cluster-maintenance
+      equal:
+        - 'cluster'
