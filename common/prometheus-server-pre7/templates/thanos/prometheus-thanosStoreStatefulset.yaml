@@ -21,6 +21,10 @@ spec:
         thanos-peers: "true"
         prometheus: {{ include "prometheus.name" . }}
     spec:
+      securityContext:
+        fsGroup: 0
+        runAsGroup: 0
+        runAsUser: 0
       containers:
       - args:
         - store
@@ -73,8 +77,4 @@ spec:
           requests:
             storage: {{ required ".Values.thanos.store.persistence.size missing" .Values.thanos.store.persistence.size | quote }}
 {{- end }}
-      securityContext:
-        fsGroup: 0
-        runAsGroup: 0
-        runAsUser: 0
 {{ end }}
