@@ -9,7 +9,8 @@ groups:
     # to be able to get a proper duration from $value we have to reorder to:
     # remaining < 0.2 * lifetime
     # this means both sides need to join the support group
-    expr: (x509_cert_not_after - time()) * on(secret_name, secret_namespace) group_left(label_ccloud_support_group) label_replace(label_replace(kube_secret_labels, "secret_name", "$1", "secret", "(.*)"), "secret_namespace", "$1", "namespace", "(.*)") < 0.2 * (x509_cert_not_after - x509_cert_not_before) * on(secret_name, secret_namespace) group_left(label_ccloud_support_group) label_replace(label_replace(kube_secret_labels, "secret_name", "$1", "secret", "(.*)"), "secret_namespace", "$1", "namespace", "(.*)")
+    # also we clamp to 30 days, to get notified months in advance for long-lived certs
+    expr: (x509_cert_not_after - time()) * on(secret_name, secret_namespace) group_left(label_ccloud_support_group) label_replace(label_replace(kube_secret_labels, "secret_name", "$1", "secret", "(.*)"), "secret_namespace", "$1", "namespace", "(.*)") < clamp_max(0.2 * (x509_cert_not_after - x509_cert_not_before) * on(secret_name, secret_namespace) group_left(label_ccloud_support_group) label_replace(label_replace(kube_secret_labels, "secret_name", "$1", "secret", "(.*)"), "secret_namespace", "$1", "namespace", "(.*)"), 30*60*60*24)
     for: 1h
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
