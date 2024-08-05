@@ -20,10 +20,6 @@
 {{- required ".Values.root_password missing" .Values.root_password }}
 {{- end -}}
 
-{{- define "mariadb.exporter_scrape_target_address" -}}
-{{.Values.name}}-mariadb.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}:3306
-{{- end -}}
-
 {{- define "db_password" -}}
 {{- .Values.global.dbPassword }}
 {{- end -}}
