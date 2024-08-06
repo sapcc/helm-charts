@@ -3,6 +3,12 @@ Rabbitmq CHANGELOG
 
 This file is used to list changes made in each version of the common chart rabbitmq.
 
+0.11.0
+------
+- Update RabbitMQ to version 3.13.6-management
+- Add `helm.sh/chart` label
+- `app.kubernetes.io/version` is now an application version
+
 0.10.1
 -----
 - add urlquery escaped transport function to the helpers to be used while switching to secret-injector

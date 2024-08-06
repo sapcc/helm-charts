@@ -90,10 +90,18 @@ rabbit://{{- $_prefix -}}{{- $_username -}}:{{- $_password -}}@{{- $_rhost -}}:{
                 - reinstalling
 {{- end }}
 
-{{- define "sharedservices.labels" }}
+{{- define "rabbitmq.labels" }}
 app.kubernetes.io/name: {{ .Chart.Name }}
 app.kubernetes.io/instance: {{ .Chart.Name }}-{{ .Release.Name }}
-app.kubernetes.io/version: {{ .Chart.Version }}
+app.kubernetes.io/version: {{ .Chart.AppVersion }}
 app.kubernetes.io/component: {{ .Chart.Name }}
 app.kubernetes.io/part-of: {{ .Release.Name }}
+helm.sh/chart: {{ include "rabbitmq.chart" . }}
 {{- end }}
+
+{{/*
+Create chart name and version as used by the chart label.
+*/}}
+{{- define "rabbitmq.chart" -}}
+{{- printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" -}}
+{{- end -}}
