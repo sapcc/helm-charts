@@ -16,12 +16,26 @@
 
 {{- define "mariadb.db_host"}}{{.Release.Name}}-mariadb.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{- end}}
 
-{{- define "mariadb.root_password" -}}
-{{- required ".Values.root_password missing" .Values.root_password }}
+{{- define "mariadb.resolve_secret" -}}
+    {{- $str := . -}}
+    {{- if (hasPrefix "vault+kvv2" $str ) -}}
+        {{"{{"}} resolve "{{ $str }}" {{"}}"}}
+    {{- else -}}
+        {{ $str }}
+{{- end -}}
 {{- end -}}
 
-{{- define "db_password" -}}
-{{- .Values.global.dbPassword }}
+{{- define "mariadb.resolve_secret_squote" -}}
+    {{- $str := . -}}
+    {{- if (hasPrefix "vault+kvv2" $str ) -}}
+        {{"{{"}} resolve "{{ $str }}" | replace "'" "''" | squote {{"}}"}}
+    {{- else -}}
+        {{ $str | replace "'" "''" | squote }}
+{{- end -}}
+{{- end -}}
+
+{{- define "mariadb.root_password" -}}
+{{- include "mariadb.resolve_secret" (required ".Values.root_password missing" .Values.root_password) }}
 {{- end -}}
 
 {{- define "registry" -}}
