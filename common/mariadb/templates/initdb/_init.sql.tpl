@@ -1,5 +1,6 @@
 SET character_set_server = '{{ .Values.character_set_server }}';
 SET collation_server = '{{ .Values.collation_server }}';
+SET sql_mode = CONCAT(@@sql_mode, ',NO_BACKSLASH_ESCAPES');
 {{- $dbs := coalesce .Values.databases (list .Values.name) }}
 {{- range $dbs }}
 CREATE DATABASE IF NOT EXISTS {{ . }};
@@ -7,7 +8,9 @@ CREATE DATABASE IF NOT EXISTS {{ . }};
 
 {{- if and .Values.global.dbUser .Values.global.dbPassword (not (hasKey .Values.users (default "" .Values.global.dbUser))) (not .Values.custom_initdb_secret) }}
 CREATE USER IF NOT EXISTS {{ .Values.global.dbUser }};
-GRANT ALL PRIVILEGES ON {{ .Values.name }}.* TO {{ .Values.global.dbUser }} IDENTIFIED BY '{{ include "db_password" . }}';
+GRANT ALL PRIVILEGES ON {{ .Values.name }}.*
+  TO {{ include "mariadb.resolve_secret_squote" (.Values.global.dbUser) }}
+  IDENTIFIED BY {{ include "mariadb.resolve_secret_squote" .Values.global.dbPassword }};
 {{- end }}
 
 {{- range $username, $values := .Values.users }}
@@ -15,8 +18,8 @@ GRANT ALL PRIVILEGES ON {{ .Values.name }}.* TO {{ .Values.global.dbUser }} IDEN
     {{- if not $values.password }}
 -- Skipping user {{ $username }} without password
     {{- else }}
-CREATE USER IF NOT EXISTS '{{ $username }}';
-ALTER USER '{{ $username }}' IDENTIFIED BY '{{ $values.password }}'
+CREATE USER IF NOT EXISTS {{ include "mariadb.resolve_secret_squote" $username }};
+ALTER USER {{ include "mariadb.resolve_secret_squote" $username }} IDENTIFIED BY {{ include "mariadb.resolve_secret_squote" $values.password }}
 {{- if $values.limits }}
   WITH
 {{- range $k, $v := $values.limits }}
@@ -24,7 +27,7 @@ ALTER USER '{{ $username }}' IDENTIFIED BY '{{ $values.password }}'
 {{- end }}
 {{- end }};
         {{- range $values.grants }}
-GRANT {{ . }} TO '{{ $username }}';
+GRANT {{ . }} TO {{ include "mariadb.resolve_secret_squote" $username }};
         {{- end }}
     {{- end }}
 {{- end }}
