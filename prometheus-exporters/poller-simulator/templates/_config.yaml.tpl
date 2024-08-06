@@ -43,12 +43,12 @@ poller:
     {{- range $key, $value := .Values.simulator.poller.retry }}
     {{ $key }}: {{ $value }}
   {{- end }}
-  {{- if .Values.rhea.enabled -}}
+  {{- if .Values.rhea.enabled }}
   rhea:
-    queueName: {{- .Values.simulator.poller.rhea.queueName }}
-    uri:  https://rhea.{{ .Values.simulator.poller.keystone.region }}.cloud.sap
-    domainMode: {{- .Values.simulator.poller.rhea.domainMode }}
-  {{- end -}}
+    queueName: {{ .Values.simulator.poller.rhea.queueName }}
+    uri: https://rhea.{{ .Values.simulator.poller.keystone.region }}.cloud.sap
+    domainMode: {{ .Values.simulator.poller.rhea.domainMode }}
+  {{- end }}
   {{- if .Values.simulator.poller.endpoint.enabled }}
   endpoint: {{ .Values.simulator.poller.endpoint.name }}
   {{- end -}}
@@ -108,8 +108,6 @@ poller:
     headerFrom: {{ .Values.simulator.poller.headerFrom }}
     {{- end }}
     insecureTLS: {{ .Values.simulator.poller.insecureTLS }}
-
-
     recipients:
     {{- range $key, $value := .Values.simulator.poller.recipients }}
      - {{ $value }}
