@@ -85,8 +85,6 @@ poller:
   simulator:
     region: {{ .Values.config.keystone.region }}
     loader: {{ .Values.simulator.poller.loader }}
-    emailBodySize: {{ .Values.simulator.emailBodySize }}
-    cacheRetention: {{ .Values.simulator.cacheRetention }}
     simulatorTests:
     {{- range .Values.simulator.poller.simulatorTests }}
     - test:
@@ -97,6 +95,8 @@ poller:
     {{- end }}
     {{- end }}
     executionTime: {{ .Values.simulator.poller.executionTime }}
+    emailBodySize: {{ .Values.simulator.poller.emailBodySize }}
+    cacheRetention: {{ .Values.simulator.poller.cacheRetention }}
     loaderThreads: {{ .Values.simulator.poller.loaderThreads }}
     sleepDuration: {{ .Values.simulator.poller.sleepDuration }}
     sleepThreads: {{ .Values.simulator.poller.sleepThreads }}

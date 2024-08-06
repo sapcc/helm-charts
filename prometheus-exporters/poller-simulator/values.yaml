@@ -1,6 +1,20 @@
 global:
   alerts:
     prometheus: infra-frontend
+config:
+  # Configuration for the poller
+  keystone:
+    enabled: false
+    authUrl: https://identity/v3
+    endpointType: public
+    projectDomainName: default
+    projectName: project
+    region: region
+    userDomainName: default
+    username: username
+    password: password
+  allowedServices:
+    email: eu-central-1
 simulator:
   sesUsername: username
   sesSecret: secretkey
@@ -30,7 +44,7 @@ simulator:
       imagePullSecrets: []
     statefulSet:
       enabled: false
-    action: forwardEmail # supported values: forwardEmail, activateEmail
+    action: simulator # supported values: forwardEmail, activateEmail
     pollInterval: 5 # should be less than a default cronus ResponseHeaderTimeout (9 seconds)
     maxThreads: 5 # maximum amount of queue processing threads.will generate N threads = maxThreads * (maxSendThreads + maxBounceThreads)
     maxSendThreads: 5 # maximum amount of SMTP send threads per one processing thread
@@ -47,6 +61,8 @@ simulator:
     sleepDuration: 60s
     sleepThreads: 60s
     loaderThreads: 1
+    cacheRetention: 20s
+    emailBodySize: 10000
     emailSubject: "test run"
     emailBody: |
       "test email sending"
