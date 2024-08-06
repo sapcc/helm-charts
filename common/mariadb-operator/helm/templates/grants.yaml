@@ -1,0 +1,53 @@
+---
+apiVersion: k8s.mariadb.com/v1alpha1
+kind: Grant
+metadata:
+  name: root
+  namespace: {{ $.Release.Namespace }}
+spec:
+  mariaDbRef:
+    name: {{ .Values.mariadb.database }}
+  privileges:
+    - "ALL PRIVILEGES"
+  database: "*"
+  table: "*"
+  username: root
+  grantOption: true
+  host: "localhost"
+---
+apiVersion: k8s.mariadb.com/v1alpha1
+kind: Grant
+metadata:
+  name: mariadb
+  namespace: {{ $.Release.Namespace }}
+spec:
+  mariaDbRef:
+    name: {{ .Values.mariadb.database }}
+  privileges:
+    - "ALL PRIVILEGES"
+  database: {{ .Values.mariadb.database | quote }}
+  table: "*"
+  username: mariadb
+  grantOption: false
+  host: "%"
+---
+apiVersion: k8s.mariadb.com/v1alpha1
+kind: Grant
+metadata:
+  name: metrics
+  namespace: {{ $.Release.Namespace }}
+spec:
+  mariaDbRef:
+    name: {{ .Values.mariadb.database }}
+  privileges:
+    - "SHOW DATABASES"
+    - "SLAVE MONITOR"
+    - "BINLOG MONITOR"
+    - "PROCESS"
+    - "REPLICA MONITOR"
+    - "SELECT"
+  database: "*"
+  table: "*"
+  username: metrics
+  grantOption: false
+  host: "localhost"

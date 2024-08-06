@@ -1,0 +1,66 @@
+apiVersion: k8s.mariadb.com/v1alpha1
+kind: MariaDB
+metadata:
+  name: mariadb
+  namespace: {{ $.Release.Namespace }}
+spec:
+  image: {{ .Values.image.repository }}
+  imagePullPolicy: {{ .Values.image.pullPolicy }}
+
+  rootPasswordSecretKeyRef:
+    name: mariadb-root
+    key: password
+    generate: false
+
+  username: mariadb
+  passwordSecretKeyRef:
+    name: mariadb-password
+    key: password
+    generate: false
+  database: {{ .Values.mariadb.database }}
+
+  storage:
+    size: {{ .Values.mariadb.storage.size }}
+
+  replicas: {{ .Values.replicaCount }}
+
+  galera:
+    enabled: true
+
+  service:
+    type: {{ .Values.mariadb.service.type }}
+  connection:
+    secretName: mariadb-conn
+    secretTemplate:
+      key: dsn
+  primaryService:
+    type: ClusterIP
+  primaryConnection:
+    secretName: mariadb-conn-primary
+    secretTemplate:
+      key: dsn
+  secondaryService:
+    type: {{ .Values.mariadb.service.type }}
+  secondaryConnection:
+    secretName: mariadb-conn-secondary
+    secretTemplate:
+      key: dsn
+
+  updateStrategy:
+    type: ReplicasFirstPrimaryLast
+
+  myCnf: |
+    [mariadb]
+    bind-address=*
+    default_storage_engine=InnoDB
+    binlog_format=row
+    innodb_autoinc_lock_mode=2
+    innodb_buffer_pool_size=1024M
+    max_allowed_packet=256M
+
+  metrics:
+    passwordSecretKeyRef:
+      name: mariadb-metrics
+      key: password
+      generate: false
+    enabled: true

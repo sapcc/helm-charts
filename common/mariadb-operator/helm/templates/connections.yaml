@@ -1,0 +1,51 @@
+---
+apiVersion: k8s.mariadb.com/v1alpha1
+kind: Connection
+metadata:
+  name: root
+  namespace: {{ $.Release.Namespace }}
+spec:
+  mariaDbRef:
+    name: {{ .Values.mariadb.database }}
+  username: root
+  passwordSecretKeyRef:
+    name: root
+    key: password
+  database: mysql
+  secretName: connection
+  secretTemplate:
+    key: dsn
+---
+apiVersion: k8s.mariadb.com/v1alpha1
+kind: Connection
+metadata:
+  name: mariadb
+  namespace: {{ $.Release.Namespace }}
+spec:
+  mariaDbRef:
+    name: {{ .Values.mariadb.database }}
+  username: mariadb
+  passwordSecretKeyRef:
+    name: mariadb
+    key: password
+  database: {{ .Values.mariadb.database }}
+  secretName: connection
+  secretTemplate:
+    key: dsn
+---
+apiVersion: k8s.mariadb.com/v1alpha1
+kind: Connection
+metadata:
+  name: metrics
+  namespace: {{ $.Release.Namespace }}
+spec:
+  mariaDbRef:
+    name: {{ .Values.mariadb.database }}
+  username: metrics
+  passwordSecretKeyRef:
+    name: metrics
+    key: password
+  database: mysql
+  secretName: connection
+  secretTemplate:
+    key: dsn
