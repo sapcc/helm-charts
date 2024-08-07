@@ -1,8 +1,8 @@
 
 ---
 checksums:
-  my.cnf: &mycnf "972f94dfc079c9e66d0b0299f770985337b09c6a2a20f79d8ffe551fedd79edc"
-  configmap: &configmap "b4e588de0e5967d19297789458fc97ecc1a4b337cdfae330667e2df17874c841"
+  my.cnf: &mycnf "15aa1b7d620eeacc139ce168ec9469e8fc2ba0164b08f7db2b1125b33f622a4d"
+  configmap: &configmap "c6c999875ce4cec765178da0938b73faae5a554647ebebe9b8215f4e3302a769"
 
 suite: statefulset-mariadb
 values:
@@ -30,15 +30,6 @@ tests:
       - equal:
           path: metadata.name
           value: "testrelease-mariadb-g"
-      - equal:
-          path: metadata.labels.app
-          value: "testrelease"
-      - equal:
-          path: metadata.labels.component
-          value: "database"
-      - equal:
-          path: metadata.labels.release
-          value: "testrelease"
 
   - it: metadata with included clustername
     template: statefulset-mariadb.yaml
@@ -55,15 +46,6 @@ tests:
       - equal:
           path: metadata.name
           value: "testrelease-testclustername-mariadb-g"
-      - equal:
-          path: metadata.labels.app
-          value: "testrelease"
-      - equal:
-          path: metadata.labels.component
-          value: "database"
-      - equal:
-          path: metadata.labels.release
-          value: "testrelease"
 
   - it: default common spec
     template: statefulset-mariadb.yaml
@@ -77,8 +59,8 @@ tests:
           path: spec.serviceName
           value: "testrelease"
       - equal:
-          path: spec.selector.matchLabels.component
-          value: "database"
+          path: spec.selector.matchLabels["app.kubernetes.io/component"]
+          value: mariadb-galera-sts-database
       - equal:
           path: spec.revisionHistoryLimit
           value: 3
@@ -116,15 +98,6 @@ tests:
     set:
       mariadb.galera.clustername: "testclustername"
     asserts:
-      - equal:
-          path: spec.template.metadata.labels.app
-          value: "testrelease"
-      - equal:
-          path: spec.template.metadata.labels.component
-          value: "database"
-      - equal:
-          path: spec.template.metadata.labels.release
-          value: "testrelease"
       - isNull:
           path: spec.template.metadata.annotations["prometheus.io/scrape"]
       - isNull:
@@ -149,15 +122,6 @@ tests:
       global.linkerd_enabled: true
       global.linkerd_requested: true
     asserts:
-      - equal:
-          path: spec.template.metadata.labels.app
-          value: "testrelease"
-      - equal:
-          path: spec.template.metadata.labels.component
-          value: "database"
-      - equal:
-          path: spec.template.metadata.labels.release
-          value: "testrelease"
       - equal:
           path: spec.template.metadata.annotations["prometheus.io/scrape"]
           value: "true"
@@ -209,7 +173,7 @@ tests:
     asserts:
       - equal:
           path: spec.template.spec.affinity.podAntiAffinity.preferredDuringSchedulingIgnoredDuringExecution[0].podAffinityTerm.labelSelector.matchExpressions[0].key
-          value: "app"
+          value: "app.kubernetes.io/part-of"
       - equal:
           path: spec.template.spec.affinity.podAntiAffinity.preferredDuringSchedulingIgnoredDuringExecution[0].podAffinityTerm.labelSelector.matchExpressions[0].operator
           value: "In"
@@ -218,13 +182,13 @@ tests:
           value: "testrelease"
       - equal:
           path: spec.template.spec.affinity.podAntiAffinity.preferredDuringSchedulingIgnoredDuringExecution[0].podAffinityTerm.labelSelector.matchExpressions[1].key
-          value: "component"
+          value: "app.kubernetes.io/component"
       - equal:
           path: spec.template.spec.affinity.podAntiAffinity.preferredDuringSchedulingIgnoredDuringExecution[0].podAffinityTerm.labelSelector.matchExpressions[1].operator
           value: "In"
       - equal:
           path: spec.template.spec.affinity.podAntiAffinity.preferredDuringSchedulingIgnoredDuringExecution[0].podAffinityTerm.labelSelector.matchExpressions[1].values[0]
-          value: "database"
+          value: "mariadb-galera-sts-database"
       - equal:
           path: spec.template.spec.affinity.podAntiAffinity.preferredDuringSchedulingIgnoredDuringExecution[0].weight
           value: 1
@@ -233,7 +197,7 @@ tests:
           value: "topology.kubernetes.io/zone"
       - equal:
           path: spec.template.spec.affinity.podAntiAffinity.preferredDuringSchedulingIgnoredDuringExecution[1].podAffinityTerm.labelSelector.matchExpressions[0].key
-          value: "app"
+          value: "app.kubernetes.io/part-of"
       - equal:
           path: spec.template.spec.affinity.podAntiAffinity.preferredDuringSchedulingIgnoredDuringExecution[1].podAffinityTerm.labelSelector.matchExpressions[0].operator
           value: "In"
@@ -242,13 +206,13 @@ tests:
           value: "testrelease"
       - equal:
           path: spec.template.spec.affinity.podAntiAffinity.preferredDuringSchedulingIgnoredDuringExecution[1].podAffinityTerm.labelSelector.matchExpressions[1].key
-          value: "component"
+          value: "app.kubernetes.io/component"
       - equal:
           path: spec.template.spec.affinity.podAntiAffinity.preferredDuringSchedulingIgnoredDuringExecution[1].podAffinityTerm.labelSelector.matchExpressions[1].operator
           value: "In"
       - equal:
           path: spec.template.spec.affinity.podAntiAffinity.preferredDuringSchedulingIgnoredDuringExecution[1].podAffinityTerm.labelSelector.matchExpressions[1].values[0]
-          value: "database"
+          value: "mariadb-galera-sts-database"
       - equal:
           path: spec.template.spec.affinity.podAntiAffinity.preferredDuringSchedulingIgnoredDuringExecution[1].weight
           value: 2
@@ -310,7 +274,7 @@ tests:
           value: "sysctl-tcp-keepalive"
       - equal:
           path: spec.template.spec.initContainers[0].image
-          value: "keppel.eu-de-1.cloud.sap/ccloud/mariadb-galera-ubuntu:22.04-20240618114008"
+          value: "keppel.eu-de-1.cloud.sap/ccloud/mariadb-galera-ubuntu:22.04-20240724035543"
       - equal:
           path: spec.template.spec.initContainers[0].imagePullPolicy
           value: "IfNotPresent"
@@ -379,7 +343,7 @@ tests:
           value: "db"
       - equal:
           path: spec.template.spec.containers[0].image
-          value: "keppel.eu-de-1.cloud.sap/ccloud/mariadb-galera:10.5.25-20240618114008"
+          value: "keppel.eu-de-1.cloud.sap/ccloud/mariadb-galera:10.5.25-20240724035543"
       - equal:
           path: spec.template.spec.containers[0].imagePullPolicy
           value: "IfNotPresent"
@@ -1500,7 +1464,7 @@ tests:
           value: "metrics"
       - equal:
           path: spec.template.spec.containers[1].image
-          value: "keppel.eu-de-1.cloud.sap/ccloud/mariadb-galera-mysqld_exporter:0.14.0-20240618114008"
+          value: "keppel.eu-de-1.cloud.sap/ccloud/mariadb-galera-mysqld_exporter:0.14.0-20240724035543"
       - equal:
           path: spec.template.spec.containers[1].imagePullPolicy
           value: "IfNotPresent"
@@ -2143,15 +2107,6 @@ tests:
           path: metadata.name
           value: "testrelease-mariadb-g"
       - equal:
-          path: metadata.labels.app
-          value: "testrelease"
-      - equal:
-          path: metadata.labels.component
-          value: "database"
-      - equal:
-          path: metadata.labels.release
-          value: "testrelease"
-      - equal:
           path: spec.replicas
           value: 1
 
@@ -2176,15 +2131,6 @@ tests:
           path: metadata.name
           value: "testrelease-mariadb-g"
       - equal:
-          path: metadata.labels.app
-          value: "testrelease"
-      - equal:
-          path: metadata.labels.component
-          value: "database"
-      - equal:
-          path: metadata.labels.release
-          value: "testrelease"
-      - equal:
           path: spec.replicas
           value: 1
 
@@ -2208,15 +2154,6 @@ tests:
       - equal:
           path: metadata.name
           value: "testrelease-mariadb-g"
-      - equal:
-          path: metadata.labels.app
-          value: "testrelease"
-      - equal:
-          path: metadata.labels.component
-          value: "database"
-      - equal:
-          path: metadata.labels.release
-          value: "testrelease"
       - equal:
           path: spec.replicas
           value: 1

@@ -10,8 +10,7 @@ metadata:
   namespace: {{ $.Release.Namespace }}
   name: {{ include "commonPrefix" $ }}-mariadb-config-job-entrypoint-sh
   labels:
-    app: {{ $.Release.Name }}
-    {{- include "sharedservices.labels" $ | indent 4 }}
+    {{- include "mariadb-galera.labels" (list $ "noversion" "database" "cm" "entrypoint") | indent 4 }}
 data:
 {{ tpl (.Files.Glob "scripts/mariadb-galera/entrypoint-job-config.sh").AsConfig . | indent 2 }}
 {{- end }}

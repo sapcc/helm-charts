@@ -23,9 +23,6 @@ tests:
           path: metadata.name
           value: testrelease-mariadb-g-0
       - equal:
-          path: metadata.labels.app
-          value: testrelease
-      - equal:
           path: spec.type
           value: ClusterIP
       - equal:
@@ -35,7 +32,7 @@ tests:
           path: spec.selector["statefulset.kubernetes.io/pod-name"]
           value: testrelease-mariadb-g-0
       - notExists:
-          path: spec.selector.component
+          path: spec.selector["app.kubernetes.io/component"]
       - equal:
           path: spec.ports[0].name
           value: galera
@@ -104,9 +101,6 @@ tests:
           path: metadata.name
           value: testrelease-mariadb-g-1
       - equal:
-          path: metadata.labels.app
-          value: testrelease
-      - equal:
           path: spec.type
           value: ClusterIP
       - equal:
@@ -116,7 +110,7 @@ tests:
           path: spec.selector["statefulset.kubernetes.io/pod-name"]
           value: testrelease-mariadb-g-1
       - notExists:
-          path: spec.selector.component
+          path: spec.selector["app.kubernetes.io/component"]
       - equal:
           path: spec.ports[0].name
           value: galera
@@ -185,9 +179,6 @@ tests:
           path: metadata.name
           value: testrelease-mariadb-g-2
       - equal:
-          path: metadata.labels.app
-          value: testrelease
-      - equal:
           path: spec.type
           value: ClusterIP
       - equal:
@@ -197,7 +188,7 @@ tests:
           path: spec.selector["statefulset.kubernetes.io/pod-name"]
           value: testrelease-mariadb-g-2
       - notExists:
-          path: spec.selector.component
+          path: spec.selector["app.kubernetes.io/component"]
       - equal:
           path: spec.ports[0].name
           value: galera
@@ -348,9 +339,6 @@ tests:
           path: metadata.name
           value: testrelease-mariadb-g-backend
       - equal:
-          path: metadata.labels.app
-          value: testrelease
-      - equal:
           path: spec.type
           value: ClusterIP
       - equal:
@@ -359,8 +347,8 @@ tests:
       - notExists:
           path: spec.selector["statefulset.kubernetes.io/pod-name"]
       - equal:
-          path: spec.selector.component
-          value: database
+          path: spec.selector["app.kubernetes.io/component"]
+          value: mariadb-galera-sts-database
       - equal:
           path: spec.ports[0].name
           value: galera
@@ -431,16 +419,13 @@ tests:
           path: metadata.name
           value: testrelease-mariadb
       - equal:
-          path: metadata.labels.app
-          value: testrelease
-      - equal:
           path: spec.type
           value: ClusterIP
       - notExists:
           path: spec.clusterIP
       - equal:
-          path: spec.selector.component
-          value: database
+          path: spec.selector["app.kubernetes.io/component"]
+          value: mariadb-galera-sts-database
       - equal:
           path: spec.ports[0].name
           value: mysql
@@ -475,16 +460,13 @@ tests:
           path: metadata.name
           value: testrelease-mariadb-direct
       - equal:
-          path: metadata.labels.app
-          value: testrelease
-      - equal:
           path: spec.type
           value: ClusterIP
       - notExists:
           path: spec.clusterIP
       - equal:
-          path: spec.selector.component
-          value: database
+          path: spec.selector["app.kubernetes.io/component"]
+          value: mariadb-galera-sts-database
       - equal:
           path: spec.ports[0].name
           value: mysql
@@ -520,16 +502,13 @@ tests:
           path: metadata.name
           value: testrelease-mariadb-direct
       - equal:
-          path: metadata.labels.app
-          value: testrelease
-      - equal:
           path: spec.type
           value: ClusterIP
       - notExists:
           path: spec.clusterIP
       - equal:
-          path: spec.selector.component
-          value: database
+          path: spec.selector["app.kubernetes.io/component"]
+          value: mariadb-galera-sts-database
       - equal:
           path: spec.ports[0].name
           value: mysql
@@ -549,7 +528,7 @@ tests:
           path: spec.sessionAffinityConfig.clientIP.timeoutSeconds
           value: 28800
 
-  - it: frontend services  no second service with proxysql on
+  - it: frontend services no second service with proxysql on
     template: service.yaml
     documentIndex: 5
     set:
@@ -587,9 +566,6 @@ tests:
           path: metadata.name
           value: testrelease-proxysql-0
       - equal:
-          path: metadata.labels.app
-          value: testrelease
-      - equal:
           path: spec.type
           value: ClusterIP
       - equal:
@@ -599,7 +575,7 @@ tests:
           path: spec.selector["statefulset.kubernetes.io/pod-name"]
           value: testrelease-proxysql-0
       - notExists:
-          path: spec.selector.component
+          path: spec.selector["app.kubernetes.io/component"]
       - equal:
           path: spec.ports[1].name
           value: proxy
@@ -660,9 +636,6 @@ tests:
           path: metadata.name
           value: testrelease-proxysql-1
       - equal:
-          path: metadata.labels.app
-          value: testrelease
-      - equal:
           path: spec.type
           value: ClusterIP
       - equal:
@@ -672,7 +645,7 @@ tests:
           path: spec.selector["statefulset.kubernetes.io/pod-name"]
           value: testrelease-proxysql-1
       - notExists:
-          path: spec.selector.component
+          path: spec.selector["app.kubernetes.io/component"]
       - equal:
           path: spec.ports[1].name
           value: proxy
@@ -732,9 +705,6 @@ tests:
           path: metadata.name
           value: testrelease-proxysql-2
       - equal:
-          path: metadata.labels.app
-          value: testrelease
-      - equal:
           path: spec.type
           value: ClusterIP
       - equal:
@@ -744,7 +714,7 @@ tests:
           path: spec.selector["statefulset.kubernetes.io/pod-name"]
           value: testrelease-proxysql-2
       - notExists:
-          path: spec.selector.component
+          path: spec.selector["app.kubernetes.io/component"]
       - equal:
           path: spec.ports[1].name
           value: proxy
@@ -804,9 +774,6 @@ tests:
           path: metadata.name
           value: testrelease-proxysql-backend
       - equal:
-          path: metadata.labels.app
-          value: testrelease
-      - equal:
           path: spec.type
           value: ClusterIP
       - equal:
@@ -815,8 +782,8 @@ tests:
       - notExists:
           path: spec.selector["statefulset.kubernetes.io/pod-name"]
       - equal:
-          path: spec.selector.component
-          value: proxysql
+          path: spec.selector["app.kubernetes.io/component"]
+          value: mariadb-galera-proxysql-sts-proxy
       - equal:
           path: spec.ports[1].name
           value: proxy
@@ -876,16 +843,13 @@ tests:
           path: metadata.name
           value: testrelease-mariadb
       - equal:
-          path: metadata.labels.app
-          value: testrelease
-      - equal:
           path: spec.type
           value: ClusterIP
       - notExists:
           path: spec.clusterIP
       - equal:
-          path: spec.selector.component
-          value: proxysql
+          path: spec.selector["app.kubernetes.io/component"]
+          value: mariadb-galera-proxysql-sts-proxy
       - equal:
           path: spec.ports[0].name
           value: proxy
@@ -922,16 +886,13 @@ tests:
           path: metadata.name
           value: testrelease-haproxy-backend
       - equal:
-          path: metadata.labels.app
-          value: testrelease
-      - equal:
           path: spec.type
           value: LoadBalancer
       - notExists:
           path: spec.clusterIP
       - equal:
-          path: spec.selector.component
-          value: haproxy
+          path: spec.selector["app.kubernetes.io/component"]
+          value: mariadb-galera-haproxy-deploy-proxy
       - equal:
           path: spec.ports[0].name
           value: stats
@@ -965,16 +926,13 @@ tests:
           path: metadata.name
           value: testrelease-mariadb
       - equal:
-          path: metadata.labels.app
-          value: testrelease
-      - equal:
           path: spec.type
           value: ClusterIP
       - notExists:
           path: spec.clusterIP
       - equal:
-          path: spec.selector.component
-          value: haproxy
+          path: spec.selector["app.kubernetes.io/component"]
+          value: mariadb-galera-haproxy-deploy-proxy
       - equal:
           path: spec.ports[0].name
           value: proxy
@@ -1008,16 +966,13 @@ tests:
           path: metadata.name
           value: testrelease-backup-kopiaserver-frontend
       - equal:
-          path: metadata.labels.app
-          value: testrelease
-      - equal:
           path: spec.type
           value: LoadBalancer
       - notExists:
           path: spec.clusterIP
       - equal:
-          path: spec.selector.component
-          value: kopiaserver
+          path: spec.selector["app.kubernetes.io/component"]
+          value: mariadb-galera-kopia-deploy-server
       - equal:
           path: spec.ports[0].name
           value: kopia
@@ -1054,9 +1009,6 @@ tests:
       - notEqual:
           path: metadata.name
           value: testrelease-mariadb
-      - equal:
-          path: metadata.labels.app
-          value: testrelease
 
   - it: database service name changed if migration option is disabled
     template: service.yaml
@@ -1075,9 +1027,6 @@ tests:
       - notEqual:
           path: metadata.name
           value: testrelease-mariadb-replica
-      - equal:
-          path: metadata.labels.app
-          value: testrelease
 
   - it: database backend service external IP added for region 1
     template: service.yaml
@@ -1094,9 +1043,6 @@ tests:
     asserts:
       - isKind:
           of: Service
-      - equal:
-          path: metadata.labels.app
-          value: testrelease
       - equal:
           path: spec.externalIPs[0]
           value: "10.0.0.1"
@@ -1117,9 +1063,6 @@ tests:
       - isKind:
           of: Service
       - equal:
-          path: metadata.labels.app
-          value: testrelease
-      - equal:
           path: spec.externalIPs[0]
           value: "10.0.0.2"
 
@@ -1138,9 +1081,6 @@ tests:
     asserts:
       - isKind:
           of: Service
-      - equal:
-          path: metadata.labels.app
-          value: testrelease
       - equal:
           path: spec.externalIPs[0]
           value: "10.0.0.3"
@@ -1161,9 +1101,6 @@ tests:
       - isKind:
           of: Service
       - equal:
-          path: metadata.labels.app
-          value: testrelease
-      - equal:
           path: spec.externalIPs[0]
           value: "10.0.0.1"
 
@@ -1183,9 +1120,6 @@ tests:
       - isKind:
           of: Service
       - equal:
-          path: metadata.labels.app
-          value: testrelease
-      - equal:
           path: spec.externalIPs[0]
           value: "10.0.0.2"
 
@@ -1204,9 +1138,6 @@ tests:
     asserts:
       - isKind:
           of: Service
-      - equal:
-          path: metadata.labels.app
-          value: testrelease
       - equal:
           path: spec.externalIPs[0]
           value: "10.0.0.3"
