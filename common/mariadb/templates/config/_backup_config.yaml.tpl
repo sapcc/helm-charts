@@ -14,9 +14,9 @@ backup:
     redirect_url: "https://{{ .Values.name }}.mariabackup.{{ .Values.global.region }}.cloud.sap"
 database:
   type: "mariadb"
-  user: {{ .Values.users.backup.name | required ".Values.users.backup.name is required" }}
+  user: {{ include "mariadb.resolve_secret_squote" .Values.users.backup.name | required ".Values.users.backup.name is required" }}
   version: {{ .Values.backup_v2.maria_db.version }}
-  password: {{ .Values.users.backup.password | required ".Values.users.backup.password is required" }}
+  password: {{ include "mariadb.resolve_secret_squote" .Values.users.backup.password | required ".Values.users.backup.password is required" }}
   host: {{ include "fullName" . }}
   port: 3306
   server_id: 999
@@ -33,12 +33,12 @@ database:
 storages:
   s3:
     - name: aws-{{ .Values.global.mariadb.backup_v2.aws.region }}
-      aws_access_key_id: {{ .Values.global.backup_v2.aws_access_key_id }}
-      aws_secret_access_key: {{ .Values.global.backup_v2.aws_secret_access_key }}
+      aws_access_key_id: {{ include "mariadb.resolve_secret_squote" .Values.global.backup_v2.aws_access_key_id }}
+      aws_secret_access_key: {{ include "mariadb.resolve_secret_squote" .Values.global.backup_v2.aws_secret_access_key }}
       region: {{ .Values.global.mariadb.backup_v2.aws.region }}
       bucket_name: "mariadb-backup-{{ .Values.global.region }}"
       sse_customer_algorithm: "AES256"
-      sse_customer_key: "{{ .Values.global.mariadb.backup_v2.aws.sse_customer_key }}"
+      sse_customer_key: "{{ include "mariadb.resolve_secret_squote" .Values.global.mariadb.backup_v2.aws.sse_customer_key }}"
   swift:
     - name: swift-{{ .Values.global.region }}
       auth_version: 3
@@ -47,7 +47,7 @@ storages:
       user_domain_name: Default
       project_name: master
       project_domain_name: ccadmin
-      password: {{ .Values.backup_v2.swift.password | required "Please set .Values.backup_v2.swift.password" }}
+      password: {{ include "mariadb.resolve_secret_squote" .Values.backup_v2.swift.password | required "Please set .Values.backup_v2.swift.password" }}
       region: {{ .Values.global.region }}
       container_name: "mariadb-backup-{{ .Values.global.region }}"
 verification:
