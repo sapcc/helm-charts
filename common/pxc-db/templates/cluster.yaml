@@ -1,0 +1,377 @@
+---
+apiVersion: pxc.percona.com/v1
+kind: PerconaXtraDBCluster
+metadata:
+  namespace: {{ $.Release.Namespace }}
+  name: db-{{.Values.name}}
+  finalizers:
+    - percona.com/delete-pxc-pods-in-order
+  {{- with .Values.annotations }}
+  annotations:
+    {{- .  | toYaml | nindent 4 }}
+  {{- end }}
+spec:
+  crVersion: {{ .Chart.AppVersion }}
+  {{- if .Values.ignoreAnnotations }}
+  ignoreAnnotations:
+{{ .Values.ignoreAnnotations | toYaml | indent 4 }}
+  {{- end }}
+  {{- if .Values.ignoreLabels }}
+  ignoreLabels:
+{{ .Values.ignoreLabels | toYaml | indent 4 }}
+  {{- end }}
+  secretsName: pxc-cluster-{{.Values.name}}-secrets
+  sslSecretName: pxc-cluster-{{.Values.name}}-ssl
+  sslInternalSecretName: pxc-cluster-{{.Values.name}}-ssl-internal
+  {{- if .Values.initContainer }}
+  initContainer:
+    {{- if $.Values.initContainer.image.override }}
+    image: {{ $.Values.initContainer.image.override }}
+    {{- else }}
+    image: {{ required ".Values.global.dockerHubMirror is missing" .Values.global.dockerHubMirror }}/{{ $.Values.initContainer.image.name }}:{{ $.Values.initContainer.image.tag }}
+    {{- end }}
+    {{- if .Values.initContainer.resources }}
+    resources:
+      {{- if hasKey .Values.initContainer.resources "requests" }}
+      requests:
+{{ tpl (.Values.initContainer.resources.requests | toYaml) $ | indent 8 }}
+      {{- end }}
+      {{- if hasKey .Values.initContainer.resources "limits" }}
+      limits:
+{{ tpl (.Values.initContainer.resources.limits | toYaml) $ | indent 8 }}
+      {{- end }}
+    {{- end }}
+  {{- end }}
+  enableCRValidationWebhook: true
+  tls:
+    enabled: true
+  pause: {{ .Values.pause }}
+  updateStrategy: SmartUpdate
+  upgradeOptions:
+    apply: disabled
+  {{- $pxc := .Values.pxc }}
+  pxc:
+    size: {{ $pxc.size }}
+    {{- if $pxc.image.override }}
+    image: {{ $pxc.image.override }}
+    {{- else }}
+    image: {{ required ".Values.global.dockerHubMirror is missing" .Values.global.dockerHubMirror }}/{{ $pxc.image.name }}:{{ $pxc.image.tag }}
+    {{- end }}
+    annotations:
+{{ $pxc.annotations | toYaml | indent 6 }}
+    labels:
+{{ $pxc.labels | toYaml | indent 6 }}
+    {{- if $pxc.expose }}
+    expose:
+{{ tpl ($pxc.expose | toYaml) $ | indent 6 }}
+    {{- end }}
+    autoRecovery: {{ $pxc.autoRecovery }}
+    readinessDelaySec: 15
+    livenessDelaySec: 600
+    {{- if .Values.pxc.configuration }}
+    configuration:
+{{ toYaml .Values.pxc.configuration | indent 6 }}
+    {{- end }}
+    {{- if $pxc.imagePullPolicy }}
+    imagePullPolicy: {{ $pxc.imagePullPolicy }}
+    {{- end }}
+    readinessProbes:
+      initialDelaySeconds: 15
+      timeoutSeconds: 15
+      periodSeconds: 30
+      successThreshold: 1
+      failureThreshold: 5
+    livenessProbes:
+      initialDelaySeconds: 300
+      timeoutSeconds: 5
+      periodSeconds: 10
+      successThreshold: 1
+      failureThreshold: 3
+    containerSecurityContext:
+      privileged: false
+    podSecurityContext:
+      runAsUser: 1001
+      runAsGroup: 1001
+      fsGroup: 1001
+      supplementalGroups: [1001]
+      fsGroupChangePolicy: "Always"
+    resources:
+      requests:
+{{ tpl ($pxc.resources.requests | toYaml) $ | indent 8 }}
+      limits:
+{{ tpl ($pxc.resources.limits | toYaml) $ | indent 8 }}
+    sidecars:
+    - name: metrics
+      {{- if $pxc.sidecars.metrics.image.override }}
+      image: {{ $pxc.sidecars.metrics.image.override }}
+      {{- else }}
+      image: {{ required ".Values.global.dockerHubMirror is missing" .Values.global.dockerHubMirror }}/{{ $pxc.sidecars.metrics.image.name }}:{{ $pxc.sidecars.metrics.image.tag }}
+      {{- end }}
+      env:
+        - name: MYSQLD_EXPORTER_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: pxc-cluster-{{.Values.name}}-secrets
+              key: monitor
+      ports:
+        - name: metrics
+          containerPort: 9104
+      args:
+        - "--mysqld.username=monitor"
+        - "--mysqld.address=localhost:3306"
+        - "--collect.binlog_size"
+        - "--collect.info_schema.processlist"
+        - "--collect.info_schema.query_response_time"
+      livenessProbe:
+        httpGet:
+          path: /
+          port: 9104
+          scheme: HTTP
+        periodSeconds: 20
+        timeoutSeconds: 10
+      readinessProbe:
+        httpGet:
+          path: /
+          port: 9104
+          scheme: HTTP
+        periodSeconds: 20
+        timeoutSeconds: 10
+      resources:
+        requests:
+          cpu: 5m
+          memory: 32Mi
+        limits:
+          cpu: 250m
+          memory: 256Mi
+    {{- if $pxc.priorityClassName }}
+    priorityClassName: {{ $pxc.priorityClassName }}
+    {{- end }}
+    affinity:
+#     antiAffinityTopologyKey: "kubernetes.io/hostname"
+      advanced:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 1
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: "app"
+                      operator: In
+                      values:
+                        - {{ $.Release.Name | quote }}
+                    - key: "component"
+                      operator: In
+                      values:
+                        - "pxc"
+                topologyKey: "topology.kubernetes.io/zone"
+            - weight: 2
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: "app"
+                      operator: In
+                      values:
+                        - {{ $.Release.Name | quote }}
+                    - key: "component"
+                      operator: In
+                      values:
+                        - "pxc"
+                topologyKey: "kubernetes.io/hostname"
+    podDisruptionBudget:
+      maxUnavailable: 1
+    volumeSpec:
+      persistentVolumeClaim:
+        {{- if $pxc.persistence.storageClass }}
+        {{- if (eq "-" $pxc.persistence.storageClass) }}
+        storageClassName: ""
+        {{- else }}
+        storageClassName: "{{ $pxc.persistence.storageClass }}"
+        {{- end }}
+        {{- end }}
+        accessModes: [{{ $pxc.persistence.accessMode | quote }}]
+        resources:
+          requests:
+            storage: {{ $pxc.persistence.size | quote }}
+    gracePeriod: 600
+  proxysql:
+    enabled: false
+  {{- $haproxy := .Values.haproxy }}
+  haproxy:
+    enabled: true
+    size: {{ $haproxy.size }}
+    {{- if $haproxy.image.override }}
+    image: {{ $haproxy.image.override }}
+    {{- else }}
+    image: {{ required ".Values.global.dockerHubMirror is missing" .Values.global.dockerHubMirror }}/{{ $haproxy.image.name }}:{{ $haproxy.image.tag }}
+    {{- end }}
+    {{- if $haproxy.imagePullPolicy }}
+    imagePullPolicy: {{ $haproxy.imagePullPolicy }}
+    {{- end }}
+    annotations:
+{{ $haproxy.annotations | toYaml | indent 6 }}
+    labels:
+{{ $haproxy.labels | toYaml | indent 6 }}
+    readinessDelaySec: 15
+    livenessDelaySec: 600
+    readinessProbes:
+      initialDelaySeconds: 15
+      timeoutSeconds: 1
+      periodSeconds: 5
+      successThreshold: 1
+      failureThreshold: 3
+    livenessProbes:
+      initialDelaySeconds: 60
+      timeoutSeconds: 5
+      periodSeconds: 30
+      successThreshold: 1
+      failureThreshold: 4
+    exposePrimary:
+{{ $haproxy.service.primary | toYaml | indent 6 }}
+    exposeReplicas:
+{{ $haproxy.service.replicas | toYaml | indent 6 }}
+    resources:
+      requests:
+{{ tpl ($haproxy.resources.requests | toYaml) $ | indent 8 }}
+      limits:
+{{ tpl ($haproxy.resources.limits | toYaml) $ | indent 8 }}
+    {{- if $haproxy.priorityClassName }}
+    priorityClassName: {{ $haproxy.priorityClassName }}
+    {{- end }}
+    affinity:
+#     antiAffinityTopologyKey: "kubernetes.io/hostname"
+      advanced:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 1
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: "app"
+                      operator: In
+                      values:
+                        - {{ $.Release.Name | quote }}
+                    - key: "component"
+                      operator: In
+                      values:
+                        - "haproxy"
+                topologyKey: "topology.kubernetes.io/zone"
+            - weight: 2
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: "app"
+                      operator: In
+                      values:
+                        - {{ $.Release.Name | quote }}
+                    - key: "component"
+                      operator: In
+                      values:
+                        - "haproxy"
+                topologyKey: "kubernetes.io/hostname"
+    containerSecurityContext:
+      privileged: false
+    podSecurityContext:
+      runAsUser: 1001
+      runAsGroup: 1001
+      fsGroup: 1001
+      supplementalGroups: [1001]
+    podDisruptionBudget:
+      maxUnavailable: 1
+    gracePeriod: 30
+  {{- $backup := .Values.backup }}
+  {{- if $backup.enabled }}
+  backup:
+    {{- if $backup.image.override }}
+    image: {{ $backup.image.override }}
+    {{- else }}
+    image: {{ required ".Values.global.dockerHubMirror is missing" .Values.global.dockerHubMirror }}/{{ $backup.image.name }}:{{ $backup.image.tag }}
+    {{- end }}
+    {{- if $backup.imagePullPolicy }}
+    imagePullPolicy: {{ $backup.imagePullPolicy }}
+    {{- end }}
+    pitr:
+    {{- if not $backup.pitr.enabled }}
+      enabled: false
+    {{- else }}
+      enabled: true
+      storageName: {{ $backup.pitr.storageName }}
+      timeBetweenUploads: {{ $backup.pitr.timeBetweenUploads }}
+      timeoutSeconds: {{ $backup.pitr.timeoutSeconds }}
+      resources:
+        requests:
+{{ tpl ($backup.pitr.resources.requests | toYaml) $ | indent 10 }}
+        limits:
+{{ tpl ($backup.pitr.resources.limits | toYaml) $ | indent 10 }}
+    {{- end }}
+    storages:
+      s3-binlogs:
+        type: s3
+        annotations:
+{{ $backup.pitr.annotations | toYaml | indent 10 }}
+        resources:
+          requests:
+{{ tpl ($backup.resources.requests | toYaml) $ | indent 12 }}
+          limits:
+{{ tpl ($backup.resources.limits | toYaml) $ | indent 12 }}
+        {{- if $backup.priorityClassName }}
+        priorityClassName: {{ $backup.priorityClassName }}
+        {{- end }}
+        s3:
+          bucket: "pxc-backup-{{ .Values.global.region }}/binlogs/{{.Values.name}}/"
+          credentialsSecret: "pxc-cluster-{{.Values.name}}-backup-s3"
+          region: "{{ .Values.s3.region }}"
+          endpointUrl: "https://objectstore-3.{{ .Values.s3.region }}.cloud.sap"
+      s3-backups-hourly:
+        type: s3
+        annotations:
+{{ $backup.annotations | toYaml | indent 10 }}
+        resources:
+          requests:
+{{ tpl ($backup.resources.requests | toYaml) $ | indent 12 }}
+          limits:
+{{ tpl ($backup.resources.limits | toYaml) $ | indent 12 }}
+        {{- if $backup.priorityClassName }}
+        priorityClassName: {{ $backup.priorityClassName }}
+        {{- end }}
+        s3:
+          bucket: "pxc-backup-{{ .Values.global.region }}/backups/{{.Values.name}}/hourly"
+          credentialsSecret: "pxc-cluster-{{.Values.name}}-backup-s3"
+          region: "{{ .Values.s3.region }}"
+          endpointUrl: "https://objectstore-3.{{ .Values.s3.region }}.cloud.sap"
+      s3-backups-daily:
+        type: s3
+        annotations:
+{{ $backup.annotations | toYaml | indent 10 }}
+        resources:
+          requests:
+{{ tpl ($backup.resources.requests | toYaml) $ | indent 12 }}
+          limits:
+{{ tpl ($backup.resources.limits | toYaml) $ | indent 12 }}
+        {{- if $backup.priorityClassName }}
+        priorityClassName: {{ $backup.priorityClassName }}
+        {{- end }}
+        s3:
+          bucket: "pxc-backup-{{ .Values.global.region }}/backups/{{.Values.name}}/daily"
+          credentialsSecret: "pxc-cluster-{{.Values.name}}-backup-s3"
+          region: "{{ .Values.s3.region }}"
+          endpointUrl: "https://objectstore-3.{{ .Values.s3.region }}.cloud.sap"
+      s3-backups-custom:
+        type: s3
+        annotations:
+{{ $backup.annotations | toYaml | indent 10 }}
+        resources:
+          requests:
+{{ tpl ($backup.resources.requests | toYaml) $ | indent 12 }}
+          limits:
+{{ tpl ($backup.resources.limits | toYaml) $ | indent 12 }}
+        {{- if $backup.priorityClassName }}
+        priorityClassName: {{ $backup.priorityClassName }}
+        {{- end }}
+        s3:
+          bucket: "pxc-backup-{{ .Values.global.region }}/backups/{{.Values.name}}/custom"
+          credentialsSecret: "pxc-cluster-{{.Values.name}}-backup-s3"
+          region: "{{ .Values.s3.region }}"
+          endpointUrl: "https://objectstore-3.{{ .Values.s3.region }}.cloud.sap"
+    schedule:
+{{ $backup.schedule | toYaml | indent 6 }}
+{{- end }}

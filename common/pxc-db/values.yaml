@@ -1,0 +1,179 @@
+# Default values for percona-xtradb-cluster.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+global:
+  linkerd_enabled: true
+  linkerd_requested: true
+
+linkerd:
+  enabled: true
+
+name: null
+
+ignoreAnnotations:
+  - linkerd.io/inject
+ignoreLabels: []
+
+annotations: {}
+
+pause: false
+initContainer:
+  image:
+    name: percona/percona-xtradb-cluster-operator
+    tag: 1.15.0
+    override: null
+  resources:
+    requests:
+      memory: 100M
+      cpu: 100m
+    limits:
+      memory: 200M
+      cpu: 200m
+
+system_users:
+  root:
+    password: null
+  xtrabackup:
+    password: null
+  monitor:
+    password: null
+  proxyadmin:
+    password: null
+  operator:
+    password: null
+  replication:
+    password: null
+
+pxc:
+  size: 3
+  image:
+    name: percona/percona-xtradb-cluster
+    tag: 8.0.36-28.1
+    override: null
+  sidecars:
+    metrics:
+      image:
+        name: prom/mysqld-exporter
+        tag: v0.15.1
+        override: null
+  imagePullPolicy: IfNotPresent
+  annotations: {}
+  labels: {}
+  expose:
+    enabled: true
+    type: ClusterIP
+    externalTrafficPolicy: Cluster
+    internalTrafficPolicy: Cluster
+    annotations: {}
+#   annotations:
+#     config.linkerd.io/opaque-ports: 3306,33060,33062
+  autoRecovery: true
+  configuration: |
+    [mysqld]
+    wsrep_debug                     = CLIENT
+    wsrep_provider_options          = "gcache.size=1G; gcache.recover=yes"
+    binlog_format                   = ROW
+    max_connections                 = 1024
+    innodb_flush_log_at_trx_commit  = 0
+    innodb_flush_method             = O_DIRECT
+    innodb_file_per_table           = 1
+    innodb_autoinc_lock_mode        = 2
+    innodb_buffer_pool_size         = 1024M
+    innodb_log_file_size            = 512M
+    innodb_open_files               = 4000
+    innodb_stats_on_metadata        = 0
+    innodb_thread_concurrency       = 0
+    innodb_read_io_threads          = 8
+    innodb_write_io_threads         = 8
+    innodb_print_all_deadlocks      = 1
+    log_bin_trust_function_creators = 1
+    bind_address                    = 0.0.0.0
+    slow_query_log                  = 1
+    long_query_time                 = 5
+    [sst]
+    xbstream-opts=--decompress
+    [xtrabackup]
+    compress=lz4
+  priorityClassName: openstack-service-critical
+  resources:
+    requests:
+      memory: 1G
+      cpu: 500m
+    limits: {}
+  persistence:
+    enabled: true
+    ## percona data Persistent Volume Storage Class
+    ## If defined, storageClassName: <storageClass>
+    ## If set to "-", storageClassName: "", which disables dynamic provisioning
+    ## If undefined (the default) or set to null, no storageClassName spec is
+    ##   set, choosing the default provisioner.  (gp2 on AWS, standard on
+    ##   GKE, AWS & OpenStack)
+    ##
+    # storageClass: "-"
+    accessMode: ReadWriteOnce
+    size: 10Gi
+
+haproxy:
+  enabled: true
+  size: 3
+  image:
+    name: percona/haproxy
+    tag: 2.8.5
+    override: null
+  imagePullPolicy: Always
+  annotations: {}
+  labels: {}
+  service:
+    primary:
+      enabled: true
+      type: ClusterIP
+      externalTrafficPolicy: Cluster
+      internalTrafficPolicy: Cluster
+      annotations: {}
+#     annotations:
+#       config.linkerd.io/opaque-ports: 3306,3307,3309,33060,33062
+    replicas:
+      enabled: true
+      type: ClusterIP
+      externalTrafficPolicy: Cluster
+      internalTrafficPolicy: Cluster
+      annotations: {}
+  priorityClassName: openstack-service-critical
+  resources:
+    requests:
+      memory: 100M
+      cpu: 500m
+    limits: {}
+
+s3:
+  region: null
+  aws_access_key_id: null
+  aws_secret_access_key: null
+
+backup:
+  enabled: false
+  annotations: {}
+  image:
+    name: percona/percona-xtradb-cluster-operator
+    tag: 1.15.0-pxc8.0-backup-pxb8.0.35
+    override: null
+  imagePullPolicy: Always
+  priorityClassName: openstack-service-critical
+  resources:
+    requests: {}
+    limits: {}
+  pitr:
+    enabled: false
+    annotations: {}
+    storageName: s3-binlogs
+    timeBetweenUploads: 300
+    timeoutSeconds: 60
+    priorityClassName: openstack-service-critical
+    resources:
+      requests: {}
+      limits: {}
+  schedule:
+    - name: "daily-backup"
+      schedule: "0 0 * * *"
+      keep: 5
+      storageName: s3-backups
