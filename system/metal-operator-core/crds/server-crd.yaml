@@ -67,6 +67,23 @@ spec:
             spec:
               description: ServerSpec defines the desired state of a Server.
               properties:
+                BIOS:
+                  description: BIOS specifies the BIOS settings for the server.
+                  items:
+                    description: BIOSSettings represents the BIOS settings for a server.
+                    properties:
+                      settings:
+                        additionalProperties:
+                          type: string
+                        description: Settings is a map of key-value pairs representing the BIOS settings.
+                        type: object
+                      version:
+                        description: Version specifies the version of the server BIOS for which the settings are defined.
+                        type: string
+                    required:
+                      - version
+                    type: object
+                  type: array
                 bmc:
                   description: |-
                     BMC contains the access details for the BMC.
@@ -181,6 +198,26 @@ spec:
                       type: string
                   type: object
                   x-kubernetes-map-type: atomic
+                bootOrder:
+                  description: BootOrder specifies the boot order of the server.
+                  items:
+                    description: BootOrder represents the boot order of the server.
+                    properties:
+                      device:
+                        description: Device is the device to boot from.
+                        type: string
+                      name:
+                        description: Name is the name of the boot device.
+                        type: string
+                      priority:
+                        description: Priority is the priority of the boot device.
+                        type: integer
+                    required:
+                      - device
+                      - name
+                      - priority
+                    type: object
+                  type: array
                 indicatorLED:
                   description: IndicatorLED specifies the desired state of the server's indicator LED.
                   type: string
@@ -242,6 +279,20 @@ spec:
             status:
               description: ServerStatus defines the observed state of Server.
               properties:
+                BIOS:
+                  description: BIOSSettings represents the BIOS settings for a server.
+                  properties:
+                    settings:
+                      additionalProperties:
+                        type: string
+                      description: Settings is a map of key-value pairs representing the BIOS settings.
+                      type: object
+                    version:
+                      description: Version specifies the version of the server BIOS for which the settings are defined.
+                      type: string
+                  required:
+                    - version
+                  type: object
                 conditions:
                   description: Conditions represents the latest available observations of the server's current state.
                   items:
