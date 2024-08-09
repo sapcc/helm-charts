@@ -1,4 +1,4 @@
-{{- if.Values.alerts.enabled }}
+{{- if and .Values.alerts.enabled .Values.alerts.alertmanager.hosts }}
 apiVersion: greenhouse.sap/v1alpha1
 kind: Plugin
 metadata:
@@ -10,11 +10,30 @@ spec:
   displayName: Alerts
   optionValues:
     - name: endpoint
-      value: {{ required ".Values.alerts.endpoint missing" .Values.alerts.endpoint }}
+      value: {{ printf "https://%s/api/v2" (.Values.alerts.alertmanager.hosts | first) }}
     - name: alerts.alertmanager.enabled
       value: {{ .Values.alerts.alertmanager.enabled }}
     - name: alerts.alertmanager.ingress.enabled
       value: {{ .Values.alerts.alertmanager.enabled }}
+    {{- if .Values.alerts.alertmanager.enabled }}
+    - name: alerts.alertmanager.ingress.annotations
+      value:
+        nginx.ingress.kubernetes.io/auth-tls-secret: greenhouse/ingress-ca-cert
+        nginx.ingress.kubernetes.io/auth-tls-verify-client: "true"
+        nginx.ingress.kubernetes.io/auth-tls-verify-depth: "3"
+    - name: alerts.alertmanager.ingress.enabled
+      value: true
+    - name: alerts.alertmanager.ingress.hosts
+      value: 
+        {{ .Values.alerts.alertmanager.hosts | toYaml | nindent 8 }}
+    - name: alerts.alertmanager.ingress.tls
+      value:
+        - hosts:
+            {{ .Values.alerts.alertmanager.hosts | toYaml | nindent 12 }}
+          {{- range $host := .Values.alerts.alertmanager.hosts }}
+          secretName: {{ printf "tls-%s" $host | replace "." "-" }}
+          {{- end }}
+    {{- end }}
     - name: alerts.defaultRules.create
       value: {{ .Values.alerts.alertmanager.enabled }}
     - name: filterLabels
