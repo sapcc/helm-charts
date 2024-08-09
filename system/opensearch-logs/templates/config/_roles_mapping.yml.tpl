@@ -62,6 +62,11 @@ otellogs:
   users:
   - "otellogs"
 
+otelstorage:
+  reserved: false
+  users:
+  - "otelstorage"
+
 jaeger:
   reserved: false
   users:
@@ -102,6 +107,13 @@ promrole:
   reserved: false
   users:
   - "promuser"
+  backend_roles:
+  - CC_IAS_OPERATIONS_UI_KIBANA_SUPPORT
+
+oraboskvmrole:
+  reserved: false
+  users:
+  - "oraboskvm"
   backend_roles:
   - CC_IAS_OPERATIONS_UI_KIBANA_SUPPORT
 

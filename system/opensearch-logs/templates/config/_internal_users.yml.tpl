@@ -32,6 +32,12 @@ compute:
   backend_roles:
   - "compute"
 
+oraboskvm:
+  hash: "{{ .Values.users.oraboskvm.hash }}"
+  reserved: true
+  backend_roles:
+  - "oraboskvm"
+
 otel:
   hash: "{{ .Values.users.otel.hash }}"
   reserved: true
@@ -43,6 +49,12 @@ otellogs:
   reserved: true
   backend_roles:
   - "otellogs"
+
+otelstorage:
+  hash: "{{ .Values.users.otelstorage.hash }}"
+  reserved: true
+  backend_roles:
+  - "otelstorage"
 
 {{- if .Values.qalogs.enabled }}
 dataqade2:

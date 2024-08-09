@@ -289,6 +289,26 @@ otellogs:
     - "indices:admin/create"
     - "indices:data/write/bulk*"
     - "indices:data/write/index"
+otelstorage:
+  reserved: false
+  cluster_permissions:
+  - "cluster_monitor"
+  - "cluster_composite_ops"
+  - "cluster:admin/ingest/pipeline/put"
+  - "cluster:admin/ingest/pipeline/get"
+  - "indices:admin/template/get"
+  - "cluster_manage_index_templates"
+  - "cluster:admin/opensearch/ml/predict"
+  index_permissions:
+  - index_patterns:
+    - "otelstorage-*"
+    allowed_actions:
+    - "indices:admin/template/get"
+    - "indices:admin/template/put"
+    - "indices:admin/mapping/put"
+    - "indices:admin/create"
+    - "indices:data/write/bulk*"
+    - "indices:data/write/index"
 jaeger:
   reserved: false
   cluster_permissions:
@@ -360,6 +380,35 @@ complex-role:
     - "kibana_all_write"
 
 promrole:
+  reserved: false
+  hidden: false
+  cluster_permissions:
+    - "cluster:monitor/prometheus/metrics"
+    - "cluster:monitor/health"
+    - "cluster:monitor/state"
+    - "cluster:monitor/nodes/info"
+    - "cluster:monitor/nodes/stats"
+    - "indices:data/read/scroll*"
+    - "indices:data/read/msearch"
+  index_permissions:
+  - index_patterns:
+    - "*"
+    allowed_actions:
+    - "indices:monitor/stats"
+    - "indices:admin/mappings/get"
+    - "indices:admin/aliases/get"
+    - "indices:data/read/scroll"
+    - "indices:data/read/scroll/clear"
+    - "indices:data/read/search"
+    - "indices:data/read/search*"
+    - "read"
+  tenant_permissions:
+  - tenant_patterns:
+    - "*"
+    allowed_actions:
+    - "kibana_all_write"
+
+oraboskvmrole:
   reserved: false
   hidden: false
   cluster_permissions:
