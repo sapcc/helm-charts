@@ -124,6 +124,8 @@ mysql_metrics:
           secrets.id,
           secrets.status,
           COALESCE(secrets.name, "No Secret Name") AS secret_name,
+          UNIX_TIMESTAMP(STR_TO_DATE(IFNULL(secrets.created_at,'1970-01-01 00:00:00'), '%Y-%c-%e %T')) AS created_at,
+          UNIX_TIMESTAMP(STR_TO_DATE(IFNULL(secrets.deleted_at,'1970-01-01 00:00:00'), '%Y-%c-%e %T')) AS deleted_at,
           UNIX_TIMESTAMP(STR_TO_DATE(IFNULL(secrets.expiration,'1970-01-01 00:00:00'), '%Y-%c-%e %T')) AS expiration,
           projects.external_id  AS project_id,
           secrets.secret_type ,
@@ -131,7 +133,6 @@ mysql_metrics:
         from secrets
         INNER JOIN projects
         on secrets.project_id=projects.id
-        where secrets.deleted='false'
         GROUP BY secrets.id, secrets.status, secrets.name, projects.external_id, secrets.secret_type, secrets.expiration;
       values:
       - "count_gauge"
@@ -141,6 +142,8 @@ mysql_metrics:
       - "status"
       - "secret_name"
       - "expiration"
+      - "created_at"
+      - "deleted_at"
       - "project_id"
       - "secret_type"
       name: openstack_barbican_hsm_secrets_count_gauge
@@ -149,6 +152,8 @@ mysql_metrics:
           secrets.id,
           secrets.status,
           COALESCE(secrets.name, "No Secret Name") AS secret_name,
+          UNIX_TIMESTAMP(STR_TO_DATE(IFNULL(secrets.created_at,'1970-01-01 00:00:00'), '%Y-%c-%e %T')) AS created_at,
+          UNIX_TIMESTAMP(STR_TO_DATE(IFNULL(secrets.deleted_at,'1970-01-01 00:00:00'), '%Y-%c-%e %T')) AS deleted_at,
           UNIX_TIMESTAMP(STR_TO_DATE(IFNULL(secrets.expiration,'1970-01-01 00:00:00'), '%Y-%c-%e %T')) AS expiration,
           projects.external_id  AS project_id,
           secrets.secret_type,
@@ -170,6 +175,8 @@ mysql_metrics:
       - "certificate_name"
       - "project_id"
       - "creator_id"
+      - "created_at"
+      - "deleted_at"
       name: openstack_barbican_certificate_expiration_date
       query: |
         SELECT
