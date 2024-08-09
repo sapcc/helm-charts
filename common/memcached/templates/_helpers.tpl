@@ -32,6 +32,19 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
 {{- end -}}
 {{- end -}}
 
+{{- define "memcached.resolve_secret" -}}
+    {{- $str := . -}}
+    {{- if (hasPrefix "vault+kvv2" $str ) -}}
+        {{"{{"}} resolve "{{ $str }}" {{"}}"}}
+    {{- else -}}
+        {{ $str }}
+    {{- end -}}
+{{- end -}}
+
+{{- define "memcached.sasl_pwdb" -}}
+{{ include "memcached.resolve_secret" .Values.auth.username }}:{{ include "memcached.resolve_secret" .Values.auth.password }}
+{{- end -}}
+
 {{- define "memcached_maintenance_affinity" }}
           - weight: 1
             preference:
