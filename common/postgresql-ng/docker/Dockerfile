@@ -5,12 +5,12 @@ FROM debian:stable-slim
 ARG DEBIAN_FRONTEND=noninteractive
 RUN apt-get update \
   && apt-get upgrade -y \
-  # install locales which are excluded on dbeian slim variant by default \
+  # install locales which are excluded on debian slim variant by default \
   && grep -q '/usr/share/locale' /etc/dpkg/dpkg.cfg.d/docker \
   && sed -ri '/\/usr\/share\/locale/d' /etc/dpkg/dpkg.cfg.d/docker \
   && ! grep -q '/usr/share/locale' /etc/dpkg/dpkg.cfg.d/docker \
   && apt-get install --no-install-recommends -y \
-    # used to compare verison numbers
+    # used to compare version numbers
     bc \
     # required for https \
     ca-certificates \
