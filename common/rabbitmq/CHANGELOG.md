@@ -3,6 +3,62 @@ Rabbitmq CHANGELOG
 
 This file is used to list changes made in each version of the common chart rabbitmq.
 
+0.11.0
+------
+- Update RabbitMQ to version 3.13.6-management
+- Add `helm.sh/chart` label
+- `app.kubernetes.io/version` is now an application version
+
+0.10.1
+-----
+- add urlquery escaped transport function to the helpers to be used while switching to secret-injector
+
+0.10.0
+-----
+- add ability to change service type and set externalTrafficPolicy
+
+0.9.0
+-----
+- add pythonic escaping of special characters in the startup script
+- move secrets from the startup script to /etc/rabbitmq/secrets
+- disable guest user completely
+
+0.8.0
+-----
+- Remove support of the insecure rabbitmq-exporter sidecar container
+  1. Sidecar uses plaintext credentials in environment variables
+  2. Sidecar utilises Management API metrics
+  3. Management API metrics will not be supported in future RabbitMQ releases
+
+0.7.5
+-----
+- remove shared service labels from volumeClaimTemplates, because it's immutable
+- return mutable shared service labels to statefulset metadata
+
+0.7.4
+-----
+nathan.oyler@sap.com
+- remove shared service tags for statefulsets, statefulsets are immutable.
+
+0.7.3
+-----
+- add option enableAllFeatureFlags to enable all stable feature flags after service has started
+
+0.7.2
+-----
+- Fix RabbitMQRPCUnackTotal alert to support both old and new unack metric name
+
+0.7.1
+------
+birk.bohne@sap.com
+- `app.kubernetes.io/component` label fixed by using the `.Chart.Name` variable instead of a hardcoded value
+- defined functions are shared between all (sub)charts and because of that hardcoded values will cause unexpected behavior
+
+0.6.13
+------
+dusan.dordevic@sap.com
+- Adding standardized labels to all objects, according to https://kubernetes.io/docs/concepts/overview/working-with-objects/common-labels/#labels and https://helm.sh/docs/chart_best_practices/labels/
+
 0.6.9
 -----
 b.alkhateeb@sap.com

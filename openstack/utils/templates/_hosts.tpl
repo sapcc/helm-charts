@@ -6,6 +6,24 @@
 {{ .Release.Namespace }}.svc.kubernetes.{{ include "host_fqdn" . }}
 {{- end }}
 
+{{- define "_resolve_secret" -}}
+    {{- $str := index . 0 -}}
+    {{- $add_urlquery := index . 1 -}}
+    {{- if (hasPrefix "vault+kvv2" $str) -}}
+        {{"{{"}} resolve "{{ $str }}" {{ if $add_urlquery }}| urlquery {{ end }}{{"}}"}}
+    {{- else -}}
+        {{ $str }}
+{{- end -}}
+{{- end -}}
+
+{{- define "resolve_secret" -}}
+{{ include "_resolve_secret" (tuple . false) }}
+{{- end -}}
+
+{{- define "resolve_secret_urlquery" -}}
+{{ include "_resolve_secret" (tuple . true) }}
+{{- end -}}
+
 {{define "db_url" }}
     {{- if kindIs "map" . -}}
 postgresql+psycopg2://{{default .Values.dbUser .Values.global.dbUser}}:{{(default .Values.dbPassword .Values.global.dbPassword) | default (tuple . (default .Values.dbUser .Values.global.dbUser) | include "postgres.password_for_user")}}@{{.Chart.Name}}-postgresql.{{ include "svc_fqdn" . }}:5432/{{.Values.postgresql.postgresDatabase}}
@@ -28,12 +46,12 @@ postgresql+psycopg2://{{$user}}:{{$password | urlquery}}@{{.Chart.Name}}-postgre
             {{- $user := get .Values.mariadb.users $db | required (printf ".Values.mariadb.%v.name & .password are required (key comes from first database in .Values.mariadb.databases)" $db) }}
             {{- $user.name | required (printf ".Values.mariadb.%v.name is required!" $db ) }}:{{ $user.password | required (printf ".Values.mariadb.%v.password is required!" $db ) }}
         {{- else }}
-            {{- coalesce .Values.dbUser .Values.global.dbUser "root" }}:{{ coalesce .Values.dbPassword .Values.global.dbPassword .Values.mariadb.root_password | required ".Values.mariadb.root_password is required!" | urlquery }}
+            {{- coalesce .Values.dbUser .Values.global.dbUser "root" }}:{{ coalesce .Values.dbPassword .Values.global.dbPassword .Values.mariadb.root_password | required ".Values.mariadb.root_password is required!" }}
         {{- end }}
     {{- else }}
         {{- $user := index . 2 }}
         {{- $password := index . 3 }}
-        {{- $user }}:{{ $password | urlquery }}
+        {{- $user }}:{{ include "resolve_secret_urlquery" $password }}
     {{- end }}
 {{- end }}
 
@@ -57,7 +75,7 @@ postgresql+psycopg2://{{$user}}:{{$password | urlquery}}@{{.Chart.Name}}-postgre
             {{- $user := get .Values.mariadb.users $db | required (printf ".Values.mariadb.%v.name & .password are required (key comes from first database in .Values.mariadb.databases)" $db) }}
             {{- tuple . $db $user.name (required (printf "User with key %v requires password" $db) $user.password) | include "db_url_mysql" }}
         {{- else }}
-            {{- tuple . (coalesce .Values.dbName .Values.db_name) (coalesce .Values.dbUser .Values.global.dbUser "root") (coalesce .Values.dbPassword .Values.global.dbPassword .Values.mariadb.root_password | required ".Values.mariadb.root_password is required!") .Values.mariadb.name | include "db_url_mysql" }}
+            {{- tuple . (coalesce .Values.dbName .Values.db_name) (coalesce .Values.dbUser .Values.global.dbUser "root") (coalesce .Values.dbPassword .Values.global.dbPassword .Values.mariadb.root_password | include "resolve_secret_urlquery" | required ".Values.mariadb.root_password is required!") .Values.mariadb.name | include "db_url_mysql" }}
         {{- end }}
     {{- else -}}
 mysql+pymysql://{{ include "db_credentials" . }}@
@@ -187,7 +205,7 @@ mysql+pymysql://{{ include "db_credentials" . }}@
     {{- $host := index . 0 }}
     {{- $user := index . 1 }}
     {{- $password := index . 2 -}}
-https://{{ $user }}:{{ $password | urlquery }}@{{ $host }}
+https://{{ $user }}:{{ include "resolve_secret_urlquery" $password }}@{{ $host }}
 {{- end }}
 
 {{- define "utils.bigip_url" }}

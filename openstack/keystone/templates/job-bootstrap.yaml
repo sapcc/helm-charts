@@ -26,8 +26,11 @@ spec:
         chart-version: {{.Chart.Version}}
         configmap-bin-hash: {{ include (print $.Template.BasePath "/configmap-bin.yaml") . | sha256sum }}
         configmap-etc-hash: {{ include (print $.Template.BasePath "/configmap-etc.yaml") . | sha256sum }}
+        secrets-bin-hash: {{ include (print $.Template.BasePath "/secret-bin.yaml") . | sha256sum }}
+        secrets-hash: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
         # only run once on initial install
         "helm.sh/hook": post-install
+{{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
     spec:
 {{- if .Values.rbac.enabled }}
       serviceAccountName: {{ .Release.Name }}
@@ -71,6 +74,8 @@ spec:
               mountPath: /etc/keystone/keystone.conf
               subPath: keystone.conf
               readOnly: true
+            - name: keystone-etc-confd
+              mountPath: /etc/keystone/keystone.conf.d
 {{- if ne .Values.api.policy "json" }}
             - name: keystone-etc
               mountPath: /etc/keystone/policy.yaml
@@ -105,10 +110,20 @@ spec:
           configMap:
             name: keystone-etc
             defaultMode: 0444
+        - name: keystone-etc-confd
+          secret:
+            secretName: {{ .Release.Name }}-secrets
+            defaultMode: 0444
         - name: keystone-bin
-          configMap:
-            name: keystone-bin
-            defaultMode: 0555
+          projected:
+            sources:
+            - configMap:
+                name: keystone-bin
+            - secret:
+                name: keystone-bin-secrets
+                items:
+                  - key: bootstrap
+                    path: bootstrap
         - name: fernet
           secret:
             secretName: keystone-fernet

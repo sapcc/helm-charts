@@ -409,12 +409,24 @@ tests:
     object: fixtures/pod-security/audit-logs-fluent-systemd.yaml
     assertions:
     - violations: no
+  - name: pod-security-accept-calico-apiserver
+    object: fixtures/pod-security/calico-apiserver.yaml
+    assertions:
+    - violations: no
   - name: pod-security-accept-cinder-volume-vmware
     object: fixtures/pod-security/cinder-volume-vmware.yaml
     assertions:
     - violations: no
   - name: pod-security-accept-cloudprober
     object: fixtures/pod-security/cloudprober.yaml
+    assertions:
+    - violations: no
+  - name: pod-security-accept-cni-nanny
+    object: fixtures/pod-security/cni-nanny.yaml
+    assertions:
+    - violations: no
+  - name: pod-security-accept-cni-nanny-bgp-peer-discovery-job
+    object: fixtures/pod-security/cni-nanny-bgp-peer-discovery-job.yaml
     assertions:
     - violations: no
   - name: pod-security-accept-concourse-kubernetes-ingress
@@ -664,16 +676,16 @@ tests:
     object: fixtures/vulnerable-images/deployment-vulnerable.yaml
     assertions:
     - violations: 1
-      message: '^\{"support_group":"foo-group","service":"dummy"\} >> image keppel.example.com/vulnerability-unpinned:low for container "dummylow" has "X-Keppel-Vulnerability-Status: Low"$'
+      message: '^\{"status":"Low","support_group":"foo-group","service":"dummy"\} >> image keppel.example.com/vulnerability-unpinned:low for container "dummylow" has "X-Keppel-Vulnerability-Status: Low"$'
     - violations: 1
-      message: '^\{"support_group":"foo-group","service":"dummy"\} >> image keppel.example.com/vulnerability-unpinned:medium for container "dummymedium" has "X-Keppel-Vulnerability-Status: Medium"$'
+      message: '^\{"status":"Medium","support_group":"foo-group","service":"dummy"\} >> image keppel.example.com/vulnerability-unpinned:medium for container "dummymedium" has "X-Keppel-Vulnerability-Status: Medium"$'
     - violations: 1
-      message: '^\{"support_group":"foo-group","service":"dummy"\} >> image keppel.example.com/vulnerability-unpinned:high for container "starter" has "X-Keppel-Vulnerability-Status: High"$'
+      message: '^\{"status":"High","support_group":"foo-group","service":"dummy"\} >> image keppel.example.com/vulnerability-unpinned:high for container "starter" has "X-Keppel-Vulnerability-Status: High"$'
   - name: pod-unclear
     object: fixtures/vulnerable-images/deployment-unclear.yaml
     assertions:
     - violations: 1
-      message: '^\{"support_group":"foo-group","service":"dummy"\} >> image keppel.example.com/vulnerability-unpinned:unclear for container "dummy" has "X-Keppel-Vulnerability-Status: Unclear"$'
+      message: '^\{"status":"Unclear","support_group":"foo-group","service":"dummy"\} >> image keppel.example.com/vulnerability-unpinned:unclear for container "dummy" has "X-Keppel-Vulnerability-Status: Unclear"$'
   - name: pod-clean
     object: fixtures/vulnerable-images/deployment-clean.yaml
     assertions:
@@ -687,16 +699,23 @@ tests:
     object: fixtures/vulnerable-images/pod-vulnerable.yaml
     assertions:
     - violations: 1
-      message: '^\{"support_group":"foo-group","service":"dummy"\} >> image keppel.example.com/vulnerability:low for container "dummylow" has "X-Keppel-Vulnerability-Status: Low"$'
+      message: '^\{"status":"Low","support_group":"foo-group","service":"dummy"\} >> image keppel.example.com/vulnerability:low for container "dummylow" has "X-Keppel-Vulnerability-Status: Low"$'
     - violations: 1
-      message: '^\{"support_group":"foo-group","service":"dummy"\} >> image keppel.example.com/vulnerability:medium for container "dummymedium" has "X-Keppel-Vulnerability-Status: Medium"$'
+      message: '^\{"status":"Medium","support_group":"foo-group","service":"dummy"\} >> image keppel.example.com/vulnerability:medium for container "dummymedium" has "X-Keppel-Vulnerability-Status: Medium"$'
     - violations: 1
-      message: '^\{"support_group":"foo-group","service":"dummy"\} >> image keppel.example.com/vulnerability:high for container "starter" has "X-Keppel-Vulnerability-Status: High"$'
+      message: '^\{"status":"High","support_group":"foo-group","service":"dummy"\} >> image keppel.example.com/vulnerability:high for container "starter" has "X-Keppel-Vulnerability-Status: High"$'
+  - name: pod-vulnerable-in-linkerd
+    object: fixtures/vulnerable-images/pod-vulnerable-in-linkerd.yaml
+    assertions:
+    - violations: 1
+      message: '^\{"status":"Low","support_group":"containers","service":"linkerd"\} >> image keppel.example.com/ccloud/servicemesh/proxy:low for container "linkerd-proxy" has "X-Keppel-Vulnerability-Status: Low"$'
+    - violations: 1
+      message: '^\{"status":"High","support_group":"containers","service":"linkerd"\} >> image keppel.example.com/ccloud/servicemesh/proxy-init:high for container "linkerd-init" has "X-Keppel-Vulnerability-Status: High"$'
   - name: pod-unclear
     object: fixtures/vulnerable-images/pod-unclear.yaml
     assertions:
     - violations: 1
-      message: '^\{"support_group":"foo-group","service":"dummy"\} >> image keppel.example.com/vulnerability:unclear for container "dummy" has "X-Keppel-Vulnerability-Status: Unclear"$'
+      message: '^\{"status":"Unclear","support_group":"foo-group","service":"dummy"\} >> image keppel.example.com/vulnerability:unclear for container "dummy" has "X-Keppel-Vulnerability-Status: Unclear"$'
   - name: pod-clean
     object: fixtures/vulnerable-images/pod-clean.yaml
     assertions:

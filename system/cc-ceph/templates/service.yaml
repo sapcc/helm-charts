@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.objectstore.service.name }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  externalIPs:
+  - {{ .Values.objectstore.service.externalIP }}
+  type: NodePort
+  sessionAffinity: None
+  externalTrafficPolicy: Local
+  ports:
+    - port: {{ .Values.objectstore.service.port }}
+      targetPort: {{ .Values.objectstore.service.port }}
+      protocol: TCP
+      name: rgw-ssl
+  selector:
+    app: {{ .Values.objectstore.service.selector.app }}
+    rook_cluster: {{ .Values.objectstore.service.selector.rook_cluster }}
+    rook_object_store: {{ .Values.objectstore.name }}

@@ -118,6 +118,8 @@ mariadb:
   max_connections: 2048
   buffer_pool_size: "2048M"
   log_file_size: "512M"
+  ccroot_user:
+    enabled: true
   name: cinder
   databases:
   - cinder
@@ -127,7 +129,7 @@ mariadb:
       password: null
       grants:
       - "ALL PRIVILEGES on cinder.*"
-  initdb_configmap: cinder-initdb
+  initdb_secret: true
   persistence_claim:
     name: db-cinder-pvclaim
   extraConfigFiles:
@@ -321,9 +323,11 @@ rabbitmq:
     ready_total_wait_for: 60m
     support_group: compute-storage-api
   metrics:
-    enabled: &metrics true
+    enabled: true
     sidecar:
-      enabled: *metrics
+      enabled: false
+  enableDetailedMetrics: true
+  enablePerObjectMetrics: true 
 rabbitmq_notifications:
   name: cinder
 logging:

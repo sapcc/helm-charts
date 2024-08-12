@@ -1,0 +1,14 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ include "owner-label-injector.fullname" . }}
+  labels:
+    {{- include "owner-label-injector.labels" . | nindent 4 }}
+spec:
+  dnsNames:
+  - {{ include "owner-label-injector.fullname" . }}.{{ .Release.Namespace }}.svc
+  - {{ include "owner-label-injector.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local
+  issuerRef:
+    kind: Issuer
+    name: {{ include "owner-label-injector.fullname" . }}
+  secretName: {{ include "owner-label-injector.fullname" . }}

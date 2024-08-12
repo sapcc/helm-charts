@@ -250,7 +250,7 @@ scheduler:
   rpc_statsd_port: 9125
   # enables collecting metrics for RPC calls
   rpc_statsd_enabled: true
-  default_filters: "CpuInfoMigrationFilter, ShardFilter, AggregateMultiTenancyIsolation, ComputeFilter, ComputeCapabilitiesFilter, BigVmFlavorHostSizeFilter, VmSizeThresholdFilter, ImagePropertiesFilter, ServerGroupAntiAffinityFilter, ServerGroupAffinityFilter"
+  default_filters: "CpuInfoMigrationFilter, ShardFilter, AggregateMultiTenancyIsolation, ComputeFilter, ComputeCapabilitiesFilter, HANAMemoryMaxUnitFilter, ResizeVcpuMaxUnitFilter, BigVmFlavorHostSizeFilter, VmSizeThresholdFilter, ImagePropertiesFilter, ServerGroupAntiAffinityFilter, ServerGroupAffinityFilter"
   vm_size_threshold_vm_size_mb: "16385"
   vm_size_threshold_hv_size_mb: "819200"
   ram_weight_multiplier: 1.0
@@ -271,6 +271,19 @@ scheduler:
   hv_ram_class_weight_multiplier: 100.0
   # this is a DictOpt and takes the form key1:value1,key2:value2
   hv_ram_class_weights_gib: "1024:1"
+  # Hosts having the CUSTOM_DECOMMISSIONING trait should be used only if it's
+  # absolutely necessary. Positive values are decreasing the weight in this case.
+  decommissioning_weight_multiplier: 150.0
+  # Hosts having the CUSTOM_HW_SAPPHIRE_RAPIDS trait should be used only if
+  # there are no other usable hosts for this flavor. Positive values decrease
+  # the weight in this case.
+  sapphire_rapids_weight_multiplier: 100.0
+  # When we dedicate hardware to customers, we want them to use it preferrably.
+  # But flavors not meant for SR should still try to go onto non-SR BBs. BBs
+  # currently getting decommissioned, even if they're dedicated to a customer,
+  # should not be preferred.
+  aggregate_multi_tenancy_isolation_weight_multiplier: 50.0
+
   image_properties_default_architecture: "x86_64"
 
 compute:
@@ -679,6 +692,29 @@ mysql_metrics:
         WHERE deleted_at is NULL;
       values:
       - "version"
+    - help: Errored live-migrations
+      name: openstack_compute_errored_live_migration_gauge
+      labels:
+        - "instance_uuid"
+        - "migration_uuid"
+        - "vm_state"
+      query: |
+        WITH instance_migrations AS (
+            SELECT
+                m.instance_uuid,
+                m.status,
+                m.uuid,
+                ROW_NUMBER() OVER(PARTITION BY m.instance_uuid ORDER BY m.id DESC) AS rn
+            FROM migrations m
+            WHERE m.deleted = 0 AND m.migration_type='live-migration'
+        )
+        SELECT
+            i.uuid as instance_uuid,im.uuid as migration_uuid,i.vm_state,1 as gauge
+        FROM instances i
+        INNER JOIN instance_migrations im ON i.uuid = im.instance_uuid
+        WHERE i.deleted = 0 AND i.vm_state = 'error' AND im.rn = 1 AND im.status = 'error'
+      values:
+        - "gauge"
 
 postgresql:
   enabled: false
@@ -699,10 +735,12 @@ mariadb:
   buffer_pool_size: "4096M"
   log_file_size: "1024M"
   name: nova
-  initdb_configmap: true
+  initdb_secret: true
   long_query_time: 8
   vpa:
     set_main_container: true
+  ccroot_user:
+    enabled: true
   databases:
   - nova
   - nova_cell0
@@ -739,10 +777,12 @@ mariadb_api:
   buffer_pool_size: "4096M"
   log_file_size: "1024M"
   name: nova-api
-  initdb_configmap: true
+  initdb_secret: true
   long_query_time: 8
   vpa:
     set_main_container: true
+  ccroot_user:
+    enabled: true
   databases:
   - nova_api
   users:
@@ -772,10 +812,12 @@ mariadb_cell2:
   enabled: false
   buffer_pool_size: "4096M"
   log_file_size: "1024M"
-  initdb_configmap: true
+  initdb_secret: true
   long_query_time: 8
   vpa:
     set_main_container: true
+  ccroot_user:
+    enabled: true
   persistence_claim:
     name: db-nova-cell2-pvc
     size: "50Gi"
@@ -801,6 +843,8 @@ rabbitmq_cell2:
     enabled: true
     sidecar:
       enabled: false
+    enableDetailedMetrics: true
+    enablePerObjectMetrics: true
 audit:
   central_service:
     user: rabbitmq
@@ -824,6 +868,8 @@ rabbitmq:
     enabled: true
     sidecar:
       enabled: false
+    enableDetailedMetrics: true
+    enablePerObjectMetrics: true
   resources:
     requests:
       memory: 2Gi

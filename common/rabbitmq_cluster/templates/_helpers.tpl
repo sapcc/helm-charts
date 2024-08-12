@@ -22,7 +22,7 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
 {{- define "rabbitmq._transport_url" -}}
 {{- $envAll := index . 0 -}}
 {{- $rabbitmq := index . 1 -}}
-rabbit://{{ default "" $envAll.Values.global.user_suffix | print $rabbitmq.users.default.user }}:{{ required "$rabbitmq.users.default.password missing" $rabbitmq.users.default.password | urlquery}}@{{ include "rabbitmq.release_host" $envAll }}:{{ $rabbitmq.port | default 5672 }}{{ $rabbitmq.virtual_host | default "/" }}
+rabbit://{{ default "" $envAll.Values.global.user_suffix | print $rabbitmq.users.default.user }}:{{ required "$rabbitmq.users.default.password missing" $rabbitmq.users.default.password }}@{{ include "rabbitmq.release_host" $envAll }}:{{ $rabbitmq.port | default 5672 }}{{ $rabbitmq.virtual_host | default "/" }}
 {{- end}}
 
 {{- define "rabbitmq.shell_quote" -}}

@@ -21,7 +21,7 @@ groups:
         Check the logs of keppel-janitor for details.
 
   - alert: OpenstackKeppelNotValidatingBlobs
-    expr: time() - max(keppel_blobs_min_validated_at) > 691200 # 8 days (in seconds)
+    expr: time() - max(keppel_blobs_min_next_validation_at) > 7200 # 2 hours (in seconds)
     for: 5m
     labels:
       context: janitor
@@ -58,7 +58,7 @@ groups:
         The detailed errors are in the Keppel DB under `SELECT DISTINCT validation_error_message FROM blobs`.
 
   - alert: OpenstackKeppelNotValidatingManifests
-    expr: time() - max(keppel_manifests_min_validated_at) > 90000
+    expr: time() - max(keppel_manifests_min_next_validation_at) > 1800 # 30 minutes (in seconds)
     for: 5m
     labels:
       context: janitor

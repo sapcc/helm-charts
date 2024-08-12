@@ -42,8 +42,14 @@ spec:
         - name: APP_ENV
           value: "{{ .Values.app_env }}"
         - name: ARISTA_USERNAME
-          value: "{{ .Values.global.arista_username }}"
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "fullName" . }}
+              key: arista_username
         - name: ARISTA_PASSWORD
-          value: "{{ .Values.global.arista_password }}"
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "fullName" . }}
+              key: arista_password
         resources:
 {{ toYaml $values.resources | indent 10 }}

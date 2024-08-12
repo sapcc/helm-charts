@@ -27,6 +27,7 @@ spec:
 {{ tuple . "cinder" "scheduler" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
       annotations:
         configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
+        secrets-hash: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
         {{- if .Values.proxysql.mode }}
         prometheus.io/scrape: "true"
         prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
@@ -54,7 +55,7 @@ spec:
           {{- end }}
           livenessProbe:
             exec:
-              command: ["openstack-agent-liveness", "--component", "cinder", "--config-file", "/etc/cinder/cinder.conf"]
+              command: ["openstack-agent-liveness", "--component", "cinder", "--config-file", "/etc/cinder/cinder.conf", "--config-file", "/etc/cinder/cinder.conf.d/secrets.conf"]
             initialDelaySeconds: 60
             periodSeconds: 60
             timeoutSeconds: 20
@@ -69,6 +70,8 @@ spec:
               mountPath: /etc/cinder/cinder.conf
               subPath: cinder.conf
               readOnly: true
+            - name: cinder-etc-confd
+              mountPath: /etc/cinder/cinder.conf.d
             - name: cinder-etc
               mountPath: /etc/cinder/api-paste.ini
               subPath: api-paste.ini
@@ -91,5 +94,8 @@ spec:
         - name: cinder-etc
           configMap:
             name: cinder-etc
+        - name: cinder-etc-confd
+          secret:
+            secretName: {{ .Release.Name }}-secrets
         {{- include "utils.proxysql.volumes" . | indent 8 }}
         {{- include "utils.coordination.volumes" . | indent 8 }}

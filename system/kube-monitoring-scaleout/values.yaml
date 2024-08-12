@@ -7,6 +7,9 @@ owner-info:
   support-group: containers
   helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/system/kube-monitoring-scaleout
 
+absent-metrics-operator:
+  enabled: true
+
 # Disable the prometheus-operator kube-state-metrics sub-chart. We deploy independently.
 kubeStateMetrics:
   enabled: false
@@ -123,8 +126,9 @@ grafana:
     alerting:
       enabled: false
 
-absent-metrics-operator:
-  enabled: true
+http-keep-alive-monitor:
+  image:
+    repository: keppel.global.cloud.sap/ccloud/http-keep-alive-monitor
 
 kube-state-metrics:
   image:
@@ -230,10 +234,7 @@ fluent-bit:
     repository: keppel.global.cloud.sap/ccloud-dockerhub-mirror/fluent/fluent-bit
     pullPolicy: IfNotPresent
   backend:
-    es:
-      enabled: true
     opensearch:
-      enabled: false
       host: DEFINED-IN-SECRETS
       http_user: DEFINED-IN-SECRETS
       http_passwd: DEFINED-IN-SECRETS
@@ -243,3 +244,19 @@ fluent-bit:
         enabled: "On"
         verify: "Off"
         debug: '1'
+
+x509-certificate-exporter:
+  enabled: false
+  secretsExporter:
+    podAnnotations:
+      prometheus.io/port: "9793"
+      prometheus.io/scrape: "true"
+      prometheus.io/targets: kubernetes
+  hostPathsExporter:
+    daemonSets: null
+  service:
+    create: false
+  prometheusServiceMonitor:
+    create: false
+  prometheusRules:
+    create: false

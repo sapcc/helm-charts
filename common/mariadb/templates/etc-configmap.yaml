@@ -7,6 +7,7 @@ metadata:
     release: "{{ .Release.Name }}"
     heritage: "{{ .Release.Service }}"
     component: database
+    {{- include "sharedservices.labels" . | indent 4 }}
 data:
   mariadb.cnf: |
     [mysqld]
@@ -58,6 +59,9 @@ data:
     log_bin                   = mysqld-bin
     log_slow_admin_statements = OFF
 {{- end }}
+    tcp_keepalive_time        = {{ .Values.tcp_keepalive.time | default 0 | int }}
+    tcp_keepalive_probes      = {{ .Values.tcp_keepalive.probes | default 0 | int }}
+    tcp_keepalive_interval    = {{ .Values.tcp_keepalive.interval | default 0 | int }}
 {{- if .Values.extraConfigFiles }}
 {{ toYaml .Values.extraConfigFiles | indent 2 }}
 {{- end }}

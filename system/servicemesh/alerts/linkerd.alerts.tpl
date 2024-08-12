@@ -32,7 +32,7 @@ groups:
       summary: Linkerd proxy sidecar certificate expiring
       description: "Linkerd proxy sidecar certificate in pod {{`{{ $labels.namespace }}`}}/{{`{{ $labels.pod }}`}} is expiring in less than 24h. Immediate action is required or network connectivity might be lost."
   - alert: LinkerdTrustAnchorCertificateExpiration
-    expr: (secrets_exporter_certificate_not_after{secret="linkerd/linkerd-identity-issuer"} - time()) / 60 / 60 / 24 <= 21
+    expr: (x509_cert_not_after{secret_namespace="linkerd",secret_name="linkerd-identity-issuer"} - time()) / 60 / 60 / 24 <= 21
     for: 5m
     labels:
       tier: k8s
@@ -40,7 +40,7 @@ groups:
       support_group: {{ include "supportGroupFromLabelsOrDefault" "containers" }}
       severity: warning
       context: servicemesh
-      meta: "Linkerd trust anchor certificate {{`{{ $labels.secret }}`}} is expiring in less than 21 days."
+      meta: "Linkerd trust anchor certificate {{`{{ $labels.secret_namespace }}`}}/{{`{{ $labels.secret_name }}`}} is expiring in less than 21 days."
       playbook: 'docs/support/playbook/kubernetes/linkerd'
       no_alert_on_absence: "true"
     annotations:

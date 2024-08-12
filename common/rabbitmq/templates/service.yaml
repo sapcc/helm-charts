@@ -10,6 +10,7 @@ metadata:
     type: rabbitmq
     component: {{ .Release.Name }}
     system: openstack
+    {{- include "rabbitmq.labels" . | indent 4 }}
   annotations:
 {{- if .Values.metrics.enabled }}
     prometheus.io/scrape: "true"
@@ -20,6 +21,10 @@ metadata:
     linkerd.io/inject: enabled
 {{- end }}
 spec:
+  type: {{ .Values.serviceType }}
+{{- if .Values.serviceExternalTrafficPolicy }}
+  externalTrafficPolicy: {{ .Values.serviceExternalTrafficPolicy }}
+{{- end }}
   ports:
     - name: public
       port: {{ default 5672 .Values.ports.public }}

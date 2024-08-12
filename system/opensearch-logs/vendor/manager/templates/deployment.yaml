@@ -35,6 +35,10 @@ spec:
         - name: manager-etc
           configMap:
             name: manager-etc
+        - name: manager-secrets
+          secret:
+            defaultMode: 420
+            secretName: manager-secrets
         - name: opensearch-certs
           secret:
             defaultMode: 420
@@ -58,8 +62,12 @@ spec:
               fieldRef:
                 fieldPath: metadata.namespace
         volumeMounts:
-          - mountPath: /manager-etc
+          - mountPath: /manager-etc/logback.xml
             name: manager-etc
+            subPath: logback.xml
+          - mountPath: /manager-etc/application.conf
+            name: manager-secrets
+            subPath: application.conf
           - mountPath: /opt/certs
             name: opensearch-certs
         ports:

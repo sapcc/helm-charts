@@ -1,0 +1,30 @@
+{{ range $plugin := .Values.ingressPlugins }}
+---
+apiVersion: greenhouse.sap/v1alpha1
+kind: Plugin
+metadata:
+  labels:
+    greenhouse.sap/cluster: {{ required "cluster key is missing for ingress plugin" $plugin.cluster }}
+    greenhouse.sap/plugindefinition: ingress-nginx
+  name: ingress-nginx-{{ $plugin.cluster }}
+spec:
+  clusterName: {{ $plugin.cluster }}
+  displayName: ingress nginx {{ $plugin.cluster }}
+  optionValues:
+  - name: controller.image.registry
+    value: keppel.global.cloud.sap/ccloud-registry-k8s-io-mirror
+  - name: controller.ingressClassResource.default
+    value: true
+  - name: controller.scope.enabled
+    value: false
+  - name: controller.service.externalIPs
+    value:
+    - {{ required "externalIP key is missing for ingress plugin" $plugin.externalIP }}
+  - name: controller.service.externalTrafficPolicy
+    value: Local
+  - name: controller.service.loadBalancerIP
+    value: {{ $plugin.externalIP }}
+  pluginDefinition: ingress-nginx
+  releaseNamespace: kube-system
+
+{{- end}}

@@ -3,12 +3,8 @@ DEFAULT:
   transport_url: nats://andromeda-nats:4222
 
 database:
-{{- if .Values.database_override.enabled }}
-  connection: postgresql://postgres:{{ required ".Values.database_override.password variable missing" .Values.database_override.password | urlquery }}@{{ .Values.database_override.host }}/andromeda?sslmode=disable
-{{- else if .Values.mariadb.enabled }}
+{{- if .Values.mariadb.enabled }}
   connection: mysql://andromeda:{{ required ".Values.mariadb.users.andromeda.password variable missing" .Values.mariadb.users.andromeda.password | urlquery }}@{{.Release.Name}}-mariadb/andromeda?sql_mode=%27ANSI_QUOTES%27
-{{- else if .Values.postgresql.enabled }}
-  connection: postgresql://postgres:{{ required ".Values.postgresql.postgresPassword variable missing" .Values.postgresql.postgresPassword | urlquery }}@andromeda-postgresql:5432/andromeda?sslmode=disable
 {{- end }}
 
 api_settings:
@@ -24,8 +20,6 @@ api_settings:
 service_auth:
 {{- if eq .Values.global.region "global" }}
   auth_url: {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "andromeda_keystone_global_api_endpoint_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
-{{- else if ne .Values.global.clusterType "scaleout" }}
-  auth_url: {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "andromeda_keystone_api_endpoint_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
 {{- else }}
   auth_url: {{ .Values.global.keystone_api_endpoint_protocol_public | default "https"}}://{{include "keystone_api_endpoint_host_public" .}}/v3
 {{- end }}
@@ -44,6 +38,13 @@ quota:
   members: 100
   monitors: 100
   datacenters: 100
+{{- end }}
+
+{{- if .Values.audit.enabled }}
+audit_middleware_notifications:
+  enabled: true
+  queue_name: {{.Values.audit.queue_name}}
+  transport_url: rabbit://{{.Values.audit.user}}:{{.Values.audit.password | required "audit.password required"}}@:{{.Values.audit.port}}
 {{- end }}
 
 house_keeping:

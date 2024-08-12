@@ -32,9 +32,9 @@ metadata:
 spec:
   tls:
     - secretName: maintenance-controller
-      hosts: ["maintenance-controller.{{ .Values.global.clusterType }}.{{ .Values.global.region }}.cloud.sap"]
+      hosts: [{{ printf "maintenance-controller.%s.%s.cloud.sap" .Values.global.clusterType .Values.global.region | coalesce .Values.ingress.hostOverride | quote }}]
   rules:
-  - host: "maintenance-controller.{{ .Values.global.clusterType }}.{{ .Values.global.region }}.cloud.sap"
+  - host: {{ printf "maintenance-controller.%s.%s.cloud.sap" .Values.global.clusterType .Values.global.region | coalesce .Values.ingress.hostOverride | quote }}
     http:
       paths:
       - path: /

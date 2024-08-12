@@ -17,6 +17,8 @@ spec:
       annotations:
         {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
         linkerd.io/inject: enabled
+        config.linkerd.io/skip-inbound-ports: "22,443,9125"
+        config.linkerd.io/skip-outbound-ports: "22,443,9125"
         {{- end }}
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") $ | sha256sum }}
     spec:

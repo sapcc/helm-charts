@@ -27,3 +27,6 @@ default_text_search_config = 'pg_catalog.english'
 log_min_duration_statement = {{ .Values.config.log_min_duration_statement }}
 max_connections = {{.Values.config.max_connections }}
 random_page_cost = {{.Values.config.random_page_cost }}
+{{- if ge (.Values.postgresVersion | int) 16 }}
+reserved_connections = 3 # used by metrics user to prevent blind flying
+{{- end }}

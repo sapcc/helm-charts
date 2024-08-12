@@ -9,8 +9,8 @@ groups:
     for: 6h
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
-      service: node
-      support_group: containers
+      support_group: {{ required ".Values.supportGroup missing" .Values.supportGroup }}
+      service: {{ required ".Values.service missing" .Values.service }}
       severity: warning
       context: node
       meta: "High CPU usage on {{`{{ $labels.node }}`}}"
@@ -25,8 +25,8 @@ groups:
     for: 96h
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
-      service: node
-      support_group: containers
+      support_group: {{ required ".Values.supportGroup missing" .Values.supportGroup }}
+      service: {{ required ".Values.service missing" .Values.service }}
       severity: info
       context: availability
       meta: "Kernel deadlock on {{`{{ $labels.node }}`}}"
@@ -40,8 +40,8 @@ groups:
     for: 5m
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
-      service: node
-      support_group: containers
+      support_group: {{ required ".Values.supportGroup missing" .Values.supportGroup }}
+      service: {{ required ".Values.service missing" .Values.service }}
       severity: warning
       context: node
       meta: "Disk pressure on {{`{{ $labels.node }}`}}"
@@ -54,8 +54,8 @@ groups:
     for: 5m
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
-      service: node
-      support_group: containers
+      support_group: {{ required ".Values.supportGroup missing" .Values.supportGroup }}
+      service: {{ required ".Values.service missing" .Values.service }}
       severity: warning
       context: node
       meta: "Memory pressure on {{`{{ $labels.node }}`}}"
@@ -68,8 +68,8 @@ groups:
     for: 5m
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
-      service: node
-      support_group: containers
+      support_group: {{ required ".Values.supportGroup missing" .Values.supportGroup }}
+      service: {{ required ".Values.service missing" .Values.service }}
       severity: info
       context: node
       meta: "Node disk usage above 85% on {{`{{ $labels.node }}`}} device {{`{{ $labels.device }}`}}"
@@ -84,8 +84,8 @@ groups:
     for: 15m
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
-      service: node
-      support_group: containers
+      support_group: {{ required ".Values.supportGroup missing" .Values.supportGroup }}
+      service: {{ required ".Values.service missing" .Values.service }}
       severity: warning
       context: availability
       meta: "{{`{{ $labels.node }}`}}"
@@ -99,8 +99,8 @@ groups:
     for: 15m
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
-      service: node
-      support_group: containers
+      support_group: {{ required ".Values.supportGroup missing" .Values.supportGroup }}
+      service: {{ required ".Values.service missing" .Values.service }}
       severity: warning
       context: availability
       meta: "{{`{{ $labels.node }}"
@@ -114,8 +114,8 @@ groups:
     expr: sum by (node) (changes(node_vmstat_oom_kill[24h])) > 3
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
-      service: node
-      support_group: containers
+      support_group: {{ required ".Values.supportGroup missing" .Values.supportGroup }}
+      service: {{ required ".Values.service missing" .Values.service }}
       severity: info
       context: memory
     annotations:
@@ -127,8 +127,8 @@ groups:
     for: 1h
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
-      service: node
-      support_group: containers
+      support_group: {{ required ".Values.supportGroup missing" .Values.supportGroup }}
+      service: {{ required ".Values.service missing" .Values.service }}
       severity: critical
       context: threads
       meta: "Very high number of threads on {{`{{ $labels.node }}`}}. Forking problems are imminent."
@@ -137,27 +137,26 @@ groups:
       description: "Very high number of threads on {{`{{ $labels.node }}`}}. Forking problems are imminent."
       summary: Very high number of threads
 
-  - alert: NodeReadonlyFilesystem
-    expr: kube_node_status_condition_normalized{condition="ReadonlyFilesystem", status="true"} == 1
+  - alert: NodeReadOnlyRootFilesystem
+    expr: sum by (node) (node_filesystem_readonly{mountpoint="/"}) > 0
     for: 15m
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
-      service: node
-      support_group: containers
-      severity: info
+      support_group: {{ required ".Values.supportGroup missing" .Values.supportGroup }}
+      service: {{ required ".Values.service missing" .Values.service }}
+      severity: warning
       context: availability
-      meta: "Node {{`{{ $labels.node }}`}} has a read-only filesystem."
-      playbook: docs/support/playbook/k8s_node_read_only_filesystem
+      meta: "Node {{`{{ $labels.node }}`}} has a read-only root filesystem."
     annotations:
-      description: Node {{`{{ $labels.node }}`}} has a read-only filesystem.
-      summary: Read-only file system on node
+      description: Node {{`{{ $labels.node }}`}} has a read-only root filesystem. This could lead to unforeseeable problems. A reboot of the node is advised to fix the issue.
+      summary: Read-only root filesystem on node
 
   - alert: NodeRebootsTooFast
     expr: max by (node) (changes(node_boot_time_seconds[1h])) > 2
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
-      service: node
-      support_group: containers
+      support_group: {{ required ".Values.supportGroup missing" .Values.supportGroup }}
+      service: {{ required ".Values.service missing" .Values.service }}
       severity: warning
       context: availability
       meta: "The node {{`{{ $labels.node }}`}} rebooted at least 3 times in the last hour"

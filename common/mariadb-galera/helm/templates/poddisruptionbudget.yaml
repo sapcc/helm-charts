@@ -1,0 +1,50 @@
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  namespace: {{ $.Release.Namespace }}
+  name: {{ include "commonPrefix" $ }}-database
+  labels:
+    {{- include "sharedservices.labels" $ | indent 4 }}
+spec:
+  maxUnavailable: {{ $.Values.maxUnavailable.database | default 1 }}
+  selector:
+    matchLabels:
+      component: "database"
+{{- if and (hasKey $.Values.mariadb "autostart") (not $.Values.mariadb.autostart) }}
+{{- else if and ($.Values.command) (hasKey $.Values.command "database") }}
+{{- else if and (hasKey $.Values.mariadb.galera.restore "kopia") ($.Values.mariadb.galera.restore.kopia.enabled) }}
+{{- else if and (hasKey $.Values.mariadb "wipeDataAndLog") ($.Values.mariadb.wipeDataAndLog) }}
+{{- else if and ($.Values.proxy.enabled) (eq $.Values.proxy.type "proxysql") }}
+  {{- $unevenNodeCount := "" }}
+  {{- if eq (mod ((include "replicaCount" (dict "global" $ "type" "proxy")) | int) 2) 1 }}
+    {{- $unevenNodeCount = "true" }}
+  {{- end }}
+  {{- $_ := (required ".replicas value not an uneven integer. This is required to avoid a split brain cluster state." $unevenNodeCount) }}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  namespace: {{ $.Release.Namespace }}
+  name: {{ include "commonPrefix" $ }}-proxy
+spec:
+  maxUnavailable: {{ $.Values.maxUnavailable.proxy | default 1 }}
+  selector:
+    matchLabels:
+      component: "proxy"
+{{- end }}
+{{- if and (hasKey $.Values.mariadb "autostart") (not $.Values.mariadb.autostart) }}
+{{- else if and ($.Values.command) (hasKey $.Values.command "database") }}
+{{- else if and (and (hasKey $.Values.mariadb.galera "backup") ($.Values.mariadb.galera.backup.enabled)) (and (hasKey $.Values.mariadb.galera.backup "kopia") ($.Values.mariadb.galera.backup.kopia.enabled)) }}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  namespace: {{ $.Release.Namespace }}
+  name: {{ include "commonPrefix" $ }}-backup-kopiaserver
+spec:
+  maxUnavailable: {{ $.Values.maxUnavailable.kopiaserver | default 1 }}
+  selector:
+    matchLabels:
+      component: "kopiaserver"
+{{- end }}

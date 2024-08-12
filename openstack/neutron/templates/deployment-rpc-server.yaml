@@ -37,6 +37,7 @@ spec:
         configmap-bin-hash: {{ include (print $.Template.BasePath "/configmap-bin.yaml") . | sha256sum }}
         {{- if .Values.cc_fabric.enabled }}
         configmap-etc-cc-fabric: {{ include (print $.Template.BasePath "/configmap-etc-cc-fabric.yaml") . | sha256sum }}
+        secret-cc-fabric: {{ include (print $.Template.BasePath "/secret-cc-fabric.yaml") $ | sha256sum }}
         {{- end }}
         {{- if .Values.proxysql.mode }}
         prometheus.io/scrape: "true"
@@ -53,7 +54,7 @@ spec:
           command: ['dumb-init', 'kubernetes-entrypoint']
           env:
             - name: COMMAND
-              value: "neutron-rpc-server --config-file /etc/neutron/neutron.conf --config-file /etc/neutron/plugins/ml2/ml2-conf.ini --config-file /etc/neutron/plugins/ml2/ml2-conf-aci.ini --config-file /etc/neutron/plugins/ml2/ml2-conf-manila.ini --config-file /etc/neutron/plugins/ml2/ml2-conf-arista.ini --config-file /etc/neutron/plugins/ml2/ml2-conf-asr1k.ini {{- if .Values.bgp_vpn.enabled }} --config-file /etc/neutron/networking-bgpvpn.conf{{- end }}{{- if .Values.interconnection.enabled }} --config-file /etc/neutron/networking-interconnection.conf{{- end }}{{- if .Values.fwaas.enabled }} --config-file /etc/neutron/neutron-fwaas.ini{{- end }}{{- if .Values.cc_fabric.enabled }} --config-file /etc/neutron/plugins/ml2/ml2_conf_cc-fabric.ini {{- end }}"
+              value: "neutron-rpc-server --config-file /etc/neutron/neutron.conf --config-dir /etc/neutron/secrets --config-file /etc/neutron/plugins/ml2/ml2-conf.ini --config-file /etc/neutron/plugins/ml2/ml2-conf-aci.ini --config-file /etc/neutron/plugins/ml2/ml2-conf-manila.ini --config-file /etc/neutron/plugins/ml2/ml2-conf-arista.ini --config-file /etc/neutron/plugins/ml2/ml2-conf-asr1k.ini {{- if .Values.bgp_vpn.enabled }} --config-file /etc/neutron/networking-bgpvpn.conf{{- end }}{{- if .Values.interconnection.enabled }} --config-file /etc/neutron/networking-interconnection.conf{{- end }}{{- if .Values.fwaas.enabled }} --config-file /etc/neutron/neutron-fwaas.ini{{- end }}{{- if .Values.cc_fabric.enabled }} --config-file /etc/neutron/plugins/ml2/ml2_conf_cc-fabric.ini {{- end }}"
             - name: NAMESPACE
               value: {{ .Release.Namespace }}
             - name: DEPENDENCY_JOBS
@@ -87,6 +88,18 @@ spec:
               name: neutron-etc
               subPath: neutron.conf
               readOnly: true
+            - mountPath: /etc/neutron/secrets/neutron-server-secrets.conf
+              name: neutron-server-secrets
+              subPath: neutron-server-secrets.conf
+            - mountPath: /etc/neutron/secrets/neutron-common-secrets.conf
+              name: neutron-common-secrets
+              subPath: neutron-common-secrets.conf
+            - mountPath: /etc/neutron/secrets/neutron-interconnection-secrets.conf
+              name: neutron-interconnection-secrets
+              subPath: neutron-interconnection-secrets.conf
+            - mountPath: /etc/neutron/secrets/neutron-arista-secrets.conf
+              name: neutron-arista-secrets
+              subPath: neutron-arista-secrets.conf
             - mountPath: /etc/neutron/logging.conf
               name: neutron-etc
               subPath: logging.conf
@@ -100,6 +113,8 @@ spec:
               name: neutron-etc-cc-fabric
               subPath: cc-fabric-driver-config.yaml
               readOnly: true
+            - mountPath: /etc/neutron/cc-fabric-secrets/
+              name: neutron-cc-fabric-secrets
 {{- end }}
             - mountPath: /etc/neutron/plugins/ml2/ml2-conf.ini
               name: neutron-etc
@@ -150,10 +165,25 @@ spec:
         - name: neutron-etc
           configMap:
             name: neutron-etc
+        - name: neutron-server-secrets
+          secret:
+            secretName: neutron-server-secrets
+        - name: neutron-common-secrets
+          secret:
+            secretName: neutron-common-secrets
+        - name: neutron-interconnection-secrets
+          secret:
+            secretName: neutron-interconnection-secrets
+        - name: neutron-arista-secrets
+          secret:
+            secretName: neutron-arista-secrets
 {{- if .Values.cc_fabric.enabled }}
         - name: neutron-etc-cc-fabric
           configMap:
             name: neutron-etc-cc-fabric
+        - name: neutron-cc-fabric-secrets
+          secret:
+            secretName: neutron-cc-fabric-secrets
 {{- end }}
         - name: neutron-etc-vendor
           configMap:

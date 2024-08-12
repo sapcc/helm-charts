@@ -1,4 +1,51 @@
 {{- define "tempest-base.tempest_pod" }}
+{{- if .Values.tempestKubectlAccess }}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ .Chart.Name }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ .Chart.Name }}
+rules:
+- apiGroups:
+  - extensions
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - get
+  - list
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  verbs:
+  - get
+  - list
+- apiGroups:
+  - ""
+  resources:
+  - "pods/exec"
+  verbs:
+  - create
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ .Chart.Name }}
+subjects:
+- kind: ServiceAccount
+  name: {{ .Chart.Name }}
+  namespace: {{ .Release.Namespace }}
+roleRef:
+  kind: Role
+  name: {{ .Chart.Name }}
+  apiGroup: rbac.authorization.k8s.io
+{{- end }}
+---
 apiVersion: v1
 kind: Pod
 metadata:
@@ -8,6 +55,9 @@ metadata:
     type: configuration
 spec:
   restartPolicy: Never
+  {{- if .Values.tempestKubectlAccess }}
+  serviceAccountName: {{ .Chart.Name }}
+  {{- end }}
   containers:
     - name: {{ .Chart.Name }}
       image: {{ default "keppel.eu-de-1.cloud.sap/ccloud" .Values.global.registry}}/{{ default .Chart.Name (index .Values (print .Chart.Name | replace "-" "_")).tempest.imageNameOverride }}-plugin-python3:{{ default "latest" (index .Values (print .Chart.Name | replace "-" "_")).tempest.imageTag}}

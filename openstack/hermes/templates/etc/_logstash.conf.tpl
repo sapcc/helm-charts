@@ -4,12 +4,12 @@ input {
 {{- $user := $value.user | default $.Values.hermes.rabbitmq.user }}
 {{- $host := printf "%s-rabbitmq.monsoon3.svc.kubernetes.%s.%s" $key $.Values.global.region $.Values.global.tld}}
 rabbitmq {
-    id => {{ printf "logstash_hermes_%s" $key | quote }}
-    host => {{ $value.host | default (printf $.Values.hermes.rabbitmq.host_template $key) | quote }}
-    user => {{ $user | quote }}
-    password => {{ $value.password | quote }}
+    id => "{{ printf "logstash_hermes_%s" $key }}"
+    host => "{{ $value.host | default (printf $.Values.hermes.rabbitmq.host_template $key) }}"
+    user => "{{ $user }}"
+    password => "{{ $value.password }}"
     port => {{ $.Values.hermes.rabbitmq.port }}
-    queue => {{ $value.queue_name | default $.Values.hermes.rabbitmq.queue_name | quote }}
+    queue => "{{ $value.queue_name | default $.Values.hermes.rabbitmq.queue_name }}"
     subscription_retry_interval_seconds => 60
     automatic_recovery => true
     connection_timeout => 1000
@@ -22,6 +22,13 @@ rabbitmq {
 
 
 filter {
+  # Drop events with action "read/list"
+  # Barbican records reads, but has multiple events per read. 
+  # This will keep it to one event per action 
+  if ([action] == "read/list" or [action] == "read/get") {
+    drop { }
+  }
+
   # unwrap messagingv2 envelope
   if [oslo.message] {
     json {
@@ -77,6 +84,15 @@ filter {
         add_field => { "%{[domain]}" => "%{[initiator][domain_id]}"}
         id => "f06b_mutate_initiator_domain_id"
       }
+    }
+  }
+
+  # Keystone condition for target id and typeURI moving to project_id for consistency and enrichment
+  if [target][id] and [target][typeURI] == "data/security/project" {
+    mutate {
+      id => "f06c_move_target_id_to_project_id"
+      add_field => { "[target][project_id]" => "%{[target][id]}" }
+      remove_field => [ "[target][id]" ]
     }
   }
 
@@ -254,8 +270,8 @@ filter {
     ]
     staging_directory => "/tmp/logstash/jdbc_static/import_data"
     loader_schedule => "{{ .Values.logstash.jdbc.schedule }}"
-    jdbc_user => {{ .Values.global.metis.user | default "default" | quote }}
-    jdbc_password => {{ .Values.global.metis.password | default "default" | quote }}
+    jdbc_user => "{{ .Values.global.metis.user | default "default" }}"
+    jdbc_password => "{{ .Values.global.metis.password | default "default" }}"
     jdbc_driver_class => "com.mysql.cj.jdbc.Driver"
     jdbc_driver_library => ""
     jdbc_connection_string => "jdbc:mysql://{{ .Values.logstash.jdbc.service }}.{{ .Values.logstash.jdbc.namespace }}:3306/{{ .Values.logstash.jdbc.db }}"
@@ -456,7 +472,7 @@ output {
     if ([@metadata][index]) {
       opensearch {
           id => "output_opensearch_clone_for_audit_1"
-          index => "audit-%{[@metadata][index]}-%{+YYYY.MM}"
+          index => "audit-%{[@metadata][index]}"
           template => "/hermes-etc/audit.json"
           template_name => "audit"
           template_overwrite => true
@@ -474,7 +490,7 @@ output {
     } else {
       opensearch {
           id => "output_opensearch_clone_for_audit_2"
-          index => "audit-default-%{+YYYY.MM}"
+          index => "audit-default"
           template => "/hermes-etc/audit.json"
           template_name => "audit"
           template_overwrite => true
@@ -495,7 +511,7 @@ output {
   if ([@metadata][index2] and [@metadata][index2] != [@metadata][index] and [type] == 'clone_for_cc') {
     opensearch {
         id => "output_opensearch_clone_for_cc"
-        index => "audit-%{[@metadata][index2]}-%{+YYYY.MM}"
+        index => "audit-%{[@metadata][index2]}"
         template => "/hermes-etc/audit.json"
         template_name => "audit"
         template_overwrite => true
@@ -517,8 +533,8 @@ output {
     s3 {
       id => "output_s3_for_swift"
       endpoint => "{{.Values.logstash.endpoint}}"
-      access_key_id => "{{.Values.logstash.access_key_id}}"
-      secret_access_key => "{{.Values.logstash.secret_access_key}}"
+      access_key_id => "{{.Values.logstash.access_key_id_conf}}"
+      secret_access_key => "{{.Values.logstash.secret_access_key_conf}}"
       region => "{{.Values.logstash.region}}"
       bucket => "{{.Values.logstash.bucket}}"
       prefix => "{{.Values.logstash.prefix}}"
@@ -535,7 +551,7 @@ output {
 
   {{- if .Values.logstash.audit }}
   if [type] == 'audit' {
-    if (([initiator][domain] == 'Default' and [initiator][name] == 'admin') or [initiator][domain] == 'ccadmin' or [target][project_domain_name] == 'ccadmin' or [initiator][project_domain_name] == 'ccadmin') or ([observer][typeURI] == 'service/security' and [action] == "authenticate" and [outcome] == 'failure') or ([observer][typeURI] == 'service/security' and ([action] == 'create/user') or [action] == 'delete/user') {
+    if (([initiator][domain] == 'Default' and [initiator][name] == 'admin') or [initiator][domain] == 'ccadmin' or [target][project_domain_name] == 'ccadmin' or [initiator][project_domain_name] == 'ccadmin') or ([observer][typeURI] == 'service/security' and [action] == "authenticate" and [outcome] == 'failure') or ([observer][typeURI] == 'service/security' and ([action] == 'create/user') or [action] == 'delete/user') or [observer][typeURI] == 'service/data/security/keymanager' or [target][typeURI] ==  'data/security/project' {
       http {
         id => "output_octobus_audit"
         ssl_certificate_authorities => "/usr/share/logstash/config/ca.pem"

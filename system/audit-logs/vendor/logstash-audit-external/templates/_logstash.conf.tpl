@@ -12,7 +12,7 @@ input {
   http {
     port  => {{.Values.input_http_port}}
     tags => ["audit"]
-    user => '{{.Values.global.elk_elasticsearch_http_user}}'
+    user => '{{.Values.global.logstash_external_http_user}}'
     password => '${AUDIT_HTTP_IN}'
 {{ if eq .Values.global.clusterType "metal" -}}
     ssl_enabled => true

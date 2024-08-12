@@ -46,6 +46,7 @@ pod:
         rolling_update:
           max_unavailable: 10%
           max_surge: 25%
+  tolerations: {}
   debug:
     server: false
     dhcp_agent: false
@@ -53,7 +54,6 @@ pod:
     aci_agent: false
     asr_agent: false
     f5_agent: false
-    cisco_ml2_ucsm_bm: false
   resources:
     metadata_agent:
       requests:
@@ -108,13 +108,6 @@ pod:
       limits:
         cpu: "4000m"
         memory: "3Gi"
-    cisco_ml2_ucsm_bm:
-      requests:
-        cpu: "256m"
-        memory: "512Mi"
-      limits:
-        cpu: "500m"
-        memory: "1024Mi"
     sftp_backup:
       requests:
         cpu: "256m"
@@ -177,7 +170,6 @@ imageNameNetworkAgentDHCPInit: alpine
 # imageVersionCCFabric:
 # imageVersionASR1kML2:
 # imageVersionASR1k:
-# imageVersionUCSM:
 # imageVersionNSXv3:
 # imageVersionNSXTExporter:
 # imageVersionNetworkAgent:
@@ -271,6 +263,7 @@ hypervisors_vmware: []
 # SFTP-swift bridge (e.g. for nsx-t backups in control-plane)
 sftp:
   enabled: false
+  server_key:
   externalIPs: []
   user: db_backup
   logins:
@@ -298,13 +291,6 @@ drivers:
         nsxv3_remove_orphan_ports_after: 2
         nsxv3_default_policy_infrastructure_rules: true
         nsxv3_transport_zone_id_cache_time: 86400
-
-# cisco_ucsm_bm:
-#  example.com:
-#    user:
-#    password:
-#    physical_network:
-#    vnic_paths:
 
 logging:
   formatters:
@@ -353,7 +339,7 @@ logging:
     auditmiddleware:
       handlers: stdout, sentry
       level: INFO
-    rate_limit.rate_limit:
+    rate_limit:
       handlers: stdout, sentry
       level: INFO
 
@@ -371,9 +357,11 @@ mariadb:
   buffer_pool_size: "4096M"
   log_file_size: "1024M"
   name: neutron
-  initdb_configmap: neutron-initdb
+  initdb_secret: true
   vpa:
     set_main_container: true
+  ccroot_user:
+    enabled: true
   persistence_claim:
     name: db-neutron-pvclaim
   backup:
@@ -546,6 +534,7 @@ mysql_metrics:
           host AS hostgroup,
           COUNT(*) AS value
         FROM aci_port_binding_allocations
+        JOIN (SELECT physical_network pn FROM ml2_vlan_allocations GROUP BY pn) AS mva ON mva.pn = host
         GROUP BY host;
       values:
       - "value"
@@ -558,6 +547,7 @@ mysql_metrics:
           host AS hostgroup,
           SUM(segment_id IS NULL) AS value
         FROM aci_port_binding_allocations
+        JOIN (SELECT physical_network pn FROM ml2_vlan_allocations GROUP BY pn) AS mva ON mva.pn = host
         GROUP BY host;
       values:
       - "value"
@@ -625,6 +615,7 @@ rate_limit:
   whitelist:
     - Default/service
     - Default/admin
+    - ccadmin/cloud_admin
   whitelist_users: null
   blacklist: null
   blacklist_users: null
@@ -713,6 +704,12 @@ rate_limit:
           limit: 700r/m
         - action: write
           limit: 200r/m
+      routers/router/add_extraroutes:
+        - action: write
+          limit: 10r/m
+      routers/router/remove_extraroutes:
+        - action: write
+          limit: 10r/m
       routers/router/*:
         - action: write
           limit: 200r/m

@@ -431,8 +431,11 @@ rabbitmq:
     accessMode: ReadWriteOnce
     size: 10Gi
   metrics:
-    enabled: false
-
+    enabled: true
+    sidecar:
+      enabled: false
+    enableDetailedMetrics: true
+    enablePerObjectMetrics: true
 rhea:
   enabled: false
   server:
@@ -511,7 +514,11 @@ rhea_rabbitmq:
     accessMode: ReadWriteOnce
     size: 10Gi
   metrics:
-    enabled: false
+    enabled: true
+    sidecar:
+      enabled: false
+    enableDetailedMetrics: true
+    enablePerObjectMetrics: true
 
 poller: # service that handles received emails
   enabled: false
@@ -664,16 +671,11 @@ owner-info:
 
 postfix:
   postfixEnabled: false
-  ldap:
-    url: ldaps://ldapmaster-ext-svc.management.svc.{{.Values.global.region}}.cronus-pbe.only.sap:636
-    clientKeyPath: /etc/certs/ldap.key
-    clientCertPath: /etc/certs/ldap.crt
-    baseDN: dc=cm,dc=net,dc=sap
-    projectAttributes:
-      - top
-      - x-sap-ccloudProject
-      - x-sap-eMailSystem
 
+postfixMgmt:
+  clientKeyPath: /etc/certs/ldap.key # we re-use the LDAP certificate for postfix mgmt We should change the name but first we need to adjust the secrets chart
+  clientCertPath: /etc/certs/ldap.crt
+  url: https://management.postfix.{{.Values.global.region}}.cloud.sap
 
 #Chart dependecies
 maillog:

@@ -8,7 +8,7 @@ global:
   master_password: ""
 
 image: library/rabbitmq
-imageTag: 3.13.0-management
+imageTag: 3.13.6-management
 ## Specify a imagePullPolicy
 ## 'Always' if imageTag is 'latest', else set to 'IfNotPresent'
 ## ref: http://kubernetes.io/docs/user-guide/images/#pre-pulling-images
@@ -21,6 +21,8 @@ imageTag: 3.13.0-management
 ports:
   public: 5672
   management: 15672
+
+serviceType: ClusterIP
 
 # when not empty, exposes the RabbitMQ service to the outside of the cluster on these IPs
 externalIPs: []
@@ -37,6 +39,8 @@ users:
 # if set true, this will create user dev with password dev for debug and development purposes
 # DANGEROUS, please make sure it is set to false unless really needed
 addDevUser: false
+
+enableAllFeatureFlags: true
 
 persistence:
   enabled: false
@@ -73,21 +77,10 @@ resources:
 nodeAffinity: {}
 
 metrics:
-  enabled: &metrics true
-  sidecar:
-    enabled: *metrics
-  image: kbudde/rabbitmq-exporter
-  imageTag: 0.16.0
+  enabled: true
   user: monitoring
   password: null
   port: 9150
-  resources:
-    limits:
-      memory: 512Mi
-      cpu: 500m
-    requests:
-      memory: 64Mi
-      cpu: 100m
   enableDetailedMetrics: false
   enablePerObjectMetrics: false
 

@@ -12,8 +12,6 @@ prune_orphans=True
 
 # Hostname:port list of APIC controllers
 apic_hosts = {{required "A valid .Values.aci required!" .Values.aci.apic_hosts}}
-apic_username = {{required "A valid .Values.aci required!" .Values.aci.apic_user}}
-apic_password = {{required "A valid .Values.aci required!" .Values.aci.apic_password}}
 apic_use_ssl = True
 apic_application_profile = {{required "A valid .Values.aci required!" .Values.aci.apic_application_profile}}
 

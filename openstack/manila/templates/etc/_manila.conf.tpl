@@ -41,6 +41,10 @@ delete_share_server_with_last_share = {{ .Values.delete_share_server_with_last_s
 
 use_scheduler_creating_share_from_snapshot = {{ .Values.use_scheduler_creating_share_from_snapshot | default false }}
 
+is_deferred_deletion_enabled = {{ .Values.is_deferred_deletion_enabled | default false }}
+
+periodic_deferred_delete_interval = {{ .Values.periodic_deferred_delete_interval | default 300 }}
+
 scheduler_default_filters = {{ .Values.scheduler_default_filters | default "AvailabilityZoneFilter,CapacityFilter,CapabilitiesFilter,ShareReplicationFilter,AffinityFilter,AntiAffinityFilter,OnlyHostFilter" }}
 scheduler_default_weighers = CapacityWeigher,GoodnessWeigher,HostAffinityWeigher
 scheduler_default_share_group_filters = AvailabilityZoneFilter,ConsistentSnapshotFilter,CapabilitiesFilter,DriverFilter

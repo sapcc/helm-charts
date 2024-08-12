@@ -58,7 +58,9 @@ proxysql:
 mariadb:
   enabled: true
   name: barbican
-  initdb_configmap: barbican-initdb
+  initdb_secret: barbican-initdb
+  ccroot_user:
+    enabled: true
   databases:
   - barbican
   users:
@@ -114,22 +116,27 @@ mysql_metrics:
       - "status"
       - "secret_name"
       - "expiration"
+      - "created_at"
+      - "deleted_at"
       - "project_id"
       - "secret_type"
+      - "deleted"
       name: openstack_barbican_secrets_count_gauge
       query: |
         SELECT
           secrets.id,
           secrets.status,
           COALESCE(secrets.name, "No Secret Name") AS secret_name,
+          UNIX_TIMESTAMP(STR_TO_DATE(IFNULL(secrets.created_at,'1970-01-01 00:00:00'), '%Y-%c-%e %T')) AS created_at,
+          UNIX_TIMESTAMP(STR_TO_DATE(IFNULL(secrets.deleted_at,'1970-01-01 00:00:00'), '%Y-%c-%e %T')) AS deleted_at,
           UNIX_TIMESTAMP(STR_TO_DATE(IFNULL(secrets.expiration,'1970-01-01 00:00:00'), '%Y-%c-%e %T')) AS expiration,
           projects.external_id  AS project_id,
-          secrets.secret_type ,
+          secrets.secret_type,
+          secrets.deleted,
           COUNT(*)  AS count_gauge
         from secrets
         INNER JOIN projects
         on secrets.project_id=projects.id
-        where secrets.deleted='false'
         GROUP BY secrets.id, secrets.status, secrets.name, projects.external_id, secrets.secret_type, secrets.expiration;
       values:
       - "count_gauge"
@@ -139,17 +146,23 @@ mysql_metrics:
       - "status"
       - "secret_name"
       - "expiration"
+      - "created_at"
+      - "deleted_at"
       - "project_id"
       - "secret_type"
+      - "deleted"
       name: openstack_barbican_hsm_secrets_count_gauge
       query: |
         SELECT 
           secrets.id,
           secrets.status,
           COALESCE(secrets.name, "No Secret Name") AS secret_name,
+          UNIX_TIMESTAMP(STR_TO_DATE(IFNULL(secrets.created_at,'1970-01-01 00:00:00'), '%Y-%c-%e %T')) AS created_at,
+          UNIX_TIMESTAMP(STR_TO_DATE(IFNULL(secrets.deleted_at,'1970-01-01 00:00:00'), '%Y-%c-%e %T')) AS deleted_at,
           UNIX_TIMESTAMP(STR_TO_DATE(IFNULL(secrets.expiration,'1970-01-01 00:00:00'), '%Y-%c-%e %T')) AS expiration,
           projects.external_id  AS project_id,
           secrets.secret_type,
+          secrets.deleted,
           COUNT(*) AS count_gauge
         FROM encrypted_data 
         JOIN kek_data 
@@ -168,6 +181,8 @@ mysql_metrics:
       - "certificate_name"
       - "project_id"
       - "creator_id"
+      - "created_at"
+      - "deleted_at"
       name: openstack_barbican_certificate_expiration_date
       query: |
         SELECT
@@ -196,11 +211,12 @@ mysql_metrics:
           secrets.name  AS certificate_name,
           creator_id,
           projects.external_id  AS project_id,
+          secrets.deleted,
           COUNT(*)  AS count_gauge
         from secrets
         INNER JOIN projects
         on secrets.project_id=projects.id
-        where secrets.deleted='false' AND secret_type='opaque' AND expiration!='0'
+        where secret_type='opaque' AND expiration!='0'
         GROUP BY secrets.creator_id, secrets.name, projects.external_id, secrets.expiration;
       values:
       - "expiration_date"
@@ -305,3 +321,14 @@ hsm:
 utils:
   trust_bundle:
     enabled: true
+
+# barbican nanny
+barbican_nanny:
+  replicas: 1
+  enabled: false
+  # debug mode - no script run in the containers, just a sleep loop
+  debug: false
+  # Sleep time in minutes between runs
+  interval: 1
+  db_secret_move:
+    enabled: false

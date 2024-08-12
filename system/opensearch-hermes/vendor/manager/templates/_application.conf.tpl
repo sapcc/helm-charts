@@ -55,7 +55,7 @@ play.ws.ssl {
   trustManager = {
     stores = [
 {{- if .Values.global.truststore.enabled }}
-      { type = "PKCS12", path = "/truststore/truststore", password = "{{.Values.global.truststore.cert_pw}}" }
+      { type = "PKCS12", path = "/opt/cerebro/truststore", password = "{{.Values.global.truststore.cert_pw}}" }
 {{- else -}}
       { type = "PEM", path = "/opt/certs/opensearchCA.crt" }
 {{- end }}

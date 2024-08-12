@@ -7,8 +7,11 @@ metadata:
   annotations:
     kubernetes.io/tls-acme: "true"
     disco: "true"
+    nginx.ingress.kubernetes.io/auth-url: "https://auth-internal.{{.Values.global.region}}.{{ .Values.global.tld }}/oauth2/auth"
     ingress.kubernetes.io/auth-url: "https://auth-internal.{{.Values.global.region}}.{{ .Values.global.tld }}/oauth2/auth"
+    nginx.ingress.kubernetes.io/auth-signin: "https://auth-internal.{{.Values.global.region}}.{{ .Values.global.tld }}/oauth2/start"
     ingress.kubernetes.io/auth-signin: "https://auth-internal.{{.Values.global.region}}.{{ .Values.global.tld }}/oauth2/start"
+    nginx.ingress.kubernetes.io/request-redirect: $escaped_request_uri
     ingress.kubernetes.io/auth-request-redirect: $escaped_request_uri
     {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
     ingress.kubernetes.io/service-upstream: "true"

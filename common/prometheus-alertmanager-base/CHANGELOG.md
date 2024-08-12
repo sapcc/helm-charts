@@ -1,3 +1,7 @@
+## 3.2.5
+
+* upgrading to v0.27.0
+
 ## 3.0.3
 
 * adding AM health check alerts (observability issue #44)

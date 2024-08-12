@@ -162,7 +162,7 @@ checksum/swift.secret: {{ include "swift/templates/secret.yaml" . | sha256sum }}
       cpu: "300m"
       memory: "150Mi"
     limits:
-      cpu: "300m"
+      cpu: "600m"
       memory: "150Mi"
   # TODO: securityContext: { runAsNonRoot: true }
   volumeMounts:

@@ -30,8 +30,8 @@ mysql_variables =
             {{- end }}
         {{- end }}
     monitor_enabled = true
-    monitor_username = "{{ .global.Values.mariadb.users.proxysql_monitor.name | required ".global.Values.mariadb.users.proxysql_monitor.name is required!" }}"
-    monitor_password = "{{ .global.Values.mariadb.users.proxysql_monitor.password | required ".global.Values.mariadb.users.proxysql_monitor.password is required!" }}"
+    monitor_username = "{{ include "resolve_secret" .global.Values.mariadb.users.proxysql_monitor.name | required ".global.Values.mariadb.users.proxysql_monitor.name is required!" }}"
+    monitor_password = "{{ include "resolve_secret" .global.Values.mariadb.users.proxysql_monitor.password | required ".global.Values.mariadb.users.proxysql_monitor.password is required!" }}"
     {{- end }}
     connect_retries_on_failure = {{ default 1000 .global.Values.proxysql.connect_retries_on_failure }}
     connect_retries_delay = {{ default 100 .global.Values.proxysql.connect_retries_delay }} {{- /* The default is 1ms, and that means we will run through the retries on failure in no time */}}
@@ -57,8 +57,8 @@ mysql_users =
   {{- range $userKey, $user := $db.users }}
     {{- if ne $userKey "proxysql_monitor"  }}
     {
-        username = "{{ $user.name | required (print "user name needs to be set for " $dbKey " and user " $userKey)  }}"
-        password = "{{ $user.password | required "password needs to be set for all extra dbs" }}"
+        username = "{{ include "resolve_secret" $user.name | required (print "user name needs to be set for " $dbKey " and user " $userKey) }}"
+        password = "{{ include "resolve_secret" $user.password | required (print "password needs to be set for " $dbKey " and user " $userKey)  }}"
         default_hostgroup = {{ $index }}
     },
     {{- end }}

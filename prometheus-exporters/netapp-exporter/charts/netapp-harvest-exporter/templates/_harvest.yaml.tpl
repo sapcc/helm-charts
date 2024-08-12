@@ -1,7 +1,6 @@
 Defaults:
   auth_style: basic_auth
-  username: {{ .Values.global.netapp_exporter_user }}
-  password: {{ .Values.global.netapp_exporter_password }}
+  credentials_file: /opt/harvest/credentials.yaml
   use_insecure_tls: true
   exporters:
     - prom1
@@ -12,7 +11,11 @@ Exporters:
     port: 13000
 Pollers:{{`
   {{ .Name }}:
+    {{- if .Ip }}
+    addr: {{ .Ip }}
+    {{- else }}
     addr: {{ .Host }}
+    {{- end }}
     datacenter: {{ .AvailabilityZone }}
     labels:
       - availability_zone: {{ .AvailabilityZone }}

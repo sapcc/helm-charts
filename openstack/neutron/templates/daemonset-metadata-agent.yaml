@@ -39,7 +39,7 @@ spec:
         - name: neutron-metadata-agent
           image: {{.Values.global.registry}}/loci-neutron:{{$.Values.imageVersionNetworkAgentMetadata | default $.Values.imageVersionNetworkAgent | default $.Values.imageVersion | required "Please set neutron.imageVersionNetworkAgentMetadata or similar"}}
           imagePullPolicy: IfNotPresent
-          command: ["dumb-init", "bash", "-c", "echo -e \"[DEFAULT]\\nhost = $NODE_NAME\\n\" > /run/hostname.conf && exec neutron-metadata-agent --config-file /etc/neutron/neutron.conf --config-file /etc/neutron/metadata-agent.ini --config-file /run/hostname.conf"]
+          command: ["dumb-init", "bash", "-c", "echo -e \"[DEFAULT]\\nhost = $NODE_NAME\\n\" > /run/hostname.conf && exec neutron-metadata-agent --config-file /etc/neutron/neutron.conf --config-dir /etc/neutron/secrets/ --config-file /etc/neutron/metadata-agent.ini --config-file /run/hostname.conf"]
           env:
             - name: SENTRY_DSN
               valueFrom:
@@ -56,7 +56,7 @@ spec:
             {{- include "utils.trust_bundle.env" . | indent 12 }}
           livenessProbe:
             exec:
-              command: ["neutron-agent-liveness", "--config-file", "/etc/neutron/neutron.conf", "--config-file", "/run/hostname.conf", "--agent-type", "Metadata agent"]
+              command: ["neutron-agent-liveness", "--config-file", "/etc/neutron/neutron.conf", "--config-file", "/etc/neutron/secrets/neutron-common-secrets.conf", "--config-file", "/run/hostname.conf", "--agent-type", "Metadata agent"]
             initialDelaySeconds: 30
             periodSeconds: 30
             timeoutSeconds: 10
@@ -86,5 +86,15 @@ spec:
                   path: logging.conf
                 - key: metadata-agent.ini
                   path: metadata-agent.ini
+            - secret:
+                name: neutron-common-secrets
+                items:
+                  - key: neutron-common-secrets.conf
+                    path: secrets/neutron-common-secrets.conf
+            - secret:
+                name: neutron-metadata-secrets
+                items:
+                  - key: neutron-metadata-secrets.conf
+                    path: secrets/neutron-metadata-secrets.conf
         {{- include "utils.trust_bundle.volumes" . | indent 8 }}
   {{- end }}

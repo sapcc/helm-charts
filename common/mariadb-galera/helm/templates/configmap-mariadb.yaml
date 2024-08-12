@@ -1,0 +1,65 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  namespace: {{ $.Release.Namespace }}
+  name: {{ include "commonPrefix" $ }}-mariadb-entrypoint-sh
+  labels:
+    app: {{ $.Release.Name }}
+    {{- include "sharedservices.labels" $ | indent 4 }}
+data:
+{{ tpl (.Files.Glob "scripts/mariadb-galera/entrypoint-galera.sh").AsConfig . | indent 2 }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  namespace: {{ $.Release.Namespace }}
+  name: {{ include "commonPrefix" $ }}-mariadb-common-functions-extended-sh
+  labels:
+    app: {{ $.Release.Name }}
+    {{- include "sharedservices.labels" $ | indent 4 }}
+data:
+{{ tpl (.Files.Glob "scripts/mariadb-galera/common-functions-extended.sh").AsConfig . | indent 2 }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "commonPrefix" $ }}-mariadb-probes-sh
+  namespace: {{ $.Release.Namespace }}
+data:
+{{ tpl (.Files.Glob "scripts/mariadb-galera/startup.sh").AsConfig . | indent 2 }}
+{{ tpl (.Files.Glob "scripts/mariadb-galera/liveness.sh").AsConfig . | indent 2 }}
+{{ tpl (.Files.Glob "scripts/mariadb-galera/readiness.sh").AsConfig . | indent 2 }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  namespace: {{ $.Release.Namespace }}
+  name: {{ include "commonPrefix" $ }}-mariadb-hooks-sh
+  labels:
+    app: {{ $.Release.Name }}
+    {{- include "sharedservices.labels" $ | indent 4 }}
+data:
+{{ tpl (.Files.Glob "scripts/mariadb-galera/pre-stop-hook.sh").AsConfig . | indent 2 }}
+{{ tpl (.Files.Glob "scripts/mariadb-galera/post-start-hook.sh").AsConfig . | indent 2 }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "commonPrefix" $ }}-galerastatus
+  namespace: {{ $.Release.Namespace }}
+data:
+{{- range $int, $err := until ((include "replicaCount" (dict "global" $ "type" "database")) | int) }}
+  {{ (include "nodeNamePrefix" (dict "global" $ "component" "database")) }}-{{ $int }}.seqno: |-
+  {{ (include "nodeNamePrefix" (dict "global" $ "component" "database")) }}-{{ $int }}.running: |-
+  {{ (include "nodeNamePrefix" (dict "global" $ "component" "database")) }}-{{ $int }}.primary: |-
+{{- end }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "commonPrefix" $ }}-mariadb-wipedata
+  namespace: {{ $.Release.Namespace }}
+data:
+  wipedata.flag: |-
+    true

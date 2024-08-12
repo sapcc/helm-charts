@@ -44,7 +44,8 @@ spec:
 
       initContainers:
       - name: generate-secrets
-        image: "{{ include "preferredRegistry" . }}/shared-app-images/alpine-kubectl:edge-latest"
+        image: "{{ include "preferredRegistry" . }}/shared-app-images/alpine-kubectl:3.20-latest"
+        imagePullPolicy: "Always"
         env:
         - name: DEBUG
           value: {{ quote .Values.debug }}
@@ -99,7 +100,7 @@ spec:
             command:
             - bash
             - -c
-            - "[[ -e /tmp/in-init ]] || exec pg_isready --host $POD_IP"
+            - "[[ -e /tmp/in-init ]] || exec pg_isready --host $POD_IP --timeout {{ .Values.probe_timeout_secs }}"
           initialDelaySeconds: 120
           timeoutSeconds: {{ .Values.probe_timeout_secs }}
           failureThreshold: {{ .Values.probe_failure_threshold }}
@@ -108,10 +109,14 @@ spec:
             command:
             - bash
             - -c
-            - "[[ -e /tmp/in-init ]] || exec pg_isready --host $POD_IP"
+            - "[[ -e /tmp/in-init ]] || exec pg_isready --host $POD_IP --timeout {{ .Values.probe_timeout_secs }}"
           initialDelaySeconds: 5
           timeoutSeconds: {{ .Values.probe_timeout_secs }}
-        resources: {{ toYaml .Values.resources | nindent 10 }}
+        resources:
+          limits: {{ toYaml .Values.resources.limits | nindent 12 }}
+          {{- if not (.Values.global.region | regexMatch "^qa-de-[2-6]$") }}
+          requests: {{ toYaml .Values.resources.requests | nindent 12 }}
+          {{- end }}
         volumeMounts:
         - name: data
           mountPath: /data
@@ -127,6 +132,25 @@ spec:
         - name: dev-shm
           mountPath: /dev/shm
         {{- end }}
+      {{- if .Values.crontab }}
+      - name: cron
+        image: "{{ include "preferredRegistry" . }}/shared-app-images/alpine-psql:3.20-latest"
+        imagePullPolicy: "Always"
+        command:
+          - /bin/sh
+          - -c
+          - |
+            /usr/bin/crontab /crontab/root
+            exec crond -f -d8
+        env:
+        - name: PGHOSTADDR
+          value: 127.0.0.1
+        - name: PGUSER
+          value: postgres
+        volumeMounts:
+        - name: crontab
+          mountPath: /crontab
+      {{- end }}
       serviceAccountName: {{ template "postgres.fullname" . }}
       volumes:
       - name: postgres-etc
@@ -139,7 +163,12 @@ spec:
       {{- else }}
         emptyDir: {}
       {{- end }}
-        {{- if .Values.sqlOnCreate }}
+      {{- if .Values.crontab }}
+      - name: crontab
+        configMap:
+          name: {{ template "postgres.fullname" . }}-crontab
+      {{- end }}
+      {{- if .Values.sqlOnCreate }}
       - name: sql-on-create
         configMap:
           name: {{ template "postgres.fullname" . }}-sql-on-create

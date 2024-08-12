@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "fullname" . }}-bin
+  labels:
+    app: {{ template "fullname" . }}
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    component: rabbitmq
+    {{- include "rabbitmq.labels" . | indent 4 }}
+data:
+  rabbitmq-start: |
+{{ include (print .Template.BasePath "/bin/_rabbitmq-start.tpl") . | indent 4 }}
+  rabbitmq-setup-users: |
+{{ .Files.Get "files/rabbitmq-setup-users.py" | indent 4 }}
