@@ -1,6 +1,8 @@
 DEFAULT:
   #api_base_uri: http://localhost:8000
   transport_url: nats://andromeda-nats:4222
+  prometheus: true
+  prometheus_listen: 0.0.0.0:9090
 
 database:
 {{- if .Values.mariadb.enabled }}
