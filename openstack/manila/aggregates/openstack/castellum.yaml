@@ -1,0 +1,23 @@
+# aggregates rules for castellum
+
+groups:
+  - name: manila-castellum
+    rules:
+      - record: manila_share_exclusion_reasons_for_castellum
+        expr: |
+          max (
+            label_replace(
+              label_replace(openstack_manila_shares_size_gauge{status="error"},
+                "share_id", "$1", "id", "(.*)"),
+              "reason", "status = error", ".*", ".*")
+          ) by (project_id, share_id, reason)
+
+      - record: manila_share_exclusion_reasons_for_castellum
+        expr: |
+          max (
+            label_replace(
+              label_replace(openstack_manila_shares_size_gauge{snapmirror="1"},
+                "share_id", "$1", "id", "(.*)"),
+              "reason", "snapmirror = 1", ".*", ".*")
+          ) by (project_id, share_id, reason)
+
