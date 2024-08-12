@@ -1,14 +1,14 @@
-{{- range $target, $unused := .Values.aggregates.prometheus }}
-{{- range $path, $bytes := $.Files.Glob (printf "aggregates/%s/*.yaml" $target) }}
+{{- range $target, $prometheusService := .Values.aggregates.prometheus }}
+{{- range $path, $bytes := $.Files.Glob (printf "aggregates/%s/*.rules" $target) }}
 ---
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 
 metadata:
-  name: {{ $.Release.Name }}-{{ printf "%s" $path | replace "/" "-" }}
+  name: {{ $.Release.Name }}-{{ printf "%s" $path | trimSuffix ".rules" | replace "/" "-" }}
   labels:
     type: aggregation-rules
-    prometheus: {{ index $.Values.alerts.prometheus $target | required (printf ".Values.alerts.prometheus.%s missing" $target) }}
+    prometheus: {{ $prometheusService }}
 
 spec:
 {{ printf "%s" $bytes | indent 2 }}
