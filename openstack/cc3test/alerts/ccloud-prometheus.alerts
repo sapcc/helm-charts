@@ -60,3 +60,34 @@ groups:
     annotations:
       description: 'CCloud Prometheus {{ $labels.name }} is flapping'
       summary: 'CCloud Prometheus {{ $labels.name }} is flapping'
+
+  - alert: PrometheusSSOCertificateExpiresInLessThan1Week
+    expr: cc3test_cert_expires_in_days{type="prometheus-sso"} < 8
+    # we want a critical alert 7 days before (fixing during business hours is sufficient -> warning)
+    labels:
+      severity: warning
+      support_group: observability
+      tier: os
+      service: prometheus
+      context: prometheus-sso
+      meta: 'Certificate on {{ $labels.cert_name }} expires in less than 8 days'
+      dashboard: cc3test-certificate-status?var-service=prometheus
+    annotations:
+      description: Certificate on {{ $labels.cert_name }} expires in less than 8 days
+      summary: Certificate expires
+
+  - alert: PrometheusSSOCertificateExpiresInLessThan2Week
+    expr: cc3test_cert_expires_in_days{type="prometheus-sso"} < 15
+    # we want a warning alert 14 days before
+    labels:
+      severity: warning
+      support_group: observability
+      tier: os
+      service: prometheus
+      context: prometheus-sso
+      meta: 'Certificate on {{ $labels.cert_name }} expires in less than 15 days'
+      dashboard: cc3test-certificate-status?var-service=prometheus
+    annotations:
+      description: Certificate on {{ $labels.cert_name }} expires in less than 15 days
+      summary: Certificate expires
+
