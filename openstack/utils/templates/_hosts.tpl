@@ -195,12 +195,6 @@ mysql+pymysql://{{ include "db_credentials" . }}@
 
 {{define "sftp_api_endpoint_host"}}sftp-bridge.{{ .Values.global.region }}.{{ .Values.global.tld }}{{end}}
 
-{{- define "identity.password_for_user" }}
-    {{- $envAll := index . 0 }}
-    {{- $user := index . 1 }}
-    {{- tuple $envAll ( $envAll.Values.global.user_suffix | default "" | print $user ) ( include "keystone_api_endpoint_host_public" $envAll ) ("long")| fail "You need to pass an individual password." }}
-{{- end }}
-
 {{ define "f5_url" }}
     {{- $host := index . 0 }}
     {{- $user := index . 1 }}
