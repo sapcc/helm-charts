@@ -31,12 +31,12 @@ spec:
       valueFrom:
         secret:
           key: tls.crt
-          name: ccloud-prometheus-sso-cert
+          name: {{ .Chart.Name }}-prometheus-sso-cert
     - name: alerts.alertmanagers.tlsConfig.key
       valueFrom:
         secret:
           key: tls.key
-          name: ccloud-prometheus-sso-cert
+          name: {{ .Chart.Name }}-prometheus-sso-cert
     - name: alerts.enabled
       value: true
     - name: kubeMonitoring.defaultRules.create
@@ -48,7 +48,7 @@ spec:
     - name: kubeMonitoring.prometheus.prometheusSpec.externalLabels
       value:
         cluster: '{{ "{{ .Values.global.greenhouse.clusterName }}" }}'
-        cluster_type: '{{ "{{ (split \"-\" .Values.global.greenhouse.clusterName)._0 }}" }}'
+        cluster_type: storage
         organization: ccloud
         region: '{{ "{{ .Values.global.greenhouse.clusterName | trunc -7 }}" }}'
     - name: kubeMonitoring.prometheus.prometheusSpec.externalUrl
@@ -57,6 +57,7 @@ spec:
       value: 30d
     - name: kubeMonitoring.prometheus.prometheusSpec.storageSpec.volumeClaimTemplate.spec.resources.requests.storage
       value: 100Gi
+    # NFS volumes need more permissions to work
     - name: kubeMonitoring.prometheus.prometheusSpec.securityContext
       value:
         fsGroup: 0
