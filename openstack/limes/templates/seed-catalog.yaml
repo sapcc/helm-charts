@@ -40,6 +40,8 @@ spec:
           url:       'http://limes-api-ccloud.{{.Release.Namespace}}.svc/rates'
 
     {{- range $name := sortAlpha (keys .Values.limes.local_liquids) }}
+    {{- $config := index $.Values.limes.local_liquids $name }}
+    {{- if not $config.skip }}
     - name:        liquid-{{ $name }}
       type:        liquid-{{ $name }}
       description: 'Limes integration for {{ title $name }} <https://pkg.go.dev/github.com/sapcc/go-api-declarations/liquid>'
@@ -53,4 +55,5 @@ spec:
           interface: internal
           enabled:   true
           url:       'http://liquid-swift.{{ $.Release.Namespace }}.svc'
+    {{- end }}
     {{- end }}
