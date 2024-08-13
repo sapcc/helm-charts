@@ -2,14 +2,14 @@
 local _M = {}
 _M.dbs = {
     { host = '{{ .Release.Name }}-mariadb.{{ include "svc_fqdn" . }}',
-    user = '{{ .Values.mariadb.users.nova.name }}',
-    password = '{{ .Values.mariadb.users.nova.password }}',
+    user = '{{ .Values.mariadb.users.nova.name | include "resolve_secret" }}',
+    password = '{{ .Values.mariadb.users.nova.password | include "resolve_secret" }}',
     database = 'nova',
     charset = 'utf8' },
 {{- if .Values.cell2.enabled }}
     { host = '{{ .Release.Name }}-{{ .Values.cell2.name }}-mariadb.{{ include "svc_fqdn" . }}',
-    user = '{{ .Values.cell2dbUser }}',
-    password = '{{ default .Values.cell2dbPassword .Values.global.dbPassword }}',
+    user = '{{ .Values.cell2dbUser | include "resolve_secret" }}',
+    password = '{{ default .Values.cell2dbPassword .Values.global.dbPassword | include "resolve_secret" }}',
     database = '{{ .Values.cell2dbName }}',
     charset = 'utf8' },
 {{- end }}
