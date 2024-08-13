@@ -9,7 +9,13 @@ metadata:
 
 spec:
   revisionHistoryLimit: 5
+  {{- if eq .Values.global.region "eu-de-1" }}
+  # Because of high load on the API in this region,
+  # we will try and see if distributing it over more replicas helps.
+  replicas: 4
+  {{- else }}
   replicas: 2
+  {{- end }}
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -78,19 +84,9 @@ spec:
             # However, we have some very significant spikes esp. when billing
             # scrapes us, so we give some extra headroom to stay performant.
             limits:
-              {{- if eq .Values.global.region "qa-de-1" }}
-              # In qa-de-1, we also need some extra headroom because of the sheer size
-              # of some reports rendered by billing. The "tempest" domain has
-              # ~2000 projects in order to test the behavior of large-scale
-              # deployments. A full project report with `?detail` for that
-              # domain is about 160 MiB of pure JSON.
               cpu: '1'
               memory: '700Mi'
-              {{- else }}
-              cpu: '500m'
-              memory: '700Mi'
-              {{- end }}
             requests:
               cpu: '250m'
-              memory: '500Mi'
+              memory: '700Mi'
           {{- end }}
