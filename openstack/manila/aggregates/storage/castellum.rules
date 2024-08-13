@@ -8,19 +8,27 @@ groups:
       # Share size = NetApp Volume size = netapp_volume_size_total +  netapp_volume_snapshot_reserve_size
       # Share usage = netapp_volume_size_used
       # Share minimal size = netapp_volume_size_used +  netapp_volume_snapshot_reserve_size
-
       - record: netapp_volume_provision_case_one
-        expr: netapp_volume_snapshot_reserve_percent{share_id!="", type="rw",
-          volume=~"share_[0-9a-f]{8}_[0-9a-f]{4}_[0-9a-f]{4}_[0-9a-f]{4}_[0-9a-f]{12}"} / 5 == 1
+        expr: |
+          max by (app, svm, volume, project_id, share_id, volume_state, volume_type) (
+            label_replace(label_replace(
+              netapp_volume_labels{
+                  share_id!="",
+                  type="rw",
+                  volume=~"share_[0-9a-f]{8}_[0-9a-f]{4}_[0-9a-f]{4}_[0-9a-f]{4}_[0-9a-f]{12}"},
+              "volume_state", "$1", "state", "(.*)"),
+              "volume_type", "$1", "type", "(.*)")
+            * on (app, svm, volume) group_left() (netapp_volume_snapshot_reserve_percent / 5 == 1)
+          )
 
       - record: manila_share_size_bytes_for_castellum
-        expr: netapp_volume_provision_case_one * netapp_volume_size
+        expr: netapp_volume_provision_case_one * on (app, svm, volume) group_left() netapp_volume_size
 
       - record: manila_share_used_bytes_for_castellum
-        expr: netapp_volume_provision_case_one * netapp_volume_size_used
+        expr: netapp_volume_provision_case_one * on (app, svm, volume) group_left() netapp_volume_size_used
 
       - record: manila_share_minimal_size_bytes_for_castellum
-        expr: netapp_volume_provision_case_one * (netapp_volume_size_used + netapp_volume_snapshot_reserve_size)
+        expr: netapp_volume_provision_case_one * on (app, svm, volume) group_left() (netapp_volume_size_used + netapp_volume_snapshot_reserve_size)
 
       # Case two: new provision style and logical space is NOT enabled
       # New provision style means snapshot reserve is allocated side by side to the share space.
@@ -30,15 +38,24 @@ groups:
       # Share usage = netapp_volume_used_bytes
       # Share minimal size = max(netapp_volume_used_bytes, netapp_volume_snapshot_used_bytes)
       - record: netapp_volume_provision_case_two
-        expr: (netapp_volume_snapshot_reserve_percent{share_id!="", type="rw",
-          volume=~"share_[0-9a-f]{8}_[0-9a-f]{4}_[0-9a-f]{4}_[0-9a-f]{4}_[0-9a-f]{12}"} / 50 == 1)
-          * on (app, aggr, svm, volume) group_left() netapp_volume_labels{is_space_enforcement_logical="false"}
+        expr: |
+          max by (app, svm, volume, project_id, share_id, volume_state, volume_type) (
+            label_replace(label_replace(
+              netapp_volume_labels{
+                  is_space_enforcement_logical="false",
+                  share_id!="",
+                  type="rw",
+                  volume=~"share_[0-9a-f]{8}_[0-9a-f]{4}_[0-9a-f]{4}_[0-9a-f]{4}_[0-9a-f]{12}"},
+              "volume_state", "$1", "state", "(.*)"),
+              "volume_type", "$1", "type", "(.*)")
+            * on (app, svm, volume) group_left() (netapp_volume_snapshot_reserve_percent / 50 == 1)
+          )
 
       - record: manila_share_size_bytes_for_castellum
-        expr: netapp_volume_provision_case_two * netapp_volume_size_total
+        expr: netapp_volume_provision_case_two * on (app, svm, volume) group_left() netapp_volume_size_total
 
       - record: manila_share_used_bytes_for_castellum
-        expr: netapp_volume_provision_case_two * netapp_volume_size_used
+        expr: netapp_volume_provision_case_two * on (app, svm, volume) group_left() netapp_volume_size_used
 
       - record: manila_share_minimal_size_bytes_for_castellum
         expr: netapp_volume_provision_case_two * on (share_id) group_left() max by (share_id) (
@@ -49,16 +66,25 @@ groups:
       # Share usage = logical space used by file system
       # Share minimal size = max of logical space used by file system or snapshot size
       - record: netapp_volume_provision_case_three
-        expr: (netapp_volume_snapshot_reserve_percent{share_id!="", type="rw",
-          volume=~"share_[0-9a-f]{8}_[0-9a-f]{4}_[0-9a-f]{4}_[0-9a-f]{4}_[0-9a-f]{12}"} / 50 == 1)
-          * on (app, aggr, svm, volume) group_left() netapp_volume_labels{is_space_enforcement_logical="true"}
+        expr: |
+          max by (app, svm, volume, project_id, share_id, volume_state, volume_type) (
+            label_replace(label_replace(
+              netapp_volume_labels{
+                  is_space_enforcement_logical="true",
+                  share_id!="",
+                  type="rw",
+                  volume=~"share_[0-9a-f]{8}_[0-9a-f]{4}_[0-9a-f]{4}_[0-9a-f]{4}_[0-9a-f]{12}"},
+              "volume_state", "$1", "state", "(.*)"),
+              "volume_type", "$1", "type", "(.*)")
+            * on (app, svm, volume) group_left() (netapp_volume_snapshot_reserve_percent / 50 == 1)
+          )
 
       - record: manila_share_size_bytes_for_castellum
-        expr: netapp_volume_provision_case_three * netapp_volume_size_total
+        expr: netapp_volume_provision_case_three * on (app, svm, volume) group_left() netapp_volume_size_total
 
       # netapp_volume_space_logical_used_by_afs considers no snapshot spill
       - record: manila_share_used_bytes_for_castellum
-        expr: netapp_volume_provision_case_three * netapp_volume_space_logical_used_by_afs
+        expr: netapp_volume_provision_case_three * on (app, svm, volume) group_left() netapp_volume_space_logical_used_by_afs
 
       - record: manila_share_minimal_size_bytes_for_castellum
         expr: netapp_volume_provision_case_three * on (share_id) group_left() max by (share_id) (
@@ -76,9 +102,14 @@ groups:
       # There can be two volumes for the same share, one online and one offline.
       # We Use 'unless {volume_state="online"}' to make sure the offline volume is the only one for the share.
       - record: netapp_volume_exclusion_reason_offline
-        expr: max by (project_id, share_id) (netapp_volume_labels{project_id!="", share_id!="", state="offline",
-          volume=~"share_[0-9a-f]{8}_[0-9a-f]{4}_[0-9a-f]{4}_[0-9a-f]{4}_[0-9a-f]{12}"}
-          unless on (project_id, share_id) netapp_volume_labels{state="online"})
+        expr: |
+          max by (project_id, share_id) (
+            netapp_volume_labels{
+                project_id!="",
+                share_id!="",
+                state="offline",
+                volume=~"share_[0-9a-f]{8}_[0-9a-f]{4}_[0-9a-f]{4}_[0-9a-f]{4}_[0-9a-f]{12}"}
+            unless on (project_id, share_id) netapp_volume_labels{state="online"})
       - record: manila_share_exclusion_reasons_for_castellum
         expr: label_replace(netapp_volume_exclusion_reason_offline, "reason", "volume_state = offline", ".*", ".*")
 
@@ -91,8 +122,13 @@ groups:
       #
       # NOTE: Explicitly requiring the volume label to match the share_id regex to avoid missing shares that have other volumes tagged with the same share_id.
       - record: netapp_volume_exclusion_reason_dponly
-        expr: max by (project_id, share_id) (netapp_volume_labels{project_id!="", share_id!="", type="dp",
-          volume=~"share_[0-9a-f]{8}_[0-9a-f]{4}_[0-9a-f]{4}_[0-9a-f]{4}_[0-9a-f]{12}"}
-          unless on (project_id, share_id) netapp_volume_labels{type!="dp"})
+        expr: |
+          max by (project_id, share_id) (
+            netapp_volume_labels{
+                project_id!="",
+                share_id!="",
+                type="dp",
+                volume=~"share_[0-9a-f]{8}_[0-9a-f]{4}_[0-9a-f]{4}_[0-9a-f]{4}_[0-9a-f]{12}"}
+            unless on (project_id, share_id) netapp_volume_labels{type!="dp"})
       - record: manila_share_exclusion_reasons_for_castellum
         expr: label_replace(netapp_volume_exclusion_reason_dponly, "reason", "volume_type = dp", ".*", ".*")
