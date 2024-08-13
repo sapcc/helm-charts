@@ -71,9 +71,9 @@ spec:
         role: cloud_compute_admin
       - project: admin
         role: cloud_compute_admin
-    - name: {{ .Values.global.nova_service_user | default "nova" }}{{ .Values.global.user_suffix | default "" }}
+    - name: '{{ .Values.global.nova_service_user | default "nova" | include "resolve_secret" }}'
       description: Nova Service
-      password: {{ required ".Values.global.nova_service_password is missing" .Values.global.nova_service_password }}
+      password: '{{ required ".Values.global.nova_service_password is missing" .Values.global.nova_service_password | include "resolve_secret" }}'
       role_assignments:
       - project: service
         role: service
