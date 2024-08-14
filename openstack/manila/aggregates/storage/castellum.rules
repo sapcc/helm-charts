@@ -18,8 +18,7 @@ groups:
                   volume=~"share_[0-9a-f]{8}_[0-9a-f]{4}_[0-9a-f]{4}_[0-9a-f]{4}_[0-9a-f]{12}"},
               "volume_state", "$1", "state", "(.*)"),
               "volume_type", "$1", "type", "(.*)")
-            * on (app, svm, volume) group_left() (netapp_volume_snapshot_reserve_percent / 5 == 1)
-          )
+          ) * on (app, svm, volume) group_left() (netapp_volume_snapshot_reserve_percent / 5 == 1)
 
       - record: manila_share_size_bytes_for_castellum
         expr: netapp_volume_provision_case_one * on (app, svm, volume) group_left() netapp_volume_size
@@ -48,8 +47,7 @@ groups:
                   volume=~"share_[0-9a-f]{8}_[0-9a-f]{4}_[0-9a-f]{4}_[0-9a-f]{4}_[0-9a-f]{12}"},
               "volume_state", "$1", "state", "(.*)"),
               "volume_type", "$1", "type", "(.*)")
-            * on (app, svm, volume) group_left() (netapp_volume_snapshot_reserve_percent / 50 == 1)
-          )
+          ) * on (app, svm, volume) group_left() (netapp_volume_snapshot_reserve_percent / 50 == 1)
 
       - record: manila_share_size_bytes_for_castellum
         expr: netapp_volume_provision_case_two * on (app, svm, volume) group_left() netapp_volume_size_total
@@ -76,8 +74,7 @@ groups:
                   volume=~"share_[0-9a-f]{8}_[0-9a-f]{4}_[0-9a-f]{4}_[0-9a-f]{4}_[0-9a-f]{12}"},
               "volume_state", "$1", "state", "(.*)"),
               "volume_type", "$1", "type", "(.*)")
-            * on (app, svm, volume) group_left() (netapp_volume_snapshot_reserve_percent / 50 == 1)
-          )
+          ) * on (app, svm, volume) group_left() (netapp_volume_snapshot_reserve_percent / 50 == 1)
 
       - record: manila_share_size_bytes_for_castellum
         expr: netapp_volume_provision_case_three * on (app, svm, volume) group_left() netapp_volume_size_total
@@ -109,7 +106,7 @@ groups:
                 share_id!="",
                 state="offline",
                 volume=~"share_[0-9a-f]{8}_[0-9a-f]{4}_[0-9a-f]{4}_[0-9a-f]{4}_[0-9a-f]{12}"}
-            unless on (project_id, share_id) netapp_volume_labels{state="online"})
+          ) unless on (project_id, share_id) netapp_volume_labels{state="online"}
       - record: manila_share_exclusion_reasons_for_castellum
         expr: label_replace(netapp_volume_exclusion_reason_offline, "reason", "volume_state = offline", ".*", ".*")
 
@@ -129,6 +126,6 @@ groups:
                 share_id!="",
                 type="dp",
                 volume=~"share_[0-9a-f]{8}_[0-9a-f]{4}_[0-9a-f]{4}_[0-9a-f]{4}_[0-9a-f]{12}"}
-            unless on (project_id, share_id) netapp_volume_labels{type!="dp"})
+          ) unless on (project_id, share_id) netapp_volume_labels{type!="dp"}
       - record: manila_share_exclusion_reasons_for_castellum
         expr: label_replace(netapp_volume_exclusion_reason_dponly, "reason", "volume_type = dp", ".*", ".*")
