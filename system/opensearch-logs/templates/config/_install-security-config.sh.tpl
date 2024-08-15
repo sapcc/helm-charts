@@ -17,19 +17,25 @@ for i in $USER_NAME; do
   echo USERNAME=$i
   PASSWORD_VALUE=`yq ".$i.hash" $OPENSEARCH_BASE/config/security/internal_users.yml`
   if [[ "$PASSWORD_VALUE" != null ]]; then
-    HASHED_VALUE=`$OPENSEARCH_BASE/plugins/opensearch-security/tools/hash.sh -p "$PASSWORD_VALUE" | tail -1`
-    # Check if the hashing was successful
-    if [ -z "$HASHED_VALUE" ]; then
-      echo "Error: Failed to hash the secret value."
+    if [[ $PASSWORD_VALUE =~ "vault" ]]; then
+      echo "check vault injector or password, looks like it was not retrieved from vaul"
       exit 1
-    fi
+    else
+      echo PASSWORD_VALUE=$PASSWORD_VALUE
+      HASHED_VALUE=`$OPENSEARCH_BASE/plugins/opensearch-security/tools/hash.sh -p "$PASSWORD_VALUE" | tail -1`
+      # Check if the hashing was successful
+      if [ -z "$HASHED_VALUE" ]; then
+        echo "Error: Failed to hash the secret value."
+        exit 1
+      fi
     # Update the internal_users.yaml with the hashed value
-  
-    yq eval ".$i.hash |= \"$HASHED_VALUE\"" -i $OPENSEARCH_BASE/config/security/internal_users.yml
-    # Check if the insertion was successful
-    if [ $? -ne 0 ]; then
-      echo "Error: Failed to insert the hashed value into internal_users.yaml."
-      exit 1
+
+      yq eval ".$i.hash |= \"$HASHED_VALUE\"" -i $OPENSEARCH_BASE/config/security/internal_users.yml
+      # Check if the insertion was successful
+      if [ $? -ne 0 ]; then
+        echo "Error: Failed to insert the hashed value into internal_users.yaml."
+        exit 1
+      fi
     fi
   else
       echo USER $i has no password set, no hashing
