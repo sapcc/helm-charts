@@ -9,123 +9,123 @@ _meta:
 # Define your internal users here
 
 data:
-  hash: "{{ .Values.users.data.password }}"
+  hash: "{{ .Values.users.data.nohash }}"
   reserved: true
   backend_roles:
   - "data"
 
 greenhouse:
-  hash: "{{ .Values.users.greenhouse.password }}"
+  hash: "{{ .Values.users.greenhouse.nohash }}"
   reserved: true
   backend_roles:
   - "greenhouse"
 
 storage:
-  hash: "{{ .Values.users.storage.password }}"
+  hash: "{{ .Values.users.storage.nohash }}"
   reserved: true
   backend_roles:
   - "storage"
 
 compute:
-  hash: "{{ .Values.users.compute.password }}"
+  hash: "{{ .Values.users.compute.nohash }}"
   reserved: true
   backend_roles:
   - "compute"
 
 otel:
-  hash: "{{ .Values.users.otel.password }}"
+  hash: "{{ .Values.users.otel.nohash }}"
   reserved: true
   backend_roles:
   - "otel"
 
 otellogs:
-  hash: "{{ .Values.users.otellogs.password }}"
+  hash: "{{ .Values.users.otellogs.nohash }}"
   reserved: true
   backend_roles:
   - "otellogs"
 
 {{- if .Values.qalogs.enabled }}
 dataqade2:
-  hash: "{{ .Values.users.dataqade2.password }}"
+  hash: "{{ .Values.users.dataqade2.nohash }}"
   reserved: true
   backend_roles:
   - "qade2"
 
 dataqade3:
-  hash: "{{ .Values.users.dataqade3.password }}"
+  hash: "{{ .Values.users.dataqade3.nohash }}"
   reserved: true
   backend_roles:
   - "qade3"
 
 dataqade5:
-  hash: "{{ .Values.users.dataqade5.password }}"
+  hash: "{{ .Values.users.dataqade5.nohash }}"
   reserved: true
   backend_roles:
   - "qade5"
 
 oraboskvm:
-  hash: "{{ .Values.users.oraboskvm.password }}"
+  hash: "{{ .Values.users.oraboskvm.nohash }}"
   reserved: true
   backend_roles:
   - "oraboskvm"
 
 otelstorage:
-  hash: "{{ .Values.users.otelstorage.password }}"
+  hash: "{{ .Values.users.otelstorage.nohash }}"
   reserved: true
   backend_roles:
   - "otelstorage"
 {{- end }}
 
 jump:
-  hash: "{{ .Values.users.jump.password }}"
+  hash: "{{ .Values.users.jump.nohash }}"
   reserved: true
   backend_roles:
   - "jump"
 
 jaeger:
-  hash: "{{ .Values.users.jaeger.password }}"
+  hash: "{{ .Values.users.jaeger.nohash }}"
   reserved: true
   backend_roles:
   - "jaeger"
 
 syslog:
-  hash: "{{ .Values.users.syslog.password }}"
+  hash: "{{ .Values.users.syslog.nohash }}"
   reserved: true
   backend_roles:
   - "syslog"
 
 promuser:
-  hash: "{{ .Values.users.promuser.password }}"
+  hash: "{{ .Values.users.promuser.nohash }}"
   reserved: true
   backend_roles:
   - "promuser"
 
 admin:
-  hash: "{{ .Values.users.admin.password }}"
+  hash: "{{ .Values.users.admin.nohash }}"
   reserved: true
   backend_roles:
   - "adminrole"
 
 dashboard:
-  hash: "{{ .Values.users.dashboard.password }}"
+  hash: "{{ .Values.users.dashboard.nohash }}"
   reserved: true
   description: "Demo OpenSearch Dashboards user"
 
 kibanaro:
-  hash: "{{ .Values.users.kibanaro.password }}"
+  hash: "{{ .Values.users.kibanaro.nohash }}"
 
 kibanaserver:
-  hash: "{{ .Values.users.kibanaserver.password }}"
+  hash: "{{ .Values.users.kibanaserver.nohash }}"
   reserved: true
 
 maillog:
-  hash: "{{ .Values.users.maillog.password }}"
+  hash: "{{ .Values.users.maillog.nohash }}"
   reserved: true
   backend_roles:
   - "maillog"
 
 jupyterhub:
-  hash: "{{ .Values.users.jupyterhub.password }}"
+  hash: "{{ .Values.users.jupyterhub.nohash }}"
   reserved: true
   backend_roles:
   - "jupyterhub"
