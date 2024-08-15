@@ -64,8 +64,6 @@
   value: "{{ .Release.Name }}-postgresql"
 - name: KEPPEL_DB_CONNECTION_OPTIONS
   value: "sslmode=disable"
-- name:  KEPPEL_DRIVER_ACCOUNT_MANAGEMENT
-  value: 'trivial'
 - name:  KEPPEL_DRIVER_AUTH
   value: 'keystone'
 - name:  KEPPEL_DRIVER_FEDERATION

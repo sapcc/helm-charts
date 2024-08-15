@@ -28,6 +28,9 @@ spec:
         - name: config
           configMap:
             name: keppel
+        - name: config-auto-managed-accounts
+          configMap:
+            name: keppel-auto-managed-accounts
         - name: keys
           secret:
             secretName: keppel-keys
@@ -37,11 +40,19 @@ spec:
           imagePullPolicy: IfNotPresent
           args: [ server, janitor ]
           env: {{ include "keppel_environment" $ | indent 12 }}
+            - name: KEPPEL_DRIVER_ACCOUNT_MANAGEMENT
+              value: 'basic'
+            - name: KEPPEL_ACCOUNT_MANAGEMENT_CONFIG_PATH
+              value: /etc/keppel-auto-managed-accounts/config.json
+            - name: KEPPEL_ACCOUNT_MANAGEMENT_PROTECTED_ACCOUNTS
+              value: ccloud ccloud-dockerhub-mirror ccloud-gcr-mirror ccloud-ghcr-io-mirror ccloud-quay-mirror ccloud-registry-k8s-io-mirror
           securityContext:
             runAsNonRoot: true
           volumeMounts:
             - mountPath: /etc/keppel
               name: config
+            - mountPath: /etc/keppel-auto-managed-accounts
+              name: config-auto-managed-accounts
             - mountPath: /etc/keppel-keys
               name: keys
           ports:
