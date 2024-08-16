@@ -194,6 +194,20 @@ groups:
         Check the `kubectl logs` for limes-collect-ccloud for additional info.
       summary: Limes cannot sync from Keystone.
 
+  - alert: OpenstackLimesFailedQuotaOverrideSyncs
+    expr: sum(increase(limes_quota_override_syncs{task_outcome="failure"}[10m])) > 0 or sum(increase(limes_quota_override_syncs{task_outcome="success"}[10m])) == 0
+    for: 10m
+    labels:
+      context: quotaoverridesync
+      dashboard: limes-overview
+      service: limes
+      severity: warning
+      support_group: containers
+    annotations:
+      description: Limes cannot sync quota overrides from its config into the DB.
+        Check the `kubectl logs` for limes-collect-ccloud for errors (esp. from parsing the overrides file).
+      summary: Limes cannot sync quota overrides.
+
   - alert: OpenstackLimesAuditEventPublishFailing
     # Usually, you would check increase() here, but audit events *can* be quite
     # rare, so we alert if there are any failed audit events at all. To clear this alert,
