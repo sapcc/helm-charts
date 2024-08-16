@@ -129,3 +129,9 @@ jupyterhub:
   reserved: true
   backend_roles:
   - "jupyterhub"
+
+ronly:
+  hash: "{{ .Values.users.jupyterhub.nohash }}"
+  reserved: true
+  backend_roles:
+  - "promuser"
