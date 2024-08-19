@@ -32,7 +32,7 @@ fi
 # cd ./helm-charts/prometheus-exporters/snmp-exporter/generator/
 
 
-mv /usr/share/snmp/mibs/CISCO-UNIFIED-COMPUTING-TC-MIB.mib /usr/share/snmp/ # This mib makes other generators fail...
+#mv /usr/share/snmp/mibs/CISCO-UNIFIED-COMPUTING-TC-MIB.mib /usr/share/snmp/ # This mib makes other generators fail...
 
 for i in $modules;
 
@@ -47,7 +47,7 @@ for i in $modules;
             mv /usr/share/snmp/CISCO-UNIFIED-COMPUTING-TC-MIB.mib /usr/share/snmp/mibs/
         fi
 
-        $GENERATOR_PATH/generator generate || exit
+        $GENERATOR_PATH/generator generate --no-fail-on-parse-errors || exit
 
         if [ $i = "ucs" ]; then # This mib makes other generators fail...
             mv /usr/share/snmp/mibs/CISCO-UNIFIED-COMPUTING-TC-MIB.mib /usr/share/snmp/
