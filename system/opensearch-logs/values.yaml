@@ -54,8 +54,8 @@ opensearch_master:
       path: /usr/share/opensearch/config/certs/
       defaultMode: 0700
   securityConfig:
+    enabled: false
     path: "/usr/share/opensearch/config/opensearch-security"
-    enabled: true
     config:
       securityConfigSecret: "security-config"
   extraEnvs:
@@ -96,8 +96,8 @@ opensearch_client:
     enabled: false
   clusterName: "opensearch-logs"
   securityConfig:
+    enabled: false
     path: "/usr/share/opensearch/config/opensearch-security"
-    enabled: true
     actionGroupsSecret: "security-config"
     configSecret: "security-config"
     internalUsersSecret: "security-config"
@@ -141,8 +141,8 @@ opensearch_data:
     installList:
       - https://github.com/Aiven-Open/prometheus-exporter-plugin-for-opensearch/releases/download/2.16.0.0/prometheus-exporter-2.16.0.0.zip
   securityConfig:
+    enabled: false
     path: "/usr/share/opensearch/config/opensearch-security"
-    enabled: true
     config:
       securityConfigSecret: "security-config"
   extraEnvs:
@@ -179,8 +179,8 @@ opensearch_ml:
     enabled: false
   clusterName: "opensearch-logs"
   securityConfig:
+    enabled: false
     path: "/usr/share/opensearch/config/opensearch-security"
-    enabled: true
     actionGroupsSecret: "security-config"
     configSecret: "security-config"
     internalUsersSecret: "security-config"
@@ -210,10 +210,12 @@ opensearch_dashboards:
     enabled: false
   logs_endpoint:
     enabled: false
-  resources: {}
+  resources:
+    limits:
+      memory: 4096M
   envFrom:
     - secretRef:
-        name: openid-secrets
+        name: dashboard-secrets
 
 manager:
   enabled: false
