@@ -3,7 +3,7 @@ transport_url = rabbit://{{ .Values.rabbitmq.users.default.user | default "rabbi
 
 [keystone_authtoken]
 username = {{ .Values.global.designate_service_user | default "designate" }}
-password = {{ .Values.global.designate_service_password }}
+password = {{ .Values.global.designate_service_password | include "resolve_secret" }}
 
 [storage:sqlalchemy]
 # Database connection string - MariaDB for regional setup
