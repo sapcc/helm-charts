@@ -10,6 +10,7 @@ metadata:
   namespace: {{ required ".Values.vrops.namespace variable missing" $.Values.vrops.namespace }}
   labels:
     target: {{ include "vropsExporter.fullName" (list $target $root) }}
+    shard: {{ include "vropsExporter.name" (list $target $root) }}
     type: vrops-exporter
   annotations:
     vpa-butler.cloud.sap/update-mode: Auto
@@ -23,7 +24,7 @@ spec:
       labels:
         app: {{ include "vropsExporter.fullName" (list $target $root) }}-{{ required "$exporter_type.name is missing" $exporter_type.name }}
         type: exporter
-        vrops-collector-target: {{ include "vropsExporter.name" (list $target $root) }}
+        shard: {{ include "vropsExporter.name" (list $target $root) }}
         target: {{ include "vropsExporter.fullName" (list $target $root) }}
         alert-tier: vmware
         alert-service: vrops
