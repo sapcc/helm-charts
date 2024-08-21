@@ -34,7 +34,7 @@ network_vlan_ranges = {{ range $i, $aci_hostgroup := .Values.aci.aci_hostgroups.
         {{- if or (ne $i 0) ((($.Values.aci|default).aci_hostgroups|default).hostgroups|default) }},{{ end -}}
         {{- range $x, $range := $switchgroup.vlan_ranges | default $.Values.cc_fabric.driver_config.global_config.default_vlan_ranges -}}
             {{- if ne $x 0 }},{{ end -}}
-            {{ $switchgroup.name}}:{{ $range }}
+            {{ default $switchgroup.name $switchgroup.override_vlan_pool }}:{{ $range }}
         {{- end -}}
     {{- end -}}
 {{- end }}
