@@ -2,7 +2,9 @@
   {{- $envAll := index . 0 }}
   {{- $params := index . 1 }}
 - name: kubernetes-entrypoint
-  image: {{ $envAll.Values.global.registry }}/kubernetes-entrypoint:v0.3.1
+  {{- $version := $envAll.Values.utils.kubernetes_entrypoint_version }}
+  {{- $build := default "latest" (get $envAll.Values.global.kubernetes_entrypoint_build_version $envAll.Values.utils.kubernetes_entrypoint_version) }}
+  image: {{ $envAll.Values.global.registry }}/shared-app-images/kubernetes-entrypoint:{{ $version }}-{{ $build }}
   command:
   - /kubernetes-entrypoint
   env:
