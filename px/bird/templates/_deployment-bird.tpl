@@ -1,16 +1,19 @@
 {{- define "deployment_bird" -}}
 ---
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: {{ include "bird.instance.deployment_name" . }}
   labels: {{ include "bird.instance.labels" . | nindent 4 }}
 spec:
   replicas: 1
+  updateStrategy:
+    type: RollingUpdate
+  podManagementPolicy: OrderedReady
+  ordinals:
+    start: 1
   selector:
     matchLabels: {{ include "bird.instance.labels" . | nindent 8 }}
-  strategy:
-    type: Recreate
   template:
     metadata:
       labels: {{ include "bird.instance.labels" . | nindent 8 }}
