@@ -107,7 +107,7 @@ mysql+pymysql://{{ include "db_credentials" . }}@
 # Please keep as it is, special case when it has to reference the db_region value.
 {{define "db_host_pxc"}}{{.Release.Name}}-percona-pxc.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.db_region}}.{{.Values.global.tld}}{{end}}
 
-{{define "db_url_pxc" }}mysql+pymysql://{{.Values.percona_cluster.db_user }}:{{.Values.percona_cluster.dbPassword }}@{{include "db_host_pxc" .}}/{{.Values.percona_cluster.db_name}}?charset=utf8{{end}}
+{{define "db_url_pxc" }}mysql+pymysql://{{- include "resolve_secret_urlquery" .Values.percona_cluster.db_user -}}:{{- include "resolve_secret_urlquery" .Values.percona_cluster.dbPassword -}}@{{include "db_host_pxc" .}}/{{.Values.percona_cluster.db_name}}?charset=utf8{{end}}
 
 {{define "nova_db_host"}}nova-mariadb.{{ include "svc_fqdn" . }}{{end}}
 {{define "nova_api_endpoint_host_admin"}}nova-api.{{ include "svc_fqdn" . }}{{end}}
