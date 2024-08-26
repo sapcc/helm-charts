@@ -4,7 +4,7 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: {{ include "bird.statefulset.deployment_name" . }}
-  labels: {{ include "bird.instance.labels" . | nindent 4 }}
+  labels: {{ include "bird.statefulset.labels" . | nindent 4 }}
 spec:
   replicas: 1
   updateStrategy:
@@ -13,10 +13,10 @@ spec:
   ordinals:
     start: 1
   selector:
-    matchLabels: {{ include "bird.instance.labels" . | nindent 8 }}
+    matchLabels: {{ include "bird.statefulset.labels" . | nindent 8 }}
   template:
     metadata:
-      labels: {{ include "bird.instance.labels" . | nindent 8 }}
+      labels: {{ include "bird.statefulset.labels" . | nindent 8 }}
         {{ include "bird.alert.labels" . | nindent 8 }}
         app.kubernetes.io/name: px
         kubectl.kubernetes.io/default-container: "bird"

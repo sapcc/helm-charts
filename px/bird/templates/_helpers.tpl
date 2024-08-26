@@ -28,7 +28,7 @@ pxservice: '{{ .service_number }}'
 pxdomain: '{{ .domain_number }}'
 {{- end }}
 
-{{- define "bird.instance.labels" }}
+{{- define "bird.statefulset.labels" }}
 app: {{ include "bird.statefulset.deployment_name" . | quote }}
 pxservice: '{{ .service_number }}'
 pxdomain: '{{ .domain_number }}'
