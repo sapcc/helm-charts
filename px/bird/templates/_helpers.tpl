@@ -17,26 +17,18 @@ domain_config: everything nested under .Values.service_1.domain_1
 {{- printf "%s%s.conf" .top.Values.bird_config_path  (include "bird.domain.config_name" .) -}}
 {{- end }}
 
-{{- /*
-All bird.instance.* expect a instance-context that should be consisted of
-:<< domainCtx
-instance_number: 1
-instance: instance_1
-instance_config: everything nested under .Values.service_1.domain_1.instance_1
-*/}}
-
-{{- define "bird.instance.deployment_name" }}
-{{- printf "%s-pxrs-%d-s%d-%d" .top.Values.global.region .domain_number .service_number .instance_number}}
+{{- define "bird.statefulset.deployment_name" }}
+{{- printf "routeserver-v4-service-%d-domain-%d-%d" .service_number .domain_number .instance_number }}
 {{- end }}
 
 {{- define "bird.domain.labels" }}
-app: {{ include "bird.instance.deployment_name" . | quote }}
+app: {{ include "bird.statefulset.deployment_name" . | quote }}
 pxservice: '{{ .service_number }}'
 pxdomain: '{{ .domain_number }}'
 {{- end }}
 
 {{- define "bird.instance.labels" }}
-app: {{ include "bird.instance.deployment_name" . | quote }}
+app: {{ include "bird.statefulset.deployment_name" . | quote }}
 pxservice: '{{ .service_number }}'
 pxdomain: '{{ .domain_number }}'
 pxinstance: '{{ .instance_number }}'
