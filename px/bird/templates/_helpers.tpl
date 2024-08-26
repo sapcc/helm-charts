@@ -26,7 +26,7 @@ instance_config: everything nested under .Values.service_1.domain_1.instance_1
 */}}
 
 {{- define "bird.instance.deployment_name" }}
-{{- printf "%s-pxrs-%d-s%d-%d" .top.Values.global.region .domain_number .service_number .instance_number}}
+{{- printf "routeserver-v4-service-%d-domain-%d-%d" .service_number .domain_number .instance_number }}
 {{- end }}
 
 {{- define "bird.domain.labels" }}
