@@ -26,6 +26,15 @@ spec:
         app.kubernetes.io/instance: percona-xtradb-cluster-operator
         app.kubernetes.io/name: percona-xtradb-cluster-operator
         app.kubernetes.io/part-of: percona-xtradb-cluster-operator
+        ccloud/support-group: shared
+        ccloud/service: pxc-operator
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+        prometheus.io/targets: "kubernetes"
+        {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+        linkerd.io/inject: enabled
+        {{- end }}
     spec:
       serviceAccountName: percona-xtradb-cluster-operator
       terminationGracePeriodSeconds: 600
