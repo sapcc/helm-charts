@@ -1,11 +1,9 @@
 {{- define "lg_conf" -}}
-{{- $region := index . 0 -}}
-{{- $lg_config := index . 1 -}}
 DEBUG = False
 LOG_FILE="/var/log/lg.log"
 LOG_LEVEL="WARNING"
 
-DOMAIN = "px.svc.kubernetes.{{ $region }}.cloud.sap"
+DOMAIN = "px.svc"
 
 BIND_IP = "0.0.0.0"
 BIND_PORT = 80
@@ -20,5 +18,5 @@ PROXY = {
     {{- end -}}
 }
 
-SESSION_KEY = '{{ $lg_config.session_key }}'
+SESSION_KEY = '{{ .session_key }}'
 {{- end }}

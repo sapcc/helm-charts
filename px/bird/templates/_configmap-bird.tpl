@@ -5,12 +5,12 @@
 kind: ConfigMap
 apiVersion: v1
 metadata:
-    name: cfg-{{ $config_name }}
+    name: {{ $config_name }}
     annotations:
         px.cloud.sap/configPath: {{ $config_path | quote }}
         px.cloud.sap/configChecksumSha1: {{ .top.Files.Get $config_path | sha1sum | quote }}
 data:
-    "{{ $config_name }}.conf": |
+    "bird.conf": |
 {{- if not (.top.Files.Glob $config_path) -}}
 {{- fail (printf "bird config file %s does not exist."  $config_path ) -}}
 {{- end }}

@@ -25,20 +25,20 @@ spec:
       affinity: {{ include "bird.domain.affinity" . | nindent 8 }}
       tolerations: {{ include "bird.domain.tolerations" . | nindent 8 }}
       initContainers:
-      - name: {{ include "bird.instance.deployment_name" .}}-init
+      - name: init-network
         image: keppel.{{ required "A registry mus be set" .top.Values.registry }}.cloud.sap/ccloud-dockerhub-mirror/library/alpine:latest
         command: ["sh", "-c", "ip link set vlan{{ .domain_config.multus_vlan }} promisc on"]
         securityContext:
           privileged: true
       containers:
-      - name: {{ include "bird.instance.deployment_name" .}}
+      - name: bird
         image: keppel.{{ required "A registry mus be set" .top.Values.registry }}.cloud.sap/{{ required "A bird_image must be set" .top.Values.bird_image }}
         securityContext:
           capabilities:
             add: ["NET_ADMIN"]
         imagePullPolicy: Always
         volumeMounts:
-        - name: vol-{{ include "bird.instance.deployment_name" .}}
+        - name: config
           mountPath: /etc/bird
         - name: bird-socket
           mountPath: /var/run/bird
@@ -48,7 +48,7 @@ spec:
           initialDelaySeconds: 5
           periodSeconds: 5
         resources: {{ toYaml .top.Values.resources.bird | nindent 10 }}
-      - name: {{ include "bird.instance.deployment_name" .}}-exporter
+      - name: exporter
         image: keppel.{{ .top.Values.registry }}.cloud.sap/{{required "bird_exporter_image must be set" .top.Values.bird_exporter_image}}
         args: ["-format.new=true", "-bird.v2", "-bird.socket=/var/run/bird/bird.ctl", "-proto.ospf=false", "-proto.direct=false"]
         resources: {{ toYaml .top.Values.resources.exporter | nindent 10 }}
@@ -59,7 +59,7 @@ spec:
         ports:
         - containerPort: 9324
           name: metrics
-      - name: {{ include "bird.instance.deployment_name" .}}-lgproxy
+      - name: lgproxy
         image: keppel.{{ .top.Values.registry }}.cloud.sap/{{ required "lg_image must be set" .top.Values.lg_image }}
         command: ["python3"]
         args: ["lgproxy.py"]
@@ -71,7 +71,7 @@ spec:
         ports:
         - containerPort: 5000
           name: lgproxy
-      - name: {{ include "bird.instance.deployment_name" .}}-lgadminproxy
+      - name: lgadminproxy
         image: keppel.{{ .top.Values.registry }}.cloud.sap/{{ .top.Values.lg_image }}
         command: ["python3"]
         args: ["lgproxy.py", "priv"]
@@ -84,9 +84,9 @@ spec:
         - containerPort: 5005
           name: lgadminproxy
       volumes:
-        - name: vol-{{ include "bird.instance.deployment_name" .}}
+        - name: config
           configMap:
-            name: cfg-{{ include "bird.domain.config_name" . }}
+            name: {{ include "bird.domain.config_name" . }}
         - name: bird-socket
           emptyDir: {}
 {{- end }}
