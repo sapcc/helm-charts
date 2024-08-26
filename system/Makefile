@@ -4,7 +4,7 @@ PROVIDER_VSPHERE_VERSION ?= v1.9.3
 PROVIDER_IPAM_VERSION ?= v0.1.0
 PROVIDER_KUBERNIKUS_VERSION ?= 9fd81475b828971913b3b27addf51fdbd0511d85
 BAREMETAL_OPERATOR_VERSION ?= v0.6.0
-METAL_OPERATOR_VERSION ?= 2289cae925d0d261483fffc6e447cec9c422c18e
+METAL_OPERATOR_VERSION ?= a4264ab60cdbec2fca6bd5cbe9fe08c1fba409ed
 BOOT_OPERATOR_VERSION ?= d3c5d5fdd5617a660265673218bd5efd9d793e7e
 IPXE_OPERATOR_VERSION ?= 61c6898bfd7772008835bdcca8d8a64c1dfc3b32
 FEDHCP_VERSION ?= a59539c62aaa11a96c82fe792c87daaac4cb75bf
@@ -95,7 +95,7 @@ build-metal-operator:
 	@find metal-operator-core/templates -type f -exec $(SED) -i -e 's#-metal-operator-serving-cert#-serving-cert#g' {} \;
 	@yq -i '.controllerManager.manager.image.tag="$(METAL_OPERATOR_VERSION)"' metal-operator-core/values.yaml
 	@yq -i '.fullnameOverride="metal-operator"' metal-operator-core/values.yaml
-	@yq -i '.version="1.0.6"' metal-operator-core/Chart.yaml
+	@yq -i '.version="1.0.7"' metal-operator-core/Chart.yaml
 
 build-boot-operator:
 	@cat kustomize/boot-operator/kustomization.yaml >> kustomization.yaml
