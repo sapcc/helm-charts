@@ -529,6 +529,21 @@ mysql_metrics:
         UNION SELECT 'none' AS access_id, 'none' AS share_id, 'none' AS share_instance_id, 'none' AS state, 0 AS max_duration_gauge;
       values:
         - "max_duration_gauge"
+    - help: Manila Oldest Soft Deleted Share
+      labels:
+        - "id"
+      name: manila_oldest_soft_deleted_share
+      query: |
+        SELECT
+          id,
+          DATEDIFF(NOW(), deleted_at) AS age_of_oldest_share_in_days
+        FROM shares
+        WHERE deleted_at IN (
+          SELECT MIN(deleted_at)
+          FROM shares
+        );
+      values:
+        - "age_of_oldest_share_in_days"
 
 pod:
   replicas:
