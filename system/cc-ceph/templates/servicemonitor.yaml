@@ -43,3 +43,25 @@ spec:
     matchLabels:
       app: rook-ceph-mgr
       rook_cluster: rook-ceph
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ .Values.objectstore.name }}-ext-rgw-exporter
+  namespace: {{ .Release.Namespace }}
+  labels:
+    plugin: kube-monitoring-{{ .Values.global.cluster }}
+spec:
+  endpoints:
+  - interval: 10s
+    path: /metrics
+    port: metrics
+    relabelings:
+    - targetLabel: cluster
+      replacement: {{ .Values.global.cluster }}
+  namespaceSelector:
+    matchNames:
+    - {{ .Release.Namespace }}
+  selector:
+    matchLabels:
+      app: {{ .Values.objectstore.name }}-ext-rgw-exporter

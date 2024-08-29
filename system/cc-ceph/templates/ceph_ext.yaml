@@ -1,0 +1,33 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.objectstore.name }}-ext-rgw-exporter
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Values.objectstore.name }}-ext-rgw-exporter
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Values.objectstore.name }}-ext-rgw-exporter
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.objectstore.name }}-ext-rgw-exporter
+    spec:
+      containers:
+      - name: prysm
+        image: {{ .Values.objectstore.prysm.repository.image }}:{{ .Values.objectstore.prysm.repository.tag }}
+        imagePullPolicy: {{ .Values.objectstore.prysm.repository.pullPolicy }}
+        args:
+        - "remote-producer"
+        - "radosgw-usage"
+        - '--prometheus=true'
+        - '-v=info'
+        envFrom:
+        - secretRef:
+            name: {{ .Values.objectstore.name }}-ext-rgw-exporter
+        ports:
+        - containerPort: 8080
+          name: metrics

@@ -18,3 +18,20 @@ spec:
     app: {{ .Values.objectstore.service.selector.app }}
     rook_cluster: {{ .Values.objectstore.service.selector.rook_cluster }}
     rook_object_store: {{ .Values.objectstore.name }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.objectstore.name }}-ext-rgw-exporter
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Values.objectstore.name }}-ext-rgw-exporter
+spec:
+  type: ClusterIP
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
+      name: metrics
+  selector:
+    app: {{ .Values.objectstore.name }}-ext-rgw-exporter
