@@ -247,7 +247,12 @@
           },
           "project_id" : {
             "type" : "text",
-            "analyzer": "custom_analyzer"
+            "analyzer": "custom_analyzer",
+            "fields": {
+              "keyword": {
+                "type": "keyword"
+              }
+            }
           },
           "typeURI" : {
             "type" : "text",
