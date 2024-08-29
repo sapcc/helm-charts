@@ -92,6 +92,7 @@ filter {
     mutate {
       id => "f06c_move_target_id_to_project_id"
       add_field => { "[target][project_id]" => "%{[target][id]}" }
+      remove_field => [ "[target][id]" ]
     }
   }
 
