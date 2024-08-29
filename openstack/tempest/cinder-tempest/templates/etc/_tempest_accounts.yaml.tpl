@@ -4,48 +4,56 @@
   username: nova-tempestadmin1
   types:
   - admin
+  - primary
 - domain_name: tempest
   password: {{ .Values.tempestAdminPassword | quote }}
   project_name: nova-tempest-admin2
   username: nova-tempestadmin2
   types:
   - admin
+  - primary
 - domain_name: tempest
   password: {{ .Values.tempestAdminPassword | quote }}
   project_name: nova-tempest-admin3
   username: nova-tempestadmin3
   types:
   - admin
+  - primary
 - domain_name: tempest
   password: {{ .Values.tempestAdminPassword | quote }}
   project_name: nova-tempest-admin4
   username: nova-tempestadmin4
   types:
   - admin
+  - primary
 - domain_name: tempest
   password: {{ .Values.tempestAdminPassword | quote }}
   project_name: nova-tempest-admin5
   username: nova-tempestadmin5
   types:
   - admin
+  - primary
 - domain_name: tempest
   password: {{ .Values.tempestAdminPassword | quote }}
   project_name: nova-tempest-admin6
   username: nova-tempestadmin6
   types:
   - admin
+  - primary
 - domain_name: tempest
   password: {{ .Values.tempestAdminPassword | quote }}
   project_name: nova-tempest-admin7
   username: nova-tempestadmin7
   types:
   - admin
+  - primary
 - domain_name: tempest
   password: {{ .Values.tempestAdminPassword | quote }}
   project_name: nova-tempest-admin8
   username: nova-tempestadmin8
   types:
   - admin
+  - primary
 - domain_name: tempest
   password: {{ .Values.tempestAdminPassword | quote }}
   project_name: nova-tempest1

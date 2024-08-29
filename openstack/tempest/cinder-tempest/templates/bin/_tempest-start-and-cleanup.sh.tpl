@@ -14,6 +14,7 @@ function cleanup_tempest_leftovers() {
   # need to build some waiting function
 
   delete_dependencies() {
+    env | grep OS_
     for group_snap in $(openstack volume group snapshot list --os-volume-api-version 3.14 | grep -v -e ID -e '^+' | awk '{print $2;}'); do
       openstack volume group snapshot delete ${group_snap} --os-volume-api-version 3.14
     done
@@ -48,6 +49,7 @@ function cleanup_tempest_leftovers() {
   delete_groups() {
     # this will be called twice, because there are groups created from snapshot
     # which need to go before we can delete the snapshots in other groups
+    env | grep OS_
     for group in $(openstack volume group list --os-volume-api-version=3.13 | grep -v -e ID -e '^+' | awk '{print $2;}'); do
       openstack volume group delete --os-volume-api-version=3.13 --force ${group}
     done
@@ -67,7 +69,7 @@ function cleanup_tempest_leftovers() {
 
   echo "Cleanup groups, backups, snapshots"
   for i in $(seq 1 18); do
-    export OS_USERNAME=nova-tempestuser${i}
+    export OS_USERNAME=nova-tempestadmin1
     export OS_PROJECT_NAME=nova-tempest${i}
     delete_dependencies
     delete_groups
@@ -82,7 +84,7 @@ function cleanup_tempest_leftovers() {
 
   echo "Cleanup volumes, group types and volume types"
   for i in $(seq 1 18); do
-    export OS_USERNAME=nova-tempestuser${i}
+    export OS_USERNAME=nova-tempestadmin1
     export OS_PROJECT_NAME=nova-tempest${i}
     delete_volumes
   done
