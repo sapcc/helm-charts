@@ -22,6 +22,7 @@ spec:
         hypervisor: "kvm"
       annotations:
         configmap-etc-hash: {{ include (print $.Template.BasePath "/configmap-etc.yaml") . | sha256sum }}
+        secret-etc-hash: {{ include (print $.Template.BasePath "/secret-etc.yaml") . | sha256sum }}
     spec:
       hostNetwork: true
       hostPID: true
@@ -45,15 +46,15 @@ spec:
       - name: network-from-netbox
         image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/loci-neutron:{{ .Values.imageVersion | required "Please set imageVersion similar" }}
         command: ["/container.init/network-from-netbox"]
-        workingDir: "/etc/neutron/neutron.conf.d"
+        workingDir: "/etc/neutron/neutron-openvswitch-agent.conf.d"
         volumeMounts:
           - mountPath: /container.init
             name: bin
           - mountPath: /etc/neutron
             name: etcneutron
-          - mountPath: /etc/neutron/neutron.conf.d
-            name: etcneutronconfd
-          - mountPath: /etc/neutron/neutron.conf.d/segment-names.yaml
+          - mountPath: /etc/neutron/neutron-openvswitch-agent.conf.d
+            name: etcneutronagentconfd
+          - mountPath: /etc/neutron/neutron-openvswitch-agent.conf.d/segment-names.yaml
             name: etc-vpod
             subPath: segment-names.yaml
       containers:
@@ -67,8 +68,8 @@ spec:
           volumeMounts:
           - mountPath: /etc/neutron
             name: etcneutron
-          - mountPath: /etc/neutron/neutron.conf.d
-            name: etcneutronconfd
+          - mountPath: /etc/neutron/neutron-openvswitch-agent.conf.d
+            name: etcneutronagentconfd
           - mountPath: /etc/neutron/neutron.conf
             name: etc
             subPath: neutron.conf
@@ -84,6 +85,9 @@ spec:
           - mountPath: /etc/neutron/neutron.conf.d/vpod.conf
             name: etc-vpod
             subPath: vpod.conf
+          - mountPath: /etc/neutron/neutron.conf.d/secret.conf
+            name: etc-secrets
+            subPath: secret.conf
           - mountPath: /etc/sudoers
             name: etc
             subPath: sudoers
@@ -132,12 +136,15 @@ spec:
       - name: etcneutron
         emptyDir:
           medium: Memory
-      - name: etcneutronconfd
+      - name: etcneutronagentconfd
         emptyDir:
           medium: Memory
       - name: modules
         hostPath:
           path: /lib/modules
+      - name: etc-secrets
+        secret:
+          secretName: {{ .Release.Name }}-etc
       - name: etc
         configMap:
           name: {{ .Release.Name }}-etc
