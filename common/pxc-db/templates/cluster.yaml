@@ -20,9 +20,9 @@ spec:
   ignoreLabels:
 {{ .Values.ignoreLabels | toYaml | indent 4 }}
   {{- end }}
-  secretsName: pxc-cluster-{{.Values.name}}-secrets
-  sslSecretName: pxc-cluster-{{.Values.name}}-ssl
-  sslInternalSecretName: pxc-cluster-{{.Values.name}}-ssl-internal
+  secretsName: pxc-{{.Values.name}}-secrets
+  sslSecretName: pxc-{{.Values.name}}-ssl
+  sslInternalSecretName: pxc-{{.Values.name}}-ssl-internal
   {{- if .Values.initContainer }}
   initContainer:
     {{- if $.Values.initContainer.image.override }}
@@ -111,7 +111,7 @@ spec:
         - name: MYSQLD_EXPORTER_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: pxc-cluster-{{.Values.name}}-secrets
+              name: pxc-{{.Values.name}}-secrets
               key: monitor
       ports:
         - name: metrics
@@ -318,9 +318,9 @@ spec:
         {{- end }}
         s3:
           bucket: "pxc-backup-{{ .Values.global.region }}/binlogs/{{.Values.name}}/"
-          credentialsSecret: "pxc-cluster-{{.Values.name}}-backup-s3"
+          credentialsSecret: "pxc-{{ .Values.name }}-backup-s3"
           region: "{{ .Values.s3.region }}"
-          endpointUrl: "https://objectstore-3.{{ .Values.s3.region }}.cloud.sap"
+          endpointUrl: "{{ .Values.s3.endpointUrl }}"
       s3-backups-hourly:
         type: s3
         annotations:
@@ -334,10 +334,10 @@ spec:
         priorityClassName: {{ $backup.priorityClassName }}
         {{- end }}
         s3:
-          bucket: "pxc-backup-{{ .Values.global.region }}/backups/{{.Values.name}}/hourly"
-          credentialsSecret: "pxc-cluster-{{.Values.name}}-backup-s3"
+          bucket: "pxc-backup-{{ .Values.global.region }}/backups/{{ .Values.name }}/hourly"
+          credentialsSecret: "pxc-{{ .Values.name }}-backup-s3"
           region: "{{ .Values.s3.region }}"
-          endpointUrl: "https://objectstore-3.{{ .Values.s3.region }}.cloud.sap"
+          endpointUrl: "{{ .Values.s3.endpointUrl }}"
       s3-backups-daily:
         type: s3
         annotations:
@@ -351,10 +351,10 @@ spec:
         priorityClassName: {{ $backup.priorityClassName }}
         {{- end }}
         s3:
-          bucket: "pxc-backup-{{ .Values.global.region }}/backups/{{.Values.name}}/daily"
-          credentialsSecret: "pxc-cluster-{{.Values.name}}-backup-s3"
+          bucket: "pxc-backup-{{ .Values.global.region }}/backups/{{ .Values.name }}/daily"
+          credentialsSecret: "pxc-{{.Values.name}}-backup-s3"
           region: "{{ .Values.s3.region }}"
-          endpointUrl: "https://objectstore-3.{{ .Values.s3.region }}.cloud.sap"
+          endpointUrl: "{{ .Values.s3.endpointUrl }}"
       s3-backups-custom:
         type: s3
         annotations:
@@ -368,10 +368,10 @@ spec:
         priorityClassName: {{ $backup.priorityClassName }}
         {{- end }}
         s3:
-          bucket: "pxc-backup-{{ .Values.global.region }}/backups/{{.Values.name}}/custom"
-          credentialsSecret: "pxc-cluster-{{.Values.name}}-backup-s3"
+          bucket: "pxc-backup-{{ .Values.global.region }}/backups/{{ .Values.name }}/custom"
+          credentialsSecret: "pxc-{{.Values.name}}-backup-s3"
           region: "{{ .Values.s3.region }}"
-          endpointUrl: "https://objectstore-3.{{ .Values.s3.region }}.cloud.sap"
+          endpointUrl: "{{ .Values.s3.endpointUrl }}"
     schedule:
 {{ $backup.schedule | toYaml | indent 6 }}
 {{- end }}
