@@ -13,22 +13,6 @@ connection = {{ tuple . .Values.apidbName .Values.apidbUser .Values.apidbPasswor
     {{- tuple . .Values.cell0dbName .Values.cell0dbUser (default .Values.cell0dbPassword .Values.global.dbPassword) | include "db_url_mysql" }}
 {{- end }}
 
-{{- define "cell2_db_path" -}}
-    {{- if eq .Values.cell2.enabled true -}}
-        {{- tuple . .Values.cell2dbName .Values.cell2dbUser (default .Values.cell2dbPassword .Values.global.dbPassword) .Values.mariadb_cell2.name | include "db_url_mysql" }}
-    {{- end }}
-{{- end }}
-
-{{- define "cell2_db_path_for_exporter" -}}
-{{- if eq .Values.cell2.enabled true -}}
-mysql://{{.Values.cell2dbUser}}:{{ default .Values.cell2dbPassword .Values.global.dbPassword | urlquery }}@tcp(nova-{{.Values.cell2.name}}-mariadb.{{include "svc_fqdn" .}}:3306)/{{.Values.cell2dbName}}
-{{- end -}}
-{{- end -}}
-
-{{- define "cell2_transport_url" -}}
-rabbit://{{ default "" .Values.global.user_suffix | print .Values.rabbitmq_cell2.users.default.user }}:{{ required "rabbitmq_cell2.users.default.password required" .Values.rabbitmq_cell2.users.default.password | urlquery }}@{{.Chart.Name}}-{{.Values.cell2.name}}-rabbitmq.{{include "svc_fqdn" .}}:{{ .Values.rabbitmq_cell2.port | default 5672 }}{{ .Values.rabbitmq_cell2.virtual_host | default "/" }}
-{{- end -}}
-
 
 {{- define "container_image_nova" -}}
   {{- $name := index . 1 -}}
@@ -77,52 +61,13 @@ annotations:
   {{- keys $dbs | sortAlpha | join "," }}
 {{- end }}
 
-{{/* TODO: Expose and use the logic in the rabbitmq subchart */}}
-{{- define "nova.helpers.rabbitmq_name" }}
-  {{- $vals := index . 1 }}
-  {{- with index . 0 }}
-    {{- $name := default "rabbitmq" $vals.nameOverride -}}
-    {{- printf "%s-%s" .Release.Name $name | trunc 63 | replace "_" "-" | trimSuffix "-" -}}
-  {{- end}}
+{{- define "nova.helpers.default_transport_url" }}
+{{- $data := merge (pick .Values.rabbitmq "nameOverride" "host" "port" "virtual_host") .Values.rabbitmq.users.default }}
+{{- $_ := required ".Values.rabbitmq.users.default.user is required" .Values.rabbitmq.users.default.user }}
+{{- $_ := required ".Values.rabbitmq.users.default.password is required" .Values.rabbitmq.users.default.password }}
+{{- .Values.rabbitmq.users.default.password | urlquery | set "password" $data }}
+transport_url = {{ include "utils.rabbitmq_url" (tuple . $data) }}
 {{- end }}
-
-{{- define "nova.helpers.cell01_rabbitmq" }}
-  {{- tuple . .Values.rabbitmq | include "nova.helpers.rabbitmq_name" }}
-{{- end }}
-
-{{- define "nova.helpers.cell2_rabbitmq" }}
-  {{- tuple . .Values.rabbitmq_cell2 | include "nova.helpers.rabbitmq_name" }}
-{{- end }}
-
-{{- define "nova.helpers.cell01_services" }}
-  {{- print .Values.mariadb_api.name "-mariadb," .Values.mariadb.name "-mariadb," (include "nova.helpers.cell01_rabbitmq" .) }}
-{{- end }}
-
-{{- define "nova.helpers.cell1_services" }}
-  {{- print .Values.mariadb.name "-mariadb," (include "nova.helpers.cell01_rabbitmq" .) }}
-{{- end }}
-
-{{- define "nova.helpers.cell2_services" }}
-  {{- if .Values.cell2.enabled }}
-    {{- print .Values.mariadb_cell2.name "-mariadb," (include "nova.helpers.cell2_rabbitmq" .) }}
-  {{- end }}
-{{- end }}
-
-{{- define "nova.helpers.all_cell_services" }}
-  {{- include "nova.helpers.cell01_services" . }}
-  {{- if .Values.cell2.enabled -}}
-    ,{{ include "nova.helpers.cell2_services" . }}
-  {{- end }}
-{{- end }}
-
-
-{{- define "rabbitmq.transport_url" -}}{{ tuple . .Values.rabbitmq | include "rabbitmq._transport_url" }}{{- end}}
-
-{{- define "rabbitmq._transport_url" -}}
-{{- $envAll := index . 0 -}}
-{{- $rabbitmq := index . 1 -}}
-rabbit://{{ default "" $envAll.Values.global.user_suffix | print $rabbitmq.users.default.user }}:{{ required "$rabbitmq.users.default.password missing" $rabbitmq.users.default.password }}@nova-rabbitmq:{{ $rabbitmq.port | default 5672 }}{{ $rabbitmq.virtual_host | default "/" }}
-{{- end}}
 
 {{- define "console-novnc.conf" }}
 {{- $cell_name := index . 1 }}
