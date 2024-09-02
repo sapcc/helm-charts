@@ -49,3 +49,21 @@ Selector labels
 app.kubernetes.io/name: {{ include "pxc-db.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
+
+{{- define "pxc-db.resolve_secret" -}}
+    {{- $str := . -}}
+    {{- if (hasPrefix "vault+kvv2" $str ) -}}
+        {{"{{"}} resolve "{{ $str }}" {{"}}"}}
+    {{- else -}}
+        {{ $str }}
+{{- end -}}
+{{- end -}}
+
+{{- define "pxc-db.resolve_secret_squote" -}}
+    {{- $str := . -}}
+    {{- if (hasPrefix "vault+kvv2" $str ) -}}
+        {{"{{"}} resolve "{{ $str }}" | replace "'" "''" | squote {{"}}"}}
+    {{- else -}}
+        {{ $str | replace "'" "''" | squote }}
+{{- end -}}
+{{- end -}}
