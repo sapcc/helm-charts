@@ -45,7 +45,7 @@ spec:
           {{- else }}
           image: {{ required ".Values.global.dockerHubMirror is missing" .Values.global.dockerHubMirror }}/{{ required ".Values.image.name is missing" .Values.image.name }}:{{ required ".Values.image.tag is missing" .Values.image.tag }}
           {{- end }}
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: {{ required ".Values.image.pullPolicy is missing" .Values.image.pullPolicy }}
           ports:
           - containerPort: 8080
             name: metrics
@@ -64,11 +64,11 @@ spec:
             - name: LOG_STRUCTURED
               value: "true"
             - name: LOG_LEVEL
-              value: "INFO"
+              value: "{{ .Values.logLevel }}"
             - name: DISABLE_TELEMETRY
               value: "true"
             - name: CC_FIX_PERMISSIONS
-              value: "true"
+              value: "{{ .Values.ccFixPemissions }}"
           livenessProbe:
             failureThreshold: 3
             httpGet:
