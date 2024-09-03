@@ -29,6 +29,12 @@ spec:
         {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
         linkerd.io/inject: enabled
         {{- end }}
+        {{- if .Values.config }}
+        checksum/configmap: {{ include (print .Template.BasePath "/configmap.yaml") . | sha256sum }}
+        {{- end }}
+        {{- if .Values.redisPassword }}
+        checksum/secrets: {{ include (print .Template.BasePath "/secrets.yaml") . | sha256sum }}
+        {{- end }}
     spec:
       containers:
       - name: {{ template "redis.fullname" . }}
