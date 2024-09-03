@@ -3,6 +3,11 @@ Rabbitmq CHANGELOG
 
 This file is used to list changes made in each version of the common chart rabbitmq.
 
+0.11.1
+------
+nathan.oyler@sap.com
+- Remove alert for unacknowledged as it's been renamed unack
+
 0.11.0
 ------
 - Update RabbitMQ to version 3.13.6-management
