@@ -1,11 +1,12 @@
+{{- if and $.Values.mariadb.enabled (not $.Values.mariadboperator.enabled) }}
 apiVersion: k8s.mariadb.com/v1alpha1
 kind: MariaDB
 metadata:
   name: mariadb
   namespace: {{ $.Release.Namespace }}
 spec:
-  image: {{ .Values.image.repository }}
-  imagePullPolicy: {{ .Values.image.pullPolicy }}
+{{ if .Values.image.repository }}  image: {{ .Values.image.repository }}{{ end }}
+{{ if .Values.image.pullPolicy }}  imagePullPolicy: {{ .Values.image.pullPolicy }}{{ end }}
 
   rootPasswordSecretKeyRef:
     name: mariadb-root
@@ -22,14 +23,18 @@ spec:
   storage:
     size: {{ .Values.mariadb.storage.size }}
 
-  replicas: {{ .Values.replicaCount }}
+  replicas: {{ .Values.replicas | default 1 | int }}
+  replicasAllowEvenNumber: {{ .Values.replicasAllowEvenNumber | default false }}
 
   galera:
     enabled: true
-    agent:
-      image: {{ .Values.image.agent.repository }}
-    initContainer:
-      image: {{ .Values.image.initContainer.repository }}
+    replicaThreads: 1
+  {{ if .Values.image.agent }}  agent:
+    {{ if .Values.image.agent.repository }}  image: {{ .Values.image.agent.repository }} {{ end }}
+  {{ end }}
+  {{- if .Values.image.initContainer }}  initContainer:
+    {{ if .Values.image.initContainer.repository }}  image: {{ .Values.image.initContainer.repository }} {{- end }}
+  {{ end }}
 
   service:
     type: {{ .Values.mariadb.service.type }}
@@ -68,3 +73,4 @@ spec:
       key: password
       generate: false
     enabled: true
+{{- end }}
