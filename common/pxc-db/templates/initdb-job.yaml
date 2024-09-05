@@ -1,0 +1,58 @@
+{{- if .Values.initdb_secret }}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: "{{ include "pxc-db.fullname" . }}-init-db"
+  namespace:  {{.Release.Namespace}}
+  labels:
+{{ include "pxc-db.labels" . | indent 4 }}
+  annotations:
+#    "helm.sh/hook": pre-upgrade,pre-rollback
+#    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+#    "helm.sh/hook-weight": "3"
+{{- if and (and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested) $.Values.linkerd.enabled }}
+    linkerd.io/inject: enabled
+    config.alpha.linkerd.io/proxy-enable-native-sidecar: "true"
+{{- end }}
+spec:
+  template:
+    metadata:
+      name: "{{ include "pxc-db.fullname" . }}-init-db"
+      labels:
+{{ include "pxc-db.labels" . | indent 8 }}
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: init-db-job
+        image: {{ required ".Values.global.dockerHubMirror is missing" .Values.global.dockerHubMirror }}/{{ .Values.initdb.image.name }}:{{ .Values.initdb.image.tag }}
+        command:
+          - /bin/bash
+          - -c
+          - |
+            /configurator/init-db.sh
+        env:
+          - name: MYSQL_ADDRESS
+            value: {{ .Values.name }}-db-haproxy
+          - name: MYSQL_USERNAME
+            value: 'operator'
+          - name: MYSQL_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: pxc-{{.Values.name}}-secrets
+                key: operator
+        volumeMounts:
+          - name: initdb
+            mountPath: /var/lib/initdb
+          - name: init-db-configmap
+            mountPath: /configurator
+      volumes:
+        - name: initdb
+          secret:
+            secretName: pxc-{{ .Values.name }}-db-mysql-init
+            defaultMode: 0666
+        - name: init-db-configmap
+          configMap:
+            name: pxc-{{ .Values.name }}-init-db-bin
+            defaultMode: 0755
+{{- end }}

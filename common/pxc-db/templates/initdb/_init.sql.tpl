@@ -9,9 +9,8 @@ CREATE DATABASE IF NOT EXISTS {{ . }};
 {{- if and .Values.global.dbUser .Values.global.dbPassword (not (hasKey .Values.users (default "" .Values.global.dbUser))) (not .Values.custom_initdb_secret) }}
 CREATE DATABASE IF NOT EXISTS `{{ .Values.name }}`;
 CREATE USER IF NOT EXISTS {{ .Values.global.dbUser }};
-GRANT ALL PRIVILEGES ON `{{ .Values.name }}.*`
-  TO {{ include "pxc-db.resolve_secret_squote" (.Values.global.dbUser) }}
-  IDENTIFIED BY {{ include "pxc-db.resolve_secret_squote" .Values.global.dbPassword }};
+ALTER USER {{ include "pxc-db.resolve_secret_squote" (.Values.global.dbUser) }} IDENTIFIED BY {{ include "pxc-db.resolve_secret_squote" .Values.global.dbPassword }};
+GRANT ALL PRIVILEGES ON `{{ .Values.name }}`.* TO {{ include "pxc-db.resolve_secret_squote" (.Values.global.dbUser) }};
 {{- end }}
 
 {{- range $username, $values := .Values.users }}
@@ -20,17 +19,18 @@ GRANT ALL PRIVILEGES ON `{{ .Values.name }}.*`
 -- Skipping user {{ $username }} without password
     {{- else }}
 CREATE USER IF NOT EXISTS {{ include "pxc-db.resolve_secret_squote" $username }};
-ALTER USER {{ include "pxc-db.resolve_secret_squote" $username }} IDENTIFIED BY {{ include "pxc-db.resolve_secret_squote" $values.password }}
+ALTER USER {{ include "pxc-db.resolve_secret_squote" $username }} IDENTIFIED BY {{ include "pxc-db.resolve_secret_squote" $values.password }};
 {{- if $values.limits }}
+ALTER USER {{ include "pxc-db.resolve_secret_squote" $username }}
   WITH
 {{- range $k, $v := $values.limits }}
     {{ $k | upper }} {{ $v }}
-{{- end }}
 {{- end }};
-        {{- range $values.grants }}
+{{- end }}
+{{- range $values.grants }}
 GRANT {{ . }} TO {{ include "pxc-db.resolve_secret_squote" $username }};
-        {{- end }}
-    {{- end }}
+{{- end }}
+{{- end }}
 {{- end }}
 
 {{- if (and (hasKey .Values "ccroot_user") (.Values.ccroot_user.enabled)) }}
