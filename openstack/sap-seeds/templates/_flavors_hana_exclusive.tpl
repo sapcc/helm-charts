@@ -9,6 +9,7 @@
     "trait:CUSTOM_NUMASIZE_C48_M729": "required"
     "hw:cpu_cores": "24"  # used in nova-vmware as cores-per-socket (12pCPU = 24vCPU)
     "reservation:cpu": "22"
+    "vmware:vmotion_encryption": "disabled"
     {{- if ( .Values.hana_flavors_quota_separate ) }}
     "quota:instance_only": "true"
     "quota:separate": "true"
@@ -23,6 +24,7 @@
     "trait:CUSTOM_NUMASIZE_C48_M729": "required"
     "hw:cpu_cores": "48"  # used in nova-vmware as cores-per-socket (24pCPU = 48vCPU)
     "reservation:cpu": "45"
+    "vmware:vmotion_encryption": "disabled"
     {{- if ( .Values.hana_flavors_quota_separate ) }}
     "quota:instance_only": "true"
     "quota:separate": "true"
@@ -37,6 +39,7 @@
     "trait:CUSTOM_NUMASIZE_C48_M729": "required"
     "hw:cpu_cores": "48"  # used in nova-vmware as cores-per-socket (24pCPU = 48vCPU)
     "reservation:cpu": "91"
+    "vmware:vmotion_encryption": "disabled"
     {{- if ( .Values.hana_flavors_quota_separate ) }}
     "quota:instance_only": "true"
     "quota:separate": "true"
@@ -51,6 +54,7 @@
     "trait:CUSTOM_NUMASIZE_C48_M729": "required"
     "hw:cpu_cores": "48"  # used in nova-vmware as cores-per-socket (24pCPU = 48vCPU)
     "reservation:cpu": "136"
+    "vmware:vmotion_encryption": "disabled"
     "vmware:hw_version": "vmx-18"
     {{- if ( .Values.hana_flavors_quota_separate ) }}
     "quota:instance_only": "true"
@@ -66,6 +70,7 @@
     "trait:CUSTOM_NUMASIZE_C48_M729": "required"
     "hw:cpu_cores": "48"  # used in nova-vmware as cores-per-socket (24pCPU = 48vCPU)
     "reservation:cpu": "182"
+    "vmware:vmotion_encryption": "disabled"
     "vmware:hw_version": "vmx-18"
     {{- if ( .Values.hana_flavors_quota_separate ) }}
     "quota:instance_only": "true"
@@ -81,6 +86,7 @@
     "trait:CUSTOM_NUMASIZE_C48_M729": "required"
     "hw:cpu_cores": "48"  # used in nova-vmware as cores-per-socket (24pCPU = 48vCPU)
     "reservation:cpu": "364"
+    "vmware:vmotion_encryption": "disabled"
     "vmware:hw_version": "vmx-18"
     {{- if ( .Values.hana_flavors_quota_separate ) }}
     "quota:instance_only": "true"
@@ -96,6 +102,7 @@
     "trait:CUSTOM_NUMASIZE_C48_M729": "required"
     "hw:cpu_cores": "48"  # used in nova-vmware as cores-per-socket (24pCPU = 48vCPU)
     "reservation:cpu": "273"
+    "vmware:vmotion_encryption": "disabled"
     "vmware:hw_version": "vmx-18"
     {{- if ( .Values.hana_flavors_quota_separate ) }}
     "quota:instance_only": "true"
@@ -111,6 +118,7 @@
     "trait:CUSTOM_NUMASIZE_C56_M1459": "required"
     "hw:cpu_cores": "56"  # used in nova-vmware as cores-per-socket (24pCPU = 48vCPU)
     "reservation:cpu": "425"
+    "vmware:vmotion_encryption": "disabled"
     "vmware:hw_version": "vmx-18"
     {{- if ( .Values.hana_flavors_quota_separate ) }}
     "quota:instance_only": "true"
@@ -128,6 +136,7 @@
     "trait:CUSTOM_NUMASIZE_C60_M480": "required"
     "hw:cpu_cores": "30"   # used in nova-vmware as cores-per-socket (15pCPU = 30vCPU)
     "reservation:cpu": "28"
+    "vmware:vmotion_encryption": "disabled"
     "vmware:hw_version": "vmx-18"
     {{- if ( .Values.hana_flavors_quota_separate ) }}
     "quota:instance_only": "true"
@@ -143,6 +152,7 @@
     "trait:CUSTOM_NUMASIZE_C60_M480": "required"
     "hw:cpu_cores": "60"   # used in nova-vmware as cores-per-socket (30pCPU = 60vCPU)
     "reservation:cpu": "57"
+    "vmware:vmotion_encryption": "disabled"
     "vmware:hw_version": "vmx-18"
     {{- if ( .Values.hana_flavors_quota_separate ) }}
     "quota:instance_only": "true"
@@ -158,6 +168,7 @@
     "trait:CUSTOM_NUMASIZE_C60_M480": "required"
     "hw:cpu_cores": "60"   # used in nova-vmware as cores-per-socket (30pCPU = 60vCPU)
     "reservation:cpu": "114"
+    "vmware:vmotion_encryption": "disabled"
     "vmware:hw_version": "vmx-18"
     {{- if ( .Values.hana_flavors_quota_separate ) }}
     "quota:instance_only": "true"
@@ -173,6 +184,7 @@
     "trait:CUSTOM_NUMASIZE_C60_M960": "required"
     "hw:cpu_cores": "30"   # used in nova-vmware as cores-per-socket (15pCPU = 30vCPU)
     "reservation:cpu": "28"
+    "vmware:vmotion_encryption": "disabled"
     "vmware:hw_version": "vmx-18"
     {{- if ( .Values.hana_flavors_quota_separate ) }}
     "quota:instance_only": "true"
@@ -188,6 +200,7 @@
     "trait:CUSTOM_NUMASIZE_C60_M960": "required"
     "hw:cpu_cores": "60"   # used in nova-vmware as cores-per-socket (30pCPU = 60vCPU)
     "reservation:cpu": "57"
+    "vmware:vmotion_encryption": "disabled"
     "vmware:hw_version": "vmx-18"
     {{- if ( .Values.hana_flavors_quota_separate ) }}
     "quota:instance_only": "true"
@@ -203,6 +216,7 @@
     "trait:CUSTOM_NUMASIZE_C60_M960": "required"
     "hw:cpu_cores": "60"   # used in nova-vmware as cores-per-socket (30pCPU = 60vCPU)
     "reservation:cpu": "114"
+    "vmware:vmotion_encryption": "disabled"
     "vmware:hw_version": "vmx-18"
     {{- if ( .Values.hana_flavors_quota_separate ) }}
     "quota:instance_only": "true"
@@ -218,6 +232,7 @@
     "trait:CUSTOM_NUMASIZE_C60_M960": "required"
     "hw:cpu_cores": "60"   # used in nova-vmware as cores-per-socket (30pCPU = 60vCPU)
     "reservation:cpu": "171"
+    "vmware:vmotion_encryption": "disabled"
     "vmware:hw_version": "vmx-18"
     {{- if ( .Values.hana_flavors_quota_separate ) }}
     "quota:instance_only": "true"
@@ -233,6 +248,7 @@
     "trait:CUSTOM_NUMASIZE_C60_M960": "required"
     "hw:cpu_cores": "60"   # used in nova-vmware as cores-per-socket (30pCPU = 60vCPU)
     "reservation:cpu": "228"
+    "vmware:vmotion_encryption": "disabled"
     "vmware:hw_version": "vmx-18"
     {{- if ( .Values.hana_flavors_quota_separate ) }}
     "quota:instance_only": "true"
