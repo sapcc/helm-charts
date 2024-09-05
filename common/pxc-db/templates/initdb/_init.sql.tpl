@@ -7,8 +7,9 @@ CREATE DATABASE IF NOT EXISTS {{ . }};
 {{- end }}
 
 {{- if and .Values.global.dbUser .Values.global.dbPassword (not (hasKey .Values.users (default "" .Values.global.dbUser))) (not .Values.custom_initdb_secret) }}
+CREATE DATABASE IF NOT EXISTS `{{ .Values.name }}`;
 CREATE USER IF NOT EXISTS {{ .Values.global.dbUser }};
-GRANT ALL PRIVILEGES ON {{ .Values.name }}.*
+GRANT ALL PRIVILEGES ON `{{ .Values.name }}.*`
   TO {{ include "pxc-db.resolve_secret_squote" (.Values.global.dbUser) }}
   IDENTIFIED BY {{ include "pxc-db.resolve_secret_squote" .Values.global.dbPassword }};
 {{- end }}
