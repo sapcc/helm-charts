@@ -25,10 +25,31 @@ limes:
   # The "skip" field can be set to true in regions that do not have the service in question
   local_liquids:
     archer:    { skip: false, cpu_request: 50m, memory_limit: 128Mi }
+    cinder:    { skip: false, cpu_request: 50m, memory_limit: 128Mi }
     designate: { skip: false, cpu_request: 50m, memory_limit: 128Mi }
+    manila:    { skip: false, cpu_request: 50m, memory_limit: 128Mi }
     neutron:   { skip: false, cpu_request: 50m, memory_limit: 128Mi }
     octavia:   { skip: false, cpu_request: 50m, memory_limit: 128Mi }
     swift:     { skip: false, cpu_request: 50m, memory_limit: 128Mi }
+
+  # Out of the local liquids above, some take configuration, which is passed in these sections.
+  local_liquid_configs:
+    cinder:
+      with_subcapacities: true
+      with_volume_subresources: true
+      with_snapshot_subresources: true
+    manila:
+      capacity_calculation:
+        capacity_balance: 0.75
+        share_networks: 250
+        shares_per_pool: 1000
+        snapshots_per_share: 5
+        with_subcapacities: true
+      prometheus_api_for_az_awareness:
+        url: http://prometheus-openstack.prometheus-openstack.svc:9090
+      prometheus_api_for_netapp_metrics:
+        url: http://prometheus-storage.infra-monitoring.svc:9090
+      share_types: [] # see regional values.yaml
 
   # Map with entries like:
   #
