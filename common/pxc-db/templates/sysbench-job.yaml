@@ -1,0 +1,63 @@
+{{- if .Values.sysbench.enabled }}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: "{{ include "pxc-db.fullname" . }}-sysbench"
+  namespace:  {{.Release.Namespace}}
+  labels:
+{{ include "pxc-db.labels" . | indent 4 }}
+  annotations:
+#    "helm.sh/hook": pre-upgrade,pre-rollback
+#    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+#    "helm.sh/hook-weight": "3"
+{{- if and (and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested) $.Values.linkerd.enabled }}
+    linkerd.io/inject: enabled
+    config.alpha.linkerd.io/proxy-enable-native-sidecar: "true"
+{{- end }}
+spec:
+  template:
+    metadata:
+      name: "{{ include "pxc-db.fullname" . }}-sysbench"
+      labels:
+{{ include "pxc-db.labels" . | indent 8 }}
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: init-db-job
+        {{- if .Values.sysbench.image.override }}
+        image: {{ .Values.sysbench.image.override }}
+        {{- else }}
+        image: {{ required ".Values.global.dockerHubMirror is missing" .Values.global.dockerHubMirror }}/{{ .Values.sysbench.image.name }}:{{ .Values.sysbench.image.tag }}
+        {{- end }}
+        command:
+          - /bin/bash
+          - -c
+          - |
+            /init/sysbench.sh
+        env:
+          - name: SOFTWARE_NAME
+            value: 'sysbench'
+          - name: DB_NAME
+            value: 'sysbench'
+          - name: DB_USER
+            value: 'sysbench'
+          - name: DB_PASSWORD
+            value: {{ .Values.users.sysbench.password }}
+          - name: DB_HOST
+            value: {{ .Values.name }}-db-haproxy
+          - name: SYSBENCH_MYSQL_DRY_RUN
+            value: 'off'
+          - name: SYSBENCH_TABLE_SIZE
+            value: '10000'
+          - name: SYSBENCH_THREAD_COUNT
+            value: '10'
+        volumeMounts:
+          - name: sysbench-configmap
+            mountPath: /init
+      volumes:
+        - name: sysbench-configmap
+          configMap:
+            name: pxc-{{ .Values.name }}-sysbench-bin
+            defaultMode: 0755
+{{- end }}
