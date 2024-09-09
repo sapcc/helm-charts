@@ -39,6 +39,7 @@ function preparesysbench {
   /opt/${SOFTWARE_NAME}/bin/${SOFTWARE_NAME} --db-driver=mysql --mysql-dry-run=${SYSBENCH_MYSQL_DRY_RUN-off} \
     --mysql-host=${DB_HOST} --mysql-port=${DB_PORT-3306} \
     --mysql-user=${DB_USER} --mysql-password=${DB_PASSWORD} \
+    --auto-inc=off \
     --mysql-db=${DB_NAME} --table-size=${SYSBENCH_TABLE_SIZE-100} --tables=${SYSBENCH_TABLE_COUNT-10} --threads=${SYSBENCH_THREAD_COUNT-1} \
     /opt/${SOFTWARE_NAME}/share/${SOFTWARE_NAME}/${SYSBENCH_TEST_CASE-oltp_read_write}.lua prepare
   if [ $? -ne 0 ]; then
@@ -52,6 +53,7 @@ function runsysbench {
   /opt/${SOFTWARE_NAME}/bin/${SOFTWARE_NAME} --db-driver=mysql --mysql-dry-run=${SYSBENCH_MYSQL_DRY_RUN-off} \
     --mysql-host=${DB_HOST} --mysql-port=${DB_PORT-3306} \
     --mysql-user=${DB_USER} --mysql-password=${DB_PASSWORD} \
+    --auto-inc=off \
     --mysql-db=${DB_NAME} --table-size=${SYSBENCH_TABLE_SIZE-100} --tables=${SYSBENCH_TABLE_COUNT-10} --threads=${SYSBENCH_THREAD_COUNT-1} \
     --report-interval=2 --time=${SYSBENCH_RUNTIME-30} \
     /opt/${SOFTWARE_NAME}/share/${SOFTWARE_NAME}/${SYSBENCH_TEST_CASE-oltp_read_write}.lua run
@@ -66,6 +68,7 @@ function cleanupsysbench {
   /opt/${SOFTWARE_NAME}/bin/${SOFTWARE_NAME} --db-driver=mysql --mysql-dry-run=${SYSBENCH_MYSQL_DRY_RUN-off} \
     --mysql-host=${DB_HOST} --mysql-port=${DB_PORT-3306} \
     --mysql-user=${DB_USER} --mysql-password=${DB_PASSWORD} \
+    --auto-inc=off \
     --mysql-db=${DB_NAME} --table-size=${SYSBENCH_TABLE_SIZE-100} --tables=${SYSBENCH_TABLE_COUNT-10} --threads=${SYSBENCH_THREAD_COUNT-1} \
     /opt/${SOFTWARE_NAME}/share/${SOFTWARE_NAME}/${SYSBENCH_TEST_CASE-oltp_read_write}.lua cleanup
   if [ $? -ne 0 ]; then
