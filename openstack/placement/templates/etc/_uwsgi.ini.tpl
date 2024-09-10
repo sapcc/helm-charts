@@ -1,8 +1,8 @@
 [uwsgi]
 need-app = true
 http-socket = :{{ .Values.global.placementApiPortInternal }}
-uid = {{ include "placement_project" . }}
-gid = {{ include "placement_project" . }}
+uid = placement
+gid = placement
 lazy-apps = true
 add-header = Connection: close
 buffer-size = 65535

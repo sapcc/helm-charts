@@ -18,6 +18,7 @@ spec:
   activeDeadlineSeconds: 300
   template:
     spec:
+      restartPolicy: Never
       containers:
       - name: designate-tempest-cleanup
         image: {{.Values.global.registry}}/rally-openstack:{{.Values.imageVersionTempest | required "Please set designate.imageVersionTempest or similar"}}
@@ -46,5 +47,8 @@ spec:
             value: "3"
           - name: OS_AUTH_URL
             value: "{{ .Values.global.keystone_api_endpoint_protocol_public | default "https"}}://{{include "keystone_api_endpoint_host_public" .}}/v3"
-      restartPolicy: Never
+        volumeMounts:
+        {{- include "utils.trust_bundle.volume_mount" . | indent 8 }}
+      volumes:
+      {{- include "utils.trust_bundle.volumes" . | indent 8 }}
 {{ end }}

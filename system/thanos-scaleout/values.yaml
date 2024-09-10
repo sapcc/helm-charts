@@ -1,4 +1,8 @@
+global:
+  linkerd_requested: true
+
 owner-info:
+  service: prometheus
   support-group: observability
   maintainers:
     - Tommy Sauer
@@ -7,18 +11,31 @@ owner-info:
 
 thanos:
   name: scaleout
+  loglevel: warn
+  evaluationInterval: 30s
   deployWholeThanos: false
   ingress:
     enabled: true
     hosts:
-      - thanos-scaleout
       - metrics.scaleout
+      - thanos-scaleout
       - prometheus-vmware
+
+  internalIngress:
+    enabled: true
+    hosts:
+      - metrics-internal.scaleout
+      - thanos-internal-scaleout
+      - prometheus-vmware-internal
+
   grpcIngress:
     enabled: true
     hosts:
-      - thanos-scaleout
+      - thanos-scaleout-grpc
   queryDiscovery: true
+
+  query:
+    replicas: 5
 
   ruler:
     enabled: true

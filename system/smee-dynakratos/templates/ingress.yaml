@@ -1,0 +1,42 @@
+{{- $tld := $.Values.global.tld | required ".Values.global.tld not found" }}
+{{- $region := $.Values.global.region | required ".Values.global.region not found" }}
+
+kind: Ingress
+apiVersion: networking.k8s.io/v1
+
+metadata:
+  name: {{ .Release.Name }}
+  annotations:
+    kubernetes.io/tls-acme: "true"
+    disco: "true"
+    {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+    ingress.kubernetes.io/ssl-redirect: "true"
+    ingress.kubernetes.io/service-upstream: "true"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/service-upstream: "true"
+    {{- end }}
+
+spec:
+  tls:
+    - secretName: tls-{{ .Release.Name }}
+      hosts:
+        - 'smee-dynakratos.{{ $region }}.{{ $tld }}'
+{{- if .Values.global }}
+        - 'smee-dynakratos.global.{{ $tld }}'
+{{- end }}
+  rules:
+    - &rule
+      host: 'smee-dynakratos.{{ $region }}.{{ $tld }}'
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ .Release.Name }}-api
+                port:
+                  number: 80
+{{- if .Values.smee.global }}
+    - <<: *rule
+      host: 'smee-dynakratos.global.{{ $tld }}'
+{{- end }}

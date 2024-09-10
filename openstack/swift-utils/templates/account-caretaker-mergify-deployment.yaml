@@ -20,8 +20,6 @@ spec:
     metadata:
       labels:
         component: swift-account-caretaker-mergify
-        alert-tier: os
-        alert-service: swift
       annotations:
         checksum/caretaker.etc: {{ include "swift-utils/templates/caretaker-configmap.yaml" . | sha256sum }}
         checksum/secret: {{ include "swift-utils/templates/secret.yaml" . | sha256sum }}
@@ -51,6 +49,7 @@ spec:
                 secretKeyRef:
                   name: swift-utils-secret
                   key: caretaker_password
+          # TODO: securityContext: { runAsNonRoot: true }
           volumeMounts:
             - mountPath: /caretaker-etc
               name: caretaker-etc
@@ -84,7 +83,7 @@ spec:
               cpu: "50m"
               memory: "100Mi"
             limits:
-              cpu: "50m"
-              memory: "100Mi"
+              cpu: "300m"
+              memory: "150Mi"
           {{- end }}
 {{- end }}

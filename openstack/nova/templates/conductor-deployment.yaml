@@ -7,6 +7,10 @@ metadata:
     system: openstack
     type: backend
     component: nova
+  {{- if .Values.vpa.set_main_container }}
+  annotations:
+    vpa-butler.cloud.sap/main-container: nova-conductor
+  {{- end }}
 spec:
   replicas: {{ .Values.pod.replicas.conductor }}
   revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revision_history }}
@@ -26,31 +30,23 @@ spec:
         name: nova-conductor
         alert-tier: os
         alert-service: nova
-{{ tuple . "nova" "conductor" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
+        {{- tuple . "nova" "conductor" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | nindent 8 }}
+        {{- include "utils.topology.pod_label" . | indent 8 }}
       annotations:
         {{- if or .Values.conductor.config_file.DEFAULT.statsd_enabled .Values.proxysql.mode }}
         prometheus.io/scrape: "true"
         prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
         {{- end }}
+        {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
         configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
     spec:
-{{ tuple . "nova" "conductor" | include "kubernetes_pod_anti_affinity" | indent 6 }}
-{{ include "utils.proxysql.pod_settings" . | indent 6 }}
+      {{- tuple . "nova" "conductor" | include "kubernetes_pod_anti_affinity" | nindent 6 }}
+      {{- include "utils.proxysql.pod_settings" . | nindent 6 }}
+      {{- tuple . (dict "name" "nova-conductor") | include "utils.topology.constraints" | indent 6 }}
       terminationGracePeriodSeconds: {{ .Values.defaults.default.graceful_shutdown_timeout | add 5 }}
       hostname: nova-conductor
       initContainers:
-        - name: dependencies
-          image: {{ tuple . "conductor" | include "container_image_nova" }}
-          imagePullPolicy: IfNotPresent
-          command:
-            - kubernetes-entrypoint
-          env:
-            - name: COMMAND
-              value: "true"
-            - name: NAMESPACE
-              value: {{ .Release.Namespace }}
-            - name: DEPENDENCY_SERVICE
-              value: "nova-api,{{ .Release.Name }}-rabbitmq"
+      {{- tuple . (dict "service" (include "nova.helpers.cell01_services" .)) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
       containers:
         - name: nova-conductor
           image: {{ tuple . "conductor" | include "container_image_nova" }}
@@ -70,13 +66,9 @@ spec:
             - name: PYTHONWARNINGS
               value: {{ .Values.python_warnings | quote }}
 {{- end }}
-            - name: PGAPPNAME
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.name
           livenessProbe:
             exec:
-              command: ["openstack-agent-liveness", "--component", "nova", "--config-file", "/etc/nova/nova.conf"]
+              command: ["openstack-agent-liveness", "--component", "nova", "--config-file", "/etc/nova/nova.conf", "--config-file", "/etc/nova/nova.conf.d/keystoneauth-secrets.conf"]
             initialDelaySeconds: 60
             periodSeconds: 60
             timeoutSeconds: 20
@@ -88,6 +80,7 @@ spec:
           - mountPath: /etc/nova
             name: nova-etc
           {{- include "utils.proxysql.volume_mount" . | indent 10 }}
+          {{- include "utils.trust_bundle.volume_mount" . | indent 10 }}
         {{- tuple . .Values.conductor.config_file.conductor.workers | include "utils.proxysql.container" | indent 8 }}
         {{- if .Values.conductor.config_file.DEFAULT.statsd_enabled }}
         - name: statsd
@@ -122,8 +115,12 @@ spec:
           - secret:
               name: nova-etc
               items:
-              - key: db.conf
-                path: nova.conf.d/db.conf
+              - key: api-db.conf
+                path: nova.conf.d/api-db.conf
+              - key: cell1.conf
+                path: nova.conf.d/cell1.conf
+              - key: keystoneauth-secrets.conf
+                path: nova.conf.d/keystoneauth-secrets.conf
 {{- if .Values.conductor.config_file.DEFAULT.statsd_enabled }}
       - name: statsd-etc
         projected:
@@ -135,3 +132,4 @@ spec:
                 path: statsd-exporter.yaml
 {{- end }}
       {{- include "utils.proxysql.volumes" . | indent 6 }}
+      {{- include "utils.trust_bundle.volumes" . | indent 6 }}

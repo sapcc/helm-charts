@@ -6,7 +6,8 @@ global:
   dbUser: cinder
   domain_seeds:
     skip_hcm_domain: false
-    
+ 
+  linkerd_requested: true
   osprofiler: {}
   imagePullPolicy: IfNotPresent
 
@@ -95,7 +96,7 @@ use_tls_acme: true
 
 db_name: cinder
 
-scheduler_default_filters: "AvailabilityZoneFilter,ShardFilter,SAPPoolDownFilter,CapabilitiesFilter,SAPLargeVolumeFilter,SAPDifferentBackendFilter,SAPSameBackendFilter,CapacityFilter"
+scheduler_default_filters: "AvailabilityZoneFilter,SAPPoolDownFilter,CapabilitiesFilter,ShardFilter,SAPLargeVolumeFilter,SAPDifferentBackendFilter,SAPSameBackendFilter,CapacityFilter"
 scheduler_default_weighers: "CapacityWeigher"
 
 capacity_weight_multiplier: 1.0
@@ -107,6 +108,8 @@ sap_disable_incremental_backup: True
 sap_allow_independent_snapshots: True
 sap_allow_independent_clone: True
 
+rpc_ping_enabled: true
+
 proxysql:
   mode: null # Disabled by default
 
@@ -115,6 +118,8 @@ mariadb:
   max_connections: 2048
   buffer_pool_size: "2048M"
   log_file_size: "512M"
+  ccroot_user:
+    enabled: true
   name: cinder
   databases:
   - cinder
@@ -124,7 +129,7 @@ mariadb:
       password: null
       grants:
       - "ALL PRIVILEGES on cinder.*"
-  initdb_configmap: cinder-initdb
+  initdb_secret: true
   persistence_claim:
     name: db-cinder-pvclaim
   extraConfigFiles:
@@ -299,9 +304,6 @@ mysql_metrics:
       values:
         - "size_gauge"
 
-postgresql:
-  enabled: false
-
 audit:
   enabled: false
   # how many messages to buffer before dumping to log (when rabbit is down or too slow)
@@ -321,9 +323,11 @@ rabbitmq:
     ready_total_wait_for: 60m
     support_group: compute-storage-api
   metrics:
-    enabled: &metrics true
+    enabled: true
     sidecar:
-      enabled: *metrics
+      enabled: false
+  enableDetailedMetrics: true
+  enablePerObjectMetrics: true 
 rabbitmq_notifications:
   name: cinder
 logging:

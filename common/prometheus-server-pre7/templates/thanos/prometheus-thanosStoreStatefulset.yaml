@@ -21,6 +21,10 @@ spec:
         thanos-peers: "true"
         prometheus: {{ include "prometheus.name" . }}
     spec:
+      securityContext:
+        fsGroup: 0
+        runAsGroup: 0
+        runAsUser: 0
       containers:
       - args:
         - store
@@ -33,6 +37,7 @@ spec:
         - --chunk-pool-size={{ required ".Values.thanos.store.chunkPoolSize missing" .Values.thanos.store.chunkPoolSize }}
         - --store.grpc.series-sample-limit={{ required ".Values.thanos.store.seriesSampleLimit missing" .Values.thanos.store.seriesSampleLimit }}
         - --store.grpc.series-max-concurrency={{ required ".Values.thanos.store.seriesMaxConcurrency missing" .Values.thanos.store.seriesMaxConcurrency }}
+        - --min-time={{ .Values.thanos.store.timePartioning.minTime }}
         env:
         - name: OBJSTORE_CONFIG
           valueFrom:

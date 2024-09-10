@@ -1,13 +1,11 @@
 apiVersion: monitoring.coreos.com/v1
 kind: Probe
-
 metadata:
-  name: ocb-in-https
+  name: ocb-data-in
   labels:
     prometheus: {{ required "$.Values.global.prometheus missing" $.Values.global.prometheus }}
-
 spec:
-  jobName: ocb-in-https
+  jobName: ocb-data-in
   prober:
     url: {{ .Values.prober }}
     scheme: {{ .Values.scheme }}
@@ -17,7 +15,9 @@ spec:
   targets:
     staticConfig:
       static:
-        - https://{{ required "$.Values.global.forwarding.audit.host" $.Values.global.forwarding.audit.host }}
+      {{- range .Values.global.probe_targets }}
+        - {{ . }}
+      {{- end }}
       labels:
         {{ if $.Values.global.region -}}
         region: {{ $.Values.global.region }}

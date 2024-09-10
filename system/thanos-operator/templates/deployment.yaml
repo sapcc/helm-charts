@@ -13,6 +13,10 @@ spec:
     metadata:
       labels:
         {{- include "thanos-operator.selectorLabels" . | nindent 8 }}
+      annotations:
+        {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+        linkerd.io/inject: enabled
+        {{- end }}
     spec:
     {{- with .Values.imagePullSecrets }}
       imagePullSecrets:

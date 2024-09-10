@@ -14,6 +14,8 @@ metadata:
     system: openstack
     type: api
     component: ironic-conductor
+  annotations:
+    {{- include "utils.linkerd.pod_and_service_annotation" . | indent 4 }}
 spec:
   selector:
   {{- if $conductor.name }}
@@ -23,6 +25,6 @@ spec:
   {{- end }}
   ports:
   - name: ironic-console
-    port: 80
+    port: 443
     {{- end }}
 {{- end }}

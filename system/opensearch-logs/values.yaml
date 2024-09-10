@@ -1,7 +1,23 @@
+global:
+  linkerd_requested: true
+  clusterType: local
+  users:
+    admin:
+      name: admin
+  aggregations:
+    prometheus: infra-frontend
+  data_stream:
+    enabled: false
+  index:
+    ism_indexes: "logstash"
+    schema_version: "1"
+    
+
 owner-info:
   support-group: observability
+  service: logs
   maintainers:
-    - "Vi Truchsess"
+    - "Timo Johner"
     - "Olaf Heydorn"
   helm-chart-url: "https://github.com/sapcc/helm-charts/tree/master/system/opensearch-logs"
 
@@ -21,7 +37,7 @@ opensearch_master:
   nodeGroup: "master"
   masterService: "opensearch-logs-master"
   image:
-    tag: 2.6.0
+    tag: 2.16.0
   roles:
     - master
   replicas: 3
@@ -38,8 +54,8 @@ opensearch_master:
       path: /usr/share/opensearch/config/certs/
       defaultMode: 0700
   securityConfig:
+    enabled: false
     path: "/usr/share/opensearch/config/opensearch-security"
-    enabled: true
     config:
       securityConfigSecret: "security-config"
   extraEnvs:
@@ -48,12 +64,12 @@ opensearch_master:
   plugins:
     enabled: true
     installList:
-      - https://github.com/aiven/prometheus-exporter-plugin-for-opensearch/releases/download/2.6.0.0/prometheus-exporter-2.6.0.0.zip
+      - https://github.com/Aiven-Open/prometheus-exporter-plugin-for-opensearch/releases/download/2.16.0.0/prometheus-exporter-2.16.0.0.zip
 
 opensearch_client:
   enabled: false
   image:
-    tag: 2.6.0
+    tag: 2.16.0
   replicas: 3
   nameOverride: "opensearch-logs-client"
   fullnameOverride: "opensearch-logs-client"
@@ -61,7 +77,7 @@ opensearch_client:
   masterService: "opensearch-logs-master"
   podAnnotations:
     # manual versioning, raise if secrets change
-    versioning: "1"	
+    versioning: "3"
   roles:
     - remote_cluster_client
   opensearchJavaOpts: "-Dlog4j2.formatMsgNoLookups=true -XX:MaxRAM=5g -XX:MaxGCPauseMillis=5000 -Xms1g -Xmx1g"
@@ -80,8 +96,8 @@ opensearch_client:
     enabled: false
   clusterName: "opensearch-logs"
   securityConfig:
+    enabled: false
     path: "/usr/share/opensearch/config/opensearch-security"
-    enabled: true
     actionGroupsSecret: "security-config"
     configSecret: "security-config"
     internalUsersSecret: "security-config"
@@ -94,12 +110,12 @@ opensearch_client:
   plugins:
     enabled: true
     installList:
-      - https://github.com/aiven/prometheus-exporter-plugin-for-opensearch/releases/download/2.6.0.0/prometheus-exporter-2.6.0.0.zip
+      - https://github.com/Aiven-Open/prometheus-exporter-plugin-for-opensearch/releases/download/2.16.0.0/prometheus-exporter-2.16.0.0.zip
 
 opensearch_data:
   enabled: false
   image:
-    tag: 2.6.0
+    tag: 2.16.0
   nameOverride: "opensearch-logs-data"
   fullnameOverride: "opensearch-logs-data"
   nodeGroup: "data"
@@ -123,17 +139,66 @@ opensearch_data:
   plugins:
     enabled: true
     installList:
-      - https://github.com/aiven/prometheus-exporter-plugin-for-opensearch/releases/download/2.6.0.0/prometheus-exporter-2.6.0.0.zip
+      - https://github.com/Aiven-Open/prometheus-exporter-plugin-for-opensearch/releases/download/2.16.0.0/prometheus-exporter-2.16.0.0.zip
   securityConfig:
+    enabled: false
     path: "/usr/share/opensearch/config/opensearch-security"
-    enabled: true
     config:
       securityConfigSecret: "security-config"
+  extraEnvs:
+    - name: DISABLE_INSTALL_DEMO_CONFIG
+      value: "true"
+
+opensearch_ml:
+  enabled: false
+  image:
+    tag: 2.16.0
+  replicas: 2
+  nameOverride: "opensearch-logs-ml"
+  fullnameOverride: "opensearch-logs-ml"
+  nodeGroup: "ml"
+  masterService: "opensearch-logs-master"
+  podAnnotations:
+    # manual versioning, raise if secrets change
+    versioning: "3"
+  roles:
+    - ml
+  opensearchJavaOpts: "-Dlog4j2.formatMsgNoLookups=true -XX:MaxRAM=5g -XX:MaxGCPauseMillis=5000 -Xms1g -Xmx1g"
+  secretMounts:
+    - name: opensearch-certificates
+      secretName: cert-manager
+      path: /usr/share/opensearch/config/certs/
+      defaultMode: 0700
+  persistence:
+    enabled: false
+    enableInitChown: false
+    image: "library/busybox"
+  service:
+    type: LoadBalancer
+  ingress:
+    enabled: false
+  clusterName: "opensearch-logs"
+  securityConfig:
+    enabled: false
+    path: "/usr/share/opensearch/config/opensearch-security"
+    actionGroupsSecret: "security-config"
+    configSecret: "security-config"
+    internalUsersSecret: "security-config"
+    rolesSecret: "security-config"
+    rolesMappingSecret: "security-config"
+    tenantsSecret: "security-config"
+  extraEnvs:
+    - name: DISABLE_INSTALL_DEMO_CONFIG
+      value: "true"
+  plugins:
+    enabled: true
+    installList:
+      - https://github.com/Aiven-Open/prometheus-exporter-plugin-for-opensearch/releases/download/2.16.0.0/prometheus-exporter-2.16.0.0.zip
 
 opensearch_dashboards:
   enabled: false
   image:
-    tag: "2.6.0"
+    tag: "2.16.0"
   fullnameOverride: opensearch-logs-dashboards
   nameOverride: opensearch-logs-dashboards
   serviceAccount:
@@ -143,14 +208,24 @@ opensearch_dashboards:
     secret: dashboard-secrets
   ingress:
     enabled: false
+  logs_endpoint:
+    enabled: false
+  resources:
+    limits:
+      memory: 4096M
+  envFrom:
+    - secretRef:
+        name: dashboard-secrets
 
-elastic_manager:
+manager:
   enabled: false
   port_internal: '9000'
   http_port: 9200
   cluster_port: 9301
-  endpoint_host_internal: es-client.elk
-  endpoint_host_public: elastic-manager.scaleout
-  image_elastic_manager: lmenezes/cerebro:0.9.4
+  endpoint_host_public: opensearch-logs-manager.scaleout
+  image_manager: elk-elasticsearch-manager:20240214094510
   opensearch:
     enabled: false
+
+elasticdump:
+  enabled: false

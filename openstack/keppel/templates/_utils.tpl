@@ -26,18 +26,21 @@
 - name:  KEPPEL_API_PUBLIC_FQDN
   value: 'keppel.{{$.Values.global.region}}.{{$.Values.global.tld}}'
 - name:  KEPPEL_AUDIT_SILENT
-  value: "{{ ne $.Values.keppel.rabbitmq.queue_name "" }}"
+  value: "true" # because hermes-rabbitmq connection is enabled
 - name:  KEPPEL_AUDIT_RABBITMQ_QUEUE_NAME
-  value: "{{ $.Values.keppel.rabbitmq.queue_name }}"
+  value: notifications.info
 - name: KEPPEL_AUDIT_RABBITMQ_USERNAME
-  value: "{{ $.Values.keppel.rabbitmq.username }}"
+  valueFrom:
+    secretKeyRef:
+      name: keppel-secret
+      key: rabbitmq_username
 - name: KEPPEL_AUDIT_RABBITMQ_PASSWORD
   valueFrom:
     secretKeyRef:
       name: keppel-secret
       key: rabbitmq_password
 - name: KEPPEL_AUDIT_RABBITMQ_HOSTNAME
-  value: "{{ $.Values.keppel.rabbitmq.hostname }}"
+  value: hermes-rabbitmq-notifications.hermes.svc
 - name:  KEPPEL_BURST_ANYCAST_BLOB_PULL_BYTES
   value: '4718592000' # 4500 MiB per account (see below, near the corresponding ratelimit, for rationale)
 - name:  KEPPEL_BURST_BLOB_PULLS # burst budgets for regular pull/push are all ~30% of the rate limit per minute
@@ -48,20 +51,15 @@
   value: '300'  # per account
 - name:  KEPPEL_BURST_MANIFEST_PUSHES
   value: '15'   # per account
-{{- if .Values.keppel.clair.hostname }}
-- name:  KEPPEL_CLAIR_PRESHARED_KEY
-  valueFrom:
-    secretKeyRef:
-      name: keppel-secret
-      key: clair_preshared_key
-- name:  KEPPEL_CLAIR_URL
-  value: "https://{{ .Values.keppel.clair.hostname }}"
-{{- end }}
+- name:  KEPPEL_BURST_TRIVY_REPORT_RETRIEVALS
+  value: '50'   # per account
+- name: KEPPEL_DB_USERNAME
+  value: 'keppel'
 - name:  KEPPEL_DB_PASSWORD
   valueFrom:
     secretKeyRef:
-      name: keppel-secret
-      key: postgres_password
+      name: '{{ $.Release.Name }}-pguser-keppel'
+      key: 'postgres-password'
 - name: KEPPEL_DB_HOSTNAME
   value: "{{ .Release.Name }}-postgresql"
 - name: KEPPEL_DB_CONNECTION_OPTIONS
@@ -156,6 +154,8 @@
                     # actually pulling the image contents)
 - name:  KEPPEL_RATELIMIT_MANIFEST_PUSHES
   value: '10r/m'   # per account
+- name:  KEPPEL_RATELIMIT_TRIVY_REPORT_RETRIEVALS
+  value: '10r/m'   # per account
 - name: KEPPEL_REDIS_ENABLE
   value: '1'
 - name: KEPPEL_REDIS_HOSTNAME
@@ -169,6 +169,17 @@
     secretKeyRef:
       name: keppel-secret
       key: redis_password
+{{- if .Values.keppel.trivy.hostname }}
+- name: KEPPEL_TRIVY_ADDITIONAL_PULLABLE_REPOS
+  value: "ccloud-ghcr-io-mirror/aquasecurity/trivy-db,ccloud-ghcr-io-mirror/aquasecurity/trivy-java-db"
+- name: KEPPEL_TRIVY_URL
+  value: "https://{{ .Values.keppel.trivy.hostname }}"
+- name: KEPPEL_TRIVY_TOKEN
+  valueFrom:
+    secretKeyRef:
+      name: keppel-secret
+      key: trivy_token
+{{- end }}
 - name:  OS_AUTH_URL
   value: "http://keystone.{{ $.Values.global.keystoneNamespace }}.svc.kubernetes.{{ $.Values.global.region }}.{{ $.Values.global.tld }}:5000/v3"
 - name:  OS_AUTH_VERSION
@@ -192,4 +203,19 @@
   value: 'Default'
 - name:  OS_USERNAME
   value: 'keppel'
+{{- end -}}
+
+{{- define "tmplKeepImagePulled" -}}
+          command: [ '/bin/sleep', 'inf' ]
+          securityContext:
+            runAsNonRoot: true
+            runAsUser:    65534 # nobody
+            runAsGroup:   65534 # nobody
+          resources:
+            requests:
+              cpu: "1m"
+              memory: "32Mi"
+            limits:
+              cpu: "1m"
+              memory: "32Mi"
 {{- end -}}

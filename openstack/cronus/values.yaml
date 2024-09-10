@@ -1,11 +1,22 @@
 global:
-  region: RegionOne
-  tld: openstack.local
-  alternateContact:
-    emailAddress: support-email
-    name: support
-    title: support
-    phoneNumber: 0
+  accessKeyRotationDays: 80
+anchors:
+  keystone: &keystone
+    projectName: master
+    projectDomainName: ccadmin
+    userDomainName: Default
+    username: cronus
+    # authUrl: https://identity
+    # region: eu-de-2
+    # endpointType: public
+    # applicationCredentialID: application-credential-id
+    # applicationCredentialSecret: application-credential-secret
+    # applicationCredentialName: application-credential-name
+    # projectID: project-id
+    # projectDomainID: project-domain-id
+    # domainName: domain-name
+    # domainID: domain-id
+    # userID: user-id
 cronus:
   certPath: /etc/certs
   enabled: true
@@ -15,7 +26,7 @@ cronus:
   smtps: 587
   prometheus: 2772
   listenProxyProtocol: false
-  proxyHeaderTimeout: 1000ms
+  proxyHeaderTimeout: 2000ms
   readTimeout: 30
   writeTimeout: 30
   keepAliveTimeout: 61
@@ -137,24 +148,7 @@ nebula:
   maxUnavailable: 0
 
 config:
-  ## keystone optional authentication methods, add in @SECRETS the relevant method
-  keystone:
-    # authUrl: https://identity
-    # region: eu-de-2
-    # endpointType: public
-    # applicationCredentialID: application-credential-id
-    # applicationCredentialSecret: application-credential-secret
-    # applicationCredentialName: application-credential-name
-    # projectID: project-id
-    projectName: master
-    projectDomainName: ccadmin
-    # projectDomainID: project-domain-id
-    userDomainName: Default
-    # domainName: domain-name
-    # domainID: domain-id
-    username: cronus
-    # password: # a password must be defined in ".Values.global.cronus_service_password"
-    # userID: user-id
+  keystone: *keystone
   group: service-group
   jira:
     endpoint: http://url-to
@@ -259,11 +253,8 @@ config:
     allowTrigger: false
     queueName: cronus_work_queue
     exchangeName: cronus_work_queue_exchange
-    trailLimit: 6
     workerPrefetchCount: 1
     workerPrefetchSize: 0
-    trailTimeBaseFactor: 5 # in sec
-    trailTimeRandMaxNumber: 300 # in sec
     # initial waiting time before retry
     initialDelayTime: 5m
     # factor to multiply the waiting time with before each next retry
@@ -440,8 +431,11 @@ rabbitmq:
     accessMode: ReadWriteOnce
     size: 10Gi
   metrics:
-    enabled: false
-
+    enabled: true
+    sidecar:
+      enabled: false
+    enableDetailedMetrics: true
+    enablePerObjectMetrics: true
 rhea:
   enabled: false
   server:
@@ -450,6 +444,7 @@ rhea:
   queue:
     maxTTL: 0s
     maxTries: 5
+    maxMessages: 0
   tls:
     serverTlsName: tls-secret-rhea
     clientTlsAuth: VerifyClientCertIfGiven
@@ -494,18 +489,7 @@ rhea:
       disco: "true"
       disco/record: my-ingress.region.cloud.com.
   deployment:
-    enabled: true
     replicas: 1
-  statefulSet:
-    enabled: false
-    replicas: 1
-    podManagementPolicy: OrderedReady
-    annotations: {}
-    labels: {}
-    headless:
-      annotations: {}
-      labels: {}
-      servicePort: 80
   updateStrategy: RollingUpdate
   terminationGracePeriod: 60
   # all below can be used only with a deployment style
@@ -530,7 +514,11 @@ rhea_rabbitmq:
     accessMode: ReadWriteOnce
     size: 10Gi
   metrics:
-    enabled: false
+    enabled: true
+    sidecar:
+      enabled: false
+    enableDetailedMetrics: true
+    enablePerObjectMetrics: true
 
 poller: # service that handles received emails
   enabled: false
@@ -547,7 +535,7 @@ poller: # service that handles received emails
   statefulSet:
     enabled: false
   action: forwardEmail # supported values: forwardEmail, activateEmail, simulator
-  pollInterval: 5 # should be less than a default cronus ResponseHeaderTimeout (9 seconds)
+  pollInterval: 5s # should be less than a default cronus ResponseHeaderTimeout (9 seconds)
   maxThreads: 5 # maximum amount of queue processing threads.will generate N threads = maxThreads * (maxSendThreads + maxBounceThreads)
   maxSendThreads: 5 # maximum amount of SMTP send threads per one processing thread
   maxBounceThreads: 5 # maximum amount of bounce threads per one processing thread
@@ -647,7 +635,10 @@ poller: # service that handles received emails
   prometheus: 2112 # relevant for action: simulator
   charSet: UTF-8 # relevant for action: simulator
   period: 60 # in seconds, relevant for action: simulator
-
+  cors:
+    enabled: false
+    allowedOrigins:
+    allowedHeaders:
 notifier:
   enabled: false
   host: test
@@ -680,12 +671,13 @@ owner-info:
 
 postfix:
   postfixEnabled: false
-  ldap:
-    url: ldap-url
-    certPem: |
-      pem
-    certKey: |
-      key
-    baseDN: dn
-    projectAttributes:
-      - projsec
+
+postfixMgmt:
+  clientKeyPath: /etc/certs/ldap.key # we re-use the LDAP certificate for postfix mgmt We should change the name but first we need to adjust the secrets chart
+  clientCertPath: /etc/certs/ldap.crt
+  url: https://management.postfix.{{.Values.global.region}}.cloud.sap
+
+#Chart dependecies
+maillog:
+  enabled: false
+  keystone: *keystone

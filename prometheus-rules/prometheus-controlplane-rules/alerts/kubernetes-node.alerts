@@ -102,11 +102,26 @@ groups:
         description: Bond {{ $labels.master }} on {{ $labels.node }} is degraded. Imminent network outage for this node.
         summary: Bond {{ $labels.master }} is degraded. Node network connectivity is not HA. Switch failover or ACI upgrade will cause an outage!
 
+    - alert: NodeVirtualInterfaceDown
+      expr: sum(node_network_up{device=~"bond.*|vlan.*"} == 0) by (node, device)
+      for: 15m
+      labels:
+        tier: k8s
+        service: node
+        severity: warning 
+        context: bond 
+        meta: "{{ $labels.node }}"
+        support_group: containers
+        playbook: "docs/support/playbook/kubernetes/k8s_node_interface_down"
+      annotations:
+        description: Interface {{ $labels.device }} on {{ $labels.node }} is down. Tenant network outage for this node.
+        summary: Interface {{ $labels.device }} is down. Node network connectivity is degraded. Check ESX node state in vCenter.
+
     ### PVC usage ###
 
     - alert: KubernetesHighPVCUsagePredicted
       # NOTE: The labels for support-group and service are already present in `kubelet_volume_stats_available_percent`, cf. the aggregation rule that defines it.
-      expr: sum((kubelet_volume_stats_available_percent < 30) and (predict_linear(kubelet_volume_stats_available_percent[1d], 7 * 24 * 3600) < 10)) by (namespace, persistentvolumeclaim)
+      expr: sum((kubelet_volume_stats_available_percent < 30) and (predict_linear(kubelet_volume_stats_available_percent[1d], 7 * 24 * 3600) < 10)) by (label_ccloud_support_group, label_ccloud_service, namespace, persistentvolumeclaim)
       for: 1h
       labels:
         tier: k8s
@@ -115,7 +130,7 @@ groups:
         severity: warning
         context: storage
         meta: "PVC {{ $labels.namespace }}/{{ $labels.persistentvolumeclaim }} is set to exceed 90% usage soon"
-        playbook: '/docs/support/playbook/kubernetes/pvc_usage'
+        playbook: 'docs/support/playbook/kubernetes/pvc_usage'
       annotations:
         description: "The PVC {{ $labels.namespace }}/{{ $labels.persistentvolumeclaim }} is predicted to exceed 90% storage consumption in the next 7 days."
         summary: "PVC {{ $labels.namespace }}/{{ $labels.persistentvolumeclaim }} is set to exceed 90% usage soon"

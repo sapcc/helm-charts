@@ -6,8 +6,6 @@ backup_swift_url = https://objectstore-3.{{.Values.global.region}}.{{.Values.glo
 backup_swift_auth_version = 2
 backup_driver = cinder.backup.drivers.swift.SwiftBackupDriver
 
-{{- template "ini_sections.default_transport_url" . }}
-
 enable_v2_api = True
 enable_v3_api = True
 volume_name_template = '%s'
@@ -30,6 +28,7 @@ auth_strategy = keystone
 
 rpc_response_timeout = {{ .Values.rpc_response_timeout | default .Values.global.rpc_response_timeout | default 600 }}
 rpc_workers = {{ .Values.rpc_workers | default .Values.global.rpc_workers | default 1 }}
+rpc_ping_enabled = {{ .Values.rpc_ping_enabled }}
 
 {{- if not .Values.api.use_uwsgi }}
 osapi_volume_workers = {{ .Values.osapi_volume_workers | default .Values.api.workers }}
@@ -59,11 +58,7 @@ sap_disable_incremental_backup = {{ .Values.sap_disable_incremental_backup }}
 sap_allow_independent_snapshots = {{ .Values.sap_allow_independent_snapshots }}
 sap_allow_independent_clone = {{ .Values.sap_allow_independent_clone }}
 
-{{- include "ini_sections.database" . }}
-
 {{ include "ini_sections.oslo_messaging_rabbit" . }}
-
-{{- include "osprofiler" . }}
 
 [keystone_authtoken]
 auth_plugin = v3password
@@ -71,8 +66,6 @@ auth_version = v3
 auth_interface = internal
 www_authenticate_uri = https://{{include "keystone_api_endpoint_host_public" .}}/v3
 auth_url = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
-username = {{ .Values.global.cinder_service_user | default "cinder"}}{{ .Values.global.user_suffix }}
-password = {{ required ".Values.global.cinder_service_password is missing" .Values.global.cinder_service_password | replace "$" "$$" }}
 user_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}
 project_name = {{.Values.global.keystone_service_project | default "service"}}
 project_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}
@@ -85,12 +78,10 @@ include_service_catalog = true
 service_type = volumev3
 
 [oslo_policy]
-policy_file = /etc/cinder/policy.json
+policy_file = /etc/cinder/policy.yaml
 
 [oslo_concurrency]
 lock_path = /var/lib/cinder/tmp
-
-{{- include "ini_sections.audit_middleware_notifications" . }}
 
 {{- include "ini_sections.cache" . }}
 
@@ -107,8 +98,6 @@ auth_type = v3password
 auth_version = v3
 auth_interface = internal
 auth_url = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
-username = {{ .Values.global.cinder_service_user | default "cinder" }}{{ .Values.global.user_suffix }}
-password = {{ required ".Values.global.cinder_service_password is missing" .Values.global.cinder_service_password }}
 user_domain_name = "{{.Values.global.keystone_service_domain | default "Default" }}"
 project_name = "{{.Values.global.keystone_service_project | default "service" }}"
 project_domain_name = "{{.Values.global.keystone_service_domain | default "Default" }}"
@@ -121,8 +110,6 @@ auth_type = v3password
 auth_version = v3
 auth_interface = internal
 auth_url = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
-username = {{ .Values.global.cinder_service_user | default "cinder" }}{{ .Values.global.user_suffix }}
-password = {{ required ".Values.global.cinder_service_password is missing" .Values.global.cinder_service_password }}
 user_domain_name = "{{.Values.global.keystone_service_domain | default "Default" }}"
 project_name = "{{.Values.global.keystone_service_project | default "service" }}"
 project_domain_name = "{{.Values.global.keystone_service_domain | default "Default" }}"

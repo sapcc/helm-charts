@@ -1,8 +1,25 @@
+global:
+  linkerd_requested: true
+  clusterType: local
+  users:
+    admin:
+      name: admin
+
+hermes_image_version_logstash: "20240807194811"
+      
+owner-info:
+  support-group: observability
+  service: hermes
+  maintainers:
+    - Nathan Oyler
+  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/openstack/hermes
+
 # global.region: DEFINED_IN_VALUES_FILE
 hermes:
   debug: 0
   insecure: 0
   name: hermes
+  username: hermes
   rabbitmq:
     port: 5672
     user: rabbitmq
@@ -43,13 +60,12 @@ elasticsearch_pv_size: 92
 
 hermes_image_version_elasticsearch_manager: "0.9.4"
 
-hermes_kibana_port_public: '5601'
-deploy_kibana: false # true in staging values
-
 rabbitmq_notifications:
   ## default: {{.Release.Name}}-rabbitmq.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}
   # host: rabbitmq
   kind: "statefulset"
+  # required due to circular dependency between keppel, keystone, and hermes
+  use_alternate_registry: true
   replicas: 3
   # pod distruption budget
   pdr: 
@@ -57,6 +73,10 @@ rabbitmq_notifications:
     minAvailable: "51%"
   persistence: 
     enabled: true
+  metrics:
+    enabled: true
+    sidecar:
+      enabled: false
   users:
     default:
       user: openstack
@@ -66,10 +86,30 @@ rabbitmq_notifications:
       # password: DEFINED-IN-SECRETS
   alerts:
     support_group: observability
+  livenessProbe:
+    enabled: true
+    failureThreshold: 3
+    initialDelaySeconds: 60
+    periodSeconds: 10
+    successThreshold: 1
+    timeoutSeconds: 10
+  readinessProbe:
+    enabled: true
+    failureThreshold: 3
+    initialDelaySeconds: 60 # default 15, need for crash recovery
+    periodSeconds: 10
+    successThreshold: 1
+    timeoutSeconds: 5
+  # service options
+  serviceType: LoadBalancer
+  serviceExternalTrafficPolicy: Local
 
 # Pod Monitor
 exporter:
   enabled: false
+  prometheus: openstack
+
+metrics:
   prometheus: openstack
 
 # Deploy hermes Prometheus alerts.
@@ -81,9 +121,27 @@ alerts:
   prometheus:
     openstack: openstack
     kubernetes: kubernetes
+    thanos-ruler: metal
 
-owner-info:
-  support-group: observability
-  maintainers:
-    - Nathan Oyler
-  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/openstack/hermes
+elasticsearch_hermes:
+  enabled: false
+  http_port: 9200
+  cluster_port: 9301
+  legacy_service_name: true
+  noschedule_port: '63062'
+  replicas: '3'
+  resources:
+    requests:
+      cpu: "2000m"
+      memory: "20Gi"
+    limits:
+      cpu: "4000m"
+  exporter:
+    enabled: true
+    prometheus: openstack
+
+elasticsearch_hermes_kibana:
+  enabled: false
+
+opensearch_hermes:
+  enabled: false

@@ -26,9 +26,9 @@ spec:
         - name: OS_PROJECT_DOMAIN_NAME
           value: "tempest"
         - name: OS_INTERFACE
-          value: "internal"
+          value: "public"
         - name: OS_ENDPOINT_TYPE
-          value: "internal"
+          value: "public"
         - name: OS_PASSWORD
           value: {{ .Values.tempestAdminPassword | quote }}
         - name: OS_IDENTITY_API_VERSION
@@ -37,10 +37,10 @@ spec:
           value: "http://{{ if .Values.global.clusterDomain }}keystone.{{.Release.Namespace}}.svc.{{ required "Missing clusterDomain value!" .Values.global.clusterDomain}}{{ else }}keystone.{{.Release.Namespace}}.svc.kubernetes.{{required "Missing region value!" .Values.global.region}}.{{ required "Missing tld value!" .Values.global.tld}}{{end}}:5000/v3"
       resources:
         requests:
-          memory: "1024Mi"
-          cpu: "750m"
+          memory: "2048Mi"
+          cpu: "1000m"
         limits:
-          memory: "4096Mi"
+          memory: "8192Mi"
           cpu: "2000m"
       volumeMounts:
         - mountPath: /{{ .Chart.Name }}-etc

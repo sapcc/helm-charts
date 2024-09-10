@@ -49,8 +49,6 @@ spec:
     metadata:
       labels:
         component: swift-haproxy-{{ $.Values.cluster_name }}
-        alert-tier: os
-        alert-service: swift
         from: deployment
         os-cluster: {{ $.Values.cluster_name }}
         for-service: swift-proxy-{{ $.Values.cluster_name }}
@@ -71,7 +69,7 @@ spec:
       {{- end }}
       nodeSelector:
         {{- if eq $apod "cp" }}
-        failure-domain.beta.kubernetes.io/zone: {{ $az }}
+        topology.kubernetes.io/zone: {{ $az }}
         {{- else }}
         kubernetes.cloud.sap/apod: {{ $apod }}
         {{- end }}
@@ -151,13 +149,14 @@ spec:
                 fieldRef:
                   apiVersion: v1
                   fieldPath: spec.nodeName
+          # TODO: securityContext: { runAsNonRoot: true }
           resources:
             requests:
-              cpu: {{ $.Values.haproxy_deployment_resources_cpu | required "haproxy_deployment_resources_cpu is required" | quote }}
-              memory: {{ $.Values.haproxy_deployment_resources_memory | required "haproxy_deployment_resources_memory is required" | quote }}
+              cpu: {{ $.Values.haproxy_deployment_resources_cpu_req | required "haproxy_deployment_resources_cpu_req is required" | quote }}
+              memory: {{ $.Values.haproxy_deployment_resources_memory_req | required "haproxy_deployment_resources_memory_req is required" | quote }}
             limits:
-              cpu: {{ $.Values.haproxy_deployment_resources_cpu | required "haproxy_deployment_resources_cpu is required" | quote }}
-              memory: {{ $.Values.haproxy_deployment_resources_memory | required "haproxy_deployment_resources_memory is required" | quote }}
+              cpu: {{ $.Values.haproxy_deployment_resources_cpu_limit | required "haproxy_deployment_resources_cpu_limit is required" | quote }}
+              memory: {{ $.Values.haproxy_deployment_resources_memory_limit | required "haproxy_deployment_resources_memory_limit is required" | quote }}
           volumeMounts:
             - mountPath: /tls-secret
               name: tls-secret

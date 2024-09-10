@@ -7,6 +7,8 @@ metadata:
     app: {{ template "name" . }}
 spec:
   updateStrategy:
+    rollingUpdate:
+      maxUnavailable: '50%' # these pods can be rolled rather quickly since they are not in the hot path
     type: RollingUpdate
   selector:
     matchLabels:
@@ -26,7 +28,7 @@ spec:
 {{- end }}
       containers:
       - name: {{ template "name" . }}
-        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        image: "{{ .Values.image.repository }}:{{ if .Values.image.tag }}{{ .Values.image.tag }}{{ else }}{{ .Chart.AppVersion }}{{ end }}"
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         args:
         - -logtostderr

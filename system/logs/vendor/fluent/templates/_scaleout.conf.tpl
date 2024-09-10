@@ -1,21 +1,10 @@
-<filter kubernetes.var.log.containers.es**>
-  @type parser
-  key_name log
-  reserve_data true
-  <parse>
-    @type grok
-    grok_pattern \[%{TIMESTAMP_ISO8601:timestamp}\]\[%{WORD:loglevel}
-    grok_pattern %{TIMESTAMP_ISO8601:timestamp} \| %{NOTSPACE:loglevel}
-  </parse>
-</filter>
-
-<filter kubernetes.var.log.containers.elk-k8s-event-exporter**>
+<filter kubernetes.var.log.containers.logs-k8s-event-exporter**>
   @type parser
   @id json_parser
   key_name log
   reserve_data true
   inject_key_prefix k8s.
-  remove_key_name_field true
+  remove_key_name_field false
   <parse>
     @type json
     time_format %Y-%m-%dT%T.%L%Z
@@ -23,8 +12,7 @@
   </parse>
 </filter>
 
-
-<filter kubernetes.var.log.containers.elk-fluent**>
+<filter kubernetes.var.log.containers.fluent**>
   @type parser
   key_name log
   reserve_data true
@@ -32,41 +20,6 @@
     @type grok
     grok_pattern %{TIMESTAMP_ISO8601:timestamp} \+0000 \[%{WORD:loglevel}
   </parse>
-</filter>
-
-<filter kubernetes.var.log.containers.elk-wall-e**>
-  @type record_transformer
-  <record>
-    process "elk-wall-e"
-  </record>
-</filter>
-
-<filter kubernetes.var.log.containers.elk-fluent**>
-  @type record_transformer
-  <record>
-    process "elk-fluent"
-  </record>
-</filter>
-
-<filter kubernetes.var.log.containers.es-client**>
-  @type record_transformer
-  <record>
-    process "es-client"
-  </record>
-</filter>
-
-<filter kubernetes.var.log.containers.es-master**>
-  @type record_transformer
-  <record>
-    process "es-master"
-  </record>
-</filter>
-
-<filter kubernetes.var.log.containers.es-data**>
-  @type record_transformer
-  <record>
-    process "es-data"
-  </record>
 </filter>
 
 <filter kubernetes.**>
@@ -78,36 +31,38 @@
   @type null
 </match>
 
-<match kubernetes.var.log.containers.es-query-exporter**>
-  @type null
-</match>
-
 <match kubernetes.var.log.containers.logstash**>
   @type null
 </match>
-#<filter kubernetes.var.log.containers.ingress-controller**>
-#  @type parser
-#  key_name log
-#  reserve_data true
-#  <parse>
-#    @type grok
-#    grok_pattern %{IP:remote_addr} - \[%{GREEDYDATA:proxy_add_x_forwarded_for}\] - %{NOTSPACE:auth} \[%{HAPROXYDATE:timestamp}\] "%{WORD:request_method} %{NOTSPACE:request_path} %{NOTSPACE:httpversion}" %{NUMBER:response} %{NUMBER:content_length} "(?<referer>[^\"]{,255}).*?" "%{DATA:user_agent}" %{NUMBER:request_length} %{NUMBER:request_time}( \[%{NOTSPACE:service}\])? %{IP:upstream_addr}\:%{NUMBER:upstream_port} %{NUMBER:upstream_response_length} %{NOTSPACE:upstream_response_time} %{NOTSPACE:upstream_status}
-#  </parse>
-#</filter>
 
-<filter kubernetes.var.log.containers.kube-system-nginx-ingress-controller**>
+<filter kubernetes.var.log.containers.kube-system-ingress-nginx-controller**>
   @type parser
   key_name log
   reserve_data true
   <parse>
     @type grok
-    grok_pattern %{IPV4:remote_addr} %{GREEDYDATA}
-    custom_pattern_path /fluentd/etc/pattern
+    grok_pattern %{IP:remote_addr} %{NOTSPACE:ident} %{NOTSPACE:auth} \[%{HTTPDATE:timestamp}\] "%{WORD:request_method} %{NOTSPACE:request_path} %{NOTSPACE:httpversion}" %{NUMBER:response} %{NUMBER:content_length:integer} "(?<referer>[^\"]{,255}).*?" "%{DATA:user_agent}" %{NUMBER:request_length:integer} %{BASE10NUM:request_time:float}( \[%{NOTSPACE:service}\])? ?(\[\])? %{IP:upstream_addr}\:%{NUMBER:upstream_port} %{NUMBER:upstream_response_length:integer} %{BASE10NUM:upstream_response_time:float} %{NOTSPACE:upstream_status}
+  </parse>
+</filter>
+
+<filter kubernetes.var.log.containers.opensearch**>
+  @type parser
+  key_name log
+  reserve_data true
+  <parse>
+    @type grok
+    grok_failure_key grok_opensearch_parser
+    <grok>
+      pattern .*\[internal:coordination\/fault_detection\/%{WORD:fault_detection}\], node \[{%{USERNAME:opensearch_name}
+    </grok>
+    <grok>
+      pattern Caused by: org.opensearch.transport.RemoteTransportException: \[%{USERNAME:opensearch_name}\]\[%{IP}:%{NUMBER}\]\[internal:coordination/fault_detection/%{WORD:fault_detection}\]
+    </grok>
   </parse>
 </filter>
 
 {{- if .Values.metis.enabled }}
-<filter kubernetes.var.log.containers.kube-system-nginx-ingress-controller**>
+<filter kubernetes.var.log.containers.kube-system-ingress-nginx-controller**>
   @type mysql_enrich
   host {{.Values.metis.host}}.{{.Values.global.region}}.{{.Values.global.tld}}
   port {{.Values.metis.port}}
@@ -139,55 +94,26 @@
 # count number of outgoing records per tag
 <match kubernetes.**>
   @type copy
-{{- if .Values.elasticsearch.enabled }}
   <store>
-    @type elasticsearch
-    host {{.Values.endpoint_host_internal}}
-    port {{.Values.http_port}}
-    user {{.Values.global.elk_elasticsearch_data_user}}
-    password {{.Values.global.elk_elasticsearch_data_password}}
-    ssl_verify false
-    ssl_version TLSv1_2
-    logstash_prefix {{.Values.indexname}}
-    logstash_format true
-    template_name {{.Values.indexname}}
-    template_file /fluentd/etc/{{.Values.indexname}}.json
-    template_overwrite false
-    time_as_integer false
-    type_name _doc
-    @log_level info
-    slow_flush_log_threshold 50.0
-    request_timeout 60s
-    include_tag_key true
-    resurrect_after 120
-    reconnect_on_error true
-    <buffer>
-      total_limit_size 256MB
-      flush_at_shutdown true
-      flush_thread_interval 5
-      overflow_action block
-      retry_forever true
-      retry_wait 2s
-      flush_thread_count 2
-      flush_interval 1s
-    </buffer>
-  </store>
-{{- end }}
-{{- if .Values.opensearch.enabled }}
-  <store>
+  {{- if .Values.opensearch.datastream.enabled }}
+    @type opensearch_data_stream
+    data_stream_name logs
+  {{- else }}
     @type opensearch
-    hosts {{.Values.opensearch.http.endpoint}}
-    scheme https
-    port {{.Values.opensearch.http_port}}
-    user {{.Values.opensearch.user}}
-    password {{.Values.opensearch.password}}
-    ssl_verify false
-    ssl_version TLSv1_2
     logstash_prefix {{.Values.opensearch.indexname}}
     logstash_format true
     template_name {{.Values.opensearch.indexname}}
     template_file /fluentd/etc/{{.Values.opensearch.indexname}}.json
     template_overwrite false
+  {{- end }}
+    hosts {{.Values.global.opensearch.host}}
+    scheme https
+    port {{.Values.global.opensearch.port}}
+    user "#{ENV['USER']}"
+    password "#{ENV['PASSWORD']}"
+    ssl_verify false
+    ssl_version TLSv1_2
+    log_os_400_reason true
     time_as_integer false
     @log_level info
     slow_flush_log_threshold 50.0
@@ -209,7 +135,6 @@
       flush_interval 2s
     </buffer>
   </store>
-{{- end }}
   <store>
     @type prometheus
     <metric>

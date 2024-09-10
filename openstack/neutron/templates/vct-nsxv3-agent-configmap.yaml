@@ -9,7 +9,6 @@ options:
     variable_start_string: '{='
     variable_end_string: '=}'
 template: |
-  {% if nsx_t_enabled is defined and nsx_t_enabled -%}
   apiVersion: v1
   kind: ConfigMap
   metadata:
@@ -31,22 +30,26 @@ template: |
       firewall_driver = nsxv3
 
       [AGENT]
-      {{- range $k, $v := .Values.drivers.nsxv3.defaults.AGENT }}
-      {{ $k }} = {{ $v }}
+      {{- range $k, $confvals := .Values.drivers.nsxv3 }}
+      {%- if '{{ $k }}' == name or '{{ $k }}' == 'defaults' %}
+      {{- range $key, $v := $confvals.AGENT }}
+      {{ $key }} = {{ $v }}
+      {{- end }}
+      {%- endif %}
       {{- end }}
 
+      [cache]
+      enabled = true
+      backend = dogpile.cache.memory
+
       [NSXV3]
-      # nsx-t has only admin / audit user
-      nsxv3_login_user = admin
       {%- set bb = name | replace( "bb", "") | int %}
       {%- set hostname = "nsx-ctl-" + "bb" + ( '%03d' % bb ) + "." + domain %}
       nsxv3_login_hostname = {= hostname =}
-      nsxv3_login_password = {= username | derive_password(hostname) | quote =}
 
       {%- set tzname = "bb" + ( '%03d' % bb ) + "-vlan" %}
       nsxv3_transport_zone_name = {= tzname =}
       {{- range $k, $v := .Values.drivers.nsxv3.defaults.NSXV3 }}
       {{ $k }} = {{ $v }}
       {{- end }}
-  {% endif %}
 {{ end }}

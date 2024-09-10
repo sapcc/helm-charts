@@ -1,0 +1,34 @@
+{{- $values := .Values.redfish_exporter -}}
+{{- if $values.firmware.enabled }}
+apiVersion: monitoring.coreos.com/v1alpha1
+kind: ScrapeConfig
+
+metadata:
+  name: 'redfish-fw'
+  namespace: {{ $values.namespace }}
+  labels:
+    prometheus: {{ required "$values.prometheus missing" $values.prometheus }}
+    app.kubernetes.io/name: 'redfish-fw'
+
+spec:
+  scrapeInterval: {{$values.firmware.scrapeInterval}}
+  scrapeTimeout: {{$values.firmware.scrapeTimeout}}
+  httpSDConfigs:
+    - url: {{ $values.httpSDConfigs.netbox_production_url }}/devices/?custom_labels=job=redfish-fw&target=mgmt_only&status=active&role=server&tenant=converged-cloud&tag__n=no-redfish&region={{ .Values.global.region }}
+      refreshInterval: {{ $values.httpSDConfigs.refreshInterval }}
+  metricsPath: /firmware
+  params:
+    job: [redfish-fw]
+  relabelings:
+    - sourceLabels: [job]
+      regex: redfish-fw
+      action: keep
+    - sourceLabels: [__address__]
+      targetLabel: __param_target
+    - sourceLabels: [__param_target]
+      targetLabel: instance
+    - targetLabel: __address__
+      replacement: redfish-exporter:{{$values.listen_port}}
+    - regex: 'device_type|cluster.*|role|platform|status'
+      action: labeldrop
+{{- end }}

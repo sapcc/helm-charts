@@ -16,6 +16,11 @@ metadata:
     component: ironic
   annotations:
     kubernetes.io/tls-acme: "true"
+    ingress.kubernetes.io/backend-protocol: HTTPS
+    nginx.ingress.kubernetes.io/backend-protocol: HTTPS
+    ingress.kubernetes.io/ssl-passthrough: "true"
+    nginx.ingress.kubernetes.io/ssl-passthrough: "true"
+    {{- include "utils.linkerd.ingress_annotation" . | indent 4 }}
 spec:
   tls:
      - secretName: tls-{{ include "ironic_console_endpoint_host_public" . | replace "." "-" }}
@@ -38,6 +43,6 @@ spec:
               name: ironic-conductor-console
             {{- end }}
               port: 
-                number: 80
+                number: 443
     {{- end }}
 {{- end }}

@@ -1,4 +1,3 @@
-{{- if eq .Values.global.clusterType "scaleout" }}
 {{- $values := .Values }}
 {{- if $values.alerts.enabled }}
 {{- range $path, $bytes := .Files.Glob "alerts/*.alerts" }}
@@ -9,7 +8,7 @@ kind: PrometheusRule
 metadata:
   name: {{ printf "opensearch-%s" $path | replace "/" "-" }}
   labels:
-    app: opensearch
+    app: opensearch-logs
     tier: os
     type: alerting-rules
     prometheus: {{ required ".Values.alerts.prometheus missing" $values.alerts.prometheus | quote }}
@@ -17,6 +16,5 @@ metadata:
 spec:
 {{ printf "%s" $bytes | indent 2 }}
 
-{{- end }}
 {{- end }}
 {{- end }}

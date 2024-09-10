@@ -15,7 +15,10 @@ metadata:
     app.kubernetes.io/managed-by: {{ $.Release.Service }}
     app.kubernetes.io/version: "{{ $.Values.backup_v2.image_version }}"
     alert-service: "metis"
-    alert-tier: {{ required "$.Values.alerts.tier missing" $.Values.alerts.tier }}
+  annotations:
+    {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+    linkerd.io/inject: enabled
+    {{- end }}
 spec:
   ports:
   - port: 8080
@@ -37,7 +40,6 @@ metadata:
     app.kubernetes.io/managed-by: {{ $.Release.Service }}
     app.kubernetes.io/version: "{{ $.Values.backup_v2.image_version }}"
     alert-service: "metis"
-    alert-tier: {{ required "$.Values.alerts.tier missing" $.Values.alerts.tier }}
 spec:
   replicas: 1
   serviceName: mariadb-sync-{{ $backup.name }}
@@ -49,13 +51,16 @@ spec:
     metadata:
       labels:
         alert-service: "metis"
-        alert-tier: {{ required "$.Values.alerts.tier missing" $.Values.alerts.tier }}
         app.kubernetes.io/version: "{{ $.Values.metisSync.imageVersion }}"
         app.kubernetes.io/name: mariadb-sync
         app.kubernetes.io/instance: mariadb-sync-{{ $backup.name }}-{{ $.Release.Name }}
       annotations:
         {{- $data := dict "common" $common "backup" $backup "mariadb" $.Values.mariadb "root" $ }}
         checksum/config: {{ include "sync.configmap" $data | sha256sum }}
+        kubectl.kubernetes.io/default-container: "sync"
+        {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+        linkerd.io/inject: enabled
+        {{- end }}
     spec:
       affinity:
         podAntiAffinity:
@@ -70,6 +75,10 @@ spec:
                   values:
                   - mariadb-replication
                   - mariadb-sync
+                - key: app
+                  operator: In
+                  values:
+                  - {{ $backup.name }}-mariadb
       terminationGracePeriodSeconds: 10
       containers:
       - name: sync
@@ -85,6 +94,8 @@ spec:
         env:
         - name: "CONFIG"
           value: "/etc/config/config.yaml"
+        - name: "DOWNLOAD_DIR"
+          value: "/home/appuser/backup"
         - name: "SOURCEDB_PASSWORD"
           valueFrom:
             secretKeyRef:

@@ -1,0 +1,138 @@
+---
+suite: mariadb-galera-configmaps
+values:
+  - default_values.yaml
+set:
+  mariadb.galera.clustername: "testname"
+release:
+  name: testrelease
+  namespace: testnamespace
+templates:
+  - configmap-mariadb.yaml
+tests:
+  - it: default mariadb entrypoint script
+    template: configmap-mariadb.yaml
+    documentIndex: 0
+    set:
+      mariadb.galera.clustername: "testname"
+    asserts:
+      - isKind:
+          of: ConfigMap
+      - equal:
+          path: metadata.namespace
+          value: testnamespace
+      - equal:
+          path: metadata.name
+          value: testrelease-mariadb-entrypoint-sh
+      - equal:
+          path: metadata.labels.app
+          value: testrelease
+
+  - it: default mariadb common extenden functions scripts
+    template: configmap-mariadb.yaml
+    documentIndex: 1
+    set:
+      mariadb.galera.clustername: "testname"
+    asserts:
+      - isKind:
+          of: ConfigMap
+      - equal:
+          path: metadata.namespace
+          value: testnamespace
+      - equal:
+          path: metadata.name
+          value: testrelease-mariadb-common-functions-extended-sh
+      - equal:
+          path: metadata.labels.app
+          value: testrelease
+      - exists:
+          path: data["common-functions-extended.sh"]
+
+  - it: default mariadb probes scripts
+    template: configmap-mariadb.yaml
+    documentIndex: 2
+    set:
+      mariadb.galera.clustername: "testname"
+    asserts:
+      - isKind:
+          of: ConfigMap
+      - equal:
+          path: metadata.namespace
+          value: testnamespace
+      - equal:
+          path: metadata.name
+          value: testrelease-mariadb-probes-sh
+      - exists:
+          path: data["startup.sh"]
+      - exists:
+          path: data["readiness.sh"]
+      - exists:
+          path: data["liveness.sh"]
+
+  - it: default mariadb galera hooks script
+    template: configmap-mariadb.yaml
+    documentIndex: 3
+    set:
+      mariadb.galera.clustername: "testname"
+    asserts:
+      - isKind:
+          of: ConfigMap
+      - equal:
+          path: metadata.namespace
+          value: testnamespace
+      - equal:
+          path: metadata.name
+          value: testrelease-mariadb-hooks-sh
+      - equal:
+          path: metadata.labels.app
+          value: testrelease
+      - exists:
+          path: data["pre-stop-hook.sh"]
+      - exists:
+          path: data["post-start-hook.sh"]
+
+  - it: default mariadb galera status file
+    template: configmap-mariadb.yaml
+    documentIndex: 4
+    set:
+      mariadb.galera.clustername: "testname"
+    asserts:
+      - isKind:
+          of: ConfigMap
+      - equal:
+          path: metadata.namespace
+          value: testnamespace
+      - equal:
+          path: metadata.name
+          value: testrelease-galerastatus
+      - isSubset:
+          path: data
+          content:
+            testrelease-mariadb-g-0.primary: |-
+            testrelease-mariadb-g-0.running: |-
+            testrelease-mariadb-g-0.seqno: |-
+            testrelease-mariadb-g-1.primary: |-
+            testrelease-mariadb-g-1.running: |-
+            testrelease-mariadb-g-1.seqno: |-
+            testrelease-mariadb-g-2.primary: |-
+            testrelease-mariadb-g-2.running: |-
+            testrelease-mariadb-g-2.seqno: |-
+
+  - it: default mariadb galera wipedata flag
+    template: configmap-mariadb.yaml
+    documentIndex: 5
+    set:
+      mariadb.galera.clustername: "testname"
+    asserts:
+      - isKind:
+          of: ConfigMap
+      - equal:
+          path: metadata.namespace
+          value: testnamespace
+      - equal:
+          path: metadata.name
+          value: testrelease-mariadb-wipedata
+      - isSubset:
+          path: data
+          content:
+            wipedata.flag: "true"

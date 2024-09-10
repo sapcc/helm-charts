@@ -8,6 +8,10 @@ metadata:
     system: openstack
     type: backend
     component: designate
+  {{- if .Values.vpa.set_main_container }}
+  annotations:
+    vpa-butler.cloud.sap/main-container: designate-sink
+  {{- end }}
 spec:
   replicas: {{ .Values.pod.replicas.sink }}
   revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revision_history }}
@@ -28,6 +32,11 @@ spec:
       annotations:
         configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
         configmap-bin-hash: {{ include (print $.Template.BasePath "/bin-configmap.yaml") . | sha256sum }}
+        {{- if .Values.proxysql.mode }}
+        prometheus.io/scrape: "true"
+        prometheus.io/targets: {{ required ".Values.metrics.prometheus missing" .Values.metrics.prometheus | quote }}
+        {{- end }}
+        {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
     spec:
 {{- if .Values.rbac.enabled }}
       serviceAccountName: {{ .Release.Name }}
@@ -42,6 +51,7 @@ spec:
                 values:
                 - designate-sink
             topologyKey: "kubernetes.io/hostname"
+      {{- include "utils.proxysql.pod_settings" . | indent 6 }}
       containers:
         - name: designate-sink
           image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/loci-designate:{{ required ".Values.global.image_version_designate is missing" .Values.image_version_designate }}
@@ -67,6 +77,9 @@ spec:
               name: designate-etc
             - mountPath: /container.init
               name: container-init
+            {{- include "utils.proxysql.volume_mount" . | indent 12 }}
+            {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
+        {{- include "utils.proxysql.container" . | indent 8 }}
       volumes:
         - name: designate-etc
           configMap:
@@ -75,4 +88,6 @@ spec:
           configMap:
             name: designate-bin
             defaultMode: 0755
+        {{- include "utils.proxysql.volumes" . | indent 8 }}
+        {{- include "utils.trust_bundle.volumes" . | indent 8 }}
 {{- end }}

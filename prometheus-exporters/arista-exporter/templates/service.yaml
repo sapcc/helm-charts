@@ -1,10 +1,19 @@
 apiVersion: v1
 kind: Service
+
 metadata:
-  name: arista-exporter
+  name: {{ include "fullName" . }}
+  namespace: {{ .Values.arista_exporter.namespace }}
+  labels:
+    app: {{ include "fullName" . }}
+    system: infra_monitoring
+    type: exporter
+    release: {{ include "fullName" . }}
+
 spec:
   selector:
-    app: arista-exporter
+    app: {{ include "fullName" . }}
     type: exporter
   ports:
-    - port: 9200
+    - name: metrics
+      port: {{ required "listen_port missing in arista_exporter values" .Values.arista_exporter.listen_port }}

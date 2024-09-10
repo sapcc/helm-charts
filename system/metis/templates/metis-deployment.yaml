@@ -11,7 +11,6 @@ metadata:
     app.kubernetes.io/instance: metis-{{ .Release.Name }}
     app.kubernetes.io/managed-by: {{ .Release.Service }}
     alert-service: "metis"
-    alert-tier: {{ required "$.Values.alerts.tier missing" $.Values.alerts.tier | quote }}
 spec:
   replicas: 1
   selector:
@@ -25,21 +24,14 @@ spec:
         app.kubernetes.io/instance: metis-{{ .Release.Name }}
         app.kubernetes.io/version: "{{ .Values.metis.imageTag }}"
         alert-service: "metis"
-        alert-tier: {{ required "$.Values.alerts.tier missing" $.Values.alerts.tier | quote}}
       annotations:
         checksum/config: {{ include ( print $.Template.BasePath "/metis-etc-configmap.yaml" ) . | sha256sum }}
         checksum/secret: {{ include ( print $.Template.BasePath "/metis-secrets.yaml" ) . | sha256sum }}
+        kubectl.kubernetes.io/default-container: "metis"
+      {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+        linkerd.io/inject: enabled
+      {{- end }}
     spec:
-      affinity:
-        podAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-          - labelSelector:
-              matchExpressions:
-                - key: app
-                  operator: In
-                  values:
-                  - "metisdb-mariadb"
-            topologyKey: kubernetes.io/hostname
       containers:
       - name: metis
         image: "{{ required ".Values.global.registry variable missing" .Values.global.registry }}/{{ .Values.metis.image }}:{{ .Values.metis.imageTag }}"
@@ -50,10 +42,7 @@ spec:
         resources:
           requests:
             memory: 50Mi
-            cpu: 10m
-          limits:
-            memory: 250Mi
-            cpu: 200m
+            cpu: 50m
 
         env:
           - name: API_TOKEN
@@ -81,7 +70,7 @@ spec:
             valueFrom:
               secretKeyRef:
                 name: metis-secrets
-                key: vcenterMasterPW
+                key: vcenterPW
 {{- end }}
         volumeMounts:
           - name: metis-etc

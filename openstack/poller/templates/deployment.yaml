@@ -1,0 +1,72 @@
+{{- $val := .Values.poller }}
+{{- if $val.enabled -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "poller.fullname" . }}
+  {{- if $val.labels }}
+  labels:
+    {{ toYaml $val.labels | indent 4 }}
+  {{- end }}
+spec:
+  replicas: {{ $val.replicas }}
+  strategy:
+  {{- if eq "RollingUpdate" $val.updateStrategy }}
+    rollingUpdate:
+      maxSurge: {{ $val.maxSurge }}
+      maxUnavailable: {{ $val.maxUnavailable }}
+  {{- end }}
+    type: {{ $val.updateStrategy }}
+  selector:
+    matchLabels:
+      name: {{ include "poller.fullname" . }}
+      instance: {{ include "poller.fullname" . }}
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include "poller/templates/_config.yaml.tpl" . | sha256sum }}
+      labels:
+        name: {{ include "poller.fullname" . }}
+        instance: {{ include "poller.fullname" . }}
+    spec:
+      serviceAccountName: {{ include "poller.fullname" . }}
+{{- if $val.affinity }}
+      affinity: {{ toYaml $val.affinity | nindent 8 }}
+{{- end }}
+      containers:
+        - name: {{ include "poller.fullname" . }}
+          image: "{{ $val.image.name }}:{{ $val.image.tag }}"
+          imagePullPolicy: {{ $val.image.pullPolicy }}
+          args:
+            - "-config=/poller/config.yaml"
+            - "-mx-records=/poller/mx/mx-records.json"
+          volumeMounts:
+            - name: config-{{ include "poller.fullname" . }}
+              mountPath: "/poller/config.yaml"
+              subPath: config.yaml
+            {{- if not $val.mxrecords }}
+            - name: ldap-configmx
+              mountPath: "/poller/mx"
+              subPath: mx-records.json
+            {{- end }}
+            {{- if $val.mxrecords }}
+            - name: poller-mx-records
+              mountPath: "/poller/mx/mx-records.json"
+              subPath: mx-records.json
+            {{- end }}
+      terminationGracePeriodSeconds: {{ $val.terminationGracePeriod | default 60 }}
+      volumes:
+        - name: config-{{ include "poller.fullname" . }}
+          secret:
+            secretName: config-{{ include "poller.fullname" . }}
+        {{- if $val.mxrecords }}
+        - name: poller-mx-records
+          configMap:
+            name: configmx-{{ include "poller.fullname" . }}
+        {{- end }}
+        {{- if not $val.mxrecords }}
+        - name: ldap-configmx
+          persistentVolumeClaim:
+            claimName: ldap-configmx-pvc
+        {{- end }}
+{{- end -}}

@@ -4,6 +4,7 @@ global:
 exporter:
   enabled: true
   prometheusPort: port
+  nebulaEndpoint: http://nebula.cronus:1080
   replicas: 1
   image:
     name: cronus-exporter-repository
@@ -15,6 +16,14 @@ exporter:
   loopInterval: 10
   pushgatewayUrl: http://localhost:9091
   accountStatusTimeout: 5m
+  receivingDelay: 5m
+  sendingDelay: 5m
+  suppressionDelay: 10m
+  accountsDelay: 120h
+  identityDelay: 10m
+  quotaDelay: 10m
+  clientErrorDelay: 10m
+  maxAllowedSuppression: 1000
 config:
   multiCloud:
     endpoint: mcendpoint
@@ -31,11 +40,26 @@ config:
 
 alerts:
   enabled: false
-  prometheus: infra-frontend
+  prometheus:
+    - name: infra-frontend
+      type: prometheus
   cisco: false
   global: false
-  queue: false
+  postfix: false
+
+updater:
+  applicationCredentialsProject: project
+  applicationCredentialsDomain: domain
+  applicationCredentialsName: name
+  applicationCredentialsSecret: sec
+  applicationCredentialsId: id
 
 owner-info:
   helm-chart-url: 'https://github.com/sapcc/helm-charts/tree/master/prometheus-exporters/cronus-exporter'
   support-group: email
+
+postfix:
+  postfixEnabled: false
+
+simulator:
+  nebulaApiEndpoint: http://nebula.cronus:1080

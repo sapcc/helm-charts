@@ -3,12 +3,12 @@ groups:
 - name: kubelet.alerts
   rules:
   - alert: ManyKubeletDown
-    expr: count(count(up{job="kubernetes-kubelet"} unless on (node) kube_node_labels{label_cloud_sap_maintenance_state="in-maintenance"}) - sum(up{job="kubernetes-kubelet"} unless on (node) kube_node_labels{label_cloud_sap_maintenance_state="in-maintenance"})) > 2
+    expr: count(count(up{job="kubernetes-kubelet"} unless on (node) (kube_node_labels{label_cloud_sap_maintenance_state="in-maintenance"} or kube_node_labels{label_kubernetes_cloud_sap_role="storage"})) - sum(up{job="kubernetes-kubelet"} unless on (node) (kube_node_labels{label_cloud_sap_maintenance_state="in-maintenance"} or kube_node_labels{label_kubernetes_cloud_sap_role="storage"}))) > 4
     for: 10m
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
-      service: kubelet
-      support_group: containers
+      support_group: {{ required ".Values.supportGroup missing" .Values.supportGroup }}
+      service: {{ required ".Values.service missing" .Values.service }}
       severity: critical
       context: kubelet
       dashboard: kubernetes-health
@@ -22,8 +22,8 @@ groups:
     for: 10m
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
-      service: kubelet
-      support_group: containers
+      support_group: {{ required ".Values.supportGroup missing" .Values.supportGroup }}
+      service: {{ required ".Values.service missing" .Values.service }}
       severity: warning
       context: kubelet
       meta: "{{`{{ $labels.node }}`}}"
@@ -34,28 +34,13 @@ groups:
       description: Kublet on {{`{{ $labels.node }}`}} is DOWN.
       summary: A Kubelet is DOWN
 
-  - alert: KubeletScrapeMissing
-    expr: absent(up{job="kubernetes-kubelet"})
-    for: 10m
-    labels:
-      tier: {{ required ".Values.tier missing" .Values.tier }}
-      service: kubelet
-      support_group: containers
-      severity: warning
-      context: kubelet
-      dashboard: kubernetes-health
-      playbook: docs/support/playbook/kubernetes/k8s_node_scrape_missing
-    annotations:
-      description: Kubelets cannot be scraped. Status unknown.
-      summary: Kubelets failed to be scraped.
-
   - alert: KubeletTooManyPods
     expr: kubelet_running_pod_count > 225
     for: 1h
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
-      service: kubelet
-      support_group: containers
+      support_group: {{ required ".Values.supportGroup missing" .Values.supportGroup }}
+      service: {{ required ".Values.service missing" .Values.service }}
       severity: warning
       context: kubelet
       meta: "{{`{{ $labels.node }}`}}"
@@ -69,8 +54,8 @@ groups:
     for: 1h
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
-      service: kubelet
-      support_group: containers
+      support_group: {{ required ".Values.supportGroup missing" .Values.supportGroup }}
+      service: {{ required ".Values.service missing" .Values.service }}
       severity: warning
       context: kubelet
       meta: "{{`{{ $labels.node }}`}}"
@@ -84,8 +69,8 @@ groups:
     for: 5m
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
-      service: k8s
-      support_group: containers
+      support_group: {{ required ".Values.supportGroup missing" .Values.supportGroup }}
+      service: {{ required ".Values.service missing" .Values.service }}
       severity: warning
       context: kubelet
       meta: "{{`{{ $labels.node }}`}}"
@@ -98,8 +83,8 @@ groups:
     for: 5m
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
-      service: k8s
-      support_group: containers
+      support_group: {{ required ".Values.supportGroup missing" .Values.supportGroup }}
+      service: {{ required ".Values.service missing" .Values.service }}
       severity: warning
       context: kubelet
       meta: "{{`{{ $labels.node }}`}}"
@@ -116,8 +101,8 @@ groups:
     for: 10m
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
-      service: k8s
-      support_group: containers
+      support_group: {{ required ".Values.supportGroup missing" .Values.supportGroup }}
+      service: {{ required ".Values.service missing" .Values.service }}
       severity: warning
       context: kubelet
       meta: "Many 5xx responses for Kubelet on {{`{{ $labels.node }}`}} "

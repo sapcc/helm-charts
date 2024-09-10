@@ -1,3 +1,28 @@
+## 6.5.8
+
+* Adapting swift credential for kvv2 vault
+
+## 6.5.4
+
+* prepare to switch ingress annotation prefix
+
+## 6.5.3
+
+* bump Thanos version to v0.30.1
+
+## 6.5.1
+
+* VerticalPodAutoscaler for prometheus container only
+
+## 6.5.0
+
+* Prometheus updated to v2.43.0
+
+## 6.4.22 - 6.4.23
+
+* HighAlert playbook link added
+* HighAlert condition increased
+
 ## 6.4.21
 
 * Limitation to own `pod-sd` scrape job for `PrometheusMultiplePodScrapes` alert

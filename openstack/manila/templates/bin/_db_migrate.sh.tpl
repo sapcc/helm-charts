@@ -4,7 +4,7 @@ set -e
 
 . /container.init/common.sh
 
-manila-status --config-file /etc/manila/manila.conf upgrade check
+manila-status upgrade check
 manila-manage db sync
 manila-manage service cleanup
-{{ include "utils.proxysql.proxysql_signal_stop_script" . }}
+{{ include "utils.script.job_finished_hook" . }}

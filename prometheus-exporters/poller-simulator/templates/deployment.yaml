@@ -52,8 +52,11 @@ spec:
           imagePullPolicy: {{ .Values.simulator.poller.image.pullPolicy }}
           args:
             - "-config=/poller/config.yaml"
+          envFrom:
+            - secretRef:
+                name: poller-simulator-secret
           volumeMounts:
-            - name: {{ include "poller-simulator.fullname" . }}
+            - name: poller-simulator-config
               mountPath: "/poller/config.yaml"
               subPath: config.yaml
           ports:
@@ -62,7 +65,10 @@ spec:
               protocol: TCP
       terminationGracePeriodSeconds: {{ .Values.simulator.poller.terminationGracePeriod | default 60 }}
       volumes:
-        - name: {{ include "poller-simulator.fullname" . }}
-          secret:
-            secretName: {{ include "poller-simulator.fullname" . }}
+        - name: poller-simulator-config
+          configMap:
+            name: poller-simulator-config
+            items:
+              - key: config.yaml
+                path: config.yaml
 {{- end -}}

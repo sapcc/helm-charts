@@ -7,8 +7,8 @@ groups:
     for: 5m
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
-      service: k8s
-      support_group: containers
+      support_group: {{ required ".Values.supportGroup missing" .Values.supportGroup }}
+      service: {{ required ".Values.service missing" .Values.service }}
       severity: warning
       context: apiserver
       meta: "{{`{{ $labels.instance }}`}}"
@@ -23,8 +23,8 @@ groups:
     for: 15m
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
-      service: k8s
-      support_group: containers
+      support_group: {{ required ".Values.supportGroup missing" .Values.supportGroup }}
+      service: {{ required ".Values.service missing" .Values.service }}
       severity: warning
       context: apiserver
       meta: "{{`{{ $labels.instance }}`}}"
@@ -35,12 +35,12 @@ groups:
       summary: An ApiServer is DOWN
 
   - alert: KubernetesApiServerScrapeMissing
-    expr: absent(up{job="kubernetes-apiserver"})
+    expr: up{job=~".*apiserver.*"} == 0 or absent(up{job=~".*apiserver.*"})
     for: 1h
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
-      service: k8s
-      support_group: containers
+      support_group: {{ required ".Values.supportGroup missing" .Values.supportGroup }}
+      service: {{ required ".Values.service missing" .Values.service }}
       severity: info
       context: apiserver
       dashboard: kubernetes-health
@@ -53,7 +53,8 @@ groups:
     for: 30m
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
-      service: k8s
+      support_group: {{ required ".Values.supportGroup missing" .Values.supportGroup }}
+      service: {{ required ".Values.service missing" .Values.service }}
       support_group: containers
       severity: info
       context: apiserver
@@ -69,8 +70,8 @@ groups:
     for: 5m
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
-      service: k8s
-      support_group: containers
+      support_group: {{ required ".Values.supportGroup missing" .Values.supportGroup }}
+      service: {{ required ".Values.service missing" .Values.service }}
       severity: warning
       context: apiserver
     annotations:

@@ -1,7 +1,5 @@
-{{- $domains := list "ccadmin" "bs" "cis" "cp" "fsn" "hcp03" "hec" "monsoon3" "neo" "s4" "wbs"}}
-{{- if not .Values.global.domain_seeds.skip_hcm_domain -}}
-  {{- $domains = append $domains "hcm" }}
-{{- end -}}
+{{- $cdomains := .Values.global.domain_seeds.customer_domains | required "missing value for .Values.global.domain_seeds.customer_domains" -}}
+{{- $domains := concat (list "ccadmin") $cdomains -}}
 
 apiVersion: "openstack.stable.sap.cc/v1"
 kind: OpenstackSeed
@@ -12,7 +10,7 @@ spec:
   requires:
   - keppel/keppel-seed
   {{- range $domains }}
-  - monsoon3/domain-{{ . | lower }}-seed
+  - monsoon3/domain-{{replace "_" "-" .}}-seed
   {{- end }}
 
   domains:

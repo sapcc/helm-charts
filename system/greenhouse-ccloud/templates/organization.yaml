@@ -1,0 +1,29 @@
+apiVersion: greenhouse.sap/v1alpha1
+kind: Organization
+metadata:
+  name: {{ .Chart.Name }}
+spec:
+  description: Converged Cloud organization
+  mappedOrgAdminIdPGroup: {{ required ".Values.mappedOrgAdminIdPGroup missing" .Values.mappedOrgAdminIdPGroup }}
+  authentication:
+    oidc:
+      issuer: {{ required ".Values.oidc.issuer missing" .Values.oidc.issuer }}
+      redirectURL: {{ required ".Values.oidc.redirectURL missing" .Values.oidc.redirectURL }}
+      clientIDReference:
+        name: {{ .Chart.Name }}-oidc
+        key: clientID
+      clientSecretReference:
+        name: {{ .Chart.Name }}-oidc
+        key: clientSecret
+{{ if .Values.scim.enabled }}
+    scim:
+      baseURL: {{ required ".Values.scim.baseURL" .Values.scim.baseURL }}
+      basicAuthUser:
+        secret:
+          name: {{ .Chart.Name }}-scim
+          key: username
+      basicAuthPw:
+        secret:
+          name: {{ .Chart.Name }}-scim
+          key: password
+{{ end }}

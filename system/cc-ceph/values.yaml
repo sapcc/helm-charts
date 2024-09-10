@@ -1,0 +1,163 @@
+owner-info:
+  support-group: containers
+  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/system/cc-ceph
+
+rook-ceph:
+  monitoring:
+    enabled: true
+  crds:
+    enabled: false
+
+ceph:
+  registry:
+  image: "ceph/ceph"
+  version:
+
+cephConfig:
+  global:
+    bdev_flock_retry: "20"
+    bluefs_buffered_io: "false"
+    mon_allow_pool_delete: "false"
+    mon_allow_pool_size_one: "false"
+    osd_pool_default_size: "3"
+    mon_data_avail_warn: "10"
+    osd_op_queue: "wpq"
+    osd_pool_default_pg_autoscale_mode: "off"
+  mon:
+    ms_client_mode: "secure"
+    ms_cluster_mode: "secure"
+    ms_service_mode: "secure"
+    ms_mon_cluster_mode: "secure"
+    ms_mon_client_mode: "secure"
+    ms_mon_service_mode: "secure"
+
+clusterName: ceph-cluster
+
+mon:
+  count: 5
+  nodeRole: ceph-mon
+
+resources:
+  osd:
+    limits:
+      memory: 8192Mi #no limits for osds leads to osd taking all available memory
+    requests:
+      memory: 8192Mi
+
+osd:
+  nodeRole: ceph-osd
+
+prepareosd:
+  nodeRole: ceph-osd
+
+pool:
+  mgr:
+    replicated: 3
+  # Sets "ceph osd pool set nodelete" to all CephBolckPools. Valid values: "0" | "1"
+  # Set to "1" to to prevent unintended pool changes in production
+  nodelete: "1"
+  # Sets "ceph osd pool set nodelete" to all CephBolckPools. Valid values: "0" | "1"
+  # Set to "1" to to prevent unintended pool changes in production
+  nosizechange: "1"
+
+mgr:
+  nodeRole: ceph-mon
+
+storage:
+  useAllNodes: false
+  useAllDevices: false
+  deviceFilter: "^sd[a-q]+$"
+  config:
+    osdsPerDevice: "1"
+  #  metadataDevice: "nvme0n1"
+    databaseSizeMB: "120000"
+    encryptedDevice: "true"
+  nodes: null
+  # - name: a
+  #   config:
+  #     metadataDevice: "nvme0n1"
+  # - name: b
+  #   config:
+  #     metadataDevice: "nvme1n1"
+  # - name: c
+  #   config:
+  #     metadataDevice: "nvme0n1"
+
+dashboard:
+  ingress:
+    host: "mydash.local.domain"
+
+objectstore:
+  enabled: true
+  name: objectstore
+  gateway:
+    instances: 6
+    port: 80
+    securePort: 443
+    sslCertificateRef: ""
+    dnsNames: []
+    # - dns1
+    # - dns2
+    resources:
+      requests:
+        cpu: 10
+        memory: 16Gi
+  metadataPool:
+    # replicated:
+    #   size: 4
+    #   replicasPerFailureDomain: 2
+    #   subFailureDomain: "host"
+    # failureDomain: "zone"
+    # deviceClass: "nvme"
+  dataPool:
+    # choose between replicated and erasureCoded
+    # erasureCoded:
+    #   codingChunks: 1
+    #   dataChunks: 2
+    # failureDomain: host
+    # replicated:
+    #   size: 3
+  service:
+    name: ceph-objectstore-external
+    port: 443
+    externalIPs:
+      - 10.0.0.1
+  keystone:
+    enabled: true
+    global_config: true
+    auth_order:
+      - local
+      - external
+    url: http://keystone.local:8083
+    verify_ssl: true
+    implicit_tenants: true
+    swift_account_in_url: true
+    swift_versioning_enabled: true
+    accepted_roles:
+      - objectstore_admin
+      - objectstore_viewer
+    token_cache_size: 1000
+    admin_user: XXX
+    admin_password: XXX
+    admin_domain: XXX
+    admin_project: XXX
+    revocation_interval: 25200 # 7h
+  prysm:
+    enabled: false
+    repository:
+      image: "ghcr.io/cobaltcore-dev/prysm"
+      tag: "latest"
+      pullPolicy: "Always"
+    interval: "10"
+
+rgwTargetPlacements:
+  enabled: false 
+
+defaultRgwPools:
+  enabled: false # create default rgw pools, see: https://github.com/sapcc/helm-charts/issues/6670
+  crushRoot: default 
+  failureDomain: zone
+  replicated: 4
+  replicasPerFailureDomain: 2
+  subFailureDomain: host
+  deviceClass: nvme

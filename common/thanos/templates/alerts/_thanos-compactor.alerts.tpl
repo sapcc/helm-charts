@@ -26,6 +26,7 @@ groups:
         support_group: {{ default "observability" $root.Values.alerts.support_group }}
         severity: info
         meta: Thanos Compact `{{`{{ $labels.thanos }}`}}` has failed to run and is now halted.
+        playbook: 'docs/support/playbook/prometheus/thanos_compaction/#thanos-compact-halted'
       annotations:
         description: |
           Thanos Compact `{{`{{ $labels.thanos }}`}}` has
@@ -46,7 +47,7 @@ groups:
         service: {{ default "metrics" $root.Values.alerts.service }}
         support_group: {{ default "observability" $root.Values.alerts.support_group }}
         severity: info
-        playbook: 'docs/support/playbook/prometheus/thanos_compaction'
+        playbook: 'docs/support/playbook/prometheus/thanos_compaction/#thanos-component-has-disappeared'
         meta: Thanos Compact `{{`{{ $labels.thanos }}`}}` is failing to execute compactions.
       annotations:
         description: |
@@ -95,7 +96,7 @@ groups:
 
     - alert: ThanosCompactIsDown
       expr: up{job=~".*thanos.*compact.*", thanos="{{ include "thanos.name" . }}"} == 0 or absent({job=~".*thanos.*compact.*", thanos="{{ include "thanos.name" . }}"})
-      for: 5m
+      for: 15m
       labels:
         no_alert_on_absence: "true" # because the expression already checks for absence
         service: {{ default "metrics" $root.Values.alerts.service }}

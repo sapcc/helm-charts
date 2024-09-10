@@ -1,0 +1,16 @@
+groups:
+- name: ad-file-integrity.alerts
+  rules:      
+  - alert: ADFileIntegrityWarn
+    expr: count(windows_file_integrity > 0) by (server_name, file)
+    for: 2h
+    labels:
+      severity: warning
+      tier: ad
+      service: windows-exporter
+      context: "{{ $labels.server_name }}"
+      meta: "Checksum of file {{ $labels.file }} on {{ $labels.server_name }} has changed."
+      playbook: docs/support/playbook/activedirectory/alerts/#adfileintegritywarn
+    annotations:
+      description: "Checksum of file {{ $labels.file }} on {{ $labels.server_name }} has changed. Check if there was an update installed or the file has been exchanged by an attacker."
+      summary: "Checksum of file {{ $labels.file }} on {{ $labels.server_name }} has changed."

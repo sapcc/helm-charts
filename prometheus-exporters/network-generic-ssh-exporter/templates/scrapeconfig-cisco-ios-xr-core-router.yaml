@@ -1,0 +1,36 @@
+apiVersion: monitoring.coreos.com/v1alpha1
+kind: ScrapeConfig
+metadata:
+  name: network-generic-ssh-exporter-cisco-ios-xr-core-router
+  namespace: infra-monitoring
+  labels:
+    prometheus: {{ .Values.network_generic_ssh_exporter.aggregations.prometheus }}
+    app.kubernetes.io/name: network-generic-ssh-exporter-cisco-ios-xr-core-router
+spec:
+  httpSDConfigs:
+    - url: {{ .Values.global.http_sd_configs.netbox_url }}/devices/?custom_labels=__param_batch=cisco-ios-xr_core-router;__param_credential=default;__param_device=cisco-ios-xr&status=active&region={{ .Values.global.region }}&tenant=cnd-netbb&role=core-router&platform=cisco-ios-xr
+      refreshInterval: {{ .Values.global.http_sd_configs.refresh_interval }}
+  metricsPath: /ssh
+  scrapeInterval: 120s
+  scrapeTimeout: 60s
+  relabelings:
+    - sourceLabels: [__address__]
+      targetLabel: __param_target
+    - targetLabel: __param_batch
+      replacement: cisco-ios-xr_core-router
+    - targetLabel: __param_credential
+      replacement: default
+    - targetLabel: __param_device
+      replacement: cisco-ios-xr
+    - targetLabel: __address__
+      replacement: network-generic-ssh-exporter:9116
+  metricRelabelings:
+    - action: labeldrop
+      regex: "metrics_label"
+    - sourceLabels: [cluster]
+      targetLabel: cluster_router
+    - sourceLabels: [__name__, server_name]
+      regex: '^ssh_[A-za-z0-9]+;.*((rt|asr)[0-9]+)[a|b]$'
+      replacement: '$1'
+      targetLabel: asr_pair
+      action: replace

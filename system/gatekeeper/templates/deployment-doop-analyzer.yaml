@@ -1,0 +1,80 @@
+{{- $registry     := .Values.global.registry             | required ".Values.global.registry not found"             -}}
+{{- $swift_region := .Values.doop.swift_region           | required ".Values.doop.swift_region not found"           -}}
+{{- $image_tag    := .Values.gatekeeper_addons.image_tag | required ".Values.gatekeeper_addons.image_tag not found" -}}
+
+kind: Deployment
+apiVersion: apps/v1
+
+metadata:
+  name: doop-analyzer
+
+spec:
+  revisionHistoryLimit: 5
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      name: doop-analyzer
+  template:
+    metadata:
+      labels:
+        name: doop-analyzer
+      annotations:
+        checksum/configmap: {{ include "gatekeeper/templates/configmap-doop-analyzer.yaml" . | sha256sum }}
+        kubectl.kubernetes.io/default-container: analyzer
+        {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+        linkerd.io/inject: enabled
+        {{- end }}
+        prometheus.io/scrape: "true"
+        prometheus.io/targets: kubernetes
+    spec:
+      enableServiceLinks: false
+      serviceAccountName: doop-agent
+      volumes:
+        - name: config
+          configMap:
+            name: doop-analyzer
+      containers:
+        - name: analyzer
+          image: "{{ $registry }}/gatekeeper-addons:{{ $image_tag }}"
+          imagePullPolicy: IfNotPresent
+          command: [ doop-analyzer ]
+          args: [ run, /etc/doop-analyzer/config.yaml ]
+          env:
+            - name: OS_AUTH_URL
+              value: "https://identity-3.{{ $swift_region }}.cloud.sap/v3"
+            - name: OS_AUTH_VERSION
+              value: "3"
+            - name: OS_IDENTITY_API_VERSION
+              value: "3"
+            - name: OS_PROJECT_DOMAIN_NAME
+              value: ccadmin
+            - name: OS_PROJECT_NAME
+              value: master
+            - name: OS_REGION_NAME
+              value: {{ $swift_region }}
+            - name: OS_USER_DOMAIN_NAME
+              value: Default
+            - name: OS_USERNAME
+              value: doop
+            - name: OS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: doop-agent
+                  key: swift_password
+          ports:
+            - name: metrics
+              containerPort: 8080
+          resources:
+            requests: &requests
+              cpu: "50m"
+              memory: "64Mi"
+            limits: *requests
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            readOnlyRootFilesystem: true
+          volumeMounts:
+            - name: config
+              mountPath: /etc/doop-analyzer

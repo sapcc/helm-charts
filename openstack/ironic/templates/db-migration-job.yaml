@@ -2,7 +2,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: ironic-db-migration
+  name: ironic-db-migration-{{ randAlphaNum 4 | lower }}
   labels:
     system: openstack
     type: job
@@ -12,23 +12,13 @@ metadata:
     "helm.sh/hook-weight": "-1"
     "helm.sh/hook-delete-policy": "before-hook-creation"
     # hooks are not annotated as belonging to the Helm release, so we cannot rely on owner-info injection
-    ccloud/support-group: compute-storage-api
+    ccloud/support-group: foundation
     ccloud/service: ironic
 spec:
   template:
     spec:
       initContainers:
-      - name: "kubernetes-entrypoint"
-        image: {{ .Values.global.registry }}/loci-ironic:{{ .Values.imageVersion }}
-        imagePullPolicy: "IfNotPresent"
-        command: ["kubernetes-entrypoint"]
-        env:
-        - name: "NAMESPACE"
-          value: {{ .Release.Namespace | quote }}
-        - name: "DEPENDENCY_SERVICE"
-          value: "ironic-mariadb"
-        - name: "COMMAND"
-          value: "true"
+      {{- tuple . (dict "service" "ironic-mariadb") | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
       restartPolicy: OnFailure
       containers:
       - name: ironic-dbsync
@@ -51,6 +41,8 @@ spec:
         volumeMounts:
         - mountPath: /etc/ironic
           name: etcironic
+        - mountPath: /etc/ironic/ironic.conf.d
+          name: ironic-etc-confd
         - mountPath: /etc/ironic/ironic.conf
           name: ironic-etc
           subPath: ironic.conf
@@ -67,6 +59,7 @@ spec:
           name: ironic-etc
           subPath: logging.ini
           readOnly: true
+        {{- include "utils.trust_bundle.volume_mount" . | indent 8 }}
       volumes:
       - name: etcironic
         emptyDir: {}
@@ -74,3 +67,10 @@ spec:
         configMap:
           name: ironic-etc
           defaultMode: 0444
+      - name: ironic-etc-confd
+        secret:
+          secretName: {{ .Release.Name }}-secrets
+          items:
+          - key: secrets.conf
+            path: secrets.conf
+      {{- include "utils.trust_bundle.volumes" . | indent 6 }}

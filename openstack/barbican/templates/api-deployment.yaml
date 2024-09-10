@@ -38,36 +38,31 @@ spec:
         prometheus.io/scrape: "true"
         prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
         {{- end }}
+        {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
     spec:
 {{ tuple . "barbican" "api" | include "kubernetes_pod_anti_affinity" | indent 6 }}
-{{ include "utils.proxysql.pod_settings" . | indent 6 }}
+      {{- include "utils.proxysql.pod_settings" . | indent 6 }}
+      initContainers:
+      {{- tuple . (dict "service" "barbican-mariadb,barbican-rabbitmq") | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
       containers:
         - name: barbican-api
           image: {{required ".Values.global.registry is missing" .Values.global.registry }}/loci-barbican:{{required "Values.imageVersionBarbicanApi is missing" .Values.imageVersionBarbicanApi}}
           imagePullPolicy: IfNotPresent
           command:
-            - dumb-init
-            - kubernetes-entrypoint
+          - dumb-init
+          - barbican-api
           env:
-            - name: COMMAND
-              value: "/var/lib/openstack/bin/barbican-api"
-            - name: NAMESPACE
-              value: {{ .Release.Namespace }}
-            - name: DEPENDENCY_JOBS
-              value: "barbican-migration-job-{{ required "Please set barbican.imageVersionBarbicanApi or similar" .Values.imageVersionBarbicanApi }}"
-            - name: DEPENDENCY_SERVICE
-              value: "barbican-mariadb,barbican-rabbitmq"
-            {{- if .Values.sentry.enabled }}
-            - name: SENTRY_DSN
-              valueFrom:
-                secretKeyRef:
-                  name: sentry
-                  key: barbican.DSN.python
-            {{- end }}
-            {{- if .Values.hsm.enabled }}
-            - name: ChrystokiConfigurationPath
-              value: "/thales/safenet/lunaclient/config"
-            {{- end }}
+          {{- if .Values.sentry.enabled }}
+          - name: SENTRY_DSN
+            valueFrom:
+              secretKeyRef:
+                name: sentry
+                key: barbican.DSN.python
+          {{- end }}
+          {{- if .Values.hsm.enabled }}
+          - name: ChrystokiConfigurationPath
+            value: "/thales/safenet/lunaclient/config"
+          {{- end }}
           {{- if .Values.api.resources.enabled }}
           resources:
             limits:
@@ -114,6 +109,9 @@ spec:
               mountPath: /etc/barbican/logging.ini
               subPath: logging.ini
               readOnly: true
+            - mountPath: /etc/barbican/barbican.conf.d
+              name: barbican-etc-confd
+              readOnly: true
             {{- if .Values.watcher.enabled }}
             - name: barbican-etc
               mountPath: /etc/barbican/watcher.yaml
@@ -136,6 +134,7 @@ spec:
             - name: luna
               mountPath: /thales/
             {{- include "utils.proxysql.volume_mount" . | indent 12 }}
+            {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
         {{- include "utils.proxysql.container" . | indent 8 }}
         - name: lunaclient
           image: {{required ".Values.global.registry is missing" .Values.global.registry }}/loci-barbican:{{required "Values.hsm.luna.image is missing" .Values.hsm.luna.image }}
@@ -144,7 +143,16 @@ spec:
             - name: ChrystokiConfigurationPath
               value: "/thales/safenet/lunaclient/config"
           command: [ "/bin/bash", "-c", "--" ]
-          args: [ "mv /usr/safenet /thales; while true; do sleep 30; done;" ]
+          args: [ "while true; do sleep 30; done;" ]
+          {{- if .Values.hsm.resources.enabled }}
+          resources:
+            limits:
+              cpu: {{ .Values.hsm.resources.limits.cpu | quote }}
+              memory: {{ .Values.hsm.resources.limits.memory | quote }}
+            requests:
+              cpu: {{ .Values.hsm.resources.requests.cpu | quote }}
+              memory: {{ .Values.hsm.resources.requests.memory | quote }}
+          {{- end }}
           lifecycle:
             postStart:
               exec:
@@ -190,14 +198,24 @@ spec:
         - name: barbican-etc
           configMap:
             name: barbican-etc
+        - name: barbican-etc-confd
+          secret:
+            secretName: {{ .Release.Name }}-secrets
+            items:
+            - key: secrets.conf
+              path: secrets.conf
         - name: etcbarbican
           emptyDir: {}
         {{- if .Values.hsm.enabled }}
         - name: hsm
-          configMap:
-            name: barbican-etc
+          secret:
+            secretName: {{ .Release.Name }}-secrets
             defaultMode: 0744
+            items:
+            - key: barbican_lunaclient.sh
+              path: barbican_lunaclient.sh
         - name: luna
           emptyDir: {}
         {{ end }}
         {{- include "utils.proxysql.volumes" . | indent 8 }}
+        {{- include "utils.trust_bundle.volumes" . | indent 8 }}

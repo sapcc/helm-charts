@@ -1,25 +1,20 @@
 # placement.conf
 [DEFAULT]
-log_config_append = /etc/{{ include "placement_project" . }}/logging.ini
-state_path = /var/lib/{{ include "placement_project" . }}
+log_config_append = /etc/placement/logging.ini
+state_path = /var/lib/placement
 
 memcache_servers = {{ .Chart.Name }}-memcached.{{ include "svc_fqdn" . }}:{{ .Values.memcached.memcached.port | default 11211 }}
 
 {{- include "ini_sections.logging_format" . }}
 
 [placement_database]
-{{- if not .Values.mariadb.enabled }}
-connection = {{ tuple . .Values.api_db.name .Values.api_db.user .Values.api_db.password | include "db_url_mysql" }}
-{{- else }}
-connection = {{ tuple . .Values.mariadb.name .Values.global.dbUser .Values.global.dbPassword | include "db_url_mysql" }}
-{{- end }}
 {{- include "ini_sections.database_options_mysql" . }}
 
 
 {{- include "osprofiler" . }}
 
 [oslo_concurrency]
-lock_path = /var/lib/{{ include "placement_project" . }}/tmp
+lock_path = /var/lib/placement/tmp
 
 [keystone_authtoken]
 auth_type = v3password
@@ -27,8 +22,6 @@ auth_version = v3
 auth_interface = internal
 www_authenticate_uri = https://{{include "keystone_api_endpoint_host_public" .}}/v3
 auth_url = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
-username = {{ .Values.global.placement_service_user | default "placement" }}{{ .Values.global.user_suffix }}
-password = {{ required ".Values.global.placement_service_password is missing" .Values.global.placement_service_password }}
 user_domain_name = "{{.Values.global.keystone_service_domain | default "Default" }}"
 project_name = "{{.Values.global.keystone_service_project | default "service" }}"
 project_domain_name = "{{.Values.global.keystone_service_domain | default "Default" }}"

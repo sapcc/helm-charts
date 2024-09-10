@@ -1,0 +1,47 @@
+{{- range $key, $cluster := .Values.clusters }}
+{{- range $dkey, $deployment := $cluster.machineDeployments }}
+---
+apiVersion: cluster.x-k8s.io/v1beta1
+kind: MachineDeployment
+metadata:
+  labels:
+    kubernetes.metal.cloud.sap/cluster: {{ $key }}
+    kubernetes.metal.cloud.sap/role: {{ $dkey }}
+  name: {{ $key }}-{{ $dkey }}
+  namespace: metal-{{ $key }}
+spec:
+  clusterName: {{ $key }}
+  replicas: {{ $deployment.replicas }}
+  strategy:
+    rollingUpdate:
+      # We don't have spare nodes in bare metal clusters to spin up a new machine during upgrade.
+      # Therefore we change maxSurge from 1 (default) to 0.
+      # Cluster will be updated by temporary scaling down control plane to 1 machine less.
+      maxSurge: 0
+  selector:
+    matchLabels:
+      kubernetes.metal.cloud.sap/cluster: {{ $key }}
+      kubernetes.metal.cloud.sap/role: {{ $dkey }}
+  template:
+    metadata:
+      labels:
+        kubernetes.metal.cloud.sap/cluster: {{ $key }}
+        kubernetes.metal.cloud.sap/role: {{ $dkey }}
+        {{- if $cluster.maintenanceController }}
+        runtime-extension-maintenance-controller.cloud.sap/enabled: "true"
+        {{- end }}
+    spec:
+      bootstrap:
+        configRef:
+          apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
+          kind: KubeadmConfigTemplate
+          name: {{ $key }}
+      clusterName: {{ $key }}
+      infrastructureRef:
+        apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+        kind: Metal3MachineTemplate
+        name: {{ $key }}-{{ $dkey }}
+      nodeDrainTimeout: 0s
+      version: v{{ $cluster.version }}
+{{- end }}
+{{- end }}

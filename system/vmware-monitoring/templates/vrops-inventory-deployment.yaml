@@ -8,6 +8,9 @@ metadata:
   namespace: {{ required ".Values.vrops.namespace variable missing" $.Values.vrops.namespace }}
   labels:
     type: vrops-inventory
+    shard: {{ include "vropsExporter.name" (list $target $root) }}
+  annotations:
+    vpa-butler.cloud.sap/update-mode: Auto
 spec:
   selector:
     matchLabels:
@@ -17,9 +20,12 @@ spec:
     metadata:
       labels:
         app: {{ include "vropsInventory.fullName" (list $target $root) }}
+        shard: {{ include "vropsExporter.name" (list $target $root) }}
         type: inventorycollector
         alert-tier: vmware
         alert-service: vrops
+      annotations:
+        kubectl.kubernetes.io/default-container: vrops-inventory
     spec:
       volumes:
         - name: vrops-exporter-inventory-config
@@ -40,7 +46,10 @@ spec:
            - name: USER
              value: {{ required ".Values.vrops.user variable is missing" $.Values.vrops.user }}
            - name: PASSWORD
-             value: {{ required ".Values.vrops.password variable is missing" $.Values.vrops.password | quote }}
+             valueFrom:
+               secretKeyRef:
+                 name: vrops-exporter
+                 key: vrops_password
            - name: PORT
              value: {{ required ".Values.vrops.inventory.port_number missing" $.Values.vrops.inventory.port_number | quote }}
            - name: DEBUG

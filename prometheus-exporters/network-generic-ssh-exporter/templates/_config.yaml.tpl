@@ -1,35 +1,40 @@
-credentials:
-  default:
-    username: {{ .Values.network_generic_ssh_exporter.user }}
-    password: {{ .Values.network_generic_ssh_exporter.password }}
-#  apic:
-#    username: {{ .Values.network_generic_ssh_exporter.apic_user }}
-#    password: {{ .Values.network_generic_ssh_exporter.apic_password }}
-
-lookup_sources:
-  metis:
-    host: {{ .Values.network_generic_ssh_exporter.metis.host }}
-    port: 3306
-    username: {{ .Values.network_generic_ssh_exporter.metis.user }}
-    password: {{ .Values.network_generic_ssh_exporter.metis.password }}
-    driver: mysql
-    mappings:
-      router_project: SELECT DISTINCT id, project_id FROM neutron.routers
-
 metrics:
-#  ep_learning_state:
-#    regex: |
-#      Xr.tcam.limit.learn.disabled.+\:.(\w+)|Peer.Xr.tcam.limit.learn.disabled.+\:.(\w+)|Hal.Learn.Disabled.+\:.(\w+)
-#    multi_value: true
-#    value: $3
-#    labels:
-#      hal_learn: $3
-#      xr_learn: $1
-#      xr_peer_learn: $2
-#    description: EP learing status check
-#    metric_type_name: string
-#    command: vsh_lc -c 'show system internal epmc global-info'
-#    timeout_secs: 5
+  zmq_errors:
+    regex: >-
+      ^ZmQ\:\s*(RX|TX)\sCNT\:\s\d+\,\sBYTES\:\s\d+\,\sERRORS\:\s(\d*)
+    multi_value: true
+    value: $2
+    labels:
+      direction: $1
+    description: check for zmq  errors
+    metric_type_name: counter
+    command: show system internal epm counters zmq
+    timeout_secs: 5
+
+  xr_tcam_learn_disabled: &xr_tcam_learn_disabled
+    regex: |
+      ^Xr tcam limit learn disabled\s*:\s+(\w+)$
+    value: $1
+    map_values:
+    - regex: No
+      value: 0
+    - regex: Yes
+      value: 1
+    description: linecard xr learning state
+    metric_type_name: string
+    command: vsh_lc -c 'show system internal epmc global-info'
+    timeout_secs: 5
+  hal_learn_disabled:
+    <<: *xr_tcam_learn_disabled
+    regex: |
+      ^Hal Learn Disabled\s*:\s+(\w+)$
+    description: linecard hal learning state
+  epm_pending_epreg:
+    <<: *xr_tcam_learn_disabled
+    regex: |
+      ^EPM pending epreq\s*:\s+(\d+)$
+    metric_type_name: gauge
+    description: linecard pending EP requests
 
   nat_static:
     regex: >-
@@ -508,6 +513,20 @@ metrics:
     metric_type_name: gauge
     command: show policy-firewall stats vrf | in (VRF|Total|UDP|ICMP|TCP)
     timeout_secs: 4
+  
+  logging_dmiauthd_sync:
+    regex: >-
+      ^(\d+/\d+/\d+\s\d+:\d+\d:\d+\.\d+)\s.*%DMI-5-(\w+)(?:.+?Configuration change requiring running configuration sync detected - '(.+)')?
+    multi_value: true
+    value: $1
+    labels:
+      action: $2
+      reason: $3
+    description: Parse timestamp of sync needed messages
+    metric_type_name: time
+    time_format: 2006/01/02 15:04:05.999999
+    command: show logging process dmiauthd start last 180
+    timeout_secs: 4
 
   nx_ntp_configured:
     regex: >-
@@ -638,10 +657,11 @@ metrics:
     timeout_secs: 5
 
 batches:
-  test:
-    - redundancy_send_queue
-#  acileaf:
-#    - ep_learning_state
+  aci-leaf:
+    - xr_tcam_learn_disabled
+    - hal_learn_disabled
+    - epm_pending_epreg
+    - zmq_errors
   neutron-router:
     - nat_dynamic
     - nat_static
@@ -684,6 +704,7 @@ batches:
     - arp_drop_input_queue_full
     - memory_util_stats
     - dynamic_mac_count
+    - logging_dmiauthd_sync
 
 
   cisco-nx-os_core-router:
@@ -703,11 +724,11 @@ batches:
     - xr_ntp_configured
 
 devices:
-#  cisco-aci:
-#    prompt_regex: ^\S+\# $
   cisco-ios-xe:
     prompt_regex: ^\S+\#$
     init_command: terminal length 0
+  cisco-aci:
+    prompt_regex: ^\S+\# $
   cisco-nx-os:
     prompt_regex: ^\S+\# $
     init_command: terminal length 0

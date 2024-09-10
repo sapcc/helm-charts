@@ -31,33 +31,9 @@ spec:
   namespaceSelector:
     matchNames:
 {{  default (list .Release.Namespace ) .Values.namespaces | toYaml | indent 6 }}
-  
   endpoints:
-    - interval: {{ default "60s" .Values.scrapeInterval }}
-      scrapeTimeout: {{ default "55s" .Values.scrapeTimeout }}
-      port: {{ default "metrics" .Values.metricsPort }}
-      path: {{ default "/metrics" .Values.metricsPath }}
-      scheme: {{ default "http" .Values.httpScheme }}
-    {{- if .Values.basicAuth }}
-      basicAuth:
-{{ .Values.basicAuth | toYaml | indent 8 }}
-    {{- end }}
-      honorLabels: {{ default true .Values.honorLabels }}
-      relabelings: 
-        - action: labelmap
-          regex: '__meta_kubernetes_service_label_(.+)'
-        - sourceLabels:
-            - __meta_kubernetes_namespace
-          targetLabel: kubernetes_namespace
-        - sourceLabels:
-            - __meta_kubernetes_pod_name
-          targetLabel: kubernetes_pod_name
-{{ include "prometheus.defaultRelabelConfig" .  | indent 8 }}
-{{- if .Values.customRelabelings }}
-{{ .Values.customRelabelings | toYaml | indent 8 }}
-{{- end }}
-{{- if .Values.customMetricRelabelings }}
-      metricRelabelings:
-{{ .Values.customMetricRelabelings | toYaml | indent 8 }}
+{{ include "metricsEndpoint" (dict "root" $.Values "endpoint" .Values "isService" true) | indent 4 }}
+{{- range $k, $v := .Values.additionalEndpoints }}
+{{ include "metricsEndpoint" (dict "root" $.Values "endpoint" $v "isService" true) | indent 4 }}
 {{- end }}
 {{- end }}

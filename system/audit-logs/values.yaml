@@ -1,19 +1,25 @@
 owner-info:
   support-group: observability
+  service: log-collector
   maintainers:
     - "Ivo Gosemann"
     - "Olaf Heydorn"
   helm-chart-url: "https://github.com/sapcc/helm-charts/tree/master/system/audit-logs"
 
 global:
+  linkerd_requested: false
   https_port: 443
   prometheus: kubernetes
   forwarding:
     audit:
       host: Non
+
+linkerd-support:
+  annotate_namespace: true
+
 logstash_audit_external:
   enabled: false
-  image_version: "20220110143833"
+  image_version: "20240807083110"
   replicas: 1
   input_netflow_port: 2055
   input_syslog_port: 514
@@ -23,16 +29,11 @@ logstash_audit_external:
   input_http_port: 443
   syslog:
     enabled: false
-    elkOutputEnabled: false
   tls:
     crt: DEFINED-IN-SECRETS
     key: DEFINED-IN-SECRETS
   ingress:
     enabled: false
-  elk_elasticsearch_endpoint_host_scaleout: "elk-elasticsearch.scaleout"
-  elk_elasticsearch_ssl_port: "443"
-  elk_elasticsearch_endpoint_host_internal: "es-client"
-  elk_elasticsearch_http_port_internal: 9200
   beats:
     enabled: true
     port: 5044
@@ -48,7 +49,7 @@ fluent_audit_container:
   enabled: false
   port: 8887
   metrics_port: 24231
-  image_version: "20230216092201"
+  image_version: "20240227111845"
   resources:
     limits:
       memory: 500Mi
@@ -60,11 +61,17 @@ fluent_audit_container:
       host: none
   alerts:
     enabled: false
-    prometheus: infra-collector
+    # Keys = directory names in alerts/ and aggregations/
+    prometheus:
+      - name: infra-collector
+        type: prometheus
+      - name: metal
+        type: thanos-ruler
+  default_container_logs: []
 
 fluent_audit_systemd:
   enabled: false
-  image_version: "20230216092201"
+  image_version: "20240227111845"
   resources:
     limits:
       memory: 500Mi

@@ -35,7 +35,9 @@ spec:
     {{- end }}
 {{ tuple . "ironic" "conductor" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
       annotations:
+        kubectl.kubernetes.io/default-container: ironic-conductor
         configmap-etc-hash: {{ include (print .Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
+        secrets-hash: {{ include (print .Template.BasePath "/secrets.yaml") . | sha256sum }}
         configmap-etc-conductor-hash: {{ tuple . $conductor | include "ironic_conductor_configmap" | sha256sum }}{{- if $conductor.jinja2 }}{{`
         configmap-etc-jinja2-hash: {{ block | safe | sha256sum }}
 `}}{{- end }}
@@ -43,8 +45,11 @@ spec:
         prometheus.io/scrape: "true"
         prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
         {{- end }}
+        {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
     spec:
       {{- include "utils.proxysql.pod_settings" . | indent 6 }}
+      initContainers:
+      {{- tuple . (dict "service" "ironic-api,ironic-rabbitmq") | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
       containers:
       - name: ironic-conductor
         image: {{ .Values.global.registry }}/loci-ironic:{{ .Values.imageVersion }}
@@ -54,21 +59,14 @@ spec:
           runAsUser: 0
         {{- end }}
         command:
+        {{- if not $conductor.debug }}
         - dumb-init
-        - kubernetes-entrypoint
+        - ironic-conductor
+        {{- else }}
+        - sleep
+        - inf
+        {{- end }}
         env:
-        - name: COMMAND
-          {{- if not $conductor.debug }}
-          value: "ironic-conductor --config-file /etc/ironic/ironic.conf --config-file /etc/ironic/ironic-conductor.conf"
-          {{- else }}
-          value: "sleep inf"
-          {{- end }}
-        - name: POD_NAME
-          valueFrom: {fieldRef: {fieldPath: metadata.name}}
-        - name: NAMESPACE
-          value: {{ .Release.Namespace }}
-        - name: DEPENDENCY_SERVICE
-          value: "ironic-api,ironic-rabbitmq"
         - name: PYTHONWARNINGS
           value: ignore:Unverified HTTPS request
         {{- if .Values.logging.handlers.sentry }}
@@ -96,11 +94,7 @@ spec:
           failureThreshold: 30
         livenessProbe:
           exec:
-            command:
-            - bash
-            - -c
-            - curl -u {{ .Values.rabbitmq.metrics.user }}:{{ .Values.rabbitmq.metrics.password }} ironic-rabbitmq:{{ .Values.rabbitmq.ports.management }}/api/consumers | sed 's/,/\n/g' | grep ironic-conductor-{{$conductor.name}} >/dev/null
-              && openstack-agent-liveness -c ironic --config-file /etc/ironic/ironic.conf --ironic_conductor_host ironic-conductor-{{$conductor.name}}
+            command: [ "openstack-agent-liveness",  "--component", "ironic",  "--config-file", "/etc/ironic/ironic.conf", "--config-file", "/etc/ironic/ironic.conf.d/secrets.conf", "--ironic_conductor_host", "ironic-conductor-{{$conductor.name}}" ]
           periodSeconds: 120
           failureThreshold: 3
           timeoutSeconds: 12
@@ -109,6 +103,8 @@ spec:
         volumeMounts:
         - mountPath: /etc/ironic
           name: etcironic
+        - mountPath: /etc/ironic/ironic.conf.d
+          name: ironic-etc-confd
         - mountPath: /etc/ironic/ironic.conf
           name: ironic-etc
           subPath: ironic.conf
@@ -150,31 +146,36 @@ spec:
           name: development
         {{- end }}
         {{- include "utils.proxysql.volume_mount" . | indent 8 }}
+        {{- include "utils.trust_bundle.volume_mount" . | indent 8 }}
       {{- include "utils.proxysql.container" . | indent 6 }}
       - name: console
-        image: {{.Values.imageVersionNginx | default "nginx:stable-alpine"}}
+        image: {{ .Values.global.dockerHubMirror }}/library/{{ .Values.imageVersionNginx | default "nginx:stable-alpine" }}
         imagePullPolicy: IfNotPresent
         resources:
 {{ toYaml .Values.pod.resources.console | indent 10 }}
         ports:
           - name: ironic-console
             protocol: TCP
-            containerPort: 80
+            containerPort: 443
         volumeMounts:
           - mountPath: /etc/nginx/conf.d
             name: ironic-console
           - mountPath: /shellinabox
             name: shellinabox
+          - mountPath: /etc/nginx/certs
+            name: secret-tls
         livenessProbe:
           httpGet:
             path: /health
             port: ironic-console
+            scheme: HTTPS
           initialDelaySeconds: 5
           periodSeconds: 3
         readinessProbe:
           httpGet:
             path: /health
             port: ironic-console
+            scheme: HTTPS
           initialDelaySeconds: 5
           periodSeconds: 3
       {{- if $conductor.default.statsd_enabled }}
@@ -201,6 +202,12 @@ spec:
         emptyDir: {}
       - name: shellinabox
         emptyDir: {}
+      - name: ironic-etc-confd
+        secret:
+          secretName: {{ .Release.Name }}-secrets
+          items:
+          - key: secrets.conf
+            path: secrets.conf
       - name: ironic-etc
         configMap:
           name: ironic-etc
@@ -211,6 +218,7 @@ spec:
         {{- else }}
           name: ironic-conductor-etc
         {{- end }}
+
       - name: ironic-console
         configMap:
           name: ironic-console
@@ -222,6 +230,10 @@ spec:
         persistentVolumeClaim:
           claimName: development-pvclaim
       {{- end }}
+      - name: secret-tls
+        secret:
+          secretName: tls-{{ include "ironic_console_endpoint_host_public" . | replace "." "-" }}
       {{- include "utils.proxysql.volumes" . | indent 6 }}
+      {{- include "utils.trust_bundle.volumes" . | indent 6 }}
     {{- end }}
 {{- end }}

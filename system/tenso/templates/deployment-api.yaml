@@ -19,9 +19,8 @@ spec:
     metadata:
       labels:
         name: tenso-api
-        alert-tier: os
-        alert-service: tenso
       annotations:
+        kubectl.kubernetes.io/default-container: api
         checksum/configmap: {{ include "tenso/templates/configmap.yaml" . | sha256sum }}
         checksum/secret: {{ include "tenso/templates/secret.yaml" . | sha256sum }}
     spec:
@@ -41,15 +40,22 @@ spec:
         - name: config
           configMap:
             name: tenso
+        - name: keys
+          secret:
+            secretName: tenso-keys
       containers:
         - name: api
           image: {{ include "tenso_image" $ }}
           imagePullPolicy: IfNotPresent
           args: [ api ]
           env: {{ include "tenso_environment" $ | indent 12 }}
+          securityContext:
+            runAsNonRoot: true
           volumeMounts:
             - mountPath: /etc/tenso
               name: config
+            - mountPath: /etc/tenso-keys
+              name: keys
           livenessProbe:
             httpGet:
               path: /healthcheck

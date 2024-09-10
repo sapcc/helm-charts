@@ -1,0 +1,52 @@
+kind: Deployment
+apiVersion: apps/v1
+
+metadata:
+  name: content-repo-statsd
+  namespace: content-repo
+  labels:
+    system: openstack
+    component: content-repo
+
+spec:
+  revisionHistoryLimit: 5
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      component: content-repo-statsd
+  template:
+    metadata:
+      labels:
+        component: content-repo-statsd
+      annotations:
+        checksum/etc: {{ include "content-repo/templates/configmap-statsd.yaml" . | sha256sum }}
+    spec:
+      volumes:
+      - name: config
+        configMap:
+          name: statsd-content-repo
+      containers:
+      - name: statsd
+        image: {{$.Values.global.dockerHubMirror}}/prom/statsd-exporter:{{.Values.image_version_auxiliary_statsd_exporter}}
+        args: [ --statsd.mapping-config=/config/statsd-exporter.yaml ]
+        securityContext:
+          runAsNonRoot: true
+        ports:
+          - name: statsd
+            containerPort: 9125
+            protocol: UDP
+          - name: metrics
+            containerPort: 9102
+        volumeMounts:
+          - mountPath: /config
+            name: config
+        resources:
+          # observed usage in qa-de-1: CPU <= 0.1m, RAM = 20-30 MiB
+          limits:
+            cpu: '10m'
+            memory: '64Mi'
+          requests:
+            cpu: '1m'
+            memory: '64Mi'

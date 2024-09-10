@@ -18,6 +18,39 @@
       }
     }
   },
-  "mappings": {},
+  "mappings": {
+    "properties": {
+      "request_time": {
+        "type": "float"
+      },
+      "uri_req_duration": {
+        "type": "float"
+      },
+      "response_time": {
+        "type": "float"
+      },
+      "request_start_time": {
+        "type": "float"
+      },
+      "request_end_time": {
+        "type": "float"
+      },
+      "upstream_response_time": {
+        "type": "float"
+      },
+      "bytes_recvd": {
+        "type": "integer"
+      },
+      "bytes_sent": {
+        "type": "integer"
+      },
+      "content_length": {
+        "type": "integer"
+      },
+      "upstream_response_length": {
+        "type": "integer"
+      }
+    }
+  },
   "aliases": {}
 }

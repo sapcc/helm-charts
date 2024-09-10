@@ -14,7 +14,7 @@
       summary: {{ include "fullName" . }} has too many connections open.
 
   - alert: {{ include "alerts.service" . | title }}MariaDBSlowQueries
-    expr: (rate(mysql_global_status_slow_queries{app=~"{{ include "fullName" . }}"}[30m]) > 0)
+    expr: (delta(mysql_global_status_slow_queries{app=~"{{ include "fullName" . }}"}[8m]) > 3)
     for: 10m
     labels:
       context: database
@@ -28,7 +28,7 @@
       summary: {{ include "fullName" . }} reports slow queries.
 
   - alert: {{ include "alerts.service" . | title }}MariaDBWaitingForLock
-    expr: (mysql_info_schema_threads_seconds{app=~"{{ include "fullName" . }}", state=~"waiting for lock"} / 1000  > 15)
+    expr: (mysql_info_schema_processlist_seconds{app=~"{{ include "fullName" . }}", state=~"waiting for lock"} / 1000  > 15)
     for: 10m
     labels:
       context: database

@@ -21,8 +21,6 @@ spec:
     metadata:
       labels:
         component: swift-account-caretaker-collect
-        alert-tier: os
-        alert-service: swift
         from: daemonset
       annotations:
         checksum/caretaker.etc: {{ include "swift-utils/templates/caretaker-configmap.yaml" . | sha256sum }}
@@ -62,6 +60,7 @@ spec:
             - account-caretaker-collect
           # privileged access required for /swift-bin/unmount-helper (TODO: use shared/slave mount namespace instead)
           securityContext:
+            runAsUser: 0
             privileged: true
           env:
             - name: DEBUG_CONTAINER

@@ -2,7 +2,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: {{ .Release.Name }}-job-migration
+  name: "{{ tuple . "job-migration" | include "job_name" }}"
   labels:
     app: {{ template "fullname" . }}
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
@@ -18,7 +18,7 @@ spec:
   template:
     metadata:
       labels:
-        name: {{ .Release.Name }}-job-migration
+        name: "{{ tuple . "job-migration" | include "job_name" }}"
         system: openstack
         component: keystone
         type: job
@@ -30,6 +30,7 @@ spec:
         configmap-etc-hash: {{ include (print $.Template.BasePath "/configmap-etc.yaml") . | sha256sum }}
         # only run once
         "helm.sh/hook": post-install, post-upgrade
+{{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}  
     spec:
 {{- if .Values.rbac.enabled }}
       serviceAccountName: {{ .Release.Name }}
@@ -71,6 +72,8 @@ spec:
               mountPath: /etc/keystone/keystone.conf
               subPath: keystone.conf
               readOnly: true
+            - name: keystone-etc-confd
+              mountPath: /etc/keystone/keystone.conf.d
 {{- if ne .Values.api.policy "json" }}
             - name: keystone-etc
               mountPath: /etc/keystone/policy.yaml
@@ -96,6 +99,7 @@ spec:
               mountPath: /credential-keys
               readOnly: true
             {{- include "utils.proxysql.volume_mount" . | indent 12 }}
+            {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
         {{- include "utils.proxysql.container" . | indent 8 }}
       volumes:
         - name: etc-keystone
@@ -104,10 +108,20 @@ spec:
           configMap:
             name: keystone-etc
             defaultMode: 0444
+        - name: keystone-etc-confd
+          secret:
+            secretName: {{ .Release.Name }}-secrets
+            defaultMode: 0444
         - name: keystone-bin
-          configMap:
-            name: keystone-bin
-            defaultMode: 0555
+          projected:
+            sources:
+            - configMap:
+                name: keystone-bin
+            - secret:
+                name: keystone-bin-secrets
+                items:
+                  - key: bootstrap
+                    path: bootstrap
         - name: fernet
           secret:
             secretName: keystone-fernet
@@ -117,4 +131,5 @@ spec:
             secretName: keystone-credential-keys
             defaultMode: 0555
         {{- include "utils.proxysql.volumes" . | indent 8 }}
+        {{- include "utils.trust_bundle.volumes" . | indent 8 }}
 {{ end -}}

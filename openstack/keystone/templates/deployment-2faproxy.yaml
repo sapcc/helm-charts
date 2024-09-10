@@ -17,6 +17,7 @@ spec:
         {{- with (index .Values "2fa" "podAnnotations") }}
         {{- toYaml . | nindent 8 }}
         {{- end}}
+        {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
       labels:
         {{- include "2faproxy.selectorLabels" . | nindent 8 }}
     spec:
@@ -36,7 +37,11 @@ spec:
             {{- end}}
           env:
             - name: OS_AUTH_URL
+{{- if .Values.global_setup }}
+              value: "http://$(KEYSTONE_GLOBAL_SERVICE_HOST):$(KEYSTONE_GLOBAL_SERVICE_PORT)/v3"
+{{- else }}
               value: "http://$(KEYSTONE_SERVICE_HOST):$(KEYSTONE_SERVICE_PORT)/v3"
+{{- end }}
           {{- range $key, $value :=  index .Values "2fa" "openstack" }}
             - name: {{ $key }}
               valueFrom: { secretKeyRef: { name: {{ $.Release.Name }}-2faproxy, key: {{ $key }} } }

@@ -1,0 +1,45 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    plugin: kube-monitoring-{{ .Values.global.cluster }}
+  name: extra-ceph-exporter
+  namespace: rook-ceph
+spec:
+  endpoints:
+  - interval: 10s
+    path: /metrics
+    port: ceph-exporter-http-metrics
+    relabelings:
+    - targetLabel: cluster
+      replacement: {{ .Values.global.cluster }}
+  namespaceSelector:
+    matchNames:
+    - rook-ceph
+  selector:
+    matchLabels:
+      app: rook-ceph-exporter
+      rook_cluster: rook-ceph
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: extra-ceph-mgr
+  namespace: rook-ceph
+  labels:
+    plugin: kube-monitoring-{{ .Values.global.cluster }}
+spec:
+  endpoints:
+  - interval: 10s
+    path: /metrics
+    port: http-metrics
+    relabelings:
+    - targetLabel: cluster
+      replacement: {{ .Values.global.cluster }}
+  namespaceSelector:
+    matchNames:
+    - rook-ceph
+  selector:
+    matchLabels:
+      app: rook-ceph-mgr
+      rook_cluster: rook-ceph

@@ -15,6 +15,15 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
 {{- printf "%s-%s" .Release.Name $name | trunc 63 | replace "_" "-" | trimSuffix "-" -}}
 {{- end -}}
 
+{{- define "rabbitmq.resolve_secret_urlquery" -}}
+    {{- $str := . -}}
+    {{- if (hasPrefix "vault+kvv2" $str ) -}}
+        {{"{{"}} resolve "{{ $str }}" | urlquery {{"}}"}}
+    {{- else -}}
+        {{ $str }}
+{{- end -}}
+{{- end -}}
+
 {{define "rabbitmq.release_host"}}{{.Release.Name}}-rabbitmq{{end}}
 
 {{- define "rabbitmq.transport_url" -}}{{ tuple . .Values.rabbitmq | include "rabbitmq._transport_url" }}{{- end}}
@@ -22,28 +31,25 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
 {{- define "rabbitmq._transport_url" -}}
 {{- $envAll := index . 0 -}}
 {{- $rabbitmq := index . 1 -}}
-rabbit://{{ default "" $envAll.Values.global.user_suffix | print $rabbitmq.users.default.user }}:{{ required "$rabbitmq.users.default.password missing" $rabbitmq.users.default.password | urlquery}}@{{ include "rabbitmq.release_host" $envAll }}:{{ $rabbitmq.port | default 5672 }}{{ $rabbitmq.virtual_host | default "/" }}
+{{- $_prefix := default "" $envAll.Values.global.user_suffix -}}
+{{- $_username := include "rabbitmq.resolve_secret_urlquery" (required "$rabbitmq.users.default.user missing" $rabbitmq.users.default.user) -}}
+{{- $_password := include "rabbitmq.resolve_secret_urlquery" (required "$rabbitmq.users.default.password missing" $rabbitmq.users.default.password) -}}
+{{- $_rhost := include "rabbitmq.release_host" $envAll -}}
+rabbit://{{- $_prefix -}}{{- $_username -}}:{{- $_password -}}@{{- $_rhost -}}:{{ $rabbitmq.port | default 5672 }}{{ $rabbitmq.virtual_host | default "/" }}
 {{- end}}
 
-{{- define "rabbitmq.shell_quote" -}}
-"{{ replace `\` `\\` . | replace `"` `\"` | replace `$` `\$` | replace "`" "\\`" }}"
-{{- end }}
-
-{{- define "rabbitmq.upsert_user" -}}
-    {{- $path := index . 0 -}}
-    {{- $v := index . 1 -}}
-    {{- if not $v.user }}
-        {{- fail (printf "%v.user missing" $path) }}
-    {{- else if hasPrefix "-" $v.user }}
-        {{- fail (printf "%v.user starts with hypen" $path) }}
-    {{- else if not $v.password }}
-        {{- fail (printf "%v.password missing" $path) }}
-    {{- else if hasPrefix "-" $v.password }}
-        {{- fail (printf "%v.password starts with hypen" $path) }}
-    {{- else -}}
-        upsert_user {{ $v.user | include "rabbitmq.shell_quote" }} {{ $v.password | include "rabbitmq.shell_quote" }}
-        {{- if $v.tag }} {{ $v.tag | include "rabbitmq.shell_quote" }}
-        {{- end }}
+{{- define "rabbitmq._validate_users" -}}
+    {{- $users := . -}}
+    {{- range $path, $v := $users }}
+      {{- if not $v.user }}
+          {{- fail (printf "%v.user missing" $path) }}
+      {{- else if hasPrefix "-" $v.user }}
+          {{- fail (printf "%v.user starts with hypen" $path) }}
+      {{- else if not $v.password }}
+          {{- fail (printf "%v.password missing" $path) }}
+      {{- else if hasPrefix "-" $v.password }}
+          {{- fail (printf "%v.password starts with hypen" $path) }}
+      {{- end }}
     {{- end }}
 {{- end }}
 
@@ -83,3 +89,19 @@ rabbit://{{ default "" $envAll.Values.global.user_suffix | print $rabbitmq.users
                 values:
                 - reinstalling
 {{- end }}
+
+{{- define "rabbitmq.labels" }}
+app.kubernetes.io/name: {{ .Chart.Name }}
+app.kubernetes.io/instance: {{ .Chart.Name }}-{{ .Release.Name }}
+app.kubernetes.io/version: {{ .Chart.AppVersion }}
+app.kubernetes.io/component: {{ .Chart.Name }}
+app.kubernetes.io/part-of: {{ .Release.Name }}
+helm.sh/chart: {{ include "rabbitmq.chart" . }}
+{{- end }}
+
+{{/*
+Create chart name and version as used by the chart label.
+*/}}
+{{- define "rabbitmq.chart" -}}
+{{- printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" -}}
+{{- end -}}

@@ -127,7 +127,8 @@ absent-metrics-operator:
 
 kube-state-metrics:
   image:
-    repository: keppel.global.cloud.sap/ccloud-registry-k8s-io-mirror/kube-state-metrics/kube-state-metrics
+    registry: keppel.global.cloud.sap/ccloud-registry-k8s-io-mirror
+    repository: kube-state-metrics/kube-state-metrics
 
   customLabels:
     app: kube-state-metrics
@@ -176,79 +177,10 @@ prometheus-node-exporter:
   rbac:
     pspEnabled: false
 
-prometheus-server:
-  name: kubernetes
-
-  retentionTime: 21d
-
-  additionalScrapeConfigs:
-    name: prometheus-kubernikus-additional-scrape-config
-    key: scrape-config.yaml
-
-  secrets:
-    - prometheus-openstack-sso-cert
-
-  ingress:
-    enabled: true
-    hosts:
-      - prometheus-kubernetes.admin
-      - prometheus.admin
-
-  internalIngress:
-    enabled: true
-    hosts:
-      - prometheus-kubernetes-internal.admin
-      - prometheus-internal.admin
-
-  # Store in memory.
-  persistence:
-    enabled: true
-    size: 100Gi
-
-  serviceDiscoveries:
-    endpoints:
-      enabled: true
-      # Scrape all targets regardless of their `prometheus.io/targets` annotation.
-      limitToPrometheusTargets: false
-    pods:
-      enabled: true
-      # Scrape all targets regardless of their `prometheus.io/targets` annotation.
-      limitToPrometheusTargets: false
-    probes:
-      enabled: true
-    kubeAPIServer:
-      enabled: true
-    cAdvisor:
-      enabled: true
-    kubelet:
-      enabled: true
-    nodeExporter:
-      enabled: true
-    kubeDNS:
-      enabled: false
-    kubernikus:
-      enabled: true
-
-  # Send alerts to these alertmanagers.
-  alertmanagers:
-    # Enabled via secrets.
-    authentication:
-      enabled: false
-
-    hosts:
-      - alertmanager-internal.scaleout.eu-de-1.cloud.sap
-      - alertmanager-internal.scaleout.eu-nl-1.cloud.sap
-
-  thanos:
-    enabled: false
-
 prometheus-kubernetes-rules:
   prometheusName: kubernetes
   kubelet:
     goroutinesHighCount: "8000"
-
-# Additional scrape configuration deployed via secrets.
-extraScrapeConfig: ""
 
 kubernikus-monitoring:
   prometheusName: kubernetes
@@ -318,3 +250,72 @@ fluent-bit:
         enabled: "On"
         verify: "Off"
         debug: '1'
+  existingConfigMap: fluent-bit-config
+  dropAnnotations: false
+  extraPorts:
+  - name: prometheus
+    port: 2021
+    containerPort: 2021
+    protocol: TCP
+  livenessProbe:
+    httpGet:
+      path: /
+      port: prometheus
+  readinessProbe:
+    httpGet:
+      path: /api/v1/health
+      port: prometheus
+
+falco:
+  enabled: false
+  image:
+    registry: keppel.global.cloud.sap/ccloud-dockerhub-mirror
+
+  driver:
+    loader:
+      initContainer:
+        image:
+          registry: keppel.global.cloud.sap/ccloud-dockerhub-mirror
+
+  controller:
+    daemonset:
+      updateStrategy:
+        type: RollingUpdate
+        rollingUpdate:
+          maxUnavailable: 25%
+
+  falcoctl:
+    image:
+      registry: keppel.global.cloud.sap/ccloud-dockerhub-mirror
+
+  tolerations:
+    - operator: Exists
+
+  extra:
+    args:
+      - -t
+      - pci
+      - -v
+      - --unbuffered
+      - -o
+      - json_output=true
+
+  falco:
+    rules_file:
+      - /etc/falco/rules.d
+
+x509-certificate-exporter:
+  enabled: false
+  secretsExporter:
+    podAnnotations:
+      prometheus.io/port: "9793"
+      prometheus.io/scrape: "true"
+      prometheus.io/targets: kubernetes
+  hostPathsExporter:
+    daemonSets: null
+  service:
+    create: false
+  prometheusServiceMonitor:
+    create: false
+  prometheusRules:
+    create: false

@@ -8,7 +8,7 @@ global:
   master_password: ""
 
 image: library/rabbitmq
-imageTag: 3.10.5-management
+imageTag: 3.13.6-management
 ## Specify a imagePullPolicy
 ## 'Always' if imageTag is 'latest', else set to 'IfNotPresent'
 ## ref: http://kubernetes.io/docs/user-guide/images/#pre-pulling-images
@@ -22,6 +22,8 @@ ports:
   public: 5672
   management: 15672
 
+serviceType: ClusterIP
+
 # when not empty, exposes the RabbitMQ service to the outside of the cluster on these IPs
 externalIPs: []
 
@@ -33,6 +35,12 @@ users:
     user: admin
     password: null
     tag: administrator
+
+# if set true, this will create user dev with password dev for debug and development purposes
+# DANGEROUS, please make sure it is set to false unless really needed
+addDevUser: false
+
+enableAllFeatureFlags: true
 
 persistence:
   enabled: false
@@ -69,21 +77,12 @@ resources:
 nodeAffinity: {}
 
 metrics:
-  enabled: &metrics true
-  sidecar:
-    enabled: *metrics
-  image: kbudde/rabbitmq-exporter
-  imageTag: 0.16.0
+  enabled: true
   user: monitoring
   password: null
   port: 9150
-  resources:
-    limits:
-      memory: 512Mi
-      cpu: 500m
-    requests:
-      memory: 64Mi
-      cpu: 100m
+  enableDetailedMetrics: false
+  enablePerObjectMetrics: false
 
 # Default Prometheus alerts and rules.
 alerts:
@@ -112,3 +111,13 @@ upgrades:
 #  rollingUpdate:
 #    maxUnavailable: 1
 #    maxSurge: 3
+
+linkerd:
+  # linkerd annotation for the RabbitMQ pod (true/false)
+  enabled: true
+
+# RabbitMQ custom configuration to be added under /etc/rabbitmq/conf.d/20-custom.conf
+customConfig:
+  # to set a custom limit please use the following format: 50MB or 1GB
+  # if not set default value of 50MB will be used
+  # disk_free_limit.absolute: 500MB

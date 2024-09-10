@@ -12,6 +12,7 @@
 {{- $instance := index . 10}}
 {{- $az_redundancy  := index . 11}}
 {{- $tolerate_arista_fabric  := index . 12}}
+{{- $prevent_hosts := index . 13 }}
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -62,6 +63,12 @@ spec:
                 - {{ . }}
 {{- end }}
 {{- end }}
+{{- if $prevent_hosts }}
+              - key: kubernetes.cloud.sap/host
+                operator: NotIn
+                values:
+{{ $prevent_hosts | toYaml | indent  16 }}
+{{- end }}
         podAntiAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
           - topologyKey: "kubernetes.cloud.sap/host"
@@ -75,7 +82,7 @@ spec:
 {{- if lt (len (keys $apods))  2 }}
 {{- fail "If the region consists of multiple AZs, PX must be scheduled in at least 2" -}}
 {{- end }}
-          - topologyKey: failure-domain.beta.kubernetes.io/zone
+          - topologyKey: topology.kubernetes.io/zone
             labelSelector:
               matchExpressions:
               - key: pxservice

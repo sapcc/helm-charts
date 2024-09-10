@@ -1,0 +1,29 @@
+{{- if .Values.pluginPreset.enabled }}
+apiVersion: greenhouse.sap/v1alpha1
+kind: PluginPreset
+metadata:
+  name: cert-manager
+  namespace: {{ .Release.Namespace }}
+spec:
+  clusterSelector:
+    matchLabels:
+      greenhouse.sap/cluster-presets-enabled: "true"
+  plugin:
+    disabled: false
+    displayName: cert manager
+    optionValues:
+    - name: cert-manager.extraArgs[0]
+      value: --enable-certificate-owner-ref=true
+    - name: cert-manager.ingressShim.defaultIssuerGroup
+      value: certmanager.cloud.sap
+    - name: cert-manager.ingressShim.defaultIssuerKind
+      value: DigicertIssuer
+    - name: cert-manager.ingressShim.defaultIssuerName
+      value: digicert-issuer
+    - name: cert-manager.installCRDs
+      value: false
+    - name: cert-manager.prometheus.enabled
+      value: true
+    pluginDefinition: cert-manager
+    releaseNamespace: kube-system
+{{- end -}}

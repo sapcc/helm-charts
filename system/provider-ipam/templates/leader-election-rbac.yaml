@@ -1,0 +1,55 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ include "provider-ipam.fullname" . }}-leader-election-role
+  labels:
+    cluster.x-k8s.io/provider: ipam-in-cluster
+  {{- include "provider-ipam.labels" . | nindent 4 }}
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - coordination.k8s.io
+  resources:
+  - leases
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ include "provider-ipam.fullname" . }}-leader-election-rolebinding
+  labels:
+    cluster.x-k8s.io/provider: ipam-in-cluster
+  {{- include "provider-ipam.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: '{{ include "provider-ipam.fullname" . }}-leader-election-role'
+subjects:
+- kind: ServiceAccount
+  name: '{{ include "provider-ipam.fullname" . }}-controller-manager'
+  namespace: '{{ .Release.Namespace }}'

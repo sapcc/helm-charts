@@ -2,9 +2,13 @@ global:
   # region: DEFINED-IN-REGION-SECRETS
   # domain: DEFINED-IN-REGION-SECRETS
   # imageRegistry: DEFINED-IN-REGION-SECRETS
+  linkerd_requested: true
   clusterType: controlplane
   domain_seeds:
     skip_hcm_domain: false
+
+linkerd-support:
+  annotate_namespace: true
 
 maia:
   # maia is on in all regions by default
@@ -69,15 +73,8 @@ prometheus_server:
     # accessMode: ReadWriteOnce
     size: 300Gi
 
-  rbac:
-    create: false
-
   secrets:
     - prometheus-auth-sso-cert
-
-  serviceAccount:
-    create: false
-    name: default
 
   # The log level of the Prometheus.
   logLevel: info
@@ -102,14 +99,10 @@ prometheus_server:
     service: maia
 
     multipleTargetScrapes:
-      # List of exceptions for scrape jobs. This is joined together with a `|`.
-      exceptions:
-        # jobs `prometheus-vmware.*` scrape prometheus-vmware multiple times for different metrics
-        - prometheus-vmware.*
-        # job `netbox-webhook-dist-client` is from prometheus-openstack
-        - netbox-webhook-dist-client
-        # jobs `maia/prometheus-maia-oprom` and `prometheus-maia-oprom` scrape prometheus-maia multiple times for different metrics
-        - .*prometheus-maia-oprom
+      enabled: false
+
+    multiplePodScrapes:
+      enabled: false
 
 # Deploy Maia Prometheus alerts.
 alerts:
@@ -169,6 +162,7 @@ prometheus_vmware:
     - vrops_virtualmachine_network_usage_average_kilobytes_per_second
     - vrops_virtualmachine_number_vcpus_total
     - vrops_virtualmachine_oversized.+
+    - vrops_virtualmachine_power_average_watts
     - vrops_virtualmachine_runtime_connectionstate
     - vrops_virtualmachine_runtime_powerstate
     - vrops_virtualmachine_summary_ethernetcards
@@ -189,6 +183,7 @@ prometheus_vmware:
       - vrops_hostsystem_memory_contention_percentage
 
 owner-info:
+  service: maia
   support-group: observability
   maintainers: 
     - Nathan Oyler

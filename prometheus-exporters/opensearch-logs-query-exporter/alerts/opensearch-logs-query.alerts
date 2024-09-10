@@ -10,7 +10,7 @@ groups:
       severity: info
       tier: os
       support_group: observability
-      playbook: docs/operation/monitor/elk_query
+      playbook: docs/operation/monitor/opensearch_query
     annotations:
       description: 'opensearch-logs-query-exporter in {{ $labels.region }} is missing.'
       summary: 'opensearch-logs-query-exporter in {{ $labels.region }} is missing.'
@@ -24,7 +24,7 @@ groups:
       summary: 'octobus-logs-query-exporter had an error in the pod log.'
 
   - alert: OpenstackGlanceReturn50xCode
-    expr: sum(rate(opensearch_logs_openstack_glance_query_return_code_doc_count{glance="/v2/images", code=~"50.*"}[30m]))by(query, code) > 0
+    expr: sum(rate(elasticsearch_openstack_glance_query_return_code_doc_count{glance="/v2/images", code=~"50.*"}[30m]))by(query, code) > 0
     for: 5m
     labels:
       context: nodes
@@ -37,7 +37,7 @@ groups:
       summary: 'Openstack Glance Returned HTTP {{ $labels.query }} {{ $labels.code }}'
 
   - alert: EsxRootPasswordWrong
-    expr: opensearch_logs_esxi_exporter_login_error_container_name_doc_count > 0
+    expr: elasticsearch_esxi_exporter_login_error_container_name_doc_count > 0
     for: 5m
     labels:
       severity: info
@@ -58,8 +58,36 @@ groups:
       severity: warning
       support_group: observability
       tier: os
-      playbook: docs/support/playbook/elastic_kibana_issues
-      dashboard: health-elasticsearch?var-cluster={{ $labels.elastic_cluster }}
+      playbook: docs/operation/monitor/opensearch_query
+      dashboard: health-opensearch?var-cluster={{ $labels.elastic_cluster }}
     annotations:
       description: 'cluster *{{ $labels.elastic_cluster }}* opensearch-logs-query-exporter in `{{ $labels.region }}` is missing.'
       summary: 'cluster: *{{ $labels.elastic_cluster }}* opensearch-logs-query-exporter in `{{ $labels.region }}` is missing.'
+
+  - alert: SrcSiemRulesUpdaterLogError
+    expr: elasticsearch_siem_error_doc_count > 0
+    labels:
+      context: nodes
+      service: logs
+      severity: warning
+      support_group: src
+      tier: os
+      kibana: "goto/4ad456d9ae56ecb44336662641c67935"
+      no_alert_on_absence: "true"
+    annotations:
+      description: 'The siem-rules-updater service pod has error logs.'
+      summary: 'The siem-rules-updater service pod has error logs.'
+
+  - alert: OpenstackManilaPromotedReplicaError
+    expr: count_over_time(opensearch_logs_manila_replica_error_doc_count{}[2h]) > 0
+    for: 5m
+    labels:
+      no_alert_on_absence: "true"
+      service: manila
+      severity: info
+      support_group: compute-storage-api
+      tier: os
+      kibana: "app/discover#/?_g=(filters:!(),refreshInterval:(pause:!t,value:0),time:(from:now-15m,to:now))&_a=(columns:!(_source),filters:!(),index:'logstash-*',interval:auto,query:(language:kuery,query:'\"to%20the%20promoted%20replica\"'),sort:!())"
+    annotations:
+      description: "Exception while applying properties to promoted Replica"
+      summary: "Exception while applying properties to promoted Replica"

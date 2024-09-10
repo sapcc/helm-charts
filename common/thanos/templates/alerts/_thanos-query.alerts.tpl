@@ -85,10 +85,10 @@ groups:
     - alert: ThanosQueryHighDNSFailures
       expr: |
         (
-          sum by (thanos) (rate(grpc_client_handled_total{grpc_code!="OK", job=~".*thanos.*query.*", thanos="{{ include "thanos.name" . }}"}[5m]))
+          sum by (thanos) (rate(thanos_query_store_apis_dns_failures_total{job=~".*thanos.*query.*", thanos="{{ include "thanos.name" . }}"}[5m]))
         /
-          sum by (thanos) (rate(grpc_client_started_total{job=~".*thanos.*query.*", thanos="{{ include "thanos.name" . }}"}[5m]))
-        ) * 100 > 5
+          sum by (thanos) (rate(thanos_query_store_apis_dns_lookups_total{job=~".*thanos.*query.*", thanos="{{ include "thanos.name" . }}"}[5m]))
+        ) * 100 > 1
       for: 15m
       labels:
         service: {{ default "metrics" $root.Values.alerts.service }}

@@ -174,11 +174,6 @@
   </rule>
   <rule>
     key log
-    pattern /because ReadonlyREST/
-    tag "READONLYREST.${tag}"
-  </rule>
-  <rule>
-    key log
     pattern /failed to parse field/
     tag "FLUENTPARSER.${tag}"
   </rule>
@@ -189,12 +184,7 @@
   </rule>
   <rule>
     key log
-    pattern /READONLYREST_NOT_READY_YET/
-    tag "FLUENTESREADONLY.${tag}"
-  </rule>
-  <rule>
-    key log
-    pattern /400 - Rejected by Elasticsearch/
+    pattern /400 - Rejected by/
     tag "FLUENTREJECTED.${tag}"
   </rule>
   <rule>
@@ -247,7 +237,7 @@
     <metric>
       name prom_fluentd_output_retry_succeed
       type counter
-      desc The total number of sucessfull retries in resolving to ES
+      desc The total number of sucessfull retries in resolving to Elastic
       <labels>
         nodename "#{ENV['K8S_NODE_NAME']}"
         fluent_container $.kubernetes.pod_name

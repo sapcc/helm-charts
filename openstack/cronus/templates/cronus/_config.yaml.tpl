@@ -14,7 +14,7 @@ cronus:
       backend: {{$v.backend | quote }}
     {{- end }}
     {{- if $v.routing }}
-      routing: {{$v.routing | quote }}
+      routing: {{$v.routing }}
     {{- end }}
   {{- end }}
 {{- end }}
@@ -32,6 +32,15 @@ cronus:
       errorCode: {{ $v.errorCode }}
     {{- end }}
   {{- end }}
+{{- end }}
+{{- if .Values.cronus.ndr }}
+  ndr:
+    rheaUri: {{ .Values.cronus.ndr.rheaUri | quote }}
+    queue: {{ .Values.cronus.ndr.queue | quote }}
+{{- end }}
+{{- if .Values.cronus.maillog }}
+  maillog:
+    uri: {{ .Values.cronus.maillog.uri | quote }}
 {{- end }}
 {{- if or .Values.cronus.fileBufferPath .Values.global.fileBufferPath }}
   fileBufferPath: {{ .Values.cronus.fileBufferPath | default .Values.global.fileBufferPath }}
@@ -71,6 +80,9 @@ cronus:
 {{- if .Values.cronus.proxyHeaderTimeout }}
     proxyHeaderTimeout: {{ .Values.cronus.proxyHeaderTimeout }}
 {{- end }}
+{{- if .Values.cronus.skipProxyForCIDR }}
+    skipProxyForCIDR: {{ .Values.cronus.skipProxyForCIDR }}
+{{- end }}
     shutdownTimeout: {{ .Values.cronus.terminationGracePeriod | default 60 }}s
     readTimeout: {{ .Values.cronus.readTimeout | default 30 }}s
     writeTimeout: {{ .Values.cronus.writeTimeout | default 30 }}s
@@ -87,9 +99,6 @@ cronus:
       serverTlsName: {{ .Values.cronus.tls.serverTlsName }}
 {{- if or .Values.cronus.tls.clientCA .Values.global.clientCA .Values.cronus.tls.clientTlsAuth .Values.global.clientTlsAuth }}
       clientTlsAuth: {{ .Values.cronus.tls.clientTlsAuth | default .Values.global.clientTlsAuth }}
-{{- if or .Values.cronus.tls.clientCertOU .Values.global.clientCertOU }}
-      clientCertOU: {{ .Values.cronus.tls.clientCertOU | default .Values.global.clientCertOU }}
-{{- end }}
       clientCA: |
 {{ .Values.cronus.tls.clientCA | default .Values.global.clientCA | indent 8 }}
 {{- end }}
@@ -97,25 +106,22 @@ cronus:
 {{- end }}
   keystone:
 {{- if .Values.config.keystone }}
-{{- range $key, $value := .Values.config.keystone }}
-  {{- if $value }}
-    {{ $key }}: {{ $value }}
-  {{- end }}
-{{- end }}
-{{- if .Values.global.cronus_service_password }}
-    password: {{ .Values.global.cronus_service_password }}
+    region: {{ .Values.config.keystone.region }}
+    authUrl: {{ .Values.config.keystone.authUrl }}
+    endpointType: {{ .Values.config.keystone.endpointType }}
+    username: {{ .Values.config.keystone.username }}
+    userDomainName: {{ .Values.config.keystone.userDomainName }}
+    projectName: {{ .Values.config.keystone.projectName }}
+    projectDomainName: {{ .Values.config.keystone.projectDomainName }}
+    enabled: {{ .Values.config.keystone.enabled }}
 {{- end }}
 {{- else }}
     authUrl: {{ .Values.config.authUrl }}
     applicationCredentialID: {{ .Values.config.applicationCredentialID }}
-    applicationCredentialSecret: {{ .Values.config.applicationCredentialSecret }}
     region: {{ .Values.config.region }}
     endpointType: {{ .Values.config.endpointType }}
 {{- end }}
 {{- if .Values.config.workQueue }}
-{{- $r_host := .Values.rabbitmq.host }}
-{{- $r_user := .Values.rabbitmq.users.default.user }}
-{{- $r_creds := .Values.rabbitmq.users.default.password }}
   workQueue:
     enabled: {{ .Values.config.workQueue.enabled }}
 {{- if .Values.config.workQueue.active }}
@@ -124,7 +130,9 @@ cronus:
 {{- if .Values.config.workQueue.allowTrigger }}
     allowTrigger: {{ .Values.config.workQueue.allowTrigger }}
 {{- end }}
-    rabbitmqUri: amqp://{{ $r_user }}:{{ $r_creds }}@{{ $r_host }}/
+{{- if .Values.config.workQueue.sendNdrs }}
+    sendNdrs: {{ .Values.config.workQueue.sendNdrs }}
+{{- end }}
 {{- if .Values.config.workQueue.queueName }}
     queueName: {{ .Values.config.workQueue.queueName }}
 {{- end }}
@@ -137,9 +145,6 @@ cronus:
 {{- if .Values.config.workQueue.workerPrefetchSize }}
     workerPrefetchSize: {{ .Values.config.workQueue.workerPrefetchSize }}
 {{- end }}
-    trailLimit: {{ .Values.config.workQueue.trailLimit }}
-    trailTimeBaseFactor: {{ .Values.config.workQueue.trailTimeBaseFactor }}
-    trailTimeRandMaxNumber: {{ .Values.config.workQueue.trailTimeRandMaxNumber }}
     initialDelayTime: {{ .Values.config.workQueue.initialDelayTime }}
     delayGrowthFactor: {{ .Values.config.workQueue.delayGrowthFactor }}
     maxDelayTime: {{ .Values.config.workQueue.maxDelayTime }}
@@ -284,11 +289,7 @@ cronus:
     {{ $key }}: {{ $value }}
 {{- end }}
 {{- if .Values.hermes }}
-{{- $user := .Values.rabbitmq_notifications.users.default.user }}
-{{- $password := .Values.rabbitmq_notifications.users.default.password }}
-{{- $host := printf "%s.%s.%s:5672" "hermes-rabbitmq-notifications" .Values.global.region .Values.global.tld }}
   auditSink:
-    rabbitmqUrl: amqp://{{ $user }}:{{ $password }}@{{ if .Values.config.cronusAuditSink.host }}{{ .Values.config.cronusAuditSink.host }}{{ else }}{{ $host }}{{ end }}
     queueName: {{ .Values.config.cronusAuditSink.queueName }}
     internalQueueSize: {{ .Values.config.cronusAuditSink.internalQueueSize }}
     maxContentLen: {{ .Values.config.cronusAuditSink.maxContentLen | int64 }}
@@ -318,7 +319,4 @@ cronus:
 {{- end }}
     debug: {{ .Values.config.cronusAuditSink.debug | default false }}
 {{- end }}
-{{- if .Values.cronus.sentryDsn }}
-  sentryDsn: {{ .Values.cronus.sentryDsn }}
-{{- end }}
-{{- end -}}
+

@@ -12,7 +12,7 @@ metadata:
     "helm.sh/hook-weight": "-1"
     "helm.sh/hook-delete-policy": "before-hook-creation"
     # hooks are not annotated as belonging to the Helm release, so we cannot rely on owner-info injection
-    ccloud/support-group: compute-storage-api
+    ccloud/support-group: foundation
     ccloud/service: ironic
 spec:
   template:
@@ -55,6 +55,7 @@ spec:
           name: ironic-etc
           subPath: ironic.conf
           readOnly: true
+        {{- include "utils.trust_bundle.volume_mount" . | indent 8 }}
       volumes:
       - name: etcironic
         emptyDir: {}
@@ -62,4 +63,4 @@ spec:
         configMap:
           name: ironic-etc
           defaultMode: 0444
-
+      {{- include "utils.trust_bundle.volumes" . | indent 6 }}

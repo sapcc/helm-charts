@@ -22,6 +22,8 @@ data:
 
     gpg:
       cache_container_name: repo-gpg-cache
+      keyserver_urls:
+        - "https://keyserver.ubuntu.com/pks/lookup?search=0x{keyid}&options=mr&op=get"
 
     statsd:
       hostname: {{$.Values.statsd_hostname}}
@@ -45,7 +47,7 @@ data:
           dist: {{ toJson $job.from.dist }}
           {{- end }}
           {{- if $job.from.token }}
-          token: {{ $job.from.token }}
+          token: {{ toJson $job.from.token }}
           {{- end }}
           {{- if or (eq $type "yum") (eq $type "debian") }}
           verify_signature: {{ toJson $job.from.verify_signature }}

@@ -10,6 +10,9 @@ metadata:
     tier: {{ required ".Values.tier missing" $values.tier }}
     type: alerting-rules
     prometheus: {{ required ".Values.prometheusName missing" $values.prometheusName }}
+    {{- range $i, $target := $.Values.ruleSelectors }}
+    {{ $target.name | required (printf "$.Values.ruleSelector.[%v].name missing" $i) }}: {{ tpl ($target.value | required (printf "$.Values.ruleSelector.[%v].value missing" $i)) $ }}
+    {{- end }}
 
 spec:
 {{- with $root -}}

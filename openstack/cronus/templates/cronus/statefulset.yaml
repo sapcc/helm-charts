@@ -43,10 +43,13 @@ spec:
           args:
             - "-config=/cronus/config.yaml"
           env:
-          - name: GODEBUG
-            value: {{ .Values.cronus.godebug | quote }}
+            - name: GODEBUG
+              value: {{ .Values.cronus.godebug | quote }}
+          envFrom:
+            - secretRef:
+                name: cronus-secret
           volumeMounts:
-            - name: cronus
+            - name: cronus-config
               mountPath: "/cronus/config.yaml"
               subPath: config.yaml
 {{- if or .Values.cronus.fileBufferPath .Values.global.fileBufferPath }}
@@ -68,6 +71,16 @@ spec:
               containerPort: {{ .Values.cronus.smtps }}
               protocol: TCP
 {{- end }}
+          startupProbe:
+            httpGet:
+{{- if .Values.cronus.tls }}
+              scheme: HTTPS
+{{- end }}
+              path: /healthz
+              port: http
+            initialDelaySeconds: 5
+            failureThreshold: 3
+            periodSeconds: 5
           readinessProbe:
             httpGet:
 {{- if .Values.cronus.tls }}
@@ -75,7 +88,7 @@ spec:
 {{- end }}
               path: /healthz
               port: http
-            initialDelaySeconds: 3
+            initialDelaySeconds: 5
             periodSeconds: 2
       terminationGracePeriodSeconds: {{ .Values.cronus.terminationGracePeriod | default 60 }}
       dnsConfig:
@@ -83,9 +96,12 @@ spec:
         - name: ndots
           value: "1"
       volumes:
-        - name: cronus
-          secret:
-            secretName: cronus
+        - name: cronus-config
+          configMap:
+            name: cronus-config
+            items:
+              - key: config.yaml
+                path: config.yaml
         - name: certs
           projected:
             sources:

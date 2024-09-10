@@ -21,5 +21,5 @@ Note: The pods define the 'alert-service' label but Prometheus replaces the hyph
 {{- end -}}
 
 {{- define "supportGroupFromLabelsOrDefault" -}}
-"{{`{{ if $labels.label_ccloud_support_group }}{{ $labels.label_ccloud_support_group }}{{ else }}`}}{{ required "default value is missing" . }}{{`{{ end }}`}}"
+"{{`{{ if $labels.label_ccloud_support_group }}{{ $labels.label_ccloud_support_group }}{{ else }}`}}{{ required "default support_group is missing" . }}{{`{{ end }}`}}"
 {{- end -}}

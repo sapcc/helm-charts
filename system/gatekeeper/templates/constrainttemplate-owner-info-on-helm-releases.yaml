@@ -14,6 +14,10 @@ spec:
           properties:
             helmManifestParserURL:
               type: string
+            knownBrokenReleases:
+              type: array
+              items:
+                type: string
 
   targets:
     - target: admission.k8s.gatekeeper.sh
@@ -46,10 +50,14 @@ spec:
         violation[{"msg": add_support_labels.from_helm_release(release, msg)}] {
           release.error == ""
 
-          # Check if an 'owner-of-<release-name>' ConfigMap exists for this release.
+          # Complain if no 'owner-of-<release-name>' ConfigMap exists for this release.
           count(configmaps) == 0
-          release_name := iro.metadata.labels.name
-          msg := sprintf("could not find ConfigMap: %s", [configmap_name])
+
+          # Do not complain if this release is part of the knownBrokenReleases.
+          key := sprintf("%s/%s", [iro.metadata.namespace, iro.metadata.labels.name])
+          count({ k | k := input.parameters.knownBrokenReleases[_]; k == key }) == 0
+
+          msg := "Chart does not contain owner info. Please add the common/owner-info chart as a direct dependency."
         }
 
         violation[{"msg": add_support_labels.from_helm_release(release, msg)}] {

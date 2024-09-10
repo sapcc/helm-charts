@@ -7,7 +7,7 @@ groups:
     for: 5m
     labels:
       tier: k8s
-      service: resources
+      service: {{ include "serviceFromLabelsOrDefault" "resources" }}
       support_group: {{ include "supportGroupFromLabelsOrDefault" "containers" }}
       severity: info
       context: memory
@@ -23,7 +23,7 @@ groups:
     for: 5m
     labels:
       tier: k8s
-      service: resources
+      service: {{ include "serviceFromLabelsOrDefault" "resources" }}
       support_group: {{ include "supportGroupFromLabelsOrDefault" "containers" }}
       severity: warning
       context: memory

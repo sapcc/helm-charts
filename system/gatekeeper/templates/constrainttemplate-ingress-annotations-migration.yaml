@@ -1,0 +1,52 @@
+apiVersion: templates.gatekeeper.sh/v1
+kind: ConstraintTemplate
+metadata:
+  name: gkingressannotationsmigration
+spec:
+  crd:
+    spec:
+      names:
+        kind: GkIngressAnnotationsMigration
+
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      libs:
+        - |
+          {{ .Files.Get "lib/add-support-labels.rego" | nindent 10 }}
+      rego: |
+        package ingressannotations
+        import data.lib.add_support_labels
+
+        iro := input.review.object
+        annotations := object.get(iro, ["metadata", "annotations"], {})
+
+        violation[{"msg": add_support_labels.from_k8s_object(iro, msg)}] {
+          iro.kind == "Ingress"
+
+          # We are transitioning from the old ingress-nginx annotation prefix `ingress.kubernetes.io/`
+          # to the current standard prefix `nginx.ingress.kubernetes.io/`. During the migration, Ingress
+          # objects must use both annotation prefixes consistently.
+
+          oldValue := annotations[oldKey]
+          startswith(oldKey, "ingress.kubernetes.io/")
+          subkey := trim_prefix(oldKey, "ingress.kubernetes.io/")
+          newKey := sprintf("nginx.ingress.kubernetes.io/%s", [subkey])
+          newValue := object.get(annotations, [newKey], "<unset>")
+
+          oldValue != newValue
+          msg := sprintf("has not correctly migrated %s annotation (value in old annotation is %q, value in new annotation is %q)", [oldKey, oldValue, newValue])
+        }
+
+        violation[{"msg": add_support_labels.from_k8s_object(iro, msg)}] {
+          iro.kind == "Ingress"
+
+          # At this point, the old annotations still need to be kept around, so we are also checking in the reverse direction.
+
+          annotations[newKey]
+          startswith(newKey, "nginx.ingress.kubernetes.io/")
+          subkey := trim_prefix(newKey, "nginx.ingress.kubernetes.io/")
+          oldKey := sprintf("ingress.kubernetes.io/%s", [subkey])
+
+          object.get(annotations, [oldKey], "<unset>") == "<unset>"
+          msg := sprintf("has deleted %s annotation too early (ingress-nginx is still using the old prefix right now)", [oldKey])
+        }

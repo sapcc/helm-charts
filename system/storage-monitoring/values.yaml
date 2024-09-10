@@ -2,7 +2,10 @@ global:
   domain: cloud.sap
   clusterType: metal
 
+  linkerd_requested: true
+
 owner-info:
+  service: prometheus
   support-group: observability
   maintainers: 
     - Tommy Sauer
@@ -11,8 +14,6 @@ owner-info:
 
 prometheus-server:
   name: storage
-
-  retentionTime: 30d
 
   alertmanagers:
     hosts:
@@ -35,15 +36,35 @@ prometheus-server:
     accessMode: ReadWriteOnce
     size: 10Gi
 
-  alerts:
-    tier: monitor
-
   resources:
     requests:
       cpu: 500m
       memory: 3Gi
+
+  vpaUpdateMode: "Auto"
+  vpaResources:
+    prometheus:
+      containerName: "prometheus"
+      maxAllowed:
+        memory: "40Gi"
+
   thanos:
     enabled: true
+
+  additionalScrapeConfigs:
+    name: storage-additional-scrape-config
+    key: scrape-config.yaml
+
+  serviceDiscoveries:
+    scrapeInterval: 60s
+    scrapeTimeout: 55s
+    pods:
+      enabled: true
+
+  alerts:
+    thanos:
+      enabled: true
+      name: metal
 
 thanos:
   name: storage
@@ -51,3 +72,28 @@ thanos:
   clusterDomain: kubernetes
   serviceAccount:
     create: false
+
+  grpcIngress:
+    enabled: true
+    hosts:
+      - thanos-storage-grpc
+
+netapp_cap_exporter:
+  enabled: false
+  apps:
+    manila:
+      scrapeInterval: 2m
+      scrapeTimeout: 110s
+      fullname: "netapp-capacity-exporter-manila"
+    cinder:
+      scrapeInterval: 2m
+      scrapeTimeout: 110s
+      fullname: "netapp-capacity-exporter-cinder"
+    baremetal:
+      scrapeInterval: 2m
+      scrapeTimeout: 110s
+      fullname: "netapp-capacity-exporter-bare-metal"
+    controlplane:
+      scrapeInterval: 2m
+      scrapeTimeout: 110s
+      fullname: "netapp-capacity-exporter-control-plane"
