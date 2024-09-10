@@ -4,9 +4,12 @@
 groups:
   - name: manila-castellum
     rules:
+      # We use count() function to make sure the metrics values to be 1.
+      # It works because `openstack_manila_shares_size_gauge` is unique per share.
+
       - record: manila_share_exclusion_reasons_for_castellum
         expr: |
-          max (
+          count (
             label_replace(label_replace(
                 openstack_manila_shares_size_gauge{status="error"},
                 "share_id", "$1", "id", "(.*)"),
@@ -15,7 +18,7 @@ groups:
 
       - record: manila_share_exclusion_reasons_for_castellum
         expr: |
-          max (
+          count (
             label_replace(label_replace(
                 openstack_manila_shares_size_gauge{snapmirror="1"},
                 "share_id", "$1", "id", "(.*)"),
