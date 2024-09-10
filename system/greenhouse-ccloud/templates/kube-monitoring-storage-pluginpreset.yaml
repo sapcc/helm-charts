@@ -16,6 +16,15 @@ metadata:
   name: kube-monitoring
   namespace: {{ .Release.Namespace }}
 spec:
+  clusterOptionOverrides: |-
+   {{- range thanosCluster := .Values.kubeMonitoring.thanosClusters }}
+  - clusterName: $cluster 
+    overrides:
+    - name: kubeMonitoring.prometheus.prometheusSpec.thanos.objectStorageConfig.existingSecret.name
+      value: thanos-{{ $thanosCluster }}-metrics-objectstore
+    - name: kubeMonitoring.prometheus.prometheusSpec.thanos.objectStorageConfig.existingSecret.key
+      value: thanos.yaml
+   {{- end }}
   clusterSelector:
     matchLabels:
       greenhouse.sap/cluster-presets-enabled: "true"
