@@ -1,3 +1,5 @@
+{{ range $i, $namespace := .Values.cert_exporter.namespaces }}
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -8,6 +10,7 @@ metadata:
     cert-exporter.io/type: deployment
     helm.sh/chart: cert-exporter-3.8.0
   name: trust-manager-cert-exporter
+  namespace: {{ $namespace }}
 spec:
   replicas: 1
   selector:
@@ -49,3 +52,4 @@ spec:
             path: /metrics
             port: 8080
           periodSeconds: 10
+{{- end }}
