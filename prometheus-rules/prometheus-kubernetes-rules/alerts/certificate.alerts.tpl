@@ -16,7 +16,7 @@ groups:
       tier: {{ required ".Values.tier missing" .Values.tier }}
       context: availability
       service: {{ required ".Values.service missing" .Values.service }}
-      severity: info
+      severity: warning
       support_group: {{ include "supportGroupFromLabelsOrDefault" .Values.supportGroup }}
     annotations:
       description: The certificate for {{`{{ $labels.subject_CN }}`}} expires in {{`{{ $value | humanizeDuration }}`}}. See secret {{`{{ $labels.secret_namespace }}`}}/{{`{{ $labels.secret_name }}`}}, key {{`{{ $labels.secret_key }}`}}.
