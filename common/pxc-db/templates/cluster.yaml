@@ -44,8 +44,15 @@ spec:
   {{- end }}
   enableCRValidationWebhook: true
   tls:
-    enabled: true
+    enabled: {{ .Values.tls.enabled }}
   pause: {{ .Values.pause }}
+  unsafeFlags:
+    {{- $unsafeFlagsTLS:= dict -}}
+    {{- if not .Values.tls.enabled }}
+      {{- $unsafeFlagsTLS = dict "tls" true }}
+    {{- end}}
+    {{- $unsafeFlags := merge .Values.unsafeFlags $unsafeFlagsTLS }}
+{{ tpl ($unsafeFlags| toYaml) $ | indent 4 }}
   updateStrategy: SmartUpdate
   upgradeOptions:
     apply: disabled
