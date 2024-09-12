@@ -22,7 +22,6 @@ spec:
     # our own roles
     - name: cloud_resource_admin
     - name: cloud_resource_viewer
-    - name: cloud_dns_resource_admin
     - name: resource_admin
     - name: resource_viewer
     - name: resource_service
@@ -94,11 +93,6 @@ spec:
           role: resource_admin
         - domain: ccadmin
           role: resource_viewer # technically unnecessary, but allows creating application credentials with read-only permissions
-      - name: CCADMIN_DOMAIN_DNS_OPS
-        role_assignments:
-        - domain: ccadmin
-          role: cloud_dns_resource_admin
-          inherited: true
 
     {{- range $domains }}
     - name: {{ . | lower }}
@@ -109,9 +103,4 @@ spec:
           role: resource_admin
         - domain: {{ . | lower }}
           role: resource_viewer # technically unnecessary, but allows creating application credentials with read-only permissions
-      - name: {{ . | upper }}_DOMAIN_DNS_OPS
-        role_assignments:
-        - domain: {{ . | lower }}
-          role: cloud_dns_resource_admin
-          inherited: true
     {{- end }}
