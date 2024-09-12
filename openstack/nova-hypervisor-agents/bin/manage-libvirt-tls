@@ -1,0 +1,256 @@
+#!/usr/bin/env python3
+import base64
+import os
+import pathlib
+import re
+import signal
+import subprocess
+import sys
+import time
+
+import requests
+
+_ISSUER_NAME = os.environ["ISSUER_NAME"]
+
+_HOST_ROOT = pathlib.Path("/host")
+
+
+_service_host = os.environ.get("KUBERNETES_SERVICE_HOST", "kubernetes.default.svc")
+_service_port = os.environ.get("KUBERNETES_SERVICE_PORT", "443")
+_apiserver = f"https://{_service_host}:{_service_port}"
+
+_serviceaccount = pathlib.Path("/run/secrets/kubernetes.io/serviceaccount")
+
+
+namespace = (_serviceaccount / "namespace").read_text().strip()
+token_path = _serviceaccount / "token"
+
+session = requests.Session()
+session.headers.update(
+    {"Accept": "application/json"},
+)
+
+
+def _ensure_certificate(host, ips):
+    _API_VERSION = "cert-manager.io/v1"
+    cert_name = f"libvirt-{host}"
+    secret_name = f"tls-{cert_name}"
+    certificate = {
+        "apiVersion": _API_VERSION,
+        "kind": "Certificate",
+        "metadata": {"name": cert_name},
+        "spec": {
+            "secretName": secret_name,
+            "privateKey": {"algorithm": "RSA", "encoding": "PKCS1", "size": 4096},
+            # Values for testing, increase for production to something sensible
+            "duration": "8h",
+            "renewBefore": "2h",
+            "isCA": False,
+            "usages": ["server auth", "client auth"],
+            "subject": {"organizations": ["nova"]},
+            "commonName": host,
+            "dnsNames": [host],
+            # "emailAddresses": [], Can we do without
+            "ipAddresses": ips,
+            "issuerRef": {
+                "name": _ISSUER_NAME,
+                "kind": "Issuer",
+                "group": "cert-manager.io",
+            },
+        },
+    }
+
+    resp = session.patch(
+        f"{_apiserver}/apis/{_API_VERSION}/namespaces/{namespace}/certificates/{cert_name}?fieldManager=nova-compute",
+        headers={
+            "Content-Type": "application/apply-patch+yaml",
+            "Authorization": f"Bearer {token_path.read_text()}",
+        },
+        json=certificate,
+        verify=_serviceaccount / "ca.crt",
+    )
+
+    resp.raise_for_status()
+    return secret_name
+
+
+def _get_certificate_secret(secret_name):
+    while True:
+        resp = session.get(
+            f"{_apiserver}/api/v1/namespaces/{namespace}/secrets/{secret_name}",
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {token_path.read_text()}",
+            },
+            verify=_serviceaccount / "ca.crt",
+        )
+
+        if resp.status_code == 404:
+            continue
+        resp.raise_for_status()
+        break
+
+    return resp.json()
+
+
+def _write_secret_if_changed(path, base64_data):
+    data = base64.b64decode(base64_data)
+    try:
+        if path.read_bytes() == data:
+            return False
+    except FileNotFoundError:
+        pass
+
+    path.write_bytes(data)
+    return True
+
+
+def _write_certificate(data):
+    any_change = False
+    pki = _HOST_ROOT / "etc" / "pki"
+    ca = pki / "CA"
+    ca.mkdir(mode=0o755, parents=True, exist_ok=True)
+
+    cacert_pem = ca / "cacert.pem"
+    any_change |= _write_secret_if_changed(cacert_pem, data["ca.crt"])
+
+    pki_libvirt = pki / "libvirt"
+    pki_libvirt.mkdir(mode=0o755, parents=True, exist_ok=True)
+
+    server_cert = pki_libvirt / "servercert.pem"
+    any_change |= _write_secret_if_changed(server_cert, data["tls.crt"])
+
+    client_cert = pki_libvirt / "clientcert.pem"
+    try:
+        client_cert.symlink_to(server_cert.name)
+        any_change |= True
+    except FileExistsError:
+        pass
+
+    private = pki_libvirt / "private"
+    private.mkdir(mode=0o750, exist_ok=True)
+
+    server_key = private / "serverkey.pem"
+    any_change |= _write_secret_if_changed(server_key, data["tls.key"])
+
+    _client_key = private / "clientkey.pem"
+    try:
+        _client_key.symlink_to(server_key.name)
+        any_change |= True
+    except FileExistsError:
+        pass
+
+    return any_change
+
+
+def _ensure_libvirt_tls_conf():
+    libvirtd_conf = _HOST_ROOT / "etc" / "libvirt" / "libvirtd.conf"
+    _PATTERN = re.compile(r"^(listen_tls|key_file|cert_file|ca_file).*$")
+    _old_libvirtd_conf = [line for line in libvirtd_conf.read_text().splitlines()]
+
+    _libvirtd_conf = [line for line in _old_libvirtd_conf if not _PATTERN.match(line)]
+
+    if len(_libvirtd_conf) != len(_old_libvirtd_conf):
+        libvirtd_conf.write_text("\n".join(_libvirtd_conf) + "\n")
+        subprocess.run(
+            ["/usr/sbin/chroot", _HOST_ROOT, "/usr/bin/systemctl", "daemon-reload"],
+            check=True,
+        )
+        subprocess.run(
+            ["/usr/sbin/chroot", _HOST_ROOT, "/usr/bin/systemctl", "stop", "libvirtd"],
+            check=True,
+        )
+        subprocess.run(
+            [
+                "/usr/sbin/chroot",
+                _HOST_ROOT,
+                "/usr/bin/systemctl",
+                "enable",
+                "libvirtd-tls.socket",
+            ],
+            check=True,
+        )
+        subprocess.run(
+            [
+                "/usr/sbin/chroot",
+                _HOST_ROOT,
+                "/usr/bin/systemctl",
+                "start",
+                "libvirtd-tls.socket",
+            ],
+            check=True,
+        )
+
+
+def _server_update_tls():
+    subprocess.run(
+        [
+            "/usr/sbin/chroot",
+            _HOST_ROOT,
+            "/usr/bin/virt-admin",
+            "server-update-tls",
+            "libvirtd",
+        ],
+        check=True,
+    )
+
+
+blocking = False
+run = True
+
+
+def _handle_stop_signals(signum, frame):
+    global run
+    if blocking:
+        sys.exit(0)
+    else:
+        run = False
+
+
+signal.signal(signal.SIGINT, _handle_stop_signals)
+signal.signal(signal.SIGTERM, _handle_stop_signals)
+
+
+def _main():
+    global blocking
+
+    _conf = pathlib.Path("/etc/nova/nova-compute.conf.d/hostname.conf")
+    hostname_conf = _conf.read_text()
+    m = re.search(r"^host\s*=\s*(\S+)\s*$", hostname_conf, re.MULTILINE)
+    host = m[1]
+
+    m = re.search(
+        r"^live_migration_inbound_addr\s*=\s*(\S+)\s*$",
+        hostname_conf,
+        re.MULTILINE,
+    )
+    live_migration_inbound_addr = m[1]
+
+    secret_name = _ensure_certificate(host, ips=[live_migration_inbound_addr])
+    secret = _get_certificate_secret(secret_name)
+    resource_version = secret.get("metadata", {}).get("resourceVersion", 0)
+    changed = _write_certificate(secret["data"])
+
+    _ensure_libvirt_tls_conf()
+
+    if changed:
+        _server_update_tls()
+
+    while run:
+        blocking = True
+        time.sleep(5)
+        blocking = False
+
+        new_secret = _get_certificate_secret(secret_name)
+        new_resouce_version = new_secret.get("metadata", {}).get("resourceVersion", 0)
+        if resource_version == new_resouce_version:
+            continue
+
+        secret = new_secret
+        changed = _write_certificate(secret["data"])
+        resource_version = new_resouce_version
+        if changed:
+            _server_update_tls()
+
+
+_main()
