@@ -24,6 +24,7 @@ spec:
         configmap-etc-hash: {{ include (print .Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
         configmap-kvm-etc-hash: {{ include "kvm_configmap" . | sha256sum }}
     spec:
+      serviceAccountName: {{ .Release.Name }}
       terminationGracePeriodSeconds: {{ $hypervisor.default.graceful_shutdown_timeout | default .Values.defaults.default.graceful_shutdown_timeout | add 5 }}
       hostNetwork: true
       hostPID: true
@@ -163,7 +164,25 @@ spec:
             subPath: nova
             readOnly: true
           {{- end }}
-{{- if not .Values.hypervisor_on_host }}
+        - name: certmanagement
+          image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/{{ .Values.imageName }}:{{ .Values.imageVersion | required "Please set imageVersion similar" }}
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            runAsUser: 0
+          command:
+          - "manage-libvirt-tls"
+          env:
+          - name: ISSUER_NAME
+            value: {{ .Release.Name }}-ca-issuer
+          volumeMounts:
+          - mountPath: /usr/local/bin/manage-libvirt-tls
+            subPath: manage-libvirt-tls
+            name: bin
+          - mountPath: /etc/nova/nova-compute.conf.d
+            name: nova-compute-etc
+          - mountPath: /host
+            name: host
+        {{- if not .Values.hypervisor_on_host }}
         - name: nova-libvirt
           image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/{{ .Values.imageName }}:{{ .Values.imageVersion | required "Please set imageVersion similar" }}
           imagePullPolicy: IfNotPresent
