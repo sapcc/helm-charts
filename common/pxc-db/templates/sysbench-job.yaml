@@ -23,6 +23,20 @@ spec:
 {{ include "pxc-db.labels" . | indent 8 }}
     spec:
       restartPolicy: Never
+      initContainers:
+      - name: wait-for-mysql
+        {{- if .Values.sysbench.image.override }}
+        image: {{ .Values.sysbench.image.override }}
+        {{- else }}
+        image: {{ required ".Values.global.dockerHubMirror is missing" .Values.global.dockerHubMirror }}/{{ .Values.busybox.image.name }}:{{ .Values.busybox.image.tag }}
+        {{- end }}
+        env:
+          - name: MYSQL_ADDRESS
+            value: {{ .Values.name }}-db-haproxy
+        command:
+          - '/bin/sh'
+          - '-c'
+          - 'echo -e "Checking for the DB service readiness"; while ! nc -z $MYSQL_ADDRESS 3306; do sleep 1; printf "-"; done; echo -e "  >> DB is ready";'
       containers:
       - name: init-db-job
         {{- if .Values.sysbench.image.override }}
