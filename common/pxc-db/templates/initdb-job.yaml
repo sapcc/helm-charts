@@ -25,7 +25,11 @@ spec:
       restartPolicy: Never
       initContainers:
       - name: wait-for-mysql
-        image:  {{ required ".Values.global.dockerHubMirror is missing" .Values.global.dockerHubMirror }}/{{ .Values.busybox.image.name }}:{{ .Values.busybox.image.tag }}
+        {{- if .Values.busybox.image.override }}
+        image: {{ .Values.busybox.image.override }}
+        {{- else }}
+        image: {{ required ".Values.global.dockerHubMirror is missing" .Values.global.dockerHubMirror }}/{{ .Values.busybox.image.name }}:{{ .Values.busybox.image.tag }}
+        {{- end }}
         env:
           - name: MYSQL_ADDRESS
             value: {{ .Values.name }}-db-haproxy
