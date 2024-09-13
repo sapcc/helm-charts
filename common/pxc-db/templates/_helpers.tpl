@@ -49,6 +49,26 @@ app.kubernetes.io/name: {{ include "pxc-db.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 
+{{/*
+Default pod labels for linkerd
+*/}}
+{{- define "pxc-db.linkerdPodAnnotations" -}}
+{{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested $.Values.linkerd.enabled }}
+linkerd.io/inject: "enabled"
+config.alpha.linkerd.io/proxy-enable-native-sidecar: "true"
+config.linkerd.io/opaque-ports: "3306,3307,3009,4444,4567,4568,33060,33062"
+{{- end }}
+{{- end -}}
+
+{{/*
+Default service labels for linkerd
+*/}}
+{{- define "pxc-db.linkerdServiceAnnotations" -}}
+{{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested $.Values.linkerd.enabled }}
+config.linkerd.io/opaque-ports: "3306,3307,3009,4444,4567,4568,33060,33062"
+{{- end }}
+{{- end -}}
+
 {{- define "pxc-db.resolve_secret" -}}
     {{- $str := . -}}
     {{- if (hasPrefix "vault+kvv2" $str ) -}}

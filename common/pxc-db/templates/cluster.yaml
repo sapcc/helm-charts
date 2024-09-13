@@ -65,7 +65,7 @@ spec:
     image: {{ required ".Values.global.dockerHubMirror is missing" .Values.global.dockerHubMirror }}/{{ $pxc.image.name }}:{{ $pxc.image.tag }}
     {{- end }}
     annotations:
-{{ $pxc.annotations | toYaml | indent 6 }}
+{{ merge (include "pxc-db.linkerdPodAnnotations" . | fromYaml) ($pxc.annotations) | toYaml | indent 6 }}
     labels:
 {{ $pxc.labels | toYaml | indent 6 }}
     {{- if $pxc.expose }}
@@ -215,7 +215,7 @@ spec:
     imagePullPolicy: {{ $haproxy.imagePullPolicy }}
     {{- end }}
     annotations:
-{{ $haproxy.annotations | toYaml | indent 6 }}
+{{ merge (include "pxc-db.linkerdPodAnnotations" . | fromYaml) ($haproxy.annotations) | toYaml | indent 6 }}
     labels:
 {{ $haproxy.labels | toYaml | indent 6 }}
     readinessDelaySec: 15
@@ -314,7 +314,7 @@ spec:
       s3-binlogs:
         type: s3
         annotations:
-{{ $backup.pitr.annotations | toYaml | indent 10 }}
+{{ merge (include "pxc-db.linkerdPodAnnotations" . | fromYaml) ($backup.pitr.annotations) | toYaml | indent 10 }}
         resources:
           requests:
 {{ tpl ($backup.resources.requests | toYaml) $ | indent 12 }}
@@ -331,7 +331,7 @@ spec:
       s3-backups-hourly:
         type: s3
         annotations:
-{{ $backup.annotations | toYaml | indent 10 }}
+{{ merge (include "pxc-db.linkerdPodAnnotations" . | fromYaml) ($backup.annotations) | toYaml | indent 10 }}
         resources:
           requests:
 {{ tpl ($backup.resources.requests | toYaml) $ | indent 12 }}
@@ -348,7 +348,7 @@ spec:
       s3-backups-daily:
         type: s3
         annotations:
-{{ $backup.annotations | toYaml | indent 10 }}
+{{ merge (include "pxc-db.linkerdPodAnnotations" . | fromYaml) ($backup.annotations) | toYaml | indent 10 }}
         resources:
           requests:
 {{ tpl ($backup.resources.requests | toYaml) $ | indent 12 }}
@@ -365,7 +365,7 @@ spec:
       s3-backups-custom:
         type: s3
         annotations:
-{{ $backup.annotations | toYaml | indent 10 }}
+{{ merge (include "pxc-db.linkerdPodAnnotations" . | fromYaml) ($backup.annotations) | toYaml | indent 10 }}
         resources:
           requests:
 {{ tpl ($backup.resources.requests | toYaml) $ | indent 12 }}
