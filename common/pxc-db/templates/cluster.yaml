@@ -65,7 +65,7 @@ spec:
     image: {{ required ".Values.global.dockerHubMirror is missing" .Values.global.dockerHubMirror }}/{{ $pxc.image.name }}:{{ $pxc.image.tag }}
     {{- end }}
     annotations:
-{{ merge (include "pxc-db.linkerdPodAnnotations" . | fromYaml) ($pxc.annotations) | toYaml | indent 6 }}
+{{ merge (include "pxc-db.linkerdPodAnnotations" . | fromYaml) (include "pxc-db.metricsAnnotations" . | fromYaml ) ($pxc.annotations) | toYaml | indent 6 }}
     labels:
 {{ $pxc.labels | toYaml | indent 6 }}
     {{- if $pxc.expose }}
@@ -108,11 +108,13 @@ spec:
       limits:
 {{ tpl ($pxc.resources.limits | toYaml) $ | indent 8 }}
     sidecars:
+    {{- $metrics := .Values.metrics }}
+    {{- if $metrics.enabled }}
     - name: metrics
-      {{- if $pxc.sidecars.metrics.image.override }}
-      image: {{ $pxc.sidecars.metrics.image.override }}
+      {{- if $metrics.image.override }}
+      image: {{ $metrics.image.override }}
       {{- else }}
-      image: {{ required ".Values.global.dockerHubMirror is missing" .Values.global.dockerHubMirror }}/{{ $pxc.sidecars.metrics.image.name }}:{{ $pxc.sidecars.metrics.image.tag }}
+      image: {{ required ".Values.global.dockerHubMirror is missing" .Values.global.dockerHubMirror }}/{{ $metrics.image.name }}:{{ $metrics.image.tag }}
       {{- end }}
       env:
         - name: MYSQLD_EXPORTER_PASSWORD
@@ -126,9 +128,9 @@ spec:
       args:
         - "--mysqld.username=monitor"
         - "--mysqld.address=localhost:3306"
-        - "--collect.binlog_size"
-        - "--collect.info_schema.processlist"
-        - "--collect.info_schema.query_response_time"
+        {{- range $flag := $metrics.flags }}
+        - "--{{$flag}}"
+        {{- end }}
       livenessProbe:
         httpGet:
           path: /
@@ -150,6 +152,7 @@ spec:
         limits:
           cpu: 250m
           memory: 256Mi
+    {{- end }}
     {{- if $pxc.priorityClassName }}
     priorityClassName: {{ $pxc.priorityClassName }}
     {{- end }}

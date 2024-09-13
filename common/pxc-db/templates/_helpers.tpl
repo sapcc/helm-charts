@@ -50,6 +50,16 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 
 {{/*
+Prometheus labels
+*/}}
+{{- define "pxc-db.metricsAnnotations" -}}
+{{- if .Values.metrics.enabled }}
+prometheus.io/scrape: "true"
+prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
+{{- end }}
+{{- end -}}
+
+{{/*
 Default pod labels for linkerd
 */}}
 {{- define "pxc-db.linkerdPodAnnotations" -}}

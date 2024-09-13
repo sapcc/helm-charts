@@ -94,12 +94,6 @@ pxc:
     name: percona/percona-xtradb-cluster
     tag: 8.0.36-28.1
     override: null
-  sidecars:
-    metrics:
-      image:
-        name: prom/mysqld-exporter
-        tag: v0.15.1
-        override: null
   imagePullPolicy: IfNotPresent
   annotations: {}
   labels: {}
@@ -229,3 +223,31 @@ backup:
       schedule: "0 0 * * *"
       keep: 5
       storageName: s3-backups
+
+# Prometheus metrics.
+metrics:
+  enabled: true
+  flags:
+    - collect.binlog_size
+    - collect.info_schema.processlist
+    - collect.info_schema.query_response_time
+  image:
+    name: prom/mysqld-exporter
+    tag: v0.15.1
+    override: null
+
+# Default Prometheus alerts and rules.
+alerts:
+  enabled: true
+
+  # Name of the Prometheus supposed to scrape the metrics and to which alerts are assigned.
+  prometheus: openstack
+
+  # The tier of the alert.
+  tier: os
+
+  # The support group label of the alerts. Must be given in values.yaml of parent chart.
+  #support_group:
+
+  # Configurable service label of the alerts. Defaults to `.Release.Name`.
+  # service:
