@@ -1,0 +1,30 @@
+groups:
+- name: openstack-manila.alerts
+  rules:
+  - alert: OpenstackManilaCaCertificateExpireSoon
+    expr: cert_exporter_configmap_expires_in_seconds{issuer="SAP Global Root CA"} < 2419200
+    for: 1h
+    labels:
+      severity: info
+      tier: os
+      service: manila
+      context: ca
+      support_group: compute-storage-api
+      playbook: 'docs/support/playbook/manila/ca_expire'
+    annotations:
+      description: CA certificate {{ $labels.cn }} will expire in 4 weeks or less.
+      summary: CA certificate {{ $labels.cn }} will expire.
+
+  - alert: OpenstackManilaCaCertificateExpireVerySoon
+    expr: cert_exporter_configmap_expires_in_seconds{issuer="SAP Global Root CA"} < 604800
+    for: 1h
+    labels:
+      severity: warning
+      tier: os
+      service: manila
+      context: ca
+      support_group: compute-storage-api
+      playbook: 'docs/support/playbook/manila/ca_expire'
+    annotations:
+      description: CA certificate {{ $labels.cn }} will expire in one week or less.
+      summary: CA certificate {{ $labels.cn }} will expire.
