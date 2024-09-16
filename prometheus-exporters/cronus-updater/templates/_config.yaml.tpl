@@ -17,7 +17,6 @@ updaterConfig:
     enabled: {{ .Values.secAttNotifier.enabled }}
     ec2Access: {{ .Values.secAttNotifier.awsAccess }}
     smtpHost: {{ .Values.secAttNotifier.smtpHost }}
-    smtpPassword: {{ .Values.secAttNotifier.smtpPassword }}
     port: {{ .Values.secAttNotifier.port }}
   {{- if .Values.secAttNotifier.days }}
     days:
