@@ -31,7 +31,6 @@
 "blocklist_roles": "'resource_service':%(target.role.name)s or
   'cloud_registry_admin':%(target.role.name)s or
   'cloud_registry_viewer':%(target.role.name)s or
-  'cloud_dns_resource_admin':%(target.role.name)s or
   'cloud_resource_admin':%(target.role.name)s or
   'cloud_resource_viewer':%(target.role.name)s or
   'cloud_baremetal_admin':%(target.role.name)s or
