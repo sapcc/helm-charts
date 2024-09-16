@@ -12,6 +12,12 @@ spec:
   teamRoleRef: {{ $roleBinding.teamRoleRef }}
   clusterSelector:
     {{- $roleBinding.clusterSelector | toYaml | nindent 4 }}
+{{- if $roleBinding.namespaces }}
+  namespaces:
+{{- range $namespace := $roleBinding.namespaces }}
+    - {{ $namespace }}
+{{- end }}
+{{- end }}
 {{- else }}
 {{- printf "Error: Missing teamRef, teamRoleRef, or clusterSelector in teamRoleBinding: %#v" $roleBinding | fail }}
 {{- end }}
