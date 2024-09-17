@@ -30,7 +30,6 @@ spec:
         linkerd.io/inject: enabled
 {{- end }}
         checksum/container.init: {{ include (print $.Template.BasePath "/bin-configmap.yaml") . | sha256sum }}
-        checksum/users: {{ include (print $.Template.BasePath "/users-secret.yaml") . | sha256sum }}
 {{- if .Values.customConfig }}
         checksum/custom.conf: {{ include (print .Template.BasePath "/etc/_rabbitmq-custom-config.tpl") . | sha256sum }}
 {{- end }}
@@ -68,6 +67,7 @@ spec:
           - mountPath: /var/lib/rabbitmq
             name: rabbitmq-persistent-storage
       {{- end }}
+      shareProcessNamespace: true
       containers:
       - name: rabbitmq
         image: "{{include "dockerHubMirror" .}}/{{ .Values.image }}:{{.Values.imageTag }}"
@@ -75,10 +75,6 @@ spec:
         env:
           - name: RABBIT_START_TIMEOUT
             value: {{ .Values.livenessProbe.initialDelaySeconds | quote }}
-        command:
-          - bash
-        args:
-          - /container.init/rabbitmq-start
         {{- if .Values.livenessProbe.enabled }}
         livenessProbe:
           exec:
@@ -115,15 +111,37 @@ spec:
         volumeMounts:
           - mountPath: /var/lib/rabbitmq
             name: rabbitmq-persistent-storage
-          - mountPath: /container.init
-            name: container-init
-          - mountPath: /etc/rabbitmq/secrets
-            name: rabbitmq-users-config
         {{- if .Values.customConfig }}
           - mountPath: /etc/rabbitmq/conf.d/20-custom.conf
             name: rabbitmq-custom-config
             subPath: 20-custom.conf
         {{- end }}
+      - name: configurator
+        image: "{{include "dockerHubMirror" .}}/{{ .Values.image }}:{{.Values.imageTag }}"
+        imagePullPolicy: {{ default "IfNotPresent" .Values.imagePullPolicy | quote }}
+        command:
+          - python3
+        args:
+          - /container.init/rabbitmq_setup_users.py
+        volumeMounts:
+          - mountPath: /container.init
+            name: container-init
+          - mountPath: /etc/rabbitmq/configurator
+            name: configurator-etc
+          - mountPath: /etc/rabbitmq/secrets
+            name: rabbitmq-users-config
+          - mountPath: /var/lib/rabbitmq
+            name: rabbitmq-persistent-storage
+        readinessProbe:
+          exec:
+            command:
+            - python3
+            - /container.init/rabbitmq_configurator_readiness.py
+          initialDelaySeconds: 20
+          periodSeconds: 5
+          timeoutSeconds: 20
+          failureThreshold: 3
+          successThreshold: 1
       priorityClassName: {{ default "openstack-service-critical" .Values.priority_class | quote }}
       volumes:
       {{- if not .Values.persistence.enabled }}
@@ -133,6 +151,9 @@ spec:
         - name: container-init
           configMap:
             name: {{ template "fullname" . }}-bin
+        - name: configurator-etc
+          configMap:
+            name: {{ template "fullname" . }}-configurator-etc
         - name: rabbitmq-users-config
           projected:
             sources:
