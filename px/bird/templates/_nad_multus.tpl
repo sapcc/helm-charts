@@ -17,7 +17,7 @@ spec:
         "mode": "bridge",
         "ipam": {
         "type": "static",
-        "addresses": [{ "address": "{{ required "bird_ip or pxmon_ip must be set" $ip }}"}]
+        "addresses": [{ "address": "{{ required "bird_ip must be set" $ip }}"}]
         }
     }
 {{ end }}
