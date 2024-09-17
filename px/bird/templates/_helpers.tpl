@@ -29,6 +29,24 @@ instance_config: everything nested under .Values.service_1.domain_1.instance_1
 {{- printf "%s-pxrs-%d-s%d-%d" .top.Values.global.region .domain_number .service_number .instance_number}}
 {{- end }}
 
+{{- define "bird.domain.labels" }}
+app: {{ include "bird.instance.deployment_name" . | quote }}
+pxservice: '{{ .service_number }}'
+pxdomain: '{{ .domain_number }}'
+{{- end }}
+
+{{- define "bird.instance.labels" }}
+app: {{ include "bird.instance.deployment_name" . | quote }}
+pxservice: '{{ .service_number }}'
+pxdomain: '{{ .domain_number }}'
+pxinstance: '{{ .instance_number }}'
+{{- end }}
+
+{{- define "bird.alert.labels" }}
+alert-tier: px
+alert-service: px
+{{- end }}
+
 {{- define "bird.domain.affinity" }}
 {{- if len .top.Values.apods  | eq 0 }}
 {{- fail "You must supply at least one apod for scheduling" -}}
