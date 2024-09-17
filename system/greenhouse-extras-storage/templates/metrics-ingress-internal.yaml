@@ -11,43 +11,22 @@ metadata:
     nginx.ingress.kubernetes.io/auth-tls-verify-depth: {{ required ".Values.prometheus.auth.tlsVerifyDepth missing" .Values.prometheus.auth.tlsVerifyDepth | quote }}
     ingress.kubernetes.io/auth-tls-verify-client: {{ required ".Values.prometheus.auth.tlsVerifyClient missing" .Values.prometheus.auth.tlsVerifyClient | quote }}
     nginx.ingress.kubernetes.io/auth-tls-verify-client: {{ required ".Values.prometheus.auth.tlsVerifyClient missing" .Values.prometheus.auth.tlsVerifyClient | quote }}
-  name: prometheus-internal
-  namespace: {{ required ".Values.prometheus.namespace is unset" .Values.prometheus.namespace }}
+  name: thanos-st1-internal 
+  namespace: {{ required ".Values.thanos.namespace is unset" .Values.thanos.namespace }}
 spec:
   ingressClassName: nginx
   rules:
-  - host: prometheus-internal.st1.{{ .Values.global.region }}.cloud.sap
+  - host: metrics.st1.{{ .Values.global.region }}.cloud.sap
     http:
       paths:
       - backend:
           service:
-            name: kube-monitoring-{{ .Values.global.cluster }}-prometheus
-            port:
-              number: 9090
-        path: /-/healthy
-        pathType: ImplementationSpecific
-      - backend:
-          service:
-            name: thanos-st1-{{ .Values.global.region }}-query
+            name: thanos-st1-{{ .Values.global.cluster }}-query
             port:
               name: http
-        path: /thanos
-        pathType: Prefix 
-      - backend:
-          service:
-            name: kube-monitoring-{{ .Values.global.cluster }}-prometheus
-            port:
-              number: 9090
-        path: /api
-        pathType: ImplementationSpecific
-      - backend:
-          service:
-            name: kube-monitoring-{{ .Values.global.cluster }}-prometheus
-            port:
-              number: 9090
-        path: /federate
-        pathType: ImplementationSpecific
+        path: /
+        pathType: Prefix
   tls:
   - hosts:
-    - prometheus-internal.st1.{{ .Values.global.region }}.cloud.sap
-    secretName: tls-prometheus-internal-{{ .Values.global.cluster }}-cloud-sap
+    - metrics.st1.{{ .Values.global.region }}.cloud.sap
+    secretName: tls-metrics-st1-{{ .Values.global.cluster }}-cloud-sap
