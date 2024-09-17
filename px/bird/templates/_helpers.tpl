@@ -77,3 +77,12 @@ podAntiAffinity:
           - {{ .domain_number | quote }}
 {{- end }}
 {{- end }}
+
+{{ define "bird.domain.tolerations"}}
+{{- if .top.Values.tolerate_arista_fabric }}
+- key: "fabric"
+  operator: "Equal"
+  value: "arista"
+  effect: "NoSchedule"
+{{- end }}
+{{- end }}

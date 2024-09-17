@@ -35,11 +35,5 @@ spec:
         k8s.v1.cni.cncf.io/networks: '[{ "name": "{{ include "bird.instance.deployment_name" . }}", "interface": "vlan{{ .domain_config.multus_vlan }}"}]'
     spec:
       affinity: {{ include "bird.domain.affinity" . | nindent 8 }}
-{{- if .top.Values.tolerate_arista_fabric }}
-      tolerations:
-      - key: "fabric"
-        operator: "Equal"
-        value: "arista"
-        effect: "NoSchedule"
-{{- end }}
+      tolerations: {{ include "bird.domain.tolerations" . | nindent 8 }}
 {{- end }}
