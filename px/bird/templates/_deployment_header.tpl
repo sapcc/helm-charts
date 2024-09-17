@@ -34,53 +34,7 @@ spec:
       annotations:
         k8s.v1.cni.cncf.io/networks: '[{ "name": "{{ include "bird.instance.deployment_name" . }}", "interface": "vlan{{ .domain_config.multus_vlan }}"}]'
     spec:
-{{- if len .top.Values.apods  | eq 0 }}
-{{- fail "You must supply at least one apod for scheduling" -}}
-{{ end }}
-      affinity:
-        nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-            - matchExpressions:
-              - key: kubernetes.cloud.sap/apod
-                operator: In
-                values: 
-{{- range $site := keys .top.Values.apods | sortAlpha }}
-{{- range get $.top.Values.apods  $site | sortAlpha }}
-                - {{ . }}
-{{- end }}
-{{- end }}
-{{- if .top.Values.prevent_hosts }}
-              - key: kubernetes.cloud.sap/host
-                operator: NotIn
-                values:
-{{ .top.Values.prevent_hosts | toYaml | indent  16 }}
-{{- end }}
-        podAntiAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-          - topologyKey: "kubernetes.cloud.sap/host"
-            labelSelector:
-              matchExpressions:
-              - key: pxservice
-                operator: In
-                values:
-                - {{ .service_number | quote }}
-{{- if and (ge (len .top.Values.global.availability_zones ) 2) $.top.Values.az_redundancy }}
-{{- if lt (len (keys .top.Values.apods))  2 }}
-{{- fail "If the region consists of multiple AZs, PX must be scheduled in at least 2" -}}
-{{- end }}
-          - topologyKey: topology.kubernetes.io/zone
-            labelSelector:
-              matchExpressions:
-              - key: pxservice
-                operator: In
-                values:
-                - {{ .service_number | quote }}
-              - key: pxdomain
-                operator: In
-                values:
-                - {{ .domain_number | quote }}
-{{- end }}
+      affinity: {{ include "bird.domain.affinity" . | nindent 8 }}
 {{- if .top.Values.tolerate_arista_fabric }}
       tolerations:
       - key: "fabric"
