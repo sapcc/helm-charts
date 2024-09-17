@@ -151,6 +151,22 @@ spec:
     affinity:
 #     antiAffinityTopologyKey: "kubernetes.io/hostname"
       advanced:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - preference:
+              matchExpressions:
+              - key: cloud.sap/maintenance-state
+                operator: In
+                values:
+                - operational
+            weight: 1
+          - preference:
+              matchExpressions:
+              - key: cloud.sap/deployment-state
+                operator: NotIn
+                values:
+                - reinstalling
+            weight: 1
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
             - weight: 1
@@ -242,6 +258,22 @@ spec:
     affinity:
 #     antiAffinityTopologyKey: "kubernetes.io/hostname"
       advanced:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - preference:
+              matchExpressions:
+              - key: cloud.sap/maintenance-state
+                operator: In
+                values:
+                - operational
+            weight: 1
+          - preference:
+              matchExpressions:
+              - key: cloud.sap/deployment-state
+                operator: NotIn
+                values:
+                - reinstalling
+            weight: 1
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
             - weight: 1
