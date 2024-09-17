@@ -30,7 +30,8 @@
 - name: CASTELLUM_NFS_DISCOVERY_PROMETHEUS_URL
   value: "http://prometheus-openstack.prometheus-openstack.svc:9090"
 - name: CASTELLUM_NFS_PROMETHEUS_URL
-  value: "http://prometheus-storage.infra-monitoring.svc:9090"
+  # most metrics are in prometheus-storage, but some exclusion_reasons metrics are in prometheus-openstack
+  value: "http://thanos-metal-query.thanos.svc:10902"
 {{- end }}
 - name: CASTELLUM_OSLO_POLICY_PATH
   value: /etc/castellum/policy.yaml
