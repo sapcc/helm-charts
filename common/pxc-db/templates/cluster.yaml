@@ -83,25 +83,17 @@ spec:
     imagePullPolicy: {{ $pxc.imagePullPolicy }}
     {{- end }}
     readinessProbes:
-      initialDelaySeconds: 15
-      timeoutSeconds: 15
-      periodSeconds: 30
-      successThreshold: 1
-      failureThreshold: 5
+{{ tpl ($pxc.readinessProbes | toYaml) $ | indent 6 }}
     livenessProbes:
-      initialDelaySeconds: 300
-      timeoutSeconds: 5
-      periodSeconds: 10
-      successThreshold: 1
-      failureThreshold: 3
+{{ tpl ($pxc.livenessProbes | toYaml) $ | indent 6 }}
+    {{- if $pxc.containerSecurityContext }}
     containerSecurityContext:
-      privileged: false
+{{ tpl ($pxc.containerSecurityContext | toYaml) $ | indent 6 }}
+    {{- end }}
+    {{- if $pxc.podSecurityContext }}
     podSecurityContext:
-      runAsUser: 1001
-      runAsGroup: 1001
-      fsGroup: 1001
-      supplementalGroups: [1001]
-      fsGroupChangePolicy: "Always"
+{{ tpl ($pxc.podSecurityContext | toYaml) $ | indent 6 }}
+    {{- end }}
     resources:
       requests:
 {{ tpl ($pxc.resources.requests | toYaml) $ | indent 8 }}
@@ -224,17 +216,17 @@ spec:
     readinessDelaySec: 15
     livenessDelaySec: 600
     readinessProbes:
-      initialDelaySeconds: 15
-      timeoutSeconds: 1
-      periodSeconds: 5
-      successThreshold: 1
-      failureThreshold: 3
+{{ tpl ($haproxy.readinessProbes | toYaml) $ | indent 6 }}
     livenessProbes:
-      initialDelaySeconds: 60
-      timeoutSeconds: 5
-      periodSeconds: 30
-      successThreshold: 1
-      failureThreshold: 4
+{{ tpl ($haproxy.livenessProbes | toYaml) $ | indent 6 }}
+    {{- if $haproxy.containerSecurityContext }}
+    containerSecurityContext:
+{{ tpl ($haproxy.containerSecurityContext | toYaml) $ | indent 6 }}
+    {{- end }}
+    {{- if $haproxy.podSecurityContext }}
+    podSecurityContext:
+{{ tpl ($haproxy.podSecurityContext | toYaml) $ | indent 6 }}
+    {{- end }}
     exposePrimary:
 {{ $haproxy.service.primary | toYaml | indent 6 }}
     exposeReplicas:
@@ -278,13 +270,6 @@ spec:
                       values:
                         - "haproxy"
                 topologyKey: "kubernetes.io/hostname"
-    containerSecurityContext:
-      privileged: false
-    podSecurityContext:
-      runAsUser: 1001
-      runAsGroup: 1001
-      fsGroup: 1001
-      supplementalGroups: [1001]
     podDisruptionBudget:
       maxUnavailable: 1
     gracePeriod: 30
