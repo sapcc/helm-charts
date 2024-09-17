@@ -19,6 +19,7 @@ spec:
       labels: {{ include "bird.instance.labels" . | nindent 8 }}
         {{ include "bird.alert.labels" . | nindent 8 }}
         app.kubernetes.io/name: px
+        kubectl.kubernetes.io/default-container: "bird"
       annotations:
         k8s.v1.cni.cncf.io/networks: '[{ "name": "{{ include "bird.instance.deployment_name" . }}", "interface": "vlan{{ .domain_config.multus_vlan }}"}]'
     spec:
