@@ -1,37 +1,24 @@
 {{- define "deployment_header" -}}
-{{- $deployment_name := index . 0 | required "deployment_name cannot be empty"}}
-{{- $azs := index . 1}}
-{{- $scheduling_labels := index . 2 }}
-{{- $apods := index . 3 }}
-{{- $multus_vlan := index . 4 | required "multus_vlan is required for every domain" }}
-{{- $service_number := index . 5 }}
-{{- $service := index . 6 }}
-{{- $domain_number := index . 7}}
-{{- $domain := index . 8}}
-{{- $instance_number := index . 9}}
-{{- $instance := index . 10}}
-{{- $az_redundancy  := index . 11}}
-{{- $tolerate_arista_fabric  := index . 12}}
-{{- $prevent_hosts := index . 13 }}
+{{- $apods := .top.Values.apods }}
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ $deployment_name }}
+  name: {{ include "bird.instance.deployment_name" . }}
   namespace: px
   labels:
-    app: {{ $deployment_name | quote }}
-    pxservice: '{{ $service_number }}'
-    pxdomain: '{{ $domain_number }}'
-    pxinstance: '{{ $instance_number }}'
+    app: {{ include "bird.instance.deployment_name" .  | quote }}
+    pxservice: '{{ .service_number }}'
+    pxdomain: '{{ .domain_number }}'
+    pxinstance: '{{ .instance_number }}'
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: {{ $deployment_name | quote }}
-      pxservice: '{{ $service_number }}'
-      pxdomain: '{{ $domain_number }}'
-      pxinstance: '{{ $instance_number }}'
+      app: {{ include "bird.instance.deployment_name" . | quote }}
+      pxservice: '{{ .service_number }}'
+      pxdomain: '{{ .domain_number }}'
+      pxinstance: '{{ .instance_number }}'
   strategy:
     type: Recreate
   template:
@@ -39,15 +26,15 @@ spec:
       labels:
         alert-tier: px
         alert-service: px
-        app: {{ $deployment_name }}
-        pxservice: '{{ $service_number }}'
-        pxdomain: '{{ $domain_number }}'
-        pxinstance: '{{ $instance_number }}'
+        app: {{ include "bird.instance.deployment_name" .  | quote }}
+        pxservice: '{{ .service_number }}'
+        pxdomain: '{{ .domain_number }}'
+        pxinstance: '{{ .instance_number }}'
         app.kubernetes.io/name: px
       annotations:
-        k8s.v1.cni.cncf.io/networks: '[{ "name": "{{ $deployment_name }}", "interface": "vlan{{ $multus_vlan}}"}]'
+        k8s.v1.cni.cncf.io/networks: '[{ "name": "{{ include "bird.instance.deployment_name" . }}", "interface": "vlan{{ .domain_config.multus_vlan }}"}]'
     spec:
-{{- if len $apods | eq 0 }}
+{{- if len .top.Values.apods  | eq 0 }}
 {{- fail "You must supply at least one apod for scheduling" -}}
 {{ end }}
       affinity:
@@ -58,16 +45,16 @@ spec:
               - key: kubernetes.cloud.sap/apod
                 operator: In
                 values: 
-{{- range $site := keys $apods | sortAlpha }}
-{{- range get $apods $site | sortAlpha }}
+{{- range $site := keys .top.Values.apods | sortAlpha }}
+{{- range get $.top.Values.apods  $site | sortAlpha }}
                 - {{ . }}
 {{- end }}
 {{- end }}
-{{- if $prevent_hosts }}
+{{- if .top.Values.prevent_hosts }}
               - key: kubernetes.cloud.sap/host
                 operator: NotIn
                 values:
-{{ $prevent_hosts | toYaml | indent  16 }}
+{{ .top.Values.prevent_hosts | toYaml | indent  16 }}
 {{- end }}
         podAntiAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
@@ -77,9 +64,9 @@ spec:
               - key: pxservice
                 operator: In
                 values:
-                - {{ $service_number | quote }}
-{{- if and (ge (len $azs) 2) $az_redundancy }}
-{{- if lt (len (keys $apods))  2 }}
+                - {{ .service_number | quote }}
+{{- if and (ge (len .top.Values.global.availability_zones ) 2) $.top.Values.az_redundancy }}
+{{- if lt (len (keys .top.Values.apods))  2 }}
 {{- fail "If the region consists of multiple AZs, PX must be scheduled in at least 2" -}}
 {{- end }}
           - topologyKey: topology.kubernetes.io/zone
@@ -88,13 +75,13 @@ spec:
               - key: pxservice
                 operator: In
                 values:
-                - {{ $service_number | quote }}
+                - {{ .service_number | quote }}
               - key: pxdomain
                 operator: In
                 values:
-                - {{ $domain_number | quote }}
+                - {{ .domain_number | quote }}
 {{- end }}
-{{- if $tolerate_arista_fabric }}
+{{- if .top.Values.tolerate_arista_fabric }}
       tolerations:
       - key: "fabric"
         operator: "Equal"

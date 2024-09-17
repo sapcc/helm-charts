@@ -1,24 +1,35 @@
 {{- range $service, $service_config := .Values.config -}}
 {{ if and (hasPrefix "service_" $service) (has $service $.Values.deploy) }}
-{{- $service_number := trimPrefix "service_" $service | int -}}
 
 {{- range $domain, $domain_config := $service_config -}}
 {{ if and (hasPrefix "domain_" $domain) (has $domain $.Values.deploy) }}
-{{- $domain_number := trimPrefix "domain_" $domain | int -}}
-{{- $config_name := printf "%s-pxrs-%d-s%d" $.Values.global.region $domain_number $service_number -}}
 
-{{ tuple $.Files $.Values.bird_config_path $config_name | include "configmap_bird" }}
+{{- $ctxDomain := dict 
+    "top" $
+    "service" $service
+    "service_number" (trimPrefix "service_" $service | int)
+    "service_config" $service_config
+    "domain" $domain
+    "domain_number" (trimPrefix "domain_" $domain | int)
+    "domain_config" $domain_config
+}}
+
+{{ include "configmap_bird" $ctxDomain }}
 
 {{- range $instance, $instance_config := $domain_config -}}
 {{ if and (hasPrefix "instance_" $instance) (has $instance $.Values.deploy) }}
-{{- $instance_number := trimPrefix "instance_" $instance | int -}}
-{{- $deployment_name := printf "%s-pxrs-%d-s%d-%d" $.Values.global.region $domain_number $service_number $instance_number -}}
+
+{{- $ctxInstance := mergeOverwrite $ctxDomain (dict 
+        "instance" $instance
+        "instance_number" (trimPrefix "instance_" $instance | int)
+        "instance_config" $instance_config)
+}}
 
 ---
-{{ tuple $deployment_name $domain_config.multus_vlan $instance_config.bird_ip | include "nad_multus"}}
-{{ tuple $deployment_name $.Values.global.availability_zones $.Values.scheduling_labels $.Values.apods $domain_config.multus_vlan $service_number $service $domain_number $domain $instance_number $instance $.Values.az_redundancy $.Values.tolerate_arista_fabric $.Values.prevent_hosts | include "deployment_header" }}
-{{ tuple $.Values $deployment_name $service_number $service_config $domain_number $domain_config | include "deployment_bird" | indent 6 }}
-{{ tuple $deployment_name $.Values.looking_glass | include "service_pxrs" }}
+{{ include "nad_multus" $ctxInstance }}
+{{ include "deployment_header" $ctxInstance }}
+{{ include "deployment_bird" $ctxInstance | indent 6 }}
+{{ include "service_pxrs" $ctxInstance }}
 
 {{- end -}}
 {{- end -}}
