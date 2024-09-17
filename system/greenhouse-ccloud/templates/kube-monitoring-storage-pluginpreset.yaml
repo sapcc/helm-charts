@@ -24,6 +24,14 @@ spec:
       value: thanos-{{ $thanosCluster }}-metrics-objectstore
     - name: kubeMonitoring.prometheus.prometheusSpec.thanos.objectStorageConfig.existingSecret.key
       value: thanos.yaml
+    - name: kubeMonitoring.kube-state-metrics.prometheus.monitor.http.metricRelabelings
+      value:
+      - action: replace
+        regex: .*
+        replacement: {{ $thanosCluster }}
+        sourceLabels:
+        - __name__
+        targetLabel: cluster
   {{- end }}
   clusterSelector:
     matchLabels:
