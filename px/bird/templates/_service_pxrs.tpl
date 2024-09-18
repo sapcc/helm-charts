@@ -4,7 +4,6 @@ apiVersion: v1
 kind: Service
 metadata:
   name: {{ include "bird.instance.deployment_name" . }}
-  namespace: px
 spec:
   ports:
 {{- range $lg, $lg_config := .top.Values.looking_glass }}

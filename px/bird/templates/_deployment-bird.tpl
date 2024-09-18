@@ -4,7 +4,6 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ include "bird.instance.deployment_name" . }}
-  namespace: px
   labels: {{ include "bird.instance.labels" . | nindent 4 }}
 spec:
   replicas: 1
