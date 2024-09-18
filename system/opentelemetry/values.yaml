@@ -8,50 +8,53 @@ owner-info:
   helm-chart-url: https://github.com/sapcc/helm-charts/system/opentelemetry
 
 opentelemetry-operator:
-  crds:
-    create: false
-  admissionWebhooks:
-    failurePolicy: 'Ignore'
-    create: true
-    certManager:
+  opentelemetry-operator:
+    crds:
+      create: false
+    admissionWebhooks:
+      failurePolicy: 'Ignore'
+      create: true
+      certManager:
+        enabled: false
+      autoGenerateCert:
+        enabled: false
+        recreate: false
+    manager:
+      collectorImage:
+        repository: DEFINED-IN-SECRETS
+        tag: DEFINED-IN-SECRETS
+      deploymentAnnotations:
+        vpa-butler.cloud.sap/update-mode: Auto
+      prometheusRule:
+        enabled: false
+        defaultRules:
+          enabled: false
+      serviceMonitor:
+        enabled: false
+    kubeRBACProxy:
       enabled: false
-    autoGenerateCert:
-      enabled: false
-      recreate: false
-  manager:
-    collectorImage:
-      repository: keppel.eu-de-1.cloud.sap/ccloud/opentelemetry/collector-image
-      tag: "20240916095244"
-    deploymentAnnotations:
-      vpa-butler.cloud.sap/update-mode: Auto
-    prometheusRule:
-      enabled: true
-      defaultRules:
-        enabled: true
-    serviceMonitor:
-      enabled: true
-  kubeRBACProxy:
-    enabled: false
 # Empty variables will fail during rollout
-openTelemetry:
-  OpenSearchLogs:
-    endpoint: DEFINED-IN-SECRETS
-    username: DEFINED-IN-SECRETS
-    password: DEFINED-IN-SECRETS
-  cluster: DEFINED-IN-SECRETS
-  region: DEFINED-IN-SECRETS
-  logsCollector:
-    enabled: false
-  prometheus: DEFINED-IN-SECRETS
-  podMonitor:
-    enabled: false
-  serviceMonitor:
-    enabled: false
+  openTelemetry:
+    metricsCollector:
+      enabled: false
+    openSearchLogs:
+      endpoint: DEFINED-IN-SECRETS
+      username: DEFINED-IN-SECRETS
+      password: DEFINED-IN-SECRETS
+    cluster: DEFINED-IN-SECRETS
+    region: DEFINED-IN-SECRETS
+    logsCollector:
+      enabled: false
+    prometheus: DEFINED-IN-SECRETS
+    podMonitor:
+      enabled: false
+    serviceMonitor:
+      enabled: false
 
-testFramework:
-  enabled: true
-  image:
-    registry: ghcr.io
-    repository: cloudoperators/greenhouse-extensions-integration-test
-    tag: main
-  imagePullPolicy: IfNotPresent
+  testFramework:
+    enabled: false
+    image:
+      registry: ghcr.io
+      repository: cloudoperators/greenhouse-extensions-integration-test
+      tag: main
+    imagePullPolicy: IfNotPresent
