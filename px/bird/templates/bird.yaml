@@ -15,23 +15,10 @@
 }}
 
 {{ include "configmap_bird" $ctxDomain }}
+{{ include "nad_multus" $ctxDomain }}
+{{ include "deployment_bird" $ctxDomain }}
 
-{{- range $instance, $instance_config := $domain_config -}}
-{{ if and (hasPrefix "instance_" $instance) (has $instance $.Values.deploy) }}
 
-{{- $ctxInstance := mergeOverwrite $ctxDomain (dict 
-        "instance" $instance
-        "instance_number" (trimPrefix "instance_" $instance | int)
-        "instance_config" $instance_config)
-}}
-
----
-{{ include "nad_multus" $ctxInstance }}
-{{ include "deployment_bird" $ctxInstance }}
-{{ include "service_pxrs" $ctxInstance }}
-
-{{- end -}}
-{{- end -}}
 {{- end -}}
 {{- end -}}
 {{- end -}}

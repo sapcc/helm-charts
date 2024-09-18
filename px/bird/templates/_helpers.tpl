@@ -23,16 +23,10 @@
 {{- end }}
 
 {{- define "bird.domain.labels" }}
-app: {{ include "bird.statefulset.deployment_name" . | quote }}
+app: {{ include "bird.domain.deployment_name" . | quote }}
 pxservice: '{{ .service_number }}'
 pxdomain: '{{ .domain_number }}'
-{{- end }}
-
-{{- define "bird.statefulset.labels" }}
-app: {{ include "bird.statefulset.deployment_name" . | quote }}
-pxservice: '{{ .service_number }}'
-pxdomain: '{{ .domain_number }}'
-pxinstance: '{{ .instance_number }}'
+service: {{ .top.Release.Name | quote }}
 {{- end }}
 
 {{- define "bird.alert.labels" }}
