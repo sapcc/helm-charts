@@ -1,0 +1,17 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}
+spec:
+  type: ClusterIP
+  clusterIP: "None"
+  ipFamilyPolicy: SingleStack
+  selector:
+    service: {{ .Release.Name }}
+  ports:
+{{- range $lg, $lg_config := .Values.looking_glass }}
+  - name: {{ $lg }}proxy
+    protocol: TCP
+    port: {{ required "proxy_port cannot be empty" $lg_config.proxy_port }}
+{{- end }}
