@@ -1,0 +1,65 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+    name: {{ printf "%s-init-network" .Release.Name | quote }}
+data:
+    configure_network.sh: |
+        #!/usr/bin/bash -e
+
+        RS_IP=$(/px-init/calculate_ip_by_statefulset_ordinal.py)
+
+        function ip_assigned() {
+            out=$(ip addr show dev $PX_INTERFACE scope global)
+            if [[ "$out" == *"$RS_IP"* ]] && [[ "$out" == *"tentative"* ]]; then
+                echo "tentative"
+            elif [[ "$out" == *"$RS_IP"* ]]; then
+                echo "assigned"
+            else
+                echo "unassigned"
+            fi
+        }
+
+        function assign_ip_address() {
+            echo "Adding $RS_IP to $PX_INTERFACE"
+            ip addr add $RS_IP dev $PX_INTERFACE
+
+            while [[ $(ip_assigned) == "tentative" ]]; do
+                echo "Waiting for IP address to be assigned, is tentative"
+                sleep 1
+            done;
+
+            if [[ $(ip_assigned) == "unassigned" ]]; then
+                echo "Failed to assign $RS_IP to $PX_INTERFACE"
+                exit -1
+            fi
+
+            echo "Successfully assigned $RS_IP to $PX_INTERFACE"
+            ip addr show dev $PX_INTERFACE scope global
+        }
+
+        if [[ $(ip_assigned) == "unassigned" ]]; then
+            assign_ip_address
+        fi
+        
+        echo "Setting promiscious mode on $PX_INTERFACE"
+        ip link set $PX_INTERFACE promisc on
+
+    calculate_ip_by_statefulset_ordinal.py: |
+        #!/usr/bin/python3
+        import platform
+        import os
+        import sys
+
+        from ipaddress import ip_network
+
+        network = os.environ.get('PX_NETWORK')
+        network = ip_network(network)
+
+        hostname = platform.node()
+        ordinal = hostname.split('-')[-1]
+        if not ordinal or not ordinal.isdigit():
+            print(f'Invalid hostname "{hostname}", must be statefulset-like ending with an integer ordinal (0 or 1)',
+                file=sys.stderr)
+            exit(1)
+        ordinal = int(ordinal)
+        print(f'{network[ordinal]}/{network.prefixlen}')

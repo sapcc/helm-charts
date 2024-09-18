@@ -12,7 +12,7 @@ PROXY = {
     {{ range $i, $domain := list "1" "2" -}}
     {{- range $service := list "1" "2" "3" -}}
     {{- range $instance := list "1" "2" -}}
-    "routeserver-v4-service-{{ $service }}-domain-{{ $domain }}-{{ $instance }}": {{ $.proxy_port }},
+    "routeserver-v4-service-{{ $service }}-domain-{{ $domain }}-{{ $instance }}.bird-domain{{ $domain }}": {{ $.proxy_port }},
     {{ end -}}
     {{- end -}}
     {{- end -}}
