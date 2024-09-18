@@ -13,29 +13,22 @@ metadata:
     nginx.ingress.kubernetes.io/auth-request-redirect: $escaped_request_uri
     ingress.kubernetes.io/auth-response-headers: "Authorization, X-Auth-Request-Email, X-Auth-Request-User, X-Forwarded-Access-Token"
     nginx.ingress.kubernetes.io/auth-response-headers: "Authorization, X-Auth-Request-Email, X-Auth-Request-User, X-Forwarded-Access-Token"
-  name: prometheus
-  namespace: {{ required ".Values.prometheus.namespace is unset" .Values.prometheus.namespace }}
+  name: thanos-st1 
+  namespace: {{ required ".Values.thanos.namespace is unset" .Values.thanos.namespace }}
 spec:
   ingressClassName: nginx
   rules:
-  - host: prometheus.st1.{{ .Values.global.region }}.cloud.sap
+  - host: metrics.st1.{{ .Values.global.region }}.cloud.sap
     http:
       paths:
       - backend:
           service:
-            name: kube-monitoring-{{ .Values.global.cluster }}-prometheus
-            port:
-              number: 9090
-        path: /
-        pathType: Prefix
-      - backend:
-          service:
-            name: thanos-st1-{{ .Values.global.region }}-query
+            name: thanos-st1-{{ .Values.global.cluster }}-query
             port:
               name: http
-        path: /thanos
-        pathType: Prefix 
+        path: /
+        pathType: Prefix
   tls:
   - hosts:
-    - prometheus.st1.{{ .Values.global.region }}.cloud.sap
-    secretName: tls-prometheus-{{ .Values.global.cluster }}-cloud-sap
+    - metrics.st1.{{ .Values.global.region }}.cloud.sap
+    secretName: tls-metrics-st1-{{ .Values.global.cluster }}-cloud-sap
