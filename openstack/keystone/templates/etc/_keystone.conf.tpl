@@ -43,7 +43,6 @@ url = {{ required "missing global.api.cc_password.url" .Values.global.api.cc_pas
 {{- end }}
 
 [cc_x509]
-trusted_issuer = CN=SSO_CA,O=SAP-AG,C=DE
 trusted_issuer = CN=SAP SSO CA G2,O=SAP SE,L=Walldorf,C=DE
 user_domain_id_header: HTTP_X_USER_DOMAIN_ID
 user_domain_name_header: HTTP_X_USER_DOMAIN_NAME
