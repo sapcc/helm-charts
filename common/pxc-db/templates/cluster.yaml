@@ -149,51 +149,7 @@ spec:
     priorityClassName: {{ $pxc.priorityClassName }}
     {{- end }}
     affinity:
-      advanced:
-        nodeAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-          - preference:
-              matchExpressions:
-              - key: cloud.sap/maintenance-state
-                operator: In
-                values:
-                - operational
-            weight: 1
-          - preference:
-              matchExpressions:
-              - key: cloud.sap/deployment-state
-                operator: NotIn
-                values:
-                - reinstalling
-            weight: 1
-        podAntiAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-            - weight: 50
-              podAffinityTerm:
-                labelSelector:
-                  matchExpressions:
-                    - key: app.kubernetes.io/instance
-                      operator: In
-                      values:
-                        - {{ .Values.name }}-db
-                    - key: app.kubernetes.io/component
-                      operator: In
-                      values:
-                        - pxc
-                topologyKey: topology.kubernetes.io/zone
-            - weight: 100
-              podAffinityTerm:
-                labelSelector:
-                  matchExpressions:
-                    - key: app.kubernetes.io/instance
-                      operator: In
-                      values:
-                        - {{ .Values.name }}-db
-                    - key: app.kubernetes.io/component
-                      operator: In
-                      values:
-                        - pxc
-                topologyKey: kubernetes.io/hostname
+{{ tpl ($pxc.affinity | toYaml) $ | indent 6 }}
     podDisruptionBudget:
       maxUnavailable: 1
     volumeSpec:
@@ -255,51 +211,7 @@ spec:
     priorityClassName: {{ $haproxy.priorityClassName }}
     {{- end }}
     affinity:
-      advanced:
-        nodeAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-          - preference:
-              matchExpressions:
-              - key: cloud.sap/maintenance-state
-                operator: In
-                values:
-                - operational
-            weight: 1
-          - preference:
-              matchExpressions:
-              - key: cloud.sap/deployment-state
-                operator: NotIn
-                values:
-                - reinstalling
-            weight: 1
-        podAntiAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-            - weight: 50
-              podAffinityTerm:
-                labelSelector:
-                  matchExpressions:
-                    - key: app.kubernetes.io/instance
-                      operator: In
-                      values:
-                        - {{ .Values.name }}-db
-                    - key: app.kubernetes.io/component
-                      operator: In
-                      values:
-                        - haproxy
-                topologyKey: topology.kubernetes.io/zone
-            - weight: 100
-              podAffinityTerm:
-                labelSelector:
-                  matchExpressions:
-                    - key: app.kubernetes.io/instance
-                      operator: In
-                      values:
-                        - {{ .Values.name }}-db
-                    - key: app.kubernetes.io/component
-                      operator: In
-                      values:
-                        - haproxy
-                topologyKey: kubernetes.io/hostname
+{{ tpl ($haproxy.affinity | toYaml) $ | indent 6 }}
     podDisruptionBudget:
       maxUnavailable: 1
     gracePeriod: 30
