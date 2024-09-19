@@ -76,8 +76,6 @@ transport_url = {{ include "utils.rabbitmq_url" (tuple . $data) }}
 [vnc]
 enabled = {{ $config.enabled }}
 {{- if $config.enabled }}
-server_listen = $my_ip
-server_proxyclient_address = $my_ip
 novncproxy_base_url = https://{{include "nova_console_endpoint_host_public" .}}:{{ .Values.global.novaConsolePortPublic }}/{{ $cell_name }}/novnc/vnc_auto.html?path=/{{ $cell_name }}/novnc/websockify
 {{- end }}
 {{- end }}
