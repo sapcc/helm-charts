@@ -17,6 +17,7 @@ function cleanup_tempest_leftovers() {
   export OS_PROJECT_DOMAIN_NAME=tempest
   export OS_DOMAIN_NAME=tempest
   export OS_USER_DOMAIN_NAME=tempest
+  export OS_PROJECT_NAME=admin
 
   for service in $(openstack service list | grep -E 'tempest-service' | awk '{ print $2 }'); do openstack service delete ${service}; done
   for region in $(openstack region list | grep -E 'tempest-region' | awk '{ print $2 }'); do openstack region delete ${region}; done
