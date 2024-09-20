@@ -71,15 +71,34 @@ poller:
   {{- end -}}
   {{- end -}}
   {{- if .Values.simulator.poller.keystone.enabled }}
-
   keystone:
+    {{- if .Values.simulator.poller.keystone.authUrl }}
     authUrl: {{ .Values.simulator.poller.keystone.authUrl }}
+    {{- end -}}
+    {{- if .Values.simulator.poller.keystone.endpointType }}
     endpointType: {{ .Values.simulator.poller.keystone.endpointType }}
+    {{- end -}}
+    {{- if .Values.simulator.poller.keystone.projectDomainName }}
     projectDomainName: {{ .Values.simulator.poller.keystone.projectDomainName }}
+    {{- end -}}
+    {{- if .Values.simulator.poller.keystone.projectName }}
     projectName: {{ .Values.simulator.poller.keystone.projectName }}
+    {{- end -}}
+    {{- if .Values.simulator.poller.keystone.region }}
     region: {{ .Values.simulator.poller.keystone.region }}
+    {{- end -}}
+    {{- if .Values.simulator.poller.keystone.userDomainName }}
     userDomainName: {{ .Values.simulator.poller.keystone.userDomainName }}
+    {{- end -}}
+    {{- if .Values.simulator.poller.keystone.username }}
     username: {{ .Values.simulator.poller.keystone.username }}
+    {{- end -}}
+    {{- if .Values.simulator.poller.keystone.applicationCredentialID }}
+    applicationCredentialID: {{ .Values.simulator.poller.keystone.applicationCredentialID }}
+    {{- end -}}
+    {{- if .Values.simulator.poller.keystone.applicationCredentialSecret }}
+    applicationCredentialID: {{ .Values.simulator.poller.keystone.applicationCredentialSecret }}
+    {{- end -}}
   {{- end -}}
   {{- if eq .Values.simulator.poller.action "simulator" }}
   simulator:
