@@ -97,7 +97,7 @@ poller:
     applicationCredentialID: {{ .Values.simulator.poller.keystone.applicationCredentialID }}
     {{- end -}}
     {{- if .Values.simulator.poller.keystone.applicationCredentialSecret }}
-    applicationCredentialID: {{ .Values.simulator.poller.keystone.applicationCredentialSecret }}
+    applicationCredentialSecret: {{ .Values.simulator.poller.keystone.applicationCredentialSecret }}
     {{- end -}}
   {{- end -}}
   {{- if eq .Values.simulator.poller.action "simulator" }}
