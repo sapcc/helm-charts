@@ -55,13 +55,16 @@ if [ "${DATA_STREAM_ENABLED}" = true ]; then
         # 2. create datastream, if missing. It's done here, because the normal template has no versioning and can be overwritten during each run.
         #    data_stream example: otellogs-datastream
 
-        export EXISTING_DS=$(curl -s -u "${ADMIN_USER}:${ADMIN_PASSWORD}" -XGET "${CLUSTER_HOST}/_data_stream"|jq .data_streams[].name)
-        echo $EXISTING_DS | grep -q "$e-datastream"
+        export EXISTING_DS=`curl -s -u "${ADMIN_USER}:${ADMIN_PASSWORD}" -XGET "${CLUSTER_HOST}/_data_stream"|jq .data_streams[].name|awk ' {gsub("-datastream","") } 1'|tr  -d \"`
+        echo "\nExisting datastreams: $EXISTING_DS\n"
+        echo "$EXISTING_DS" | grep -q "^$e$"
         if [ $? -eq 1 ]; then
-           echo "Creating datastream $e"
+           echo "\nCreating datastream $e\n"
            curl -u "${ADMIN_USER}:${ADMIN_PASSWORD}" -XPUT "${CLUSTER_HOST}/_data_stream/${e}-datastream"
            # Assign ISM policy to newly created datastream
            curl --header 'content-type: application/JSON' --silent -u "${ADMIN_USER}:${ADMIN_PASSWORD}" -XPOST "${CLUSTER_HOST}/_plugins/_ism/add/.ds-${e}-datastream-000001" -d "{ \"policy_id\": \"ds-${e}-ism\" }"
+        else
+           echo "No datastream creation return code was not 1 for datastream $e"
         fi
      else
        # update of existing policy
