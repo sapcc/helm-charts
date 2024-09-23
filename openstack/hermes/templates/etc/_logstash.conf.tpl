@@ -205,7 +205,7 @@ filter {
   }
 
   # Log and Correct malformed target.project_id
-  # Addresses some castellum events having multiple duplicate target.project_id's3
+  # Addresses some castellum events having multiple duplicate target.project_id's
   # with debug logging to track down the issue further.
   if [target][project_id] {
    if ([target][project_id] =~ /,/) or (is_array([target][project_id])) {
@@ -223,19 +223,15 @@ filter {
         code => '
           project_id = event.get("[target][project_id]")
           if project_id.is_a?(Array)
-            # If it's an array, take the first element
             corrected_id = project_id[0]
             event.logger.warn("target project_id is an array")
           elsif project_id.is_a?(String)
-            # If it's a string, remove comma and everything after
             corrected_id = project_id.split(",")[0]
             event.logger.warn("target project_id is a string that contains a comma")
           else
-            # If it's not an array nor a string, leave as is
             corrected_id = project_id
             event.logger.warn("target project_id is not a string or an array")
           end
-          # Remove any leading/trailing whitespace
           event.set("[target][project_id]", corrected_id.strip)
         '
       }
