@@ -208,7 +208,7 @@ filter {
   # Addresses some castellum events having multiple duplicate target.project_id's3
   # with debug logging to track down the issue further.
   if [target][project_id] {
-    if ([target][project_id] =~ /,/) or ([target][project_id].is_a?(Array)) {
+   if ([target][project_id] =~ /,/) or (is_array([target][project_id])) {
       # Log a warning message with the entire event
       ruby {
         id => "f27_log_entire_event"
