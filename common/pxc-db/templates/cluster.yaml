@@ -254,10 +254,7 @@ spec:
         priorityClassName: {{ $backup.priorityClassName }}
         {{- end }}
         s3:
-          bucket: "pxc-backup-{{ .Values.global.region }}/binlogs/{{.Values.name}}/"
-          credentialsSecret: "pxc-{{ .Values.name }}-backup-s3"
-          region: "{{ .Values.s3.region }}"
-          endpointUrl: "{{ .Values.s3.endpointUrl }}"
+{{ tpl (deepCopy $backup.s3 | merge (dict "bucket" $backup.bucket.binlogs) | toYaml) $ | indent 10 }}
       s3-backups-hourly:
         type: s3
         annotations:
@@ -271,10 +268,7 @@ spec:
         priorityClassName: {{ $backup.priorityClassName }}
         {{- end }}
         s3:
-          bucket: "pxc-backup-{{ .Values.global.region }}/backups/{{ .Values.name }}/hourly"
-          credentialsSecret: "pxc-{{ .Values.name }}-backup-s3"
-          region: "{{ .Values.s3.region }}"
-          endpointUrl: "{{ .Values.s3.endpointUrl }}"
+{{ tpl (deepCopy $backup.s3 | merge (dict "bucket" $backup.bucket.hourly) | toYaml) $ | indent 10 }}
       s3-backups-daily:
         type: s3
         annotations:
@@ -288,10 +282,7 @@ spec:
         priorityClassName: {{ $backup.priorityClassName }}
         {{- end }}
         s3:
-          bucket: "pxc-backup-{{ .Values.global.region }}/backups/{{ .Values.name }}/daily"
-          credentialsSecret: "pxc-{{.Values.name}}-backup-s3"
-          region: "{{ .Values.s3.region }}"
-          endpointUrl: "{{ .Values.s3.endpointUrl }}"
+{{ tpl (deepCopy $backup.s3 | merge (dict "bucket" $backup.bucket.daily) | toYaml) $ | indent 10 }}
       s3-backups-custom:
         type: s3
         annotations:
@@ -305,10 +296,7 @@ spec:
         priorityClassName: {{ $backup.priorityClassName }}
         {{- end }}
         s3:
-          bucket: "pxc-backup-{{ .Values.global.region }}/backups/{{ .Values.name }}/custom"
-          credentialsSecret: "pxc-{{.Values.name}}-backup-s3"
-          region: "{{ .Values.s3.region }}"
-          endpointUrl: "{{ .Values.s3.endpointUrl }}"
+{{ tpl (deepCopy $backup.s3 | merge (dict "bucket" $backup.bucket.custom) | toYaml) $ | indent 10 }}
     schedule:
 {{ $backup.schedule | toYaml | indent 6 }}
 {{- end }}

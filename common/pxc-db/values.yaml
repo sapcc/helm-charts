@@ -307,8 +307,6 @@ haproxy:
     limits: {}
 
 s3:
-  region: null
-  endpointUrl: null
   aws_access_key_id: null
   aws_secret_access_key: null
 
@@ -344,6 +342,15 @@ backup:
     resources:
       requests: {}
       limits: {}
+  s3:
+    credentialsSecret: "pxc-{{ .Values.name }}-backup-s3"
+    region: "{{ .Values.s3.region }}"
+    endpointUrl: "{{ .Values.s3.endpointUrl }}"
+  bucket:
+    binlogs: "pxc-backup-{{ .Values.global.region }}/binlogs/{{.Values.name}}/"
+    hourly: "pxc-backup-{{ .Values.global.region }}/backups/{{ .Values.name }}/hourly"
+    daily: "pxc-backup-{{ .Values.global.region }}/backups/{{ .Values.name }}/daily"
+    custom: "pxc-backup-{{ .Values.global.region }}/backups/{{ .Values.name }}/custom"
   schedule:
     - name: "daily-backup"
       schedule: "0 0 * * *"
