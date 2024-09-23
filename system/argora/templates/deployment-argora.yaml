@@ -1,0 +1,25 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: argora
+  namespace: default
+  labels:
+    app: argora
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: argora
+  template:
+    metadata:
+      labels:
+        app: argora
+    spec:
+      serviceAccountName: argora
+      containers:
+        - name: argora
+          image: "{{ $.Values.images.argora.image }}:{{ $.Values.images.argora.tag }}"
+          envFrom:
+            - secretRef:
+                name: argora
