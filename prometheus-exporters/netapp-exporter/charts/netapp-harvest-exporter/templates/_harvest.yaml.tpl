@@ -19,7 +19,8 @@ Pollers:{{`
     datacenter: {{ .AvailabilityZone }}
     labels:
       - availability_zone: {{ .AvailabilityZone }}
-      - filer: {{ .Name }}`}}
+      - filer: {{ .Name }}
+      - host: {{ .Host }}`}}
     collectors:
       - Rest:
         - limited.yaml
