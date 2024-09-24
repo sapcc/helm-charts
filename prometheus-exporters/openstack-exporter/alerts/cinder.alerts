@@ -63,7 +63,7 @@ groups:
       summary: 'Cinder standard_hdd backend {{ $labels.shard }}/{{ $labels.backend }} has 1 or less datastores with > 30% free space left'
   - alert: CinderShardMaxVolumeSize
     expr: >
-      count by (shard, backend) (sum(cinder_available_capacity_gib) by (shard, backend, pool)) - count by (shard, backend) (sum by(shard, backend, pool) (cinder_virtual_free_capacity_gib) - sum by(shard, backend, pool) (cinder_per_volume_gigabytes) <=0) < 1
+      count by (shard, backend) (sum(cinder_available_capacity_gib) by (shard, backend, pool) * on (shard, backend, pool) cinder_pool_state_info{pool_state="up"}) - count by (shard, backend) (sum by(shard, backend, pool) (cinder_virtual_free_capacity_gib * on (shard, backend, pool) cinder_pool_state_info{pool_state="up"} ) - sum by(shard, backend, pool) (cinder_per_volume_gigabytes * on (shard, backend, pool) cinder_pool_state_info{pool_state="up"}) <=0) < 1
     for: 15m
     labels:
       severity: info
@@ -78,7 +78,7 @@ groups:
       summary: "Cinder backend {{ $labels.shard }}/{{ $labels.backend }} has no datastores that can accept max volume size"
   - alert: CinderShardMaxVolumeSize
     expr: >
-      count by (shard, backend) (sum(cinder_available_capacity_gib) by (shard, backend, pool)) - count by (shard, backend) (sum by(shard, backend, pool) (cinder_virtual_free_capacity_gib) - sum by(shard, backend, pool) (cinder_per_volume_gigabytes) <=0) < 2
+      count by (shard, backend) (sum(cinder_available_capacity_gib) by (shard, backend, pool) * on (shard, backend, pool) cinder_pool_state_info{pool_state="up"}) - count by (shard, backend) (sum by(shard, backend, pool) (cinder_virtual_free_capacity_gib * on (shard, backend, pool) cinder_pool_state_info{pool_state="up"} ) - sum by(shard, backend, pool) (cinder_per_volume_gigabytes * on (shard, backend, pool) cinder_pool_state_info{pool_state="up"}) <=0) < 2
     for: 15m
     labels:
       severity: info
