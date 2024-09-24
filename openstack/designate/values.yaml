@@ -123,6 +123,40 @@ mariadb:
     oauth:
       client_id: "designate"
 
+pxc_db:
+  enabled: false
+  name: designate
+  initdb_job: true
+  alerts:
+    support_group: network-api
+  ccroot_user:
+    enabled: true
+  databases:
+    - designate
+  users:
+    designate:
+      name: designate
+      auth_plugin: 'mysql_native_password'
+      grants:
+      - "ALL PRIVILEGES on designate.*"
+  pxc:
+    resources:
+      requests:
+        memory: 1Gi
+    persistence:
+      size: 10Gi
+  backup:
+    enabled: false
+    s3:
+      secrets:
+        aws_access_key_id: null
+        aws_secret_access_key: null
+      config:
+        region:  DEFINED-IN-SECRETS
+        endpointUrl: DEFINED-IN-SECRETS
+    pitr:
+      enabled: false
+
 mysql_metrics:
   enabled: true
   db_name: designate

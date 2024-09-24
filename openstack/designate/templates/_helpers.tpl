@@ -18,6 +18,22 @@ identity-3.{{.Values.global.region}}.{{.Values.global.tld}}
 {{- end -}}
 {{- end -}}
 
+{{/*
+If Designate is deployed in a global setup, use global Percona Cluster URL.
+Otherwise, if dbType value is set, use utils.db_url to generate the connection string.
+dbType could be set to "mariadb", "pxc-db" or "pxc-global".
+Fallback to backward compatible MariaDB helper db_url_mysql.
+*/}}
+{{- define "designate.db_url" }}
+{{- if or .Values.percona_cluster.enabled (eq .Values.dbType "pxc-global") }}
+connection = {{ include "db_url_pxc" . }}
+{{- else if .Values.dbType }}
+connection = {{ include "utils.db_url" . }}
+{{- else }}
+connection = {{ include "db_url_mysql" . }}
+{{- end }}
+{{- end }}
+
 {{- define "joinKey" -}}
 {{range $item, $_ := . -}}{{$item | replace "." "_" -}},{{- end}}
 {{- end -}}
