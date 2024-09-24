@@ -1,13 +1,26 @@
-{{- define "bird.domain.configMapName" -}}
-{{-  printf "v4-service-%d-domain-%d" .service_number .domain_number }}
+{{- define "bird.afis" -}}
+{{ $afis := list }}
+{{- range $k, $v := .domain_config }}
+  {{ if and (hasPrefix "network_v" $k) $v }}
+    {{- $afis = append $afis (trimPrefix "network_" $k) }}
+  {{- end }}
+{{- end }}
+{{ $afis | toJson }}
+{{- end }}
+
+{{- define "bird.statefulset.configMapName" -}}
+{{- printf "%s-service-%d-domain-%d" .afi .service_number .domain_number }}
 {{- end }}
 
 {{- define "bird.domain.config_path"}}
 {{- /* Try new path first, if we fail fall back to old path */ -}}
-{{- $confFile := printf "%s.conf" (include "bird.domain.configMapName" .) -}}
+{{- $confFile := printf "%s.conf" (include "bird.statefulset.configMapName" .) -}}
 {{- $filePath := printf "%s%s/%s" .top.Values.bird_config_path .top.Values.global.region $confFile -}}
 {{- $newPath := $filePath -}}
 {{- if not (.top.Files.Glob $filePath) -}}
+  {{- if eq .afi "v6" -}}
+    {{- fail "v6 address family not supported with legacy file path" -}}
+  {{- end }}
   {{- /* fall back to legacy path */ -}}
   {{- $confFile = printf "%s-pxrs-%d-s%d.conf" .top.Values.global.region .domain_number .service_number -}}
   {{- $filePath = printf "%s%s" .top.Values.bird_config_path $confFile -}}
@@ -18,16 +31,34 @@
 {{- $filePath }}
 {{- end }}
 
-{{- define "bird.statefulset.deployment_name" }}
-{{- printf "routeserver-v4-service-%d-domain-%d-%d" .service_number .domain_number .instance_number }}
+{{- define "bird.statefulset.name" }}
+{{- printf "routeserver-%s-service-%d-domain-%d" .afi .service_number .domain_number }}
 {{- end }}
 
 {{- define "bird.domain.labels" }}
-app: {{ include "bird.domain.deployment_name" . | quote }}
 pxservice: '{{ .service_number }}'
+px.cloud.sap/service: {{ .service_number | quote }}
 pxdomain: '{{ .domain_number }}'
+px.cloud.sap/domain: {{ .domain_number | quote }}
 service: {{ .top.Release.Name | quote }}
 {{- end }}
+
+{{- define "bird.afi.labels" }}
+px.cloud.sap/afi: {{ .afi | quote }}
+{{- end }}
+
+{{- define "bird.statefulset.labels" }}
+app: {{ include "bird.statefulset.name" . | quote }}
+px.cloud.sap/component: "routeserver"
+{{- include "bird.domain.labels" . }}
+{{- include "bird.afi.labels" . }}
+{{- end }}
+
+
+{{- define "bird.afi.network "}}
+
+{{- end }}
+
 
 {{- define "bird.alert.labels" }}
 alert-tier: px
@@ -60,6 +91,10 @@ podAntiAffinity:
     - topologyKey: "kubernetes.cloud.sap/host"
       labelSelector:
         matchExpressions:
+        - key: px.cloud.sap/afi
+          operator: In
+          values:
+          - {{ .afi | quote }}
         - key: pxservice
           operator: In
           values:
@@ -79,6 +114,10 @@ podAntiAffinity:
           operator: In
           values:
           - {{ .domain_number | quote }}
+        - key: px.cloud.sap/afi
+          operator: In
+          values:
+          - {{ .afi | quote }}
 {{- end }}
 {{- end }}
 
