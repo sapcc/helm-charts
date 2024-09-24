@@ -306,10 +306,6 @@ haproxy:
       cpu: 500m
     limits: {}
 
-s3:
-  aws_access_key_id: null
-  aws_secret_access_key: null
-
 initdb:
   image:
     name: percona/percona-xtradb-cluster-operator
@@ -343,9 +339,13 @@ backup:
       requests: {}
       limits: {}
   s3:
-    credentialsSecret: "pxc-{{ .Values.name }}-backup-s3"
-    region: "{{ .Values.s3.region }}"
-    endpointUrl: "{{ .Values.s3.endpointUrl }}"
+    config:
+      credentialsSecret: "pxc-{{ .Values.name }}-backup-s3"
+      region: "{{ .Values.global.region }}"
+      endpointUrl: null
+    secrets:
+      aws_access_key_id: null
+      aws_secret_access_key: null
   bucket:
     binlogs: "pxc-backup-{{ .Values.global.region }}/binlogs/{{.Values.name}}/"
     hourly: "pxc-backup-{{ .Values.global.region }}/backups/{{ .Values.name }}/hourly"
