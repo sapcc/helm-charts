@@ -3,8 +3,8 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: {{ include "bird.domain.deployment_name" . }}
-  labels: {{ include "bird.domain.labels" . | nindent 4 }}
+  name: {{ include "bird.statefulset.name" . }}
+  labels: {{ include "bird.statefulset.labels" . | nindent 4 }}
 spec:
   serviceName: {{ .top.Release.Name }}
   replicas: {{ .top.Values.bird_replicas }}
@@ -14,10 +14,10 @@ spec:
   ordinals:
     start: 1
   selector:
-    matchLabels: {{ include "bird.domain.labels" . | nindent 8 }}
+    matchLabels: {{ include "bird.statefulset.labels" . | nindent 8 }}
   template:
     metadata:
-      labels: {{ include "bird.domain.labels" . | nindent 8 }}
+      labels: {{ include "bird.statefulset.labels" . | nindent 8 }}
         {{ include "bird.alert.labels" . | nindent 8 }}
         app.kubernetes.io/name: px
         kubectl.kubernetes.io/default-container: "bird"
@@ -37,6 +37,7 @@ spec:
         - name: PX_INTERFACE
           value: "vlan{{ .domain_config.multus_vlan | required "multus_vlan must be set" }}"
         - name: PX_NETWORK
+          value: "{{ get .domain_config (printf "network_%s" .afi)}}"
         # needed for router id 
         - name: PX_NETWORK_V4
           value: {{ .domain_config.network_v4 | quote }}
@@ -101,7 +102,7 @@ spec:
       volumes:
         - name: config
           configMap:
-            name: {{ include "bird.domain.configMapName" . }}
+            name: {{ include "bird.statefulset.configMapName" . }}
         - name: run-bird
           emptyDir: {}
         - name: init-network
