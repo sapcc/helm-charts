@@ -6,11 +6,11 @@ connection = {{ include "db_url_mysql" . }}
 
 [keystone_authtoken]
 username = {{ .Values.global.ironicServiceUser }}
-password = {{ required ".Values.global.ironicServicePassword is missing" .Values.global.ironicServicePassword }}
+password = {{ required ".Values.global.ironicServicePassword is missing" .Values.global.ironicServicePassword | include "resolve_secret" }}
 
 [service_catalog]
 username = {{ .Values.global.ironicServiceUser }}
-password = {{ required ".Values.global.ironicServicePassword is missing" .Values.global.ironicServicePassword }}
+password = {{ required ".Values.global.ironicServicePassword is missing" .Values.global.ironicServicePassword | include "resolve_secret" }}
 
 [glance]
 {{- if .Values.swift_store_multi_tenant }}
