@@ -37,10 +37,14 @@ spec:
         - name: PX_INTERFACE
           value: "vlan{{ .domain_config.multus_vlan | required "multus_vlan must be set" }}"
         - name: PX_NETWORK
-          value: "{{ .domain_config.network_v4 | required "network_v4 must be set" }}"
+        # needed for router id 
+        - name: PX_NETWORK_V4
+          value: {{ .domain_config.network_v4 | quote }}
         volumeMounts:
           - name: init-network
             mountPath: /px-init/
+          - name: run-bird
+            mountPath: /var/run/bird
       containers:
       - name: bird
         image: keppel.{{ required "A registry mus be set" .top.Values.registry }}.cloud.sap/{{ required "A bird_image must be set" .top.Values.bird_image }}
@@ -51,7 +55,7 @@ spec:
         volumeMounts:
         - name: config
           mountPath: /etc/bird
-        - name: bird-socket
+        - name: run-bird
           mountPath: /var/run/bird
         livenessProbe:
           exec:
@@ -64,7 +68,7 @@ spec:
         args: ["-format.new=true", "-bird.v2", "-bird.socket=/var/run/bird/bird.ctl", "-proto.ospf=false", "-proto.direct=false"]
         resources: {{ toYaml .top.Values.resources.exporter | nindent 10 }}
         volumeMounts:
-        - name: bird-socket
+        - name: run-bird
           mountPath: /var/run/bird
           readOnly: true
         ports:
@@ -76,7 +80,7 @@ spec:
         args: ["lgproxy.py"]
         resources: {{ toYaml .top.Values.resources.proxy | nindent 10 }}
         volumeMounts:
-        - name: bird-socket
+        - name: run-bird
           mountPath: /var/run/bird
           readOnly: true
         ports:
@@ -88,7 +92,7 @@ spec:
         args: ["lgproxy.py", "priv"]
         resources: {{ toYaml .top.Values.resources.proxy | nindent 10 }}
         volumeMounts:
-        - name: bird-socket
+        - name: run-bird
           mountPath: /var/run/bird
           readOnly: true
         ports:
@@ -98,7 +102,7 @@ spec:
         - name: config
           configMap:
             name: {{ include "bird.domain.configMapName" . }}
-        - name: bird-socket
+        - name: run-bird
           emptyDir: {}
         - name: init-network
           configMap:
