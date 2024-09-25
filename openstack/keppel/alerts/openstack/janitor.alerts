@@ -335,6 +335,20 @@ groups:
       description: |
         Keppel observed some errors while checking the vulnerability status for {{ $value }} images. Check the logs for more details.
 
+  - alert: OpenstackKeppelManagedAccountsErrors
+    expr: 'rate(keppel_managed_account_creations{task_outcome="failure"}[10m]) > 0'
+    for: 15m
+    labels:
+      context: trivy-check
+      service: keppel
+      severity: info
+      support_group: containers
+      tier: os
+    annotations:
+      summary: 'Managed accounts are failing for some accounts'
+      description: |
+        Keppel observed some errors while enforcing managed accounts. Check the logs for more details.
+
   - alert: OpenstackKeppelTrivyIndexingFailsAtHighRate
     expr: 'max(increase(keppel_trivy_security_status_checks{task_outcome="success"}[5m])) < max(increase(keppel_trivy_security_status_checks{task_outcome="failure"}[5m]))'
     for: 5m
