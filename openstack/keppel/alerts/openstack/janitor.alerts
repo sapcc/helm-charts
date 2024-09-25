@@ -167,6 +167,23 @@ groups:
         However, some repos have not been garbage-collected on schedule, so it looks like the GC is having issues.
         Check the logs of keppel-janitor for details.
 
+  - alert: OpenstackKeppelManagedAccountsNotEnforced
+    expr: max(keppel_repos_count) > 0 and time() - max(keppel_accounts_min_next_enforcement_at) > 600
+    for: 5m
+    labels:
+      context: janitor
+      dashboard: keppel-overview
+      service: keppel
+      severity: info
+      support_group: containers
+      tier: os
+    annotations:
+      summary: 'Managed accounts are not being enforced'
+      description: |
+        Managed accounts (eg. ccloud or ccloud-dockerhub-mirror) are enforced via the keppel-managed-accounts.yaml config file
+        normally once every 5 minutes. However, some accounts seem to have problems, maybe a bad config got deployed?
+        Either way, check the logs of keppel-janitor for details.
+
   - alert: OpenstackKeppelNotDeletingBlobMounts
     expr: max(keppel_blob_mounts_min_can_be_deleted_at) > 0 and time() - max(keppel_blob_mounts_min_can_be_deleted_at) > 7200
     for: 5m
