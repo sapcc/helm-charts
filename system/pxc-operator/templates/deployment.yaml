@@ -62,13 +62,14 @@ spec:
             - name: OPERATOR_NAME
               value: percona-xtradb-cluster-operator
             - name: LOG_STRUCTURED
-              value: "true"
+              value: "{{ .Values.logStructured }}"
             - name: LOG_LEVEL
               value: "{{ .Values.logLevel }}"
             - name: DISABLE_TELEMETRY
-              value: "true"
-            - name: CC_FIX_PERMISSIONS
-              value: "{{ .Values.ccFixPemissions }}"
+              value: "{{ .Values.disableTelemetry }}"
+            {{- if .Values.extraEnvVars }}
+              {{- toYaml .Values.extraEnvVars | nindent 12 }}
+            {{- end }}
           livenessProbe:
             failureThreshold: 3
             httpGet:
@@ -80,3 +81,15 @@ spec:
 {{ tpl (.Values.resources.limits | toYaml) $ | indent 14 }}
             requests:
 {{ tpl (.Values.resources.requests | toYaml) $ | indent 14 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+    {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}

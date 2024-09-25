@@ -8,12 +8,40 @@ image:
   tag: 1.15.0
   pullPolicy: IfNotPresent
 
-logLevel: "INFO"
-
 watchNamespace: ""
 # watchNamespace: "monsoon3,monsoon3global"
 
-ccFixPemissions: "true"
+disableTelemetry: true
+
+logStructured: true
+
+logLevel: "INFO"
+
+extraEnvVars:
+  - name: CC_FIX_PERMISSIONS
+    value: true
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity:
+  nodeAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+    - preference:
+        matchExpressions:
+        - key: cloud.sap/maintenance-state
+          operator: In
+          values:
+          - operational
+      weight: 1
+    - preference:
+        matchExpressions:
+        - key: cloud.sap/deployment-state
+          operator: NotIn
+          values:
+          - reinstalling
+      weight: 1
 
 resources:
   limits:
