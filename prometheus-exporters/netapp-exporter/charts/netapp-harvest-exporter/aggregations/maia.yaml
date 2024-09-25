@@ -163,19 +163,20 @@ groups:
       expr: |
         sum(
           netapp_snapmirror_labels *
-            on(destination_volume)
-            group_left(destination_cluster, destination_project_id, destination_share_id, destination_share_name)
+            on(destination_volume) group_left()
             label_replace(
             label_replace(
             label_replace(
             label_replace(
             label_replace(
-              netapp_volume_labels{app="netapp-harvest-exporter-manila", volume=~"share.*"},
-                "destination_cluster", "$1", "filer", "(.*)"),
-                "destination_project_id", "$1", "project_id", "(.*)"),
-                "destination_share_id", "$1", "share_id", "(.*)"),
-                "destination_share_name", "$1", "share_name", "(.*)"),
-                "destination_volume", "$1", "volume", "(.*)")
+              max (
+                netapp_volume_labels{app="netapp-harvest-exporter-manila", volume=~"share.*"}
+              ) by (filer, project_id, share_id, share_name, svm, volume),
+              "destination_cluster", "$1", "filer", "(.*)"),
+              "destination_project_id", "$1", "project_id", "(.*)"),
+              "destination_share_id", "$1", "share_id", "(.*)"),
+              "destination_share_name", "$1", "share_name", "(.*)"),
+              "destination_volume", "$1", "volume", "(.*)")
         ) by (
           availability_zone, derived_relationship_type, destination_cluster,
           destination_location, destination_node, destination_project_id,
@@ -191,19 +192,20 @@ groups:
       expr: |
         sum(
           netapp_snapmirror_lag_time *
-            on(destination_volume)
-            group_left(destination_cluster, destination_project_id, destination_share_id, destination_share_name)
+            on(destination_volume) group_left()
             label_replace(
             label_replace(
             label_replace(
             label_replace(
             label_replace(
-              netapp_volume_labels{app="netapp-harvest-exporter-manila", volume=~"share.*"},
-                "destination_cluster", "$1", "filer", "(.*)"),
-                "destination_project_id", "$1", "project_id", "(.*)"),
-                "destination_share_id", "$1", "share_id", "(.*)"),
-                "destination_share_name", "$1", "share_name", "(.*)"),
-                "destination_volume", "$1", "volume", "(.*)")
+              max (
+                netapp_volume_labels{app="netapp-harvest-exporter-manila", volume=~"share.*"}
+              ) by (filer, project_id, share_id, share_name, svm, volume),
+              "destination_cluster", "$1", "filer", "(.*)"),
+              "destination_project_id", "$1", "project_id", "(.*)"),
+              "destination_share_id", "$1", "share_id", "(.*)"),
+              "destination_share_name", "$1", "share_name", "(.*)"),
+              "destination_volume", "$1", "volume", "(.*)")
         ) by (
           destination_cluster, destination_location, destination_node,
           destination_project_id, destination_share_id, destination_share_name,
@@ -215,19 +217,20 @@ groups:
       expr: |
         sum(
           netapp_snapmirror_last_transfer_duration *
-            on(destination_volume)
-            group_left(destination_cluster, destination_project_id, destination_share_id, destination_share_name)
+            on(destination_volume) group_left()
             label_replace(
             label_replace(
             label_replace(
             label_replace(
             label_replace(
-              netapp_volume_labels{app="netapp-harvest-exporter-manila", volume=~"share.*"},
-                "destination_cluster", "$1", "filer", "(.*)"),
-                "destination_project_id", "$1", "project_id", "(.*)"),
-                "destination_share_id", "$1", "share_id", "(.*)"),
-                "destination_share_name", "$1", "share_name", "(.*)"),
-                "destination_volume", "$1", "volume", "(.*)")
+              max (
+                netapp_volume_labels{app="netapp-harvest-exporter-manila", volume=~"share.*"}
+              ) by (filer, project_id, share_id, share_name, svm, volume),
+              "destination_cluster", "$1", "filer", "(.*)"),
+              "destination_project_id", "$1", "project_id", "(.*)"),
+              "destination_share_id", "$1", "share_id", "(.*)"),
+              "destination_share_name", "$1", "share_name", "(.*)"),
+              "destination_volume", "$1", "volume", "(.*)")
         ) by (
           destination_cluster, destination_location, destination_node,
           destination_project_id, destination_share_id, destination_share_name,
