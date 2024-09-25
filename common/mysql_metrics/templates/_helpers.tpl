@@ -20,6 +20,8 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
 {{.Release.Name}}-percona-pxc.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.db_region}}.{{.Values.global.tld}}
 {{- else if eq .Values.db_type "galera" -}}
 {{.Release.Name}}-mariadb-galera.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}
+{{- else if eq .Values.db_type "pxc-db" -}}
+{{.Release.Name}}-db-haproxy.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}
 {{- else -}}
 {{.Release.Name}}-mariadb.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}
 {{- end -}}
