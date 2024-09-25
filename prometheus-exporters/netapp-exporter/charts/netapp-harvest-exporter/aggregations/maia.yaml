@@ -161,11 +161,76 @@ groups:
 
     - record: netapp_snapmirror_labels:maia
       expr: |
-          sum(
-            netapp_snapmirror_labels * on(destination_volume)  group_left(project_id, share_id, share_name) label_replace(
-              netapp_volume_labels{app="netapp-harvest-exporter-manila", volume=~"share.*"}, "destination_volume", "$1", "volume", "(.*)")
-          ) by (
-            availability_zone, derived_relationship_type, destination_location, destination_node, destination_volume, destination_vserver, filer,
-            group_type, healthy, host, project_id, protectedBy, protectionSourceType, relationship_id, relationship_status, relationship_type,
-            share_id, share_name, source_cluster, source_volume, source_vserver
-          )
+        sum(
+          netapp_snapmirror_labels *
+            on(destination_volume)
+            group_left(destination_cluster, destination_project_id, destination_share_id, destination_share_name)
+            label_replace(
+            label_replace(
+            label_replace(
+            label_replace(
+            label_replace(
+              netapp_volume_labels{app="netapp-harvest-exporter-manila", volume=~"share.*"},
+                "destination_cluster", "$1", "filer", "(.*)"),
+                "destination_project_id", "$1", "project_id", "(.*)"),
+                "destination_share_id", "$1", "share_id", "(.*)"),
+                "destination_share_name", "$1", "share_name", "(.*)"),
+                "destination_volume", "$1", "volume", "(.*)")
+        ) by (
+          availability_zone, derived_relationship_type, destination_cluster,
+          destination_location, destination_node, destination_project_id,
+          destination_share_id, destination_share_name, destination_volume,
+          destination_vserver, group_type, healthy, last_transfer_error,
+          last_transfer_type, local,  region, policy_type, protectedBy,
+          protectionSourceType, relationship_id, relationship_status,
+          relationship_type, schedule, source_cluster, source_volume,
+          source_vserver, unhealthy_reason
+        )
+
+    - record: netapp_snapmirror_lag_time:maia
+      expr: |
+        sum(
+          netapp_snapmirror_lag_time *
+            on(destination_volume)
+            group_left(destination_cluster, destination_project_id, destination_share_id, destination_share_name)
+            label_replace(
+            label_replace(
+            label_replace(
+            label_replace(
+            label_replace(
+              netapp_volume_labels{app="netapp-harvest-exporter-manila", volume=~"share.*"},
+                "destination_cluster", "$1", "filer", "(.*)"),
+                "destination_project_id", "$1", "project_id", "(.*)"),
+                "destination_share_id", "$1", "share_id", "(.*)"),
+                "destination_share_name", "$1", "share_name", "(.*)"),
+                "destination_volume", "$1", "volume", "(.*)")
+        ) by (
+          destination_cluster, destination_location, destination_node,
+          destination_project_id, destination_share_id, destination_share_name,
+          destination_volume, destination_vserver, source_cluster,
+          source_volume, source_vserver
+        )
+
+    - record: netapp_snapmirror_last_transfer_duration:maia
+      expr: |
+        sum(
+          netapp_snapmirror_last_transfer_duration *
+            on(destination_volume)
+            group_left(destination_cluster, destination_project_id, destination_share_id, destination_share_name)
+            label_replace(
+            label_replace(
+            label_replace(
+            label_replace(
+            label_replace(
+              netapp_volume_labels{app="netapp-harvest-exporter-manila", volume=~"share.*"},
+                "destination_cluster", "$1", "filer", "(.*)"),
+                "destination_project_id", "$1", "project_id", "(.*)"),
+                "destination_share_id", "$1", "share_id", "(.*)"),
+                "destination_share_name", "$1", "share_name", "(.*)"),
+                "destination_volume", "$1", "volume", "(.*)")
+        ) by (
+          destination_cluster, destination_location, destination_node,
+          destination_project_id, destination_share_id, destination_share_name,
+          destination_volume, destination_vserver, source_cluster,
+          source_volume, source_vserver
+        )
