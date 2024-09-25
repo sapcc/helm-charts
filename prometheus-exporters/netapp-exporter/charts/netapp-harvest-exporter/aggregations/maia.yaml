@@ -156,11 +156,16 @@ groups:
       expr: netapp_volume_total_ops:maia2 or sum (netapp_volume_total_ops:maia1{project_id!=""}) without (app, instance, job, filer, aggregate, node, snapshot_policy, volume_state)
 
     #
-    # snampirror
+    # snampirror relationship
     #
+
     - record: netapp_snapmirror_labels:maia
       expr: |
-          netapp_snapmirror_labels * on(destination_volume)  group_left(project_id, share_id, share_name) label_replace(
-            netapp_volume_labels{app="netapp-harvest-exporter-manila"}, "destination_volume", "$1", "volume", "(.*)"
+          sum(
+            netapp_snapmirror_labels * on(destination_volume)  group_left(project_id, share_id, share_name) label_replace(
+              netapp_volume_labels{app="netapp-harvest-exporter-manila", volume=~"share.*"}, "destination_volume", "$1", "volume", "(.*)")
+          ) by (
+            availability_zone, derived_relationship_type, destination_location, destination_node, destination_volume, destination_vserver, filer,
+            group_type, healthy, host, project_id, protectedBy, protectionSourceType, relationship_id, relationship_status, relationship_type,
+            share_id, share_name, source_cluster, source_volume, source_vserver
           )
-
