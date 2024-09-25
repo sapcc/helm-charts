@@ -146,6 +146,7 @@ pgmetrics:
       query: >
         SELECT COUNT(*) AS count,
                COALESCE(EXTRACT(epoch FROM MIN(next_blob_sweep_at)), 0) AS min_next_blob_sweep_at,
+               COALESCE(EXTRACT(epoch FROM MIN(next_enforcement_at)), 0) AS min_next_enforcement_at,
                COALESCE(EXTRACT(epoch FROM MIN(next_storage_sweep_at)), 0) AS min_next_storage_sweep_at,
                COALESCE(EXTRACT(epoch FROM MIN(next_federation_announcement_at)), 0) AS min_next_federation_announcement_at
           FROM accounts
@@ -156,6 +157,9 @@ pgmetrics:
         - min_next_blob_sweep_at:
             usage: "GAUGE"
             description: "UNIX timestamp of next scheduled blob sweep, or 0 if no accounts have ever been sweeped"
+        - min_next_enforcement_at:
+            usage: "GAUGE"
+            description: "UNIX timestamp of next scheduled managed account run, or 0 if no accounts have ever been managed"
         - min_next_storage_sweep_at:
             usage: "GAUGE"
             description: "UNIX timestamp of next scheduled storage sweep, or 0 if no accounts have ever been sweeped"
