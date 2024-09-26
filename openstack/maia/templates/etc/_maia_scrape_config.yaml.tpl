@@ -156,6 +156,10 @@
       target_label: __name__
       regex: netapp_volume_(.*):maia
       replacement: openstack_manila_share_${1}
+    - source_labels: [__name__]
+      target_label: __name__
+      regex: netapp_snapmirror_(.*):maia
+      replacement: openstack_manila_snapmirror_${1}
 
   metrics_path: '/federate'
   params:

@@ -89,7 +89,7 @@ export PATH="$PGBIN:$PATH"
 created_db=false
 updated_db=false
 
-# make sure that we never accidentially start multiple postgres on the same PVC
+# make sure that we never accidentally start multiple postgres on the same PVC
 LOCKFILE=/var/lib/postgresql/lock
 exec 9>${LOCKFILE} || exit 4
 flock -n 9
@@ -107,7 +107,7 @@ fi
 
 # check for older postgres databases and upgrade from them if possible
 found_current_db=false
-# Only directories are matched to not match accidential left behind files or /var/lib/postgresql/update_extensions.sql.
+# Only directories are matched to not match accidental left behind files or /var/lib/postgresql/update_extensions.sql.
 # Also directories beginning with a dot like .cache or .local are ignored in case a login shell was ever used for the postgres user
 for data in $(find /var/lib/postgresql/ -mindepth 1 -maxdepth 1 -type d -not -name ".*" | sort --version-sort); do
   # we found a newer postgres version than the user wants to start
@@ -212,7 +212,7 @@ if [[ $updated_db == true ]]; then
   vacuumdb --all --analyze-in-stages
 fi
 
-# if a new db was initted, create the databse inside of it and run init scripts
+# if a new db was initted, create the database inside of it and run init scripts
 if [[ $created_db == true ]]; then
   # shellcheck disable=SC2097,SC2098 # false positive
   PGDATABASE='' process_sql --dbname postgres --set db="$PGDATABASE" <<-'EOSQL'
