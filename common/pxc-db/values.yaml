@@ -118,33 +118,31 @@ pxc:
     annotations:
       config.linkerd.io/opaque-ports: "3306,3307,3009,4444,4567,4568,33060,33062"
   autoRecovery: true
-  configuration: |
-    [mysqld]
-    wsrep_provider_options          = "gcache.size=1G; gcache.recover=yes"
-    wsrep_slave_threads             = 4
-    wsrep_retry_autocommit          = 3
-    binlog_format                   = ROW
-    max_connections                 = 1024
-    innodb_flush_log_at_trx_commit  = 0
-    innodb_flush_method             = O_DIRECT
-    innodb_file_per_table           = 1
-    innodb_autoinc_lock_mode        = 2
-    innodb_buffer_pool_size         = 1024M
-    innodb_log_file_size            = 512M
-    innodb_open_files               = 4000
-    innodb_stats_on_metadata        = 0
-    innodb_thread_concurrency       = 0
-    innodb_read_io_threads          = 8
-    innodb_write_io_threads         = 8
-    innodb_print_all_deadlocks      = 1
-    log_bin_trust_function_creators = 1
-    slow_query_log                  = 1
-    long_query_time                 = 5
-    log_error_suppression_list      = "MY-013360"
-    [sst]
-    xbstream-opts=--decompress
-    [xtrabackup]
-    compress=lz4
+  configuration:
+    performance_schema: true
+    options:
+      wsrep_provider_options: "gcache.size=1G; gcache.recover=yes"
+      wsrep_slave_threads:  4
+      wsrep_retry_autocommit:  3
+      binlog_format: ROW
+      max_connections: 1024
+      max_connect_errors: "4294967295" # to avoid failed connections because of loadbalancer health checks
+      innodb_flush_log_at_trx_commit:  0
+      innodb_flush_method : O_DIRECT
+      innodb_file_per_table: 1
+      innodb_autoinc_lock_mode: 2
+      innodb_buffer_pool_size: 1024M
+      innodb_log_file_size: 512M
+      innodb_open_files: 4000
+      innodb_stats_on_metadata:  0
+      innodb_thread_concurrency: 0
+      innodb_read_io_threads: 8
+      innodb_write_io_threads: 8
+      innodb_print_all_deadlocks: 1
+      log_bin_trust_function_creators: 1
+      slow_query_log: 1
+      long_query_time: 5
+      log_error_suppression_list: "MY-013360"
   priorityClassName: openstack-service-critical
   affinity:
     advanced:

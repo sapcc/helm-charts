@@ -76,8 +76,25 @@ spec:
     readinessDelaySec: 15
     livenessDelaySec: 600
     {{- if .Values.pxc.configuration }}
-    configuration:
-{{ tpl (.Values.pxc.configuration | toYaml) $ | indent 6 }}
+    configuration: |
+      [mysqld]
+      {{- if $.Values.pxc.configuration.performance_schema }}
+      # performance monitoring
+      performance_schema=ON
+      performance-schema-instrument='stage/%=ON'
+      performance-schema-consumer-events-stages-current=ON
+      performance-schema-consumer-events-stages-history=ON
+      performance-schema-consumer-events-stages-history-long=ON
+      {{- else }}
+      performance_schema=OFF
+      {{- end }}
+      {{- range $key, $value := $.Values.pxc.configuration.options }}
+      {{ $key }} = "{{ tpl (toString $value) $ }}"
+      {{- end }}
+      [sst]
+      xbstream-opts=--decompress
+      [xtrabackup]
+      compress=lz4
     {{- end }}
     {{- if $pxc.imagePullPolicy }}
     imagePullPolicy: {{ $pxc.imagePullPolicy }}
