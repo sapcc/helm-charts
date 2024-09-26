@@ -75,6 +75,6 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
     {{- $proxysql := list $bin (include "utils.proxysql.job_pod_settings" . ) (include "utils.proxysql.volume_mount" . ) (include "utils.proxysql.container" . ) (include "utils.proxysql.volumes" .) $dbBackend }}
     {{- $combined := concat $standard $proxysql }}
     {{- $hash := empty .Values.proxysql.mode | ternary $standard ($combined | join "\n") | sha256sum }}
-    {{ .Release.Name }}-{{ $name }}-{{ substr 0 4 $hash }}-{{ .Values.api.imageTag | required "Please set api.imageTag or similar"}}
+    {{- .Release.Name }}-{{ $name }}-{{ substr 0 4 $hash }}-{{ .Values.api.imageTag | required "Please set api.imageTag or similar"}}
   {{- end }}
 {{- end }}
