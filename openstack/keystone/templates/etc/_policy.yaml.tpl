@@ -21,7 +21,7 @@
 
 # ccloud: added these to allow a smooth transitioning from old cloud-admin to new system scopes
 "cloud_admin": "(role:admin and system_scope:all) or
-  (role:admin and ((is_admin_project:True or domain_id:default)))"
+  (role:admin and ((is_admin_project:True or domain_id:default){{- if .Values.tempest.enabled }} or project_id:{{.Values.tempest.adminProjectId}}{{- end}}))"
 
 "cloud_reader": "(role:reader and system_scope:all) or
   role:cloud_identity_viewer or
@@ -951,7 +951,7 @@
 # Intended scope(s): system, domain
 #"identity:delete_project": "(role:admin and system_scope:all) or (role:admin and domain_id:%(target.project.domain_id)s)"
 # The corresponding `prodel` service details are available on GitHub under `cc/prodel`
-"identity:delete_project": "(rule:cloud_admin or (rule:admin_required and (project_id:%(project_id)s or project_id:%(target.project.parent_id)s))) and {{ .Values.prodel.url }})"
+"identity:delete_project": "(rule:cloud_admin or (rule:admin_required and (project_id:%(project_id)s or project_id:%(target.project.parent_id)s))) and ({{- if .Values.tempest.enabled }}domain_id:{{.Values.tempest.domainId}} or {{ end }}{{ .Values.prodel.url }})"
 
 # List tags for a project.
 # GET  /v3/projects/{project_id}/tags
