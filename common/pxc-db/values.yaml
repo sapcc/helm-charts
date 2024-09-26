@@ -327,7 +327,7 @@ backup:
   pitr:
     enabled: false
     annotations: {}
-    storageName: s3-binlogs
+    storageName: s3-backups-binlogs
     timeBetweenUploads: 300
     timeoutSeconds: 60
     priorityClassName: openstack-service-critical
@@ -342,11 +342,19 @@ backup:
     secrets:
       aws_access_key_id: null
       aws_secret_access_key: null
-  bucket:
-    binlogs: "pxc-backup-{{ .Values.global.region }}/binlogs/{{.Values.name}}/"
-    hourly: "pxc-backup-{{ .Values.global.region }}/backups/{{ .Values.name }}/hourly"
-    daily: "pxc-backup-{{ .Values.global.region }}/backups/{{ .Values.name }}/daily"
-    custom: "pxc-backup-{{ .Values.global.region }}/backups/{{ .Values.name }}/custom"
+    storages:
+      binlogs:
+        enabled: true
+        bucket: "pxc-backup-{{ .Values.global.region }}/binlogs/{{.Values.name}}/"
+      daily:
+        enabled: true
+        bucket: "pxc-backup-{{ .Values.global.region }}/backups/{{ .Values.name }}/daily"
+      hourly:
+        enabled: false
+        bucket: "pxc-backup-{{ .Values.global.region }}/backups/{{ .Values.name }}/hourly"
+      custom:
+        enabled: false
+        bucket: "pxc-backup-{{ .Values.global.region }}/backups/{{ .Values.name }}/custom"
   schedule:
     - name: "daily-backup"
       schedule: "0 0 * * *"

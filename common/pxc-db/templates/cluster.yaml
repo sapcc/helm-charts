@@ -65,7 +65,7 @@ spec:
     image: {{ required ".Values.global.dockerHubMirrorAlternateRegion is missing" .Values.global.dockerHubMirrorAlternateRegion }}/{{ $pxc.image.name }}:{{ $pxc.image.tag }}
     {{- end }}
     annotations:
-{{ merge (include "pxc-db.linkerdPodAnnotations" . | fromYaml) (include "pxc-db.metricsAnnotations" . | fromYaml ) ($pxc.annotations) | toYaml | indent 6 }}
+{{ merge (include "pxc-db.linkerdPodAnnotations" $ | fromYaml) (include "pxc-db.metricsAnnotations" $ | fromYaml ) ($pxc.annotations) | toYaml | indent 6 }}
     labels:
 {{ $pxc.labels | toYaml | indent 6 }}
     {{- if $pxc.expose }}
@@ -198,7 +198,7 @@ spec:
     imagePullPolicy: {{ $haproxy.imagePullPolicy }}
     {{- end }}
     annotations:
-{{ merge (include "pxc-db.linkerdPodAnnotations" . | fromYaml) ($haproxy.annotations) | toYaml | indent 6 }}
+{{ merge (include "pxc-db.linkerdPodAnnotations" $ | fromYaml) ($haproxy.annotations) | toYaml | indent 6 }}
     labels:
 {{ $haproxy.labels | toYaml | indent 6 }}
     readinessDelaySec: 15
@@ -258,10 +258,12 @@ spec:
 {{ tpl ($backup.pitr.resources.limits | toYaml) $ | indent 10 }}
     {{- end }}
     storages:
-      s3-binlogs:
+{{- range $storage, $config := $backup.s3.storages }}
+  {{- if $config.enabled }}
+      s3-backups-{{ $storage }}:
         type: s3
         annotations:
-{{ merge (include "pxc-db.linkerdPodAnnotations" . | fromYaml) ($backup.pitr.annotations) | toYaml | indent 10 }}
+{{ merge (include "pxc-db.linkerdPodAnnotations" $ | fromYaml) ($backup.annotations) | toYaml | indent 10 }}
         resources:
           requests:
 {{ tpl ($backup.resources.requests | toYaml) $ | indent 12 }}
@@ -271,49 +273,9 @@ spec:
         priorityClassName: {{ $backup.priorityClassName }}
         {{- end }}
         s3:
-{{ tpl (deepCopy $backup.s3.config | merge (dict "bucket" $backup.bucket.binlogs) | toYaml) $ | indent 10 }}
-      s3-backups-hourly:
-        type: s3
-        annotations:
-{{ merge (include "pxc-db.linkerdPodAnnotations" . | fromYaml) ($backup.annotations) | toYaml | indent 10 }}
-        resources:
-          requests:
-{{ tpl ($backup.resources.requests | toYaml) $ | indent 12 }}
-          limits:
-{{ tpl ($backup.resources.limits | toYaml) $ | indent 12 }}
-        {{- if $backup.priorityClassName }}
-        priorityClassName: {{ $backup.priorityClassName }}
-        {{- end }}
-        s3:
-{{ tpl (deepCopy $backup.s3.config | merge (dict "bucket" $backup.bucket.hourly) | toYaml) $ | indent 10 }}
-      s3-backups-daily:
-        type: s3
-        annotations:
-{{ merge (include "pxc-db.linkerdPodAnnotations" . | fromYaml) ($backup.annotations) | toYaml | indent 10 }}
-        resources:
-          requests:
-{{ tpl ($backup.resources.requests | toYaml) $ | indent 12 }}
-          limits:
-{{ tpl ($backup.resources.limits | toYaml) $ | indent 12 }}
-        {{- if $backup.priorityClassName }}
-        priorityClassName: {{ $backup.priorityClassName }}
-        {{- end }}
-        s3:
-{{ tpl (deepCopy $backup.s3.config | merge (dict "bucket" $backup.bucket.daily) | toYaml) $ | indent 10 }}
-      s3-backups-custom:
-        type: s3
-        annotations:
-{{ merge (include "pxc-db.linkerdPodAnnotations" . | fromYaml) ($backup.annotations) | toYaml | indent 10 }}
-        resources:
-          requests:
-{{ tpl ($backup.resources.requests | toYaml) $ | indent 12 }}
-          limits:
-{{ tpl ($backup.resources.limits | toYaml) $ | indent 12 }}
-        {{- if $backup.priorityClassName }}
-        priorityClassName: {{ $backup.priorityClassName }}
-        {{- end }}
-        s3:
-{{ tpl (deepCopy $backup.s3.config | merge (dict "bucket" $backup.bucket.custom) | toYaml) $ | indent 10 }}
+{{ tpl (deepCopy $backup.s3.config | merge (dict "bucket" (get $backup.s3.storages $storage).bucket) | toYaml) $ | indent 10 }}
+  {{- end }}
+{{- end }}
     schedule:
 {{ $backup.schedule | toYaml | indent 6 }}
 {{- end }}
