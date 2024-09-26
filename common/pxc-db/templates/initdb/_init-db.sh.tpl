@@ -1,6 +1,7 @@
 #!/bin/sh
 
-# cat /var/lib/initdb/init.sql
+echo "Running init.sql"
 MYSQL_PWD=$MYSQL_PASSWORD mysql -h $MYSQL_ADDRESS -u $MYSQL_USERNAME --batch -e "source /var/lib/initdb/init.sql"
+echo "Finished"
 
-echo -n 'True' && exit 0
+exit 0
