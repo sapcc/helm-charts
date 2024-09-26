@@ -66,8 +66,7 @@ nodeAffinity:
           {{- if .top.Values.prevent_hosts }}
         - key: kubernetes.cloud.sap/host
           operator: NotIn
-          values:
-          {{ .top.Values.prevent_hosts | toYaml | indent  16 }}
+          values: {{ .top.Values.prevent_hosts | toYaml | nindent  10 }}
           {{- end }}
 podAntiAffinity:
     requiredDuringSchedulingIgnoredDuringExecution:
