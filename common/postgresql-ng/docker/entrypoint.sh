@@ -66,7 +66,7 @@ if [[ $(id -u) == 0 ]]; then
     chown -R postgres:postgres /data/postgresql
     chmod -R 700 /data/postgresql
 
-    touch /data/postgresql/$old_version/migrated_from_old_chart
+    touch "/data/postgresql/$old_version/migrated_from_old_chart"
   fi
 
   # setup the default directories with correct permissions
