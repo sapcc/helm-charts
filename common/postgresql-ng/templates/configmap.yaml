@@ -52,15 +52,12 @@ data:
     CREATE EXTENSION IF NOT EXISTS pg_stat_statements;
     {{- end }}
 
-    SET password_encryption = '{{ if ge ($.Values.postgresVersion | int) 12 }}scram-sha-256{{ else }}md5{{ end }}';
+    SET password_encryption = 'scram-sha-256';
 
-    {{- if lt ($.Values.postgresVersion | int) 14 }}
-    SELECT 'CREATE ROLE "poor_mans_pg_read_all_data"' where not exists (select rolname from pg_authid where rolname = 'poor_mans_pg_read_all_data')\gexec
-    {{- else }}
+    -- TODO: drop with next breaking update
     SELECT 'REASSIGN OWNED BY poor_mans_pg_read_all_data TO pg_read_all_data' where exists (SELECT rolname FROM pg_roles WHERE rolname='poor_mans_pg_read_all_data')\gexec
     SELECT 'DROP OWNED BY poor_mans_pg_read_all_data' where exists (SELECT rolname FROM pg_roles WHERE rolname='poor_mans_pg_read_all_data')\gexec
     DROP ROLE IF EXISTS poor_mans_pg_read_all_data;
-    {{- end }}
 
     {{- range $user, $settings := $users }}
     {{- /* prevent more suffering and pain by forgotten {} in users */}}
@@ -82,11 +79,7 @@ data:
     {{- if eq $user "backup" }}
     GRANT CONNECT ON DATABASE "%PGDATABASE%" TO backup;
 
-    {{- if ge ($.Values.postgresVersion | int) 14 }}
     GRANT pg_read_all_data to backup;
-    {{- else }}
-    GRANT poor_mans_pg_read_all_data to backup;
-    {{- end }}
     {{- end }}
 
     {{- if eq $user "metrics" }}
@@ -95,11 +88,7 @@ data:
     GRANT pg_use_reserved_connections to metrics;
     {{- end }}
     -- pg_read_all_data is required for custom metrics
-    {{- if ge ($.Values.postgresVersion | int) 14 }}
     GRANT pg_read_all_data to metrics;
-    {{- else }}
-    GRANT poor_mans_pg_read_all_data to metrics;
-    {{- end }}
     {{- end }}
     {{- end }}
 
@@ -107,13 +96,5 @@ data:
     ALTER DATABASE "%PGDATABASE%" OWNER TO "{{ .Values.tableOwner }}";
     SELECT format('ALTER TABLE %I.%I.%I OWNER TO %I;', table_catalog, table_schema, table_name, '{{ .Values.tableOwner }}')
       FROM information_schema.tables WHERE table_schema = 'public'\gexec
-
-    {{- if ge ($.Values.postgresVersion | int) 14 | not }}
-    GRANT SELECT ON ALL TABLES IN SCHEMA public TO poor_mans_pg_read_all_data;
-    SELECT format('GRANT select ON %I.%I.%I TO %I;', table_catalog, table_schema, table_name, 'poor_mans_pg_read_all_data')
-      FROM information_schema.tables WHERE table_schema = 'public'\gexec
-    SELECT format('GRANT select ON %I.%I.%I TO %I;', sequence_catalog, sequence_schema, sequence_name, 'poor_mans_pg_read_all_data')
-      FROM information_schema.sequences WHERE sequence_schema = 'public'\gexec
-    {{- end }}
 
     {{ .Values.sqlOnStartup }}

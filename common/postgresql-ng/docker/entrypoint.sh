@@ -66,7 +66,7 @@ if [[ $(id -u) == 0 ]]; then
     chown -R postgres:postgres /data/postgresql
     chmod -R 700 /data/postgresql
 
-    touch /data/postgresql/$old_version/migrated_from_old_chart
+    touch "/data/postgresql/$old_version/migrated_from_old_chart"
   fi
 
   # setup the default directories with correct permissions
@@ -88,6 +88,7 @@ fi
 export PATH="$PGBIN:$PATH"
 created_db=false
 updated_db=false
+postgres_auth_method=scram-sha-256
 
 # make sure that we never accidentally start multiple postgres on the same PVC
 LOCKFILE=/var/lib/postgresql/lock
@@ -130,12 +131,6 @@ for data in $(find /var/lib/postgresql/ -mindepth 1 -maxdepth 1 -type d -not -na
   if [[ ! -d $bindir ]]; then
     echo "Old postgresql is not installed into $bindir, aborting upgrade"
     exit 1
-  fi
-
-  if (( $(echo "$old_version >= 12" | bc -l) )); then
-    postgres_auth_method=scram-sha-256
-  else
-    postgres_auth_method=md5
   fi
 
   # create a backup unless we are migrating from the old chart
@@ -226,14 +221,8 @@ if [[ $created_db == true ]]; then
   done
 fi
 
-if (( $(echo "$PGVERSION >= 12" | bc -l) )); then
-  postgres_auth_method=scram-sha-256
-else
-  postgres_auth_method=md5
-fi
-
 # ensure that the configured password matches the password in the database
-# this is required when upgrading the password hashing from md5 to scram-sha-256 which is the case when eg. updating from 9.5 to 15
+# this was required when upgrading the password hashing algorithm from md5 to scram-sha-256 which was the case when eg. updating from 9.5 to 15
 # this also allows password rotations with restarts
 PGDATABASE='' process_sql --dbname postgres --set user="$PGUSER" --set password_encryption="$postgres_auth_method" --set password="$PGPASSWORD" <<-'EOSQL'
   SET password_encryption = :'password_encryption';

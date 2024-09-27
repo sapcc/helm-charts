@@ -16,7 +16,7 @@ RUN apt-get update \
     ca-certificates \
     # create backup via API \
     curl \
-    # drop privilges easy \
+    # drop privileges easy \
     gosu \
     # required utf-8 encoding \
     locales \
@@ -25,10 +25,9 @@ RUN apt-get update \
   && /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y \
   && pg_conftool /etc/postgresql-common/createcluster.conf set create_main_cluster false \
   && apt-get install --no-install-recommends -y \
-    postgresql-9.5 \
-    postgresql-12 \
     postgresql-15 \
     postgresql-16 \
+    postgresql-17 \
   && rm -rf /var/lib/apt/lists/* \
   && for conf in /usr/share/postgresql/*/postgresql.conf.sample; do \
     pg_conftool "$conf" set listen_addresses '*' ; \
