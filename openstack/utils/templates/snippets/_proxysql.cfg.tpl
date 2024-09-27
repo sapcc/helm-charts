@@ -12,26 +12,32 @@ admin_variables =
 mysql_variables =
 {
     interfaces = "127.0.0.1:3306;/run/proxysql/mysql.sock"
-    {{- if not .global.Values.mariadb.users }}
-    monitor_enabled = false
-    {{- else if not .global.Values.mariadb.users.proxysql_monitor }}
+    {{- $monitorEnabled := false }}
+    {{- $monitorUsername := "" }}
+    {{- $monitorPassword := "" }}
+    {{- /*
+    Check that proxysql_monitor user exists in all DB instances
+    Check that proxysql_monitor credentials are the same in all DB instances
+    */}}
+    {{- range $dbKey, $db := $dbs }}
+        {{- if and $db.users $db.users.proxysql_monitor }}
+            {{- if not $monitorEnabled }}
+                {{- $monitorEnabled = true }}
+                {{- $monitorUsername = $db.users.proxysql_monitor.name }}
+                {{- $monitorPassword = $db.users.proxysql_monitor.password }}
+            {{- else if or (ne $monitorUsername $db.users.proxysql_monitor.name) (ne $monitorPassword $db.users.proxysql_monitor.password) }}
+                {{- fail (printf "users.proxysql_monitor.password needs to be the same in %s as in other databases" $dbKey) }}
+            {{- end }}
+        {{- else if $monitorEnabled }}
+            {{- fail (printf "users.proxysql_monitor.password is missing in database %s but present in others" $dbKey) }}
+        {{- end }}
+    {{- end }}
+    {{- if not $monitorEnabled }}
     monitor_enabled = false
     {{- else }}
-        {{- /* Validate equality of the monitor user in all mariadb instance in the chart */}}
-        {{- range $dbKey, $db := $dbs }}
-            {{- if not $db.users }}
-                fail (print ".global.Values. " $dbKey ".users needs to be set")
-            {{- else if not $db.users.proxysql_monitor }}
-                fail (print ".global.Values. " $dbKey ".users.proxysql_monitor needs to be set")
-            {{- else if not (eq $.global.Values.mariadb.users.proxysql_monitor.name $db.users.proxysql_monitor.name) }}
-                fail (print ".global.Values. " $dbKey ".users.proxysql_monitor.name needs to be equal to .global.Values.mariadb.users.proxysql_monitor.name")
-            {{- else if not (eq $.global.Values.mariadb.users.proxysql_monitor.password $db.users.proxysql_monitor.password) }}
-                fail (print ".global.Values. " $dbKey ".users.proxysql_monitor.password needs to be equal to .global.Values.mariadb.users.proxysql_monitor.password")
-            {{- end }}
-        {{- end }}
     monitor_enabled = true
-    monitor_username = "{{ include "resolve_secret" .global.Values.mariadb.users.proxysql_monitor.name | required ".global.Values.mariadb.users.proxysql_monitor.name is required!" }}"
-    monitor_password = "{{ include "resolve_secret" .global.Values.mariadb.users.proxysql_monitor.password | required ".global.Values.mariadb.users.proxysql_monitor.password is required!" }}"
+    monitor_username = "{{ include "resolve_secret" $monitorUsername | required "db.users.proxysql_monitor.name is required!" }}"
+    monitor_password = "{{ include "resolve_secret" $monitorPassword | required "db.users.proxysql_monitor.password is required!" }}"
     {{- end }}
     connect_retries_on_failure = {{ default 1000 .global.Values.proxysql.connect_retries_on_failure }}
     connect_retries_delay = {{ default 100 .global.Values.proxysql.connect_retries_delay }} {{- /* The default is 1ms, and that means we will run through the retries on failure in no time */}}
@@ -43,7 +49,7 @@ mysql_servers =
 {{- range $index, $dbKey:= $.dbKeys }}
   {{- $db := get $dbs $dbKey }}
     {
-        address = "{{ $db.name }}-mariadb.{{ include "svc_fqdn" $.global }}"
+        address = "{{ $db.name }}-{{ $db.serviceSuffix }}.{{ include "svc_fqdn" $.global }}"
         hostgroup = {{ $index }}
         max_connections = {{ $max_connections }}
     },
