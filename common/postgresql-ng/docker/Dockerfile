@@ -16,7 +16,7 @@ RUN apt-get update \
     ca-certificates \
     # create backup via API \
     curl \
-    # drop privilges easy \
+    # drop privileges easy \
     gosu \
     # required utf-8 encoding \
     locales \
