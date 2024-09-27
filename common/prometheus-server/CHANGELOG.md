@@ -1,3 +1,7 @@
+## 7.6.1
+
+* VPAexceeded alerts adjusted; no Thanos rule anymore
+
 ## 7.6.0
 
 * Upgrade to v2.53.0
