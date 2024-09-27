@@ -31,14 +31,8 @@ max_overflow = {{ .Values.max_overflow | default .Values.global.max_overflow | d
 {{- define "ini_sections.database" }}
 
 [database]
-{{- if not .Values.postgresql }}
-connection = {{ include "db_url_mysql" . }}
-{{- else if not .Values.postgresql.enabled }}
-connection = {{ include "db_url_mysql" . }}
+connection = {{ include "utils.db_url" . }}
 {{- include "ini_sections.database_options_mysql" . }}
-{{- else }}
-connection = {{ include "db_url" . }}
-{{- end }}
 {{- end }}
 
 {{- define "ini_sections.cache" }}
