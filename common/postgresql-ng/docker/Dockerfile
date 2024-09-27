@@ -28,6 +28,7 @@ RUN apt-get update \
     postgresql-12 \
     postgresql-15 \
     postgresql-16 \
+    postgresql-17 \
   && rm -rf /var/lib/apt/lists/* \
   && for conf in /usr/share/postgresql/*/postgresql.conf.sample; do \
     pg_conftool "$conf" set listen_addresses '*' ; \
