@@ -35,7 +35,7 @@ propagate=0
 [profiler]
 enabled = true
 connection_string = jaeger://localhost:6831
-hmac_keys = {{ .Values.global.osprofiler.hmac_keys }}
+hmac_keys = {{ .Values.global.osprofiler.hmac_keys | include "resolve_secret" }}
 trace_sqlalchemy = {{ .Values.global.osprofiler.trace_sqlalchemy }}
 {{- end }}
 {{- end }}
