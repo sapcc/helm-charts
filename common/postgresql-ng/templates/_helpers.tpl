@@ -24,3 +24,7 @@ some space for the name suffixes on replicasets and pods.
 {{- if .Values.postgresUser }}
 {{- fail "postgres-ng: Changing the superuser away from postgres is no longer supported as it is required for updates. Please create extra users via the users value." }}
 {{- end }}
+
+{{- if lt ($.Values.postgresVersion | int) 12 }}
+{{- fail "postgres-ng: only postgres version 12 and up are supported by this chart version" }}
+{{- end }}

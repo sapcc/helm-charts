@@ -52,7 +52,7 @@ data:
     CREATE EXTENSION IF NOT EXISTS pg_stat_statements;
     {{- end }}
 
-    SET password_encryption = '{{ if ge ($.Values.postgresVersion | int) 12 }}scram-sha-256{{ else }}md5{{ end }}';
+    SET password_encryption = 'scram-sha-256';
 
     {{- if lt ($.Values.postgresVersion | int) 14 }}
     SELECT 'CREATE ROLE "poor_mans_pg_read_all_data"' where not exists (select rolname from pg_authid where rolname = 'poor_mans_pg_read_all_data')\gexec
