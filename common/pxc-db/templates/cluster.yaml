@@ -20,9 +20,9 @@ spec:
   ignoreLabels:
 {{ .Values.ignoreLabels | toYaml | indent 4 }}
   {{- end }}
-  secretsName: pxc-{{.Values.name}}-secrets
-  sslSecretName: pxc-{{.Values.name}}-ssl
-  sslInternalSecretName: pxc-{{.Values.name}}-ssl-internal
+  secretsName: pxc-db-{{.Values.name}}-secrets
+  sslSecretName: pxc-db-{{.Values.name}}-ssl
+  sslInternalSecretName: pxc-db-{{.Values.name}}-ssl-internal
   {{- if .Values.initContainer }}
   initContainer:
     {{- if $.Values.initContainer.image.override }}
@@ -129,7 +129,7 @@ spec:
         - name: MYSQLD_EXPORTER_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: pxc-{{.Values.name}}-secrets
+              name: pxc-db-{{.Values.name}}-secrets
               key: monitor
       ports:
         - name: metrics
