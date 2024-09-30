@@ -77,13 +77,6 @@ Default: mariadb
 {{- end }}
 
 {{/*
-Alias for for backward compatibility
-*/}}
-{{- define "db_host_mysql" }}
-{{- include "utils.db_host" . }}
-{{- end }}
-
-{{/*
 Service hostname for mariadb
 Example: service-mariadb
 */}}
@@ -118,14 +111,26 @@ Example: service-db
 {{- end }}
 
 {{/*
-Alias for backward compatibility
+Backward-compatible function, which calls utils._db_url_mariadb
+Returns example: service-mariadb
 */}}
-{{- define "db_url_mysql" }}
-{{- include "utils.db_url" . }}
+{{- define "db_host_mysql" }}
+{{- include "utils._db_host_mariadb" . }}
 {{- end }}
 
 {{/*
-Use .Values.mariadb for connection URL generation
+Backward-compatible function, which calls utils._db_url_mariadb
+Returns example: mysql+pymysql://username:password@service-mariadb/dbname?charset=utf8
+*/}}
+{{- define "db_url_mysql" }}
+{{- include "utils._db_url_mariadb" . }}
+{{- end }}
+
+{{/*
+Function accepts tuple or map
+1: Uses .Values.mariadb for connection URL generation
+2: Uses provided tuple for connection URL generation
+Tuple example: tuple . .Values.apidbName .Values.apidbUser .Values.apidbPassword .Values.mariadb_api.name
 */}}
 {{- define "utils._db_url_mariadb" }}
     {{- if kindIs "map" . }}
@@ -164,7 +169,10 @@ mysql+pymysql://{{ include "db_credentials" (dict "context" . "dbType" "mariadb"
 {{- end }}
 
 {{/*
-Use .Values.pxc_db for connection URL generation
+Function accepts tuple or map
+1: Uses .Values.pxc_db for connection URL generation
+2: Uses provided tuple for connection URL generation
+Tuple example: tuple . .Values.apidbName .Values.apidbUser .Values.apidbPassword .Values.pxd_db_api.name
 */}}
 {{- define "utils._db_url_pxc_db" }}
     {{- if kindIs "map" . }}
