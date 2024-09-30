@@ -2,7 +2,7 @@
 Expand the name of the chart.
 */}}
 {{- define "pxc-db.name" -}}
-{{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" }}
+{{- default .Chart.Name .Values.nameOverride | trunc 63 | replace "_" "-" | trimSuffix "-" }}
 {{- end }}
 
 {{/*
@@ -12,13 +12,13 @@ If release name contains chart name it will be used as a full name.
 */}}
 {{- define "pxc-db.fullname" -}}
 {{- if .Values.fullnameOverride }}
-{{- .Values.fullnameOverride | trunc 63 | trimSuffix "-" }}
+{{- .Values.fullnameOverride | trunc 63 | replace "_" "-" | trimSuffix "-" }}
 {{- else }}
 {{- $name := default .Chart.Name .Values.nameOverride }}
 {{- if contains $name .Release.Name }}
-{{- .Release.Name | trunc 63 | trimSuffix "-" }}
+{{- .Release.Name | trunc 63 | replace "_" "-" | trimSuffix "-" }}
 {{- else }}
-{{- printf "%s-%s" .Release.Name $name | trunc 63 | trimSuffix "-" }}
+{{- printf "%s-%s" .Release.Name $name | trunc 63 | replace "_" "-" | trimSuffix "-" }}
 {{- end }}
 {{- end }}
 {{- end }}
@@ -37,7 +37,7 @@ Common labels
 helm.sh/chart: {{ include "pxc-db.chart" . }}
 {{ include "pxc-db.selectorLabels" . }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
-app.kubernetes.io/component: {{ .Chart.Name }}
+app.kubernetes.io/component: {{ include "pxc-db.name" . }}
 app.kubernetes.io/part-of: {{ .Release.Name }}
 {{- end }}
 
@@ -47,7 +47,7 @@ Selector labels
 {{- define "pxc-db.selectorLabels" -}}
 app: {{ .Release.Name }}
 app.kubernetes.io/name: {{ include "pxc-db.name" . }}
-app.kubernetes.io/instance: {{ .Release.Name }}
+app.kubernetes.io/instance: {{ include "pxc-db.name" . }}-{{ .Release.Name }}
 {{- end }}
 
 {{/*
