@@ -124,6 +124,10 @@ service_token_roles_required = True
 token_cache_time = 600
 include_service_catalog = true
 service_type = load-balancer
+http_request_max_retries = {{ .Values.keystone_authtoken.http_request_max_retries | default 3 }}
+{{ if .Values.keystone_authtoken.http_connect_timeout -}}
+http_connect_timeout = {{ .Values.keystone_authtoken.http_connect_timeout }}
+{{- end }}
 
 {{- include "ini_sections.cache" . }}
 
