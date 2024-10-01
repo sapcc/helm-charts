@@ -38,7 +38,7 @@ groups:
   {{/* This is covering all Prometheis but kubernetes. They don not have the vpa_butler metric and need to leverage thanos ruler instead. */}}
   - alert: PrometheusVpaMemoryExceeded
     expr: |
-      round(vpa_butler_vpa_container_recommendation_excess{verticalpodautoscaler=~"{{ include "prometheus.fullName" . }}",resource="memory"} / 1024 / 1024 / 1024, 0.1 ) > 0.1
+      round(vpa_butler_vpa_container_recommendation_excess{verticalpodautoscaler=~"{{ include "prometheus.fullName" . }}",resource="memory"} / 1024 / 1024 / 1024, 0.1 ) > 5
     for: 15m
     labels:
       service: {{ default "metrics" $root.Values.alerts.service }}
@@ -54,7 +54,7 @@ groups:
 
   - alert: PrometheusVpaCPUExceeded
     expr: |
-      round(vpa_butler_vpa_container_recommendation_excess{verticalpodautoscaler=~"{{ include "prometheus.fullName" . }}",resource="cpu"}, 0.1) > 0.1
+      round(vpa_butler_vpa_container_recommendation_excess{verticalpodautoscaler=~"{{ include "prometheus.fullName" . }}",resource="cpu"}, 0.1) > 5
     for: 15m
     labels:
       service: {{ default "metrics" $root.Values.alerts.service }}

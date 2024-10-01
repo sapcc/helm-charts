@@ -261,7 +261,7 @@ groups:
   - alert: PrometheusVpaMemoryExceeded
     expr: |
       round(vpa_butler_vpa_container_recommendation_excess{verticalpodautoscaler=~"{{ include "prometheus.fullName" . }}",resource="memory"} / 1024 / 1024 / 1024, 0.1 ) > 5
-    for: 4d
+    for: 3h
     labels:
       service: {{ default "metrics" $root.Values.alerts.service }}
       support_group: {{ default "observability" $root.Values.alerts.support_group }}
@@ -277,7 +277,7 @@ groups:
   - alert: PrometheusVpaCPUExceeded
     expr: |
       round(vpa_butler_vpa_container_recommendation_excess{verticalpodautoscaler=~"{{ include "prometheus.fullName" . }}",resource="cpu"}, 0.1) > 0.5
-    for: 4d
+    for: 3h
     labels:
       service: {{ default "metrics" $root.Values.alerts.service }}
       support_group: {{ default "observability" $root.Values.alerts.support_group }}
