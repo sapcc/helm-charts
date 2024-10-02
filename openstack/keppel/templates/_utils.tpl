@@ -139,7 +139,7 @@
 - name:  KEPPEL_OSLO_POLICY_PATH
   value: '/etc/keppel/policy.yaml'
 - name:  KEPPEL_PEERS
-  value: "{{ range .Values.keppel.peers }}{{ .hostname }},{{ end }}"
+  value: {{ index (include "build_peers" $ | fromYaml) "peers" | toJson | quote }}
 - name:  KEPPEL_RATELIMIT_ANYCAST_BLOB_PULL_BYTES
   value: '5242880 B/s' # 5 MiB/s per account (very small to discourage continuous use of anycast, but
                        # the burst budget is very large to enable anycast pulling of large images; the
@@ -218,4 +218,14 @@
             limits:
               cpu: "1m"
               memory: "32Mi"
+{{- end -}}
+
+{{- define "build_peers" -}}
+peers:
+{{- range .Values.keppel.peers }}
+- hostname: {{ .hostname }}
+{{- if hasKey . "use_for_pull_delegation" }}
+  use_for_pull_delegation: {{ .use_for_pull_delegation }}
+{{- end -}}
+{{- end -}}
 {{- end -}}
