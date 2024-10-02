@@ -30,23 +30,26 @@ spec:
         - name: barbican-etc
           configMap:
             name: barbican-etc
+      initContainers:
+      {{- tuple . (dict "service" "barbican-api,barbican-mariadb") | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 8 }}
       containers:
-{{- if .Values.barbican_nanny.db_purge.enabled }}
         - name: db-consistency-and-purge
           image: {{ required "Please set .Values.global.registry is missing" .Values.global.registry }}/barbican-nanny:{{ required "Please set .Values.barbican_nanny.image_version" .Values.barbican_nanny.image_version }}
           imagePullPolicy: IfNotPresent
           command:
             - dumb-init
-            - kubernetes-entrypoint
+{{- if not .Values.barbican_nanny.debug }}
+            - /bin/bash
+            - /scripts/barbican-db-consistency-and-purge.sh
+{{- else }}
+            - sleep
+            - inf
+{{- end }}
           env:
-            - name: COMMAND
-              value: "{{ if not .Values.barbican_nanny.debug }}/bin/bash /scripts/barbican-db-consistency-and-purge.sh{{ else }}sleep inf{{ end }}"
             - name: NAMESPACE
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
-            - name: DEPENDENCY_SERVICE
-              value: "barbican-api,barbican-mariadb"
             - name: BARBICAN_DB_PURGE_ENABLED
               value: {{ .Values.barbican_nanny.db_purge.enabled | quote }}
             - name: BARBICAN_DB_PURGE_OLDER_THAN
@@ -70,6 +73,5 @@ spec:
             limits:
               memory: "250Mi"
               cpu: "100m"
-{{- end }}
 {{- end }}
 {{- end }}
