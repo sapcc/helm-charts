@@ -158,7 +158,7 @@ spec:
           - mountPath: /host
             name: host
           - mountPath: /var/lib/nova/.ssh
-            name: ssh
+            name: nova-ssh
           - mountPath: /usr/share/qemu
             name: usr-share-qemu
           - mountPath: /etc/sudoers.d/nova
@@ -176,6 +176,8 @@ spec:
           env:
           - name: ISSUER_NAME
             value: {{ .Release.Name }}-ca-issuer
+          - name: SSH_SECRET_NAME
+            value: {{ .Release.Name }}-ssh-keypair
           volumeMounts:
           - mountPath: /usr/local/bin/manage-libvirt-tls
             subPath: manage-libvirt-tls
@@ -184,7 +186,7 @@ spec:
             name: nova-compute-etc
           - mountPath: /host
             name: host
-        {{- if not .Values.hypervisor_on_host }}
+         {{- if not .Values.hypervisor_on_host }}
         - name: nova-libvirt
           image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/{{ .Values.imageName }}:{{ .Values.imageVersion | required "Please set imageVersion similar" }}
           imagePullPolicy: IfNotPresent
@@ -275,7 +277,7 @@ spec:
       - name: instances
         hostPath:
           path: /var/lib/nova/instances
-      - name: ssh
+      - name: nova-ssh
         hostPath:
           path: /var/lib/nova/.ssh
       - name: libvirt
