@@ -3,6 +3,7 @@ import base64
 import os
 import pathlib
 import re
+import shutil
 import signal
 import subprocess
 import sys
@@ -11,6 +12,7 @@ import time
 import requests
 
 _ISSUER_NAME = os.environ["ISSUER_NAME"]
+_SSH_SECRET_NAME = os.environ["SSH_SECRET_NAME"]
 
 _HOST_ROOT = pathlib.Path("/host")
 
@@ -74,7 +76,7 @@ def _ensure_certificate(host, ips):
     return secret_name
 
 
-def _get_certificate_secret(secret_name):
+def _get_secret(secret_name):
     while True:
         resp = session.get(
             f"{_apiserver}/api/v1/namespaces/{namespace}/secrets/{secret_name}",
@@ -90,7 +92,9 @@ def _get_certificate_secret(secret_name):
         resp.raise_for_status()
         break
 
-    return resp.json()
+    secret = resp.json()
+    resource_version = secret.get("metadata", {}).get("resourceVersion", 0)
+    return secret, resource_version
 
 
 def _write_secret_if_changed(path, base64_data):
@@ -211,6 +215,53 @@ signal.signal(signal.SIGINT, _handle_stop_signals)
 signal.signal(signal.SIGTERM, _handle_stop_signals)
 
 
+def _sync_certs(secret_name, resource_version):
+    secret, new_resouce_version = _get_secret(secret_name)
+    if resource_version == new_resouce_version:
+        return resource_version, False
+
+    changed = _write_certificate(secret["data"])
+    return new_resouce_version, changed
+
+
+_NOVA_USER_ID = 42436
+_NOVA_SSH_PATH = pathlib.Path("/host/var/lib/nova/.ssh")
+
+
+def _write_ssh_data(data):
+    any_change = False
+    any_change |= _write_secret_if_changed(
+        _NOVA_SSH_PATH / "id_ed25519", data["ssh-privatekey"]
+    )
+    any_change |= _write_secret_if_changed(
+        _NOVA_SSH_PATH / "id_ed25519.pub", data["ssh-publickey"]
+    )
+    any_change |= _write_secret_if_changed(
+        _NOVA_SSH_PATH / "authorized_keys", data["ssh-authorizedkeys"]
+    )
+
+    os.chown(_NOVA_SSH_PATH, _NOVA_USER_ID, _NOVA_USER_ID)
+    os.chmod(_NOVA_SSH_PATH, 0o700)
+
+    for p in _NOVA_SSH_PATH.rglob("*"):
+        os.chown(p, _NOVA_USER_ID, _NOVA_USER_ID)
+        if p.name != 'known_hosts':
+            os.chmod(p, 0o400)
+        else:
+            os.chmod(p, 0o600)
+
+    return any_change
+
+
+def _sync_ssh(resource_version):
+    secret, new_resouce_version = _get_secret(_SSH_SECRET_NAME)
+    if resource_version == new_resouce_version:
+        return resource_version, False
+
+    changed = _write_ssh_data(secret["data"])
+    return new_resouce_version, changed
+
+
 def _main():
     global blocking
 
@@ -227,30 +278,27 @@ def _main():
     live_migration_inbound_addr = m[1]
 
     secret_name = _ensure_certificate(host, ips=[live_migration_inbound_addr])
-    secret = _get_certificate_secret(secret_name)
-    resource_version = secret.get("metadata", {}).get("resourceVersion", 0)
-    changed = _write_certificate(secret["data"])
+    certificate_changed, certificate_version = _sync_certs(secret_name, None)
 
     _ensure_libvirt_tls_conf()
 
-    if changed:
+    if certificate_changed:
         _server_update_tls()
+
+    ssh_changed, ssh_version = _sync_ssh(None)
 
     while run:
         blocking = True
         time.sleep(5)
         blocking = False
 
-        new_secret = _get_certificate_secret(secret_name)
-        new_resouce_version = new_secret.get("metadata", {}).get("resourceVersion", 0)
-        if resource_version == new_resouce_version:
-            continue
-
-        secret = new_secret
-        changed = _write_certificate(secret["data"])
-        resource_version = new_resouce_version
-        if changed:
+        certificate_changed, certificate_version = _sync_certs(
+            secret_name, certificate_version
+        )
+        if certificate_changed:
             _server_update_tls()
+
+        ssh_changed, ssh_version = _sync_ssh(ssh_version)
 
 
 _main()
