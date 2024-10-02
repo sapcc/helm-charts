@@ -1,3 +1,13 @@
+## 7.7.0
+
+* Prometheus bump to v2.54.1
+* Thanos bump to v0.36.1
+
+## 7.6.1
+
+* increasing retention
+* unified vpa alert conditions
+
 ## 7.6.0
 
 * Upgrade to v2.53.0
