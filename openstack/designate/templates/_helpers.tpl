@@ -61,3 +61,24 @@ qualname={{$item}}
   {{- $hash := empty .Values.proxysql.mode | ternary $bin $all | sha256sum }}
   {{- .Release.Name }}-migration-{{ substr 0 4 $hash }}-{{ required ".Values.image_version_designate is missing" .Values.image_version_designate }}
 {{- end }}
+
+
+{{- define "designate.rabbitmq_dependencies" }}
+  {{- if .Values.rabbitmq_cluster.enabled }}
+    {{- .Release.Name }}-rabbitmq-cluster
+  {{- else }}
+    {{- .Release.Name }}-rabbitmq
+  {{- end }}
+{{- end }}
+
+{{- define "designate.db_dependencies" }}
+  {{- if .Values.percona_cluster.enabled }}
+    {{- .Release.Name }}-percona-pxc
+  {{- else }}
+    {{- .Release.Name }}-mariadb
+  {{- end }}
+{{- end }}
+
+{{- define "designate.service_dependencies" }}
+  {{- template "designate.db_dependencies" . }},{{ template "designate.rabbitmq_dependencies" . }}
+{{- end }}
