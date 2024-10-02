@@ -5,8 +5,7 @@ metadata:
   namespace: {{ $.Release.Namespace }}
   name: {{ include "commonPrefix" $ }}-mariadb-entrypoint-sh
   labels:
-    app: {{ $.Release.Name }}
-    {{- include "sharedservices.labels" $ | indent 4 }}
+    {{- include "mariadb-galera.labels" (list $ "noversion" "database" "cm" "entrypoint") | indent 4 }}
 data:
 {{ tpl (.Files.Glob "scripts/mariadb-galera/entrypoint-galera.sh").AsConfig . | indent 2 }}
 ---
@@ -16,8 +15,7 @@ metadata:
   namespace: {{ $.Release.Namespace }}
   name: {{ include "commonPrefix" $ }}-mariadb-common-functions-extended-sh
   labels:
-    app: {{ $.Release.Name }}
-    {{- include "sharedservices.labels" $ | indent 4 }}
+    {{- include "mariadb-galera.labels" (list $ "noversion" "database" "cm" "functions") | indent 4 }}
 data:
 {{ tpl (.Files.Glob "scripts/mariadb-galera/common-functions-extended.sh").AsConfig . | indent 2 }}
 ---
@@ -26,6 +24,8 @@ kind: ConfigMap
 metadata:
   name: {{ include "commonPrefix" $ }}-mariadb-probes-sh
   namespace: {{ $.Release.Namespace }}
+  labels:
+    {{- include "mariadb-galera.labels" (list $ "noversion" "database" "cm" "probes") | indent 4 }}
 data:
 {{ tpl (.Files.Glob "scripts/mariadb-galera/startup.sh").AsConfig . | indent 2 }}
 {{ tpl (.Files.Glob "scripts/mariadb-galera/liveness.sh").AsConfig . | indent 2 }}
@@ -37,8 +37,7 @@ metadata:
   namespace: {{ $.Release.Namespace }}
   name: {{ include "commonPrefix" $ }}-mariadb-hooks-sh
   labels:
-    app: {{ $.Release.Name }}
-    {{- include "sharedservices.labels" $ | indent 4 }}
+    {{- include "mariadb-galera.labels" (list $ "noversion" "database" "cm" "hooks") | indent 4 }}
 data:
 {{ tpl (.Files.Glob "scripts/mariadb-galera/pre-stop-hook.sh").AsConfig . | indent 2 }}
 {{ tpl (.Files.Glob "scripts/mariadb-galera/post-start-hook.sh").AsConfig . | indent 2 }}
@@ -48,6 +47,8 @@ kind: ConfigMap
 metadata:
   name: {{ include "commonPrefix" $ }}-galerastatus
   namespace: {{ $.Release.Namespace }}
+  labels:
+    {{- include "mariadb-galera.labels" (list $ "noversion" "database" "cm" "status") | indent 4 }}
 data:
 {{- range $int, $err := until ((include "replicaCount" (dict "global" $ "type" "database")) | int) }}
   {{ (include "nodeNamePrefix" (dict "global" $ "component" "database")) }}-{{ $int }}.seqno: |-
@@ -60,6 +61,8 @@ kind: ConfigMap
 metadata:
   name: {{ include "commonPrefix" $ }}-mariadb-wipedata
   namespace: {{ $.Release.Namespace }}
+  labels:
+    {{- include "mariadb-galera.labels" (list $ "noversion" "database" "cm" "wipedata") | indent 4 }}
 data:
   wipedata.flag: |-
     true

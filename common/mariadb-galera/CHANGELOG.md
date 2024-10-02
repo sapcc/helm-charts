@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.29.5 - 2024/07/30
+* labels standardized for all components
+  * `sharedservices.labels` renamed to `mariadb-galera.labels` to avoid [conflicts with templates from other charts](https://helm.sh/docs/chart_template_guide/subcharts_and_globals/#sharing-templates-with-subcharts)
+  * redundant labels removed
+  * label selectors updated
+  * unit tests added/updated
+* software versions bumped
+  * Ubuntu packages timestamp `20240724035543`
+* chart version bumped
+
 ## v0.29.4 - 2024/07/23
 * init containers to set `vm.max_map_count` and `vm.drop_caches` removed
   * because both settings are not required for the related components

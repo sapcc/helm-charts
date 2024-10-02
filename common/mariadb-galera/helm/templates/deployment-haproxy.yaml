@@ -9,23 +9,15 @@ kind: Deployment
 metadata:
   namespace: {{ $.Release.Namespace }}
   name: {{ include "commonPrefix" $ }}-haproxy
-  labels:
-    app: {{ $.Release.Name }}
-    component: "haproxy"
-    release: {{ $.Release.Name }}
-    {{- include "sharedservices.labels" $ | indent 4 }}
 spec:
   replicas: {{ $.Values.replicas.proxy | default 3 }}
   selector:
     matchLabels:
-      component: "haproxy"
+      app.kubernetes.io/component: {{ (index $.Values.image (printf "%s" "haproxy")).softwarename }}-deploy-proxy
   template:
     metadata:
       labels:
-        app: {{ $.Release.Name }}
-        component: "haproxy"
-        release: {{ $.Release.Name }}
-        {{- include "sharedservices.labels" $ | indent 8 }}
+        {{- include "mariadb-galera.labels" (list $ "version" "haproxy" "deploy" "proxy") | indent 8 }}
       annotations:
         {{- if $.Values.monitoring.proxy.enabled }}
         prometheus.io/scrape: "true"
@@ -44,34 +36,34 @@ spec:
               podAffinityTerm:
                 labelSelector:
                   matchExpressions:
-                    - key: "app"
+                    - key: "app.kubernetes.io/part-of"
                       operator: In
                       values:
                         - {{ $.Release.Name | quote }}
-                    - key: "component"
+                    - key: "app.kubernetes.io/component"
                       operator: In
                       values:
-                        - "haproxy"
+                        - {{ (index $.Values.image (printf "%s" "haproxy")).softwarename }}-deploy-proxy
                 topologyKey: "topology.kubernetes.io/zone"
             - weight: 2
               podAffinityTerm:
                 labelSelector:
                   matchExpressions:
-                    - key: "app"
+                    - key: "app.kubernetes.io/part-of"
                       operator: In
                       values:
                         - {{ $.Release.Name | quote }}
-                    - key: "component"
+                    - key: "app.kubernetes.io/component"
                       operator: In
                       values:
-                        - "haproxy"
+                        - {{ (index $.Values.image (printf "%s" "haproxy")).softwarename }}-deploy-proxy
                 topologyKey: "kubernetes.io/hostname"
       serviceAccount: {{ include "commonPrefix" $ }}-mariadb-galera
       securityContext:
         runAsUser:  {{ $.Values.userId.proxy | default 3100 | int }}
         runAsGroup: {{ $.Values.groupId.proxy | default 3100 | int }}
         fsGroup:  {{ $.Values.groupId.proxy | default 3100 | int }}
-      {{- if and (hasKey $.Values.image.proxy "pullSecret") $.Values.image.haproxy.pullSecret }}
+      {{- if and (hasKey $.Values.image.haproxy "pullSecret") $.Values.image.haproxy.pullSecret }}
       imagePullSecrets:
       - name: {{ include "commonPrefix" $ }}-{{$.Values.image.haproxy.pullSecret}}
       {{- end }}

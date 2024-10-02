@@ -58,7 +58,7 @@ metadata:
   name: {{ include "commonPrefix" $ }}-mariadb-my-cnf
   namespace: {{ $.Release.Namespace }}
   labels:
-    {{- include "sharedservices.labels" $ | indent 4 }}
+    {{- include "mariadb-galera.labels" (list $ "noversion" "database" "cm" "config") | indent 4 }}
 data:
 {{- range $int, $err := until ((include "replicaCount" (dict "global" $ "type" "database")) | int) }}
   my.cnf.{{ $nodeNamePrefix }}-{{ $int }}.tpl: |-
