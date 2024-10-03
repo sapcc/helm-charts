@@ -95,7 +95,12 @@ Example: service-mariadb
 
 {{/*
 Service hostname for pxc-db
-Example: service-db
+pxc-db provides following services:
+- service-db-haproxy (*)
+- service-db-haproxy-replicas
+- service-db-pxc
+- service-db-pxc-unready
+Example: service-db-haproxy
 */}}
 {{- define "utils._db_host_pxc_db" }}
     {{- if kindIs "map" . }}
@@ -107,7 +112,7 @@ Example: service-db
         {{- else }}
             {{- $envAll.Values.pxc_db.name }}
         {{- end }}
-    {{- end }}-db
+    {{- end }}-db-haproxy
 {{- end }}
 
 {{/*

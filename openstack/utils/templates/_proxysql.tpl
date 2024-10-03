@@ -95,7 +95,7 @@
           {{- $_ := set $dbs $d.Name (merge (get $envAll.Values $d.Name) (dict "hostAliasesSuffix" "mariadb")) }}
         {{- end }}
         {{- if hasPrefix "pxc" $d.Name }}
-          {{- $_ := set $dbs $d.Name (merge (get $envAll.Values $d.Name) (dict "hostAliasesSuffix" "db")) }}
+          {{- $_ := set $dbs $d.Name (merge (get $envAll.Values $d.Name) (dict "hostAliasesSuffix" "db-haproxy")) }}
         {{- end }}
       {{- end }}
       {{/* Option: add hostAliases base on proxysql.force_enable values */}}
@@ -103,7 +103,7 @@
         {{- if hasPrefix "mariadb" $d }}
           {{- $_ := set $dbs $d (merge (get $envAll.Values $d) (dict "hostAliasesSuffix" "mariadb")) }}
         {{- else if hasPrefix "pxc" $d }}
-          {{- $_ := set $dbs $d (merge (get $envAll.Values $d) (dict "hostAliasesSuffix" "db")) }}
+          {{- $_ := set $dbs $d (merge (get $envAll.Values $d) (dict "hostAliasesSuffix" "db-haproxy")) }}
         {{- else }}
           {{ fail (printf "unknown database type: %s" $d) }}
         {{- end }}
