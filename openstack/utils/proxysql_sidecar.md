@@ -15,7 +15,7 @@ The two modes differ in the following way:
 - `unix_socket` connects to the side-car container via a unix socket file on a shared volume.
    This should be the fastest, but has the disadvantage that works only with the side-car present, as the url
    is referring to said file.
-- `host_alias`  uses a host alias for the short hostname (ie. `<app>-mariadb` or `<app>-db`) to redirect the application to the localhost
+- `host_alias`  uses a host alias for the short hostname (ie. `<app>-mariadb` or `<app>-db-haproxy`) to redirect the application to the localhost
   where the side-car container is listening on the default port. But the very same url also works without a side-car
   container, if the host-alias is not set. So we do not have to annotate all pods, we just have to make sure,
   that the annotations are consistent for a single pod.
