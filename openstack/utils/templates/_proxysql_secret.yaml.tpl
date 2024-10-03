@@ -5,23 +5,32 @@
       {{- $max_pool_size := coalesce .Values.max_pool_size .Values.global.max_pool_size 50 }}
       {{- $max_overflow := coalesce .Values.max_overflow .Values.global.max_overflow 5 }}
       {{- $max_connections := .Values.proxysql.max_connections_per_proc | default (add $max_pool_size $max_overflow) }}
-      {{/* Default: use mariadb dependencies chart values */}}
-      {{- $dbs := dict }}
+      {{/* Collect all enabled databases from dependencies */}}
+      {{- $_dbs := dict }}
       {{- range $d := $envAll.Chart.Dependencies }}
         {{- if hasPrefix "mariadb" $d.Name }}
-          {{- $_ := set $dbs $d.Name (merge (get $envAll.Values $d.Name) (dict "serviceSuffix" "mariadb")) }}
+          {{- $_ := set $_dbs $d.Name (merge (get $envAll.Values $d.Name) (dict "serviceSuffix" "mariadb")) }}
+        {{- end }}
+        {{- if hasPrefix "pxc" $d.Name }}
+          {{- $_ := set $_dbs $d.Name (merge (get $envAll.Values $d.Name) (dict "serviceSuffix" "db-haproxy")) }}
         {{- end }}
       {{- end }}
-      {{/* Option 1: use pxc-db dependencies chart values conditionally */}}
-      {{- if and ($envAll.Values.dbType ) (eq $envAll.Values.dbType "pxc-db") }}
-        {{- $dbs = dict }}
-        {{- range $d := $envAll.Chart.Dependencies }}
-          {{- if hasPrefix "pxc" $d.Name }}
-            {{- $_ := set $dbs $d.Name (merge (get $envAll.Values $d.Name) (dict "serviceSuffix" "db-haproxy")) }}
+      {{/* Determine which database to include based on configuration */}}
+      {{- $defaultDbType := .Values.dbType | default "mariadb" }}
+      {{- $dbs := dict }}
+      {{- if $envAll.Values.proxysql.multiDestination }}
+        {{- $dbs = $_dbs }}
+      {{- else }}
+        {{- range $dbKey, $db := $_dbs }}
+          {{- if and (eq $defaultDbType "mariadb") (hasPrefix "mariadb" $dbKey) }}
+            {{- $_ := set $dbs $dbKey $db }}
+          {{- end }}
+          {{- if and (eq $defaultDbType "pxc-db") (hasPrefix "pxc" $dbKey) }}
+            {{- $_ := set $dbs $dbKey $db }}
           {{- end }}
         {{- end }}
       {{- end }}
-      {{/* Option 2: use override from proxysql.force_enable value */}}
+      {{/* Option: use override from proxysql.force_enable value */}}
       {{- if $envAll.Values.proxysql.force_enable }}
         {{- $dbs = dict }}
         {{- range $d := $envAll.Values.proxysql.force_enable }}
