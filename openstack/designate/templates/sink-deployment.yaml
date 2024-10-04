@@ -51,18 +51,13 @@ spec:
                 values:
                 - designate-sink
             topologyKey: "kubernetes.io/hostname"
-      {{- include "utils.proxysql.pod_settings" . | indent 6 }}
       containers:
         - name: designate-sink
           image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/loci-designate:{{ required ".Values.global.image_version_designate is missing" .Values.image_version_designate }}
           imagePullPolicy: IfNotPresent
           command:
-            - kubernetes-entrypoint
+            - /container.init/designate-sink-start
           env:
-            - name: COMMAND
-              value: "/container.init/designate-sink-start"
-            - name: NAMESPACE
-              value: {{ .Release.Namespace }}
             - name: DEBUG_CONTAINER
               value: "false"
             {{- if .Values.sentry.enabled }}
@@ -77,7 +72,6 @@ spec:
               name: designate-etc
             - mountPath: /container.init
               name: container-init
-            {{- include "utils.proxysql.volume_mount" . | indent 12 }}
             {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
         {{- include "utils.proxysql.container" . | indent 8 }}
       volumes:
@@ -88,6 +82,5 @@ spec:
           configMap:
             name: designate-bin
             defaultMode: 0755
-        {{- include "utils.proxysql.volumes" . | indent 8 }}
         {{- include "utils.trust_bundle.volumes" . | indent 8 }}
 {{- end }}

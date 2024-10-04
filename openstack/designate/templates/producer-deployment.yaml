@@ -44,12 +44,14 @@ spec:
       serviceAccountName: {{ .Release.Name }}
 {{- end }}
       {{- include "utils.proxysql.pod_settings" . | indent 6 }}
+      initContainers:
+      {{- tuple . (dict "service" (include "designate.service_dependencies" . )) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 8 }}
       containers:
         - name: designate-producer
           image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/loci-designate:{{ required ".Values.global.image_version_designate is missing" .Values.image_version_designate }}
           imagePullPolicy: IfNotPresent
           command:
-            - kubernetes-entrypoint
+            - /container.init/designate-producer-start
           resources:
              requests:
                memory: "128Mi"
@@ -58,18 +60,6 @@ spec:
                memory: "512Mi"
                cpu: "500m"
           env:
-            - name: COMMAND
-              value: "/container.init/designate-producer-start"
-            - name: NAMESPACE
-              value: {{ .Release.Namespace }}
-            - name: DEPENDENCY_SERVICE
-{{- if .Values.percona_cluster.enabled }}
-              value: "{{ .Release.Name }}-percona-pxc,{{ .Release.Name }}-rabbitmq"
-{{- else if .Values.rabbitmq_cluster.enabled }}
-              value: "{{ .Release.Name }}-mariadb,{{ .Release.Name }}-rabbitmq-cluster"
-{{- else }}
-              value: "{{ .Release.Name }}-mariadb,{{ .Release.Name }}-rabbitmq"
-{{- end }}
             - name: DEBUG_CONTAINER
               value: "false"
             {{- if .Values.sentry.enabled }}
