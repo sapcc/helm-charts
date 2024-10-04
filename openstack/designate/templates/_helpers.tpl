@@ -72,10 +72,10 @@ qualname={{$item}}
 {{- end }}
 
 {{- define "designate.db_dependencies" }}
-  {{- if .Values.percona_cluster.enabled }}
+  {{- if or .Values.percona_cluster.enabled (eq .Values.dbType "pxc-global") }}
     {{- .Release.Name }}-percona-pxc
   {{- else }}
-    {{- .Release.Name }}-mariadb
+    {{- include "utils.db_host" . }}
   {{- end }}
 {{- end }}
 
