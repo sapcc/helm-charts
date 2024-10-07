@@ -42,6 +42,8 @@ spec:
               - key: secrets.conf
                 path: cinder.conf.d/secrets.conf
               name: cinder-secrets
+      initContainers:
+      {{- tuple . (dict "service" "cinder-mariadb,cinder-api") | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 8 }}
       containers:
 {{- if .Values.cinder_nanny.db_purge.enabled }}
         - name: db-consistency-and-purge
@@ -49,16 +51,14 @@ spec:
           imagePullPolicy: IfNotPresent
           command:
             - dumb-init
-            - kubernetes-entrypoint
+{{- if not .Values.cinder_nanny.debug }}
+            - /bin/bash
+            - /scripts/cinder-db-consistency-and-purge.sh
+{{- else }}
+            - sleep
+            - inf
+{{- end }}
           env:
-            - name: COMMAND
-              value: "{{ if not .Values.cinder_nanny.debug }}/bin/bash /scripts/cinder-db-consistency-and-purge.sh{{ else }}sleep inf{{ end }}"
-            - name: NAMESPACE
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.namespace
-            - name: DEPENDENCY_SERVICE
-              value: "cinder-mariadb,cinder-api"
             - name: CINDER_DB_PURGE_ENABLED
               value: {{ .Values.cinder_nanny.db_purge.enabled | quote }}
             - name: CINDER_DB_PURGE_OLDER_THAN
@@ -103,16 +103,14 @@ spec:
           imagePullPolicy: IfNotPresent
           command:
             - dumb-init
-            - kubernetes-entrypoint
+{{- if not .Values.cinder_nanny.debug }}
+            - /bin/bash
+            - /scripts/cinder-quota-sync.sh
+{{- else }}
+            - sleep
+            - inf
+{{- end }}
           env:
-            - name: COMMAND
-              value: "{{ if not .Values.cinder_nanny.debug }}/bin/bash /scripts/cinder-quota-sync.sh{{ else }}sleep inf{{ end }}"
-            - name: NAMESPACE
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.namespace
-            - name: DEPENDENCY_SERVICE
-              value: "cinder-mariadb,cinder-api"
             - name: CINDER_QUOTA_SYNC_ENABLED
               value: {{ .Values.cinder_nanny.quota_sync.enabled | quote }}
             - name: CINDER_QUOTA_SYNC_DRY_RUN
