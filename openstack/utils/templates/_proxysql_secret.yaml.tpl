@@ -22,10 +22,7 @@
         {{- $dbs = $_dbs }}
       {{- else }}
         {{- range $dbKey, $db := $_dbs }}
-          {{- if and (eq $defaultDbType "mariadb") (hasPrefix "mariadb" $dbKey) }}
-            {{- $_ := set $dbs $dbKey $db }}
-          {{- end }}
-          {{- if and (eq $defaultDbType "pxc-db") (hasPrefix "pxc" $dbKey) }}
+          {{- if hasPrefix ($defaultDbType | replace "-" "_") $dbKey }}
             {{- $_ := set $dbs $dbKey $db }}
           {{- end }}
         {{- end }}
@@ -60,6 +57,37 @@ metadata:
 data:
   proxysql.cnf: |
 {{ include "utils.snippets.set_proxysql_config" (dict "max_connections" $max_connections "dbs" $dbs "dbKeys" $dbKeys "global" $ ) | b64enc | trim | indent 4 }}
+{{/* Create database-specific ProxySQL secrets. */}}
+{{- if $envAll.Values.proxysql.multiSecret }}
+{{- range $dbType := list "mariadb" "pxc-db" }}
+  {{- $dbByType := dict }}
+  {{- range $dbKey, $db := $_dbs }}
+    {{- if hasPrefix ($dbType | replace "-" "_") $dbKey }}
+      {{- $_ := set $dbByType $dbKey $db }}
+    {{- end }}
+  {{- end }}
+  {{- $sortedDbKeys := keys $dbByType | sortAlpha }}
+  {{- if $sortedDbKeys }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ $envAll.Release.Name }}-proxysql-etc-{{ $dbType }}
+  labels:
+    system: openstack
+    type: configuration
+    component: database
+  {{- if $envAll.Values.proxysql.forceSecretCreation }}
+  annotations:
+    "helm.sh/hook": pre-upgrade
+    "helm.sh/hook-weight": "-10"
+  {{- end }}
+data:
+  proxysql.cnf: |
+{{ include "utils.snippets.set_proxysql_config" (dict "max_connections" $max_connections "dbs" $dbByType "dbKeys" $sortedDbKeys "global" $ ) | b64enc | trim | indent 4 }}
+  {{- end }}
+        {{- end }}
+      {{- end }}
     {{- end }}
   {{- end }}
 {{- end }}
