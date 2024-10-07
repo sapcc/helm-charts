@@ -148,3 +148,17 @@ groups:
     annotations:
       description: Prometheus is scraping `{{`{{ $labels.pod }}`}}` pods in namespace `{{`{{ $labels.namespace }}`}}` multiple times. This is likely caused due to incorrectly placed scrape annotations.
       summary: Prometheus scrapes pods multiple times
+
+  - alert: PodNeedsRestartToUpdateSidecar
+    expr: count by (label_ccloud_support_group, label_ccloud_service, namespace, container) (pod_needs_restart_to_update_sidecar) > 0
+    for: 10m
+    labels:
+      service: {{ include "serviceFromLabelsOrDefault" "k8s" }}
+      support_group: {{ include "supportGroupFromLabelsOrDefault" .Values.supportGroup }}
+      severity: warning
+    annotations:
+      summary: Pods need to be restarted to update their {{`{{ $labels.container }}`}} sidecar container images
+      description: >
+        A new image version has been rolled out for {{`{{ $labels.container }}`}} sidecars, but it will not apply to running containers.
+        Please query the metric `pod_needs_restart_to_update_sidecar{label_ccloud_support_group="{{`{{ $labels.labels_ccloud_support_group }}`}}",label_ccloud_service="{{`{{ $labels.labels_ccloud_service }}`}}",namespace="{{`{{ $labels.namespace }}`}}"}` in prometheus-kubernetes and restart the listed pods with however much care is needed.
+        This is a warning-level alert because sidecar container updates usually include security fixes.
