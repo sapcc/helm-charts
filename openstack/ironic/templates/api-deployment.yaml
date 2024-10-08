@@ -73,12 +73,12 @@ spec:
         volumeMounts:
         - mountPath: /etc/ironic
           name: etcironic
+        - mountPath: /etc/ironic/ironic.conf.d
+          name: ironic-etc-confd
         - mountPath: /etc/ironic/ironic.conf
           name: ironic-etc
           subPath: ironic.conf
           readOnly: true
-        - mountPath: /etc/ironic/ironic.conf.d
-          name: ironic-etc-confd
         - mountPath: /etc/ironic/policy.json
           name: ironic-etc
           subPath: policy.json
@@ -98,8 +98,12 @@ spec:
           readOnly: true
         {{- end }}
         {{- if .Values.watcher.enabled }}
-        - name: ironic-etc
-          mountPath: /etc/ironic/watcher.yaml
+        - mountPath: /etc/ironic/ironic.conf.d/watcher.conf
+          name: ironic-etc
+          subPath: watcher.conf
+          readOnly: true
+        - mountPath: /etc/ironic/watcher.yaml
+          name: ironic-etc
           subPath: watcher.yaml
           readOnly: true
         {{- end }}
