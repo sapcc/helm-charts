@@ -35,6 +35,10 @@
   @type null
 </match>
 
+<match kubernetes.var.log.containers.wormhole**>
+  @type null
+</match>
+
 <filter kubernetes.var.log.containers.kube-system-ingress-nginx-controller**>
   @type parser
   key_name log
