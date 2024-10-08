@@ -482,6 +482,10 @@
   @type null
 </match>
 
+<match kubernetes.var.log.containers.wormhole**>
+  @type null
+</match>
+
 <filter kubernetes.**>
   @type flatten_hash
   @id flatten_hash
