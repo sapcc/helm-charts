@@ -3,8 +3,8 @@
 {{- range $i, $share := $context.Values.global.netapp.filers }}
 
 [{{$share.name}}]
-netapp_login={{$share.username}}
-netapp_password={{$share.password}}
+netapp_login={{$share.username | include "resolve_secret" }}
+netapp_password={{$share.password | include "resolve_secret"}}
 
 {{- end -}}
 {{- end }}
