@@ -345,7 +345,8 @@ spec:
           isFalcoPod
           container.name == "falco"
           regex.match("^keppel\\.[a-z0-9-.]+/ccloud-dockerhub-mirror/falcosecurity/falco-no-driver:", container.image)
-          hostPath in ["/boot", "/dev", "/etc", "/lib/modules", "/proc", "/run/containerd/containerd.sock", "/run/crio/crio.sock", "/sys/module/falco", "/usr", "/var/run/docker.sock"]
+          # TODO: after new falco version is rolled out, remove the mounts that are no longer needed in the new version
+          hostPath in ["/boot", "/dev", "/etc", "/lib/modules", "/proc", "/run/containerd", "/run/containerd/containerd.sock", "/run/crio", "/run/crio/crio.sock", "/sys/module/falco", "/usr", "/var/run", "/var/run/docker.sock"]
         }
         isContainerAllowedToBePrivileged(container) = true {
           isFalcoPod
@@ -353,7 +354,7 @@ spec:
           regex.match("^keppel\\.[a-z0-9-.]+/ccloud-dockerhub-mirror/falcosecurity/falco-no-driver:", container.image)
         }
 
-        # falco-driver-loader loads a kernel module for falco
+        # falco-driver-loader loads a kernel module for falco (TODO: remove once the new falco version is rolled out)
         isContainerAllowedToAccessHostPath(container, hostPath, readOnly) = true {
           isFalcoPod
           container.name == "falco-driver-loader"

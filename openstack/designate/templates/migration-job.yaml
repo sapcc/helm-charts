@@ -17,23 +17,15 @@ spec:
       {{- if $proxysql}}
       {{- include "utils.proxysql.job_pod_settings" . | indent 6 }}
       {{- end }}
+      initContainers:
+      {{- tuple . (dict "service" (include "designate.db_dependencies" . )) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 8 }}
       containers:
         - name: designate-migration
           image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/loci-designate:{{ required ".Values.image_version_designate is missing" .Values.image_version_designate }}
           imagePullPolicy: IfNotPresent
           command:
-            - kubernetes-entrypoint
+            - /container.init/db-migrate
           env:
-            - name: COMMAND
-              value: "/container.init/db-migrate"
-            - name: NAMESPACE
-              value: {{ .Release.Namespace }}
-            - name: DEPENDENCY_SERVICE
-{{- if .Values.percona_cluster.enabled }}
-              value: {{ .Release.Name }}-percona-pxc
-{{- else }}
-              value: {{ .Release.Name }}-mariadb
-{{- end }}
           volumeMounts:
             - mountPath: /etc/designate
               name: designate-etc

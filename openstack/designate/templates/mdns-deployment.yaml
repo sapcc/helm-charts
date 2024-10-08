@@ -48,29 +48,17 @@ spec:
           preferredDuringSchedulingIgnoredDuringExecution:
 {{- include "kubernetes_maintenance_affinity" . }}
       {{- include "utils.proxysql.pod_settings" . | indent 6 }}
+      initContainers:
+      {{- tuple . (dict "service" (include "designate.service_dependencies" . ) "jobs" (include "migration_job_name" . )) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 8 }}
       containers:
         - name: designate-mdns
           image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/loci-designate:{{ required ".Values.image_version_designate is missing" .Values.image_version_designate }}
           imagePullPolicy: IfNotPresent
           command:
-            - kubernetes-entrypoint
+            - /container.init/designate-mdns-start
           resources:
 {{ toYaml .Values.resources.mdns | indent 12 }}
           env:
-            - name: COMMAND
-              value: "/container.init/designate-mdns-start"
-            - name: NAMESPACE
-              value: {{ .Release.Namespace }}
-            - name: DEPENDENCY_JOBS
-              value: {{ include "migration_job_name" . }}
-            - name: DEPENDENCY_SERVICE
-{{- if .Values.percona_cluster.enabled }}
-              value: "{{ .Release.Name }}-percona-pxc,{{ .Release.Name }}-rabbitmq"
-{{- else if .Values.rabbitmq_cluster.enabled }}
-              value: "{{ .Release.Name }}-mariadb,{{ .Release.Name }}-rabbitmq-cluster"
-{{- else }}
-              value: "{{ .Release.Name }}-mariadb,{{ .Release.Name }}-rabbitmq"
-{{- end }}
             - name: DEBUG_CONTAINER
               value: "false"
             - name: NODE_NAME
