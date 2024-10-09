@@ -3,6 +3,11 @@ Rabbitmq CHANGELOG
 
 This file is used to list changes made in each version of the common chart rabbitmq.
 
+0.12.0
+------
+b.alkhateeb@sap.com
+- add aconfigurator side car container to insure configuring RabbitMQ without restart
+
 0.11.1
 ------
 nathan.oyler@sap.com
