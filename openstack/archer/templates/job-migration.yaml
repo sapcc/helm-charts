@@ -27,8 +27,13 @@ spec:
       containers:
         - name: {{ include "archer.fullname" . }}-migration
           image: "{{ .Values.global.registry }}/archer:{{ .Values.image.tag | required ".Values.image.tag is required" }}"
+          {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
           command: [ "/linkerd-await" ]
           args: [ "--shutdown", "--", "/usr/bin/archer-migrate", "--config-file=/etc/archer/archer.ini" ]
+          {{- else }}
+          command: [ "/usr/bin/archer-migrate" ]
+          args: [ "--config-file=/etc/archer/archer.ini" ]
+          {{- end }}
           env:
             - name: SENTRY_DSN
               valueFrom:
