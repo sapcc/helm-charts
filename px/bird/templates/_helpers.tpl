@@ -65,6 +65,31 @@ alert-tier: px
 alert-service: px
 {{- end }}
 
+
+{{- define "bird.topology_spread" }}
+- maxSkew: 1
+  # minDomains: {{ len .top.Values.global.availability_zones }} 
+  topologyKey: topology.kubernetes.io/zone
+  whenUnsatisfiable: ScheduleAnyway
+  labelSelector: 
+    matchExpressions:
+      - key: px.cloud.sap/component
+        operator: In
+        values:
+        - routeserver
+      - key: px.cloud.sap/afi
+        operator: In
+        values:
+        - {{ .afi | quote }}
+      - key: px.cloud.sap/service
+        operator: In
+        values:
+        - {{ .service_number | quote }}
+  # matchLabelKeys: <list> # optional; beta since v1.27
+  nodeAffinityPolicy: Honor # respect affinities below
+  nodeTaintsPolicy: Ignore # default value 
+{{- end }}
+
 {{- define "bird.domain.affinity" }}
 {{- if len .top.Values.apods  | eq 0 }}
 {{- fail "You must supply at least one apod for scheduling" -}}
