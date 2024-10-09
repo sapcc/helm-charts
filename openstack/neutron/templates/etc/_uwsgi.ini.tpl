@@ -11,7 +11,7 @@ uid = neutron
 gid = neutron
 http = :{{.Values.global.neutron_api_port_internal | default 9696}}
 plugins-dir = /var/lib/openstack/lib
-need-plugins = dogstatsd,shortmsecs
+need-plugins = shortmsecs
 
 # Connection tuning
 vacuum = true
@@ -35,9 +35,6 @@ log-x-forwarded-for = true
 log-date = %%Y-%%m-%%d %%H:%%M:%%S
 log-format-strftime = true
 log-format = %(ftime),%(shortmsecs) %(pid) INFO uWSGI [%(request_id) g%(global_request_id) %(user_id) %(project) %(domain) %(user_domain) %(project_domain)] %(addr) "%(method) %(uri) %(proto)" status: %(status) len: %(size) time: %(secs) agent: %(uagent)
-plugin = dogstatsd
-stats-push = dogstatsd:127.0.0.1:9125
-dogstatsd-all-gauges = true
 memory-report = true
 
 # HTTP-Socket Timeout
