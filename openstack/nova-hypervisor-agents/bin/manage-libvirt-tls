@@ -3,10 +3,10 @@ import base64
 import os
 import pathlib
 import re
-import shutil
 import signal
 import subprocess
 import sys
+import textwrap
 import time
 
 import requests
@@ -185,15 +185,22 @@ def _ensure_libvirt_tls_conf():
             check=True,
         )
 
+# Starting the socket ensures that the service is up
+# even if it was down due to an expired certificate.
+_RESTART_SCRIPT = textwrap.dedent("""
+    set -e
+    systemctl start libvirtd-tls.socket
+    virt-admin server-update-tls libvirtd
+    """)
 
 def _server_update_tls():
     subprocess.run(
         [
             "/usr/sbin/chroot",
             _HOST_ROOT,
-            "/usr/bin/virt-admin",
-            "server-update-tls",
-            "libvirtd",
+            "bash",
+            "-c",
+            _RESTART_SCRIPT
         ],
         check=True,
     )
