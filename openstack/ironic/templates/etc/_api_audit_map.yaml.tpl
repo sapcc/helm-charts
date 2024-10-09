@@ -4,6 +4,7 @@ prefix: '/v1'
 
 resources:
   allocations:
+  chassis:
   deploy_templates:
   nodes:
     children:
@@ -14,8 +15,10 @@ resources:
       states:
       traits:
       vifs:
+      vmedia:
   ports:
   portgroups:
+  runbooks:
   volumes:
     children:
       connectors:
