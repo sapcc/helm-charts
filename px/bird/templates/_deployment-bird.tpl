@@ -25,6 +25,7 @@ spec:
         k8s.v1.cni.cncf.io/networks: '[{ "name": "vlan{{ .domain_config.multus_vlan }}", "interface": "vlan{{ .domain_config.multus_vlan }}"}]'
     spec:
       priorityClassName: critical-payload
+      topologySpreadConstraints: {{ include "bird.topology_spread" . | nindent 8 }}
       affinity: {{ include "bird.domain.affinity" . | nindent 8 }}
       tolerations: {{ include "bird.domain.tolerations" . | nindent 8 }}
       initContainers:
