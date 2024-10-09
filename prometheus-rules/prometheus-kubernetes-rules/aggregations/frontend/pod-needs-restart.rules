@@ -1,0 +1,13 @@
+# vim: set ft=yaml:
+groups:
+  # This ruleset powers the PodNeedsRestartToUpdateSidecar alert.
+  # The naming for the aggregated metric and the alert are not tied to linkerd-proxy and can be reused for other sidecars in the future.
+  - name: pod-needs-restart
+    rules:
+      # This rule generates metrics for each pod whose linkerd-proxy is using a different image version than any of the linkerd-proxy-injector pods.
+      - record: pod_needs_restart_to_update_sidecar
+        expr: |
+          max by (image_id, namespace, pod, container) (
+            (kube_pod_container_info{namespace="monsoon3",pod=~"keystone.*",container="linkerd-proxy"} == 1)
+            unless on (image_id) (max by (image_id) (kube_pod_container_info{namespace="linkerd",pod=~"linkerd-proxy-injector.*",container="linkerd-proxy"} == 1))
+          ) * on (namespace, pod) group_left (label_ccloud_support_group, label_ccloud_service) (kube_pod_labels)
