@@ -43,7 +43,7 @@ poller:
     {{- range $key, $value := .Values.simulator.poller.retry }}
     {{ $key }}: {{ $value }}
   {{- end }}
-  {{- if .Values.rhea.enabled }}
+  {{- if .Values.simulator.rhea.enabled }}
   rhea:
     queueName: {{ .Values.simulator.poller.rhea.queueName }}
     uri: https://rhea.{{ .Values.simulator.poller.keystone.region }}.cloud.sap
