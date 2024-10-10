@@ -87,7 +87,7 @@ spec:
       volumes:
         - name: config
           configMap:
-            name: {{ include "bird.domain.config_name" . }}
+            name: {{ include "bird.domain.ConfigMapName" . }}
         - name: bird-socket
           emptyDir: {}
 {{- end }}
