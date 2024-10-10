@@ -80,10 +80,14 @@ spec:
           imagePullPolicy: IfNotPresent
           command:
             - dumb-init
-            - kubernetes-entrypoint
+{{- if not .Values.nova_nanny.debug }}
+            - /bin/bash
+            - /scripts/nova-db-consistency-and-purge.sh
+{{- else }}
+            - sleep
+            - inf
+{{- end }}
           env:
-            - name: COMMAND
-              value: "{{ if not .Values.nova_nanny.debug }}/bin/bash /scripts/nova-db-consistency-and-purge.sh{{ else }}sleep inf{{ end }}"
             - name: NAMESPACE
               valueFrom:
                 fieldRef:
