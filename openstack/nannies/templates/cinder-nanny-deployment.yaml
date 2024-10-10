@@ -49,10 +49,14 @@ spec:
           imagePullPolicy: IfNotPresent
           command:
             - dumb-init
-            - kubernetes-entrypoint
+{{- if not .Values.cinder_nanny.debug }}
+            - /bin/bash
+            - /scripts/cinder-db-consistency-and-purge.sh
+{{- else }}
+            - sleep
+            - inf
+{{- end }}
           env:
-            - name: COMMAND
-              value: "{{ if not .Values.cinder_nanny.debug }}/bin/bash /scripts/cinder-db-consistency-and-purge.sh{{ else }}sleep inf{{ end }}"
             - name: NAMESPACE
               valueFrom:
                 fieldRef:
