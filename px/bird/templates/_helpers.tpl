@@ -47,6 +47,26 @@ alert-tier: px
 alert-service: px
 {{- end }}
 
+# this definition will spread pods for any domain and service accross 
+# all available AZs - ignores looking glass pods
+{{- define "bird.topology_spread" }}
+- maxSkew: 1
+  # minDomains: {{ len .top.Values.global.availability_zones }} 
+  topologyKey: topology.kubernetes.io/zone
+  whenUnsatisfiable: ScheduleAnyway
+  labelSelector: 
+    matchExpressions:
+      - key: ccloud/service
+        operator: In
+        values:
+        - px
+      - key: pxinstance
+        operator: Exists
+  # matchLabelKeys: <list> # optional; beta since v1.27
+  nodeAffinityPolicy: Honor # respect affinities below
+  nodeTaintsPolicy: Ignore # default value 
+{{- end }}
+
 {{- define "bird.domain.affinity" }}
 {{- if len .top.Values.apods  | eq 0 }}
 {{- fail "You must supply at least one apod for scheduling" -}}
@@ -91,7 +111,7 @@ podAntiAffinity:
         - key: pxdomain
           operator: In
           values:
-          - {{ .domain_number | quote }}
+          - {{ .domain_number | quote }}      
 {{- end }}
 {{- end }}
 
