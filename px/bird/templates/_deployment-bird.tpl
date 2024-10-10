@@ -3,7 +3,7 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: {{ include "bird.instance.deployment_name" . }}
+  name: {{ include "bird.statefulset.deployment_name" . }}
   labels: {{ include "bird.instance.labels" . | nindent 4 }}
 spec:
   replicas: 1
@@ -21,7 +21,7 @@ spec:
         app.kubernetes.io/name: px
         kubectl.kubernetes.io/default-container: "bird"
       annotations:
-        k8s.v1.cni.cncf.io/networks: '[{ "name": "{{ include "bird.instance.deployment_name" . }}", "interface": "vlan{{ .domain_config.multus_vlan }}"}]'
+        k8s.v1.cni.cncf.io/networks: '[{ "name": "{{ include "bird.statefulset.deployment_name" . }}", "interface": "vlan{{ .domain_config.multus_vlan }}"}]'
     spec:
       affinity: {{ include "bird.domain.affinity" . | nindent 8 }}
       tolerations: {{ include "bird.domain.tolerations" . | nindent 8 }}
