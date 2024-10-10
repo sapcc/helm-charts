@@ -12,11 +12,17 @@ spec:
   template:
     spec:
       containers:
-      - image: keppel.global.cloud.sap/ccloud-dockerhub-mirror/falcosecurity/falco-no-driver:0.39.0
+      - image: keppel.global.cloud.sap/ccloud-dockerhub-mirror/falcosecurity/falco-distroless:0.39.0
         name: falco
         securityContext:
           privileged: true
         volumeMounts:
+        - mountPath: /etc/falco
+          name: rulesfiles-install-dir
+        - mountPath: /usr/share/falco/plugins
+          name: plugins-install-dir
+        - mountPath: /root/.falco
+          name: root-falco-fs
         - mountPath: /host/proc
           name: proc-fs
           readOnly: true
@@ -37,6 +43,11 @@ spec:
           name: containerd-socket
         - mountPath: /host/run/crio/
           name: crio-socket
+        - mountPath: /etc/falco/falco.yaml
+          name: falco-yaml
+          subPath: falco.yaml
+        - mountPath: /etc/falco/rules.d
+          name: rules-volume
       - image: keppel.global.cloud.sap/ccloud-dockerhub-mirror/falcosecurity/falcoctl:0.10.0
       initContainers:
       - image: keppel.global.cloud.sap/ccloud-dockerhub-mirror/falcosecurity/falcoctl:0.10.0
