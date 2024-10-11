@@ -35,3 +35,52 @@ groups:
     annotations:
       description: 'Openstack Swift API is flapping'
       summary: 'Openstack Swift API is flapping'
+
+  - alert: OpenstackCephApiDown
+    expr: |
+        cc3test_status{service="ceph", type="api", phase="call"} == 0
+    for: 16m
+    labels:
+      severity: critical
+      support_group: storage
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      meta: 'Openstack Ceph API is down'
+      dashboard: 'cc3test-api-status?var-service={{ $labels.service }}'
+      report: 'cc3test/admin/object-storage/swift/containers/cc3test/objects/{{ $labels.base64path }}'
+    annotations:
+      description: 'Openstack Ceph API is down'
+      summary: 'Openstack Ceph API is down'
+
+  - alert: OpenstackCephApiFlapping
+    expr: |
+        changes(cc3test_status{service="ceph", type="api", phase="call"}[30m]) > 8
+    labels:
+      severity: warning
+      support_group: storage
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      meta: 'Openstack Ceph API is flapping'
+      dashboard: 'cc3test-api-status?var-service={{ $labels.service }}'
+      report: 'cc3test/admin/object-storage/swift/containers/cc3test/objects/{{ $labels.base64path }}'
+    annotations:
+      description: 'Openstack Ceph API is flapping'
+      summary: 'Openstack Ceph API is flapping'
+
+  - alert: OpenstackCephCreateContainerFailed
+    expr: cc3test_status{service="ceph", name=~"TestContainer_create_container", phase="call"} == 0
+    for: 3h
+    labels:
+      severity: warning
+      support_group: storage
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      meta: 'Openstack Ceph Container Create: {{ $labels.name }} Failed, see report for more details'
+      dashboard: cc3test-canary-status?var-service={{ $labels.service }}
+      report: 'cc3test/admin/object-storage/swift/containers/cc3test/objects/{{ $labels.base64path }}'
+    annotations:
+      description: 'Openstack Ceph Container Create: {{ $labels.name }} Failed, see report for more details'
+      summary: 'Openstack Ceph Container Create: {{ $labels.name }} Failed, see report for more details'
