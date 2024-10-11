@@ -118,25 +118,23 @@ groups:
         summary: Interface {{ $labels.device }} is down. Node network connectivity is degraded. Check ESX node state in vCenter.
 
     ### PVC usage ###
-
-    - alert: KubernetesHighPVCUsagePredicted
-      # NOTE: The labels for support-group and service are already present in `kubelet_volume_stats_available_percent`, cf. the aggregation rule that defines it.
-      expr: sum((kubelet_volume_stats_available_percent < 30) and (predict_linear(kubelet_volume_stats_available_percent[1d], 7 * 24 * 3600) < 10)) by (label_ccloud_support_group, label_ccloud_service, namespace, persistentvolumeclaim)
-      for: 1h
+    - alert: KubernetesPVCNoSpaceLeft
+      expr: kubelet_volume_stats_available_percent < 10
+      for: 10m
       labels:
         tier: k8s
         support_group: '{{ if $labels.label_ccloud_support_group }}{{ $labels.label_ccloud_support_group }}{{ else }}containers{{ end }}'
         service: '{{ if $labels.label_ccloud_service }}{{ $labels.label_ccloud_service }}{{ else }}resources{{ end }}'
-        severity: warning
+        severity: info
         context: storage
-        meta: "PVC {{ $labels.namespace }}/{{ $labels.persistentvolumeclaim }} is set to exceed 90% usage soon"
+        meta: "PVC {{ $labels.namespace }}/{{ $labels.persistentvolumeclaim }} free space is less than 10%."
         playbook: 'docs/support/playbook/kubernetes/pvc_usage'
       annotations:
-        description: "The PVC {{ $labels.namespace }}/{{ $labels.persistentvolumeclaim }} is predicted to exceed 90% storage consumption in the next 7 days."
-        summary: "PVC {{ $labels.namespace }}/{{ $labels.persistentvolumeclaim }} is set to exceed 90% usage soon"
+        description: "The PVC {{ $labels.namespace }}/{{ $labels.persistentvolumeclaim }} is almost full. Increase or delete files."
+        summary: "PVC {{ $labels.namespace }}/{{ $labels.persistentvolumeclaim }} free space is less than 10%."
 
     - alert: KubernetesPVCNoSpaceLeft
-      expr: kubelet_volume_stats_available_percent < 1 
+      expr: kubelet_volume_stats_available_percent < 2 
       for: 10m
       labels:
         tier: k8s
@@ -144,8 +142,8 @@ groups:
         service: '{{ if $labels.label_ccloud_service }}{{ $labels.label_ccloud_service }}{{ else }}resources{{ end }}'
         severity: warning
         context: storage
-        meta: "PVC {{ $labels.namespace }}/{{ $labels.persistentvolumeclaim }} usage is over 99%."
+        meta: "PVC {{ $labels.namespace }}/{{ $labels.persistentvolumeclaim }} usage is over 98%."
         playbook: 'docs/support/playbook/kubernetes/pvc_usage'
       annotations:
         description: "The PVC {{ $labels.namespace }}/{{ $labels.persistentvolumeclaim }} is full. Programs will stop working if relying upon free storage."
-        summary: "PVC {{ $labels.namespace }}/{{ $labels.persistentvolumeclaim }} usage is over 99%."
+        summary: "PVC {{ $labels.namespace }}/{{ $labels.persistentvolumeclaim }} usage is over 98%."
