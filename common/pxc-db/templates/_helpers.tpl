@@ -45,9 +45,17 @@ app.kubernetes.io/part-of: {{ .Release.Name }}
 Selector labels
 */}}
 {{- define "pxc-db.selectorLabels" -}}
-app: {{ .Release.Name }}
+{{ include "pxc-db.appLabels" . }}
 app.kubernetes.io/name: {{ include "pxc-db.name" . }}
 app.kubernetes.io/instance: {{ include "pxc-db.name" . }}-{{ .Release.Name }}
+{{- end }}
+
+{{/*
+Application labels
+*/}}
+{{- define "pxc-db.appLabels" -}}
+app: {{ include "pxc-db.fullname" . }}
+name: {{ include "pxc-db.fullname" . }}
 {{- end }}
 
 {{/*
