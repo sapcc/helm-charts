@@ -1,0 +1,20 @@
+{{- if .Values.pluginPreset.enabled }}
+apiVersion: greenhouse.sap/v1alpha1
+kind: PluginPreset
+metadata:
+  name: plutono
+  namespace: {{ .Release.Namespace }}
+spec:
+  clusterSelector:
+    matchLabels:
+      greenhouse.sap/cluster-presets-enabled: "true"
+      cluster-type: "storage"
+  plugin:
+    disabled: false
+    optionValues:
+      - name: plutono.service.labels
+        value:
+          greenhouse.sap/expose: "true"
+    pluginDefinition: plutono
+    releaseNamespace: kube-monitoring
+{{- end -}}
