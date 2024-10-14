@@ -60,7 +60,7 @@
         "ism_template":
             {
                 "index_patterns": [
-                    "otel-_DS_NAME_-datastream"
+                    "_DS_NAME_-datastream"
                 ],
                 "priority": 1
             }
