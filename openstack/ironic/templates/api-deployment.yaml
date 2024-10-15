@@ -73,8 +73,6 @@ spec:
         volumeMounts:
         - mountPath: /etc/ironic
           name: etcironic
-        - mountPath: /etc/ironic/ironic.conf.d
-          name: ironic-etc-confd
         - mountPath: /etc/ironic/ironic.conf
           name: ironic-etc
           subPath: ironic.conf
@@ -91,6 +89,10 @@ spec:
           name: ironic-etc
           subPath: logging.ini
           readOnly: true
+        - mountPath: /etc/ironic/ironic.conf.d/secrets.conf
+          name: ironic-secrets
+          readOnly: true
+          subPath: secrets.conf
         {{- if .Values.audit.enabled }}
         - mountPath: /etc/ironic/api_audit_map.yaml
           name: ironic-etc
@@ -136,12 +138,9 @@ spec:
         configMap:
           name: ironic-etc
           defaultMode: 0444
-      - name: ironic-etc-confd
-        secret:
+      - secret:
           secretName: {{ .Release.Name }}-secrets
-          items:
-          - key: secrets.conf
-            path: secrets.conf
+          name: ironic-secrets
       {{- include "utils.proxysql.volumes" . | indent 6 }}
       {{- include "utils.trust_bundle.volumes" . | indent 6 }}
       {{- tuple . .Values.api.override "ironic-api" .Values.global.ironicApiPortInternal | include "utils.snippets.debug.debug_port_volumes_and_configmap" }}
