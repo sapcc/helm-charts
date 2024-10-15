@@ -82,8 +82,10 @@ template: |
             value: "localhost"
           - name: STATSD_PORT
             value: "9125"
+          {{- if .Values.python_warnings }}
           - name: PYTHONWARNINGS
-            value: "ignore:Unverified HTTPS request"
+            value: {{ .Values.python_warnings | quote }}
+          {{- end }}
           {{- if .Values.pod.resources.hv_vmware }}
           resources:
 {{ toYaml .Values.pod.resources.hv_vmware | indent 12 }}
