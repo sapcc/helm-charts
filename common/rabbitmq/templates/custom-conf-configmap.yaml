@@ -5,11 +5,7 @@ kind: ConfigMap
 metadata:
   name: {{ template "fullname" . }}-custom-conf
   labels:
-    app: {{ template "fullname" . }}
-    release: "{{ .Release.Name }}"
-    heritage: "{{ .Release.Service }}"
-    component: rabbitmq
-    {{- include "rabbitmq.labels" . | indent 4 }}
+    {{- include "rabbitmq.labels" (list $ "version" "rabbitmq" "configmap" "messagequeue") | indent 4 }}
 data:
   20-custom.conf: |
 {{ include (print .Template.BasePath "/etc/_rabbitmq-custom-config.tpl") . | indent 4 }}

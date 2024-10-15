@@ -4,26 +4,18 @@ kind: StatefulSet
 metadata:
   name: {{ template "fullname" . }}
   labels:
-    app: {{ template "fullname" . }}
-    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
-    release: "{{ .Release.Name }}"
-    heritage: "{{ .Release.Service }}"
-    type: rabbitmq
-    component: {{ .Release.Name }}
-    system: openstack
-    {{- include "rabbitmq.labels" . | indent 4 }}
+    {{- include "rabbitmq.labels" (list $ "version" "rabbitmq" "statefulset" "messagequeue") | indent 4 }}
 spec:
   replicas: {{ .Values.replicas }}
   revisionHistoryLimit: {{ .Values.upgrades.revisionHistory }}
   serviceName: {{ template "fullname" . }}
   selector:
     matchLabels:
-      app: {{ template "fullname" . }}
+      app.kubernetes.io/instance: {{ template "fullname" . }}
   template:
     metadata:
       labels:
-        app: {{ template "fullname" . }}
-      {{- include "rabbitmq.labels" . | indent 8 }}
+        {{- include "rabbitmq.labels" (list $ "version" "rabbitmq" "statefulset" "messagequeue") | indent 8 }}
       annotations:
         kubectl.kubernetes.io/default-container: rabbitmq
 {{- if and (and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested) $.Values.linkerd.enabled }}
@@ -149,13 +141,7 @@ spec:
   - metadata:
       name: rabbitmq-persistent-storage
       labels:
-        app: {{ template "fullname" . }}
-        {{- if .Values.volumeClaimTemplatesChartVersion }}
-        chart: "{{ .Chart.Name }}-{{ .Values.volumeClaimTemplatesChartVersion }}"
-        {{- end }}
-        release: "{{ .Release.Name }}"
-        heritage: "{{ .Release.Service }}"
-        component: rabbitmq
+        {{- include "rabbitmq.labels" (list $ "noversion" "rabbitmq" "statefulset" "messagequeue") | indent 8 }}
     spec:
       accessModes:
       - {{ .Values.persistence.accessMode | quote }}
