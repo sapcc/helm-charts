@@ -3,11 +3,29 @@ ownerinfo:
 
 pxcdb:
   enabled: true
-  pxc:
-    unsafeFlags:
-      tls: true
-    tls:
-      enabled: false
+
+unsafeFlags:
+  tls: true
+tls:
+  enabled: false
+pxc:
+  configuration: |
+    [mysqld]
+    #innodb_buffer_pool_size=536870912
+  persistence:
+    enabled: true
+    size: 64Gi
+
+database:
+  job:
+    config:
+      backoffLimit: 6
+      activeDeadlineSeconds: 300
+      ttlSecondsAfterFinished: 120
+      jobRestartPolicy: "OnFailure"
+      linkerd:
+        enabled: true
+      groupId: 1001
 
 owner-info:
   helm-chart-url: 'https://github.com/sapcc/helm-charts/tree/master/common/mariadb-operator'
