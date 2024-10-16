@@ -11,9 +11,11 @@
     {{- $add_urlquery := index . 1 -}}
     {{- if (hasPrefix "vault+kvv2" $str) -}}
         {{"{{"}} resolve "{{ $str }}" {{ if $add_urlquery }}| urlquery {{ end }}{{"}}"}}
-    {{- else -}}
-        {{ $str }}
-{{- end -}}
+    {{- else if $add_urlquery }}
+        {{- $str | urlquery }}
+    {{- else }}
+        {{- $str  }}
+    {{- end }}
 {{- end -}}
 
 {{- define "resolve_secret" -}}
