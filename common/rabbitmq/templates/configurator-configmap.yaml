@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "fullname" . }}-configurator-etc
+  labels:
+    app: {{ template "fullname" . }}
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    component: rabbitmq
+    {{- include "rabbitmq.labels" . | indent 4 }}
+data:
+  config.ini: |-
+    [main]
+    deletionTimeout = {{ default 300  .Values.configurator.deletionTimeout }}
+    rabbitmqTimeout =  {{ default 60 .Values.configurator.rabbitmqTimeout }}
+    deletionForeType = {{ default "gracefully" .Values.configurator.deletionForeType }}
+    keepGuestUser = {{ default true .Values.configurator.keepGuestUser }}
