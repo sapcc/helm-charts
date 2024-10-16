@@ -14,7 +14,7 @@
     {{- else if $add_urlquery }}
         {{- $str | urlquery }}
     {{- else }}
-        {{- $str  }}
+        {{- $str }}
     {{- end }}
 {{- end -}}
 
