@@ -1,0 +1,66 @@
+{{- if .Values.openTelemetry.enabled -}}
+
+apiVersion: v1
+kind: Secret
+metadata:
+  name: otel-basic-auth
+  namespace: {{ .Release.Namespace }}
+data:
+  password: {{ required ".Values.openTelemetry.openSearchLogs.password missing" .Values.openTelemetry.openSearchLogs.password | b64enc }}
+  username: {{ required ".Values.openTelemetry.openSearchLogs.username missing" .Values.openTelemetry.openSearchLogs.username | b64enc }}
+
+---
+
+apiVersion: greenhouse.sap/v1alpha1
+kind: PluginPreset
+metadata:
+  name: opentelemetry
+  namespace: {{ .Release.Namespace }}
+spec:
+  clusterSelector:
+    matchLabels:
+      greenhouse.sap/pluginpreset: "true"
+  plugin:
+    disabled: false
+  pluginDefinition: opentelemetry
+  releaseNamespace: otel
+  optionValues:
+  - name: openTelemetry.logsCollector.enabled
+    value: true
+  - name: openTelemetry.metricsCollector.enabled
+    value: true
+  - name: openTelemetry.openSearchLogs.username
+    valueFrom:
+      secret:
+        key: username
+        name: otel-basic-auth
+  - name: openTelemetry.openSearchLogs.password
+    valueFrom:
+      secret:
+        key: password
+        name: otel-basic-auth
+  - name: openTelemetry.openSearchLogs.endpoint
+    value: {{ .Values.openTelemetry.openSearchLogs.endpoint }}
+  - name: openTelemetry.region
+    value: {{ .Values.openTelemetry.region }}
+  - name: openTelemetry.cluster
+    value: {{ .Values.openTelemetry.cluster }}
+  - name: openTelemetry.prometheus
+    value: {{ .Values.openTelemetry.prometheus }}
+  - name: openTelemetry.podMonitor.enabled
+    value: {{ .Values.openTelemetry.podMonitor.enabled }}
+  - name: openTelemetry.admissionWebhooks.certManager.enabled
+    value: {{ .Values.openTelemetry.admissionWebhooks.certManager.enabled }}
+  - name: openTelemetry.admissionWebhooks.autoGenerateCert.enabled
+    value: {{ .Values.openTelemetry.admissionWebhooks.autoGenerateCert.enabled }}
+  - name: openTelemetry.admissionWebhooks.autoGenerateCert.recreate
+    value: {{ .Values.openTelemetry.admissionWebhooks.autoGenerateCert.recreate }}
+  - name: openTelemetry.kubeRBACProxy.enabled
+    value: {{ .Values.openTelemetry.kubeRBACProxy.enabled }}
+  - name: openTelemetry.manager.prometheusRule.defaultRules.enabled
+    value: {{ .Values.manager.prometheusRule.defaultRules.enabled }}
+  - name: openTelemetry.manager.prometheusRule.enabled
+    value: {{ .Values.openTelemetry.manager.prometheusRule.enabled }}
+  - name: openTelemetry.manager.serviceMonitor.enabled
+    value: {{ .Values.openTelemetry.manager.serviceMonitor.enabled }}
+{{- end -}}
