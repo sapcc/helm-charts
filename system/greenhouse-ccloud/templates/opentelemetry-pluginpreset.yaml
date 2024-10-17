@@ -8,6 +8,7 @@ metadata:
 data:
   password: {{ required ".Values.openTelemetry.openSearchLogs.password missing" $r.openSearchLogs.password | b64enc }}
   username: {{ required ".Values.openTelemetry.openSearchLogs.username missing" $r.openSearchLogs.username | b64enc }}
+{{- end -}}
 
 ---
 apiVersion: greenhouse.sap/v1alpha1
@@ -22,6 +23,7 @@ spec:
       greenhouse.sap/cluster-presets-enabled: "true"
       cluster-type: "storage"
   clusterOptionOverrides:
+  {{- range $r := $.Values.openTelemetry.clusters }}
     clusterName: {{ $r.cluster }}
     overrides:
     - name: openTelemetry.OpenSearchLogs.endpoint
@@ -34,6 +36,7 @@ spec:
       value: {{ $r.cluster}}
     - name: openTelemetry.region
       value: {{ $r.region }}
+  {{- end -}}
   pluginDefinition: opentelemetry
   releaseNamespace: otel
   optionValues:
@@ -59,5 +62,4 @@ spec:
     value: {{ .Values.openTelemetry.manager.prometheusRule.enabled }}
   - name: openTelemetry.manager.serviceMonitor.enabled
     value: {{ .Values.openTelemetry.manager.serviceMonitor.enabled }}
-{{- end -}}
 {{- end -}}
