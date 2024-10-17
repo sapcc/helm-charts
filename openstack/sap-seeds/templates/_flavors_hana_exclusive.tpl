@@ -225,3 +225,111 @@
     "quota:instance_only": "true"
     "quota:separate": "true"
     {{- end }}
+
+# KVM HANA Flavors
+{{- if .Values.kvm_enabled }}
+- name: "hana_c30_m240_k1"
+  id: "320"
+  vcpus: 30
+  ram: 245760
+  disk: 64
+  extra_specs:
+    {{ tuple . "kvm_hana" | include "sap_seeds.helpers.extra_specs" | indent 4 }}
+    "trait:CUSTOM_NUMASIZE_C48_M729": "required"
+    "reservation:cpu": "28"
+    {{- if ( .Values.hana_flavors_quota_separate ) }}
+    "quota:instance_only": "true"
+    "quota:separate": "true"
+    {{- end }}
+- name: "hana_c60_m480_k1"
+  id: "321"
+  vcpus: 60
+  ram: 491520
+  disk: 64
+  extra_specs:
+    {{ tuple . "kvm_hana" | include "sap_seeds.helpers.extra_specs" | indent 4 }}
+    "trait:CUSTOM_NUMASIZE_C48_M729": "required"
+    "reservation:cpu": "57"
+    {{- if ( .Values.hana_flavors_quota_separate ) }}
+    "quota:instance_only": "true"
+    "quota:separate": "true"
+    {{- end }}
+- name: "hana_c120_m960_k1"
+  id: "322"
+  vcpus: 120
+  ram: 983040
+  disk: 64
+  extra_specs:
+    {{ tuple . "kvm_hana" | include "sap_seeds.helpers.extra_specs" | indent 4 }}
+    "trait:CUSTOM_NUMASIZE_C48_M729": "required"
+    "reservation:cpu": "114"
+    {{- if ( .Values.hana_flavors_quota_separate ) }}
+    "quota:instance_only": "true"
+    "quota:separate": "true"
+    {{- end }}
+- name: "hana_c30_m480_k1"
+  id: "323"
+  vcpus: 30
+  ram: 491520
+  disk: 64
+  extra_specs:
+    {{ tuple . "kvm_hana" | include "sap_seeds.helpers.extra_specs" | indent 4 }}
+    "trait:CUSTOM_NUMASIZE_C48_M729": "required"
+    "reservation:cpu": "28"
+    {{- if ( .Values.hana_flavors_quota_separate ) }}
+    "quota:instance_only": "true"
+    "quota:separate": "true"
+    {{- end }}
+- name: "hana_c60_m960_k1"
+  id: "324"
+  vcpus: 60
+  ram: 983040
+  disk: 64
+  extra_specs:
+    {{ tuple . "kvm_hana" | include "sap_seeds.helpers.extra_specs" | indent 4 }}
+    "trait:CUSTOM_NUMASIZE_C48_M729": "required"
+    "reservation:cpu": "57"
+    {{- if ( .Values.hana_flavors_quota_separate ) }}
+    "quota:instance_only": "true"
+    "quota:separate": "true"
+    {{- end }}
+- name: "hana_c120_m1920_k1"
+  id: "325"
+  vcpus: 120
+  ram: 1966080
+  disk: 64
+  extra_specs:
+    {{ tuple . "kvm_hana" | include "sap_seeds.helpers.extra_specs" | indent 4 }}
+    "trait:CUSTOM_NUMASIZE_C48_M729": "required"
+    "reservation:cpu": "114"
+    {{- if ( .Values.hana_flavors_quota_separate ) }}
+    "quota:instance_only": "true"
+    "quota:separate": "true"
+    {{- end }}
+- name: "hana_c180_m2880_k1"
+  id: "326"
+  vcpus: 180
+  ram: 2949120
+  disk: 64
+  extra_specs:
+    {{ tuple . "kvm_hana" | include "sap_seeds.helpers.extra_specs" | indent 4 }}
+    "trait:CUSTOM_NUMASIZE_C48_M729": "required"
+    "reservation:cpu": "171"
+    {{- if ( .Values.hana_flavors_quota_separate ) }}
+    "quota:instance_only": "true"
+    "quota:separate": "true"
+    {{- end }}
+- name: "hana_c240_m3840_k1"
+  id: "327"
+  vcpus: 240
+  ram: 3932160
+  disk: 64
+  extra_specs:
+    {{ tuple . "kvm_hana" | include "sap_seeds.helpers.extra_specs" | indent 4 }}
+    "trait:CUSTOM_NUMASIZE_C48_M729": "required"
+    "reservation:cpu": "228"
+    {{- if ( .Values.hana_flavors_quota_separate ) }}
+    "quota:instance_only": "true"
+    "quota:separate": "true"
+    {{- end }}
+{{- end}}  # kvm_enabled

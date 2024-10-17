@@ -3,6 +3,8 @@
 use_hana_exclusive: false
 # whether to use separate quota for each hana-flavor for pay-per-use billing
 hana_flavors_quota_separate: false
+# whether to seed KVM flavors
+kvm_enabled: false
 
 owner-info:
   support-group: compute-storage-api
@@ -32,4 +34,14 @@ extra_specs:
     "trait:CUSTOM_HANA_EXCLUSIVE_HOST": "forbidden"
   vmware_hana_exclusive:
     <<: *vmware_common
+    "trait:CUSTOM_HANA_EXCLUSIVE_HOST": "required"
+  kvm_common: &kvm_common
+    "capabilities:hypervisor_type": "QEMU"
+    "hw:mem_page_size": "large"
+    "hw_video:ram_max_mb": "16"
+  kvm:
+    <<: *kvm_common
+    "trait:CUSTOM_HANA_EXCLUSIVE_HOST": "forbidden"
+  kvm_hana:
+    <<: *kvm_common
     "trait:CUSTOM_HANA_EXCLUSIVE_HOST": "required"
