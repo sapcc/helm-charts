@@ -12,7 +12,8 @@ teams: {}
   #   mappedIdPGroup: Identity provider group name.
   #   isSupportGroup: true|false
 
-teamRoleBindings: []
+teamRoleBindings:
+  []
   # - teamRef: team1
   #   teamRoleRef: role1
   #   clusterSelector:
@@ -53,8 +54,25 @@ alerts:
     - pod
     - pod_name
     - instance
+  predefinedFilters:
+    - name: "prod"
+      displayName: "Prod"
+      matchers:
+        region: "^(?!qa-de-).*"
+    - name: "prod-qa"
+      displayName: "Prod + QA"
+      matchers:
+        region: "^(?!qa-de-(?!1$)\\d+).*"
+    - name: "labs"
+      displayName: "Labs"
+      matchers:
+        region: "^qa-de-(?!1$)\\d+"
+    - name: "all"
+      displayName: "All"
+      matchers:
+        region: ".*"
   # silenceTemplates: --> defined in the _silence.conf.tpl
-    
+
   # Alertmanager options.
   alertmanager:
     # Do not deploy the alertmanager.
