@@ -1,42 +1,35 @@
-
-{{- /*
-All bird.domain.* expect a domain-context that should look like the following:
-top: the root helm context including .Files, .Release, .Chart, .Values
-service: service_1
-service_number: 1
-service_config: everything nested under .Values.services_1
-domain_number: 1
-domain_config: everything nested under .Values.service_1.domain_1
-*/}}
-
-{{- define "bird.domain.config_name" -}}
-{{- printf "%s-pxrs-%d-s%d" .top.Values.global.region .domain_number .service_number }}
+{{- define "bird.domain.configMapName" -}}
+{{-  printf "v4-service-%d-domain-%d" .service_number .domain_number }}
 {{- end }}
 
 {{- define "bird.domain.config_path"}}
-{{- printf "%s%s.conf" .top.Values.bird_config_path  (include "bird.domain.config_name" .) -}}
+{{- /* Try new path first, if we fail fall back to old path */ -}}
+{{- $confFile := printf "%s.conf" (include "bird.domain.configMapName" .) -}}
+{{- $filePath := printf "%s%s/%s" .top.Values.bird_config_path .top.Values.global.region $confFile -}}
+{{- $newPath := $filePath -}}
+{{- if not (.top.Files.Glob $filePath) -}}
+  {{- /* fall back to legacy path */ -}}
+  {{- $confFile = printf "%s-pxrs-%d-s%d.conf" .top.Values.global.region .domain_number .service_number -}}
+  {{- $filePath = printf "%s%s" .top.Values.bird_config_path $confFile -}}
+  {{- if not (.top.Files.Glob $filePath) -}}
+    {{- fail (printf "cannot find bird config file, tried %s and legacy path %s" $newPath $filePath ) -}}
+  {{- end }}
+{{- end }}
+{{- $filePath }}
 {{- end }}
 
-{{- /*
-All bird.instance.* expect a instance-context that should be consisted of
-:<< domainCtx
-instance_number: 1
-instance: instance_1
-instance_config: everything nested under .Values.service_1.domain_1.instance_1
-*/}}
-
-{{- define "bird.instance.deployment_name" }}
-{{- printf "%s-pxrs-%d-s%d-%d" .top.Values.global.region .domain_number .service_number .instance_number}}
+{{- define "bird.statefulset.deployment_name" }}
+{{- printf "routeserver-v4-service-%d-domain-%d-%d" .service_number .domain_number .instance_number }}
 {{- end }}
 
 {{- define "bird.domain.labels" }}
-app: {{ include "bird.instance.deployment_name" . | quote }}
+app: {{ include "bird.statefulset.deployment_name" . | quote }}
 pxservice: '{{ .service_number }}'
 pxdomain: '{{ .domain_number }}'
 {{- end }}
 
 {{- define "bird.instance.labels" }}
-app: {{ include "bird.instance.deployment_name" . | quote }}
+app: {{ include "bird.statefulset.deployment_name" . | quote }}
 pxservice: '{{ .service_number }}'
 pxdomain: '{{ .domain_number }}'
 pxinstance: '{{ .instance_number }}'

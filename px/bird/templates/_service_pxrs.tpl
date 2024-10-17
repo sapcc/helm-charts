@@ -3,7 +3,7 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "bird.instance.deployment_name" . }}
+  name: {{ include "bird.statefulset.deployment_name" . }}
 spec:
   ports:
 {{- range $lg, $lg_config := .top.Values.looking_glass }}
@@ -13,5 +13,5 @@ spec:
     targetPort: {{ $lg }}proxy
 {{- end }}
   selector:
-    app: {{ include "bird.instance.deployment_name" . }}
+    app: {{ include "bird.statefulset.deployment_name" . }}
 {{ end }}
