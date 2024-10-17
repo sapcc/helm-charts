@@ -1,5 +1,5 @@
 {{- if .Values.openTelemetry.enabled -}}
-
+{{- range $r := $.Values.openTelemetry.clusters }}
 apiVersion: v1
 kind: Secret
 metadata:
@@ -34,19 +34,19 @@ spec:
   - name: openTelemetry.openSearchLogs.username
     valueFrom:
       secret:
-        key: username
+        key: {{ $r.cluster.openSearchLogs.username }}
         name: otel-basic-auth
   - name: openTelemetry.openSearchLogs.password
     valueFrom:
       secret:
-        key: password
+        key: {{ $r.cluster.openSearchLogs.password }}
         name: otel-basic-auth
   - name: openTelemetry.openSearchLogs.endpoint
     value: {{ .Values.openTelemetry.openSearchLogs.endpoint }}
   - name: openTelemetry.region
-    value: {{ .Values.openTelemetry.region }}
+    value: {{ $r.region }}
   - name: openTelemetry.cluster
-    value: {{ .Values.openTelemetry.cluster }}
+    value: {{ $r.cluster }}
   - name: openTelemetry.prometheus
     value: {{ .Values.openTelemetry.prometheus }}
   - name: openTelemetry.podMonitor.enabled
@@ -65,4 +65,5 @@ spec:
     value: {{ .Values.openTelemetry.manager.prometheusRule.enabled }}
   - name: openTelemetry.manager.serviceMonitor.enabled
     value: {{ .Values.openTelemetry.manager.serviceMonitor.enabled }}
+{{- end -}}
 {{- end -}}
