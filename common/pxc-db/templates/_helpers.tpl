@@ -88,6 +88,15 @@ config.linkerd.io/opaque-ports: "3306,3307,3009,4444,4567,4568,33060,33062"
 {{- end }}
 {{- end -}}
 
+{{/* Generate the service label for the templated Prometheus alerts. */}}
+{{- define "pxc-db.alerts.service" -}}
+{{- if .Values.alerts.service -}}
+{{- .Values.alerts.service -}}
+{{- else -}}
+{{- .Release.Name -}}
+{{- end -}}
+{{- end -}}
+
 {{- define "pxc-db.resolve_secret" -}}
     {{- $str := . -}}
     {{- if (hasPrefix "vault+kvv2" $str ) -}}
