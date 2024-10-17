@@ -146,7 +146,7 @@ Tuple example: tuple . .Values.apidbName .Values.apidbUser .Values.apidbPassword
             {{- $user := get .Values.mariadb.users $db | required (printf ".Values.mariadb.%v.name & .password are required (key comes from first database in .Values.mariadb.databases)" $db) }}
             {{- tuple . $db $user.name (required (printf "User with key %v requires password" $db) $user.password) | include "utils._db_url_mariadb" }}
         {{- else }}
-            {{- tuple . (coalesce .Values.dbName .Values.db_name) (coalesce .Values.dbUser .Values.global.dbUser "root" | include "resolve_secret_urlquery") (coalesce .Values.dbPassword .Values.global.dbPassword .Values.mariadb.root_password | include "resolve_secret_urlquery" | required ".Values.mariadb.root_password is required!") .Values.mariadb.name | include "utils._db_url_mariadb" }}
+            {{- tuple . (coalesce .Values.dbName .Values.db_name) (coalesce .Values.dbUser .Values.global.dbUser "root" ) (coalesce .Values.dbPassword .Values.global.dbPassword .Values.mariadb.root_password | required ".Values.mariadb.root_password is required!") .Values.mariadb.name | include "utils._db_url_mariadb" }}
         {{- end }}
     {{- else -}}
 mysql+pymysql://{{ include "db_credentials" (dict "context" . "dbType" "mariadb") }}@
@@ -188,7 +188,7 @@ Tuple example: tuple . .Values.apidbName .Values.apidbUser .Values.apidbPassword
             {{- $user := get .Values.pxc_db.users $db | required (printf ".Values.pxc_db.%v.name & .password are required (key comes from first database in .Values.pxc_db.databases)" $db) }}
             {{- tuple . $db $user.name (required (printf "User with key %v requires password" $db) $user.password) | include "utils._db_url_pxc_db" }}
         {{- else }}
-            {{- tuple . (coalesce .Values.dbName .Values.db_name) (coalesce .Values.dbUser .Values.global.dbUser "root" | include "resolve_secret_urlquery") (coalesce .Values.dbPassword .Values.global.dbPassword .Values.pxc_db.root_password | include "resolve_secret_urlquery" | required ".Values.pxc_db.root_password is required!") .Values.pxc_db.name | include "utils._db_url_pxc_db" }}
+            {{- tuple . (coalesce .Values.dbName .Values.db_name) (coalesce .Values.dbUser .Values.global.dbUser "root") (coalesce .Values.dbPassword .Values.global.dbPassword .Values.pxc_db.root_password | required ".Values.pxc_db.root_password is required!") .Values.pxc_db.name | include "utils._db_url_pxc_db" }}
         {{- end }}
     {{- else -}}
 mysql+pymysql://{{ include "db_credentials" (dict "context" . "dbType" "pxc-db") }}@
