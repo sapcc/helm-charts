@@ -22,11 +22,25 @@ data:
     rgw swift account in url = {{ .swift_account_in_url }}
     rgw swift versioning enabled = {{ .swift_versioning_enabled }}
     rgw keystone accepted roles = {{ join "," .accepted_roles }}
+{{- if .accepted_admin_roles }}
+    rgw keystone accepted admin roles = {{ join "," .accepted_admin_roles }}
+{{- end }}
+{{- if .accepted_reader_roles }}
+    rgw keystone accepted reader roles = {{ join "," .accepted_reader_roles }}
+{{- end }}
     rgw keystone token cache size = {{ .token_cache_size }}
     rgw keystone admin user = {{ .admin_user }}
     rgw keystone admin password = {{ include "cc-ceph.escapePassword" .admin_password }}
     rgw keystone admin domain = {{ .admin_domain }}
     rgw keystone admin project = {{ .admin_project }}
+{{- if and .barbican .barbican.enabled }}
+    rgw crypt s3 kms backend = barbican
+    rgw barbican url = {{ .barbican.url }}
+    rgw keystone barbican user = {{ .barbican.user }}
+    rgw keystone barbican password = {{ include "cc-ceph.escapePassword" .barbican.password }}
+    rgw keystone barbican project = {{ .barbican.project }}
+    rgw keystone barbican domain = {{ .barbican.domain }}
+{{- end }}
 {{ end }}
 {{ else }}
   config: ""

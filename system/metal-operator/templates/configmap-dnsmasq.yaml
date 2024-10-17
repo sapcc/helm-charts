@@ -18,7 +18,7 @@ data:
     {{ range $pool := .Values.dnsmasq.dhcpPools }}
     {{- $ipPoolStart := $pool.ipPoolStart | default (printf "%s.10" $pool.subnetPrefix) -}}
     {{- $ipPoolEnd := $pool.ipPoolEnd | default (printf "%s.125" $pool.subnetPrefix) -}}
-    dhcp-range=set:{{ $pool.subnetPrefix }},{{ $ipPoolStart }},{{ $ipPoolEnd }},{{ $pool.mask }},{{ $.Values.dnsmasq.leaseTime }}
+    dhcp-range=set:{{ $pool.subnetPrefix }},{{ $pool.subnetPrefix }}.0,static,{{ $pool.mask }},{{ $.Values.dnsmasq.leaseTime }}
     {{ end }}
 
     {{- if .Values.dnsmasq.staticHosts }}

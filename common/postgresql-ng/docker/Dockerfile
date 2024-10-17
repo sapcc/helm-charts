@@ -5,18 +5,18 @@ FROM debian:stable-slim
 ARG DEBIAN_FRONTEND=noninteractive
 RUN apt-get update \
   && apt-get upgrade -y \
-  # install locales which are excluded on dbeian slim variant by default \
+  # install locales which are excluded on debian slim variant by default \
   && grep -q '/usr/share/locale' /etc/dpkg/dpkg.cfg.d/docker \
   && sed -ri '/\/usr\/share\/locale/d' /etc/dpkg/dpkg.cfg.d/docker \
   && ! grep -q '/usr/share/locale' /etc/dpkg/dpkg.cfg.d/docker \
   && apt-get install --no-install-recommends -y \
-    # used to compare verison numbers
+    # used to compare version numbers
     bc \
     # required for https \
     ca-certificates \
     # create backup via API \
     curl \
-    # drop privilges easy \
+    # drop privileges easy \
     gosu \
     # required utf-8 encoding \
     locales \
@@ -25,10 +25,10 @@ RUN apt-get update \
   && /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y \
   && pg_conftool /etc/postgresql-common/createcluster.conf set create_main_cluster false \
   && apt-get install --no-install-recommends -y \
-    postgresql-9.5 \
-    postgresql-12 \
+    # match the installed versions with backup-tools!
     postgresql-15 \
     postgresql-16 \
+    postgresql-17 \
   && rm -rf /var/lib/apt/lists/* \
   && for conf in /usr/share/postgresql/*/postgresql.conf.sample; do \
     pg_conftool "$conf" set listen_addresses '*' ; \

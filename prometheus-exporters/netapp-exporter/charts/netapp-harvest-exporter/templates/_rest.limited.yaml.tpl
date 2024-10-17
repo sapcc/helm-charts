@@ -6,9 +6,9 @@ objects:
   Node: node.yaml
   SVM: svm.yaml
   Status: status.yaml
+  Volume: volume.yaml
 {{- /*
-Extra objects can be defined in values.yaml and added to the list above.
-Pass the values, such as (dict "objects" .Values.app.xxx.objects), to the template.
+  Add extra items to this object list.
 */}}
   {{- with $.objects }}
   {{- range $object, $file := . }}

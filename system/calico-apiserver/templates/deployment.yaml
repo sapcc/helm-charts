@@ -29,21 +29,14 @@ spec:
         - name: DATASTORE_TYPE
           value: kubernetes
         image: "{{ required ".Values.global.dockerHubMirrorAlternateRegion is missing" $.Values.global.dockerHubMirrorAlternateRegion }}/{{ $.Values.images.apiserver.image }}:{{ $.Values.images.apiserver.tag }}"
-        livenessProbe:
-          httpGet:
-            path: /version
-            port: 5443
-            scheme: HTTPS
-          initialDelaySeconds: 90
-          periodSeconds: 10
         name: calico-apiserver
         readinessProbe:
-          exec:
-            command:
-            - /code/filecheck
-          failureThreshold: 5
-          initialDelaySeconds: 5
-          periodSeconds: 10
+          httpGet:
+            path: /readyz
+            port: 5443
+            scheme: HTTPS
+          timeoutSeconds: 5
+          periodSeconds: 60
         securityContext:
           privileged: false
           runAsUser: 0

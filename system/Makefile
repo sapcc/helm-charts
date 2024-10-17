@@ -1,11 +1,12 @@
 CLUSTER_API_VERSION ?= v1.6.2
 PROVIDER_METAL3_VERSION ?= v1.6.0
+PROVIDER_METAL_VERSION ?= 62d325a558ce09c8d457fb76a13c1dca2bb3d565
 PROVIDER_VSPHERE_VERSION ?= v1.9.3
 PROVIDER_IPAM_VERSION ?= v0.1.0
 PROVIDER_KUBERNIKUS_VERSION ?= 9fd81475b828971913b3b27addf51fdbd0511d85
 BAREMETAL_OPERATOR_VERSION ?= v0.6.0
-METAL_OPERATOR_VERSION ?= c1a917e3dfde107c22be08236950de5fc86978b7
-BOOT_OPERATOR_VERSION ?= 3177bf504b7719bf1e33e84c7faa89b495a08465
+METAL_OPERATOR_VERSION ?= 99c08918ff17eab322592976fa75afcda9d6db83
+BOOT_OPERATOR_VERSION ?= d3c5d5fdd5617a660265673218bd5efd9d793e7e
 IPXE_OPERATOR_VERSION ?= 61c6898bfd7772008835bdcca8d8a64c1dfc3b32
 FEDHCP_VERSION ?= a59539c62aaa11a96c82fe792c87daaac4cb75bf
 
@@ -26,6 +27,13 @@ build-cluster-api-core:
 	@yq -i '.controllerManager.manager.image.tag="$(CLUSTER_API_VERSION)"' cluster-api-core/values.yaml
 	@yq -i '.fullnameOverride="capi-capi"' cluster-api-core/values.yaml
 	@yq -i '.version="0.1.3"' cluster-api-core/Chart.yaml
+
+build-controlplane-kubeadm:
+	$(call build-chart,controlplane-kubeadm,https://github.com/kubernetes-sigs/cluster-api//controlplane/kubeadm/config/default,$(CLUSTER_API_VERSION))
+	$(call fix-crds,controlplane-kubeadm)
+	@yq -i '.controllerManager.manager.image.tag="$(CLUSTER_API_VERSION)"' controlplane-kubeadm/values.yaml
+	@yq -i '.fullnameOverride="capi-capi-kubeadm-controlplane"' controlplane-kubeadm/values.yaml
+	@yq -i '.version="0.0.1"' controlplane-kubeadm/Chart.yaml
 
 build-bootstrap-kubeadm:
 	$(call build-chart,bootstrap-kubeadm,https://github.com/kubernetes-sigs/cluster-api//bootstrap/kubeadm/config/default,$(CLUSTER_API_VERSION))
@@ -63,6 +71,13 @@ build-provider-metal3:
 	@yq -i '.fullnameOverride="capi"' provider-metal3/values.yaml
 	@yq -i '.version="0.1.2"' provider-metal3/Chart.yaml
 
+build-provider-metal:
+	$(call build-chart,provider-metal,https://github.com/ironcore-dev/cluster-api-provider-metal//config/default,$(PROVIDER_METAL_VERSION))
+	$(call fix-crds,provider-metal)
+	@yq -i '.controllerManager.manager.image.tag="$(PROVIDER_METAL_VERSION)"' provider-metal/values.yaml
+	@yq -i '.fullnameOverride="provider-metal"' provider-metal/values.yaml
+	@yq -i '.version="0.0.3"' provider-metal/Chart.yaml
+
 build-provider-kubernikus:
 	$(call build-chart,provider-kubernikus,https://github.com/sapcc/cluster-api-control-plane-provider-kubernikus//config/default,$(PROVIDER_KUBERNIKUS_VERSION))
 	@yq -i '.controllerManager.manager.image.tag="$(PROVIDER_KUBERNIKUS_VERSION)"' provider-kubernikus/values.yaml
@@ -95,14 +110,14 @@ build-metal-operator:
 	@find metal-operator-core/templates -type f -exec $(SED) -i -e 's#-metal-operator-serving-cert#-serving-cert#g' {} \;
 	@yq -i '.controllerManager.manager.image.tag="$(METAL_OPERATOR_VERSION)"' metal-operator-core/values.yaml
 	@yq -i '.fullnameOverride="metal-operator"' metal-operator-core/values.yaml
-	@yq -i '.version="1.0.5"' metal-operator-core/Chart.yaml
+	@yq -i '.version="1.0.8"' metal-operator-core/Chart.yaml
 
 build-boot-operator:
 	@cat kustomize/boot-operator/kustomization.yaml >> kustomization.yaml
 	$(call build-chart,boot-operator,https://github.com/ironcore-dev/boot-operator//config/default,$(BOOT_OPERATOR_VERSION))
 	@yq -i '.controllerManager.manager.image.tag="$(BOOT_OPERATOR_VERSION)"' boot-operator/values.yaml
 	@yq -i '.fullnameOverride="boot-operator"' boot-operator/values.yaml
-	@yq -i '.version="0.0.7"' boot-operator/Chart.yaml
+	@yq -i '.version="0.0.8"' boot-operator/Chart.yaml
 
 build-ipxe-operator:
 	@cat kustomize/ipxe-operator/kustomization.yaml >> kustomization.yaml

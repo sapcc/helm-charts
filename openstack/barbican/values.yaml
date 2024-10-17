@@ -116,6 +116,7 @@ mysql_metrics:
       - "status"
       - "secret_name"
       - "expiration"
+      - "created_at"
       - "project_id"
       - "secret_type"
       name: openstack_barbican_secrets_count_gauge
@@ -124,14 +125,15 @@ mysql_metrics:
           secrets.id,
           secrets.status,
           COALESCE(secrets.name, "No Secret Name") AS secret_name,
+          secrets.created_at,
           UNIX_TIMESTAMP(STR_TO_DATE(IFNULL(secrets.expiration,'1970-01-01 00:00:00'), '%Y-%c-%e %T')) AS expiration,
           projects.external_id  AS project_id,
-          secrets.secret_type ,
+          secrets.secret_type,
           COUNT(*)  AS count_gauge
         from secrets
         INNER JOIN projects
         on secrets.project_id=projects.id
-        where secrets.deleted='false'
+        WHERE secrets.deleted='false'
         GROUP BY secrets.id, secrets.status, secrets.name, projects.external_id, secrets.secret_type, secrets.expiration;
       values:
       - "count_gauge"
@@ -141,6 +143,7 @@ mysql_metrics:
       - "status"
       - "secret_name"
       - "expiration"
+      - "created_at"
       - "project_id"
       - "secret_type"
       name: openstack_barbican_hsm_secrets_count_gauge
@@ -149,6 +152,7 @@ mysql_metrics:
           secrets.id,
           secrets.status,
           COALESCE(secrets.name, "No Secret Name") AS secret_name,
+          secrets.created_at,
           UNIX_TIMESTAMP(STR_TO_DATE(IFNULL(secrets.expiration,'1970-01-01 00:00:00'), '%Y-%c-%e %T')) AS expiration,
           projects.external_id  AS project_id,
           secrets.secret_type,
@@ -202,7 +206,7 @@ mysql_metrics:
         from secrets
         INNER JOIN projects
         on secrets.project_id=projects.id
-        where secrets.deleted='false' AND secret_type='opaque' AND expiration!='0'
+        where secret_type='opaque' AND expiration!='0'
         GROUP BY secrets.creator_id, secrets.name, projects.external_id, secrets.expiration;
       values:
       - "expiration_date"

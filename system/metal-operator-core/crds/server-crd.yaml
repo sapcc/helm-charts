@@ -3,7 +3,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     cert-manager.io/inject-ca-from: metal-operator-system/metal-serving-cert
-    controller-gen.kubebuilder.io/version: v0.15.0
+    controller-gen.kubebuilder.io/version: v0.16.3
   name: servers.metal.ironcore.dev
 spec:
   group: metal.ironcore.dev
@@ -20,6 +20,9 @@ spec:
           type: string
         - jsonPath: .status.manufacturer
           name: Manufacturer
+          type: string
+        - jsonPath: .status.model
+          name: Model
           type: string
         - jsonPath: .status.sku
           name: SKU
@@ -67,6 +70,23 @@ spec:
             spec:
               description: ServerSpec defines the desired state of a Server.
               properties:
+                BIOS:
+                  description: BIOS specifies the BIOS settings for the server.
+                  items:
+                    description: BIOSSettings represents the BIOS settings for a server.
+                    properties:
+                      settings:
+                        additionalProperties:
+                          type: string
+                        description: Settings is a map of key-value pairs representing the BIOS settings.
+                        type: object
+                      version:
+                        description: Version specifies the version of the server BIOS for which the settings are defined.
+                        type: string
+                    required:
+                      - version
+                    type: object
+                  type: array
                 bmc:
                   description: |-
                     BMC contains the access details for the BMC.
@@ -84,9 +104,7 @@ spec:
                             This field is effectively required, but due to backwards compatibility is
                             allowed to be empty. Instances of this type with an empty value here are
                             almost certainly wrong.
-                            TODO: Add other useful fields. apiVersion, kind, uid?
                             More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                            TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                           type: string
                       type: object
                       x-kubernetes-map-type: atomic
@@ -128,9 +146,7 @@ spec:
                         This field is effectively required, but due to backwards compatibility is
                         allowed to be empty. Instances of this type with an empty value here are
                         almost certainly wrong.
-                        TODO: Add other useful fields. apiVersion, kind, uid?
                         More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                        TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                       type: string
                   type: object
                   x-kubernetes-map-type: atomic
@@ -152,7 +168,6 @@ spec:
                         the event) or if no container name is specified "spec.containers[2]" (container with
                         index 2 in this pod). This syntax is chosen only to have some well-defined way of
                         referencing a part of an object.
-                        TODO: this design is not final and this field is subject to change in the future.
                       type: string
                     kind:
                       description: |-
@@ -181,6 +196,26 @@ spec:
                       type: string
                   type: object
                   x-kubernetes-map-type: atomic
+                bootOrder:
+                  description: BootOrder specifies the boot order of the server.
+                  items:
+                    description: BootOrder represents the boot order of the server.
+                    properties:
+                      device:
+                        description: Device is the device to boot from.
+                        type: string
+                      name:
+                        description: Name is the name of the boot device.
+                        type: string
+                      priority:
+                        description: Priority is the priority of the boot device.
+                        type: integer
+                    required:
+                      - device
+                      - name
+                      - priority
+                    type: object
+                  type: array
                 indicatorLED:
                   description: IndicatorLED specifies the desired state of the server's indicator LED.
                   type: string
@@ -204,7 +239,6 @@ spec:
                         the event) or if no container name is specified "spec.containers[2]" (container with
                         index 2 in this pod). This syntax is chosen only to have some well-defined way of
                         referencing a part of an object.
-                        TODO: this design is not final and this field is subject to change in the future.
                       type: string
                     kind:
                       description: |-
@@ -242,10 +276,24 @@ spec:
             status:
               description: ServerStatus defines the observed state of Server.
               properties:
+                BIOS:
+                  description: BIOSSettings represents the BIOS settings for a server.
+                  properties:
+                    settings:
+                      additionalProperties:
+                        type: string
+                      description: Settings is a map of key-value pairs representing the BIOS settings.
+                      type: object
+                    version:
+                      description: Version specifies the version of the server BIOS for which the settings are defined.
+                      type: string
+                  required:
+                    - version
+                  type: object
                 conditions:
                   description: Conditions represents the latest available observations of the server's current state.
                   items:
-                    description: "Condition contains details for one aspect of the current state of this API Resource.\n---\nThis struct is intended for direct use as an array at the field path .status.conditions.  For example,\n\n\n\ttype FooStatus struct{\n\t    // Represents the observations of a foo's current state.\n\t    // Known .status.conditions.type are: \"Available\", \"Progressing\", and \"Degraded\"\n\t    // +patchMergeKey=type\n\t    // +patchStrategy=merge\n\t    // +listType=map\n\t    // +listMapKey=type\n\t    Conditions []metav1.Condition `json:\"conditions,omitempty\" patchStrategy:\"merge\" patchMergeKey:\"type\" protobuf:\"bytes,1,rep,name=conditions\"`\n\n\n\t    // other fields\n\t}"
+                    description: Condition contains details for one aspect of the current state of this API Resource.
                     properties:
                       lastTransitionTime:
                         description: |-
@@ -286,12 +334,7 @@ spec:
                           - Unknown
                         type: string
                       type:
-                        description: |-
-                          type of condition in CamelCase or in foo.example.com/CamelCase.
-                          ---
-                          Many .condition.type values are consistent across resources like Available, but because arbitrary conditions can be
-                          useful (see .node.status.conditions), the ability to deconflict is important.
-                          The regex it matches is (dns1123SubdomainFmt/)?(qualifiedNameFmt)
+                        description: type of condition in CamelCase or in foo.example.com/CamelCase.
                         maxLength: 316
                         pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
                         type: string
@@ -308,6 +351,9 @@ spec:
                   type: string
                 manufacturer:
                   description: Manufacturer is the name of the server manufacturer.
+                  type: string
+                model:
+                  description: Model is the model of the server.
                   type: string
                 networkInterfaces:
                   description: NetworkInterfaces is a list of network interfaces associated with the server.

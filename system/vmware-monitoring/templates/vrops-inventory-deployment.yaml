@@ -8,6 +8,7 @@ metadata:
   namespace: {{ required ".Values.vrops.namespace variable missing" $.Values.vrops.namespace }}
   labels:
     type: vrops-inventory
+    shard: {{ include "vropsExporter.name" (list $target $root) }}
   annotations:
     vpa-butler.cloud.sap/update-mode: Auto
 spec:
@@ -19,6 +20,7 @@ spec:
     metadata:
       labels:
         app: {{ include "vropsInventory.fullName" (list $target $root) }}
+        shard: {{ include "vropsExporter.name" (list $target $root) }}
         type: inventorycollector
         alert-tier: vmware
         alert-service: vrops
@@ -32,6 +34,7 @@ spec:
       containers:
          - name: vrops-inventory
            image: {{ required ".Values.global.registry variable missing" $.Values.global.registry }}/{{ required ".Values.vrops.image.name variable missing" $.Values.vrops.image.name }}:{{ required ".Values.vrops.inventory.tag variable missing" $.Values.vrops.inventory.tag }}
+           imagePullPolicy: {{ required ".Values.vrops.image.pullPolicy variable missing" $.Values.vrops.image.pullPolicy }}
            ports:
              - name: metrics
                containerPort: {{ required ".Values.vrops.inventory.port_number missing" $.Values.vrops.inventory.port_number }}

@@ -1,77 +1,89 @@
 {{- define "deployment_bird" -}}
-{{- $values := index . 0 }}
-{{- $deployment_name := index . 1 | required "deployment_name cannot be empty" }}
-{{- $service_number := index . 2 }}
-{{- $service := index . 3 }}
-{{- $domain_number := index . 4}}
-{{- $domain_config := index . 5 }}
-initContainers:
-- name: {{ $deployment_name }}-init
-  image: keppel.{{ required "A registry mus be set" $values.registry }}.cloud.sap/ccloud-dockerhub-mirror/library/alpine:latest
-  command: ["sh", "-c", "ip link set vlan{{ $domain_config.multus_vlan }} promisc on"]
-  securityContext:
-    privileged: true
-containers:
-- name: {{ $deployment_name }}
-  image: keppel.{{ required "A registry mus be set" $values.registry }}.cloud.sap/{{ required "A bird_image must be set" $values.bird_image }}
-  securityContext:
-    capabilities:
-      add: ["NET_ADMIN"]
-  imagePullPolicy: Always
-  volumeMounts:
-  - name: vol-{{ $deployment_name }}
-    mountPath: /etc/bird
-  - name: bird-socket
-    mountPath: /var/run/bird
-  livenessProbe:
-    exec:
-      command: ["px", "status"]
-    initialDelaySeconds: 5
-    periodSeconds: 5
-  resources:
-{{ toYaml $values.resources.bird | indent 4 }}
-- name: {{ $deployment_name }}-exporter
-  image: keppel.{{ $values.registry }}.cloud.sap/{{required "bird_exporter_image must be set" $values.bird_exporter_image}}
-  args: ["-format.new=true", "-bird.v2", "-bird.socket=/var/run/bird/bird.ctl", "-proto.ospf=false", "-proto.direct=false"]
-  resources:
-{{ toYaml $values.resources.exporter | indent 4 }}
-  volumeMounts:
-  - name: bird-socket
-    mountPath: /var/run/bird
-    readOnly: true
-  ports:
-  - containerPort: 9324
-    name: metrics
-- name: {{ $deployment_name }}-lgproxy
-  image: keppel.{{ $values.registry }}.cloud.sap/{{ required "lg_image must be set" $values.lg_image }}
-  command: ["python3"]
-  args: ["lgproxy.py"]
-  resources:
-{{ toYaml $values.resources.proxy | indent 4 }}
-  volumeMounts:
-  - name: bird-socket
-    mountPath: /var/run/bird
-    readOnly: true
-  ports:
-  - containerPort: 5000
-    name: lgproxy
-- name: {{ $deployment_name }}-lgadminproxy
-  image: keppel.{{ $values.registry }}.cloud.sap/{{ $values.lg_image }}
-  command: ["python3"]
-  args: ["lgproxy.py", "priv"]
-  resources:
-{{ toYaml $values.resources.proxy | indent 4 }}
-  volumeMounts:
-  - name: bird-socket
-    mountPath: /var/run/bird
-    readOnly: true
-  ports:
-  - containerPort: 5005
-    name: lgadminproxy
-volumes:
-  - name: vol-{{ $deployment_name }}
-    configMap:
-      name: cfg-{{ $values.global.region }}-pxrs-{{ $domain_number }}-s{{ $service_number }}
-  - name: bird-socket
-    emptyDir: {}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "bird.instance.deployment_name" . }}
+  labels: {{ include "bird.instance.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {{ include "bird.instance.labels" . | nindent 8 }}
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels: {{ include "bird.instance.labels" . | nindent 8 }}
+        {{ include "bird.alert.labels" . | nindent 8 }}
+        app.kubernetes.io/name: px
+      annotations:
+        k8s.v1.cni.cncf.io/networks: '[{ "name": "{{ include "bird.instance.deployment_name" . }}", "interface": "vlan{{ .domain_config.multus_vlan }}"}]'
+    spec:
+      affinity: {{ include "bird.domain.affinity" . | nindent 8 }}
+      tolerations: {{ include "bird.domain.tolerations" . | nindent 8 }}
+      initContainers:
+      - name: {{ include "bird.instance.deployment_name" .}}-init
+        image: keppel.{{ required "A registry mus be set" .top.Values.registry }}.cloud.sap/ccloud-dockerhub-mirror/library/alpine:latest
+        command: ["sh", "-c", "ip link set vlan{{ .domain_config.multus_vlan }} promisc on"]
+        securityContext:
+          privileged: true
+      containers:
+      - name: {{ include "bird.instance.deployment_name" .}}
+        image: keppel.{{ required "A registry mus be set" .top.Values.registry }}.cloud.sap/{{ required "A bird_image must be set" .top.Values.bird_image }}
+        securityContext:
+          capabilities:
+            add: ["NET_ADMIN"]
+        imagePullPolicy: Always
+        volumeMounts:
+        - name: vol-{{ include "bird.instance.deployment_name" .}}
+          mountPath: /etc/bird
+        - name: bird-socket
+          mountPath: /var/run/bird
+        livenessProbe:
+          exec:
+            command: ["px", "status"]
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        resources: {{ toYaml .top.Values.resources.bird | nindent 10 }}
+      - name: {{ include "bird.instance.deployment_name" .}}-exporter
+        image: keppel.{{ .top.Values.registry }}.cloud.sap/{{required "bird_exporter_image must be set" .top.Values.bird_exporter_image}}
+        args: ["-format.new=true", "-bird.v2", "-bird.socket=/var/run/bird/bird.ctl", "-proto.ospf=false", "-proto.direct=false"]
+        resources: {{ toYaml .top.Values.resources.exporter | nindent 10 }}
+        volumeMounts:
+        - name: bird-socket
+          mountPath: /var/run/bird
+          readOnly: true
+        ports:
+        - containerPort: 9324
+          name: metrics
+      - name: {{ include "bird.instance.deployment_name" .}}-lgproxy
+        image: keppel.{{ .top.Values.registry }}.cloud.sap/{{ required "lg_image must be set" .top.Values.lg_image }}
+        command: ["python3"]
+        args: ["lgproxy.py"]
+        resources: {{ toYaml .top.Values.resources.proxy | nindent 10 }}
+        volumeMounts:
+        - name: bird-socket
+          mountPath: /var/run/bird
+          readOnly: true
+        ports:
+        - containerPort: 5000
+          name: lgproxy
+      - name: {{ include "bird.instance.deployment_name" .}}-lgadminproxy
+        image: keppel.{{ .top.Values.registry }}.cloud.sap/{{ .top.Values.lg_image }}
+        command: ["python3"]
+        args: ["lgproxy.py", "priv"]
+        resources: {{ toYaml .top.Values.resources.proxy | nindent 10 }}
+        volumeMounts:
+        - name: bird-socket
+          mountPath: /var/run/bird
+          readOnly: true
+        ports:
+        - containerPort: 5005
+          name: lgadminproxy
+      volumes:
+        - name: vol-{{ include "bird.instance.deployment_name" .}}
+          configMap:
+            name: cfg-{{ include "bird.domain.config_name" . }}
+        - name: bird-socket
+          emptyDir: {}
 {{- end }}

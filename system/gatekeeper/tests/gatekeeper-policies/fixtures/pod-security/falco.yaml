@@ -2,51 +2,79 @@ apiVersion: apps/v1
 kind: DaemonSet
 metadata:
   annotations:
-    meta.helm.sh/release-name: kube-monitoring-scaleout
+    meta.helm.sh/release-name: kube-monitoring-test
     meta.helm.sh/release-namespace: kube-monitoring
   labels:
     app.kubernetes.io/managed-by: Helm
-  name: kube-monitoring-scaleout-falco
+  name: kube-monitoring-test-falco
   namespace: kube-monitoring
 spec:
   template:
     spec:
-      initContainers:
-      - image: keppel.eu-de-1.cloud.sap/ccloud-dockerhub-mirror/falcosecurity/falco-driver-loader:0.34.1
-        name: falco-driver-loader
       containers:
-      - image: keppel.eu-de-1.cloud.sap/ccloud-dockerhub-mirror/falcosecurity/falco-no-driver:0.34.1
+      - image: keppel.global.cloud.sap/ccloud-dockerhub-mirror/falcosecurity/falco-distroless:0.39.0
         name: falco
-      securityContext:
-        privileged: true
+        securityContext:
+          privileged: true
+        volumeMounts:
+        - mountPath: /etc/falco
+          name: rulesfiles-install-dir
+        - mountPath: /usr/share/falco/plugins
+          name: plugins-install-dir
+        - mountPath: /root/.falco
+          name: root-falco-fs
+        - mountPath: /host/proc
+          name: proc-fs
+          readOnly: true
+        - mountPath: /host/boot
+          name: boot-fs
+          readOnly: true
+        - mountPath: /host/lib/modules
+          name: lib-modules
+        - mountPath: /host/usr
+          name: usr-fs
+          readOnly: true
+        - mountPath: /host/etc
+          name: etc-fs
+          readOnly: true
+        - mountPath: /host/var/run/
+          name: docker-socket
+        - mountPath: /host/run/containerd/
+          name: containerd-socket
+        - mountPath: /host/run/crio/
+          name: crio-socket
+        - mountPath: /etc/falco/falco.yaml
+          name: falco-yaml
+          subPath: falco.yaml
+        - mountPath: /etc/falco/rules.d
+          name: rules-volume
+      - image: keppel.global.cloud.sap/ccloud-dockerhub-mirror/falcosecurity/falcoctl:0.10.0
+      initContainers:
+      - image: keppel.global.cloud.sap/ccloud-dockerhub-mirror/falcosecurity/falcoctl:0.10.0
+        name: falcoctl-artifact-install
+      securityContext: {}
       volumes:
-      - name: boot-fs
-        hostPath:
+      - hostPath:
           path: /boot
-      - name: containerd-socket
-        hostPath:
-          path: /run/containerd/containerd.sock
-      - name: crio-socket
-        hostPath:
-          path: /run/crio/crio.sock
-      - name: dev-fs
-        hostPath:
-          path: /dev
-      - name: docker-socket
-        hostPath:
-          path: /var/run/docker.sock
-      - name: etc-fs
-        hostPath:
-          path: /etc
-      - name: lib-modules
-        hostPath:
+        name: boot-fs
+      - hostPath:
           path: /lib/modules
-      - name: proc-fs
-        hostPath:
-          path: /proc
-      - name: sys-fs
-        hostPath:
-          path: /sys/module/falco
-      - name: usr-fs
-        hostPath:
+        name: lib-modules
+      - hostPath:
           path: /usr
+        name: usr-fs
+      - hostPath:
+          path: /etc
+        name: etc-fs
+      - hostPath:
+          path: /var/run
+        name: docker-socket
+      - hostPath:
+          path: /run/containerd
+        name: containerd-socket
+      - hostPath:
+          path: /run/crio
+        name: crio-socket
+      - hostPath:
+          path: /proc
+        name: proc-fs

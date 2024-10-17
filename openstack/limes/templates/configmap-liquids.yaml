@@ -13,3 +13,9 @@ data:
     "liquid:get_capacity": "rule:readonly"
     "liquid:get_usage": "rule:readonly"
     "liquid:set_quota": "rule:readwrite"
+
+  {{- range $name, $config := .Values.limes.local_liquid_configs }}
+  {{- if not (index $.Values.limes.local_liquids $name "skip") }}
+  {{ $name }}.json: {{ $config | toJson | quote }}
+  {{- end }}
+  {{- end }}

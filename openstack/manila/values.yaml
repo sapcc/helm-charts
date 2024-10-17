@@ -108,22 +108,6 @@ mysql_metrics:
     limits:
       memory: 512Mi
   customMetrics: # metrics starting "openstack_" and having a project_id label will go to Maia !
-    - help: Manila Share servers count
-      labels:
-        - "manila_host"
-        - "share_network_subnet_id"
-        - "status"
-      name: manila_share_servers_count_gauge
-      query: |
-        SELECT
-          host AS manila_host,
-          share_network_subnet_id,
-          status,
-          COUNT(*) AS count_gauge
-        FROM share_servers
-        GROUP BY manila_host, share_network_subnet_id, status;
-      values:
-        - "count_gauge"
     - help: Manila Shares count
       labels:
         - "share_type_id"
@@ -461,26 +445,20 @@ mysql_metrics:
         UNION SELECT 'none' AS project_id, 'none' AS share_id, 'none' AS id, 'none' AS status, 0 AS max_duration_gauge;
       values:
         - "max_duration_gauge"
-    - help: Manila Share servers
+    - help: Manila Share servers count
       labels:
-        - "project_id"
-        - "share_network_id"
+        - "manila_host"
         - "share_network_subnet_id"
-        - "share_server_id"
-      name: manila_share_servers_gauge
+        - "status"
+      name: manila_share_servers_count_gauge
       query: |
         SELECT
-          a.project_id AS project_id,
-          a.id AS share_network_id,
-          b.id AS share_network_subnet_id,
-          c.id AS share_server_id,
+          host AS manila_host,
+          share_network_subnet_id,
+          status,
           COUNT(*) AS count_gauge
-        FROM share_network_subnets as b
-        JOIN share_networks AS a ON a.id = b.share_network_id
-        JOIN share_servers AS c ON b.id = c.share_network_subnet_id
-        WHERE c.deleted = 'False'
-        GROUP BY
-          project_id, share_network_id, share_network_subnet_id, share_server_id;
+        FROM share_servers
+        GROUP BY manila_host, share_network_subnet_id, status;
       values:
         - "count_gauge"
     - help: Manila Share servers Stuck Count
@@ -551,6 +529,21 @@ mysql_metrics:
         UNION SELECT 'none' AS access_id, 'none' AS share_id, 'none' AS share_instance_id, 'none' AS state, 0 AS max_duration_gauge;
       values:
         - "max_duration_gauge"
+    - help: Manila Oldest Soft Deleted Share
+      labels:
+        - "id"
+      name: manila_oldest_soft_deleted_share
+      query: |
+        SELECT
+          id,
+          DATEDIFF(NOW(), deleted_at) AS age_of_oldest_share_in_days
+        FROM shares
+        WHERE deleted_at IN (
+          SELECT MIN(deleted_at)
+          FROM shares
+        );
+      values:
+        - "age_of_oldest_share_in_days"
 
 pod:
   replicas:
@@ -672,8 +665,6 @@ rabbitmq:
     enabled: true
   metrics:
     enabled: true
-    sidecar:
-      enabled: false
   enableDetailedMetrics: false
   enablePerObjectMetrics: false
 
@@ -743,10 +734,19 @@ rpc_statsd_enabled: true
 # prometheus alerts
 alerts:
   enabled: true
+  support_group: compute-storage-api
   prometheus:
     openstack: openstack
     kubernetes: kubernetes
-  support_group: compute-storage-api
+    metrics-metal: metal
+    # metrics: regional
+    # metrics-global: global
+    # metrics-scaleout: scaleout
+
+aggregates:
+  prometheus:
+    openstack: openstack
+    storage: storage
 
 # osprofiler
 osprofiler:

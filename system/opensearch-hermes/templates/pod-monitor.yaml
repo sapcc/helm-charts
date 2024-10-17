@@ -19,7 +19,7 @@ spec:
     matchNames: [hermes]
 
   podMetricsEndpoints:
-    - interval: 60s
+    - interval: 120s
       scrapeTimeout: 50s
       path: /_prometheus/metrics
       scheme: https
@@ -57,6 +57,9 @@ spec:
         - action: drop
           regex: '(opensearch_index_doc_number|opensearch_index_replicas_number|opensearch_index_store_size_bytes|opensearch_cluster_pending_tasks_number);(opensearch-hermes-[1-9])'
           sourceLabels: [__name__, pod]
+        - action: drop
+          regex: 'opensearch_index_store_size_bytes;total'
+          sourceLabels: [__name__, context]
         - action: drop
           regex: 'opensearch_index_shards_number;(initializing|relocating|unassigned)'
           sourceLabels: [__name__, type]

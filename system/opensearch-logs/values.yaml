@@ -17,7 +17,7 @@ owner-info:
   support-group: observability
   service: logs
   maintainers:
-    - "Vi Truchsess"
+    - "Timo Johner"
     - "Olaf Heydorn"
   helm-chart-url: "https://github.com/sapcc/helm-charts/tree/master/system/opensearch-logs"
 
@@ -37,7 +37,7 @@ opensearch_master:
   nodeGroup: "master"
   masterService: "opensearch-logs-master"
   image:
-    tag: 2.14.0
+    tag: 2.17.1
   roles:
     - master
   replicas: 3
@@ -54,8 +54,8 @@ opensearch_master:
       path: /usr/share/opensearch/config/certs/
       defaultMode: 0700
   securityConfig:
+    enabled: false
     path: "/usr/share/opensearch/config/opensearch-security"
-    enabled: true
     config:
       securityConfigSecret: "security-config"
   extraEnvs:
@@ -64,12 +64,12 @@ opensearch_master:
   plugins:
     enabled: true
     installList:
-      - https://github.com/Aiven-Open/prometheus-exporter-plugin-for-opensearch/releases/download/2.14.0.0/prometheus-exporter-2.14.0.0.zip
+      - https://github.com/Aiven-Open/prometheus-exporter-plugin-for-opensearch/releases/download/2.17.1.0/prometheus-exporter-2.17.1.0.zip
 
 opensearch_client:
   enabled: false
   image:
-    tag: 2.14.0
+    tag: 2.17.1
   replicas: 3
   nameOverride: "opensearch-logs-client"
   fullnameOverride: "opensearch-logs-client"
@@ -96,8 +96,8 @@ opensearch_client:
     enabled: false
   clusterName: "opensearch-logs"
   securityConfig:
+    enabled: false
     path: "/usr/share/opensearch/config/opensearch-security"
-    enabled: true
     actionGroupsSecret: "security-config"
     configSecret: "security-config"
     internalUsersSecret: "security-config"
@@ -110,12 +110,12 @@ opensearch_client:
   plugins:
     enabled: true
     installList:
-      - https://github.com/Aiven-Open/prometheus-exporter-plugin-for-opensearch/releases/download/2.14.0.0/prometheus-exporter-2.14.0.0.zip
+      - https://github.com/Aiven-Open/prometheus-exporter-plugin-for-opensearch/releases/download/2.17.1.0/prometheus-exporter-2.17.1.0.zip
 
 opensearch_data:
   enabled: false
   image:
-    tag: 2.14.0
+    tag: 2.17.1
   nameOverride: "opensearch-logs-data"
   fullnameOverride: "opensearch-logs-data"
   nodeGroup: "data"
@@ -139,10 +139,10 @@ opensearch_data:
   plugins:
     enabled: true
     installList:
-      - https://github.com/Aiven-Open/prometheus-exporter-plugin-for-opensearch/releases/download/2.14.0.0/prometheus-exporter-2.14.0.0.zip
+      - https://github.com/Aiven-Open/prometheus-exporter-plugin-for-opensearch/releases/download/2.17.1.0/prometheus-exporter-2.17.1.0.zip
   securityConfig:
+    enabled: false
     path: "/usr/share/opensearch/config/opensearch-security"
-    enabled: true
     config:
       securityConfigSecret: "security-config"
   extraEnvs:
@@ -152,7 +152,7 @@ opensearch_data:
 opensearch_ml:
   enabled: false
   image:
-    tag: 2.14.0
+    tag: 2.17.1
   replicas: 2
   nameOverride: "opensearch-logs-ml"
   fullnameOverride: "opensearch-logs-ml"
@@ -179,8 +179,8 @@ opensearch_ml:
     enabled: false
   clusterName: "opensearch-logs"
   securityConfig:
+    enabled: false
     path: "/usr/share/opensearch/config/opensearch-security"
-    enabled: true
     actionGroupsSecret: "security-config"
     configSecret: "security-config"
     internalUsersSecret: "security-config"
@@ -193,12 +193,12 @@ opensearch_ml:
   plugins:
     enabled: true
     installList:
-      - https://github.com/Aiven-Open/prometheus-exporter-plugin-for-opensearch/releases/download/2.14.0.0/prometheus-exporter-2.14.0.0.zip
+      - https://github.com/Aiven-Open/prometheus-exporter-plugin-for-opensearch/releases/download/2.17.1.0/prometheus-exporter-2.17.1.0.zip
 
 opensearch_dashboards:
   enabled: false
   image:
-    tag: "2.14.0"
+    tag: "2.17.1"
   fullnameOverride: opensearch-logs-dashboards
   nameOverride: opensearch-logs-dashboards
   serviceAccount:
@@ -210,10 +210,12 @@ opensearch_dashboards:
     enabled: false
   logs_endpoint:
     enabled: false
-  resources: {}
+  resources:
+    limits:
+      memory: 4096M
   envFrom:
     - secretRef:
-        name: openid-secrets
+        name: dashboard-secrets
 
 manager:
   enabled: false

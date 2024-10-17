@@ -163,7 +163,7 @@ groups:
       summary: Limes cannot scrape {{ title $labels.service_name }}
 
   - alert: OpenstackLimesMissingSwiftMetrics
-    expr: (limes_project_usage{service="object-store",resource="capacity"} > 0) unless on(project_id) (limes_plugin_metrics_ok{service="object-store"} == 1)
+    expr: (limes_project_usage{service="object-store",resource="capacity"} > 0) unless on(project_id) (limes_plugin_metrics_ok{service="swift"} == 1)
     for: 5m
     labels:
       context: swiftmetrics
@@ -193,6 +193,20 @@ groups:
       description: Limes cannot sync domains and projects from Keystone.
         Check the `kubectl logs` for limes-collect-ccloud for additional info.
       summary: Limes cannot sync from Keystone.
+
+  - alert: OpenstackLimesFailedQuotaOverrideSyncs
+    expr: sum(increase(limes_quota_override_syncs{task_outcome="failure"}[10m])) > 0 or sum(increase(limes_quota_override_syncs{task_outcome="success"}[10m])) == 0
+    for: 10m
+    labels:
+      context: quotaoverridesync
+      dashboard: limes-overview
+      service: limes
+      severity: warning
+      support_group: containers
+    annotations:
+      description: Limes cannot sync quota overrides from its config into the DB.
+        Check the `kubectl logs` for limes-collect-ccloud for errors (esp. from parsing the overrides file).
+      summary: Limes cannot sync quota overrides.
 
   - alert: OpenstackLimesAuditEventPublishFailing
     # Usually, you would check increase() here, but audit events *can* be quite
@@ -265,7 +279,7 @@ groups:
   - alert: OpenstackNonGrowingQuotaAlmostExhausted
     expr: max by (support_group, service_name, service, resource, domain, project_id, project) (
         ((limes_project_usage{resource!~"instances_.*"} > 0.9 * limes_project_quota) and on (service, resource) (limes_autogrow_growth_multiplier == 1)) * on (service) group_left (support_group) (limes_support_group_mapping)
-      )
+      ) unless on (service, resource) (limes_available_commitment_duration == 1)
     for: 5m
     labels:
       severity: warning
@@ -279,3 +293,19 @@ groups:
         The {{ $labels.service }}/{{ $labels.resource }} quota in project {{ $labels.project_id }} ("{{ $labels.domain }}/{{ $labels.project }}") is more than 90% used.
         This quota does not grow automatically, so care should be taken now to ensure that the customer does not run out of quota.
         Please check the playbook for which options you have to resolve this issue.
+
+  - alert: OpenstackLimesIneffectiveQuotaOverride
+    expr: 'max by (domain, project, project_id, service, resource) (limes_project_quota != limes_project_override_quota_from_config)'
+    for: 60m
+    labels:
+      severity: warning
+      support_group: containers
+      tier: os
+      service: limes
+    annotations:
+      summary: Quota override is ineffective
+      description: |
+        In the project {{ $labels.project_id }} ({{ $labels.domain }}/{{ $labels.project }}), the quota override for {{ $labels.service }}/{{ $labels.resource }} is ineffective.
+        The actual quota is {{ $value }}, which differs from the configured quota override.
+        Please check the Resource Management UI of the project. If the quota override cannot be enforced because commitments or usage are higher than it, the override needs to be removed (from quota-overrides.yaml in cc/secrets).
+        The opposite case (a quota below the configured override) needs to be triaged by a Limes expert.

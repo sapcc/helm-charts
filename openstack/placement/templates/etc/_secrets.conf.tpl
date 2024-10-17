@@ -6,5 +6,5 @@ connection = {{ tuple . .Values.mariadb.name .Values.global.dbUser .Values.globa
 {{- end }}
 
 [keystone_authtoken]
-username = {{ .Values.global.placement_service_user | default "placement" }}
-password = {{ required ".Values.global.placement_service_password is missing" .Values.global.placement_service_password }}
+username = {{ .Values.global.placement_service_user | default "placement" | include "resolve_secret" }}
+password = {{ required ".Values.global.placement_service_password is missing" .Values.global.placement_service_password | include "resolve_secret" }}

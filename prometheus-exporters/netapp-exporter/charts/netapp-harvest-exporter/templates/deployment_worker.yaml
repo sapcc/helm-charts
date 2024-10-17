@@ -1,10 +1,15 @@
 {{- range $appName, $appValues := .Values.apps }}
 {{- if $appValues.enabled }}
 {{- with $ }}
+
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ include "netapp-harvest.fullname" . }}-{{ $appName }}-worker
+  annotations:
+    vpa-butler.cloud.sap/main-container: poller
+    vpa-butler.cloud.sap/update-mode: Auto
+
 spec:
   replicas: 1
   selector:

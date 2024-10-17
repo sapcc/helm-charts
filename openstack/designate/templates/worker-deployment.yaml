@@ -46,27 +46,19 @@ spec:
 {{- end }}
 {{ tuple . "designate" "worker" | include "kubernetes_pod_anti_affinity" | indent 6 }}
       {{- include "utils.proxysql.pod_settings" . | indent 6 }}
+      initContainers:
+      {{- tuple . (dict "service" (include "designate.rabbitmq_dependencies" . )) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 8 }}
       containers:
         - name: designate-worker
           image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/loci-designate:{{ required ".Values.global.image_version_designate is missing" .Values.image_version_designate }}
           imagePullPolicy: IfNotPresent
           command:
-            - kubernetes-entrypoint
+            - /container.init/designate-worker-start
           resources:
 {{ toYaml .Values.resources.worker | indent 12 }}
           env:
-            - name: COMMAND
-              value: "/container.init/designate-worker-start"
-            - name: NAMESPACE
-              value: {{ .Release.Namespace }}
             - name: DEBUG_CONTAINER
               value: "false"
-            - name: DEPENDENCY_SERVICE
-{{- if .Values.rabbitmq_cluster.enabled }}
-              value: "{{ .Release.Name }}-rabbitmq-cluster"
-{{- else }}
-              value: "{{ .Release.Name }}-rabbitmq"
-{{- end }}
             - name: NODE_NAME
               valueFrom:
                 fieldRef:

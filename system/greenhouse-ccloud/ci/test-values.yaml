@@ -1,8 +1,7 @@
 mappedOrgAdminIdPGroup: ccloudAdminGroup
 
-alerts:
+pluginPreset:
   enabled: true
-  endpoint: "https://foo.bar"
 
 teams:
   team1:
@@ -17,9 +16,19 @@ teams:
 teamRoleBindings:
   - teamRef: team1
     teamRoleRef: role1
-    clusterNames:
-      - cluster1
-      - cluster2
+    clusterSelector:
+      matchLabels:
+        cluster-type: compute
+        environment: production
+  - teamRef: team2
+    teamRoleRef: role1
+    clusterSelector:
+      matchLabels:
+        cluster-type: compute
+        environment: labs
+    namespaces:
+      - foo
+      - bar
 
 oidc:
   issuer: https://top.secret
@@ -27,16 +36,42 @@ oidc:
   clientID: topSecret!
   clientSecret: topSecret!
 
-supernova:
+scim:
+  baseURL: https://top.secret/scim
+  username: topSecret!
+  password: topSecret!123
+
+alerts:
   enabled: true
   alertmanager:
-    apiEndpoint: https://alertmanager.prometheus
-    apiEndpointBackup: https://alertmanager.backup.prometheus
-    ssoCert: topSecret!
-    ssoKey: topSecret!
-  pagerduty:
-    apiToken: topSecret!
-    serviceIDs: A,B,C
+    hosts:
+      - "alertmanager.foo.bar"
+
+digicert:
+  enabled: true
+  provisioner:
+    apiToken: "TopSecret!"
+    organizationID: "1337"
+    organizationUnits:
+      - MyUnit
+
+kubeconfigGenerator:
+  enabled: true
+  oidc:
+    clientID: "TopSecret!"
+    clientSecret: "TopSecret!"
+  swift:
+    username: "technical-user"
+    domain: "my-domain"
+    projectID: "1234-project-id"
+    container: "container-one"
+    region: "testing"
+    password: "TopSecret!"
+
+kubeMonitoring:
+  enabled: true
+  ssoCert: "TopSecret!"
+  ssoKey: "TopSecret!"
 
 teams2slack:
   enabled: true
@@ -60,10 +95,14 @@ doopKubernikus:
   showDebugSeverities: false
 
 logshipping:
-  regions:
+  clusters:
     - region: qa
+      cluster: qa-cluster
       username: TopSecret!
       password: TopSecret!
+    - region: qa
+      cluster: qa-cluster
+      username: TopSecret!
 
 ingressPlugins:
   - cluster: nase

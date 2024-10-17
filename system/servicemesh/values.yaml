@@ -10,9 +10,6 @@ rootCA:
   #cert:
   #key:
 
-linkerd-crds:
-  enabled: false
-
 linkerd-control-plane:
   enabled: false
 
@@ -21,7 +18,10 @@ linkerd-control-plane:
   identity:
     issuer:
       scheme: kubernetes.io/tls
-      issuanceLifetime: 72h0m0s
+      # The proxy requests new certificates once 70% of lifetime is reached.
+      # This gives a buffer of 3 days, if the controlplane becomes unavailable
+      # at the worst moment.
+      issuanceLifetime: 240h0m0s
 
   controllerImage: keppel.global.cloud.sap/ccloud/linkerd/controller
 

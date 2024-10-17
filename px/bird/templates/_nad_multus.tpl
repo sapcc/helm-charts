@@ -1,12 +1,11 @@
 {{- define "nad_multus" -}}
-{{- $deployment_name := index . 0 | required "deployment_name cannot be empty" }}
-{{- $vlan:= index . 1 -}}
-{{- $ip:= index . 2 -}}
+{{- $vlan:= .domain_config.multus_vlan -}}
+{{- $ip:= .instance_config.bird_ip -}}
 ---
 apiVersion: "k8s.cni.cncf.io/v1"
 kind: NetworkAttachmentDefinition
 metadata:
-  name: {{ $deployment_name }}
+  name: {{ include "bird.instance.deployment_name" . }}
   namespace: px
 spec:
   config: |
@@ -17,7 +16,7 @@ spec:
         "mode": "bridge",
         "ipam": {
         "type": "static",
-        "addresses": [{ "address": "{{ required "bird_ip or pxmon_ip must be set" $ip }}"}]
+        "addresses": [{ "address": "{{ required "bird_ip must be set" $ip }}"}]
         }
     }
 {{ end }}

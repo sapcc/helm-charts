@@ -281,8 +281,8 @@ groups:
     labels:
       severity: info
       tier: os
-      service: manila-db-locks
-      context: manila
+      service: manila
+      context: manila-db-locks
       meta: '{{ $labels.service }} db row locks'
       support_group: compute-storage-api
     annotations:
@@ -330,3 +330,16 @@ groups:
     annotations:
       description: '{{ $labels.host }}: host has status disabled but is in state up for 20 minutes. Either the pod should be scaled down or the service be enabled!'
       summary: '{{ $labels.host }}: host is disabled but is up'
+
+  - alert: OpenstackManilaPurgeBroken
+    expr: manila_oldest_soft_deleted_share{region!="qa-de-1"} > 15
+    for: 4h
+    labels:
+      severity: info
+      tier: os
+      service: manila
+      context: manila-db-purge
+      support_group: compute-storage-api
+    annotations:
+      description: manila has a soft deleted share that is older than 15 days, check the db-consistency-and-purge container of manila-nanny
+      summary: manila db purger not working

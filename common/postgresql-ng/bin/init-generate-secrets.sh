@@ -23,7 +23,7 @@ for USER in ${USERS:-}; do
     metadata:
       name: $SECRET
       ownerReferences:
-        - apiVersion: v1
+        - apiVersion: apps/v1
           blockOwnerDeletion: true
           kind: Deployment
           name: $DEPLOYMENT_NAME
