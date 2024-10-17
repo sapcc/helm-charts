@@ -63,7 +63,7 @@ spec:
         lifecycle:
           postStart:
             exec:
-              command: ["sh", "-c", "while ! mysqladmin ping -uroot -p$MYSQL_ROOT_PASSWORD --silent; do sleep 1; done; mysql_upgrade"]
+              command: ["sh", "-c", "while ! mysqladmin ping --silent; do sleep 1; done; mysql_upgrade"]
         env:
         - name: MYSQL_ROOT_PASSWORD
           valueFrom:
@@ -76,7 +76,7 @@ spec:
         {{- if .Values.livenessProbe.enabled }}
         livenessProbe:
           exec:
-            command: ["sh", "-c", "exec mysqladmin status -uroot -p$MYSQL_ROOT_PASSWORD"]
+            command: ["sh", "-c", "exec mysqladmin status"]
           initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds }}
           periodSeconds: {{ .Values.livenessProbe.periodSeconds }}
           timeoutSeconds: {{ .Values.livenessProbe.timeoutSeconds }}
@@ -86,7 +86,7 @@ spec:
         {{- if .Values.readinessProbe.enabled }}
         readinessProbe:
           exec:
-            command: ["sh", "-c", "exec mysqladmin status -uroot -p$MYSQL_ROOT_PASSWORD"]
+            command: ["sh", "-c", "exec mysqladmin status"]
           initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}
           periodSeconds: {{ .Values.readinessProbe.periodSeconds }}
           timeoutSeconds: {{ .Values.readinessProbe.timeoutSeconds }}
