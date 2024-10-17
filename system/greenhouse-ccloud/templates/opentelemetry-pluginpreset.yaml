@@ -6,8 +6,8 @@ metadata:
   name: otel-basic-auth-{{ $r.region }}
   namespace: {{ .Release.Namespace }}
 data:
-  password: {{ required ".Values.openTelemetry.openSearchLogs.password missing" $r.openSearchLogs.password | b64enc }}
-  username: {{ required ".Values.openTelemetry.openSearchLogs.username missing" $r.openSearchLogs.username | b64enc }}
+  password: {{ required ".Values.openTelemetry.clusters[].openSearchLogs.password missing" $r.openSearchLogs.password | b64enc }}
+  username: {{ required ".Values.openTelemetry.clusters[].openSearchLogs.username missing" $r.openSearchLogs.username | b64enc }}
 {{- end -}}
 
 ---
@@ -29,9 +29,15 @@ spec:
     - name: openTelemetry.OpenSearchLogs.endpoint
       value: {{ $r.openSearchLogs.endpoint }}
     - name: openTelemetry.OpenSearchLogs.username
-      value: {{ $r.openSearchLogs.username }}
+      valueFrom: 
+        secret: 
+          key: {{ $r.openSearchLogs.username }}
+          name: otel-basic-auth-{{ $r.region }}
     - name: openTelemetry.OpenSearchLogs.password
-      value: {{ $r.openSearchLogs.password }}
+      valueFrom: 
+        secret: 
+          key: {{ $r.openSearchLogs.password }}
+          name: otel-basic-auth-{{ $r.region }}
     - name: openTelemetry.cluster
       value: {{ $r.cluster}}
     - name: openTelemetry.region
