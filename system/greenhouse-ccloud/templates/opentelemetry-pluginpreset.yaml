@@ -3,14 +3,13 @@
 apiVersion: v1
 kind: Secret
 metadata:
-  name: otel-basic-auth
+  name: otel-basic-auth-{{ $r.region }}
   namespace: {{ .Release.Namespace }}
 data:
-  password: {{ required ".Values.openTelemetry.openSearchLogs.password missing" .Values.openTelemetry.openSearchLogs.password | b64enc }}
-  username: {{ required ".Values.openTelemetry.openSearchLogs.username missing" .Values.openTelemetry.openSearchLogs.username | b64enc }}
+  password: {{ required ".Values.openTelemetry.openSearchLogs.password missing" $r.openSearchLogs.password | b64enc }}
+  username: {{ required ".Values.openTelemetry.openSearchLogs.username missing" $r.openSearchLogs.username | b64enc }}
 
 ---
-
 apiVersion: greenhouse.sap/v1alpha1
 kind: PluginPreset
 metadata:
@@ -22,8 +21,19 @@ spec:
       greenhouse.sap/pluginpreset: "true"
       greenhouse.sap/cluster-presets-enabled: "true"
       cluster-type: "storage"
-  plugin:
-    disabled: false
+  clusterOptionOverrides:
+    clusterName: {{ $r.cluster }}
+    overrides:
+    - name: openTelemetry.OpenSearchLogs.endpoint
+      value: {{ $r.openSearchLogs.endpoint }}
+    - name: openTelemetry.OpenSearchLogs.username
+      value: {{ $r.openSearchLogs.username }}
+    - name: openTelemetry.OpenSearchLogs.password
+      value: {{ $r.openSearchLogs.password }}
+    - name: openTelemetry.cluster
+      value: {{ $r.cluster}}
+    - name: openTelemetry.region
+      value: {{ $r.region }}
   pluginDefinition: opentelemetry
   releaseNamespace: otel
   optionValues:
@@ -31,22 +41,6 @@ spec:
     value: true
   - name: openTelemetry.metricsCollector.enabled
     value: true
-  - name: openTelemetry.openSearchLogs.username
-    valueFrom:
-      secret:
-        key: {{ $r.cluster.openSearchLogs.username }}
-        name: otel-basic-auth
-  - name: openTelemetry.openSearchLogs.password
-    valueFrom:
-      secret:
-        key: {{ $r.cluster.openSearchLogs.password }}
-        name: otel-basic-auth
-  - name: openTelemetry.openSearchLogs.endpoint
-    value: {{ .Values.openTelemetry.openSearchLogs.endpoint }}
-  - name: openTelemetry.region
-    value: {{ $r.region }}
-  - name: openTelemetry.cluster
-    value: {{ $r.cluster }}
   - name: openTelemetry.prometheus
     value: {{ .Values.openTelemetry.prometheus }}
   - name: openTelemetry.podMonitor.enabled
