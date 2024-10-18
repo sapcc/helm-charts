@@ -8,6 +8,8 @@ metadata:
     "helm.sh/hook": pre-upgrade,pre-rollback
     "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
     "helm.sh/hook-weight": "-50"
+  labels:
+    {{- include "mariadb.labels" (list $ "version" "mariadb" "serviceaccount" "database") | indent 4 }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
@@ -18,6 +20,8 @@ metadata:
     "helm.sh/hook": pre-upgrade,pre-rollback
     "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
     "helm.sh/hook-weight": "-40"
+  labels:
+    {{- include "mariadb.labels" (list $ "version" "mariadb" "role" "database") | indent 4 }}
 rules:
 - apiGroups: ["extensions", "apps"]
   resources: ["deployments"]
@@ -38,6 +42,8 @@ metadata:
     "helm.sh/hook": pre-upgrade,pre-rollback
     "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
     "helm.sh/hook-weight": "-30"
+  labels:
+    {{- include "mariadb.labels" (list $ "version" "mariadb" "rolebinding" "database") | indent 4 }}
 subjects:
 - kind: ServiceAccount
   name: {{ .Values.name }}-db-exec

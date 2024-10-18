@@ -78,10 +78,28 @@
 {{define "RELEASE-NAME_db_host"}}testRelease-mariadb.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
 {{define "testRelease_db_host"}}testRelease-mariadb.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
 
-{{- define "sharedservices.labels" }}
-app.kubernetes.io/name: {{ .Chart.Name }}
-app.kubernetes.io/instance: {{ .Chart.Name }}-{{ .Release.Name }}
-app.kubernetes.io/version: {{ .Chart.Version }}
-app.kubernetes.io/component: {{ .Chart.Name }}
-app.kubernetes.io/part-of: {{ .Release.Name }}
+{{/*
+  Generate labels
+  $ = global values
+  version/noversion = enable/disable version fields in labels
+  mariadb = desired component name
+  job = object type
+  config = provided function
+  include "memcached.labels" (list $ "version" "mariadb" "deployment" "database")
+  include "memcached.labels" (list $ "version" "mariadb" "job" "config")
+*/}}
+{{- define "mariadb.labels" }}
+{{- $ := index . 0 }}
+{{- $component := index . 2 }}
+{{- $type := index . 3 }}
+{{- $function := index . 4 }}
+app.kubernetes.io/name: {{ $.Chart.Name }}
+app.kubernetes.io/instance: {{ $.Release.Name }}-{{ $.Chart.Name }}
+app.kubernetes.io/component: {{ $.Chart.Name }}-{{ $type }}-{{ $function }}
+app.kubernetes.io/part-of: {{ $.Release.Name }}
+  {{- if eq (index . 1) "version" }}
+app.kubernetes.io/version: {{ $.Values.image | regexFind "[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}" }}
+app.kubernetes.io/managed-by: "helm"
+helm.sh/chart: {{ $.Chart.Name }}-{{ $.Chart.Version | replace "+" "_" }}
+  {{- end }}
 {{- end }}
