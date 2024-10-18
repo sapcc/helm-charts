@@ -4,10 +4,7 @@ kind: Deployment
 metadata:
   name: {{ include "fullName" . }}-backup
   labels:
-    system: openstack
-    type: database
-    component: {{ .Values.name }}
-    {{- include "sharedservices.labels" . | indent 4 }}
+    {{- include "mariadb.labels" (list $ "version" "mariadb" "deployment" "backup") | indent 4 }}
 spec:
   replicas: 1
   revisionHistoryLimit: 5
@@ -15,13 +12,11 @@ spec:
     type: Recreate
   selector:
     matchLabels:
-      app: {{ include "fullName" . }}-backup
+      app.kubernetes.io/component: {{ include "label.component" (list "mariadb" "deployment" "backup") }}
   template:
     metadata:
       labels:
-        app: {{ include "fullName" . }}-backup
-        name: {{ template "fullName" . }}-backup
-        {{- include "sharedservices.labels" . | indent 8 }}
+        {{- include "mariadb.labels" (list $ "version" "mariadb" "deployment" "backup") | indent 8 }}
       annotations:
         checksum/etc: {{ include (print $.Template.BasePath  "/config/_backup_config.yaml.tpl") . | sha256sum }}
 {{- if .Values.metrics.enabled }}
