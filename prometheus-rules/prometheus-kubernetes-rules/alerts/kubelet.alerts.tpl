@@ -35,7 +35,7 @@ groups:
       summary: A Kubelet is DOWN
 
   - alert: KubeletTooManyPods
-    expr: kubelet_running_pod_count > 225
+    expr: kubelet_running_pods > 225
     for: 1h
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
@@ -50,7 +50,7 @@ groups:
       summary: Kubelet {{`{{ $labels.node }}`}} is running {{`{{ $value }}`}} pods, close to the limit of 250
 
   - alert: KubeletFull
-    expr: kubelet_running_pod_count >= 250
+    expr: kubelet_running_pods >= 250
     for: 1h
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
