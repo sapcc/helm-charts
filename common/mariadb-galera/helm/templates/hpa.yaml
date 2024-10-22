@@ -7,7 +7,7 @@ metadata:
   name: {{ (include "nodeNamePrefix" (dict "global" $ "component" "database")) }}
   namespace: {{ $.Release.Namespace }}
   labels:
-    {{- include "sharedservices.labels" $ | indent 4 }}
+    {{- include "mariadb-galera.labels" (list $ "version" "database" "hpa" "database") | indent 4 }}
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
@@ -24,12 +24,14 @@ kind: HorizontalPodAutoscaler
 metadata:
   {{- if eq $.Values.proxy.type "proxysql" }}
   name: {{ (include "nodeNamePrefix" (dict "global" $ "component" "proxysql")) }}
+  labels:
+    {{- include "mariadb-galera.labels" (list $ "version" "proxysql" "hpa" "proxy") | indent 4 }}
   {{- else if eq $.Values.proxy.type "haproxy" }}
   name: {{ (include "nodeNamePrefix" (dict "global" $ "component" "haproxy")) }}
+  labels:
+    {{- include "mariadb-galera.labels" (list $ "version" "haproxy" "hpa" "proxy") | indent 4 }}
   {{- end }}
   namespace: {{ $.Release.Namespace }}
-  labels:
-    {{- include "sharedservices.labels" $ | indent 4 }}
 spec:
   scaleTargetRef:
     apiVersion: apps/v1

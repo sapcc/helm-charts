@@ -5,12 +5,12 @@ metadata:
   namespace: {{ $.Release.Namespace }}
   name: {{ include "commonPrefix" $ }}-database
   labels:
-    {{- include "sharedservices.labels" $ | indent 4 }}
+    {{- include "mariadb-galera.labels" (list $ "version" "database" "pdb" "database") | indent 4 }}
 spec:
   maxUnavailable: {{ $.Values.maxUnavailable.database | default 1 }}
   selector:
     matchLabels:
-      component: "database"
+      app.kubernetes.io/component: {{ (index $.Values.image (printf "%s" "database")).softwarename }}-pdb-database
 {{- if and (hasKey $.Values.mariadb "autostart") (not $.Values.mariadb.autostart) }}
 {{- else if and ($.Values.command) (hasKey $.Values.command "database") }}
 {{- else if and (hasKey $.Values.mariadb.galera.restore "kopia") ($.Values.mariadb.galera.restore.kopia.enabled) }}
@@ -26,12 +26,28 @@ apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
   namespace: {{ $.Release.Namespace }}
-  name: {{ include "commonPrefix" $ }}-proxy
+  name: {{ include "commonPrefix" $ }}-proxysql
+  labels:
+    {{- include "mariadb-galera.labels" (list $ "version" "proxysql" "pdb" "proxy") | indent 4 }}
 spec:
   maxUnavailable: {{ $.Values.maxUnavailable.proxy | default 1 }}
   selector:
     matchLabels:
-      component: "proxy"
+      app.kubernetes.io/component: {{ (index $.Values.image (printf "%s" "proxysql")).softwarename}}-pdb-proxy
+{{- else if and ($.Values.proxy.enabled) (eq $.Values.proxy.type "haproxy") }}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  namespace: {{ $.Release.Namespace }}
+  name: {{ include "commonPrefix" $ }}-haproxy
+  labels:
+    {{- include "mariadb-galera.labels" (list $ "version" "haproxy" "pdb" "proxy") | indent 4 }}
+spec:
+  maxUnavailable: {{ $.Values.maxUnavailable.proxy | default 1 }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: {{ (index $.Values.image (printf "%s" "haproxy")).softwarename }}-pdb-proxy
 {{- end }}
 {{- if and (hasKey $.Values.mariadb "autostart") (not $.Values.mariadb.autostart) }}
 {{- else if and ($.Values.command) (hasKey $.Values.command "database") }}
@@ -42,9 +58,11 @@ kind: PodDisruptionBudget
 metadata:
   namespace: {{ $.Release.Namespace }}
   name: {{ include "commonPrefix" $ }}-backup-kopiaserver
+  labels:
+    {{- include "mariadb-galera.labels" (list $ "version" "kopiabackup" "pdb" "server") | indent 4 }}
 spec:
   maxUnavailable: {{ $.Values.maxUnavailable.kopiaserver | default 1 }}
   selector:
     matchLabels:
-      component: "kopiaserver"
+      app.kubernetes.io/component: {{ (index $.Values.image (printf "%s" "kopiabackup")).softwarename }}-pdb-server
 {{- end }}
