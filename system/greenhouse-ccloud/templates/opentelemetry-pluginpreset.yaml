@@ -24,8 +24,12 @@ spec:
       cluster-type: "storage"
   clusterOptionOverrides:
   {{- range $r := $.Values.openTelemetry.clusters }}
-    clusterName: {{ $r.cluster }}
+  - clusterName: {{ $r.cluster }}
     overrides:
+    - name: openTelemetry.prometheus.additionalLabels
+      value:
+        - name: plugin
+          value: 'kube-monitoring-{{ $r.cluster }}'
     - name: openTelemetry.OpenSearchLogs.endpoint
       value: {{ $r.openSearchLogs.endpoint }}
     - name: openTelemetry.OpenSearchLogs.username
@@ -39,10 +43,10 @@ spec:
           key: password
           name: otel-basic-auth-{{ $r.region }}
     - name: openTelemetry.cluster
-      value: {{ $r.cluster}}
+      value: {{ $r.cluster }}
     - name: openTelemetry.region
       value: {{ $r.region }}
-  {{- end -}}
+  {{ end -}}
   pluginDefinition: opentelemetry
   releaseNamespace: otel
   optionValues:
@@ -50,8 +54,8 @@ spec:
     value: true
   - name: openTelemetry.metricsCollector.enabled
     value: true
-  - name: openTelemetry.prometheus
-    value: {{ .Values.openTelemetry.prometheus }}
+  - name: openTelemetry.prometheus.additionalLabels
+    value: {{ .Values.openTelemetry.prometheus.additionalLabels }}
   - name: openTelemetry.podMonitor.enabled
     value: {{ .Values.openTelemetry.podMonitor.enabled }}
   - name: openTelemetry.admissionWebhooks.certManager.enabled
