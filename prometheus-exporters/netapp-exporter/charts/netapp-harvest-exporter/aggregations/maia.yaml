@@ -55,10 +55,10 @@ groups:
     - record: netapp_volume_write_throughput:pre
       expr: label_replace(netapp_volume_write_data{app="netapp-harvest-exporter-manila"} * on (app, host, svm, volume) group_left(project_id, share_id, share_name, share_type, volume_type) netapp_volume_labels, "vserver", "$1", "svm", "(.*)")
 
-    - record: netapp_volume_read_latency_milliseconds:pre
+    - record: netapp_volume_read_latency_microseconds:pre
       expr: label_replace(netapp_volume_read_latency{app="netapp-harvest-exporter-manila"} * on (app, host, svm, volume) group_left(project_id, share_id, share_name, share_type, volume_type) netapp_volume_labels, "vserver", "$1", "svm", "(.*)")
 
-    - record: netapp_volume_write_latency_milliseconds:pre
+    - record: netapp_volume_write_latency_microseconds:pre
       expr: label_replace(netapp_volume_write_latency{app="netapp-harvest-exporter-manila"} * on (app, host, svm, volume) group_left(project_id, share_id, share_name, share_type, volume_type) netapp_volume_labels, "vserver", "$1", "svm", "(.*)")
 
     #
@@ -112,11 +112,11 @@ groups:
     - record: netapp_volume_write_throughput:maia
       expr: avg by (host, vserver, volume, volume_type, share_name, share_id, share_type, project_id, availability_zone) (netapp_volume_write_throughput:pre{project_id!=""})
 
-    - record: netapp_volume_read_latency_milliseconds:maia
-      expr: avg by (host, vserver, volume, volume_type, share_name, share_id, share_type, project_id, availability_zone) (netapp_volume_read_latency_milliseconds:pre{project_id!=""})
+    - record: netapp_volume_read_latency_microseconds:maia
+      expr: avg by (host, vserver, volume, volume_type, share_name, share_id, share_type, project_id, availability_zone) (netapp_volume_read_latency_microseconds:pre{project_id!=""})
 
-    - record: netapp_volume_write_latency_milliseconds:maia
-      expr: avg by (host, vserver, volume, volume_type, share_name, share_id, share_type, project_id, availability_zone) (netapp_volume_write_latency_milliseconds:pre{project_id!=""})
+    - record: netapp_volume_write_latency_microseconds:maia
+      expr: avg by (host, vserver, volume, volume_type, share_name, share_id, share_type, project_id, availability_zone) (netapp_volume_write_latency_microseconds:pre{project_id!=""})
 
     #
     # fall back to old metrics
