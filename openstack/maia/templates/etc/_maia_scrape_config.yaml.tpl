@@ -165,7 +165,7 @@
   params:
     'match[]':
       # import any tenant-specific metric, except for those which already have been imported
-      - '{__name__=~"^netapp_volume_.+:maia", project_id!=""}'
+      - '{__name__=~"^netapp_.+:maia", project_id!=""}'
 
 
 # iteration over vmware-monitoring values
