@@ -51,10 +51,14 @@ spec:
         imagePullPolicy: IfNotPresent
         command:
         - dumb-init
-        - kubernetes-entrypoint
+{{- if not .Values.barbican_nanny.debug }}
+        - /bin/bash
+        - /scripts/move-secrets.sh
+{{- else }}
+        - sleep
+        - inf
+{{- end }}
         env:
-        - name: COMMAND
-          value: "{{ if not .Values.barbican_nanny.debug }}/bin/bash /scripts/move-secrets.sh{{ else }}sleep inf{{ end }}"
         - name: BARBICAN_DB_SECRET_MOVE_ENABLED
           value: {{ .Values.barbican_nanny.db_secret_move.enabled | quote }}
         - name: BARBICAN_DB_OLD_PROJECT_ID
