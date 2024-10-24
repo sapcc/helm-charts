@@ -1,0 +1,71 @@
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: virtual-garden-etcd-main-backup-s3
+  namespace: garden
+type: Opaque
+data:
+{{- with .Values.garden.backup }}
+  accessKeyID: {{ required "backup.accessKeyID missing" .accessKeyID | b64enc }}
+  secretAccessKey: {{ required "backup.secretAccessKey missing" .secretAccessKey | b64enc }}
+  region: {{ required "backup.region missing" .region | b64enc }}
+{{- end }}
+---
+apiVersion: operator.gardener.cloud/v1alpha1
+kind: Garden
+metadata:
+  name: {{ .Values.garden.name }}
+  namespace: garden
+spec:
+  runtimeCluster:
+    ingress:
+      domains:
+      - runtime-garden.{{ required ".Values.garden.cluster missing" .Values.garden.cluster }}.{{ required ".Values.garden.region missing" .Values.garden.region }}.cloud.sap
+      controller:
+        kind: nginx
+    networking:
+      {{- toYaml .Values.garden.runtimeCluster.networking | nindent 6 }}
+    provider:
+      zones:
+      {{- toYaml .Values.garden.runtimeCluster.zones | nindent 6 }}
+    settings:
+      verticalPodAutoscaler:
+        enabled: false
+      topologyAwareRouting:
+        enabled: false
+  virtualCluster:
+    dns:
+      domains:
+      - virtual-garden.{{ required ".Values.garden.cluster missing" .Values.garden.cluster }}.{{ required ".Values.garden.region missing" .Values.garden.region }}.cloud.sap
+    etcd:
+      main:
+        backup:
+          provider: S3
+          bucketName: {{ required ".buckup.bucket missing" .Values.garden.backup.bucket | quote }}
+          secretRef:
+            name: virtual-garden-etcd-main-backup-s3
+        storage:
+          capacity: 10Gi
+      events:
+        storage:
+          capacity: 10Gi
+    kubernetes:
+      version: {{ .Values.garden.virtualCluster.version | quote}}
+      kubeAPIServer:
+        enableAnonymousAuthentication: true # cluster registry version check
+        oidcConfig:
+          {{- toYaml .Values.garden.virtualCluster.oidcConfig | nindent 10 }}
+    gardener:
+      clusterIdentity: local
+      gardenerAPIServer:
+        admissionPlugins:
+        - name: ShootVPAEnabledByDefault
+      gardenerDashboard: {}
+      gardenerDiscoveryServer: {}
+    maintenance:
+      timeWindow:
+        begin: 140000+0100
+        end: 150000+0100
+    networking:
+      {{- toYaml .Values.garden.virtualCluster.networking | nindent 6 }}
