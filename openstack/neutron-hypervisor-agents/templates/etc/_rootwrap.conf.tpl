@@ -1,13 +1,13 @@
-# Configuration for nova-rootwrap
+# Configuration for neutron-rootwrap
 # This file should be owned by (and only-writeable by) the root user
 
 [DEFAULT]
 # List of directories to load filter definitions from (separated by ',').
 # These directories MUST all be only writeable by root !
-filters_path=/etc/nova/rootwrap.d,/usr/share/nova/rootwrap,/var/lib/openstack/etc/nova/rootwrap.d
+filters_path=/etc/neutron/rootwrap.d,/usr/share/neutron/rootwrap,/var/lib/openstack/etc/neutron/rootwrap.d
 
 # List of directories to search executables in, in case filters do not
-# explicitly specify a full path (separated by ',')
+# explicitely specify a full path (separated by ',')
 # If not specified, defaults to system PATH environment variable.
 # These directories MUST all be only writeable by root !
 exec_dirs=/sbin,/usr/sbin,/bin,/usr/bin,/usr/local/bin,/usr/local/sbin,/var/lib/openstack/bin
@@ -25,3 +25,10 @@ syslog_log_facility=syslog
 # INFO means log all usage
 # ERROR means only log unsuccessful attempts
 syslog_log_level=ERROR
+
+[xenapi]
+# XenAPI configuration is only required by the L2 agent if it is to
+# target a XenServer/XCP compute host's dom0.
+xenapi_connection_url=<None>
+xenapi_connection_username=root
+xenapi_connection_password=<None>
