@@ -10,7 +10,7 @@ metadata:
 data:
   password: {{ required ".Values.openTelemetry.clusters[].openSearchLogs.password missing" $r.openSearchLogs.password | b64enc }}
   username: {{ required ".Values.openTelemetry.clusters[].openSearchLogs.username missing" $r.openSearchLogs.username | b64enc }}
-{{- end -}}
+{{- end }}
 
 ---
 apiVersion: greenhouse.sap/v1alpha1
@@ -56,8 +56,10 @@ spec:
       value: true
     - name: openTelemetry.metricsCollector.enabled
       value: true
-    - name: openTelemetry.podMonitor.enabled
-      value: {{ .Values.openTelemetry.podMonitor.enabled }}
+    - name: openTelemetry.prometheus.podMonitor.enabled
+      value: {{ .Values.openTelemetry.prometheus.podMonitor.enabled }}
+    - name: openTelemetry.prometheus.serviceMonitor.enabled
+      value: {{ .Values.openTelemetry.prometheus.serviceMonitor.enabled }}
     - name: openTelemetry.admissionWebhooks.certManager.enabled
       value: {{ .Values.openTelemetry.admissionWebhooks.certManager.enabled }}
     - name: openTelemetry.admissionWebhooks.autoGenerateCert.enabled
@@ -70,6 +72,4 @@ spec:
       value: {{ .Values.openTelemetry.manager.prometheusRule.defaultRules.enabled }}
     - name: openTelemetry.manager.prometheusRule.enabled
       value: {{ .Values.openTelemetry.manager.prometheusRule.enabled }}
-    - name: openTelemetry.manager.serviceMonitor.enabled
-      value: {{ .Values.openTelemetry.manager.serviceMonitor.enabled }}
 {{- end -}}
