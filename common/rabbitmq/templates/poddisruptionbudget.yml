@@ -4,17 +4,10 @@ kind: PodDisruptionBudget
 metadata:
   name: {{ template "fullname" . }}
   labels:
-    app: {{ template "fullname" . }}
-    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
-    release: "{{ .Release.Name }}"
-    heritage: "{{ .Release.Service }}"
-    type: rabbitmq
-    component: {{ .Release.Name }}
-    system: openstack
-    {{- include "rabbitmq.labels" . | indent 4 }}
+    {{- include "rabbitmq.labels" (list $ "version" "rabbitmq" "poddisruptionbudget" "messagequeue") | indent 4 }}
 spec:
   minAvailable: {{ .Values.pdr.minAvailable | quote }}
   selector:
     matchLabels:
-      app: {{ template "fullname" . }}
+      app.kubernetes.io/instance: {{ template "fullname" . }}
 {{- end }}
