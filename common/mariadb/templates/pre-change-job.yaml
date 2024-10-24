@@ -5,8 +5,7 @@ metadata:
   name: "{{ include "fullName" . }}-pre-change"
   namespace:  {{.Release.Namespace}}
   labels:
-    helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
-    {{- include "sharedservices.labels" . | indent 4 }}
+    {{- include "mariadb.labels" (list $ "version" "mariadb" "job" "database") | indent 4 }}
   annotations:
     "helm.sh/hook": pre-upgrade,pre-rollback
     "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
@@ -19,10 +18,7 @@ spec:
     metadata:
       name: "{{ include "fullName" . }}-pre-change"
       labels:
-        app.kubernetes.io/managed-by: {{ .Release.Service | quote }}
-        app.kubernetes.io/instance: {{ .Release.Name | quote }}
-        helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
-        {{- include "sharedservices.labels" . | indent 8 }}
+        {{- include "mariadb.labels" (list $ "version" "mariadb" "job" "database") | indent 8 }}
     spec:
       restartPolicy: Never
       serviceAccountName: {{ .Values.name }}-db-exec
