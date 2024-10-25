@@ -17,33 +17,69 @@ metadata:
   namespace: {{ .Release.Namespace }}
 spec:
   clusterOptionOverrides:
-  {{- range $thanosCluster := .Values.kubeMonitoring.thanosClusters }}
-  - clusterName: {{ $thanosCluster }}
+  {{- range $cluster, $thanos := .Values.kubeMonitoring.cephClusters }}
+  - clusterName: {{ $cluster }}
     overrides:
+    - name: global.commonLabels
+      value:
+        service: ceph
+        support_group: storage
+    - name: kubeMonitoring.prometheus.prometheusSpec.externalLabels
+      value:
+        cluster: '{{ "{{ .Values.global.greenhouse.clusterName }}" }}'
+        cluster_type: storage
+        organization: ccloud
+        region: '{{ "{{ .Values.global.greenhouse.clusterName | trunc -7 }}" }}'
+    - name: kubeMonitoring.prometheus.prometheusSpec.externalUrl
+      value: '{{ "https://prometheus.st1.{{ .Values.global.greenhouse.clusterName | trunc -7 }}.cloud.sap" }}'
+    # NFS volumes need more permissions to work
+    - name: kubeMonitoring.prometheus.prometheusSpec.securityContext
+      value:
+        fsGroup: 0
+        runAsNonRoot: false
+        runAsUser: 0
+  {{- if index $thanos "thanos" }}
     - name: kubeMonitoring.prometheus.prometheusSpec.thanos.objectStorageConfig.existingSecret.name
-      value: thanos-{{ $thanosCluster }}-metrics-objectstore
+      value: thanos-{{ $cluster }}-metrics-objectstore
     - name: kubeMonitoring.prometheus.prometheusSpec.thanos.objectStorageConfig.existingSecret.key
       value: thanos.yaml
     - name: kubeMonitoring.kube-state-metrics.prometheus.monitor.http.metricRelabelings
       value:
       - action: replace
         regex: .*
-        replacement: {{ $thanosCluster }}
+        replacement: {{ $cluster }}
         sourceLabels:
         - __name__
         targetLabel: cluster
   {{- end }}
+  {{- end }}
+  {{- range $cluster, $thanos := .Values.kubeMonitoring.computeClusters }}
+  - clusterName: {{ $cluster }}
+    overrides:
+    - name: global.commonLabels
+      value:
+        service: kvm
+    - name: kubeMonitoring.prometheus.prometheusSpec.externalLabels
+      value:
+        cluster: '{{ "{{ .Values.global.greenhouse.clusterName }}" }}'
+        cluster_type: compute
+        organization: ccloud
+        region: '{{ "{{ .Values.global.greenhouse.clusterName | trunc -7 }}" }}'
+  {{- end }}
   clusterSelector:
-    matchLabels:
-      greenhouse.sap/pluginpreset: "true"
-      cluster-type: "storage"
+    matchExpressions:
+    - key: greenhouse.sap/pluginpreset
+      operator: In
+      values:
+      - "true"
+    - key: cluster-type
+      operator: In
+      values:
+      - "storage"
+      - "compute"
   plugin:
     disabled: false
     optionValues:
-    - name: global.commonLabels
-      value:
-        service: ceph
-        support_group: storage
     - name: alerts.alertmanagers.hosts
       value:
       - alertmanager-internal.scaleout.eu-de-1.cloud.sap
@@ -62,28 +98,10 @@ spec:
       value: true
     - name: kubeMonitoring.defaultRules.create
       value: false
-    - name: kubeMonitoring.additionalPrometheusRulesMap
-      value: {}
-    - name: kubeMonitoring.prometheus.ingress.enabled
-      value: false
-    - name: kubeMonitoring.prometheus.prometheusSpec.externalLabels
-      value:
-        cluster: '{{ "{{ .Values.global.greenhouse.clusterName }}" }}'
-        cluster_type: storage
-        organization: ccloud
-        region: '{{ "{{ .Values.global.greenhouse.clusterName | trunc -7 }}" }}'
-    - name: kubeMonitoring.prometheus.prometheusSpec.externalUrl
-      value: '{{ "https://prometheus.st1.{{ .Values.global.greenhouse.clusterName | trunc -7 }}.cloud.sap" }}'
     - name: kubeMonitoring.prometheus.prometheusSpec.retention
       value: 30d
     - name: kubeMonitoring.prometheus.prometheusSpec.storageSpec.volumeClaimTemplate.spec.resources.requests.storage
       value: 100Gi
-    # NFS volumes need more permissions to work
-    - name: kubeMonitoring.prometheus.prometheusSpec.securityContext
-      value:
-        fsGroup: 0
-        runAsNonRoot: false
-        runAsUser: 0
     pluginDefinition: kube-monitoring
     releaseNamespace: kube-monitoring
 {{- end -}}
