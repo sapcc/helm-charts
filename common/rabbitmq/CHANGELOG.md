@@ -3,6 +3,10 @@ Rabbitmq CHANGELOG
 
 This file is used to list changes made in each version of the common chart rabbitmq.
 
+0.11.2
+------
+- Append urlquery in `rabbitmq.resolve_secret_urlquery` function for non-vault values
+
 0.11.1
 ------
 nathan.oyler@sap.com

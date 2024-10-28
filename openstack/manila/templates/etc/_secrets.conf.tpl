@@ -1,5 +1,5 @@
 [DEFAULT]
-transport_url = {{ include "rabbitmq.transport_url" . }}
+{{- include "ini_sections.default_transport_url" . }}
 
 {{- include "ini_sections.database" . }}
 

@@ -125,20 +125,27 @@ pxc:
   configuration:
     performance_schema: true
     options:
+      skip-name-resolve: 1
       wsrep_provider_options: "gcache.size=1G; gcache.recover=yes"
-      wsrep_slave_threads:  4
-      wsrep_retry_autocommit:  3
+      wsrep_slave_threads: 4
+      wsrep_retry_autocommit: 3
       binlog_format: ROW
+      binlog_expire_logs_seconds: 345600  # default 30 days -> 4 days
+      net_read_timeout: 120
+      net_write_timeout: 300
+      connect_timeout: 30
+      wait_timeout: 3800
+      interactive_timeout: 1800
       max_connections: 1024
-      max_connect_errors: "4294967295" # to avoid failed connections because of loadbalancer health checks
-      innodb_flush_log_at_trx_commit:  0
-      innodb_flush_method : O_DIRECT
+      max_connect_errors: "4294967295"  # to avoid failed connections because of loadbalancer health checks
+      innodb_flush_log_at_trx_commit: 0
+      innodb_flush_method: O_DIRECT
       innodb_file_per_table: 1
       innodb_autoinc_lock_mode: 2
       innodb_buffer_pool_size: 1024M
       innodb_log_file_size: 512M
       innodb_open_files: 4000
-      innodb_stats_on_metadata:  0
+      innodb_stats_on_metadata: 0
       innodb_thread_concurrency: 0
       innodb_read_io_threads: 8
       innodb_write_io_threads: 8
@@ -324,6 +331,7 @@ backup:
     tag: 1.15.0-pxc8.0-backup-pxb8.0.35
     override: null
   imagePullPolicy: Always
+  backoffLimit: 1
   priorityClassName: openstack-service-critical
   resources:
     requests: {}

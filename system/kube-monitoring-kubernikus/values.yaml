@@ -45,7 +45,8 @@ prometheus-kubernetes-rules:
 
 prometheus-node-exporter:
   image:
-    repository: keppel.global.cloud.sap/ccloud-dockerhub-mirror/prom/node-exporter
+    registry: keppel.global.cloud.sap
+    repository: ccloud-dockerhub-mirror/prom/node-exporter
 
   service:
     annotations:
@@ -310,16 +311,19 @@ falco:
 
   extra:
     args:
-      - -t
-      - pci
       - -v
       - --unbuffered
       - -o
       - json_output=true
 
   falco:
-    rules_file:
+    rules_files:
       - /etc/falco/rules.d
+    rules:
+      - disable:
+          rule: "*"
+      - enable:
+          tag: pci
 
 x509-certificate-exporter:
   enabled: false

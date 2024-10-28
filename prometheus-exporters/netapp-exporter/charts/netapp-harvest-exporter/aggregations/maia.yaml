@@ -55,10 +55,10 @@ groups:
     - record: netapp_volume_write_throughput:pre
       expr: label_replace(netapp_volume_write_data{app="netapp-harvest-exporter-manila"} * on (app, host, svm, volume) group_left(project_id, share_id, share_name, share_type, volume_type) netapp_volume_labels, "vserver", "$1", "svm", "(.*)")
 
-    - record: netapp_volume_read_latency_milliseconds:pre
+    - record: netapp_volume_read_latency_microseconds:pre
       expr: label_replace(netapp_volume_read_latency{app="netapp-harvest-exporter-manila"} * on (app, host, svm, volume) group_left(project_id, share_id, share_name, share_type, volume_type) netapp_volume_labels, "vserver", "$1", "svm", "(.*)")
 
-    - record: netapp_volume_write_latency_milliseconds:pre
+    - record: netapp_volume_write_latency_microseconds:pre
       expr: label_replace(netapp_volume_write_latency{app="netapp-harvest-exporter-manila"} * on (app, host, svm, volume) group_left(project_id, share_id, share_name, share_type, volume_type) netapp_volume_labels, "vserver", "$1", "svm", "(.*)")
 
     #
@@ -112,11 +112,11 @@ groups:
     - record: netapp_volume_write_throughput:maia
       expr: avg by (host, vserver, volume, volume_type, share_name, share_id, share_type, project_id, availability_zone) (netapp_volume_write_throughput:pre{project_id!=""})
 
-    - record: netapp_volume_read_latency_milliseconds:maia
-      expr: avg by (host, vserver, volume, volume_type, share_name, share_id, share_type, project_id, availability_zone) (netapp_volume_read_latency_milliseconds:pre{project_id!=""})
+    - record: netapp_volume_read_latency_microseconds:maia
+      expr: avg by (host, vserver, volume, volume_type, share_name, share_id, share_type, project_id, availability_zone) (netapp_volume_read_latency_microseconds:pre{project_id!=""})
 
-    - record: netapp_volume_write_latency_milliseconds:maia
-      expr: avg by (host, vserver, volume, volume_type, share_name, share_id, share_type, project_id, availability_zone) (netapp_volume_write_latency_milliseconds:pre{project_id!=""})
+    - record: netapp_volume_write_latency_microseconds:maia
+      expr: avg by (host, vserver, volume, volume_type, share_name, share_id, share_type, project_id, availability_zone) (netapp_volume_write_latency_microseconds:pre{project_id!=""})
 
     #
     # fall back to old metrics
@@ -163,8 +163,10 @@ groups:
       expr: |
         sum(
           netapp_snapmirror_labels *
-            on(destination_volume) group_left()
-            label_replace(
+            on(destination_volume) group_left(
+              destination_cluster, destination_share_id, destination_share_name,
+              destination_project_id, project_id)
+            label_join(
             label_replace(
             label_replace(
             label_replace(
@@ -173,27 +175,29 @@ groups:
                 netapp_volume_labels{app="netapp-harvest-exporter-manila", volume=~"share.*"}
               ) by (filer, project_id, share_id, share_name, svm, volume),
               "destination_cluster", "$1", "filer", "(.*)"),
-              "destination_project_id", "$1", "project_id", "(.*)"),
               "destination_share_id", "$1", "share_id", "(.*)"),
               "destination_share_name", "$1", "share_name", "(.*)"),
-              "destination_volume", "$1", "volume", "(.*)")
+              "destination_volume", "$1", "volume", "(.*)"),
+              "destination_project_id", "", "project_id")
         ) by (
           availability_zone, derived_relationship_type, destination_cluster,
           destination_location, destination_node, destination_project_id,
           destination_share_id, destination_share_name, destination_volume,
           destination_vserver, group_type, healthy, last_transfer_error,
-          last_transfer_type, local,  region, policy_type, protectedBy,
-          protectionSourceType, relationship_id, relationship_status,
-          relationship_type, schedule, source_cluster, source_volume,
-          source_vserver, unhealthy_reason
+          last_transfer_type, local,  region, policy_type, project_id,
+          protectedBy, protectionSourceType, relationship_id,
+          relationship_status, relationship_type, schedule, source_cluster,
+          source_volume, source_vserver, unhealthy_reason
         )
 
     - record: netapp_snapmirror_lag_time:maia
       expr: |
         sum(
           netapp_snapmirror_lag_time *
-            on(destination_volume) group_left()
-            label_replace(
+            on(destination_volume) group_left(
+              destination_cluster, destination_share_id, destination_share_name,
+              destination_project_id, project_id)
+            label_join(
             label_replace(
             label_replace(
             label_replace(
@@ -202,23 +206,25 @@ groups:
                 netapp_volume_labels{app="netapp-harvest-exporter-manila", volume=~"share.*"}
               ) by (filer, project_id, share_id, share_name, svm, volume),
               "destination_cluster", "$1", "filer", "(.*)"),
-              "destination_project_id", "$1", "project_id", "(.*)"),
               "destination_share_id", "$1", "share_id", "(.*)"),
               "destination_share_name", "$1", "share_name", "(.*)"),
-              "destination_volume", "$1", "volume", "(.*)")
+              "destination_volume", "$1", "volume", "(.*)"),
+              "destination_project_id", "", "project_id")
         ) by (
           destination_cluster, destination_location, destination_node,
           destination_project_id, destination_share_id, destination_share_name,
           destination_volume, destination_vserver, source_cluster,
-          source_volume, source_vserver
+          source_volume, source_vserver, project_id
         )
 
     - record: netapp_snapmirror_last_transfer_duration:maia
       expr: |
         sum(
           netapp_snapmirror_last_transfer_duration *
-            on(destination_volume) group_left()
-            label_replace(
+            on(destination_volume) group_left(
+              destination_cluster, destination_share_id, destination_share_name,
+              destination_project_id, project_id)
+            label_join(
             label_replace(
             label_replace(
             label_replace(
@@ -227,13 +233,13 @@ groups:
                 netapp_volume_labels{app="netapp-harvest-exporter-manila", volume=~"share.*"}
               ) by (filer, project_id, share_id, share_name, svm, volume),
               "destination_cluster", "$1", "filer", "(.*)"),
-              "destination_project_id", "$1", "project_id", "(.*)"),
               "destination_share_id", "$1", "share_id", "(.*)"),
               "destination_share_name", "$1", "share_name", "(.*)"),
-              "destination_volume", "$1", "volume", "(.*)")
+              "destination_volume", "$1", "volume", "(.*)"),
+              "destination_project_id", "", "project_id")
         ) by (
           destination_cluster, destination_location, destination_node,
           destination_project_id, destination_share_id, destination_share_name,
           destination_volume, destination_vserver, source_cluster,
-          source_volume, source_vserver
+          source_volume, source_vserver, project_id
         )

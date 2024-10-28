@@ -25,6 +25,7 @@ RUN apt-get update \
   && /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y \
   && pg_conftool /etc/postgresql-common/createcluster.conf set create_main_cluster false \
   && apt-get install --no-install-recommends -y \
+    # match the installed versions with backup-tools!
     postgresql-15 \
     postgresql-16 \
     postgresql-17 \

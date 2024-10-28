@@ -46,26 +46,7 @@ spec:
 {{ tuple . "designate" "api" | include "kubernetes_pod_anti_affinity" | indent 6 }}
       {{- include "utils.proxysql.pod_settings" . | indent 6 }}
       initContainers:
-      - name: kubernetes-entrypoint
-        image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/loci-designate:{{ required ".Values.image_version_designate is missing" .Values.image_version_designate }}
-        imagePullPolicy: IfNotPresent
-        command:
-          - kubernetes-entrypoint
-        env:
-            - name: NAMESPACE
-              value: {{ .Release.Namespace }}
-            - name: DEPENDENCY_JOBS
-              value: {{ include "migration_job_name" . }}
-            - name: DEPENDENCY_SERVICE
-{{- if .Values.percona_cluster.enabled }}
-              value: "{{ .Release.Name }}-percona-pxc,{{ .Release.Name }}-rabbitmq,{{ .Release.Name }}-memcached"
-{{- else if .Values.rabbitmq_cluster.enabled }}
-              value: "{{ .Release.Name }}-mariadb,{{ .Release.Name }}-rabbitmq-cluster,{{ .Release.Name }}-memcached"
-{{- else }}
-              value: "{{ .Release.Name }}-mariadb,{{ .Release.Name }}-rabbitmq,{{ .Release.Name }}-memcached"
-{{- end }}
-            - name: COMMAND
-              value: "true"
+      {{- tuple . (dict "service" (include "designate.service_dependencies" . ) "jobs" (include "migration_job_name" . )) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 8 }}
       containers:
         - name: designate-api
           image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/loci-designate:{{ required ".Values.image_version_designate is missing" .Values.image_version_designate }}
@@ -112,7 +93,7 @@ spec:
 {{- if .Values.global_setup }}
               - "set -e; curl --fail 127.0.0.1:{{.Values.global.designate_api_port_internal}}/healthcheck; nc -zvw3 designate-global-percona-pxc 3306"
 {{- else }}
-              - "set -e; curl --fail 127.0.0.1:{{.Values.global.designate_api_port_internal}}/healthcheck; nc -zvw3 designate-mariadb 3306"
+              - "set -e; curl --fail 127.0.0.1:{{.Values.global.designate_api_port_internal}}/healthcheck; nc -zvw3 {{ include "utils.db_host" . }} 3306"
 {{- end }}
             initialDelaySeconds: 5
             periodSeconds: 10
