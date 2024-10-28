@@ -11,10 +11,12 @@
     {{- $add_urlquery := index . 1 -}}
     {{- if (hasPrefix "vault+kvv2" $str) -}}
         {{"{{"}} resolve "{{ $str }}" {{ if $add_urlquery }}| urlquery {{ end }}{{"}}"}}
+    {{- else if (hasPrefix "{{" $str) }}
+        {{- $str }}
     {{- else if $add_urlquery }}
         {{- $str | urlquery }}
     {{- else }}
-        {{- $str  }}
+        {{- $str }}
     {{- end }}
 {{- end -}}
 
