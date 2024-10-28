@@ -2,7 +2,10 @@ global:
   domain: cloud.sap
   clusterType: metal
 
+  linkerd_requested: true
+
 owner-info:
+  service: prometheus
   support-group: observability
   maintainers: 
     - Tommy Sauer
@@ -12,12 +15,10 @@ owner-info:
 prometheus-server:
   name: storage
 
-  retentionTime: 1d
-
   alertmanagers:
     hosts:
-      - alertmanager.scaleout.eu-de-1.cloud.sap
-      - alertmanager.scaleout.eu-nl-1.cloud.sap
+      - alertmanager-internal.scaleout.eu-de-1.cloud.sap
+      - alertmanager-internal.scaleout.eu-nl-1.cloud.sap
   ingress:
     enabled: true
     authentication:
@@ -32,16 +33,19 @@ prometheus-server:
 
   persistence:
     enabled: true
-    accessMode: ReadWriteOnce
-    size: 10Gi
-
-  alerts:
-    tier: monitor
 
   resources:
     requests:
       cpu: 500m
       memory: 3Gi
+
+  vpaUpdateMode: "Auto"
+  vpaResources:
+    prometheus:
+      containerName: "prometheus"
+      maxAllowed:
+        memory: "50Gi"
+
   thanos:
     enabled: true
 
@@ -55,10 +59,25 @@ prometheus-server:
     pods:
       enabled: true
 
+  alerts:
+    thanos:
+      enabled: true
+      name: metal
+
 thanos:
   name: storage
-  deployWholeThanos: true
   clusterDomain: kubernetes
+
+  compactor:
+    dataVolume:
+      enabled: true
+
+  deployWholeThanos: true
+
+  grpcIngress:
+    enabled: true
+    hosts:
+      - thanos-storage-grpc
   serviceAccount:
     create: false
 

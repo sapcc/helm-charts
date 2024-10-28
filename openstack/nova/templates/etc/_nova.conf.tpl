@@ -34,9 +34,10 @@ prepare_empty_host_for_spawning_interval = 600
 dhcp_domain = openstack.{{ required ".Values.global.region is missing" .Values.global.region }}.{{ required ".Values.global.tld is missing" .Values.global.tld }}
 {{- end }}
 
-{{ include "ini_sections.default_transport_url" . }}
-
 {{ template "utils.snippets.debug.eventlet_backdoor_ini" "nova" }}
+
+[database]
+{{- include "ini_sections.database_options_mysql" . }}
 
 [api]
 compute_link_prefix = https://{{include "nova_api_endpoint_host_public" .}}:{{.Values.global.novaApiPortPublic}}
@@ -57,44 +58,7 @@ until_refresh = {{ .Values.usage_until_refresh | default 0 }}
 
 {{- include "osprofiler" . }}
 
-[spice]
-enabled = {{ .Values.consoles.spice.enabled }}
-{{- if .Values.consoles.spice.enabled }}
-html5proxy_base_url = https://{{include "nova_console_endpoint_host_public" .}}:{{.Values.global.novaConsolePortPublic}}/spicehtml5/spice_auto.html
-{{- end }}
-
-[vnc]
-enabled = {{ .Values.consoles.novnc.enabled }}
-{{- if .Values.consoles.novnc.enabled }}
-server_listen = $my_ip
-server_proxyclient_address = $my_ip
-novncproxy_base_url = https://{{include "nova_console_endpoint_host_public" .}}:{{ .Values.global.novaConsolePortPublic }}/novnc/vnc_auto.html?path=/novnc/websockify
-novncproxy_host = 0.0.0.0
-novncproxy_port = {{ .Values.consoles.novnc.portInternal }}
-{{- end }}
-
-[serial_console]
-enabled = {{ .Values.consoles.serial.enabled }}
-{{- if .Values.consoles.serial.enabled }}
-base_url = https://{{include "nova_console_endpoint_host_public" .}}:{{ .Values.global.novaConsolePortPublic }}/serial
-{{- end }}
-
-[shellinabox]
-enabled = {{ .Values.consoles.shellinabox.enabled }}
-{{- if .Values.consoles.shellinabox.enabled }}
-host = 0.0.0.0
-port = {{ .Values.consoles.shellinabox.portInternal }}
-base_url = https://{{include "nova_console_endpoint_host_public" .}}:{{ .Values.global.novaConsolePortPublic }}/shellinabox
-proxyclient_url = https://{{include "ironic_console_endpoint_host_public" .}}
-{{- end }}
-
-[mks]
-enabled = {{ .Values.consoles.mks.enabled }}
-{{- if .Values.consoles.mks.enabled }}
-mksproxy_base_url = https://{{include "nova_console_endpoint_host_public" .}}:{{.Values.global.novaConsolePortPublic}}/mks/vnc_auto.html?path=mks/websockify
-{{- end }}
-
-{{- include "ini_sections.oslo_messaging_rabbit" .}}
+{{ include "ini_sections.oslo_messaging_rabbit" .}}
 
 [oslo_concurrency]
 lock_path = /var/lib/nova/tmp
@@ -107,8 +71,6 @@ os_region_name = {{.Values.global.region}}
 cross_az_attach={{.Values.cross_az_attach}}
 auth_url = http://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default "5000" }}/v3
 auth_type = v3password
-username = {{ .Values.global.nova_service_user | default "nova" }}{{ .Values.global.user_suffix }}
-password = {{ required ".Values.global.nova_service_password is missing" .Values.global.nova_service_password }}
 user_domain_name = {{.Values.global.keystone_service_domain | default "Default" }}
 region_name = {{.Values.global.region}}
 project_name = {{.Values.global.keystone_service_project | default "service" }}
@@ -116,12 +78,9 @@ project_domain_name = {{.Values.global.keystone_service_domain | default "Defaul
 http_retries = {{.Values.cinder_http_retries}}
 
 [neutron]
-metadata_proxy_shared_secret = {{ .Values.global.nova_metadata_secret }}
 service_metadata_proxy = true
 auth_url = http://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default "5000" }}/v3
 auth_type = v3password
-username = {{ .Values.global.nova_service_user | default "nova" }}{{ .Values.global.user_suffix }}
-password = {{ required ".Values.global.nova_service_password is missing" .Values.global.nova_service_password }}
 user_domain_name = {{.Values.global.keystone_service_domain | default "Default" }}
 region_name = {{.Values.global.region}}
 project_name = {{.Values.global.keystone_service_project | default "service" }}
@@ -135,8 +94,6 @@ auth_version = v3
 auth_interface = internal
 www_authenticate_uri = https://{{include "keystone_api_endpoint_host_public" .}}/v3
 auth_url = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
-username = {{ .Values.global.nova_service_user | default "nova" }}{{ .Values.global.user_suffix }}
-password = {{ required ".Values.global.nova_service_password is missing" .Values.global.nova_service_password }}
 user_domain_name = "{{.Values.global.keystone_service_domain | default "Default" }}"
 project_name = "{{.Values.global.keystone_service_project | default "service" }}"
 project_domain_name = "{{.Values.global.keystone_service_domain | default "Default" }}"
@@ -162,15 +119,11 @@ enable_proxy_headers_parsing = true
 auth_type = v3password
 auth_version = v3
 auth_url = http://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default "5000" }}/v3
-username = {{ .Values.global.nova_service_user | default "nova" }}{{ .Values.global.user_suffix }}
-password = {{ required ".Values.global.nova_service_password is missing" .Values.global.nova_service_password }}
 user_domain_name = "{{.Values.global.keystone_service_domain | default "Default" }}"
 project_name = "{{.Values.global.keystone_service_project | default "service" }}"
 project_domain_name = "{{.Values.global.keystone_service_domain | default "Default" }}"
 valid_interfaces = internal
 region_name = {{.Values.global.region}}
-
-{{- include "ini_sections.audit_middleware_notifications" . }}
 
 {{- include "ini_sections.cache" . }}
 
@@ -184,8 +137,6 @@ auth_type = v3password
 auth_version = v3
 auth_interface = internal
 auth_url = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
-username = {{ .Values.global.nova_service_user | default "nova" }}{{ .Values.global.user_suffix }}
-password = {{ required ".Values.global.nova_service_password is missing" .Values.global.nova_service_password }}
 user_domain_name = "{{.Values.global.keystone_service_domain | default "Default" }}"
 project_name = "{{.Values.global.keystone_service_project | default "service" }}"
 project_domain_name = "{{.Values.global.keystone_service_domain | default "Default" }}"

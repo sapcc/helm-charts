@@ -22,7 +22,11 @@
     {{- if .Values.proxysql }}
       {{- if .Values.proxysql.mode }}
 - name: proxysql
-  image: {{ required ".Values.global.dockerHubMirror is missing" .Values.global.dockerHubMirror }}/{{ default "proxysql/proxysql" .Values.proxysql.image }}:{{ .Values.proxysql.imageTag | default "2.4.7-debian" }}
+  image: {{ if .Values.proxysql.imageRepository -}}
+            {{ .Values.proxysql.imageRepository }}
+        {{- else -}}
+          {{ required ".Values.global.dockerHubMirror is missing" .Values.global.dockerHubMirror }}/{{ default "proxysql/proxysql" .Values.proxysql.image }}
+        {{- end }}:{{ .Values.proxysql.imageTag | default "2.4.7-debian" }}
   imagePullPolicy: IfNotPresent
   command: ["proxysql"]
   args: ["--config", "/etc/proxysql/proxysql.cnf", "--exit-on-error", "--foreground", "--idle-threads", "--admin-socket", "/run/proxysql/admin.sock", "--no-version-check", "-D", "/run/proxysql"]
@@ -61,6 +65,7 @@
   - mountPath: /etc/proxysql
     name: etcproxysql
     {{- include "utils.proxysql.volume_mount" . | indent 2 }}
+    {{- include "utils.trust_bundle.volume_mount" . | indent 2 }}
       {{- end }}
     {{- end }}
   {{- end }}
@@ -72,8 +77,8 @@
 - name: runproxysql
   emptyDir: {}
 - name: etcproxysql
-  configMap:
-    name: {{ .Release.Name }}-proxysql-etc
+  secret:
+    secretName: {{ .Release.Name }}-proxysql-etc
     {{- end }}
   {{- end }}
 {{- end }}
@@ -82,23 +87,34 @@
 {{- define "utils.proxysql.pod_settings" }}
   {{- if .Values.proxysql }}
     {{- if .Values.proxysql.mode }}
-    {{- $envAll := . }}
-    {{- $dbs := dict }}
-    {{- range $d := $envAll.Chart.Dependencies }}
+      {{- $envAll := . }}
+      {{- $dbs := dict }}
+      {{/* Default: create mariadb and db hostAliases based on present chart dependencies */}}
+      {{- range $d := $envAll.Chart.Dependencies }}
         {{- if hasPrefix "mariadb" $d.Name }}
-            {{- $_ := set $dbs $d.Name (get $envAll.Values $d.Name) }}
+          {{- $_ := set $dbs $d.Name (merge (get $envAll.Values $d.Name) (dict "hostAliasesSuffix" "mariadb")) }}
         {{- end }}
-    {{- end }}
-    {{- range $d := $envAll.Values.proxysql.force_enable }}
-        {{- $_ := set $dbs $d (get $envAll.Values $d) }}
-    {{- end }}
-    {{- $dbKeys := keys $dbs | sortAlpha }}
+        {{- if hasPrefix "pxc" $d.Name }}
+          {{- $_ := set $dbs $d.Name (merge (get $envAll.Values $d.Name) (dict "hostAliasesSuffix" "db-haproxy")) }}
+        {{- end }}
+      {{- end }}
+      {{/* Option: add hostAliases base on proxysql.force_enable values */}}
+      {{- range $d := $envAll.Values.proxysql.force_enable }}
+        {{- if hasPrefix "mariadb" $d }}
+          {{- $_ := set $dbs $d (merge (get $envAll.Values $d) (dict "hostAliasesSuffix" "mariadb")) }}
+        {{- else if hasPrefix "pxc" $d }}
+          {{- $_ := set $dbs $d (merge (get $envAll.Values $d) (dict "hostAliasesSuffix" "db-haproxy")) }}
+        {{- else }}
+          {{ fail (printf "unknown database type: %s" $d) }}
+        {{- end }}
+      {{- end }}
+      {{- $dbKeys := keys $dbs | sortAlpha }}
 hostAliases:
 - ip: "127.0.0.1"
   hostnames:
-    {{- range $index, $dbKey := $dbKeys }}
+      {{- range $index, $dbKey := $dbKeys }}
         {{- $db := get $dbs $dbKey }}
-  - {{ print $db.name "-mariadb" | quote }}
+  - {{ printf "%s-%s" $db.name $db.hostAliasesSuffix | quote }}
       {{- end }}
     {{- end }}
   {{- end }}

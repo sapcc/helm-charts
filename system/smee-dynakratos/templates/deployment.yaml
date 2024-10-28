@@ -1,0 +1,46 @@
+kind: Deployment
+apiVersion: apps/v1
+
+metadata:
+  name: {{ .Release.Name }}-api
+  
+spec:
+  revisionHistoryLimit: 5
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  selector:
+    matchLabels:
+      name: {{ .Release.Name }}-api
+  template:
+    metadata:
+      labels:
+        name: {{ .Release.Name }}-api
+      annotations:
+        kubectl.kubernetes.io/default-container: api
+        {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+        linkerd.io/inject: enabled
+        {{- end }}
+    spec:
+      automountServiceAccountToken: false
+      enableServiceLinks: false
+      containers:
+        - name: api
+          image: {{.Values.global.ghcrIoMirror | required ".Values.global.ghcrIoMirror not found"}}/probot/smee.io:{{.Values.image_tag}}
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: app
+              containerPort: 3000
+          resources:
+            limits:
+              cpu: '2'
+              memory: '256Mi'
+            requests:
+              cpu: '0.1'
+              memory: '256Mi'
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true

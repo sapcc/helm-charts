@@ -1,0 +1,73 @@
+{{- range $source_region, $source := .Values.source }}
+apiVersion: batch/v1
+kind: CronJob
+
+metadata:
+  name: backup-replication-from-{{ $source_region }}
+  labels:
+    component: backup-replication
+
+spec:
+  concurrencyPolicy: Replace # restarting a hung s-h-i should be safe (Swift will not store objects if the upload connection resets)
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  schedule: "59 * * * *"
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            component: backup-replication-from-{{ $source_region }}
+          annotations:
+            checksum/config: {{ include (print $.Template.BasePath "/replication-configmap.yaml") $ | sha256sum }}
+            checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") $ | sha256sum }}
+            kubectl.kubernetes.io/default-container: swift-http-import
+            {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+            linkerd.io/inject: enabled
+            {{- end }}
+        spec:
+          restartPolicy: Never # restarting a failed s-h-i does not work because the linkerd-proxy sidecar has been torn down when the s-h-i container shut down
+          volumes:
+          - name: config
+            configMap:
+              name: swift-http-import
+          containers:
+          - name: swift-http-import
+            image: {{ $.Values.global.registry | required ".Values.global.registry not found" }}/swift-http-import:{{ $.Values.swift_http_import.image_tag | required ".Values.swift_http_import.image_tag not found" }}
+            imagePullPolicy: IfNotPresent
+            args:
+            - /etc/swift-http-import/{{ $source_region }}.yaml
+            env:
+            - name: TARGET_AUTH_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: backup-replication-secret
+                  key: target_auth_password
+            - name: SOURCE_AUTH_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: backup-replication-secret
+                  key: {{ $source_region }}_auth_password
+            - name: LOG_TRANSFERS
+              value: 'true'
+            - name: DEBUG
+              value: 'false' # can be overridden manually as required
+            {{- if not (and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested) }}
+            - name: LINKERD_AWAIT_DISABLED
+              value: "Linkerd was not enabled or not requested"
+            {{- end }}
+            securityContext:
+              runAsNonRoot: true
+            volumeMounts:
+            - name: config
+              mountPath: /etc/swift-http-import
+            resources:
+              # observed usage in qa-de-1 during runs: CPU <= 30m, RAM up to 60 MiB
+              limits:
+                cpu: '50m'
+                memory: '100Mi'
+              requests:
+                cpu: '10m'
+                memory: '50Mi'
+---
+{{- end }}

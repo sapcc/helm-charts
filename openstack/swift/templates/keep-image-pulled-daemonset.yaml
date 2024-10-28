@@ -27,8 +27,8 @@ spec:
     metadata:
       labels:
         app: keep-image-pulled
-        alert-tier: os
-        alert-service: swift
+      annotations:
+        linkerd.io/inject: disabled # This pod does not interact with the network.
     spec:
       # NOTE: observed resource usage in eu-de-1 (as of 2020-02-26)
       # - no measurable CPU usage once started
@@ -45,10 +45,10 @@ spec:
             runAsGroup:   65534 # nobody
           resources:
             requests:
-              cpu: "1m"
+              cpu: "5m"
               memory: "32Mi"
             limits:
-              cpu: "1m"
+              cpu: "5m"
               memory: "32Mi"
         - name: swift-rings
           image: {{ include "swift_rings_image" . }}
@@ -60,10 +60,10 @@ spec:
             runAsGroup:   65534 # nobody
           resources:
             requests:
-              cpu: "1m"
+              cpu: "5m"
               memory: "32Mi"
             limits:
-              cpu: "1m"
+              cpu: "5m"
               memory: "32Mi"
         - name: haproxy
           image: {{ .Values.global.registryAlternateRegion}}/swift-haproxy:{{ .Values.image_version_haproxy }}
@@ -75,10 +75,10 @@ spec:
             runAsGroup:   65534 # nobody
           resources:
             requests:
-              cpu: "1m"
+              cpu: "5m"
               memory: "32Mi"
             limits:
-              cpu: "1m"
+              cpu: "5m"
               memory: "32Mi"
         - name: statsd
           image: {{ .Values.global.dockerHubMirrorAlternateRegion }}/prom/statsd-exporter:{{ .Values.image_version_auxiliary_statsd_exporter }}
@@ -88,10 +88,10 @@ spec:
             runAsNonRoot: true
           resources:
             requests:
-              cpu: "1m"
+              cpu: "5m"
               memory: "32Mi"
             limits:
-              cpu: "1m"
+              cpu: "5m"
               memory: "32Mi"
 
 {{- end }}

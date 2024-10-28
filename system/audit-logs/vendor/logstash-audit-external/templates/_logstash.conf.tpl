@@ -12,10 +12,10 @@ input {
   http {
     port  => {{.Values.input_http_port}}
     tags => ["audit"]
-    user => '{{.Values.global.elk_elasticsearch_http_user}}'
-    password => '{{.Values.global.elk_elasticsearch_http_password}}'
+    user => '{{.Values.global.logstash_external_http_user}}'
+    password => '${AUDIT_HTTP_IN}'
 {{ if eq .Values.global.clusterType "metal" -}}
-    ssl => true
+    ssl_enabled => true
     ssl_certificate => '/tls-secret/tls.crt'
     ssl_key => '/usr/share/logstash/config/tls.key'
     threads => 12
@@ -77,11 +77,6 @@ filter {
       replace => { "type" => "audit" }
       add_field => { "[sap][cc][audit][source]" => "remoteboard"}
     }
-    {{- if .Values.syslog.elkOutputEnabled }}
-    clone {
-      clones => ['audit', 'syslog']
-    }
-    {{- end }}
   }
 
 # Set source for ucs central instances
@@ -99,11 +94,6 @@ filter {
         replace => { "type" => "audit" }
         add_field => { "[sap][cc][audit][source]" => "ucsm" }
       }
-    {{- if .Values.syslog.elkOutputEnabled }}
-      clone {
-        clones => ['audit', 'syslog']
-      }
-    {{- end }}
     }
   }
 
@@ -113,23 +103,10 @@ filter {
         replace => { "type" => "audit" }
         add_field => { "[sap][cc][audit][source]" => "hsm" }
     }
-    {{- if .Values.syslog.elkOutputEnabled }}
-    clone {
-      clones => ['audit', 'syslog']
-    }
-    {{- end }}
   }
-  {{- if .Values.syslog.elkOutputEnabled }}
-  if [type] == "syslog" and [sap][cc][audit][source] {
-    mutate{
-      remove_field => "[sap][cc][audit][source]"
-    }
-  }
-  {{- else}}
   if [type] == "syslog" {
     drop{}
   }
-  {{- end }}
  }
  {{- end }}
  {{- if eq .Values.global.clusterType "metal" }}
@@ -181,10 +158,13 @@ filter {
         {{ end -}}
       }
 
-      if "awx" in [cluster_host_id] {
+      if "awx" in [logger_name] {
         mutate {
           add_field => { "[sap][cc][audit][source]"  => "awx" }
-          remove_field => [ "event_data" ]
+          remove_field => [ "[event_data][artifact_data]", "[event_data][changed]", "[event_data][dark]",
+                            "[event_data][failures]", "[event_data][ignored]", "[event_data][ok]",
+                            "[event_data][processed]", "[event_data][res]", "[event_data][rescued]",
+                            "[event_data][skipped]" ]
         }
       }
 
@@ -208,38 +188,24 @@ filter {
 output {
   if [sap][cc][audit][source] == "awx" {
     http {
-      cacert => "/usr/share/logstash/config/ca.pem"
+      ssl_certificate_authorities => ["/usr/share/logstash/config/ca.pem"]
       url => "https://{{ .Values.global.forwarding.audit_awx.host }}"
       format => "json"
       http_method => "post"
     }
   } else if [sap][cc][audit][source] == "flatcar" {
     http {
-      cacert => "/usr/share/logstash/config/ca.pem"
+      ssl_certificate_authorities => ["/usr/share/logstash/config/ca.pem"]
       url => "https://{{ .Values.global.forwarding.audit_auditbeat.host }}"
       format => "json"
       http_method => "post"
     }
   } else if [type] == "audit" or "audit" in [tags] {
     http {
-      cacert => "/usr/share/logstash/config/ca.pem"
+      ssl_certificate_authorities => ["/usr/share/logstash/config/ca.pem"]
       url => "https://{{ .Values.global.forwarding.audit.host }}"
       format => "json"
       http_method => "post"
     }
   }
-{{- if .Values.syslog.elkOutputEnabled }}
-  elseif [type] == "syslog" {
-    elasticsearch {
-      index => "syslog-%{+YYYY.MM.dd}"
-      template => "/audit-etc/syslog.json"
-      template_name => "syslog"
-      template_overwrite => true
-      hosts => ["{{.Values.global.elk_elasticsearch_endpoint_host_scaleout}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.global.elk_elasticsearch_ssl_port}}"]
-      user => "{{.Values.global.elk_elasticsearch_data_user}}"
-      password => "{{.Values.global.elk_elasticsearch_data_password}}"
-      ssl => true
-    }
-  }
-{{- end }}
 }

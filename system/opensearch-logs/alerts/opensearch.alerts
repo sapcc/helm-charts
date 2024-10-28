@@ -6,12 +6,12 @@ groups:
     for: 60m
     labels:
       context: diskspace
-      service: logs
+      service: opensearch-logs
       severity: warning
       tier: os
       support_group: observability
-      playbook: docs/operation/elastic_kibana_issues/generic/elasticlowdiskspace-alert
-      dashboard: health-elasticsearch?var-cluster=opensearch-logs
+      playbook: 'docs/support/playbook/opensearch/generic/lowdiskspace-alert'
+      dashboard: health-opensearch?var-cluster=opensearch-logs
     annotations:
       description: 'Opensearch-logs cluster 60 % of all data nodes are more than 80 % full.
                    Please consider cleaning up Opensearch-logs or lower the retention period for the logs.'
@@ -22,44 +22,43 @@ groups:
     for: 60m
     labels:
       context: diskspace
-      service: logs
+      service: opensearch-logs
       support_group: observability
       severity: critical
       tier: os
-      playbook: docs/operation/elastic_kibana_issues/generic/elasticlowdiskspace-alert
-      dashboard: health-elasticsearch?var-cluster=opensearch-logs
+      playbook: 'docs/support/playbook/opensearch/generic/lowdiskspace-alert'
+      dashboard: health-opensearch?var-cluster=opensearch-logs
     annotations:
       description: 'opensearch-logs cluster 80 % of all data nodes are more than 80 % full.
                    Please consider cleaning up opensearch-logs or lower the retention period for the logs.'
       summary: '*opensearch-logs cluster* in is out of disk space'
 
-  - alert: OpensearchLogsClusterRed
-    expr: opensearch_cluster_status{elastic_cluster="opensearch-logs",pod=~".*-master-0"} == 2
-    for: 30m
-    labels:
-      context: nodes
-      service: logs
-      severity: critical
-      support_group: observability
-      tier: os
-      playbook: docs/operation/elastic_kibana_issues/generic/cluster-red
-      dashboard: health-elasticsearch?var-cluster=opensearch-logs
-    annotations:
-      description: 'Opensearch cluster *opensearch-logs* in `{{ $labels.region }}` is RED. Please check all nodes.'
-      summary: '*opensearch-logs* cluster in `{{ $labels.region }}` is RED'
-
   - alert: OpensearchLogsClusterYellow
-    expr: opensearch_cluster_status{elastic_cluster="opensearch-logs",pod=~".*-master-0"} == 1 and sum(kube_statefulset_replicas{statefulset=~"opensearch-logs.*"}) - sum(kube_statefulset_status_replicas_ready{statefulset=~"opensearch-logs.*"}) > 0
-    for: 30m
+    expr: (sum by (elastic_cluster) (opensearch_cluster_status{elastic_cluster="opensearch-logs"})) / count by (elastic_cluster) (opensearch_cluster_status{elastic_cluster="opensearch-logs"}) == 1
+    for: 120m
     labels:
       context: nodes
-      service: logs
+      service: opensearch-logs
       severity: warning
       support_group: observability
       tier: os
-      playbook: docs/operation/elastic_kibana_issues/generic/cluster-yellow-no-resync
-      dashboard: health-elasticsearch?var-cluster=opensearch-logs
+      playbook: 'docs/support/playbook/opensearch/generic/cluster-yellow'
+      dashboard: health-opensearch?var-cluster=opensearch-logs
     annotations:
-      description: 'Opensearch cluster *opensearch-logs* in `{{ $labels.region }}` is YELLOW. Please check all nodes.
-        nodes one or more are missing.'
-      summary: 'Opensearch cluster *opensearch-logs* in `{{ $labels.region }}` is YELLOW'
+      description: 'Opensearch cluster *opensearch-logs* is *YELLOW*. Please check all nodes.'
+      summary: '*opensearch-logs* cluster is *YELLOW*'
+
+  - alert: OpensearchLogsClusterRed
+    expr: (sum by (elastic_cluster) (opensearch_cluster_status{elastic_cluster="opensearch-logs"})) / count by (elastic_cluster) (opensearch_cluster_status{elastic_cluster="opensearch-logs"}) == 2
+    for: 30m
+    labels:
+      context: nodes
+      service: opensearch-logs
+      severity: critical
+      support_group: observability
+      tier: os
+      playbook: 'docs/support/playbook/opensearch/generic/cluster-red'
+      dashboard: health-opensearch?var-cluster=opensearch-logs
+    annotations:
+      description: 'Opensearch cluster *opensearch-logs* is *RED*. Please check all nodes.'
+      summary: '*opensearch-logs* cluster is *RED*'

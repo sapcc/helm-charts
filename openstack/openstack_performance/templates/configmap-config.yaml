@@ -9,7 +9,9 @@ data:
   docker-entrypoint.sh: |
     #!/bin/sh
     set -eu
+    apt-get update -y && apt-get install gcc -y;
     {{- if .Values.pip_packages }}
     pip install {{ range .Values.pip_packages }}{{ . }} {{ end }}
     {{- end }}
+    cd /data/src/
     exec {{ .Values.locustCmd }} $@

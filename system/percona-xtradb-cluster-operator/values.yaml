@@ -1,0 +1,94 @@
+---
+pxc-operator:
+  # Default values for pxc-operator.
+  # This is a YAML-formatted file.
+  # Declare variables to be passed into your templates.
+
+
+  replicaCount: 1
+
+  operatorImageRepository: keppel.global.cloud.sap/ccloud-dockerhub-mirror/percona/percona-xtradb-cluster-operator
+  imagePullPolicy: IfNotPresent
+  image: ""
+
+  # set if you want to specify a namespace to watch
+  # defaults to `.Release.namespace` if left blank
+  # multiple namespaces can be specified and separated by comma
+  # watchNamespace:
+  # set if you want that watched namespaces are created by helm
+  # createNamespace: false
+
+  # set if operator should be deployed in cluster wide mode. defaults to false
+  watchAllNamespaces: true
+
+  # rbac: settings for deployer RBAC creation
+  rbac:
+    # rbac.create: if false RBAC resources should be in place
+    create: true
+
+  # serviceAccount: settings for Service Accounts used by the deployer
+  serviceAccount:
+    # serviceAccount.create: Whether to create the Service Accounts or not
+    create: true
+
+  # set if you want to use a different operator name
+  # defaults to `percona-xtradb-cluster-operator`
+  # operatorName:
+
+  imagePullSecrets: []
+  nameOverride: "percona-xtradb-cluster-operator"
+  fullnameOverride: "percona-xtradb-cluster-operator"
+
+  resources:
+    limits:
+      cpu: 2000m
+      memory: 500Mi
+    requests:
+      cpu: 100m
+      memory: 20Mi
+
+  containerSecurityContext: {}
+
+  nodeSelector: {}
+
+  tolerations: []
+
+  affinity:
+    nodeAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - preference:
+          matchExpressions:
+          - key: cloud.sap/maintenance-state
+            operator: In
+            values:
+            - operational
+        weight: 1
+      - preference:
+          matchExpressions:
+          - key: cloud.sap/deployment-state
+            operator: NotIn
+            values:
+            - reinstalling
+        weight: 1
+
+  podAnnotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "8080"
+    prometheus.io/targets: "kubernetes"
+    linkerd.io/inject: enabled
+
+  logStructured: true
+  logLevel: "INFO"
+  disableTelemetry: true
+
+  extraEnvVars:
+    - name: CC_FIX_PERMISSIONS
+      value: "true"
+
+owner-info:
+  support-group: network-api
+  maintainers:
+    - Vladislav Gusev
+    - Bashar Alkhateeb
+    - Birk Bohne
+  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/system/percona-xtradb-cluster-operator

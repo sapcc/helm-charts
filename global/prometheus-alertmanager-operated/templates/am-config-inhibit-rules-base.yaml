@@ -1,0 +1,68 @@
+apiVersion: monitoring.coreos.com/v1alpha1
+kind: AlertmanagerConfig
+metadata:
+  name: inhibit-rules-base
+  labels:
+    alertmanager: {{ include "alertmanagerRelease.name" . }}
+spec:
+  inhibitRules:
+    - sourceMatch:
+        - matchType: "="
+          name: severity
+          value: 'critical'
+      targetMatch:
+        - matchType: "="
+          name: severity
+          value: 'warning'
+      equal:
+        - 'region'
+        - 'alertname'
+        - 'cluster'
+    - sourceMatch:
+        - matchType: "=~"
+          name: severity
+          value: 'critical|warning'
+      targetMatch:
+        - matchType: "="
+          name: severity
+          value: 'info'
+      equal:
+        - 'region'
+        - 'alertname'
+        - 'cluster'
+    - sourceMatch:
+        - matchType: "="
+          name: severity
+          value: 'critical'
+        - matchType: "!="
+          name: context
+          value: ''
+      targetMatch:
+        - matchType: "="
+          name: severity
+          value: 'warning'
+        - matchType: "!="
+          name: context
+          value: ''
+      equal:
+        - 'region'
+        - 'context'
+        - 'cluster'
+    - sourceMatch:
+        - matchType: "=~"
+          name: severity
+          value: 'critical|warning'
+        - matchType: "!="
+          name: context
+          value: ''
+      targetMatch:
+        - matchType: "="
+          name: severity
+          value: 'info'
+        - matchType: "!="
+          name: context
+          value: ''
+      equal:
+        - 'region'
+        - 'context'
+        - 'cluster'

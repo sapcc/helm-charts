@@ -1,0 +1,43 @@
+{{- if .Values.snmp_exporter.ipn.enabled }}
+apiVersion: monitoring.coreos.com/v1alpha1
+kind: ScrapeConfig
+metadata:
+  name: snmp-exporter-ipn
+  namespace: infra-monitoring
+  labels:
+    prometheus: {{ .Values.snmp_exporter.aggregations.prometheus }}
+    app.kubernetes.io/name: snmp-exporter-ipn
+spec:
+  httpSDConfigs:
+    - url: {{ .Values.global.http_sd_configs.netbox_url }}/devices/?custom_labels=__param_module=ipn;__param_auth=ipn_v3&manufacturer=cisco&status=active&region={{ .Values.global.region }}&role=aci-ipn
+      refreshInterval: {{ .Values.global.http_sd_configs.refresh_interval }}
+  metricsPath: /snmp
+  scrapeInterval: 60s
+  scrapeTimeout: 50s
+  relabelings:
+    - sourceLabels: [__address__]
+      targetLabel: __param_target
+    - sourceLabels: [__param_target]
+      targetLabel: instance
+    - targetLabel: __address__
+      replacement: snmp-exporter:{{.Values.snmp_exporter.listen_port}}
+    - targetLabel: module
+      replacement: ipn
+    - targetLabel: __param_auth
+      replacement: ipn_v3
+  metricRelabelings:
+    - sourceLabels: [name]
+      targetLabel:  devicename
+    - sourceLabels: [devicename]
+      regex: '(\w*-\w*-\w*)-(\S*)'
+      replacement: '$1'
+      targetLabel: availability_zone
+    - sourceLabels: [devicename]
+      regex: '(\w*-\w*-\w*)-(\S*)'
+      replacement: '$2'
+      targetLabel: device
+    - sourceLabels: [__name__, snmp_ipn_sysDescr]
+      regex: 'snmp_ipn_sysDescr;(?s)(.*)(Version )([0-9().a-zIU]*)(,.*)'
+      replacement: '$3'
+      targetLabel: image_version
+{{- end }}

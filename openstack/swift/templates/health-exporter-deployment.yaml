@@ -22,8 +22,6 @@ spec:
     metadata:
       labels:
         component: swift-health-exporter
-        alert-tier: os
-        alert-service: swift
       annotations:
         {{- include "swift_conf_annotations" . | indent 8 }}
         prometheus.io/scrape: "true"
@@ -56,6 +54,7 @@ spec:
             - --collector.recon.unmounted
             - --collector.recon.updater_sweep_time
             - --recon.timeout-host=2
+            - --collector.recon.sharding
           env:
             - name: HASH_PATH_PREFIX
               valueFrom:
@@ -86,7 +85,7 @@ spec:
               cpu: "600m"
               memory: "200Mi"
             limits:
-              cpu: "600m"
+              cpu: "1000m"
               memory: "200Mi"
           volumeMounts:
             - mountPath: /swift-etc

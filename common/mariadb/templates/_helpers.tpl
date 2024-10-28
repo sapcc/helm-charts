@@ -16,12 +16,26 @@
 
 {{- define "mariadb.db_host"}}{{.Release.Name}}-mariadb.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{- end}}
 
-{{- define "mariadb.root_password" -}}
-{{- required ".Values.root_password missing" .Values.root_password }}
+{{- define "mariadb.resolve_secret" -}}
+    {{- $str := . -}}
+    {{- if (hasPrefix "vault+kvv2" $str ) -}}
+        {{"{{"}} resolve "{{ $str }}" {{"}}"}}
+    {{- else -}}
+        {{ $str }}
+{{- end -}}
 {{- end -}}
 
-{{- define "db_password" -}}
-{{- .Values.global.dbPassword }}
+{{- define "mariadb.resolve_secret_squote" -}}
+    {{- $str := . -}}
+    {{- if (hasPrefix "vault+kvv2" $str ) -}}
+        {{"{{"}} resolve "{{ $str }}" | replace "'" "''" | squote {{"}}"}}
+    {{- else -}}
+        {{ $str | replace "'" "''" | squote }}
+{{- end -}}
+{{- end -}}
+
+{{- define "mariadb.root_password" -}}
+{{- include "mariadb.resolve_secret" (required ".Values.root_password missing" .Values.root_password) }}
 {{- end -}}
 
 {{- define "registry" -}}
@@ -63,3 +77,11 @@
 {{/* Needed for testing purposes only. */}}
 {{define "RELEASE-NAME_db_host"}}testRelease-mariadb.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
 {{define "testRelease_db_host"}}testRelease-mariadb.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
+
+{{- define "sharedservices.labels" }}
+app.kubernetes.io/name: {{ .Chart.Name }}
+app.kubernetes.io/instance: {{ .Chart.Name }}-{{ .Release.Name }}
+app.kubernetes.io/version: {{ .Chart.Version }}
+app.kubernetes.io/component: {{ .Chart.Name }}
+app.kubernetes.io/part-of: {{ .Release.Name }}
+{{- end }}

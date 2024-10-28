@@ -1,6 +1,14 @@
 global:
   region: earth
   master_password: topSecret
+  metis:
+    password: topSecret
+  forwarding:
+    audit:
+      host: host
+  user_suffix: ""
+  dockerHubMirror: "another-region"
+  dockerHubMirrorAlternateRegion: "other.dockerhub.mirror"
 
 hermes_image_version_elasticsearch: latest
 hermes_image_version_elasticsearch_manager: latest
@@ -13,11 +21,16 @@ hermes_elasticsearch_host: my-es-host
 hermes_elasticsearch_port: my-es-port
 
 docker_repo: my-docker-repository
+users:
+  audit:
+    username: test
+    password: test
 
 hermes:
   image: my-image
   image_tag: latest
   image_pull_policy: IfNotPresent
+  dockerHubMirror: another-region
   certs:
     tls_crt: my-tls-cert
     tls_key: my-tls-key
@@ -42,3 +55,35 @@ ingress:
 
 ldap:
   host: my-ldap-host
+
+elasticsearch_exporter:
+  enabled: false
+
+rabbitmq_notifications:
+# Test values for rabbitmq.
+  ports:
+    public: 5672
+    management: 15672
+
+  users:
+    default:
+      user: test1
+      password: test
+    admin:
+      user: test2
+      password: test
+
+  persistence:
+    enabled: false
+
+  resources:
+    requests:
+      memory: 1Mi
+      cpu: 1m
+    limits:
+      cpu: 1m
+
+  replicas: 1
+
+  metrics:
+    enabled: false

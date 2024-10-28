@@ -1,0 +1,70 @@
+{{- if .Values.initdb_job }}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: "{{ include "pxc-db.fullname" . }}-init-db"
+  namespace:  {{.Release.Namespace}}
+  labels:
+{{ include "pxc-db.labels" . | indent 4 }}
+  annotations:
+{{- if and (and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested) $.Values.linkerd.enabled }}
+{{- include "pxc-db.linkerdPodAnnotations" . | indent 4 }}
+{{- end }}
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+    "helm.sh/hook-weight": "3"
+spec:
+  template:
+    metadata:
+      name: "{{ include "pxc-db.fullname" . }}-init-db"
+      labels:
+{{ include "pxc-db.labels" . | indent 8 }}
+    spec:
+      restartPolicy: Never
+      serviceAccountName: {{ .Values.name }}-init-db
+      initContainers:
+      - name: kubernetes-entrypoint
+        image: {{ $.Values.global.registryAlternateRegion }}/kubernetes-entrypoint:v0.3.1
+        command:
+        - /kubernetes-entrypoint
+        env:
+        - name: COMMAND
+          value: "true"
+        - name: NAMESPACE
+          value: {{ .Release.Namespace }}
+        - name: DEPENDENCY_SERVICE
+          value: {{ .Values.name }}-db-haproxy
+      containers:
+      - name: init-db-job
+        image: {{ required ".Values.global.dockerHubMirrorAlternateRegion is missing" .Values.global.dockerHubMirrorAlternateRegion }}/{{ .Values.initdb.image.name }}:{{ .Values.initdb.image.tag }}
+        command:
+          - /bin/bash
+          - -c
+          - |
+            /configurator/init-db.sh
+        env:
+          - name: MYSQL_ADDRESS
+            value: {{ .Values.name }}-db-haproxy
+          - name: MYSQL_USERNAME
+            value: 'operator'
+          - name: MYSQL_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: pxc-db-{{ .Values.name }}-init-sql
+                key: operator
+        volumeMounts:
+          - name: initdb
+            mountPath: /var/lib/initdb
+          - name: init-db-configmap
+            mountPath: /configurator
+      volumes:
+        - name: initdb
+          secret:
+            secretName: pxc-db-{{ .Values.name }}-init-sql
+            defaultMode: 0666
+        - name: init-db-configmap
+          configMap:
+            name: pxc-db-{{ .Values.name }}-init-db-bin
+            defaultMode: 0755
+{{- end }}

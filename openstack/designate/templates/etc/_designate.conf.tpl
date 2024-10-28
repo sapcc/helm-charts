@@ -58,14 +58,16 @@ min_pool_size = {{ .Values.min_pool_size | default .Values.global.min_pool_size 
 max_pool_size = {{ .Values.max_pool_size | default .Values.global.max_pool_size | default 100 }}
 max_overflow = {{ .Values.max_overflow | default .Values.global.max_overflow | default 50 }}
 
-
-transport_url = rabbit://{{ .Values.rabbitmq.users.default.user | default "rabbitmq" }}:{{ .Values.rabbitmq.users.default.password }}@{{ include "rabbitmq_host" . }}:{{ .Values.rabbitmq.port | default 5672 }}/
-
 [oslo_policy]
 policy_file = policy.yaml
 
 [oslo_messaging_rabbit]
 heartbeat_in_pthread = false
+rabbit_interval_max = 3
+rabbit_retry_backoff = 1
+kombu_reconnect_delay = 0.1
+heartbeat_timeout_threshold = 15
+heartbeat_rate = 3
 
 [oslo_messaging_notifications]
 driver = noop
@@ -101,8 +103,7 @@ default_pool_id = '794ccc2c-d751-44fe-b57f-8894c9f5c842'
 #managed_resource_email = hostmaster@example.com.
 
 # Tenant ID to own all managed resources - like auto-created records etc.
-#managed_resource_tenant_id = 123456
-
+managed_resource_tenant_id = {{ .Values.managed_resource_tenant_id | default "00000000-0000-0000-0000-000000000000" }}
 # What filters to use. They are applied in order listed in the option, from
 # left to right
 scheduler_filters = {{ .Values.scheduler_filters }}
@@ -190,14 +191,12 @@ auth_url = {{.Values.global.keystone_api_endpoint_protocol_internal | default "h
 {{- else }}
 auth_url = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
 {{- end }}
-username = {{ .Values.global.designate_service_user }}
-password = {{ .Values.global.designate_service_password }}
 user_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}
 project_name = {{.Values.global.keystone_service_project | default "service"}}
 project_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}
 region_name = {{.Values.global.region}}
 {{- if .Values.global_setup }}
-memcached_servers = {{.Release.Name}}-memcached.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.db_region}}.{{.Values.global.tld}}:{{.Values.global.memcached_port_public | default 11211}}
+memcached_servers = "{{ include "helm-toolkit.utils.joinListWithComma" .Values.memcached.server_ips_ports }}"
 {{- else }}
 memcached_servers = {{.Release.Name}}-memcached.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.global.memcached_port_public | default 11211}}
 {{- end }}
@@ -300,6 +299,28 @@ query_enforce_tsig = {{ .Values.query_enforce_tsig }}
 #transfer_source = None
 #notify_delay = 0
 
+#-----------------------
+# Producer Service
+#-----------------------
+[service:producer]
+# Number of Producer worker processes to spawn (integer value)
+workers = 2
+
+# Number of Producer greenthreads to spawn (integer value)
+#threads = 1000
+
+# Enabled tasks to run (list value)
+#enabled_tasks = <None>
+
+# DEPRECATED: Whether to allow synchronous zone exports (boolean value)
+# This option is deprecated for removal.
+# Its value may be silently ignored in the future.
+# Reason: Migrated to designate-worker
+#export_synchronous = true
+
+# RPC topic name for producer (string value)
+topic = producer
+
 #------------------------
 # Deleted domains purging
 #------------------------
@@ -316,7 +337,7 @@ per_page = 200
 
 # How old deleted zones should be (deleted_at) to be purged, in seconds (integer
 # value)
-time_threshold = 604800
+time_threshold = 2592000
 
 # How many zones to be purged on each run (integer value)
 batch_size = 200
@@ -342,7 +363,7 @@ enabled = {{.Values.worker_enabled}}
 workers = 2
 
 # Number of Worker greenthreads to spawn
-threads = 1000
+threads = 200
 
 # The percentage of servers requiring a successful update for a zone change
 # to be considered active
@@ -359,8 +380,11 @@ poll_retry_interval = {{ .Values.worker_poll_retry_interval }}
 # response from a server
 poll_max_retries = {{ .Values.worker_poll_max_retries }}
 
+# The maximum times to consider PENDING zone as stale and try recovery
+poll_max_prop_time = {{ .Values.worker_poll_max_prop_time }}
+
 # The time to wait before sending the first request to a server
-poll_delay = 2
+poll_delay = {{ .Values.worker_poll_delay }}
 
 # Whether to allow worker to send NOTIFYs. NOTIFY requests to mdns will noop
 notify = {{ .Values.worker_notify }}
@@ -376,15 +400,9 @@ all_tcp = {{ .Values.worker_all_tcp }}
 {{- if eq .Values.global_setup false }}
 endpoints = {{ .Values.global.region }}|https://network-3.{{ .Values.global.region }}.{{ .Values.global.tld }}
 endpoint_type = publicURL
-timeout = 20
+timeout = 30
 insecure = True
 {{- end }}
-#admin_username = designate
-#admin_password = designate
-#admin_tenant_name = designate
-#auth_url = http://localhost:35357/v2.0
-#auth_strategy = keystone
-#ca_certificates_file =
 
 ########################
 ## Storage Configuration
@@ -393,14 +411,6 @@ insecure = True
 # SQLAlchemy Storage
 #-----------------------
 [storage:sqlalchemy]
-# Database connection string - MariaDB for regional setup
-# and Percona Cluster for inter-regional setup:
-{{ if .Values.percona_cluster.enabled -}}
-connection = {{ include "db_url_pxc" . }}
-{{- else }}
-connection = {{ include "db_url_mysql" . }}
-{{- end }}
-
 mysql_sql_mode = TRADITIONAL
 
 #connection_debug = 0
@@ -488,9 +498,7 @@ disable_by_file_path = /etc/designate/healthcheck_disable
 ########################
 ## Coordination
 ########################
-[coordination]
-# URL for the coordination backend to use.
-#backend_url = kazoo://127.0.0.1/
+{{ include "ini_sections.coordination" . }}
 
 ########################
 ## Hook Points
@@ -511,7 +519,6 @@ disable_by_file_path = /etc/designate/healthcheck_disable
 #   name = '%s.%s' % (func.__module__, func.__name__)
 
 # [hook_point:designate.api.v2.controllers.zones.get_one]
-{{ include "ini_sections.audit_middleware_notifications" . }}
 
 # Tracing
 {{- include "osprofiler" . }}

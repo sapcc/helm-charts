@@ -1,13 +1,38 @@
+rhea:
+  enabled: false
 global:
   alerts:
     prometheus: infra-frontend
+config:
+  # Configuration for the poller
+  keystone:
+    enabled: false
+    authUrl: https://identity/v3
+    endpointType: public
+    projectDomainName: default
+    projectName: project
+    region: region
+    userDomainName: default
+    username: username
+    password: password
+  allowedServices:
+    email: eu-central-1
 simulator:
+  sesUsername: username
+  sesSecret: secretkey
+  rhea:
+    enabled: false
+  smtpPassword: smtppassword
+  cacheRetention: 20s
+  emailBodySize: 10000
   poller: # service that handles received emails 
     enabled: false
     prometheusPort: 2112
     prometheus: :2112
     charSet: UTF-8
     period: 60
+    certPem: abcd
+    keyPem: abcd
     service:
       type: ClusterIP
     # all below can be used only with a deployment style
@@ -23,7 +48,7 @@ simulator:
       imagePullSecrets: []
     statefulSet:
       enabled: false
-    action: forwardEmail # supported values: forwardEmail, activateEmail
+    action: simulator # supported values: forwardEmail, activateEmail
     pollInterval: 5 # should be less than a default cronus ResponseHeaderTimeout (9 seconds)
     maxThreads: 5 # maximum amount of queue processing threads.will generate N threads = maxThreads * (maxSendThreads + maxBounceThreads)
     maxSendThreads: 5 # maximum amount of SMTP send threads per one processing thread
@@ -40,6 +65,8 @@ simulator:
     sleepDuration: 60s
     sleepThreads: 60s
     loaderThreads: 1
+    cacheRetention: 20s
+    emailBodySize: 10000
     emailSubject: "test run"
     emailBody: |
       "test email sending"
@@ -49,6 +76,9 @@ simulator:
     retry: # retry settings for failed connections
       maxConnectionRetries: 5 # 5 retries per connection
       retryInterval: 0.5s # 500ms to wait after each try, e.g. in total 2.5 seconds
+    rhea: # rhea settings
+      queueName: incoming
+      domainMode: false
     endpoint: 
       enabled: false
       name: http://localhost:5000 # override cronus endpoint URL - REMOVE IF NOT NEEDED
@@ -99,6 +129,39 @@ simulator:
     alerts:
       enabled: false
       prometheus: infra-frontend
+    emailPassVerdicts:
+      spam:
+        - PASS
+      virus:
+        - PASS
+      spf:
+        - PASS
+      dkim:
+        - PASS
+        - GRAY
+      dmarc:
+        - PASS
+        - GRAY
+    simulatorTests:
+    - test:
+      enabled: false
+      envelopeFrom: sender@postfix-eude1.cronus-simulator.ccloud.sap-test.de
+      headerFrom: sender@postfix-eude1.cronus-simulator.ccloud.sap-test.de
+      isExpectedReceived: true
+      isTls: true
+      port: 465
+      recipients: [receiving-test@postfix-eude1.cronus-simulator.ccloud.sap-test.de]
+      region: eu-de-1
+      testName: smtpTls
+    - test:
+      enabled: false
+      envelopeFrom: sender@postfix-eude1.cronus-simulator.ccloud.sap-test.de
+      headerFrom: sender@postfix-eude1.cronus-simulator.ccloud.sap-test.de
+      isExpectedReceived: true
+      port: 587
+      recipients: [receiving-test@postfix-eude1.cronus-simulator.ccloud.sap-test.de]
+      region: eu-de-1
+      testName: smtpStls
 
 owner-info:
   helm-chart-url: 'https://github.com/sapcc/helm-charts/tree/master/prometheus-exporters/poller-simulator'

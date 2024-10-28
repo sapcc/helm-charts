@@ -1,0 +1,85 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vault-tec
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: vault-tec
+spec:
+  selector:
+    matchLabels:
+      app: vault-tec
+  replicas: {{ .Values.replicaCount }}
+  template:
+    metadata:
+      labels:
+        app: vault-tec
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        prometheus.io/scrape: "true"
+        prometheus.io/targets: kubernetes
+        {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+        linkerd.io/inject: enabled
+        {{- end }}
+    spec:
+      {{- if .Values.tolerations }}
+      tolerations:
+        {{- toYaml .Values.tolerations | nindent 8 }}
+      {{- end }}
+      containers:
+      - command:
+        - /vault-tec
+        image: "{{required ".Values.global.registry is missing" .Values.global.registry }}/{{ .Values.image.repository }}:{{required ".Values.image.tag is missing" .Values.image.tag }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        name: vault-tec
+        env:
+        {{ range $index, $approle := .Values.config.approles -}}
+        - name: CONCOURSE_USERNAME_{{- $index }}
+          valueFrom:
+            secretKeyRef:
+              name: vault-tec-secret
+              key: CONCOURSE_USERNAME_{{- $index }}
+        - name: CONCOURSE_PASSWORD_{{- $index }}
+          valueFrom:
+            secretKeyRef:
+              name: vault-tec-secret
+              key: CONCOURSE_PASSWORD_{{- $index }}
+        - name: VAULT_USERNAME_{{- $index }}
+          valueFrom:
+            secretKeyRef:
+              name: vault-tec-secret
+              key: VAULT_USERNAME_{{- $index }}
+        - name: VAULT_PASSWORD_{{- $index }}
+          valueFrom:
+            secretKeyRef:
+              name: vault-tec-secret
+              key: VAULT_PASSWORD_{{- $index }}
+        {{ end -}}
+        volumeMounts:
+        - name: config
+          mountPath: "/config"
+          readOnly: true
+        resources:
+          limits:
+            cpu: {{ .Values.limits.cpu }}
+            memory: {{ .Values.limits.memory }}
+          requests:
+            cpu: {{ .Values.limits.cpu }}
+            memory: {{ .Values.limits.memory }}
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8080
+          initialDelaySeconds: 3
+          periodSeconds: 3
+        ports:
+          - name: metrics
+            containerPort: 8080
+      volumes:
+      - name: config
+        configMap:
+          name: vault-tec-config
+      terminationGracePeriodSeconds: 30
+      {{- if .Values.rbac.create }}
+      serviceAccountName: {{ .Values.rbac.serviceAccountName }}
+      {{- end }}

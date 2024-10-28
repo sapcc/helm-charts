@@ -8,6 +8,10 @@ metadata:
     application: designate
     type: api
     component: api
+  {{- if .Values.vpa.set_main_container }}
+  annotations:
+    vpa-butler.cloud.sap/main-container: designate-api
+  {{- end }}
 spec:
   replicas: {{ .Values.pod.replicas.api }}
   revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revision_history }}
@@ -26,34 +30,23 @@ spec:
       labels:
         app: {{ .Release.Name }}-api
       annotations:
+        kubectl.kubernetes.io/default-container: designate-api
         configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
         configmap-bin-hash: {{ include (print $.Template.BasePath "/bin-configmap.yaml") . | sha256sum }}
+        secrets-hash: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
+        {{- if .Values.proxysql.mode }}
+        prometheus.io/scrape: "true"
+        prometheus.io/targets: {{ required ".Values.metrics.prometheus missing" .Values.metrics.prometheus | quote }}
+        {{- end }}
+        {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
     spec:
 {{- if .Values.rbac.enabled }}
       serviceAccountName: {{ .Release.Name }}
 {{- end }}
 {{ tuple . "designate" "api" | include "kubernetes_pod_anti_affinity" | indent 6 }}
+      {{- include "utils.proxysql.pod_settings" . | indent 6 }}
       initContainers:
-      - name: kubernetes-entrypoint
-        image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/loci-designate:{{ required ".Values.image_version_designate is missing" .Values.image_version_designate }}
-        imagePullPolicy: IfNotPresent
-        command:
-          - kubernetes-entrypoint
-        env:
-            - name: NAMESPACE
-              value: {{ .Release.Namespace }}
-            - name: DEPENDENCY_JOBS
-              value: {{ .Release.Name }}-migration-{{ required ".Values.image_version_designate is missing" .Values.image_version_designate }}
-            - name: DEPENDENCY_SERVICE
-{{- if .Values.percona_cluster.enabled }}
-              value: "{{ .Release.Name }}-percona-pxc,{{ .Release.Name }}-rabbitmq,{{ .Release.Name }}-memcached"
-{{- else if .Values.rabbitmq_cluster.enabled }}
-              value: "{{ .Release.Name }}-mariadb,{{ .Release.Name }}-rabbitmq-cluster,{{ .Release.Name }}-memcached"
-{{- else }}
-              value: "{{ .Release.Name }}-mariadb,{{ .Release.Name }}-rabbitmq,{{ .Release.Name }}-memcached"
-{{- end }}
-            - name: COMMAND
-              value: "true"
+      {{- tuple . (dict "service" (include "designate.service_dependencies" . ) "jobs" (include "migration_job_name" . )) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 8 }}
       containers:
         - name: designate-api
           image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/loci-designate:{{ required ".Values.image_version_designate is missing" .Values.image_version_designate }}
@@ -100,7 +93,7 @@ spec:
 {{- if .Values.global_setup }}
               - "set -e; curl --fail 127.0.0.1:{{.Values.global.designate_api_port_internal}}/healthcheck; nc -zvw3 designate-global-percona-pxc 3306"
 {{- else }}
-              - "set -e; curl --fail 127.0.0.1:{{.Values.global.designate_api_port_internal}}/healthcheck; nc -zvw3 designate-mariadb 3306"
+              - "set -e; curl --fail 127.0.0.1:{{.Values.global.designate_api_port_internal}}/healthcheck; nc -zvw3 {{ include "utils.db_host" . }} 3306"
 {{- end }}
             initialDelaySeconds: 5
             periodSeconds: 10
@@ -115,9 +108,17 @@ spec:
               name: container-init
             - name: wsgi-designate
               mountPath: /var/www/cgi-bin/designate
+{{- if .Values.global_setup }}
+            - mountPath: /var/www/html/test.html
+              name: designate-etc
+              subPath: test.html
+{{- end }}
             - name: designate-etc-wsgi
               mountPath: /etc/apache2/conf-enabled/wsgi-designate.conf
               subPath: wsgi-designate.conf
+            {{- include "utils.proxysql.volume_mount" . | indent 12 }}
+            {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
+        {{- include "utils.proxysql.container" . | indent 8 }}
         - name: statsd
           image: {{ required ".Values.global.dockerHubMirror is missing" .Values.global.dockerHubMirror }}/prom/statsd-exporter:v0.8.1
           imagePullPolicy: IfNotPresent
@@ -136,8 +137,17 @@ spec:
  {{- include "jaeger_agent_sidecar" . | indent 8 }}
       volumes:
         - name: designate-etc
-          configMap:
-            name: designate-etc
+          projected:
+            sources:
+            - configMap:
+                name: designate-etc
+            - secret:
+                name: {{ .Release.Name }}-secrets
+                items:
+                  - key: secrets.conf
+                    path: secrets.conf
+            - secret:
+                name: {{ .Release.Name }}-secrets-rndc
         - name: designate-etc-wsgi
           configMap:
             name: designate-etc-wsgi
@@ -147,3 +157,5 @@ spec:
           configMap:
             name: designate-bin
             defaultMode: 0755
+        {{- include "utils.proxysql.volumes" . | indent 8 }}
+        {{- include "utils.trust_bundle.volumes" . | indent 8 }}

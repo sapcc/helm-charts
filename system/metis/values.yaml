@@ -3,6 +3,7 @@ namespace: metis
 global:
   dbUser: "metis"
   #dbPassword: <defined-in-secrets>
+  linkerd_requested: false
 
 alerts:
   prometheus: "infra-collector"
@@ -10,6 +11,7 @@ alerts:
 
 owner-info:
   support-group: observability
+  service: metis
   maintainers:
     - "Ivo Gosemann"
   helm-chart-url: "https://github.com/sapcc/helm-charts/tree/master/system/metis"
@@ -29,7 +31,9 @@ mariadb:
   name: metisdb
   enabled: true
   dbName: metis
-  initdb_configmap: metis-initdb
+  initdb_secret: true
+  ccroot_user:
+    enabled: true
   ronly_user: ronly
   ronly_password: DEFINED-IN-REGION
   long_query_time: 10
@@ -79,6 +83,9 @@ mariadb:
     prometheus: "infra-collector"
     alert_db_not_ready: false
     support_group: "observability"
+
+  vpa:
+    set_main_container: true
 
 ingress:
   disco: true
@@ -131,8 +138,10 @@ metis:
   imageTag: DEFINED-IN-PIPELINE
   vcenter:
     enabled: false
+  prometheus:
+    enabled: false
   releaseLocks: false
-  migration_version: 3
+  migration_version: 9
   requiredDatabases:
     - "keystone"
     - "nova"

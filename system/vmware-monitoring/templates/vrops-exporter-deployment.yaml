@@ -10,7 +10,10 @@ metadata:
   namespace: {{ required ".Values.vrops.namespace variable missing" $.Values.vrops.namespace }}
   labels:
     target: {{ include "vropsExporter.fullName" (list $target $root) }}
+    shard: {{ include "vropsExporter.name" (list $target $root) }}
     type: vrops-exporter
+  annotations:
+    vpa-butler.cloud.sap/update-mode: Auto
 spec:
   selector:
     matchLabels:
@@ -21,10 +24,12 @@ spec:
       labels:
         app: {{ include "vropsExporter.fullName" (list $target $root) }}-{{ required "$exporter_type.name is missing" $exporter_type.name }}
         type: exporter
-        vrops-collector-target: {{ include "vropsExporter.name" (list $target $root) }}
+        shard: {{ include "vropsExporter.name" (list $target $root) }}
         target: {{ include "vropsExporter.fullName" (list $target $root) }}
         alert-tier: vmware
         alert-service: vrops
+      annotations:
+        kubectl.kubernetes.io/default-container: vrops-exporter
     spec:
       affinity:
         podAntiAffinity:
@@ -46,6 +51,7 @@ spec:
       containers:
          - name: vrops-exporter
            image: {{ required ".Values.global.registry variable missing" $.Values.global.registry }}/{{ required ".Values.vrops.image.name variable missing" $.Values.vrops.image.name }}:{{ required ".Values.vrops.image.tag variable missing" $.Values.vrops.image.tag }}
+           imagePullPolicy: {{ required ".Values.vrops.image.pullPolicy variable missing" $.Values.vrops.image.pullPolicy }}
            ports:
              - name: metrics
                containerPort: {{ required ".Values.vrops.port missing" $.Values.vrops.port_number }}
@@ -116,6 +122,12 @@ spec:
             - container
           targetLabel: job
       metricRelabelings:
+        - action: replace
+          regex: .*{\"category\":\"(.*)\",\"name\":\"(.*)\"}.*
+          replacement: $2
+          sourceLabels:
+            - summary_tag
+          targetLabel: tag_$1
         - action: labeldrop
           regex: "pod|container|instance|endpoint|namespace|service"
 {{- end }}

@@ -94,7 +94,7 @@
       # import any tenant-specific metric, except for those which already have been imported
       - '{__name__=~"^castellum_aggregated_.+",project_id!=""}'
       - '{__name__=~"^openstack_.+",project_id!=""}'
-      - '{__name__=~"^limes_(?:project|domain)_(?:quota|usage)$"}'
+      - '{__name__=~"^limes_(?:project|domain)_(?:quota|usage|committed_per_az|usage_per_az)$"}'
       - '{__name__=~"^limes_swift_.+",project_id!=""}'
       - '{__name__=~"^keppel_.+",project_id!=""}'
 
@@ -141,6 +141,8 @@
       - '{__name__=~"^ssh_nat_limits_miss", project_id!=""}'
       - '{__name__=~"^ssh_nat_limits_use", project_id!=""}'
       - '{__name__=~"^snmp_asr_ifHC.+", project_id!=""}'
+      - '{__name__=~"^snmp_asr_ifInUcastPkts", project_id!=""}'
+      - '{__name__=~"^snmp_asr_ifOutUcastPkts", project_id!=""}'
 
 - job_name: 'prometheus-storage'
   scrape_interval: 1m
@@ -154,12 +156,16 @@
       target_label: __name__
       regex: netapp_volume_(.*):maia
       replacement: openstack_manila_share_${1}
+    - source_labels: [__name__]
+      target_label: __name__
+      regex: netapp_snapmirror_(.*):maia
+      replacement: openstack_manila_snapmirror_${1}
 
   metrics_path: '/federate'
   params:
     'match[]':
       # import any tenant-specific metric, except for those which already have been imported
-      - '{__name__=~"^netapp_volume_.+:maia", project_id!=""}'
+      - '{__name__=~"^netapp_.+:maia", project_id!=""}'
 
 
 # iteration over vmware-monitoring values
@@ -208,10 +214,13 @@
     key_file: /etc/prometheus/secrets/prometheus-auth-sso-cert/sso.key
   static_configs:
     - targets:
-      - "prometheus-infra.scaleout.{{ .Values.global.region }}.cloud.sap"
+      - "prometheus-infra-internal.scaleout.{{ .Values.global.region }}.cloud.sap"
   metrics_path: '/federate'
   params:
     'match[]':
+      - '{__name__="aws_sending_counter_cronus_provider"}'
+      - '{__name__="aws_sending_cronus_provider"}'
+      - '{__name__="aws_receiving_cronus_provider"}'
       - '{__name__="aws_ses_cronus_provider_bounce"}'
       - '{__name__="aws_ses_cronus_provider_complaint"}'
       - '{__name__="aws_ses_cronus_provider_delivery"}'

@@ -8,22 +8,30 @@ owner-info:
     - Sebastian Lohff
   helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/global/ccloud-hedgedoc
 
-cc-postgresql:
-  imageTag: '12.15'
+global:
+  linkerd_requested: true
+linkerd-support:
+  annotate_namespace: true
+
+postgresql:
   persistence:
     enabled: true
     size: 10Gi
     accessMode: ReadWriteOnce
-  dbMaintain: codi-db-maintain
+  postgresDatabase: codimd
+  users:
+    codimd: {}
+  tableOwner: codimd
 
   alerts:
     enabled: true
     support_group: containers
 
 pgbackup:
+  isPostgresNG: true
   database:
     name: codimd
-    host: codi-cc-postgresql
+    host: codi-postgresql
   alerts:
     support_group: containers
 
@@ -67,7 +75,9 @@ service:
 
 ingress:
   enabled: false
-  annotations: {}
+  annotations:
+    ingress.kubernetes.io/service-upstream: "true"
+    nginx.ingress.kubernetes.io/service-upstream: "true"
     # kubernetes.io/ingress.class: nginx
     # kubernetes.io/tls-acme: "true"
   hosts:

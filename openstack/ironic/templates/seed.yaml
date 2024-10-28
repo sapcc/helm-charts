@@ -8,6 +8,7 @@ spec:
   - monsoon3/domain-cc3test-seed
   - monsoon3/domain-ccadmin-seed
   - monsoon3/domain-bs-seed
+  - monsoon3/domain-btp-fp-seed
   - monsoon3/domain-cis-seed
   - monsoon3/domain-cp-seed
   - monsoon3/domain-fsn-seed
@@ -15,6 +16,7 @@ spec:
   - monsoon3/domain-hcm-seed
   - monsoon3/domain-hcp03-seed
   - monsoon3/domain-hec-seed
+  - monsoon3/domain-kyma-seed
   - monsoon3/domain-monsoon3-seed
   - monsoon3/domain-neo-seed
   - monsoon3/domain-s4-seed
@@ -61,29 +63,16 @@ spec:
       region: {{ .Values.global.region }}
       url: https://{{ include "ironic_inspector_endpoint_host_public" .}}
 
-  quota_class_sets:
-    flavors:
-      instances_zg1bcm1.medium: 0
-      instances_zg1bcm1.1medium: 0
-      instances_zh0hpe1.large: 0
-      instances_zh1vic1.small: 0
-      instances_zh2vic1.medium: 0
-      instances_zh2mlx1.large: 0
-      instances_zh1emx1.large: 0
-      instances_zh1emx1.xlarge: 0
-      instances_zh2mlx1.xlarge: 0
-      instances_zh2mlx1.1xlarge: 0
-      instances_zh2mlx1.2xlarge: 0
-      instances_zh2mlx1.3xlarge: 0
-      instances_hv_s2_c4_m128: 0
-      instances_hv_s2_c14_m256: 0
-      instances_hv_s2_c20_m384: 0
-      instances_hv_s2_c26_m384: 0
-      instances_hv_s2_c26_m768: 0
-      instances_hv_s4_c24_m3072: 0
-      instances_hv_s4_c24_m6144: 0
-      instances_hv_s8_c24_m6144: 0
-      instances_hv_s8_c28_m12288: 0
+## we decided to count up the flavor ID continously for baremetal
+## new bm flavors start at 1000 historically and are public (former zh*, zg*; now bm_*, bg_*)
+## new hv_ flavors start at 2020 and are private
+## as soon as we start handing out hypervisor hosts from the new compute PODs (cPODs), we will have to create
+## in parallel to the private hv_ flavors a bm_ public flavor which will have a 2 in front of the original flavor ID
+## vSMP flavors are also private like the original hv_ flavor but have a 1 in front of the original flavor ID.
+## Example:
+## 2032  hv_s2_c32_m512_v0 private
+## 12032 hv_s2_c32_m512_v0_vsmp private
+## 22032 bm_s2_c32_m512_v0 public
 
   flavors:
   - name: "zg1bcm1.medium"
@@ -93,73 +82,40 @@ spec:
     disk: 1966
     extra_specs:
       "catalog:description": GPU Baremetal 2 Socket Skylake 3xNvidia Tesla V100
-      "capabilities:cpu_arch": "x86_64"
-      "quota:separate": "true"
-      "quota:instance_only": "true"
       "resources:CUSTOM_ZG1BCM1_MEDIUM": "1"
-      "resources:MEMORY_MB": "0"
-      "resources:DISK_GB": "0"
-      "resources:VCPU": "0"
+      {{- tuple . "baremetal" | include "ironic.helpers.extra_specs" | indent 6 }}
 
-  - name: "zg1bcm1.1medium"
-    id: "915"
-    vcpus: 40
-    ram: 524288
-    disk: 1966
-    extra_specs:
-      "catalog:description": GPU Baremetal 2 Socket Skylake 3xNvidia Tesla V100
-      "capabilities:cpu_arch": "x86_64"
-      "quota:separate": "true"
-      "quota:instance_only": "true"
-      "resources:CUSTOM_ZG1BCM1_1MEDIUM": "1"
-      "resources:MEMORY_MB": "0"
-      "resources:DISK_GB": "0"
-      "resources:VCPU": "0"
+  # GPU Servers Dell PowerEdge R740. Only existing in qa-de-1.
+  # adding for documentation purposes
+  # - name: "zg1bcm1.1medium"
+  #   id: "915"
+  #   vcpus: 40
+  #   ram: 524288
+  #   disk: 1966
+  #   extra_specs:
+  #     "catalog:description": GPU Baremetal 2 Socket Skylake 3xNvidia Tesla V100
+  #     "resources:CUSTOM_ZG1BCM1_1MEDIUM": "1"
+  #     {{- tuple . "baremetal" | include "ironic.helpers.extra_specs" | indent 6 }}
 
-  - name: "zh0hpe1.large"
-    id: "900"
-    vcpus: 60
-    ram: 1048576
-    disk: 900
-    extra_specs:
-      "catalog:description": HANA Baremetal 4 socket 1TB Ivybridge
-      "capabilities:cpu_arch": "x86_64"
-      "quota:separate": "true"
-      "quota:instance_only": "true"
-      "resources:CUSTOM_ZH0HPE1_LARGE": "1"
-      "resources:MEMORY_MB": "0"
-      "resources:DISK_GB": "0"
-      "resources:VCPU": "0"
+  # Not in use anymore
+  # - name: "zh1bcm1.large"
+  #   id: "920"
+  #   vcpus: 32
+  #   ram: 393216
+  #   disk: 400
+  #   extra_specs:
+  #     "catalog:description": HANA Baremetal 2 Socket 384GB Skylake
+  #     "resources:CUSTOM_ZH1BCM1_LARGE": "1"
 
-  - name: "zh1vic1.small"
-    id: "1000"
-    vcpus: 8
-    ram: 262144
-    disk: 300
-    extra_specs:
-      "catalog:description": HANA Baremetal 2 socket 256GB Haswell
-      "capabilities:cpu_arch": "x86_64"
-      "quota:separate": "true"
-      "quota:instance_only": "true"
-      "resources:CUSTOM_ZH1VIC1_SMALL": "1"
-      "resources:MEMORY_MB": "0"
-      "resources:DISK_GB": "0"
-      "resources:VCPU": "0"
-
-  - name: "zh2vic1.medium"
-    id: "1010"
-    vcpus: 28
-    ram: 524288
-    disk: 300
-    extra_specs:
-      "catalog:description": HANA Baremetal 2 socket 512GB Broadwell
-      "capabilities:cpu_arch": "x86_64"
-      "quota:separate": "true"
-      "quota:instance_only": "true"
-      "resources:CUSTOM_ZH2VIC1_MEDIUM": "1"
-      "resources:MEMORY_MB": "0"
-      "resources:DISK_GB": "0"
-      "resources:VCPU": "0"
+  # Not in use anymore
+  # - name: "zg1int1.medium"
+  #   id: "921"
+  #   vcpus: 32
+  #   ram: 393216
+  #   disk: 960
+  #   extra_specs:
+  #     "catalog:description": GPU Baremetal 2 Socket Skylake 4xNvidia Tesla V100
+  #     "resources:CUSTOM_ZG1INT1.MEDIUM": "1"
 
   - name: "zh2mlx1.large"
     id: "1020"
@@ -168,43 +124,8 @@ spec:
     disk: 400
     extra_specs:
       "catalog:description": HANA Baremetal 2 socket 1TB Broadwell
-      "capabilities:cpu_arch": "x86_64"
-      "quota:separate": "true"
-      "quota:instance_only": "true"
       "resources:CUSTOM_ZH2MLX1_LARGE": "1"
-      "resources:MEMORY_MB": "0"
-      "resources:DISK_GB": "0"
-      "resources:VCPU": "0"
-
-  - name: "zh1emx1.large"
-    id: "1029"
-    vcpus: 72
-    ram: 1048576
-    disk: 1228
-    extra_specs:
-      "catalog:description": HANA Baremetal 4 socket 1TB Haswell
-      "capabilities:cpu_arch": "x86_64"
-      "quota:separate": "true"
-      "quota:instance_only": "true"
-      "resources:CUSTOM_ZH1EMX1_LARGE": "1"
-      "resources:MEMORY_MB": "0"
-      "resources:DISK_GB": "0"
-      "resources:VCPU": "0"
-
-  - name: "zh1emx1.xlarge"
-    id: "1030"
-    vcpus: 72
-    ram: 2097152
-    disk: 1228
-    extra_specs:
-      "catalog:description": HANA Baremetal 4 socket 2TB Haswell
-      "capabilities:cpu_arch": "x86_64"
-      "quota:separate": "true"
-      "quota:instance_only": "true"
-      "resources:CUSTOM_ZH1EMX1_XLARGE": "1"
-      "resources:MEMORY_MB": "0"
-      "resources:DISK_GB": "0"
-      "resources:VCPU": "0"
+      {{- tuple . "baremetal" | include "ironic.helpers.extra_specs" | indent 6 }}
 
   - name: "zh2mlx1.xlarge"
     id: "1031"
@@ -213,13 +134,8 @@ spec:
     disk: 400
     extra_specs:
       "catalog:description": HANA Baremetal 4 socket 2TB Broadwell
-      "capabilities:cpu_arch": "x86_64"
-      "quota:separate": "true"
-      "quota:instance_only": "true"
       "resources:CUSTOM_ZH2MLX1_XLARGE": "1"
-      "resources:MEMORY_MB": "0"
-      "resources:DISK_GB": "0"
-      "resources:VCPU": "0"
+      {{- tuple . "baremetal" | include "ironic.helpers.extra_specs" | indent 6 }}
 
   - name: "zh2mlx1.1xlarge"
     id: "1032"
@@ -228,28 +144,8 @@ spec:
     disk: 400
     extra_specs:
       "catalog:description": HANA Baremetal 4 socket 4TB Broadwell
-      "capabilities:cpu_arch": "x86_64"
-      "quota:separate": "true"
-      "quota:instance_only": "true"
       "resources:CUSTOM_ZH2MLX1_1XLARGE": "1"
-      "resources:MEMORY_MB": "0"
-      "resources:DISK_GB": "0"
-      "resources:VCPU": "0"
-
-  - name: "zh1emx1.1xlarge"
-    id: "1033"
-    vcpus: 72
-    ram: 4194304
-    disk: 1228
-    extra_specs:
-      "catalog:description": HANA Baremetal 4 socket 4TB Haswell
-      "capabilities:cpu_arch": "x86_64"
-      "quota:separate": "true"
-      "quota:instance_only": "true"
-      "resources:CUSTOM_ZH1EMX1_1XLARGE": "1"
-      "resources:MEMORY_MB": "0"
-      "resources:DISK_GB": "0"
-      "resources:VCPU": "0"
+      {{- tuple . "baremetal" | include "ironic.helpers.extra_specs" | indent 6 }}
 
   - name: "zh2mlx1.2xlarge"
     id: "1040"
@@ -258,13 +154,8 @@ spec:
     disk: 400
     extra_specs:
       "catalog:description": HANA Baremetal 8 socket 4TB Broadwell
-      "capabilities:cpu_arch": "x86_64"
-      "quota:separate": "true"
-      "quota:instance_only": "true"
       "resources:CUSTOM_ZH2MLX1_2XLARGE": "1"
-      "resources:MEMORY_MB": "0"
-      "resources:DISK_GB": "0"
-      "resources:VCPU": "0"
+      {{- tuple . "baremetal" | include "ironic.helpers.extra_specs" | indent 6 }}
 
   - name: "zh2mlx1.3xlarge"
     id: "1050"
@@ -273,13 +164,8 @@ spec:
     disk: 400
     extra_specs:
       "catalog:description": HANA Baremetal 8 socket 6TB Broadwell
-      "capabilities:cpu_arch": "x86_64"
-      "quota:separate": "true"
-      "quota:instance_only": "true"
       "resources:CUSTOM_ZH2MLX1_3XLARGE": "1"
-      "resources:MEMORY_MB": "0"
-      "resources:DISK_GB": "0"
-      "resources:VCPU": "0"
+      {{- tuple . "baremetal" | include "ironic.helpers.extra_specs" | indent 6 }}
 
 #not a real baremetal flavor, but we only need it when baremetal is present in a region. Belongs to ccadmin/BaremetalMonitoring project
   - name: "bame_xclarity"
@@ -290,8 +176,7 @@ spec:
     is_public: false
     extra_specs:
       "catalog:description": Baremetal Monitoring for Lenovo XCA
-      "vmware:hv_enabled": "True"
-      "hw_video:ram_max_mb": "16"
+      {{- tuple . "bame" | include "ironic.helpers.extra_specs" | indent 6 }}
 
   - name: "bame_xclarity_big"
     id: "90011"
@@ -301,8 +186,7 @@ spec:
     is_public: false
     extra_specs:
       "catalog:description": Baremetal Monitoring for Lenovo XCA
-      "vmware:hv_enabled": "True"
-      "hw_video:ram_max_mb": "16"
+      {{- tuple . "bame" | include "ironic.helpers.extra_specs" | indent 6 }}
 
   - name: "bame_openmanage"
     id: "90020"
@@ -312,8 +196,7 @@ spec:
     is_public: false
     extra_specs:
       "catalog:description": Baremetal Monitoring for Dell Openmanage Enterprise
-      "vmware:hv_enabled": "True"
-      "hw_video:ram_max_mb": "16"
+      {{- tuple . "bame" | include "ironic.helpers.extra_specs" | indent 6 }}
 
   - name: "bame_imc"
     id: "90030"
@@ -323,8 +206,7 @@ spec:
     is_public: false
     extra_specs:
       "catalog:description": Baremetal Monitoring for Cisco IMC Supervisor
-      "vmware:hv_enabled": "True"
-      "hw_video:ram_max_mb": "16"
+      {{- tuple . "bame" | include "ironic.helpers.extra_specs" | indent 6 }}
 
   - name: "bame_intersight"
     id: "90040"
@@ -334,8 +216,7 @@ spec:
     is_public: false
     extra_specs:
       "catalog:description": Baremetal Monitoring for Cisco Intersight
-      "vmware:hv_enabled": "True"
-      "hw_video:ram_max_mb": "16"
+      {{- tuple . "bame" | include "ironic.helpers.extra_specs" | indent 6 }}
 
   - name: "bame_hpe"
     id: "90050"
@@ -345,8 +226,7 @@ spec:
     is_public: false
     extra_specs:
       "catalog:description": Baremetal Monitoring for HPe Openview
-      "vmware:hv_enabled": "True"
-      "hw_video:ram_max_mb": "16"
+      {{- tuple . "bame" | include "ironic.helpers.extra_specs" | indent 6 }}
 
 # New Hypervisor Flavors
   # aPOD servers Dell PowerEdge R640
@@ -358,13 +238,21 @@ spec:
     is_public: false
     extra_specs:
       "catalog:description": Hypervisor Host 2 sockets, 20 cores, 384GB RAM
-      "capabilities:cpu_arch": "x86_64"
-      "quota:separate": "true"
-      "quota:instance_only": "true"
       "resources:CUSTOM_HV_S2_C20_M384": "1"
-      "resources:MEMORY_MB": "0"
-      "resources:DISK_GB": "0"
-      "resources:VCPU": "0"
+      {{- tuple . "baremetal" | include "ironic.helpers.extra_specs" | indent 6 }}
+
+  # aPOD servers Dell PowerEdge R640 for vSMP. Only existing in qa-de-1.
+  # adding for documentation purposes
+  # - name: "hv_s2_c20_m384_vsmp"
+  #   id: "12021"
+  #   vcpus: 40
+  #   ram: 393216
+  #   disk: 240
+  #   is_public: false
+  #   extra_specs:
+  #     "catalog:description": Hypervisor Host 2 sockets, 20 cores, 384GB RAM
+  #     "resources:CUSTOM_HV_S2_C20_M384": "1"
+  #     {{- tuple . "baremetal" | include "ironic.helpers.extra_specs" | indent 6 }}
 
   # vPOD servers Lenovo Thinksystem SR950
   - name: "hv_s8_c24_m6144"
@@ -375,30 +263,20 @@ spec:
     is_public: false
     extra_specs:
       "catalog:description": Hypervisor Host 8 sockets, 24 cores, 6TB RAM
-      "capabilities:cpu_arch": "x86_64"
-      "quota:separate": "true"
-      "quota:instance_only": "true"
       "resources:CUSTOM_HV_S8_C24_M6144": "1"
-      "resources:MEMORY_MB": "0"
-      "resources:DISK_GB": "0"
-      "resources:VCPU": "0"
+      {{- tuple . "baremetal" | include "ironic.helpers.extra_specs" | indent 6 }}
 
-  # vPOD servers Dell PowerEdge R840 with 6TB RAM
-  - name: "hv_s4_c24_m6144"
-    id: "2029"
-    vcpus: 96
+  # BM servers Lenovo Thinksystem SR950
+  - name: "bm_s8_c24_m6144"
+    id: "22022"
+    vcpus: 192
     ram: 6291456
-    disk: 240
-    is_public: false
+    disk: 400
+    is_public: true
     extra_specs:
-      "catalog:description": Hypervisor Host 4 sockets, 24 cores, 6TB RAM
-      "capabilities:cpu_arch": "x86_64"
-      "quota:separate": "true"
-      "quota:instance_only": "true"
-      "resources:CUSTOM_HV_S4_C24_M6144": "1"
-      "resources:MEMORY_MB": "0"
-      "resources:DISK_GB": "0"
-      "resources:VCPU": "0"
+      "catalog:description": Baremetal Host 8 sockets, 24 cores, 6TB RAM
+      "resources:CUSTOM_BM_S8_C24_M6144": "1"
+      {{- tuple . "baremetal" | include "ironic.helpers.extra_specs" | indent 6 }}
 
   # vPOD servers Dell PowerEdge R840
   - name: "hv_s4_c24_m3072"
@@ -409,13 +287,8 @@ spec:
     is_public: false
     extra_specs:
       "catalog:description": Hypervisor Host 4 sockets, 24 cores, 3TB RAM
-      "capabilities:cpu_arch": "x86_64"
-      "quota:separate": "true"
-      "quota:instance_only": "true"
       "resources:CUSTOM_HV_S4_C24_M3072": "1"
-      "resources:MEMORY_MB": "0"
-      "resources:DISK_GB": "0"
-      "resources:VCPU": "0"
+      {{- tuple . "baremetal" | include "ironic.helpers.extra_specs" | indent 6 }}
 
   # vPOD servers Dell PowerEdge R640
   - name: "hv_s2_c26_m768"
@@ -426,13 +299,8 @@ spec:
     is_public: false
     extra_specs:
       "catalog:description": Hypervisor Host 2 sockets, 26 cores, 768GB RAM
-      "capabilities:cpu_arch": "x86_64"
-      "quota:separate": "true"
-      "quota:instance_only": "true"
       "resources:CUSTOM_HV_S2_C26_M768": "1"
-      "resources:MEMORY_MB": "0"
-      "resources:DISK_GB": "0"
-      "resources:VCPU": "0"
+      {{- tuple . "baremetal" | include "ironic.helpers.extra_specs" | indent 6 }}
 
   # Cisco UCSC-C240-M4S2
   - name: "hv_s2_c14_m256"
@@ -443,13 +311,8 @@ spec:
     is_public: false
     extra_specs:
       "catalog:description": Hypervisor Host 2 sockets, 14 cores, 256GB RAM
-      "capabilities:cpu_arch": "x86_64"
-      "quota:separate": "true"
-      "quota:instance_only": "true"
       "resources:CUSTOM_HV_S2_C14_M256": "1"
-      "resources:MEMORY_MB": "0"
-      "resources:DISK_GB": "0"
-      "resources:VCPU": "0"
+      {{- tuple . "baremetal" | include "ironic.helpers.extra_specs" | indent 6 }}
 
   # vPOD servers Lenovo ThinkSystem SR650
   - name: "hv_s2_c26_m384"
@@ -460,13 +323,8 @@ spec:
     is_public: false
     extra_specs:
       "catalog:description": Hypervisor Host 2 sockets, 26 cores, 384GB RAM
-      "capabilities:cpu_arch": "x86_64"
-      "quota:separate": "true"
-      "quota:instance_only": "true"
       "resources:CUSTOM_HV_S2_C26_M384": "1"
-      "resources:MEMORY_MB": "0"
-      "resources:DISK_GB": "0"
-      "resources:VCPU": "0"
+      {{- tuple . "baremetal" | include "ironic.helpers.extra_specs" | indent 6 }}
 
   # Swift servers Cisco UCS-C240-M4L
   - name: "hv_s2_c4_m128"
@@ -477,13 +335,8 @@ spec:
     is_public: false
     extra_specs:
       "catalog:description": Swift Hypervisor Host 2 sockets, 4 cores, 128GB RAM
-      "capabilities:cpu_arch": "x86_64"
-      "quota:separate": "true"
-      "quota:instance_only": "true"
       "resources:CUSTOM_HV_S2_C4_M128": "1"
-      "resources:MEMORY_MB": "0"
-      "resources:DISK_GB": "0"
-      "resources:VCPU": "0"
+      {{- tuple . "baremetal" | include "ironic.helpers.extra_specs" | indent 6 }}
 
   # vPOD servers Lenovo Thinksystem SR950 12TB
   - name: "hv_s8_c28_m12288"
@@ -494,13 +347,203 @@ spec:
     is_public: false
     extra_specs:
       "catalog:description": Hypervisor Host 8 sockets, 28 cores, 12TB RAM
-      "capabilities:cpu_arch": "x86_64"
-      "quota:separate": "true"
-      "quota:instance_only": "true"
       "resources:CUSTOM_HV_S8_C28_M12288": "1"
-      "resources:MEMORY_MB": "0"
-      "resources:DISK_GB": "0"
-      "resources:VCPU": "0"
+      {{- tuple . "baremetal" | include "ironic.helpers.extra_specs" | indent 6 }}
+
+  # BM servers Lenovo Thinksystem SR950 12TB
+  - name: "bm_s8_c28_m12288"
+    id: "22028"
+    vcpus: 224
+    ram: 12582912
+    disk: 240
+    is_public: true
+    extra_specs:
+      "catalog:description": Baremetal Host 8 sockets, 28 cores, 12TB RAM
+      "resources:CUSTOM_BM_S8_C28_M12288": "1"
+      {{- tuple . "baremetal" | include "ironic.helpers.extra_specs" | indent 6 }}
+
+  # vPOD servers Dell PowerEdge R840 with 6TB RAM
+  - name: "hv_s4_c24_m6144"
+    id: "2029"
+    vcpus: 96
+    ram: 6291456
+    disk: 240
+    is_public: false
+    extra_specs:
+      "catalog:description": Hypervisor Host 4 sockets, 24 cores, 6TB RAM
+      "resources:CUSTOM_HV_S4_C24_M6144": "1"
+      {{- tuple . "baremetal" | include "ironic.helpers.extra_specs" | indent 6 }}
+
+  # Dell R760 only in qa-de-1 currently for testing and not for seeding in other regions
+  # just adding for documentation purposes
+  # - name: "hv_s2_c32_m2048"
+  #   id: "2030"
+  #   vcpus: 64
+  #   ram: 2097152
+  #   disk: 480
+  #   is_public: false
+  #   extra_specs:
+  #     "catalog:description": Hypervisor Host 2 sockets, 32 cores, 2TB RAM
+  #     "resources:CUSTOM_HV_S2_C32_M2048": "1"
+  #     {{- tuple . "baremetal" | include "ironic.helpers.extra_specs" | indent 6 }}
+
+  # Dell R760 only in qa-de-1 currently for testing and not for seeding in other regions
+  # just adding for documentation purposes
+  # - name: "hv_s2_c32_m2048_vsmp"
+  #   id: 12030"
+  #   vcpus: 64
+  #   ram: 2097152
+  #   disk: 480
+  #   is_public: false
+  #   extra_specs:
+  #     "catalog:description": Hypervisor Host 2 sockets, 32 cores, 2TB RAM
+  #     "resources:CUSTOM_HV_S2_C32_M2048_VSMP": "1"
+  #     {{- tuple . "baremetal" | include "ironic.helpers.extra_specs" | indent 6 }}
+
+  # New Sapphire Rapids 2S1T
+  - name: "hv_s2_c32_m1024_v0"
+    id: "2031"
+    vcpus: 64
+    ram: 1048576
+    disk: 447
+    is_public: false
+    extra_specs:
+      "catalog:description": Hypervisor Host 2 sockets, 32 cores, 1TB RAM, Sapphire Rapids
+      "resources:CUSTOM_HV_S2_C32_M1024_V0": "1"
+      {{- tuple . "baremetal" | include "ironic.helpers.extra_specs" | indent 6 }}
+
+  # New Sapphire Rapids 2S1T
+  - name: "bm_s2_c32_m1024_v0"
+    id: "22031"
+    vcpus: 64
+    ram: 1048576
+    disk: 447
+    is_public: true
+    extra_specs:
+      "catalog:description": BareMetal 2 sockets, 32 cores, 1TB RAM, Sapphire Rapids
+      "resources:CUSTOM_BM_S2_C32_M1024_V0": "1"
+      {{- tuple . "baremetal" | include "ironic.helpers.extra_specs" | indent 6 }}
+
+  # New Sapphire Rapids Swift nodes
+  - name: "hv_s2_c32_m512_v0"
+    id: "2032"
+    vcpus: 64
+    ram: 524288
+    disk: 960
+    is_public: false
+    extra_specs:
+      "catalog:description": Hypervisor Host 2 sockets, 32 cores, 512MB RAM, Sapphire Rapids
+      "resources:CUSTOM_HV_S2_C32_M512_V0": "1"
+      {{- tuple . "baremetal" | include "ironic.helpers.extra_specs" | indent 6 }}
+
+  # New GPU Nodes Dell PowerEdge XE9680 with Nvidia H100
+  - name: "bg_s2_c48_m1024_v0"
+    id: "2033"
+    vcpus: 96
+    ram: 1048576
+    disk: 480
+    is_public: true
+    extra_specs:
+      "catalog:description": GPU Baremetal 2 Socket Sapphire Rapids 8x Nvidia Tesla H100
+      "resources:CUSTOM_BG_S2_C48_M1024_V0": "1"
+      {{- tuple . "baremetal" | include "ironic.helpers.extra_specs" | indent 6 }}
+
+  # New Sapphire Rapids 4S4T
+  - name: "hv_s4_c32_m4096_v0"
+    id: "2034"
+    vcpus: 128
+    ram: 4194304
+    disk: 447
+    is_public: false
+    extra_specs:
+      "catalog:description": Hypervisor Host 4 sockets, 32 cores, 4TB RAM, Sapphire Rapids
+      "resources:CUSTOM_HV_S4_C32_M4096_V0": "1"
+      {{- tuple . "baremetal" | include "ironic.helpers.extra_specs" | indent 6 }}
+
+  # New Sapphire Rapids 4S4T
+  - name: "bm_s4_c32_m4096_v0"
+    id: "22034"
+    vcpus: 128
+    ram: 4194304
+    disk: 447
+    is_public: true
+    extra_specs:
+      "catalog:description": BareMetal 4 sockets, 32 cores, 4TB RAM, Sapphire Rapids
+      "resources:CUSTOM_BM_S4_C32_M4096_V0": "1"
+      {{- tuple . "baremetal" | include "ironic.helpers.extra_specs" | indent 6 }}
+
+  # New Sapphire Rapids 4S2T only for HDA nto as hypervisor
+  # Therefore only as baremetal flavor and not as hypervisor flavor
+  - name: "bm_s4_c32_m2048_v0"
+    id: "22035"
+    vcpus: 128
+    ram: 2097152
+    disk: 447
+    is_public: true
+    extra_specs:
+      "catalog:description": BareMetal 4 sockets, 32 cores, 2TB RAM, Sapphire Rapids
+      "resources:CUSTOM_BM_S4_C32_M2048_V0": "1"
+      {{- tuple . "baremetal" | include "ironic.helpers.extra_specs" | indent 6 }}
+
+  # New Sapphire Rapids aPOD servers
+  - name: "hv_s1_c32_m512_v0"
+    id: "2036"
+    vcpus: 32
+    ram: 524288
+    disk: 447
+    is_public: false
+    extra_specs:
+      "catalog:description": Hypervisor 1 socket, 32 cores, 512GB RAM, Sapphire Rapids
+      "resources:CUSTOM_HV_S1_C32_M512_V0": "1"
+      {{- tuple . "baremetal" | include "ironic.helpers.extra_specs" | indent 6 }}
+
+  # New Sapphire Rapids 8S8T servers
+  - name: "hv_s8_c32_m8192_v0"
+    id: "2037"
+    vcpus: 256
+    ram: 8388608
+    disk: 480
+    is_public: false
+    extra_specs:
+      "catalog:description": Hypervisor 8 socket, 32 cores, 8TB RAM, Sapphire Rapids
+      "resources:CUSTOM_HV_S8_C32_M8192_V0": "1"
+      {{- tuple . "baremetal" | include "ironic.helpers.extra_specs" | indent 6 }}
+
+  # new Sapphire Rapid 8S8T in qa-de-1 with less RAM
+  - name: "hv_s8_c32_m2048_v0"
+    id: "2038"
+    vcpus: 256
+    ram: 2097152
+    disk: 3200
+    is_public: false
+    extra_specs:
+      "catalog:description": Hypervisor 8 socket, 32 cores, 2TB RAM, Sapphire Rapids
+      "resources:CUSTOM_HV_S8_C32_M2048_V0": "1"
+      {{- tuple . "baremetal" | include "ironic.helpers.extra_specs" | indent 6 }}
+
+  # new Lenovo AMD servers
+  - name: "hv_s1_c24_m192_v0"
+    id: "2039"
+    vcpus: 24
+    ram: 196608
+    disk: 894
+    is_public: false
+    extra_specs:
+      "catalog:description": Hypervisor 1 socket, 24 cores, 192GB RAM, AMD EPYC
+      "resources:CUSTOM_HV_S1_C24_M192_V0": "1"
+      {{- tuple . "baremetal" | include "ironic.helpers.extra_specs" | indent 6 }}
+
+  # HPE Superdome Sapphire Rapid with 8TB in qa-de-1 only
+  # - name: "bm_s16_c16_m8192_v0"
+  #   id: "2040"
+  #   vcpus: 256
+  #   ram: 8388608
+  #   disk: 3200
+  #   is_public: true
+  #   extra_specs:
+  #     "catalog:description": BareMetal 16 socket, 16 cores, 8TB RAM, Sapphire Rapids
+  #     "resources:CUSTOM_BM_S16_C16_M8192_V0": "1"
+  #     {{- tuple . "baremetal" | include "ironic.helpers.extra_specs" | indent 6 }}
 
   domains:
   - name: Default
@@ -691,6 +734,34 @@ spec:
       - project: service_desk
         role: baremetal_admin
       - domain: bs
+        role: baremetal_viewer
+        inherited: true
+
+  - name: btp_fp
+    groups:
+    - name: BTP_FP_API_SUPPORT
+      role_assignments:
+      - domain: btp_fp
+        role: baremetal_admin
+        inherited: true
+    - name: BTP_FP_COMPUTE_SUPPORT
+      role_assignments:
+      - domain: btp_fp
+        role: baremetal_admin
+        inherited: true
+    - name: BTP_FP_NETWORK_SUPPORT
+      role_assignments:
+      - domain: btp_fp
+        role: baremetal_viewer
+        inherited: true
+    - name: BTP_FP_STORAGE_SUPPORT
+      role_assignments:
+      - domain: btp_fp
+        role: baremetal_viewer
+        inherited: true
+    - name: BTP_FP_SERVICE_DESK
+      role_assignments:
+      - domain: btp_fp
         role: baremetal_viewer
         inherited: true
 
@@ -921,6 +992,34 @@ spec:
       - project: service_desk
         role: baremetal_admin
       - domain: hec
+        role: baremetal_viewer
+        inherited: true
+
+  - name: kyma
+    groups:
+    - name: KYMA_API_SUPPORT
+      role_assignments:
+      - domain: kyma
+        role: baremetal_admin
+        inherited: true
+    - name: KYMA_COMPUTE_SUPPORT
+      role_assignments:
+      - domain: kyma
+        role: baremetal_admin
+        inherited: true
+    - name: KYMA_NETWORK_SUPPORT
+      role_assignments:
+      - domain: kyma
+        role: baremetal_viewer
+        inherited: true
+    - name: KYMA_STORAGE_SUPPORT
+      role_assignments:
+      - domain: kyma
+        role: baremetal_viewer
+        inherited: true
+    - name: KYMA_SERVICE_DESK
+      role_assignments:
+      - domain: kyma
         role: baremetal_viewer
         inherited: true
 

@@ -14,3 +14,21 @@ spec:
     matchLabels:
       failure-domain.beta.kubernetes.io/zone: {{ .Values.global.region }}{{ .Values.failure_domain_zone }}
 {{ end }}
+{{ if .Values.sshd.enabled }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Release.Name }}-sshd
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 10Mi
+{{ if .Values.pvc_zone_selector }}
+  selector:
+    matchLabels:
+      failure-domain.beta.kubernetes.io/zone: {{ .Values.global.region }}{{ .Values.failure_domain_zone }}
+{{ end }}
+{{ end }}

@@ -18,7 +18,7 @@ function process_config {
 
 
 function _start_application {
-    exec neutron-aci-agent --config-file /etc/neutron/neutron.conf --config-file /etc/neutron/plugins/ml2/ml2_conf.ini --config-file /etc/neutron/plugins/ml2/ml2-conf-aci.ini
+    exec neutron-aci-agent --config-file /etc/neutron/neutron.conf --config-dir /etc/neutron/secrets --config-file /etc/neutron/plugins/ml2/ml2_conf.ini --config-file /etc/neutron/plugins/ml2/ml2-conf-aci.ini
 }
 
 

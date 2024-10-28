@@ -19,12 +19,14 @@ spec:
       {{- if .Values.serviceAccount.enabled }}
       serviceAccountName: {{ .Values.serviceAccount.name }}
       {{- end }}
+      {{- if .Values.databaseUpgrade.enabled }}
       initContainers:
       - name: "upgrade"
         image: "{{required ".Values.global.registry is missing" .Values.global.registry }}/{{ .Values.image.repository }}:{{required ".Values.image.tag is missing" .Values.image.tag }}"
         args: ["upgrade", "--noinput", "--lock"]
         env:
 {{ include "env-vars" . | indent  10 }}
+      {{- end }}
       containers:
       - name: {{ .Chart.Name }}
         image: "{{required ".Values.global.registry is missing" .Values.global.registry }}/{{ .Values.image.repository }}:{{required ".Values.image.tag is missing" .Values.image.tag }}"
@@ -45,3 +47,10 @@ spec:
           timeoutSeconds: 5
         env:
 {{ include "env-vars" . | indent  10 }}
+        resources:
+          requests:
+            cpu: {{ .Values.sentry.resources.requests.cpu | quote }}
+            memory: {{ .Values.sentry.resources.requests.memory | quote }}
+          limits:
+            cpu: {{ .Values.sentry.resources.limits.cpu | quote }}
+            memory: {{ .Values.sentry.resources.limits.memory | quote }}

@@ -1,0 +1,20 @@
+{{ if .Capabilities.APIVersions.Has "trust.cert-manager.io/v1alpha1" -}}
+apiVersion: trust.cert-manager.io/v1alpha1
+kind: Bundle
+metadata:
+  name: cloud-sap # The bundle name will also be used for the target
+spec:
+  sources:
+  - useDefaultCAs: true
+  - configMap:
+      key: ca.crt
+      name: kube-root-ca.crt
+{{- if .Values.additional_sources }}
+  {{- .Values.additional_sources | toYaml | nindent 2 }}
+{{- end }}
+  target:
+    configMap:
+      key: "trust-bundle.pem"
+    namespaceSelector:
+      {{- .Values.namespaces | toYaml | nindent 6 }}
+{{- end }}

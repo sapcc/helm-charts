@@ -16,8 +16,12 @@ db_password: ""
 # not used)
 collectors:
   database: true
-  bgwriter: true
   replication_slot: true
+  stat_bgwriter: true
+
+image:
+  repository: shared-app-images/postgres-exporter
+  tag: 0.15.0-20240907231702
 
 # resource requests and limits <http://kubernetes.io/docs/user-guide/compute-resources/>
 resources:
@@ -39,6 +43,10 @@ alerts:
   support_group:
   # Configurable service label of the alerts. Defaults to `.Release.Name`.
   service: ""
+
+  # An alert will be sent if the scrape duration of this exporter consistently
+  # exceeds this threshold (value in seconds).
+  scrape_duration_threshold: 5
 
 customMetrics:
   pg_stat_user_tables:

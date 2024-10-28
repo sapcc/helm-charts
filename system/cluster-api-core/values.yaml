@@ -1,0 +1,30 @@
+controllerManager:
+  manager:
+    args:
+      - --leader-elect
+      - --diagnostics-address=:8443
+      - --insecure-diagnostics=false
+      - --feature-gates=MachinePool=false,ClusterResourceSet=false,ClusterTopology=false,RuntimeSDK=false,MachineSetPreflightChecks=false
+    containerSecurityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+          - ALL
+      privileged: false
+      runAsGroup: 65532
+      runAsUser: 65532
+    image:
+      repository: gcr.io/k8s-staging-cluster-api/cluster-api-controller
+      tag: v1.6.2
+    imagePullPolicy: Always
+  replicas: 1
+kubernetesClusterDomain: cluster.local
+manager:
+  serviceAccount:
+    annotations: {}
+webhookService:
+  ports:
+    - port: 443
+      targetPort: webhook-server
+  type: ClusterIP
+fullnameOverride: capi-capi

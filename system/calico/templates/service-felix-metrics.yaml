@@ -1,0 +1,17 @@
+{{- if .Values.config.monitoring.enabled }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: calico-felix-monitoring
+  namespace: {{ .Release.Namespace }}
+  labels:
+    monitoring: calico-felix
+spec:
+  ports:
+    - port: {{ .Values.config.monitoring.felixMetricsPort }}
+      targetPort: {{ .Values.config.monitoring.felixMetricsPort }}
+      name: metrics
+  selector:
+    k8s-app: calico-node
+{{- end }}

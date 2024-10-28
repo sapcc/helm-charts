@@ -1,0 +1,112 @@
+{{- range $host, $env := .Values.agents.f5 }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: archer-agent-f5-{{ $host }}
+  labels:
+    {{- include "archer.labels" $ | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "archer.selectorLabels" $ | nindent 6 }}
+      app.kubernetes.io/component: agent
+      cloud.sap/host: {{ $host }}
+  template:
+    metadata:
+      {{- with $.Values.podAnnotations }}
+      annotations:
+        checksum/etc: {{ include (print $.Template.BasePath  "/configmap.yaml") $ | sha256sum }}
+        checksum/etc-f5: {{ include (print $.Template.BasePath  "/configmap-f5.yaml") $ | sha256sum }}
+        kubectl.kubernetes.io/default-container: {{ $.Chart.Name }}-agent-f5
+        {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+        linkerd.io/inject: enabled
+        {{- end }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "archer.labels" $ | nindent 8 }}
+        app.kubernetes.io/component: agent
+        cloud.sap/host: {{ $host }}
+    spec:
+      initContainers:
+        - name: wait-for-migration
+          image: "{{ $.Values.global.registry }}/kubernetes-entrypoint:{{ $.Values.image.kubernetes_entrypoint_version }}"
+          env:
+            - name: NAMESPACE
+              value: "monsoon3"
+            - name: DEPENDENCY_JOBS
+              value: {{ include "archer.fullname" $ }}-migration-{{ $.Values.image.tag | required ".Values.image.tag is required" }}
+            - name: COMMAND
+              value: "true"
+      containers:
+        - name: {{ $.Chart.Name }}-agent-f5
+          securityContext:
+          {{- toYaml $.Values.securityContext | nindent 12 }}
+          image: "{{ $.Values.global.registry }}/archer:{{ $.Values.image.tag }}"
+          command: ["/usr/bin/archer-f5-agent"]
+          args: ["--config-file=/etc/archer/archer.ini", "--config-file=/etc/archer/f5.ini"]
+          imagePullPolicy: {{ $.Values.image.pullPolicy }}
+          env:
+            - name: GOMEMLIMIT
+              valueFrom:
+                resourceFieldRef:
+                  containerName: {{ $.Chart.Name }}-agent-f5
+                  resource: limits.memory
+            - name: GOMAXPROCS
+              valueFrom:
+                resourceFieldRef:
+                  containerName: {{ $.Chart.Name }}-agent-f5
+                  resource: limits.cpu
+            - name: SENTRY_DSN
+              valueFrom:
+                secretKeyRef:
+                  name: sentry
+                  key: archer.DSN
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: archer-pguser-archer
+                  key: postgres-password
+            - name: OS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: archer-secret
+                  key: service_user_password
+            - name: BIGIP_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: archer-secret
+                  key: bigip_password
+            - name: BIGIP_USER
+              valueFrom:
+                secretKeyRef:
+                  name: archer-secret
+                  key: bigip_username
+          ports:
+            - name: metrics
+              containerPort: {{ required ".Values.metrics.port missing" $.Values.metrics.port }}
+              protocol: TCP
+          resources:
+          {{- toYaml $.Values.resources.f5_agent | nindent 12 }}
+          volumeMounts:
+            - name: etc-archer
+              mountPath: /etc/archer
+              readOnly: true
+      volumes:
+        - name: etc-archer
+          projected:
+            defaultMode: 420
+            sources:
+              - configMap:
+                  name: archer-etc
+                  items:
+                    - key: archer.ini
+                      path: archer.ini
+              - configMap:
+                  name: archer-etc-{{ $host }}
+                  items:
+                    - key: f5.ini
+                      path: f5.ini
+{{- end }}

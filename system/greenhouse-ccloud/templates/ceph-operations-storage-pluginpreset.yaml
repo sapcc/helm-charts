@@ -1,0 +1,25 @@
+{{- if .Values.pluginPreset.enabled }}
+apiVersion: greenhouse.sap/v1alpha1
+kind: PluginPreset
+metadata:
+  name: ceph-operations
+  namespace: {{ .Release.Namespace }}
+spec:
+  clusterSelector:
+    matchLabels:
+      greenhouse.sap/cluster-presets-enabled: "true"
+      cluster-type: "storage"
+  plugin:
+    disabled: false
+    pluginDefinition: ceph-operations
+    releaseNamespace: rook-ceph
+    optionValues:
+      - name: prometheusRules.ruleSelectors
+        value:
+          - name: plugin
+            value: 'kube-monitoring-{{ "{{ .Values.global.greenhouse.clusterName }}" }}'
+      - name: prometheusRules.additionalRuleLabels
+        value:
+          service: ceph
+          support_group: storage
+{{- end -}}

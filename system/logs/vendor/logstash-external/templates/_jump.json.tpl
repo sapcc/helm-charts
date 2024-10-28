@@ -3,7 +3,7 @@
   "template": "jump-*",
   "settings": {
     "index": {
-      "refresh_interval": "10s",
+      "refresh_interval": "60s",
       "unassigned": {
         "node_left": {
           "delayed_timeout": "10m"

@@ -1,0 +1,80 @@
+{{- if .Values.enabled }}
+{{- if .Values.internalIngress.enabled }}
+{{- $root := . }}
+{{- range $name := coalesce .Values.names .Values.global.targets (list .Values.name) }}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "thanos.fullName" (list $name $root) }}-internal
+  annotations:
+    disco: "true"
+    kubernetes.io/tls-acme: "true"
+    {{- if $.Values.internalIngress.authentication.sso.enabled}}
+    ingress.kubernetes.io/auth-tls-secret: {{ required "$.Values.internalIngress.authentication.sso.authTLSSecret missing" $.Values.internalIngress.authentication.sso.authTLSSecret | quote }}
+    nginx.ingress.kubernetes.io/auth-tls-secret: {{ required "$.Values.internalIngress.authentication.sso.authTLSSecret missing" $.Values.internalIngress.authentication.sso.authTLSSecret | quote }}
+    ingress.kubernetes.io/auth-tls-verify-depth: {{ required "$.Values.internalIngress.authentication.sso.authTLSVerifyDepth missing" $.Values.internalIngress.authentication.sso.authTLSVerifyDepth | quote }}
+    nginx.ingress.kubernetes.io/auth-tls-verify-depth: {{ required "$.Values.internalIngress.authentication.sso.authTLSVerifyDepth missing" $.Values.internalIngress.authentication.sso.authTLSVerifyDepth | quote }}
+    ingress.kubernetes.io/auth-tls-verify-client: {{ required "$.Values.internalIngress.authentication.sso.authTLSVerifyClient missing" $.Values.internalIngress.authentication.sso.authTLSVerifyClient | quote }}
+    nginx.ingress.kubernetes.io/auth-tls-verify-client: {{ required "$.Values.internalIngress.authentication.sso.authTLSVerifyClient missing" $.Values.internalIngress.authentication.sso.authTLSVerifyClient | quote }}
+    {{ end }}
+    {{- if $.Values.internalIngress.annotations }}
+{{ toYaml $.Values.internalIngress.annotations | indent 4 }}
+    {{ end }}
+    {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+    ingress.kubernetes.io/service-upstream: "true"
+    nginx.ingress.kubernetes.io/service-upstream: "true"
+    {{- end }}
+spec:
+  rules:
+    {{- range $host := coalesce $.Values.internalIngress.hosts (list $name) }}
+    - host: {{ include "fqdnHelper" (list $host $root) }}
+      http:
+        paths:
+        - path: /api
+          backend:
+            service:
+              name:  {{ include "thanos.fullName" (list $name $root) }}-query
+              port:
+                name: http
+          pathType: ImplementationSpecific
+        - path: /-/healthy
+          backend:
+            service:
+              name:  {{ include "thanos.fullName" (list $name $root) }}-query
+              port:
+                name: http
+          pathType: ImplementationSpecific
+    {{- end }}
+    {{- range $host := $.Values.internalIngress.hostsFQDN }}
+    - host: {{ $host }}
+      http:
+        paths:
+        - path: /api
+          backend:
+            service:
+              name:  {{ include "thanos.fullName" (list $name $root) }}-query
+              port:
+                name: http
+          pathType: ImplementationSpecific
+        - path: /-/healthy
+          backend:
+            service:
+              name:  {{ include "thanos.fullName" (list $name $root) }}-query
+              port:
+                name: http
+          pathType: ImplementationSpecific
+
+    {{- end }}
+  tls:
+    - secretName: tls-{{ include "thanos.internalURL" (list $name $root) | replace "." "-" }}
+      hosts:
+        {{- range $host := coalesce $.Values.internalIngress.hosts (list $name) }}
+        - {{ include "fqdnHelper" (list $host $root) }}
+        {{- end }}
+        {{- range $host := $.Values.internalIngress.hostsFQDN }}
+        - {{ $host }}
+        {{- end }}
+{{- end }}
+{{- end }}
+{{- end }}

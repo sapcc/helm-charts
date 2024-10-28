@@ -1,0 +1,40 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ironic-config-httpd
+  namespace: {{ .Release.Namespace }}
+data:
+  DEPLOY_KERNEL_URL: https://metal3-ironic.{{ .Values.global.region }}.{{ .Values.global.tld }}:{{ .Values.ironic.ipxePort }}/images/ironic-python-agent.kernel
+  DEPLOY_RAMDISK_URL: https://metal3-ironic.{{ .Values.global.region }}.{{ .Values.global.tld }}:{{ .Values.ironic.ipxePort }}/images/ironic-python-agent.initramfs
+  HTTP_PORT: "{{ .Values.ironic.ipxePort }}"
+  IPXE_TLS_PORT: "{{ .Values.ironic.ipxePort }}"
+  IRONIC_ENDPOINT: https://metal3-ironic.{{ .Values.global.region }}.{{ .Values.global.tld }}:{{ .Values.ironic.ironicPort }}/v1/
+  IRONIC_FAST_TRACK: "true"
+  IRONIC_ENABLE_VLAN_INTERFACES: all
+  INSPECTOR_REVERSE_PROXY_SETUP: "true"
+  USE_IRONIC_INSPECTOR: "false"
+  IRONIC_KERNEL_PARAMS: console=ttyS0
+  PROVISIONING_INTERFACE: {{ .Values.ironic.provisionInterface }}
+  RESTART_CONTAINER_CERTIFICATE_UPDATED: "false"
+  IRONIC_RAMDISK_SSH_KEY: {{ .Values.ironic.auth.ipaSshKey }}
+  IRONIC_BASE_URL: https://metal3-ironic.{{ .Values.global.region }}.{{ .Values.global.tld }}
+  IRONIC_IP: metal3-ironic.{{ .Values.global.region }}.{{ .Values.global.tld }}
+  IRONIC_URL_HOST: metal3-ironic.{{ .Values.global.region }}.{{ .Values.global.tld }}
+  IPA_BASEURI: {{ .Values.ironic.ipa.baseUri }} 
+  IPA_BRANCH: {{ .Values.ironic.ipa.branch }}
+  RESTART_CONTAINER_CERTIFICATE_UPDATED: "true"
+  IRONIC_TLS_SETUP: "true"
+  IRONIC_CACERT_FILE: "/certs/ironic/ca.crt"
+  IPXE_CACERT_FILE: "/certs/ipxe/ca.crt"
+  IPXE_CUSTOM_FIRMWARE_DIR: "/tftpboot"
+  inspector.ipxe.j2: |
+    #!ipxe
+
+    :retry_boot
+    echo In inspector.ipxe
+    imgfree
+    # NOTE(dtantsur): keep inspection kernel params in [mdns]params in
+    # ironic-inspector-image and configuration in configure-ironic.sh
+    kernel --timeout 60000 https://metal3-ironic.{{ .Values.global.region }}.{{ .Values.global.tld }}:{{ .Values.ironic.ipxePort }}/images/ironic-python-agent.kernel ipa-insecure=1 ipa-inspection-collectors=default,logs systemd.journald.forward_to_console=yes BOOTIF=${mac} ipa-debug=1 ipa-enable-vlan-interfaces=all ipa-inspection-dhcp-all-interfaces=1 ipa-collect-lldp=1 ipa-inspection-callback-url=https://metal3-ironic.{{ .Values.global.region }}.{{ .Values.global.tld }}:{{ .Values.ironic.ironicPort }}/v1/continue_inspection ipa-api-url=https://metal3-ironic.{{ .Values.global.region }}.{{ .Values.global.tld }}:{{ .Values.ironic.ironicPort }} initrd=ironic-python-agent.initramfs sshkey={{ .Values.ironic.auth.ipaSshKey | quote }} console=tty0 || goto retry_boot
+    initrd --timeout 60000 https://metal3-ironic.{{ .Values.global.region }}.{{ .Values.global.tld }}:{{ .Values.ironic.ipxePort }}/images/ironic-python-agent.initramfs || goto retry_boot
+    boot

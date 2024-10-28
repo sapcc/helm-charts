@@ -128,7 +128,8 @@ absent-metrics-operator:
 
 kube-state-metrics:
   image:
-    repository: keppel.global.cloud.sap/ccloud-registry-k8s-io-mirror/kube-state-metrics/kube-state-metrics
+    registry: keppel.global.cloud.sap/ccloud-registry-k8s-io-mirror
+    repository: kube-state-metrics/kube-state-metrics
 
   customLabels:
     app: kube-state-metrics
@@ -148,7 +149,8 @@ ping-exporter:
 
 prometheus-node-exporter:
   image:
-    repository: keppel.global.cloud.sap/ccloud-dockerhub-mirror/prom/node-exporter
+    registry: keppel.global.cloud.sap
+    repository: ccloud-dockerhub-mirror/prom/node-exporter
 
   service:
     annotations:
@@ -177,77 +179,6 @@ prometheus-node-exporter:
   rbac:
     pspEnabled: false
 
-prometheus-server:
-  name: kubernetes
-
-  retentionTime: 21d
-
-  additionalScrapeConfigs:
-    name: prometheus-kubernetes-additional-scrape-config
-    key: scrape-config.yaml
-
-  ingress:
-    enabled: true
-    hosts:
-      - prometheus-kubernetes.virtual
-      - prometheus.virtual
-
-  internalIngress:
-    enabled: true
-    hosts:
-      - prometheus-kubernetes-internal.virtual
-      - prometheus-internal.virtual
-
-  # Store in memory.
-  persistence:
-    enabled: true
-    size: 100Gi
-
-  serviceDiscoveries:
-    endpoints:
-      enabled: true
-      # Scrape all targets regardless of their `prometheus.io/targets` annotation.
-      limitToPrometheusTargets: false
-    pods:
-      enabled: true
-      # Scrape all targets regardless of their `prometheus.io/targets` annotation.
-      limitToPrometheusTargets: false
-    kubeAPIServer:
-      enabled: true
-    cAdvisor:
-      enabled: true
-    kubelet:
-      enabled: true
-    nodeExporter:
-      enabled: true
-    kubeDNS:
-      enabled: false
-    kubernikus:
-      enabled: true
-    probes:
-      enabled: true
-
-  alerts:
-    multipleTargetScrapes:
-      exceptions:
-        # we exclude cadvisor metrics because it has the same instance as the kubelet but a different path
-        # e.g. 10.246.204.80:10250/metrics vs. 10.246.204.80:10250/metrics/cadvisor
-        - kubernetes-cadvisors
-        - kubernetes-kubelet
-
-  # Send alerts to these alertmanagers.
-  alertmanagers:
-    # Enabled via secrets.
-    authentication:
-      enabled: false
-
-    hosts:
-      - alertmanager-internal.scaleout.eu-de-1.cloud.sap
-      - alertmanager-internal.scaleout.eu-nl-1.cloud.sap
-
-  thanos:
-    enabled: false
-
 prometheus-kubernetes-rules:
   prometheusName: kubernetes
 
@@ -258,12 +189,11 @@ kubernikus-monitoring:
   prometheusName: kubernetes
 
 fluent-bit:
+  existingConfigMap: fluent-bit-config
   image:
     repository: keppel.global.cloud.sap/ccloud-dockerhub-mirror/fluent/fluent-bit
     pullPolicy: IfNotPresent
   backend:
-    es:
-      enabled: true
     opensearch:
       enabled: false
       host: DEFINED-IN-SECRETS
@@ -275,3 +205,60 @@ fluent-bit:
         enabled: "On"
         verify: "Off"
         debug: '1'
+
+falco:
+  enabled: false
+  image:
+    registry: keppel.global.cloud.sap/ccloud-dockerhub-mirror
+
+  driver:
+    loader:
+      initContainer:
+        image:
+          registry: keppel.global.cloud.sap/ccloud-dockerhub-mirror
+
+  controller:
+    daemonset:
+      updateStrategy:
+        type: RollingUpdate
+        rollingUpdate:
+          maxUnavailable: 25%
+
+  falcoctl:
+    image:
+      registry: keppel.global.cloud.sap/ccloud-dockerhub-mirror
+
+  tolerations:
+    - operator: Exists
+
+  extra:
+    args:
+      - -v
+      - --unbuffered
+      - -o
+      - json_output=true
+
+  falco:
+    rules_files:
+      - /etc/falco/rules.d
+    rules:
+      - disable:
+          rule: "*"
+      - enable:
+          tag: pci
+
+x509-certificate-exporter:
+  enabled: false
+  secretsExporter:
+    podAnnotations:
+      prometheus.io/port: "9793"
+      prometheus.io/scrape: "true"
+      prometheus.io/targets: kubernetes
+  hostPathsExporter:
+    daemonSets: null
+  service:
+    create: false
+  prometheusServiceMonitor:
+    create: false
+  prometheusRules:
+    create: false

@@ -1,0 +1,40 @@
+{{- if and .Values.pluginPreset.enabled .Values.digicert.enabled }}
+
+apiVersion: v1
+kind: Secret
+metadata:
+  name: digicert-issuer
+  namespace: {{ .Release.Namespace }}
+data:
+  apiToken: {{ required "PluginPreset digicert apiToken missing" .Values.digicert.provisioner.apiToken | b64enc }}
+
+---
+apiVersion: greenhouse.sap/v1alpha1
+kind: PluginPreset
+metadata:
+  name: digicert-issuer
+  namespace: {{ .Release.Namespace }}
+spec:
+  clusterSelector:
+    matchLabels:
+      greenhouse.sap/cluster-presets-enabled: "true"
+  plugin:
+    disabled: false
+    displayName: digicert issuer
+    optionValues:
+    - name: certManager.serviceAccount.name
+      value: cert-manager
+    - name: certManager.serviceAccount.namespace
+      value: greenhouse
+    - name: provisioner.apiToken
+      valueFrom:
+        secret:
+          key: apiToken
+          name: digicert-issuer
+    - name: provisioner.organizationID
+      value: {{  required "plugin digicert organization ID is missing" .Values.digicert.provisioner.organizationID }}
+    - name: provisioner.organizationUnits
+      value: {{ required "plugin digicert organization units is missing" .Values.digicert.provisioner.organizationUnits }}
+    pluginDefinition: digicert-issuer
+    releaseNamespace: kube-system
+{{- end -}}

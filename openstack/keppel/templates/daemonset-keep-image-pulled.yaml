@@ -22,13 +22,13 @@ spec:
       maxUnavailable: 1000 # allow updating all pods at once
   selector:
     matchLabels:
-      app: keep-image-pulled
+      name: keep-image-pulled
   template:
     metadata:
       labels:
-        app: keep-image-pulled
-        alert-tier: os
-        alert-service: keppel
+        name: keep-image-pulled
+      annotations:
+        linkerd.io/inject: disabled # This pod does not interact with the network.
     spec:
       # NOTE: observed resource usage in eu-de-1 (as of 2020-02-26)
       # - no measurable CPU usage once started
@@ -36,48 +36,21 @@ spec:
       #   starting a container with less than 16-32 MiB RAM limit)
       containers:
         - name: keppel
-          image: {{ include "keppel_image" . }}
+          image: "{{ include "keppel_image" . }}"
           imagePullPolicy: IfNotPresent
-          command: [ '/bin/sleep', 'inf' ]
-          securityContext:
-            runAsNonRoot: true
-          resources:
-            requests:
-              cpu: "1m"
-              memory: "32Mi"
-            limits:
-              cpu: "1m"
-              memory: "32Mi"
+          {{ include "tmplKeepImagePulled" . }}
         - name: postgres
-          image: "{{ .Values.global.registryAlternateRegion }}/postgres:{{.Values.postgresql.imageTag}}"
+          image: "{{ .Values.global.registryAlternateRegion }}/postgres-ng:{{.Values.postgresql.imageTag}}"
           imagePullPolicy: IfNotPresent
-          command: [ '/bin/sleep', 'inf' ]
-          securityContext:
-            runAsNonRoot: true
-            runAsUser:    65534 # nobody
-            runAsGroup:   65534 # nobody
-          resources:
-            requests:
-              cpu: "1m"
-              memory: "32Mi"
-            limits:
-              cpu: "1m"
-              memory: "32Mi"
+          {{ include "tmplKeepImagePulled" . }}
+        - name: postgres-kubectl
+          image: "{{ .Values.global.registryAlternateRegion }}/shared-app-images/alpine-kubectl:3.20-latest"
+          imagePullPolicy: Always
+          {{ include "tmplKeepImagePulled" . }}
         - name: redis # NOTE: redis-metrics is a separate pod, so we don't need to care about it
-          image: "{{.Values.redis.image.repository}}:{{.Values.redis.image.tag}}"
+          image: "{{.Values.global.registryAlternateRegion}}/shared-app-images/alpine-redis:{{.Values.redis.image.tag}}"
           imagePullPolicy: IfNotPresent
-          command: [ '/bin/sleep', 'inf' ]
-          securityContext:
-            runAsNonRoot: true
-            runAsUser:    65534 # nobody
-            runAsGroup:   65534 # nobody
-          resources:
-            requests:
-              cpu: "1m"
-              memory: "32Mi"
-            limits:
-              cpu: "1m"
-              memory: "32Mi"
+          {{ include "tmplKeepImagePulled" . }}
       # sleep(1) doesn't seem to react to SIGTERM at all, so skip right ahead to SIGKILL
       terminationGracePeriodSeconds: 1
 

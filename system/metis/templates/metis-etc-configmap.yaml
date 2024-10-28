@@ -6,7 +6,6 @@ metadata:
   namespace: {{ .Values.namespace }}
   labels:
     app.kubernetes.io/name: metis
-    helm.sh/chart: {{ include "metis.chart" $ }}
     app.kubernetes.io/instance: metis-{{ .Release.Name }}
     app.kubernetes.io/managed-by: {{ .Release.Service }}
 data:
@@ -17,7 +16,13 @@ data:
       api_host: {{ required "Missing required global billing API endpoint" .Values.metis.billingApiHost}}
     vcenter:
       enabled: {{ .Values.metis.vcenter.enabled }}
-      sync_cron_schedule: "0 */12 * * *"
+      sync_cron_schedule: "12 */1 * * *"
+{{- if .Values.metis.prometheus.enabled }}
+    prometheus:
+      enabled: {{ .Values.metis.prometheus.enabled }}
+      prometheusURL: "http://prometheus-openstack.prometheus-openstack.svc:9090"
+      cronSchedule: "*/30 * * * *"
+{{- end }}
     db:
       user: "root"
       host: metisdb-mariadb.metis

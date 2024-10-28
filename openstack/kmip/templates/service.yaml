@@ -1,0 +1,29 @@
+kind: Service
+apiVersion: v1
+
+metadata:
+  name: kmip-barbican
+  namespace: {{.Release.Namespace}}
+  labels:
+    app: {{ include "kmip.fullname" . }}-barbican
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    system: openstack
+    type: api
+    component: barbican
+  annotations:
+    {{- include "utils.linkerd.pod_and_service_annotation" . | indent 4 }}
+spec:
+  type : {{ .Values.service.type }}
+  externalIPs:
+    - {{ .Values.service.externalIPs }}
+  sessionAffinity: None
+  externalTrafficPolicy: Local
+  selector:
+    name: kmip-barbican
+  ports:
+    - port: {{ .Values.service.ports.port }}
+      targetPort: 5696
+      protocol: TCP
+      name: http

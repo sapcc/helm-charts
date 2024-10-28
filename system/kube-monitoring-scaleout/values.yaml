@@ -7,6 +7,9 @@ owner-info:
   support-group: containers
   helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/system/kube-monitoring-scaleout
 
+absent-metrics-operator:
+  enabled: true
+
 # Disable the prometheus-operator kube-state-metrics sub-chart. We deploy independently.
 kubeStateMetrics:
   enabled: false
@@ -123,12 +126,14 @@ grafana:
     alerting:
       enabled: false
 
-absent-metrics-operator:
-  enabled: true
+http-keep-alive-monitor:
+  image:
+    repository: keppel.global.cloud.sap/ccloud/http-keep-alive-monitor
 
 kube-state-metrics:
   image:
-    repository: keppel.global.cloud.sap/ccloud-registry-k8s-io-mirror/kube-state-metrics/kube-state-metrics
+    registry: keppel.global.cloud.sap/ccloud-registry-k8s-io-mirror
+    repository: kube-state-metrics/kube-state-metrics
 
   customLabels:
     app: kube-state-metrics
@@ -143,12 +148,16 @@ kube-state-metrics:
     - nodes=[*]
     - namespaces=[*]
 
+  selfMonitor:
+    enabled: true
+
 kube-state-metrics-exporter:
   prometheusName: kubernetes
 
 prometheus-node-exporter:
   image:
-    repository: keppel.global.cloud.sap/ccloud-dockerhub-mirror/prom/node-exporter
+    registry: keppel.global.cloud.sap
+    repository: ccloud-dockerhub-mirror/prom/node-exporter
 
   service:
     annotations:
@@ -177,65 +186,6 @@ prometheus-node-exporter:
   rbac:
     pspEnabled: false
 
-prometheus-server:
-  name: kubernetes
-
-  retentionTime: 21d
-
-  ingress:
-    enabled: true
-    hosts:
-      - prometheus-kubernetes.scaleout
-      - prometheus.scaleout
-
-  internalIngress:
-    enabled: true
-    hosts:
-      - prometheus-kubernetes-internal.scaleout
-      - prometheus-internal.scaleout
-
-  # Store in memory.
-  persistence:
-    enabled: true
-    size: 100Gi
-
-  serviceDiscoveries:
-    pods:
-      enabled: true
-    probes:
-      enabled: true
-    kubeAPIServer:
-      enabled: true
-    cAdvisor:
-      enabled: true
-    kubelet:
-      enabled: true
-    nodeExporter:
-      enabled: true
-    kubeDNS:
-      enabled: true
-
-  alerts:
-    multipleTargetScrapes:
-      exceptions:
-        # we exclude cadvisor metrics because it has the same instance as the kubelet but a different path
-        # e.g. 10.246.204.80:10250/metrics vs. 10.246.204.80:10250/metrics/cadvisor
-        - kubernetes-cadvisors
-        - kubernetes-kubelet
-
-  # Send alerts to these alertmanagers.
-  alertmanagers:
-    # Enabled via secrets.
-    authentication:
-      enabled: false
-
-    hosts:
-      - alertmanager-internal.scaleout.eu-de-1.cloud.sap
-      - alertmanager-internal.scaleout.eu-nl-1.cloud.sap
-
-  thanos:
-    enabled: false
-
 prometheus-kubernetes-rules:
   prometheusName: kubernetes
 
@@ -253,6 +203,13 @@ falco:
         image:
           registry: keppel.global.cloud.sap/ccloud-dockerhub-mirror
 
+  controller:
+    daemonset:
+      updateStrategy:
+        type: RollingUpdate
+        rollingUpdate:
+          maxUnavailable: 25%
+
   falcoctl:
     image:
       registry: keppel.global.cloud.sap/ccloud-dockerhub-mirror
@@ -262,24 +219,26 @@ falco:
 
   extra:
     args:
-      - -t
-      - pci
       - -v
       - --unbuffered
+      - -o
+      - json_output=true
 
   falco:
-    rules_file:
+    rules_files:
       - /etc/falco/rules.d
+    rules:
+      - disable:
+          rule: "*"
+      - enable:
+          tag: pci
 
 fluent-bit:
   image:
     repository: keppel.global.cloud.sap/ccloud-dockerhub-mirror/fluent/fluent-bit
     pullPolicy: IfNotPresent
   backend:
-    es:
-      enabled: true
     opensearch:
-      enabled: false
       host: DEFINED-IN-SECRETS
       http_user: DEFINED-IN-SECRETS
       http_passwd: DEFINED-IN-SECRETS
@@ -289,3 +248,19 @@ fluent-bit:
         enabled: "On"
         verify: "Off"
         debug: '1'
+
+x509-certificate-exporter:
+  enabled: false
+  secretsExporter:
+    podAnnotations:
+      prometheus.io/port: "9793"
+      prometheus.io/scrape: "true"
+      prometheus.io/targets: kubernetes
+  hostPathsExporter:
+    daemonSets: null
+  service:
+    create: false
+  prometheusServiceMonitor:
+    create: false
+  prometheusRules:
+    create: false

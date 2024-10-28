@@ -1,7 +1,12 @@
 {{ if .Values.api_rate_limit.enabled -}}
-{{ if .Values.api_rate_limit.project_whitelist -}}
-# List of whitelisted scopes keys (domainName/projectName).
-whitelist: {{ .Values.api_rate_limit.project_whitelist }}
+{{ if or .Values.api_rate_limit.project_whitelist_default .Values.api_rate_limit.project_whitelist -}}
+whitelist:
+{{- if .Values.api_rate_limit.project_whitelist_default }}
+  {{- toYaml .Values.api_rate_limit.project_whitelist_default | nindent 2 }}
+{{- end }}
+{{- if .Values.api_rate_limit.project_whitelist }}
+  {{- toYaml .Values.api_rate_limit.project_whitelist | nindent 2 }}
+{{- end }}
 {{- end }}
 {{- end }}
 
@@ -19,15 +24,16 @@ blacklist_response:
 
 # Group multiple CADF actions to one rate limit action.
 groups:
+  read:
+    - read
+    - read/list
+    - update/access_list
+
   write:
     - create
     - delete
     - update
     - update/*
-
-  read:
-    - read
-    - read/list
 
 rates:
   # local rate limits below applied to each project
@@ -45,6 +51,8 @@ rates:
         limit: 100r/m
 
     shares/share/action:
+      - action: read
+        limit: 1000r/m
       - action: write
         limit: 100r/m
 

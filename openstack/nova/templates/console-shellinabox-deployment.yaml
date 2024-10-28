@@ -2,11 +2,15 @@ kind: Deployment
 apiVersion: apps/v1
 
 metadata:
-  name: nova-console-shellinabox
+  name: nova-console-cell1-shellinabox
   labels:
     system: openstack
     type: backend
     component: nova
+  {{- if .Values.vpa.set_main_container }}
+  annotations:
+    vpa-butler.cloud.sap/main-container: nova-console-cell1-shellinabox
+  {{- end }}
 spec:
   replicas: {{ .Values.pod.replicas.console }}
   revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revision_history }}
@@ -19,27 +23,30 @@ spec:
     {{ end }}
   selector:
     matchLabels:
-      name: nova-console-shellinabox
+      name: nova-console-cell1-shellinabox
   template:
     metadata:
       labels:
-        name: nova-console-shellinabox
-{{ tuple . "nova" "console-shellinabox" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
+        name: nova-console-cell1-shellinabox
+        {{- tuple . "nova" "console-cell1-shellinabox" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | nindent 8 }}
+        {{- include "utils.topology.pod_label" . | indent 8 }}
       annotations:
         {{- if .Values.proxysql.mode }}
         prometheus.io/scrape: "true"
         prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
         {{- end }}
+        {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
         config-hash: {{ print (.Files.Glob "shellinabox/*").AsConfig (include "nova.etc_config_lua" .) | sha256sum }}
     spec:
       securityContext:
         runAsUser: 33
         runAsGroup: 33
         fsGroup: 33
-{{ tuple . "nova" "console-shellinabox" | include "kubernetes_pod_anti_affinity" | indent 6 }}
-{{ include "utils.proxysql.pod_settings" . | indent 6 }}
+      {{- tuple . "nova" "console-cell1-shellinabox" | include "kubernetes_pod_anti_affinity" | nindent 6 }}
+      {{- include "utils.proxysql.pod_settings" . | nindent 6 }}
+      {{- tuple . (dict "name" "nova-console-cell1-shellinabox") | include "utils.topology.constraints" | indent 6 }}
       containers:
-      - name: nova-console-shellinabox
+      - name: nova-console-cell1-shellinabox
         image: {{ required ".Values.global.dockerHubMirror is missing" .Values.global.dockerHubMirror }}/bitnami/openresty:{{ .Values.imageVersionBitnamiOpenResty }}
         imagePullPolicy: IfNotPresent
         command:
@@ -74,19 +81,20 @@ spec:
         emptyDir: {}
       - name: config
         configMap:
-          name: nova-console-shellinabox
+          name: nova-console-cell1-shellinabox
       - name: app
         projected:
           defaultMode: 420
           sources:
           - configMap:
-              name: nova-console-shellinabox
+              name: nova-console-cell1-shellinabox
               items:
               - key: revproxy.lua
                 path: revproxy.lua
           - secret:
-              name: nova-console-shellinabox
+              name: nova-console-cell1-shellinabox
               items:
               - key: config.lua
                 path: config.lua
       {{- include "utils.proxysql.volumes" . | indent 6 }}
+      {{- include "utils.trust_bundle.volumes" . | indent 6 }}

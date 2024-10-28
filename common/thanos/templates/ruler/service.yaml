@@ -9,10 +9,15 @@ metadata:
   name: thanos-ruler-{{ include "thanos.name" (list $name $root) }}
   labels:
     thanos: {{ include "thanos.name" (list $name $root) }}
-{{ if $.Values.ruler.service.annotations }}
+  {{- if or (and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested) $.Values.ruler.service.annotations }}
   annotations:
+  {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+    linkerd.io/inject: enabled
+  {{- end }}
+{{ if $.Values.ruler.service.annotations }}
 {{ toYaml $.Values.ruler.service.annotations | indent 4 }}
 {{ end }}
+  {{- end }}
 spec:
   selector:
     thanos-ruler: {{ include "thanos.name" (list $name $root) }}

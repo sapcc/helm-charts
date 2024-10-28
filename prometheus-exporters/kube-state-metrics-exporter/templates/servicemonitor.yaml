@@ -25,10 +25,11 @@ spec:
   endpoints:
     - port: http
       honorLabels: {{ default true .Values.honorLabels }}
-      relabelings:
+      metricRelabelings:
         - action: replace
           targetLabel: prometheus
-          replacement: {{ required ".Values.prometheusName missing" .Values.prometheusName }}
+          replacement: {{ printf "%s/%s" $.Release.Namespace (required ".Values.prometheusName missing" .Values.prometheusName) }}
+      relabelings:
         - action: labelmap
           regex: '__meta_kubernetes_service_label_(.+)'
         - sourceLabels:

@@ -3,7 +3,12 @@
   "template": "alerts-*",
   "settings": {
     "index": {
-      "refresh_interval": "10s",
+      "mapping": {
+        "total_fields": {
+          "limit": "4000"
+        }
+      },
+      "refresh_interval": "60s",
       "unassigned": {
         "node_left": {
           "delayed_timeout": "10m"

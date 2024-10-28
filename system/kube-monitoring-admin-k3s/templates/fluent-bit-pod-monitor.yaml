@@ -1,0 +1,31 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+
+metadata:
+  name: fluent-bit
+  labels:
+    prometheus: kubernetes
+
+spec:
+  jobLabel: fluent-bit
+
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: fluent-bit
+
+  namespaceSelector:
+    matchNames: [kube-monitoring]
+
+  podMetricsEndpoints:
+    - interval: 120s
+      scrapeTimeout: 50s
+      path: /metrics
+      scheme: http
+      port: prometheus
+      relabelings:
+        - targetLabel: job
+          replacement: fluent-bit-exporter
+      #metricRelabelings:
+      #  - action: drop
+      #    regex: '(fluentbit_.+);(fluentbit_metrics.+|prometheus_exporter.+)'
+      #    sourceLabels: [__name__, name]

@@ -1,0 +1,22 @@
+FROM keppel.eu-de-1.cloud.sap/ccloud-dockerhub-mirror/alpine/git:latest AS git
+WORKDIR /git
+RUN git clone https://github.com/sepich/beats-exporter.git
+
+FROM keppel.eu-de-1.cloud.sap/ccloud-dockerhub-mirror/library/python:3.11-alpine
+LABEL source_repository="https://github.com/sapcc/helm-charts/system/auditbeat"
+ENV PYTHONDONTWRITEBYTECODE=true
+ENV PYTHONUNBUFFERED=true
+
+WORKDIR /usr/src/app
+# Install gcc and musl-dev
+RUN apk add --no-cache gcc musl-dev libffi-dev
+# Install latest version of requirements required
+RUN pip install --no-cache-dir aiodns>=2.0.0
+RUN pip install --no-cache-dir aiohttp>=3.7.4
+RUN pip install --no-cache-dir requests>=2.22.0
+
+RUN pip install --no-cache-dir --upgrade --force-reinstall setuptools>=70.0.0
+
+USER 1000
+COPY --from=git /git/beats-exporter/beats-exporter.py .
+ENTRYPOINT [ "./beats-exporter.py" ]

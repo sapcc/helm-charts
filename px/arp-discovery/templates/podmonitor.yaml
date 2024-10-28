@@ -1,0 +1,48 @@
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata: 
+  labels:
+    prometheus: infra-collector
+  name: px-arp-discovery
+  namespace: px
+spec: 
+  selector:
+    matchLabels:
+      app: arp-discovery-exporter
+  podMetricsEndpoints:
+{{- range $service, $service_config := .Values.config }}
+{{- range $domain, $domain_config := $service_config }}
+  - honorLabels: true
+    interval: 5m
+    path: /arp_discovery
+    port: arp-discovery
+    scheme: http
+    scrapeTimeout: 55s
+    relabelings: 
+    - targetLabel: "__param_interface"
+      replacement: {{ printf "vlan%d"  ($domain_config.multus_vlan | int) }}
+    - targetLabel: "__param_scope"
+      replacement: {{ $domain_config.instance_1.bird_ip }}
+    - action: labelmap
+      regex: __meta_kubernetes_pod_label_(.+)
+    - action: replace
+      sourceLabels: 
+      - __meta_kubernetes_namespace
+      targetLabel: kubernetes_namespace
+    - action: replace
+      sourceLabels: 
+      - __meta_kubernetes_pod_name
+      targetLabel: kubernetes_pod_name
+    - action: replace
+      replacement: {{ $.Values.global.region }}
+      targetLabel: region
+    - action: replace
+      replacement: controlplane
+      targetLabel: cluster_type
+    - action: replace
+      replacement: {{ $.Values.global.region }}
+      targetLabel: cluster
+
+{{- end }}
+{{- end }}

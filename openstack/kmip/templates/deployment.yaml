@@ -1,0 +1,109 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "kmip.fullname" . }}-barbican
+  labels:
+    {{- include "kmip.labels" . | nindent 4 }}
+    app: {{ include "kmip.fullname" . }}-barbican
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    system: openstack
+    type: api
+    component: barbican
+spec:
+  replicas: {{ .Values.replicaCount }}
+
+  revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revisionHistory }}
+  strategy:
+    type: {{ .Values.pod.lifecycle.upgrades.deployments.podReplacementStrategy }}
+    {{- if eq .Values.pod.lifecycle.upgrades.deployments.podReplacementStrategy "RollingUpdate" }}
+    rollingUpdate:
+      maxUnavailable: {{ .Values.pod.lifecycle.upgrades.deployments.rollingUpdate.maxUnavailable }}
+      maxSurge: {{ .Values.pod.lifecycle.upgrades.deployments.rollingUpdate.maxSurge }}
+    {{- end }}
+  selector:
+    matchLabels:
+      {{- include "kmip.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "kmip.labels" . | nindent 8 }}
+        app: {{ include "kmip.fullname" . }}-barbican
+        name: {{ include "kmip.fullname" . }}-barbican
+        alert-tier: os
+        alert-service: barbican
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      annotations:
+        configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
+        {{- if .Values.proxysql.mode }}
+        prometheus.io/scrape: "true"
+        prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
+        {{- end }}        
+    spec:
+      serviceAccountName: {{ include "kmip.serviceAccountName" . }}-barbican
+      containers:
+        - name: kmip-barbican
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: {{required ".Values.global.registry is missing" .Values.global.registry }}/loci-barbican:{{required "Values.kmip.image is missing" .Values.kmip.image }}
+          imagePullPolicy: {{ .Values.kmip.pullPolicy }}
+          env:
+            - name: OS_AUTH_URL
+              value: "https://{{ include "keystone_api_endpoint_host_public" . }}:443/v3"
+            - name: OS_USERNAME
+              value: {{ .Values.kmip.openstack_env.username | quote }}
+            - name: OS_PASSWORD
+              value: {{ .Values.kmip.openstack_env.password | quote }}
+            - name: OS_PROJECT_ID
+              value: {{ .Values.kmip.openstack_env.project_id | quote }}
+            - name: OS_APPLICATION_CREDENTIAL_NAME
+              value: {{ .Values.kmip.openstack_env.appl_cred_name | quote }}
+            - name: OS_APPLICATION_CREDENTIAL_SECRET
+              value: {{ .Values.kmip.openstack_env.appl_cred_secret | quote }}
+            - name: OS_AUTH_TYPE
+              value: "v3applicationcredential"
+            - name: OS_REGION_NAME
+              value: {{ .Values.kmip.openstack_env.region_name | quote }}
+            - name: OS_PROJECT_DOMAIN_NAME
+              value: {{ .Values.kmip.openstack_env.project_domain_name | quote }}
+            - name: OS_IDENTITY_API_VERSION
+              value: {{ .Values.kmip.openstack_env.identity_api_version | quote }}
+            - name: OS_PROJECT_NAME
+              value: {{ .Values.kmip.openstack_env.project_name | quote }}
+            - name: OS_USER_DOMAIN_NAME
+              value: {{ .Values.kmip.openstack_env.user_domain_name | quote }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.ports.port }}
+              protocol: TCP           
+          resources:
+            requests:
+              memory: 0
+              cpu: 0
+          volumeMounts:
+            - name: kmip-barbican-etc
+              mountPath: /etc/pykmip/server.conf
+              subPath: kmip-server.conf
+              readOnly: true
+            - name: kmip-certificates
+              mountPath: /etc/pykmip/certs/server.crt
+              subPath: tls.crt
+              readOnly: true
+            - name: kmip-certificates
+              mountPath: /etc/pykmip/certs/server.key
+              subPath: tls.key
+              readOnly: true
+            - name: kmip-certificates
+              mountPath: /etc/pykmip/certs/ca.crt
+              subPath: ca.crt
+              readOnly: true
+      volumes:
+        - name: kmip-barbican-etc
+          configMap:
+            name: kmip-barbican-etc
+        - name: kmip-certificates
+          secret:
+            secretName: kmip-certificates

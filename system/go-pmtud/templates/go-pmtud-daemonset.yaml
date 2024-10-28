@@ -1,17 +1,16 @@
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
-  annotations:
-{{ include "helm3-helper.annotations" . | indent 4 }}
   labels:
     k8s-app: pmtud
-{{ include "helm3-helper.labels" . | indent 4 }}
   name: pmtud
 spec:
   selector:
     matchLabels:
       name: pmtud
   updateStrategy:
+    rollingUpdate:
+      maxUnavailable: '10%'
     type: RollingUpdate
   template:
     metadata:
@@ -45,7 +44,6 @@ spec:
           - --nodename=$(NODE_NAME)
           - --ttl={{ required ".Values.pmtud.ttl is required" .Values.pmtud.ttl }}
           - --nflog_group={{ required ".Values.pmtud.nflogGroup is required" .Values.iptables.nflogGroup }}
-          - --metrics_port={{ required ".Values.pmtud.metricsPort is required" .Values.pmtud.metricsPort }}
           {{- if .Values.pmtud.ifaceMtu }}
           - --iface_mtu={{ .Values.pmtud.ifaceMtu }}
           {{- end }}
@@ -61,6 +59,7 @@ spec:
           - name: pmtud
             mountPath: /scripts/pmtud
       hostNetwork: true
+      serviceAccountName: pmtud
       terminationGracePeriodSeconds: 5
       tolerations:
         - operator: "Exists"

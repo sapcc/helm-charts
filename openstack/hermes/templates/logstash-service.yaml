@@ -7,9 +7,12 @@ metadata:
     system: openstack
     service: audit
   annotations:
-    prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus }}
+    prometheus.io/targets: {{ required ".Values.metrics.prometheus missing" .Values.metrics.prometheus }}
     prometheus.io/scrape: "true"
     prometheus.io/port: "9198"
+    {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+    linkerd.io/inject: enabled
+    {{- end }}
 spec:
   selector:
     component: logstash

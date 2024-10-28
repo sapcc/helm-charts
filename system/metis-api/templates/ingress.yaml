@@ -7,18 +7,20 @@ metadata:
   name:  metis-api
   namespace: {{ .Values.namespace }}
   labels:
-    app.kubernetes.io/name: {{ template "name" . }}
-    helm.sh/chart: {{ include "metisAPI.chart" $ }}
-    app.kubernetes.io/instance: {{ template "name" . }}
-    app.kubernetes.io/component: "api"
-    app.kubernetes.io/part-of: "metis"
-    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    {{- include "labels" . | indent 4 }}
   annotations:
     kubernetes.io/tls-acme: "true"
     disco: "true"
     ingress.kubernetes.io/auth-tls-secret: kube-system/ingress-cacrt
+    nginx.ingress.kubernetes.io/auth-tls-secret: kube-system/ingress-cacrt
     ingress.kubernetes.io/auth-tls-verify-client: optional
+    nginx.ingress.kubernetes.io/auth-tls-verify-client: optional
     ingress.kubernetes.io/auth-tls-verify-depth: "3"
+    nginx.ingress.kubernetes.io/auth-tls-verify-depth: "3"
+    {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+    ingress.kubernetes.io/service-upstream: "true"
+    nginx.ingress.kubernetes.io/service-upstream: "true"
+    {{- end }}
 
 spec:
   tls:

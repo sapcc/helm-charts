@@ -6,12 +6,15 @@ metadata:
 
 spec:
   revisionHistoryLimit: 5
-  replicas: 1
+  # When running the Trivy client against a server, lots of computations are
+  # still performed on the clide side, i.e. in these pods. Therefore we have
+  # this scaled up more than the server itself.
+  replicas: {{ $.Values.trivy.api.replicas }}
   strategy:
     type: RollingUpdate
     rollingUpdate:
-      maxUnavailable: 0
-      maxSurge: 1
+      maxUnavailable: 2
+      maxSurge: 2
   selector:
     matchLabels:
       name: trivy-api
@@ -19,10 +22,9 @@ spec:
     metadata:
       labels:
         name: trivy-api
-        alert-tier: os
-        alert-service: keppel
       annotations:
         checksum/secret: {{ include "keppel-trivy/templates/secret.yaml" . | sha256sum }}
+        kubectl.kubernetes.io/default-container: trivy-api
     spec:
       containers:
         - name: trivy-api
@@ -56,4 +58,11 @@ spec:
               port: 80
             timeoutSeconds: 5
             periodSeconds: 5
-          # resources: {} # TODO: configure once we have some data
+          # half of the replicas usually sit at 1Gi RAM usage
+          resources:
+            limits:
+              memory: 2Gi
+              cpu: 4
+            requests:
+              memory: 2Gi
+              cpu: 4

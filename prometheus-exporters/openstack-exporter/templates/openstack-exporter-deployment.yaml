@@ -1,12 +1,12 @@
 kind: Deployment
 apiVersion: apps/v1
 metadata:
-  name: openstack-exporter 
+  name: openstack-exporter
   namespace: monsoon3
 spec:
   selector:
     matchLabels:
-      app: openstack-exporter 
+      app: openstack-exporter
       type: exporter
   template:
     metadata:
@@ -15,8 +15,8 @@ spec:
         type: exporter
       annotations:
         prometheus.io/scrape: "true"
-        prometheus.io/port: {{ required ".Values.exporter.prometheus_port missing" .Values.exporter.prometheus_port | quote }}
         prometheus.io/targets: {{ required ".Values.openstack.alerts.prometheus missing" .Values.openstack.alerts.prometheus }}
+        {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
     spec:
       containers:
          - name: openstack-exporter
@@ -25,7 +25,7 @@ spec:
              - name: metrics
                containerPort: {{ required ".Values.exporter.prometheus_port missing" .Values.exporter.prometheus_port }}
            command:
-             - /usr/bin/openstack_exporter 
+             - /usr/bin/openstack_exporter
            args:
              - -c
              - /openstack-config/openstack-config.yaml

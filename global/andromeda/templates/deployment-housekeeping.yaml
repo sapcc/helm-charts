@@ -16,8 +16,21 @@ spec:
         app.kubernetes.io/name: {{ include "andromeda.fullname" . }}-housekeeping
         app.kubernetes.io/instance: {{ .Release.Name }}
       annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/targets: openstack
         checksum/etc: {{ include (print $.Template.BasePath  "/configmap.yaml") . | sha256sum }}
     spec:
+      serviceAccountName: {{ template "andromeda.serviceAccountName" . }}
+      initContainers:
+        - name: wait-for-server
+          image: "{{ .Values.global.registry }}/kubernetes-entrypoint:{{ .Values.image.kubernetes_entrypoint_version }}"
+          env:
+            - name: NAMESPACE
+              value: "{{ .Release.Namespace }}"
+            - name: DEPENDENCY_SERVICE
+              value: {{ include "andromeda.fullname" . }}-nats,{{ include "andromeda.fullname" . }}-server
+            - name: COMMAND
+              value: "true"
       containers:
       - name: {{ .Chart.Name }}-housekeeping
         securityContext:
@@ -37,9 +50,14 @@ spec:
               resourceFieldRef:
                 containerName: {{ .Chart.Name }}-housekeeping
                 resource: limits.cpu
+          - name: SENTRY_DSN
+            valueFrom:
+              secretKeyRef:
+                name: sentry
+                key: {{ include "andromeda.fullname" . }}.DSN
         ports:
-          - name: http
-            containerPort: 8000
+          - containerPort: 9090
+            name: metrics
             protocol: TCP
         resources:
           {{- toYaml .Values.resources | nindent 12 }}

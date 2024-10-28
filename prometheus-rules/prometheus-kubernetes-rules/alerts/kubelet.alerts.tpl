@@ -3,12 +3,12 @@ groups:
 - name: kubelet.alerts
   rules:
   - alert: ManyKubeletDown
-    expr: count(count(up{job="kubernetes-kubelet"} unless on (node) kube_node_labels{label_cloud_sap_maintenance_state="in-maintenance"}) - sum(up{job="kubernetes-kubelet"} unless on (node) kube_node_labels{label_cloud_sap_maintenance_state="in-maintenance"})) > 2
+    expr: count(count(up{job="kubernetes-kubelet"} unless on (node) (kube_node_labels{label_cloud_sap_maintenance_state="in-maintenance"} or kube_node_labels{label_kubernetes_cloud_sap_role="storage"})) - sum(up{job="kubernetes-kubelet"} unless on (node) (kube_node_labels{label_cloud_sap_maintenance_state="in-maintenance"} or kube_node_labels{label_kubernetes_cloud_sap_role="storage"}))) > 4
     for: 10m
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
-      service: kubelet
-      support_group: containers
+      support_group: {{ required ".Values.supportGroup missing" .Values.supportGroup }}
+      service: {{ required ".Values.service missing" .Values.service }}
       severity: critical
       context: kubelet
       dashboard: kubernetes-health
@@ -22,8 +22,8 @@ groups:
     for: 10m
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
-      service: kubelet
-      support_group: containers
+      support_group: {{ required ".Values.supportGroup missing" .Values.supportGroup }}
+      service: {{ required ".Values.service missing" .Values.service }}
       severity: warning
       context: kubelet
       meta: "{{`{{ $labels.node }}`}}"
@@ -35,12 +35,12 @@ groups:
       summary: A Kubelet is DOWN
 
   - alert: KubeletTooManyPods
-    expr: kubelet_running_pod_count > 225
+    expr: kubelet_running_pods > 225
     for: 1h
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
-      service: kubelet
-      support_group: containers
+      support_group: {{ required ".Values.supportGroup missing" .Values.supportGroup }}
+      service: {{ required ".Values.service missing" .Values.service }}
       severity: warning
       context: kubelet
       meta: "{{`{{ $labels.node }}`}}"
@@ -50,12 +50,12 @@ groups:
       summary: Kubelet {{`{{ $labels.node }}`}} is running {{`{{ $value }}`}} pods, close to the limit of 250
 
   - alert: KubeletFull
-    expr: kubelet_running_pod_count >= 250
+    expr: kubelet_running_pods >= 250
     for: 1h
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
-      service: kubelet
-      support_group: containers
+      support_group: {{ required ".Values.supportGroup missing" .Values.supportGroup }}
+      service: {{ required ".Values.service missing" .Values.service }}
       severity: warning
       context: kubelet
       meta: "{{`{{ $labels.node }}`}}"
@@ -69,8 +69,8 @@ groups:
     for: 5m
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
-      service: k8s
-      support_group: containers
+      support_group: {{ required ".Values.supportGroup missing" .Values.supportGroup }}
+      service: {{ required ".Values.service missing" .Values.service }}
       severity: warning
       context: kubelet
       meta: "{{`{{ $labels.node }}`}}"
@@ -83,8 +83,8 @@ groups:
     for: 5m
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
-      service: k8s
-      support_group: containers
+      support_group: {{ required ".Values.supportGroup missing" .Values.supportGroup }}
+      service: {{ required ".Values.service missing" .Values.service }}
       severity: warning
       context: kubelet
       meta: "{{`{{ $labels.node }}`}}"
@@ -101,8 +101,8 @@ groups:
     for: 10m
     labels:
       tier: {{ required ".Values.tier missing" .Values.tier }}
-      service: k8s
-      support_group: containers
+      support_group: {{ required ".Values.supportGroup missing" .Values.supportGroup }}
+      service: {{ required ".Values.service missing" .Values.service }}
       severity: warning
       context: kubelet
       meta: "Many 5xx responses for Kubelet on {{`{{ $labels.node }}`}} "

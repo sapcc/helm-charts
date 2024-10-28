@@ -1,0 +1,18 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: opensearch-hermes-manager-configmap
+  namespace: hermes
+  labels:
+    system: opensearch-hermes
+    service: audit
+    component: configuration
+
+data:
+  logback.xml: |
+{{ include (print .Template.BasePath "/_logback.xml.tpl") . | indent 4 }}
+{{- if .Values.global.truststore.enabled}}
+  start.sh: |
+{{ include (print .Template.BasePath "/_start.sh.tpl") . | indent 4 }}
+{{- end }}

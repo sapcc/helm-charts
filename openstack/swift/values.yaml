@@ -9,13 +9,17 @@ global:
     skip_hcm_domain: false
 
 owner-info:
-  support-group: containers
+  support-group: storage
   service: swift
   maintainers:
-    - Falk Reimann
+    # current maintainers in Storage Team
+    - Sumit Arora
+    - Barun Kumar
+    - Adrian Corici
+    - Chandrakanth Renduchintala
+    # previous maintainers in Team Services
     - Stefan Majewsky
     - Sandro Jäckel
-    - Muhammad Talal Anwar
   helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/openstack/swift
 
 debug: false
@@ -31,12 +35,12 @@ image_version: DEFINED_BY_PIPELINE
 rings_image_version: DEFINED_BY_PIPELINE
 
 # image version of haproxy bundled with dumb-init
-image_version_haproxy: '2.6.12-20230411163110'
+image_version_haproxy: '2.8.10-20240703155912'
 
 # image versions of auxiliary images from other sources
-image_version_auxiliary_memcached: '1.6.19-alpine'
-image_version_auxiliary_memcached_exporter: 'v0.11.2'
-image_version_auxiliary_statsd_exporter: 'v0.23.1'
+image_version_auxiliary_memcached: '1.6.28-alpine'
+image_version_auxiliary_memcached_exporter: 'v0.14.4'
+image_version_auxiliary_statsd_exporter: 'v0.26.1'
 
 # shared secrets and credentials
 hash_path_prefix: DEFINED_IN_REGION_CHART
@@ -106,6 +110,7 @@ max_manifest_segments: 4000
 
 # Don't log requests to object, container or account servers
 log_requests: false
+default_log_level: info # for haproxy log level setting
 
 # Local to advertise the ExternalIP only on nodes that run the pod
 # Only works with ServiceType NodePort
@@ -143,8 +148,11 @@ alerts:
 #    name: node1
 
 # haproxy nodes act as LBs in front of the Swift proxies
-haproxy_deployment_resources_cpu: "2000m"
-haproxy_deployment_resources_memory: "1024Mi"
+haproxy_deployment_resources_cpu_req: "2000m"
+haproxy_deployment_resources_memory_req: "1024Mi"
+
+haproxy_deployment_resources_cpu_limit: "2000m"
+haproxy_deployment_resources_memory_limit: "1024Mi"
 
 # # Swift proxies can be deployed as Deployment, Daemonset or both
 # proxy_deployment_enabled: true

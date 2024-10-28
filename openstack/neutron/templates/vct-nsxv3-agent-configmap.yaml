@@ -38,13 +38,14 @@ template: |
       {%- endif %}
       {{- end }}
 
+      [cache]
+      enabled = true
+      backend = dogpile.cache.memory
+
       [NSXV3]
-      # nsx-t has only admin / audit user
-      nsxv3_login_user = admin
       {%- set bb = name | replace( "bb", "") | int %}
       {%- set hostname = "nsx-ctl-" + "bb" + ( '%03d' % bb ) + "." + domain %}
       nsxv3_login_hostname = {= hostname =}
-      nsxv3_login_password = {= username | derive_password(hostname) | quote =}
 
       {%- set tzname = "bb" + ( '%03d' % bb ) + "-vlan" %}
       nsxv3_transport_zone_name = {= tzname =}

@@ -8,6 +8,10 @@ metadata:
     helm.sh/chart: {{ include "octavia.chart" . }}
     app.kubernetes.io/instance: {{ .Release.Name }}
     app.kubernetes.io/managed-by: {{ .Release.Service }}
+  {{- if .Values.vpa.set_main_container }}
+  annotations:
+    vpa-butler.cloud.sap/main-container: f5-as3-container
+  {{- end }}
 spec:
   replicas: 1
   selector:
@@ -19,6 +23,9 @@ spec:
       labels:
         app.kubernetes.io/name: octavia-f5-as3
         app.kubernetes.io/instance: {{ .Release.Name }}
+      annotations:
+        {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
+
     spec:
       containers:
         - name: f5-as3-container

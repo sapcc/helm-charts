@@ -28,7 +28,6 @@ thanos:
     projectDomainName:  <projectDomainName>
     # all settings below are not mandatory and auto-generated
     # userName:           <userName>
-    # regionName:         <regionName>
     # containerName:      <swiftContainerName>
 ```
 

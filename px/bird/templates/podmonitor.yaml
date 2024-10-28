@@ -16,7 +16,6 @@ metadata:
   labels:
     prometheus: infra-collector
   name: px-domain-{{ $domain_number }}
-  namespace: px
 spec: 
   selector:
     matchLabels:
@@ -25,27 +24,6 @@ spec:
   - honorLabels: true
     interval: 60s
     metricRelabelings: 
-    - action: replace
-      regex: ^bird_.+;{{ $.Values.global.region }}-pxrs-([0-9])-s([0-9])-([0-9])
-      replacement: $1
-      sourceLabels: 
-      - __name__
-      - app
-      targetLabel: pxdomain
-    - action: replace
-      regex: ^bird_.+;{{ $.Values.global.region }}-pxrs-([0-9])-s([0-9])-([0-9])
-      replacement: $2
-      sourceLabels: 
-      - __name__
-      - app
-      targetLabel: pxservice
-    - action: replace
-      regex: ^bird_.+;{{ $.Values.global.region }}-pxrs-([0-9])-s([0-9])-([0-9])
-      replacement: $3
-      sourceLabels: 
-      - __name__
-      - app
-      targetLabel: pxinstance
     - action: replace
       regex: ^bird_.+;BGP;(PL|TP|MN)-([A-Z0-9]*)-(.*)
       replacement: $1

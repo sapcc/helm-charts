@@ -33,9 +33,12 @@ spec:
   # The labels to add to any alert when communicating with Alertmanager
   labels:
     region: {{ required ".Values.global.region missing" $.Values.global.region }}
+{{- if $.Values.ruler.externalClusterLabels.enabled }}
     cluster: {{ if $.Values.global.cluster }}{{ $.Values.global.cluster }}{{ else }}{{ $.Values.global.region }}{{ end }}
     cluster_type: {{ required ".Values.global.clusterType missing" $.Values.global.clusterType }}
-
+{{- else }}
+    cluster: {{ required ".Values.global.region missing" $.Values.global.region }}
+{{- end }}
   alertQueryUrl: https://{{ include "thanos.externalURL" (list $name $root) }}
 {{ if required "$.Values.ruler.alertmanagers.hosts missing" $.Values.ruler.alertmanagers.hosts }}
   # Alertmanager configuration.
@@ -43,6 +46,13 @@ spec:
     name: {{ include "thanos.fullName" (list $name $root) }}-alertmanager-config
     key: alertManagerConfig.yaml
 {{- end }}
+
+{{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+  podMetadata:
+    annotations:
+      linkerd.io/inject: enabled
+{{- end }}
+
 {{ if not $.Values.ruler.queryEndpoints }}
   queryEndpoints: 
     - {{ include "thanos.fullName" (list $name $root) }}-query:10902

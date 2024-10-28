@@ -19,185 +19,36 @@ absent-metrics-operator:
 
 kube-state-metrics:
   image:
-    repository: keppel.global.cloud.sap/ccloud-quay-mirror/coreos/kube-state-metrics
-    tag: v1.9.7
-
-  podSecurityPolicy:
-    enabled: false
-
-  prometheusScrape: false
-
-  collectors:
-    certificatesigningrequests: false
-    configmaps: false
-    cronjobs: true
-    daemonsets: true
-    deployments: true
-    endpoints: true
-    horizontalpodautoscalers: true
-    ingresses: false
-    jobs: true
-    limitranges: true
-    mutatingwebhookconfigurations: false
-    namespaces: true
-    networkpolicies: true
-    nodes: true
-    persistentvolumeclaims: true
-    persistentvolumes: true
-    poddisruptionbudgets: true
-    pods: true
-    replicasets: true
-    replicationcontrollers: true
-    resourcequotas: true
-    secrets: false
-    services: true
-    statefulsets: true
-    storageclasses: true
-    validatingwebhookconfigurations: false
-    verticalpodautoscalers: true
-    volumeattachments: true
+    registry: keppel.global.cloud.sap/ccloud-registry-k8s-io-mirror
+    repository: kube-state-metrics/kube-state-metrics
+  rbac:
+    create: true
 
   customLabels:
     app: kube-state-metrics
-
-  prometheus:
-    monitor:
-      enabled: false
-      honorLabels: true
-      additionalLabels:
-        prometheus: collector-kubernetes
 
   resources:
     requests:
       memory: 150Mi
       cpu: 100m
 
-# Values for operated Prometheus collector.
-prometheus-collector:
-  name: collector-kubernetes
+  # Allow all labels from nodes to be exported.
+  metricLabelsAllowlist:
+    - nodes=[*]
+    - namespaces=[*]
 
-  retentionTime: 1h
-
-  additionalScrapeConfigs:
-    name: k8s-collector-additional-scrape-config
-    key: scrape-config.yaml
-
-  ingress:
+  selfMonitor:
     enabled: true
-    hosts:
-      - prometheus-collector-kubernetes
-      - prometheus-collector.metal
-
-  # Store in memory.
-  persistence:
-    enabled: false
-
-  serviceAccount:
-    create: false
-    name: default
-
-  # Discover targets with `prometheus.io/targets=kubernetes` annotation as well.
-  serviceDiscoveries:
-    additionalTargets:
-      - kubernetes
-    endpoints:
-      enabled: true
-    pods:
-      enabled: false
-    probes:
-      enabled: true
-    kubeAPIServer:
-      enabled: true
-    cAdvisor:
-      enabled: true
-    kubelet:
-      enabled: true
-    nodeExporter:
-      enabled: true
-
-  thanos:
-    enabled: false
-
-# Values for Prometheus frontend.
-prometheus-frontend:
-  name: kubernetes
-
-  retentionTime: 21d
-
-  additionalScrapeConfigs:
-    name: k8s-frontend-additional-scrape-config
-    key: scrape-config.yaml
-
-  ingress:
-    enabled: true
-    hosts:
-      - prometheus-kubernetes
-      - prometheus.metal
-
-  internalIngress:
-    enabled: true
-    hosts:
-      - prometheus-kubernetes-internal
-      - prometheus-internal.metal
-
-  # Store in memory.
-  persistence:
-    enabled: true
-    size: 300Gi
-
-  serviceAccount:
-    create: false
-    name: default
-
-  # No service discoveries. Only federate from collector Prometheus.
-  serviceDiscoveries:
-    endpoints:
-      enabled: false
-    pods:
-      enabled: false
-    probes:
-      enabled: true
-    kubeAPIServer:
-      enabled: false
-    cAdvisor:
-      enabled: false
-    kubelet:
-      enabled: false
-    nodeExporter:
-      enabled: false
-    kubeDNS:
-      enabled: false
-
-  alerts:
-    multipleTargetScrapes:
-      exceptions:
-        # we exclude cadvisor metrics because it has the same instance as the kubelet but a different path
-        # e.g. 10.246.204.80:10250/metrics vs. 10.246.204.80:10250/metrics/cadvisor
-        - kubernetes-cadvisors
-        - kubernetes-kubelet
-
-  # Send alerts to these alertmanagers.
-  alertmanagers:
-    # Enabled via secrets.
-    authentication:
-      enabled: false
-
-    hosts:
-      - alertmanager-internal.scaleout.eu-de-1.cloud.sap
-      - alertmanager-internal.scaleout.eu-nl-1.cloud.sap
-
-  thanos:
-    enabled: false
 
 # Deploy basic set of Prometheus alert and aggregation rules for monitoring Kubernetes.
 prometheus-kubernetes-rules:
   prometheusName: kubernetes
-  prometheusCollectorName: collector-kubernetes
   tier: k8s
 
 prometheus-node-exporter:
   image:
-    repository: keppel.global.cloud.sap/ccloud-dockerhub-mirror/prom/node-exporter
+    registry: keppel.global.cloud.sap
+    repository: ccloud-dockerhub-mirror/prom/node-exporter
 
   serviceAccount:
     create: true
@@ -209,6 +60,8 @@ prometheus-node-exporter:
     - --collector.systemd.enable-restarts-metrics
     - --collector.systemd.enable-start-time-metrics
     - --collector.processes
+    - --collector.mountstats
+    - --collector.bonding
 
   extraHostVolumeMounts:
     - name: dbus
@@ -225,7 +78,7 @@ prometheus-node-exporter:
     pspEnabled: false
 
 kube-state-metrics-exporter:
-  prometheusName: collector-kubernetes
+  prometheusName: kubernetes
 
 prober-static:
   prometheusName: kubernetes
@@ -237,3 +90,62 @@ http-keep-alive-monitor:
   alert:
     ignore_ingress_names:
       - cfm
+  image:
+    repository: keppel.global.cloud.sap/ccloud/http-keep-alive-monitor
+
+falco:
+  enabled: false
+  image:
+    registry: keppel.global.cloud.sap/ccloud-dockerhub-mirror
+
+  driver:
+    loader:
+      initContainer:
+        image:
+          registry: keppel.global.cloud.sap/ccloud-dockerhub-mirror
+
+  controller:
+    daemonset:
+      updateStrategy:
+        type: RollingUpdate
+        rollingUpdate:
+          maxUnavailable: 25%
+
+  falcoctl:
+    image:
+      registry: keppel.global.cloud.sap/ccloud-dockerhub-mirror
+
+  tolerations:
+    - operator: Exists
+
+  extra:
+    args:
+      - -v
+      - --unbuffered
+      - -o
+      - json_output=true
+
+  falco:
+    rules_files:
+      - /etc/falco/rules.d
+    rules:
+      - disable:
+          rule: "*"
+      - enable:
+          tag: pci
+
+x509-certificate-exporter:
+  enabled: false
+  secretsExporter:
+    podAnnotations:
+      prometheus.io/port: "9793"
+      prometheus.io/scrape: "true"
+      prometheus.io/targets: kubernetes
+  hostPathsExporter:
+    daemonSets: null
+  service:
+    create: false
+  prometheusServiceMonitor:
+    create: false
+  prometheusRules:
+    create: false

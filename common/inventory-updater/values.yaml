@@ -1,6 +1,6 @@
 owner-info:
   support-group: foundation
-  # service: foobar        # optional
+  service: inventory-updater
   maintainers:
     - Bernd Kuespert
   helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/common/inventory-updater
@@ -11,20 +11,22 @@ updater:
     tag: latest
   namespace: infra-monitoring
   replicas: 1
+  api:
+    enabled: false
+    port: 9200
 
   connection_timeout: 10 # timeout in seconds for requests connections
-  scrape_interval: 3600 # sleep time in seconds between update runs
-  netbox_url: DEFINED-IN-REGION-SECRETS
-  netbox_token: DEFINED-IN-REGION-SECRETS
-  netbox_role_id: 8 # Role: server
-  netbox_tenant_id: 1 # Tenant: converged cloud
-  netbox_device_status: active # only check device that are active in Netbox
+  scrape_interval: 21600 # sleep time in seconds between update runs (21600=6h)
+
+  netbox:
+    url: DEFINED-IN-REGION-SECRETS
+    token: DEFINED-IN-REGION-SECRETS
+    query:
+      role_id: 8 # Role: server
+      tenant_id: 1 # Tenant: converged cloud
 
   redfish_username: hwconsole
   redfish_password: DEFINED-IN-REGION-SECRETS
-
-  lenovo_username: hw_admin
-  lenovo_password: DEFINED-IN-REGION-SECRETS
 
 resources:
   requests:
@@ -33,6 +35,10 @@ resources:
   limits:
     memory: 200Mi
     cpu: 400m
+
+ingress:
+  # Additional annotations for the ingress.
+  annotations: {}
 
 global:
   registry: DEFINED-IN-GLOBAL-SECRETS

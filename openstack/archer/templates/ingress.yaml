@@ -20,6 +20,10 @@ metadata:
     {{- include "archer.labels" . | nindent 4 }}
   {{- with .Values.ingress.annotations }}
   annotations:
+    {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+    ingress.kubernetes.io/service-upstream: "true"
+    nginx.ingress.kubernetes.io/service-upstream: "true"
+    {{- end }}
     {{- toYaml . | nindent 4 }}
   {{- end }}
 spec:

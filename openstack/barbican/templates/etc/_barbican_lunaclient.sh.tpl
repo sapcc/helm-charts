@@ -1,13 +1,18 @@
 #!/bin/bash
-set -e
+set -ex
 
-lunaclient () {
+lunaclient ()
+    {
+    mv /usr/safenet /thales
     NOW="$(date +%Y%m%d)"
     cp /thales/safenet/lunaclient/Chrystoki-template.conf /thales/safenet/lunaclient/config/Chrystoki.conf
-    ln -s /thales/safenet/lunaclient/libs/64/libCryptoki2.so /usr/lib/libcrystoki2.so
+    cd /thales/safenet/lunaclient/libs/64/
+    rm -f libCryptoki2_64.so
+    ln -s libCryptoki2.so libCryptoki2_64.so
     /thales/safenet/lunaclient/bin/64/configurator setValue -s Chrystoki2 -e LibUNIX -v /thales/safenet/lunaclient/libs/64/libCryptoki2.so
     /thales/safenet/lunaclient/bin/64/configurator setValue -s Chrystoki2 -e LibUNIX64 -v /thales/safenet/lunaclient/libs/64/libCryptoki2_64.so
     /thales/safenet/lunaclient/bin/64/configurator setValue -s Misc -e ToolsDir -v /thales/safenet/lunaclient/bin/64/
+    /thales/safenet/lunaclient/bin/64/configurator setValue -s Misc -e MutexFolder -v /thales/safenet/lunaclient/lock
     /thales/safenet/lunaclient/bin/64/configurator setValue -s "LunaSA Client" -e SSLConfigFile -v /thales/safenet/lunaclient/openssl.cnf
     /thales/safenet/lunaclient/bin/64/configurator setValue -s "LunaSA Client" -e ServerCAFile -v /thales/safenet/lunaclient/config/certs/CAFile.pem
     /thales/safenet/lunaclient/bin/64/configurator setValue -s "LunaSA Client" -e "ClientCertFile" -v /thales/safenet/lunaclient/config/certs/
@@ -36,6 +41,7 @@ lunaclient () {
     /thales/safenet/lunaclient/bin/64/vtl createCert -n $HOSTNAME-$NOW
 
     #REGISTER HSM1
+    echo "Registering HSM01"
     /thales/safenet/lunaclient/bin/64/pscp -pw {{ .Values.lunaclient.conn.pwd }} /thales/safenet/lunaclient/config/certs/$HOSTNAME-$NOW.pem {{ .Values.lunaclient.conn.user }}@{{ .Values.lunaclient.conn.ip }}:.
     /thales/safenet/lunaclient/bin/64/pscp -pw {{ .Values.lunaclient.conn.pwd }} {{ .Values.lunaclient.conn.user }}@{{ .Values.lunaclient.conn.ip }}:server.pem /thales/safenet/lunaclient/config/certs/
     /thales/safenet/lunaclient/bin/64/vtl addserver -n {{ .Values.lunaclient.conn.ip }} -c  /thales/safenet/lunaclient/config/certs/server.pem
@@ -46,6 +52,7 @@ lunaclient () {
     
     {{- if eq .Values.hsm.ha.enabled true }}
     #REGISTER HSM2
+    echo "Registering HSM02"
     /thales/safenet/lunaclient/bin/64/pscp -pw {{ .Values.lunaclient.conn.pwd }} /thales/safenet/lunaclient/config/certs/$HOSTNAME-$NOW.pem {{ .Values.lunaclient.conn.user }}@{{ .Values.lunaclient.conn.ip02 }}:.
     /thales/safenet/lunaclient/bin/64/pscp -pw {{ .Values.lunaclient.conn.pwd }} {{ .Values.lunaclient.conn.user }}@{{ .Values.lunaclient.conn.ip02 }}:server.pem /thales/safenet/lunaclient/config/certs/
     /thales/safenet/lunaclient/bin/64/vtl addserver -n {{ .Values.lunaclient.conn.ip02 }} -c  /thales/safenet/lunaclient/config/certs/server.pem

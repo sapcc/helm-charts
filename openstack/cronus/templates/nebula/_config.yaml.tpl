@@ -23,9 +23,6 @@ nebula:
     {{ $key }}: {{ $value }}
   {{- end }}
 {{- end }}
-{{- if .Values.global.cronus_service_password }}
-    password: {{ .Values.global.cronus_service_password }}
-{{- end }}
 {{ else }}
     authUrl: {{ .Values.config.authUrl }}
     applicationCredentialID: {{ .Values.config.applicationCredentialID }}
@@ -36,11 +33,9 @@ nebula:
   multiCloud:
     endpoint: {{ .Values.config.multiCloud.endpoint }}
     username: {{ .Values.config.multiCloud.username }}
-    password: {{ .Values.config.multiCloud.password }}
   intSMTP:
     endpoint: {{ .Values.config.intSMTP.endpoint }}
     username: {{ .Values.config.intSMTP.username }}
-    password: {{ .Values.config.intSMTP.password }}
     owners:
 {{- range $v := .Values.config.intSMTP.owners }}
       - {{ $v }}
@@ -49,8 +44,7 @@ nebula:
   technicalResponsible: {{ .Values.config.technicalResponsible }}
   aws:
     region: {{ .Values.config.allowedServices.email }}
-    access: {{ .Values.config.awsAccess }}
-    secret: {{ .Values.config.awsSecret }}
+    accessKeyRotationDays: {{ .Values.global.accessKeyRotationDays }}
     technicalUsername: {{ .Values.config.technicalUsername }}
     policyName: {{ .Values.config.policyName }}
     roleName: {{ .Values.config.roleName }}
@@ -62,7 +56,6 @@ nebula:
     iamPolicy: |
 {{ .Values.config.iamPolicy | indent 6 }}
     verifyEmailDomain: {{ .Values.config.verifyEmailDomain }}
-    verifyEmailSecret: {{ .Values.config.verifyEmailSecret }}
     useCaseDescription: |
 {{ .Values.config.useCaseDescription | indent 6 }}
     websiteURL: {{ .Values.config.websiteURL }}
@@ -88,11 +81,7 @@ nebula:
     {{ $key }}: {{ $value }}
 {{- end }}
 {{- if .Values.hermes }}
-{{- $user := .Values.rabbitmq_notifications.users.default.user }}
-{{- $password := .Values.rabbitmq_notifications.users.default.password }}
-{{- $host := printf "%s.%s.%s:5672" "hermes-rabbitmq-notifications" .Values.global.region .Values.global.tld }}
   auditSink:
-    rabbitmqUrl: amqp://{{ $user }}:{{ $password }}@{{ if .Values.config.nebulaAuditSink.host }}{{ .Values.config.nebulaAuditSink.host }}{{ else }}{{ $host }}{{ end }}
     queueName: {{ .Values.config.nebulaAuditSink.queueName }}
     internalQueueSize: {{ .Values.config.nebulaAuditSink.internalQueueSize }}
     maxContentLen: {{ .Values.config.nebulaAuditSink.maxContentLen | int64 }}
@@ -122,9 +111,6 @@ nebula:
 {{- end }}
     debug: {{ .Values.config.nebulaAuditSink.debug | default false }}
 {{- end }}
-{{- if .Values.nebula.sentryDsn }}
-  sentryDsn: {{ .Values.nebula.sentryDsn }}
-{{- end }}
 {{- if .Values.nebula.secAttrsUpdateAfter }}
   secAttrsUpdateAfter: {{ .Values.nebula.secAttrsUpdateAfter }}
 {{- end }}
@@ -134,8 +120,6 @@ nebula:
 {{- if .Values.notifier.enabled }}
   notifier:
     host: {{ .Values.notifier.host }}
-    smtpUsername: {{ .Values.notifier.smtpUsername }}
-    smtpPassword: {{ .Values.notifier.smtpPassword }}
     sender: {{ .Values.notifier.sender }}
     recipients:
   {{- range $key, $value := .Values.config.sesAdditionalContactEmails }}
@@ -150,9 +134,6 @@ nebula:
 {{- end }}
 {{- if .Values.pki.enabled }}
   pki:
-    clientID: {{ .Values.pki.clientID }}
-    accountID: {{ .Values.pki.accountID }}
-    clientSecret: {{ .Values.pki.clientSecret }}
     authEndpoint: {{ .Values.pki.authEndpoint }}
     enrollEndpoint: {{ .Values.pki.enrollEndpoint }}
     subjectPattern: {{ .Values.pki.subjectPattern }}
@@ -160,25 +141,21 @@ nebula:
 {{- end }}
 {{- if .Values.postfix.postfixEnabled }}
   postfixEnabled: {{ .Values.postfix.postfixEnabled }}
-  ldap:
-    url: "{{ tpl .Values.postfix.ldap.url $ }}"
-    {{- if .Values.postfix.ldap.clientKeyPath }}
-    clientCertPath: {{ .Values.postfix.ldap.clientCertPath }}
-    clientKeyPath: {{ .Values.postfix.ldap.clientKeyPath }}
-    {{- else }}
-    certPem: |
-{{ .Values.postfix.ldap.certPem | indent 6 }}
-    certKey: |
-{{ .Values.postfix.ldap.certKey | indent 6 }}
-    {{- end }}
-    baseDN: {{ .Values.postfix.ldap.baseDN }}
-    projectAttributes:
-{{- range $key, $value := .Values.postfix.ldap.projectAttributes }}
-  {{- if $value }}
-      - {{ $value }}
-  {{- end }}
+  postfixDNS:
+    zoneID: {{ .Values.postfixDNS.zoneID }}
+    auth:
+      auth_url: {{ .Values.postfixDNS.auth.auth_url }}
+  postfixMgmt:
+    url: {{ .Values.postfixMgmt.url }}
+    clientCertPath: {{ .Values.postfixMgmt.clientCertPath }}
+    clientKeyPath: {{ .Values.postfixMgmt.clientKeyPath }}
 {{- end }}
+{{- if .Values.nebula.cors }}
+  cors:
+    enabled: {{ .Values.nebula.cors.enabled }}
+    allowedOrigins:
+{{- .Values.nebula.cors.allowedOrigins | toYaml | nindent 6 }}
+    allowedHeaders:
+{{- .Values.nebula.cors.allowedHeaders | toYaml | nindent 6 }}
 {{- end }}
-
 {{- end -}}
-

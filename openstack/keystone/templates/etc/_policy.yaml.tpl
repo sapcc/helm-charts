@@ -21,7 +21,7 @@
 
 # ccloud: added these to allow a smooth transitioning from old cloud-admin to new system scopes
 "cloud_admin": "(role:admin and system_scope:all) or
-  (role:admin and ((is_admin_project:True or domain_id:default){{- if .Values.tempest.enabled }} or domain_id:{{.Values.tempest.domainId}}{{- end}}))"
+  (role:admin and ((is_admin_project:True or domain_id:default){{- if .Values.tempest.enabled }} or project_id:{{.Values.tempest.adminProjectId}}{{- end}}))"
 
 "cloud_reader": "(role:reader and system_scope:all) or
   role:cloud_identity_viewer or
@@ -31,7 +31,6 @@
 "blocklist_roles": "'resource_service':%(target.role.name)s or
   'cloud_registry_admin':%(target.role.name)s or
   'cloud_registry_viewer':%(target.role.name)s or
-  'cloud_dns_resource_admin':%(target.role.name)s or
   'cloud_resource_admin':%(target.role.name)s or
   'cloud_resource_viewer':%(target.role.name)s or
   'cloud_baremetal_admin':%(target.role.name)s or
@@ -39,6 +38,9 @@
   'cloud_dns_admin':%(target.role.name)s or
   'cloud_dns_viewer':%(target.role.name)s or
   'dns_admin':%(target.role.name)s or
+  'dns_hostmaster':%(target.role.name)s or
+  'dns_zonemaster':%(target.role.name)s or
+  'dns_mailmaster':%(target.role.name)s or
   'cloud_image_admin':%(target.role.name)s or
   'cloud_compute_admin':%(target.role.name)s or
   'cloud_keymanager_admin':%(target.role.name)s or
@@ -440,10 +442,10 @@
 "domain_admin_for_domain_role_grants": "rule:admin_required and domain_id:%(target.role.domain_id)s and rule:domain_admin_grant_match"
 "domain_admin_grant_match": "domain_id:%(domain_id)s or domain_id:%(target.project.domain_id)s"
 "project_admin_for_grants": "(rule:project_admin_for_global_role_grants or rule:project_admin_for_domain_role_grants) and not rule:blocklist_roles and not rule:blocklist_projects"
-"project_admin_for_global_role_grants": "(rule:admin_required or role:role_admin) and None:%(target.role.domain_id)s and project_id:%(project_id)s"
-"project_admin_for_domain_role_grants": "(rule:admin_required or role:role_admin) and project_domain_id:%(target.role.domain_id)s and project_id:%(project_id)s"
+"project_admin_for_global_role_grants": "(rule:admin_required or role:role_admin) and None:%(target.role.domain_id)s and (project_id:%(project_id)s or project_id:%(target.project.parent_id)s)"
+"project_admin_for_domain_role_grants": "(rule:admin_required or role:role_admin) and project_domain_id:%(target.role.domain_id)s and (project_id:%(project_id)s or project_id:%(target.project.parent_id)s)"
 "domain_admin_for_list_grants": "rule:admin_required and rule:domain_admin_grant_match"
-"project_admin_for_list_grants": "(rule:admin_required or role:role_admin or role:role_viewer) and project_id:%(project_id)s"
+"project_admin_for_list_grants": "(rule:admin_required or role:role_admin or role:role_viewer) and (project_id:%(project_id)s or project_id:%(target.project.parent_id)s)"
 
 # Check a role grant between a target and an actor. A target can be
 # either a domain or a project. An actor can be either a user or a
@@ -920,7 +922,9 @@
 # Intended scope(s): system, domain
 #"identity:list_projects": "(role:reader and system_scope:all) or (role:reader and domain_id:%(target.domain_id)s)"
 "identity:list_projects": "rule:cloud_reader or
-  (role:reader and domain_id:%(target.domain_id)s)"
+  (role:reader and domain_id:%(target.domain_id)s) or
+  (role:reader and domain_id:%(domain_id)s) or
+  (role:reader and project_id:%(parent_id)s)"
 
 # List projects for user.
 # GET  /v3/users/{user_id}/projects
@@ -934,7 +938,7 @@
 # POST  /v3/projects
 # Intended scope(s): system, domain
 #"identity:create_project": "(role:admin and system_scope:all) or (role:admin and domain_id:%(target.project.domain_id)s)"
-"identity:create_project": "rule:cloud_admin or (role:admin and domain_id:%(target.project.domain_id)s)"
+"identity:create_project": "rule:cloud_admin or (role:admin and domain_id:%(target.project.domain_id)s) or (role:admin and project_id:%(target.project.parent_id)s)"
 
 # Update project.
 # PATCH  /v3/projects/{project_id}
@@ -946,7 +950,8 @@
 # DELETE  /v3/projects/{project_id}
 # Intended scope(s): system, domain
 #"identity:delete_project": "(role:admin and system_scope:all) or (role:admin and domain_id:%(target.project.domain_id)s)"
-"identity:delete_project": "rule:cloud_admin"
+# The corresponding `prodel` service details are available on GitHub under `cc/prodel`
+"identity:delete_project": "(rule:cloud_admin or (rule:admin_required and (project_id:%(project_id)s or project_id:%(target.project.parent_id)s))) and ({{- if .Values.tempest.enabled }}project_id:{{.Values.tempest.adminProjectId}} or {{ end }}{{ .Values.prodel.url }})"
 
 # List tags for a project.
 # GET  /v3/projects/{project_id}/tags
@@ -1358,7 +1363,9 @@
 # Intended scope(s): system, domain
 #"identity:list_users": "(role:reader and system_scope:all) or (role:reader and domain_id:%(target.domain_id)s)"
 "identity:list_users": "rule:cloud_reader or
-  (role:reader and domain_id:%(target.domain_id)s)"
+  (role:reader and domain_id:%(target.domain_id)s) or
+  project_domain_id:%(domain_id)s or
+  user_domain_id:%(domain_id)s"
 
 # List all projects a user has access to via role assignments.
 # GET   /v3/auth/projects
