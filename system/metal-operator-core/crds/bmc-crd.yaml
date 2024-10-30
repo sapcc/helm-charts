@@ -6,6 +6,16 @@ metadata:
     controller-gen.kubebuilder.io/version: v0.16.3
   name: bmcs.metal.ironcore.dev
 spec:
+  conversion:
+    strategy: Webhook
+    webhook:
+      clientConfig:
+        service:
+          name: metal-webhook-service
+          namespace: metal-operator-system
+          path: /convert
+      conversionReviewVersions:
+        - v1
   group: metal.ironcore.dev
   names:
     kind: BMC
@@ -70,6 +80,21 @@ spec:
             spec:
               description: BMCSpec defines the desired state of BMC
               properties:
+                access:
+                  description: |-
+                    Endpoint allows inline configuration of network access details for the BMC.
+                    Use this field if access settings like address are to be configured directly within the BMC resource.
+                  properties:
+                    ip:
+                      description: IP is the IP address of the BMC.
+                      type: string
+                    macAddress:
+                      description: MACAddress is the MAC address of the endpoint.
+                      type: string
+                  required:
+                    - ip
+                    - macAddress
+                  type: object
                 bmcSecretRef:
                   description: |-
                     BMCSecretRef is a reference to the Kubernetes Secret object that contains the credentials
@@ -144,7 +169,6 @@ spec:
                   type: object
               required:
                 - bmcSecretRef
-                - endpointRef
                 - protocol
               type: object
             status:
