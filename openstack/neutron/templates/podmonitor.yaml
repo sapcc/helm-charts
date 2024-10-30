@@ -1,0 +1,24 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: neutron-server
+  labels:
+    system: openstack
+    type: api
+    component: neutron
+    prometheus: openstack
+spec:
+  podMetricsEndpoints:
+    - honorLabels: true
+      port: metrics
+    - honorLabels: true
+      port: uexporter
+      path: /metrics
+      interval: 15s
+      scheme: http
+  selector:
+    matchLabels:
+      name: neutron-server
+  namespaceSelector:
+    matchNames:
+      - monsoon3
