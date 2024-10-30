@@ -1,0 +1,71 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: "cron-monthly-ticket-analysis-report"
+  namespace: jupyterhub
+spec:
+  schedule: "0 0 1 * *"  # Schedule the job to run at 00:00 on the 1st day of every month
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      activeDeadlineSeconds: 1800
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+          - name: "cron-monthly-ticket-analysis-report"
+            image: "{{ .Values.global.registry }}/{{ .Values.jupyterhub_cron.images.application.name }}:{{ .Values.jupyterhub_cron.images.application.tag }}"
+            command: ['sh', '-c']
+            args:
+            - >
+              papermill /notebooks-git/Ticket_analysis_script.ipynb /notebooks-git/Ticket_analysis_output.ipynb
+            volumeMounts:
+            - name: notebooks-git
+              mountPath: /notebooks-git
+            env:
+            {{- if not (and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested) }}
+            - name: LINKERD_AWAIT_DISABLED
+              value: "Linkerd was not enabled or not requested"
+            {{- end }}
+            - name: swift_url
+              valueFrom:
+                secretKeyRef:
+                  name: jupyter-cron-reports-secrets
+                  key: swift_url
+            - name: swift_password
+              valueFrom:
+                secretKeyRef:
+                  name: jupyter-cron-reports-secrets
+                  key: swift_password
+            - name: vault_token
+              valueFrom:
+                secretKeyRef:
+                  name: jupyter-cron-reports-secrets
+                  key: vault_token
+            securityContext:
+              allowPrivilegeEscalation: false
+          initContainers:
+          - name: "clone-notebooks"
+            volumeMounts:
+            - name: notebooks-git
+              mountPath: /notebooks-git
+            env:
+            - name: github_token
+              valueFrom:
+                secretKeyRef:
+                  name: jupyter-cron-reports-secrets
+                  key: github_token
+            - name: github_url
+              value: "https://github.wdf.sap.corp/cc/devsupport-scripts/raw/main/scripts/Ticket-analysis-report/Ticket_analysis_script.ipynb"
+            image: "{{ .Values.global.dockerHubMirror }}/{{ .Values.jupyterhub_cron.images.init.name }}:{{ .Values.jupyterhub_cron.images.init.tag }}"
+            command: ['sh', '-c']
+            args:
+            - >
+              curl -L -k -o /notebooks-git/Ticket_analysis_script.ipynb \
+              -H "Accept: application/vnd.github.raw+json" \
+              -H "Authorization: Bearer $(github_token)" \
+              -H "X-GitHub-Api-Version: 2022-11-28" \
+              "$(github_url)"
+          volumes:
+          - name: notebooks-git
+            emptyDir: {}
