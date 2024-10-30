@@ -80,7 +80,7 @@ driver = noop
 #-----------------------
 [service:central]
 # Number of central worker processes to spawn
-workers = 2
+workers = {{ .Values.central_workers }}
 
 # Number of central greenthreads to spawn
 #threads = 1000
@@ -113,7 +113,7 @@ scheduler_filters = {{ .Values.scheduler_filters }}
 #-----------------------
 [service:api]
 # Number of api worker processes to spawn
-workers = 2
+workers = {{ .Values.api_workers }}
 
 # Number of api greenthreads to spawn
 #threads = 1000
@@ -262,7 +262,7 @@ allow_headers = X-Auth-Token,X-Auth-Sudo-Tenant-ID,X-Auth-Sudo-Project-ID,X-Auth
 #-----------------------
 [service:mdns]
 # Number of mdns worker processes to spawn
-workers = 2
+workers = {{ .Values.mdns_workers }}
 
 # Number of mdns greenthreads to spawn
 threads = 1000
@@ -304,7 +304,7 @@ query_enforce_tsig = {{ .Values.query_enforce_tsig }}
 #-----------------------
 [service:producer]
 # Number of Producer worker processes to spawn (integer value)
-workers = 2
+workers = {{ .Values.producer_workers }}
 
 # Number of Producer greenthreads to spawn (integer value)
 #threads = 1000
@@ -360,7 +360,7 @@ batch_size = 200
 enabled = {{.Values.worker_enabled}}
 
 # Number of Worker processes to spawn
-workers = 2
+workers = {{ .Values.worker_workers }}
 
 # Number of Worker greenthreads to spawn
 threads = 200
