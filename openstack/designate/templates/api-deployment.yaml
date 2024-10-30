@@ -44,7 +44,6 @@ spec:
       serviceAccountName: {{ .Release.Name }}
 {{- end }}
 {{ tuple . "designate" "api" | include "kubernetes_pod_anti_affinity" | indent 6 }}
-      {{- include "utils.proxysql.pod_settings" . | indent 6 }}
       initContainers:
       {{- tuple . (dict "service" (include "designate.service_dependencies" . ) "jobs" (include "migration_job_name" . )) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 8 }}
       containers:
@@ -116,9 +115,7 @@ spec:
             - name: designate-etc-wsgi
               mountPath: /etc/apache2/conf-enabled/wsgi-designate.conf
               subPath: wsgi-designate.conf
-            {{- include "utils.proxysql.volume_mount" . | indent 12 }}
             {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
-        {{- include "utils.proxysql.container" . | indent 8 }}
         - name: statsd
           image: {{ required ".Values.global.dockerHubMirror is missing" .Values.global.dockerHubMirror }}/prom/statsd-exporter:v0.8.1
           imagePullPolicy: IfNotPresent
@@ -157,5 +154,4 @@ spec:
           configMap:
             name: designate-bin
             defaultMode: 0755
-        {{- include "utils.proxysql.volumes" . | indent 8 }}
         {{- include "utils.trust_bundle.volumes" . | indent 8 }}
