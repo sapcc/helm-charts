@@ -19,9 +19,15 @@ spec:
         - name: CONCOURSE_URL
           value: {{ .Values.concourse.concourse.web.externalUrl }} 
         - name: CONCOURSE_USER
-          value: admin
+          valueFrom:
+            secretKeyRef:
+              name: webhook-broadcaster
+              key: admin-user
         - name: CONCOURSE_PASSWORD
-          value: {{ (split "," (split ":" .Values.concourse.secrets.localUsers)._1)._0 }}
+          valueFrom:
+            secretKeyRef:
+              name: webhook-broadcaster
+              key: admin-password
         - name: CONCOURSE_REFRESH_INTERVAL
           value: 10m
         - name: CONCOURSE_WEBHOOK_CONCURRENCY
