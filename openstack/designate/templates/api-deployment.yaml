@@ -81,9 +81,9 @@ spec:
             httpGet:
               path: /healthcheck
               port: {{.Values.global.designate_api_port_internal}}
-            initialDelaySeconds: 15
-            periodSeconds: 15
-            timeoutSeconds: 10
+            initialDelaySeconds: 30
+            periodSeconds: 20
+            timeoutSeconds: 20
           readinessProbe:
             exec:
               command:
@@ -96,7 +96,7 @@ spec:
 {{- end }}
             initialDelaySeconds: 5
             periodSeconds: 10
-            timeoutSeconds: 5
+            timeoutSeconds: 20
           ports:
             - name: designate-api
               containerPort: {{.Values.global.designate_api_port_internal}}
@@ -115,6 +115,11 @@ spec:
             - name: designate-etc-wsgi
               mountPath: /etc/apache2/conf-enabled/wsgi-designate.conf
               subPath: wsgi-designate.conf
+              readOnly: true
+            - name: designate-etc-wsgi
+              mountPath: /etc/apache2/mods-available/mpm_event.conf
+              subPath: mpm_event.conf
+              readOnly: true
             {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
         - name: statsd
           image: {{ required ".Values.global.dockerHubMirror is missing" .Values.global.dockerHubMirror }}/prom/statsd-exporter:v0.8.1
