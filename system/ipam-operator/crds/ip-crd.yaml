@@ -1,0 +1,136 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    cert-manager.io/inject-ca-from: ipam-system/ipam-operator-serving-cert
+    controller-gen.kubebuilder.io/version: v0.14.0
+  name: ips.ipam.metal.ironcore.dev
+spec:
+  group: ipam.metal.ironcore.dev
+  names:
+    kind: IP
+    listKind: IPList
+    plural: ips
+    singular: ip
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - description: IP Address
+      jsonPath: .status.reserved
+      name: IP
+      type: string
+    - description: Subnet
+      jsonPath: .spec.subnet.name
+      name: Subnet
+      type: string
+    - description: Consumer Group
+      jsonPath: .spec.consumer.apiVersion
+      name: Consumer Group
+      type: string
+    - description: Consumer Kind
+      jsonPath: .spec.consumer.kind
+      name: Consumer Kind
+      type: string
+    - description: Consumer Name
+      jsonPath: .spec.consumer.name
+      name: Consumer Name
+      type: string
+    - description: Processing state
+      jsonPath: .status.state
+      name: State
+      type: string
+    - description: Message
+      jsonPath: .status.message
+      name: Message
+      type: string
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: IP is the Schema for the ips API
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: IPSpec defines the desired state of IP
+            properties:
+              consumer:
+                description: Consumer refers to resource IP has been booked for
+                properties:
+                  apiVersion:
+                    description: APIVersion is resource's API group
+                    maxLength: 253
+                    minLength: 1
+                    pattern: ^[a-z0-9]([-./a-z0-9]*[a-z0-9])?$
+                    type: string
+                  kind:
+                    description: Kind is CRD Kind for lookup
+                    maxLength: 63
+                    minLength: 1
+                    pattern: ^[A-Z]([-A-Za-z0-9]*[A-Za-z0-9])?$
+                    type: string
+                  name:
+                    description: Name is CRD Name for lookup
+                    maxLength: 63
+                    minLength: 1
+                    pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
+                    type: string
+                required:
+                - kind
+                - name
+                type: object
+              ip:
+                description: IP allows to set desired IP address explicitly
+                type: string
+              subnet:
+                description: SubnetName is referring to parent subnet that holds requested
+                  IP
+                properties:
+                  name:
+                    default: ""
+                    description: |-
+                      Name of the referent.
+                      This field is effectively required, but due to backwards compatibility is
+                      allowed to be empty. Instances of this type with an empty value here are
+                      almost certainly wrong.
+                      TODO: Add other useful fields. apiVersion, kind, uid?
+                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                      TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
+                    type: string
+                type: object
+                x-kubernetes-map-type: atomic
+            required:
+            - subnet
+            type: object
+          status:
+            description: IPStatus defines the observed state of IP
+            properties:
+              message:
+                description: Message contains error details if the one has occurred
+                type: string
+              reserved:
+                description: Reserved is a reserved IP
+                type: string
+              state:
+                description: State is a network creation request processing state
+                type: string
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
