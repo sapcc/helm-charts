@@ -65,8 +65,12 @@ groups:
       # compare scraped filers by netapp-harvest-exporter and netapp-capacity-exporter
       # netapp-harvest-exporter automatically discovers filers, netapp-capacity-exporter uses static configuration
       # netapp_volume_total_bytes is a metric from netapp_capacity_exporter, netapp_volume_size_total is a metric from netapp-harvest-exporter
-      - alert: NetappHarvestFilersMissing
-        expr: count (label_replace(netapp_volume_total_bytes, "cluster", "$1", "host", "(.*).cc.*")) by (cluster) unless count (netapp_volume_size_total{app="netapp-harvest-exporter-manila"}) by (cluster)
+      - alert: NetappHarvestFilerMissing
+        expr: |
+          (
+            count by (host) (label_replace(manila_total_capacity_gb, "host", "$1", "share_backend_fqdn", "(.*)"))
+            unless on(host) netapp_volume_size
+          )
         for: 15m
         labels:
           context: netapp-exporter
@@ -76,7 +80,7 @@ groups:
           support_group: compute-storage-api
           tier: storage
         annotations:
-          description: Filer {{ $labels.cluster }} is scraped by Netapp Capacity but not by Netapp Harvest.
+          description: Manila Filer {{ $labels.host }} is not scraped by Netapp Harvest.
 
       # compare scraped volumes by netapp-harvest-exporter and netapp-capacity-exporter
       - alert: NetappHarvestVolumesMissing
