@@ -75,18 +75,16 @@ spec:
           livenessProbe:
             exec:
               command:
-              - bash
-              - -c
-{{- if .Values.global_setup }}
-              - "set -e; nc -zvw3 designate-global-percona-pxc 3306; nc -zvw3 designate-global-memcached 11211"
-{{- else }}
-              - "set -e; nc -zvw3 {{ include "utils.db_host" . }} 3306; nc -zvw3 designate-memcached 11211"
-{{- end }}
-            failureThreshold: 3
-            initialDelaySeconds: 5
-            periodSeconds: 10
-            successThreshold: 1
-            timeoutSeconds: 5
+              - python3
+              - /container.init/health-probe.py
+              - --config-file
+              - /etc/designate/secrets.conf
+              - --service-name
+              - producer
+              - --liveness-probe
+            initialDelaySeconds: 60
+            periodSeconds: 45
+            timeoutSeconds: 40
           volumeMounts:
             - mountPath: /designate-etc
               name: designate-etc

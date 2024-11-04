@@ -52,7 +52,7 @@ quota_api_export_size = {{ .Values.quota_api_export_size | default 1000 }}
 
 rpc_response_timeout = {{ .Values.rpc_response_timeout | default .Values.global.rpc_response_timeout | default 300 }}
 
-rpc_ping_enabled = True
+rpc_ping_enabled = true
 
 wsgi_default_pool_size = {{ .Values.wsgi_default_pool_size | default .Values.global.wsgi_default_pool_size | default 100 }}
 

@@ -75,6 +75,21 @@ spec:
             - name: PYTHONWARNINGS
               value: {{ .Values.python_warnings | quote }}
             {{- end }}
+          livenessProbe:
+            exec:
+              command:
+              - python3
+              - /container.init/health-probe.py
+              - --config-file
+              - /etc/designate/secrets.conf
+              - --config-file
+              - /etc/designate/hostname.conf
+              - --service-name
+              - worker
+              - --liveness-probe
+            initialDelaySeconds: 60
+            periodSeconds: 45
+            timeoutSeconds: 40
           volumeMounts:
             - mountPath: /designate-etc
               name: designate-etc
