@@ -125,7 +125,7 @@
       summary: "{{ include "pxc-db.fullname" . }} Galera cluster node sync delayed"
 
   - alert: {{ include "pxc-db.alerts.service" . | camelcase }}GaleraClusterNodeReplicationPaused"
-    expr: (mysql_global_status_wsrep_flow_control_paused{app="{{ include "pxc-db.fullname" . }}"}} > 0.25)
+    expr: (mysql_global_status_wsrep_flow_control_paused{app="{{ include "pxc-db.fullname" . }}"} > 0.25)
     for: 30m
     labels:
       context: database
