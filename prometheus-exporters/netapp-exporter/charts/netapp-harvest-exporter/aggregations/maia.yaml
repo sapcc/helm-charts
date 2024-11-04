@@ -243,3 +243,13 @@ groups:
           destination_volume, destination_vserver, source_cluster,
           source_volume, source_vserver, project_id
         )
+
+    #
+    # nfs connection metrics
+    #
+    # Use this to monitor if the volume is being used by any clients.
+    - record: netapp_volume_connection_count:maia
+      expr: |
+          count (netapp_nfs_clients_idle_duration{app="netapp-harvest-exporter-manila"}) by (volume, filer) *
+          on (volume, filer) group_left (project_id, share_id, share_name, share_type, volume_type)
+          netapp_volume_labels{app="netapp-harvest-exporter-manila", volume=~"share.*"}
