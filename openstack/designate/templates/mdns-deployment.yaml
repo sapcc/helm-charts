@@ -79,9 +79,24 @@ spec:
             {{- end }}
           livenessProbe:
             tcpSocket:
-              port: {{.Values.global.designate_mdns_port_public}}
-            initialDelaySeconds: 15
+              port: designate-mdns
+            initialDelaySeconds: 30
+            periodSeconds: 10
             timeoutSeconds: 5
+          readinessProbe:
+            exec:
+              command:
+              - python3
+              - /container.init/health-probe.py
+              - --config-file
+              - /etc/designate/secrets.conf
+              - --config-file
+              - /etc/designate/hostname.conf
+              - --service-name
+              - mdns
+            initialDelaySeconds: 30
+            periodSeconds: 45
+            timeoutSeconds: 40
           ports:
             - name: designate-mdns
               containerPort: {{.Values.global.designate_mdns_port_public}}

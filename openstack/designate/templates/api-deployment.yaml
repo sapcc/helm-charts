@@ -85,21 +85,22 @@ spec:
             tcpSocket:
               port: designate-api
             initialDelaySeconds: 30
-            periodSeconds: 20
-            timeoutSeconds: 20
+            periodSeconds: 15
+            timeoutSeconds: 10
           readinessProbe:
             exec:
               command:
-              - bash
-              - -c
-{{- if .Values.global_setup }}
-              - "set -e; curl --fail 127.0.0.1:{{.Values.global.designate_api_port_internal}}/healthcheck; nc -zvw3 designate-global-percona-pxc 3306"
-{{- else }}
-              - "set -e; curl --fail 127.0.0.1:{{.Values.global.designate_api_port_internal}}/healthcheck; nc -zvw3 {{ include "utils.db_host" . }} 3306"
-{{- end }}
-            initialDelaySeconds: 5
+              - python3
+              - /container.init/health-probe.py
+              - --config-file
+              - /etc/designate/secrets.conf
+              - --config-file
+              - /etc/designate/hostname.conf
+              - --service-name
+              - api
+            initialDelaySeconds: 30
             periodSeconds: 10
-            timeoutSeconds: 20
+            timeoutSeconds: 10
           ports:
             - name: designate-api
               containerPort: {{.Values.global.designate_api_port_internal}}
