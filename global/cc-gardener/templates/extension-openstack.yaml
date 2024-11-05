@@ -29,12 +29,20 @@ spec:
         helm:
           ociRepository: {}
     extension:
-      runtimeClusterValues: {}
+      runtimeClusterValues: # values for runtime cluster, required mostly for a single dnsrecord
+        replicaCount: 1
+        image:
+          tag: v1.42.1
+        disableWebhooks: ["*"]
+        config:
+          etcd:
+            storage:
+              enabled: false
       helm:
         ociRepository:
           tag: v1.42.1
-          repository: keppel.global.cloud.sap/ccloud-europe-docker-pkg-dev-mirror/gardener-project/releases/charts/gardener/extensions/provider-openstack
-      values:
+          repository: keppel.global.cloud.sap/ccloud-helm/gardener-extension-provider-openstack/gardener-extension-provider-openstack
+      values: # real values for shoots
         replicaCount: 1
         image:
           tag: v1.42.1
@@ -42,6 +50,6 @@ spec:
           etcd:
             storage:
               provisioner: rancher.io/local-path
-      policy: Always
+      policy: OnDemand
       # seedSelector: {}
 {{- end }}
