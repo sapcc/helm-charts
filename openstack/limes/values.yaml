@@ -24,14 +24,15 @@ limes:
   # List of liquids that we will deploy as part of this Helm release by running `limes liquid $NAME`.
   # The "skip" field can be set to true in regions that do not have the service in question
   local_liquids:
-    archer:    { skip: false, cpu_request: 50m, memory_limit: 128Mi }
-    cinder:    { skip: false, cpu_request: 50m, memory_limit: 128Mi }
-    cronus:    { skip: false, cpu_request: 50m, memory_limit: 128Mi }
-    designate: { skip: false, cpu_request: 50m, memory_limit: 128Mi }
-    manila:    { skip: false, cpu_request: 50m, memory_limit: 128Mi }
-    neutron:   { skip: false, cpu_request: 50m, memory_limit: 128Mi }
-    octavia:   { skip: false, cpu_request: 50m, memory_limit: 128Mi }
-    swift:     { skip: false, cpu_request: 50m, memory_limit: 128Mi }
+    archer:    { skip: false, cpu_request:  20m, memory_limit:  64Mi }
+    cinder:    { skip: false, cpu_request: 100m, memory_limit: 128Mi }
+    cronus:    { skip: false, cpu_request:  20m, memory_limit:  64Mi }
+    designate: { skip: false, cpu_request:  20m, memory_limit:  64Mi }
+    ironic:    { skip: false, cpu_request:  20m, memory_limit: 128Mi }
+    manila:    { skip: false, cpu_request:  20m, memory_limit:  64Mi }
+    neutron:   { skip: false, cpu_request:  20m, memory_limit:  64Mi }
+    octavia:   { skip: false, cpu_request:  20m, memory_limit:  64Mi }
+    swift:     { skip: false, cpu_request:  20m, memory_limit:  64Mi }
 
   # Out of the local liquids above, some take configuration, which is passed in these sections.
   local_liquid_configs:
@@ -39,6 +40,9 @@ limes:
       with_subcapacities: true
       with_volume_subresources: true
       with_snapshot_subresources: true
+    ironic:
+      with_subcapacities: true
+      with_subresources: true
     manila:
       capacity_calculation:
         capacity_balance: 0.75
@@ -233,10 +237,10 @@ pgmetrics:
     limes_support_group:
       query: >
         SELECT 1 AS mapping, type AS service, CASE
-          WHEN type IN ('compute', 'sharev2', 'volumev2')            THEN 'compute-storage-api'
-          WHEN type IN ('archer', 'designate', 'neutron', 'octavia') THEN 'network-api'
-          WHEN type IN ('email-aws')                                 THEN 'email'
-          WHEN type IN ('ceph', 'swift')                             THEN 'storage'
+          WHEN type IN ('compute', 'cinder', 'ironic', 'manila', 'nova') THEN 'compute-storage-api'
+          WHEN type IN ('archer', 'designate', 'neutron', 'octavia')     THEN 'network-api'
+          WHEN type IN ('cronus')                                        THEN 'email'
+          WHEN type IN ('ceph', 'swift')                                 THEN 'storage'
           ELSE 'containers' END AS support_group
         FROM project_services GROUP BY type
       metrics:
