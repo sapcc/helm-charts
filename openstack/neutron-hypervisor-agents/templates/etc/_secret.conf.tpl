@@ -3,9 +3,9 @@
 {{ include "ini_sections.default_transport_url" . }}
 
 [nova]
-username = {{ .Values.global.neutron_service_user | default "neutron" | replace "$" "$$" }}
-password = {{ .Values.global.neutron_service_password | default "" | replace "$" "$$" }}
+username = {{ include "resolve_secret" .Values.global.neutron_service_user }}
+password = {{ include "resolve_secret" .Values.global.neutron_service_password }}
 
 [keystone_authtoken]
-username = {{ .Values.global.neutron_service_user | default "neutron" | replace "$" "$$" }}
-password = {{ .Values.global.neutron_service_password | default "" | replace "$" "$$" }}
+username = {{ include "resolve_secret" .Values.global.neutron_service_user }}
+password = {{ include "resolve_secret" .Values.global.neutron_service_password }}
