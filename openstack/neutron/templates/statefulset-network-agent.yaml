@@ -90,6 +90,8 @@ spec:
           imagePullPolicy: IfNotPresent
           command: ["dumb-init", "neutron-dhcp-agent", "--config-file", "/etc/neutron/neutron.conf", "--config-dir", "/etc/neutron/secrets", "--config-file", "/etc/neutron/dhcp-agent.ini", "--config-file", "/etc/neutron/linux-bridge.ini", "--config-file", "/etc/neutron/az-{{ $az }}.conf"]
           env:
+            - name: CCSENTRY_USE_SDK
+              value: "{{$.Values.global.neutron_use_sentry_sdk | default false }}"
             - name: SENTRY_DSN
               valueFrom:
                 secretKeyRef:
