@@ -12,7 +12,8 @@ teams: {}
   #   mappedIdPGroup: Identity provider group name.
   #   isSupportGroup: true|false
 
-teamRoleBindings: []
+teamRoleBindings:
+  []
   # - teamRef: team1
   #   teamRoleRef: role1
   #   clusterSelector:
@@ -53,8 +54,25 @@ alerts:
     - pod
     - pod_name
     - instance
+  predefinedFilters:
+    - name: "prod"
+      displayName: "Prod"
+      matchers:
+        region: "^(?!qa-de-).*"
+    - name: "prod-qa"
+      displayName: "Prod + QA"
+      matchers:
+        region: "^(?!qa-de-(?!1$)\\d+).*"
+    - name: "labs"
+      displayName: "Labs"
+      matchers:
+        region: "^qa-de-(?!1$)\\d+"
+    - name: "all"
+      displayName: "All"
+      matchers:
+        region: ".*"
   # silenceTemplates: --> defined in the _silence.conf.tpl
-    
+
   # Alertmanager options.
   alertmanager:
     # Do not deploy the alertmanager.
@@ -86,11 +104,54 @@ kubeMonitoring:
   enabled: false
   ssoCert:
   ssoKey:
-  thanosClusters:
-    - st1-qa-de-1
-    - st1-eu-de-2
-    - st1-na-us-2
+  cephClusters:
+    st1-qa-de-1:
+      thanos: true
+    st1-eu-de-2:
+      thanos: true
+    st1-na-us-2:
+      thanos: true
+  computeClusters:
+    cc273-qa-de-1:
+      thanos: false
+    cc274-qa-de-1:
+      thanos: false
+    cc275-qa-de-1:
+      thanos: false
 
+openTelemetry:
+  enabled: false
+# set via secrets
+  # prometheus:
+  # clusters:
+    # - region:
+    #   cluster:
+    #   username:
+    #   password:
+    #   endpoint:
+  logsCollector:
+    enabled: true
+  metricsCollector:
+    enabled: true
+  prometheus:
+    podMonitor:
+      enabled: true
+    serviceMonitor:
+      enabled: true
+  admissionWebhooks:
+    certManager: 
+      enabled: false
+    autoGenerateCert:
+      enabled: true
+      recreate: false
+  kubeRBACProxy:
+    enabled: false
+  manager:
+    prometheusRule:
+      defaultRules:
+        enabled: false
+      enabled: false
+  
 thanos:
   enabled: false
 

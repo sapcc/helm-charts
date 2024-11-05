@@ -5,7 +5,7 @@
 apiVersion: "k8s.cni.cncf.io/v1"
 kind: NetworkAttachmentDefinition
 metadata:
-  name: {{ include "bird.instance.deployment_name" . }}
+  name: {{ include "bird.statefulset.deployment_name" . }}
   namespace: px
 spec:
   config: |

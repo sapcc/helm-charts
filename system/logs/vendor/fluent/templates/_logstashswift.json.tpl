@@ -3,7 +3,7 @@
   "template": "logstash-swift-*",
   "settings": {
     "index": {
-      "refresh_interval": "30s",
+      "refresh_interval": "60s",
       "unassigned": {
         "node_left": {
           "delayed_timeout": "10m"

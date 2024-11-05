@@ -5,10 +5,11 @@ PROVIDER_VSPHERE_VERSION ?= v1.9.3
 PROVIDER_IPAM_VERSION ?= v0.1.0
 PROVIDER_KUBERNIKUS_VERSION ?= 9fd81475b828971913b3b27addf51fdbd0511d85
 BAREMETAL_OPERATOR_VERSION ?= v0.6.0
-METAL_OPERATOR_VERSION ?= 99c08918ff17eab322592976fa75afcda9d6db83
+METAL_OPERATOR_VERSION ?= 4fe9dfc22f73b496dc93720de3b1251982fc8317
 BOOT_OPERATOR_VERSION ?= d3c5d5fdd5617a660265673218bd5efd9d793e7e
 IPXE_OPERATOR_VERSION ?= 61c6898bfd7772008835bdcca8d8a64c1dfc3b32
 FEDHCP_VERSION ?= a59539c62aaa11a96c82fe792c87daaac4cb75bf
+IPAM_VERSION ?= 6faf501000c5d7ff9744a3c111ca5ecf3339c00c
 
 SHELL := bash
 .ONESHELL:
@@ -110,7 +111,7 @@ build-metal-operator:
 	@find metal-operator-core/templates -type f -exec $(SED) -i -e 's#-metal-operator-serving-cert#-serving-cert#g' {} \;
 	@yq -i '.controllerManager.manager.image.tag="$(METAL_OPERATOR_VERSION)"' metal-operator-core/values.yaml
 	@yq -i '.fullnameOverride="metal-operator"' metal-operator-core/values.yaml
-	@yq -i '.version="1.0.8"' metal-operator-core/Chart.yaml
+	@yq -i '.version="1.0.9"' metal-operator-core/Chart.yaml
 
 build-boot-operator:
 	@cat kustomize/boot-operator/kustomization.yaml >> kustomization.yaml
@@ -132,6 +133,15 @@ build-fedhcp:
 	@yq -i '.controllerManager.manager.image.tag="$(FEDHCP_VERSION)"' fedhcp/values.yaml
 	@yq -i '.fullnameOverride="fedhcp"' fedhcp/values.yaml
 	@yq -i '.version="0.0.2"' fedhcp/Chart.yaml
+
+build-ipam-operator:
+	@cat kustomize/ipam-operator/kustomization.yaml >> kustomization.yaml
+	$(call build-chart,ipam-operator,https://github.com/ironcore-dev/ipam//config/default,$(IPAM_VERSION))
+	@find ipam-operator/crds -type f -exec $(SED) -i -e 's#ipam-system/ipam-serving-cert#ipam-system/ipam-operator-serving-cert#g' {} \;
+	@find ipam-operator/templates -type f -exec $(SED) -i -e 's#-ipam-serving-cert#-serving-cert#g' {} \;
+	@find ipam-operator/templates -type f -exec $(SED) -i -e 's#-ipam-webhook-service#-webhook-service#g' {} \;
+	@yq -i '.controllerManager.manager.image.tag="$(IPAM_VERSION)"' ipam-operator/values.yaml
+	@yq -i '.version="0.0.2"' ipam-operator/Chart.yaml
 
 # chart name, source url, tag
 define build-chart

@@ -20,8 +20,8 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
     {{- if (hasPrefix "vault+kvv2" $str ) -}}
         {{"{{"}} resolve "{{ $str }}" | urlquery {{"}}"}}
     {{- else -}}
-        {{ $str }}
-{{- end -}}
+        {{ $str | urlquery }}
+    {{- end -}}
 {{- end -}}
 
 {{define "rabbitmq.release_host"}}{{.Release.Name}}-rabbitmq{{end}}

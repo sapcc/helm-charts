@@ -346,7 +346,7 @@ spec:
           container.name == "falco"
           regex.match("^keppel\\.[a-z0-9-.]+/ccloud-dockerhub-mirror/falcosecurity/falco-(no-driver|distroless):", container.image)
           # TODO: after new falco version is rolled out, remove the mounts that are no longer needed in the new version
-          hostPath in ["/boot", "/dev", "/etc", "/lib/modules", "/proc", "/run/containerd", "/run/containerd/containerd.sock", "/run/crio", "/run/crio/crio.sock", "/sys/module/falco", "/usr", "/var/run", "/var/run/docker.sock"]
+          hostPath in ["/boot", "/dev", "/etc", "/lib/modules", "/proc", "/run/containerd", "/run/containerd/containerd.sock", "/run/crio", "/run/crio/crio.sock", "/sys/module", "/sys/module/falco", "/usr", "/var/run", "/var/run/docker.sock"]
         }
         isContainerAllowedToBePrivileged(container) = true {
           isFalcoPod
@@ -663,6 +663,9 @@ spec:
 
         {{- if eq .Values.cluster_type "baremetal" "test" }}
         default isPXBirdPod = false
+        
+        # TODO: Legacy setup, cleanup after 2024-11-30
+        # BEGIN LEGACY SETUP, CLEANUP AFTER 2024-11-30
         isPXBirdPod = true {
           iro.kind == "Deployment"
           iro.metadata.namespace == "px"
@@ -678,10 +681,39 @@ spec:
           isPXBirdPod
           container.name == sprintf("%s-init", [iro.metadata.name])
         }
+
         # Bird needs to be able to send and receive BGP announcements.
         isContainerAllowedToUseCapability(container, "NET_ADMIN") = true {
           isPXBirdPod
           container.name == iro.metadata.name
+        }
+
+        # TODO: transistion StatefulsetName, cleanup after 2024-11-30
+        isPXBirdPod = true {
+          iro.kind == "StatefulSet"
+          iro.metadata.namespace == "px"
+          regex.match("^routeserver-v(4|6)-service-[1-3]-domain-[1-2]-[1-2]$", iro.metadata.name)
+          regex.match("^bird-domain[0-2]$", helmReleaseName)
+        }
+        # END OF LEGACY SETUP, CLEANUP AFTER 2024-11-30
+
+        # Final PX setup
+        isPXBirdPod = true {
+          iro.kind == "StatefulSet"
+          iro.metadata.namespace == "px"
+          regex.match("^routeserver-v(4|6)-service-[1-3]-domain-[1-2]$", iro.metadata.name)
+          regex.match("^bird-domain[0-2]$", helmReleaseName)
+        }
+
+        isContainerAllowedToBePrivileged(container) = true {
+          isPXBirdPod
+          container.name == "init-network"
+        }
+
+        # Bird needs to be able to send and receive BGP announcements.
+        isContainerAllowedToUseCapability(container, "NET_ADMIN") = true {
+          isPXBirdPod
+          container.name == "bird"
         }
         {{- end }}
 

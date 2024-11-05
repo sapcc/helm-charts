@@ -92,6 +92,9 @@ spec:
                     BMC contains the access details for the BMC.
                     This field is optional and can be omitted if no BMC access is specified.
                   properties:
+                    address:
+                      description: Address is the address of the BMC.
+                      type: string
                     bmcSecretRef:
                       description: |-
                         BMCSecretRef is a reference to the Kubernetes Secret object that contains the credentials
@@ -108,9 +111,6 @@ spec:
                           type: string
                       type: object
                       x-kubernetes-map-type: atomic
-                    endpoint:
-                      description: Endpoint is the address of the BMC endpoint.
-                      type: string
                     protocol:
                       description: Protocol specifies the protocol to be used for communicating with the BMC.
                       properties:
@@ -130,8 +130,8 @@ spec:
                         - port
                       type: object
                   required:
+                    - address
                     - bmcSecretRef
-                    - endpoint
                     - protocol
                   type: object
                 bmcRef:
@@ -389,6 +389,38 @@ spec:
                 state:
                   description: State represents the current state of the server.
                   type: string
+                storages:
+                  description: Storages is a list of storages associated with the server.
+                  items:
+                    description: Storage defines the details of one storage device
+                    properties:
+                      capacity:
+                        anyOf:
+                          - type: integer
+                          - type: string
+                        description: SizeBytes specifies the size of the storage device in bytes.
+                        pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                        x-kubernetes-int-or-string: true
+                      model:
+                        description: Model specifies the model of the storage device.
+                        type: string
+                      name:
+                        description: Name is the name of the storage interface.
+                        type: string
+                      rotational:
+                        description: Rotational specifies whether the storage device is rotational.
+                        type: boolean
+                      state:
+                        description: State specifies the state of the storage device.
+                        type: string
+                      type:
+                        description: Type specifies the type of the storage device.
+                        type: string
+                      vendor:
+                        description: Vendor specifies the vendor of the storage device.
+                        type: string
+                    type: object
+                  type: array
               type: object
           type: object
       served: true

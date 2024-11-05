@@ -36,6 +36,7 @@ spec:
         checksum/users: {{ include (print $.Template.BasePath "/users-secret.yaml") . | sha256sum }}
 {{- if and (and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested) $.Values.linkerd.enabled }}
         linkerd.io/inject: enabled
+        config.linkerd.io/opaque-ports: "{{ default 5672 .Values.ports.public }}"
 {{- end }}
 {{- if .Values.customConfig }}
         checksum/custom.conf: {{ include (print .Template.BasePath "/etc/_rabbitmq-custom-config.tpl") . | sha256sum }}

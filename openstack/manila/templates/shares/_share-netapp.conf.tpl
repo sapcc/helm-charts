@@ -59,6 +59,18 @@ netapp_trace_flags=api,method
 netapp_volume_provision_net_capacity = True
 netapp_volume_snapshot_reserve_percent = {{ $share.netapp_volume_snapshot_reserve_percent | default $context.Values.netapp_volume_snapshot_reserve_percent | default 50 }}
 
+# Specify if the FlexGroup pool is enabled. When it is enabled, the
+# driver will report a single pool representing all aggregates (ONTAP
+# chooses on which the share will be allocated). If you want to Manila
+# control the aggregate selection, you can configure its custom
+# FlexGroup pools through netapp_flexgroup_pools option. The FlexGroup
+# placement is done either by ONTAP or Manila, not both. (boolean
+# value)
+netapp_enable_flexgroup = {{ $share.enable_flexgroup | default "False" }}
+# Specify if the FlexVol pools must not be reported when the
+# netapp_enable_flexgroup is enabled. (boolean value)
+netapp_flexgroup_pool_only = {{ $share.disable_flexvol | default "False" }}
+
 # Enable logical space reporting
 netapp_enable_logical_space_reporting = False
 
@@ -79,7 +91,7 @@ netapp_hardware_state = {{ $share.hardware_state | default "live" }}
 {{- if eq 100 (int $share.reserved_share_percentage)}}
 reserved_share_percentage = 100
 {{- else }}
-reserved_share_percentage = {{ $share.reserved_share_percentage | default 30 }}
+reserved_share_percentage = {{ $share.reserved_share_percentage | default 25 }}
 {{- end }}
 
 {{- if eq 100 (int $share.reserved_share_extend_percentage)}}

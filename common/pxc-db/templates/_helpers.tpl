@@ -45,9 +45,17 @@ app.kubernetes.io/part-of: {{ .Release.Name }}
 Selector labels
 */}}
 {{- define "pxc-db.selectorLabels" -}}
-app: {{ .Release.Name }}
+{{ include "pxc-db.appLabels" . }}
 app.kubernetes.io/name: {{ include "pxc-db.name" . }}
 app.kubernetes.io/instance: {{ include "pxc-db.name" . }}-{{ .Release.Name }}
+{{- end }}
+
+{{/*
+Application labels
+*/}}
+{{- define "pxc-db.appLabels" -}}
+app: {{ include "pxc-db.fullname" . }}
+name: {{ include "pxc-db.fullname" . }}
 {{- end }}
 
 {{/*
@@ -78,6 +86,15 @@ Default service labels for linkerd
 {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested $.Values.linkerd.enabled }}
 config.linkerd.io/opaque-ports: "3306,3307,3009,4444,4567,4568,33060,33062"
 {{- end }}
+{{- end -}}
+
+{{/* Generate the service label for the templated Prometheus alerts. */}}
+{{- define "pxc-db.alerts.service" -}}
+{{- if .Values.alerts.service -}}
+{{- .Values.alerts.service -}}
+{{- else -}}
+{{- .Release.Name -}}
+{{- end -}}
 {{- end -}}
 
 {{- define "pxc-db.resolve_secret" -}}

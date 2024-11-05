@@ -1,0 +1,29 @@
+{{ if .Values.garden.managedresources -}}
+---
+apiVersion: resources.gardener.cloud/v1alpha1
+kind: ManagedResource
+metadata:
+  name: cc-gardener
+  namespace: garden
+spec:
+  secretRefs:
+  - name: cc-gardener
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: cc-gardener
+  namespace: garden
+type: Opaque
+data:
+  # Cannot use .Files.AsSecrets because it would create a map
+  # of "file: base64 data" instead of concatenating the data
+  # and encoding that
+  objects.yaml: |-
+    {{- $combined := "" }}
+    {{- range $path, $_ := .Files.Glob "managedresources/*.yaml" }}
+    {{- $combined = print $combined ($.Files.Get $path) "\n"}}
+    {{- end }}
+    {{- $encoded := $combined | b64enc }}
+    {{ $encoded }}
+{{- end }}

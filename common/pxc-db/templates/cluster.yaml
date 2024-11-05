@@ -67,7 +67,7 @@ spec:
     annotations:
 {{ merge (include "pxc-db.linkerdPodAnnotations" $ | fromYaml) (include "pxc-db.metricsAnnotations" $ | fromYaml ) ($pxc.annotations) | toYaml | indent 6 }}
     labels:
-{{ $pxc.labels | toYaml | indent 6 }}
+{{ merge (include "pxc-db.appLabels" $ | fromYaml) ($pxc.labels) | toYaml | indent 6 }}
     {{- if $pxc.expose }}
     expose:
 {{ tpl ($pxc.expose | toYaml) $ | indent 6 }}
@@ -200,7 +200,7 @@ spec:
     annotations:
 {{ merge (include "pxc-db.linkerdPodAnnotations" $ | fromYaml) ($haproxy.annotations) | toYaml | indent 6 }}
     labels:
-{{ $haproxy.labels | toYaml | indent 6 }}
+{{ merge (include "pxc-db.appLabels" $ | fromYaml) ($haproxy.labels) | toYaml | indent 6 }}
     readinessDelaySec: 15
     livenessDelaySec: 600
     readinessProbes:

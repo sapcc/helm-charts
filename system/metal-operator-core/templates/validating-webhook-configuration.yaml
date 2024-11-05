@@ -13,6 +13,26 @@ webhooks:
     service:
       name: '{{ include "metal-operator-core.fullname" . }}-webhook-service'
       namespace: '{{ .Release.Namespace }}'
+      path: /validate-metal-ironcore-dev-v1alpha1-bmc
+  failurePolicy: Fail
+  name: vbmc.kb.io
+  rules:
+  - apiGroups:
+    - metal.ironcore.dev
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - bmcs
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: '{{ include "metal-operator-core.fullname" . }}-webhook-service'
+      namespace: '{{ .Release.Namespace }}'
       path: /validate-metal-ironcore-dev-v1alpha1-serverclaim
   failurePolicy: Fail
   name: vserverclaim.kb.io

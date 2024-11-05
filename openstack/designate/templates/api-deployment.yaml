@@ -44,7 +44,6 @@ spec:
       serviceAccountName: {{ .Release.Name }}
 {{- end }}
 {{ tuple . "designate" "api" | include "kubernetes_pod_anti_affinity" | indent 6 }}
-      {{- include "utils.proxysql.pod_settings" . | indent 6 }}
       initContainers:
       {{- tuple . (dict "service" (include "designate.service_dependencies" . ) "jobs" (include "migration_job_name" . )) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 8 }}
       containers:
@@ -79,12 +78,11 @@ spec:
             preStop:
               {{- include "utils.snippets.pre_stop_graceful_shutdown" . | indent 14 }}
           livenessProbe:
-            httpGet:
-              path: /healthcheck
-              port: {{.Values.global.designate_api_port_internal}}
-            initialDelaySeconds: 15
-            periodSeconds: 15
-            timeoutSeconds: 10
+            tcpSocket:
+              port: designate-api
+            initialDelaySeconds: 30
+            periodSeconds: 20
+            timeoutSeconds: 20
           readinessProbe:
             exec:
               command:
@@ -97,7 +95,7 @@ spec:
 {{- end }}
             initialDelaySeconds: 5
             periodSeconds: 10
-            timeoutSeconds: 5
+            timeoutSeconds: 20
           ports:
             - name: designate-api
               containerPort: {{.Values.global.designate_api_port_internal}}
@@ -116,9 +114,16 @@ spec:
             - name: designate-etc-wsgi
               mountPath: /etc/apache2/conf-enabled/wsgi-designate.conf
               subPath: wsgi-designate.conf
-            {{- include "utils.proxysql.volume_mount" . | indent 12 }}
+              readOnly: true
+            - name: designate-etc-wsgi
+              mountPath: /etc/apache2/mods-available/mpm_event.conf
+              subPath: mpm_event.conf
+              readOnly: true
+            - name: designate-etc-wsgi
+              mountPath: /etc/apache2/mods-available/status.conf
+              subPath: status.conf
+              readOnly: true
             {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
-        {{- include "utils.proxysql.container" . | indent 8 }}
         - name: statsd
           image: {{ required ".Values.global.dockerHubMirror is missing" .Values.global.dockerHubMirror }}/prom/statsd-exporter:v0.8.1
           imagePullPolicy: IfNotPresent
@@ -157,5 +162,4 @@ spec:
           configMap:
             name: designate-bin
             defaultMode: 0755
-        {{- include "utils.proxysql.volumes" . | indent 8 }}
         {{- include "utils.trust_bundle.volumes" . | indent 8 }}

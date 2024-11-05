@@ -45,7 +45,7 @@ as3_endpoint = https://octavia-f5-as3.{{ include "svc_fqdn" $envAll }}
 # Async Mode (always use async tasks)
 async_mode = {{ $envAll.Values.async_mode | default "false" }}
 
-# Unsafe Mode (don't check F5 running configuration when applying declarations)
-unsafe_mode = {{ $envAll.Values.unsafe_mode | default "false" }}
+# Unchecked Mode (Skip F5 running configuration check when applying AS3 declarations)
+unchecked_mode = {{ $envAll.Values.unchecked_mode | default "false" }}
 
 {{- end }}

@@ -6,7 +6,6 @@ objects:
   Node: node.yaml
   SVM: svm.yaml
   Status: status.yaml
-  Volume: volume.yaml
 {{- /*
   Add extra items to this object list.
 */}}
