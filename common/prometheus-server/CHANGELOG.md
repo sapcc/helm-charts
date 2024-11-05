@@ -1,3 +1,7 @@
+## 7.7.1
+
+* Fix scraping of apiserver_request_duration_seconts histogram
+
 ## 7.7.0
 
 * Prometheus bump to v2.54.1
