@@ -3,7 +3,7 @@
 apiVersion: seedmanagement.gardener.cloud/v1alpha1
 kind: Gardenlet
 metadata:
-  name: soil-{{ .Values.garden.region }}
+  name: soil-{{ .Values.global.region }}
   namespace: garden
 spec:
   deployment:
@@ -28,7 +28,7 @@ spec:
       spec:
         backup:
           provider: openstack          
-          region: {{ .Values.garden.region }}
+          region: {{ .Values.global.region }}
           secretRef:
             name: ingress-secret
             namespace: garden
@@ -39,12 +39,12 @@ spec:
               name: ingress-secret
               namespace: garden
         ingress: # see prerequisites
-          domain: {{ required ".Values.garden.cluster missing" .Values.garden.cluster }}.soil-garden.{{ required ".Values.garden.region missing" .Values.garden.region }}.cloud.sap
+          domain: {{ required ".Values.global.cluster missing" .Values.global.cluster }}.soil-garden.{{ required ".Values.global.region missing" .Values.global.region }}.cloud.sap
           controller:
             kind: nginx
         networks: {{ toYaml .Values.garden.runtimeCluster.networking | nindent 10 }}
         provider:
-          region: {{ .Values.garden.region }}
+          region: {{ .Values.global.region }}
           type: openstack
         settings:
           excessCapacityReservation:
