@@ -211,3 +211,18 @@
     "quota:instance_only": "true"
     "quota:separate": "true"
     {{- end }}
+- name: "hana_c480_m7680_v2"
+  id: "328"
+  vcpus: 480
+  ram: 7864320
+  disk: 64
+  extra_specs:
+    {{ tuple . "vmware_common" | include "sap_seeds.helpers.extra_specs" | indent 4 }}
+    "resources:CUSTOM_BIGVM": "2"
+    "trait:CUSTOM_NUMASIZE_C60_M960": "required"
+    "hw:cpu_cores": "60"   # used in nova-vmware as cores-per-socket (30pCPU = 60vCPU)
+    "reservation:cpu": "456"
+    {{- if ( .Values.hana_flavors_quota_separate ) }}
+    "quota:instance_only": "true"
+    "quota:separate": "true"
+    {{- end }}
