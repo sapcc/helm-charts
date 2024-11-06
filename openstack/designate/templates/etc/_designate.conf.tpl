@@ -51,12 +51,10 @@ quota_recordset_records = {{ .Values.quota_recordset_records | default 20 }}
 quota_api_export_size = {{ .Values.quota_api_export_size | default 1000 }}
 
 rpc_response_timeout = {{ .Values.rpc_response_timeout | default .Values.global.rpc_response_timeout | default 300 }}
-rpc_workers = {{ .Values.rpc_workers | default .Values.global.rpc_workers | default 1 }}
+
+rpc_ping_enabled = True
 
 wsgi_default_pool_size = {{ .Values.wsgi_default_pool_size | default .Values.global.wsgi_default_pool_size | default 100 }}
-min_pool_size = {{ .Values.min_pool_size | default .Values.global.min_pool_size | default 10 }}
-max_pool_size = {{ .Values.max_pool_size | default .Values.global.max_pool_size | default 100 }}
-max_overflow = {{ .Values.max_overflow | default .Values.global.max_overflow | default 50 }}
 
 [oslo_policy]
 policy_file = policy.yaml
@@ -66,11 +64,14 @@ heartbeat_in_pthread = false
 rabbit_interval_max = 3
 rabbit_retry_backoff = 1
 kombu_reconnect_delay = 0.1
-heartbeat_timeout_threshold = 15
+heartbeat_timeout_threshold = 30
 heartbeat_rate = 3
 
 [oslo_messaging_notifications]
 driver = noop
+
+[heartbeat_emitter]
+heartbeat_interval = 30.0
 
 ########################
 ## Service Configuration
@@ -416,9 +417,14 @@ mysql_sql_mode = TRADITIONAL
 #connection_debug = 0
 #connection_trace = False
 #sqlite_synchronous = True
-#idle_timeout = 3600
+#connection_recycle_time = 3600
 #max_retries = 10
+
+max_pool_size = {{ .Values.max_pool_size | default .Values.global.max_pool_size | default 100 }}
+max_overflow = {{ .Values.max_overflow | default .Values.global.max_overflow | default 50 }}
+
 retry_interval = 1
+db_max_retry_interval = 1
 
 [healthcheck]
 # DEPRECATED: The path to respond to healtcheck requests on. (string value)
