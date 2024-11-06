@@ -31,7 +31,7 @@ def get_hostname():
 
 
 def get_network(hostname):
-    with open('segment-names.yaml', 'r') as f:
+    with open('neutron.conf.d/segment-names.yaml', 'r') as f:
         segments = yaml.safe_load(f)
         for segment_name, hosts in segments.items():
             if hostname in hosts:
@@ -44,7 +44,7 @@ hostname = get_hostname()
 network_name = get_network(hostname)
 
 
-pathlib.Path('ovs.conf').write_text(textwrap.dedent(f"""\
+pathlib.Path('neutron-openvswitch-agent.conf.d/ovs.conf').write_text(textwrap.dedent(f"""\
     [DEFAULT]
     host={hostname}
 
