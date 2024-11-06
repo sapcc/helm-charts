@@ -46,7 +46,7 @@ spec:
       - name: network-from-netbox
         image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/loci-neutron:{{ .Values.imageVersion | required "Please set imageVersion similar" }}
         command: ["/container.init/network-from-netbox"]
-        workingDir: "/etc/neutron/neutron-openvswitch-agent.conf.d"
+        workingDir: "/etc/neutron"
         volumeMounts:
           - mountPath: /container.init
             name: bin
@@ -54,7 +54,7 @@ spec:
             name: etcneutron
           - mountPath: /etc/neutron/neutron-openvswitch-agent.conf.d
             name: etcneutronagentconfd
-          - mountPath: /etc/neutron/neutron-openvswitch-agent.conf.d/segment-names.yaml
+          - mountPath: /etc/neutron/neutron.conf.d/segment-names.yaml
             name: etc-vpod
             subPath: segment-names.yaml
       containers:
