@@ -74,6 +74,10 @@ spec:
                   name: sentry
                   key: {{ .Release.Name }}.DSN.python
             {{- end }}
+            {{- if .Values.python_warnings }}
+            - name: PYTHONWARNINGS
+              value: {{ .Values.python_warnings | quote }}
+            {{- end }}
           lifecycle:
             preStop:
               {{- include "utils.snippets.pre_stop_graceful_shutdown" . | indent 14 }}
