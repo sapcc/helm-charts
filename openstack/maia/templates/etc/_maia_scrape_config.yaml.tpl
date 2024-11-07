@@ -107,9 +107,9 @@
   static_configs:
     - targets: ['prometheus-infra-collector.infra-monitoring:9090']
   metric_relabel_configs:
- 51 - source_labels: [snmp_f5_ltmVirtualServStatName]
- 52   target_label: ltmVirtualServStatName
- 53   action: replace
+    - source_labels: [snmp_f5_ltmVirtualServStatName]
+      target_label: ltmVirtualServStatName
+      action: replace
     - regex: "cluster|cluster_type|instance|job|kubernetes_namespace|kubernetes_pod_name|kubernetes_name|pod_template_hash|exported_instance|exported_job|type|name|component|app|system|thanos_cluster|thanos_cluster_type|thanos_region|alert_tier|alert_service|snmp_f5_ltmVirtualServStatName"
       action: labeldrop
     - action: drop
