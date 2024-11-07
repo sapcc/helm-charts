@@ -81,7 +81,9 @@ spec:
               name: container-init
             {{- include "utils.proxysql.volume_mount" . | indent 12 }}
             {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
+            {{- if .Values.coordination.central.enabled }}
             {{- include "utils.coordination.volume_mount" . | indent 12 }}
+            {{- end }}
         {{- tuple . .Values.central_workers | include "utils.proxysql.container" | indent 8 }}
         {{- include "jaeger_agent_sidecar" . | indent 8 }}
       volumes:
@@ -103,6 +105,8 @@ spec:
           configMap:
             name: designate-bin
             defaultMode: 0755
+        {{- if .Values.coordination.central.enabled }}
         {{- include "utils.coordination.volumes" . | indent 8 }}
+        {{- end }}
         {{- include "utils.proxysql.volumes" . | indent 8 }}
         {{- include "utils.trust_bundle.volumes" . | indent 8 }}
