@@ -5,7 +5,7 @@
 apiVersion: v1
 kind: Secret
 metadata:
-  name: otel-basic-auth-{{ $r.region }}
+  name: otel-basic-auth-{{ $r.cluster }}
   namespace: {{ $.Release.Namespace }}
 data:
   password: {{ required ".Values.openTelemetry.clusters[].openSearchLogs.password missing" $r.openSearchLogs.password | b64enc }}
@@ -21,9 +21,17 @@ metadata:
 spec:
   clusterSelector:
     matchLabels:
-      greenhouse.sap/pluginpreset: "true"
       greenhouse.sap/cluster-presets-enabled: "true"
-      cluster-type: "storage"
+    matchExpressions:
+    - key: greenhouse.sap/pluginpreset
+      operator: In
+      values:
+      - "true"
+    - key: cluster-type
+      operator: In
+      values:
+      - "storage"
+      - "compute"
   clusterOptionOverrides:
   {{- range $r := $.Values.openTelemetry.clusters }}
   - clusterName: {{ $r.cluster }}
@@ -37,12 +45,12 @@ spec:
       valueFrom: 
         secret: 
           key: username
-          name: otel-basic-auth-{{ $r.region }}
+          name: otel-basic-auth-{{ $r.cluster }}
     - name: openTelemetry.openSearchLogs.password
       valueFrom: 
         secret: 
           key: password
-          name: otel-basic-auth-{{ $r.region }}
+          name: otel-basic-auth-{{ $r.cluster }}
     - name: openTelemetry.cluster
       value: {{ $r.cluster }}
     - name: openTelemetry.region
