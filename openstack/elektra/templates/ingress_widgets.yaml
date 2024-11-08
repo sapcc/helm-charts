@@ -1,0 +1,21 @@
+# This Ingress excludes the assets/*_widget.js files from authentication which is done in ingress.yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: elektra-public-assets
+  namespace: elektra
+  annotations:
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    ingress.kubernetes.io/use-regex: "true"
+spec:
+  rules:
+    - host: dashboard.qa-de-1.cloud.sap
+      http:
+        paths:
+          - path: /assets/.*_widget\.js
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: elektra
+                port:
+                  number: 80   
