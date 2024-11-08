@@ -11,7 +11,7 @@ spec:
     webhook:
       clientConfig:
         service:
-          name: metal-webhook-service
+          name: webhook-service
           namespace: metal-operator-system
           path: /convert
       conversionReviewVersions:
@@ -95,6 +95,9 @@ spec:
                     - ip
                     - macAddress
                   type: object
+                  x-kubernetes-validations:
+                    - message: access is immutable
+                      rule: self == oldSelf
                 bmcSecretRef:
                   description: |-
                     BMCSecretRef is a reference to the Kubernetes Secret object that contains the credentials
@@ -147,6 +150,9 @@ spec:
                       type: string
                   type: object
                   x-kubernetes-map-type: atomic
+                  x-kubernetes-validations:
+                    - message: endpointRef is immutable
+                      rule: self == oldSelf
                 protocol:
                   description: |-
                     Protocol specifies the protocol to be used for communicating with the BMC.
@@ -171,6 +177,9 @@ spec:
                 - bmcSecretRef
                 - protocol
               type: object
+              x-kubernetes-validations:
+                - message: exactly one of access or endpointRef needs to be set
+                  rule: has(self.access) != has(self.endpointRef)
             status:
               description: BMCStatus defines the observed state of BMC.
               properties:

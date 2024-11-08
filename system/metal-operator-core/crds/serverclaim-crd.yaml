@@ -11,7 +11,7 @@ spec:
     webhook:
       clientConfig:
         service:
-          name: metal-webhook-service
+          name: webhook-service
           namespace: metal-operator-system
           path: /convert
       conversionReviewVersions:
@@ -103,6 +103,9 @@ spec:
                       type: string
                   type: object
                   x-kubernetes-map-type: atomic
+                  x-kubernetes-validations:
+                    - message: serverRef is immutable
+                      rule: self == oldSelf
                 serverSelector:
                   description: |-
                     ServerSelector specifies a label selector to identify the server to be claimed.
@@ -149,10 +152,18 @@ spec:
                       type: object
                   type: object
                   x-kubernetes-map-type: atomic
+                  x-kubernetes-validations:
+                    - message: serverSelector is immutable
+                      rule: self == oldSelf
               required:
                 - image
                 - power
               type: object
+              x-kubernetes-validations:
+                - message: serverRef is required once set
+                  rule: '!has(oldSelf.serverRef) || has(self.serverRef)'
+                - message: serverSelector is required once set
+                  rule: '!has(oldSelf.serverSelector) || has(self.serverSelector)'
             status:
               description: ServerClaimStatus defines the observed state of ServerClaim.
               properties:
