@@ -5,17 +5,8 @@ metadata:
   name: tenso
 
 data:
-  policy.yaml: |
-    # rules expected by Tenso
-    'event:create': '(rule:match_concourse_event and rule:match_concourse_user) or (rule:match_ansible_event and rule:match_ansible_user)'
-    'event:create_synthetic': 'rule:cloud_admin'
-
-    # building blocks
-    'cloud_admin': 'project_name:cloud_admin and project_domain_name:ccadmin and role:admin'
-    'match_concourse_event': '"helm-deployment-from-concourse.v1":%(target.payload_type)s or "active-directory-deployment-from-concourse.v1":%(target.payload_type)s or "active-directory-deployment-from-concourse.v2":%(target.payload_type)s or "terraform-deployment-from-concourse.v1":%(target.payload_type)s'
-    'match_concourse_user': 'user_name:tenso-concourse and user_domain_name:Default'
-    'match_ansible_event': '"infra-workflow-from-awx.v1":%(target.payload_type)s'
-    'match_ansible_user': 'user_name:tenso-ansible and user_domain_name:Default'
+  policy.json: |
+    {{- .Files.Get "files/policy.yaml" | fromYaml | toPrettyJson | nindent 4 }}
 
   servicenow-mapping.yaml: |
 {{ toYaml .Values.tenso.servicenow.mapping_config | indent 4 }}
