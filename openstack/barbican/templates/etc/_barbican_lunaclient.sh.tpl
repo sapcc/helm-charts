@@ -5,7 +5,6 @@ lunaclient ()
     {
     mv /usr/safenet /thales
     NOW="$(date +%Y%m%d)"
-    cp /thales/safenet/lunaclient/Chrystoki-template.conf /thales/safenet/lunaclient/config/Chrystoki.conf
     cd /thales/safenet/lunaclient/libs/64/
     rm -f libCryptoki2_64.so
     ln -s libCryptoki2.so libCryptoki2_64.so
