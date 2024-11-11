@@ -137,7 +137,7 @@
 - name:  KEPPEL_JANITOR_LISTEN_ADDRESS
   value: ':80'
 - name:  KEPPEL_OSLO_POLICY_PATH
-  value: '/etc/keppel/policy.yaml'
+  value: '/etc/keppel/policy.json'
 - name:  KEPPEL_PEERS
   value: {{ index (include "build_peers" $ | fromYaml) "peers" | toJson | quote }}
 - name:  KEPPEL_RATELIMIT_ANYCAST_BLOB_PULL_BYTES
