@@ -144,3 +144,8 @@ thread_pool_size = 3
 {{- end }}
 
 {{- include "ini_sections.cache" . }}
+
+{{- if hasPrefix "caracal" .Values.imageVersion }}
+[experimental]
+linuxbridge = true
+{{- end }}
