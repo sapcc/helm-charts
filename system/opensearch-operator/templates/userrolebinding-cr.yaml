@@ -1,0 +1,28 @@
+{{- if .Values.opensearchUserRoleBinding.enabled }}
+{{- range .Values.opensearchUserRoleBinding.bindings }}
+apiVersion: opensearch.opster.io/v1
+kind: OpensearchUserRoleBinding
+metadata:
+  name: {{ .name }}
+  namespace:  {{ $.Release.Namespace }}
+spec:
+  opensearchCluster:
+    name: {{ $.Values.opensearchCluster.general.serviceName | quote }}
+  roles:
+    {{- range .roles }}
+    - {{ . | quote }}
+    {{- end }}
+  {{- if .backendRoles }}
+  backendRoles:
+    {{- range .backendRoles }}
+    - {{ . | quote }}
+    {{- end }}
+  {{- end }}
+  {{- if .users }}
+  users:
+    {{- range .users }}
+    - {{ . | quote }}
+    {{- end }}
+  {{- end }}
+{{- end }}
+{{- end }}

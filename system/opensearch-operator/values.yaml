@@ -1,0 +1,376 @@
+owner-info:
+  service: opensearch
+  support-group: observability
+  maintainers:
+  - name: timojohlo
+  - name: kuckkuck
+  - name: joluc
+  helm-chart-url: https://github.com/sapcc/helm-charts/system/opensearch-operator
+
+opensearch-operator:
+  namespace: "opensearch-logs"
+  nameOverride: ""
+  fullnameOverride: ""
+
+  podAnnotations: {}
+  podLabels: {}
+  nodeSelector: {}
+  tolerations: []
+  securityContext:
+    runAsNonRoot: true
+  priorityClassName: ""
+  manager:
+    securityContext:
+      allowPrivilegeEscalation: false
+    extraEnv: []
+    resources:
+      limits:
+        cpu: 200m
+        memory: 500Mi
+      requests:
+        cpu: 100m
+        memory: 350Mi
+
+    livenessProbe:
+      failureThreshold: 3
+      httpGet:
+        path: /healthz
+        port: 8081
+      periodSeconds: 15
+      successThreshold: 1
+      timeoutSeconds: 3
+      initialDelaySeconds: 10
+
+    readinessProbe:
+      failureThreshold: 3
+      httpGet:
+        path: /readyz
+        port: 8081
+      periodSeconds: 15
+      successThreshold: 1
+      timeoutSeconds: 3
+      initialDelaySeconds: 10
+
+    # Set this to false to disable the experimental parallel recovery in case you are experiencing problems
+    parallelRecoveryEnabled: true
+    # Set this to true to enable the standard go pprof endpoints on port 6060 (https://pkg.go.dev/net/http/pprof)
+    # Should only be used for debugging purposes
+    pprofEndpointsEnabled: false
+
+    image:
+      repository: opensearchproject/opensearch-operator
+      ## tag default uses appVersion from Chart.yaml, to override specify tag tag: "v1.1"
+      tag: ""
+      pullPolicy: "Always"
+
+    ## Optional array of imagePullSecrets containing private registry credentials
+    imagePullSecrets: []
+    # - name: secretName
+
+    dnsBase: cluster.local
+
+    # Log level of the operator. Possible values: debug, info, warn, error
+    loglevel: info
+
+    # If a watchNamespace is specified, the manager's cache will be restricted to
+    # watch objects in the desired namespace. Defaults is to watch all namespaces.
+    watchNamespace:
+
+  # Install the Custom Resource Definitions with Helm
+  installCRDs: true
+
+  serviceAccount:
+    # Specifies whether a service account should be created
+    create: true
+    # Override the service account name. Defaults to opensearch-operator-controller-manager
+    name: ""
+
+  kubeRbacProxy:
+    enable: true
+    securityContext:
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
+      capabilities:
+        drop:
+          - ALL
+    resources:
+      limits:
+        cpu: 50m
+        memory: 50Mi
+      requests:
+        cpu: 25m
+        memory: 25Mi
+
+    livenessProbe:
+      failureThreshold: 3
+      httpGet:
+        path: /healthz
+        port: 10443
+        scheme: HTTPS
+      periodSeconds: 15
+      successThreshold: 1
+      timeoutSeconds: 3
+      initialDelaySeconds: 10
+
+    readinessProbe:
+      failureThreshold: 3
+      httpGet:
+        path: /healthz
+        port: 10443
+        scheme: HTTPS
+      periodSeconds: 15
+      successThreshold: 1
+      timeoutSeconds: 3
+      initialDelaySeconds: 10
+
+    image:
+      repository: "gcr.io/kubebuilder/kube-rbac-proxy"
+      tag: "v0.15.0"
+
+  ## If this is set to true, RoleBindings will be used instead of ClusterRoleBindings, inorder to restrict ClusterRoles
+  ## to the namespace where the operator and OpenSearch cluster are in. In that case, specify the namespace where they
+  ## are in in manager.watchNamespace field.
+  ## If false, ClusterRoleBindings will be used
+  useRoleBindings: false
+
+  testFramework:
+    enabled: false
+    image:
+      registry: ghcr.io
+      repository: cloudoperators/greenhouse-extensions-integration-test
+      tag: main
+    imagePullPolicy: IfNotPresent
+
+opensearchCluster:
+  enabled: true
+#  bootstrap:
+#    Configure settings for the bootstrap pod
+  general:
+    httpPort: "9200"
+    version: 2.3.0
+    serviceName: "opensearch"
+    drainDataNodes: true
+    setVMMaxMapCount: true
+#    securityContext:
+#       Specify container security context for OpenSearch pods
+#    podSecurityContext:
+#       Specify pod security context for OpenSearch pods
+  dashboards:
+    enable: true
+    replicas: 1
+    version: 2.3.0
+#        securityContext:
+#           Specify container security context for OSD pods
+#        podSecurityContext:
+#           Specify pod security context for OSD pods
+    resources:
+      requests:
+        memory: "1Gi"
+        cpu: "500m"
+      limits:
+        memory: "1Gi"
+        cpu: "500m"
+  initHelper:
+    imagePullSecrets: []
+    # - registryKeySecretName
+    imagePullPolicy: IfNotPresent
+    resources: {}
+    # requests:
+    #   memory: "1Gi"
+    #   cpu: "500m"
+    # limits:
+    #   memory: "1Gi"
+    #   cpu: "500m"
+  nodePools:
+    - component: masters
+      diskSize: "30Gi"
+      replicas: 1
+      roles:
+        - "master"
+      resources:
+        requests:
+          memory: "2Gi"
+          cpu: "500m"
+        limits:
+          memory: "2Gi"
+          cpu: "500m"
+    - component: client
+      diskSize: "30Gi"
+      replicas: 1
+      roles:
+        - "client"
+      resources:
+        requests:
+          memory: "2Gi"
+          cpu: "500m"
+        limits:
+          memory: "2Gi"
+          cpu: "500m"
+    - component: data
+      diskSize: "30Gi"
+      replicas: 3
+      roles:
+        - "data"
+      resources:
+        requests:
+          memory: "2Gi"
+          cpu: "500m"
+        limits:
+          memory: "2Gi"
+          cpu: "500m"
+  security:
+    tls:
+      transport:
+        generate: true
+      http:
+        generate: true
+
+opensearchIndexTemplate:
+  enabled: true
+  templates:
+    - name: "sample-index-template"
+      indexPatterns:
+        - "logs-*"
+        - "metrics-*"
+      priority: 200
+      composedOf:
+        - "component-1"
+        - "component-2"
+      settings:
+        number_of_shards: 1
+        number_of_replicas: 1
+      mappings:
+        properties:
+          field1:
+            type: keyword
+          field2:
+            type: text
+      aliases:
+        my-alias:
+          filter:
+            term:
+              user: "test"
+      version: 1
+
+opensearchISMPolicy:
+  enabled: true
+  policies:
+  - name: "31d-log-retention"
+    defaultState: "ingest"
+    description: "Simple 31d log retention"
+    errorNotification:
+      channel: "slack"
+      destination:
+      # customWebhook:
+      #   url: "https://custom-webhook-url"
+        slack:
+          url: "https://slack-webhook-url"
+      messageTemplate:
+        source: "Alert: An issue occurred"
+    ismTemplate:
+      indexPatterns:
+        - "greenhouse-*"
+      priority: 1
+    policyId: "31d_log_retention"
+    states:
+      - name: "ingest"
+        actions: []
+        transitions:
+          - stateName: "delete"
+            conditions:
+              minIndexAge: "31d"
+      - name: "delete"
+        actions:
+          - delete: {}
+          - retry:
+              - count: 3
+                backoff: "exponential"
+                delay: "1m"
+        transitions: []
+
+opensearchRoles:
+  enabled: true
+  default:
+    reserved: false
+    hidden: false
+    clusterPermissions:
+      - "cluster_monitor"
+      - "cluster_composite_ops"
+      - "cluster:admin/ingest/pipeline/put"
+      - "cluster:admin/ingest/pipeline/get"
+      - "indices:admin/template/get"
+      - "cluster_manage_index_templates"
+      - "cluster:admin/opensearch/ml/predict"
+    indexPermissions:
+      - indexPatterns:
+         - '*'
+        allowedActions:
+          - "indices:admin/template/get"
+          - "indices:admin/template/put"
+          - "indices:admin/mapping/put"
+          - "indices:admin/create"
+          - "indices:data/write/bulk*"
+          - "indices:data/write/index"
+  roles:
+    # Fields left empty will inherit values from opensearchRoles.default
+    - name: greenhouse
+      reserved: ""
+      hidden: ""
+      clusterPermissions: ""
+      indexPermissions:
+        - indexPatterns:
+            - "greenhouse-*"
+          allowedActions: ""
+    - name: adminuser
+      reserved: ""
+      hidden: ""
+      clusterPermissions:
+        - "*"
+      indexPermissions:
+        - index_patterns:
+          - "*"
+          allowed_actions:
+          - "*"
+      tenant_permissions:
+        - tenant_patterns:
+          - "global_tenant"
+          allowed_actions:
+          - "kibana_all_write"
+
+opensearchUserRoleBinding:
+  enabled: true
+  bindings:
+    - name: "admin-role-binding"
+      roles:
+        - "admin"
+      backendRoles:
+        - "CC_IAS_TEAM_SUPERVISION"
+      users:
+        - "adminuser"
+    - name: "greenhouse-role-binding"
+      roles:
+        - "greenhouse"
+      users:
+        - "greenhouse"
+
+opensearchUser:
+  enabled: true
+  users:
+    - name: "greenhouse"
+      passwordFrom:
+        name: "user-credentials-secret"
+        key: "greenhouse-password"
+        optional: false
+      attributes:
+        team: "services"
+      backendRoles:
+        - "greenhouse"
+    - name: "adminuser"
+      passwordFrom:
+        name: "user-credentials-secret"
+        key: "admin-password"
+        optional: false
+      attributes:
+        team: "observability"
+      backendRoles:
+        - "admin"

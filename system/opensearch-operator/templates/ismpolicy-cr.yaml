@@ -1,0 +1,66 @@
+{{- if .Values.opensearchISMPolicy.enabled }}
+{{- range .Values.opensearchISMPolicy.policies }}
+apiVersion: opensearch.opster.io/v1
+kind: OpenSearchISMPolicy
+metadata:
+  name: {{ .name }}
+  namespace: {{ $.Release.Namespace }}
+spec:
+  defaultState: {{ .defaultState | quote }}
+  description: {{ .description | quote }}
+  {{- if .errorNotification }}
+  errorNotification:
+    channel: {{ .errorNotification.channel | quote }}
+    destination:
+      {{- if .errorNotification.destination.customWebhook }}
+      customWebhook:
+        url: {{ .errorNotification.destination.customWebhook.url | quote }}
+      {{- end }}
+      {{- if .errorNotification.destination.slack }}
+      slack:
+        url: {{ .errorNotification.destination.slack.url | quote }}
+      {{- end }}
+    messageTemplate:
+      source: {{ .errorNotification.messageTemplate.source | quote }}
+  {{- end }}
+  ismTemplate:
+    indexPatterns:
+      {{- range .ismTemplate.indexPatterns }}
+      - {{ . | quote }}
+      {{- end }}
+    priority: {{ .ismTemplate.priority }}
+  policyId: {{ .policyId | quote }}
+  states:
+    {{- range .states }}
+    - name: {{ .name | quote }}
+      actions:
+        {{- range .actions }}
+        - {{ toYaml . | nindent 10 }}
+        {{- end }}
+      {{- if .transitions }}
+      transitions:
+        {{- range .transitions }}
+        - stateName: {{ .stateName | quote }}
+          conditions:
+            {{- if .conditions.cron }}
+            cron:
+              expression: {{ .conditions.cron.expression | quote }}
+              timezone: {{ .conditions.cron.timezone | quote }}
+            {{- end }}
+            {{- if .conditions.minDocCount }}
+            minDocCount: {{ .conditions.minDocCount }}
+            {{- end }}
+            {{- if .conditions.minIndexAge }}
+            minIndexAge: {{ .conditions.minIndexAge }}
+            {{- end }}
+            {{- if .conditions.minRolloverAge }}
+            minRolloverAge: {{ .conditions.minRolloverAge }}
+            {{- end }}
+            {{- if .conditions.minSize }}
+            minSize: {{ .conditions.minSize }}
+            {{- end }}
+        {{- end }}
+      {{- end }}
+    {{- end }}
+{{- end }}
+{{- end }}

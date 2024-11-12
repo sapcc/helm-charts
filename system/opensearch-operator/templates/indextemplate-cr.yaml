@@ -1,0 +1,34 @@
+{{- if .Values.opensearchIndexTemplate.enabled }}
+{{- range .Values.opensearchIndexTemplate.templates }}
+apiVersion: opensearch.opster.io/v1
+kind: OpenSearchIndexTemplate
+metadata:
+  name: {{ .name | quote }}
+  namespace: {{ $.Release.Namespace }}
+spec:
+  indexPatterns:
+    {{- range .indexPatterns }}
+    - {{ . | quote }}
+    {{- end }}
+  priority: {{ .priority | default 100 }}
+  composedOf:
+    {{- range .composedOf }}
+    - {{ . | quote }}
+    {{- end }}
+  settings:
+    {{- if .settings }}
+    {{ toYaml .settings | nindent 4 }}
+    {{- end }}
+  mappings:
+    {{- if .mappings }}
+    {{ toYaml .mappings | nindent 4 }}
+    {{- end }}
+  aliases:
+    {{- if .aliases }}
+    {{ toYaml .aliases | nindent 4 }}
+    {{- end }}
+  {{- if .version }}
+  version: {{ .version }}
+  {{- end }}
+{{- end }}
+{{- end }}

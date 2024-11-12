@@ -1,0 +1,73 @@
+{{- if .Values.opensearchRoles.enabled }}
+{{- range .Values.opensearchRoles.roles }}
+apiVersion: opensearch.opster.io/v1
+kind: OpensearchRole
+metadata:
+  name: {{ .name }}
+  namespace:  {{ $.Release.Namespace }}
+spec:
+  reserved: {{ default $.Values.opensearchRoles.default.reserved .reserved }}
+  hidden: {{ default $.Values.opensearchRoles.default.hidden .hidden }}
+  clusterPermissions:
+  {{- if .clusterPermissions }}
+  {{ .clusterPermissions | toYaml | indent 4 }}
+  {{- else }}
+{{ $.Values.opensearchRoles.default.clusterPermissions | toYaml | indent 4 }}
+  {{- end }}
+  indexPermissions:
+  {{- if .indexPermissions }}
+  {{- range .indexPermissions }}
+    - indexPatterns:
+      {{- if .indexPatterns }}
+      {{- range $indexPattern := .indexPatterns }}
+        - "{{ $indexPattern }}"
+      {{- end }}
+      {{- else }}
+      {{- range $indexPattern := (index $.Values.opensearchRoles.default.indexPermissions 0).indexPatterns }}
+        - "{{ $indexPattern }}"
+      {{- end }}
+      {{- end }}
+      allowedActions:
+      {{- if .allowedActions }}
+      {{- range $action := .allowedActions }}
+        - "{{ $action }}"
+      {{- end }}
+      {{- else }}
+      {{- range $action := (index $.Values.opensearchRoles.default.indexPermissions 0).allowedActions }}
+        - "{{ $action }}"
+      {{- end }}
+      {{- end }}
+  {{- end }}
+  {{- end }}
+  {{- if .dls }}
+  dls: {{ .dls | quote }}
+  {{- end }}
+  {{- if .fls }}
+  fls:
+  {{- range .fls }}
+    - {{ . | quote }}
+  {{- end }}
+  {{- end }}
+  {{- if .maskedFields }}
+  maskedFields:
+  {{- range .maskedFields }}
+    - {{ . | quote }}
+  {{- end }}
+  {{- end }}
+  opensearchCluster:
+    name: {{ $.Values.opensearchCluster.general.serviceName | quote }}
+  {{- if $.Values.opensearchRoles.tenantPermissions }}
+  tenantPermissions:
+  {{- range $.Values.opensearchRoles.tenantPermissions }}
+    - tenantPatterns:
+      {{- range .tenantPatterns }}
+      - {{ . | quote }}
+      {{- end }}
+      allowedActions:
+      {{- range .allowedActions }}
+        - {{ . | quote }}
+      {{- end }}
+  {{- end }}
+  {{- end }}
+{{- end }}
+{{- end }}

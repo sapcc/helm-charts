@@ -1,0 +1,28 @@
+{{- if .Values.opensearchUser.enabled }}
+{{- range .Values.opensearchUser.users }}
+apiVersion: opensearch.opster.io/v1
+kind: OpensearchUser
+metadata:
+  name: {{ .name }}
+  namespace: {{ $.Release.Namespace }}
+spec:
+  opensearchCluster:
+    name: {{ $.Values.opensearchCluster.general.serviceName | quote }}
+  passwordFrom:
+    name: {{ .passwordFrom.name | quote }}
+    key: {{ .passwordFrom.key | quote }}
+    optional: {{ .passwordFrom.optional }}
+  {{- if .attributes }}
+  attributes:
+    {{- range $key, $value := .attributes }}
+    {{ $key }}: {{ $value | quote }}
+    {{- end }}
+  {{- end }}
+  {{- if .backendRoles }}
+  backendRoles:
+    {{- range .backendRoles }}
+    - {{ . | quote }}
+    {{- end }}
+  {{- end }}
+{{- end }}
+{{- end }}
