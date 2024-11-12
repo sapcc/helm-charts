@@ -1,7 +1,6 @@
 {{- $envAll := . }}
 {{- if .Values.agent.apod | default false }}
 {{- if .Values.global.apods | default false }}
-{{- $release_requires_sec_cap:= or (hasPrefix "ussuri" (default .Values.imageVersion .Values.imageVersionServerAPI)) (hasPrefix "yoga" (default .Values.imageVersion .Values.imageVersionServerAPI)) -}}
 {{ range $az_long, $apods := .Values.global.apods }}
 {{ range $k, $apod := $apods }}
 {{- if not (has $apod ($.Values.disabled_network_agents | default list )) }}
@@ -163,12 +162,10 @@ spec:
             capabilities:
               add:
                 - NET_ADMIN
-{{- if $release_requires_sec_cap }}
                 - SYS_ADMIN
                 - DAC_OVERRIDE
                 - DAC_READ_SEARCH
                 - SYS_PTRACE
-{{ end }}
           resources:
 {{ toYaml $.Values.pod.resources.linuxbridge_agent | indent 12 }}
           volumeMounts:
