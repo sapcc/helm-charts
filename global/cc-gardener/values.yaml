@@ -1,3 +1,6 @@
+global:
+  region: ""
+  cluster: ""
 operator:
   image:
     repository: keppel.global.cloud.sap/ccloud-europe-docker-pkg-dev-mirror/gardener-project/releases/gardener/operator
@@ -7,8 +10,6 @@ operator:
       HVPA: false
 garden:
   name: garden
-  # region: ""
-  # cluster: ""
   # externalIP: ""
   managedresources: true # disable on inital deployment
   backup:
@@ -30,9 +31,32 @@ garden:
     # oidcConfig:
     networking:
       services: 100.64.0.0/13
+secretsInjector:
+  replicaCount: 2
+  topologyKey: ""
+  virtualGardenCA: "" # base64 encoded
+  image:
+    repository: ""
+    tag: ""
+  config:
+    accounts: []
+    intervals:
+      rotationPeriod: 5m
+      rotationJitter: 1.1
+      mirrorPeriod: 1m
+      mirrorJitter: 1.1
+    cleartext: asLiteral
 extensions:
+  kubernetesVersions: []
   openstack:
     enabled: false
+    machineTypes: []
+    machineImages: []
+    providerConfig:
+      machineImages: []
+    zones: []
+gardenlet:
+  enabled: false
 owner-info:
   support-group: containers
   helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/global/cc-gardener

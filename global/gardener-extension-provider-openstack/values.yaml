@@ -1,0 +1,93 @@
+image:
+  repository: europe-docker.pkg.dev/gardener-project/public/gardener/extensions/provider-openstack
+  tag: latest
+  pullPolicy: IfNotPresent
+
+replicaCount: 1
+maxUnavailable: 1
+maxSurge: 50%
+
+resources: {}
+vpa:
+  enabled: true
+  updatePolicy:
+    updateMode: "Auto"
+
+metricsPort: 8080
+healthPort: 8081
+
+monitoring:
+  createClusterFilters: true
+
+controllers:
+  backupbucket:
+    concurrentSyncs: 5
+  backupentry:
+    concurrentSyncs: 5
+  bastion:
+    concurrentSyncs: 5
+  controlplane:
+    concurrentSyncs: 5
+  dnsrecord:
+    concurrentSyncs: 5
+  healthcheck:
+    concurrentSyncs: 5
+  heartbeat: 
+    renewIntervalSeconds: 30 
+  infrastructure:
+    concurrentSyncs: 5
+  worker:
+    concurrentSyncs: 5
+  ignoreOperationAnnotation: false
+
+disableControllers: []
+disableWebhooks: []
+ignoreResources: false
+# imageVectorOverwrite: |
+#   images:
+#   - name: pause-container
+#     sourceRepository: github.com/kubernetes/kubernetes/blob/master/build/pause/Dockerfile
+#     repository: gcr.io/google_containers/pause-amd64
+#     tag: "3.0"
+#     version: 1.11.x
+#   - name: pause-container
+#     sourceRepository: github.com/kubernetes/kubernetes/blob/master/build/pause/Dockerfile
+#     repository: gcr.io/google_containers/pause-amd64
+#     tag: "3.1"
+#     version: ">= 1.12"
+#   ...
+
+webhookConfig:
+  servicePort: 443
+  serverPort: 10250
+
+## settings for metrics, e.g. scraping by seed-prometheus
+metrics:
+  ## enable metrics scraping
+  enableScraping: true
+
+config:
+  clientConnection:
+    acceptContentTypes: application/json
+    contentType: application/json
+    qps: 100
+    burst: 130
+  etcd:
+    storage:
+      enabled: true
+      className: gardener.cloud-fast
+      capacity: 25Gi
+      provisioner: kubernetes.io/cinder
+      volumeBindingMode: WaitForFirstConsumer
+ #      parameters:
+ #        type: volumetype-nameOrID
+  bastionConfig:
+    imageRef: ""
+    flavorRef: ""
+
+gardener:
+  version: ""
+  gardenlet:
+    featureGates: {}
+  seed:
+    provider: openstack

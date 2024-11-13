@@ -22,7 +22,8 @@ data:
   objects.yaml: |-
     {{- $combined := "" }}
     {{- range $path, $_ := .Files.Glob "managedresources/*.yaml" }}
-    {{- $combined = print $combined ($.Files.Get $path) "\n"}}
+    {{- $fileContent := tpl ($.Files.Get $path) $ }}
+    {{- $combined = print $combined $fileContent "\n" }}
     {{- end }}
     {{- $encoded := $combined | b64enc }}
     {{ $encoded }}
