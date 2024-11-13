@@ -32,12 +32,6 @@ spec:
         region: '{{ "{{ .Values.global.greenhouse.clusterName | trunc -7 }}" }}'
     - name: kubeMonitoring.prometheus.prometheusSpec.externalUrl
       value: '{{ "https://prometheus.st1.{{ .Values.global.greenhouse.clusterName | trunc -7 }}.cloud.sap" }}'
-    # NFS volumes need more permissions to work
-    - name: kubeMonitoring.prometheus.prometheusSpec.securityContext
-      value:
-        fsGroup: 0
-        runAsNonRoot: false
-        runAsUser: 0
   {{- if index $thanos "thanos" }}
     - name: kubeMonitoring.prometheus.prometheusSpec.thanos.objectStorageConfig.existingSecret.name
       value: thanos-{{ $cluster }}-metrics-objectstore
@@ -102,6 +96,12 @@ spec:
       value: 30d
     - name: kubeMonitoring.prometheus.prometheusSpec.storageSpec.volumeClaimTemplate.spec.resources.requests.storage
       value: 100Gi
+    # NFS volumes need more permissions to work
+    - name: kubeMonitoring.prometheus.prometheusSpec.securityContext
+      value:
+        fsGroup: 0
+        runAsNonRoot: false
+        runAsUser: 0
     pluginDefinition: kube-monitoring
     releaseNamespace: kube-monitoring
 {{- end -}}
