@@ -16,6 +16,10 @@ lunaclient ()
     /thales/safenet/lunaclient/bin/64/configurator setValue -s "LunaSA Client" -e ServerCAFile -v /thales/safenet/lunaclient/config/certs/CAFile.pem
     /thales/safenet/lunaclient/bin/64/configurator setValue -s "LunaSA Client" -e "ClientCertFile" -v /thales/safenet/lunaclient/config/certs/
     /thales/safenet/lunaclient/bin/64/configurator setValue -s "LunaSA Client" -e "ClientPrivKeyFile" -v /thales/safenet/lunaclient/config/certs/
+    /thales/safenet/lunaclient/bin/64/configurator setValue -s "Secure Trusted Channel" -e ClientTokenLib -v /thales/safenet/lunaclient/libs/64/libSoftToken.so
+    /thales/safenet/lunaclient/bin/64/configurator setValue -s "Secure Trusted Channel" -e SoftTokenDir -v /thales/safenet/lunaclient/config/stc/token
+    /thales/safenet/lunaclient/bin/64/configurator setValue -s "Secure Trusted Channel" -e ClientIdentitiesDir -v /thales/safenet/lunaclient/config/stc/client_identities
+    /thales/safenet/lunaclient/bin/64/configurator setValue -s "Secure Trusted Channel" -e PartitionIdentitiesDir -v /thales/safenet/lunaclient/config/stc/partition_identities
 
     /thales/safenet/lunaclient/bin/64/configurator setValue -s "VirtualToken" -e VirtualToken00Label -v {{ .Values.lunaclient.VirtualToken.VirtualToken00Label }}
     {{- if eq .Values.hsm.ha.enabled true }}
