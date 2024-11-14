@@ -86,6 +86,11 @@ spec:
         {{ if .Values.extra_env }}
 {{ toYaml .Values.extra_env | indent 8 }}
         {{ end }}
+
+        envFrom:
+          - secretRef:
+            name: {{ .Release.Name }}-secret-env
+
         volumeMounts:
           - name: persistent-storage
             mountPath: {{ .Values.storage_mountpoint | default "/var/lib/bind" }}
