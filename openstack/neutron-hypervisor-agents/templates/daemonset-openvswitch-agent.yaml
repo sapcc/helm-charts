@@ -1,4 +1,4 @@
-{{- $hypervisor := merge .Values.defaults.hypervisor.kvm .Values.defaults.hypervisor.common }}
+{{- $hypervisor := merge .Values.defaults.network.ovs .Values.defaults.network.common }}
 kind: DaemonSet
 apiVersion: apps/v1
 metadata:
@@ -19,7 +19,7 @@ spec:
         name: neutron-openvswitch-agent
         alert-tier: os
         alert-service: neutron
-        hypervisor: "kvm"
+        ml2-driver: "ovs"
       annotations:
         configmap-etc-hash: {{ include (print $.Template.BasePath "/configmap-etc.yaml") . | sha256sum }}
         secret-etc-hash: {{ include (print $.Template.BasePath "/secret-etc.yaml") . | sha256sum }}
