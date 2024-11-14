@@ -47,3 +47,23 @@ spec:
     sslCertificateRef: {{ .Values.objectstore.gateway.sslCertificateRef }}
     resources: {{ toYaml .Values.objectstore.gateway.resources | nindent 6 }}
   preservePoolsOnDelete: true
+{{- if and .Values.objectstore.keystone.enabled .Values.objectstore.keystone.keystoneCRD }}
+{{- with .Values.objectstore.keystone }}
+  auth:
+    keystone:
+      acceptedRoles:
+{{- range $_, $role := .accepted_roles }}
+        - {{ $role }}
+{{- end }}
+      implicitTenants: {{ .implicit_tenants | quote }}
+      serviceUserSecretName: ceph-keystone-secret
+      tokenCacheSize: {{ .token_cache_size }}
+      url: {{ .url }}
+  protocols:
+    s3:
+      authUseKeystone: true
+    swift:
+      accountInUrl: {{ .swift_account_in_url }}
+      versioningEnabled: {{ .swift_versioning_enabled }}
+{{- end }}
+{{- end }}

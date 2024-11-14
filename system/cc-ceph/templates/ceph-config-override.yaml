@@ -13,26 +13,30 @@ data:
 {{- else }}
     [client.rgw.{{ $name }}.a]
 {{- end }}
+    rgw s3 auth order = {{ join "," .auth_order }}
+    rgw keystone verify ssl = {{ .verify_ssl }}
+{{- if not .keystoneCRD }}
     rgw keystone api version = 3
     rgw s3 auth use keystone = true
-    rgw s3 auth order = {{ join "," .auth_order }}
     rgw keystone url = {{ .url }}
-    rgw keystone verify ssl = {{ .verify_ssl }}
     rgw keystone implicit tenants = {{ .implicit_tenants }}
     rgw swift account in url = {{ .swift_account_in_url }}
     rgw swift versioning enabled = {{ .swift_versioning_enabled }}
     rgw keystone accepted roles = {{ join "," .accepted_roles }}
+{{- end }}
 {{- if .accepted_admin_roles }}
     rgw keystone accepted admin roles = {{ join "," .accepted_admin_roles }}
 {{- end }}
 {{- if .accepted_reader_roles }}
     rgw keystone accepted reader roles = {{ join "," .accepted_reader_roles }}
 {{- end }}
+{{- if not .keystoneCRD }}
     rgw keystone token cache size = {{ .token_cache_size }}
     rgw keystone admin user = {{ .admin_user }}
     rgw keystone admin password = {{ include "cc-ceph.escapePassword" .admin_password }}
     rgw keystone admin domain = {{ .admin_domain }}
     rgw keystone admin project = {{ .admin_project }}
+{{- end }}
 {{- if and .barbican .barbican.enabled }}
     rgw crypt s3 kms backend = barbican
     rgw barbican url = {{ .barbican.url }}
