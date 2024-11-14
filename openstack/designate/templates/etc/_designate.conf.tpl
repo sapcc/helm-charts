@@ -331,17 +331,17 @@ topic = producer
 #
 
 # Run interval in seconds (integer value)
-interval = 3600
+interval = {{ .Values.zone_purge.interval }}
 
 # Default amount of results returned per page (integer value)
-per_page = 200
+per_page = {{ .Values.zone_purge.per_page }}
 
 # How old deleted zones should be (deleted_at) to be purged, in seconds (integer
 # value)
-time_threshold = 2592000
+time_threshold = {{ .Values.zone_purge.time_threshold }}
 
 # How many zones to be purged on each run (integer value)
-batch_size = 200
+batch_size = {{ .Values.zone_purge.batch_size }}
 
 #------------------------
 # Delayed zones NOTIFY
