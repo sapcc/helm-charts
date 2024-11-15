@@ -5,8 +5,8 @@ PROVIDER_VSPHERE_VERSION ?= v1.9.3
 PROVIDER_IPAM_VERSION ?= v0.1.0
 PROVIDER_KUBERNIKUS_VERSION ?= 9fd81475b828971913b3b27addf51fdbd0511d85
 BAREMETAL_OPERATOR_VERSION ?= v0.6.0
-METAL_OPERATOR_VERSION ?= 18c70650c05dc4090f6f60821f7385a6afcaa668
-BOOT_OPERATOR_VERSION ?= 473ef3e732fffc15e4f1e5215dc73b445d7600ad
+METAL_OPERATOR_VERSION ?= b696030c3b10f373ad6c2ba44653b91e3e454f70
+BOOT_OPERATOR_VERSION ?= 9ad7325e76fc00b1b6e5b5535404d732539ecbce
 IPXE_OPERATOR_VERSION ?= 61c6898bfd7772008835bdcca8d8a64c1dfc3b32
 FEDHCP_VERSION ?= a59539c62aaa11a96c82fe792c87daaac4cb75bf
 IPAM_VERSION ?= 6faf501000c5d7ff9744a3c111ca5ecf3339c00c
@@ -112,14 +112,14 @@ build-metal-operator:
 	@find metal-operator-core/templates -type f -exec $(SED) -i -e 's#-metal-operator-serving-cert#serving-cert#g' {} \;
 	@yq -i '.controllerManager.manager.image.tag="$(METAL_OPERATOR_VERSION)"' metal-operator-core/values.yaml
 	@yq -i '.fullnameOverride="metal-operator"' metal-operator-core/values.yaml
-	@yq -i '.version="1.0.11"' metal-operator-core/Chart.yaml
+	@yq -i '.version="1.0.12"' metal-operator-core/Chart.yaml
 
 build-boot-operator:
 	@cat kustomize/boot-operator/kustomization.yaml >> kustomization.yaml
 	$(call build-chart,boot-operator,https://github.com/ironcore-dev/boot-operator//config/default,$(BOOT_OPERATOR_VERSION))
 	@yq -i '.controllerManager.manager.image.tag="$(BOOT_OPERATOR_VERSION)"' boot-operator/values.yaml
 	@yq -i '.fullnameOverride="boot-operator"' boot-operator/values.yaml
-	@yq -i '.version="1.0.1"' boot-operator/Chart.yaml
+	@yq -i '.version="1.0.2"' boot-operator/Chart.yaml
 
 build-ipxe-operator:
 	@cat kustomize/ipxe-operator/kustomization.yaml >> kustomization.yaml
