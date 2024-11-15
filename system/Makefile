@@ -114,6 +114,24 @@ build-metal-operator:
 	@yq -i '.fullnameOverride="metal-operator"' metal-operator-core/values.yaml
 	@yq -i '.version="1.0.11"' metal-operator-core/Chart.yaml
 
+build-metal-operator-remote:
+	@cat kustomize/metal-operator-remote/kustomization.yaml > kustomization.yaml
+	@kubectl kustomize | helmify -crd-dir metal-operator-remote
+	@cp kustomize/metal-operator-remote/remote-kubeconfig.yaml metal-operator-remote/templates
+	@cp kustomize/metal-operator-remote/managedresource.yaml metal-operator-remote/templates
+	@cp kustomize/metal-operator-remote/macdb.yaml metal-operator-remote/templates
+	@mkdir metal-operator-remote/managedresources
+	@kubectl kustomize kustomize/metal-operator-managedresources > metal-operator-remote/managedresources/kustomize.yaml
+	@cp kustomize/metal-operator-managedresources/rbac.yaml metal-operator-remote/managedresources
+	@yq -i '.controllerManager.manager.image.tag="$(METAL_OPERATOR_VERSION)"' metal-operator-remote/values.yaml
+	@yq -i '.fullnameOverride="metal-operator"' metal-operator-remote/values.yaml
+	@yq -i '.remote.ca=""' metal-operator-remote/values.yaml
+	@yq -i '.remote.server=""' metal-operator-remote/values.yaml
+	@echo 'macdb: {}' >> metal-operator-remote/values.yaml
+	@yq -i '.version="0.1.0"' metal-operator-remote/Chart.yaml
+	@$(SED) -i 's/serviceAccountName.*$$/serviceAccountName: default/g' metal-operator-remote/templates/deployment.yaml
+	@$(SED) -i 's/kind: Role/kind: ClusterRole/g' metal-operator-remote/managedresources/kustomize.yaml
+
 build-boot-operator:
 	@cat kustomize/boot-operator/kustomization.yaml >> kustomization.yaml
 	$(call build-chart,boot-operator,https://github.com/ironcore-dev/boot-operator//config/default,$(BOOT_OPERATOR_VERSION))
