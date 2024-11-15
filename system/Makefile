@@ -139,6 +139,21 @@ build-boot-operator:
 	@yq -i '.fullnameOverride="boot-operator"' boot-operator/values.yaml
 	@yq -i '.version="1.0.1"' boot-operator/Chart.yaml
 
+build-boot-operator-remote:
+	@cat kustomize/boot-operator-remote/kustomization.yaml > kustomization.yaml
+	@kubectl kustomize | helmify -crd-dir boot-operator-remote
+	@cp kustomize/boot-operator-remote/remote-kubeconfig.yaml boot-operator-remote/templates
+	@cp kustomize/boot-operator-remote/managedresource.yaml boot-operator-remote/templates
+	@mkdir boot-operator-remote/managedresources
+	@kubectl kustomize kustomize/boot-operator-managedresources > boot-operator-remote/managedresources/kustomize.yaml
+	@yq -i '.controllerManager.manager.image.tag="$(BOOT_OPERATOR_VERSION)"' boot-operator-remote/values.yaml
+	@yq -i '.fullnameOverride="boot-operator"' boot-operator-remote/values.yaml
+	@yq -i '.remote.ca=""' boot-operator-remote/values.yaml
+	@yq -i '.remote.server=""' boot-operator-remote/values.yaml
+	@yq -i '.version="0.1.0"' boot-operator-remote/Chart.yaml
+	@$(SED) -i 's/serviceAccountName.*$$/serviceAccountName: default/g' boot-operator-remote/templates/deployment.yaml
+	@$(SED) -i 's/kind: Role/kind: ClusterRole/g' boot-operator-remote/managedresources/kustomize.yaml
+
 build-ipxe-operator:
 	@cat kustomize/ipxe-operator/kustomization.yaml >> kustomization.yaml
 	$(call build-chart,ipxe-operator,https://github.com/ironcore-dev/ipxe-operator//config/default,$(IPXE_OPERATOR_VERSION))
