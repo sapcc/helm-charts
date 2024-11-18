@@ -3,6 +3,10 @@ Rabbitmq CHANGELOG
 
 This file is used to list changes made in each version of the common chart rabbitmq.
 
+0.11.4
+------
+- priorityClassName updated to new naming convention and default value added
+
 0.11.3
 ------
 - Add linkerd opaque ports annotation for RabbitMQ deployment/statefulset and service
