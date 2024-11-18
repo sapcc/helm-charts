@@ -113,13 +113,7 @@ spec:
             memory: {{ .Values.metrics.resources.requests.memory | quote }}
         {{- end }}
       {{- end }}
-      {{- if .Values.priority_class }}
-        {{- if and (kindIs "bool" .Values.priority_class) (eq .Values.priority_class true) }}
-      priorityClassName: "openstack-service-critical"
-        {{- else }}
-      priorityClassName: {{ .Values.priority_class | quote }}
-        {{- end }}
-      {{- end }}
+      priorityClassName: {{ .Values.priority_class | default "critical-infrastructure" | quote }}
 {{- if and .Values.auth.username .Values.auth.password }}
       volumes:
         - name: memcached-etc
