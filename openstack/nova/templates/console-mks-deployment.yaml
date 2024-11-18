@@ -1,15 +1,22 @@
-kind: Deployment
+{{ $envAll := . }}
+{{- $cells := dict "cell1" false }}
+{{- if .Values.cell2.enabled }}
+  {{ $_ := set $cells .Values.cell2.name true }}
+{{- end }}
+{{- range $cell_name, $is_cell2 := $cells }}
+{{- with $envAll }}
+---
 apiVersion: apps/v1
-
+kind: Deployment
 metadata:
-  name: nova-console-cell1-shellinabox
+  name: nova-console-{{ $cell_name }}-mks
   labels:
     system: openstack
     type: backend
     component: nova
   {{- if .Values.vpa.set_main_container }}
   annotations:
-    vpa-butler.cloud.sap/main-container: nova-console-cell1-shellinabox
+    vpa-butler.cloud.sap/main-container: nova-console-mks
   {{- end }}
 spec:
   replicas: {{ .Values.pod.replicas.console }}
@@ -23,12 +30,12 @@ spec:
     {{ end }}
   selector:
     matchLabels:
-      name: nova-console-cell1-shellinabox
+      name: nova-console-{{ $cell_name }}-mks
   template:
     metadata:
       labels:
-        name: nova-console-cell1-shellinabox
-        {{- tuple . "nova" "console-cell1-shellinabox" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | nindent 8 }}
+        name: nova-console-{{ $cell_name }}-mks
+        {{- tuple . "nova" (print "console-" $cell_name "-mks") | include "helm-toolkit.snippets.kubernetes_metadata_labels" | nindent 8 }}
         {{- include "utils.topology.pod_label" . | indent 8 }}
       annotations:
         {{- if .Values.proxysql.mode }}
@@ -36,27 +43,23 @@ spec:
         prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
         {{- end }}
         {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
-        config-hash: {{ print (.Files.Glob "shellinabox/*").AsConfig (include "nova.etc_config_lua" .) | sha256sum }}
+        config-hash: {{ print (.Files.Glob "console/mks/*").AsConfig (.Files.Glob "console/common/*").AsConfig (include "nova.etc_config_lua" .) | sha256sum }}
     spec:
-      securityContext:
-        runAsUser: 33
-        runAsGroup: 33
-        fsGroup: 33
-      {{- tuple . "nova" "console-cell1-shellinabox" | include "kubernetes_pod_anti_affinity" | nindent 6 }}
+      {{- tuple . "nova" (print "console-" $cell_name "-mks") | include "kubernetes_pod_anti_affinity" | nindent 6 }}
       {{- include "utils.proxysql.pod_settings" . | nindent 6 }}
-      {{- tuple . (dict "name" "nova-console-cell1-shellinabox") | include "utils.topology.constraints" | indent 6 }}
+      {{- tuple . (dict "name" (print "nova-console-" $cell_name "-mks")) | include "utils.topology.constraints" | indent 6 }}
       containers:
-      - name: nova-console-cell1-shellinabox
-        image: {{ required ".Values.global.dockerHubMirror is missing" .Values.global.dockerHubMirror }}/bitnami/openresty:{{ .Values.imageVersionBitnamiOpenResty }}
+      - name: nova-console-mks
+        image: {{ required ".Values.global.registry is missing" .Values.global.registry}}/nova-console-mks:{{ required ".Values.imageVersionConsoleMks is missing" .Values.imageVersionConsoleMks }}
         imagePullPolicy: IfNotPresent
         command:
         - /opt/bitnami/scripts/openresty/run.sh
         ports:
-        - name: shellinabox
-          containerPort: {{ .Values.consoles.shellinabox.portInternal }}
+        - name: mks
+          containerPort: {{ .Values.consoles.mks.portInternal }}
         volumeMounts:
-        - mountPath: /app
-          name: app
+        - mountPath: /opt/bitnami/openresty/site/lualib
+          name: lualib
         - mountPath: /opt/bitnami/openresty/nginx/conf/server_blocks
           name: config
         - mountPath: /opt/bitnami/openresty/nginx/tmp
@@ -65,43 +68,46 @@ spec:
         livenessProbe:
           httpGet:
             path: /status
-            port: {{ .Values.consoles.shellinabox.portInternal }}
+            port: {{ .Values.consoles.mks.portInternal }}
           initialDelaySeconds: 1
           timeoutSeconds: 10
           periodSeconds: 10
         readinessProbe:
           httpGet:
             path: /status
-            port: {{ .Values.consoles.shellinabox.portInternal }}
+            port: {{ .Values.consoles.mks.portInternal }}
           initialDelaySeconds: 1
           timeoutSeconds: 5
       {{- include "utils.proxysql.container" . | indent 6 }}
       volumes:
-      - name: temp
-        emptyDir: {}
+      - emptyDir: {}
+        name: temp
       - name: config
-        projected:
-          sources:
-          - configMap:
-              name: nova-console-cell1-shellinabox
-              items:
-              - key: 10_default_server.conf
-                path: 10_default_server.conf
-      - name: app
         projected:
           defaultMode: 420
           sources:
           - configMap:
-              name: nova-console-cell1-shellinabox
+              items:
+              - key: 10_default_server.conf
+                path: 10_default_server.conf
+              name: nova-console-{{ $cell_name }}-mks
+      - name: lualib
+        projected:
+          defaultMode: 420
+          sources:
+          - configMap:
               items:
               - key: revproxy.lua
                 path: revproxy.lua
               - key: token_lookup.lua
                 path: token_lookup.lua
+              name: nova-console-{{ $cell_name }}-mks
           - secret:
-              name: nova-console-cell1-shellinabox
               items:
               - key: config.lua
                 path: config.lua
+              name: nova-console-{{ $cell_name }}-mks
       {{- include "utils.proxysql.volumes" . | indent 6 }}
       {{- include "utils.trust_bundle.volumes" . | indent 6 }}
+{{- end }}
+{{- end }}

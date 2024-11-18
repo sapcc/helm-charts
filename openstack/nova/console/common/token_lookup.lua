@@ -2,14 +2,12 @@ local _M = {} -- That will be the module we return in the end
 
 local config = require "config" -- Hold the config rendered by the helm-chart
 
-local cjson = require "cjson"
 local resty_sha256 = require "resty.sha256"
 local str = require "resty.string"
 local memcached = require "resty.memcached"
 local mysql = require "resty.mysql"
 
 local guid_pattern = "%x%x%x%x%x%x%x%x%-%x%x%x%x%-%x%x%x%x%-%x%x%x%x%-%x%x%x%x%x%x%x%x%x%x%x%x"
-local url_base = "/cell1/shellinabox/" -- TODO: Get the "shellinabox" from the proxy dynamically somehow
 
 -- Little wrapper function, which avoids a
 -- potentially expensive function call "f"
@@ -32,15 +30,6 @@ local function sha256_hex(token)
     sha256:update(token)
     local final  = sha256:final()
     if final then return str.to_hex(final) end
-end
-
--- Converts the entry to the upstream with an optional port
-local function host_from_entry(entry)
-    if entry.port and entry.port ~= 443 then
-        return "https://" .. entry.host .. ":" .. entry.port
-    else
-        return "https://" .. entry.host
-    end
 end
 
 -- set_keepalive puts a socket back in a pool,
@@ -114,6 +103,8 @@ local function lookup_db(token_hash)
     local dbs_len = #dbs
     local threads = {}
     -- Fire of the queries
+	-- FIXME This would not be necessary if we'd provide the right URL already and thus would run a shellinabox for each cell with its own config
+	-- TODO Do we need those threads to not block other, parallel requests from continuing?
     for i = 1, dbs_len do
         threads[i] = ngx.thread.spawn(connect_and_query, query, dbs[i])
     end
@@ -172,7 +163,7 @@ end
 
 -- Toplevel lookup, get the token hash it, and send it through
 -- the lookup hierarchy. Store/cache the result in ngx.ctx
-local lookup = store_in_ctx("entry", function()
+_M.lookup = store_in_ctx("entry", function(use_memc)
     local token = get_token()
     local token_hash = sha256_hex(token)
     if not token_hash then
@@ -180,77 +171,25 @@ local lookup = store_in_ctx("entry", function()
         return ngx.exit(ngx.HTTP_INTERNAL_SERVER_ERROR)
     end
 
-    local entry, err = lookup_memc(token_hash)
+    if use_memc then
+    	local entry, err = lookup_memc(token_hash)
 
-    if err then
-        ngx.log(ngx.ERR, "could not retrieve user: ", err)
-        return ngx.exit(ngx.HTTP_INTERNAL_SERVER_ERROR)
-    end
+		if err then
+			ngx.log(ngx.ERR, "could not retrieve user: ", err)
+			return ngx.exit(ngx.HTTP_INTERNAL_SERVER_ERROR)
+		end
+	else
+		entry = lookup_db(token_hash)
+	end
     return entry
 end)
 
-
--- The server may respond with a redirect, and we
--- transform that redirect to one relative on "our"
--- host with the token still in the path and whatever
--- prefix we use on the ingress
--- Unfortunately, we also need to parse query parameters,
--- as that is how the vnc host is passed on to the javascript
--- vnc client running in the browser
-function _M.handle_redirect()
-    local location = ngx.header.Location
-    if not location then return end
-
-    local token = get_token()
-    if not token then return end
-    local token_base = url_base .. token
-
-    local self_host = ngx.var.host
-    local scheme, host, path, query = location:match("([^:]+)://([^/]+)([^?]+)(?%g+)")
-    local new_q = {}
-    -- query starts with '?', which we remove with sub(2), then we iterate over
-    -- all query paramters, which are split by &
-    for key, value in query:sub(2):gmatch("([^=&]+)=([^&]*)") do
-        -- ip would point to the BMC, now it points to this server
-        if key == "ip" then value = self_host
-        -- This is a bit hacky: the client concatenates <ip>:<kvmport> to open
-        -- a websocket connection to. Since we need the token to know which host
-        -- to proxy to, we add it to the "port", so it becomes
-        -- wss://<self_host>:443/<token>
-        elseif key == "kvmport" then value = "443" .. token_base
-        -- The next one replaces the actual name from the baremetal host
-        -- with the instance uuid. We probably do not want to expose the baremetal hostname
-        elseif key == "title" then value = ngx.ctx.entry.instance_uuid or "KVM"
-        end
-        table.insert(new_q, key .. "=" .. value)
-    end
-    local new_query = table.concat(new_q, "&")
-
-    local new_location = token_base .. path .. "?" .. new_query
-    ngx.header.Location = new_location
-end
-
--- This gets called with the token in the path, which we need to strip
--- from the request path, and the rest goes straight on to the actual host
-function _M.process()
-    local entry = lookup()
-    if not entry then return end
-    local host = host_from_entry(entry)
-    local request_uri = ngx.var.request_uri
-    local sub_uri = request_uri:sub(38)  -- 38 = uuid(36) + 2 * '/'
-    return host .. sub_uri
-end
-
--- Gets called with just a token. That is the standard way of doing things in nova,
--- but we need the token in every request just for this proxy, so encode it in the url
--- After the token comes the path on the host in the field `internal_access_path`
-function _M.root()
-    local token = get_token()
-    local entry = lookup()
-    if entry then
-        return ngx.redirect(url_base .. token .. entry.internal_access_path)
+-- Converts the entry to the upstream with an optional port
+function _M.host_from_entry(entry)
+    if entry.port and entry.port ~= 443 then
+        return "https://" .. entry.host .. ":" .. entry.port
     else
-        return ngx.exit(ngx.HTTP_UNAUTHORIZED)
+        return "https://" .. entry.host
     end
 end
 
