@@ -51,10 +51,13 @@ spec:
         imagePullPolicy: IfNotPresent
         command:
         - dumb-init
-        - kubernetes-entrypoint
-        env:
-        - name: COMMAND
-          value: "{{ if not .Values.glance_nanny.debug }}/bin/bash /scripts/glance-db-consistency-and-purge.sh{{ else }}sleep inf{{ end }}"
+{{- if not .Values.glance_nanny.debug }}
+        - /bin/bash
+        - /scripts/glance-db-consistency-and-purge.sh
+{{- else }}
+        - sleep
+        - inf
+{{- end }}
         - name: GLANCE_DB_PURGE_ENABLED
           value: {{ .Values.glance_nanny.db_purge.enabled | quote }}
         - name: GLANCE_DB_PURGE_OLDER_THAN
