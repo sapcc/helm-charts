@@ -52,6 +52,11 @@ compute:
   users:
   - "compute"
 
+awx:
+  reserved: false
+  users:
+  - "awx"
+
 otel:
   reserved: false
   users:
