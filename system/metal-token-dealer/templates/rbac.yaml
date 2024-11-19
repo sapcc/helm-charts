@@ -4,6 +4,37 @@ kind: ServiceAccount
 metadata:
   name: metal-token-dealer
   namespace: garden
+{{- if .Values.targetSecret }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: metal-token-dealer
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  resourceNames:
+  - {{ (split "/" .Values.targetSecret)._1 | quote }}
+  verbs:
+  - get
+  - list
+  - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: metal-token-dealer
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: metal-token-dealer
+subjects:
+- kind: ServiceAccount
+  name: metal-token-dealer
+  namespace: garden
+{{- else }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -58,3 +89,4 @@ subjects:
 - kind: ServiceAccount
   name: metal-token-dealer
   namespace: garden
+{{- end }}

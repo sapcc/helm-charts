@@ -150,7 +150,7 @@ build-boot-operator-remote:
 	@yq -i '.fullnameOverride="boot-operator"' boot-operator-remote/values.yaml
 	@yq -i '.remote.ca=""' boot-operator-remote/values.yaml
 	@yq -i '.remote.server=""' boot-operator-remote/values.yaml
-	@yq -i '.version="0.1.0"' boot-operator-remote/Chart.yaml
+	@yq -i '.version="0.1.1"' boot-operator-remote/Chart.yaml
 	@$(SED) -i 's/serviceAccountName.*$$/serviceAccountName: default/g' boot-operator-remote/templates/deployment.yaml
 	@$(SED) -i 's/kind: Role/kind: ClusterRole/g' boot-operator-remote/managedresources/kustomize.yaml
 
