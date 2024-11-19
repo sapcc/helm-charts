@@ -16,7 +16,9 @@ metadata:
 spec:
   tls:
   - secretName: tls-{{include "masakari_api_endpoint_host_public" . | replace "." "-" }}
-    hosts: [{{include "masakari_api_endpoint_host_public" .}}]
+    hosts:
+      - {{include "masakari_api_endpoint_host_public" .}}
+      - masakari-monitoring.{{ .Values.global.region }}.cloud.sap
   rules:
   - host: {{include "masakari_api_endpoint_host_public" .}}
     http:
@@ -28,3 +30,13 @@ spec:
             name: {{ .Release.Name }}-api
             port:
               number: {{ .Values.masakariApiPortInternal }}
+  - host: masakari-monitoring.qa-de-1.cloud.sap
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: {{ .Release.Name }}-monitoring
+            port:
+              number: {{ .Values.monitoringPort }}

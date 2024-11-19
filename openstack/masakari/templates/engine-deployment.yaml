@@ -51,6 +51,22 @@ spec:
         command:
           - /var/lib/openstack/bin/masakari-engine
         env:
+{{ toYaml .Values.engine.env | indent 8 }}
+        - name: SLACK_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Release.Name }}-etc
+              key: slack_token
+        - name: HOST_DOWN_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Release.Name }}-etc
+              key: host_down_username
+        - name: HOST_DOWN_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Release.Name }}-etc
+              key: host_down_password
         {{- if .Values.sentry.enabled }}
         - name: SENTRY_DSN
           valueFrom:
@@ -67,9 +83,6 @@ spec:
               {{- include "utils.snippets.pre_stop_graceful_shutdown" . | indent 14 }}
         resources:
 {{ toYaml .Values.pod.resources.masakari | indent 10 }}
-        #ports:
-        #- name: masakari-engine
-        #  containerPort: {{.Values.masakariApiPortInternal}}
         volumeMounts:
         - mountPath: /etc/masakari
           name: masakari-etc

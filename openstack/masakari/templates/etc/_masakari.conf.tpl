@@ -9,16 +9,16 @@ memcache_servers = {{ .Chart.Name }}-memcached.{{ include "svc_fqdn" . }}:{{ .Va
 
 os_privileged_user_tenant = service
 os_privileged_user_auth_url = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
-os_privileged_user_name = {{ .Values.global.masakari_service_user | default "masakari" }}
-os_privileged_user_password = {{ required ".Values.global.masakari_service_password is missing" .Values.global.masakari_service_password }}
+os_privileged_user_name = masakari
+os_privileged_user_password = {{ .Values.global.masakari_service_password }}
+
+wait_period_after_service_update = 181
 
 {{- include "ini_sections.logging_format" . }}
 
 [database]
 {{- include "ini_sections.database_options_mysql" . }}
 
-
-{{- include "osprofiler" . }}
 
 [oslo_concurrency]
 lock_path = /var/lib/masakari/tmp
@@ -29,9 +29,9 @@ auth_version = v3
 auth_interface = internal
 www_authenticate_uri = https://{{include "keystone_api_endpoint_host_public" .}}/v3
 auth_url = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
-user_domain_name = "{{.Values.global.keystone_service_domain | default "Default" }}"
-project_name = "{{.Values.global.keystone_service_project | default "service" }}"
-project_domain_name = "{{.Values.global.keystone_service_domain | default "Default" }}"
+user_domain_name = "Default"
+project_name = "service"
+project_domain_name = "Default"
 region_name = {{.Values.global.region}}
 memcached_servers = {{ .Chart.Name }}-memcached.{{ include "svc_fqdn" . }}:{{ .Values.memcached.memcached.port | default 11211 }}
 insecure = True
@@ -51,13 +51,17 @@ policy_file = /etc/masakari/policy.yaml
 
 {{- include "ini_sections.cache" . }}
 
-{{- include "util.helpers.valuesToIni" .Values.masakari_conf }}
-
 [wsgi]
 api_paste_config = /var/lib/openstack/etc/masakari/api-paste.ini
 
 [host_failure]
 evacuate_all_instances = true
+add_reserved_host_to_aggregate = true
 
 [instance_failure]
 process_all_instances = true
+
+[taskflow_driver_recovery_flows]
+host_auto_failure_recovery_tasks = pre:[{{ join "," .Values.recovery_flows.host_auto.pre }}],main:[{{ join "," .Values.recovery_flows.host_auto.main }}],post:[{{ join "," .Values.recovery_flows.host_auto.post }}]
+host_rh_failure_recovery_tasks = pre:[{{ join "," .Values.recovery_flows.host_reserved.pre }}],main:[{{ join "," .Values.recovery_flows.host_reserved.main }}],post:[{{ join "," .Values.recovery_flows.host_reserved.post }}]
+instance_failure_recovery_tasks = pre:[{{ join "," .Values.recovery_flows.instance.pre }}],main:[{{ join "," .Values.recovery_flows.instance.main }}],post:[{{ join "," .Values.recovery_flows.instance.post }}]

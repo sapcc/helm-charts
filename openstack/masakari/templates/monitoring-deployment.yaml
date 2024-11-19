@@ -50,17 +50,22 @@ spec:
         command:
           - /masakari-monitoring
           - -l
-          - DEBUG
+          - masakari-monitoring=debug
         lifecycle:
           preStop:
               {{- include "utils.snippets.pre_stop_graceful_shutdown" . | indent 14 }}
         resources:
 {{ toYaml .Values.pod.resources.masakari | indent 10 }}
+        ports:
+        - name: masakari-mo
+          containerPort: {{.Values.monitoringPort}}
+        - name: metrics
+          containerPort: {{.Values.monitoringExporterPort}}
         volumeMounts:
         - mountPath: /config.yaml
           name: masakari-etc
           subPath: config.yaml
       volumes:
       - name: masakari-etc
-        configMap:
-          name: masakari-etc
+        secret:
+          secretName: masakari-etc
