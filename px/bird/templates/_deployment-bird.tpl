@@ -23,6 +23,7 @@ spec:
       annotations:
         k8s.v1.cni.cncf.io/networks: '[{ "name": "{{ include "bird.statefulset.deployment_name" . }}", "interface": "vlan{{ .domain_config.multus_vlan }}"}]'
     spec:
+      priorityClassName: critical-payload
       affinity: {{ include "bird.domain.affinity" . | nindent 8 }}
       tolerations: {{ include "bird.domain.tolerations" . | nindent 8 }}
       initContainers:
