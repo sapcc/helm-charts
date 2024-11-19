@@ -1,0 +1,139 @@
+kind: Deployment
+apiVersion: apps/v1
+
+metadata:
+  name: {{ .Release.Name }}
+  labels:
+    {{- tuple . .Release.Name "controller" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | nindent 4 }}
+spec:
+  replicas: {{ .Values.pod.replicas }}
+  revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revisionHistory }}
+  strategy:
+    type: {{ .Values.pod.lifecycle.upgrades.deployments.podReplacementStrategy }}
+    {{ if eq .Values.pod.lifecycle.upgrades.deployments.podReplacementStrategy "RollingUpdate" }}
+    rollingUpdate:
+      maxUnavailable: {{ .Values.pod.lifecycle.upgrades.deployments.rollingUpdate.maxUnavailable }}
+      maxSurge: {{ .Values.pod.lifecycle.upgrades.deployments.rollingUpdate.maxSurge }}
+    {{ end }}
+  selector:
+    matchLabels:
+      name: {{ .Release.Name }}
+      {{- tuple . .Release.Name "controller" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        name: {{ .Release.Name }}
+        alert-tier: os
+        alert-service: nova
+        {{- tuple . .Release.Name "controller" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | nindent 8 }}
+        {{- include "utils.topology.pod_label" . | indent 8 }}
+      annotations:
+        {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
+    spec:
+      securityContext:
+        runAsUser: 65535
+        runAsGroup: 65535
+        fsGroup: 65535
+      terminationGracePeriodSeconds: {{ .Values.pod.gracefulShutdownTimeout }}
+      {{- tuple . (dict "name" .Release.Name ) | include "utils.topology.constraints" | indent 6 }}
+      {{- tuple . .Release.Name "controller" | include "kubernetes_pod_anti_affinity" | nindent 6 }}
+      initContainers:
+      - name: logon
+        image: keppel.eu-de-1.cloud.sap/ccloud/unified-kubernetes-toolbox:latest
+        imagePullPolicy: Always
+        command:
+        - sh
+        - -c
+        - |
+          set -eu
+          umask 077
+          touch "$KUBECONFIG"
+          kubectl-sync
+        {{- range .Values.clusters }}
+          printf -- "\n\n----- {{ . }} -----\n"
+          kubectl-sync logon --context {{ . }} -u "$KUBELOGON_USER" -p "$KUBELOGON_PASSWORD"
+          kubectl --context {{ . }} get nodes
+        {{- end }}
+        env:
+        - name: SKIP_VERSION_BANNERS
+          value: "true"
+        - name: KUBECONFIG
+          value: "/home/nonroot/.kubeconfig"
+        envFrom:
+        - secretRef:
+            name: {{ .Release.Name }}
+        volumeMounts:
+        - mountPath: /home/nonroot
+          name: home
+        {{- include "utils.trust_bundle.volume_mount" . | indent 10 }}
+      containers:
+      - name: controller
+        image: {{ required "missing value 'image'" .Values.image }}{{ if (required "missing value 'imageVersion'" .Values.imageVersion | contains ":") }}@{{ else }}:{{ end }}{{ .Values.imageVersion }}
+        imagePullPolicy: IfNotPresent
+        command:
+        - /manager
+        {{- range .Values.clusters }}
+        - -cluster
+        - {{ . }}
+        {{- end }}
+        env:
+        - name: OS_REGION_NAME
+          value: "{{ required "missing value 'global.region'" .Values.global.region }}"
+        - name: OS_AUTH_URL
+          value: "https://{{ include "keystone_api_endpoint_host_public" . }}/v3"
+        - name: "OS_IDENTITY_API_VERSION"
+          value: "3"
+        - name: OS_PROJECT_NAME
+          value: "{{ default "service" .Values.global.keystone_service_project }}"
+        - name: OS_PROJECT_DOMAIN_NAME
+          value: "{{ default "Default" .Values.global.keystone_service_domain }}"
+        - name: OS_USER_DOMAIN_NAME
+          value: "{{ default "Default" .Values.global.keystone_service_domain }}"
+        - name: KUBECONFIG
+          value: "/home/nonroot/.kubeconfig"
+        envFrom:
+        - secretRef:
+            name: {{ .Release.Name }}
+        livenessProbe:
+          httpGet:
+            path: "/healthz"
+            port: 8081
+          initialDelaySeconds: 30
+          timeoutSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: "/readyz"
+            port: 8081
+          initialDelaySeconds: 15
+          timeoutSeconds: 5
+        {{- if .Values.pod.resources }}
+        resources:
+          {{- toYaml .Values.pod.resources | nindent 12 }}
+        {{- end }}
+        volumeMounts:
+        - mountPath: /home/nonroot
+          name: home
+        {{- include "utils.trust_bundle.volume_mount" . | indent 10 }}
+      - name: test
+        image: keppel.eu-de-1.cloud.sap/ccloud/unified-kubernetes-toolbox:latest
+        imagePullPolicy: Always
+        command:
+        - sleep
+        - inf
+        env:
+        - name: SKIP_VERSION_BANNERS
+          value: "true"
+        - name: KUBECONFIG
+          value: "/home/nonroot/.kubeconfig"
+        envFrom:
+        - secretRef:
+            name: {{ .Release.Name }}
+        volumeMounts:
+        - mountPath: /home/nonroot
+          name: home
+        {{- include "utils.trust_bundle.volume_mount" . | indent 10 }}
+      volumes:
+      - name: home
+        emptyDir:
+          sizeLimit: "10M"
+          medium: "Memory"
