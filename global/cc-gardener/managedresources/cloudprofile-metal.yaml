@@ -1,0 +1,27 @@
+{{ if .Values.extensions.metal.enabled -}}
+---
+apiVersion: core.gardener.cloud/v1beta1
+kind: CloudProfile
+metadata:
+  name: metal
+spec:
+  type: metal
+  seedSelector:
+    providerTypes: ["*"]
+  regions:
+  - name: {{ .Values.global.region }}
+    zones:
+    {{- range .Values.extensions.metal.zones }}
+    - name: {{ . }}
+    {{- end }}
+  kubernetes:
+    versions: {{ toYaml .Values.extensions.kubernetesVersions | nindent 6 }}
+  machineTypes: {{ toYaml .Values.extensions.metal.machineTypes | nindent 4 }}
+  machineImages: {{ toYaml .Values.extensions.metal.machineImages | nindent 4 }}
+  providerConfig: # https://github.com/ironcore-dev/gardener-extension-provider-metal/blob/main/pkg/apis/metal/v1alpha1/types_cloudprofile.go
+    apiVersion: metal.provider.extensions.gardener.cloud/v1alpha1
+    kind: CloudProfileConfig
+    regionConfigs: {{ toYaml .Values.extensions.metal.providerConfig.regionConfigs | nindent 6 }}
+    machineTypes: {{ toYaml .Values.extensions.metal.providerConfig.machineTypes | nindent 6 }}
+    machineImages: {{ toYaml .Values.extensions.metal.providerConfig.machineImages | nindent 6 }}
+{{- end }}
