@@ -251,6 +251,7 @@
 # metrics from ceph objectstore
 {{- if $root.Values.prometheus_ceph.enabled }}
 - job_name: 'prometheus-ceph'
+  scheme: https
   scrape_interval: "{{ $root.Values.prometheus_ceph.scrape_interval }}"
   scrape_timeout: "{{ $root.Values.prometheus_ceph.scrape_timeout }}"
   tls_config:
