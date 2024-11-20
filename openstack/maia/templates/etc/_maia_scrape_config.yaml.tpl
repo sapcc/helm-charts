@@ -247,3 +247,20 @@
     - action: labeldrop
       regex: "exported_instance|exported_job|instance|job|tags|cluster|cluster_type|multicloud_id|alert_tier|alert_service"
 {{ end }}
+
+# metrics from ceph objectstore
+{{- if $root.Values.prometheus_ceph.enabled }}
+- job_name: 'prometheus-ceph'
+  scrape_interval: "{{ $root.Values.prometheus_ceph.scrape_interval }}"
+  scrape_timeout: "{{ $root.Values.prometheus_ceph.scrape_timeout }}"
+  tls_config:
+    cert_file: /etc/prometheus/secrets/prometheus-auth-sso-cert/sso.crt
+    key_file: /etc/prometheus/secrets/prometheus-auth-sso-cert/sso.key
+  static_configs:
+    - targets:
+      - "prometheus.st1.{{ $root.Values.global.region }}.cloud.sap"
+  metrics_path: '/federate'
+  params:
+    'match[]':
+      - '{__name__="{{- include "prometheusCephFederationMatches" $root }}"}'
+{{ end }}
