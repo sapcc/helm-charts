@@ -262,5 +262,5 @@
   metrics_path: '/federate'
   params:
     'match[]':
-      - '{__name__="{{- include "prometheusCephFederationMatches" $root }}"}'
+      - '{__name__=~"{{- include "prometheusCephFederationMatches" $root }}"}'
 {{ end }}
