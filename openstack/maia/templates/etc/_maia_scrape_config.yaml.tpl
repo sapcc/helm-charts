@@ -264,4 +264,8 @@
   params:
     'match[]':
       - '{__name__=~"{{- include "prometheusCephFederationMatches" $root }}"}'
+  metric_relabel_configs:
+    - regex: "cluster|cluster_type|instance|job|organization|prometheus|prometheus_replica"
+      action: labeldrop
+
 {{ end }}
