@@ -48,7 +48,7 @@ def _ensure_certificate(host, ips):
             "duration": "8h",
             "renewBefore": "2h",
             "isCA": False,
-            "usages": ["server auth", "client auth"],
+            "usages": ["server auth", "client auth", "digital signature", "key encipherment"],
             "subject": {"organizations": ["nova"]},
             "commonName": host,
             "dnsNames": [host],
@@ -71,6 +71,12 @@ def _ensure_certificate(host, ips):
         json=certificate,
         verify=_serviceaccount / "ca.crt",
     )
+
+    if resp.status_code == 409:
+        # Happens, if another fieldManager modifies the same fields
+        # We then expect them to be correct and go on
+        if "FieldManagerConflict" in resp.json().get("message", ""):
+            return secret_name
 
     resp.raise_for_status()
     return secret_name
