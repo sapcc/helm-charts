@@ -248,7 +248,6 @@
       regex: "exported_instance|exported_job|instance|job|tags|cluster|cluster_type|multicloud_id|alert_tier|alert_service"
 {{ end }}
 
-# metrics from ceph objectstore
 {{- if $root.Values.prometheus_ceph.enabled }}
 - job_name: 'prometheus-ceph'
   scheme: https
@@ -267,5 +266,4 @@
   metric_relabel_configs:
     - regex: "cluster|cluster_type|instance|job|organization|prometheus|prometheus_replica"
       action: labeldrop
-
 {{ end }}
