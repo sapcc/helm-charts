@@ -259,7 +259,7 @@
     key_file: /etc/prometheus/secrets/prometheus-auth-sso-cert/sso.key
   static_configs:
     - targets:
-      - "prometheus.st1.{{ $root.Values.global.region }}.cloud.sap"
+      - "prometheus-internal.st1.{{ $root.Values.global.region }}.cloud.sap"
   metrics_path: '/federate'
   params:
     'match[]':
