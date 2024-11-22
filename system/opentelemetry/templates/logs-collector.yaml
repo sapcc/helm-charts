@@ -27,9 +27,9 @@ spec:
           apiVersion: v1
           fieldPath: status.podIP
     - name: cluster
-      value: "{{ .Values.openTelemetry.cluster }}"
+      value: "{{ .Values.cluster }}"
     - name: region
-      value: "{{ .Values.openTelemetry.region }}"
+      value: "{{ .Values.region }}"
   envFrom:
     - secretRef:
          name: otel-basic-auth
@@ -38,7 +38,7 @@ spec:
     - name: prometheus
       port: 9999
 {{- end }}
-  image: {{ index .Values "opentelemetry-operator" "manager" "collectorImage" "repository" }}:{{ index .Values "opentelemetry-operator" "manager" "collectorImage" "tag" }}
+  image: {{ index .Values "manager" "collectorImage" "repository" }}:{{ index .Values "manager" "collectorImage" "tag" }}
   volumeMounts:
   - mountPath: /var/log
     name: varlog
@@ -94,7 +94,7 @@ spec:
             field: attributes["log.type"]
             value: "files"
 
-{{- if .Values.openTelemetry.prometheus.podMonitor.enabled }}
+{{- if .Values.podMonitor.enabled }}
       prometheus/internal:
         config:
           scrape_configs:
@@ -110,7 +110,7 @@ spec:
         timeout: 5s
         send_batch_size : 10
 
-{{- if .Values.openTelemetry.prometheus.podMonitor.enabled }}
+{{- if .Values.podMonitor.enabled }}
       attributes/prometheus:
         actions:
           - action: insert
@@ -394,7 +394,7 @@ spec:
         http:
           auth:
             authenticator: basicauth
-          endpoint: {{ .Values.openTelemetry.openSearchLogs.endpoint }}
+          endpoint: {{ .Values.openSearchLogs.endpoint }}
         logs_index: ${username}-datastream
         
       prometheus:
