@@ -1,0 +1,58 @@
+{{- if .Values.elastic.exporter }}
+{{- $schedule := .Values.schedule }}
+{{- $awx_url := .Values.awx.url }}
+{{- $awx_token := .Values.awx.token }}
+{{- $loglevel := .Values.loglevel }}
+{{- range .Values.elastic.exporter }}
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: cron-awx-api-crawler-{{ .name }}
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade,pre-rollback
+    "helm.sh/hook-delete-policy": before-hook-creation
+    "helm.sh/hook-weight": "3"
+spec:
+  schedule: "{{ $schedule }}"
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: awx-api-crawler
+            env: {{ .name }}
+        spec:
+          containers:
+          - name: awx-crawler
+            image: awx-overview
+            imagePullPolicy: IfNotPresent
+            backoffLimit: 0
+            env:
+            - name: ELASTIC_URL
+              value: {{ .url }}
+            - name: ELASTIC_PASS
+              value: {{ .pass }}
+            - name: ELASTIC_USER
+              value: {{ .user }}
+            - name: ELASTIC_INDEX
+              value: {{ .index }}
+            - name: ELASTIC_ENV
+              value: {{ .name }}
+            - name: AWX_URL
+              value: {{ $awx_url }}
+            - name: AWX_TOKEN
+              value: {{ $awx_token }}
+            - name: LOGLEVEL
+              value: {{ $loglevel }}
+            volumeMounts:
+            - name: data
+              mountPath: /mnt/checkpoints
+          restartPolicy: Never
+          volumes:
+            - name: data
+              persistentVolumeClaim:
+                claimName: pvc-k8s
+{{- end }}
+{{- end }}
