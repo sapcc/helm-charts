@@ -19,8 +19,7 @@ message to service through rpc call method and expects a reply.
 Uses oslo's ping method that is designed just for such simple purpose.
 
 For API service script:
-  a. checks if there are any established RabbitMQ connections in a pod.
-  b. checks if the RabbitMQ and DB are reachable over TCP.
+  a. checks if the RabbitMQ and DB are reachable over TCP.
 These two checks succeed or timeout within 5 seconds.
 
 For other RPC services script:
@@ -138,21 +137,6 @@ def tcp_socket_status(process: Optional[str], ports: Set[int]) -> int:
     return 0
 
 
-def tcp_connection_established(ports: Set[int]) -> int:
-    """Check the presence of established TCP connections to remote ports"""
-    scon = psutil.net_connections(kind="tcp")
-    for con in scon:
-        try:
-            rport = con.raddr[1]
-            status = con.status
-        except IndexError:
-            # Skip if raddr is empty tuple: connection is not ESTABLISED or connection is LISTEN
-            continue
-        if rport in ports and status == tcp_established:
-            return 1
-    return 0
-
-
 def check_tcp_socket(
     service: str,
     rabbits: Set[Tuple[str, int]],
@@ -187,18 +171,6 @@ def check_tcp_socket(
                 # Just log it to pod events
                 if not cfg.CONF.liveness_probe:
                     sys.exit(1)
-
-
-def check_rabbitmq_tcp_socket(rabbits: Set[Tuple[str, int]]) -> None:
-    """Check RabbitMQ TCP socket in ESTABLISHED state is present"""
-    r_ports = {port for _, port in rabbits}
-    # Check that there are any established RabbitMQ connections
-    # Apache2 wsgi RabbitMQ connections doesn't belong to any process in pods netstat
-    if r_ports and tcp_connection_established(r_ports) == 0:
-        sys.stderr.write(f"RabbitMQ socket not established")
-        # Do not kill the pod if RabbitMQ is not reachable/down
-        if not cfg.CONF.liveness_probe:
-            sys.exit(1)
 
 
 def check_tcp_connectivity(
@@ -292,7 +264,6 @@ def test_liveness() -> None:
         check_service_status(transport)
 
     if service in api_services:
-        check_rabbitmq_tcp_socket(rabbits)
         check_tcp_connectivity(rabbits, databases)
 
 
