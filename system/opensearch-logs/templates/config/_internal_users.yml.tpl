@@ -75,11 +75,9 @@ otelstorage:
   backend_roles:
   - "otelstorage"
 {{- end }}
+
 awx:
   hash: "{{ .Values.users.awx.nohash }}"
-  reserved: true
-  backend_roles:
-  - "awx"
   reserved: true
   backend_roles:
   - "awx"
