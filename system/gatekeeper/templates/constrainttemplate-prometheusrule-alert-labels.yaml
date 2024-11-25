@@ -31,10 +31,11 @@ spec:
         violation[{"msg": add_support_labels.from_k8s_object(iro, msg)}] {
           alert := alert_rule[_]
           # warn if we don't have a valid labels.severity
-          not regex.match("^(?:critical|warning|info)$", object.get(alert.rule, ["labels", "severity"], ""))
+          not regex.match("^(?:critical|warning|info|none)$", object.get(alert.rule, ["labels", "severity"], ""))
 
+          # the special value none is used by alerts which are only used for inhibition rules like NodeInMaintenance
           msg := sprintf(
-            "rule %s in group %s does not have a valid value for labels.severity (\"critical\", \"warning\" or \"info\")",
+            "rule %s in group %s does not have a valid value for labels.severity (\"critical\", \"warning\", \"info\" or \"none\")",
             [alert.rule.alert, alert.group_name]
           )
         }
