@@ -309,6 +309,26 @@ otelstorage:
     - "indices:admin/create"
     - "indices:data/write/bulk*"
     - "indices:data/write/index"
+awx:
+  reserved: false
+  cluster_permissions:
+  - "cluster_monitor"
+  - "cluster_composite_ops"
+  - "cluster:admin/ingest/pipeline/put"
+  - "cluster:admin/ingest/pipeline/get"
+  - "indices:admin/template/get"
+  - "cluster_manage_index_templates"
+  - "cluster:admin/opensearch/ml/predict"
+  index_permissions:
+  - index_patterns:
+    - "awx-*"
+    allowed_actions:
+    - "indices:admin/template/get"
+    - "indices:admin/template/put"
+    - "indices:admin/mapping/put"
+    - "indices:admin/create"
+    - "indices:data/write/bulk*"
+    - "indices:data/write/index"
 jaeger:
   reserved: false
   cluster_permissions:
@@ -464,7 +484,6 @@ maillog:
     - "indices:data/write/delete/byquery"
     - "indices:data/write/index"
     - "indices:data/write/reindex"
-
     - "indices:data/write/update"
     - "indices:data/write/update/byquery"
     - "read"
