@@ -73,9 +73,13 @@ spec:
         command:
         - /manager
         {{- range .Values.clusters }}
-        - -cluster
-        - {{ . }}
+        - -cluster={{ . }}
         {{- end }}
+        - -region=$(OS_REGION_NAME)
+        - -namespace=$(POD_NAMESPACE)
+        - -netbox-graphql-url={{.Values.netbox.graphQlUrl}}
+        - -cluster-type-id={{.Values.netbox.clusterTypeId}}
+        - -issuer-name={{.Values.issuerName}}
         env:
         - name: OS_REGION_NAME
           value: "{{ required "missing value 'global.region'" .Values.global.region }}"
@@ -91,6 +95,10 @@ spec:
           value: "{{ default "Default" .Values.global.keystone_service_domain }}"
         - name: KUBECONFIG
           value: "/home/nonroot/.kubeconfig"
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
         envFrom:
         - secretRef:
             name: {{ .Release.Name }}
