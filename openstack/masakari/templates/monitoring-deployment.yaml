@@ -1,0 +1,71 @@
+kind: Deployment
+apiVersion: apps/v1
+
+metadata:
+  name: {{ .Release.Name }}-monitoring
+  labels:
+    system: openstack
+    type: monitoring
+    component: {{ .Chart.Name }}
+  annotations:
+    vpa-butler.cloud.sap/main-container: {{ .Chart.Name }}-monitoring
+    vpa-butler.cloud.sap/update-mode: "Off"
+spec:
+  replicas: {{ .Values.pod.replicas.masakari }}
+  revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revision_history }}
+  strategy:
+    type: {{ .Values.pod.lifecycle.upgrades.deployments.podRemasakariStrategy }}
+    {{ if eq .Values.pod.lifecycle.upgrades.deployments.podRemasakariStrategy "RollingUpdate" }}
+    rollingUpdate:
+      maxUnavailable: {{ .Values.pod.lifecycle.upgrades.deployments.rollingUpdate.maxUnavailable }}
+      maxSurge: {{ .Values.pod.lifecycle.upgrades.deployments.rollingUpdate.maxSurge }}
+    {{ end }}
+  selector:
+    matchLabels:
+      name: {{ .Release.Name }}-monitoring
+  template:
+    metadata:
+      labels:
+        name: {{ .Release.Name }}-monitoring
+{{ tuple . .Chart.Name "monitoring" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
+        alert-tier: os
+        alert-service: {{ .Chart.Name }}
+      annotations:
+        kubectl.kubernetes.io/default-container: {{ .Chart.Name }}-monitoring
+        configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
+        secrets-hash: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
+        {{- if .Values.proxysql.mode }}
+        prometheus.io/scrape: "true"
+        prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
+        {{- end }}
+        {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
+    spec:
+{{ tuple . "masakari" "monitoring" | include "kubernetes_pod_anti_affinity" | indent 6 }}
+      {{- include "utils.proxysql.pod_settings" . | indent 6 }}
+      containers:
+      - name: {{ .Chart.Name }}-monitoring
+        image: {{ required ".Values.global.registry is missing" .Values.global.registry}}/masakari-monitoring:latest
+        imagePullPolicy: Always
+        workingDir: /
+        command:
+          - /masakari-monitoring
+          - -l
+          - masakari-monitoring=debug
+        lifecycle:
+          preStop:
+              {{- include "utils.snippets.pre_stop_graceful_shutdown" . | indent 14 }}
+        resources:
+{{ toYaml .Values.pod.resources.masakari | indent 10 }}
+        ports:
+        - name: masakari-mo
+          containerPort: {{.Values.monitoringPort}}
+        - name: metrics
+          containerPort: {{.Values.monitoringExporterPort}}
+        volumeMounts:
+        - mountPath: /config.yaml
+          name: masakari-etc
+          subPath: config.yaml
+      volumes:
+      - name: masakari-etc
+        secret:
+          secretName: masakari-etc
