@@ -1,0 +1,106 @@
+kind: Deployment
+apiVersion: apps/v1
+
+metadata:
+  name: {{ .Release.Name }}-api
+  labels:
+    system: openstack
+    type: api
+    component: {{ .Chart.Name }}
+  annotations:
+    vpa-butler.cloud.sap/main-container: {{ .Chart.Name }}-api
+    vpa-butler.cloud.sap/update-mode: "Off"
+spec:
+  replicas: {{ .Values.pod.replicas.masakari }}
+  revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revision_history }}
+  strategy:
+    type: {{ .Values.pod.lifecycle.upgrades.deployments.podRemasakariStrategy }}
+    {{ if eq .Values.pod.lifecycle.upgrades.deployments.podRemasakariStrategy "RollingUpdate" }}
+    rollingUpdate:
+      maxUnavailable: {{ .Values.pod.lifecycle.upgrades.deployments.rollingUpdate.maxUnavailable }}
+      maxSurge: {{ .Values.pod.lifecycle.upgrades.deployments.rollingUpdate.maxSurge }}
+    {{ end }}
+  selector:
+    matchLabels:
+      name: {{ .Release.Name }}-api
+  template:
+    metadata:
+      labels:
+        name: {{ .Release.Name }}-api
+{{ tuple . .Chart.Name "api" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
+        alert-tier: os
+        alert-service: {{ .Chart.Name }}
+      annotations:
+        kubectl.kubernetes.io/default-container: {{ .Chart.Name }}-api
+        configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
+        secrets-hash: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
+        {{- if .Values.proxysql.mode }}
+        prometheus.io/scrape: "true"
+        prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
+        {{- end }}
+        {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
+    spec:
+{{ tuple . "masakari" "api" | include "kubernetes_pod_anti_affinity" | indent 6 }}
+      {{- include "utils.proxysql.pod_settings" . | indent 6 }}
+      initContainers:
+        - name: masakari-init-database
+          image: {{ required ".Values.global.registry is missing" .Values.global.registry}}/loci-masakari:{{.Values.imageVersion | required "Please set .imageVersion or similar" }}
+          command:
+            - masakari-manage 
+            - db 
+            - sync
+          volumeMounts:
+          - name: masakari-database
+            mountPath: /database
+          - mountPath: /etc/masakari
+            name: masakari-etc
+          - mountPath: /etc/masakari/masakari.conf.d
+            name: masakari-etc-confd
+      containers:
+      - name: {{ .Chart.Name }}-api
+        image: {{ required ".Values.global.registry is missing" .Values.global.registry}}/loci-masakari:{{.Values.imageVersion | required "Please set .imageVersion or similar" }}
+        imagePullPolicy: IfNotPresent
+        command:
+          - /var/lib/openstack/bin/masakari-api
+        env:
+        {{- if .Values.sentry.enabled }}
+        - name: SENTRY_DSN
+          valueFrom:
+            secretKeyRef:
+              name: sentry
+              key: {{ .Chart.Name }}.DSN.python
+        {{- end }}
+        {{- if .Values.python_warnings }}
+        - name: PYTHONWARNINGS
+          value: {{ .Values.python_warnings | quote }}
+        {{- end }}
+        lifecycle:
+          preStop:
+              {{- include "utils.snippets.pre_stop_graceful_shutdown" . | indent 14 }}
+        resources:
+{{ toYaml .Values.pod.resources.masakari | indent 10 }}
+        ports:
+        - name: masakari-api
+          containerPort: {{.Values.masakariApiPortInternal}}
+        volumeMounts:
+        - name: masakari-database
+          mountPath: /database
+        - mountPath: /etc/masakari
+          name: masakari-etc
+        - mountPath: /etc/masakari/masakari.conf.d
+          name: masakari-etc-confd
+        {{- include "utils.proxysql.volume_mount" . | indent 8 }}
+        {{- include "utils.trust_bundle.volume_mount" . | indent 8 }}
+      {{- include "utils.proxysql.container" . | indent 6 }}
+      volumes:
+      - name: masakari-database
+        persistentVolumeClaim:
+          claimName: masakari-database
+      - name: masakari-etc
+        configMap:
+          name: masakari-etc
+      - name: masakari-etc-confd
+        secret:
+          secretName: masakari-etc
+      {{- include "utils.proxysql.volumes" . | indent 6 }}
+      {{- include "utils.trust_bundle.volumes" . | indent 6 }}
