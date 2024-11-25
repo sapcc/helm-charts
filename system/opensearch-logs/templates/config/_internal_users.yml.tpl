@@ -74,7 +74,7 @@ otelstorage:
   reserved: true
   backend_roles:
   - "otelstorage"
-
+{{- end }}
 awx:
   hash: "{{ .Values.users.awx.nohash }}"
   reserved: true
@@ -83,7 +83,6 @@ awx:
   reserved: true
   backend_roles:
   - "awx"
-{{- end }}
 
 jump:
   hash: "{{ .Values.users.jump.nohash }}"
