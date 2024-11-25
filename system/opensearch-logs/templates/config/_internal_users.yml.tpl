@@ -38,12 +38,6 @@ otel:
   backend_roles:
   - "otel"
 
-awx:
-  hash: "{{ .Values.users.awx.nohash }}"
-  reserved: true
-  backend_roles:
-  - "awx"
-
 otellogs:
   hash: "{{ .Values.users.otellogs.nohash }}"
   reserved: true
