@@ -12,6 +12,7 @@ groups:
           meta: "Unbound pool member {{ $labels.ltmPoolMbrStatusNodeName }} is NOT AVAILABLE. Verify the actual status on F5 device {{ $labels.devicename }} and proceed with playbook instructions."
           playbook: 'docs/devops/alert/network/f5#f5_unbound_offline'
           dashboard: f5-dns-resolver-cache-for-unbounds
+          support_group: network-api
         annotations:
           description: "Unbound pool member {{ $labels.ltmPoolMbrStatusNodeName }} is NOT AVAILABLE. Verify the actual status on F5 device {{ $labels.devicename }} and proceed with playbook instructions."
           summary: "F5 health check monitor for Unbound pool member unbound1 failed."
@@ -26,6 +27,7 @@ groups:
           meta: "Unbound pool member {{ $labels.ltmPoolMbrStatusNodeName }} is NOT AVAILABLE. Verify the actual status on F5 device {{ $labels.devicename }} and proceed with playbook instructions."
           playbook: 'docs/devops/alert/network/f5#f5_unbound_offline'
           dashboard: f5-dns-resolver-cache-for-unbounds
+          support_group: network-api
         annotations:
           description: "Unbound pool member {{ $labels.ltmPoolMbrStatusNodeName }} is NOT AVAILABLE. Verify the actual status on F5 device {{ $labels.devicename }} and proceed with playbook instructions."
           summary: "F5 health check monitor of Unbound pool member unbound2 failed."
@@ -84,6 +86,7 @@ groups:
           context: f5
           meta: "Big-IP device {{ $labels.devicename }} reports config-sync failure."
           playbook: 'docs/devops/alert/network/f5#config-sync-failure'
+          support_group: network-lb
         annotations:
           description: Big-IP device {{ $labels.devicename }} reports config sync failure.
           summary: Active Big-IP device configuration failed to synchronize to the standby device.
@@ -131,3 +134,17 @@ groups:
         annotations:
           description: "Admin1 pool member {{ $labels.ltmPoolMbrStatusNodeName }} in pool {{ $labels.ltmPoolMbrStatusPoolName }} on port {{ $labels.ltmPoolMbrStatusPort }} is NOT AVAILABLE. Verify the actual status on F5 device {{ $labels.devicename }} and proceed with playbook instructions."
           summary: "F5 health check monitor for a admin pool member admin1 failed."
+      - alert: NetworkF5UnboundConnectionsTooHigh
+        expr: snmp_f5_ltmNodeAddrStatServerCurConns{ltmNodeAddrStatNodeName=~"/Common/unbound.*.cloud.sap"} > 55000
+        for: 5m
+        labels:
+          severity: info
+          tier: net
+          service: f5
+          context: f5
+          meta: "Current active connections to {{ $labels.ltmNodeAddrStatNodeName }} on F5 {{ $labels.devicename }} are reaching critical threshold of 65536 (currently at {{ $value }})."
+          dashboard: dns-f5-and-unbound-performance
+          support_group: network-api
+        annotations:
+          description: "Current active connections to {{ $labels.ltmNodeAddrStatNodeName }} on F5 {{ $labels.devicename }} are reaching critical threshold of 65536 (currently at {{ $value }})."
+          summary: "Number of concurrent connections to one or both unbound servers is reaching limit."
