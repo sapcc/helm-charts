@@ -73,10 +73,8 @@ def _ensure_certificate(host, ips):
     )
 
     if resp.status_code == 409:
-        # Happens, if another fieldManager modifies the same fields
-        # We then expect them to be correct and go on
-        if "FieldManagerConflict" in resp.json().get("message", ""):
-            return secret_name
+        # Assume it will be be correct and go on
+        return secret_name
 
     resp.raise_for_status()
     return secret_name
