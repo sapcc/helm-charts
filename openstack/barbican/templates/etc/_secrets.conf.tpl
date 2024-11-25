@@ -5,7 +5,7 @@ sql_connection = {{ include "db_url_mysql" . }}
 
 
 [keystone_authtoken]
-username = {{ .Release.Name | include "resolve_secret" }}
+username = {{ .Release.Name }}
 password = {{ required ".Values.global.barbican_service_password is missing" .Values.global.barbican_service_password | include "resolve_secret" }}
 
 
