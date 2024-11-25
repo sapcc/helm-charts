@@ -1,5 +1,4 @@
-{{- if .Values.kubeMonitoring.enabled -}}
-
+{{- if and .Values.kubeMonitoring.enabled .Values.pluginPreset.enabled -}}
 apiVersion: v1
 kind: Secret
 metadata:
@@ -8,7 +7,6 @@ metadata:
 data:
   tls.crt: {{ required ".Values.kubeMonitoring.ssoCert missing" .Values.kubeMonitoring.ssoCert | b64enc }}
   tls.key: {{ required ".Values.kubeMonitoring.ssoKey missing" .Values.kubeMonitoring.ssoKey | b64enc }}
-
 ---
 apiVersion: greenhouse.sap/v1alpha1
 kind: PluginPreset
@@ -32,6 +30,14 @@ spec:
         region: '{{ "{{ .Values.global.greenhouse.clusterName | trunc -7 }}" }}'
     - name: kubeMonitoring.prometheus.prometheusSpec.externalUrl
       value: '{{ "https://prometheus.st1.{{ .Values.global.greenhouse.clusterName | trunc -7 }}.cloud.sap" }}'
+    - name: kubeMonitoring.kube-state-metrics.prometheus.monitor.http.metricRelabelings
+      value:
+      - action: replace
+        regex: .*
+        replacement: {{ $cluster }}
+        sourceLabels:
+        - __name__
+        targetLabel: cluster
     # NFS volumes need more permissions to work
     - name: kubeMonitoring.prometheus.prometheusSpec.securityContext
       value:
@@ -43,14 +49,6 @@ spec:
       value: thanos-{{ $cluster }}-metrics-objectstore
     - name: kubeMonitoring.prometheus.prometheusSpec.thanos.objectStorageConfig.existingSecret.key
       value: thanos.yaml
-    - name: kubeMonitoring.kube-state-metrics.prometheus.monitor.http.metricRelabelings
-      value:
-      - action: replace
-        regex: .*
-        replacement: {{ $cluster }}
-        sourceLabels:
-        - __name__
-        targetLabel: cluster
   {{- end }}
   {{- end }}
   {{- range $cluster, $thanos := .Values.kubeMonitoring.computeClusters }}
@@ -65,6 +63,41 @@ spec:
         cluster_type: compute
         organization: ccloud
         region: '{{ "{{ .Values.global.greenhouse.clusterName | trunc -7 }}" }}'
+    - name: kubeMonitoring.kube-state-metrics.prometheus.monitor.http.metricRelabelings
+      value:
+      - action: replace
+        regex: .*
+        replacement: {{ $cluster }}
+        sourceLabels:
+        - __name__
+        targetLabel: cluster
+  {{- end }}
+  {{- range $cluster, $thanos := .Values.kubeMonitoring.obsClusters }}
+  - clusterName: {{ $cluster }}
+    overrides:
+    - name: global.commonLabels
+      value:
+        service: observability
+    - name: kubeMonitoring.prometheus.prometheusSpec.externalLabels
+      value:
+        cluster: '{{ "{{ .Values.global.greenhouse.clusterName }}" }}'
+        cluster_type: observability
+        organization: ccloud
+        region: '{{ "{{ .Values.global.greenhouse.clusterName | trunc -7 }}" }}'
+    - name: kubeMonitoring.kube-state-metrics.prometheus.monitor.http.metricRelabelings
+      value:
+      - action: replace
+        regex: .*
+        replacement: {{ $cluster }}
+        sourceLabels:
+        - __name__
+        targetLabel: cluster
+  {{- if index $thanos "thanos" }}
+    - name: kubeMonitoring.prometheus.prometheusSpec.thanos.objectStorageConfig.existingSecret.name
+      value: thanos-{{ $cluster }}-metrics-objectstore
+    - name: kubeMonitoring.prometheus.prometheusSpec.thanos.objectStorageConfig.existingSecret.key
+      value: thanos.yaml
+  {{- end }}
   {{- end }}
   clusterSelector:
     matchExpressions:
@@ -77,6 +110,7 @@ spec:
       values:
       - "storage"
       - "compute"
+      - "observability"
   plugin:
     disabled: false
     optionValues:
