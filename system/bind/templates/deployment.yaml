@@ -174,8 +174,18 @@ spec:
         imagePullPolicy: {{ .Values.image_pullPolicy }}
         resources:
 {{ toYaml .Values.resources.sshd | indent 10 }}
+
+{{- if .Values.sshd.secret_env }}
         env:
 {{ toYaml .Values.sshd.env | indent 10 }}
+{{- end }}
+
+{{- if .Values.sshd.secret_env }}
+        envFrom:
+          - secretRef:
+              name: {{ .Release.Name }}-sshd-secret-env
+{{- end }}
+
         volumeMounts:
           - name: persistent-storage
             mountPath: {{ .Values.storage_mountpoint | default "/var/lib/bind" }}
