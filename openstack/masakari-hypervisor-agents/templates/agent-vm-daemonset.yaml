@@ -1,0 +1,73 @@
+kind: DaemonSet
+apiVersion: apps/v1
+metadata:
+  name: {{ .Release.Name }}-vm-compute-kvm
+  labels:
+    system: openstack
+    type: backend
+    component: masakari
+spec:
+  selector:
+    matchLabels:
+      name: masakari-compute-kvm
+  template:
+    metadata:
+      labels:
+        name: masakari-compute-kvm
+        alert-tier: os
+        alert-service: masakari
+        hypervisor: "kvm"
+    spec:
+      hostNetwork: true
+      nodeSelector:
+        kubernetes.io/os: linux
+      tolerations:
+        - effect: NoSchedule
+          key: node.gardener.cloud/critical-components-not-ready
+        - effect: NoSchedule
+          key: node.kubernetes.io/network-unavailable
+        - effect: NoSchedule
+          key: node.cloudprovider.kubernetes.io/uninitialized
+          value: "true"
+      containers:
+        - name: masakari-instance-monitor
+          image: {{ .Values.global.registry }}/ccloud/loci-masakari-monitors:bobcat
+          imagePullPolicy: {{ .Values.masakari_monitors.imagePullPolicy }}
+          securityContext:
+{{ toYaml .Values.securityContext | indent 12 }}
+          command:
+          - masakari-instancemonitor
+          volumeMounts:
+          - mountPath: /var/lib/libvirt
+            name: libvirt
+            readOnly: true
+          - mountPath: /var/run/libvirt
+            name: libvirt-run
+            readOnly: true
+          - mountPath: /etc/masakarimonitors
+            name: masakari-monitors-etc
+        - name: masakari-instance-agent
+          image: {{ .Values.global.registry }}/ccloud/masakari-monitoring:latest
+          imagePullPolicy: {{ .Values.monitoring_agent.imagePullPolicy }}
+          securityContext:
+{{ toYaml .Values.securityContext | indent 12 }}
+          command:
+            - /masakari-monitoring-agent
+            - -l
+            - {{ .Values.monitoring_agent.log_level }}
+            - -f
+            - {{ .Values.monitoring_agent.config_path }}
+          volumeMounts:
+            - mountPath: {{ .Values.monitoring_agent.config_path }}
+              name: masakari-monitors-etc
+              subPath: agent-checks.conf
+      volumes:
+      - name: libvirt
+        hostPath:
+          path: /var/lib/libvirt
+      - name: libvirt-run
+        hostPath:
+          path: /var/run/libvirt
+      - name: masakari-monitors-etc
+        secret:
+          secretName: {{ .Release.Name }}-etc
