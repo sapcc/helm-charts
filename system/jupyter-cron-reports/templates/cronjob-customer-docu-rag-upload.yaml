@@ -1,10 +1,10 @@
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: "cron-customer-docu-rag-upload-weekly"
+  name: "cron-customer-docu-rag-upload"
   namespace: jupyterhub
 spec:
-  schedule: "0 6 * * 1"
+  schedule: "0 6 * * 1-5"
   jobTemplate:
     spec:
       backoffLimit: 2
@@ -13,7 +13,7 @@ spec:
         spec:
           restartPolicy: Never
           containers:
-          - name: "cron-customer-docu-rag-upload-weekly"
+          - name: "cron-customer-docu-rag-upload"
             image: "{{ required ".Values.global.registry variable missing" .Values.global.registry }}/{{ .Values.jupyterhub_cron.images.application.name }}:{{ .Values.jupyterhub_cron.images.application.tag }}"
             command: ['sh', '-c']
             args:
