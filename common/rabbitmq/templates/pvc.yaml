@@ -4,12 +4,7 @@ apiVersion: v1
 metadata:
   name: {{ template "fullname" . }}
   labels:
-    app: {{ template "fullname" . }}
-    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
-    release: "{{ .Release.Name }}"
-    heritage: "{{ .Release.Service }}"
-    component: rabbitmq
-    {{- include "rabbitmq.labels" . | indent 4 }}
+    {{- include "rabbitmq.labels" (list $ "noversion" "rabbitmq" "persistentvolumeclaim" "messagequeue") | indent 4 }}
   annotations:
   {{- if .Values.persistence.storageClass }}
     volume.beta.kubernetes.io/storage-class: {{ .Values.persistence.storageClass | quote }}

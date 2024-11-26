@@ -3,14 +3,7 @@ kind: Service
 metadata:
   name: {{ template "fullname" . }}
   labels:
-    app: {{ template "fullname" . }}
-    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
-    release: "{{ .Release.Name }}"
-    heritage: "{{ .Release.Service }}"
-    type: rabbitmq
-    component: {{ .Release.Name }}
-    system: openstack
-    {{- include "rabbitmq.labels" . | indent 4 }}
+    {{- include "rabbitmq.labels" (list $ "version" "rabbitmq" "service" "messagequeue") | indent 4 }}
   annotations:
 {{- if .Values.metrics.enabled }}
     prometheus.io/scrape: "true"
@@ -32,7 +25,7 @@ spec:
     - name: management
       port: {{ default 15672 .Values.ports.management }}
   selector:
-    app: {{ template "fullname" . }}
+    app.kubernetes.io/instance: {{ template "fullname" . }}
   {{- if .Values.externalIPs }}
   externalIPs:
     {{- range .Values.externalIPs }}
