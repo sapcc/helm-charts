@@ -398,10 +398,6 @@ spec:
       prometheus:
         endpoint: 0.0.0.0:9999
 
-    connectors:
-      forward:
-      count:
-
     extensions:
       basicauth:
         client_auth:
@@ -418,27 +414,20 @@ spec:
       pipelines:
         logs/containerd:
           receivers: [filelog/containerd]
-          processors: [k8sattributes,attributes/cluster,transform/ingress,transform/ceph_rgw,transform/ceph_osd,transform/kvm_openvswitch,transform/kvm_nova_agent]
-          exporters: [logs/forward, count]
+          processors: [k8sattributes,attributes/cluster,transform/ingress,transform/ceph_rgw,transform/ceph_osd,transform/kvm_openvswitch,transform/kvm_nova_agent, batch]
+          exporters: [opensearch/logs]
         logs/files:
           receivers: [filelog/files]
-          processors: [k8sattributes,attributes/cluster,transform/files]
-          exporters: [logs/forward, count]
+          processors: [k8sattributes,attributes/cluster,transform/files, batch]
+          exporters: [opensearch/logs]
         logs/k8sevents:
           receivers: [k8s_events]
-          processors: [attributes/k8sevents]
-          exporters: [logs/forward, count]
+          processors: [attributes/k8sevents,batch]
+          exporters: [opensearch/logs]
         logs/journald:
           receivers: [journald]
-          processors: [attributes/cluster,transform/journal]
-          exporters: [logs/forward, count]
-        logs/forward:
-          receivers: [forward]
-          processors: [batch]
-          exporters: [opensearch/logs]
-        metrics/count:
-          receivers: [count]
-          exporters: [prometheus/internal]
+          processors: [attributes/cluster,transform/journal,batch]
+          receivers: [opensearch/logs]
         metrics/prometheus:
           receivers: [prometheus/internal]
           processors: [attributes/prometheus]
