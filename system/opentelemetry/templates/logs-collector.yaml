@@ -406,43 +406,43 @@ spec:
           password: ${password}
 
     connectors:
-      routing:
-        default_pipelines: [logs/containerd]
-        error_mode: ignore
-        table:
-          - statement: route() where attributes["container.runtime"] =="containerd"
-            pipelines: [logs/containerd]
+      forward:
+      count:
 
     service:
       extensions:
         - basicauth
-{{- if .Values.podMonitor.enabled }}
       telemetry:
         metrics:
           address: 127.0.0.1:8888
           level: detailed
-{{- end }}
       pipelines:
         logs/containerd:
           receivers: [filelog/containerd]
-          processors: [k8sattributes,attributes/cluster,transform/ingress,transform/ceph_rgw,transform/ceph_osd,transform/kvm_openvswitch,transform/kvm_nova_agent,batch]
-          exporters: [opensearch/logs]
+          processors: [k8sattributes,attributes/cluster,transform/ingress,transform/ceph_rgw,transform/ceph_osd,transform/kvm_openvswitch,transform/kvm_nova_agent]
+          exporters: [forward, count]
         logs/files:
           receivers: [filelog/files]
-          processors: [k8sattributes,attributes/cluster,transform/files,batch]
-          exporters: [opensearch/logs]
+          processors: [k8sattributes,attributes/cluster,transform/files]
+          exporters: [forward, count]
         logs/k8sevents:
           receivers: [k8s_events]
-          processors: [attributes/k8sevents,batch]
-          exporters: [opensearch/logs]
+          processors: [attributes/k8sevents]
+          exporters: [forward, count]
         logs/journald:
           receivers: [journald]
-          processors: [attributes/cluster,transform/journal,batch]
+          processors: [attributes/cluster,transform/journal]
+          exporters: [forward, count]
+        logs:
+          receivers: [forward]
+          processors: [batch]
           exporters: [opensearch/logs]
-{{- if .Values.podMonitor.enabled }}
+        metrics/count:
+          receivers: [count]
+          processors: [prometheus/internal]
+          exporters: [opensearch/logs]
         metrics/prometheus:
           receivers: [prometheus/internal]
           processors: [attributes/prometheus]
           exporters: [prometheus]
-{{- end }}
 {{- end }}
