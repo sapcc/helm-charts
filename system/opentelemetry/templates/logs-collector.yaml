@@ -395,19 +395,18 @@ spec:
             authenticator: basicauth
           endpoint: {{ .Values.openSearchLogs.endpoint }}
         logs_index: ${username}-datastream
-        
       prometheus:
         endpoint: 0.0.0.0:9999
+
+    connectors:
+      forward:
+      count:
 
     extensions:
       basicauth:
         client_auth:
           username: ${username}
           password: ${password}
-
-    connectors:
-      forward:
-      count:
 
     service:
       extensions:
@@ -439,8 +438,7 @@ spec:
           exporters: [opensearch/logs]
         metrics/count:
           receivers: [count]
-          processors: [prometheus/internal]
-          exporters: [opensearch/logs]
+          receivers: [prometheus/internal]
         metrics/prometheus:
           receivers: [prometheus/internal]
           processors: [attributes/prometheus]
