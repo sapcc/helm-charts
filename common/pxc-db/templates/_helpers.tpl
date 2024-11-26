@@ -59,6 +59,25 @@ name: {{ include "pxc-db.fullname" . }}
 {{- end }}
 
 {{/*
+owner-info lables
+*/}}
+{{- define "pxc-db.ownerLabels" -}}
+{{- if index .Values "owner-info" }}
+ccloud/support-group: {{  index .Values "owner-info" "support-group" | quote }}
+ccloud/service: {{  index .Values "owner-info" "service" | quote }}
+{{- end }}
+{{- end }}
+
+{{/*
+Backup labels
+Add owner-info if exists
+Backup jobs are created by operator and are not inherited from the parent cluster resource
+*/}}
+{{- define "pxc-db.backupLabels" -}}
+{{- include "pxc-db.ownerLabels" . }}
+{{- end }}
+
+{{/*
 Prometheus labels
 */}}
 {{- define "pxc-db.metricsAnnotations" -}}

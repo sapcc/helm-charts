@@ -6,6 +6,8 @@ metadata:
   name: "{{ include "pxc-db.fullname" . }}-init-db"
   namespace:  {{.Release.Namespace}}
   labels:
+    # hooks are not annotated as belonging to the Helm release, so we cannot rely on owner-info injection
+{{- include "pxc-db.ownerLabels" . | indent 4 }}
 {{ include "pxc-db.labels" . | indent 4 }}
   annotations:
 {{- if and (and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested) $.Values.linkerd.enabled }}
