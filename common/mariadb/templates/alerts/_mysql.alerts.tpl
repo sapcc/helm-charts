@@ -1,7 +1,7 @@
 - name: mysql.alerts
   rules:
   - alert: {{ include "alerts.service" . | title }}MariaDBTooManyConnections
-    expr: (mysql_global_variables_max_connections{app=~"{{ include "fullName" . }}"} - mysql_global_status_threads_connected{app=~"{{ include "fullName" . }}"} < 200)
+    expr: (mysql_global_variables_max_connections{app_kubernetes_io_instance=~"{{ include "fullName" . }}"} - mysql_global_status_threads_connected{app_kubernetes_io_instance=~"{{ include "fullName" . }}"} < 200)
     for: 10m
     labels:
       context: datbase
@@ -14,7 +14,7 @@
       summary: {{ include "fullName" . }} has too many connections open.
 
   - alert: {{ include "alerts.service" . | title }}MariaDBSlowQueries
-    expr: (delta(mysql_global_status_slow_queries{app=~"{{ include "fullName" . }}"}[8m]) > 3)
+    expr: (delta(mysql_global_status_slow_queries{app_kubernetes_io_instance=~"{{ include "fullName" . }}"}[8m]) > 3)
     for: 10m
     labels:
       context: database
@@ -28,7 +28,7 @@
       summary: {{ include "fullName" . }} reports slow queries.
 
   - alert: {{ include "alerts.service" . | title }}MariaDBWaitingForLock
-    expr: (mysql_info_schema_processlist_seconds{app=~"{{ include "fullName" . }}", state=~"waiting for lock"} / 1000  > 15)
+    expr: (mysql_info_schema_processlist_seconds{app_kubernetes_io_instance=~"{{ include "fullName" . }}", state=~"waiting for lock"} / 1000  > 15)
     for: 10m
     labels:
       context: database
@@ -41,7 +41,7 @@
       summary: {{ include "fullName" . }} has queries waiting for lock.
 
   - alert: {{ include "alerts.service" . | title }}MariaDBHighRunningThreads
-    expr: (mysql_global_status_threads_running{app=~"{{ include "fullName" . }}"} > 20)
+    expr: (mysql_global_status_threads_running{app_kubernetes_io_instance=~"{{ include "fullName" . }}"} > 20)
     for: 10m
     labels:
       context: database

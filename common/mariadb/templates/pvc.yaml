@@ -3,6 +3,8 @@ kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
   name: {{ required "Values.persistence_claim.name missing"  .Values.persistence_claim.name }}
+  labels:
+    {{- include "mariadb.labels" (list $ "noversion" "mariadb" "persistentvolumeclaim" "database") | indent 4 }}
 spec:
 {{- if .Values.persistence_claim.access_modes }}
   accessModes:

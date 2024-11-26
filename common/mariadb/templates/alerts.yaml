@@ -5,12 +5,8 @@ kind: PrometheusRule
 metadata:
   name: {{ include "fullName" . }}-alerts
   labels:
-    app: {{ include "fullName" . }}
-    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
-    release: "{{ .Release.Name }}"
-    heritage: "{{ .Release.Service }}"
     prometheus: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
-    {{- include "sharedservices.labels" . | indent 4 }}
+    {{- include "mariadb.labels" (list $ "version" "mariadb" "prometheusrule" "alert") | indent 4 }}
 
 spec:
   groups:
@@ -26,12 +22,8 @@ kind: PrometheusRule
 metadata:
   name: {{ include "fullName" . }}-health-alerts
   labels:
-    app: {{ include "fullName" . }}
-    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
-    release: "{{ .Release.Name }}"
-    heritage: "{{ .Release.Service }}"
     prometheus: "kubernetes"
-    {{- include "sharedservices.labels" . | indent 4 }}
+    {{- include "mariadb.labels" (list $ "version" "mariadb" "prometheusrule" "alert") | indent 4 }}
 
 spec:
   groups:
