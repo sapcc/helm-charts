@@ -1,49 +1,17 @@
 apiVersion: core.gardener.cloud/v1beta1
 kind: Shoot
 metadata:
-  name: kvm
+  name: metal-operator
   namespace: garden-ccloud
 spec:
-  cloudProfileName: metal
-  secretBindingName: metal-{{ .Values.global.region }}
+  cloudProfileName: openstack
   region: {{ required "missing .Values.global.region" .Values.global.region }}
   networking:
-    pods: 10.46.0.0/16
-    services: 10.47.0.0/16
-    nodes: 10.245.152.0/22
-    type: calico
+    services: 10.55.0.0/16
+  provider:
+    type: openstack
   kubernetes:
     version: 1.30.0
     kubeAPIServer:
       enableAnonymousAuthentication: true # cluster registry version check
       oidcConfig: {{- toYaml .Values.oidcConfig | nindent 8 }}
-  provider:
-    type: metal
-    infrastructureConfig:
-      apiVersion: metal.provider.extensions.gardener.cloud/v1alpha1
-      kind: InfrastructureConfig
-    controlPlaneConfig:
-      apiVersion: metal.provider.extensions.gardener.cloud/v1alpha1
-      kind: ControlPlaneConfig
-    workers:
-    - name: worker-dell
-      machine:
-        architecture: amd64
-        image:
-          name: gardenlinux
-          version: "1592.2-install"
-        type: baremetal
-      minimum: 1
-      maximum: 1
-      maxSurge: 0
-      maxUnavailable: 1
-      zones:
-      - qa-de-1a
-      machineControllerManager:
-        machineCreationTimeout: 1h20m0s
-        machineHealthTimeout: 1h0m0s
-      providerConfig:
-        apiVersion: metal.provider.extensions.gardener.cloud/v1alpha1
-        kind: WorkerConfig
-        extraServerLabels:
-          manufacturer: dell
