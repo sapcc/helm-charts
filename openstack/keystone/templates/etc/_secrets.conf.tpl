@@ -27,7 +27,7 @@ memcache_password = {{ .Values.memcached.auth.password | include "resolve_secret
 [oslo_messaging_notifications]
 driver = messaging
   {{- if and (.Values.audit.central_service.user) (.Values.audit.central_service.password) }}
-transport_url = rabbit://{{ .Values.audit.central_service.user }}:{{ .Values.audit.central_service.password | include "resolve_secret_urlquery" }}@{{ .Values.audit.central_service.host }}:{{ .Values.audit.central_service.port }}/
+transport_url = rabbit://{{ .Values.audit.central_service.user | include "resolve_secret_urlquery" }}:{{ .Values.audit.central_service.password | include "resolve_secret_urlquery" }}@{{ .Values.audit.central_service.host }}:{{ .Values.audit.central_service.port }}/
 
 [oslo_messaging_rabbit]
 rabbit_retry_interval = {{ .Values.audit.central_service.rabbit_retry_interval | default 1 }}
