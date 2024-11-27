@@ -395,6 +395,7 @@ spec:
             authenticator: basicauth
           endpoint: {{ .Values.openSearchLogs.endpoint }}
         logs_index: ${username}-datastream
+        
       prometheus:
         endpoint: 0.0.0.0:9999
 
@@ -404,21 +405,31 @@ spec:
           username: ${username}
           password: ${password}
 
+    connectors:
+      routing:
+        default_pipelines: [logs/containerd]
+        error_mode: ignore
+        table:
+          - statement: route() where attributes["container.runtime"] =="containerd"
+            pipelines: [logs/containerd]
+
     service:
       extensions:
         - basicauth
+{{- if .Values.podMonitor.enabled }}
       telemetry:
         metrics:
           address: 127.0.0.1:8888
           level: detailed
+{{- end }}
       pipelines:
         logs/containerd:
           receivers: [filelog/containerd]
-          processors: [k8sattributes,attributes/cluster,transform/ingress,transform/ceph_rgw,transform/ceph_osd,transform/kvm_openvswitch,transform/kvm_nova_agent, batch]
+          processors: [k8sattributes,attributes/cluster,transform/ingress,transform/ceph_rgw,transform/ceph_osd,transform/kvm_openvswitch,transform/kvm_nova_agent,batch]
           exporters: [opensearch/logs]
         logs/files:
           receivers: [filelog/files]
-          processors: [k8sattributes,attributes/cluster,transform/files, batch]
+          processors: [k8sattributes,attributes/cluster,transform/files,batch]
           exporters: [opensearch/logs]
         logs/k8sevents:
           receivers: [k8s_events]
@@ -427,9 +438,11 @@ spec:
         logs/journald:
           receivers: [journald]
           processors: [attributes/cluster,transform/journal,batch]
-          exporters:: [opensearch/logs]
+          exporters: [opensearch/logs]
+{{- if .Values.podMonitor.enabled }}
         metrics/prometheus:
           receivers: [prometheus/internal]
           processors: [attributes/prometheus]
           exporters: [prometheus]
+{{- end }}
 {{- end }}
