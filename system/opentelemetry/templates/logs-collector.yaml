@@ -412,6 +412,7 @@ spec:
         table:
           - statement: route() where attributes["container.runtime"] =="containerd"
             pipelines: [logs/containerd]
+      count:
 
     service:
       extensions:
@@ -426,19 +427,22 @@ spec:
         logs/containerd:
           receivers: [filelog/containerd]
           processors: [k8sattributes,attributes/cluster,transform/ingress,transform/ceph_rgw,transform/ceph_osd,transform/kvm_openvswitch,transform/kvm_nova_agent,batch]
-          exporters: [opensearch/logs]
+          exporters: [opensearch/logs,count]
         logs/files:
           receivers: [filelog/files]
           processors: [k8sattributes,attributes/cluster,transform/files,batch]
-          exporters: [opensearch/logs]
+          exporters: [opensearch/logs,count]
         logs/k8sevents:
           receivers: [k8s_events]
           processors: [attributes/k8sevents,batch]
-          exporters: [opensearch/logs]
+          exporters: [opensearch/logs,count]
         logs/journald:
           receivers: [journald]
           processors: [attributes/cluster,transform/journal,batch]
-          exporters: [opensearch/logs]
+          exporters: [opensearch/logs,count]
+        metrics:
+          receivers: [count]
+          exporters: [prometheus/internal]
 {{- if .Values.podMonitor.enabled }}
         metrics/prometheus:
           receivers: [prometheus/internal]
