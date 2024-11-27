@@ -4,14 +4,14 @@
 {{ if .Values.percona_cluster.enabled -}}
   {{/* in caase percona is active and we need to switch the connection string to mariadb-galera cluster without removing the percona cluster objects */}}
   {{- if and .Values.mariadb_galera.enabled .Values.databaseKind (eq .Values.databaseKind "galera") -}}
-connection = mysql+pymysql://{{ .Values.mariadb_galera.mariadb.users.keystone.username }}:{{.Values.mariadb_galera.mariadb.users.keystone.password }}@{{include "db_host" .}}/{{ .Values.mariadb_galera.mariadb.database_name_to_connect }}?charset=utf8
+connection = mysql+pymysql://{{ .Values.mariadb_galera.mariadb.users.keystone.username }}:{{.Values.mariadb_galera.mariadb.users.keystone.password | include "resolve_secret" }}@{{include "db_host" .}}/{{ .Values.mariadb_galera.mariadb.database_name_to_connect }}?charset=utf8
   {{- else }}
 connection = {{ include "db_url_pxc" . }}
   {{- end }}
 {{- else if .Values.global.clusterDomain -}}
-connection = mysql+pymysql://{{ default .Release.Name .Values.global.dbUser }}:{{.Values.global.dbPassword }}@{{include "db_host" .}}/{{ default .Release.Name .Values.mariadb.name }}?charset=utf8
+connection = mysql+pymysql://{{ default .Release.Name .Values.global.dbUser }}:{{.Values.global.dbPassword | include "resolve_secret" }}@{{include "db_host" .}}/{{ default .Release.Name .Values.mariadb.name }}?charset=utf8
 {{- else if and .Values.mariadb_galera.enabled .Values.databaseKind (eq .Values.databaseKind "galera") -}}
-connection = mysql+pymysql://{{ .Values.mariadb_galera.mariadb.users.keystone.username }}:{{.Values.mariadb_galera.mariadb.users.keystone.password }}@{{include "db_host" .}}/{{ .Values.mariadb_galera.mariadb.database_name_to_connect }}?charset=utf8
+connection = mysql+pymysql://{{ .Values.mariadb_galera.mariadb.users.keystone.username }}:{{.Values.mariadb_galera.mariadb.users.keystone.password | include "resolve_secret" }}@{{include "db_host" .}}/{{ .Values.mariadb_galera.mariadb.database_name_to_connect }}?charset=utf8
 {{- else }}
 connection = {{ include "db_url_mysql" . }}
 {{- end }}
@@ -20,14 +20,14 @@ connection = {{ include "db_url_mysql" . }}
 [cache]
 memcache_sasl_enabled = True
 memcache_username = {{ .Values.memcached.auth.username }}
-memcache_password = {{ .Values.memcached.auth.password }}
+memcache_password = {{ .Values.memcached.auth.password | include "resolve_secret" }}
 {{- end }}
 
 {{- if not (and (hasKey $.Values "oslo_messaging_notifications") ($.Values.oslo_messaging_notifications.disabled)) }}
 [oslo_messaging_notifications]
 driver = messaging
   {{- if and (.Values.audit.central_service.user) (.Values.audit.central_service.password) }}
-transport_url = rabbit://{{ .Values.audit.central_service.user }}:{{ .Values.audit.central_service.password }}@{{ .Values.audit.central_service.host }}:{{ .Values.audit.central_service.port }}/
+transport_url = rabbit://{{ .Values.audit.central_service.user }}:{{ .Values.audit.central_service.password | include "resolve_secret" }}@{{ .Values.audit.central_service.host }}:{{ .Values.audit.central_service.port }}/
 
 [oslo_messaging_rabbit]
 rabbit_retry_interval = {{ .Values.audit.central_service.rabbit_retry_interval | default 1 }}
@@ -41,9 +41,9 @@ heartbeat_timeout_threshold = {{ .Values.audit.central_service.heartbeat_timeout
       when rabbit_interval_max >= rabbit_retry_interval
 */}}
   {{- else if .Values.rabbitmq.host }}
-transport_url = rabbit://{{ .Values.rabbitmq.users.default.user | default "rabbitmq" }}:{{ .Values.rabbitmq.users.default.password }}@{{ .Values.rabbitmq.host }}:{{ .Values.rabbitmq.port | default 5672 }}
+transport_url = rabbit://{{ .Values.rabbitmq.users.default.user | default "rabbitmq" }}:{{ .Values.rabbitmq.users.default.password | include "resolve_secret" }}@{{ .Values.rabbitmq.host }}:{{ .Values.rabbitmq.port | default 5672 }}
   {{ else }}
-transport_url = rabbit://{{ .Values.rabbitmq.users.default.user | default "rabbitmq" }}:{{ .Values.rabbitmq.users.default.password }}@{{ include "rabbitmq_host" . }}:{{ .Values.rabbitmq.port | default 5672 }}
+transport_url = rabbit://{{ .Values.rabbitmq.users.default.user | default "rabbitmq" }}:{{ .Values.rabbitmq.users.default.password | include "resolve_secret" }}@{{ include "rabbitmq_host" . }}:{{ .Values.rabbitmq.port | default 5672 }}
   {{- end }}
 {{- end }}
 
