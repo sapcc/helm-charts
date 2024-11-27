@@ -1,0 +1,31 @@
+controllerManager:
+  manager:
+    args:
+      - --health-probe-bind-address=:8081
+      - --metrics-bind-address=127.0.0.1:8080
+      - --leader-elect
+      - --controllers=httpbootconfig,ipxebootconfig,serverbootconfighttp,serverbootconfigpxe
+      - --kubeconfig=/kubeconfig/kubeconfig
+    containerSecurityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+          - ALL
+    image:
+      repository: controller
+      tag: 473ef3e732fffc15e4f1e5215dc73b445d7600ad
+    resources:
+      limits:
+        cpu: 500m
+        memory: 128Mi
+      requests:
+        cpu: 10m
+        memory: 64Mi
+  podSecurityContext:
+    runAsNonRoot: true
+  replicas: 1
+kubernetesClusterDomain: cluster.local
+fullnameOverride: boot-operator
+remote:
+  ca: ""
+  server: ""

@@ -16,6 +16,9 @@ spec:
         networking.gardener.cloud/to-dns: allowed
         networking.gardener.cloud/to-runtime-apiserver: allowed
         networking.resources.gardener.cloud/to-virtual-garden-kube-apiserver-tcp-443: allowed
+        {{- if .Values.targetSecret }}
+        networking.resources.gardener.cloud/to-all-shoots-kube-apiserver-tcp-443: allowed
+        {{- end }}
     spec:
       containers:
       - name: metal-token-dealer
@@ -24,6 +27,10 @@ spec:
         env:
         - name: GARDEN_CLUSTER_ADDRESS
           value: "https://virtual-garden-kube-apiserver.{{ .Release.Namespace }}.svc.cluster.local"
+        {{- if .Values.targetSecret }}
+        args:
+        - --targetSecret={{ .Values.targetSecret }}
+        {{- end }}
         volumeMounts:
         - name: config
           mountPath: /etc/metal-token-dealer
