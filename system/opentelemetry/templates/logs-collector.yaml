@@ -203,6 +203,7 @@ spec:
             statements:
               - merge_maps(attributes, ExtractGrokPatterns(body, "%{IP:client.address} %{NOTSPACE:client.ident} %{NOTSPACE:client.auth} \\[%{HTTPDATE:timestamp}\\] \"%{WORD:request_method} %{NOTSPACE:request_path} %{WORD:network.protocol.name}/%{NOTSPACE:network.protocol.version}\" %{NUMBER:response} %{NUMBER:content_length:int} %{QUOTEDSTRING} \"%{GREEDYDATA:user_agent}\" %{NUMBER:request_length:int} %{BASE10NUM:request_time:float}( \\[%{NOTSPACE:service}\\])? ?(\\[\\])? %{IP:server.address}\\:%{NUMBER:server.port} %{NUMBER:upstream_response_length:int} %{BASE10NUM:upstream_response_time:float} %{NOTSPACE:upstream_status} %{NOTSPACE:request_id}", true),"upsert")
               - set(attributes["network.protocol.name"], ConvertCase(attributes["network.protocol.name"], "lower"))
+              - set(attributes["config.parsed"], "ingress-nginx") where attributes["client.address"] != nil
 
       transform/ceph_rgw:
         error_mode: ignore
@@ -215,7 +216,6 @@ spec:
               - merge_maps(attributes, ExtractGrokPatterns(body, "%{WORD:log_level}%{SPACE}%{NOTSPACE}%{SPACE}%{NOTSPACE:process.name}", true),"upsert")
               - set(attributes["network.protocol.name"], ConvertCase(attributes["network.protocol.name"], "lower")) where cache["network.protocol.name"] != nil
               - set(attributes["config.parsed"], "ceph_rgw") where attributes["project.id"] != nil
-              - set(attributes["config.parsed"], "ceph_rgw") where attributes["log_level"] != nil
 
       transform/ceph_osd:
         error_mode: ignore
@@ -228,7 +228,7 @@ spec:
               - merge_maps(attributes, ExtractGrokPatterns(body, "%{GREEDYDATA:osd.wall.type}\\:%{SPACE}%{NUMBER:osd.wall.writes:float}(K|M|G)?%{SPACE}writes,%{SPACE}%{NUMBER:osd.wall.syncs:float}(K|M|G)?%{SPACE}syncs,%{SPACE}%{NUMBER:osd.wall.writes_per_sync:float}%{SPACE}writes per sync, written\\:%{SPACE}%{NUMBER:osd.wall.written_gb:float}%{SPACE}(GB|MB|TB)?,%{SPACE}%{NUMBER:osd.written_mb_sec:float}", true),"upsert")
               - merge_maps(attributes, ExtractGrokPatterns(body, "%{WORD:log_level}%{SPACE}%{NOTSPACE}%{SPACE}%{SPACE}%{NOTSPACE:process.name}", true),"upsert")
               - set(attributes["config.parsed"], "ceph_osd") where attributes["osd.stats.level"] != nil
-              - set(attributes["config.parsed"], "ceph_osd") where attributes["log_level"] != nil
+              - set(attributes["config.parsed"], "ceph_osd") where attributes["osd.wall.type"] != nil
 
       transform/files:
         error_mode: ignore
@@ -407,7 +407,32 @@ spec:
 
     connectors:
       forward: {}
-      #count: {}
+      count:
+        logs:
+          otelcol_filter_ingress_count:
+          description: Counter for ingress filtered events
+          conditions:
+            - 'attributes["config.parsed"], "ingress-nginx"'
+          otelcol_filter_ceph_rgw_count:
+          description: Counter for ceph_rgw filtered events
+          conditions:
+            - 'attributes["config.parsed"], "ceph_rgw"'
+          otelcol_filter_ceph_osd_count:
+          description: Counter for ceph_osd filtered events
+          conditions:
+            - 'attributes["config.parsed"], "ceph_osd"'
+          otelcol_filter_source_files_count:
+          description: Counter for extra files source events
+          conditions:
+            - 'attributes["config.parsed"], "files"'
+          otelcol_filter_kvm_openvswitch_count:
+          description: Counter for kvm_openvswitch filtered events
+          conditions:
+            - 'attributes["config.parsed"], "kvm_openvswitch"'
+          otelcol_filter_kvm_nova_agent_count:
+          description: Counter for kvm nova agent filtered events
+          conditions:
+            - 'attributes["config.parsed"], "kvm_nova_agent"'
       #routing:
       #  default_pipelines: [logs/containerd]
       #  error_mode: ignore
@@ -445,10 +470,10 @@ spec:
           receivers: [forward]
           processors: [batch]
           exporters: [opensearch/logs]
-        #metrics/count:
-        #  receivers: [count]
-        #  processors: [attributes/prometheus]
-        #  exporters: [prometheus]
+        metrics/count:
+          receivers: [count]
+          processors: [attributes/prometheus]
+          exporters: [prometheus]
 {{- if .Values.podMonitor.enabled }}
         metrics/prometheus:
           receivers: [prometheus/internal]
