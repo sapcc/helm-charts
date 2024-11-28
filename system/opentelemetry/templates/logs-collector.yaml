@@ -395,10 +395,10 @@ spec:
             authenticator: basicauth
           endpoint: {{ .Values.openSearchLogs.endpoint }}
         logs_index: ${username}-datastream
-        
       prometheus:
         endpoint: "0.0.0.0:9999"
-        metric_expiration: 5m
+        resource_to_telemetry_conversion:
+          enabled: true
 
     extensions:
       basicauth:
@@ -473,7 +473,7 @@ spec:
           exporters: [opensearch/logs]
         metrics:
           receivers: [count]
-          exporters: [prometheus]
+          exporters: [prometheus, debug]
 {{- if .Values.podMonitor.enabled }}
         #metrics/prometheus:
         #  receivers: [prometheus/internal]
