@@ -406,7 +406,7 @@ spec:
           password: ${password}
 
     connectors:
-      count: {}
+      #count: {}
       #routing:
       #  default_pipelines: [logs/containerd]
       #  error_mode: ignore
@@ -427,23 +427,23 @@ spec:
         logs/containerd:
           receivers: [filelog/containerd]
           processors: [k8sattributes,attributes/cluster,transform/ingress,transform/ceph_rgw,transform/ceph_osd,transform/kvm_openvswitch,transform/kvm_nova_agent,batch]
-          exporters: [opensearch/logs, count]
+          exporters: [opensearch/logs]
         logs/files:
           receivers: [filelog/files]
           processors: [k8sattributes,attributes/cluster,transform/files,batch]
-          exporters: [opensearch/logs, count]
+          exporters: [opensearch/logs]
         logs/k8sevents:
           receivers: [k8s_events]
           processors: [attributes/k8sevents,batch]
-          exporters: [opensearch/logs, count]
+          exporters: [opensearch/logs]
         logs/journald:
           receivers: [journald]
           processors: [attributes/cluster,transform/journal,batch]
-          exporters: [opensearch/logs, count]
-        metrics/count:
-          receivers: [count]
-          processors: [attributes/prometheus]
-          exporters: [prometheus]
+          exporters: [opensearch/logs]
+        #metrics/count:
+        #  receivers: [count]
+        #  processors: [attributes/prometheus]
+        #  exporters: [prometheus]
 {{- if .Values.podMonitor.enabled }}
         metrics/prometheus:
           receivers: [prometheus/internal]
