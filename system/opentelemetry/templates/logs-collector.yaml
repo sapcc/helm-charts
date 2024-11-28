@@ -407,6 +407,7 @@ spec:
 
     connectors:
       #count: {}
+      forward: {}
       #routing:
       #  default_pipelines: [logs/containerd]
       #  error_mode: ignore
@@ -426,20 +427,25 @@ spec:
       pipelines:
         logs/containerd:
           receivers: [filelog/containerd]
-          processors: [k8sattributes,attributes/cluster,transform/ingress,transform/ceph_rgw,transform/ceph_osd,transform/kvm_openvswitch,transform/kvm_nova_agent,batch]
-          exporters: [opensearch/logs]
+          processors: [k8sattributes,attributes/cluster,transform/ingress,transform/ceph_rgw,transform/ceph_osd,transform/kvm_openvswitch,transform/kvm_nova_agent]
+          exporters: [forward]
         logs/files:
           receivers: [filelog/files]
-          processors: [k8sattributes,attributes/cluster,transform/files,batch]
-          exporters: [opensearch/logs]
+          processors: [k8sattributes,attributes/cluster,transform/files]
+          exporters: [forward]
         logs/k8sevents:
           receivers: [k8s_events]
-          processors: [attributes/k8sevents,batch]
-          exporters: [opensearch/logs]
+          processors: [attributes/k8sevents]
+          exporters: [forward]
         logs/journald:
           receivers: [journald]
-          processors: [attributes/cluster,transform/journal,batch]
+          processors: [attributes/cluster,transform/journal]
+          exporters: [forward]
+        logs/forward:
+          receivers: [forward]
+          processors: [batch]
           exporters: [opensearch/logs]
+        ]
         #metrics/count:
         #  receivers: [count]
         #  processors: [attributes/prometheus]
