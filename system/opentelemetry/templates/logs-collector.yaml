@@ -94,13 +94,13 @@ spec:
             value: "files"
 
 {{- if .Values.podMonitor.enabled }}
-      #prometheus/internal:
-      #  config:
-      #    scrape_configs:
-      #      - job_name: 'internal'
-      #        scrape_interval: 5s
-      #        static_configs:
-      #          - targets: ['127.0.0.1:8888']
+      prometheus/internal:
+        config:
+          scrape_configs:
+            - job_name: 'internal'
+              scrape_interval: 5s
+              static_configs:
+                - targets: ['127.0.0.1:8888']
 {{- end }}
 
     processors:
@@ -443,10 +443,10 @@ spec:
       extensions:
         - basicauth
 {{- if .Values.podMonitor.enabled }}
-      #telemetry:
-      #  metrics:
-      #    address: 127.0.0.1:8888
-      #    level: detailed
+      telemetry:
+        metrics:
+          address: 127.0.0.1:8888
+          level: detailed
 {{- end }}
       pipelines:
         logs/containerd:
@@ -473,9 +473,9 @@ spec:
           receivers: [count]
           exporters: [prometheus]
 {{- if .Values.podMonitor.enabled }}
-        #metrics/prometheus:
-        #  receivers: [prometheus/internal]
-        #  processors: [attributes/prometheus]
-        #  exporters: [prometheus]
+        metrics/prometheus:
+          receivers: [prometheus/internal]
+          processors: [attributes/prometheus]
+          exporters: [prometheus]
 {{- end }}
 {{- end }}
