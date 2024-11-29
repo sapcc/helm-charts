@@ -3,6 +3,7 @@ kind: Deployment
 metadata:
   name: {{ include "fullName" . }}
   labels:
+    app: {{ include "fullName" . }}
     {{- include "mariadb.labels" (list $ "version" "mariadb" "deployment" "database") | indent 4 }}
 {{- if .Values.vpa.set_main_container }}
   annotations:
@@ -15,10 +16,11 @@ spec:
     type: Recreate
   selector:
     matchLabels:
-      app.kubernetes.io/component: {{ include "label.component" (list "mariadb" "deployment" "database") }}
+      app: {{ include "fullName" . }}
   template:
     metadata:
       labels:
+        app: {{ include "fullName" . }}
         {{- include "mariadb.labels" (list $ "version" "mariadb" "deployment" "database") | indent 8 }}
       annotations:
         checksum/secrets: {{ include (print $.Template.BasePath  "/secret.yaml") . | sha256sum }}
