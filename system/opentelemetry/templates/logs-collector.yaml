@@ -458,7 +458,7 @@ spec:
         logs/files:
           receivers: [filelog/files]
           processors: [k8sattributes,attributes/cluster,transform/files]
-          exporters: [forward, count]
+          exporters: [forward]
         logs/k8sevents:
           receivers: [k8s_events]
           processors: [attributes/k8sevents]
@@ -473,11 +473,11 @@ spec:
           exporters: [opensearch/logs]
         metrics:
           receivers: [count]
-          exporters: [prometheus, debug]
+          exporters: [prometheus]
 {{- if .Values.podMonitor.enabled }}
-        #metrics/prometheus:
-        #  receivers: [prometheus/internal]
-        #  processors: [attributes/prometheus]
-        #  exporters: [prometheus]
+        metrics/prometheus:
+          receivers: [prometheus/internal]
+          processors: [attributes/prometheus]
+          exporters: [prometheus]
 {{- end }}
 {{- end }}
