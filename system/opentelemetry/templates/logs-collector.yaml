@@ -435,7 +435,7 @@ spec:
           otelcol_all_container_records:
             description: all container log records.
             conditions:
-              - 'attributes["log.type"] == "containerd"'
+              - IsMatch(attributes["log.type"], "containerd")
       #routing:
       #  default_pipelines: [logs/containerd]
       #  error_mode: ignore
@@ -476,7 +476,7 @@ spec:
         metrics:
           receivers: [count]
           processors: [attributes/prometheus]
-          exporters: [prometheus]
+          exporters: [forward]
 {{- if .Values.podMonitor.enabled }}
         metrics/prometheus:
           receivers: [prometheus/internal]
