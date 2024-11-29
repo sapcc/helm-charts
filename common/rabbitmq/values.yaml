@@ -19,6 +19,7 @@ imageTag: 3.13.7-management
 priority_class: "critical-infrastructure"
 
 ports:
+  amqps: 5671
   public: 5672
   management: 15672
 
@@ -117,7 +118,18 @@ linkerd:
   enabled: true
 
 # RabbitMQ custom configuration to be added under /etc/rabbitmq/conf.d/20-custom.conf
-customConfig:
+customConfig: {}
   # to set a custom limit please use the following format: 50MB or 1GB
   # if not set default value of 50MB will be used
   # disk_free_limit.absolute: 500MB
+
+enableSsl: false
+certificate:
+  issuerRef:
+    name: nil
+    kind: "ClusterIssuer"
+    group: "cert-manager.io"
+  usages:
+    - digital signature
+    - key encipherment
+    - server auth

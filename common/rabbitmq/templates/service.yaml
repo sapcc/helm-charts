@@ -21,9 +21,13 @@ spec:
 {{- end }}
   ports:
     - name: public
-      port: {{ default 5672 .Values.ports.public }}
+      port: {{ .Values.ports.public }}
     - name: management
-      port: {{ default 15672 .Values.ports.management }}
+      port: {{ .Values.ports.management }}
+{{- if .Values.enableSsl }}
+    - name: amqps
+      port: {{ .Values.ports.amqps }}
+{{- end }}
   selector:
     app.kubernetes.io/instance: {{ template "fullname" . }}
   {{- if .Values.externalIPs }}
