@@ -2,6 +2,21 @@
 
 This file is used to list changes made in each version of the common chart rabbitmq.
 
+## 0.13.0
+[@fwiesel](https://github.com/fwiesel)
+- Add option to enable ssl in rabbitmq
+
+The following options need to be set:
+```yaml
+enableSsl: true
+certificate:
+  issuerRef:
+    name: issuer-name
+```
+
+The default is a cluster-issuer, but it can be changed with the respective value
+`certifcate.issuerRef.kind`
+
 ## 0.12.0
 
 [@businessbean](https://github.com/businessbean)
