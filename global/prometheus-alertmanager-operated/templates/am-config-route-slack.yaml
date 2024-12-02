@@ -170,7 +170,7 @@ spec:
             value: alerting|backup|castellum|cc3test|ceph|exporter|gatekeeper|grafana|hermes|jumpserver|keppel|limes|logs|maia|metis|metrics|repo|slack-alert-reactions|swift|tenso
           - name: region
             matchType: "=~"
-            value: {{ without .Values.regions "qa-de-1" | join "|" }}
+            value: {{ without .Values.regions "qa-de-1" | join "|" }} 
 
       # to be reviewed
       - receiver: slack_sre
@@ -467,6 +467,26 @@ spec:
             matchType: "="
             value: compute
 
+      # Test Channel for CC KVM Alerting slack_alert_kvm_test
+      - receiver: slack_alert_kvm_test
+        continue: true
+        matchers:
+          - name: tier
+            matchType: "="
+            value: vmware
+          - name: support_group
+            matchType: "="
+            value: compute
+          - name: service
+            matchType: "="
+            value: kvm
+          - name: severity
+            matchType: "="
+            value: info|warning|critical
+          - name: region
+            matchType: "=~"
+            value: {{ .Values.regions | join "|" }}
+
   receivers:
     - name: slack
 
@@ -601,6 +621,14 @@ spec:
     - name: slack_hsm
       slackConfigs:
         - channel: '#cc-os-hsm'
+          apiURL:
+            name: alertmanager-{{ include "alertmanagerRelease.name" . }}-slack-secrets
+            key: slack_webhookURL
+          {{- include "slack.template" . | nindent 10 }}
+
+    - name: slack_alert_kvm_test
+      slackConfigs:
+        - channel: '#alert-kvm-test'
           apiURL:
             name: alertmanager-{{ include "alertmanagerRelease.name" . }}-slack-secrets
             key: slack_webhookURL
