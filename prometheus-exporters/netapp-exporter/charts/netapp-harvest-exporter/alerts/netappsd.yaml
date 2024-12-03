@@ -1,21 +1,6 @@
 groups:
   - name: netappsd
     rules:
-      # info alert: more workers than discovered filers
-      - alert: NetappHarvestMoreWorkersThanFilers
-        expr: netappsd_worker_replicas - on(app) count by (app) (netappsd_discovered_filer) > 0
-        for: 15m
-        labels:
-          context: netapp-exporter
-          no_alert_on_absence: "true"
-          service: exporter
-          severity: info
-          support_group: compute-storage-api
-          tier: storage
-        annotations:
-          summary:  More Netapp Harvest workers than discovered filers
-          description: There are {{ $value }} more workers for {{ $labels.app }}.
-
       - alert: NetappHarvestExporterAuthenticationError
         expr: netapp_harvest_probe_failure{reason="authentication error"} > 0
         for: 15m
@@ -24,7 +9,7 @@ groups:
           no_alert_on_absence: "true"
           playbook: 'docs/support/playbook/storage/filer_inaccessible'
           service: exporter
-          severity: warning
+          severity: info
           support_group: compute-storage-api
           tier: os
         annotations:
@@ -54,23 +39,15 @@ groups:
           context: netapp-exporter
           no_alert_on_absence: "true"
           service: exporter
-          severity: warning
+          severity: info
           support_group: compute-storage-api
           tier: storage
         annotations:
           summary:  Multiple Netapp Harvest poller instances for {{ $labels.poller }}
           description: There are {{ $value }} pollers collecting metrics from NetApp Filer {{ $labels.poller }}.
 
-
-      # compare scraped filers by netapp-harvest-exporter and netapp-capacity-exporter
-      # netapp-harvest-exporter automatically discovers filers, netapp-capacity-exporter uses static configuration
-      # netapp_volume_total_bytes is a metric from netapp_capacity_exporter, netapp_volume_size_total is a metric from netapp-harvest-exporter
-      - alert: NetappHarvestFilerMissing
-        expr: |
-          (
-            count by (host) (label_replace(manila_total_capacity_gb, "host", "$1", "share_backend_fqdn", "(.*)"))
-            unless on(host) netapp_volume_size
-          )
+      - alert: NetappHarvestDiscoveredFilerNotScraped
+        expr: netappsd_discovered_filer unless on (app, filer) netapp_metadata_exporter_count
         for: 15m
         labels:
           context: netapp-exporter
@@ -80,38 +57,19 @@ groups:
           support_group: compute-storage-api
           tier: storage
         annotations:
-          description: Manila Filer {{ $labels.host }} is not scraped by Netapp Harvest.
+          summary:  Filer not scraped by Netapp Harvest exporter
+          description: Filer {{ $labels.filer }} discovered but not scraped by {{ $labels.app }}.
 
-      # compare scraped volumes by netapp-harvest-exporter and netapp-capacity-exporter
-      - alert: NetappHarvestVolumesMissing
-        expr: |
-          (
-            count by (cluster) (label_replace(netapp_volume_total_bytes{volume=~"share.*"}, "cluster", "$1", "host", "(.*).cc.*"))
-            - count by (cluster) (netapp_volume_size{app="netapp-harvest-exporter-manila", volume=~"share.*"})
-          ) > 0 
+      - alert: NetappHarvestManilaFilerNotScraped
+        expr: label_replace(manila_total_capacity_gb, "host", "$1", "share_backend_fqdn", "(.*)") unless on(host) netapp_volume_size
         for: 15m
         labels:
           context: netapp-exporter
           no_alert_on_absence: "true"
           service: exporter
-          severity: info
+          severity: warning
           support_group: compute-storage-api
           tier: storage
         annotations:
-          summary:  Volumes missing in Netapp Harvest
-          description: Volumes are missing in Netapp Harvest for Filer {{ $labels.cluster }}.
-
-      - alert: NetappHarvestFilerNotScraped
-        expr: count (netappsd_discovered_filer) by (app, filer) unless count (netapp_volume_size) by (app, filer)
-        for: 15m
-        labels:
-          context: netapp-exporter
-          no_alert_on_absence: "true"
-          service: exporter
-          severity: info
-          support_group: compute-storage-api
-          tier: storage
-        annotations:
-          summary:  Filer not scraped by Netapp Harvest
-          description: Filer {{ $labels.filer }} is not scraped by Netapp Harvest {{ $labels.app }}.
+          description: Manila Filer {{ $labels.host }} in production but not scraped by Netapp Harvest.
 
