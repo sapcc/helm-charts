@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.15.2 - 2024/11/29
+- `app` selector label returned, because deployment selector is immutable
+- chart version bumped
+
 ## v0.15.1 - 2024/11/28
 * mysqld-exporter version bumped to `0.16.0`
 * mysqld-exporter `collect.info_schema.innodb_tablespaces` collector enabled

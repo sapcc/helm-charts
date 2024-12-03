@@ -92,6 +92,7 @@ We've chosen not to use colons in these memcache secrets
 {{- $component := index . 2 }}
 {{- $type := index . 3 }}
 {{- $function := index . 4 }}
+app: {{ template "fullname" $ }}
 app.kubernetes.io/name: {{ $.Chart.Name }}
 app.kubernetes.io/instance: {{ template "fullname" $ }}
 app.kubernetes.io/component: {{ include "label.component" (list $component $type $function) }}
