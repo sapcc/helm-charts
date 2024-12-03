@@ -18,16 +18,12 @@
       {{/* Determine which database to include based on configuration */}}
       {{- $defaultDbType := .Values.dbType | default "mariadb" }}
       {{- $dbs := dict }}
-      {{- if $envAll.Values.proxysql.multiDestination }}
-        {{- $dbs = $_dbs }}
-      {{- else }}
-        {{- range $dbKey, $db := $_dbs }}
-          {{- if and (eq $defaultDbType "mariadb") (hasPrefix "mariadb" $dbKey) }}
-            {{- $_ := set $dbs $dbKey $db }}
-          {{- end }}
-          {{- if and (eq $defaultDbType "pxc-db") (hasPrefix "pxc" $dbKey) }}
-            {{- $_ := set $dbs $dbKey $db }}
-          {{- end }}
+      {{- range $dbKey, $db := $_dbs }}
+        {{- if and (eq $defaultDbType "mariadb") (hasPrefix "mariadb" $dbKey) }}
+          {{- $_ := set $dbs $dbKey $db }}
+        {{- end }}
+        {{- if and (eq $defaultDbType "pxc-db") (hasPrefix "pxc" $dbKey) }}
+          {{- $_ := set $dbs $dbKey $db }}
         {{- end }}
       {{- end }}
       {{/* Option: use override from proxysql.force_enable value */}}
