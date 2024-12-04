@@ -36,6 +36,10 @@ dhcp_domain = openstack.{{ required ".Values.global.region is missing" .Values.g
 
 {{ template "utils.snippets.debug.eventlet_backdoor_ini" "nova" }}
 
+{{- if .Values.nova_bigvm_enabled -}}
+bigvm_exporter_listen_port = {{ required ".Values.nova_bigvm_exporter_port" .Values.nova_bigvm_exporter_port }}
+{{- end }}
+
 [database]
 {{- include "ini_sections.database_options_mysql" . }}
 
