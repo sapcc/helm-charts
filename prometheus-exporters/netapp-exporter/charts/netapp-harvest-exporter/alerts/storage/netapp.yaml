@@ -1,5 +1,5 @@
 groups:
-  - name: netappsd
+  - name: netapp-harvest
     rules:
       - alert: NetappHarvestExporterAuthenticationError
         expr: netapp_harvest_probe_failure{reason="authentication error"} > 0
@@ -31,7 +31,20 @@ groups:
           summary: Probe failure during NetApp Filer discovery.
           description: Filer {{ $labels.host }} can't be accessed due to {{ $labels.reason }}.
 
-      # warning alert: multiple instances of netapp-harvest-exporter
+      - alert: NetappHarvestPollerTargetStatus
+        expr: netapp_metadata_target_status == 1
+        for: 15m
+        labels:
+          context: netapp-exporter
+          no_alert_on_absence: "true"
+          service: exporter
+          severity: info
+          support_group: compute-storage-api
+          tier: storage
+        annotations:
+          summary:  Target status of poller {{ $labels.poller }} is 1
+          description: Filer can not be reached. Reach out storage team to investigate.
+
       - alert: NetappHarvestMultipleInstances
         expr: count (netapp_metadata_exporter_count) by (pod_template_hash, poller) > 1
         for: 15m
@@ -46,6 +59,7 @@ groups:
           summary:  Multiple Netapp Harvest poller instances for {{ $labels.poller }}
           description: There are {{ $value }} pollers collecting metrics from NetApp Filer {{ $labels.poller }}.
 
+      # filer discovered from netbox but not scraped by netapp harvest
       - alert: NetappHarvestDiscoveredFilerNotScraped
         expr: netappsd_discovered_filer unless on (app, filer) netapp_metadata_exporter_count
         for: 15m
@@ -59,17 +73,4 @@ groups:
         annotations:
           summary:  Filer not scraped by Netapp Harvest exporter
           description: Filer {{ $labels.filer }} discovered but not scraped by {{ $labels.app }}.
-
-      - alert: NetappHarvestManilaFilerNotScraped
-        expr: label_replace(manila_total_capacity_gb, "host", "$1", "share_backend_fqdn", "(.*)") unless on(host) netapp_volume_size
-        for: 15m
-        labels:
-          context: netapp-exporter
-          no_alert_on_absence: "true"
-          service: exporter
-          severity: warning
-          support_group: compute-storage-api
-          tier: storage
-        annotations:
-          description: Manila Filer {{ $labels.host }} in production but not scraped by Netapp Harvest.
 
