@@ -42,6 +42,7 @@ mysql_variables =
     connect_retries_on_failure = {{ default 1000 .global.Values.proxysql.connect_retries_on_failure }}
     connect_retries_delay = {{ default 100 .global.Values.proxysql.connect_retries_delay }} {{- /* The default is 1ms, and that means we will run through the retries on failure in no time */}}
     connect_timeout_server_max = {{ default 100000 .global.Values.proxysql.connect_timeout_server_max }}
+    query_retries_on_failure = {{ default 1 .global.Values.proxysql.query_retries_on_failure }} {{- /* The ProxySQL default is 1, and that means queries are being retried once */}}
 }
 
 mysql_servers =
@@ -81,5 +82,14 @@ mysql_query_rules =
         cache_ttl = 3600000,
         match_pattern = "^SELECT 1$",
     },
+{{- if and .global.Values.proxysql.query_rules .global.Values.proxysql.query_rules.retries_on_select }}
+    {
+        rule_id = 1,
+        active = 1,
+        apply = 1,
+        retries = {{ default 10 .global.Values.proxysql.query_rules.retries_on_select }},
+        match_digest = "^SELECT",
+    },
+{{- end }}
 )
 {{- end }}
