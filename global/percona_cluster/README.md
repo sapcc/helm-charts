@@ -52,7 +52,7 @@ The following table lists the configurable parameters of the Percona chart and t
 
 | Parameter                  | Description                        | Default                                                    |
 | -----------------------    | ---------------------------------- | ---------------------------------------------------------- |
-| `image.repository`         | `percona-xtradb-cluster` image Repo.                 | 5.7.19 release                                        |
+| `image.repository`         | `percona-xtradb-cluster` image Repo.                 | 8.0.37-29.1 release                                        |
 | `image.tag`                | `percona-xtradb-cluster` image tag.                 | `percona/percona-xtradb-cluster` |
 | `image.pullPolicy`         | Image pull policy                  | `IfNotPresent` |
 | `replicas`                 | Number of pods to join the Percona XtraDB Cluster   | 3                                         |
