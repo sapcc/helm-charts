@@ -8,6 +8,9 @@ host = manila-share-netapp-{{$enabled_share.name}}
 # Values are conf groupnames that contain per manila-share service opts.
 enabled_share_backends = {{$enabled_share.name}}
 
+# when bringing up a service, it will be down
+# will be enabled after successful integration test via API
+enable_new_services = False
 [coordination]
 # overrides configuration from manila.conf
 backend_url = file://$state_path
