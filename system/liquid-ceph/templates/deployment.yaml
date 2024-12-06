@@ -26,6 +26,9 @@ spec:
       - name: policy
         configMap:
           name: liquid-ceph-policy
+      - name: zone-mapping
+        configMap:
+          name: {{ required ".Values.ceph.zoneMapping missing" .Values.ceph.zoneMapping }}
       - name: ceph-conf
         configMap:
           name: liquid-ceph-conf
@@ -39,17 +42,15 @@ spec:
           image: "{{required ".Values.global.registry is missing" .Values.global.registry }}/{{ .Values.image.repository }}:{{required ".Values.image.tag is missing" .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           args:
+          {{ .Values.ceph.enableDebug }}
+          - -d
+          {{ end }}
           - server
-          - --ceph-endpoint={{ required ".Values.ceph.endpoint missing" .Values.ceph.endpoint }}
           - --ceph-conf=/etc/ceph/ceph.conf
-          - --target-zone={{ required ".Values.ceph.targetZone missing" .Values.ceph.targetZone }}
-          - --valid-pools={{ required ".Values.ceph.validPools missing" .Values.ceph.validPools }}
           {{- range .Values.ceph.allowedDomains }}
           - --domain-allow={{ . }}
           {{- end }}
-          {{- if .Values.ceph.resourceName }}
-          - --resource-name={{ .Values.ceph.resourceName }}
-          {{- end }}
+          - --zone-mapping=/etc/liquid/zone-mapping.yaml
           env:
           - name: OS_AUTH_URL
             value: "https://identity-3.{{ .Values.global.region }}.cloud.sap/v3"
@@ -70,21 +71,13 @@ spec:
             value: {{ quote $.Values.global.region }}
           - name: LIQUID_POLICY_PATH
             value: "/etc/liquid/policy.yaml"
-          - name: CEPH_ACCESS_KEY
-            valueFrom:
-              secretKeyRef:
-                name: {{ .Values.ceph.rgwSecretName }}
-                key: AccessKey
-          - name: CEPH_SECRET_KEY
-            valueFrom:
-              secretKeyRef:
-                name: {{ .Values.ceph.rgwSecretName }}
-                key: SecretKey
           securityContext:
             runAsNonRoot: true
           volumeMounts:
           - mountPath: /etc/liquid
             name: policy
+          - mountPath: /etc/liquid
+            name: zone-mapping
           - mountPath: /etc/ceph
             name: ceph-conf
           - mountPath: /etc/ceph-keyring
