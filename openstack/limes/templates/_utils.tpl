@@ -8,9 +8,7 @@
 
 {{- define "limes_common_envvars" }}
 {{- if $.Values.limes.has_audit_trail }}
-- name: LIMES_AUDIT_ENABLE
-  value: "true"
-- name: LIMES_AUDIT_QUEUE_NAME
+- name: LIMES_AUDIT_RABBITMQ_QUEUE_NAME
   value: "notifications.info"
 - name: LIMES_AUDIT_RABBITMQ_HOSTNAME
   value: "hermes-rabbitmq-notifications.hermes.svc"

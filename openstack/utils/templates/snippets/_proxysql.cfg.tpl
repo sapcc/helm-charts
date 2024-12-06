@@ -42,6 +42,8 @@ mysql_variables =
     connect_retries_on_failure = {{ default 1000 .global.Values.proxysql.connect_retries_on_failure }}
     connect_retries_delay = {{ default 100 .global.Values.proxysql.connect_retries_delay }} {{- /* The default is 1ms, and that means we will run through the retries on failure in no time */}}
     connect_timeout_server_max = {{ default 100000 .global.Values.proxysql.connect_timeout_server_max }}
+    max_transaction_time = {{ default 60000 .global.Values.proxysql.max_transaction_time }}
+    default_query_timeout = {{ default 90000 .global.Values.proxysql.default_query_timeout }}
 }
 
 mysql_servers =
