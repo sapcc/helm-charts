@@ -79,10 +79,10 @@ The following table lists the configurable parameters of the Percona chart and t
 | `ssl.certificates[0].cert`                   | Server certificate (public key)                                                              | `nil`                                                |
 | `ssl.certificates[0].key`                    | Server key (private key)                                                                     | `nil`                                                |
 | `logTail` | if set to true runs a container to tail /var/log/mysqld.log in the pod | true |
-| `metricsExporter.enabled` | if set to true runs a [mysql metrics exporter](https://github.com/prometheus/mysqld_exporter) container in the pod | false |
-| `metricsExporter.commandOverrides` | Overrides default docker command for metrics exporter | `[]` |
-| `metricsExporter.argsOverrides`   | Overrides default docker args for metrics exporter     | `[]` |
-| `metricsExporter.tag`             | Specify a docker image tag for `prom/mysqld-exporter` metrics exporter docker image | `nil` |
+| `metrics.enabled` | if set to true runs a [mysql metrics exporter](https://github.com/prometheus/mysqld_exporter) container in the pod | false |
+| `metrics.commandOverrides` | Overrides default docker command for metrics exporter | `[]` |
+| `metrics.argsOverrides`   | Overrides default docker args for metrics exporter     | `[]` |
+| `metrics.tag`             | Specify a docker image tag for `prom/mysqld-exporter` metrics exporter docker image | `nil` |
 | `prometheus.operator.enabled`                  | Setting to true will create Prometheus-Operator specific resources | `false` |
 | `prometheus.operator.prometheusRule.enabled`   | Create default alerting rules                                      | `true`  |
 | `prometheus.operator.prometheusRule.labels`    | Labels to add to alerts                                            | `{}`    |
