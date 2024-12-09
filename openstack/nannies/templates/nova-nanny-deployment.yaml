@@ -73,27 +73,22 @@ spec:
                   path: nova.conf.d/keystoneauth-secrets.conf
                 - key: audit-middleware.conf
                   path: nova.conf.d/audit-middleware.conf
-      containers:
+      initContainers:
+      {{- tuple . (dict "service" "nova-mariadb,nova-api") | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 8 }}      containers:
 {{- if or .Values.nova_nanny.db_purge.enabled .Values.nova_nanny.consistency.enabled }}
         - name: db-consistency-and-purge
           image: {{.Values.global.registry}}/nova-nanny:{{.Values.nova_nanny.image_version}}
           imagePullPolicy: IfNotPresent
           command:
             - dumb-init
-            - kubernetes-entrypoint
+{{- if not .Values.nova_nanny.debug }}
+            - /bin/bash
+            - /scripts/nova-db-consistency-and-purge.sh
+{{- else }}
+            - sleep
+            - inf
+{{- end }}
           env:
-            - name: COMMAND
-              value: "{{ if not .Values.nova_nanny.debug }}/bin/bash /scripts/nova-db-consistency-and-purge.sh{{ else }}sleep inf{{ end }}"
-            - name: NAMESPACE
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.namespace
-            - name: DEPENDENCY_SERVICE
-              {{- if .Values.nova.mariadb.enabled }}
-              value: "nova-mariadb,nova-api"
-              {{- else }}
-              value: "nova-postgresql,nova-api"
-              {{- end }}
             - name: NOVA_DB_PURGE_ENABLED
               value: {{ .Values.nova_nanny.db_purge.enabled | quote }}
             - name: NOVA_DB_PURGE_DRY_RUN
