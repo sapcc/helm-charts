@@ -23,4 +23,13 @@ spec:
       protocol: UDP
       port: 53
       targetPort: dns-udp
-  externalIPs: ["{{ required "A valid .Values.unbound.externalIP required!" .Values.unbound.externalIP }}"]
+  externalIPs:
+  {{- if and ( not $.Values.unbound.externalIP ) ( not $.Values.unbound.externalIPs ) }}
+  {{- fail "Neither $.Values.unbound.externalIP nor $.Values.unbound.externalIPs defined" }}
+  {{- end }}
+  {{- if $.Values.unbound.externalIP }}
+  {{- list $.Values.unbound.externalIP | toYaml | nindent 2 }}
+  {{- end }}
+  {{- if $.Values.unbound.externalIPs }}
+  {{- $.Values.unbound.externalIPs | toYaml | nindent 2 }}
+  {{- end }}
