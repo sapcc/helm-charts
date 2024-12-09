@@ -165,24 +165,10 @@ spec:
           mountPath: /etc/mysql/conf.d
         - name: slash-root
           mountPath: /root
-        - name: var-log
-          mountPath: /var/log
         {{- if .Values.ssl.enabled }}
         - name: certificates
           mountPath: /ssl
         {{- end }}
-      {{- if .Values.logTail }}
-      - name: "logs"
-        image: "{{ required ".Values.global.dockerHubMirrorAlternateRegion is missing" .Values.global.dockerHubMirrorAlternateRegion }}/library/busybox:1.37.0"
-        imagePullPolicy: IfNotPresent
-        command:
-        - "tail"
-        - "-f"
-        - "/var/log/mysqld.log"
-        volumeMounts:
-        - name: var-log
-          mountPath: /var/log
-      {{- end }}
       {{- if .Values.metrics.enabled }}
       - name: metrics
         {{- if .Values.metrics.tag }}
