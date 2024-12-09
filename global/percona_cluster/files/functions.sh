@@ -68,9 +68,12 @@ init_mysql() {
             CREATE USER 'xtrabackup'@'localhost' IDENTIFIED BY '${XTRABACKUP_PASSWORD}';
             GRANT RELOAD,PROCESS,LOCK TABLES,REPLICATION CLIENT ON *.* TO 'xtrabackup'@'localhost';
 
-            CREATE USER 'monitor'@'localhost' IDENTIFIED BY 'monitor' WITH MAX_USER_CONNECTIONS 10;
+            CREATE USER 'monitor'@'localhost' IDENTIFIED BY '${MONITOR_PASSWORD}' WITH MAX_USER_CONNECTIONS 10;
             GRANT SELECT, PROCESS, SUPER, REPLICATION CLIENT, RELOAD ON *.* TO 'monitor'@'%';
             GRANT SELECT ON performance_schema.* TO 'monitor'@'%';
+
+            CREATE USER 'clustercheck'@'localhost' IDENTIFIED BY '${CLUSTERCHECK_PASSWORD}';
+            GRANT PROCESS ON *.* TO 'clustercheck'@'localhost';
 
             CREATE USER 'mysql'@'localhost' IDENTIFIED BY '';
 

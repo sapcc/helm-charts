@@ -99,6 +99,16 @@ spec:
               name: {{ include "fullName" . }}
               key: exporter-password
         {{- end }}
+        - name: CLUSTERCHECK_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "fullName" . }}
+              key: clustercheck-password
+        - name: MONITOR_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "fullName" . }}
+              key: monitor-password
         - name: MYSQL_USER
           value: {{ default "" .Values.db_user | quote }}
         - name: MYSQL_DATABASE
@@ -175,7 +185,7 @@ spec:
         {{- end }}
         imagePullPolicy: IfNotPresent
         args:
-          - "--mysqld.username=root"
+          - "--mysqld.username=monitor"
           - "--mysqld.address=localhost:3306"
         {{- range $flag := .Values.metrics.flags }}
           - "--{{$flag}}"
@@ -185,7 +195,7 @@ spec:
           valueFrom:
             secretKeyRef:
               name: {{ include "fullName" . }}
-              key: mysql-root-password
+              key: monitor-password
         ports:
         - name: metrics
           containerPort: 9104
