@@ -77,9 +77,9 @@ init_mysql() {
 
             CREATE USER 'mysql'@'localhost' IDENTIFIED BY '';
 
-            DROP DATABASE IF EXISTS test ;
-            FLUSH PRIVILEGES ;
-        EOSQL
+            DROP DATABASE IF EXISTS test;
+            FLUSH PRIVILEGES;
+EOSQL
 
         echo "ALTER USER 'root'@'localhost' IDENTIFIED BY '${MYSQL_ROOT_PASSWORD}'; FLUSH PRIVILEGES;" | "${mysql[@]}"
 
@@ -105,7 +105,7 @@ init_mysql() {
         if [ ! -z "$MYSQL_ONETIME_PASSWORD" ]; then
             "${mysql[@]}" <<-EOSQL
                 ALTER USER 'root'@'%' PASSWORD EXPIRE;
-            EOSQL
+EOSQL
         fi
         if ! kill -s TERM "$pid" || ! wait "$pid"; then
             echo >&2 'MySQL init process failed.'
