@@ -92,7 +92,7 @@ spec:
             secretKeyRef:
               name: {{ include "fullName" . }}
               key: xtrabackup-password
-        {{- if .Values.metricsExporter.enabled }}
+        {{- if .Values.metrics.enabled }}
         - name: METRICS_EXPORTER_PASSWORD
           valueFrom:
             secretKeyRef:
@@ -176,10 +176,10 @@ spec:
         - name: var-log
           mountPath: /var/log
       {{ end }}
-      {{ if .Values.metricsExporter.enabled }}
+      {{ if .Values.metrics.enabled }}
       - name: metrics
-        {{- if .Values.metricsExporter.tag }}
-        image: {{ required ".Values.global.dockerHubMirrorAlternateRegion is missing" .Values.global.dockerHubMirrorAlternateRegion }}/prom/mysqld-exporter:{{ .Values.metricsExporter.tag }}
+        {{- if .Values.metrics.tag }}
+        image: {{ required ".Values.global.dockerHubMirrorAlternateRegion is missing" .Values.global.dockerHubMirrorAlternateRegion }}/prom/mysqld-exporter:{{ .Values.metrics.tag }}
         {{- else }}
         image: {{ required ".Values.global.dockerHubMirrorAlternateRegion is missing" .Values.global.dockerHubMirrorAlternateRegion }}/prom/mysqld-exporter
         {{- end }}
