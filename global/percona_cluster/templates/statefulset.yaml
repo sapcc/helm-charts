@@ -52,6 +52,18 @@ spec:
                   values:
                   - {{.Values.global.db_region}}a
       initContainers:
+      - name: "pxc-permissions-init"
+        command:
+        - "/bin/sh"
+        - "-c"
+        - "chown -R 1001:1001 /var/lib/mysql"
+        image: "{{ required ".Values.global.dockerHubMirrorAlternateRegion is missing" .Values.global.dockerHubMirrorAlternateRegion }}/library/busybox:1.37.0"
+        imagePullPolicy: IfNotPresent
+        securityContext:
+          runAsUser: 0
+        volumeMounts:
+        - name: "{{ .Values.persistence.claimName }}"
+          mountPath: /var/lib/mysql
       - name: "remove-lost-found"
         image: "{{ required ".Values.global.dockerHubMirrorAlternateRegion is missing" .Values.global.dockerHubMirrorAlternateRegion }}/library/busybox:1.37.0"
         imagePullPolicy: IfNotPresent
