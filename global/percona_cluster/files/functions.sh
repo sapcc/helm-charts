@@ -28,8 +28,8 @@ init_mysql() {
 
         echo "Running --initialize-insecure on $DATADIR"
         ls -lah $DATADIR
+        chown -R mysql:mysql "$DATADIR" || true  # default is root:root 777
         mysqld --user=mysql --datadir="$DATADIR" --initialize-insecure
-        chown -R mysql:mysql "$DATADIR" || true # default is root:root 777
         if [ -f /var/log/mysqld.log ]; then
             chown mysql:mysql /var/log/mysqld.log
         fi
