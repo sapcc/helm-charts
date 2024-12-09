@@ -78,7 +78,7 @@ spec:
           name: metrics
       - name: lgproxy
         image: keppel.{{ .top.Values.registry }}.cloud.sap/{{ required "lg_image must be set" .top.Values.lg_image }}
-        command: ["python3"]
+        command: ["/venv/bin/python3"]
         args: ["lgproxy.py"]
         resources: {{ toYaml .top.Values.resources.proxy | nindent 10 }}
         volumeMounts:
@@ -90,7 +90,7 @@ spec:
           name: lgproxy
       - name: lgadminproxy
         image: keppel.{{ .top.Values.registry }}.cloud.sap/{{ .top.Values.lg_image }}
-        command: ["python3"]
+        command: ["/venv/bin/python3"]
         args: ["lgproxy.py", "priv"]
         resources: {{ toYaml .top.Values.resources.proxy | nindent 10 }}
         volumeMounts:
