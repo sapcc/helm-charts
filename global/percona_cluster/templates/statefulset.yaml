@@ -174,22 +174,18 @@ spec:
         image: {{ required ".Values.global.dockerHubMirrorAlternateRegion is missing" .Values.global.dockerHubMirrorAlternateRegion }}/prom/mysqld-exporter
         {{- end }}
         imagePullPolicy: IfNotPresent
-{{- if .Values.metricsExporter.commandOverrides }}
-        command:
-{{ toYaml .Values.metricsExporter.commandOverrides | indent 8 }}
-{{- end }}
-{{- if .Values.metricsExporter.argsOverrides }}
         args:
-{{ toYaml .Values.metricsExporter.argsOverrides | indent 8 }}
-{{- end }}
+          - "--mysqld.username=root"
+          - "--mysqld.address=localhost:3306"
+        {{- range $flag := .Values.metrics.flags }}
+          - "--{{$flag}}"
+        {{- end }}
         env:
-        - name: METRICS_EXPORTER_PASSWORD
+        - name: MYSQLD_EXPORTER_PASSWORD
           valueFrom:
             secretKeyRef:
               name: {{ include "fullName" . }}
-              key: exporter-password
-        - name: DATA_SOURCE_NAME
-          value: "exporter:$(METRICS_EXPORTER_PASSWORD)@(localhost:3306)/"
+              key: mysql-root-password
         ports:
         - name: metrics
           containerPort: 9104

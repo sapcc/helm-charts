@@ -28,11 +28,7 @@ init_mysql() {
 
         echo "Running --initialize-insecure on $DATADIR"
         ls -lah $DATADIR
-        if [ "$PERCONA_MAJOR" = "5.6" ]; then
-            mysql_install_db --user=mysql --datadir="$DATADIR"
-        else
-            mysqld --user=mysql --datadir="$DATADIR" --initialize-insecure
-        fi
+        mysqld --user=mysql --datadir="$DATADIR" --initialize-insecure
         chown -R mysql:mysql "$DATADIR" || true # default is root:root 777
         if [ -f /var/log/mysqld.log ]; then
             chown mysql:mysql /var/log/mysqld.log
@@ -59,27 +55,30 @@ init_mysql() {
 
         # sed is for https://bugs.mysql.com/bug.php?id=20545
         mysql_tzinfo_to_sql /usr/share/zoneinfo | sed 's/Local time zone must be set--see zic manual page/FCTY/' | "${mysql[@]}" mysql
-        "${mysql[@]}" <<-EOSQL
-        -- What's done in this file shouldn't be replicated
-        --  or products like mysql-fabric won't work
-        SET @@SESSION.SQL_LOG_BIN=0;
-        CREATE USER 'root'@'${ALLOW_ROOT_FROM}' IDENTIFIED BY '${MYSQL_ROOT_PASSWORD}' ;
-        GRANT ALL ON *.* TO 'root'@'${ALLOW_ROOT_FROM}' WITH GRANT OPTION ;
-        GRANT ALL ON *.* TO 'root'@'localhost' WITH GRANT OPTION ;
-        CREATE USER 'xtrabackup'@'localhost' IDENTIFIED BY '$XTRABACKUP_PASSWORD';
-        GRANT RELOAD,PROCESS,LOCK TABLES,REPLICATION CLIENT ON *.* TO 'xtrabackup'@'localhost';
-        GRANT REPLICATION CLIENT ON *.* TO monitor@'%' IDENTIFIED BY 'monitor';
-        GRANT PROCESS ON *.* TO monitor@localhost IDENTIFIED BY 'monitor';
-        CREATE USER 'mysql'@'localhost' IDENTIFIED BY '' ;
-        DROP DATABASE IF EXISTS test ;
-        FLUSH PRIVILEGES ;
-EOSQL
 
-        if [ "$PERCONA_MAJOR" = "5.6" ]; then
-            echo "SET PASSWORD FOR 'root'@'localhost' = PASSWORD('${MYSQL_ROOT_PASSWORD}'); FLUSH PRIVILEGES;" | "${mysql[@]}"
-        else
-            echo "ALTER USER 'root'@'localhost' IDENTIFIED BY '${MYSQL_ROOT_PASSWORD}'; FLUSH PRIVILEGES;" | "${mysql[@]}"
-        fi
+        "${mysql[@]}" <<-EOSQL
+            -- What's done in this file shouldn't be replicated
+            --  or products like mysql-fabric won't work
+            SET @@SESSION.SQL_LOG_BIN=0;
+
+            CREATE USER 'root'@'${ALLOW_ROOT_FROM}' IDENTIFIED BY '${MYSQL_ROOT_PASSWORD}' ;
+            GRANT ALL ON *.* TO 'root'@'${ALLOW_ROOT_FROM}' WITH GRANT OPTION ;
+            GRANT ALL ON *.* TO 'root'@'localhost' WITH GRANT OPTION ;
+
+            CREATE USER 'xtrabackup'@'localhost' IDENTIFIED BY '${XTRABACKUP_PASSWORD}';
+            GRANT RELOAD,PROCESS,LOCK TABLES,REPLICATION CLIENT ON *.* TO 'xtrabackup'@'localhost';
+
+            CREATE USER 'monitor'@'localhost' IDENTIFIED BY 'monitor' WITH MAX_USER_CONNECTIONS 10;
+            GRANT SELECT, PROCESS, SUPER, REPLICATION CLIENT, RELOAD ON *.* TO 'monitor'@'%';
+            GRANT SELECT ON performance_schema.* TO 'monitor'@'%';
+
+            CREATE USER 'mysql'@'localhost' IDENTIFIED BY '';
+
+            DROP DATABASE IF EXISTS test ;
+            FLUSH PRIVILEGES ;
+        EOSQL
+
+        echo "ALTER USER 'root'@'localhost' IDENTIFIED BY '${MYSQL_ROOT_PASSWORD}'; FLUSH PRIVILEGES;" | "${mysql[@]}"
 
         if [ ! -z "$MYSQL_ROOT_PASSWORD" ]; then
             mysql+=( -p"${MYSQL_ROOT_PASSWORD}" )
@@ -109,8 +108,8 @@ EOSQL
 
         if [ ! -z "$MYSQL_ONETIME_PASSWORD" ]; then
             "${mysql[@]}" <<-EOSQL
-            ALTER USER 'root'@'%' PASSWORD EXPIRE;
-EOSQL
+                ALTER USER 'root'@'%' PASSWORD EXPIRE;
+            EOSQL
         fi
         if ! kill -s TERM "$pid" || ! wait "$pid"; then
             echo >&2 'MySQL init process failed.'
