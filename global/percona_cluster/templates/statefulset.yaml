@@ -164,7 +164,7 @@ spec:
         - name: certificates
           mountPath: /ssl
         {{- end }}
-      {{ if .Values.logTail }}
+      {{- if .Values.logTail }}
       - name: "logs"
         image: "{{ required ".Values.global.dockerHubMirrorAlternateRegion is missing" .Values.global.dockerHubMirrorAlternateRegion }}/library/busybox:1.34.1"
         imagePullPolicy: IfNotPresent
@@ -175,8 +175,8 @@ spec:
         volumeMounts:
         - name: var-log
           mountPath: /var/log
-      {{ end }}
-      {{ if .Values.metrics.enabled }}
+      {{- end }}
+      {{- if .Values.metrics.enabled }}
       - name: metrics
         {{- if .Values.metrics.tag }}
         image: {{ required ".Values.global.dockerHubMirrorAlternateRegion is missing" .Values.global.dockerHubMirrorAlternateRegion }}/prom/mysqld-exporter:{{ .Values.metrics.tag }}
@@ -212,7 +212,7 @@ spec:
             command: ["wget","-q","-O","-","localhost:9104"]
           initialDelaySeconds: 30
           timeoutSeconds: 2
-      {{ end }}
+      {{- end }}
       priorityClassName: {{ default "critical-infrastructure" .Values.priority_class | quote }}
       volumes:
       - name: slash-root
