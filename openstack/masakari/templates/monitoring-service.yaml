@@ -1,0 +1,19 @@
+kind: Service
+apiVersion: v1
+
+metadata:
+  name: {{ .Release.Name }}-monitoring
+  labels:
+    system: openstack
+    type: api
+    component: {{ .Chart.Name }}
+  annotations:
+    {{- include "utils.linkerd.pod_and_service_annotation" . | indent 4 }}
+spec:
+  selector:
+    name: {{ .Release.Name }}-monitoring
+  ports:
+    - name: masakari-mo
+      port: {{ .Values.monitoringPort }}
+    - name: metrics
+      port: {{ .Values.monitoringExporterPort }}

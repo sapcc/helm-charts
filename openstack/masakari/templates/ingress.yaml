@@ -1,0 +1,42 @@
+kind: Ingress
+apiVersion: networking.k8s.io/v1
+
+metadata:
+  name: {{ .Release.Name }}-api
+  labels:
+    system: openstack
+    type: api
+    component: {{ .Release.Name }}
+  annotations:
+    disco: "true"
+  {{- if .Values.use_tls_acme }}
+    kubernetes.io/tls-acme: "true"
+  {{- end }}
+    {{- include "utils.linkerd.ingress_annotation" . | indent 4 }}
+spec:
+  tls:
+  - secretName: tls-{{include "masakari_api_endpoint_host_public" . | replace "." "-" }}
+    hosts:
+      - {{include "masakari_api_endpoint_host_public" .}}
+      - masakari-monitoring.{{ .Values.global.region }}.cloud.sap
+  rules:
+  - host: {{include "masakari_api_endpoint_host_public" .}}
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: {{ .Release.Name }}-api
+            port:
+              number: {{ .Values.masakariApiPortInternal }}
+  - host: masakari-monitoring.qa-de-1.cloud.sap
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: {{ .Release.Name }}-monitoring
+            port:
+              number: {{ .Values.monitoringPort }}
