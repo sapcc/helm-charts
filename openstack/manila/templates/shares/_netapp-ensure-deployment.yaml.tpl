@@ -49,6 +49,7 @@ spec:
                   values:
                   - {{ .Release.Name }}-share-netapp-{{$share.name}}
               topologyKey: kubernetes.io/hostname
+      priorityClassName: {{ .Values.pod.priority_class.low }}
       initContainers:
       {{- tuple . (dict "service" (print .Release.Name "-mariadb")) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 8 }}
       containers:
