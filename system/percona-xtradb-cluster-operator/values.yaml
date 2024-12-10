@@ -189,6 +189,43 @@ kube-state-metrics:
                   type: Gauge
                   gauge:
                     path: ["status", "pxc", "ready"]
+          - groupVersionKind:
+              group: pxc.percona.com
+              version: v1
+              kind: PerconaXtraDBClusterBackup
+            labelsFromPath:
+              name: ["metadata", "name"]
+              namespace: ["metadata", "namespace"]
+              ccloud_support_group: ["metadata", "labels", "ccloud/support-group"]
+              ccloud_service: ["metadata", "labels", "ccloud/service"]
+            metrics:
+              - name: perconaxtradbclusterbackup_info
+                help: "Information about the PerconaXtraDBClusterBackup"
+                each:
+                  type: Info
+                  info:
+                    labelsFromPath:
+                      storage_location: ["spec", "storageName"]
+                      cluster_name: ["spec", "pxcCluster"]
+              - name: perconaxtradbclusterbackup_creationtimestamp
+                help: "Creation timestamp of the backup"
+                each:
+                  type: Gauge
+                  gauge:
+                    path: ["metadata", "creationTimestamp"]
+              - name: perconaxtradbclusterbackup_status
+                help: "Status of PerconaXtraDBClusterBackup"
+                each:
+                  type: StateSet
+                  stateSet:
+                    labelName: state
+                    path: ["status", "state"]
+                    list:
+                      - ""              # BackupNew
+                      - "Starting"
+                      - "Running"
+                      - "Failed"
+                      - "Succeeded"
 
   # collect metrics from ALL namespaces
   namespaces: ""
