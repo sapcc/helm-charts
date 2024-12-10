@@ -41,10 +41,10 @@ spec:
           secret:
             defaultMode: 420
             secretName: manager-secret
-        - name: opensearch-certs
+        - name: admin-cert-manager
           secret:
             defaultMode: 420
-            secretName: certs
+            secretName: admin-cert-manager
       containers:
       - name: manager
         image: {{.Values.global.registry}}/elk-elasticsearch-manager:{{.Values.image_version}}
@@ -88,8 +88,9 @@ spec:
             name: manager-config
             subPath: start.sh
 {{ else }}
-          - mountPath: /opt/certs
-            name: opensearch-certs
+          - mountPath: /opt/certs/ca.crt
+            name: admin-cert-manager
+            subPath: ca.crt
 {{- end }}
         ports:
           - name: manager
