@@ -86,7 +86,117 @@ pxc-operator:
       value: "true"
 
 alerts:
-  enabled: true
+  enabled: false
+
+kube-state-metrics:
+  image:
+    registry: keppel.global.cloud.sap/ccloud-registry-k8s-io-mirror
+    repository: kube-state-metrics/kube-state-metrics
+  rbac:
+    create: true  # NOTE: need to create a custom role instead with access only to custom resources
+    extraRules:
+      - apiGroups: ["pxc.percona.com"]
+        resources:
+          - "perconaxtradbclusters"
+          - "perconaxtradbclusterbackups"
+          - "perconaxtradbclusterrestores"
+        verbs:
+          - "list"
+          - "watch"
+
+  customLabels:
+    app: kube-state-metrics
+
+  resources:
+    requests:
+      memory: 150Mi
+      cpu: 100m
+
+  selfMonitor:
+    enabled: true
+
+  collectors: null
+
+  extraArgs:
+    - --custom-resource-state-only=true
+  customResourceState:
+    enabled: true
+    config:
+      kind: CustomResourceStateMetrics
+      spec:
+        resources:
+          - groupVersionKind:
+              group: pxc.percona.com
+              version: v1
+              kind: PerconaXtraDBCluster
+            labelsFromPath:
+              name: ["metadata", "name"]
+              namespace: ["metadata", "namespace"]
+              ccloud_support_group: ["metadata", "labels", "ccloud/support-group"]
+              ccloud_service: ["metadata", "labels", "ccloud/service"]
+            metrics:
+              - name: perconaxtradbcluster_info
+                help: "Exposes details about the configuration of a PerconaXtraDBCluster: CR version and PXC version"
+                each:
+                  type: Info
+                  info:
+                    labelsFromPath:
+                      pxc_version: ["status", "pxc", "version"]
+                      cr_version: ["spec", "crVersion"]
+              - name: perconaxtradbcluster_creationtimestamp
+                help: "Exposes the creation date of this cluster"
+                each:
+                  type: Gauge
+                  gauge:
+                    path: ["metadata", "creationTimestamp"]
+              - name: perconaxtradbcluster_status
+                help: "Status of PerconaXtraDBCluster"
+                each:
+                  type: StateSet
+                  stateSet:
+                    labelName: state
+                    path: ["status", "state"]
+                    list:
+                      - "unknown"
+                      - "initializing"
+                      - "paused"
+                      - "stopping"
+                      - "ready"
+                      - "error"
+              - name: perconaxtradbcluster_pxc_status
+                help: "Status of PerconaXtraDBCluster PXC component"
+                each:
+                  type: StateSet
+                  stateSet:
+                    labelName: state
+                    path: ["status", "pxc", "status"]
+                    list:
+                      - "unknown"
+                      - "initializing"
+                      - "paused"
+                      - "stopping"
+                      - "ready"
+                      - "error"
+              - name: perconaxtradbcluster_pxc_size
+                help: "Total size of the PerconaXtraDBCluster"
+                each:
+                  type: Gauge
+                  gauge:
+                    path: ["status", "pxc", "size"]
+              - name: perconaxtradbcluster_pxc_ready
+                help: "Number of ready PXC nodes in the cluster"
+                each:
+                  type: Gauge
+                  gauge:
+                    path: ["status", "pxc", "ready"]
+
+  # collect metrics from ALL namespaces
+  namespaces: ""
+
+  # deploy a ServiceMonitor so the metrics are collected by Prometheus
+  prometheus:
+    monitor:
+      enabled: false
 
 owner-info:
   support-group: network-api
