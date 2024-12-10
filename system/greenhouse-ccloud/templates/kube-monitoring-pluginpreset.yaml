@@ -15,7 +15,7 @@ metadata:
   namespace: {{ .Release.Namespace }}
 spec:
   clusterOptionOverrides:
-  {{- range $cluster, $values := .Values.kubeMonitoring.cephClusters }}
+  {{- range $cluster, $additionalSettings := .Values.kubeMonitoring.cephClusters }}
   - clusterName: {{ $cluster }}
     overrides:
     - name: global.commonLabels
@@ -28,9 +28,9 @@ spec:
         cluster_type: storage
         organization: ccloud
         region: '{{ "{{ .Values.global.greenhouse.clusterName | trunc -7 }}" }}'
-  {{- if index $values "serviceProxyUrl" }}
+  {{- if index $additionalSettings "serviceProxyUrl" }}
     - name: kubeMonitoring.prometheus.prometheusSpec.externalUrl
-      value: {{ index $values "serviceProxyUrl" }}
+      value: {{ index $additionalSettings "serviceProxyUrl" }}
   {{- end }}
     - name: kubeMonitoring.kube-state-metrics.prometheus.monitor.http.metricRelabelings
       value:
@@ -46,14 +46,14 @@ spec:
         fsGroup: 0
         runAsNonRoot: false
         runAsUser: 0
-  {{- if index $values "thanos" }}
+  {{- if index $additionalSettings "thanos" }}
     - name: kubeMonitoring.prometheus.prometheusSpec.thanos.objectStorageConfig.existingSecret.name
       value: thanos-{{ $cluster }}-metrics-objectstore
     - name: kubeMonitoring.prometheus.prometheusSpec.thanos.objectStorageConfig.existingSecret.key
       value: thanos.yaml
   {{- end }}
   {{- end }}
-  {{- range $cluster, $values := .Values.kubeMonitoring.computeClusters }}
+  {{- range $cluster, $additionalSettings := .Values.kubeMonitoring.computeClusters }}
   - clusterName: {{ $cluster }}
     overrides:
     - name: global.commonLabels
@@ -65,9 +65,9 @@ spec:
         cluster_type: compute
         organization: ccloud
         region: '{{ "{{ .Values.global.greenhouse.clusterName | trunc -7 }}" }}'
-  {{- if index $values "serviceProxyUrl" }}
+  {{- if index $additionalSettings "serviceProxyUrl" }}
     - name: kubeMonitoring.prometheus.prometheusSpec.externalUrl
-      value: {{ index $values "serviceProxyUrl" }}
+      value: {{ index $additionalSettings "serviceProxyUrl" }}
   {{- end }}
     - name: kubeMonitoring.kube-state-metrics.prometheus.monitor.http.metricRelabelings
       value:
@@ -78,7 +78,7 @@ spec:
         - __name__
         targetLabel: cluster
   {{- end }}
-  {{- range $cluster, $values := .Values.kubeMonitoring.obsClusters }}
+  {{- range $cluster, $additionalSettings := .Values.kubeMonitoring.obsClusters }}
   - clusterName: {{ $cluster }}
     overrides:
     - name: global.commonLabels
@@ -90,9 +90,9 @@ spec:
         cluster_type: observability
         organization: ccloud
         region: '{{ "{{ .Values.global.greenhouse.clusterName | trunc -7 }}" }}'
-  {{- if index $values "serviceProxyUrl" }}
+  {{- if index $additionalSettings "serviceProxyUrl" }}
     - name: kubeMonitoring.prometheus.prometheusSpec.externalUrl
-      value: {{ index $values "serviceProxyUrl" }}
+      value: {{ index $additionalSettings "serviceProxyUrl" }}
   {{- end }}
     - name: kubeMonitoring.kube-state-metrics.prometheus.monitor.http.metricRelabelings
       value:
@@ -102,7 +102,7 @@ spec:
         sourceLabels:
         - __name__
         targetLabel: cluster
-  {{- if index $values "thanos" }}
+  {{- if index $additionalSettings "thanos" }}
     - name: kubeMonitoring.prometheus.prometheusSpec.thanos.objectStorageConfig.existingSecret.name
       value: thanos-{{ $cluster }}-metrics-objectstore
     - name: kubeMonitoring.prometheus.prometheusSpec.thanos.objectStorageConfig.existingSecret.key
