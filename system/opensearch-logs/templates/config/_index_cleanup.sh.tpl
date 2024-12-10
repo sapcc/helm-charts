@@ -2,7 +2,7 @@
 
 #job to delete wrongly created indexes, which have timestamps in the future
 export HOST=https://opensearch-logs-client.{{ .Values.global.clusterType}}.{{ .Values.global.region }}.{{ .Values.global.tld }}:9200
-export CLEANUP_INDEXES="kubernikus virtual scaleout"
+export CLEANUP_INDEXES="kubernikus virtual scaleout logstash"
 
 export LC_ALL=C.UTF-8; export LANG=C.UTF-8
 
