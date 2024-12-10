@@ -44,10 +44,19 @@
 {{- end -}}
 
 {{- define "limes_openstack_envvars" }}
+{{- $limes_url := .Values.limes.clusters.ccloud.catalog_url }}
+{{- $is_global := $limes_url | contains "global" }}
+{{- if $is_global }}
+- name: OS_AUTH_URL
+  value: "{{ $limes_url | replace "limes" "identity" }}/v3"
+- name: OS_INTERFACE
+  value: "public"
+{{- else }}
 - name: OS_AUTH_URL
   value: "http://keystone.{{ $.Values.global.keystoneNamespace }}.svc.kubernetes.{{ $.Values.global.region }}.{{ $.Values.global.tld }}:5000/v3"
 - name: OS_INTERFACE
   value: "internal"
+{{- end }}
 - name: OS_USER_DOMAIN_NAME
   value: "Default"
 - name: OS_USERNAME
