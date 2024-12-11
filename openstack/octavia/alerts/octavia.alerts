@@ -122,8 +122,7 @@ groups:
       description: 'The Load Balancer `{{ $labels.loadbalancer_name }} ({{ $labels.loadbalancer_id }})` of agent `{{ $labels.loadbalancer_host }}` stuck in {{ $labels.loadbalancer_status }} state (<https://dashboard.{{ $externalLabels.region }}.cloud.sap/ccadmin/cloud_admin/cloudops#/universal-search/?searchTerm={{ $labels.loadbalancer_id }}&type=loadbalancer|Dashboard>)'
       summary: Octavia Load-Balancer stuck in PENDING_* state
   - alert: OctaviaApiFailing
-    expr: changes(openstack_watcher_api_requests_duration_seconds{status=~"5.*",service="loadbalancer"}[10m]) # we use changes(...[10m]) to smooth over gaps between 5XX error, so that we don't alert on the same error more than once within 10 minutes.
-    for: 10m
+    expr: max(openstack_watcher_api_requests_duration_seconds{status=~"5.*",service="loadbalancer"})
     labels:
       no_alert_on_absence: "true"
       context: API
