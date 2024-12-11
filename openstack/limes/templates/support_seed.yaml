@@ -1,10 +1,13 @@
+{{- $is_global := $.Values.limes.clusters.ccloud.catalog_url | contains "global" -}}
+{{- $base_seed_namespace := $is_global | ternary "monsoon3global" "monsoon3" }}
+
 {{- $domains := list "ccadmin" "bs" "cis" "cp" "fsn" "hcp03" "hda" "hec" "monsoon3" "neo" "ora" "s4" "wbs"}}
 {{- if not .Values.global.domain_seeds.skip_hcm_domain -}}
   {{- $domains = append $domains "hcm" }}
 {{- end -}}
-
-{{- $is_global := $.Values.limes.clusters.ccloud.catalog_url | contains "global" -}}
-{{- $base_seed_namespace := $is_global | ternary "monsoon3global" "monsoon3" }}
+{{- if $is_global -}}
+  {{- $domains = list "ccadmin" "global" -}}
+{{- end -}}
 
 apiVersion: "openstack.stable.sap.cc/v1"
 kind: "OpenstackSeed"
@@ -13,7 +16,7 @@ metadata:
 
 spec:
   requires:
-  - limes/limes-seed
+  - {{ .Release.Namespace }}/limes-seed
   {{- range $domains }}
   - {{ $base_seed_namespace }}/domain-{{ . | lower }}-seed
   {{- end }}

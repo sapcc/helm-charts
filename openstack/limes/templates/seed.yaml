@@ -1,11 +1,14 @@
 {{- $vbase  := .Values.global.vaultBaseURL | required "missing value for .Values.global.vaultBaseURL" -}}
 {{- $region := .Values.global.region       | required "missing value for .Values.global.region"       -}}
+{{- $is_global := $.Values.limes.clusters.ccloud.catalog_url | contains "global" -}}
 
 {{- $domains := list "bs" "btp_fp" "cc3test" "cp" "cis" "fsn" "hcm" "hcp03" "hda" "hec" "kyma" "monsoon3" "neo" "s4" "wbs" -}}
 {{- /* WARNING: When adding a new domain, also increment the domain count in the OpenstackLimesUnexpectedCloudDnsAdminRoleAssignments alert. */ -}}
+{{- if $is_global -}}
+  {{- $domains = list "cc3test" "global" -}}
+{{- end -}}
 
 {{- $liquid_roles := list -}}
-{{- $is_global := $.Values.limes.clusters.ccloud.catalog_url | contains "global" -}}
 {{- if not $is_global -}}{{/* TODO: use "if not .Values.limes.local_liquids.nova.skip" here once we have liquid-nova */}}
   {{- /* NOTE: cloud_image_admin is required to determine the OS type for images of running instances */ -}}
   {{- $liquid_roles = concat $liquid_roles (list "cloud_compute_admin" "cloud_image_admin" "cloud_keymanager_admin") -}}
