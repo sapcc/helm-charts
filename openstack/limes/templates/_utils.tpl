@@ -70,6 +70,11 @@
   value: "ccadmin"
 - name: OS_PROJECT_NAME
   value: "cloud_admin"
+{{- if $is_global }}
+- name: OS_REGION_NAME
+  value: global
+{{- else }}
 - name: OS_REGION_NAME
   value: {{ quote $.Values.global.region }}
+{{- end }}
 {{- end -}}
