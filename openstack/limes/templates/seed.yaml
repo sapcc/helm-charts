@@ -33,11 +33,12 @@ metadata:
 
 spec:
   requires:
-  - {{ default .Release.Namespace .Values.global.keystoneNamespace }}/keystone-seed
-  - monsoon3/domain-ccadmin-seed
-  - monsoon3/domain-default-seed
+  {{- $base_seed_namespace := $is_global | ternary "monsoon3global" "monsoon3" }}
+  - {{ $base_seed_namespace }}/keystone-seed
+  - {{ $base_seed_namespace }}/domain-ccadmin-seed
+  - {{ $base_seed_namespace }}/domain-default-seed
   {{- range $domains }}
-  - monsoon3/domain-{{replace "_" "-" .}}-seed
+  - {{ $base_seed_namespace }}/domain-{{replace "_" "-" .}}-seed
   {{- end }}
 
   roles:
