@@ -65,6 +65,12 @@ spec:
         cluster_type: compute
         organization: ccloud
         region: '{{ "{{ .Values.global.greenhouse.clusterName | trunc -7 }}" }}'
+    # NFS volumes need more permissions to work
+    - name: kubeMonitoring.prometheus.prometheusSpec.securityContext
+      value:
+        fsGroup: 0
+        runAsNonRoot: false
+        runAsUser: 0
   {{- if index $additionalSettings "serviceProxyUrl" }}
     - name: kubeMonitoring.prometheus.prometheusSpec.externalUrl
       value: {{ index $additionalSettings "serviceProxyUrl" }}
