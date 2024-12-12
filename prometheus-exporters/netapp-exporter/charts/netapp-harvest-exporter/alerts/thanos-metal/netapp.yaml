@@ -1,0 +1,16 @@
+groups:
+  - name: netapp-harvest
+    rules:
+      - alert: NetappHarvestManilaFilerNotScraped
+        expr: label_replace(manila_total_capacity_gb, "host", "$1", "share_backend_fqdn", "(.*)") unless on(host) netapp_volume_size
+        for: 15m
+        labels:
+          context: netapp-exporter
+          no_alert_on_absence: "true"
+          service: exporter
+          severity: warning
+          support_group: compute-storage-api
+          tier: storage
+        annotations:
+          description: Manila Filer {{ $labels.host }} in production but not scraped by Netapp Harvest.
+

@@ -38,6 +38,10 @@ spec:
           initialDelaySeconds: 15
           periodSeconds: 20
         name: manager
+        ports:
+        - containerPort: 9445
+          name: webhook-server
+          protocol: TCP
         readinessProbe:
           httpGet:
             path: /readyz
@@ -51,6 +55,9 @@ spec:
         volumeMounts:
         - mountPath: /etc/macdb/
           name: macdb
+        - mountPath: /tmp/k8s-webhook-server/serving-certs
+          name: cert
+          readOnly: true
       - args: {{- toYaml .Values.controllerManager.kubeRbacProxy.args | nindent 8 }}
         env:
         - name: KUBERNETES_CLUSTER_DOMAIN
@@ -67,11 +74,15 @@ spec:
         securityContext: {{- toYaml .Values.controllerManager.kubeRbacProxy.containerSecurityContext
           | nindent 10 }}
       hostNetwork: true
-      securityContext:
-        runAsNonRoot: true
+      securityContext: {{- toYaml .Values.controllerManager.podSecurityContext | nindent
+        8 }}
       serviceAccountName: {{ include "metal-operator-core.fullname" . }}-controller-manager
       terminationGracePeriodSeconds: 10
       volumes:
       - name: macdb
         secret:
           secretName: macdb
+      - name: cert
+        secret:
+          defaultMode: 420
+          secretName: webhook-server-cert

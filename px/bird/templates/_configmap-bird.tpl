@@ -4,7 +4,7 @@
 kind: ConfigMap
 apiVersion: v1
 metadata:
-    name: {{ include "bird.domain.configMapName" . }}
+    name: {{ include "bird.statefulset.configMapName" . }}
     annotations:
         px.cloud.sap/configPath: {{ $config_path | quote }}
         px.cloud.sap/configChecksumSha1: {{ .top.Files.Get $config_path | sha1sum | quote }}

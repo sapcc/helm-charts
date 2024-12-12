@@ -121,3 +121,18 @@ groups:
     annotations:
       description: 'The Load Balancer `{{ $labels.loadbalancer_name }} ({{ $labels.loadbalancer_id }})` of agent `{{ $labels.loadbalancer_host }}` stuck in {{ $labels.loadbalancer_status }} state (<https://dashboard.{{ $externalLabels.region }}.cloud.sap/ccadmin/cloud_admin/cloudops#/universal-search/?searchTerm={{ $labels.loadbalancer_id }}&type=loadbalancer|Dashboard>)'
       summary: Octavia Load-Balancer stuck in PENDING_* state
+  - alert: OctaviaApiFailing
+    expr: max(openstack_watcher_api_requests_duration_seconds{status=~"5.*",service="loadbalancer"})
+    labels:
+      no_alert_on_absence: "true"
+      context: API
+      dashboard: octavia
+      service: octavia
+      severity: info # New Alerts MUST be initially implemented Info.
+      support_group: network-api
+      tier: os
+      meta: 'HTTP 5XX error(s) in Octavia API'
+      playbook: docs/support/playbook/octavia/http5xx
+    annotations:
+      description: 'There was at least one HTTP {{ $labels.status }} error in Octavia API pod {{ $labels.kubernetes_pod_name }} in the last 10 minutes for target type URI {{ $labels.target_type_uri }}'
+      summary: HTTP 5XX in Octavia API

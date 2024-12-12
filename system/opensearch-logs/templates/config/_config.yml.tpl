@@ -34,6 +34,6 @@ config:
             enable_ssl: true
             openid_connect_idp:
               enable_ssl: true
-              pemtrustedcas_filepath: /usr/share/opensearch/config/certs/tenant/opensearchCA.crt
+              pemtrustedcas_filepath: {{.Values.auth.ca_path }}
         authentication_backend:
           type: noop

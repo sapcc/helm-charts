@@ -209,11 +209,11 @@ groups:
       summary: Limes cannot sync quota overrides.
 
   - alert: OpenstackLimesAuditEventPublishFailing
-    # Usually, you would check increase() here, but audit events *can* be quite
-    # rare, so we alert if there are any failed audit events at all. To clear this alert,
-    # delete the respective
-    expr: max by (pod) (limes_failed_auditevent_publish > 0)
-    for: 1h
+    # The underlying metric counts failed submission attempts, e.g. because the hermes-rabbitmq server is restarting.
+    # These are not necessarily fatal because the process will hold them in memory to retry the submission later.
+    # The alert will clear up on its own once submissions start working again.
+    expr: sum by (pod) (changes(audittools_failed_submissions{namespace="limes"}[1h]) > 0)
+    for: 5m
     labels:
       context: auditeventpublish
       dashboard: limes-overview
@@ -224,7 +224,7 @@ groups:
       meta: '{{ $labels.pod }}'
     annotations:
       summary: "{{ $labels.pod }} cannot publish audit events"
-      description: "Audit events from {{ $labels.pod }} could not be published to the RabbitMQ server. Check the pod log for details. Once the underlying issue was addressed, delete the offending pod to clear this alert."
+      description: "Audit events from {{ $labels.pod }} could not be published to the RabbitMQ server. Check the pod log for detailed error messages. Affected audit events are held in memory until publishing succeeds."
 
   - alert: OpenstackLimesIncompleteProjectResourceData
     expr: max by (service, resource) (limes_project_resources_by_type_count) != on () group_left max(limes_project_count)
