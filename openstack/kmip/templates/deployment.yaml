@@ -45,6 +45,26 @@ spec:
     spec:
       serviceAccountName: {{ include "kmip.serviceAccountName" . }}-barbican
       containers:
+        - name: kmip-restapi
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: {{required ".Values.global.registry is missing" .Values.global.registry }}/loci-barbican:{{required "Values.kmip.restapi-image is missing" .Values.kmip.restapi-image }}
+          imagePullPolicy: {{ .Values.kmip.pullPolicy }}
+          env:
+            - name: KMIP_MARIADB_SERVICE_HOST
+              value: "kmip-mariadb.monsoon3.svc.cluster.local"
+            - name: KMIP_MARIADB_SERVICE_PORT
+              value: "3306"
+            - name: KMIP_MARIADB_SERVICE_USER
+              value: "{{ .Values.mariadb.users.kmip.user | quote }}"
+            - name: KMIP_MARIADB_SERVICE_PASSWORD
+              value: "{{ .Values.mariadb.users.kmip.password | quote }}"
+            - name: DB_NAME
+              value: "kmip"
+          resources:
+            requests:
+              memory: 0
+              cpu: 0
         - name: kmip-barbican
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
