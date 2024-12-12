@@ -1,3 +1,5 @@
+# Install
+
 - setup operator CRDs
 ```sh
 k apply -f https://raw.githubusercontent.com/gardener/gardener/refs/tags/v1.105.1/charts/gardener/operator/templates/crd-extensions.yaml
@@ -13,3 +15,9 @@ k annotate crd gardens.operator.gardener.cloud extensions.operator.gardener.clou
 - upgrade with proper secrets-injector ca (`k get secret ca-bundle-***** -o yaml`)
 - upgrade enable openstack extension
 - upgrade enable gardenlet
+
+# Upgrade
+- read [the changelog](https://github.com/gardener/gardener/releases)
+- change `appVersion`, `version` and `version` of operator in `Chart.yaml`
+- change `.operator.image.tag` in `values.yaml`
+- `helm dep up`
