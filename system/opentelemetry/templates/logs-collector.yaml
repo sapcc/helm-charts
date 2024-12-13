@@ -33,7 +33,7 @@ spec:
   envFrom:
     - secretRef:
          name: otel-basic-auth
-{{- if .Values.openTelemetry.prometheus.podMonitor.enabled }}
+{{- if .Values.podMonitor.enabled }}
   ports:
     - name: prometheus
       port: 9999
@@ -93,7 +93,7 @@ spec:
             field: attributes["log.type"]
             value: "files"
 
-{{- if .Values.openTelemetry.prometheus.podMonitor.enabled }}
+{{- if .Values.podMonitor.enabled }}
       prometheus/internal:
         config:
           scrape_configs:
@@ -109,7 +109,7 @@ spec:
         timeout: 5s
         send_batch_size : 10
 
-{{- if .Values.openTelemetry.prometheus.podMonitor.enabled }}
+{{- if .Values.podMonitor.enabled }}
       attributes/prometheus:
         actions:
           - action: insert
@@ -446,7 +446,7 @@ spec:
     service:
       extensions:
         - basicauth
-{{- if .Values.openTelemetry.prometheus.podMonitor.enabled }}
+{{- if .Values.podMonitor.enabled }}
       telemetry:
         metrics:
           address: 127.0.0.1:8888
@@ -477,7 +477,7 @@ spec:
           receivers: [count]
           processors: [attributes/prometheus]
           exporters: [opensearch/logs]
-{{- if .Values.openTelemetry.prometheus.podMonitor.enabled }}
+{{- if .Values.podMonitor.enabled }}
         metrics/prometheus:
           receivers: [prometheus/internal]
           processors: [attributes/prometheus]
