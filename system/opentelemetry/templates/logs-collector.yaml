@@ -451,7 +451,7 @@ spec:
       default_pipelines: [logs/containerd]
       error_mode: ignore
       table:
-        - statement: route() where IsMatch(attributes["log.type"], "ingress.*")
+        - statement: route() where IsMatch(attributes["log.type"], "containerd.*")
           pipelines: [logs/test]
       #  default_pipelines: [logs/containerd]
       #  error_mode: ignore
@@ -471,7 +471,7 @@ spec:
       pipelines:
         logs/test:
           receivers: [filelog/containerd]
-          processors: [routing]
+          processors: [routing,transform/ingress_test]
           exporters: [opensearch/logs]
         logs/containerd:
           receivers: [filelog/containerd]
