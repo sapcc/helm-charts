@@ -415,36 +415,6 @@ spec:
 
     connectors:
       forward: {}
-      count:
-        logs:
-          otelcol_filter_ingress_count:
-            description: Counter for ingress filtered events.
-            conditions:
-              - IsMatch(attributes["config.parsed"], "ingress-nginx")
-          otelcol_filter_ceph_rgw_count:
-            description: Counter for ceph_rgw filtered events.
-            conditions:
-              - 'attributes["config.parsed"] == "ceph_rgw"'
-          otelcol_filter_ceph_osd_count:
-            description: Counter for ceph_osd filtered events.
-            conditions:
-              - 'attributes["config.parsed"] == "ceph_osd"'
-          otelcol_filter_source_files_count:
-            description: Counter for extra files source events.
-            conditions:
-              - 'attributes["config.parsed"] == "files"'
-          otelcol_filter_kvm_openvswitch_count:
-            description: Counter for kvm_openvswitch filtered events.
-            conditions:
-              - 'attributes["config.parsed"] == "kvm_openvswitch"'
-          otelcol_filter_kvm_nova_agent_count:
-            description: Counter for kvm nova agent filtered events.
-            conditions:
-              - 'attributes["config.parsed"] == "kvm_nova_agent"'
-          otelcol_all_container_records:
-            description: all container log records.
-            conditions:
-              - IsMatch(attributes["log.type"], "containerd")
       routing:
         default_pipelines: [logs/containerd]
         error_mode: ignore
@@ -469,26 +439,6 @@ spec:
         logs/test:
           receivers: [routing]
           processors: [transform/containerd_test]
-          exporters: [opensearch/logs]
-        logs/files:
-          receivers: [filelog/files]
-          processors: [k8sattributes,attributes/cluster,transform/files]
-          exporters: [forward]
-        logs/k8sevents:
-          receivers: [k8s_events]
-          processors: [attributes/k8sevents]
-          exporters: [forward, count]
-        logs/journald:
-          receivers: [journald]
-          processors: [attributes/cluster,transform/journal]
-          exporters: [forward, count]
-        logs/forward:
-          receivers: [forward]
-          processors: [batch]
-          exporters: [opensearch/logs]
-        metrics:
-          receivers: [count]
-          processors: [attributes/prometheus]
           exporters: [opensearch/logs]
 {{- if .Values.podMonitor.enabled }}
         metrics/prometheus:
