@@ -205,17 +205,6 @@ spec:
               - set(attributes["network.protocol.name"], ConvertCase(attributes["network.protocol.name"], "lower")) where attributes["network.protocol.name"] != nil
               - set(attributes["config.parsed"], "ingress-nginx") where attributes["client.address"] != nil
 
-      transform/ingress_test:
-        error_mode: ignore
-        log_statements:
-          - context: log
-            conditions:
-              - resource.attributes["app.label.name"] == "ingress-nginx"
-            statements:
-              - merge_maps(attributes, ExtractGrokPatterns(body, "%{IP:client.address} %{NOTSPACE:client.ident} %{NOTSPACE:client.auth} \\[%{HTTPDATE:timestamp}\\] \"%{WORD:request_method} %{NOTSPACE:request_path} %{WORD:network.protocol.name}/%{NOTSPACE:network.protocol.version}\" %{NUMBER:response} %{NUMBER:content_length:int} %{QUOTEDSTRING} \"%{GREEDYDATA:user_agent}\" %{NUMBER:request_length:int} %{BASE10NUM:request_time:float}( \\[%{NOTSPACE:service}\\])? ?(\\[\\])? %{IP:server.address}\\:%{NUMBER:server.port} %{NUMBER:upstream_response_length:int} %{BASE10NUM:upstream_response_time:float} %{NOTSPACE:upstream_status} %{NOTSPACE:request_id}", true),"upsert")
-              - set(attributes["network.protocol.name"], ConvertCase(attributes["network.protocol.name"], "lower")) where attributes["network.protocol.name"] != nil
-              - set(attributes["config.parsed_test"], "ingress-nginx_test") where attributes["client.address"] != nil
-
       transform/ceph_rgw:
         error_mode: ignore
         log_statements:
@@ -270,6 +259,15 @@ spec:
             statements:
               - merge_maps(attributes, ExtractGrokPatterns(body, "%{TIMESTAMP_ISO8601:logtime}%{SPACE}%{NUMBER:process.id}%{SPACE}%{WORD:log_level}%{SPACE}%{NOTSPACE:process.name}%{SPACE}\\[%{REQUEST_ID:request.id}%{SPACE}%{REQUEST_ID:request.global_id}", true, ["REQUEST_ID=([A-Za-z0-9-]+)"]), "upsert")
               - set(attributes["config.parsed"], "kvm_nova_agent") where attributes["log_level"] != nil
+
+      transform/containerd_test:
+        error_mode: ignore
+        log_statements:
+          - context: log
+            conditions:
+              - resource.attributes["log.type"] == "containerd"
+            statements:
+              - set(attributes["config.parsed_test"], "containerd_test")
 
       k8sattributes:
         auth_type: "serviceAccount"
@@ -451,13 +449,8 @@ spec:
         default_pipelines: [logs/containerd]
         error_mode: ignore
         table:
-          - statement: route() where IsMatch(attributes["log.type"], "containerd.*")
+          - statement: route() where IsMatch(attributes["config.parsed"], "containerd.*")
             pipelines: [logs/test]
-      #  default_pipelines: [logs/containerd]
-      #  error_mode: ignore
-      #  table:
-      #    - statement: route() where attributes["container.runtime"] =="containerd"
-      #      pipelines: [logs/containerd]
 
     service:
       extensions:
@@ -469,14 +462,14 @@ spec:
           level: detailed
 {{- end }}
       pipelines:
-        logs/test:
-          receivers: [routing]
-          processors: [transform/ingress_test]
-          exporters: [opensearch/logs]
         logs/containerd:
           receivers: [filelog/containerd]
           processors: [k8sattributes,attributes/cluster,transform/ingress,transform/ceph_rgw,transform/ceph_osd,transform/kvm_openvswitch,transform/kvm_nova_agent]
-          exporters: [forward, count,routing]
+          exporters: [routing]
+        logs/test:
+          receivers: [routing]
+          processors: [transform/containerd_test]
+          exporters: [opensearch/logs]
         logs/files:
           receivers: [filelog/files]
           processors: [k8sattributes,attributes/cluster,transform/files]
@@ -492,6 +485,10 @@ spec:
         logs/forward:
           receivers: [forward]
           processors: [batch]
+          exporters: [opensearch/logs]
+        metrics:
+          receivers: [count]
+          processors: [attributes/prometheus]
           exporters: [opensearch/logs]
 {{- if .Values.podMonitor.enabled }}
         metrics/prometheus:
