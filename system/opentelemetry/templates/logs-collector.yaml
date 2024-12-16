@@ -416,11 +416,11 @@ spec:
     connectors:
       forward: {}
       routing:
-        default_pipelines: [logs/containerd]
+        default_pipelines: [logs/test]
         error_mode: ignore
         table:
           - statement: route() where IsMatch(attributes["config.parsed"], "containerd.*")
-            pipelines: [logs/test]
+            pipelines: [logs/containerd]
 
     service:
       extensions:
@@ -435,7 +435,7 @@ spec:
         logs/containerd:
           receivers: [filelog/containerd]
           processors: [k8sattributes,attributes/cluster,transform/ingress,transform/ceph_rgw,transform/ceph_osd,transform/kvm_openvswitch,transform/kvm_nova_agent]
-          exporters: [routing]
+          exporters: [opensearch/logs]
         logs/test:
           receivers: [routing]
           processors: [transform/containerd_test]
