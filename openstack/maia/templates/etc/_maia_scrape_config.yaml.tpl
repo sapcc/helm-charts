@@ -97,8 +97,8 @@
       # import any tenant-specific metric, except for those which already have been imported
       - '{__name__=~"^castellum_aggregated_.+",project_id!=""}'
       - '{__name__=~"^openstack_.+",project_id!=""}'
-      - '{__name__=~"^limes_(?:project|domain)_(?:quota|usage|committed_per_az|usage_per_az)$"}'
-      - '{__name__=~"^limes_swift_.+",project_id!=""}'
+      - '{__name__=~"^limes_(?:project|domain)_(?:quota|usage|committed_per_az|usage_per_az)$",namespace="limes"}' # the namespace match filters limes-global
+      - '{__name__=~"^limes_swift_.+",project_id!="",namespace="limes"}'
       - '{__name__=~"^keppel_.+",project_id!=""}'
 
 - job_name: 'prometheus-infra-collector'
