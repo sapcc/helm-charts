@@ -60,6 +60,9 @@ spec:
     apply: disabled
   {{- $pxc := .Values.pxc }}
   pxc:
+    {{- if gt (int $pxc.size) 7 }}
+    {{- fail "The Galera cluster must not be bigger than 7 nodes" }}
+    {{- end }}
     size: {{ $pxc.size }}
     {{- if $pxc.image.override }}
     image: {{ $pxc.image.override }}
