@@ -3,7 +3,7 @@
 {{- end -}}
 
 {{- define "tenso_image" -}}
-  {{ $.Values.global.registry }}/tenso:{{ $.Values.tenso.image_tag | required ".Values.tenso.image_tag is missing" }}
+  {{ $.Values.global.registry }}/{{ $.Values.containerImages.tenso.repository | required ".Values.containerImages.tenso.repository is missing" }}:{{ $.Values.containerImages.tenso.tag | required ".Values.containerImages.tenso.tag is missing" }}
 {{- end -}}
 
 {{- define "tenso_environment" }}
@@ -52,7 +52,7 @@
 - name: TENSO_HELM_DEPLOYMENT_SWIFT_CONTAINER
   value: tenso-deployment-events
 - name: TENSO_OSLO_POLICY_PATH
-  value: '/etc/tenso/policy.yaml'
+  value: '/etc/tenso/policy.json'
 - name: TENSO_ROUTES
   value: >
     helm-deployment-from-concourse.v1 -> helm-deployment-to-elk.v1,
