@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.6.2 - 2024/12/16
+
+* memcached [version](https://github.com/memcached/memcached/wiki/ReleaseNotes1633) bumped to `1.6.33-alpine3.21`
+* chart version bumped
+
 ## v0.6.1 - 2024/11/28
 * `app` selector label returned, because deployment selector is immutable
 * chart version bumped
