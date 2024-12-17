@@ -40,14 +40,25 @@ transform/kvm_nova_agent:
       statements:
         - merge_maps(attributes, ExtractGrokPatterns(body, "%{TIMESTAMP_ISO8601:logtime}%{SPACE}%{NUMBER:process.id}%{SPACE}%{WORD:log_level}%{SPACE}%{NOTSPACE:process.name}%{SPACE}\\[%{REQUEST_ID:request.id}%{SPACE}%{REQUEST_ID:request.global_id}", true, ["REQUEST_ID=([A-Za-z0-9-]+)"]), "upsert")
         - set(attributes["config.parsed"], "kvm_nova_agent") where attributes["log_level"] != nil
+
+transform/kvm_logs:
+  error_mode: ignore
+  log_statements:
+    - context: log
+      conditions:
+        - resource.attributes["log.type"] == "files"
+      statements:
+        - merge_maps(attributes, ExtractGrokPatterns(body, "%{TIMESTAMP_ISO8601:timestamp}%{SPACE}%{GREEDYDATA:log}",true), "upsert")
+        - set(attributes["config.parsed"], "files") where attributes["log_level"]
+
 {{- end }}
 {{- define "kvm.pipeline" }}
 logs/kvm_containerd:
   receivers: [filelog/containerd]
-  processors: [k8sattributes,attributes/cluster,transform/ingress,transform/kvm_openvswitch,transform/kvm_nova_agent,batch]
-  exporters: [opensearch/logs]
+  processors: [k8sattributes,attributes/cluster,transform/ingress,transform/kvm_openvswitch,transform/kvm_nova_agent]
+  exporters: [forward]
 logs/kvm_filelog:
   receivers: [filelog/kvm_logs]
-  processors: [k8sattributes,attributes/cluster,transform/files,batch]
-  exporters: [opensearch/logs]
+  processors: [k8sattributes,attributes/cluster,transform/kvm_logs]
+  exporters: [forward]
 {{- end }}

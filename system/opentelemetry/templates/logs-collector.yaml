@@ -283,19 +283,14 @@ spec:
       prometheus:
         endpoint: "0.0.0.0:9999"
 
+    connectors:
+      forward: {} 
+
     extensions:
       basicauth:
         client_auth:
           username: ${username}
           password: ${password}
-
-    connectors:
-      routing:
-        default_pipelines: [logs/containerd]
-        error_mode: ignore
-        table:
-          - statement: route() where attributes["container.runtime"] =="containerd"
-            pipelines: [logs/containerd]
 
     service:
       extensions:
@@ -307,10 +302,14 @@ spec:
           level: detailed
 {{- end }}
       pipelines:
+        logs/forward:
+          receivers: [forward]
+          processors: [batch]
+          exporters: [opensearch/logs]
         logs/containerd:
           receivers: [filelog/containerd]
-          processors: [k8sattributes,attributes/cluster,transform/ingress,batch]
-          exporters: [opensearch/logs]
+          processors: [k8sattributes,attributes/cluster,transform/ingress]
+          exporters: [forward]
 {{- if .Values.logsCollector.kvmConfig.enabled }}
     {{- include "kvm.pipeline" . | nindent 8 -}}
 {{- end }}
@@ -319,12 +318,12 @@ spec:
 {{- end }}
         logs/k8sevents:
           receivers: [k8s_events]
-          processors: [attributes/k8sevents,batch]
-          exporters: [opensearch/logs]
+          processors: [attributes/k8sevents]
+          exporters: [forward]
         logs/journald:
           receivers: [journald]
-          processors: [attributes/cluster,transform/journal,batch]
-          exporters: [opensearch/logs]
+          processors: [attributes/cluster,transform/journal]
+          exporters: [forward]
 {{- if .Values.podMonitor.enabled }}
         metrics/prometheus:
           receivers: [prometheus/internal]

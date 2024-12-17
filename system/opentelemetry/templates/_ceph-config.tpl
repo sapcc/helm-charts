@@ -83,12 +83,12 @@ transform/ceph_osd:
         - merge_maps(attributes, ExtractGrokPatterns(body, "%{GREEDYDATA:osd.wall.type}\\:%{SPACE}%{NUMBER:osd.wall.writes:float}(K|M|G)?%{SPACE}writes,%{SPACE}%{NUMBER:osd.wall.syncs:float}(K|M|G)?%{SPACE}syncs,%{SPACE}%{NUMBER:osd.wall.writes_per_sync:float}%{SPACE}writes per sync, written\\:%{SPACE}%{NUMBER:osd.wall.written_gb:float}%{SPACE}(GB|MB|TB)?,%{SPACE}%{NUMBER:osd.written_mb_sec:float}", true),"upsert")
         - merge_maps(attributes, ExtractGrokPatterns(body, "%{WORD:log_level}%{SPACE}%{NOTSPACE}%{SPACE}%{SPACE}%{NOTSPACE:process.name}", true),"upsert")
         - set(attributes["config.parsed"], "ceph_osd") where attributes["osd.stats.level"] != nil
-        - set(attributes["config.parsed"], "ceph_osd") where attributes["log_level"] != nil
+        - set(attributes["config.parsed"], "ceph_osd") where attributes["osd.wall.type"] != nil
 {{- end }}
 
 {{- define "ceph.pipeline" }}
 logs/ceph:
   receivers: [filelog/containerd]
-  processors: [k8sattributes,attributes/cluster,transform/ingress,transform/ceph_rgw,transform/ceph_osd,batch]
-  exporters: [opensearch/logs]
+  processors: [k8sattributes,attributes/cluster,transform/ingress,transform/ceph_rgw,transform/ceph_osd]
+  exporters: [forward]
 {{- end }}
