@@ -47,12 +47,14 @@ spec:
         securityContext:
          privileged: true
         ports:
-          - name: dns-tcp
-            containerPort: 53
+{{- range $.Values.unbound.externalPorts | required "externalPorts missing" }}
+          - name: dns-tcp-{{.}}
+            containerPort: {{.}}
             protocol: TCP
-          - name: dns-udp
-            containerPort: 53
+          - name: dns-udp-{{.}}
+            containerPort: {{.}}
             protocol: UDP
+{{- end }}
         volumeMounts:
           - name: unbound-conf
             mountPath: /etc/unbound

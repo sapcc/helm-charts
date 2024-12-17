@@ -18,8 +18,12 @@ data:
 
         module-config: {{ $unbound_modules | quote }}
 
-        interface: {{.Values.unbound.interface}}
-        port: 53
+        # let unbound listen on all the ports we've defined as external
+        # so that we can map them one-to-one
+{{- range $.Values.unbound.externalPorts | required ".Values.unbound.externalPorts missing" }}
+        interface: {{$.Values.unbound.interface}}@{{.}}
+{{- end }}
+
         do-ip4: yes
         do-ip6: no
         do-udp: yes
