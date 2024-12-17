@@ -4,7 +4,7 @@ set -o errexit
 set -o xtrace
 
 LIB_PATH='/usr/lib/pxc'
-. ${LIB_PATH}/vault.sh
+. ${LIB_PATH}/backup.sh
 
 GARBD_OPTS=""
 SOCAT_OPTS="TCP-LISTEN:4444,reuseaddr,retry=30"
@@ -38,7 +38,8 @@ function request_streaming() {
 
     if [ -z "$NODE_NAME" ]; then
         peer-list -on-start=/usr/bin/get-pxc-state -service=$PXC_SERVICE
-        echo "[ERROR] Cannot find node for backup"
+        log 'ERROR' 'Cannot find node for backup'
+        log 'ERROR' 'Backup was finished unsuccessfull'
         exit 1
     fi
 
@@ -118,15 +119,6 @@ function remove_old_backups() {
     find /backup/* -mtime +"$PXC_DAYS_RETENTION" -exec rm -rf {} \;
 }
 
-is_object_exist() {
-    local bucket="$1"
-    local object="$2"
-
-    if [[ -n "$(mc -C /tmp/mc --json ls  "dest/$bucket/$object" | jq '.status')" ]]; then
-        return 1
-    fi
-}
-
 function backup_s3() {
     S3_BUCKET_PATH=${S3_BUCKET_PATH:-$PXC_SERVICE-$(date +%F-%H-%M)-xtrabackup.stream}
 
@@ -148,7 +140,7 @@ function backup_s3() {
     xbstream -C /tmp -c ${SST_INFO_NAME} \
         | xbcloud put --storage=s3 --parallel=10 --md5 --s3-bucket="$S3_BUCKET" "$S3_BUCKET_PATH.$SST_INFO_NAME" 2>&1 |
         (grep -v "error: http request failed: Couldn't resolve host name" || exit 1)
-        
+
     socat -u "$SOCAT_OPTS" stdio |
         xbcloud put --storage=s3 --parallel=10 --md5 --s3-bucket="$S3_BUCKET" "$S3_BUCKET_PATH" 2>&1 |
         (grep -v "error: http request failed: Couldn't resolve host name" || exit 1)
