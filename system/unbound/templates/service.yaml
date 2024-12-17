@@ -15,13 +15,15 @@ spec:
     app: {{ .Values.unbound.name }}
     type: dns
   ports: 
-    - name: dns-tcp
+{{- range $.Values.unbound.externalPorts | required ".Values.unbound.externalPorts missing" }}
+    - name: dns-tcp-{{.}}
       protocol: TCP
-      port: 53
+      port: {{.}}
       targetPort: dns-tcp
-    - name: dns-udp
+    - name: dns-udp-{{.}}
       protocol: UDP
-      port: 53
+      port: {{.}}
       targetPort: dns-udp
+{{- end }}
   externalIPs:
     {{- required "A valid .Values.unbound.externalIPs required!" .Values.unbound.externalIPs | toYaml | nindent 2 }}
