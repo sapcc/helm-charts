@@ -49,7 +49,7 @@ transform/kvm_logs:
         - resource.attributes["log.type"] == "files"
       statements:
         - merge_maps(attributes, ExtractGrokPatterns(body, "%{TIMESTAMP_ISO8601:timestamp}%{SPACE}%{GREEDYDATA:log}",true), "upsert")
-        - set(attributes["config.parsed"], "files") where attributes["log_level"]
+        - set(attributes["config.parsed"], "files") where attributes["log_level"] != nil
 
 {{- end }}
 {{- define "kvm.pipeline" }}
