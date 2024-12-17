@@ -6,7 +6,7 @@ set -o xtrace
 LIB_PATH='/usr/lib/pxc'
 . ${LIB_PATH}/vault.sh
 
-GARBD_OPTS=""
+GARBD_OPTS="gmcast.peer_timeout=PT15S"
 SOCAT_OPTS="TCP-LISTEN:4444,reuseaddr,retry=30"
 SST_INFO_NAME=sst_info
 
@@ -148,7 +148,7 @@ function backup_s3() {
     xbstream -C /tmp -c ${SST_INFO_NAME} \
         | xbcloud put --storage=s3 --parallel=10 --md5 --s3-bucket="$S3_BUCKET" "$S3_BUCKET_PATH.$SST_INFO_NAME" 2>&1 |
         (grep -v "error: http request failed: Couldn't resolve host name" || exit 1)
-        
+
     socat -u "$SOCAT_OPTS" stdio |
         xbcloud put --storage=s3 --parallel=10 --md5 --s3-bucket="$S3_BUCKET" "$S3_BUCKET_PATH" 2>&1 |
         (grep -v "error: http request failed: Couldn't resolve host name" || exit 1)
