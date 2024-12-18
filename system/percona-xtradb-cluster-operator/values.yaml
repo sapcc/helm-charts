@@ -93,7 +93,7 @@ kube-state-metrics:
     registry: keppel.global.cloud.sap/ccloud-registry-k8s-io-mirror
     repository: kube-state-metrics/kube-state-metrics
   rbac:
-    create: true  # NOTE: need to create a custom role instead with access only to custom resources
+    create: true  # only a limited role is created, because all collectors are disabled, except custom-resource-state
     extraRules:
       - apiGroups: ["pxc.percona.com"]
         resources:
@@ -114,6 +114,7 @@ kube-state-metrics:
 
   selfMonitor:
     enabled: true
+  prometheusScrape: false  # don't set prometheus.io/scrape annotation on kube-state-metrics service, because we use ServiceMonitor
 
   collectors: null
 
