@@ -324,7 +324,7 @@ spec:
                               alive or ready to receive traffic.
                             properties:
                               exec:
-                                description: Exec specifies the action to take.
+                                description: Exec specifies a command to execute in the container.
                                 properties:
                                   command:
                                     description: |-
@@ -345,7 +345,7 @@ spec:
                                 format: int32
                                 type: integer
                               grpc:
-                                description: GRPC specifies an action involving a GRPC port.
+                                description: GRPC specifies a GRPC HealthCheckRequest.
                                 properties:
                                   port:
                                     description: Port number of the gRPC service. Number must be in the range 1 to 65535.
@@ -363,7 +363,7 @@ spec:
                                   - port
                                 type: object
                               httpGet:
-                                description: HTTPGet specifies the http request to perform.
+                                description: HTTPGet specifies an HTTP GET request to perform.
                                 properties:
                                   host:
                                     description: |-
@@ -428,7 +428,7 @@ spec:
                                 format: int32
                                 type: integer
                               tcpSocket:
-                                description: TCPSocket specifies an action involving a TCP port.
+                                description: TCPSocket specifies a connection to a TCP port.
                                 properties:
                                   host:
                                     description: 'Optional: Host name to connect to, defaults to the pod IP.'
@@ -472,7 +472,7 @@ spec:
                               alive or ready to receive traffic.
                             properties:
                               exec:
-                                description: Exec specifies the action to take.
+                                description: Exec specifies a command to execute in the container.
                                 properties:
                                   command:
                                     description: |-
@@ -493,7 +493,7 @@ spec:
                                 format: int32
                                 type: integer
                               grpc:
-                                description: GRPC specifies an action involving a GRPC port.
+                                description: GRPC specifies a GRPC HealthCheckRequest.
                                 properties:
                                   port:
                                     description: Port number of the gRPC service. Number must be in the range 1 to 65535.
@@ -511,7 +511,7 @@ spec:
                                   - port
                                 type: object
                               httpGet:
-                                description: HTTPGet specifies the http request to perform.
+                                description: HTTPGet specifies an HTTP GET request to perform.
                                 properties:
                                   host:
                                     description: |-
@@ -576,7 +576,7 @@ spec:
                                 format: int32
                                 type: integer
                               tcpSocket:
-                                description: TCPSocket specifies an action involving a TCP port.
+                                description: TCPSocket specifies a connection to a TCP port.
                                 properties:
                                   host:
                                     description: 'Optional: Host name to connect to, defaults to the pod IP.'
@@ -1409,6 +1409,20 @@ spec:
                         Enabled determines whether to create the prometheus rules for the ceph cluster. If true, the prometheus
                         types must exist or the creation will fail. Default is false.
                       type: boolean
+                    exporter:
+                      description: Ceph exporter configuration
+                      properties:
+                        perfCountersPrioLimit:
+                          default: 5
+                          description: Only performance counters greater than or equal to this option are fetched
+                          format: int64
+                          type: integer
+                        statsPeriodSeconds:
+                          default: 5
+                          description: Time to wait before sending requests again to exporter server (seconds)
+                          format: int64
+                          type: integer
+                      type: object
                     externalMgrEndpoints:
                       description: ExternalMgrEndpoints points to an existing Ceph prometheus exporter endpoint
                       items:
@@ -1618,7 +1632,7 @@ spec:
                         other network providers.
 
                         Valid keys are "public" and "cluster". Refer to Ceph networking documentation for more:
-                        https://docs.ceph.com/en/reef/rados/configuration/network-config-ref/
+                        https://docs.ceph.com/en/latest/rados/configuration/network-config-ref/
 
                         Refer to Multus network annotation documentation for help selecting values:
                         https://github.com/k8snetworkplumbingwg/multus-cni/blob/master/docs/how-to-use.md#run-pod-with-network-annotation
@@ -2331,6 +2345,16 @@ spec:
                       minimum: 0
                       nullable: true
                       type: number
+                    migration:
+                      description: Migration handles the OSD migration
+                      properties:
+                        confirmation:
+                          description: |-
+                            A user confirmation to migrate the OSDs. It destroys each OSD one at a time, cleans up the backing disk
+                            and prepares OSD with same ID on that disk
+                          pattern: ^$|^yes-really-migrate-osds$
+                          type: string
+                      type: object
                     nearFullRatio:
                       description: NearFullRatio is the ratio at which the cluster is considered nearly full and will raise a ceph health warning. Default is 0.85.
                       maximum: 1
@@ -2666,6 +2690,9 @@ spec:
                       nullable: true
                       type: array
                     onlyApplyOSDPlacement:
+                      type: boolean
+                    scheduleAlways:
+                      description: Whether to always schedule OSDs on a node even if the node is not currently scheduleable or ready
                       type: boolean
                     storageClassDeviceSets:
                       items:
@@ -4421,6 +4448,12 @@ spec:
                     osd:
                       description: OSDStatus represents OSD status of the ceph Cluster
                       properties:
+                        migrationStatus:
+                          description: MigrationStatus status represents the current status of any OSD migration.
+                          properties:
+                            pending:
+                              type: integer
+                          type: object
                         storeType:
                           additionalProperties:
                             type: integer
