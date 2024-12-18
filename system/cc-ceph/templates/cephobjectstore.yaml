@@ -4,8 +4,13 @@ metadata:
   name: {{ .Values.objectstore.name }}
   namespace: {{ .Release.Namespace }}
 spec:
+{{- if .Values.objectstore.multiInstance.enabled }}
+  zone:
+    name: {{ .Values.objectstore.name }} 
+{{- else }}
   metadataPool: {{ toYaml .Values.objectstore.metadataPool | nindent 4 }}
   dataPool: {{ toYaml .Values.objectstore.dataPool | nindent 4 }}
+{{- end }}
   hosting:
 {{- if gt (len .Values.objectstore.gateway.dnsNames) 0 }}
     advertiseEndpoint:
@@ -60,6 +65,9 @@ spec:
       tokenCacheSize: {{ .token_cache_size }}
       url: {{ .url }}
   protocols:
+{{- if $.Values.objectstore.enabledAPIs }}
+    enableAPIs: {{ toYaml $.Values.objectstore.enabledAPIs | nindent 6 }}
+{{- end }}
     s3:
       authUseKeystone: true
     swift:
