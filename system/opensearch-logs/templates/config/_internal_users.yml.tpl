@@ -38,6 +38,12 @@ otel:
   backend_roles:
   - "otel"
 
+audit:
+  hash: "{{ .Values.users.audit.nohash }}"
+  reserved: true
+  backend_roles:
+  - "audit"
+
 otellogs:
   hash: "{{ .Values.users.otellogs.nohash }}"
   reserved: true

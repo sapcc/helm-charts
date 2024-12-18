@@ -32,6 +32,11 @@ greenhouse:
   users:
   - "greenhouse"
 
+audit:
+  reserved: false
+  users:
+  - "audit"
+
 jump:
   reserved: false
   users:
