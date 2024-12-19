@@ -106,12 +106,16 @@ spec:
 {{ toYaml .Values.resources | indent 10 }}
         ports:
           - name: public
-            containerPort: {{ default "5672" .Values.ports.public }}
+            containerPort: {{ .Values.ports.public }}
           - name: management
-            containerPort: {{ default "15672" .Values.ports.management }}
+            containerPort: {{ .Values.ports.management }}
+{{- if .Values.enableSsl }}
+          - name: amqps
+            containerPort: {{ .Values.ports.amqps }}
+{{- end }}
 {{- if .Values.metrics.enabled }}
           - name: metrics
-            containerPort: {{ default "15692" .Values.metrics.port }}
+            containerPort: {{ .Values.metrics.port }}
 {{- end }}
         volumeMounts:
           - mountPath: /var/lib/rabbitmq
@@ -124,6 +128,13 @@ spec:
           - mountPath: /etc/rabbitmq/conf.d/20-custom.conf
             name: rabbitmq-custom-config
             subPath: 20-custom.conf
+        {{- end }}
+        {{- if .Values.enableSsl }}
+          - mountPath: /etc/rabbitmq/conf.d/30-ssl.conf
+            name: rabbitmq-custom-config
+            subPath: 30-ssl.conf
+          - mountPath: /etc/rabbitmq/ssl
+            name: ssl
         {{- end }}
       priorityClassName: {{ .Values.priority_class | default "critical-infrastructure" | quote }}
       volumes:
@@ -145,9 +156,14 @@ spec:
             sources:
             - secret:
                 name: {{ template "fullname" . }}-users
-      {{- if .Values.customConfig }}
+      {{- if or .Values.customConfig .Values.enableSsl }}
         - name: rabbitmq-custom-config
           configMap:
             name: {{ template "fullname" . }}-custom-conf
+      {{- end }}
+      {{- if .Values.enableSsl }}
+        - name: ssl
+          secret:
+            secretName: tls-{{ template "fullname" . }}
       {{- end }}
 {{- end }}
