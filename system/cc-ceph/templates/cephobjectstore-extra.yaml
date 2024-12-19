@@ -20,8 +20,20 @@ metadata:
   namespace: {{ .Release.Namespace }}
 spec:
   zoneGroup: {{ .Values.objectstore.name }}
+{{- if and .Values.rgwTargetPlacements.useRookCRD .Values.rgwTargetPlacements.placements }}
+  sharedPools:
+    poolPlacements:
+{{- range $target := .Values.rgwTargetPlacements.placements }}
+      - name: {{ $target.name }} 
+        metadataPoolName: {{ $target.name }}.rgw.buckets.index
+        dataPoolName: {{ $target.name }}.rgw.buckets.data
+        dataNonECPoolName: {{ $target.name }}.rgw.buckets.non-ec
+        default: {{ $target.default | default false }}
+{{- end }}
+{{- else }}
   metadataPool: {{ toYaml .Values.objectstore.metadataPool | nindent 4 }}
   dataPool: {{ toYaml .Values.objectstore.dataPool | nindent 4 }}
+{{- end }}
 {{- range $instance := .Values.objectstore.multiInstance.extraInstances }}
 ---
 apiVersion: ceph.rook.io/v1
