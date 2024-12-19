@@ -1,0 +1,47 @@
+groups:
+  - name: manila-limes
+    rules:
+      # building a heuristic to tell how much space is consumed by backend (non-manila) snapmirror replication.
+      # we look at the source (volume_type is not dp)
+      # we only look at volumes that have dedicated snapshot policy
+      # we require share type and project id to be able to associate to valid billing targets.
+      # we multiply the source total bytes with the count of target snapmirrors.
+      # we only look at vault mirrors with EC2DR (different region) or EC2BKP (same region) destination.
+      # each volume and destination volume pair is unique. We apply 'max by()' to get rid of double scrapes, e.g. due to prometheus restarts.
+      # we use last_over_time() to not report 0 values if metrics are missing for a short time (15 min)
+      # the 'healthy' label from netapp_snapmirror_labels is made accessible, will be used for filtering in limes
+      - record: netapp_snapmirror_total_bytes
+        expr: |
+            last_over_time(
+                netapp_volume_total_bytes{
+                    project_id!="",
+                    share_type!="",
+                    volume_type!="dp",
+                    volume_state="online",
+                    snapshot_policy="EC2_Backups"}[15m]
+            ) * on(volume) group_left(healthy) count by (volume, healthy) (
+                max by (volume, healthy, destination_volume) (label_replace(
+                    last_over_time(
+                        netapp_snapmirror_labels{
+                            policy_type="vault",
+                            destination_volume=~".*_EC2DR|.*_EC2BKP"}[15m]
+                    ),
+                    "volume", "$1", "source_volume", "(.*)")))
+
+      - record: netapp_snapmirror_used_bytes
+        expr: |
+            last_over_time(
+                netapp_volume_used_bytes{
+                    project_id!="",
+                    share_type!="",
+                    volume_type!="dp",
+                    volume_state="online",
+                    snapshot_policy="EC2_Backups"}[15m]
+            ) * on(volume) group_left(healthy) count by (volume, healthy) (
+                max by (volume, healthy, destination_volume) (label_replace(
+                    last_over_time(
+                        netapp_snapmirror_labels{
+                            policy_type="vault",
+                            destination_volume=~".*_EC2DR|.*_EC2BKP"}[15m]
+                    ),
+                    "volume", "$1", "source_volume", "(.*)")))
