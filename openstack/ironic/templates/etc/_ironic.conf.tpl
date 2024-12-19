@@ -132,3 +132,15 @@ metrics_enabled = {{ if .Values.audit.metrics_enabled -}}True{{- else -}}False{{
 {{- include "osprofiler" . }}
 
 {{- include "ini_sections.cache" . }}
+
+
+{{- if or .Values.conductor.defaults.conductor.permitted_image_formats .Values.conductor.defaults.conductor.disable_deep_image_inspection }}
+
+[conductor]
+  {{- if .Values.conductor.defaults.conductor.disable_deep_image_inspection }}
+disable_deep_image_inspection = {{ .Values.conductor.defaults.conductor.disable_deep_image_inspection }}
+  {{- end }}
+  {{- if .Values.conductor.defaults.conductor.permitted_image_formats }}
+permitted_image_formats = {{ .Values.conductor.defaults.conductor.permitted_image_formats }}
+  {{- end }}
+{{- end }}
