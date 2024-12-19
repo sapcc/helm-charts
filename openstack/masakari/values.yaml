@@ -1,0 +1,198 @@
+global:
+  dbUser: masakari
+  masakari_service_user: masakari
+  linkerd_requested: false
+  livenessProbe:
+    enabled: false
+  readinessProbe:
+    enabled: false
+  osprofiler:
+    enabled: false
+    hmac_keys: null
+
+#imageVersion: 'bobcat-latest'
+
+recovery_flows:
+  host_auto:
+    pre:
+      - "'slack_host'"
+      - "'host_service_down'"
+      - "'host_down'"
+      - "'disable_compute_service_task'"
+    main:
+      - "'prepare_HA_enabled_instances_task'"
+      - "'evacuate_instances_task'"
+    post: []
+  host_reserved:
+    pre:
+      - "'slack_host'"
+      - "'host_service_down'"
+      - "'host_down'"
+      - "'disable_compute_service_task'"
+    main:
+      - "'prepare_HA_enabled_instances_task'"
+      - "'evacuate_instances_task'"
+    post: []
+  instance:
+    pre:
+#      - "'slack_instance'"
+      - "'stop_instance_task'"
+    main:
+      - "'start_instance_task'"
+    post:
+      - "'confirm_instance_active_task'"
+
+livenessProbe:
+  enabled: false
+readinessProbe:
+  enabled: false
+
+use_tls_acme: true
+
+#proxysql:
+#  mode: ""
+
+masakariApiPortAdmin: '8778'
+masakariApiPortInternal: '8778'
+masakariApiPortPublic: '443'
+
+monitoringPort: 8080
+monitoringExporterPort: 8181
+
+defaults:
+  default:
+    graceful_shutdown_timeout: 60
+
+pod:
+  replicas:
+    masakari: 1
+  lifecycle:
+    upgrades:
+      deployments:
+        revision_history: 5
+        podRemasakariStrategy: RollingUpdate
+        rollingUpdate:
+          maxUnavailable: 0
+          maxSurge: 1
+  resources:
+    masakari:
+      requests:
+        cpu: "100m"
+        memory: "100Mi"
+  livenessProbe:
+    enabled: false
+  readinessProbe:
+    enabled: false
+
+uwsgi:
+  processes: 10
+  wsgi_file: "/var/lib/openstack/bin/masakari-wsgi"
+
+max_pool_size: 10
+max_overflow: 5
+
+sqlite:
+  connection: sqlite:///database/masakari.sqlite
+
+mariadb:
+  enabled: true
+  name: masakari
+  alerts:
+    support_group: "compute-storage-api"
+  ccroot_user:
+    enabled: true
+  databases:
+  - masakari
+  users:
+    masakari:
+      name: masakari
+      grants:
+      - "ALL PRIVILEGES on masakari.*"
+  initdb_secret: true
+  persistence_claim:
+    name: db-masakari-pvclaim
+    enabled: true
+    autoprovision: true
+  livenessProbe:
+    enabled: false
+  readinessProbe:
+    enabled: false
+  resources:
+    requests:
+      cpu: "600m"
+      memory: "1Gi"
+
+memcached:
+  alerts:
+    support_group: "compute-storage-api"
+  resources:
+    requests:
+      cpu: "300m"
+
+logging:
+  formatters:
+    context:
+      class: oslo_log.formatters.ContextFormatter
+    default:
+      format: "%(message)s"
+  handlers:
+    stdout:
+      class: StreamHandler
+      args: "(sys.stdout,)"
+      formatter: context
+    "null":
+      class: logging.NullHandler
+      args: "()"
+      formatter: default
+    sentry:
+      class: raven.handlers.logging.SentryHandler
+      level: ERROR
+      args: "()"
+  loggers:
+    root:
+      handlers: stdout, sentry
+      level: WARNING
+    migrate:
+      handlers: stdout, sentry
+      level: INFO
+    masakari:
+      handlers: stdout, sentry
+      level: DEBUG
+
+alerts:
+  enabled: true
+  prometheus: openstack
+
+sentry:
+  enabled: true
+
+utils:
+  trust_bundle:
+    enabled: true
+
+owner-info:
+  support-group: compute-storage-api
+  service: masakari
+  maintainers:
+    - Fabian Wiesel
+    - Christian Lehmann
+    - Felix Goldmann
+  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/openstack/masakari
+
+rabbitmq:
+  name: masakari
+  alerts:
+    support_group: compute-storage-api
+  resources:
+    requests:
+      cpu: "500m"
+
+engine:
+  env:
+    - name: SLACK_CHANNEL
+      value: "#i748122-test"
+
+securityContext:
+  securityContext:
+    runAsUser: 42485
+    runAsGroup: 42485

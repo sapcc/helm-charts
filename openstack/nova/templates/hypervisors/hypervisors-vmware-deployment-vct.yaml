@@ -93,9 +93,6 @@ template: |
           volumeMounts:
           - mountPath: /etc/nova
             name: nova-etc
-          - mountPath: /etc/sudoers
-            name: sudoers
-            subPath: sudoers
           {{- include "utils.trust_bundle.volume_mount" . | indent 10 }}
         - name: statsd
           image: {{ required ".Values.global.dockerHubMirror is missing" .Values.global.dockerHubMirror}}/prom/statsd-exporter:v0.8.1
@@ -125,10 +122,6 @@ template: |
                   path: policy.yaml
                 - key: logging.ini
                   path: logging.ini
-                - key: rootwrap.conf
-                  path: rootwrap.conf
-                - key: compute.filters
-                  path: rootwrap.d/compute.filters
             - configMap:
                 name: nova-compute-vmware-{= name =}
                 items:
