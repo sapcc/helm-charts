@@ -1,3 +1,4 @@
+---
 # Default values for percona-xtradb-cluster.
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
@@ -72,8 +73,8 @@ pause: false
 
 initContainer:
   image:
-    name: percona/percona-xtradb-cluster-operator
-    tag: 1.15.1
+    name: percona-xtradb-cluster-operator
+    tag: 1.16.0
     override: null
   resources:
     requests:
@@ -87,7 +88,7 @@ pxc:
   size: 3
   image:
     name: percona/percona-xtradb-cluster
-    tag: 8.0.36-28.1
+    tag: 8.0.39-30.1
     override: null
   imagePullPolicy: IfNotPresent
   annotations: {}
@@ -131,17 +132,17 @@ pxc:
       wsrep_retry_autocommit: 3
       pxc_strict_mode: MASTER  # default is ENFORCING
       binlog_format: ROW
-      binlog_expire_logs_seconds: 345600 # default 30 days -> 4 days
-      sync_binlog: 1 # default value for PXC
+      binlog_expire_logs_seconds: 345600  # default 30 days -> 4 days
+      sync_binlog: 1  # default value for PXC
       net_read_timeout: 30
       net_write_timeout: 60
       connect_timeout: 30
       wait_timeout: 3800
       interactive_timeout: 1800
-      innodb_lock_wait_timeout: 30 # default 50 seconds -> 30 seconds
+      innodb_lock_wait_timeout: 30  # default 50 seconds -> 30 seconds
       max_connections: 1024
-      max_connect_errors: "4294967295" # to avoid failed connections because of loadbalancer health checks
-      innodb_flush_log_at_trx_commit: 1 # for better performance set (2): write at commit, flush once per second
+      max_connect_errors: "4294967295"  # to avoid failed connections because of loadbalancer health checks
+      innodb_flush_log_at_trx_commit: 1  # for better performance set (2): write at commit, flush once per second
       innodb_flush_method: O_DIRECT
       innodb_file_per_table: 1
       innodb_autoinc_lock_mode: 2
@@ -228,7 +229,7 @@ haproxy:
   size: 2
   image:
     name: percona/haproxy
-    tag: 2.8.5
+    tag: 2.8.11
     override: null
   imagePullPolicy: Always
   annotations: {}
@@ -325,7 +326,7 @@ haproxy:
 initdb:
   image:
     name: percona/percona-xtradb-cluster-operator
-    tag: 1.15.1-pxc8.0-backup-pxb8.0.35
+    tag: 1.16.0-pxc8.0-backup-pxb8.0.35
 
 backup:
   enabled: false
@@ -333,10 +334,11 @@ backup:
   labels: {}
   image:
     name: percona/percona-xtradb-cluster-operator
-    tag: 1.15.1-pxc8.0-backup-pxb8.0.35
+    tag: 1.16.0-pxc8.0-backup-pxb8.0.35
     override: null
   imagePullPolicy: Always
-  backoffLimit: 1
+  backoffLimit: 2
+  activeDeadlineSeconds: 3600
   priority_class: "critical-infrastructure"
   resources:
     requests: {}
