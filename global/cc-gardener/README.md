@@ -2,8 +2,8 @@
 
 - setup operator CRDs
 ```sh
-k apply -f https://raw.githubusercontent.com/gardener/gardener/refs/tags/v1.109.0/charts/gardener/operator/templates/crd-extensions.yaml
-k apply -f https://raw.githubusercontent.com/gardener/gardener/refs/tags/v1.109.0/charts/gardener/operator/templates/crd-gardens.yaml
+k apply -f https://raw.githubusercontent.com/gardener/gardener/refs/tags/v1.110.1/charts/gardener/operator/templates/crd-extensions.yaml
+k apply -f https://raw.githubusercontent.com/gardener/gardener/refs/tags/v1.110.1/charts/gardener/operator/templates/crd-gardens.yaml
 k label crd gardens.operator.gardener.cloud extensions.operator.gardener.cloud app.kubernetes.io/managed-by=Helm
 k annotate crd gardens.operator.gardener.cloud extensions.operator.gardener.cloud meta.helm.sh/release-name=cc-gardener meta.helm.sh/release-namespace=garden
 ```
