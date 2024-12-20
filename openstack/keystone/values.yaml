@@ -296,10 +296,36 @@ mariadb:
     # Annotate the Deployment, StatefulSet or DaemonSet with vpa-butler.cloud.sap/main-container=$MAIN_CONTAINER. That will distribute 75% of the maximum available capacity to the main container and the rest evenly across all others
     set_main_container: true
 
-# MariaDB Galera cluster as database backend
-# mariadb.enabled has to be false if Galera is enabled
-mariadb_galera:
+pxc_db:
   enabled: false
+  name: keystone
+  initdb_job: true
+  alerts:
+    support_group: identity
+  databases:
+    - keystone
+  users:
+    keystone:
+      name: keystone
+      grants:
+      - "ALL PRIVILEGES on keystone.*"
+  pxc:
+    resources:
+      requests:
+        memory: 1Gi
+    persistence:
+      size: 10Gi
+  backup:
+    enabled: false
+    s3:
+      secrets:
+        aws_access_key_id: null
+        aws_secret_access_key: null
+      config:
+        region:  DEFINED-IN-SECRETS
+        endpointUrl: DEFINED-IN-SECRETS
+    pitr:
+      enabled: false
 
 mysql_metrics:
   enabled: true
