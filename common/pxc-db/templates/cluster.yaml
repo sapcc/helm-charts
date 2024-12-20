@@ -30,7 +30,7 @@ spec:
     {{- if $.Values.initContainer.image.override }}
     image: {{ $.Values.initContainer.image.override }}
     {{- else }}
-    image: {{ required ".Values.global.dockerHubMirrorAlternateRegion is missing" .Values.global.dockerHubMirrorAlternateRegion }}/{{ $.Values.initContainer.image.name }}:{{ $.Values.initContainer.image.tag }}
+    image: {{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{ $.Values.initContainer.image.name }}:{{ $.Values.initContainer.image.tag }}
     {{- end }}
     {{- if .Values.initContainer.resources }}
     resources:
@@ -250,6 +250,9 @@ spec:
     {{- end }}
     {{- if $backup.backoffLimit }}
     backoffLimit: {{ $backup.backoffLimit }}
+    {{- end }}
+    {{- if $backup.activeDeadlineSeconds }}
+    activeDeadlineSeconds: {{ $backup.activeDeadlineSeconds }}
     {{- end }}
     pitr:
     {{- if not $backup.pitr.enabled }}
