@@ -73,11 +73,7 @@ spec:
   {{- end }}
 {{- end }}
         - name: DEPENDENCY_SERVICE
-{{- if .Values.percona_cluster.enabled }}
-          value: "{{ .Release.Name }}-percona-pxc,{{ .Release.Name }}-memcached"
-{{- else }}
-          value: "{{ .Release.Name }}-mariadb,{{ .Release.Name }}-memcached"
-{{- end }}
+          value: {{ include "keystone.service_dependencies" . | quote }}
         - name: COMMAND
           value: "true"
       containers:
@@ -123,11 +119,7 @@ spec:
               command:
               - bash
               - -c
-{{- if .Values.global_setup }}
-              - "set -e; curl --fail 127.0.0.1:5000/healthcheck; nc -zvw3 keystone-global-percona-pxc 3306"
-{{- else }}
-              - "set -e; curl --fail 127.0.0.1:5000/healthcheck; nc -zvw3 keystone-mariadb 3306"
-{{- end }}
+              - "set -e; curl --fail 127.0.0.1:5000/healthcheck; nc -zvw3 {{ include "keystone.db_service" . }} 3306"
             initialDelaySeconds: 5
             periodSeconds: 10
             timeoutSeconds: 20
