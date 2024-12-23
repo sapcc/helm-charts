@@ -25,5 +25,35 @@
       playbook: ''
       support_group: {{ required ".Values.alerts.support_group missing" .Values.alerts.support_group }}
     annotations:
-      description: "{{ include "pxc-db.fullname" . }} cluster has no new backups completed earlier than 36 hours ago."
-      summary: "{{ include "pxc-db.fullname" . }} cluster has no new backups completed earlier than 36 hours ago."
+      description: "{{ include "pxc-db.fullname" . }} cluster has no new full backups completed earlier than 36 hours ago."
+      summary: "{{ include "pxc-db.fullname" . }} cluster has no new full backups completed earlier than 36 hours ago."
+
+{{- if .Values.backup.pitr.enabled }}
+  - alert: {{ include "pxc-db.alerts.service" . | camelcase }}GaleraClusterBinlogProcessingTooOld
+    expr: (time() - pxc_binlog_collector_last_processing_timestamp > 1800)
+    for: 30m
+    labels:
+      context: database
+      service: {{ include "pxc-db.alerts.service" . }}
+      severity: info
+      tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
+      playbook: ''
+      support_group: {{ required ".Values.alerts.support_group missing" .Values.alerts.support_group }}
+    annotations:
+      description: "More than 30 minutes passed since the last cluster {{ include "pxc-db.fullname" . }} binlog processing."
+      summary: "{{ include "pxc-db.fullname" . }} cluster binlog processing is too old."
+
+  - alert: {{ include "pxc-db.alerts.service" . | camelcase }}GaleraClusterBinlogUploadTooOld
+    expr: (time() - pxc_binlog_collector_last_upload_timestamp > 1800)
+    for: 30m
+    labels:
+      context: database
+      service: {{ include "pxc-db.alerts.service" . }}
+      severity: info
+      tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
+      playbook: ''
+      support_group: {{ required ".Values.alerts.support_group missing" .Values.alerts.support_group }}
+    annotations:
+      description: "More than 30 minutes passed since the last cluster {{ include "pxc-db.fullname" . }} binlog upload."
+      summary: "{{ include "pxc-db.fullname" . }} cluster binlog upload is too old."
+{{- end }}
