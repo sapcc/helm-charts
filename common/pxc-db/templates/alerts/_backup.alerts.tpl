@@ -15,7 +15,7 @@
       summary: "{{ include "pxc-db.fullname" . }} cluster backup is not succeeded."
 
   - alert: {{ include "pxc-db.alerts.service" . | camelcase }}GaleraClusterBackupMissing
-    expr: (time() - max by (app_kubernetes_io_instance) (kube_customresource_perconaxtradbclusterbackup_completed{app_kubernetes_io_instance="{{ include "pxc-db.fullname" . }}") > 129600)
+    expr: (time() - max by (app_kubernetes_io_instance) (kube_customresource_perconaxtradbclusterbackup_completed{app_kubernetes_io_instance="{{ include "pxc-db.fullname" . }}"}) > 129600)
     for: 30m
     labels:
       context: database
