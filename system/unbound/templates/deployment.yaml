@@ -46,15 +46,6 @@ spec:
 {{ toYaml .Values.resources.unbound | indent 10 }}
         securityContext:
          privileged: true
-        ports:
-{{- range $.Values.unbound.externalPorts | required "externalPorts missing" }}
-          - name: dns-tcp-{{.}}
-            containerPort: {{.}}
-            protocol: TCP
-          - name: dns-udp-{{.}}
-            containerPort: {{.}}
-            protocol: UDP
-{{- end }}
         volumeMounts:
           - name: unbound-conf
             mountPath: /etc/unbound
