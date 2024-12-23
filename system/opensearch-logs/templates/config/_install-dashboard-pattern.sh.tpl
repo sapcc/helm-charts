@@ -7,13 +7,8 @@ for i in $(curl -s -u ${BASIC_AUTH_HEADER} "${CLUSTER_HOST}/_cat/indices?v"|awk 
     #Creating an alias for all standard indexes, which are not datastreams to mitigate the issue with indexes, where for example storage-* is selecting the index and also the datastream, which shows up in dashboards as duplicate entries
     echo "using index $i from Opensearch-Logs"
     export ALIAS_EXISTS=`curl -s -i -u ${BASIC_AUTH_HEADER} "${CLUSTER_HOST}/_cat/aliases/${i}"|grep "content-length"|awk -F: '{ print $2 }'|tr -d '[:space:]'`
-    if [[ "$ALIAS_EXISTS" -gt 0 ]]
-     then
-      echo "Alias and dashboard index pattern for index ${i} already exists. Nothing to do."
-    else
-      echo "setting OpenSearch dashboard index mapping for index $i"
-      curl -s -XPOST --header "content-type: application/JSON" -u  ${BASIC_AUTH_HEADER} "${CLUSTER_HOST}/_aliases" -H "osd-xsrf: true" -d "{ \"actions\": [ { \"add\": { \"index\": \"${i}-2*\", \"alias\": \"${i}\" } } ] }"
-    fi
+    echo "Creating for updating alias $i, because alias setting is only valid for indexes, which were created before the alias creation timestamp"
+    curl -s -XPOST --header "content-type: application/JSON" -u  ${BASIC_AUTH_HEADER} "${CLUSTER_HOST}/_aliases" -H "osd-xsrf: true" -d "{ \"actions\": [ { \"add\": { \"index\": \"${i}-2*\", \"alias\": \"${i}\" } } ] }"
     echo "Deleting old index pattern based on index-* format"
     export DASHBOARD_PATTERN=`curl -s --header "content-type: application/JSON" --fail -XGET -u ${BASIC_AUTH_HEADER} "${DASHBOARD_HOST}/api/saved_objects/index-pattern/${i}-*"|grep "content-length"|awk -F: '{ print $2 }'|tr -d '[:space:]'`
     if [[ "$DASHBOARD_PATTERN" -gt 0 ]]
