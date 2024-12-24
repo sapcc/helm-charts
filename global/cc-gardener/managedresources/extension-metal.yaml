@@ -9,9 +9,16 @@ helm:
     image:
       repository: "{{required ".Values.extensions.metal.image.repository is missing" .Values.extensions.metal.image.repository }}"
       tag: "{{required ".Values.extensions.metal.image.tag is missing" .Values.extensions.metal.image.tag }}"
-    {{- if .Values.extensions.metal.imageVectorOverwrites }}
-    imageVectorOverwrite: "{{ .Values.extensions.metal.imageVectorOverwrites }}"
-    {{ end -}}
+    imageVectorOverwrite: |
+      images:
+        - name: cloud-controller-manager
+          sourceRepository: github.com/ironcore-dev/cloud-provider-metal
+          repository: "{{required ".Values.extensions.metal.imageVectorOverwrite.ccm.repository is missing" .Values.extensions.metal.imageVectorOverwrite.ccm.repository }}"
+          tag: "{{required ".Values.extensions.metal.imageVectorOverwrite.ccm.tag is missing" .Values.extensions.metal.imageVectorOverwrite.ccm.tag }}"
+        - name: machine-controller-manager-provider-metal
+          sourceRepository: github.com/ironcore-dev/machine-controller-manager-provider-metal
+          repository: "{{required ".Values.extensions.metal.imageVectorOverwrite.mcm.repository is missing" .Values.extensions.metal.imageVectorOverwrite.mcm.repository }}"
+          tag: "{{required ".Values.extensions.metal.imageVectorOverwrite.mcm.tag is missing" .Values.extensions.metal.imageVectorOverwrite.mcm.tag }}"
 ---
 apiVersion: core.gardener.cloud/v1beta1
 kind: ControllerRegistration
