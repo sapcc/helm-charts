@@ -181,6 +181,22 @@ build-ipam-operator:
 	@yq -i '.controllerManager.manager.image.tag="$(IPAM_VERSION)"' ipam-operator/values.yaml
 	@yq -i '.version="0.0.2"' ipam-operator/Chart.yaml
 
+build-ipam-operator-remote:
+	@rm -rf ipam-operator-remote
+	@cat kustomize/ipam-operator-remote/kustomization.yaml > kustomization.yaml
+	@kubectl kustomize | helmify -crd-dir ipam-operator-remote
+	@cp kustomize/ipam-operator-remote/remote-kubeconfig.yaml ipam-operator-remote/templates
+	@cp kustomize/ipam-operator-remote/managedresource.yaml ipam-operator-remote/templates
+	@mkdir ipam-operator-remote/managedresources
+	@kubectl kustomize kustomize/ipam-operator-managedresources > ipam-operator-remote/managedresources/kustomize.yaml
+	@yq -i '.controllerManager.manager.image.tag="$(IPAM_VERSION)"' ipam-operator-remote/values.yaml
+	@yq -i '.fullnameOverride="ipam-operator"' ipam-operator-remote/values.yaml
+	@yq -i '.remote.ca=""' ipam-operator-remote/values.yaml
+	@yq -i '.remote.server=""' ipam-operator-remote/values.yaml
+	@yq -i '.version="0.1.0"' ipam-operator-remote/Chart.yaml
+	@$(SED) -i 's/serviceAccountName.*$$/serviceAccountName: default/g' ipam-operator-remote/templates/deployment.yaml
+	@$(SED) -i 's/kind: Role/kind: ClusterRole/g' ipam-operator-remote/managedresources/kustomize.yaml
+
 # chart name, source url, tag
 define build-chart
 @echo "Generating Helm chart for $(1) version $(3)"
