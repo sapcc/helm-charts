@@ -193,7 +193,7 @@ build-ipam-operator-remote:
 	@yq -i '.fullnameOverride="ipam-operator"' ipam-operator-remote/values.yaml
 	@yq -i '.remote.ca=""' ipam-operator-remote/values.yaml
 	@yq -i '.remote.server=""' ipam-operator-remote/values.yaml
-	@yq -i '.version="0.1.0"' ipam-operator-remote/Chart.yaml
+	@yq -i '.version="0.1.1"' ipam-operator-remote/Chart.yaml
 	@$(SED) -i 's/serviceAccountName.*$$/serviceAccountName: default/g' ipam-operator-remote/templates/deployment.yaml
 	@$(SED) -i 's/kind: Role/kind: ClusterRole/g' ipam-operator-remote/managedresources/kustomize.yaml
 

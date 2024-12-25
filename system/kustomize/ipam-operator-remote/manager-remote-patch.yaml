@@ -6,17 +6,18 @@ metadata:
 spec:
   template:
     spec:
+      hostNetwork: true
       containers:
         - name: manager
           args:
-            - --health-probe-bind-address=:8081
-            - --metrics-bind-address=127.0.0.1:8080
+            - --health-probe-bind-address=:30081
+            - --metrics-bind-address=127.0.0.1:30082
             - --kubeconfig=/kubeconfig/kubeconfig
           livenessProbe:
             failureThreshold: 3
             httpGet:
               path: /healthz
-              port: 8081
+              port: 30081
               scheme: HTTP
             initialDelaySeconds: 15
             periodSeconds: 20
@@ -24,10 +25,13 @@ spec:
             failureThreshold: 3
             httpGet:
               path: /readyz
-              port: 8081
+              port: 30081
               scheme: HTTP
             initialDelaySeconds: 5
             periodSeconds: 10
+          env:
+          - name: ENABLE_WEBHOOKS
+            value: "false"
           volumeMounts:
           - name: remote-kubeconfig
             mountPath: /kubeconfig
