@@ -14,6 +14,12 @@ data:
   backend_roles:
   - "data"
 
+data2:
+  hash: "{{ .Values.users.data2.nohash }}"
+  reserved: true
+  backend_roles:
+  - "data"
+
 greenhouse:
   hash: "{{ .Values.users.greenhouse.nohash }}"
   reserved: true
