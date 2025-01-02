@@ -1,3 +1,7 @@
+## 6.6.2
+
+* another fix for ThanosStoreSeriesGateLatencyHigh 
+
 ## 6.6.1
 
 * fixed missing metric for ThanosStoreSeriesGateLatencyHigh alert 
