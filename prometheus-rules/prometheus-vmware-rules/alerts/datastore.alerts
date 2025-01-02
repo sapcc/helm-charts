@@ -1,4 +1,193 @@
-- alert: NVMeSwapDatastoreMissing
+groups:
+- name: datastore.alerts
+  rules:
+  - alert: VVolDatastoreNotAccessible
+    expr: |
+      vrops_datastore_summary_datastore_accessible{type='vVOL'} == 0
+    for: 5m
+    labels:
+      severity: critical
+      tier: vmware
+      service: storage
+      support_group: compute
+      context: "{{ $labels.datastore }}"
+      meta: 'Datastore {{ $labels.datastore }} is not accessible. ({{ $labels.vcenter }}, {{ $labels.datacenter }})'
+      playbook: docs/devops/alert/vcenter/vvol_datastore#vvol_1
+    annotations:
+      description: 'Datastore {{ $labels.datastore }} is not accessible. ({{ $labels.vcenter }}, {{ $labels.datacenter }})'
+      summary: 'Datastore {{ $labels.datastore }} is not accessible. ({{ $labels.vcenter }}, {{ $labels.datacenter }})'
+
+  - alert: VVolDatastoreZeroFreeSpace
+    expr: |
+      vrops_datastore_diskspace_freespace_gigabytes{type="vVOL"} == 0
+    for: 10m
+    labels:
+      severity: critical
+      tier: vmware
+      service: storage
+      support_group: compute
+      context: "{{ $labels.datastore }}"
+      meta: 'Datastore {{ $labels.datastore }} has no free space. ({{ $labels.vcenter }}, {{ $labels.datacenter }})'
+      dashboard: vcenter-datastore-utilization
+      playbook: docs/devops/alert/vcenter/vvol_datastore#vvol_4
+    annotations:
+      description: 'Datastore {{ $labels.datastore }} has no free space. ({{ $labels.vcenter }}, {{ $labels.datacenter }})'
+      summary: 'Datastore {{ $labels.datastore }} has no free space. ({{ $labels.vcenter }}, {{ $labels.datacenter }})'
+
+  - alert: VVolDatastoreZeroCapacity
+    expr: |
+      vrops_datastore_diskspace_capacity_gigabytes{type="vVOL"} == 0
+    for: 10m
+    labels:
+      severity: critical
+      tier: vmware
+      service: storage
+      support_group: compute
+      context: "{{ $labels.datastore }}"
+      meta: 'Datastore {{ $labels.datastore }} has zero capacity. ({{ $labels.vcenter }}, {{ $labels.datacenter }})'
+      dashboard: vcenter-datastore-utilization
+      playbook: docs/devops/alert/vcenter/vvol_datastore#vvol_3
+    annotations:
+      description: 'Datastore {{ $labels.datastore }} has zero capacity. ({{ $labels.vcenter }}, {{ $labels.datacenter }})'
+      summary: 'Datastore {{ $labels.datastore }} has zero capacity. ({{ $labels.vcenter }}, {{ $labels.datacenter }})'
+
+  - alert: EphemeralDataStoreCapacity
+    expr: >
+      vrops_datastore_diskspace_total_usage_gigabytes{type=~"ephemeral"} / vrops_datastore_diskspace_capacity_gigabytes >= 0.85
+    for: 20m
+    labels:
+      severity: info
+      tier: vmware
+      service: storage
+      support_group: compute
+      context: "{{ $labels.datastore }}"
+      meta: "Eph Datastore {{ $labels.datastore }} utilization > 85%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
+      dashboard: vcenter-datastore-utilization
+      playbook: docs/support/playbook/datastore/datastorediskusagealarm
+    annotations:
+      description: "Eph Datastore {{ $labels.datastore }} utilization > 85%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
+      summary: "Eph Datastore {{ $labels.datastore }} utilization > 85%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
+
+  - alert: EphemeralDataStoreCapacity
+    expr: >
+      vrops_datastore_diskspace_total_usage_gigabytes{type=~"ephemeral"} / vrops_datastore_diskspace_capacity_gigabytes >=  0.9
+    for: 20m
+    labels:
+      severity: info
+      tier: vmware
+      service: storage
+      support_group: compute
+      context: "{{ $labels.datastore }}"
+      meta: "Eph Datastore {{ $labels.datastore }} utilization > 90%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
+      dashboard: vcenter-datastore-utilization
+      playbook: docs/support/playbook/datastore/datastorediskusagealarm
+    annotations:
+      description: "Eph Datastore {{ $labels.datastore }} utilization > 90%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
+      summary: "Eph Datastore {{ $labels.datastore }} utilization > 90%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
+
+  - alert: VVolDataStoreCapacity
+    expr: >
+      vrops_datastore_diskspace_total_usage_gigabytes{type="vVOL"} / vrops_datastore_diskspace_capacity_gigabytes >= 0.8
+    for: 20m
+    labels:
+      severity: warning
+      tier: os
+      service: storage
+      support_group: compute
+      context: "{{ $labels.datastore }}"
+      meta: "vVOL Datastore {{ $labels.datastore }} utilization > 80%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
+      dashboard: vcenter-datastore-utilization
+      playbook: docs/support/playbook/cinder/balancing/cinder_balance_alert
+    annotations:
+      description: "vVOL Datastore {{ $labels.datastore }} utilization > 80%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
+      summary: "vVOL Datastore {{ $labels.datastore }} utilization > 80%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
+
+  - alert: VVolDataStoreCapacity
+    expr: >
+      vrops_datastore_diskspace_total_usage_gigabytes{type="vVOL"} / vrops_datastore_diskspace_capacity_gigabytes >=  0.9
+    for: 20m
+    labels:
+      severity: critical
+      tier: os
+      service: storage
+      support_group: compute
+      context: "{{ $labels.datastore }}"
+      meta: "vVOL Datastore {{ $labels.datastore }} utilization > 90%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
+      dashboard: vcenter-datastore-utilization
+      playbook: docs/support/playbook/cinder/balancing/cinder_balance_alert
+    annotations:
+      description: "vVOL Datastore {{ $labels.datastore }} utilization > 90%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
+      summary: "vVOL Datastore {{ $labels.datastore }} utilization > 90%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
+
+  - alert: AverageVmfsDataStoreCapacity
+    expr: >
+      avg by (type, vcenter) (vrops_datastore_diskspace_total_usage_gigabytes{type=~"vmfs_p_ssd|vmfs_s_hdd"} / vrops_datastore_diskspace_capacity_gigabytes) > 0.85
+    for: 20m
+    labels:
+      severity: warning
+      tier: vmware
+      service: storage
+      support_group: compute
+      context: "{{ $labels.type }} storage"
+      meta: "Average utilization for `{{ $labels.type }}` Datastores per vCenter is above 70%. ({{ $labels.vcenter }})"
+      dashboard: vcenter-datastore-utilization
+      playbook: docs/support/playbook/storage/new_storage_lun_request
+    annotations:
+      description: "Average utilization for `{{ $labels.type }}` Datastores per vCenter is above 70%. ({{ $labels.vcenter }})"
+      summary: "Average utilization for `{{ $labels.type }}` Datastores per vCenter is above 70%. ({{ $labels.vcenter }})"
+
+  - alert: DataStoreCapacity
+    expr: >
+      vrops_datastore_diskspace_total_usage_gigabytes{type!~"ephemeral|vVOL|vmfs.+", datastore!~".+swap"} / vrops_datastore_diskspace_capacity_gigabytes >=  0.8
+    for: 20m
+    labels:
+      severity: warning
+      tier: vmware
+      service: storage
+      support_group: compute
+      context: "{{ $labels.datastore }}"
+      meta: "{{ $labels.type }} datastore {{ $labels.datastore }} utilization > 80%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
+      dashboard: vcenter-datastore-utilization
+      playbook: docs/support/playbook/datastore/datastorediskusagealarm
+    annotations:
+      description: "{{ $labels.type }} datastore {{ $labels.datastore }} utilization > 80%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
+      summary: "{{ $labels.type }} datastore {{ $labels.datastore }} utilization > 80%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
+
+  - alert: DataStoreCapacity
+    expr: >
+      vrops_datastore_diskspace_total_usage_gigabytes{type!~"ephemeral|vVOL|vmfs.+", datastore!~".+swap"} / vrops_datastore_diskspace_capacity_gigabytes >=  0.9
+    for: 20m
+    labels:
+      severity: critical
+      tier: vmware
+      service: storage
+      support_group: compute
+      context: "{{ $labels.datastore }}"
+      meta: "{{ $labels.type }} datastore {{ $labels.datastore }} utilization > 90%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
+      dashboard: vcenter-datastore-utilization
+      playbook: docs/support/playbook/datastore/datastorediskusagealarm
+    annotations:
+      description: "{{ $labels.type }} datastore {{ $labels.datastore }} utilization > 90%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
+      summary: "{{ $labels.type }} datastore {{ $labels.datastore }} utilization > 90%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
+
+  - alert: SwapDataStoreUsageWithoutVMs
+    expr: >
+      vrops_datastore_diskspace_total_usage_gigabytes{datastore=~".*-swap"} > 10 and vrops_datastore_summary_total_number_vms == 0
+      unless on (datastore) label_replace(vrops_hostsystem_runtime_maintenancestate{state="inMaintenance"}, "datastore", "$1-swap", "hostsystem", "(node...-bb...).*")
+    for: 20m
+    labels:
+      severity: warning
+      tier: vmware
+      service: storage
+      support_group: compute
+      context: "{{ $labels.datastore }}"
+      meta: "NVMe swap datastore {{ $labels.datastore }} is utilized without associated VMs. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
+      playbook: docs/devops/alert/vcenter/#swap-files-exist-on-local-ds-without-running-vms
+    annotations:
+      description: "NVMe swap datastore {{ $labels.datastore }} is utilized without associated VMs. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
+      summary: "NVMe swap datastore {{ $labels.datastore }} is utilized without associated VMs. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
+
+  - alert: NVMeSwapDatastoreMissing
     expr: >
       vrops_hostsystem_hardware_model{vccluster=~"^productionbb\\d+$", hardware_model!~"^Cisco Systems Inc.+"} and on (hostsystem) vrops_hostsystem_runtime_maintenancestate{state!="inMaintenance"} 
       unless on (hostsystem) (label_replace(label_join(vrops_datastore_summary_datastore_accessible{type="NVMe"}, "hostsystem", "", "datastore", "vcenter"), "hostsystem", "$1$2", "hostsystem", 
@@ -14,7 +203,7 @@
       playbook: docs/support/playbook/datastore/NVMeSwapDatastoreMissing
     annotations:
       description: "NVMe swap datastore {{ $labels.datastore }} missing. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
-      summary: "NVMe swap datastore {{ $labels.datastore }} missing. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
+      summary: "NVMe swap datastore {{ $labels.datastore }} missing. ({{ $labels.vcenter }}, {{ $labels.datacenter }}
 
   - alert: DatastoreDisconnectedWithVmsOnIt
     expr: >
