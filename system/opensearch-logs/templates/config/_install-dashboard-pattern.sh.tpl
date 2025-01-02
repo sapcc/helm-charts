@@ -37,11 +37,11 @@ done
 
 
 # Dashboard index pattern for all available datastreams
-for i in $(curl -s -u ${BASIC_AUTH_HEADER} "${CLUSTER_HOST}/_cat/aliases?v"|grep "\-ds"|awk '{ print $1 }'|uniq)
+for i in $(curl -s -u ${BASIC_AUTH_HEADER} "${CLUSTER_HOST}/_cat/aliases?v"|grep "\-ds"|awk '{ print $1 }'|sort|uniq)
   do
     echo "using datastream $i from Opensearch-Logs"
     echo "setting OpenSearch dashboard index mapping for index $i"
-    curl -s --header "content-type: application/JSON" --fail -XGET -u ${BASIC_AUTH_HEADER} "${DASHBOARD_HOST}/api/saved_objects/index-pattern/${i}"
+    curl -s --fail -XGET -u ${BASIC_AUTH_HEADER} "${DASHBOARD_HOST}/api/saved_objects/index-pattern/${i}"
     if [ $? -eq 0 ]
     then
         echo "index ${i} already exists in Opensearch dashboard"
