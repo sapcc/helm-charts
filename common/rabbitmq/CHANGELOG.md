@@ -2,6 +2,13 @@
 
 This file is used to list changes made in each version of the common chart rabbitmq.
 
+## 0.13.0
+
+[@businessbean](https://github.com/businessbean)
+- RabbitMQ [4.0.5 Release Notes](https://github.com/rabbitmq/rabbitmq-server/releases/tag/v4.0.5)
+- [What's new?](https://www.rabbitmq.com/docs/whats-new)
+- chart version bumped
+
 ## 0.12.1
 - `app` selector label returned, because deployment selector is immutable
 - chart version bumped
