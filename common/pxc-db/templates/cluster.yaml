@@ -73,10 +73,13 @@ spec:
 {{ merge (include "pxc-db.linkerdPodAnnotations" $ | fromYaml) (include "pxc-db.metricsAnnotations" $ | fromYaml ) ($pxc.annotations) | toYaml | indent 6 }}
     labels:
 {{ merge (include "pxc-db.appLabels" $ | fromYaml) ($pxc.labels) | toYaml | indent 6 }}
-    {{- if $pxc.expose }}
     expose:
-{{ tpl ($pxc.expose | toYaml) $ | indent 6 }}
-    {{- end }}
+      enabled: {{ $pxc.expose.enabled }}
+      type: {{ $pxc.expose.type }}
+      externalTrafficPolicy: {{ $pxc.expose.externalTrafficPolicy }}
+      internalTrafficPolicy: {{ $pxc.expose.internalTrafficPolicy }}
+      annotations:
+{{ merge (include "pxc-db.linkerdServiceAnnotations" $ | fromYaml) ($pxc.expose.annotations) | toYaml | indent 8 }}
     autoRecovery: {{ $pxc.autoRecovery }}
     readinessDelaySec: 15
     livenessDelaySec: 600
@@ -221,9 +224,19 @@ spec:
 {{ tpl ($haproxy.podSecurityContext | toYaml) $ | indent 6 }}
     {{- end }}
     exposePrimary:
-{{ $haproxy.service.primary | toYaml | indent 6 }}
+      enabled: {{ $haproxy.service.primary.enabled }}
+      type: {{ $haproxy.service.primary.type }}
+      externalTrafficPolicy: {{ $haproxy.service.primary.externalTrafficPolicy }}
+      internalTrafficPolicy: {{ $haproxy.service.primary.internalTrafficPolicy }}
+      annotations:
+{{ merge (include "pxc-db.linkerdServiceAnnotations" $ | fromYaml) ($haproxy.service.primary.annotations) | toYaml | indent 8 }}
     exposeReplicas:
-{{ $haproxy.service.replicas | toYaml | indent 6 }}
+      enabled: {{ $haproxy.service.replicas.enabled }}
+      type: {{ $haproxy.service.replicas.type }}
+      externalTrafficPolicy: {{ $haproxy.service.replicas.externalTrafficPolicy }}
+      internalTrafficPolicy: {{ $haproxy.service.replicas.internalTrafficPolicy }}
+      annotations:
+{{ merge (include "pxc-db.linkerdServiceAnnotations" $ | fromYaml) ($haproxy.service.replicas.annotations) | toYaml | indent 8 }}
     resources:
       requests:
 {{ tpl ($haproxy.resources.requests | toYaml) $ | indent 8 }}
