@@ -21,11 +21,11 @@ for i in $(curl -s -u ${BASIC_AUTH_HEADER} "${CLUSTER_HOST}/_cat/indices?v"|awk 
 done
 
 # Dashboard index pattern for all available aliases, which are not datastreams
-for i in $(curl -u ${BASIC_AUTH_HEADER} "${CLUSTER_HOST}/_cat/aliases?v"|grep -v "\-ds"|grep -v "^\."|awk '{ print $1 }'|uniq)
+for i in $(curl -s -u ${BASIC_AUTH_HEADER} "${CLUSTER_HOST}/_cat/aliases?v"|grep -v "\-ds"|grep -v "^\."|awk '{ print $1 }'|sort|uniq)
   do
     echo "using alias $i from Opensearch-Logs"
     echo "Setting OpenSearch dashboard index mapping for alias $i"
-    curl -s --header "content-type: application/JSON" --fail -XGET -u ${BASIC_AUTH_HEADER} "${DASHBOARD_HOST}/api/saved_objects/index-pattern/${i}"
+    curl -s --fail -XGET -u ${BASIC_AUTH_HEADER} "${DASHBOARD_HOST}/api/saved_objects/index-pattern/${i}"
     if [ $? -eq 0 ]
     then
       echo "index pattern for alias ${i} already exists in Opensearch dashboard, nothing to do"
