@@ -1,4 +1,4 @@
-- name: pxc-operator.alerts
+- name: pxc-operator-kubernetes.alerts
   rules:
   - alert: PerconaXtraDBClusterOperatorNotReady
     expr: (sum(kube_pod_status_ready_normalized{condition="true", pod=~"percona-xtradb-cluster-operator.*"}) < 1)
