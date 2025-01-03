@@ -2,31 +2,58 @@
 # Default values for percona-xtradb-cluster.
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
+
+# -- Enable linkerd annotations for services, pods and other cluster resources
 linkerd:
   enabled: true
 
+# -- Enable owner_info injector chart dependency to allow installation as stand-alone chart
 owner_info:
   enabled: false
 
+# -- Name of the cluster
+# This is used as base name for all resources created by the chart
+# Example: test
+# This creates PerconaXtraDBCluster with name test-db
 name: null
 
-# NOTE: don't use internal TLS by default, linkerd mesh is preferred
+# -- Enable internal TLS
+# https://docs.percona.com/percona-operator-for-mysql/pxc/TLS.html
+# NOTE: We don't use internal TLS by default, because linkerd mesh is preferred
 tls:
   enabled: false
 
+#  -- Various configuration options to prevent users from configuring a cluster with unsafe parameters.
+# Translates to https://docs.percona.com/percona-operator-for-mysql/pxc/operator.html#unsafe-flags-section
+# Example:
+# unsafeFlags:
+#   pxcSize: false
+#   proxySize: false
+#   backupIfUnhealthy: false
 unsafeFlags: {}
-#unsafeFlags:
-#  pxcSize: false
-#  proxySize: false
-#  backupIfUnhealthy: false
 
-# Enable init.sql job
+### InitDB configuration
+# -- InitDB job options
+# -- Image used by the initdb job
+initdb:
+  image:
+    name: percona/percona-xtradb-cluster-operator
+    tag: 1.16.1-pxc8.0-backup-pxb8.0.35
+# -- Enable InitDB job that creates databases and users
+# Disabled by default
 initdb_job: null
-# Set charachter set and collation in init.sql
+# -- Set default charachter set and collation in init.sql
 character_set_server: "utf8mb4"
 collation_server: "utf8mb4_0900_ai_ci"
-
+# -- Enable the creation of a local-only root user `ccroot` without a password
+ccroot_user:
+  enabled: false
+# -- List of databases to create
+# Example:
+# databases:
+#   - test
 databases: {}
+# -- List of users to create
 users: {}
 #  backup:
 #    name: backup
@@ -41,10 +68,14 @@ users: {}
 #                   # used as credentials. It should be possible to change the latter,
 #                   # without having to change the first.
 #    password: null # Causes users not be be created, and even maybe to get locked
-#    auth_plugin: 'mysql_native_password'
+#    auth_plugin: 'caching_sha2_password'  # 'mysql_native_password' is deprecated
 #    grants:
 #    - ALL ON example.*
+### End of InitDB configuration
 
+# -- Default system-level Percona XtraDB Cluster users
+# All credentials are mandatory
+# See https://docs.percona.com/percona-operator-for-mysql/pxc/users.html#system-users
 system_users:
   root:
     password: null
@@ -59,18 +90,26 @@ system_users:
   replication:
     password: null
 
-ccroot_user:
-  enabled: false
-
+# -- Options to ignore injected labels and annotations
+# https://docs.percona.com/percona-operator-for-mysql/pxc/annotations.html#specifying-labels-and-annotations-ignored-by-the-operator
+# -- List of ignored annotations
 ignoreAnnotations: []
+# -- List of ignored labels
 ignoreLabels:
   - ccloud/service
   - ccloud/support-group
 
+# -- Additional labels to apply to PerconaXtraDBCluster resource
+# https://docs.percona.com/percona-operator-for-mysql/pxc/annotations.html
 annotations: {}
 
+# -- Pause/resume Percona XtraDB Cluster
+# https://docs.percona.com/percona-operator-for-mysql/pxc/pause.html
 pause: false
 
+# -- The initContainer section in the custom resource
+# Allows to override the image used by the initContainer and configure resources limits and requests
+# https://docs.percona.com/percona-operator-for-mysql/pxc/operator.html#initcontainer-configuration-section
 initContainer:
   image:
     name: percona-xtradb-cluster-operator
@@ -84,6 +123,21 @@ initContainer:
       memory: 200M
       cpu: 200m
 
+# -- Configuration of the mysqld-exporter sidecar container
+# Provides prometheus metrics for the Percona XtraDB Cluster
+metrics:
+  enabled: true
+  flags:
+    - collect.binlog_size
+    - collect.info_schema.processlist
+    - collect.info_schema.query_response_time
+    - collect.info_schema.innodb_tablespaces
+  image:
+    name: prom/mysqld-exporter
+    tag: v0.16.0
+    override: null
+
+# -- Percona XtraDB Cluster statefulset configuration
 pxc:
   size: 3
   image:
@@ -115,6 +169,8 @@ pxc:
     fsGroup: 1001
     supplementalGroups: [1001]
     fsGroupChangePolicy: "Always"
+  # -- Expose cluster pods as separate services
+  # https://docs.percona.com/percona-operator-for-mysql/pxc/expose.html#service-per-pod
   expose:
     enabled: false
     type: ClusterIP
@@ -122,7 +178,11 @@ pxc:
     internalTrafficPolicy: Cluster
     annotations:
       config.linkerd.io/opaque-ports: "3306,3307,3009,4444,4567,4568,33060,33062"
+  # -- Automatic crash recovery
+  # https://docs.percona.com/percona-operator-for-mysql/pxc/recovery.html#automatic-crash-recovery
   autoRecovery: true
+  # -- Custom my.cnf configuration
+  # https://docs.percona.com/percona-operator-for-mysql/pxc/options.html
   configuration:
     performance_schema: true
     options:
@@ -160,6 +220,8 @@ pxc:
       long_query_time: 5
       log_error_suppression_list: "MY-010055,MY-013360"
   priority_class: "critical-infrastructure"
+  # -- Advanced affinity configuration for PXC databse pods
+  # https://docs.percona.com/percona-operator-for-mysql/pxc/constraints.html#simple-approach-use-topologykey-of-the-percona-operator-for-mysql
   affinity:
     advanced:
       nodeAffinity:
@@ -206,11 +268,13 @@ pxc:
                     values:
                       - pxc
               topologyKey: kubernetes.io/hostname
+  # -- Resource configuration for cluster pods
   resources:
     requests:
       memory: 1G
       cpu: 500m
     limits: {}
+  # -- Storage configuration for cluster nodes
   persistence:
     enabled: true
     ## percona data Persistent Volume Storage Class
@@ -224,6 +288,7 @@ pxc:
     accessMode: ReadWriteOnce
     size: 10Gi
 
+# -- HAProxy statefulset configuration
 haproxy:
   enabled: true
   size: 2
@@ -256,6 +321,9 @@ haproxy:
     fsGroup: 1001
     supplementalGroups: [1001]
   service:
+    # -- Primary HAProxy service configuration
+    # Exposes *only one* primary cluster member
+    # https://docs.percona.com/percona-operator-for-mysql/pxc/operator.html?#haproxyexposeprimaryenabled
     primary:
       enabled: true
       type: ClusterIP
@@ -263,6 +331,9 @@ haproxy:
       internalTrafficPolicy: Cluster
       annotations:
         config.linkerd.io/opaque-ports: "3306,3307,3009,4444,4567,4568,33060,33062"
+    # --  Replicas HAPRoxy service configuration
+    # Exposes *all* cluster members
+    # https://docs.percona.com/percona-operator-for-mysql/pxc/operator.html?#haproxyexposereplicasenabled
     replicas:
       enabled: true
       type: ClusterIP
@@ -271,6 +342,8 @@ haproxy:
       annotations:
         config.linkerd.io/opaque-ports: "3306,3307,3009,4444,4567,4568,33060,33062"
   priority_class: "critical-infrastructure"
+  # -- Advanced affinity configuration for HAProxy pods
+  # https://docs.percona.com/percona-operator-for-mysql/pxc/constraints.html#simple-approach-use-topologykey-of-the-percona-operator-for-mysql
   affinity:
     advanced:
       nodeAffinity:
@@ -317,17 +390,14 @@ haproxy:
                     values:
                       - haproxy
               topologyKey: kubernetes.io/hostname
+  # -- Resource configuration for HAProxy pods
   resources:
     requests:
       memory: 100M
       cpu: 500m
     limits: {}
 
-initdb:
-  image:
-    name: percona/percona-xtradb-cluster-operator
-    tag: 1.16.1-pxc8.0-backup-pxb8.0.35
-
+## - Scheduled backup configuration
 backup:
   enabled: false
   annotations: {}
@@ -337,62 +407,92 @@ backup:
     tag: 1.16.1-pxc8.0-backup-pxb8.0.35
     override: null
   imagePullPolicy: Always
+  # -- The number of retries to make a backup
   backoffLimit: 2
+  # -- The timeout value in seconds, after which backup job will automatically fail.
   activeDeadlineSeconds: 3600
+  # -- Priority class for the backup job
   priority_class: "critical-infrastructure"
+  # -- Resources configuration for the backup job
   resources:
     requests: {}
     limits: {}
+  # -- PiTR configuration
+  # When enabled, operator creates a PiTR binlog-collector deployment
   pitr:
     enabled: false
     storageName: s3-backups-binlogs
+    # -- Seconds between running the binlog uploader.
+    # https://docs.percona.com/percona-operator-for-mysql/pxc/operator.html?#backuppitrtimebetweenuploads
     timeBetweenUploads: 300
+    # -- Timeout in seconds for the binlog to be uploaded
+    # https://docs.percona.com/percona-operator-for-mysql/pxc/operator.html?#backuppitrtimeoutseconds
     timeoutSeconds: 60
+    # -- Priority class for the binlog-collector deployment
+    # https://docs.percona.com/percona-operator-for-mysql/pxc/operator.html?#backupstoragesstorage-namepriorityclassname
     priority_class: "critical-infrastructure"
+    # -- Resource configuration for a PiTR binlog-collector deployment
     resources:
       requests: {}
       limits: {}
+  # -- S3 backup storage configuration
   s3:
+    # -- General configuration, that is being deep copied to the custom resource
+    #
     config:
+      # -- S3 credential name
+      # Default value should stay the same as the secret name created by the chart
+      # https://docs.percona.com/percona-operator-for-mysql/pxc/operator.html?#backupstoragesstorage-names3credentialssecret
       credentialsSecret: "pxc-db-{{ .Values.name }}-backup-s3"
+      # -- S3 region name
+      # Default value is being taken from global variables
+      # https://docs.percona.com/percona-operator-for-mysql/pxc/operator.html?#backupstoragesstorage-names3region
       region: "{{ .Values.global.region }}"
+      # -- S3 API endpoint URL
+      # This option must be set explicitly
+      # Example: https://objectstore-3.REGION.DOMAIN
+      # https://docs.percona.com/percona-operator-for-mysql/pxc/operator.html?#backupstoragesstorage-names3endpointurl
       endpointUrl: null
+    # -- S3 credentials
+    # This map is being used by the chart k8s secret creation
     secrets:
       aws_access_key_id: null
       aws_secret_access_key: null
+    # -- S3 storages list
+    # Contains bucket name for each type of storage and enables/disables value
+    # The name of the storage adds backup configuration secrtion with `s3-backups` prefix
+    # Example: s3-backups-daily
+    # https://docs.percona.com/percona-operator-for-mysql/pxc/operator.html?#backupstoragesstorage-names3bucket
     storages:
+      # -- Binlogs storage is being used by binglog-collector (PiTR)
       binlogs:
         enabled: true
         bucket: "pxc-backup-{{ .Values.global.region }}/binlogs/{{.Values.name}}/"
+      # -- Daily backups storage is enabled by default
       daily:
         enabled: true
         bucket: "pxc-backup-{{ .Values.global.region }}/backups/{{ .Values.name }}/daily"
+      # -- Hourly backups storage is disabled by default
       hourly:
         enabled: false
         bucket: "pxc-backup-{{ .Values.global.region }}/backups/{{ .Values.name }}/hourly"
+      # -- Custom backup storage is supposed to be used for manual backups
       custom:
         enabled: false
         bucket: "pxc-backup-{{ .Values.global.region }}/backups/{{ .Values.name }}/custom"
+  # -- Example of the backup schedule configuration
   schedule:
     - name: "daily-backup"
+      # -- Scheduled time to make a backup specified in the crontab format .
+      # https://docs.percona.com/percona-operator-for-mysql/pxc/operator.html?#backupscheduleschedule
       schedule: "0 0 * * *"
+      # -- The amount of most recent backups to store. Older backups are automatically deleted.
+      # https://docs.percona.com/percona-operator-for-mysql/pxc/operator.html?#backupschedulekeep
       keep: 5
-      storageName: s3-backups
+      # -- The name of the storage for the backups configured in the storages subsection
+      storageName: s3-backups-daily
 
-# Prometheus metrics.
-metrics:
-  enabled: true
-  flags:
-    - collect.binlog_size
-    - collect.info_schema.processlist
-    - collect.info_schema.query_response_time
-    - collect.info_schema.innodb_tablespaces
-  image:
-    name: prom/mysqld-exporter
-    tag: v0.16.0
-    override: null
-
-# Default Prometheus alerts and rules.
+# -- Default Prometheus alerts and rules.
 alerts:
   enabled: true
 
