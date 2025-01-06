@@ -50,6 +50,9 @@ cronus:
 {{- if .Values.config.retry.maxConnectionRetries }}
     maxConnectionRetries: {{ .Values.config.retry.maxConnectionRetries }}
 {{- end }}
+{{- if .Values.config.retry.maxProxyRetries }}
+    maxProxyRetries: {{ .Values.config.retry.maxProxyRetries }}
+{{- end }}
 {{- if .Values.config.retry.retryInterval }}
     retryInterval: {{ .Values.config.retry.retryInterval }}
 {{- end }}
