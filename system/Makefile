@@ -127,6 +127,7 @@ build-metal-operator-remote:
 	@cp kustomize/metal-operator-managedresources/rbac.yaml metal-operator-remote/managedresources
 	@yq -i '.controllerManager.manager.image.tag="$(METAL_OPERATOR_VERSION)"' metal-operator-remote/values.yaml
 	@yq -i '.fullnameOverride="metal-operator"' metal-operator-remote/values.yaml
+	@yq -i '.remote.ca=""' metal-operator-remote/values.yaml
 	@echo 'macdb: {}' >> metal-operator-remote/values.yaml
 	@yq -i '.version="0.2.0"' metal-operator-remote/Chart.yaml
 	@$(SED) -i 's/serviceAccountName.*$$/serviceAccountName: default/g' metal-operator-remote/templates/deployment.yaml
