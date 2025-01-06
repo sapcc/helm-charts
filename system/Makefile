@@ -127,10 +127,8 @@ build-metal-operator-remote:
 	@cp kustomize/metal-operator-managedresources/rbac.yaml metal-operator-remote/managedresources
 	@yq -i '.controllerManager.manager.image.tag="$(METAL_OPERATOR_VERSION)"' metal-operator-remote/values.yaml
 	@yq -i '.fullnameOverride="metal-operator"' metal-operator-remote/values.yaml
-	@yq -i '.remote.ca=""' metal-operator-remote/values.yaml
-	@yq -i '.remote.server=""' metal-operator-remote/values.yaml
 	@echo 'macdb: {}' >> metal-operator-remote/values.yaml
-	@yq -i '.version="0.1.2"' metal-operator-remote/Chart.yaml
+	@yq -i '.version="0.2.0"' metal-operator-remote/Chart.yaml
 	@$(SED) -i 's/serviceAccountName.*$$/serviceAccountName: default/g' metal-operator-remote/templates/deployment.yaml
 	@$(SED) -i 's/kind: Role/kind: ClusterRole/g' metal-operator-remote/managedresources/kustomize.yaml
 
@@ -152,9 +150,7 @@ build-boot-operator-remote:
 	@kubectl kustomize kustomize/boot-operator-managedresources > boot-operator-remote/managedresources/kustomize.yaml
 	@yq -i '.controllerManager.manager.image.tag="$(BOOT_OPERATOR_VERSION)"' boot-operator-remote/values.yaml
 	@yq -i '.fullnameOverride="boot-operator"' boot-operator-remote/values.yaml
-	@yq -i '.remote.ca=""' boot-operator-remote/values.yaml
-	@yq -i '.remote.server=""' boot-operator-remote/values.yaml
-	@yq -i '.version="0.1.2"' boot-operator-remote/Chart.yaml
+	@yq -i '.version="0.2.0"' boot-operator-remote/Chart.yaml
 	@$(SED) -i 's/serviceAccountName.*$$/serviceAccountName: default/g' boot-operator-remote/templates/deployment.yaml
 	@$(SED) -i 's/kind: Role/kind: ClusterRole/g' boot-operator-remote/managedresources/kustomize.yaml
 
