@@ -1,7 +1,7 @@
 - name: pxc-backup.alerts
   rules:
   - alert: {{ include "pxc-db.alerts.service" . | camelcase }}GaleraClusterBackupNotSucceeded
-    expr: (kube_customresource_perconaxtradbclusterbackup_status{app_kubernetes_io_instance="{{ include "pxc-db.fullname" . }}",state="Succeeded"} != 1)
+    expr: (kube_customresource_perconaxtradbclusterbackup_status{app_kubernetes_io_instance="{{ include "pxc-db.clusterName" . }}",state="Succeeded"} != 1)
     for: 10m
     labels:
       context: database
@@ -15,7 +15,7 @@
       summary: "{{ include "pxc-db.fullname" . }} cluster backup is not succeeded."
 
   - alert: {{ include "pxc-db.alerts.service" . | camelcase }}GaleraClusterBackupMissing
-    expr: (time() - max by (app_kubernetes_io_instance) (kube_customresource_perconaxtradbclusterbackup_completed{app_kubernetes_io_instance="{{ include "pxc-db.fullname" . }}"}) > 129600)
+    expr: (time() - max by (app_kubernetes_io_instance) (kube_customresource_perconaxtradbclusterbackup_completed{app_kubernetes_io_instance="{{ include "pxc-db.clusterName" . }}"}) > 129600)
     for: 30m
     labels:
       context: database
@@ -30,7 +30,7 @@
 
 {{- if .Values.backup.pitr.enabled }}
   - alert: {{ include "pxc-db.alerts.service" . | camelcase }}GaleraClusterBinlogProcessingTooOld
-    expr: (time() - pxc_binlog_collector_last_processing_timestamp > 1800)
+    expr: (time() - pxc_binlog_collector_last_processing_timestamp{app_kubernetes_io_instance="{{ include "pxc-db.clusterName" . }}"} > 1800)
     for: 30m
     labels:
       context: database
@@ -44,7 +44,7 @@
       summary: "{{ include "pxc-db.fullname" . }} cluster binlog processing is too old."
 
   - alert: {{ include "pxc-db.alerts.service" . | camelcase }}GaleraClusterBinlogUploadTooOld
-    expr: (time() - pxc_binlog_collector_last_upload_timestamp > 1800)
+    expr: (time() - pxc_binlog_collector_last_upload_timestamp{app_kubernetes_io_instance="{{ include "pxc-db.clusterName" . }}"} > 1800)
     for: 30m
     labels:
       context: database

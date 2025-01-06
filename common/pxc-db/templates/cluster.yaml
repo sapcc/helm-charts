@@ -3,7 +3,7 @@ apiVersion: pxc.percona.com/v1
 kind: PerconaXtraDBCluster
 metadata:
   namespace: {{ $.Release.Namespace }}
-  name: {{ .Values.name }}-db
+  name: {{ include "pxc-db.clusterName" . }}
   finalizers:
     - percona.com/delete-pxc-pods-in-order
   {{- with .Values.annotations }}
@@ -137,7 +137,7 @@ spec:
         - name: MYSQLD_EXPORTER_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: internal-{{ .Values.name }}-db
+              name: internal-{{ include "pxc-db.clusterName" . }}
               key: monitor
       ports:
         - name: metrics
