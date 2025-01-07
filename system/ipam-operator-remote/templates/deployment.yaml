@@ -50,7 +50,7 @@ spec:
         securityContext: {{- toYaml .Values.controllerManager.manager.containerSecurityContext
           | nindent 10 }}
         volumeMounts:
-        - mountPath: /kubeconfig
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
           name: remote-kubeconfig
           readOnly: true
       hostNetwork: true
@@ -61,4 +61,9 @@ spec:
       volumes:
       - name: remote-kubeconfig
         secret:
+          items:
+          - key: token
+            path: token
+          - key: bundle.crt
+            path: ca.crt
           secretName: ipam-operator-remote-kubeconfig
