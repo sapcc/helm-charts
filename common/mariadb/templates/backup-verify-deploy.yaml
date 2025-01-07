@@ -4,10 +4,7 @@ kind: Deployment
 metadata:
   name: {{ include "fullName" . }}-verification
   labels:
-    system: openstack
-    type: database
-    component: {{ .Values.name }}
-    {{- include "sharedservices.labels" . | indent 4 }}
+    {{- include "mariadb.labels" (list $ "version" "mariadb" "deployment" "backupverification") | indent 4 }}
 spec:
   replicas: 1
   revisionHistoryLimit: 5
@@ -15,13 +12,11 @@ spec:
     type: Recreate
   selector:
     matchLabels:
-      app: {{ include "fullName" . }}-verification
+      app.kubernetes.io/component: {{ include "label.component" (list "mariadb" "deployment" "backupverification") }}
   template:
     metadata:
       labels:
-        app: {{ include "fullName" . }}-verification
-        name: {{ template "fullName" . }}-verification
-        {{- include "sharedservices.labels" . | indent 8 }}
+        {{- include "mariadb.labels" (list $ "version" "mariadb" "deployment" "backupverification") | indent 8 }}
       annotations:
 {{- if .Values.metrics.enabled }}
         prometheus.io/scrape: "true"
@@ -33,6 +28,7 @@ spec:
 {{- end }}
     spec:
       serviceAccountName: {{ .Values.name }}-db-backup-v2
+      priorityClassName: {{ .Values.priority_class_backup | default "critical-infrastructure" | quote }}
       containers:
       - name: mariabackup-verification
         image: "{{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{ .Values.backup_v2.image }}:{{ .Values.backup_v2.image_version }}"

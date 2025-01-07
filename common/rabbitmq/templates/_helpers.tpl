@@ -11,8 +11,8 @@ Create a default fully qualified app name.
 We truncate at 63 chars because some Kubernetes name fields are limited to this (by the DNS naming spec).
 */}}
 {{- define "fullname" -}}
-{{- $name := default .Chart.Name .Values.nameOverride -}}
-{{- printf "%s-%s" .Release.Name $name | trunc 63 | replace "_" "-" | trimSuffix "-" -}}
+{{- $name := default $.Chart.Name $.Values.nameOverride -}}
+{{- printf "%s-%s" $.Release.Name $name | trunc 63 | replace "_" "-" | trimSuffix "-" -}}
 {{- end -}}
 
 {{- define "rabbitmq.resolve_secret_urlquery" -}}
@@ -20,8 +20,8 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
     {{- if (hasPrefix "vault+kvv2" $str ) -}}
         {{"{{"}} resolve "{{ $str }}" | urlquery {{"}}"}}
     {{- else -}}
-        {{ $str }}
-{{- end -}}
+        {{ $str | urlquery }}
+    {{- end -}}
 {{- end -}}
 
 {{define "rabbitmq.release_host"}}{{.Release.Name}}-rabbitmq{{end}}
@@ -90,18 +90,44 @@ rabbit://{{- $_prefix -}}{{- $_username -}}:{{- $_password -}}@{{- $_rhost -}}:{
                 - reinstalling
 {{- end }}
 
+{{/*
+  Generate labels
+  $ = global values
+  version/noversion = enable/disable version fields in labels
+  rabbitmq = desired component name
+  job = object type
+  config = provided function
+  include "rabbitmq.labels" (list $ "version" "rabbitmq" "deployment" "messagequeue")
+  include "rabbitmq.labels" (list $ "version" "rabbitmq" "job" "config")
+*/}}
 {{- define "rabbitmq.labels" }}
-app.kubernetes.io/name: {{ .Chart.Name }}
-app.kubernetes.io/instance: {{ .Chart.Name }}-{{ .Release.Name }}
-app.kubernetes.io/version: {{ .Chart.AppVersion }}
-app.kubernetes.io/component: {{ .Chart.Name }}
-app.kubernetes.io/part-of: {{ .Release.Name }}
-helm.sh/chart: {{ include "rabbitmq.chart" . }}
+{{- $ := index . 0 }}
+{{- $component := index . 2 }}
+{{- $type := index . 3 }}
+{{- $function := index . 4 }}
+app: {{ template "fullname" $ }}
+app.kubernetes.io/name: {{ $.Chart.Name }}
+app.kubernetes.io/instance: {{ template "fullname" $ }}
+app.kubernetes.io/component: {{ include "label.component" (list $component $type $function) }}
+app.kubernetes.io/part-of: {{ $.Release.Name }}
+  {{- if eq (index . 1) "version" }}
+app.kubernetes.io/version: {{ $.Values.imageTag | regexFind "[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}" }}
+app.kubernetes.io/managed-by: "helm"
+helm.sh/chart: {{ $.Chart.Name }}-{{ $.Chart.Version | replace "+" "_" }}
+  {{- end }}
 {{- end }}
 
 {{/*
-Create chart name and version as used by the chart label.
+  Generate labels
+  rabbitmq = desired component name
+  job = object type
+  config = provided function
+  include "label.component" (list "rabbitmq" "deployment" "messagequeue")
+  include "label.component" (list "rabbitmq" "job" "config")
 */}}
-{{- define "rabbitmq.chart" -}}
-{{- printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" -}}
-{{- end -}}
+{{- define "label.component" }}
+{{- $component := index . 0 }}
+{{- $type := index . 1 }}
+{{- $function := index . 2 }}
+{{- $component }}-{{ $type }}-{{ $function }}
+{{- end }}

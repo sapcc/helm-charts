@@ -17,3 +17,11 @@ vrops_virtualmachine_(?:
 )
 {{- end -}}
 {{- end -}}
+
+{{- define "prometheusCephFederationMatches" -}}
+objectstore_(?:
+{{- range .Values.prometheus_ceph.matches -}}
+{{- . | trimPrefix "objectstore_" -}}|
+{{- end -}}
+)
+{{- end -}}

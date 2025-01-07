@@ -207,36 +207,19 @@ filter {
   # Log and Correct malformed target.project_id
   # Addresses some castellum events having multiple duplicate target.project_id's
   # with debug logging to track down the issue further.
-  if [target][project_id] {
-   if ([target][project_id] =~ /,/) or (is_array([target][project_id])) {
-      # Log a warning message with the entire event
-      ruby {
-        id => "f27_log_entire_event"
-        code => '
-          event.logger.warn("Malformed target.project_id detected. Event details:", event.to_hash)
-        '
-      }
-
-      # Correct the project_id field
-      ruby {
-        id => "f27_correct_project_id"
-        code => '
-          project_id = event.get("[target][project_id]")
-          if project_id.is_a?(Array)
-            corrected_id = project_id[0]
-            event.logger.warn("target project_id is an array")
-          elsif project_id.is_a?(String)
-            corrected_id = project_id.split(",")[0]
-            event.logger.warn("target project_id is a string that contains a comma")
-          else
-            corrected_id = project_id
-            event.logger.warn("target project_id is not a string or an array")
-          end
-          event.set("[target][project_id]", corrected_id.strip)
-        '
-      }
-    }
+  ruby {
+    id => "f27_correct_project_id"
+    code => '
+      project_id = event.get("[target][project_id]")
+      if project_id.is_a?(Array) || (project_id.is_a?(String) && project_id.include?(","))
+        original_project_id = project_id
+        corrected_id = project_id.is_a?(Array) ? project_id.first : project_id.split(",").first.strip
+        event.set("[target][project_id]", corrected_id)
+        logger.warn("Corrected malformed target.project_id from #{original_project_id.inspect} to #{corrected_id}")
+      end
+    '
   }
+
 
   # With several different event types using jdbc_static, not sure an if makes sense.
   # we will have to handle several events that don't match a query

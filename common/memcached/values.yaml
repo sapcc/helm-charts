@@ -2,7 +2,7 @@
 ## ref: https://hub.docker.com/r/library/memcached/tags/
 ##
 image: library/memcached
-imageTag: 1.6.28-alpine
+imageTag: 1.6.31-alpine3.20
 # set to true to use .Values.global.dockerHubMirrorAlternateRegion instead of .Values.global.dockerHubMirror
 use_alternate_registry: false
 
@@ -22,10 +22,7 @@ nodeAffinity: {}
 #external_ip: ''
 
 # name of priorityClass to influence scheduling priority
-# false = disabled
-# true = enabled and set to 'openstack-service-critical'
-# <string> = set the priorityClassName to that value
-priority_class: true
+priority_class: "critical-infrastructure"
 
 memcached:
   ## Various values that get set as command-line flags.
@@ -50,10 +47,10 @@ resources:
 
 metrics:
   enabled: true
-  image: 'prom/memcached-exporter'
-  imageTag: 'v0.14.1'
+  image: "prom/memcached-exporter"
+  imageTag: "v0.14.1"
 
-  port: '9150'
+  port: "9150"
   resources:
     enabled: true
     limits:
@@ -69,8 +66,8 @@ replicas: 1
 # the client should connect using this username/password combination to
 # connect to memcached.
 auth:
-  username: ''
-  password: ''
+  username: ""
+  password: ""
 
 upgrades:
   revisionHistory: 3
@@ -78,7 +75,6 @@ upgrades:
   rollingUpdate:
     maxUnavailable: 1
     maxSurge: 3
-
 
 # Default Prometheus alerts and rules.
 alerts:

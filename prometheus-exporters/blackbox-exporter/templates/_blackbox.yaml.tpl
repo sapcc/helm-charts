@@ -4,7 +4,7 @@ modules:
     http:
       fail_if_not_ssl: false
       preferred_ip_protocol: "ip4"
-      no_follow_redirects: false
+      follow_redirects: true
       tls_config:
         insecure_skip_verify: true
   https_2xx:
@@ -12,7 +12,7 @@ modules:
     http:
       fail_if_not_ssl: true
       preferred_ip_protocol: "ip4"
-      no_follow_redirects: false
+      follow_redirects: true
   http_401:
     prober: http
     http:
@@ -28,21 +28,21 @@ modules:
   http_403:
     prober: http
     http:
-      no_follow_redirects: false
+      follow_redirects: true
       valid_status_codes: [403]
       tls_config:
         insecure_skip_verify: true
   https_403:
     prober: http
     http:
-      no_follow_redirects: false
+      follow_redirects: true
       fail_if_not_ssl: true
       valid_status_codes: [403]
   # used for probing kubernikus kluster api
   http_200_403:
     prober: http
     http:
-      no_follow_redirects: false
+      follow_redirects: true
       valid_status_codes: [200,403]
       tls_config:
         insecure_skip_verify: true
@@ -60,7 +60,7 @@ modules:
     http:
       fail_if_not_ssl: true
       preferred_ip_protocol: "ip4"
-      no_follow_redirects: false
+      follow_redirects: true
       fail_if_body_not_matches_regexp:
         - '"WarningStatusCheck":true'
         - '"CeleryAppVersionCheck":true'

@@ -34,7 +34,7 @@
   value: "http://thanos-metal-query.thanos.svc:10902"
 {{- end }}
 - name: CASTELLUM_OSLO_POLICY_PATH
-  value: /etc/castellum/policy.yaml
+  value: /etc/castellum/policy.json
 - name: CASTELLUM_RABBITMQ_QUEUE_NAME
   value: notifications.info
 - name: CASTELLUM_RABBITMQ_USERNAME

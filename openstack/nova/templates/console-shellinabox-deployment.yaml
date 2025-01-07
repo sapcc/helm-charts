@@ -80,8 +80,13 @@ spec:
       - name: temp
         emptyDir: {}
       - name: config
-        configMap:
-          name: nova-console-cell1-shellinabox
+        projected:
+          sources:
+          - configMap:
+              name: nova-console-cell1-shellinabox
+              items:
+              - key: 10_default_server.conf
+                path: 10_default_server.conf
       - name: app
         projected:
           defaultMode: 420
@@ -91,6 +96,8 @@ spec:
               items:
               - key: revproxy.lua
                 path: revproxy.lua
+              - key: token_lookup.lua
+                path: token_lookup.lua
           - secret:
               name: nova-console-cell1-shellinabox
               items:

@@ -1,0 +1,14 @@
+groups:
+- name: metis-api.alerts
+  rules:
+  - alert: MetisAPIUnexpectedError
+    expr: increase(httpmux_request_size_bytes_count{app="metis-api", status=~"5.."}[60m]) > 0
+    for: 5m
+    labels:
+      support_group: observability
+      service: metis
+      severity: info
+    annotations:
+      summary: 'Unexpected API error with status {{$labels.status}}'
+      description: 'Metis API returned an unexpected error.'
+

@@ -15,7 +15,6 @@ groups:
         description: The modification date of the most recently modified object on S3 bucket `{{ $labels.bucket }}` is more than 24 hours. No recent k3s backup available!
         summary: k3s backup is too old.
 
-  rules:
     - alert: K3sStateDbAwsBackupTooOld
       expr: (time() - s3_last_modified_object_date{job="k3s-statedb-s3-exporter"}) / 3600 > 1
       for: 5m
@@ -30,7 +29,6 @@ groups:
         description: The modification date of the most recently modified object on S3 bucket `{{ $labels.bucket }}` is more than 1 hour. No recent k3s statedb backup available!
         summary: k3s statebd backup (Litestream) is too old.
 
-  rules:
     - alert: K3sLitestreamNotReplicating
       expr: rate(litestream_replica_operation_total{k8s_app="k3s-litestream",operation="PUT"}[5m]) <= 0 or absent(litestream_replica_operation_total{k8s_app="k3s-litestream"})
       for: 10m
@@ -45,7 +43,6 @@ groups:
         description: Litestream is not replicating k3s statebd to AWS S3 bucket `{{ $labels.bucket }}` for more than 10m. Check the Litestream pod for errors.
         summary: Litestream not replicating k3s statebd to AWS.
 
-  rules:
     - alert: K3sLitestreamSyncError
       expr: rate(litestream_sync_error_count{k8s_app="k3s-litestream"}[5m]) / rate(litestream_sync_count{k8s_app="k3s-litestream"}[5m]) > 0.01
       for: 10m

@@ -1,43 +1,63 @@
 {{- define "deployment_bird" -}}
 ---
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
-  name: {{ include "bird.instance.deployment_name" . }}
-  labels: {{ include "bird.instance.labels" . | nindent 4 }}
+  name: {{ include "bird.statefulset.name" . }}
+  labels: {{ include "bird.statefulset.labels" . | nindent 4 }}
 spec:
-  replicas: 1
+  serviceName: {{ .top.Release.Name }}
+  replicas: {{ .top.Values.bird_replicas }}
+  updateStrategy:
+    type: RollingUpdate
+  podManagementPolicy: OrderedReady
+  ordinals:
+    start: 1
   selector:
-    matchLabels: {{ include "bird.instance.labels" . | nindent 8 }}
-  strategy:
-    type: Recreate
+    matchLabels: {{ include "bird.statefulset.labels" . | nindent 8 }}
   template:
     metadata:
-      labels: {{ include "bird.instance.labels" . | nindent 8 }}
+      labels: {{ include "bird.statefulset.labels" . | nindent 8 }}
         {{ include "bird.alert.labels" . | nindent 8 }}
         app.kubernetes.io/name: px
+        kubectl.kubernetes.io/default-container: "bird"
       annotations:
-        k8s.v1.cni.cncf.io/networks: '[{ "name": "{{ include "bird.instance.deployment_name" . }}", "interface": "vlan{{ .domain_config.multus_vlan }}"}]'
+        k8s.v1.cni.cncf.io/networks: '[{ "name": "vlan{{ .domain_config.multus_vlan }}", "interface": "vlan{{ .domain_config.multus_vlan }}"}]'
     spec:
+      priorityClassName: critical-payload
+      topologySpreadConstraints: {{ include "bird.topology_spread" . | nindent 8 }}
       affinity: {{ include "bird.domain.affinity" . | nindent 8 }}
       tolerations: {{ include "bird.domain.tolerations" . | nindent 8 }}
       initContainers:
-      - name: {{ include "bird.instance.deployment_name" .}}-init
-        image: keppel.{{ required "A registry mus be set" .top.Values.registry }}.cloud.sap/ccloud-dockerhub-mirror/library/alpine:latest
-        command: ["sh", "-c", "ip link set vlan{{ .domain_config.multus_vlan }} promisc on"]
+      - name: init-network
+        image: keppel.{{ required "A registry mus be set" .top.Values.registry }}.cloud.sap/{{ required "A bird_image must be set" .top.Values.bird_image }}
+        command: ["/px-init/configure_network.sh"]
         securityContext:
           privileged: true
+        env:
+        - name: PX_INTERFACE
+          value: "vlan{{ .domain_config.multus_vlan | required "multus_vlan must be set" }}"
+        - name: PX_NETWORK
+          value: "{{ get .domain_config (printf "network_%s" .afi)}}"
+        # needed for router id 
+        - name: PX_NETWORK_V4
+          value: {{ .domain_config.network_v4 | quote }}
+        volumeMounts:
+          - name: init-network
+            mountPath: /px-init/
+          - name: run-bird
+            mountPath: /var/run/bird
       containers:
-      - name: {{ include "bird.instance.deployment_name" .}}
+      - name: bird
         image: keppel.{{ required "A registry mus be set" .top.Values.registry }}.cloud.sap/{{ required "A bird_image must be set" .top.Values.bird_image }}
         securityContext:
           capabilities:
             add: ["NET_ADMIN"]
         imagePullPolicy: Always
         volumeMounts:
-        - name: vol-{{ include "bird.instance.deployment_name" .}}
+        - name: config
           mountPath: /etc/bird
-        - name: bird-socket
+        - name: run-bird
           mountPath: /var/run/bird
         livenessProbe:
           exec:
@@ -45,45 +65,49 @@ spec:
           initialDelaySeconds: 5
           periodSeconds: 5
         resources: {{ toYaml .top.Values.resources.bird | nindent 10 }}
-      - name: {{ include "bird.instance.deployment_name" .}}-exporter
+      - name: exporter
         image: keppel.{{ .top.Values.registry }}.cloud.sap/{{required "bird_exporter_image must be set" .top.Values.bird_exporter_image}}
         args: ["-format.new=true", "-bird.v2", "-bird.socket=/var/run/bird/bird.ctl", "-proto.ospf=false", "-proto.direct=false"]
         resources: {{ toYaml .top.Values.resources.exporter | nindent 10 }}
         volumeMounts:
-        - name: bird-socket
+        - name: run-bird
           mountPath: /var/run/bird
           readOnly: true
         ports:
         - containerPort: 9324
           name: metrics
-      - name: {{ include "bird.instance.deployment_name" .}}-lgproxy
+      - name: lgproxy
         image: keppel.{{ .top.Values.registry }}.cloud.sap/{{ required "lg_image must be set" .top.Values.lg_image }}
-        command: ["python3"]
+        command: ["/venv/bin/python3"]
         args: ["lgproxy.py"]
         resources: {{ toYaml .top.Values.resources.proxy | nindent 10 }}
         volumeMounts:
-        - name: bird-socket
+        - name: run-bird
           mountPath: /var/run/bird
           readOnly: true
         ports:
         - containerPort: 5000
           name: lgproxy
-      - name: {{ include "bird.instance.deployment_name" .}}-lgadminproxy
+      - name: lgadminproxy
         image: keppel.{{ .top.Values.registry }}.cloud.sap/{{ .top.Values.lg_image }}
-        command: ["python3"]
+        command: ["/venv/bin/python3"]
         args: ["lgproxy.py", "priv"]
         resources: {{ toYaml .top.Values.resources.proxy | nindent 10 }}
         volumeMounts:
-        - name: bird-socket
+        - name: run-bird
           mountPath: /var/run/bird
           readOnly: true
         ports:
         - containerPort: 5005
           name: lgadminproxy
       volumes:
-        - name: vol-{{ include "bird.instance.deployment_name" .}}
+        - name: config
           configMap:
-            name: cfg-{{ include "bird.domain.config_name" . }}
-        - name: bird-socket
+            name: {{ include "bird.statefulset.configMapName" . }}
+        - name: run-bird
           emptyDir: {}
+        - name: init-network
+          configMap:
+            name: {{ printf "%s-init-network" .top.Release.Name | quote }}
+            defaultMode: 0500
 {{- end }}

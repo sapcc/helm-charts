@@ -3,9 +3,18 @@
 kind: ConfigMap
 apiVersion: v1
 metadata:
-    name: cfg-{{ $.Values.global.region }}-pxrs-{{ $lg }}
+    name: {{ $lg }}
 data:
-    "{{ $.Values.global.region }}-pxrs-{{ $lg }}.cfg": |
-{{ tuple $.Values.global.region $lg_config | include "lg_conf" | indent 8 }}
+    "lg_config.cfg": |
+        DEBUG = False
+        LOG_FILE="/var/log/lg.log"
+        LOG_LEVEL="INFO"
+
+        BIND_IP = "0.0.0.0"
+        BIND_PORT = 80
+        PROXY_PORT = {{ $lg_config.proxy_port | quote }}
+
+        SERVICE_DISCOVERY_NAMESPACE = {{ $.Release.Namespace | quote }}
+        SERVICE_DISCOVERY_LABEL_SELECTOR = {{ $lg_config.service_discovery_label_selector | quote }}
 
 {{ end }}

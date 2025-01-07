@@ -30,7 +30,7 @@ global:
   domain_seeds:
     skip_hcm_domain: false
   linkerd_requested: false
-  
+
 pod:
   replicas:
     api: 3
@@ -48,6 +48,12 @@ pod:
         rolling_update:
           max_unavailable: 0
           max_surge: 1
+
+mdns_workers: 2
+producer_workers: 2
+worker_workers: 2
+central_workers: 2
+api_workers: 4
 
 # image_version_designate:  DEFINED-IN-REGION-CHART
 imageVersionTempest: "latest"
@@ -78,6 +84,12 @@ worker_threshold_percentage: '100'
 worker_poll_max_prop_time: '100'
 worker_poll_delay: '3'
 worker_all_tcp: True
+
+zone_purge:
+  interval: '3600'
+  per_page: '200'
+  time_threshold: '2592000'
+  batch_size: '200'
 
 percona_cluster:
   enabled: false
@@ -136,7 +148,6 @@ pxc_db:
   users:
     designate:
       name: designate
-      auth_plugin: 'mysql_native_password'
       grants:
       - "ALL PRIVILEGES on designate.*"
   pxc:
@@ -325,7 +336,7 @@ rabbitmq:
   metrics:
     enabled: true
     sidecar:
-      enabled: false 
+      enabled: false
     enableDetailedMetrics: true
     enablePerObjectMetrics: true
 
@@ -355,7 +366,7 @@ resources:
       cpu: "100m"
     limits:
       memory: "2048Mi"
-      cpu: "2000m"
+      cpu: "4000m"
   central:
     requests:
       cpu: "250m"
@@ -402,6 +413,9 @@ osprofiler:
   enabled: false
 
 coordinationBackend: "file"
+coordination:
+  central:
+    enabled: false
 
 owner-info:
   support-group: network-api
@@ -414,9 +428,12 @@ owner-info:
 utils:
   trust_bundle:
     enabled: true
-    
+
 vpa:
   # https://github.com/sapcc/vpa_butler
   # The maximum available capacity is split evenly across containers specified in the Deployment, StatefulSet or DaemonSet to derive the upper recommendation bound. This does not work out for pods with a single resource-hungry container with several sidecar containers
   # Annotate the Deployment, StatefulSet or DaemonSet with vpa-butler.cloud.sap/main-container=$MAIN_CONTAINER. That will distribute 75% of the maximum available capacity to the main container and the rest evenly across all others
   set_main_container: true
+
+# used to set the PYTHONWARNINGS environment variable everywhere
+python_warnings: "ignore:Unverified HTTPS request,ignore::SyntaxWarning"

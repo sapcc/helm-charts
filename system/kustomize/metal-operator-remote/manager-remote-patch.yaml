@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: controller-manager
+  namespace: system
+spec:
+  template:
+    spec:
+      hostNetwork: true
+      containers:
+      - name: manager
+        args:
+        - --mac-prefixes-file=/etc/macdb/macdb.yaml
+        - --probe-image=keppel.eu-de-1.cloud.sap/ccloud-ghcr-io-mirror/ironcore-dev/metalprobe:latest
+        - --probe-os-image=ghcr.io/ironcore-dev/os-images/gardenlinux:1443.3
+        - --insecure=false
+        - --registry-url=http://[2a10:afc0:e013:d002::]:30010
+        - --kubeconfig=/kubeconfig/kubeconfig
+        - --manager-namespace=metal-operator-system
+        volumeMounts:
+        - name: remote-kubeconfig
+          mountPath: /kubeconfig
+          readOnly: true
+        - mountPath: /etc/macdb/
+          name: macdb
+      volumes:
+      - name: remote-kubeconfig
+        secret:
+          secretName: metal-operator-remote-kubeconfig
+      - name: macdb
+        secret:
+          secretName: macdb

@@ -1,0 +1,28 @@
+{{- if .Values.thanos.enabled -}}
+apiVersion: greenhouse.sap/v1alpha1
+kind: PluginPreset
+metadata:
+  name: thanos
+  namespace: ccloud
+spec:
+  {{- if .Values.thanos.clusterOptionOverrides }}
+  clusterOptionOverrides:
+    {{ toYaml .Values.thanos.clusterOptionOverrides | nindent 4 }}
+  {{- end }}
+  clusterSelector:
+    matchExpressions:
+    - key: greenhouse.sap/pluginpreset
+      operator: In
+      values:
+      - "true"
+    - key: cluster-type
+      operator: In
+      values:
+      - "storage"
+      - "observability"
+  plugin:
+    disabled: false
+    displayName: Thanos
+    pluginDefinition: thanos
+    releaseNamespace: kube-monitoring
+{{- end -}}

@@ -38,7 +38,7 @@ storages:
       region: {{ .Values.global.mariadb.backup_v2.aws.region }}
       bucket_name: "mariadb-backup-{{ .Values.global.region }}"
       sse_customer_algorithm: "AES256"
-      sse_customer_key: "{{ include "mariadb.resolve_secret_squote" .Values.global.mariadb.backup_v2.aws.sse_customer_key }}"
+      sse_customer_key: {{ include "mariadb.resolve_secret_squote" .Values.global.mariadb.backup_v2.aws.sse_customer_key }}
   swift:
     - name: swift-{{ .Values.global.region }}
       auth_version: 3

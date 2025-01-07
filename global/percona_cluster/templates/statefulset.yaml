@@ -24,6 +24,7 @@ spec:
       annotations:
         {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
         linkerd.io/inject: enabled
+        config.linkerd.io/opaque-ports: "3306,4444,4567,4568"
         {{- end }}
         prometheus.io/scrape: "true"
         prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
@@ -207,7 +208,7 @@ spec:
           initialDelaySeconds: 30
           timeoutSeconds: 2
       {{ end }}
-      priorityClassName: {{ default "openstack-service-critical" .Values.priority_class | quote }}
+      priorityClassName: {{ default "critical-infrastructure" .Values.priority_class | quote }}
       volumes:
       - name: slash-root
         emptyDir: {}

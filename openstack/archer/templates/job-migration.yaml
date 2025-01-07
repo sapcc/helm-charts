@@ -27,18 +27,19 @@ spec:
       containers:
         - name: {{ include "archer.fullname" . }}-migration
           image: "{{ .Values.global.registry }}/archer:{{ .Values.image.tag | required ".Values.image.tag is required" }}"
-          command: [ "/linkerd-await" ]
-          args: [ "--shutdown", "--", "/usr/bin/archer-migrate", "--config-file=/etc/archer/archer.ini" ]
+          {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+          command: [ "/bin/sh" ]
+          args: [ "-c", "/usr/bin/archer-migrate --config-file=/etc/archer/archer.ini && wget -O- --post-data hello=shutdown http://0.0.0.0:4191/shutdown" ]
+          {{- else }}
+          command: [ "/usr/bin/archer-migrate" ]
+          args: [ "--config-file=/etc/archer/archer.ini" ]
+          {{- end }}
           env:
             - name: SENTRY_DSN
               valueFrom:
                 secretKeyRef:
                   name: sentry
                   key: archer.DSN
-            {{- if not (and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested) }}
-            - name: LINKERD_AWAIT_DISABLED
-              value: "Linkerd was not enabled or not requested"
-            {{- end }}
             - name: PGPASSWORD
               valueFrom:
                 secretKeyRef:

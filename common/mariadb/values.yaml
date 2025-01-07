@@ -4,7 +4,7 @@
 # name: value
 
 name: null
-image: library/mariadb:10.5.17
+image: library/mariadb:10.5.27
 imagePullPolicy: IfNotPresent
 port_public: 3306
 max_connections: 1024
@@ -62,7 +62,8 @@ pre_change_hook:
   kubectl_version: "1.23"
 
 # name of priorityClass to influence scheduling priority
-priority_class: "openstack-service-critical"
+priority_class: "critical-infrastructure"
+priority_class_backup: "critical-infrastructure"
 
 persistence_claim:
   enabled: true
@@ -142,12 +143,13 @@ backup_v2:
 metrics:
   enabled: true
   image: prom/mysqld-exporter
-  image_version: v0.15.1
+  image_version: v0.16.0
   port: "9104"
   flags:
     - collect.binlog_size
     - collect.info_schema.processlist
     - collect.info_schema.query_response_time
+    - collect.info_schema.innodb_tablespaces
   resources:
     enabled: true
     limits:

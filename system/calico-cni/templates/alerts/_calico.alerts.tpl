@@ -46,3 +46,17 @@ groups:
       annotations:
         description: Calico is not running on all nodes that are Ready.
         summary: Calico is not running on all bare metal nodes that are Ready. Network datapath threatened!
+
+    - alert: CalicoNodeNotReady
+      expr: kube_pod_container_status_ready{container="calico-node"} == 0
+      for: 30m
+      labels:
+        tier: k8s
+        service: {{ .Values.alerts.service }}
+        severity: warning
+        context: availability
+        support_group: {{ .Values.alerts.supportGroup }}
+        playbook: "docs/support/playbook/kubernetes/k8s_node_bgp_neighbor"
+      annotations:
+        description: Calico-Node Pod is not Ready on all nodes.
+        summary: Calico-Node is not healthy on all bare metal nodes that are Ready. Risk of stale BGP advertisement. Network datapath threatened!

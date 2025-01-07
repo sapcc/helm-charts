@@ -70,6 +70,39 @@ spec:
                   name: sentry
                   key: {{ .Release.Name }}.DSN.python
             {{- end }}
+            {{- if .Values.python_warnings }}
+            - name: PYTHONWARNINGS
+              value: {{ .Values.python_warnings | quote }}
+            {{- end }}
+          livenessProbe:
+            exec:
+              command:
+              - python3
+              - /container.init/health-probe.py
+              - --config-file
+              - /etc/designate/secrets.conf
+              - --config-file
+              - /etc/designate/hostname.conf
+              - --service-name
+              - central
+              - --liveness-probe
+            initialDelaySeconds: 30
+            periodSeconds: 45
+            timeoutSeconds: 40
+          readinessProbe:
+            exec:
+              command:
+              - python3
+              - /container.init/health-probe.py
+              - --config-file
+              - /etc/designate/secrets.conf
+              - --config-file
+              - /etc/designate/hostname.conf
+              - --service-name
+              - central
+            initialDelaySeconds: 30
+            periodSeconds: 45
+            timeoutSeconds: 40
           volumeMounts:
             - mountPath: /designate-etc
               name: designate-etc
@@ -77,7 +110,10 @@ spec:
               name: container-init
             {{- include "utils.proxysql.volume_mount" . | indent 12 }}
             {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
-        {{- include "utils.proxysql.container" . | indent 8 }}
+            {{- if .Values.coordination.central.enabled }}
+            {{- include "utils.coordination.volume_mount" . | indent 12 }}
+            {{- end }}
+        {{- tuple . .Values.central_workers | include "utils.proxysql.container" | indent 8 }}
         {{- include "jaeger_agent_sidecar" . | indent 8 }}
       volumes:
         - name: designate-etc
@@ -98,5 +134,8 @@ spec:
           configMap:
             name: designate-bin
             defaultMode: 0755
+        {{- if .Values.coordination.central.enabled }}
+        {{- include "utils.coordination.volumes" . | indent 8 }}
+        {{- end }}
         {{- include "utils.proxysql.volumes" . | indent 8 }}
         {{- include "utils.trust_bundle.volumes" . | indent 8 }}

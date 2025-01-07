@@ -51,12 +51,10 @@ quota_recordset_records = {{ .Values.quota_recordset_records | default 20 }}
 quota_api_export_size = {{ .Values.quota_api_export_size | default 1000 }}
 
 rpc_response_timeout = {{ .Values.rpc_response_timeout | default .Values.global.rpc_response_timeout | default 300 }}
-rpc_workers = {{ .Values.rpc_workers | default .Values.global.rpc_workers | default 1 }}
+
+rpc_ping_enabled = true
 
 wsgi_default_pool_size = {{ .Values.wsgi_default_pool_size | default .Values.global.wsgi_default_pool_size | default 100 }}
-min_pool_size = {{ .Values.min_pool_size | default .Values.global.min_pool_size | default 10 }}
-max_pool_size = {{ .Values.max_pool_size | default .Values.global.max_pool_size | default 100 }}
-max_overflow = {{ .Values.max_overflow | default .Values.global.max_overflow | default 50 }}
 
 [oslo_policy]
 policy_file = policy.yaml
@@ -66,11 +64,14 @@ heartbeat_in_pthread = false
 rabbit_interval_max = 3
 rabbit_retry_backoff = 1
 kombu_reconnect_delay = 0.1
-heartbeat_timeout_threshold = 15
+heartbeat_timeout_threshold = 30
 heartbeat_rate = 3
 
 [oslo_messaging_notifications]
 driver = noop
+
+[heartbeat_emitter]
+heartbeat_interval = 30.0
 
 ########################
 ## Service Configuration
@@ -80,7 +81,7 @@ driver = noop
 #-----------------------
 [service:central]
 # Number of central worker processes to spawn
-workers = 2
+workers = {{ .Values.central_workers }}
 
 # Number of central greenthreads to spawn
 #threads = 1000
@@ -113,7 +114,7 @@ scheduler_filters = {{ .Values.scheduler_filters }}
 #-----------------------
 [service:api]
 # Number of api worker processes to spawn
-workers = 2
+workers = {{ .Values.api_workers }}
 
 # Number of api greenthreads to spawn
 #threads = 1000
@@ -262,7 +263,7 @@ allow_headers = X-Auth-Token,X-Auth-Sudo-Tenant-ID,X-Auth-Sudo-Project-ID,X-Auth
 #-----------------------
 [service:mdns]
 # Number of mdns worker processes to spawn
-workers = 2
+workers = {{ .Values.mdns_workers }}
 
 # Number of mdns greenthreads to spawn
 threads = 1000
@@ -304,7 +305,7 @@ query_enforce_tsig = {{ .Values.query_enforce_tsig }}
 #-----------------------
 [service:producer]
 # Number of Producer worker processes to spawn (integer value)
-workers = 2
+workers = {{ .Values.producer_workers }}
 
 # Number of Producer greenthreads to spawn (integer value)
 #threads = 1000
@@ -330,17 +331,17 @@ topic = producer
 #
 
 # Run interval in seconds (integer value)
-interval = 3600
+interval = {{ .Values.zone_purge.interval }}
 
 # Default amount of results returned per page (integer value)
-per_page = 200
+per_page = {{ .Values.zone_purge.per_page }}
 
 # How old deleted zones should be (deleted_at) to be purged, in seconds (integer
 # value)
-time_threshold = 2592000
+time_threshold = {{ .Values.zone_purge.time_threshold }}
 
 # How many zones to be purged on each run (integer value)
-batch_size = 200
+batch_size = {{ .Values.zone_purge.batch_size }}
 
 #------------------------
 # Delayed zones NOTIFY
@@ -360,7 +361,7 @@ batch_size = 200
 enabled = {{.Values.worker_enabled}}
 
 # Number of Worker processes to spawn
-workers = 2
+workers = {{ .Values.worker_workers }}
 
 # Number of Worker greenthreads to spawn
 threads = 200
@@ -416,9 +417,14 @@ mysql_sql_mode = TRADITIONAL
 #connection_debug = 0
 #connection_trace = False
 #sqlite_synchronous = True
-#idle_timeout = 3600
+#connection_recycle_time = 3600
 #max_retries = 10
+
+max_pool_size = {{ .Values.max_pool_size | default .Values.global.max_pool_size | default 100 }}
+max_overflow = {{ .Values.max_overflow | default .Values.global.max_overflow | default 50 }}
+
 retry_interval = 1
+db_max_retry_interval = 1
 
 [healthcheck]
 # DEPRECATED: The path to respond to healtcheck requests on. (string value)

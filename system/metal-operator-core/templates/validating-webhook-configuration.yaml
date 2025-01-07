@@ -3,7 +3,7 @@ kind: ValidatingWebhookConfiguration
 metadata:
   name: {{ include "metal-operator-core.fullname" . }}-validating-webhook-configuration
   annotations:
-    cert-manager.io/inject-ca-from: {{ .Release.Namespace }}/{{ include "metal-operator-core.fullname" . }}-serving-cert
+    cert-manager.io/inject-ca-from: {{ .Release.Namespace }}/metal-operator-serving-cert
   labels:
   {{- include "metal-operator-core.labels" . | nindent 4 }}
 webhooks:
@@ -13,9 +13,9 @@ webhooks:
     service:
       name: '{{ include "metal-operator-core.fullname" . }}-webhook-service'
       namespace: '{{ .Release.Namespace }}'
-      path: /validate-metal-ironcore-dev-v1alpha1-serverclaim
+      path: /validate-metal-ironcore-dev-v1alpha1-endpoint
   failurePolicy: Fail
-  name: vserverclaim.kb.io
+  name: vendpoint-v1alpha1.kb.io
   rules:
   - apiGroups:
     - metal.ironcore.dev
@@ -25,5 +25,5 @@ webhooks:
     - CREATE
     - UPDATE
     resources:
-    - serverclaims
+    - endpoints
   sideEffects: None

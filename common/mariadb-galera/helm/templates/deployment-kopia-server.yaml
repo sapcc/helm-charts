@@ -6,28 +6,20 @@ kind: Deployment
 metadata:
   namespace: {{ $.Release.Namespace }}
   name: {{ include "commonPrefix" $ }}-backup-kopiaserver
-  labels:
-    app: {{ $.Release.Name }}
-    release: {{ $.Release.Name }}
-    component: "kopiaserver"
-    backupsoftware: "kopia"
-    {{- include "sharedservices.labels" $ | indent 4 }}
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: {{ $.Release.Name }}
+      app.kubernetes.io/component: {{ (index $.Values.image (printf "%s" "kopiabackup")).softwarename }}-deploy-server
   revisionHistoryLimit: {{ $.Values.revisionHistoryLimit | default 10 | int }}
   strategy:
     type: {{ $.Values.updateStrategy | default "RollingUpdate" | quote }}
   template:
     metadata:
       labels:
-        app: {{ $.Release.Name }}
-        release: {{ $.Release.Name }}
-        component: "kopiaserver"
         backupsoftware: "kopia"
-        {{- include "sharedservices.labels" $ | indent 8 }}
+        backupcomponent: "server"
+        {{- include "mariadb-galera.labels" (list $ "version" "kopiabackup" "deploy" "server") | indent 8 }}
       annotations:
         {{- if $.Values.monitoring.kopia.enabled }}
         prometheus.io/scrape: "true"

@@ -25,9 +25,15 @@ spec:
       metadata:
         labels:
           thanos: {{ include "thanos.name" (list $name $root) }}
-        {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+        {{- if or (and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested)
+                  (and $.Values.traefik.enabled $.Values.traefik.annotations) }}
         annotations:
+        {{- end }}
+        {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
           linkerd.io/inject: enabled
+        {{- end }}
+        {{- if and $.Values.traefik.enabled $.Values.traefik.annotations }}
+{{ toYaml $.Values.traefik.annotations | indent 10 }}
         {{- end }}
     deploymentOverrides:
       spec:

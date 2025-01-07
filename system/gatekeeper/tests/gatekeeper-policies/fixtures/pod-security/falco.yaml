@@ -12,11 +12,17 @@ spec:
   template:
     spec:
       containers:
-      - image: keppel.global.cloud.sap/ccloud-dockerhub-mirror/falcosecurity/falco-no-driver:0.39.0
+      - image: keppel.global.cloud.sap/ccloud-dockerhub-mirror/falcosecurity/falco-distroless:0.39.0
         name: falco
         securityContext:
           privileged: true
         volumeMounts:
+        - mountPath: /etc/falco
+          name: rulesfiles-install-dir
+        - mountPath: /usr/share/falco/plugins
+          name: plugins-install-dir
+        - mountPath: /root/.falco
+          name: root-falco-fs
         - mountPath: /host/proc
           name: proc-fs
           readOnly: true
@@ -37,33 +43,38 @@ spec:
           name: containerd-socket
         - mountPath: /host/run/crio/
           name: crio-socket
+        - mountPath: /etc/falco/falco.yaml
+          name: falco-yaml
+          subPath: falco.yaml
+        - mountPath: /etc/falco/rules.d
+          name: rules-volume
       - image: keppel.global.cloud.sap/ccloud-dockerhub-mirror/falcosecurity/falcoctl:0.10.0
       initContainers:
       - image: keppel.global.cloud.sap/ccloud-dockerhub-mirror/falcosecurity/falcoctl:0.10.0
         name: falcoctl-artifact-install
       securityContext: {}
       volumes:
-      - name: boot-fs
-        hostPath:
+      - hostPath:
           path: /boot
-      - name: lib-modules
-        hostPath:
+        name: boot-fs
+      - hostPath:
           path: /lib/modules
-      - name: usr-fs
-        hostPath:
+        name: lib-modules
+      - hostPath:
           path: /usr
-      - name: etc-fs
-        hostPath:
+        name: usr-fs
+      - hostPath:
           path: /etc
-      - name: docker-socket
-        hostPath:
+        name: etc-fs
+      - hostPath:
           path: /var/run
-      - name: containerd-socket
-        hostPath:
+        name: docker-socket
+      - hostPath:
           path: /run/containerd
-      - name: crio-socket
-        hostPath:
+        name: containerd-socket
+      - hostPath:
           path: /run/crio
-      - name: proc-fs
-        hostPath:
+        name: crio-socket
+      - hostPath:
           path: /proc
+        name: proc-fs

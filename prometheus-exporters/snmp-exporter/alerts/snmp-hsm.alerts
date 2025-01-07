@@ -18,7 +18,7 @@ groups:
 
   - alert: hsmAribaClientsMoreThan14
     expr: sum((snmp_hsm_hsmClientName{hsmClientName!~"barb.*"})) by (devicename) > 14
-    for: 12h
+    for: 1d
     labels:
       severity: info
       service: barbican
@@ -64,7 +64,7 @@ groups:
 
   - alert: hsmClientsMoreThan20
     expr: sum(snmp_hsm_hsmClientName) by (devicename) > 20
-    for: 12h
+    for: 1d
     labels:
       severity: info
       service: barbican
@@ -79,7 +79,7 @@ groups:
 
   - alert: hsmBarbicanClientsMoreThan4
     expr: sum((snmp_hsm_hsmClientName{hsmClientName=~"barb.*"})) by (devicename) > 4
-    for: 12h
+    for: 1d
     labels:
       severity: info
       service: barbican
@@ -92,62 +92,17 @@ groups:
       description: "HSM Client License in {{ $labels.devicename }} is {{ $value }}"
       summary: "HSM Client License in {{ $labels.devicename }} is {{ $value }}"
 
-  - alert: hsm01B700IsUnReachable
-    expr: irate(snmp_hsm_hsmUpTime{hsmModel="Luna G7",devicename=~"hsm01.*"}[5m]) != 0
-    for: 1h
-    labels:
-      severity: info
-      service: barbican
-      context: hsm
-      meta: "HSM01 B700 Device is UnReachable"
-      dashboard: hsm
-      no_alert_on_absence: "true"
-      support_group: foundation
-    annotations:
-      description: "HSM01 B700 Device is UnReachable"
-      summary: "HSM01 B700 Device is UnReachable"
-
-  - alert: hsm02B700IsUnReachable
-    expr: irate(snmp_hsm_hsmUpTime{hsmModel="Luna G7",devicename=~"hsm02.*"}[5m]) != 0
-    for: 1h
-    labels:
-      severity: info
-      service: barbican
-      context: hsm
-      meta: "HSM02 B700 Device is UnReachable"
-      dashboard: hsm
-      no_alert_on_absence: "true"
-      support_group: foundation
-    annotations:
-      description: "HSM02 B700 Device is UnReachable"
-      summary: "HSM02 B700 Device is UnReachable"
-
-  - alert: hsm01A790IsUnReachable
-    expr: irate(snmp_hsm_hsmUpTime{hsmModel="Luna K7",devicename=~"hsm01.*"}[5m]) < 0.95
+  - alert: hsmDeviceIsUnReachable
+    expr: count(up{job="scrapeConfig/infra-monitoring/snmp-exporter-hsm"} == 0 or absent(up{job="scrapeConfig/infra-monitoring/snmp-exporter-hsm"})) by (name, device_type)
     for: 15m
     labels:
-      severity: info
+      severity: warning
       service: barbican
       context: hsm
-      meta: "HSM01 A790 Device is UnReachable"
+      meta: "{{ $labels.name }} {{ $labels.device_type }} Device is UnReachable"
       dashboard: hsm
       no_alert_on_absence: "true"
       support_group: foundation
     annotations:
-      description: "HSM01 A790 Device is UnReachable"
-      summary: "HSM01 A790 Device is UnReachable"
-
-  - alert: hsm02A790IsUnReachable
-    expr: irate(snmp_hsm_hsmUpTime{hsmModel="Luna K7",devicename=~"hsm02.*"}[5m]) < 0.95
-    for: 15m
-    labels:
-      severity: info
-      service: barbican
-      context: hsm
-      meta: "HSM02 A790 Device is UnReachable"
-      dashboard: hsm
-      no_alert_on_absence: "true"
-      support_group: foundation
-    annotations:
-      description: "HSM02 A790 Device is UnReachable"
-      summary: "HSM02 A790 Device is UnReachable"
+      description: "{{ $labels.name }} {{ $labels.device_type }} Device is UnReachable"
+      summary: "{{ $labels.name }} {{ $labels.device_type }} Device is UnReachable"

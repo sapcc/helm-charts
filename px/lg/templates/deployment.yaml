@@ -3,14 +3,14 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ $.Values.global.region }}-pxrs-{{ $lg }}
+  name: {{ $lg }}
   labels:
-    app: {{ $.Values.global.region }}-pxrs-{{ $lg }}
+    app: {{ $lg }}
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: {{ $.Values.global.region }}-pxrs-{{ $lg }}
+      app: {{ $lg }}
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -21,33 +21,35 @@ spec:
       labels:
         alert-tier: px
         alert-service: px
-        app: {{ $.Values.global.region }}-pxrs-{{ $lg }}
+        app: {{ $lg }}
+      annotations:
+        checksum/configmap-config: {{ include (print $.Template.BasePath "/configmap.yaml") $ | sha256sum }}
     spec:
+      serviceAccountName: {{ $.Release.Name }}
       containers:
-      - name: {{ $.Values.global.region }}-pxrs-{{ $lg }}
+      - name: {{ $lg }}
         image: keppel.{{ $.Values.registry }}.cloud.sap/{{ $.Values.lg_image }}
         imagePullPolicy: Always
         resources:
 {{ toYaml $.Values.resources.lg | indent 10 }}
         volumeMounts:
-        - name: vol-{{ $.Values.global.region }}-pxrs-{{ $lg }}
+        - name: config
           mountPath: /etc/bird-lg
-        - name: vol-{{ $.Values.global.region }}-pxrs-lg-communities
+        - name: lg-communities
           mountPath: /etc/bird-lg-communities
-        command: ["python3"]
 {{- if $lg_config.privileged }}
-        args: ["lg.py", "{{ $.Values.global.region }}-pxrs-{{ $lg }}.cfg", "priv"]
+        args: ["lg_config.cfg", "priv"]
 {{- else }}
-        args: ["lg.py", "{{ $.Values.global.region }}-pxrs-{{ $lg }}.cfg"]
+        args: ["lg_config.cfg"]
 {{- end }}
         ports:
         - containerPort: 80
           name: {{ $lg }}web
       volumes:
-        - name: vol-{{ $.Values.global.region }}-pxrs-{{ $lg }}
+        - name: config
           configMap:
-            name: cfg-{{ $.Values.global.region }}-pxrs-{{ $lg }}
-        - name: vol-{{ $.Values.global.region }}-pxrs-lg-communities
+            name: {{ $lg }}
+        - name: lg-communities
           configMap:
-            name: cfg-{{ $.Values.global.region }}-pxrs-lg-communities
+            name: lg-communities
 {{ end }}

@@ -1,0 +1,79 @@
+global:
+  region: ""
+  cluster: ""
+operator:
+  image:
+    repository: keppel.global.cloud.sap/ccloud-europe-docker-pkg-dev-mirror/gardener-project/releases/gardener/operator
+    tag: v1.110.1 # also the gardener version, which will be used
+garden:
+  name: garden
+  # externalIP: ""
+  managedresources: true # disable on inital deployment
+  backup:
+  # accessKeyID: ""
+  # secretAccessKey: ""
+  # region: ""
+  # bucket: ""
+  runtimeCluster:
+    zones: []
+    # - "eu-de-1a"
+    # Those CIDRs have been chosen to match with the runtime cluster configuration (see example/gardener-local/kind/cluster/values.yaml).
+    # Generally, they have to match the CIDRs of the runtime cluster.
+    networking:
+    # nodes: 
+      pods: 10.42.0.0/16 # k3s default
+      services: 10.43.0.0/16 # k3s default
+  virtualCluster:
+    version: "1.29.6"
+    # oidcConfig:
+    networking:
+      services: 100.64.0.0/13
+secretsInjector:
+  replicaCount: 2
+  topologyKey: ""
+  virtualGardenCA: "" # base64 encoded
+  image:
+    repository: ""
+    tag: ""
+  config:
+    accounts: []
+    intervals:
+      rotationPeriod: 5m
+      rotationJitter: 1.1
+      mirrorPeriod: 1m
+      mirrorJitter: 1.1
+    cleartext: asLiteral
+extensions:
+  kubernetesVersions: []
+  openstack:
+    enabled: false
+    machineTypes: []
+    machineImages: []
+    providerConfig:
+      machineImages: []
+    zones: []
+  metal:
+    enabled: false
+    image:
+      repository: ghcr.io/ironcore-dev/gardener-extension-provider-metal
+      tag: sha-681e007
+    imageVectorOverwrite: 
+      ccm:
+        repository: ghcr.io/ironcore-dev/metal-cloud-controller-manager
+        tag: sha-62079d8
+      mcm:
+        repository: ghcr.io/ironcore-dev/machine-controller-manager-provider-metal
+        tag: sha-1591c41
+gardenlet:
+  enabled: false
+owner-info:
+  support-group: containers
+  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/global/cc-gardener
+  service: cc-gardener
+  maintainers:
+  - Alexandru Mihai
+  - Dmitri Fedotov
+  - Erik Schubert
+  - Göran Gudat
+  - Jan Knipper
+  - Marian Schwarz

@@ -1,5 +1,4 @@
 {{- $envAll := . }}
-{{- $release_requires_sec_cap:= or (hasPrefix "ussuri" (default .Values.imageVersion .Values.imageVersionServerAPI)) (hasPrefix "yoga" (default .Values.imageVersion .Values.imageVersionServerAPI)) -}}
 {{- if and (.Values.agent.multus | default false) .Values.agent.controlplane }}
 {{- $az_count := len .Values.global.availability_zones -}}
 {{ range $i, $az_long := .Values.global.availability_zones | default (list (printf "%sa" $.Values.global.region) (printf "%sb" $.Values.global.region)) }}
@@ -104,7 +103,7 @@ spec:
             {{- include "utils.trust_bundle.env" $ | indent 12 }}
           readinessProbe:
             exec:
-              command: ["neutron-dhcp-readiness", "-config-file", "/etc/neutron/neutron.conf", "--config-file", "/etc/neutron/secrets/neutron-common-secrets.conff"]
+              command: ["neutron-dhcp-readiness", "-config-file", "/etc/neutron/neutron.conf", "--config-file", "/etc/neutron/secrets/neutron-common-secrets.conf"]
             initialDelaySeconds: 30
             periodSeconds: 60
             timeoutSeconds: 10
@@ -246,12 +245,10 @@ spec:
             capabilities:
               add:
                 - NET_ADMIN
-{{- if $release_requires_sec_cap }}
                 - SYS_ADMIN
                 - DAC_OVERRIDE
                 - DAC_READ_SEARCH
                 - SYS_PTRACE
-{{ end }}
           resources:
 {{ toYaml $.Values.pod.resources.linuxbridge_agent | indent 12 }}
           volumeMounts:

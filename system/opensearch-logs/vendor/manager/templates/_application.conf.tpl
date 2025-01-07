@@ -57,7 +57,7 @@ auth = {
 play.ws.ssl {
   trustManager = {
     stores = [
-      { type = "PEM", path = "/opt/certs/opensearchCA.crt" }
+      { type = "PEM", path = "/opt/certs/ca.crt" }
     ]
   }
 }

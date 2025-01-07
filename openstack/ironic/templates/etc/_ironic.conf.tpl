@@ -120,23 +120,27 @@ port_setup_delay = {{ .Values.neutron_port_setup_delay }}
 [oslo_middleware]
 enable_proxy_headers_parsing = True
 
-{{- if .Values.watcher.enabled }}
-[watcher]
-enabled = true
-service_type = baremetal
-config_file = /etc/ironic/watcher.yaml
-{{ end }}
-
-{{ if .Values.audit.enabled }}
+{{ if .Values.audit.enabled -}}
 [audit]
 enabled = True
 audit_map_file = /etc/ironic/api_audit_map.yaml
 ignore_req_list = GET, HEAD
 record_payloads = {{ if .Values.audit.record_payloads -}}True{{- else -}}False{{- end }}
 metrics_enabled = {{ if .Values.audit.metrics_enabled -}}True{{- else -}}False{{- end }}
-
 {{- end }}
 
 {{- include "osprofiler" . }}
 
 {{- include "ini_sections.cache" . }}
+
+
+{{- if or .Values.conductor.defaults.conductor.permitted_image_formats .Values.conductor.defaults.conductor.disable_deep_image_inspection }}
+
+[conductor]
+  {{- if .Values.conductor.defaults.conductor.disable_deep_image_inspection }}
+disable_deep_image_inspection = {{ .Values.conductor.defaults.conductor.disable_deep_image_inspection }}
+  {{- end }}
+  {{- if .Values.conductor.defaults.conductor.permitted_image_formats }}
+permitted_image_formats = {{ .Values.conductor.defaults.conductor.permitted_image_formats }}
+  {{- end }}
+{{- end }}
