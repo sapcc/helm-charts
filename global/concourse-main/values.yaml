@@ -88,6 +88,17 @@ concourse:
                     values:
                     - concourse-main-web
               topologyKey: "kubernetes.io/hostname"
+    command:
+    - dumb-init
+    - sh
+    args:
+    - -ce
+    - |-
+      # fix cni-plugins, see https://github.com/concourse/concourse/issues/9027
+      apt update && apt install -y wget
+      wget -P /tmp https://github.com/containernetworking/plugins/releases/download/v1.5.1/cni-plugins-linux-amd64-v1.5.1.tgz
+      tar xvf /tmp/cni-plugins-linux-amd64-v1.5.1.tgz -C /usr/local/concourse/bin
+      exec /usr/local/bin/entrypoint.sh web
 
   persistence:
     enabled: false
