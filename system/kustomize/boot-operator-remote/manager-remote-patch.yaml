@@ -14,7 +14,6 @@ spec:
             - --metrics-bind-address=127.0.0.1:8080
             - --leader-elect
             - --controllers=httpbootconfig,ipxebootconfig,serverbootconfighttp,serverbootconfigpxe
-            - --kubeconfig=/kubeconfig/kubeconfig
           livenessProbe:
             httpGet:
               port: 8087
@@ -27,9 +26,17 @@ spec:
               protocol: TCP
           volumeMounts:
           - name: remote-kubeconfig
-            mountPath: /kubeconfig
+            mountPath: /var/run/secrets/kubernetes.io/serviceaccount
             readOnly: true
+          env:
+          - name: KUBERNETES_SERVICE_HOST
+            value: "apiserver-url"
       volumes:
       - name: remote-kubeconfig
         secret:
           secretName: boot-operator-remote-kubeconfig
+          items:
+          - key: token
+            path: token
+          - key: bundle.crt
+            path: ca.crt

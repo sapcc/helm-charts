@@ -27,6 +27,8 @@ spec:
         command:
         - /manager
         env:
+        - name: KUBERNETES_SERVICE_HOST
+          value: {{ quote .Values.controllerManager.manager.env.kubernetesServiceHost }}
         - name: KUBERNETES_CLUSTER_DOMAIN
           value: {{ quote .Values.kubernetesClusterDomain }}
         image: {{ .Values.controllerManager.manager.image.repository }}:{{ .Values.controllerManager.manager.image.tag
@@ -49,7 +51,7 @@ spec:
         securityContext: {{- toYaml .Values.controllerManager.manager.containerSecurityContext
           | nindent 10 }}
         volumeMounts:
-        - mountPath: /kubeconfig
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
           name: remote-kubeconfig
           readOnly: true
         - mountPath: /etc/macdb/
@@ -62,6 +64,11 @@ spec:
       volumes:
       - name: remote-kubeconfig
         secret:
+          items:
+          - key: token
+            path: token
+          - key: bundle.crt
+            path: ca.crt
           secretName: metal-operator-remote-kubeconfig
       - name: macdb
         secret:
