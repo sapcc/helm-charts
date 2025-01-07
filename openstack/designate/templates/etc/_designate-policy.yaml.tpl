@@ -31,7 +31,7 @@ context_is_master: rule:context_is_dns_support or rule:context_is_zonemaster or 
 
 zone_primary_or_dns_ops: "('PRIMARY':%(zone_type)s and rule:context_is_dns_ops) or ('SECONDARY':%(zone_type)s and is_admin:True)"
 
-default: rule:context_is_viewer
+default: rule:context_is_cloud_admin
 all_tenants: rule:context_is_dns_support or rule:cloud_dns_viewer
 edit_managed_records: rule:context_is_master
 use_low_ttl: rule:context_is_dns_support
@@ -56,6 +56,7 @@ share_zone: rule:context_is_master
 unshare_zone: rule:context_is_master
 create_zone: rule:context_is_dns_ops
 move_zone: rule:context_is_dns_ops
+pool_move_zone: rule:context_is_dns_op
 create_sub_zone: rule:context_is_zonemaster
 create_super_zone: rule:context_is_cloud_admin
 get_zones: rule:context_is_viewer
@@ -63,10 +64,12 @@ get_zone: rule:context_is_viewer
 get_shared_zone: rule:context_is_viewer
 get_zone_share: rule:context_is_viewer
 get_zone_servers: rule:context_is_viewer
+get_zone_ns_records: rule:context_is_viewer
 find_zones: rule:context_is_viewer
 find_zone: rule:context_is_viewer
 find_shared_zones: rule:context_is_viewer
 find_zone_shares: rule:context_is_viewer
+find_project_zone_share: rule:context_is_viewer
 update_zone: rule:context_is_master
 update_sub_zone: rule:context_is_master
 delete_zone: rule:context_is_master
@@ -136,6 +139,7 @@ update_record: rule:context_is_master
 delete_record: rule:context_is_master
 count_records: rule:context_is_viewer
 use_sudo: rule:context_is_dns_ops
+hard_delete: rule:context_is_dns_ops
 create_blacklist: rule:context_is_dns_ops
 find_blacklist: rule:context_is_dns_support
 find_blacklists: rule:context_is_dns_support
@@ -185,6 +189,7 @@ create_zone_export: rule:context_is_master
 find_zone_exports: rule:context_is_master
 get_zone_export: rule:context_is_master
 update_zone_export: rule:context_is_master
+delete_zone_export: rule:context_is_master
 
 find_service_status: rule:admin
 find_service_statuses: rule:admin
