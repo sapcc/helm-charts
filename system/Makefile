@@ -188,7 +188,7 @@ build-ipam-operator-remote:
 	@kubectl kustomize kustomize/ipam-operator-managedresources > ipam-operator-remote/managedresources/kustomize.yaml
 	@yq -i '.controllerManager.manager.image.tag="$(IPAM_VERSION)"' ipam-operator-remote/values.yaml
 	@yq -i '.fullnameOverride="ipam-operator"' ipam-operator-remote/values.yaml
-	@yq -i '.version="0.1.4"' ipam-operator-remote/Chart.yaml
+	@yq -i '.version="0.1.5"' ipam-operator-remote/Chart.yaml
 	@$(SED) -i 's/serviceAccountName.*$$/serviceAccountName: default/g' ipam-operator-remote/templates/deployment.yaml
 	@$(SED) -i 's/kind: Role/kind: ClusterRole/g' ipam-operator-remote/managedresources/kustomize.yaml
 
