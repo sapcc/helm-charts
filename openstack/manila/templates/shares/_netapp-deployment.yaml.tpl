@@ -44,6 +44,7 @@ spec:
     spec:
 {{ tuple . $availability_zone | include "utils.kubernetes_pod_az_affinity" | indent 6 }}
 {{ include "utils.proxysql.pod_settings" . | indent 6 }}
+      priorityClassName: {{ .Values.pod.priority_class.default }}
       initContainers:
       {{- tuple . (dict "service" (print .Release.Name "-mariadb," .Release.Name "-rabbitmq")) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 8 }}
         - name: fetch-rabbitmqadmin

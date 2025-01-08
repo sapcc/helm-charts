@@ -33,7 +33,7 @@ api_paste_config = /etc/designate/api-paste.ini
 network_api = neutron
 
 # Supported record types
-#supported_record_type = A, AAAA, CNAME, MX, SRV, TXT, SPF, NS, PTR, SSHFP, SOA
+#supported_record_type = A,AAAA,CNAME,MX,SRV,TXT,SPF,NS,PTR,SSHFP,SOA,NAPTR,CAA,CERT
 
 # Setting SOA defaults
 default_soa_refresh_min = 3500
@@ -322,14 +322,38 @@ workers = {{ .Values.producer_workers }}
 # RPC topic name for producer (string value)
 topic = producer
 
-#------------------------
-# Deleted domains purging
-#------------------------
-[producer_task:zone_purge]
-#
-# From designate.producer
-#
+[producer_task:delayed_notify]
+# Run interval in seconds (integer value)
+#interval = 5
 
+# Default amount of results returned per page (integer value)
+#per_page = 100
+
+# How many zones to receive NOTIFY on each run (integer value)
+#batch_size = 100
+
+[producer_task:periodic_exists]
+# Run interval in seconds (integer value)
+#interval = 3600
+
+# Default amount of results returned per page (integer value)
+#per_page = 100
+
+[producer_task:periodic_secondary_refresh]
+# Run interval in seconds (integer value)
+#interval = 3600
+
+# Default amount of results returned per page (integer value)
+#per_page = 100
+
+[producer_task:worker_periodic_recovery]
+# Run interval in seconds (integer value)
+#interval = 120
+
+# Default amount of results returned per page (integer value)
+#per_page = 100
+
+[producer_task:zone_purge]
 # Run interval in seconds (integer value)
 interval = {{ .Values.zone_purge.interval }}
 
@@ -342,16 +366,6 @@ time_threshold = {{ .Values.zone_purge.time_threshold }}
 
 # How many zones to be purged on each run (integer value)
 batch_size = {{ .Values.zone_purge.batch_size }}
-
-#------------------------
-# Delayed zones NOTIFY
-#------------------------
-[zone_manager_task:delayed_notify]
-# How frequently to scan for zones pending NOTIFY, in seconds
-#interval = 5
-
-# How many zones to receive NOTIFY on each run
-#batch_size = 100
 
 #-----------------------
 # Worker Service
@@ -390,6 +404,19 @@ poll_delay = {{ .Values.worker_poll_delay }}
 # Whether to allow worker to send NOTIFYs. NOTIFY requests to mdns will noop
 notify = {{ .Values.worker_notify }}
 
+# Timeout in seconds for XFR's. (integer value)
+#xfr_timeout = 10
+
+# The maximum number of times to retry fetching a zones serial. (integer value)
+#serial_max_retries = 3
+
+# The time to wait before retrying a zone serial request. (integer value)
+#serial_retry_delay = 1
+
+# Timeout in seconds before giving up on fetching a zones serial. (integer
+# value)
+#serial_timeout = 1
+
 # Whether to enforce worker to send messages over TCP
 all_tcp = {{ .Values.worker_all_tcp }}
 
@@ -413,12 +440,6 @@ insecure = True
 #-----------------------
 [storage:sqlalchemy]
 mysql_sql_mode = TRADITIONAL
-
-#connection_debug = 0
-#connection_trace = False
-#sqlite_synchronous = True
-#connection_recycle_time = 3600
-#max_retries = 10
 
 max_pool_size = {{ .Values.max_pool_size | default .Values.global.max_pool_size | default 100 }}
 max_overflow = {{ .Values.max_overflow | default .Values.global.max_overflow | default 50 }}

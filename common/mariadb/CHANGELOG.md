@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.15.2 - 2024/11/29
+- `app` selector label returned, because deployment selector is immutable
+- chart version bumped
+
+## v0.15.1 - 2024/11/28
+* mysqld-exporter version bumped to `0.16.0`
+* mysqld-exporter `collect.info_schema.innodb_tablespaces` collector enabled
+
 ## v0.15.0 - 2024/10/18
 * MariaDB version bumped to `10.5.27`
 * version info added to labels

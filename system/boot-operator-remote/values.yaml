@@ -1,0 +1,36 @@
+bootService:
+  ports:
+    - nodePort: 30007
+      port: 80
+      protocol: TCP
+      targetPort: 8082
+  type: NodePort
+controllerManager:
+  manager:
+    args:
+      - --health-probe-bind-address=:8081
+      - --metrics-bind-address=127.0.0.1:8080
+      - --leader-elect
+      - --controllers=httpbootconfig,ipxebootconfig,serverbootconfighttp,serverbootconfigpxe
+    containerSecurityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+          - ALL
+    env:
+      kubernetesServiceHost: apiserver-url
+    image:
+      repository: controller
+      tag: 4f2452ce450dc65342d68daf611edfb182585020
+    resources:
+      limits:
+        cpu: 500m
+        memory: 128Mi
+      requests:
+        cpu: 10m
+        memory: 64Mi
+  podSecurityContext:
+    runAsNonRoot: true
+  replicas: 1
+kubernetesClusterDomain: cluster.local
+fullnameOverride: boot-operator

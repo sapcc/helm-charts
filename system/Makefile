@@ -5,8 +5,8 @@ PROVIDER_VSPHERE_VERSION ?= v1.9.3
 PROVIDER_IPAM_VERSION ?= v0.1.0
 PROVIDER_KUBERNIKUS_VERSION ?= 9fd81475b828971913b3b27addf51fdbd0511d85
 BAREMETAL_OPERATOR_VERSION ?= v0.6.0
-METAL_OPERATOR_VERSION ?= 05f9869ffd931027435514002d9b8f3ee9b009d3
-BOOT_OPERATOR_VERSION ?= 9ad7325e76fc00b1b6e5b5535404d732539ecbce
+METAL_OPERATOR_VERSION ?= 4dc7a47f2cf412966e6362aa5da5624845dadd46
+BOOT_OPERATOR_VERSION ?= 4f2452ce450dc65342d68daf611edfb182585020
 IPXE_OPERATOR_VERSION ?= 61c6898bfd7772008835bdcca8d8a64c1dfc3b32
 FEDHCP_VERSION ?= a59539c62aaa11a96c82fe792c87daaac4cb75bf
 IPAM_VERSION ?= 6faf501000c5d7ff9744a3c111ca5ecf3339c00c
@@ -106,20 +106,54 @@ build-metal-operator:
 	$(call build-chart,metal-operator-core,https://github.com/ironcore-dev/metal-operator//config/default,$(METAL_OPERATOR_VERSION))
 	$(call fix-crds,metal-operator-core)
 	@find metal-operator-core/crds -type f -exec $(SED) -i -e 's#metal-operator-metal-operator-#metal-#g' {} \;
-	@find metal-operator-core/crds -type f -exec $(SED) -i -e 's#webhook-service#metal-webhook-service#g' {} \;
-	@find metal-operator-core/crds -type f -exec $(SED) -i -e 's#metal-operator-system/metal-operator-serving-cert#metal-operator-system/metal-serving-cert#g' {} \;
-	@find metal-operator-core/templates -type f -exec $(SED) -i -e 's#{{ include "metal-operator-core.fullname" . }}-SERVICE_NAME.SERVICE_NAMESPACE#metal-webhook-service.metal-operator-system#g' {} \;
-	@find metal-operator-core/templates -type f -exec $(SED) -i -e 's#-metal-operator-serving-cert#serving-cert#g' {} \;
+	@find metal-operator-core/crds -type f -exec $(SED) -i -e 's#metal-webhook-service#metal-operator-webhook-service#g' {} \;
+	@find metal-operator-core/templates -type f -exec $(SED) -i -e 's#{{ include "metal-operator-core.fullname" . }}-metal-#metal-#g' {} \;
+	@find metal-operator-core/templates -type f -exec $(SED) -i -e 's#metal-serving-#metal-operator-serving-#g' {} \;
+	@find metal-operator-core/templates -type f -exec $(SED) -i -e 's#metal-webhook-service#metal-operator-webhook-service#g' {} \;
 	@yq -i '.controllerManager.manager.image.tag="$(METAL_OPERATOR_VERSION)"' metal-operator-core/values.yaml
 	@yq -i '.fullnameOverride="metal-operator"' metal-operator-core/values.yaml
-	@yq -i '.version="1.1.0"' metal-operator-core/Chart.yaml
+	@yq -i '.version="1.1.1"' metal-operator-core/Chart.yaml
+
+build-metal-operator-remote:
+	@rm -rf metal-operator-remote
+	@cat kustomize/metal-operator-remote/kustomization.yaml > kustomization.yaml
+	@kubectl kustomize | helmify -crd-dir metal-operator-remote
+	@cp kustomize/metal-operator-remote/remote-kubeconfig.yaml metal-operator-remote/templates
+	@cp kustomize/metal-operator-remote/dealer-kubeconfig.yaml metal-operator-remote/templates
+	@cp kustomize/metal-operator-remote/managedresource.yaml metal-operator-remote/templates
+	@cp kustomize/metal-operator-remote/macdb.yaml metal-operator-remote/templates
+	@mkdir metal-operator-remote/managedresources
+	@kubectl kustomize kustomize/metal-operator-managedresources > metal-operator-remote/managedresources/kustomize.yaml
+	@cp kustomize/metal-operator-managedresources/rbac.yaml metal-operator-remote/managedresources
+	@yq -i '.controllerManager.manager.image.tag="$(METAL_OPERATOR_VERSION)"' metal-operator-remote/values.yaml
+	@yq -i '.fullnameOverride="metal-operator"' metal-operator-remote/values.yaml
+	@yq -i '.remote.ca=""' metal-operator-remote/values.yaml
+	@echo 'macdb: {}' >> metal-operator-remote/values.yaml
+	@yq -i '.version="0.2.0"' metal-operator-remote/Chart.yaml
+	@$(SED) -i 's/serviceAccountName.*$$/serviceAccountName: default/g' metal-operator-remote/templates/deployment.yaml
+	@$(SED) -i 's/kind: Role/kind: ClusterRole/g' metal-operator-remote/managedresources/kustomize.yaml
 
 build-boot-operator:
 	@cat kustomize/boot-operator/kustomization.yaml >> kustomization.yaml
 	$(call build-chart,boot-operator,https://github.com/ironcore-dev/boot-operator//config/default,$(BOOT_OPERATOR_VERSION))
+	@find boot-operator/templates -type f -exec $(SED) -i -e 's#{{ include "boot-operator.fullname" . }}-boot-operator#boot-operator#g' {} \;
 	@yq -i '.controllerManager.manager.image.tag="$(BOOT_OPERATOR_VERSION)"' boot-operator/values.yaml
 	@yq -i '.fullnameOverride="boot-operator"' boot-operator/values.yaml
-	@yq -i '.version="1.0.2"' boot-operator/Chart.yaml
+	@yq -i '.version="1.0.3"' boot-operator/Chart.yaml
+
+build-boot-operator-remote:
+	@rm -rf boot-operator-remote
+	@cat kustomize/boot-operator-remote/kustomization.yaml > kustomization.yaml
+	@kubectl kustomize | helmify -crd-dir boot-operator-remote
+	@cp kustomize/boot-operator-remote/remote-kubeconfig.yaml boot-operator-remote/templates
+	@cp kustomize/boot-operator-remote/managedresource.yaml boot-operator-remote/templates
+	@mkdir boot-operator-remote/managedresources
+	@kubectl kustomize kustomize/boot-operator-managedresources > boot-operator-remote/managedresources/kustomize.yaml
+	@yq -i '.controllerManager.manager.image.tag="$(BOOT_OPERATOR_VERSION)"' boot-operator-remote/values.yaml
+	@yq -i '.fullnameOverride="boot-operator"' boot-operator-remote/values.yaml
+	@yq -i '.version="0.2.0"' boot-operator-remote/Chart.yaml
+	@$(SED) -i 's/serviceAccountName.*$$/serviceAccountName: default/g' boot-operator-remote/templates/deployment.yaml
+	@$(SED) -i 's/kind: Role/kind: ClusterRole/g' boot-operator-remote/managedresources/kustomize.yaml
 
 build-ipxe-operator:
 	@cat kustomize/ipxe-operator/kustomization.yaml >> kustomization.yaml
@@ -143,6 +177,20 @@ build-ipam-operator:
 	@find ipam-operator/templates -type f -exec $(SED) -i -e 's#-ipam-webhook-service#-webhook-service#g' {} \;
 	@yq -i '.controllerManager.manager.image.tag="$(IPAM_VERSION)"' ipam-operator/values.yaml
 	@yq -i '.version="0.0.2"' ipam-operator/Chart.yaml
+
+build-ipam-operator-remote:
+	@rm -rf ipam-operator-remote
+	@cat kustomize/ipam-operator-remote/kustomization.yaml > kustomization.yaml
+	@kubectl kustomize | helmify -crd-dir ipam-operator-remote
+	@cp kustomize/ipam-operator-remote/remote-kubeconfig.yaml ipam-operator-remote/templates
+	@cp kustomize/ipam-operator-remote/managedresource.yaml ipam-operator-remote/templates
+	@mkdir ipam-operator-remote/managedresources
+	@kubectl kustomize kustomize/ipam-operator-managedresources > ipam-operator-remote/managedresources/kustomize.yaml
+	@yq -i '.controllerManager.manager.image.tag="$(IPAM_VERSION)"' ipam-operator-remote/values.yaml
+	@yq -i '.fullnameOverride="ipam-operator"' ipam-operator-remote/values.yaml
+	@yq -i '.version="0.1.5"' ipam-operator-remote/Chart.yaml
+	@$(SED) -i 's/serviceAccountName.*$$/serviceAccountName: default/g' ipam-operator-remote/templates/deployment.yaml
+	@$(SED) -i 's/kind: Role/kind: ClusterRole/g' ipam-operator-remote/managedresources/kustomize.yaml
 
 # chart name, source url, tag
 define build-chart

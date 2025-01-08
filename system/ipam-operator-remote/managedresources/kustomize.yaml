@@ -1,0 +1,820 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    cert-manager.io/inject-ca-from: $(CERTIFICATE_NAMESPACE)/$(CERTIFICATE_NAME)
+    controller-gen.kubebuilder.io/version: v0.14.0
+  name: ips.ipam.metal.ironcore.dev
+spec:
+  group: ipam.metal.ironcore.dev
+  names:
+    kind: IP
+    listKind: IPList
+    plural: ips
+    singular: ip
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - description: IP Address
+      jsonPath: .status.reserved
+      name: IP
+      type: string
+    - description: Subnet
+      jsonPath: .spec.subnet.name
+      name: Subnet
+      type: string
+    - description: Consumer Group
+      jsonPath: .spec.consumer.apiVersion
+      name: Consumer Group
+      type: string
+    - description: Consumer Kind
+      jsonPath: .spec.consumer.kind
+      name: Consumer Kind
+      type: string
+    - description: Consumer Name
+      jsonPath: .spec.consumer.name
+      name: Consumer Name
+      type: string
+    - description: Processing state
+      jsonPath: .status.state
+      name: State
+      type: string
+    - description: Message
+      jsonPath: .status.message
+      name: Message
+      type: string
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: IP is the Schema for the ips API
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: IPSpec defines the desired state of IP
+            properties:
+              consumer:
+                description: Consumer refers to resource IP has been booked for
+                properties:
+                  apiVersion:
+                    description: APIVersion is resource's API group
+                    maxLength: 253
+                    minLength: 1
+                    pattern: ^[a-z0-9]([-./a-z0-9]*[a-z0-9])?$
+                    type: string
+                  kind:
+                    description: Kind is CRD Kind for lookup
+                    maxLength: 63
+                    minLength: 1
+                    pattern: ^[A-Z]([-A-Za-z0-9]*[A-Za-z0-9])?$
+                    type: string
+                  name:
+                    description: Name is CRD Name for lookup
+                    maxLength: 63
+                    minLength: 1
+                    pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
+                    type: string
+                required:
+                - kind
+                - name
+                type: object
+              ip:
+                description: IP allows to set desired IP address explicitly
+                type: string
+              subnet:
+                description: SubnetName is referring to parent subnet that holds requested
+                  IP
+                properties:
+                  name:
+                    default: ""
+                    description: |-
+                      Name of the referent.
+                      This field is effectively required, but due to backwards compatibility is
+                      allowed to be empty. Instances of this type with an empty value here are
+                      almost certainly wrong.
+                      TODO: Add other useful fields. apiVersion, kind, uid?
+                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                      TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
+                    type: string
+                type: object
+                x-kubernetes-map-type: atomic
+            required:
+            - subnet
+            type: object
+          status:
+            description: IPStatus defines the observed state of IP
+            properties:
+              message:
+                description: Message contains error details if the one has occurred
+                type: string
+              reserved:
+                description: Reserved is a reserved IP
+                type: string
+              state:
+                description: State is a network creation request processing state
+                type: string
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.14.0
+  name: networkcounters.ipam.metal.ironcore.dev
+spec:
+  group: ipam.metal.ironcore.dev
+  names:
+    kind: NetworkCounter
+    listKind: NetworkCounterList
+    plural: networkcounters
+    singular: networkcounter
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: NetworkCounter is the Schema for the networkcounters API
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: NetworkCounterSpec stores the state of assigned IDs for network
+              type.
+            properties:
+              vacant:
+                description: Vacant is a list of unassigned network IDs.
+                items:
+                  description: |-
+                    NetworkIDInterval represents inclusive interval for network IDs.
+                    Used to represent intervals of unassigned IDs.
+                  properties:
+                    begin:
+                      description: Begin is a first available value in interval
+                      type: string
+                    end:
+                      description: End is a last available value in interval
+                      type: string
+                    exact:
+                      description: Exact represents a single value in interval
+                      type: string
+                  type: object
+                type: array
+            type: object
+          status:
+            description: NetworkCounterStatus defines the observed state of NetworkCounter
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.14.0
+  name: networks.ipam.metal.ironcore.dev
+spec:
+  group: ipam.metal.ironcore.dev
+  names:
+    kind: Network
+    listKind: NetworkList
+    plural: networks
+    singular: network
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - description: Network Type
+      jsonPath: .spec.type
+      name: Type
+      type: string
+    - description: Reserved Network ID
+      jsonPath: .status.reserved
+      name: Reserved
+      type: string
+    - description: Total IPv4 address capacity in all ranges
+      jsonPath: .status.ipv4Capacity
+      name: IPv4 Capacity
+      type: string
+    - description: Total IPv4 address capacity in all ranges
+      jsonPath: .status.ipv6Capacity
+      name: IPv6 Capacity
+      type: string
+    - description: Description
+      jsonPath: .spec.description
+      name: Description
+      type: string
+    - description: Request state
+      jsonPath: .status.state
+      name: State
+      type: string
+    - description: Message about request processing resutls
+      jsonPath: .status.message
+      name: Message
+      type: string
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: Network is the Schema for the networks API
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: NetworkSpec defines the desired state of Network
+            properties:
+              description:
+                description: Description contains a human readable description of
+                  network
+                type: string
+              id:
+                description: |-
+                  ID is a unique network identifier.
+                  For VXLAN it is a single 24 bit value. First 100 values are reserved.
+                  For GENEVE it is a single 24 bit value. First 100 values are reserved.
+                  For MLPS it is a set of 20 bit values. First 16 values are reserved.
+                  Represented with number encoded to string.
+                type: string
+              type:
+                description: NetworkType is a type of network id is assigned to.
+                enum:
+                - VXLAN
+                - GENEVE
+                - MPLS
+                type: string
+            type: object
+          status:
+            description: NetworkStatus defines the observed state of Network
+            properties:
+              ipv4Capacity:
+                anyOf:
+                - type: integer
+                - type: string
+                description: IPv4Capacity is a total address capacity of all IPv4
+                  CIDRs in Ranges
+                pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                x-kubernetes-int-or-string: true
+              ipv4Ranges:
+                description: IPv4Ranges is a list of IPv4 ranges booked by child subnets
+                items:
+                  type: string
+                type: array
+              ipv6Capacity:
+                anyOf:
+                - type: integer
+                - type: string
+                description: IPv6Capacity is a total address capacity of all IPv4
+                  CIDRs in Ranges
+                pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                x-kubernetes-int-or-string: true
+              ipv6Ranges:
+                description: IPv6Ranges is a list of IPv6 ranges booked by child subnets
+                items:
+                  type: string
+                type: array
+              message:
+                description: Message contains error details if the one has occurred
+                type: string
+              reserved:
+                description: Reserved is a reserved network ID
+                type: string
+              state:
+                description: State is a network creation request processing state
+                type: string
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.14.0
+  name: subnets.ipam.metal.ironcore.dev
+spec:
+  group: ipam.metal.ironcore.dev
+  names:
+    kind: Subnet
+    listKind: SubnetList
+    plural: subnets
+    singular: subnet
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - description: Parent Subnet
+      jsonPath: .spec.parentSubnet.name
+      name: Parent Subnet
+      type: string
+    - description: Parent Network
+      jsonPath: .spec.network.name
+      name: Parent Network
+      type: string
+    - description: Reserved CIDR
+      jsonPath: .status.reserved
+      name: Reserved
+      type: string
+    - description: Address Type
+      jsonPath: .status.type
+      name: Address Type
+      type: string
+    - description: Locality
+      jsonPath: .status.locality
+      name: Locality
+      type: string
+    - description: Amount of ones in netmask
+      jsonPath: .status.prefixBits
+      name: Prefix Bits
+      type: string
+    - description: Capacity
+      jsonPath: .status.capacity
+      name: Capacity
+      type: string
+    - description: Capacity Left
+      jsonPath: .status.capacityLeft
+      name: Capacity Left
+      type: string
+    - description: Consumer Group
+      jsonPath: .spec.consumer.apiVersion
+      name: Consumer Group
+      type: string
+    - description: Consumer Kind
+      jsonPath: .spec.consumer.kind
+      name: Consumer Kind
+      type: string
+    - description: Consumer Name
+      jsonPath: .spec.consumer.name
+      name: Consumer Name
+      type: string
+    - description: State
+      jsonPath: .status.state
+      name: State
+      type: string
+    - description: Message
+      jsonPath: .status.message
+      name: Message
+      type: string
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: Subnet is the Schema for the subnets API
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: SubnetSpec defines the desired state of Subnet
+            properties:
+              capacity:
+                anyOf:
+                - type: integer
+                - type: string
+                description: Capacity is a desired amount of addresses; will be ceiled
+                  to the closest power of 2.
+                pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                x-kubernetes-int-or-string: true
+              cidr:
+                description: CIDR represents the IP Address Range
+                type: string
+              consumer:
+                description: Consumer refers to resource Subnet has been booked for
+                properties:
+                  apiVersion:
+                    description: APIVersion is resource's API group
+                    maxLength: 253
+                    minLength: 1
+                    pattern: ^[a-z0-9]([-./a-z0-9]*[a-z0-9])?$
+                    type: string
+                  kind:
+                    description: Kind is CRD Kind for lookup
+                    maxLength: 63
+                    minLength: 1
+                    pattern: ^[A-Z]([-A-Za-z0-9]*[A-Za-z0-9])?$
+                    type: string
+                  name:
+                    description: Name is CRD Name for lookup
+                    maxLength: 63
+                    minLength: 1
+                    pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
+                    type: string
+                required:
+                - kind
+                - name
+                type: object
+              network:
+                description: NetworkName contains a reference (name) to the network
+                properties:
+                  name:
+                    default: ""
+                    description: |-
+                      Name of the referent.
+                      This field is effectively required, but due to backwards compatibility is
+                      allowed to be empty. Instances of this type with an empty value here are
+                      almost certainly wrong.
+                      TODO: Add other useful fields. apiVersion, kind, uid?
+                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                      TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
+                    type: string
+                type: object
+                x-kubernetes-map-type: atomic
+              parentSubnet:
+                description: ParentSubnetName contains a reference (name) to the parent
+                  subent
+                properties:
+                  name:
+                    default: ""
+                    description: |-
+                      Name of the referent.
+                      This field is effectively required, but due to backwards compatibility is
+                      allowed to be empty. Instances of this type with an empty value here are
+                      almost certainly wrong.
+                      TODO: Add other useful fields. apiVersion, kind, uid?
+                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                      TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
+                    type: string
+                type: object
+                x-kubernetes-map-type: atomic
+              prefixBits:
+                description: PrefixBits is an amount of ones zero bits at the beginning
+                  of the netmask
+                maximum: 128
+                minimum: 0
+                type: integer
+              regions:
+                description: Regions represents the network service location
+                items:
+                  properties:
+                    availabilityZones:
+                      items:
+                        type: string
+                      minItems: 1
+                      type: array
+                    name:
+                      maxLength: 63
+                      minLength: 1
+                      pattern: ^[a-z0-9]([-./a-z0-9]*[a-z0-9])?$
+                      type: string
+                  required:
+                  - availabilityZones
+                  - name
+                  type: object
+                type: array
+            required:
+            - network
+            type: object
+          status:
+            description: SubnetStatus defines the observed state of Subnet
+            properties:
+              capacity:
+                anyOf:
+                - type: integer
+                - type: string
+                description: Capacity shows total capacity of CIDR
+                pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                x-kubernetes-int-or-string: true
+              capacityLeft:
+                anyOf:
+                - type: integer
+                - type: string
+                description: CapacityLeft shows remaining capacity (excluding capacity
+                  of child subnets)
+                pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                x-kubernetes-int-or-string: true
+              locality:
+                description: Locality represents subnet regional coverated
+                type: string
+              message:
+                description: Message contains an error string for the failed State
+                type: string
+              prefixBits:
+                description: PrefixBits is an amount of ones zero bits at the beginning
+                  of the netmask
+                type: integer
+              reserved:
+                description: Reserved is a CIDR that was reserved
+                type: string
+              state:
+                description: State represents the cunnet processing state
+                type: string
+              type:
+                description: Type represents whether CIDR is an IPv4 or IPv6
+                type: string
+              vacant:
+                description: Vacant shows CIDR ranges available for booking
+                items:
+                  type: string
+                type: array
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: ipam-operator-controller-manager
+  namespace: kube-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: ipam-operator-leader-election-role
+  namespace: kube-system
+rules:
+- apiGroups:
+  - ""
+  - coordination.k8s.io
+  resources:
+  - configmaps
+  - leases
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: ipam-operator-manager-role
+rules:
+- apiGroups:
+  - '*'
+  resources:
+  - '*'
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - '*'
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
+- apiGroups:
+  - ipam.metal.ironcore.dev
+  resources:
+  - ips
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ipam.metal.ironcore.dev
+  resources:
+  - ips/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - ipam.metal.ironcore.dev
+  resources:
+  - ips/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - ipam.metal.ironcore.dev
+  resources:
+  - networkcounters
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ipam.metal.ironcore.dev
+  resources:
+  - networkcounters/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - ipam.metal.ironcore.dev
+  resources:
+  - networkcounters/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - ipam.metal.ironcore.dev
+  resources:
+  - networks
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ipam.metal.ironcore.dev
+  resources:
+  - networks/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - ipam.metal.ironcore.dev
+  resources:
+  - networks/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - ipam.metal.ironcore.dev
+  resources:
+  - subnets
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ipam.metal.ironcore.dev
+  resources:
+  - subnets/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - ipam.metal.ironcore.dev
+  resources:
+  - subnets/status
+  verbs:
+  - get
+  - patch
+  - update
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: ipam-operator-metrics-reader
+rules:
+- nonResourceURLs:
+  - /metrics
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: ipam-operator-proxy-role
+rules:
+- apiGroups:
+  - authentication.k8s.io
+  resources:
+  - tokenreviews
+  verbs:
+  - create
+- apiGroups:
+  - authorization.k8s.io
+  resources:
+  - subjectaccessreviews
+  verbs:
+  - create
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: ipam-operator-leader-election-rolebinding
+  namespace: kube-system
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: ipam-operator-leader-election-role
+subjects:
+- kind: ServiceAccount
+  name: ipam-operator-controller-manager
+  namespace: kube-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: ipam-operator-manager-rolebinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: ipam-operator-manager-role
+subjects:
+- kind: ServiceAccount
+  name: ipam-operator-controller-manager
+  namespace: kube-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: ipam-operator-proxy-rolebinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: ipam-operator-proxy-role
+subjects:
+- kind: ServiceAccount
+  name: ipam-operator-controller-manager
+  namespace: kube-system
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    control-plane: controller-manager
+  name: ipam-operator-controller-manager-metrics-service
+  namespace: kube-system
+spec:
+  ports:
+  - name: https
+    port: 8443
+    targetPort: https
+  selector:
+    control-plane: controller-manager

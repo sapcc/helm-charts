@@ -1,0 +1,76 @@
+groups:
+  - name: netapp-harvest
+    rules:
+      - alert: NetappHarvestExporterAuthenticationError
+        expr: netapp_harvest_probe_failure{reason="authentication error"} > 0
+        for: 15m
+        labels:
+          context: netapp-exporter
+          no_alert_on_absence: "true"
+          playbook: 'docs/support/playbook/storage/filer_inaccessible'
+          service: exporter
+          severity: info
+          support_group: compute-storage-api
+          tier: os
+        annotations:
+          summary: Authentication failure during NetApp Filer discovery.
+          description: Filer {{ $labels.host }} can't be accessed due to authentication error.
+
+      - alert: NetappHarvestExporterProbeError
+        expr: netapp_harvest_probe_failure{reason!="authentication error"} > 0
+        for: 15m
+        labels:
+          context: netapp-exporter
+          no_alert_on_absence: "true"
+          playbook: 'docs/support/playbook/storage/filer_inaccessible'
+          service: exporter
+          severity: info
+          support_group: compute-storage-api
+          tier: storage
+        annotations:
+          summary: Probe failure during NetApp Filer discovery.
+          description: Filer {{ $labels.host }} can't be accessed due to {{ $labels.reason }}.
+
+      - alert: NetappHarvestPollerTargetStatus
+        expr: netapp_metadata_target_status == 1
+        for: 15m
+        labels:
+          context: netapp-exporter
+          no_alert_on_absence: "true"
+          service: exporter
+          severity: info
+          support_group: compute-storage-api
+          tier: storage
+        annotations:
+          summary:  Target status of poller {{ $labels.poller }} is 1
+          description: Filer can not be reached. Reach out storage team to investigate.
+
+      - alert: NetappHarvestMultipleInstances
+        expr: count (netapp_metadata_exporter_count) by (pod_template_hash, poller) > 1
+        for: 15m
+        labels:
+          context: netapp-exporter
+          no_alert_on_absence: "true"
+          service: exporter
+          severity: info
+          support_group: compute-storage-api
+          tier: storage
+        annotations:
+          summary:  Multiple Netapp Harvest poller instances for {{ $labels.poller }}
+          description: There are {{ $value }} pollers collecting metrics from NetApp Filer {{ $labels.poller }}.
+
+      # filer discovered from netbox but not scraped by netapp harvest
+      - alert: NetappHarvestDiscoveredFilerNotScraped
+        expr: netappsd_discovered_filer unless on (app, filer) netapp_metadata_exporter_count
+        for: 15m
+        labels:
+          context: netapp-exporter
+          no_alert_on_absence: "true"
+          service: exporter
+          severity: info
+          support_group: compute-storage-api
+          tier: storage
+        annotations:
+          summary:  Filer not scraped by Netapp Harvest exporter
+          description: Filer {{ $labels.filer }} discovered but not scraped by {{ $labels.app }}.
+

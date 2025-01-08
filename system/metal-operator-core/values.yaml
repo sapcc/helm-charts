@@ -35,7 +35,7 @@ controllerManager:
           - ALL
     image:
       repository: controller
-      tag: 05f9869ffd931027435514002d9b8f3ee9b009d3
+      tag: 4dc7a47f2cf412966e6362aa5da5624845dadd46
     resources:
       limits:
         cpu: 300m
@@ -43,6 +43,8 @@ controllerManager:
       requests:
         cpu: 300m
         memory: 50Mi
+  podSecurityContext:
+    runAsNonRoot: true
   replicas: 1
   serviceAccount:
     annotations: {}
@@ -53,5 +55,11 @@ metricsService:
       port: 8443
       protocol: TCP
       targetPort: https
+  type: ClusterIP
+webhookService:
+  ports:
+    - port: 443
+      protocol: TCP
+      targetPort: 9445
   type: ClusterIP
 fullnameOverride: metal-operator

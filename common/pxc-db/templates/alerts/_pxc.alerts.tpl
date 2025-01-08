@@ -8,6 +8,7 @@
       service: {{ include "pxc-db.alerts.service" . }}
       severity: info
       tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
+      playbook: ''
       support_group: {{ required ".Values.alerts.support_group missing" .Values.alerts.support_group }}
     annotations:
       description: {{ include "pxc-db.fullname" . }} has too many connections open. Please check the service containers.
@@ -35,6 +36,7 @@
       service: {{ include "pxc-db.alerts.service" . }}
       severity: info
       tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
+      playbook: ''
       support_group: {{ required ".Values.alerts.support_group missing" .Values.alerts.support_group }}
     annotations:
       description: {{ include "pxc-db.fullname" . }} has queries waiting for lock more than 20 sec. Deadlock possible.
@@ -137,3 +139,17 @@
     annotations:
       description: "{{ include "pxc-db.fullname" . }} Galera cluster reports at least 1 node with 25% paused replication in the last 30 minutes"
       summary: "{{ include "pxc-db.fullname" . }} Galera cluster node replication paused"
+
+  - alert: {{ include "pxc-db.alerts.service" . | camelcase }}GaleraClusterResourceNotReady
+    expr: (kube_customresource_perconaxtradbcluster_status{app="{{ include "pxc-db.fullname" . }}",state='ready'} != 1)
+    for: 10m
+    labels:
+      context: database
+      service: {{ include "pxc-db.alerts.service" . }}
+      severity: info
+      tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
+      playbook: ''
+      support_group: {{ required ".Values.alerts.support_group missing" .Values.alerts.support_group }}
+    annotations:
+      description: "{{ include "pxc-db.fullname" . }} cluster resource is not in ready state."
+      summary: "{{ include "pxc-db.fullname" . }} cluster resource is not in ready state."

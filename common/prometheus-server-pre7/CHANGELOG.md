@@ -1,3 +1,11 @@
+## 6.6.2
+
+* another fix for ThanosStoreSeriesGateLatencyHigh 
+
+## 6.6.1
+
+* fixed missing metric for ThanosStoreSeriesGateLatencyHigh alert 
+
 ## 6.5.8
 
 * Adapting swift credential for kvv2 vault

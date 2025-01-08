@@ -2,6 +2,10 @@
 
 This file is used to list changes made in each version of the common chart rabbitmq.
 
+## 0.12.1
+- `app` selector label returned, because deployment selector is immutable
+- chart version bumped
+
 ## 0.12.0
 
 [@businessbean](https://github.com/businessbean)
@@ -9,6 +13,7 @@ This file is used to list changes made in each version of the common chart rabbi
 - version info added to labels
   - to allow gatekeeper rules based on them
 - old (non-standard) labels removed
+- note: rabbitmq statefulsets (but not deployments) need to be deleted before upgrade
 - chart version bumped
 
 ### label example

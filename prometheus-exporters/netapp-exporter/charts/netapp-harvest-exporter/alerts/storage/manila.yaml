@@ -1,0 +1,93 @@
+groups:
+  - name: manila-storage
+    rules:
+      # NetApp LIFs limit is 1024 per HA pair (from ONTAP 9.13 onwards)
+      - alert: ManilaStorageNetworkInterfaceUsageHigh
+        expr: max_over_time(count by (filer) (netapp_lif_labels{app="netapp-harvest-exporter-manila"})[2h:5m]) > 950
+        for: 1h
+        labels:
+          severity: info
+          context: netapp-usage
+          service: manila
+          tier: os
+          support_group: compute-storage-api
+          support_component: manila_netapp
+        annotations:
+          description: Number of NetApp LIFs in use is above 950
+          summary: High NetApp LIF Usage on filer {{ $labels.filer }}
+
+      # NetApp Volumes limit is 5000 per cluster
+      - alert: ManilaStorageVolumeCountHigh
+        expr: max_over_time(count by (filer) (netapp_volume_labels{app="netapp-harvest-exporter-manila"})[2h:5m]) > 4500
+        for: 1h
+        labels:
+          severity: info
+          context: netapp-usage
+          service: manila
+          tier: os
+          support_group: compute-storage-api
+          support_component: manila_netapp
+        annotations:
+          description: Number of Volumes on NetApp filer is above 4500
+          summary: High number of Volumes created on filer {{ $labels.filer }}
+
+      - alert: ManilaStorageAggregateHighUsage
+        expr: max_over_time(netapp_aggr_space_used_percent{app="netapp-harvest-exporter-manila"}[2h:5m]) > 75
+        for: 10m
+        labels:
+          severity: info
+          context: netapp-usage
+          service: manila
+          tier: os
+          support_group: compute-storage-api
+          support_component: manila_netapp
+          dashboard: netapp-capacity-manila?&var-region={{$labels.region}}&var-node={{$labels.node}}
+          playbook: 'docs/support/playbook/manila/netapp_aggr_full_maint'
+        annotations:
+          description: 'Storage Capacity Usage on node {{$labels.node}} is above 75%'
+          summary: 'High Capacity Usage on {{$labels.filer}}'
+
+      - alert: ManilaStorageAggregateFull
+        expr: max_over_time(netapp_aggr_space_used_percent{app="netapp-harvest-exporter-manila"}[2h:5m]) > 90
+        labels:
+          severity: warning
+          context: netapp-usage
+          tier: os
+          service: manila
+          support_group: compute-storage-api
+          support_component: manila_netapp
+          dashboard: netapp-capacity-manila?&var-region={{$labels.region}}&var-node={{$labels.node}}
+          playbook: 'docs/support/playbook/manila/netapp_aggr_full_maint'
+        annotations:
+          description: 'Storage Capacity Usage on node {{$labels.node}} is above 90%'
+          summary: 'Nearly Full Capacity Usage on {{$labels.filer}}'
+
+      - alert: ManilaShareInodeUsageVeryHigh
+        expr: max_over_time((netapp_volume_inode_files_used{app="netapp-harvest-exporter-manila"} / netapp_volume_inode_files_total)[1h:5m]) > 0.95
+        for: 2d
+        labels:
+          severity: info
+          context: netapp-usage
+          tier: os
+          service: manila
+          support_group: compute-storage-api
+          support_component: manila_netapp
+          playbook: 'docs/support/playbook/manila/share_inode_usage'
+        annotations:
+            summary: 'inode usage above 95%'
+            description: 'inode usage of Manila share {{ $labels.share_id }} is very high'
+
+      - alert: ManilaShareInconsistentLogicalSpaceSetting
+        expr: netapp_volume_labels{app="netapp-harvest-exporter-manila", is_space_reporting_logical="true"} AND netapp_volume_labels{is_space_enforcement_logical="false"}
+        for: 1d
+        labels:
+          severity: warning
+          context: volume-setting
+          tier: os
+          service: manila
+          support_group: storage
+          meta: netapp volume logical space reporting is enabled but logical space enforcement is disabled
+          playbook: 'docs/support/playbook/manila/netapp_volume_logical_setting'
+        annotations:
+          description: 'Netapp volume {{$labels.volume}} (Share {{$labels.share_id}}) has logical space reporting enabled but logical space enforcement disabled'
+          summary: 'Netapp volume logical space reporting is enabled but logical space enforcement is disabled'

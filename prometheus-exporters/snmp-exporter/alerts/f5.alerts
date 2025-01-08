@@ -138,13 +138,14 @@ groups:
         expr: snmp_f5_ltmNodeAddrStatServerCurConns{ltmNodeAddrStatNodeName=~"/Common/unbound.*.cloud.sap"} > 55000
         for: 5m
         labels:
-          severity: info
+          severity: warning
           tier: net
           service: f5
           context: f5
           meta: "Current active connections to {{ $labels.ltmNodeAddrStatNodeName }} on F5 {{ $labels.devicename }} are reaching critical threshold."
           dashboard: dns-f5-and-unbound-performance
           support_group: network-api
+          playbook: 'docs/devops/alert/network/f5#unbound-connection-count-high'
         annotations:
           description: "Current active connections to {{ $labels.ltmNodeAddrStatNodeName }} on F5 {{ $labels.devicename }} are reaching critical threshold of 65536 (currently at {{ $value }})."
           summary: "Number of concurrent connections to one or both unbound servers is reaching limit."

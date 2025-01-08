@@ -24,6 +24,14 @@ If release name contains chart name it will be used as a full name.
 {{- end }}
 
 {{/*
+Generate cluster custom resource name
+Example: test-db
+*/}}
+{{- define "pxc-db.clusterName" -}}
+{{ required ".Values.name is missing" .Values.name }}-db
+{{- end -}}
+
+{{/*
 Create chart name and version as used by the chart label.
 */}}
 {{- define "pxc-db.chart" -}}
@@ -74,6 +82,7 @@ Add owner-info if exists
 Backup jobs are created by operator and are not inherited from the parent cluster resource
 */}}
 {{- define "pxc-db.backupLabels" -}}
+{{- include "pxc-db.appLabels" . }}
 {{- include "pxc-db.ownerLabels" . }}
 {{- end }}
 

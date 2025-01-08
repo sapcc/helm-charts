@@ -4,8 +4,23 @@ metadata:
   name: {{ .Values.objectstore.name }}
   namespace: {{ .Release.Namespace }}
 spec:
+{{- if .Values.objectstore.multiInstance.enabled }}
+  zone:
+    name: {{ .Values.objectstore.name }} 
+{{- else if and .Values.rgwTargetPlacements.useRookCRD .Values.rgwTargetPlacements.placements }}
+  sharedPools:
+    poolPlacements:
+{{- range $target := .Values.rgwTargetPlacements.placements }}
+      - name: {{ $target.name }} 
+        metadataPoolName: {{ $target.name }}.rgw.buckets.index
+        dataPoolName: {{ $target.name }}.rgw.buckets.data
+        dataNonECPoolName: {{ $target.name }}.rgw.buckets.non-ec
+        default: {{ $target.default | default false }}
+{{- end }}
+{{- else }}
   metadataPool: {{ toYaml .Values.objectstore.metadataPool | nindent 4 }}
   dataPool: {{ toYaml .Values.objectstore.dataPool | nindent 4 }}
+{{- end }}
   hosting:
 {{- if gt (len .Values.objectstore.gateway.dnsNames) 0 }}
     advertiseEndpoint:
@@ -47,7 +62,7 @@ spec:
     sslCertificateRef: {{ .Values.objectstore.gateway.sslCertificateRef }}
     resources: {{ toYaml .Values.objectstore.gateway.resources | nindent 6 }}
   preservePoolsOnDelete: true
-{{- if and .Values.objectstore.keystone.enabled .Values.objectstore.keystone.keystoneCRD }}
+{{- if and .Values.objectstore.keystone.enabled }}
 {{- with .Values.objectstore.keystone }}
   auth:
     keystone:
@@ -60,6 +75,9 @@ spec:
       tokenCacheSize: {{ .token_cache_size }}
       url: {{ .url }}
   protocols:
+{{- if $.Values.objectstore.enabledAPIs }}
+    enableAPIs: {{ toYaml $.Values.objectstore.enabledAPIs | nindent 6 }}
+{{- end }}
     s3:
       authUseKeystone: true
     swift:

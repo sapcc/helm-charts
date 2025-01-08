@@ -15,7 +15,7 @@ metadata:
   namespace: {{ .Release.Namespace }}
 spec:
   clusterOptionOverrides:
-  {{- range $cluster, $thanos := .Values.kubeMonitoring.cephClusters }}
+  {{- range $cluster, $additionalSettings := .Values.kubeMonitoring.cephClusters }}
   - clusterName: {{ $cluster }}
     overrides:
     - name: global.commonLabels
@@ -28,8 +28,10 @@ spec:
         cluster_type: storage
         organization: ccloud
         region: '{{ "{{ .Values.global.greenhouse.clusterName | trunc -7 }}" }}'
+  {{- if index $additionalSettings "serviceProxyUrl" }}
     - name: kubeMonitoring.prometheus.prometheusSpec.externalUrl
-      value: '{{ "https://prometheus.st1.{{ .Values.global.greenhouse.clusterName | trunc -7 }}.cloud.sap" }}'
+      value: {{ index $additionalSettings "serviceProxyUrl" }}
+  {{- end }}
     - name: kubeMonitoring.kube-state-metrics.prometheus.monitor.http.metricRelabelings
       value:
       - action: replace
@@ -44,14 +46,14 @@ spec:
         fsGroup: 0
         runAsNonRoot: false
         runAsUser: 0
-  {{- if index $thanos "thanos" }}
+  {{- if index $additionalSettings "thanos" }}
     - name: kubeMonitoring.prometheus.prometheusSpec.thanos.objectStorageConfig.existingSecret.name
       value: thanos-{{ $cluster }}-metrics-objectstore
     - name: kubeMonitoring.prometheus.prometheusSpec.thanos.objectStorageConfig.existingSecret.key
       value: thanos.yaml
   {{- end }}
   {{- end }}
-  {{- range $cluster, $thanos := .Values.kubeMonitoring.computeClusters }}
+  {{- range $cluster, $additionalSettings := .Values.kubeMonitoring.computeClusters }}
   - clusterName: {{ $cluster }}
     overrides:
     - name: global.commonLabels
@@ -63,6 +65,16 @@ spec:
         cluster_type: compute
         organization: ccloud
         region: '{{ "{{ .Values.global.greenhouse.clusterName | trunc -7 }}" }}'
+    # NFS volumes need more permissions to work
+    - name: kubeMonitoring.prometheus.prometheusSpec.securityContext
+      value:
+        fsGroup: 0
+        runAsNonRoot: false
+        runAsUser: 0
+  {{- if index $additionalSettings "serviceProxyUrl" }}
+    - name: kubeMonitoring.prometheus.prometheusSpec.externalUrl
+      value: {{ index $additionalSettings "serviceProxyUrl" }}
+  {{- end }}
     - name: kubeMonitoring.kube-state-metrics.prometheus.monitor.http.metricRelabelings
       value:
       - action: replace
@@ -72,7 +84,7 @@ spec:
         - __name__
         targetLabel: cluster
   {{- end }}
-  {{- range $cluster, $thanos := .Values.kubeMonitoring.obsClusters }}
+  {{- range $cluster, $additionalSettings := .Values.kubeMonitoring.obsClusters }}
   - clusterName: {{ $cluster }}
     overrides:
     - name: global.commonLabels
@@ -84,6 +96,10 @@ spec:
         cluster_type: observability
         organization: ccloud
         region: '{{ "{{ .Values.global.greenhouse.clusterName | trunc -7 }}" }}'
+  {{- if index $additionalSettings "serviceProxyUrl" }}
+    - name: kubeMonitoring.prometheus.prometheusSpec.externalUrl
+      value: {{ index $additionalSettings "serviceProxyUrl" }}
+  {{- end }}
     - name: kubeMonitoring.kube-state-metrics.prometheus.monitor.http.metricRelabelings
       value:
       - action: replace
@@ -92,7 +108,7 @@ spec:
         sourceLabels:
         - __name__
         targetLabel: cluster
-  {{- if index $thanos "thanos" }}
+  {{- if index $additionalSettings "thanos" }}
     - name: kubeMonitoring.prometheus.prometheusSpec.thanos.objectStorageConfig.existingSecret.name
       value: thanos-{{ $cluster }}-metrics-objectstore
     - name: kubeMonitoring.prometheus.prometheusSpec.thanos.objectStorageConfig.existingSecret.key
@@ -131,7 +147,25 @@ spec:
     - name: alerts.enabled
       value: true
     - name: kubeMonitoring.defaultRules.create
-      value: false
+      value: true
+    - name: kubeMonitoring.defaultRules.additionalRuleLabels
+      value:
+        service: metrics
+        support_group: observability
+    - name: kubeMonitoring.customRules
+      value:
+        PrometheusBadConfig:
+          severity: warning
+        PrometheusRemoteStorageFailures:
+          severity: warning
+        PrometheusRemoteWriteBehind:
+          severity: warning
+        PrometheusRuleFailures:
+          severity: warning
+        PrometheusTargetSyncFailure:
+          severity: warning
+        PrometheusErrorSendingAlertsToAnyAlertmanager:
+          severity: warning
     - name: kubeMonitoring.prometheus.prometheusSpec.retention
       value: 30d
     - name: kubeMonitoring.prometheus.prometheusSpec.storageSpec.volumeClaimTemplate.spec.resources.requests.storage
