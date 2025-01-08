@@ -149,4 +149,7 @@ barbican = True
 keystone = True
 octavia = True
 
+[dns]
+nameservers = ['ns1-qa.global.cloud.sap.', 'ns2-qa.global.cloud.sap.']
+
 {{ end }}
