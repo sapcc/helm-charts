@@ -50,3 +50,21 @@ transport_url = rabbit://{{ .Values.rabbitmq.users.default.user | default "rabbi
 {{- if .Values.osprofiler.enabled }}
 {{- include "osprofiler" . }}
 {{- end }}
+
+{{ if .Values.api.cc_radius }}
+[cc_radius]
+host = {{ .Values.api.cc_radius.host | default "radius" }}
+port = {{ .Values.api.cc_radius.port | default "radius" }}
+secret = {{ .Values.api.cc_radius.secret }}
+{{ end }}
+
+
+{{ if .Values.api.cc_external }}
+[cc_external]
+user_name_header = {{ .Values.api.cc_external.user_name_header | default "HTTP_X_USER_NAME" }}
+user_domain_name_header = {{ .Values.api.cc_external.user_domain_name_header | default "HTTP_X_USER_DOMAIN_NAME" }}
+{{- if .Values.api.cc_external.trusted_key }}
+trusted_key_header = {{ .Values.api.cc_external.trusted_key_header | default "HTTP_X_TRUSTED_KEY" }}
+trusted_key_value = {{ .Values.api.cc_external.trusted_key_value }}
+{{- end }}
+{{- end }}
