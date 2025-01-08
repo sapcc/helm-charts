@@ -29,7 +29,7 @@ groups:
       summary: sending emails with internal relay fails
   - alert: SendingEmailsWithSESHighErrorRate
     expr: (sum(sum_over_time(cronus_event_mails_sent_error_provider_rate_perminute{provider="aws"}[5m]) OR on() vector(0)) ) / (sum (sum_over_time(cronus_event_mails_sent_provider_rate_perminute{provider="aws"}[5m]) OR on() vector(0))) > 0.8
-    for: 15m
+    for: 20m
     labels:
       service: email
       severity: warning
@@ -42,7 +42,7 @@ groups:
       summary: sending emails with aws ses relay high error rate greater than 80%
   - alert: SendingEmailsHighErrorRateByProjectProvider
     expr: sum (sum_over_time(cronus_event_mails_sent_error_provider_rate_perminute[5m]) OR on() vector(0)) by (project_name, provider) / sum (sum_over_time(cronus_event_mails_sent_provider_rate_perminute[5m]) OR on() vector(0)) by (project_name, provider) > 0.8
-    for: 15m
+    for: 20m
     labels:
       service: email
       severity: warning
