@@ -47,23 +47,6 @@ trusted_issuer = CN=SAP SSO CA G2,O=SAP SE,L=Walldorf,C=DE
 user_domain_id_header: HTTP_X_USER_DOMAIN_ID
 user_domain_name_header: HTTP_X_USER_DOMAIN_NAME
 
-{{ if .Values.api.cc_external }}
-[cc_external]
-user_name_header = {{ .Values.api.cc_external.user_name_header | default "HTTP_X_USER_NAME" }}
-user_domain_name_header = {{ .Values.api.cc_external.user_domain_name_header | default "HTTP_X_USER_DOMAIN_NAME" }}
-{{- if .Values.api.cc_external.trusted_key }}
-trusted_key_header = {{ .Values.api.cc_external.trusted_key_header | default "HTTP_X_TRUSTED_KEY" }}
-trusted_key_value = {{ .Values.api.cc_external.trusted_key_value }}
-{{- end }}
-{{- end }}
-
-{{ if .Values.api.cc_radius }}
-[cc_radius]
-host = {{ .Values.api.cc_radius.host | default "radius" }}
-port = {{ .Values.api.cc_radius.port | default "radius" }}
-secret = {{ .Values.api.cc_radius.secret }}
-{{ end }}
-
 {{- if .Values.services.ingress.x509.trusted_issuer }}
 [tokenless_auth]
 trusted_issuer = {{ .Values.services.ingress.x509.trusted_issuer }}
