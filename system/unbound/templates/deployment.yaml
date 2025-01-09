@@ -102,9 +102,9 @@ spec:
 {{- if .Values.unbound.dnstap.hec_splunk_url }}
 {{- if .Values.unbound.dnstap.hec_splunk_token }}
           - -H
-          - {{ .Values.unbound.dnstap.hec_splunk_url }}
+          - "$(HEC_SPLUNK_URL)"
           - -token
-          - {{ .Values.unbound.dnstap.hec_splunk_token }}
+          - "$(HEC_SPLUNK_TOKEN)"
 {{- if .Values.unbound.dnstap.hec_splunk_server_uuid }}
           - -server_uuid
           - {{ .Values.unbound.dnstap.hec_splunk_server_uuid }}
@@ -113,6 +113,19 @@ spec:
 {{- end }}
 {{- if .Values.unbound.dnstap.additional_cmdline_args }}
 {{ toYaml .Values.unbound.dnstap.additional_cmdline_args | indent 10 }}
+{{- end }}
+{{- if and $.Values.unbound.dnstap.hec_splunk_url $.Values.unbound.dnstap.hec_splunk_token }}
+        env:
+        - name: HEC_SPLUNK_URL
+          valueFrom:
+            secretKeyRef:
+              name: {{.Release.Name}}-hec-secrets
+              key: hec_splunk_url
+        - name: HEC_SPLUNK_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: {{.Release.Name}}-hec-secrets
+              key: hec_splunk_token
 {{- end }}
         volumeMounts:
           - name: dnstap-socket
