@@ -67,7 +67,7 @@ name: {{ include "pxc-db.fullname" . }}
 {{- end }}
 
 {{/*
-owner-info lables
+Charts owner-info labels
 */}}
 {{- define "pxc-db.ownerLabels" -}}
 {{- if index .Values "owner-info" }}
