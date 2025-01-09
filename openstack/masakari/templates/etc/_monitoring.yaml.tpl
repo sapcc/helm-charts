@@ -3,7 +3,7 @@ openstack:
     interval: 60
     compute_interface: internal
     ha_interface: internal
-    notification_wait_time: 300
+    notification_wait_time: 3600 # do not host ha more than one per hour
     exporter:
       listen: 0.0.0.0:{{ .Values.monitoringExporterPort }}
       string_to_bool:
@@ -13,9 +13,8 @@ openstack:
     netbox:
       url: https://netbox.global.cloud.sap
       devices_query:
-        region_id: 19
-        platform_id: 36
-        q: ap002
+        platform: linux-kvm
+        region: {{ .Values.global.region }}
       devices_field_match: netbox_field("name") == str::regex_find("node[0-9]{3}-(bb|ap)[0-9]{2,3}", hypervisor("service.host"))
       interval: 30
     settings:
@@ -26,13 +25,18 @@ openstack:
       project_name: service
       auth_url: http://keystone:5000
     segments:
-      - name: ap002
-        recovery_method: auto
-        description: maintained by masakari-monitoring
-        control_attributes: SSH
+      - name: prod
+        match: |
+          str::regex_matches(hypervisor("hypervisor_type"), "QEMU") &&
+          str::regex_matches(hypervisor("hypervisor_hostname"), ".*node\\d{3}-bb(27\\d|096)")
+      - name: dev
+        match: |
+          str::regex_matches(hypervisor("hypervisor_type"), "QEMU") &&
+          str::regex_matches(hypervisor("hypervisor_hostname"), ".*node\\d{3}-ap002")
+      - name: nested
         match: |
           str::regex_matches(hypervisor("hypervisor_type"), "QEMU") && 
-          str::regex_matches(hypervisor("hypervisor_hostname"), "kvm-node0\\d\\d-ap002")
+          str::regex_matches(hypervisor("service.host"), "vm\\d{3}")
     collectors:
       - name: agents
         type: agent
@@ -60,7 +64,7 @@ openstack:
             collector: storage exporter
             metric: nfs idle time
             expected:
-              - "<= 60.0"
+              - "<= 360.0"
       - name: heartbeat
         checks:
           - name: overall
@@ -83,5 +87,9 @@ openstack:
             monitor: heartbeat
           - name: nova
             monitor: nova
+          - name: nfs idle
+            monitor: nfs idle
+        segments:
+          - prod
         notification:
           event: stopped
