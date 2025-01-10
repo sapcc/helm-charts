@@ -156,12 +156,14 @@ pgmetrics:
             description: "Total number of projects that are failing rate data scrape"
 
     limes_mismatch_project_quota:
+      # The UNION SELECT adds a dummy row to satisfy the absent-metrics-operator.
       query: >
         SELECT ps.type AS service_name, COUNT(*) as count
           FROM project_resources pr
           JOIN project_services ps ON ps.id = pr.service_id
          WHERE pr.backend_quota != pr.quota
          GROUP BY ps.type
+         UNION SELECT 'none' AS service_name, 0 AS count
       metrics:
         - service_name:
             usage: "LABEL"
