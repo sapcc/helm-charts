@@ -150,6 +150,6 @@ keystone = True
 octavia = True
 
 [dns]
-nameservers = ["147.204.35.156"]
+nameservers = ["147.204.35.156", "147.204.35.157"]
 
 {{ end }}
