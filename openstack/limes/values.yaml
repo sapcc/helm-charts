@@ -157,9 +157,15 @@ pgmetrics:
 
     limes_mismatch_project_quota:
       query: >
-        SELECT COUNT(*) as count FROM project_resources
-        WHERE backend_quota != quota
+        SELECT ps.type AS service_name, COUNT(*) as count
+          FROM project_resources pr
+          JOIN project_services ps ON ps.id = pr.service_id
+         WHERE pr.backend_quota != pr.quota
+         GROUP BY ps.type
       metrics:
+        - service_name:
+            usage: "LABEL"
+            description: "Service type"
         - count:
             usage: "GAUGE"
             description: "Total number of project resources that have mismatched quota"

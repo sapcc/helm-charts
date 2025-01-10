@@ -247,7 +247,7 @@ groups:
         limes-collect pods.
 
   - alert: OpenstackLimesMismatchProjectQuota
-    expr: limes_mismatch_project_quota_count > 0
+    expr: max by (service_name) (limes_mismatch_project_quota_count > 0)
     for: 60m # every 30m, limes-collect scrapes quota/usage on each project service and at the same time tries to rectify this error; give it 1-2 chances before alerting
     labels:
       severity: info
@@ -256,13 +256,13 @@ groups:
       service: limes
     annotations:
       summary: Mismatched Project Quota
-      description: Limes detected that the quota of some resource(s) in some project differ from the backend quota for that resource and project.
+      description: Limes detected that the quota of some {{ $labels.service_name }} resource(s) in some project differ from the backend quota for that resource and project.
         This may happen when Limes is unable to write a changed quota value into the backend, for example because of a service downtime.
 
         More details can be found in <https://dashboard.{{ $labels.region }}.cloud.sap/ccadmin/cloud_admin/resources/cluster/current#/inconsistencies|the Limes Inconsistencies view in Elektra>.
 
   - alert: OpenstackLimesOverspentProjectQuota
-    expr: limes_overspent_project_quota_count > 0
+    expr: max(limes_overspent_project_quota_count > 0)
     for: 60m # every 30m, limes-collect scrapes quota/usage on each project service; give it 1-2 chances to observe a consistent usage value before alerting
     labels:
       severity: info
