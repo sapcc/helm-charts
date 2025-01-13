@@ -7,18 +7,18 @@ spec:
 {{- if .Values.objectstore.multiInstance.enabled }}
   zone:
     name: {{ .Values.objectstore.name }} 
-{{- else if and .Values.rgwTargetPlacements.useRookCRD .Values.rgwTargetPlacements.placements }}
+{{- else if and .Values.rgwTargetPlacements.useRookCRD .Values.rgwTargetPlacements.premiumPlacements }}
   sharedPools:
     poolPlacements:
-{{- range $target := .Values.rgwTargetPlacements.placements }}
+{{- range $target := .Values.rgwTargetPlacements.premiumPlacements }}
       - name: {{ $target.name }} 
         metadataPoolName: {{ $target.name }}.rgw.buckets.index
         dataPoolName: {{ $target.name }}.rgw.buckets.data
         dataNonECPoolName: {{ $target.name }}.rgw.buckets.non-ec
         default: {{ $target.default | default false }}
 {{- end }}
-{{- if .Values.rgwTargetPlacements.premiumPlacements }}
-{{- range $target := .Values.rgwTargetPlacements.premiumPlacements }}
+{{- if .Values.rgwTargetPlacements.Placements }}
+{{- range $target := .Values.rgwTargetPlacements.placements }}
       - name: {{ $target.name }} 
         metadataPoolName: {{ $target.name }}.rgw.buckets.index
         dataPoolName: {{ $target.name }}.rgw.buckets.data
