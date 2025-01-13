@@ -52,7 +52,7 @@
 - name: TENSO_HELM_DEPLOYMENT_SWIFT_CONTAINER
   value: tenso-deployment-events
 - name: TENSO_OSLO_POLICY_PATH
-  value: '/etc/tenso/policy.yaml'
+  value: '/etc/tenso/policy.json'
 - name: TENSO_ROUTES
   value: >
     helm-deployment-from-concourse.v1 -> helm-deployment-to-elk.v1,
