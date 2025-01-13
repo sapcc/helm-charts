@@ -1,0 +1,16 @@
+groups:
+  - name: jumplogs
+    rules:
+      - alert: OctobusJumpserverLogShipping
+        expr: label_replace(node_uname_info, "logs", "$0", "nodename", ".*") unless on (logs) (elasticsearch_octobus_jumpserver_logs_doc_count > 0)
+        for: 15m
+        labels:
+          severity: warning
+          service: audit
+          support_group: "observability"
+          meta: "No Jumpserver logs shipping to Octobus"
+          playbook: 'docs/support/playbook/opensearch/octobus/jumpserver-audit-logs-in-octobus-missing'
+          dashboard: audit-log-shipping
+        annotations:
+          description: "Jumpserver log shipping to Octobus not working for `{{ $labels.server_name }}`"
+          summary: "JumpserverLogs2Octobus not working"
