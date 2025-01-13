@@ -191,6 +191,19 @@ spec:
           requests:
             storage: {{ $pxc.persistence.size | quote }}
     gracePeriod: 600
+{{- if .Values.custom_users }}
+  users:
+{{- if .Values.ccroot_user.enabled }}
+  - name: pcroot
+    hosts:
+    - '127.0.0.1'
+    grants:
+    - 'ALL PRIVILEGES'
+    passwordSecretRef:
+      name: "{{ include "pxc-db.clusterName" $ }}-custom-users-secret"
+      key: ccroot
+{{- end }}
+{{- end }}
   proxysql:
     enabled: false
   {{- $haproxy := .Values.haproxy }}
