@@ -1,24 +1,31 @@
+{{- define "mrname" }}
+{{- /* use uppercase letters of kind as prefix to avoid some naming clashes */ -}}
+{{- $kind := regexFindAll "[A-Z]" .kind -1 | join "" | lower }}
+{{- $name := .metadata.name | replace "." "-" | replace ":" "-" -}}
+mr-{{ $kind }}-{{ $name }}
+{{- end }}
+
+{{- range $path, $_ := .Files.Glob "managedresources/*.yaml" }}
+{{- range $_, $doc := (tpl ($.Files.Get $path) $ | splitList "---\n") }}
+{{- $obj := $doc | fromYaml }}
+{{- if not $obj }}
+{{- continue }}
+{{- end }}
+---
 apiVersion: resources.gardener.cloud/v1alpha1
 kind: ManagedResource
 metadata:
-  name: {{ include "metal-operator-remote.fullname" . }}-resources
+  name: {{ template "mrname" $obj }}
 spec:
   secretRefs:
-  - name: {{ include "metal-operator-remote.fullname" . }}-resources
+  - name: {{ template "mrname" $obj }}
 ---
 apiVersion: v1
 kind: Secret
 metadata:
-  name: {{ include "metal-operator-remote.fullname" . }}-resources
+  name: {{ template "mrname" $obj }}
 type: Opaque
 data:
-  # Cannot use .Files.AsSecrets because it would create a map
-  # of "file: base64 data" instead of concatenating the data
-  # and encoding that
-  objects.yaml: |-
-    {{- $combined := "" }}
-    {{- range $path, $_ := .Files.Glob "managedresources/*.yaml" }}
-    {{- $combined = print $combined ($.Files.Get $path) "\n"}}
-    {{- end }}
-    {{- $encoded := $combined | b64enc }}
-    {{ $encoded }}
+  objects.yaml: {{ $doc | b64enc }}
+{{- end }}
+{{- end }}
