@@ -34,6 +34,8 @@ start_as_primary () {
     echo "I am the Primary Node"
     init_mysql
     write_password_file
+    init_mysql_upgrade
+    update_users &
     exec mysqld --user=mysql --wsrep_cluster_name=$SHORT_CLUSTER_NAME --wsrep_node_name=$hostname-$ipaddr \
     --wsrep_cluster_address="gcomm://" --wsrep_sst_method=xtrabackup-v2 \
     --wsrep_sst_auth="xtrabackup:$XTRABACKUP_PASSWORD" \
@@ -42,7 +44,6 @@ start_as_primary () {
     --log-bin=$hostname-bin $CMDARG \
     --skip-name-resolve
 }
-
 
 {{- if eq .Values.service.primary true }}
 
