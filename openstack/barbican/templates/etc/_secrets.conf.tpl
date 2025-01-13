@@ -1,5 +1,5 @@
 [DEFAULT]
-sql_connection = {{ include "db_url_mysql" . }}
+sql_connection = {{ include "utils.db_url" . }}
 
 {{ include "ini_sections.default_transport_url" . }}
 
