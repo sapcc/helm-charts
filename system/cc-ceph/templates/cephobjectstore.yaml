@@ -17,6 +17,15 @@ spec:
         dataNonECPoolName: {{ $target.name }}.rgw.buckets.non-ec
         default: {{ $target.default | default false }}
 {{- end }}
+{{- if .Values.rgwTargetPlacements.premiumPlacements }}
+{{- range $target := .Values.rgwTargetPlacements.premiumPlacements }}
+      - name: {{ $target.name }} 
+        metadataPoolName: {{ $target.name }}.rgw.buckets.index
+        dataPoolName: {{ $target.name }}.rgw.buckets.data
+        dataNonECPoolName: {{ $target.name }}.rgw.buckets.non-ec
+        default: {{ $target.default | default false }}
+{{- end }}
+{{- end }}
 {{- else }}
   metadataPool: {{ toYaml .Values.objectstore.metadataPool | nindent 4 }}
   dataPool: {{ toYaml .Values.objectstore.dataPool | nindent 4 }}
