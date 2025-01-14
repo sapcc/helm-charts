@@ -161,8 +161,8 @@ def check_tcp_socket(
                 sys.exit(1)
 
         # let's do the db check
-        # producer service doesn't have a db connection
-        if service not in ["producer"]:
+        # producer, mdns services do not have a direct db connection:
+        if service not in ["producer", "mdns"]:
             if d_ports and tcp_socket_status(proc, d_ports) == 0:
                 sys.stderr.write(f"Database socket not established for service {proc}")
                 # Do not kill the pod if database is not reachable/down
