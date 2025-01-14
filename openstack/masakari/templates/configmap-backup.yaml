@@ -1,0 +1,28 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-backup-script
+  labels:
+    system: openstack
+    type: configuration
+    component: {{ .Release.Name }}
+data:
+  backup.sh: |
+    #!/bin/bash
+    # Define variables
+    DB_PATH="${DB_PATH:-/database/masakari.sqlite}"
+    BACKUP_PATH="${BACKUP_PATH:-/backup}"
+    TIMESTAMP=$(date +"%Y%m%d%H%M%S")
+    BACKUP_FILE="$BACKUP_PATH/database_backup_$TIMESTAMP.db"
+    COMPRESSED_BACKUP_FILE="$BACKUP_FILE.gz"
+    # Create a backup
+    sqlite3 "$DB_PATH" ".backup '$BACKUP_FILE'"
+    # Compress the backup
+    gzip "$BACKUP_FILE"
+    # Verify if backup exists and is not empty
+    if [ -s "$COMPRESSED_BACKUP_FILE" ]; then
+        echo "Backup successful: $COMPRESSED_BACKUP_FILE"
+    else
+        echo "Backup failed: Compressed backup file not created or is empty."
+        exit 1
+    fi
