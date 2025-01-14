@@ -2,14 +2,14 @@
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: metal-token-dealer
+  name: metal-token-rotate
   namespace: garden
 {{- if .Values.targetSecret }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: metal-token-dealer
+  name: metal-token-rotate
 rules:
 - apiGroups:
   - ""
@@ -25,21 +25,21 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: metal-token-dealer
+  name: metal-token-rotate
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: metal-token-dealer
+  name: metal-token-rotate
 subjects:
 - kind: ServiceAccount
-  name: metal-token-dealer
+  name: metal-token-rotate
   namespace: garden
 {{- else }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: metal-token-dealer
+  name: metal-token-rotate
 rules:
 - apiGroups:
   - "authentication.k8s.io"
@@ -51,20 +51,20 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: metal-token-dealer
+  name: metal-token-rotate
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: metal-token-dealer
+  name: metal-token-rotate
 subjects:
 - kind: ServiceAccount
-  name: metal-token-dealer
+  name: metal-token-rotate
   namespace: garden
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: metal-token-dealer
+  name: metal-token-rotate
   namespace: {{ .Values.config.serviceAccountNamespace | quote }}
 rules:
 - apiGroups:
@@ -79,14 +79,14 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: metal-token-dealer
+  name: metal-token-rotate
   namespace: {{ .Values.config.serviceAccountNamespace | quote }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
-  name: metal-token-dealer
+  name: metal-token-rotate
 subjects:
 - kind: ServiceAccount
-  name: metal-token-dealer
+  name: metal-token-rotate
   namespace: garden
 {{- end }}

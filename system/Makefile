@@ -119,7 +119,7 @@ build-metal-operator-remote:
 	@cat kustomize/metal-operator-remote/kustomization.yaml > kustomization.yaml
 	@kubectl kustomize | helmify -crd-dir metal-operator-remote
 	@cp kustomize/metal-operator-remote/remote-kubeconfig.yaml metal-operator-remote/templates
-	@cp kustomize/metal-operator-remote/dealer-kubeconfig.yaml metal-operator-remote/templates
+	@cp kustomize/metal-operator-remote/rotate-kubeconfig.yaml metal-operator-remote/templates
 	@cp kustomize/metal-operator-remote/managedresource.yaml metal-operator-remote/templates
 	@cp kustomize/metal-operator-remote/macdb.yaml metal-operator-remote/templates
 	@mkdir metal-operator-remote/managedresources
@@ -129,7 +129,7 @@ build-metal-operator-remote:
 	@yq -i '.fullnameOverride="metal-operator"' metal-operator-remote/values.yaml
 	@yq -i '.remote.ca=""' metal-operator-remote/values.yaml
 	@echo 'macdb: {}' >> metal-operator-remote/values.yaml
-	@yq -i '.version="0.2.0"' metal-operator-remote/Chart.yaml
+	@yq -i '.version="0.2.1"' metal-operator-remote/Chart.yaml
 	@$(SED) -i 's/serviceAccountName.*$$/serviceAccountName: default/g' metal-operator-remote/templates/deployment.yaml
 	@$(SED) -i 's/kind: Role/kind: ClusterRole/g' metal-operator-remote/managedresources/kustomize.yaml
 

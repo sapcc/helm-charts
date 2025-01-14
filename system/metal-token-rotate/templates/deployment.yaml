@@ -1,18 +1,18 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: metal-token-dealer
+  name: metal-token-rotate
   labels:
-    app: metal-token-dealer
+    app: metal-token-rotate
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: metal-token-dealer
+      app: metal-token-rotate
   template:
     metadata:
       labels:
-        app: metal-token-dealer
+        app: metal-token-rotate
         networking.gardener.cloud/to-dns: allowed
         networking.gardener.cloud/to-runtime-apiserver: allowed
         networking.resources.gardener.cloud/to-virtual-garden-kube-apiserver-tcp-443: allowed
@@ -21,7 +21,7 @@ spec:
         {{- end }}
     spec:
       containers:
-      - name: metal-token-dealer
+      - name: metal-token-rotate
         image: {{ .Values.global.registry }}/{{ .Values.image.repository }}:{{ .Values.image.tag }}
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         env:
@@ -33,7 +33,7 @@ spec:
         {{- end }}
         volumeMounts:
         - name: config
-          mountPath: /etc/metal-token-dealer
+          mountPath: /etc/metal-token-rotate
           readOnly: true
         - name: gardener-client-ca
           mountPath: /var/run/garden/ca
@@ -41,14 +41,14 @@ spec:
         - name: garden-token
           mountPath: /var/run/garden/token
           readOnly: true
-      serviceAccountName: metal-token-dealer
+      serviceAccountName: metal-token-rotate
       volumes:
       - name: config
         configMap:
-          name: metal-token-dealer
+          name: metal-token-rotate
       - name: gardener-client-ca
         secret:
           secretName: {{ .Values.gardener.clientCASecretName }}
       - name: garden-token
         secret:
-          secretName: metal-token-dealer-garden-token
+          secretName: metal-token-rotate-garden-token
