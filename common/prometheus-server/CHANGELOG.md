@@ -1,3 +1,8 @@
+## 7.7.2
+
+* Prometheus bump to v2.55.1
+* Thanos bump to v0.37.2
+
 ## 7.7.1
 
 * Fix scraping of apiserver_request_duration_seconts histogram

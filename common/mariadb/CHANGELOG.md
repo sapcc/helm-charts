@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.15.3 - 2025/01/14
+- fixed service selector: added `app.kubernetes.io/instance` label to make service target specific service instance
+- chart version bumped
+
 ## v0.15.2 - 2024/11/29
 - `app` selector label returned, because deployment selector is immutable
 - chart version bumped

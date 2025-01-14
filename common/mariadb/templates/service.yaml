@@ -1,6 +1,6 @@
+---
 kind: Service
 apiVersion: v1
-
 metadata:
   name: {{ include "fullName" . }}
   namespace:  {{.Release.Namespace}}
@@ -14,6 +14,7 @@ spec:
   type: ClusterIP
   selector:
     app.kubernetes.io/component: {{ include "label.component" (list "mariadb" "deployment" "database") }}
+    app.kubernetes.io/instance: {{ $.Release.Name }}-{{ $.Chart.Name }}
   ports:
     - name: {{ include "fullName" . }}
       port: {{.Values.port_public}}
@@ -37,6 +38,7 @@ metadata:
 spec:
   selector:
     app.kubernetes.io/component: {{ include "label.component" (list "mariadb" "deployment" "backup") }}
+    app.kubernetes.io/instance: {{ $.Release.Name }}-{{ $.Chart.Name }}
   ports:
     - port: 8081
       name: http
