@@ -1,3 +1,8 @@
+## 6.7.3 
+
+* Prometheus bump to v2.55.1
+* Thanos bump to v0.37.2
+
 ## 6.6.2
 
 * another fix for ThanosStoreSeriesGateLatencyHigh 
