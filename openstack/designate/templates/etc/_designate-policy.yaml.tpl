@@ -56,7 +56,7 @@ share_zone: rule:context_is_master
 unshare_zone: rule:context_is_master
 create_zone: rule:context_is_dns_ops
 move_zone: rule:context_is_dns_ops
-pool_move_zone: rule:context_is_dns_op
+pool_move_zone: rule:context_is_dns_ops
 create_sub_zone: rule:context_is_zonemaster
 create_super_zone: rule:context_is_cloud_admin
 get_zones: rule:context_is_viewer
