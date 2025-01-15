@@ -64,6 +64,8 @@ spec:
   - name: cloud_sharedfilesystem_viewer
   - name: sharedfilesystem_admin
   - name: sharedfilesystem_viewer
+{{- Role `cloud_objectstore_admin` needed for backup to cloud service }}
+  - name: cloud_objectstore_admin
 
   domains:
   - name: Default
@@ -91,6 +93,12 @@ spec:
         role: cloud_network_admin
       - project: service
         role: cloud_sharedfilesystem_admin
+    - name: manilabackup
+      description: Manila Backup Service
+      password: '{{.Values.global.manilabackup_service_password | include "resolve_secret"}}'
+      role_assignments:
+      - project: service
+        role: service
     - name: '{{.Values.global.manila_network_username | include "resolve_secret"}}'
       description: Manila Network
       password: '{{.Values.global.manila_network_password | include "resolve_secret"}}'
@@ -105,6 +113,10 @@ spec:
     - name: cloud_admin
       role_assignments:
       - user: admin@Default
+        role: cloud_sharedfilesystem_admin
+      - user: manilabackup@Default
+        role: cloud_objectstore_admin
+      - user: manilabackup@Default
         role: cloud_sharedfilesystem_admin
     groups:
     - name: CCADMIN_CLOUD_ADMINS
