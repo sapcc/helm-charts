@@ -1,4 +1,5 @@
 {{- range $key, $record := .Values.objectstore.gateway.dnsNames }}
+{{- if or (not $.Values.dnsNamesSkipCertificate) (not (has $record $.Values.dnsNamesSkipCertificate)) }}
 ---
 apiVersion: cert-manager.io/v1
 kind: Certificate
@@ -18,4 +19,5 @@ spec:
   usages:
     - digital signature
     - key encipherment
+{{- end }}
 {{- end }}

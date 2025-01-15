@@ -1,6 +1,7 @@
 {{- if .Values.objectstore.multiInstance.enabled }}
 {{- range $instance := .Values.objectstore.multiInstance.extraInstances }}
 {{- range $key, $record := $instance.gateway.dnsNames }}
+{{- if or (not $.Values.dnsNamesSkipRecord) (not (has $record $.Values.dnsNamesSkipRecord)) }}
 ---
 apiVersion: disco.stable.sap.cc/v1
 kind: Record
@@ -21,6 +22,7 @@ spec:
   record: "{{ $record }}."
   hosts:
     - "*.{{ $record }}."
+{{- end }}
 {{- end }}
 {{- end }}
 {{- end }}
