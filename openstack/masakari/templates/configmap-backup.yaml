@@ -9,20 +9,35 @@ metadata:
 data:
   backup.sh: |
     #!/bin/bash
+    set -e
+
     # Define variables
     DB_PATH="${DB_PATH:-/database/masakari.sqlite}"
     BACKUP_PATH="${BACKUP_PATH:-/backup}"
     TIMESTAMP=$(date +"%Y%m%d%H%M%S")
     BACKUP_FILE="$BACKUP_PATH/database_backup_$TIMESTAMP.db"
     COMPRESSED_BACKUP_FILE="$BACKUP_FILE.gz"
-    # Create a backup
-    sqlite3 "$DB_PATH" ".backup '$BACKUP_FILE'"
-    # Compress the backup
-    gzip "$BACKUP_FILE"
-    # Verify if backup exists and is not empty
+
+    # Function to handle errors
+    error_exit() {
+      echo "$1" 1>&2
+      exit 1
+      }
+
+    echo "Verify if path exists"
+    if [ ! -d "$BACKUP_PATH" ]; then
+      mkdir -p "$BACKUP_PATH" || error_exit "Failed to create backup directory: $BACKUP_PATH"
+    fi
+
+    echo "Create a backup"
+    sqlite3 "$DB_PATH" ".backup '$BACKUP_FILE'" || error_exit "Failed to create database backup: $BACKUP_FILE"
+
+    echo "Compress the backup"
+    gzip "$BACKUP_FILE" || error_exit "Failed to compress backup file: $BACKUP_FILE"
+
+    echo "Verify if backup exists and is not empty"
     if [ -s "$COMPRESSED_BACKUP_FILE" ]; then
-        echo "Backup successful: $COMPRESSED_BACKUP_FILE"
+      echo "Backup successful: $COMPRESSED_BACKUP_FILE"
     else
-        echo "Backup failed: Compressed backup file not created or is empty."
-        exit 1
+      error_exit "Backup failed: Compressed backup file not created or is empty."
     fi
