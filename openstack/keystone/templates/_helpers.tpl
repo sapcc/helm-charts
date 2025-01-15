@@ -15,16 +15,6 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
 {{- printf "%s-%s" .Release.Name $name | trunc 63 | replace "_" "-" | trimSuffix "-" -}}
 {{- end -}}
 
-{{- define "db_host" -}}
-{{- if .Values.global.clusterDomain -}}
-{{.Release.Name}}-mariadb.{{.Release.Namespace}}.svc.{{.Values.global.clusterDomain}}
-{{- else if and .Values.mariadb_galera.enabled .Values.databaseKind (eq .Values.databaseKind "galera") -}}
-{{.Release.Name}}-mariadb.{{.Release.Namespace}}
-{{- else -}}
-{{.Release.Name}}-mariadb.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}
-{{- end -}}
-{{- end -}}
-
 {{- define "memcached_host" -}}
 {{- if .Values.global.clusterDomain -}}
 {{.Release.Name}}-memcached.{{.Release.Namespace}}.svc.{{.Values.global.clusterDomain}}
@@ -44,13 +34,6 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
 {{.Release.Name}}-rabbitmq.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}
 {{- end -}}
 {{- end -}}
-
-{{/*
-To satisfy common/mysql_metrics :(
-*/}}
-
-{{define "keystone_db_host"}}{{- if .Values.global.clusterDomain }}{{.Release.Name}}-mariadb.{{.Release.Namespace}}.svc.{{.Values.global.clusterDomain}}{{ else }}{{.Release.Name}}-mariadb.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{- end -}}{{end}}
-
 
 {{- define "2faproxy.selectorLabels" -}}
 app.kubernetes.io/name: 2faproxy
