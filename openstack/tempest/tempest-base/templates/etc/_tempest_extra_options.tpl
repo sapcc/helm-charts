@@ -150,6 +150,6 @@ keystone = True
 octavia = True
 
 [dns]
-nameservers = 147.204.35.157:53,ns2.qa-de-1.cloud.sap,ns3.qa-de-1.cloud.sap
+nameservers = 147.204.35.157:53,147.204.35.141
 
 {{ end }}
