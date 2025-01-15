@@ -10,6 +10,7 @@ spec:
   record: {{ $.Values.objectstore.service.externalIP }}
   hosts:
     - "{{ $record }}."
+{{- if or (not $.Values.dnsNamesSkipRecordWildcard) (not (has $record $.Values.dnsNamesSkipRecordWildcard)) }}
 ---
 apiVersion: disco.stable.sap.cc/v1
 kind: Record
@@ -20,5 +21,6 @@ spec:
   record: "{{ $record }}."
   hosts:
     - "*.{{ $record }}."
+{{- end }}
 {{- end }}
 {{- end }}
