@@ -57,8 +57,10 @@ spec:
 {{- if gt (len $instance.gateway.dnsNames) 0 }}
     advertiseEndpoint:
       dnsName: {{ $instance.gateway.dnsNames | first }}
+{{- if $instance.gateway.securePort }}
       port: 443
       useTls: true
+{{- end }}
     dnsNames: {{ toYaml $instance.gateway.dnsNames | nindent 8 }}
 {{- end }}
   gateway:
@@ -66,8 +68,8 @@ spec:
     {{- if or $instance.gateway.port $.Values.objectstore.gateway.port }}
     port: {{ $instance.gateway.port | default $.Values.objectstore.gateway.port }}
     {{- end }}
-    {{- if or $instance.gateway.securePort $.Values.objectstore.gateway.securePort }}
-    securePort: {{ $instance.gateway.securePort | default $.Values.objectstore.gateway.securePort }}
+    {{- if $instance.gateway.securePort }}
+    securePort: {{ $instance.gateway.securePort }}
     {{- end }}
     placement:
       nodeAffinity:
@@ -89,7 +91,9 @@ spec:
               - rook-ceph-rgw
           topologyKey: kubernetes.io/hostname
     priorityClassName: system-cluster-critical
+{{- if $instance.gateway.securePort }}
     sslCertificateRef: {{ $instance.gateway.sslCertificateRef | default $.Values.objectstore.gateway.sslCertificateRef }}
+{{- end }}
     resources: {{ toYaml ( $instance.gateway.resources | default $.Values.objectstore.gateway.resources) | nindent 6 }}
   preservePoolsOnDelete: true
 {{- if and $.Values.objectstore.keystone.enabled }}
