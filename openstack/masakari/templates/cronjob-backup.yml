@@ -22,14 +22,13 @@ spec:
             - name: BACKUP_PATH
               value: "/backup/{{ now | date "2006-01-02" }}"
             volumeMounts:
-            - name: backup-script
-              mountPath: /backup/backup.sh
-              subPath: backup.sh
             - name: masakari-database
               mountPath: /database
             - name: masakari-backup
               mountPath: /backup
-            command: ["/bin/bash", "-c", "/backup/backup.sh"]
+            - name: backup-script
+              mountPath: /script
+            command: ["/bin/bash", "-c", "/script/backup.sh"]
           containers:
           - name: {{ .Chart.Name }}-upload-backup
             image: "keppel.eu-de-1.cloud.sap/ccloud/swift:2023.1-latest"
@@ -38,11 +37,9 @@ spec:
             - name: BACKUP_PATH
               value: "/backup"
             - name: "OBJECT_NAME"
-              value: {{.Values.global.region}}"/masakari"
+              value: {{.Values.global.region}}/masakari
             - name: OS_AUTH_URL
-              value: {{ .Values.global.auth_url }}
-            - name: OS_IDENTITY_API_VERSION
-              value: "3"
+              value: "https://identity-3.{{.Values.global.region}}.cloud.sap/v3"
             - name: OS_REGION_NAME
               value: {{.Values.global.region}}
             - name: OS_PROJECT_NAME
@@ -52,24 +49,28 @@ spec:
             - name: OS_USER_DOMAIN_NAME
               value: {{ .Values.backup.OS_USER_DOMAIN_NAME }}
             - name: OS_USERNAME
-              value: {{ .Values.global.masakari_service_user }}
-            - name: OS_PASSWORD
-              value: {{ .Values.global.masakari_service_password }}
+              value: "db_backup"
+            #- name: OS_PASSWORD
+            #  valueFrom:
+            #    secretKeyRef:
+            #      name: {{ .Release.Name }}-etc
+            #      key: db_password
             volumeMounts:
             - name: upload-script
-              mountPath: /backup/upload.sh
-              subPath: upload.sh
+              mountPath: /script
             - name: masakari-backup
               mountPath: /backup
-            command: ["/bin/bash", "-c", "/backup/upload.sh"]
+            command: ["/bin/bash", "-c", "/script/upload.sh"]
           restartPolicy: OnFailure
           volumes:
           - name: backup-script
             configMap:
               name: {{ .Release.Name }}-backup-script
+              defaultMode: 0744
           - name: upload-script
             configMap:
               name: {{ .Release.Name }}-upload-script
+              defaultMode: 0744
           - name: masakari-database
             persistentVolumeClaim:
               claimName: masakari-database
