@@ -1,5 +1,6 @@
 {{- if .Values.objectstore.multiInstance.enabled }}
 {{- range $instance := .Values.objectstore.multiInstance.extraInstances }}
+{{- if $instance.gateway.sslCertificateRef }}
 {{- range $key, $record := $instance.gateway.dnsNames }}
 {{- if or (not $.Values.dnsNamesSkipCertificate) (not (has $record $.Values.dnsNamesSkipCertificate)) }}
 ---
@@ -9,7 +10,9 @@ metadata:
   name: {{ $record }}
 spec:
   dnsNames:
+{{- if or (not $.Values.dnsNamesSkipCertificateWildcard) (not (has $record $.Values.dnsNamesSkipCertificateWildcard)) }}
     - "*.{{ $record }}"
+{{- end }}
     - "{{ $record }}"
   uris:
     - rook-ceph-rgw-{{ $instance.name }}.rook-ceph.svc
@@ -21,6 +24,7 @@ spec:
   usages:
     - digital signature
     - key encipherment
+{{- end }}
 {{- end }}
 {{- end }}
 {{- end }}
