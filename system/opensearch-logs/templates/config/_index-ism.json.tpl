@@ -97,6 +97,18 @@
                     "scaleout-*"
                 ],
                 "priority": 1
+            },
+            {
+                "index_patterns": [
+                    "compute-*"
+                ],
+                "priority": 1
+            }
+            {
+                "index_patterns": [
+                    "storage-*"
+                ],
+                "priority": 1
             }
         ]
     }
