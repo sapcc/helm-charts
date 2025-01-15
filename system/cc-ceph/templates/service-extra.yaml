@@ -16,7 +16,11 @@ spec:
   sessionAffinity: None
   ports:
     - port: {{ $instance.service.port }}
+{{- if $instance.gateway.securePort }}
       targetPort: {{ $instance.service.port }}
+{{- else }}
+      targetPort: 8080 # rgw doesn't listen to 80 port for some reason
+{{- end }}
       protocol: TCP
       name: rgw-ssl
   selector:
