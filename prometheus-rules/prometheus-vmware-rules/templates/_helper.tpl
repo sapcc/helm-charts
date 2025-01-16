@@ -39,6 +39,6 @@ expr: >
               )
           )
       ),
-      "bedrock", "yes", "bedrock", ""
+      "bedrock", "true", "bedrock", ""
   )
 {{- end -}}
