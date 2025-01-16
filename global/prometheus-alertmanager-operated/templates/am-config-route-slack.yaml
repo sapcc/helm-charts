@@ -450,6 +450,23 @@ spec:
             matchType: "="
             value: compute
 
+      # rework to match support group compute needed
+      - receiver: slack_vmware_info
+        continue: true
+        matchers:
+          - name: tier
+            matchType: "="
+            value: vmware
+          - name: severity
+            matchType: "="
+            value: info
+          - name: region
+            matchType: "=~"
+            value: {{ without .Values.regions "qa-de-1" | join "|" }}
+          - name: support_group
+            matchType: "="
+            value: compute
+
       - receiver: slack_bedrock_critical
         continue: true
         matchers:
@@ -487,23 +504,6 @@ spec:
           - name: bedrock
             matchType: "="
             value: true
-
-      # rework to match support group compute needed
-      - receiver: slack_vmware_info
-        continue: true
-        matchers:
-          - name: tier
-            matchType: "="
-            value: vmware
-          - name: severity
-            matchType: "="
-            value: info
-          - name: region
-            matchType: "=~"
-            value: {{ without .Values.regions "qa-de-1" | join "|" }}
-          - name: support_group
-            matchType: "="
-            value: compute
 
       # Test Channel for CC KVM Alerting slack_alert_kvm_test
       - receiver: slack_alert_kvm_test
