@@ -83,6 +83,53 @@ spec:
             - name: etc-andromeda
               mountPath: /etc/andromeda
               readOnly: true
+        - name: {{ .Chart.Name }}-liquid-server
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          command: ["/usr/bin/andromeda-liquid-server", "--port", {{ .Values.liquidServerService.port }}]
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - name: HOST
+              value: 0.0.0.0
+            - name: GOMEMLIMIT
+              valueFrom:
+                resourceFieldRef:
+                  containerName: {{ .Chart.Name }}-server
+                  resource: limits.memory
+            - name: GOMAXPROCS
+              valueFrom:
+                resourceFieldRef:
+                  containerName: {{ .Chart.Name }}-server
+                  resource: limits.cpu
+            - name: LIQUID_POLICY_PATH
+              value: /etc/andromeda/liquid-policy.json
+            - name: SENTRY_DSN
+              valueFrom:
+                secretKeyRef:
+                  name: sentry
+                  key: {{ include "andromeda.fullname" . }}.DSN
+          ports:
+            - name: http
+              containerPort: 8081
+              protocol: TCP
+            - containerPort: 9091
+              name: metrics
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /healthcheck
+              port: http
+          readinessProbe:
+            httpGet:
+              path: /healthcheck
+              port: http
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - name: etc-andromeda
+              mountPath: /etc/andromeda
+              readOnly: true
       volumes:
         - name: etc-andromeda
           projected:
@@ -95,6 +142,8 @@ spec:
                       path: andromeda.yaml
                     - key: policy.json
                       path: policy.json
+                    - key: liquid-policy.json
+                      path: liquid-policy.json
               - configMap:
                   name: andromeda-etc-akamai
                   items:

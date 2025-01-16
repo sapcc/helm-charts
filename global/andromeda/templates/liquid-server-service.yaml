@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: andromeda-liquid-server
+  labels:
+{{ include "andromeda.labels" . | indent 4 }}
+spec:
+  type: {{ .Values.liquidServerService.type }}
+  externalTrafficPolicy: {{ .Values.liquidServerService.externalTrafficPolicy }}
+  ports:
+    - port: {{ .Values.liquidServerService.port }}
+      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/name: {{ include "andromeda.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
