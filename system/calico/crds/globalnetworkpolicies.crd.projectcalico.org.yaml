@@ -444,7 +444,7 @@ spec:
                   description: NamespaceSelector is an optional field for an expression used to select a pod based on namespaces.
                   type: string
                 order:
-                  description: Order is an optional field that specifies the order in which the policy is applied. Policies with higher "order" are applied after those with lower order.  If the order is omitted, it may be considered to be "infinite" - i.e. the policy will be applied last.  Policies with identical order will be applied in alphanumerical order based on the Policy "Name".
+                  description: Order is an optional field that specifies the order in which the policy is applied. Policies with higher "order" are applied after those with lower order within the same tier.  If the order is omitted, it may be considered to be "infinite" - i.e. the policy will be applied last.  Policies with identical order will be applied in alphanumerical order based on the Policy "Name" within the tier.
                   type: number
                 performanceHints:
                   description: "PerformanceHints contains a list of hints to Calico's policy engine to help process the policy more efficiently.  Hints never change the enforcement behaviour of the policy. \n Currently, the only available hint is \"AssumeNeededOnEveryNode\".  When that hint is set on a policy, Felix will act as if the policy matches a local endpoint even if it does not. This is useful for \"preloading\" any large static policies that are known to be used on every node. If the policy is _not_ used on a particular node then the work done to preload the policy (and to maintain it) is wasted."
@@ -459,6 +459,9 @@ spec:
                   type: string
                 serviceAccountSelector:
                   description: ServiceAccountSelector is an optional field for an expression used to select a pod based on service accounts.
+                  type: string
+                tier:
+                  description: The name of the tier that this policy belongs to.  If this is omitted, the default tier (name is "default") is assumed.  The specified tier must exist in order to create security policies within the tier, the "default" tier is created automatically if it does not exist, this means for deployments requiring only a single Tier, the tier name may be omitted on all policy management requests.
                   type: string
                 types:
                   description: "Types indicates whether this policy applies to ingress, or to egress, or to both.  When not explicitly specified (and so the value on creation is empty or nil), Calico defaults Types according to what Ingress and Egress rules are present in the policy.  The default is: \n - [ PolicyTypeIngress ], if there are no Egress rules (including the case where there are   also no Ingress rules) \n - [ PolicyTypeEgress ], if there are Egress rules but no Ingress rules \n - [ PolicyTypeIngress, PolicyTypeEgress ], if there are both Ingress and Egress rules. \n When the policy is read back again, Types will always be one of these values, never empty or nil."
