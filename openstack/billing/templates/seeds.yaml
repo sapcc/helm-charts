@@ -1,9 +1,13 @@
 {{- $vbase  := .Values.global.vaultBaseURL | required "missing value for .Values.global.vaultBaseURL" -}}
 {{- $region := .Values.global.region       | required "missing value for .Values.global.region"       -}}
+{{- $tld    := .Values.global.tld          | required "missing value for .Values.global.tld"          -}}
 
 {{- $domains := list "ccadmin" "bs" "cis" "cp" "fsn" "hcp03" "hec" "monsoon3" "neo" "s4" "wbs"}}
 {{- if not .Values.global.domain_seeds.skip_hcm_domain -}}
   {{- $domains = append $domains "hcm" }}
+{{- end -}}
+{{- if .Values.is_global -}}
+  {{- $domains = list "ccadmin" "global" -}}
 {{- end -}}
 
 apiVersion: "openstack.stable.sap.cc/v1"
@@ -30,18 +34,26 @@ spec:
     description: 'SAP Converged Cloud Billing services'
     endpoints:
     - interface: public
-      region: '{{.Values.global.region}}'
-      url: 'https://billing.{{.Values.global.region}}.cloud.sap:64000'
+      {{- if .Values.is_global }}
+      region: global
+      url: 'https://{{ $region | contains "qa" | ternary "billing-qa" "billing" }}.global.{{ $tld }}:64000'
+      {{- else }}
+      region: '{{ $region }}'
+      url: 'https://billing.{{ $region }}.{{ $tld }}:64000'
+      {{- end }}
 
   domains:
   - name: Default
     users:
+    {{/* TODO: remove the billing@Default user account once CBR has migrated to their new technical user */}}
+    {{- if not .Values.is_global }}
     - name: billing # service user for the billing API itself
       description: 'Billing Service'
       password: {{ printf "%s/%s/billing/keystone-user/service/password" $vbase $region | quote }}
       role_assignments:
       - project: service
         role: service
+    {{- end }}
     - name: masterdata_scanner # service user for a data quality check job
       description: 'Masterdata Scanner (Data Quality Validation)'
       password: {{ printf "%s/%s/billing/keystone-user/masterdata-scanner/password" $vbase $region | quote }}
@@ -51,7 +63,7 @@ spec:
     - user: masterdata_scanner@Default
       role: masterdata_admin
       inherited: true
-  {{- if eq $region "qa-de-1" }}
+  {{- if and (eq $region "qa-de-1") (not .Values.is_global) }}
     {{- if not .Values.cc3test }}
       {{- fail "missing values in .Values.cc3test" }}
     {{- end }}
@@ -91,6 +103,7 @@ spec:
       inherited: true
     {{- if eq . "ccadmin" }}
     projects:
+    {{- if not $.Values.is_global }}
     - name: billing
       description: 'Billing Administration for Converged Cloud'
       role_assignments:
@@ -99,6 +112,7 @@ spec:
         # NOTE: The cloud_resource_viewer role is given by the limes seed.
       swift:
         enabled: true
+    {{- end }}
     - name: cloud_admin
       role_assignments:
         - user: masterdata_scanner@Default
