@@ -7,6 +7,7 @@ resources:
   chassis:
   deploy_templates:
   nodes:
+    custom_id: id
     children:
       allocation:
       validate:
