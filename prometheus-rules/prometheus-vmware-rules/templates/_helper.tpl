@@ -23,7 +23,7 @@ expr: >
               )
           )
       ),
-      "bedrock", "no", "bedrock", "")
+      "bedrock", "false", "bedrock", "")
   or
   label_replace(
       {{ $expr }} and on({{ $mappingKey }})
