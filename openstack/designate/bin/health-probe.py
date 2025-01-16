@@ -122,7 +122,7 @@ def tcp_socket_status(process: Optional[str], ports: Set[int]) -> int:
         try:
             with p.oneshot():
                 if process in " ".join(p.cmdline()):
-                    pcon = p.connections()
+                    pcon = p.net_connections()
                     for con in pcon:
                         try:
                             rport = con.raddr[1]
@@ -261,7 +261,8 @@ def test_liveness() -> None:
 
     if service in rpc_services:
         check_tcp_socket(service, rabbits, databases)
-        check_service_status(transport)
+        if service not in "mdns":
+            check_service_status(transport)
 
     if service in api_services:
         check_tcp_connectivity(rabbits, databases)
