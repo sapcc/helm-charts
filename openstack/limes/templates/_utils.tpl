@@ -25,8 +25,6 @@
 {{- end }}
 - name: LIMES_AUTHORITATIVE
   value: "true"
-- name: LIMES_CONSTRAINTS_PATH
-  value: "/etc/limes/constraints-ccloud.yaml"
 - name: LIMES_DEBUG
   value: '0'
 - name: LIMES_DB_USERNAME
