@@ -66,6 +66,7 @@ otel:
   reserved: false
   users:
   - "otel"
+  - "otel2"
 
 otellogs:
   reserved: false
