@@ -7,12 +7,15 @@ resources:
   chassis:
   deploy_templates:
   nodes:
+    custom_id: id
     children:
       allocation:
       validate:
       maintenance:
       management:
       states:
+        children:
+          power:
       traits:
       vifs:
       vmedia:
