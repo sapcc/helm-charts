@@ -13,6 +13,8 @@ resources:
       maintenance:
       management:
       states:
+        children:
+          power:
       traits:
       vifs:
       vmedia:
