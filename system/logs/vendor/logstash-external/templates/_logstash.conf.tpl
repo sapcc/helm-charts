@@ -9,11 +9,6 @@ input {
     port  => {{.Values.input.syslog_port}}
     type => syslog
   }
-  udp {
-    id => "input-udp-netflow"
-    port  => {{.Values.input.netflow_port}}
-    type => netflow
-  }
   http {
     id => "input-http"
     port  => {{.Values.input.alertmanager_port}}
@@ -202,20 +197,6 @@ output {
       template => "/logstash-etc/deployments.json"
       template_name => "deployments"
       template_overwrite => true
-      ssl => true
-      ssl_certificate_verification => true
-    }
-  }
-  elseif  [type] == "netflow" {
-    opensearch {
-      id => "opensearch-netflow"
-      index => "netflow-%{+YYYY.MM.dd}"
-      hosts => ["https://{{.Values.global.opensearch.host}}:{{.Values.global.opensearch.port}}"]
-      auth_type => {
-        type => 'basic'
-        user => "${OPENSEARCH_USER}"
-        password => "${OPENSEARCH_PASSWORD}"
-      }
       ssl => true
       ssl_certificate_verification => true
     }
