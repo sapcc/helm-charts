@@ -61,6 +61,10 @@ spec:
                 secretKeyRef:
                   name: oauth-secret
                   key: OAUTH_PROXY_COOKIE_SECRET
+          {{- with .Values.oauth_proxy.skipAuthRoutes }}
+            - name: OAUTH2_PROXY_SKIP_AUTH_ROUTES
+              value: {{ . | join "," | quote }}
+          {{- end }}
           image: "{{ .Values.global.dockerHubMirror }}/{{.Values.image.name}}:{{ .Values.image.tag }}"    
           imagePullPolicy: {{.Values.image.pullPolicy}}
           name: oauth2-proxy
