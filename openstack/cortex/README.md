@@ -1,4 +1,4 @@
-# Scheduler seed project
+# Cortex seed project
 
 Contains project seed for generating a project on CC.
 
