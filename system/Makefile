@@ -129,7 +129,10 @@ build-metal-operator-remote:
 	@yq -i '.fullnameOverride="metal-operator"' metal-operator-remote/values.yaml
 	@yq -i '.remote.ca=""' metal-operator-remote/values.yaml
 	@echo 'macdb: {}' >> metal-operator-remote/values.yaml
-	@yq -i '.version="0.3.0"' metal-operator-remote/Chart.yaml
+	@mkdir metal-operator-remote/ci
+	@echo 'global:' >> metal-operator-remote/ci/test-values.yaml
+	@echo '  region: ab-cd-1' >> metal-operator-remote/ci/test-values.yaml
+	@yq -i '.version="0.3.1"' metal-operator-remote/Chart.yaml
 	@$(SED) -i 's/serviceAccountName.*$$/serviceAccountName: default/g' metal-operator-remote/templates/deployment.yaml
 	@$(SED) -i 's/kind: Role/kind: ClusterRole/g' metal-operator-remote/managedresources/kustomize.yaml
 
