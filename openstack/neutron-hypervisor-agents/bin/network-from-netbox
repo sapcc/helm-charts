@@ -1,6 +1,5 @@
 #!/var/lib/openstack/bin/python3
-import pathlib
-import os
+from pathlib import Path
 import platform
 import textwrap
 import uuid
@@ -40,14 +39,34 @@ def get_network(hostname):
             return hostname.rsplit("-", 1)[-1]
 
 
-hostname = get_hostname()
-network_name = get_network(hostname)
+if __name__ == '__main__':
+    hostname = get_hostname()
+    network_name = get_network(hostname)
 
+    ovs = Path('neutron-openvswitch-agent.conf.d')
+    if ovs.is_dir():
+        ovs = ovs / 'ovs.conf'
+        ovs.write_text(textwrap.dedent(f"""\
+            [DEFAULT]
+            host={hostname}
+        
+            [OVS]
+            bridge_mappings={network_name}:br-ex
+            
+            [securitygroup]
+            firewall_driver = openvswitch
+        """))
 
-pathlib.Path('neutron-openvswitch-agent.conf.d/ovs.conf').write_text(textwrap.dedent(f"""\
-    [DEFAULT]
-    host={hostname}
-
-    [OVS]
-    bridge_mappings={network_name}:br-ex
-    """))
+    linuxbridge = Path('neutron-linuxbridge-agent.conf.d')
+    if linuxbridge.is_dir():
+        linuxbridge = linuxbridge / 'linuxbridge.conf'
+        linuxbridge.write_text(textwrap.dedent(f"""\
+            [DEFAULT]
+            host={hostname}
+        
+            [LINUX_BRIDGE]
+            physical_interface_mappings={network_name}:bond0
+            
+            [securitygroup]
+            firewall_driver = iptables
+        """))
