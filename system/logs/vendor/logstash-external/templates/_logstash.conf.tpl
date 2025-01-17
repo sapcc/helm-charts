@@ -1,14 +1,4 @@
 input {
-  udp {
-    id => "input-udp-syslog"
-    port  => {{.Values.input.syslog_port}}
-    type => syslog
-  }
-  tcp {
-    id => "input-tcp-syslog"
-    port  => {{.Values.input.syslog_port}}
-    type => syslog
-  }
   http {
     id => "input-http"
     port  => {{.Values.input.alertmanager_port}}
@@ -38,39 +28,6 @@ input {
 }
 
 filter {
- if  [type] == "syslog" {
-   mutate {
-     id => "syslog-rename-hostname"
-     rename => { "host" => "hostname"}
-   }
-
-   dns {
-     id => "syslog-dns-resolve"
-     reverse => [ "hostname" ]
-     action => "replace"
-     hit_cache_size => "100"
-     hit_cache_ttl => "2678600"
-     failed_cache_size => "100"
-     failed_cache_ttl => "3600"
-   }
-    grok {
-      id => "syslog-grok"
-      match => {
-        "message" => [
-                      "<%{NONNEGINT:syslog_pri}>: %{SYSLOGCISCOTIMESTAMP:syslog_timestamp}: %{SYSLOGCISCOSTRING}:",
-                      "<%{NONNEGINT:syslog_pri}>%{SYSLOGTIMESTAMP:syslog_timestamp} %{SYSLOGHOST:syslog_hostname} %{SYSLOGPROG:syslog_process}: %{SYSLOGCISCOSTRING}:",
-                      "<%{NONNEGINT:syslog_pri}>%{SYSLOGTIMESTAMP:syslog_timestamp} %{SYSLOGHOST:syslog_hostname} Severity: (?<syslog_severity>\w+), Category: (?<syslog_category>\w+), MessageID: (?<syslog_messageid>\w+)",
-                      "<%{NONNEGINT:syslog_pri}>%{PROG:syslog_process}\[%{POSINT:pid}\]",
-                      "<%{NONNEGINT:syslog_pri}>Severity: (?<syslog_severity>\w+), Category: (?<syslog_category>\w+), MessageID: (?<syslog_messageid>\w+)"
-                      ]
-                }
-      break_on_match => "true"
-      overwrite => ["message"]
-      patterns_dir => ["/logstash-etc/*.grok"]
-      tag_on_failure => ["_syslog_grok_failure"]
-    }
-  }
-
   if  [type] == "jumpserver" {
     mutate {
         id => "jump-split"
@@ -116,24 +73,7 @@ filter {
 
 
 output {
-  if [type] == "syslog" {
-    opensearch {
-      id => "opensearch-syslog"
-      index => "syslog-%{+YYYY.MM.dd}"
-      hosts => ["https://{{.Values.global.opensearch.host}}:{{.Values.global.opensearch.port}}"]
-      template => "/logstash-etc/syslog.json"
-      template_name => "syslog"
-      template_overwrite => true
-      auth_type => {
-        type => "basic"
-        user => "${OPENSEARCH_SYSLOG_USER}"
-        password => "${OPENSEARCH_SYSLOG_PASSWORD}"
-      }
-      ssl => true
-      ssl_certificate_verification => true
-    }
-  }
-  elseif [type] == "alert" and [alerts][labels][severity] == "critical"{
+  if [type] == "alert" and [alerts][labels][severity] == "critical"{
     opensearch {
       id => "opensearch-critical-alerts"
       index => "alerts-critical-%{+YYYY}"
