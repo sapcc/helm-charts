@@ -1,0 +1,39 @@
+{{- range $database, $config := $.Values.databases }}
+{{- $secret := $config.secret | default dict}}
+{{- $secretName := coalesce $secret.name $.Values.secret.name }}
+{{- $secretKey := coalesce $secret.key $.Values.secret.key }}
+{{- if ne $config.enabled false }}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: maria-check-constraints-{{ $config.name }}
+  labels:
+  {{- include "maria-check-constraints.labels" $ | nindent 4 }}
+spec:
+  backoffLimit: 1
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: maria-check-constraints
+          image: {{ required ".Values.global.registryAlternateRegion is missing" $.Values.global.registryAlternateRegion }}/{{ $.Values.image.name }}:{{ $.Values.image.tag }}
+          command:
+            - /usr/bin/maria-check-constraints
+            - --dry-run={{ $.Values.dryRun }}
+          env:
+            - name: DB_HOST
+              value: {{ $config.host }}.{{ $config.namespace }}.svc.kubernetes.{{ $.Values.global.region }}.{{ $.Values.global.tld }}
+            - name: DB_PORT
+              value: {{ $config.port | quote }}
+            - name: DB_NAME
+              value: {{ $config.schema | quote }}
+            - name: DB_USERNAME
+              value: {{ $config.username | quote }}
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ tpl $secretName . }}
+                  key: {{ $secretKey }}
+{{- end }}
+{{- end }}
