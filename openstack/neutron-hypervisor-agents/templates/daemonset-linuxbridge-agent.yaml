@@ -1,0 +1,147 @@
+{{- $hypervisor := merge .Values.defaults.network.linuxbridge .Values.defaults.network.common }}
+kind: DaemonSet
+apiVersion: apps/v1
+metadata:
+  name: neutron-linuxbridge-agent
+  labels:
+    system: openstack
+    type: backend
+    component: neutron
+spec:
+  revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revision_history }}
+  selector:
+    matchLabels:
+      name: neutron-linuxbridge-agent
+  template:
+    metadata:
+      labels:
+        {{- tuple . "neutron" "linuxbridge-agent" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | nindent 8 }}
+        name: neutron-linuxbridge-agent
+        alert-tier: os
+        alert-service: neutron
+        ml2-driver: "linuxbridge"
+      annotations:
+        configmap-etc-hash: {{ include (print $.Template.BasePath "/configmap-etc.yaml") . | sha256sum }}
+        secret-etc-hash: {{ include (print $.Template.BasePath "/secret-etc.yaml") . | sha256sum }}
+    spec:
+      hostNetwork: true # TODO: replace with multus
+      hostAliases:
+      {{- range $ip := .Values.rabbitmq.externalIPs }}
+      - ip: {{ $ip }}
+        hostnames:
+        - {{ required "Please set rabbitmq.host" $.Values.rabbitmq.host }}
+      {{- end }}
+      tolerations:
+      {{- range $k, $v :=  $hypervisor.pod.tolerations }}
+      - # {{ $k }}
+      {{- toYaml $v | nindent 8 }}
+      {{- end }}
+      nodeSelector:
+      {{- range $k, $v := $hypervisor.pod.nodeSelector }}
+        {{ $k }}: {{ $v }}
+      {{- end }}
+      initContainers:
+      - name: load-ebtable-nat
+        image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/loci-neutron:{{ .Values.imageVersion | required "Please set imageVersion similar" }}
+        securityContext:
+          privileged: true
+        command:
+          - sh
+          - -c
+        args:
+          - |-
+            set -xe
+            chroot /host modprobe ebtable_nat
+        volumeMounts:
+          - name: host
+            mountPath: "/host"
+      - name: network-from-netbox
+        image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/loci-neutron:{{ .Values.imageVersion | required "Please set imageVersion similar" }}
+        command: ["/container.init/network-from-netbox"]
+        workingDir: "/etc/neutron"
+        volumeMounts:
+          - mountPath: /container.init
+            name: bin
+          - mountPath: /etc/neutron
+            name: etcneutron
+          - mountPath: /etc/neutron/neutron-linuxbridge-agent.conf.d
+            name: etcneutronagentconfd
+          - mountPath: /etc/neutron/neutron.conf.d/segment-names.yaml
+            name: etc-vpod
+            subPath: segment-names.yaml
+      containers:
+        - name: neutron-linuxbridge-agent
+          image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/loci-neutron:{{ .Values.imageVersion | required "Please set imageVersion or similar" }}
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            capabilities:
+              add:
+                - NET_ADMIN
+                - SYS_ADMIN
+                - DAC_OVERRIDE
+                - DAC_READ_SEARCH
+                - SYS_PTRACE
+          command: ["neutron-linuxbridge-agent"]
+          volumeMounts:
+          - mountPath: /etc/neutron
+            name: etcneutron
+          - mountPath: /etc/neutron/neutron-linuxbridge-agent.conf.d
+            name: etcneutronagentconfd
+          - mountPath: /etc/neutron/neutron.conf
+            name: etc
+            subPath: neutron.conf
+          - mountPath: /etc/neutron/logging.ini
+            name: etc
+            subPath: logging.ini
+          - mountPath: /etc/neutron/rootwrap.conf
+            name: etc
+            subPath: rootwrap.conf
+          - mountPath: /etc/neutron/neutron.conf.d/ml2.conf
+            name: etc
+            subPath: ml2-conf.conf
+          - mountPath: /etc/neutron/neutron.conf.d/vpod.conf
+            name: etc-vpod
+            subPath: vpod.conf
+          - mountPath: /etc/neutron/neutron.conf.d/secret.conf
+            name: etc-secrets
+            subPath: secret.conf
+          - mountPath: /etc/sudoers
+            name: etc
+            subPath: sudoers
+          - mountPath: /run
+            name: run
+          - mountPath: /lib/modules
+            name: modules
+            readOnly: true
+      dnsConfig:
+        searches:
+          - {{ .Values.global.region }}.{{ .Values.global.tld }}
+      volumes:
+      - name: run
+        hostPath:
+          path: /run
+      - name: etcneutron
+        emptyDir:
+          medium: Memory
+      - name: etcneutronagentconfd
+        emptyDir:
+          medium: Memory
+      - name: modules
+        hostPath:
+          path: /lib/modules
+      - name: etc-secrets
+        secret:
+          secretName: {{ .Release.Name }}-etc
+      - name: etc
+        configMap:
+          name: {{ .Release.Name }}-etc
+      - name: etc-vpod
+        configMap:
+          name: {{ .Release.Name }}-etc-vpod
+      - name: bin
+        configMap:
+          name: {{ .Release.Name }}-bin
+          defaultMode: 0755
+      - name: host
+        hostPath:
+            path: "/"
