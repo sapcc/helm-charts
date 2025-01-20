@@ -32,6 +32,15 @@ data:
     - "indices:data/write/bulk*"
     - "indices:data/write/index"
   - index_patterns:
+    - "logs"
+    allowed_actions:
+    - "indices:admin/template/get"
+    - "indices:admin/template/put"
+    - "indices:admin/mapping/put"
+    - "indices:admin/create"
+    - "indices:data/write/bulk*"
+    - "indices:data/write/index"
+  - index_patterns:
     - "systemd-*"
     allowed_actions:
     - "indices:admin/template/get"
@@ -242,6 +251,26 @@ compute:
   index_permissions:
   - index_patterns:
     - "compute-*"
+    allowed_actions:
+    - "indices:admin/template/get"
+    - "indices:admin/template/put"
+    - "indices:admin/mapping/put"
+    - "indices:admin/create"
+    - "indices:data/write/bulk*"
+    - "indices:data/write/index"
+audit:
+  reserved: false
+  cluster_permissions:
+  - "cluster_monitor"
+  - "cluster_composite_ops"
+  - "cluster:admin/ingest/pipeline/put"
+  - "cluster:admin/ingest/pipeline/get"
+  - "indices:admin/template/get"
+  - "cluster_manage_index_templates"
+  - "cluster:admin/opensearch/ml/predict"
+  index_permissions:
+  - index_patterns:
+    - "audit-*"
     allowed_actions:
     - "indices:admin/template/get"
     - "indices:admin/template/put"
