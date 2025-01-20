@@ -3,7 +3,7 @@ local _M = {}
 local token_lookup = require "token_lookup"
 local get_token = token_lookup.get_token
 local lookup = token_lookup.lookup
-local host_from_entry = token_lookup.token_lookup.lookup
+local host_from_entry = token_lookup.host_from_entry
 local url_base = "/cell1/shellinabox/" -- TODO: Get the "shellinabox" from the proxy dynamically somehow
 
 -- The server may respond with a redirect, and we
