@@ -49,32 +49,18 @@ spec:
       path: /var/log
   config:
     receivers:
-      journald:
-        directory: /var/log/journal
-        operators:
-          - id: journal-label
-            type: add
-            field: attributes["log.type"]
-            value: "journald"
+{{- if .Values.openTelemetry.openTelemetry.logsCollector.journaldConfig.enabled }}
+    {{- include "journald.receiver" . | nindent 6 -}}
 
+{{ end }}
+{{- if .Values.openTelemetry.openTelemetry.logsCollector.k8seventsConfig.enabled }}
       k8s_events:
         auth_type: serviceAccount
+{{- end }}
 
-      filelog/containerd:
-        include_file_path: true
-        include: [ /var/log/pods/*/*/*.log ]
-        exclude: [ /var/log/pods/otel_logs-*, /var/log/pods/logs_* ]
-        operators:
-          - id: container-parser
-            type: container
-          - id: parser-containerd
-            type: add
-            field: resource["container.runtime"]
-            value: "containerd"
-          - id: container-label
-            type: add
-            field: attributes["log.type"]
-            value: "containerd"
+{{- if .Values.openTelemetry.openTelemetry.logsCollector.containerdConfig.enabled }}
+  {{- include "containerd.receiver" . | nindent 6 -}}
+{{- end }}
 
 {{- if .Values.openTelemetry.openTelemetry.logsCollector.kvmConfig.enabled }}
     {{- include "kvm.receiver" . | nindent 6 -}}
@@ -127,61 +113,6 @@ spec:
             key: k8s.node.name
             value: ${KUBE_NODE_NAME}
 
-      attributes/k8sevents:
-        actions:
-          - action: insert
-            key: k8s.node.name
-            value: ${KUBE_NODE_NAME}
-          - key: k8s.namespace.name
-            from_attribute: k8s.namespace.name
-            action: insert
-          - action: insert
-            key: k8s.cluster.name
-            value: ${cluster}
-          - action: insert
-            key: region
-            value: ${region}
-          - action: insert
-            key: log.type
-            value: "k8sevents"
-
-      transform/journal:
-        error_mode: ignore
-        log_statements:
-          - context: log
-            statements:
-              - merge_maps(cache, body, "upsert") where IsMatch(body, "^\\{")
-              - set(attributes["message"], cache["MESSAGE"])
-              - set(attributes["code_file"], cache["CODE_FILE"])
-              - set(attributes["code_func"], cache["CODE_FUNC"])
-              - set(attributes["code_line"], cache["CODE_LINE"])
-              - set(attributes["incovation_id"], cache["INVOCATION_ID"])
-              - set(attributes["message_id"], cache["MESSAGE_ID"])
-              - set(attributes["priority"], cache["PRIORITY"])
-              - set(attributes["syslog_facility"], cache["SYSLOG_FACILITY"])
-              - set(attributes["syslog_identifier"], cache["SYSLOG_IDENTIFIER"])
-              - set(attributes["tid"], cache["TID"])
-              - set(attributes["unit"], cache["UNIT"])
-              - set(attributes["boot_id"], cache["_BOOT_ID"])
-              - set(attributes["cao_effective"], cache["_CAP_EFFECTIVE"])
-              - set(attributes["cmdline"], cache["_CMDLINE"])
-              - set(attributes["exe"], cache["_EXE"])
-              - set(attributes["gid"], cache["_GID"])
-              - set(attributes["hostname"], cache["_HOSTNAME"])
-              - set(attributes["machine_id"], cache["_MACHINE_ID"])
-              - set(attributes["pid"], cache["_PID"])
-              - set(attributes["runtime_scope"], cache["_RUNTIME_SCOPE"])
-              - set(attributes["selinux_context"], cache["_SELINUX_CONTEXT"])
-              - set(attributes["source_realtime_timestamp"], cache["_SOURCE_REALTIME_TIMESTAMP"])
-              - set(attributes["systemd_cgroup"], cache["_SYSTEMD_CGROUP"])
-              - set(attributes["systemd_slice"], cache["_SYSTEMD_SLICE"])
-              - set(attributes["systemd_unit"], cache["_SYSTEMD_UNIT"])
-              - set(attributes["transport"], cache["_TRANSPORT"])
-              - set(attributes["uid"], cache["_UID"])
-              - set(attributes["cursor"], cache["__CURSOR"])
-              - set(attributes["monotonic_timestamp"], cache["__MONOTONIC_TIMESTAMP"])
-              - delete_key(attributes, "cache")
-
       transform/ingress:
         error_mode: ignore
         log_statements:
@@ -212,6 +143,15 @@ spec:
 
 {{- if .Values.openTelemetry.openTelemetry.logsCollector.kvmConfig.enabled }}
     {{- include "kvm.transform" . | nindent 6 -}}
+{{- end }}
+
+{{- if .Values.openTelemetry.openTelemetry.journaldConfig.enabled }}
+    {{- include "journaldConfig.transform" . | nindent 6 -}}
+{{- end }}
+
+
+{{- if .Values.openTelemetry.openTelemetry.k8seventsConfig.enabled }}
+    {{- include "k8seventsConfig.transform" . | nindent 6 -}}
 {{- end }}
 
       k8sattributes:
@@ -321,12 +261,6 @@ spec:
           receivers: [forward]
           processors: [batch]
           exporters: [opensearch/logs]
-
-
-        logs/containerd:
-          receivers: [filelog/containerd]
-          processors: [k8sattributes,attributes/cluster,transform/ingress]
-          exporters: [forward]
 {{- if .Values..openTelemetry.openTelemetry.logsCollector.kvmConfig.enabled }}
     {{- include "kvm.pipeline" . | nindent 8 -}}
 {{- end }}
@@ -334,18 +268,20 @@ spec:
     {{- include "ceph.pipeline" . | nindent 8 -}}
 {{- end }}
 
-        logs/k8sevents:
-          receivers: [k8s_events]
-          processors: [attributes/k8sevents]
-          exporters: [forward]
-        logs/journald:
-          receivers: [journald]
-          processors: [attributes/cluster,transform/journal]
-          exporters: [forward]
-{{- if .Values.openTelemetry.prometheus.podMonitor.enabled }}
+{{- if .Values.openTelemetry.openTelemetry.prometheus.podMonitor.enabled }}
         metrics/prometheus:
           receivers: [prometheus/internal]
           processors: [attributes/prometheus]
           exporters: [prometheus]
 {{- end }}
+{{- if .Values.openTelemetry.openTelemetry.logsCollector.journaldConfig.enabled }}
+    {{- include "journald.pipeline" . | nindent 8 -}}
+{{- end }}
+{{- if .Values.openTelemetry.openTelemetry.logsCollector.containerdConfig.enabled }}
+    {{- include "containerd.pipeline" . | nindent 8 -}}
+{{- end }}
+{{- if .Values.openTelemetry.openTelemetry.logsCollector.k8seventsConfig.enabled }}
+    {{- include "k8sevents.pipeline" . | nindent 8 -}}
+{{- end }}
+
 {{- end }}
