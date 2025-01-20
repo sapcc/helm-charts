@@ -1,6 +1,6 @@
 {
     "policy": {
-        "description": "Simple 31d log retention",
+        "description": "Simple {{ .Values.retention.index}} log retention",
         "default_state": "ingest",
         "schema_version": 25,
         "states": [
@@ -11,7 +11,7 @@
                     {
                         "state_name": "delete",
                         "conditions": {
-                            "min_index_age": "31d"
+                            "min_index_age": "{{ .Values.retention.index}}"
                         }
                     }
                 ]
