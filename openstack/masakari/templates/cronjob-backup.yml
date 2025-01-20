@@ -20,7 +20,7 @@ spec:
             - name: DB_PATH
               value: "/database/masakari.sqlite"
             - name: BACKUP_PATH
-              value: "/backup/{{ now | date "2006-01-02" }}"
+              value: "/backup"
             volumeMounts:
             - name: masakari-database
               mountPath: /database
@@ -37,24 +37,26 @@ spec:
             - name: BACKUP_PATH
               value: "/backup"
             - name: "OBJECT_NAME"
-              value: {{.Values.global.region}}/masakari
+              value: "{{.Values.global.region}}/masakari"
             - name: OS_AUTH_URL
               value: "https://identity-3.{{.Values.global.region}}.cloud.sap/v3"
             - name: OS_REGION_NAME
-              value: {{.Values.global.region}}
+              value: "{{.Values.global.region}}"
             - name: OS_PROJECT_NAME
-              value: {{ .Values.backup.OS_PROJECT_NAME }}
+              value: "{{ .Values.backup.OS_PROJECT_NAME }}"
             - name: OS_PROJECT_DOMAIN_NAME
-              value: {{ .Values.backup.OS_PROJECT_DOMAIN_NAME }}
+              value: "{{ .Values.backup.OS_PROJECT_DOMAIN_NAME }}"
             - name: OS_USER_DOMAIN_NAME
-              value: {{ .Values.backup.OS_USER_DOMAIN_NAME }}
+              value: "{{ .Values.backup.OS_USER_DOMAIN_NAME }}"
             - name: OS_USERNAME
-              value: "db_backup"
-            #- name: OS_PASSWORD
-            #  valueFrom:
-            #    secretKeyRef:
-            #      name: {{ .Release.Name }}-etc
-            #      key: db_password
+              value: "{{ .Values.backup.OS_USERNAME }}"
+            - name: OS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-etc
+                  key: db_password
+            - name: EXPIRATION_TIME
+              value: "{{ .Values.backup.EXPIRATION_TIME }}"
             volumeMounts:
             - name: upload-script
               mountPath: /script
@@ -77,3 +79,6 @@ spec:
           - name: masakari-backup
             persistentVolumeClaim:
               claimName: masakari-backup
+          - name: masakari-etc-confd
+            secret:
+              secretName: masakari-etc
