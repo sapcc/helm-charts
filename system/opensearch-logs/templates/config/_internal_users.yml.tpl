@@ -44,18 +44,6 @@ otel:
   backend_roles:
   - "otel"
 
-otel2:
-  hash: "{{ .Values.users.otel2.nohash }}"
-  reserved: true
-  backend_roles:
-  - "otel"
-
-audit:
-  hash: "{{ .Values.users.audit.nohash }}"
-  reserved: true
-  backend_roles:
-  - "audit"
-
 otellogs:
   hash: "{{ .Values.users.otellogs.nohash }}"
   reserved: true
@@ -80,6 +68,18 @@ dataqade5:
   reserved: true
   backend_roles:
   - "qade5"
+
+otel2:
+  hash: "{{ .Values.users.otel2.nohash }}"
+  reserved: true
+  backend_roles:
+  - "otel"
+
+audit:
+  hash: "{{ .Values.users.audit.nohash }}"
+  reserved: true
+  backend_roles:
+  - "audit"
 
 oraboskvm:
   hash: "{{ .Values.users.oraboskvm.nohash }}"
