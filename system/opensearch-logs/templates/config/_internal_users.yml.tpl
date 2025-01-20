@@ -14,6 +14,12 @@ data:
   backend_roles:
   - "data"
 
+data2:
+  hash: "{{ .Values.users.data2.nohash }}"
+  reserved: true
+  backend_roles:
+  - "data"
+
 greenhouse:
   hash: "{{ .Values.users.greenhouse.nohash }}"
   reserved: true
@@ -37,6 +43,18 @@ otel:
   reserved: true
   backend_roles:
   - "otel"
+
+otel2:
+  hash: "{{ .Values.users.otel2.nohash }}"
+  reserved: true
+  backend_roles:
+  - "otel"
+
+audit:
+  hash: "{{ .Values.users.audit.nohash }}"
+  reserved: true
+  backend_roles:
+  - "audit"
 
 otellogs:
   hash: "{{ .Values.users.otellogs.nohash }}"
