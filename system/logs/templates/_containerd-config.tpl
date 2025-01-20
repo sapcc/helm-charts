@@ -1,3 +1,14 @@
+{{- define "containerd.transform" }}
+transform/protocol:
+  error_mode: ignore
+  log_statements:
+    - context: log
+      conditions:
+        - resource.attributes["network.protocol.name"] != nil
+      statements:
+        - set(attributes["network.protocol.name"], ConvertCase(attributes["network.protocol.name"], "lower"))
+{{ end }}
+
 {{- define "containerd.receiver" }}
 filelog/containerd:
   include_file_path: true
