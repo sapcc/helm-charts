@@ -44,7 +44,7 @@ end
 -- the url, or from the referrer
 -- Caches the value, as it won't change over the request
 -- and apparently ngx.var lookups are not the cheapest
-local get_token = store_in_ctx("token", function()
+_M.get_token = store_in_ctx("token", function()
     local var_token = ngx.var.token
     if var_token then return var_token end
 
@@ -164,23 +164,24 @@ end
 -- Toplevel lookup, get the token hash it, and send it through
 -- the lookup hierarchy. Store/cache the result in ngx.ctx
 _M.lookup = store_in_ctx("entry", function(use_memc)
-    local token = get_token()
+    local token = _M.get_token()
     local token_hash = sha256_hex(token)
     if not token_hash then
         ngx.log(ngx.ERR, "Could not hash token")
         return ngx.exit(ngx.HTTP_INTERNAL_SERVER_ERROR)
     end
 
-    if use_memc then
-    	local entry, err = lookup_memc(token_hash)
+    if not use_memc then
+        return lookup_db(token_hash)
+    end
 
-		if err then
-			ngx.log(ngx.ERR, "could not retrieve user: ", err)
-			return ngx.exit(ngx.HTTP_INTERNAL_SERVER_ERROR)
-		end
-	else
-		entry = lookup_db(token_hash)
-	end
+    local entry, err = lookup_memc(token_hash)
+
+    if err then
+        ngx.log(ngx.ERR, "could not retrieve user: ", err)
+        return ngx.exit(ngx.HTTP_INTERNAL_SERVER_ERROR)
+    end
+
     return entry
 end)
 
