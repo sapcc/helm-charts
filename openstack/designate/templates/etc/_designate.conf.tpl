@@ -368,6 +368,14 @@ time_threshold = {{ .Values.zone_purge.time_threshold }}
 # How many zones to be purged on each run (integer value)
 batch_size = {{ .Values.zone_purge.batch_size }}
 
+[producer_task:periodic_check_service_status]
+# Run interval in seconds (integer value)
+interval = 1800
+
+# How old service entries not reporting heartbeat should be deleted, in seconds (integer
+# value)
+time_threshold = 600
+
 #-----------------------
 # Worker Service
 #-----------------------
