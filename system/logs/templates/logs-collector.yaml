@@ -1,17 +1,12 @@
-{{/*
-SPDX-FileCopyrightText: 2024 SAP SE or an SAP affiliate company and Greenhouse contributors
-SPDX-License-Identifier: Apache-2.0
-*/}}
-
-{{- if .Values.openTelemetry.logsCollector.enabled }}
+{{- if .Values.openTelemetry.openTelemetry.logsCollector.enabled }}
 apiVersion: opentelemetry.io/v1beta1
 kind: OpenTelemetryCollector
 metadata:
   name: logs
   labels:
   {{- include "plugin.labels" . | nindent 4 }} 
-  {{- if .Values.openTelemetry.customLabels }}
-  {{ toYaml .Values.openTelemetry.customLabels | nindent 4 }}
+  {{- if .Values.openTelemetry.openTelemetry.customLabels }}
+  {{ toYaml .Values.openTelemetry.openTelemetry.customLabels | nindent 4 }}
   {{- end }}
 spec:
   mode: daemonset
@@ -32,18 +27,18 @@ spec:
           apiVersion: v1
           fieldPath: status.podIP
     - name: cluster
-      value: "{{ .Values.openTelemetry.cluster }}"
+      value: "{{ .Values.openTelemetry.openTelemetry.cluster }}"
     - name: region
-      value: "{{ .Values.openTelemetry.region }}"
+      value: "{{ .Values.openTelemetry.openTelemetry.region }}"
   envFrom:
     - secretRef:
          name: otel-basic-auth
-{{- if .Values.openTelemetry.prometheus.podMonitor.enabled }}
+{{- if .Values.openTelemetry.openTelemetry.prometheus.podMonitor.enabled }}
   ports:
     - name: prometheus
       port: 9999
 {{- end }}
-  image: {{ index .Values "opentelemetry-operator" "manager" "collectorImage" "repository" }}:{{ index .Values "opentelemetry-operator" "manager" "collectorImage" "tag" }}
+  image: {{ index .Values "opentelemetry" "opentelemetry-operator" "manager" "collectorImage" "repository" }}:{{ index .Values "opentelemetry-operator" "manager" "collectorImage" "tag" }}
   volumeMounts:
   - mountPath: /var/log
     name: varlog
@@ -81,11 +76,12 @@ spec:
             field: attributes["log.type"]
             value: "containerd"
 
-{{- if .Values.openTelemetry.logsCollector.kvmConfig.enabled }}
+{{- if .Values.openTelemetry.openTelemetry.logsCollector.kvmConfig.enabled }}
     {{- include "kvm.receiver" . | nindent 6 -}}
 {{- end }}
 
-{{- if .Values.openTelemetry.prometheus.podMonitor.enabled }}
+
+{{- if .Values.openTelemetry.openTelemetry.prometheus.podMonitor.enabled }}
       prometheus/internal:
         config:
           scrape_configs:
@@ -101,7 +97,7 @@ spec:
         timeout: 5s
         send_batch_size : 10
 
-{{- if .Values.openTelemetry.prometheus.podMonitor.enabled }}
+{{- if .Values.openTelemetry.openTelemetry.prometheus.podMonitor.enabled }}
       attributes/prometheus:
         actions:
           - action: insert
@@ -210,7 +206,11 @@ spec:
               - merge_maps(attributes, ExtractGrokPatterns(body, "%{TIMESTAMP_ISO8601:timestamp}%{SPACE}%{GREEDYDATA:log}", true), "upsert")
               - set(attributes["config.parsed"], "files") where attributes["log_level"] != nil
 
-{{- if .Values.openTelemetry.logsCollector.kvmConfig.enabled }}
+{{- if .Values.openTelemetry.openTelemetry.logsCollector.cephConfig.enabled }}
+    {{- include "ceph.transform" . | nindent 6 -}}
+{{- end }}
+
+{{- if .Values.openTelemetry.openTelemetry.logsCollector.kvmConfig.enabled }}
     {{- include "kvm.transform" . | nindent 6 -}}
 {{- end }}
 
@@ -265,7 +265,7 @@ spec:
             - tag_name: app.label.pod-template-hash
               key: app.kubernetes.io/pod-template-hash
               from: pod
-{{- if .Values.openTelemetry.logsCollector.cephConfig.enabled }}
+{{- if .Values.logsCollector.cephConfig.enabled }}
     {{- include "ceph.labels" . | nindent 12 -}}
 {{- end }}
         pod_association:
@@ -292,7 +292,7 @@ spec:
         http:
           auth:
             authenticator: basicauth
-          endpoint: {{ .Values.openTelemetry.openSearchLogs.endpoint }}
+          endpoint: {{ .Values.openTelemetry.openTelemetry.openSearchLogs.endpoint }}
         logs_index: ${username}-datastream
         
       prometheus:
@@ -310,7 +310,7 @@ spec:
     service:
       extensions:
         - basicauth
-{{- if .Values.openTelemetry.prometheus.podMonitor.enabled }}
+{{- if .Values.openTelemetry.openTelemetry.prometheus.podMonitor.enabled }}
       telemetry:
         metrics:
           address: 127.0.0.1:8888
@@ -321,16 +321,19 @@ spec:
           receivers: [forward]
           processors: [batch]
           exporters: [opensearch/logs]
+
+
         logs/containerd:
           receivers: [filelog/containerd]
           processors: [k8sattributes,attributes/cluster,transform/ingress]
           exporters: [forward]
-{{- if .Values.openTelemetry.logsCollector.kvmConfig.enabled }}
+{{- if .Values..openTelemetry.openTelemetry.logsCollector.kvmConfig.enabled }}
     {{- include "kvm.pipeline" . | nindent 8 -}}
 {{- end }}
-{{- if .Values.openTelemetry.logsCollector.cephConfig.enabled }}
+{{- if .Values..openTelemetry.openTelemetry.logsCollector.cephConfig.enabled }}
     {{- include "ceph.pipeline" . | nindent 8 -}}
 {{- end }}
+
         logs/k8sevents:
           receivers: [k8s_events]
           processors: [attributes/k8sevents]
