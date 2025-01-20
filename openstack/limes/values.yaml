@@ -30,6 +30,7 @@ limes:
     designate: { skip: false, cpu_request:  20m, memory_limit:  64Mi }
     ironic:    { skip: false, cpu_request:  20m, memory_limit:  64Mi }
     manila:    { skip: false, cpu_request:  20m, memory_limit:  64Mi }
+    nova:      { skip: false, cpu_request: 100m, memory_limit: 256Mi } # initial high estimate, TODO: adjust downwards if prod deployments end up having unused headroom
     neutron:   { skip: false, cpu_request:  20m, memory_limit:  64Mi }
     octavia:   { skip: false, cpu_request:  20m, memory_limit:  64Mi }
     swift:     { skip: false, cpu_request:  20m, memory_limit:  64Mi }
@@ -40,9 +41,11 @@ limes:
       with_subcapacities: true
       with_volume_subresources: true
       with_snapshot_subresources: true
+
     ironic:
       with_subcapacities: true
       with_subresources: true
+
     manila:
       capacity_calculation:
         capacity_balance: 0.75
@@ -55,6 +58,22 @@ limes:
       prometheus_api_for_netapp_metrics:
         url: http://prometheus-storage.infra-monitoring.svc:9090
       share_types: [] # see regional values.yaml
+
+    nova:
+      with_subcapacities: true
+      with_subresources: true
+      flavor_selection:
+        required_extra_specs: { "vmware:hv_enabled" : "True" } # consider only VMware flavors
+      hypervisor_selection:
+        hypervisor_type_pattern: '(?i)vmware'                  # consider only VMware hypervisors
+        shadowing_traits: [ CUSTOM_DECOMMISSIONING ]
+        aggregate_name_pattern: '^vc-[a-z]-[0-9]+$'            # AZ association is established by the vCenter-membership aggregates
+      binpack_behavior:
+        # We are currently running with a sort of lobotomized placement scoring function: In short, placeability of HANA flavors is dominated by the available VCPUs.
+        # Memory follows the same curve, but there is a bit of leftovers on full nodes, which makes the scoring prefer empty nodes over half-full nodes.
+        # This is even worse on the disk dimension, because there is a gigantic amount of leftovers for local disk even on full nodes.
+        score_ignores_disk: true
+        score_ignores_ram: true
 
   # Map with entries like:
   #
