@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/name: nodecidr-controller
+  name: nodecidr-controller
+  namespace: kube-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: nodecidr-controller
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: nodecidr-controller
+    spec:
+      hostNetwork: true
+      containers:
+      - args:
+        - --netboxtoken=$(NETBOX_API_TOKEN)
+        - --debug=true
+        image: {{ required ".Values.image.repository missing" .Values.image.repository }}:{{ required ".Values.image.tag missing" .Values.image.tag }}
+        imagePullPolicy: IfNotPresent
+        name: nodecidr-controller
+        resources:
+          limits:
+            cpu: 100m
+            memory: 50Mi
+          requests:
+            cpu: 50m
+            memory: 10Mi
+        env:
+        - name: NETBOX_API_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: nodecidr-controller
+              key: NETBOX_API_TOKEN
+      serviceAccountName: nodecidr-controller
