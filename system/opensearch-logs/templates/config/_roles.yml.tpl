@@ -12,6 +12,7 @@ security_rest_api_access:
 
 
 data:
+  index_permissions:
   reserved: false
   cluster_permissions:
   - "cluster_monitor"
@@ -24,6 +25,15 @@ data:
   index_permissions:
   - index_patterns:
     - "logstash-*"
+    allowed_actions:
+    - "indices:admin/template/get"
+    - "indices:admin/template/put"
+    - "indices:admin/mapping/put"
+    - "indices:admin/create"
+    - "indices:data/write/bulk*"
+    - "indices:data/write/index"
+  - index_patterns:
+    - "logs"
     allowed_actions:
     - "indices:admin/template/get"
     - "indices:admin/template/put"
