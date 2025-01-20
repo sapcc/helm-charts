@@ -40,7 +40,7 @@ spec:
         configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
         {{- if .Values.proxysql.mode }}
         prometheus.io/scrape: "true"
-        prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
+        prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | include "resolve_secret" }}
         {{- end }}        
     spec:
       serviceAccountName: {{ include "kmip.serviceAccountName" . }}-barbican
@@ -56,9 +56,9 @@ spec:
             - name: KMIP_MARIADB_SERVICE_PORT
               value: "3306"
             - name: KMIP_MARIADB_SERVICE_USER
-              value: {{ .Values.mariadb.users.kmip.user | quote }}
+              value: {{ .Values.mariadb.users.kmip.user | include "resolve_secret" }}
             - name: KMIP_MARIADB_SERVICE_PASSWORD
-              value: {{ .Values.mariadb.users.kmip.password | quote }}
+              value: {{ .Values.mariadb.users.kmip.password | include "resolve_secret" }}
             - name: KMIP_MARIADB_NAME
               value: "kmip"
             - name: BARBICAN_MARIADB_SERVICE_HOST
@@ -66,16 +66,16 @@ spec:
             - name: BARBICAN_MARIADB_SERVICE_PORT
               value: "3306"
             - name: BARBICAN_MARIADB_SERVICE_USER
-              value: {{ .Values.mariadb.users.barbican.user | quote }}
+              value: {{ .Values.mariadb.users.barbican.user | include "resolve_secret" }}
             - name: BARBICAN_MARIADB_SERVICE_PASSWORD
-              value: {{ .Values.mariadb.users.barbican.password | quote }}
+              value: {{ .Values.mariadb.users.barbican.password | include "resolve_secret" }}
             - name: BARBICAN_MARIADB_NAME
               value: "barbican"
           command: ["sh", "-c"]
           args:
           - |
-            echo "Sleeping for 30 seconds before starting the application...";
-            sleep 30;
+            echo "Sleeping for 15 seconds before starting the application...";
+            sleep 15;
             echo "Starting the application...";
             python /app/app.py;
             echo "Application exited. Keeping container alive...";
@@ -93,27 +93,27 @@ spec:
             - name: OS_AUTH_URL
               value: "https://{{ include "keystone_api_endpoint_host_public" . }}:443/v3"
             - name: OS_USERNAME
-              value: {{ .Values.kmip.openstack_env.username | quote }}
+              value: {{ .Values.kmip.openstack_env.username | include "resolve_secret" }}
             - name: OS_PASSWORD
-              value: {{ .Values.kmip.openstack_env.password | quote }}
+              value: {{ .Values.kmip.openstack_env.password | include "resolve_secret" }}
             - name: OS_PROJECT_ID
-              value: {{ .Values.kmip.openstack_env.project_id | quote }}
+              value: {{ .Values.kmip.openstack_env.project_id | include "resolve_secret" }}
             - name: OS_APPLICATION_CREDENTIAL_NAME
-              value: {{ .Values.kmip.openstack_env.appl_cred_name | quote }}
+              value: {{ .Values.kmip.openstack_env.appl_cred_name | include "resolve_secret" }}
             - name: OS_APPLICATION_CREDENTIAL_SECRET
-              value: {{ .Values.kmip.openstack_env.appl_cred_secret | quote }}
+              value: {{ .Values.kmip.openstack_env.appl_cred_secret | include "resolve_secret" }}
             - name: OS_AUTH_TYPE
               value: "v3applicationcredential"
             - name: OS_REGION_NAME
-              value: {{ .Values.kmip.openstack_env.region_name | quote }}
+              value: {{ .Values.kmip.openstack_env.region_name | include "resolve_secret" }}
             - name: OS_PROJECT_DOMAIN_NAME
-              value: {{ .Values.kmip.openstack_env.project_domain_name | quote }}
+              value: {{ .Values.kmip.openstack_env.project_domain_name | include "resolve_secret" }}
             - name: OS_IDENTITY_API_VERSION
-              value: {{ .Values.kmip.openstack_env.identity_api_version | quote }}
+              value: {{ .Values.kmip.openstack_env.identity_api_version | include "resolve_secret" }}
             - name: OS_PROJECT_NAME
-              value: {{ .Values.kmip.openstack_env.project_name | quote }}
+              value: {{ .Values.kmip.openstack_env.project_name | include "resolve_secret" }}
             - name: OS_USER_DOMAIN_NAME
-              value: {{ .Values.kmip.openstack_env.user_domain_name | quote }}
+              value: {{ .Values.kmip.openstack_env.user_domain_name | include "resolve_secret" }}
           ports:
             - name: http
               containerPort: {{ .Values.service.ports.port }}
