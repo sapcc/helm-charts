@@ -12,7 +12,6 @@ security_rest_api_access:
 
 
 data:
-  index_permissions:
   reserved: false
   cluster_permissions:
   - "cluster_monitor"
