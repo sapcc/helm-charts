@@ -194,3 +194,4 @@ delete_zone_export: rule:context_is_master
 find_service_status: rule:admin
 find_service_statuses: rule:admin
 update_service_status: rule:admin
+delete_service_status: rule:admin
