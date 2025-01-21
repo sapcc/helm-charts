@@ -53,22 +53,14 @@ spec:
     receivers:
 {{- if .Values.openTelemetry.logsCollector.journaldConfig.enabled }}
     {{- include "journald.receiver" . | nindent 6 -}}
-
 {{ end }}
 {{- if .Values.openTelemetry.logsCollector.k8seventsConfig.enabled }}
       k8s_events:
         auth_type: serviceAccount
 {{- end }}
-
 {{- if .Values.openTelemetry.logsCollector.containerdConfig.enabled }}
   {{- include "containerd.receiver" . | nindent 6 -}}
 {{- end }}
-
-{{- if .Values.openTelemetry.logsCollector.kvmConfig.enabled }}
-    {{- include "kvm.receiver" . | nindent 6 -}}
-{{- end }}
-
-
 {{- if .Values.openTelemetry.prometheus.podMonitor.enabled }}
       prometheus/internal:
         config:
@@ -136,23 +128,12 @@ spec:
               - merge_maps(attributes, ExtractGrokPatterns(body, "%{TIMESTAMP_ISO8601:timestamp}%{SPACE}%{GREEDYDATA:log}", true), "upsert")
               - set(attributes["config.parsed"], "files") where attributes["log_level"] != nil
 
-{{- if .Values.openTelemetry.logsCollector.cephConfig.enabled }}
-    {{- include "ceph.transform" . | nindent 6 -}}
-{{- end }}
-
-{{- if .Values.openTelemetry.logsCollector.kvmConfig.enabled }}
-    {{- include "kvm.transform" . | nindent 6 -}}
-{{- end }}
-
 {{- if .Values.openTelemetry.logsCollector.journaldConfig.enabled }}
     {{- include "journald.transform" . | nindent 6 -}}
 {{- end }}
-
 {{- if .Values.openTelemetry.logsCollector.containerdConfig.enabled }}
     {{- include "containerd.transform" . | nindent 6 -}}
 {{- end }}
-
-
 {{- if .Values.openTelemetry.logsCollector.k8seventsConfig.enabled }}
     {{- include "k8sevents.transform" . | nindent 6 -}}
 {{- end }}
@@ -208,9 +189,6 @@ spec:
             - tag_name: app.label.pod-template-hash
               key: app.kubernetes.io/pod-template-hash
               from: pod
-{{- if .Values.openTelemetry.logsCollector.cephConfig.enabled }}
-    {{- include "ceph.labels" . | nindent 12 -}}
-{{- end }}
         pod_association:
           - sources:
               - from: resource_attribute
@@ -290,14 +268,6 @@ spec:
           receivers: [failover]
           processors: [attributes/usertwo_username]
           exporters: [opensearch/two]
-
-{{- if .Values.openTelemetry.logsCollector.kvmConfig.enabled }}
-    {{- include "kvm.pipeline" . | nindent 8 -}}
-{{- end }}
-{{- if .Values.openTelemetry.logsCollector.cephConfig.enabled }}
-    {{- include "ceph.pipeline" . | nindent 8 -}}
-{{- end }}
-
 {{- if .Values.openTelemetry.prometheus.podMonitor.enabled }}
         metrics/prometheus:
           receivers: [prometheus/internal]
@@ -313,5 +283,4 @@ spec:
 {{- if .Values.openTelemetry.logsCollector.k8seventsConfig.enabled }}
     {{- include "k8sevents.pipeline" . | nindent 8 -}}
 {{- end }}
-
 {{- end }}
