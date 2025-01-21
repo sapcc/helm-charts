@@ -32,7 +32,7 @@ data:
     - "indices:data/write/bulk*"
     - "indices:data/write/index"
   - index_patterns:
-    - "logs"
+    - "logs-datastream"
     allowed_actions:
     - "indices:admin/template/get"
     - "indices:admin/template/put"
