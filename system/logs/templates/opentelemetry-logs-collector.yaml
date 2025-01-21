@@ -231,28 +231,46 @@ spec:
     exporters:
       debug:
         verbosity: basic
-      opensearch/logs:
+      opensearch/one:
         http:
           auth:
-            authenticator: basicauth
-          endpoint: {{ .Values.openTelemetry.openSearchLogs.endpoint }}
+            authenticator: basicauth/userone
+          endpoint: https://opensearch-logs-client.scaleout.qa-de-1.cloud.sap:9200
         logs_index: ${index}-datastream
-        
+      opensearch/two:
+        http:
+          auth:
+            authenticator: basicauth/usertwo
+          endpoint: https://opensearch-logs-client.scaleout.qa-de-1.cloud.sap:9200
+        logs_index: ${index}-datastream
+
       prometheus:
         endpoint: 0.0.0.0:9999
 
     extensions:
-      basicauth:
+      basicauth/userone:
         client_auth:
-          username: ${username}
-          password: ${password}
+          password: ${userone_password}
+          username: ${userone_username}
+      basicauth/usertwo:
+        client_auth:
+          password: ${usertwo_password}
+          username: ${usertwo_username}
 
     connectors:
       forward: {}
+      failover:
+        priority_levels:
+          - [logs/one]
+          - [logs/two]
+        retry_interval: 2m
+        retry_gap: 30s
+        max_retries: 0
 
     service:
       extensions:
-        - basicauth
+        - basicauth/userone
+        - basicauth/usertwo
 {{- if .Values.openTelemetry.prometheus.podMonitor.enabled }}
       telemetry:
         metrics:
@@ -263,7 +281,16 @@ spec:
         logs/forward:
           receivers: [forward]
           processors: [batch]
-          exporters: [opensearch/logs]
+          exporters: [failover]
+        logs/one:
+          receivers: [failover]
+          processors: [attributes/userone_username]
+          exporters: [opensearch/one]
+        logs/two:
+          receivers: [failover]
+          processors: [attributes/usertwo_username]
+          exporters: [opensearch/two]
+
 {{- if .Values.openTelemetry.logsCollector.kvmConfig.enabled }}
     {{- include "kvm.pipeline" . | nindent 8 -}}
 {{- end }}
