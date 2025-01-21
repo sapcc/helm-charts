@@ -1,0 +1,14 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: pxc-db-{{ .Values.name }}-backup-scripts
+  labels:
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    system: openstack
+    type: configuration
+    component: database
+{{ include "pxc-db.labels" . | indent 4 }}
+data:
+  backup.sh: |
+{{ include (print .Template.BasePath "/bin/_backup.sh.tpl") . | indent 4 }}
