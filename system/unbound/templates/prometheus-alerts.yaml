@@ -2,7 +2,7 @@
 apiVersion: "monitoring.coreos.com/v1"
 kind: "PrometheusRule"
 metadata:
-  name: unbound-openstack-alerts
+  name: {{ $.Values.unbound.name }}-openstack-alerts
   labels:
     app: unbound
     tier: os
@@ -13,59 +13,43 @@ spec:
   groups:
   - name: unbound.alerts
     rules:
-    - alert: DnsUnboundManySERVFAIL
-      expr: sum(delta(unbound_answer_rcodes_total{rcode="SERVFAIL"}[1h])) BY (region, app) > 500000
+    - alert: Dns{{ $.Values.unbound.name | title }}ManySERVFAIL
+      expr: sum(delta(unbound_answer_rcodes_total{rcode="SERVFAIL",app="{{ $.Values.unbound.name }}"}[1h])) > 500000
       for: 60m
       labels:
         context: unbound
         dashboard: dns-unbound-and-f5-performance
-        meta: {{` '{{ $labels.app }}' `}}
+        meta: {{ $.Values.unbound.name }}
         service: unbound
         severity: info
         support_group: network-api
         tier: os
         playbook: 'docs/devops/alert/designate'
       annotations:
-        description: {{` 'Recursor {{ $labels.app }} returns lots of SERVFAIL responses in {{ $labels.region }} region.' `}}
-        summary: {{` '{{ $labels.app }} returned a lot of SERVFAIL responses in the last hour. Check the logs.' `}}
+        description: 'Recursor {{ $.Values.unbound.name }} returns lots of SERVFAIL responses in {{ $.Values.global.region }} region.'
+        summary: '{{ $.Values.unbound.name }} returned a lot of SERVFAIL responses in the last hour. Check the logs.'
 
-    - alert: DnsUnbound1Down
-      expr: absent(unbound_up{app="unbound1"}) == 1 or unbound_up{app="unbound1"} != 1
+    - alert: Dns{{ $.Values.unbound.name | title }}Down
+      expr: absent(unbound_up{app="{{ $.Values.unbound.name }}"}) == 1 or unbound_up{app="{{ $.Values.unbound.name }}"} != 1
       for: 30m
       labels:
         context: unbound
         dashboard: dns-unbound-and-f5-performance
-        meta: unbound1
+        meta: {{ $.Values.unbound.name }}
         service: unbound
         severity: warning
         support_group: network-api
         tier: os
         playbook: 'docs/devops/alert/designate/#test_unbound_endpoint'
       annotations:
-        description: 'DNS Unbound1 recursor is down.'
-        summary: DNS Unbound1 recursor is down. DNS resolution might be handled by another region.
-
-    - alert: DnsUnbound2Down
-      expr: absent(unbound_up{app="unbound2"}) == 1 or unbound_up{app="unbound2"} != 1
-      for: 30m
-      labels:
-        context: unbound
-        dashboard: dns-unbound-and-f5-performance
-        meta: unbound2
-        service: unbound
-        severity: warning
-        support_group: network-api
-        tier: os
-        playbook: 'docs/devops/alert/designate/#test_unbound_endpoint'
-      annotations:
-        description: 'DNS Unbound2 recursor is down.'
-        summary: DNS Unbound2 recursor is down. DNS resolution might be handled by another region.
+        description: 'DNS {{ $.Values.unbound.name }} recursor is down.'
+        summary: DNS {{ $.Values.unbound.name }} recursor is down. DNS resolution might be handled by another region.
 
 ---
 apiVersion: "monitoring.coreos.com/v1"
 kind: "PrometheusRule"
 metadata:
-  name: unbound-kubernetes-alerts
+  name: {{ $.Values.unbound.name }}-kubernetes-alerts
   labels:
     app: unbound
     tier: os
@@ -76,18 +60,22 @@ spec:
   groups:
   - name: unbound.alerts
     rules:
-    - alert: DnsUnboundEndpointNotAvailable
-      expr: max(kube_endpoint_address{namespace="dns-recursor"}) BY (region,endpoint) < 1
+    - alert: Dns{{ $.Values.unbound.name | title }}UnexpectedNumberOfEndpoints
+{{- $num_replicas := 2 }}
+{{- $num_ports := len $.Values.unbound.externalPorts }}
+{{- $num_proto := list "TCP" "UDP" | len }}
+{{- $num_expected_endpoints := mul $num_replicas $num_ports $num_proto }}
+      expr: count(kube_endpoint_address{namespace="dns-recursor",endpoint=~"{{ $.Values.unbound.name }}-.*"}) != {{ $num_expected_endpoints }}
       for: 15m
       labels:
         context: unbound
         dashboard: dns-unbound-and-f5-performance
-        meta: {{` '{{ $labels.endpoint }}' `}}
+        meta: '{{ $.Values.unbound.name }}'
         service: unbound
         severity: warning
         support_group: network-api
         tier: os
         playbook: 'docs/devops/alert/designate/#test_unbound_endpoint'
       annotations:
-        description: {{` 'DNS Unbound endpoint {{ $labels.endpoint }} not available in {{ $labels.region }} region.' `}}
-        summary: {{` 'DNS Unbound endpoint {{ $labels.endpoint }} is not available. DNS resolution might be handled by another region.' `}}
+        description: 'DNS Unbound {{ $.Values.unbound.name }}: unexpected number of endpoints found in {{ $.Values.global.region }}.'
+        summary: 'DNS Unbound {{ $.Values.unbound.name }}: unexpected number of endpoints found in {{ $.Values.global.region }}. Expected {{ $num_expected_endpoints }}.'
