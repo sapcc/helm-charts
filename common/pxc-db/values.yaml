@@ -465,19 +465,19 @@ backup:
       # -- Binlogs storage is being used by binglog-collector (PiTR)
       binlogs:
         enabled: true
-        bucket: "pxc-backup-{{ .Values.global.region }}/binlogs/{{.Values.name}}/"
+        bucket: "pxc-binlog-{{ .Values.global.region }}/{{.Values.name}}/binlogs/"  # / at the end is required
       # -- Daily backups storage is enabled by default
       daily:
         enabled: true
-        bucket: "pxc-backup-{{ .Values.global.region }}/backups/{{ .Values.name }}/daily"
+        bucket: "pxc-backup-{{ .Values.global.region }}/{{ .Values.name }}/daily"
       # -- Hourly backups storage is disabled by default
       hourly:
         enabled: false
-        bucket: "pxc-backup-{{ .Values.global.region }}/backups/{{ .Values.name }}/hourly"
+        bucket: "pxc-backup-{{ .Values.global.region }}/{{ .Values.name }}/hourly"
       # -- Custom backup storage is supposed to be used for manual backups
       custom:
         enabled: false
-        bucket: "pxc-backup-{{ .Values.global.region }}/backups/{{ .Values.name }}/custom"
+        bucket: "pxc-backup-{{ .Values.global.region }}/{{ .Values.name }}/custom"
   # -- Example of the backup schedule configuration
   schedule:
     - name: "daily-backup"
@@ -486,7 +486,7 @@ backup:
       schedule: "0 0 * * *"
       # -- The amount of most recent backups to store. Older backups are automatically deleted.
       # https://docs.percona.com/percona-operator-for-mysql/pxc/operator.html?#backupschedulekeep
-      keep: 5
+      keep: 7
       # -- The name of the storage for the backups configured in the storages subsection
       storageName: s3-backups-daily
 
