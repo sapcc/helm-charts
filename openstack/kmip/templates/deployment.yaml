@@ -37,11 +37,11 @@ spec:
         {{- toYaml . | nindent 8 }}
         {{- end }}
       annotations:
-        configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
+        secrets-etc-hash: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
         {{- if .Values.proxysql.mode }}
         prometheus.io/scrape: "true"
         prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | include "resolve_secret" }}
-        {{- end }}        
+        {{- end }}
     spec:
       serviceAccountName: {{ include "kmip.serviceAccountName" . }}-barbican
       containers:
@@ -153,7 +153,7 @@ spec:
           ports:
             - name: http
               containerPort: {{ .Values.service.ports.port }}
-              protocol: TCP           
+              protocol: TCP
           resources:
             requests:
               memory: 0
@@ -163,22 +163,22 @@ spec:
               mountPath: /etc/pykmip/server.conf
               subPath: kmip-server.conf
               readOnly: true
-            - name: kmip-secrets
+            - name: kmip-certificates
               mountPath: /etc/pykmip/certs/server.crt
               subPath: tls.crt
               readOnly: true
-            - name: kmip-secrets
+            - name: kmip-certificates
               mountPath: /etc/pykmip/certs/server.key
               subPath: tls.key
               readOnly: true
-            - name: kmip-secrets
+            - name: kmip-certificates
               mountPath: /etc/pykmip/certs/ca.crt
               subPath: ca.crt
               readOnly: true
       volumes:
         - name: kmip-barbican-etc
-          configMap:
-            name: kmip-barbican-etc
-        - name: kmip-secrets
           secret:
-            secretName: kmip-secrets
+            secretName: kmip-barbican-etc
+        - name: kmip-certificates
+          secret:
+            secretName: kmip-certificates
