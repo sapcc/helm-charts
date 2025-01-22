@@ -40,7 +40,7 @@ spec:
         secrets-etc-hash: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
         {{- if .Values.proxysql.mode }}
         prometheus.io/scrape: "true"
-        prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | include "resolve_secret" }}
+        prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
         {{- end }}
     spec:
       serviceAccountName: {{ include "kmip.serviceAccountName" . }}-barbican
