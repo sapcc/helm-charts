@@ -1,4 +1,3 @@
-{{- define "tempest-base.extra_options" }}
 [DEFAULT]
 debug = True
 use_stderr = True
@@ -117,5 +116,3 @@ ironic = False
 barbican = False
 keystone = False
 octavia = False
-
-{{ end }}
