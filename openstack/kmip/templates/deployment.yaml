@@ -72,9 +72,15 @@ spec:
             - name: BARBICAN_MARIADB_SERVICE_PORT
               value: "3306"
             - name: BARBICAN_MARIADB_SERVICE_USER
-              value: {{ .Values.mariadb.users.barbican.user | include "resolve_secret" }}
+              valueFrom:
+                secretKeyRef:
+                  name: kmip-secrets
+                  key: barbican_mariadb_service_user
             - name: BARBICAN_MARIADB_SERVICE_PASSWORD
-              value: {{ .Values.mariadb.users.barbican.password | include "resolve_secret" }}
+              valueFrom:
+                secretKeyRef:
+                  name: kmip-secrets
+                  key: barbican_mariadb_service_password
             - name: BARBICAN_MARIADB_NAME
               value: "barbican"
           command: ["sh", "-c"]
