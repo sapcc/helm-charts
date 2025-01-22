@@ -106,6 +106,18 @@ cronus:
 {{ .Values.cronus.tls.clientCA | default .Values.global.clientCA | indent 8 }}
 {{- end }}
       errInterval: {{ .Values.cronus.tls.errInterval | default "60s" }}
+      {{- if .Values.global.tls }}
+      {{- if .Values.global.tls.clientCertWarningPeriod }}
+      clientCertWarningPeriod: {{ .Values.global.tls.clientCertWarningPeriod }}
+      {{- end }}
+      {{- if .Values.global.tls.checkRevocations }}
+      checkRevocations: true
+      revokedSerialNumbers:
+      {{- range $v := .Values.global.tls.revokedSerialNumbers }}
+        - {{ $v | quote }}
+      {{- end }}
+      {{- end }}
+      {{- end }}
 {{- end }}
   keystone:
 {{- if .Values.config.keystone }}
