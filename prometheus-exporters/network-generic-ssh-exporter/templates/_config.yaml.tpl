@@ -440,6 +440,27 @@ metrics:
     command: show bgp vpnv4 unicast all neighbors | include (BGP neighbor is|BGP state)
     timeout_secs: 4
 
+  bgp_sessions_admin_down:
+    regex: >-
+      ^BGP neighbor is (\S+),(\s+vrf (\S+),)?\s+remote AS (\d+),.*?((\w+) link).*?(\n\sAdministratively \S+ \S+)?\n\s{2,}(\w+.*?$)
+    multi_value: true
+    value: $7
+    labels:
+      vrf: $3
+      peer_ip: $1
+      remote_as: $4
+      peer_type: $6
+      local_as: $4
+    map_values:
+      - regex: Administratively.*
+        value: 5
+      - regex: .*
+        value: 6
+    description: Indicates if a session is Administratively shutdown or not
+    metric_type_name: string
+    command: show bgp vpnv4 unicast all neighbors | include (BGP neighbor is|BGP state|Administratively shut)
+    timeout_secs: 4
+
   arp_drop_input_queue_full:
     regex: "Drop due to input queue full: (\\d+)"
     value: $1
@@ -705,6 +726,7 @@ batches:
     - memory_util_stats
     - dynamic_mac_count
     - logging_dmiauthd_sync
+    - bgp_sessions_admin_down
 
 
   cisco-nx-os_core-router:
