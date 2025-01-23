@@ -11,3 +11,8 @@ subjects:
 - apiGroup: rbac.authorization.k8s.io
   kind: Group
   name: {{ if contains "qa-de-" .Values.global.region -}} CC_IAS_CONTROLPLANE_QA_ADMIN {{- else -}} CC_IAS_CONTROLPLANE_PROD_ADMIN {{- end }}
+{{- range $user := .Values.garden.virtualCluster.adminUsers }}
+- apiGroup: rbac.authorization.k8s.io
+  kind: User
+  name: {{ $user | quote }}
+{{- end }}
