@@ -7,10 +7,10 @@ hana_flavors_quota_separate: false
 owner-info:
   support-group: compute-storage-api
   maintainers:
-    - David Hoeller
-    - Jakob Karge
-    - Johannes Kulik
-    - Fabian Wiesel
+  - David Hoeller
+  - Jakob Karge
+  - Johannes Kulik
+  - Fabian Wiesel
   helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/openstack/sap-seeds
 
 global:
@@ -19,33 +19,1337 @@ global:
 
 extra_specs:
   vmware_common: &vmware_common
-    "capabilities:hypervisor_type": "VMware vCenter Server"
-    "hw_video:ram_max_mb": "16"
-    "vmware:hw_version": "vmx-18"
-    "vmware:hv_enabled": "True"
+    capabilities:hypervisor_type: VMware vCenter Server
+    hw_video:ram_max_mb: '16'
+    vmware:hw_version: vmx-18
+    vmware:hv_enabled: 'True'
   vmware: &vmware
     <<: *vmware_common
-    "trait:CUSTOM_HANA_EXCLUSIVE_HOST": "forbidden"
+    trait:CUSTOM_HANA_EXCLUSIVE_HOST: forbidden
   vmware_hana_exclusive: &vmware_hana_exclusive
     <<: *vmware_common
-    "trait:CUSTOM_HANA_EXCLUSIVE_HOST": "required"
+    trait:CUSTOM_HANA_EXCLUSIVE_HOST: required
 
   vmware_common_v1: &vmware_common_v1
     <<: *vmware_common
-    "vmware:evc_mode": "intel-cascadelake"
-  vmware_v1:
-    <<: *vmware_common_v1
-    <<: *vmware
+    vmware:evc_mode: intel-cascadelake
+  vmware_v1: &vmware_v1
+    <<: [*vmware_common_v1, *vmware]
   vmware_hana_exclusive_v1:
-    <<: *vmware_common_v1
-    <<: *vmware_hana_exclusive
+    <<: [*vmware_common_v1, *vmware_hana_exclusive]
 
   vmware_common_v2: &vmware_common_v2
     <<: *vmware_common
-    "trait:CUSTOM_HW_SAPPHIRE_RAPIDS": "required"
-  vmware_v2:
-    <<: *vmware_common_v2
-    <<: *vmware
-  vmware_hana_exclusive_v1:
-    <<: *vmware_common_v2
-    <<: *vmware_hana_exclusive
+    trait:CUSTOM_HW_SAPPHIRE_RAPIDS: required
+  vmware_v2: &vmware_v2
+    <<: [*vmware_common_v2, *vmware]
+  vmware_hana_exclusive_v2:
+    <<: [*vmware_common_v2, *vmware_hana_exclusive]
+
+flavors:
+  untemplated:
+    c_c16_m16:
+      disk: 64
+      extra_specs:
+        <<: *vmware_v1
+        catalog:alias: m1.xlarge_cpu
+      id: '52'
+      is_public: true
+      ram: 16368
+      vcpus: 16
+    c_c16_m16_v2:
+      disk: 64
+      extra_specs:
+        <<: *vmware_v2
+      id: '411'
+      is_public: true
+      ram: 16368
+      vcpus: 16
+    c_c2_m2:
+      disk: 64
+      extra_specs:
+        <<: *vmware_v1
+        catalog:alias: m1.small,m1.smallhdd
+      id: '20'
+      is_public: true
+      ram: 2032
+      vcpus: 2
+    c_c2_m2_v2:
+      disk: 64
+      extra_specs:
+        <<: *vmware_v2
+      id: '403'
+      is_public: true
+      ram: 2032
+      vcpus: 2
+    c_c4_m4:
+      disk: 64
+      extra_specs:
+        <<: *vmware_v1
+        catalog:alias: m1.medium
+      id: '30'
+      is_public: true
+      ram: 4080
+      vcpus: 4
+    c_c4_m4_v2:
+      disk: 64
+      extra_specs:
+        <<: *vmware_v2
+      id: '408'
+      is_public: true
+      ram: 4080
+      vcpus: 4
+    g_c128_m512:
+      disk: 64
+      extra_specs:
+        <<: *vmware_v1
+        catalog:alias: m5.32xlarge
+        hw:cpu_cores: '64'
+      id: '230'
+      is_public: true
+      ram: 524272
+      vcpus: 128
+    g_c128_m512_v2:
+      disk: 64
+      extra_specs:
+        <<: *vmware_v2
+        hw:cpu_cores: '64'
+      id: '448'
+      is_public: true
+      ram: 524272
+      vcpus: 128
+    g_c12_m48:
+      disk: 64
+      extra_specs:
+        <<: *vmware_v1
+      id: '62'
+      is_public: true
+      ram: 49136
+      vcpus: 12
+    g_c12_m48_v2:
+      disk: 64
+      extra_specs:
+        <<: *vmware_v2
+      id: '415'
+      is_public: true
+      ram: 49136
+      vcpus: 12
+    g_c16_m32:
+      disk: 64
+      extra_specs:
+        <<: *vmware_v1
+        catalog:alias: m1.2xlargecpu
+      id: '61'
+      is_public: true
+      ram: 32752
+      vcpus: 16
+    g_c16_m32_v2:
+      disk: 64
+      extra_specs:
+        <<: *vmware_v2
+      id: '414'
+      is_public: true
+      ram: 32752
+      vcpus: 16
+    g_c16_m64:
+      disk: 64
+      extra_specs:
+        <<: *vmware_v1
+        catalog:alias: m1.4xlarge
+      id: '70'
+      is_public: true
+      ram: 65520
+      vcpus: 16
+    g_c16_m64_v2:
+      disk: 64
+      extra_specs:
+        <<: *vmware_v2
+      id: '416'
+      is_public: true
+      ram: 65520
+      vcpus: 16
+    g_c1_m2:
+      disk: 64
+      extra_specs:
+        <<: *vmware_v1
+        catalog:alias: m1.xsmallcpuhdd
+      id: '19'
+      is_public: true
+      ram: 2032
+      vcpus: 1
+    g_c1_m2_v2:
+      disk: 64
+      extra_specs:
+        <<: *vmware_v2
+      id: '402'
+      is_public: true
+      ram: 2032
+      vcpus: 1
+    g_c1_m3:
+      disk: 64
+      extra_specs:
+        <<: *vmware_v1
+      id: '24'
+      is_public: true
+      ram: 3056
+      vcpus: 1
+    g_c1_m3_v2:
+      disk: 64
+      extra_specs:
+        <<: *vmware_v2
+      id: '405'
+      is_public: true
+      ram: 3056
+      vcpus: 1
+    g_c1_m4:
+      disk: 64
+      extra_specs:
+        <<: *vmware_v1
+      id: '25'
+      is_public: true
+      ram: 4080
+      vcpus: 1
+    g_c1_m4_v2:
+      disk: 64
+      extra_specs:
+        <<: *vmware_v2
+      id: '406'
+      is_public: true
+      ram: 4080
+      vcpus: 1
+    g_c24_m96:
+      disk: 64
+      extra_specs:
+        <<: *vmware_v1
+      id: '144'
+      is_public: true
+      ram: 98288
+      vcpus: 24
+    g_c24_m96_v2:
+      disk: 64
+      extra_specs:
+        <<: *vmware_v2
+      id: '451'
+      is_public: true
+      ram: 98288
+      vcpus: 24
+    g_c2_m4:
+      disk: 64
+      extra_specs:
+        <<: *vmware_v1
+        catalog:alias: m1.xsmall,m1.xsmallhdd
+      id: '22'
+      ram: 4080
+      vcpus: 2
+      is_public: true
+    g_c2_m4_v2:
+      disk: 64
+      extra_specs:
+        <<: *vmware_v2
+      id: '404'
+      is_public: true
+      ram: 4080
+      vcpus: 2
+    g_c2_m8:
+      disk: 64
+      extra_specs:
+        <<: *vmware_v1
+        catalog:alias: m1.xmedium
+      id: '32'
+      is_public: true
+      ram: 8176
+      vcpus: 2
+    g_c2_m8_v2:
+      disk: 64
+      extra_specs:
+        <<: *vmware_v2
+      id: '407'
+      is_public: true
+      ram: 8176
+      vcpus: 2
+    g_c32_m128:
+      disk: 64
+      extra_specs:
+        <<: *vmware_v1
+      id: '162'
+      is_public: true
+      ram: 131056
+      vcpus: 32
+    g_c32_m128_v2:
+      disk: 64
+      extra_specs:
+        <<: *vmware_v2
+      id: '439'
+      is_public: true
+      ram: 131056
+      vcpus: 32
+    g_c48_m192:
+      disk: 64
+      extra_specs:
+        <<: *vmware_v1
+      id: '166'
+      is_public: true
+      ram: 196592
+      vcpus: 48
+    g_c48_m192_v2:
+      disk: 64
+      extra_specs:
+        <<: *vmware_v2
+      id: '440'
+      is_public: true
+      ram: 196592
+      vcpus: 48
+    g_c4_m16:
+      disk: 64
+      extra_specs:
+        <<: *vmware_v1
+        catalog:alias: m1.xlarge
+      id: '50'
+      is_public: true
+      ram: 16368
+      vcpus: 4
+    g_c4_m16_v2:
+      disk: 64
+      extra_specs:
+        <<: *vmware_v2
+      id: '410'
+      is_public: true
+      ram: 16368
+      vcpus: 4
+    g_c4_m8:
+      disk: 64
+      extra_specs:
+        <<: *vmware_v1
+        catalog:alias: m1.large
+      id: '40'
+      is_public: true
+      ram: 8176
+      vcpus: 4
+    g_c4_m8_v2:
+      disk: 64
+      extra_specs:
+        <<: *vmware_v2
+      id: '409'
+      is_public: true
+      ram: 8176
+      vcpus: 4
+    g_c64_m256:
+      disk: 64
+      extra_specs:
+        <<: *vmware_v1
+        catalog:alias: m5.16xlarge
+        hw:cpu_cores: '64'
+      id: '220'
+      is_public: true
+      ram: 262128
+      vcpus: 64
+    g_c64_m256_v2:
+      disk: 64
+      extra_specs:
+        <<: *vmware_v2
+        hw:cpu_cores: '64'
+      id: '446'
+      is_public: true
+      ram: 262128
+      vcpus: 64
+    g_c6_m24:
+      disk: 64
+      extra_specs:
+        <<: *vmware_v1
+      id: '53'
+      is_public: true
+      ram: 24560
+      vcpus: 6
+    g_c6_m24_v2:
+      disk: 64
+      extra_specs:
+        <<: *vmware_v2
+      id: '412'
+      is_public: true
+      ram: 24560
+      vcpus: 6
+    g_c8_m16:
+      disk: 64
+      extra_specs:
+        <<: *vmware_v1
+        catalog:alias: m2.xlarge
+      id: '110'
+      is_public: true
+      ram: 16368
+      vcpus: 8
+    g_c8_m16_v2:
+      disk: 64
+      extra_specs:
+        <<: *vmware_v2
+      id: '424'
+      is_public: true
+      ram: 16368
+      vcpus: 8
+    g_c8_m32:
+      disk: 64
+      extra_specs:
+        <<: *vmware_v1
+        catalog:alias: m1.2xlarge
+      id: '60'
+      is_public: true
+      ram: 32752
+      vcpus: 8
+    g_c8_m32_v2:
+      disk: 64
+      extra_specs:
+        <<: *vmware_v2
+      id: '413'
+      is_public: true
+      ram: 32752
+      vcpus: 8
+    m_c128_m1000:
+      disk: 64
+      extra_specs:
+        <<: *vmware_v1
+        catalog:alias: m5.64xlarge
+        hw:cpu_cores: '64'
+      id: '240'
+      is_public: true
+      ram: 1048560
+      vcpus: 128
+    m_c128_m1000_v2:
+      disk: 64
+      extra_specs:
+        <<: *vmware_v2
+        hw:cpu_cores: '64'
+      id: '450'
+      is_public: true
+      ram: 1048560
+      vcpus: 128
+    m_c16_m128:
+      disk: 64
+      extra_specs:
+        <<: *vmware_v1
+        catalog:alias: m2.8xlarge
+      id: '160'
+      ram: 131056
+      vcpus: 16
+      is_public: true
+    m_c16_m128_v2:
+      disk: 64
+      extra_specs:
+        <<: *vmware_v2
+      id: '436'
+      is_public: true
+      ram: 131056
+      vcpus: 16
+    m_c16_m256:
+      disk: 64
+      extra_specs:
+        <<: *vmware_v1
+        catalog:alias: x1.2xmemory
+      id: '99'
+      is_public: true
+      ram: 262128
+      vcpus: 16
+    m_c16_m256_v2:
+      disk: 64
+      extra_specs:
+        <<: *vmware_v2
+      id: '420'
+      is_public: true
+      ram: 262128
+      vcpus: 16
+    m_c16_m512:
+      disk: 64
+      extra_specs:
+        <<: *vmware_v1
+      id: '164'
+      is_public: true
+      ram: 524272
+      vcpus: 16
+    m_c16_m512_v2:
+      disk: 64
+      extra_specs:
+        <<: *vmware_v2
+      id: '438'
+      is_public: true
+      ram: 524272
+      vcpus: 16
+    m_c20_m160:
+      disk: 64
+      extra_specs:
+        <<: *vmware_v1
+      id: '143'
+      is_public: true
+      ram: 163824
+      vcpus: 20
+    m_c20_m160_v2:
+      disk: 64
+      extra_specs:
+        <<: *vmware_v2
+      id: '434'
+      is_public: true
+      ram: 163824
+      vcpus: 20
+    m_c24_m192:
+      disk: 64
+      extra_specs:
+        <<: *vmware_v1
+      id: '142'
+      is_public: true
+      ram: 196592
+      vcpus: 24
+    m_c24_m192_v2:
+      disk: 64
+      extra_specs:
+        <<: *vmware_v2
+      id: '435'
+      is_public: true
+      ram: 196592
+      vcpus: 24
+    m_c2_m16:
+      disk: 64
+      extra_specs:
+        <<: *vmware_v1
+      id: '138'
+      is_public: true
+      ram: 16368
+      vcpus: 2
+    m_c2_m16_v2:
+      disk: 64
+      extra_specs:
+        <<: *vmware_v2
+      id: '431'
+      is_public: true
+      ram: 16368
+      vcpus: 2
+    m_c32_m256:
+      disk: 64
+      extra_specs:
+        <<: *vmware_v1
+      id: '163'
+      is_public: true
+      ram: 262128
+      vcpus: 32
+    m_c32_m256_v2:
+      disk: 64
+      extra_specs:
+        <<: *vmware_v2
+      id: '444'
+      is_public: true
+      ram: 262128
+      vcpus: 32
+    m_c32_m512:
+      disk: 64
+      extra_specs:
+        <<: *vmware_v1
+        catalog:alias: x1.4xmemory
+      id: '150'
+      is_public: true
+      ram: 524272
+      vcpus: 32
+    m_c32_m512_v2:
+      disk: 64
+      extra_specs:
+        <<: *vmware_v2
+      id: '421'
+      is_public: true
+      ram: 524272
+      vcpus: 32
+    m_c48_m512:
+      disk: 64
+      extra_specs:
+        <<: *vmware_v1
+      id: '221'
+      is_public: true
+      ram: 524272
+      vcpus: 48
+    m_c48_m512_v2:
+      disk: 64
+      extra_specs:
+        <<: *vmware_v2
+      id: '447'
+      is_public: true
+      ram: 524272
+      vcpus: 48
+    m_c4_m32:
+      disk: 64
+      extra_specs:
+        <<: *vmware_v1
+      id: '145'
+      is_public: true
+      ram: 32752
+      vcpus: 4
+    m_c4_m32_v2:
+      disk: 64
+      extra_specs:
+        <<: *vmware_v2
+      id: '452'
+      is_public: true
+      ram: 32752
+      vcpus: 4
+    m_c4_m64:
+      disk: 64
+      extra_specs:
+        <<: *vmware_v1
+        catalog:alias: m2.large
+      id: '100'
+      is_public: true
+      ram: 65520
+      vcpus: 4
+    m_c4_m64_v2:
+      disk: 64
+      extra_specs:
+        <<: *vmware_v2
+      id: '423'
+      is_public: true
+      ram: 65520
+      vcpus: 4
+    m_c64_m512:
+      disk: 64
+      extra_specs:
+        <<: *vmware_v1
+        hw:cpu_cores: '64'
+      id: '165'
+      is_public: true
+      ram: 524272
+      vcpus: 64
+    m_c64_m512_v2:
+      disk: 64
+      extra_specs:
+        <<: *vmware_v2
+        hw:cpu_cores: '64'
+      id: '445'
+      is_public: true
+      ram: 524272
+      vcpus: 64
+    m_c8_m128:
+      disk: 64
+      extra_specs:
+        <<: *vmware_v1
+        catalog:alias: x1.memory
+      id: '90'
+      is_public: true
+      ram: 131056
+      vcpus: 8
+    m_c8_m128_v2:
+      disk: 64
+      extra_specs:
+        <<: *vmware_v2
+      id: '419'
+      is_public: true
+      ram: 131056
+      vcpus: 8
+    m_c8_m256:
+      disk: 64
+      extra_specs:
+        <<: *vmware_v1
+      id: '141'
+      is_public: true
+      ram: 262128
+      vcpus: 8
+    m_c8_m256_v2:
+      disk: 64
+      extra_specs:
+        <<: *vmware_v2
+      id: '433'
+      is_public: true
+      ram: 262128
+      vcpus: 8
+    m_c8_m64:
+      disk: 64
+      extra_specs:
+        <<: *vmware_v1
+        catalog:alias: m2.4xlarge
+      id: '140'
+      is_public: true
+      ram: 65520
+      vcpus: 8
+    m_c8_m64_v2:
+      disk: 64
+      extra_specs:
+        <<: *vmware_v2
+      id: '432'
+      is_public: true
+      ram: 65520
+      vcpus: 8
+    ##############################################
+    # Legacy flavors
+    ##############################################
+    m1.10xlarge:
+      disk: 64
+      extra_specs:
+        <<: *vmware_v1
+      id: '80'
+      is_public: true
+      ram: 163824
+      vcpus: 40
+    m1.10xlarge_v2:
+      disk: 64
+      extra_specs:
+        <<: *vmware_v2
+      id: '417'
+      is_public: true
+      ram: 163824
+      vcpus: 40
+    m1.10xlargesmallcpu:
+      disk: 64
+      extra_specs:
+        <<: *vmware_v1
+      id: '81'
+      is_public: true
+      ram: 163824
+      vcpus: 16
+    m1.10xlargesmallcpu_v2:
+      disk: 64
+      extra_specs:
+        <<: *vmware_v2
+      id: '418'
+      is_public: true
+      ram: 163824
+      vcpus: 16
+    m1.tiny:
+      disk: 1
+      extra_specs:
+        <<: *vmware_v1
+        hw_video:ram_max_mb: 4
+      id: '10'
+      is_public: true
+      ram: 508
+      vcpus: 1
+    m1.tiny_v2:
+      disk: 1
+      extra_specs:
+        <<: *vmware_v1
+        hw_video:ram_max_mb: 4
+      id: '401'
+      is_public: true
+      ram: 508
+      vcpus: 1
+    m2.10xlarge_cpu:
+      disk: 64
+      extra_specs:
+        <<: *vmware_v1
+      id: '123'
+      is_public: true
+      ram: 262128
+      vcpus: 24
+    m2.10xlarge_cpu_v2:
+      disk: 64
+      extra_specs:
+        <<: *vmware_v2
+      id: '427'
+      is_public: true
+      ram: 262128
+      vcpus: 24
+    m2.14xlarge_cpu:
+      disk: 64
+      extra_specs:
+        <<: *vmware_v1
+      id: '124'
+      is_public: true
+      ram: 327680
+      vcpus: 24
+    m2.14xlarge_cpu_v2:
+      disk: 64
+      extra_specs:
+        <<: *vmware_v2
+      id: '428'
+      is_public: true
+      ram: 327680
+      vcpus: 24
+    m2.14xlarge_cpuhdd:
+      disk: 64
+      extra_specs:
+        <<: *vmware_v1
+      id: '125'
+      is_public: true
+      ram: 327680
+      vcpus: 24
+    m2.14xlarge_cpuhdd_v2:
+      disk: 64
+      extra_specs:
+        <<: *vmware_v2
+      id: '429'
+      is_public: true
+      ram: 327680
+      vcpus: 24
+    m2.16xlarge:
+      disk: 64
+      extra_specs:
+        <<: *vmware_v1
+      id: '161'
+      is_public: true
+      ram: 204800
+      vcpus: 16
+    m2.16xlarge_v2:
+      disk: 64
+      extra_specs:
+        <<: *vmware_v2
+      id: '437'
+      is_public: true
+      ram: 204800
+      vcpus: 16
+    m2.2xlarge:
+      disk: 64
+      extra_specs:
+        <<: *vmware_v1
+      id: '120'
+      is_public: true
+      ram: 24560
+      vcpus: 8
+    m2.2xlarge_cpu:
+      disk: 64
+      extra_specs:
+        <<: *vmware_v1
+      id: '122'
+      is_public: true
+      ram: 24560
+      vcpus: 24
+    m2.2xlarge_cpu_v2:
+      disk: 64
+      extra_specs:
+        <<: *vmware_v2
+      id: '426'
+      is_public: true
+      ram: 24560
+      vcpus: 24
+    m2.2xlarge_v2:
+      disk: 64
+      extra_specs:
+        <<: *vmware_v2
+      id: '425'
+      is_public: true
+      ram: 24560
+      vcpus: 8
+    m2.3xlarge:
+      disk: 64
+      extra_specs:
+        <<: *vmware_v1
+      id: '130'
+      is_public: true
+      ram: 49136
+      vcpus: 8
+    m2.3xlarge_v2:
+      disk: 64
+      extra_specs:
+        <<: *vmware_v2
+      id: '430'
+      is_public: true
+      ram: 49136
+      vcpus: 8
+    m5.12xlarge:
+      disk: 64
+      extra_specs:
+        <<: *vmware_v1
+      id: '211'
+      is_public: true
+      ram: 524272
+      vcpus: 48
+    m5.12xlarge_v2:
+      disk: 64
+      extra_specs:
+        <<: *vmware_v2
+      id: '442'
+      is_public: true
+      ram: 524272
+      vcpus: 48
+    m5.14xlarge:
+      disk: 64
+      extra_specs:
+        <<: *vmware_v1
+      id: '212'
+      is_public: true
+      ram: 524272
+      vcpus: 60
+    m5.14xlarge_v2:
+      disk: 64
+      extra_specs:
+        <<: *vmware_v2
+      id: '443'
+      is_public: true
+      ram: 524272
+      vcpus: 60
+    m5.48xlarge:
+      disk: 64
+      extra_specs:
+        <<: *vmware_v1
+        hw:cpu_cores: '48'
+      id: '231'
+      is_public: true
+      ram: 1048560
+      vcpus: 96
+    m5.48xlarge_v2:
+      disk: 64
+      extra_specs:
+        <<: *vmware_v2
+        hw:cpu_cores: '48'
+      id: '449'
+      is_public: true
+      ram: 1048560
+      vcpus: 96
+    ##############################################
+    # Private flavors
+    ##############################################
+    forced:
+      disk: 64
+      extra_specs:
+        resources:DISK_GB: '0'
+        resources:MEMORY_MB: '0'
+        resources:VCPU: '0'
+      id: '1'
+      is_public: false
+      ram: 1024
+      vcpus: 1
+    hana_cc3test: # HANA flavor for testing
+      disk: 64
+      extra_specs:
+        <<: *vmware_common
+      id: '312'
+      is_public: false
+      ram: 2032
+      vcpus: 2
+    m5.xlarge2hdd:
+      disk: 150
+      extra_specs:
+        <<: *vmware_v1
+      id: '210'
+      is_public: false
+      ram: 16368
+      vcpus: 4
+    m5.xlarge2hdd_v2:
+      disk: 150
+      extra_specs:
+        <<: *vmware_v2
+      id: '441'
+      is_public: false
+      ram: 16368
+      vcpus: 4
+    s_c64_m64:
+      disk: 64
+      extra_specs:
+        <<: *vmware_v1
+        hw:cpu_cores: '64'
+      id: '400'
+      is_public: false
+      ram: 65520
+      vcpus: 64
+    x1.8xmemory:
+      disk: 64
+      extra_specs:
+        <<: *vmware_v1
+        hw:cpu_cores: '64'
+      id: '151'
+      is_public: false
+      ram: 1048560
+      vcpus: 64
+    x1.8xmemory_v2:
+      disk: 64
+      extra_specs:
+        <<: *vmware_v2
+        hw:cpu_cores: '64'
+      id: '422'
+      is_public: false
+      ram: 1048560
+      vcpus: 64
+    ##############################################
+    # Removed flavors: See README.md for details
+    ##############################################
+    gmp_m1024_c128:
+      disk: 40
+      extra_specs:
+        <<: *vmware
+        hw:cpu_cores: '48'
+        trait:CUSTOM_NUMASIZE_C48_M729: required
+        vmware:hw_version: vmx-18
+      id: cb13a435-bd62-4569-ad02-2da67f88b776
+      is_public: false
+      ram: 1048576
+      vcpus: 128
+    gmp_m1024_c96:
+      disk: 40
+      extra_specs:
+        <<: *vmware
+        hw:cpu_cores: '48'
+        trait:CUSTOM_NUMASIZE_C48_M729: required
+        vmware:hw_version: vmx-18
+      id: 97709ba4-e52e-4a92-ae28-caf53f28243e
+      is_public: false
+      ram: 1048576
+      vcpus: 96
+    gmp_m1024_c96_hana:
+      disk: 40
+      extra_specs:
+        <<: *vmware
+        hw:cpu_cores: '48'
+        trait:CUSTOM_NUMASIZE_C48_M729: required
+        vmware:hw_version: vmx-18
+      id: a219a815-e08e-47c6-9b71-bc77bc1cbbfd
+      is_public: false
+      ram: 1048576
+      vcpus: 96
+    gmp_m128_c20:
+      disk: 40
+      extra_specs:
+        <<: *vmware
+      id: 85a96f15-70f8-43fd-86f3-cdde3c26874a
+      is_public: false
+      ram: 131072
+      vcpus: 20
+    gmp_m128_c8:
+      disk: 40
+      extra_specs:
+        <<: *vmware
+      id: fb00681d-ae99-4a8a-9e4d-b1b832f30cab
+      is_public: false
+      ram: 131072
+      vcpus: 8
+    gmp_m16_c4:
+      disk: 40
+      extra_specs:
+        <<: *vmware
+      id: de149b2d-ac27-49a2-8974-9169f0c3ff34
+      is_public: false
+      ram: 16384
+      vcpus: 4
+    gmp_m1946_c128:
+      disk: 40
+      extra_specs:
+        <<: *vmware_common
+        hw:cpu_cores: '48'
+        resources:CUSTOM_BIGVM: '2'
+        resources:CUSTOM_MEMORY_RESERVABLE_MB: '1992704'
+        trait:CUSTOM_NUMASIZE_C48_M729: required
+      id: db25520d-b4d7-4485-850b-140021557ea5
+      is_public: false
+      ram: 1992704
+      vcpus: 128
+    gmp_m200_c24:
+      disk: 40
+      extra_specs:
+        <<: *vmware
+      id: 0788f792-25d8-4538-b410-287d55de0380
+      is_public: false
+      ram: 204800
+      vcpus: 24
+    gmp_m246_c24_hana:
+      disk: 40
+      extra_specs:
+        <<: *vmware
+      id: 576b9c5d-5ebe-4281-8ff5-250891efab18
+      is_public: false
+      ram: 251904
+      vcpus: 24
+    gmp_m24_c8:
+      disk: 40
+      extra_specs:
+        <<: *vmware
+      id: a9666665-a504-40e5-a191-c18c09188298
+      is_public: false
+      ram: 24576
+      vcpus: 8
+    gmp_m256_c24:
+      disk: 40
+      extra_specs:
+        <<: *vmware
+      id: 098aefa2-b45f-4bb0-808b-4606d53e0167
+      is_public: false
+      ram: 262144
+      vcpus: 24
+    gmp_m256_c24_hana:
+      disk: 40
+      extra_specs:
+        <<: *vmware
+      id: 4fe207d5-32a8-49a8-a8d0-ca1710969ce0
+      is_public: false
+      ram: 262144
+      vcpus: 24
+    gmp_m256_c32:
+      disk: 40
+      extra_specs:
+        <<: *vmware
+      id: 7361b99c-fae3-4dd7-a291-68f1bf2d28a7
+      is_public: false
+      ram: 262144
+      vcpus: 32
+    gmp_m256_c40:
+      disk: 40
+      extra_specs:
+        <<: *vmware
+      id: 74f07fca-ae8d-4585-894c-acd82548a2ff
+      is_public: false
+      ram: 262144
+      vcpus: 40
+    gmp_m256_c64:
+      disk: 40
+      extra_specs:
+        <<: *vmware
+      id: e29d2378-16c2-4654-83fa-d19f470ab991
+      is_public: false
+      ram: 262144
+      vcpus: 64
+    gmp_m2_c2:
+      disk: 40
+      extra_specs:
+        <<: *vmware
+      id: 911ee148-d131-471e-b475-1fb4de6b76cf
+      is_public: false
+      ram: 2048
+      vcpus: 2
+    gmp_m320_c24_hana:
+      disk: 40
+      extra_specs:
+        <<: *vmware
+      id: e88de616-3d65-4ed0-87b0-e06641f1943c
+      is_public: false
+      ram: 327680
+      vcpus: 24
+    gmp_m32_c10:
+      disk: 40
+      extra_specs:
+        <<: *vmware
+      id: '101'
+      is_public: false
+      ram: 32768
+      vcpus: 10
+    gmp_m32_c12:
+      disk: 40
+      extra_specs:
+        <<: *vmware
+      id: 6551a9d9-6010-4174-ad51-0e988ea18aed
+      is_public: false
+      ram: 32768
+      vcpus: 12
+    gmp_m32_c8:
+      disk: 40
+      extra_specs:
+        <<: *vmware
+      id: 3b051fec-386b-42d0-89c2-e92dac2a5658
+      is_public: false
+      ram: 32768
+      vcpus: 8
+    gmp_m44_c12:
+      disk: 40
+      extra_specs:
+        <<: *vmware
+      id: dc59f223-6394-4759-88f2-6069dcf5e03e
+      is_public: false
+      ram: 45056
+      vcpus: 12
+    gmp_m48_c12:
+      disk: 40
+      extra_specs:
+        <<: *vmware
+      id: 3cfb669e-7371-49bb-a536-238503ce631c
+      is_public: false
+      ram: 49152
+      vcpus: 12
+    gmp_m48_c32:
+      disk: 40
+      extra_specs:
+        <<: *vmware
+      id: eea81c29-77f8-4015-acf0-5e85f27d9830
+      is_public: false
+      ram: 49152
+      vcpus: 32
+    gmp_m4_c2:
+      disk: 40
+      extra_specs:
+        <<: *vmware
+      id: 1c571abf-cc81-4e99-859f-5a991cbc0b14
+      is_public: false
+      ram: 4096
+      vcpus: 2
+    gmp_m4_c4:
+      disk: 40
+      extra_specs:
+        <<: *vmware
+      id: 29537e93-9be7-43ed-8ccd-83ae38050393
+      is_public: false
+      ram: 4096
+      vcpus: 4
+    gmp_m512_c32:
+      disk: 40
+      extra_specs:
+        <<: *vmware
+      id: 38f2d6d7-6f83-4c53-b183-3968fe2e94a6
+      is_public: false
+      ram: 524288
+      vcpus: 32
+    gmp_m512_c60:
+      disk: 40
+      extra_specs:
+        <<: *vmware
+      id: 115b5ea7-0dcb-4254-ae91-052fb01ae57b
+      is_public: false
+      ram: 524288
+      vcpus: 60
+    gmp_m64_c12:
+      disk: 40
+      extra_specs:
+        <<: *vmware
+      id: adb79f96-904c-4e4d-8480-046d0f5f7d4e
+      is_public: false
+      ram: 65536
+      vcpus: 12
+    gmp_m64_c20:
+      disk: 40
+      extra_specs:
+        <<: *vmware
+      id: 90cf44cb-11a5-4fd0-a76a-68772fe92919
+      is_public: false
+      ram: 65536
+      vcpus: 20
+    gmp_m64_c60:
+      disk: 40
+      extra_specs:
+        <<: *vmware
+      id: 6ecde341-e475-4fb3-8802-58a69e68837f
+      is_public: false
+      ram: 65536
+      vcpus: 60
+    gmp_m8_c32:
+      disk: 40
+      extra_specs:
+        <<: *vmware
+      id: dab7c9da-0a00-4885-9e53-811ec670fe0e
+      is_public: false
+      ram: 8192
+      vcpus: 32
+    gmp_m8_c4:
+      disk: 40
+      extra_specs:
+        <<: *vmware
+      id: 9e0fa54d-3112-4ec1-8b38-bb407b5d978b
+      is_public: false
+      ram: 8192
+      vcpus: 4
+    gmp_m8_c8:
+      disk: 40
+      extra_specs:
+        <<: *vmware
+      id: ac16ac87-49bc-400f-ad9c-da8c41da4f85
+      is_public: false
+      ram: 8192
+      vcpus: 8
+    hana_c192_m5835:
+      disk: 64
+      extra_specs:
+        <<: *vmware_common
+        hw:cpu_cores: '48'
+        limes:allow_growth: 'false'
+        quota:instance_only: 'true'
+        quota:separate: 'true'
+        resources:CUSTOM_BIGVM: '2'
+        resources:CUSTOM_MEMORY_RESERVABLE_MB: '5975376'
+        trait:CUSTOM_NUMASIZE_C48_M1459: required
+        vmware:hw_version: vmx-18
+      id: '310'
+      is_public: false
+      ram: 5975376
+      vcpus: 192
+    hana_c24_m729:
+      disk: 64
+      extra_specs:
+        <<: *vmware_common
+        hw:cpu_cores: '24'
+        limes:allow_growth: 'false'
+        quota:instance_only: 'true'
+        quota:separate: 'true'
+        resources:CUSTOM_MEMORY_RESERVABLE_MB: '746908'
+        trait:CUSTOM_NUMASIZE_C48_M1459: required
+        vmware:hw_version: vmx-18
+      id: '306'
+      is_public: false
+      ram: 746908
+      vcpus: 24
+    hana_c48_m1459:
+      disk: 64
+      extra_specs:
+        <<: *vmware_common
+        hw:cpu_cores: '48'
+        limes:allow_growth: 'false'
+        quota:instance_only: 'true'
+        quota:separate: 'true'
+        resources:CUSTOM_BIGVM: '2'
+        resources:CUSTOM_MEMORY_RESERVABLE_MB: '1493832'
+        trait:CUSTOM_NUMASIZE_C48_M1459: required
+        vmware:hw_version: vmx-18
+      id: '307'
+      is_public: false
+      ram: 1493832
+      vcpus: 48
+    hana_c96_m2918:
+      disk: 64
+      extra_specs:
+        <<: *vmware_common
+        hw:cpu_cores: '48'
+        limes:allow_growth: 'false'
+        quota:instance_only: 'true'
+        quota:separate: 'true'
+        resources:CUSTOM_BIGVM: '2'
+        resources:CUSTOM_MEMORY_RESERVABLE_MB: '2987680'
+        trait:CUSTOM_NUMASIZE_C48_M1459: required
+        vmware:hw_version: vmx-18
+      id: '308'
+      is_public: false
+      ram: 2987680
+      vcpus: 96
+    m5.192xlarge:
+      disk: 64
+      extra_specs:
+        <<: *vmware_common
+        host_fraction: 1,1/2
+        hw:cpu_cores: '48'
+        resources:CUSTOM_BIGVM: '2'
+        trait:CUSTOM_NUMASIZE_C48_M729: required
+        vmware:hw_version: vmx-18
+      id: '271'
+      is_public: false
+      ram: 2979840
+      vcpus: 106
+    m5.96xlarge:
+      disk: 64
+      extra_specs:
+        <<: *vmware_common
+        host_fraction: 1/4,3/4,1/2,1
+        hw:cpu_cores: '48'
+        resources:CUSTOM_BIGVM: '2'
+        resources:CUSTOM_MEMORY_RESERVABLE_MB: '1468416'
+        trait:CUSTOM_NUMASIZE_C48_M729: required
+        vmware:hw_version: vmx-18
+      id: '270'
+      is_public: false
+      ram: 1468416
+      vcpus: 90
+    x1.32xlarge:
+      disk: 64
+      extra_specs:
+        <<: *vmware_common
+        host_fraction: 1,0.67,0.34
+        hw:cpu_cores: '48'
+        resources:CUSTOM_BIGVM: '2'
+        resources:CUSTOM_MEMORY_RESERVABLE_MB: '1991680'
+        trait:CUSTOM_NUMASIZE_C48_M729: required
+        vmware:hw_version: vmx-18
+      id: '250'
+      is_public: false
+      ram: 1991680
+      vcpus: 128
+    x1.64xlarge:
+      disk: 64
+      extra_specs:
+        <<: *vmware_common
+        hw:cpu_cores: '48'
+        resources:CUSTOM_BIGVM: '2'
+        resources:CUSTOM_MEMORY_RESERVABLE_MB: '4194304'
+        trait:CUSTOM_NUMASIZE_C48_M729: required
+        vmware:hw_version: vmx-18
+      id: '251'
+      is_public: false
+      ram: 4194304
+      vcpus: 128
+    xclarity:
+      disk: 192
+      extra_specs:
+        <<: *vmware
+      id: deleted_160
+      is_public: false
+      ram: 8176
+      vcpus: 8
