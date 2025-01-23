@@ -6,7 +6,29 @@ spec:
   requires:
   - monsoon3/nova-flavor-seed
   flavors:
-{{- range $name, $values := .Values.flavors.untemplated }}
+  ### From .Values.flavors.(templates x hypervisors)
+{{- range $hyp, $hypervisor := $.Values.flavors.hypervisors }}
+  {{- $hypervisorSpec := default (dict) $hypervisor.spec  }}
+  {{- range $ver, $version := $hypervisor.variants }}
+    {{- $hypervisorVerSpec := merge (default (dict) $hypervisor.spec) $hypervisorSpec }}
+      {{- range $cat, $category := $.Values.flavors.templates }}
+          {{- $categorySpec := default (dict) $category.spec }}
+          {{- range $cpu, $cpus:= $category.variants }}
+              {{- $cpuSpec := merge (default (dict) $cpus.spec) $categorySpec }}
+              {{- range $ram, $rams:= $cpus.variants }}
+                  {{- $ramSpec := merge (default (dict) $rams.spec) $cpuSpec }}
+                  {{- $name := list $cat $hyp $cpu $ram $ver | join "_"}}
+                  {{- $overrides := get $.Values.flavors.overrides $name | default (dict) }}
+                  {{- $spec := merge $overrides $hypervisorVerSpec $ramSpec }}
+  - name: {{ $name }}
+    {{- toYaml $spec | nindent 4 }}
+              {{- end }}
+          {{- end }}
+      {{- end }}
+  {{- end }}
+{{- end }}
+  ### From .Values.flavors.untemplated
+{{- range $name, $values := $.Values.flavors.untemplated }}
   - name: {{ $name }}
     {{- toYaml $values | nindent 4 }}
 {{- end }}
