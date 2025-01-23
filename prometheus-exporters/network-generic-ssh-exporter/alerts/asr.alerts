@@ -104,7 +104,7 @@ groups:
     - alert: NetworkAsrBgpFabricPeerDown
       expr: >-
         ((ssh_redundancy_state == 3 ) * 0)
-        + on (name) group_right() ssh_bgp_sessions{vrf!="", vrf=~"CC-CLOUD(0[1-9]|10)"} != 8
+        + on (name) group_right() (ssh_bgp_sessions{vrf!="", vrf=~"CC-CLOUD(0[1-9]|10)"} != 8 and ssh_bgp_sessions_admin_down{vrf!="", vrf=~"CC-CLOUD(0[1-9]|10)"} != 5)
       for: 5m
       labels:
         severity: critical
@@ -123,7 +123,7 @@ groups:
     - alert: NetworkAsrBgpNeutronPeerDown
       expr: >-
         ((ssh_redundancy_state == 3 ) * 0)
-        + on (name) group_right() ssh_bgp_sessions{vrf="", peer_type="internal"} != 8
+        + on (name) group_right() (ssh_bgp_sessions{vrf="", peer_type="internal"} != 8 and ssh_bgp_sessions_admin_down{vrf="", peer_type="internal"} != 5)
       for: 5m
       labels:
         severity: critical
@@ -141,7 +141,7 @@ groups:
     - alert: NetworkAsrBgpCorePeerDown
       expr: >-
         ((ssh_redundancy_state == 3 ) * 0)
-        + on (name) group_right() ssh_bgp_sessions{vrf="", peer_type="external"} != 8
+        + on (name) group_right () (ssh_bgp_sessions{peer_type="external",vrf=""} != 8 and ssh_bgp_sessions_admin_down{peer_type="external",vrf=""} != 5)
       for: 5m
       labels:
         severity: critical
