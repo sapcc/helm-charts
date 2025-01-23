@@ -1,0 +1,40 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: argora
+  labels:
+    app: argora
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: argora
+  template:
+    metadata:
+      labels:
+        app: argora
+    spec:
+      serviceAccountName: argora
+      containers:
+        - name: argora
+          image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+          args:
+            - --controllers="ironCoreServerController"
+          envFrom:
+            - secretRef:
+                name: argora
+          imagePullPolicy: IfNotPresent
+          volumeMounts:
+          - name: remote-kubeconfig
+            mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+            readOnly: true
+      volumes:
+      - name: remote-kubeconfig
+        secret:
+          secretName: argora-remote-kubeconfig
+          items:
+          - key: token
+            path: token
+          - key: bundle.crt
+            path: ca.crt
