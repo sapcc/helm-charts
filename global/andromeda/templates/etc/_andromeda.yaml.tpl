@@ -26,7 +26,6 @@ service_auth:
   auth_url: {{ .Values.global.keystone_api_endpoint_protocol_public | default "https"}}://{{include "keystone_api_endpoint_host_public" .}}/v3
 {{- end }}
   username: {{ .Release.Name }}{{ .Values.global.user_suffix }}
-  password: {{ .Values.global.andromeda_service_password }}
   project_name: service
   project_domain_id: default
   user_domain_id: default
@@ -46,7 +45,6 @@ quota:
 audit_middleware_notifications:
   enabled: true
   queue_name: {{.Values.audit.queue_name}}
-  transport_url: rabbit://{{.Values.audit.user}}:{{.Values.audit.password | required "audit.password required"}}@:{{.Values.audit.port}}
 {{- end }}
 
 house_keeping:
