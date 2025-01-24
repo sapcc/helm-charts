@@ -16,6 +16,18 @@ spec:
         - --insecure=false
         - --registry-url=http://[2a10:afc0:e013:d002::]:30010
         - --manager-namespace=metal-operator-system
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 32801
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: 32801
+          initialDelaySeconds: 5
+          periodSeconds: 10
         volumeMounts:
         - name: remote-kubeconfig
           mountPath: /var/run/secrets/kubernetes.io/serviceaccount
