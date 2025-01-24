@@ -175,12 +175,25 @@ objectstore:
     # - name: other-instance-name
 
   prysm:
-    enabled: true
     repository:
       image: "ghcr.io/cobaltcore-dev/prysm"
       tag: "latest"
       pullPolicy: "Always"
-    interval: "10"
+    rgwMetrics:
+      enabled: true
+      interval: "10"
+    diskHealth:
+      enabled: true
+      interval: "60"
+      disks: "*"
+      nodeSelector:
+        kubernetes.metal.cloud.sap/role: ceph-osd
+
+  prysmDiskHealth:
+    repository:
+      image: "ghcr.io/cobaltcore-dev/prysm"
+      tag: "latest"
+      pullPolicy: "Always"
 
 rgwTargetPlacements:
   #  enabled: false deprecate rgwTargetPlacements.enabled because it is true on all envs
