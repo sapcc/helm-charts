@@ -5,7 +5,7 @@ PROVIDER_VSPHERE_VERSION ?= v1.9.3
 PROVIDER_IPAM_VERSION ?= v0.1.0
 PROVIDER_KUBERNIKUS_VERSION ?= 9fd81475b828971913b3b27addf51fdbd0511d85
 BAREMETAL_OPERATOR_VERSION ?= v0.6.0
-METAL_OPERATOR_VERSION ?= 4dc7a47f2cf412966e6362aa5da5624845dadd46
+METAL_OPERATOR_VERSION ?= b705a57f5ee159073141f999d02201023a794d55
 BOOT_OPERATOR_VERSION ?= 4f2452ce450dc65342d68daf611edfb182585020
 IPXE_OPERATOR_VERSION ?= 61c6898bfd7772008835bdcca8d8a64c1dfc3b32
 FEDHCP_VERSION ?= a59539c62aaa11a96c82fe792c87daaac4cb75bf
@@ -112,7 +112,7 @@ build-metal-operator:
 	@find metal-operator-core/templates -type f -exec $(SED) -i -e 's#metal-webhook-service#metal-operator-webhook-service#g' {} \;
 	@yq -i '.controllerManager.manager.image.tag="$(METAL_OPERATOR_VERSION)"' metal-operator-core/values.yaml
 	@yq -i '.fullnameOverride="metal-operator"' metal-operator-core/values.yaml
-	@yq -i '.version="1.1.1"' metal-operator-core/Chart.yaml
+	@yq -i '.version="1.1.2"' metal-operator-core/Chart.yaml
 
 build-metal-operator-remote:
 	@rm -rf metal-operator-remote
@@ -132,7 +132,7 @@ build-metal-operator-remote:
 	@mkdir metal-operator-remote/ci
 	@echo 'global:' >> metal-operator-remote/ci/test-values.yaml
 	@echo '  region: ab-cd-1' >> metal-operator-remote/ci/test-values.yaml
-	@yq -i '.version="0.3.1"' metal-operator-remote/Chart.yaml
+	@yq -i '.version="0.3.2"' metal-operator-remote/Chart.yaml
 	@$(SED) -i 's/serviceAccountName.*$$/serviceAccountName: default/g' metal-operator-remote/templates/deployment.yaml
 	@$(SED) -i 's/kind: Role/kind: ClusterRole/g' metal-operator-remote/managedresources/kustomize.yaml
 
