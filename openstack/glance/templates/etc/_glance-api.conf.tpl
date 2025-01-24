@@ -21,6 +21,8 @@ workers = {{ .Values.workers }}
 
 wsgi_default_pool_size = {{ .Values.wsgi_default_pool_size | default 100 }}
 
+image_size_cap = 2199023255552
+
 [keystone_authtoken]
 auth_plugin = v3password
 auth_version = v3
