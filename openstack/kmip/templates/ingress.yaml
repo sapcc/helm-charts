@@ -15,21 +15,28 @@ metadata:
   annotations:
   {{- if .Values.tlsacme }}
     kubernetes.io/tls-acme: "true"
-    disco: "true"
   {{- end }}
   {{- include "utils.linkerd.ingress_annotation" . | indent 4 }}
 spec:
   tls:
      - secretName: kmip-barbican
-       hosts: [{{include "barbican_api_endpoint_host_public" .}}]
+       hosts:
+         - kmip.cc.qa-de-1.cloud.sap
   rules:
-    - host: {{include "barbican_api_endpoint_host_public" .}}
+    - host: kmip.cc.qa-de-1.cloud.sap
       http:
         paths:
         - path: /
           pathType: Prefix
           backend:
             service:
-              name: barbican-api
+              name: kmip-barbican
               port:
-                number: {{.Values.api_port_internal}}
+                number: 5696
+        - path: /restapi
+          pathType: Prefix
+          backend:
+            service:
+              name: kmip-barbican
+              port:
+                number: 5006
