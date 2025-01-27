@@ -98,6 +98,12 @@ oraboskvm:
   reserved: true
   backend_roles:
   - "oraboskvm"
+
+oraboskvm2:
+  hash: "{{ .Values.users.oraboskvm2.nohash }}"
+  reserved: true
+  backend_roles:
+  - "oraboskvm"
 {{- end }}
 
 awx:

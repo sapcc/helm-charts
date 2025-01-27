@@ -125,8 +125,8 @@ maillog:
   - "maillog"
   - "maillog2"
 
-oraboskvm:
-  hash: "{{ .Values.users.oraboskvm.nohash }}"
-  reserved: true
-  backend_roles:
+oraboskvmrole:	
+  reserved: false	
+  users:	
   - "oraboskvm"
+  - "oraboskvm2"
