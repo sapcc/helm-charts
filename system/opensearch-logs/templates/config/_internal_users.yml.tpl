@@ -92,6 +92,12 @@ ronly2:
   reserved: true
   backend_roles:
   - "promuser"
+
+oraboskvm:
+  hash: "{{ .Values.users.oraboskvm.nohash }}"
+  reserved: true
+  backend_roles:
+  - "oraboskvm"
 {{- end }}
 
 awx:
