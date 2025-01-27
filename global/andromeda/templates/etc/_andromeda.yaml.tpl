@@ -4,11 +4,6 @@ DEFAULT:
   prometheus: true
   prometheus_listen: 0.0.0.0:9090
 
-database:
-{{- if .Values.mariadb.enabled }}
-  connection: mysql://andromeda:{{ required ".Values.mariadb.users.andromeda.password variable missing" .Values.mariadb.users.andromeda.password | urlquery }}@{{.Release.Name}}-mariadb/andromeda?sql_mode=%27ANSI_QUOTES%27
-{{- end }}
-
 api_settings:
   auth_strategy: keystone
   policy_engine: goslo
