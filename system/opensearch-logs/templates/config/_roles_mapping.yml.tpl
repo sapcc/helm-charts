@@ -124,8 +124,7 @@ maillog:
   users:
   - "maillog"
   - "maillog2"
-
-oraboskvmrole:	
+oraboskvmrole:
   reserved: false	
   users:
   - "oraboskvm"
