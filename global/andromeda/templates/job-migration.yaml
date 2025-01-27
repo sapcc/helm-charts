@@ -48,6 +48,13 @@ spec:
                 secretKeyRef:
                   name: sentry
                   key: {{ include "andromeda.fullname" . }}.DSN
+            {{- if .Values.mariadb.enabled }}
+            - name: DATABASE_CONNECTION
+              valueFrom:
+                secretKeyRef:
+                  name: andromeda-secret
+                  key: database_connection
+            {{- end }}
           volumeMounts:
             - name: etc-andromeda
               mountPath: /etc/andromeda
