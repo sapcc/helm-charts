@@ -433,6 +433,26 @@ spec:
         }
 
         ########################################################################
+        # allowlist for opentelemetry
+
+        isOtelPod = true {
+          # In the "main" clusters (baremetal and the original scaleouts), Team
+          # Supervision deploys several otel daemonsets in the "logs"
+          # namespace.
+          iro.kind == "DaemonSet"
+          iro.metadata.namespace in {"logs" }
+          iro.metadata.name in {"logs-operator", "logs-collector"}
+          helmReleaseName == "logs"
+        }
+
+        isContainerAllowedToAccessHostPath(container, hostPath, readOnly) = true {
+          # Most Otel pods need to access log files on the host.
+          isOtelPod
+          hostPath == "/var/log"
+          readOnly
+        }
+        
+        ########################################################################
         # allowlist for Ironic pods
 
         {{- if eq .Values.cluster_type "baremetal" "test" }}
