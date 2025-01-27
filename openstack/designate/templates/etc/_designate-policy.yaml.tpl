@@ -68,7 +68,7 @@ get_zone_ns_records: rule:context_is_viewer
 find_zones: rule:context_is_viewer
 find_zone: rule:context_is_viewer
 find_shared_zones: rule:context_is_viewer
-find_zone_shares: rule:context_is_viewer
+find_zone_shares: "@"
 find_project_zone_share: rule:context_is_viewer
 update_zone: rule:context_is_master
 update_sub_zone: rule:context_is_master
