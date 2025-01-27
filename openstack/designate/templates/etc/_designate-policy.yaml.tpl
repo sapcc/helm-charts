@@ -1,8 +1,8 @@
 admin: rule:context_is_cloud_admin or is_admin:True
 primary_zone: target.zone_type:SECONDARY
 
-owner: tenant:%(tenant_id)s
-target: tenant:%(target_tenant_id)s
+owner: project_id:%(tenant_id)s
+target: project_id:%(target_project_id)s
 shared: "'True':%(zone_shared)s"
 
 owner_or_target: rule:target or rule:owner
@@ -31,7 +31,7 @@ context_is_master: rule:context_is_dns_support or rule:context_is_zonemaster or 
 
 zone_primary_or_dns_ops: "('PRIMARY':%(zone_type)s and rule:context_is_dns_ops) or ('SECONDARY':%(zone_type)s and is_admin:True)"
 
-default: rule:context_is_cloud_admin
+default: rule:admin_or_owner_or_zone_shared
 all_tenants: rule:context_is_dns_support or rule:cloud_dns_viewer
 edit_managed_records: rule:context_is_master
 use_low_ttl: rule:context_is_dns_support
@@ -164,13 +164,13 @@ diagnostics_sync_record: rule:admin
 create_zone_transfer_request: rule:context_is_dns_support
 create_sub_zone_transfer_request: rule:context_is_zonemaster
 
-get_zone_transfer_request: rule:context_is_master or tenant:%(target_tenant_id)s or None:%(target_tenant_id)s
+get_zone_transfer_request: rule:context_is_master or project_id:%(target_project_id)s or None:%(target_project_id)s
 get_zone_transfer_request_detailed: rule:context_is_master
 find_zone_transfer_requests: "@"
 find_zone_transfer_request: "@"
 update_zone_transfer_request: rule:context_is_zonemaster
 delete_zone_transfer_request: rule:context_is_zonemaster
-create_zone_transfer_accept: rule:context_is_master or tenant:%(target_tenant_id)s or None:%(target_tenant_id)s
+create_zone_transfer_accept: rule:context_is_master or project_id:%(target_project_id)s or None:%(target_project_id)s
 get_zone_transfer_accept: rule:context_is_master
 find_zone_transfer_accepts: rule:admin
 find_zone_transfer_accept: rule:admin

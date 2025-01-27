@@ -58,6 +58,7 @@ wsgi_default_pool_size = {{ .Values.wsgi_default_pool_size | default .Values.glo
 
 [oslo_policy]
 policy_file = policy.yaml
+enforce_scope = false
 enforce_new_defaults = false
 
 [oslo_messaging_rabbit]
