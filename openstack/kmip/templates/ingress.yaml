@@ -11,19 +11,20 @@ metadata:
     heritage: "{{ .Release.Service }}"
     system: openstack
     type: api
-    component: barbican
+    component: kmip
   annotations:
   {{- if .Values.tlsacme }}
     kubernetes.io/tls-acme: "true"
+    disco: "true"
   {{- end }}
   {{- include "utils.linkerd.ingress_annotation" . | indent 4 }}
 spec:
   tls:
      - secretName: kmip-barbican
        hosts:
-         - kmip.cc.qa-de-1.cloud.sap
+         - kmip.cc.{{ .Values.global.region }}.{{ .Values.global.tld }}
   rules:
-    - host: kmip.cc.qa-de-1.cloud.sap
+    - host: kmip.cc.{{ .Values.global.region }}.{{ .Values.global.tld }}
       http:
         paths:
         - path: /
