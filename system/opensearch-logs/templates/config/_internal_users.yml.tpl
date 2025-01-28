@@ -20,17 +20,16 @@ data2:
   backend_roles:
   - "data"
 
-greenhouse:
-  hash: "{{ .Values.users.greenhouse.nohash }}"
-  reserved: true
-  backend_roles:
-  - "greenhouse"
-
 storage:
   hash: "{{ .Values.users.storage.nohash }}"
   reserved: true
   backend_roles:
   - "storage"
+
+storage2:
+  hash: "{{ .Values.users.storage2.nohash }}"
+  reserved: true
+  backend_roles:
 
 compute:
   hash: "{{ .Values.users.compute.nohash }}"
@@ -38,42 +37,25 @@ compute:
   backend_roles:
   - "compute"
 
-otel:
-  hash: "{{ .Values.users.otel.nohash }}"
+compute2:
+  hash: "{{ .Values.users.compute2.nohash }}"
   reserved: true
   backend_roles:
-  - "otel"
+  - "compute"
 
-otellogs:
-  hash: "{{ .Values.users.otellogs.nohash }}"
-  reserved: true
-  backend_roles:
-  - "otellogs"
 
 {{- if .Values.qalogs.enabled }}
 dataqade2:
   hash: "{{ .Values.users.dataqade2.nohash }}"
   reserved: true
   backend_roles:
-  - "qade2"
+  - "data"
 
 dataqade3:
   hash: "{{ .Values.users.dataqade3.nohash }}"
   reserved: true
   backend_roles:
-  - "qade3"
-
-dataqade5:
-  hash: "{{ .Values.users.dataqade5.nohash }}"
-  reserved: true
-  backend_roles:
-  - "qade5"
-
-otel2:
-  hash: "{{ .Values.users.otel2.nohash }}"
-  reserved: true
-  backend_roles:
-  - "otel"
+  - "data"
 
 audit:
   hash: "{{ .Values.users.audit.nohash }}"
@@ -81,21 +63,57 @@ audit:
   backend_roles:
   - "audit"
 
+audit2:
+  hash: "{{ .Values.users.audit2.nohash }}"
+  reserved: true
+  backend_roles:
+  - "audit"
+
+otel:
+  hash: "{{ .Values.users.otel.nohash }}"
+  reserved: true
+  backend_roles:
+  - "otel"
+
+otel2:
+  hash: "{{ .Values.users.otel2.nohash }}"
+  reserved: true
+  backend_roles:
+  - "otel"
+
+ronly:
+  hash: "{{ .Values.users.jupyterhub.nohash }}"
+  reserved: true
+  backend_roles:
+  - "promuser"
+
+ronly2:
+  hash: "{{ .Values.users.jupyterhub2.nohash }}"
+  reserved: true
+  backend_roles:
+  - "promuser"
+
 oraboskvm:
   hash: "{{ .Values.users.oraboskvm.nohash }}"
   reserved: true
   backend_roles:
   - "oraboskvm"
 
-otelstorage:
-  hash: "{{ .Values.users.otelstorage.nohash }}"
+oraboskvm2:
+  hash: "{{ .Values.users.oraboskvm2.nohash }}"
   reserved: true
   backend_roles:
-  - "otelstorage"
+  - "oraboskvm"
 {{- end }}
 
 awx:
   hash: "{{ .Values.users.awx.nohash }}"
+  reserved: true
+  backend_roles:
+  - "awx"
+
+awx2:
+  hash: "{{ .Values.users.awx2.nohash }}"
   reserved: true
   backend_roles:
   - "awx"
@@ -106,20 +124,32 @@ jump:
   backend_roles:
   - "jump"
 
+jump2:
+  hash: "{{ .Values.users.jump2.nohash }}"
+  reserved: true
+  backend_roles:
+  - "jump"
+
 jaeger:
   hash: "{{ .Values.users.jaeger.nohash }}"
   reserved: true
   backend_roles:
   - "jaeger"
 
-syslog:
-  hash: "{{ .Values.users.syslog.nohash }}"
+jaeger2:
+  hash: "{{ .Values.users.jaeger2.nohash }}"
   reserved: true
   backend_roles:
-  - "syslog"
+  - "jaeger"
 
 promuser:
   hash: "{{ .Values.users.promuser.nohash }}"
+  reserved: true
+  backend_roles:
+  - "promuser"
+
+promuser2:
+  hash: "{{ .Values.users.promuser2.nohash }}"
   reserved: true
   backend_roles:
   - "promuser"
@@ -130,8 +160,19 @@ admin:
   backend_roles:
   - "adminrole"
 
+admin2:
+  hash: "{{ .Values.users.admin2.nohash }}"
+  reserved: true
+  backend_roles:
+  - "adminrole"
+
 dashboard:
   hash: "{{ .Values.users.dashboard.nohash }}"
+  reserved: true
+  description: "Demo OpenSearch Dashboards user"
+
+dashboard2:
+  hash: "{{ .Values.users.dashboard2.nohash }}"
   reserved: true
   description: "Demo OpenSearch Dashboards user"
 
@@ -148,14 +189,20 @@ maillog:
   backend_roles:
   - "maillog"
 
+maillog2:
+  hash: "{{ .Values.users.maillog2.nohash }}"
+  reserved: true
+  backend_roles:
+  - "maillog2"
+
 jupyterhub:
   hash: "{{ .Values.users.jupyterhub.nohash }}"
   reserved: true
   backend_roles:
   - "jupyterhub"
 
-ronly:
-  hash: "{{ .Values.users.jupyterhub.nohash }}"
+jupyterhub2:
+  hash: "{{ .Values.users.jupyterhub2.nohash }}"
   reserved: true
   backend_roles:
-  - "promuser"
+  - "jupyterhub"

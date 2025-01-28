@@ -14,6 +14,7 @@ adminrole:
   reserved: false
   users:
   -  "admin"
+  -  "admin2"
   backend_roles:
   - CC_IAS_TEAM_SUPERVISION
 
@@ -21,26 +22,19 @@ data:
   reserved: false
   users:
   - "data"
-
-syslog:
-  reserved: false
-  users:
-  - "syslog"
-
-greenhouse:
-  reserved: false
-  users:
-  - "greenhouse"
+  - "data2"
 
 audit:
   reserved: false
   users:
   - "audit"
+  - "audit2"
 
 jump:
   reserved: false
   users:
   - "jump"
+  - "jump2"
 
 logstash:
   reserved: false
@@ -51,16 +45,19 @@ storage:
   reserved: false
   users:
   - "storage"
+  - "storage2"
 
 compute:
   reserved: false
   users:
   - "compute"
+  - "compute2"
 
 awx:
   reserved: false
   users:
   - "awx"
+  - "awx2"
 
 otel:
   reserved: false
@@ -68,20 +65,11 @@ otel:
   - "otel"
   - "otel2"
 
-otellogs:
-  reserved: false
-  users:
-  - "otellogs"
-
-otelstorage:
-  reserved: false
-  users:
-  - "otelstorage"
-
 jaeger:
   reserved: false
   users:
   - "jaeger"
+  - "jaeger2"
 
 complex-role:
   reserved: false
@@ -113,18 +101,15 @@ kibana_server:
   reserved: true
   users:
   - "kibanaserver"
+  - "kibanaserver2"
 
 promrole:
   reserved: false
   users:
   - "promuser"
-  backend_roles:
-  - CC_IAS_OPERATIONS_UI_KIBANA_SUPPORT
-
-oraboskvmrole:
-  reserved: false
-  users:
-  - "oraboskvm"
+  - "promuser2"
+  - "ronly"
+  - "ronly2"
   backend_roles:
   - CC_IAS_OPERATIONS_UI_KIBANA_SUPPORT
 
@@ -132,8 +117,15 @@ jupyterhub:
   reserved: false
   users:
   - "jupyterhub"
+  - "jupyterhub2"
 
 maillog:
   reserved: false
   users:
   - "maillog"
+  - "maillog2"
+oraboskvmrole:
+  reserved: false	
+  users:
+  - "oraboskvm"
+  - "oraboskvm2"
