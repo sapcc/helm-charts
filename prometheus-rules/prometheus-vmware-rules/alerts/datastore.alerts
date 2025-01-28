@@ -407,3 +407,20 @@ groups:
     annotations:
       description: "The Cinder state is reserved but the Cinder tag still exists for the `{{ $labels.datastore }}` datastore of type: _{{ $labels.type }}_ in the *{{ $labels.datacenter }}* availability zone\nLink to the vCenter: --> <https://{{ $labels.vcenter }}|{{ $labels.vcenter }}>"
       summary: "The Cinder state is reserved but the Cinder tag still exists for the `{{ $labels.datastore }}` datastore of type: _{{ $labels.type }}_ in the *{{ $labels.datacenter }}* availability zone\nLink to the vCenter: --> <https://{{ $labels.vcenter }}|{{ $labels.vcenter }}>"
+
+  - alert: DatastoreHostcountMismatch
+    expr: |
+      vrops_datastore_hostcount{datastore=~"^nfs_.+|^vmfs_vc_.+"} < on (vcenter) group_left
+      count by (vcenter) (vrops_hostsystem_runtime_connectionstate{state="connected", vccluster=~"^productionbb\\d+$"}
+      unless on (hostsystem) (vrops_hostsystem_runtime_maintenancestate{state="inMaintenance"}))
+    for: 5m
+    labels:
+      severity: info
+      tier: vmware
+      service: storage
+      support_group: compute
+      meta: "The `{{ $labels.datastore }}` datastore is not connected to all production ESXi hosts in *{{ $labels.vcenter }}* vCenter.\nLink to the vCenter: --> <https://{{ $labels.vcenter }}|{{ $labels.vcenter }}>"
+      playbook: docs/devops/alert/vcenter/#datastorehostcountmismatch
+    annotations:
+      description: "The `{{ $labels.datastore }}` datastore is not connected to all production ESXi hosts in *{{ $labels.vcenter }}* vCenter.\nLink to the vCenter: --> <https://{{ $labels.vcenter }}|{{ $labels.vcenter }}>"
+      summary: "The `{{ $labels.datastore }}` datastore is not connected to all production ESXi hosts in *{{ $labels.vcenter }}* vCenter.\nLink to the vCenter: --> <https://{{ $labels.vcenter }}|{{ $labels.vcenter }}>"
