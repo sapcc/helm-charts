@@ -1,5 +1,6 @@
-{{ if .Values.kvmShoots -}}
+{{- if .Values.kvmShoots -}}
 {{- range $key, $cluster := .Values.kvmShoots }}
+---
 apiVersion: core.gardener.cloud/v1beta1
 kind: Shoot
 metadata:
@@ -33,14 +34,12 @@ spec:
     infrastructureConfig:
       apiVersion: metal.provider.extensions.gardener.cloud/v1alpha1
       kind: InfrastructureConfig
-{{- toYaml $ $cluster.infrastructureConfig | nindent 8 }}
+      {{- toYaml $cluster.infrastructureConfig | nindent 6 }}
     controlPlaneConfig:
       apiVersion: metal.provider.extensions.gardener.cloud/v1alpha1
       kind: ControlPlaneConfig
-{{- toYaml $ $cluster.controlPlaneConfig | nindent 8 }}
+      {{- toYaml $cluster.controlPlaneConfig | nindent 6 }}
     workers:
-{{- range $worker := $cluster.workers }}
-    {{- toYaml $worker | nindent 6 }}
-{{- end }}
+      {{- toYaml $cluster.workers | nindent 6 }}
 {{- end }}
 {{- end }}
