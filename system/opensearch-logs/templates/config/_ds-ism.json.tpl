@@ -15,7 +15,6 @@
                             "min_index_age": "1d"
                         }
                     },
-,
                     {
                         "state_name": "rollover",
                         "conditions": {
