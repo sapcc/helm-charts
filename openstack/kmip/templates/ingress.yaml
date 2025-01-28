@@ -11,7 +11,7 @@ metadata:
     heritage: "{{ .Release.Service }}"
     system: openstack
     type: api
-    component: barbican
+    component: kmip
   annotations:
   {{- if .Values.tlsacme }}
     kubernetes.io/tls-acme: "true"
@@ -20,16 +20,24 @@ metadata:
   {{- include "utils.linkerd.ingress_annotation" . | indent 4 }}
 spec:
   tls:
-     - secretName: kmip-barbican
-       hosts: [{{include "barbican_api_endpoint_host_public" .}}]
+     - secretName: kmip-certificates
+       hosts:
+         - kmip.cc.{{ .Values.global.region }}.{{ .Values.global.tld }}
   rules:
-    - host: {{include "barbican_api_endpoint_host_public" .}}
+    - host: kmip.cc.{{ .Values.global.region }}.{{ .Values.global.tld }}
       http:
         paths:
         - path: /
           pathType: Prefix
           backend:
             service:
-              name: barbican-api
+              name: kmip-barbican
               port:
-                number: {{.Values.api_port_internal}}
+                number: 5696
+        - path: /restapi
+          pathType: Prefix
+          backend:
+            service:
+              name: kmip-barbican
+              port:
+                number: 5006
