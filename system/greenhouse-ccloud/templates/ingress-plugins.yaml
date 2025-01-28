@@ -11,8 +11,8 @@ spec:
   clusterName: {{ $plugin.cluster }}
   displayName: ingress nginx {{ $plugin.cluster }}
   optionValues:
-  - name: controller.image.registry
-    value: keppel.global.cloud.sap/ccloud-registry-k8s-io-mirror
+  - name: global.image.registry
+    value: {{ required ".global.registryK8sIoMirror is missing" $.global.registryK8sIoMirror }}
   - name: controller.ingressClassResource.default
     value: true
   - name: controller.scope.enabled
@@ -20,6 +20,11 @@ spec:
   - name: controller.service.externalIPs
     value:
     - {{ required "externalIP key is missing for ingress plugin" $plugin.externalIP }}
+  - name: controller.service.annotations
+    value:
+      disco: "true"
+      disco/record: {{required "$plugin.recordName" $plugin.recordName | quote}}
+      disco/record-type: "A"
   - name: controller.service.externalTrafficPolicy
     value: Local
   - name: controller.service.loadBalancerIP
