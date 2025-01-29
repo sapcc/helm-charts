@@ -25,5 +25,5 @@ hmac_key_type = CKK_GENERIC_SECRET
 hmac_keygen_mechanism = CKM_GENERIC_SECRET_KEY_GEN
 hmac_mechanism = CKM_SHA256_HMAC
 key_wrap_mechanism = CKM_AES_KEY_WRAP_KWP
-aes_gcm_generate_iv = False
+aes_gcm_generate_iv = True
 {{- end }}
