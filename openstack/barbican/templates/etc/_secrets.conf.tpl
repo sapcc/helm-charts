@@ -20,4 +20,10 @@ mkek_label = {{ .Values.lunaclient.conn.mkek_label | include "resolve_secret" }}
 mkek_length = {{ .Values.lunaclient.conn.mkek_length }}
 hmac_label = {{ .Values.lunaclient.conn.hmac_label | include "resolve_secret" }}
 slot_id = {{ .Values.lunaclient.conn.slot_id }}
+encryption_mechanism = CKM_AES_GCM
+hmac_key_type = CKK_GENERIC_SECRET
+hmac_keygen_mechanism = CKM_GENERIC_SECRET_KEY_GEN
+hmac_mechanism = CKM_SHA256_HMAC
+key_wrap_mechanism = CKM_AES_KEY_WRAP_KWP
+aes_gcm_generate_iv = False
 {{- end }}
