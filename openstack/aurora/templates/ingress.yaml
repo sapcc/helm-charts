@@ -1,0 +1,25 @@
+kind: Ingress
+apiVersion: networking.k8s.io/v1
+
+metadata:
+  name: aurora
+  annotations:
+    nginx.ingress.kubernetes.io/auth-tls-secret: kube-system/ingress-cacrt
+    nginx.ingress.kubernetes.io/auth-tls-verify-client: "optional"
+    nginx.ingress.kubernetes.io/auth-tls-verify-depth: "3"
+    kubernetes.io/tls-acme: {{ default false .Values.ingress.vice_president | quote }}
+spec:
+  tls:
+    - secretName: aurora
+      hosts: [{{ .Values.ingress.host }}]
+  rules:
+  - host: "{{ .Values.ingress.host }}"
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: aurora
+            port:
+              number: 3000
