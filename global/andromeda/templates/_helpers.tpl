@@ -66,6 +66,14 @@ Create the name of the service account to use
 {{- end }}
 {{- end }}
 
+{{- define "andromeda_liquid_server_api"}}
+{{- if .Values.qa -}}
+  andromeda-liquid-qa.{{ include "host_fqdn" . }}
+{{- else }}
+  {{- include "andromeda_liquid_server_api_endpoint_public" . }}
+{{- end }}
+{{- end }}
+
 {{- define "andromeda.database_service" -}}
 {{- if .Values.mariadb.enabled -}}
   {{ include "andromeda.fullname" . }}-mariadb
