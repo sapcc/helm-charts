@@ -4,13 +4,10 @@ apiVersion: networking.k8s.io/v1
 metadata:
   name: aurora
   annotations:
-    nginx.ingress.kubernetes.io/auth-tls-secret: kube-system/ingress-cacrt
-    nginx.ingress.kubernetes.io/auth-tls-verify-client: "optional"
-    nginx.ingress.kubernetes.io/auth-tls-verify-depth: "3"
-    kubernetes.io/tls-acme: {{ default false .Values.ingress.vice_president | quote }}
+    kubernetes.io/tls-acme: "true"
 spec:
   tls:
-    - secretName: aurora-ingress
+    - secretName: aurora-ingress-tls
       hosts: [{{ .Values.ingress.host }}]
   rules:
   - host: "{{ .Values.ingress.host }}"
