@@ -1,0 +1,22 @@
+kind: Ingress
+apiVersion: networking.k8s.io/v1
+
+metadata:
+  name: aurora
+  annotations:
+    kubernetes.io/tls-acme: "true"
+spec:
+  tls:
+    - secretName: aurora-ingress-tls
+      hosts: [{{ .Values.ingress.host }}]
+  rules:
+  - host: "{{ .Values.ingress.host }}"
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: aurora
+            port:
+              number: 3000

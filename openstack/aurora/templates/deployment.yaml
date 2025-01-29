@@ -1,0 +1,70 @@
+kind: Deployment
+apiVersion: apps/v1
+
+metadata:
+  name: aurora
+
+spec:
+  selector:
+    matchLabels:
+      name: aurora
+  revisionHistoryLimit: 5
+  replicas: {{ .Values.replica_count }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 2
+  template:
+    metadata:
+      labels:
+        name: aurora
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              topologyKey: kubernetes.io/hostname
+              labelSelector:
+                matchExpressions:
+                - key: name
+                  operator: In
+                  values:
+                  - aurora
+      # The preStop hook below sleeps 30 seconds, extend the gracePeriod accordingly
+      terminationGracePeriodSeconds: 60
+      containers:
+        - name: server
+          image: "{{.Values.global.registry}}/aurora:{{.Values.image.tag}}"
+          imagePullPolicy: {{.Values.image.pullPolicy}}
+          ports:
+            - name: server
+              containerPort: 3000
+          env:
+            - name: PORT
+              value: "3000"
+            - name: IDENTITY_ENDPOINT
+              value: {{.Values.identity_endpoint}}    
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 3000
+            timeoutSeconds: 10
+            failureThreshold: 3
+            periodSeconds: 60
+            initialDelaySeconds: 60
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 3000
+            timeoutSeconds: 5
+            periodSeconds: 5
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "800Mi"
+            limits:
+              cpu: "2000m"
+              memory: "2Gi"                
