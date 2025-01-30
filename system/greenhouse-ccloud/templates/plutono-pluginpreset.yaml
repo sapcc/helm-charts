@@ -17,12 +17,24 @@ spec:
       - "storage"
       - "compute"
       - "observability"
+  {{- with .Values.plutono.clusterOptionOverrides }}
+  clusterOptionOverrides:
+    {{ toYaml .Values.plutono.clusterOptionOverrides | nindent 4 }}
+  {{- end }}
   plugin:
     disabled: false
     optionValues:
       - name: plutono.service.labels
         value:
           greenhouse.sap/expose: "true"
+      {{- if and .Values.global.ghcrIoMirror .Values.global.quayIoMirror }}
+      - name: plutono.image.registry
+        value: {{ .Values.global.ghcrIoMirror }}
+      - name: plutono.sidecar.image.registry
+        value: {{ .Values.global.quayIoMirror }}
+      - name: plutono.testFramework.image.registry
+        value: {{ .Values.global.ghcrIoMirror }}
+      {{- end }}
     pluginDefinition: plutono
     releaseNamespace: kube-monitoring
 {{- end -}}
