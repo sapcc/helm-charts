@@ -31,7 +31,7 @@ spec:
     - name: region
       value: "{{ .Values.openTelemetryPlugin.openTelemetry.region }}"
     - name: index
-      value: "{{ .Values.openTelemetryPlugin.openTelemetry.index }}"
+      value: "{{ .Values.openTelemetryPlugin.openTelemetry.openSearchLogs.index }}"
   envFrom:
     - secretRef:
          name: otel-basic-auth-ccloud
@@ -94,16 +94,16 @@ spec:
           - action: delete
             key: pod
 {{- end }}
-      attributes/userone_username:
+      attributes/username_a:
         actions:
           - action: insert
             key: username_opensearch
-            value: ${userone_username}
-      attributes/usertwo_username:
+            value: ${username_a}
+      attributes/username_b:
         actions:
           - action: insert
             key: username_opensearch
-            value: ${usertwo_username}
+            value: ${username_b}
       attributes/cluster:
         actions:
           - action: insert
@@ -221,13 +221,13 @@ spec:
       opensearch/one:
         http:
           auth:
-            authenticator: basicauth/userone
+            authenticator: basicauth/usera
           endpoint: https://opensearch-logs-client.scaleout.qa-de-1.cloud.sap:9200
         logs_index: ${index}-datastream
       opensearch/two:
         http:
           auth:
-            authenticator: basicauth/usertwo
+            authenticator: basicauth/userb
           endpoint: https://opensearch-logs-client.scaleout.qa-de-1.cloud.sap:9200
         logs_index: ${index}-datastream
 
@@ -235,14 +235,14 @@ spec:
         endpoint: 0.0.0.0:9999
 
     extensions:
-      basicauth/userone:
+      basicauth/usera:
         client_auth:
-          password: ${userone_password}
-          username: ${userone_username}
-      basicauth/usertwo:
+          password: ${password_a}
+          username: ${username_a}
+      basicauth/userb:
         client_auth:
-          password: ${usertwo_password}
-          username: ${usertwo_username}
+          password: ${password_b}
+          username: ${username_b}
 
     connectors:
       forward: {}
@@ -256,8 +256,8 @@ spec:
 
     service:
       extensions:
-        - basicauth/userone
-        - basicauth/usertwo
+        - basicauth/usera
+        - basicauth/userb
 {{- if .Values.openTelemetryPlugin.openTelemetry.prometheus.podMonitor.enabled }}
       telemetry:
         metrics:
@@ -271,11 +271,11 @@ spec:
           exporters: [failover]
         logs/one:
           receivers: [failover]
-          processors: [attributes/userone_username]
+          processors: [attributes/username_a]
           exporters: [opensearch/one]
         logs/two:
           receivers: [failover]
-          processors: [attributes/usertwo_username]
+          processors: [attributes/username_b]
           exporters: [opensearch/two]
 {{- if .Values.openTelemetryPlugin.openTelemetry.prometheus.podMonitor.enabled }}
         metrics/prometheus:
