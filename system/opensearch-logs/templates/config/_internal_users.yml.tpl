@@ -30,6 +30,19 @@ storage2:
   hash: "{{ .Values.users.storage2.nohash }}"
   reserved: true
   backend_roles:
+  - "storage"
+
+syslog:
+  hash: "{{ .Values.users.syslog.nohash }}"
+  reserved: true
+  backend_roles:
+  - "syslog"
+
+syslog2:
+  hash: "{{ .Values.users.syslog2.nohash }}"
+  reserved: true
+  backend_roles:
+  - "syslog"
 
 compute:
   hash: "{{ .Values.users.compute.nohash }}"
