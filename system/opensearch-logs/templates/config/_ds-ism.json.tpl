@@ -12,14 +12,20 @@
                     {
                         "state_name": "rollover",
                         "conditions": {
-                            "min_index_age": "1d"
+                            "min_index_age": "7d"
                         }
                     },
                     {
                         "state_name": "rollover",
                         "conditions": {
-                            "min_size": "50gb"
-                        }
+                            "min_size": "30gb"
+                        },
+                    {
+                        "state_name": "rollover",
+                        "conditions": {
+                            "max_docs": "50000000"
+                        },
+
                     }
                 ]
             },
