@@ -13,3 +13,17 @@ rules:
     resources: ["secrets"]
     verbs: ["list"]
     resourceNames: []
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: rgw-exporter-init-container-binding
+  namespace: {{ .Release.Namespace }}
+subjects:
+  - kind: ServiceAccount
+    name: rgw-exporter-init-container-service-account
+    namespace: {{ .Release.Namespace }}
+roleRef:
+  kind: Role
+  name: rgw-exporter-init-container-service
+  apiGroup: rbac.authorization.k8s.io
