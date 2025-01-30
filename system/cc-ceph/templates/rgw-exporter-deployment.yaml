@@ -14,14 +14,14 @@ spec:
 {{- $secretName := printf "rook-ceph-object-user-%s-%s" (.Values.objectstore.prysm.rgwMetrics.user.store | default .Values.objectstore.name) .Values.objectstore.prysm.rgwMetrics.user.name }}
     metadata:
       annotations:
-        checksum/secret: {{- with (lookup "v1" "Secret" .Release.Namespace $secretName) -}}
+        checksum/secret: {{ with (lookup "v1" "Secret" .Release.Namespace $secretName) -}}
           {{- if .data -}}
             {{- .data | toJson | sha256sum -}}
           {{- else -}}
-  "no-secret"
+ "no-secret"
           {{- end -}}
         {{- else -}}
-  "no-secret"
+ "no-secret"
         {{- end }}
       labels:
         app: {{ .Values.objectstore.name }}-ext-rgw-exporter
