@@ -26,11 +26,11 @@ spec:
       labels:
         app: {{ .Values.objectstore.name }}-ext-rgw-exporter
     spec:
+      serviceAccountName: rgw-exporter-init-container-service-account
       initContainers:
       - name: wait-for-secret
         image: {{ .Values.objectstore.prysm.initContainer.repository.image }}:{{ .Values.objectstore.prysm.initContainer.repository.tag }}
         imagePullPolicy: {{ .Values.objectstore.prysm.initContainer.repository.pullPolicy }}
-        serviceAccountName: rgw-exporter-init-container-service-account
         command:
           - sh
           - "-c"
@@ -43,6 +43,7 @@ spec:
               echo "Secret is now available!"
         securityContext:
           runAsNonRoot: true
+          runAsUser: 1000
       containers:
       - name: prysm
         image: {{ .Values.objectstore.prysm.repository.image }}:{{ .Values.objectstore.prysm.repository.tag }}
