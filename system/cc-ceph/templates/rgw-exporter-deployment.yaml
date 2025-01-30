@@ -12,9 +12,10 @@ spec:
       app: {{ .Values.objectstore.name }}-ext-rgw-exporter
   template:
     metadata:
+      annotations:
+        checksum/secret: {{ include (print $.Template.BasePath "/rgw-exporter-secret.yaml") . | sha256sum }}
       labels:
         app: {{ .Values.objectstore.name }}-ext-rgw-exporter
-        checksum/secret: {{ include (print $.Template.BasePath "/rgw-exporter-secret.yaml") . | sha256sum }}
     spec:
       containers:
       - name: prysm
