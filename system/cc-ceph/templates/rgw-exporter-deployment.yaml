@@ -37,7 +37,7 @@ spec:
           - |
               # Wait for the secret to be available
               echo "Waiting for secret to be available..."
-              until kubectl -n {{ .Release.Namespace }} get secret -l rook_object_store={{ .Values.objectstore.name }},user={{ .Values.objectstore.prysm.rgwMetrics.user.name }}; do
+              until kubectl -n {{ .Release.Namespace }} get secret -l rook_object_store={{ .Values.objectstore.name }},user={{ .Values.objectstore.prysm.rgwMetrics.user.name }} -o jsonpath='{.items[0].metadata.name}'; do
                 sleep 5
               done
               echo "Secret is now available!"
