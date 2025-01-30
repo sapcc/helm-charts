@@ -61,3 +61,4 @@ process_all_instances = true
 host_auto_failure_recovery_tasks = pre:[{{ join "," .Values.recovery_flows.host_auto.pre }}],main:[{{ join "," .Values.recovery_flows.host_auto.main }}],post:[{{ join "," .Values.recovery_flows.host_auto.post }}]
 host_rh_failure_recovery_tasks = pre:[{{ join "," .Values.recovery_flows.host_reserved.pre }}],main:[{{ join "," .Values.recovery_flows.host_reserved.main }}],post:[{{ join "," .Values.recovery_flows.host_reserved.post }}]
 instance_failure_recovery_tasks = pre:[{{ join "," .Values.recovery_flows.instance.pre }}],main:[{{ join "," .Values.recovery_flows.instance.main }}],post:[{{ join "," .Values.recovery_flows.instance.post }}]
+instance_events = QEMU_GUEST_AGENT_ERROR:["STOPPED_FAILED"],IO_ERROR:["IO_ERROR_REPORT"]
