@@ -25,10 +25,12 @@ spec:
     displayName: Thanos
     pluginDefinition: thanos
     releaseNamespace: kube-monitoring
-    {{- if and .Values.global.quayIoMirror .Values.global.ghcrIoMirror }}
+    {{- if and .Values.global.quayIoMirror .Values.global.ghcrIoMirror .Values.global.dockerHubMirror }}
     optionValues:
     - name: thanos.image.repository
       value: {{ printf "%s/thanos/thanos" .Values.global.quayIoMirror }}
+    - name: thanos.initChownData.image.registry
+      value: {{ .Values.global.dockerHubMirror }}
     - name: testFramework.image.registry
       value: {{ .Values.global.ghcrIoMirror }}
     {{- end }}
