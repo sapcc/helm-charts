@@ -24,7 +24,7 @@
                     {
                         "state_name": "rollover",
                         "conditions": {
-                            "max_docs": "50000000"
+                            "min_doc_count": "50000000"
                         }
                     }
                 ]
