@@ -38,8 +38,6 @@ until_refresh = {{ .Values.usage_until_refresh | default 0 }}
 
 {{- include "osprofiler" . }}
 
-{{ include "ini_sections.oslo_messaging_rabbit" .}}
-
 [oslo_concurrency]
 lock_path = /var/lib/nova/tmp
 
@@ -103,9 +101,6 @@ project_name = "{{.Values.global.keystone_service_project | default "service" }}
 project_domain_name = "{{.Values.global.keystone_service_domain | default "Default" }}"
 valid_interfaces = public
 region_name = {{.Values.global.region}}
-
-{{- include "ini_sections.audit_middleware_notifications" . }}
-
 
 [barbican]
 backend = barbican
