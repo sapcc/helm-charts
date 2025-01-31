@@ -94,16 +94,6 @@ spec:
           - action: delete
             key: pod
 {{- end }}
-      attributes/username_a:
-        actions:
-          - action: insert
-            key: username_opensearch
-            value: ${username_a}
-      attributes/username_b:
-        actions:
-          - action: insert
-            key: username_opensearch
-            value: ${username_b}
       attributes/cluster:
         actions:
           - action: insert
@@ -115,7 +105,16 @@ spec:
           - action: insert
             key: k8s.node.name
             value: ${KUBE_NODE_NAME}
-
+      attributes/failover_username_a:
+        actions:
+          - action: insert
+            key: failover_username_opensearch
+            value: ${failover_username_a}
+      attributes/failover_username_b:
+        actions:
+          - action: insert
+            key: failover_username_opensearch
+            value: ${failover_username_b}
       transform/ingress:
         error_mode: ignore
         log_statements:
@@ -218,46 +217,44 @@ spec:
     exporters:
       debug:
         verbosity: basic
-      opensearch/one:
+      opensearch/failover_a:
         http:
           auth:
-            authenticator: basicauth/usera
+            authenticator: basicauth/failover_a
           endpoint: https://opensearch-logs-client.scaleout.qa-de-1.cloud.sap:9200
         logs_index: ${index}-datastream
-      opensearch/two:
+      opensearch/failover_b:
         http:
           auth:
-            authenticator: basicauth/userb
+            authenticator: basicauth/failover_b
           endpoint: https://opensearch-logs-client.scaleout.qa-de-1.cloud.sap:9200
         logs_index: ${index}-datastream
-
       prometheus:
         endpoint: 0.0.0.0:9999
 
     extensions:
-      basicauth/usera:
+      basicauth/failover_a:
         client_auth:
-          password: ${password_a}
-          username: ${username_a}
-      basicauth/userb:
+          username: ${failover_username_a}
+          password: ${failover_password_a}
+      basicauth/failover_b:
         client_auth:
-          password: ${password_b}
-          username: ${username_b}
+          username: ${failover_username_b}
+          password: ${failover_password_b}
 
     connectors:
       forward: {}
       failover:
         priority_levels:
-          - [logs/one]
-          - [logs/two]
+          - [logs/failover_a]
+          - [logs/failover_b]
         retry_interval: 2m
         retry_gap: 30s
         max_retries: 0
-
     service:
       extensions:
-        - basicauth/usera
-        - basicauth/userb
+        - basicauth/failover_a
+        - basicauth/failover_b
 {{- if .Values.openTelemetryPlugin.openTelemetry.prometheus.podMonitor.enabled }}
       telemetry:
         metrics:
@@ -269,14 +266,14 @@ spec:
           receivers: [forward]
           processors: [batch]
           exporters: [failover]
-        logs/one:
+        logs/failover_a:
           receivers: [failover]
-          processors: [attributes/username_a]
-          exporters: [opensearch/one]
-        logs/two:
+          processors: [attributes/failover_username_a]
+          exporters: [opensearch/failover_a]
+        logs/failover_b:
           receivers: [failover]
-          processors: [attributes/username_b]
-          exporters: [opensearch/two]
+          processors: [attributes/failover_username_b]
+          exporters: [opensearch/failover_b]
 {{- if .Values.openTelemetryPlugin.openTelemetry.prometheus.podMonitor.enabled }}
         metrics/prometheus:
           receivers: [prometheus/internal]
