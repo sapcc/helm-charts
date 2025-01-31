@@ -2,7 +2,7 @@ groups:
 - name: logs-otel.alerts
   rules:
   - alert: LogsOTelLogsMissing
-    expr: rate(otelcol_exporter_sent_log_records_total{job="logs/opentelemetry-collector-logs"}[60m]) > 1
+    expr: rate(otelcol_exporter_sent_log_records_total{job="logs/opentelemetry-collector-logs"}[3h]) > 0
     for: 2m
     labels:
       context: logshipping
