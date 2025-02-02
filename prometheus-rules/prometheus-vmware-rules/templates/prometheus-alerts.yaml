@@ -19,11 +19,15 @@ metadata:
 
 spec:
 {{- $string := $bytes | toString }}
+{{- /* 
+Replaces special whitespace characters to ensure correct YAML formatting. 
+Previously, improper indentation and line breaks caused alerts to be unmatched. 
+This fix applies replacements in place. 
+*/}}
 {{- $string := (regexReplaceAll "\\n\\s+\\n" $string "\n\n") }}
 {{- range $alert := splitList "\n\n" $string }}
 {{- $alertname := (regexReplaceAll "[\\s\\S]+?alert: (\\S+)\\n[\\s\\S]+" $alert "${1}") }}
 {{- if has $alertname (keys $filteredBedrockAlerts) }}
-# Alert expr. templated with bedrock alerts template
 {{- $mappingKey := (printf "%s" (get $bedrockAlerts $alertname)) }}
 {{ regexReplaceAll "([\\s\\S]+?- alert: \\S+)\\n([\\s\\S]+?expr:[\\s\\S]+)" $alert "${1}" | indent 2 }}
 {{ regexReplaceAll "[\\s\\S]+expr.+?(>\\n|\\w|\\|\\n)\\s+([\\s\\S]+?)\\s+\\S+:[\\s\\S]+" $alert (include "bedrockConfirm.expr" (list "$2" $mappingKey)) | indent 6 }}
