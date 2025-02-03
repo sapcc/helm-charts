@@ -121,6 +121,15 @@ data:
     - "indices:admin/create"
     - "indices:data/write/bulk*"
     - "indices:data/write/index"
+  - index_patterns:
+    - "storage-*"
+    allowed_actions:
+    - "indices:admin/template/get"
+    - "indices:admin/template/put"
+    - "indices:admin/mapping/put"
+    - "indices:admin/create"
+    - "indices:data/write/bulk*"
+    - "indices:data/write/index"
 
 syslog:
   reserved: false
