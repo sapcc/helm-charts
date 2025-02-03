@@ -38,7 +38,6 @@ lunaclient ()
     /thales/safenet/lunaclient/bin/64/configurator setValue -s "HAConfiguration" -e haLogPath -v {{ .Values.lunaclient.HAConfiguration.haLogPath | include "resolve_secret" }}
     /thales/safenet/lunaclient/bin/64/configurator setValue -s "HAConfiguration" -e logLen -v {{ .Values.lunaclient.HAConfiguration.logLen }}
     /thales/safenet/lunaclient/bin/64/vtl createCert -n $HOSTNAME-$NOW
-    /thales/safenet/lunaclient/bin/64/vtl cklogsupport enable
 
     #REGISTER HSM1
     echo "Registering HSM01"
