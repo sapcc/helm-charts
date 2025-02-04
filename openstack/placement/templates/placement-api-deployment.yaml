@@ -39,7 +39,7 @@ spec:
 {{ tuple . "placement" "api" | include "kubernetes_pod_anti_affinity" | indent 6 }}
       {{- include "utils.proxysql.pod_settings" . | indent 6 }}
       initContainers:
-      {{- tuple . (dict "service" (include "db_name" .) "jobs" (tuple . "db-migrate" | include "job_name") ) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
+      {{- tuple . (dict "service" (include "placement.db_name" .) "jobs" (tuple . "db-migrate" | include "placement.job_name") ) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
       containers:
       - name: placement-api
         image: {{ required ".Values.global.registry is missing" .Values.global.registry}}/loci-placement:{{.Values.imageVersion | required "Please set .imageVersion or similar" }}
