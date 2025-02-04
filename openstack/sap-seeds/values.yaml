@@ -18,18 +18,34 @@ global:
     skip_hcm_domain: false
 
 extra_specs:
-  forced:
-    "resources:VCPU": "0"
-    "resources:MEMORY_MB": "0"
-    "resources:DISK_GB": "0"
   vmware_common: &vmware_common
     "capabilities:hypervisor_type": "VMware vCenter Server"
     "hw_video:ram_max_mb": "16"
     "vmware:hw_version": "vmx-18"
     "vmware:hv_enabled": "True"
-  vmware:
+  vmware: &vmware
     <<: *vmware_common
     "trait:CUSTOM_HANA_EXCLUSIVE_HOST": "forbidden"
-  vmware_hana_exclusive:
+  vmware_hana_exclusive: &vmware_hana_exclusive
     <<: *vmware_common
     "trait:CUSTOM_HANA_EXCLUSIVE_HOST": "required"
+
+  vmware_common_v1: &vmware_common_v1
+    <<: *vmware_common
+    "vmware:evc_mode": "intel-cascadelake"
+  vmware_v1:
+    <<: *vmware_common_v1
+    <<: *vmware
+  vmware_hana_exclusive_v1:
+    <<: *vmware_common_v1
+    <<: *vmware_hana_exclusive
+
+  vmware_common_v2: &vmware_common_v2
+    <<: *vmware_common
+    "trait:CUSTOM_HW_SAPPHIRE_RAPIDS": "required"
+  vmware_v2:
+    <<: *vmware_common_v2
+    <<: *vmware
+  vmware_hana_exclusive_v1:
+    <<: *vmware_common_v2
+    <<: *vmware_hana_exclusive
