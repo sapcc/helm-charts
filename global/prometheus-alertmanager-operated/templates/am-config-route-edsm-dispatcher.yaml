@@ -1,0 +1,43 @@
+apiVersion: monitoring.coreos.com/v1alpha1
+kind: AlertmanagerConfig
+metadata:
+  name: route-edsm-dispatcher
+  labels:
+    alertmanager: {{ include "alertmanagerRelease.name" . }}
+spec:
+  route:
+    receiver: edsm-dispatcher
+    matchers:
+      - name: alertname
+        matchType: "="
+        value: "SecretExpiration"
+      - name: support_group
+        matchType: "="
+        value: "compute"
+  receivers:
+    - name: edsm-dispatcher
+      webhookConfigs:
+      - sendResolved: true
+        httpConfig:
+          basicAuth:
+            username:
+              name: alertmanager-{{ include "alertmanagerRelease.name" . }}-edsm-dispatcher-secrets
+              key: username
+            password:
+              name: alertmanager-{{ include "alertmanagerRelease.name" . }}-edsm-dispatcher-secrets
+              key: password
+        urlSecret:
+          name: alertmanager-{{ include "alertmanagerRelease.name" . }}-edsm-dispatcher-secrets
+          key: url
+---
+kind: Secret
+apiVersion: v1
+type: Opaque
+metadata:
+  name: alertmanager-{{ include "alertmanagerRelease.name" . }}-edsm-dispatcher-secrets
+  labels:
+    alertmanager: {{ include "alertmanagerRelease.name" . }}
+data:
+  username: {{ required ".Values.edsm-dispatcher.basicAuthUser undefined" .Values.edsm-dispatcher.basicAuthUser | b64enc | quote }}
+  password: {{ required ".Values.edsm-dispatcher.basicAuthPwd undefined" .Values.edsm-dispatcher.basicAuthPwd | b64enc }}
+  url: {{ required ".Values.edsm-dispatcher.listenerURL undefined" .Values.edsm-dispatcher.listenerURL | b64enc | quote }}
