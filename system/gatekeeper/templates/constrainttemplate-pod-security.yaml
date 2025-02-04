@@ -339,6 +339,12 @@ spec:
           iro.metadata.name == "{{ $kubeMonitoringReleaseName }}-falco"
           iro.metadata.namespace == "kube-monitoring"
         }
+        isContainerAllowedToAccessHostPath(container, hostPath, readOnly) = true {
+          isFalcoPod
+          container.name == "falco"
+          regex.match("^keppel\\.[a-z0-9-.]+/ccloud-dockerhub-mirror/falcosecurity/falco(-no-driver|-distroless)?:", container.image)
+          hostPath in ["/boot", "/lib/modules", "/usr", "/etc", "/var/run", "/run/containerd", "/run/crio", "/proc"]
+        }
         isContainerAllowedToBePrivileged(container) = true {
           isFalcoPod
           container.name == "falco"
