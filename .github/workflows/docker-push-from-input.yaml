@@ -19,6 +19,11 @@ on:
         description: 'Run the workflow without pushing the Docker image to the registry'
         type: boolean
         required: false
+      skip-trivy-scan:
+        description: 'Skip the Trivy vulnerability scan'
+        type: boolean
+        required: false
+        default: false
     
 env:
   REGISTRY: ghcr.io
@@ -44,7 +49,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Change directory to Dockerfile location
+      - name: set build context to Dockerfile location
         id: change-dir
         run: echo "CONTEXT=$(dirname ${{ inputs.Dockerfile }})" >> "$GITHUB_OUTPUT"
 
@@ -89,8 +94,6 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           provenance: false
-          #platforms: |
-          #  linux/amd64
 
       - name: Sign the published Docker image
         if: ${{ github.event_name != 'pull_request' }}
@@ -108,6 +111,7 @@ jobs:
     name: Vulnerability Scan
     needs: build
     runs-on: [ ubuntu-latest ]
+    if: ${{ !inputs.skip-trivy-scan }}
     steps:
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@0.29.0
