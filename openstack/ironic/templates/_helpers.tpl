@@ -10,3 +10,15 @@
 {{ $k | quote }}: {{ $v | quote }}
 {{- end }}
 {{- end }}
+
+{{- define "ironic.service_dependencies" }}
+{{- include "ironic.db_service" . }},{{ include "ironic.rabbitmq_service" . -}}
+{{- end }}
+
+{{- define "ironic.db_service" }}
+{{- include "utils.db_host" . }}
+{{- end }}
+
+{{- define "ironic.rabbitmq_service" -}}
+ironic-rabbitmq
+{{- end }}

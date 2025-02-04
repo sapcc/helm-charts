@@ -2,7 +2,7 @@
 {{- include "ini_sections.oslo_messaging_rabbit" .}}
 
 [database]
-connection = {{ include "db_url_mysql" . }}
+connection = {{ include "utils.db_url" . }}
 
 [keystone_authtoken]
 username = {{ .Values.global.ironicServiceUser }}
