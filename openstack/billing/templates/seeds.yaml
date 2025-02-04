@@ -26,6 +26,10 @@ spec:
     {{- end }}
 
   roles:
+  - name: cloud_masterdata_admin
+    description: Master data administrator (global)
+  - name: cloud_masterdata_viewer
+    description: Master data read-only (global)
   - name: masterdata_admin
     description: Master data administrator
   - name: masterdata_viewer
@@ -122,6 +126,12 @@ spec:
           role: cloud_identity_viewer
     {{- end }}
     groups:
+    {{- if eq . "ccadmin" }}
+    - name: CCADMIN_CLOUD_ADMINS
+      role_assignments:
+      - project: cloud_admin
+        role: cloud_masterdata_viewer # we will start with only viewer here; the admin role can be added if the need arises
+    {{- end }}
     {{- if eq . "monsoon3" }}
     - name: MONSOON3_DOMAIN_ADMINS
       role_assignments:
