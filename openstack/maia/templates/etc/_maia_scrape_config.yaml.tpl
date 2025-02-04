@@ -2,6 +2,7 @@
 - job_name: 'maia-exporters'
   scrape_interval: 1m
   scrape_timeout: 55s
+  honor_timestamps: true
   kubernetes_sd_configs:
     - role: endpoints
   relabel_configs:
@@ -86,6 +87,7 @@
 - job_name: 'prometheus-openstack'
   scrape_interval: 1m
   scrape_timeout: 55s
+  honor_timestamps: true
   static_configs:
     - targets: ['prometheus-openstack.prometheus-openstack:9090']
   metric_relabel_configs:
@@ -104,6 +106,7 @@
 - job_name: 'prometheus-infra-collector'
   scrape_interval: 1m
   scrape_timeout: 55s
+  honor_timestamps: true
   static_configs:
     - targets: ['prometheus-infra-collector.infra-monitoring:9090']
   metric_relabel_configs:
@@ -153,6 +156,7 @@
 - job_name: 'prometheus-storage'
   scrape_interval: 1m
   scrape_timeout: 55s
+  honor_timestamps: true
   static_configs:
     - targets: ['prometheus-storage.infra-monitoring:9090']
   metric_relabel_configs:
@@ -182,6 +186,7 @@
   scheme: http
   scrape_interval: "{{ $root.Values.prometheus_vmware.scrape_interval }}"
   scrape_timeout: "{{ $root.Values.prometheus_vmware.scrape_timeout }}"
+  honor_timestamps: true
   tls_config:
     cert_file: /etc/prometheus/secrets/prometheus-auth-sso-cert/sso.crt
     key_file: /etc/prometheus/secrets/prometheus-auth-sso-cert/sso.key
@@ -215,6 +220,7 @@
   scheme: https
   scrape_interval: 1m
   scrape_timeout: 55s
+  honor_timestamps: true
   tls_config:
     cert_file: /etc/prometheus/secrets/prometheus-auth-sso-cert/sso.crt
     key_file: /etc/prometheus/secrets/prometheus-auth-sso-cert/sso.key
@@ -253,6 +259,7 @@
   scheme: https
   scrape_interval: "{{ $root.Values.prometheus_ceph.scrape_interval }}"
   scrape_timeout: "{{ $root.Values.prometheus_ceph.scrape_timeout }}"
+  honor_timestamps: true
   tls_config:
     cert_file: /etc/prometheus/secrets/prometheus-auth-sso-cert/sso.crt
     key_file: /etc/prometheus/secrets/prometheus-auth-sso-cert/sso.key
