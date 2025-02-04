@@ -274,21 +274,6 @@ groups:
       description: "Rate limit for {{ $labels.target_type_uri }} with action {{ $labels.action }} exceeded. Target project: {{ $labels.domain_name }}/{{ $labels.project_name }} ({{ $labels.project_id }})."
       summary: Manila API rate limit exceeded
 
-# row locks
-  - alert: OpenstackManilaMariadbRowLocks
-    expr: mysql_global_status_innodb_row_lock_current_waits{app="manila-mariadb"} > 0
-    for: 5m
-    labels:
-      severity: info
-      tier: os
-      service: manila
-      context: manila-db-locks
-      meta: '{{ $labels.service }} db row locks'
-      support_group: compute-storage-api
-    annotations:
-      description: '{{ $labels.service }} db row locks'
-      summary: '{{ $labels.service }} db row locks'
-
   - alert: OpenstackManilaUnresolvedSentryIssues
     expr: delta(sentry_unresolved_issues_count{project="manila"}[1d]) > 0
     for: 10m

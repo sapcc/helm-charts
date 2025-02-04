@@ -1,0 +1,17 @@
+groups:
+- name: manila-mariadb.alerts
+  rules:
+# row locks
+  - alert: OpenstackManilaMariadbRowLocks
+    expr: mysql_global_status_innodb_row_lock_current_waits{app_kubernetes_io_part_of="manila"} > 0
+    for: 5m
+    labels:
+      severity: info
+      tier: os
+      service: manila
+      context: manila-db-locks
+      meta: '{{ $labels.app_kubernetes_io_instance }} db row locks'
+      support_group: compute-storage-api
+    annotations:
+      description: '{{ $labels.app_kubernetes_io_instance }} db row locks'
+      summary: '{{ $labels.app_kubernetes_io_instance }} db row locks'
