@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.16.0 - 2025/02/04
+- default binary log format changed from MIXED to ROW
+- chart version bumped
+
 ## v0.15.3 - 2025/01/14
 - fixed service selector: added `app.kubernetes.io/instance` label to make service target specific service instance
 - chart version bumped
