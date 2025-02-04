@@ -9,7 +9,7 @@
 {{- end -}}
 
 {{- $liquid_roles := list -}}
-{{- if not $is_global -}}{{/* TODO: use "if not .Values.limes.local_liquids.nova.skip" here once we have liquid-nova */}}
+{{- if not .Values.limes.local_liquids.nova.skip -}}
   {{- /* NOTE: cloud_image_admin is required to determine the OS type for images of running instances */ -}}
   {{- $liquid_roles = concat $liquid_roles (list "cloud_compute_admin" "cloud_image_admin" "cloud_keymanager_admin") -}}
 {{- end -}}
@@ -53,6 +53,7 @@ spec:
     - name: resource_service
     # roles defined by other services (instead of adding complicated seed
     # dependencies between services, we just redefine these roles here)
+    - name: cloud_masterdata_viewer
     {{- range (sortAlpha $liquid_roles) }}
     - name: {{ . }}
     {{- end }}
@@ -84,6 +85,9 @@ spec:
           # permission to enumerate all projects and domains
           - user: limes@Default
             role: admin
+          # permission to read project masterdata (used for e-mail notifications)
+          - user: limes@Default
+            role: cloud_masterdata_viewer
           # (new-style) permission to manage all services' quotas
           - user: limes@Default
             role: resource_service
