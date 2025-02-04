@@ -27,7 +27,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-            fetch-depth: 0
             token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Configure Git
@@ -40,7 +39,6 @@ jobs:
 
       - uses: actions/setup-python@v5
         with:
-            python-version: 3.9
             check-latest: true
             token: ${{ secrets.GITHUB_TOKEN }}
 
@@ -56,13 +54,13 @@ jobs:
         uses: helm/chart-testing-action@v2.6.1
 
       - name: Run chart-testing (lint)
-        run: ct lint --chart-yaml-schema ci/chart_schema.yaml --lint-conf ci/lintconf.yaml --config ci/config.yaml --since HEAD~1 --chart-dirs ${{ inputs.chartDir }}
+        run: ct lint --chart-yaml-schema ci/chart_schema.yaml --lint-conf ci/lintconf.yaml --config ci/config.yaml --chart-dirs ${{ inputs.chartDir }}
 
       - name: Push Charts to GHCR
         run: |
             helm dependency update ${{ inputs.chartDir }}
             helm package ${{ inputs.chartDir }} -d ${{ inputs.chartDir }}
-            PKG_NAME=`ls ${{ inputs.chartDir }}/*.tgz`
+            PKG_NAME=$(ls ${{ inputs.chartDir }}/*.tgz)
             if [ ${{ inputs.dry-run }} == 'true' ]; then
               echo "Dry run: Skipping push of $PKG_NAME"
               exit 0
