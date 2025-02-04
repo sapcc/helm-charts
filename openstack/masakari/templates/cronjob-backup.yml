@@ -1,0 +1,84 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ .Release.Name }}-backup
+  labels:
+    system: openstack
+    type: api
+    component: {{ .Chart.Name }}
+spec:
+  schedule: "0 2 * * *" # Runs every day at 2 AM
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          initContainers:
+          - name: {{ .Chart.Name }}-backup
+            image: {{ required ".Values.global.registry is missing" .Values.global.registry}}/loci-masakari:{{.Values.imageVersion | required "Please set .imageVersion or similar" }}
+            imagePullPolicy: IfNotPresent
+            env:
+            - name: DB_PATH
+              value: "/database/masakari.sqlite"
+            - name: BACKUP_PATH
+              value: "/backup"
+            volumeMounts:
+            - name: masakari-database
+              mountPath: /database
+            - name: masakari-backup
+              mountPath: /backup
+            - name: backup-script
+              mountPath: /script
+            command: ["/bin/bash", "-c", "/script/backup.sh"]
+          containers:
+          - name: {{ .Chart.Name }}-upload-backup
+            image: "keppel.eu-de-1.cloud.sap/ccloud/swift:2023.1-latest"
+            imagePullPolicy: IfNotPresent
+            env:
+            - name: BACKUP_PATH
+              value: "/backup"
+            - name: "OBJECT_NAME"
+              value: "{{.Values.global.region}}/masakari"
+            - name: OS_AUTH_URL
+              value: "https://identity-3.{{.Values.global.region}}.cloud.sap/v3"
+            - name: OS_REGION_NAME
+              value: "{{.Values.global.region}}"
+            - name: OS_PROJECT_NAME
+              value: "{{ .Values.backup.OS_PROJECT_NAME }}"
+            - name: OS_PROJECT_DOMAIN_NAME
+              value: "{{ .Values.backup.OS_PROJECT_DOMAIN_NAME }}"
+            - name: OS_USER_DOMAIN_NAME
+              value: "{{ .Values.backup.OS_USER_DOMAIN_NAME }}"
+            - name: OS_USERNAME
+              value: "{{ .Values.backup.OS_USERNAME }}"
+            - name: OS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-etc
+                  key: db_password
+            - name: EXPIRATION_TIME
+              value: "{{ .Values.backup.EXPIRATION_TIME }}"
+            volumeMounts:
+            - name: upload-script
+              mountPath: /script
+            - name: masakari-backup
+              mountPath: /backup
+            command: ["/bin/bash", "-c", "/script/upload.sh"]
+          restartPolicy: OnFailure
+          volumes:
+          - name: backup-script
+            configMap:
+              name: {{ .Release.Name }}-backup-script
+              defaultMode: 0744
+          - name: upload-script
+            configMap:
+              name: {{ .Release.Name }}-upload-script
+              defaultMode: 0744
+          - name: masakari-database
+            persistentVolumeClaim:
+              claimName: masakari-database
+          - name: masakari-backup
+            persistentVolumeClaim:
+              claimName: masakari-backup
+          - name: masakari-etc-confd
+            secret:
+              secretName: masakari-etc
