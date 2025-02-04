@@ -159,10 +159,18 @@ spec:
               name: neutron-etc
               subPath: api-paste.ini
               readOnly: true
+{{- if hasKey .Values.sapccsentry.enabled "server"  | ternary .Values.sapccsentry.enabled.server
+      (hasKey .Values.sapccsentry.enabled "default" | ternary .Values.sapccsentry.enabled.default false ) }}
+            - mountPath: /etc/neutron/logging.conf
+              name: neutron-etc
+              subPath: logging_sapccsentry.conf
+              readOnly: true
+{{- else }}
             - mountPath: /etc/neutron/logging.conf
               name: neutron-etc
               subPath: logging.conf
               readOnly: true
+{{- end }}
 {{- if .Values.cc_fabric.enabled }}
             - mountPath: /etc/neutron/plugins/ml2/ml2_conf_cc-fabric.ini
               name: neutron-etc-cc-fabric
