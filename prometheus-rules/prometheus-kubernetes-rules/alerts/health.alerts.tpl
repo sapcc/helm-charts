@@ -149,6 +149,20 @@ groups:
       description: "The pod {{`{{ $labels.namespace }}`}}/{{`{{ $labels.pod }}`}} is not ready for more then 2h."
       summary: "Pod not ready for a long time"
 
+  - alert: PodNotSchedulable
+    expr: max by (namespace, pod) (kube_pod_status_unschedulable > 0) * on (namespace, pod) group_left(label_alert_tier, label_alert_service, label_ccloud_support_group, label_ccloud_service) (max without (uid) (kube_pod_labels))
+    for: 1h
+    labels:
+      tier: {{ include "alertTierLabelOrDefault" .Values.tier }}
+      service: {{ include "serviceFromLabelsOrDefault" "k8s" }}
+      support_group: {{ include "supportGroupFromLabelsOrDefault" .Values.supportGroup }}
+      severity: warning
+      context: pod
+      meta: "Pod {{`{{ $labels.namespace }}`}}/{{`{{ $labels.pod }}`}} cannot pull all container images"
+    annotations:
+      description: The pod {{`{{ $labels.namespace }}`}}/{{`{{ $labels.pod }}`}} cannot pull all container images.{{`{{ if eq $labels.support_group "containers"}}`}} Is `owner-info` set --> Contact respective service owner! If not, try finding him/her and make sure, `owner-info` is set!{{`{{ end }}`}}
+      summary: Pod cannot pull all container images
+
   - alert: PrometheusMultiplePodScrapes
     expr: sum by(pod, namespace, label_alert_service, label_alert_tier, label_ccloud_service, label_ccloud_support_group) (label_replace((up * on(instance) group_left() (sum by(instance) (up{job=~".*pod-sd"}) > 1)* on(pod) group_left(label_alert_tier, label_alert_service, label_ccloud_support_group, label_ccloud_service) (max without(uid) (kube_pod_labels))) , "pod", "$1", "kubernetes_pod_name", "(.*)-[0-9a-f]{8,10}-[a-z0-9]{5}"))
     for: 30m
