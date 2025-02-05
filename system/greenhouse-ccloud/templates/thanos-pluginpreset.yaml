@@ -33,5 +33,17 @@ spec:
       value: {{ .Values.global.dockerHubMirror }}
     - name: testFramework.image.registry
       value: {{ .Values.global.ghcrIoMirror }}
+    - name: thanos.ruler.alertmanagers.enabled
+      value: true
+    - name: thanos.ruler.alertmanagers.authentication.ssoCert
+      valueFrom:
+        secret:
+          key: tls.crt
+          name: tls-ccloud-prometheus-auth
+    - name: thanos.ruler.alertmanagers.authentication.ssoKey
+      valueFrom:
+        secret:
+          key: tls.key
+          name: tls-ccloud-prometheus-auth
     {{- end }}
 {{- end -}}
