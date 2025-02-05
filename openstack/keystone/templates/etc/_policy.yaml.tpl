@@ -33,6 +33,8 @@
   'cloud_registry_viewer':%(target.role.name)s or
   'cloud_resource_admin':%(target.role.name)s or
   'cloud_resource_viewer':%(target.role.name)s or
+  'cloud_masterdata_admin':%(target.role.name)s or
+  'cloud_masterdata_viewer':%(target.role.name)s or
   'cloud_baremetal_admin':%(target.role.name)s or
   'cloud_network_admin':%(target.role.name)s or
   'cloud_dns_admin':%(target.role.name)s or
