@@ -21,9 +21,9 @@
   @id in_tail_container_logs
   path /var/log/containers/*.log
 {{- if .Values.swift.enabled }}
-  exclude_path ["/var/log/containers/fluent*","/var/log/containers/swift*"]
+  exclude_path ["/var/log/containers/fluent*", "/var/log/containers/logs-collector*", "/var/log/containers/swift*"]
 {{- else}}
-  exclude_path /var/log/containers/fluent*
+  exclude_path ["/var/log/containers/fluent*", "/var/log/containers/logs-collector*"]
 {{- end}}
   pos_file /var/log/es-containers.log.pos
   read_from_head true
