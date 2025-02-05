@@ -1,4 +1,5 @@
 {{- if .Values.blockrbdpool.enabled }}
+{{- range $target := .Values.rblockrbdpool.pools }}
 ---
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
@@ -10,7 +11,7 @@ parameters:
     # clusterID is the namespace where the rook cluster is running
     clusterID: rook-ceph
     # Ceph pool into which the RBD image shall be created
-    pool: {{ .Values.blockrbdpool.pools.name }}
+    pool: {{ $target.name }}
 
     # (optional) mapOptions is a comma-separated list of map options.
     # For krbd options refer
@@ -61,4 +62,5 @@ reclaimPolicy: Delete
 # Optional, if you want to add dynamic resize for PVC.
 # For now only ext3, ext4, xfs resize support provided, like in Kubernetes itself.
 allowVolumeExpansion: true
+{{- end }}
 {{- end }}

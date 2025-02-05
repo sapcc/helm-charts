@@ -1,23 +1,24 @@
 {{- if .Values.blockrbdpool.enabled }}
+{{- range $target := .Values.rblockrbdpool.pools }}
 ---
 apiVersion: ceph.rook.io/v1
 kind: CephBlockPool
 metadata:
-  name: {{ .Values.blockrbdpool.name }}
+  name: {{ $target.name }}
 spec:
-  {{- if .Values.blockrbdpool.pools.failureDomain }}
-  failureDomain: {{ .Values.blockrbdpool.pools.failureDomain | default "host"  }}
+  {{- if $target.failureDomain }}
+  failureDomain: {{ $target.failureDomain | default "host"  }}
   {{- end }}
   replicated:
-    size: {{ .Values.blockrbdpool.pools.size | default 3 }}
-    {{- if .Values.blockrbdpool.pools.replicasPerFailureDomain }}
-    replicasPerFailureDomain: {{ .Values.blockrbdpool.pools.replicasPerFailureDomain | default 1 }}
+    size: {{ $target.size | default 3 }}
+    {{- if $target.replicasPerFailureDomain }}
+    replicasPerFailureDomain: {{ $target.replicasPerFailureDomain | default 1 }}
     {{- end }}
-    {{- if .Values.blockrbdpool.pools.subFailureDomain }}
-    subFailureDomain: {{ .Values.blockrbdpool.pools.subFailureDomain | default "host" }}
+    {{- if $target.subFailureDomain }}
+    subFailureDomain: {{ $target.subFailureDomain | default "host" }}
     {{- end }}
-  {{- if .Values.blockrbdpool.pools.crushRoot }}
-  crushRoot: {{ .Values.blockrbdpool.pools.crushRoot | default "default" }} 
+  {{- if $target.crushRoot }}
+  crushRoot: {{ $target.crushRoot | default "default" }} 
   {{- end }}
   deviceClass: nvme
   application: rbd
@@ -26,4 +27,5 @@ spec:
     pgp_num: "1024"
     nodelete: {{ $.Values.pool.nodelete | quote }}
     nosizechange: {{ $.Values.pool.nosizechange | quote }}
+{{- end }}
 {{- end }}
