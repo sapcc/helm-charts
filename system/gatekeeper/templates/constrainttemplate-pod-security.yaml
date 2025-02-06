@@ -339,39 +339,16 @@ spec:
           iro.metadata.name == "{{ $kubeMonitoringReleaseName }}-falco"
           iro.metadata.namespace == "kube-monitoring"
         }
-
-        # falco monitors container runtimes and wants to access its kernel module
         isContainerAllowedToAccessHostPath(container, hostPath, readOnly) = true {
           isFalcoPod
           container.name == "falco"
-          regex.match("^keppel\\.[a-z0-9-.]+/ccloud-dockerhub-mirror/falcosecurity/falco-(no-driver|distroless):", container.image)
-          # TODO: after new falco version is rolled out, remove the mounts that are no longer needed in the new version
-          hostPath in ["/boot", "/dev", "/etc", "/lib/modules", "/proc", "/run/containerd", "/run/containerd/containerd.sock", "/run/crio", "/run/crio/crio.sock", "/sys/module", "/sys/module/falco", "/usr", "/var/run", "/var/run/docker.sock"]
+          regex.match("^keppel\\.[a-z0-9-.]+/ccloud-dockerhub-mirror/falcosecurity/falco(-no-driver|-distroless)?:", container.image)
+          hostPath in ["/boot", "/lib/modules", "/usr", "/etc", "/var/run", "/run/containerd", "/run/crio", "/proc"]
         }
         isContainerAllowedToBePrivileged(container) = true {
           isFalcoPod
           container.name == "falco"
-          regex.match("^keppel\\.[a-z0-9-.]+/ccloud-dockerhub-mirror/falcosecurity/falco-(no-driver|distroless):", container.image)
-        }
-
-        # falco-driver-loader loads a kernel module for falco (TODO: remove once the new falco version is rolled out)
-        isContainerAllowedToAccessHostPath(container, hostPath, readOnly) = true {
-          isFalcoPod
-          container.name == "falco-driver-loader"
-          regex.match("^keppel\\.[a-z0-9-.]+/ccloud-dockerhub-mirror/falcosecurity/falco-driver-loader:", container.image)
-          hostPath in ["/boot", "/etc", "/proc", "/usr"]
-          readOnly
-        }
-        isContainerAllowedToAccessHostPath(container, hostPath, readOnly) = true {
-          isFalcoPod
-          container.name == "falco-driver-loader"
-          regex.match("^keppel\\.[a-z0-9-.]+/ccloud-dockerhub-mirror/falcosecurity/falco-driver-loader:", container.image)
-          hostPath in ["/lib/modules"]
-        }
-        isContainerAllowedToBePrivileged(container) = true {
-          isFalcoPod
-          container.name == "falco-driver-loader"
-          regex.match("^keppel\\.[a-z0-9-.]+/ccloud-dockerhub-mirror/falcosecurity/falco-driver-loader:", container.image)
+          regex.match("^keppel\\.[a-z0-9-.]+/ccloud-dockerhub-mirror/falcosecurity/falco(-no-driver|-distroless)?:", container.image)
         }
 
         ########################################################################
@@ -435,6 +412,7 @@ spec:
         ########################################################################
         # allowlist for opentelemetry
 
+        {{- if eq .Values.cluster_type "baremetal" "scaleout" "test" }}
         isOtelPod = true {
           # In the "main" clusters (baremetal and the original scaleouts), Team
           # Supervision deploys several otel daemonsets in the "logs"
@@ -451,7 +429,8 @@ spec:
           hostPath == "/var/log"
           readOnly
         }
-        
+        {{- end }}
+
         ########################################################################
         # allowlist for Ironic pods
 

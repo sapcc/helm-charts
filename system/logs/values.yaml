@@ -2,8 +2,9 @@ owner-info:
   support-group: observability
   service: logs
   maintainers:
-    - "Ivo Gosemann"
     - "Olaf Heydorn"
+    - "Timo Johner"
+    - "Simon Olander"
   helm-chart-url: "https://github.com/sapcc/helm-charts/tree/master/system/logs"
 
 linkerd-support:
@@ -56,6 +57,61 @@ fluent:
       enabled: false
     datastream:
       enabled: false
+
+openTelemetryPlugin:
+  alerts:
+    enabled: false
+  opentelemetry-operator:
+    admissionWebhooks:
+      failurePolicy: 'Ignore'
+      create: true
+      certManager:
+        enabled: true
+      autoGenerateCert:
+        enabled: false
+        recreate: false
+    manager:
+      image:
+        repository: keppel.eu-de-1.cloud.sap/ccloud-ghcr-io-mirror/open-telemetry/opentelemetry-operator/opentelemetry-operator
+        tag: v0.116.0
+      collectorImage:
+        repository: keppel.eu-de-1.cloud.sap/ccloud/opentelemetry-collector-contrib
+        tag: "20250122152049"
+      prometheusRule:
+        enabled: true
+        defaultRules:
+          enabled: true
+      serviceMonitor:
+        enabled: true
+  openTelemetry:
+    customLabels:
+      prometheus: DEFINED-IN-SECRETS
+    openSearchLogs:
+      endpoint: DEFINED-IN-SECRETS
+      failover_username_a: DEFINED-IN-SECRETS
+      failover_password_a: DEFINED-IN-SECRETS
+      failover_username_b: DEFINED-IN-SECRETS
+      failover_password_b: DEFINED-IN-SECRETS
+      index: DEFINED-IN-SECRETS
+    cluster: DEFINED-IN-SECRETS
+    region: DEFINED-IN-SECRETS
+    logsCollector:
+      enabled: false
+      journaldConfig:
+        enabled: false
+      k8seventsConfig:
+        enabled: false
+      containerdConfig:
+        enabled: false
+      kvmConfig:
+        enabled: false
+      cephConfig:
+        enabled: false
+    prometheus:
+      additionalLabels:
+        prometheus: infra-frontend
+      podMonitor:
+        enabled: false
 
 fluent_prometheus:
   enabled: false

@@ -50,6 +50,15 @@ data:
     - "indices:data/write/bulk*"
     - "indices:data/write/index"
   - index_patterns:
+    - "compute-*"
+    allowed_actions:
+    - "indices:admin/template/get"
+    - "indices:admin/template/put"
+    - "indices:admin/mapping/put"
+    - "indices:admin/create"
+    - "indices:data/write/bulk*"
+    - "indices:data/write/index"
+  - index_patterns:
     - "kubernikus-*"
     allowed_actions:
     - "indices:admin/template/get"
@@ -121,6 +130,15 @@ data:
     - "indices:admin/create"
     - "indices:data/write/bulk*"
     - "indices:data/write/index"
+  - index_patterns:
+    - "storage-*"
+    allowed_actions:
+    - "indices:admin/template/get"
+    - "indices:admin/template/put"
+    - "indices:admin/mapping/put"
+    - "indices:admin/create"
+    - "indices:data/write/bulk*"
+    - "indices:data/write/index"
 
 syslog:
   reserved: false
@@ -153,24 +171,6 @@ syslog:
     - "indices:data/write/index"
   - index_patterns:
     - "deployments-*"
-    allowed_actions:
-    - "indices:admin/template/get"
-    - "indices:admin/template/put"
-    - "indices:admin/mapping/put"
-    - "indices:admin/create"
-    - "indices:data/write/bulk*"
-    - "indices:data/write/index"
-  - index_patterns:
-    - "nsxt-*"
-    allowed_actions:
-    - "indices:admin/template/get"
-    - "indices:admin/template/put"
-    - "indices:admin/mapping/put"
-    - "indices:admin/create"
-    - "indices:data/write/bulk*"
-    - "indices:data/write/index"
-  - index_patterns:
-    - "netflow-*"
     allowed_actions:
     - "indices:admin/template/get"
     - "indices:admin/template/put"

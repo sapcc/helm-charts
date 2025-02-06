@@ -17,6 +17,8 @@ tests/%.out.yaml: tests/%.in.yaml
 	helm-manifest-generator < $< > $@
 
 render-charts: FORCE
+	@# just to be safe from stupid mistakes because an old chart version cached
+	helm dep up
 	./tests/render-charts.sh
 
 FORCE:
