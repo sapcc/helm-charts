@@ -52,15 +52,6 @@ spec:
   domains:
   - name: Default
     users:
-    {{/* TODO: remove the billing@Default user account once CBR has migrated to their new technical user */}}
-    {{- if not .Values.is_global }}
-    - name: billing # service user for the billing API itself
-      description: 'Billing Service'
-      password: {{ printf "%s/%s/billing/keystone-user/service/password" $vbase $region | quote }}
-      role_assignments:
-      - project: service
-        role: service
-    {{- end }}
     - name: masterdata_scanner # service user for a data quality check job
       description: 'Masterdata Scanner (Data Quality Validation)'
       password: {{ printf "%s/%s/billing/keystone-user/masterdata-scanner/password" $vbase $region | quote }}
@@ -124,6 +115,10 @@ spec:
       role_assignments:
         - user: masterdata_scanner@Default
           role: cloud_identity_viewer
+        {{- if and (eq $.Values.global.region "qa-de-1") (not $.Values.is_global)}}
+        - user: TCC_BILLING_001
+          role: cloud_masterdata_viewer
+        {{end}}
     {{- end }}
     groups:
     {{- if eq . "ccadmin" }}
