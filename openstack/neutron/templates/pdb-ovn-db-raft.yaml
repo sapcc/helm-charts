@@ -1,0 +1,11 @@
+{{- if ((.Values).ovn).enabled | default false }}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: ovndb-raft-pdb
+spec:
+  minAvailable: {{ div (add (default 3 .Values.ovn.replicas) 1) 2 }}
+  selector:
+    matchLabels:
+      name: ovnkube-db
+{{- end }}
