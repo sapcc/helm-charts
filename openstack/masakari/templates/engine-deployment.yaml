@@ -79,17 +79,12 @@ spec:
         resources:
 {{ toYaml .Values.pod.resources.masakari | indent 10 }}
         volumeMounts:
-        - name: masakari-database
-          mountPath: /database
         - mountPath: /etc/masakari
           name: masakari-etc
         - mountPath: /etc/masakari/masakari.conf.d
           name: masakari-etc-confd
         {{- include "utils.trust_bundle.volume_mount" . | indent 8 }}
       volumes:
-      - name: masakari-database
-        persistentVolumeClaim:
-          claimName: masakari-database
       - name: masakari-etc
         configMap:
           name: masakari-etc
