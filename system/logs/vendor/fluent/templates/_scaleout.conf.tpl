@@ -108,8 +108,8 @@
     hosts {{.Values.global.opensearch.host}}
     scheme https
     port {{.Values.global.opensearch.port}}
-    user "#{ENV['USER1']}"
-    password "#{ENV['PASSWORD1']}"
+    user "#{ENV['USER2']}"
+    password "#{ENV['PASSWORD2']}"
     ssl_verify false
     ssl_version TLSv1_2
     log_os_400_reason true
@@ -144,8 +144,8 @@
     hosts {{.Values.global.opensearch.host}}
     scheme https
     port {{.Values.global.opensearch.port}}
-    user "#{ENV['USER2']}"
-    password "#{ENV['PASSWORD2']}"
+    user "#{ENV['USER1']}"
+    password "#{ENV['PASSWORD1']}"
     ssl_verify false
     ssl_version TLSv1_2
     log_os_400_reason true
