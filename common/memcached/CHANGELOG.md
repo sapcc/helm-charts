@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.6.4 - 2025/02/07
+
+* memcached [version](https://github.com/memcached/memcached/wiki/ReleaseNotes1636) bumped to `1.6.36-alpine3.21`
+  * `Critical bugfix for the proxy when using an "internal" backend with extstore enabled. Does not affect the system otherwise.`
+* chart version bumped
+
 ## v0.6.3 - 2025/01/07
 
 * memcached [version](https://github.com/memcached/memcached/wiki/ReleaseNotes1634) bumped to `1.6.34-alpine3.21`
