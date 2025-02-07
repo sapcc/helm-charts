@@ -100,6 +100,7 @@
   @type copy
   <store ignore_error>
     @type opensearch
+    @id "#{ENV['USER2']}"
     logstash_prefix {{.Values.opensearch.indexname}}
     logstash_format true
     template_name {{.Values.opensearch.indexname}}
@@ -136,6 +137,7 @@
   </store>
   <store ignore_if_prev_success ignore_error>
     @type opensearch
+    @id "#{ENV['USER1']}"
     logstash_prefix {{.Values.opensearch.indexname}}
     logstash_format true
     template_name {{.Values.opensearch.indexname}}
