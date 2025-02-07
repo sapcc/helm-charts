@@ -14,11 +14,11 @@ spec:
           restartPolicy: Never
           containers:
           - name: cron-monthly-ticket-analysis-report
-            image: "{{ .Values.global.registry }}/{{ .Values.jupyterhub_cron.images.application.name }}:{{ .Values.jupyterhub_cron.images.application.tag }}"
+            image: "{{ required ".Values.global.registry variable missing" .Values.global.registry }}/{{ .Values.jupyterhub_cron.images.application.name }}:{{ .Values.jupyterhub_cron.images.application.tag }}"
             command: ['sh', '-c']
             args:
             - >
-              papermill /notebooks-git/Ticket_analysis_script.ipynb 
+              papermill /notebooks-git/Ticket_analysis_script.ipynb - -r swift_url $(swift_url) && /linkerd-await --shutdown echo "shutdown linkerd-proxy"
             volumeMounts:
             - name: notebooks-git
               mountPath: /notebooks-git
