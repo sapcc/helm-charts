@@ -3,7 +3,6 @@
 # shellcheck disable=SC3010
 
 # This is the entrypoint script for the "generate-secrets" init container of the elektra pod.
-
 set -eou pipefail
 [[ ${DEBUG:-} != false ]] && set -x
 
@@ -17,6 +16,7 @@ fi
 
 # sets a new secret key
 # double base64 encode to get a string without newlines and 128 characters long after being decoded when deploying
+# 96×3/4 = 128 characters
 SECRET_KEY_BASE=$(head -c 96 /dev/urandom | base64 -w 0 | tr -d '\n' | base64 -w 0)
 
 # check if the old secret exists and if it does, copy the token from it
