@@ -12,7 +12,7 @@ SECRET="$RELEASE-secrets"
 
 # if we already have a secret, we can stop here
 if [[ "$(kubectl get secrets "$SECRET" --ignore-not-found)" != "" ]]; then
-  continue
+  exit 0
 fi
 
 # if kubectl get secret "$OLD_SECRET" >/dev/null 2>&1; then
