@@ -22,8 +22,7 @@ SECRET_KEY_BASE=$(head -c 64 /dev/urandom | base64 | tr -d '\n' | cut -c1-64)
 if [[ -n "$(kubectl get secret "$OLD_SECRET" --ignore-not-found)" ]]; then
   EXISTING_TOKEN=$(kubectl get secret "$OLD_SECRET" -o jsonpath="{.data.monsoon\.rails\.secret\.token}" 2>/dev/null || echo "")
   if [[ -n "$EXISTING_TOKEN" ]]; then
-    # Decode the existing token (Kubernetes stores secrets in base64)
-    SECRET_KEY_BASE=$(echo "$EXISTING_TOKEN" | base64 -d)    
+    SECRET_KEY_BASE=$EXISTING_TOKEN
   fi
 fi
 
