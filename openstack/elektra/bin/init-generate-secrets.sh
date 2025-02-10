@@ -8,7 +8,7 @@ set -eou pipefail
 [[ ${DEBUG:-} != false ]] && set -x
 
 OLD_SECRET="$RELEASE"
-SECRET="$RELEASE-rails-token"
+SECRET="$RELEASE-secrets"
 
 # if we already have a secret, we can stop here
 if [[ "$(kubectl get secrets "$SECRET" --ignore-not-found)" != "" ]]; then
