@@ -50,5 +50,5 @@
 - name: SMTP_PORT
   value: "587"
 - name: SMTP_FROM
-  value: "noreply+%sender%@email.global.cloud.sap"
+  value: "noreply+%sender%@email.global.{{ $.Values.global.tld }}"
 {{- end }}
