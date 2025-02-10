@@ -34,24 +34,19 @@ spec:
         kubectl.kubernetes.io/default-container: {{ .Chart.Name }}-api
         configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
         secrets-hash: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
-        {{- if .Values.proxysql.mode }}
         prometheus.io/scrape: "true"
         prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
-        {{- end }}
         {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
     spec:
 {{ tuple . "masakari" "api" | include "kubernetes_pod_anti_affinity" | indent 6 }}
-      {{- include "utils.proxysql.pod_settings" . | indent 6 }}
       initContainers:
         - name: masakari-init-database
           image: {{ required ".Values.global.registry is missing" .Values.global.registry}}/loci-masakari:{{.Values.imageVersion | required "Please set .imageVersion or similar" }}
           command:
-            - masakari-manage 
-            - db 
+            - masakari-manage
+            - db
             - sync
           volumeMounts:
-          - name: masakari-database
-            mountPath: /database
           - mountPath: /etc/masakari
             name: masakari-etc
           - mountPath: /etc/masakari/masakari.conf.d
@@ -83,24 +78,16 @@ spec:
         - name: masakari-api
           containerPort: {{.Values.masakariApiPortInternal}}
         volumeMounts:
-        - name: masakari-database
-          mountPath: /database
         - mountPath: /etc/masakari
           name: masakari-etc
         - mountPath: /etc/masakari/masakari.conf.d
           name: masakari-etc-confd
-        {{- include "utils.proxysql.volume_mount" . | indent 8 }}
         {{- include "utils.trust_bundle.volume_mount" . | indent 8 }}
-      {{- include "utils.proxysql.container" . | indent 6 }}
       volumes:
-      - name: masakari-database
-        persistentVolumeClaim:
-          claimName: masakari-database
       - name: masakari-etc
         configMap:
           name: masakari-etc
       - name: masakari-etc-confd
         secret:
           secretName: masakari-etc
-      {{- include "utils.proxysql.volumes" . | indent 6 }}
       {{- include "utils.trust_bundle.volumes" . | indent 6 }}

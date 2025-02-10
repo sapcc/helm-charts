@@ -16,4 +16,3 @@ master = true
 memory-report = true
 processes = {{ .Values.uwsgi.processes }}
 wsgi-file = {{ .Values.uwsgi.wsgi_file }}
-

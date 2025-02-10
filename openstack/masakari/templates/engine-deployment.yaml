@@ -34,14 +34,11 @@ spec:
         kubectl.kubernetes.io/default-container: {{ .Chart.Name }}-engine
         configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
         secrets-hash: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
-        {{- if .Values.proxysql.mode }}
         prometheus.io/scrape: "true"
         prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
-        {{- end }}
         {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
     spec:
 {{ tuple . "masakari" "engine" | include "kubernetes_pod_anti_affinity" | indent 6 }}
-      {{- include "utils.proxysql.pod_settings" . | indent 6 }}
       containers:
       - name: {{ .Chart.Name }}-engine
         image: {{ required ".Values.global.registry is missing" .Values.global.registry}}/loci-masakari:{{.Values.imageVersion | required "Please set .imageVersion or similar" }}
@@ -82,22 +79,16 @@ spec:
         resources:
 {{ toYaml .Values.pod.resources.masakari | indent 10 }}
         volumeMounts:
-        - name: masakari-database
-          mountPath: /database
         - mountPath: /etc/masakari
           name: masakari-etc
         - mountPath: /etc/masakari/masakari.conf.d
           name: masakari-etc-confd
         {{- include "utils.trust_bundle.volume_mount" . | indent 8 }}
       volumes:
-      - name: masakari-database
-        persistentVolumeClaim:
-          claimName: masakari-database
       - name: masakari-etc
         configMap:
           name: masakari-etc
       - name: masakari-etc-confd
         secret:
           secretName: masakari-etc
-      {{- include "utils.proxysql.volumes" . | indent 6 }}
       {{- include "utils.trust_bundle.volumes" . | indent 6 }}
