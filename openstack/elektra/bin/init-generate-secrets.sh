@@ -39,7 +39,7 @@ echo -n "
         name: $DEPLOYMENT_NAME
         uid: $(kubectl get deployment "$DEPLOYMENT_NAME" -o jsonpath='{.metadata.uid}')
   data:
-    token: $(head -c 64 /dev/urandom | base64 | tr -d '\n' | cut -c1-64)
+    token: $SECRET_KEY_BASE
 " > secret.yaml
   kubectl create -f secret.yaml
 
