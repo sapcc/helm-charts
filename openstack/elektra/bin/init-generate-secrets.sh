@@ -15,15 +15,15 @@ if [[ "$(kubectl get secrets "$SECRET" --ignore-not-found)" != "" ]]; then
   continue
 fi
 
-if kubectl get secret "$OLD_SECRET" >/dev/null 2>&1; then
-  EXISTING_TOKEN=$(kubectl get secret "$OLD_SECRET" -o jsonpath="{.data.$KEY}" 2>/dev/null || echo "")
-  if [[ -n "$EXISTING_TOKEN" ]]; then
-    # Decode the existing token (Kubernetes stores secrets in base64)
-    SECRET_KEY_BASE=$(echo "$EXISTING_TOKEN" | base64 -d)
-  else
-    SECRET_KEY_BASE=$(head -c 64 /dev/urandom | base64 | tr -d '\n' | cut -c1-64)
-  fi
-fi
+# if kubectl get secret "$OLD_SECRET" >/dev/null 2>&1; then
+#   EXISTING_TOKEN=$(kubectl get secret "$OLD_SECRET" -o jsonpath="{.data.$KEY}" 2>/dev/null || echo "")
+#   if [[ -n "$EXISTING_TOKEN" ]]; then
+#     # Decode the existing token (Kubernetes stores secrets in base64)
+#     SECRET_KEY_BASE=$(echo "$EXISTING_TOKEN" | base64 -d)
+#   else
+#     SECRET_KEY_BASE=$(head -c 64 /dev/urandom | base64 | tr -d '\n' | cut -c1-64)
+#   fi
+# fi
 
 # create new secret with randomly generated token
 echo -n "
@@ -38,7 +38,7 @@ echo -n "
         name: $DEPLOYMENT_NAME
         uid: $(kubectl get deployment "$DEPLOYMENT_NAME" -o jsonpath='{.metadata.uid}')
   data:
-    token: $(SECRET_KEY_BASE)
+    token: $(head -c 64 /dev/urandom | base64 | tr -d '\n' | cut -c1-64)
 " > secret.yaml
   kubectl create -f secret.yaml
 
