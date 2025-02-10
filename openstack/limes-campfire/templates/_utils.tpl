@@ -1,18 +1,16 @@
 {{- define "campfire_image" -}}
-  {{- if contains "DEFINED" $.Values.campfire.image_tag -}}
-    {{ required "This release should be installed by the deployment pipeline!" "" }}
+  {{- if $.Values.campfire.image_tag -}}
+    {{$.Values.global.registry}}/campfire:{{$.Values.campfire.image_tag}}   
   {{- else -}}
-    {{$.Values.global.registry}}/campfire:{{$.Values.campfire.image_tag}}
+    {{ required "This release should be installed by the deployment pipeline!" "" }}
   {{- end -}}
 {{- end -}}
 
 {{- define "campfire_openstack_envvars" }}
 - name: OS_AUTH_URL
   value: "http://keystone.{{ $.Values.global.keystoneNamespace }}.svc.kubernetes.{{ $.Values.global.region }}.{{ $.Values.global.tld }}:5000/v3"
-- name: OS_INTERFACE
-  value: "internal"
 - name: OS_USER_DOMAIN_NAME
-  value: "master"
+  value: "ccadmin"
 - name: OS_USERNAME
   value: "limes"
 - name: OS_PASSWORD
@@ -23,7 +21,7 @@
 - name: OS_PROJECT_DOMAIN_NAME
   value: "ccadmin"
 - name: OS_PROJECT_NAME
-  value: "cloud_admin"
+  value: "master"
 - name: OS_REGION_NAME
   value: {{ quote $.Values.global.region }}
   
