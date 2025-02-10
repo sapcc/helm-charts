@@ -49,6 +49,17 @@ spec:
       # The preStop hook below sleeps 30 seconds, extend the gracePeriod accordingly
       terminationGracePeriodSeconds: 60
       initContainers:
+        - name: generate-secrets
+          image: "{{.Values.global.registry}}/shared-app-images/alpine-kubectl:3.21-latest"
+          imagePullPolicy: "Always"
+          env:
+          - name: DEBUG
+            value: {{ quote .Values.debug }}
+          - name: RELEASE
+            value: {{ quote .Release.Name }}
+          - name: DEPLOYMENT_NAME
+            value: elektra
+          command: [ ash, -c, {{ .Files.Get "bin/init-generate-secrets.sh" | quote }} ]      
         - name: init-database
           image: {{.Values.global.registry}}/elektra:{{.Values.image.tag}}
           command: ['script/init-db.sh']
