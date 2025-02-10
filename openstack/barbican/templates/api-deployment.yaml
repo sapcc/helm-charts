@@ -147,7 +147,11 @@ spec:
             - name: ChrystokiConfigurationPath
               value: "/thales/safenet/lunaclient/config"
           command: [ "/bin/bash", "-c", "--" ]
-          args: [ "while true; do sleep 30; done;" ]
+          args:
+            - |
+              touch /tmp/cklog.txt
+              tail -F /tmp/cklog.txt &
+              while true; do sleep 30; done;
           {{- if .Values.hsm.resources.enabled }}
           resources:
             limits:
