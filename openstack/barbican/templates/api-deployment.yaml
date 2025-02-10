@@ -135,6 +135,8 @@ spec:
         {{- if .Values.hsm.enabled }}
             - name: luna
               mountPath: /thales/
+            - name: shared-tmp
+              mountPath: /tmp/
             {{- include "utils.proxysql.volume_mount" . | indent 12 }}
             {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
         {{- include "utils.proxysql.container" . | indent 8 }}
@@ -166,6 +168,8 @@ spec:
               readOnly: true
             - name: luna
               mountPath: /thales/
+            - name: shared-tmp
+              mountPath: /tmp/
         {{- end }}       
         - name: statsd
           {{- if hasKey .Values.global "dockerHubMirror"}}
@@ -195,7 +199,6 @@ spec:
               mountPath: /etc/statsd/statsd-exporter.yaml
               subPath: statsd-exporter.yaml
               readOnly: true
-
       volumes:
         - name: barbican-etc
           configMap:
@@ -207,6 +210,8 @@ spec:
             - key: secrets.conf
               path: secrets.conf
         - name: etcbarbican
+          emptyDir: {}
+        - name: shared-tmp  # <--- Add this shared emptyDir volume
           emptyDir: {}
         {{- if .Values.hsm.enabled }}
         - name: hsm
