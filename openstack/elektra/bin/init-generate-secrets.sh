@@ -15,8 +15,12 @@ if [[ "$(kubectl get secrets "$SECRET" --ignore-not-found)" != "" ]]; then
   exit 0
 fi
 
+J6Q7yjnhFA5Hix6bImjA3d4jFHVDyWuDcuYk8GrhVhzUMCCJjFSO5HwAt3Z5wxJhULf2AMT5fqtlUOtKHQ5HkOOOqfg9BJl3mvdUsvExLKXxiJolTq61vkrpgnNRzBuA
+
+
 # sets a new secret key
-SECRET_KEY_BASE=$(head -c 64 /dev/urandom | base64 | tr -d '\n' | cut -c1-64)
+# double base64 encode to get a string without newlines and 128 characters long after being decoded when deploying
+SECRET_KEY_BASE=$(head -c 96 /dev/urandom | base64 -w 0 | tr -d '\n' | base64 -w 0)
 
 # check if the old secret exists and if it does, copy the token from it
 if [[ -n "$(kubectl get secret "$OLD_SECRET" --ignore-not-found)" ]]; then
