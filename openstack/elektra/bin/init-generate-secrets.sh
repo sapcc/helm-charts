@@ -15,9 +15,6 @@ if [[ "$(kubectl get secrets "$SECRET" --ignore-not-found)" != "" ]]; then
   exit 0
 fi
 
-J6Q7yjnhFA5Hix6bImjA3d4jFHVDyWuDcuYk8GrhVhzUMCCJjFSO5HwAt3Z5wxJhULf2AMT5fqtlUOtKHQ5HkOOOqfg9BJl3mvdUsvExLKXxiJolTq61vkrpgnNRzBuA
-
-
 # sets a new secret key
 # double base64 encode to get a string without newlines and 128 characters long after being decoded when deploying
 SECRET_KEY_BASE=$(head -c 96 /dev/urandom | base64 -w 0 | tr -d '\n' | base64 -w 0)
