@@ -8,7 +8,7 @@ metadata:
     component: backup-replication
 
 spec:
-  concurrencyPolicy: Replace # restarting a hung s-h-i should be safe (Swift will not store objects if the upload connection resets)
+  concurrencyPolicy: Forbid # if large files take longer than 60m to transfer (which can happen esp. with multiple concurrent transfers), we will be stuck in a loop if we replace the job every 60m
   successfulJobsHistoryLimit: 3
   failedJobsHistoryLimit: 3
   schedule: "59 * * * *"
