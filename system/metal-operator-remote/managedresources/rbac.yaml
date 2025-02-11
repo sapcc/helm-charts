@@ -12,6 +12,19 @@ subjects:
   kind: Group
   name: {{ if contains "qa-de-" .Values.global.region -}} CC_IAS_CONTROLPLANE_QA_ADMIN {{- else -}} CC_IAS_CONTROLPLANE_PROD_ADMIN {{- end }}
 ---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: cc:oidc-ias-viewer
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: view
+subjects:
+- apiGroup: rbac.authorization.k8s.io
+  kind: Group
+  name: {{ if contains "qa-de-" .Values.global.region -}} CC_IAS_CONTROLPLANE_QA_DEVELOPER {{- else -}} CC_IAS_CONTROLPLANE_PROD_DEVELOPER {{- end }}
+---
 apiVersion: v1
 kind: ServiceAccount
 metadata:
