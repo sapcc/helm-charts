@@ -21,25 +21,27 @@
 - name: OS_PROJECT_DOMAIN_NAME
   value: "ccadmin"
 - name: OS_PROJECT_NAME
-  value: "master"
+  value: "cloud_admin"
 - name: OS_REGION_NAME
   value: {{ quote $.Values.global.region }}
   
-- name: MASTERDATA_AUTH_URL
+- name: CRONUS_AUTH_URL
   value: "http://keystone.{{ $.Values.global.keystoneNamespace }}.svc.kubernetes.{{ $.Values.global.region }}.{{ $.Values.global.tld }}:5000/v3"
-- name: MASTERDATA_USER_DOMAIN_NAME
+- name: CRONUS_USER_DOMAIN_NAME
   value: "Default"
-- name: MASTERDATA_USERNAME
+- name: CRONUS_USERNAME
   value: "limes"
-- name: MASTERDATA_PASSWORD
+- name: CRONUS_PASSWORD
   valueFrom:
     secretKeyRef:
       name: campfire-secret
       key: os_password
-- name: MASTERDATA_PROJECT_DOMAIN_NAME
+- name: CRONUS_PROJECT_DOMAIN_NAME
   value: "ccadmin"
-- name: MASTERDATA_PROJECT_NAME
-  value: "cloud_admin"
+- name: CRONUS_PROJECT_NAME
+  value: "master"
+- name: CRONUS_REGION_NAME
+  value: {{ quote $.Values.global.region }}
 {{- end }}
 
 {{- define "campfire_smtp_envvars" }}
