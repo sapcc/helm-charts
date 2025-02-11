@@ -50,17 +50,13 @@ spec:
       terminationGracePeriodSeconds: 60
       serviceAccountName: elektra
       initContainers:
-        - name: generate-secrets
+        - name: generate-token-secret
           image: "{{.Values.global.registry}}/shared-app-images/alpine-kubectl:3.21-latest"
           imagePullPolicy: "Always"
           env:
           - name: DEBUG
-            value: {{ quote .Values.debug }}
-          - name: RELEASE
-            value: {{ quote .Release.Name }}
-          - name: DEPLOYMENT_NAME
-            value: elektra
-          command: [ ash, -c, {{ .Files.Get "bin/init-generate-secrets.sh" | quote }} ]      
+            value: {{ quote .Values.init_container_debug }}
+          command: [ ash, -c, {{ .Files.Get "bin/init-generate-token-secret.sh" | quote }} ]      
         - name: init-database
           image: {{.Values.global.registry}}/elektra:{{.Values.image.tag}}
           command: ['script/init-db.sh']

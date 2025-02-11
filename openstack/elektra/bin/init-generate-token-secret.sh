@@ -6,8 +6,8 @@
 set -eou pipefail
 [[ ${DEBUG:-} != false ]] && set -x
 
-OLD_SECRET="$RELEASE"
-SECRET="$RELEASE-secrets"
+OLD_SECRET="elektra"
+SECRET="elektra-token-secret"
 
 # if we already have a secret, we can stop here
 if [[ "$(kubectl get secrets "$SECRET" --ignore-not-found)" != "" ]]; then
@@ -37,8 +37,8 @@ echo -n "
       - apiVersion: apps/v1
         blockOwnerDeletion: true
         kind: Deployment
-        name: $DEPLOYMENT_NAME
-        uid: $(kubectl get deployment "$DEPLOYMENT_NAME" -o jsonpath='{.metadata.uid}')
+        name: elektra
+        uid: $(kubectl get deployment elektra -o jsonpath='{.metadata.uid}')
   data:
     token: $SECRET_KEY_BASE
 " > secret.yaml
