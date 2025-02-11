@@ -158,9 +158,9 @@ groups:
       support_group: {{ include "supportGroupFromLabelsOrDefault" .Values.supportGroup }}
       severity: warning
       context: pod
-      meta: "Pod {{`{{ $labels.namespace }}`}}/{{`{{ $labels.pod }}`}} cannot pull all container images"
+      meta: "Pod {{`{{ $labels.namespace }}`}}/{{`{{ $labels.pod }}`}} cannot be scheduled"
     annotations:
-      description: The pod {{`{{ $labels.namespace }}`}}/{{`{{ $labels.pod }}`}} cannot pull all container images.{{`{{ if eq $labels.support_group "containers"}}`}} Is `owner-info` set --> Contact respective service owner! If not, try finding him/her and make sure, `owner-info` is set!{{`{{ end }}`}}
+      description: The pod {{`{{ $labels.namespace }}`}}/{{`{{ $labels.pod }}`}} cannot be scheduled. Check its event log with "kubectl describe pod" to see why.{{`{{ if eq $labels.support_group "containers"}}`}} Is `owner-info` set --> Contact respective service owner! If not, try finding him/her and make sure, `owner-info` is set!{{`{{ end }}`}}
       summary: Pod cannot pull all container images
 
   - alert: PrometheusMultiplePodScrapes
