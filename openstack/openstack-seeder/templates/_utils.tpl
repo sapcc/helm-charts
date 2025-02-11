@@ -1,17 +1,17 @@
 {{- define "seeder_environment" }}
 - name: COMMAND
-    value: "bash /scripts/start"
+  value: "bash /scripts/start"
 - name: NAMESPACE
-    value: {{ .Release.Namespace }}
+  value: {{ .Release.Namespace }}
 {{- if .Values.sentry.enabled }}
 - name: SENTRY_DSN
 {{- if .Values.sentry.dsn }}
-    value: {{ .Values.sentry.dsn | quote}}
+  value: {{ .Values.sentry.dsn | quote}}
 {{ else }}
-    valueFrom:
+  valueFrom:
     secretKeyRef:
-        name: sentry
-        key: seeder.DSN
+      name: sentry
+      key: seeder.DSN
 {{- end }}
 {{- end }}
 {{- if .Values.keystone.authUrl }}
