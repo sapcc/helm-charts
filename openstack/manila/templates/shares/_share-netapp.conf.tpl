@@ -70,6 +70,7 @@ netapp_enable_flexgroup = {{ $share.enable_flexgroup | default "False" }}
 {{- if $share.flexgroup_pools }}
 netapp_flexgroup_pools = {{ $share.flexgroup_pools }}
 {{- end }}
+netapp_flexgroup_aggregate_multiplier = {{ $share.flexgroup_aggregate_multiplier | default 4 }}
 # Specify if the FlexVol pools must not be reported when the
 # netapp_enable_flexgroup is enabled. (boolean value)
 netapp_flexgroup_pool_only = {{ $share.disable_flexvol | default "False" }}
