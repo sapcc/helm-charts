@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: controller-manager
+  namespace: system
+spec:
+  template:
+    spec:
+      containers:
+        - name: manager
+          volumeMounts:
+          - name: remote-kubeconfig
+            mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+            readOnly: true
+          env:
+          - name: KUBERNETES_SERVICE_HOST
+            value: "apiserver-url"
+      volumes:
+      - name: remote-kubeconfig
+        secret:
+          secretName: ipam-capi-remote-kubeconfig
+          items:
+          - key: token
+            path: token
+          - key: bundle.crt
+            path: ca.crt
