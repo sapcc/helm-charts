@@ -10,7 +10,7 @@
 - name: OS_AUTH_URL
   value: "http://keystone.{{ $.Values.global.keystoneNamespace }}.svc.kubernetes.{{ $.Values.global.region }}.{{ $.Values.global.tld }}:5000/v3"
 - name: OS_USER_DOMAIN_NAME
-  value: "ccadmin"
+  value: "Default"
 - name: OS_USERNAME
   value: "limes"
 - name: OS_PASSWORD
@@ -28,7 +28,7 @@
 - name: MASTERDATA_AUTH_URL
   value: "http://keystone.{{ $.Values.global.keystoneNamespace }}.svc.kubernetes.{{ $.Values.global.region }}.{{ $.Values.global.tld }}:5000/v3"
 - name: MASTERDATA_USER_DOMAIN_NAME
-  value: "ccadmin"
+  value: "Default"
 - name: MASTERDATA_USERNAME
   value: "limes"
 - name: MASTERDATA_PASSWORD
