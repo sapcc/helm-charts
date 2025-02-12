@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.16.0 - 2025/02/14
+- maintenance job added
+  - currently the [analyze table](https://mariadb.com/kb/en/analyze-table/) task is supported
+  - the[README.md](README.md#analyzetable) is updated with the new maintenance job details
+- chart version bumped
+
 ## v0.15.5 - 2025/02/14
 * `maria-back-me-up` (backup-v2) oauth secret moved to a separate `Secret`
 * chart version bumped
