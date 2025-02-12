@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.16.2 - 2025/02/14
+- maintenance job added
+  - currently the [analyze table](https://mariadb.com/kb/en/analyze-table/) task is supported
+  - the[README.md](README.md#analyzetable) is updated with the new maintenance job details
+- chart version bumped
+
 ## v0.16.1 - 2025/02/18
 * enquote password in /root/.my.cnf
   * this would allow to use `=` and `#` symbols in password
