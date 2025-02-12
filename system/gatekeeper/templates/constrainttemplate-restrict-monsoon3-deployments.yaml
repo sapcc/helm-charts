@@ -1,0 +1,36 @@
+apiVersion: templates.gatekeeper.sh/v1
+kind: ConstraintTemplate
+metadata:
+  name: gkrestrictmonsoon3deployments
+spec:
+  crd:
+    spec:
+      names:
+        kind: GkRestrictMonsoon3Deployments
+      validation:
+        openAPIV3Schema:
+          type: object
+          properties:
+            patterns:
+              type: array
+              items:
+                description: regex pattern that release names must match
+                type: string
+              minItems: 0
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package restrictnewdeployments
+
+        import future.keywords.in
+
+        iro = input.review.object
+        n := iro.metadata.namespace
+        releaseName := iro.metadata.name
+
+        violation[{"msg": msg}] {
+          n == "monsoon3"
+          some pattern in input.parameters.patterns
+          not regex.match(pattern, releaseName)
+          msg := sprintf("deployment of %q is not allowed in namespace monsoon3", [releaseName])
+        }
