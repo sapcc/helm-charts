@@ -12,8 +12,10 @@ metadata:
     prometheus.io/targets: {{ required ".Values.metrics.prometheus missing" .Values.metrics.prometheus | quote }}
     {{- include "utils.linkerd.pod_and_service_annotation" . | indent 4 }}
 spec:
+{{- if .Values.global_setup }}
   type: LoadBalancer
   externalTrafficPolicy: Local
+{{- end }}
   selector:
     app: {{ .Release.Name }}-api
   ports:
