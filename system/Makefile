@@ -69,9 +69,10 @@ build-ipam-capi-remote:
 	@cp kustomize/ipam-capi-remote/managedresource.yaml ipam-capi-remote/templates
 	@mkdir ipam-capi-remote/managedresources
 	@kubectl kustomize kustomize/ipam-capi-remote-managedresources > ipam-capi-remote/managedresources/kustomize.yaml
+	@cp kustomize/ipam-capi-remote-managedresources/rbac.yaml ipam-capi-remote/managedresources
 	@yq -i '.controllerManager.manager.image.tag="$(PROVIDER_IPAM_VERSION)"' ipam-capi-remote/values.yaml
 	@yq -i '.fullnameOverride="ipam-capi"' ipam-capi-remote/values.yaml
-	@yq -i '.version="0.1.4"' ipam-capi-remote/Chart.yaml
+	@yq -i '.version="0.1.5"' ipam-capi-remote/Chart.yaml
 	@$(SED) -i 's/serviceAccountName.*$$/serviceAccountName: default/g' ipam-capi-remote/templates/deployment.yaml
 	@$(SED) -i 's/kind: Role/kind: ClusterRole/g' ipam-capi-remote/managedresources/kustomize.yaml
 
@@ -203,6 +204,7 @@ build-ipam-operator-remote:
 	@cp kustomize/ipam-operator-remote/managedresource.yaml ipam-operator-remote/templates
 	@mkdir ipam-operator-remote/managedresources
 	@kubectl kustomize kustomize/ipam-operator-managedresources > ipam-operator-remote/managedresources/kustomize.yaml
+	@cp kustomize/ipam-operator-managedresources/rbac.yaml ipam-operator-remote/managedresources
 	@yq -i '.controllerManager.manager.image.tag="$(IPAM_VERSION)"' ipam-operator-remote/values.yaml
 	@yq -i '.fullnameOverride="ipam-operator"' ipam-operator-remote/values.yaml
 	@yq -i '.version="0.2.0"' ipam-operator-remote/Chart.yaml
