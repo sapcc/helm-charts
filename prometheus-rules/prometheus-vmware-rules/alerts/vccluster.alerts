@@ -117,3 +117,20 @@ groups:
     annotations:
       description: "The HANA-exclusive {{ $labels.vccluster }} cluster DRS configuration is not set to partially automated in the *{{ $labels.datacenter }}* availability zone\nLink to the vCenter: --> <https://{{ $labels.vcenter }}|{{ $labels.vcenter }}>"
       summary: "The HANA-exclusive {{ $labels.vccluster }} cluster DRS configuration is not set to partially automated in the *{{ $labels.datacenter }}* availability zone\nLink to the vCenter: --> <https://{{ $labels.vcenter }}|{{ $labels.vcenter }}>"
+
+  - alert: VCClusterMemoryDistrubutionOverVMs
+    expr: |
+      (   sum by (vccluster)(vrops_virtualmachine_config_hardware_memory_kilobytes{vccluster=~"productionbb.*"}))
+          / (sum by (vccluster)(vrops_cluster_memory_capacity_total{vccluster=~"productionbb.*"})
+      ) * 100 > 90
+    for: 48h
+    labels:
+      severity: info
+      tier: vmware
+      service: compute
+      support_group: compute
+      context: "Cluster Memory consumption"
+      meta: "Cluster {{ $labels.vccluster }} Memory consumption of VMs is above 90%."
+    annotations:
+      description: "Cluster {{ $labels.vccluster }} Memory consumption of VMs is above 90%."
+      summary: "Cluster {{ $labels.vccluster }} Memory consumption of VMs is above 90%."
