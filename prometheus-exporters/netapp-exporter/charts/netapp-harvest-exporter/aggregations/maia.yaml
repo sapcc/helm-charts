@@ -158,13 +158,31 @@ groups:
     #
     # snampirror relationship
     #
-    # on(filer, destination_volume):
-    #     leads to only looking at volumes on destination side,
-    #     because on source side volume filer and snapmirror filer will not match
+    # NOTE:
+    #
+    # netapp_snapmirror_labels: Local destinations ONLY (from 'snapmirror show' - relationship details).
+    # netapp_snapmirror_destination_labels: Local sources AND destinations (from 'snapmirror list-destinations' - endpoints only).
+    #
+    # Below rules are to export snapmirror relationships to maia from a) destination side and b) source side.
+    # a) from destination side:
+    #     1. include local destinations only (using netapp_snapmirror_labels)
+    #     2. extract volume labels from destination_volume
+    # b) from source side:
+    #     1. include local sources only (using netapp_snapmirror_destination_labels WITH unless)
+    #     2. extract volume labels from source_volume
 
     - record: netapp_snapmirror_labels:maia
       expr: |
-        sum(
+        sum by (
+          availability_zone, derived_relationship_type, destination_cluster,
+          destination_location, destination_node, destination_project_id,
+          destination_share_id, destination_share_name, destination_volume,
+          destination_vserver, group_type, healthy, last_transfer_error,
+          last_transfer_type, local,  region, policy_type, project_id,
+          protectedBy, protectionSourceType, relationship_id,
+          relationship_status, relationship_type, schedule, source_cluster,
+          source_volume, source_vserver, unhealthy_reason
+        ) (
           netapp_snapmirror_labels *
             on(filer, destination_volume) group_left(
               destination_cluster, destination_share_id, destination_share_name,
@@ -182,16 +200,34 @@ groups:
               "destination_share_name", "$1", "share_name", "(.*)"),
               "destination_volume", "$1", "volume", "(.*)"),
               "destination_project_id", "", "project_id")
-        ) by (
-          availability_zone, derived_relationship_type, destination_cluster,
-          destination_location, destination_node, destination_project_id,
-          destination_share_id, destination_share_name, destination_volume,
-          destination_vserver, group_type, healthy, last_transfer_error,
-          last_transfer_type, local,  region, policy_type, project_id,
-          protectedBy, protectionSourceType, relationship_id,
-          relationship_status, relationship_type, schedule, source_cluster,
-          source_volume, source_vserver, unhealthy_reason
         )
+
+    - record: netapp_snapmirror_labels:maia
+      expr: |
+          sum by (
+            availability_zone, project_id, policy_type, relationship_id,
+            source_project_id, source_share_id, source_share_name,
+            source_cluster, source_location, source_vserver, source_volume,
+            destination_cluster, destination_location, destination_vserver, destination_volume,
+          ) (
+            (netapp_snapmirror_destination_labels unless on (source_vserver, source_volume) netapp_snapmirror_labels)
+              * on (filer, source_volume) group_left(
+                  source_cluster, source_share_id, source_share_name,
+                  source_project_id, project_id)
+                label_replace(
+                label_replace(
+                label_replace(
+                label_replace (
+                label_replace (
+                  max (
+                      netapp_volume_labels{app="netapp-harvest-exporter-manila", volume=~"share.*"}
+                  ) by (filer, project_id, share_id, share_name, svm, volume),
+                "source_cluster", "$1", "filer", "(.*)"),
+                "source_volume", "$1", "volume", "(.*)"),
+                "source_share_name", "$1", "share_name", "(.*)"),
+                "source_share_id", "$1", "share_id", "(.*)"),
+                "source_project_id", "$1", "project_id", "(.*)")
+          )
 
     - record: netapp_snapmirror_lag_time:maia
       expr: |
