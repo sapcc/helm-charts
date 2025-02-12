@@ -61,6 +61,19 @@ build-provider-ipam:
 	@yq -i '.fullnameOverride="capi-capi-provider-ipam"' provider-ipam/values.yaml
 	@yq -i '.version="0.0.3"' provider-ipam/Chart.yaml
 
+build-ipam-capi-remote:
+	@rm -rf ipam-capi-remote
+	@cat kustomize/ipam-capi-remote/kustomization.yaml > kustomization.yaml
+	@kubectl kustomize | helmify -crd-dir ipam-capi-remote
+	@cp kustomize/ipam-capi-remote/remote-kubeconfig.yaml ipam-capi-remote/templates
+	@cp kustomize/ipam-capi-remote/managedresource.yaml ipam-capi-remote/templates
+	@mkdir ipam-capi-remote/managedresources
+	@kubectl kustomize kustomize/ipam-capi-remote-managedresources > ipam-capi-remote/managedresources/kustomize.yaml
+	@yq -i '.controllerManager.manager.image.tag="$(PROVIDER_IPAM_VERSION)"' ipam-capi-remote/values.yaml
+	@yq -i '.fullnameOverride="ipam-capi"' ipam-capi-remote/values.yaml
+	@yq -i '.version="0.1.0"' ipam-capi-remote/Chart.yaml
+	@$(SED) -i 's/kind: Role/kind: ClusterRole/g' ipam-capi-remote/managedresources/kustomize.yaml
+
 build-provider-metal3:
 	$(call build-chart,provider-metal3,https://github.com/metal3-io/cluster-api-provider-metal3//config/default,$(PROVIDER_METAL3_VERSION))
 	$(call fix-crds,provider-metal3)
