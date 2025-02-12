@@ -57,8 +57,11 @@ spec:
       k8s_events:
         auth_type: serviceAccount
 {{- end }}
-{{- if .Values.openTelemetryPlugin.openTelemetry.logsCollector.containerdConfig.enabled }}
+{{- if and (.Values.openTelemetryPlugin.openTelemetry.logsCollector.containerdConfig.enabled) (.Values.openTelemetryPlugin.openTelemetry.logsCollector.openstackConfig.enabled) }}
+{{- else if .Values.openTelemetryPlugin.openTelemetry.logsCollector.containerdConfig.enabled }}
   {{- include "containerd.receiver" . | nindent 6 -}}
+{{- else if .Values.openTelemetryPlugin.openTelemetry.logsCollector.openstackConfig.enabled }}
+  {{- include "openstack.receiver" . | nindent 6 -}}
 {{- end }}
 {{- if .Values.openTelemetryPlugin.openTelemetry.prometheus.podMonitor.enabled }}
       prometheus/internal:
@@ -114,32 +117,15 @@ spec:
           - action: insert
             key: failover_username_opensearch
             value: ${failover_username_b}
-      transform/ingress:
-        error_mode: ignore
-        log_statements:
-          - context: log
-            conditions:
-              - resource.attributes["app.label.name"] == "ingress-nginx"
-            statements:
-              - merge_maps(attributes, ExtractGrokPatterns(body, "%{IP:client.address} %{NOTSPACE:client.ident} %{NOTSPACE:client.auth} \\[%{HTTPDATE:timestamp}\\] \"%{WORD:request_method} %{NOTSPACE:request_path} %{WORD:network.protocol.name}/%{NOTSPACE:network.protocol.version}\" %{NUMBER:response} %{NUMBER:content_length:int} %{QUOTEDSTRING} \"%{GREEDYDATA:user_agent}\" %{NUMBER:request_length:int} %{BASE10NUM:request_time:float}( \\[%{NOTSPACE:service}\\])? ?(\\[\\])? %{IP:server.address}\\:%{NUMBER:server.port} %{NUMBER:upstream_response_length:int} %{BASE10NUM:upstream_response_time:float} %{NOTSPACE:upstream_status} %{NOTSPACE:request_id}", true),"upsert")
-              - set(attributes["network.protocol.name"], ConvertCase(attributes["network.protocol.name"], "lower")) where attributes["network.protocol.name"] != nil
-              - set(attributes["config.parsed"], "ingress-nginx") where attributes["client.address"] != nil
-
-      transform/files:
-        error_mode: ignore
-        log_statements:
-          - context: log
-            conditions:
-              - resource.attributes["log.type"] == "files"
-            statements:
-              - merge_maps(attributes, ExtractGrokPatterns(body, "%{TIMESTAMP_ISO8601:timestamp}%{SPACE}%{GREEDYDATA:log}", true), "upsert")
-              - set(attributes["config.parsed"], "files") where attributes["log_level"] != nil
 
 {{- if .Values.openTelemetryPlugin.openTelemetry.logsCollector.journaldConfig.enabled }}
     {{- include "journald.transform" . | nindent 6 -}}
 {{- end }}
-{{- if .Values.openTelemetryPlugin.openTelemetry.logsCollector.containerdConfig.enabled }}
+{{- if and (.Values.openTelemetryPlugin.openTelemetry.logsCollector.containerdConfig.enabled) (.Values.openTelemetryPlugin.openTelemetry.logsCollector.openstackConfig.enabled) }}
+{{- else if .Values.openTelemetryPlugin.openTelemetry.logsCollector.containerdConfig.enabled }}
     {{- include "containerd.transform" . | nindent 6 -}}
+{{- else if .Values.openTelemetryPlugin.openTelemetry.logsCollector.openstackConfig.enabled }}
+    {{- include "openstack.transform" . | nindent 6 -}}
 {{- end }}
 {{- if .Values.openTelemetryPlugin.openTelemetry.logsCollector.k8seventsConfig.enabled }}
     {{- include "k8sevents.transform" . | nindent 6 -}}
@@ -282,8 +268,11 @@ spec:
 {{- if .Values.openTelemetryPlugin.openTelemetry.logsCollector.journaldConfig.enabled }}
     {{- include "journald.pipeline" . | nindent 8 -}}
 {{- end }}
-{{- if .Values.openTelemetryPlugin.openTelemetry.logsCollector.containerdConfig.enabled }}
+{{- if and (.Values.openTelemetryPlugin.openTelemetry.logsCollector.containerdConfig.enabled) (.Values.openTelemetryPlugin.openTelemetry.logsCollector.openstackConfig.enabled) }}
+{{- else if .Values.openTelemetryPlugin.openTelemetry.logsCollector.containerdConfig.enabled }}
     {{- include "containerd.pipeline" . | nindent 8 -}}
+{{- else if .Values.openTelemetryPlugin.openTelemetry.logsCollector.openstackConfig.enabled }}
+    {{- include "openstack.pipeline" . | nindent 8 -}}
 {{- end }}
 {{- if .Values.openTelemetryPlugin.openTelemetry.logsCollector.k8seventsConfig.enabled }}
     {{- include "k8sevents.pipeline" . | nindent 8 -}}
