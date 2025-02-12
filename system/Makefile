@@ -71,7 +71,8 @@ build-ipam-capi-remote:
 	@kubectl kustomize kustomize/ipam-capi-remote-managedresources > ipam-capi-remote/managedresources/kustomize.yaml
 	@yq -i '.controllerManager.manager.image.tag="$(PROVIDER_IPAM_VERSION)"' ipam-capi-remote/values.yaml
 	@yq -i '.fullnameOverride="ipam-capi"' ipam-capi-remote/values.yaml
-	@yq -i '.version="0.1.0"' ipam-capi-remote/Chart.yaml
+	@yq -i '.version="0.1.1"' ipam-capi-remote/Chart.yaml
+	@$(SED) -i 's/serviceAccountName.*$$/serviceAccountName: default/g' ipam-capi-remote/templates/deployment.yaml
 	@$(SED) -i 's/kind: Role/kind: ClusterRole/g' ipam-capi-remote/managedresources/kustomize.yaml
 
 build-provider-metal3:
