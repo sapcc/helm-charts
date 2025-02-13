@@ -7,7 +7,7 @@ set -eou pipefail
 [[ ${DEBUG:-} != false ]] && set -x
 
 OLD_SECRET="elektra"
-SECRET="elektra-token-secret"
+SECRET="elektra-token"
 
 # if we already have a secret, we can stop here
 if [[ "$(kubectl get secrets "$SECRET" --ignore-not-found)" != "" ]]; then
