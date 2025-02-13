@@ -55,7 +55,7 @@
 - name: MONSOON_OPENSTACK_AUTH_API_PASSWORD
   valueFrom: { secretKeyRef:    { name: elektra, key: monsoon.openstack.auth.api.password } }
 - name: MONSOON_RAILS_SECRET_TOKEN
-  valueFrom: { secretKeyRef:    { name: elektra-token-secret, key: token } }
+  valueFrom: { secretKeyRef:    { name: elektra-token, key: token } }
 {{- if .Values.sentryDSN }}
 - name: SENTRY_DSN
 {{- if eq .Values.sentryDSN "auto" }}
