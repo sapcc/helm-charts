@@ -61,12 +61,9 @@ transform/network-generic-ssh-exporter:
       conditions:
         - resource["k8s.container.name"] == "network-generic-ssh-exporter"
       statements:
-        - - merge_maps(cache, ParseJSON(body), "upsert") where IsMatch(body, "^\\{")
+        - merge_maps(cache, ParseJSON(body), "upsert") where IsMatch(body, "^\\{")
         - set(attributes["log_level"], cache["level"])
         - set(attributes["msg"], cache["msg"])
-
-
-
 
 
 {{ end }}
