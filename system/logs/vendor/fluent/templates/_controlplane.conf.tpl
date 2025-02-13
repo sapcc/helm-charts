@@ -532,7 +532,7 @@
     scheme https
     port {{.Values.global.opensearch.port}}
     user "#{ENV['USER1']}"
-    password "#{ENV['PASSWORD1]}"
+    password "#{ENV['PASSWORD1']}"
     log_os_400_reason true
     ssl_verify true
     ssl_version TLSv1_2
