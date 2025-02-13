@@ -2,6 +2,12 @@
 
 This file is used to list changes made in each version of the common chart rabbitmq.
 
+## 0.15.0
+
+- Add [user-credential-updater](https://github.com/sapcc/rabbitmq-user-credential-updater) sidecar container
+- Use sidecar container for runtime password updates
+- Remove `metrics` user, because it's not needed with native prometheus metrics
+
 ## 0.14.0
 
 [@businessbean](https://github.com/businessbean)
@@ -33,6 +39,7 @@ The default is a `ClusterIssuer`, but it can be changed with the respective valu
 It is imporant there, that all names entered are accepted by the certificate-issuer.
 
 ## 0.12.1
+
 - `app` selector label returned, because deployment selector is immutable
 - chart version bumped
 

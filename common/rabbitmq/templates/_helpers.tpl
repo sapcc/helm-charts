@@ -70,6 +70,14 @@ rabbit://{{- $_prefix -}}{{- $_username -}}:{{- $_password -}}@{{- $_rhost -}}:{
 {{- end -}}
 {{- end -}}
 
+{{- define "dockerRegistry" -}}
+{{- if .Values.use_alternate_registry -}}
+{{- .Values.global.registryAlternateRegion -}}
+{{- else -}}
+{{- .Values.global.registry -}}
+{{- end -}}
+{{- end -}}
+
 {{- define "rabbitmq_maintenance_affinity" }}
           - weight: 1
             preference:
