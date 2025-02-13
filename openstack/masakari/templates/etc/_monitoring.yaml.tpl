@@ -91,5 +91,6 @@ openstack:
             monitor: nfs idle
         segments:
           - prod
+          - nested
         notification:
           event: stopped
