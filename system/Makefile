@@ -72,7 +72,7 @@ build-ipam-capi-remote:
 	@cp kustomize/ipam-capi-remote-managedresources/rbac.yaml ipam-capi-remote/managedresources
 	@yq -i '.controllerManager.manager.image.tag="$(PROVIDER_IPAM_VERSION)"' ipam-capi-remote/values.yaml
 	@yq -i '.fullnameOverride="ipam-capi"' ipam-capi-remote/values.yaml
-	@yq -i '.version="0.1.5"' ipam-capi-remote/Chart.yaml
+	@yq -i '.version="0.1.6"' ipam-capi-remote/Chart.yaml
 	@$(SED) -i 's/serviceAccountName.*$$/serviceAccountName: default/g' ipam-capi-remote/templates/deployment.yaml
 	@$(SED) -i 's/kind: Role/kind: ClusterRole/g' ipam-capi-remote/managedresources/kustomize.yaml
 
