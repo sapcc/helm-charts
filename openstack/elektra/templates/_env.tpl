@@ -19,9 +19,9 @@
 - name: MONSOON_DASHBOARD_MAIL_AUTHENTICATION
   value: {{ .Values.monsoon_dashboard_mail_authentication | quote }}
 - name: MONSOON_DASHBOARD_MAIL_USER
-  valueFrom: { secretKeyRef: { name: elektra, key: monsoon.dashboard.mail.user } }
+  valueFrom: { secretKeyRef: { name: elektra-secrets, key: monsoon.dashboard.mail.user } }
 - name: MONSOON_DASHBOARD_MAIL_PASSWORD
-  valueFrom: { secretKeyRef: { name: elektra, key: monsoon.dashboard.mail.password } }
+  valueFrom: { secretKeyRef: { name: elektra-secrets, key: monsoon.dashboard.mail.password } }
 - name: MONSOON_DASHBOARD_AVATAR_URL
   value: {{ .Values.monsoon_dashboard_avatar_url | quote }}
 - name: MONSOON_DASHBOARD_CAM_URL
@@ -42,7 +42,7 @@
 - name: TWO_FACTOR_RADIUS_SERVERS
   value: {{ .Values.two_factor_radius_servers | quote }}
 - name: TWO_FACTOR_RADIUS_SECRET
-  valueFrom: { secretKeyRef:    { name: elektra, key: two-factor-radius-secret } }
+  valueFrom: { secretKeyRef:    { name: elektra-secrets, key: two-factor-radius-secret } }
 - name: TWO_FACTOR_AUTH_DOMAINS
   value: {{ .Values.two_factor_auth_domains | quote }}
 - name: MONSOON_DB_USER
@@ -53,15 +53,15 @@
       name: '{{ $.Release.Name }}-pguser-{{ .Values.postgresql.user }}'
       key: 'postgres-password'
 - name: MONSOON_OPENSTACK_AUTH_API_PASSWORD
-  valueFrom: { secretKeyRef:    { name: elektra, key: monsoon.openstack.auth.api.password } }
+  valueFrom: { secretKeyRef:    { name: elektra-secrets, key: monsoon.openstack.auth.api.password } }
 - name: MONSOON_RAILS_SECRET_TOKEN
-  valueFrom: { secretKeyRef:    { name: elektra, key: monsoon.rails.secret.token } }
+  valueFrom: { secretKeyRef:    { name: elektra-secrets, key: monsoon.rails.secret.token } }
 {{- if .Values.sentryDSN }}
 - name: SENTRY_DSN
 {{- if eq .Values.sentryDSN "auto" }}
   valueFrom: { secretKeyRef:    { name: sentry, key: elektra.DSN } }
 {{- else }}
-  valueFrom: { secretKeyRef:    { name: {{ .Release.Name }}, key: sentryDSN } }
+  valueFrom: { secretKeyRef:    { name: elektra-secrets, key: sentryDSN } }
 {{- end }}
 {{- end }}
 - name: DOMAIN_MASTERDATA_INHERITANCE_BLACKLIST
