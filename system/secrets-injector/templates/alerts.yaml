@@ -2,8 +2,10 @@ apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
   labels:
-    prometheus: kubernetes
     app: secrets-injector
+  {{- with .Values.alerts.ruleSelector }}
+    {{ toYaml . | nindent 4 }}
+  {{- end }}
   name: secrets-injector-alerts
   namespace: {{ .Release.Namespace }}
 spec:
