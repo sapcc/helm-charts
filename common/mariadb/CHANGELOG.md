@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.15.5 - 2025/02/14
+* `maria-back-me-up` (backup-v2) oauth secret moved to a separate `Secret`
+* chart version bumped
+
 ## v0.15.4 - 2025/02/07
 * MariaDB version bumped to [10.5.28](https://mariadb.com/kb/en/mariadb-10-5-28-release-notes/)
   * several fixes for INNODB and other components
