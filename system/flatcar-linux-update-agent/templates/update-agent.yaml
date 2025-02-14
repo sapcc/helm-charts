@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: DaemonSet
 metadata:
   name: flatcar-linux-update-agent
-  namespace: kube-system
+  namespace: {{ .Release.Namespace }}
 spec:
   updateStrategy:
     rollingUpdate:
@@ -20,6 +20,9 @@ spec:
         linkerd.io/inject: enabled
         {{- end }}
     spec:
+      {{- if .Values.priorityClassName }}
+      priorityClassName: {{ .Values.priorityClassName }}
+      {{- end }}
       tolerations:
       - operator: "Exists"
       containers:

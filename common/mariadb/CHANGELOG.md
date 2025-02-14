@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.15.5 - 2025/02/14
+* `maria-back-me-up` (backup-v2) oauth secret moved to a separate `Secret`
+* chart version bumped
+
+## v0.15.4 - 2025/02/07
+* MariaDB version bumped to [10.5.28](https://mariadb.com/kb/en/mariadb-10-5-28-release-notes/)
+  * several fixes for INNODB and other components
+  * memory leaks have been fixed
+  * [CVE-2025-21490](http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2025-21490) has been fixed
+    * a DOS can be triggered from an unauthorized connection
+* chart version bumped
+
 ## v0.15.3 - 2025/01/14
 - fixed service selector: added `app.kubernetes.io/instance` label to make service target specific service instance
 - chart version bumped

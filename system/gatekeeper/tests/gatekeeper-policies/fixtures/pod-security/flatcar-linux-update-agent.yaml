@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  annotations:
+    meta.helm.sh/release-name: maintenance-controller
+    meta.helm.sh/release-namespace: maintenance-controller
+  labels:
+    app.kubernetes.io/managed-by: Helm
+  name: flatcar-linux-update-agent
+  namespace: maintenance-controller
+spec:
+  selector:
+    matchLabels:
+      app: flatcar-linux-update-agent
+  template:
+    metadata:
+      labels:
+        app: flatcar-linux-update-agent
+    spec:
+      containers:
+      - name: update-agent
+        volumeMounts:
+        - mountPath: /var/run/dbus
+          name: var-run-dbus
+        - mountPath: /etc/flatcar
+          name: etc-flatcar
+        - mountPath: /usr/share/flatcar
+          name: usr-share-flatcar
+        - mountPath: /etc/os-release
+          name: etc-os-release
+      volumes:
+      - hostPath:
+          path: /var/run/dbus
+          type: ""
+        name: var-run-dbus
+      - hostPath:
+          path: /etc/flatcar
+          type: ""
+        name: etc-flatcar
+      - hostPath:
+          path: /usr/share/flatcar
+          type: ""
+        name: usr-share-flatcar
+      - hostPath:
+          path: /etc/os-release
+          type: ""
+        name: etc-os-release

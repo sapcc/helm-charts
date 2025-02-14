@@ -522,7 +522,7 @@
   @id copy_swift
   <store>
     @type opensearch
-    @id opensearch_swift
+    @id "opensearch_swift_#{ENV['USER1']}"
     logstash_prefix logstash-swift
     logstash_format true
     template_name logstash-swift
@@ -531,8 +531,8 @@
     hosts {{.Values.global.opensearch.host}}
     scheme https
     port {{.Values.global.opensearch.port}}
-    user "#{ENV['USER']}"
-    password "#{ENV['PASSWORD']}"
+    user "#{ENV['USER1']}"
+    password "#{ENV['PASSWORD1']}"
     log_os_400_reason true
     ssl_verify true
     ssl_version TLSv1_2
@@ -582,23 +582,18 @@
   @type copy
   @id copy_kubernetes
   <store>
-  {{- if .Values.opensearch.datastream.enabled }}
-    @type opensearch_data_stream
-    data_stream_name logs
-  {{- else }}
     @type opensearch
-    @id opensearch_kubernetes
+    @id "opensearch_kubernetes_#{ENV['USER1']}"
     logstash_prefix {{.Values.opensearch.indexname}}
     logstash_format true
     template_name {{.Values.opensearch.indexname}}
     template_file /fluentd/etc/{{.Values.opensearch.indexname}}.json
     template_overwrite false
-  {{- end }}
     hosts {{.Values.global.opensearch.host}}
     scheme https
     port {{.Values.global.opensearch.port}}
-    user "#{ENV['USER']}"
-    password "#{ENV['PASSWORD']}"
+    user "#{ENV['USER1']}"
+    password "#{ENV['PASSWORD1']}"
     log_os_400_reason true
     ssl_verify true
     ssl_version TLSv1_2

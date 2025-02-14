@@ -99,22 +99,18 @@
 <match kubernetes.**>
   @type copy
   <store>
-  {{- if .Values.opensearch.datastream.enabled }}
-    @type opensearch_data_stream
-    data_stream_name logs
-  {{- else }}
     @type opensearch
+    @id "#{ENV['USER1']}"
     logstash_prefix {{.Values.opensearch.indexname}}
     logstash_format true
     template_name {{.Values.opensearch.indexname}}
     template_file /fluentd/etc/{{.Values.opensearch.indexname}}.json
     template_overwrite false
-  {{- end }}
     hosts {{.Values.global.opensearch.host}}
     scheme https
     port {{.Values.global.opensearch.port}}
-    user "#{ENV['USER']}"
-    password "#{ENV['PASSWORD']}"
+    user "#{ENV['USER1']}"
+    password "#{ENV['PASSWORD1']}"
     ssl_verify false
     ssl_version TLSv1_2
     log_os_400_reason true

@@ -412,7 +412,6 @@ spec:
         ########################################################################
         # allowlist for opentelemetry
 
-        {{- if eq .Values.cluster_type "baremetal" "scaleout" "test" }}
         isOtelPod = true {
           # In the "main" clusters (baremetal and the original scaleouts), Team
           # Supervision deploys several otel daemonsets in the "logs"
@@ -429,8 +428,7 @@ spec:
           hostPath == "/var/log"
           readOnly
         }
-        {{- end }}
-
+        
         ########################################################################
         # allowlist for Ironic pods
 
@@ -869,3 +867,18 @@ spec:
           isProjectAuroraPod
         }
         {{- end }}
+
+        ########################################################################
+        # allowlist for flatcar-linux-update-agent
+
+        isFlatcarUpdateAgentPod = true {
+          iro.kind == "DaemonSet"
+          iro.metadata.namespace == "maintenance-controller"
+          iro.metadata.name == "flatcar-linux-update-agent"
+          helmReleaseName == "maintenance-controller"
+        }
+
+        isContainerAllowedToAccessHostPath(container, hostPath, readOnly) = true {
+          isFlatcarUpdateAgentPod
+          hostPath in {"/etc/flatcar", "/etc/os-release", "/usr/share/flatcar", "/var/run/dbus"}
+        }
