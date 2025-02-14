@@ -39,6 +39,12 @@ spec:
     dnsNames: {{ toYaml .Values.objectstore.gateway.dnsNames | nindent 8 }}
 {{- end }}
   gateway:
+  {{- if not (empty .Values.objectstore.gateway.rgwConfig) }}
+    rgwConfig: {{ toYaml .Values.objectstore.gateway.rgwConfig | nindent 6 }}
+  {{- end }}
+  {{- if not (empty .Values.objectstore.gateway.rgwCommandFlags) }}
+    rgwCommandFlags: {{ toYaml .Values.objectstore.gateway.rgwCommandFlags | nindent 6 }}
+  {{- end }}
     annotations:
       checksum/config: {{ include (print $.Template.BasePath "/ceph-config-override.yaml") . | sha256sum }}
     instances: {{ .Values.objectstore.gateway.instances }}
