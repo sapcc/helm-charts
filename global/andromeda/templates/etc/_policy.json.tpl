@@ -6,6 +6,7 @@
   "member": "role:member and rule:project_scope",
   "viewer": "role:gtm_viewer and rule:project_scope",
   "admin": "role:gtm_admin and rule:project_scope",
+  "resource_service": "role:resource_service",
 
   "context_is_admin": "rule:cloud_admin or rule:admin",
   "context_is_editor": "rule:context_is_admin or rule:member",
@@ -53,7 +54,7 @@
   "andromeda:quota:get_all": "rule:context_is_viewer",
   "andromeda:quota:get_all-global": "rule:cloud_admin",
   "andromeda:quota:get_one": "rule:context_is_viewer",
-  "andromeda:quota:get_one-global": "rule:cloud_admin",
-  "andromeda:quota:put": "rule:context_is_admin",
+  "andromeda:quota:get_one-global": "rule:cloud_admin or rule:resource_service",
+  "andromeda:quota:put": "rule:context_is_admin or rule:resource_service",
   "andromeda:quota:delete": "rule:context_is_admin"
 }
