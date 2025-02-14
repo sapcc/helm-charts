@@ -42,7 +42,7 @@
 - name: TWO_FACTOR_RADIUS_SERVERS
   value: {{ .Values.two_factor_radius_servers | quote }}
 - name: TWO_FACTOR_RADIUS_SECRET
-  value: {{ .Values.two_factor_radius_secret | quote }}
+  valueFrom: { secretKeyRef:    { name: elektra, key: two-factor-radius-secret } }
 - name: TWO_FACTOR_AUTH_DOMAINS
   value: {{ .Values.two_factor_auth_domains | quote }}
 - name: MONSOON_DB_USER
