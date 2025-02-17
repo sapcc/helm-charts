@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.15.6 - 2025/02/17
+* make backup storage to AWS flexibel via enablement in `backup-v2` configuration
+
 ## v0.15.5 - 2025/02/14
 * `maria-back-me-up` (backup-v2) oauth secret moved to a separate `Secret`
 * chart version bumped
