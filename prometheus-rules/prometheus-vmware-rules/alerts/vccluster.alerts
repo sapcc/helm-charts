@@ -120,8 +120,12 @@ groups:
 
   - alert: VCClusterMemoryDistrubutionOverVMs
     expr: |
-      (   sum by (vccluster)(vrops_virtualmachine_config_hardware_memory_kilobytes{vccluster=~"productionbb.*"}))
-          / (sum by (vccluster)(vrops_cluster_memory_capacity_total{vccluster=~"productionbb.*"})
+      (
+        sum by (vccluster)(vrops_virtualmachine_memory_consumed_kilobytes{vccluster=~"productionbb.*"}) 
+      unless on (hostsystem) vrops_hostsystem_runtime_maintenancestate{state="inMaintenance"}
+      ) / 
+      ( 
+        sum by (vccluster)(vrops_hostsystem_hardware_memory_size_kilobytes{vccluster=~"productionbb.*"}) unless on (hostsystem) vrops_hostsystem_runtime_maintenancestate{state="inMaintenance"}
       ) * 100 > 90
     for: 48h
     labels:
@@ -134,3 +138,5 @@ groups:
     annotations:
       description: "Cluster {{ $labels.vccluster }} Memory consumption of VMs is above 90%."
       summary: "Cluster {{ $labels.vccluster }} Memory consumption of VMs is above 90%."
+
+
