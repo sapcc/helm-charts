@@ -4,7 +4,7 @@ metadata:
   # since this name changes with every image change, removal and creation of
   # this Job happens on nearly every deployment. Check the helm-chart changes
   # to see if this needs more review.
-  name: {{ tuple . "db-online-migrate" | include "job_name" }}
+  name: {{ tuple . "db-online-migrate" | include "placement.job_name" }}
   labels:
     system: openstack
     type: configuration
@@ -22,7 +22,7 @@ spec:
       restartPolicy: OnFailure
       {{- include "utils.proxysql.job_pod_settings" . | indent 6 }}
       initContainers:
-      {{- tuple . (dict "service" (include "db_name" .) "jobs" (tuple . "db-migrate" | include "job_name") ) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
+      {{- tuple . (dict "service" (include "placement.db_name" .) "jobs" (tuple . "db-migrate" | include "placement.job_name") ) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
       containers:
       - name: db-online-migrate
         image: {{ required ".Values.global.registry is missing" .Values.global.registry}}/loci-placement:{{.Values.imageVersion | required "Please set .imageVersion or similar" }}
