@@ -22,7 +22,7 @@ lunaclient ()
     /thales/safenet/lunaclient/bin/64/configurator setValue -s "Secure Trusted Channel" -e PartitionIdentitiesDir -v /thales/safenet/lunaclient/config/stc/partition_identities
 
     /thales/safenet/lunaclient/bin/64/configurator setValue -s "VirtualToken" -e VirtualToken00Label -v {{ .Values.lunaclient.VirtualToken.VirtualToken00Label | include "resolve_secret" }}
-    {{- if eq .Values.hsm.ha.enabled true }}
+    {{- if .Values.hsm.ha.enabled }}
     /thales/safenet/lunaclient/bin/64/configurator setValue -s "VirtualToken" -e VirtualToken00SN -v 1{{ .Values.lunaclient.VirtualToken.VirtualToken00SN | include "resolve_secret" }}
     /thales/safenet/lunaclient/bin/64/configurator setValue -s "VirtualToken" -e VirtualToken00Members -v {{ .Values.lunaclient.VirtualToken.VirtualToken00Members | include "resolve_secret" }},{{ .Values.lunaclient.VirtualToken.VirtualToken00Members02 | include "resolve_secret" }}
     {{- else}}
@@ -49,7 +49,7 @@ lunaclient ()
     echo "exit" >> /thales/safenet/lunaclient/config/$HOSTNAME-$NOW.txt
     /thales/safenet/lunaclient/bin/64/plink {{ .Values.lunaclient.conn.ip | include "resolve_secret" }} -ssh -l {{ .Values.lunaclient.conn.user | include "resolve_secret" }} -pw {{ .Values.lunaclient.conn.pwd | include "resolve_secret" }} -v < /thales/safenet/lunaclient/config/$HOSTNAME-$NOW.txt
     
-    {{- if eq .Values.hsm.ha.enabled true }}
+    {{- if .Values.hsm.ha.enabled }}
     #REGISTER HSM2
     echo "Registering HSM02"
     /thales/safenet/lunaclient/bin/64/pscp -pw {{ .Values.lunaclient.conn.pwd | include "resolve_secret" }} /thales/safenet/lunaclient/config/certs/$HOSTNAME-$NOW.pem {{ .Values.lunaclient.conn.user | include "resolve_secret" }}@{{ .Values.lunaclient.conn.ip02 | include "resolve_secret" }}:.
@@ -64,6 +64,6 @@ lunaclient ()
     cp /thales/safenet/lunaclient/config/Chrystoki.conf /etc/Chrystoki.conf
     }
 
-{{- if eq .Values.hsm.enabled true }}
+{{- if .Values.hsm.ha.enabled }}
 lunaclient
 {{- end }}
