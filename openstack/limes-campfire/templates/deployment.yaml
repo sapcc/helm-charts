@@ -1,0 +1,65 @@
+kind: Deployment
+apiVersion: apps/v1
+
+metadata:
+  name: campfire
+
+spec:
+  revisionHistoryLimit: 5
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      name: campfire
+  template:
+    metadata:
+      labels:
+        name: campfire
+      annotations:
+        checksum/configmap: {{ include "campfire/templates/configmap.yaml" $ | sha256sum }}
+        kubectl.kubernetes.io/default-container: campfire
+    spec:
+      volumes:
+        - name: config
+          configMap:
+            name: campfire
+      containers:
+        - name: campfire
+          image: {{ include "campfire_image" $ }}
+          imagePullPolicy: IfNotPresent
+          env:
+            {{ include "campfire_openstack_envvars" $ | indent 12 }}
+            {{ include "campfire_smtp_envvars" $ | indent 12 }}
+            - name: CAMPFIRE_API_LISTEN_ADDRESS
+              value: ":80"
+            - name: CAMPFIRE_OSLO_POLICY_PATH
+              value: "/etc/campfire/policy.json"
+          securityContext:
+            runAsNonRoot: true
+          volumeMounts:
+            - mountPath: /etc/campfire
+              name: config
+          livenessProbe:
+            httpGet:
+              path: /healthcheck
+              port: 80
+            timeoutSeconds: 10
+            periodSeconds: 60
+            initialDelaySeconds: 60
+          readinessProbe:
+            httpGet:
+              path: /healthcheck
+              port: 80
+            timeoutSeconds: 5
+            periodSeconds: 5
+          resources:
+            limits:
+              cpu: '1'
+              memory: {{ .Values.campfire.memory_limit }}
+            requests:
+              cpu: {{ .Values.campfire.cpu_request }}
+              memory: {{ .Values.campfire.memory_limit }}

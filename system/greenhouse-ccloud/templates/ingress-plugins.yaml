@@ -19,9 +19,13 @@ spec:
     value: true
   - name: controller.scope.enabled
     value: false
+{{- if $plugin.externalIP }}
   - name: controller.service.externalIPs
     value:
     - {{ required "externalIP key is missing for ingress plugin" $plugin.externalIP }}
+  - name: controller.service.loadBalancerIP
+    value: {{ $plugin.externalIP }}
+{{- end }}
   - name: controller.service.annotations
     value:
       disco: "true"
@@ -29,8 +33,6 @@ spec:
       disco/record-type: "A"
   - name: controller.service.externalTrafficPolicy
     value: Local
-  - name: controller.service.loadBalancerIP
-    value: {{ $plugin.externalIP }}
   - name: controller.config
     value:
       allow-cross-namespace-resources: true

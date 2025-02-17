@@ -273,13 +273,13 @@ mysql_metrics:
         - "name"
         - "provision_state"
       query: |
-        SELECT 
-          uuid, 
-          name, 
+        SELECT
+          uuid,
+          name,
           provision_state,
           COUNT(*) AS in_24hrs_gauge
-        FROM nodes 
-        WHERE updated_at >= NOW() - INTERVAL 1 DAY 
+        FROM nodes
+        WHERE updated_at >= NOW() - INTERVAL 1 DAY
         GROUP BY uuid, provision_state, name;
       values:
         - "in_24hrs_gauge"
@@ -292,10 +292,10 @@ mysql_metrics:
       values:
         - "node_not_in_maint"
       query: |
-        SELECT 
-          COUNT(case when maintenance = 0 then 1 end) AS node_not_in_maint, 
-          uuid, 
-          name, 
+        SELECT
+          COUNT(case when maintenance = 0 then 1 end) AS node_not_in_maint,
+          uuid,
+          name,
           COALESCE(maintenance_reason,'reason unknown') AS maintenance_reason
         FROM nodes
         GROUP BY
@@ -311,10 +311,10 @@ mysql_metrics:
       values:
         - "node_in_maint"
       query: |
-        SELECT 
-          COUNT(case when maintenance = 1 then 1 end) AS node_in_maint, 
-          uuid, 
-          name, 
+        SELECT
+          COUNT(case when maintenance = 1 then 1 end) AS node_in_maint,
+          uuid,
+          name,
           COALESCE(maintenance_reason,'reason unknown') AS maintenance_reason
         FROM nodes
         GROUP BY
@@ -328,21 +328,23 @@ mysql_metrics:
         - "name"
         - "conductor_group"
       query: |
-        SELECT 
-          uuid, 
-          name, 
+        SELECT
+          uuid,
+          name,
           conductor_group,
           COUNT(conductor_group) AS groups
         FROM nodes
-        GROUP BY 
-          name, 
-          uuid, 
+        GROUP BY
+          name,
+          uuid,
           conductor_group;
       values:
         - "groups"
 
 proxysql:
   mode: ""
+
+dbType: "mariadb"
 
 mariadb:
   enabled: true
@@ -373,13 +375,44 @@ mariadb:
     verify_tables:
       - ironic.nodes
       - ironic_inspector.nodes
-
-  root_password: "AHardPa55w0rd!"
+  root_password: null
   initdb_secret: true
   ccroot_user:
     enabled: true
   persistence_claim:
     name: db-ironic-pvclaim
+
+pxc_db:
+  alerts:
+    support_group: foundation
+  enabled: false
+  name: ironic
+  initdb_job: true
+  ccroot_user:
+    enabled: true
+  databases:
+    - ironic
+    - ironic_inspector
+  users:
+    ironic:
+      name: ironic
+      grants:
+        - "ALL PRIVILEGES on ironic.*"
+    ironic_inspector:
+      name: ironic_inspector
+      grants:
+        - "ALL PRIVILEGES on ironic_inspector.*"
+  pxc:
+    persistence:
+      size: 10Gi
+  backup:
+    enabled: true
+    s3:
+      secrets:
+        aws_access_key_id: null
+        aws_secret_access_key: null
+    pitr:
+      enabled: true
 
 dbName: ironic
 #dbPassword: null

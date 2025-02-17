@@ -56,3 +56,9 @@ prevent_arp_spoofing = False
 
 [vxlan]
 enable_vxlan = false
+
+{{- if ((.Values).ovn).enabled | default false }}
+[ovn]
+ovn_nb_connection = tcp:{{ .Values.ovn.nbAddress }}:{{ .Values.ovn.nbPort }}
+ovn_sb_connection = tcp:{{ .Values.ovn.sbAddress }}:{{ .Values.ovn.sbPort }}
+{{- end }}
