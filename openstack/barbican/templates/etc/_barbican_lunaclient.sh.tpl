@@ -64,6 +64,6 @@ lunaclient ()
     cp /thales/safenet/lunaclient/config/Chrystoki.conf /etc/Chrystoki.conf
     }
 
-{{- if .Values.hsm.ha.enabled }}
+{{- if .Values.hsm.enabled }}
 lunaclient
 {{- end }}
