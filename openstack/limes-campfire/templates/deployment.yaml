@@ -1,5 +1,6 @@
 {{- $tld     := $.Values.global.tld              | required "missing value for .Values.global.tld"              }}
 {{- $region  := $.Values.global.region           | required "missing value for .Values.global.region"           }}
+{{- $cregion := $.Values.campfire.central_region | required "missing value for .Values.campfire.central_region" }}
 
 kind: Deployment
 apiVersion: apps/v1
@@ -61,16 +62,16 @@ spec:
 
             # credentials and configuration for sending mails using Cronus
             - name: CRONUS_AUTH_URL
-              value: "http://keystone.{{ $.Values.global.keystoneNamespace }}.svc.kubernetes.{{ $region }}.{{ $tld }}:5000/v3"
+              value: "https://identity-3.{{ $cregion }}.{{ $tld }}/v3"
             - name: CRONUS_USER_DOMAIN_NAME
               value: Default
             - name: CRONUS_USERNAME
-              value: limes
+              value: {{ printf "campfire-%s" $region | quote }}
             - name: CRONUS_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: campfire-secret
-                  key: os_password
+                  key: cronus_password
             - name: CRONUS_PROJECT_DOMAIN_NAME
               value: ccadmin
             - name: CRONUS_PROJECT_NAME
@@ -78,7 +79,7 @@ spec:
             - name: CRONUS_REGION_NAME
               value: {{ quote $region }}
             - name: SMTP_HOST
-              value: "cronus.{{ $region }}.{{ $tld }}"
+              value: "cronus.{{ $cregion }}.{{ $tld }}"
             - name: SMTP_PORT
               value: "587"
             - name: SMTP_FROM
