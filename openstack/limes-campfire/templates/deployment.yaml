@@ -1,3 +1,6 @@
+{{- $tld     := $.Values.global.tld              | required "missing value for .Values.global.tld"              }}
+{{- $region  := $.Values.global.region           | required "missing value for .Values.global.region"           }}
+
 kind: Deployment
 apiVersion: apps/v1
 
@@ -32,12 +35,55 @@ spec:
           image: {{ include "campfire_image" $ }}
           imagePullPolicy: IfNotPresent
           env:
-            {{ include "campfire_openstack_envvars" $ | indent 12 }}
-            {{ include "campfire_smtp_envvars" $ | indent 12 }}
             - name: CAMPFIRE_API_LISTEN_ADDRESS
               value: ":80"
             - name: CAMPFIRE_OSLO_POLICY_PATH
-              value: "/etc/campfire/policy.json"
+              value: /etc/campfire/policy.json
+
+            # credentials for authenticating incoming requests and talking to the regional masterdata API
+            - name: OS_AUTH_URL
+              value: "http://keystone.{{ $.Values.global.keystoneNamespace }}.svc.kubernetes.{{ $region }}.{{ $tld }}:5000/v3"
+            - name: OS_USER_DOMAIN_NAME
+              value: Default
+            - name: OS_USERNAME
+              value: limes
+            - name: OS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: campfire-secret
+                  key: os_password
+            - name: OS_PROJECT_DOMAIN_NAME
+              value: ccadmin
+            - name: OS_PROJECT_NAME
+              value: cloud_admin
+            - name: OS_REGION_NAME
+              value: {{ quote $region }}
+
+            # credentials and configuration for sending mails using Cronus
+            - name: CRONUS_AUTH_URL
+              value: "http://keystone.{{ $.Values.global.keystoneNamespace }}.svc.kubernetes.{{ $region }}.{{ $tld }}:5000/v3"
+            - name: CRONUS_USER_DOMAIN_NAME
+              value: Default
+            - name: CRONUS_USERNAME
+              value: limes
+            - name: CRONUS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: campfire-secret
+                  key: os_password
+            - name: CRONUS_PROJECT_DOMAIN_NAME
+              value: ccadmin
+            - name: CRONUS_PROJECT_NAME
+              value: master
+            - name: CRONUS_REGION_NAME
+              value: {{ quote $region }}
+            - name: SMTP_HOST
+              value: "cronus.{{ $region }}.{{ $tld }}"
+            - name: SMTP_PORT
+              value: "587"
+            - name: SMTP_FROM
+              value: "noreply+%sender%@email.global.{{ $tld }}"
+
           securityContext:
             runAsNonRoot: true
           volumeMounts:
