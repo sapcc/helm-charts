@@ -708,3 +708,34 @@ tests:
     object: fixtures/vulnerable-images/pod-clean.yaml
     assertions:
     - violations: no
+
+- name: restrict-monsoon3-releases
+  template: ../rendered-chart/gatekeeper/templates/constrainttemplate-restrict-monsoon3-deployments.yaml
+  constraint: ../rendered-chart/gatekeeper-config/templates/constraint-restrict-monsoon3-deployments.yaml
+  cases:
+  - name: configmap-allowed
+    object: fixtures/restrict-monsoon3-deployments/configmap-allowed.yaml
+    assertions:
+    - violations: no
+  - name: configmap-different-namespace
+    object: fixtures/restrict-monsoon3-deployments/configmap-different-namespace.yaml
+    assertions:
+    - violations: no
+  - name: configmap-forbidden-release-name
+    object: fixtures/restrict-monsoon3-deployments/configmap-forbidden-release-name.yaml
+    assertions:
+    - violations: 1
+      message: 'deployment of "forbidden-configmap" is not allowed in namespace monsoon3'
+  - name: pod-allowed
+    object: fixtures/restrict-monsoon3-deployments/pod-allowed.yaml
+    assertions:
+    - violations: no
+  - name: pod-different-namespace
+    object: fixtures/restrict-monsoon3-deployments/pod-different-namespace.yaml
+    assertions:
+    - violations: no
+  - name: pod-forbidden-release-name
+    object: fixtures/restrict-monsoon3-deployments/pod-forbidden-release-name.yaml
+    assertions:
+    - violations: 1
+      message: 'deployment of "forbidden-pod" is not allowed in namespace monsoon3'

@@ -1,0 +1,19 @@
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: GkRestrictMonsoon3Deployments
+metadata:
+  name: restrictmonsoon3deployments
+  annotations:
+    {{- include "sources" (tuple "restrict-monsoon3-deployments" "restrict-monsoon3-deployments") | indent 4 }}
+    {{- include "docstring" (tuple $ "GkRestrictMonsoon3Deployments") | indent 4 }}
+  labels:
+    severity: 'error'
+spec:
+  enforcementAction: deny
+  parameters:
+    patterns:
+      {{- if contains "qa-" .Values.global.region }}
+      - "bogus-pattern-for-testing"
+      {{- else }}
+      - "todo"
+      - "todo2"
+      {{- end }}
