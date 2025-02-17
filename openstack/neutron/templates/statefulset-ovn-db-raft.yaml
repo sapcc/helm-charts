@@ -1,4 +1,4 @@
-{{- if ((.Values).ovn).enabled | default false }}
+{{- if .Values.ovn.enabled }}
 kind: StatefulSet
 apiVersion: apps/v1
 metadata:
@@ -9,7 +9,7 @@ metadata:
 spec:
   serviceName: ovnkube-db
   podManagementPolicy: "Parallel"
-  replicas: {{ default 3 .Values.ovn.replicas }}
+  replicas: {{ .Values.pod.replicas.ovn_db }}
   revisionHistoryLimit: 10
   selector:
     matchLabels:
@@ -25,32 +25,22 @@ spec:
     spec:
       priorityClassName: "system-cluster-critical"
       terminationGracePeriodSeconds: 30
-      imagePullSecrets:
-        - name: registry-credentials
       serviceAccountName: ovnkube-db
       hostNetwork: true
       dnsPolicy: Default
 
       # required to be scheduled on node with k8s.ovn.org/ovnkube-db=true label but can
       # only have one instance per node
-      #affinity:
-      #  nodeAffinity:
-      #    requiredDuringSchedulingIgnoredDuringExecution:
-      #      nodeSelectorTerms:
-      #      - matchExpressions:
-      #        - key: k8s.ovn.org/ovnkube-db
-      #          operator: In
-      #          values:
-      #          - "true"
-      #  podAntiAffinity:
-      #    requiredDuringSchedulingIgnoredDuringExecution:
-      #    - labelSelector:
-      #        matchExpressions:
-      #        - key: name
-      #          operator: In
-      #          values:
-      #          - ovnkube-db
-      #      topologyKey: kubernetes.io/hostname
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: name
+                operator: In
+                values:
+                - ovnkube-db
+            topologyKey: kubernetes.io/hostname
 
       containers:
       # nb-ovsdb - v3
@@ -88,12 +78,12 @@ spec:
         - mountPath: /ovn-cert
           name: host-ovn-cert
           readOnly: true
-        resources: {{ toYaml $.Values.ovn.resources | nindent 10 }}
+        resources: {{ toYaml $.Values.pod.resources.ovs_db| nindent 10 }}
         env:
         - name: OVN_DAEMONSET_VERSION
           value: "1.0.0"
         - name: OVN_LOGLEVEL_NB
-          value: {{ default "-vconsole:info -vfile:info" .Values.ovn.nbLogLevel }}
+          value: {{ quote .Values.ovn.nbLogLevel }}
         - name: K8S_APISERVER
           valueFrom:
             configMapKeyRef:
@@ -112,15 +102,15 @@ spec:
             fieldRef:
               fieldPath: status.hostIP
         - name: OVN_SSL_ENABLE
-          value: {{ default "" .Values.ovn.enableSsl | quote }}
+          value: {{ quote  .Values.ovn.enableSsl }}
         - name: ENABLE_IPSEC
-          value: {{ hasKey .Values.ovn "enableIpsec" | ternary .Values.ovn.enableIpsec false | quote }}
+          value: {{ quote .Values.ovn.enableIpsec }}
         - name: OVN_NB_RAFT_ELECTION_TIMER
-          value: {{ default 1000 .Values.ovn.nbElectionTimer | quote }}
+          value: {{ quote  .Values.ovn.nbElectionTimer }}
         - name: OVN_NB_PORT
-          value: {{ default 6641 .Values.ovn.nbPort | quote }}
+          value: {{ quote .Values.ovn.nbPort }}
         - name: OVN_NB_RAFT_PORT
-          value: {{ default 6643 .Values.ovn.nbRaftPort | quote }}
+          value: {{ quote .Values.ovn.nbRaftPort }}
       # end of container
 
       # sb-ovsdb - v3
@@ -158,12 +148,12 @@ spec:
         - mountPath: /ovn-cert
           name: host-ovn-cert
           readOnly: true
-        resources: {{ toYaml $.Values.ovn.resources | nindent 10 }}
+        resources: {{ toYaml $.Values.pod.resources.ovs_db| nindent 10 }}
         env:
         - name: OVN_DAEMONSET_VERSION
           value: "1.0.0"
         - name: OVN_LOGLEVEL_SB
-          value: {{ default "-vconsole:info -vfile:info" .Values.ovn.sbLogLevel }}
+          value: {{ quote .Values.ovn.sbLogLevel }}
         - name: K8S_APISERVER
           valueFrom:
             configMapKeyRef:
@@ -182,13 +172,13 @@ spec:
             fieldRef:
               fieldPath: status.hostIP
         - name: OVN_SSL_ENABLE
-          value: {{ default "" .Values.ovn.enableSsl | quote }}
+          value: {{ quote .Values.ovn.enableSsl }}
         - name: OVN_SB_RAFT_ELECTION_TIMER
-          value: {{ default 1000 .Values.ovn.sbElectionTimer | quote }}
+          value: {{ quote .Values.ovn.sbElectionTimer }}
         - name: OVN_SB_PORT
-          value: {{ default 6642 .Values.ovn.sbPort | quote }}
+          value: {{ quote .Values.ovn.sbPort }}
         - name: OVN_SB_RAFT_PORT
-          value: {{ default 6644 .Values.ovn.sbRaftPort | quote }}
+          value: {{ quote .Values.ovn.sbRaftPort }}
       # end of container
 
 
@@ -221,18 +211,18 @@ spec:
         - mountPath: /ovn-cert
           name: host-ovn-cert
           readOnly: true
-        resources: {{ toYaml $.Values.ovn.resources | nindent 10 }}
+        resources: {{ toYaml $.Values.pod.resources.ovs_db| nindent 10 }}
         env:
         - name: OVN_DAEMONSET_VERSION
           value: "1.0.0"
         - name: OVNKUBE_LOGLEVEL
-          value: {{ default 4 .Values.ovn.dbCheckerLogLevel | quote }}
+          value: {{ quote .Values.ovn.dbCheckerLogLevel }}
         - name: OVNKUBE_LOGFILE_MAXSIZE
-          value: {{ default 100 .Values.ovn.logFileMaxSize | quote }}
+          value: {{ quote .Values.ovn.logFileMaxSize }}
         - name: OVNKUBE_LOGFILE_MAXBACKUPS
-          value: {{ default 5 .Values.ovn.logFileMaxBackups | quote }}
+          value: {{ quote .Values.ovn.logFileMaxBackups }}
         - name: OVNKUBE_LOGFILE_MAXAGE
-          value: {{ default 5 .Values.ovn.logFileMaxAge | quote }}
+          value: {{ quote .Values.ovn.logFileMaxAge }}
         - name: K8S_APISERVER
           valueFrom:
             configMapKeyRef:
@@ -251,13 +241,13 @@ spec:
             fieldRef:
               fieldPath: status.hostIP
         - name: OVN_SSL_ENABLE
-          value: {{ default "" .Values.ovn.enableSsl | quote }}
+          value: {{ quote .Values.ovn.enableSsl }}
         - name: OVN_NB_RAFT_ELECTION_TIMER
-          value: {{ default 1000 .Values.ovn.nbElectionTimer | quote }}
+          value: {{ quote .Values.ovn.nbElectionTimer }}
         - name: OVN_NB_PORT
-          value: {{ default 6641 .Values.ovn.nbPort | quote }}
+          value: {{ quote .Values.ovn.nbPort }}
         - name: OVN_NB_RAFT_PORT
-          value: {{ default 6643 .Values.ovn.nbRaftPort | quote }}
+          value: {{ quote .Values.ovn.nbRaftPort }}
       # end of container
 
       volumes:
@@ -274,6 +264,4 @@ spec:
         hostPath:
           path: /etc/ovn
           type: DirectoryOrCreate
-      tolerations:
-      - operator: "Exists"
 {{- end }}
