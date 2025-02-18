@@ -32,6 +32,20 @@ spec:
         checksum/secrets: {{ include (print .Template.BasePath "/secrets.yaml") . | sha256sum }}
         {{- end }}
     spec:
+      {{- if not .Values.redisPassword }}
+      initContainers:
+      - name: generate-secrets
+        image: {{ $registry }}/shared-app-images/alpine-kubectl:3.21-latest
+        imagePullPolicy: Always
+        env:
+        - name: DEBUG
+          value: 'false'
+        - name: DEPLOYMENT_NAME
+          value: {{ $fullname }}
+        - name: USERS
+          value: 'default'
+        command: [ ash, -c, {{ .Files.Get "bin/init-generate-secrets.sh" | quote }} ]
+      {{- end }}
       containers:
       - name: {{ $fullname }}
         image: {{ $registry }}/shared-app-images/alpine-valkey:{{ .Values.image.tag }}
@@ -40,16 +54,19 @@ spec:
         {{- if .Values.config }}
         - /etc/redis/redis.conf
         {{- end }}
-        {{- if .Values.redisPassword }}
         - --requirepass
         - $(REDIS_PASSWORD)
         env:
         - name: REDIS_PASSWORD
           valueFrom:
             secretKeyRef:
+              {{- if .Values.redisPassword }}
               name: {{ $fullname }}
               key: redis-password
-        {{ end }}
+              {{- else }}
+              name: {{ $fullname }}-user-default
+              key: password
+              {{- end }}
         ports:
         - name: redis
           containerPort: 6379
@@ -82,6 +99,7 @@ spec:
         - name: redis-config
           mountPath: /etc/redis
       {{- end }}
+      serviceAccountName: {{ $fullname }}
       volumes:
       - name: redis-data
       {{- if .Values.persistence.enabled }}

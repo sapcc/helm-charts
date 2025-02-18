@@ -42,13 +42,16 @@ spec:
               value: "{{ $fullname }}:6379"
             - name: REDIS_ALIAS
               value: {{ $fullname }}
-            {{ if .Values.redisPassword }}
             - name: REDIS_PASSWORD
               valueFrom:
                 secretKeyRef:
+                  {{- if .Values.redisPassword }}
                   name: {{ $fullname }}
                   key: redis-password
-            {{ end }}
+                  {{- else }}
+                  name: {{ $fullname }}-user-default
+                  key: password
+                  {{- end }}
           ports:
             - name: metrics
               containerPort: 9121
