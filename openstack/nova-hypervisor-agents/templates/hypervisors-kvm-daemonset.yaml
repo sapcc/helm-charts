@@ -48,15 +48,19 @@ spec:
         - {{ $.Values.rabbitmq.host }}
       {{- end }}
       initContainers:
-      - name: hostname-from-netbox
+      - name: nova-compute-init
         image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/{{ .Values.imageName }}:{{ .Values.imageVersion | required "Please set imageVersion similar" }}
-        command: ["/container.init/hostname-from-netbox"]
+        command: ["/container.init/nova-compute-init"]
         workingDir: /etc/nova/nova-compute.conf.d
         volumeMounts:
           - mountPath: /container.init
             name: bin
           - mountPath: /etc/nova/nova-compute.conf.d
             name: nova-compute-etc
+          - mountPath: /etc/nova
+            name: nova-etc
+          - mountPath: /var/lib/nova
+            name: var-lib-nova
       {{- if and .Values.hypervisor_on_host .Values.defaults.hypervisor.kvm.instance_nfs_share }}
       - name: setup-nfs
         image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/{{ .Values.imageName }}:{{ .Values.imageVersion | required "Please set imageVersion similar" }}
@@ -121,6 +125,8 @@ spec:
             value: {{ or $hypervisor.python_warnings .Values.python_warnings | quote }}
 {{- end }}
           volumeMounts:
+          - mountPath: /var/lib/nova
+            name: var-lib-nova
           - mountPath: /var/lib/nova/instances
             name: instances
           - mountPath: /var/lib/libvirt
@@ -257,6 +263,8 @@ spec:
         searches:
           - {{ .Values.global.region }}.{{ .Values.global.tld }}
       volumes:
+      - name: var-lib-nova
+        emptyDir: {}
 {{- if not .Values.hypervisor_on_host }}
       - name: instances
         persistentVolumeClaim:
