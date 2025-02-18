@@ -55,20 +55,6 @@ spec:
         volumeMounts:
           - name: host
             mountPath: "/host"
-      - name: network-from-netbox
-        image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/loci-neutron:{{ .Values.imageVersion | required "Please set imageVersion similar" }}
-        command: ["/container.init/network-from-netbox"]
-        workingDir: "/etc/neutron"
-        volumeMounts:
-          - mountPath: /container.init
-            name: bin
-          - mountPath: /etc/neutron
-            name: etcneutron
-          - mountPath: /etc/neutron/neutron-linuxbridge-agent.conf.d
-            name: etcneutronagentconfd
-          - mountPath: /etc/neutron/neutron.conf.d/segment-names.yaml
-            name: etc-vpod
-            subPath: segment-names.yaml
       containers:
         - name: neutron-linuxbridge-agent
           image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/loci-neutron:{{ .Values.imageVersion | required "Please set imageVersion or similar" }}
@@ -81,7 +67,20 @@ spec:
                 - DAC_OVERRIDE
                 - DAC_READ_SEARCH
                 - SYS_PTRACE
-          command: ["neutron-linuxbridge-agent"]
+          command: ["neutron-linuxbridge-agent", "--debug"]
+          env:
+            - name: OS_DEFAULT__HOST
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.labels['kubernetes.metal.cloud.sap/name']
+            - name: BUILDING_BLOCK
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.labels['kubernetes.metal.cloud.sap/bb']
+            - name: OS_LINUX_BRIDGE__PHYSICAL_INTERFACE_MAPPINGS
+              value: "$(BUILDING_BLOCK):bond0"
+            - name: OS_SECURITYGROUP__FIREWALL_DRIVER
+              value: "iptables"
           volumeMounts:
           - mountPath: /etc/neutron
             name: etcneutron
@@ -138,10 +137,6 @@ spec:
       - name: etc-vpod
         configMap:
           name: {{ .Release.Name }}-etc-vpod
-      - name: bin
-        configMap:
-          name: {{ .Release.Name }}-bin
-          defaultMode: 0755
       - name: host
         hostPath:
             path: "/"
