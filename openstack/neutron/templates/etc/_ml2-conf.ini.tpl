@@ -60,6 +60,10 @@ enable_vxlan = false
 {{- if .Values.ovn.enabled }}
 
 [ovn]
-ovn_nb_connection = tcp:ovnkube-db.{{ include "svc_fqdn" . }}:{{ .Values.ovn.nbPort }}
-ovn_sb_connection = tcp:ovnkube-db.{{ include "svc_fqdn" . }}:{{ .Values.ovn.sbPort }}
+{{- $numIPs := len .Values.ovn.externalIPs }}
+{{- if le $numIPs 0 }}
+    {{- fail "Need at least one IP in ovn.externalIPs" }}
+{{- end}}
+ovn_nb_connection = tcp:{{ first .Values.ovn.externalIPs }}:{{ .Values.ovn.nbPort }}
+ovn_sb_connection = tcp:{{ first .Values.ovn.externalIPs }}:{{ .Values.ovn.sbPort }}
 {{- end }}
