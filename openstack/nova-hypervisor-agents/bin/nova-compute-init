@@ -1,0 +1,92 @@
+#!/var/lib/openstack/bin/python3
+import json
+import os
+import pathlib
+import platform
+import socket
+import subprocess
+import textwrap
+import uuid
+
+import requests
+
+from novaclient import client as novaclient
+from novaclient import exceptions as novaexceptions
+import configparser
+
+
+def _get_hypervisor():
+    config = configparser.ConfigParser()
+    config.read("/etc/nova/nova.conf.d/keystoneauth-secrets.conf")
+    authtoken = config["service_user"]
+    auth_endpoint = socket.gethostbyname_ex("identity-3")[1][0]
+    client = novaclient.Client(
+        "2.53",
+        authtoken["username"],
+        authtoken["password"],
+        user_domain_name="default",
+        project_domain_name="default",
+        project_name="service",
+        auth_url=f"https://{auth_endpoint}/v3",
+    )
+    node = platform.node().split(".", 1)[0]
+    try:
+        return client.hypervisors.search(node, detailed=True)[0]
+    except novaexceptions.NotFound:
+        return None
+
+
+def get_hostname():
+    node = platform.node().split(".", 1)[0]
+    # Is the hostname already matching our pattern
+    if not node.startswith("shoot--"):
+        return node
+
+    try:
+        mac = uuid.getnode()
+        query = f'{{ interface_list(filters: {{mac_address: "{mac:012x}"}}) {{ device {{ name }} }} }}'
+
+        response = requests.post(
+            "https://netbox.global.cloud.sap/graphql/", json={"query": query}
+        )
+
+        response.raise_for_status()
+        data = response.json()["data"]
+        name = data["interface_list"][0]["device"]["name"].split(".", 1)[0]
+        return "kvm-" + name
+    except (IndexError, KeyError):
+        return node
+
+
+hostname = get_hostname()
+
+routes = json.loads(
+    subprocess.check_output(
+        ["/usr/bin/ip", "--json", "route", "get", "10.245.0.1"],
+    )
+)
+
+source = routes[0]["prefsrc"]
+
+pathlib.Path("hostname.conf").write_text(
+    textwrap.dedent(f"""\
+    [DEFAULT]
+    host={hostname}
+
+    [libvirt]
+    live_migration_inbound_addr={source}
+
+    [vnc]
+    server_listen={source}
+    server_proxyclient_address={source}
+
+    [spice]
+    server_listen={source}
+    server_proxyclient_address={source}
+    """)
+)
+
+
+hypervisor = _get_hypervisor()
+if hypervisor:
+    pathlib.Path("/var/lib/nova/compute_id").write_text(hypervisor.id)
