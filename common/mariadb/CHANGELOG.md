@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.16.1 - 2025/02/18
+* enquote password in /root/.my.cnf
+  * this would allow to use `=` and `#` symbols in password
+* chart version bumped
+
 ## v0.16.0 - 2025/02/17
 * remove user and password from readiness and liveness probes
   * `/root/.my.cnf` is used instead
