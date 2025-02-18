@@ -163,8 +163,8 @@
 - name: KEPPEL_REDIS_PASSWORD
   valueFrom:
     secretKeyRef:
-      name: keppel-secret
-      key: redis_password
+      name: keppel-redis-user-default
+      key: password
 {{- if .Values.keppel.trivy.hostname }}
 - name: KEPPEL_TRIVY_ADDITIONAL_PULLABLE_REPOS
   value: "ccloud-ghcr-io-mirror/aquasecurity/trivy-db,ccloud-ghcr-io-mirror/aquasecurity/trivy-java-db"
