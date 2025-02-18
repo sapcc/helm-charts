@@ -15,6 +15,17 @@ spec:
       - name: webhook-broadcaster
         image: "{{ index .Values "webhook-broadcaster" "image" }}:{{ index .Values "webhook-broadcaster" "imageTag" }}"
         imagePullPolicy: {{ index .Values "webhook-broadcaster" "imagePullPolicy" | quote }}
+        command:
+        - /bin/sh
+        args:
+        - -ce
+        - |-
+          /usr/bin/webhook-broadcaster -concourse-url "$(CONCOURSE_URL)" \
+            -auth-user "$(CONCOURSE_USER)" \
+            -auth-password "$(CONCOURSE_PASSWORD)" \
+            -refresh-interval "$(CONCOURSE_REFRESH_INTERVAL)" \
+            -listen-addr "$(CONCOURSE_LISTEN_ADDRESS)" \
+            -webhook-concurrency "$(CONCOURSE_WEBHOOK_CONCURRENCY)"
         env:
         - name: CONCOURSE_URL
           value: {{ .Values.concourse.concourse.web.externalUrl }} 
