@@ -55,8 +55,6 @@ spec:
         volumeMounts:
           - mountPath: /container.init
             name: bin
-          - mountPath: /etc/nova/nova-compute.conf.d
-            name: nova-compute-etc
           - mountPath: /etc/nova
             name: nova-etc
           - mountPath: /var/lib/nova
@@ -103,6 +101,17 @@ spec:
         - mountPath: /var/lib/nova/instances
           name: instances
       {{- end }}
+      - name: pki-symlink
+        securityContext:
+          runAsUser: 0
+        image: {{ required ".Values.global.dockerHubMirror is missing" .Values.global.dockerHubMirror }}/library/busybox
+        command:
+        - /container.init/pki-symlink
+        volumeMounts:
+        - mountPath: /host
+          name: host
+        - mountPath: /container.init
+          name: bin
       containers:
         - name: nova-compute
           image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/{{ .Values.imageName }}:{{ .Values.imageVersion | required "Please set imageVersion similar" }}
@@ -113,6 +122,30 @@ spec:
           command:
           - "nova-compute"
           env:
+            - name: OS_DEFAULT__host
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.labels['kubernetes.metal.cloud.sap/name']
+            - name: OS_libvirt__live_migration_inbound_addr
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.hostIP
+            - name: OS_vnc__server_listen
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.hostIP
+            - name: OS_vnc__server_proxyclient_address
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.hostIP
+            - name: OS_spice__server_listen
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.hostIP
+            - name: OS_spice__server_proxyclient_address
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.hostIP
           {{- if .Values.sentry.enabled }}
           - name: SENTRY_DSN
             valueFrom:
@@ -172,26 +205,6 @@ spec:
             subPath: nova
             readOnly: true
           {{- end }}
-        - name: certmanagement
-          image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/{{ .Values.imageName }}:{{ .Values.imageVersion | required "Please set imageVersion similar" }}
-          imagePullPolicy: IfNotPresent
-          securityContext:
-            runAsUser: 0
-          command:
-          - "manage-libvirt-tls"
-          env:
-          - name: ISSUER_NAME
-            value: {{ .Release.Name }}-ca-issuer
-          - name: SSH_SECRET_NAME
-            value: {{ .Release.Name }}-ssh-keypair
-          volumeMounts:
-          - mountPath: /usr/local/bin/manage-libvirt-tls
-            subPath: manage-libvirt-tls
-            name: bin
-          - mountPath: /etc/nova/nova-compute.conf.d
-            name: nova-compute-etc
-          - mountPath: /host
-            name: host
          {{- if not .Values.hypervisor_on_host }}
         - name: nova-libvirt
           image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/{{ .Values.imageName }}:{{ .Values.imageVersion | required "Please set imageVersion similar" }}
