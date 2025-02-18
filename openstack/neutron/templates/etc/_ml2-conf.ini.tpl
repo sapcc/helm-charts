@@ -60,6 +60,6 @@ enable_vxlan = false
 {{- if .Values.ovn.enabled }}
 
 [ovn]
-ovn_nb_connection = tcp:ovnkube-db:{{ .Values.ovn.nbPort }}
-ovn_sb_connection = tcp:ovnkube-db:{{ .Values.ovn.sbPort }}
+ovn_nb_connection = tcp:ovnkube-db.{{ include "svc_fqdn" . }}:{{ .Values.ovn.nbPort }}
+ovn_sb_connection = tcp:ovnkube-db.{{ include "svc_fqdn" . }}:{{ .Values.ovn.sbPort }}
 {{- end }}
