@@ -42,21 +42,6 @@ spec:
       {{- range $k, $v := $hypervisor.pod.nodeSelector }}
         {{ $k }}: {{ $v }}
       {{- end }}
-      initContainers:
-      - name: network-from-netbox
-        image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/loci-neutron:{{ .Values.imageVersion | required "Please set imageVersion similar" }}
-        command: ["/container.init/network-from-netbox"]
-        workingDir: "/etc/neutron"
-        volumeMounts:
-          - mountPath: /container.init
-            name: bin
-          - mountPath: /etc/neutron
-            name: etcneutron
-          - mountPath: /etc/neutron/neutron-openvswitch-agent.conf.d
-            name: etcneutronagentconfd
-          - mountPath: /etc/neutron/neutron.conf.d/segment-names.yaml
-            name: etc-vpod
-            subPath: segment-names.yaml
       containers:
         - name: neutron-openvswitch-agent
           image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/loci-neutron:{{ .Values.imageVersion | required "Please set imageVersion or similar" }}
@@ -65,6 +50,19 @@ spec:
             privileged: true
           command:
           - neutron-openvswitch-agent
+          env:
+            - name: OS_DEFAULT__HOST
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.labels['kubernetes.metal.cloud.sap/name']
+            - name: BUILDING_BLOCK
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.labels['kubernetes.metal.cloud.sap/bb']
+            - name: OS_OVS__BRIDGE_MAPPINGS
+              value: "$(BUILDING_BLOCK):br-ex"
+            - name: OS_SECURITYGROUP__FIREWALL_DRIVER
+              value: "openvswitch"
           volumeMounts:
           - mountPath: /etc/neutron
             name: etcneutron
