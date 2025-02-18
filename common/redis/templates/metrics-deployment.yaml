@@ -39,7 +39,7 @@ spec:
           imagePullPolicy: Always
           env:
             - name: REDIS_ADDR
-              value: {{ printf "%s:%d" $fullname (int .Values.redisPort) | quote }}
+              value: "{{ $fullname }}:6379"
             - name: REDIS_ALIAS
               value: {{ $fullname }}
             {{ if .Values.redisPassword }}
@@ -51,6 +51,6 @@ spec:
             {{ end }}
           ports:
             - name: metrics
-              containerPort: {{ required ".Values.metrics.port missing" .Values.metrics.port }}
+              containerPort: 9121
           resources: {{ toYaml .Values.metrics.resources | nindent 12 }}
 {{ end }}
