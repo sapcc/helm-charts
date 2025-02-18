@@ -1,12 +1,11 @@
 {
-  "cloud_admin": "project_domain_name:ccadmin and project_name:cloud_admin",
+  "cloud_admin": "(project_domain_name:ccadmin and project_name:cloud_admin) or user_domain_id:default",
   "project_scope": "project_id:%(project_id)s",
   "public_scope": "'public':%(scope)s",
   "shared_scope": "'shared':%(scope)s",
   "member": "role:member and rule:project_scope",
   "viewer": "role:gtm_viewer and rule:project_scope",
   "admin": "role:gtm_admin and rule:project_scope",
-  "resource_service": "role:resource_service",
 
   "context_is_admin": "rule:cloud_admin or rule:admin",
   "context_is_editor": "rule:context_is_admin or rule:member",
@@ -48,13 +47,13 @@
   "andromeda:geomap:get_one": "rule:context_is_viewer or rule:shared_scope",
   "andromeda:geomap:delete": "rule:context_is_editor",
 
-  "andromeda:service:get_all": "rule:context_is_admin",
-  "andromeda:sync:post": "rule:context_is_admin",
+  "andromeda:service:get_all": "rule:cloud_admin",
+  "andromeda:sync:post": "rule:cloud_admin",
 
   "andromeda:quota:get_all": "rule:context_is_viewer",
   "andromeda:quota:get_all-global": "rule:cloud_admin",
-  "andromeda:quota:get_one": "rule:context_is_viewer or rule:resource_service",
+  "andromeda:quota:get_one": "rule:context_is_viewer",
   "andromeda:quota:get_one-global": "rule:cloud_admin",
-  "andromeda:quota:put": "rule:context_is_admin or rule:resource_service",
-  "andromeda:quota:delete": "rule:context_is_admin"
+  "andromeda:quota:put": "rule:cloud_admin",
+  "andromeda:quota:delete": "rule:cloud_admin"
 }
