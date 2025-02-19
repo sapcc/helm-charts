@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.17.0 - 2025/02/19
+* use custom entrypoint script for mariadb deployment
+  * remove non-optional and `healthcheck` user creation
+* chart version bumped
+
 ## v0.16.2 - 2025/02/14
 - maintenance job added
   - currently the [analyze table](https://mariadb.com/kb/en/analyze-table/) task is supported
