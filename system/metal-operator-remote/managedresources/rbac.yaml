@@ -12,70 +12,6 @@ subjects:
   kind: Group
   name: {{ if contains "qa-de-" .Values.global.region -}} CC_IAS_CONTROLPLANE_QA_ADMIN {{- else -}} CC_IAS_CONTROLPLANE_PROD_ADMIN {{- end }}
 ---
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  name: cc:oidc-ias-viewer
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: view
-subjects:
-- apiGroup: rbac.authorization.k8s.io
-  kind: Group
-  name: {{ if contains "qa-de-" .Values.global.region -}} CC_IAS_CONTROLPLANE_QA_DEVELOPER {{- else -}} CC_IAS_CONTROLPLANE_PROD_DEVELOPER {{- end }}
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  name: cc:oidc-ias-metal-viewer
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: metal-api-viewer
-subjects:
-- apiGroup: rbac.authorization.k8s.io
-  kind: Group
-  name: {{ if contains "qa-de-" .Values.global.region -}} CC_IAS_CONTROLPLANE_QA_DEVELOPER {{- else -}} CC_IAS_CONTROLPLANE_PROD_DEVELOPER {{- end }}
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  name: metal-api-viewer
-rules:
-- apiGroups:
-  - metal.ironcore.dev
-  resources:
-  - '*'
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - boot.ironcore.dev
-  resources:
-  - '*'
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - ipam.metal.ironcore.dev
-  resources:
-  - '*'
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - secrets
-  verbs:
-  - get
-  - list
-  - watch
----
 apiVersion: v1
 kind: ServiceAccount
 metadata:
@@ -135,3 +71,75 @@ subjects:
 - kind: ServiceAccount
   name: metal-token-rotate
   namespace: kube-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: cc:oidc-ias-viewer
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: view
+subjects:
+- apiGroup: rbac.authorization.k8s.io
+  kind: Group
+  name: {{ if contains "qa-de-" .Values.global.region -}} CC_IAS_CONTROLPLANE_QA_DEVELOPER {{- else -}} CC_IAS_CONTROLPLANE_PROD_DEVELOPER {{- end }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: cc:oidc-ias-metal-viewer
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: metal-api-viewer
+subjects:
+- apiGroup: rbac.authorization.k8s.io
+  kind: Group
+  name: {{ if contains "qa-de-" .Values.global.region -}} CC_IAS_CONTROLPLANE_QA_DEVELOPER {{- else -}} CC_IAS_CONTROLPLANE_PROD_DEVELOPER {{- end }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: metal-api-viewer
+rules:
+- apiGroups:
+  - metal.ironcore.dev
+  resources:
+  - '*'
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - boot.ironcore.dev
+  resources:
+  - '*'
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ipam.metal.ironcore.dev
+  resources:
+  - '*'
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ipam.cluster.x-k8s.io
+  resources:
+  - '*'
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  verbs:
+  - get
+  - list
+  - watch

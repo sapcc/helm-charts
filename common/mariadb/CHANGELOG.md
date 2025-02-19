@@ -1,5 +1,20 @@
 # Changelog
 
+## v0.16.1 - 2025/02/18
+* enquote password in /root/.my.cnf
+  * this would allow to use `=` and `#` symbols in password
+* chart version bumped
+
+## v0.16.0 - 2025/02/17
+* remove user and password from readiness and liveness probes
+  * `/root/.my.cnf` is used instead
+  * this helps avoiding problems with shell escaping and showing passwords in the processlist of the k8s nodes
+* chart version bumped
+
+## v0.15.5 - 2025/02/14
+* `maria-back-me-up` (backup-v2) oauth secret moved to a separate `Secret`
+* chart version bumped
+
 ## v0.15.4 - 2025/02/07
 * MariaDB version bumped to [10.5.28](https://mariadb.com/kb/en/mariadb-10-5-28-release-notes/)
   * several fixes for INNODB and other components

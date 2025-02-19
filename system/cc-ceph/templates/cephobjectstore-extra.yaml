@@ -67,6 +67,12 @@ spec:
     dnsNames: {{ toYaml $instance.gateway.dnsNames | nindent 8 }}
 {{- end }}
   gateway:
+  {{- if not (empty $instance.gateway.rgwConfig) }}
+    rgwConfig: {{ toYaml $instance.gateway.rgwConfig | nindent 6 }}
+  {{- end }}
+  {{- if not (empty $instance.gateway.rgwCommandFlags) }}
+    rgwCommandFlags: {{ toYaml $instance.gateway.rgwCommandFlags | nindent 6 }}
+  {{- end }}
     instances: {{ $instance.gateway.instances | default $.Values.objectstore.gateway.instances }}
     {{- if or $instance.gateway.port $.Values.objectstore.gateway.port }}
     port: {{ $instance.gateway.port | default $.Values.objectstore.gateway.port }}

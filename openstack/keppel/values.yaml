@@ -34,6 +34,9 @@ keppel:
   # The `healthcheck_account` is only needed for anycast monitoring.
   peers: []
 
+  # The name of the peer group. This is used to find the issuer key for the respective anycast API in Vault.
+  peer_group: ""
+
   # anycast domain name shared between all Keppel instances in the same peer group
   # (Keppel does not care about how the anycasting works exactly; it just means
   # that all Keppels accept HTTP requests for this domain name)
@@ -43,11 +46,6 @@ keppel:
 
   # name of Keppel account reserved for keppel-health-monitor
   healthcheck_account: healthcheck
-
-  issuer_key.pem: DEFINED_IN_VALUES_FILE
-  previous_issuer_key.pem: ''         # empty = no key rotation in progress
-  anycast_issuer_key.pem: ''          # empty = anycast not enabled
-  anycast_previous_issuer_key.pem: '' # empty = no key rotation in progress
 
 # This refers to the region holding the shared Swift container where the
 # "swift" federation driver tracks account name claims.
@@ -62,7 +60,6 @@ redis:
   persistence:
     enabled: false
   useAlternateRegion: true
-  redisPassword: DEFINED_IN_VALUES_FILE
 
   # evict unused keys automatically
   config:

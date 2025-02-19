@@ -6,7 +6,7 @@
 set -eou pipefail
 [[ ${DEBUG:-} != false ]] && set -x
 
-OLD_SECRET="elektra"
+OLD_SECRET="${OLD_SECRET:-elektra-secrets}"
 SECRET="elektra-token"
 
 # if we already have a secret, we can stop here

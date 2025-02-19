@@ -21,7 +21,7 @@ patch_idrac = [
         "value": "idrac-redfish-virtual-media",
         "path": "/boot_interface",
     },
-    {"value": "idrac-redfish-kvm", "path": "/console_interface"},
+    {"value": "ipmitool-shellinabox", "path": "/console_interface"},
 ] + [
     {"value": "idrac-redfish", "path": i}
     for i in [

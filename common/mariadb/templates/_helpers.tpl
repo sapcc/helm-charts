@@ -34,6 +34,19 @@
 {{- end -}}
 {{- end -}}
 
+{{/*
+This function resolves a secret and escapes it for use in a my.cnf file.
+It replaces backslashes with double backslashes.
+ */}}
+{{- define "mariadb.resolve_secret_for_ini" }}
+    {{- $str := . -}}
+    {{- if (hasPrefix "vault+kvv2" $str ) -}}
+        {{"{{"}} resolve "{{ $str }}" | replace "\\" "\\\\" | squote {{"}}"}}
+    {{- else -}}
+        {{ $str | replace "\\" "\\\\" | squote }}
+{{- end }}
+{{- end }}
+
 {{- define "mariadb.root_password" -}}
 {{- include "mariadb.resolve_secret" (required ".Values.root_password missing" .Values.root_password) }}
 {{- end -}}

@@ -56,7 +56,7 @@ netapp_trace_flags=api,method
 {{- end }}
 
 # Enable the net_capacity provisioning
-netapp_volume_provision_net_capacity = True
+netapp_volume_provision_net_capacity = {{ $share.provision_net_capacity | default "True" }}
 netapp_volume_snapshot_reserve_percent = {{ $share.netapp_volume_snapshot_reserve_percent | default $context.Values.netapp_volume_snapshot_reserve_percent | default 50 }}
 
 # Specify if the FlexGroup pool is enabled. When it is enabled, the

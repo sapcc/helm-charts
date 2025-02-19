@@ -1,11 +1,9 @@
 {{- $vbase  := .Values.global.vaultBaseURL | required "missing value for .Values.global.vaultBaseURL" -}}
 {{- $region := .Values.global.region       | required "missing value for .Values.global.region"       -}}
 {{- $tld    := .Values.global.tld          | required "missing value for .Values.global.tld"          -}}
+{{- $cdomains := .Values.global.domain_seeds.customer_domains | required "missing value for .Values.global.domain_seeds.customer_domains" -}}
+{{- $domains  := concat (list "ccadmin") $cdomains -}}
 
-{{- $domains := list "ccadmin" "bs" "cis" "cp" "fsn" "hcp03" "hec" "monsoon3" "neo" "s4" "wbs"}}
-{{- if not .Values.global.domain_seeds.skip_hcm_domain -}}
-  {{- $domains = append $domains "hcm" }}
-{{- end -}}
 {{- if .Values.is_global -}}
   {{- $domains = list "ccadmin" "global" -}}
 {{- end -}}
@@ -105,9 +103,9 @@ spec:
     - name: billing
       description: 'Billing Administration for Converged Cloud'
       role_assignments:
-      - user: billing@Default
-        role: objectstore_admin
-        # NOTE: The cloud_resource_viewer role is given by the limes seed.
+      # Role provisioned from CAM to enable takeover of seeded project by billing admins
+      - group: CCADMIN_BILLING_ADMIN
+        role: admin
       swift:
         enabled: true
     {{- end }}
