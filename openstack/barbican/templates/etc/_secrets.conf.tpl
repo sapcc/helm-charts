@@ -3,7 +3,7 @@
 {{ include "ini_sections.default_transport_url" . }}
 
 [database]
-sql_connection = {{ include "db_url_mysql" . }}
+connection = {{ include "db_url_mysql" . }}
 
 [keystone_authtoken]
 username = {{ .Release.Name }}
