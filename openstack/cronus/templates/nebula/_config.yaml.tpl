@@ -50,7 +50,7 @@ nebula:
     iamPolicies:
     {{- range $key, $value := .Values.config.iamPolicies }}
       - {{ $key }}: |
-          {{ $value }}
+          {{ $value | fromJson | toJson | indent 4 }}
     {{- end }}
     {{- end }}
     policyName: {{ .Values.config.policyName }}
