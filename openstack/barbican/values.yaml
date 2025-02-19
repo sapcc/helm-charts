@@ -75,6 +75,32 @@ mariadb:
   alerts:
     support_group: identity
 
+pxc_db:
+  enabled: false
+  name: barbican
+  alerts:
+    support_group: identity
+  ccroot_user:
+    enabled: true
+  databases:
+    - barbican
+  users:
+    barbican:
+      name: barbican
+      grants:
+        - "ALL PRIVILEGES on barbican.*"
+  pxc:
+    persistence:
+      size: 10Gi
+  backup:
+    enabled: true
+    s3:
+      secrets:
+        aws_access_key_id: null
+        aws_secret_access_key: null
+    pitr:
+      enabled: true
+
 mysql_metrics:
   db_name: barbican
   db_user: barbican
@@ -148,7 +174,7 @@ mysql_metrics:
       - "secret_type"
       name: openstack_barbican_hsm_secrets_count_gauge
       query: |
-        SELECT 
+        SELECT
           secrets.id,
           secrets.status,
           COALESCE(secrets.name, "No Secret Name") AS secret_name,
@@ -157,11 +183,11 @@ mysql_metrics:
           projects.external_id  AS project_id,
           secrets.secret_type,
           COUNT(*) AS count_gauge
-        FROM encrypted_data 
-        JOIN kek_data 
-        ON encrypted_data.kek_id = kek_data.id 
-        JOIN secrets 
-        ON secrets.id = encrypted_data.secret_id 
+        FROM encrypted_data
+        JOIN kek_data
+        ON encrypted_data.kek_id = kek_data.id
+        JOIN secrets
+        ON secrets.id = encrypted_data.secret_id
         JOIN projects
         ON secrets.project_id=projects.id
         WHERE kek_data.plugin_name='barbican.plugin.crypto.p11_crypto.P11CryptoPlugin' AND secrets.deleted='false'
