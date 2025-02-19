@@ -76,6 +76,49 @@ transform/openstack-ironic:
       statements:
         - merge_maps(attributes, ExtractGrokPatterns(body, "%{DATE_EU:timestamp}%{SPACE}%{GREEDYDATA}\"%{WORD:method}%{SPACE}%{IMAGE_METHOD:path}%{NOTSPACE}%{SPACE}%{NOTSPACE:httpversion}\"%{SPACE}%{NUMBER:response}", true, ["IMAGE_METHOD:\/v2\/images"]),"upsert")
 
+transform/openstack-manila:
+  error_mode: ignore
+  log_statements:
+    - context: log
+      conditions:
+        - resource["k8s.container.name"] == "manila-api"
+      statements:
+        - merge_maps(attributes, ExtractGrokPatterns(body, "(%{TIMESTAMP_ISO8601:logtime}|)( )?%{TIMESTAMP_ISO8601:access_timestamp}.%{NOTSPACE} %{NUMBER:pid} %{NOTSPACE:log_level} %{NOTSPACE:program} (\\[?)%{NOTSPACE:request_id} %{NOTSPACE:user_id} %{NOTSPACE:project_id} %{NOTSPACE:domain_id} %{NOTSPACE:id1} %{REQUESTID:id2}(\\]?) %{GREEDYDATA:log_request}", true, ["REQUESTID=[0-9A-Za-z-]+"]),"upsert")
+
+transform/openstack-api:
+  error_mode: ignore
+  log_statements:
+    - context: log
+      conditions:
+        - resource.attributes["app.label.app_name"] == "cinder"
+        - resource.attributes["app.label.app_name"] == "nova"
+        - resource.attributes["app.label.app_name"] == "designate"
+        - resource.attributes["app.label.app_name"] == "barbican"
+      statements:
+        - merge_maps(attributes, ExtractGrokPatterns(body, "%{TIMESTAMP_ISO8601:timestamp} %{NOTSPACE} %{NOTSPACE:loglevel} %{NOTSPACE:process} (\\[)?(req-)%{NOTSPACE:request_id} ?(g%{NOTSPACE:global_request_id}) ?%{NOTSPACE:user_id} ?%{NOTSPACE:project_id} ?%{NOTSPACE:domain_id} ?%{NOTSPACE:user_domain_id} ?%{NOTSPACE:project_domain_id}\\] %{IPV4:client_ip},%{IPV4:internal_ip} \"%{WORD:request_method} %{NOTSPACE:request_path} HTTP/%{NOTSPACE}\" %{NOTSPACE} %{NUMBER:response}?( ).*%{NOTSPACE} %{NUMBER:content_length:integer} %{NOTSPACE} %{BASE10NUM:request_time:float} ?%{NOTSPACE} ?%{NOTSPACE:agent}", true), "upsert")
+
+transform/non-openstack:
+  error_mode: ignore
+  log_statements:
+    - context: log
+      conditions:
+        - resource["k8s.container.name"] == "sentry"
+        - resource["k8s.deployment.name"] == "arc-api"
+      statements:
+        - merge_maps(attributes, ExtractGrokPatterns(body, "%{IP:remote_addr} %{NOTSPACE:ident} %{NOTSPACE:auth} \\[%{HAPROXYDATE:timestamp}\\] \"%{WORD:request_method} %{NOTSPACE:request_path} %{NOTSPACE:httpversion}\" %{NUMBER:response} %{NUMBER:content_length:integer} %{QUOTEDSTRING:url} \"%{GREEDYDATA:user_agent}\"?( )?(%{BASE10NUM:request_time:float})", true, ["HAPROXYDATE=%{MONTHDAY}/%{MONTH}/%{YEAR}:%{HAPROXYTIME}.%{INT}", "HAPROXYTIME=%{HOUR}:%{MINUTE}(?::%{SECOND})"]),"upsert")
+
+transform/network-generic-ssh-exporter:
+  error_mode: ignore
+  log_statements:
+    - context: log
+      conditions:
+        - resource["k8s.container.name"] == "network-generic-ssh-exporter"
+      statements:
+        - merge_maps(cache, ParseJSON(body), "upsert") where IsMatch(body, "^\\{")
+        - set(attributes["log_level"], cache["level"])
+        - set(attributes["msg"], cache["msg"])
+        - merge_maps(attributes, ExtractGrokPatterns(msg, "Error connecting to target%{NOTSPACE} %{GREEDYDATA:ssh_reason}, %{NOTSPACE} %{IPV4:ssh_ip}", true), "upsert")
+
 {{- end }}
 
 {{- define "openstack.pipeline" }}
