@@ -1,13 +1,20 @@
 #!/usr/bin/env sh
 
-if [ ! -L /host/etc/pki/CA ]
+cd /host/etc/pki
+NODE_AGENT_DIR="../../var/lib/kvm-node-agent"
+
+[ -d ${NODE_AGENT_DIR}/CA ] || exit 1
+
+if [ ! -L CA ]
 then
-    rm -rf /host/etc/pki/CA
-    ln -s /var/lib/kvm-node-agent/CA /host/etc/pki/CA
+    rm -rf CA
+    ln -s ${NODE_AGENT_DIR}/CA
 fi
 
-if [ ! -L /host/etc/pki/libvirt ]
+[ -d ${NODE_AGENT_DIR}/libvirt ] || exit 1
+
+if [ ! -L libvirt ]
 then
-    rm -rf /host/etc/pki/libvirt
-    ln -s /var/lib/kvm-node-agent/libvirt /host/etc/pki/libvirt
+    rm -rf libvirt
+    ln -s ${NODE_AGENT_DIR}/libvirt
 fi
