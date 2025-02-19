@@ -112,6 +112,9 @@ spec:
           - name: initdb
             mountPath: /docker-entrypoint-initdb.d
 {{ end }}
+          - name: initdb-root
+            mountPath: /etc/mysql/init-file/init.sql
+            subPath: init.sql
 {{- if or .Values.backup_v2.enabled .Values.readiness.useSidecar }}
       - name: readiness
         image: "{{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{ .Values.readiness.image }}:{{ .Values.readiness.image_version }}"
@@ -205,3 +208,7 @@ spec:
             secretName: {{ .Values.custom_initdb_secret }}
             defaultMode: 0744
 {{ end }}
+        - name: initdb-root
+          secret:
+            secretName: mariadb-{{ .Values.name }}-initdb-root
+            defaultMode: 0644
