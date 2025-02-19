@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.17.0 - 2025/02/18
+- default binary log format changed from MIXED to ROW
+- chart version bumped
+
 ## v0.16.1 - 2025/02/18
 * enquote password in /root/.my.cnf
   * this would allow to use `=` and `#` symbols in password
