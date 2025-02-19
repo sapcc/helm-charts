@@ -131,3 +131,25 @@ helm.sh/chart: {{ $.Chart.Name }}-{{ $.Chart.Version | replace "+" "_" }}
 {{- $function := index . 2 }}
 {{- $component }}-{{ $type }}-{{ $function }}
 {{- end }}
+
+{{/*
+  generate a randomized schedule for the maintenance job
+  include "mariadb.maintenance.schedule.randomize"
+*/}}
+{{- define "mariadb.maintenance.schedule.randomize" }}
+  {{- if $.Values.job.maintenance.schedule -}}
+    {{- $schedule := split " " $.Values.job.maintenance.schedule }}
+    {{- $minute := required "invalid cron syntax for job.maintenance.schedule" $schedule._0 }}
+    {{- $hour := required "invalid cron syntax for job.maintenance.schedule" $schedule._1 }}
+    {{- $monthday := required "invalid cron syntax for job.maintenance.schedule" $schedule._2 }}
+    {{- $month := required "invalid cron syntax for job.maintenance.schedule" $schedule._3 }}
+    {{- $weekday := required "invalid cron syntax for job.maintenance.schedule" $schedule._4 }}
+    {{- if not (mustRegexMatch "^(\\*|\\?)$|^(\\*|\\?)\\/[0-9]{1,2}$|^[0-9]{1,2}-[0-9]{1,2}$" $minute) }}
+      {{- $minute = (randInt 1 59 | toString) }}
+    {{- end }}
+    {{- (printf "%s %s %s %s %s" $minute $hour $monthday $month $weekday) }}
+  {{- else -}}
+    {{- (printf "%d %d * * %d" (randInt 1 59) (randInt 9 15) (randInt 2 4)) }}
+  {{- end }}
+{{- end }}
+
