@@ -46,7 +46,7 @@ spec:
         summary: DNS {{ $.Values.unbound.name }} recursor is down. DNS resolution might be handled by another region.
 
     - alert: Dns{{ $.Values.unbound.name | title }}LowTraffic
-      expr: avg(rate(unbound_queries_total{app="{{ $.Values.unbound.name }}", namespace="dns-recursor"}[1m]))/avg(rate(unbound_queries_total{app="{{ $.Values.unbound.name }}", namespace="dns-recursor"}[24h])) < 0.10
+      expr: sum(rate(unbound_queries_total{app="{{ $.Values.unbound.name }}", namespace="dns-recursor"}[1m]) or vector(0))/sum(rate(unbound_queries_total{app="{{ $.Values.unbound.name }}", namespace="dns-recursor"}[24h]) or vector(0)) < 0.10
       for: 5m
       labels:
         context: unbound
