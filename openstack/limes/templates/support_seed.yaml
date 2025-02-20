@@ -25,12 +25,14 @@ spec:
       groups:
       - name: {{ contains "iaas-" . | ternary . ( upper . ) }}_API_SUPPORT
         role_assignments:
+        {{- if not (or (contains "iaas-" .) (eq "btp_fp" .)) }}
         - project: api_support
           role: resource_admin
         {{- if eq . "ccadmin" }}
         - project: api_tools
           role: resource_admin
         {{- end }}
+        {{- end}}
         # Inherit read-only role within domain
         - domain: {{ . | lower }}
           role: resource_viewer
@@ -38,11 +40,13 @@ spec:
       {{- if ne . "global" }}
       - name: {{ contains "iaas-" . | ternary . ( upper . ) }}_COMPUTE_SUPPORT
         role_assignments:
+        {{- if not (or (contains "iaas-" .) (eq "btp_fp" .)) }}
         - project: compute_support
           role: resource_admin
         {{- if eq . "ccadmin" }}
         - project: compute_tools
           role: resource_admin
+        {{- end }}
         {{- end }}
         # Inherit read-only role within domain
         - domain: {{ . | lower }}
@@ -50,11 +54,13 @@ spec:
           inherited: true
       - name: {{ contains "iaas-" . | ternary . ( upper . ) }}_NETWORK_SUPPORT
         role_assignments:
+        {{- if not (or (contains "iaas-" .) (eq "btp_fp" .)) }}
         - project: network_support
           role: resource_admin
         {{- if eq . "ccadmin" }}
         - project: network_tools
           role: resource_admin
+        {{- end }}
         {{- end }}
         # Inherit read-only role within domain
         - domain: {{ . | lower }}
@@ -62,11 +68,13 @@ spec:
           inherited: true
       - name: {{ contains "iaas-" . | ternary . ( upper . ) }}_STORAGE_SUPPORT
         role_assignments:
+        {{- if not (or (contains "iaas-" .) (eq "btp_fp" .)) }}
         - project: storage_support
           role: resource_admin
         {{- if eq . "ccadmin" }}
         - project: storage_tools
           role: resource_admin
+        {{- end }}
         {{- end }}
         # Inherit read-only role within domain
         - domain: {{ . | lower }}
@@ -74,8 +82,10 @@ spec:
           inherited: true
       - name: {{ contains "iaas-" . | ternary . ( upper . ) }}_SERVICE_DESK
         role_assignments:
+        {{- if not (or (contains "iaas-" .) (eq "btp_fp" .)) }}
         - project: service_desk
           role: resource_admin
+        {{- end }}
         # Inherit read-only role within domain
         - domain: {{ . | lower }}
           role: resource_viewer
