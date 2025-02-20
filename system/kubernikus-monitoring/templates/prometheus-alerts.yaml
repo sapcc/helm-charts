@@ -13,3 +13,18 @@ spec:
 {{ printf "%s" $bytes | indent 2 }}
 
 {{- end }}
+
+{{ if eq .Values.global.clusterType "kubernikus" }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+
+metadata:
+  name: kubernikus-customer.alerts
+  labels:
+    prometheus: {{ required ".Values.prometheusName missing" $values.prometheusName }}
+
+spec:
+{{ .Files.Get "kubernikus/customer.alerts" | indent 2 }}
+
+{{ end }}
