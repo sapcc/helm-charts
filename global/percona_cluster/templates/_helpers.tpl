@@ -17,6 +17,15 @@ https://www.percona.com/doc/percona-xtradb-cluster/LATEST/wsrep-system-index.htm
 {{- printf "%s-%s" .Release.Name $name | trunc 32 | trimSuffix "-" -}}
 {{- end -}}
 
+{{- define "percona-cluster.resolve_secret_squote" -}}
+    {{- $str := . -}}
+    {{- if (hasPrefix "vault+kvv2" $str ) -}}
+        {{"{{"}} resolve "{{ $str }}" | replace "'" "''" | squote {{"}}"}}
+    {{- else -}}
+        {{ $str | replace "'" "''" | squote }}
+{{- end -}}
+{{- end -}}
+
 {{/* Helper to turn list into a comma-separated string */}}
 {{- define "helm-toolkit.utils.joinListWithComma" -}}
 {{- $local := dict "first" true -}}
