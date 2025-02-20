@@ -32,7 +32,7 @@ def _get_hypervisor():
     node = os.environ.get("OS_DEFAULT__host", platform.node().split(".", 1)[0])
     try:
         return client.hypervisors.search(node, detailed=True)[0]
-    except novaexceptions.NotFound:
+    except (novaexceptions.NotFound, IndexError):
         return None
 
 hypervisor = _get_hypervisor()
