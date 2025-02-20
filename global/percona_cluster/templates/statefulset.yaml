@@ -158,6 +158,9 @@ spec:
           mountPath: /startup-scripts
         - name: mysql-config-files
           mountPath: /etc/mysql/conf.d
+        - name: initdb-root
+          mountPath: /etc/mysql/init-file/init.sql
+          subPath: init.sql
         - name: slash-root
           mountPath: /root
         - name: var-log
@@ -215,6 +218,10 @@ spec:
       - name: mysql-startup-scripts
         configMap:
           name: {{ include "fullName" . }}-startup-scripts
+      - name: initdb-root
+        secret:
+          secretName: {{ include "fullName" . }}-initdb-root
+          defaultMode: 0644
       {{- if not .Values.persistence.enabled }}
       - name: "{{ .Values.persistence.claimName }}"
         emptyDir: {}
