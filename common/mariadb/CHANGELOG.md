@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.16.3 - 2025/02/19
+* fix names of the maintenance cronjob resources
+  * make cm names unique
+* chart version bumped
+
 ## v0.16.2 - 2025/02/14
 - maintenance job added
   - currently the [analyze table](https://mariadb.com/kb/en/analyze-table/) task is supported
