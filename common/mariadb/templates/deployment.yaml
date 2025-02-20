@@ -25,6 +25,7 @@ spec:
       annotations:
         checksum/secrets: {{ include (print $.Template.BasePath  "/secret.yaml") . | sha256sum }}
         checksum/etc: {{ include (print $.Template.BasePath  "/etc-configmap.yaml") . | sha256sum }}
+        secret.reloader.stakater.com/reload: "mariadb-{{.Values.name}}"
 {{- if .Values.metrics.enabled }}
         prometheus.io/scrape: "true"
         prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
@@ -98,6 +99,10 @@ spec:
             mountPath: /var/lib/mysql
             readOnly: false
 {{- end }}
+          - mountPath: /usr/local/bin/docker-entrypoint.sh
+            subPath: docker-entrypoint.sh
+            name: mariadb-entrypoint
+            readOnly: true
           - mountPath: /etc/mysql/mariadb.conf.d/
             name: mariadb-etc
           - mountPath: /root/.my.cnf
@@ -107,6 +112,9 @@ spec:
           - name: initdb
             mountPath: /docker-entrypoint-initdb.d
 {{ end }}
+          - name: initdb-root
+            mountPath: /etc/mysql/init-file/init.sql
+            subPath: init.sql
 {{- if or .Values.backup_v2.enabled .Values.readiness.useSidecar }}
       - name: readiness
         image: "{{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{ .Values.readiness.image }}:{{ .Values.readiness.image_version }}"
@@ -173,6 +181,10 @@ spec:
 {{- end }}
       priorityClassName: {{ .Values.priority_class | default "critical-infrastructure" | quote }}
       volumes:
+        - name: mariadb-entrypoint
+          configMap:
+            name: mariadb-{{.Values.name}}-entrypoint
+            defaultMode: 0755
         - name: mariadb-etc
           configMap:
             name: mariadb-{{.Values.name}}-etc
@@ -196,3 +208,7 @@ spec:
             secretName: {{ .Values.custom_initdb_secret }}
             defaultMode: 0744
 {{ end }}
+        - name: initdb-root
+          secret:
+            secretName: mariadb-{{ .Values.name }}-initdb-root
+            defaultMode: 0644
