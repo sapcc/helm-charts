@@ -47,11 +47,8 @@ nebula:
     accessKeyRotationDays: {{ .Values.global.accessKeyRotationDays }}
     technicalUsername: {{ .Values.config.technicalUsername }}
     {{- if .Values.config.iamPolicies }}
-    iamPolicies:
-    {{- range $key, $value := .Values.config.iamPolicies }}
-      - {{ $key }}: |
-          {{ printf "\n%v" $value | indent 10 }}
-    {{- end }}
+    iamPolicies: |-
+      {{- toYaml .Values.config.iamPolicies | nindent 4 }}
     {{- end }}
     policyName: {{ .Values.config.policyName }}
     roleName: {{ .Values.config.roleName }}
