@@ -35,16 +35,6 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
 {{- end -}}
 {{- end -}}
 
-{{- define "rabbitmq_host" -}}
-{{- if .Values.global.clusterDomain -}}
-{{.Release.Name}}-rabbitmq.{{.Release.Namespace}}.svc.{{.Values.global.clusterDomain}}
-{{- else if .Values.global_setup -}}
-{{.Release.Name}}-rabbitmq.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.db_region}}.{{.Values.global.tld}}
-{{- else -}}
-{{.Release.Name}}-rabbitmq.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}
-{{- end -}}
-{{- end -}}
-
 {{/*
 To satisfy common/mysql_metrics :(
 */}}
