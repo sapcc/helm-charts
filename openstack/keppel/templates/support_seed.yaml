@@ -19,11 +19,13 @@ spec:
       groups:
       - name: {{ contains "iaas-" . | ternary . ( upper . ) }}_API_SUPPORT
         role_assignments:
+        {{- if not (or (contains "iaas-" .) (eq "btp_fp" .)) }}
         - project: api_support
           role: registry_admin
         {{- if eq . "ccadmin" }}
         - project: api_tools
           role: registry_admin
+        {{- end }}
         {{- end }}
         # Inherit read-only role within domain
         - domain: {{ . | lower }}
@@ -31,11 +33,13 @@ spec:
           inherited: true
       - name: {{ contains "iaas-" . | ternary . ( upper . ) }}_STORAGE_SUPPORT
         role_assignments:
+        {{- if not (or (contains "iaas-" .) (eq "btp_fp" .)) }}
         - project: storage_support
           role: registry_admin
         {{- if eq . "ccadmin" }}
         - project: storage_tools
           role: registry_admin
+        {{- end }}
         {{- end }}
         # Inherit read-only role within domain
         - domain: {{ . | lower }}
@@ -43,8 +47,10 @@ spec:
           inherited: true
       - name: {{ contains "iaas-" . | ternary . ( upper . ) }}_SERVICE_DESK
         role_assignments:
+        {{- if not (or (contains "iaas-" .) (eq "btp_fp" .)) }}
         - project: service_desk
           role: registry_admin
+        {{- end }}
         # Inherit read-only role within domain
         - domain: {{ . | lower }}
           role: registry_viewer

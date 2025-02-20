@@ -133,11 +133,13 @@ spec:
     {{- end }}
     - name: {{ contains "iaas-" . | ternary . ( upper . ) }}_API_SUPPORT
       role_assignments:
+      {{- if not (or (contains "iaas-" .) (eq "btp_fp" .)) }}
       - project: api_support
         role: masterdata_admin
       {{- if eq . "ccadmin" }}
       - project: api_tools
         role: masterdata_admin
+      {{- end }}
       {{- end }}
       - domain: {{ . | lower }}
         role: masterdata_admin
@@ -145,41 +147,49 @@ spec:
   {{- if ne . "global" }}
     - name: {{ contains "iaas-" . | ternary . ( upper . ) }}_COMPUTE_SUPPORT
       role_assignments:
+      {{- if not (or (contains "iaas-" .) (eq "btp_fp" .)) }}
       - project: compute_support
         role: masterdata_admin
       {{- if eq . "ccadmin" }}
       - project: compute_tools
         role: masterdata_admin
       {{- end }}
+      {{- end }}
       - domain: {{ . | lower }}
         role: masterdata_viewer
         inherited: true
     - name: {{ contains "iaas-" . | ternary . ( upper . ) }}_NETWORK_SUPPORT
       role_assignments:
+      {{- if not (or (contains "iaas-" .) (eq "btp_fp" .)) }}
       - project: network_support
         role: masterdata_admin
       {{- if eq . "ccadmin" }}
       - project: network_tools
         role: masterdata_admin
       {{- end }}
+      {{- end }}
       - domain: {{ . | lower }}
         role: masterdata_viewer
         inherited: true
     - name: {{ contains "iaas-" . | ternary . ( upper . ) }}_STORAGE_SUPPORT
       role_assignments:
+      {{- if not (or (contains "iaas-" .) (eq "btp_fp" .)) }}
       - project: storage_support
         role: masterdata_admin
       {{- if eq . "ccadmin" }}
       - project: storage_tools
         role: masterdata_admin
       {{- end }}
+      {{- end }}
       - domain: {{ . | lower }}
         role: masterdata_viewer
         inherited: true
     - name: {{ contains "iaas-" . | ternary . ( upper . ) }}_SERVICE_DESK
       role_assignments:
+      {{- if not (or (contains "iaas-" .) (eq "btp_fp" .)) }}
       - project: service_desk
         role: masterdata_admin
+      {{- end }}
       - domain: {{ . | lower }}
         role: masterdata_viewer
         inherited: true
