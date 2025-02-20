@@ -36,11 +36,7 @@
 - name: MONSOON_OPENSTACK_AUTH_API_USERID
   value: {{ .Values.monsoon_openstack_auth_api_userid | quote }}
 - name: MONSOON_OPENSTACK_AUTH_API_PASSWORD
-  valueFrom: { secretKeyRef:    { name: elektra-secrets, key: monsoon.openstack.auth.api.password } }
-- name: APP_CRED_ID
-  valueFrom: { secretKeyRef:    { name: elektra-secrets, key: app_cred_id } }  
-- name: APP_CRED_SECRET
-  valueFrom: { secretKeyRef:    { name: elektra-secrets, key: app_cred_secret } }    
+  valueFrom: { secretKeyRef:    { name: elektra-secrets, key: monsoon.openstack.auth.api.password } }   
 - name: MONSOON_OPENSTACK_AUTH_API_DOMAIN
   value: {{ .Values.monsoon_openstack_auth_api_domain | quote }}
 - name: TWO_FACTOR_AUTHENTICATION
