@@ -88,3 +88,17 @@ config_file = /etc/designate/watcher.yaml
 
 [filter:osprofiler]
 paste.filter_factory = osprofiler.web:WsgiMiddleware.factory
+
+{{ if ((.Values.rate_limit).enabled) -}}
+[filter:rate_limit]
+use = egg:rate-limit-middleware#rate-limit
+config_file = /etc/designate/ratelimit.yaml
+service_type = dns
+rate_limit_by = {{ .Values.rate_limit.rate_limit_by }}
+max_sleep_time_seconds: {{ .Values.rate_limit.max_sleep_time_seconds }}
+clock_accuracy = 1ns
+log_sleep_time_seconds: {{ .Values.rate_limit.log_sleep_time_seconds }}
+backend_host = {{ .Release.Name }}-api-ratelimit-redis
+backend_port = 6379
+backend_timeout_seconds = {{ .Values.rate_limit.backend_timeout_seconds }}
+{{- end }}
