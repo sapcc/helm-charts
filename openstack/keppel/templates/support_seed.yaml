@@ -1,5 +1,6 @@
 {{- $cdomains := .Values.global.domain_seeds.customer_domains | required "missing value for .Values.global.domain_seeds.customer_domains" -}}
 {{- $domains := concat (list "ccadmin") $cdomains -}}
+{{- $internalDomainsWithoutAllProjects := list "btp_fp" "kyma" "ora"}}
 
 apiVersion: "openstack.stable.sap.cc/v1"
 kind: OpenstackSeed
@@ -19,7 +20,7 @@ spec:
       groups:
       - name: {{ contains "iaas-" . | ternary . ( upper . ) }}_API_SUPPORT
         role_assignments:
-        {{- if not (or (contains "iaas-" .) (eq "btp_fp" .)) }}
+        {{- if not (or (contains "iaas-" .) (has . $internalDomainsWithoutAllProjects)) }}
         - project: api_support
           role: registry_admin
         {{- if eq . "ccadmin" }}
@@ -33,7 +34,7 @@ spec:
           inherited: true
       - name: {{ contains "iaas-" . | ternary . ( upper . ) }}_STORAGE_SUPPORT
         role_assignments:
-        {{- if not (or (contains "iaas-" .) (eq "btp_fp" .)) }}
+        {{- if not (or (contains "iaas-" .) (has . $internalDomainsWithoutAllProjects)) }}
         - project: storage_support
           role: registry_admin
         {{- if eq . "ccadmin" }}
@@ -47,7 +48,7 @@ spec:
           inherited: true
       - name: {{ contains "iaas-" . | ternary . ( upper . ) }}_SERVICE_DESK
         role_assignments:
-        {{- if not (or (contains "iaas-" .) (eq "btp_fp" .)) }}
+        {{- if not (or (contains "iaas-" .) (has . $internalDomainsWithoutAllProjects)) }}
         - project: service_desk
           role: registry_admin
         {{- end }}
