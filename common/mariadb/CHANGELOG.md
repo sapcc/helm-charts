@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.17.0 - 2025/02/21
+* use custom entrypoint script for mariadb deployment
+  * remove non-optional and `healthcheck` user creation
+* chart version bumped
+
 ## v0.16.3 - 2025/02/19
 * fix names of the maintenance cronjob resources
   * make cm names unique

@@ -98,6 +98,10 @@ spec:
             mountPath: /var/lib/mysql
             readOnly: false
 {{- end }}
+          - mountPath: /usr/local/bin/docker-entrypoint.sh
+            subPath: docker-entrypoint.sh
+            name: mariadb-entrypoint
+            readOnly: true
           - mountPath: /etc/mysql/mariadb.conf.d/
             name: mariadb-etc
           - mountPath: /root/.my.cnf
@@ -173,6 +177,10 @@ spec:
 {{- end }}
       priorityClassName: {{ .Values.priority_class | default "critical-infrastructure" | quote }}
       volumes:
+        - name: mariadb-entrypoint
+          configMap:
+            name: mariadb-{{.Values.name}}-entrypoint
+            defaultMode: 0755
         - name: mariadb-etc
           configMap:
             name: mariadb-{{.Values.name}}-etc
