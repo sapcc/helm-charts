@@ -6,7 +6,7 @@ SET sql_mode = CONCAT(@@sql_mode, ',NO_BACKSLASH_ESCAPES');
 CREATE DATABASE IF NOT EXISTS {{ . }};
 {{- end }}
 
-{{- if and .Values.global.dbUser .Values.global.dbPassword (not (hasKey .Values.users (default "" .Values.global.dbUser))) (not .Values.custom_initdb_secret) }}
+{{- if and .Values.global.dbUser .Values.global.dbPassword (not (hasKey .Values.users (default "" .Values.global.dbUser))) }}
 CREATE USER IF NOT EXISTS {{ .Values.global.dbUser }};
 GRANT ALL PRIVILEGES ON {{ .Values.name }}.*
   TO {{ include "mariadb.resolve_secret_squote" (.Values.global.dbUser) }}

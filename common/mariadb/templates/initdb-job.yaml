@@ -1,0 +1,74 @@
+{{- if .Values.initdb_job }}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: "{{ include "fullName" . }}-init-db"
+  namespace:  {{.Release.Namespace}}
+  labels:
+    {{- include "mariadb.labels" (list $ "version" "mariadb" "job" "database") | indent 4 }}
+# hooks are not annotated as belonging to the Helm release, so we cannot rely on owner-info injection
+    {{- include "mariadb.ownerLabels" . | indent 4 }}
+  annotations:
+{{- if and (and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested) $.Values.linkerd.mariadb.enabled }}
+    linkerd.io/inject: enabled
+    config.alpha.linkerd.io/proxy-enable-native-sidecar: "true"
+{{- end }}
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+    "helm.sh/hook-weight": "3"
+spec:
+  backoffLimit: 1
+  template:
+    metadata:
+      name: "{{ include "fullName" . }}-init-db"
+      labels:
+{{- include "mariadb.labels" (list $ "version" "mariadb" "job" "database") | indent 8 }}
+    spec:
+      restartPolicy: Never
+      serviceAccountName: {{ include "fullName" . }}-init-db
+      initContainers:
+      - name: kubernetes-entrypoint
+        image: {{ required ".Values.global.registryAlternateRegion is missing" $.Values.global.registryAlternateRegion }}/{{ .Values.kubernetes_entrypoint.image.name }}:{{ .Values.kubernetes_entrypoint.image.tag }}
+        command:
+        - /kubernetes-entrypoint
+        env:
+        - name: COMMAND
+          value: "true"
+        - name: NAMESPACE
+          value: {{ .Release.Namespace }}
+        - name: DEPENDENCY_SERVICE
+          value: {{ include "fullName" . }}
+      containers:
+      - name: init-db-job
+        image: {{ required ".Values.global.dockerHubMirrorAlternateRegion is missing" .Values.global.dockerHubMirrorAlternateRegion }}/{{ .Values.initdb.image.name }}:{{ .Values.initdb.image.tag }}
+        command:
+          - /bin/bash
+          - -c
+          - |
+            /configurator/init-db.sh
+        env:
+          - name: MYSQL_ADDRESS
+            value: {{ include "fullName" . }}
+          - name: MYSQL_USERNAME
+            value: 'root'
+          - name: MYSQL_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: {{ include "fullName" . }}-init-db
+                key: root-password
+        volumeMounts:
+          - name: initdb
+            mountPath: /var/lib/initdb
+          - name: init-db-configmap
+            mountPath: /configurator
+      volumes:
+        - name: initdb
+          secret:
+            secretName: {{ include "fullName" . }}-init-db
+            defaultMode: 0666
+        - name: init-db-configmap
+          configMap:
+            name: {{ include "fullName" . }}-init-db-bin
+            defaultMode: 0755
+{{- end }}
