@@ -47,7 +47,7 @@ nebula:
     accessKeyRotationDays: {{ .Values.global.accessKeyRotationDays }}
     technicalUsername: {{ .Values.config.technicalUsername }}
     {{- if .Values.config.iamPolicies }}
-    iamPolicies: |-
+    iamPolicies:
       {{- toYaml .Values.config.iamPolicies | nindent 4 }}
     {{- end }}
     policyName: {{ .Values.config.policyName }}
