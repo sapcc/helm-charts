@@ -1,0 +1,40 @@
+#!/var/lib/openstack/bin/python3
+import json
+import os
+import pathlib
+import platform
+import socket
+import subprocess
+import textwrap
+import uuid
+
+import requests
+
+from novaclient import client as novaclient
+from novaclient import exceptions as novaexceptions
+import configparser
+
+
+def _get_hypervisor():
+    config = configparser.ConfigParser()
+    config.read("/etc/nova/nova.conf.d/keystoneauth-secrets.conf")
+    authtoken = config["service_user"]
+    auth_endpoint = socket.gethostbyname_ex("identity-3")[1][0]
+    client = novaclient.Client(
+        "2.53",
+        authtoken["username"],
+        authtoken["password"],
+        user_domain_name="default",
+        project_domain_name="default",
+        project_name="service",
+        auth_url=f"https://{auth_endpoint}/v3",
+    )
+    node = os.environ.get("OS_DEFAULT__host", platform.node().split(".", 1)[0])
+    try:
+        return client.hypervisors.search(node, detailed=True)[0]
+    except (novaexceptions.NotFound, IndexError):
+        return None
+
+hypervisor = _get_hypervisor()
+if hypervisor:
+    pathlib.Path("/var/lib/nova/compute_id").write_text(hypervisor.id)
