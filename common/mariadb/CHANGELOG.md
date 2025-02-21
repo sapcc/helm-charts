@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.16.4 - 2025/02/21
+* fix maria-back-me-up alert rules
+* chart version bumped
+
 ## v0.16.3 - 2025/02/19
 * fix names of the maintenance cronjob resources
   * make cm names unique
