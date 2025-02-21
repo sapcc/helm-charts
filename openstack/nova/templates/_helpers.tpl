@@ -9,6 +9,18 @@ connection = {{ tuple . .Values.apidbName .Values.apidbUser .Values.apidbPasswor
     {{- tuple . .Values.cell0dbName .Values.cell0dbUser (default .Values.cell0dbPassword .Values.global.dbPassword) | include "db_url_mysql" }}
 {{- end }}
 
+{{- define "cell1_db_path" -}}
+    {{- tuple . .Values.dbName .Values.dbUser (default .Values.dbPassword .Values.global.dbPassword) | include "db_url_mysql" }}
+{{- end }}
+
+{{- define "cell1_transport_url" -}}
+{{- $data := merge (pick .Values.rabbitmq "port" "virtual_host") .Values.rabbitmq.users.default }}
+{{- $_ := set $data "host" (printf "%s-rabbitmq" .Release.Name ) }}
+{{- $_ := required ".Values.rabbitmq.users.default.user is required" .Values.rabbitmq.users.default.user }}
+{{- $_ := required ".Values.rabbitmq.users.default.password is required" .Values.rabbitmq.users.default.password }}
+{{- include "utils.rabbitmq_url" (tuple . $data) }}
+{{- end -}}
+
 {{- define "cell2_db_path" -}}
     {{- if eq .Values.cell2.enabled true -}}
         {{- tuple . .Values.cell2dbName .Values.cell2dbUser (default .Values.cell2dbPassword .Values.global.dbPassword) .Values.mariadb_cell2.name | include "db_url_mysql" }}
