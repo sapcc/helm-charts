@@ -4,13 +4,13 @@ kind: MutatingWebhookConfiguration
 metadata:
   name: prysm-webhook
   annotations:
-    cert-manager.io/inject-ca-from: "{{ .Values.objectstore.prysm.rgwSidecarWebhook.namespace }}/{{ .Values.objectstore.prysm.rgwSidecarWebhook.certSecretName }}"
+    cert-manager.io/inject-ca-from: "{{ .Release.Namespace }}/{{ .Values.objectstore.prysm.rgwSidecarWebhook.certSecretName }}"
 webhooks:
   - name: prysm-webhook.injector.webhook
     clientConfig:
       service:
         name: prysm-webhook-service
-        namespace: {{ .Values.objectstore.prysm.rgwSidecarWebhook.namespace }}
+        namespace: {{ .Release.Namespace }}
         path: "/mutate"
       # cert-manager automatically injects the CA bundle
     admissionReviewVersions: ["v1"]
