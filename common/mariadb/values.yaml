@@ -30,8 +30,22 @@ db_performance_schema_instrument: # Enabling performance schema instruments.
   enabled: false
 
 root_password: null
-initdb_secret: null
-custom_initdb_secret: null
+
+### InitDB configuration
+# -- InitDB job options
+# -- Enable or disable InitDB job that creates databases and users
+# Enabled by default
+initdb_job: true
+# -- Image used by the initdb job
+initdb:
+  image:
+    name: library/mariadb
+    tag: 10.5.28
+# -- Image used by kubernetes-entrypoint init container
+kubernetes_entrypoint:
+  image:
+    name: kubernetes-entrypoint
+    tag: v0.3.1
 
 # if enabled create 'ccroot'@'127.0.0.1' with all privileges to allow passwordless local connections
 # if disabled, the user will be dropped from the DB if existing
@@ -108,11 +122,6 @@ job:
         # -- Define how much CPU the MariaDB maintenance job container will request
         # @default -- 0.5
         cpu:
-
-pre_change_hook:
-  image: "sapcc/unified-kubernetes-toolbox"
-  image_version: "20220613150453"
-  kubectl_version: "1.23"
 
 # name of priorityClass to influence scheduling priority
 priority_class: "critical-infrastructure"
