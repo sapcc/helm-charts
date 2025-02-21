@@ -1,13 +1,13 @@
-{{- if .Values.prysm.rgwSidecarWebhook.enabled }}
+{{- if and .Values.objectstore.prysm.rgwSidecarWebhook ( .Values.objectstore.prysm.rgwSidecarWebhook.enabled ) }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: prysm-webhook-service
-  namespace: {{ .Values.prysm.rgwSidecarWebhook.namespace }}
+  namespace: {{ .Values.objectstore.prysm.rgwSidecarWebhook.namespace }}
   labels:
     app: prysm-webhook-service
 spec:
-  replicas: {{ .Values.prysm.rgwSidecarWebhook.replicas }}
+  replicas: {{ .Values.objectstore.prysm.rgwSidecarWebhook.replicas }}
   selector:
     matchLabels:
       app: prysm-webhook-service
@@ -18,10 +18,10 @@ spec:
     spec:
       containers:
       - name: prysmwebhook
-        image: "{{ .Values.prysm.rgwSidecarWebhook.image }}:{{ .Values.prysm.rgwSidecarWebhook.tag }}"
-        imagePullPolicy: {{ .Values.prysm.rgwSidecarWebhook.pullPolicy }}
+        image: "{{ .Values.objectstore.prysm.rgwSidecarWebhook.image }}:{{ .Values.objectstore.prysm.rgwSidecarWebhook.tag }}"
+        imagePullPolicy: {{ .Values.objectstore.prysm.rgwSidecarWebhook.pullPolicy }}
         ports:
-        - containerPort: {{ .Values.prysm.rgwSidecarWebhook.containerPort }}
+        - containerPort: {{ .Values.objectstore.prysm.rgwSidecarWebhook.containerPort }}
         volumeMounts:
         - name: certs
           mountPath: "/certs"
@@ -29,5 +29,5 @@ spec:
       volumes:
       - name: certs
         secret:
-          secretName: {{ .Values.prysm.rgwSidecarWebhook.certSecretName }}
+          secretName: {{ .Values.objectstore.prysm.rgwSidecarWebhook.certSecretName }}
 {{- end }}
