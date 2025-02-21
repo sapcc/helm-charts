@@ -30,7 +30,7 @@ This fix applies replacements in place.
 {{- if has $alertname (keys $filteredBedrockAlerts) }}
 {{- $mappingKey := (printf "%s" (get $bedrockAlerts $alertname)) }}
 {{ regexReplaceAll "([\\s\\S]+?- alert: \\S+)\\n([\\s\\S]+?expr:[\\s\\S]+)" $alert "${1}" | indent 2 }}
-{{ regexReplaceAll "[\\s\\S]+expr.+?(>\\n|\\w|\\|\\n)\\s+([\\s\\S]+?)\\s+\\S+:[\\s\\S]+" $alert (include "bedrockConfirm.expr" (list "$2" $mappingKey)) | indent 6 }}
+{{ regexReplaceAll "[\\s\\S]+expr:.(\\|\\n|\\>\\n|)([\\s\\S]+?)\\s+\\S+:[\\s\\S]+" $alert (include "bedrockConfirm.expr" (list "$2" $mappingKey)) | indent 6 }}
 {{- regexReplaceAll "([\\s\\S]+?expr:[\\s\\S]+?)\\n(\\s+\\S+:[\\s\\S]+)" $alert "${2}" | nindent 2 }}
 {{- else }}
 {{ printf "%s" $alert | indent 2 }}
