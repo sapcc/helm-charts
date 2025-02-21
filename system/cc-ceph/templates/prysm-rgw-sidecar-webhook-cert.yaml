@@ -1,0 +1,14 @@
+{{- if .Values.prysm.rgwSidecarWebhook.enabled }}
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ .Values.prysm.rgwSidecarWebhook.certSecretName }}
+  namespace: {{ .Values.prysm.rgwSidecarWebhook.namespace }}
+spec:
+  secretName: {{ .Values.prysm.rgwSidecarWebhook.certSecretName }}
+  dnsNames:
+    - prysm-webhook-service.{{ .Values.prysm.rgwSidecarWebhook.namespace }}.svc
+  issuerRef:
+    name: selfsigned-issuer
+    kind: Issuer
+{{- end }}
