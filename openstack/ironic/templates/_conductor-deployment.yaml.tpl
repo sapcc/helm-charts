@@ -158,8 +158,13 @@ spec:
             protocol: TCP
             containerPort: 443
         volumeMounts:
-          - mountPath: /etc/nginx/conf.d
+          - mountPath: /etc/nginx/nginx.conf
             name: ironic-console
+            subPath: nginx.conf
+          - mountPath: /etc/nginx/conf.d
+            name: nginx-confd
+          - mountPath: /etc/nginx/conf.d/dhparam.pem
+            name: ironic-console-dhparam
           - mountPath: /shellinabox
             name: shellinabox
           - mountPath: /etc/nginx/certs
@@ -217,10 +222,17 @@ spec:
         {{- else }}
           name: ironic-conductor-etc
         {{- end }}
-
+      - name: nginx-confd
+        emptyDir: {}
       - name: ironic-console
         configMap:
           name: ironic-console
+      - name: ironic-console-dhparam
+        secret:
+          secretName: {{ .Release.Name }}-secrets
+          items:
+          - key: dhparam.pem
+            path: dhparam.pem
       - name: ironic-tftp
         persistentVolumeClaim:
           claimName: ironic-tftp-pvclaim
