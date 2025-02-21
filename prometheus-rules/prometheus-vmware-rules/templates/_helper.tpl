@@ -17,12 +17,12 @@ Description:
 {{- define "bedrockConfirm.expr" -}}
 {{- $expr := index . 0 -}}
 {{- $mappingKey := index . 1 -}}
-expr: >
+expr: |
   label_replace(
       {{ $expr }} unless on({{ $mappingKey }})
       (
           group by (project, {{ $mappingKey }}) (
-              vrops_virtualmachine_system_powered_on{region="eu-de-1", vccluster=~"^productionbb\\d+$"}
+              vrops_virtualmachine_system_powered_on{region="eu-de-1", vccluster=~"productionbb\\d+"}
           )
           and on(project) 
           group by (project) (
@@ -38,7 +38,7 @@ expr: >
       {{ $expr }} and on({{ $mappingKey }})
       (
           group by (project, {{ $mappingKey }}) (
-              vrops_virtualmachine_system_powered_on{region="eu-de-1", vccluster=~"^productionbb\\d+$"}
+              vrops_virtualmachine_system_powered_on{region="eu-de-1", vccluster=~"productionbb\\d+"}
           )
           and on(project) 
           group by (project) (
