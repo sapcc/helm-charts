@@ -56,4 +56,4 @@ echo -n "
     username: $USERNAME
     password: $PASSWORD
 " > secret.yaml
-  kubectl create -f secret.yaml
+  kubectl-v1.32.1 create -f secret.yaml
