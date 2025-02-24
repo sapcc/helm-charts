@@ -3,6 +3,7 @@
 {{- $tld    := .Values.global.tld          | required "missing value for .Values.global.tld"          -}}
 {{- $cdomains := .Values.global.domain_seeds.customer_domains | required "missing value for .Values.global.domain_seeds.customer_domains" -}}
 {{- $domains  := concat (list "ccadmin") $cdomains -}}
+{{- $internalDomainsWithoutAllProjects := list "btp_fp" "kyma" "ora"}}
 
 {{- if .Values.is_global -}}
   {{- $domains = list "ccadmin" "global" -}}
@@ -60,30 +61,13 @@ spec:
       role: masterdata_admin
       inherited: true
   {{- if and (eq $region "qa-de-1") (not .Values.is_global) }}
-    {{- if not .Values.cc3test }}
-      {{- fail "missing values in .Values.cc3test" }}
-    {{- end }}
-    {{- $domainAdmin  := .Values.cc3test.domainAdmin  | required "missing value for .Values.cc3test.domainAdmin"  }}
-    {{- $domainUser   := .Values.cc3test.domainUser   | required "missing value for .Values.cc3test.domainUser"   }}
-    {{- $projectAdmin := .Values.cc3test.projectAdmin | required "missing value for .Values.cc3test.projectAdmin" }}
-    {{- $projectUser  := .Values.cc3test.projectUser  | required "missing value for .Values.cc3test.projectUser"  }}
-
-    - user: {{ quote $domainAdmin }}
-      role: admin
-    - user: {{ quote $domainUser }}
-      role: member
-
     projects:
     - name: billing_test
       description: 'project for used for testing the billing service'
+      # Role provisioned from CAM to enable takeover of seeded project by billing admins
       role_assignments:
-      - user: {{ quote $projectAdmin }}
+      - group: CCADMIN_BILLING_ADMIN
         role: admin
-      - user: {{ quote $projectUser }}
-        role: member
-      - user: {{ quote $projectUser }}
-        role: objectstore_admin
-
     groups:
     - name: CC3TEST_DOMAIN_ADMINS
       role_assignments:
@@ -133,7 +117,7 @@ spec:
     {{- end }}
     - name: {{ contains "iaas-" . | ternary . ( upper . ) }}_API_SUPPORT
       role_assignments:
-      {{- if not (or (contains "iaas-" .) (eq "btp_fp" .)) }}
+      {{- if not (or (contains "iaas-" .) (has . $internalDomainsWithoutAllProjects)) }}
       - project: api_support
         role: masterdata_admin
       {{- if eq . "ccadmin" }}
@@ -147,7 +131,7 @@ spec:
   {{- if ne . "global" }}
     - name: {{ contains "iaas-" . | ternary . ( upper . ) }}_COMPUTE_SUPPORT
       role_assignments:
-      {{- if not (or (contains "iaas-" .) (eq "btp_fp" .)) }}
+      {{- if not (or (contains "iaas-" .) (has . $internalDomainsWithoutAllProjects)) }}
       - project: compute_support
         role: masterdata_admin
       {{- if eq . "ccadmin" }}
@@ -160,7 +144,7 @@ spec:
         inherited: true
     - name: {{ contains "iaas-" . | ternary . ( upper . ) }}_NETWORK_SUPPORT
       role_assignments:
-      {{- if not (or (contains "iaas-" .) (eq "btp_fp" .)) }}
+      {{- if not (or (contains "iaas-" .) (has . $internalDomainsWithoutAllProjects)) }}
       - project: network_support
         role: masterdata_admin
       {{- if eq . "ccadmin" }}
@@ -173,7 +157,7 @@ spec:
         inherited: true
     - name: {{ contains "iaas-" . | ternary . ( upper . ) }}_STORAGE_SUPPORT
       role_assignments:
-      {{- if not (or (contains "iaas-" .) (eq "btp_fp" .)) }}
+      {{- if not (or (contains "iaas-" .) (has . $internalDomainsWithoutAllProjects)) }}
       - project: storage_support
         role: masterdata_admin
       {{- if eq . "ccadmin" }}
@@ -186,7 +170,7 @@ spec:
         inherited: true
     - name: {{ contains "iaas-" . | ternary . ( upper . ) }}_SERVICE_DESK
       role_assignments:
-      {{- if not (or (contains "iaas-" .) (eq "btp_fp" .)) }}
+      {{- if not (or (contains "iaas-" .) (has . $internalDomainsWithoutAllProjects)) }}
       - project: service_desk
         role: masterdata_admin
       {{- end }}
