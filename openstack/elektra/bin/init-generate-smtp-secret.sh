@@ -9,12 +9,9 @@ set -eou pipefail
 export OS_AUTH_TYPE=v3applicationcredential
 SECRET="elektra-smtp"
 
-# If we already have a secret, we can extract the ec2 access key
+# if we already have a secret, we can stop here
 if [[ -n "$(kubectl-v1.32.1 get secrets "$SECRET" --ignore-not-found)" ]]; then
-  EC2_ACCESS_KEY=$(kubectl-v1.32.1 get secret "$SECRET" -o jsonpath='{.data.ec2_access_key}' | base64 --decode)
-  # Remove secret and ec2 credentials
-  kubectl-v1.32.1 delete secret "$SECRET"
-  openstack ec2 credentials delete --user dashboard --user-domain default $EC2_ACCESS_KEY
+  exit 0
 fi
 
 # Step 1: List ec2 credentials
