@@ -51,7 +51,7 @@ echo -n "
         blockOwnerDeletion: true
         kind: Deployment
         name: elektra
-        uid: $(kubectl get deployment elektra -o jsonpath='{.metadata.uid}')
+        uid: $(kubectl-v1.32.1 get deployment elektra -o jsonpath='{.metadata.uid}')
   data:
     username: $USERNAME
     password: $PASSWORD
