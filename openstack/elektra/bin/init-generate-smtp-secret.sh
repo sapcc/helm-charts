@@ -33,7 +33,7 @@ echo "Listing ec2 credentials done."
 # Step 4: Authenticate and get OpenStack token
 echo "Generating SMTP credentials..."
 # SMTP_OUTPUT=$(cronuscli smtp credentials --ec2-access "$ACCESS_KEY" --ec2-secret "$SECRET_KEY")
-SMTP_OUTPUT=$(cronuscli smtp credentials --ec2-access 123 --ec2-secret 123)
+SMTP_OUTPUT=$(cronuscli smtp credentials --ec2-access 123 --ec2-secret 123 --base64)
 USERNAME=$(echo "$SMTP_OUTPUT" | grep -oP 'Username:\s+\K.*')
 PASSWORD=$(echo "$SMTP_OUTPUT" | grep -oP 'Password:\s+\K.*')
 echo "SMTP credentials obtained"
