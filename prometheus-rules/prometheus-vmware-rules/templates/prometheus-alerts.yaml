@@ -28,6 +28,9 @@ Get all rules in group
 */}}
 {{- range $rule := $group.rules }}
 {{- if has $rule.alert (keys $filteredBedrockAlerts) }}
+{{- /*
+Replace expression for alerts matching alert name in $bedrockAlerts
+*/}}
       {{- $mappingKey := (printf "%s" (get $bedrockAlerts $rule.alert)) }}
       {{- $updatedExpression := (include "bedrockConfirm.expr" (list $rule.expr $mappingKey)) }}
       {{- $_ := set $rule "expr" $updatedExpression }}
