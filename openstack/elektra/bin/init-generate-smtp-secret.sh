@@ -24,4 +24,4 @@ export OS_TOKEN=$(openstack token issue -f value -c id)
 
 # Step 2: List ec2 credentials
 echo "Listing ec2 credentials..."
-openstack ec2 credentials list --user dashboard --user-domain default
+# openstack ec2 credentials list --user dashboard --user-domain default
