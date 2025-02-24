@@ -18,7 +18,7 @@ export OS_AUTH_TYPE=v3applicationcredential
 
 # Step 1: List ec2 credentials
 echo "Listing ec2 credentials..."
-os ec2 credentials list --user dashboard --user-domain default
+openstack ec2 credentials list --user dashboard --user-domain default
 echo "Listing ec2 credentials done."
 
 # Step 2: Delete all ec2 credentials
