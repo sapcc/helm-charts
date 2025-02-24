@@ -45,4 +45,11 @@ echo -n "
     username: $USERNAME
     password: $PASSWORD
 " > secret.yaml
-  kubectl-v1.32.1 create -f secret.yaml
+  # kubectl-v1.32.1 create -f secret.yaml
+
+if ! kubectl-v1.32.1 create -f secret.yaml; then
+  echo "Failed to create secret, likely because it already exists. Deleting associated EC2 credentials..."
+  openstack ec2 credentials delete --user dashboard --user-domain default $ACCESS_KEY
+else
+  echo "Secret created successfully."
+fi
