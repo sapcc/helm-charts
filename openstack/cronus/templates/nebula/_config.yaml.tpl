@@ -48,7 +48,7 @@ nebula:
     technicalUsername: {{ .Values.config.technicalUsername }}
     {{- if .Values.config.iamPolicies }}
     iamPolicies:
-      {{- toYaml .Values.config.iamPolicies | nindent 4 }}
+      {{- toYaml .Values.config.iamPolicies | nindent 6 }}
     {{- end }}
     policyName: {{ .Values.config.policyName }}
     roleName: {{ .Values.config.roleName }}
