@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.16.5 - 2025/02/21
+* add `lost+found` to `ignore_db_dirs` list
+* chart version bumped
+
 ## v0.16.4 - 2025/02/21
 * fix maria-back-me-up alert rules
 * chart version bumped
