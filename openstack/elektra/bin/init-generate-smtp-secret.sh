@@ -1,14 +1,14 @@
-#!/usr/bin/env ash
-# shellcheck shell=ash
+#!/usr/bin/env bash
+# shellcheck shell=bash
 # shellcheck disable=SC3010
 
 # This is the entrypoint script for the "generate-secrets" init container of the elektra pod.
 set -eou pipefail
-[[ ${DEBUG:-} != false ]] && set -x
+[[ ${DEBUG:-false} != false ]] && set -x
 
 SECRET="elektra-smtp"
 
-# if we already have a secret, we can stop here
-if [[ "$(kubectl get secrets "$SECRET" --ignore-not-found)" != "" ]]; then
+# If we already have a secret, we can stop here
+if [[ -n "$(kubectl get secrets "$SECRET" --ignore-not-found)" ]]; then
   exit 0
 fi
