@@ -58,7 +58,16 @@ spec:
           env:
           - name: DEBUG
             value: {{ quote .Values.init_container_debug }}
-          command: [ ash, -c, {{ .Files.Get "bin/init-generate-token-secret.sh" | quote }} ]      
+          command: [ ash, -c, {{ .Files.Get "bin/init-generate-token-secret.sh" | quote }} ]
+        - name: generate-smtp-secret
+          image: "{{.Values.global.registry}}/ccloud/ccloud-shell:20250221103656"
+          imagePullPolicy: "IfNotPresent"
+          env:
+          - name: OS_APPLICATION_CREDENTIAL_ID
+            valueFrom: { secretKeyRef:    { name: elektra-secrets, key: app_cred_id, optional: true } }
+          - name: OS_APPLICATION_CREDENTIAL_SECRET
+            valueFrom: { secretKeyRef:    { name: elektra-secrets, key: app_cred_secret, optional: true } }
+          command: [ ash, -c, {{ .Files.Get "bin/init-generate-smtp-secret.sh" | quote }} ] 
         - name: init-database
           image: {{.Values.global.registry}}/elektra:{{.Values.image.tag}}
           command: ['script/init-db.sh']
