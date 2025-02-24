@@ -62,7 +62,7 @@ spec:
         - name: config
           mountPath: "/config"
           readOnly: true
-        {{- if .Values.kubernikus.enabled }}
+        {{- if not .Values.rbac.cloudProviderSecretName | and .Values.kubernikus.enabled }}
         - name: cloudconfig
           mountPath: "/provider"
           readOnly: true
@@ -95,7 +95,7 @@ spec:
       - name: config
         configMap:
           name: maintenance-controller
-      {{- if .Values.kubernikus.enabled }}
+      {{- if not .Values.rbac.cloudProviderSecretName | and .Values.kubernikus.enabled }}
       - name: cloudconfig
         secret:
           secretName: {{ .Values.kubernikus.cloudconfig }}
