@@ -15,6 +15,8 @@ fi
 
 # Step 0: Set env OS_AUTH_TYPE
 export OS_AUTH_TYPE=v3applicationcredential
+# echo all envs
+env | grep OS_
 
 # Step 1: Authenticate and get OpenStack token
 echo "Fetching OpenStack token..."
