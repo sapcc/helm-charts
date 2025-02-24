@@ -14,27 +14,21 @@ if [[ -n "$(kubectl-v1.32.1 get secrets "$SECRET" --ignore-not-found)" ]]; then
   exit 0
 fi
 
-# Step 1: List ec2 credentials
-echo "Listing ec2 credentials..."
-openstack ec2 credentials list --user dashboard --user-domain default
-echo "Listing ec2 credentials done."
-
-# Step 3: Create ec2 credentials
+# Step 2: Create ec2 credentials
 echo "Creating EC2 credentials..."
 EC2_CREDS=$(openstack ec2 credentials create --user dashboard --user-domain default --project master --project-domain ccadmin -f json)
 ACCESS_KEY=$(echo "$EC2_CREDS" | jq -r '.access')
 SECRET_KEY=$(echo "$EC2_CREDS" | jq -r '.secret')
 echo "EC2 credentials created."
 
-# Step 4: Authenticate and get OpenStack token
+# Step 3: Authenticate and get OpenStack token
 echo "Generating SMTP credentials..."
 SMTP_OUTPUT=$(cronuscli smtp credentials --ec2-access "$ACCESS_KEY" --ec2-secret "$SECRET_KEY" --base64)
 USERNAME=$(echo "$SMTP_OUTPUT" | grep -oP 'Username:\s+\K.*')
 PASSWORD=$(echo "$SMTP_OUTPUT" | grep -oP 'Password:\s+\K.*')
 echo "SMTP credentials obtained"
 
-# Step 5: create new secret with randomly generated token
-# ec2_access_key: $ACCESS_KEY
+# Step 4: create new secret with randomly generated token
 echo -n "
   apiVersion: v1
   kind: Secret
