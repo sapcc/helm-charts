@@ -12,3 +12,11 @@ SECRET="elektra-smtp"
 if [[ -n "$(kubectl-v1.32.1 get secrets "$SECRET" --ignore-not-found)" ]]; then
   exit 0
 fi
+
+# Step 1: Authenticate and get OpenStack token
+echo "Fetching OpenStack token..."
+export OS_TOKEN=$(openstack token issue -f value -c id)
+
+# Step 2: List ec2 credentials
+echo "Listing ec2 credentials..."
+os ec2 credentials list --user dashboard --user-domain default
