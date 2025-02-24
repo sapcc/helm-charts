@@ -9,6 +9,6 @@ set -eou pipefail
 SECRET="elektra-smtp"
 
 # If we already have a secret, we can stop here
-if [[ -n "$(kubectl get secrets "$SECRET" --ignore-not-found)" ]]; then
+if [[ -n "$(kubectl-v1.32.1 get secrets "$SECRET" --ignore-not-found)" ]]; then
   exit 0
 fi
