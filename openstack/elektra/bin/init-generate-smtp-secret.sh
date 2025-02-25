@@ -2,7 +2,7 @@
 # shellcheck shell=bash
 # shellcheck disable=SC3010
 
-# This is the entrypoint script for the "generate-secrets" init container of the elektra pod.
+# This is the entrypoint script for the "generate-smpt-secret" init container of the elektra pod.
 set -eou pipefail
 [[ ${DEBUG:-false} != false ]] && set -x
 
@@ -28,7 +28,7 @@ USERNAME=$(echo "$SMTP_OUTPUT" | grep -oP 'Username:\s+\K.*')
 PASSWORD=$(echo "$SMTP_OUTPUT" | grep -oP 'Password:\s+\K.*')
 echo "SMTP credentials obtained"
 
-# Step 4: create new secret with randomly generated token
+# Step 4: create new secret with smtp credentials and id from ec2 credentials
 echo -n "
   apiVersion: v1
   kind: Secret
@@ -45,8 +45,7 @@ echo -n "
     username: $USERNAME
     password: $PASSWORD
 " > secret.yaml
-  # kubectl-v1.32.1 create -f secret.yaml
-
+  
 if ! kubectl-v1.32.1 create -f secret.yaml; then
   echo "Failed to create secret, likely because it already exists. Deleting associated EC2 credentials..."
   openstack ec2 credentials delete --user dashboard --user-domain default $ACCESS_KEY
