@@ -239,35 +239,6 @@ event-exporter:
       labels:
         volume: Message[1]
 
-fluent-bit:
-  backend:
-    opensearch:
-      enabled: false
-      host: DEFINED-IN-SECRETS
-      http_user: DEFINED-IN-SECRETS
-      http_passwd: DEFINED-IN-SECRETS
-      port: DEFINED-IN-SECRETS
-      logstash_prefix: admin
-      tls:
-        enabled: "On"
-        verify: "Off"
-        debug: '1'
-  existingConfigMap: fluent-bit-config
-  dropAnnotations: false
-  extraPorts:
-  - name: prometheus
-    port: 2021
-    containerPort: 2021
-    protocol: TCP
-  livenessProbe:
-    httpGet:
-      path: /
-      port: prometheus
-  readinessProbe:
-    httpGet:
-      path: /api/v1/health
-      port: prometheus
-
 falco:
   enabled: false
   image:
