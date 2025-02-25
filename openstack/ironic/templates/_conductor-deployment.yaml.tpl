@@ -159,8 +159,7 @@ spec:
             containerPort: 443
         volumeMounts:
           - mountPath: /etc/nginx/nginx.conf
-            name: ironic-console
-            subPath: nginx.conf
+            name: ironic-console-nginxconf
           - mountPath: /etc/nginx/conf.d
             name: nginx-confd
           - mountPath: /etc/nginx/conf.d/dhparam.pem
@@ -224,7 +223,12 @@ spec:
         {{- end }}
       - name: nginx-confd
         emptyDir: {}
-      - name: ironic-console
+      - name: ironic-console-nginxconf
+        secret:
+          secretName: ironic-console-secret
+          items:
+          - key: nginx.conf
+            path: nginx.conf
         configMap:
           name: ironic-console
       - name: ironic-console-dhparam
