@@ -33,13 +33,17 @@ spec:
         supplementalGroups: [476, 477]
         fsGroup: 42436
       tolerations:
-      {{- range $k, $v :=  merge $hypervisor.pod.tolerations .Values.pod.tolerations }}
+      {{- range $k, $v := merge $hypervisor.pod.tolerations .Values.pod.tolerations }}
       - # {{ $k }}
       {{- toYaml $v | nindent 8 }}
       {{- end }}
+      {{- if $hypervisor.pod.nodeSelector }}
       nodeSelector:
-      {{- range $k, $v := $hypervisor.pod.nodeSelector }}
-        {{ $k }}: {{ $v }}
+        {{- $hypervisor.pod.nodeSelector | toYaml| nindent 8 }}
+      {{- end }}
+      {{- if $hypervisor.pod.affinity }}
+      affinity:
+        {{- $hypervisor.pod.affinity | toYaml| nindent 8 }}
       {{- end }}
       hostAliases:
       {{- range $ip := .Values.rabbitmq.externalIPs }}
