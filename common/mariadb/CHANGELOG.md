@@ -1,8 +1,11 @@
 # Changelog
 
+## v0.16.8 - 2025/02/25
+* maintenance job configmap name fixed
+* chart version bumped
+
 ## v0.16.7 - 2025/02/25
 * `pod-readiness` updated to `20250225131500`
-* chart version bumped
 
 ## v0.16.6 - 2025/02/24
 * mysqld_exporter updated to [0.17.1](https://github.com/prometheus/mysqld_exporter/releases/tag/v0.17.1)
