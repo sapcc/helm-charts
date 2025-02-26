@@ -47,7 +47,7 @@
                     <td>{{"{{"}} .Commitment.Amount {{"}}"}}</td>
                     <td>{{"{{"}} .Commitment.Duration {{"}}"}}</td>
                     <td>{{"{{"}} .DateString {{"}}"}}</td>
-                    <td>{{"{{"}} .Resource.ServiceName {{"}}"}}</td>
+                    <td>{{"{{"}} .Resource.ServiceType {{"}}"}}</td>
                     <td>{{"{{"}} .Resource.ResourceName {{"}}"}}</td>
                     <td>{{"{{"}} .Resource.AvailabilityZone {{"}}"}}</td>
                 </tr>
