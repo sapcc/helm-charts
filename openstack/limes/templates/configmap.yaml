@@ -11,6 +11,16 @@ data:
       - {{ . }}
     {{- end }}
 {{ toYaml .Values.limes.clusters.ccloud | indent 4 }}
+    mail_notifications:
+      endpoint: limes-campfire.{{ .Values.global.region }}.{{ .Values.global.tld }}/
+      templates:
+
+        confirmed_commitments:
+          subject: {{ .Values.campfire.mail_type.expire.subject }}
+          body: {{ tpl (.Files.Get "files/commitment_mail.tpl") (merge (dict "region" .Values.global.region "condition" .Values.campfire.mail_type.confirm.condition)) | nindent 4 }}
+        expiring_commitments:
+          subject: {{ .Values.campfire.mail_type.confirm.subject }}
+          body: {{ tpl (.Files.Get "files/commitment_mail.tpl") (merge (dict "region" .Values.global.region "condition" .Values.campfire.mail_type.expire.condition)) | nindent 4 }}
 
   policy.json: |
     {{- .Files.Get "files/policy.yaml" | fromYaml | toPrettyJson | nindent 4 }}
