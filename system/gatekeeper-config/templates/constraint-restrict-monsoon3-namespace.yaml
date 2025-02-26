@@ -1,0 +1,21 @@
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: GkRestrictMonsoon3Namespace
+metadata:
+  name: restrictmonsoon3namespace
+  annotations:
+    {{- include "sources" (tuple "restrict-monsoon3-namespace" "restrict-monsoon3-namespace") | indent 4 }}
+    {{- include "docstring" (tuple $ "GkRestrictMonsoon3Namespace") | indent 4 }}
+  labels:
+    severity: 'error'
+spec:
+  enforcementAction: dryrun
+  match: {{ include "match_active_helm_releases" . | indent 4 }}
+  parameters:
+    patterns:
+      {{- if contains "qa-" .Values.global.region }}
+      monsoon3: "^(?:foo|bar)$"
+      monsoon3global: "^(?:foo-global|bar-global)$"
+      {{- else }}
+      monsoon3: "TODO"
+      monsoon3global: "TODO"
+      {{- end }}
