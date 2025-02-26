@@ -23,7 +23,7 @@ PROJECT_ID=$(echo "$EC2_CREDS" | jq -r '.project_id')
 USER_ID=$(echo "$EC2_CREDS" | jq -r '.user_id')
 echo "EC2 credentials created."
 
-# Step 3: Authenticate and get OpenStack token
+# Step 3: Generating SMTP
 echo "Generating SMTP credentials..."
 SMTP_OUTPUT=$(cronuscli smtp credentials --ec2-access "$ACCESS_KEY" --ec2-secret "$SECRET_KEY" --project-id "$PROJECT_ID" --user-id "$USER_ID" --base64 )
 USERNAME=$(echo "$SMTP_OUTPUT" | grep -oP 'Username:\s+\K.*')
