@@ -10,7 +10,7 @@ export OS_AUTH_TYPE=v3applicationcredential
 SECRET="elektra-smtp"
 
 # if we already have a secret, we can stop here
-if [[ -n "$(kubectl-v1.32.1 get secrets "$SECRET" --ignore-not-found)" ]]; then
+if [[ -n "$(/usr/bin/kubectl get secrets "$SECRET" --ignore-not-found)" ]]; then
   exit 0
 fi
 
@@ -41,14 +41,14 @@ echo -n "
         blockOwnerDeletion: true
         kind: Deployment
         name: elektra
-        uid: $(kubectl-v1.32.1 get deployment elektra -o jsonpath='{.metadata.uid}')
+        uid: $(/usr/bin/kubectl get deployment elektra -o jsonpath='{.metadata.uid}')
   data:
     ec2_access_key: $ACCESS_KEY
     username: $USERNAME
     password: $PASSWORD
 " > secret.yaml
   
-if ! kubectl-v1.32.1 create -f secret.yaml; then
+if ! /usr/bin/kubectl create -f secret.yaml; then
   echo "Failed to create secret, likely because it already exists. Deleting associated EC2 credentials..."
   openstack ec2 credentials delete --user dashboard --user-domain default $ACCESS_KEY
 else
