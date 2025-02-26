@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.16.9 - 2025/02/26
+* maintenance job configmap condition fixed
+* chart version bumped
+
 ## v0.16.8 - 2025/02/25
 * maintenance job configmap name fixed
 * chart version bumped
