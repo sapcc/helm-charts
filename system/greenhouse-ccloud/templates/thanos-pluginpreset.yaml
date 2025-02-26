@@ -15,11 +15,24 @@ spec:
       operator: In
       values:
       - "true"
-    - key: cluster-type
+    - key: cluster
       operator: In
       values:
-      - "storage"
-      - "observability"
+{{- range $cluster, $additionalSettings := .Values.kubeMonitoring.cephClusters }}
+    {{- if index $additionalSettings "thanos" }}
+      - {{ $cluster }}
+    {{- end }}
+{{- end }}
+{{- range $cluster, $additionalSettings := .Values.kubeMonitoring.computeClusters }}
+    {{- if index $additionalSettings "thanos" }}
+      - {{ $cluster }}
+    {{- end }}
+{{- end }}
+{{- range $cluster, $additionalSettings := .Values.kubeMonitoring.obsClusters }}
+    {{- if index $additionalSettings "thanos" }}
+      - {{ $cluster }}
+    {{- end }}
+{{- end }}
   plugin:
     disabled: false
     displayName: Thanos
