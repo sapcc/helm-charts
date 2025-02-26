@@ -72,7 +72,11 @@ spec:
             - name: CRONUS_USER_DOMAIN_NAME
               value: Default
             - name: CRONUS_USERNAME
+              {{- if $is_global }}
+              value: {{ contains "qa" $region | ternary "campfire-global-qa" "campfire-global" | quote }}
+              {{- else }}
               value: {{ printf "campfire-%s" $region | quote }}
+              {{- end }}
             - name: CRONUS_PASSWORD
               valueFrom:
                 secretKeyRef:
