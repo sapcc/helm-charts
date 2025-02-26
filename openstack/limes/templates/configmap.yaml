@@ -10,16 +10,16 @@ data:
     {{- range .Values.global.availability_zones }}
       - {{ . }}
     {{- end }}
-{{ toYaml .Values.limes.clusters.ccloud | indent 4 }}
     mail_notifications:
       endpoint: {{ .Values.limes.clusters.ccloud.catalog_url | replace "limes-3" "limes-campfire" | trimSuffix "/" }}/
       templates:
         confirmed_commitments:
-          subject: {{ .Values.campfire.mail_type.confirmed.subject }}
-          body: {{ tpl (.Files.Get "files/commitment_mail.tpl") (merge (dict "region" .Values.global.region "condition" .Values.campfire.mail_type.confirmed.condition)) | nindent 4 }}
+         subject: {{ .Values.campfire.mail_type.confirmed.subject }}
+         body: {{ tpl (.Files.Get "files/commitment_mail.tpl") (dict "region" .Values.global.region "condition" .Values.campfire.mail_type.confirmed.condition) | toJson }}
         expiring_commitments:
-          subject: {{ .Values.campfire.mail_type.expire.subject }}
-          body: {{ tpl (.Files.Get "files/commitment_mail.tpl") (merge (dict "region" .Values.global.region "condition" .Values.campfire.mail_type.expire.condition)) | nindent 4 }}
+         subject: {{ .Values.campfire.mail_type.expire.subject }}
+         body: {{ tpl (.Files.Get "files/commitment_mail.tpl") (dict "region" .Values.global.region "condition" .Values.campfire.mail_type.expire.condition) | toJson }}
+{{ toYaml .Values.limes.clusters.ccloud | indent 4 }}
 
   policy.json: |
     {{- .Files.Get "files/policy.yaml" | fromYaml | toPrettyJson | nindent 4 }}
