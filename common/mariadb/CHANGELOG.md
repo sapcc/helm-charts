@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.18.0 - 2025/02/26
+
+* enable reloader annotation to restart mariadb pod on root password update
+* start database with init.sql to update root password
+* chart version bumped
+
 ## v0.17.0 - 2025/02/26
 * use custom entrypoint script for mariadb deployment
   * remove non-optional and `healthcheck` user creation
