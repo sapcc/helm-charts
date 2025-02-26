@@ -30,8 +30,6 @@ db_performance_schema_instrument: # Enabling performance schema instruments.
   enabled: false
 
 root_password: null
-initdb_secret: null
-custom_initdb_secret: null
 
 # if enabled create 'ccroot'@'127.0.0.1' with all privileges to allow passwordless local connections
 # if disabled, the user will be dropped from the DB if existing
@@ -108,11 +106,34 @@ job:
         # -- Define how much CPU the MariaDB maintenance job container will request
         # @default -- 0.5
         cpu:
-
-pre_change_hook:
-  image: "sapcc/unified-kubernetes-toolbox"
-  image_version: "20220613150453"
-  kubectl_version: "1.23"
+  initdb:
+    # -- Whether to enable the init-db job
+    # @default -- true
+    enabled: true
+    # -- Define how the init-db job pod [will be restarted](https://kubernetes.io/docs/concepts/workloads/controllers/job/#handling-pod-and-container-failures) in case of an error.
+    # It can be on the same worker node or another
+    # @default -- OnFailure
+    jobRestartPolicy:
+    # -- Define if and how init-db jobs can run in [parallel](https://kubernetes.io/docs/tasks/job/automated-tasks-with-cron-jobs/#concurrency-policy)
+    # @default -- Forbid
+    concurrencyPolicy:
+    # -- Define how how many completed init-db jobs [should be kept](https://kubernetes.io/docs/tasks/job/automated-tasks-with-cron-jobs/#jobs-history-limits)
+    # @default -- 1
+    successfulJobsHistoryLimit:
+    # -- Define how how many failed init-db jobs [should be kept](https://kubernetes.io/docs/tasks/job/automated-tasks-with-cron-jobs/#jobs-history-limits)
+    # @default -- 1
+    failedJobsHistoryLimit:
+    # -- Define the [timezone](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones) for the MariaDB init-db job pod
+    # @default -- Etc/UTC
+    timeZone:
+    resources:
+      requests:
+        # -- Define how much memory the MariaDB init-db job container will request
+        # @default -- 64Mi
+        memory:
+        # -- Define how much CPU the MariaDB init-db job container will request
+        # @default -- 0.5
+        cpu:
 
 # name of priorityClass to influence scheduling priority
 priority_class: "critical-infrastructure"

@@ -1,0 +1,93 @@
+{{- if .Values.job.initdb.enabled }}
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: "{{ include "fullName" . }}-init-db"
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    {{- include "mariadb.labels" (list $ "version" "mariadb" "cronjob" "database") | indent 4 }}
+  annotations:
+    secret.reloader.stakater.com/reload: {{ include "fullName" . }}-init-db
+spec:
+  schedule: "0 0 * * *"
+  concurrencyPolicy: {{ $.Values.job.initdb.concurrencyPolicy | default "Forbid" | quote }}
+  successfulJobsHistoryLimit: {{ $.Values.job.initdb.successfulJobsHistoryLimit | default 1 | int }}
+  failedJobsHistoryLimit: {{ $.Values.job.initdb.failedJobsHistoryLimit | default 1 | int }}
+  timeZone: {{ $.Values.job.initdb.timeZone | default "Etc/UTC" | quote }}
+  suspend: true
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      template:
+        metadata:
+          name: "{{ include "fullName" . }}-init-db"
+          labels:
+{{- include "mariadb.labels" (list $ "version" "mariadb" "cronjob" "database") | indent 12 }}
+          annotations:
+{{- if and (and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested) $.Values.linkerd.mariadb.enabled }}
+            linkerd.io/inject: enabled
+            config.alpha.linkerd.io/proxy-enable-native-sidecar: "true"
+{{- end }}
+        spec:
+          restartPolicy: {{ .Values.job.initdb.jobRestartPolicy | default "OnFailure" | quote }}
+          priorityClassName: {{ .Values.priority_class | default "critical-infrastructure" | quote }}
+          initContainers:
+          - name: mariadb-check-readiness
+            image: {{ required ".Values.global.dockerHubMirrorAlternateRegion is missing" .Values.global.dockerHubMirrorAlternateRegion }}/{{ .Values.image }}
+            command:
+              - /bin/bash
+              - -c
+              - |
+                /configurator/mariadb-check-readiness.sh
+            env:
+              - name: MYSQL_ADDRESS
+                value: {{ include "fullName" . }}
+              - name: MYSQL_USERNAME
+                value: 'root'
+              - name: MYSQL_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: mariadb-{{.Values.name}}
+                    key: root-password
+            volumeMounts:
+              - name: init-db-configmap
+                mountPath: /configurator
+          containers:
+          - name: init-db-job
+            image: {{ required ".Values.global.dockerHubMirrorAlternateRegion is missing" .Values.global.dockerHubMirrorAlternateRegion }}/{{ .Values.image }}
+            command:
+              - /bin/bash
+              - -c
+              - |
+                /configurator/init-db.sh
+            env:
+              - name: MYSQL_ADDRESS
+                value: {{ include "fullName" . }}
+              - name: MYSQL_USERNAME
+                value: 'root'
+              - name: MYSQL_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: mariadb-{{.Values.name}}
+                    key: root-password
+            resources:
+              requests:
+                cpu: {{ $.Values.job.initdb.resources.requests.cpu | default 0.5 }}
+              limits:
+                memory: {{ $.Values.job.initdb.resources.requests.memory | default "64Mi" | quote }}
+            volumeMounts:
+              - name: init-db-secret
+                mountPath: /var/lib/initdb
+              - name: init-db-configmap
+                mountPath: /configurator
+          volumes:
+            - name: init-db-secret
+              secret:
+                secretName: {{ include "fullName" . }}-init-db
+                defaultMode: 0666
+            - name: init-db-configmap
+              configMap:
+                name: {{ include "fullName" . }}-init-db-bin
+                defaultMode: 0755
+{{- end }}
