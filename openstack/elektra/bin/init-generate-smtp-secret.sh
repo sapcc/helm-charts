@@ -6,7 +6,7 @@
 set -eou pipefail
 [[ ${DEBUG:-false} != false ]] && set -x
 
-export OS_AUTH_TYPE=v3applicationcredential
+OS_AUTH_TYPE=v3applicationcredential
 SECRET="elektra-smtp"
 
 # if we already have a secret, we can stop here
