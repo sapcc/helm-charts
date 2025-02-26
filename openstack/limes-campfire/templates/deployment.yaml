@@ -1,6 +1,7 @@
 {{- $tld     := $.Values.global.tld              | required "missing value for .Values.global.tld"              }}
 {{- $region  := $.Values.global.region           | required "missing value for .Values.global.region"           }}
 {{- $cregion := $.Values.campfire.central_region | required "missing value for .Values.campfire.central_region" }}
+{{- $is_global := eq .Release.Namespace "limes-global" }}
 
 kind: Deployment
 apiVersion: apps/v1
@@ -42,8 +43,13 @@ spec:
               value: /etc/campfire/policy.json
 
             # credentials for authenticating incoming requests and talking to the regional masterdata API
+            {{- if $is_global }}
+            - name: OS_AUTH_URL
+              value: "https://{{ contains "qa" $region | ternary "identity-3-qa" "identity-3" }}.global.{{ $tld }}/v3"
+            {{- else }}
             - name: OS_AUTH_URL
               value: "http://keystone.{{ $.Values.global.keystoneNamespace }}.svc.kubernetes.{{ $region }}.{{ $tld }}:5000/v3"
+            {{- end }}
             - name: OS_USER_DOMAIN_NAME
               value: Default
             - name: OS_USERNAME

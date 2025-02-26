@@ -1,4 +1,10 @@
-{{- $domain := printf "%s.%s.%s" "limes-campfire" .Values.global.region .Values.global.tld -}}
+{{- $tld    := $.Values.global.tld    | required "missing value for .Values.global.tld"    -}}
+{{- $region := $.Values.global.region | required "missing value for .Values.global.region" -}}
+
+{{- $domain := printf "%s.%s.%s" "limes-campfire" $region $tld -}}
+{{- if eq .Release.Namespace "limes-global" -}}
+  {{- $domain = printf "%s.global.%s" (contains "qa" $region | ternary "limes-campfire-qa" "limes-campfire") $tld -}}
+{{- end -}}
 
 kind: Ingress
 apiVersion: networking.k8s.io/v1
