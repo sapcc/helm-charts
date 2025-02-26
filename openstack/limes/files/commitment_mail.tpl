@@ -20,7 +20,7 @@
     </head>
     <body>
         <p><b>Dear SAP Cloud Infrastructure user</b>,</p>
-        <p>the following commitments are about to {{ .condition }} for the
+        <p>the following commitments are {{ .condition }} for the
             following project:</p>
         <p>
             <ul>
