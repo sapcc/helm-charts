@@ -121,12 +121,12 @@ spec:
 {{- if .Values.openTelemetryPlugin.openTelemetry.logsCollector.journaldConfig.enabled }}
     {{- include "journald.transform" . | nindent 6 -}}
 {{- end }}
-#{{- if and (.Values.openTelemetryPlugin.openTelemetry.logsCollector.containerdConfig.enabled) (.Values.openTelemetryPlugin.openTelemetry.logsCollector.openstackConfig.enabled) }}
-#{{- else if .Values.openTelemetryPlugin.openTelemetry.logsCollector.containerdConfig.enabled }}
-#    {{- include "containerd.transform" . | nindent 6 -}}
-#{{- else if .Values.openTelemetryPlugin.openTelemetry.logsCollector.openstackConfig.enabled }}
-#    {{- include "openstack.transform" . | nindent 6 -}}
-#{{- end }}
+{{- if and (.Values.openTelemetryPlugin.openTelemetry.logsCollector.containerdConfig.enabled) (.Values.openTelemetryPlugin.openTelemetry.logsCollector.openstackConfig.enabled) }}
+{{- else if .Values.openTelemetryPlugin.openTelemetry.logsCollector.containerdConfig.enabled }}
+    {{- include "containerd.transform" . | nindent 6 -}}
+{{- else if .Values.openTelemetryPlugin.openTelemetry.logsCollector.openstackConfig.enabled }}
+    {{- include "openstack.transform" . | nindent 6 -}}
+{{- end }}
 {{- if .Values.openTelemetryPlugin.openTelemetry.logsCollector.k8seventsConfig.enabled }}
     {{- include "k8sevents.transform" . | nindent 6 -}}
 {{- end }}
@@ -225,6 +225,9 @@ spec:
         logs_index: ${index}-datastream
       prometheus:
         endpoint: 0.0.0.0:9999
+{{- if .Values.openTelemetryPlugin.openTelemetry.logsCollector.openstackConfig.enabled }}
+    {{- include "openstack.exporter" . | nindent 6 -}}
+{{- end }}
 
     extensions:
       basicauth/failover_a:
@@ -238,10 +241,18 @@ spec:
 
     connectors:
       forward: {}
-      failover:
+      forward/swift: {}
+      failover/opensearch:
         priority_levels:
           - [logs/failover_a]
           - [logs/failover_b]
+        retry_interval: 1h
+        retry_gap: 15m
+        max_retries: 0
+      failover/opensearch-swift:
+        priority_levels:
+          - [logs/failover_a_swift]
+          - [logs/failover_b_swift]
         retry_interval: 1h
         retry_gap: 15m
         max_retries: 0
@@ -259,13 +270,13 @@ spec:
         logs/forward:
           receivers: [forward]
           processors: [batch]
-          exporters: [failover]
+          exporters: [failover/opensearch]
         logs/failover_a:
-          receivers: [failover]
+          receivers: [failover/opensearch]
           processors: [attributes/failover_username_a]
           exporters: [opensearch/failover_a]
         logs/failover_b:
-          receivers: [failover]
+          receivers: [failover/opensearch]
           processors: [attributes/failover_username_b]
           exporters: [opensearch/failover_b]
 {{- if .Values.openTelemetryPlugin.openTelemetry.prometheus.podMonitor.enabled }}

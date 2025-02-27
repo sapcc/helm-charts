@@ -2,7 +2,7 @@
 filelog/containerd:
   include_file_path: true
   include: [ /var/log/pods/*/*/*.log ]
-  exclude: [ /var/log/pods/otel_logs-*, /var/log/pods/logs_*, /var/log/containers/fluent*, /var/log/containers/swift*, /var/log/pods/dns-recursor_unbound*, /var/log/pods/kube-system_wormhole* ]
+  exclude: [ /var/log/pods/otel_logs-*, /var/log/pods/logs_*, /var/log/pods/fluent*, /var/log/pods/swift*, /var/log/pods/dns-recursor_unbound*, /var/log/pods/kube-system_wormhole* ]
   operators:
     - id: container-parser
       type: container
@@ -17,7 +17,7 @@ filelog/containerd:
 
 filelog/containerd-swift:
   include_file_path: true
-  include: [ /var/log/containers/swift* ]
+  include: [ /var/log/pods/swift* ]
   operators:
     - id: container-parser-swift
       type: container
@@ -48,7 +48,7 @@ transform/neutron-agent:
   log_statements:
     - context: log
       conditions:
-        - resource["k8s.container.name"] == "neutron-network-agent"
+        - attributes["k8s.container.name"] == "neutron-network-agent"
       statements:
         - merge_maps(attributes, ExtractGrokPatterns(body, "%{WORD:loglevel} %{NOTSPACE:logger} \\[-\\] %{GREEDYDATA} %{NOTSPACE} %{WORD:request_method} %{NOTSPACE} %{QUOTEDSTRING:request_path} %{NOTSPACE} %{NUMBER:request_status} %{NOTSPACE} %{IPV4:client.address} %{NOTSPACE} %{NOTSPACE:project_id} %{NOTSPACE} %{NOTSPACE:os_network_id} %{NOTSPACE} %{NOTSPACE:os_router_id} %{NOTSPACE} %{NOTSPACE:os_instance_id} %{NOTSPACE} %{BASE10NUM:request_duration} %{NOTSPACE} %{QUOTEDSTRING:user_agent}", true),"upsert")
         - merge_maps(attributes, ExtractGrokPatterns(body, "(%{TIMESTAMP_ISO8601:logtime}|)( )?%{TIMESTAMP_ISO8601:timestamp}.%{NOTSPACE}? %{NUMBER:pid} %{WORD:loglevel} %{NOTSPACE:logger} \\[-\\] %{GREEDYDATA} %{NOTSPACE} %{WORD:request_method} %{NOTSPACE} %{QUOTEDSTRING:request_path} %{NOTSPACE} %{NUMBER:request_status} %{NOTSPACE} %{IPV4:client.address} %{NOTSPACE %{NOTSPACE:project_id} %{NOTSPACE} %{NOTSPACE:os_network_id} %{NOTSPACE} %{NOTSPACE:os_router_id} %{NOTSPACE} %{NOTSPACE:os_instance_id} %{NOTSPACE} %{BASE10NUM:request_duration} %{NOTSPACE} %{QUOTEDSTRING:user_agent}", true),"upsert")
@@ -58,8 +58,8 @@ transform/neutron-errors:
   log_statements:
     - context: log
       conditions:
-        - resource["k8s.container.name"] == "neutron-server"
-        - resource["k8s.container.name"] == "neutron-asr1k"
+        - attributes["k8s.container.name"] == "neutron-server"
+        - attributes["k8s.container.name"] == "neutron-asr1k"
       statements:
         - merge_maps(attributes, ExtractGrokPatterns(body, "%{TIMESTAMP_ISO8601:timestamp} %{NOTSPACE} %{NOTSPACE:loglevel} %{NOTSPACE:process} (\\[)?(req-)%{NOTSPACE:request_id} ?(g%{NOTSPACE:global_request_id}) ?%{NOTSPACE:user_id} ?%{NOTSPACE:project_id} ?%{NOTSPACE:domain_id} ?%{NOTSPACE:user_domain_id} ?%{NOTSPACE:project_domain_id}\\] %{IPV4:client.address} \"%{WORD:request_method} %{NOTSPACE:request_path} HTTP/%{NOTSPACE}\" %{NOTSPACE} %{NUMBER:response}?( ).*%{NOTSPACE} %{NUMBER:content_length} %{NOTSPACE} %{BASE10NUM:request_time} %{NOTSPACE} %{NOTSPACE:agent}", true),"upsert")
         - merge_maps(attributes, ExtractGrokPatterns(body, "Encoutered a requeable lock exception executing %{WORD:neutronTask:string} for model %{WORD:neutronModel:string} on device %{IP:neutronIp:string}", true),"upsert")
@@ -74,14 +74,14 @@ transform/openstack-ironic:
       conditions:
         - resource.attributes["app.label.name"] == "ironic-api"
       statements:
-        - merge_maps(attributes, ExtractGrokPatterns(body, "%{DATE_EU:timestamp}%{SPACE}%{GREEDYDATA}\"%{WORD:method}%{SPACE}%{IMAGE_METHOD:path}%{NOTSPACE}%{SPACE}%{NOTSPACE:httpversion}\"%{SPACE}%{NUMBER:response}", true, ["IMAGE_METHOD:\/v2\/images"]),"upsert")
+        - merge_maps(attributes, ExtractGrokPatterns(body, "%{DATE_EU:timestamp}%{SPACE}%{GREEDYDATA}\"%{WORD:method}%{SPACE}%{IMAGE_METHOD:path}%{NOTSPACE}%{SPACE}%{NOTSPACE:httpversion}\"%{SPACE}%{NUMBER:response}", true, ["IMAGE_METHOD=/v2/images"]),"upsert")
 
 transform/openstack-manila:
   error_mode: ignore
   log_statements:
     - context: log
       conditions:
-        - resource["k8s.container.name"] == "manila-api"
+        - attributes["k8s.container.name"] == "manila-api"
       statements:
         - merge_maps(attributes, ExtractGrokPatterns(body, "(%{TIMESTAMP_ISO8601:logtime}|)( )?%{TIMESTAMP_ISO8601:access_timestamp}.%{NOTSPACE} %{NUMBER:pid} %{NOTSPACE:loglevel} %{NOTSPACE:program} (\\[?)%{NOTSPACE:request_id} %{NOTSPACE:user_id} %{NOTSPACE:project_id} %{NOTSPACE:domain_id} %{NOTSPACE:id1} %{REQUESTID:id2}(\\]?) %{GREEDYDATA:log_request}", true, ["REQUESTID=[0-9A-Za-z-]+"]),"upsert")
 
@@ -102,8 +102,8 @@ transform/non-openstack:
   log_statements:
     - context: log
       conditions:
-        - resource["k8s.container.name"] == "sentry"
-        - resource["k8s.deployment.name"] == "arc-api"
+        - attributes["k8s.container.name"] == "sentry"
+        - attributes["k8s.deployment.name"] == "arc-api"
       statements:
         - merge_maps(attributes, ExtractGrokPatterns(body, "%{IP:remote_addr} %{NOTSPACE:ident} %{NOTSPACE:auth} \\[%{HAPROXYDATE:timestamp}\\] \"%{WORD:request_method} %{NOTSPACE:request_path} %{NOTSPACE:httpversion}\" %{NUMBER:response} %{NUMBER:content_length:integer} %{QUOTEDSTRING:url} \"%{GREEDYDATA:user_agent}\"?( )?(%{BASE10NUM:request_time:float})", true, ["HAPROXYDATE=%{MONTHDAY}/%{MONTH}/%{YEAR}:%{HAPROXYTIME}.%{INT}", "HAPROXYTIME=%{HOUR}:%{MINUTE}(?::%{SECOND})"]),"upsert")
 
@@ -112,19 +112,18 @@ transform/network-generic-ssh-exporter:
   log_statements:
     - context: log
       conditions:
-        - resource["k8s.container.name"] == "network-generic-ssh-exporter"
+        - attributes["k8s.container.name"] == "network-generic-ssh-exporter"
       statements:
         - merge_maps(cache, ParseJSON(body), "upsert") where IsMatch(body, "^\\{")
         - set(attributes["loglevel"], cache["level"])
         - set(attributes["msg"], cache["msg"])
-        - merge_maps(attributes, ExtractGrokPatterns(msg, "Error connecting to target%{NOTSPACE} %{GREEDYDATA:ssh_reason}, %{NOTSPACE} %{IPV4:ssh_ip}", true), "upsert")
 
 transform/snmp-exporter:
   error_mode: ignore
   log_statements:
     - context: log
       conditions:
-        - resource["k8s.deployment.name"] == "snmp-exporter"
+        - attributes["k8s.deployment.name"] == "snmp-exporter"
       statements:
         - merge_maps(attributes, ExtractGrokPatterns(body, "ts=%{TIMESTAMP_ISO8601:timestamp} caller=%{NOTSPACE} level=%{NOTSPACE:loglevel} auth=%{NOTSPACE:snmp_auth} target=%{IP:snmp_ip} source_address=(?:%{GREEDYDATA:source}) worker=(?:%{NUMBER}) module=%{NOTSPACE:snmp_module} msg=%{QUOTEDSTRING:snmp_error} err=\"%{GREEDYDATA} %{IP}%{NOTSPACE} %{GREEDYDATA:snmp_reason}\"", true), "upsert")
 
@@ -133,7 +132,7 @@ transform/elektra:
   log_statements:
     - context: log
       conditions:
-        - resource["k8s.deployment.name"] == "elektra"
+        - attributes["k8s.deployment.name"] == "elektra"
       statements:
         - merge_maps(attributes, ExtractGrokPatterns(body, "\\[%{NOTSPACE:request}\\] %{WORD} %{WORD:method} \"%{NOTSPACE:url} %{WORD} %{IP:ip} %{WORD} %{TIMESTAMP_ISO8601:timestamp}", true), "upsert")
         - merge_maps(attributes, ExtractGrokPatterns(body, "\\[%{NOTSPACE:request}\\] %{WORD} %{NUMBER:response}", true), "upsert")
@@ -144,7 +143,7 @@ transform/keystone-api:
   log_statements:
     - context: log
       conditions:
-        - resource["k8s.container.name"] == "keystone-api"
+        - attributes["k8s.container.name"] == "keystone-api"
       statements:
         - merge_maps(attributes, ExtractGrokPatterns(body, "%{DATE_EU:timestamp} %{TIME:timestamp} %{NUMBER} %{NOTSPACE:loglevel} %{NOTSPACE:component} \\[%{NOTSPACE:requestid} %{NOTSPACE:global_request_id} usr %{NOTSPACE:usr} prj %{NOTSPACE:prj} dom %{NOTSPACE:dom} usr-dom %{NOTSPACE:usr_domain} prj-dom %{NOTSPACE:project_domain_id}\\] %{GREEDYDATA}'%{WORD:method} %{URIPATH:pri_path}' %{WORD:action}", true), "upsert")
 
@@ -153,36 +152,63 @@ transform/swift-proxy:
   log_statements:
     - context: log
       conditions:
-        - resource["k8s.daemonset.name"] == "swift-proxy-cluster-3"
+        - attributes["k8s.daemonset.name"] == "swift-proxy-cluster-3"
       statements:
-        - merge_maps(attributes, ExtractGrokPatterns(body, "%{SYSLOGTIMESTAMP:date} %{HOSTNAME:host} %{WORD}.%{LOGLEVEL} %{SYSLOGPROG}%{NOTSPACE} %{HOSTNAME:client.address} %{HOSTNAME:remote_addr} %{NOTSPACE:datetime} %{WORD:request_method} %{NOTSPACE:request_path}( )?%{SWIFTREQPARAM:request_param}?%( )?%{NOTSPACE:protocol} %{NUMBER:response} %{NOTSPACE} %{NOTSPACE:user_agent} %{NOTSPACE:auth_token} %{NOTSPACE:bytes_recvd} %{NOTSPACE:bytes_sent} %{NOTSPACE:client.etag} %{NOTSPACE:transaction_id} %{NOTSPACE:headers} %{BASE10NUM:request_time} %{NOTSPACE:source} %{NOTSPACE:log_info} %{BASE10NUM:request_start_time} %{BASE10NUM:request_end_time} %{NOTSPACE:policy_index}", true), "upsert")
+        - merge_maps(attributes, ExtractGrokPatterns(body, "%{SYSLOGTIMESTAMP:date} %{HOSTNAME:host} %{WORD}.%{LOGLEVEL} %{SYSLOGPROG}%{NOTSPACE} %{HOSTNAME:client.address} %{HOSTNAME:remote_addr} %{NOTSPACE:datetime} %{WORD:request_method} %{NOTSPACE:request_path}( )?%{NOTSPACE:request_param}?%( )?%{NOTSPACE:protocol} %{NUMBER:response} %{NOTSPACE} %{NOTSPACE:user_agent} %{NOTSPACE:auth_token} %{NOTSPACE:bytes_recvd} %{NOTSPACE:bytes_sent} %{NOTSPACE:client.etag} %{NOTSPACE:transaction_id} %{NOTSPACE:headers} %{BASE10NUM:request_time} %{NOTSPACE:source} %{NOTSPACE:log_info} %{BASE10NUM:request_start_time} %{BASE10NUM:request_end_time} %{NOTSPACE:policy_index}", true), "upsert")
 
 transform/swift-server:
   error_mode: ignore
   log_statements:
     - context: log
       conditions:
-        - resource["app.label.component"] == "swift-servers"
+        - attributes["app.label.component"] == "swift-servers"
       statements:
-        - merge_maps(attributes, ExtractGrokPatterns(body, "%{SYSLOGTIMESTAMP:date} %{HOSTNAME:host} %{WORD}.%{LOGLEVEL} %{SYSLOGPROG}%{NOTSPACE} %{HOSTNAME:client_ip} %{HOSTNAME:remote_addr} %{NOTSPACE:datetime} %{WORD:request_method} %{SWIFTREQPATH:request_path} (?:%{SWIFTREQPARAM:request_param})?%{NOTSPACE:protocol} %{NUMBER:response} %{NOTSPACE} %{NOTSPACE:user_agent} %{NOTSPACE:auth_token} %{NOTSPACE:bytes_recvd:integer} %{NOTSPACE:bytes_sent:integer} %{NOTSPACE:client_etag} %{NOTSPACE:transaction_id} %{NOTSPACE:headers} %{BASE10NUM:request_time:float} %{NOTSPACE:source} %{NOTSPACE:log_info} %{BASE10NUM:request_start_time:float} %{BASE10NUM:request_end_time:float} %{NOTSPACE:policy_index}", true), "upsert")
+        - merge_maps(attributes, ExtractGrokPatterns(body, "%{SYSLOGTIMESTAMP:date} %{HOSTNAME:host} %{WORD}.%{LOGLEVEL} %{SYSLOGPROG}%{NOTSPACE} %{HOSTNAME:client_ip} %{HOSTNAME:remote_addr} %{NOTSPACE:datetime} %{WORD:request_method} %{NOTSPACE:request_path} (?:%{NOTSPACE:request_param})?%{NOTSPACE:protocol} %{NUMBER:response} %{NOTSPACE} %{NOTSPACE:user_agent} %{NOTSPACE:auth_token} %{NOTSPACE:bytes_recvd:integer} %{NOTSPACE:bytes_sent:integer} %{NOTSPACE:client_etag} %{NOTSPACE:transaction_id} %{NOTSPACE:headers} %{BASE10NUM:request_time:float} %{NOTSPACE:source} %{NOTSPACE:log_info} %{BASE10NUM:request_start_time:float} %{BASE10NUM:request_end_time:float} %{NOTSPACE:policy_index}", true), "upsert")
 
 attributes/swift-proxy:
   actions:
     - key: auth_token
       action: delete
 
+{{- end }}
 
-
+{{- define "openstack.exporter" }}
+opensearch/failover_a_swift:
+  http:
+    auth:
+      authenticator: basicauth/failover_a
+    endpoint: {{ .Values.openTelemetryPlugin.openTelemetry.openSearchLogs.endpoint }}
+  logs_index: ${index}-swift-datastream
+opensearch/failover_b_swift:
+  http:
+    auth:
+      authenticator: basicauth/failover_b
+    endpoint: {{ .Values.openTelemetryPlugin.openTelemetry.openSearchLogs.endpoint }}
+  logs_index: ${index}-swift-datastream
 {{- end }}
 
 {{- define "openstack.pipeline" }}
+logs/forward_swift:
+  receivers: [forward/swift]
+  processors: [batch]
+  exporters: [failover/opensearch-swift]
+
+logs/failover_a_swift:
+  receivers: [failover/opensearch-swift]
+  processors: [attributes/failover_username_a]
+  exporters: [opensearch/failover_a_swift]
+logs/failover_b_swift:
+  receivers: [failover/opensearch-swift]
+  processors: [attributes/failover_username_b]
+  exporters: [opensearch/failover_b_swift]
+
 logs/containerd:
   receivers: [filelog/containerd]
-  processors: [k8sattributes,attributes/cluster,transform/ingress,transform/protocol]
+  processors: [k8sattributes,attributes/cluster,transform/ingress,transform/neutron-agent,transform/neutron-errors,transform/openstack-ironic,transform/openstack-manila,transform/openstack-api,transform/non-openstack,transform/network-generic-ssh-exporter,transform/snmp-exporter,transform/elektra,transform/keystone-api]
   exporters: [forward]
 
 logs/containerd-swift:
   receivers: [filelog/containerd-swift]
-  processors: [k8sattributes,attributes/cluster,transform/ingress,transform/protocol]
-  exporters: [forward]
+  processors: [k8sattributes,attributes/cluster,transform/ingress,transform/swift-proxy,transform/swift-server,attributes/swift-proxy]
+  exporters: [forward/swift]
 {{- end }}
