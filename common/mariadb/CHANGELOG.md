@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.16.11 - 2025/02/27
+* use `shared-app-images/alpine-kubectl` image for pre-change job instead of outdated `unified-kubernetes-toolbox`
+* use native sidecar container for linkerd in pre-change job
+
 ## v0.16.10 - 2025/02/27
 * verbose logging option for the analyzetables job added
 * chart version bumped
