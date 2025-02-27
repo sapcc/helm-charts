@@ -1,0 +1,10 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  namespace: {{ $.Release.Namespace }}
+  name: mariadb-{{.Values.name}}-entrypoint
+  labels:
+    {{- include "mariadb.labels" (list $ "version" "mariadb" "configmap" "entrypoint") | indent 4 }}
+data:
+{{ tpl (.Files.Glob "scripts/docker-entrypoint.sh").AsConfig . | indent 2 }}
