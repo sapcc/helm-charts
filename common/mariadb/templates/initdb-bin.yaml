@@ -1,0 +1,17 @@
+{{- if .Values.job.initdb.enabled }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "fullName" . }}-init-db-bin
+  labels:
+    {{- include "mariadb.labels" (list $ "version" "mariadb" "secret" "database") | indent 4 }}
+# hooks are not annotated as belonging to the Helm release, so we cannot rely on owner-info injection
+    {{- include "mariadb.ownerLabels" . | indent 4 }}
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade
+    "helm.sh/hook-weight": "2"
+data:
+{{ tpl (.Files.Glob "scripts/mariadb-init-db.sh").AsConfig . | indent 2 }}
+{{ tpl (.Files.Glob "scripts/mariadb-check-readiness.sh").AsConfig . | indent 2 }}
+{{- end }}

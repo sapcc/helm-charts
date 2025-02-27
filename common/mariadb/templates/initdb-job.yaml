@@ -1,0 +1,84 @@
+{{- if .Values.job.initdb.enabled }}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: "{{ include "fullName" . }}-init-db"
+  namespace:  {{.Release.Namespace}}
+  labels:
+    {{- include "mariadb.labels" (list $ "version" "mariadb" "job" "database") | indent 4 }}
+# hooks are not annotated as belonging to the Helm release, so we cannot rely on owner-info injection
+    {{- include "mariadb.ownerLabels" . | indent 4 }}
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+    "helm.sh/hook-weight": "3"
+spec:
+  backoffLimit: 1
+  template:
+    metadata:
+      name: "{{ include "fullName" . }}-init-db"
+      labels:
+{{- include "mariadb.labels" (list $ "version" "mariadb" "job" "database") | indent 8 }}
+      annotations:
+{{- if and (and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested) $.Values.linkerd.mariadb.enabled }}
+        linkerd.io/inject: enabled
+        config.alpha.linkerd.io/proxy-enable-native-sidecar: "true"
+{{- end }}
+    spec:
+      restartPolicy: {{ .Values.job.initdb.jobRestartPolicy | default "OnFailure" | quote }}
+      priorityClassName: {{ .Values.priority_class | default "critical-infrastructure" | quote }}
+      initContainers:
+      - name: mariadb-check-readiness
+        image: {{ required ".Values.global.dockerHubMirrorAlternateRegion is missing" .Values.global.dockerHubMirrorAlternateRegion }}/{{ .Values.image }}
+        command:
+          - /bin/bash
+          - -c
+          - |
+            /configurator/mariadb-check-readiness.sh
+        env:
+          - name: MYSQL_ADDRESS
+            value: {{ include "fullName" . }}
+          - name: MYSQL_USERNAME
+            value: 'root'
+          - name: MYSQL_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: mariadb-{{.Values.name}}
+                key: root-password
+        volumeMounts:
+          - name: init-db-configmap
+            mountPath: /configurator
+      containers:
+      - name: init-db-job
+        image: {{ required ".Values.global.dockerHubMirrorAlternateRegion is missing" .Values.global.dockerHubMirrorAlternateRegion }}/{{ .Values.image }}
+        command:
+          - /bin/bash
+          - -c
+          - |
+            /configurator/mariadb-init-db.sh
+        env:
+          - name: MYSQL_ADDRESS
+            value: {{ include "fullName" . }}
+          - name: MYSQL_USERNAME
+            value: 'root'
+          - name: MYSQL_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: mariadb-{{.Values.name}}
+                key: root-password
+        volumeMounts:
+          - name: init-db-secret
+            mountPath: /var/lib/initdb
+          - name: init-db-configmap
+            mountPath: /configurator
+      volumes:
+        - name: init-db-secret
+          secret:
+            secretName: {{ include "fullName" . }}-init-db
+            defaultMode: 0666
+        - name: init-db-configmap
+          configMap:
+            name: {{ include "fullName" . }}-init-db-bin
+            defaultMode: 0755
+{{- end }}
