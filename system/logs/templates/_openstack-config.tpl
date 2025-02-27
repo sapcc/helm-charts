@@ -155,7 +155,7 @@ transform/swift_proxy:
         - resource.attributes["k8s.daemonset.name"] == "swift-proxy-cluster-3"
         - resource.attributes["app.label.component"] == "swift-servers"
       statements:
-        - merge_maps(attributes, ExtractGrokPatterns(body, "%{SYSLOGTIMESTAMP:date} %{HOSTNAME:host} %{WORD}.%{LOGLEVEL} %{SYSLOGPROG}%{NOTSPACE} %{HOSTNAME:client.address} %{HOSTNAME:remote_addr} %{NOTSPACE:datetime} %{WORD:request_method} %{NOTSPACE:request_path}?( )?(%{NOTSPACE:request_param})?( )?(%{NOTSPACE:protocol}) %{NUMBER:response} %{NOTSPACE} %{NOTSPACE:user_agent} %{NOTSPACE:auth_token} %{NOTSPACE:bytes_recvd} %{NOTSPACE:bytes_sent} %{NOTSPACE:client.etag} %{NOTSPACE:transaction_id} %{NOTSPACE:headers} %{BASE10NUM:request_time} %{NOTSPACE:source} %{NOTSPACE:log_info} %{BASE10NUM:request_start_time} %{BASE10NUM:request_end_time} %{NOTSPACE:policy_index}", true), "upsert")
+        - merge_maps(attributes, ExtractGrokPatterns(body, "%{SYSLOGTIMESTAMP:date} %{HOSTNAME:host} %{WORD}.%{LOGLEVEL} %{SYSLOGPROG}%{NOTSPACE} %{HOSTNAME:client.address} %{HOSTNAME:remote_addr} %{NOTSPACE:datetime} %{WORD:request_method} %{NOTSPACE:request_path}?( )?(%{NOTSPACE:request_param}) ?(%{NOTSPACE:protocol})?( )%{NUMBER:response} %{NOTSPACE} %{NOTSPACE:user_agent} %{NOTSPACE:auth_token} %{NOTSPACE:bytes_recvd} %{NOTSPACE:bytes_sent} %{NOTSPACE:client.etag} %{NOTSPACE:transaction_id} %{NOTSPACE:headers} %{BASE10NUM:request_time} %{NOTSPACE:source} %{NOTSPACE:log_info} %{BASE10NUM:request_start_time} %{BASE10NUM:request_end_time} %{NOTSPACE:policy_index}", true), "upsert")
         - set(attributes["bytes_recvd"], 0) where attributes["bytes_recvd"] == "-"
         - set(attributes["bytes_sent"], 0) where attributes["bytes_sent"] == "-"
 
