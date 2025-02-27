@@ -647,7 +647,12 @@ _main() {
 			docker_mariadb_upgrade "$@"
 		fi
 	fi
-	exec "$@"
+	init_opt=""
+	if [[ -f /var/lib/initdb/init.sql ]]; then
+		init_opt="--init-file=/var/lib/initdb/init.sql"
+		echo "Using init-file: /var/lib/initdb/init.sql"
+	fi
+	exec "$@" ${init_opt}
 }
 
 # If we are sourced from elsewhere, don't perform any further actions

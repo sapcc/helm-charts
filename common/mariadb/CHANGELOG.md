@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.17.1 - 2025/02/27
+* start database with init.sql to update root password
+
 ## v0.17.0 - 2025/02/27
 * use custom entrypoint script for mariadb deployment
   * remove non-optional and `healthcheck` user creation
