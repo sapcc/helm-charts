@@ -5,8 +5,13 @@ metadata:
   namespace: {{ .Release.Namespace }}
   labels:
     app: maintenance-controller
+    {{- if .Values.deployment.extraLabels }}
+    {{- .Values.deployment.extraLabels | toYaml | nindent 4 }}
+    {{- end }}
+    {{- if .Values.deployment.extraAnnotations }}
   annotations:
-    secret.reloader.stakater.com/reload: maintenance-controller-secrets{{ if and .Values.kubernikus.enabled .Values.kubernikus.cloudconfig }},{{ .Values.kubernikus.cloudconfig }}{{ end }}
+    {{- .Values.deployment.extraAnnotations | toYaml | nindent 4 }}
+    {{- end }}
 spec:
   selector:
     matchLabels:
@@ -16,17 +21,11 @@ spec:
     metadata:
       labels:
         app: maintenance-controller
-        {{- if .Values.deployment.extraLabels }}
-        {{- .Values.deployment.extraLabels | toYaml | nindent 8 }}
-        {{- end }}
       annotations:
         prometheus.io/scrape: "true"
         prometheus.io/targets: kubernetes
         {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
         linkerd.io/inject: enabled
-        {{- end }}
-        {{- if .Values.deployment.extraAnnotations }}
-        {{- .Values.deployment.extraAnnotations | toYaml | nindent 8 }}
         {{- end }}
     spec:
       affinity:
