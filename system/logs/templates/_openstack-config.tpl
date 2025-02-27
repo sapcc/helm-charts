@@ -2,7 +2,7 @@
 filelog/containerd:
   include_file_path: true
   include: [ /var/log/pods/*/*/*.log ]
-  exclude: [ /var/log/pods/otel_logs-*, /var/log/pods/logs_*, /var/log/pods/fluent*, /var/log/pods/swift*, /var/log/pods/dns-recursor_unbound*, /var/log/pods/kube-system_wormhole* ]
+  exclude: [ /var/log/pods/logs_logs-*/*/*.log, /var/log/pods/logs_fluent*/*/*.log, /var/log/pods/swift*/*/*.log, /var/log/pods/dns-recursor_unbound*/*/*.log, /var/log/pods/kube-system_wormhole*/*/*.log ]
   operators:
     - id: container-parser
       type: container
@@ -15,9 +15,9 @@ filelog/containerd:
       field: attributes["log.type"]
       value: "containerd"
 
-filelog/containerd-swift:
+filelog/containerd_swift:
   include_file_path: true
-  include: [ /var/log/pods/swift* ]
+  include: [ /var/log/pods/swift*/*/*.log ]
   operators:
     - id: container-parser-swift
       type: container
@@ -43,7 +43,7 @@ transform/ingress:
         - set(attributes["network.protocol.name"], ConvertCase(attributes["network.protocol.name"], "lower")) where attributes["network.protocol.name"] != nil
         - set(attributes["config.parsed"], "ingress-nginx") where attributes["client.address"] != nil
 
-transform/neutron-agent:
+transform/neutron_agent:
   error_mode: ignore
   log_statements:
     - context: log
@@ -53,7 +53,7 @@ transform/neutron-agent:
         - merge_maps(attributes, ExtractGrokPatterns(body, "%{WORD:loglevel} %{NOTSPACE:logger} \\[-\\] %{GREEDYDATA} %{NOTSPACE} %{WORD:request_method} %{NOTSPACE} %{QUOTEDSTRING:request_path} %{NOTSPACE} %{NUMBER:request_status} %{NOTSPACE} %{IPV4:client.address} %{NOTSPACE} %{NOTSPACE:project_id} %{NOTSPACE} %{NOTSPACE:os_network_id} %{NOTSPACE} %{NOTSPACE:os_router_id} %{NOTSPACE} %{NOTSPACE:os_instance_id} %{NOTSPACE} %{BASE10NUM:request_duration} %{NOTSPACE} %{QUOTEDSTRING:user_agent}", true),"upsert")
         - merge_maps(attributes, ExtractGrokPatterns(body, "(%{TIMESTAMP_ISO8601:logtime}|)( )?%{TIMESTAMP_ISO8601:timestamp}.%{NOTSPACE}? %{NUMBER:pid} %{WORD:loglevel} %{NOTSPACE:logger} \\[-\\] %{GREEDYDATA} %{NOTSPACE} %{WORD:request_method} %{NOTSPACE} %{QUOTEDSTRING:request_path} %{NOTSPACE} %{NUMBER:request_status} %{NOTSPACE} %{IPV4:client.address} %{NOTSPACE %{NOTSPACE:project_id} %{NOTSPACE} %{NOTSPACE:os_network_id} %{NOTSPACE} %{NOTSPACE:os_router_id} %{NOTSPACE} %{NOTSPACE:os_instance_id} %{NOTSPACE} %{BASE10NUM:request_duration} %{NOTSPACE} %{QUOTEDSTRING:user_agent}", true),"upsert")
 
-transform/neutron-errors:
+transform/neutron_errors:
   error_mode: ignore
   log_statements:
     - context: log
@@ -67,7 +67,7 @@ transform/neutron-errors:
         - merge_maps(attributes, ExtractGrokPatterns(body, "%{WORD:neutronTask} for model %{WORD:neutronModel} cannot be executed on %{IP:neutronIp} due to a model/device inconsistency.", true),"upsert")
         - merge_maps(attributes, ExtractGrokPatterns(body, "Failed to bind port %{UUID:neutronPort:string} on host %{NOTSPACE:neutronHost:string} for vnic_type %{WORD:neutronVnicType:string} using segments", true),"upsert")
 
-transform/openstack-ironic:
+transform/openstack_ironic:
   error_mode: ignore
   log_statements:
     - context: log
@@ -76,7 +76,7 @@ transform/openstack-ironic:
       statements:
         - merge_maps(attributes, ExtractGrokPatterns(body, "%{DATE_EU:timestamp}%{SPACE}%{GREEDYDATA}\"%{WORD:method}%{SPACE}%{IMAGE_METHOD:path}%{NOTSPACE}%{SPACE}%{NOTSPACE:httpversion}\"%{SPACE}%{NUMBER:response}", true, ["IMAGE_METHOD=/v2/images"]),"upsert")
 
-transform/openstack-manila:
+transform/openstack_manila:
   error_mode: ignore
   log_statements:
     - context: log
@@ -85,7 +85,7 @@ transform/openstack-manila:
       statements:
         - merge_maps(attributes, ExtractGrokPatterns(body, "(%{TIMESTAMP_ISO8601:logtime}|)( )?%{TIMESTAMP_ISO8601:access_timestamp}.%{NOTSPACE} %{NUMBER:pid} %{NOTSPACE:loglevel} %{NOTSPACE:program} (\\[?)%{NOTSPACE:request_id} %{NOTSPACE:user_id} %{NOTSPACE:project_id} %{NOTSPACE:domain_id} %{NOTSPACE:id1} %{REQUESTID:id2}(\\]?) %{GREEDYDATA:log_request}", true, ["REQUESTID=[0-9A-Za-z-]+"]),"upsert")
 
-transform/openstack-api:
+transform/openstack_api:
   error_mode: ignore
   log_statements:
     - context: log
@@ -97,7 +97,7 @@ transform/openstack-api:
       statements:
         - merge_maps(attributes, ExtractGrokPatterns(body, "%{TIMESTAMP_ISO8601:timestamp} %{NOTSPACE} %{NOTSPACE:loglevel} %{NOTSPACE:process} (\\[)?(req-)%{NOTSPACE:request_id} ?(g%{NOTSPACE:global_request_id}) ?%{NOTSPACE:user_id} ?%{NOTSPACE:project_id} ?%{NOTSPACE:domain_id} ?%{NOTSPACE:user_domain_id} ?%{NOTSPACE:project_domain_id}\\] %{IPV4:client.address},%{IPV4:internal_ip} \"%{WORD:request_method} %{NOTSPACE:request_path} HTTP/%{NOTSPACE}\" %{NOTSPACE} %{NUMBER:response}?( ).*%{NOTSPACE} %{NUMBER:content_length:integer} %{NOTSPACE} %{BASE10NUM:request_time:float} ?%{NOTSPACE} ?%{NOTSPACE:agent}", true), "upsert")
 
-transform/non-openstack:
+transform/non_openstack:
   error_mode: ignore
   log_statements:
     - context: log
@@ -107,7 +107,7 @@ transform/non-openstack:
       statements:
         - merge_maps(attributes, ExtractGrokPatterns(body, "%{IP:remote_addr} %{NOTSPACE:ident} %{NOTSPACE:auth} \\[%{HAPROXYDATE:timestamp}\\] \"%{WORD:request_method} %{NOTSPACE:request_path} %{NOTSPACE:httpversion}\" %{NUMBER:response} %{NUMBER:content_length:integer} %{QUOTEDSTRING:url} \"%{GREEDYDATA:user_agent}\"?( )?(%{BASE10NUM:request_time:float})", true, ["HAPROXYDATE=%{MONTHDAY}/%{MONTH}/%{YEAR}:%{HAPROXYTIME}.%{INT}", "HAPROXYTIME=%{HOUR}:%{MINUTE}(?::%{SECOND})"]),"upsert")
 
-transform/network-generic-ssh-exporter:
+transform/network_generic_ssh_exporter:
   error_mode: ignore
   log_statements:
     - context: log
@@ -118,7 +118,7 @@ transform/network-generic-ssh-exporter:
         - set(attributes["loglevel"], cache["level"])
         - set(attributes["msg"], cache["msg"])
 
-transform/snmp-exporter:
+transform/snmp_exporter:
   error_mode: ignore
   log_statements:
     - context: log
@@ -138,7 +138,7 @@ transform/elektra:
         - merge_maps(attributes, ExtractGrokPatterns(body, "\\[%{NOTSPACE:request}\\] %{WORD} %{NUMBER:response}", true), "upsert")
         - merge_maps(attributes, ExtractGrokPatterns(body, "\\[%{NOTSPACE:request}\\]", true), "upsert")
 
-transform/keystone-api:
+transform/keystone_api:
   error_mode: ignore
   log_statements:
     - context: log
@@ -147,7 +147,7 @@ transform/keystone-api:
       statements:
         - merge_maps(attributes, ExtractGrokPatterns(body, "%{DATE_EU:timestamp} %{TIME:timestamp} %{NUMBER} %{NOTSPACE:loglevel} %{NOTSPACE:component} \\[%{NOTSPACE:requestid} %{NOTSPACE:global_request_id} usr %{NOTSPACE:usr} prj %{NOTSPACE:prj} dom %{NOTSPACE:dom} usr-dom %{NOTSPACE:usr_domain} prj-dom %{NOTSPACE:project_domain_id}\\] %{GREEDYDATA}'%{WORD:method} %{URIPATH:pri_path}' %{WORD:action}", true), "upsert")
 
-transform/swift-proxy:
+transform/swift_proxy:
   error_mode: ignore
   log_statements:
     - context: log
@@ -156,7 +156,7 @@ transform/swift-proxy:
       statements:
         - merge_maps(attributes, ExtractGrokPatterns(body, "%{SYSLOGTIMESTAMP:date} %{HOSTNAME:host} %{WORD}.%{LOGLEVEL} %{SYSLOGPROG}%{NOTSPACE} %{HOSTNAME:client.address} %{HOSTNAME:remote_addr} %{NOTSPACE:datetime} %{WORD:request_method} %{NOTSPACE:request_path}( )?%{NOTSPACE:request_param}?%( )?%{NOTSPACE:protocol} %{NUMBER:response} %{NOTSPACE} %{NOTSPACE:user_agent} %{NOTSPACE:auth_token} %{NOTSPACE:bytes_recvd} %{NOTSPACE:bytes_sent} %{NOTSPACE:client.etag} %{NOTSPACE:transaction_id} %{NOTSPACE:headers} %{BASE10NUM:request_time} %{NOTSPACE:source} %{NOTSPACE:log_info} %{BASE10NUM:request_start_time} %{BASE10NUM:request_end_time} %{NOTSPACE:policy_index}", true), "upsert")
 
-transform/swift-server:
+transform/swift_server:
   error_mode: ignore
   log_statements:
     - context: log
@@ -165,7 +165,7 @@ transform/swift-server:
       statements:
         - merge_maps(attributes, ExtractGrokPatterns(body, "%{SYSLOGTIMESTAMP:date} %{HOSTNAME:host} %{WORD}.%{LOGLEVEL} %{SYSLOGPROG}%{NOTSPACE} %{HOSTNAME:client_ip} %{HOSTNAME:remote_addr} %{NOTSPACE:datetime} %{WORD:request_method} %{NOTSPACE:request_path} (?:%{NOTSPACE:request_param})?%{NOTSPACE:protocol} %{NUMBER:response} %{NOTSPACE} %{NOTSPACE:user_agent} %{NOTSPACE:auth_token} %{NOTSPACE:bytes_recvd:integer} %{NOTSPACE:bytes_sent:integer} %{NOTSPACE:client_etag} %{NOTSPACE:transaction_id} %{NOTSPACE:headers} %{BASE10NUM:request_time:float} %{NOTSPACE:source} %{NOTSPACE:log_info} %{BASE10NUM:request_start_time:float} %{BASE10NUM:request_end_time:float} %{NOTSPACE:policy_index}", true), "upsert")
 
-attributes/swift-proxy:
+attributes/swift_proxy:
   actions:
     - key: auth_token
       action: delete
@@ -191,24 +191,24 @@ opensearch/failover_b_swift:
 logs/forward_swift:
   receivers: [forward/swift]
   processors: [batch]
-  exporters: [failover/opensearch-swift]
+  exporters: [failover/opensearch_swift]
 
 logs/failover_a_swift:
-  receivers: [failover/opensearch-swift]
+  receivers: [failover/opensearch_swift]
   processors: [attributes/failover_username_a]
   exporters: [opensearch/failover_a_swift]
 logs/failover_b_swift:
-  receivers: [failover/opensearch-swift]
+  receivers: [failover/opensearch_swift]
   processors: [attributes/failover_username_b]
   exporters: [opensearch/failover_b_swift]
 
 logs/containerd:
   receivers: [filelog/containerd]
-  processors: [k8sattributes,attributes/cluster,transform/ingress,transform/neutron-agent,transform/neutron-errors,transform/openstack-ironic,transform/openstack-manila,transform/openstack-api,transform/non-openstack,transform/network-generic-ssh-exporter,transform/snmp-exporter,transform/elektra,transform/keystone-api]
+  processors: [k8sattributes,attributes/cluster,transform/ingress,transform/neutron_agent,transform/neutron_errors,transform/openstack_ironic,transform/openstack_manila,transform/openstack_api,transform/non_openstack,transform/network_generic_ssh_exporter,transform/snmp_exporter,transform/elektra,transform/keystone_api]
   exporters: [forward]
 
 logs/containerd-swift:
-  receivers: [filelog/containerd-swift]
-  processors: [k8sattributes,attributes/cluster,transform/ingress,transform/swift-proxy,transform/swift-server,attributes/swift-proxy]
+  receivers: [filelog/containerd_swift]
+  processors: [k8sattributes,attributes/cluster,transform/ingress,transform/swift_proxy,transform/swift_server,attributes/swift_proxy]
   exporters: [forward/swift]
 {{- end }}
