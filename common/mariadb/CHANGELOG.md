@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.16.10 - 2025/02/27
+* verbose logging option for the analyzetables job added
+* chart version bumped
+
 ## v0.16.9 - 2025/02/26
 * maintenance job configmap condition fixed
 * chart version bumped
