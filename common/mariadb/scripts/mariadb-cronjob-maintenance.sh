@@ -28,6 +28,9 @@ function analyzeTable {
     MYSQL_RESPONSE=$(mysql ${mysqlOpts} --execute="ANALYZE TABLE ${tblName} PERSISTENT FOR ALL;")
     MYSQL_STATUS=$?
     MYSQL_QUERY_STATUS=$(echo "${MYSQL_RESPONSE}" | grep "Error" | wc -l)
+    {{- if $.Values.job.maintenance.function.analyzeTable.verbose }}
+    echo "${MYSQL_RESPONSE}"
+    {{- end }}
 
     if [ "${MYSQL_STATUS}" -ne 0 ] || [ "${MYSQL_QUERY_STATUS}" -ne 0 ]; then
       logerror "${FUNCNAME[0]}" "analyze table ${tblName} failed"
