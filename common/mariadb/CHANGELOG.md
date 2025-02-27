@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.17.1 - 2025/03/04
+* use local unix_socket connection for all status checks and mysqld_upgrade
+  * this would allow to change root password without intermittent liveness check failure
+  * this would allow to use `'` and `\` in root password in mysqld_upgrade
+* use monitor user with limited privileges for metrics sidecar
+
 ## v0.17.0 - 2025/02/27
 * use custom entrypoint script for mariadb deployment
   * remove non-optional and `healthcheck` user creation

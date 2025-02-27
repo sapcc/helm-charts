@@ -32,6 +32,16 @@ GRANT {{ . }} TO {{ include "mariadb.resolve_secret_squote" $username }};
     {{- end }}
 {{- end }}
 
+ALTER USER 'root'@'localhost' IDENTIFIED VIA unix_socket;
+ALTER USER 'root'@'%' IDENTIFIED BY {{ include "mariadb.resolve_secret_squote" .Values.root_password }};
+
+{{- if .Values.metrics.enabled }}
+CREATE USER IF NOT EXISTS 'monitor'@'127.0.0.1' WITH MAX_USER_CONNECTIONS 5;
+GRANT SLAVE MONITOR, PROCESS, REPLICATION CLIENT, SELECT ON *.* TO 'monitor'@'127.0.0.1';
+{{- else }}
+DROP USER IF EXISTS 'monitor'@'127.0.0.1';
+{{- end }}
+
 {{- if (and (hasKey .Values "ccroot_user") (.Values.ccroot_user.enabled)) }}
 CREATE USER IF NOT EXISTS 'ccroot'@'127.0.0.1';
 GRANT ALL PRIVILEGES ON *.* TO 'ccroot'@'127.0.0.1';
