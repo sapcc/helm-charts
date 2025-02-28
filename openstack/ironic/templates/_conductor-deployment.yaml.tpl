@@ -89,7 +89,7 @@ spec:
             command:
             - bash
             - -c
-            - curl -u {{ .Values.rabbitmq.metrics.user }}:{{ .Values.rabbitmq.metrics.password }} ironic-rabbitmq:{{ .Values.rabbitmq.ports.management }}/api/consumers | sed 's/,/\n/g' | grep ironic-conductor-{{$conductor.name}} >/dev/null
+            - curl --netrc-file /etc/ironic/netrc ironic-rabbitmq:{{ .Values.rabbitmq.ports.management }}/api/consumers | sed 's/,/\n/g' | grep ironic-conductor-{{$conductor.name}} >/dev/null
           periodSeconds: 10
           failureThreshold: 30
         livenessProbe:
@@ -103,6 +103,8 @@ spec:
         volumeMounts:
         - mountPath: /etc/ironic
           name: etcironic
+        - mountPath: /etc/ironic/netrc
+          name: curl-netrc
         - mountPath: /etc/ironic/ironic.conf.d
           name: ironic-etc-confd
         - mountPath: /etc/ironic/ironic.conf
@@ -211,6 +213,12 @@ spec:
           items:
           - key: secrets.conf
             path: secrets.conf
+      - name: curl-netrc
+        secret:
+          secretName: {{ .Release.Name }}-secrets
+          items:
+          - key: netrc
+            path: netrc
       - name: ironic-etc
         configMap:
           name: ironic-etc
