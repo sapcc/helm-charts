@@ -24,7 +24,7 @@ transform/ingress:
 filelog/containerd:
   include_file_path: true
   include: [ /var/log/pods/*/*/*.log ]
-  exclude: [ /var/log/pods/otel_logs-*, /var/log/pods/logs_* ]
+  exclude: [ /var/log/pods/logs_logs-*/*/*.log, /var/log/pods/logs_fluent*/*/*.log ]
   operators:
     - id: container-parser
       type: container
