@@ -59,8 +59,27 @@ if [ "${DATA_STREAM_ENABLED}" = true ]; then
      # we have to copy the template from the scripts secrets to a directory, where we can change the template.
      cp /${FILEPATH}/${DS_ISM_TEMPLATE} ${TMPPATH}/ds-${e}-${DS_ISM_TEMPLATE}
      echo "Applying ${TMPPATH}/ds-${e}-${DS_ISM_TEMPLATE} to ${CLUSTER_HOST}"
+
+     # common substitutions
      sed -i "s/_DS_NAME_/${e}/g" ${TMPPATH}/ds-${e}-${DS_ISM_TEMPLATE}
      sed -i "s/_SCHEMAVERSION_/${FILE_RETENTION_SCHEMA_VERSION}/g" ${TMPPATH}/ds-${e}-${DS_ISM_TEMPLATE}
+
+     # set condition values based on data stream
+     if [ "$e" = "logs-swift" ]; then
+       MIN_SIZE="120gb"
+       MIN_DOC_COUNT="200000000"
+       MIN_INDEX_AGE="14d"
+     else
+       MIN_SIZE="30gb"
+       MIN_DOC_COUNT="50000000"
+       MIN_INDEX_AGE="7d"
+     fi
+
+     # apply condition values
+     sed -i "s/_MIN_SIZE_/${MIN_SIZE}/g" ${TMPPATH}/ds-${e}-${DS_ISM_TEMPLATE}
+     sed -i "s/_MIN_DOC_COUNT_/${MIN_DOC_COUNT}/g" ${TMPPATH}/ds-${e}-${DS_ISM_TEMPLATE}
+     sed -i "s/_MIN_INDEX_AGE_/${MIN_INDEX_AGE}/g" ${TMPPATH}/ds-${e}-${DS_ISM_TEMPLATE}
+
      # initial upload or test if ism policy exists
      export POLICY_RETURN_CODE=$( curl -s -o /dev/null -s -w "%{http_code}\n" -u "${BASIC_AUTH_HEADER}" -XGET "${CLUSTER_HOST}/_plugins/_ism/policies/ds-${e}-ism")
      echo -e "\nReturn code is $POLICY_RETURN_CODE\n"
@@ -93,7 +112,7 @@ if [ "${DATA_STREAM_ENABLED}" = true ]; then
        export CLUSTER_RETENTION_SCHEMA_VERSION=$(echo ${CLUSTER_RETENTION_RESPONSE} | jq .policy.schema_version?)
        export CLUSTER_RETENTION_RUN_PRIM_TERM=$(echo ${CLUSTER_RETENTION_RESPONSE} | jq ._primary_term?)
        export CLUSTER_RETENTION_SEQ_NUMBER=$(echo ${CLUSTER_RETENTION_RESPONSE} | jq ._seq_no?)
-      
+
        if [ -z ${FILE_RETENTION_SCHEMA_VERSION} ]; then
          echo -e "Variable FILE_RETENTION_SCHEMA_VERSION is empty or not existing\n"
        else
