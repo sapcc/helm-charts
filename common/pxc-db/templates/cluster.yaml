@@ -191,6 +191,19 @@ spec:
           requests:
             storage: {{ $pxc.persistence.size | quote }}
     gracePeriod: 600
+{{- if .Values.custom_users }}
+  users:
+  {{- range $username, $values := .Values.users }}
+    {{- $username := default $username $values.name }}
+    {{- if $values.password }}
+    - name: {{ $values.name }}
+      hosts: []
+      passwordSecretRef:
+        name: pxc-db-{{$.Values.name}}-custom-users-secret
+        key: {{ $username }}
+    {{- end }}
+  {{- end }}
+{{- end }}
   proxysql:
     enabled: false
   {{- $haproxy := .Values.haproxy }}
