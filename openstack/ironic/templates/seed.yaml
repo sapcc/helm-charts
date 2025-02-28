@@ -570,9 +570,9 @@ spec:
   domains:
   - name: Default
     users:
-    - name: {{ .Values.global.ironicServiceUser }}{{ .Values.global.user_suffix | default "" }}
+    - name: '{{ .Values.global.ironicServiceUser | default "ironic" | include "resolve_secret" }}'
       description: Ironic Service
-      password: {{ required ".Values.global.ironic_service_password is missing" .Values.global.ironic_service_password | quote }}
+      password: '{{ required ".Values.global.ironic_service_password is missing" .Values.global.ironic_service_password | include "resolve_secret" }}'
       role_assignments:
       - project: service
         role: service
@@ -588,7 +588,7 @@ spec:
         role: cloud_objectstore_admin
     - name: ipmi_exporter
       description: IPMI Exporter for MB Monitoring
-      password: {{ required "ipmi_exporter_user_passwd is missing" .Values.global.ipmi_exporter_user_passwd | quote }}
+      password: '{{ required ".Values.global.ipmi_exporter_user_passwd is missing" .Values.global.ipmi_exporter_user_passwd | include "resolve_secret" }}'
 
 {{- if .Values.tempest_enabled }}
   - name: tempest
