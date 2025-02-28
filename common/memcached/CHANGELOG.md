@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.6.5 - 2025/02/24
+
+* memcached [version](https://github.com/memcached/memcached/wiki/ReleaseNotes1637) bumped to `1.6.37-alpine3.21`
+  * `proto: -X disables stats detail as well` to make information leakage harder
+* chart version bumped
+
+## v0.6.4 - 2025/02/07
+
+* memcached [version](https://github.com/memcached/memcached/wiki/ReleaseNotes1636) bumped to `1.6.36-alpine3.21`
+  * `Critical bugfix for the proxy when using an "internal" backend with extstore enabled. Does not affect the system otherwise.`
+* chart version bumped
+
 ## v0.6.3 - 2025/01/07
 
 * memcached [version](https://github.com/memcached/memcached/wiki/ReleaseNotes1634) bumped to `1.6.34-alpine3.21`

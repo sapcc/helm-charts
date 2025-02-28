@@ -1,9 +1,9 @@
 {{- $vbase  := .Values.global.vaultBaseURL | required "missing value for .Values.global.vaultBaseURL" -}}
 {{- $region := .Values.global.region       | required "missing value for .Values.global.region"       -}}
 {{- $is_global := $.Values.limes.clusters.ccloud.catalog_url | contains "global" -}}
+{{- $cdomains := .Values.global.domain_seeds.customer_domains | required "missing value for .Values.global.domain_seeds.customer_domains" -}}
+{{- $domains  := concat (list "cc3test") $cdomains -}}
 
-{{- $domains := list "bs" "btp_fp" "cc3test" "cp" "cis" "fsn" "hcm" "hcp03" "hda" "hec" "kyma" "monsoon3" "neo" "s4" "wbs" -}}
-{{- /* WARNING: When adding a new domain, also increment the domain count in the OpenstackLimesUnexpectedCloudDnsAdminRoleAssignments alert. */ -}}
 {{- if $is_global -}}
   {{- $domains = list "cc3test" "global" -}}
 {{- end -}}
@@ -113,7 +113,7 @@ spec:
     {{- range $domains }}
     - name: {{ . | lower }}
       groups:
-      - name: {{ . | upper }}_DOMAIN_RESOURCE_ADMINS
+      - name: {{ contains "iaas-" . | ternary . ( upper . ) }}_DOMAIN_RESOURCE_ADMINS
         role_assignments:
         - domain: {{ . | lower }}
           role: resource_admin

@@ -1,7 +1,3 @@
-## Bitnami Redis image version
-## ref: https://hub.docker.com/r/bitnami/redis/tags/
-##
-
 # If enabled, image references use `.Values.registryAlternateRegion` etc. instead of `.Values.registry` etc.
 useAlternateRegion: false
 
@@ -10,13 +6,13 @@ image:
   # To pin to a specific image, replace this with a timestamped tag from there in values.yaml of the parent chart.
   tag: 8.0-20241028165807
 
-# Port for the Redis.
-redisPort: 6379
-
 ## Redis password
-## ref: https://github.com/bitnami/bitnami-docker-redis#setting-the-server-password-on-first-run
 ##
-# redisPassword:
+## WARNING: Setting this password explicitly is deprecated.
+## Leave this field unfilled to have the redis server autogenerate a password on first startup.
+## The password can be consumed from the secret "$RELEASE-redis-user-default" in the key "password".
+## To rotate the secret, delete it and restart the redis container to generate a new one.
+redisPassword: null
 
 ## Enable persistence using Persistent Volume Claims
 ## ref: http://kubernetes.io/docs/user-guide/persistent-volumes/
@@ -37,6 +33,10 @@ resources:
     memory: 128Mi
     cpu: 100m
 
+alerts:
+  support_group: null # This field must be filled by the top-level chart.
+  service: null       # defaults to .Release.Name if not set
+
 # Prometheus metrics via oliver006/redis_exporter sidecar.
 metrics:
   enabled: true
@@ -45,9 +45,6 @@ metrics:
     # This tag must be valid within the Docker Hub repo oliver006/redis_exporter.
     tag: v1.67.0
 
-  # Port to expose metrics on.
-  port: 9121
-
   # Name of the Prometheus by which the metrics will be scraped.
   prometheus: openstack
 
@@ -55,8 +52,8 @@ metrics:
   ## ref: http://kubernetes.io/docs/user-guide/compute-resources
   resources:
     limits:
-      memory: 512Mi
+      memory: 64Mi
       cpu: 100m
     requests:
-      memory: 128Mi
+      memory: 64Mi
       cpu: 10m

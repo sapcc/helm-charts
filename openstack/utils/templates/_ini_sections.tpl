@@ -70,7 +70,7 @@ driver = messagingv2
                     {{- include "ini_sections._transport_url" (tuple . $data) }}
                 {{- end }}
             {{- end }}
-mem_queue_size = {{ .Values.audit.mem_queue_size }}
+mem_queue_size = {{ .Values.audit.mem_queue_size | default 1000 | int }}
         {{- end }}
     {{- end }}
 {{- end }}

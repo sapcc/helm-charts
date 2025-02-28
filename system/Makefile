@@ -61,6 +61,22 @@ build-provider-ipam:
 	@yq -i '.fullnameOverride="capi-capi-provider-ipam"' provider-ipam/values.yaml
 	@yq -i '.version="0.0.3"' provider-ipam/Chart.yaml
 
+build-ipam-capi-remote:
+	@rm -rf ipam-capi-remote
+	@cat kustomize/ipam-capi-remote/kustomization.yaml > kustomization.yaml
+	@kubectl kustomize | helmify -crd-dir ipam-capi-remote
+	@cp kustomize/ipam-capi-remote/remote-kubeconfig.yaml ipam-capi-remote/templates
+	@cp kustomize/ipam-capi-remote/managedresource.yaml ipam-capi-remote/templates
+	@mkdir ipam-capi-remote/managedresources
+	@kubectl kustomize kustomize/ipam-capi-remote-managedresources > ipam-capi-remote/managedresources/kustomize.yaml
+	@cp kustomize/ipam-capi-remote-managedresources/rbac.yaml ipam-capi-remote/managedresources
+	@cp kustomize/ipam-capi-remote-managedresources/globalinclusterippool.yaml ipam-capi-remote/managedresources
+	@yq -i '.controllerManager.manager.image.tag="$(PROVIDER_IPAM_VERSION)"' ipam-capi-remote/values.yaml
+	@yq -i '.fullnameOverride="ipam-capi"' ipam-capi-remote/values.yaml
+	@yq -i '.version="0.1.11"' ipam-capi-remote/Chart.yaml
+	@$(SED) -i 's/serviceAccountName.*$$/serviceAccountName: default/g' ipam-capi-remote/templates/deployment.yaml
+	@$(SED) -i 's/kind: Role/kind: ClusterRole/g' ipam-capi-remote/managedresources/kustomize.yaml
+
 build-provider-metal3:
 	$(call build-chart,provider-metal3,https://github.com/metal3-io/cluster-api-provider-metal3//config/default,$(PROVIDER_METAL3_VERSION))
 	$(call fix-crds,provider-metal3)
@@ -132,7 +148,7 @@ build-metal-operator-remote:
 	@mkdir metal-operator-remote/ci
 	@echo 'global:' >> metal-operator-remote/ci/test-values.yaml
 	@echo '  region: ab-cd-1' >> metal-operator-remote/ci/test-values.yaml
-	@yq -i '.version="0.3.6"' metal-operator-remote/Chart.yaml
+	@yq -i '.version="0.3.9"' metal-operator-remote/Chart.yaml
 	@$(SED) -i 's/serviceAccountName.*$$/serviceAccountName: default/g' metal-operator-remote/templates/deployment.yaml
 	@$(SED) -i 's/kind: Role/kind: ClusterRole/g' metal-operator-remote/managedresources/kustomize.yaml
 
@@ -189,9 +205,12 @@ build-ipam-operator-remote:
 	@cp kustomize/ipam-operator-remote/managedresource.yaml ipam-operator-remote/templates
 	@mkdir ipam-operator-remote/managedresources
 	@kubectl kustomize kustomize/ipam-operator-managedresources > ipam-operator-remote/managedresources/kustomize.yaml
+	@cp kustomize/ipam-operator-managedresources/rbac.yaml ipam-operator-remote/managedresources
+	@cp kustomize/ipam-operator-managedresources/network.yaml ipam-operator-remote/managedresources
+	@cp kustomize/ipam-operator-managedresources/subnet.yaml ipam-operator-remote/managedresources
 	@yq -i '.controllerManager.manager.image.tag="$(IPAM_VERSION)"' ipam-operator-remote/values.yaml
 	@yq -i '.fullnameOverride="ipam-operator"' ipam-operator-remote/values.yaml
-	@yq -i '.version="0.2.0"' ipam-operator-remote/Chart.yaml
+	@yq -i '.version="0.2.2"' ipam-operator-remote/Chart.yaml
 	@$(SED) -i 's/serviceAccountName.*$$/serviceAccountName: default/g' ipam-operator-remote/templates/deployment.yaml
 	@$(SED) -i 's/kind: Role/kind: ClusterRole/g' ipam-operator-remote/managedresources/kustomize.yaml
 

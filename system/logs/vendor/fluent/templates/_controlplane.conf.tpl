@@ -19,24 +19,24 @@
   </parse>
 </filter>
 
-<filter kubernetes.var.log.containers.network-generic-ssh-exporter**>
-  @type parser
-  @id ssh_grok
-  key_name msg
-  <parse>
-    @type grok
-    grok_failure_key grokstatus_ssh_exporter
-    <grok>
-      pattern %{GREEDYDATA}: %{GREEDYDATA:ssh_reason} \^%{GREEDYDATA}on %{IPORHOST:ssh_ip}\:
-    </grok>
-    <grok>
-      pattern Error parsing metric: %{GREEDYDATA:ssh_reason}\, address: %{IPORHOST:ssh_ip}
-    </grok>
-    <grok>
-      pattern %{GREEDYDATA:ssh_reason}: dial tcp %{IPORHOST:ssh_ip}
-    </grok>
-  </parse>
-</filter>
+#<filter kubernetes.var.log.containers.network-generic-ssh-exporter**>
+#  @type parser
+#  @id ssh_grok
+#  key_name msg
+#  <parse>
+#    @type grok
+#    grok_failure_key grokstatus_ssh_exporter
+#    <grok>
+#      pattern %{GREEDYDATA}: %{GREEDYDATA:ssh_reason} \^%{GREEDYDATA}on %{IPORHOST:ssh_ip}\:
+#    </grok>
+#    <grok>
+#      pattern Error parsing metric: %{GREEDYDATA:ssh_reason}\, address: %{IPORHOST:ssh_ip}
+#    </grok>
+#    <grok>
+#      pattern %{GREEDYDATA:ssh_reason}: dial tcp %{IPORHOST:ssh_ip}
+#    </grok>
+#  </parse>
+#</filter>
 
 <filter kubernetes.var.log.containers.neutron**>
   @type parser
@@ -520,44 +520,7 @@
 <match swift.**>
   @type copy
   @id copy_swift
-  <store ignore_error>
-    @type opensearch
-    @id "opensearch_swift_#{ENV['USER2']}"
-    logstash_prefix logstash-swift
-    logstash_format true
-    template_name logstash-swift
-    template_file /fluentd/etc/logstashswift.json
-    template_overwrite false
-    hosts {{.Values.global.opensearch.host}}
-    scheme https
-    port {{.Values.global.opensearch.port}}
-    user "#{ENV['USER2']}"
-    password "#{ENV['PASSWORD2]}"
-    log_os_400_reason true
-    ssl_verify true
-    ssl_version TLSv1_2
-    time_as_integer false
-    @log_level info
-    slow_flush_log_threshold 50.0
-    request_timeout 60s
-    include_tag_key true
-    resurrect_after 120
-    reconnect_on_error true
-    reload_connections false
-    reload_on_failure false
-    suppress_type_name true
-    <buffer>
-      total_limit_size 256MB
-      flush_at_shutdown true
-      flush_thread_interval 5
-      overflow_action block
-      retry_forever true
-      retry_wait 2s
-      flush_thread_count 2
-      flush_interval 2s
-    </buffer>
-  </store>
-  <store ignore_if_prev_success ignore_error>
+  <store>
     @type opensearch
     @id "opensearch_swift_#{ENV['USER1']}"
     logstash_prefix logstash-swift
@@ -569,7 +532,7 @@
     scheme https
     port {{.Values.global.opensearch.port}}
     user "#{ENV['USER1']}"
-    password "#{ENV['PASSWORD1]}"
+    password "#{ENV['PASSWORD1']}"
     log_os_400_reason true
     ssl_verify true
     ssl_version TLSv1_2
@@ -618,44 +581,7 @@
 <match kubernetes.**>
   @type copy
   @id copy_kubernetes
-  <store ignore_error>
-    @type opensearch
-    @id "opensearch_kubernetes_#{ENV['USER2']}"
-    logstash_prefix {{.Values.opensearch.indexname}}
-    logstash_format true
-    template_name {{.Values.opensearch.indexname}}
-    template_file /fluentd/etc/{{.Values.opensearch.indexname}}.json
-    template_overwrite false
-    hosts {{.Values.global.opensearch.host}}
-    scheme https
-    port {{.Values.global.opensearch.port}}
-    user "#{ENV['USER2']}"
-    password "#{ENV['PASSWORD2']}"
-    log_os_400_reason true
-    ssl_verify true
-    ssl_version TLSv1_2
-    time_as_integer false
-    @log_level info
-    slow_flush_log_threshold 50.0
-    request_timeout 60s
-    include_tag_key true
-    resurrect_after 120
-    reconnect_on_error true
-    reload_connections false
-    reload_on_failure false
-    suppress_type_name true
-    <buffer>
-      total_limit_size 256MB
-      flush_at_shutdown true
-      flush_thread_interval 5
-      overflow_action block
-      retry_forever true
-      retry_wait 2s
-      flush_thread_count 2
-      flush_interval 2s
-    </buffer>
-  </store>
-  <store ignore_if_prev_success ignore_error>
+  <store>
     @type opensearch
     @id "opensearch_kubernetes_#{ENV['USER1']}"
     logstash_prefix {{.Values.opensearch.indexname}}

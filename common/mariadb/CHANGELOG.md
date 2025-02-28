@@ -1,5 +1,65 @@
 # Changelog
 
+## v0.16.10 - 2025/02/27
+* verbose logging option for the analyzetables job added
+* chart version bumped
+
+## v0.16.9 - 2025/02/26
+* maintenance job configmap condition fixed
+* chart version bumped
+
+## v0.16.8 - 2025/02/25
+* maintenance job configmap name fixed
+* chart version bumped
+
+## v0.16.7 - 2025/02/25
+* `pod-readiness` updated to `20250225131500`
+
+## v0.16.6 - 2025/02/24
+* mysqld_exporter updated to [0.17.1](https://github.com/prometheus/mysqld_exporter/releases/tag/v0.17.1)
+* chart version bumped
+
+## v0.16.5 - 2025/02/21
+* add `lost+found` to `ignore_db_dirs` list
+* chart version bumped
+
+## v0.16.4 - 2025/02/21
+* fix maria-back-me-up alert rules
+
+## v0.16.3 - 2025/02/19
+* fix names of the maintenance cronjob resources
+  * make cm names unique
+* chart version bumped
+
+## v0.16.2 - 2025/02/14
+- maintenance job added
+  - currently the [analyze table](https://mariadb.com/kb/en/analyze-table/) task is supported
+  - the[README.md](README.md#analyzetable) is updated with the new maintenance job details
+- chart version bumped
+
+## v0.16.1 - 2025/02/18
+* enquote password in /root/.my.cnf
+  * this would allow to use `=` and `#` symbols in password
+* chart version bumped
+
+## v0.16.0 - 2025/02/17
+* remove user and password from readiness and liveness probes
+  * `/root/.my.cnf` is used instead
+  * this helps avoiding problems with shell escaping and showing passwords in the processlist of the k8s nodes
+* chart version bumped
+
+## v0.15.5 - 2025/02/14
+* `maria-back-me-up` (backup-v2) oauth secret moved to a separate `Secret`
+* chart version bumped
+
+## v0.15.4 - 2025/02/07
+* MariaDB version bumped to [10.5.28](https://mariadb.com/kb/en/mariadb-10-5-28-release-notes/)
+  * several fixes for INNODB and other components
+  * memory leaks have been fixed
+  * [CVE-2025-21490](http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2025-21490) has been fixed
+    * a DOS can be triggered from an unauthorized connection
+* chart version bumped
+
 ## v0.15.3 - 2025/01/14
 - fixed service selector: added `app.kubernetes.io/instance` label to make service target specific service instance
 - chart version bumped

@@ -1,0 +1,26 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: logcatcher
+  labels:
+    {{- include "logcatcher.labels" . | nindent 4 }}
+  {{- with .Values.ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  tls:
+    - hosts:
+        - "logs.tailscale.global.cloud.sap"
+      secretName: logcatcher
+  rules:
+    - host: "logs.tailscale.global.cloud.sap"
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: logcatcher
+                port:
+                  name: logs

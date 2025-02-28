@@ -2,6 +2,22 @@
 
 This file is used to list changes made in each version of the common chart rabbitmq.
 
+## 0.15.0
+
+- Remove the following helm template helper functions:
+  - `rabbitmq.release_host`
+  - `rabbitmq.transport_url`
+  - `rabbitmq._transport_url`
+  - `rabbitmq.resolve_secret_urlquery`
+- Chart version bumped
+
+## 0.14.1
+
+[@businessbean](https://github.com/businessbean)
+- RabbitMQ [4.0.6 Release Notes](https://github.com/rabbitmq/rabbitmq-server/releases/tag/v4.0.6)
+  - several bugs have been fixed and improvements have been made in the server and Prometheus plugin
+- chart version bumped
+
 ## 0.14.0
 
 [@businessbean](https://github.com/businessbean)

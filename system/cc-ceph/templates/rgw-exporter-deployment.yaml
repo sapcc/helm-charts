@@ -3,6 +3,9 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ .Values.objectstore.name }}-ext-rgw-exporter
+{{- $secretName := printf "%s-object-user-%s-%s" .Release.Namespace (.Values.objectstore.prysm.rgwMetrics.user.store | default .Values.objectstore.name) .Values.objectstore.prysm.rgwMetrics.user.name }}
+  annotations:
+    secret.reloader.stakater.com/reload: {{ $secretName | quote }}
   labels:
     app: {{ .Values.objectstore.name }}-ext-rgw-exporter
 spec:
@@ -13,37 +16,12 @@ spec:
   template:
 {{- $secretName := printf "rook-ceph-object-user-%s-%s" (.Values.objectstore.prysm.rgwMetrics.user.store | default .Values.objectstore.name) .Values.objectstore.prysm.rgwMetrics.user.name }}
     metadata:
-      annotations:
-        checksum/secret: {{ with (lookup "v1" "Secret" .Release.Namespace $secretName) -}}
-          {{- if .data -}}
-            {{- .data | toJson | sha256sum -}}
-          {{- else -}}
-{{ printf "no-data-%s-%s" .Release.Namespace $secretName | quote }}
-          {{- end -}}
-        {{- else -}}
-{{ printf "no-secret-%s-%s" .Release.Namespace $secretName | quote }}
-        {{- end }}
       labels:
         app: {{ .Values.objectstore.name }}-ext-rgw-exporter
     spec:
-      serviceAccountName: rgw-exporter-init-container-service-account
-      initContainers:
-      - name: wait-for-secret
-        image: {{ .Values.objectstore.prysm.initContainer.repository.image }}:{{ .Values.objectstore.prysm.initContainer.repository.tag }}
-        imagePullPolicy: {{ .Values.objectstore.prysm.initContainer.repository.pullPolicy }}
-        command:
-          - sh
-          - "-c"
-          - |
-              # Wait for the secret to be available
-              echo "Waiting for secret to be available..."
-              until kubectl -n {{ .Release.Namespace }} get secret -l rook_object_store={{ .Values.objectstore.prysm.rgwMetrics.user.store }},user={{ .Values.objectstore.prysm.rgwMetrics.user.name }} -o jsonpath='{.items[0].metadata.name}'; do
-                sleep 5
-              done
-              echo "Secret is now available!"
-        securityContext:
-          runAsNonRoot: true
-          runAsUser: 1000
+      # ensure that we use the default service account
+      serviceAccountName: ""
+      serviceAccount: ""
       containers:
       - name: prysm
         image: {{ .Values.objectstore.prysm.repository.image }}:{{ .Values.objectstore.prysm.repository.tag }}

@@ -10,6 +10,17 @@ data:
     {{- range .Values.global.availability_zones }}
       - {{ . }}
     {{- end }}
+    {{- if not (or (.Values.global.region | regexMatch "qa-de-[2-6]") (eq .Release.Namespace "limes-global")) }}
+    mail_notifications:
+      endpoint: {{ .Values.limes.clusters.ccloud.catalog_url | replace "limes-3" "limes-campfire" | trimSuffix "/" }}/
+      templates:
+        confirmed_commitments:
+         subject: {{ .Values.campfire.mail_type.confirmed.subject }}
+         body: {{ tpl (.Files.Get "files/commitment_mail.tpl") (dict "region" .Values.global.region "condition" .Values.campfire.mail_type.confirmed.condition) | toJson }}
+        expiring_commitments:
+         subject: {{ .Values.campfire.mail_type.expire.subject }}
+         body: {{ tpl (.Files.Get "files/commitment_mail.tpl") (dict "region" .Values.global.region "condition" .Values.campfire.mail_type.expire.condition) | toJson }}
+    {{- end }}
 {{ toYaml .Values.limes.clusters.ccloud | indent 4 }}
 
   policy.json: |

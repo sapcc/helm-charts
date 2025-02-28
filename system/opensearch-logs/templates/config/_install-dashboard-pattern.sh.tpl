@@ -1,8 +1,21 @@
 #!/bin/bash
-export BASIC_AUTH_HEADER=${ADMIN_USER}:${ADMIN_PASSWORD}
+curl -s -u "${ADMIN_USER}:${ADMIN_PASSWORD}" ${CLUSTER_HOST}/
+if [ $? -ne 0 ]; then
+  echo "First user failed, trying second user"
+  # Second attempt with user2 if user1 fails
+  curl -s -u "${ADMIN2_USER}:${ADMIN2_PASSWORD}" ${CLUSTER_HOST}/
+  if [ $? -ne 0 ]; then
+    echo "Second user failed, giving up..."
+    exit 1
+  else
+    export BASIC_AUTH_HEADER=${ADMIN2_USER}:${ADMIN2_PASSWORD}
+  fi
+else
+  export BASIC_AUTH_HEADER=${ADMIN_USER}:${ADMIN_PASSWORD}
+fi
 
 #  Creating aliases for all indexes, because logstash-* is also selecting datastreams besides the logstash-2024... indexes.
-for i in $(curl -s -u ${BASIC_AUTH_HEADER} "${CLUSTER_HOST}/_cat/indices?v"|awk '{ print $3 }'|grep -v "^\."|sort|sed 's/-[0-9].*\.[0-9].*\.[0-9].*$//'|uniq|grep -v index|grep -v "alerts-other"|grep -v deployments|grep -v maillog|grep -v ss4o|grep -v sample)
+for i in $(curl -s -u ${BASIC_AUTH_HEADER} "${CLUSTER_HOST}/_cat/indices?v"|awk '{ print $3 }'|grep -v "^\."|sort|sed 's/-[0-9].*\.[0-9].*\.[0-9].*$//'|uniq|grep -v index|grep -v "alerts-other"|grep -v deployments|grep -v maillog|grep -v ss4o|grep -v sample |grep -v awx)
   do
     #Creating an alias for all standard indexes, which are not datastreams to mitigate the issue with indexes, where for example storage-* is selecting the index and also the datastream, which shows up in dashboards as duplicate entries
     echo "using index $i from Opensearch-Logs"

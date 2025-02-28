@@ -98,44 +98,7 @@
 # count number of outgoing records per tag
 <match kubernetes.**>
   @type copy
-  <store ignore_error>
-    @type opensearch
-    @id "#{ENV['USER2']}"
-    logstash_prefix {{.Values.opensearch.indexname}}
-    logstash_format true
-    template_name {{.Values.opensearch.indexname}}
-    template_file /fluentd/etc/{{.Values.opensearch.indexname}}.json
-    template_overwrite false
-    hosts {{.Values.global.opensearch.host}}
-    scheme https
-    port {{.Values.global.opensearch.port}}
-    user "#{ENV['USER2']}"
-    password "#{ENV['PASSWORD2']}"
-    ssl_verify false
-    ssl_version TLSv1_2
-    log_os_400_reason true
-    time_as_integer false
-    @log_level info
-    slow_flush_log_threshold 50.0
-    request_timeout 60s
-    include_tag_key true
-    resurrect_after 120
-    reconnect_on_error true
-    reload_connections false
-    reload_on_failure false
-    suppress_type_name true
-    <buffer>
-      total_limit_size 256MB
-      flush_at_shutdown true
-      flush_thread_interval 5
-      overflow_action block
-      retry_forever true
-      retry_wait 2s
-      flush_thread_count 2
-      flush_interval 2s
-    </buffer>
-  </store>
-  <store ignore_if_prev_success ignore_error>
+  <store>
     @type opensearch
     @id "#{ENV['USER1']}"
     logstash_prefix {{.Values.opensearch.indexname}}

@@ -46,6 +46,10 @@ nebula:
     region: {{ .Values.config.allowedServices.email }}
     accessKeyRotationDays: {{ .Values.global.accessKeyRotationDays }}
     technicalUsername: {{ .Values.config.technicalUsername }}
+    {{- if .Values.config.iamPolicies }}
+    iamPolicies:
+      {{- toYaml .Values.config.iamPolicies | nindent 6 }}
+    {{- end }}
     policyName: {{ .Values.config.policyName }}
     roleName: {{ .Values.config.roleName }}
     iamRolePolicyName: {{ .Values.config.iamRolePolicyName }}

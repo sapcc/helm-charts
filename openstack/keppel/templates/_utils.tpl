@@ -15,11 +15,9 @@
 - name:  KEPPEL_API_ANYCAST_FQDN
   value: '{{$.Values.keppel.anycast_domain_name}}'
 {{- end }}
-{{- if (index $.Values.keppel "anycast_issuer_key.pem") }}
+{{- if .Values.keppel.peer_group }}
 - name:  KEPPEL_ANYCAST_ISSUER_KEY
   value: '/etc/keppel-keys/anycast-issuer-key.pem'
-{{- end }}
-{{- if (index .Values.keppel "anycast_previous_issuer_key.pem") }}
 - name:  KEPPEL_ANYCAST_PREVIOUS_ISSUER_KEY
   value: '/etc/keppel-keys/anycast-previous-issuer-key.pem'
 {{- end }}
@@ -130,10 +128,8 @@
   value: 'keppel_inbound_cache'
 - name:  KEPPEL_ISSUER_KEY
   value: '/etc/keppel-keys/issuer-key.pem'
-{{- if (index .Values.keppel "previous_issuer_key.pem") }}
 - name:  KEPPEL_PREVIOUS_ISSUER_KEY
   value: '/etc/keppel-keys/previous-issuer-key.pem'
-{{- end }}
 - name:  KEPPEL_JANITOR_LISTEN_ADDRESS
   value: ':80'
 - name:  KEPPEL_OSLO_POLICY_PATH
@@ -167,8 +163,8 @@
 - name: KEPPEL_REDIS_PASSWORD
   valueFrom:
     secretKeyRef:
-      name: keppel-secret
-      key: redis_password
+      name: keppel-redis-user-default
+      key: password
 {{- if .Values.keppel.trivy.hostname }}
 - name: KEPPEL_TRIVY_ADDITIONAL_PULLABLE_REPOS
   value: "ccloud-ghcr-io-mirror/aquasecurity/trivy-db,ccloud-ghcr-io-mirror/aquasecurity/trivy-java-db"

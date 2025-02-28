@@ -77,9 +77,9 @@ spec:
 
     processors:
       batch:
-        send_batch_max_size: 500
+        send_batch_max_size: 5000
         timeout: 5s
-        send_batch_size : 10
+        send_batch_size : 100
 
 {{- if .Values.openTelemetryPlugin.openTelemetry.prometheus.podMonitor.enabled }}
       attributes/prometheus:
@@ -193,6 +193,9 @@ spec:
             - tag_name: app.label.pod-template-hash
               key: app.kubernetes.io/pod-template-hash
               from: pod
+            - tag_name: app.label.release
+              key: app.kubernetes.io/release
+              from: pod
         pod_association:
           - sources:
               - from: resource_attribute
@@ -248,8 +251,8 @@ spec:
         priority_levels:
           - [logs/failover_a]
           - [logs/failover_b]
-        retry_interval: 1h
-        retry_gap: 15m
+        retry_interval: 20m
+        retry_gap: 5m
         max_retries: 0
       failover/opensearch_swift:
         priority_levels:

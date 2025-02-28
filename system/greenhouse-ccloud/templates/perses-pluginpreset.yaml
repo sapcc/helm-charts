@@ -1,0 +1,39 @@
+{{- if .Values.pluginPreset.enabled }}
+apiVersion: greenhouse.sap/v1alpha1
+kind: PluginPreset
+metadata:
+  name: perses
+  namespace: {{ .Release.Namespace }}
+spec:
+  clusterSelector:
+    matchExpressions:
+    - key: greenhouse.sap/pluginpreset
+      operator: In
+      values:
+      - "true"
+    - key: cluster-type
+      operator: In
+      values:
+      - "storage"
+      - "compute"
+      - "observability"
+  {{- with .Values.perses.clusterOptionOverrides }}
+  clusterOptionOverrides:
+    {{ toYaml .Values.perses.clusterOptionOverrides | nindent 4 }}
+  {{- end }}
+  plugin:
+    disabled: false
+    optionValues:
+      - name: perses.sidecar.enabled
+        value: true
+      {{- if and .Values.global.ghcrIoMirror .Values.global.dockerHubMirror }}
+      - name: perses.image.name
+        value: "{{ .Values.global.dockerHubMirror }}/persesdev/perses"
+      - name: perses.sidecar.image.repository
+        value: "{{ .Values.global.dockerHubMirror }}/kiwigrid/k8s-sidecar"
+      - name: perses.testFramework.image.registry
+        value: {{ .Values.global.ghcrIoMirror }}
+      {{- end }}
+    pluginDefinition: perses
+    releaseNamespace: kube-monitoring
+{{- end -}}

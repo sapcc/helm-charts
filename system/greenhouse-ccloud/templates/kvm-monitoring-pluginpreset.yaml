@@ -1,0 +1,20 @@
+{{- if and .Values.pluginPreset.enabled .Values.kvmMonitoring.enabled }}
+apiVersion: greenhouse.sap/v1alpha1
+kind: PluginPreset
+metadata:
+  name: kvm-monitoring
+  namespace: {{ .Release.Namespace }}
+spec:
+  clusterSelector:
+    matchLabels:
+      greenhouse.sap/cluster-presets-enabled: "true"
+      cluster-type: "compute"
+  plugin:
+    disabled: false
+    pluginDefinition: kvm-monitoring
+    releaseNamespace: kube-monitoring
+    optionValues:
+      - name: serviceMonitorLabels
+        value:
+          plugin: 'kube-monitoring-{{ "{{ .Values.global.greenhouse.clusterName }}" }}'
+{{- end -}}
