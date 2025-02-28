@@ -23,7 +23,6 @@ spec:
         config.linkerd.io/opaque-ports: "{{ default 5672 .Values.ports.public }}"
 {{- end }}
         checksum/container.init: {{ include (print $.Template.BasePath "/bin-configmap.yaml") . | sha256sum }}
-        checksum/users: {{ include (print $.Template.BasePath "/users-secret.yaml") . | sha256sum }}
 {{- if .Values.customConfig }}
         checksum/custom.conf: {{ include (print .Template.BasePath "/etc/_rabbitmq-custom-config.tpl") . | sha256sum }}
 {{- end }}
@@ -128,6 +127,14 @@ spec:
           - mountPath: /etc/rabbitmq/ssl
             name: ssl
         {{- end }}
+      - name: user-credential-updater
+        image: "{{ include "dockerRegistry" . }}/{{ .Values.credentialUpdater.image }}:{{.Values.credentialUpdater.imageTag }}"
+        imagePullPolicy: {{ default "IfNotPresent" .Values.imagePullPolicy | quote }}
+        volumeMounts:
+          - mountPath: /etc/rabbitmq/secrets
+            name: rabbitmq-users-config
+          - mountPath: /var/lib/rabbitmq
+            name: rabbitmq-persistent-storage
       priorityClassName: {{ .Values.priority_class | default "critical-infrastructure" | quote }}
       volumes:
       {{- if not .Values.persistence.enabled }}
