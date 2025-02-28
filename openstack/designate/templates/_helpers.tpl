@@ -8,16 +8,6 @@ identity-3.{{.Values.global.region}}.{{.Values.global.tld}}
 {{- end -}}
 {{- end -}}
 
-{{- define "rabbitmq_host" -}}
-{{- if .Values.global_setup -}}
-{{.Release.Name}}-rabbitmq.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.db_region}}.{{.Values.global.tld}}
-{{- else if .Values.rabbitmq_cluster.enabled -}}
-{{.Release.Name}}-rabbitmq-cluster.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}
-{{- else -}}
-{{.Release.Name}}-rabbitmq.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}
-{{- end -}}
-{{- end -}}
-
 {{/*
 If Designate is deployed in a global setup, use global Percona Cluster URL.
 Otherwise, if dbType value is set, use utils.db_url to generate the connection string.
@@ -64,11 +54,7 @@ qualname={{$item}}
 
 
 {{- define "designate.rabbitmq_dependencies" }}
-  {{- if .Values.rabbitmq_cluster.enabled }}
-    {{- .Release.Name }}-rabbitmq-cluster
-  {{- else }}
-    {{- .Release.Name }}-rabbitmq
-  {{- end }}
+  {{- .Release.Name }}-rabbitmq
 {{- end }}
 
 {{- define "designate.db_dependencies" }}
