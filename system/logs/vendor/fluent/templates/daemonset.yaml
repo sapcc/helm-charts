@@ -28,6 +28,15 @@ spec:
         kubectl.kubernetes.io/default-container: "fluent"
     spec:
       serviceAccountName: fluentd
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchFields:
+              - key: cloud.sap/deployment-state
+                operator: NotIn
+                values:
+                - reinstalling
       tolerations:
       - effect: "NoSchedule"
         operator: "Exists"
