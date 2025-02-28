@@ -12,6 +12,7 @@ metadata:
     "helm.sh/hook-weight": "3"
 {{- if and (and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested) $.Values.linkerd.mariadb.enabled }}
     linkerd.io/inject: enabled
+    config.alpha.linkerd.io/proxy-enable-native-sidecar: "true"
 {{- end }}
 spec:
   template:
@@ -24,9 +25,9 @@ spec:
       serviceAccountName: {{ .Values.name }}-db-exec
       containers:
       - name: pre-change-job
-        image: "{{ required ".Values.global.dockerHubMirrorAlternateRegion is missing" .Values.global.dockerHubMirrorAlternateRegion }}/{{ .Values.pre_change_hook.image }}:{{ .Values.pre_change_hook.image_version }}"
+        image: "{{ required ".Values.global.registryAlternateRegion missing" .Values.global.registryAlternateRegion }}/shared-app-images/alpine-kubectl:latest-latest"
         command:
-          - /bin/bash
+          - /bin/sh
           - -c
           - |
             /configurator/configuredb.sh
