@@ -13,6 +13,16 @@ spec:
   - operator: Exists
   podAnnotations:
     kubectl.kubernetes.io/default-container: "otc-container"
+    prometheus.io/scrape: "false"
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchFields:
+          - key: cloud.sap/deployment-state
+            operator: NotIn
+            values:
+            - reinstalling
   env:
     - name: NAMESPACE
       valueFrom:
