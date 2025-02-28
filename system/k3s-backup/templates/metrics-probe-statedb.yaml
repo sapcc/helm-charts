@@ -17,9 +17,9 @@ spec:
   targets:
     staticConfig: 
       static:
-        - "bucket={{ .Values.aws.statedbBucketName }}-{{ .Values.global.region }};"
+        - "bucket={{ default (printf "%s-%s" .Values.aws.statedbBucketName .Values.global.region) .Values.aws.overrideStatedbBucketName }};"
       labels: 
-        __param_bucket: {{ .Values.aws.statedbBucketName }}-{{ .Values.global.region }}
+        __param_bucket: {{ default (printf "%s-%s" .Values.aws.statedbBucketName .Values.global.region) .Values.aws.overrideStatedbBucketName }}
         {{ if .Values.global.region -}}
         region: {{ .Values.global.region }}
         {{- end }}
