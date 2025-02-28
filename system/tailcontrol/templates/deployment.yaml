@@ -45,6 +45,7 @@ spec:
                 - key: superusers
                   path: superusers
                 name: tailcontrol-config
+{{- if .Values.tailcontrol.backup.enabled }}
       initContainers:
         - name: litestream-restore-sqlite
           image: "{{ .Values.image.litestream.repository }}:{{ .Values.image.litestream.tag }}"
@@ -94,6 +95,7 @@ spec:
             - name: litestream-config
               mountPath: /etc/litestream.yml
               subPath: litestream.yml
+{{- end }}
       containers:
         - name: tailcontrol
           image: "{{ .Values.image.tailcontrol.repository }}:{{ .Values.image.tailcontrol.tag }}"
@@ -102,6 +104,8 @@ spec:
             privileged: true
             capabilities:
               add: ["NET_ADMIN"]
+          command:
+          - tailcontrol
           args:
           - --url
           - {{ .Values.tailcontrol.url }}
@@ -148,6 +152,7 @@ spec:
               mountPath: {{ .Values.tailcontrol.certdir }}
             - mountPath: /tailcontrol-config
               name: tailcontrol-config
+{{- if .Values.tailcontrol.backup.enabled }}
         - name: litestream
           image: "{{ .Values.image.litestream.repository }}:{{ .Values.image.litestream.tag }}"
           imagePullPolicy: IfNotPresent
@@ -170,3 +175,4 @@ spec:
             - name: litestream-config
               mountPath: /etc/litestream.yml
               subPath: litestream.yml
+{{- end }}
