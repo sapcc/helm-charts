@@ -2,6 +2,9 @@
 {{- include "ini_sections.default_transport_url" . }}
 {{- include "ini_sections.oslo_messaging_rabbit" .}}
 
+[console]
+url_auth_digest_secret = {{required "A valid .Values.console.secret required!" .Values.console.secret}}
+
 [database]
 connection = {{ include "utils.db_url" . }}
 
