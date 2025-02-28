@@ -23,4 +23,14 @@ spec:
               role:    email_user
         {{- end }}
 
+        {{- range $d := keys .Values.campfire.all_global_deployments | sortAlpha }}
+        {{- $r := index $.Values.campfire.all_global_deployments $d }}
+        - name: campfire-{{$r}}-global
+          description: Campfire in {{$r}} for {{$d}} sending mails through {{$region}}
+          password: {{ printf "%s/%s/limes-global/keystone-user/campfire/password" $vbase $r | quote }}
+          role_assignments:
+            - project: master@ccadmin
+              role:    email_user
+        {{- end }}
+
 {{- end }}
