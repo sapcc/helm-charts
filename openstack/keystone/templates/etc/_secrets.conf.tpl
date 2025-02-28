@@ -51,7 +51,7 @@ heartbeat_timeout_threshold = {{ .Values.audit.central_service.heartbeat_timeout
 [cc_radius]
 host = {{ .Values.api.cc_radius.host | default "radius" }}
 port = {{ .Values.api.cc_radius.port | default "radius" }}
-secret = {{ .Values.api.cc_radius.secret }}
+secret = {{ .Values.api.cc_radius.secret | include "resolve_secret" }}
 {{ end }}
 
 
