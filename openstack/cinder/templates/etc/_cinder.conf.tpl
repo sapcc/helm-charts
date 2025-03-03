@@ -86,7 +86,7 @@ lock_path = /var/lib/cinder/tmp
 {{- include "ini_sections.cache" . }}
 
 [barbican]
-barbican_endpoint = internal
+barbican_endpoint_type = internal
 auth_endpoint = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
 
 [key_manager]
