@@ -416,11 +416,14 @@ complex-role:
   - "read"
   - "cluster:monitor/nodes/stats"
   - "cluster:monitor/task/get"
-  # add permissions matching 'reports_read_access' role
+  - 'cluster:admin/opendistro/reports/definition/create'
+  - 'cluster:admin/opendistro/reports/definition/update'
+  - 'cluster:admin/opendistro/reports/definition/on_demand'
+  - 'cluster:admin/opendistro/reports/definition/delete'
   - 'cluster:admin/opendistro/reports/definition/get'
   - 'cluster:admin/opendistro/reports/definition/list'
-  - 'cluster:admin/opendistro/reports/instance/get'
   - 'cluster:admin/opendistro/reports/instance/list'
+  - 'cluster:admin/opendistro/reports/instance/get'
   - 'cluster:admin/opendistro/reports/menu/download'
   index_permissions:
   - index_patterns:
