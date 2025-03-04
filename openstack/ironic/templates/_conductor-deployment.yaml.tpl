@@ -89,7 +89,7 @@ spec:
             command:
             - bash
             - -c
-            - curl -u {{ .Values.rabbitmq.metrics.user }}:{{ .Values.rabbitmq.metrics.password }} ironic-rabbitmq:{{ .Values.rabbitmq.ports.management }}/api/consumers | sed 's/,/\n/g' | grep ironic-conductor-{{$conductor.name}} >/dev/null
+            - curl --netrc-file /etc/ironic/netrc ironic-rabbitmq:{{ .Values.rabbitmq.ports.management }}/api/consumers | sed 's/,/\n/g' | grep ironic-conductor-{{$conductor.name}} >/dev/null
           periodSeconds: 10
           failureThreshold: 30
         livenessProbe:
@@ -103,6 +103,8 @@ spec:
         volumeMounts:
         - mountPath: /etc/ironic
           name: etcironic
+        - mountPath: /etc/ironic/netrc
+          name: curl-netrc
         - mountPath: /etc/ironic/ironic.conf.d
           name: ironic-etc-confd
         - mountPath: /etc/ironic/ironic.conf
@@ -158,8 +160,12 @@ spec:
             protocol: TCP
             containerPort: 443
         volumeMounts:
+          - mountPath: /etc/nginx/nginx.conf
+            name: ironic-console-nginxconf
           - mountPath: /etc/nginx/conf.d
-            name: ironic-console
+            name: nginx-confd
+          - mountPath: /etc/nginx/conf.d/dhparam.pem
+            name: ironic-console-dhparam
           - mountPath: /shellinabox
             name: shellinabox
           - mountPath: /etc/nginx/certs
@@ -207,6 +213,12 @@ spec:
           items:
           - key: secrets.conf
             path: secrets.conf
+      - name: curl-netrc
+        secret:
+          secretName: {{ .Release.Name }}-secrets
+          items:
+          - key: netrc
+            path: netrc
       - name: ironic-etc
         configMap:
           name: ironic-etc
@@ -217,10 +229,22 @@ spec:
         {{- else }}
           name: ironic-conductor-etc
         {{- end }}
-
-      - name: ironic-console
+      - name: nginx-confd
+        emptyDir: {}
+      - name: ironic-console-nginxconf
+        secret:
+          secretName: ironic-console-secret
+          items:
+          - key: nginx.conf
+            path: nginx.conf
         configMap:
           name: ironic-console
+      - name: ironic-console-dhparam
+        secret:
+          secretName: {{ .Release.Name }}-secrets
+          items:
+          - key: dhparam.pem
+            path: dhparam.pem
       - name: ironic-tftp
         persistentVolumeClaim:
           claimName: ironic-tftp-pvclaim
