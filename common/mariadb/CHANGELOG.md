@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.17.2 - 2025/03/05
+* use `shared-app-images/alpine-kubectl` image for pre-change job instead of outdated `unified-kubernetes-toolbox`, that is supposed to be used in CI
+
 ## v0.17.1 - 2025/03/04
 * use local unix_socket connection for all status checks and mysqld_upgrade
   * this would allow to change root password without intermittent liveness check failure
