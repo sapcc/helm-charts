@@ -28,15 +28,15 @@ openstack:
       - name: prod
         match: |
           str::regex_matches(hypervisor("hypervisor_type"), "QEMU") &&
-          str::regex_matches(hypervisor("hypervisor_hostname"), ".*node\\d{3}-bb(27\\d|096)")
+          str::regex_matches(hypervisor("hypervisor_hostname"), "shoot--ccloud.*")
       - name: dev
         match: |
           str::regex_matches(hypervisor("hypervisor_type"), "QEMU") &&
-          str::regex_matches(hypervisor("hypervisor_hostname"), ".*node\\d{3}-ap002")
-      - name: nested
+          str::regex_matches(hypervisor("hypervisor_hostname"), ".*node\\d{3}-bb(27\\d|096)")
+      - name: clusterapi
         match: |
-          str::regex_matches(hypervisor("hypervisor_type"), "QEMU") && 
-          str::regex_matches(hypervisor("service.host"), "vm\\d{3}")
+          str::regex_matches(hypervisor("hypervisor_type"), "QEMU") &&
+          str::regex_matches(hypervisor("hypervisor_hostname"), ".*node\\d{3}-ap002")
     collectors:
       - name: agents
         type: agent
@@ -91,6 +91,5 @@ openstack:
             monitor: nfs idle
         segments:
           - prod
-          - nested
         notification:
           event: stopped
