@@ -45,7 +45,7 @@ server {
     # We obviously do not have to secure any static resources
     location ~* "/[^/]*/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/([0-9]*)/([^/]*)/?$" {
         secure_link $3,$2;
-        secure_link_md5 "$secure_link_expires$1 {{required "A valid .Values.console.secret required!" .Values.console.secret}}";
+        secure_link_md5 "$secure_link_expires$1 {{required "A valid .Values.console.secret required!" .Values.console.secret | include "resolve_secret" }}";
 
         set $check $secure_link;
 
