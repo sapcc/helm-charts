@@ -431,3 +431,62 @@ vpa:
 
 # used to set the PYTHONWARNINGS environment variable everywhere
 python_warnings: "ignore:Unverified HTTPS request,ignore::SyntaxWarning"
+
+# openstack-rate-limit
+rate_limit:
+  enabled: false
+  rate_limit_by: target_project_id
+  max_sleep_time_seconds: 0
+  log_sleep_time_seconds: 10
+  backend_timeout_seconds: 1
+  whitelist:
+    - Default/service
+    - Default/admin
+    - tempest/performance-testing
+    - ccadmin/cloud_admin
+    - ccadmin/master
+  whitelist_users: null
+  blacklist: null
+  blacklist_users: null
+  groups:
+    write:
+      - delete
+      - update
+  rates:
+    default:
+      zones:
+        - action: read/list
+          limit: 100r/m
+      zones/zone:
+        - action: read/list
+          limit: 100r/m
+      zones/zone/recordsets:
+        - action: read/list
+          limit: 100r/m
+      zones/tasks/imports/import:
+        - action: read/list
+          limit: 100r/m
+      zones/tasks/imports:
+        - action: read/list
+          limit: 100r/m
+      zones/tasks/exports/export:
+        - action: read/list
+          limit: 100r/m
+      zones/tasks/exports:
+        - action: read/list
+          limit: 100r/m
+      reverse/floatingips/*:
+        - action: read/list
+          limit: 100r/m
+      tsigkeys:
+        - action: read/list
+          limit: 100r/m
+      blacklists:
+        - action: read/list
+          limit: 100r/m
+      tlds:
+        - action: read/list
+          limit: 100r/m
+      pools:
+        - action: read/list
+          limit: 100r/m
