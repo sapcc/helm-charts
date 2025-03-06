@@ -4,8 +4,10 @@ metadata:
   name: tailcontrol
   labels:
     {{- include "tailcontrol.labels" . | nindent 4 }}
+{{- if .Values.tailcontrol.backup.enabled }}
   annotations:
     litestream-config: {{ include (print $.Template.BasePath "/litestream-config.yaml") $ | sha256sum }}
+{{- end }}
 spec:
   strategy:
     type: Recreate
@@ -33,9 +35,11 @@ spec:
         - name: var-lib-tailscale
           persistentVolumeClaim:
             claimName: var-lib-tailscale
+{{- if .Values.tailcontrol.backup.enabled }}
         - name: litestream-config
           configMap:
             name: litestream-config
+{{- end }}
         - name: tailcontrol-config
           projected:
             defaultMode: 400
