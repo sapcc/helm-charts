@@ -8,17 +8,12 @@ set -eou pipefail
 
 SECRET="elektra-token"
 
-# if we already have a secret, we can stop here
-# if [[ "$(kubectl get secrets "$SECRET" --ignore-not-found)" != "" ]]; then
-#   exit 0
-# fi
-
-# sets a new secret key
+# creates a new secret key
 # double base64 encode to get a string without newlines and 128 characters long after being decoded when deploying
 # 96×3/4 = 128 characters
 SECRET_KEY_BASE=$(head -c 96 /dev/urandom | base64 -w 0 | tr -d '\n' | base64 -w 0)
 
-# create new secret with randomly generated token
+# update secret with randomly generated token
 echo -n "
   apiVersion: v1
   kind: Secret
