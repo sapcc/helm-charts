@@ -111,7 +111,6 @@ spec:
 {{- if .Values.tailcontrol.command.enabled }}
           command:
           - tailcontrol
-{{- end }}
           args:
           - --url
           - {{ .Values.tailcontrol.url }}
@@ -129,6 +128,12 @@ spec:
           - --checkpoint-passive-period=5s
           - -ts2021=local
           - -use-forwarded-for
+{{ else }}
+          command:
+          - sleep
+          args:
+          - infinity
+{{- end }}
           env:
             - name: TS_LOG_TARGET
               value: http://logcatcher:48283
