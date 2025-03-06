@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.17.3 - 2025/03/06
+* start database with init.sql to always update root password on start
+
 ## v0.17.2 - 2025/03/05
 * use `shared-app-images/alpine-kubectl` image for pre-change job instead of outdated `unified-kubernetes-toolbox`, that is supposed to be used in CI
 
