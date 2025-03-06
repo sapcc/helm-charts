@@ -2,16 +2,16 @@
 # shellcheck shell=ash
 # shellcheck disable=SC3010
 
-# This is the entrypoint script for the "generate-secrets" init container of the elektra pod.
+# This is the entrypoint script for the elektra token rotation.
 set -eou pipefail
 [[ ${DEBUG:-} != false ]] && set -x
 
 SECRET="elektra-token"
 
 # if we already have a secret, we can stop here
-if [[ "$(kubectl get secrets "$SECRET" --ignore-not-found)" != "" ]]; then
-  exit 0
-fi
+# if [[ "$(kubectl get secrets "$SECRET" --ignore-not-found)" != "" ]]; then
+#   exit 0
+# fi
 
 # sets a new secret key
 # double base64 encode to get a string without newlines and 128 characters long after being decoded when deploying
@@ -33,5 +33,5 @@ echo -n "
   data:
     token: $SECRET_KEY_BASE
 " > secret.yaml
-  kubectl create -f secret.yaml
+  kubectl apply -f secret.yaml
 
