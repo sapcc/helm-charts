@@ -13,7 +13,7 @@ spec:
     spec:
       serviceAccountName: elektra
       # So it doesn’t get restarted once it completes successfully
-      restartPolicy: Never
+      restartPolicy: Never  
       containers:
       - name: generate-token-secret
         image: "{{.Values.global.registry}}/shared-app-images/alpine-kubectl:3.21-latest"
@@ -21,4 +21,10 @@ spec:
         env:
         - name: DEBUG
           value: {{ quote .Values.init_container_debug }}
-        command: [ ash, -c, {{ .Files.Get "bin/init-generate-token-secret.sh" | quote }} ] 
+        # command: [ ash, -c, {{ .Files.Get "bin/init-generate-token-secret.sh" | quote }} ] 
+        command:
+          - ash
+          - -c
+          - |
+            set -eou pipefail
+            [[ ${DEBUG:-} != false ]] && set -x
