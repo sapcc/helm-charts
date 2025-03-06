@@ -87,6 +87,10 @@ ml_full_access:
   backend_roles:
   - CC_IAS_OPERATIONS_UI_KIBANA_SUPPORT
 
+opensearch_dashboards_user:
+  backend_roles:
+  - CC_IAS_OPERATIONS_UI_KIBANA_SUPPORT
+
 readall:
   reserved: false
   backend_roles:
