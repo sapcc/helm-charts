@@ -223,7 +223,7 @@ build-argora-operator-remote:
 	@cp kustomize/argora-operator-remote/managedresource.yaml argora-operator-remote/templates
 	@mkdir argora-operator-remote/managedresources
 	@kubectl kustomize kustomize/argora-operator-managedresources > argora-operator-remote/managedresources/kustomize.yaml
-	@yq -i '.controllerManager.manager.image.tag="sha-$(ARGORA_VERSION)"' argora-operator-remote/values.yaml
+	@yq -i '.controllerManager.manager.image.tag="$(ARGORA_VERSION)"' argora-operator-remote/values.yaml
 	@yq -i '.fullnameOverride="argora-operator"' argora-operator-remote/values.yaml
 	@mkdir argora-operator-remote/ci
 	@echo 'config:' >> argora-operator-remote/ci/test-values.yaml
