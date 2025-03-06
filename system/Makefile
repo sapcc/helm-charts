@@ -10,6 +10,7 @@ BOOT_OPERATOR_VERSION ?= 4f2452ce450dc65342d68daf611edfb182585020
 IPXE_OPERATOR_VERSION ?= 61c6898bfd7772008835bdcca8d8a64c1dfc3b32
 FEDHCP_VERSION ?= a59539c62aaa11a96c82fe792c87daaac4cb75bf
 IPAM_VERSION ?= 6faf501000c5d7ff9744a3c111ca5ecf3339c00c
+ARGORA_VERSION ?= 1133b6d2dd30ae6f1335b2fe5570d99b6c491410
 
 SHELL := bash
 .ONESHELL:
@@ -213,6 +214,27 @@ build-ipam-operator-remote:
 	@yq -i '.version="0.2.2"' ipam-operator-remote/Chart.yaml
 	@$(SED) -i 's/serviceAccountName.*$$/serviceAccountName: default/g' ipam-operator-remote/templates/deployment.yaml
 	@$(SED) -i 's/kind: Role/kind: ClusterRole/g' ipam-operator-remote/managedresources/kustomize.yaml
+
+# build-argora-operator:
+# 	@cat kustomize/argora-operator/kustomization.yaml >> kustomization.yaml
+# 	$(call build-chart,argora-operator,https://github.com/sapcc/argora//config/default,$(ARGORA_VERSION))
+# 	@yq -i '.controllerManager.manager.image.tag="$(ARGORA_VERSION)"' argora-operator/values.yaml
+# 	@yq -i '.fullnameOverride="argora-operator"' argora-operator/values.yaml
+# 	@yq -i '.version="0.0.1"' argora-operator/Chart.yaml
+
+build-argora-operator-remote:
+	@rm -rf argora-operator-remote
+	@cat kustomize/argora-operator-remote/kustomization.yaml > kustomization.yaml
+	@kubectl kustomize | helmify -crd-dir argora-operator-remote
+	@cp kustomize/argora-operator-remote/remote-kubeconfig.yaml argora-operator-remote/templates
+	@cp kustomize/argora-operator-remote/managedresource.yaml argora-operator-remote/templates
+	@mkdir argora-operator-remote/managedresources
+	@kubectl kustomize kustomize/argora-operator-managedresources > argora-operator-remote/managedresources/kustomize.yaml
+	@yq -i '.controllerManager.manager.image.tag="$(ARGORA_VERSION)"' argora-operator-remote/values.yaml
+	@yq -i '.fullnameOverride="argora-operator"' argora-operator-remote/values.yaml
+	@yq -i '.version="0.0.1"' argora-operator-remote/Chart.yaml
+	@$(SED) -i 's/serviceAccountName.*$$/serviceAccountName: default/g' argora-operator-remote/templates/deployment.yaml
+	@$(SED) -i 's/kind: Role/kind: ClusterRole/g' argora-operator-remote/managedresources/kustomize.yaml
 
 # chart name, source url, tag
 define build-chart
