@@ -1,3 +1,4 @@
+{{- if .Values.ingress.enabled -}}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -9,18 +10,28 @@ metadata:
     {{- toYaml . | nindent 4 }}
   {{- end }}
 spec:
+{{- if .Values.ingress.logcatcher.tls }}
   tls:
+  {{- range .Values.ingress.logcatcher.tls }}
     - hosts:
-        - "logs.tailscale.global.cloud.sap"
-      secretName: logcatcher
+      {{- range .hosts }}
+        - {{ . | quote }}
+      {{- end }}
+      secretName: {{ .secretName }}
+  {{- end }}
   rules:
-    - host: "logs.tailscale.global.cloud.sap"
+  {{- range .Values.ingress.logcatcher.hosts }}
+    - host: {{ .host | quote }}
       http:
         paths:
-          - path: /
+        {{- range .paths }}
+          - path: {{ . }}
             pathType: Prefix
             backend:
               service:
                 name: logcatcher
                 port:
                   name: logs
+        {{- end }}
+  {{- end }}
+{{- end }}
