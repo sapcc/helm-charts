@@ -50,8 +50,6 @@ spec:
             - db
             - sync
           volumeMounts:
-          - name: masakari-database
-            mountPath: /database
           - mountPath: /etc/masakari
             name: masakari-etc
           - mountPath: /etc/masakari/masakari.conf.d
@@ -83,8 +81,6 @@ spec:
         - name: masakari-api
           containerPort: {{.Values.masakariApiPortInternal}}
         volumeMounts:
-        - name: masakari-database
-          mountPath: /database
         - mountPath: /etc/masakari
           name: masakari-etc
         - mountPath: /etc/masakari/masakari.conf.d
@@ -93,9 +89,6 @@ spec:
         {{- include "utils.trust_bundle.volume_mount" . | indent 8 }}
       {{- include "utils.proxysql.container" . | indent 6 }}
       volumes:
-      - name: masakari-database
-        persistentVolumeClaim:
-          claimName: masakari-database
       - name: masakari-etc
         configMap:
           name: masakari-etc
