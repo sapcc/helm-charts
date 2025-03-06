@@ -214,10 +214,40 @@ build-ipam-operator-remote:
 	@$(SED) -i 's/serviceAccountName.*$$/serviceAccountName: default/g' ipam-operator-remote/templates/deployment.yaml
 	@$(SED) -i 's/kind: Role/kind: ClusterRole/g' ipam-operator-remote/managedresources/kustomize.yaml
 
+build-provider-khalkeon:
+	$(call build-chart-from-local,provider-khalkeon,../../khalkeon/config/default,$(PROVIDER_IPAM_VERSION))
+	@find provider-khalkeon/crds -type f -exec $(SED) -i -e 's#capi-capi-#capi-#g' {} \;
+	@yq -i '.controllerManager.manager.image.tag="$(PROVIDER_IPAM_VERSION)"' provider-khalkeon/values.yaml
+	@yq -i '.version="0.1.0"' provider-khalkeon/Chart.yaml
+
+build-khalkeon-remote:
+	@rm -rf khalkeon-remote
+	@cat kustomize/khalkeon-remote/kustomization.yaml > kustomization.yaml
+	@kubectl kustomize | helmify -crd-dir khalkeon-remote
+	@cp kustomize/khalkeon-remote/remote-kubeconfig.yaml khalkeon-remote/templates
+	@cp kustomize/khalkeon-remote/managedresource.yaml khalkeon-remote/templates
+	@mkdir khalkeon-remote/managedresources
+	@kubectl kustomize kustomize/khalkeon-remote-managedresources > khalkeon-remote/managedresources/kustomize.yaml
+	@yq -i '.controllerManager.manager.image.tag="$(PROVIDER_IPAM_VERSION)"' khalkeon-remote/values.yaml
+	@yq -i '.version="0.1.0"' khalkeon-remote/Chart.yaml
+	@$(SED) -i 's/serviceAccountName.*$$/serviceAccountName: default/g' khalkeon-remote/templates/deployment.yaml
+	@$(SED) -i 's/kind: Role/kind: ClusterRole/g' khalkeon-remote/managedresources/kustomize.yaml
+	@git restore kustomization.yaml
+
 # chart name, source url, tag
 define build-chart
 @echo "Generating Helm chart for $(1) version $(3)"
 @ yq -i '.resources[0] = "$(2)?ref=$(3)"' kustomization.yaml
+@rm -rf $(1)
+@kubectl kustomize | helmify -crd-dir $(1)
+@$(SED) -i -E 's/\$$\{[^:=]+\:=([^}]+)\}/\1/g' $(1)/values.yaml
+@yq -i '.appVersion="$(3)"' $(1)/Chart.yaml
+@git restore kustomization.yaml
+endef
+
+define build-chart-from-local
+@echo "Generating Helm chart for $(1) version $(3)"
+@ yq -i '.resources[0] = "$(2)"' kustomization.yaml
 @rm -rf $(1)
 @kubectl kustomize | helmify -crd-dir $(1)
 @$(SED) -i -E 's/\$$\{[^:=]+\:=([^}]+)\}/\1/g' $(1)/values.yaml
