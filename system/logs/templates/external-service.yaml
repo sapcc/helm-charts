@@ -1,0 +1,27 @@
+{{- if .Values.openTelemetryPlugin.openTelemetry.logsCollector.externalConfig.enabled }}
+apiVersion: v1
+kind: Service
+
+metadata:
+  name: logs-collector-external
+  annotations:
+    parrot.sap.cc/announce: 'true'
+spec:
+  selector:
+    app.kubernetes.io/component: opentelemetry-collector
+    app.kubernetes.io/instance: {{ .Release.Namespace }}.logs
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/part-of: opentelemetry
+  type: NodePort
+  externalTrafficPolicy: Local
+  externalIPs: ["{{.Values.openTelemetryPlugin.openTelemetry.logsCollector.externalConfig.external_ip}}"]
+  ports:
+    - name: alertmanagerwebhook
+      protocol: TCP
+      port: {{.Values.openTelemetryPlugin.openTelemetry.logsCollector.externalConfig.alertmanager_port}}
+      targetPort: {{.Values.openTelemetryPlugin.openTelemetry.logsCollector.externalConfig.alertmanager_port}}
+    - name: deploymentstcp
+      protocol: TCP
+      port: {{.Values.openTelemetryPlugin.openTelemetry.logsCollector.externalConfig.deployments_port}}
+      targetPort: {{.Values.openTelemetryPlugin.openTelemetry.logsCollector.externalConfig.deployments_port}}    
+{{- end }}
