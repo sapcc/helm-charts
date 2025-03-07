@@ -236,7 +236,7 @@ spec:
 
     exporters:
       debug:
-        verbosity: basic
+        verbosity: detailed
       opensearch/failover_a:
         http:
           auth:
@@ -254,6 +254,9 @@ spec:
 {{- if .Values.openTelemetryPlugin.openTelemetry.logsCollector.openstackConfig.enabled }}
     {{- include "openstack.exporter" . | nindent 6 -}}
 {{- end }}
+{{- if .Values.openTelemetryPlugin.openTelemetry.logsCollector.externalConfig.enabled }}
+    {{- include "external.exporter" . | nindent 6 -}}
+{{- end }}
 
     extensions:
       basicauth/failover_a:
@@ -268,6 +271,7 @@ spec:
     connectors:
       forward: {}
       forward/swift: {}
+      forward/external: {}
       failover/opensearch:
         priority_levels:
           - [logs/failover_a]
@@ -279,6 +283,13 @@ spec:
         priority_levels:
           - [logs/failover_a_swift]
           - [logs/failover_b_swift]
+        retry_interval: 1h
+        retry_gap: 15m
+        max_retries: 0
+      failover/opensearch_external:
+        priority_levels:
+          - [logs/failover_a]
+          - [logs/failover_b]
         retry_interval: 1h
         retry_gap: 15m
         max_retries: 0
