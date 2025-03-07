@@ -79,6 +79,16 @@
 {{define "testRelease_db_host"}}testRelease-mariadb.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
 
 {{/*
+Charts owner-info labels
+*/}}
+{{- define "mariadb.ownerLabels" -}}
+{{- if index .Values "owner-info" }}
+ccloud/support-group: {{  index .Values "owner-info" "support-group" | quote }}
+ccloud/service: {{  index .Values "owner-info" "service" | quote }}
+{{- end }}
+{{- end }}
+
+{{/*
   Generate labels
   $ = global values
   version/noversion = enable/disable version fields in labels
