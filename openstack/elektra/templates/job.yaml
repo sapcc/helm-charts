@@ -1,0 +1,24 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: generate-token-secret
+  annotations:
+    "helm.sh/hook": "post-install,pre-upgrade"
+    "helm.sh/hook-weight": "1"
+    "helm.sh/hook-delete-policy": "before-hook-creation"
+spec:
+  template:
+    metadata:
+      name: delete-token-secret
+    spec:
+      serviceAccountName: elektra
+      # So it doesn’t get restarted once it completes successfully
+      restartPolicy: Never  
+      containers:
+      - name: generate-token-secret
+        image: "{{.Values.global.registry}}/shared-app-images/alpine-kubectl:3.21-latest"
+        imagePullPolicy: "Always"
+        env:
+        - name: DEBUG
+          value: {{ quote .Values.init_container_debug }}
+        command: [ ash, -c, {{ .Files.Get "bin/init-generate-token-secret.sh" | quote }} ] 
