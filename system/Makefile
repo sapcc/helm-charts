@@ -236,7 +236,7 @@ build-argora-operator-remote:
 	@echo '  bmcUser: foo' >> argora-operator-remote/ci/test-values.yaml
 	@echo '  bmcPassword: bar' >> argora-operator-remote/ci/test-values.yaml
 	@echo '  netboxToken: foo' >> argora-operator-remote/ci/test-values.yaml
-	@yq -i '.version="0.0.1"' argora-operator-remote/Chart.yaml
+	@yq -i '.version="0.0.2"' argora-operator-remote/Chart.yaml
 	@$(SED) -i 's/serviceAccountName.*$$/serviceAccountName: default/g' argora-operator-remote/templates/deployment.yaml
 	@$(SED) -i 's/kind: Role/kind: ClusterRole/g' argora-operator-remote/managedresources/kustomize.yaml
 
