@@ -106,20 +106,12 @@ spec:
         defaultMode: 0755
     - name: tempest-accounts-yaml
       secret:
-        secretName: {{ .Chart.Name }}-accounts
+        secretName: {{ .Chart.Name }}-etc-secret
         items:
         - key: tempest_accounts.yaml
           path: tempest_accounts.yaml
-    - name: tempest-deployment-config-json
-      secret:
-        secretName: {{ .Chart.Name }}-deployment-config
-        items:
         - key: tempest_deployment_config.json
           path: tempest_deployment_config.json
-    - name: tempest-extra-options
-      secret:
-        secretName: {{ .Chart.Name }}-extra-options
-        items:
         - key: tempest_extra_options
           path: tempest_extra_options
 {{ end }}
