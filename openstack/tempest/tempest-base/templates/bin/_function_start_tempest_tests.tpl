@@ -32,13 +32,6 @@ function start_tempest_tests {
   RALLY_EXIT_CODE=$(($RALLY_EXIT_CODE + $?))
 
   # configure deployment for current region with existing users
-
-  ls -la /{{ .Chart.Name }}-etc/
-
-  ls -la /tmp
-
-  find / -name tempest_deployment_config.json
-
   rally deployment create --file /{{ .Chart.Name }}-etc/tempest_deployment_config.json --name tempest_deployment
   RALLY_EXIT_CODE=$(($RALLY_EXIT_CODE + $?))
 

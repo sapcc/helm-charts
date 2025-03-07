@@ -100,11 +100,6 @@ spec:
     - name: {{ .Chart.Name }}-etc
       configMap:
         name: {{ .Chart.Name }}-etc
-    - name: container-init
-      configMap:
-        name: {{ .Chart.Name }}-bin
-        defaultMode: 0755
-    - name: tempest-accounts-yaml
       secret:
         secretName: {{ .Chart.Name }}-etc-secret
         items:
@@ -114,4 +109,8 @@ spec:
           path: tempest_deployment_config.json
         - key: tempest_extra_options
           path: tempest_extra_options
+    - name: container-init
+      configMap:
+        name: {{ .Chart.Name }}-bin
+        defaultMode: 0755
 {{ end }}
