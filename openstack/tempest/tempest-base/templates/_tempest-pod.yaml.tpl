@@ -104,19 +104,19 @@ spec:
       configMap:
         name: {{ .Chart.Name }}-bin
         defaultMode: 0755
-    - name: tempect_accounts_yaml
+    - name: tempest_accounts.yaml
       secret:
         secretName: {{ .Chart.Name }}-accounts
         items:
         - key: tempest_accounts.yaml
           path: tempest_accounts.yaml
-    - name: tempest_deployment
+    - name: tempest_deployment_config.json
       secret:
         secretName: {{ .Chart.Name }}-deployment-config
         items:
         - key: tempest_deployment_config.json
           path: tempest_deployment_config.json
-    - name: tempest_extraoptions
+    - name: tempest_extra_options
       secret:
         secretName: {{ .Chart.Name }}-extra-options
         items:
