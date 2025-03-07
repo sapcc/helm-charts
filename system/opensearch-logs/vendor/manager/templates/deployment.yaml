@@ -43,6 +43,56 @@ spec:
           secret:
             defaultMode: 420
             secretName: admin-cert-manager
+        - name: dynamic-config
+          emptyDir: {}
+      initContainers:
+        - name: credential-checker
+          image: curlimages/curl:8.12.1
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              # Read credentials from secrets
+              user=$(cat /secrets/username)
+              pass=$(cat /secrets/password)
+              failover_user=$(cat /secrets/failover_username)
+              failover_pass=$(cat /secrets/failover_password)
+
+              # Create temporary .netrc files
+              mkdir -p /tmp/netrc
+              printf "machine opensearch-logs-client.opensearch-logs login %s password %s" \
+                "$user" "$pass" > /tmp/netrc/auth1
+              printf "machine opensearch-logs-client.opensearch-logs login %s password %s" \
+                "$failover_user" "$failover_pass" > /tmp/netrc/auth2
+
+              # Test credentials
+              test_connection() {
+                curl -s -o /dev/null -w "%{http_code}" \
+                  --netrc-file "$1" \
+                  --max-time 5 \
+                  --fail \
+                  "https://opensearch-logs-client.opensearch-logs:9200"
+              }
+
+              # Try credentials in sequence
+              for auth in /tmp/netrc/auth1 /tmp/netrc/auth2; do
+                if [ "$(test_connection $auth)" = "200" ]; then
+                  echo "Using valid credentials from ${auth}"
+                  valid_user=$(awk '/login/ {print $2}' $auth)
+                  valid_pass=$(awk '/password/ {print $2}' $auth)
+                  sed -e "s/USERNAME_PLACEHOLDER/$valid_user/g" \
+                      -e "s/PASSWORD_PLACEHOLDER/$valid_pass/g" \
+                      /secrets/application.conf > /dynamic-config/application.conf
+                  exit 0
+                fi
+              done
+
+              echo "All credential checks failed"
+              exit 1
+          volumeMounts:
+            - name: manager-secrets
+              mountPath: /secrets
+            - name: dynamic-config
+              mountPath: /dynamic-config
       containers:
       - name: manager
         image: {{.Values.global.registry}}/{{.Values.image_manager}}
@@ -66,7 +116,7 @@ spec:
             name: manager-etc
             subPath: logback.xml
           - mountPath: /manager-etc/application.conf
-            name: manager-secrets
+            name: dynamic-config
             subPath: application.conf
           - mountPath: /opt/certs/ca.crt
             name: admin-cert-manager
