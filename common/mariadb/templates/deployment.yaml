@@ -53,6 +53,24 @@ spec:
                   operator: In
                   values:
                   - {{.Values.global.region}}a
+      initContainers:
+      - name: set-root-password
+        image: {{ required ".Values.global.dockerHubMirrorAlternateRegion is missing" .Values.global.dockerHubMirrorAlternateRegion }}/{{ .Values.image }}
+        imagePullPolicy: {{ default "IfNotPresent" .Values.imagePullPolicy | quote }}
+        command:
+          - /bin/bash
+          - -c
+          - |
+            /configurator/mariadb-set-root-password.sh
+        volumeMounts:
+          - name: set-root-password
+            mountPath: /configurator
+            readOnly: true
+          - name: mysql-users-secret-file
+            mountPath: /etc/mysql/mysql-users-secret
+            readOnly: true
+          - name: init-file-root-sql
+            mountPath: /etc/mysql/init-file
       containers:
       - name: mariadb
         image: {{ required ".Values.global.dockerHubMirrorAlternateRegion is missing" .Values.global.dockerHubMirrorAlternateRegion }}/{{ .Values.image }}
@@ -111,6 +129,11 @@ spec:
           - name: initdb
             mountPath: /docker-entrypoint-initdb.d
 {{ end }}
+          - name: mysql-users-secret-file
+            mountPath: /etc/mysql/mysql-users-secret
+            readOnly: true
+          - name: init-file-root-sql
+            mountPath: /etc/mysql/init-file
 {{- if or .Values.backup_v2.enabled .Values.readiness.useSidecar }}
       - name: readiness
         image: "{{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{ .Values.readiness.image }}:{{ .Values.readiness.image_version }}"
@@ -199,3 +222,18 @@ spec:
             secretName: {{ .Values.custom_initdb_secret }}
             defaultMode: 0744
 {{ end }}
+        - name: init-file-root-sql
+          emptyDir: {}
+        - name: set-root-password
+          configMap:
+            name: mariadb-{{.Values.name}}-set-root-password
+            defaultMode: 0755
+        - name: mysql-users-secret-file
+          projected:
+            sources:
+            - secret:
+                name: mariadb-{{.Values.name}}
+                optional: false
+                items:
+                  - key: root-password
+                    path: root
