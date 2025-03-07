@@ -53,8 +53,10 @@ spec:
             - name: mysql-startup-scripts
               mountPath: /startup-scripts
             env:
-            - name: PXC_SERVICE
+            - name: PXC_GROUP
               value: "{{ .Release.Name }}-pxc"
+            - name: PXC_SERVICE
+              value: "{{ include "fullName" . }}"
             - name: NODE_NAME
               value: "{{ include "fullName" . }}-repl"
             - name: PXC_DAYS_RETENTION
@@ -64,10 +66,6 @@ spec:
                 secretKeyRef:
                   name: {{ include "fullName" . }}
                   key: xtrabackup-password
-            - name: OS_AUTH_URL
-              value: "{{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{ .Values.global.keystone_internal_ip }}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3"
-            - name: OS_REGION_NAME
-              value: "{{ .Values.global.db_region }}"
           restartPolicy: OnFailure
           volumes:
           - name: mysql-startup-scripts
