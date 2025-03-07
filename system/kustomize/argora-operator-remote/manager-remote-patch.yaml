@@ -37,6 +37,12 @@ spec:
           - name: remote-kubeconfig
             mountPath: /var/run/secrets/kubernetes.io/serviceaccount
             readOnly: true
+          - name: config-volume
+            mountPath: /etc/config
+            readOnly: true
+          - name: secret-volume
+            mountPath: /etc/credentials
+            readOnly: true
       volumes:
       - name: remote-kubeconfig
         secret:
@@ -46,3 +52,9 @@ spec:
             path: token
           - key: bundle.crt
             path: ca.crt
+      - name: config-volume
+        configMap:
+          name: argora-operator-config
+      - name: secret-volume
+        secret:
+          secretName: argora-operator-secret
