@@ -129,7 +129,7 @@ build-metal-operator:
 	@find metal-operator-core/templates -type f -exec $(SED) -i -e 's#metal-webhook-service#metal-operator-webhook-service#g' {} \;
 	@yq -i '.controllerManager.manager.image.tag="$(METAL_OPERATOR_VERSION)"' metal-operator-core/values.yaml
 	@yq -i '.fullnameOverride="metal-operator"' metal-operator-core/values.yaml
-	@yq -i '.version="1.1.2"' metal-operator-core/Chart.yaml
+	@yq -i '.version="1.1.3"' metal-operator-core/Chart.yaml
 
 build-metal-operator-remote:
 	@rm -rf metal-operator-remote
@@ -149,7 +149,7 @@ build-metal-operator-remote:
 	@mkdir metal-operator-remote/ci
 	@echo 'global:' >> metal-operator-remote/ci/test-values.yaml
 	@echo '  region: ab-cd-1' >> metal-operator-remote/ci/test-values.yaml
-	@yq -i '.version="0.3.9"' metal-operator-remote/Chart.yaml
+	@yq -i '.version="0.3.10"' metal-operator-remote/Chart.yaml
 	@$(SED) -i 's/serviceAccountName.*$$/serviceAccountName: default/g' metal-operator-remote/templates/deployment.yaml
 	@$(SED) -i 's/kind: Role/kind: ClusterRole/g' metal-operator-remote/managedresources/kustomize.yaml
 
@@ -159,7 +159,7 @@ build-boot-operator:
 	@find boot-operator/templates -type f -exec $(SED) -i -e 's#{{ include "boot-operator.fullname" . }}-boot-operator#boot-operator#g' {} \;
 	@yq -i '.controllerManager.manager.image.tag="$(BOOT_OPERATOR_VERSION)"' boot-operator/values.yaml
 	@yq -i '.fullnameOverride="boot-operator"' boot-operator/values.yaml
-	@yq -i '.version="1.0.3"' boot-operator/Chart.yaml
+	@yq -i '.version="1.0.4"' boot-operator/Chart.yaml
 
 build-boot-operator-remote:
 	@rm -rf boot-operator-remote
@@ -171,7 +171,7 @@ build-boot-operator-remote:
 	@kubectl kustomize kustomize/boot-operator-managedresources > boot-operator-remote/managedresources/kustomize.yaml
 	@yq -i '.controllerManager.manager.image.tag="$(BOOT_OPERATOR_VERSION)"' boot-operator-remote/values.yaml
 	@yq -i '.fullnameOverride="boot-operator"' boot-operator-remote/values.yaml
-	@yq -i '.version="0.3.0"' boot-operator-remote/Chart.yaml
+	@yq -i '.version="0.3.1"' boot-operator-remote/Chart.yaml
 	@$(SED) -i 's/serviceAccountName.*$$/serviceAccountName: default/g' boot-operator-remote/templates/deployment.yaml
 	@$(SED) -i 's/kind: Role/kind: ClusterRole/g' boot-operator-remote/managedresources/kustomize.yaml
 
