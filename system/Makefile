@@ -10,7 +10,7 @@ BOOT_OPERATOR_VERSION ?= 4f2452ce450dc65342d68daf611edfb182585020
 IPXE_OPERATOR_VERSION ?= 61c6898bfd7772008835bdcca8d8a64c1dfc3b32
 FEDHCP_VERSION ?= a59539c62aaa11a96c82fe792c87daaac4cb75bf
 IPAM_VERSION ?= 6faf501000c5d7ff9744a3c111ca5ecf3339c00c
-ARGORA_VERSION ?= 1133b6d2dd30ae6f1335b2fe5570d99b6c491410
+ARGORA_VERSION ?= e30ef54b8dd69e6a322aa92af34606b382491ce1
 
 SHELL := bash
 .ONESHELL:
@@ -223,6 +223,7 @@ build-argora-operator-remote:
 	@cp kustomize/argora-operator-remote/managedresource.yaml argora-operator-remote/templates
 	@mkdir argora-operator-remote/managedresources
 	@kubectl kustomize kustomize/argora-operator-managedresources > argora-operator-remote/managedresources/kustomize.yaml
+	@cp kustomize/argora-operator-managedresources/updates.yaml argora-operator-remote/managedresources
 	@yq -i '.controllerManager.manager.image.tag="$(ARGORA_VERSION)"' argora-operator-remote/values.yaml
 	@yq -i '.fullnameOverride="argora-operator"' argora-operator-remote/values.yaml
 	@mkdir argora-operator-remote/ci

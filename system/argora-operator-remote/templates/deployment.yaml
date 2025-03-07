@@ -59,6 +59,12 @@ spec:
         - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
           name: remote-kubeconfig
           readOnly: true
+        - mountPath: /etc/config
+          name: config-volume
+          readOnly: true
+        - mountPath: /etc/credentials
+          name: secret-volume
+          readOnly: true
       hostNetwork: true
       securityContext: {{- toYaml .Values.controllerManager.podSecurityContext | nindent
         8 }}
@@ -73,3 +79,9 @@ spec:
           - key: bundle.crt
             path: ca.crt
           secretName: argora-operator-remote-kubeconfig
+      - configMap:
+          name: argora-operator-config
+        name: config-volume
+      - name: secret-volume
+        secret:
+          secretName: argora-operator-secret

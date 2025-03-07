@@ -144,47 +144,6 @@ metadata:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  labels:
-    app.kubernetes.io/managed-by: kustomize
-    app.kubernetes.io/name: argora
-  name: argora-operator-leader-election-role
-  namespace: kube-system
-rules:
-- apiGroups:
-  - ""
-  resources:
-  - configmaps
-  verbs:
-  - get
-  - list
-  - watch
-  - create
-  - update
-  - patch
-  - delete
-- apiGroups:
-  - coordination.k8s.io
-  resources:
-  - leases
-  verbs:
-  - get
-  - list
-  - watch
-  - create
-  - update
-  - patch
-  - delete
-- apiGroups:
-  - ""
-  resources:
-  - events
-  verbs:
-  - create
-  - patch
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
   name: argora-operator-manager-role
 rules:
 - apiGroups:
@@ -270,23 +229,6 @@ metadata:
   labels:
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/name: argora
-  name: argora-operator-leader-election-rolebinding
-  namespace: kube-system
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: argora-operator-leader-election-role
-subjects:
-- kind: ServiceAccount
-  name: argora-operator-controller-manager
-  namespace: kube-system
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  labels:
-    app.kubernetes.io/managed-by: kustomize
-    app.kubernetes.io/name: argora
   name: argora-operator-manager-rolebinding
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -296,20 +238,3 @@ subjects:
 - kind: ServiceAccount
   name: argora-operator-controller-manager
   namespace: kube-system
----
-apiVersion: v1
-data:
-  config.json: '{{ toJson .Values.config }}'
-kind: ConfigMap
-metadata:
-  name: argora-operator-config
-  namespace: kube-system
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: argora-operator-secret
-  namespace: kube-system
-stringData:
-  credentials.json: '{{ toJson .Values.credentials}}'
-type: Opaque
