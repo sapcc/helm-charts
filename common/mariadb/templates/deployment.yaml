@@ -127,10 +127,8 @@ spec:
           - mountPath: /root/.my.cnf
             subPath: ".my.cnf"
             name: mariadb-client
-{{- if or .Values.initdb_secret .Values.custom_initdb_secret }}
           - name: initdb
             mountPath: /docker-entrypoint-initdb.d
-{{ end }}
           - name: mysql-users-secret-file
             mountPath: /etc/mysql/mysql-users-secret
             readOnly: true
@@ -250,17 +248,10 @@ spec:
           persistentVolumeClaim:
            claimName: {{ .Values.persistence_claim.name |  default (include "fullName" . ) }}
 {{- end }}
-{{- if .Values.initdb_secret }}
         - name: initdb
           secret:
             secretName: {{ .Values.name }}-initdb
             defaultMode: 0744
-{{- else if .Values.custom_initdb_secret }}
-        - name: initdb
-          secret:
-            secretName: {{ .Values.custom_initdb_secret }}
-            defaultMode: 0744
-{{ end }}
         - name: init-file-root-sql
           emptyDir: {}
         - name: set-root-password
