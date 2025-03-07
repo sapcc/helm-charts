@@ -23,8 +23,8 @@ spec:
         app: {{ include "fullName" . }}
         {{- include "mariadb.labels" (list $ "version" "mariadb" "deployment" "database") | indent 8 }}
       annotations:
-        checksum/secrets: {{ include (print $.Template.BasePath  "/secret.yaml") . | sha256sum }}
         checksum/etc: {{ include (print $.Template.BasePath  "/etc-configmap.yaml") . | sha256sum }}
+        checksum/credential-updater: {{ include (print $.Template.BasePath  "/configmap-mariadb-credential-updater.yaml") . | sha256sum }}
 {{- if .Values.metrics.enabled }}
         prometheus.io/scrape: "true"
         prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
@@ -111,6 +111,8 @@ spec:
         resources:
 {{ toYaml (required "missing .resources" .Values.resources) | indent 10 }}
         volumeMounts:
+          - name: mariadb-socket
+            mountPath: /run/mysqld
 {{- if .Values.persistence_claim.enabled }}
           - name: mariadb-persistent-storage
             mountPath: /var/lib/mysql
@@ -134,6 +136,37 @@ spec:
             readOnly: true
           - name: init-file-root-sql
             mountPath: /etc/mysql/init-file
+      - name: user-credential-updater
+        image: "{{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{ .Values.credentialUpdater.image }}:{{ .Values.credentialUpdater.imageTag }}"
+        imagePullPolicy: {{ default "IfNotPresent" .Values.imagePullPolicy | quote }}
+        securityContext:
+          runAsUser: 0
+          privileged: false
+          allowPrivilegeEscalation: false
+        command:
+          - python3
+          - /usr/bin/mariadb-credential-updater.py
+        env:
+          - name: INITDB_FILE_PATH
+            value: /var/lib/initdb/init.sql
+          - name: CHECK_INTERVAL
+            value: {{ .Values.credentialUpdater.checkInterval | quote }}
+          - name: MYSQL_ADDRESS
+            value: /run/mysqld/mysqld.sock
+          - name: MYSQL_CLIENT_CONFIG
+            value: /root/.my.cnf
+        volumeMounts:
+          - mountPath: /run/mysqld
+            name: mariadb-socket
+          - mountPath: /root/.my.cnf
+            subPath: ".my.cnf"
+            name: mariadb-client
+          - mountPath: /usr/bin/mariadb-credential-updater.py
+            subPath: mariadb-credential-updater.py
+            name: mariadb-credential-updater
+            readOnly: true
+          - mountPath: /var/lib/initdb
+            name: initdb
 {{- if or .Values.backup_v2.enabled .Values.readiness.useSidecar }}
       - name: readiness
         image: "{{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{ .Values.readiness.image }}:{{ .Values.readiness.image_version }}"
@@ -195,9 +228,15 @@ spec:
 {{- end }}
       priorityClassName: {{ .Values.priority_class | default "critical-infrastructure" | quote }}
       volumes:
+        - name: mariadb-socket
+          emptyDir: {}
         - name: mariadb-entrypoint
           configMap:
             name: mariadb-{{.Values.name}}-entrypoint
+            defaultMode: 0755
+        - name: mariadb-credential-updater
+          configMap:
+            name: mariadb-{{.Values.name}}-credential-updater
             defaultMode: 0755
         - name: mariadb-etc
           configMap:
