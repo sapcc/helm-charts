@@ -1,0 +1,13 @@
+{{- if and (hasKey $.Values.job "renameCheckConstraints") ($.Values.job.renameCheckConstraints.enabled) }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  namespace: {{ $.Release.Namespace }}
+  name: mariadb-{{ .Values.name }}-rename-check-constraints
+  labels:
+    {{- include "mariadb.labels" (list $ "version" "mariadb" "cm" "rename-check-constraints") | indent 4 }}
+data:
+{{ tpl (.Files.Glob "scripts/common-functions.sh").AsConfig . | indent 2 }}
+{{ tpl (.Files.Glob "scripts/mariadb-rename-check-constraints.sh").AsConfig . | indent 2 }}
+{{- end }}
