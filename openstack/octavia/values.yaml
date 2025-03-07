@@ -80,6 +80,32 @@ mariadb:
   ccroot_user:
     enabled: true
 
+pxc_db:
+  enabled: false
+  name: octavia
+  alerts:
+    support_group: network-api
+  ccroot_user:
+    enabled: true
+  databases:
+    - octavia
+  users:
+    octavia:
+      name: octavia
+      grants:
+        - "ALL PRIVILEGES on octavia.*"
+  pxc:
+    persistence:
+      size: 10Gi
+  backup:
+    enabled: true
+    s3:
+      secrets:
+        aws_access_key_id: null
+        aws_secret_access_key: null
+    pitr:
+      enabled: true
+
 status_manager:
   health_check_interval: 120
 
@@ -212,9 +238,9 @@ mysql_metrics:
       labels:
         - "octavia_host"
       query: |
-        SELECT 
-          compute_flavor AS octavia_host, 
-          IFNULL((UNIX_TIMESTAMP(NOW()) - UNIX_TIMESTAMP(MAX(updated_at))), 1000) AS heartbeat_seconds 
+        SELECT
+          compute_flavor AS octavia_host,
+          IFNULL((UNIX_TIMESTAMP(NOW()) - UNIX_TIMESTAMP(MAX(updated_at))), 1000) AS heartbeat_seconds
         FROM amphora
         WHERE role = 'MASTER' or role = 'BACKUP'
         GROUP BY compute_flavor;
@@ -225,13 +251,13 @@ mysql_metrics:
       labels:
         - "agent"
       query: |
-        SELECT 
+        SELECT
           compute_flavor as agent,
-          sum(case role WHEN 'MASTER' THEN 1 WHEN 'BACKUP' THEN 0 END) AS schedulable 
-        FROM amphora 
-        WHERE 
-          (vrrp_interface != 'enabled' OR vrrp_interface IS Null) AND 
-          cached_zone is not NULL 
+          sum(case role WHEN 'MASTER' THEN 1 WHEN 'BACKUP' THEN 0 END) AS schedulable
+        FROM amphora
+        WHERE
+          (vrrp_interface != 'enabled' OR vrrp_interface IS Null) AND
+          cached_zone is not NULL
         GROUP BY compute_flavor;
       values:
         - "schedulable"
@@ -313,7 +339,7 @@ watcher:
   enabled: false
 
 audit:
-  enabled: true 
+  enabled: true
   # how many messages to buffer before dumping to log (when rabbit is down or too slow)
   mem_queue_size: 1000
 
