@@ -1,4 +1,3 @@
-{{- define "tempest-base.extra_options" }}
 [DEFAULT]
 debug = True
 use_stderr = True
@@ -7,7 +6,7 @@ rally_debug = True
 [auth]
 use_dynamic_credentials = False
 create_isolated_networks = False
-test_accounts_file = /{{ .Chart.Name }}-etc/tempest_accounts.yaml
+test_accounts_file = /{{ .Chart.Name }}-etc-secret/tempest_accounts.yaml
 default_credentials_domain_name = tempest
 admin_project_name = {{ default "neutron-tempest-admin1" (index .Values (print .Chart.Name | replace "-" "_")).tempest.admin_project_name }}
 admin_username = {{ default "neutron-tempest-admin1" (index .Values (print .Chart.Name | replace "-" "_")).tempest.admin_name }}
@@ -151,5 +150,3 @@ octavia = True
 
 [dns]
 nameservers = 10.114.1.233,147.204.35.140,147.204.35.141
-
-{{ end }}

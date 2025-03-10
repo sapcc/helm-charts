@@ -94,6 +94,8 @@ spec:
       volumeMounts:
         - mountPath: /{{ .Chart.Name }}-etc
           name: {{ .Chart.Name }}-etc
+        - mountPath: /{{ .Chart.Name }}-etc-secret
+          name: {{ .Chart.Name }}-etc-secret
         - mountPath: /container.init
           name: container-init
   volumes:
@@ -104,4 +106,14 @@ spec:
       configMap:
         name: {{ .Chart.Name }}-bin
         defaultMode: 0755
+    - name: {{ .Chart.Name }}-etc-secret
+      secret:
+        secretName: {{ .Chart.Name }}-etc-secret
+        items:
+        - key: tempest_accounts.yaml
+          path: tempest_accounts.yaml
+        - key: tempest_deployment_config.json
+          path: tempest_deployment_config.json
+        - key: tempest_extra_options
+          path: tempest_extra_options
 {{ end }}
