@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "fullname" . }}-probes
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    {{- include "rabbitmq.labels" (list $ "version" "rabbitmq" "configmap" "probes") | indent 4 }}
+data:
+{{ tpl (.Files.Glob "scripts/common-functions.sh").AsConfig . | indent 2 }}
+{{ tpl (.Files.Glob "scripts/liveness.sh").AsConfig . | indent 2 }}
+{{ tpl (.Files.Glob "scripts/readiness.sh").AsConfig . | indent 2 }}

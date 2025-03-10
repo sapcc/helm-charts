@@ -26,6 +26,7 @@ spec:
         kubectl.kubernetes.io/default-container: rabbitmq
         checksum/container.init: {{ include (print $.Template.BasePath "/bin-configmap.yaml") . | sha256sum }}
         checksum/users: {{ include (print $.Template.BasePath "/users-secret.yaml") . | sha256sum }}
+        checksum/configmap-probes: {{ include (print $.Template.BasePath "/configmap-probes.yaml") $ | sha256sum }}
 {{- if and (and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested) $.Values.linkerd.enabled }}
         linkerd.io/inject: enabled
         config.linkerd.io/opaque-ports: "{{ default 5672 .Values.ports.public }}"
@@ -80,27 +81,31 @@ spec:
           - bash
         args:
           - /container.init/rabbitmq-start
-        {{- if .Values.livenessProbe.enabled }}
+        {{- if $.Values.livenessProbe.enabled }}
         livenessProbe:
           exec:
             command:
-            - rabbitmqctl
-            - status
-          failureThreshold: {{ .Values.livenessProbe.failureThreshold }}
-          initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds }}
-          periodSeconds: {{ .Values.livenessProbe.periodSeconds }}
-          successThreshold: {{ .Values.livenessProbe.successThreshold }}
-          timeoutSeconds: {{ .Values.livenessProbe.timeoutSeconds }}
+              - sh
+              - -c
+              - '/usr/bin/liveness.sh'
+          failureThreshold: {{ $.Values.livenessProbe.failureThreshold }}
+          initialDelaySeconds: {{ $.Values.livenessProbe.initialDelaySeconds }}
+          periodSeconds: {{ $.Values.livenessProbe.periodSeconds }}
+          successThreshold: {{ $.Values.livenessProbe.successThreshold }}
+          timeoutSeconds: {{ $.Values.livenessProbe.timeoutSeconds }}
         {{- end }}
         {{- if .Values.readinessProbe.enabled }}
         readinessProbe:
-          tcpSocket:
-            port: public
-          failureThreshold: {{ .Values.readinessProbe.failureThreshold }}
-          initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}
-          periodSeconds: {{ .Values.readinessProbe.periodSeconds }}
-          successThreshold: {{ .Values.readinessProbe.successThreshold }}
-          timeoutSeconds: {{ .Values.readinessProbe.timeoutSeconds }}
+          exec:
+            command:
+              - sh
+              - -c
+              - '/usr/bin/readiness.sh'
+          failureThreshold: {{ $.Values.readinessProbe.failureThreshold }}
+          initialDelaySeconds: {{ $.Values.readinessProbe.initialDelaySeconds }}
+          periodSeconds: {{ $.Values.readinessProbe.periodSeconds }}
+          successThreshold: {{ $.Values.readinessProbe.successThreshold }}
+          timeoutSeconds: {{ $.Values.readinessProbe.timeoutSeconds }}
         {{- end }}
         resources:
 {{ toYaml .Values.resources | indent 10 }}
@@ -136,6 +141,18 @@ spec:
           - mountPath: /etc/rabbitmq/ssl
             name: ssl
         {{- end }}
+          - name: {{ template "fullname" . }}-probes
+            mountPath: /usr/bin/common-functions.sh
+            subPath: common-functions.sh
+            readOnly: true
+          - name: {{ template "fullname" . }}-probes
+            mountPath: /usr/bin/liveness.sh
+            subPath: liveness.sh
+            readOnly: true
+          - name: {{ template "fullname" . }}-probes
+            mountPath: /usr/bin/readiness.sh
+            subPath: readiness.sh
+            readOnly: true
       priorityClassName: {{ .Values.priority_class | default "critical-infrastructure" | quote }}
       volumes:
         - name: rabbitmq-persistent-storage
@@ -166,4 +183,8 @@ spec:
           secret:
             secretName: tls-{{ template "fullname" . }}
       {{- end }}
+        - name: {{ template "fullname" . }}-probes
+          configMap:
+            name: {{ template "fullname" . }}-probes
+            defaultMode: 0755
 {{- end }}

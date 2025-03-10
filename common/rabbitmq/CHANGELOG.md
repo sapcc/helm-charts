@@ -2,6 +2,13 @@
 
 This file is used to list changes made in each version of the common chart rabbitmq.
 
+## v0.16.0 - 2025/02/24
+
+* liveness and readiness probes enhanced
+  * simple network checks for the liveness probe
+  * advanced API status checks for the readiness probe
+* chart version bumped
+
 ## 0.15.0
 
 - Remove the following helm template helper functions:
