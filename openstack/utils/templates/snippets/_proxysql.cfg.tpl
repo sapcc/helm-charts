@@ -139,7 +139,7 @@ mysql_users =
 {{- range $index, $dbKey := $.dbKeys }}
   {{- $db := get $.dbs $dbKey }}
   {{- range $userKey, $user := $db.users }}
-    {{- if ne $userKey "proxysql_monitor"  }}
+    {{- if and (ne $userKey "proxysql_monitor") (ne $userKey "metis") }}
     {
         username = "{{ include "resolve_secret" $user.name | required (print "user name needs to be set for " $dbKey " and user " $userKey) }}"
         password = "{{ include "resolve_secret" $user.password | required (print "password needs to be set for " $dbKey " and user " $userKey)  }}"
