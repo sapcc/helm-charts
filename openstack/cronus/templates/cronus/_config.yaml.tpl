@@ -106,6 +106,12 @@ cronus:
 {{ .Values.cronus.tls.clientCA | default .Values.global.clientCA | indent 8 }}
 {{- end }}
       errInterval: {{ .Values.cronus.tls.errInterval | default "60s" }}
+      {{- if .Values.cronus.tls.enforceForCIDRs }}
+      enforceForCIDRs:
+      {{- range $v := .Values.cronus.tls.enforceForCIDRs }}
+        - {{ $v | quote }}
+      {{- end }}
+      {{- end }}
       {{- if .Values.global.tls }}
       {{- if .Values.global.tls.clientCertWarningPeriod }}
       clientCertWarningPeriod: {{ .Values.global.tls.clientCertWarningPeriod }}
