@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.4.3 - 2025/02/25
+* add option to set vpa main container
+
 ## v0.4.2 - 2025/01/08
 
 * Updated sql-exporter version to 0.5.9 (2025-01-07)
