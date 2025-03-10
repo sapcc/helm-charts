@@ -57,12 +57,66 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
+            
             - name: LS_JAVA_OPTS
               value: {{.Values.logstash.javaopts}}
+            
             - name: CONFIG_HASH
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.annotations['logstash-etc-configmap.yaml']
+            
+            # RabbitMQ
+            - name: RABBITMQ_USER
+              valueFrom:
+                secretKeyRef:
+                  name: logstash-secret
+                  key: RABBITMQ_USER
+
+            - name: RABBITMQ_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: logstash-secret
+                  key: RABBITMQ_PASSWORD
+
+            # Metis / DB
+            - name: METIS_USER
+              valueFrom:
+                secretKeyRef:
+                  name: logstash-secret
+                  key: METIS_USER
+
+            - name: METIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: logstash-secret
+                  key: METIS_PASSWORD
+
+            # Swift / S3
+            - name: SWIFT_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: logstash-secret
+                  key: SWIFT_ACCESS_KEY
+
+            - name: SWIFT_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: logstash-secret
+                  key: SWIFT_SECRET_KEY
+
+            # OpenSearch
+            - name: OPENSEARCH_USER
+              valueFrom:
+                secretKeyRef:
+                  name: logstash-secret
+                  key: OPENSEARCH_USER
+
+            - name: OPENSEARCH_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: logstash-secret
+                  key: OPENSEARCH_PASSWORD
           volumeMounts:
             - name: hermes-etc
               mountPath: /hermes-etc
