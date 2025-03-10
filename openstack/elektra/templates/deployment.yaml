@@ -58,7 +58,21 @@ spec:
           env:
           - name: DEBUG
             value: {{ quote .Values.init_container_debug }}
-          command: [ ash, -c, {{ .Files.Get "bin/init-generate-token-secret.sh" | quote }} ]      
+          command: [ ash, -c, {{ .Files.Get "bin/init-generate-token-secret.sh" | quote }} ]
+        - name: generate-smtp-secret
+          image: "{{.Values.global.registry}}/ccloud-shell:latest"
+          imagePullPolicy: "IfNotPresent"
+          env:
+          - name: DEBUG
+            value: {{ quote .Values.init_container_debug }}
+          - name: OS_AUTH_URL
+            value: {{ .Values.monsoon_dashboard_mail_auth_api_endpoint | quote }}
+          - name: OS_APPLICATION_CREDENTIAL_ID
+            valueFrom: { secretKeyRef:    { name: elektra-secrets, key: smtp_app_cred_id, optional: true } }
+          - name: OS_APPLICATION_CREDENTIAL_SECRET
+            valueFrom: { secretKeyRef:    { name: elektra-secrets, key: smtp_app_cred_secret, optional: true } }
+          command: [ "/bin/bash", -c, {{ .Files.Get "bin/init-generate-smtp-secret.sh" | quote }} ] 
+          # command: ["/bin/bash", "-c", "tail -f /dev/null"]
         - name: init-database
           image: {{.Values.global.registry}}/elektra:{{.Values.image.tag}}
           command: ['script/init-db.sh']
