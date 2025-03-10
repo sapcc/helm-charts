@@ -26,6 +26,12 @@ transform/external-alert:
       statements:
         - merge_maps(attributes, ParseJSON(body), "upsert")
         - set(attributes["log.type"], "alert")
+        - set(time_unix_nano, observed_time_unix_nano)
+        - set(time, observed_time)
+        - set(attributes["@timestamp"], Int(observed_time_unix_nano))
+        - set(attributes["@timestamp2"], observed_time_unix_nano)
+        - set(attributes["timestamp"], Int(observed_time_unix_nano))
+        - set(attributes["timestamp2"], observed_time_unix_nano)
 {{- end }}
 
 
