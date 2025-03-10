@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.18.0 - 2025/03/07
+* add credential-updater sidecar, that reapplies init.sql on the detected change
+* make init.sql not optional
+* remove pre-change job, because it's no longer needed with the above sidecar
+* add missing owner labels to initdb secret
+
 ## v0.17.3 - 2025/03/06
 * start database with init.sql to always update root password on start
 
