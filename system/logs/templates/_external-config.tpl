@@ -52,7 +52,7 @@ logs/external-deployment:
 logs/external-alert:
   receivers: [webhookevent/external-alert]
   processors: [transform/external-alert]
-  exporters: [debug,failover/opensearch]
+  exporters: [debug,forward]
 
 #logs/forward_external:
 #  receivers: [forward/external]
