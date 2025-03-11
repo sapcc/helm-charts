@@ -271,7 +271,6 @@ spec:
     connectors:
       forward: {}
       forward/swift: {}
-      forward/external: {}
       failover/opensearch:
         priority_levels:
           - [logs/failover_a]
@@ -286,13 +285,11 @@ spec:
         retry_interval: 1h
         retry_gap: 15m
         max_retries: 0
-      failover/opensearch_external:
-        priority_levels:
-          - [logs/failover_a]
-          - [logs/failover_b]
-        retry_interval: 1h
-        retry_gap: 15m
-        max_retries: 0
+
+{{- if .Values.openTelemetryPlugin.openTelemetry.logsCollector.externalConfig.enabled }}
+    {{- include "external.connectors" . | nindent 6 -}}
+{{- end }}
+
     service:
       extensions:
         - basicauth/failover_a
