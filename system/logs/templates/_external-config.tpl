@@ -5,10 +5,10 @@ webhookevent/external-alerts:
 tcplog/external-deployments:
   listen_address: "0.0.0.0:{{.Values.openTelemetryPlugin.openTelemetry.logsCollector.externalConfig.deployments_port}}"
   operators:
-  - id: type
-    type: add
-    field: attributes["log.type"]
-    value: "deployment"
+#  - id: type
+#    type: add
+#    field: attributes["log.type"]
+#    value: "deployment"
 {{- end }}
 
 {{- define "external.transform" }}
@@ -23,10 +23,11 @@ transform/external-alerts:
 
 transform/external-deployments:
   error_mode: ignore
-  #log_statements:
-  #  - context: log
-  #    conditions:
-  #      - resource.attributes["log.type"] == "deployment"
+  log_statements:
+    - context: log
+      statements:
+        - set(attributes["log.type"], "deployment")
+        - set(time_unix_nano, observed_time_unix_nano)
 {{- end }}
 
 
