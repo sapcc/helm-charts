@@ -655,6 +655,41 @@ mariadb:
       net_read_timeout = 300
       net_write_timeout = 300
 
+pxc_db:
+  alerts:
+    support_group: compute-storage-api
+  enabled: false
+  name: manila
+  ccroot_user:
+    enabled: true
+  databases:
+    - manila
+  users:
+    manila:
+      name: manila
+      grants:
+        - "ALL PRIVILEGES on manila.*"
+  pxc:
+    configuration:
+      options:
+        innodb_buffer_pool_size: "4096M"
+        innodb_log_file_size: "2048M"
+        net_read_timeout: "300"
+        net_write_timeout: "300"
+    resources:
+      requests:
+        memory: 6Gi
+    persistence:
+      size: 10Gi
+  backup:
+    enabled: true
+    s3:
+      secrets:
+        aws_access_key_id: null
+        aws_secret_access_key: null
+    pitr:
+      enabled: true
+
 # needed for utils ini_sections
 postgresql:
   enabled: false

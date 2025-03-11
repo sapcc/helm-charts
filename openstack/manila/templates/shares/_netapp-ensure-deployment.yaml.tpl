@@ -51,7 +51,7 @@ spec:
               topologyKey: kubernetes.io/hostname
       priorityClassName: {{ .Values.pod.priority_class.low }}
       initContainers:
-      {{- tuple . (dict "service" (print .Release.Name "-mariadb")) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 8 }}
+      {{- tuple . (dict "service" (include "manila.db_service" .)) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 8 }}
       containers:
         - name: reexport
           image: "{{.Values.global.registry}}/loci-manila:{{.Values.loci.imageVersion}}"

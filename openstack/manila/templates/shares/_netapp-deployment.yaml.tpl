@@ -46,7 +46,7 @@ spec:
 {{ include "utils.proxysql.pod_settings" . | indent 6 }}
       priorityClassName: {{ .Values.pod.priority_class.default }}
       initContainers:
-      {{- tuple . (dict "service" (print .Release.Name "-mariadb," .Release.Name "-rabbitmq")) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 8 }}
+      {{- tuple . (dict "service" (include "manila.service_dependencies" . )) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 8 }}
         - name: fetch-rabbitmqadmin
           image: {{.Values.global.dockerHubMirror}}/library/busybox
           command: ["/scripts/fetch-rabbitmqadmin.sh"]

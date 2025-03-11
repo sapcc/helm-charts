@@ -34,7 +34,7 @@ spec:
 {{- end }}
       priorityClassName: {{ .Values.pod.priority_class.low }}
       initContainers:
-      {{- tuple . (dict "service" (print .Release.Name "-mariadb")) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
+      {{- tuple . (dict "service" (include "manila.db_service" .)) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
       containers:
         - name: manila-migration
           image: {{.Values.global.registry}}/loci-manila:{{.Values.loci.imageVersion}}
