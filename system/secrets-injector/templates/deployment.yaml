@@ -5,6 +5,8 @@ metadata:
   namespace: {{ .Release.Namespace }}
   labels:
     app: secrets-injector
+  annotations:
+    secret.reloader.stakater.com/reload: secrets-injector 
 spec:
   selector:
     matchLabels:
@@ -21,7 +23,6 @@ spec:
         kubectl.kubernetes.io/default-container: secrets-injector
         prometheus.io/scrape: "true"
         prometheus.io/targets: kubernetes
-        secret.reloader.stakater.com/reload: secrets-injector
         {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
         linkerd.io/inject: enabled
         {{- end }}
