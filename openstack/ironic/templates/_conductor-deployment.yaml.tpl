@@ -105,6 +105,7 @@ spec:
           name: etcironic
         - mountPath: /etc/ironic/netrc
           name: curl-netrc
+          subPath: netrc
         - mountPath: /etc/ironic/ironic.conf.d
           name: ironic-etc-confd
         - mountPath: /etc/ironic/ironic.conf
@@ -160,12 +161,14 @@ spec:
             protocol: TCP
             containerPort: 443
         volumeMounts:
-          - mountPath: /etc/nginx/nginx.conf
-            name: ironic-console-nginxconf
           - mountPath: /etc/nginx/conf.d
             name: nginx-confd
+          - mountPath: /etc/nginx/conf.d/default.conf
+            name: ironic-console-nginxconf
+            subPath: nginx.conf
           - mountPath: /etc/nginx/conf.d/dhparam.pem
             name: ironic-console-dhparam
+            subPath: dhparam.pem
           - mountPath: /shellinabox
             name: shellinabox
           - mountPath: /etc/nginx/certs
