@@ -13,23 +13,24 @@ spec:
       template:
         spec:
           containers:
-            image: {{ required ".Values.global.registry is missing" .Values.global.registry}}/loci-masakari:{{.Values.imageVersion | required "Please set .imageVersion or similar" }}
-            imagePullPolicy: IfNotPresent
-            env:
-              - name: DAYS
-                value: {{ .Values.cleanup_db.days }}
-              - name: MASAKARI_DB_USER
-                value: {{ .Values.mariadb.users.masakari.name }}
-              - name: MASAKARI_DB_PASSWORD
-                value: {{ .Values.mariadb.users.masakari.password }}
-              - name: MASAKARI_DB_HOST
-                value: {{ .Values.mariadb.name }}
-            - name: cleanup-db-script
-              mountPath: /script
-            command: ["/bin/bash", "-c", "/script/cleanup.sh"]
+            - image: {{ required ".Values.global.registry is missing" .Values.global.registry}}/loci-masakari:{{.Values.imageVersion | required "Please set .imageVersion or similar" }}
+              imagePullPolicy: IfNotPresent
+              env:
+                - name: DAYS
+                  value: {{ .Values.cleanup_db.days }}
+                - name: MASAKARI_DB_USER
+                  value: {{ .Values.mariadb.users.masakari.name }}
+                - name: MASAKARI_DB_PASSWORD
+                  value: {{ .Values.mariadb.users.masakari.password }}
+                - name: MASAKARI_DB_HOST
+                  value: {{ .Values.mariadb.name }}
+              volumeMounts:
+                - name: cleanup-db-script
+                  mountPath: /script
+              command: ["/bin/bash", "-c", "/script/cleanup.sh"]
           restartPolicy: OnFailure
           volumes:
-          - name: cleanup-db-script
-            configMap:
-              name: {{ .Release.Name }}-cleanupdb-script
-              defaultMode: 0744
+            - name: cleanup-db-script
+              configMap:
+                name: {{ .Release.Name }}-cleanupdb-script
+                defaultMode: 0744
