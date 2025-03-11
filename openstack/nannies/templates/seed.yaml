@@ -12,10 +12,10 @@ spec:
     users:
     - name: nova_nanny{{ .Values.global.user_suffix | default "" }}
       description: Nova Nanny
-      password: {{ derivePassword 1 "long" .Values.nannies.master_password "nova_nanny" (include "keystone_api_endpoint_host_public" .) | quote }}
+      password: {{ required ".Values.nova_nanny.keystone_password is missing" .Values.nova_nanny.keystone_password | quote }}
     - name: cinder_nanny{{ .Values.global.user_suffix | default "" }}
       description: Cinder Nanny
-      password: {{ derivePassword 1 "long" .Values.nannies.master_password "cinder_nanny" (include "keystone_api_endpoint_host_public" .) | quote }}
+      password: {{ required ".Values.cinder_nanny.keystone_password is missing" .Values.cinder_nanny.keystone_password | quote }}
 
   - name: ccadmin
     projects:
