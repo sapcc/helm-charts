@@ -237,8 +237,6 @@ spec:
           items:
           - key: nginx.conf
             path: nginx.conf
-        configMap:
-          name: ironic-console
       - name: ironic-console-dhparam
         secret:
           secretName: {{ .Release.Name }}-secrets
