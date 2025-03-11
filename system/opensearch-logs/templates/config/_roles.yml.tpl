@@ -23,6 +23,24 @@ data:
   - "cluster:admin/opensearch/ml/predict"
   index_permissions:
   - index_patterns:
+    - "alerts-datastream"
+    allowed_actions:
+    - "indices:admin/template/get"
+    - "indices:admin/template/put"
+    - "indices:admin/mapping/put"
+    - "indices:admin/create"
+    - "indices:data/write/bulk*"
+    - "indices:data/write/index"
+  - index_patterns:
+    - "deployments-datastream"
+    allowed_actions:
+    - "indices:admin/template/get"
+    - "indices:admin/template/put"
+    - "indices:admin/mapping/put"
+    - "indices:admin/create"
+    - "indices:data/write/bulk*"
+    - "indices:data/write/index"
+  - index_patterns:
     - "logstash-*"
     allowed_actions:
     - "indices:admin/template/get"
@@ -148,6 +166,24 @@ data:
     - "indices:admin/create"
     - "indices:data/write/bulk*"
     - "indices:data/write/index"
+  - index_patterns:
+    - "alerts-*"
+    allowed_actions:
+    - "indices:admin/template/get"
+    - "indices:admin/template/put"
+    - "indices:admin/mapping/put"
+    - "indices:admin/create"
+    - "indices:data/write/bulk*"
+    - "indices:data/write/index"
+  - index_patterns:
+    - "deployments-*"
+    allowed_actions:
+    - "indices:admin/template/get"
+    - "indices:admin/template/put"
+    - "indices:admin/mapping/put"
+    - "indices:admin/create"
+    - "indices:data/write/bulk*"
+    - "indices:data/write/index"
 
 syslog:
   reserved: false
@@ -169,24 +205,7 @@ syslog:
     - "indices:admin/create"
     - "indices:data/write/bulk*"
     - "indices:data/write/index"
-  - index_patterns:
-    - "alerts-*"
-    allowed_actions:
-    - "indices:admin/template/get"
-    - "indices:admin/template/put"
-    - "indices:admin/mapping/put"
-    - "indices:admin/create"
-    - "indices:data/write/bulk*"
-    - "indices:data/write/index"
-  - index_patterns:
-    - "deployments-*"
-    allowed_actions:
-    - "indices:admin/template/get"
-    - "indices:admin/template/put"
-    - "indices:admin/mapping/put"
-    - "indices:admin/create"
-    - "indices:data/write/bulk*"
-    - "indices:data/write/index"
+
 jump:
   reserved: false
   cluster_permissions:
