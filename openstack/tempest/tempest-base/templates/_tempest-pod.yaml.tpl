@@ -79,7 +79,7 @@ spec:
         - name: OS_ENDPOINT_TYPE
           value: "public"
         - name: OS_PASSWORD
-          value: {{ .Values.tempestAdminPassword | quote | include "tempest-base.resolve_secret"}}
+          value: "{{ .Values.tempestAdminPassword | include "tempest-base.resolve_secret" }}"
         - name: OS_IDENTITY_API_VERSION
           value: "3"
         - name: OS_AUTH_URL
