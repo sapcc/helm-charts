@@ -1,14 +1,3 @@
-{{- define "tempest-base.resolve_secret" -}}
-    {{- $str := . -}}
-    {{- if (hasPrefix "vault+kvv2" $str) -}}
-        {{"{{"}} resolve "{{ $str }}" {{"}}"}}
-    {{- else if (hasPrefix "{{" $str) }}
-        {{- $str }}
-    {{- else }}
-        {{- $str }}
-    {{- end }}
-{{- end -}}
-
 {{- define "tempest-base.tempest_pod" }}
 {{- if .Values.tempestKubectlAccess }}
 apiVersion: v1
@@ -89,8 +78,6 @@ spec:
           value: "public"
         - name: OS_ENDPOINT_TYPE
           value: "public"
-        - name: OS_PASSWORD
-          value: "{{ .Values.tempestAdminPassword | include 'tempest-base.resolve_secret' | quote }}"
         - name: OS_IDENTITY_API_VERSION
           value: "3"
         - name: OS_AUTH_URL
