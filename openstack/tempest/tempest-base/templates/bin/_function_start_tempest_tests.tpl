@@ -6,13 +6,6 @@ $(openstack image list --sort-column created_at:desc --limit 1 -f value -c ID --
   {{- end }}
 {{- end }}
 
-{{- define "tempest-base._resolve_secret" -}}
-    {{- $str := . -}}
-    {{- if (hasPrefix "vault+kvv2" $str) -}}
-        {{"{{"}} resolve "{{ $str }}" {{"}}"}}
-    {{- end }}
-{{- end -}}
-
 {{- define "tempest-base.function_start_tempest_tests" }}
 
 function start_tempest_tests {
@@ -22,8 +15,6 @@ function start_tempest_tests {
   export OS_USERNAME={{ default "neutron-tempestadmin1" (index .Values (print .Chart.Name | replace "-" "_")).tempest.admin_name | quote }}
   export OS_TENANT_NAME={{ default "neutron-tempest-admin1" (index .Values (print .Chart.Name | replace "-" "_")).tempest.admin_project_name | quote }}
   export OS_PROJECT_NAME={{ default "neutron-tempest-admin1" (index .Values (print .Chart.Name | replace "-" "_")).tempest.admin_project_name | quote }}
-  export OS_PASSWORD={{ .Values.tempestAdminPassword | include "tempest-base._resolve_secret" }}
-  env | grep OS_
   #export IMAGE_REF={{ default "ubuntu-20.04-amd64-vmware" (index .Values (print .Chart.Name | replace "-" "_")).tempest.image_ref | include "tempest-base._image_ref" }}
   #export IMAGE_REF_ALT={{ default "ubuntu-22.04-amd64-vmware" (index .Values (print .Chart.Name | replace "-" "_")).tempest.image_ref_alt | include "tempest-base._image_ref" }}
   cp /{{ .Chart.Name }}-etc-secret/tempest_extra_options /tmp
@@ -75,8 +66,6 @@ function start_tempest_tests {
   export OS_USERNAME="neutron-tempestadmin1"
   export OS_TENANT_NAME="neutron-tempest-admin1"
   export OS_PROJECT_NAME="neutron-tempest-admin1"
-  export OS_PASSWORD={{ .Values.tempestAdminPassword | include "tempest-base._resolve_secret" }}
-  env | grep OS_
   export MYTIMESTAMP=$(date -u +%Y%m%d%H%M%S)
   cd /home/rally/.rally/verification/verifier*/for-deployment* && tar cfvz /tmp/tempest-log.tar.gz ./tempest.log
   openstack object create reports/{{ index (split "-" .Chart.Name)._0 }} /tmp/tempest-log.tar.gz --name $(echo $OS_REGION_NAME)-$(echo $MYTIMESTAMP)-log.tar.gz
