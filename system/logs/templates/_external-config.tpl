@@ -17,17 +17,18 @@ transform/external-alerts:
   log_statements:
     - context: log
       statements:
+        - set(time_unix_nano, observed_time_unix_nano)
         - merge_maps(attributes, ParseJSON(body), "upsert")
         - set(attributes["log.type"], "alert")
-        - set(time_unix_nano, observed_time_unix_nano)
 
 transform/external-deployments:
   error_mode: ignore
   log_statements:
     - context: log
       statements:
-        - set(attributes["log.type"], "deployment")
         - set(time_unix_nano, observed_time_unix_nano)
+        - merge_maps(attributes, ParseJSON(body), "upsert")
+        - set(attributes["log.type"], "deployment")
 {{- end }}
 
 
