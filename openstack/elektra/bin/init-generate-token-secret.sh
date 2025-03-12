@@ -43,3 +43,4 @@ echo -n "
     token: $SECRET_KEY_BASE
 " > secret.yaml
   kubectl create -f secret.yaml
+
