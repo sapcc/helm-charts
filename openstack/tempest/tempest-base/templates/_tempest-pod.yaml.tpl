@@ -79,6 +79,11 @@ spec:
         - name: OS_ENDPOINT_TYPE
           value: "public"
         - name: OS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Chart.Name }}-etc-secret
+              key: OS_PASSWORD
+        - name: OS_PASSWORD
           value: {{ .Values.tempestAdminPassword | include "tempest-base.resolve_secret" | quote }}
         - name: OS_IDENTITY_API_VERSION
           value: "3"
