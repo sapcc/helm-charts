@@ -10,10 +10,6 @@ $(openstack image list --sort-column created_at:desc --limit 1 -f value -c ID --
     {{- $str := . -}}
     {{- if (hasPrefix "vault+kvv2" $str) -}}
         {{"{{"}} resolve "{{ $str }}" {{"}}"}}
-    {{- else if (hasPrefix "{{" $str) }}
-        {{- $str }}
-    {{- else }}
-        {{- $str }}
     {{- end }}
 {{- end -}}
 
