@@ -83,8 +83,6 @@ spec:
             secretKeyRef:
               name: {{ .Chart.Name }}-etc-secret
               key: OS_PASSWORD
-        - name: OS_PASSWORD
-          value: {{ .Values.tempestAdminPassword | include "tempest-base.resolve_secret" | quote }}
         - name: OS_IDENTITY_API_VERSION
           value: "3"
         - name: OS_AUTH_URL
