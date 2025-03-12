@@ -5,7 +5,7 @@
         "endpoint_type": "public",
         "admin": {
             "username": "neutron-tempestadmin1",
-            "password": '{{ .Values.tempestAdminPassword | include "tempest-base.resolve_secret" }}',
+            "password": "{{ .Values.tempestAdminPassword | include "tempest-base.resolve_secret" }}",
             "user_domain_name": "tempest",
             "domain_name": "tempest"
     },
