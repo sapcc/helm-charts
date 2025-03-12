@@ -23,9 +23,9 @@ exporter:
     region: {{ .Values.config.keystone.region }}
     authUrl: {{ .Values.config.keystone.authUrl }}
     endpointType: {{ .Values.config.keystone.endpointType }}
-    username: {{ .Values.config.keystone.username }}
-    userDomainName: {{ .Values.config.keystone.userDomainName }}
-    projectName: {{ .Values.config.keystone.projectName }}
-    projectDomainName: {{ .Values.config.keystone.projectDomainName }}
+    username: {{ .Values.exporter.keystone.username }}
+    userDomainName: {{ .Values.exporter.keystone.userDomainName }}
+    projectName: {{ .Values.exporter.keystone.projectName }}
+    projectDomainName: {{ .Values.exporter.keystone.projectDomainName }}
   {{- end }}
 {{- end }}
