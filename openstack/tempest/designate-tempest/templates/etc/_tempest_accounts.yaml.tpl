@@ -1,14 +1,14 @@
 - username: 'admin'
   tenant_name: 'admin'
-  password: '{{ .Values.tempestAdminPassword  | include "tempest-base.resolve_secret" }}'
+  password: "{{ .Values.tempestAdminPassword  | include "tempest-base.resolve_secret" }}"
   project_name: 'admin'
   types:
    - admin
 - username: 'tempestuser1'
   tenant_name: 'tempest1'
-  password: '{{ .Values.tempestAdminPassword  | include "tempest-base.resolve_secret" }}'
+  password: "{{ .Values.tempestAdminPassword  | include "tempest-base.resolve_secret" }}"
   project_name: 'tempest1'
 - username: 'tempestuser2'
   tenant_name: 'tempest2'
-  password: '{{ .Values.tempestAdminPassword  | include "tempest-base.resolve_secret" }}'
+  password: "{{ .Values.tempestAdminPassword  | include "tempest-base.resolve_secret" }}"
   project_name: 'tempest2'
