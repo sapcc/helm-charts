@@ -17,8 +17,6 @@ exporter:
   clientErrorDelay: {{ .Values.exporter.clientErrorDelay }}
   maxAllowedSuppression: {{ .Values.exporter.maxAllowedSuppression }}
   getAccountsDelayHour: {{ .Values.exporter.getAccountsDelayHour }}
-
-  {{- if and .Values.config.keystone .Values.exporter.keystone.enabled }}
   keystone:
     region: {{ .Values.config.keystone.region }}
     authUrl: {{ .Values.config.keystone.authUrl }}
@@ -27,5 +25,4 @@ exporter:
     userDomainName: {{ .Values.exporter.keystone.userDomainName }}
     projectName: {{ .Values.exporter.keystone.projectName }}
     projectDomainName: {{ .Values.exporter.keystone.projectDomainName }}
-  {{- end }}
 {{- end }}
