@@ -300,10 +300,29 @@ mariadb:
           enabled: true
           allTables: true
 
-# MariaDB Galera cluster as database backend
-# mariadb.enabled has to be false if Galera is enabled
-mariadb_galera:
+pxc_db:
   enabled: false
+  name: keystone
+  alerts:
+    support_group: identity
+  databases:
+    - keystone
+  users:
+    keystone:
+      name: keystone
+      grants:
+        - "ALL PRIVILEGES on keystone.*"
+  pxc:
+    persistence:
+      size: 10Gi
+  backup:
+    enabled: true
+    s3:
+      secrets:
+        aws_access_key_id: null
+        aws_secret_access_key: null
+    pitr:
+      enabled: true
 
 mysql_metrics:
   enabled: true

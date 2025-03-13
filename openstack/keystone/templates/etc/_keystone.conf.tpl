@@ -67,7 +67,7 @@ memcached_servers = "{{ include "helm-toolkit.utils.joinListWithComma" .Values.m
 {{- else if .Values.memcached.host }}
 memcache_servers = {{ .Values.memcached.host }}:{{.Values.memcached.port | default 11211}}
 {{ else }}
-memcache_servers = {{ include "memcached_host" . }}:{{.Values.memcached.port | default 11211}}
+memcache_servers = {{ include "keystone.memcached_host" . }}:{{.Values.memcached.port | default 11211}}
 {{- end }}
 config_prefix = cache.keystone
 expiration_time = {{ .Values.cache.expiration_time | default 600 }}
@@ -151,7 +151,7 @@ enabled = {{ .Values.lifesaver.enabled }}
 {{- if .Values.memcached.host }}
 memcached = {{ .Values.memcached.host }}:{{ .Values.memcached.port | default 11211}}
 {{ else }}
-memcached = {{ include "memcached_host" . }}:{{ .Values.memcached.port | default 11211}}
+memcached = {{ include "keystone.memcached_host" . }}:{{ .Values.memcached.port | default 11211}}
 {{- end }}
 # deprecated
 domain_whitelist = {{ .Values.lifesaver.domain_allowlist | default "Default, tempest" }}
