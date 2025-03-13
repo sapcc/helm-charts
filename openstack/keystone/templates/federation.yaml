@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ .Release.Name }}-federation
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    component: keystone
+    type: config
+type: Opaque
+data:
+  oidc-federation.conf: |
+    {{ include (print .Template.BasePath "/etc/_oidc-federation.conf.tpl") . | b64enc | indent 4 }}
