@@ -81,7 +81,7 @@ openstack:
             hypervisor: state
             expected: up
       - name: ha
-        any: true
+        any: false
         checks:
           - name: heartbeat
             monitor: heartbeat
@@ -91,5 +91,7 @@ openstack:
             monitor: nfs idle
         segments:
           - prod
+          - dev
+          - clusterapi
         notification:
           event: stopped
