@@ -2,6 +2,15 @@
 
 This file is used to list changes made in each version of the common chart rabbitmq.
 
+## 0.15.1
+
+- Creation of the `metrics` user with `monitoring` tag no longer coupled with enabling prometheus metrics
+
+Native Prometheus RabbitMQ metrics don't rely on any user
+
+To create `metrics` user, if needed, set `.Values.rabbitmq.monitoring.addMetricsUser: true`
+The username for `metrics` user is taken from `.Values.rabbitmq.metrics.user`, and the password from `.Values.rabbitmq.metrics.password`
+
 ## 0.15.0
 
 - Remove the following helm template helper functions:
