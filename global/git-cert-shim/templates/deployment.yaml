@@ -31,9 +31,10 @@ spec:
         - --default-issuer-name=digicert-issuer
         - --default-issuer-kind=DigicertIssuer
         - --default-issuer-group=certmanager.cloud.sap
-        - --git-push-certs=false
-        - --vault-push-certs=true
-        - --vault-kv-engine=secrets
+        - --git-push-certs={{ .Values.git.push_certs }}
+        - --vault-push-certs={{ .Values.vault.push_certs }}
+        - --vault-update-metadata={{ .Values.vault.update_metadata }}
+        - --vault-kv-engine={{ .Values.vault.kv_engine }}
         command:
         - /git-cert-shim
         env:
@@ -67,8 +68,18 @@ spec:
           requests:
             cpu: 100m
             memory: 20Mi
+        volumes:
+        - name: known_hosts
+          configMap: 
+            name: {{ .Release.Name }}-github-wdf-ssh-key
+            items:
+              - key: known_hosts
+                path: known_hosts
         volumeMounts:
         - mountPath: /git-cert-shim.key
           name: git-cert-shim
           readOnly: true
           subPath: git-cert-shim.key
+        - mountPath: /root/.ssh/
+          name: known-hosts
+          subPath: known_hosts
