@@ -192,7 +192,18 @@ spec:
               mountPath: /etc/neutron
               readOnly: true
             {{- include "utils.trust_bundle.volume_mount" $ | indent 12 }}
+        - name: neutron-netns-exporter
+          image: "{{ required "$.Values.global.registry missing" $.Values.global.registry }}/neutron-netns-exporter:20250409140740"
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            privileged: true
+          volumeMounts:
+            - name: netns
+              mountPath: /agent/run/netns
       volumes:
+        - name: netns
+          hostPath:
+            path: /run/netns
         - name: metadata-proxy
           emptyDir: {}
         - name: modules

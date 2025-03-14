@@ -4,7 +4,7 @@
 {{ range $i, $az_long := .Values.global.availability_zones | default (list (printf "%sa" $.Values.global.region) (printf "%sb" $.Values.global.region)) }}
 {{- $az := trimPrefix $.Values.global.region $az_long }}
 ---
-apiVersion: apps/v1
+cdcdcdcapiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: neutron-network-agent-{{ $az }}
@@ -271,7 +271,24 @@ spec:
               subPath: sudoers
               readOnly: true
             {{- include "utils.trust_bundle.volume_mount" $ | indent 12 }}
+        - name: neutron-netns-exporter
+          image: "{{ required "$.Values.global.registry missing" $.Values.global.registry }}/neutron-netns-exporter:20250409140740"
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            privileged: true
+          volumeMounts:
+            - name: neutron-common-secrets
+              mountPath: /etc/neutron/secrets/neutron-common-secrets.conf
+              readOnly: true
+            - name: configmap-neutron-netns-exporter
+              mountPath: /etc/neutron/secrets/openstack-config.conf
+              readOnly: true
+            - name: netns
+              mountPath: /agent/run/netns
       volumes:
+        - name: netns
+          hostPath:
+            path: /run/netns
         - name: metadata-proxy
           hostPath:
             path: /run/metadata-proxy
@@ -290,6 +307,9 @@ spec:
         - name: neutron-common-secrets
           secret:
             secretName: neutron-common-secrets
+        - name: configmap-neutron-netns-exporter
+          configMap:
+            name: configmap-neutron-netns-exporter
         {{- include "utils.trust_bundle.volumes" $ | indent 8 }}
 {{- end }}
 {{- end }}
