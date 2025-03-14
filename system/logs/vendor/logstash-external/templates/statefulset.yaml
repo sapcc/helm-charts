@@ -43,42 +43,12 @@ spec:
         - name: logstash
           image: {{ .Values.global.registry }}/elk-logstash:{{ .Values.image_version }}
           imagePullPolicy: IfNotPresent
-          ports:
-            - name: alertmanagertcp
-              containerPort: {{ .Values.input.alertmanager_port }}
-              protocol: TCP
-            - name: deploymentstcp
-              containerPort: {{ .Values.input.deployments_port }}
-              protocol: TCP
-            - name: https
-              containerPort: {{ .Values.input.http_port }}
-              protocol: TCP
           command: ["/bin/bash","/logstash-etc/start.sh"]
           env:
             - name: NAMESPACE
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
-            - name: OPENSEARCH_USER
-              valueFrom:
-                secretKeyRef:
-                  name: logstash-external-secret
-                  key: opensearch_user
-            - name: OPENSEARCH_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: logstash-external-secret
-                  key: opensearch_password
-            - name: OPENSEARCH_SYSLOG_USER
-              valueFrom:
-                secretKeyRef:
-                  name: logstash-external-secret
-                  key: opensearch_syslog_user
-            - name: OPENSEARCH_SYSLOG_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: logstash-external-secret
-                  key: opensearch_syslog_password
             - name: OPENSEARCH_JUMP_USER
               valueFrom:
                 secretKeyRef:
@@ -89,16 +59,6 @@ spec:
                 secretKeyRef:
                   name: logstash-external-secret
                   key: opensearch_jump_password
-            - name: HTTP_USER 
-              valueFrom:
-                secretKeyRef:
-                  name: logstash-external-secret
-                  key: http_user
-            - name: HTTP_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: logstash-external-secret
-                  key: http_password
           volumeMounts:
             - name: logstash-etc
               mountPath: /logstash-etc

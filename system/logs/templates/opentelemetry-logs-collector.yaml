@@ -78,6 +78,10 @@ spec:
 {{- else if .Values.openTelemetryPlugin.openTelemetry.logsCollector.openstackConfig.enabled }}
   {{- include "openstack.receiver" . | nindent 6 -}}
 {{- end }}
+{{- if .Values.openTelemetryPlugin.openTelemetry.logsCollector.externalConfig.enabled }}
+    {{- include "external.receiver" . | nindent 6 -}}
+{{- end }}
+
 {{- if .Values.openTelemetryPlugin.openTelemetry.prometheus.podMonitor.enabled }}
       prometheus/internal:
         config:
@@ -145,6 +149,10 @@ spec:
 {{- if .Values.openTelemetryPlugin.openTelemetry.logsCollector.k8seventsConfig.enabled }}
     {{- include "k8sevents.transform" . | nindent 6 -}}
 {{- end }}
+{{- if .Values.openTelemetryPlugin.openTelemetry.logsCollector.externalConfig.enabled }}
+    {{- include "external.transform" . | nindent 6 -}}
+{{- end }}
+
 
       k8sattributes:
         auth_type: "serviceAccount"
@@ -246,6 +254,9 @@ spec:
 {{- if .Values.openTelemetryPlugin.openTelemetry.logsCollector.openstackConfig.enabled }}
     {{- include "openstack.exporter" . | nindent 6 -}}
 {{- end }}
+{{- if .Values.openTelemetryPlugin.openTelemetry.logsCollector.externalConfig.enabled }}
+    {{- include "external.exporter" . | nindent 6 -}}
+{{- end }}
 
     extensions:
       basicauth/failover_a:
@@ -274,6 +285,11 @@ spec:
         retry_interval: 1h
         retry_gap: 15m
         max_retries: 0
+
+{{- if .Values.openTelemetryPlugin.openTelemetry.logsCollector.externalConfig.enabled }}
+    {{- include "external.connectors" . | nindent 6 -}}
+{{- end }}
+
     service:
       extensions:
         - basicauth/failover_a
@@ -314,4 +330,7 @@ spec:
 {{- end }}
 {{- if .Values.openTelemetryPlugin.openTelemetry.logsCollector.k8seventsConfig.enabled }}
     {{- include "k8sevents.pipeline" . | nindent 8 -}}
+{{- end }}
+{{- if .Values.openTelemetryPlugin.openTelemetry.logsCollector.externalConfig.enabled }}
+    {{- include "external.pipeline" . | nindent 8 -}}
 {{- end }}
