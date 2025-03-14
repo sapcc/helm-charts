@@ -19,18 +19,17 @@ data:
 
     # Display vars
     echo "Number of days: $DAYS"
-    echo "Masakari DB User: $MASAKARI_DB_USER"
-    echo "Masakari DB Host: $MASAKARI_DB_HOST"
-    echo "Masakari DB Name: $MASAKARI_DB_NAME"
 
     # Queries to Masakari DB
-    NUM_DELETED_ROWS=$(mariadb -h $MASAKARI_DB_HOST -u $MASAKARI_DB_USER -p $MASAKARI_DB_PASSWORD $MASAKARI_DB_NAME -e "SELECT * FROM notifications WHERE updated_at < NOW() - INTERVAL $DAYS DAY; | wc -l")
-    # DELETE_QUERY=$(mariadb masakari -e "DELETE FROM notifications WHERE updated_at < NOW() - INTERVAL $DAYS DAY;")
+    DELETED_ROWS=$(mariadb -h "$MASAKARI_DB_HOST" -u "$MASAKARI_DB_USER" --password="$MASAKARI_DB_PASSWORD" --database="$MASAKARI_DB_NAME" -e "SELECT * FROM notifications WHERE updated_at < NOW() - INTERVAL $DAYS DAY;")
+    DELETE_QUERY=$(mariadb -h "$MASAKARI_DB_HOST" -u "$MASAKARI_DB_USER" --password="$MASAKARI_DB_PASSWORD" --database="$MASAKARI_DB_NAME" -e "DELETE FROM notifications WHERE updated_at < NOW() - INTERVAL $DAYS DAY;")
 
     # Check if the command was successful
     if [ $? -eq 0 ]; then
       echo "Successfully deleted rows older than $DAYS days from the notifications table."
-      echo "Number of Deleted rows: $NUM_DELETED_ROWS"
+      echo "Deleted rows: $DELETE_QUERY"
+      echo "Deletion: $DELETED_ROWS"
     else
       echo "Failed to delete rows from the notifications table."
+      exit 1
     fi
