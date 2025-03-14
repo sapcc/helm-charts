@@ -66,18 +66,22 @@ spec:
                 fieldRef:
                   fieldPath: metadata.annotations['logstash-etc-configmap.yaml']
             
-            # RabbitMQ
-            - name: RABBITMQ_USER
+            # ======================================================
+            # Dynamically add environment variables for *each* RabbitMQ target
+            # ======================================================
+            {{- range $key, $value := .Values.hermes.rabbitmq.targets }}
+            - name: "RABBITMQ_{{ upper $key }}_USER"
               valueFrom:
                 secretKeyRef:
                   name: logstash-secret
-                  key: RABBITMQ_USER
+                  key: "RABBITMQ_{{ upper $key }}_USER"
 
-            - name: RABBITMQ_PASSWORD
+            - name: "RABBITMQ_{{ upper $key }}_PASSWORD"
               valueFrom:
                 secretKeyRef:
                   name: logstash-secret
-                  key: RABBITMQ_PASSWORD
+                  key: "RABBITMQ_{{ upper $key }}_PASSWORD"
+            {{- end }}
 
             # Metis / DB
             - name: METIS_USER
