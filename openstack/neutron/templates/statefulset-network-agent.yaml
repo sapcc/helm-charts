@@ -283,6 +283,36 @@ spec:
               subPath: sudoers
               readOnly: true
             {{- include "utils.trust_bundle.volume_mount" $ | indent 12 }}
+        - name: neutron-nsprober
+          image: "{{ required ".Values.global.registry missing" .Values.global.registry }}/ns-exporter:{{ required ".Values.image.tag missing" .Values.image.tag }}"
+          args:
+            - -concurrency={{ default 1  .Values.concurrency }}
+            - -interval={{ default "1m" .Values.interval }}
+          ports:
+          - containerPort: {{ required ".Values.metrics.port missing" .Values.metrics.port }}
+            name: metrics
+            protocol: TCP
+          env:
+            - name: OS_AUTH_URL
+              value: {{ required ".Values.authURL missing" .Values.ns_prober.authURL }}
+            - name: OS_USERNAME
+              value: {{ .Values.username }}
+            - name: OS_DOMAIN_NAME
+              value: {{ .Values.userDomainName }}
+            - name: OS_PROJECT_NAME
+              value: {{ .Values.projectName }}
+            - name: OS_PROJECT_DOMAIN_NAME
+              value: {{ .Values.projectDomainName }}
+            - name: OS_PASSWORD
+              # original:
+              # valueFrom: { secretKeyRef:    { name: ns-exporter, key: password } }
+              valueFrom:
+                secretKeyRef:
+                  name: neutron-ns-prober
+                  key: password
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            privileged: true
       volumes:
         - name: metadata-proxy
           hostPath:
