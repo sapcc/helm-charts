@@ -284,25 +284,25 @@ spec:
               readOnly: true
             {{- include "utils.trust_bundle.volume_mount" $ | indent 12 }}
         - name: neutron-nsprober
-          image: "{{ required ".Values.global.registry missing" .Values.global.registry }}/ns-exporter:{{ required ".Values.image.tag missing" .Values.image.tag }}"
+          image: "{{ required "$.Values.global.registry missing" $.Values.global.registry }}/ns-exporter:latest"
           args:
-            - -concurrency={{ default 1  .Values.concurrency }}
-            - -interval={{ default "1m" .Values.interval }}
+            - -concurrency={{ default 1  $.Values.nsprober.concurrency }}
+            - -interval={{ default "1m" $.Values.nsprober.interval }}
           ports:
-          - containerPort: {{ required ".Values.metrics.port missing" .Values.metrics.port }}
+          - containerPort: {{ required "$.Values.nsprober.metrics.port missing" $.Values.nsprober.metrics.port }}
             name: metrics
             protocol: TCP
           env:
             - name: OS_AUTH_URL
-              value: {{ required ".Values.authURL missing" .Values.ns_prober.authURL }}
+              value: {{ required "$.Values.nsprober.authURL missing" $.Values.nsprober.authURL }}
             - name: OS_USERNAME
-              value: {{ .Values.username }}
+              value: {{ $.Values.nsprober.username }}
             - name: OS_DOMAIN_NAME
-              value: {{ .Values.userDomainName }}
+              value: {{ $.Values.nsprober.userDomainName }}
             - name: OS_PROJECT_NAME
-              value: {{ .Values.projectName }}
+              value: {{ $.Values.nsprober.projectName }}
             - name: OS_PROJECT_DOMAIN_NAME
-              value: {{ .Values.projectDomainName }}
+              value: {{ $.Values.nsprober.projectDomainName }}
             - name: OS_PASSWORD
               # original:
               # valueFrom: { secretKeyRef:    { name: ns-exporter, key: password } }
