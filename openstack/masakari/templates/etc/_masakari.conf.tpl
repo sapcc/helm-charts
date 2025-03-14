@@ -14,6 +14,8 @@ os_privileged_user_password = {{ .Values.global.masakari_service_password }}
 
 wait_period_after_service_update = 181
 
+hostname_lookup = True
+
 {{- include "ini_sections.logging_format" . }}
 
 [oslo_concurrency]
