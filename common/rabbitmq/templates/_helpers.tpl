@@ -47,6 +47,14 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
 {{- end -}}
 {{- end -}}
 
+{{- define "dockerRegistry" -}}
+{{- if .Values.use_alternate_registry -}}
+{{- .Values.global.registryAlternateRegion -}}
+{{- else -}}
+{{- .Values.global.registry -}}
+{{- end -}}
+{{- end -}}
+
 {{- define "rabbitmq_maintenance_affinity" }}
           - weight: 1
             preference:
