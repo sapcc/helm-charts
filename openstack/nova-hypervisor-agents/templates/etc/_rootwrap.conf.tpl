@@ -10,7 +10,8 @@ filters_path=/etc/nova/rootwrap.d,/usr/share/nova/rootwrap,/var/lib/openstack/et
 # explicitly specify a full path (separated by ',')
 # If not specified, defaults to system PATH environment variable.
 # These directories MUST all be only writeable by root !
-exec_dirs=/sbin,/usr/sbin,/bin,/usr/bin,/usr/local/bin,/usr/local/sbin,/var/lib/openstack/bin
+exec_dirs=/usr/local/sbin,/usr/sbin,/sbin,/var/lib/openstack/bin,/usr/local/bin,/usr/bin,/bin
+
 
 # Enable logging to syslog
 # Default value is False
@@ -25,3 +26,4 @@ syslog_log_facility=syslog
 # INFO means log all usage
 # ERROR means only log unsuccessful attempts
 syslog_log_level=ERROR
+
