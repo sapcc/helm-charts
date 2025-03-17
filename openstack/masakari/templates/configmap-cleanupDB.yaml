@@ -14,11 +14,6 @@ data:
     # MariaDB command
     MARIADB_CMD="mariadb -h \"$MASAKARI_DB_HOST\" -u \"$MASAKARI_DB_USER\" --password=\"$MASAKARI_DB_PASSWORD\" --database=\"$MASAKARI_DB_NAME\" -e "
 
-    # Queries for notifications table and deletes rows older than $DAYS
-    NOTIFICATION_SELECT_QUERY="SELECT * FROM notifications WHERE updated_at < NOW() - INTERVAL $DAYS DAY;"
-    NOTIFICATION_DELETE_QUERY="DELETE FROM notifications WHERE updated_at < NOW() - INTERVAL $DAYS DAY;"
-    delete_function "$NOTIFICATION_DELETE_QUERY" "$NOTIFICATION_SELECT_QUERY"
-  
     # Function to delete rows
     # First input is the delete statement
     # Second input is the select statement
@@ -46,3 +41,8 @@ data:
         exit 1
       fi
     }
+
+    # Queries for notifications table and deletes rows older than $DAYS
+    NOTIFICATION_SELECT_QUERY="SELECT * FROM notifications WHERE updated_at < NOW() - INTERVAL $DAYS DAY;"
+    NOTIFICATION_DELETE_QUERY="DELETE FROM notifications WHERE updated_at < NOW() - INTERVAL $DAYS DAY;"
+    delete_function "$NOTIFICATION_DELETE_QUERY" "$NOTIFICATION_SELECT_QUERY"
