@@ -9,27 +9,40 @@ metadata:
 data:
   cleanup.sh: |
     #!/bin/bash
-    # This script deletes rows older than the specified number of $DAYS from the notifications table.
+    # This script cleans up old data from the Masakari database.
 
-    # Check if the number of days is not null
-    if [ -z "$DAYS" ]; then
-      echo "Number of days can't be empty! Please provide the number of days as an argument."
-      exit 1
-    fi
+    # MariaDB command
+    MARIADB_CMD="mariadb -h \"$MASAKARI_DB_HOST\" -u \"$MASAKARI_DB_USER\" --password=\"$MASAKARI_DB_PASSWORD\" --database=\"$MASAKARI_DB_NAME\" -e "
 
-    # Display vars
-    echo "Number of days: $DAYS"
+    # Queries for notifications table and deletes rows older than $DAYS
+    NOTIFICATION_SELECT_QUERY="SELECT * FROM notifications WHERE updated_at < NOW() - INTERVAL $DAYS DAY;"
+    NOTIFICATION_DELETE_QUERY="DELETE FROM notifications WHERE updated_at < NOW() - INTERVAL $DAYS DAY;"
+    delete_function "$NOTIFICATION_DELETE_QUERY" "$NOTIFICATION_SELECT_QUERY"
+  
+    # Function to delete rows
+    # First input is the delete statement
+    # Second input is the select statement
+    delete_function() {
+      if [ -n "$DAYS" ] && [ -n "$1" ] && [ -n "$2" ]; then
+        echo "Number of days: $DAYS"
+        echo "Delete statement: $1"
+        echo "Select Statement: $2"
 
-    # Queries to Masakari DB
-    DELETED_ROWS=$(mariadb -h "$MASAKARI_DB_HOST" -u "$MASAKARI_DB_USER" --password="$MASAKARI_DB_PASSWORD" --database="$MASAKARI_DB_NAME" -e "SELECT * FROM notifications WHERE updated_at < NOW() - INTERVAL $DAYS DAY;")
-    DELETE_QUERY=$(mariadb -h "$MASAKARI_DB_HOST" -u "$MASAKARI_DB_USER" --password="$MASAKARI_DB_PASSWORD" --database="$MASAKARI_DB_NAME" -e "DELETE FROM notifications WHERE updated_at < NOW() - INTERVAL $DAYS DAY;")
+        # MariaDB command to fetch rows to be deleted
+        $MARIADB_CMD "$2"
+        if [ $? -ne 0 ]; then
+          echo "Failed to fetch rows."
+          exit 1
+        fi
 
-    # Check if the command was successful
-    if [ $? -eq 0 ]; then
-      echo "Successfully deleted rows older than $DAYS days from the notifications table."
-      echo "Deleted rows: $DELETE_QUERY"
-      echo "Deletion: $DELETED_ROWS"
-    else
-      echo "Failed to delete rows from the notifications table."
-      exit 1
-    fi
+        # MariaDB command to delete rows
+        $MARIADB_CMD "$1"
+        if [ $? -ne 0 ]; then
+          echo "Failed to delete rows."
+          exit 1
+        fi
+      else 
+        echo "Failed to delete rows. One or more variables are empty."
+        exit 1
+      fi
+    }
