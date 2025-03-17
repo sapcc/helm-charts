@@ -1,18 +1,21 @@
 {{- if .Values.thanos.enabled -}}
-{{- range $index, $service := (lookup "v1" "Service" "kube-system" "").items }}
-  {{- if and (eq $service.spec.type "LoadBalancer") (contains "nginx" $service.metadata.name) }}
-  {{- $ingressDomain := trimSuffix "." (trimPrefix "ingress." (get $service.metadata.annotations "disco/record")) }}
-  {{- end }}
-{{- end }}
 apiVersion: greenhouse.sap/v1alpha1
 kind: PluginPreset
 metadata:
   name: thanos
   namespace: ccloud
 spec:
-  {{- if .Values.thanos.clusterOptionOverrides }}
   clusterOptionOverrides:
-    {{ toYaml .Values.thanos.clusterOptionOverrides | nindent 4 }}
+  {{- range $cluster, $ingressPlugin := .Values.ingressPlugins }}
+  {{- $ingressDomain := trimSuffix "." (trimPrefix "ingress." $ingressPlugin.recordName) }}
+  - clusterName: {{ $cluster }}
+    overrides:
+    - name: thanos.query.ingress.grpc.hosts
+      value:
+        - host: "thanos.{{ $ingressDomain }}"
+          paths:
+            - path: /
+              pathType: ImplementationSpecific
   {{- end }}
   clusterSelector:
     matchExpressions:
@@ -74,12 +77,6 @@ spec:
         nginx.ingress.kubernetes.io/ssl-redirect: "true"
     - name: thanos.query.ingress.grpc.enabled
       value: true
-    - name: thanos.query.ingress.grpc.hosts
-      value:
-        - host: "thanos.{{ $ingressDomain }}"
-          paths:
-            - path: /
-              pathType: ImplementationSpecific
     - name: thanos.query.ingress.grpc.ingressClassName
       value: nginx
 {{- end -}}
