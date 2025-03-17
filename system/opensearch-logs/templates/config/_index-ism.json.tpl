@@ -46,12 +46,6 @@
             },
             {
                 "index_patterns": [
-                    "syslog-*"
-                ],
-                "priority": 1
-            },
-            {
-                "index_patterns": [
                     "qade2-logstash-*"
                 ],
                 "priority": 1
