@@ -2,12 +2,6 @@
 log_config_append = /etc/ironic/logging.ini
 {{- include "ini_sections.logging_format" . }}
 
-{{- if contains "xena" .Values.imageVersion }}
-pybasedir = /var/lib/openstack/lib/python3.8/site-packages/ironic
-{{- else }}
-pybasedir = /var/lib/openstack/lib/python3.6/site-packages/ironic
-{{- end }}
-
 network_provider = neutron_plugin
 enabled_network_interfaces = noop,flat,neutron
 default_network_interface = neutron

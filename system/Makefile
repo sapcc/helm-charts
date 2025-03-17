@@ -10,7 +10,7 @@ BOOT_OPERATOR_VERSION ?= 4f2452ce450dc65342d68daf611edfb182585020
 IPXE_OPERATOR_VERSION ?= 61c6898bfd7772008835bdcca8d8a64c1dfc3b32
 FEDHCP_VERSION ?= a59539c62aaa11a96c82fe792c87daaac4cb75bf
 IPAM_VERSION ?= 6faf501000c5d7ff9744a3c111ca5ecf3339c00c
-ARGORA_VERSION ?= e30ef54b8dd69e6a322aa92af34606b382491ce1
+ARGORA_VERSION ?= 6d1d55a79e152d2bbdc09e3b193b67071a04a6fb
 
 SHELL := bash
 .ONESHELL:
@@ -215,6 +215,13 @@ build-ipam-operator-remote:
 	@$(SED) -i 's/serviceAccountName.*$$/serviceAccountName: default/g' ipam-operator-remote/templates/deployment.yaml
 	@$(SED) -i 's/kind: Role/kind: ClusterRole/g' ipam-operator-remote/managedresources/kustomize.yaml
 
+build-argora-operator:
+	@cat kustomize/argora-operator/kustomization.yaml >> kustomization.yaml
+	$(call build-chart,argora-operator,https://github.com/sapcc/argora//config/default,$(ARGORA_VERSION))
+	@yq -i '.controllerManager.manager.image.tag="$(ARGORA_VERSION)"' argora-operator/values.yaml
+	@yq -i '.fullnameOverride="argora-operator"' argora-operator/values.yaml
+	@yq -i '.version="0.0.1"' argora-operator/Chart.yaml
+
 build-argora-operator-remote:
 	@rm -rf argora-operator-remote
 	@cat kustomize/argora-operator-remote/kustomization.yaml > kustomization.yaml
@@ -228,15 +235,10 @@ build-argora-operator-remote:
 	@yq -i '.fullnameOverride="argora-operator"' argora-operator-remote/values.yaml
 	@mkdir argora-operator-remote/ci
 	@echo 'config:' >> argora-operator-remote/ci/test-values.yaml
-	@echo '  ironCoreRoles: foo' >> argora-operator-remote/ci/test-values.yaml
-	@echo '  ironCoreRegion: ab-cd-1' >> argora-operator-remote/ci/test-values.yaml
-	@echo '  serverController: foo' >> argora-operator-remote/ci/test-values.yaml
-	@echo '  netboxURL: http://foo.bar' >> argora-operator-remote/ci/test-values.yaml
-	@echo 'credentials:' >> argora-operator-remote/ci/test-values.yaml
-	@echo '  bmcUser: foo' >> argora-operator-remote/ci/test-values.yaml
-	@echo '  bmcPassword: bar' >> argora-operator-remote/ci/test-values.yaml
-	@echo '  netboxToken: foo' >> argora-operator-remote/ci/test-values.yaml
-	@yq -i '.version="0.0.2"' argora-operator-remote/Chart.yaml
+	@echo '  configJson: {"serverController":"foo","ironCoreTypes":"bar","ironCoreRegion":"ab-cd-1","netboxURL":"https://foo.bar"}' >> argora-operator-remote/ci/test-values.yaml
+	@echo 'secret:' >> argora-operator-remote/ci/test-values.yaml
+	@echo '  credentialsJson: {"bmcUser":"foo","bmcPassword":"bar","netboxToken":"token"}' >> argora-operator-remote/ci/test-values.yaml
+	@yq -i '.version="0.0.4"' argora-operator-remote/Chart.yaml
 	@$(SED) -i 's/serviceAccountName.*$$/serviceAccountName: default/g' argora-operator-remote/templates/deployment.yaml
 	@$(SED) -i 's/kind: Role/kind: ClusterRole/g' argora-operator-remote/managedresources/kustomize.yaml
 
