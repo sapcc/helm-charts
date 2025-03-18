@@ -15,11 +15,11 @@ paste.app_factory = designate.api.versions:factory
 
 [composite:osapi_dns_v2]
 {{- define "rate_limit_pipe" -}}
-{{- if .Values.api_rate_limit.enabled }} rate_limit{{- end -}}
+{{- if .Values.rate_limit.enabled }} rate_limit{{- end -}}
 {{- end }}
 use = call:designate.api.middleware:auth_pipeline_factory
 noauth = http_proxy_to_wsgi cors request_id faultwrapper sentry validation_API_v2 {{- include "osprofiler_pipe" . }} noauthcontext {{ if .Values.watcher.enabled }}watcher {{ end }}maintenance normalizeuri {{ if .Values.audit.enabled }}audit {{ end }}osapi_dns_app_v2
-keystone = http_proxy_to_wsgi cors request_id faultwrapper sentry validation_API_v2 {{- include "osprofiler_pipe" . }} authtoken keystonecontext {{ if .Values.watcher.enabled }}watcher {{ end }}maintenance normalizeuri {{ if .Values.api_rate_limit.enabled }}{{- include "rate_limit_pipe" . }}{{ end }} {{ if .Values.audit.enabled }}audit {{ end }}osapi_dns_app_v2
+keystone = http_proxy_to_wsgi cors request_id faultwrapper sentry validation_API_v2 {{- include "osprofiler_pipe" . }} authtoken keystonecontext {{ if .Values.watcher.enabled }}watcher {{ end }}maintenance normalizeuri {{ if .Values.rate_limit.enabled }}{{- include "rate_limit_pipe" . }}{{ end }} {{ if .Values.audit.enabled }}audit {{ end }}osapi_dns_app_v2
 
 [app:healthcheck]
 paste.app_factory = oslo_middleware:Healthcheck.app_factory
