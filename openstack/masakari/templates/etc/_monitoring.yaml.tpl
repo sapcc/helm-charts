@@ -23,7 +23,7 @@ openstack:
       domain_name: default
       project_domain_name: default
       project_name: service
-      auth_url: http://keystone:5000
+      auth_url: {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}
     segments:
       - name: prod
         match: |
