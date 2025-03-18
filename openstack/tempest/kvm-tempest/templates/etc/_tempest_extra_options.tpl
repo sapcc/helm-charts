@@ -88,7 +88,7 @@ spice_console = False
 attach_encrypted_volume = False
 
 [validation]
-image_ssh_user = ubuntu
+image_ssh_user = root
 ssh_key_type = rsa
 
 [volume]
