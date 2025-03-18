@@ -1,6 +1,6 @@
 CLUSTER_API_VERSION ?= v1.6.2
 PROVIDER_METAL3_VERSION ?= v1.6.0
-PROVIDER_METAL_VERSION ?= 62d325a558ce09c8d457fb76a13c1dca2bb3d565
+PROVIDER_METAL_VERSION ?= 3139ccf421231342f3e81a4532e06cddd0789dce
 PROVIDER_VSPHERE_VERSION ?= v1.9.3
 PROVIDER_IPAM_VERSION ?= v0.1.1
 PROVIDER_KUBERNIKUS_VERSION ?= 9fd81475b828971913b3b27addf51fdbd0511d85
@@ -90,11 +90,11 @@ build-provider-metal3:
 	@yq -i '.version="0.1.2"' provider-metal3/Chart.yaml
 
 build-provider-metal:
-	$(call build-chart,provider-metal,https://github.com/ironcore-dev/cluster-api-provider-metal//config/default,$(PROVIDER_METAL_VERSION))
+	$(call build-chart,provider-metal,https://github.com/ironcore-dev/cluster-api-provider-ironcore-metal//config/default,$(PROVIDER_METAL_VERSION))
 	$(call fix-crds,provider-metal)
 	@yq -i '.controllerManager.manager.image.tag="$(PROVIDER_METAL_VERSION)"' provider-metal/values.yaml
 	@yq -i '.fullnameOverride="provider-metal"' provider-metal/values.yaml
-	@yq -i '.version="0.0.3"' provider-metal/Chart.yaml
+	@yq -i '.version="0.0.4"' provider-metal/Chart.yaml
 
 build-provider-kubernikus:
 	$(call build-chart,provider-kubernikus,https://github.com/sapcc/cluster-api-control-plane-provider-kubernikus//config/default,$(PROVIDER_KUBERNIKUS_VERSION))

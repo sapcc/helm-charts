@@ -2,23 +2,23 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.15.0
+    controller-gen.kubebuilder.io/version: v0.16.3
   labels:
     cluster.x-k8s.io/v1beta1: v1alpha1
-  name: metalmachinetemplates.infrastructure.cluster.x-k8s.io
+  name: ironcoremetalmachinetemplates.infrastructure.cluster.x-k8s.io
 spec:
   group: infrastructure.cluster.x-k8s.io
   names:
-    kind: MetalMachineTemplate
-    listKind: MetalMachineTemplateList
-    plural: metalmachinetemplates
-    singular: metalmachinetemplate
+    kind: IroncoreMetalMachineTemplate
+    listKind: IroncoreMetalMachineTemplateList
+    plural: ironcoremetalmachinetemplates
+    singular: ironcoremetalmachinetemplate
   scope: Namespaced
   versions:
     - name: v1alpha1
       schema:
         openAPIV3Schema:
-          description: MetalMachineTemplate is the Schema for the metalmachinetemplates API
+          description: IroncoreMetalMachineTemplate is the Schema for the ironcoremetalmachinetemplates API
           properties:
             apiVersion:
               description: |-
@@ -38,10 +38,10 @@ spec:
             metadata:
               type: object
             spec:
-              description: MetalMachineTemplateSpec defines the desired state of MetalMachineTemplate
+              description: IroncoreMetalMachineTemplateSpec defines the desired state of IroncoreMetalMachineTemplate
               properties:
                 template:
-                  description: MetalMachineTemplateResource defines the spec and metadata for MetalMachineTemplate supported by capi.
+                  description: IroncoreMetalMachineTemplateResource defines the spec and metadata for IroncoreMetalMachineTemplate supported by capi.
                   properties:
                     metadata:
                       description: |-
@@ -52,7 +52,7 @@ spec:
                           additionalProperties:
                             type: string
                           description: |-
-                            Annotations is an unstructured key value map stored with a resource that may be
+                            annotations is an unstructured key value map stored with a resource that may be
                             set by external tools to store and retrieve arbitrary metadata. They are not
                             queryable and should be preserved when modifying objects.
                             More info: http://kubernetes.io/docs/user-guide/annotations
@@ -68,18 +68,51 @@ spec:
                           type: object
                       type: object
                     spec:
-                      description: MetalMachineSpec defines the desired state of MetalMachine
+                      description: IroncoreMetalMachineSpec defines the desired state of IroncoreMetalMachine
                       properties:
                         image:
                           description: Image specifies the boot image to be used for the server.
                           type: string
+                        ipamConfig:
+                          description: IPAMConfig is a list of references to Network resources that should be used to assign IP addresses to the worker nodes.
+                          items:
+                            description: IPAMConfig is a reference to an IPAM resource.
+                            properties:
+                              ipamRef:
+                                description: IPAMRef is a reference to the IPAM object, which will be used for IP allocation.
+                                properties:
+                                  apiGroup:
+                                    description: APIGroup is the group for the resource being referenced.
+                                    type: string
+                                  kind:
+                                    description: Kind is the type of resource being referenced.
+                                    type: string
+                                  name:
+                                    description: Name is the name of resource being referenced.
+                                    type: string
+                                required:
+                                  - apiGroup
+                                  - kind
+                                  - name
+                                type: object
+                              metadataKey:
+                                description: MetadataKey is the name of metadata key for the network.
+                                type: string
+                            required:
+                              - ipamRef
+                              - metadataKey
+                            type: object
+                          type: array
+                        metadata:
+                          description: Metadata is a key-value map of additional data which should be passed to the Machine.
+                          x-kubernetes-preserve-unknown-fields: true
                         providerID:
                           description: ProviderID is the unique identifier as specified by the cloud provider.
                           type: string
                         serverSelector:
                           description: |-
                             ServerSelector specifies matching criteria for labels on Servers.
-                            This is used to claim specific Server types for a MetalMachine.
+                            This is used to claim specific Server types for a IroncoreMetalMachine.
                           properties:
                             matchExpressions:
                               description: matchExpressions is a list of label selector requirements. The requirements are ANDed.
