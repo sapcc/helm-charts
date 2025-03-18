@@ -18,7 +18,7 @@ transform/external-alerts:
     - context: log
       statements:
         - set(time_unix_nano, observed_time_unix_nano)
-        - merge_maps(attributes, ParseJSON(body), "upsert")
+        - merge_maps(attributes, ParseJSON(body), "upsert") where IsMatch(body, "^\\{")
         - set(attributes["log.type"], "alert")
 
 transform/external-deployments:
@@ -27,7 +27,7 @@ transform/external-deployments:
     - context: log
       statements:
         - set(time_unix_nano, observed_time_unix_nano)
-        - merge_maps(attributes, ParseJSON(body), "upsert")
+        - merge_maps(attributes, ParseJSON(body), "upsert") where IsMatch(body, "^\\{")
         - set(attributes["log.type"], "deployment")
 {{- end }}
 
