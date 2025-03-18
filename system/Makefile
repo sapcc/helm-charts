@@ -6,7 +6,7 @@ PROVIDER_IPAM_VERSION ?= v0.1.1
 PROVIDER_KUBERNIKUS_VERSION ?= 9fd81475b828971913b3b27addf51fdbd0511d85
 BAREMETAL_OPERATOR_VERSION ?= v0.6.0
 METAL_OPERATOR_VERSION ?= d339e4ef08f0c3208a9d6c9b46c0a5a9b7266a6c
-BOOT_OPERATOR_VERSION ?= 4f2452ce450dc65342d68daf611edfb182585020
+BOOT_OPERATOR_VERSION ?= e719a1651befdf1b84904c4644a57597d7022186
 IPXE_OPERATOR_VERSION ?= 61c6898bfd7772008835bdcca8d8a64c1dfc3b32
 FEDHCP_VERSION ?= a59539c62aaa11a96c82fe792c87daaac4cb75bf
 IPAM_VERSION ?= 6faf501000c5d7ff9744a3c111ca5ecf3339c00c
@@ -129,7 +129,7 @@ build-metal-operator:
 	@find metal-operator-core/templates -type f -exec $(SED) -i -e 's#metal-webhook-service#metal-operator-webhook-service#g' {} \;
 	@yq -i '.controllerManager.manager.image.tag="$(METAL_OPERATOR_VERSION)"' metal-operator-core/values.yaml
 	@yq -i '.fullnameOverride="metal-operator"' metal-operator-core/values.yaml
-	@yq -i '.version="1.1.3"' metal-operator-core/Chart.yaml
+	@yq -i '.version="1.1.4"' metal-operator-core/Chart.yaml
 
 build-metal-operator-remote:
 	@rm -rf metal-operator-remote
@@ -159,7 +159,7 @@ build-boot-operator:
 	@find boot-operator/templates -type f -exec $(SED) -i -e 's#{{ include "boot-operator.fullname" . }}-boot-operator#boot-operator#g' {} \;
 	@yq -i '.controllerManager.manager.image.tag="$(BOOT_OPERATOR_VERSION)"' boot-operator/values.yaml
 	@yq -i '.fullnameOverride="boot-operator"' boot-operator/values.yaml
-	@yq -i '.version="1.0.4"' boot-operator/Chart.yaml
+	@yq -i '.version="1.0.5"' boot-operator/Chart.yaml
 
 build-boot-operator-remote:
 	@rm -rf boot-operator-remote
