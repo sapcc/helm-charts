@@ -1,20 +1,20 @@
 input {
 
 {{ range $replica_name, $replica := .Values.hermes.rabbitmq.targets }}
-{{- $host := printf "%s-rabbitmq.monsoon3.svc.kubernetes.%s.%s" $key $.Values.global.region $.Values.global.tld}}
+{{- $host := printf "%s-rabbitmq.monsoon3.svc.kubernetes.%s.%s" $replica_name $.Values.global.region $.Values.global.tld}}
 rabbitmq {
-    id => "{{ printf "logstash_hermes_%s" $key }}"
-    host => "{{ $value.host | default (printf $.Values.hermes.rabbitmq.host_template $key) }}"
-    user => "${RABBITMQ_{{ upper $key }}_USER}"
-    password => "${RABBITMQ_{{ upper $key }}_PASSWORD}"
+    id => "{{ printf "logstash_hermes_%s" $replica_name }}"
+    host => "{{ $replica.host | default (printf $.Values.hermes.rabbitmq.host_template $replica_name) }}"
+    user => "${RABBITMQ_{{ upper $replica_name }}_USER}"
+    password => "${RABBITMQ_{{ upper $replica_name }}_PASSWORD}"
     port => {{ $.Values.hermes.rabbitmq.port }}
-    queue => "{{ $value.queue_name | default $.Values.hermes.rabbitmq.queue_name }}"
+    queue => "{{ $replica.queue_name | default $.Values.hermes.rabbitmq.queue_name }}"
     subscription_retry_interval_seconds => 60
     automatic_recovery => true
     connection_timeout => 1000
     heartbeat => 5
     connect_retry_interval => 60
-    durable => {{ $value.durable | default false }}
+    durable => {{ $replica.durable | default false }}
   }
 {{ end }}
 }
