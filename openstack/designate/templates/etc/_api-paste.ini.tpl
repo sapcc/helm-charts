@@ -19,7 +19,7 @@ paste.app_factory = designate.api.versions:factory
 {{- end }}
 use = call:designate.api.middleware:auth_pipeline_factory
 noauth = http_proxy_to_wsgi cors request_id faultwrapper sentry validation_API_v2 {{- include "osprofiler_pipe" . }} noauthcontext {{ if .Values.watcher.enabled }}watcher {{ end }}maintenance normalizeuri {{ if .Values.audit.enabled }}audit {{ end }}osapi_dns_app_v2
-keystone = http_proxy_to_wsgi cors request_id faultwrapper sentry validation_API_v2 {{- include "osprofiler_pipe" . }}  authtoken keystonecontext {{- include "rate_limit_pipe" . }} {{ if .Values.watcher.enabled }}watcher {{ end }}maintenance normalizeuri {{ if .Values.audit.enabled }}audit {{ end }}osapi_dns_app_v2
+keystone = http_proxy_to_wsgi cors request_id faultwrapper sentry validation_API_v2 {{- include "osprofiler_pipe" . }} authtoken keystonecontext {{ if .Values.watcher.enabled }}watcher {{ end }}maintenance normalizeuri {{ if .Values.api_rate_limit.enabled }}{{- include "rate_limit_pipe" . }}{{ end }} {{ if .Values.audit.enabled }}audit {{ end }}osapi_dns_app_v2
 
 [app:healthcheck]
 paste.app_factory = oslo_middleware:Healthcheck.app_factory
@@ -92,7 +92,7 @@ config_file = /etc/designate/watcher.yaml
 [filter:osprofiler]
 paste.filter_factory = osprofiler.web:WsgiMiddleware.factory
 
-{{ if ((.Values.rate_limit).enabled) -}}
+{{ if .Values.rate_limit.enabled -}}
 [filter:rate_limit]
 use = egg:rate-limit-middleware#rate-limit
 config_file = /etc/designate/ratelimit.yaml
