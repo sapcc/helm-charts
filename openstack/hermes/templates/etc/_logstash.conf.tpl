@@ -1,6 +1,6 @@
 input {
 
-{{ range $key, $value := .Values.hermes.rabbitmq.targets }}
+{{ range $replica_name, $replica := .Values.hermes.rabbitmq.targets }}
 {{- $host := printf "%s-rabbitmq.monsoon3.svc.kubernetes.%s.%s" $key $.Values.global.region $.Values.global.tld}}
 rabbitmq {
     id => "{{ printf "logstash_hermes_%s" $key }}"
