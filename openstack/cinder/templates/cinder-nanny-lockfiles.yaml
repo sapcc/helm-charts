@@ -1,0 +1,76 @@
+{{- if .Values.nanny.lockfiles.enabled }}
+kind: CronJob
+apiVersion: batch/v1
+metadata:
+  name: cinder-nanny-lock-files
+  namespace: monsoon3
+  labels:
+    system: openstack
+    service: cinder-nanny
+
+spec:
+  schedule: "{{ .Values.nanny.lockfiles.crontab_schedule }}"
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    metadata:
+      annotations:
+        {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+        linkerd.io/inject: enabled
+        {{- end }}
+      labels:
+        component: cinder-nanny
+    spec:
+      template:
+        metadata:
+          annotations:
+          labels:
+            component: cinder-nanny
+        spec:
+          nodeSelector:
+            zone: farm
+          restartPolicy: OnFailure
+          volumes:
+          - name: etccinder
+            emptyDir: {}
+          - name: cinder-etc
+            configMap:
+              name: cinder-etc
+          - name: cinder-etc-confd
+            secret:
+              secretName: {{ .Release.Name }}-secrets
+          {{- include "utils.proxysql.volumes" . | indent 10 }}
+          containers:
+            {{- include "utils.proxysql.container" . | indent 12 }}
+            - name: lock-files
+              image: {{required ".Values.global.registry is missing" .Values.global.registry}}/loci-cinder:{{required ".Values.imageVersion is missing" .Values.imageVersion}}
+              imagePullPolicy: IfNotPresent
+              command:
+                - dumb-init
+                - kubernetes-entrypoint
+              env:
+                - name: COMMAND
+                  value: "cinder-manage sap clean_old_lock_files --batch-size {{.Values.nanny.lockfiles.batch_size}} {{- if .Values.nanny.lockfiles.verbose }} --verbose {{- end}} {{- if .Values.nanny.lockfiles.dry_run}} --dry-run {{- end}}"
+                - name: NAMESPACE
+                  valueFrom: {fieldRef: {fieldPath: metadata.namespace}}
+              volumeMounts:
+                - name: cinder-etc
+                  mountPath: /etc/cinder/cinder.conf
+                  subPath: cinder.conf
+                  readOnly: true
+                - name: etccinder
+                  mountPath: /etc/cinder
+                - name: cinder-etc-confd
+                  mountPath: /etc/cinder/cinder.conf.d
+                - name: cinder-etc
+                  mountPath: /etc/cinder/logging.ini
+                  subPath: logging.ini
+                  readOnly: true
+                {{- include "utils.proxysql.volume_mount" . | indent 16 }}
+              resources:
+                requests:
+                  memory: "500Mi"
+                  cpu: "25m"
+                limits:
+                  memory: "500Mi"
+                  cpu: "100m"
+{{- end }}
