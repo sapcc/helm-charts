@@ -12,7 +12,7 @@ data:
     # This script cleans up old data from the Masakari database.
 
     # MariaDB command
-    MARIADB_CMD="mariadb -h \"$MASAKARI_DB_HOST\" -u \"$MASAKARI_DB_USER\" --password=\"$MASAKARI_DB_PASSWORD\" --database=\"$MASAKARI_DB_NAME\" -e "
+    MARIADB_CMD="mariadb -h "$MASAKARI_DB_HOST" -u "$MASAKARI_DB_USER" --password="$MASAKARI_DB_PASSWORD" --database="$MASAKARI_DB_NAME" -e "
 
     # Function to delete rows
     # First input is the delete statement
@@ -24,14 +24,14 @@ data:
         echo "Select Statement: $2"
 
         # MariaDB command to fetch rows to be deleted
-        $MARIADB_CMD "$2"
+        $MARIADB_CMD "$1"
         if [ $? -ne 0 ]; then
           echo "Failed to fetch rows."
           exit 1
         fi
 
         # MariaDB command to delete rows
-        $MARIADB_CMD "$1"
+        $MARIADB_CMD "$2"
         if [ $? -ne 0 ]; then
           echo "Failed to delete rows."
           exit 1
@@ -42,7 +42,12 @@ data:
       fi
     }
 
-    # Queries for notifications table and deletes rows older than $DAYS
+    # Deletes entries older than $DAYS from notifications table
     NOTIFICATION_SELECT_QUERY="SELECT * FROM notifications WHERE updated_at < NOW() - INTERVAL $DAYS DAY;"
     NOTIFICATION_DELETE_QUERY="DELETE FROM notifications WHERE updated_at < NOW() - INTERVAL $DAYS DAY;"
-    delete_function "$NOTIFICATION_DELETE_QUERY" "$NOTIFICATION_SELECT_QUERY"
+    delete_function "$NOTIFICATION_SELECT_QUERY" "$NOTIFICATION_DELETE_QUERY"
+
+    # Remove entries from vmoves, which are missing in notifications table
+    VMOVES_SELECT_QUERY="SELECT * FROM vmoves WHERE notification_uuid not in (select notification_uuid from notifications);"
+    VMOVES_DELETE_QUERY="DELETE FROM vmoves where notification_uuid not in (select notification_uuid from notifications);"
+    delete_function "$NOTIFICATION_SELECT_QUERY" "$NOTIFICATION_DELETE_QUERY"
