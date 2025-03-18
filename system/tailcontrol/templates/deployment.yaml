@@ -75,30 +75,6 @@ spec:
             - name: litestream-config
               mountPath: /etc/litestream.yml
               subPath: litestream.yml
-        - name: litestream-restore-noise
-          image: "{{ .Values.image.litestream.repository }}:{{ .Values.image.litestream.tag }}"
-          imagePullPolicy: IfNotPresent
-          args:
-          - restore
-          - -if-db-not-exists
-          - /tailscale/config/tailcontrol.noise.sqlite.db
-          env:
-            - name: AWS_SECRET_ACCESS_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: tailcontrol-aws
-                  key: secret-access-key
-            - name: AWS_ACCESS_KEY_ID
-              valueFrom:
-                secretKeyRef:
-                  name: tailcontrol-aws
-                  key: access-key-id
-          volumeMounts:
-            - name: tailscale
-              mountPath: /tailscale
-            - name: litestream-config
-              mountPath: /etc/litestream.yml
-              subPath: litestream.yml
 {{- end }}
       containers:
         - name: tailcontrol
