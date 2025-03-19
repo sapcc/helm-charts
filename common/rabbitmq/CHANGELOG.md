@@ -2,6 +2,13 @@
 
 This file is used to list changes made in each version of the common chart rabbitmq.
 
+## v0.17.0 - 2025/03/18
+
+* liveness and readiness probes enhanced
+  * simple network checks for the liveness probe
+  * advanced API status checks for the readiness probe
+* chart version bumped
+
 ## 0.16.1 - 2025/03/18
 
 - RabbitMQ [4.0.7 Release Notes](https://github.com/rabbitmq/rabbitmq-server/releases/tag/v4.0.7)
