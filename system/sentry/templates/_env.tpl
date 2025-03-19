@@ -49,7 +49,7 @@
 {{- end }}
 {{- if .Values.githubAppId }}
 - name: GITHUB_APP_ID
-  value: {{ .Values.githubAppId | squote}}
+  valueFrom: { secretKeyRef: { name: {{ template "fullname" . }}, key: github-app-id } }
 {{- end }}
 {{- if .Values.githubApiSecret }}
 - name: GITHUB_API_SECRET
