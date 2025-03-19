@@ -25,11 +25,11 @@
 {{- end }}
 {{- if .Values.emailUser }}
 - name: SENTRY_EMAIL_USER
-  value: {{ .Values.emailUser | squote }}
+  valueFrom: { secretKeyRef: { name: {{ template "fullname" . }}, key: sentry-email-user } }
 {{- end }}
 {{- if .Values.emailPassword }}
 - name: SENTRY_EMAIL_PASSWORD
-  value: {{ .Values.emailPassword | squote }}
+  valueFrom: { secretKeyRef: { name: {{ template "fullname" . }}, key: sentry-email-password } }
 {{- end }}
 {{- if .Values.emailUseSSL }}
 - name: SENTRY_EMAIL_USE_SSL
