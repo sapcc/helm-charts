@@ -78,7 +78,7 @@ mem_queue_size = {{ .Values.audit.mem_queue_size | default 1000 | int }}
 {{- define "ini_sections.logging_format"}}
 logging_context_format_string = %(asctime)s %(process)d %(levelname)s %(name)s [%(request_id)s g%(global_request_id)s %(user_identity)s] %(resource)s%(instance)s%(message)s
 logging_default_format_string = %(asctime)s %(process)d %(levelname)s %(name)s [-] %(resource)s%(instance)s%(message)s
-logging_user_identity_format = %(user)s %(project)s %(domain)s %(user_domain)s %(project_domain)s
+logging_user_identity_format = %(user)s %(project)s %(domain)s %(system_scope)s %(user_domain)s %(project_domain)s
 logging_exception_prefix = %(asctime)s %(process)d ERROR %(name)s %(resource)s%(instance)s
 {{- end }}
 
