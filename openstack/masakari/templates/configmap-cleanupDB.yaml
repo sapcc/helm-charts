@@ -15,31 +15,35 @@ data:
     MARIADB_CMD="mariadb -h "$MASAKARI_DB_HOST" -u "$MASAKARI_DB_USER" --password="$MASAKARI_DB_PASSWORD" --database="$MASAKARI_DB_NAME" -e "
 
     # Function to delete rows
-    # First input is the delete statement
-    # Second input is the select statement
+    # First input is the select statement
+    # Second input is the delete statement
     delete_function() {
       if [ -n "$DAYS" ] && [ -n "$1" ] && [ -n "$2" ]; then
         echo "Number of days: $DAYS"
-        echo "Delete statement: $1"
-        echo "Select Statement: $2"
+        echo "Select Statement: $1"
+        echo "Delete statement: $2"
 
         # MariaDB command to fetch rows to be deleted
-        $MARIADB_CMD "$1"
+        echo "==== Fetching rows to be deleted ===="
+        SELECT_OUTPUT=$($MARIADB_CMD "$1")
         if [ $? -ne 0 ]; then
           echo "Failed to fetch rows."
           exit 1
         fi
 
-        # MariaDB command to delete rows
+        # Check if SELECT_OUTPUT is empty
+        if [ -z "$SELECT_OUTPUT" ]; then
+          echo "No rows to delete. Skipping deletion."
+          return
+        fi
+
+        # Delete rows if SELECT_OUTPUT is not empty
+        echo "==== Deleting rows ===="
         $MARIADB_CMD "$2"
         if [ $? -ne 0 ]; then
           echo "Failed to delete rows."
           exit 1
         fi
-      else 
-        echo "Failed to delete rows. One or more variables are empty."
-        exit 1
-      fi
     }
 
     # Deletes entries older than $DAYS from notifications table
@@ -50,4 +54,4 @@ data:
     # Remove entries from vmoves, which are missing in notifications table
     VMOVES_SELECT_QUERY="SELECT * FROM vmoves WHERE notification_uuid not in (select notification_uuid from notifications);"
     VMOVES_DELETE_QUERY="DELETE FROM vmoves where notification_uuid not in (select notification_uuid from notifications);"
-    delete_function "$NOTIFICATION_SELECT_QUERY" "$NOTIFICATION_DELETE_QUERY"
+    delete_function "$VMOVES_SELECT_QUERY" "$VMOVES_DELETE_QUERY"
