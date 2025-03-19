@@ -1,0 +1,67 @@
+kind: Deployment
+apiVersion: apps/v1
+
+metadata:
+  name: {{ .Release.Name }}-slack
+  labels:
+    system: openstack
+    type: slack
+    component: {{ .Chart.Name }}
+  annotations:
+    vpa-butler.cloud.sap/main-container: {{ .Chart.Name }}-slack
+    vpa-butler.cloud.sap/update-mode: "Off"
+spec:
+  replicas: {{ .Values.pod.replicas.masakari }}
+  revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revision_history }}
+  strategy:
+    type: {{ .Values.pod.lifecycle.upgrades.deployments.podRemasakariStrategy }}
+    {{ if eq .Values.pod.lifecycle.upgrades.deployments.podRemasakariStrategy "RollingUpdate" }}
+    rollingUpdate:
+      maxUnavailable: {{ .Values.pod.lifecycle.upgrades.deployments.rollingUpdate.maxUnavailable }}
+      maxSurge: {{ .Values.pod.lifecycle.upgrades.deployments.rollingUpdate.maxSurge }}
+    {{ end }}
+  selector:
+    matchLabels:
+      name: {{ .Release.Name }}-slack
+  template:
+    metadata:
+      labels:
+        name: {{ .Release.Name }}-slack
+{{ tuple . .Chart.Name "slack" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
+        alert-tier: os
+        alert-service: {{ .Chart.Name }}
+      annotations:
+        kubectl.kubernetes.io/default-container: {{ .Chart.Name }}-slack
+        configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
+        secrets-hash: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
+        prometheus.io/scrape: "true"
+        prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
+        {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
+    spec:
+{{ tuple . "masakari" "slack" | include "kubernetes_pod_anti_affinity" | indent 6 }}
+      {{- include "utils.proxysql.pod_settings" . | indent 6 }}
+      containers:
+      - name: {{ .Chart.Name }}-slack
+        image: {{ required ".Values.global.registry is missing" .Values.global.registry}}/masakari-slack:latest
+        imagePullPolicy: Always
+        workingDir: /
+        command:
+          - /masakari-slack
+        lifecycle:
+          preStop:
+              {{- include "utils.snippets.pre_stop_graceful_shutdown" . | indent 14 }}
+        resources:
+{{ toYaml .Values.pod.resources.masakari | indent 10 }}
+        volumeMounts:
+        - mountPath: /config.yaml
+          name: masakari-etc
+          subPath: config-slack.yaml
+        - name: masakari-slack
+          mountPath: /volume
+      volumes:
+      - name: masakari-etc
+        secret:
+          secretName: masakari-etc
+      - name: masakari-slack
+        persistentVolumeClaim:
+          claimName: masakari-slack
