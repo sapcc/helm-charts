@@ -2,6 +2,12 @@
 
 This file is used to list changes made in each version of the common chart rabbitmq.
 
+## 0.17.1 - 2025/03/19
+
+- Set default `max_message_size` option to pre 4.0 default value of 256M
+  - This fixes a possible problem introduced in chart version 0.14.0 by a silent default change
+- Chart version bumped
+
 ## 0.17.0 - 2025/03/19
 
 - Add [user-credential-updater](https://github.com/sapcc/rabbitmq-user-credential-updater) sidecar container
@@ -13,7 +19,7 @@ This file is used to list changes made in each version of the common chart rabbi
 - RabbitMQ [4.0.7 Release Notes](https://github.com/rabbitmq/rabbitmq-server/releases/tag/v4.0.7)
   * Classic queue message store did not remove segment files with large messages (over 4 MB) in some cases
   * Reduced memory usage and GC pressure for workloads where large (4 MB or greater) messages were published to classic queues
-* chart version bumped
+- chart version bumped
 
 ## 0.16.0 - 2025/03/15
 
