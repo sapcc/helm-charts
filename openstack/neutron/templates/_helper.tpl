@@ -6,3 +6,18 @@
 
   {{- .Release.Name }}-migration-{{ substr 0 4 $hash }}-{{ .Values.imageVersion | required "Please set neutron.imageVersion or similar"}}
 {{- end }}
+
+{{- define "neutron.aci_config_count" -}}
+    {{- $char_limit := int .Values.aci.configmap_char_limit -}}
+    {{- $config_data := include (print $.Template.BasePath "/etc/_ml2-conf-aci.ini.tpl") . -}}
+    {{- $byte_count := 0 -}}
+    {{- $counter := 0 -}}
+    {{- range regexSplit "\n\\[" $config_data -1 -}}
+        {{- if or (eq $byte_count 0) (ge $byte_count $char_limit) -}}
+            {{- $counter = (add $counter 1) -}}
+            {{- $byte_count = 0 -}}
+        {{- end }}
+        {{- $byte_count = (add $byte_count (len .)) }}
+    {{- end }}
+    {{- $counter -}}
+{{- end }}
