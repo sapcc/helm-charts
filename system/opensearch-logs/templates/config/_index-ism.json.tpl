@@ -46,30 +46,6 @@
             },
             {
                 "index_patterns": [
-                    "syslog-*"
-                ],
-                "priority": 1
-            },
-            {
-                "index_patterns": [
-                    "admin-*"
-                ],
-                "priority": 1
-            },
-            {
-                "index_patterns": [
-                    "kubernikus-*"
-                ],
-                "priority": 1
-            },
-            {
-                "index_patterns": [
-                    "virtual-*"
-                ],
-                "priority": 1
-            },
-            {
-                "index_patterns": [
                     "qade2-logstash-*"
                 ],
                 "priority": 1
@@ -89,12 +65,6 @@
             {
                 "index_patterns": [
                     "jump-*"
-                ],
-                "priority": 1
-            },
-            {
-                "index_patterns": [
-                    "scaleout-*"
                 ],
                 "priority": 1
             },

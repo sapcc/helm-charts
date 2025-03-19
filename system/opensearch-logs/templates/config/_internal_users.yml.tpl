@@ -179,19 +179,6 @@ admin2:
   backend_roles:
   - "adminrole"
 
-dashboard:
-  hash: "{{ .Values.users.dashboard.nohash }}"
-  reserved: true
-  description: "Demo OpenSearch Dashboards user"
-
-dashboard2:
-  hash: "{{ .Values.users.dashboard2.nohash }}"
-  reserved: true
-  description: "Demo OpenSearch Dashboards user"
-
-kibanaro:
-  hash: "{{ .Values.users.kibanaro.nohash }}"
-
 kibanaserver:
   hash: "{{ .Values.users.kibanaserver.nohash }}"
   reserved: true
