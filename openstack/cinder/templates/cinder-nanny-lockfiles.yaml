@@ -28,9 +28,11 @@ spec:
         spec:
           nodeSelector:
             zone: farm
-          restartPolicy: OnFailure
+          restartPolicy: Never
           volumes:
           - name: etccinder
+            emptyDir: {}
+          - name: shutdown-signal
             emptyDir: {}
           - name: cinder-etc
             configMap:
@@ -40,16 +42,36 @@ spec:
               secretName: {{ .Release.Name }}-secrets
           {{- include "utils.proxysql.volumes" . | indent 10 }}
           containers:
-            {{- include "utils.proxysql.container" . | indent 12 }}
+            - name: proxysql
+              image: keppel.global.cloud.sap/ccloud/proxysql:2.7.3-20250315230350
+              imagePullPolicy: IfNotPresent
+              lifecycle:
+                postStart:
+                  exec:
+                    command: ["sh", "-c", "touch /shutdown/keepalive"]
+              command: ["proxysql"]
+              args: ["--config", "/etc/proxysql/proxysql.cnf", "--exit-on-error", "--foreground", "--idle-threads", "--admin-socket", "/run/proxysql/admin.sock", "--no-version-check", "-D", "/run/proxysql"]
+              ports:
+              - name: metrics-psql
+                containerPort: 6070
+              livenessProbe:
+                exec:
+                  command:
+                  - test
+                  - -f
+                  - /shutdown/keepalive
+              volumeMounts:
+                {{- include "utils.proxysql.volume_mount" . | indent 16 }}
+                - mountPath: /shutdown
+                  name: shutdown-signal
             - name: lock-files
               image: {{required ".Values.global.registry is missing" .Values.global.registry}}/loci-cinder:{{required ".Values.imageVersion is missing" .Values.imageVersion}}
               imagePullPolicy: IfNotPresent
               command:
-                - dumb-init
-                - kubernetes-entrypoint
+                - /bin/sh
+                - -c
+                - 'cinder-manage sap clean_old_lock_files --batch-size 10 --dry-run && rm /shutdown/keepalive'
               env:
-                - name: COMMAND
-                  value: "cinder-manage sap clean_old_lock_files --batch-size {{.Values.nanny.lockfiles.batch_size}} {{- if .Values.nanny.lockfiles.verbose }} --verbose {{- end}} {{- if .Values.nanny.lockfiles.dry_run}} --dry-run {{- end}}"
                 - name: NAMESPACE
                   valueFrom: {fieldRef: {fieldPath: metadata.namespace}}
               volumeMounts:
@@ -65,6 +87,8 @@ spec:
                   mountPath: /etc/cinder/logging.ini
                   subPath: logging.ini
                   readOnly: true
+                - mountPath: /shutdown
+                  name: shutdown-signal
                 {{- include "utils.proxysql.volume_mount" . | indent 16 }}
               resources:
                 requests:
