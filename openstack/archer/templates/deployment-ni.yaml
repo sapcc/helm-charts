@@ -1,5 +1,6 @@
 {{- range $name, $env := $.Values.agents.ni }}
 {{- range $az_long, $apods := $.Values.global.apods }}
+{{- if or (not $env.availability_zone) (eq $env.availability_zone $az_long) }}
 {{- $apod := first $apods }}
 ---
 apiVersion: apps/v1
@@ -216,5 +217,6 @@ spec:
                   items:
                     - key: ni.ini
                       path: ni.ini
+{{- end }}
 {{- end }}
 {{- end }}
