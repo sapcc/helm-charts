@@ -54,16 +54,41 @@
 
 {{/*
 Choose different db_url function depending on dbType value
-Default: mariadb
+Default db type: mariadb
+
+Can accept tuple or map
+
+Tuple examples:
+4 items:
+    tuple . .Values.apidbName .Values.apidbUser .Values.apidbPassword
+5 items:
+    tuple . .Values.apidbName .Values.apidbUser .Values.apidbPassword .Values.mariadb_api.name
+6 items:
+    tuple . .Values.apidbName .Values.apidbUser .Values.apidbPassword .Values.mariadb_api.name .Values.apidbType
 */}}
 {{- define "utils.db_url" }}
 {{- $dbUrlHelpers := dict
     "mariadb" "utils._db_url_mariadb"
     "pxc-db" "utils._db_url_pxc_db"
 }}
-{{- $dbType := default "mariadb" .Values.dbType }}
-{{- $dbUrl := index $dbUrlHelpers $dbType }}
-{{- include $dbUrl . }}
+{{- if kindIs "map" . }}
+    {{- $dbType := default "mariadb" .Values.dbType }}
+    {{- $dbUrl := index $dbUrlHelpers $dbType }}
+    {{- include $dbUrl . }}
+{{- else }}
+    {{- $dbType := "mariadb" }}
+    {{- $tupleLen := len . }}
+    {{- if or (eq $tupleLen 4) (eq $tupleLen 5) }}
+        {{- $dbUrl := index $dbUrlHelpers $dbType }}
+        {{- include $dbUrl . }}
+    {{- else if eq $tupleLen 6 }}
+        {{- $dbType = index . 5 }}
+        {{- $dbUrl := index $dbUrlHelpers $dbType }}
+        {{- include $dbUrl . }}
+    {{- else }}
+        {{- fail (printf "utils.db_url: supports tuples with 4, 5 or 6 items, or maps, and got tuple with %v items" $tupleLen) }}
+    {{- end }}
+{{- end }}
 {{- end }}
 
 {{/*
