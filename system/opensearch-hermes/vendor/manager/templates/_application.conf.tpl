@@ -28,8 +28,8 @@ hosts = [
     host = "https://opensearch-hermes.hermes.svc.kubernetes.{{ .Values.global.region }}.{{ .Values.global.tld }}:9200"
     name = "OpenSearch Hermes cluster"
     auth = {
-      username = "{{.Values.global.users.admin2.username}}"
-      password = "{{.Values.global.users.admin2.password}}"
+      username = "{{.Values.global.users.admin2.username_resolve}}"
+      password = "{{.Values.global.users.admin2.password_resolve}}"
     }
   }
 ]
