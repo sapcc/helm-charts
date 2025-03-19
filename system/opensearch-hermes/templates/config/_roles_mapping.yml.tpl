@@ -14,6 +14,7 @@ adminrole:
   reserved: false
   users:
   -  "admin"
+  -  "admin2"
   backend_roles:
   {{- range .Values.global.ldap.opensearch_admin_groups }}
   - {{ . | title }}
@@ -51,13 +52,16 @@ kibana_server:
   reserved: true
   users:
   - "kibanaserver"
+  - "kibanaserver2"
 
 promrole:
   reserved: false
   users:
   - "promuser"
+  - "promuser2"
 
 audit:
   reserved: false
   users:
   - "audit"
+  - "audit2"
