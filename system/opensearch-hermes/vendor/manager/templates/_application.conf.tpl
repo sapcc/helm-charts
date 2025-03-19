@@ -1,6 +1,6 @@
 # Secret will be used to sign session cookies, CSRF tokens and for other encryption utilities.
 # It is highly recommended to change this value before running cerebro in production.
-secret="{{.Values.manager_secret}}"
+secret="{{.Values.global.manager.secret}}"
 
 # Application base path
 basePath = "/"
@@ -28,8 +28,8 @@ hosts = [
     host = "https://opensearch-hermes.hermes.svc.kubernetes.{{ .Values.global.region }}.{{ .Values.global.tld }}:9200"
     name = "OpenSearch Hermes cluster"
     auth = {
-      username = "{{.Values.global.users.admin.username}}"
-      password = "{{.Values.global.users.admin.password}}"
+      username = "{{.Values.global.users.admin2.username}}"
+      password = "{{.Values.global.users.admin2.password}}"
     }
   }
 ]
