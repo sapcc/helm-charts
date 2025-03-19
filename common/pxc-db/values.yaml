@@ -527,6 +527,19 @@ backup:
       keep: 5
       # -- The name of the storage for the backups configured in the storages subsection
       storageName: s3-backups-daily
+  # -- Logical backup configuration (mysqldump)
+  # By default, only physical backups are enabled and needed
+  # Logical backup could be enabled if required by some dependent services
+  dump:
+    enabled: false
+    image:
+      name: percona-xtradb-cluster-operator
+      tag: 8.0.39-pxc8.0-backup-pxb8.0.35
+    schedule: "15 0 * * *"
+    s3:
+      config:
+        bucket: "pxc-logical-{{ .Values.global.region }}"
+        prefix: "{{ .Values.name }}"
 
 # -- Default Prometheus alerts and rules.
 alerts:
