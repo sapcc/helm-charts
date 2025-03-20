@@ -39,5 +39,3 @@ config:
               pemtrustedcas_filepath: {{.Values.auth.ca_path }}
         authentication_backend:
           type: noop
-
-er" (class org.opensearch.security.securityconf.impl.v7.ConfigV7$Dynamic), not marked as ignorable (16 known properties: "on_behalf_of", "license", "disable_intertransport_auth", "http", "kibana", "authz", "auth_failure_listeners", "transport_userrname_attribute", "filtered_alias_mode", "authc", "disable_rest_auth", "respect_request_indices_options", "multi_rolespan_enabled", "do_not_fail_on_forbidden", "hosts_resolver_mode", "do_not_fail_on_forbidden_empty"])
