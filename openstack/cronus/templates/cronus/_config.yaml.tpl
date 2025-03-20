@@ -6,6 +6,13 @@ cronus:
   billingCacheTTL: {{ .Values.config.billingCacheTTL }}
   barbicanCacheTTL: {{ .Values.config.barbicanCacheTTL }}
   awsSignV2TTL: {{ .Values.config.awsSignV2TTL }}
+{{- if and .Values.cronus.auth .Values.cronus.auth.allowPasswordsForCIDRs }}
+  auth:
+    allowPasswordsForCIDRs:
+    {{- range $v := .Values.cronus.auth.allowPasswordsForCIDRs }}
+      - {{ $v | quote }}
+    {{- end }}
+{{- end }}
 {{- if .Values.cronus.allowedNdrs }}
   allowedNdrs:
   {{- range $v := .Values.cronus.allowedNdrs }}
