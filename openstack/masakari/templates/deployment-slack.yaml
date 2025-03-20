@@ -40,6 +40,8 @@ spec:
     spec:
 {{ tuple . "masakari" "slack" | include "kubernetes_pod_anti_affinity" | indent 6 }}
       {{- include "utils.proxysql.pod_settings" . | indent 6 }}
+      securityContext:
+        fsGroup: 65532
       containers:
       - name: {{ .Chart.Name }}-slack
         image: {{ required ".Values.global.registry is missing" .Values.global.registry}}/masakari-slack:latest
