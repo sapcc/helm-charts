@@ -6,8 +6,10 @@ openstack:
     project_domain_name: default
     project_name: service
     auth_url: {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}
+  notification:
     match: |
       [[ ne .Notification.Status "ignored" ]]
+    sync: true
 slack:
   token: {{"{{"}} resolve "vault+kvv2:///secrets/global/masakari/slack/token" {{"}}"}}
   message:
