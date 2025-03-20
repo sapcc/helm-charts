@@ -5,6 +5,7 @@ _meta:
 
 config:
   dynamic:
+    server_username: {{ .Values.global.users.kibanaserver2.username }}
     http:
       anonymous_auth_enabled: false
       xff:
