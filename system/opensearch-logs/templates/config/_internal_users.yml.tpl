@@ -193,6 +193,10 @@ kibanaserver:
   hash: "{{ .Values.users.kibanaserver.nohash }}"
   reserved: true
 
+kibanaserver2:
+  hash: "{{ .Values.users.kibanaserver2.nohash }}"
+  reserved: true
+
 maillog:
   hash: "{{ .Values.users.maillog.nohash }}"
   reserved: true
