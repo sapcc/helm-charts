@@ -5,7 +5,8 @@ _meta:
 
 config:
   dynamic:
-    opensearch_dashboards_server_user: {{ .Values.global.users.kibanaserver2.username_resolve }}
+    kibana:
+      server_username: {{ .Values.global.users.kibanaserver2.username_resolve }}
     http:
       anonymous_auth_enabled: false
       xff:
