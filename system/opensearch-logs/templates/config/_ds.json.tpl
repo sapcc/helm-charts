@@ -4,7 +4,7 @@
   ],
   "template": {
     "settings": {
-      "index.number_of_shards": "_DS_NUMBER_OF_PRIMARY_SHARDS_",
+      "index.number_of_shards": "4",
       "index.number_of_replicas": "1",
       "index.refresh_interval": "60s"
     },
