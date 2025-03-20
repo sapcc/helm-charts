@@ -11,3 +11,6 @@ password = {{ .Values.global.designate_service_password | include "resolve_secre
 {{ include "designate.db_url" . }}
 
 {{ include "ini_sections.audit_middleware_notifications" . }}
+
+# Tracing
+{{- include "osprofiler" . }}
