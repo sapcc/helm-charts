@@ -19,10 +19,6 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
   {{- include "utils.db_host" . }}
 {{- end }}
 
-{{- define "barbican.rabbitmq_service" }}
-  {{- .Release.Name }}-rabbitmq
-{{- end }}
-
 {{- define "barbican.service_dependencies" }}
-  {{- template "barbican.db_service" . }},{{ template "barbican.rabbitmq_service" . }}
+  {{- template "barbican.db_service" . }}
 {{- end }}
