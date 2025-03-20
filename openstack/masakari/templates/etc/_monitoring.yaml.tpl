@@ -25,10 +25,16 @@ openstack:
       project_name: service
       auth_url: {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}
     segments:
-      - name: prod
+      - name: prod-green
+        recovery_method: reserved_host
         match: |
           str::regex_matches(hypervisor("hypervisor_type"), "QEMU") &&
-          str::regex_matches(hypervisor("hypervisor_hostname"), "shoot--ccloud.*")
+          str::regex_matches(hypervisor("hypervisor_hostname"), "shoot--ccloud.*green.*")
+      - name: prod-blue
+        recovery_method: auto
+        match: |
+          str::regex_matches(hypervisor("hypervisor_type"), "QEMU") &&
+          str::regex_matches(hypervisor("hypervisor_hostname"), "shoot--ccloud.*blue.*")
       - name: dev
         match: |
           str::regex_matches(hypervisor("hypervisor_type"), "QEMU") &&
