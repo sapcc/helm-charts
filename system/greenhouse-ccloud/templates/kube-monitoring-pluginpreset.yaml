@@ -83,6 +83,12 @@ spec:
         sourceLabels:
         - __name__
         targetLabel: cluster
+  {{- if index $additionalSettings "thanos" }}
+    - name: kubeMonitoring.prometheus.prometheusSpec.thanos.objectStorageConfig.existingSecret.name
+      value: thanos-{{ $cluster }}-metrics-objectstore
+    - name: kubeMonitoring.prometheus.prometheusSpec.thanos.objectStorageConfig.existingSecret.key
+      value: thanos.yaml
+  {{- end }}
   {{- end }}
   {{- range $cluster, $additionalSettings := .Values.kubeMonitoring.obsClusters }}
   - clusterName: {{ $cluster }}
