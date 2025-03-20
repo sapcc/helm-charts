@@ -2,6 +2,34 @@
 
 This file is used to list changes made in each version of the common chart rabbitmq.
 
+## 0.17.1 - 2025/03/19
+
+- Set default `max_message_size` option to pre 4.0 default value of 256M
+  - This fixes a possible problem introduced in chart version 0.14.0 by a silent default change
+- Chart version bumped
+
+## 0.17.0 - 2025/03/19
+
+- Add [user-credential-updater](https://github.com/sapcc/rabbitmq-user-credential-updater) sidecar container
+- Use sidecar container for runtime password updates
+- Chart version bumped
+
+## 0.16.1 - 2025/03/18
+
+- RabbitMQ [4.0.7 Release Notes](https://github.com/rabbitmq/rabbitmq-server/releases/tag/v4.0.7)
+  * Classic queue message store did not remove segment files with large messages (over 4 MB) in some cases
+  * Reduced memory usage and GC pressure for workloads where large (4 MB or greater) messages were published to classic queues
+- chart version bumped
+
+## 0.16.0 - 2025/03/15
+
+- Creation of the `metrics` user with `monitoring` tag no longer coupled with enabling prometheus metrics
+
+Native Prometheus RabbitMQ metrics don't rely on any user
+
+To create `metrics` user, if needed, set `.Values.rabbitmq.monitoring.addMetricsUser: true`
+The username for `metrics` user is taken from `.Values.rabbitmq.metrics.user`, and the password from `.Values.rabbitmq.metrics.password`
+
 ## 0.15.0
 
 - Remove the following helm template helper functions:
@@ -49,6 +77,7 @@ The default is a `ClusterIssuer`, but it can be changed with the respective valu
 It is imporant there, that all names entered are accepted by the certificate-issuer.
 
 ## 0.12.1
+
 - `app` selector label returned, because deployment selector is immutable
 - chart version bumped
 

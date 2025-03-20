@@ -14,9 +14,20 @@ spec:
     rules:
     - alert: SecretsInjectorNetworkErrors
       annotations:
-        description: secrets-injector cannot reach vault. Check the logs in the {{ .Release.Namespace }} and the health of vault.
+        description: secrets-injector cannot reach vault. Check the logs in the {{ .Release.Namespace }} namespace and the health of vault.
         summary: secrets-injector has network errors.
       expr: rate(secrets_injector_network_error_count[5m]) > 0
+      for: 10m
+      labels:
+        context: secrets-injector
+        service: secrets-injector
+        severity: warning
+        support_group: containers
+    - alert: SecretsInjectorRotationErrors
+      annotations:
+        description: secrets-injector fails to rotate secrets. Check the logs in the {{ .Release.Namespace }} namespace and the health of vault.
+        summary: secrets-injector fails to check secrets for rotation.
+      expr: sum(changes(secrets_injector_rotated_secret_count{result="error"}[11m])) > 0
       for: 10m
       labels:
         context: secrets-injector
