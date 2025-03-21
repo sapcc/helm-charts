@@ -29,8 +29,8 @@ spec:
         checksum/configmap: {{ include "elektra/templates/support-config-map.yaml" . | sha256sum }}
         # ensure mail port is skipeed by linkerd. This is required to allow the mail server to be accessed
         config.linkerd.io/skip-outbound-ports: {{ .Values.monsoon_dashboard_mail_server_port | quote }}
-        # redeploy on secret "elektra-token" change so all the elektra pods gets the same token
-        secret.reloader.stakater.com/reload: elektra-token
+        # redeploy on secret "elektra-token" and "elektra-secrets" change so all the elektra pods gets the same secrets
+        secret.reloader.stakater.com/reload: "elektra-token,elektra-secrets"
     spec:
       affinity:
         podAntiAffinity:
@@ -52,6 +52,7 @@ spec:
       terminationGracePeriodSeconds: 60
       serviceAccountName: elektra
       initContainers:
+        {{- if not .Values.rails_token_auto_rotate }}
         - name: generate-token-secret
           image: "{{.Values.global.registry}}/shared-app-images/alpine-kubectl:3.21-latest"
           imagePullPolicy: "Always"
@@ -59,6 +60,7 @@ spec:
           - name: DEBUG
             value: {{ quote .Values.init_container_debug }}
           command: [ ash, -c, {{ .Files.Get "bin/init-generate-token-secret.sh" | quote }} ]      
+        {{- end }}
         - name: init-database
           image: {{.Values.global.registry}}/elektra:{{.Values.image.tag}}
           command: ['script/init-db.sh']

@@ -1,15 +1,16 @@
 CLUSTER_API_VERSION ?= v1.6.2
 PROVIDER_METAL3_VERSION ?= v1.6.0
-PROVIDER_METAL_VERSION ?= 62d325a558ce09c8d457fb76a13c1dca2bb3d565
+PROVIDER_METAL_VERSION ?= b14d75ae2ce02061eca074d462136f6f699c815c
 PROVIDER_VSPHERE_VERSION ?= v1.9.3
-PROVIDER_IPAM_VERSION ?= v0.1.0
+PROVIDER_IPAM_VERSION ?= v0.1.1
 PROVIDER_KUBERNIKUS_VERSION ?= 9fd81475b828971913b3b27addf51fdbd0511d85
 BAREMETAL_OPERATOR_VERSION ?= v0.6.0
-METAL_OPERATOR_VERSION ?= 932f2ee267e0953fa51382165b34adfd45dbbcf3
-BOOT_OPERATOR_VERSION ?= 4f2452ce450dc65342d68daf611edfb182585020
+METAL_OPERATOR_VERSION ?= d339e4ef08f0c3208a9d6c9b46c0a5a9b7266a6c
+BOOT_OPERATOR_VERSION ?= e719a1651befdf1b84904c4644a57597d7022186
 IPXE_OPERATOR_VERSION ?= 61c6898bfd7772008835bdcca8d8a64c1dfc3b32
 FEDHCP_VERSION ?= a59539c62aaa11a96c82fe792c87daaac4cb75bf
 IPAM_VERSION ?= 6faf501000c5d7ff9744a3c111ca5ecf3339c00c
+ARGORA_VERSION ?= b858464f01d4823c8b5fa9633893adf6b7b5d651
 
 SHELL := bash
 .ONESHELL:
@@ -73,7 +74,7 @@ build-ipam-capi-remote:
 	@cp kustomize/ipam-capi-remote-managedresources/globalinclusterippool.yaml ipam-capi-remote/managedresources
 	@yq -i '.controllerManager.manager.image.tag="$(PROVIDER_IPAM_VERSION)"' ipam-capi-remote/values.yaml
 	@yq -i '.fullnameOverride="ipam-capi"' ipam-capi-remote/values.yaml
-	@yq -i '.version="0.1.11"' ipam-capi-remote/Chart.yaml
+	@yq -i '.version="1.0.3"' ipam-capi-remote/Chart.yaml
 	@$(SED) -i 's/serviceAccountName.*$$/serviceAccountName: default/g' ipam-capi-remote/templates/deployment.yaml
 	@$(SED) -i 's/kind: Role/kind: ClusterRole/g' ipam-capi-remote/managedresources/kustomize.yaml
 
@@ -89,11 +90,11 @@ build-provider-metal3:
 	@yq -i '.version="0.1.2"' provider-metal3/Chart.yaml
 
 build-provider-metal:
-	$(call build-chart,provider-metal,https://github.com/ironcore-dev/cluster-api-provider-metal//config/default,$(PROVIDER_METAL_VERSION))
+	$(call build-chart,provider-metal,https://github.com/ironcore-dev/cluster-api-provider-ironcore-metal//config/default,$(PROVIDER_METAL_VERSION))
 	$(call fix-crds,provider-metal)
 	@yq -i '.controllerManager.manager.image.tag="$(PROVIDER_METAL_VERSION)"' provider-metal/values.yaml
 	@yq -i '.fullnameOverride="provider-metal"' provider-metal/values.yaml
-	@yq -i '.version="0.0.3"' provider-metal/Chart.yaml
+	@yq -i '.version="0.0.5"' provider-metal/Chart.yaml
 
 build-provider-kubernikus:
 	$(call build-chart,provider-kubernikus,https://github.com/sapcc/cluster-api-control-plane-provider-kubernikus//config/default,$(PROVIDER_KUBERNIKUS_VERSION))
@@ -128,7 +129,7 @@ build-metal-operator:
 	@find metal-operator-core/templates -type f -exec $(SED) -i -e 's#metal-webhook-service#metal-operator-webhook-service#g' {} \;
 	@yq -i '.controllerManager.manager.image.tag="$(METAL_OPERATOR_VERSION)"' metal-operator-core/values.yaml
 	@yq -i '.fullnameOverride="metal-operator"' metal-operator-core/values.yaml
-	@yq -i '.version="1.1.2"' metal-operator-core/Chart.yaml
+	@yq -i '.version="1.1.4"' metal-operator-core/Chart.yaml
 
 build-metal-operator-remote:
 	@rm -rf metal-operator-remote
@@ -148,7 +149,7 @@ build-metal-operator-remote:
 	@mkdir metal-operator-remote/ci
 	@echo 'global:' >> metal-operator-remote/ci/test-values.yaml
 	@echo '  region: ab-cd-1' >> metal-operator-remote/ci/test-values.yaml
-	@yq -i '.version="0.3.6"' metal-operator-remote/Chart.yaml
+	@yq -i '.version="0.3.10"' metal-operator-remote/Chart.yaml
 	@$(SED) -i 's/serviceAccountName.*$$/serviceAccountName: default/g' metal-operator-remote/templates/deployment.yaml
 	@$(SED) -i 's/kind: Role/kind: ClusterRole/g' metal-operator-remote/managedresources/kustomize.yaml
 
@@ -158,7 +159,7 @@ build-boot-operator:
 	@find boot-operator/templates -type f -exec $(SED) -i -e 's#{{ include "boot-operator.fullname" . }}-boot-operator#boot-operator#g' {} \;
 	@yq -i '.controllerManager.manager.image.tag="$(BOOT_OPERATOR_VERSION)"' boot-operator/values.yaml
 	@yq -i '.fullnameOverride="boot-operator"' boot-operator/values.yaml
-	@yq -i '.version="1.0.3"' boot-operator/Chart.yaml
+	@yq -i '.version="1.0.5"' boot-operator/Chart.yaml
 
 build-boot-operator-remote:
 	@rm -rf boot-operator-remote
@@ -170,7 +171,7 @@ build-boot-operator-remote:
 	@kubectl kustomize kustomize/boot-operator-managedresources > boot-operator-remote/managedresources/kustomize.yaml
 	@yq -i '.controllerManager.manager.image.tag="$(BOOT_OPERATOR_VERSION)"' boot-operator-remote/values.yaml
 	@yq -i '.fullnameOverride="boot-operator"' boot-operator-remote/values.yaml
-	@yq -i '.version="0.3.0"' boot-operator-remote/Chart.yaml
+	@yq -i '.version="0.3.1"' boot-operator-remote/Chart.yaml
 	@$(SED) -i 's/serviceAccountName.*$$/serviceAccountName: default/g' boot-operator-remote/templates/deployment.yaml
 	@$(SED) -i 's/kind: Role/kind: ClusterRole/g' boot-operator-remote/managedresources/kustomize.yaml
 
@@ -213,6 +214,33 @@ build-ipam-operator-remote:
 	@yq -i '.version="0.2.2"' ipam-operator-remote/Chart.yaml
 	@$(SED) -i 's/serviceAccountName.*$$/serviceAccountName: default/g' ipam-operator-remote/templates/deployment.yaml
 	@$(SED) -i 's/kind: Role/kind: ClusterRole/g' ipam-operator-remote/managedresources/kustomize.yaml
+
+build-argora-operator:
+	@cat kustomize/argora-operator/kustomization.yaml >> kustomization.yaml
+	$(call build-chart,argora-operator,https://github.com/sapcc/argora//config/default,$(ARGORA_VERSION))
+	@yq -i '.controllerManager.manager.image.tag="$(ARGORA_VERSION)"' argora-operator/values.yaml
+	@yq -i '.fullnameOverride="argora-operator"' argora-operator/values.yaml
+	@yq -i '.version="0.0.1"' argora-operator/Chart.yaml
+
+build-argora-operator-remote:
+	@rm -rf argora-operator-remote
+	@cat kustomize/argora-operator-remote/kustomization.yaml > kustomization.yaml
+	@kubectl kustomize | helmify -crd-dir argora-operator-remote
+	@cp kustomize/argora-operator-remote/remote-kubeconfig.yaml argora-operator-remote/templates
+	@cp kustomize/argora-operator-remote/managedresource.yaml argora-operator-remote/templates
+	@mkdir argora-operator-remote/managedresources
+	@kubectl kustomize kustomize/argora-operator-managedresources > argora-operator-remote/managedresources/kustomize.yaml
+	@cp kustomize/argora-operator-managedresources/updates.yaml argora-operator-remote/managedresources
+	@yq -i '.controllerManager.manager.image.tag="$(ARGORA_VERSION)"' argora-operator-remote/values.yaml
+	@yq -i '.fullnameOverride="argora-operator"' argora-operator-remote/values.yaml
+	@mkdir argora-operator-remote/ci
+	@echo 'config:' >> argora-operator-remote/ci/test-values.yaml
+	@echo '  configJson: {"serverController":"foo","ironCoreTypes":"bar","ironCoreRegion":"ab-cd-1","netboxURL":"https://foo.bar"}' >> argora-operator-remote/ci/test-values.yaml
+	@echo 'secret:' >> argora-operator-remote/ci/test-values.yaml
+	@echo '  credentialsJson: {"bmcUser":"foo","bmcPassword":"bar","netboxToken":"token"}' >> argora-operator-remote/ci/test-values.yaml
+	@yq -i '.version="0.0.4"' argora-operator-remote/Chart.yaml
+	@$(SED) -i 's/serviceAccountName.*$$/serviceAccountName: default/g' argora-operator-remote/templates/deployment.yaml
+	@$(SED) -i 's/kind: Role/kind: ClusterRole/g' argora-operator-remote/managedresources/kustomize.yaml
 
 # chart name, source url, tag
 define build-chart

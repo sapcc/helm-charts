@@ -1,0 +1,70 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: "install-security-config"
+  labels:
+    #app.kubernetes.io/managed-by: {{ .Release.Service | quote }}
+    #app.kubernetes.io/instance: {{ .Release.Name | quote }}
+    #app.kubernetes.io/version: {{ .Chart.AppVersion }}
+    helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    ccloud/service: hermes
+    ccloud/support-group: observability
+  annotations:
+    # This is what defines this resource as a hook. Without this line, the
+    # job is considered part of the release.
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-weight": "-6"
+spec:
+  template:
+    metadata:
+      name: "install-security-config"
+      labels:
+        #app.kubernetes.io/managed-by: {{ .Release.Service | quote }}
+        #app.kubernetes.io/instance: {{ .Release.Name | quote }}
+        helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: install-security-config
+        image: "{{ .Values.global.registry }}/opensearch-tools:20240815102459"
+        command: ["/bin/bash","/scripts/install-security-config.sh"]
+        volumeMounts:
+        - mountPath: /usr/share/opensearch/config/opensearch-security/action_groups.yml
+          name: security-config
+          subPath: action_groups.yml
+        - mountPath: /usr/share/opensearch/config/opensearch-security/config.yml
+          name: security-config
+          subPath: config.yml
+        - mountPath: /usr/share/opensearch/config/opensearch-security/internal_users.yml
+          name: security-config
+          subPath: internal_users.yml
+        - mountPath: /usr/share/opensearch/config/opensearch-security/roles.yml
+          name: security-config
+          subPath: roles.yml
+        - mountPath: /usr/share/opensearch/config/opensearch-security/roles_mapping.yml
+          name: security-config
+          subPath: roles_mapping.yml
+        - mountPath: /scripts/install-security-config.sh
+          name: security-config
+          subPath: install-security-config.sh
+        - mountPath: /usr/share/opensearch/config/opensearch-security/tenants.yml
+          name: security-config
+          subPath: tenants.yml
+        - mountPath: /usr/share/opensearch/config/certs/admin
+          name: admin-cert
+        - mountPath: /usr/share/opensearch/config/certs/tenant/ca.crt
+          name: ca-cert
+          subPath: ca.crt
+      volumes:
+      - name: admin-cert
+        secret:
+          defaultMode: 420
+          secretName: admin-cert
+      - name: ca-cert
+        secret:
+          defaultMode: 420
+          secretName: certs
+      - name: security-config
+        secret:
+          defaultMode: 420
+          secretName: security-config

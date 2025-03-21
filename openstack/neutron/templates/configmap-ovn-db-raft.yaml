@@ -1,12 +1,10 @@
-{{- if ((.Values).ovn).enabled | default false }}
+{{- if .Values.ovn.enabled }}
 ---
-{{/* XXX not sure if the next line is needed */}}
-{{- $hostNetworkNamespace := .Values.ovn.hostNetworkNamespace | default "ovn-host-network"}}
 # The network cidr and service cidr are set in the ovn-config configmap
 kind: ConfigMap
 apiVersion: v1
 metadata:
   name: ovn-config
 data:
-  k8s_apiserver: {{ .Values.ovn.k8sAPIServer }}
+  k8s_apiserver: {{ .Values.ovn.k8sAPIServer | required "Please set ovn.k8sAPIServer" }}
 {{- end }}

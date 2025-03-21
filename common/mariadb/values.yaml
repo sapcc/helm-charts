@@ -30,8 +30,6 @@ db_performance_schema_instrument: # Enabling performance schema instruments.
   enabled: false
 
 root_password: null
-initdb_secret: null
-custom_initdb_secret: null
 
 # if enabled create 'ccroot'@'127.0.0.1' with all privileges to allow passwordless local connections
 # if disabled, the user will be dropped from the DB if existing
@@ -56,10 +54,66 @@ users:
 #    grants:
 #    - ALL ON example.*
 
+job:
+  maintenance:
+    # -- Whether to enable the maintenance job
+    # @default -- false
+    enabled:
+    function:
+      # -- Whether to enable the analyze table function
+      # @default -- false
+      analyzeTable:
+        enabled:
+        # -- List of tables to analyze (database.table)
+        # @default -- []
+        # Example:
+        # - keystone.user
+        # - keystone.project
+        tables:
+        # -- Query all tables in all non system databases(information_schema, performance_schema, mysql, sys, innodb) and analyze them. This will skip the analyzeTable.tables option
+        # @default -- false
+        allTables:
+        # -- Whether to enable verbose logging
+        # @default -- false
+        verbose:
+    # -- [Schedule](https://kubernetes.io/docs/tasks/job/automated-tasks-with-cron-jobs/#schedule) for the maintenance job based on that [syntax](https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/#cron-schedule-syntax)
+    # @default -- [5 9 * * 2](https://crontab.guru/#5_9_*_*_2)
+    schedule:
+    # -- (int) Define how many seconds [after a missed schedule](https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/#job-creation) the job should still be scheduled or skipped
+    # @default -- 300
+    startingDeadlineSeconds:
+    # -- Define how the maintenance job pod [will be restarted](https://kubernetes.io/docs/concepts/workloads/controllers/job/#handling-pod-and-container-failures) in case of an error.
+    # It can be on the same worker node or another
+    # @default -- OnFailure
+    jobRestartPolicy:
+    # -- Define if and how maintenance jobs can run in [parallel](https://kubernetes.io/docs/tasks/job/automated-tasks-with-cron-jobs/#concurrency-policy)
+    # @default -- Forbid
+    concurrencyPolicy:
+    # -- Define how how many completed maintenance jobs [should be kept](https://kubernetes.io/docs/tasks/job/automated-tasks-with-cron-jobs/#jobs-history-limits)
+    # @default -- 1
+    successfulJobsHistoryLimit:
+    # -- Define how how many failed maintenance jobs [should be kept](https://kubernetes.io/docs/tasks/job/automated-tasks-with-cron-jobs/#jobs-history-limits)
+    # @default -- 1
+    failedJobsHistoryLimit:
+    # -- Define the priority class for the maintenance job pod
+    # @default -- common-payload
+    priority_class:
+    # -- Define the [timezone](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones) for the MariaDB maintenance job pod
+    # @default -- Etc/UTC
+    timeZone:
+    resources:
+      requests:
+        # -- Define how much memory the MariaDB ma job container will request
+        # @default -- 64Mi
+        memory:
+        # -- Define how much CPU the MariaDB maintenance job container will request
+        # @default -- 0.5
+        cpu:
+
 pre_change_hook:
-  image: "sapcc/unified-kubernetes-toolbox"
-  image_version: "20220613150453"
-  kubectl_version: "1.23"
+  image:
+    name: "shared-app-images/alpine-kubectl"
+    tag: "3.21-20250214202620"
 
 # name of priorityClass to influence scheduling priority
 priority_class: "critical-infrastructure"
@@ -112,9 +166,15 @@ use_alternate_registry: false
 
 readiness:
   image: pod-readiness
-  image_version: "20230623091358"
+  image_version: "20250225131500"
   # set to true if backup_v2 is not enabled, but readiness sidecar is required
   useSidecar: false
+
+credentialUpdater:
+  enabled: true
+  image: 'shared-app-images/alpine-mariadb'
+  imageTag: 'python3.13-alpine3.21-20250305175417'
+  checkInterval: '10'
 
 backup_v2:
   enabled: false
@@ -146,7 +206,7 @@ backup_v2:
 metrics:
   enabled: true
   image: prom/mysqld-exporter
-  image_version: v0.16.0
+  image_version: v0.17.1
   port: "9104"
   flags:
     - collect.binlog_size

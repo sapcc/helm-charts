@@ -1,7 +1,74 @@
 # Changelog
 
-## v0.15.6 - 2025/02/17
-* make backup storage to AWS flexibel via enablement in `backup-v2` configuration
+## v0.18.0 - 2025/03/07
+* add credential-updater sidecar, that reapplies init.sql on the detected change
+* make init.sql not optional
+* remove pre-change job, because it's no longer needed with the above sidecar
+* add missing owner labels to initdb secret
+
+## v0.17.3 - 2025/03/06
+* start database with init.sql to always update root password on start
+
+## v0.17.2 - 2025/03/05
+* use `shared-app-images/alpine-kubectl` image for pre-change job instead of outdated `unified-kubernetes-toolbox`, that is supposed to be used in CI
+
+## v0.17.1 - 2025/03/04
+* use local unix_socket connection for all status checks and mysqld_upgrade
+  * this would allow to change root password without intermittent liveness check failure
+  * this would allow to use `'` and `\` in root password in mysqld_upgrade
+* use monitor user with limited privileges for metrics sidecar
+
+## v0.17.0 - 2025/02/27
+* use custom entrypoint script for mariadb deployment
+  * remove non-optional and `healthcheck` user creation
+
+## v0.16.10 - 2025/02/27
+* verbose logging option for the analyzetables job added
+* chart version bumped
+
+## v0.16.9 - 2025/02/26
+* maintenance job configmap condition fixed
+* chart version bumped
+
+## v0.16.8 - 2025/02/25
+* maintenance job configmap name fixed
+* chart version bumped
+
+## v0.16.7 - 2025/02/25
+* `pod-readiness` updated to `20250225131500`
+
+## v0.16.6 - 2025/02/24
+* mysqld_exporter updated to [0.17.1](https://github.com/prometheus/mysqld_exporter/releases/tag/v0.17.1)
+* chart version bumped
+
+## v0.16.5 - 2025/02/21
+* add `lost+found` to `ignore_db_dirs` list
+* chart version bumped
+
+## v0.16.4 - 2025/02/21
+* fix maria-back-me-up alert rules
+
+## v0.16.3 - 2025/02/19
+* fix names of the maintenance cronjob resources
+  * make cm names unique
+* chart version bumped
+
+## v0.16.2 - 2025/02/14
+- maintenance job added
+  - currently the [analyze table](https://mariadb.com/kb/en/analyze-table/) task is supported
+  - the[README.md](README.md#analyzetable) is updated with the new maintenance job details
+- chart version bumped
+
+## v0.16.1 - 2025/02/18
+* enquote password in /root/.my.cnf
+  * this would allow to use `=` and `#` symbols in password
+* chart version bumped
+
+## v0.16.0 - 2025/02/17
+* remove user and password from readiness and liveness probes
+  * `/root/.my.cnf` is used instead
+  * this helps avoiding problems with shell escaping and showing passwords in the processlist of the k8s nodes
+* chart version bumped
 
 ## v0.15.5 - 2025/02/14
 * `maria-back-me-up` (backup-v2) oauth secret moved to a separate `Secret`

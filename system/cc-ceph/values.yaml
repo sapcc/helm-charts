@@ -135,9 +135,7 @@ objectstore:
   keystone:
     enabled: true
     global_config: true
-    auth_order:
-      - local
-      - external
+    auth_order: []
     url: http://keystone.local:8083
     verify_ssl: true
     implicit_tenants: true
@@ -209,6 +207,16 @@ objectstore:
       disks: "*"
       nodeSelector:
         kubernetes.metal.cloud.sap/role: ceph-osd
+    rgwSidecarWebhook:
+      enabled: false
+      repository:
+        image: "keppel.eu-de-1.cloud.sap/ccloud/prysm-wh"
+        tag: "20250221130000"
+        pullPolicy: "Always"
+      replicas: 1
+      servicePort: 443
+      containerPort: 8443
+      certSecretName: "prysm-webhook-cert"
 
   prysmDiskHealth:
     repository:
@@ -236,3 +244,10 @@ dnsNamesSkipRecordWildcard: []
 dnsNamesSkipCertificate: []
 # a list of dnsNames to skip certificate creation for RGW instances with wildcard
 dnsNamesSkipCertificateWildcard: []
+
+# a deloyment reloader that restarts deployments on secrets/configmaps changes
+reloader:
+  enabled: true
+  image:
+    name: keppel.global.cloud.sap/ccloud-ghcr-io-mirror/stakater/reloader
+    tag: v1.3.0

@@ -15,11 +15,9 @@
 - name:  KEPPEL_API_ANYCAST_FQDN
   value: '{{$.Values.keppel.anycast_domain_name}}'
 {{- end }}
-{{- if (index $.Values.keppel "anycast_issuer_key.pem") }}
+{{- if .Values.keppel.peer_group }}
 - name:  KEPPEL_ANYCAST_ISSUER_KEY
   value: '/etc/keppel-keys/anycast-issuer-key.pem'
-{{- end }}
-{{- if (index .Values.keppel "anycast_previous_issuer_key.pem") }}
 - name:  KEPPEL_ANYCAST_PREVIOUS_ISSUER_KEY
   value: '/etc/keppel-keys/anycast-previous-issuer-key.pem'
 {{- end }}
@@ -44,11 +42,11 @@
 - name:  KEPPEL_BURST_ANYCAST_BLOB_PULL_BYTES
   value: '4718592000' # 4500 MiB per account (see below, near the corresponding ratelimit, for rationale)
 - name:  KEPPEL_BURST_BLOB_PULLS # burst budgets for regular pull/push are all ~30% of the rate limit per minute
-  value: '300' # per account
+  value: '360' # per account
 - name:  KEPPEL_BURST_BLOB_PUSHES
   value: '30'  # per account
 - name:  KEPPEL_BURST_MANIFEST_PULLS
-  value: '300'  # per account
+  value: '360'  # per account
 - name:  KEPPEL_BURST_MANIFEST_PUSHES
   value: '15'   # per account
 - name:  KEPPEL_BURST_TRIVY_REPORT_RETRIEVALS
@@ -130,10 +128,8 @@
   value: 'keppel_inbound_cache'
 - name:  KEPPEL_ISSUER_KEY
   value: '/etc/keppel-keys/issuer-key.pem'
-{{- if (index .Values.keppel "previous_issuer_key.pem") }}
 - name:  KEPPEL_PREVIOUS_ISSUER_KEY
   value: '/etc/keppel-keys/previous-issuer-key.pem'
-{{- end }}
 - name:  KEPPEL_JANITOR_LISTEN_ADDRESS
   value: ':80'
 - name:  KEPPEL_OSLO_POLICY_PATH
@@ -145,11 +141,11 @@
                        # the burst budget is very large to enable anycast pulling of large images; the
                        # actual burst budget is 4500 MiB, which is 15 minutes worth of rate limit)
 - name:  KEPPEL_RATELIMIT_BLOB_PULLS
-  value: '1000r/m' # per account
+  value: '1200r/m' # per account
 - name:  KEPPEL_RATELIMIT_BLOB_PUSHES
   value: '100r/m'  # per account
 - name:  KEPPEL_RATELIMIT_MANIFEST_PULLS
-  value: '1000r/m'  # per account (used to be smaller than rate limit for blob pulls, but we pulled
+  value: '1200r/m'  # per account (used to be smaller than rate limit for blob pulls, but we pulled
                     # it up to account for clients that just poll the state of certain tags without
                     # actually pulling the image contents)
 - name:  KEPPEL_RATELIMIT_MANIFEST_PUSHES
@@ -167,8 +163,8 @@
 - name: KEPPEL_REDIS_PASSWORD
   valueFrom:
     secretKeyRef:
-      name: keppel-secret
-      key: redis_password
+      name: keppel-redis-user-default
+      key: password
 {{- if .Values.keppel.trivy.hostname }}
 - name: KEPPEL_TRIVY_ADDITIONAL_PULLABLE_REPOS
   value: "ccloud-ghcr-io-mirror/aquasecurity/trivy-db,ccloud-ghcr-io-mirror/aquasecurity/trivy-java-db"

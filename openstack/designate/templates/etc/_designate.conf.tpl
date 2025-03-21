@@ -553,6 +553,3 @@ disable_by_file_path = /etc/designate/healthcheck_disable
 #   name = '%s.%s' % (func.__module__, func.__name__)
 
 # [hook_point:designate.api.v2.controllers.zones.get_one]
-
-# Tracing
-{{- include "osprofiler" . }}

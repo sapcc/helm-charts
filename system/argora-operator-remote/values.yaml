@@ -1,0 +1,38 @@
+config:
+  configJson: '{{ toJson .Values.config }}'
+controllerManager:
+  manager:
+    args:
+      - --health-probe-bind-address=:30081
+      - --metrics-bind-address=127.0.0.1:30082
+    containerSecurityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+          - ALL
+    env:
+      enableWebhooks: "false"
+      kubernetesServiceHost: apiserver-url
+    image:
+      repository: controller
+      tag: b858464f01d4823c8b5fa9633893adf6b7b5d651
+    resources:
+      limits:
+        cpu: 500m
+        memory: 128Mi
+      requests:
+        cpu: 10m
+        memory: 64Mi
+  podSecurityContext:
+    runAsNonRoot: true
+    seccompProfile:
+      type: RuntimeDefault
+  replicas: 1
+  serviceAccount:
+    annotations: {}
+  strategy:
+    type: Recreate
+kubernetesClusterDomain: cluster.local
+secret:
+  credentialsJson: ""
+fullnameOverride: argora-operator

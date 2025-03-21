@@ -1,0 +1,13 @@
+{{- if and .Values.objectstore.prysm.rgwSidecarWebhook ( .Values.objectstore.prysm.rgwSidecarWebhook.enabled ) }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: prysm-webhook-service
+  namespace: {{ .Release.Namespace }}
+spec:
+  ports:
+    - port: {{ .Values.objectstore.prysm.rgwSidecarWebhook.servicePort }}
+      targetPort: {{ .Values.objectstore.prysm.rgwSidecarWebhook.containerPort }}
+  selector:
+    app: prysm-webhook-service
+{{- end }}

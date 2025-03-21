@@ -2,12 +2,6 @@
 log_config_append = /etc/ironic/logging.ini
 {{- include "ini_sections.logging_format" . }}
 
-{{- if contains "xena" .Values.imageVersion }}
-pybasedir = /var/lib/openstack/lib/python3.8/site-packages/ironic
-{{- else }}
-pybasedir = /var/lib/openstack/lib/python3.6/site-packages/ironic
-{{- end }}
-
 network_provider = neutron_plugin
 enabled_network_interfaces = noop,flat,neutron
 default_network_interface = neutron
@@ -16,7 +10,7 @@ notification_level = {{ .Values.notification_level }}
 versioned_notifications_topics = {{ .Values.versioned_notifications_topics  | default "ironic_versioned_notifications" | quote }}
 {{- end }}
 
-{{- include "ini_sections.default_transport_url" . }}
+
 
 rpc_response_timeout = {{ .Values.rpc_response_timeout | default .Values.global.rpc_response_timeout | default 100 }}
 executor_thread_pool_size = {{ .Values.rpc_workers | default .Values.global.rpc_workers | default 64 }}

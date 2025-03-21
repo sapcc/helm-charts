@@ -1,16 +1,15 @@
 [DEFAULT]
-sql_connection = {{ include "db_url_mysql" . }}
 
 {{ include "ini_sections.default_transport_url" . }}
 
+[database]
+connection = {{ include "utils.db_url" . }}
 
 [keystone_authtoken]
 username = {{ .Release.Name }}
 password = {{ required ".Values.global.barbican_service_password is missing" .Values.global.barbican_service_password | include "resolve_secret" }}
 
-
 {{ include "ini_sections.audit_middleware_notifications" . }}
-
 
 {{- if .Values.hsm.multistore.enabled }}
 [p11_crypto_plugin]

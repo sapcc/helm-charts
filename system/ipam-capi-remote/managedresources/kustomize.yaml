@@ -2,7 +2,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.17.0
+    controller-gen.kubebuilder.io/version: v0.17.2
   name: clusters.cluster.x-k8s.io
 spec:
   group: cluster.x-k8s.io
@@ -46,7 +46,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: ClusterSpec defines the desired state of Cluster.
+            description: spec is the desired state of Cluster.
             properties:
               clusterNetwork:
                 description: clusterNetwork is the cluster network configuration.
@@ -196,7 +196,7 @@ spec:
                 type: boolean
             type: object
           status:
-            description: ClusterStatus defines the observed state of Cluster.
+            description: status is the observed state of Cluster.
             properties:
               conditions:
                 description: conditions defines current service state of the cluster.
@@ -336,7 +336,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: ClusterSpec defines the desired state of Cluster.
+            description: spec is the desired state of Cluster.
             properties:
               clusterNetwork:
                 description: clusterNetwork is the cluster network configuration.
@@ -613,7 +613,7 @@ spec:
                 type: object
             type: object
           status:
-            description: ClusterStatus defines the observed state of Cluster.
+            description: status is the observed state of Cluster.
             properties:
               conditions:
                 description: conditions defines current service state of the cluster.
@@ -754,11 +754,14 @@ spec:
           metadata:
             type: object
           spec:
-            description: ClusterSpec defines the desired state of Cluster.
+            description: spec is the desired state of Cluster.
             properties:
               availabilityGates:
                 description: |-
                   availabilityGates specifies additional conditions to include when evaluating Cluster Available condition.
+
+                  If this field is not defined and the Cluster implements a managed topology, availabilityGates
+                  from the corresponding ClusterClass will be used, if any.
 
                   NOTE: this field is considered only for computing v1beta2 conditions.
                 items:
@@ -1128,6 +1131,39 @@ spec:
                           nodeVolumeDetachTimeout is the total amount of time that the controller will spend on waiting for all volumes
                           to be detached. The default value is 0, meaning that the volumes can be detached without any time limitations.
                         type: string
+                      readinessGates:
+                        description: |-
+                          readinessGates specifies additional conditions to include when evaluating Machine Ready condition.
+
+                          This field can be used e.g. to instruct the machine controller to include in the computation for Machine's ready
+                          computation a condition, managed by an external controllers, reporting the status of special software/hardware installed on the Machine.
+
+                          If this field is not defined, readinessGates from the corresponding ControlPlaneClass will be used, if any.
+
+                          NOTE: This field is considered only for computing v1beta2 conditions.
+                          NOTE: Specific control plane provider implementations might automatically extend the list of readinessGates;
+                          e.g. the kubeadm control provider adds ReadinessGates for the APIServerPodHealthy, SchedulerPodHealthy conditions, etc.
+                        items:
+                          description: MachineReadinessGate contains the type of a
+                            Machine condition to be used as a readiness gate.
+                          properties:
+                            conditionType:
+                              description: |-
+                                conditionType refers to a positive polarity condition (status true means good) with matching type in the Machine's condition list.
+                                If the conditions doesn't exist, it will be treated as unknown.
+                                Note: Both Cluster API conditions or conditions added by 3rd party controllers can be used as readiness gates.
+                              maxLength: 316
+                              minLength: 1
+                              pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
+                              type: string
+                          required:
+                          - conditionType
+                          type: object
+                        maxItems: 32
+                        type: array
+                        x-kubernetes-list-map-keys:
+                        - conditionType
+                        x-kubernetes-list-type: map
                       replicas:
                         description: |-
                           replicas is the number of control plane nodes.
@@ -1439,6 +1475,38 @@ spec:
                                 nodeVolumeDetachTimeout is the total amount of time that the controller will spend on waiting for all volumes
                                 to be detached. The default value is 0, meaning that the volumes can be detached without any time limitations.
                               type: string
+                            readinessGates:
+                              description: |-
+                                readinessGates specifies additional conditions to include when evaluating Machine Ready condition.
+
+                                This field can be used e.g. to instruct the machine controller to include in the computation for Machine's ready
+                                computation a condition, managed by an external controllers, reporting the status of special software/hardware installed on the Machine.
+
+                                If this field is not defined, readinessGates from the corresponding MachineDeploymentClass will be used, if any.
+
+                                NOTE: This field is considered only for computing v1beta2 conditions.
+                              items:
+                                description: MachineReadinessGate contains the type
+                                  of a Machine condition to be used as a readiness
+                                  gate.
+                                properties:
+                                  conditionType:
+                                    description: |-
+                                      conditionType refers to a positive polarity condition (status true means good) with matching type in the Machine's condition list.
+                                      If the conditions doesn't exist, it will be treated as unknown.
+                                      Note: Both Cluster API conditions or conditions added by 3rd party controllers can be used as readiness gates.
+                                    maxLength: 316
+                                    minLength: 1
+                                    pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
+                                    type: string
+                                required:
+                                - conditionType
+                                type: object
+                              maxItems: 32
+                              type: array
+                              x-kubernetes-list-map-keys:
+                              - conditionType
+                              x-kubernetes-list-type: map
                             replicas:
                               description: |-
                                 replicas is the number of worker nodes belonging to this set.
@@ -1728,7 +1796,7 @@ spec:
                 type: object
             type: object
           status:
-            description: ClusterStatus defines the observed state of Cluster.
+            description: status is the observed state of Cluster.
             properties:
               conditions:
                 description: conditions defines current service state of the cluster.
@@ -1982,7 +2050,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.15.0
+    controller-gen.kubebuilder.io/version: v0.17.2
   labels:
     clusterctl.cluster.x-k8s.io/move-hierarchy: ""
   name: globalinclusterippools.ipam.cluster.x-k8s.io
@@ -2259,7 +2327,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.15.0
+    controller-gen.kubebuilder.io/version: v0.17.2
   labels:
     clusterctl.cluster.x-k8s.io/move-hierarchy: ""
   name: inclusterippools.ipam.cluster.x-k8s.io
@@ -2534,7 +2602,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.17.0
+    controller-gen.kubebuilder.io/version: v0.17.2
   name: ipaddressclaims.ipam.cluster.x-k8s.io
 spec:
   group: ipam.cluster.x-k8s.io
@@ -2583,7 +2651,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: IPAddressClaimSpec is the desired state of an IPAddressClaim.
+            description: spec is the desired state of IPAddressClaim.
             properties:
               poolRef:
                 description: poolRef is a reference to the pool from which an IP address
@@ -2610,7 +2678,7 @@ spec:
             - poolRef
             type: object
           status:
-            description: IPAddressClaimStatus is the observed status of a IPAddressClaim.
+            description: status is the observed state of IPAddressClaim.
             properties:
               addressRef:
                 description: addressRef is a reference to the address that was created
@@ -2714,7 +2782,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: IPAddressClaimSpec is the desired state of an IPAddressClaim.
+            description: spec is the desired state of IPAddressClaim.
             properties:
               clusterName:
                 description: clusterName is the name of the Cluster this object belongs
@@ -2745,7 +2813,7 @@ spec:
             - poolRef
             type: object
           status:
-            description: IPAddressClaimStatus is the observed status of a IPAddressClaim.
+            description: status is the observed state of IPAddressClaim.
             properties:
               addressRef:
                 description: addressRef is a reference to the address that was created
@@ -2818,7 +2886,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.17.0
+    controller-gen.kubebuilder.io/version: v0.17.2
   name: ipaddresses.ipam.cluster.x-k8s.io
 spec:
   group: ipam.cluster.x-k8s.io
@@ -2871,7 +2939,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: IPAddressSpec is the desired state of an IPAddress.
+            description: spec is the desired state of IPAddress.
             properties:
               address:
                 description: address is the IP address.
@@ -2969,7 +3037,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: IPAddressSpec is the desired state of an IPAddress.
+            description: spec is the desired state of IPAddress.
             properties:
               address:
                 description: address is the IP address.
@@ -3089,6 +3157,8 @@ rules:
   - ipam.cluster.x-k8s.io
   resources:
   - globalinclusterippools
+  - inclusterippools
+  - ipaddresses
   verbs:
   - create
   - delete
@@ -3101,55 +3171,7 @@ rules:
   - ipam.cluster.x-k8s.io
   resources:
   - globalinclusterippools/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - ipam.cluster.x-k8s.io
-  resources:
-  - globalinclusterippools/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - ipam.cluster.x-k8s.io
-  resources:
-  - inclusterippools
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - ipam.cluster.x-k8s.io
-  resources:
   - inclusterippools/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - ipam.cluster.x-k8s.io
-  resources:
-  - inclusterippools/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - ipam.cluster.x-k8s.io
-  resources:
-  - ipaddressclaims
-  verbs:
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - ipam.cluster.x-k8s.io
-  resources:
   - ipaddressclaims/finalizers
   - ipaddresses/finalizers
   verbs:
@@ -3157,6 +3179,8 @@ rules:
 - apiGroups:
   - ipam.cluster.x-k8s.io
   resources:
+  - globalinclusterippools/status
+  - inclusterippools/status
   - ipaddressclaims/status
   - ipaddresses/status
   verbs:
@@ -3166,10 +3190,8 @@ rules:
 - apiGroups:
   - ipam.cluster.x-k8s.io
   resources:
-  - ipaddresses
+  - ipaddressclaims
   verbs:
-  - create
-  - delete
   - get
   - list
   - patch

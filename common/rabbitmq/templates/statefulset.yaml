@@ -23,7 +23,9 @@ spec:
         config.linkerd.io/opaque-ports: "{{ default 5672 .Values.ports.public }}"
 {{- end }}
         checksum/container.init: {{ include (print $.Template.BasePath "/bin-configmap.yaml") . | sha256sum }}
+{{- if not .Values.credentialUpdater.enabled }}
         checksum/users: {{ include (print $.Template.BasePath "/users-secret.yaml") . | sha256sum }}
+{{- end }}
 {{- if .Values.customConfig }}
         checksum/custom.conf: {{ include (print .Template.BasePath "/etc/_rabbitmq-custom-config.tpl") . | sha256sum }}
 {{- end }}
@@ -45,8 +47,8 @@ spec:
         runAsUser: 999
         runAsGroup: 999
         fsGroup: 999
-      {{- if .Values.persistence.enabled }}
       initContainers:
+      {{- if .Values.persistence.enabled }}
       - name: volume-permissions
         image: "{{include "dockerHubMirror" .}}/library/busybox"
         imagePullPolicy: {{ default "IfNotPresent" .Values.imagePullPolicy | quote }}
@@ -58,6 +60,17 @@ spec:
         securityContext:
           runAsUser: 0
         volumeMounts:
+          - mountPath: /var/lib/rabbitmq
+            name: rabbitmq-persistent-storage
+      {{- end }}
+      {{- if and (.Values.global.rabbitmq.native_sidecar.enabled) (.Values.credentialUpdater.enabled) }}
+      - name: user-credential-updater
+        image: "{{ include "dockerRegistry" . }}/{{ .Values.credentialUpdater.image }}:{{.Values.credentialUpdater.imageTag }}"
+        imagePullPolicy: {{ default "IfNotPresent" .Values.imagePullPolicy | quote }}
+        restartPolicy: Always
+        volumeMounts:
+          - mountPath: /etc/rabbitmq/secrets
+            name: rabbitmq-users-config
           - mountPath: /var/lib/rabbitmq
             name: rabbitmq-persistent-storage
       {{- end }}
@@ -128,6 +141,16 @@ spec:
           - mountPath: /etc/rabbitmq/ssl
             name: ssl
         {{- end }}
+      {{- if and (not .Values.global.rabbitmq.native_sidecar.enabled) (.Values.credentialUpdater.enabled) }}
+      - name: user-credential-updater
+        image: "{{ include "dockerRegistry" . }}/{{ .Values.credentialUpdater.image }}:{{.Values.credentialUpdater.imageTag }}"
+        imagePullPolicy: {{ default "IfNotPresent" .Values.imagePullPolicy | quote }}
+        volumeMounts:
+          - mountPath: /etc/rabbitmq/secrets
+            name: rabbitmq-users-config
+          - mountPath: /var/lib/rabbitmq
+            name: rabbitmq-persistent-storage
+      {{- end }}
       priorityClassName: {{ .Values.priority_class | default "critical-infrastructure" | quote }}
       volumes:
       {{- if not .Values.persistence.enabled }}

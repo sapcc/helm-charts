@@ -5,13 +5,18 @@ metadata:
   namespace: {{ .Release.Namespace }}
   labels:
     app: secrets-injector
+  annotations:
+    secret.reloader.stakater.com/reload: secrets-injector 
 spec:
   selector:
     matchLabels:
       app: secrets-injector
   replicas: {{ .Values.replicaCount }}
   strategy:
-    type: Recreate
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
   template:
     metadata:
       labels:

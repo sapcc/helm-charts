@@ -1,0 +1,17 @@
+{{- if .Values.tailcontrol.backup.enabled }}
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: litestream-config
+data:
+  litestream.yml: |-
+    access-key-id: $AWS_ACCESS_KEY_ID
+    secret-access-key: $AWS_SECRET_ACCESS_KEY
+    dbs:
+      - path: /tailscale/config/tailcontrol.sqlite.db
+        replicas:
+          - url: s3://{{ .Values.aws.bucketName }}/tailcontrol.sqlite.db
+            retention: 336h
+            snapshot-interval: 1h
+            region: eu-central-1
+{{- end }}

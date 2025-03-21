@@ -1,0 +1,16 @@
+groups:
+- name: tailscale-backup.alerts
+  rules:
+    - alert: TailcontrolStateDbAwsBackupTooOld
+      expr: (time() - s3_last_modified_object_date{job="tailscale-s3-exporter"}) / 3600 > 1
+      for: 5m
+      labels:
+        tier: k8s
+        service: tailscale
+        severity: warning
+        context: tailscale
+        support_group: containers
+        playbook: "docs/support/playbook/kubernetes/k3s_alerts.html"
+      annotations:
+        description: The modification date of the most recently modified object on S3 bucket `{{ $labels.bucket }}` is more than 1 hour. No recent Tailcontrol DB backup available!
+        summary: Tailscale backup (Litestream) is too old.

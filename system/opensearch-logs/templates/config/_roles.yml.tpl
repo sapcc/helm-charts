@@ -41,6 +41,15 @@ data:
     - "indices:data/write/bulk*"
     - "indices:data/write/index"
   - index_patterns:
+    - "logs-swift-datastream"
+    allowed_actions:
+    - "indices:admin/template/get"
+    - "indices:admin/template/put"
+    - "indices:admin/mapping/put"
+    - "indices:admin/create"
+    - "indices:data/write/bulk*"
+    - "indices:data/write/index"
+  - index_patterns:
     - "systemd-*"
     allowed_actions:
     - "indices:admin/template/get"
@@ -139,6 +148,24 @@ data:
     - "indices:admin/create"
     - "indices:data/write/bulk*"
     - "indices:data/write/index"
+  - index_patterns:
+    - "alerts-*"
+    allowed_actions:
+    - "indices:admin/template/get"
+    - "indices:admin/template/put"
+    - "indices:admin/mapping/put"
+    - "indices:admin/create"
+    - "indices:data/write/bulk*"
+    - "indices:data/write/index"
+  - index_patterns:
+    - "deployments-*"
+    allowed_actions:
+    - "indices:admin/template/get"
+    - "indices:admin/template/put"
+    - "indices:admin/mapping/put"
+    - "indices:admin/create"
+    - "indices:data/write/bulk*"
+    - "indices:data/write/index"
 
 syslog:
   reserved: false
@@ -160,24 +187,7 @@ syslog:
     - "indices:admin/create"
     - "indices:data/write/bulk*"
     - "indices:data/write/index"
-  - index_patterns:
-    - "alerts-*"
-    allowed_actions:
-    - "indices:admin/template/get"
-    - "indices:admin/template/put"
-    - "indices:admin/mapping/put"
-    - "indices:admin/create"
-    - "indices:data/write/bulk*"
-    - "indices:data/write/index"
-  - index_patterns:
-    - "deployments-*"
-    allowed_actions:
-    - "indices:admin/template/get"
-    - "indices:admin/template/put"
-    - "indices:admin/mapping/put"
-    - "indices:admin/create"
-    - "indices:data/write/bulk*"
-    - "indices:data/write/index"
+
 jump:
   reserved: false
   cluster_permissions:
@@ -407,11 +417,14 @@ complex-role:
   - "read"
   - "cluster:monitor/nodes/stats"
   - "cluster:monitor/task/get"
-  # add permissions matching 'reports_read_access' role
+  - 'cluster:admin/opendistro/reports/definition/create'
+  - 'cluster:admin/opendistro/reports/definition/update'
+  - 'cluster:admin/opendistro/reports/definition/on_demand'
+  - 'cluster:admin/opendistro/reports/definition/delete'
   - 'cluster:admin/opendistro/reports/definition/get'
   - 'cluster:admin/opendistro/reports/definition/list'
-  - 'cluster:admin/opendistro/reports/instance/get'
   - 'cluster:admin/opendistro/reports/instance/list'
+  - 'cluster:admin/opendistro/reports/instance/get'
   - 'cluster:admin/opendistro/reports/menu/download'
   index_permissions:
   - index_patterns:

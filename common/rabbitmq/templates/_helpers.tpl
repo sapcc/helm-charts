@@ -15,29 +15,6 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
 {{- printf "%s-%s" $.Release.Name $name | trunc 63 | replace "_" "-" | trimSuffix "-" -}}
 {{- end -}}
 
-{{- define "rabbitmq.resolve_secret_urlquery" -}}
-    {{- $str := . -}}
-    {{- if (hasPrefix "vault+kvv2" $str ) -}}
-        {{"{{"}} resolve "{{ $str }}" | urlquery {{"}}"}}
-    {{- else -}}
-        {{ $str | urlquery }}
-    {{- end -}}
-{{- end -}}
-
-{{define "rabbitmq.release_host"}}{{.Release.Name}}-rabbitmq{{end}}
-
-{{- define "rabbitmq.transport_url" -}}{{ tuple . .Values.rabbitmq | include "rabbitmq._transport_url" }}{{- end}}
-
-{{- define "rabbitmq._transport_url" -}}
-{{- $envAll := index . 0 -}}
-{{- $rabbitmq := index . 1 -}}
-{{- $_prefix := default "" $envAll.Values.global.user_suffix -}}
-{{- $_username := include "rabbitmq.resolve_secret_urlquery" (required "$rabbitmq.users.default.user missing" $rabbitmq.users.default.user) -}}
-{{- $_password := include "rabbitmq.resolve_secret_urlquery" (required "$rabbitmq.users.default.password missing" $rabbitmq.users.default.password) -}}
-{{- $_rhost := include "rabbitmq.release_host" $envAll -}}
-rabbit://{{- $_prefix -}}{{- $_username -}}:{{- $_password -}}@{{- $_rhost -}}:{{ $rabbitmq.port | default 5672 }}{{ $rabbitmq.virtual_host | default "/" }}
-{{- end}}
-
 {{- define "rabbitmq._validate_users" -}}
     {{- $users := . -}}
     {{- range $path, $v := $users }}
@@ -67,6 +44,14 @@ rabbit://{{- $_prefix -}}{{- $_username -}}:{{- $_password -}}@{{- $_rhost -}}:{
 {{- .Values.global.dockerHubMirrorAlternateRegion -}}
 {{- else -}}
 {{- .Values.global.dockerHubMirror -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "dockerRegistry" -}}
+{{- if .Values.use_alternate_registry -}}
+{{- .Values.global.registryAlternateRegion -}}
+{{- else -}}
+{{- .Values.global.registry -}}
 {{- end -}}
 {{- end -}}
 

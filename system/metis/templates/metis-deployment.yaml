@@ -28,6 +28,7 @@ spec:
         checksum/config: {{ include ( print $.Template.BasePath "/metis-etc-configmap.yaml" ) . | sha256sum }}
         checksum/secret: {{ include ( print $.Template.BasePath "/metis-secrets.yaml" ) . | sha256sum }}
         kubectl.kubernetes.io/default-container: "metis"
+        secret.reloader.stakater.com/reload: "metis-secrets"
       {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
         linkerd.io/inject: enabled
       {{- end }}
@@ -50,11 +51,21 @@ spec:
               secretKeyRef:
                 name: metis-secrets
                 key: billingToken
+          - name: DB_USER
+            valueFrom:
+              secretKeyRef:
+                name: metis-secrets
+                key: metisAdminUser
           - name: DB_PASSWD
             valueFrom:
               secretKeyRef:
                 name: metis-secrets
                 key: metisAdminPW
+          - name: DB_RONLY_USER
+            valueFrom:
+              secretKeyRef:
+                name: metis-secrets
+                key: metisRonlyUser
           - name: DB_RONLY_PASSWD
             valueFrom:
               secretKeyRef:

@@ -48,7 +48,7 @@ default_pool_tls_versions = {{ .Values.tls.versions.default.pools | join ", " }}
 backends = octavia_db_check
 
 [controller_worker]
-worker = {{ .Values.worker | default 1 }}
+workers = {{ .Values.worker | default 1 }}
 amphora_driver = {{ .Values.amphora_driver  | default "amphora_noop_driver" }}
 compute_driver = {{ .Values.compute_driver  | default "compute_noop_driver" }}
 network_driver = {{ .Values.network_driver  | default "network_noop_driver" }}

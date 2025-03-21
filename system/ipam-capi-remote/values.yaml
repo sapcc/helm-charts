@@ -1,5 +1,7 @@
 controllerManager:
   manager:
+    args:
+      - --leader-elect
     containerSecurityContext:
       allowPrivilegeEscalation: false
       capabilities:
@@ -8,11 +10,10 @@ controllerManager:
       runAsGroup: 65532
       runAsUser: 65532
     env:
-      enableWebhooks: "false"
       kubernetesServiceHost: apiserver-url
     image:
       repository: controller
-      tag: v0.1.0
+      tag: v0.1.1
     resources:
       limits:
         cpu: 500m
@@ -25,6 +26,8 @@ controllerManager:
     seccompProfile:
       type: RuntimeDefault
   replicas: 1
+  strategy:
+    type: Recreate
 kubernetesClusterDomain: cluster.local
 managerConfig:
   controllerManagerConfigYaml: |-

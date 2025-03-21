@@ -62,13 +62,13 @@ subnet_id = a5703f23-ffcb-4ca7-9dfe-ab9861d91bf5
 ipv6 = False
 
 [compute]
-image_ref = 48a4823e-3374-4b43-b9ec-dd42586f664a
-image_ref_alt = 48a4823e-3374-4b43-b9ec-dd42586f664a
+image_ref = eaccb4eb-78f9-4470-ad64-0c2c8b614164
+image_ref_alt = eaccb4eb-78f9-4470-ad64-0c2c8b614164
 endpoint_type = public
 v3_endpoint_type = public
 region = {{ .Values.global.region }}
-flavor_ref = 21
-flavor_ref_alt = 31
+flavor_ref = 100021
+flavor_ref_alt = 100021
 min_microversio = 2.1
 max_microversion = latest
 fixed_network_name = {{ (index .Values (print .Chart.Name | replace "-" "_")).tempest.fixed_network_name }}

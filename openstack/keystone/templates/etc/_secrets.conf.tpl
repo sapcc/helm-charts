@@ -40,10 +40,6 @@ heartbeat_timeout_threshold = {{ .Values.audit.central_service.heartbeat_timeout
       It is exploiting a bug in the logic which seems to be triggered
       when rabbit_interval_max >= rabbit_retry_interval
 */}}
-  {{- else if .Values.rabbitmq.host }}
-transport_url = rabbit://{{ .Values.rabbitmq.users.default.user | default "rabbitmq" }}:{{ .Values.rabbitmq.users.default.password | include "resolve_secret_urlquery" }}@{{ .Values.rabbitmq.host }}:{{ .Values.rabbitmq.port | default 5672 }}
-  {{ else }}
-transport_url = rabbit://{{ .Values.rabbitmq.users.default.user | default "rabbitmq" }}:{{ .Values.rabbitmq.users.default.password | include "resolve_secret_urlquery" }}@{{ include "rabbitmq_host" . }}:{{ .Values.rabbitmq.port | default 5672 }}
   {{- end }}
 {{- end }}
 
@@ -55,7 +51,7 @@ transport_url = rabbit://{{ .Values.rabbitmq.users.default.user | default "rabbi
 [cc_radius]
 host = {{ .Values.api.cc_radius.host | default "radius" }}
 port = {{ .Values.api.cc_radius.port | default "radius" }}
-secret = {{ .Values.api.cc_radius.secret }}
+secret = {{ .Values.api.cc_radius.secret | include "resolve_secret" }}
 {{ end }}
 
 

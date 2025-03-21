@@ -190,6 +190,10 @@ cluster.local
 {{- $storeItem := printf "thanos-%s-grpc.%s.%s" $cluster $root.Values.global.region $root.Values.global.tld -}}
 {{- $regionalList = append $regionalList $storeItem -}}
 {{- end }}
+{{- range $store := $root.Values.query.stores -}}
+{{- $storeItem := printf "%s.%s.%s" $store $root.Values.global.region $root.Values.global.tld -}}
+{{- $regionalList = append $regionalList $storeItem -}}
+{{- end -}}
 {{- range $regionalList | sortAlpha }}
   - {{ . }}:443
 {{- end }}

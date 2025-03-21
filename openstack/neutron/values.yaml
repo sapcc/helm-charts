@@ -38,6 +38,7 @@ pod:
   replicas:
     server: 3
     rpc_server: 2
+    ovn_db: 3
   lifecycle:
     upgrades:
       deployments:
@@ -150,6 +151,10 @@ pod:
       limits:
         cpu: "128m"
         memory: "128Mi"
+    ovs_db:
+      requests:
+        cpu: "100m"
+        memory: "300Mi"
 
 debug: "True"
 port_metrics: '9102'
@@ -236,6 +241,42 @@ interconnection:
 
 fwaas:
   enabled: false
+
+ovn:
+  enabled: false
+  k8sAPIServer: null
+  imageVersionOVN: "release-1.0"
+
+  # -- Configure to enable IPsec
+  enableIpsec: false
+  # -- Use SSL transport to NB/SB db and northd
+  enableSsl: false
+
+  dbCheckerLogLevel: 4
+  logFileMaxAge: 5
+  logFileMaxBackups: 5
+  logFileMaxSize: 100
+
+  # -- Port of north bound ovsdb
+  nbPort: 6641
+  nbElectionTimer: 1000
+  nbLogLevel: "-vconsole:info -vfile:info"
+  nbRaftPort: 6643
+
+  # -- Port of south bound ovsdb
+  sbPort: 6642
+  sbElectionTimer: 1000
+  sbLogLevel: "-vconsole:info -vfile:info"
+  sbRaftPort: 6644
+
+  # northd
+  northdLogLevel: "-vconsole:info -vfile:info"
+
+  externalIPs: []
+
+  # ovn controller
+  controllerLogLevel: "-vconsole:info"
+
 
 asr:
   config_agents: []

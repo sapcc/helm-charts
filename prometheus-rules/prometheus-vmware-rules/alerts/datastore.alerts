@@ -413,9 +413,9 @@ groups:
       vrops_datastore_hostcount{datastore=~"^vmfs_vc_.+"} < on (vcenter) group_left
       count by (vcenter) (vrops_hostsystem_runtime_connectionstate{state="connected", vccluster=~"^productionbb\\d+$"}
       unless on (hostsystem) (vrops_hostsystem_runtime_maintenancestate{state="inMaintenance"}))
-    for: 5m
+    for: 60m
     labels:
-      severity: info
+      severity: warning
       tier: vmware
       service: storage
       support_group: compute
@@ -428,9 +428,8 @@ groups:
   - alert: NFSDatastoreHostcountMismatch
     expr: |
       vrops_datastore_hostcount{datastore=~"^nfs_.+"} < on (vcenter) group_left
-      count by (vcenter) (vrops_hostsystem_runtime_connectionstate{state="connected", vccluster=~"^productionbb\\d+$"}
-      unless on (hostsystem) (vrops_hostsystem_runtime_maintenancestate{state="inMaintenance"}))
-    for: 5m
+      count by (vcenter) (vrops_hostsystem_runtime_connectionstate{state="connected", vccluster=~"^productionbb\\d+$"})
+    for: 60m
     labels:
       severity: info
       tier: vmware

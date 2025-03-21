@@ -2,11 +2,10 @@
 # shellcheck shell=ash
 # shellcheck disable=SC3010
 
-# This is the entrypoint script for the "generate-secrets" init container of the elektra pod.
+# This is the entrypoint script for the elektra token rotation.
 set -eou pipefail
 [[ ${DEBUG:-} != false ]] && set -x
 
-OLD_SECRET="elektra"
 SECRET="elektra-token"
 
 # if we already have a secret, we can stop here
@@ -18,14 +17,6 @@ fi
 # double base64 encode to get a string without newlines and 128 characters long after being decoded when deploying
 # 96×3/4 = 128 characters
 SECRET_KEY_BASE=$(head -c 96 /dev/urandom | base64 -w 0 | tr -d '\n' | base64 -w 0)
-
-# check if the old secret exists and if it does, copy the token from it
-if [[ -n "$(kubectl get secret "$OLD_SECRET" --ignore-not-found)" ]]; then
-  EXISTING_TOKEN=$(kubectl get secret "$OLD_SECRET" -o jsonpath="{.data.monsoon\.rails\.secret\.token}" 2>/dev/null || echo "")
-  if [[ -n "$EXISTING_TOKEN" ]]; then
-    SECRET_KEY_BASE=$EXISTING_TOKEN
-  fi
-fi
 
 # create new secret with randomly generated token
 echo -n "

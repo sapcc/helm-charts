@@ -32,19 +32,16 @@ tls:
 #   backupIfUnhealthy: false
 unsafeFlags: {}
 
-### InitDB configuration
-# -- InitDB job options
-# -- Image used by the initdb job
-initdb:
+# -- Image used by kubernetes-entrypoint init container
+kubernetes_entrypoint:
   image:
-    name: percona/percona-xtradb-cluster-operator
-    tag: 1.16.1-pxc8.0-backup-pxb8.0.35
-# -- Enable InitDB job that creates databases and users
-# Disabled by default
-initdb_job: null
-# -- Set default character set and collation in init.sql
-character_set_server: "utf8mb4"
-collation_server: "utf8mb4_0900_ai_ci"
+    name: kubernetes-entrypoint
+    tag: v0.3.1
+
+### InitDB configuration
+# -- Use CRD to create application users and set their passwords
+# Enabled by default
+custom_users: true
 # -- Enable the creation of a local-only root user `ccroot` without a password
 ccroot_user:
   enabled: false
@@ -72,6 +69,47 @@ users: {}
 #    grants:
 #    - ALL ON example.*
 ### End of InitDB configuration
+
+job:
+  initdb:
+    # -- Whether to enable the init-db job
+    # @default -- true
+    enabled: true
+    # -- Define the image used by the init-db job
+    # @default -- operator image
+    image:
+      name: percona/percona-xtradb-cluster-operator
+      tag: 1.16.1-pxc8.0-backup-pxb8.0.35
+    # -- Set default character set in init.sql
+    character_set_server: utf8mb4
+    # -- Set default collation in init.sql
+    collation_server: utf8mb4_0900_ai_ci
+    # -- Define the init-db job backoff limit
+    # @default -- 1
+    backoffLimit:
+    # -- Define how the init-db job pod [will be restarted](https://kubernetes.io/docs/concepts/workloads/controllers/job/#handling-pod-and-container-failures) in case of an error.
+    # It can be on the same worker node or another
+    # @default -- Never
+    jobRestartPolicy:
+    # -- Define the priority class for the maintenance job pod
+    # @default -- critical-infrastructure
+    priority_class:
+    # -- Define the resource requests and limits for init-db job
+    resources:
+      requests:
+        # -- Define how much memory the MariaDB init-db job container will request
+        # @default -- 128Mi
+        memory:
+        # -- Define how much CPU the MariaDB init-db job container will request
+        # @default -- 0.5
+        cpu:
+      limits:
+        # -- Define memory limit for the MariaDB init-db job container
+        # @default -- 128Mi
+        memory:
+        # -- Define CPU limit for the MariaDB init-db job container
+        # @default -- 0.5
+        cpu:
 
 # -- Default system-level Percona XtraDB Cluster users
 # All credentials are mandatory
@@ -134,7 +172,7 @@ metrics:
     - collect.info_schema.innodb_tablespaces
   image:
     name: prom/mysqld-exporter
-    tag: v0.16.0
+    tag: v0.17.2
     override: null
 
 # -- Percona XtraDB Cluster statefulset configuration

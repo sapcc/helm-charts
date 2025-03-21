@@ -1,0 +1,36 @@
+{{- $vbase  := .Values.global.vaultBaseURL | required "missing value for .Values.global.vaultBaseURL" -}}
+{{- $region := .Values.global.region       | required "missing value for .Values.global.region"       -}}
+{{- if eq $region .Values.campfire.central_region -}}
+
+apiVersion: "openstack.stable.sap.cc/v1"
+kind: OpenstackSeed
+metadata:
+  name: limes-campfire-seed
+
+spec:
+  roles:
+    - name: email_user
+
+  domains:
+    - name: Default
+      users:
+        {{- range $r := .Values.campfire.all_regions }}
+        - name: campfire-{{$r}}
+          description: Campfire in {{$r}} sending mails through {{$region}}
+          password: {{ printf "%s/%s/limes/keystone-user/campfire/password" $vbase $r | quote }}
+          role_assignments:
+            - project: master@ccadmin
+              role:    email_user
+        {{- end }}
+
+        {{- range $d := keys .Values.campfire.all_global_deployments | sortAlpha }}
+        {{- $r := index $.Values.campfire.all_global_deployments $d }}
+        - name: campfire-{{$r}}-global
+          description: Campfire in {{$r}} for {{$d}} sending mails through {{$region}}
+          password: {{ printf "%s/%s/limes-global/keystone-user/campfire/password" $vbase $r | quote }}
+          role_assignments:
+            - project: master@ccadmin
+              role:    email_user
+        {{- end }}
+
+{{- end }}

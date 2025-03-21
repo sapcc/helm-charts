@@ -1,4 +1,4 @@
-{{- if ((.Values).ovn).enabled | default false }}
+{{- if .Values.ovn.enabled }}
 kind: Deployment
 apiVersion: apps/v1
 metadata:
@@ -26,8 +26,6 @@ spec:
         type: infra
         kubernetes.io/os: "linux"
     spec:
-      imagePullSecrets:
-        - name: registry-credentials
       priorityClassName: "system-cluster-critical"
       # Requires fairly broad permissions - ability to read all services and network functions as well
       # as all pods.
@@ -62,12 +60,12 @@ spec:
         - mountPath: /ovn-cert
           name: host-ovn-cert
           readOnly: true
-        resources: {{ toYaml $.Values.ovn.resources | nindent 10 }}
+        resources: {{ toYaml $.Values.pod.resources.ovs_db| nindent 10 }}
         env:
         - name: OVN_DAEMONSET_VERSION
           value: "1.0.0"
         - name: OVN_LOGLEVEL_NORTHD
-          value: {{ default "-vconsole:info -vfile:info" .Values.ovn.northdLogLevel | quote }}
+          value: {{ quote .Values.ovn.northdLogLevel }}
         - name: K8S_APISERVER
           valueFrom:
             configMapKeyRef:
@@ -78,7 +76,7 @@ spec:
             fieldRef:
               fieldPath: metadata.namespace
         - name: OVN_SSL_ENABLE
-          value: {{ default "" .Values.ovn.enableSsl | quote }}
+          value: {{ quote .Values.ovn.enableSsl }}
         readinessProbe:
           exec:
             command: ["/usr/bin/ovn-kube-util", "readiness-probe", "-t", "ovn-northd"]
@@ -100,6 +98,4 @@ spec:
         hostPath:
           path: /etc/ovn
           type: DirectoryOrCreate
-      tolerations:
-      - operator: "Exists"
 {{- end }}

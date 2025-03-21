@@ -6,9 +6,12 @@
 global:
   user_suffix: ""
   master_password: ""
+  rabbitmq:
+    native_sidecar:
+      enabled: true
 
 image: library/rabbitmq
-imageTag: 4.0.6-management
+imageTag: 4.0.7-management
 ## Specify a imagePullPolicy
 ## 'Always' if imageTag is 'latest', else set to 'IfNotPresent'
 ## ref: http://kubernetes.io/docs/user-guide/images/#pre-pulling-images
@@ -81,6 +84,7 @@ metrics:
   enabled: true
   user: monitoring
   password: null
+  addMetricsUser: false
   port: 9150
   enableDetailedMetrics: false
   enablePerObjectMetrics: false
@@ -118,10 +122,16 @@ linkerd:
   enabled: true
 
 # RabbitMQ custom configuration to be added under /etc/rabbitmq/conf.d/20-custom.conf
-customConfig: {}
+customConfig:
+  max_message_size: '268435456'  # 256M; default value since 4.0 was 16M
   # to set a custom limit please use the following format: 50MB or 1GB
   # if not set default value of 50MB will be used
   # disk_free_limit.absolute: 500MB
+
+credentialUpdater:
+  enabled: true
+  image: rabbitmq-user-credential-updater
+  imageTag: '20250317121126'
 
 enableSsl: false
 certificate:

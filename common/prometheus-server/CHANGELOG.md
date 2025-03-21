@@ -1,3 +1,7 @@
+## 8.0.0
+
+* Upgrade Prometheus to v3.2.1
+
 ## 7.7.2
 
 * Prometheus bump to v2.55.1

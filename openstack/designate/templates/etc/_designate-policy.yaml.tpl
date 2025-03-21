@@ -5,8 +5,7 @@ owner: project_id:%(tenant_id)s
 target: project_id:%(target_project_id)s
 shared: "'True':%(zone_shared)s"
 
-owner_or_target: rule:target or rule:owner
-owner_or_zone_shared: rule:target or rule:shared
+owner_or_zone_shared: rule:owner or rule:shared
 
 admin_or_owner_or_zone_shared: rule:owner_or_zone_shared or rule:admin
 dns_admin: role:dns_admin and rule:owner
@@ -21,10 +20,10 @@ cloud_dns_viewer: role:cloud_dns_viewer
 context_is_cloud_admin: role:cloud_dns_admin
 context_is_dns_ops: rule:context_is_cloud_admin or role:cloud_dns_ops or rule:admin
 context_is_dns_support: rule:context_is_dns_ops or role:cloud_dns_support
-context_is_zonemaster: rule:context_is_dns_support or (role:dns_zonemaster and rule:owner)
-context_is_hostmaster: rule:context_is_dns_support or (role:dns_hostmaster and rule:owner)
-context_is_mailmaster: rule:context_is_dns_support or (role:dns_mailmaster and rule:owner)
-context_is_webmaster: rule:context_is_dns_support or rule:context_is_mailmaster or rule:context_is_hostmaster or (role:dns_webmaster and rule:owner)
+context_is_zonemaster: rule:context_is_dns_support or (role:dns_zonemaster and rule:owner_or_zone_shared)
+context_is_hostmaster: rule:context_is_dns_support or (role:dns_hostmaster and rule:owner_or_zone_shared)
+context_is_mailmaster: rule:context_is_dns_support or (role:dns_mailmaster and rule:owner_or_zone_shared)
+context_is_webmaster: rule:context_is_dns_support or rule:context_is_mailmaster or rule:context_is_hostmaster or (role:dns_webmaster and rule:owner_or_zone_shared)
 context_is_editor: rule:dns_admin or rule:member or rule:admin
 context_is_viewer: rule:viewer_and_shared or rule:member_and_shared or rule:context_is_master or rule:context_is_editor or rule:viewer or rule:member or rule:cloud_dns_viewer
 context_is_master: rule:context_is_dns_support or rule:context_is_zonemaster or rule:context_is_hostmaster or rule:context_is_mailmaster or rule:context_is_webmaster or rule:context_is_editor
@@ -110,20 +109,20 @@ update_SSHFP_recordset: rule:admin
 update_NAPTR_recordset: rule:admin
 update_TXT_recordset: rule:context_is_webmaster or rule:context_is_editor
 
-delete_A_recordset: rule:context_is_webmaster or rule:context_is_editor
-delete_AAAA_recordset: rule:context_is_webmaster or rule:context_is_editor
-delete_CNAME_recordset: rule:context_is_webmaster or rule:context_is_editor
-delete_CAA_recordset: rule:context_is_webmaster or rule:context_is_editor
-delete_CERT_recordset: rule:context_is_webmaster or rule:context_is_editor
-delete_MX_recordset: rule:context_is_mailmaster or rule:context_is_editor
-delete_NS_recordset: rule:context_is_hostmaster or rule:context_is_editor
-delete_PTR_recordset: rule:context_is_webmaster or rule:context_is_editor
+delete_A_recordset: (role:dns_webmaster and (project_id:%(recordset_project_id)s)) or rule:context_is_editor
+delete_AAAA_recordset: (role:dns_webmaster and (project_id:%(recordset_project_id)s)) or rule:context_is_editor
+delete_CNAME_recordset: (role:dns_webmaster and (project_id:%(recordset_project_id)s)) or rule:context_is_editor
+delete_CAA_recordset: (role:dns_webmaster and (project_id:%(recordset_project_id)s)) or rule:context_is_editor
+delete_CERT_recordset: (role:dns_webmaster and (project_id:%(recordset_project_id)s)) or rule:context_is_editor
+delete_MX_recordset: (role:dns_mailmaster and (project_id:%(recordset_project_id)s)) or rule:context_is_editor
+delete_NS_recordset: (role:dns_hostmaster and (project_id:%(recordset_project_id)s)) or rule:context_is_editor
+delete_PTR_recordset: (role:dns_webmaster and (project_id:%(recordset_project_id)s)) or rule:context_is_editor
 delete_SOA_recordset: "!"
-delete_SPF_recordset: rule:context_is_mailmaster or rule:context_is_editor
-delete_SRV_recordset: rule:context_is_webmaster or rule:context_is_editor
+delete_SPF_recordset: (role:dns_mailmaster and (project_id:%(recordset_project_id)s)) or rule:context_is_editor
+delete_SRV_recordset: (role:dns_webmaster and (project_id:%(recordset_project_id)s)) or rule:context_is_editor
 delete_SSHFP_recordset: rule:admin
 delete_NAPTR_recordset: rule:admin
-delete_TXT_recordset: rule:context_is_webmaster or rule:context_is_editor
+delete_TXT_recordset: (role:dns_webmaster and (project_id:%(recordset_project_id)s)) or rule:context_is_editor
 
 get_recordsets: rule:context_is_viewer
 get_recordset: rule:context_is_viewer

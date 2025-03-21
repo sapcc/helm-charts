@@ -227,7 +227,7 @@ groups:
       description: "Audit events from {{ $labels.pod }} could not be published to the RabbitMQ server. Check the pod log for detailed error messages. Affected audit events are held in memory until publishing succeeds."
 
   - alert: OpenstackLimesIncompleteProjectResourceData
-    expr: max by (service, resource) (limes_project_resources_by_type_count) != on () group_left max(limes_project_count)
+    expr: max by (service, resource, namespace) (limes_project_resources_by_type_count) != on (namespace) group_left max by (namespace) (limes_project_count)
     # Do not trigger too fast! When a new resource is added, it takes one full scrape cycle to create all resource records.
     for: 60m
     labels:
