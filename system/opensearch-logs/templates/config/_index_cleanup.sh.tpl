@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #job to delete wrongly created indexes, which have timestamps in the future
-export CLEANUP_INDEXES="kubernikus virtual scaleout logstash"
+export CLEANUP_INDEXES="logstash"
 
 export LC_ALL=C.UTF-8; export LANG=C.UTF-8
 

@@ -189,11 +189,12 @@ dashboard2:
   reserved: true
   description: "Demo OpenSearch Dashboards user"
 
-kibanaro:
-  hash: "{{ .Values.users.kibanaro.nohash }}"
-
 kibanaserver:
   hash: "{{ .Values.users.kibanaserver.nohash }}"
+  reserved: true
+
+kibanaserver2:
+  hash: "{{ .Values.users.kibanaserver2.nohash }}"
   reserved: true
 
 maillog:
