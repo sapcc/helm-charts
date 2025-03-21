@@ -4,8 +4,9 @@ This file is used to list changes made in each version of the common chart rabbi
 
 ## 0.17.1 - 2025/03/19
 
-- Set default `max_message_size` option to pre 4.0 default value of 256M
-  - This fixes a possible problem introduced in chart version 0.14.0 by a silent default change
+- Set the default `max_message_size` option to pre-4.0 increased default value of 256M
+  - This fixes a possible error `Failed to publish message to topic`, that might happen with RabbitMQ 4.0 and caused by an announced default value decrease
+  - Metrics that will allow to make a decision about this value will be added in RabbitMQ 4.1
 - Chart version bumped
 
 ## 0.17.0 - 2025/03/19
