@@ -30,6 +30,9 @@ openstack:
         match: |
           str::regex_matches(hypervisor("hypervisor_type"), "QEMU") &&
           str::regex_matches(hypervisor("hypervisor_hostname"), "shoot--ccloud.*green.*")
+        reserved:
+          aggregates:
+            - failover
       - name: prod-blue
         recovery_method: auto
         match: |
