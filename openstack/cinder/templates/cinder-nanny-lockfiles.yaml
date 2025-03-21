@@ -1,0 +1,100 @@
+{{- if .Values.nanny.lockfiles.enabled }}
+kind: CronJob
+apiVersion: batch/v1
+metadata:
+  name: cinder-nanny-lock-files
+  namespace: monsoon3
+  labels:
+    system: openstack
+    service: cinder-nanny
+
+spec:
+  schedule: "{{ .Values.nanny.lockfiles.crontab_schedule }}"
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    metadata:
+      annotations:
+        {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+        linkerd.io/inject: enabled
+        {{- end }}
+      labels:
+        component: cinder-nanny
+    spec:
+      template:
+        metadata:
+          annotations:
+          labels:
+            component: cinder-nanny
+        spec:
+          nodeSelector:
+            zone: farm
+          restartPolicy: Never
+          volumes:
+          - name: etccinder
+            emptyDir: {}
+          - name: shutdown-signal
+            emptyDir: {}
+          - name: cinder-etc
+            configMap:
+              name: cinder-etc
+          - name: cinder-etc-confd
+            secret:
+              secretName: {{ .Release.Name }}-secrets
+          {{- include "utils.proxysql.volumes" . | indent 10 }}
+          containers:
+            - name: proxysql
+              image: keppel.global.cloud.sap/ccloud/proxysql:2.7.3-20250315230350
+              imagePullPolicy: IfNotPresent
+              lifecycle:
+                postStart:
+                  exec:
+                    command: ["sh", "-c", "touch /shutdown/keepalive"]
+              command: ["proxysql"]
+              args: ["--config", "/etc/proxysql/proxysql.cnf", "--exit-on-error", "--foreground", "--idle-threads", "--admin-socket", "/run/proxysql/admin.sock", "--no-version-check", "-D", "/run/proxysql"]
+              ports:
+              - name: metrics-psql
+                containerPort: 6070
+              livenessProbe:
+                exec:
+                  command:
+                  - test
+                  - -f
+                  - /shutdown/keepalive
+              volumeMounts:
+                {{- include "utils.proxysql.volume_mount" . | indent 16 }}
+                - mountPath: /shutdown
+                  name: shutdown-signal
+            - name: lock-files
+              image: {{required ".Values.global.registry is missing" .Values.global.registry}}/loci-cinder:{{required ".Values.imageVersion is missing" .Values.imageVersion}}
+              imagePullPolicy: IfNotPresent
+              command:
+                - /bin/sh
+                - -c
+                - 'cinder-manage sap clean_old_lock_files --batch-size 10 --dry-run && rm /shutdown/keepalive'
+              env:
+                - name: NAMESPACE
+                  valueFrom: {fieldRef: {fieldPath: metadata.namespace}}
+              volumeMounts:
+                - name: cinder-etc
+                  mountPath: /etc/cinder/cinder.conf
+                  subPath: cinder.conf
+                  readOnly: true
+                - name: etccinder
+                  mountPath: /etc/cinder
+                - name: cinder-etc-confd
+                  mountPath: /etc/cinder/cinder.conf.d
+                - name: cinder-etc
+                  mountPath: /etc/cinder/logging.ini
+                  subPath: logging.ini
+                  readOnly: true
+                - mountPath: /shutdown
+                  name: shutdown-signal
+                {{- include "utils.proxysql.volume_mount" . | indent 16 }}
+              resources:
+                requests:
+                  memory: "500Mi"
+                  cpu: "25m"
+                limits:
+                  memory: "500Mi"
+                  cpu: "100m"
+{{- end }}
