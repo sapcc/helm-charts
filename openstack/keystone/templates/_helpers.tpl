@@ -60,8 +60,11 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
   {{- $name := index . 1 }}
   {{- with index . 0 }}
     {{- $bin := include "utils.proxysql.proxysql_signal_stop_script" . | trim }}
-    {{- $all := list $bin (include "utils.proxysql.job_pod_settings" . ) (include "utils.proxysql.volume_mount" . ) (include "utils.proxysql.container" . ) (include "utils.proxysql.volumes" .) | join "\n" }}
-    {{- $hash := empty .Values.proxysql.mode | ternary $bin $all | sha256sum }}
-{{- .Release.Name }}-{{ $name }}-{{ substr 0 4 $hash }}-{{ .Values.api.imageTag | required "Please set api.imageTag or similar"}}
+    {{- $dbBackend := ternary "percona-pxc" "mariadb" .Values.percona_cluster.enabled }}
+    {{- $standard := list $dbBackend (include (print .Template.BasePath "/configmap-bin.yaml") . | indent 4 ) (include (print .Template.BasePath "/configmap-etc.yaml") . | indent 4 )}}
+    {{- $proxysql := list $bin (include "utils.proxysql.job_pod_settings" . ) (include "utils.proxysql.volume_mount" . ) (include "utils.proxysql.container" . ) (include "utils.proxysql.volumes" .) $dbBackend }}
+    {{- $combined := concat $standard $proxysql }}
+    {{- $hash := empty .Values.proxysql.mode | ternary $standard ($combined | join "\n") | sha256sum }}
+    {{- .Release.Name }}-{{ $name }}-{{ substr 0 4 $hash }}-{{ .Values.api.imageTag | required "Please set api.imageTag or similar"}}
   {{- end }}
 {{- end }}
