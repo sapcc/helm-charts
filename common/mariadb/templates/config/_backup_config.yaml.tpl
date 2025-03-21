@@ -41,6 +41,7 @@ storages:
       sse_customer_algorithm: "AES256"
       sse_customer_key: {{ include "mariadb.resolve_secret_squote" .Values.global.mariadb.backup_v2.aws.sse_customer_key }}
   {{- end }}
+  {{- if .Values.backup_v2.swift.enabled }}
   swift:
     - name: swift-{{ .Values.global.region }}
       auth_version: 3
@@ -52,5 +53,6 @@ storages:
       password: {{ include "mariadb.resolve_secret_squote" .Values.backup_v2.swift.password | required "Please set .Values.backup_v2.swift.password" }}
       region: {{ .Values.global.region }}
       container_name: "mariadb-backup-{{ .Values.global.region }}"
+  {{- end }}
 verification:
   run_after_inc_backups: {{ .Values.backup_v2.verification.run_after_inc_backups }}
