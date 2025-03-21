@@ -46,6 +46,18 @@ metadata:
     component: keystone
     type: api
   annotations:
+    {{- if .Values.federation.oidc.enabled }}
+    # the affinity bits are required for federation; they do not affect the
+    # cases when the API is used, but will affect browser-based workflows
+    ingress.kubernetes.io/affinity: cookie
+    ingress.kubernetes.io/session-cookie-expires: "3600"
+    ingress.kubernetes.io/session-cookie-max-age: "3600"
+    ingress.kubernetes.io/session-cookie-name: route
+    nginx.ingress.kubernetes.io/affinity: cookie
+    nginx.ingress.kubernetes.io/session-cookie-expires: "3600"
+    nginx.ingress.kubernetes.io/session-cookie-max-age: "3600"
+    nginx.ingress.kubernetes.io/session-cookie-name: route
+    {{- end }}
     # clear the trusted key header from external requests
     ingress.kubernetes.io/configuration-snippet: |
       proxy_set_header X-Trusted-Key        "";

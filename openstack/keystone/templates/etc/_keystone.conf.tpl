@@ -29,7 +29,7 @@ default_tag = vc-{{ $az }}-0
 
 {{- if .Values.api.auth }}
 [auth]
-methods = {{ .Values.api.auth.methods | default "password,token,application_credential" }}
+methods = {{ if .Values.federation.oidc.enabled }}openid,{{ end }}{{ .Values.api.auth.methods | default "password,token,application_credential" }}
 {{ if .Values.api.auth.external }}external = {{ .Values.api.auth.external }}{{ end }}
 {{ if .Values.api.auth.password }}password = {{ .Values.api.auth.password }}{{ end }}
 {{ if .Values.api.auth.totp }}totp = {{ .Values.api.auth.totp }}{{ end }}
@@ -176,4 +176,8 @@ allowed_origin = {{ .Values.cors.allowed_origin | default "*"}}
 allow_credentials = true
 expose_headers = Content-Type,Cache-Control,Content-Language,Expires,Last-Modified,Pragma,X-Auth-Token,X-Openstack-Request-Id,X-Subject-Token
 allow_headers = Content-Type,Cache-Control,Content-Language,Expires,Last-Modified,Pragma,X-Auth-Token,X-Openstack-Request-Id,X-Subject-Token,X-Project-Id,X-Project-Name,X-Project-Domain-Id,X-Project-Domain-Name,X-Domain-Id,X-Domain-Name,X-User-Id,X-User-Name,X-User-Domain-name
+{{- end }}
+{{- if .Values.federation.oidc.enabled }}
+[federation]
+remote_id_attribute = HTTP_OIDC_ISS
 {{- end }}
