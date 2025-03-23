@@ -6,7 +6,7 @@ global:
   dbUser: cinder
   domain_seeds:
     skip_hcm_domain: false
- 
+
   linkerd_requested: true
   osprofiler: {}
   imagePullPolicy: IfNotPresent
@@ -129,7 +129,6 @@ mariadb:
       password: null
       grants:
       - "ALL PRIVILEGES on cinder.*"
-  initdb_secret: true
   persistence_claim:
     name: db-cinder-pvclaim
   extraConfigFiles:
@@ -138,6 +137,13 @@ mariadb:
       connect_timeout = 15
   alerts:
     support_group: compute-storage-api
+  job:
+    maintenance:
+      enabled: false
+      function:
+        analyzeTable:
+          enabled: true
+          allTables: true
 
 max_pool_size: 15
 max_overflow: 5
@@ -306,8 +312,6 @@ mysql_metrics:
 
 audit:
   enabled: false
-  # how many messages to buffer before dumping to log (when rabbit is down or too slow)
-  mem_queue_size: 1000
   record_payloads: false
   metrics_enabled: true
   central_service:
@@ -324,10 +328,11 @@ rabbitmq:
     support_group: compute-storage-api
   metrics:
     enabled: true
+    addMetricsUser: true
     sidecar:
       enabled: false
   enableDetailedMetrics: true
-  enablePerObjectMetrics: true 
+  enablePerObjectMetrics: true
 rabbitmq_notifications:
   name: cinder
 logging:
@@ -406,3 +411,7 @@ owner-info:
   helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/openstack/cinder
 
 coordinationBackend: "file"
+
+api-ratelimit-redis:
+  alerts:
+    support_group: compute-storage-api
