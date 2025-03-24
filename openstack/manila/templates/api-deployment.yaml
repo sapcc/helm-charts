@@ -52,7 +52,7 @@ spec:
       {{- include "utils.proxysql.pod_settings" . | indent 6 }}
       priorityClassName: {{ .Values.pod.priority_class.default }}
       initContainers:
-      {{- tuple . (dict "jobs" (print .Release.Name "-migration") "service" (print .Release.Name "-mariadb," .Release.Name "-rabbitmq," .Release.Name "-memcached")) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
+      {{- tuple . (dict "jobs" (print .Release.Name "-migration") "service" (include "manila.api_service_dependencies" . )) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
       - name: fetch-rabbitmqadmin
         image: {{.Values.global.dockerHubMirror}}/library/busybox
         command: ["/scripts/fetch-rabbitmqadmin.sh"]
@@ -98,7 +98,7 @@ spec:
             - name: STATSD_PORT
               value: "9125"
             - name: DEPENDENCY_SERVICE
-              value: "{{ .Release.Name }}-mariadb,{{ .Release.Name }}-rabbitmq,{{ .Release.Name }}-memcached"
+              value: "{{ include "manila.api_service_dependencies" . }}"
             {{- if .Values.sentry.enabled }}
             - name: SENTRY_DSN_SSL
               valueFrom:

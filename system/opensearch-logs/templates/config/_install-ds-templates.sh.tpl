@@ -31,6 +31,8 @@ if [ "${DATA_STREAM_ENABLED}" = true ]; then
      export TMPPATH=/tmp
      export DS_TEMPLATE=ds.json
      export DS_ISM_TEMPLATE=ds-ism.json
+     export DS_NAME=`echo ${e}|awk -F# '{ print $1 }'`
+     export DS_SHARD=`echo ${e}|awk -F# '{ print $2 }'`
 
      echo "creating file FILE=${TMPPATH}/${e}"
      cp "/${FILEPATH}/${DS_TEMPLATE}" "${TMPPATH}/${e}-${DS_TEMPLATE}"

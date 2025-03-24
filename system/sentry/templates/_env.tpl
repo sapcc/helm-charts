@@ -8,7 +8,7 @@
 - name: SENTRY_REDIS_PORT
   value: "6379"
 - name: SENTRY_REDIS_PASSWORD
-  valueFrom: { secretKeyRef: { name: {{ template "redis.fullname" . }}, key: redis-password } }
+  valueFrom: { secretKeyRef: { name: {{ template "redis.fullname" . }}-user-default, key: password } }
 - name: SENTRY_SECRET_KEY
   valueFrom: { secretKeyRef: { name: {{ template "fullname" . }}, key: sentry-secret-key } }
 - name: SENTRY_DB_USER
@@ -25,11 +25,11 @@
 {{- end }}
 {{- if .Values.emailUser }}
 - name: SENTRY_EMAIL_USER
-  value: {{ .Values.emailUser | squote }}
+  valueFrom: { secretKeyRef: { name: {{ template "fullname" . }}, key: sentry-email-user } }
 {{- end }}
 {{- if .Values.emailPassword }}
 - name: SENTRY_EMAIL_PASSWORD
-  value: {{ .Values.emailPassword | squote }}
+  valueFrom: { secretKeyRef: { name: {{ template "fullname" . }}, key: sentry-email-password } }
 {{- end }}
 {{- if .Values.emailUseSSL }}
 - name: SENTRY_EMAIL_USE_SSL
@@ -49,7 +49,7 @@
 {{- end }}
 {{- if .Values.githubAppId }}
 - name: GITHUB_APP_ID
-  value: {{ .Values.githubAppId | squote}}
+  valueFrom: { secretKeyRef: { name: {{ template "fullname" . }}, key: github-app-id } }
 {{- end }}
 {{- if .Values.githubApiSecret }}
 - name: GITHUB_API_SECRET

@@ -45,7 +45,7 @@ spec:
       {{- include "utils.proxysql.pod_settings" . | indent 6 }}
       {{- tuple . (dict "name" "barbican-api") | include "utils.topology.constraints" | indent 6 }}
       initContainers:
-      {{- tuple . (dict "service" "barbican-mariadb,barbican-rabbitmq") | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
+      {{- tuple . (dict "service" (include "barbican.service_dependencies" .)) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
       containers:
         - name: barbican-api
           image: {{required ".Values.global.registry is missing" .Values.global.registry }}/loci-barbican:{{required "Values.imageVersionBarbicanApi is missing" .Values.imageVersionBarbicanApi}}
@@ -166,7 +166,7 @@ spec:
               readOnly: true
             - name: luna
               mountPath: /thales/
-        {{- end }}       
+        {{- end }}
         - name: statsd
           {{- if hasKey .Values.global "dockerHubMirror"}}
           image: {{.Values.global.dockerHubMirror}}/{{ .Values.statsd.image.repository }}:{{ .Values.statsd.image.tag }}

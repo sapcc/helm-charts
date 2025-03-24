@@ -18,7 +18,7 @@ transform/external-alerts:
     - context: log
       statements:
         - set(time_unix_nano, observed_time_unix_nano)
-        - merge_maps(attributes, ParseJSON(body), "upsert")
+        - merge_maps(attributes, ParseJSON(body), "upsert") where IsMatch(body, "^\\{")
         - set(attributes["log.type"], "alert")
 
 transform/external-deployments:
@@ -27,7 +27,7 @@ transform/external-deployments:
     - context: log
       statements:
         - set(time_unix_nano, observed_time_unix_nano)
-        - merge_maps(attributes, ParseJSON(body), "upsert")
+        - merge_maps(attributes, ParseJSON(body), "upsert") where IsMatch(body, "^\\{")
         - set(attributes["log.type"], "deployment")
 {{- end }}
 
@@ -86,10 +86,10 @@ logs/failover_b_external_{{ toString . }}:
 logs/external-alerts:
   receivers: [webhookevent/external-alerts]
   processors: [transform/external-alerts]
-  exporters: [debug,forward/external_alerts]
+  exporters: [forward/external_alerts]
 
 logs/external-deployments:
   receivers: [tcplog/external-deployments]
   processors: [transform/external-deployments]
-  exporters: [debug,forward/external_deployments]
+  exporters: [forward/external_deployments]
 {{- end }}

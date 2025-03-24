@@ -5,9 +5,22 @@ metadata:
   name: thanos
   namespace: ccloud
 spec:
-  {{- if .Values.thanos.clusterOptionOverrides }}
   clusterOptionOverrides:
-    {{ toYaml .Values.thanos.clusterOptionOverrides | nindent 4 }}
+  {{- range $plugin := .Values.ingressPlugins }}
+  {{- $ingressDomain := trimSuffix "." (trimPrefix "ingress." $plugin.recordName) }}
+  - clusterName: {{ $plugin.cluster }}
+    overrides:
+    - name: thanos.query.ingress.grpc.hosts
+      value:
+        - host: "thanos-grpc.{{ $ingressDomain }}"
+          paths:
+            - path: /
+              pathType: ImplementationSpecific
+    - name: thanos.query.ingress.grpc.tls
+      value:
+        - hosts:
+            - "thanos-grpc.{{ $ingressDomain }}"
+          secretName: {{ printf "tls-thanos-grpc-%s" $ingressDomain | replace "." "-" }}
   {{- end }}
   clusterSelector:
     matchExpressions:
@@ -61,4 +74,14 @@ spec:
         secret:
           key: tls.key
           name: tls-ccloud-prometheus-auth
+    - name: thanos.query.ingress.grpc.annotations
+      value:
+        disco: "true"
+        kubernetes.io/tls-acme: "true"
+        nginx.ingress.kubernetes.io/backend-protocol: GRPC
+        nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    - name: thanos.query.ingress.grpc.enabled
+      value: true
+    - name: thanos.query.ingress.grpc.ingressClassName
+      value: nginx
 {{- end -}}

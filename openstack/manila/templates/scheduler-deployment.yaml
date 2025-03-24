@@ -54,7 +54,7 @@ spec:
                   - {{ .Release.Name }}-scheduler
               topologyKey: "topology.kubernetes.io/zone"
       initContainers:
-        {{- tuple . (dict "jobs" (print .Release.Name "-migration") "service" (print .Release.Name "-mariadb," .Release.Name "-rabbitmq")) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 8 }}
+        {{- tuple . (dict "jobs" (print .Release.Name "-migration") "service" (include "manila.service_dependencies" . )) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 8 }}
         - name: fetch-rabbitmqadmin
           image: {{.Values.global.dockerHubMirror}}/library/busybox
           command: ["/scripts/fetch-rabbitmqadmin.sh"]

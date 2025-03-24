@@ -12,7 +12,7 @@ function process_config {
     cp /neutron-etc/ml2-conf.ini  /etc/neutron/plugins/ml2/ml2_conf.ini
     cp /neutron-etc/neutron-policy.json  /etc/neutron/policy.json
     cp /neutron-etc/rootwrap.conf  /etc/neutron/rootwrap.conf
-    cp /neutron-etc-region/ml2-conf-aci.ini  /etc/neutron/plugins/ml2/ml2-conf-aci.ini
+    cat /neutron-etc-aci/ml2-conf-aci-*.ini > /etc/neutron/plugins/ml2/ml2-conf-aci.ini
 }
 
 
