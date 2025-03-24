@@ -66,7 +66,7 @@ spec:
             - name: OS_PROJECT_NAME
               value: cloud_admin
             - name: OS_REGION_NAME
-              value: {{ quote $region }}
+              value: {{ quote ($is_global | ternary "global" $region) }}
 
             # credentials and configuration for sending mails using Cronus
             - name: CRONUS_AUTH_URL
@@ -75,7 +75,7 @@ spec:
               value: Default
             - name: CRONUS_USERNAME
               {{- if $is_global }}
-              value: {{ contains "qa" $region | ternary "campfire-global-qa" "campfire-global" | quote }}
+              value: {{ printf "campfire-%s-global" $region | quote }}
               {{- else }}
               value: {{ printf "campfire-%s" $region | quote }}
               {{- end }}
