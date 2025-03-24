@@ -122,7 +122,7 @@ data:
     - "indices:data/write/bulk*"
     - "indices:data/write/index"
   - index_patterns:
-    - "alerts-*"
+    - "storage-*"
     allowed_actions:
     - "indices:admin/template/get"
     - "indices:admin/template/put"
@@ -131,7 +131,7 @@ data:
     - "indices:data/write/bulk*"
     - "indices:data/write/index"
   - index_patterns:
-    - "storage-*"
+    - "alerts-*"
     allowed_actions:
     - "indices:admin/template/get"
     - "indices:admin/template/put"
