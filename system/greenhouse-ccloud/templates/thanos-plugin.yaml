@@ -1,0 +1,54 @@
+{{- $thanosHost := print .Chart.Name ".thanos." .Values.global.dnsDomain -}}
+apiVersion: greenhouse.sap/v1alpha1
+kind: Plugin
+metadata:
+  name: thanos-{{ .Chart.Name }}
+  namespace: {{ .Chart.Name }}
+spec:
+  disabled: false
+  optionValues:
+    {{- if and .Values.global.quayIoMirror .Values.global.ghcrIoMirror .Values.global.dockerHubMirror }}
+    - name: thanos.image.repository
+      value: {{ printf "%s/thanos/thanos" .Values.global.quayIoMirror }}
+    - name: thanos.initChownData.image.registry
+      value: {{ .Values.global.dockerHubMirror }}
+    - name: testFramework.image.registry
+      value: {{ .Values.global.ghcrIoMirror }}
+    {{- end }}
+    - name: thanos.query.autoDownsampling
+      value: true
+    - name: thanos.query.standalone
+      value: true
+    - name: thanos.query.stores
+      value:
+      {{- range $index, $plugin := (lookup "greenhouse.sap/v1alpha1" "Plugin" .Chart.Name "").items }}
+        {{- if eq (get $plugin.metadata.labels "greenhouse.sap/plugindefinition") "thanos" }}
+          {{- range $index, $option := $plugin.spec.optionValues }}
+            {{- if eq $option.name "thanos.query.ingress.grpc.hosts" }}
+              {{- print "- " (get (index (get $option "value") 0) "host") ":443" | nindent 6 }}
+            {{- end }}
+          {{- end }}
+        {{- end }}
+      {{- end }}
+    - name: thanos.ruler.enabled
+      value: false
+    - name: thanos.query.ingress.annotations
+      value:
+        disco: "true"
+        kubernetes.io/tls-acme: "true"
+    - name: thanos.query.ingress.enabled
+      value: true
+    - name: thanos.query.ingress.hosts
+      value:
+        - host: "{{ $thanosHost }}"
+          paths:
+            - path: /
+              pathType: Prefix
+    - name: thanos.query.ingress.ingressClassName
+      value: nginx
+    - name: thanos.query.ingress.tls
+      value:
+        - hosts:
+            - "{{ $thanosHost }}"
+          secretName: "tls-{{ .Chart.Name }}-thanos"
+  pluginDefinition: thanos
