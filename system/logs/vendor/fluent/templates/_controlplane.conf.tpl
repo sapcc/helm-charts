@@ -522,7 +522,7 @@
   @id copy_swift
   <store>
     @type opensearch
-    @id "opensearch_swift_#{ENV['USER1']}"
+    @id "opensearch_swift_#{ENV['USER2']}"
     logstash_prefix logstash-swift
     logstash_format true
     template_name logstash-swift
@@ -531,8 +531,8 @@
     hosts {{.Values.global.opensearch.host}}
     scheme https
     port {{.Values.global.opensearch.port}}
-    user "#{ENV['USER1']}"
-    password "#{ENV['PASSWORD1']}"
+    user "#{ENV['USER2']}"
+    password "#{ENV['PASSWORD2']}"
     log_os_400_reason true
     ssl_verify true
     ssl_version TLSv1_2
@@ -583,7 +583,7 @@
   @id copy_kubernetes
   <store>
     @type opensearch
-    @id "opensearch_kubernetes_#{ENV['USER1']}"
+    @id "opensearch_kubernetes_#{ENV['USER2']}"
     logstash_prefix {{.Values.opensearch.indexname}}
     logstash_format true
     template_name {{.Values.opensearch.indexname}}
@@ -592,8 +592,8 @@
     hosts {{.Values.global.opensearch.host}}
     scheme https
     port {{.Values.global.opensearch.port}}
-    user "#{ENV['USER1']}"
-    password "#{ENV['PASSWORD1']}"
+    user "#{ENV['USER2']}"
+    password "#{ENV['PASSWORD2']}"
     log_os_400_reason true
     ssl_verify true
     ssl_version TLSv1_2
