@@ -29,6 +29,11 @@ default_tag = vc-{{ $az }}-0
 
 {{- if .Values.api.auth }}
 [auth]
+{{- /*
+Note: the federation-related methods must be in the beginning of the list.
+This goes against the official keystone documentation.
+This allows them to work even if the "external" method is present.
+*/}}
 methods = {{ if .Values.federation.oidc.enabled }}openid,{{ end }}{{ .Values.api.auth.methods | default "password,token,application_credential" }}
 {{ if .Values.api.auth.external }}external = {{ .Values.api.auth.external }}{{ end }}
 {{ if .Values.api.auth.password }}password = {{ .Values.api.auth.password }}{{ end }}
