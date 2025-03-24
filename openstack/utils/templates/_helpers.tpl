@@ -76,3 +76,15 @@ trace_sqlalchemy = {{ .Values.global.osprofiler.trace_sqlalchemy }}
 {{- include "utils.proxysql.proxysql_signal_stop_script" . }}
 {{- include "utils.linkerd.signal_stop_script" . }}
 {{- end }}
+
+{{- define "utils.sentry_config" -}}
+- name: SENTRY_DSN
+  valueFrom:
+    secretKeyRef:
+      name: sentry
+      key: {{ .Chart.Name }}.DSN.python
+{{- if .Values.sentry.release }}
+- name: SENTRY_RELEASE
+  value: {{ .Values.sentry.release }}
+{{- end -}}
+{{- end -}}
