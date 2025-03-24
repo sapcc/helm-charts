@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.18.1 - 2025/03/21
+* make backup storage to AWS and Swift flexibel via enablement in `backup-v2` configuration
+
 ## v0.18.0 - 2025/03/07
 * add credential-updater sidecar, that reapplies init.sql on the detected change
 * make init.sql not optional

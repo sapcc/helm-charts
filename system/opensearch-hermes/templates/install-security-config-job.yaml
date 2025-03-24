@@ -3,9 +3,9 @@ kind: Job
 metadata:
   name: "install-security-config"
   labels:
-    app.kubernetes.io/managed-by: {{ .Release.Service | quote }}
-    app.kubernetes.io/instance: {{ .Release.Name | quote }}
-    app.kubernetes.io/version: {{ .Chart.AppVersion }}
+    #app.kubernetes.io/managed-by: {{ .Release.Service | quote }}
+    #app.kubernetes.io/instance: {{ .Release.Name | quote }}
+    #app.kubernetes.io/version: {{ .Chart.AppVersion }}
     helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
     ccloud/service: hermes
     ccloud/support-group: observability
@@ -19,8 +19,8 @@ spec:
     metadata:
       name: "install-security-config"
       labels:
-        app.kubernetes.io/managed-by: {{ .Release.Service | quote }}
-        app.kubernetes.io/instance: {{ .Release.Name | quote }}
+        #app.kubernetes.io/managed-by: {{ .Release.Service | quote }}
+        #app.kubernetes.io/instance: {{ .Release.Name | quote }}
         helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
     spec:
       restartPolicy: Never
@@ -51,16 +51,15 @@ spec:
           name: security-config
           subPath: tenants.yml
         - mountPath: /usr/share/opensearch/config/certs/admin
-          name: admin-cert-manager
+          name: admin-cert
         - mountPath: /usr/share/opensearch/config/certs/tenant/ca.crt
           name: ca-cert
           subPath: ca.crt
-          secretName: certs
       volumes:
-      - name: admin-cert-manager
+      - name: admin-cert
         secret:
           defaultMode: 420
-          secretName: admin-cert-manager
+          secretName: admin-cert
       - name: ca-cert
         secret:
           defaultMode: 420
