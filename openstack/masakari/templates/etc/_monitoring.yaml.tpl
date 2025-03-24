@@ -99,7 +99,8 @@ openstack:
           - name: nfs idle
             monitor: nfs idle
         segments:
-          - prod
+          - prod-blue
+          - prod-green
           - dev
           - clusterapi
         notification:
