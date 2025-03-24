@@ -97,6 +97,13 @@ cronus:
 {{- if .Values.cronus.smtps }}
     startTls: :{{ .Values.cronus.smtps }} # default :587
 {{- end }}
+{{- if .Values.cronus.auth }}
+  auth:
+    allowPasswordsForCIDRs:
+    {{- range $v := .Values.cronus.auth.allowPasswordsForCIDRs }}
+      - {{ $v | quote }}
+    {{- end }}
+{{- end }}
     tls:
       namespace: {{ .Values.cronus.tls.namespace | default "cronus" }}
       serverTlsName: {{ .Values.cronus.tls.serverTlsName }}
