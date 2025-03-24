@@ -122,6 +122,15 @@ data:
     - "indices:data/write/bulk*"
     - "indices:data/write/index"
   - index_patterns:
+    - "alerts-*"
+    allowed_actions:
+    - "indices:admin/template/get"
+    - "indices:admin/template/put"
+    - "indices:admin/mapping/put"
+    - "indices:admin/create"
+    - "indices:data/write/bulk*"
+    - "indices:data/write/index"
+  - index_patterns:
     - "storage-*"
     allowed_actions:
     - "indices:admin/template/get"
@@ -132,27 +141,6 @@ data:
     - "indices:data/write/index"
   - index_patterns:
     - "deployments-*"
-    allowed_actions:
-    - "indices:admin/template/get"
-    - "indices:admin/template/put"
-    - "indices:admin/mapping/put"
-    - "indices:admin/create"
-    - "indices:data/write/bulk*"
-    - "indices:data/write/index"
-
-syslog:
-  reserved: false
-  cluster_permissions:
-  - "cluster_monitor"
-  - "cluster_composite_ops"
-  - "cluster:admin/ingest/pipeline/put"
-  - "cluster:admin/ingest/pipeline/get"
-  - "indices:admin/template/get"
-  - "cluster_composite_ops"
-  - "cluster_manage_index_templates"
-  index_permissions:
-  - index_patterns:
-    - "syslog-*"
     allowed_actions:
     - "indices:admin/template/get"
     - "indices:admin/template/put"
