@@ -8,7 +8,7 @@
 - name: SENTRY_REDIS_PORT
   value: "6379"
 - name: SENTRY_REDIS_PASSWORD
-  valueFrom: { secretKeyRef: { name: {{ template "redis.fullname" . }}-redis-user-default, key: password } }
+  valueFrom: { secretKeyRef: { name: {{ template "redis.fullname" . }}-user-default, key: password } }
 - name: SENTRY_SECRET_KEY
   valueFrom: { secretKeyRef: { name: {{ template "fullname" . }}, key: sentry-secret-key } }
 - name: SENTRY_DB_USER
