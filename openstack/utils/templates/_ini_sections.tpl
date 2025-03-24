@@ -6,9 +6,14 @@ heartbeat_in_pthread = False
 {{- end }}
 
 {{- define "ini_sections.default_transport_url" }}
-{{- $data := merge (pick .Values.rabbitmq "host" "port" "virtual_host") .Values.rabbitmq.users.default }}
-{{- $_ := required ".Values.rabbitmq.users.default.user is required" .Values.rabbitmq.users.default.user }}
-{{- $_ := required ".Values.rabbitmq.users.default.password is required" .Values.rabbitmq.users.default.password }}
+{{- $defaultUser := default "default" .Values.rabbitmq.defaultUser }}
+{{- if and (hasKey .Values.global "rabbitmq") (hasKey .Values.global.rabbitmq "defaultUser") (hasKey .Values.rabbitmq "defaultUser") }}
+    {{- $defaultUser = coalesce .Values.global.rabbitmq.defaultUser .Values.rabbitmq.defaultUser "default" }}
+{{- end }}
+{{- $user := index .Values.rabbitmq.users $defaultUser }}
+{{- $data := merge (pick .Values.rabbitmq "host" "port" "virtual_host") $user }}
+{{- $_ := required (printf ".Values.rabbitmq.users.%s.user is required" $defaultUser) $data.user }}
+{{- $_ := required (printf ".Values.rabbitmq.users.%s.password is required" $defaultUser) $data.password }}
 {{- include "ini_sections._transport_url" (tuple . $data) }}
 {{- end }}
 
