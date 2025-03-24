@@ -3,7 +3,7 @@ openstack:
     interval: 60
     compute_interface: internal
     ha_interface: internal
-    notification_wait_time: 3600 # do not host ha more than one per hour
+    notification_wait_time: 1 # 3600 # do not host ha more than one per hour
     exporter:
       listen: 0.0.0.0:{{ .Values.monitoringExporterPort }}
       string_to_bool:
