@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.6.8 - 2025/03/24
+
+* Set Service 'externalTrafficPolicy: Local' when using external IP.
+* needed for calico rollout
+* chart version bumped
+
 ## v0.6.7 - 2025/03/21
 
 memcached [version](https://github.com/memcached/memcached/wiki/ReleaseNotes1638) bumped to `1.6.38-alpine3.21`
