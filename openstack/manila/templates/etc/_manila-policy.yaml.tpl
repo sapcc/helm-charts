@@ -32,6 +32,7 @@
 "share:get_all": "rule:context_is_viewer"
 "share:list_by_share_server_id": "rule:context_is_cloud_viewer"
 "share:list_by_host": "rule:context_is_sharedfilesystem_admin"
+"context_is_host_admin": "rule:context_is_admin"
 "share:list_shares_in_deferred_deletion_states": "rule:cloud_viewer"
 "share:update": "rule:context_is_editor"
 "share:access_get": "rule:context_is_viewer"
