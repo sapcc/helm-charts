@@ -17,10 +17,9 @@
 {{/* Get related Thanos store endpoints */}}
 {{- define "thanosStoreEndpoints" -}}
 {{- range $cluster := .Values.thanos.globalClusters -}}
-{{- $clusterPrefix := ($cluster | trunc 3) -}}
-{{- $stores := (include "getRelatedStoreEndpoints" (list $clusterPrefix $)) }}
-{{- if and (contains $clusterPrefix $cluster) $stores }}
-- clusterName: {{ $cluster }}
+{{- $stores := (include "getRelatedStoreEndpoints" (list $cluster.prefix $)) }}
+{{- if and (contains $cluster.prefix $cluster.name) $stores }}
+- clusterName: {{ $cluster.name }}
   overrides:
   - name: thanos.query.stores
     value: 
