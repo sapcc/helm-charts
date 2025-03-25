@@ -49,11 +49,7 @@ spec:
             - name: NAMESPACE
               value: {{ .Release.Namespace }}
             - name: DEPENDENCY_SERVICE
-{{- if .Values.percona_cluster.enabled }}
-              value: "{{ .Release.Name }}-percona-pxc"
-{{- else }}
-              value: "{{ .Release.Name }}-mariadb"
-{{- end }}
+              value: {{ include "keystone.db_service" . | quote }}
             - name: DEPENDENCY_JOBS
               value: "{{ tuple . "job-migration" | include "job_name" }}"
             {{- if .Values.sentry.enabled }}
