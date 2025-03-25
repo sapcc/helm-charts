@@ -51,10 +51,10 @@ spec:
       prysm-sidecar/sidecar-env-configmap: "{{ .Values.objectstore.prysm.rgwSidecarWebhook.sidecarEnvConfig.configMapName }}"
       checksum/sidecar-env-config: {{ include (print $.Template.BasePath "/prysm-rgw-sidecar-webhook-configmap.yaml") . | sha256sum }}
       {{- end }}
+    {{- if and .Values.objectstore.prysm.rgwSidecarWebhook ( .Values.objectstore.prysm.rgwSidecarWebhook.enabled ) }}
     labels:
-      {{- if and .Values.objectstore.prysm.rgwSidecarWebhook ( .Values.objectstore.prysm.rgwSidecarWebhook.enabled ) }}
       prysm-sidecar: "yes"
-      {{- end }}
+    {{- end }}
     instances: {{ .Values.objectstore.gateway.instances }}
     {{- if .Values.objectstore.gateway.port }}
     port: {{ .Values.objectstore.gateway.port }}
