@@ -8,10 +8,17 @@ metadata:
 spec:
   interval: 60s
   jobName: ingress-external-public-service
+{{- if .Values.ingress.external_public_service.monitor.url }}
+  module: http_200_403
+  prober:
+    scheme: https
+    url: https://{{ required ".Values.ingress.external_public_service.monitor.url" .Values.ingress.external_public_service.monitor.url }}
+{{- else }}
   module: icmp
   prober:
     scheme: https
     url: prober.{{ .Values.global.region }}.cloud.sap
+{{- end }}
   scrapeTimeout: 55s
   targets:
     staticConfig:
