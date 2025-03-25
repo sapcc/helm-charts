@@ -28,6 +28,7 @@ spec:
       operator: In
       values:
       - "true"
+{{- if and .Values.kubeMonitoring.cephClusters .Values.kubeMonitoring.computeClusters .Values.kubeMonitoring.obsClusters }} 
     - key: cluster
       operator: In
       values:
@@ -46,13 +47,14 @@ spec:
       - {{ $cluster }}
     {{- end }}
 {{- end }}
+{{- end }}
   plugin:
     disabled: false
     displayName: Thanos
     pluginDefinition: thanos
     releaseNamespace: kube-monitoring
-    {{- if and .Values.global.quayIoMirror .Values.global.ghcrIoMirror .Values.global.dockerHubMirror }}
     optionValues:
+    {{- if and .Values.global.quayIoMirror .Values.global.ghcrIoMirror .Values.global.dockerHubMirror }}
     - name: thanos.image.repository
       value: {{ printf "%s/thanos/thanos" .Values.global.quayIoMirror }}
     - name: thanos.initChownData.image.registry

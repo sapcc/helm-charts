@@ -1,0 +1,92 @@
+{{- if and .Values.thanos.enabled .Values.thanos.globalClusters -}}
+{{- $st1Stores := (include "thanosStoreEndpoints" (list "st1" .)) }}
+{{- $obsStores := (include "thanosStoreEndpoints" (list "obs" .)) }}
+kind: Secret
+apiVersion: v1
+metadata:
+  name: thanos-{{ .Chart.Name }}-tls
+  namespace: {{ .Chart.Name }}
+type: Opaque
+data:
+  ca.crt: {{ required ".Values.thanos.tls.caCert missing" .Values.thanos.tls.caCert | b64enc | quote }} 
+  tls.crt: {{ required ".Values.thanos.tls.tlsCert missing" .Values.thanos.tls.tlsCert | b64enc | quote }} 
+  tls.key: {{ required ".Values.thanos.tls.tlsKey missing" .Values.thanos.tls.tlsKey | b64enc | quote }}
+---
+apiVersion: greenhouse.sap/v1alpha1
+kind: PluginPreset
+metadata:
+  name: thanos-global
+  namespace: {{ .Chart.Name }}
+spec:
+ clusterSelector:
+    matchExpressions:
+    - key: greenhouse.sap/pluginpreset
+      operator: In
+      values:
+      - "true"
+    - key: cluster
+      operator: In
+      values:
+        {{ toYaml .Values.thanos.globalClusters | nindent 8 }}
+ clusterOptionOverrides:
+{{- range $cluster := .Values.thanos.globalClusters }}
+  {{- if and (contains "st1" $cluster) $st1Stores }}
+  - clusterName: {{ $cluster }}
+    overrides:
+    - name: thanos.query.stores
+      value: 
+        {{- $st1Stores | nindent 8 }}
+  {{- end }}
+  {{- if and (contains "obs" $cluster) $obsStores }}
+  - clusterName: {{ $cluster }}
+    overrides:
+    - name: thanos.query.stores
+      value:
+        {{- $obsStores | nindent 8 }}
+  {{- end }}
+{{- end }}
+ plugin:
+  disabled: false
+  displayName: Thanos global
+  pluginDefinition: thanos
+  releaseNamespace: kube-monitoring
+  optionValues:
+    optionValues:
+    {{- if and .Values.global.quayIoMirror .Values.global.ghcrIoMirror .Values.global.dockerHubMirror }}
+    - name: thanos.image.repository
+      value: {{ printf "%s/thanos/thanos" .Values.global.quayIoMirror }}
+    - name: thanos.initChownData.image.registry
+      value: {{ .Values.global.dockerHubMirror }}
+    - name: testFramework.image.registry
+      value: {{ .Values.global.ghcrIoMirror }}
+    {{- end }}
+    - name: thanos.query.autoDownsampling
+      value: false
+    - name: thanos.query.serviceLabels
+      value:
+        greenhouse.sap/expose: "true"
+        greenhouse.sap/exposeNamedPort: http
+    - name: thanos.query.standalone
+      value: true
+    - name: thanos.query.tls.data.caCert
+      valueFrom:
+        secret:
+          key: ca.crt
+          name: thanos-{{ .Chart.Name }}-tls
+    - name: thanos.query.tls.data.tlsCert
+      valueFrom:
+        secret:
+          key: tls.crt
+          name: thanos-{{ .Chart.Name }}-tls
+    - name: thanos.query.tls.data.tlsKey
+      valueFrom:
+        secret:
+          key: tls.key
+          name: thanos-{{ .Chart.Name }}-tls
+    - name: thanos.ruler.alertmanagers.authentication.enabled
+      value: false
+    - name: thanos.serviceMonitor.selfMonitor
+      value: true
+    - name: thanos.store.enabled
+      value: false
+{{- end }}
