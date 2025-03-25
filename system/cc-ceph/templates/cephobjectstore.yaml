@@ -51,6 +51,10 @@ spec:
       prysm-sidecar/sidecar-env-configmap: "{{ .Values.objectstore.prysm.rgwSidecarWebhook.sidecarEnvConfig.configMapName }}"
       checksum/sidecar-env-config: {{ include (print $.Template.BasePath "/prysm-rgw-sidecar-webhook-configmap.yaml") . | sha256sum }}
       {{- end }}
+      {{- if and .Values.objectstore.prysm.rgwSidecarWebhook ( .Values.objectstore.prysm.rgwSidecarWebhook.enabled ) }}
+      # reload deployment when the sidecar configmap changes
+      configmap.reloader.stakater.com/reload: {{ .Values.objectstore.prysm.rgwSidecarWebhook.sidecarEnvConfig.configMapName | quote }}
+      {{- end }}
     {{- if and .Values.objectstore.prysm.rgwSidecarWebhook ( .Values.objectstore.prysm.rgwSidecarWebhook.enabled ) }}
     labels:
       prysm-sidecar: "yes"
