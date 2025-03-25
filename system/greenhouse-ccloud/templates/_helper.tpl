@@ -19,10 +19,12 @@
 {{- range $cluster := .Values.thanos.globalClusters -}}
 {{- $clusterPrefix := ($cluster | trunc 3) -}}
 {{- $stores := (include "getRelatedStoreEndpoints" (list $clusterPrefix $)) }}
+{{- if and (contains $clusterPrefix $cluster) $stores }}
 - clusterName: {{ $cluster }}
   overrides:
   - name: thanos.query.stores
     value: 
       {{- $stores | nindent 8 }}
+{{- end }}
 {{- end }}
 {{- end }}
