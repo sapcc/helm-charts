@@ -9,7 +9,7 @@ openstack:
   notification:
     oldest: 600
     match: |
-      [[ ne .Notification.Status "ignored" "new" ]]
+      [[ and (ne .Notification.Status "new") (ne .Notification.Status "ignored") ]]
     sync: true
 slack:
   token: {{"{{"}} resolve "vault+kvv2:///secrets/global/masakari/slack/token" {{"}}"}}
