@@ -1,5 +1,5 @@
-{{/* Thanos store endpoints */}}
-{{- define "thanosStoreEndpoints" -}}
+{{/* Get related Thanos store endpoints */}}
+{{- define "getRelatedStoreEndpoints" -}}
 {{- $name := index . 0 -}}
 {{- $root := index . 1 -}}
 {{- $stores := list }}
@@ -14,3 +14,15 @@
 {{- end }}
 {{- end -}}
 
+{{/* Get related Thanos store endpoints */}}
+{{- define "thanosStoreEndpoints" -}}
+{{- range $cluster := .Values.thanos.globalClusters -}}
+{{- $clusterPrefix := ($cluster | trunc 3) -}}
+{{- $stores := (include "getRelatedStoreEndpoints" (list $clusterPrefix $)) }}
+- clusterName: {{ $cluster }}
+  overrides:
+  - name: thanos.query.stores
+    value: 
+      {{- $stores | nindent 8 }}
+{{- end }}
+{{- end }}

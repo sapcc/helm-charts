@@ -1,6 +1,4 @@
 {{- if and .Values.thanos.enabled .Values.thanos.globalClusters -}}
-{{- $st1Stores := (include "thanosStoreEndpoints" (list "st1" .)) }}
-{{- $obsStores := (include "thanosStoreEndpoints" (list "obs" .)) }}
 kind: Secret
 apiVersion: v1
 metadata:
@@ -18,7 +16,7 @@ metadata:
   name: thanos-global
   namespace: {{ .Chart.Name }}
 spec:
- clusterSelector:
+  clusterSelector:
     matchExpressions:
     - key: greenhouse.sap/pluginpreset
       operator: In
@@ -28,29 +26,15 @@ spec:
       operator: In
       values:
         {{ toYaml .Values.thanos.globalClusters | nindent 8 }}
- clusterOptionOverrides:
-{{- range $cluster := .Values.thanos.globalClusters }}
-  {{- if and (contains "st1" $cluster) $st1Stores }}
-  - clusterName: {{ $cluster }}
-    overrides:
-    - name: thanos.query.stores
-      value: 
-        {{- $st1Stores | nindent 8 }}
-  {{- end }}
-  {{- if and (contains "obs" $cluster) $obsStores }}
-  - clusterName: {{ $cluster }}
-    overrides:
-    - name: thanos.query.stores
-      value:
-        {{- $obsStores | nindent 8 }}
-  {{- end }}
-{{- end }}
- plugin:
-  disabled: false
-  displayName: Thanos global
-  pluginDefinition: thanos
-  releaseNamespace: kube-monitoring
-  optionValues:
+{{- if .Values.thanos.globalClusters }}
+  clusterOptionOverrides:
+  {{ include "thanosStoreEndpoints" . | nindent 4 }}
+{{- end }}  
+  plugin:
+    disabled: false
+    displayName: Thanos global
+    pluginDefinition: thanos
+    releaseNamespace: kube-monitoring
     optionValues:
     {{- if and .Values.global.quayIoMirror .Values.global.ghcrIoMirror .Values.global.dockerHubMirror }}
     - name: thanos.image.repository
