@@ -47,6 +47,13 @@ spec:
   {{- end }}
     annotations:
       checksum/config: {{ include (print $.Template.BasePath "/ceph-config-override.yaml") . | sha256sum }}
+      {{- if and .Values.objectstore.rgwSidecarWebhook (and .Values.objectstore.rgwSidecarWebhook.sidecarEnvConfig .Values.objectstore.rgwSidecarWebhook.sidecarEnvConfig.enabled) }}
+      prysm-sidecar/sidecar-env-configmap: "{{ .Values.objectstore.rgwSidecarWebhook.sidecarEnvConfig.configMapName }}"
+      {{- end }}
+    labels:
+      {{- if and .Values.objectstore.rgwSidecarWebhook ( .Values.objectstore.rgwSidecarWebhook.enabled ) }}
+      prysm-sidecar: "yes"
+      {{- end }}
     instances: {{ .Values.objectstore.gateway.instances }}
     {{- if .Values.objectstore.gateway.port }}
     port: {{ .Values.objectstore.gateway.port }}
