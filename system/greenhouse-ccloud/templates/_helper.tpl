@@ -1,4 +1,4 @@
-{{/* Get related Thanos store endpoints */}}
+{{/* Get store endpoints to put into global queries */}}
 {{- define "thanos.storeEndpoints" -}}
 {{- range $cluster := $.Values.thanos.globalClusters -}}
 {{- $stores := (include "thanos.getRelatedStoreEndpoints" (list $cluster.prefixes $)) }}
