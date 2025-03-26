@@ -1,4 +1,18 @@
 {{/* Get related Thanos store endpoints */}}
+{{- define "thanos.storeEndpoints" -}}
+{{- range $cluster := $.Values.thanos.globalClusters -}}
+{{- $stores := (include "thanos.getRelatedStoreEndpoints" (list $cluster.prefixes $)) }}
+{{- if $stores }}
+- clusterName: {{ $cluster.name }}
+  overrides:
+  - name: thanos.query.stores
+    value:
+      {{- $stores | nindent 8 }}
+{{- end }}
+{{- end }}
+{{- end }}
+
+{{/* Get related Thanos store endpoints */}}
 {{- define "thanos.getRelatedStoreEndpoints" -}}
 {{- $prefixes := index . 0 -}}
 {{- $root := index . 1 -}}
@@ -17,17 +31,3 @@
   - {{ $v }}
 {{- end }}
 {{- end -}}
-
-{{/* Get related Thanos store endpoints */}}
-{{- define "thanos.storeEndpoints" -}}
-{{- range $cluster := $.Values.thanos.globalClusters -}}
-{{- $stores := (include "thanos.getRelatedStoreEndpoints" (list $cluster.prefixes $)) }}
-{{- if $stores }}
-- clusterName: {{ $cluster.name }}
-  overrides:
-  - name: thanos.query.stores
-    value: 
-      {{- $stores | nindent 8 }}
-{{- end }}
-{{- end }}
-{{- end }}
