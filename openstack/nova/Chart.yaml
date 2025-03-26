@@ -1,19 +1,30 @@
+---
 apiVersion: v2
 description: A Helm chart for Kubernetes
 name: nova
 icon: https://www.openstack.org/themes/openstack/images/project-mascots/Nova/OpenStack_Project_Nova_mascot.png
-version: 0.4.1
+version: 0.5.0
 appVersion: "rocky"
 dependencies:
   - name: mariadb
     condition: mariadb.enabled
     repository: oci://keppel.eu-de-1.cloud.sap/ccloud-helm
     version: 0.18.2
+  - condition: pxc_db.enabled
+    name: pxc-db
+    alias: pxc_db
+    repository: oci://keppel.eu-de-1.cloud.sap/ccloud-helm
+    version: 0.3.1
   - name: mariadb
     alias: mariadb_api
     condition: mariadb_api.enabled
     repository: oci://keppel.eu-de-1.cloud.sap/ccloud-helm
     version: 0.18.2
+  - condition: pxc_db_api.enabled
+    name: pxc-db
+    alias: pxc_db_api
+    repository: oci://keppel.eu-de-1.cloud.sap/ccloud-helm
+    version: 0.3.1
   - name: mysql_metrics
     condition: mariadb.enabled
     repository: oci://keppel.eu-de-1.cloud.sap/ccloud-helm
@@ -32,6 +43,11 @@ dependencies:
     condition: mariadb_cell2.enabled
     repository: oci://keppel.eu-de-1.cloud.sap/ccloud-helm
     version: 0.18.2
+  - condition: pxc_db_cell2.enabled
+    name: pxc-db
+    alias: pxc_db_cell2
+    repository: oci://keppel.eu-de-1.cloud.sap/ccloud-helm
+    version: 0.3.1
   - name: rabbitmq
     alias: rabbitmq_cell2
     condition: cell2.enabled
