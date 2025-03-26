@@ -5,9 +5,11 @@
 {{- $stores := list }}
 {{- range $plugin := $root.Values.ingressPlugins -}}
 {{- range $prefix := $prefixes -}}
+{{- if and (hasPrefix "ingress" $plugin.recordName ) (hasSuffix "." $plugin.recordName ) }}
 {{- $thanosStore := printf "thanos-grpc.%s:443" (trimSuffix "." (trimPrefix "ingress." $plugin.recordName)) -}}
 {{- if contains $prefix $thanosStore -}}
 {{- $stores = append $stores $thanosStore -}}
+{{- end -}}
 {{- end -}}
 {{- end -}}
 {{- end -}}
