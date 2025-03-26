@@ -89,11 +89,7 @@ spec:
           imagePullPolicy: IfNotPresent
           command: ["dumb-init", "neutron-dhcp-agent", "--config-file", "/etc/neutron/neutron.conf", "--config-dir", "/etc/neutron/secrets", "--config-file", "/etc/neutron/dhcp-agent.ini", "--config-file", "/etc/neutron/linux-bridge.ini", "--config-file", "/etc/neutron/az-{{ $az }}.conf"]
           env:
-            - name: SENTRY_DSN
-              valueFrom:
-                secretKeyRef:
-                  name: sentry
-                  key: neutron.DSN.python
+            {{- include "utils.sentry_config" $ | nindent 12 }}
             - name: DEBUG_CONTAINER
               value: "false"
             - name: SPT_NOENV
@@ -166,11 +162,7 @@ spec:
           imagePullPolicy: IfNotPresent
           command: ["dumb-init", "neutron-l3-agent", "--config-file", "/etc/neutron/neutron.conf", "--config-dir", "/etc/neutron/secrets", "--config-file", "/etc/neutron/l3-agent.ini", "--config-file", "/etc/neutron/plugins/ml2/ml2-conf.ini", "--config-file", "/etc/neutron/linux-bridge.ini", "--config-file", "/etc/neutron/az-{{ $az }}.conf"]
           env:
-            - name: SENTRY_DSN
-              valueFrom:
-                secretKeyRef:
-                  name: sentry
-                  key: neutron.DSN.python
+            {{- include "utils.sentry_config" $ | nindent 12 }}
             - name: DEBUG_CONTAINER
               value: "false"
             {{- include "utils.trust_bundle.env" $ | indent 12 }}
@@ -223,11 +215,7 @@ spec:
           imagePullPolicy: IfNotPresent
           command: ["dumb-init", "neutron-linuxbridge-agent", "--config-file", "/etc/neutron/neutron.conf", "--config-dir", "/etc/neutron/secrets", "--config-file", "/etc/neutron/plugins/ml2/ml2_conf.ini", "--config-file", "/etc/neutron/linux-bridge.ini"]
           env:
-            - name: SENTRY_DSN
-              valueFrom:
-                secretKeyRef:
-                  name: sentry
-                  key: neutron.DSN.python
+            {{- include "utils.sentry_config" $ | nindent 12 }}
             - name: DEBUG_CONTAINER
               value: "false"
             - name: PYTHONWARNINGS

@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.6.9 - 2025/03/25
+
+* Set type: LoadBalancer in case of external IP
+* needed for global/calico rollout
+* chart version bumped
+
 ## v0.6.8 - 2025/03/24
 
 * Set Service 'externalTrafficPolicy: Local' when using external IP.

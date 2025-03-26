@@ -64,11 +64,7 @@ spec:
           resources:
 {{ toYaml $.Values.pod.resources.cc_fabric_agent | indent 12 }}
           env:
-            - name: SENTRY_DSN
-              valueFrom:
-                secretKeyRef:
-                  name: sentry
-                  key: neutron.DSN.python
+            {{- include "utils.sentry_config" $ | nindent 12 }}
             {{- include "utils.trust_bundle.env" $ | indent 12 }}
           ports:
             - containerPort: 9090
