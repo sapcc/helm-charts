@@ -12,7 +12,7 @@
 {{- end }}
 {{- end }}
 
-{{/* Get related Thanos store endpoints */}}
+{{/* Get related Thanos store endpoints filtered by given prefix */}}
 {{- define "thanos.getRelatedStoreEndpoints" -}}
 {{- $prefixes := index . 0 -}}
 {{- $root := index . 1 -}}
