@@ -60,11 +60,7 @@ spec:
   {{- end }}
 {{- end }}
         - name: DEPENDENCY_SERVICE
-{{- if .Values.percona_cluster.enabled }}
-          value: "{{ .Release.Name }}-percona-pxc,{{ .Release.Name }}-memcached"
-{{- else }}
-          value: "{{ .Release.Name }}-mariadb,{{ .Release.Name }}-memcached"
-{{- end }}
+          value: {{ include "keystone.service_dependencies" . | quote }}
         - name: COMMAND
           value: "true"
       containers:
