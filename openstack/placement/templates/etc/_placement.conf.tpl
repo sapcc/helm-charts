@@ -10,9 +10,6 @@ memcache_servers = {{ .Chart.Name }}-memcached.{{ include "svc_fqdn" . }}:{{ .Va
 [placement_database]
 {{- include "ini_sections.database_options_mysql" . }}
 
-
-{{- include "osprofiler" . }}
-
 [oslo_concurrency]
 lock_path = /var/lib/placement/tmp
 
