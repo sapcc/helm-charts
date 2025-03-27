@@ -19,3 +19,7 @@ swift_store_key = {{ required ".Values.global.glance_service_password is missing
 key = {{ required ".Values.global.glance_service_password is missing" .Values.global.glance_service_password }}
 user = {{ .Values.swift.projectName }}:{{ .Values.global.glance_service_user | default "glance" | replace "$" "$$"}}
 {{- end }}
+
+{{- if .Values.osprofiler.enabled }}
+{{- include "osprofiler" . }}
+{{- end }}
