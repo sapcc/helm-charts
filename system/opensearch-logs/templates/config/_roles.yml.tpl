@@ -23,6 +23,24 @@ data:
   - "cluster:admin/opensearch/ml/predict"
   index_permissions:
   - index_patterns:
+    - "alerts-datastream"
+    allowed_actions:
+    - "indices:admin/template/get"
+    - "indices:admin/template/put"
+    - "indices:admin/mapping/put"
+    - "indices:admin/create"
+    - "indices:data/write/bulk*"
+    - "indices:data/write/index"
+  - index_patterns:
+    - "deployments-datastream"
+    allowed_actions:
+    - "indices:admin/template/get"
+    - "indices:admin/template/put"
+    - "indices:admin/mapping/put"
+    - "indices:admin/create"
+    - "indices:data/write/bulk*"
+    - "indices:data/write/index"
+  - index_patterns:
     - "logstash-*"
     allowed_actions:
     - "indices:admin/template/get"
@@ -68,24 +86,6 @@ data:
     - "indices:data/write/bulk*"
     - "indices:data/write/index"
   - index_patterns:
-    - "kubernikus-*"
-    allowed_actions:
-    - "indices:admin/template/get"
-    - "indices:admin/template/put"
-    - "indices:admin/mapping/put"
-    - "indices:admin/create"
-    - "indices:data/write/bulk*"
-    - "indices:data/write/index"
-  - index_patterns:
-    - "scaleout-*"
-    allowed_actions:
-    - "indices:admin/template/get"
-    - "indices:admin/template/put"
-    - "indices:admin/mapping/put"
-    - "indices:admin/create"
-    - "indices:data/write/bulk*"
-    - "indices:data/write/index"
-  - index_patterns:
     - "qade2-logstash-*"
     allowed_actions:
     - "indices:admin/template/get"
@@ -105,24 +105,6 @@ data:
     - "indices:data/write/index"
   - index_patterns:
     - "qade5-logstash-*"
-    allowed_actions:
-    - "indices:admin/template/get"
-    - "indices:admin/template/put"
-    - "indices:admin/mapping/put"
-    - "indices:admin/create"
-    - "indices:data/write/bulk*"
-    - "indices:data/write/index"
-  - index_patterns:
-    - "virtual-*"
-    allowed_actions:
-    - "indices:admin/template/get"
-    - "indices:admin/template/put"
-    - "indices:admin/mapping/put"
-    - "indices:admin/create"
-    - "indices:data/write/bulk*"
-    - "indices:data/write/index"
-  - index_patterns:
-    - "admin-*"
     allowed_actions:
     - "indices:admin/template/get"
     - "indices:admin/template/put"
@@ -159,27 +141,6 @@ data:
     - "indices:data/write/index"
   - index_patterns:
     - "deployments-*"
-    allowed_actions:
-    - "indices:admin/template/get"
-    - "indices:admin/template/put"
-    - "indices:admin/mapping/put"
-    - "indices:admin/create"
-    - "indices:data/write/bulk*"
-    - "indices:data/write/index"
-
-syslog:
-  reserved: false
-  cluster_permissions:
-  - "cluster_monitor"
-  - "cluster_composite_ops"
-  - "cluster:admin/ingest/pipeline/put"
-  - "cluster:admin/ingest/pipeline/get"
-  - "indices:admin/template/get"
-  - "cluster_composite_ops"
-  - "cluster_manage_index_templates"
-  index_permissions:
-  - index_patterns:
-    - "syslog-*"
     allowed_actions:
     - "indices:admin/template/get"
     - "indices:admin/template/put"
