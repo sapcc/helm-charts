@@ -2,6 +2,8 @@
 {{- $cdomains := .Values.global.domain_seeds.customer_domains | required "missing value for .Values.global.domain_seeds.customer_domains" -}}
 {{- $domains  := concat (list "ccadmin" "Default" "cc3test") $cdomains -}}
 
+{{/* seeding of global region only happens once */}}
+{{- if or (not .Values.global.is_global_region) (eq .Values.global.db_region "eu-de-2") (eq .Values.global.db_region "qa-de-1") }}
 apiVersion: "openstack.stable.sap.cc/v1"
 kind: "OpenstackSeed"
 metadata:
@@ -59,14 +61,14 @@ spec:
 {{- end }}
     - interface: internal
       region: {{ .Values.global.region }}
-{{- if .Values.global_setup }}
+{{- if .Values.global.is_global_region }}
       url: http://{{ .Values.global.designate_internal_ip }}:9001
 {{- else }}
       url: http://{{ .Release.Name }}-api.{{ .Release.Namespace }}.svc.kubernetes.{{ .Values.global.region }}.{{ .Values.global.tld }}:9001
 {{- end }}
     - interface: admin
       region: {{ .Values.global.region }}
-{{- if .Values.global_setup }}
+{{- if .Values.global.is_global_region }}
       url: http://{{ .Values.global.designate_admin_ip }}:9001
 {{- else }}
       url: http://{{ .Release.Name }}-api.{{ .Release.Namespace }}.svc.kubernetes.{{ .Values.global.region }}.{{ .Values.global.tld }}:9001
@@ -284,7 +286,7 @@ spec:
   requires:
   - {{ .Release.Namespace }}/domain-default-seed
   - {{ .Release.Namespace }}/domain-ccadmin-seed
-{{- if .Values.global_setup }}
+{{- if .Values.global.is_global_region }}
   - {{ .Release.Namespace }}/designate-global-seed
   - {{ .Release.Namespace }}/domain-global-seed
 {{- else}}
@@ -308,4 +310,5 @@ spec:
       - user: '{{ .Values.designate_nanny.credentials.designate_api.user | include "resolve_secret" }}@{{.Values.designate_nanny.credentials.designate_api.project_user_domain_name }}'
         role: objectstore_admin
 
+{{- end }}
 {{- end }}
