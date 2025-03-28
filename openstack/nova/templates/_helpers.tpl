@@ -1,16 +1,16 @@
 {{- define "nova.helpers.ini_sections.api_database" }}
 
 [api_database]
-connection = {{ tuple . .Values.apidbName .Values.apidbUser .Values.apidbPassword .Values.mariadb_api.name | include "db_url_mysql" }}
+connection = {{ tuple . .Values.apidbName .Values.apidbUser .Values.apidbPassword .Values.mariadb_api.name .Values.apidbType | include "utils.db_url" }}
 {{- include "ini_sections.database_options_mysql" . }}
 {{- end }}
 
 {{- define "cell0_db_path" }}
-    {{- tuple . .Values.cell0dbName .Values.cell0dbUser (default .Values.cell0dbPassword .Values.global.dbPassword) | include "db_url_mysql" }}
+    {{- tuple . .Values.cell0dbName .Values.cell0dbUser (default .Values.cell0dbPassword .Values.global.dbPassword) .Values.mariadb.name .Values.cell0dbType | include "utils.db_url" }}
 {{- end }}
 
 {{- define "cell1_db_path" -}}
-    {{- tuple . .Values.dbName .Values.dbUser (default .Values.dbPassword .Values.global.dbPassword) | include "db_url_mysql" }}
+    {{- tuple . .Values.dbName .Values.dbUser (default .Values.dbPassword .Values.global.dbPassword) .Values.mariadb.name .Values.dbType | include "utils.db_url" }}
 {{- end }}
 
 {{- define "cell1_transport_url" -}}
@@ -23,7 +23,7 @@ connection = {{ tuple . .Values.apidbName .Values.apidbUser .Values.apidbPasswor
 
 {{- define "cell2_db_path" -}}
     {{- if eq .Values.cell2.enabled true -}}
-        {{- tuple . .Values.cell2dbName .Values.cell2dbUser (default .Values.cell2dbPassword .Values.global.dbPassword) .Values.mariadb_cell2.name | include "db_url_mysql" }}
+        {{- tuple . .Values.cell2dbName .Values.cell2dbUser (default .Values.cell2dbPassword .Values.global.dbPassword) .Values.mariadb_cell2.name .Values.cell2dbType | include "utils.db_url" }}
     {{- end }}
 {{- end }}
 
