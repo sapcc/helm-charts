@@ -110,6 +110,12 @@ spec:
               name: nova-etc-secret
               subPath: keystoneauth-secrets.conf
               readOnly: true
+            {{- if .Values.osprofiler.enabled }}
+            - mountPath: /etc/nova/nova.conf.d/osprofiler.conf
+              name: nova-etc-secret
+              subPath: osprofiler.conf
+              readOnly: true
+            {{- end }}
             {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
         - name: nova-libvirt
           image: {{ tuple . "libvirt" | include "container_image_nova" }}
