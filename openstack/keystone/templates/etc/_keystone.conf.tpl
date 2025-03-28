@@ -185,4 +185,5 @@ allow_headers = Content-Type,Cache-Control,Content-Language,Expires,Last-Modifie
 {{- if .Values.federation.oidc.enabled }}
 [federation]
 remote_id_attribute = HTTP_OIDC_ISS
+trusted_dashboard = https://dashboard.{{ .Values.global.region }}.cloud.sap/verify-auth-token
 {{- end }}
