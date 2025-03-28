@@ -283,36 +283,18 @@ spec:
               subPath: sudoers
               readOnly: true
             {{- include "utils.trust_bundle.volume_mount" $ | indent 12 }}
-        - name: neutron-nsprober
-          image: "{{ required "$.Values.global.registry missing" $.Values.global.registry }}/ns-exporter:latest"
-          args:
-            - -concurrency={{ default 1  $.Values.nsprober.concurrency }}
-            - -interval={{ default "1m" $.Values.nsprober.interval }}
-          ports:
-          - containerPort: {{ required "$.Values.nsprober.metrics.port missing" $.Values.nsprober.metrics.port }}
-            name: metrics
-            protocol: TCP
-          env:
-            - name: OS_AUTH_URL
-              value: {{ required "$.Values.nsprober.authURL missing" $.Values.nsprober.authURL }}
-            - name: OS_USERNAME
-              value: {{ $.Values.nsprober.username }}
-            - name: OS_DOMAIN_NAME
-              value: {{ $.Values.nsprober.userDomainName }}
-            - name: OS_PROJECT_NAME
-              value: {{ $.Values.nsprober.projectName }}
-            - name: OS_PROJECT_DOMAIN_NAME
-              value: {{ $.Values.nsprober.projectDomainName }}
-            - name: OS_PASSWORD
-              # original:
-              # valueFrom: { secretKeyRef:    { name: ns-exporter, key: password } }
-              valueFrom:
-                secretKeyRef:
-                  name: neutron-ns-prober
-                  key: password
+        - name: neutron-netns-exporter
+          image: "{{ required "$.Values.global.registry missing" $.Values.global.registry }}/neutron-netns-exporter:20250328093258"
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
+          volumeMounts:
+            - name: neutron-common-secrets
+              mountPath: /etc/neutron/secrets/neutron-common-secrets.conf
+              readOnly: true
+            - name: configmap-neutron-netns-exporter
+              mountPath: /etc/neutron/secrets/openstack-config.conf
+              readOnly: true
       volumes:
         - name: metadata-proxy
           hostPath:
@@ -332,6 +314,9 @@ spec:
         - name: neutron-common-secrets
           secret:
             secretName: neutron-common-secrets
+        - name: configmap-neutron-netns-exporter
+          configMap:
+            name: configmap-neutron-netns-exporter
         {{- include "utils.trust_bundle.volumes" $ | indent 8 }}
 {{- end }}
 {{- end }}
