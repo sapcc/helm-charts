@@ -12,19 +12,6 @@
 {{- end -}}
 {{- end -}}
 
-{{define "keystone_url"}}http://keystone.{{ default .Release.Namespace .Values.global.keystoneNamespace }}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}:5000/v3{{end}}
-
-{{- define "mariadb.db_host"}}{{.Release.Name}}-mariadb.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{- end}}
-
-{{- define "mariadb.resolve_secret" -}}
-    {{- $str := . -}}
-    {{- if (hasPrefix "vault+kvv2" $str ) -}}
-        {{"{{"}} resolve "{{ $str }}" {{"}}"}}
-    {{- else -}}
-        {{ $str }}
-{{- end -}}
-{{- end -}}
-
 {{- define "mariadb.resolve_secret_squote" -}}
     {{- $str := . -}}
     {{- if (hasPrefix "vault+kvv2" $str ) -}}
@@ -32,10 +19,6 @@
     {{- else -}}
         {{ $str | replace "'" "''" | squote }}
 {{- end -}}
-{{- end -}}
-
-{{- define "mariadb.root_password" -}}
-{{- include "mariadb.resolve_secret" (required ".Values.root_password missing" .Values.root_password) }}
 {{- end -}}
 
 {{- define "registry" -}}

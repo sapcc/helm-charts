@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.19.0 - 2025/03/25
+* Remove the following internal helm template helper functions:
+  * `keystone_url`
+  * `mariadb.db_host`
+  * `mariadb.root_password`
+  * `mariadb.resolve_secret`
+
 ## v0.18.2 - 2025/03/21
 * add missing headers to the mariadb-credential-updater.py
 * remove unused `credentialUpdater.enabled` option from values - this sidecar is non-optional
