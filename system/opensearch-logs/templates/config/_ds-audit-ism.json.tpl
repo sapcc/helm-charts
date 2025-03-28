@@ -1,8 +1,8 @@
 {
     "policy": {
-        "policy_id": "otel-_DS_NAME_-ism",
-        "description": "Datastream (ds) ism policy for _DS_NAME_-ds",
-        "schema_version": _SCHEMAVERSION_,
+        "policy_id": "ds-audit-ism",
+        "description": "Datastream (ds) ism policy for audit-ds",
+        "schema_version": "{{ .Values.global.data_stream.schema_version }}",
         "default_state": "initial",
         "states": [
             {
@@ -12,19 +12,19 @@
                     {
                         "state_name": "rollover",
                         "conditions": {
-                            "min_index_age": "_MIN_INDEX_AGE_"
+                            "min_index_age": "{{ .Values.global.data_stream.audit.min_index_age }}"
                         }
                     },
                     {
                         "state_name": "rollover",
                         "conditions": {
-                            "min_size": "_MIN_SIZE_"
+                            "min_size": "{{ .Values.global.data_stream.audit.min_size }}"
                         }
                     },
                     {
                         "state_name": "rollover",
                         "conditions": {
-                            "min_doc_count": "_MIN_DOC_COUNT_"
+                            "min_doc_count": "{{ .Values.global.data_stream.audit.min_doc_count }}"
                         }
                     }
                 ]
@@ -72,9 +72,9 @@
         "ism_template":
             {
                 "index_patterns": [
-                    "_DS_NAME_-datastream"
+                    "audit-datastream"
                 ],
-                "priority": 1
+                "priority": 2
             }
     }
 }
