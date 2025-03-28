@@ -138,6 +138,12 @@ transform/keystone_api:
       statements:
         - merge_maps(attributes, ExtractGrokPatterns(body, "%{DATE_EU:date} %{TIME:time} %{NUMBER} %{NOTSPACE:loglevel} %{NOTSPACE:component} \\[%{NOTSPACE:requestid} %{NOTSPACE:global_request_id} usr %{NOTSPACE:usr} prj %{NOTSPACE:prj} dom %{NOTSPACE:dom} usr-dom %{NOTSPACE:usr_domain} prj-dom %{NOTSPACE:project_domain_id}\\] %{GREEDYDATA}'%{WORD:method} %{URIPATH:pri_path}' %{WORD:action}", true), "upsert")
 
+filter/hermes_logstash:
+  error_mode: ignore
+  logs:
+    log_record:
+      - 'IsMatch(body, ".*Authorization: Basic.*")'
+
 transform/swift_proxy:
   error_mode: ignore
   log_statements:
@@ -190,7 +196,7 @@ logs/failover_b_swift:
 
 logs/containerd:
   receivers: [filelog/containerd]
-  processors: [k8sattributes,attributes/cluster,transform/ingress,transform/neutron_agent,transform/neutron_errors,transform/openstack_api,transform/non_openstack,transform/network_generic_ssh_exporter,transform/snmp_exporter,transform/elektra,transform/keystone_api]
+  processors: [k8sattributes,attributes/cluster,transform/ingress,transform/neutron_agent,transform/neutron_errors,transform/openstack_api,transform/non_openstack,transform/network_generic_ssh_exporter,transform/snmp_exporter,transform/elektra,transform/keystone_api,filter/hermes_logstash]
   exporters: [forward]
 
 logs/containerd-swift:
