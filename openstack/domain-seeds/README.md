@@ -27,5 +27,5 @@ Only the following domains should be seeded:
 - ccadmin
 - global
 
-Set **global_setup** value to **true** for such scenario. All other domain seeds will be ignored.
+Check for **global.is_global_region** value equals **true** for such scenario. All other domain seeds will be ignored.
 **Important** to set a correct kubernetes namespace where keystone will be deployed **(keystoneNamespace: 'monsoon3global', not 'monsoon3')**
