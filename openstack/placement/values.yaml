@@ -1,3 +1,4 @@
+---
 # Default values for placement
 # This is a YAML-formatted file.
 # Declare name/value pairs to be passed into your templates.
@@ -47,10 +48,13 @@ uwsgi:
 max_pool_size: 10
 max_overflow: 5
 
-api_db: # Only used when mariadb.enabled=False to connect to the nova-api-mariadb
+api_db:  # Only used when mariadb.enabled=False to connect to the nova-api-mariadb
   name: placement
   user: placement
   password: null
+
+dbType: ""
+dbName: "placement"
 
 mariadb:
   enabled: true
@@ -66,6 +70,32 @@ mariadb:
         analyzeTable:
           enabled: true
           allTables: true
+
+pxc_db:
+  enabled: false
+  name: placement
+  alerts:
+    support_group: "compute-storage-api"
+  ccroot_user:
+    enabled: true
+  databases:
+    - placement
+  users:
+    placement:
+      name: placement
+      grants:
+        - "ALL PRIVILEGES on placement.*"
+  pxc:
+    persistence:
+      size: 10Gi
+  backup:
+    enabled: true
+    s3:
+      secrets:
+        aws_access_key_id: null
+        aws_secret_access_key: null
+    pitr:
+      enabled: true
 
 memcached:
   alerts:
