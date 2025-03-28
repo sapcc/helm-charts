@@ -1,3 +1,5 @@
+{{/* seeding of global region only happens once */}}
+{{- if or (not .Values.global.is_global_region) (eq .Values.global.db_region "eu-de-2") }}
 apiVersion: "openstack.stable.sap.cc/v1"
 kind: "OpenstackSeed"
 metadata:
@@ -10,7 +12,7 @@ metadata:
     heritage: "{{ .Release.Service }}"
 spec:
   requires:
-{{- if .Values.global_setup }}
+{{- if .Values.global.is_global_region }}
   - {{ .Release.Namespace }}/domain-default-seed
   - {{ .Release.Namespace }}/domain-cc3test-seed
   - {{ .Release.Namespace }}/domain-ccadmin-seed
@@ -74,14 +76,14 @@ spec:
 {{- end }}
     - interface: internal
       region: {{ .Values.global.region }}
-{{- if .Values.global_setup }}
+{{- if .Values.global.is_global_region }}
       url: http://{{ .Values.global.designate_internal_ip }}:9001
 {{- else }}
       url: http://{{ .Release.Name }}-api.{{ .Release.Namespace }}.svc.kubernetes.{{ .Values.global.region }}.{{ .Values.global.tld }}:9001
 {{- end }}
     - interface: admin
       region: {{ .Values.global.region }}
-{{- if .Values.global_setup }}
+{{- if .Values.global.is_global_region }}
       url: http://{{ .Values.global.designate_admin_ip }}:9001
 {{- else }}
       url: http://{{ .Release.Name }}-api.{{ .Release.Namespace }}.svc.kubernetes.{{ .Values.global.region }}.{{ .Values.global.tld }}:9001
@@ -238,7 +240,7 @@ spec:
       role: cloud_dns_admin
       inherited: true
 
-{{- if ne .Values.global_setup true }}
+{{- if ne .Values.global.is_global_region true }}
   - name: bs
     groups:
     - name: BS_DOMAIN_DNS_SUPPORT
@@ -958,7 +960,7 @@ spec:
         role: cloud_dns_ops
 {{- end }}
 
-{{- if .Values.global_setup }}
+{{- if .Values.global.is_global_region }}
   - name: global
     groups:
     - name: GLOBAL_DOMAIN_DNS_SUPPORT
@@ -998,7 +1000,7 @@ spec:
   requires:
   - {{ .Release.Namespace }}/domain-default-seed
   - {{ .Release.Namespace }}/domain-ccadmin-seed
-{{- if .Values.global_setup }}
+{{- if .Values.global.is_global_region }}
   - {{ .Release.Namespace }}/designate-global-seed
   - {{ .Release.Namespace }}/domain-global-seed
 {{- else}}
@@ -1022,4 +1024,5 @@ spec:
       - user: '{{ .Values.designate_nanny.credentials.designate_api.user | include "resolve_secret" }}@{{.Values.designate_nanny.credentials.designate_api.project_user_domain_name }}'
         role: objectstore_admin
 
+{{- end }}
 {{- end }}
