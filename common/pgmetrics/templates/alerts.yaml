@@ -13,20 +13,6 @@ spec:
   groups:
   - name: pg-database.alerts
     rules:
-    - alert: {{ title $service }}PredictHighNumberOfDatabaseConnections
-      expr: predict_linear(pg_stat_activity_count{datname="{{default .Release.Name .Values.db_name}}"}[1h], 3*3600) >= 2000
-      for: 5m
-      labels:
-        context: database
-        support_group: {{ required ".Values.alerts.support_group missing" .Values.alerts.support_group }}
-        tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
-        service: {{ $service }}
-        severity: warning
-        meta: "Predicting a high number of database connections for {{`{{ $labels.datname }}`}}"
-      annotations:
-        summary: High number of database connections
-        description: Predicting more than 2000 database connections for {{ $service }} within the next 3 hours and might be unavailable soon.
-
     - alert: {{ title $service }}StuckTransactions
       expr: max(pg_stat_activity_max_tx_duration{datname="{{default .Release.Name .Values.db_name}}"}) > 600
       for: 5m

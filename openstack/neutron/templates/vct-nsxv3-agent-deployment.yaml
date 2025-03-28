@@ -53,11 +53,7 @@ template: |
           command: ["dumb-init"]
           args: ["neutron-nsxv3-agent", "--config-file", "/etc/neutron/neutron.conf", "--config-dir", "/etc/neutron/secrets", "--config-file", "/etc/neutron/plugins/ml2/ml2-conf.ini", "--config-file", "/etc/neutron/plugins/ml2/ml2-nsxv3.ini"]
           env:
-          - name: SENTRY_DSN
-            valueFrom:
-              secretKeyRef:
-                name: sentry
-                key: neutron.DSN.python
+          {{- include "utils.sentry_config" . | nindent 12 }}
           - name: PYTHONWARNINGS
             value: "ignore:Unverified HTTPS request"
           - name: PGAPPNAME

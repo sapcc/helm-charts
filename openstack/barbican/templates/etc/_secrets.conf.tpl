@@ -1,7 +1,5 @@
 [DEFAULT]
 
-{{ include "ini_sections.default_transport_url" . }}
-
 [database]
 connection = {{ include "utils.db_url" . }}
 

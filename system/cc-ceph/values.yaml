@@ -209,14 +209,46 @@ objectstore:
         kubernetes.metal.cloud.sap/role: ceph-osd
     rgwSidecarWebhook:
       enabled: false
-      repository:
-        image: "keppel.eu-de-1.cloud.sap/ccloud/prysm-wh"
-        tag: "20250221130000"
-        pullPolicy: "Always"
+      webhook:
+        repository:
+          image: "ghcr.io/cobaltcore-dev/prysm-webhook"
+          tag: "latest"
+          pullPolicy: "Always"
+      injectedSidecar:
+        repository:
+          image: "ghcr.io/cobaltcore-dev/prysm"
+          tag: "latest"
       replicas: 1
       servicePort: 443
       containerPort: 8443
       certSecretName: "prysm-webhook-cert"
+
+      # Optional configuration for sidecar behavior
+      sidecarEnvConfig:
+        enabled: false
+        configMapName: "prysm-sidecar-config"
+        config:
+          LOG_TO_STDOUT: "true"
+          LOG_RETENTION_DAYS: "1"
+          MAX_LOG_FILE_SIZE: "10"
+          PROMETHEUS_PORT: "9090"
+          IGNORE_ANONYMOUS_REQUESTS: "true"
+          TRACK_REQUESTS_BY_IP: "true"
+          TRACK_BYTES_SENT_BY_IP: "true"
+          TRACK_BYTES_RECEIVED_BY_IP: "true"
+          TRACK_ERRORS_BY_IP: "true"
+          TRACK_ERRORS_BY_USER: "true"
+          TRACK_REQUESTS_BY_METHOD: "true"
+          TRACK_REQUESTS_BY_OPERATION: "true"
+          TRACK_REQUESTS_BY_STATUS: "true"
+          TRACK_REQUESTS_BY_BUCKET: "true"
+          TRACK_REQUESTS_BY_USER: "true"
+          TRACK_REQUESTS_BY_TENANT: "true"
+          TRACK_ERRORS_BY_BUCKET: "true"
+          TRACK_ERRORS_BY_STATUS: "true"
+          TRACK_LATENCY_BY_USER: "true"
+          TRACK_LATENCY_BY_BUCKET: "true"
+          TRACK_LATENCY_BY_TENANT: "true"
 
   prysmDiskHealth:
     repository:

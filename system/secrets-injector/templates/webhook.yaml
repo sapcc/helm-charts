@@ -24,26 +24,8 @@ webhooks:
   timeoutSeconds: {{ .Values.webhook.timeoutSeconds }}
   {{- if .Values.webhook.matchConditions }}
   matchConditions: # webhook is called, when all conditions are true
-  - name: 'exclude-type-bootstrap-token'
-    expression: 'object.?type.orValue("") != "bootstrap.kubernetes.io/token"'
-  - name: 'exclude-type-docker-config-json'
-    expression: 'object.?type.orValue("") != "kubernetes.io/dockerconfigjson"'
-  - name: 'exclude-type-docker-cfg'
-    expression: 'object.?type.orValue("") != "kubernetes.io/dockercfg"'
-  - name: 'exclude-type-service-account-token'
-    expression: 'object.?type.orValue("") != "kubernetes.io/service-account-token"'
-  - name: 'exclude-owner-cert-manager'
-    expression: 'object.metadata.?ownerReferences.optMap(l, !("cert-manager.io" in l.map(r, r.apiVersion))).orValue(true)'
-  - name: 'exclude-owner-prometheus'
-    expression: 'object.metadata.?ownerReferences.optMap(l, !("Prometheus" in l.map(r, r.kind))).orValue(true)'
-  - name: 'exclude-owner-alertmanager'
-    expression: 'object.metadata.?ownerReferences.optMap(l, !("Alertmanager" in l.map(r, r.kind))).orValue(true)'
-  - name: 'exclude-owner-helm'
-    expression: 'object.metadata.?labels["owner"].orValue("") != "helm"'
-  - name: 'exclude-terraform-state'
-    expression: 'object.metadata.?labels["tfstate"].orValue("") != "true"'
-  - name: 'exclude-namespace-kubernikus'
-    expression: 'object.metadata.namespace != "kubernikus" || object.metadata.?annotations["cloud.sap/inject-secrets"].orValue("") == "true"'
+  - name: 'exclude-opt-out-secrets'
+    expression: 'object.metadata.?annotations["cloud.sap/inject-secrets"].orValue("") != "false"'
   {{- end }}
 {{- if .Values.webhook.genericRules }}
 - name: "generic.secrets-injector.cloud.sap"

@@ -94,7 +94,3 @@ enforce_scope=False
 
 [barbican]
 auth_endpoint = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
-
-{{- if .Values.osprofiler.enabled }}
-{{- include "osprofiler" . }}
-{{- end }}

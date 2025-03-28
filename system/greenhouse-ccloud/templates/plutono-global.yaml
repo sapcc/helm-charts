@@ -1,0 +1,44 @@
+{{/* Deployed alongside a global thanos query*/}}
+{{- if and .Values.thanos.enabled .Values.thanos.globalClusters -}}
+apiVersion: greenhouse.sap/v1alpha1
+kind: PluginPreset
+metadata:
+  name: plutono-global
+  namespace: {{ .Chart.Name }}
+spec:
+  clusterSelector:
+    matchExpressions:
+    - key: greenhouse.sap/pluginpreset
+      operator: In
+      values:
+      - "true"
+{{- with .Values.thanos.globalClusters }}
+    - key: cluster
+      operator: In
+      values:
+        {{- range $cluster := $.Values.thanos.globalClusters }}
+        - {{ $cluster.name }}
+        {{- end }}
+{{- end }}
+  plugin:
+    disabled: false
+    displayName: Plutono global
+    pluginDefinition: plutono
+    releaseNamespace: kube-monitoring
+    optionValues:
+      - name: plutono.service.labels
+        value:
+          greenhouse.sap/expose: "true"
+      - name: plutono.sidecar.datasources.label
+        value: plutono-global
+      - name: plutono.sidecar.dashboards.label
+        value: plutono-global
+      {{- if and .Values.global.ghcrIoMirror .Values.global.quayIoMirror }}
+      - name: plutono.image.registry
+        value: {{ .Values.global.ghcrIoMirror }}
+      - name: plutono.sidecar.image.registry
+        value: {{ .Values.global.quayIoMirror }}
+      - name: plutono.testFramework.image.registry
+        value: {{ .Values.global.ghcrIoMirror }}
+      {{- end }}
+{{- end }}

@@ -2,7 +2,7 @@ groups:
 - name: logs-otel.alerts
   rules:
   - alert: LogsOTelLogsMissing
-    expr: sum by (region, k8s_node_name, pod, exporter) (rate(otelcol_exporter_sent_log_records_total{job="logs/opentelemetry-collector-logs", exporter !~"debug|opensearch/failover_a_external_deployments"}[60m])) == 0
+    expr: sum by (region, k8s_node_name) (rate(otelcol_exporter_sent_log_records_total{job="logs/opentelemetry-collector-logs", exporter !~"debug"}[60m])) == 0
     for: 120m
     labels:
       context: logshipping
