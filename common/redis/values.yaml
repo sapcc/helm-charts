@@ -33,6 +33,13 @@ resources:
     memory: 128Mi
     cpu: 100m
 
+# if enabled, annotates generated password Secrets with `stakater/Reloader`
+# annotations to cause the consuming applications annotated with
+# `reloader.stakater.com/auto: "true"` to be restarted when the corresponding
+# Secrets change
+reloader:
+  annotatePasswordSecrets: false
+
 alerts:
   enabled: true
   support_group: null # This field must be filled by the top-level chart.
@@ -58,3 +65,10 @@ metrics:
     requests:
       memory: 64Mi
       cpu: 10m
+
+  # if enabled, configures `stakater/Reloader` (annotations) to cause the
+  # deployment to do a rolling restart when referenced CMs and Secrets annotated
+  # with `reloader.stakater.com/match: "true"` (e.g. Secret with DB password)
+  # change
+  reloader:
+    enabled: false
