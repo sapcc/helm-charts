@@ -25,7 +25,7 @@ filter {
 
     if "_grokparsefailure" not in [tags] {
       ruby {
-        init => 'require "sequel"; $rc = Sequel.connect("jdbc:mysql://{{include "db_host_mysql" .}}/{{.Values.db_name}}?user=%s&password=%s" % [ENV["NEUTRON_DB_USER"], ENV["NEUTRON_DB_PASSWORD"]])'
+        init => 'require "sequel"; $rc = Sequel.connect("jdbc:mysql://{{include "utils.db_host" .}}/{{.Values.db_name}}?user=%s&password=%s" % [ENV["NEUTRON_DB_USER"], ENV["NEUTRON_DB_PASSWORD"]])'
         code => '
         event_map = {"PASS" => "ACCEPT", "DROP" => "DROP"}
         event.set("action", "TERM") if event.get("action").nil?
