@@ -22,3 +22,8 @@ record_payloads = {{ if .Values.audit.record_payloads -}}True{{- else -}}False{{
 metrics_enabled = {{ if .Values.audit.metrics_enabled -}}True{{- else -}}False{{- end }}
 {{- include "ini_sections.audit_middleware_notifications" . }}
 {{- end }}
+
+{{- if .Values.osprofiler.enabled }}
+# Tracing
+{{- include "osprofiler" . }}
+{{- end }}
