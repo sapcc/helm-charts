@@ -23,6 +23,31 @@ SetEnvIf X-Forwarded-For "^.*\..*\..*\..*" forwarded
 CustomLog /dev/stdout combined env=!forwarded
 CustomLog /dev/stdout proxy env=forwarded
 
+{{- if .Values.federation.oidc.enabled }}
+<Location "/v3/auth/OS-FEDERATION/websso/openid">
+    AuthType "openid-connect"
+    Require valid-user
+</Location>
+
+<Location "/v3/auth/OS-FEDERATION/identity_providers/sap-ias/protocols/openid/websso">
+    AuthType "openid-connect"
+    Require valid-user
+</Location>
+
+<Location "/v3/auth/OS-FEDERATION/identity_providers/sap-ias/protocols/openid/auth">
+    AuthType "openid-connect"
+    Require valid-user
+</Location>
+
+# Location a non-browser apps can communicate with
+<Location "/v3/OS-FEDERATION/identity_providers/sap-ias/protocols/openid/auth">
+    # AuthType here is not "openid-connect" since apps going here do not support browser flow
+    AuthType "auth-openidc"
+    Require valid-user
+</Location>
+
+{{- end }}
+
 <VirtualHost *:5000>
     ServerName {{ .Values.services.public.host }}.{{ .Values.global.region }}.{{ .Values.global.tld }}
     WSGIDaemonProcess keystone-public processes=8 threads=1 user=keystone group=keystone display-name=%{GROUP}

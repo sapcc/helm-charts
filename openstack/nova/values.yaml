@@ -288,6 +288,8 @@ scheduler:
   aggregate_multi_tenancy_isolation_weight_multiplier: 50.0
 
   image_properties_default_architecture: "x86_64"
+  # comma-separated list of prefixes for external domains
+  external_customer_domain_name_prefixes: "iaas-"
 
 compute:
   defaults:
@@ -740,7 +742,6 @@ mariadb:
   buffer_pool_size: "4096M"
   log_file_size: "1024M"
   name: nova
-  initdb_secret: true
   long_query_time: 8
   vpa:
     set_main_container: true
@@ -776,13 +777,19 @@ mariadb:
       client_id: "nova"
   alerts:
     support_group: compute-storage-api
+  job:
+    maintenance:
+      enabled: false
+      function:
+        analyzeTable:
+          enabled: true
+          allTables: true
 
 mariadb_api:
   enabled: false
   buffer_pool_size: "4096M"
   log_file_size: "1024M"
   name: nova-api
-  initdb_secret: true
   long_query_time: 8
   vpa:
     set_main_container: true
@@ -812,12 +819,18 @@ mariadb_api:
       client_id: "nova-api"
   alerts:
     support_group: compute-storage-api
+  job:
+    maintenance:
+      enabled: false
+      function:
+        analyzeTable:
+          enabled: true
+          allTables: true
 
 mariadb_cell2:
   enabled: false
   buffer_pool_size: "4096M"
   log_file_size: "1024M"
-  initdb_secret: true
   long_query_time: 8
   vpa:
     set_main_container: true
@@ -834,6 +847,14 @@ mariadb_cell2:
       client_id: "nova-cell2"
   alerts:
     support_group: compute-storage-api
+  job:
+    maintenance:
+      enabled: false
+      function:
+        analyzeTable:
+          enabled: true
+          allTables: true
+
 rabbitmq_cell2:
   nameOverride: cell2-rabbitmq
   persistence:
@@ -855,8 +876,6 @@ audit:
     user: rabbitmq
     password: null
   enabled: false
-  # how many messages to buffer before dumping to log (when rabbit is down or too slow)
-  mem_queue_size: 1000
   record_payloads: false
   metrics_enabled: true
 
@@ -871,6 +890,7 @@ rabbitmq:
   metrics:
     password: null
     enabled: true
+    addMetricsUser: true
     sidecar:
       enabled: false
     enableDetailedMetrics: true

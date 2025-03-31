@@ -1,0 +1,11 @@
+{{- if and .Values.objectstore.prysm.rgwSidecarWebhook ( .Values.objectstore.prysm.rgwSidecarWebhook.enabled ) ( .Values.objectstore.prysm.rgwSidecarWebhook.sidecarEnvConfig.enabled ) }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.objectstore.prysm.rgwSidecarWebhook.sidecarEnvConfig.configMapName | quote }}
+  namespace: {{ .Release.Namespace }}
+data:
+{{- range $key, $val := .Values.objectstore.prysm.rgwSidecarWebhook.sidecarEnvConfig.config }}
+  {{ $key }}: {{ $val | quote }}
+{{- end }}
+{{- end }}

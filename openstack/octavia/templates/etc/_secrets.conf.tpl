@@ -11,7 +11,7 @@ username = {{ .Release.Name }}
 password = {{ .Values.global.octavia_service_password | replace "$" "" }}
 
 [database]
-connection = {{ include "db_url_mysql" . }}
+connection = {{ include "utils.db_url" . }}
 
 {{ if .Values.audit.enabled -}}
 [audit]

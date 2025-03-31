@@ -100,7 +100,7 @@
   @type copy
   <store>
     @type opensearch
-    @id "#{ENV['USER1']}"
+    @id "#{ENV['USER2']}"
     logstash_prefix {{.Values.opensearch.indexname}}
     logstash_format true
     template_name {{.Values.opensearch.indexname}}
@@ -109,8 +109,8 @@
     hosts {{.Values.global.opensearch.host}}
     scheme https
     port {{.Values.global.opensearch.port}}
-    user "#{ENV['USER1']}"
-    password "#{ENV['PASSWORD1']}"
+    user "#{ENV['USER2']}"
+    password "#{ENV['PASSWORD2']}"
     ssl_verify false
     ssl_version TLSv1_2
     log_os_400_reason true

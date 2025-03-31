@@ -15,11 +15,17 @@ spec:
     metadata:
       labels:
         app: prysm-webhook-service
+      annotations:
+        # this is a hack for the "replicate-changed-images" concourse task
+        image: "{{ .Values.objectstore.prysm.rgwSidecarWebhook.injectedSidecar.repository.image }}:{{ .Values.objectstore.prysm.rgwSidecarWebhook.injectedSidecar.repository.tag }}"
     spec:
       containers:
       - name: prysmwebhook
-        image: "{{ .Values.objectstore.prysm.rgwSidecarWebhook.repository.image }}:{{ .Values.objectstore.prysm.rgwSidecarWebhook.repository.tag }}"
-        imagePullPolicy: {{ .Values.objectstore.prysm.rgwSidecarWebhook.repository.pullPolicy }}
+        image: "{{ .Values.objectstore.prysm.rgwSidecarWebhook.webhook.repository.image }}:{{ .Values.objectstore.prysm.rgwSidecarWebhook.webhook.repository.tag }}"
+        imagePullPolicy: {{ .Values.objectstore.prysm.rgwSidecarWebhook.webhook.repository.pullPolicy }}
+        env:
+        - name: SIDECAR_IMAGE
+          value: "{{ .Values.objectstore.prysm.rgwSidecarWebhook.injectedSidecar.repository.image }}:{{ .Values.objectstore.prysm.rgwSidecarWebhook.injectedSidecar.repository.tag }}"
         ports:
         - containerPort: {{ .Values.objectstore.prysm.rgwSidecarWebhook.containerPort }}
         volumeMounts:

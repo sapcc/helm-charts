@@ -47,6 +47,18 @@ spec:
   {{- end }}
     annotations:
       checksum/config: {{ include (print $.Template.BasePath "/ceph-config-override.yaml") . | sha256sum }}
+      {{- if and .Values.objectstore.prysm.rgwSidecarWebhook ( .Values.objectstore.prysm.rgwSidecarWebhook.enabled ) ( .Values.objectstore.prysm.rgwSidecarWebhook.sidecarEnvConfig.enabled ) }}
+      prysm-sidecar/sidecar-env-configmap: "{{ .Values.objectstore.prysm.rgwSidecarWebhook.sidecarEnvConfig.configMapName }}"
+      checksum/sidecar-env-config: {{ include (print $.Template.BasePath "/prysm-rgw-sidecar-webhook-configmap.yaml") . | sha256sum }}
+      {{- end }}
+      {{- if and .Values.objectstore.prysm.rgwSidecarWebhook ( .Values.objectstore.prysm.rgwSidecarWebhook.enabled ) }}
+      # reload deployment when the sidecar configmap changes
+      configmap.reloader.stakater.com/reload: {{ .Values.objectstore.prysm.rgwSidecarWebhook.sidecarEnvConfig.configMapName | quote }}
+      {{- end }}
+    {{- if and .Values.objectstore.prysm.rgwSidecarWebhook ( .Values.objectstore.prysm.rgwSidecarWebhook.enabled ) }}
+    labels:
+      prysm-sidecar: "yes"
+    {{- end }}
     instances: {{ .Values.objectstore.gateway.instances }}
     {{- if .Values.objectstore.gateway.port }}
     port: {{ .Values.objectstore.gateway.port }}

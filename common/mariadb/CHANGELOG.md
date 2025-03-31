@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.18.2 - 2025/03/21
+* add missing headers to the mariadb-credential-updater.py
+* remove unused `credentialUpdater.enabled` option from values - this sidecar is non-optional
+
+## v0.18.1 - 2025/03/21
+* make backup storage to AWS and Swift flexibel via enablement in `backup-v2` configuration
+
 ## v0.18.0 - 2025/03/07
 * add credential-updater sidecar, that reapplies init.sql on the detected change
 * make init.sql not optional

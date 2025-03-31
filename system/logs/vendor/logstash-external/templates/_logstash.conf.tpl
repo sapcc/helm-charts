@@ -7,7 +7,7 @@ input {
 }
 
 filter {
-  if  [type] == "jumpserver" {
+  if [type] == "jumpserver" {
     mutate {
         id => "jump-split"
         split => { "[host][hostname]" => "-" }
@@ -19,7 +19,7 @@ filter {
 
 
 output {
-  elseif  [type] == "jumpserver" {
+  if [type] == "jumpserver" {
     opensearch {
       id => "opensearch-jump"
       index => "jump-%{+YYYY.MM.dd}"

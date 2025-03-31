@@ -83,6 +83,12 @@ spec:
         sourceLabels:
         - __name__
         targetLabel: cluster
+  {{- if index $additionalSettings "thanos" }}
+    - name: kubeMonitoring.prometheus.prometheusSpec.thanos.objectStorageConfig.existingSecret.name
+      value: thanos-{{ $cluster }}-metrics-objectstore
+    - name: kubeMonitoring.prometheus.prometheusSpec.thanos.objectStorageConfig.existingSecret.key
+      value: thanos.yaml
+  {{- end }}
   {{- end }}
   {{- range $cluster, $additionalSettings := .Values.kubeMonitoring.obsClusters }}
   - clusterName: {{ $cluster }}
@@ -200,12 +206,8 @@ spec:
           severity: warning
         PrometheusErrorSendingAlertsToAnyAlertmanager:
           severity: warning
-    - name: kubeMonitoring.prometheus.prometheusSpec.retention
-      value: 30d
     - name: kubeMonitoring.prometheus.prometheusSpec.storageSpec.volumeClaimTemplate.spec.resources.requests.storage
       value: 100Gi
-    - name: kubeMonitoring.prometheus.prometheusSpec.image.tag
-      value: v2.55.1
     pluginDefinition: kube-monitoring
     releaseNamespace: kube-monitoring
 {{- end -}}
