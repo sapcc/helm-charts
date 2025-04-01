@@ -10,6 +10,9 @@ kubeStateMetrics:
       runAsUser: 65534
       seccompProfile:
         type: RuntimeDefault
+    env:
+      enableWebhooks: "false"
+      kubernetesServiceHost: apiserver-url
     image:
       repository: registry.k8s.io/kube-state-metrics/kube-state-metrics
       tag: v2.15.0
@@ -17,14 +20,16 @@ kubeStateMetrics:
     kubernetes.io/os: linux
   ports:
   - name: http-metrics
-    port: 8080
+    port: 30080
     targetPort: http-metrics
   - name: telemetry
-    port: 8081
+    port: 30081
     targetPort: telemetry
   replicas: 1
   serviceAccount:
     annotations: {}
+  strategy:
+    type: Recreate
   type: ClusterIP
 kubernetesClusterDomain: cluster.local
-fullnameOverride: kube-state-metrics-remote
+fullnameOverride: remote
