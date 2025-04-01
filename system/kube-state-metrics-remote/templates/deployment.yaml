@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "kube-state-metrics-remote.fullname" . }}-kube-state-metrics
+  name: {{ include "kube-state-metrics-remote.fullname" . }}
   labels:
     app.kubernetes.io/component: exporter
   {{- include "kube-state-metrics-remote.labels" . | nindent 4 }}
@@ -34,6 +34,9 @@ spec:
           value: {{ quote .Values.kubernetesClusterDomain }}
         image: {{ .Values.kubeStateMetrics.kubeStateMetrics.image.repository }}:{{ .Values.kubeStateMetrics.kubeStateMetrics.image.tag
           | default .Chart.AppVersion }}
+        commnad:
+        - /kube-state-metrics
+        args: {{- toYaml .Values.kubeStateMetrics.kubeStateMetrics.args | nindent 8 }}
         livenessProbe:
           failureThreshold: 3
           httpGet:
@@ -63,9 +66,12 @@ spec:
         - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
           name: remote-kubeconfig
           readOnly: true
+        - mountPath: /etc/config
+          name: config-volume
+          readOnly: true
       hostNetwork: true
       nodeSelector: {{- toYaml .Values.kubeStateMetrics.nodeSelector | nindent 8 }}
-      serviceAccountName: {{ include "kube-state-metrics-remote.fullname" . }}-kube-state-metrics
+      serviceAccountName: {{ include "kube-state-metrics-remote.fullname" . }}-service-account
       volumes:
       - name: remote-kubeconfig
         secret:
@@ -74,4 +80,7 @@ spec:
             path: token
           - key: bundle.crt
             path: ca.crt
-          secretName: kube-state-metrics-remote-kubeconfig
+          secretName: {{ include "kube-state-metrics-remote.fullname" . }}-kubeconfig
+      - configMap:
+          name: {{ include "kube-state-metrics-remote.fullname" . }}-config
+        name: config-volume
