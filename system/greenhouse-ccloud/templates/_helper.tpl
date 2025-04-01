@@ -29,9 +29,9 @@
 {{- end -}}
 {{- range $addStorePrefix := $cluster.additionalStores }} 
 {{- range $stores }}
-{{- $parts := split "." . }}
-{{- $region := $parts._2 }}
-{{- $baseDomainPort := printf "%s.%s" $parts._3 $parts._4 }}
+{{- $endpointSplit := split "." . }}
+{{- $region := $endpointSplit._2 }}
+{{- $baseDomainPort := printf "%s.%s" $endpointSplit._3 $endpointSplit._4 }}
 {{- $stores = append $stores (printf "%s-grpc.%s.%s" $addStorePrefix $region $baseDomainPort) }}
 {{- end }}
 {{- end }}
