@@ -139,6 +139,11 @@ spec:
             - mountPath: /etc/neutron/secrets/neutron-arista-secrets.conf
               name: neutron-arista-secrets
               subPath: neutron-arista-secrets.conf
+{{- if .Values.rate_limit.enabled }}
+            - mountPath: {{ .Values.rate_limit.backend_secret_file }}
+              name: neutron-ratelimit-backend-secret
+              subPath: ratelimit-backend-secret.conf
+{{- end }}
             - mountPath: /etc/neutron/plugins/asr1k-global.ini
               name: neutron-etc
               subPath: asr1k-global.ini
@@ -296,6 +301,11 @@ spec:
         - name: neutron-cc-fabric-secrets
           secret:
             secretName: neutron-cc-fabric-secrets
+{{- end }}
+{{- if .Values.rate_limit.enabled }}
+        - name: neutron-ratelimit-backend-secret
+          secret:
+            secretName: neutron-ratelimit-backend-secret
 {{- end }}
         - name: neutron-etc-vendor
           configMap:
