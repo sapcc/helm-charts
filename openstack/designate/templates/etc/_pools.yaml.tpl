@@ -77,12 +77,12 @@
         host: {{ $pool.options.host }}
         port: {{ $pool.options.port }}
         akamai_host: {{ $pool.options.akamai_host }}
-        akamai_client_token: {{ $pool.options.akamai_client_token }}
-        akamai_access_token: {{ $pool.options.akamai_access_token }}
-        akamai_client_secret: {{ $pool.options.akamai_client_secret }}
-        akamai_contract_id: {{ $pool.options.akamai_contract_id }}
+        akamai_client_token: {{ $pool.options.akamai_client_token | include "resolve_secret" }}
+        akamai_access_token: {{ $pool.options.akamai_access_token | include "resolve_secret" }}
+        akamai_client_secret: {{ $pool.options.akamai_client_secret | include "resolve_secret" }}
+        akamai_contract_id: {{ $pool.options.akamai_contract_id | include "resolve_secret" }}
         akamai_gid: {{ $pool.options.akamai_gid }}
-        tsig_key_name: "{{$pool.options.tsig_key_name}}"
-        tsig_key_secret: "{{$pool.options.tsig_key_secret}}"
-        tsig_key_algorithm: "{{$pool.options.tsig_key_algorithm}}"
+        tsig_key_name: "{{ $pool.options.tsig_key_name }}"
+        tsig_key_secret: {{ $pool.options.tsig_key_secret | include "resolve_secret" }}
+        tsig_key_algorithm: "{{ $pool.options.tsig_key_algorithm }}"
 {{- end }}
