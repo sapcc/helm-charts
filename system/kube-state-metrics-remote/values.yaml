@@ -1,0 +1,30 @@
+kubeStateMetrics:
+  kubeStateMetrics:
+    containerSecurityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+        - ALL
+      readOnlyRootFilesystem: true
+      runAsNonRoot: true
+      runAsUser: 65534
+      seccompProfile:
+        type: RuntimeDefault
+    image:
+      repository: registry.k8s.io/kube-state-metrics/kube-state-metrics
+      tag: v2.15.0
+  nodeSelector:
+    kubernetes.io/os: linux
+  ports:
+  - name: http-metrics
+    port: 8080
+    targetPort: http-metrics
+  - name: telemetry
+    port: 8081
+    targetPort: telemetry
+  replicas: 1
+  serviceAccount:
+    annotations: {}
+  type: ClusterIP
+kubernetesClusterDomain: cluster.local
+fullnameOverride: kube-state-metrics-remote
