@@ -1,0 +1,32 @@
+global:
+  region: test-1
+
+controlPlane:
+  replicas: 3
+  podSubnet: 
+  serviceSubnet:
+  address: 192.168.1.100
+  version: v1.31.5
+  additionalConfig: |
+    storage:
+      files:
+        - path: /etc/ssh/sshd_config
+          filesystem: root
+          mode: 0644
+          overwrite: true
+            inline: |
+              Foo Bar
+
+images:
+  repository: k8s.gcr.io
+  dns:
+    repository: k8s.gcr.io
+    tag: 1.9.1
+  kubeVip:
+    repository: kube-vip/kube-vip
+    tag: v0.8.7
+
+user:
+  name: admin
+  passwordhash: "$6$randomsalt$hashedpassword"
+  key: "ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEArandomkey"

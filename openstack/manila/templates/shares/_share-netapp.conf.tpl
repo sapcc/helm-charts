@@ -87,6 +87,10 @@ netapp_snapmirror_last_transfer_size_limit = 1099511627776
 netapp_snapmirror_schedule = "hourly"
 netapp_snapmirror_quiesce_timeout = 7200
 
+# The maximum time in seconds to wait for the completion of a volume move
+# operation after the cutover was triggered. default 3600
+netapp_volume_move_cutover_timeout = {{ $share.volume_move_cutover_timeout | default 7200 }}
+
 # state, that will be reported as pool property. Valid values are `in_build`, `live`, `in_decom` and `replacing_decom`
 netapp_hardware_state = {{ $share.hardware_state | default "live" }}
 
