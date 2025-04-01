@@ -49,11 +49,11 @@ lunaclient()
     echo "exit" >> /thales/safenet/lunaclient/config/$HOSTNAME-$NOW.txt
     /thales/safenet/lunaclient/bin/64/plink {{ .Values.lunaclient.conn.ip | include "resolve_secret" }} -ssh -l {{ .Values.lunaclient.conn.user | include "resolve_secret" }} -pw {{ .Values.lunaclient.conn.pwd | include "resolve_secret" }} -v < /thales/safenet/lunaclient/config/$HOSTNAME-$NOW.txt
     
-    # #REGISTER multi client HSM1
-    # echo "Registering multi HSM01"
-    # echo "client assignPartition -c $HOSTNAME-$NOW -p {{ .Values.lunaclient.conn.par | include "resolve_secret"  }}" > /thales/safenet/lunaclient/config/$HOSTNAME-$NOW-multi.txt
-    # echo "exit" >> /thales/safenet/lunaclient/config/$HOSTNAME-$NOW-multi.txt
-    # /thales/safenet/lunaclient/bin/64/plink {{ .Values.lunaclient.conn.ip | include "resolve_secret" }} -ssh -l {{ .Values.lunaclient.conn.user | include "resolve_secret" }} -pw {{ .Values.lunaclient.conn.pwd | include "resolve_secret" }} -v < /thales/safenet/lunaclient/config/$HOSTNAME-$NOW-multi.txt
+    #REGISTER multi client HSM1
+    echo "Registering multi HSM01"
+    echo "client assignPartition -c $HOSTNAME-$NOW -p {{ .Values.lunaclient.multi_conn.par | include "resolve_secret"  }}" > /thales/safenet/lunaclient/config/$HOSTNAME-$NOW-multi.txt
+    echo "exit" >> /thales/safenet/lunaclient/config/$HOSTNAME-$NOW-multi.txt
+    /thales/safenet/lunaclient/bin/64/plink {{ .Values.lunaclient.conn.ip | include "resolve_secret" }} -ssh -l {{ .Values.lunaclient.conn.user | include "resolve_secret" }} -pw {{ .Values.lunaclient.conn.pwd | include "resolve_secret" }} -v < /thales/safenet/lunaclient/config/$HOSTNAME-$NOW-multi.txt
 
     {{- if .Values.hsm.ha.enabled }}
     #REGISTER HSM2
