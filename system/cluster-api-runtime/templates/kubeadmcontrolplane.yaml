@@ -108,7 +108,7 @@ spec:
           hostNetwork: true
           volumes:
           - hostPath:
-              path: /etc/kubernetes/super-admin.conf
+              path: $KUBE_FILE
             name: kubeconfig
           - hostPath:
               path: /etc/kube-vip.hosts
@@ -138,6 +138,8 @@ spec:
         - {{ $.Values.user.key | quote }}
     preKubeadmCommands:
      - hostnamectl set-hostname $${METAL_HOSTNAME}
+     # https://github.com/kube-vip/kube-vip/issues/684
+     - if [ -f /etc/kubernetes/super-admin.conf ]; then export KUBE_FILE=/etc/kubernetes/super-admin.conf; else export KUBE_FILE=/etc/kubernetes/admin.conf; fi
      # avoid running kubeadm on L1 interface - wait for bond
      # https://www.freedesktop.org/software/systemd/man/latest/systemd-networkd-wait-online.service.html
      - /usr/lib/systemd/systemd-networkd-wait-online -i {{ .Values.controlPlane.uplinkInterface }} --ipv4 --timeout 0
