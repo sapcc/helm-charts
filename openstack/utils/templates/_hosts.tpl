@@ -100,9 +100,15 @@ Default: mariadb
     "mariadb" "utils._db_host_mariadb"
     "pxc-db" "utils._db_host_pxc_db"
 }}
-{{- $dbType := default "mariadb" .Values.dbType }}
-{{- $dbHost := index $dbHostHelpers $dbType }}
-{{- include $dbHost . }}
+{{- if kindIs "map" . }}
+    {{- $dbType := default "mariadb" .Values.dbType }}
+    {{- $dbHost := index $dbHostHelpers $dbType }}
+    {{- include $dbHost . }}
+{{- else }}
+    {{- $dbType := default "mariadb" (index . 5) }}
+    {{- $dbHost := index $dbHostHelpers $dbType }}
+    {{- include $dbHost . }}
+{{- end -}}
 {{- end }}
 
 {{/*
