@@ -161,7 +161,7 @@ groups:
     # NOTE:
     #
     # netapp_snapmirror_labels: Local destinations ONLY (from 'snapmirror show' - relationship details).
-    # netapp_snapmirror_destination_labels: Local sources AND destinations (from 'snapmirror list-destinations' - endpoints only).
+    # netapp_snapmirror_endpoint_labels: Local sources AND remote destinations (from 'snapmirror list-destinations' - endpoints only).
     #
     # The cross region snapmirror relationships 'EC2DR' cannot be exported to Maia from destination region, because the project_id belongs to the source region.
     # So we need to export the cross region snapmirror relationships from the source region.
@@ -171,7 +171,7 @@ groups:
     #     1. include local destinations only (using netapp_snapmirror_labels)
     #     2. extract volume labels from destination_volume
     # b) from source side:
-    #     1. include local sources only (using netapp_snapmirror_destination_labels WITH unless)
+    #     1. include local sources only (using netapp_snapmirror_endpoint_labels WITH unless)
     #     2. extract volume labels from source_volume
 
     - record: netapp_snapmirror_labels:maia
@@ -205,7 +205,7 @@ groups:
             source_cluster, source_location, source_vserver, source_volume,
             destination_cluster, destination_location, destination_vserver, destination_volume,
           ) (
-            (netapp_snapmirror_destination_labels unless on (destination_vserver, destination_volume, source_vserver, source_volume) netapp_snapmirror_labels)
+            (netapp_snapmirror_endpoint_labels unless on (destination_vserver, destination_volume, source_vserver, source_volume) netapp_snapmirror_labels)
               * on (filer, source_volume) group_left(source_cluster, share_id, share_name, project_id)
                 label_replace (
                 label_replace (
