@@ -140,6 +140,15 @@ spec:
      - hostnamectl set-hostname $${METAL_HOSTNAME}
      # https://github.com/kube-vip/kube-vip/issues/684
      - if [ -f /etc/kubernetes/super-admin.conf ]; then ln -s /etc/kubernetes/super-admin.conf /etc/kubernetes/kube-vip.conf; else /etc/kubernetes/admin.conf /etc/kubernetes/kube-vip.conf; fi
+     # match kubelet with KCP version
+     - IMAGE={{ $.Values.image.kubelet.repository }}:{{ .Values.controlPlane.version }}
+     - while true; do ctr image pull $IMAGE && break; done
+     - TMPMOUNT=$(mktemp -d --suffix=.ctrcp)
+     - trap "umount -l ${TMPMOUNT} || true; rmdir ${TMPMOUNT}" EXIT
+     - ctr image mount $IMAGE $TMPMOUNT >/dev/null
+     - cp --preserve=mode ${TMPMOUNT}/usr/local/bin/kubeadm ${TMPMOUNT}/usr/local/bin/kubelet /usr/bin/
+     - umount -l ${TMPMOUNT}
+     - rmdir ${TMPMOUNT}
      # avoid running kubeadm on L1 interface - wait for bond
      # https://www.freedesktop.org/software/systemd/man/latest/systemd-networkd-wait-online.service.html
      - /usr/lib/systemd/systemd-networkd-wait-online -i {{ .Values.controlPlane.uplinkInterface }} --ipv4 --timeout 0
