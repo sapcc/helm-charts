@@ -5,9 +5,49 @@ service_name: 'neutron'
 prefix: '/v2.0'
 
 resources:
+  address_groups:
+    type_name: address-group
+    custom_actions:
+      add_addresses: update/add/addresses
+      remove_addresses: update/remove/addresses
+    custom_attributes:
+      addresses: network/address-group/addresses
+  address_scopes:
+    el_type_uri: network/address-scope
+  agents:
+    type_uri: network/agents
+    el_type_uri: network/agent #singular for individual resources
+    custom_attributes:
+      admin_state_up: network/agent/admin-state-up
+      alive: network/agent/alive
+      agent_type: network/agent/type
+      host: network/agent/host
+      binary: network/agent/binary
+    # Exclude payload from large objects in audit records
+    payloads:
+      exclude:
+        - configurations
+    children:
+      l3-routers:
+        type_uri: network/agent/l3-routers
+        el_type_uri: network/agent/l3-router
+      dhcp-networks:
+        type_uri: network/agent/dhcp-networks
+        el_type_uri: network/agent/dhcp-network
   #custom endpoint
   asrk1:
     singleton: true
+  auto-allocated-topology:
+    singleton: true
+    custom_id: project_id
+    custom_attributes:
+      tenant_id: network/project
+  bgp-peers:
+    type_uri: network/bgp-peers
+    el_type_uri: network/bgp-peer
+  bgp-speakers:
+    type_uri: network/bgp-speakers
+    el_type_uri: network/bgp-speaker
   bgpvpn:
     # BPG VPNs namespace
     singleton: true
@@ -97,8 +137,16 @@ resources:
         type_uri: network/metering/labels
       metering-label-rules:
         type_uri: network/metering/label-rules
+  ndp-proxies:
+    type_uri: network/ndp-proxies
+    el_type_uri: network/ndp-proxy
+    children:
+      tags:
   networks:
     children:
+      dhcp-agents:
+        type_uri: network/network/dhcp-agents
+        el_type_uri: network/network/dhcp-agent
       tags:
   network-ip-availabilities:
   ports:
@@ -122,6 +170,11 @@ resources:
           minimum_bandwidth_rules:
             type_uri: network/qos/minimum-bandwidth-rules
       rule-types:
+        type_uri: network/qos/rule-types
+      minimum_packet_rate_rules:
+        type_uri: network/qos/minimum-packet-rate-rules
+      packet_rate_limit_rules:
+        type_uri: network/qos/packet-rate-limit-rules
       tags:
   rbac-policies:
   routers:
@@ -129,6 +182,9 @@ resources:
       add_router_interface: update/add/router-interface
       remove_router_interface: update/remove/router-interface
     children:
+      l3-agents:
+        type_uri: network/router/l3-agents
+        el_type_uri: network/router/l3-agent
       tags:
   security-groups:
     children:
@@ -142,12 +198,35 @@ resources:
       tags:
   segments:
   service-profiles:
+    el_type_uri: network/service-profile
+  sfc:
+    singleton: true
+    children:
+      port_chains:
+        type_uri: network/sfc/port-chains
+      port_pair_groups:
+        type_uri: network/sfc/port-pair-groups
+      port_pairs:
+        type_uri: network/sfc/port-pairs
+      flow_classifiers:
+        type_uri: network/sfc/flow-classifiers
+      service_graphs:
+        type_uri: network/sfc/service-graphs
   subnetpools:
     children:
       tags:
   subnets:
     children:
       tags:
+  taas:
+    singleton: true
+    children:
+      tap_services:
+        type_uri: network/taas/tap-services
+      tap_flows:
+        type_uri: network/taas/tap-flows
+      tap_mirrors:
+        type_uri: network/taas/tap-mirrors
   trunks:
     children:
       tags:
