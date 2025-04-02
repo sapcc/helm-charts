@@ -1,0 +1,73 @@
+groups:
+  - name: netapp-snapmirror
+    rules:
+    # enrich netapp_snapmirror_labels with destination_cluster
+    - record: netapp_snapmirror_labels:filled
+      expr: |
+        netapp_snapmirror_labels
+        * on (filer, destination_volume) group_left(destination_cluster)
+        label_replace (
+        label_replace (
+          max by (filer, svm, volume)
+            (netapp_volume_labels{app="netapp-harvest-exporter-manila", volume=~"share.*"}),
+          "destination_cluster", "$1", "filer", "(.*)"),
+          "destination_volume", "$1", "volume", "(.*)")
+
+    # enrich netapp_snapmirror_labels with share_id, share_name, project_id
+    - record: netapp_snapmirror_labels:filled
+      expr: |
+        netapp_snapmirror_labels
+        * on (source_vserver, source_volume) group_left(project_id, share_id, share_name)
+        label_replace (
+        label_replace (
+          max by (filer, project_id, share_id, share_name, svm, volume)
+            (netapp_volume_labels{app="netapp-harvest-exporter-manila", volume=~"share.*"}),
+          "source_volume", "$1", "volume", "(.*)"),
+          "source_vserver", "$1", "svm", "(.*)")
+
+    - record: netapp_snapmirror_destination_labels:filled
+      expr: |
+        netapp_snapmirror_destination_labels
+        * on (source_vserver, source_volume) group_left (filer, project_id, share_id, share_name)
+        label_replace(
+        label_replace(
+        label_replace(
+          max by (filer, project_id, share_id, share_name, svm, volume)
+            (netapp_volume_labels{app="netapp-harvest-exporter-manila", volume=~"share.*"}),
+          "source_volume", "$1", "volume", "(.*)"),
+          "source_vserver", "$1", "svm", "(.*)"),
+          "source_cluster", "$1", "filer", "(.*)")
+
+          
+    # cross region snapmirror
+    # i.e. source_volume can't be found in the same region
+    # netapp_snapmirror_labels unless on(source_volume) label_replace(netapp_volume_labels, "source_volume", "$1", "volume", "(.*)")
+ 
+    #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    # maia
+    #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+    # - record: netapp_snapmirror_labels:maia
+    #   expr: |
+    #     sum by (
+    #       availability_zone, project_id, share_id, share_name,
+    #       destination_cluster, destination_node, destination_volume, destination_vserver,
+    #       source_cluster, source_volume, source_vserver,
+    #       derived_relationship_type, group_type, healthy, last_transfer_error,
+    #       last_transfer_type, local,  region, policy_type, protectedBy,
+    #       protectionSourceType, relationship_id, relationship_status,
+    #       relationship_type, schedule, unhealthy_reason
+    #     ) netapp_snapmirror_labels:filled
+    #
+    # - record: netapp_snapmirror_endpoint_labels
+    #   expr: |
+    #     netapp_snapmirror_endpoint_labels
+    #     * on (source_volume) group_left(source_cluster, share_id, share_name, project_id)
+    #     label_replace (
+    #     label_replace (
+    #       max by (filer, project_id, share_id, share_name, svm, volume)
+    #         (netapp_volume_labels{app="netapp-harvest-exporter-manila", volume=~"share.*"}),
+    #       "source_cluster", "$1", "filer", "(.*)"),
+    #       "source_volume", "$1", "volume", "(.*)")
+
+
