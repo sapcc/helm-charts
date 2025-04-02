@@ -152,4 +152,4 @@ spec:
      - /usr/lib/systemd/systemd-networkd-wait-online -i {{ .Values.controlPlane.uplinkInterface }} --ipv4 --timeout 0
     postKubeadmCommands:
      # https://github.com/kube-vip/kube-vip/issues/684
-     - if [ -f /etc/kubernetes/super-admin.conf ]; then ln -s /etc/kubernetes/super-admin.conf /etc/kubernetes/kube-vip.conf; else /etc/kubernetes/admin.conf /etc/kubernetes/kube-vip.conf; fi
+     - while true; do if [ -f /etc/kubernetes/super-admin.conf ]; then ln -sf /etc/kubernetes/super-admin.conf /etc/kubernetes/kube-vip.conf && break; elif [ -f /etc/kubernetes/admin.conf ] && [ ! -d /etc/kubernetes/admin.conf ]; then ln -sf /etc/kubernetes/admin.conf /etc/kubernetes/kube-vip.conf && break; else echo "Neither /etc/kubernetes/super-admin.conf nor /etc/kubernetes/admin.conf is a valid file" >&2; sleep 5; fi; done
