@@ -2,7 +2,7 @@ groups:
 - name: logs-otel.alerts
   rules:
   - alert: LogsOTelLogsMissing
-    expr: sum by (region, k8s_node_name) (rate(otelcol_exporter_sent_log_records_total{job="logs/opentelemetry-collector-logs", exporter !~"debug"}[60m])) == 0
+    expr: sum by (region, k8s_node_name, pod) (rate(otelcol_exporter_sent_log_records_total{job="logs/opentelemetry-collector-logs", exporter !~"debug"}[60m])) == 0
     for: 120m
     labels:
       context: logshipping
@@ -12,7 +12,7 @@ groups:
       tier: os
       playbook: 'docs/support/playbook/logs/otel-logs-missing'
     annotations:
-      description: 'otel-logs on {{`{{ $labels.k8s_node_name }}`}} in {{`{{ $labels.region }}`}} is not shipping logs to {{`{{ $labels.exporter }}`}}. Please check.'
+      description: 'OpenTelemetry Collector on {{`{{ $labels.k8s_node_name }}`}} in {{`{{ $labels.region }}`}} is not shipping logs. Please check.'
       summary: OTel is not shipping logs
   - alert: LogsOTelLogsIncreasing
     expr: sum(increase(otelcol_exporter_sent_log_records_total{job="logs/opentelemetry-collector-logs"}[1h])) by (name) / sum(increase(otelcol_exporter_sent_log_records_total{job="logs/opentelemetry-collector-logs"}[1h]offset 2h)) by (name) > 4

@@ -103,7 +103,7 @@ spec:
           hostNetwork: true
           volumes:
           - hostPath:
-              path: /etc/kubernetes/admin.conf
+              path: /etc/kubernetes/super-admin.conf
             name: kubeconfig
           - hostPath:
               path: /etc/kube-vip.hosts
@@ -133,4 +133,7 @@ spec:
         - {{ $.Values.user.key | quote }}
     preKubeadmCommands:
      - hostnamectl set-hostname $${METAL_HOSTNAME}
+     # avoid running kubeadm on L1 interface - wait for bond
+     # https://www.freedesktop.org/software/systemd/man/latest/systemd-networkd-wait-online.service.html
+     - /usr/lib/systemd/systemd-networkd-wait-online -i {{ .Values.controlPlane.uplinkInterface }} --ipv4 --timeout 0
   version: {{ .Values.controlPlane.version }}

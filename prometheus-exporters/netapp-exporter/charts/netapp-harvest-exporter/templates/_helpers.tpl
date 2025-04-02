@@ -79,3 +79,11 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 prometheus.io/scrape: "true"
 prometheus.io/targets: {{ .Values.global.prometheus }}
 {{- end }}
+
+{{- define "netbox-host" -}}
+{{- if eq .Values.global.region "qa-de-1" -}}
+https://{{ required ".Values.global.netbox_host_staging" .Values.global.netbox_host_staging }}
+{{- else -}}
+https://{{ required ".Values.global.netbox_host" .Values.global.netbox_host }}
+{{- end }}
+{{- end }}
