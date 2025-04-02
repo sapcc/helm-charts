@@ -4,6 +4,11 @@ metadata:
   name: r-{{ .Values.global.region }}
 spec:
   replicas: {{ default 3 .Values.controlPlane.replicas }}
+  version: {{ .Values.controlPlane.version }}
+  rolloutStrategy:
+    rollingUpdate:
+      maxSurge: 0
+    type: RollingUpdate
   machineTemplate:
     infrastructureRef:
       kind: IroncoreMetalMachineTemplate
@@ -14,16 +19,16 @@ spec:
       nodeRegistration:
         name: $${METAL_HOSTNAME}
         kubeletExtraArgs:
-          cloud-provider: external
+          cloud-provider: ""
         taints: []
     clusterConfiguration:
       apiServer:
         extraArgs:
-          cloud-provider: external
+          cloud-provider: ""
           secure-port: "6443"
       controllerManager:
         extraArgs:
-          cloud-provider: external
+          cloud-provider: ""
           allocate-node-cidrs: "true"
       dns:
         imageRepository: {{ .Values.images.dns.repository }}
@@ -37,7 +42,7 @@ spec:
       nodeRegistration:
         name: $${METAL_HOSTNAME}
         kubeletExtraArgs:
-          cloud-provider: external
+          cloud-provider: ""
         taints: []
     files:
     - content: |
@@ -136,4 +141,3 @@ spec:
      # avoid running kubeadm on L1 interface - wait for bond
      # https://www.freedesktop.org/software/systemd/man/latest/systemd-networkd-wait-online.service.html
      - /usr/lib/systemd/systemd-networkd-wait-online -i {{ .Values.controlPlane.uplinkInterface }} --ipv4 --timeout 0
-  version: {{ .Values.controlPlane.version }}
