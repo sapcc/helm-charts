@@ -141,12 +141,7 @@ spec:
       # match kubelet with KCP version
       - IMAGE={{ $.Values.images.kubelet.repository }}:{{ .Values.controlPlane.version }}
       - while true; do ctr image pull $IMAGE && break; done
-      - TMPMOUNT=$(mktemp -d --suffix=.ctrcp)
-      - trap "umount -l ${TMPMOUNT} || true; rmdir ${TMPMOUNT}" EXIT
-      - ctr image mount $IMAGE $TMPMOUNT >/dev/null
-      - cp --preserve=mode ${TMPMOUNT}/usr/local/bin/kubeadm ${TMPMOUNT}/usr/local/bin/kubelet /usr/bin/
-      - if mountpoint -q ${TMPMOUNT}; then umount -l ${TMPMOUNT}; fi
-      - if [ -d ${TMPMOUNT} ]; then rmdir ${TMPMOUNT}; fi  
+      - ctr run --rm --mount type=bind,src=/usr/bin,dst=/mnt,options=rbind $IMAGE extract-files sh -c "cp --preserve=mode /usr/local/bin/kubeadm /mnt/kubeadm && cp --preserve=mode /usr/local/bin/kubelet /mnt/kubelet"
       # https://github.com/kube-vip/kube-vip/issues/684
       - |
         sed -i 's#path: /etc/kubernetes/admin.conf#path: /etc/kubernetes/super-admin.conf#' /etc/kubernetes/manifests/kube-vip.yaml;
