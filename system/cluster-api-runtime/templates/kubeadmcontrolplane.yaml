@@ -149,15 +149,11 @@ spec:
       - if [ -d ${TMPMOUNT} ]; then rmdir ${TMPMOUNT}; fi  
       # https://github.com/kube-vip/kube-vip/issues/684
       - |
-        if [ -f /run/kubeadm/kubeadm.yaml ]; then
-          sed -i 's#path: /etc/kubernetes/admin.conf#path: /etc/kubernetes/super-admin.conf#' /etc/kubernetes/manifests/kube-vip.yaml;
-        fi
+        sed -i 's#path: /etc/kubernetes/admin.conf#path: /etc/kubernetes/super-admin.conf#' /etc/kubernetes/manifests/kube-vip.yaml;
       # avoid running kubeadm on L1 interface - wait for bond
       # https://www.freedesktop.org/software/systemd/man/latest/systemd-networkd-wait-online.service.html
       - /usr/lib/systemd/systemd-networkd-wait-online -i {{ .Values.controlPlane.uplinkInterface }} --ipv4 --timeout 0
     postKubeadmCommands:
      # https://github.com/kube-vip/kube-vip/issues/684
       - |
-        if [ -f /run/kubeadm/kubeadm.yaml ]; then
-          sed -i 's#path: /etc/kubernetes/super-admin.conf#path: /etc/kubernetes/admin.conf#' /etc/kubernetes/manifests/kube-vip.yaml;
-        fi
+        sed -i 's#path: /etc/kubernetes/super-admin.conf#path: /etc/kubernetes/admin.conf#' /etc/kubernetes/manifests/kube-vip.yaml;
