@@ -61,6 +61,22 @@ spec:
         description: 'DNS {{ $.Values.unbound.name }} recursor in {{ $.Values.global.region }} is getting less than 10% of the usual traffic.'
         summary: 'DNS {{ $.Values.unbound.name }} recursor in {{ $.Values.global.region }} is getting less than 10% of the usual traffic compared to the 24h avegrage.'
 
+    - alert: Dns{{ $.Values.unbound.name | title }}DisproportionateAmountOfTraffic
+      expr: abs(sum(rate(unbound_queries_total{app="{{ $.Values.unbound.name }}", namespace="dns-recursor"}[5m]))/sum(rate(unbound_queries_total{namespace="dns-recursor"}[5m])) - 0.5) > {{ $.Values.unbound.tolerable_traffic_distribution_deviation | default 10 }}/100
+      for: 5m
+      labels:
+        context: unbound
+        dashboard: dns-unbound-and-f5-performance
+        meta: {{ $.Values.unbound.name }}
+        service: unbound
+        severity: warning
+        support_group: coredns
+        tier: os
+        playbook: 'docs/devops/alert/designate/#test_unbound_endpoint'
+      annotations:
+        description: 'DNS {{ $.Values.unbound.name }} recursor in {{ $.Values.global.region }} is getting a disproportionate amount of traffic.'
+        summary: 'DNS {{ $.Values.unbound.name }} recursor in {{ $.Values.global.region }} is getting a disproportionate amount of traffic. Expected between {{ sub 50 $.Values.unbound.tolerable_traffic_distribution_deviation | default 10 }}% and {{ add 50 $.Values.unbound.tolerable_traffic_distribution_deviation | default 10}}% of the total traffic, ideally as close to 50% as possible.'
+
 ---
 apiVersion: "monitoring.coreos.com/v1"
 kind: "PrometheusRule"
