@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.19.1 - 2025/04/02
+* `set-root-password` init container now always tries to create `'root'@'localhost'` and `'root'@'%'` user if it doesn't exist
+  * this helps to avoid lock-out issue, if this user was previously deleted
+
 ## v0.19.0 - 2025/03/25
 * Remove the following internal helm template helper functions:
   * `keystone_url`
