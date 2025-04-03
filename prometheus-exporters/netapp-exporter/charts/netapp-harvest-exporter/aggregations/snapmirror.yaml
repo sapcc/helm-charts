@@ -1,10 +1,13 @@
 groups:
   - name: netapp-snapmirror
     rules:
-    # enrich netapp_snapmirror_labels with destination_cluster
-    # then with share_id, share_name and project_id
-    # "*" operator is left-associative
-    - record: netapp_snapmirror_labels:filled
+    # NOTE:
+    #
+    # netapp_snapmirror_labels: Local destinations ONLY (from 'snapmirror show' - more snapmirror details).
+    # netapp_snapmirror_endpoint_labels: Local AND remote destinations (from 'snapmirror list-destinations' - endpoints only no details).
+    
+    # Enrich netapp_snapmirror_labels with destination_cluster
+    - record: netapp_snapmirror_labels:enhanced
       expr: |
         netapp_snapmirror_labels{app="netapp-harvest-exporter-manila"} 
         * on (app, filer, destination_volume) group_left(destination_cluster)
@@ -13,6 +16,18 @@ groups:
           max by (app, filer, svm, volume) (netapp_volume_labels{volume=~"share.*"}),
           "destination_cluster", "$1", "filer", "(.*)"),
           "destination_volume", "$1", "volume", "(.*)")
+
+    # Enrich the enhanced metrics netapp_snapmirror_labels:enhanced further
+    # with share_id, share_name and project_id.
+    #
+    # NOTE: All snapmirror have destinations in local region, not all have
+    # local sources. We have to separte the enhancement into two separate
+    # rules. There will be some metrics enhanced with only
+    # "destination_cluster", and others with "source_cluster", "share_id" and
+    # etc in addition.
+    - record: netapp_snapmirror_labels:enhanced
+      expr: |
+        netapp_snapmirror_labels:enhanced
         * on (app, source_vserver, source_volume) group_left(project_id, share_id, share_name)
         label_replace (
         label_replace (
@@ -21,7 +36,11 @@ groups:
           "source_volume", "$1", "volume", "(.*)"),
           "source_vserver", "$1", "svm", "(.*)")
 
-    - record: netapp_snapmirror_endpoint_labels:filled
+    # In comparison to netapp_snapmirror_labels,
+    # netapp_snapmirror_endpoint_labels includes snapmirrors with destinations
+    # in remote region. But it doesn't have detailed info about snapmirror,
+    # like healthy, status and etc.
+    - record: netapp_snapmirror_endpoint_labels:enhanced
       expr: |
         netapp_snapmirror_endpoint_labels
         * on (source_vserver, source_volume) group_left (source_cluster, project_id, share_id, share_name)
