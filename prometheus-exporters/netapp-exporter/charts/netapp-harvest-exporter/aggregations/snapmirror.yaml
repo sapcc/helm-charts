@@ -5,17 +5,27 @@ groups:
     #
     # netapp_snapmirror_labels: Local destinations ONLY (from 'snapmirror show' - more snapmirror details).
     # netapp_snapmirror_endpoint_labels: Local AND remote destinations (from 'snapmirror list-destinations' - endpoints only no details).
-    
-    # Enrich netapp_snapmirror_labels with destination_cluster
+    #
+    # Enrich netapp_snapmirror_labels with destination_cluster,
+    # then with share_id, share_name and project_id.
     - record: netapp_snapmirror_labels:enhanced
       expr: |
         netapp_snapmirror_labels{app="netapp-harvest-exporter-manila"} 
+        * on (app, source_vserver, source_volume) group_left(project_id, share_id, share_name)
+        label_replace (
+        label_replace (
+          max by (app, filer, project_id, share_id, share_name, svm, volume)
+            (netapp_volume_labels{volume=~"share.*"}),
+          "source_volume", "$1", "volume", "(.*)"),
+          "source_vserver", "$1", "svm", "(.*)")
         * on (app, filer, destination_volume) group_left(destination_cluster)
         label_replace (
         label_replace (
           max by (app, filer, svm, volume) (netapp_volume_labels{volume=~"share.*"}),
           "destination_cluster", "$1", "filer", "(.*)"),
           "destination_volume", "$1", "volume", "(.*)")
+
+
 
     # Enrich the enhanced metrics netapp_snapmirror_labels:enhanced further
     # with share_id, share_name and project_id.
@@ -27,14 +37,13 @@ groups:
     # etc in addition.
     - record: netapp_snapmirror_labels:enhanced
       expr: |
-        netapp_snapmirror_labels:enhanced
-        * on (app, source_vserver, source_volume) group_left(project_id, share_id, share_name)
-        label_replace (
-        label_replace (
-          max by (app, filer, project_id, share_id, share_name, svm, volume)
-            (netapp_volume_labels{volume=~"share.*"}),
-          "source_volume", "$1", "volume", "(.*)"),
-          "source_vserver", "$1", "svm", "(.*)")
+        (netapp_snapmirror_labels unless on (source_volume)
+            label_replace(netapp_volume_labels, "source_volume", "$1", "volume", "(.*)"))
+        * on (filer, destination_volume) group_left(destination_cluster) 
+        label_replace(label_replace(
+          netapp_volume_labels{volume=~"share.*"},
+          "destination_volume", "$1", "volume", "(.*)"),
+          "destination_cluster", "$1", "filer", "(.*)")
 
     # In comparison to netapp_snapmirror_labels,
     # netapp_snapmirror_endpoint_labels includes snapmirrors with destinations
