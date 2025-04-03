@@ -708,3 +708,25 @@ tests:
     object: fixtures/vulnerable-images/pod-clean.yaml
     assertions:
     - violations: no
+
+- name: restrict-monsoon3-releases
+  template: ../rendered-chart/gatekeeper/templates/constrainttemplate-restrict-monsoon3-namespace.yaml
+  constraint: ../rendered-chart/gatekeeper-config/templates/constraint-restrict-monsoon3-namespace.yaml
+  cases:
+  - name: configmap-forbidden-name
+    object: fixtures/restrict-monsoon3-namespace/configmap-forbidden-name.out.yaml
+    assertions:
+    - violations: 1
+      message: 'helm release "forbidden-name" is not allowed in namespace "monsoon3"'
+  - name: configmap-pass
+    object: fixtures/restrict-monsoon3-namespace/configmap-pass.out.yaml
+    assertions:
+    - violations: no
+  - name: configmap-pass-different-namespace
+    object: fixtures/restrict-monsoon3-namespace/configmap-pass-different-namespace.out.yaml
+    assertions:
+    - violations: no
+  - name: not-a-helm-release
+    object: fixtures/restrict-monsoon3-namespace/generic-secret.yaml
+    assertions:
+    - violations: no
