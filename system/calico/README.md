@@ -1,9 +1,11 @@
-Prometheus Operator CRDs
+Calico CNI templates and CRDs
 ------------------------
 
-This Helm Chart contains the CRDs used by Calico.
+This Helm Chart contains Calico templates and CRDs.
 
-## NOTE
+Review this chart before upgrading Calico version.
+
+## CRDs
 
 Use `./get-crds <version>` to update the CRDs from the upstream repository.
 
