@@ -19,16 +19,22 @@ spec:
       nodeRegistration:
         name: $${METAL_HOSTNAME}
         kubeletExtraArgs:
-          cloud-provider: ""
+          cloud-provider: external
+        taints: []
+    joinConfiguration:
+      nodeRegistration:
+        name: $${METAL_HOSTNAME}
+        kubeletExtraArgs:
+          cloud-provider: external
         taints: []
     clusterConfiguration:
       apiServer:
         extraArgs:
-          cloud-provider: ""
+          cloud-provider: external
           secure-port: "6443"
       controllerManager:
         extraArgs:
-          cloud-provider: ""
+          cloud-provider: external
           allocate-node-cidrs: "true"
       dns:
         imageRepository: {{ .Values.images.dns.repository }}
@@ -38,12 +44,6 @@ spec:
         podSubnet: {{ .Values.controlPlane.podSubnet }}
         serviceSubnet: {{ .Values.controlPlane.serviceSubnet }}
       imageRepository: {{ .Values.images.repository }}
-    joinConfiguration:
-      nodeRegistration:
-        name: $${METAL_HOSTNAME}
-        kubeletExtraArgs:
-          cloud-provider: ""
-        taints: []
     files:
     - content: |
         apiVersion: v1
