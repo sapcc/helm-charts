@@ -2,26 +2,22 @@ groups:
   - name: netapp-snapmirror
     rules:
     # enrich netapp_snapmirror_labels with destination_cluster
+    # then with share_id, share_name and project_id
+    # "*" operator is left-associative
     - record: netapp_snapmirror_labels:filled
       expr: |
-        netapp_snapmirror_labels
-        * on (filer, destination_volume) group_left(destination_cluster)
+        netapp_snapmirror_labels{app="netapp-harvest-exporter-manila"} 
+        * on (app, filer, destination_volume) group_left(destination_cluster)
         label_replace (
         label_replace (
-          max by (filer, svm, volume)
-            (netapp_volume_labels{app="netapp-harvest-exporter-manila", volume=~"share.*"}),
+          max by (app, filer, svm, volume) (netapp_volume_labels{volume=~"share.*"}),
           "destination_cluster", "$1", "filer", "(.*)"),
           "destination_volume", "$1", "volume", "(.*)")
-
-    # enrich netapp_snapmirror_labels with share_id, share_name, project_id
-    - record: netapp_snapmirror_labels:filled
-      expr: |
-        netapp_snapmirror_labels
-        * on (source_vserver, source_volume) group_left(project_id, share_id, share_name)
+        * on (app, source_vserver, source_volume) group_left(project_id, share_id, share_name)
         label_replace (
         label_replace (
-          max by (filer, project_id, share_id, share_name, svm, volume)
-            (netapp_volume_labels{app="netapp-harvest-exporter-manila", volume=~"share.*"}),
+          max by (app, filer, project_id, share_id, share_name, svm, volume)
+            (netapp_volume_labels{volume=~"share.*"}),
           "source_volume", "$1", "volume", "(.*)"),
           "source_vserver", "$1", "svm", "(.*)")
 
