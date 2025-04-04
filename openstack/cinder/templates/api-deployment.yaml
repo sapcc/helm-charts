@@ -130,6 +130,10 @@ spec:
               mountPath: /etc/cinder/ratelimit.yaml
               subPath: ratelimit.yaml
               readOnly: true
+            - name: redis-ratelimit-secret
+              mountPath: /etc/cinder/ratelimit-backend-secret.conf
+              subPath: ratelimit-backend-secret.conf
+              readOnly: true
             {{- end }}
             {{- if .Values.watcher.enabled }}
             - name: cinder-etc
@@ -167,3 +171,11 @@ spec:
             secretName: {{ .Release.Name }}-secrets
         {{- include "utils.proxysql.volumes" . | indent 8 }}
         {{- include "utils.coordination.volumes" . | indent 8 }}
+
+        {{- if .Values.api_rate_limit.enabled }}
+        - name: redis-ratelimit-secret
+          secret:
+            secretName: cinder-api-ratelimit-secret
+        {{- end }}
+
+
