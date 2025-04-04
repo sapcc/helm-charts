@@ -10,9 +10,6 @@ octavia_plugins = f5_plugin
 # oslo_messaging rpc timeout
 rpc_response_timeout = {{ .Values.rpc_response_timeout | default .Values.global.rpc_response_timeout | default 60 }}
 
-# Tracing
-{{- include "osprofiler" . }}
-
 [api_settings]
 bind_host = 0.0.0.0
 bind_port = {{.Values.global.octavia_port_internal | default 9876}}
