@@ -67,6 +67,10 @@ spec:
                 path: nova.conf.d/api-db.conf
               - key: {{ $cell_name }}.conf
                 path: nova.conf.d/{{ $cell_name }}.conf
+              {{- if .Values.osprofiler.enabled }}
+              - key: osprofiler.conf
+                path: nova.conf.d/osprofiler.conf
+              {{- end }}
           - configMap:
               name: nova-console
               items:
