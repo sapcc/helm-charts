@@ -21,9 +21,9 @@ spec:
         app.kubernetes.io/version: 2.15.0
       {{- include "kube-state-metrics-remote.selectorLabels" . | nindent 8 }}
       annotations:
-        prometheus.io/scrape: true
-        prometheus.io/path: /metrics
-        prometheus.io/port: {{ with index .Values.kubeStateMetrics.ports 0 }}{{ .port }}{{ end }}
+        prometheus.io/scrape: "true"
+        prometheus.io/path: "/metrics"
+        prometheus.io/port: {{ with index .Values.kubeStateMetrics.ports 0 }}{{ .port | quote }}{{ end }}
     spec:
       automountServiceAccountToken: true
       containers:
