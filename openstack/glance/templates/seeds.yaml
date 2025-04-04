@@ -19,9 +19,6 @@ spec:
   - monsoon3/domain-{{replace "_" "-" . | lower}}-seed
   {{- end }}
   {{- end }}
-  {{- if .Values.tempest.enabled }}
-  - monsoon3/domain-tempest-seed
-  {{- end }}
   - swift/swift-seed
 
   roles:
@@ -45,7 +42,7 @@ spec:
       region: {{ .Values.global.region | quote }}
       url: http://{{include "glance_api_endpoint_host_internal" .}}:{{.Values.api_port_internal}}
 
-  # default and tempest get special handling
+  # default get special handling
   # ccadmin gets additional role assignments for projects and some group assignments
   # iaas- is excluded
 
@@ -71,25 +68,6 @@ spec:
         role: cloud_image_admin
       - project: admin
         role: cloud_image_admin
-
-  {{- if .Values.tempest.enabled }}
-  - name: tempest
-    projects:
-    - name: admin
-      role_assignments:
-      - user: admin
-        role: cloud_image_admin
-      - user: admin@Default
-        role: cloud_image_admin
-    - name: tempest1
-      role_assignments:
-      - user: admin@Default
-        role: cloud_image_admin
-    - name: tempest2
-      role_assignments:
-      - user: admin@Default
-        role: cloud_image_admin
-  {{- end }}
 
   {{- range $domains}}
   {{- if and (ne . "Default") (not (contains "iaas-" .))}}
