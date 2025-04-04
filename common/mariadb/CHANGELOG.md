@@ -1,5 +1,24 @@
 # Changelog
 
+## v0.20.0 - 2025/04/03
+* add `renameCheckConstraints`  job, which allows to rename constraints, created by sqlalchemy with names like `CONSTRAINT_*`, to constraints with a unique name, as MySQL does
+
+Context: by default, alembic migrations creating a boolean column causes sqlalchemy to create a check constraint without a specified name like this:
+```sql
+CONSTRAINT `CONSTRAINT_1` CHECK (`enabled` in (0,1))
+```
+MariaDB's default behavior is to name constraints like 'CONSTRAINT_1', 'CONSTRAINT_2', and so on. The constraint name being unique per table.
+The default behaviour of MySQL (or Percona Server / Percona XtraDB Cluster) is to name constraints like 'table_chk_1', 'table_chk_2', and so on. The constraint name must be unique per database.
+This makes data migration from MariaDB to MySQL impossible without renaming constraints, because mysqldump of MariaDB contains many non-unique constraint names.
+To solve this problem and make a database dump compatible with MySQL, these constraints should be renamed (recreated) using unique names.
+
+### Job configuration example
+```yaml
+job:
+  renameCheckConstraints:
+    enabled: true
+```
+
 ## v0.19.1 - 2025/04/02
 * `set-root-password` init container now always tries to create `'root'@'localhost'` and `'root'@'%'` user if it doesn't exist
   * this helps to avoid lock-out issue, if this user was previously deleted
