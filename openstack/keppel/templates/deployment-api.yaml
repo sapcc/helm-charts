@@ -3,6 +3,8 @@ apiVersion: apps/v1
 
 metadata:
   name: keppel-api
+  annotations:
+    secret.reloader.stakater.com/reload: keppel-keys,keppel-secret
 
 spec:
   revisionHistoryLimit: 5
@@ -24,7 +26,6 @@ spec:
         checksum/secret: {{ include "keppel/templates/secret.yaml" . | sha256sum }}
         checksum/secret-keys: {{ include "keppel/templates/secret-keys.yaml" . | sha256sum }}
         kubectl.kubernetes.io/default-container: api
-        secret.reloader.stakater.com/reload: keppel-keys,keppel-secret
     spec:
       affinity:
         podAntiAffinity:
