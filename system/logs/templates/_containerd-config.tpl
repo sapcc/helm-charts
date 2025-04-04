@@ -6,7 +6,7 @@ transform/protocol:
       conditions:
         - resource.attributes["network.protocol.name"] != nil
       statements:
-        - set(attributes["network.protocol.name"], ConvertCase(attributes["network.protocol.name"], "lower"))
+        - set(log.attributes["network.protocol.name"], ConvertCase(log.attributes["network.protocol.name"], "lower"))
 
 transform/ingress:
   error_mode: ignore
@@ -16,8 +16,8 @@ transform/ingress:
         - resource.attributes["app.label.name"] == "ingress-nginx"
       statements:
         - merge_maps(log.attributes, ExtractGrokPatterns(log.body, "%{IP:client.address} %{NOTSPACE:client.ident} %{NOTSPACE:client.auth} \\[%{HTTPDATE:httpdate}\\] \"%{WORD:request_method} %{NOTSPACE:request_path} %{WORD:network.protocol.name}/%{NOTSPACE:network.protocol.version}\" %{NUMBER:response} %{NUMBER:content_length:int} %{QUOTEDSTRING} \"%{GREEDYDATA:user_agent}\" %{NUMBER:request_length:int} %{BASE10NUM:request_time:float}( \\[%{NOTSPACE:service}\\])? ?(\\[\\])? %{IP:server.address}\\:%{NUMBER:server.port} %{NUMBER:upstream_response_length:int} %{BASE10NUM:upstream_response_time:float} %{NOTSPACE:upstream_status} %{NOTSPACE:request_id}", true),"upsert")
-        - set(attributes["network.protocol.name"], ConvertCase(attributes["network.protocol.name"], "lower")) where attributes["network.protocol.name"] != nil
-        - set(attributes["config.parsed"], "ingress-nginx") where attributes["client.address"] != nil
+        - set(log.attributes["network.protocol.name"], ConvertCase(log.attributes["network.protocol.name"], "lower")) where log.attributes["network.protocol.name"] != nil
+        - set(log.attributes["config.parsed"], "ingress-nginx") where log.attributes["client.address"] != nil
 {{ end }}
 
 {{- define "containerd.receiver" }}
