@@ -88,7 +88,7 @@ spec:
       {{- end }}
 
   {{- range $domains}}
-  {{ if and (ne . "Default" ) (ne . "cc3test") (not (contains "iaas-" .))}}
+  {{ if and (ne . "Default" ) (ne . "cc3test") (not (hasPrefix "iaas-" .))}}
   - name: {{ . }}
     {{ if eq . "ccadmin" }}
     projects:
@@ -98,35 +98,35 @@ spec:
         role: email_user # to be able to send emails via cronus
     {{- end }}
     groups:
-    - name: {{ contains "iaas-" . | ternary . ( upper . ) }}_API_SUPPORT
+    - name: {{ hasPrefix "iaas-" . | ternary . ( upper . ) }}_API_SUPPORT
       role_assignments:
         - domain: {{ . }}
           role: cloud_support_tools_viewer
         - domain: {{ . }}
           role: cloud_support_tools_viewer
           inherited: true
-    - name: {{ contains "iaas-" . | ternary . ( upper . ) }}_COMPUTE_SUPPORT
+    - name: {{ hasPrefix "iaas-" . | ternary . ( upper . ) }}_COMPUTE_SUPPORT
       role_assignments:
         - domain: {{ . }}
           role: cloud_support_tools_viewer
         - domain: {{ . }}
           role: cloud_support_tools_viewer
           inherited: true
-    - name: {{ contains "iaas-" . | ternary . ( upper . ) }}_NETWORK_SUPPORT
+    - name: {{ hasPrefix "iaas-" . | ternary . ( upper . ) }}_NETWORK_SUPPORT
       role_assignments:
         - domain: {{ . }}
           role: cloud_support_tools_viewer
         - domain: {{ . }}
           role: cloud_support_tools_viewer
           inherited: true
-    - name: {{ contains "iaas-" . | ternary . ( upper . ) }}_STORAGE_SUPPORT
+    - name: {{ hasPrefix "iaas-" . | ternary . ( upper . ) }}_STORAGE_SUPPORT
       role_assignments:
         - domain: {{ . }}
           role: cloud_support_tools_viewer
         - domain: {{ . }}
           role: cloud_support_tools_viewer
           inherited: true
-    - name: {{ contains "iaas-" . | ternary . ( upper . ) }}_SERVICE_DESK
+    - name: {{ hasPrefix "iaas-" . | ternary . ( upper . ) }}_SERVICE_DESK
       role_assignments:
         - domain: {{ . }}
           role: cloud_support_tools_viewer
@@ -134,7 +134,7 @@ spec:
           role: cloud_support_tools_viewer
           inherited: true
     {{- if not (has . $domainsWithoutSupportToolViewers) }}
-    - name: {{ contains "iaas-" . | ternary . ( upper . ) }}_SUPPORT_TOOL_VIEWERS
+    - name: {{ hasPrefix "iaas-" . | ternary . ( upper . ) }}_SUPPORT_TOOL_VIEWERS
       role_assignments:
       - domain: {{ . }}
         role: domain_support_tools_viewer
