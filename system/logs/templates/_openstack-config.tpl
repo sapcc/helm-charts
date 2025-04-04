@@ -51,7 +51,7 @@ transform/neutron_agent:
         - resource.attributes["k8s.container.name"] == "neutron-network-agent"
       statements:
         - merge_maps(attributes, ExtractGrokPatterns(body, "%{WORD:loglevel} %{NOTSPACE:logger} \\[-\\] %{GREEDYDATA} %{NOTSPACE} %{WORD:request_method} %{NOTSPACE} %{QUOTEDSTRING:request_path} %{NOTSPACE} %{NUMBER:request_status} %{NOTSPACE} %{IPV4:client.address} %{NOTSPACE} %{NOTSPACE:project_id} %{NOTSPACE} %{NOTSPACE:os_network_id} %{NOTSPACE} %{NOTSPACE:os_router_id} %{NOTSPACE} %{NOTSPACE:os_instance_id} %{NOTSPACE} %{BASE10NUM:request_duration} %{NOTSPACE} %{QUOTEDSTRING:user_agent}", true),"upsert")
-        - merge_maps(attributes, ExtractGrokPatterns(body, "(%{TIMESTAMP_ISO8601:logtime}|)( )?%{TIMESTAMP_ISO8601:time}.%{NOTSPACE}? %{NUMBER:pid} %{WORD:loglevel} %{NOTSPACE:logger} \\[-\\] %{GREEDYDATA} %{NOTSPACE} %{WORD:request_method} %{NOTSPACE} %{QUOTEDSTRING:request_path} %{NOTSPACE} %{NUMBER:request_status} %{NOTSPACE} %{IPV4:client.address} %{NOTSPACE %{NOTSPACE:project_id} %{NOTSPACE} %{NOTSPACE:os_network_id} %{NOTSPACE} %{NOTSPACE:os_router_id} %{NOTSPACE} %{NOTSPACE:os_instance_id} %{NOTSPACE} %{BASE10NUM:request_duration} %{NOTSPACE} %{QUOTEDSTRING:user_agent}", true),"upsert")
+        - merge_maps(attributes, ExtractGrokPatterns(body, "(%{TIMESTAMP_ISO8601}|)( )?%{TIMESTAMP_ISO8601}.%{NOTSPACE}? %{NUMBER:pid} %{WORD:loglevel} %{NOTSPACE:logger} \\[-\\] %{GREEDYDATA} %{NOTSPACE} %{WORD:request_method} %{NOTSPACE} %{QUOTEDSTRING:request_path} %{NOTSPACE} %{NUMBER:request_status} %{NOTSPACE} %{IPV4:client.address} %{NOTSPACE %{NOTSPACE:project_id} %{NOTSPACE} %{NOTSPACE:os_network_id} %{NOTSPACE} %{NOTSPACE:os_router_id} %{NOTSPACE} %{NOTSPACE:os_instance_id} %{NOTSPACE} %{BASE10NUM:request_duration} %{NOTSPACE} %{QUOTEDSTRING:user_agent}", true),"upsert")
 
 transform/neutron_errors:
   error_mode: ignore
@@ -136,7 +136,7 @@ transform/keystone_api:
       conditions:
         - resource.attributes["k8s.container.name"] == "keystone-api"
       statements:
-        - merge_maps(attributes, ExtractGrokPatterns(body, "%{DATE_EU:date} %{TIME:time} %{NUMBER} %{NOTSPACE:loglevel} %{NOTSPACE:component} \\[%{NOTSPACE:requestid} %{NOTSPACE:global_request_id} usr %{NOTSPACE:usr} prj %{NOTSPACE:prj} dom %{NOTSPACE:dom} usr-dom %{NOTSPACE:usr_domain} prj-dom %{NOTSPACE:project_domain_id}\\] %{GREEDYDATA}'%{WORD:method} %{URIPATH:pri_path}' %{WORD:action}", true), "upsert")
+        - merge_maps(attributes, ExtractGrokPatterns(body, "%{DATE_EU} %{TIME} %{NUMBER} %{NOTSPACE:loglevel} %{NOTSPACE:component} \\[%{NOTSPACE:requestid} %{NOTSPACE:global_request_id} usr %{NOTSPACE:usr} prj %{NOTSPACE:prj} dom %{NOTSPACE:dom} usr-dom %{NOTSPACE:usr_domain} prj-dom %{NOTSPACE:project_domain_id}\\] %{GREEDYDATA}'%{WORD:method} %{URIPATH:pri_path}' %{WORD:action}", true), "upsert")
 
 transform/swift_proxy:
   error_mode: ignore
