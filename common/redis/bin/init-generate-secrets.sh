@@ -32,4 +32,7 @@ for USER in ${USERS:-}; do
       password: $(LC_ALL=C tr -dc '[:graph:]' </dev/urandom | head -c 30 | base64 -w0 | base64 -w0)
   " > secret.yaml
   kubectl create -f secret.yaml
+  if [[ $ANNOTATE_FOR_RELOADER -eq "true" ]]; then
+    kubectl annotate reloader.stakater.com/match="true" -f secret.yaml
+  fi
 done
