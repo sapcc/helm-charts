@@ -61,8 +61,8 @@ transform/neutron_errors:
         - resource.attributes["k8s.container.name"] == "neutron-server"
         - resource.attributes["k8s.container.name"] == "neutron-asr1k"
       statements:
-        - merge_maps(attributes, ExtractGrokPatterns(body, "%{TIMESTAMP_ISO8601:time} %{NOTSPACE} %{NOTSPACE:loglevel} %{NOTSPACE:logger} (\\[)?(req-)%{NOTSPACE:request_id} ?(g%{NOTSPACE:global_request_id}) ?%{NOTSPACE:user_id} ?%{NOTSPACE:project_id} ?%{NOTSPACE:domain_id} ?%{NOTSPACE:user_domain_id} ?%{NOTSPACE:project_domain_id}\\] %{IPV4:client.address} \"%{WORD:request_method} %{NOTSPACE:request_path} HTTP/%{NOTSPACE}\" %{NOTSPACE} %{NUMBER:response}?( ).*%{NOTSPACE} %{NUMBER:content_length:int} %{NOTSPACE} %{BASE10NUM:request_time:float} %{NOTSPACE} %{NOTSPACE:agent}", true),"upsert")
-        - merge_maps(attributes, ExtractGrokPatterns(body, "%{TIMESTAMP_ISO8601:time} %{NOTSPACE} %{NOTSPACE:loglevel} %{NOTSPACE:logger} (\\[)?(req-)%{NOTSPACE:request_id} ?(g%{NOTSPACE:global_request_id}) ?%{NOTSPACE:user_id} ?%{NOTSPACE:project_id} ?%{NOTSPACE:domain_id} ?%{NOTSPACE:user_domain_id} ?%{NOTSPACE:project_domain_id}\\]", true), "upsert")
+        - merge_maps(attributes, ExtractGrokPatterns(body, "%{TIMESTAMP_ISO8601} %{NOTSPACE} %{NOTSPACE:loglevel} %{NOTSPACE:logger} (\\[)?(req-)%{NOTSPACE:request_id} ?(g%{NOTSPACE:global_request_id}) ?%{NOTSPACE:user_id} ?%{NOTSPACE:project_id} ?%{NOTSPACE:domain_id} ?%{NOTSPACE:user_domain_id} ?%{NOTSPACE:project_domain_id}\\] %{IPV4:client.address} \"%{WORD:request_method} %{NOTSPACE:request_path} HTTP/%{NOTSPACE}\" %{NOTSPACE} %{NUMBER:response}?( ).*%{NOTSPACE} %{NUMBER:content_length:int} %{NOTSPACE} %{BASE10NUM:request_time:float} %{NOTSPACE} %{NOTSPACE:agent}", true),"upsert")
+        - merge_maps(attributes, ExtractGrokPatterns(body, "%{TIMESTAMP_ISO8601} %{NOTSPACE} %{NOTSPACE:loglevel} %{NOTSPACE:logger} (\\[)?(req-)%{NOTSPACE:request_id} ?(g%{NOTSPACE:global_request_id}) ?%{NOTSPACE:user_id} ?%{NOTSPACE:project_id} ?%{NOTSPACE:domain_id} ?%{NOTSPACE:user_domain_id} ?%{NOTSPACE:project_domain_id}\\]", true), "upsert")
         - merge_maps(attributes, ExtractGrokPatterns(body, "Encoutered a requeable lock exception executing %{WORD:neutronTask:string} for model %{WORD:neutronModel:string} on device %{IP:neutronIp:string}", true),"upsert")
         - merge_maps(attributes, ExtractGrokPatterns(body, "asr1k_exceptions.InconsistentModelException?(:) %{WORD:neutronTask} for model %{WORD:neutronModel} cannot be executed on %{IP:neutronIp}", true),"upsert")
         - merge_maps(attributes, ExtractGrokPatterns(body, "%{WORD:neutronTask} for model %{WORD:neutronModel} cannot be executed on %{IP:neutronIp} due to a model/device inconsistency.", true),"upsert")
@@ -80,8 +80,8 @@ transform/openstack_api:
         - resource.attributes["k8s.deployment.name"] == "manila-api"
         - resource.attributes["k8s.deployment.name"] == "ironic-api"
       statements:
-        - merge_maps(attributes, ExtractGrokPatterns(body, "%{TIMESTAMP_ISO8601:time} %{NOTSPACE} %{NOTSPACE:loglevel} %{NOTSPACE:logger} (\\[)?(req-)%{NOTSPACE:request_id} ?(g%{NOTSPACE:global_request_id}) ?%{NOTSPACE:user_id} ?%{NOTSPACE:project_id} ?%{NOTSPACE:domain_id} ?%{NOTSPACE:user_domain_id} ?%{NOTSPACE:project_domain_id}\\] %{IPV4:client.address}(,%{IPV4:internal_ip})? \"%{WORD:request_method} %{NOTSPACE:request_path} HTTP/%{NOTSPACE}\" %{NOTSPACE} %{NUMBER:response}?( ).*%{NOTSPACE} %{NUMBER:content_length:int} %{NOTSPACE} %{BASE10NUM:request_time:float} ?%{NOTSPACE} ?%{NOTSPACE:agent}", true), "upsert")
-        - merge_maps(attributes, ExtractGrokPatterns(body, "%{TIMESTAMP_ISO8601:time} %{NOTSPACE} %{NOTSPACE:loglevel} %{NOTSPACE:logger} (\\[)?(req-)%{NOTSPACE:request_id} ?(g%{NOTSPACE:global_request_id}) ?%{NOTSPACE:user_id} ?%{NOTSPACE:project_id} ?%{NOTSPACE:domain_id} ?%{NOTSPACE:user_domain_id} ?%{NOTSPACE:project_domain_id}\\]", true), "upsert")
+        - merge_maps(attributes, ExtractGrokPatterns(body, "%{TIMESTAMP_ISO8601} %{NOTSPACE} %{NOTSPACE:loglevel} %{NOTSPACE:logger} (\\[)?(req-)%{NOTSPACE:request_id} ?(g%{NOTSPACE:global_request_id}) ?%{NOTSPACE:user_id} ?%{NOTSPACE:project_id} ?%{NOTSPACE:domain_id} ?%{NOTSPACE:user_domain_id} ?%{NOTSPACE:project_domain_id}\\] %{IPV4:client.address}(,%{IPV4:internal_ip})? \"%{WORD:request_method} %{NOTSPACE:request_path} HTTP/%{NOTSPACE}\" %{NOTSPACE} %{NUMBER:response}?( ).*%{NOTSPACE} %{NUMBER:content_length:int} %{NOTSPACE} %{BASE10NUM:request_time:float} ?%{NOTSPACE} ?%{NOTSPACE:agent}", true), "upsert")
+        - merge_maps(attributes, ExtractGrokPatterns(body, "%{TIMESTAMP_ISO8601} %{NOTSPACE} %{NOTSPACE:loglevel} %{NOTSPACE:logger} (\\[)?(req-)%{NOTSPACE:request_id} ?(g%{NOTSPACE:global_request_id}) ?%{NOTSPACE:user_id} ?%{NOTSPACE:project_id} ?%{NOTSPACE:domain_id} ?%{NOTSPACE:user_domain_id} ?%{NOTSPACE:project_domain_id}\\]", true), "upsert")
 
 transform/non_openstack:
   error_mode: ignore
@@ -91,7 +91,7 @@ transform/non_openstack:
         - resource.attributes["k8s.container.name"] == "sentry"
         - resource.attributes["k8s.deployment.name"] == "arc-api"
       statements:
-        - merge_maps(attributes, ExtractGrokPatterns(body, "%{IP:remote_addr} %{NOTSPACE:ident} %{NOTSPACE:auth} \\[%{HAPROXYDATE:time}\\] \"%{WORD:request_method} %{NOTSPACE:request_path} %{NOTSPACE:httpversion}\" %{NUMBER:response} %{NUMBER:content_length:int} %{QUOTEDSTRING:url} \"%{GREEDYDATA:user_agent}\"?( )?(%{BASE10NUM:request_time:float})", true, ["HAPROXYDATE=%{MONTHDAY}/%{MONTH}/%{YEAR}:%{HAPROXYTIME}.%{INT}", "HAPROXYTIME=%{HOUR}:%{MINUTE}(?::%{SECOND})"]),"upsert")
+        - merge_maps(attributes, ExtractGrokPatterns(body, "%{IP:remote_addr} %{NOTSPACE:ident} %{NOTSPACE:auth} \\[%{HAPROXYDATE:proxy_date}\\] \"%{WORD:request_method} %{NOTSPACE:request_path} %{NOTSPACE:httpversion}\" %{NUMBER:response} %{NUMBER:content_length:int} %{QUOTEDSTRING:url} \"%{GREEDYDATA:user_agent}\"?( )?(%{BASE10NUM:request_time:float})", true, ["HAPROXYDATE=%{MONTHDAY}/%{MONTH}/%{YEAR}:%{HAPROXYTIME}.%{INT}", "HAPROXYTIME=%{HOUR}:%{MINUTE}(?::%{SECOND})"]),"upsert")
 
 transform/network_generic_ssh_exporter:
   error_mode: ignore
@@ -116,7 +116,7 @@ transform/snmp_exporter:
       conditions:
         - resource.attributes["k8s.deployment.name"] == "snmp-exporter"
       statements:
-        - merge_maps(attributes, ExtractGrokPatterns(body, "ts=%{TIMESTAMP_ISO8601:time} caller=%{NOTSPACE} level=%{NOTSPACE:loglevel} auth=%{NOTSPACE:snmp_auth} target=%{IP:snmp_ip} source_address=(?:%{GREEDYDATA:source}) worker=(?:%{NUMBER}) module=%{NOTSPACE:snmp_module} msg=\"%{GREEDYDATA:snmp_error}\" err=\"%{GREEDYDATA} %{IP}%{NOTSPACE} %{GREEDYDATA:snmp_reason}\"", true), "upsert")
+        - merge_maps(attributes, ExtractGrokPatterns(body, "ts=%{TIMESTAMP_ISO8601} caller=%{NOTSPACE} level=%{NOTSPACE:loglevel} auth=%{NOTSPACE:snmp_auth} target=%{IP:snmp_ip} source_address=(?:%{GREEDYDATA:source}) worker=(?:%{NUMBER}) module=%{NOTSPACE:snmp_module} msg=\"%{GREEDYDATA:snmp_error}\" err=\"%{GREEDYDATA} %{IP}%{NOTSPACE} %{GREEDYDATA:snmp_reason}\"", true), "upsert")
 
 transform/elektra:
   error_mode: ignore
@@ -125,7 +125,7 @@ transform/elektra:
       conditions:
         - resource.attributes["k8s.deployment.name"] == "elektra"
       statements:
-        - merge_maps(attributes, ExtractGrokPatterns(body, "\\[%{NOTSPACE:request}\\] %{WORD} %{WORD:method} \"%{NOTSPACE:url} %{WORD} %{IP:ip} %{WORD} %{TIMESTAMP_ISO8601:time}", true), "upsert")
+        - merge_maps(attributes, ExtractGrokPatterns(body, "\\[%{NOTSPACE:request}\\] %{WORD} %{WORD:method} \"%{NOTSPACE:url} %{WORD} %{IP:ip} %{WORD} %{TIMESTAMP_ISO8601}", true), "upsert")
         - merge_maps(attributes, ExtractGrokPatterns(body, "\\[%{NOTSPACE:request}\\] %{WORD} %{NUMBER:response}", true), "upsert")
         - merge_maps(attributes, ExtractGrokPatterns(body, "\\[%{NOTSPACE:request}\\]", true), "upsert")
 
