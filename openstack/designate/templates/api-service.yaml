@@ -12,7 +12,7 @@ metadata:
     prometheus.io/targets: {{ required ".Values.metrics.prometheus missing" .Values.metrics.prometheus | quote }}
     {{- include "utils.linkerd.pod_and_service_annotation" . | indent 4 }}
 spec:
-{{- if .Values.global_setup }}
+{{- if .Values.global.is_global_region }}
   type: LoadBalancer
   externalTrafficPolicy: Local
 {{- end }}
@@ -23,7 +23,7 @@ spec:
       port: {{ .Values.global.designate_api_port_internal }}
     - name: metrics
       port: {{ .Values.global.designate_metrics_port }}
-{{- if .Values.global_setup }}
+{{- if .Values.global.is_global_region }}
     - name: static
       port: 80
   externalIPs:
