@@ -20,6 +20,10 @@ spec:
         app.kubernetes.io/name: kube-state-metrics-remote
         app.kubernetes.io/version: 2.15.0
       {{- include "kube-state-metrics-remote.selectorLabels" . | nindent 8 }}
+      annotations:
+        prometheus.io/scrape: true
+        prometheus.io/path: /metrics
+        prometheus.io/port: {{ with index .Values.kubeStateMetrics.ports 0 }}{{ .port }}{{ end }}
     spec:
       automountServiceAccountToken: true
       containers:
@@ -47,9 +51,9 @@ spec:
           timeoutSeconds: 5
         name: kube-state-metrics
         ports:
-        - containerPort: 30090
+        - containerPort: {{ with index .Values.kubeStateMetrics.ports 0 }}{{ .port }}{{ end }}
           name: http-metrics
-        - containerPort: 30091
+        - containerPort: {{ with index .Values.kubeStateMetrics.ports 1 }}{{ .port }}{{ end }}
           name: telemetry
         readinessProbe:
           failureThreshold: 3
