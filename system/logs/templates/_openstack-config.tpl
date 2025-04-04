@@ -40,8 +40,8 @@ transform/ingress:
         - resource.attributes["app.label.name"] == "ingress-nginx"
       statements:
         - merge_maps(log.attributes, ExtractGrokPatterns(log.body, "%{IP:client.address} %{NOTSPACE:client.ident} %{NOTSPACE:client.auth} \\[%{HTTPDATE:httpdate}\\] \"%{WORD:request_method} %{NOTSPACE:request_path} %{WORD:network.protocol.name}/%{NOTSPACE:network.protocol.version}\" %{NUMBER:response} %{NUMBER:content_length:int} %{QUOTEDSTRING} \"%{GREEDYDATA:user_agent}\" %{NUMBER:request_length:int} %{BASE10NUM:request_time:float}( \\[%{NOTSPACE:service}\\])? ?(\\[\\])? %{IP:server.address}\\:%{NUMBER:server.port} %{NUMBER:upstream_response_length:int} %{BASE10NUM:upstream_response_time:float} %{NOTSPACE:upstream_status} %{NOTSPACE:request_id}", true),"upsert")
-        - set(attributes["network.protocol.name"], ConvertCase(attributes["network.protocol.name"], "lower")) where attributes["network.protocol.name"] != nil
-        - set(attributes["config.parsed"], "ingress-nginx") where attributes["client.address"] != nil
+        - set(log.attributes["network.protocol.name"], ConvertCase(log.attributes["network.protocol.name"], "lower")) where log.attributes["network.protocol.name"] != nil
+        - set(log.attributes["config.parsed"], "ingress-nginx") where log.attributes["client.address"] != nil
 
 transform/neutron_agent:
   error_mode: ignore
@@ -100,14 +100,14 @@ transform/network_generic_ssh_exporter:
       conditions:
         - resource.attributes["k8s.container.name"] == "network-generic-ssh-exporter"
       statements:
-        - merge_maps(cache, ParseJSON(log.body), "upsert") where IsMatch(log.body, "^\\{")
-        - set(attributes["loglevel"], cache["level"])
-        - set(attributes["ts"], cache["ts"])
-        - set(attributes["msg"], cache["msg"])
-        - set(attributes["caller"], cache["caller"])
-        - set(attributes["ip"], cache["address"])
-        - set(attributes["command"], cache["command"])
-        - set(attributes["metric"], cache["metric"])
+        - merge_maps(log.cache, ParseJSON(log.body), "upsert") where IsMatch(log.body, "^\\{")
+        - set(log.attributes["loglevel"], log.cache["level"])
+        - set(log.attributes["ts"], log.cache["ts"])
+        - set(log.attributes["msg"], log.cache["msg"])
+        - set(log.attributes["caller"], log.cache["caller"])
+        - set(log.attributes["ip"], log.cache["address"])
+        - set(log.attributes["command"], log.cache["command"])
+        - set(log.attributes["metric"], log.cache["metric"])
 
 transform/snmp_exporter:
   error_mode: ignore
@@ -147,8 +147,8 @@ transform/swift_proxy:
         - resource.attributes["app.label.component"] == "swift-servers"
       statements:
         - merge_maps(log.attributes, ExtractGrokPatterns(log.body, "%{SYSLOGTIMESTAMP:date} %{HOSTNAME:host} %{WORD}.%{LOGLEVEL} %{SYSLOGPROG}%{NOTSPACE} %{HOSTNAME:client.address} %{HOSTNAME:remote_addr} %{NOTSPACE:datetime} %{WORD:request_method} %{NOTSPACE:request_path}?( )?(%{NOTSPACE:request_param}) ?(%{NOTSPACE:protocol})?( )%{NUMBER:response} %{NOTSPACE} %{NOTSPACE:user_agent} %{NOTSPACE:auth_token} %{NOTSPACE:bytes_recvd} %{NOTSPACE:bytes_sent} %{NOTSPACE:client.etag} %{NOTSPACE:transaction_id} %{NOTSPACE:headers} %{BASE10NUM:request_time:float} %{NOTSPACE:source} %{NOTSPACE:log_info} %{BASE10NUM:request_start_time} %{BASE10NUM:request_end_time} %{NOTSPACE:policy_index}", true), "upsert")
-        - set(attributes["bytes_recvd"], 0) where attributes["bytes_recvd"] == "-"
-        - set(attributes["bytes_sent"], 0) where attributes["bytes_sent"] == "-"
+        - set(log.attributes["bytes_recvd"], 0) where log.attributes["bytes_recvd"] == "-"
+        - set(log.attributes["bytes_sent"], 0) where log.attributes["bytes_sent"] == "-"
 
 
 attributes/swift_proxy:

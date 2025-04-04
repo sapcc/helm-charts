@@ -17,18 +17,18 @@ transform/external-alerts:
   log_statements:
     - context: log
       statements:
-        - set(time_unix_nano, observed_time_unix_nano)
-        - merge_maps(attributes, ParseJSON(body), "upsert") where IsMatch(body, "^\\{")
-        - set(attributes["log.type"], "alert")
+        - set(log.time_unix_nano, log.observed_time_unix_nano)
+        - merge_maps(log.attributes, ParseJSON(log.body), "upsert") where IsMatch(log.body, "^\\{")
+        - set(log.attributes["log.type"], "alert")
 
 transform/external-deployments:
   error_mode: ignore
   log_statements:
     - context: log
       statements:
-        - set(time_unix_nano, observed_time_unix_nano)
-        - merge_maps(attributes, ParseJSON(body), "upsert") where IsMatch(body, "^\\{")
-        - set(attributes["log.type"], "deployment")
+        - set(log.time_unix_nano, log.observed_time_unix_nano)
+        - merge_maps(log.attributes, ParseJSON(log.body), "upsert") where IsMatch(log.body, "^\\{")
+        - set(log.attributes["log.type"], "deployment")
 {{- end }}
 
 
