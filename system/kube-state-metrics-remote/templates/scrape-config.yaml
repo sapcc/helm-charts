@@ -1,0 +1,43 @@
+apiVersion: monitoring.coreos.com/v1alpha1
+kind: ScrapeConfig
+metadata:
+  labels:
+    prometheus: shoot
+  name: {{ include "kube-state-metrics-remote.fullname" . }}
+spec:
+  honorLabels: false
+  kubernetesSDConfigs:
+    - role: Pod
+  relabelings:
+    - action: replace
+      replacement: {{ include "kube-state-metrics-remote.fullname" . }}
+      targetLabel: job
+    - action: keep
+      regex: 'true'
+      sourceLabels:
+        - __meta_kubernetes_pod_annotation_prometheus_io_scrape
+    - action: replace
+      regex: (https?)
+      sourceLabels:
+        - __meta_kubernetes_pod_annotation_prometheus_io_scheme
+      targetLabel: __scheme__
+    - action: replace
+      regex: (.+)
+      sourceLabels:
+        - __meta_kubernetes_pod_annotation_prometheus_io_path
+      targetLabel: __metrics_path__
+    - action: replace
+      regex: (\d+);((([0-9]+?)(\.|$)){4})
+      sourceLabels:
+        - __address__
+        - __meta_kubernetes_pod_annotation_prometheus_io_port
+      targetLabel: __address__
+    - action: replace
+      sourceLabels:
+        - __meta_kubernetes_namespace
+      targetLabel: namespace
+    - action: replace
+      sourceLabels:
+        - __meta_kubernetes_pod_name
+      targetLabel: pod
+  sampleLimit: 500
