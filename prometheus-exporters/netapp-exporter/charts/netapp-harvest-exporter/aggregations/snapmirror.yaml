@@ -6,22 +6,28 @@ groups:
     # netapp_snapmirror_labels: destinations only in LOCAL region (from 'snapmirror show' - rich snapmirror details).
     # netapp_snapmirror_endpoint_labels: destinations in LOCAL and REMOTE regions (from 'snapmirror list-destinations' - endpoints only no details).
     #
+    # It's important for netapp_volume_labels to be available for following rules.
+    # We record them from past 6 hours to avoid incorrect "join" operations for the local and cross-region snapmirrors.
+    - record: netapp_volume_labels:manila
+      expr: max_over_time(netapp_volume_labels{app="netapp-harvest-exporter-manila", volume=~"share.*"}[6h])
+ 
     # Enrich netapp_snapmirror_labels within a region.
     # First with share_id, share_name and project_id, then with destination_cluster.
     - record: netapp_snapmirror_labels:enhanced
       expr: |
-        netapp_snapmirror_labels{app="netapp-harvest-exporter-manila"} 
+        netapp_snapmirror_labels 
         * on (app, source_vserver, source_volume) group_left(project_id, share_id, share_name)
         label_replace (
         label_replace (
-          max by (app, filer, project_id, share_id, share_name, svm, volume)
-            (netapp_volume_labels{volume=~"share.*"}),
+          max by (app, filer, project_id, share_id, share_name, svm, volume) (netapp_volume_labels:manila),
           "source_volume", "$1", "volume", "(.*)"),
           "source_vserver", "$1", "svm", "(.*)")
-        * on (app, filer, destination_volume) group_left(destination_cluster)
+        * on (app, filer, destination_volume) group_left(destination_availability_zone, destination_cluster)
         label_replace (
         label_replace (
-          max by (app, filer, svm, volume) (netapp_volume_labels{volume=~"share.*"}),
+        label_replace (
+          max by (app, availability_zone, filer, svm, volume) (netapp_volume_labels:manila),
+          "destination_availability_zone", "$1", "availability_zone", "(.*)"),
           "destination_cluster", "$1", "filer", "(.*)"),
           "destination_volume", "$1", "volume", "(.*)")
 
@@ -29,13 +35,15 @@ groups:
     # They have no share and project labels.
     - record: netapp_snapmirror_labels:enhanced
       expr: |
-        (netapp_snapmirror_labels unless on (source_volume)
-            label_replace(netapp_volume_labels, "source_volume", "$1", "volume", "(.*)"))
-        * on (filer, destination_volume) group_left(destination_cluster) 
-        label_replace(label_replace(
-          netapp_volume_labels{volume=~"share.*"},
-          "destination_volume", "$1", "volume", "(.*)"),
-          "destination_cluster", "$1", "filer", "(.*)")
+        (netapp_snapmirror_labels unless on (source_cluster)
+          label_replace(netapp_volume_labels:manila, "source_cluster", "$1", "filer", "(.*)"))
+        * on (filer, destination_volume) group_left(destination_availability_zone, destination_cluster) 
+        label_replace(
+        label_replace(
+        label_replace(netapp_volume_labels:manila,
+          "destination_availability_zone", "$1", "availability_zone", "(.*)"),
+          "destination_cluster", "$1", "filer", "(.*)"),
+          "destination_volume", "$1", "volume", "(.*)")
 
     # Enrich netapp_snapmirror_endpoint_labels.
     - record: netapp_snapmirror_endpoint_labels:enhanced
@@ -45,8 +53,7 @@ groups:
         label_replace(
         label_replace(
         label_replace(
-          max by (filer, project_id, share_id, share_name, svm, volume)
-            (netapp_volume_labels{app="netapp-harvest-exporter-manila", volume=~"share.*"}),
+          max by (filer, project_id, share_id, share_name, svm, volume) (netapp_volume_labels:manila),
           "source_volume", "$1", "volume", "(.*)"),
           "source_vserver", "$1", "svm", "(.*)"),
           "source_cluster", "$1", "filer", "(.*)")
