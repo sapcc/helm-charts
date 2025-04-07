@@ -1,8 +1,12 @@
 {{- $vbase  := .Values.global.vaultBaseURL | required "missing value for .Values.global.vaultBaseURL" -}}
 {{- $region := .Values.global.region       | required "missing value for .Values.global.region"       -}}
-{{/* cdomains equals [ "global" ] in global region */}}
+{{- $is_global := $.Values.limes.clusters.ccloud.catalog_url | contains "global" -}}
 {{- $cdomains := .Values.global.domain_seeds.customer_domains | required "missing value for .Values.global.domain_seeds.customer_domains" -}}
 {{- $domains  := concat (list "cc3test") $cdomains -}}
+
+{{- if $is_global -}}
+  {{- $domains = list "cc3test" "global" -}}
+{{- end -}}
 
 {{- $liquid_roles := list -}}
 {{- if not .Values.limes.local_liquids.nova.skip -}}
@@ -32,8 +36,8 @@ metadata:
 
 spec:
   requires:
-  {{- $base_seed_namespace := .Values.global.is_global_region | ternary "monsoon3global" "monsoon3" }}
-  - {{ $base_seed_namespace }}/{{ .Values.global.is_global_region | ternary "keystone-global-seed" "keystone-seed" }}
+  {{- $base_seed_namespace := $is_global | ternary "monsoon3global" "monsoon3" }}
+  - {{ $base_seed_namespace }}/{{ $is_global | ternary "keystone-global-seed" "keystone-seed" }}
   - {{ $base_seed_namespace }}/domain-ccadmin-seed
   - {{ $base_seed_namespace }}/domain-default-seed
   {{- range $domains }}
@@ -66,7 +70,7 @@ spec:
         - name: limes-validation
           description: User account for pre-deployment validation in CI
           {{- $vault_path := printf "%s/limes" $region }}
-          {{- if .Values.global.is_global_region }}
+          {{- if $is_global }}
             {{- $vault_path = printf "%s/limes-global" (($region | contains "qa") | ternary $region "global") }}
           {{- end }}
           password: {{ printf "%s/%s/keystone-user/validation/password" $vbase $vault_path | quote }}
@@ -109,7 +113,7 @@ spec:
     {{- range $domains }}
     - name: {{ . | lower }}
       groups:
-      - name: {{ hasPrefix "iaas-" . | ternary . ( upper . ) }}_DOMAIN_RESOURCE_ADMINS
+      - name: {{ contains "iaas-" . | ternary . ( upper . ) }}_DOMAIN_RESOURCE_ADMINS
         role_assignments:
         - domain: {{ . | lower }}
           role: resource_admin

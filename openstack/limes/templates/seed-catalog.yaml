@@ -1,6 +1,7 @@
 {{- $region := .Values.global.region | required "missing value for .Values.global.region" -}}
 {{- $tld    := .Values.global.tld    | required "missing value for .Values.global.tld"    -}}
 {{- $limes_url := .Values.limes.clusters.ccloud.catalog_url | required ".Values.limes.clusters.ccloud.catalog_url" -}}
+{{- $is_global := $limes_url | contains "global" -}}
 
 apiVersion: "openstack.stable.sap.cc/v1"
 kind: OpenstackSeed
@@ -17,11 +18,11 @@ spec:
       description: 'Hierarchical quota/usage tracking'
       enabled:     true
       endpoints:
-        - region:    '{{ if .Values.global.is_global_region }}global{{ else }}{{ $region }}{{ end }}'
+        - region:    '{{ if $is_global }}global{{ else }}{{ $region }}{{ end }}'
           interface: public
           enabled:   true
           url:       '{{ $limes_url }}'
-        {{- if not .Values.global.is_global_region }}
+        {{- if not $is_global }}
         - region:    '{{ $region }}'
           interface: internal
           enabled:   true
@@ -33,11 +34,11 @@ spec:
       description: 'Hierarchical rate limit/usage tracking'
       enabled:     true
       endpoints:
-        - region:    '{{ if .Values.global.is_global_region }}global{{ else }}{{ $region }}{{ end }}'
+        - region:    '{{ if $is_global }}global{{ else }}{{ $region }}{{ end }}'
           interface: public
           enabled:   true
           url:       '{{ $limes_url }}/rates'
-        {{- if not .Values.global.is_global_region }}
+        {{- if not $is_global }}
         - region:    '{{ $region }}'
           interface: internal
           enabled:   true
@@ -52,11 +53,11 @@ spec:
       description: 'Limes integration for {{ title $name }} <https://pkg.go.dev/github.com/sapcc/go-api-declarations/liquid>'
       enabled:     true
       endpoints:
-        - region:    '{{ if $.Values.global.is_global_region }}global{{ else }}{{ $region }}{{ end }}'
+        - region:    '{{ if $is_global }}global{{ else }}{{ $region }}{{ end }}'
           interface: public
           enabled:   true
           url:       '{{ $limes_url | replace "limes-3" (printf "liquid-%s" $name) }}'
-        {{- if not $.Values.global.is_global_region }}
+        {{- if not $is_global }}
         - region:    '{{ $region }}'
           interface: internal
           enabled:   true

@@ -35,7 +35,8 @@ metadata:
 
 {{/* If there is a global deployment in this region, different limits may apply for it vs. for the regular deployment.
      We need to restrict the PromQL expressions to match only the Keystone that our own deployment is interested in. */}}
-{{- $keystone_namespace := .Values.global.is_global_region | ternary "monsoon3global" "monsoon3" }}
+{{- $is_global := $.Values.limes.clusters.ccloud.catalog_url | contains "global" -}}
+{{- $keystone_namespace := $is_global | ternary "monsoon3global" "monsoon3" }}
 
 spec:
   groups:

@@ -43,7 +43,8 @@
 
 {{- define "limes_openstack_envvars" }}
 {{- $limes_url := .Values.limes.clusters.ccloud.catalog_url }}
-{{- if .Values.global.is_global_region }}
+{{- $is_global := $limes_url | contains "global" }}
+{{- if $is_global }}
 - name: OS_AUTH_URL
   value: "{{ $limes_url | replace "limes" "identity" }}/v3"
 - name: OS_INTERFACE
@@ -67,7 +68,7 @@
   value: "ccadmin"
 - name: OS_PROJECT_NAME
   value: "cloud_admin"
-{{- if .Values.global.is_global_region }}
+{{- if $is_global }}
 - name: OS_REGION_NAME
   value: global
 {{- else }}
