@@ -2,6 +2,7 @@
 {{- if not $config.skip }}
 
 {{- $limes_domain := $.Values.limes.clusters.ccloud.catalog_url | trimPrefix "https://" -}}
+{{- $is_global := $limes_domain | contains "global" -}}
 {{- $domain := $limes_domain | replace "limes-3" (printf "liquid-%s" $name) }}
 
 ---
@@ -18,12 +19,12 @@ metadata:
     ingress.kubernetes.io/service-upstream: "true"
     nginx.ingress.kubernetes.io/service-upstream: "true"
     {{- end }}
-    {{- if $.Values.global.is_global_region }}
+    {{- if $is_global }}
     kubernetes.io/ingress.class: "nginx-external"
     {{- end }}
 
 spec:
-  {{- if $.Values.global.is_global_region }}
+  {{- if $is_global }}
   ingressClassName: "nginx-external"
   {{- end }}
   tls:
