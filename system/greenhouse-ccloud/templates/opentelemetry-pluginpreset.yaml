@@ -18,7 +18,7 @@ data:
 apiVersion: greenhouse.sap/v1alpha1
 kind: PluginPreset
 metadata:
-  name: opentelemetry
+  name: logs
   namespace: {{ $.Release.Namespace }}
 spec:
   clusterSelector:
@@ -69,9 +69,13 @@ spec:
       value: {{ $r.cluster }}
     - name: openTelemetry.region
       value: {{ $r.region }}
+    - name: openTelemetry.logsCollector.cephConfig.enabled
+      value: {{ $r.cephConfig.enabled }}
+    - name: openTelemetry.logsCollector.kvmConfig.enabled
+      value: {{ $r.kvmConfig.enabled }}
   {{ end -}}
   plugin:
-    pluginDefinition: opentelemetry
+    pluginDefinition: logs
     releaseNamespace: otel
     optionValues:
     - name: openTelemetry.logsCollector.enabled
@@ -95,11 +99,11 @@ spec:
     - name: openTelemetry.manager.prometheusRule.enabled
       value: {{ .Values.openTelemetry.manager.prometheusRule.enabled }}
   {{- if .Values.global.ghcrIoMirror }}
-    - name: opentelemetry-operator.manager.image.repository
+    - name: logs-operator.manager.image.repository
       value: {{ .Values.global.ghcrIoMirror }}/open-telemetry/opentelemetry-operator/opentelemetry-operator
-    - name: opentelemetry-operator.manager.collectorImage.repository
+    - name: logs-operator.manager.collectorImage.repository
       value: {{ .Values.global.ghcrIoMirror }}/cloudoperators/opentelemetry-collector-contrib
-    - name: opentelemetry-operator.testFramework.image.repository
+    - name: logs-operator.testFramework.image.repository
       value: {{ .Values.global.dockerHubMirror }}/library/busybox
     - name: testFramework.image.registry
       value: {{ .Values.global.ghcrIoMirror }}
