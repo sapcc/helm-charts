@@ -10,7 +10,6 @@ discover_hosts_in_cells_interval = 60
 workers = {{ .Values.scheduler.workers }}
 driver_task_period = {{ .Values.scheduler.driver_task_period | default 60 }}
 query_placement_for_availability_zone = {{ not (contains "AvailabilityZoneFilter" .Values.scheduler.default_filters) }}
-external_customer_domain_name_prefixes = {{ .Values.scheduler.external_customer_domain_name_prefixes }}
 
 [filter_scheduler]
 available_filters = {{ .Values.scheduler.available_filters | default "nova.scheduler.filters.all_filters" }}
