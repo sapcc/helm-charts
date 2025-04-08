@@ -1,0 +1,18 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    serviceMonitorSelector: prometheus
+  name: prometheus
+  namespace: prometheus
+spec:
+  endpoints:
+  - interval: 30s
+    targetPort: {{ with index .Values.kubeStateMetrics.ports 0 }}{{ .port }}{{ end }}
+    path: /metrics
+  namespaceSelector:
+    matchNames:
+    - {{ quote .Values.namespace }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "kube-state-metrics-remote.fullname" . }}
