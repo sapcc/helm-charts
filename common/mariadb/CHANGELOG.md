@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.21.0 - 2025/04/08
+* remove version label from mariadb deployment pod template and related configmaps to avoid unnecessary database restarts on simple chart version update
+
 ## v0.20.0 - 2025/04/03
 * add `renameCheckConstraints`  job, which allows to rename constraints, created by sqlalchemy with names like `CONSTRAINT_*`, to constraints with a unique name, as MySQL does
 
