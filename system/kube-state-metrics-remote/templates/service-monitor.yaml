@@ -2,17 +2,23 @@ apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   labels:
-    serviceMonitorSelector: prometheus
-  name: prometheus
-  namespace: prometheus
+    prometheus: shoot
+  name: {{ include "kube-state-metrics-remote.fullname" . }}
 spec:
   endpoints:
-  - interval: 30s
-    targetPort: {{ with index .Values.kubeStateMetrics.ports 0 }}{{ .port }}{{ end }}
-    path: /metrics
-  namespaceSelector:
-    matchNames:
-    - {{ quote .Values.namespace }}
+    - authorization:
+        credentials:
+          key: token
+          name: shoot-access-prometheus-shoot
+      interval: 30s
+      targetPort: {{ with index .Values.kubeStateMetrics.ports 0 }}{{ .port }}{{ end }}
+      path: /metrics
+      scheme: https
+      tlsConfig:
+        ca: {}
+        cert: {}
+        insecureSkipVerify: true
+  namespaceSelector: {}
   selector:
     matchLabels:
       app.kubernetes.io/name: {{ include "kube-state-metrics-remote.fullname" . }}
