@@ -6,18 +6,10 @@ metadata:
   name: {{ include "kube-state-metrics-remote.fullname" . }}
 spec:
   endpoints:
-    - authorization:
-        credentials:
-          key: token
-          name: shoot-access-prometheus-shoot
-      interval: 30s
+    - interval: 30s
       targetPort: {{ with index .Values.kubeStateMetrics.ports 0 }}{{ .port }}{{ end }}
       path: /metrics
-      scheme: https
-      tlsConfig:
-        ca: {}
-        cert: {}
-        insecureSkipVerify: true
+      scheme: http
   namespaceSelector: {}
   selector:
     matchLabels:
