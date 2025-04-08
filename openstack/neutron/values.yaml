@@ -151,7 +151,7 @@ pod:
       limits:
         cpu: "128m"
         memory: "128Mi"
-    ovs_db:
+    ovn_northd:
       requests:
         cpu: "100m"
         memory: "300Mi"
@@ -245,39 +245,29 @@ fwaas:
 
 ovn:
   enabled: false
-  k8sAPIServer: null
-  imageVersionOVN: "release-1.0"
+  image: "keppel.eu-de-1.cloud.sap/ccloud/cobaltcore-dev/openstack-ovn-controller"
+  imageVersionOVN: "latest"
 
-  # -- Configure to enable IPsec
-  enableIpsec: false
   # -- Use SSL transport to NB/SB db and northd
   enableSsl: false
 
-  dbCheckerLogLevel: 4
-  logFileMaxAge: 5
-  logFileMaxBackups: 5
-  logFileMaxSize: 100
+ovsdb-sb:
+  RAFT_PORT: 6644
+  DB_TYPE: sb
+  DB_PORT: 6441
+  OVN_LOG_LEVEL: "info"
+  OVN_ELECTION_TIMER: "10000"
+  OVN_INACTIVITY_PROBE: "60000"
+  OVN_PROBE_INTERVAL_TO_ACTIVE: "60000"
 
-  # -- Port of north bound ovsdb
-  nbPort: 6641
-  nbElectionTimer: 1000
-  nbLogLevel: "-vconsole:info -vfile:info"
-  nbRaftPort: 6643
-
-  # -- Port of south bound ovsdb
-  sbPort: 6642
-  sbElectionTimer: 1000
-  sbLogLevel: "-vconsole:info -vfile:info"
-  sbRaftPort: 6644
-
-  # northd
-  northdLogLevel: "-vconsole:info -vfile:info"
-
-  externalIPs: []
-
-  # ovn controller
-  controllerLogLevel: "-vconsole:info"
-
+ovsdb-nb:
+  RAFT_PORT: 6643
+  DB_TYPE: nb
+  DB_PORT: 6442
+  OVN_LOG_LEVEL: "info"
+  OVN_ELECTION_TIMER: "10000"
+  OVN_INACTIVITY_PROBE: "60000"
+  OVN_PROBE_INTERVAL_TO_ACTIVE: "60000"
 
 asr:
   config_agents: []
