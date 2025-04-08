@@ -167,7 +167,24 @@ groups:
     annotations:
       description: "Too many NSX-T VMs for the same cluster on {{ $labels.hostsystem }}. Please distribute the VMs across different nodes. ({{ $labels.vcenter }})"
       summary: "Too many NSX-T VMs on {{ $labels.hostsystem }}. ({{ $labels.vcenter }})"
-      
+ 
+  - alert: NSXTMgmtVMsOddDistributionSDRS
+    expr: >
+      count (vrops_storagepod_config_sdrsconfig_vmstorageantiaffinityrules{storagepod!~"SDRS_MGMT_BB\\d+"}) by (rule_name) != 3
+    labels:
+      severity: info
+      tier: vmware
+      service: network
+      support_group: compute
+      context: "NSXTMgmtVMsOddDistributionSDRS"
+      dashboard: management-cluster-resources/management-cluster-resources?orgId=1&var-pod=All&var-clusters={{ $labels.vccluster }}&var-hosts={{ $labels.hostsystem }}
+      meta: "NSX-T VMs not part of SDRS anti-affinity rule  {{ $labels.rule_name }}. ({{ $labels.vcenter }})"
+	  playbook: docs/devops/alert/vcenter/#nsxtmgmtvmsodddistributionsdrs
+      no_alert_on_absence: "true"
+    annotations:
+      description: "NSX-T VMs not part of SDRS anti-affinity rule  {{ $labels.rule_name }}. ({{ $labels.vcenter }})". Please distribute the VMs across different DS. ({{ $labels.vcenter }})"
+      summary: "NSX-T VMs not part of SDRS anti-affinity rule  {{ $labels.rule_name }}. ({{ $labels.vcenter }})"
+
   - alert: VASAVMHighCPUUtilization
     expr: vrops_virtualmachine_cpu_usage_ratio{virtualmachine=~"vasa.*"} > 90
     for: 1h
