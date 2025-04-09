@@ -87,5 +87,5 @@ crypto_plugin = hsm_partition_crypto
 
 [secretstore:utimaco_hsm]
 secret_store_plugin = store_crypto
-crypto_plugin = utimaco_partition_crypto
+crypto_plugin = utimaco_hsm_crypto
 {{- end }}
