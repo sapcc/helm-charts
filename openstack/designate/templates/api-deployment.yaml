@@ -159,6 +159,13 @@ spec:
                     path: secrets.conf
             - secret:
                 name: {{ .Release.Name }}-secrets-rndc
+{{- if .Values.rate_limit.enabled }}
+            - secret:
+                name: {{ .Release.Name }}-api-ratelimit-redis-user-default
+                items:
+                  - key: password
+                    path: ratelimit-backend-secret.conf
+{{- end }}
         - name: designate-etc-wsgi
           configMap:
             name: designate-etc-wsgi
