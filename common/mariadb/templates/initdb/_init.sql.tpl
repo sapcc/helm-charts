@@ -18,7 +18,8 @@ GRANT ALL PRIVILEGES ON {{ .Values.name }}.*
     {{- if not $values.password }}
 -- Skipping user {{ $username }} without password
     {{- else }}
-CREATE USER IF NOT EXISTS {{ include "mariadb.resolve_secret_squote" $username }};
+DROP USER IF EXISTS {{ include "mariadb.resolve_secret_squote" $username }}@'localhost';
+CREATE USER IF NOT EXISTS {{ include "mariadb.resolve_secret_squote" $username }}@'%';
 ALTER USER {{ include "mariadb.resolve_secret_squote" $username }} IDENTIFIED BY {{ include "mariadb.resolve_secret_squote" $values.password }}
 {{- if $values.limits }}
   WITH
