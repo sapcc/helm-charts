@@ -16,9 +16,6 @@ metadata:
     heritage: "{{ .Release.Service }}"
 spec:
   requires:
-  {{- if .Values.tempest_enabled }}
-  - {{ .Release.Namespace }}/domain-tempest-seed
-  {{- end }}
   {{- range $domains}}
   {{- if not (hasPrefix "iaas-" .)}}
   - {{ $.Release.Namespace }}/domain-{{replace "_" "-" . | lower}}-seed
@@ -75,7 +72,7 @@ spec:
 {{- end }}
 
 
-  # Default and tempest get special handling
+  # Default get special handling
   # ccadmin gets some additional project and group assignments
   # global has less group assignments than all other domains
   # cc3test has even less group assignments than global
@@ -109,51 +106,6 @@ spec:
     #  role_assignments:
     #  - project: service
     #    role: service
-
-
-  {{- if .Values.tempest_enabled }}
-  - name: tempest
-    dns_quota:
-      api_export_size: 2000
-      recordset_records: 2000
-      zone_records: 10000
-      zone_recordsets: 10000
-      zones: 1000
-    projects:
-    - name: tempest1
-      role_assignments:
-      - user: admin@Default
-        role: cloud_dns_admin
-      dns_quota:
-        api_export_size: 2000
-        recordset_records: 2000
-        zone_records: 2000
-        zone_recordsets: 2000
-        zones: 200
-    - name: tempest2
-      role_assignments:
-      - user: admin@Default
-        role: cloud_dns_admin
-      dns_quota:
-        api_export_size: 2000
-        recordset_records: 2000
-        zone_records: 2000
-        zone_recordsets: 2000
-        zones: 200
-    users:
-    - name: tempestuser1
-      role_assignments:
-      - project: tempest1
-        role: cloud_dns_ops
-      - domain: tempest
-        role: cloud_dns_ops
-    - name: tempestuser2
-      role_assignments:
-      - project: tempest2
-        role: cloud_dns_ops
-      - domain: tempest
-        role: cloud_dns_ops
-  {{- end }}
 
   {{- range $domains }}
   {{- if and (not (hasPrefix "iaas-" .)) (not (eq . "Default"))}}
