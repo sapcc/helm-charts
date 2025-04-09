@@ -40,8 +40,8 @@ spec:
       {{- end }}
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=127.0.0.1:8080
+        - --health-probe-bind-address=:{{ .Values.healthPort }}
+        - --metrics-bind-address=127.0.0.1:{{ .Values.metricsPort }}
         - --leader-elect
         {{- range .Values.extraArgs}}
         - {{ . }}
@@ -52,14 +52,14 @@ spec:
         livenessProbe:
           httpGet:
             path: /healthz
-            port: 8081
+            port: {{ .Values.healthPort }}
           initialDelaySeconds: 15
           periodSeconds: 20
         name: manager
         readinessProbe:
           httpGet:
             path: /readyz
-            port: 8081
+            port: {{ .Values.healthPort }}
           initialDelaySeconds: 5
           periodSeconds: 10
         resources:
