@@ -1,5 +1,6 @@
-{{- $vbase  := .Values.global.vaultBaseURL | required "missing value for .Values.global.vaultBaseURL" -}}
+{{- $vbase  := .Values.global.vaultBaseURL   | required "missing value for .Values.global.vaultBaseURL" -}}
 {{- $region := .Values.global.region       | required "missing value for .Values.global.region"       -}}
+{{- $dbRegion := .Values.global.db_region  | required "missing value for .Values.global.db_region"    -}}
 {{- $tld    := .Values.global.tld          | required "missing value for .Values.global.tld"          -}}
 {{/* cdomains equals [ "global" ] in global region */}}
 {{- $cdomains := .Values.global.domain_seeds.customer_domains | required "missing value for .Values.global.domain_seeds.customer_domains" -}}
@@ -12,11 +13,10 @@ metadata:
   name: billing-seed
 spec:
   requires:
-    {{- $base_seed_namespace := .Values.global.is_global_region | ternary "monsoon3global" "monsoon3" }}
     {{- range $domains }}
-    - {{ $base_seed_namespace }}/domain-{{replace "_" "-" .|lower}}-seed
+    - {{ $.Values.global.keystoneNamespace }}/domain-{{replace "_" "-" .|lower}}-seed
     {{- end }}
-    - {{ $base_seed_namespace }}/domain-cc3test-seed
+    - {{ $.Values.global.keystoneNamespace }}/domain-cc3test-seed
     {{- if not .Values.global.is_global_region }}
     - swift/swift-seed
     {{- end }}
@@ -37,13 +37,8 @@ spec:
     description: 'SAP Converged Cloud Billing services'
     endpoints:
     - interface: public
-      {{- if .Values.global.is_global_region }}
-      region: global
-      url: 'https://{{ $region | contains "qa" | ternary "billing-qa" "billing" }}.global.{{ $tld }}:64000'
-      {{- else }}
-      region: '{{ $region }}'
-      url: 'https://billing.{{ $region }}.{{ $tld }}:64000'
-      {{- end }}
+      region: {{ $region }}
+      url: 'https://{{ and (contains "qa" $dbRegion) .Values.global.is_global_region | ternary "billing-qa" "billing" }}.{{ $region }}.{{ $tld }}:64000'
 
   domains:
   # we are unsure who mantains this, so as long as nobody requests it and there is no secret in vault, we don't deploy this part to global
@@ -62,7 +57,7 @@ spec:
       role: masterdata_admin
       inherited: true
   {{- end }}
-  {{- if and (eq $region "qa-de-1") (not .Values.global.is_global_region) }}
+  {{- if eq $region "qa-de-1"}}
     projects:
     - name: billing_test
       description: 'project used for testing the billing service'
@@ -103,7 +98,7 @@ spec:
         # this role is necessary to view a complete flavor list across the region with GET compute-3.$REGION.cloud.sap/$VERSION/flavors, there is currently no cloud_compute_viewer role
         - user: TCC_BILLING_001
           role: cloud_compute_admin
-        {{- if and (eq $.Values.global.region "qa-de-1") (not $.Values.global.is_global_region)}}
+        {{- if eq $region "qa-de-1"}}
         - user: TCC_BILLING_001
           role: cloud_masterdata_viewer
         {{- end }}
@@ -184,7 +179,7 @@ spec:
         role: masterdata_viewer
         inherited: true
   {{- end }}
-  {{- if and (eq . "bs") (ne $.Values.global.region "qa-de-1") }}
+  {{- if and (eq . "bs") (ne $region "qa-de-1") }}
     - name: BS_CCloud_SO_TLO
       role_assignments:
       - domain: bs
