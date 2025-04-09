@@ -40,7 +40,7 @@ aes_gcm_generate_iv = {{ .Values.lunaclient.conn.aes_gcm_generate_iv }}
 # encryption_mechanism = CKM_AES_CBC
 # rw_session = True
 
-[hsm_partition_crypto_plugin:thales_multi_hsm]
+[hsm_partition_crypto_plugin:thales_hsm]
 plugin_name = Thales HSM Partition Plugin
 library_path = {{ .Values.lunaclient.conn.library_path }}
 hmac_key_length = 32
@@ -53,7 +53,7 @@ hmac_mechanism = CKM_SHA256_HMAC
 encryption_mechanism = CKM_AES_CBC
 rw_session = True
 
-[hsm_partition_crypto_plugin:utimaco_hsm]
+[utimaco_hsm_crypto_plugin:utimaco_hsm]
 plugin_name = Utimaco HSM Partition Plugin
 library_path = {{ .Values.lunaclient.conn.library_path }}
 hmac_key_length = 32
