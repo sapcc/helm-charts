@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.22.0 - 2025/04/09
+* delete unmanaged localhost users like 'username'@'localhost'
+
+Previously, init.sql script was creating a pair of users: 'username'@'%' and 'username'@'localhost'. The second one stopped being managed since the introduction of granular user configuration in 2022. These @'localhost' users will be removed now.
+
 ## v0.21.0 - 2025/04/08
 * remove version label from mariadb deployment pod template and related configmaps to avoid unnecessary database restarts on simple chart version update
 
