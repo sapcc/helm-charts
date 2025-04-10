@@ -278,26 +278,13 @@ spec:
         {{- end }}
 
         ########################################################################
-        # allowlist for ELK/OpenSearch
+        # allowlist for OpenSearch
 
         {{- if eq .Values.cluster_type "baremetal" "scaleout" "test" }}
-        default isElasticPod = false
-        default isElasticOrOpenSearchPod = false
-        isElasticOrOpenSearchPod = true {
-          isElasticPod
-        }
+        default isOpenSearchPod = false
 
         {{- if eq .Values.cluster_type "baremetal" "test" }}
-        isElasticPod = true {
-          iro.kind == "StatefulSet"
-          iro.metadata.namespace == "hermes"
-          iro.metadata.name in {"elasticsearch-hermes"}
-          helmReleaseName == "hermes"
-        }
-        {{- end }}
-
-        {{- if eq .Values.cluster_type "baremetal" "test" }}
-        isElasticOrOpenSearchPod = true {
+        isOpenSearchPod = true {
           iro.kind == "StatefulSet"
           iro.metadata.namespace == "hermes"
           iro.metadata.name in {"opensearch-hermes", "opensearch-hermes-master"}
@@ -306,7 +293,7 @@ spec:
         {{- end }}
 
         {{- if eq .Values.cluster_type "scaleout" "test" }}
-        isElasticOrOpenSearchPod = true {
+        isOpenSearchPod = true {
           iro.kind == "StatefulSet"
           iro.metadata.namespace == "opensearch-logs"
           iro.metadata.name in {"opensearch-logs-client", "opensearch-logs-data", "opensearch-logs-master"}
@@ -314,17 +301,10 @@ spec:
         }
         {{- end }}
 
-        # TODO: Why does Elastic need CAP_IPC_LOCK and CAP_SYS_RESOURCE?
-        # TODO: Remove this case once Hermes was migrated from Elastic to OpenSearch.
-        isContainerAllowedToUseCapability(container, capability) = true {
-          isElasticPod
-          container.name == "elasticsearch-hermes"
-          capability in {"IPC_LOCK", "SYS_RESOURCE"}
-        }
         # Elastic and OpenSearch need to use sysctl to increase `vm.max_map_count`:
         # <https://www.elastic.co/guide/en/elasticsearch/reference/current/vm-max-map-count.html>
         isContainerAllowedToBePrivileged(container) = true {
-          isElasticOrOpenSearchPod
+          isOpenSearchPod
           container.name in {"sysctl", "configure-sysctl"}
           container.command[0] == "sysctl"
         }
@@ -428,7 +408,7 @@ spec:
           hostPath == "/var/log"
           readOnly
         }
-        
+
         ########################################################################
         # allowlist for Ironic pods
 
@@ -660,7 +640,7 @@ spec:
 
         {{- if eq .Values.cluster_type "baremetal" "test" }}
         default isPXBirdPod = false
-        
+
         # TODO: Legacy setup, cleanup after 2024-11-30
         # BEGIN LEGACY SETUP, CLEANUP AFTER 2024-11-30
         isPXBirdPod = true {
