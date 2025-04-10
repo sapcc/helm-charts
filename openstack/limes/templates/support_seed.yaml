@@ -1,12 +1,7 @@
-{{- $is_global := $.Values.limes.clusters.ccloud.catalog_url | contains "global" -}}
-{{- $base_seed_namespace := $is_global | ternary "monsoon3global" "monsoon3" }}
-
+{{/* cdomains equals [ "global" ] in global region */}}
 {{- $cdomains := .Values.global.domain_seeds.customer_domains | required "missing value for .Values.global.domain_seeds.customer_domains" -}}
 {{- $domains  := concat (list "ccadmin") $cdomains -}}
 {{- $cdomainsWithoutSupportProjects := .Values.global.domain_seeds.customer_domains_without_support_projects | required "missing value for .Values.global.domain_seeds.customer_domains_without_support_projects" -}}
-{{- if $is_global -}}
-  {{- $domains = list "ccadmin" "global" -}}
-{{- end -}}
 
 apiVersion: "openstack.stable.sap.cc/v1"
 kind: "OpenstackSeed"
@@ -17,14 +12,14 @@ spec:
   requires:
   - {{ .Release.Namespace }}/limes-seed
   {{- range $domains }}
-  - {{ $base_seed_namespace }}/domain-{{replace "_" "-" .|lower}}-seed
+  - {{ $.Values.global.keystoneNamespace }}/domain-{{replace "_" "-" .|lower}}-seed
   {{- end }}
 
   domains:
     {{- range $domains }}
     - name: {{ . | lower }}
       groups:
-      - name: {{ contains "iaas-" . | ternary . ( upper . ) }}_API_SUPPORT
+      - name: {{ hasPrefix "iaas-" . | ternary . ( upper . ) }}_API_SUPPORT
         role_assignments:
         {{- if not (has . $cdomainsWithoutSupportProjects) }}
         - project: api_support
@@ -39,7 +34,7 @@ spec:
           role: resource_viewer
           inherited: true
       {{- if ne . "global" }}
-      - name: {{ contains "iaas-" . | ternary . ( upper . ) }}_COMPUTE_SUPPORT
+      - name: {{ hasPrefix "iaas-" . | ternary . ( upper . ) }}_COMPUTE_SUPPORT
         role_assignments:
         {{- if not (has . $cdomainsWithoutSupportProjects) }}
         - project: compute_support
@@ -53,7 +48,7 @@ spec:
         - domain: {{ . | lower }}
           role: resource_viewer
           inherited: true
-      - name: {{ contains "iaas-" . | ternary . ( upper . ) }}_NETWORK_SUPPORT
+      - name: {{ hasPrefix "iaas-" . | ternary . ( upper . ) }}_NETWORK_SUPPORT
         role_assignments:
         {{- if not (has . $cdomainsWithoutSupportProjects) }}
         - project: network_support
@@ -67,7 +62,7 @@ spec:
         - domain: {{ . | lower }}
           role: resource_viewer
           inherited: true
-      - name: {{ contains "iaas-" . | ternary . ( upper . ) }}_STORAGE_SUPPORT
+      - name: {{ hasPrefix "iaas-" . | ternary . ( upper . ) }}_STORAGE_SUPPORT
         role_assignments:
         {{- if not (has . $cdomainsWithoutSupportProjects) }}
         - project: storage_support
@@ -81,7 +76,7 @@ spec:
         - domain: {{ . | lower }}
           role: resource_viewer
           inherited: true
-      - name: {{ contains "iaas-" . | ternary . ( upper . ) }}_SERVICE_DESK
+      - name: {{ hasPrefix "iaas-" . | ternary . ( upper . ) }}_SERVICE_DESK
         role_assignments:
         {{- if not (has . $cdomainsWithoutSupportProjects) }}
         - project: service_desk
