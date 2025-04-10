@@ -1,0 +1,17 @@
+{{- if .Values.certManager.enabled }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: prometheus-thanos-ca
+data:
+  ca.crt: {{ required ".Values.authentication.caCert missing" .Values.authentication.caCert | b64enc | quote }}
+---
+# Create an Issuer that uses the above generated CA certificate to issue certs
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: prometheus-thanos
+spec:
+  ca:
+    secretName: prometheus-thanos-ca
+{{- end }}
