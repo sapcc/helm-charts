@@ -1,13 +1,11 @@
-{{- $vbase  := .Values.global.vaultBaseURL | required "missing value for .Values.global.vaultBaseURL" -}}
+{{- $vbase  := .Values.global.vaultBaseURL   | required "missing value for .Values.global.vaultBaseURL" -}}
 {{- $region := .Values.global.region       | required "missing value for .Values.global.region"       -}}
+{{- $dbRegion := .Values.global.db_region  | required "missing value for .Values.global.db_region"    -}}
 {{- $tld    := .Values.global.tld          | required "missing value for .Values.global.tld"          -}}
+{{/* cdomains equals [ "global" ] in global region */}}
 {{- $cdomains := .Values.global.domain_seeds.customer_domains | required "missing value for .Values.global.domain_seeds.customer_domains" -}}
 {{- $domains  := concat (list "ccadmin") $cdomains -}}
 {{- $cdomainsWithoutSupportProjects := .Values.global.domain_seeds.customer_domains_without_support_projects | required "missing value for .Values.global.domain_seeds.customer_domains_without_support_projects" -}}
-
-{{- if .Values.is_global -}}
-  {{- $domains = list "ccadmin" "global" -}}
-{{- end -}}
 
 apiVersion: "openstack.stable.sap.cc/v1"
 kind: OpenstackSeed
@@ -15,12 +13,11 @@ metadata:
   name: billing-seed
 spec:
   requires:
-    {{- $base_seed_namespace := .Values.is_global | ternary "monsoon3global" "monsoon3" }}
     {{- range $domains }}
-    - {{ $base_seed_namespace }}/domain-{{replace "_" "-" .|lower}}-seed
+    - {{ $.Values.global.keystoneNamespace }}/domain-{{replace "_" "-" .|lower}}-seed
     {{- end }}
-    - {{ $base_seed_namespace }}/domain-cc3test-seed
-    {{- if not .Values.is_global }}
+    - {{ $.Values.global.keystoneNamespace }}/domain-cc3test-seed
+    {{- if not .Values.global.is_global_region }}
     - swift/swift-seed
     {{- end }}
 
@@ -40,30 +37,30 @@ spec:
     description: 'SAP Converged Cloud Billing services'
     endpoints:
     - interface: public
-      {{- if .Values.is_global }}
-      region: global
-      url: 'https://{{ $region | contains "qa" | ternary "billing-qa" "billing" }}.global.{{ $tld }}:64000'
-      {{- else }}
-      region: '{{ $region }}'
-      url: 'https://billing.{{ $region }}.{{ $tld }}:64000'
-      {{- end }}
+      region: {{ $region }}
+      url: 'https://{{ and (contains "qa" $dbRegion) .Values.global.is_global_region | ternary "billing-qa" "billing" }}.{{ $region }}.{{ $tld }}:64000'
 
   domains:
+  # we are unsure who mantains this, so as long as nobody requests it and there is no secret in vault, we don't deploy this part to global
+  {{- if not .Values.global.is_global_region}}
   - name: Default
     users:
     - name: masterdata_scanner # service user for a data quality check job
       description: 'Masterdata Scanner (Data Quality Validation)'
       password: {{ printf "%s/%s/billing/keystone-user/masterdata-scanner/password" $vbase $region | quote }}
+  {{- end }}
 
   - name: cc3test
+  {{- if not .Values.global.is_global_region}}
     role_assignments:
     - user: masterdata_scanner@Default
       role: masterdata_admin
       inherited: true
-  {{- if and (eq $region "qa-de-1") (not .Values.is_global) }}
+  {{- end }}
+  {{- if eq $region "qa-de-1"}}
     projects:
     - name: billing_test
-      description: 'project for used for testing the billing service'
+      description: 'project used for testing the billing service'
       # Role provisioned from CAM to enable takeover of seeded project by billing admins
       role_assignments:
       - group: CCADMIN_BILLING_ADMIN@ccadmin
@@ -76,6 +73,7 @@ spec:
   {{- end }}
 
   {{- range $domains }}
+  {{- if not (hasPrefix "iaas-" .) }}
   - name: {{ . | lower }}
     role_assignments:
     - user: masterdata_scanner@Default
@@ -83,7 +81,7 @@ spec:
       inherited: true
     {{- if eq . "ccadmin" }}
     projects:
-    {{- if not $.Values.is_global }}
+    {{- if not $.Values.global.is_global_region }}
     - name: billing
       description: 'Billing Administration for Converged Cloud'
       role_assignments:
@@ -97,10 +95,13 @@ spec:
       role_assignments:
         - user: masterdata_scanner@Default
           role: cloud_identity_viewer
-        {{- if and (eq $.Values.global.region "qa-de-1") (not $.Values.is_global)}}
+        # this role is necessary to view a complete flavor list across the region with GET compute-3.$REGION.cloud.sap/$VERSION/flavors, there is currently no cloud_compute_viewer role
+        - user: TCC_BILLING_001
+          role: cloud_compute_admin
+        {{- if eq $region "qa-de-1"}}
         - user: TCC_BILLING_001
           role: cloud_masterdata_viewer
-        {{end}}
+        {{- end }}
     {{- end }}
     groups:
     {{- if eq . "ccadmin" }}
@@ -115,7 +116,7 @@ spec:
       - project: cc-demo
         role: masterdata_admin
     {{- end }}
-    - name: {{ contains "iaas-" . | ternary . ( upper . ) }}_API_SUPPORT
+    - name: {{ hasPrefix "iaas-" . | ternary . ( upper . ) }}_API_SUPPORT
       role_assignments:
       {{- if not (has . $cdomainsWithoutSupportProjects) }}
       - project: api_support
@@ -129,7 +130,7 @@ spec:
         role: masterdata_admin
         inherited: true
   {{- if ne . "global" }}
-    - name: {{ contains "iaas-" . | ternary . ( upper . ) }}_COMPUTE_SUPPORT
+    - name: {{ hasPrefix "iaas-" . | ternary . ( upper . ) }}_COMPUTE_SUPPORT
       role_assignments:
       {{- if not (has . $cdomainsWithoutSupportProjects) }}
       - project: compute_support
@@ -142,7 +143,7 @@ spec:
       - domain: {{ . | lower }}
         role: masterdata_viewer
         inherited: true
-    - name: {{ contains "iaas-" . | ternary . ( upper . ) }}_NETWORK_SUPPORT
+    - name: {{ hasPrefix "iaas-" . | ternary . ( upper . ) }}_NETWORK_SUPPORT
       role_assignments:
       {{- if not (has . $cdomainsWithoutSupportProjects) }}
       - project: network_support
@@ -155,7 +156,7 @@ spec:
       - domain: {{ . | lower }}
         role: masterdata_viewer
         inherited: true
-    - name: {{ contains "iaas-" . | ternary . ( upper . ) }}_STORAGE_SUPPORT
+    - name: {{ hasPrefix "iaas-" . | ternary . ( upper . ) }}_STORAGE_SUPPORT
       role_assignments:
       {{- if not (has . $cdomainsWithoutSupportProjects) }}
       - project: storage_support
@@ -168,7 +169,7 @@ spec:
       - domain: {{ . | lower }}
         role: masterdata_viewer
         inherited: true
-    - name: {{ contains "iaas-" . | ternary . ( upper . ) }}_SERVICE_DESK
+    - name: {{ hasPrefix "iaas-" . | ternary . ( upper . ) }}_SERVICE_DESK
       role_assignments:
       {{- if not (has . $cdomainsWithoutSupportProjects) }}
       - project: service_desk
@@ -178,7 +179,7 @@ spec:
         role: masterdata_viewer
         inherited: true
   {{- end }}
-  {{- if and (eq . "bs") (ne $.Values.global.region "qa-de-1") }}
+  {{- if and (eq . "bs") (ne $region "qa-de-1") }}
     - name: BS_CCloud_SO_TLO
       role_assignments:
       - domain: bs
@@ -189,5 +190,6 @@ spec:
       - domain: bs
         role: masterdata_viewer
         inherited: true
+  {{- end }}
   {{- end }}
   {{- end }}
