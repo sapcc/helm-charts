@@ -2,6 +2,13 @@
 
 This file is used to list changes made in each version of the common chart rabbitmq.
 
+## 0.17.2 - 2025/04/10
+
+- RabbitMQ [4.0.8 Release Notes](https://github.com/rabbitmq/rabbitmq-server/releases/tag/v4.0.8)
+  * Fixes a number of rare replication safety issues for quorum queues
+  * several cluster fixes and enhancements
+- Chart version bumped
+
 ## 0.17.1 - 2025/03/19
 
 - Set the default `max_message_size` option to pre-4.0 increased default value of 256M
