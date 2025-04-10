@@ -1,4 +1,5 @@
-{{- $region   := .Values.global.region                   | required "missing value for .Values.global.region"       -}}
+{{/* in case of the global region, the dbRegion is different than region=global */}}
+{{- $dbRegion := coalesce .Values.global.db_region .Values.global.region  | required "missing value for .Values.global.region and db_region" -}}
 {{- $registry := .Values.global.registry                 | required "missing value for .Values.global.registry" -}}
 {{- if .Values.use_alternate_region -}}
   {{- $registry = .Values.global.registryAlternateRegion | required "missing value for .Values.global.registryAlternateRegion" -}}
@@ -53,7 +54,7 @@ spec:
             - name: MY_POD_NAMESPACE
               value: {{ quote .Release.Namespace }}
             - name: OS_AUTH_URL
-              value: {{ printf "https://identity-3.%s.cloud.sap/v3" $region | quote }}
+              value: {{ printf "https://identity-3.%s.cloud.sap/v3" $dbRegion | quote }}
             - name: OS_AUTH_VERSION
               value: "3"
             - name: OS_USERNAME
@@ -65,7 +66,7 @@ spec:
             - name: OS_PROJECT_DOMAIN_NAME
               value: ccadmin
             - name: OS_REGION_NAME
-              value: {{ quote $region }}
+              value: {{ quote $dbRegion }}
             - name: OS_PASSWORD
               valueFrom:
                 secretKeyRef:
@@ -87,7 +88,7 @@ spec:
             limits:
               memory: {{ .Values.resources.memory_limit }}
               cpu: {{ .Values.resources.cpu_limit }}
-            {{- if not (.Values.global.region | regexMatch "^qa-de-[2-6]$") }}
+            {{- if not ($dbRegion | regexMatch "^qa-de-[2-6]$") }}
             requests:
               memory: {{ .Values.resources.memory_limit }}
               cpu: {{ .Values.resources.cpu_request }}
