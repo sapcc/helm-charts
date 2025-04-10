@@ -26,46 +26,49 @@ spec:
           {{ .Files.Get "lib/traversal.rego" | nindent 10 }}
       rego: |
         package imagesfromcorrectregistry
+
         import data.lib.add_support_labels
         import data.lib.traversal
+        import rego.v1
 
-        extract_keppel_region(image) = region {
-          matchList := regex.find_all_string_submatch_n(`^keppel\.([-\w]+)\.[a-zA-Z]+\.[a-zA-Z]+/`, image, 1)
-          count(matchList) > 0
-          region = matchList[0][1]
+        extract_keppel_region(image) := region if {
+            matchList := regex.find_all_string_submatch_n(`^keppel\.([-\w]+)\.[a-zA-Z]+\.[a-zA-Z]+/`, image, 1)
+            count(matchList) > 0
+            region = matchList[0][1]
         }
 
-        extract_image_name_with_tag(image) = image_tag {
-          not contains(image, "/")
-          image_tag = image
+        extract_image_name_with_tag(image) := image_tag if {
+            not contains(image, "/")
+            image_tag = image
         }
-        extract_image_name_with_tag(image) = image_tag {
-          contains(image, "/")
-          sL := split(image, "/")
-          count(sL) > 0
-          image_tag = sL[minus(count(sL), 1)]
+
+        extract_image_name_with_tag(image) := image_tag if {
+            contains(image, "/")
+            sL := split(image, "/")
+            count(sL) > 0
+            image_tag = sL[count(sL) - 1]
         }
 
         iro := input.review.object
         containers := traversal.find_container_specs(iro)
 
-        correct_regions[region] {
-          region = extract_keppel_region(input.parameters.registry)
+        correct_regions contains region if {
+            region = extract_keppel_region(input.parameters.registry)
         }
 
-        correct_regions[alternate_region] {
-          alternate_region = extract_keppel_region(input.parameters.registryAlternateRegion)
+        correct_regions contains alternate_region if {
+            alternate_region = extract_keppel_region(input.parameters.registryAlternateRegion)
         }
 
-        violation[{"msg": add_support_labels.from_k8s_object(iro, msg)}] {
-          container := containers[_]
-          image := container.image
+        violation contains {"msg": add_support_labels.from_k8s_object(iro, msg)} if {
+            container := containers[_]
+            image := container.image
 
-          current_region = extract_keppel_region(image) # this will also check if image is using Keppel or not
-          current_region != "global" # global registry is also an acceptable source
-          found := {r | current_region == correct_regions[r]}
-          count(found) == 0
+            current_region = extract_keppel_region(image) # this will also check if image is using Keppel or not
+            current_region != "global" # global registry is also an acceptable source
+            found := {r | current_region == correct_regions[r]}
+            count(found) == 0
 
-          image_name := extract_image_name_with_tag(image)
-          msg := sprintf("container %q uses incorrect regional registry for image: %s", [container.name, image_name])
+            image_name := extract_image_name_with_tag(image)
+            msg := sprintf("container %q uses incorrect regional registry for image: %s", [container.name, image_name])
         }
