@@ -1,4 +1,3 @@
-{{- $base_seed_namespace := .Values.global.is_global_region | ternary "monsoon3global" "monsoon3" }}
 {{/* cdomains equals [ "global" ] in global region */}}
 {{- $cdomains := .Values.global.domain_seeds.customer_domains | required "missing value for .Values.global.domain_seeds.customer_domains" -}}
 {{- $domains  := concat (list "ccadmin") $cdomains -}}
@@ -13,7 +12,7 @@ spec:
   requires:
   - {{ .Release.Namespace }}/limes-seed
   {{- range $domains }}
-  - {{ $base_seed_namespace }}/domain-{{replace "_" "-" .|lower}}-seed
+  - {{ $.Values.global.keystoneNamespace }}/domain-{{replace "_" "-" .|lower}}-seed
   {{- end }}
 
   domains:
