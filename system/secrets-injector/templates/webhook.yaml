@@ -26,6 +26,8 @@ webhooks:
   matchConditions: # webhook is called, when all conditions are true
   - name: 'exclude-opt-out-secrets'
     expression: 'object.metadata.?annotations["cloud.sap/inject-secrets"].orValue("") != "false"'
+  - name: 'exclude-owner-cert-manager'
+    expression: 'object.metadata.?ownerReferences.optMap(l, !("cert-manager.io" in l.map(r, r.apiVersion))).orValue(true)'
   {{- end }}
 {{- if .Values.webhook.genericRules }}
 - name: "generic.secrets-injector.cloud.sap"
