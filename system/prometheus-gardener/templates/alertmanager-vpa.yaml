@@ -1,0 +1,29 @@
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: {{ include "prometheus-gardener.fullname" . }}-alertmanager-{{ .Values.name }}
+  labels:
+    alertmanager: {{ .Values.name }}
+    component: alertmanager
+    observability.gardener.cloud/app: {{ include "prometheus-gardener.fullname" . }}-alertmanager-{{ .Values.name }}
+    role: monitoring
+  {{- include "prometheus-gardener.labels" . | nindent 4 }}
+spec:
+  resourcePolicy:
+    containerPolicies:
+    - containerName: alertmanager
+      controlledValues: RequestsOnly
+      maxAllowed:
+        cpu: 500m
+        memory: 200Mi
+      minAllowed:
+        memory: 20Mi
+    - containerName: config-reloader
+      mode: "Off"
+  targetRef:
+    apiVersion: monitoring.coreos.com/v1
+    kind: Alertmanager
+    name: {{ include "prometheus-gardener.fullname" . }}-alertmanager-{{ .Values.name }}
+  updatePolicy:
+    updateMode: Auto
+status: {}

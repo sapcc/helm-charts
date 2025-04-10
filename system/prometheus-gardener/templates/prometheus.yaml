@@ -1,0 +1,93 @@
+apiVersion: monitoring.coreos.com/v1
+kind: Prometheus
+metadata:
+  name: {{ include "prometheus-gardener.fullname" . }}-prometheus-{{ .Values.name }}
+  labels:
+    app: prometheus
+    name: {{ .Values.name }}
+    role: monitoring
+  {{- include "prometheus-gardener.labels" . | nindent 4 }}
+spec:
+  additionalScrapeConfigs:
+    key: prometheus.yaml
+    name: {{ include "prometheus-gardener.fullname" . }}-prometheus-{{ .Values.name }}
+  alerting:
+    alertmanagers:
+    - alertRelabelings:
+      - action: drop
+        regex: "true"
+        sourceLabels:
+        - ignoreAlerts
+      name: {{ include "prometheus-gardener.fullname" . }}-alertmanager-{{ .Values.name }}
+      port: metrics
+  arbitraryFSAccessThroughSMs: {}
+  evaluationInterval: 1m
+  externalLabels:
+    landscape: local
+  externalUrl: https://sap.com
+  imagePullPolicy: IfNotPresent
+  podMetadata:
+    labels:
+      networking.gardener.cloud/to-dns: allowed
+      networking.gardener.cloud/to-private-networks: allowed
+      networking.gardener.cloud/to-public-networks: allowed
+      networking.gardener.cloud/to-runtime-apiserver: allowed
+      networking.resources.gardener.cloud/to-all-garden-scrape-targets: allowed
+      networking.resources.gardener.cloud/to-extensions-all-garden-scrape-targets: allowed
+      observability.gardener.cloud/app: {{ include "prometheus-gardener.fullname" . }}-prometheus-{{ .Values.name }}
+  podMonitorNamespaceSelector: {}
+  podMonitorSelector:
+    matchLabels:
+      prometheus: {{ .Values.name }}
+  priorityClassName: gardener-garden-system-100
+  probeNamespaceSelector: {}
+  probeSelector:
+    matchLabels:
+      prometheus: {{ .Values.name }}
+  reloadStrategy: HTTP
+  replicas: 1
+  resources:
+    requests:
+      cpu: 300m
+      memory: 1000Mi
+  retention: 10d
+  retentionSize: 190GB
+  ruleNamespaceSelector: {}
+  ruleSelector:
+    matchLabels:
+      prometheus: {{ .Values.name }}
+  rules:
+    alert: {}
+  scrapeConfigNamespaceSelector: {}
+  scrapeConfigSelector:
+    matchLabels:
+      prometheus: {{ .Values.name }}
+  scrapeInterval: 1m
+  scrapeTimeout: 50s
+  securityContext:
+    runAsUser: 0
+  serviceAccountName: {{ include "prometheus-gardener.fullname" . }}-prometheus-{{ .Values.name }}
+  serviceMonitorNamespaceSelector: {}
+  serviceMonitorSelector:
+    matchLabels:
+      prometheus: {{ .Values.name }}
+  shards: 1
+  storage:
+    volumeClaimTemplate:
+      metadata:
+        name: prometheus-db
+      spec:
+        accessModes:
+        - ReadWriteOnce
+        resources:
+          requests:
+            storage: 200Gi
+      status: {}
+  web:
+    maxConnections: 1024
+status:
+  availableReplicas: 0
+  paused: false
+  replicas: 0
+  unavailableReplicas: 0
+  updatedReplicas: 0

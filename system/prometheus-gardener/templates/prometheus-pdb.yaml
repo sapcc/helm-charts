@@ -1,0 +1,18 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "prometheus-gardener.fullname" . }}-prometheus-{{ .Values.name }}
+  labels:
+    app: prometheus
+    name: {{ .Values.name }}
+    role: monitoring
+  {{- include "prometheus-gardener.labels" . | nindent 4 }}
+spec:
+  minAvailable: {{ .Values.prometheus.minAvailable }}
+  maxUnavailable: {{ .Values.prometheus.maxUnavailable }}
+  selector:
+    matchLabels:
+      app: prometheus
+      name: {{ .Values.name }}
+      role: monitoring
+    {{- include "prometheus-gardener.selectorLabels" . | nindent 6 }}

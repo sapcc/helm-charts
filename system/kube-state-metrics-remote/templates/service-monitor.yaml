@@ -2,14 +2,14 @@ apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   labels:
-    prometheus: shoot
+    prometheus: {{ .Values.name }}
   name: {{ include "kube-state-metrics-remote.fullname" . }}
 spec:
   endpoints:
     - interval: 30s
-      targetPort: {{ with index .Values.kubeStateMetrics.ports 0 }}{{ .port }}{{ end }}
       path: /metrics
       scheme: http
+      targetPort: {{ with index .Values.kubeStateMetrics.ports 0 }}{{ .port }}{{ end }}
   namespaceSelector: {}
   selector:
     matchLabels:

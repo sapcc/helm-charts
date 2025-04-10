@@ -1,0 +1,91 @@
+apiVersion: monitoring.coreos.com/v1alpha1
+kind: AlertmanagerConfig
+metadata:
+  name: {{ include "prometheus-gardener.fullname" . }}-{{ .Values.name }}
+  labels:
+    alertmanager: {{ .Values.name }}
+  {{- include "prometheus-gardener.labels" . | nindent 4 }}
+spec:
+  receivers:
+  - name: slack
+    slackConfigs:
+    - apiURL:
+        key: slackWebhookURL
+        name: {{ include "prometheus-gardener.fullname" . }}-alertmanager-{{ .Values.name }}
+        optional: false
+      channel: {{ .Values.slackChannelName | quote }}
+      color: '{{ if eq .Status "firing" -}}{{ if eq .CommonLabels.severity "warning"
+        -}}warning{{- else if eq .CommonLabels.severity "critical" -}}danger{{- else
+        -}}#439FE0{{- end -}}{{ else -}}good{{- end }}'
+      iconEmoji: ':alert:'
+      sendResolved: true
+      text: |
+        {{/* Severity of the alert */}}
+        {{ define "__alert_severity" -}}
+            {{- if eq .CommonLabels.severity "critical" -}}
+            *Severity:* `Critical` :alert:
+            {{- else if eq .CommonLabels.severity "warning" -}}
+            *Severity:* `Warning` :warning:
+            {{- else if eq .CommonLabels.severity "info" -}}
+            *Severity:* `Info` :information_source:
+            {{- else -}}
+            *Severity:* `Unknown` :question: {{ .CommonLabels.severity }}
+            {{- end }}
+        {{- end }}
+        {{/* The text to display in the alert */}}
+        {{ define "slack.text" -}}
+
+            {{ template "__alert_severity" . }}
+            {{- if (index .Alerts 0).Annotations.summary }}
+            {{- "\n" -}}
+            *Summary:* {{ (index .Alerts 0).Annotations.summary }}
+            {{- end }}
+            {{- if (index .Alerts 0).Labels.cluster }}
+            {{- "\n" -}}
+            *Cluster:* `{{ (index .Alerts 0).Labels.cluster }}`
+            {{- end }}
+            {{- if (index .Alerts 0).Labels.service }}
+            {{- "\n" -}}
+            *Service:* `{{ (index .Alerts 0).Labels.service }}`
+            {{- end }}
+            {{- if (index .Alerts 0).Labels.namespace }}
+            {{- "\n" -}}
+            *Namespace:* `{{ (index .Alerts 0).Labels.namespace }}`
+            {{- end }}
+            {{ range .Alerts }}
+
+                {{- if .Annotations.description }}
+                {{- "\n" -}}
+                {{ .Annotations.description }}
+                {{- "\n" -}}
+                {{- end }}
+                {{- if .Annotations.message }}
+                {{- "\n" -}}
+                {{ .Annotations.message }}
+                {{- "\n" -}}
+                {{- end }}
+
+            {{- end }}
+
+        {{- end }}
+        {{ template "slack.text" . }}
+      title: |
+        {{/* Title of the Slack alert */}}
+        {{ define "slack.title" -}}
+        [{{ .Status | toUpper -}}
+        {{ if eq .Status "firing" }}:{{ .Alerts.Firing | len }}{{- end -}}
+        ] {{ .CommonLabels.alertname }}
+        {{- end }}
+        {{ template "slack.title" . }}
+      titleLink: https://sap.com
+  route:
+    groupBy:
+    - job
+    - alertname
+    groupInterval: 5m
+    groupWait: 5s
+    receiver: slack
+    repeatInterval: 1m
+    routes:
+    - continue: true
+      receiver: slack
