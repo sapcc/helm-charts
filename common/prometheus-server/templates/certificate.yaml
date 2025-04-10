@@ -1,0 +1,25 @@
+{{- $root := . }}
+{{- if and .Values.alertmanagers.authentication.enabled .Values.certManager.enabled }}
+{{- range $name := coalesce .Values.names .Values.global.targets (list .Values.name) }}
+# generate a client certificate for prometheus to use
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ include "prometheus.fullName" (list $name $root) }}-cert
+spec:
+  secretName: {{ include "prometheus.fullName" (list $name $root) }}-alertmanager-sso-cert
+  duration: {{ $.Values.certManager.ssoCert.duration | quote }}
+  issuerRef:
+    kind: ClusterIssuer
+    name: {{ $.Values.certManager.clusterIssuerName }}
+  dnsNames:
+  - {{ include "prometheus.fullName" (list $name $root) }}
+  - {{ include "prometheus.fullName" (list $name $root) }}.{{ .Release.Namespace }}
+  - {{ include "prometheus.fullName" (list $name $root) }}.{{ .Release.Namespace }}.svc
+{{- if and $.Values.ingress.enabled $.Values.ingress.hosts }}
+{{- range $host := coalesce $.Values.ingress.hosts (list $name) }}
+  - {{ include "fqdnHelper" (list $host $root) }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}

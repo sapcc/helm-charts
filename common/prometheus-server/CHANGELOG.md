@@ -1,3 +1,7 @@
+## 8.1.0
+
+* Add certificate creation through cert-manager
+
 ## 8.0.0
 
 * Upgrade Prometheus to v3.2.1
