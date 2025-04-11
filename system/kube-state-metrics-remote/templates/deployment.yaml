@@ -40,7 +40,11 @@ spec:
           | default .Chart.AppVersion }}
         commnad:
         - /kube-state-metrics
-        args: {{- toYaml .Values.kubeStateMetrics.kubeStateMetrics.args | nindent 8 }}
+        args:
+        {{- toYaml .Values.kubeStateMetrics.kubeStateMetrics.args | nindent 8 }}
+        {{- if .Values.kubeStateMetrics.kubeStateMetrics.customResources }}
+        - --resources={{ .Values.kubeStateMetrics.kubeStateMetrics.customResources }}
+        {{- end }}
         livenessProbe:
           failureThreshold: 3
           httpGet:

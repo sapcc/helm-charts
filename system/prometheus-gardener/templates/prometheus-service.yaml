@@ -1,10 +1,10 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "prometheus-gardener.fullname" . }}-prometheus-{{ .Values.name }}
+  name: {{ include "prometheus-gardener.fullname" . }}-prometheus-{{ .Values.prometheusName }}
   labels:
     app: prometheus
-    name: {{ .Values.name }}
+    name: {{ .Values.prometheusName }}
     role: monitoring
   {{- include "prometheus-gardener.labels" . | nindent 4 }}
   annotations:
@@ -13,7 +13,7 @@ metadata:
 spec:
   type: {{ .Values.prometheus.type }}
   selector:
-    prometheus: {{ .Values.name }}
+    prometheus: {{ .Values.prometheusName }}
     {{- include "prometheus-gardener.selectorLabels" . | nindent 4 }}
   ports:
   {{- .Values.prometheus.ports | toYaml | nindent 2 }}

@@ -1,16 +1,16 @@
 apiVersion: monitoring.coreos.com/v1
 kind: Prometheus
 metadata:
-  name: {{ include "prometheus-gardener.fullname" . }}-prometheus-{{ .Values.name }}
+  name: {{ include "prometheus-gardener.fullname" . }}-prometheus-{{ .Values.prometheusName }}
   labels:
     app: prometheus
-    name: {{ .Values.name }}
+    name: {{ .Values.prometheusName }}
     role: monitoring
   {{- include "prometheus-gardener.labels" . | nindent 4 }}
 spec:
   additionalScrapeConfigs:
     key: prometheus.yaml
-    name: {{ include "prometheus-gardener.fullname" . }}-prometheus-{{ .Values.name }}
+    name: {{ include "prometheus-gardener.fullname" . }}-prometheus-{{ .Values.prometheusName }}
   alerting:
     alertmanagers:
     - alertRelabelings:
@@ -18,7 +18,7 @@ spec:
         regex: "true"
         sourceLabels:
         - ignoreAlerts
-      name: {{ include "prometheus-gardener.fullname" . }}-alertmanager-{{ .Values.name }}
+      name: {{ include "prometheus-gardener.fullname" . }}-alertmanager-{{ .Values.prometheusName }}
       port: metrics
   arbitraryFSAccessThroughSMs: {}
   evaluationInterval: 1m
@@ -34,16 +34,16 @@ spec:
       networking.gardener.cloud/to-runtime-apiserver: allowed
       networking.resources.gardener.cloud/to-all-garden-scrape-targets: allowed
       networking.resources.gardener.cloud/to-extensions-all-garden-scrape-targets: allowed
-      observability.gardener.cloud/app: {{ include "prometheus-gardener.fullname" . }}-prometheus-{{ .Values.name }}
+      observability.gardener.cloud/app: {{ include "prometheus-gardener.fullname" . }}-prometheus-{{ .Values.prometheusName }}
   podMonitorNamespaceSelector: {}
   podMonitorSelector:
     matchLabels:
-      prometheus: {{ .Values.name }}
+      prometheus: {{ .Values.prometheusName }}
   priorityClassName: gardener-garden-system-100
   probeNamespaceSelector: {}
   probeSelector:
     matchLabels:
-      prometheus: {{ .Values.name }}
+      prometheus: {{ .Values.prometheusName }}
   reloadStrategy: HTTP
   replicas: 1
   resources:
@@ -55,22 +55,22 @@ spec:
   ruleNamespaceSelector: {}
   ruleSelector:
     matchLabels:
-      prometheus: {{ .Values.name }}
+      prometheus: {{ .Values.prometheusName }}
   rules:
     alert: {}
   scrapeConfigNamespaceSelector: {}
   scrapeConfigSelector:
     matchLabels:
-      prometheus: {{ .Values.name }}
+      prometheus: {{ .Values.prometheusName }}
   scrapeInterval: 1m
   scrapeTimeout: 50s
   securityContext:
     runAsUser: 0
-  serviceAccountName: {{ include "prometheus-gardener.fullname" . }}-prometheus-{{ .Values.name }}
+  serviceAccountName: {{ include "prometheus-gardener.fullname" . }}-prometheus-{{ .Values.prometheusName }}
   serviceMonitorNamespaceSelector: {}
   serviceMonitorSelector:
     matchLabels:
-      prometheus: {{ .Values.name }}
+      prometheus: {{ .Values.prometheusName }}
   shards: 1
   storage:
     volumeClaimTemplate:

@@ -1,9 +1,9 @@
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
-  name: {{ include "prometheus-gardener.fullname" . }}-alertmanager-{{ .Values.name }}
+  name: {{ include "prometheus-gardener.fullname" . }}-alertmanager-{{ .Values.prometheusName }}
   labels:
-    alertmanager: {{ .Values.name }}
+    alertmanager: {{ .Values.prometheusName }}
     component: alertmanager
     role: monitoring
   {{- include "prometheus-gardener.labels" . | nindent 4 }}
@@ -12,7 +12,7 @@ spec:
   maxUnavailable: {{ .Values.alertmanager.maxUnavailable }}
   selector:
     matchLabels:
-      alertmanager: {{ .Values.name }}
+      alertmanager: {{ .Values.prometheusName }}
       component: alertmanager
       role: monitoring
     {{- include "prometheus-gardener.selectorLabels" . | nindent 6 }}

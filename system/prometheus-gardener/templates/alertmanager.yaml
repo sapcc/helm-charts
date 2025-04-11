@@ -1,9 +1,9 @@
 apiVersion: monitoring.coreos.com/v1
 kind: Alertmanager
 metadata:
-  name: {{ include "prometheus-gardener.fullname" . }}-alertmanager-{{ .Values.name }}
+  name: {{ include "prometheus-gardener.fullname" . }}-alertmanager-{{ .Values.prometheusName }}
   labels:
-    alertmanager: {{ .Values.name }}
+    alertmanager: {{ .Values.prometheusName }}
     component: alertmanager
     role: monitoring
   {{- include "prometheus-gardener.labels" . | nindent 4 }}
@@ -13,21 +13,21 @@ spec:
   alertmanagerConfigNamespaceSelector: {}
   alertmanagerConfigSelector:
     matchLabels:
-      alertmanager: {{ .Values.name }}
+      alertmanager: {{ .Values.prometheusName }}
   externalUrl: https://sap.com
   forceEnableClusterMode: true
   imagePullPolicy: IfNotPresent
   logLevel: info
   podMetadata:
     labels:
-      alertmanager: {{ .Values.name }}
+      alertmanager: {{ .Values.prometheusName }}
       component: alertmanager
       networking.gardener.cloud/to-dns: allowed
       networking.gardener.cloud/to-private-networks: allowed
       networking.gardener.cloud/to-public-networks: allowed
       networking.resources.gardener.cloud/to-alertmanager-operated-tcp-9094: allowed
       networking.resources.gardener.cloud/to-alertmanager-operated-udp-9094: allowed
-      observability.gardener.cloud/app: {{ include "prometheus-gardener.fullname" . }}-alertmanager-{{ .Values.name }}
+      observability.gardener.cloud/app: {{ include "prometheus-gardener.fullname" . }}-alertmanager-{{ .Values.prometheusName }}
       role: monitoring
   priorityClassName: gardener-garden-system-100
   replicas: 1

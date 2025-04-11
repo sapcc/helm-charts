@@ -1,9 +1,9 @@
 apiVersion: monitoring.coreos.com/v1alpha1
 kind: AlertmanagerConfig
 metadata:
-  name: {{ include "prometheus-gardener.fullname" . }}-{{ .Values.name }}
+  name: {{ include "prometheus-gardener.fullname" . }}-{{ .Values.prometheusName }}
   labels:
-    alertmanager: {{ .Values.name }}
+    alertmanager: {{ .Values.prometheusName }}
   {{- include "prometheus-gardener.labels" . | nindent 4 }}
 spec:
   receivers:
@@ -11,7 +11,7 @@ spec:
     slackConfigs:
     - apiURL:
         key: slackWebhookURL
-        name: {{ include "prometheus-gardener.fullname" . }}-alertmanager-{{ .Values.name }}
+        name: {{ include "prometheus-gardener.fullname" . }}-alertmanager-{{ .Values.prometheusName }}
         optional: false
       channel: {{ .Values.slackChannelName | quote }}
       color: '{{ if eq .Status "firing" -}}{{ if eq .CommonLabels.severity "warning"
