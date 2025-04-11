@@ -84,6 +84,9 @@ data:
        include: /etc/unbound/regional.conf
        include: /etc/unbound/global.conf
 
+       # firewall
+       include: /etc/unbound/firewall.conf
+
        # dnstap.conf
        include: /etc/unbound/dnstap.conf
 
@@ -144,6 +147,14 @@ data:
        {{- range $ldata := .Values.unbound.local_data}}
        local-data: {{ $ldata.local_data | quote }}
        {{- end}}
+
+  firewall.conf: |
+       {{- range $blocklisted := .Values.unbound.blocklisted_zones }}
+       local-zone: {{ tpl $blocklisted $ | quote }} refuse
+       {{- end }}
+       {{- range $allowlisted := .Values.unbound.allowlisted_zones }}
+       local-zone: {{ tpl $allowlisted $ | quote }} transparent
+       {{- end }}
 
   regional.conf: |
        {{- range $forward := .Values.unbound.forward_zones }}
