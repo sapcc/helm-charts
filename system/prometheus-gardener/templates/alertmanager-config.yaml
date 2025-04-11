@@ -20,8 +20,8 @@ spec:
       iconEmoji: ':alert:'
       sendResolved: true
       text: |
-        {{/* Severity of the alert */}}
         {{ define "__alert_severity" -}}
+          {{- if .CommonLabels -}}
             {{- if eq .CommonLabels.severity "critical" -}}
             *Severity:* `Critical` :alert:
             {{- else if eq .CommonLabels.severity "warning" -}}
@@ -31,11 +31,11 @@ spec:
             {{- else -}}
             *Severity:* `Unknown` :question: {{ .CommonLabels.severity }}
             {{- end }}
+          {{- end }}
         {{- end }}
-        {{/* The text to display in the alert */}}
         {{ define "slack.text" -}}
-
-            {{ template "__alert_severity" . }}
+          {{ template "__alert_severity" . }}
+          {{- if .Alerts -}}
             {{- if (index .Alerts 0).Annotations.summary }}
             {{- "\n" -}}
             *Summary:* {{ (index .Alerts 0).Annotations.summary }}
@@ -53,7 +53,6 @@ spec:
             *Namespace:* `{{ (index .Alerts 0).Labels.namespace }}`
             {{- end }}
             {{ range .Alerts }}
-
                 {{- if .Annotations.description }}
                 {{- "\n" -}}
                 {{ .Annotations.description }}
@@ -64,17 +63,18 @@ spec:
                 {{ .Annotations.message }}
                 {{- "\n" -}}
                 {{- end }}
-
             {{- end }}
-
+          {{- end }}
         {{- end }}
         {{ template "slack.text" . }}
       title: |
         {{/* Title of the Slack alert */}}
         {{ define "slack.title" -}}
-        [{{ .Status | upper -}}
-        {{ if eq .Status "firing" }}:{{ .Alerts.Firing | len }}{{- end -}}
-        ] {{ .CommonLabels.alertname }}
+        {{- if .Status -}}
+          [{{ upper .Status -}}
+          {{ if eq .Status "firing" }}:{{ .Alerts.Firing | len }}{{- end -}}
+          ] {{ .CommonLabels.alertname }}
+          {{- end }}
         {{- end }}
         {{ template "slack.title" . }}
       titleLink: https://sap.com
