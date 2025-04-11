@@ -145,6 +145,38 @@ mariadb:
           enabled: true
           allTables: true
 
+pxc_db:
+  enabled: false
+  name: cinder
+  alerts:
+    support_group: compute-storage-api
+  ccroot_user:
+    enabled: true
+  databases:
+    - cinder
+  users:
+    cinder:
+      name: cinder
+      grants:
+        - "ALL PRIVILEGES on cinder.*"
+  pxc:
+    configuration:
+      options:
+        max_connections: "2048"
+        innodb_buffer_pool_size: "2048M"
+        innodb_log_file_size: "512M"
+        connect_timeout: "15"
+    persistence:
+      size: 10Gi
+  backup:
+    enabled: true
+    s3:
+      secrets:
+        aws_access_key_id: null
+        aws_secret_access_key: null
+    pitr:
+      enabled: true
+
 max_pool_size: 15
 max_overflow: 5
 
