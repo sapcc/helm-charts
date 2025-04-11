@@ -13,7 +13,8 @@ metadata:
 spec:
   type: {{ .Values.prometheus.type }}
   selector:
-    prometheus: {{ .Values.prometheusName }}
-    {{- include "prometheus-gardener.selectorLabels" . | nindent 4 }}
+    prometheus: {{ include "prometheus-gardener.fullname" . }}-prometheus-{{ .Values.prometheusName }}
+    component: prometheus
+    role: monitoring
   ports:
   {{- .Values.prometheus.ports | toYaml | nindent 2 }}
