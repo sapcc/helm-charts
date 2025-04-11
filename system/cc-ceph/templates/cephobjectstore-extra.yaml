@@ -73,6 +73,12 @@ spec:
   {{- if not (empty $instance.gateway.rgwCommandFlags) }}
     rgwCommandFlags: {{ toYaml $instance.gateway.rgwCommandFlags | nindent 6 }}
   {{- end }}
+    annotations:
+      checksum/config: {{ include (print $.Template.BasePath "/ceph-config-override.yaml") . | sha256sum }}
+      {{- if $instance.gateway.securePort }}
+      # reload deployment when the certificate changes
+      secret.reloader.stakater.com/reload: {{ $instance.gateway.sslCertificateRef | default $.Values.objectstore.gateway.sslCertificateRef | quote }}
+      {{- end }}
     labels:
       prysm-sidecar: "no"
     instances: {{ $instance.gateway.instances | default $.Values.objectstore.gateway.instances }}
