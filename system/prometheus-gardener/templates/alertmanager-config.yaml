@@ -19,6 +19,13 @@ spec:
         -}}#439FE0{{- end -}}{{ else -}}good{{- end }}'
       iconEmoji: ':alert:'
       sendResolved: true
+      title: |
+        {{ `{{ define "slack.title" -}}` }}
+        {{ `[{{ upper .Status -}}` }}
+        {{ `{{ if eq .Status "firing" }}:{{ .Alerts.Firing | len }}{{- end -}}` }}
+        {{ `] {{ .CommonLabels.alertname }}` }}
+        {{ `{{- end }}` }}
+        {{ `{{ template "slack.title" . }}` }}
       text: |
         {{ `{{ define "__alert_severity" -}}` }}
         {{ `  {{- if eq .CommonLabels.severity "critical" -}}` }}
@@ -62,15 +69,7 @@ spec:
         {{ `      {{- end }}` }}
         {{ `  {{- end }}` }}
         {{ `{{- end }}` }}
-        {{ `{{ template "slack.text" . }}` }}` }}
-      title: |
-        {{ `{{/* Title of the Slack alert */}}` }}
-        {{ `{{ define "slack.title" -}}` }}
-        {{ `[{{ upper .Status -}}` }}
-        {{ `{{ if eq .Status "firing" }}:{{ .Alerts.Firing | len }}{{- end -}}` }}
-        {{ `] {{ .CommonLabels.alertname }}` }}
-        {{ `{{- end }}` }}
-        {{ `{{ template "slack.title" . }}` }}
+        {{ `{{ template "slack.text" . }}` }}
       titleLink: https://sap.com
   route:
     groupBy:
