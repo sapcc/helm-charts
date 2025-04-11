@@ -1,16 +1,16 @@
 {{- define "nova.helpers.ini_sections.api_database" }}
 
 [api_database]
-connection = {{ tuple . .Values.apidbName .Values.apidbUser .Values.apidbPassword .Values.mariadb_api.name | include "db_url_mysql" }}
+connection = {{ tuple . .Values.apidbName .Values.apidbUser .Values.apidbPassword .Values.mariadb_api.name .Values.apidbType | include "utils.db_url" }}
 {{- include "ini_sections.database_options_mysql" . }}
 {{- end }}
 
 {{- define "cell0_db_path" }}
-    {{- tuple . .Values.cell0dbName .Values.cell0dbUser (default .Values.cell0dbPassword .Values.global.dbPassword) | include "db_url_mysql" }}
+    {{- tuple . .Values.cell0dbName .Values.cell0dbUser (default .Values.cell0dbPassword .Values.global.dbPassword) .Values.mariadb.name .Values.cell0dbType | include "utils.db_url" }}
 {{- end }}
 
 {{- define "cell1_db_path" -}}
-    {{- tuple . .Values.dbName .Values.dbUser (default .Values.dbPassword .Values.global.dbPassword) | include "db_url_mysql" }}
+    {{- tuple . .Values.dbName .Values.dbUser (default .Values.dbPassword .Values.global.dbPassword) .Values.mariadb.name .Values.cell1dbType | include "utils.db_url" }}
 {{- end }}
 
 {{- define "cell1_transport_url" -}}
@@ -23,7 +23,7 @@ connection = {{ tuple . .Values.apidbName .Values.apidbUser .Values.apidbPasswor
 
 {{- define "cell2_db_path" -}}
     {{- if eq .Values.cell2.enabled true -}}
-        {{- tuple . .Values.cell2dbName .Values.cell2dbUser (default .Values.cell2dbPassword .Values.global.dbPassword) .Values.mariadb_cell2.name | include "db_url_mysql" }}
+        {{- tuple . .Values.cell2dbName .Values.cell2dbUser (default .Values.cell2dbPassword .Values.global.dbPassword) .Values.mariadb_cell2.name .Values.cell2dbType | include "utils.db_url" }}
     {{- end }}
 {{- end }}
 
@@ -77,21 +77,6 @@ annotations:
   {{- end }}
 {{- end }}
 
-
-{{- define "nova.helpers.database_services" }}
-  {{- $envAll := . }}
-  {{- $dbs := dict }}
-  {{- range $d := $envAll.Chart.Dependencies }}
-    {{- if and (hasPrefix "mariadb" $d.Name) }}
-        {{- $db := get $envAll.Values $d.Name }}
-        {{- if get $db "enabled" }}
-          {{- $_ := set $dbs (print (get $db "name") "-mariadb") $db }}
-        {{- end }}
-    {{- end }}
-  {{- end }}
-  {{- keys $dbs | sortAlpha | join "," }}
-{{- end }}
-
 {{/* TODO: Expose and use the logic in the rabbitmq subchart */}}
 {{- define "nova.helpers.rabbitmq_name" }}
   {{- $vals := index . 1 }}
@@ -109,17 +94,56 @@ annotations:
   {{- tuple . .Values.rabbitmq_cell2 | include "nova.helpers.rabbitmq_name" }}
 {{- end }}
 
+{{- define "nova.helpers.api_db" }}
+  {{- if eq .Values.apidbType "mariadb" }}
+    {{- print .Values.mariadb_api.name "-mariadb" }}
+  {{- else if eq .Values.apidbType "pxc-db" }}
+    {{- print .Values.pxc_db_api.name "-db-haproxy" }}
+  {{- else }}
+    {{- fail (print "Unsupported database type for api_db") }}
+  {{- end }}
+{{- end }}
+
+{{- define "nova.helpers.cell01_db"}}
+  {{- if eq .Values.cell1dbType "mariadb" }}
+    {{- print .Values.mariadb.name "-mariadb" }}
+  {{- else if eq .Values.cell1dbType "pxc-db" }}
+    {{- print .Values.pxc_db.name "-db-haproxy" }}
+  {{- else }}
+    {{- fail (print "Unsupported database type for cell0 and cell1") }}
+  {{- end }}
+{{- end }}
+
+{{- define "nova.helpers.cell2_db"}}
+{{- if .Values.cell2.enabled }}
+  {{- if eq .Values.cell2dbType "mariadb" }}
+    {{- print .Values.mariadb_cell2.name "-mariadb" }}
+  {{- else if eq .Values.cell2dbType "pxc-db" }}
+    {{- print .Values.pxc_db_cell2.name "-db-haproxy" }}
+  {{- else }}
+    {{- fail (print "Unsupported database type for cell2") }}
+  {{- end }}
+{{- end }}
+{{- end }}
+
 {{- define "nova.helpers.cell01_services" }}
-  {{- print .Values.mariadb_api.name "-mariadb," .Values.mariadb.name "-mariadb," (include "nova.helpers.cell01_rabbitmq" .) }}
+  {{- print (include "nova.helpers.api_db" .) "," (include "nova.helpers.cell01_db" .) "," (include "nova.helpers.cell01_rabbitmq" .) }}
 {{- end }}
 
 {{- define "nova.helpers.cell1_services" }}
-  {{- print .Values.mariadb.name "-mariadb," (include "nova.helpers.cell01_rabbitmq" .) }}
+  {{- print (include "nova.helpers.cell01_db" .) "," (include "nova.helpers.cell01_rabbitmq" .) }}
 {{- end }}
 
 {{- define "nova.helpers.cell2_services" }}
   {{- if .Values.cell2.enabled }}
-    {{- print .Values.mariadb_cell2.name "-mariadb," (include "nova.helpers.cell2_rabbitmq" .) }}
+    {{- print (include "nova.helpers.cell2_db" .) "," (include "nova.helpers.cell2_rabbitmq" .) }}
+  {{- end }}
+{{- end }}
+
+{{- define "nova.helpers.all_database_services" }}
+  {{- include "nova.helpers.api_db" . }},{{ include "nova.helpers.cell01_db" . }}
+  {{- if .Values.cell2.enabled }}
+    ,{{ include "nova.helpers.cell2_db" . }}
   {{- end }}
 {{- end }}
 
