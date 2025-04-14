@@ -49,16 +49,16 @@ spec:
               iro := input.review.object
               phase := object.get(iro, ["status", "phase"], "Running") # only relevant for iro.kind == "Pod"
               pod := traversal.find_pod(iro)
-              checks := __run_image_check()
+              checks := __run_image_check(phase)
 
-              __run_image_check := result if {
+              __run_image_check(phase) := result if {
                   input.parameters.reportingLevel == "pod"
                   phase != "Succeeded"
                   phase != "Failed"
                   result = image_check.for_pod(iro, input.parameters.doopImageCheckerURL)
               }
 
-              __run_image_check := result if {
+              __run_image_check(phase) := result if {
                   input.parameters.reportingLevel == "pod"
 
                   # ignore pods that have already finished running, but still exist
@@ -67,13 +67,13 @@ spec:
                   result = []
               }
 
-              __run_image_check := result if {
+              __run_image_check(phase) := result if {
                   input.parameters.reportingLevel == "pod-owner"
                   pod.isFound
                   result = image_check.for_pod_template(pod, input.parameters.doopImageCheckerURL)
               }
 
-              __run_image_check := result if {
+              __run_image_check(phase) := result if {
                   input.parameters.reportingLevel == "pod-owner"
                   not pod.isFound
 
