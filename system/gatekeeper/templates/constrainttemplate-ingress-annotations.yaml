@@ -24,19 +24,22 @@ spec:
       libs:
         - |
           {{ .Files.Get "lib/add-support-labels.rego" | nindent 10 }}
-      rego: |
-        package ingressannotations
+      code:
+        - engine: Rego
+          source:
+            version: "v1"
+            rego: |
+              package ingressannotations
 
-        import data.lib.add_support_labels
-        import rego.v1
+              import data.lib.add_support_labels
 
-        iro := input.review.object
-        annotations := object.get(iro, ["metadata", "annotations"], {})
+              iro := input.review.object
+              annotations := object.get(iro, ["metadata", "annotations"], {})
 
-        violation contains {"msg": add_support_labels.from_k8s_object(iro, msg)} if {
-            iro.kind == "Ingress"
-            annotations[key]
-            pattern := input.parameters.regexes[_]
-            regex.match(pattern, key)
-            msg := sprintf("has disabled annotation: %q (%s)", [key, input.parameters.hint])
-        }
+              violation contains {"msg": add_support_labels.from_k8s_object(iro, msg)} if {
+                  iro.kind == "Ingress"
+                  annotations[key]
+                  pattern := input.parameters.regexes[_]
+                  regex.match(pattern, key)
+                  msg := sprintf("has disabled annotation: %q (%s)", [key, input.parameters.hint])
+              }

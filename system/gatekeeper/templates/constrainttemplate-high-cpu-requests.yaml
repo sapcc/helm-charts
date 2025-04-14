@@ -22,39 +22,42 @@ spec:
           {{ .Files.Get "lib/add-support-labels.rego" | nindent 10 }}
         - |
           {{ .Files.Get "lib/traversal.rego" | nindent 10 }}
-      rego: |
-        package highcpurequests
+      code:
+        - engine: Rego
+          source:
+            version: "v1"
+            rego: |
+              package highcpurequests
 
-        import data.lib.add_support_labels
-        import data.lib.traversal
-        import rego.v1
+              import data.lib.add_support_labels
+              import data.lib.traversal
 
-        canonify_cpu(orig) := new if {
-            is_number(orig)
-            new := orig
-        }
+              canonify_cpu(orig) := new if {
+                  is_number(orig)
+                  new := orig
+              }
 
-        canonify_cpu(orig) := new if {
-            not is_number(orig)
-            not endswith(orig, "m")
-            regex.match(`^[0-9]*\.?[0-9]+$`, orig)
-            new := to_number(orig)
-        }
+              canonify_cpu(orig) := new if {
+                  not is_number(orig)
+                  not endswith(orig, "m")
+                  regex.match(`^[0-9]*\.?[0-9]+$`, orig)
+                  new := to_number(orig)
+              }
 
-        canonify_cpu(orig) := new if {
-            not is_number(orig)
-            endswith(orig, "m")
-            new := to_number(replace(orig, "m", "")) / 1000
-        }
+              canonify_cpu(orig) := new if {
+                  not is_number(orig)
+                  endswith(orig, "m")
+                  new := to_number(replace(orig, "m", "")) / 1000
+              }
 
-        iro := input.review.object
-        pod := traversal.find_pod(iro)
+              iro := input.review.object
+              pod := traversal.find_pod(iro)
 
-        violation contains {"msg": add_support_labels.from_k8s_object(iro, msg)} if {
-            pod.isFound
+              violation contains {"msg": add_support_labels.from_k8s_object(iro, msg)} if {
+                  pod.isFound
 
-            total_cpu := sum([canonify_cpu(c) | c = pod.spec.containers[_].resources.requests.cpu])
-            total_cpu > input.parameters.maxCpu
+                  total_cpu := sum([canonify_cpu(c) | c = pod.spec.containers[_].resources.requests.cpu])
+                  total_cpu > input.parameters.maxCpu
 
-            msg := sprintf("requests %v CPU in total", [total_cpu])
-        }
+                  msg := sprintf("requests %v CPU in total", [total_cpu])
+              }

@@ -1,7 +1,5 @@
 package lib.image_check
 
-import rego.v1
-
 # The public interface is the function for_pod(pod, baseURL). `pod` must be a
 # Pod object. `baseURL` is where doop-image-checker is running. This usually
 # comes from the policy's `input.parameters`.

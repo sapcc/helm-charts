@@ -1,7 +1,5 @@
 package lib.add_support_labels
 
-import rego.v1
-
 # `obj` must be a full Kubernetes object.
 from_k8s_object(obj, msg) := result if {
 	support_group := object.get(obj, ["metadata", "labels", "ccloud/support-group"], "none")

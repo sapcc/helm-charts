@@ -1,7 +1,5 @@
 package lib.traversal
 
-import rego.v1
-
 ### find_pod(obj)
 #
 # Find a Pod object or template within the given k8s object. For Pods, `obj`
