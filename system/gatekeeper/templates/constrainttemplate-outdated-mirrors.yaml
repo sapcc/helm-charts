@@ -10,11 +10,6 @@ spec:
 
   targets:
     - target: admission.k8s.gatekeeper.sh
-      libs:
-        - |
-          {{ .Files.Get "lib/add-support-labels.rego" | nindent 10 }}
-        - |
-          {{ .Files.Get "lib/traversal.rego" | nindent 10 }}
       code:
         - engine: Rego
           source:
@@ -22,13 +17,13 @@ spec:
             rego: |
               package outdatedmirrors
 
-              import data.lib.add_support_labels
-              import data.lib.traversal
+              {{ .Files.Get "lib/add-support-labels.rego" | nindent 14 }}
+              {{ .Files.Get "lib/traversal.rego" | nindent 14 }}
 
               iro := input.review.object
-              containers := traversal.find_container_specs(iro)
+              containers := find_container_specs(iro)
 
-              violation contains {"msg": add_support_labels.from_k8s_object(iro, msg)} if {
+              violation contains {"msg": from_k8s_object(iro, msg)} if {
                   container := containers[_]
                   image := container.image
 
@@ -36,7 +31,7 @@ spec:
                   msg := sprintf("container %q uses image from obsolete mirror: %s", [container.name, image])
               }
 
-              violation contains {"msg": add_support_labels.from_k8s_object(iro, msg)} if {
+              violation contains {"msg": from_k8s_object(iro, msg)} if {
                   container := containers[_]
                   image := container.image
 

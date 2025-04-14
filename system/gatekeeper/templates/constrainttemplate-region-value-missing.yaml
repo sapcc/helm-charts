@@ -17,13 +17,6 @@ spec:
 
   targets:
     - target: admission.k8s.gatekeeper.sh
-      libs:
-        - |
-          {{ .Files.Get "lib/add-support-labels.rego" | nindent 10 }}
-        - |
-          {{ .Files.Get "lib/helm-release.rego" | nindent 10 }}
-        - |
-          {{ .Files.Get "lib/validation.rego" | nindent 10 }}
       code:
         - engine: Rego
           source:
@@ -31,21 +24,21 @@ spec:
             rego: |
               package gkregionvaluemissing
 
-              import data.lib.add_support_labels
-              import data.lib.helm_release
-              import data.lib.validation
+              {{ .Files.Get "lib/add-support-labels.rego" | nindent 14 }}
+              {{ .Files.Get "lib/helm-release.rego" | nindent 14 }}
+              {{ .Files.Get "lib/validation.rego" | nindent 14 }}
 
               iro := input.review.object
-              release := helm_release.parse_k8s_object(iro, input.parameters.helmManifestParserURL)
+              release := parse_k8s_object(iro, input.parameters.helmManifestParserURL)
 
               violation contains {"msg": release.error} if {
                   release.error != ""
               }
 
-              violation contains {"msg": add_support_labels.from_helm_release(release, msg)} if {
+              violation contains {"msg": from_helm_release(release, msg)} if {
                   release.error == ""
 
-                  not validation.is_region_name(object.get(release, ["values", "global", "region"], ""))
+                  not is_region_name(object.get(release, ["values", "global", "region"], ""))
 
                   msg := "missing or invalid .Values.global.region value"
               }

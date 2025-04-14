@@ -1,5 +1,3 @@
-package lib.image_check
-
 # The public interface is the function for_pod(pod, baseURL). `pod` must be a
 # Pod object. `baseURL` is where doop-image-checker is running. This usually
 # comes from the policy's `input.parameters`.
@@ -24,87 +22,87 @@ package lib.image_check
 # repushed after the pod was started.
 
 for_pod(pod, baseURL) := result if {
-	pod.kind != "Pod"
-	result := [{"error": "not a pod"}]
+  pod.kind != "Pod"
+  result := [{"error": "not a pod"}]
 }
 
 for_pod(pod, baseURL) := result if {
-	pod.kind == "Pod"
+  pod.kind == "Pod"
 
-	containerStatuses := array.concat(
-		object.get(pod, ["status", "containerStatuses"], []),
-		object.get(pod, ["status", "initContainerStatuses"], []),
-	)
-	result := [__run_check(c, baseURL, true) | c := containerStatuses[_]]
+  containerStatuses := array.concat(
+    object.get(pod, ["status", "containerStatuses"], []),
+    object.get(pod, ["status", "initContainerStatuses"], []),
+  )
+  result := [__run_check(c, baseURL, true) | c := containerStatuses[_]]
 }
 
 for_pod_template(podTemplate, baseURL) := result if {
-	containerSpecs := array.concat(
-		object.get(podTemplate, ["spec", "containers"], []),
-		object.get(podTemplate, ["spec", "initContainers"], []),
-	)
-	result := [__run_check(c, baseURL, false) | c := containerSpecs[_]]
+  containerSpecs := array.concat(
+    object.get(podTemplate, ["spec", "containers"], []),
+    object.get(podTemplate, ["spec", "initContainers"], []),
+  )
+  result := [__run_check(c, baseURL, false) | c := containerSpecs[_]]
 }
 
 ################################################################################
 # private helper functions
 
 __run_check(container, baseURL, hasImageID) := result if {
-	not regex.match("^keppel\\.", container.image)
+  not regex.match("^keppel\\.", container.image)
 
-	# For images not in Keppel, we return a synthetic result that does not generate
-	# any additional violations. Elsewhere, we have policies that complain about
-	# non-Keppel images in general, so we don't need to double-report this.
-	nowAsUnixTime := time.now_ns() / 1000000000
-	result = {
-		"error": "",
-		"containerName": container.name,
-		"containerImage": container.image,
-		"headers": {
-			"X-Keppel-Min-Layer-Created-At": format_int(nowAsUnixTime, 10),
-			"X-Keppel-Vulnerability-Status": "Clean",
-		},
-	}
+  # For images not in Keppel, we return a synthetic result that does not generate
+  # any additional violations. Elsewhere, we have policies that complain about
+  # non-Keppel images in general, so we don't need to double-report this.
+  nowAsUnixTime := time.now_ns() / 1000000000
+  result = {
+    "error": "",
+    "containerName": container.name,
+    "containerImage": container.image,
+    "headers": {
+      "X-Keppel-Min-Layer-Created-At": format_int(nowAsUnixTime, 10),
+      "X-Keppel-Vulnerability-Status": "Clean",
+    },
+  }
 }
 
 __run_check(container, baseURL, hasImageID) := result if {
-	regex.match("^keppel\\.", container.image)
+  regex.match("^keppel\\.", container.image)
 
-	imageRef := __get_image_ref(container, hasImageID)
-	url := sprintf("%s/v1/headers?image=%s", [baseURL, imageRef])
-	resp := http.send({"url": url, "method": "GET", "raise_error": false, "timeout": "15s"})
-	result := __parse_response(container, resp)
+  imageRef := __get_image_ref(container, hasImageID)
+  url := sprintf("%s/v1/headers?image=%s", [baseURL, imageRef])
+  resp := http.send({"url": url, "method": "GET", "raise_error": false, "timeout": "15s"})
+  result := __parse_response(container, resp)
 }
 
 __get_image_ref(container, hasImageID) := result if {
-	hasImageID
-	result := trim_prefix(container.imageID, "docker-pullable://")
+  hasImageID
+  result := trim_prefix(container.imageID, "docker-pullable://")
 }
 
 __get_image_ref(container, hasImageID) := result if {
-	not hasImageID
-	result := container.image
+  not hasImageID
+  result := container.image
 }
 
 __parse_response(container, resp) := result if {
-	resp.status_code == 200
-	result := {
-		"error": "",
-		"containerName": container.name,
-		"containerImage": container.image,
-		"headers": resp.body,
-	}
+  resp.status_code == 200
+  result := {
+    "error": "",
+    "containerName": container.name,
+    "containerImage": container.image,
+    "headers": resp.body,
+  }
 }
 
 __parse_response(container, resp) := result if {
-	resp.status_code != 200
-	object.get(resp, ["error", "message"], "") == ""
-	result := {"error": sprintf("doop-image-checker returned HTTP status %d, but we expected 200. Please retry in ~5 minutes.", [resp.status_code])}
+  resp.status_code != 200
+  object.get(resp, ["error", "message"], "") == ""
+  result := {"error": sprintf("doop-image-checker returned HTTP status %d, but we expected 200. Please retry in ~5 minutes.", [resp.status_code])}
 }
 
 __parse_response(container, resp) := result if {
-	resp.status_code != 200
-	msg := object.get(resp, ["error", "message"], "")
-	msg != ""
-	result := {"error": sprintf("Could not reach doop-image-checker (%q). Please retry in ~5 minutes.", [msg])}
+  resp.status_code != 200
+  msg := object.get(resp, ["error", "message"], "")
+  msg != ""
+  result := {"error": sprintf("Could not reach doop-image-checker (%q). Please retry in ~5 minutes.", [msg])}
 }

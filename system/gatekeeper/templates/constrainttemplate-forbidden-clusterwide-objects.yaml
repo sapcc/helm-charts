@@ -10,9 +10,6 @@ spec:
 
   targets:
     - target: admission.k8s.gatekeeper.sh
-      libs:
-        - |
-          {{ .Files.Get "lib/add-support-labels.rego" | nindent 10 }}
       code:
         - engine: Rego
           source:
@@ -20,7 +17,7 @@ spec:
             rego: |
               package forbiddenclusterwideobjects
 
-              import data.lib.add_support_labels
+              {{ .Files.Get "lib/add-support-labels.rego" | nindent 14 }}
 
               ########################################################################
               # admission webhooks
@@ -34,7 +31,7 @@ spec:
 
               # Violations act like a blocklist, but we want to have an allowlist, so
               # we go through `allowed_webhook` as an intermediate level.
-              violation contains {"msg": add_support_labels.from_k8s_object(iro, msg)} if {
+              violation contains {"msg": from_k8s_object(iro, msg)} if {
                   webhook := iro.webhooks[_]
                   count({x | x := allowed_webhook[_]; x.name == webhook.name}) == 0
                   msg := sprintf("webhook %q does not match our allowlist", [webhook.name])

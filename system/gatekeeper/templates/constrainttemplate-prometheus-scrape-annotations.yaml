@@ -10,9 +10,6 @@ spec:
 
   targets:
     - target: admission.k8s.gatekeeper.sh
-      libs:
-        - |
-          {{ .Files.Get "lib/add-support-labels.rego" | nindent 10 }}
       code:
         - engine: Rego
           source:
@@ -20,7 +17,7 @@ spec:
             rego: |
               package prometheusscrapeannotations
 
-              import data.lib.add_support_labels
+              {{ .Files.Get "lib/add-support-labels.rego" | nindent 14 }}
 
               iro := input.review.object
 
@@ -28,7 +25,7 @@ spec:
                   target := data.inventory.namespace[_]["monitoring.coreos.com/v1"].Prometheus[_].metadata.name
               }
 
-              violation contains {"msg": add_support_labels.from_k8s_object(iro, msg)} if {
+              violation contains {"msg": from_k8s_object(iro, msg)} if {
                   # does this object have Prometheus scraping enabled at all?
                   regex.match("^(?:Service|Pod)$", iro.kind)
                   anno := object.get(iro, ["metadata", "annotations"], {})

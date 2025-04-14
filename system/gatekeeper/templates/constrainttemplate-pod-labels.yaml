@@ -19,11 +19,6 @@ spec:
 
   targets:
     - target: admission.k8s.gatekeeper.sh
-      libs:
-        - |
-          {{ .Files.Get "lib/add-support-labels.rego" | nindent 10 }}
-        - |
-          {{ .Files.Get "lib/traversal.rego" | nindent 10 }}
       code:
         - engine: Rego
           source:
@@ -31,11 +26,11 @@ spec:
             rego: |
               package podlabels
 
-              import data.lib.add_support_labels
-              import data.lib.traversal
+              {{ .Files.Get "lib/add-support-labels.rego" | nindent 14 }}
+              {{ .Files.Get "lib/traversal.rego" | nindent 14 }}
 
               iro := input.review.object
-              pod := traversal.find_pod(iro)
+              pod := find_pod(iro)
               support_group := object.get(iro, ["metadata", "labels", "ccloud/support-group"], "none")
 
               # ^ NOTE: It would make more semantic sense to check for labels on the
@@ -45,13 +40,13 @@ spec:
               # object is labelled correctly. After that, we have to trust the
               # owner-label-injector to carry over those labels into the pod correctly.
 
-              violation contains {"msg": add_support_labels.from_k8s_object(iro, msg)} if {
+              violation contains {"msg": from_k8s_object(iro, msg)} if {
                   pod.isFound
                   support_group == "none"
                   msg := "pod does not have the required label: ccloud/support-group"
               }
 
-              violation contains {"msg": add_support_labels.from_k8s_object(iro, msg)} if {
+              violation contains {"msg": from_k8s_object(iro, msg)} if {
                   pod.isFound
                   support_group != "none"
                   found := {true | support_group == input.parameters.known_support_groups[_]}

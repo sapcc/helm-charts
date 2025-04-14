@@ -28,13 +28,6 @@ spec:
 
   targets:
     - target: admission.k8s.gatekeeper.sh
-      libs:
-        - |
-          {{ .Files.Get "lib/add-support-labels.rego" | nindent 10 }}
-        - |
-          {{ .Files.Get "lib/image-check.rego" | nindent 10 }}
-        - |
-          {{ .Files.Get "lib/traversal.rego" | nindent 10 }}
       code:
         - engine: Rego
           source:
@@ -42,20 +35,20 @@ spec:
             rego: |
               package vulnerableimages
 
-              import data.lib.add_support_labels
-              import data.lib.image_check
-              import data.lib.traversal
+              {{ .Files.Get "lib/add-support-labels.rego" | nindent 14 }}
+              {{ .Files.Get "lib/image-check.rego" | nindent 14 }}
+              {{ .Files.Get "lib/traversal.rego" | nindent 14 }}
 
               iro := input.review.object
               phase := object.get(iro, ["status", "phase"], "Running") # only relevant for iro.kind == "Pod"
-              pod := traversal.find_pod(iro)
+              pod := find_pod(iro)
               checks := __run_image_check()
 
               __run_image_check := result if {
                   input.parameters.reportingLevel == "pod"
                   phase != "Succeeded"
                   phase != "Failed"
-                  result = image_check.for_pod(iro, input.parameters.doopImageCheckerURL)
+                  result = for_pod(iro, input.parameters.doopImageCheckerURL)
               }
 
               __run_image_check := result if {
@@ -70,7 +63,7 @@ spec:
               __run_image_check := result if {
                   input.parameters.reportingLevel == "pod-owner"
                   pod.isFound
-                  result = image_check.for_pod_template(pod, input.parameters.doopImageCheckerURL)
+                  result = for_pod_template(pod, input.parameters.doopImageCheckerURL)
               }
 
               __run_image_check := result if {
@@ -86,7 +79,7 @@ spec:
                   check.error != ""
               }
 
-              violation contains {"msg": add_support_labels.extra("status", status, add_support_labels_with_overrides(iro, check, msg))} if {
+              violation contains {"msg": extra("status", status, with_overrides(iro, check, msg))} if {
                   check := checks[_]
                   check.error == ""
                   status := trim_space(object.get(check.headers, input.parameters.vulnStatusHeader, "Unclear"))
@@ -101,14 +94,14 @@ spec:
                   )
               }
 
-              # extend add_support_labels.from_k8s_object() with some special cases for this specific policy
-              add_support_labels_with_overrides(iro, check, msg) := result if {
+              # extend from_k8s_object() with some special cases for this specific policy
+              with_overrides(iro, check, msg) := result if {
                   # default behavior
                   not is_linkerd_sidecar_pod(check)
-                  result := add_support_labels.from_k8s_object(iro, msg)
+                  result := from_k8s_object(iro, msg)
               }
 
-              add_support_labels_with_overrides(iro, check, msg) := result if {
+              with_overrides(iro, check, msg) := result if {
                   # vulns in linkerd sidecar pods are not actionable for the actual pod owner until linkerd is updated centrally
                   is_linkerd_sidecar_pod(check)
                   result := sprintf("{\"support_group\":\"containers\",\"service\":\"linkerd\"} >> %s", [msg])

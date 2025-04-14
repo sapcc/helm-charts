@@ -12,9 +12,6 @@ spec:
 
   targets:
     - target: admission.k8s.gatekeeper.sh
-      libs:
-        - |
-          {{ .Files.Get "lib/traversal.rego" | nindent 10 }}
       code:
         - engine: Rego
           source:
@@ -22,15 +19,15 @@ spec:
             rego: |
               package libtesttraversal
 
-              import data.lib.traversal
+              {{ .Files.Get "lib/traversal.rego" | nindent 14 }}
 
-              # This test takes any object that traversal.find_pod() and
-              # traversal.find_container_specs() work on. A single violation is
+              # This test takes any object that find_pod() and
+              # find_container_specs() work on. A single violation is
               # generates that describes which pod and containers were found (or that
               # no pod was found).
               iro := input.review.object
-              pod := traversal.find_pod(iro)
-              container_specs := traversal.find_container_specs(iro)
+              pod := find_pod(iro)
+              container_specs := find_container_specs(iro)
               container_names := concat(", ", sort([sprintf("%q", [c.name]) | c := container_specs[_]]))
 
               violation contains {"msg": msg} if {

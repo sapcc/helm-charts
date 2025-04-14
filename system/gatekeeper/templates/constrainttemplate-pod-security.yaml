@@ -21,11 +21,6 @@ spec:
 
   targets:
     - target: admission.k8s.gatekeeper.sh
-      libs:
-        - |
-          {{ .Files.Get "lib/add-support-labels.rego" | nindent 10 }}
-        - |
-          {{ .Files.Get "lib/traversal.rego" | nindent 10 }}
       code:
         - engine: Rego
           source:
@@ -33,12 +28,12 @@ spec:
             rego: |
               package podsecurity
 
-              import data.lib.add_support_labels
-              import data.lib.traversal
+              {{ .Files.Get "lib/add-support-labels.rego" | nindent 14 }}
+              {{ .Files.Get "lib/traversal.rego" | nindent 14 }}
 
               iro := input.review.object
-              pod := traversal.find_pod(iro)
-              containers := traversal.find_container_specs(iro)
+              pod := find_pod(iro)
+              containers := find_container_specs(iro)
 
               helmReleaseName := object.get(iro.metadata, ["annotations", "meta.helm.sh/release-name"], "<none>")
               helmReleaseNamespace := object.get(iro.metadata, ["annotations", "meta.helm.sh/release-namespace"], "<none>")
@@ -67,35 +62,35 @@ spec:
               # generate violations for all pods using privileged security features
               # without being allowlisted
 
-              violation contains {"msg": add_support_labels.from_k8s_object(iro, msg)} if {
+              violation contains {"msg": from_k8s_object(iro, msg)} if {
                   pod.isFound
                   object.get(pod.spec, ["hostNetwork"], false)
                   not isPodAllowedToUseHostNetwork
                   msg := "pod is not allowed to set spec.hostNetwork = true"
               }
 
-              violation contains {"msg": add_support_labels.from_k8s_object(iro, msg)} if {
+              violation contains {"msg": from_k8s_object(iro, msg)} if {
                   pod.isFound
                   object.get(pod.spec, ["hostPID"], false)
                   not isPodAllowedToUseHostPID
                   msg := "pod is not allowed to set spec.hostPID = true"
               }
 
-              violation contains {"msg": add_support_labels.from_k8s_object(iro, msg)} if {
+              violation contains {"msg": from_k8s_object(iro, msg)} if {
                   container := containers[_]
                   object.get(container, ["securityContext", "allowPrivilegeEscalation"], false)
                   not isContainerAllowedToUsePrivilegeEscalation(container)
                   msg := sprintf("pod is not allowed to set spec.containers[%q].securityContext.allowPrivilegeEscalation = true", [container.name])
               }
 
-              violation contains {"msg": add_support_labels.from_k8s_object(iro, msg)} if {
+              violation contains {"msg": from_k8s_object(iro, msg)} if {
                   container := containers[_]
                   object.get(container, ["securityContext", "privileged"], false)
                   not isContainerAllowedToBePrivileged(container)
                   msg := sprintf("pod is not allowed to set spec.containers[%q].securityContext.privileged = true", [container.name])
               }
 
-              violation contains {"msg": add_support_labels.from_k8s_object(iro, msg)} if {
+              violation contains {"msg": from_k8s_object(iro, msg)} if {
                   container := containers[_]
                   capabilities := object.get(container, ["securityContext", "capabilities", "add"], [])
                   capability := capabilities[_]
@@ -103,7 +98,7 @@ spec:
                   msg := sprintf("pod is not allowed to set spec.containers[%q].securityContext.capabilities.add = [%q]", [container.name, capability])
               }
 
-              violation contains {"msg": add_support_labels.from_k8s_object(iro, msg)} if {
+              violation contains {"msg": from_k8s_object(iro, msg)} if {
                   # if pod has a hostPath volume...
                   pod.isFound
                   volume := pod.spec.volumes[_]

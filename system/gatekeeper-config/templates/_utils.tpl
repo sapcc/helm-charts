@@ -19,7 +19,7 @@ kinds:
     kinds: ["Pod"]
 {{- end -}}
 
-{{/* Use this for policies that call the traversal.find_pod() or traversal.find_container_specs() helper function. */}}
+{{/* Use this for policies that call the find_pod() or find_container_specs() helper function. */}}
 {{- define "match_pods_and_pod_owners" }}
 kinds:
   - apiGroups: [""]
