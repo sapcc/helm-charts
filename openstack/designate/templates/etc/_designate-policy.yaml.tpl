@@ -109,20 +109,20 @@ update_SSHFP_recordset: rule:admin
 update_NAPTR_recordset: rule:admin
 update_TXT_recordset: rule:context_is_webmaster or rule:context_is_editor
 
-delete_A_recordset: (role:dns_webmaster and (project_id:%(recordset_project_id)s)) or rule:context_is_editor
-delete_AAAA_recordset: (role:dns_webmaster and (project_id:%(recordset_project_id)s)) or rule:context_is_editor
-delete_CNAME_recordset: (role:dns_webmaster and (project_id:%(recordset_project_id)s)) or rule:context_is_editor
-delete_CAA_recordset: (role:dns_webmaster and (project_id:%(recordset_project_id)s)) or rule:context_is_editor
-delete_CERT_recordset: (role:dns_webmaster and (project_id:%(recordset_project_id)s)) or rule:context_is_editor
-delete_MX_recordset: (role:dns_mailmaster and (project_id:%(recordset_project_id)s)) or rule:context_is_editor
-delete_NS_recordset: (role:dns_hostmaster and (project_id:%(recordset_project_id)s)) or rule:context_is_editor
-delete_PTR_recordset: (role:dns_webmaster and (project_id:%(recordset_project_id)s)) or rule:context_is_editor
+delete_A_recordset: (role:dns_webmaster and (project_id:%(recordset_project_id)s)) or rule:context_is_editor or rule:context_is_dns_support
+delete_AAAA_recordset: (role:dns_webmaster and (project_id:%(recordset_project_id)s)) or rule:context_is_editor or rule:context_is_dns_support
+delete_CNAME_recordset: (role:dns_webmaster and (project_id:%(recordset_project_id)s)) or rule:context_is_editor or rule:context_is_dns_support
+delete_CAA_recordset: (role:dns_webmaster and (project_id:%(recordset_project_id)s)) or rule:context_is_editor or rule:context_is_dns_support
+delete_CERT_recordset: (role:dns_webmaster and (project_id:%(recordset_project_id)s)) or rule:context_is_editor or rule:context_is_dns_support
+delete_MX_recordset: (role:dns_mailmaster and (project_id:%(recordset_project_id)s)) or rule:context_is_editor or rule:context_is_dns_support
+delete_NS_recordset: (role:dns_hostmaster and (project_id:%(recordset_project_id)s)) or rule:context_is_editor or rule:context_is_dns_support
+delete_PTR_recordset: (role:dns_webmaster and (project_id:%(recordset_project_id)s)) or rule:context_is_editor or rule:context_is_dns_support
 delete_SOA_recordset: "!"
-delete_SPF_recordset: (role:dns_mailmaster and (project_id:%(recordset_project_id)s)) or rule:context_is_editor
-delete_SRV_recordset: (role:dns_webmaster and (project_id:%(recordset_project_id)s)) or rule:context_is_editor
+delete_SPF_recordset: (role:dns_mailmaster and (project_id:%(recordset_project_id)s)) or rule:context_is_editor or rule:context_is_dns_support
+delete_SRV_recordset: (role:dns_webmaster and (project_id:%(recordset_project_id)s)) or rule:context_is_editor or rule:context_is_dns_support
 delete_SSHFP_recordset: rule:admin
 delete_NAPTR_recordset: rule:admin
-delete_TXT_recordset: (role:dns_webmaster and (project_id:%(recordset_project_id)s)) or rule:context_is_editor
+delete_TXT_recordset: (role:dns_webmaster and (project_id:%(recordset_project_id)s)) or rule:context_is_editor or rule:context_is_dns_support
 
 get_recordsets: rule:context_is_viewer
 get_recordset: rule:context_is_viewer
