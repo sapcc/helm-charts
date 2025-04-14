@@ -67,10 +67,6 @@ enforce_new_defaults=False
 enforce_scope=False
 
 {{- if and .Values.hsm.thales_multitenancy.enabled .Values.hsm.multistore.enabled }}
-[secretstore:thales_hsm]
-secret_store_plugin = store_crypto
-crypto_plugin = hsm_partition_crypto
-
 [secretstore]
 enable_multiple_secret_stores = True
 stores_lookup_suffix = software, pkcs11, thales_hsm
