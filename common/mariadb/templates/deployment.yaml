@@ -78,7 +78,7 @@ spec:
         lifecycle:
           postStart:
             exec:
-              command: ["sh", "-c", "while ! mysqladmin ping --silent; do sleep 1; done; mysql_upgrade"]
+              command: ["sh", "-c", "while ! mariadb-admin ping --silent; do sleep 1; done; mariadb-upgrade"]
         env:
         - name: MYSQL_ROOT_PASSWORD
           valueFrom:
@@ -91,7 +91,7 @@ spec:
         {{- if .Values.livenessProbe.enabled }}
         livenessProbe:
           exec:
-            command: ["sh", "-c", "exec mysqladmin status"]
+            command: ["sh", "-c", "exec mariadb-admin status"]
           initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds }}
           periodSeconds: {{ .Values.livenessProbe.periodSeconds }}
           timeoutSeconds: {{ .Values.livenessProbe.timeoutSeconds }}
@@ -101,7 +101,7 @@ spec:
         {{- if .Values.readinessProbe.enabled }}
         readinessProbe:
           exec:
-            command: ["sh", "-c", "exec mysqladmin status"]
+            command: ["sh", "-c", "exec mariadb-admin status"]
           initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}
           periodSeconds: {{ .Values.readinessProbe.periodSeconds }}
           timeoutSeconds: {{ .Values.readinessProbe.timeoutSeconds }}
