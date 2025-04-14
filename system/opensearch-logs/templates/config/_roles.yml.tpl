@@ -10,7 +10,6 @@ kibana_read_only:
 security_rest_api_access:
   reserved: true
 
-
 data:
   reserved: false
   cluster_permissions:
@@ -22,22 +21,21 @@ data:
   - "cluster_manage_index_templates"
   - "cluster:admin/opensearch/ml/predict"
   index_permissions:
-  - index_patterns: [
-      "alerts-datastream",
-      "deployments-datastream",
-      "logstash-*",
-      "logs-datastream",
-      "logs-swift-datastream",
-      "systemd-*",
-      "compute-*",
-      "qade2-logstash-*",
-      "qade3-logstash-*",
-      "qade5-logstash-*",
-      "greenhouse-*",
-      "storage-*",
-      "alerts-*",
-      "deployments-*"
-      ],
+  - "index_patterns":
+  - "alerts-datastream"
+  - "deployments-datastream"
+  - "logstash-*"
+  - "logs-datastream"
+  - "logs-swift-datastream"
+  - "systemd-*"
+  - "compute-*"
+  - "qade2-logstash-*"
+  - "qade3-logstash-*"
+  - "qade5-logstash-*"
+  - "greenhouse-*"
+  - "storage-*"
+  - "alerts-*"
+  - "deployments-*"
     allowed_actions:
     - "indices:admin/template/get"
     - "indices:admin/template/put"
@@ -397,3 +395,4 @@ ml_full_access:
         - "*"
       allowed_actions:
         - "indices_monitor"
+}
