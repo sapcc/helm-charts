@@ -21,20 +21,22 @@ spec:
 
   targets:
     - target: admission.k8s.gatekeeper.sh
-      libs:
-        - |
-          {{ .Files.Get "lib/add-support-labels.rego" | nindent 10 }}
-      rego: |
-        package ingressannotations
-        import data.lib.add_support_labels
+      code:
+        - engine: Rego
+          source:
+            version: "v1"
+            rego: |
+              package ingressannotations
 
-        iro := input.review.object
-        annotations := object.get(iro, ["metadata", "annotations"], {})
+              {{ .Files.Get "lib/add-support-labels.rego" | nindent 14 }}
 
-        violation[{"msg": add_support_labels.from_k8s_object(iro, msg)}] {
-          iro.kind == "Ingress"
-          annotations[key]
-          pattern := input.parameters.regexes[_]
-          regex.match(pattern, key)
-          msg := sprintf("has disabled annotation: %q (%s)", [key, input.parameters.hint])
-        }
+              iro := input.review.object
+              annotations := object.get(iro, ["metadata", "annotations"], {})
+
+              violation contains {"msg": from_k8s_object(iro, msg)} if {
+                  iro.kind == "Ingress"
+                  annotations[key]
+                  pattern := input.parameters.regexes[_]
+                  regex.match(pattern, key)
+                  msg := sprintf("has disabled annotation: %q (%s)", [key, input.parameters.hint])
+              }
