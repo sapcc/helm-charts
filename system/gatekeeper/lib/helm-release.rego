@@ -1,7 +1,5 @@
 package lib.helm_release
 
-import rego.v1
-
 # The public interface is the function parse_k8s_object(obj, baseURL). `obj`
 # must be a full Kubernetes object. A Secret containing a Helm release must be
 # given, otherwise an error will be returned. `baseURL` is where

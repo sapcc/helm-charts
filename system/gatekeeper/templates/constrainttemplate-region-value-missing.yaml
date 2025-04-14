@@ -24,26 +24,28 @@ spec:
           {{ .Files.Get "lib/helm-release.rego" | nindent 10 }}
         - |
           {{ .Files.Get "lib/validation.rego" | nindent 10 }}
-      rego: |
-        package gkregionvaluemissing
+      code:
+        - engine: Rego
+          source:
+            version: "v1"
+            rego: |
+              package gkregionvaluemissing
 
-        import rego.v1
+              import data.lib.add_support_labels
+              import data.lib.helm_release
+              import data.lib.validation
 
-        import data.lib.add_support_labels
-        import data.lib.helm_release
-        import data.lib.validation
+              iro := input.review.object
+              release := helm_release.parse_k8s_object(iro, input.parameters.helmManifestParserURL)
 
-        iro := input.review.object
-        release := helm_release.parse_k8s_object(iro, input.parameters.helmManifestParserURL)
+              violation contains {"msg": release.error} if {
+                  release.error != ""
+              }
 
-        violation contains {"msg": release.error} if {
-            release.error != ""
-        }
+              violation contains {"msg": add_support_labels.from_helm_release(release, msg)} if {
+                  release.error == ""
 
-        violation contains {"msg": add_support_labels.from_helm_release(release, msg)} if {
-            release.error == ""
+                  not validation.is_region_name(object.get(release, ["values", "global", "region"], ""))
 
-            not validation.is_region_name(object.get(release, ["values", "global", "region"], ""))
-
-            msg := "missing or invalid .Values.global.region value"
-        }
+                  msg := "missing or invalid .Values.global.region value"
+              }

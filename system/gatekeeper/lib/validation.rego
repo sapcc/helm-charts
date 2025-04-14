@@ -1,7 +1,5 @@
 package lib.validation
 
-import rego.v1
-
 is_region_name(region) := false if {
 	not is_string(region)
 }
