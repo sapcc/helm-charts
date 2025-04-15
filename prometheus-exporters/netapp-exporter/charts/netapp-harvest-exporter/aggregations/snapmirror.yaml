@@ -7,9 +7,9 @@ groups:
     # netapp_snapmirror_endpoint_labels: destinations in LOCAL and REMOTE regions (from 'snapmirror list-destinations' - endpoints only no details).
     #
     # It's important for netapp_volume_labels to be available for following rules.
-    # We record them from past 6 hours to avoid incorrect "join" operations for the local and cross-region snapmirrors.
+    # We record them from past 2 hours to avoid incorrect "join" operations for the local and cross-region snapmirrors.
     - record: netapp_volume_labels:manila
-      expr: max_over_time(netapp_volume_labels{app="netapp-harvest-exporter-manila", volume=~"share.*"}[6h])
+      expr: last_over_time(netapp_volume_labels{app="netapp-harvest-exporter-manila", volume=~"share.*"}[2h])
  
     # Enrich netapp_snapmirror_labels within a region.
     # First with share_id, share_name and project_id, then with destination_cluster.
