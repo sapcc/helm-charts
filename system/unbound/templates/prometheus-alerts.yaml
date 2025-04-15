@@ -46,7 +46,7 @@ spec:
         summary: DNS {{ $.Values.unbound.name }} recursor is down. DNS resolution might be handled by another region.
 
     - alert: Dns{{ $.Values.unbound.name | title }}LowTraffic
-      expr: sum(rate(unbound_queries_total{app="{{ $.Values.unbound.name }}", namespace="dns-recursor"}[1m]) or vector(0))/sum(rate(unbound_queries_total{app="{{ $.Values.unbound.name }}", namespace="dns-recursor"}[24h]) or vector(0)) < 0.10
+      expr: sum(rate(unbound_queries_total{app="{{ $.Values.unbound.name }}", namespace="{{ $.Release.Namespace }}"}[1m]) or vector(0))/sum(rate(unbound_queries_total{app="{{ $.Values.unbound.name }}", namespace="{{ $.Release.Namespace }}"}[24h]) or vector(0)) < 0.10
       for: 5m
       labels:
         context: unbound
@@ -62,7 +62,7 @@ spec:
         summary: 'DNS {{ $.Values.unbound.name }} recursor in {{ $.Values.global.region }} is getting less than 10% of the usual traffic compared to the 24h avegrage.'
 
     - alert: Dns{{ $.Values.unbound.name | title }}DisproportionateAmountOfTraffic
-      expr: abs(sum(rate(unbound_queries_total{app="{{ $.Values.unbound.name }}", namespace="dns-recursor"}[5m]))/sum(rate(unbound_queries_total{namespace="dns-recursor"}[5m])) - 0.5) > {{ $.Values.unbound.tolerable_traffic_distribution_deviation | default 10 }}/100
+      expr: abs(sum(rate(unbound_queries_total{app="{{ $.Values.unbound.name }}", namespace="{{ $.Release.Namespace }}"}[5m]))/sum(rate(unbound_queries_total{namespace="{{ $.Release.Namespace }}"}[5m])) - 0.5) > {{ $.Values.unbound.tolerable_traffic_distribution_deviation | default 10 }}/100
       for: 5m
       labels:
         context: unbound
@@ -97,7 +97,7 @@ spec:
 {{- $num_ports := len $.Values.unbound.externalPorts }}
 {{- $num_proto := list "TCP" "UDP" | len }}
 {{- $num_expected_endpoints := mul $num_replicas $num_ports $num_proto }}
-      expr: count(kube_endpoint_address{namespace="dns-recursor",endpoint=~"{{ $.Values.unbound.name }}-.*"}) != {{ $num_expected_endpoints }}
+      expr: count(kube_endpoint_address{namespace="{{ $.Release.Namespace }}",endpoint=~"{{ $.Values.unbound.name }}-.*"}) != {{ $num_expected_endpoints }}
       for: 15m
       labels:
         context: unbound
