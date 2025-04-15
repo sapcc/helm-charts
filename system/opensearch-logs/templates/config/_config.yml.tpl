@@ -8,7 +8,7 @@ config:
     kibana:
       server_username: {{ .Values.users.kibanaserver2.username_resolve }}
     http:
-      anonymous_auth_enabled: false
+      anonymous_auth_enabled: true
       xff:
         enabled: false
     authc:

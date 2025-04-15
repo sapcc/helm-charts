@@ -10,6 +10,9 @@ kibana_read_only:
 security_rest_api_access:
   reserved: true
 
+anonymous_health_role:
+  cluster_permissions:
+    - cluster:monitor/health
 
 data:
   reserved: false
