@@ -143,4 +143,4 @@ syslog:
 
 anonymous_health_role:
   backend_roles:
-  - "anonymous"
+  - "opendistro_security_anonymous_backendrole"
