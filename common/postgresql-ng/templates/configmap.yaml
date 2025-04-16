@@ -92,11 +92,10 @@ data:
     {{- end }}
     {{- end }}
 
-    ALTER SCHEMA public OWNER TO "{{ .Values.tableOwner | required ".Values.tableOwner must be set to one user!" }}";
-    ALTER DATABASE "%PGDATABASE%" OWNER TO "{{ .Values.tableOwner }}";
-    SELECT format('ALTER TABLE %I.%I.%I OWNER TO %I;', table_catalog, table_schema, table_name, '{{ .Values.tableOwner }}')
+    ALTER DATABASE "%PGDATABASE%" OWNER TO "%PGDATABASE%";
+    SELECT format('ALTER TABLE %I.%I.%I OWNER TO %I;', table_catalog, table_schema, table_name, '%PGDATABASE%')
       FROM information_schema.tables WHERE table_schema = 'public'\gexec
-    SELECT FORMAT('ALTER TYPE %I.%I.%I OWNER TO %I;', current_database()::information_schema.sql_identifier, n.nspname, t.typname, '{{ .Values.tableOwner }}')
+    SELECT FORMAT('ALTER TYPE %I.%I.%I OWNER TO %I;', current_database()::information_schema.sql_identifier, n.nspname, t.typname, '%PGDATABASE%')
       FROM pg_catalog.pg_type t JOIN pg_catalog.pg_namespace n ON n.oid = t.typnamespace WHERE t.typtype = 'e' AND n.nspname = 'public'\gexec
 
     {{ .Values.sqlOnStartup }}
