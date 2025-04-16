@@ -14,9 +14,10 @@ spec:
         name: {{ include "prometheus-gardener.fullname" . }}-alertmanager-{{ .Values.prometheusName }}
         optional: false
       channel: {{ .Values.slackChannelName | quote }}
-      color: '{{ if eq .Status "firing" -}}{{ if eq .CommonLabels.severity "warning"
-        -}}warning{{- else if eq .CommonLabels.severity "critical" -}}danger{{- else
-        -}}#439FE0{{- end -}}{{ else -}}good{{- end }}'
+      color: >-
+        {{ if eq .Status "firing" -}}{{ if eq .CommonLabels.severity
+        "warning" -}}warning{{- else if eq .CommonLabels.severity "critical"
+        -}}danger{{- else -}}#439FE0{{- end -}}{{ else -}}good{{- end }}
       iconEmoji: ':alert:'
       sendResolved: true
       title: |
