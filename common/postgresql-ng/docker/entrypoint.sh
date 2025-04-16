@@ -209,16 +209,18 @@ fi
 
 # check if any database needs to be created
 for DB in $PGDATABASE $DATABASES; do
-  if ! PGDATABASE='postgres' process_sql --set db="$DB" 'SELECT 1 FROM pg_database WHERE datname = :"db";' | grep -q 1; then
-    # shellcheck disable=SC2097,SC2098 # false positive
-    PGDATABASE='postgres' process_sql --set db="$DB" 'CREATE DATABASE :"db";'
-
-    for file in /sql-on-create.d/*.sql; do
-      echo "Processing $file ..."
-      process_sql -f <(substituteSqlEnvs "$file")
-      echo
-    done
+  if PGDATABASE='postgres' process_sql --set db="$DB" 'SELECT 1 FROM pg_database WHERE datname = :"db";' | grep -q 1; then
+    continue
   fi
+
+  # shellcheck disable=SC2097,SC2098 # false positive
+  PGDATABASE='postgres' process_sql --set db="$DB" 'CREATE DATABASE :"db";'
+
+  for file in /sql-on-create.d/*.sql; do
+    echo "Processing $file ..."
+    process_sql -f <(substituteSqlEnvs "$file")
+    echo
+  done
 done
 
 # ensure that the configured password matches the password in the database
