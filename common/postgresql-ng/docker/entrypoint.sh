@@ -207,19 +207,19 @@ if [[ $updated_db == true ]]; then
   vacuumdb --all --analyze-in-stages
 fi
 
-# if a new db was initted, create the database inside of it and run init scripts
-if [[ $created_db == true ]]; then
-  # shellcheck disable=SC2097,SC2098 # false positive
-  PGDATABASE='postgres' process_sql --set db="$PGDATABASE" <<-'EOSQL'
-    CREATE DATABASE :"db";
-  EOSQL
+# check if any database needs to be created
+for DB in $PGDATABASE $DATABASES; do
+  if ! PGDATABASE='postgres' process_sql --set db="$DB" 'SELECT 1 FROM pg_database WHERE datname = :"db";' | grep -q 1; then
+    # shellcheck disable=SC2097,SC2098 # false positive
+    PGDATABASE='postgres' process_sql --set db="$DB" 'CREATE DATABASE :"db";'
 
-  for file in /sql-on-create.d/*.sql; do
-    echo "Processing $file ..."
-    process_sql -f <(substituteSqlEnvs "$file")
-    echo
-  done
-fi
+    for file in /sql-on-create.d/*.sql; do
+      echo "Processing $file ..."
+      process_sql -f <(substituteSqlEnvs "$file")
+      echo
+    done
+  fi
+done
 
 # ensure that the configured password matches the password in the database
 # this was required when upgrading the password hashing algorithm from md5 to scram-sha-256 which was the case when eg. updating from 9.5 to 15
