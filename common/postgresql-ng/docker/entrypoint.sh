@@ -210,9 +210,9 @@ fi
 # if a new db was initted, create the database inside of it and run init scripts
 if [[ $created_db == true ]]; then
   # shellcheck disable=SC2097,SC2098 # false positive
-  PGDATABASE='postgres' process_sql --set db="$PGDATABASE" <<-'EOSQL'
-    CREATE DATABASE :"db";
-  EOSQL
+  PGDATABASE='postgres' process_sql --set db="$PGDATABASE" <<EOF
+  CREATE DATABASE :"db";
+EOF
 
   for file in /sql-on-create.d/*.sql; do
     echo "Processing $file ..."
@@ -224,15 +224,17 @@ fi
 # ensure that the configured password matches the password in the database
 # this was required when upgrading the password hashing algorithm from md5 to scram-sha-256 which was the case when eg. updating from 9.5 to 15
 # this also allows password rotations with restarts
-PGDATABASE='postgres' process_sql --set user="$PGUSER" --set password_encryption="$postgres_auth_method" --set password="$PGPASSWORD" <<-'EOSQL'
+PGDATABASE='postgres' process_sql --set user="$PGUSER" --set password_encryption="$postgres_auth_method" --set password="$PGPASSWORD" <<EOF
   SET password_encryption = :'password_encryption';
   ALTER USER :user WITH PASSWORD :'password';
-EOSQL
+EOF
 
 for file in /sql-on-startup.d/*.sql; do
-  echo "Processing $file ..."
-  process_sql -f <(substituteSqlEnvs "$file")
-  echo
+  for DB in "$PGDATABASE" "${EXTRA_DATABASES[@]}"; do
+    echo "Processing $file for $DB..."
+    PGDATABASE="$DB" process_sql -f <(substituteSqlEnvs "$file")
+    echo
+  done
 done
 
 # stop and exec later to properly attach to forward signals and stdout/stderr properly

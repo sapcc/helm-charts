@@ -44,3 +44,13 @@ some space for the name suffixes on replicasets and pods.
 {{- if eq .Values.postgresDatabase "postgres" }}
 {{- fail "postgresDatabase cannot be set to postgres because that is the name of an internal database!" }}
 {{- end }}
+
+{{ range $db := values.extraDatabases }}
+{{- if eq $db .Values.postgresDatabase }}
+{{- fail "postgres-ng: extraDatabases cannot contain postgresDatabase!" }}
+{{- end }}
+
+{{- if (contains "_" $db) }}
+{{- fail "postgres-ng: extraDatabases entry cannot contain underscores!" }}
+{{- end }}
+{{- end }}

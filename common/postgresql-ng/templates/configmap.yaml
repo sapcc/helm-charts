@@ -57,8 +57,7 @@ data:
     DROP ROLE IF EXISTS poor_mans_pg_read_all_data;
 
     {{- range $user, $settings := $users }}
-    {{- /* prevent more suffering and pain by forgotten {} in users */}}
-    {{- $settings = $settings | default (dict) }}
+    {{- $settings := default (dict) $settings }}
     SELECT 'CREATE ROLE "{{ $user }}" WITH PASSWORD ''%USER_PASSWORD_{{ $user | replace "-" "_" }}%'' LOGIN' where not exists (select rolname from pg_authid where rolname = '{{ $user }}')\gexec
     {{- /* update password in case it changed or the password hashing format changed */}}
     ALTER USER "{{ $user }}" WITH PASSWORD '%USER_PASSWORD_{{ $user | replace "-" "_" }}%';
@@ -69,7 +68,7 @@ data:
     GRANT SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER ON ALL TABLES IN SCHEMA public TO "{{ $user }}";
     {{- end }}
 
-    {{- range $settings.grant }}
+    {{- range (default (list) $settings.grant) }}
     {{ . }} to "{{ $user }}";
     {{- end }}
 
@@ -89,6 +88,8 @@ data:
     {{- end }}
     {{- end }}
 
+    ALTER SCHEMA public OWNER TO "%PGDATABASE%";
+    SELECT 'CREATE DATABASE "%PGDATABASE%"' where not exists (SELECT 1 FROM pg_database WHERE datname = '%PGDATABASE%')\gexec
     ALTER DATABASE "%PGDATABASE%" OWNER TO "%PGDATABASE%";
     SELECT format('ALTER TABLE %I.%I.%I OWNER TO %I;', table_catalog, table_schema, table_name, '%PGDATABASE%')
       FROM information_schema.tables WHERE table_schema = 'public'\gexec
