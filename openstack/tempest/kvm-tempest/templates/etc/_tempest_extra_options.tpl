@@ -46,7 +46,7 @@ trust = True
 security_compliance = True
 
 [image]
-build_timeout=600
+build_timeout=10800
 
 [network]
 project_network_cidr = 10.199.0.0/16
@@ -62,7 +62,7 @@ subnet_id = a5703f23-ffcb-4ca7-9dfe-ab9861d91bf5
 ipv6 = False
 
 [compute]
-image_ref = eaccb4eb-78f9-4470-ad64-0c2c8b614164
+image_ref = 931141b8-f170-4bb7-a547-bbcc0aa3c2cd
 image_ref_alt = eaccb4eb-78f9-4470-ad64-0c2c8b614164
 endpoint_type = public
 v3_endpoint_type = public
@@ -72,7 +72,7 @@ flavor_ref_alt = 100021
 min_microversio = 2.1
 max_microversion = latest
 fixed_network_name = {{ (index .Values (print .Chart.Name | replace "-" "_")).tempest.fixed_network_name }}
-build_timeout=600
+build_timeout=10800
 compute_volume_common_az=qa-de-1b
 
 [compute-feature-enabled]
@@ -89,6 +89,7 @@ attach_encrypted_volume = False
 
 [validation]
 image_ssh_user = ccloud
+image_alt_ssh_user = ubuntu
 ssh_key_type = rsa
 
 [volume]
