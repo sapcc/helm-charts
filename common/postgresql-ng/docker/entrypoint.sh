@@ -212,7 +212,7 @@ if [[ $created_db == true ]]; then
   # shellcheck disable=SC2097,SC2098 # false positive
   PGDATABASE='' process_sql --dbname postgres --set db="$PGDATABASE" <<-'EOSQL'
     CREATE DATABASE :"db";
-	EOSQL
+  EOSQL
 
   for file in /sql-on-create.d/*.sql; do
     echo "Processing $file ..."
