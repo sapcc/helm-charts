@@ -54,7 +54,8 @@ spec:
         - name: DEPLOYMENT_NAME
           value: {{ $deployment_name }}
         - name: USERS
-          value: {{ keys (.Values.users | required ".Values.users must be configured") | sortAlpha | join " " | quote }}
+          {{- $allUserNames := keys (.Values.users | required ".Values.users must be configured") | sortAlpha }}
+          value: "{{ range $user := $allUserNames }}{{ $settings := index $.Values.users $user | default (dict) }}{{ if hasKey $settings "secretName" }}{{ $user }} {{ end }}{{ end }}"
         - name: ANNOTATE_FOR_RELOADER
           value: {{ .Values.reloader.annotateGeneratedSecrets | quote }}
         command: [ ash, -c, {{ .Files.Get "bin/init-generate-secrets.sh" | quote }} ]
@@ -90,8 +91,13 @@ spec:
         - name: USER_PASSWORD_{{ $user | replace "-" "_" }}
           valueFrom:
             secretKeyRef:
+        {{- $settings := $settings | default (dict) }}{{ if (and (hasKey $settings "secretName") (hasKey $settings "secretKey")) }}
+              name: {{ $settings.secretName }}
+              key:  {{ $settings.secretKey }}
+        {{- else }}
               name: {{ $.Release.Name }}-pguser-{{ $user }}
               key: postgres-password
+        {{- end }}
         {{- end }}
 
         ports:
