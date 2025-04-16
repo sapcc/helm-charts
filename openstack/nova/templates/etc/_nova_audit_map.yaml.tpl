@@ -68,7 +68,7 @@ resources:
         custom_attributes:
           server_uuid: compute/server
     # os-security-group-rules is deprecated, but it's still being called, must be mapped.
-    os-security-group-rules
+    os-security-group-rules:
         type_uri: compute/security-group-rules
     os-volumes_boot:
         # this is a legacy alternative to POST /servers used still in Devstack
