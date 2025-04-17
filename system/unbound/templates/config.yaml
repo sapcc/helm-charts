@@ -76,6 +76,9 @@ data:
 
         include: /etc/unbound/hosts.conf
 
+        # AS112 zones
+        include: /etc/unbound/as112.conf
+
         # firewall
         include: /etc/unbound/firewall.conf
 
@@ -155,6 +158,18 @@ data:
        {{- end }}
        {{- range $allowlisted := .Values.unbound.allowlisted_zones }}
        local-zone: {{ tpl $allowlisted $ | quote }} transparent
+       {{- end }}
+
+  as112.conf: |
+       {{- range $zone := concat ( $.Values.unbound.forward_zones_global | default list ) ( $.Values.unbound.forward_zones | default list )}}
+       {{- if $zone.expose_as112 }}
+       local-zone: {{ $zone.forward_zone_name | quote }} {{ $zone.expose_as112 }}
+       {{- end }}
+       {{- end }}
+       {{- range $zone := concat ( $.Values.unbound.stub_zones_global | default list ) ( $.Values.unbound.stub_zones | default list )}}
+       {{- if $zone.expose_as112 }}
+       local-zone: {{ $zone.stub_zone_name | quote }} {{ $zone.expose_as112 }}
+       {{- end }}
        {{- end }}
 
   regional.conf: |
