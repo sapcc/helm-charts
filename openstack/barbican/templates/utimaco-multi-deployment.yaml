@@ -1,9 +1,9 @@
-{{- if .Values.hsm.thales_multitenancy.enabled }}
+{{- if .Values.hsm.utimaco_multitenancy.enabled }}
 kind: Deployment
 apiVersion: apps/v1
 
 metadata:
-  name: barbican-api-thales-multi
+  name: barbican-api-utimaco-multi
   labels:
     app: {{ template "fullname" . }}
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
@@ -24,12 +24,12 @@ spec:
     {{ end }}
   selector:
     matchLabels:
-      name: barbican-api-thales-multi
+      name: barbican-api-utimaco-multi
   template:
     metadata:
       labels:
         app: {{ template "fullname" . }}
-        name: barbican-api-thales-multi
+        name: barbican-api-utimaco-multi
         alert-tier: os
         alert-service: barbican
         {{ tuple . "barbican" "api" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | nindent 8 }}
@@ -48,7 +48,7 @@ spec:
       initContainers:
       {{- tuple . (dict "service" (include "barbican.service_dependencies" .)) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
       containers:
-        - name: barbican-api-thales-multi
+        - name: barbican-api-utimaco-multi
           image: {{required ".Values.global.registry is missing" .Values.global.registry }}/loci-barbican:{{required "Values.imageVersionBarbicanApi is missing" .Values.imageVersionBarbicanApi}}
           imagePullPolicy: IfNotPresent
           command:
@@ -97,8 +97,8 @@ spec:
             - name: etcbarbican
               mountPath: /etc/barbican
             - name: barbican-etc
-              mountPath: /etc/barbican/barbican_thales.conf
-              subPath: barbican_thales.conf
+              mountPath: /etc/barbican/barbican_utimaco.conf
+              subPath: barbican_utimaco.conf
               readOnly: true
             - name: barbican-etc
               mountPath: /etc/barbican/barbican-api-paste.ini
@@ -112,7 +112,7 @@ spec:
               mountPath: /etc/barbican/logging.ini
               subPath: logging.ini
               readOnly: true
-            - mountPath: /etc/barbican/barbican_thales.conf.d
+            - mountPath: /etc/barbican/barbican_utimaco.conf.d
               name: barbican-etc-confd
               readOnly: true
             {{- if .Values.watcher.enabled }}
