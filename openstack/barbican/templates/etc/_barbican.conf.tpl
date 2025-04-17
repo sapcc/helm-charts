@@ -1,6 +1,6 @@
 [DEFAULT]
 # Show debugging output in logs (sets DEBUG log level output)
-debug = {{.Values.debug}}
+debug = True
 
 log_config_append = /etc/barbican/logging.ini
 {{- include "ini_sections.logging_format" . }}
@@ -66,18 +66,24 @@ policy_file = /etc/barbican/policy.yaml
 enforce_new_defaults=False
 enforce_scope=False
 
-{{- if .Values.hsm.multistore.enabled }}
 [secretstore]
 enable_multiple_secret_stores = True
-stores_lookup_suffix = software, pkcs11
+stores_lookup_suffix = software{{- if .Values.hsm.multistore.enabled }}, pkcs11{{- end }}{{- if .Values.hsm.utimaco_multitenancy.enabled }}, utimaco_hsm{{- end }}
 namespace = barbican.secretstore.plugin
 
 [secretstore:software]
 secret_store_plugin = store_crypto
 crypto_plugin = simple_crypto
 
+{{- if .Values.hsm.multistore.enabled }}
 [secretstore:pkcs11]
 secret_store_plugin = store_crypto
 crypto_plugin = p11_crypto
 global_default = True
+{{- end }}
+
+{{- if .Values.hsm.utimaco_multitenancy.enabled }}
+[secretstore:utimaco_hsm]
+secret_store_plugin = store_crypto
+crypto_plugin = utimaco_hsm_crypto
 {{- end }}
