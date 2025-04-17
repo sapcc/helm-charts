@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.24.0 - 2025/04/16
+* MariaDB has been updated to the 10.6.21 version
+  * delete removed `innodb_thread_concurrency` variable from my.cnf
+
+See related documentation at https://mariadb.com/kb/en/upgrading-from-mariadb-10-5-to-mariadb-10-6/
+
+The default value of the `old_mode` variable is `UTF8_IS_UTF8MB3` until MariaDB 11.2.
+
 ## v0.23.0 - 2025/04/10
 * reloader annotation has been added to the backup-v2 deployment, so backup-v2 deployment always uses updated credentials
 
