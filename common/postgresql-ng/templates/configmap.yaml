@@ -68,7 +68,7 @@ data:
 
     {{- if not (eq $user "backup" "metrics") }}
     -- https://www.postgresql.org/docs/current/ddl-priv.html
-    GRANT CREATE,CONNECT,TEMPORARY ON DATABASE "%PGDATABASE%" TO "{{ $user }}";
+    GRANT CREATE,CONNECT,TEMPORARY ON DATABASE "{{ $.Values.postgresDatabase }}" TO "{{ $user }}";
     GRANT SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER ON ALL TABLES IN SCHEMA public TO "{{ $user }}";
     {{- end }}
 
@@ -77,7 +77,7 @@ data:
     {{- end }}
 
     {{- if eq $user "backup" }}
-    GRANT CONNECT ON DATABASE "%PGDATABASE%" TO backup;
+    GRANT CONNECT ON DATABASE "{{ $.Values.postgresDatabase }}" TO backup;
 
     GRANT pg_read_all_data to backup;
     {{- end }}
@@ -92,11 +92,13 @@ data:
     {{- end }}
     {{- end }}
 
-    ALTER SCHEMA public OWNER TO "{{ .Values.tableOwner | required ".Values.tableOwner must be set to one user!" }}";
-    ALTER DATABASE "%PGDATABASE%" OWNER TO "{{ .Values.tableOwner }}";
-    SELECT format('ALTER TABLE %I.%I.%I OWNER TO %I;', table_catalog, table_schema, table_name, '{{ .Values.tableOwner }}')
+    {{- $databases := append (default (list) $.Values.databases) $.Values.postgresDatabase }}
+    {{- range $db := $databases }}
+    ALTER DATABASE "{{ $db }}" OWNER TO "{{ $db }}";
+    SELECT format('ALTER TABLE %I.%I.%I OWNER TO %I;', table_catalog, table_schema, table_name, '{{ $db }}')
       FROM information_schema.tables WHERE table_schema = 'public'\gexec
-    SELECT FORMAT('ALTER TYPE %I.%I.%I OWNER TO %I;', current_database()::information_schema.sql_identifier, n.nspname, t.typname, '{{ .Values.tableOwner }}')
+    SELECT FORMAT('ALTER TYPE %I.%I.%I OWNER TO %I;', current_database()::information_schema.sql_identifier, n.nspname, t.typname, '{{ $db }}')
       FROM pg_catalog.pg_type t JOIN pg_catalog.pg_namespace n ON n.oid = t.typnamespace WHERE t.typtype = 'e' AND n.nspname = 'public'\gexec
+    {{- end }}
 
     {{ .Values.sqlOnStartup }}

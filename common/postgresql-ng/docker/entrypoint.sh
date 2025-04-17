@@ -149,7 +149,7 @@ for data in $(find /var/lib/postgresql/ -mindepth 1 -maxdepth 1 -type d -not -na
 
     # start postgres and load current hba conf
     start_postgres
-    PGDATABASE='' process_sql --dbname postgres -c "SELECT pg_reload_conf()"
+    PGDATABASE='postgres' process_sql -c "SELECT pg_reload_conf()"
 
     # we need to retry loop here a bit because the k8s service, through which pgbackup must go, is probably not yet up
     for i in {1..60}; do
@@ -194,7 +194,7 @@ echo -e "host  all  all  all  $PGAUTHMETHOD\n" >>"$PGDATA/pg_hba.conf"
 # update postgres.conf
 cp /etc/postgresql/postgresql.conf "$PGDATA/postgresql.conf"
 start_postgres
-PGDATABASE='' process_sql --dbname postgres -c "SELECT pg_reload_conf()"
+PGDATABASE='postgres' process_sql -c "SELECT pg_reload_conf()"
 
 # there might be some extensions which we need to enable
 if [[ -f /var/lib/postgresql/update_extensions.sql ]]; then
@@ -207,24 +207,26 @@ if [[ $updated_db == true ]]; then
   vacuumdb --all --analyze-in-stages
 fi
 
-# if a new db was initted, create the database inside of it and run init scripts
-if [[ $created_db == true ]]; then
+# check if any database needs to be created
+for DB in $PGDATABASE $DATABASES; do
+  if PGDATABASE='postgres' process_sql --set db="$DB" 'SELECT 1 FROM pg_database WHERE datname = :"db";' | grep -q 1; then
+    continue
+  fi
+
   # shellcheck disable=SC2097,SC2098 # false positive
-  PGDATABASE='' process_sql --dbname postgres --set db="$PGDATABASE" <<-'EOSQL'
-    CREATE DATABASE :"db";
-	EOSQL
+  PGDATABASE='postgres' process_sql --set db="$DB" 'CREATE DATABASE :"db";'
 
   for file in /sql-on-create.d/*.sql; do
     echo "Processing $file ..."
     process_sql -f <(substituteSqlEnvs "$file")
     echo
   done
-fi
+done
 
 # ensure that the configured password matches the password in the database
 # this was required when upgrading the password hashing algorithm from md5 to scram-sha-256 which was the case when eg. updating from 9.5 to 15
 # this also allows password rotations with restarts
-PGDATABASE='' process_sql --dbname postgres --set user="$PGUSER" --set password_encryption="$postgres_auth_method" --set password="$PGPASSWORD" <<-'EOSQL'
+PGDATABASE='postgres' process_sql --set user="$PGUSER" --set password_encryption="$postgres_auth_method" --set password="$PGPASSWORD" <<-'EOSQL'
   SET password_encryption = :'password_encryption';
   ALTER USER :user WITH PASSWORD :'password';
 EOSQL

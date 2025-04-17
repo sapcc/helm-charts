@@ -28,3 +28,7 @@ some space for the name suffixes on replicasets and pods.
 {{- if lt ($.Values.postgresVersion | int) 15 }}
 {{- fail "postgres-ng: only postgres version 15 and up are supported by this chart version" }}
 {{- end }}
+
+{{- if .Values.tableOwner }}
+{{- fail "postgres-ng: Changing the owner of a database is no longer supported. A database is always owned by the user with the same name." }}
+{{- end }}
