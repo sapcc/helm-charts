@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.4.4 - 2025/04/17
+* add reloader annotation to the deployment
+
 ## v0.4.3 - 2025/02/25
 * add option to set vpa main container
 
