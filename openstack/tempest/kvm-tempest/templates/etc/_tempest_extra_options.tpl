@@ -67,12 +67,12 @@ image_ref_alt = eaccb4eb-78f9-4470-ad64-0c2c8b614164
 endpoint_type = public
 v3_endpoint_type = public
 region = {{ .Values.global.region }}
-flavor_ref = 100021
-flavor_ref_alt = 100021
+flavor_ref = 100403
+flavor_ref_alt = 100408
 min_microversio = 2.1
 max_microversion = latest
 fixed_network_name = {{ (index .Values (print .Chart.Name | replace "-" "_")).tempest.fixed_network_name }}
-build_timeout=10800
+build_timeout=600
 compute_volume_common_az=qa-de-1b
 
 [compute-feature-enabled]
