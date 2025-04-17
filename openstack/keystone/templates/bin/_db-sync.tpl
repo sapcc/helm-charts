@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -e
+
 echo "Status before migration:"
 keystone-status --config-file=/etc/keystone/keystone.conf --config-file=/etc/keystone/keystone.conf.d/secrets.conf upgrade check
 
@@ -15,6 +17,3 @@ echo "Keystone doctor:"
 keystone-manage --config-file=/etc/keystone/keystone.conf --config-file=/etc/keystone/keystone.conf.d/secrets.conf doctor
 
 {{ include "utils.script.job_finished_hook" . | trim }}
-
-# don't let the doctor break stuff (as usual not qualified enough and you allways need another opinion :P )
-exit 0
