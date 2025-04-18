@@ -37,7 +37,7 @@ hmac_mechanism = CKM_SHA256_HMAC
 encryption_mechanism = CKM_AES_CBC
 rw_session = True
 
-# [thales_hsm_crypto:thales_hsm]
+# [thales_hsm_crypto_plugin:thales_hsm]
 # plugin_name = Thales HSM Partition Plugin
 # library_path = {{ .Values.lunaclient.conn.library_path }}
 # hmac_key_length = 32

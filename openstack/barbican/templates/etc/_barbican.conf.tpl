@@ -69,7 +69,7 @@ enforce_scope=False
 {{- if .Values.hsm.multistore.enabled }}
 [secretstore]
 enable_multiple_secret_stores = True
-stores_lookup_suffix = software, pkcs11, utimaco_hsm
+stores_lookup_suffix = software, pkcs11, utimaco_hsm #,thales_hsm
 namespace = barbican.secretstore.plugin
 
 [secretstore:software]
