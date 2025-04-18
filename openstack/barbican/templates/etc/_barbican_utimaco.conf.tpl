@@ -69,23 +69,14 @@ enforce_scope=False
 {{- if .Values.hsm.multistore.enabled }}
 [secretstore]
 enable_multiple_secret_stores = True
-stores_lookup_suffix = software, pkcs11
+stores_lookup_suffix = software, utimaco_hsm
 namespace = barbican.secretstore.plugin
 
 [secretstore:software]
 secret_store_plugin = store_crypto
 crypto_plugin = simple_crypto
 
-[secretstore:pkcs11]
+[secretstore:utimaco_hsm]
 secret_store_plugin = store_crypto
-crypto_plugin = p11_crypto
-global_default = True
-
-# [secretstore:thales_hsm]
-# secret_store_plugin = store_crypto
-# crypto_plugin = thales_hsm_crypto
-
-# [secretstore:utimaco_hsm]
-# secret_store_plugin = store_crypto
-# crypto_plugin = utimaco_hsm_crypto
+crypto_plugin = utimaco_hsm_crypto
 {{- end }}

@@ -1,0 +1,223 @@
+kind: Deployment
+apiVersion: apps/v1
+
+metadata:
+  name: barbican-api-utimaco
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    system: openstack
+    type: api
+    component: barbican
+spec:
+  replicas: {{ required ".Values.api.replicas is missing" .Values.api.replicas }}
+  revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revisionHistory }}
+  strategy:
+    type: {{ .Values.pod.lifecycle.upgrades.deployments.podReplacementStrategy }}
+    {{ if eq .Values.pod.lifecycle.upgrades.deployments.podReplacementStrategy "RollingUpdate" }}
+    rollingUpdate:
+      maxUnavailable: {{ .Values.pod.lifecycle.upgrades.deployments.rollingUpdate.maxUnavailable }}
+      maxSurge: {{ .Values.pod.lifecycle.upgrades.deployments.rollingUpdate.maxSurge }}
+    {{ end }}
+  selector:
+    matchLabels:
+      name: barbican-api-utimaco
+  template:
+    metadata:
+      labels:
+        app: {{ template "fullname" . }}
+        name: barbican-api-utimaco
+        alert-tier: os
+        alert-service: barbican
+        {{ tuple . "barbican" "api" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | nindent 8 }}
+        {{- include "utils.topology.pod_label" . | nindent 8 }}
+      annotations:
+        configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
+        {{- if .Values.proxysql.mode }}
+        prometheus.io/scrape: "true"
+        prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
+        {{- end }}
+        {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
+    spec:
+      {{ tuple . "barbican" "api" | include "kubernetes_pod_anti_affinity" | nindent 6 }}
+      {{- include "utils.proxysql.pod_settings" . | indent 6 }}
+      {{- tuple . (dict "name" "barbican-api") | include "utils.topology.constraints" | indent 6 }}
+      initContainers:
+      {{- tuple . (dict "service" (include "barbican.service_dependencies" .)) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
+      containers:
+        - name: barbican-api-utimaco
+          image: {{required ".Values.global.registry is missing" .Values.global.registry }}/loci-barbican:{{required "Values.imageVersionBarbicanApi is missing" .Values.imageVersionBarbicanApi}}
+          imagePullPolicy: IfNotPresent
+          command:
+          - dumb-init
+          - barbican-api
+          env:
+          {{- if .Values.sentry.enabled }}
+          - name: SENTRY_DSN
+            valueFrom:
+              secretKeyRef:
+                name: sentry
+                key: barbican.DSN.python
+          {{- end }}
+          {{- if .Values.hsm.enabled }}
+          - name: ChrystokiConfigurationPath
+            value: "/thales/safenet/lunaclient/config"
+          {{- end }}
+          {{- if .Values.api.resources.enabled }}
+          resources:
+            limits:
+              cpu: {{ .Values.api.resources.limits.cpu | quote }}
+              memory: {{ .Values.api.resources.limits.memory | quote }}
+            requests:
+              cpu: {{ .Values.api.resources.requests.cpu | quote }}
+              memory: {{ .Values.api.resources.requests.memory | quote }}
+          {{- end }}
+          lifecycle:
+            preStop:
+              {{- include "utils.snippets.pre_stop_graceful_shutdown" . | indent 14 }}
+          livenessProbe:
+            httpGet:
+              path: /
+              port: {{.Values.api_port_internal}}
+            initialDelaySeconds: 15
+            timeoutSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /healthcheck
+              port: {{.Values.api_port_internal}}
+            initialDelaySeconds: 15
+            timeoutSeconds: 5
+          ports:
+            - name: barbican-api
+              containerPort: {{.Values.api_port_internal}}
+          volumeMounts:
+            - name: etcbarbican
+              mountPath: /etc/barbican
+            - name: barbican-etc
+              mountPath: /etc/barbican/barbican_utimaco.conf
+              subPath: barbican_utimaco.conf
+              readOnly: true
+            - name: barbican-etc
+              mountPath: /etc/barbican/barbican-api-paste.ini
+              subPath: barbican-api-paste.ini
+              readOnly: true
+            - name: barbican-etc
+              mountPath: /etc/barbican/policy.yaml
+              subPath: policy.yaml
+              readOnly: true
+            - name: barbican-etc
+              mountPath: /etc/barbican/logging.ini
+              subPath: logging.ini
+              readOnly: true
+            - mountPath: /etc/barbican/barbican.conf.d
+              name: barbican-etc-confd
+              readOnly: true
+            {{- if .Values.watcher.enabled }}
+            - name: barbican-etc
+              mountPath: /etc/barbican/watcher.yaml
+              subPath: watcher.yaml
+              readOnly: true
+            {{- end }}
+            {{- if .Values.audit.enabled }}
+            - name: barbican-etc
+              mountPath: /etc/barbican/barbican_audit_map.yaml
+              subPath: barbican_audit_map.yaml
+              readOnly: true
+            {{- end }}
+            {{- if .Values.sapcc_rate_limit.enabled }}
+            - name: barbican-etc
+              mountPath: /etc/barbican/ratelimit.yaml
+              subPath: ratelimit.yaml
+              readOnly: true
+            {{- end }}
+        {{- if .Values.hsm.enabled }}
+            - name: luna
+              mountPath: /thales/
+            {{- include "utils.proxysql.volume_mount" . | indent 12 }}
+            {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
+        {{- include "utils.proxysql.container" . | indent 8 }}
+        - name: lunaclient
+          image: {{required ".Values.global.registry is missing" .Values.global.registry }}/loci-barbican:{{required "Values.hsm.luna.image is missing" .Values.hsm.luna.image }}
+          imagePullPolicy: Always
+          env:
+            - name: ChrystokiConfigurationPath
+              value: "/thales/safenet/lunaclient/config"
+          command: [ "/bin/bash", "-c", "--" ]
+          args: [ "while true; do sleep 30; done;" ]
+          {{- if .Values.hsm.resources.enabled }}
+          resources:
+            limits:
+              cpu: {{ .Values.hsm.resources.limits.cpu | quote }}
+              memory: {{ .Values.hsm.resources.limits.memory | quote }}
+            requests:
+              cpu: {{ .Values.hsm.resources.requests.cpu | quote }}
+              memory: {{ .Values.hsm.resources.requests.memory | quote }}
+          {{- end }}
+          lifecycle:
+            postStart:
+              exec:
+                command: [ "/bin/bash", "/scripts/barbican_utimaco_lunaclient.sh" ]
+          volumeMounts:
+            - name: hsm
+              mountPath: /scripts/barbican_utimaco_lunaclient.sh
+              subPath: barbican_utimaco_lunaclient.sh
+              readOnly: true
+            - name: luna
+              mountPath: /thales/
+        {{- end }}
+        - name: statsd
+          {{- if hasKey .Values.global "dockerHubMirror"}}
+          image: {{.Values.global.dockerHubMirror}}/{{ .Values.statsd.image.repository }}:{{ .Values.statsd.image.tag }}
+          {{- else }}
+          image: "{{ .Values.statsd.image.repository }}:{{ .Values.statsd.image.tag }}"
+          {{- end }}
+          imagePullPolicy: IfNotPresent
+          args: [ --statsd.mapping-config=/etc/statsd/statsd-exporter.yaml ]
+          {{- if .Values.statsd.resources.enabled }}
+          resources:
+            limits:
+              cpu: {{ .Values.statsd.resources.limits.cpu | quote }}
+              memory: {{ .Values.statsd.resources.limits.memory | quote }}
+            requests:
+              cpu: {{ .Values.statsd.resources.requests.cpu | quote }}
+              memory: {{ .Values.statsd.resources.requests.memory | quote }}
+          {{- end }}
+          ports:
+            - name: statsd
+              containerPort: 9125
+              protocol: UDP
+            - name: metrics
+              containerPort: {{ .Values.statsd.port }}
+          volumeMounts:
+            - name: barbican-etc
+              mountPath: /etc/statsd/statsd-exporter.yaml
+              subPath: statsd-exporter.yaml
+              readOnly: true
+
+      volumes:
+        - name: barbican-etc
+          configMap:
+            name: barbican-etc
+        - name: barbican-etc-confd
+          secret:
+            secretName: {{ .Release.Name }}-secrets
+            items:
+            - key: secrets.conf
+              path: secrets.conf
+        - name: etcbarbican
+          emptyDir: {}
+        {{- if .Values.hsm.enabled }}
+        - name: hsm
+          secret:
+            secretName: {{ .Release.Name }}-secrets
+            defaultMode: 0744
+            items:
+            - key: barbican_utimaco_lunaclient.sh
+              path: barbican_utimaco_lunaclient.sh
+        - name: luna
+          emptyDir: {}
+        {{ end }}
+        {{- include "utils.proxysql.volumes" . | indent 8 }}
+        {{- include "utils.trust_bundle.volumes" . | indent 8 }}
