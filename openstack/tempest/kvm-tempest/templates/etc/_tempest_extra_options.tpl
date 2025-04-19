@@ -76,7 +76,7 @@ build_timeout=600
 compute_volume_common_az=qa-de-1b
 
 [compute-feature-enabled]
-resize = True
+resize = False
 unified_limits = False
 cold_migration = True
 live_migration = True
@@ -86,11 +86,13 @@ vnc_server_header = WebSockify
 serial_console = False
 spice_console = False
 attach_encrypted_volume = False
+console_output = False
+rescue = False
+snapshot = False
 
 [validation]
 image_ssh_user = ccloud
 image_alt_ssh_user = ubuntu
-ssh_key_type = rsa
 
 [volume]
 catalog_type = volumev3
