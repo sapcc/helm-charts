@@ -140,3 +140,7 @@ syslog:
   users:
   - "syslog"
   - "syslog2"
+
+anonymous_health_role:
+  backend_roles:
+  - "opendistro_security_anonymous_backendrole"

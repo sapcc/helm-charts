@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.23.0 - 2025/04/10
+* reloader annotation has been added to the backup-v2 deployment, so backup-v2 deployment always uses updated credentials
+
 ## v0.22.0 - 2025/04/09
 * delete unmanaged localhost users like 'username'@'localhost'
 

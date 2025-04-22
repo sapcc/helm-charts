@@ -29,6 +29,7 @@
                 <li>Project: {{"{{"}} .ProjectName {{"}}"}}</li>
             </ul>
         </p>
+        {{ .dashboardInfo }}
 
         <div style="overflow-x: auto;">
             <table>

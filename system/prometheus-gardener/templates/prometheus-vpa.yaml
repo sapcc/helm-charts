@@ -1,11 +1,11 @@
 apiVersion: autoscaling.k8s.io/v1
 kind: VerticalPodAutoscaler
 metadata:
-  name: {{ include "prometheus-gardener.fullname" . }}-prometheus-{{ .Values.name }}
+  name: {{ include "prometheus-gardener.fullname" . }}-prometheus-{{ .Values.prometheusName }}
   labels:
     app: prometheus
-    name: {{ .Values.name }}
-    observability.gardener.cloud/app: {{ include "prometheus-gardener.fullname" . }}-prometheus-{{ .Values.name }}
+    name: {{ .Values.prometheusName }}
+    observability.gardener.cloud/app: {{ include "prometheus-gardener.fullname" . }}-prometheus-{{ .Values.prometheusName }}
     role: monitoring
   {{- include "prometheus-gardener.labels" . | nindent 4 }}
 spec:
@@ -20,7 +20,7 @@ spec:
   targetRef:
     apiVersion: monitoring.coreos.com/v1
     kind: Prometheus
-    name: {{ include "prometheus-gardener.fullname" . }}-prometheus-{{ .Values.name }}
+    name: {{ include "prometheus-gardener.fullname" . }}-prometheus-{{ .Values.prometheusName }}
   updatePolicy:
     updateMode: Auto
 status: {}

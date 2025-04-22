@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.6.10 - 2025/04/14
+* add option to set vpa main container
+
 ## v0.6.9 - 2025/03/25
 
 * Set type: LoadBalancer in case of external IP

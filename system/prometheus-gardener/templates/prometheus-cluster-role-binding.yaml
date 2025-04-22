@@ -1,10 +1,10 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: {{ include "prometheus-gardener.fullname" . }}-prometheus-{{ .Values.name }}
+  name: {{ include "prometheus-gardener.fullname" . }}-prometheus-{{ .Values.prometheusName }}
   labels:
     app: prometheus
-    name: {{ .Values.name }}
+    name: {{ .Values.prometheusName }}
     role: monitoring
   {{- include "prometheus-gardener.labels" . | nindent 4 }}
   annotations:
@@ -15,5 +15,5 @@ roleRef:
   name: prometheus
 subjects:
 - kind: ServiceAccount
-  name: {{ include "prometheus-gardener.fullname" . }}-prometheus-{{ .Values.name }}
+  name: {{ include "prometheus-gardener.fullname" . }}-prometheus-{{ .Values.prometheusName }}
   namespace: '{{ .Release.Namespace }}'
