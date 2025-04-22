@@ -166,6 +166,10 @@ spec:
               mountPath: /etc/manila/ratelimit.yaml
               subPath: ratelimit.yaml
               readOnly: true
+            - name: redis-ratelimit-secret
+              mountPath: {{ .Values.api_rate_limit.backend_secret_file }}
+              subPath: password
+              readOnly: true
             {{- end }}
             {{- if .Values.watcher.enabled }}
             - name: manila-etc
@@ -225,6 +229,11 @@ spec:
         - name: manila-etc-confd
           secret:
             secretName: {{ .Release.Name }}-secrets
+{{- if .Values.api_rate_limit.enabled }}
+        - name: redis-ratelimit-secret
+          secret:
+            secretName: {{ .Release.Name }}-api-ratelimit-redis-user-default
+{{- end }}
         - name: manila-bin
           configMap:
             name: {{ .Release.Name }}-bin
