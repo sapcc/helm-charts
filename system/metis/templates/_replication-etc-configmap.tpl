@@ -20,7 +20,7 @@ backup:
     bucketName: "mariadb-backup-{{ .root.Values.global.region }}"
 replication:
   sourceDB:
-    host: "{{ .backup.name }}-mariadb.monsoon3"
+    host: "{{ .backup.name }}-mariadb.{{ .backup.namespace }}"
     port: {{ .mariadb.port_public }}
     user: "root"
   targetDB:
