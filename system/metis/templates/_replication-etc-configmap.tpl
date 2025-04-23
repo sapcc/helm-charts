@@ -22,7 +22,6 @@ replication:
   sourceDB:
     host: "{{ .backup.name }}-mariadb.{{ .backup.namespace }}"
     port: {{ .mariadb.port_public }}
-    user: "root"
   targetDB:
     host: "{{ .mariadb.name }}-mariadb.metis"
     port: {{ .mariadb.port_public }}
