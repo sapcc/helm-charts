@@ -356,3 +356,19 @@ groups:
     annotations:
       description: "The `{{ $labels.datastore }}` NFS datastore is not connected to all production ESXi hosts in *{{ $labels.vcenter }}* vCenter.\nLink to the vCenter: --> <https://{{ $labels.vcenter }}|{{ $labels.vcenter }}>"
       summary: "The `{{ $labels.datastore }}` NFS datastore is not connected to all production ESXi hosts in *{{ $labels.vcenter }}* vCenter.\nLink to the vCenter: --> <https://{{ $labels.vcenter }}|{{ $labels.vcenter }}>"
+
+  - alert: NFSDatastoreCinderAggregateIDNotSet
+    expr: |
+      vrops_datastore_summary_datastore_accessible{datastore=~"^nfs_.*"}
+      unless on(datastore) vrops_datastore_summary_custom_tag_cinder_aggregate_id{datastore=~"^nfs_.*", summary_custom_tag_cinder_aggregate_id!=""}
+    for: 1h
+    labels:
+      severity: warning
+      tier: vmware
+      service: storage
+      support_group: compute
+      meta: "cinder_aggregate_id is not set for the `{{ $labels.datastore }}` NFS datastore in *{{ $labels.datacenter }}* availability zone.\nLink to the vCenter: --> <https://{{ $labels.vcenter }}|{{ $labels.vcenter }}>"
+      playbook: docs/support/playbook/cinder/cinder-fcd-operations/#nfsdatastorecinderaggregateidnotset
+    annotations:
+      description: "cinder_aggregate_id is not set for the `{{ $labels.datastore }}` NFS datastore in *{{ $labels.datacenter }}* availability zone.\nLink to the vCenter: --> <https://{{ $labels.vcenter }}|{{ $labels.vcenter }}>"
+      summary: "cinder_aggregate_id is not set for the `{{ $labels.datastore }}` NFS datastore in *{{ $labels.datacenter }}* availability zone.\nLink to the vCenter: --> <https://{{ $labels.vcenter }}|{{ $labels.vcenter }}>"
