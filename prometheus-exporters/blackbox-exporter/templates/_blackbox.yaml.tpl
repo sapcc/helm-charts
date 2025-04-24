@@ -92,7 +92,7 @@ modules:
       fail_if_body_not_matches_regexp:
         - "Unauthorized"
 
-    opensearch-client:
+  opensearch-client:
     prober: http
     timeout: 10s
     http:
