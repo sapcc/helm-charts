@@ -17,6 +17,10 @@ some space for the name suffixes on replicasets and pods.
   {{- end -}}
 {{- end -}}
 
+{{- if .Values.postgresDatabase }}
+{{- fail "postgres-ng: postgresDatabase must be set!" }}
+{{- end }}
+
 {{- if .Values.postgresPassword }}
 {{- fail "postgres-ng: Setting the password via postgresPassword is no longer supported as it is auto generated on each start. Please remove the value and any vault references!" }}
 {{- end }}
