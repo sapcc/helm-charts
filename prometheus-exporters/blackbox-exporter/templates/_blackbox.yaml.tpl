@@ -98,5 +98,3 @@ modules:
     http:
       valid_status_codes: [200]
       method: GET
-      fail_if_body_not_matches_regexp:
-        - "green"
