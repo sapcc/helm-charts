@@ -116,7 +116,7 @@ transform/snmp_exporter:
       conditions:
         - resource.attributes["k8s.deployment.name"] == "snmp-exporter"
       statements:
-        - merge_maps(log.attributes, ExtractGrokPatterns(log.body, "ts=%{TIMESTAMP_ISO8601} caller=%{NOTSPACE} level=%{NOTSPACE:loglevel} auth=%{NOTSPACE:snmp_auth} target=%{IP:snmp_ip} source_address=(?:%{GREEDYDATA:source}) worker=(?:%{NUMBER}) module=%{NOTSPACE:snmp_module} msg=\"%{GREEDYDATA:snmp_error}\" err=\"%{GREEDYDATA} %{IP}%{NOTSPACE} %{GREEDYDATA:snmp_reason}\"", true), "upsert")
+        - merge_maps(log.attributes, ExtractGrokPatterns(log.body, "time=%{TIMESTAMP_ISO8601} level=%{NOTSPACE:loglevel} source=%{NOTSPACE} msg=\"%{GREEDYDATA:snmp_error}\" auth=%{NOTSPACE:snmp_auth} target=%{IP:snmp_ip} source_address=(?:%{GREEDYDATA:source}) worker=(?:%{NUMBER}) module=%{NOTSPACE:snmp_module} err=\"%{GREEDYDATA} %{IP}%{NOTSPACE} %{GREEDYDATA:snmp_reason}\"", true), "upsert")
 
 transform/elektra:
   error_mode: ignore

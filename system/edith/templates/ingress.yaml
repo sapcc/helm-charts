@@ -1,0 +1,24 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: edith-access
+  annotations:
+    disco: "true"
+    kubernetes.io/tls-acme: "true"
+{{- $hostname :=  print .Release.Name "." .Values.edith.domain }}
+spec:
+  rules:
+    - host: {{ $hostname }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ .Release.Name }}
+                port:
+                  name: webhook
+  tls:
+    - hosts: [{{ $hostname }}]
+      secretName: tls-{{ .Release.Name }}
