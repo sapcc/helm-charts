@@ -89,6 +89,7 @@ attach_encrypted_volume = False
 console_output = False
 rescue = False
 snapshot = False
+shelve = False
 
 [validation]
 image_ssh_user = ccloud
