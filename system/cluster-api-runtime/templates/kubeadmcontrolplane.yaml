@@ -36,6 +36,9 @@ spec:
         extraArgs:
           cloud-provider: external
           allocate-node-cidrs: "true"
+      etcd:
+        local:
+          dataDir: /var/data/etcd
       dns:
         imageRepository: {{ .Values.images.dns.repository }}
         imageTag: {{ .Values.images.dns.tag }}
@@ -138,6 +141,7 @@ spec:
         - {{ $.Values.user.key | quote }}
     preKubeadmCommands:
       - hostnamectl set-hostname $${METAL_HOSTNAME}
+      - /opt/etcd_disk.sh
       # match kubelet with KCP version
       - IMAGE={{ $.Values.images.kubelet.repository }}:{{ .Values.controlPlane.version }}
       - while true; do ctr image pull $IMAGE && break; done
