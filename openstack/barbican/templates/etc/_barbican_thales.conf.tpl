@@ -66,18 +66,17 @@ policy_file = /etc/barbican/policy.yaml
 enforce_new_defaults=False
 enforce_scope=False
 
-{{- if .Values.hsm.multistore.enabled }}
+{{- if .Values.hsm.thales_multitenancy.enabled }}
 [secretstore]
 enable_multiple_secret_stores = True
-stores_lookup_suffix = software, pkcs11
+stores_lookup_suffix = software, thales_hsm
 namespace = barbican.secretstore.plugin
 
 [secretstore:software]
 secret_store_plugin = store_crypto
 crypto_plugin = simple_crypto
 
-[secretstore:pkcs11]
+[secretstore:thales_hsm]
 secret_store_plugin = store_crypto
-crypto_plugin = p11_crypto
-global_default = True
+crypto_plugin = hsm_partition_crypto
 {{- end }}

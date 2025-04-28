@@ -23,7 +23,9 @@ encryption_mechanism = {{ .Values.lunaclient.conn.encryption_mechanism }}
 hmac_mechanism = {{ .Values.lunaclient.conn.hmac_mechanism }}
 key_wrap_mechanism = {{ .Values.lunaclient.conn.key_wrap_mechanism }}
 aes_gcm_generate_iv = {{ .Values.lunaclient.conn.aes_gcm_generate_iv }}
+{{- end }}
 
+{{- if .Values.hsm.thales_multitenancy.enabled }}
 [hsm_partition_crypto_plugin:thales_hsm]
 library_path = {{ .Values.lunaclient.conn.library_path }}
 login = {{ .Values.lunaclient.conn.login | include "resolve_secret" }}
