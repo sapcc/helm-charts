@@ -40,3 +40,7 @@ some space for the name suffixes on replicasets and pods.
 {{- if .Values.tableOwner }}
 {{- fail "postgres-ng: Changing the owner of a database is no longer supported. A database is always owned by the user with the same name." }}
 {{- end }}
+
+{{- if eq .Values.postgresDatabase "postgres" }}
+{{- fail "postgresDatabase cannot be set to postgres because that is the name of an internal database!" }}
+{{- end }}
