@@ -1,0 +1,45 @@
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: cron-vrops-custom-importer
+  namespace: {{ .Values.namespace }}
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade,pre-rollback
+    "helm.sh/hook-delete-policy": before-hook-creation
+    "helm.sh/hook-weight": "3"
+spec:
+  schedule: "{{ .Values.schedule }}"
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: vrops-custom-importer
+        spec:
+          containers:
+          - name: {{ .Values.image.name}}
+            image: {{ .Values.image.registry}}
+            env:
+              - name: REGION
+                value: {{ .Values.region }}
+              - name: VC
+                value: {{ .Values.vc.cluster }}
+              - name: VC_USER
+                value: {{ .Values.vc.username }}
+              - name: VC_PASSWORD
+                value: {{ .Values.vc.password }}
+              - name: VROPS
+                value: {{ .Values.vrops.cluster }}
+              - name: VROPS_USERNAME
+                value: {{ .Values.vrops.username }}
+              - name: VROPS_PASSWORD
+                value: {{ .Values.vrops.password }}
+              - name: AUTH_SOURCE
+                value: {{ .Values.authSource }}
+              - name: DEBUG
+                value: "{{ .Values.debug }}"
+              - name: INSECURE
+                value: "{{ .Values.insecure }}"
+          restartPolicy: Never
