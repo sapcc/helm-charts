@@ -17,9 +17,15 @@ spec:
       - "storage"
       - "compute"
       - "observability"
-  {{- with .Values.perses.clusterOptionOverrides }}
   clusterOptionOverrides:
-    {{ toYaml .Values.perses.clusterOptionOverrides | nindent 4 }}
+  {{- range $plugin := .Values.ingressPlugins }}
+  - clusterName: {{ $plugin.cluster }}
+    overrides:
+    - name: perses.serviceMonitor.selfMonitor
+      value: true
+    - name: perses.serviceMonitor.labels
+      value:
+        plugin: "kube-monitoring-{{ $plugin.cluster }}"
   {{- end }}
   plugin:
     disabled: false
@@ -34,13 +40,6 @@ spec:
       - name: perses.testFramework.image.registry
         value: {{ .Values.global.ghcrIoMirror }}
       {{- end }}
-    {{- range $plugin := .Values.ingressPlugins }}
-      - name: perses.serviceMonitor.selfMonitor
-        value: true
-      - name: perses.serviceMonitor.labels
-        value:
-          plugin: "kube-monitoring-{{ $plugin.cluster }}"
-    {{- end }}
     pluginDefinition: perses
     releaseNamespace: kube-monitoring
 {{- end -}}
