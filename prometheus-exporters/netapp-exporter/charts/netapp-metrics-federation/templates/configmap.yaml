@@ -1,0 +1,46 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: {{ include "netapp-metrics-federation.fullname" . }}
+  labels:
+    {{- include "netapp-metrics-federation.labels" . | nindent 4 }}
+data:
+  snapmirror.yaml: |
+    metrics:
+      # CROSS region snapmirror setup
+      - export_name: netapp_snapmirror_labels:maia
+        query: |
+          netapp_snapmirror_endpoint_labels:enhanced{region="{{ .Values.global.region }}", project_id!="", share_id!=""} * 
+            on(source_cluster, source_vserver, source_volume, destination_cluster, destination_vserver, destination_volume) group_right(project_id, share_id, share_name) netapp_snapmirror_labels:enhanced{share_id=""}
+        label_rules:
+        - type: fill
+          label_name: unhealthy_reason
+        help: "maia netapp snapmirror labels"
+      # LOCAL region snapmirror setup
+      - export_name: netapp_snapmirror_labels:maia
+        query: | 
+          netapp_snapmirror_labels:enhanced{region="{{ .Values.global.region }}", project_id!="",share_id!="", destination_volume!~"share_[0-9a-f]{8}_[0-9a-f]{4}_[0-9a-f]{4}_[0-9a-f]{4}_[0-9a-f]{12}"}
+        label_rules:
+        - type: fill
+          label_name: unhealthy_reason
+        help: "maia netapp snapmirror labels"
+    label_rules:
+      - type: drop
+        label_prefix: linkerd_
+      - type: drop
+        label_prefix: kubernetes_
+      - type: drop
+        label_prefix: pod_
+      - type: drop
+        label_name: namespace
+      - type: drop
+        label_name: pod
+      - type: drop
+        label_name: app
+      - type: drop
+        label_name: name
+      - type: drop
+        label_name: container
+      - type: drop
+        label_name: prometheus
+
