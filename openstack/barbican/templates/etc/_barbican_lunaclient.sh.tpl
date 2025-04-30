@@ -22,16 +22,23 @@ lunaclient ()
     /thales/safenet/lunaclient/bin/64/configurator setValue -s "Secure Trusted Channel" -e PartitionIdentitiesDir -v /thales/safenet/lunaclient/config/stc/partition_identities
 
     /thales/safenet/lunaclient/bin/64/configurator setValue -s "VirtualToken" -e VirtualToken00Label -v {{ .Values.lunaclient.VirtualToken.VirtualToken00Label | include "resolve_secret" }}
+    /thales/safenet/lunaclient/bin/64/configurator setValue -s "VirtualToken" -e VirtualToken01Label -v {{ .Values.lunaclient.multi_conn.VirtualToken.VirtualToken01Label | include "resolve_secret" }}
+
     {{- if .Values.hsm.ha.enabled }}
     /thales/safenet/lunaclient/bin/64/configurator setValue -s "VirtualToken" -e VirtualToken00SN -v 1{{ .Values.lunaclient.VirtualToken.VirtualToken00SN | include "resolve_secret" }}
     /thales/safenet/lunaclient/bin/64/configurator setValue -s "VirtualToken" -e VirtualToken00Members -v {{ .Values.lunaclient.VirtualToken.VirtualToken00Members | include "resolve_secret" }},{{ .Values.lunaclient.VirtualToken.VirtualToken00Members02 | include "resolve_secret" }}
+    /thales/safenet/lunaclient/bin/64/configurator setValue -s "VirtualToken" -e VirtualToken01SN -v 1{{ .Values.lunaclient.multi_conn.VirtualToken.VirtualToken01SN | include "resolve_secret" }}
+    /thales/safenet/lunaclient/bin/64/configurator setValue -s "VirtualToken" -e VirtualToken01Members -v {{ .Values.lunaclient.multi_conn.VirtualToken.VirtualToken01Members | include "resolve_secret" }},{{ .Values.lunaclient.VirtualToken.VirtualToken00Members02 | include "resolve_secret" }}
     {{- else}}
     /thales/safenet/lunaclient/bin/64/configurator setValue -s "VirtualToken" -e VirtualToken00SN -v {{ .Values.lunaclient.VirtualToken.VirtualToken00SN | include "resolve_secret" }}
     /thales/safenet/lunaclient/bin/64/configurator setValue -s "VirtualToken" -e VirtualToken00Members -v {{ .Values.lunaclient.VirtualToken.VirtualToken00Members | include "resolve_secret" }}
+    /thales/safenet/lunaclient/bin/64/configurator setValue -s "VirtualToken" -e VirtualToken01SN -v {{ .Values.lunaclient.multi_conn.VirtualToken.VirtualToken01SN | include "resolve_secret" }}
+    /thales/safenet/lunaclient/bin/64/configurator setValue -s "VirtualToken" -e VirtualToken01Members -v {{ .Values.lunaclient.multi_conn.VirtualToken.VirtualToken01Members| include "resolve_secret" }}
     {{- end}}
 
     /thales/safenet/lunaclient/bin/64/configurator setValue -s "VirtualToken" -e VirtualTokenActiveRecovery -v {{ .Values.lunaclient.VirtualToken.VirtualTokenActiveRecovery | include "resolve_secret" }}
     /thales/safenet/lunaclient/bin/64/configurator setValue -s "HASynchronize" -e {{ .Values.lunaclient.VirtualToken.VirtualToken00Label | include "resolve_secret" }} -v {{ .Values.lunaclient.HASynchronize.sync }}
+    /thales/safenet/lunaclient/bin/64/configurator setValue -s "HASynchronize" -e {{ .Values.lunaclient.multi_conn.VirtualToken.VirtualToken01Label | include "resolve_secret" }} -v {{ .Values.lunaclient.HASynchronize.sync }}
     /thales/safenet/lunaclient/bin/64/configurator setValue -s "HAConfiguration" -e haLogStatus -v {{ .Values.lunaclient.HAConfiguration.haLogStatus | include "resolve_secret" }}
     /thales/safenet/lunaclient/bin/64/configurator setValue -s "HAConfiguration" -e reconnAtt -v {{ .Values.lunaclient.HAConfiguration.reconnAtt }}
     /thales/safenet/lunaclient/bin/64/configurator setValue -s "HAConfiguration" -e HAOnly -v {{ .Values.lunaclient.HAConfiguration.HAOnly }}
