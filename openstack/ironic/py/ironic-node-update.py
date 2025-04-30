@@ -46,6 +46,7 @@ def maintenance_mode(bm, node):
         yield
     except Exception as e:
         print(e)
+        yield
     finally:
         if unset_maintenance:
             bm.node.set_maintenance(node.uuid, "false")
