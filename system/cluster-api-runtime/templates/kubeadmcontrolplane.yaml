@@ -35,6 +35,12 @@ spec:
           cloud-provider: external
           secure-port: {{ .Values.controlPlane.port | quote }}
           authentication-config: /etc/kubernetes/authentication.yaml
+        extraVolumes:
+          - name: "authentication-config"
+            hostPath: "/etc/kubernetes/authentication.yaml"
+            mountPath: "/etc/kubernetes/authentication.yaml"
+            readOnly: true
+            pathType: File
       controllerManager:
         extraArgs:
           cloud-provider: external
