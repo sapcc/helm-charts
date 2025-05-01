@@ -31,7 +31,7 @@ build-cluster-api-core:
 	@find cluster-api-core/templates -type f -exec $(SED) -i -e 's#-system.#.#g' {} \;
 	@yq -i '.controllerManager.manager.image.tag="$(CLUSTER_API_VERSION)"' cluster-api-core/values.yaml
 	@yq -i '.fullnameOverride="capi"' cluster-api-core/values.yaml
-	@yq -i '.version="0.2.0"' cluster-api-core/Chart.yaml
+	@yq -i '.version="0.2.1"' cluster-api-core/Chart.yaml
 
 build-controlplane-kubeadm:
 	$(call build-chart,controlplane-kubeadm,https://github.com/kubernetes-sigs/cluster-api//controlplane/kubeadm/config/default,$(CLUSTER_API_VERSION))
@@ -45,7 +45,7 @@ build-controlplane-kubeadm:
 	@find controlplane-kubeadm/templates -type f -exec $(SED) -i -e 's#-kubeadm-control-plane-system.#.#g' {} \;
 	@yq -i '.controllerManager.manager.image.tag="$(CLUSTER_API_VERSION)"' controlplane-kubeadm/values.yaml
 	@yq -i '.fullnameOverride="capi-kubeadm-controlplane"' controlplane-kubeadm/values.yaml
-	@yq -i '.version="0.2.0"' controlplane-kubeadm/Chart.yaml
+	@yq -i '.version="0.2.1"' controlplane-kubeadm/Chart.yaml
 
 build-bootstrap-kubeadm:
 	$(call build-chart,bootstrap-kubeadm,https://github.com/kubernetes-sigs/cluster-api//bootstrap/kubeadm/config/default,$(CLUSTER_API_VERSION))
@@ -55,7 +55,7 @@ build-bootstrap-kubeadm:
 	@find bootstrap-kubeadm/templates -type f -exec $(SED) -i -e 's#-kubeadm-bootstrap-system.#.#g' {} \;
 	@yq -i '.controllerManager.manager.image.tag="$(CLUSTER_API_VERSION)"' bootstrap-kubeadm/values.yaml
 	@yq -i '.fullnameOverride="capi-kubeadm-bootstrap"' bootstrap-kubeadm/values.yaml
-	@yq -i '.version="0.2.0"' bootstrap-kubeadm/Chart.yaml
+	@yq -i '.version="0.2.1"' bootstrap-kubeadm/Chart.yaml
 
 build-provider-vsphere:
 	$(call build-chart,provider-vsphere,https://github.com/kubernetes-sigs/cluster-api-provider-vsphere//config/default,$(PROVIDER_VSPHERE_VERSION))
