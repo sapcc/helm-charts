@@ -12,16 +12,23 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-set -eEuo pipefail
+set -e
 
-if pgrep -f /usr/sbin/ovsdb-server; then
-    echo "Waiting to be the only highlander"
+error_exit() {
+    echo "$1" >&2
     exit 1
-fi
+}
 
-mkdir -p /run/openvswitch
-[ -f /var/lib/openvswitch/conf.db ] || ovsdb-tool create
+# Check if ovn-controller is connected to the OVN SB database
+check_ovn_controller_connection() {
+    if ! output=$(ovn-appctl -t ovn-controller connection-status 2>&1); then
+        error_exit "ERROR - Failed to get connection status from ovn-controller, ovn-appctl exit status: $?"
+    fi
 
-exec /usr/sbin/ovsdb-server \
-    --remote=punix:/run/openvswitch/db.sock --pidfile \
-    -vconsole:emer -vsyslog:err -vfile:off
+    if [ "$output" != "connected" ]; then
+        error_exit "ERROR - ovn-controller connection status is '$output', expecting 'connected' status"
+    fi
+}
+
+
+check_ovn_controller_connection
