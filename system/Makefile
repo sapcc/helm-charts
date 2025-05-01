@@ -1,4 +1,4 @@
-CLUSTER_API_VERSION ?= v1.6.2
+CLUSTER_API_VERSION ?= v1.10.1
 PROVIDER_METAL3_VERSION ?= v1.6.0
 PROVIDER_METAL_VERSION ?= 00d028c4aac7fa1e168c5ec9fab74e197530e37c
 PROVIDER_VSPHERE_VERSION ?= v1.9.3
@@ -26,23 +26,24 @@ build: build-cluster-api-core build-bootstrap-kubeadm build-provider-metal3 buil
 build-cluster-api-core:
 	$(call build-chart,cluster-api-core,https://github.com/kubernetes-sigs/cluster-api//config/default,$(CLUSTER_API_VERSION))
 	$(call fix-crds,cluster-api-core)
+	@find cluster-api-core/crds -type f -exec $(SED) -i -e 's#capi-system#capi#g' {} \;
 	@yq -i '.controllerManager.manager.image.tag="$(CLUSTER_API_VERSION)"' cluster-api-core/values.yaml
 	@yq -i '.fullnameOverride="capi-capi"' cluster-api-core/values.yaml
-	@yq -i '.version="0.1.3"' cluster-api-core/Chart.yaml
+	@yq -i '.version="0.2.0"' cluster-api-core/Chart.yaml
 
 build-controlplane-kubeadm:
 	$(call build-chart,controlplane-kubeadm,https://github.com/kubernetes-sigs/cluster-api//controlplane/kubeadm/config/default,$(CLUSTER_API_VERSION))
 	$(call fix-crds,controlplane-kubeadm)
 	@yq -i '.controllerManager.manager.image.tag="$(CLUSTER_API_VERSION)"' controlplane-kubeadm/values.yaml
 	@yq -i '.fullnameOverride="capi-capi-kubeadm-controlplane"' controlplane-kubeadm/values.yaml
-	@yq -i '.version="0.0.1"' controlplane-kubeadm/Chart.yaml
+	@yq -i '.version="0.2.0"' controlplane-kubeadm/Chart.yaml
 
 build-bootstrap-kubeadm:
 	$(call build-chart,bootstrap-kubeadm,https://github.com/kubernetes-sigs/cluster-api//bootstrap/kubeadm/config/default,$(CLUSTER_API_VERSION))
 	$(call fix-crds,bootstrap-kubeadm)
 	@yq -i '.controllerManager.manager.image.tag="$(CLUSTER_API_VERSION)"' bootstrap-kubeadm/values.yaml
 	@yq -i '.fullnameOverride="capi-capi-kubeadm-bootstrap"' bootstrap-kubeadm/values.yaml
-	@yq -i '.version="0.1.3"' bootstrap-kubeadm/Chart.yaml
+	@yq -i '.version="0.2.0"' bootstrap-kubeadm/Chart.yaml
 
 build-provider-vsphere:
 	$(call build-chart,provider-vsphere,https://github.com/kubernetes-sigs/cluster-api-provider-vsphere//config/default,$(PROVIDER_VSPHERE_VERSION))
