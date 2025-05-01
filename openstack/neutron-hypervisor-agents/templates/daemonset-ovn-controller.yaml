@@ -1,0 +1,117 @@
+{{- $hypervisor := merge .Values.defaults.network.ovn .Values.defaults.network.common }}
+kind: DaemonSet
+apiVersion: apps/v1
+metadata:
+  name: neutron-ovn-controller
+  labels:
+    system: openstack
+    type: backend
+    component: neutron
+spec:
+  revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revision_history }}
+  selector:
+    matchLabels:
+      name: neutron-ovn-controller
+  template:
+    metadata:
+      labels:
+        {{ tuple . "neutron" "ovn-controller" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | nindent 8 }}
+        name: neutron-ovn-controller
+        alert-tier: os
+        alert-service: neutron
+        ml2-driver: "ovn"
+      annotations:
+        configmap-bin-hash: {{ include (print $.Template.BasePath "/configmap-bin.yaml") . | sha256sum }}
+    spec:
+      hostNetwork: true
+      hostAliases:
+      {{- range $ip := .Values.rabbitmq.externalIPs }}
+      - ip: {{ $ip }}
+        hostnames:
+        - {{ required "Please set rabbitmq.host" $.Values.rabbitmq.host }}
+      {{- end }}
+      tolerations:
+      {{- range $k, $v :=  $hypervisor.pod.tolerations }}
+      - # {{ $k }}
+      {{- toYaml $v | nindent 8 }}
+      {{- end }}
+      nodeSelector:
+      {{- range $k, $v := $hypervisor.pod.nodeSelector }}
+        {{ $k }}: {{ $v }}
+      {{- end }}
+      containers:
+        - name: ovn-controller
+          image: {{ .Values.global.registry | required ".Values.global.registry is missing" }}/cobaltcore-dev/openstack-ovn-controller:{{ .Values.imageVersionOVN | default "latest" }}
+          imagePullPolicy: IfNotPresent
+          command: [ "ovn-controller", "--verbose=info", "--pidfile", "unix:/run/openvswitch/db.sock" ]
+          securityContext:
+            privileged: true
+            runAsUser: 0
+            capabilities:
+              add:
+                - NET_ADMIN
+                - SYS_ADMIN
+                - SYS_NICE
+          lifecycle:
+            preStop:
+              exec:
+                command: ["/usr/share/ovn/scripts/ovn-ctl", "stop_controller"]
+          volumeMounts:
+            - name: var-run-openvswitch
+              mountPath: "/var/run/openvswitch"
+            - name: var-run-ovn
+              mountPath: "/var/run/ovn"
+            - name: container-scripts
+              mountPath: "/usr/local/bin/container-scripts"
+              readOnly: true
+          livenessProbe:
+            exec:
+              command: ["/bin/bash", "-c", "/usr/local/bin/container-scripts/ovn_controller_liveness.sh"]
+            initialDelaySeconds: 30
+            periodSeconds: 5
+            timeoutSeconds: 5
+          readinessProbe:
+            exec:
+              command: ["/bin/bash", "-c", "/usr/local/bin/container-scripts/ovn_controller_readiness.sh"]
+            initialDelaySeconds: 30
+            periodSeconds: 5
+            timeoutSeconds: 5
+        - name: init-ovsdb-server
+          image: {{ .Values.global.registry | required ".Values.global.registry is missing" }}/cobaltcore-dev/openstack-ovn-controller:{{ .Values.imageVersionOVN | default "latest" }}
+          imagePullPolicy: IfNotPresent
+          command: ["dumb-init", "/bin/bash", "-c", "/usr/local/bin/container-scripts/init.sh"]
+          env:
+            - name: HOSTNAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.labels['kubernetes.metal.cloud.sap/name']
+            - name: BUILDING_BLOCK
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.labels['kubernetes.metal.cloud.sap/bb']
+            - name: HOST_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.hostIP
+          volumeMounts:
+            - name: var-run-openvswitch
+              mountPath: "/var/run/openvswitch"
+            - name: container-scripts
+              mountPath: "/usr/local/bin/container-scripts"
+              readOnly: true
+      dnsConfig:
+        searches:
+          - {{ .Values.global.region }}.{{ .Values.global.tld }}
+      volumes:
+        - name: var-run-openvswitch
+          hostPath:
+            path: "/var/run/openvswitch"
+            type: Directory
+        - name: var-run-ovn
+          hostPath:
+            path: "/var/run/ovn"
+            type: DirectoryOrCreate
+        - name: container-scripts
+          configMap:
+            name: {{ .Release.Name }}-bin
+            defaultMode: 0755
