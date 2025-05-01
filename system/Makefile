@@ -34,6 +34,7 @@ build-cluster-api-core:
 build-controlplane-kubeadm:
 	$(call build-chart,controlplane-kubeadm,https://github.com/kubernetes-sigs/cluster-api//controlplane/kubeadm/config/default,$(CLUSTER_API_VERSION))
 	$(call fix-crds,controlplane-kubeadm)
+	@find controlplane-kubeadm/crds -type f -exec $(SED) -i -e 's#capi-kubeadm-control-plane-system#capi#g' {} \;
 	@yq -i '.controllerManager.manager.image.tag="$(CLUSTER_API_VERSION)"' controlplane-kubeadm/values.yaml
 	@yq -i '.fullnameOverride="capi-capi-kubeadm-controlplane"' controlplane-kubeadm/values.yaml
 	@yq -i '.version="0.2.0"' controlplane-kubeadm/Chart.yaml
@@ -41,6 +42,7 @@ build-controlplane-kubeadm:
 build-bootstrap-kubeadm:
 	$(call build-chart,bootstrap-kubeadm,https://github.com/kubernetes-sigs/cluster-api//bootstrap/kubeadm/config/default,$(CLUSTER_API_VERSION))
 	$(call fix-crds,bootstrap-kubeadm)
+	@find bootstrap-kubeadm/crds -type f -exec $(SED) -i -e 's#capi-kubeadm-control-plane-system#capi#g' {} \;
 	@yq -i '.controllerManager.manager.image.tag="$(CLUSTER_API_VERSION)"' bootstrap-kubeadm/values.yaml
 	@yq -i '.fullnameOverride="capi-capi-kubeadm-bootstrap"' bootstrap-kubeadm/values.yaml
 	@yq -i '.version="0.2.0"' bootstrap-kubeadm/Chart.yaml
