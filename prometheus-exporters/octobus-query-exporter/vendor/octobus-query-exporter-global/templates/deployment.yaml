@@ -37,6 +37,9 @@ spec:
         - name: octobus-query-exporter-global
           configMap:
             name: octobus-query-exporter-global
+        - name: config
+          secret:
+            secretName: octobus-query-exporter-global
       containers:
         - name: octobus-query-exporter-global
           image: {{ .Values.global.registry }}/{{ .Values.global.octobus.image.repo }}:{{ .Values.global.octobus.image.tag }}
@@ -49,23 +52,15 @@ spec:
                      "--port", "{{ .Values.listen_port }}",
                      "--log-level", "{{ .Values.log_level }}",
                      "--es-cluster", "{{ .Values.octobus.target }}" ]
-          env:
-          - name: ES_EXPORTER_HEADER
-            valueFrom:
-              secretKeyRef:
-                name: octobus-query-exporter
-                key: header
-          - name: ES_EXPORTER_FAILOVER_HEADER
-            valueFrom:
-              secretKeyRef:
-                name: octobus-query-exporter
-                key: failover_header
           ports:
             - name: metrics
               containerPort: {{ .Values.listen_port }}
           volumeMounts:
             - mountPath: /octobus-query-exporter-global
               name: octobus-query-exporter-global
+            - mountPath: /config.cfg
+              name: config
+              subPath: config.cfg
           securityContext:
             capabilities:
               drop:

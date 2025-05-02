@@ -47,15 +47,14 @@ spec:
       priorityClassName: {{ .Values.pod.priority_class.default }}
       initContainers:
       {{- tuple . (dict "service" (include "manila.service_dependencies" . )) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 8 }}
-        - name: fetch-rabbitmqadmin
+        {{- if not .Values.api_backdoor }}
+        - name: create-guru-file
           image: {{.Values.global.dockerHubMirror}}/library/busybox
-          command: ["/scripts/fetch-rabbitmqadmin.sh"]
+          command: ["/bin/sh", "-c", "touch /shared/guru"]
           volumeMounts:
-            - name: manila-bin
-              mountPath: /scripts
-              readOnly: true
             - name: etcmanila
               mountPath: /shared
+        {{- end }}
       containers:
         - name: manila-share-netapp-{{$share.name}}
           image: {{.Values.global.registry}}/loci-manila:{{.Values.loci.imageVersion}}

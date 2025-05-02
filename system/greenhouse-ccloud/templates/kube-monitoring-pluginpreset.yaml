@@ -125,6 +125,49 @@ spec:
       value: thanos.yaml
   {{- end }}
   {{- end }}
+  {{- range $cluster, $additionalSettings := .Values.kubeMonitoring.controlplaneClusters }}
+  - clusterName: {{ $cluster }}
+    overrides:
+    - name: kubeMonitoring.crds.enabled
+      value: false
+    - name: kubeMonitoring.prometheusOperator.enabled
+      value: false
+    - name: kubeMonitoring.kubeControllerManager.enabled
+      value: true
+    - name: kubeMonitoring.kubeDns.enabled
+      value: true
+    - name: kubeMonitoring.kubeProxy.enabled
+      value: true
+    - name: kubeMonitoring.kubeScheduler.enabled
+      value: true
+    - name: global.commonLabels
+      value:
+        support_group: containers
+        service: cc-cp
+    - name: kubeMonitoring.prometheus.prometheusSpec.externalLabels
+      value:
+        cluster: '{{ "{{ .Values.global.greenhouse.clusterName }}" }}'
+        cluster_type: sci-k8s-runtime
+        region: '{{ "{{ .Values.global.greenhouse.clusterName | trunc -7 }}" }}'
+  {{- if index $additionalSettings "serviceProxyUrl" }}
+    - name: kubeMonitoring.prometheus.prometheusSpec.externalUrl
+      value: {{ index $additionalSettings "serviceProxyUrl" }}
+  {{- end }}
+    - name: kubeMonitoring.kube-state-metrics.prometheus.monitor.http.metricRelabelings
+      value:
+      - action: replace
+        regex: .*
+        replacement: {{ $cluster }}
+        sourceLabels:
+        - __name__
+        targetLabel: cluster
+  {{- if index $additionalSettings "thanos" }}
+    - name: kubeMonitoring.prometheus.prometheusSpec.thanos.objectStorageConfig.existingSecret.name
+      value: thanos-{{ $cluster }}-metrics-objectstore
+    - name: kubeMonitoring.prometheus.prometheusSpec.thanos.objectStorageConfig.existingSecret.key
+      value: thanos.yaml
+  {{- end }}
+  {{- end }}
   clusterSelector:
     matchExpressions:
     - key: greenhouse.sap/pluginpreset
@@ -134,8 +177,9 @@ spec:
     - key: cluster-type
       operator: In
       values:
-      - "storage"
       - "compute"
+      - "sci-k8s-runtime"
+      - "storage"
       - "observability"
   plugin:
     disabled: false

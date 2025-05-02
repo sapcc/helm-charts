@@ -1,7 +1,7 @@
 kind: KubeadmControlPlane
 apiVersion: controlplane.cluster.x-k8s.io/v1beta1
 metadata:
-  name: r-{{ .Values.global.region }}
+  name: kcp-rt-{{ .Values.global.region }}
 spec:
   replicas: {{ default 3 .Values.controlPlane.replicas }}
   version: {{ .Values.controlPlane.version }}
@@ -13,7 +13,7 @@ spec:
     infrastructureRef:
       kind: IroncoreMetalMachineTemplate
       apiVersion: infrastructure.cluster.x-k8s.io/v1alpha1
-      name: r-{{ .Values.global.region }}
+      name: controlplane-rt-{{ .Values.global.region }}
   kubeadmConfigSpec:
     initConfiguration:
       nodeRegistration:
@@ -21,7 +21,12 @@ spec:
         kubeletExtraArgs:
           cloud-provider: external
         taints: []
+      localAPIEndpoint:
+        bindPort: {{ .Values.controlPlane.port }}
     joinConfiguration:
+      controlPlane:
+        localAPIEndpoint:
+          bindPort: {{ .Values.controlPlane.port }}
       nodeRegistration:
         name: $${METAL_HOSTNAME}
         kubeletExtraArgs:
@@ -31,7 +36,14 @@ spec:
       apiServer:
         extraArgs:
           cloud-provider: external
-          secure-port: "6443"
+          secure-port: {{ .Values.controlPlane.port | quote }}
+          authentication-config: /etc/kubernetes/authentication.yaml
+        extraVolumes:
+          - name: "authentication-config"
+            hostPath: "/etc/kubernetes/authentication.yaml"
+            mountPath: "/etc/kubernetes/authentication.yaml"
+            readOnly: true
+            pathType: File
       controllerManager:
         extraArgs:
           cloud-provider: external
@@ -60,7 +72,7 @@ spec:
             - name: vip_arp
               value: "true"
             - name: port
-              value: "6443"
+              value: {{ .Values.controlPlane.port | quote }}
             - name: vip_interface
               value: ""
             - name: vip_cidr
@@ -119,6 +131,62 @@ spec:
       path: /etc/kubernetes/manifests/kube-vip.yaml
       permissions: "0644"
 
+    - content: |
+        #!/bin/bash
+        set -uo pipefail
+
+        dataDisk="/var/lib/etcd"
+
+        # Find NVMe disk larger than 1.2TB, sorted by PCI ID
+        nvme_target="/dev/"$(lsblk -ndblo kname,size,type | awk '$3 == "disk" && $1 ~ /^nvme/ && $2 > 1.2*2^40 {print $1}' | sort | head -n 1)
+
+        # Validate the device path
+        if [ -z "$nvme_target" ]; then
+          echo "No suitable NVMe disk found."
+          exit 1
+        fi
+
+        if [ ! -b "$nvme_target" ]; then
+          echo "Error: $nvme_target is not a valid block device."
+          exit 1
+        fi
+
+        echo "Preparing NVMe disk: $nvme_target"
+
+        # Ensure the device is not in use
+        if mount | grep -q "$nvme_target"; then
+          echo "Error: $nvme_target is already mounted."
+          exit 1
+        fi
+
+        # Partition and format the disk
+        sgdisk -Z "$nvme_target" || { echo "Failed to wipe partitions on $nvme_target"; exit 1; }
+        sgdisk -o "$nvme_target" || { echo "Failed to create new partition table on $nvme_target"; exit 1; }
+        mkfs.ext4 -L "ETCD_DISK" "$nvme_target" -F -E lazy_itable_init=1,lazy_journal_init=1 || { echo "Failed to format $nvme_target"; exit 1; }
+        udevadm settle
+        echo "Filesystem created and labeled as 'ETCD_DISK' on $nvme_target"
+
+        # Create the mount point
+        mkdir -p $dataDisk
+
+        # Mount the disk
+        mount "$nvme_target" $dataDisk || { echo "Failed to mount $nvme_target to $dataDisk"; exit 1; }
+        echo "Disk mounted to $dataDisk"
+
+        # Add to /etc/fstab for persistence
+        if ! grep -q "$nvme_target" /etc/fstab; then
+          echo "LABEL=ETCD_DISK $dataDisk ext4 defaults 0 0" >> /etc/fstab
+          echo "Added $nvme_target to /etc/fstab"
+        fi
+
+        # https://github.com/kubernetes/kubeadm/issues/2127 and https://github.com/kubernetes-sigs/cluster-api/blob/main/docs/proposals/20200423-etcd-data-disk.md?plain=1#L214-L215
+        rm -rf /var/lib/etcd/*
+
+        echo "NVMe disk preparation complete."
+      owner: root:root
+      path: /opt/etcd_disk.sh
+      permissions: "0744"
+
     - content: 127.0.0.1 localhost kubernetes
       owner: root:root
       path: /etc/kube-vip.hosts
@@ -138,6 +206,7 @@ spec:
         - {{ $.Values.user.key | quote }}
     preKubeadmCommands:
       - hostnamectl set-hostname $${METAL_HOSTNAME}
+      - /opt/etcd_disk.sh
       # match kubelet with KCP version
       - IMAGE={{ $.Values.images.kubelet.repository }}:{{ .Values.controlPlane.version }}
       - while true; do ctr image pull $IMAGE && break; done
