@@ -1,159 +1,163 @@
+{{- define "hsm_deployment" -}}
+{{- $envAll := index . 0 -}}
+{{- $hsm := index . 1 -}}
 kind: Deployment
 apiVersion: apps/v1
 
 metadata:
-  name: barbican-api
+  name: barbican-api-{{$hsm.name}}
   labels:
-    app: {{ template "fullname" . }}
-    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
-    release: "{{ .Release.Name }}"
-    heritage: "{{ .Release.Service }}"
+    app: {{ template "fullname" $envAll }}
+    chart: "{{ $envAll.Chart.Name }}-{{ $envAll.Chart.Version }}"
+    release: "{{ $envAll.Release.Name }}"
+    heritage: "{{ $envAll.Release.Service }}"
     system: openstack
     type: api
     component: barbican
 spec:
-  replicas: {{ required ".Values.api.replicas is missing" .Values.api.replicas }}
-  revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revisionHistory }}
+  replicas: {{ required ".Values.api.replicas is missing" $envAll.Values.api.replicas }}
+  revisionHistoryLimit: {{ $envAll.Values.pod.lifecycle.upgrades.deployments.revisionHistory }}
   strategy:
-    type: {{ .Values.pod.lifecycle.upgrades.deployments.podReplacementStrategy }}
-    {{ if eq .Values.pod.lifecycle.upgrades.deployments.podReplacementStrategy "RollingUpdate" }}
+    type: {{ $envAll.Values.pod.lifecycle.upgrades.deployments.podReplacementStrategy }}
+    {{ if eq $envAll.Values.pod.lifecycle.upgrades.deployments.podReplacementStrategy "RollingUpdate" }}
     rollingUpdate:
-      maxUnavailable: {{ .Values.pod.lifecycle.upgrades.deployments.rollingUpdate.maxUnavailable }}
-      maxSurge: {{ .Values.pod.lifecycle.upgrades.deployments.rollingUpdate.maxSurge }}
+      maxUnavailable: {{ $envAll.Values.pod.lifecycle.upgrades.deployments.rollingUpdate.maxUnavailable }}
+      maxSurge: {{ $envAll.Values.pod.lifecycle.upgrades.deployments.rollingUpdate.maxSurge }}
     {{ end }}
   selector:
     matchLabels:
-      name: barbican-api
+      name: barbican-api-{{$hsm.name}}
   template:
     metadata:
       labels:
-        app: {{ template "fullname" . }}
-        name: barbican-api
+        app: {{ template "fullname" $envAll }}
+        chart: "{{ $envAll.Chart.Name }}-{{ $envAll.Chart.Version }}"
+        name: barbican-api-{{$hsm.name}}
         alert-tier: os
         alert-service: barbican
-        {{ tuple . "barbican" "api" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | nindent 8 }}
-        {{- include "utils.topology.pod_label" . | nindent 8 }}
+        {{ tuple $envAll "barbican" "api" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | nindent 8 }}
+        {{- include "utils.topology.pod_label" $envAll | nindent 8 }}
       annotations:
-        configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
-        {{- if .Values.proxysql.mode }}
+        configmap-etc-hash: {{ include (print $envAll.Template.BasePath "/etc-configmap.yaml") $envAll | sha256sum }}
+        {{- if $envAll.Values.proxysql.mode }}
         prometheus.io/scrape: "true"
-        prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
+        prometheus.io/targets: {{ required "$envAll.Values.alerts.prometheus missing" $envAll.Values.alerts.prometheus | quote }}
         {{- end }}
-        {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
+        {{- include "utils.linkerd.pod_and_service_annotation" $envAll | indent 8 }}
     spec:
-      {{ tuple . "barbican" "api" | include "kubernetes_pod_anti_affinity" | nindent 6 }}
-      {{- include "utils.proxysql.pod_settings" . | indent 6 }}
-      {{- tuple . (dict "name" "barbican-api") | include "utils.topology.constraints" | indent 6 }}
+      {{ tuple $envAll "barbican" "api" | include "kubernetes_pod_anti_affinity" | nindent 6 }}
+      {{- include "utils.proxysql.pod_settings" $envAll | indent 6 }}
+      {{- tuple $envAll ( dict "name" "barbican-api") | include "utils.topology.constraints" | indent 6 }}
       initContainers:
-      {{- tuple . (dict "service" (include "barbican.service_dependencies" .)) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
+      {{- tuple $envAll ( dict "service" (include "barbican.service_dependencies"  $envAll )) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
       containers:
         - name: barbican-api
-          image: {{required ".Values.global.registry is missing" .Values.global.registry }}/loci-barbican:{{required "Values.imageVersionBarbicanApi is missing" .Values.imageVersionBarbicanApi}}
+          image: {{required "$envAll.Values.global.registry is missing" $envAll.Values.global.registry }}/loci-barbican:{{required "Values.imageVersionBarbicanApi is missing" $envAll.Values.imageVersionBarbicanApi}}
           imagePullPolicy: IfNotPresent
           command:
           - dumb-init
           - barbican-api
           env:
-          {{- if .Values.sentry.enabled }}
+          {{- if $envAll.Values.sentry.enabled }}
           - name: SENTRY_DSN
             valueFrom:
               secretKeyRef:
                 name: sentry
                 key: barbican.DSN.python
           {{- end }}
-          {{- if .Values.hsm.enabled }}
+          {{- if $envAll.Values.hsm.enabled }}
           - name: ChrystokiConfigurationPath
             value: "/thales/safenet/lunaclient/config"
           {{- end }}
-          {{- if .Values.api.resources.enabled }}
+          {{- if $envAll.Values.api.resources.enabled }}
           resources:
             limits:
-              cpu: {{ .Values.api.resources.limits.cpu | quote }}
-              memory: {{ .Values.api.resources.limits.memory | quote }}
+              cpu: {{ $envAll.Values.api.resources.limits.cpu | quote }}
+              memory: {{ $envAll.Values.api.resources.limits.memory | quote }}
             requests:
-              cpu: {{ .Values.api.resources.requests.cpu | quote }}
-              memory: {{ .Values.api.resources.requests.memory | quote }}
+              cpu: {{ $envAll.Values.api.resources.requests.cpu | quote }}
+              memory: {{ $envAll.Values.api.resources.requests.memory | quote }}
           {{- end }}
           lifecycle:
             preStop:
-              {{- include "utils.snippets.pre_stop_graceful_shutdown" . | indent 14 }}
+              {{- include "utils.snippets.pre_stop_graceful_shutdown" $envAll | indent 14 }}
           livenessProbe:
             httpGet:
               path: /
-              port: {{.Values.api_port_internal}}
+              port: {{ $envAll.Values.api_port_internal }}
             initialDelaySeconds: 15
             timeoutSeconds: 5
           readinessProbe:
             httpGet:
               path: /healthcheck
-              port: {{.Values.api_port_internal}}
+              port: {{ $envAll.Values.api_port_internal }}
             initialDelaySeconds: 15
             timeoutSeconds: 5
           ports:
             - name: barbican-api
-              containerPort: {{.Values.api_port_internal}}
+              containerPort: {{ $envAll.Values.api_port_internal }}
           volumeMounts:
             - name: etcbarbican
               mountPath: /etc/barbican
-            - name: barbican-etc
+            - name: barbican-etc-{{$hsm.name}}
               mountPath: /etc/barbican/barbican.conf
               subPath: barbican.conf
               readOnly: true
-            - name: barbican-etc
+            - name: barbican-etc-{{$hsm.name}}
               mountPath: /etc/barbican/barbican-api-paste.ini
               subPath: barbican-api-paste.ini
               readOnly: true
-            - name: barbican-etc
+            - name: barbican-etc-{{$hsm.name}}
               mountPath: /etc/barbican/policy.yaml
               subPath: policy.yaml
               readOnly: true
-            - name: barbican-etc
+            - name: barbican-etc-{{$hsm.name}}
               mountPath: /etc/barbican/logging.ini
               subPath: logging.ini
               readOnly: true
             - mountPath: /etc/barbican/barbican.conf.d
-              name: barbican-etc-confd
+              name: barbican-etc-{{$hsm.name}}-confd
               readOnly: true
-            {{- if .Values.watcher.enabled }}
-            - name: barbican-etc
+            {{- if $envAll.Values.watcher.enabled }}
+            - name: barbican-etc-{{$hsm.name}}
               mountPath: /etc/barbican/watcher.yaml
               subPath: watcher.yaml
               readOnly: true
             {{- end }}
-            {{- if .Values.audit.enabled }}
-            - name: barbican-etc
+            {{- if $envAll.Values.audit.enabled }}
+            - name: barbican-etc-{{$hsm.name}}
               mountPath: /etc/barbican/barbican_audit_map.yaml
               subPath: barbican_audit_map.yaml
               readOnly: true
             {{- end }}
-            {{- if .Values.sapcc_rate_limit.enabled }}
-            - name: barbican-etc
+            {{- if $envAll.Values.sapcc_rate_limit.enabled }}
+            - name: barbican-etc-{{$hsm.name}}
               mountPath: /etc/barbican/ratelimit.yaml
               subPath: ratelimit.yaml
               readOnly: true
             {{- end }}
-        {{- if .Values.hsm.enabled }}
+        {{- if $envAll.Values.hsm.enabled }}
             - name: luna
               mountPath: /thales/
-            {{- include "utils.proxysql.volume_mount" . | indent 12 }}
-            {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
-        {{- include "utils.proxysql.container" . | indent 8 }}
+            {{- include "utils.proxysql.volume_mount" $envAll | indent 12 }}
+            {{- include "utils.trust_bundle.volume_mount" $envAll | indent 12 }}
+        {{- include "utils.proxysql.container" $envAll | indent 8 }}
         - name: lunaclient
-          image: {{required ".Values.global.registry is missing" .Values.global.registry }}/loci-barbican:{{required "Values.hsm.luna.image is missing" .Values.hsm.luna.image }}
+          image: {{required "$envAll.Values.global.registry is missing" $envAll.Values.global.registry }}/loci-barbican:{{required "Values.hsm.luna.image is missing" $envAll.Values.hsm.luna.image }}
           imagePullPolicy: Always
           env:
             - name: ChrystokiConfigurationPath
               value: "/thales/safenet/lunaclient/config"
           command: [ "/bin/bash", "-c", "--" ]
           args: [ "while true; do sleep 30; done;" ]
-          {{- if .Values.hsm.resources.enabled }}
+          {{- if $envAll.Values.hsm.resources.enabled }}
           resources:
             limits:
-              cpu: {{ .Values.hsm.resources.limits.cpu | quote }}
-              memory: {{ .Values.hsm.resources.limits.memory | quote }}
+              cpu: {{ $envAll.Values.hsm.resources.limits.cpu | quote }}
+              memory: {{ $envAll.Values.hsm.resources.limits.memory | quote }}
             requests:
-              cpu: {{ .Values.hsm.resources.requests.cpu | quote }}
-              memory: {{ .Values.hsm.resources.requests.memory | quote }}
+              cpu: {{ $envAll.Values.hsm.resources.requests.cpu | quote }}
+              memory: {{ $envAll.Values.hsm.resources.requests.memory | quote }}
           {{- end }}
           lifecycle:
             postStart:
@@ -168,50 +172,50 @@ spec:
               mountPath: /thales/
         {{- end }}
         - name: statsd
-          {{- if hasKey .Values.global "dockerHubMirror"}}
-          image: {{.Values.global.dockerHubMirror}}/{{ .Values.statsd.image.repository }}:{{ .Values.statsd.image.tag }}
+          {{- if hasKey $envAll.Values.global "dockerHubMirror"}}
+          image: {{$envAll.Values.global.dockerHubMirror}}/{{ $envAll.Values.statsd.image.repository }}:{{ $envAll.Values.statsd.image.tag }}
           {{- else }}
-          image: "{{ .Values.statsd.image.repository }}:{{ .Values.statsd.image.tag }}"
+          image: "{{ $envAll.Values.statsd.image.repository }}:{{ $envAll.Values.statsd.image.tag }}"
           {{- end }}
           imagePullPolicy: IfNotPresent
           args: [ --statsd.mapping-config=/etc/statsd/statsd-exporter.yaml ]
-          {{- if .Values.statsd.resources.enabled }}
+          {{- if $envAll.Values.statsd.resources.enabled }}
           resources:
             limits:
-              cpu: {{ .Values.statsd.resources.limits.cpu | quote }}
-              memory: {{ .Values.statsd.resources.limits.memory | quote }}
+              cpu: {{ $envAll.Values.statsd.resources.limits.cpu | quote }}
+              memory: {{ $envAll.Values.statsd.resources.limits.memory | quote }}
             requests:
-              cpu: {{ .Values.statsd.resources.requests.cpu | quote }}
-              memory: {{ .Values.statsd.resources.requests.memory | quote }}
+              cpu: {{ $envAll.Values.statsd.resources.requests.cpu | quote }}
+              memory: {{ $envAll.Values.statsd.resources.requests.memory | quote }}
           {{- end }}
           ports:
             - name: statsd
               containerPort: 9125
               protocol: UDP
             - name: metrics
-              containerPort: {{ .Values.statsd.port }}
+              containerPort: {{ $envAll.Values.statsd.port }}
           volumeMounts:
-            - name: barbican-etc
+            - name: barbican-etc-{{$hsm.name}}
               mountPath: /etc/statsd/statsd-exporter.yaml
               subPath: statsd-exporter.yaml
               readOnly: true
 
       volumes:
-        - name: barbican-etc
+        - name: barbican-etc-{{$hsm.name}}
           configMap:
-            name: barbican-etc
-        - name: barbican-etc-confd
+            name: barbican-etc-{{$hsm.name}}
+        - name: barbican-etc-{{$hsm.name}}-confd
           secret:
-            secretName: {{ .Release.Name }}-secrets
+            secretName: {{ $envAll.Release.Name }}-secrets
             items:
             - key: secrets.conf
               path: secrets.conf
         - name: etcbarbican
           emptyDir: {}
-        {{- if .Values.hsm.enabled }}
+        {{- if $envAll.Values.hsm.enabled }}
         - name: hsm
           secret:
-            secretName: {{ .Release.Name }}-secrets
+            secretName: {{ $envAll.Release.Name }}-secrets
             defaultMode: 0744
             items:
             - key: barbican_lunaclient.sh
@@ -219,5 +223,6 @@ spec:
         - name: luna
           emptyDir: {}
         {{ end }}
-        {{- include "utils.proxysql.volumes" . | indent 8 }}
-        {{- include "utils.trust_bundle.volumes" . | indent 8 }}
+        {{- include "utils.proxysql.volumes" $envAll | indent 8 }}
+        {{- include "utils.trust_bundle.volumes" $envAll | indent 8 }}
+{{- end }}

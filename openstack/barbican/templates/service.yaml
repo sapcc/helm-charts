@@ -1,25 +1,28 @@
-kind: Service
+{{- define "hsm_service" -}}
+{{- $envAll := index . 0 -}}
+{{- $hsm := index . 1 -}}
 apiVersion: v1
-
+kind: Service
 metadata:
-  name: barbican-api
-  namespace: {{.Release.Namespace}}
+  name: barbican-api-{{ $hsm.name }}
   labels:
-    app: {{ template "fullname" . }}
-    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
-    release: "{{ .Release.Name }}"
-    heritage: "{{ .Release.Service }}"
+    app: {{ template "fullname" $envAll }}
+    chart: "{{ $envAll.Chart.Name }}-{{ $envAll.Chart.Version }}"
+    release: "{{ $envAll.Release.Name }}"
+    heritage: "{{ $envAll.Release.Service }}"
     system: openstack
     type: api
     component: barbican
   annotations:
     prometheus.io/scrape: "true"
-    prometheus.io/port: {{.Values.statsd.port | quote }}
-    prometheus.io/targets: {{ .Values.alerts.prometheus | quote }}
-    {{- include "utils.linkerd.pod_and_service_annotation" . | indent 4 }}
+    prometheus.io/port: {{ $envAll.Values.statsd.port | quote }}
+    prometheus.io/targets: {{ $envAll.Values.alerts.prometheus | quote }}
+    {{- include "utils.linkerd.pod_and_service_annotation" $envAll | indent 4 }}
 spec:
   selector:
-    name: barbican-api
+    name: barbican-api-{{ $hsm.name }}
   ports:
     - name: barbican-api
-      port: {{.Values.api_port_internal}}
+      port: {{ $envAll.Values.api_port_internal }}
+      targetPort: {{ $envAll.Values.api_port_internal }}
+{{- end }}
