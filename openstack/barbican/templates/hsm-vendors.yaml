@@ -1,0 +1,17 @@
+{{- $envAll := . }}
+{{- $jobRendered := false }}
+{{- range $i, $hsm := $envAll.Values.hsm.vendors }}
+  {{- if and $hsm.enabled $hsm.name }}
+---
+{{ tuple $envAll $hsm | include "hsm_deployment" }}
+---
+{{ tuple $envAll $hsm | include "hsm_configmap" }}
+---
+{{ tuple $envAll $hsm | include "hsm_service" }}
+  {{- if not $jobRendered }}
+---
+{{ tuple $envAll $hsm | include "hsm_migration_job" }}
+    {{- $jobRendered = true }}
+  {{- end }}
+  {{- end }}
+{{- end }}
