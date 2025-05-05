@@ -1,17 +1,22 @@
 {{- $envAll := . }}
-{{- $jobRendered := false }}
+{{- $firstHSM := dict }}
 {{- range $i, $hsm := $envAll.Values.hsm.vendors }}
   {{- if and $hsm.enabled $hsm.name }}
+    {{- if not $firstHSM.name }}
+      {{- $_ := set $firstHSM "hsm" $hsm }}
+    {{- end }}
 ---
 {{ tuple $envAll $hsm | include "hsm_deployment" }}
 ---
 {{ tuple $envAll $hsm | include "hsm_configmap" }}
 ---
-{{ tuple $envAll $hsm | include "hsm_service" }}
-  {{- if not $jobRendered }}
+{{ tuple $envAll $hsm | include "hsm_ingress" }}
 ---
-{{ tuple $envAll $hsm | include "hsm_migration_job" }}
-    {{- $jobRendered = true }}
+{{ tuple $envAll $hsm | include "hsm_service" }}
   {{- end }}
-  {{- end }}
+{{- end }}
+
+{{- if $firstHSM.hsm }}
+---
+{{ tuple $envAll $firstHSM.hsm | include "hsm_migration_job" }}
 {{- end }}

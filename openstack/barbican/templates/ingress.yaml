@@ -1,35 +1,41 @@
-kind: Ingress
-apiVersion: networking.k8s.io/v1
+{{- define "hsm_ingress" -}}
+{{- $envAll := index . 0 -}}
+{{- $hsm := index . 1 -}}
 
+apiVersion: networking.k8s.io/v1
+kind: Ingress
 metadata:
-  name: barbican-api
-  namespace:  {{.Release.Namespace}}
+  name: barbican-api-{{ $hsm.name }}
+  namespace: {{ $envAll.Release.Namespace }}
   labels:
-    app: {{ template "fullname" . }}
-    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
-    release: "{{ .Release.Name }}"
-    heritage: "{{ .Release.Service }}"
+    app: {{ template "fullname" $envAll }}
+    chart: "{{ $envAll.Chart.Name }}-{{ $envAll.Chart.Version }}"
+    release: "{{ $envAll.Release.Name }}"
+    heritage: "{{ $envAll.Release.Service }}"
     system: openstack
     type: api
     component: barbican
   annotations:
-  {{- if .Values.tlsacme }}
+  {{- if $envAll.Values.tlsacme }}
     kubernetes.io/tls-acme: "true"
     disco: "true"
   {{- end }}
-  {{- include "utils.linkerd.ingress_annotation" . | indent 4 }}
+  {{- include "utils.linkerd.ingress_annotation" $envAll | indent 4 }}
+
 spec:
   tls:
-     - secretName: tls-{{ include "barbican_api_endpoint_host_public" . | replace "." "-" }}
-       hosts: [{{include "barbican_api_endpoint_host_public" .}}]
+    - secretName: tls-{{ include "barbican_api_endpoint_host_public" $envAll | replace "." "-" }}
+      hosts:
+        - {{ include "barbican_api_endpoint_host_public" $envAll }}
   rules:
-    - host: {{include "barbican_api_endpoint_host_public" .}}
+    - host: {{ include "barbican_api_endpoint_host_public" $envAll }}
       http:
         paths:
-        - path: /
-          pathType: Prefix
-          backend:
-            service:
-              name: barbican-api
-              port:
-                number: {{.Values.api_port_internal}}
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: barbican-api-{{ $hsm.name }}   # ✅ Targets correct HSM-specific service
+                port:
+                  number: {{ $envAll.Values.api_port_internal }}
+{{- end }}
