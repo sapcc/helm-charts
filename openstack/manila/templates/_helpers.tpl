@@ -14,7 +14,7 @@ netapp:tcp_max_xfer_size: "262144"  # ccloud 256 KB, system default for ONTAP 9.
 netapp:thin_provisioned: "True"     # netapp_flexvol_encryption: "True"
 create_share_from_snapshot_support: "True"
 revert_to_snapshot_support: "True"
-replication_type: "dr"
+replication_type: "readable"
 {{- end }}
 
 {{/*
