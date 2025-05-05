@@ -65,6 +65,7 @@ def disabled_console(bm, node):
         import sys
 
         traceback.print_exception(e, limit=2, file=sys.stdout)
+        yield
     finally:
         if reenable_console:
             bm.node.set_console_mode(node.uuid, "true")
