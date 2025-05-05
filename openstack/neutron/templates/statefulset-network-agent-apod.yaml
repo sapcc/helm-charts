@@ -192,14 +192,35 @@ spec:
               mountPath: /etc/neutron
               readOnly: true
             {{- include "utils.trust_bundle.volume_mount" $ | indent 12 }}
-        - name: neutron-netns-exporter
-          image: "{{ required "$.Values.global.registry missing" $.Values.global.registry }}/neutron-netns-exporter:20250409140740"
+        - name: neutron-netns-exporter-v2
+          image: "{{ required "$.Values.global.registry missing" $.Values.global.registry }}/neutron-netns-exporter:{{ required "Please set netns.imageVersion" $.Values.netns.imageVersion }}"
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
+            runAsUser: 0
+            runAsGroup: 0
+            capabilities:
+              add:
+                - SYS_ADMIN
+                - NET_ADMIN
           volumeMounts:
             - name: netns
               mountPath: /agent/run/netns
+            - name: sudoers
+              mountPath: /etc/sudoers
+              subPath: sudoers
+              readOnly: true
+          env:
+          - name: OS_AUTH_URL
+            value: https://identity-3.{{ $.Values.global.region }}.cloud.sap/v3
+          - name: OS_USERNAME
+            value: {{ $.Values.netns.userName | default "ns-exporter" }}
+          - name: OS_DOMAIN_NAME
+            value: {{ $.Values.netns.domainName | default "Default" }}
+          - name: OS_PROJECT_NAME
+            value: {{ $.Values.netns.projectName | default "cloud_admin" }}
+          - name: OS_PROJECT_DOMAIN_NAME
+            value: {{ $.Values.netns.projectDomainName | default "ccadmin" }}
       volumes:
         - name: netns
           hostPath:
