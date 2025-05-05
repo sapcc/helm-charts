@@ -7,6 +7,10 @@ webhook:
     operations:  ["CREATE", "UPDATE"]
     resources:   ["pods"]
     scope:       "Namespaced"
+  matchConditions: true
+  extraConditions:
+  - name: 'exclude-opt-out-hidden-secrets'
+    expression: 'object.metadata.?annotations["cloud.sap/inject-secrets"].orValue("") != "hidden"'
   clientCA:
     enabled: true
     resourceType: secret
