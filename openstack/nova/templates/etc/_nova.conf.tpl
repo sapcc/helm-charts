@@ -143,9 +143,6 @@ region_name = {{.Values.global.region}}
 [wsgi]
 default_pool_size = {{ .Values.wsgi_default_pool_size | default .Values.global.wsgi_default_pool_size | default 100 }}
 
-[workarounds]
-enable_live_migration_to_old_hypervisor = True
-
 [compute]
 initial_cpu_allocation_ratio = 1.0
 initial_ram_allocation_ratio = 1.0
