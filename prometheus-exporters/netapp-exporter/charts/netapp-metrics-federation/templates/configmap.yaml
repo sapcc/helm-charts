@@ -22,6 +22,21 @@ data:
         - type: fill
           label_name: unhealthy_reason
         help: "netapp snapmirror labels for local backup targets"
+      - export_name: netapp_snapmirror_lag_time:federated
+        query: |
+          netapp_snapmirror_endpoint_labels:enhanced{region="{{ .Values.global.region }}", project_id!="", share_id!=""}
+            * on (source_vserver, source_volume, destination_cluster, destination_vserver, destination_volume)
+            group_left() netapp_snapmirror_lag_time:enhanced
+      - export_name: netapp_snapmirror_last_transfer_duration:federated
+        query: |
+          netapp_snapmirror_endpoint_labels:enhanced{region="{{ .Values.global.region }}", project_id!="", share_id!=""}
+            * on (source_vserver, source_volume, destination_cluster, destination_vserver, destination_volume)
+            group_left() netapp_snapmirror_last_transfer_duration:enhanced
+      - export_name: netapp_snapmirror_last_transfer_size:federated
+        query: |
+          netapp_snapmirror_endpoint_labels:enhanced{region="{{ .Values.global.region }}", project_id!="", share_id!=""}
+            * on (source_vserver, source_volume, destination_cluster, destination_vserver, destination_volume)
+            group_left() netapp_snapmirror_last_transfer_size:enhanced
     label_rules:
       - type: drop
         label_prefix: linkerd_
