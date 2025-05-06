@@ -30,10 +30,6 @@ sync_power_state_unexpected_call_stop = false
 
 prepare_empty_host_for_spawning_interval = 600
 
-{{- if (.Values.imageVersion | hasPrefix "rocky") }}
-dhcp_domain = openstack.{{ required ".Values.global.region is missing" .Values.global.region }}.{{ required ".Values.global.tld is missing" .Values.global.tld }}
-{{- end }}
-
 {{ template "utils.snippets.debug.eventlet_backdoor_ini" "nova" }}
 
 [database]
@@ -41,9 +37,7 @@ dhcp_domain = openstack.{{ required ".Values.global.region is missing" .Values.g
 
 [api]
 compute_link_prefix = https://{{include "nova_api_endpoint_host_public" .}}:{{.Values.global.novaApiPortPublic}}
-{{- if (.Values.imageVersion | hasPrefix "rocky" | not) }}
 dhcp_domain = openstack.{{ required ".Values.global.region is missing" .Values.global.region }}.{{ required ".Values.global.tld is missing" .Values.global.tld }}
-{{- end }}
 
 [quota]
 {{- range $k, $v := .Values.quota }}
