@@ -38,7 +38,11 @@ spec:
               secretName: swift-http-import-certs
           containers:
           - name: swift-http-import
+            {{- if $.Values.image_refs.swift_http_import }}
+            image: {{ quote $.Values.image_refs.swift_http_import }}
+            {{- else }}
             image: {{ $.Values.global.registry }}/swift-http-import:{{ include "image_version" $.Values }}
+            {{- end }}
             imagePullPolicy: IfNotPresent
             args:
               - /etc/http-import/config/{{ $repo }}.yaml
