@@ -1,0 +1,59 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: {{ include "netapp-metrics-federation.fullname" . }}
+  labels:
+    {{- include "netapp-metrics-federation.labels" . | nindent 4 }}
+data:
+  snapmirror.yaml: |
+    metrics:
+      - export_name: netapp_snapmirror_labels:remotebkp
+        query: |
+          netapp_snapmirror_endpoint_labels:enhanced{region="{{ .Values.global.region }}", project_id!="", share_id!=""}
+            * on(source_cluster, source_vserver, source_volume, destination_cluster, destination_vserver, destination_volume)
+            group_right(project_id, share_id, share_name) netapp_snapmirror_labels:enhanced{share_id=""}
+        label_rules:
+        - type: fill
+          label_name: unhealthy_reason
+        help: "netapp snapmirror labels for remote backup targets"
+      - export_name: netapp_snapmirror_labels:localbkp
+        query: netapp_snapmirror_labels:enhanced{region="{{ .Values.global.region }}", project_id!="",share_id!="", destination_volume!~"share_[0-9a-f]{8}_[0-9a-f]{4}_[0-9a-f]{4}_[0-9a-f]{4}_[0-9a-f]{12}"}
+        label_rules:
+        - type: fill
+          label_name: unhealthy_reason
+        help: "netapp snapmirror labels for local backup targets"
+      - export_name: netapp_snapmirror_lag_time:federated
+        query: |
+          netapp_snapmirror_endpoint_labels:enhanced{region="{{ .Values.global.region }}", project_id!="", share_id!=""}
+            * on (source_vserver, source_volume, destination_cluster, destination_vserver, destination_volume)
+            group_left() netapp_snapmirror_lag_time:enhanced
+      - export_name: netapp_snapmirror_last_transfer_duration:federated
+        query: |
+          netapp_snapmirror_endpoint_labels:enhanced{region="{{ .Values.global.region }}", project_id!="", share_id!=""}
+            * on (source_vserver, source_volume, destination_cluster, destination_vserver, destination_volume)
+            group_left() netapp_snapmirror_last_transfer_duration:enhanced
+      - export_name: netapp_snapmirror_last_transfer_size:federated
+        query: |
+          netapp_snapmirror_endpoint_labels:enhanced{region="{{ .Values.global.region }}", project_id!="", share_id!=""}
+            * on (source_vserver, source_volume, destination_cluster, destination_vserver, destination_volume)
+            group_left() netapp_snapmirror_last_transfer_size:enhanced
+    label_rules:
+      - type: drop
+        label_prefix: linkerd_
+      - type: drop
+        label_prefix: kubernetes_
+      - type: drop
+        label_prefix: pod_
+      - type: drop
+        label_name: namespace
+      - type: drop
+        label_name: pod
+      - type: drop
+        label_name: app
+      - type: drop
+        label_name: name
+      - type: drop
+        label_name: container
+      - type: drop
+        label_name: prometheus
+

@@ -46,7 +46,7 @@ mysql://{{ .Values.cell2dbUser | include "mysql_metrics.resolve_secret_for_yaml"
   {{- $name := index . 1 -}}
   {{- with index . 0 -}}
     {{- $version_name := printf "imageVersionNova%s" ($name | lower | replace "-" " " | title | nospace) -}}
-    {{- $image_name := ( not (.Values.imageVersion | hasPrefix "rocky") | ternary .Values.imageNameNova (printf "ubuntu-source-nova-%s" ($name | lower)) ) -}}
+    {{- $image_name := .Values.imageNameNova -}}
 
     {{ required ".Values.global.registry is missing" .Values.global.registry}}/{{$image_name}}:{{index .Values $version_name | default .Values.imageVersionNova | default .Values.imageVersion | required "Please set nova.imageVersionNova or similar" }}
 

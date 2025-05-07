@@ -1,5 +1,5 @@
 CLUSTER_API_VERSION ?= v1.10.1
-PROVIDER_METAL3_VERSION ?= v1.6.0
+PROVIDER_METAL3_VERSION ?= v1.10.0
 PROVIDER_METAL_VERSION ?= 00d028c4aac7fa1e168c5ec9fab74e197530e37c
 PROVIDER_VSPHERE_VERSION ?= v1.9.3
 PROVIDER_IPAM_VERSION ?= v0.1.1
@@ -47,15 +47,17 @@ build-controlplane-kubeadm:
 	@yq -i '.fullnameOverride="capi-kubeadm-controlplane"' controlplane-kubeadm/values.yaml
 	@yq -i '.version="0.2.1"' controlplane-kubeadm/Chart.yaml
 
+# fix for "spec.ignition.containerLinuxConfig.additionalConfig: Too long: may not be longer than 10240"
 build-bootstrap-kubeadm:
 	$(call build-chart,bootstrap-kubeadm,https://github.com/kubernetes-sigs/cluster-api//bootstrap/kubeadm/config/default,$(CLUSTER_API_VERSION))
 	$(call fix-crds,bootstrap-kubeadm)
 	@find bootstrap-kubeadm/crds -type f -exec $(SED) -i -e 's#capi-kubeadm-bootstrap-system#capi#g' {} \;
 	@find bootstrap-kubeadm/templates -type f -exec $(SED) -i -e 's#/{{ include "bootstrap-kubeadm.fullname" . }}-system/#/#g' {} \;
 	@find bootstrap-kubeadm/templates -type f -exec $(SED) -i -e 's#-kubeadm-bootstrap-system.#.#g' {} \;
+	@$(SED) -i 's/10240/30720/g' bootstrap-kubeadm/crds/kubeadmconfig-crd.yaml
 	@yq -i '.controllerManager.manager.image.tag="$(CLUSTER_API_VERSION)"' bootstrap-kubeadm/values.yaml
 	@yq -i '.fullnameOverride="capi-kubeadm-bootstrap"' bootstrap-kubeadm/values.yaml
-	@yq -i '.version="0.2.1"' bootstrap-kubeadm/Chart.yaml
+	@yq -i '.version="0.2.2"' bootstrap-kubeadm/Chart.yaml
 
 build-provider-vsphere:
 	$(call build-chart,provider-vsphere,https://github.com/kubernetes-sigs/cluster-api-provider-vsphere//config/default,$(PROVIDER_VSPHERE_VERSION))
@@ -95,12 +97,12 @@ build-provider-metal3:
 	$(call build-chart,provider-metal3,https://github.com/metal3-io/cluster-api-provider-metal3//config/default,$(PROVIDER_METAL3_VERSION))
 	$(call fix-crds,provider-metal3)
 	@# hacky fix for ipam
-	@find provider-metal3/crds -type f -exec $(SED) -i -e 's#capm3-system/#capi/capi-#g' {} \;
-	@find provider-metal3/templates -type f -exec $(SED) -i -e 's#-capm3-system/#-#g' {} \;
+	@find provider-metal3/crds -type f -exec $(SED) -i -e 's#capm3-system/#capi/#g' {} \;
 	@find provider-metal3/templates -type f -exec $(SED) -i -e 's#.capm3-system.#.capi.#g' {} \;
-	@yq -i '.capm3ControllerManager.manager.image.tag="$(PROVIDER_METAL3_VERSION)",.ipamControllerManager.manager.image.tag="$(PROVIDER_METAL3_VERSION)"' provider-metal3/values.yaml
-	@yq -i '.fullnameOverride="capi"' provider-metal3/values.yaml
-	@yq -i '.version="0.1.2"' provider-metal3/Chart.yaml
+	@find provider-metal3/templates -type f -exec $(SED) -i -e 's#/{{ include "provider-metal3.fullname" . }}-system/#/#g' {} \;
+	@yq -i '.controllerManager.manager.image.tag="$(PROVIDER_METAL3_VERSION)"' provider-metal3/values.yaml
+	@yq -i '.fullnameOverride="capm3"' provider-metal3/values.yaml
+	@yq -i '.version="0.2.5"' provider-metal3/Chart.yaml
 
 build-provider-metal:
 	$(call build-chart,provider-metal,https://github.com/ironcore-dev/cluster-api-provider-ironcore-metal//config/default,$(PROVIDER_METAL_VERSION))

@@ -14,6 +14,9 @@ spec:
       kind: IroncoreMetalMachineTemplate
       apiVersion: infrastructure.cluster.x-k8s.io/v1alpha1
       name: controlplane-rt-{{ .Values.global.region }}
+    # to avoid "Node deletion timeout expired, continuing without Node deletion"
+    # https://github.com/kubernetes-sigs/cluster-api/pull/5608
+    nodeDeletionTimeout: 5m
   kubeadmConfigSpec:
     initConfiguration:
       nodeRegistration:
@@ -44,6 +47,7 @@ spec:
             mountPath: "/etc/kubernetes/authentication.yaml"
             readOnly: true
             pathType: File
+        timeoutForControlPlane: 20m
       controllerManager:
         extraArgs:
           cloud-provider: external
@@ -137,14 +141,20 @@ spec:
 
         dataDisk="/var/lib/etcd"
 
-        # Find NVMe disk larger than 1.2TB, sorted by PCI ID
-        nvme_target="/dev/"$(lsblk -ndblo kname,size,type | awk '$3 == "disk" && $1 ~ /^nvme/ && $2 > 1.2*2^40 {print $1}' | sort | head -n 1)
+        # Wait for udev to settle before proceeding
+        udevadm settle
+
+        # Find the first NVMe disk by PCI path
+        nvme_target=$(ls /dev/disk/by-path/*nvme* | head -n 1)
 
         # Validate the device path
         if [ -z "$nvme_target" ]; then
           echo "No suitable NVMe disk found."
           exit 1
         fi
+
+        # Resolve the symlink to the actual device
+        nvme_target=$(readlink -f "$nvme_target")
 
         if [ ! -b "$nvme_target" ]; then
           echo "Error: $nvme_target is not a valid block device."
