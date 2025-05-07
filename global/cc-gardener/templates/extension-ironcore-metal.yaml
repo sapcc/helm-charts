@@ -1,0 +1,36 @@
+{{ if .Values.extensions.metal.enabled -}}
+apiVersion: operator.gardener.cloud/v1alpha1
+kind: Extension
+metadata:
+  name: provider-ironcore-metal
+spec:
+  resources:
+  - kind: ControlPlane
+    type: ironcore-metal
+  - kind: Infrastructure
+    type: ironcore-metal
+  - kind: Worker
+    type: ironcore-metal
+  deployment:
+    # admission:
+    extension:
+      values:
+        image:
+          repository: "{{required ".Values.extensions.metal.image.repository is missing" .Values.extensions.metal.image.repository }}"
+          tag: "{{required ".Values.extensions.metal.image.tag is missing" .Values.extensions.metal.image.tag }}"
+        imageVectorOverwrite: |
+          images:
+            - name: cloud-controller-manager
+              sourceRepository: github.com/ironcore-dev/cloud-provider-metal
+              repository: "{{required ".Values.extensions.metal.imageVectorOverwrite.ccm.repository is missing" .Values.extensions.metal.imageVectorOverwrite.ccm.repository }}"
+              tag: "{{required ".Values.extensions.metal.imageVectorOverwrite.ccm.tag is missing" .Values.extensions.metal.imageVectorOverwrite.ccm.tag }}"
+            - name: machine-controller-manager-provider-ironcore-metal
+              sourceRepository: github.com/ironcore-dev/machine-controller-manager-provider-ironcore-metal
+              repository: "{{required ".Values.extensions.metal.imageVectorOverwrite.mcm.repository is missing" .Values.extensions.metal.imageVectorOverwrite.mcm.repository }}"
+              tag: "{{required ".Values.extensions.metal.imageVectorOverwrite.mcm.tag is missing" .Values.extensions.metal.imageVectorOverwrite.mcm.tag }}"
+      helm:
+        ociRepository:
+          tag: "0.1.0"
+          repository: keppel.eu-de-1.cloud.sap/ccloud-ghcr-io-mirror/ironcore-dev/charts/gardener-extension-provider-ironcore-metal
+      policy: OnDemand
+{{ end -}}

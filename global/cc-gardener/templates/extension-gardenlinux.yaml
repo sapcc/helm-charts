@@ -1,0 +1,22 @@
+{{ if .Values.extensions.gardenlinux.enabled -}}
+apiVersion: operator.gardener.cloud/v1alpha1
+kind: Extension
+metadata:
+  name: os-gardenlinux
+spec:
+  resources:
+  - kind: OperatingSystemConfig
+    type: gardenlinux
+  deployment:
+    # admission:
+    extension:
+      values:
+        replicaCount: 1
+        image:
+          tag: v0.29.0
+      helm:
+        ociRepository:
+          tag: v0.29.0
+          repository: keppel.eu-de-1.cloud.sap/ccloud-helm/os-gardenlinux
+      policy: OnDemand
+{{ end -}}
