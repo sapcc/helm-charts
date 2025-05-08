@@ -220,7 +220,17 @@ docker_create_db_directories() {
 }
 
 _mariadb_version() {
-	echo -n "10.6.21-MariaDB"
+	# MARIADB_MAJOR=10.6 defined by https://github.com/MariaDB/mariadb-docker/blob/87a043a031e8c56ba66a0ad06e633417ae75ee1e/10.6/Dockerfile#L82-L83
+	# mariadb --version returns something like:
+	# mariadb  Ver 15.1 Distrib 10.6.21-MariaDB, for debian-linux-gnu (aarch64) using readline 5.2
+	# the perl-regexp option is required for \K
+	# \K resets the starting point of the reported match. Any previously consumed characters are no longer included in the final match
+	# the only-matching option returns only the matching part of the version string
+	# Example result: 10.6.21-MariaDB
+
+	local version
+	version=$(mariadb --version | grep --only-matching --perl-regexp --regexp="^mariadb  Ver [0-9][0-9].[0-9] Distrib \K(${MARIADB_MAJOR}.[0-9]+-MariaDB)")
+	echo -n "${version}"
 }
 
 # initializes the database directory
