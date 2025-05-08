@@ -54,3 +54,10 @@ some space for the name suffixes on replicasets and pods.
 {{- fail "postgres-ng: extraDatabases entry cannot contain underscores!" }}
 {{- end }}
 {{- end }}
+
+{{- if (hasKey .Values "sqlOnCreate") }}
+{{- fail "postgres-ng: .Values.sqlOnCreate was removed because we are not aware of users (if you need it, please get in touch with us" }}
+{{- end }}
+{{- if (hasKey .Values "sqlOnStartup") }}
+{{- fail "postgres-ng: .Values.sqlOnStartup was removed because we are not aware of users (if you need it, please get in touch with us" }}
+{{- end }}

@@ -213,12 +213,6 @@ if [[ $created_db == true ]]; then
   PGDATABASE='postgres' process_sql --set db="$PGDATABASE" <<EOF
   CREATE DATABASE :"db";
 EOF
-
-  for file in /sql-on-create.d/*.sql; do
-    echo "Processing $file ..."
-    process_sql -f <(substituteSqlEnvs "$file")
-    echo
-  done
 fi
 
 # ensure that the configured password matches the password in the database

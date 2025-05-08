@@ -132,10 +132,6 @@ spec:
           mountPath: /data
         - name: postgres-etc
           mountPath: /etc/postgresql
-        {{- if .Values.sqlOnCreate }}
-        - name: sql-on-create
-          mountPath: /sql-on-create.d
-        {{- end }}
         - name: sql-on-startup
           mountPath: /sql-on-startup.d
         {{- if .Values.sharedMemoryLimit }}
@@ -177,11 +173,6 @@ spec:
       - name: crontab
         configMap:
           name: {{ template "postgres.fullname" . }}-crontab
-      {{- end }}
-      {{- if .Values.sqlOnCreate }}
-      - name: sql-on-create
-        configMap:
-          name: {{ template "postgres.fullname" . }}-sql-on-create
       {{- end }}
       - name: sql-on-startup
         configMap:
