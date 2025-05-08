@@ -17,6 +17,14 @@ some space for the name suffixes on replicasets and pods.
   {{- end -}}
 {{- end -}}
 
+{{- if .Values.postgresDatabase }}
+{{- fail "postgres-ng: postgresDatabase must be set!" }}
+{{- end }}
+
+{{- if (contains "_" .Values.postgresDatabase) }}
+{{- fail "postgres-ng: postgresDatabase cannot contain underscores!" }}
+{{- end }}
+
 {{- if .Values.postgresPassword }}
 {{- fail "postgres-ng: Setting the password via postgresPassword is no longer supported as it is auto generated on each start. Please remove the value and any vault references!" }}
 {{- end }}
@@ -27,4 +35,22 @@ some space for the name suffixes on replicasets and pods.
 
 {{- if lt ($.Values.postgresVersion | int) 15 }}
 {{- fail "postgres-ng: only postgres version 15 and up are supported by this chart version" }}
+{{- end }}
+
+{{- if .Values.tableOwner }}
+{{- fail "postgres-ng: Changing the owner of a database is no longer supported. A database is always owned by the user with the same name." }}
+{{- end }}
+
+{{- if eq .Values.postgresDatabase "postgres" }}
+{{- fail "postgresDatabase cannot be set to postgres because that is the name of an internal database!" }}
+{{- end }}
+
+{{ range $db := values.extraDatabases }}
+{{- if eq $db .Values.postgresDatabase }}
+{{- fail "postgres-ng: extraDatabases cannot contain postgresDatabase!" }}
+{{- end }}
+
+{{- if (contains "_" $db) }}
+{{- fail "postgres-ng: extraDatabases entry cannot contain underscores!" }}
+{{- end }}
 {{- end }}

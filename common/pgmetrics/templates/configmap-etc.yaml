@@ -1,7 +1,16 @@
+{{- /* TODO: dedupe with deployment.yaml */}}
+{{- $defaultDBs := list
+  (dict "name" .Release.Name "host" (printf "%s-postgresql" .Release.Name))
+}}
+{{- $databases := default $defaultDBs .Values.databases }}
+
+{{- range $databases }}
+---
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ .Release.Name }}-pgmetrics-etc
+  name: {{ $.Release.Name }}-{{ .name }}-pgmetrics-etc
 data:
   custom-metrics.yaml: |
-{{ toYaml .Values.customMetrics | indent 4}}
+{{ toYaml $.Values.customMetrics | indent 4}}
+{{- end }}
