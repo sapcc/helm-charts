@@ -18,11 +18,7 @@ some space for the name suffixes on replicasets and pods.
 {{- end -}}
 
 {{- if .Values.postgresDatabase }}
-{{- fail "postgres-ng: postgresDatabase must be set!" }}
-{{- end }}
-
-{{- if (contains "_" .Values.postgresDatabase) }}
-{{- fail "postgres-ng: postgresDatabase cannot contain underscores!" }}
+{{- fail "postgres-ng: .Values.postgresDatabase is not supported anymore! Please use .Values.databases instead." }}
 {{- end }}
 
 {{- if .Values.postgresPassword }}
@@ -38,21 +34,44 @@ some space for the name suffixes on replicasets and pods.
 {{- end }}
 
 {{- if .Values.tableOwner }}
-{{- fail "postgres-ng: Changing the owner of a database is no longer supported. A database is always owned by the user with the same name." }}
+{{- fail "postgres-ng: .Values.tableOwner is not supported anymore! Please set .Values.databases[name].owner instead." }}
 {{- end }}
 
-{{- if eq .Values.postgresDatabase "postgres" }}
-{{- fail "postgresDatabase cannot be set to postgres because that is the name of an internal database!" }}
+{{- if eq (len .Values.databases) 0 }}
+  {{- fail "postgres-ng: need at least one entry in .Values.databases" }}
 {{- end }}
 
-{{ range $db := values.extraDatabases }}
-{{- if eq $db .Values.postgresDatabase }}
-{{- fail "postgres-ng: extraDatabases cannot contain postgresDatabase!" }}
+{{- range $db := sortAlpha (keys .Values.databases) }}
+  {{- if (contains "_" $db) }}
+    {{- fail (printf "postgres-ng: Database name %q may not contain underscores!" $db) }}
+  {{- end }}
+  {{- if eq $db "postgres" "template0" "template1" }}
+    {{- fail (printf "postgres-ng: Database name %q cannot be used because this name is reserved for an internal database!" $db) }}
+  {{- end }}
+
+  {{- $cfg := index $.Values.databases $db }}
+  {{- if not $cfg.owner }}
+    {{- fail (printf "postgres-ng: Missing owner name for database %q" $db) }}
+  {{- else if not (hasKey $.Values.users $cfg.owner) }}
+    {{- fail (printf "postgres-ng: Invalid owner name for database %q (user %q is not declared in .Values.users)" $db $cfg.owner) }}
+  {{- end }}
 {{- end }}
 
-{{- if (contains "_" $db) }}
-{{- fail "postgres-ng: extraDatabases entry cannot contain underscores!" }}
+{{- if eq (len .Values.users) 0 }}
+  {{- fail "postgres-ng: need at least one entry in .Values.users" }}
 {{- end }}
+
+{{- range $user := sortAlpha (keys .Values.users) }}
+  {{- if eq $user "backup" "metrics" "postgres" }}
+    {{- fail (printf "postgres-ng: User %q cannot be declared in .Values.users explicitly!" $db) }}
+  {{- end }}
+
+  {{- $cfg := index $.Values.users $db }}
+  {{- range $grant := $cfg.grant | default (list) }}
+    {{- if $grant | contains "%PGDATABASE%" }}
+      {{- fail "postgres-ng: .Values.users[].grant[] may not contain %PGDATABASE anymore! Please name the database explicitly." }}
+    {{- end }}
+  {{- end }}
 {{- end }}
 
 {{- if (hasKey .Values "sqlOnCreate") }}

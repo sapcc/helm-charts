@@ -21,8 +21,6 @@ imageTag: '20250422094032'
 # The version of postgres to start.
 # This will be bumped over time and auto upgrade the database.
 postgresVersion: 17
-# The name of the database to create
-# postgresDatabase: acme-db
 
 # a selection of postgresql.conf settings which can be changed via values
 config:
@@ -36,32 +34,22 @@ config:
 
   random_page_cost: 1.1
 
-# Extra databases to create. A user with the same name MUST exist.
-# This is not checked by helm due to the to high complexity it would create in Helm's very limited templating engine.
-extraDatabases:
-  # - acme-user
+# Databases to create.
+databases: {}
+  # example:
+  #   owner: example-user
+  #   sqlOnStartup: |
+  #     GRANT CONNECT, SELECT ON DATABASE "example" TO "acme";
+  #
+  # The "owner" key is required.
+  #
+  # The "sqlOnStartup" key is optional and will execute the given SQL statements
+  # within the database with superuser privileges on each startup of the PostgreSQL server.
+  # This is usually used to provide permissions to non-owner users.
 
-# users to create
-#
-# WARNING: MAKE ABSOLUTELY SURE TO ALWAYS AT LEAST ADD EMPTY CURLY BRACKETS!!!
-#
-# CORRECT:
-# users:
-#   acme: {}
-#
-# WRONG:
-# users:
-#   acme:
-#
-users:
-  # NOTE: backup, metrics and postgres are reserved user names and adding them here might cause unexpected issues
+# Users to create.
+users: {}
   # acme:
-    # Ensure the user has those grant lines run on each start.
-    # TO $USER with the username is added per line.
-    # %PGDATABASE% is replaced with the actual database name.
-    # For example, a read-only application user would need `GRANT CONNECT,SELECT ON DATABASE "%PGDATABASE%"`
-    #grant:
-    #- '"GRANT CONNECT,SELECT ON DATABASE "%PGDATABASE%"'
     # If auto generating secrets doesn't work for you, you can also create them manually and reference them here:
     #secretName: mySecret
     #secretKey: myKey
