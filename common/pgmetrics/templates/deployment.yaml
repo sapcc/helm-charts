@@ -1,17 +1,14 @@
 {{- $registry := .Values.global.registry | required "missing value for .Values.global.registry" -}}
+{{- $db_host  := .Values.db_host         | default (printf "%s-postgresql" .Release.Name) -}}
+{{- $db_host  = printf "%s.%s.svc" $db_host .Release.Namespace -}}
 
-{{- /* TODO: dedupe with deployment.yaml */}}
-{{- $defaultDBs := list
-  (dict "name" .Release.Name "host" (printf "%s-postgresql" .Release.Name))
-}}
-{{- $databases := default $defaultDBs .Values.databases }}
-
-{{- range $databases }}
+{{- range $dbName := keys .Values.databases | sortAlpha }}
+{{- $dbSettings := index $.Values.databases $dbName }}
 ---
 kind: Deployment
 apiVersion: apps/v1
 metadata:
-  name: {{ $.Release.Name }}-{{ .name }}-pgmetrics
+  name: {{ $.Release.Name }}-{{ $dbName }}-pgmetrics
   {{- if $.Values.reloader.enabled }}
   annotations:
     reloader.stakater.com/search: "true"
@@ -23,12 +20,12 @@ spec:
     type: Recreate
   selector:
     matchLabels:
-      app: {{ $.Release.Name }}-{{ .name }}-pgmetrics
+      app: {{ $.Release.Name }}-{{ $dbName }}-pgmetrics
   template:
     metadata:
       labels:
-        app: {{ $.Release.Name }}-{{ .name }}-pgmetrics
-        component: {{ .name }}
+        app: {{ $.Release.Name }}-{{ $dbName }}-pgmetrics
+        component: {{ $dbName }}
         type: metrics
       annotations:
         kubectl.kubernetes.io/default-container: metrics
@@ -45,19 +42,19 @@ spec:
         imagePullPolicy: IfNotPresent
         env:
         - name: DATA_SOURCE_URI
-          value: {{ printf "%s.%s.svc" .host $.Release.Namespace }}:5432/{{ .name }}?sslmode=disable&application_name={{ $.Release.Name }}-{{ .name }}-pgmetrics
+          value: {{ $db_host }}:5432/{{ $dbName }}?sslmode=disable&application_name={{ $.Release.Name }}-{{ $dbName }}-pgmetrics
         - name: DATA_SOURCE_USER
           value: metrics
         - name: DATA_SOURCE_PASS
           valueFrom:
             secretKeyRef:
-              name: {{ $.Release.Name }}-{{ .name }}-pguser-metrics
+              name: {{ $.Release.Name }}-{{ $dbName }}-pguser-metrics
               key: postgres-password
         ports:
           - name: metrics
             containerPort: 9187
         args:
-          - "--extend.query-path=/conf/custom-metrics.yaml"
+          - "--extend.query-path=/conf/custom-metrics-{{ $dbName }}.yaml"
           - "--log.level=info"
           {{- range $collector, $enabled := $.Values.collectors }}
           - "--{{ if not $enabled }}no-{{- end }}collector.{{ $collector }}"
@@ -78,8 +75,5 @@ spec:
       volumes:
       - name: custom-metrics
         configMap:
-          name: {{ $.Release.Name }}-{{ .name }}-pgmetrics-etc
-          items:
-          - key: custom-metrics.yaml
-            path: custom-metrics.yaml
+          name: {{ $.Release.Name }}-pgmetrics-etc
 {{- end }}
