@@ -1,3 +1,11 @@
+{{- $userNames := keys .Values.users | sortAlpha }}
+{{- if .Values.persistence.createBackupUser }}
+  {{- $userNames = append $userNames "backup" }}
+{{- end }}
+{{- if .Values.createMetricsUser }}
+  {{- $userNames = append $userNames "metrics" }}
+{{- end }}
+
 {{- $deployment_name := include "postgres.fullname" . -}}
 kind: Deployment
 apiVersion: apps/v1
@@ -54,8 +62,10 @@ spec:
         - name: DEPLOYMENT_NAME
           value: {{ $deployment_name }}
         - name: USERS
-          {{- $allUserNames := keys (.Values.users | required ".Values.users must be configured") | sortAlpha }}
-          value: "{{ range $user := $allUserNames }}{{ $settings := index $.Values.users $user | default (dict) }}{{ if not (hasKey $settings "secretName") }}{{ $user }} {{ end }}{{ end }}"
+          value: "{{- range $user := $userNames }}
+            {{- $settings := index $.Values.users $user | default (dict) }}
+            {{- hasKey $settings "secretName" | ternary "" (printf "%s " $user) }}
+          {{- end }}"
         - name: ANNOTATE_FOR_RELOADER
           value: {{ .Values.reloader.annotateGeneratedSecrets | quote }}
         command: [ ash, -c, {{ .Files.Get "bin/init-generate-secrets.sh" | quote }} ]
@@ -77,8 +87,6 @@ spec:
           value: "/var/lib/postgresql/{{ .Values.postgresVersion}}"
         - name: PGVERSION
           value: {{ .Values.postgresVersion | quote }}
-        - name: PGDATABASE
-          value: {{ .Values.postgresDatabase | quote }}
         - name: PGUSER
           value: postgres
         - name: PGAUTHMETHOD
@@ -87,17 +95,18 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.podIP
-        {{- range $user, $settings := .Values.users }}
+        {{- range $user := $userNames }}
+        {{- $settings := index $.Values.users $user | default (dict) }}
         - name: USER_PASSWORD_{{ $user | replace "-" "_" }}
           valueFrom:
             secretKeyRef:
-        {{- $settings := $settings | default (dict) }}{{ if (and (hasKey $settings "secretName") (hasKey $settings "secretKey")) }}
+              {{- if (and (hasKey $settings "secretName") (hasKey $settings "secretKey")) }}
               name: {{ $settings.secretName }}
               key:  {{ $settings.secretKey }}
-        {{- else }}
+              {{- else }}
               name: {{ $.Release.Name }}-pguser-{{ $user }}
               key: postgres-password
-        {{- end }}
+              {{- end }}
         {{- end }}
 
         ports:
@@ -130,10 +139,6 @@ spec:
           mountPath: /data
         - name: postgres-etc
           mountPath: /etc/postgresql
-        {{- if .Values.sqlOnCreate }}
-        - name: sql-on-create
-          mountPath: /sql-on-create.d
-        {{- end }}
         - name: sql-on-startup
           mountPath: /sql-on-startup.d
         {{- if .Values.sharedMemoryLimit }}
@@ -175,11 +180,6 @@ spec:
       - name: crontab
         configMap:
           name: {{ template "postgres.fullname" . }}-crontab
-      {{- end }}
-      {{- if .Values.sqlOnCreate }}
-      - name: sql-on-create
-        configMap:
-          name: {{ template "postgres.fullname" . }}-sql-on-create
       {{- end }}
       - name: sql-on-startup
         configMap:
