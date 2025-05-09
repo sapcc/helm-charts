@@ -195,7 +195,7 @@ PGDATABASE='postgres' process_sql -c "SELECT pg_reload_conf()"
 
 # there might be some extensions which we need to enable
 if [[ -f /var/lib/postgresql/update_extensions.sql ]]; then
-  process_sql -f /var/lib/postgresql/update_extensions.sql
+  PGDATABASE='' process_sql -f /var/lib/postgresql/update_extensions.sql
   rm /var/lib/postgresql/update_extensions.sql
 fi
 
@@ -203,6 +203,12 @@ fi
 if [[ $updated_db == true ]]; then
   vacuumdb --all --analyze-in-stages
 fi
+
+# maintain password of superuser account "postgres" (this is required because this password is different on each run)
+PGDATABASE='' process_sql --dbname postgres --set user="$PGUSER" --set password_encryption="$postgres_auth_method" --set password="$PGPASSWORD" <<-'EOSQL'
+  SET password_encryption = :'password_encryption';
+  ALTER USER :user WITH PASSWORD :'password';
+EOSQL
 
 if [ -f /sql-on-startup.d/phase1.sql ]; then
   echo "Processing /sql-on-startup.d/phase1.sql..."
