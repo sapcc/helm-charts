@@ -206,7 +206,7 @@ fi
 
 if [ -f /sql-on-startup.d/phase1.sql ]; then
   echo "Processing /sql-on-startup.d/phase1.sql..."
-  PGDATABASE='postgres' process_sql -f <(substituteSqlEnvs "$file")
+  PGDATABASE='postgres' process_sql -f <(substituteSqlEnvs /sql-on-startup.d/phase1.sql)
 fi
 for FILE in /sql-on-startup.d/phase2-*.sql; do
   DB="$(basename "$FILE" | sed 's/^phase2-\(.*\)\.sql$/\1/')"

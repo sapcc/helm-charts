@@ -34,7 +34,6 @@ metadata:
 data:
   # first phase of SQL on startup: statements that are executed in the "postgres" database
   phase1.sql: |
-
     {{- if hasKey .Values.extensions "pg_stat_statements" }}
     CREATE EXTENSION IF NOT EXISTS pg_stat_statements;
     {{- end }}
@@ -42,7 +41,7 @@ data:
     -- create databases as needed
     {{- range $dbName := keys .Values.databases | sortAlpha }}
     SELECT 'CREATE DATABASE IF NOT EXISTS "{{ $dbName }}"' WHERE NOT EXISTS (SELECT datname FROM pg_database WHERE datname='{{ $dbName }}')\gexec
-    {- end }}
+    {{- end }}
 
     -- TODO: drop with next breaking update
     SELECT 'REASSIGN OWNED BY poor_mans_pg_read_all_data TO pg_read_all_data' WHERE EXISTS (SELECT rolname FROM pg_roles WHERE rolname='poor_mans_pg_read_all_data')\gexec
@@ -77,13 +76,14 @@ data:
   {{- range $dbName := keys .Values.databases | sortAlpha }}
   {{- $settings := index $.Values.databases $dbName | default (dict) }}
   phase2-{{ $dbName }}.sql: |
-    -- maintain permissions for database owner "{{ $settings.owner }}"
-    ALTER DATABASE "{{ $dbName }}" OWNER TO "{{ $settings.owner }}";
-    ALTER SCHEMA public OWNER TO "{{ $settings.owner }}";
+    {{- $ownerName := $dbName }}
+    -- maintain permissions for database owner "{{ $ownerName }}"
+    ALTER DATABASE "{{ $dbName }}" OWNER TO "{{ $ownerName }}";
+    ALTER SCHEMA public OWNER TO "{{ $ownerName }}";
     -- fixup ownership of individual objects (might be necessary when database ownership changes)
-    SELECT format('ALTER TABLE %I.%I.%I OWNER TO "%I";', table_catalog, table_schema, table_name, '{{ $settings.owner }}')
+    SELECT format('ALTER TABLE %I.%I.%I OWNER TO "%I";', table_catalog, table_schema, table_name, '{{ $ownerName }}')
       FROM information_schema.tables WHERE table_schema = 'public'\gexec
-    SELECT FORMAT('ALTER TYPE %I.%I.%I OWNER TO "%I";', current_database()::information_schema.sql_identifier, n.nspname, t.typname, '{{ $settings.owner }}')
+    SELECT FORMAT('ALTER TYPE %I.%I.%I OWNER TO "%I";', current_database()::information_schema.sql_identifier, n.nspname, t.typname, '{{ $ownerName }}')
       FROM pg_catalog.pg_type t JOIN pg_catalog.pg_namespace n ON n.oid = t.typnamespace WHERE t.typtype = 'e' AND n.nspname = 'public'\gexec
 
     {{- if $settings.sqlOnStartup }}

@@ -33,12 +33,13 @@ some space for the name suffixes on replicasets and pods.
 {{- fail "postgres-ng: only postgres version 15 and up are supported by this chart version" }}
 {{- end }}
 
+{{/* Rationale: This is a simplification based on the observation that most downstream users have one DB and one user, both named the same (after the respective service). A similar naming convention is established in <https://github.com/NixOS/nixpkgs/commit/48459567>. */}}
 {{- if .Values.tableOwner }}
-{{- fail "postgres-ng: .Values.tableOwner is not supported anymore! Please set .Values.databases[name].owner instead." }}
+{{- fail "postgres-ng: .Values.tableOwner is not supported anymore! The database owner is always the user with the same name as the database." }}
 {{- end }}
 
 {{- if eq (len .Values.databases) 0 }}
-  {{- fail "postgres-ng: need at least one entry in .Values.databases" }}
+  {{- fail "postgres-ng: needs at least one entry in .Values.databases" }}
 {{- end }}
 
 {{- range $db := sortAlpha (keys .Values.databases) }}
@@ -48,25 +49,21 @@ some space for the name suffixes on replicasets and pods.
   {{- if eq $db "postgres" "template0" "template1" }}
     {{- fail (printf "postgres-ng: Database name %q cannot be used because this name is reserved for an internal database!" $db) }}
   {{- end }}
-
-  {{- $cfg := index $.Values.databases $db }}
-  {{- if not $cfg.owner }}
-    {{- fail (printf "postgres-ng: Missing owner name for database %q" $db) }}
-  {{- else if not (hasKey $.Values.users $cfg.owner) }}
-    {{- fail (printf "postgres-ng: Invalid owner name for database %q (user %q is not declared in .Values.users)" $db $cfg.owner) }}
+  {{- if not (hasKey $.Values.users $db) }}
+    {{- fail (printf "postgres-ng: No owner for database %q (user %q is not declared in .Values.users)" $db) }}
   {{- end }}
 {{- end }}
 
 {{- if eq (len .Values.users) 0 }}
-  {{- fail "postgres-ng: need at least one entry in .Values.users" }}
+  {{- fail "postgres-ng: needs at least one entry in .Values.users" }}
 {{- end }}
 
 {{- range $user := sortAlpha (keys .Values.users) }}
   {{- if eq $user "backup" "metrics" "postgres" }}
-    {{- fail (printf "postgres-ng: User %q cannot be declared in .Values.users explicitly!" $db) }}
+    {{- fail (printf "postgres-ng: User %q cannot be declared in .Values.users explicitly!" $user) }}
   {{- end }}
 
-  {{- $cfg := index $.Values.users $db }}
+  {{- $cfg := index $.Values.users $user }}
   {{- range $grant := $cfg.grant | default (list) }}
     {{- if $grant | contains "%PGDATABASE%" }}
       {{- fail "postgres-ng: .Values.users[].grant[] may not contain %PGDATABASE anymore! Please name the database explicitly." }}
@@ -78,5 +75,5 @@ some space for the name suffixes on replicasets and pods.
 {{- fail "postgres-ng: .Values.sqlOnCreate was removed because we are not aware of users (if you need it, please get in touch with us" }}
 {{- end }}
 {{- if (hasKey .Values "sqlOnStartup") }}
-{{- fail "postgres-ng: .Values.sqlOnStartup was removed because we are not aware of users (if you need it, please get in touch with us" }}
+{{- fail "postgres-ng: .Values.sqlOnStartup was removed (please use .Values.databases[dbName].sqlOnStartup instead)" }}
 {{- end }}
