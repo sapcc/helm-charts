@@ -46,6 +46,7 @@ def maintenance_mode(bm, node):
         yield
     except Exception as e:
         print(e)
+        yield
     finally:
         if unset_maintenance:
             bm.node.set_maintenance(node.uuid, "false")
@@ -64,6 +65,7 @@ def disabled_console(bm, node):
         import sys
 
         traceback.print_exception(e, limit=2, file=sys.stdout)
+        yield
     finally:
         if reenable_console:
             bm.node.set_console_mode(node.uuid, "true")

@@ -57,7 +57,7 @@ groups:
       summary: Limes is not scraping
 
   - alert: OpenstackLimesFailedCapacityScrapes
-    expr: sum(increase(limes_capacity_scrapes{task_outcome="failure"}[5m])) BY (capacitor_id) > 0
+    expr: sum(increase(limes_capacity_scrapes{task_outcome="failure"}[5m])) BY (service_type) > 0
     for: 1h
     labels:
       context: failedcapacityscrapes
@@ -67,10 +67,10 @@ groups:
       support_group: containers
       tier: os
     annotations:
-      description: Limes cannot scrape capacity from {{ title $labels.capacitor_id }}
+      description: Limes cannot scrape capacity from {{ title $labels.service_type }}
         for more than an hour.
         The `kubectl logs` for limes-collect-ccloud contain additional info.
-      summary: Limes cannot scrape capacity {{ title $labels.capacitor }}
+      summary: Limes cannot scrape capacity {{ title $labels.service_type }}
 
   - alert: OpenstackLimesMissingCapacity
     # This excludes:
@@ -91,7 +91,7 @@ groups:
       description: Limes reports no capacity for {{ $labels.full_resource }} even though there is assigned domain quota and/or usage.
         This usually happens because the backend service reported weirdly-shaped data to Limes' capacity scanner.
         The `kubectl logs` for limes-collect-ccloud may contain additional info.
-        If not, running `limes test-scan-capacity` on the respective region and capacitor may provide additional insight.
+        If not, running `limes test-scan-capacity` on the respective region and service_type may provide additional insight.
       summary: Limes reports zero capacity for {{ $labels.full_resource }}
 
   - alert: OpenstackLimesFailedScrapes

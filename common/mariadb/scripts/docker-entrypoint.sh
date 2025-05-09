@@ -100,7 +100,7 @@ docker_process_init_files() {
 	done
 }
 
-# arguments necessary to run "mysqld --verbose --help" successfully (used for testing configuration validity and for extracting default/configured values)
+# arguments necessary to run "mariadbd --verbose --help" successfully (used for testing configuration validity and for extracting default/configured values)
 _verboseHelpArgs=(
 	--verbose --help
 )
@@ -108,12 +108,12 @@ _verboseHelpArgs=(
 mysql_check_config() {
 	local toRun=( "$@" "${_verboseHelpArgs[@]}" ) errors
 	if ! errors="$("${toRun[@]}" 2>&1 >/dev/null)"; then
-		mysql_error $'mysqld failed while attempting to check config\n\tcommand was: '"${toRun[*]}"$'\n\t'"$errors"
+		mysql_error $'mariadbd failed while attempting to check config\n\tcommand was: '"${toRun[*]}"$'\n\t'"$errors"
 	fi
 }
 
 # Fetch value from server config
-# We use mysqld --verbose --help instead of my_print_defaults because the
+# We use mariadbd --verbose --help instead of my_print_defaults because the
 # latter only show values present in config files, and not server defaults
 mysql_get_config() {
 	local conf="$1"; shift
@@ -151,7 +151,7 @@ docker_temp_server_start() {
 	fi
 }
 
-# Stop the server. When using a local socket file mysqladmin will block until
+# Stop the server. When using a local socket file mariadb-admin will block until
 # the shutdown is complete.
 docker_temp_server_stop() {
 	kill "$MARIADB_PID"
@@ -220,27 +220,28 @@ docker_create_db_directories() {
 }
 
 _mariadb_version() {
-	echo -n "10.5.28-MariaDB"
+	echo -n "10.6.21-MariaDB"
 }
 
 # initializes the database directory
 docker_init_database_dir() {
 	mysql_note "Initializing database files"
 	installArgs=( --datadir="$DATADIR" --rpm --auth-root-authentication-method=normal )
-	# "Other options are passed to mysqld." (so we pass all "mysqld" arguments directly here)
+	# "Other options are passed to mariadbd." (so we pass all "mariadbd" arguments directly here)
 
-	local mysqldArgs=()
+	local mariadbdArgs=()
 	for arg in "${@:2}"; do
 		# Check if the argument contains whitespace
 		if [[ "$arg" =~ [[:space:]] ]]; then
-			mysql_warn "Not passing argument \'$arg\' to mysql_install_db because mysql_install_db does not support arguments with whitespace."
+			mysql_warn "Not passing argument \'$arg\' to mariadb-install-db because mariadb-install-db does not support arguments with whitespace."
 		else
-			mysqldArgs+=("$arg")
+			mariadbdArgs+=("$arg")
 		fi
 	done
-	mysql_install_db "${installArgs[@]}" "${mysqldArgs[@]}" \
+	mariadb-install-db "${installArgs[@]}" "${mariadbdArgs[@]}" \
 		--cross-bootstrap \
 		--skip-test-db \
+		--old-mode='UTF8_IS_UTF8MB3' \
 		--default-time-zone=SYSTEM --enforce-storage-engine= \
 		--skip-log-bin \
 		--expire-logs-days=0 \
@@ -296,7 +297,7 @@ docker_exec_client() {
 	if [ -n "$MYSQL_DATABASE" ]; then
 		set -- --database="$MYSQL_DATABASE" "$@"
 	fi
-	mysql --protocol=socket -uroot -hlocalhost --socket="${SOCKET}" "$@"
+	mariadb --protocol=socket -uroot -hlocalhost --socket="${SOCKET}" "$@"
 }
 
 # Execute sql script, passed via stdin
@@ -341,7 +342,7 @@ docker_setup_db() {
 		# --skip-write-binlog usefully disables binary logging
 		# but also outputs LOCK TABLES to improve the IO of
 		# Aria (MDEV-23326) for 10.4+.
-		mysql_tzinfo_to_sql --skip-write-binlog /usr/share/zoneinfo \
+		mariadb-tzinfo-to-sql --skip-write-binlog /usr/share/zoneinfo \
 			| docker_process_sql --dont-use-mysql-root-password --database=mysql
 		# tell docker_process_sql to not use MYSQL_ROOT_PASSWORD since it is not set yet
 	fi
@@ -550,7 +551,7 @@ docker_mariadb_backup_system()
 	fi
 
 	mysql_note "Backing up system database to $backup_db"
-	if ! mysqldump --skip-lock-tables --replace --databases mysql --socket="${SOCKET}" | zstd > "${DATADIR}/${backup_db}"; then
+	if ! mariadb-dump --skip-lock-tables --replace --databases mysql --socket="${SOCKET}" | zstd > "${DATADIR}/${backup_db}"; then
 		mysql_error "Unable backup system database for upgrade from $oldfullversion."
 	fi
 	mysql_note "Backing up complete"
@@ -561,7 +562,7 @@ docker_mariadb_backup_system()
 docker_mariadb_upgrade() {
 	if [ -z "$MARIADB_AUTO_UPGRADE" ] \
 		|| [ "$MARIADB_AUTO_UPGRADE" = 0 ]; then
-		mysql_note "MariaDB upgrade (mysql_upgrade) required, but skipped due to \$MARIADB_AUTO_UPGRADE setting"
+		mysql_note "MariaDB upgrade (mariadb-upgrade or creating healthcheck users) required, but skipped due to \$MARIADB_AUTO_UPGRADE setting"
 		return
 	fi
 	mysql_note "Starting temporary server"
@@ -572,7 +573,7 @@ docker_mariadb_upgrade() {
 	docker_mariadb_backup_system
 
 	mysql_note "Starting mariadb-upgrade"
-	mysql_upgrade --upgrade-system-tables
+	mariadb-upgrade --upgrade-system-tables
 	mysql_note "Finished mariadb-upgrade"
 
 	mysql_note "Stopping temporary server"
@@ -600,7 +601,7 @@ _check_if_upgrade_is_needed() {
 	return 1
 }
 
-# check arguments for an option that would cause mysqld to stop
+# check arguments for an option that would cause mariadbd to stop
 # return true if there is one
 _mysql_want_help() {
 	local arg
@@ -615,9 +616,9 @@ _mysql_want_help() {
 }
 
 _main() {
-	# if command starts with an option, prepend mysqld
+	# if command starts with an option, prepend mariadbd
 	if [ "${1:0:1}" = '-' ]; then
-		set -- mysqld "$@"
+		set -- mariadbd "$@"
 	fi
 
 	#ENDOFSUBSTITUTIONS
@@ -642,7 +643,7 @@ _main() {
 
 			docker_mariadb_init "$@"
 		# MDEV-27636 mariadb_upgrade --check-if-upgrade-is-needed cannot be run offline
-		#elif mysql_upgrade --check-if-upgrade-is-needed; then
+		#elif mariadb-upgrade --check-if-upgrade-is-needed; then
 		elif _check_if_upgrade_is_needed; then
 			docker_mariadb_upgrade "$@"
 		fi

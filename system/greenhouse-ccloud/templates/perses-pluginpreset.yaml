@@ -17,12 +17,20 @@ spec:
       - "storage"
       - "compute"
       - "observability"
-  {{- with .Values.perses.clusterOptionOverrides }}
   clusterOptionOverrides:
-    {{ toYaml .Values.perses.clusterOptionOverrides | nindent 4 }}
+  {{- range $plugin := .Values.ingressPlugins }}
+  - clusterName: {{ $plugin.cluster }}
+    overrides:
+    - name: perses.serviceMonitor.selfMonitor
+      value: true
+    - name: perses.serviceMonitor.labels
+      value:
+        plugin: "kube-monitoring-{{ $plugin.cluster }}"
+    - name: perses.serviceMonitor.selector.matchLabels
+      value:
+        plugin: "perses-{{ $plugin.cluster }}"
   {{- end }}
   plugin:
-    disabled: false
     optionValues:
       - name: perses.sidecar.enabled
         value: true

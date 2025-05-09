@@ -27,7 +27,10 @@ webhooks:
   - name: 'exclude-opt-out-secrets'
     expression: 'object.metadata.?annotations["cloud.sap/inject-secrets"].orValue("") != "false"'
   - name: 'exclude-owner-cert-manager'
-    expression: 'object.metadata.?ownerReferences.optMap(l, !("cert-manager.io" in l.map(r, r.apiVersion))).orValue(true)'
+    expression: 'object.metadata.?ownerReferences.optMap(l, !("cert-manager.io/v1" in l.map(r, r.apiVersion))).orValue(true)'
+  {{- if .Values.webhook.extraConditions }}
+  {{- toYaml .Values.webhook.extraConditions | nindent 2 }}
+  {{- end }}
   {{- end }}
 {{- if .Values.webhook.genericRules }}
 - name: "generic.secrets-injector.cloud.sap"

@@ -24,6 +24,8 @@ spec:
         prometheus.io/scrape: "true"
         prometheus.io/path: "/metrics"
         prometheus.io/port: {{ with index .Values.kubeStateMetrics.ports 0 }}{{ .port | quote }}{{ end }}
+        greenhouse/scrape: "true"
+        greenhouse/target: {{ .Values.greenhouseScapeTarget }}
     spec:
       automountServiceAccountToken: true
       containers:
@@ -49,14 +51,14 @@ spec:
           failureThreshold: 3
           httpGet:
             path: /livez
-            port: http-metrics
+            port: metrics
           initialDelaySeconds: 15
           periodSeconds: 20
           timeoutSeconds: 5
         name: kube-state-metrics
         ports:
         - containerPort: {{ with index .Values.kubeStateMetrics.ports 0 }}{{ .port }}{{ end }}
-          name: http-metrics
+          name: metrics
         - containerPort: {{ with index .Values.kubeStateMetrics.ports 1 }}{{ .port }}{{ end }}
           name: telemetry
         readinessProbe:

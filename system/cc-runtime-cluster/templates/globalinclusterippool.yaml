@@ -1,0 +1,13 @@
+apiVersion: ipam.cluster.x-k8s.io/v1alpha2
+kind: GlobalInClusterIPPool
+metadata:
+  name: globalinclusterippool-rt-{{ .Values.global.region }}
+spec:
+  addresses:
+{{- toYaml .Values.ipPool.addresses | nindent 2 }}
+{{- if .Values.ipPool.excludedAddresses }}
+  excludedAddresses:
+{{- toYaml .Values.ipPool.excludedAddresses | nindent 2 }}
+{{- end }}
+  prefix: {{ .Values.ipPool.prefix }}
+  gateway: {{ .Values.ipPool.gateway }}

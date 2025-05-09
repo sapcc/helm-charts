@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "ovsdb.fullname" . }}
+  labels:
+    {{- include "ovsdb.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.DB_PORT }}
+      targetPort: {{ .Values.DB_PORT }}
+      protocol: TCP
+      name: ovsdb
+    - name: raft
+      port: {{ .Values.RAFT_PORT }}
+      targetPort: {{ .Values.RAFT_PORT }}
+      protocol: TCP
+  selector:
+    {{- include "ovsdb.selectorLabels" . | nindent 4 }}
+  {{- with .Values.EXTERNAL_IP }}
+  externalIPs: [ {{ . | quote }} ]
+  {{- end }}
+  {{- with .Values.service.external_traffic_policy }}
+  externalTrafficPolicy: {{ . | quote }}
+  {{- end }}

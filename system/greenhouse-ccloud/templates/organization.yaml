@@ -1,3 +1,19 @@
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ .Chart.Name }}-auth
+  namespace: {{ .Release.Namespace }}
+type: greenhouse.sap/orgsecret
+data:
+  oidcClientID: {{ required ".Values.oidc.clientID missing" .Values.oidc.clientID | b64enc }}
+  oidcClientSecret: {{ required ".Values.oidc.clientSecret missing" .Values.oidc.clientSecret | b64enc }}
+{{- if.Values.scim.enabled }}
+  scimUsername: {{ required ".Values.scim.username missing" .Values.scim.username | b64enc }}
+  scimPassword: {{ required ".Values.scim.password missing" .Values.scim.password | b64enc }}
+{{ end }}
+
+---
 apiVersion: greenhouse.sap/v1alpha1
 kind: Organization
 metadata:
@@ -12,20 +28,20 @@ spec:
       issuer: {{ required ".Values.oidc.issuer missing" .Values.oidc.issuer }}
       redirectURL: {{ required ".Values.oidc.redirectURL missing" .Values.oidc.redirectURL }}
       clientIDReference:
-        name: {{ .Chart.Name }}-oidc
-        key: clientID
+        name: {{ .Chart.Name }}-auth
+        key: oidcClientID
       clientSecretReference:
-        name: {{ .Chart.Name }}-oidc
-        key: clientSecret
+        name: {{ .Chart.Name }}-auth
+        key: oidcClientSecret
 {{ if .Values.scim.enabled }}
     scim:
       baseURL: {{ required ".Values.scim.baseURL" .Values.scim.baseURL }}
       basicAuthUser:
         secret:
-          name: {{ .Chart.Name }}-scim
-          key: username
+          name: {{ .Chart.Name }}-auth
+          key: scimUsername
       basicAuthPw:
         secret:
-          name: {{ .Chart.Name }}-scim
-          key: password
+          name: {{ .Chart.Name }}-auth
+          key: scimPassword
 {{ end }}

@@ -145,3 +145,17 @@ thread_pool_size = 3
 [experimental]
 linuxbridge = true
 {{- end }}
+{{- if .Values.customdns.enabled }}
+
+[customdns]
+enabled = true
+{{- if .Values.customdns.upstream_dns_servers }}
+upstream_dns_servers = {{ join "," .Values.customdns.upstream_dns_servers }}
+{{- end }}
+{{- if .Values.customdns.project_ids }}
+project_ids = {{ join "," .Values.customdns.project_ids }}
+{{- end }}
+{{- if .Values.customdns.domain_name_prefixes }}
+domain_name_prefixes = {{ join "," .Values.customdns.domain_name_prefixes }}
+{{- end }}
+{{- end }}

@@ -53,15 +53,14 @@ spec:
       priorityClassName: {{ .Values.pod.priority_class.default }}
       initContainers:
       {{- tuple . (dict "jobs" (print .Release.Name "-migration") "service" (include "manila.api_service_dependencies" . )) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
-      - name: fetch-rabbitmqadmin
+      {{- if not .Values.api_backdoor }}
+      - name: create-guru-file
         image: {{.Values.global.dockerHubMirror}}/library/busybox
-        command: ["/scripts/fetch-rabbitmqadmin.sh"]
+        command: ["/bin/sh", "-c", "touch /shared/guru"]
         volumeMounts:
-          - name: manila-bin
-            mountPath: /scripts
-            readOnly: true
           - name: etcmanila
             mountPath: /shared
+      {{- end }}
       {{- if eq .Values.coordinationBackend "file" }}
       - name: chown
         image: {{.Values.global.dockerHubMirror}}/library/busybox
@@ -167,6 +166,10 @@ spec:
               mountPath: /etc/manila/ratelimit.yaml
               subPath: ratelimit.yaml
               readOnly: true
+            - name: redis-ratelimit-secret
+              mountPath: {{ .Values.api_rate_limit.backend_secret_file }}
+              subPath: password
+              readOnly: true
             {{- end }}
             {{- if .Values.watcher.enabled }}
             - name: manila-etc
@@ -226,6 +229,11 @@ spec:
         - name: manila-etc-confd
           secret:
             secretName: {{ .Release.Name }}-secrets
+{{- if .Values.api_rate_limit.enabled }}
+        - name: redis-ratelimit-secret
+          secret:
+            secretName: {{ .Release.Name }}-api-ratelimit-redis-user-default
+{{- end }}
         - name: manila-bin
           configMap:
             name: {{ .Release.Name }}-bin

@@ -2,31 +2,27 @@ groups:
   - name: netapp-snapmirror
     rules:
     # NOTE:
-    #
     # netapp_snapmirror_labels: destinations only in LOCAL region (from 'snapmirror show' - rich snapmirror details).
     # netapp_snapmirror_endpoint_labels: destinations in LOCAL and REMOTE regions (from 'snapmirror list-destinations' - endpoints only no details).
-    #
-    # It's important for netapp_volume_labels to be available for following rules.
-    # We record them from past 2 hours to avoid incorrect "join" operations for the local and cross-region snapmirrors.
-    - record: netapp_volume_labels:manila
-      expr: last_over_time(netapp_volume_labels{app="netapp-harvest-exporter-manila", volume=~"share.*"}[2h])
  
     # Enrich netapp_snapmirror_labels within a region.
     # First with share_id, share_name and project_id, then with destination_cluster.
     - record: netapp_snapmirror_labels:enhanced
       expr: |
-        netapp_snapmirror_labels 
-        * on (app, source_vserver, source_volume) group_left(project_id, share_id, share_name)
+        netapp_snapmirror_labels
+        * on (app, source_vserver, source_volume) group_left(project_id, share_id, share_name, reason)
+        label_replace (
         label_replace (
         label_replace (
           max by (app, filer, project_id, share_id, share_name, svm, volume) (netapp_volume_labels:manila),
           "source_volume", "$1", "volume", "(.*)"),
-          "source_vserver", "$1", "svm", "(.*)")
+          "source_vserver", "$1", "svm", "(.*)"),
+          "reason", "local-snapmirror", "", ".*")
         * on (app, filer, destination_volume) group_left(destination_availability_zone, destination_cluster)
         label_replace (
         label_replace (
         label_replace (
-          max by (app, availability_zone, filer, svm, volume) (netapp_volume_labels:manila),
+          max by (app, availability_zone, filer, svm, volume) (netapp_volume_labels{volume=~"share.*"}),
           "destination_availability_zone", "$1", "availability_zone", "(.*)"),
           "destination_cluster", "$1", "filer", "(.*)"),
           "destination_volume", "$1", "volume", "(.*)")
@@ -37,15 +33,20 @@ groups:
       expr: |
         (netapp_snapmirror_labels unless on (source_cluster)
           label_replace(netapp_volume_labels:manila, "source_cluster", "$1", "filer", "(.*)"))
-        * on (filer, destination_volume) group_left(destination_availability_zone, destination_cluster) 
+        * on (filer, destination_volume) group_left(destination_availability_zone, destination_cluster, reason)
         label_replace(
         label_replace(
-        label_replace(netapp_volume_labels:manila,
+        label_replace(
+        label_replace(
+          netapp_volume_labels{volume=~"share.*"},
           "destination_availability_zone", "$1", "availability_zone", "(.*)"),
           "destination_cluster", "$1", "filer", "(.*)"),
-          "destination_volume", "$1", "volume", "(.*)")
+          "destination_volume", "$1", "volume", "(.*)"),
+          "reason", "remote-snapmirror", "", ".*")
 
     # Enrich netapp_snapmirror_endpoint_labels.
+    # Add openstack labels, such as project_id, share_id and share_name.
+    # Add source_cluster label.
     - record: netapp_snapmirror_endpoint_labels:enhanced
       expr: |
         netapp_snapmirror_endpoint_labels
@@ -58,11 +59,12 @@ groups:
           "source_vserver", "$1", "svm", "(.*)"),
           "source_cluster", "$1", "filer", "(.*)")
 
-    # With above enriched metrics, we can query snapmirror in global thanos:
-    #
-    # For corss region snapmirrors
-    # netapp_snapmirror_endpoint_labels:enhanced{region="eu-de-1", destination_volume=~"share.*EC.*"} * 
-    # on(source_cluster, source_vserver, source_volume, destination_cluster, destination_vserver, destination_volume) group_left(schedule) netapp_snapmirror_labels:enhanced{share_id=""}
-    #
-    # For local snapmirrors
-    # netapp_snapmirror_labels:enhanced{region="eu-de-1", share_id!="", destination_volume=~"share.*.EC.*"}
+    # Add destination_cluster label, which is the filer label from harvester. 
+    - record: netapp_snapmirror_lag_time:enhanced
+      expr: label_replace(netapp_snapmirror_lag_time, "destination_cluster", "$1", "filer", "(.*)")
+
+    - record: netapp_snapmirror_last_transfer_duration:enhanced
+      expr: label_replace(netapp_snapmirror_last_transfer_duration, "destination_cluster", "$1", "filer", "(.*)")
+
+    - record: netapp_snapmirror_last_transfer_size:enhanced
+      expr: label_replace(netapp_snapmirror_last_transfer_size, "destination_cluster", "$1", "filer", "(.*)")

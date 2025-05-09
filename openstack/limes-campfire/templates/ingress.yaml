@@ -1,10 +1,8 @@
-{{- $tld    := $.Values.global.tld    | required "missing value for .Values.global.tld"    -}}
-{{- $region := $.Values.global.region | required "missing value for .Values.global.region" -}}
+{{- $tld    := $.Values.global.tld         | required "missing value for .Values.global.tld"       -}}
+{{- $region := $.Values.global.region      | required "missing value for .Values.global.region"    -}}
+{{- $dbRegion := $.Values.global.db_region | required "missing value for .Values.global.db_region" -}}
 
-{{- $domain := printf "%s.%s.%s" "limes-campfire" $region $tld -}}
-{{- if eq .Release.Namespace "limes-global" -}}
-  {{- $domain = printf "%s.global.%s" (contains "qa" $region | ternary "limes-campfire-qa" "limes-campfire") $tld -}}
-{{- end -}}
+{{- $domain := printf "%s.%s.%s" (and (contains "qa" $dbRegion) .Values.global.is_global_region | ternary "limes-campfire-qa" "limes-campfire") $region $tld -}}
 
 kind: Ingress
 apiVersion: networking.k8s.io/v1

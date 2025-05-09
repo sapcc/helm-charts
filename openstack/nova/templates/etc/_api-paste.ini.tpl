@@ -27,15 +27,6 @@ paste.app_factory = nova.api.metadata.handler:MetadataRequestHandler.factory
 [composite:osapi_compute]
 use = call:nova.api.openstack.urlmap:urlmap_factory
 /: oscomputeversions
-{{- if (.Values.imageVersion | hasPrefix "rocky") }}
-# v21 is an exactly feature match for v2, except it has more stringent
-# input validation on the wsgi surface (prevents fuzzing early on the
-# API). It also provides new features via API microversions which are
-# opt into for clients. Unaware clients will receive the same frozen
-# v2 API feature set, but with some relaxed validation
-/v2: openstack_compute_api_v21_legacy_v2_compatible
-/v2.1: openstack_compute_api_v21
-{{- else }}
 /v2: oscomputeversion_legacy_v2
 /v2.1: oscomputeversion_v2
 # v21 is an exactly feature match for v2, except it has more stringent
@@ -45,7 +36,6 @@ use = call:nova.api.openstack.urlmap:urlmap_factory
 # v2 API feature set, but with some relaxed validation
 /v2/+: openstack_compute_api_v21_legacy_v2_compatible
 /v2.1/+: openstack_compute_api_v21
-{{- end }}
 # provides an endpoint for healthcheck enabling us to disable the service
 /healthcheck: healthcheck
 
@@ -86,7 +76,6 @@ pipeline = cors faultwrap request_log http_proxy_to_wsgi oscomputeversionapp
 
 [app:oscomputeversionapp]
 paste.app_factory = nova.api.openstack.compute.versions:Versions.factory
-{{- if (.Values.imageVersion | hasPrefix "rocky" | not) }}
 
 [pipeline:oscomputeversion_v2]
 pipeline = cors compute_req_id faultwrap request_log http_proxy_to_wsgi oscomputeversionapp_v2
@@ -96,7 +85,6 @@ pipeline = cors compute_req_id faultwrap request_log http_proxy_to_wsgi legacy_v
 
 [app:oscomputeversionapp_v2]
 paste.app_factory = nova.api.openstack.compute.versions:VersionsV2.factory
-{{- end }}
 
 ##########
 # Shared #

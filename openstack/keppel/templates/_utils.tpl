@@ -41,12 +41,12 @@
   value: hermes-rabbitmq-notifications.hermes.svc
 - name:  KEPPEL_BURST_ANYCAST_BLOB_PULL_BYTES
   value: '4718592000' # 4500 MiB per account (see below, near the corresponding ratelimit, for rationale)
-- name:  KEPPEL_BURST_BLOB_PULLS # burst budgets for regular pull/push are all ~30% of the rate limit per minute
-  value: '360' # per account
+- name:  KEPPEL_BURST_BLOB_PULLS # burst budgets for regular pull/push are all ~50% of the rate limit per minute
+  value: '600' # per account
 - name:  KEPPEL_BURST_BLOB_PUSHES
-  value: '30'  # per account
+  value: '50'  # per account
 - name:  KEPPEL_BURST_MANIFEST_PULLS
-  value: '360'  # per account
+  value: '1200'  # per account (this is a full minute worth of burst, because manifest requests tend to be spiky in nature)
 - name:  KEPPEL_BURST_MANIFEST_PUSHES
   value: '15'   # per account
 - name:  KEPPEL_BURST_TRIVY_REPORT_RETRIEVALS
