@@ -420,6 +420,39 @@ mariadb:
   alerts:
     support_group: network-api
 
+pxc_db:
+  enabled: false
+  name: neutron
+  alerts:
+    support_group: network-api
+  ccroot_user:
+    enabled: true
+  databases:
+    - neutron
+  users:
+    neutron:
+      name: neutron
+      grants:
+        - "ALL PRIVILEGES on neutron.*"
+  pxc:
+    configuration:
+      options:
+        max_connections: "2048"
+        innodb_buffer_pool_size: "4096M"
+        innodb_log_file_size: "1024M"
+        innodb_deadlock_detect: "0"
+        innodb_lock_wait_timeout: "5"
+    persistence:
+      size: 10Gi
+  backup:
+    enabled: true
+    s3:
+      secrets:
+        aws_access_key_id: null
+        aws_secret_access_key: null
+    pitr:
+      enabled: true
+
 mysql_metrics:
   db_name: neutron
   db_user: neutron
