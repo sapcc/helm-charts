@@ -210,9 +210,9 @@ PGDATABASE='' process_sql --dbname postgres --set user="$PGUSER" --set password_
   ALTER USER :user WITH PASSWORD :'password';
 EOSQL
 
-if [ -f /sql-on-startup.d/phase1.sql ]; then
-  echo "Processing /sql-on-startup.d/phase1.sql..."
-  PGDATABASE='postgres' process_sql -f <(substituteSqlEnvs /sql-on-startup.d/phase1.sql)
+if [ -f /sql-on-startup.d/phase1-system.sql ]; then
+  echo "Processing /sql-on-startup.d/phase1-system.sql..."
+  PGDATABASE='postgres' process_sql -f <(substituteSqlEnvs /sql-on-startup.d/phase1-system.sql)
 fi
 for FILE in /sql-on-startup.d/phase2-*.sql; do
   DB="$(basename "$FILE" | sed 's/^phase2-\(.*\)\.sql$/\1/')"
