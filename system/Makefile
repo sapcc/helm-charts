@@ -133,19 +133,6 @@ build-baremetal-operator:
 	@yq -i '.fullnameOverride="metal3"' baremetal-operator-core/values.yaml
 	@yq -i '.version="1.0.1"' baremetal-operator-core/Chart.yaml
 
-build-metal-operator:
-	@cat kustomize/metal-operator/kustomization.yaml >> kustomization.yaml
-	$(call build-chart,metal-operator-core,https://github.com/ironcore-dev/metal-operator//config/default,$(METAL_OPERATOR_VERSION))
-	$(call fix-crds,metal-operator-core)
-	@find metal-operator-core/crds -type f -exec $(SED) -i -e 's#metal-operator-metal-operator-#metal-#g' {} \;
-	@find metal-operator-core/crds -type f -exec $(SED) -i -e 's#metal-webhook-service#metal-operator-webhook-service#g' {} \;
-	@find metal-operator-core/templates -type f -exec $(SED) -i -e 's#{{ include "metal-operator-core.fullname" . }}-metal-#metal-#g' {} \;
-	@find metal-operator-core/templates -type f -exec $(SED) -i -e 's#metal-serving-#metal-operator-serving-#g' {} \;
-	@find metal-operator-core/templates -type f -exec $(SED) -i -e 's#metal-webhook-service#metal-operator-webhook-service#g' {} \;
-	@yq -i '.controllerManager.manager.image.tag="$(METAL_OPERATOR_VERSION)"' metal-operator-core/values.yaml
-	@yq -i '.fullnameOverride="metal-operator"' metal-operator-core/values.yaml
-	@yq -i '.version="1.1.4"' metal-operator-core/Chart.yaml
-
 build-metal-operator-remote:
 	@rm -rf metal-operator-remote
 	@cat kustomize/metal-operator-remote/kustomization.yaml > kustomization.yaml

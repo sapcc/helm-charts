@@ -144,12 +144,19 @@ spec:
         # Wait for udev to settle before proceeding
         udevadm settle
 
-        # Find the first NVMe disk by PCI path
-        nvme_target=$(ls /dev/disk/by-path/*nvme* | head -n 1)
+        # Find the first NVMe disk by PCI path that is larger than 1TB
+        nvme_target=$(ls /dev/disk/by-path/*nvme* | while read -r disk; do
+          resolved_disk=$(readlink -f "$disk")
+          disk_size=$(blockdev --getsize64 "$resolved_disk" 2>/dev/null || echo 0)
+          if [ "$disk_size" -ge 1099511627776 ]; then
+            echo "$resolved_disk"
+            break
+          fi
+        done)
 
         # Validate the device path
         if [ -z "$nvme_target" ]; then
-          echo "No suitable NVMe disk found."
+          echo "No suitable NVMe disk larger than 1TB found."
           exit 1
         fi
 
