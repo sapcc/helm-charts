@@ -1,15 +1,19 @@
 input {
 {{- if .Values.syslog.enabled }}
   udp {
+    id => "input_udp"
     port  => {{.Values.input_syslog_port}}
     type => syslog
   }
   tcp {
+    id => "input_tcp"
     port  => {{.Values.input_syslog_port}}
     type => syslog
   }
 {{- end }}
+{{- if .Values.http.enabled }}
   http {
+    id => "input_http"
     port  => {{.Values.input_http_port}}
     tags => ["audit"]
     user => '{{.Values.global.logstash_external_http_user}}'
@@ -21,8 +25,10 @@ input {
     threads => 12
 {{- end }}
   }
+{{- end }}
 {{- if .Values.beats.enabled }}
   beats {
+    id => "input_beats"
     port => {{ .Values.beats.port }}
     tags => ["audit"]
   }
