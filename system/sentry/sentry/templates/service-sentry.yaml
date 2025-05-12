@@ -1,0 +1,37 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ template "sentry.fullname" . }}-web
+  annotations:
+    {{- range $key, $value := .Values.sentry.web.service.annotations }}
+      {{ $key }}: {{ $value | quote }}
+    {{- end }}
+    {{- if and (.Values.ingress.enabled) (eq (default "nginx" .Values.ingress.regexPathStyle) "gke") }}
+      cloud.google.com/backend-config: '{"ports": {"{{ .Values.service.externalPort }}":"{{ include "sentry.fullname" . }}-web"}}'
+    {{- end }}
+  labels:
+    app: {{ template "sentry.fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+  - port: {{ .Values.service.externalPort }}
+    targetPort: {{ template "sentry.port" }}
+    protocol: TCP
+    name: {{ .Values.service.name }}
+{{- if and (.Values.service.nodePort) (eq .Values.service.type "NodePort") }}
+    nodePort: {{ .Values.service.nodePort }}
+{{- end }}
+{{- if .Values.service.externalIPs }}
+  externalIPs:
+{{ toYaml .Values.service.externalIPs | indent 4 }}
+{{- end }}
+  selector:
+    app: {{ template "sentry.fullname" . }}
+    role: web
+  {{- with .Values.service.loadBalancerSourceRanges }}
+  loadBalancerSourceRanges:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}

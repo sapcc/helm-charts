@@ -1,0 +1,127 @@
+{{- if and .Values.user.create .Values.hooks.enabled -}}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ template "sentry.fullname" . }}-user-create
+  labels:
+    app: sentry
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+  annotations:
+    "helm.sh/hook": "post-install,post-upgrade"
+    "helm.sh/hook-delete-policy": "{{ if .Values.hooks.removeOnSuccess }}hook-succeeded,{{ end }}before-hook-creation"
+    "helm.sh/hook-weight": "9"
+spec:
+  {{- if .Values.hooks.activeDeadlineSeconds }}
+  activeDeadlineSeconds: {{ .Values.hooks.activeDeadlineSeconds }}
+  {{- end}}
+  template:
+    metadata:
+      name: {{ template "sentry.fullname" . }}-user-create
+      annotations:
+        checksum/configmap.yaml: {{ include (print $.Template.BasePath "/configmap-sentry.yaml") . | sha256sum }}
+        {{- if .Values.sentry.worker.annotations }}
+{{ toYaml .Values.sentry.worker.annotations | indent 8 }}
+        {{- end }}
+        {{- if .Values.hooks.dbInit.podAnnotations }}
+{{ toYaml .Values.hooks.dbInit.podAnnotations | indent 8 }}
+        {{- end }}
+      labels:
+        app: sentry
+        release: "{{ .Release.Name }}"
+        {{- if .Values.sentry.worker.podLabels }}
+{{ toYaml .Values.sentry.worker.podLabels | indent 8 }}
+        {{- end }}
+    spec:
+      {{- if .Values.hooks.dbInit.affinity }}
+      affinity:
+{{ toYaml .Values.hooks.dbInit.affinity | indent 8 }}
+      {{- end }}
+      {{- if .Values.hooks.dbInit.nodeSelector }}
+      nodeSelector:
+{{ toYaml .Values.hooks.dbInit.nodeSelector | indent 8 }}
+      {{- end }}
+      restartPolicy: Never
+      {{- if .Values.hooks.dbInit.tolerations }}
+      tolerations:
+{{ toYaml .Values.hooks.dbInit.tolerations | indent 8 }}
+      {{- end }}
+      {{- if .Values.images.sentry.imagePullSecrets }}
+      imagePullSecrets:
+{{ toYaml .Values.images.sentry.imagePullSecrets | indent 8 }}
+      {{- end }}
+      {{- if .Values.dnsPolicy }}
+      dnsPolicy: {{ .Values.dnsPolicy | quote }}
+      {{- end }}
+      {{- if .Values.dnsConfig }}
+      dnsConfig:
+{{ toYaml .Values.dnsConfig | indent 8 }}
+      {{- end }}
+      {{- if .Values.hooks.dbInit.securityContext }}
+      securityContext:
+{{ toYaml .Values.hooks.dbInit.securityContext | indent 8 }}
+      {{- else }}
+      {{- if .Values.hooks.securityContext }}
+      securityContext:
+{{ toYaml .Values.hooks.securityContext | indent 8 }}
+      {{- end }}
+      {{- end }}
+      containers:
+      - name: user-create-job
+        image: "{{ template "sentry.image" . }}"
+        imagePullPolicy: {{ default "IfNotPresent" .Values.images.sentry.pullPolicy }}
+        command: ["/bin/bash", "-c"]
+        # Create user but do not exit 1 when user already exists (exit code 3 from createuser command)
+        # https://docs.sentry.io/server/cli/createuser/
+        args:
+          - >
+            sentry createuser \
+              --no-input \
+              --superuser \
+              --email "{{ .Values.user.email }}" \
+              --password "$ADMIN_PASSWORD" || true; \
+            if [ $? -eq 0 ] || [ $? -eq 3 ]; then \
+              exit 0; \
+            else \
+              exit 1; \
+            fi
+        env:
+{{ include "sentry.env" . | indent 8 }}
+        {{- if .Values.user.existingSecret }}
+        - name: ADMIN_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.user.existingSecret }}
+              key: {{ default "admin-password" .Values.user.existingSecretKey }}
+        {{- else if .Values.user.password }}
+        - name: ADMIN_PASSWORD
+          value: {{ .Values.user.password | quote }}
+        {{- end }}
+        {{- if .Values.hooks.dbInit.env }}
+{{ toYaml .Values.hooks.dbInit.env | indent 8 }}
+        {{- end }}
+        volumeMounts:
+        - mountPath: /etc/sentry
+          name: config
+          readOnly: true
+{{- if .Values.hooks.dbInit.volumeMounts }}
+{{ toYaml .Values.hooks.dbInit.volumeMounts | indent 8 }}
+{{- end }}
+        resources:
+{{ toYaml .Values.hooks.dbInit.resources | indent 10 }}
+{{- if .Values.hooks.dbInit.containerSecurityContext }}
+        securityContext:
+{{ toYaml .Values.hooks.dbInit.containerSecurityContext | indent 10 }}
+{{- end }}
+      volumes:
+      - name: config
+        configMap:
+          name: {{ template "sentry.fullname" . }}-sentry
+{{- if .Values.hooks.dbInit.volumes }}
+{{ toYaml .Values.hooks.dbInit.volumes | indent 6 }}
+{{- end }}
+      {{- if .Values.hooks.shareProcessNamespace }}
+      shareProcessNamespace: {{ .Values.hooks.shareProcessNamespace }}
+      {{- end }}
+{{- end -}}
