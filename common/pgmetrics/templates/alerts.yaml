@@ -1,5 +1,5 @@
 {{- if .Values.alerts.enabled }}
-{{- $service := $.Values.alerts.service | default (printf "%s-%s" $.Release.Name .name) }}
+{{- $service := $.Values.alerts.service | default $.Release.Name }}
 
 {{- range $dbName := keys .Values.databases | sortAlpha }}
 ---
@@ -11,7 +11,7 @@ metadata:
     prometheus: {{ required ".Values.alerts.prometheus missing" $.Values.alerts.prometheus }}
 spec:
   groups:
-  - name: pg-database.alerts
+  - name: pg-database-{{ $dbName }}.alerts
     rules:
     - alert: {{ title $service }}StuckTransactions
       expr: max(pg_stat_activity_max_tx_duration{datname="{{ $dbName }}"}) > 600
