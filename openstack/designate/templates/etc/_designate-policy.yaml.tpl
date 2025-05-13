@@ -57,6 +57,7 @@ create_zone: rule:context_is_dns_ops
 move_zone: rule:context_is_dns_ops
 pool_move_zone: rule:context_is_dns_ops
 create_sub_zone: rule:context_is_zonemaster
+create_sub_zone_other_project: role:cloud_dns_admin
 create_super_zone: rule:context_is_cloud_admin
 get_zones: rule:context_is_viewer
 get_zone: rule:context_is_viewer
