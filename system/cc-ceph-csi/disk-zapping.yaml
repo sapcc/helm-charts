@@ -34,11 +34,14 @@ spec:
               DISKS='/dev/nvme1n1 /dev/nvme2n1 /dev/nvme3n1 /dev/nvme4n1 /dev/nvme5n1 /dev/nvme6n1 /dev/nvme7n1'
               
               for DISK in $DISKS; do
+                # todo: sort by pci id, skip first disk, check for labels
+                # lsblk -n -o name /dev/nvme0n1
                 echo "Zapping $DISK on node $NODE ..."
                 chroot /host sgdisk --zap-all $DISK
                 chroot /host dd if=/dev/zero of="$DISK" bs=1M count=100 oflag=direct,dsync
                 chroot /host blkdiscard $DISK
                 chroot /host hdparm -z $DISK
+                # todo: add disk label
               done
 
               echo "Done."
