@@ -8,6 +8,7 @@
 "context_is_key_admin": "rule:context_is_admin or rule:key_admin"
 "context_is_editor": "rule:context_is_key_admin"
 "context_is_viewer": "rule:context_is_editor or rule:viewer"
+"context_is_key_admin_and_project_member": "rule:context_is_key_admin and project_id:%(project_id)s"
 
 "secret_non_private_read": "rule:context_is_viewer and rule:secret_project_match and not rule:secret_private_read"
 "secret_decrypt_non_private_read": "rule:context_is_viewer and rule:secret_project_match and not rule:secret_private_read"
@@ -91,10 +92,10 @@
 "secret_meta:put": "rule:context_is_editor"
 "secret_meta:delete": "rule:context_is_editor"
 
-"secretstores:get": "rule:context_is_key_admin"
-"secretstores:get_global_default": "rule:context_is_key_admin"
-"secretstores:get_preferred": "rule:context_is_key_admin"
+"secretstores:get": "rule:context_is_key_admin_and_project_member"
+"secretstores:get_global_default": "rule:context_is_key_admin_and_project_member"
+"secretstores:get_preferred": "rule:context_is_key_admin_and_project_member"
 
-"secretstore_preferred:post": "rule:context_is_key_admin"
-"secretstore_preferred:delete": "rule:context_is_key_admin"
-"secretstore:get": "rule:context_is_key_admin"
+"secretstore_preferred:post": "rule:context_is_key_admin_and_project_member"
+"secretstore_preferred:delete": "rule:context_is_key_admin_and_project_member"
+"secretstore:get": "rule:context_is_key_admin_and_project_member"
