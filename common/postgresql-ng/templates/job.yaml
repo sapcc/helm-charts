@@ -1,3 +1,11 @@
+{{- $userNames := keys .Values.users | sortAlpha }}
+{{- if .Values.persistence.createBackupUser }}
+  {{- $userNames = append $userNames "backup" }}
+{{- end }}
+{{- if .Values.createMetricsUser }}
+  {{- $userNames = append $userNames "metrics" }}
+{{- end }}
+
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -23,11 +31,15 @@ spec:
           - ash
           - -c
           - |
+
             set -eou pipefail
             [[ ${DEBUG:-} != false ]] && set -x
 
-            {{- range $user, $settings := .Values.users }}
+            {{- range $user := $userNames }}
+            {{- $settings := index $.Values.users $user | default (dict) }}
+            {{- if not (hasKey $settings "secretName") }}
             kubectl delete secret --ignore-not-found {{ $.Release.Name }}-pguser-{{ $user }}
+            {{- end }}
             {{- end }}
       restartPolicy: Never
       serviceAccountName: {{ template "postgres.fullname" . }}
