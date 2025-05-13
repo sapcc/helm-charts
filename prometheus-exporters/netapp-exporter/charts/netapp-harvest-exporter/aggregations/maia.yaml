@@ -42,28 +42,40 @@ groups:
     # performance metrics
     #
 
-    - record: netapp_volume_total_ops:pre
-      expr: label_replace(netapp_volume_total_ops{app="netapp-harvest-exporter-manila"} * on (app, host, svm, volume) group_left(project_id, share_id, share_name, share_type, volume_type) netapp_volume_labels, "vserver", "$1", "svm", "(.*)")
+    - record: netapp_volume_total_ops:maia
+      expr: avg by (host, vserver, volume, volume_type, share_name, share_id, share_type, project_id, availability_zone) (label_replace(
+        netapp_volume_total_ops * on (app, host, svm, volume)  group_left(project_id, share_id, share_name, share_type, volume_type) netapp_volume_labels:manila,
+        "vserver", "$1", "svm", "(.*)"))
 
-    - record: netapp_volume_read_ops:pre
-      expr: label_replace(netapp_volume_read_ops{app="netapp-harvest-exporter-manila"} * on (app, host, svm, volume) group_left(project_id, share_id, share_name, share_type, volume_type) netapp_volume_labels, "vserver", "$1", "svm", "(.*)")
+    - record: netapp_volume_read_ops:maia
+      expr: avg by (host, vserver, volume, volume_type, share_name, share_id, share_type, project_id, availability_zone) (label_replace(
+        netapp_volume_read_ops * on (app, host, svm, volume)  group_left(project_id, share_id, share_name, share_type, volume_type) netapp_volume_labels:manila,
+        "vserver", "$1", "svm", "(.*)"))
 
-    - record: netapp_volume_write_ops:pre
-      expr: label_replace(netapp_volume_write_ops{app="netapp-harvest-exporter-manila"} * on (app, host, svm, volume) group_left(project_id, share_id, share_name, share_type, volume_type) netapp_volume_labels, "vserver", "$1", "svm", "(.*)")
+    - record: netapp_volume_write_ops:maia
+      expr: avg by (host, vserver, volume, volume_type, share_name, share_id, share_type, project_id, availability_zone) (label_replace(
+        netapp_volume_write_ops * on (app, host, svm, volume)  group_left(project_id, share_id, share_name, share_type, volume_type) netapp_volume_labels:manila,
+        "vserver", "$1", "svm", "(.*)"))
 
-    # volume read throughput in bytes per second
-    - record: netapp_volume_read_throughput:pre
-      expr: label_replace(netapp_volume_read_data{app="netapp-harvest-exporter-manila"} * on (app, host, svm, volume) group_left(project_id, share_id, share_name, share_type, volume_type) netapp_volume_labels, "vserver", "$1", "svm", "(.*)")
+    - record: netapp_volume_read_throughput:maia
+      expr: avg by (host, vserver, volume, volume_type, share_name, share_id, share_type, project_id, availability_zone) (label_replace(
+        netapp_volume_read_data * on (app, host, svm, volume)  group_left(project_id, share_id, share_name, share_type, volume_type) netapp_volume_labels:manila,
+        "vserver", "$1", "svm", "(.*)"))
 
-    # volume write throughput in bytes per second
-    - record: netapp_volume_write_throughput:pre
-      expr: label_replace(netapp_volume_write_data{app="netapp-harvest-exporter-manila"} * on (app, host, svm, volume) group_left(project_id, share_id, share_name, share_type, volume_type) netapp_volume_labels, "vserver", "$1", "svm", "(.*)")
+    - record: netapp_volume_write_throughput:maia
+      expr: avg by (host, vserver, volume, volume_type, share_name, share_id, share_type, project_id, availability_zone) (label_replace(
+        netapp_volume_write_data * on (app, host, svm, volume)  group_left(project_id, share_id, share_name, share_type, volume_type) netapp_volume_labels:manila,
+        "vserver", "$1", "svm", "(.*)"))
 
-    - record: netapp_volume_read_latency_microseconds:pre
-      expr: label_replace(netapp_volume_read_latency{app="netapp-harvest-exporter-manila"} * on (app, host, svm, volume) group_left(project_id, share_id, share_name, share_type, volume_type) netapp_volume_labels, "vserver", "$1", "svm", "(.*)")
+    - record: netapp_volume_read_latency_microseconds:maia
+      expr: avg by (host, vserver, volume, volume_type, share_name, share_id, share_type, project_id, availability_zone) (label_replace(
+        netapp_volume_read_latency * on (app, host, svm, volume)  group_left(project_id, share_id, share_name, share_type, volume_type) netapp_volume_labels:manila,
+        "vserver", "$1", "svm", "(.*)"))
 
-    - record: netapp_volume_write_latency_microseconds:pre
-      expr: label_replace(netapp_volume_write_latency{app="netapp-harvest-exporter-manila"} * on (app, host, svm, volume) group_left(project_id, share_id, share_name, share_type, volume_type) netapp_volume_labels, "vserver", "$1", "svm", "(.*)")
+    - record: netapp_volume_write_latency_microseconds:maia
+      expr: avg by (host, vserver, volume, volume_type, share_name, share_id, share_type, project_id, availability_zone) (label_replace(
+        netapp_volume_write_latency * on (app, host, svm, volume)  group_left(project_id, share_id, share_name, share_type, volume_type) netapp_volume_labels:manila,
+        "vserver", "$1", "svm", "(.*)"))
 
     #
     # only keep necessary labels visible to users
@@ -101,27 +113,6 @@ groups:
     - record: netapp_volume_inode_files_used_percentage:maia2
       expr: round(netapp_volume_inode_files_used:maia2 / netapp_volume_inode_files_total:maia2 * 100)
 
-    - record: netapp_volume_total_ops:maia2
-      expr: avg by (host, vserver, volume, volume_type, share_name, share_id, share_type, project_id, availability_zone) (netapp_volume_total_ops:pre{project_id!=""})
-
-    - record: netapp_volume_read_ops:maia
-      expr: avg by (host, vserver, volume, volume_type, share_name, share_id, share_type, project_id, availability_zone) (netapp_volume_read_ops:pre{project_id!=""})
-
-    - record: netapp_volume_write_ops:maia
-      expr: avg by (host, vserver, volume, volume_type, share_name, share_id, share_type, project_id, availability_zone) (netapp_volume_write_ops:pre{project_id!=""})
-
-    - record: netapp_volume_read_throughput:maia
-      expr: avg by (host, vserver, volume, volume_type, share_name, share_id, share_type, project_id, availability_zone) (netapp_volume_read_throughput:pre{project_id!=""})
-
-    - record: netapp_volume_write_throughput:maia
-      expr: avg by (host, vserver, volume, volume_type, share_name, share_id, share_type, project_id, availability_zone) (netapp_volume_write_throughput:pre{project_id!=""})
-
-    - record: netapp_volume_read_latency_microseconds:maia
-      expr: avg by (host, vserver, volume, volume_type, share_name, share_id, share_type, project_id, availability_zone) (netapp_volume_read_latency_microseconds:pre{project_id!=""})
-
-    - record: netapp_volume_write_latency_microseconds:maia
-      expr: avg by (host, vserver, volume, volume_type, share_name, share_id, share_type, project_id, availability_zone) (netapp_volume_write_latency_microseconds:pre{project_id!=""})
-
     #
     # fall back to old metrics
     #
@@ -155,9 +146,6 @@ groups:
 
     - record: netapp_volume_inode_files_used_percentage:maia
       expr: netapp_volume_inode_files_used_percentage:maia2 or sum (netapp_volume_inode_files_used_percentage:maia1{project_id!=""}) without (app, instance, job, filer, aggregate, node, snapshot_policy, volume_state)
-
-    - record: netapp_volume_total_ops:maia
-      expr: netapp_volume_total_ops:maia2 or sum (netapp_volume_total_ops:maia1{project_id!=""}) without (app, instance, job, filer, aggregate, node, snapshot_policy, volume_state)
 
     #
     # snampirror relationship
