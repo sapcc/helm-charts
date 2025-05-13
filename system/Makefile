@@ -155,14 +155,6 @@ build-metal-operator-remote:
 	@$(SED) -i 's/serviceAccountName.*$$/serviceAccountName: default/g' metal-operator-remote/templates/deployment.yaml
 	@$(SED) -i 's/kind: Role/kind: ClusterRole/g' metal-operator-remote/managedresources/kustomize.yaml
 
-build-boot-operator:
-	@cat kustomize/boot-operator/kustomization.yaml >> kustomization.yaml
-	$(call build-chart,boot-operator,https://github.com/ironcore-dev/boot-operator//config/default,$(BOOT_OPERATOR_VERSION))
-	@find boot-operator/templates -type f -exec $(SED) -i -e 's#{{ include "boot-operator.fullname" . }}-boot-operator#boot-operator#g' {} \;
-	@yq -i '.controllerManager.manager.image.tag="$(BOOT_OPERATOR_VERSION)"' boot-operator/values.yaml
-	@yq -i '.fullnameOverride="boot-operator"' boot-operator/values.yaml
-	@yq -i '.version="1.0.5"' boot-operator/Chart.yaml
-
 build-boot-operator-remote:
 	@rm -rf boot-operator-remote
 	@cat kustomize/boot-operator-remote/kustomization.yaml > kustomization.yaml
