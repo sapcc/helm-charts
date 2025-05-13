@@ -8,7 +8,7 @@
 kind: Deployment
 apiVersion: apps/v1
 metadata:
-  name: {{ $.Release.Name }}-{{ $dbName }}-pgmetrics
+  name: {{ $.Release.Name }}-pgmetrics-{{ $dbName }}
   {{- if $.Values.reloader.enabled }}
   annotations:
     reloader.stakater.com/search: "true"
@@ -20,11 +20,12 @@ spec:
     type: Recreate
   selector:
     matchLabels:
-      app: {{ $.Release.Name }}-{{ $dbName }}-pgmetrics
+      name: {{ $.Release.Name }}-pgmetrics-{{ $dbName }}
   template:
     metadata:
       labels:
-        app: {{ $.Release.Name }}-{{ $dbName }}-pgmetrics
+        name: {{ $.Release.Name }}-pgmetrics-{{ $dbName }}
+        app: {{ $.Release.Name }}-pgmetrics
         component: {{ $dbName }}
         type: metrics
       annotations:
@@ -42,7 +43,7 @@ spec:
         imagePullPolicy: IfNotPresent
         env:
         - name: DATA_SOURCE_URI
-          value: {{ $db_host }}:5432/{{ $dbName }}?sslmode=disable&application_name={{ $.Release.Name }}-{{ $dbName }}-pgmetrics
+          value: {{ $db_host }}:5432/{{ $dbName }}?sslmode=disable&application_name={{ $.Release.Name }}-pgmetrics-{{ $dbName }}
         - name: DATA_SOURCE_USER
           value: metrics
         - name: DATA_SOURCE_PASS
