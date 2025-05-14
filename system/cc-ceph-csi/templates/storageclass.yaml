@@ -14,6 +14,10 @@ apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
   name: rook-ceph-block
+{{- if .Values.cluster.storage.defaultStorageClass }}
+  annotations:
+    storageclass.kubernetes.io/is-default-class: true
+{{- end }}
 provisioner: rook-ceph.rbd.csi.ceph.com
 parameters:
   clusterID: {{ .Release.Namespace }}
