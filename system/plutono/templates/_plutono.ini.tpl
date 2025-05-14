@@ -66,7 +66,7 @@ plugins = /var/lib/plutono/plugins
 [database]
 type={{.Values.plutono.db.type}}
 host={{.Release.Name}}-postgresql.{{.Release.Namespace}}
-user={{.Values.postgresql.postgresUser}}
+user={{.Values.postgresql.postgresUser | default "postgres" }}
 # moved into the deployment ENV variables
 ;password=xyz
 
