@@ -40,7 +40,8 @@ data:
       - export_name: netapp_snapmirror_source_snapshot_count:federated
         query: |
           netapp_snapmirror_endpoint_labels:enhanced{region="{{ .Values.global.region }}", project_id!="", share_id!=""}
-          * on (source_cluster, source_vserver, source_volume) lable_replace(lable_replace(lable_replace(
+          * on (source_cluster, source_vserver, source_volume) group_left()
+          label_replace(label_replace(label_replace(
             max by (filer, svm, volume) (netapp_volume_snapshot_count),
             "source_cluster", "$1", "filer", "(.*)"),
             "source_vserver", "$1", "svm", "(.*)"),
@@ -48,7 +49,8 @@ data:
       - export_name: netapp_snapmirror_destination_snapshot_count:federated
         query: |
           netapp_snapmirror_endpoint_labels:enhanced{region="{{ .Values.global.region }}", project_id!="", share_id!=""}
-          * on (destination_cluster, destination_vserver, destination_volume) lable_replace(lable_replace(lable_replace(
+          * on (destination_cluster, destination_vserver, destination_volume) group_left()
+          label_replace(label_replace(label_replace(
             max by (filer, svm, volume) (netapp_volume_snapshot_count),
             "destination_cluster", "$1", "filer", "(.*)"),
             "destination_vserver", "$1", "svm", "(.*)"),
