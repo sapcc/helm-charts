@@ -133,19 +133,6 @@ build-baremetal-operator:
 	@yq -i '.fullnameOverride="metal3"' baremetal-operator-core/values.yaml
 	@yq -i '.version="1.0.1"' baremetal-operator-core/Chart.yaml
 
-build-metal-operator:
-	@cat kustomize/metal-operator/kustomization.yaml >> kustomization.yaml
-	$(call build-chart,metal-operator-core,https://github.com/ironcore-dev/metal-operator//config/default,$(METAL_OPERATOR_VERSION))
-	$(call fix-crds,metal-operator-core)
-	@find metal-operator-core/crds -type f -exec $(SED) -i -e 's#metal-operator-metal-operator-#metal-#g' {} \;
-	@find metal-operator-core/crds -type f -exec $(SED) -i -e 's#metal-webhook-service#metal-operator-webhook-service#g' {} \;
-	@find metal-operator-core/templates -type f -exec $(SED) -i -e 's#{{ include "metal-operator-core.fullname" . }}-metal-#metal-#g' {} \;
-	@find metal-operator-core/templates -type f -exec $(SED) -i -e 's#metal-serving-#metal-operator-serving-#g' {} \;
-	@find metal-operator-core/templates -type f -exec $(SED) -i -e 's#metal-webhook-service#metal-operator-webhook-service#g' {} \;
-	@yq -i '.controllerManager.manager.image.tag="$(METAL_OPERATOR_VERSION)"' metal-operator-core/values.yaml
-	@yq -i '.fullnameOverride="metal-operator"' metal-operator-core/values.yaml
-	@yq -i '.version="1.1.4"' metal-operator-core/Chart.yaml
-
 build-metal-operator-remote:
 	@rm -rf metal-operator-remote
 	@cat kustomize/metal-operator-remote/kustomization.yaml > kustomization.yaml
@@ -167,14 +154,6 @@ build-metal-operator-remote:
 	@yq -i '.version="0.3.10"' metal-operator-remote/Chart.yaml
 	@$(SED) -i 's/serviceAccountName.*$$/serviceAccountName: default/g' metal-operator-remote/templates/deployment.yaml
 	@$(SED) -i 's/kind: Role/kind: ClusterRole/g' metal-operator-remote/managedresources/kustomize.yaml
-
-build-boot-operator:
-	@cat kustomize/boot-operator/kustomization.yaml >> kustomization.yaml
-	$(call build-chart,boot-operator,https://github.com/ironcore-dev/boot-operator//config/default,$(BOOT_OPERATOR_VERSION))
-	@find boot-operator/templates -type f -exec $(SED) -i -e 's#{{ include "boot-operator.fullname" . }}-boot-operator#boot-operator#g' {} \;
-	@yq -i '.controllerManager.manager.image.tag="$(BOOT_OPERATOR_VERSION)"' boot-operator/values.yaml
-	@yq -i '.fullnameOverride="boot-operator"' boot-operator/values.yaml
-	@yq -i '.version="1.0.5"' boot-operator/Chart.yaml
 
 build-boot-operator-remote:
 	@rm -rf boot-operator-remote

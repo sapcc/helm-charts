@@ -1,15 +1,19 @@
 input {
 {{- if .Values.syslog.enabled }}
   udp {
+    id => "input_udp"
     port  => {{.Values.input_syslog_port}}
     type => syslog
   }
   tcp {
+    id => "input_tcp"
     port  => {{.Values.input_syslog_port}}
     type => syslog
   }
 {{- end }}
+{{- if .Values.http.enabled }}
   http {
+    id => "input_http"
     port  => {{.Values.input_http_port}}
     tags => ["audit"]
     user => '{{.Values.global.logstash_external_http_user}}'
@@ -21,8 +25,10 @@ input {
     threads => 12
 {{- end }}
   }
+{{- end }}
 {{- if .Values.beats.enabled }}
   beats {
+    id => "input_beats"
     port => {{ .Values.beats.port }}
     tags => ["audit"]
   }
@@ -188,6 +194,7 @@ filter {
 output {
   if [sap][cc][audit][source] == "awx" {
     http {
+      id => "output_awx"
       ssl_certificate_authorities => ["/usr/share/logstash/config/ca.pem"]
       url => "https://{{ .Values.global.forwarding.audit_awx.host }}"
       format => "json"
@@ -195,6 +202,7 @@ output {
     }
   } else if [sap][cc][audit][source] == "flatcar" {
     http {
+      id => "output_flatcar"
       ssl_certificate_authorities => ["/usr/share/logstash/config/ca.pem"]
       url => "https://{{ .Values.global.forwarding.audit_auditbeat.host }}"
       format => "json"
@@ -202,6 +210,7 @@ output {
     }
   } else if [type] == "audit" or "audit" in [tags] {
     http {
+      id => "output_else_audit"
       ssl_certificate_authorities => ["/usr/share/logstash/config/ca.pem"]
       url => "https://{{ .Values.global.forwarding.audit.host }}"
       format => "json"
