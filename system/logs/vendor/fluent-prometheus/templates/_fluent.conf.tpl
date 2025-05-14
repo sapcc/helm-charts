@@ -25,7 +25,6 @@
 <source>
   @type tail
   path /var/log/containers/fluent-audit*
-  exclude_path /var/log/containers/fluent-prometheus*
   pos_file /var/log/fluent-prometheus-audit.pos
   tag audit.*
   <parse>
