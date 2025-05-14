@@ -38,7 +38,7 @@ spec:
       {{- include "utils.proxysql.pod_settings" . | indent 6 }}
       hostname: cinder-scheduler
       initContainers:
-      {{- tuple . (dict "service" (print "cinder-api," .Release.Name "-rabbitmq")) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
+      {{- tuple . (dict "service" (include "cinder.scheduler_service_dependencies" . )) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
       containers:
         - name: cinder-scheduler
           image: {{required ".Values.global.registry is missing" .Values.global.registry}}/loci-cinder:{{.Values.imageVersionCinderScheduler | default .Values.imageVersion | required "Please set cinder.imageVersion or similar" }}

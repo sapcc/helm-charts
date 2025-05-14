@@ -50,7 +50,7 @@ template: |
         {{- include "utils.proxysql.pod_settings" . | nindent 8 }}
         {{- tuple . "{= availability_zone =}" | include "utils.kubernetes_pod_az_affinity" | nindent 8 }}
         initContainers:
-        {{- tuple . (dict "service" (print .Release.Name "-mariadb," .Release.Name "-rabbitmq") "jobs" (include "cinder.migration_job_name" .)) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 8 }}
+        {{- tuple . (dict "service" (include "cinder.service_dependencies" . ) "jobs" (include "cinder.migration_job_name" .)) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 8 }}
         containers:
         - name: cinder-volume-backup-vmware-{= name =}
           image: {{required ".Values.global.registry is missing" .Values.global.registry}}/loci-cinder:{{.Values.imageVersionCinderVolumeBackup | default .Values.imageVersion | required "Please set cinder.imageVersion or similar" }}
