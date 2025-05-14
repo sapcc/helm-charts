@@ -24,8 +24,7 @@
 # All the auto-generated files should use the tag "file.<filename>".
 <source>
   @type tail
-  path /var/log/containers/fluent-audit* # bleibt 
-  exclude_path /var/log/containers/fluent-prometheus*
+  path /var/log/containers/fluent-audit*
   pos_file /var/log/fluent-prometheus-audit.pos
   tag audit.*
   <parse>
