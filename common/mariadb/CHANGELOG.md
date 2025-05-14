@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.24.1 - 2025/05/14
+* Set `max_connect_errors` option in my.cnf to maximal possible value `4294967295`.
+* Set `skip_name_resolve` option to `ON` and `host_cache_size` to 0.
+
+This will prevent blocking database connections because of the failed monitor checks or other network issues.
+
+See related documentation at https://mariadb.com/kb/en/server-system-variables/#max_connect_errors
+
 ## v0.24.0 - 2025/04/16
 * MariaDB has been updated to the 10.6.21 version
   * delete removed `innodb_thread_concurrency` variable from my.cnf
