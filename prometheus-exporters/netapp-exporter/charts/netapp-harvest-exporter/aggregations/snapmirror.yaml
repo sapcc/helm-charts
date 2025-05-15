@@ -2,21 +2,14 @@ groups:
   - name: netapp-snapmirror
     rules:
     # NOTE:
-    #
     # netapp_snapmirror_labels: destinations only in LOCAL region (from 'snapmirror show' - rich snapmirror details).
     # netapp_snapmirror_endpoint_labels: destinations in LOCAL and REMOTE regions (from 'snapmirror list-destinations' - endpoints only no details).
-    # 
-    # To make sure the metric vectors have unique labels in below queries.
-    # Include metrics manila exporter ONLY and exclude volumes such as "root", "vol0" and other cinder volumes.
-    # Use `last_over_time` to make sure they are always available even during exporter rolling upgrade.
-    - record: netapp_volume_labels:manila
-      expr: last_over_time(netapp_volume_labels{app="netapp-harvest-exporter-manila", volume=~"share_.*"}[2h])
  
     # Enrich netapp_snapmirror_labels within a region.
     # First with share_id, share_name and project_id, then with destination_cluster.
     - record: netapp_snapmirror_labels:enhanced
       expr: |
-        netapp_snapmirror_labels 
+        netapp_snapmirror_labels
         * on (app, source_vserver, source_volume) group_left(project_id, share_id, share_name, reason)
         label_replace (
         label_replace (
@@ -29,7 +22,7 @@ groups:
         label_replace (
         label_replace (
         label_replace (
-          max by (app, availability_zone, filer, svm, volume) (netapp_volume_labels:manila),
+          netapp_volume_labels{app="netapp-harvest-exporter-manila", volume=~"share.*"},
           "destination_availability_zone", "$1", "availability_zone", "(.*)"),
           "destination_cluster", "$1", "filer", "(.*)"),
           "destination_volume", "$1", "volume", "(.*)")
@@ -40,11 +33,12 @@ groups:
       expr: |
         (netapp_snapmirror_labels unless on (source_cluster)
           label_replace(netapp_volume_labels:manila, "source_cluster", "$1", "filer", "(.*)"))
-        * on (filer, destination_volume) group_left(destination_availability_zone, destination_cluster, reason) 
+        * on (filer, destination_volume) group_left(destination_availability_zone, destination_cluster, reason)
         label_replace(
         label_replace(
         label_replace(
-        label_replace(netapp_volume_labels:manila,
+        label_replace(
+          netapp_volume_labels{app="netapp-harvest-exporter-manila", volume=~"share.*"},
           "destination_availability_zone", "$1", "availability_zone", "(.*)"),
           "destination_cluster", "$1", "filer", "(.*)"),
           "destination_volume", "$1", "volume", "(.*)"),
@@ -67,22 +61,10 @@ groups:
 
     # Add destination_cluster label, which is the filer label from harvester. 
     - record: netapp_snapmirror_lag_time:enhanced
-      expr: |
-        label_replace(netapp_snapmirror_lag_time, "destination_cluster", "$1", "filer", "(.*)")
+      expr: label_replace(netapp_snapmirror_lag_time, "destination_cluster", "$1", "filer", "(.*)")
 
     - record: netapp_snapmirror_last_transfer_duration:enhanced
-      expr: |
-        label_replace(netapp_snapmirror_last_transfer_duration, "destination_cluster", "$1", "filer", "(.*)")
+      expr: label_replace(netapp_snapmirror_last_transfer_duration, "destination_cluster", "$1", "filer", "(.*)")
 
     - record: netapp_snapmirror_last_transfer_size:enhanced
-      expr: |
-        label_replace(netapp_snapmirror_last_transfer_size, "destination_cluster", "$1", "filer", "(.*)")
-
-    # With above enriched metrics, we can query snapmirror in global thanos:
-    #
-    # For corss region snapmirrors
-    # netapp_snapmirror_endpoint_labels:enhanced{region="eu-de-1", destination_volume=~"share.*EC.*"} * 
-    # on(source_cluster, source_vserver, source_volume, destination_cluster, destination_vserver, destination_volume) group_left(schedule) netapp_snapmirror_labels:enhanced{share_id=""}
-    #
-    # For local snapmirrors
-    # netapp_snapmirror_labels:enhanced{region="eu-de-1", share_id!="", destination_volume=~"share.*.EC.*"}
+      expr: label_replace(netapp_snapmirror_last_transfer_size, "destination_cluster", "$1", "filer", "(.*)")

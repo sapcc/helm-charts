@@ -3,9 +3,6 @@ kind: Deployment
 metadata:
   name: {{ include "boot-operator-remote.fullname" . }}-controller-manager
   labels:
-    app.kubernetes.io/component: manager
-    app.kubernetes.io/created-by: boot-operator
-    app.kubernetes.io/part-of: boot-operator
     control-plane: controller-manager
   {{- include "boot-operator-remote.labels" . | nindent 4 }}
 spec:
@@ -14,11 +11,13 @@ spec:
     type: {{ .Values.controllerManager.strategy.type | quote }}
   selector:
     matchLabels:
+      app.kubernetes.io/name: boot-operator
       control-plane: controller-manager
     {{- include "boot-operator-remote.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       labels:
+        app.kubernetes.io/name: boot-operator
         control-plane: controller-manager
       {{- include "boot-operator-remote.selectorLabels" . | nindent 8 }}
       annotations:

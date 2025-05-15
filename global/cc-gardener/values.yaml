@@ -4,7 +4,7 @@ global:
 operator:
   image:
     repository: keppel.global.cloud.sap/ccloud-europe-docker-pkg-dev-mirror/gardener-project/releases/gardener/operator
-    tag: v1.112.4 # also the gardener version, which will be used
+    tag: v1.113.3 # also the gardener version, which will be used
 garden:
   name: garden
   # externalIP: ""
@@ -21,13 +21,13 @@ garden:
     # Generally, they have to match the CIDRs of the runtime cluster.
     networking:
     # nodes: 
-      pods: 10.42.0.0/16 # k3s default
-      services: 10.43.0.0/16 # k3s default
+      pods: ["10.42.0.0/16"] # k3s default
+      services: ["10.43.0.0/16"] # k3s default
   virtualCluster:
     version: "1.29.6"
     # oidcConfig:
     networking:
-      services: 100.64.0.0/13
+      services: ["100.64.0.0/13"]
     adminUsers: []
 secretsInjector:
   replicaCount: 2
@@ -36,6 +36,7 @@ secretsInjector:
   image:
     repository: ""
     tag: ""
+    pullPolicy: IfNotPresent
   config:
     accounts: []
     intervals:
@@ -73,6 +74,27 @@ extensions:
         tag: sha-068b0c7
 gardenlet:
   enabled: false
+cloudProfileSync:
+  enabled: false
+  replicaCount: 1
+  topologyKey: ""
+  virtualGardenCA: "" # base64 encoded
+  image:
+    repository: cloud-profile-sync
+    tag: v0.1.0
+    pullPolicy: IfNotPresent
+  config:
+    cloudProfile: ironcore-metal
+    source:
+      name: gardenlinux
+      oci:
+        registry: ""
+        repository: ""
+    provider:
+      ironcore:
+        registry: ""
+        repository: ""
+        imageName: ""
 owner-info:
   support-group: containers
   helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/global/cc-gardener
