@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.24.1 - 2025/05/08
+* MariaDB version bumped to [10.6.22](https://mariadb.com/kb/en/mariadb-10-6-22-release-notes/)
+  * InnoDB race condition has been fixed
+  * [CVEs fixed](https://mariadb.com/kb/en/security/#full-list-of-cves-fixed-in-mariadb):
+    * [CVE-2025-30722](http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2025-30722)
+    * [CVE-2025-30693](http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2025-30693)
+    * [CVE-2023-52970](http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2023-52970)
+    * [CVE-2023-52969](http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2023-52969)
+* chart version bumped
+
 ## v0.24.0 - 2025/04/16
 * MariaDB has been updated to the 10.6.21 version
   * delete removed `innodb_thread_concurrency` variable from my.cnf
