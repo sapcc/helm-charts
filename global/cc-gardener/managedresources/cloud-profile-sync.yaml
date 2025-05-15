@@ -1,0 +1,42 @@
+{{ if .Values.cloudProfileSync.enabled -}}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: cloud-profile-sync
+rules:
+- apiGroups: ["core.gardener.cloud"]
+  resources:
+  - cloudprofiles
+  verbs:
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups: ["coordination.k8s.io"]
+  resources:
+  - leases
+  verbs:
+  - get
+  - list
+  - patch
+  - update
+  - watch
+  - create
+  - delete
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: cloud-profile-sync
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cloud-profile-sync
+subjects:
+# serviceaccount is ensured by gardener-resource-manager
+- kind: ServiceAccount
+  name: cloud-profile-sync
+  namespace: garden
+{{ end -}}
