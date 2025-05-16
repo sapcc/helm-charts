@@ -16,8 +16,8 @@ input {
     id => "input_http"
     port  => {{.Values.input_http_port}}
     tags => ["audit"]
-    user => '{{.Values.global.logstash_external_http_user}}'
-    password => '${AUDIT_HTTP_IN}'
+    user => '${AUDIT_HTTP_USER}'
+    password => '${AUDIT_HTTP_PWD}'
 {{ if eq .Values.global.clusterType "metal" -}}
     ssl_enabled => true
     ssl_certificate => '/tls-secret/tls.crt'
