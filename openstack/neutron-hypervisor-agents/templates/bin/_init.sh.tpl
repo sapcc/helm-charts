@@ -12,23 +12,12 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-# Require HOSTNAME env to be set
-if [ -z "${HOSTNAME}" ]; then
-    echo "HOSTNAME env variable is not set. Exiting..."
-    exit 1
-fi
-
-# Require BUILDING_BLOCK env to be set
-if [ -z "${BUILDING_BLOCK}" ]; then
-    echo "BUILDING_BLOCK env variable is not set. Exiting..."
-    exit 1
-fi
-
-# Require HOST_IP env to be set
-if [ -z "${HOST_IP}" ]; then
-    echo "HOST_IP env variable is not set. Exiting..."
-    exit 1
-fi
+for env in HOSTNAME BUILDING_BLOCK HOST_IP AVAILABILITY_ZONE; do
+    if [ -z "${!env}" ]; then
+        echo "$env is not set. Exiting..."
+        exit 1
+    fi
+done
 
 # Wait for ovsdb server
 while true; do
@@ -46,13 +35,12 @@ set -eEuxo pipefail
 # Generate stable UUID from hostname
 echo "Generating stable UUID from hostname "${HOSTNAME}" | md5sum..."
 HASH=$(echo -n "${HOSTNAME}" | md5sum | cut -d' ' -f1)
-UUID=${HASH:0:8}-${HASH:8:4}-${HASH:12:4}-${HASH:16:4}-${HASH:20:12}
-ovs-vsctl set open . external-ids:system-id=${UUID}
+ovs-vsctl set open . external-ids:system-id=${HASH:0:8}-${HASH:8:4}-${HASH:12:4}-${HASH:16:4}-${HASH:20:12}
 ovs-vsctl set open . external-ids:hostname=${HOSTNAME}
 ovs-vsctl set open . external-ids:ovn-encap-ip=${HOST_IP}
 
-ovs-vsctl set open . external-ids:ovn-bridge-mappings=${BUILDING_BLOCK}:br-ex
-ovs-vsctl set open . external-ids:ovn-bridge={{ .Values.ovn.integration_bridge }}
+ovs-vsctl set open . external-ids:ovn-bridge-mappings=${BUILDING_BLOCK}:{{ default "br-ex" .Values.ovn.external_bridge }}
+ovs-vsctl set open . external-ids:ovn-bridge={{ default "br-int" .Values.ovn.integration_bridge }}
 ovs-vsctl set open . external-ids:ovn-cms-options="enable-chassis-as-gw,availability-zones=${AVAILABILITY_ZONE}"
 
 # Set any additional external-ids
