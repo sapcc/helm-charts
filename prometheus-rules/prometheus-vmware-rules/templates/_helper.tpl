@@ -17,36 +17,5 @@ Description:
 {{- define "bedrockConfirm.expr" -}}
 {{- $expr := index . 0 -}}
 {{- $mappingKey := index . 1 -}}
-label_replace(
-    {{ $expr }} unless on({{ $mappingKey }})
-    (
-        group by (project, {{ $mappingKey }}) (
-            vrops_virtualmachine_system_powered_on{region="eu-de-1", vccluster=~"productionbb\\d+"}
-        )
-        and on(project)
-        group by (project) (
-            label_replace(
-                limes_project_usage{domain=~"iaas-.*"},
-                "project", "$$1", "project_id", "(.*)"
-            )
-        )
-    ),
-    "bedrock", "false", "bedrock", "")
-or
-label_replace(
-    {{ $expr }} and on({{ $mappingKey }})
-    (
-        group by (project, {{ $mappingKey }}) (
-            vrops_virtualmachine_system_powered_on{region="eu-de-1", vccluster=~"productionbb\\d+"}
-        )
-        and on(project)
-        group by (project) (
-            label_replace(
-                limes_project_usage{domain=~"iaas-.*"},
-                "project", "$$1", "project_id", "(.*)"
-            )
-        )
-    ),
-    "bedrock", "true", "bedrock", ""
-)
+({{ $expr }}) + on({{ $mappingKey }}) group_left(bedrock) label_replace(vrops_hostsystem_vsphere_tags, "bedrock", "true", "vsphere_tags", ".*IAAS.*") * 0
 {{- end -}}
