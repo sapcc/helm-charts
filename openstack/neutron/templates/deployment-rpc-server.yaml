@@ -44,6 +44,7 @@ spec:
         prometheus.io/targets: {{ required "$.Values.metrics.prometheus missing" $.Values.metrics.prometheus }}
         {{- end }}
         {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
+        config.linkerd.io/skip-outbound-ports: "6441,6442" # OVSDB ports
     spec:
 {{ tuple . "neutron" "rpc" | include "kubernetes_pod_anti_affinity" | indent 6 }}
       {{- include "utils.proxysql.pod_settings" . | indent 6 }}

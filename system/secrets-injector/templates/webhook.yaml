@@ -28,6 +28,8 @@ webhooks:
     expression: 'object.metadata.?annotations["cloud.sap/inject-secrets"].orValue("") != "false"'
   - name: 'exclude-owner-cert-manager'
     expression: 'object.metadata.?ownerReferences.optMap(l, !("cert-manager.io/v1" in l.map(r, r.apiVersion))).orValue(true)'
+  - name: 'exclude-node-bootstrap-token'
+    expression: 'object.type != "bootstrap.kubernetes.io/token"'
   {{- if .Values.webhook.extraConditions }}
   {{- toYaml .Values.webhook.extraConditions | nindent 2 }}
   {{- end }}

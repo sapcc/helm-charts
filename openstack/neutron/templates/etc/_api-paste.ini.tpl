@@ -16,7 +16,9 @@ use = egg:Paste#urlmap
 {{- end }}
 
 {{- define "sentry_pipe" -}}
-{{- if .Values.sentry.enabled }} raven{{- end -}}
+{{- if .Values.sentry.enabled }}
+{{- if .Values.sentry.sapccsentry }} sapccsentry{{- else }} raven{{- end -}}
+{{- end }}
 {{- end }}
 
 {{- define "uwsgi_pipe" -}}
@@ -71,9 +73,14 @@ paste.filter_factory = osprofiler.web:WsgiMiddleware.factory
 paste.filter_factory = oslo_middleware:Debug.factory
 
 {{ if .Values.sentry.enabled -}}
+{{ if .Values.sentry.sapccsentry -}}
+[filter:sapccsentry]
+paste.filter_factory = sapcc_sentrylogger.paste:sapcc_sentry_filter_factory
+{{- else }}
 [filter:raven]
 use = egg:raven#raven
 level = ERROR
+{{- end }}
 {{- end }}
 
 {{ if .Values.audit.enabled -}}

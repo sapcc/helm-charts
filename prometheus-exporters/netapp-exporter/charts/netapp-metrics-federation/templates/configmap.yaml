@@ -27,6 +27,7 @@ data:
           netapp_snapmirror_endpoint_labels:enhanced{region="{{ .Values.global.region }}", project_id!="", share_id!=""}
             * on (source_vserver, source_volume, destination_cluster, destination_vserver, destination_volume)
             group_left() netapp_snapmirror_lag_time:enhanced
+        help: "netapp snapmirror lag time"
       - export_name: netapp_snapmirror_last_transfer_duration:federated
         query: |
           netapp_snapmirror_endpoint_labels:enhanced{region="{{ .Values.global.region }}", project_id!="", share_id!=""}
@@ -37,6 +38,24 @@ data:
           netapp_snapmirror_endpoint_labels:enhanced{region="{{ .Values.global.region }}", project_id!="", share_id!=""}
             * on (source_vserver, source_volume, destination_cluster, destination_vserver, destination_volume)
             group_left() netapp_snapmirror_last_transfer_size:enhanced
+      - export_name: netapp_snapmirror_source_snapshot_count:federated
+        query: |
+          netapp_snapmirror_endpoint_labels:enhanced{region="{{ .Values.global.region }}", project_id!="", share_id!=""}
+          * on (source_cluster, source_vserver, source_volume) group_left()
+          label_replace(label_replace(label_replace(
+            max by (filer, svm, volume) (netapp_volume_snapshot_count),
+            "source_cluster", "$1", "filer", "(.*)"),
+            "source_vserver", "$1", "svm", "(.*)"),
+            "source_volume", "$1", "volume", "(.*)")
+      - export_name: netapp_snapmirror_destination_snapshot_count:federated
+        query: |
+          netapp_snapmirror_endpoint_labels:enhanced{region="{{ .Values.global.region }}", project_id!="", share_id!=""}
+          * on (destination_cluster, destination_vserver, destination_volume) group_left()
+          label_replace(label_replace(label_replace(
+            max by (filer, svm, volume) (netapp_volume_snapshot_count),
+            "destination_cluster", "$1", "filer", "(.*)"),
+            "destination_vserver", "$1", "svm", "(.*)"),
+            "destination_volume", "$1", "volume", "(.*)")
     label_rules:
       - type: drop
         label_prefix: linkerd_

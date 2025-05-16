@@ -2,7 +2,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.16.0
+    controller-gen.kubebuilder.io/version: v0.17.1
   name: httpbootconfigs.boot.ironcore.dev
 spec:
   group: boot.ironcore.dev
@@ -89,7 +89,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.16.0
+    controller-gen.kubebuilder.io/version: v0.17.1
   name: ipxebootconfigs.boot.ironcore.dev
 spec:
   group: boot.ironcore.dev
@@ -272,8 +272,11 @@ rules:
   resources:
   - secrets
   verbs:
+  - create
   - get
   - list
+  - patch
+  - update
   - watch
 - apiGroups:
   - boot.ironcore.dev
@@ -350,31 +353,7 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  labels:
-    app.kubernetes.io/component: kube-rbac-proxy
-    app.kubernetes.io/created-by: boot-operator
-    app.kubernetes.io/instance: metrics-reader
-    app.kubernetes.io/managed-by: kustomize
-    app.kubernetes.io/name: clusterrole
-    app.kubernetes.io/part-of: boot-operator
-  name: boot-operator-metrics-reader
-rules:
-- nonResourceURLs:
-  - /metrics
-  verbs:
-  - get
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  labels:
-    app.kubernetes.io/component: kube-rbac-proxy
-    app.kubernetes.io/created-by: boot-operator
-    app.kubernetes.io/instance: proxy-role
-    app.kubernetes.io/managed-by: kustomize
-    app.kubernetes.io/name: clusterrole
-    app.kubernetes.io/part-of: boot-operator
-  name: boot-operator-proxy-role
+  name: boot-operator-metrics-auth-role
 rules:
 - apiGroups:
   - authentication.k8s.io
@@ -388,6 +367,16 @@ rules:
   - subjectaccessreviews
   verbs:
   - create
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: boot-operator-metrics-reader
+rules:
+- nonResourceURLs:
+  - /metrics
+  verbs:
+  - get
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -433,41 +422,12 @@ subjects:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  labels:
-    app.kubernetes.io/component: kube-rbac-proxy
-    app.kubernetes.io/created-by: boot-operator
-    app.kubernetes.io/instance: proxy-rolebinding
-    app.kubernetes.io/managed-by: kustomize
-    app.kubernetes.io/name: clusterrolebinding
-    app.kubernetes.io/part-of: boot-operator
-  name: boot-operator-proxy-rolebinding
+  name: boot-operator-metrics-auth-rolebinding
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: boot-operator-proxy-role
+  name: boot-operator-metrics-auth-role
 subjects:
 - kind: ServiceAccount
   name: boot-operator-controller-manager
   namespace: kube-system
----
-apiVersion: v1
-kind: Service
-metadata:
-  labels:
-    app.kubernetes.io/component: kube-rbac-proxy
-    app.kubernetes.io/created-by: boot-operator
-    app.kubernetes.io/instance: controller-manager-metrics-service
-    app.kubernetes.io/managed-by: kustomize
-    app.kubernetes.io/name: service
-    app.kubernetes.io/part-of: boot-operator
-    control-plane: controller-manager
-  name: boot-operator-controller-manager-metrics-service
-  namespace: kube-system
-spec:
-  ports:
-  - name: https
-    port: 8443
-    protocol: TCP
-    targetPort: https
-  selector:
-    control-plane: controller-manager

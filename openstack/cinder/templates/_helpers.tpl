@@ -4,3 +4,19 @@
 {{- $hash := empty .Values.proxysql.mode | ternary $bin $all | sha256sum }}
 {{- .Release.Name }}-migration-job-{{ substr 0 4 $hash }}-{{ .Values.imageVersion | required "Please set cinder.imageVersion or similar" }}
 {{- end }}
+
+{{- define "cinder.service_dependencies" }}
+  {{- template "cinder.db_service" . }},{{ template "cinder.rabbitmq_service" . }}
+{{- end }}
+
+{{- define "cinder.scheduler_service_dependencies" }}
+  {{- template "cinder.rabbitmq_service" . }},cinder-api
+{{- end }}
+
+{{- define "cinder.db_service" }}
+  {{- include "utils.db_host" . }}
+{{- end }}
+
+{{- define "cinder.rabbitmq_service" }}
+  {{- .Release.Name }}-rabbitmq
+{{- end }}

@@ -15,7 +15,7 @@ spec:
         app: ceph-storage-reset
     spec:
       #nodeSelector:
-      #  label: whatever
+      #  kubernetes.io/hostname: xyz
       hostPID: true
       initContainers:
         - name: init
@@ -29,17 +29,23 @@ spec:
             - |-
               set -xe
 
-              apk add sgdisk hdparm
-
-              DISKS='/dev/nvme1n1 /dev/nvme2n1 /dev/nvme3n1 /dev/nvme4n1 /dev/nvme5n1 /dev/nvme6n1 /dev/nvme7n1'
+              apk add sgdisk hdparm lsblk
               
-              for DISK in $DISKS; do
-                echo "Zapping $DISK on node $NODE ..."
-                chroot /host sgdisk --zap-all $DISK
-                chroot /host dd if=/dev/zero of="$DISK" bs=1M count=100 oflag=direct,dsync
-                chroot /host blkdiscard $DISK
-                chroot /host hdparm -z $DISK
+              for DISK in $(ls /dev/nvme*n1); do
+                DISK_LABEL=$(lsblk -n -o label "$DISK")
+
+                if [ -z "${DISK_LABEL}" ]; then
+                  echo "Zapping $DISK on node $NODE ..."
+                  chroot /host sgdisk --zap-all $DISK
+                  chroot /host dd if=/dev/zero of="$DISK" bs=1M count=100 oflag=direct,dsync
+                  chroot /host blkdiscard $DISK
+                  chroot /host hdparm -z $DISK
+                else
+                  echo "Skipping $DISK with label $DISK_LABEL on node $NODE"
+                fi
               done
+
+              echo "Done."
 
           volumeMounts:
             - name: host

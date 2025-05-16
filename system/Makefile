@@ -6,8 +6,8 @@ PROVIDER_IPAM_VERSION ?= v0.1.1
 PROVIDER_KUBERNIKUS_VERSION ?= 9fd81475b828971913b3b27addf51fdbd0511d85
 BAREMETAL_OPERATOR_VERSION ?= v0.6.0
 METAL_OPERATOR_VERSION ?= d339e4ef08f0c3208a9d6c9b46c0a5a9b7266a6c
-BOOT_OPERATOR_VERSION ?= e719a1651befdf1b84904c4644a57597d7022186
-IPXE_OPERATOR_VERSION ?= 61c6898bfd7772008835bdcca8d8a64c1dfc3b32
+BOOT_OPERATOR_VERSION ?= 5d753db2a9c1293f9c7bf7ce8a23f8a966612311
+IPXE_OPERATOR_VERSION ?= 28b7ac62711e74db02fe0097bdf474a302a054c6
 FEDHCP_VERSION ?= a59539c62aaa11a96c82fe792c87daaac4cb75bf
 IPAM_VERSION ?= 6faf501000c5d7ff9744a3c111ca5ecf3339c00c
 ARGORA_VERSION ?= 06b8e140698d509b98376b22f0e06d1dddf51431
@@ -133,19 +133,6 @@ build-baremetal-operator:
 	@yq -i '.fullnameOverride="metal3"' baremetal-operator-core/values.yaml
 	@yq -i '.version="1.0.1"' baremetal-operator-core/Chart.yaml
 
-build-metal-operator:
-	@cat kustomize/metal-operator/kustomization.yaml >> kustomization.yaml
-	$(call build-chart,metal-operator-core,https://github.com/ironcore-dev/metal-operator//config/default,$(METAL_OPERATOR_VERSION))
-	$(call fix-crds,metal-operator-core)
-	@find metal-operator-core/crds -type f -exec $(SED) -i -e 's#metal-operator-metal-operator-#metal-#g' {} \;
-	@find metal-operator-core/crds -type f -exec $(SED) -i -e 's#metal-webhook-service#metal-operator-webhook-service#g' {} \;
-	@find metal-operator-core/templates -type f -exec $(SED) -i -e 's#{{ include "metal-operator-core.fullname" . }}-metal-#metal-#g' {} \;
-	@find metal-operator-core/templates -type f -exec $(SED) -i -e 's#metal-serving-#metal-operator-serving-#g' {} \;
-	@find metal-operator-core/templates -type f -exec $(SED) -i -e 's#metal-webhook-service#metal-operator-webhook-service#g' {} \;
-	@yq -i '.controllerManager.manager.image.tag="$(METAL_OPERATOR_VERSION)"' metal-operator-core/values.yaml
-	@yq -i '.fullnameOverride="metal-operator"' metal-operator-core/values.yaml
-	@yq -i '.version="1.1.4"' metal-operator-core/Chart.yaml
-
 build-metal-operator-remote:
 	@rm -rf metal-operator-remote
 	@cat kustomize/metal-operator-remote/kustomization.yaml > kustomization.yaml
@@ -168,14 +155,6 @@ build-metal-operator-remote:
 	@$(SED) -i 's/serviceAccountName.*$$/serviceAccountName: default/g' metal-operator-remote/templates/deployment.yaml
 	@$(SED) -i 's/kind: Role/kind: ClusterRole/g' metal-operator-remote/managedresources/kustomize.yaml
 
-build-boot-operator:
-	@cat kustomize/boot-operator/kustomization.yaml >> kustomization.yaml
-	$(call build-chart,boot-operator,https://github.com/ironcore-dev/boot-operator//config/default,$(BOOT_OPERATOR_VERSION))
-	@find boot-operator/templates -type f -exec $(SED) -i -e 's#{{ include "boot-operator.fullname" . }}-boot-operator#boot-operator#g' {} \;
-	@yq -i '.controllerManager.manager.image.tag="$(BOOT_OPERATOR_VERSION)"' boot-operator/values.yaml
-	@yq -i '.fullnameOverride="boot-operator"' boot-operator/values.yaml
-	@yq -i '.version="1.0.5"' boot-operator/Chart.yaml
-
 build-boot-operator-remote:
 	@rm -rf boot-operator-remote
 	@cat kustomize/boot-operator-remote/kustomization.yaml > kustomization.yaml
@@ -186,7 +165,7 @@ build-boot-operator-remote:
 	@kubectl kustomize kustomize/boot-operator-managedresources > boot-operator-remote/managedresources/kustomize.yaml
 	@yq -i '.controllerManager.manager.image.tag="$(BOOT_OPERATOR_VERSION)"' boot-operator-remote/values.yaml
 	@yq -i '.fullnameOverride="boot-operator"' boot-operator-remote/values.yaml
-	@yq -i '.version="0.3.1"' boot-operator-remote/Chart.yaml
+	@yq -i '.version="0.3.3"' boot-operator-remote/Chart.yaml
 	@$(SED) -i 's/serviceAccountName.*$$/serviceAccountName: default/g' boot-operator-remote/templates/deployment.yaml
 	@$(SED) -i 's/kind: Role/kind: ClusterRole/g' boot-operator-remote/managedresources/kustomize.yaml
 

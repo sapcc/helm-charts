@@ -44,7 +44,10 @@ spec:
           domain: {{ required ".Values.global.cluster missing" .Values.global.cluster }}.soil-garden.{{ required ".Values.global.region missing" .Values.global.region }}.cloud.sap
           controller:
             kind: nginx
-        networks: {{ toYaml .Values.garden.runtimeCluster.networking | nindent 10 }}
+        networks:
+          nodes: {{ index .Values.garden.runtimeCluster.networking.nodes 0 | quote }}
+          pods: {{ index .Values.garden.runtimeCluster.networking.pods 0 | quote }}
+          services: {{ index .Values.garden.runtimeCluster.networking.services 0 | quote }}
         provider:
           region: {{ .Values.global.region }}
           type: openstack
