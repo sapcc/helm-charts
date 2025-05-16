@@ -23,27 +23,51 @@ spec:
       annotations:
         configmap-bin-hash: {{ include (print $.Template.BasePath "/configmap-bin.yaml") . | sha256sum }}
     spec:
-      hostNetwork: true
-      hostAliases:
-      {{- range $ip := .Values.rabbitmq.externalIPs }}
-      - ip: {{ $ip }}
-        hostnames:
-        - {{ required "Please set rabbitmq.host" $.Values.rabbitmq.host }}
-      {{- end }}
       tolerations:
       {{- range $k, $v :=  $hypervisor.pod.tolerations }}
       - # {{ $k }}
-      {{- toYaml $v | nindent 8 }}
+      {{ toYaml $v | nindent 8 }}
       {{- end }}
       nodeSelector:
       {{- range $k, $v := $hypervisor.pod.nodeSelector }}
         {{ $k }}: {{ $v }}
       {{- end }}
+      initContainers:
+        - name: init-ovsdb-server
+          image: {{ .Values.global.registry | required ".Values.global.registry is missing" }}/cobaltcore-dev/openstack-ovn-controller:{{ .Values.imageVersionOVN | default "latest" }}
+          imagePullPolicy: IfNotPresent
+          command: ["dumb-init", "/bin/bash", "-c", "/usr/local/bin/container-scripts/init.sh"]
+          env:
+            - name: HOSTNAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.labels['kubernetes.metal.cloud.sap/name']
+            - name: BUILDING_BLOCK
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.labels['kubernetes.metal.cloud.sap/bb']
+            - name: HOST_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.hostIP
+            - name: AVAILABILITY_ZONE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.labels['topology.kubernetes.io/zone']
+          volumeMounts:
+            - name: var-run-openvswitch
+              mountPath: "/var/run/openvswitch"
+            - name: container-scripts
+              mountPath: "/usr/local/bin/container-scripts"
+              readOnly: true
       containers:
         - name: ovn-controller
           image: {{ .Values.global.registry | required ".Values.global.registry is missing" }}/cobaltcore-dev/openstack-ovn-controller:{{ .Values.imageVersionOVN | default "latest" }}
           imagePullPolicy: IfNotPresent
           command: [ "ovn-controller", "--verbose=info", "--pidfile", "unix:/run/openvswitch/db.sock" ]
+          env:
+            - name: OVN_SB_DB
+              value: {{ .Values.ovn.external_ids.OvnRemote }}
           securityContext:
             privileged: true
             runAsUser: 0
@@ -76,32 +100,6 @@ spec:
             initialDelaySeconds: 30
             periodSeconds: 5
             timeoutSeconds: 5
-        - name: init-ovsdb-server
-          image: {{ .Values.global.registry | required ".Values.global.registry is missing" }}/cobaltcore-dev/openstack-ovn-controller:{{ .Values.imageVersionOVN | default "latest" }}
-          imagePullPolicy: IfNotPresent
-          command: ["dumb-init", "/bin/bash", "-c", "/usr/local/bin/container-scripts/init.sh"]
-          env:
-            - name: HOSTNAME
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.labels['kubernetes.metal.cloud.sap/name']
-            - name: BUILDING_BLOCK
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.labels['kubernetes.metal.cloud.sap/bb']
-            - name: HOST_IP
-              valueFrom:
-                fieldRef:
-                  fieldPath: status.hostIP
-          volumeMounts:
-            - name: var-run-openvswitch
-              mountPath: "/var/run/openvswitch"
-            - name: container-scripts
-              mountPath: "/usr/local/bin/container-scripts"
-              readOnly: true
-      dnsConfig:
-        searches:
-          - {{ .Values.global.region }}.{{ .Values.global.tld }}
       volumes:
         - name: var-run-openvswitch
           hostPath:
