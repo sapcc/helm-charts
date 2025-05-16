@@ -43,17 +43,19 @@ done
 
 set -eEuxo pipefail
 
-ovs-vsctl set open . external-ids:system-id=${HOSTNAME}
+# Generate stable UUID from hostname
+echo "Generating stable UUID from hostname "${HOSTNAME}" | md5sum..."
+HASH=$(echo -n "${HOSTNAME}" | md5sum | cut -d' ' -f1)
+UUID=${HASH:0:8}-${HASH:8:4}-${HASH:12:4}-${HASH:16:4}-${HASH:20:12}
+ovs-vsctl set open . external-ids:system-id=${UUID}
 ovs-vsctl set open . external-ids:hostname=${HOSTNAME}
 ovs-vsctl set open . external-ids:ovn-encap-ip=${HOST_IP}
-{{- with .Values.ovn.integration_bridge }}
-ovs-vsctl set open . external-ids:ovn-bridge-mappings=${BUILDING_BLOCK}:{{ . }}
-ovs-vsctl set open . external-ids:ovn-bridge={{ . }}
-{{- end }}
 
-# Set additional external-ids
+ovs-vsctl set open . external-ids:ovn-bridge-mappings=${BUILDING_BLOCK}:br-ex
+ovs-vsctl set open . external-ids:ovn-bridge={{ .Values.ovn.integration_bridge }}
+ovs-vsctl set open . external-ids:ovn-cms-options="enable-chassis-as-gw,availability-zones=${AVAILABILITY_ZONE}"
+
+# Set any additional external-ids
 {{- range $k, $v := .Values.ovn.external_ids }}
 ovs-vsctl set open . external-ids:{{ $k | kebabcase }}={{ $v }}
 {{- end }}
-
-sleep inf
