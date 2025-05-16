@@ -18,6 +18,9 @@ jobs:
     name: Build
     runs-on: [ ubuntu-latest ]
 
+    outputs:
+      image_tag: ${{ steps.set-image-tag.outputs.image_tag }}
+
     permissions:
       contents: read
       packages: write
@@ -35,7 +38,10 @@ jobs:
 
       - name: set image tag
         id: set-image-tag
-        run: echo "IMAGE_TAG=$(date +'%Y%m%d%H%M%S')" >> $GITHUB_ENV
+        run: |
+          IMAGE_TAG=$(date +'%Y%m%d%H%M%S')
+          echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
+          echo "image_tag=$IMAGE_TAG" >> $GITHUB_OUTPUT
 
       - name: Install cosign
         uses: sigstore/cosign-installer@v3.7.0
@@ -89,6 +95,9 @@ jobs:
       contents: read
       packages: read
       security-events: write
+
+    env:
+      IMAGE_TAG: ${{ needs.build.outputs.image_tag }}
     
     name: Vulnerability Scan
     needs: build
