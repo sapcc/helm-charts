@@ -77,7 +77,7 @@ compute_volume_common_az=qa-de-1b
 ccloud_compute_kvm_flavor_disk_ref = 100021
 
 [compute-feature-enabled]
-resize = False
+resize = True
 unified_limits = False
 cold_migration = True
 live_migration = True
