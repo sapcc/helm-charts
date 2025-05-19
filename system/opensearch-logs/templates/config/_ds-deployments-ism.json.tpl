@@ -45,27 +45,6 @@
                         }
                     }
                 ],
-                "transitions": [
-                    {
-                        "state_name": "delete",
-                        "conditions": {
-                            "min_index_age": "{{ .Values.retention.ds }}"
-                        }
-                    }
-                ]
-            },
-            {
-                "name": "delete",
-                "actions": [
-                    {
-                        "retry": {
-                            "count": 3,
-                            "backoff": "exponential",
-                            "delay": "1m"
-                        },
-                        "delete": {}
-                    }
-                ],
                 "transitions": []
             }
         ],
