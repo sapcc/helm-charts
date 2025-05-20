@@ -28,10 +28,9 @@ spec:
       value: in-maintenance
     - name: kubeMonitoring.prometheus.prometheusSpec.externalLabels
       value:
-        cluster: '{{ "{{ .Values.global.greenhouse.clusterName }}" }}'
+        cluster: {{ $cluster }}
         cluster_type: storage
-        organization: ccloud
-        region: '{{ "{{ .Values.global.greenhouse.clusterName | trunc -7 }}" }}'
+        region: {{ index $additionalSettings "region" | default ($cluster | trunc 7) }}
   {{- if index $additionalSettings "serviceProxyUrl" }}
     - name: kubeMonitoring.prometheus.prometheusSpec.externalUrl
       value: {{ index $additionalSettings "serviceProxyUrl" }}
@@ -65,10 +64,9 @@ spec:
         service: kvm
     - name: kubeMonitoring.prometheus.prometheusSpec.externalLabels
       value:
-        cluster: '{{ "{{ .Values.global.greenhouse.clusterName }}" }}'
+        cluster: {{ $cluster }}
         cluster_type: compute
-        organization: ccloud
-        region: '{{ "{{ .Values.global.greenhouse.clusterName | trunc -7 }}" }}'
+        region: {{ index $additionalSettings "region" | default ($cluster | trunc 7) }}
     # NFS volumes need more permissions to work
     - name: kubeMonitoring.prometheus.prometheusSpec.securityContext
       value:
@@ -102,10 +100,10 @@ spec:
         service: observability
     - name: kubeMonitoring.prometheus.prometheusSpec.externalLabels
       value:
-        cluster: '{{ "{{ .Values.global.greenhouse.clusterName }}" }}'
+        cluster: {{ $cluster }}
         cluster_type: observability
         organization: ccloud
-        region: '{{ "{{ .Values.global.greenhouse.clusterName | trunc -7 }}" }}'
+        region: {{ index $additionalSettings "region" | default ($cluster | trunc 7) }}
   {{- if index $additionalSettings "serviceProxyUrl" }}
     - name: kubeMonitoring.prometheus.prometheusSpec.externalUrl
       value: {{ index $additionalSettings "serviceProxyUrl" }}
@@ -146,9 +144,9 @@ spec:
         service: cc-cp
     - name: kubeMonitoring.prometheus.prometheusSpec.externalLabels
       value:
-        cluster: '{{ "{{ .Values.global.greenhouse.clusterName }}" }}'
+        cluster: {{ $cluster }}
         cluster_type: sci-k8s-runtime
-        region: '{{ "{{ .Values.global.greenhouse.clusterName | trunc -7 }}" }}'
+        region: {{ index $additionalSettings "region" | default ($cluster | trunc 7) }}
   {{- if index $additionalSettings "serviceProxyUrl" }}
     - name: kubeMonitoring.prometheus.prometheusSpec.externalUrl
       value: {{ index $additionalSettings "serviceProxyUrl" }}
