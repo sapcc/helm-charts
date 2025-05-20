@@ -1,0 +1,43 @@
+apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
+kind: KubeadmConfigTemplate
+metadata:
+  name: worker-rt-{{ .Values.global.region }}
+spec:
+  template:
+    spec:
+      initConfiguration:
+        nodeRegistration:
+          name: $${METAL_HOSTNAME}
+          kubeletExtraArgs:
+            cloud-provider: external
+          taints: []
+        localAPIEndpoint:
+          bindPort: {{ .Values.controlPlane.port }}    
+      joinConfiguration:
+        controlPlane:
+          localAPIEndpoint:
+            bindPort: {{ .Values.controlPlane.port }}
+        nodeRegistration:
+          name: $${METAL_HOSTNAME}
+          kubeletExtraArgs:
+            cloud-provider: external
+          taints: []
+      format: ignition
+      ignition:
+        containerLinuxConfig:
+          additionalConfig: |-
+{{ tpl .Values.controlPlane.additionalConfig . | indent 12 }}
+      users:
+        - name: {{ $.Values.user.name }}
+          passwd: {{ $.Values.user.passwordhash }}
+          groups: "sudo"
+          sshAuthorizedKeys:
+          - {{ $.Values.user.key | quote }}
+      preKubeadmCommands:
+        - hostnamectl set-hostname $${METAL_HOSTNAME}
+        - IMAGE={{ $.Values.images.kubelet.repository }}:{{ .Values.controlPlane.version }}
+        - while true; do ctr image pull $IMAGE && break; done
+        - ctr run --rm --mount type=bind,src=/usr/bin,dst=/mnt,options=rbind $IMAGE extract-files sh -c "cp --preserve=mode /usr/local/bin/kubeadm /mnt/kubeadm && cp --preserve=mode /usr/local/bin/kubelet /mnt/kubelet"
+        # avoid running kubeadm on L1 interface - wait for bond
+        # https://www.freedesktop.org/software/systemd/man/latest/systemd-networkd-wait-online.service.html
+        - /usr/lib/systemd/systemd-networkd-wait-online -i {{ .Values.controlPlane.uplinkInterface }} --ipv4 --timeout 0
