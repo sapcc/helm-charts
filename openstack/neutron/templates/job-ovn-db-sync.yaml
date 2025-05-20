@@ -28,7 +28,7 @@ spec:
             - name: NAMESPACE
               value: {{ .Release.Namespace }}
             - name: DEPENDENCY_SERVICE
-              value: "{{ .Release.Name }}-server,{{ .Release.Name }}-ovsdb-nb,{{ .Release.Name }}-ovsdb-sb,{{ .Release.Name }}-mariadb"
+              value: "{{ .Release.Name }}-ovsdb-nb,{{ .Release.Name }}-ovsdb-sb,{{ .Release.Name }}-mariadb"
             {{ include "utils.sentry_config" . | nindent 12 }}
       containers:
         - name: {{ .Release.Name }}-ovn-db-sync
@@ -43,6 +43,7 @@ spec:
               neutron-ovn-db-sync-util \
               --config-file /etc/neutron/neutron.conf \
               --config-file /etc/neutron/ml2-conf.ini \
+              --config-file /etc/neutron/ml2-conf-ovn.ini \
               --config-dir /etc/neutron/secrets \
               --ovn-neutron_sync_mod repair
               {{ include "utils.script.job_finished_hook" . | nindent 14 }}
@@ -61,6 +62,7 @@ spec:
             defaultMode: 420
             sources:
             - configMap:
+                name: neutron-etc
                 items:
                 - key: neutron.conf
                   path: neutron.conf
@@ -68,7 +70,11 @@ spec:
                   path: ml2-conf.ini
                 - key: logging.conf
                   path: logging.conf
-                name: neutron-etc
+            - configMap:
+                name: neutron-etc-vendor
+                items:
+                - key: ml2-conf-ovn.ini
+                  path: ml2-conf-ovn.ini
             - secret:
                 name: neutron-server-secrets
                 items:
