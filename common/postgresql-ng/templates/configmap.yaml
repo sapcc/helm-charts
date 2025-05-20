@@ -81,9 +81,9 @@ data:
     ALTER DATABASE "{{ $dbName }}" OWNER TO "{{ $ownerName }}";
     ALTER SCHEMA public OWNER TO "{{ $ownerName }}";
     -- fixup ownership of individual objects (might be necessary when database ownership changes)
-    SELECT format('ALTER TABLE %I.%I.%I OWNER TO "%I";', table_catalog, table_schema, table_name, '{{ $ownerName }}')
+    SELECT FORMAT('ALTER TABLE %I.%I.%I OWNER TO %I;', table_catalog, table_schema, table_name, '{{ $ownerName }}')
       FROM information_schema.tables WHERE table_schema = 'public'\gexec
-    SELECT FORMAT('ALTER TYPE %I.%I.%I OWNER TO "%I";', current_database()::information_schema.sql_identifier, n.nspname, t.typname, '{{ $ownerName }}')
+    SELECT FORMAT('ALTER TYPE %I.%I.%I OWNER TO %I;', current_database()::information_schema.sql_identifier, n.nspname, t.typname, '{{ $ownerName }}')
       FROM pg_catalog.pg_type t JOIN pg_catalog.pg_namespace n ON n.oid = t.typnamespace WHERE t.typtype = 'e' AND n.nspname = 'public'\gexec
 
     {{- if $settings.sqlOnStartup }}
