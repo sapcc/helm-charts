@@ -30,6 +30,24 @@ spec:
       serviceAccountName: fluentd-audit
       tolerations:
       - operator: "Exists"
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: cloud.sap/deployment-state
+                operator: NotIn
+                values:
+                - reinstalling
+              - key: cloud.sap/esx-in-maintenance
+                operator: NotIn
+                values:
+                - alarm
+                - "true"
+              - key: cloud.sap/maintenance-state
+                operator: NotIn
+                values:
+                - in-maintenance
       terminationGracePeriodSeconds: 30
       volumes:
         - name: fluent-bin
@@ -43,7 +61,7 @@ spec:
             path: /var/lib/docker/containers
       containers:
         - name: fluent-audit-container
-          image: {{.Values.global.registry}}/elk-fluent:{{.Values.image_version}}
+          image: "{{.Values.global.registry}}/elk-fluent:{{.Values.image_version}}"
           imagePullPolicy: IfNotPresent
           env:
             - name: NAMESPACE
