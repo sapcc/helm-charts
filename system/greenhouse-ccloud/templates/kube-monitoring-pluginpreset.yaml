@@ -15,13 +15,16 @@ metadata:
   namespace: {{ .Release.Namespace }}
 spec:
   clusterOptionOverrides:
-  {{- range $cluster, $additionalSettings := .Values.kubeMonitoring.cephClusters }}
+  {{- range $serviceName, $serviceValues := .Values.kubeMonitoring.services}}
+  {{- range $cluster, $additionalSettings := $serviceValues.clusters }}
   - clusterName: {{ $cluster }}
     overrides:
     - name: global.commonLabels
       value:
-        service: ceph
-        support_group: storage
+        service: {{ $serviceName }}
+  {{- if index $serviceValues "support_group" }}
+        support_group: {{ $serviceValues "support_group" }}
+  {{- end }}
     - name: kubernetes-operations.prometheusRules.NodeInMaintenance.label
       value: cloud_sap_maintenance_state
     - name: kubernetes-operations.prometheusRules.NodeInMaintenance.value
@@ -29,7 +32,7 @@ spec:
     - name: kubeMonitoring.prometheus.prometheusSpec.externalLabels
       value:
         cluster: {{ $cluster }}
-        cluster_type: storage
+        cluster_type: {{ $serviceValues "cluster_type" }}
         region: {{ regexReplaceAll "^(\\w+\\-)" $cluster "" }}
   {{- if index $additionalSettings "serviceProxyUrl" }}
     - name: kubeMonitoring.prometheus.prometheusSpec.externalUrl
@@ -55,115 +58,9 @@ spec:
     - name: kubeMonitoring.prometheus.prometheusSpec.thanos.objectStorageConfig.existingSecret.key
       value: thanos.yaml
   {{- end }}
+  {{- if index $serviceValues special}}
+
   {{- end }}
-  {{- range $cluster, $additionalSettings := .Values.kubeMonitoring.computeClusters }}
-  - clusterName: {{ $cluster }}
-    overrides:
-    - name: global.commonLabels
-      value:
-        service: kvm
-    - name: kubeMonitoring.prometheus.prometheusSpec.externalLabels
-      value:
-        cluster: {{ $cluster }}
-        cluster_type: compute
-        region: {{ regexReplaceAll "^(\\w+\\-)" $cluster "" }}
-    # NFS volumes need more permissions to work
-    - name: kubeMonitoring.prometheus.prometheusSpec.securityContext
-      value:
-        fsGroup: 0
-        runAsNonRoot: false
-        runAsUser: 0
-  {{- if index $additionalSettings "serviceProxyUrl" }}
-    - name: kubeMonitoring.prometheus.prometheusSpec.externalUrl
-      value: {{ index $additionalSettings "serviceProxyUrl" }}
-  {{- end }}
-    - name: kubeMonitoring.kube-state-metrics.prometheus.monitor.http.metricRelabelings
-      value:
-      - action: replace
-        regex: .*
-        replacement: {{ $cluster }}
-        sourceLabels:
-        - __name__
-        targetLabel: cluster
-  {{- if index $additionalSettings "thanos" }}
-    - name: kubeMonitoring.prometheus.prometheusSpec.thanos.objectStorageConfig.existingSecret.name
-      value: thanos-{{ $cluster }}-metrics-objectstore
-    - name: kubeMonitoring.prometheus.prometheusSpec.thanos.objectStorageConfig.existingSecret.key
-      value: thanos.yaml
-  {{- end }}
-  {{- end }}
-  {{- range $cluster, $additionalSettings := .Values.kubeMonitoring.obsClusters }}
-  - clusterName: {{ $cluster }}
-    overrides:
-    - name: global.commonLabels
-      value:
-        service: observability
-    - name: kubeMonitoring.prometheus.prometheusSpec.externalLabels
-      value:
-        cluster: {{ $cluster }}
-        cluster_type: observability
-        organization: ccloud
-        region: {{ regexReplaceAll "^(\\w+\\-)" $cluster "" }}
-  {{- if index $additionalSettings "serviceProxyUrl" }}
-    - name: kubeMonitoring.prometheus.prometheusSpec.externalUrl
-      value: {{ index $additionalSettings "serviceProxyUrl" }}
-  {{- end }}
-    - name: kubeMonitoring.kube-state-metrics.prometheus.monitor.http.metricRelabelings
-      value:
-      - action: replace
-        regex: .*
-        replacement: {{ $cluster }}
-        sourceLabels:
-        - __name__
-        targetLabel: cluster
-  {{- if index $additionalSettings "thanos" }}
-    - name: kubeMonitoring.prometheus.prometheusSpec.thanos.objectStorageConfig.existingSecret.name
-      value: thanos-{{ $cluster }}-metrics-objectstore
-    - name: kubeMonitoring.prometheus.prometheusSpec.thanos.objectStorageConfig.existingSecret.key
-      value: thanos.yaml
-  {{- end }}
-  {{- end }}
-  {{- range $cluster, $additionalSettings := .Values.kubeMonitoring.controlplaneClusters }}
-  - clusterName: {{ $cluster }}
-    overrides:
-    - name: kubeMonitoring.crds.enabled
-      value: false
-    - name: kubeMonitoring.prometheusOperator.enabled
-      value: false
-    - name: kubeMonitoring.kubeControllerManager.enabled
-      value: true
-    - name: kubeMonitoring.kubeDns.enabled
-      value: true
-    - name: kubeMonitoring.kubeProxy.enabled
-      value: true
-    - name: kubeMonitoring.kubeScheduler.enabled
-      value: true
-    - name: global.commonLabels
-      value:
-        support_group: containers
-        service: cc-cp
-    - name: kubeMonitoring.prometheus.prometheusSpec.externalLabels
-      value:
-        cluster: {{ $cluster }}
-        cluster_type: sci-k8s-runtime
-        region: {{ regexReplaceAll "^(\\w+\\-)" $cluster "" }}
-  {{- if index $additionalSettings "serviceProxyUrl" }}
-    - name: kubeMonitoring.prometheus.prometheusSpec.externalUrl
-      value: {{ index $additionalSettings "serviceProxyUrl" }}
-  {{- end }}
-    - name: kubeMonitoring.kube-state-metrics.prometheus.monitor.http.metricRelabelings
-      value:
-      - action: replace
-        regex: .*
-        replacement: {{ $cluster }}
-        sourceLabels:
-        - __name__
-        targetLabel: cluster
-  {{- if index $additionalSettings "thanos" }}
-    - name: kubeMonitoring.prometheus.prometheusSpec.thanos.objectStorageConfig.existingSecret.name
-      value: thanos-{{ $cluster }}-metrics-objectstore
-    - name: kubeMonitoring.prometheus.prometheusSpec.thanos.objectStorageConfig.existingSecret.key
-      value: thanos.yaml
   {{- end }}
   {{- end }}
   clusterSelector:
