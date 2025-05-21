@@ -9,12 +9,14 @@ groups:
     # First with share_id, share_name and project_id, then with destination_cluster.
     - record: netapp_snapmirror_labels:enhanced
       expr: |
-        netapp_snapmirror_labels
-        * on (app, source_vserver, source_volume) group_left(project_id, share_id, share_name, reason)
+        netapp_snapmirror_labels * on (app, source_vserver, source_volume)
+        group_left(project_id, share_id, share_name, source_availability_zone, reason)
         label_replace (
         label_replace (
         label_replace (
-          max by (app, filer, project_id, share_id, share_name, svm, volume) (netapp_volume_labels:manila),
+        label_replace (
+          max by (app, availability_zone, filer, project_id, share_id, share_name, svm, volume) (netapp_volume_labels:manila),
+          "source_availability_zone", "$1", "availability_zone", "(.*)"),
           "source_volume", "$1", "volume", "(.*)"),
           "source_vserver", "$1", "svm", "(.*)"),
           "reason", "local-snapmirror", "", ".*")
@@ -49,12 +51,14 @@ groups:
     # Add source_cluster label.
     - record: netapp_snapmirror_endpoint_labels:enhanced
       expr: |
-        netapp_snapmirror_endpoint_labels
-        * on (source_vserver, source_volume) group_left (source_cluster, project_id, share_id, share_name)
+        netapp_snapmirror_endpoint_labels * on (source_vserver, source_volume)
+        group_left (source_availability_zone, source_cluster, project_id, share_id, share_name)
         label_replace(
         label_replace(
         label_replace(
-          max by (filer, project_id, share_id, share_name, svm, volume) (netapp_volume_labels:manila),
+        label_replace(
+          max by (availability_zone, filer, project_id, share_id, share_name, svm, volume) (netapp_volume_labels:manila),
+          "source_availability_zone", "$1", "availability_zone", "(.*)"),
           "source_volume", "$1", "volume", "(.*)"),
           "source_vserver", "$1", "svm", "(.*)"),
           "source_cluster", "$1", "filer", "(.*)")
