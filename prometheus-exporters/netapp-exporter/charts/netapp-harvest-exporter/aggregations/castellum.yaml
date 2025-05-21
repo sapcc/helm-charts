@@ -8,17 +8,18 @@ groups:
       # Share minimal size = netapp_volume_size_used +  netapp_volume_snapshot_reserve_size
       - record: netapp_volume_provision_case_one
         expr: |
-          max by (app, svm, volume, project_id, share_id, volume_state, volume_type) (netapp_volume_labels:manila{volume_type="rw"})
-            * on (app, svm, volume) group_left() (netapp_volume_snapshot_reserve_percent / 5 == 1)
+          max by (app, svm, volume, project_id, share_id, volume_state, volume_type)
+          (netapp_volume_snapshot_reserve_percent / 5 == 1) * on(app, svm, volume) group_left(volume_state)
+          netapp_volume_labels:manila{volume_type="rw"}
 
       - record: manila_share_size_bytes_for_castellum
-        expr: netapp_volume_provision_case_one * on (app, svm, volume) group_left() max by (app, svm, volume) (netapp_volume_size)
+        expr: netapp_volume_provision_case_one * on (app, filer, svm, volume) group_left() netapp_volume_size
 
       - record: manila_share_used_bytes_for_castellum
-        expr: netapp_volume_provision_case_one * on (app, svm, volume) group_left() max by (app, svm, volume) (netapp_volume_size_used)
+        expr: netapp_volume_provision_case_one * on (app, filer, svm, volume) group_left() netapp_volume_size_used
 
       - record: manila_share_minimal_size_bytes_for_castellum
-        expr: netapp_volume_provision_case_one * on (app, svm, volume) group_left() max by (app, svm, volume) (netapp_volume_size_used + netapp_volume_snapshot_reserve_size)
+        expr: netapp_volume_provision_case_one * on (app, filer, svm, volume) group_left() (netapp_volume_size_used + netapp_volume_snapshot_reserve_size)
 
       # Case two: new provision style and logical space is NOT enabled
       # New provision style means snapshot reserve is allocated side by side to the share space.
@@ -30,14 +31,14 @@ groups:
       - record: netapp_volume_provision_case_two
         expr: |
           max by (app, svm, volume, project_id, share_id, volume_state, volume_type)
-          (netapp_volume_labels:manila{is_space_enforcement_logical="false", volume_type="rw"})
-          * on (app, svm, volume) group_left() (netapp_volume_snapshot_reserve_percent / 50 == 1)
+          (netapp_volume_snapshot_reserve_percent{volume_type="rw"} / 50 == 1) * on(app, svm, volume) group_left(volume_state)
+          netapp_volume_labels:manila{is_space_enforcement_logical="false", volume_type="rw"}
 
       - record: manila_share_size_bytes_for_castellum
-        expr: netapp_volume_provision_case_two * on (app, svm, volume) group_left() max by (app, svm, volume) (netapp_volume_size_total)
+        expr: netapp_volume_provision_case_two * on (app, filer, svm, volume) group_left() netapp_volume_size_total
 
       - record: manila_share_used_bytes_for_castellum
-        expr: netapp_volume_provision_case_two * on (app, svm, volume) group_left() max by (app, svm, volume) (netapp_volume_size_used)
+        expr: netapp_volume_provision_case_two * on (app, svm, volume) group_left() netapp_volume_size_used
 
       - record: manila_share_minimal_size_bytes_for_castellum
         expr: netapp_volume_provision_case_two * on (share_id) group_left() max by (share_id) (
@@ -50,11 +51,11 @@ groups:
       - record: netapp_volume_provision_case_three
         expr: |
           max by (app, svm, volume, project_id, share_id, volume_state, volume_type)
-          (netapp_volume_labels:manila{is_space_enforcement_logical="true", volume_type="rw"})
-          * on (app, svm, volume) group_left() (netapp_volume_snapshot_reserve_percent / 50 == 1)
+          (netapp_volume_snapshot_reserve_percent{volume_type="rw"} / 50 == 1) * on(app, svm, volume) group_left(volume_state)
+          netapp_volume_labels:manila{is_space_enforcement_logical="true", volume_type="rw"}
 
       - record: manila_share_size_bytes_for_castellum
-        expr: netapp_volume_provision_case_three * on (app, svm, volume) group_left() max by (app, svm, volume) (netapp_volume_size_total)
+        expr: netapp_volume_provision_case_three * on (app, filer, svm, volume) group_left() netapp_volume_size_total
 
       # netapp_volume_space_logical_used_by_afs considers no snapshot spill
       - record: manila_share_used_bytes_for_castellum
