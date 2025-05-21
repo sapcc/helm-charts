@@ -288,6 +288,7 @@ complex-role:
     - "read"
     - "get"
     - "indices:monitor/settings/get"
+    - "indices:admin/create"
   tenant_permissions:
   - tenant_patterns:
     - "*"
