@@ -275,6 +275,7 @@ complex-role:
   cluster_permissions:
   - "read"
   - "cluster:monitor/nodes/stats"
+  - "cluster:admin/opensearch/ql/datasources/read"
   - "cluster:monitor/task/get"
   - 'cluster:admin/opendistro/reports/definition/create'
   - 'cluster:admin/opendistro/reports/definition/update'
@@ -289,12 +290,16 @@ complex-role:
   - index_patterns:
     - "*"
     allowed_actions:
+    - "search"
     - "read"
+    - "get"
+    - "indices:monitor/settings/get"
   tenant_permissions:
   - tenant_patterns:
     - "*"
     allowed_actions:
     - "kibana_all_write"
+    - "kibana_all_read"
 
 promrole:
   reserved: false
