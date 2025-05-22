@@ -157,6 +157,15 @@
   </rule>
 </match>
 
+<match otel.**>
+  @type rewrite_tag_filter
+  <rule>
+    key log
+pattern /rejected_execution_exception/
+    tag "OTELBACKPRESSURE.${tag}"
+  </rule>
+</match>
+
 <match FLUENTDTAILSTALLED.**> 
   @type copy
   <store>
@@ -259,14 +268,6 @@
   <store>
     @type null
   </store>
-</match>
-
-<match otel.**>
-  <rule>
-    key log
-pattern /rejected_execution_exception/
-    tag "OTELBACKPRESSURE.${tag}"
-  </rule>
 </match>
 
 <match OTELBACKPRESSURE.**>
