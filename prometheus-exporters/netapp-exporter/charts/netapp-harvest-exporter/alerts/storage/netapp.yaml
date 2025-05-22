@@ -74,3 +74,18 @@ groups:
           summary:  Filer not scraped by Netapp Harvest exporter
           description: Filer {{ $labels.filer }} discovered but not scraped by {{ $labels.app }}.
 
+      - alert: PrometheusRuleEvaluationFailures
+        expr: label_replace(increase(prometheus_rule_evaluation_failures_total{rule_group=~".*netapp-harvest-exporter.*"}[3m]), "rule_group_name", "$1", "rule_group", ".*;(.*)")
+        for: 30m
+        labels:
+          context: netapp-exporter
+          no_alert_on_absence: "true"
+          service: exporter
+          severity: info
+          support_group: compute-storage-api
+          tier: storage
+        annotations:
+          summary: Prometheus rule evaluation failures (group {{ $labels.rule_group_name }})
+          description: "Prometheus encountered {{ $value }} rule evaluation failures.\n  LABELS = {{ $labels }}"
+
+
