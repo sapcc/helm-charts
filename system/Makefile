@@ -210,13 +210,6 @@ build-ipam-operator-remote:
 	@$(SED) -i 's/serviceAccountName.*$$/serviceAccountName: default/g' ipam-operator-remote/templates/deployment.yaml
 	@$(SED) -i 's/kind: Role/kind: ClusterRole/g' ipam-operator-remote/managedresources/kustomize.yaml
 
-build-argora-operator:
-	@cat kustomize/argora-operator/kustomization.yaml >> kustomization.yaml
-	$(call build-chart,argora-operator,https://github.com/sapcc/argora//config/default,$(ARGORA_VERSION))
-	@yq -i '.controllerManager.manager.image.tag="$(ARGORA_VERSION)"' argora-operator/values.yaml
-	@yq -i '.fullnameOverride="argora-operator"' argora-operator/values.yaml
-	@yq -i '.version="0.0.1"' argora-operator/Chart.yaml
-
 build-argora-operator-remote:
 	@rm -rf argora-operator-remote
 	@cat kustomize/argora-operator-remote/kustomization.yaml > kustomization.yaml
