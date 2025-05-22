@@ -161,12 +161,12 @@
   @type rewrite_tag_filter
   <rule>
     key log
-pattern /rejected_execution_exception/
+    pattern /rejected_execution_exception/
     tag "OTELBACKPRESSURE.${tag}"
   </rule>
 </match>
 
-<match FLUENTDTAILSTALLED.**> 
+<match FLUENTDTAILSTALLED.**>
   @type copy
   <store>
     @type prometheus
