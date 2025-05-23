@@ -140,8 +140,8 @@ annotations:
 
 * See https://gardener.cloud/docs/gardener/concepts/resource-manager/#preventing-reconciliations
 
---- DO not forget to include cluster in greenhouse controlplane list (pluginpreset)
-
+> [!NOTE]
+> Do not forget to include the cluster in `Greenhouse` controlplane list for the `kube-monitoring` `PluginPreset` [in here](https://github.wdf.sap.corp/cc/secrets/blob/2a4c83c1c0dd364aec096bb6a51d03054b2b3905/eu-de-1/values/greenhouse-p-eu-de-1-ccloud.yaml#L316-L320)
 
 2.4. Enable `managedresources` in values.yaml:
 
