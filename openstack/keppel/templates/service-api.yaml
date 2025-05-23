@@ -1,3 +1,4 @@
+---
 kind: Service
 apiVersion: v1
 
@@ -14,3 +15,24 @@ spec:
     - name: metrics # this specific name is required for Prometheus scraping
       port: 80
       protocol: TCP
+
+{{- if .Values.keppel.anycast_domain_name }}
+---
+kind: Service
+apiVersion: v1
+
+metadata:
+  name: keppel-anycast-api
+
+spec:
+  type: LoadBalancer
+  externalIPs:
+    - 10.46.101.103
+  externalTrafficPolicy: Local
+  selector:
+    name: keppel-anycast-nginx
+  ports:
+    - port: 443
+      protocol: TCP
+      targetPort: 443
+{{ end }}
