@@ -15,16 +15,14 @@ metadata:
   namespace: {{ .Release.Namespace }}
 spec:
   clusterOptionOverrides:
-  {{- range $serviceName, $serviceValues := .Values.kubeMonitoring.services}}
-  {{- range $cluster, $additionalSettings := $serviceValues.clusters }}
+  {{- range $serviceName, $serviceSpecs := .Values.kubeMonitoring.services}}
+  {{- range $cluster, $additionalSettings := $serviceSpecs.clusters }}
   - clusterName: {{ $cluster }}
     overrides:
     - name: global.commonLabels
       value:
         service: {{ $serviceName }}
-  {{- if index $serviceValues "support_group" }}
-        support_group: {{ $serviceValues "support_group" }}
-  {{- end }}
+        support_group: {{ $serviceSpecs.support_group }}
     - name: kubernetes-operations.prometheusRules.NodeInMaintenance.label
       value: cloud_sap_maintenance_state
     - name: kubernetes-operations.prometheusRules.NodeInMaintenance.value
@@ -32,7 +30,7 @@ spec:
     - name: kubeMonitoring.prometheus.prometheusSpec.externalLabels
       value:
         cluster: {{ $cluster }}
-        cluster_type: {{ $serviceValues "cluster_type" }}
+        cluster_type: {{ $serviceSpecs "cluster_type" }}
         region: {{ regexReplaceAll "^(\\w+\\-)" $cluster "" }}
   {{- if index $additionalSettings "serviceProxyUrl" }}
     - name: kubeMonitoring.prometheus.prometheusSpec.externalUrl
@@ -58,8 +56,8 @@ spec:
     - name: kubeMonitoring.prometheus.prometheusSpec.thanos.objectStorageConfig.existingSecret.key
       value: thanos.yaml
   {{- end }}
-  {{- if index $serviceValues special }}
-  {{- index $serviceValues special | nindent 4}}
+  {{- if index $serviceSpecs "extraSpecs" }}
+  {{- index $serviceSpecs "extraSpecs" | nindent 4}}
   {{- end }}
   {{- end }}
   {{- end }}
