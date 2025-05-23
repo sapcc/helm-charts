@@ -1,0 +1,22 @@
+# rules that others in manila-castellum/manila-limes/manila-maia depending on
+groups:
+  - name: manila
+    rules:
+    # Volumes that are known to Manila, including active and secondary replicas.
+    - record: netapp_volume_labels:manila
+      expr: netapp_volume_labels{app="netapp-harvest-exporter-manila", project_id!="", share_id!="", volume=~"share_[0-9a-f]{8}_[0-9a-f]{4}_[0-9a-f]{4}_[0-9a-f]{4}_[0-9a-f]{12}"}
+
+    # sum available_bytes and logical_used_bytes when only space reporting is enabled
+    # details see https://operations.global.cloud.sap/docs/operation/storage/manila/300-logical-space/
+    - record: netapp_volume_total_bytes:pre
+      expr: |
+        label_replace((netapp_volume_size_available{app="netapp-harvest-exporter-manila"} + netapp_volume_space_logical_used)
+        * on (app, host, svm, volume) group_left() netapp_volume_labels:manila{is_space_reporting_logical="true", is_space_enforcement_logical="false"}
+        or netapp_volume_size_total{app="netapp-harvest-exporter-manila"}, "vserver", "$1", "svm", "(.*)")
+
+    # use logical used bytes when logical space reporting is enabled
+    - record: netapp_volume_used_bytes:pre
+      expr: |
+        label_replace(netapp_volume_space_logical_used{app="netapp-harvest-exporter-manila"}
+        * on (app, host, svm, volume) group_left() netapp_volume_labels:manila{is_space_reporting_logical="true"}
+        or netapp_volume_size_used{app="netapp-harvest-exporter-manila"}, "vserver", "$1", "svm", "(.*)")

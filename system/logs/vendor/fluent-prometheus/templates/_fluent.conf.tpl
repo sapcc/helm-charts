@@ -51,6 +51,31 @@
   @type null
 </match>
 
+<source>
+  @type tail
+  path /var/log/containers/logs-collector*
+  pos_file /var/log/logs-collector.pos
+  tag otel.*
+  <parse>
+    @type multi_format
+     <pattern>
+       format regexp
+       expression /^(?<time>.+)\s(?<stream>stdout|stderr)\s(?<logtag>F|P)\s(?<log>.*)$/
+       time_key time
+       time_format '%Y-%m-%dT%H:%M:%S.%NZ'
+       keep_time_key true
+     </pattern>
+     <pattern>
+       format json
+       time_format '%Y-%m-%dT%H:%M:%S.%N%:z'
+       time_key time
+       keep_time_key true
+     </pattern>
+  </parse>
+  read_from_head
+  @log_level warn
+</source>
+
 # expose metrics in prometheus format
 
 <source>
@@ -66,6 +91,12 @@
   ca_file /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
 </filter>
 
+<filter otel.**>
+  @type kubernetes_metadata
+  bearer_token_file /var/run/secrets/kubernetes.io/serviceaccount/token
+  ca_file /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+</filter>
+
 # metrics
 # # count number of incoming records per tag
 
@@ -75,6 +106,20 @@
     name prom_fluentd_audit_input_status_num_records_total
     type counter
     desc The total number of incoming records from audit fluentds
+    <labels>
+      hostname ${hostname}
+      nodename "#{ENV['K8S_NODE_NAME']}"
+      fluent_namespace $.kubernetes.namespace_name
+    </labels>
+  </metric>
+</filter>
+
+<filter otel.**>
+  @type prometheus
+  <metric>
+    name prom_otel_input_status_num_records_total
+    type counter
+    desc The total number of incoming records from opentelemetry
     <labels>
       hostname ${hostname}
       nodename "#{ENV['K8S_NODE_NAME']}"
@@ -112,7 +157,16 @@
   </rule>
 </match>
 
-<match FLUENTDTAILSTALLED.**> 
+<match otel.**>
+  @type rewrite_tag_filter
+  <rule>
+    key log
+    pattern /rejected_execution_exception/
+    tag "OTELBACKPRESSURE.${tag}"
+  </rule>
+</match>
+
+<match FLUENTDTAILSTALLED.**>
   @type copy
   <store>
     @type prometheus
@@ -208,6 +262,26 @@
         fluent_container $.kubernetes.pod_name
         daemontype $.kubernetes.container_name
         fluent_namespace $.kubernetes.namespace_name
+      </labels>
+    </metric>
+  </store>
+  <store>
+    @type null
+  </store>
+</match>
+
+<match OTELBACKPRESSURE.**>
+  @type copy
+  <store>
+    @type prometheus
+    <metric>
+      name prom_otel_rejected_execution_exception
+      type counter
+      desc The total number of OTEL failed to send logs
+      <labels>
+        nodename "#{ENV['K8S_NODE_NAME']}"
+        fluent_container $.kubernetes.pod_name
+        daemontype $.kubernetes.container_name
       </labels>
     </metric>
   </store>

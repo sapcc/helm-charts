@@ -1,0 +1,37 @@
+# The runtime values always need to be enabled to manage backups in s3 for the virtual garden.
+apiVersion: operator.gardener.cloud/v1alpha1
+kind: Extension
+metadata:
+  name: provider-aws
+spec:
+  resources:
+  - kind: BackupBucket
+    type: aws
+  - kind: BackupEntry
+    type: aws
+  - kind: Bastion
+    type: aws
+  - kind: ControlPlane
+    type: aws
+  - kind: DNSRecord
+    type: aws-route53
+  - kind: Infrastructure
+    type: aws
+  - kind: Worker
+    type: aws
+  deployment:
+    # admission:
+    extension:
+      runtimeClusterValues:
+        replicaCount: 1
+        image:
+          tag: v1.61.2
+        config:
+          etcd:
+            storage:
+              provisioner: rancher.io/local-path
+      helm:
+        ociRepository:
+          tag: 1.61.2
+          repository: keppel.eu-de-1.cloud.sap/ccloud-helm/gardener-extension-provider-aws
+      policy: OnDemand

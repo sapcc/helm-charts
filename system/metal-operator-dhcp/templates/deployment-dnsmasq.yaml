@@ -24,7 +24,7 @@ spec:
         kubectl.kubernetes.io/default-container: metal
         checksum/configmap-dnsmasq: {{ include (print $.Template.BasePath "/configmap-dnsmasq.yaml") . | sha256sum }}
     spec:
-      hostNetwork: true
+      hostNetwork: {{ .Values.dnsmasq.hostNetwork }}
       affinity:
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
@@ -39,10 +39,7 @@ spec:
             weight: 10
       containers:
       - command:
-        - /opt/dnsmasq/rundnsmasq
-        env:
-        - name: PROVISIONING_INTERFACE
-          value: "{{ .Values.dnsmasq.interface }}"
+        - /opt/dnsmasq/initdnsmasq.sh
         image: "{{ $.Values.dnsmasq.image.repository }}:{{ $.Values.dnsmasq.image.tag }}"
         imagePullPolicy: IfNotPresent
         ports:
@@ -85,25 +82,17 @@ spec:
             - NET_RAW
             drop:
             - ALL
-          privileged: false
-          runAsGroup: 994
-          runAsUser: 997
         terminationMessagePath: /dev/termination-log
         terminationMessagePolicy: File
         volumeMounts:
         - mountPath: /opt/dnsmasq
-          name: dnsmasq
+          name: metal-dnsmasq
       dnsPolicy: ClusterFirst
       restartPolicy: Always
       schedulerName: default-scheduler
-      securityContext:
-        fsGroup: 994
-        runAsNonRoot: true
-        seccompProfile:
-          type: RuntimeDefault
       terminationGracePeriodSeconds: 30
       volumes:
       - configMap:
-          defaultMode: 511
+          defaultMode: 484
           name: metal-dnsmasq
-        name: dnsmasq
+        name: metal-dnsmasq

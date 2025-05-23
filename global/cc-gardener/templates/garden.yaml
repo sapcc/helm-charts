@@ -27,6 +27,7 @@ spec:
     networking:
       {{- toYaml .Values.garden.runtimeCluster.networking | nindent 6 }}
     provider:
+      region: {{ .Values.garden.backup.region | quote }} # as of gardener v1.114.0 not used for dns, just for backup
       zones:
       {{- toYaml .Values.garden.runtimeCluster.zones | nindent 6 }}
     settings:
@@ -41,7 +42,7 @@ spec:
     etcd:
       main:
         backup:
-          provider: S3
+          provider: aws
           bucketName: {{ required ".buckup.bucket missing" .Values.garden.backup.bucket | quote }}
           secretRef:
             name: virtual-garden-etcd-main-backup-s3

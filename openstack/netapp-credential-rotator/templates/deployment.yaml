@@ -5,7 +5,7 @@ metadata:
   labels:
     {{- include "netapp-credential-rotator.labels" . | nindent 4 }}
 spec:
-  replicas: {{ .Values.replicaCount }}
+  replicas: 1
   selector:
     matchLabels:
       {{- include "netapp-credential-rotator.selectorLabels" . | nindent 6 }}
@@ -21,10 +21,6 @@ spec:
         {{- toYaml . | nindent 8 }}
         {{- end }}
     spec:
-      {{- with .Values.imagePullSecrets }}
-      imagePullSecrets:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
       serviceAccountName: {{ include "netapp-credential-rotator.serviceAccountName" . }}
       {{- with .Values.podSecurityContext }}
       securityContext:
