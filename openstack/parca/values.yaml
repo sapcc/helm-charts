@@ -1,0 +1,37 @@
+global:
+  linkerd_requested: true
+
+owner-info:
+  support-group: compute-storage-api
+  service: parca
+  maintainers:
+  - Fabian Wiesel
+  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/openstack/parca
+
+parca:
+  agent:
+    config: {}
+    image:
+      repository: keppel.global.cloud.sap/ccloud-ghcr-io-mirror/parca-dev/parca-agent
+      tag: v0.23.1
+    podAnnotations:
+      linkerd.io/inject: enabled
+    serviceMonitor:
+      enabled: true
+  ingress:
+    annotations:
+      disco: "true"
+      kubernetes.io/tls-acme: "true"
+      ingress.kubernetes.io/service-upstream: "true"
+    enabled: true
+  server:
+    image:
+      repository: keppel.eu-de-1.cloud.sap/ccloud-ghcr-io-mirror/parca-dev/parca
+      tag: v0.23.1
+    podAnnotations:
+      linkerd.io/inject: enabled
+    service:
+      annotations:
+        linkerd.io/inject: enabled
+    serviceMonitor:
+      enabled: true
