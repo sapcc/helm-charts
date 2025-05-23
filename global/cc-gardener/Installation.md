@@ -150,7 +150,7 @@ garden:
   managedresources: true
 ```
 
-* and `upgrade` again.
+and `upgrade` again.
 
 2.5. Update `secrets-injector` CA.
 
@@ -175,7 +175,7 @@ extensions:
     enabled: true
 ```
 
-* update zones if needed and `upgrade` again.
+update zones if needed and `upgrade` again.
 
 2.7. Enable `gardenlet`:
 
@@ -215,7 +215,6 @@ virtual-garden-kube-apiserver   ["virtual-garden-kube-apiserver"]   ["api.virtua
 
 * Upload new kubeconfig and trigger registry refresh (check logs for errors):
 https://ci1.eu-de-2.cloud.sap/teams/services/pipelines/kubectl-sync/jobs/registry-refresh/builds/23116
-
 
 2.9. Add new pipeline for the cluster:
 
