@@ -104,14 +104,27 @@ kubeMonitoring:
   enabled: true
   ssoCert: "TopSecret!"
   ssoKey: "TopSecret!"
-  cephClusters:
-    cluster-1:
-      thanos: true
-    cluster-2:
-      thanos: true
-  computeClusters:
-    cluster-1:
-      thanos: false
+  services:
+    cephClusters:
+      support_group: storage
+      cluster_type: storage
+      clusters:
+        cluster-1:
+          thanos: true
+        cluster-2:
+          thanos: true
+    computeClusters:
+      support_group: compute
+      cluster_type: compute
+      extraSpecs:
+        - name: kubeMonitoring.crds.enabled
+          value: false
+      clusters:
+        cluster-1:
+          thanos: false
+        cluster-2:
+          region: test
+
 
 teams2slack:
   enabled: true

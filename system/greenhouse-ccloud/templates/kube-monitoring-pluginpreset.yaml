@@ -30,8 +30,8 @@ spec:
     - name: kubeMonitoring.prometheus.prometheusSpec.externalLabels
       value:
         cluster: {{ $cluster }}
-        cluster_type: {{ $serviceSpecs "cluster_type" }}
-        region: {{ regexReplaceAll "^(\\w+\\-)" $cluster "" }}
+        cluster_type: {{ $serviceSpecs.cluster_type }}
+        region: {{ default (regexReplaceAll "^(\\w+\\-)" $cluster "") (index $additionalSettings "region")}}
   {{- if index $additionalSettings "serviceProxyUrl" }}
     - name: kubeMonitoring.prometheus.prometheusSpec.externalUrl
       value: {{ index $additionalSettings "serviceProxyUrl" }}
@@ -57,7 +57,7 @@ spec:
       value: thanos.yaml
   {{- end }}
   {{- if index $serviceSpecs "extraSpecs" }}
-  {{- index $serviceSpecs "extraSpecs" | nindent 4}}
+  {{- index $serviceSpecs "extraSpecs" | toYaml | nindent 4}}
   {{- end }}
   {{- end }}
   {{- end }}
