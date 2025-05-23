@@ -77,9 +77,9 @@ globalinclusterippool-rt-qa-de-1   ["10.245.234.0/26"]   30      22     8
 
 ```yaml
 garden:
-  runtimeCluster
-	networking:
-	  nodes: ["10.245.234.0/26"]
+  runtimeCluster:
+    networking:
+      nodes: ["10.245.234.0/26"]
       pods: ["100.66.0.0/16"]
       services: ["100.74.0.0/16"]
 ```
