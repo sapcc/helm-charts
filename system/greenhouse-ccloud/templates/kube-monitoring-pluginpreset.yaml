@@ -30,7 +30,7 @@ spec:
       value:
         cluster: {{ $cluster }}
         cluster_type: storage
-        region: {{ regexReplaceAll "^(\\w+\\-)" $cluster "" }}
+        region: {{ default (regexReplaceAll "^(\\w+\\-)" $cluster "") (index $additionalSettings "region") }}
   {{- if index $additionalSettings "serviceProxyUrl" }}
     - name: kubeMonitoring.prometheus.prometheusSpec.externalUrl
       value: {{ index $additionalSettings "serviceProxyUrl" }}
@@ -66,7 +66,7 @@ spec:
       value:
         cluster: {{ $cluster }}
         cluster_type: compute
-        region: {{ regexReplaceAll "^(\\w+\\-)" $cluster "" }}
+        region: {{ default (regexReplaceAll "^(\\w+\\-)" $cluster "") (index $additionalSettings "region") }}
     # NFS volumes need more permissions to work
     - name: kubeMonitoring.prometheus.prometheusSpec.securityContext
       value:
@@ -103,7 +103,7 @@ spec:
         cluster: {{ $cluster }}
         cluster_type: observability
         organization: ccloud
-        region: {{ regexReplaceAll "^(\\w+\\-)" $cluster "" }}
+        region: {{ default (regexReplaceAll "^(\\w+\\-)" $cluster "") (index $additionalSettings "region") }}
   {{- if index $additionalSettings "serviceProxyUrl" }}
     - name: kubeMonitoring.prometheus.prometheusSpec.externalUrl
       value: {{ index $additionalSettings "serviceProxyUrl" }}
@@ -146,7 +146,7 @@ spec:
       value:
         cluster: {{ $cluster }}
         cluster_type: sci-k8s-runtime
-        region: {{ regexReplaceAll "^(\\w+\\-)" $cluster "" }}
+        region: {{ default (regexReplaceAll "^(\\w+\\-)" $cluster "") (index $additionalSettings "region") }}
   {{- if index $additionalSettings "serviceProxyUrl" }}
     - name: kubeMonitoring.prometheus.prometheusSpec.externalUrl
       value: {{ index $additionalSettings "serviceProxyUrl" }}
