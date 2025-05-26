@@ -190,6 +190,13 @@ spec:
         mount "$nvme_target" $dataDisk || { echo "Failed to mount $nvme_target to $dataDisk"; exit 1; }
         echo "Disk mounted to $dataDisk"
 
+        # Check available space on the disk
+        available_space=$(df --output=avail "$dataDisk" | tail -n 1)
+        if [ "$available_space" -le 1048576 ]; then # Less than 1GB available
+          echo "Error: Not enough space available on $dataDisk. Available: $available_space KB"
+          exit 1
+        fi
+
         # Add to /etc/fstab for persistence
         if ! grep -q "$nvme_target" /etc/fstab; then
           echo "LABEL=ETCD_DISK $dataDisk ext4 defaults 0 0" >> /etc/fstab
