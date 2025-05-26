@@ -11,9 +11,9 @@ metadata:
 spec:
   requires:
   {{- if .Values.global_region.is_global_region }}
-  - cc3test-global/domain-default-seed
-  - cc3test-global/domain-ccadmin-seed
-  - cc3test-global/domain-cc3test-seed
+  - seeder-global/domain-default-seed
+  - seeder-global/domain-ccadmin-seed
+  - seeder-global/domain-cc3test-seed
   {{- else}}
   - monsoon3/domain-default-seed
   - monsoon3/domain-ccadmin-seed
@@ -87,6 +87,7 @@ spec:
         role: monitoring_viewer
       - user: {{ $values.users.member.username }}
         role: member
+    {{- if not .Values.global_region.is_global_region}}
       network_quota:
         subnetpool: 5
         subnet: 5
@@ -111,11 +112,13 @@ spec:
         interfaces:
         - subnet: {{ $router.interface.subnet }}
       {{- end }}
-
+    {{- end }}
+{{- if not .Values.global_region.is_global_region}}
   rbac_policies:
   - object_type: network
     object_name: {{ $project.rbac.object_name }}
     action: access_as_shared
     target_tenant_name: {{ $project.name }}@cc3test
+{{- end }}
 ---
 {{- end }}
