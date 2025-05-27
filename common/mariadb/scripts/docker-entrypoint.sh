@@ -229,7 +229,7 @@ _mariadb_version() {
 	# Example result: 10.6.21-MariaDB
 
 	local version
-	version=$(mariadb --version | grep --only-matching --perl-regexp --regexp="^mariadb  Ver [0-9][0-9].[0-9] Distrib \K(${MARIADB_MAJOR}.[0-9]+-MariaDB)")
+	version=$(mariadb --version | grep --only-matching --perl-regexp --regexp="^mariadb  Ver [0-9][0-9].[0-9] Distrib \K([0-9]+\.[0-9]+\.[0-9]+-MariaDB)")
 	echo -n "${version}"
 }
 
