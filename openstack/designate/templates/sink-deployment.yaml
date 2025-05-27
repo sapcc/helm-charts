@@ -53,6 +53,10 @@ spec:
                 values:
                 - designate-sink
             topologyKey: "kubernetes.io/hostname"
+      initContainers:
+      {{- if .Values.proxysql.native_sidecar }}
+      {{- include "utils.proxysql.container" . | indent 8 }}
+      {{- end }}
       containers:
         - name: designate-sink
           image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/loci-designate:{{ required ".Values.global.image_version_designate is missing" .Values.image_version_designate }}
@@ -79,7 +83,9 @@ spec:
             - mountPath: /container.init
               name: container-init
             {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
+        {{- if not .Values.proxysql.native_sidecar }}
         {{- include "utils.proxysql.container" . | indent 8 }}
+        {{- end }}
       volumes:
         - name: designate-etc
           configMap:
