@@ -143,6 +143,7 @@ build-metal-operator-remote:
 	@cp kustomize/metal-operator-remote/managedresource.yaml metal-operator-remote/templates
 	@cp kustomize/metal-operator-remote/macdb.yaml metal-operator-remote/templates
 	@cp kustomize/metal-operator-remote/ingress.yaml metal-operator-remote/templates
+	@cp kustomize/metal-operator-remote/networkpolicy.yaml metal-operator-remote/templates
 	@mkdir metal-operator-remote/managedresources
 	@kubectl kustomize kustomize/metal-operator-managedresources > metal-operator-remote/managedresources/kustomize.yaml
 	@cp kustomize/metal-operator-managedresources/rbac.yaml metal-operator-remote/managedresources
@@ -154,7 +155,7 @@ build-metal-operator-remote:
 	@mkdir metal-operator-remote/ci
 	@echo 'global:' >> metal-operator-remote/ci/test-values.yaml
 	@echo '  region: ab-cd-1' >> metal-operator-remote/ci/test-values.yaml
-	@yq -i '.version="0.4.3"' metal-operator-remote/Chart.yaml
+	@yq -i '.version="0.4.4"' metal-operator-remote/Chart.yaml
 	@$(SED) -i 's/serviceAccountName.*$$/serviceAccountName: default/g' metal-operator-remote/templates/deployment.yaml
 	@$(SED) -i 's/kind: Role/kind: ClusterRole/g' metal-operator-remote/managedresources/kustomize.yaml
 	@$(SED) -i 's/hostNetwork: true/hostNetwork: {{ .Values.controllerManager.manager.hostNetwork }}/g' metal-operator-remote/templates/deployment.yaml
@@ -168,8 +169,8 @@ build-boot-operator-remote:
 	@cp kustomize/boot-operator-remote/ingress.yaml boot-operator-remote/templates
 	@yq -i '.controllerManager.manager.hostNetwork=false' boot-operator-remote/values.yaml
 	@mkdir boot-operator-remote/ci
-	@touch boot-operator-remote/ci/test-values.yaml
-	@yq -i '.global.clusterType="test-1"' boot-operator-remote/ci/test-values.yaml
+	@echo 'global:' >> boot-operator-remote/ci/test-values.yaml
+	@echo '  region: ab-cd-1' >> boot-operator-remote/ci/test-values.yaml
 	@mkdir boot-operator-remote/managedresources
 	@kubectl kustomize kustomize/boot-operator-managedresources > boot-operator-remote/managedresources/kustomize.yaml
 	@yq -i '.controllerManager.manager.image.tag="$(BOOT_OPERATOR_VERSION)"' boot-operator-remote/values.yaml
