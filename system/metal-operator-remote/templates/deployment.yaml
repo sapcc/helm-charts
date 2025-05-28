@@ -3,9 +3,6 @@ kind: Deployment
 metadata:
   name: {{ include "metal-operator-remote.fullname" . }}-controller-manager
   labels:
-    app.kubernetes.io/component: manager
-    app.kubernetes.io/created-by: metal-operator
-    app.kubernetes.io/part-of: metal-operator
     control-plane: controller-manager
   {{- include "metal-operator-remote.labels" . | nindent 4 }}
 spec:
@@ -14,11 +11,13 @@ spec:
     type: {{ .Values.controllerManager.strategy.type | quote }}
   selector:
     matchLabels:
+      app.kubernetes.io/name: metal-operator
       control-plane: controller-manager
     {{- include "metal-operator-remote.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       labels:
+        app.kubernetes.io/name: metal-operator
         control-plane: controller-manager
       {{- include "metal-operator-remote.selectorLabels" . | nindent 8 }}
       annotations:
@@ -60,7 +59,7 @@ spec:
           readOnly: true
         - mountPath: /etc/macdb/
           name: macdb
-      hostNetwork: true
+      hostNetwork: {{ .Values.controllerManager.manager.hostNetwork }}
       securityContext: {{- toYaml .Values.controllerManager.podSecurityContext | nindent
         8 }}
       serviceAccountName: default
