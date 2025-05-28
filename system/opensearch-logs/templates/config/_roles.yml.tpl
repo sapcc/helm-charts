@@ -28,18 +28,12 @@ data:
   - index_patterns:
     - "deployments-datastream"
     - "alerts-datastream"
-    - "logstash-*"
     - "logs-datastream"
     - "logs-swift-datastream"
-    - "systemd-*"
-    - "compute-*"
-    - "qade2-logstash-*"
-    - "qade3-logstash-*"
-    - "qade5-logstash-*"
-    - "greenhouse-*"
-    - "storage-*"
-    - "alerts-*"
-    - "deployments-*"
+    - "compute-datastream"
+    - "storage-datastream"
+    - "alerts-datastream"
+    - "deployments-datastream"
     allowed_actions:
     - "indices:admin/template/get"
     - "indices:admin/template/put"
@@ -294,6 +288,7 @@ complex-role:
     - "read"
     - "get"
     - "indices:monitor/settings/get"
+    - "indices:admin/create"
   tenant_permissions:
   - tenant_patterns:
     - "*"
