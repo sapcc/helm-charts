@@ -166,13 +166,15 @@ build-boot-operator-remote:
 	@cp kustomize/boot-operator-remote/remote-kubeconfig.yaml boot-operator-remote/templates
 	@cp kustomize/boot-operator-remote/managedresource.yaml boot-operator-remote/templates
 	@cp kustomize/boot-operator-remote/ingress.yaml boot-operator-remote/templates
+	@yq -i '.controllerManager.manager.hostNetwork=false' boot-operator-remote/values.yaml
 	@mkdir boot-operator-remote/managedresources
 	@kubectl kustomize kustomize/boot-operator-managedresources > boot-operator-remote/managedresources/kustomize.yaml
 	@yq -i '.controllerManager.manager.image.tag="$(BOOT_OPERATOR_VERSION)"' boot-operator-remote/values.yaml
 	@yq -i '.fullnameOverride="boot-operator"' boot-operator-remote/values.yaml
-	@yq -i '.version="0.4.2"' boot-operator-remote/Chart.yaml
+	@yq -i '.version="0.4.3"' boot-operator-remote/Chart.yaml
 	@$(SED) -i 's/serviceAccountName.*$$/serviceAccountName: default/g' boot-operator-remote/templates/deployment.yaml
 	@$(SED) -i 's/kind: Role/kind: ClusterRole/g' boot-operator-remote/managedresources/kustomize.yaml
+	@$(SED) -i 's/hostNetwork: true/hostNetwork: {{ .Values.controllerManager.manager.hostNetwork }}/g' boot-operator-remote/templates/deployment.yaml
 
 build-ipxe-operator:
 	@cat kustomize/ipxe-operator/kustomization.yaml >> kustomization.yaml
