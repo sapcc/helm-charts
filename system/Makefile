@@ -5,7 +5,7 @@ PROVIDER_VSPHERE_VERSION ?= v1.9.3
 PROVIDER_IPAM_VERSION ?= v0.1.1
 PROVIDER_KUBERNIKUS_VERSION ?= 9fd81475b828971913b3b27addf51fdbd0511d85
 BAREMETAL_OPERATOR_VERSION ?= v0.6.0
-METAL_OPERATOR_VERSION ?= d339e4ef08f0c3208a9d6c9b46c0a5a9b7266a6c
+METAL_OPERATOR_VERSION ?= 09f58322e41696a1c07e738ea295dcd4beb3a700
 BOOT_OPERATOR_VERSION ?= 5d753db2a9c1293f9c7bf7ce8a23f8a966612311
 IPXE_OPERATOR_VERSION ?= 28b7ac62711e74db02fe0097bdf474a302a054c6
 FEDHCP_VERSION ?= a59539c62aaa11a96c82fe792c87daaac4cb75bf
@@ -142,19 +142,22 @@ build-metal-operator-remote:
 	@cp kustomize/metal-operator-remote/rotate-kubeconfig.yaml metal-operator-remote/templates
 	@cp kustomize/metal-operator-remote/managedresource.yaml metal-operator-remote/templates
 	@cp kustomize/metal-operator-remote/macdb.yaml metal-operator-remote/templates
+	@cp kustomize/metal-operator-remote/ingress.yaml metal-operator-remote/templates
 	@mkdir metal-operator-remote/managedresources
 	@kubectl kustomize kustomize/metal-operator-managedresources > metal-operator-remote/managedresources/kustomize.yaml
 	@cp kustomize/metal-operator-managedresources/rbac.yaml metal-operator-remote/managedresources
 	@yq -i '.controllerManager.manager.image.tag="$(METAL_OPERATOR_VERSION)"' metal-operator-remote/values.yaml
 	@yq -i '.fullnameOverride="metal-operator"' metal-operator-remote/values.yaml
 	@yq -i '.remote.ca=""' metal-operator-remote/values.yaml
+	@yq -i '.controllerManager.manager.hostNetwork=false' metal-operator-remote/values.yaml
 	@echo 'macdb: {}' >> metal-operator-remote/values.yaml
 	@mkdir metal-operator-remote/ci
 	@echo 'global:' >> metal-operator-remote/ci/test-values.yaml
 	@echo '  region: ab-cd-1' >> metal-operator-remote/ci/test-values.yaml
-	@yq -i '.version="0.3.10"' metal-operator-remote/Chart.yaml
+	@yq -i '.version="0.4.0"' metal-operator-remote/Chart.yaml
 	@$(SED) -i 's/serviceAccountName.*$$/serviceAccountName: default/g' metal-operator-remote/templates/deployment.yaml
 	@$(SED) -i 's/kind: Role/kind: ClusterRole/g' metal-operator-remote/managedresources/kustomize.yaml
+	@$(SED) -i 's/hostNetwork: true/hostNetwork: {{ .Values.controllerManager.manager.hostNetwork }}/g' metal-operator-remote/templates/deployment.yaml
 
 build-boot-operator-remote:
 	@rm -rf boot-operator-remote
