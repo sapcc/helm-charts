@@ -19,6 +19,12 @@ spec:
       labels:
         app.kubernetes.io/name: metal-operator
         control-plane: controller-manager
+        networking.gardener.cloud/to-dns: allowed
+        networking.gardener.cloud/to-private-networks: allowed
+        networking.gardener.cloud/to-public-networks: allowed
+        networking.gardener.cloud/to-runtime-apiserver: allowed
+        networking.resources.gardener.cloud/to-garden-nginx-ingress-controller-tcp-443: allowed
+        networking.resources.gardener.cloud/to-kube-apiserver-tcp-443: allowed
       {{- include "metal-operator-remote.selectorLabels" . | nindent 8 }}
       annotations:
         kubectl.kubernetes.io/default-container: manager
@@ -39,14 +45,14 @@ spec:
         livenessProbe:
           httpGet:
             path: /healthz
-            port: 32801
+            port: 8081
           initialDelaySeconds: 15
           periodSeconds: 20
         name: manager
         readinessProbe:
           httpGet:
             path: /readyz
-            port: 32801
+            port: 8081
           initialDelaySeconds: 5
           periodSeconds: 10
         resources: {{- toYaml .Values.controllerManager.manager.resources | nindent 10
