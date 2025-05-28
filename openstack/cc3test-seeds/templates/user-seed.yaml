@@ -6,10 +6,15 @@ metadata:
     component: cc3test
 spec:
   requires:
-#  - keystone-seed
+  {{- if .Values.global_region.is_global_region }}
+  - seeder-global/domain-default-seed
+  - seeder-global/domain-ccadmin-seed
+  - seeder-global/domain-cc3test-seed
+  {{- else}}
   - monsoon3/domain-default-seed
   - monsoon3/domain-ccadmin-seed
   - monsoon3/domain-cc3test-seed
+  {{- end }}
 
   roles:
   - name: cloud_compute_admin
