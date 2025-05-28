@@ -167,6 +167,9 @@ build-boot-operator-remote:
 	@cp kustomize/boot-operator-remote/managedresource.yaml boot-operator-remote/templates
 	@cp kustomize/boot-operator-remote/ingress.yaml boot-operator-remote/templates
 	@yq -i '.controllerManager.manager.hostNetwork=false' boot-operator-remote/values.yaml
+	@mkdir boot-operator-remote/ci
+	@touch boot-operator-remote/ci/test-values.yaml
+	@yq -i '.global.clusterType="test-1"' boot-operator-remote/ci/test-values.yaml
 	@mkdir boot-operator-remote/managedresources
 	@kubectl kustomize kustomize/boot-operator-managedresources > boot-operator-remote/managedresources/kustomize.yaml
 	@yq -i '.controllerManager.manager.image.tag="$(BOOT_OPERATOR_VERSION)"' boot-operator-remote/values.yaml
