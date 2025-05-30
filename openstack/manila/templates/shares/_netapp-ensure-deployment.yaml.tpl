@@ -8,8 +8,10 @@ metadata:
   labels:
     system: openstack
     component: manila
-  {{- if .Values.vpa.set_main_container }}
   annotations:
+    secret.reloader.stakater.com/reload: "{{ .Release.Name }}-secrets,{{ .Release.Name }}-share-netapp-{{$share.name}}-secret"
+    deployment.reloader.stakater.com/pause-period: "60s"
+  {{- if .Values.vpa.set_main_container }}
     vpa-butler.cloud.sap/main-container: reexport
   {{- end }}
 spec:
