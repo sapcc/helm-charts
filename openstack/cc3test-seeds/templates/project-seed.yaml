@@ -10,7 +10,7 @@ metadata:
 
 spec:
   requires:
-  {{- if .Values.global_region.is_global_region }}
+  {{- if $values.global.is_global_region }}
   - seeder-global/domain-default-seed
   - seeder-global/domain-ccadmin-seed
   - seeder-global/domain-cc3test-seed
@@ -87,7 +87,7 @@ spec:
         role: monitoring_viewer
       - user: {{ $values.users.member.username }}
         role: member
-    {{- if not .Values.global_region.is_global_region}}
+    {{- if not $values.global.is_global_region}}
       network_quota:
         subnetpool: 5
         subnet: 5
@@ -113,7 +113,7 @@ spec:
         - subnet: {{ $router.interface.subnet }}
       {{- end }}
     {{- end }}
-{{- if not .Values.global_region.is_global_region}}
+{{- if not $values.global.is_global_region}}
   rbac_policies:
   - object_type: network
     object_name: {{ $project.rbac.object_name }}
