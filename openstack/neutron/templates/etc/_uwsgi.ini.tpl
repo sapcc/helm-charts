@@ -13,6 +13,9 @@ http = :{{.Values.global.neutron_api_port_internal | default 9696}}
 plugins-dir = /var/lib/openstack/lib
 need-plugins = shortmsecs
 
+# For ML2/OVN hash register initialization
+start-time = %t
+
 # Connection tuning
 vacuum = true
 lazy-apps = true
