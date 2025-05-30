@@ -10,6 +10,9 @@ metadata:
     system: openstack
     type: backend
     component: cinder
+  annotations:
+    secret.reloader.stakater.com/reload: "{{ .Release.Name }}-secrets,{{ .Release.Name }}-volume-{{ $name }}-secret"
+    deployment.reloader.stakater.com/pause-period: "60s"
 spec:
   replicas: 1
   revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revisionHistory }}
