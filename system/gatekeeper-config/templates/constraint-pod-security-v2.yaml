@@ -1,0 +1,45 @@
+{{/* This check is disabled entirely in the lab clusters to avoid needlessly obstructing the development of changes to the core components. */}}
+{{/* In the QA cluster, this check is in audit-only mode. Service owners can set up new deployments there and then ask for an extension of the allowlist based on that template. */}}
+{{- if ne .Values.cluster_layer "labs" }}
+
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: GkPodSecurityV2
+metadata:
+  name: podsecurityv2
+  annotations:
+    {{- include "sources" (tuple "pod-securityv2" "pod-securityv2") | indent 4 }}
+    {{- include "docstring" (tuple $ "GkPodSecurityV2") | indent 4 }}
+  labels:
+    severity: 'debug'
+spec:
+  enforcementAction: dryrun
+  match: {{ include "match_pods_and_pod_owners" . | indent 4 }}
+  parameters:
+    allowlist:
+      {{- if eq .Values.cluster_type "test" }}
+      - matchNamespace: foo
+        matchRepository: foo-repo/dummy
+        mayUseCapabilities:
+          - CAP_FOO
+      - matchNamespace: test-allow-all
+        matchRepository: test-repo/dummy
+        mayUseHostNetwork: true
+        mayUseHostPID: true
+        mayUsePrivilegeEscalation: true
+        mayBePrivileged: true
+        mayUseCapabilities:
+          - CAP_FOO
+          - CAP_SYS_ADMIN
+        mayMountHostPathVolumes:
+          - /
+      {{- end }}
+      {{- if eq .Values.cluster_type "baremetal" }}
+      - matchNamespace: infra-monitoring
+        matchRepository: ccloud-dockerhub-mirror/cloudprober/cloudprober
+        # The cloudprober pods need CAP_NET_RAW to send pings.
+        mayUseCapabilities: [ NET_RAW ]
+      - matchNamespace: cni-nanny
+        matchRepository: ccloud-ghcr-io-mirror/sapcc/cni-nanny
+        mayUseHostNetwork: true
+      {{- end }}
+{{- end }}
