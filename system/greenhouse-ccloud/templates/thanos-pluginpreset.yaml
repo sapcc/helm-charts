@@ -36,20 +36,12 @@ spec:
     - key: cluster
       operator: In
       values:
-{{- range $cluster, $additionalSettings := .Values.kubeMonitoring.cephClusters }}
+{{- range $serviceName, $serviceSpecs := .Values.kubeMonitoring.services }}
+{{- range $cluster, $additionalSettings := $serviceName.clusters }}
     {{- if index $additionalSettings "thanos" }}
       - {{ $cluster }}
     {{- end }}
 {{- end }}
-{{- range $cluster, $additionalSettings := .Values.kubeMonitoring.computeClusters }}
-    {{- if index $additionalSettings "thanos" }}
-      - {{ $cluster }}
-    {{- end }}
-{{- end }}
-{{- range $cluster, $additionalSettings := .Values.kubeMonitoring.obsClusters }}
-    {{- if index $additionalSettings "thanos" }}
-      - {{ $cluster }}
-    {{- end }}
 {{- end }}
   plugin:
     displayName: Thanos
