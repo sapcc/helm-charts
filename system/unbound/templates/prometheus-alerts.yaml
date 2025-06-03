@@ -90,7 +90,7 @@ spec:
     - alert: Dns{{ $.Values.unbound.name | title }}DisproportionateAmountOfSERVFAILs
       expr: sum(rate(unbound_answer_rcodes_total{app="{{ $.Values.unbound.name }}", namespace="{{ $.Release.Namespace }}", rcode="SERVFAIL"}[5m]))/sum(rate(unbound_answer_rcodes_total{namespace="{{ $.Release.Namespace }}", rcode="SERVFAIL"}[5m]))
         > {{ add 50 (.Values.unbound.tolerable_servfail_distribution_deviation | default 10) }}/100
-        or  sum(rate(unbound_answer_rcodes_total{app="{{ $.Values.unbound.name }}", namespace="{{ $.Release.Namespace }}"}, rcode="SERVFAIL"[5m]))/sum(rate(unbound_answer_rcodes_total{namespace="{{ $.Release.Namespace }}"}, rcode="SERVFAIL"[5m]))
+        or  sum(rate(unbound_answer_rcodes_total{app="{{ $.Values.unbound.name }}", namespace="{{ $.Release.Namespace }}", rcode="SERVFAIL"}[5m]))/sum(rate(unbound_answer_rcodes_total{namespace="{{ $.Release.Namespace }}", rcode="SERVFAIL"}[5m]))
         < {{ sub 50 (.Values.unbound.tolerable_servfail_distribution_deviation | default 10) }}/100
       for: 5m
       labels:
