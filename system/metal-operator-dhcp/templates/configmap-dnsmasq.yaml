@@ -14,14 +14,27 @@ data:
     # Configure listening for DNS (0 disables DNS)
     port=0
     log-dhcp
-    {{ range $pool := .Values.dnsmasq.dhcpPools }}
+
+    {{ if .Values.local }}
+    {{ range $pool := .Values.local.dhcpPools }}
     {{- $ipPoolStart := $pool.ipPoolStart -}}
     {{- $ipPoolEnd := $pool.ipPoolEnd -}}
-    {{- if $pool.static -}}
-    dhcp-range=set:{{ $pool.subnetPrefix }},{{ $pool.subnetPrefix }},static,{{ $pool.mask }},{{ $.Values.dnsmasq.leaseTime }}
-    {{ else }}
+    {{- $router := $pool.router -}}
     dhcp-range=set:{{ $pool.subnetPrefix }},{{ $ipPoolStart }},{{ $ipPoolEnd }},{{ $pool.mask }},{{ $.Values.dnsmasq.leaseTime }}
-    {{- end -}}
+    dhcp-option=set:{{ $pool.subnetPrefix }},option:router,{{ $router }}
+    dhcp-boot=tag:{{ $pool.subnetPrefix }},tag:ipxe,{{ $.Values.local.url }}/ipxe/${uuid}
+    {{ end }}
+    {{ end }}
+
+    {{ if .Values.remote }}
+    {{ range $pool := .Values.remote.dhcpPools }}
+    {{- $ipPoolStart := $pool.ipPoolStart -}}
+    {{- $ipPoolEnd := $pool.ipPoolEnd -}}
+    {{- $router := $pool.router -}}
+    dhcp-range=set:{{ $pool.subnetPrefix }},{{ $ipPoolStart }},{{ $ipPoolEnd }},{{ $pool.mask }},{{ $.Values.dnsmasq.leaseTime }}
+    dhcp-option=set:{{ $pool.subnetPrefix }},option:router,{{ $router }}
+    dhcp-boot=tag:{{ $pool.subnetPrefix }},tag:ipxe,{{ $.Values.remote.url }}/ipxe/${uuid}
+    {{ end }}
     {{ end }}
 
     {{- if .Values.dnsmasq.staticHosts }}
@@ -30,21 +43,12 @@ data:
     {{- end }} 
     {{- end }} 
 
-    # It can be used when setting DNS or GW variables.
-    # Set default router
-    {{ range $pool := .Values.dnsmasq.dhcpPools }}
-    {{- $router := $pool.router -}}
-    dhcp-option=set:{{ $pool.subnetPrefix }},option:router,{{ $router }}
-    {{ end }}
-
     # Set dns servers
     dhcp-option=6,{{ .Values.dnsmasq.dnsServers }}
     dhcp-option=option:domain-name,cc.{{ .Values.global.region }}.cloud.sap
 
     # IPv4 Configuration:
     dhcp-match=ipxe,175
-    # Client is already running iPXE; move to next stage of chainloading
-    dhcp-boot=tag:ipxe,{{ .Values.ipxe.url }}/ipxe/${uuid}
 
     # Note: Need to test EFI booting
     dhcp-match=set:efi,option:client-arch,7
@@ -65,3 +69,37 @@ data:
     curl -o /shared/tftpboot/{{ .Values.ipxe.efi.file }} {{ .Values.ipxe.efi.host }}/{{ .Values.ipxe.efi.file }}
 
     exec /usr/sbin/dnsmasq -d -q -C /opt/dnsmasq/dnsmasq.conf
+  dhcp-init.sh: |
+    #!/usr/bin/env bash
+    set -euxo pipefail
+    # make sure to update dhcp-stop script to keep commands aligned
+
+    export INTERFACE=$(/sbin/ip route | grep -v cbr | awk '/default/ { print $5 }')
+
+    echo "Outgoing inteface is ${INTERFACE}"
+
+    echo "Adding rule for SNAT DHCP Reply to correct server IP address"
+
+    if iptables-nft -t nat -C POSTROUTING -p udp --sport 67 --dport 67 -j SNAT --to-source ${DHCPSERVERIP} 2>/dev/null; then
+      echo "Rule for SNAT DHCP Reply already present - skipping"
+    else
+      echo "Rule for SNAT DHCP Reply not present - creating rule"
+      iptables-nft -t nat -I POSTROUTING 1 -p udp --sport 67 --dport 67 -j SNAT --to-source ${DHCPSERVERIP}
+    fi
+
+    if iptables-nft -t nat -C POSTROUTING -p udp --sport 69 --dport 69 -j SNAT --to-source ${DHCPSERVERIP} 2>/dev/null; then
+      echo "Rule for SNAT TFTP Reply already present - skipping"
+    else
+      echo "Rule for SNAT TFTP Reply not present - creating rule"
+      iptables-nft -t nat -I POSTROUTING 1 -p udp --sport 69 --dport 69 -j SNAT --to-source ${DHCPSERVERIP}
+    fi
+  dhcp-stop.sh: |
+    #!/usr/bin/env bash
+    set -euxo pipefail
+    # make sure to update dhcp-init script to keep commands aligned
+
+    echo "Deleting rule for SNAT DHCP Reply"
+    iptables-nft -t nat -D POSTROUTING -p udp --sport 67 --dport 67 -j SNAT --to-source ${DHCPSERVERIP}
+
+    echo "Deleting rule for SNAT TFTP Reply"
+    iptables-nft -t nat -D POSTROUTING -p udp --sport 69 --dport 69 -j SNAT --to-source ${DHCPSERVERIP}

@@ -61,4 +61,8 @@ maillog:
     enabled: {{ .Values.autoTagging.enabled }}
     delayedAfter: {{ .Values.autoTagging.delayedAfter | default "24h" }}
 {{- end }}
+{{- if .Values.compliance }}
+  compliance:
+    autoAnonymization: {{ .Values.compliance.autoAnonymization }}
+{{- end }}
 {{- end -}}

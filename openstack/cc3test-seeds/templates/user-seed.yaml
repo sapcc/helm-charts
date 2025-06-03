@@ -4,12 +4,17 @@ metadata:
   name: cc3test-user-seed
   labels:
     component: cc3test
+
 spec:
   requires:
-#  - keystone-seed
+  {{- if .Values.global.is_global_region }}
+  - monsoon3global/keystone-global-seed
+  {{- else}}
+  - monsoon3/keystone-seed
   - monsoon3/domain-default-seed
   - monsoon3/domain-ccadmin-seed
   - monsoon3/domain-cc3test-seed
+  {{- end }}
 
   roles:
   - name: cloud_compute_admin

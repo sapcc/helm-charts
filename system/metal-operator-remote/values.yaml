@@ -17,7 +17,7 @@ controllerManager:
       kubernetesServiceHost: apiserver-url
     image:
       repository: controller
-      tag: d339e4ef08f0c3208a9d6c9b46c0a5a9b7266a6c
+      tag: 09f58322e41696a1c07e738ea295dcd4beb3a700
     resources:
       limits:
         cpu: 500m
@@ -25,19 +25,21 @@ controllerManager:
       requests:
         cpu: 10m
         memory: 64Mi
+    hostNetwork: false
   podSecurityContext:
     runAsNonRoot: true
+    seccompProfile:
+      type: RuntimeDefault
   replicas: 1
   strategy:
     type: Recreate
 kubernetesClusterDomain: cluster.local
 metalRegistryService:
   ports:
-    - nodePort: 30010
-      port: 80
+    - port: 10000
       protocol: TCP
       targetPort: 10000
-  type: NodePort
+  type: ClusterIP
 fullnameOverride: metal-operator
 remote:
   ca: ""

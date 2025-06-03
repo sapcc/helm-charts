@@ -29,7 +29,10 @@ spec:
         config:
           etcd:
             storage:
-              provisioner: rancher.io/local-path
+              provisioner: {{ .Values.extensions.storage.provisioner | quote }}
+              {{- if .Values.extensions.storage.parameters }}
+              parameters: {{ .Values.extensions.storage.parameters | toYaml | nindent 16 }}
+              {{- end }}
       runtimeClusterValues:
         replicaCount: 1
         image:
@@ -37,7 +40,10 @@ spec:
         config:
           etcd:
             storage:
-              provisioner: rancher.io/local-path
+              provisioner: {{ .Values.extensions.storage.provisioner | quote }}
+              {{- if .Values.extensions.storage.parameters }}
+              parameters: {{ .Values.extensions.storage.parameters | toYaml | nindent 16 }}
+              {{- end }}
       helm:
         ociRepository:
           tag: 1.47.0

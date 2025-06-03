@@ -7,6 +7,14 @@ spec:
   strategy:
     type: Recreate
   template:
+    metadata:
+      labels:
+        networking.gardener.cloud/to-dns: allowed
+        networking.gardener.cloud/to-private-networks: allowed
+        networking.gardener.cloud/to-public-networks: allowed
+        networking.gardener.cloud/to-runtime-apiserver: allowed
+        networking.resources.gardener.cloud/to-all-istio-ingresses-istio-ingressgateway-tcp-9443: allowed
+        networking.resources.gardener.cloud/to-kube-apiserver-tcp-443: allowed
     spec:
       hostNetwork: true
       containers:
@@ -21,13 +29,13 @@ spec:
         livenessProbe:
           httpGet:
             path: /healthz
-            port: 32801
+            port: 8081
           initialDelaySeconds: 15
           periodSeconds: 20
         readinessProbe:
           httpGet:
             path: /readyz
-            port: 32801
+            port: 8081
           initialDelaySeconds: 5
           periodSeconds: 10
         volumeMounts:
