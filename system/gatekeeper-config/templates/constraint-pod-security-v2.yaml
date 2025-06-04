@@ -20,7 +20,7 @@ spec:
       - matchNamespace: foo
         matchRepository: test-app/unprivileged
         mayUseCapabilities:
-          - CAP_FOO
+          - FOO
       - matchNamespace: foo
         matchRepository: test-app/highly-privileged
         mayUseHostNetwork: true
@@ -28,18 +28,19 @@ spec:
         mayUsePrivilegeEscalation: true
         mayBePrivileged: true
         mayUseCapabilities:
-          - CAP_FOO
-          - CAP_SYS_ADMIN
+          - FOO
+          - SYS_ADMIN
         mayMountHostPathVolumes:
           - /
       {{- end }}
+
       {{- if eq .Values.cluster_type "baremetal" }}
-      - matchNamespace: infra-monitoring
+      - matchNamespace:  infra-monitoring
         matchRepository: ccloud-dockerhub-mirror/cloudprober/cloudprober
-        # The cloudprober pods need CAP_NET_RAW to send pings.
-        mayUseCapabilities: [ NET_RAW ]
-      - matchNamespace: cni-nanny
+        mayUseCapabilities: [ NET_RAW ] # cloudprober needs to send pings
+
+      - matchNamespace:  cni-nanny
         matchRepository: ccloud-ghcr-io-mirror/sapcc/cni-nanny
-        mayUseHostNetwork: true
+        mayUseHostNetwork: true # TODO: why?
       {{- end }}
 {{- end }}
