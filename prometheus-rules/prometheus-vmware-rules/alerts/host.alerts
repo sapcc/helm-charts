@@ -380,22 +380,3 @@ groups:
     annotations:
       description: "storage paths for `{{ $labels.hostsystem }}` is less than other hosts in the `{{ $labels.vccluster }}`. ({{ $labels.vcenter }})"
       summary: "storage paths for `{{ $labels.hostsystem }}` is less than other hosts in the `{{ $labels.vccluster }}`. ({{ $labels.vcenter }})"
-
-  - alert: HostInMaintenanceModeForAtLeast10d
-    expr: |
-      count_over_time((present_over_time(vrops_hostsystem_runtime_maintenancestate{state="inMaintenance"}[1d]))[120d:1d]) >= 10
-      and on (hostsystem) (vrops_hostsystem_runtime_maintenancestate{state="inMaintenance"})
-      unless on (hostsystem) (vrops_hostsystem_custom_attributes_hw_info != 1 or vrops_hostsystem_custom_attributes_change_request_info != 1)
-      unless on (hostsystem) (vrops_cluster_summary_custom_tag_openstack_nova_traits_decommissioning != 1)
-    labels:
-      severity: info
-      tier: vmware
-      service: compute
-      support_group: compute
-      context: "{{ $labels.hostsystem }} maintenance"
-      meta: "Host `{{ $labels.hostsystem }}` is in maintenance mode for at least 10 days with no custom attributes tag. ({{ $labels.vcenter }})."
-      playbook: docs/devops/alert/vcenter/#host_in_maintenance_mode_for_at_least_10d
-      no_alert_on_absence: "true"
-    annotations:
-      description: "Host `{{ $labels.hostsystem }}` is in maintenance mode for at least 10 days with no custom attributes tag. ({{ $labels.vcenter }})."
-      summary: "Host `{{ $labels.hostsystem }}` is in maintenance mode for at least 10 days with no custom attributes tag. ({{ $labels.vcenter }})."
