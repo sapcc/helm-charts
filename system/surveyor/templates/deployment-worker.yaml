@@ -1,0 +1,65 @@
+kind: Deployment
+apiVersion: apps/v1
+
+metadata:
+  name: surveyor-worker
+
+spec:
+  revisionHistoryLimit: 5
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      name: surveyor-worker
+  template:
+    metadata:
+      labels:
+        name: surveyor-worker
+        app.kubernetes.io/name: surveyor-worker
+      annotations:
+        kubectl.kubernetes.io/default-container: worker
+        prometheus.io/scrape: "true"
+        prometheus.io/targets: {{ .Values.prometheus.target }}
+    spec:
+      volumes:
+        - name: config
+          configMap:
+            name: surveyor-etc
+      containers:
+        - name: worker
+          image: {{ .Values.image_refs.surveyor | required "missing value for .Values.image_refs.surveyor" | quote }}
+          imagePullPolicy: IfNotPresent
+          args: [ worker ]
+          env: {{ include "surveyor_environment" . | indent 12 }}
+            - name: SURVEYOR_CONFIG_PATH
+              value: /etc/surveyor/config.json
+          securityContext:
+            runAsNonRoot: true
+          volumeMounts:
+            - mountPath: /etc/tenso
+              name: config
+          ports:
+            - name: metrics # this specific name is required for Prometheus scraping
+              containerPort: 8080
+          livenessProbe:
+            httpGet:
+              path: /healthcheck
+              port: 8080
+            timeoutSeconds: 10
+            periodSeconds: 60
+            initialDelaySeconds: 60
+          readinessProbe:
+            httpGet:
+              path: /healthcheck
+              port: 8080
+            timeoutSeconds: 5
+            periodSeconds: 5
+          resources:
+            # TODO: adjust once we have some operating experience
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "1"
+              memory: "256Mi"
