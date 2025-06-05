@@ -3,13 +3,14 @@ jobs:
 - name: "default"
   interval: '1m'
   connections:
+  {{- if .Values.connections }}
+    {{- range $connection := .Values.connections }}
+  - '{{ include "mysql_metrics.db_path_for_exporter_from_connections" (tuple $ $connection) }}'
+    {{- end }}
+  {{- else }}
   - '{{ include "mysql_metrics.db_path_for_exporter" . }}'
   {{- if .Values.queryCell2 }}
   - '{{ include "cell2_db_path_for_exporter" . }}'
-  {{- end }}
-  {{- if .Values.customSources }}
-  {{- range $customSource := .Values.customSources }}
-  - {{ $customSource | quote }}
   {{- end }}
   {{- end }}
   queries:
