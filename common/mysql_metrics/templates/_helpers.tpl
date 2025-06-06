@@ -15,17 +15,15 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
 {{- printf "%s-%s" .Release.Name $name | trunc 63 | replace "_" "-" | trimSuffix "-" -}}
 {{- end -}}
 
-{{- define "metrics_db_host" -}}
-{{- if eq .Values.db_type "pxc" -}}
-{{.Release.Name}}-percona-pxc.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.db_region}}.{{.Values.global.tld}}
-{{- else if eq .Values.db_type "galera" -}}
-{{.Release.Name}}-mariadb-galera.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}
-{{- else if eq .Values.db_type "pxc-db" -}}
-{{.Release.Name}}-db-haproxy.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}
-{{- else -}}
-{{.Release.Name}}-mariadb.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}
-{{- end -}}
-{{end}}
+{{- define "mysql_metrics.db_host" -}}
+    {{- if eq .Values.db_type "pxc" -}}
+    {{ .Release.Name }}-percona-pxc.{{ .Release.Namespace }}.svc.kubernetes.{{ .Values.global.db_region }}.{{ .Values.global.tld }}
+    {{- else if eq .Values.db_type "pxc-db" -}}
+    {{ .Release.Name }}-db-haproxy.{{ .Release.Namespace }}.svc.kubernetes.{{ .Values.global.region }}.{{ .Values.global.tld }}
+    {{- else -}}
+    {{ .Release.Name }}-mariadb.{{ .Release.Namespace }}.svc.kubernetes.{{ .Values.global.region }}.{{ .Values.global.tld }}
+    {{- end -}}
+{{- end }}
 
 {{/*
 Resolve secret and replace single quote with double single quote
@@ -44,18 +42,45 @@ This resolved secret could be put inside the single-quoted string inside yaml
 Construct the go-mysql driver DSN string
 */}}
 {{- define "mysql_metrics.db_path_for_exporter" -}}
-{{- $protocol := "mysql" -}}
-{{- $username := include "mysql_metrics.resolve_secret_for_yaml" (required ".Values.db_user missing" .Values.db_user) -}}
-{{- $password := "" -}}
-{{- $address := include "metrics_db_host" . -}}
-{{- $database := (required ".Values.db_name missing" .Values.db_name) -}}
-{{- if hasKey .Values "db_password" -}}
-    {{- $password = include "mysql_metrics.resolve_secret_for_yaml" .Values.db_password -}}
-{{- else -}}
-    {{- $password = include "mysql_metrics.resolve_secret_for_yaml" .Values.global.dbPassword -}}
+    {{- $protocol := "mysql" -}}
+    {{- $username := include "mysql_metrics.resolve_secret_for_yaml" (required ".Values.db_user missing" .Values.db_user) -}}
+    {{- $password := "" -}}
+    {{- $address := include "mysql_metrics.db_host" . -}}
+    {{- if hasKey .Values "db_password" -}}
+        {{- $password = include "mysql_metrics.resolve_secret_for_yaml" .Values.db_password -}}
+    {{- else -}}
+        {{- $password = include "mysql_metrics.resolve_secret_for_yaml" .Values.global.dbPassword -}}
+    {{- end -}}
+    {{- $database := (required ".Values.db_name missing" .Values.db_name) -}}
+    {{ $protocol }}://{{ $username }}:{{ $password }}@tcp({{ $address }}:3306)/{{ $database }}
 {{- end -}}
-{{ $protocol }}://{{ $username }}:{{ $password }}@tcp({{ $address }}:3306)/{{ $database }}
+
+{{/*
+Construct the go-mysql DNS string from connections map }}
+*/}}
+{{- define "mysql_metrics.db_path_for_exporter_from_connections" -}}
+    {{- $root := index . 0 -}}
+    {{- $connection := index . 1 -}}
+    {{- $protocol := "mysql" -}}
+    {{- $username := include "mysql_metrics.resolve_secret_for_yaml" (required "mysql_metrics.connections.X.db_user missing" $connection.db_user) -}}
+    {{- $password := "" -}}
+    {{- $address := include "mysql_metrics.db_host_from_connections" (tuple $root $connection) -}}
+    {{- $password = include "mysql_metrics.resolve_secret_for_yaml" (required "mysql_metrics.connections.X.db_password missing" $connection.db_password) -}}
+    {{- $database := (required "mysql_metrics.connections.X.db_name missing" $connection.db_name) -}}
+    {{- $protocol }}://{{ $username }}:{{ $password }}@tcp({{ $address }}:3306)/{{ $database }}
 {{- end -}}
+
+{{- define "mysql_metrics.db_host_from_connections" }}
+    {{- $root := index . 0 -}}
+    {{- $connection := index . 1 -}}
+    {{- if eq $connection.db_type "pxc" -}}
+    {{ $root.Release.Name }}-percona-pxc.{{ $root.Release.Namespace }}.svc.kubernetes.{{ .Values.global.db_region }}.{{ .Values.global.tld }}
+    {{- else if eq $connection.db_type "pxc-db" -}}
+    {{ $root.Release.Name }}-db-haproxy
+    {{- else -}}
+    {{ $root.Release.Name }}-mariadb
+    {{- end -}}
+{{- end }}
 
 {{/* Needed for testing purposes only. */}}
 {{define "RELEASE-NAME_db_host"}}testRelease-mariadb.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
