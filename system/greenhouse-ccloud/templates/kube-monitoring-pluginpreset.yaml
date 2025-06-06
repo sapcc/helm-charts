@@ -52,9 +52,13 @@ spec:
     - name: kubeMonitoring.prometheus.prometheusSpec.thanos.objectStorageConfig.existingSecret.key
       value: thanos.yaml
   {{- end }}
-  {{- $globalClusters := .Values.thanos.globalClusters | default list }}
-  {{- $matchingClusters := where $globalClusters "name" $cluster }}
-  {{- if gt (len $matchingClusters) 0 }}
+  {{- $found := false -}}
+  {{- range .Values.thanos.globalClusters }}
+  {{- if eq .name $cluster -}}
+  {{- $found = true -}}  
+  {{- end -}}
+  {{- end -}}
+  {{- if $found }}
     - name: blackboxExporter.enabled
       value: true
     - name: blackboxExporter.extraVolumes
