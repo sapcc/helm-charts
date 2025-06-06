@@ -9,15 +9,15 @@ metadata:
     kubernetes.io/description: This Deployment launches the ovn-northd.
 spec:
   progressDeadlineSeconds: 600
-  replicas: 1
+  replicas: {{ .Values.pod.replicas.ovn_northd }}
   revisionHistoryLimit: 10
   selector:
     matchLabels:
       name: neutron-ovn-northd
   strategy:
     rollingUpdate:
-      maxSurge: 0
-      maxUnavailable: 1
+      maxSurge: 2
+      maxUnavailable: {{ sub .Values.pod.replicas.ovn_northd 1 }}
     type: RollingUpdate
   template:
     metadata:
@@ -41,8 +41,9 @@ spec:
         command: ["/usr/bin/ovn-northd"]
         args:
           - "-vfile:off"
-          - "-vconsole:{{ .Values.ovn.logLevel | default "info" }}"
-          - "--n-threads={{ .Values.ovn.nThreads | default 1 }}"
+          - "-vconsole:{{ .Values.ovn.logLevel | default "INFO" }}"
+          - --pidfile
+          - --n-threads={{ .Values.ovn.nThreads | default 1 }}
       {{- if .Values.ovn.enableSsl }}
           - --certificate=/etc/pki/tls/certs/ovndb.crt
           - --private_key=/etc/pki/tls/certs/ovndb.key
@@ -60,13 +61,10 @@ spec:
             value: "tcp:neutron-ovsdb-sb.{{ .Release.Namespace }}.svc.kubernetes.{{ .Values.global.region }}.cloud.sap:{{ $ovsdb_sb.DB_PORT }}"
         readinessProbe:
           exec:
-            command: ["/usr/bin/pidof", "ovn-northd"]
-          initialDelaySeconds: 5
-          timeoutSeconds: 3
-          periodSeconds: 3
-        livenessProbe:
-          exec:
-            command: ["/usr/bin/pidof", "ovn-northd"]
+            command:
+            - sh
+            - -c
+            - ovn-appctl --target=/tmp/ovn-northd.1.ctl status | grep -qE "active|standby"
           initialDelaySeconds: 5
           timeoutSeconds: 5
           periodSeconds: 5
