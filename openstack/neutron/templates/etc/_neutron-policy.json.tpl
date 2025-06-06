@@ -139,6 +139,7 @@
     "update_router:external_gateway_info:enable_snat": "rule:context_is_admin",
     "update_router:distributed": "rule:context_is_admin",
     "update_router:ha": "rule:context_is_admin",
+    "update_routers_tags": "rule:context_is_network_admin",
 
     "update_router:cisco_ha:enabled": "rule:context_is_admin",
     "update_router:cisco_ha:details": "rule:context_is_admin",
