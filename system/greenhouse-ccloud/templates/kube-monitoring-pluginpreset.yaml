@@ -15,6 +15,7 @@ metadata:
   namespace: {{ .Release.Namespace }}
 spec:
   clusterOptionOverrides:
+  {{- $root := .Values }}
   {{- range $serviceName, $serviceSpecs := .Values.kubeMonitoring.services}}
   {{- range $cluster, $additionalSettings := $serviceSpecs.clusters }}
   - clusterName: {{ $cluster }}
@@ -53,7 +54,7 @@ spec:
       value: thanos.yaml
   {{- end }}
   {{- $found := false -}}
-  {{- range .Values.thanos.globalClusters }}
+  {{- range $root.thanos.globalClusters }}
   {{- if eq .name $cluster -}}
   {{- $found = true -}}  
   {{- end -}}
