@@ -1,44 +1,53 @@
-{{- define "nova.helpers.ini_sections.api_database" }}
-
-[api_database]
-connection = {{ tuple . .Values.apidbName .Values.apidbUser .Values.apidbPassword .Values.mariadb_api.name | include "db_url_mysql" }}
-{{- include "ini_sections.database_options_mysql" . }}
+{{- define "api_db_path" }}
+  {{- $context := dict "target" "api" "defaultUsers" .Values.defaultUsersMariaDB "users" .Values.mariadb_api.users }}
+  {{- tuple . .Values.apidbName (include "nova.helpers.default_db_user" $context) (include "nova.helpers.default_password" $context) .Values.mariadb_api.name | include "utils.db_url" }}
 {{- end }}
 
 {{- define "cell0_db_path" }}
-    {{- tuple . .Values.cell0dbName .Values.cell0dbUser (default .Values.cell0dbPassword .Values.global.dbPassword) | include "db_url_mysql" }}
+  {{- $context := dict "target" "cell0" "defaultUsers" .Values.defaultUsersMariaDB "users" .Values.mariadb.users }}
+  {{- tuple . .Values.cell0dbName (include "nova.helpers.default_db_user" $context) (include "nova.helpers.default_password" $context) | include "utils.db_url" }}
 {{- end }}
 
 {{- define "cell1_db_path" -}}
-    {{- tuple . .Values.dbName .Values.dbUser (default .Values.dbPassword .Values.global.dbPassword) | include "db_url_mysql" }}
+  {{- $context := dict "target" "cell1" "defaultUsers" .Values.defaultUsersMariaDB "users" .Values.mariadb.users }}
+  {{- tuple . .Values.dbName (include "nova.helpers.default_db_user" $context) (include "nova.helpers.default_password" $context) | include "utils.db_url" }}
 {{- end }}
 
 {{- define "cell1_transport_url" -}}
-{{- $data := merge (pick .Values.rabbitmq "port" "virtual_host") .Values.rabbitmq.users.default }}
-{{- $_ := set $data "host" (printf "%s-rabbitmq" .Release.Name ) }}
-{{- $_ := required ".Values.rabbitmq.users.default.user is required" .Values.rabbitmq.users.default.user }}
-{{- $_ := required ".Values.rabbitmq.users.default.password is required" .Values.rabbitmq.users.default.password }}
-{{- include "utils.rabbitmq_url" (tuple . $data) }}
+  {{- $context := dict "target" "cell1" "defaultUsers" .Values.defaultUsersRabbitMQ "users" .Values.rabbitmq.users }}
+  {{- $data := dict
+      "user" (include "nova.helpers.default_rabbitmq_user" $context)
+      "password" (include "nova.helpers.default_password" $context)
+      "port" .Values.rabbitmq.port
+      "virtual_host" .Values.rabbitmq.virtual_host
+      "host" (printf "%s-rabbitmq" .Release.Name)
+    }}
+  {{- include "utils.rabbitmq_url" (tuple . $data) }}
 {{- end -}}
 
 {{- define "cell2_db_path" -}}
-    {{- if eq .Values.cell2.enabled true -}}
-        {{- tuple . .Values.cell2dbName .Values.cell2dbUser (default .Values.cell2dbPassword .Values.global.dbPassword) .Values.mariadb_cell2.name | include "db_url_mysql" }}
-    {{- end }}
+  {{- $context := dict "target" "cell2" "defaultUsers" .Values.defaultUsersMariaDB "users" .Values.mariadb_cell2.users }}
+  {{- tuple . .Values.cell2dbName (include "nova.helpers.default_db_user" $context) (include "nova.helpers.default_password" $context) .Values.mariadb_cell2.name | include "utils.db_url" }}
 {{- end }}
 
 {{- define "cell2_db_path_for_exporter" -}}
 {{- if eq .Values.cell2.enabled true -}}
-mysql://{{ .Values.cell2dbUser | include "mysql_metrics.resolve_secret_for_yaml" }}:{{ default .Values.cell2dbPassword .Values.global.dbPassword | include "mysql_metrics.resolve_secret_for_yaml" }}@tcp(nova-{{.Values.cell2.name}}-mariadb.{{include "svc_fqdn" .}}:3306)/{{.Values.cell2dbName}}
+  {{- $user := include "mysql_metrics.resolve_secret_for_yaml" .Values.cell2dbUser }}
+  {{- $password := include "mysql_metrics.resolve_secret_for_yaml" (default .Values.cell2dbPassword .Values.db_password .Values.global.dbPassword ) -}}
+mysql://{{ $user }}:{{ $password }}@tcp(nova-{{ .Values.cell2.name }}-mariadb.{{ include "svc_fqdn" . }}:3306)/{{ .Values.cell2dbName }}
 {{- end -}}
 {{- end -}}
 
 {{- define "cell2_transport_url" -}}
-{{- $data := merge (pick .Values.rabbitmq_cell2 "port" "virtual_host") .Values.rabbitmq_cell2.users.default }}
-{{- $_ := set $data "host" (printf "%s-%s-rabbitmq" .Release.Name .Values.cell2.name) }}
-{{- $_ := required ".Values.rabbitmq_cell2.users.default.user is required" .Values.rabbitmq_cell2.users.default.user }}
-{{- $_ := required ".Values.rabbitmq_cell2.users.default.password is required" .Values.rabbitmq_cell2.users.default.password }}
-{{- include "utils.rabbitmq_url" (tuple . $data) }}
+  {{- $context := dict "target" "cell2" "defaultUsers" .Values.defaultUsersRabbitMQ "users" .Values.rabbitmq_cell2.users }}
+  {{- $data := dict
+      "user" (include "nova.helpers.default_rabbitmq_user" $context)
+      "password" (include "nova.helpers.default_password" $context)
+      "port" .Values.rabbitmq_cell2.port
+      "virtual_host" .Values.rabbitmq_cell2.virtual_host
+      "host" (printf "%s-%s-rabbitmq" .Release.Name .Values.cell2.name)
+    }}
+  {{- include "utils.rabbitmq_url" (tuple . $data) }}
 {{- end -}}
 
 
@@ -127,5 +136,53 @@ annotations:
   {{- include "nova.helpers.cell01_services" . }}
   {{- if .Values.cell2.enabled -}}
     ,{{ include "nova.helpers.cell2_services" . }}
+  {{- end }}
+{{- end }}
+
+{{- define "nova.helpers.default_db_user" }}
+  {{- $target := .target | lower }}
+  {{- $users := .users }}
+  {{- $userKey := index .defaultUsers $target }}
+  {{- if and $users $userKey }}
+    {{- $user := index $users $userKey }}
+    {{- if $user }}
+      {{- $user.name }}
+    {{- else }}
+      {{ fail (printf "No default user %s found for %s" $userKey $target) }}
+    {{- end }}
+  {{- else }}
+    {{ fail (printf "No users defined for %s" $target) }}
+  {{- end }}
+{{- end }}
+
+{{- define "nova.helpers.default_rabbitmq_user" }}
+  {{- $target := .target | lower }}
+  {{- $users := .users }}
+  {{- $userKey := index .defaultUsers $target }}
+  {{- if and $users $userKey }}
+    {{- $user := index $users $userKey }}
+    {{- if $user }}
+      {{- $user.user }}
+    {{- else }}
+      {{ fail (printf "No default user %s found for %s" $userKey $target) }}
+    {{- end }}
+  {{- else }}
+    {{ fail (printf "No users defined for %s" $target) }}
+  {{- end }}
+{{- end }}
+
+{{- define "nova.helpers.default_password" }}
+  {{- $target := .target | lower }}
+  {{- $users := .users }}
+  {{- $userKey := index .defaultUsers $target }}
+  {{- if and $users $userKey }}
+    {{- $user := index $users $userKey }}
+    {{- if and $user (hasKey $user "password") }}
+      {{- $user.password }}
+    {{- else }}
+      {{ fail (printf "No password for default user %s found for %s" $userKey $target) }}
+    {{- end }}
+  {{- else }}
+    {{ fail (printf "No users defined for %s" $target) }}
   {{- end }}
 {{- end }}
