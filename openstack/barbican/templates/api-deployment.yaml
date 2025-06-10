@@ -135,6 +135,8 @@ spec:
         {{- if .Values.hsm.enabled }}
             - name: luna
               mountPath: /thales/
+            - name: shared-tmp
+              mountPath: /tmp/
             {{- include "utils.proxysql.volume_mount" . | indent 12 }}
             {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
         {{- include "utils.proxysql.container" . | indent 8 }}
@@ -145,7 +147,11 @@ spec:
             - name: ChrystokiConfigurationPath
               value: "/thales/safenet/lunaclient/config"
           command: [ "/bin/bash", "-c", "--" ]
-          args: [ "while true; do sleep 30; done;" ]
+          args:
+            - |
+              touch /tmp/cklog.txt
+              tail -F /tmp/cklog.txt &
+              while true; do sleep 30; done;
           {{- if .Values.hsm.resources.enabled }}
           resources:
             limits:
@@ -166,6 +172,8 @@ spec:
               readOnly: true
             - name: luna
               mountPath: /thales/
+            - name: shared-tmp
+              mountPath: /tmp/
         {{- end }}
         - name: statsd
           {{- if hasKey .Values.global "dockerHubMirror"}}
@@ -207,6 +215,8 @@ spec:
             - key: secrets.conf
               path: secrets.conf
         - name: etcbarbican
+          emptyDir: {}
+        - name: shared-tmp
           emptyDir: {}
         {{- if .Values.hsm.enabled }}
         - name: hsm
