@@ -1,246 +1,197 @@
-# Sentry helm charts
+# Install
 
-Sentry is a cross-platform crash reporting and aggregation platform.
-
-This repository aims to support Sentry >=10 and move out from the deprecated Helm charts official repo.
-
-Big thanks to the maintainers of the [deprecated chart](https://github.com/helm/charts/tree/master/stable/sentry). This work has been partly inspired by it.
-
-## How this chart works
-
-`helm repo add sentry https://sentry-kubernetes.github.io/charts`
-
-## Values
-
-For now the full list of values is not documented but you can get inspired by the values.yaml specific to each directory.
-
-## Upgrading from 19.x.x version of this Chart to 20.x.x
-
-Bumped dependencies:
-- kafka > 22.1.3 - now supports Kraft. Note that the upgrade is breaking and that you have to start a new kafka from scratch to use it.
-
-Example:
+## Add repo
 
 ```
-kafka:
-  zookeeper:
-    enabled: false
+helm repo add sentry https://sentry-kubernetes.github.io/charts
 ```
 
+## Without overrides
 
-## Upgrading from 18.x.x version of this Chart to 19.x.x
-
-Chart dependencies has been upgraded because of sentry requirements. 
-Changes:
-- The minimum required version of Postgresql is 14.5 (works with 15.x too)
-
-Bumped dependencies:
-- postgresql > 12.5.1 - latest wersion of chart with postgres 15
-
-
-## Upgrading from 17.x.x version of this Chart to 18.x.x
-
-If Kafka is complaining about unknown or missing topic, please connect to kafka-0 and run 
-
-`/opt/bitnami/kafka/bin/kafka-topics.sh --create --topic ingest-replay-recordings --bootstrap-server localhost:9092`
-
-
-## Upgrading from 16.x.x version of this Chart to 17.x.x
-
-Sentry version from 22.10.0 onwards should be using chart 17.x.x
-
-- post process forwarder events and transactions topics are splitted in Sentry 22.10.0
-
-You can delete the deployment "sentry-post-process-forward" as it's no longer needed.
-
-`sentry-worker` may failed to start by [#774](https://github.com/sentry-kubernetes/charts/issues/774).
-If you encountered this issue, please reset `counters-0`, `triggers-0` queues.
-
-
-## Upgrading from 15.x.x version of this Chart to 16.x.x
-
-system.secret-key is removed
-
-See https://github.com/sentry-kubernetes/charts/tree/develop/sentry#sentry-secret-key
-
-
-## Upgrading from 14.x.x version of this Chart to 15.x.x
-
-Chart dependencies has been upgraded because of bitnami charts removal. 
-Changes:
-- `nginx.service.port: 80` > `nginx.service.ports.http: 80`
-- `kafka.service.port` > `kafka.service.ports.client`
-
-Bumped dependencies:
-- redis > 16.12.1 - latest version of chart
-- kafka > 16.3.2 - chart aligned with zookeeper dependency, upgraded kafka to 3.11
-- rabbit > 8.32.2 - latest 3.9.* image version of chart
-- postgresql > 10.16.2 - latest wersion of chart with postgres 11
-- nginx > 12.0.4 - latest version of chart
-
-## Upgrading from 13.x.x version of this Chart to 14.0.0
-
-ClickHouse was reconfigured with sharding and replication in-mind, If you are using external ClickHouse, you don't need to do anything.
-
-**WARNING**: You will lose current event data<br>
-Otherwise, you should delete the old ClickHouse volumes in-order to upgrade to this version.
-
-
-## Upgrading from 12.x.x version of this Chart to 13.0.0
-
-The service annotions have been moved from the `service` section to the respective service's service sub-section. So what was:
-
-```yaml
-service:
-  annotations:
-    alb.ingress.kubernetes.io/healthcheck-path: /_health/
-    alb.ingress.kubernetes.io/healthcheck-port: traffic-port
+```
+helm install sentry sentry/sentry
 ```
 
-will now be set per service:
+## With your own values file
 
-```yaml
-sentry:
-  web:
-    service:
-      annotations:
-        alb.ingress.kubernetes.io/healthcheck-path: /_health/
-        alb.ingress.kubernetes.io/healthcheck-port: traffic-port
-
-relay:
-  service:
-    annotations:
-      alb.ingress.kubernetes.io/healthcheck-path: /api/relay/healthcheck/ready/
-      alb.ingress.kubernetes.io/healthcheck-port: traffic-port
+```
+helm install sentry sentry/sentry -f values.yaml
 ```
 
+# Upgrade
 
-## Upgrading from 10.x.x version of this Chart to 11.0.0
+Read the upgrade guide before upgrading to major versions of the chart.
+[Upgrade Guide](docs/UPGRADE.md)
 
-If you were using clickhouse tabix externally, we disabled it per default.
+## Configuration
 
-## Upgrading from 9.x.x version of this Chart to 10.0.0
+The following table lists the configurable parameters of the Sentry chart and their default values.
 
-If you were using clickhouse ImagePullSecrets, [we unified](https://github.com/sentry-kubernetes/charts/commit/573ca29d03bf2c044004c1aa387f652a36ada23a) the way it's used.
+Note: this table is incomplete, so have a look at the values.yaml in case you miss something
 
-## Upgrading from 8.x.x version of this Chart to 9.0.0
-
-to simplify 1st time installations, backup value on clickhouse has been changed to false.
-
-clickhouse.clickhouse.configmap.remote_servers.replica.backup
-
-## Upgrading from 7.x.x version of this Chart to 8.0.0
-
-- the default value of features.orgSubdomains is now "false"
-
-## Upgrading from 6.x.x version of this Chart to 7.0.0
-
-- the default mode of relay is now "proxy". You can change it through the values.yaml file
-- we removed the `githubSso` variable for the oauth github configuration. It was using the old environment variable, that doesn't work with Sentry anymore. Just use the common github.xxxx configuration for both oauth & the application integration.
-
-## Upgrading from 5.x.x version of this Chart to 6.0.0
-
-- The sentry.configYml value is now in a real yaml format
-- If you were previously using `relay.asHook`, the value is now `asHook`
-
-## Upgrading from 4.x.x version of this Chart to 5.0.0
-
-As Relay is now part of this chart your need to make sure you enable either Nginx or the Ingress. Please read the next paragraph for more informations.
-
-If you are using an ingress gateway (like istio), you have to change your inbound path from sentry-web to nginx.
+| Parameter                                     | Description                                                                                                                                                         | Default                        |
+| :-------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------ | :----------------------------- |
+| `user.create`                                 | if `true`, creates a default admin user defined from `email` and `password`                                                                                         | `true`                         |
+| `user.email`                                  | Admin user email                                                                                                                                                    | `admin@sentry.local`           |
+| `user.password`                               | Admin user password                                                                                                                                                 | `aaaa`                         |
+| `ingress.enabled`                             | Enabling Ingress                                                                                                                                                    | `false`                        |
+| `ingress.regexPathStyle`                      | Allows setting the style the regex paths are rendered in the ingress for the ingress controller in use. Possible values are `nginx`, `aws-alb`, `gke` and `traefik` | `nginx`                        |
+| `nginx.enabled`                               | Enabling NGINX                                                                                                                                                      | `true`                         |
+| `metrics.enabled`                             | if `true`, enable Prometheus metrics                                                                                                                                | `false`                        |
+| `metrics.image.repository`                    | Metrics exporter image repository                                                                                                                                   | `prom/statsd-exporter`         |
+| `metrics.image.tag`                           | Metrics exporter image tag                                                                                                                                          | `v0.10.5`                      |
+| `metrics.image.PullPolicy`                    | Metrics exporter image pull policy                                                                                                                                  | `IfNotPresent`                 |
+| `metrics.nodeSelector`                        | Node labels for metrics pod assignment                                                                                                                              | `{}`                           |
+| `metrics.tolerations`                         | Toleration labels for metrics pod assignment                                                                                                                        | `[]`                           |
+| `metrics.affinity`                            | Affinity settings for metrics                                                                                                                                       | `{}`                           |
+| `metrics.resources`                           | Metrics resource requests/limit                                                                                                                                     | `{}`                           |
+| `metrics.service.annotations`                 | annotations for Prometheus metrics service                                                                                                                          | `{}`                           |
+| `metrics.service.clusterIP`                   | cluster IP address to assign to service (set to `"-"` to pass an empty value)                                                                                       | `nil`                          |
+| `metrics.service.omitClusterIP`               | (Deprecated) To omit the `clusterIP` from the metrics service                                                                                                       | `false`                        |
+| `metrics.service.externalIPs`                 | Prometheus metrics service external IP addresses                                                                                                                    | `[]`                           |
+| `metrics.service.additionalLabels`            | labels for metrics service                                                                                                                                          | `{}`                           |
+| `metrics.service.loadBalancerIP`              | IP address to assign to load balancer (if supported)                                                                                                                | `""`                           |
+| `metrics.service.loadBalancerSourceRanges`    | list of IP CIDRs allowed access to load balancer (if supported)                                                                                                     | `[]`                           |
+| `metrics.service.servicePort`                 | Prometheus metrics service port                                                                                                                                     | `9913`                         |
+| `metrics.service.type`                        | type of Prometheus metrics service to create                                                                                                                        | `ClusterIP`                    |
+| `metrics.serviceMonitor.enabled`              | Set this to `true` to create ServiceMonitor for Prometheus operator                                                                                                 | `false`                        |
+| `metrics.serviceMonitor.additionalLabels`     | Additional labels that can be used so ServiceMonitor will be discovered by Prometheus                                                                               | `{}`                           |
+| `metrics.serviceMonitor.honorLabels`          | honorLabels chooses the metric's labels on collisions with target labels.                                                                                           | `false`                        |
+| `metrics.serviceMonitor.namespace`            | namespace where servicemonitor resource should be created                                                                                                           | `the same namespace as sentry` |
+| `metrics.serviceMonitor.scrapeInterval`       | interval between Prometheus scraping                                                                                                                                | `30s`                          |
+| `serviceAccount.annotations`                  | Additional Service Account annotations.                                                                                                                             | `{}`                           |
+| `serviceAccount.enabled`                      | If `true`, a custom Service Account will be used.                                                                                                                   | `false`                        |
+| `serviceAccount.name`                         | The base name of the ServiceAccount to use. Will be appended with e.g. `snuba` or `web` for the pods accordingly.                                                   | `"sentry"`                     |
+| `serviceAccount.automountServiceAccountToken` | Automount API credentials for a Service Account.                                                                                                                    | `true`                         |
+| `sentry.existingSecret`                       | Existing kubernetes secret to be used for secret key for the session cookie ([documentation](https://develop.sentry.dev/config/#general))                                                                     | `nil`                          |
+| `sentry.features.vstsLimitedScopes`           | Disables the azdo-integrations with limited scopes that is the cause of so much pain                                                                                | `true`                         |
+| `sentry.web.customCA.secretName`              | Allows mounting a custom CA secret                                                                                                                                  | `nil`                          |
+| `sentry.web.customCA.item`                    | Key of CA cert object within the secret                                                                                                                             | `ca.crt`                       |
+| `symbolicator.api.enabled`                    | Enable Symbolicator                                                                                                                                                 | `false`                        |
+| `symbolicator.api.config`                     | Config file for Symbolicator, see [its docs](https://getsentry.github.io/symbolicator/#configuration)                                                               | see values.yaml                |
 
 ## NGINX and/or Ingress
 
 By default, NGINX is enabled to allow sending the incoming requests to [Sentry Relay](https://getsentry.github.io/relay/) or the Django backend depending on the path. When Sentry is meant to be exposed outside of the Kubernetes cluster, it is recommended to disable NGINX and let the Ingress do the same. It's recommended to go with the go to Ingress Controller, [NGINX Ingress](https://kubernetes.github.io/ingress-nginx/) but others should work as well.
 
-Note: if you are using NGINX Ingress, please set this annotation on your ingress : nginx.ingress.kubernetes.io/use-regex: "true".
-If you are using `additionalHostNames` the `nginx.ingress.kubernetes.io/upstream-vhost` annotation might also come in handy.
-It sets the `Host` header to the value you provide to avoid CSRF issues.
+## Sentry secret key
 
-### Letsencrypt on NGINX Ingress Controller
+If no `sentry.existingSecret` value is specified, for your security, the [`system.secret-key`](https://develop.sentry.dev/config/#general) is generated for you on the first installation and stored in a kubernetes secret.
+
+If `sentry.existingSecret` / `sentry.existingSecretKey` values are provided, those secrets will be used.
+
+
+## Symbolicator and or JavaScript source maps
+
+For getting native stacktraces and minidumps symbolicated with debug symbols (e.g. iOS/Android), you need to enable Symbolicator via
+
+```yaml
+symbolicator:
+  enabled: true
 ```
-nginx:
-  ingress:
-    annotations:
-      cert-manager.io/cluster-issuer: "letsencrypt-prod"
-    enabled: true
-    hostname: fqdn
-    ingressClassName: "nginx"
-    tls: true
+
+However, you also need to share the data between sentry-worker and sentry-web. This can be done in different ways:
+
+- Using Cloud Storage like GCP GCS or AWS S3, see `filestore.backend` in `values.yaml`
+- Using a filesystem like
+
+```yaml
+filestore:
+  filesystem:
+    persistence:
+      persistentWorkers: true
+      # storageClass: 'efs-storage' # see note below
 ```
 
-## Clickhouse warning
+Note: If you need to run or cannot avoid running sentry-worker and sentry-web on different cluster nodes, you need to set `filestore.filesystem.persistence.accessMode: ReadWriteMany` or might get problems. HOWEVER, [not all volume drivers support it](https://kubernetes.io/docs/concepts/storage/persistent-volumes/#access-modes), like AWS EBS or GCP disks.
+So you would want to create and use a `StorageClass` with a supported volume driver like [AWS EFS](https://github.com/kubernetes-sigs/aws-efs-csi-driver)
 
-Snuba only supports a UTC timezone for Clickhouse. Please keep the initial value!
+Its also important having `connect_to_reserved_ips: true` in the symbolicator config file, which this Chart defaults to.
 
-## Upgrading from 3.1.0 version of this Chart to 4.0.0
+#### Source Maps
 
-Following Helm Chart best practices the new version introduces some breaking changes, all configuration for external
-resources moved to separate config branches: `externalClickhouse`, `externalKafka`, `externalRedis`, `externalPostgresql`.
+To get javascript source map processing working, you need to activate sourcemaps, which in turn activates the memcached dependency:
 
-Here is a mapping table of old values and new values:
+```yaml
+sourcemaps:
+  enabled: true
+```
 
-| Before                          | After                         |
-| ------------------------------- | ----------------------------- |
-| `postgresql.postgresqlHost`     | `externalPostgresql.host`     |
-| `postgresql.postgresqlPort`     | `externalPostgresql.port`     |
-| `postgresql.postgresqlUsername` | `externalPostgresql.username` |
-| `postgresql.postgresqlPassword` | `externalPostgresql.password` |
-| `postgresql.postgresqlDatabase` | `externalPostgresql.database` |
-| `postgresql.postgresSslMode`    | `externalPostgresql.sslMode`  |
-| `redis.host`                    | `externalRedis.host`          |
-| `redis.port`                    | `externalRedis.port`          |
-| `redis.password`                | `externalRedis.password`      |
+For details on the background see this blog post: https://engblog.yext.com/post/sentry-js-source-maps
 
-## Upgrading from deprecated 9.0 -> 10.0 Chart
 
-As this chart runs in helm 3 and also tries its best to follow on from the original Sentry chart. There are some steps that needs to be taken in order to correctly upgrade.
+## Geolocation
 
-From the previous upgrade, make sure to get the following from your previous installation:
+[Geolocation of IP addresses](https://develop.sentry.dev/self-hosted/geolocation/) is supported if you provide a GeoIP database:
 
-- Redis Password (If Redis auth was enabled)
-- PostgreSQL Password
-  Both should be in the `secrets` of your original 9.0 release. Make a note of both of these values.
+Example values.yaml:
 
-#### Upgrade Steps
+```yaml
 
-Due to an issue where transferring from Helm 2 to 3. Statefulsets that use the following: `heritage: {{ .Release.Service }}` in the metadata field will error out with a `Forbidden` error during the upgrade. The only workaround is to delete the existing statefulsets (Don't worry, PVC will be retained):
+relay:
+  # provide a volume for relay that contains the geoip database
+  volumes:
+    - name: geoip
+      hostPath:
+        path: /geodata
+        type: Directory
 
-> `kubectl delete --all sts -n <Sentry Namespace>`
 
-Once the statefulsets are deleted. Next steps is to convert the helm release from version 2 to 3 using the helm 3 plugin:
+sentry:
+  web:
+    # provide a volume for sentry-web that contains the geoip database
+    volumes:
+      - name: geoip
+        hostPath:
+          path: /geodata
+          type: Directory
 
-> `helm3 2to3 convert <Sentry Release Name>`
+  worker:
+    # provide a volume for sentry-worker that contains the geoip database
+    volumes:
+      - name: geoip
+        hostPath:
+          path: /geodata
+          type: Directory
 
-Finally, it's just a case of upgrading and ensuring the correct params are used:
 
-If Redis auth enabled:
+# enable and reference the volume
+geodata:
+  volumeName: geoip
+  # mountPath of the volume containing the database
+  mountPath: /geodata
+  # path to the geoip database inside the volumemount
+  path: /geodata/GeoLite2-City.mmdb
+```
 
-> `helm upgrade -n <Sentry namespace> <Sentry Release> . --set redis.usePassword=true --set redis.password=<Redis Password> --set postgresql.postgresqlPassword=<Postgresql Password>`
+## External Kafka configuration
 
-If Redis auth is disabled:
+You can either provide a single host, which is there by default in `values.yaml`, like this:
 
-> `helm upgrade -n <Sentry namespace> <Sentry Release> . --set postgresql.postgresqlPassword=<Postgresql Password>`
+```yaml
+externalKafka:
+  ## Hostname or ip address of external kafka
+  ##
+  host: "kafka-confluent"
+  port: 9092
+```
 
-Please also follow the steps for Major version 3 to 4 migration
+or you can feed in a cluster of Kafka instances like below:
 
-## PostgreSQL
+```yaml
+externalKafka:
+  ## List of Hostnames or ip addresses of external kafka
+  - host: "233.5.100.28"
+    port: 9092
+  - host: "233.5.100.29"
+    port: 9092
+  - host: "233.5.100.30"
+    port: 9092
+```
 
-By default, PostgreSQL is installed as part of the chart. To use an external PostgreSQL server set `postgresql.enabled` to `false` and then set `postgresql.postgresHost` and `postgresql.postgresqlPassword`. The other options (`postgresql.postgresqlDatabase`, `postgresql.postgresqlUsername` and `postgresql.postgresqlPort`) may also want changing from their default values.
 
-To avoid issues when upgrade this chart, provide `postgresql.postgresqlPassword` for subsequent upgrades. This is due to an issue in the PostgreSQL chart where password will be overwritten with randomly generated passwords otherwise. See https://github.com/helm/charts/tree/master/stable/postgresql#upgrade for more detail.
 
-## Persistence
+# Usage
 
-This chart is capable of mounting the sentry-data PV in the Sentry worker and cron pods. This feature is disabled by default, but is needed for some advanced features such as private sourcemaps.
-
-You may enable mounting of the sentry-data PV across worker and cron pods by changing filestore.filesystem.persistence.persistentWorkers to true. If you plan on deploying Sentry containers across multiple nodes, you may need to change your PVC's access mode to ReadWriteMany and check that your PV supports mounting across multiple nodes.
-
-## Roadmap
-
-- [x] Lint in Pull requests
-- [x] Public availability through Github Pages
-- [x] Automatic deployment through Github Actions
-- [ ] Symbolicator deployment
-- [x] Testing the chart in a production environment
-- [ ] Improving the README
+- [AWS + Terraform](docs/usage-aws-terraform.md)
+- [DigitalOcean](docs/usage-digitalocean.md)
