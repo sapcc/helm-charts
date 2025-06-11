@@ -1,4 +1,4 @@
-CLUSTER_API_VERSION ?= v1.10.1
+CLUSTER_API_VERSION ?= v1.10.2
 PROVIDER_METAL3_VERSION ?= v1.10.0
 PROVIDER_METAL_VERSION ?= 00d028c4aac7fa1e168c5ec9fab74e197530e37c
 PROVIDER_VSPHERE_VERSION ?= v1.9.3
@@ -31,7 +31,7 @@ build-cluster-api-core:
 	@find cluster-api-core/templates -type f -exec $(SED) -i -e 's#-system.#.#g' {} \;
 	@yq -i '.controllerManager.manager.image.tag="$(CLUSTER_API_VERSION)"' cluster-api-core/values.yaml
 	@yq -i '.fullnameOverride="capi"' cluster-api-core/values.yaml
-	@yq -i '.version="0.2.1"' cluster-api-core/Chart.yaml
+	@yq -i '.version="0.2.2"' cluster-api-core/Chart.yaml
 
 build-controlplane-kubeadm:
 	$(call build-chart,controlplane-kubeadm,https://github.com/kubernetes-sigs/cluster-api//controlplane/kubeadm/config/default,$(CLUSTER_API_VERSION))
@@ -46,7 +46,7 @@ build-controlplane-kubeadm:
 	@$(SED) -i 's/10240/30720/g' controlplane-kubeadm/crds/*
 	@yq -i '.controllerManager.manager.image.tag="$(CLUSTER_API_VERSION)"' controlplane-kubeadm/values.yaml
 	@yq -i '.fullnameOverride="capi-kubeadm-controlplane"' controlplane-kubeadm/values.yaml
-	@yq -i '.version="0.2.2"' controlplane-kubeadm/Chart.yaml
+	@yq -i '.version="0.2.3"' controlplane-kubeadm/Chart.yaml
 
 # fix for "spec.ignition.containerLinuxConfig.additionalConfig: Too long: may not be longer than 10240"
 build-bootstrap-kubeadm:
@@ -58,7 +58,7 @@ build-bootstrap-kubeadm:
 	@$(SED) -i 's/10240/30720/g' bootstrap-kubeadm/crds/*
 	@yq -i '.controllerManager.manager.image.tag="$(CLUSTER_API_VERSION)"' bootstrap-kubeadm/values.yaml
 	@yq -i '.fullnameOverride="capi-kubeadm-bootstrap"' bootstrap-kubeadm/values.yaml
-	@yq -i '.version="0.2.3"' bootstrap-kubeadm/Chart.yaml
+	@yq -i '.version="0.2.4"' bootstrap-kubeadm/Chart.yaml
 
 build-provider-vsphere:
 	$(call build-chart,provider-vsphere,https://github.com/kubernetes-sigs/cluster-api-provider-vsphere//config/default,$(PROVIDER_VSPHERE_VERSION))
