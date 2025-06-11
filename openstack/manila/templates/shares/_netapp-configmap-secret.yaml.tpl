@@ -34,8 +34,8 @@ metadata:
     system: openstack
     type: configuration
     component: manila
-data:
-  username: {{ $share.username2 | include "resolve_secret" }}
-  password: {{ $share.password2 | include "resolve_secret" }}
+stringData:
+  username: {{ $share.username2 }}
+  password: {{ $share.password2 }}
 {{- end -}}
 {{- end -}}
