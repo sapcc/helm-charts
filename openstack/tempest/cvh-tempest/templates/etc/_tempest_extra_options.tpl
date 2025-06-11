@@ -62,8 +62,8 @@ subnet_id = a5703f23-ffcb-4ca7-9dfe-ab9861d91bf5
 ipv6 = False
 
 [compute]
-image_ref = 931141b8-f170-4bb7-a547-bbcc0aa3c2cd
-image_ref_alt = eaccb4eb-78f9-4470-ad64-0c2c8b614164
+image_ref = ed8dd007-de9c-4456-91d5-6965c6c12b61
+image_ref_alt = ed8dd007-de9c-4456-91d5-6965c6c12b61
 endpoint_type = public
 v3_endpoint_type = public
 region = {{ .Values.global.region }}
@@ -93,8 +93,8 @@ snapshot = False
 shelve = False
 
 [validation]
-image_ssh_user = ccloud
-image_alt_ssh_user = ubuntu
+image_ssh_user = cirros
+image_alt_ssh_user = ccloud
 
 [volume]
 catalog_type = volumev3
