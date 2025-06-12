@@ -3,8 +3,8 @@ apiVersion: controlplane.cluster.x-k8s.io/v1beta1
 metadata:
   name: kcp-rt-{{ .Values.global.region }}
 spec:
-  replicas: {{ default 3 .Values.controlPlane.replicas }}
-  version: {{ .Values.controlPlane.version }}
+  replicas: {{ default 3 .Values.controlplane.replicas }}
+  version: {{ .Values.controlplane.version }}
   rolloutStrategy:
     rollingUpdate:
       maxSurge: 0
@@ -25,11 +25,11 @@ spec:
           cloud-provider: external
         taints: []
       localAPIEndpoint:
-        bindPort: {{ .Values.controlPlane.port }}
+        bindPort: {{ .Values.controlplane.port }}
     joinConfiguration:
       controlPlane:
         localAPIEndpoint:
-          bindPort: {{ .Values.controlPlane.port }}
+          bindPort: {{ .Values.controlplane.port }}
       nodeRegistration:
         name: $${METAL_HOSTNAME}
         kubeletExtraArgs:
@@ -39,7 +39,7 @@ spec:
       apiServer:
         extraArgs:
           cloud-provider: external
-          secure-port: {{ .Values.controlPlane.port | quote }}
+          secure-port: {{ .Values.controlplane.port | quote }}
           authentication-config: /etc/kubernetes/authentication.yaml
         extraVolumes:
           - name: "authentication-config"
@@ -57,8 +57,8 @@ spec:
         imageTag: {{ .Values.images.dns.tag }}
       networking:
         dnsDomain: cluster.local
-        podSubnet: {{ .Values.controlPlane.podSubnet }}
-        serviceSubnet: {{ .Values.controlPlane.serviceSubnet }}
+        podSubnet: {{ .Values.controlplane.podSubnet }}
+        serviceSubnet: {{ .Values.controlplane.serviceSubnet }}
       imageRepository: {{ .Values.images.repository }}
     files:
     - content: |
@@ -76,7 +76,7 @@ spec:
             - name: vip_arp
               value: "true"
             - name: port
-              value: {{ .Values.controlPlane.port | quote }}
+              value: {{ .Values.controlplane.port | quote }}
             - name: vip_interface
               value: ""
             - name: vip_cidr
@@ -104,7 +104,7 @@ spec:
             - name: vip_retryperiod
               value: "2"
             - name: address
-              value: {{ .Values.controlPlane.address }}
+              value: {{ .Values.controlplane.address }}
             - name: prometheus_server
               value: :2112
             image: {{ .Values.images.kubeVip.repository }}:{{ .Values.images.kubeVip.tag }}
@@ -220,7 +220,7 @@ spec:
     ignition:
       containerLinuxConfig:
         additionalConfig: |-
-{{ tpl .Values.controlPlane.additionalConfig . | indent 10 }}
+{{ tpl .Values.controlplane.additionalConfig . | indent 10 }}
 
     users:
       - name: {{ $.Values.user.name }}
@@ -232,7 +232,7 @@ spec:
       - hostnamectl set-hostname $${METAL_HOSTNAME}
       - /opt/etcd_disk.sh
       # match kubelet with KCP version
-      - IMAGE={{ $.Values.images.kubelet.repository }}:{{ .Values.controlPlane.version }}
+      - IMAGE={{ $.Values.images.kubelet.repository }}:{{ .Values.controlplane.version }}
       - while true; do ctr image pull $IMAGE && break; done
       - ctr run --rm --mount type=bind,src=/usr/bin,dst=/mnt,options=rbind $IMAGE extract-files sh -c "cp --preserve=mode /usr/local/bin/kubeadm /mnt/kubeadm && cp --preserve=mode /usr/local/bin/kubelet /mnt/kubelet"
       # https://github.com/kube-vip/kube-vip/issues/684
@@ -240,7 +240,7 @@ spec:
         sed -i 's#path: /etc/kubernetes/admin.conf#path: /etc/kubernetes/super-admin.conf#' /etc/kubernetes/manifests/kube-vip.yaml;
       # avoid running kubeadm on L1 interface - wait for bond
       # https://www.freedesktop.org/software/systemd/man/latest/systemd-networkd-wait-online.service.html
-      - /usr/lib/systemd/systemd-networkd-wait-online -i {{ .Values.controlPlane.uplinkInterface }} --ipv4 --timeout 0
+      - /usr/lib/systemd/systemd-networkd-wait-online -i {{ .Values.controlplane.uplinkInterface }} --ipv4 --timeout 0
     postKubeadmCommands:
      # https://github.com/kube-vip/kube-vip/issues/684
       - |
