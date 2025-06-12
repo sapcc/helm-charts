@@ -2,6 +2,15 @@
 
 This file is used to list changes made in each version of the common chart rabbitmq.
 
+## 0.18.1 - 2025/06/12
+
+- RabbitMQ [4.1.1 Release Notes](https://github.com/rabbitmq/rabbitmq-server/releases/tag/v4.1.1)
+  - only `4.1.x` releases are [supported](https://www.rabbitmq.com/release-information#currently-supported)
+  - [4.1.1 Release Notes](https://github.com/rabbitmq/rabbitmq-server/blob/v4.1.x/release-notes/4.1.1.md)
+  - faster startup with empty classic queues
+  - classic queue compaction performance improvements
+- Chart version bumped
+
 ## 0.18.0 - 2025/04/22
 
 - RabbitMQ [4.1.0 Release Notes](https://github.com/rabbitmq/rabbitmq-server/releases/tag/v4.1.0)
@@ -10,7 +19,6 @@ This file is used to list changes made in each version of the common chart rabbi
   * rabbitmqadmin has been updated to [2.0](https://github.com/rabbitmq/rabbitmqadmin-ng/releases/tag/v2.0.0), but is not yet included in the image
   * RabbitMQ nodes now provide a Prometheus histogram for message sizes published by applications
 - Chart version bumped
-
 
 ## 0.17.2 - 2025/04/10
 
