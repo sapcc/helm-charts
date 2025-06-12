@@ -2,13 +2,13 @@ kind: Deployment
 apiVersion: apps/v1
 
 metadata:
-  name: landing-page
-  namespace: juno
+  name: cc-landing-page
+  namespace: elektra
 
 spec:
   selector:
     matchLabels:
-      app: landing-page
+      app: cc-landing-page
   revisionHistoryLimit: 3
   replicas: 2
   strategy:
@@ -19,7 +19,7 @@ spec:
   template:
     metadata:
       labels:
-        app: landing-page
+        app: cc-landing-page
       annotations:
         checksum/index-html-configmap: {{ include (print $.Template.BasePath "/index-html-configmap.yaml") . | sha256sum }}
         checksum/nginx-configmap: {{ include (print $.Template.BasePath "/nginx-configmap.yaml") . | sha256sum }}
@@ -27,7 +27,7 @@ spec:
       # The preStop hook below sleeps 30 seconds, extend the gracePeriod accordingly
       terminationGracePeriodSeconds: 60
       containers:
-        - name: landing-page
+        - name: cc-landing-page
           image: "{{ .Values.global.dockerHubMirror }}/library/nginx:alpine"
           imagePullPolicy: IfNotPresent
           ports:
