@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.5.0 - 2025/06/10
+
+* Update sql-exporter version to 0.6.0 (2025-06-10)
+
+* Add a new `connections` option to allow multiple database targets.
+
+This, with a defined explicit configuration, will be used instead of the `queryCell2` option.
+
+* Remove the unused `customSources` option, because it requires a full database connection URL being passed as a value and therefore can't be used.
+
 ## v0.4.4 - 2025/04/17
 * add reloader annotation to the deployment
 
