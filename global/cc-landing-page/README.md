@@ -1,8 +1,17 @@
-This helm chart is used to deploy the global landing page for https://juno.global.cloud.sap/, https://ccloud.global.cloud.sap/ and https://convergedcloud.global.cloud.sap/
+This helm chart is used to deploy the global landing page
 
 # DNS entries
 
-These dns entries are managed in `qa-de-1` for QA and `eu-nl-1` ccadmin master project
+DNS entries are managed in `qa-de-1` for QA and `eu-nl-1` ccadmin master project
+
+- https://juno.qa-de-1.cloud.sap
+- https://juno.eu-nl-1.cloud.sap
+
+`global.cloud.sap` is defined `eu-nl-1` ccadmin master project
+
+- https://juno.global.cloud.sap
+- https://ccloud.global.cloud.sap
+- https://convergedcloud.global.cloud.sap
 
 # QA
 
