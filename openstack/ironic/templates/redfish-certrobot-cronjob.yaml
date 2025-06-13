@@ -26,6 +26,8 @@ apiVersion: batch/v1
 kind: CronJob
 metadata:
   name: {{ .Release.Name }}-redfish-certrobot-0
+  annotations:
+    reloader.stakater.com/auto: "true"
 spec:
   schedule: {{ .Values.cert_robot.schedule | quote }}
   timeZone:  {{ .Values.cert_robot.timezone | quote }}
@@ -43,6 +45,26 @@ spec:
             - -m
             - redfish_certrobot
             env:
+            - name: BMC_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-redfish-certrobot
+                  key: ipmi_user_name
+            - name: BMC_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-redfish-certrobot
+                  key: ipmi_user_passwd
+            - name: VAULT_REGION
+              value: "{{ .Values.vault.region }}"
+            - name: VAULT_ADDR
+              value: "{{ .Values.vault.addr }}"
+            - name: VAULT_PROJECT
+              value: "{{ .Values.vault.project }}"
+            - name: NETBOX_URL
+              value: "{{ .Values.netbox.url }}"
+            - name: VAULT_ENV
+              value: "{{ .Values.vault.env }}"
             - name: OS_CLIENT_SECURE_FILE # gophercloud doesn't interprete that variable, but openstacksdk does
               value: "/etc/openstack/sdk.yaml"
             {{- include "values_to_env" .Values.cert_robot.env | indent 12 }}
