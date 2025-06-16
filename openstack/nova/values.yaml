@@ -155,6 +155,7 @@ imageVersionNovaNovncproxy: null
 imageVersionNovaShellinaboxproxy: null
 imageVersionNovaSpicehtml5proxy: null
 imageVersionNovaScheduler: null
+imageVersionNovaNanny: null
 imageVersionBitnamiOpenResty: 1.21.4-1-debian-11-r57
 
 imageVersionVspc: null
@@ -1006,3 +1007,29 @@ vpa:
 
 # used to set the PYTHONWARNINGS environment variable everywhere
 python_warnings: "ignore:Unverified HTTPS request,ignore::SyntaxWarning"
+
+# maintenance cronjobs
+nanny:
+  # Archive db rows soft-deleted before more than older_than days to shadow
+  # tables. Use batch size max_rows to limit transaction size.
+  db_archive_deleted_rows:
+    enabled: true
+    # cron schedule (minute | hour | day of month | month | day of week)
+    schedule: "0 * * * *"
+    older_than: 21
+    max_rows: 250
+  # Delete db rows soft-deleted before more than older_than days from shadow
+  # tables.
+  db_purge:
+    enabled: true
+    # cron schedule (minute | hour | day of month | month | day of week)
+    schedule: "15 * * * *"
+    older_than: 42
+  # For each instance, soft-delete the instance_faults db rows that exceed the
+  # count of max_faults. Use batch size max_rows to limit query size.
+  db_soft_delete_excessive_instance_faults:
+    enabled: true
+    # cron schedule (minute | hour | day of month | month | day of week)
+    schedule: "30 * * * *"
+    max_faults: 10
+    max_rows: 25

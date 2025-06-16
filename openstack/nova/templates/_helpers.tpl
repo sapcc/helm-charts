@@ -54,15 +54,33 @@ mysql://{{ .Values.cell2dbUser | include "mysql_metrics.resolve_secret_for_yaml"
 {{- end -}}
 
 
+{{- define "job_bin_path" }}
+  {{- $name := index . 1 }}
+  {{- $subdir := "" }}
+  {{- if eq (len .) 3 }}
+    {{- $subdir = index . 2 | default "" }}
+    {{- if $subdir }}
+      {{- $subdir = printf "%s/" $subdir }}
+    {{- end }}
+  {{- end }}
+  {{- with index . 0 }}
+    {{- printf "%s/bin/%s_%s.tpl" .Template.BasePath $subdir $name }}
+  {{- end }}
+{{- end }}
+
 {{- define "job_metadata" }}
   {{- $name := index . 1 }}
+  {{- $bin_subdir := "" }}
+  {{- if eq (len .) 3 }}
+    {{- $bin_subdir = index . 2 }}
+  {{- end }}
   {{- with index . 0 }}
 labels:
   alert-tier: os
   alert-service: nova
 {{ tuple . .Release.Name $name | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 2 }}
 annotations:
-  bin-hash: {{ include (print .Template.BasePath "/bin/_" $name ".tpl") . | sha256sum }}
+  bin-hash: {{ include (include "job_bin_path" (tuple . $name $bin_subdir)) . | sha256sum }}
   {{- include "utils.linkerd.pod_and_service_annotation" . | indent 2 }}
   {{- end }}
 {{- end }}
