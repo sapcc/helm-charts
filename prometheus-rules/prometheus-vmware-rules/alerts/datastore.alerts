@@ -104,9 +104,9 @@ groups:
       summary: "NVMe swap datastore {{ $labels.datastore }} is utilized without associated VMs. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
 
   - alert: NVMeSwapDatastoreMissing
-    expr: >
+    expr: |
       vrops_hostsystem_hardware_model{vccluster=~"^productionbb\\d+$", hardware_model!~"^Cisco Systems Inc.+"}
-      and on (hostsystem) vrops_hostsystem_runtime_maintenancestate{state!="inMaintenance"} 
+      and on (hostsystem) vrops_hostsystem_runtime_maintenancestate{state!="inMaintenance"}
       unless on (hostsystem) (label_replace(label_join(vrops_datastore_summary_datastore_accessible{type="NVMe"}, "hostsystem", "", "datastore", "vcenter"), "hostsystem", "$1$2", "hostsystem", "(.+)-swapvc-[a-z]-\\d+(.+)")
       or vrops_hostsystem_summary_custom_tag_nvme{summary_custom_tag_nvme="false"})
     for: 5m
