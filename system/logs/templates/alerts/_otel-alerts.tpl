@@ -28,7 +28,7 @@ groups:
       description: 'lotel-logs on {{`{{ $labels.k8s_node_name }}`}} in {{`{{ $labels.region }}`}} is sending 4 times more logs in the last 6h. Please check.'
       summary:  OTel log volume is increasing, check log volume.
   - alert: LogsTestAlertManagerGreenhouse
-    expr: otelcol_exporter_sent_log_records_total !=0 
+    expr: otelcol_exporter_send_failed_log_records_total{k8s_cluster_name="qa-de-1",k8s_node_name=~"storage-1.*"}
     for: 5m
     labels:
       context: logshipping
@@ -41,7 +41,7 @@ groups:
       description: 'This is just a test alert for AlertManager Greenhouse.'
       summary:  This is just a test alert for AlertManager Greenhouse.
   - alert: LogsTestAlertManagerSCI
-    expr: otelcol_exporter_sent_log_records_total !=0 
+    expr: otelcol_exporter_send_failed_log_records_total{k8s_cluster_name="qa-de-1",k8s_node_name=~"storage-1.*"}
     for: 5m
     labels:
       context: logshipping
