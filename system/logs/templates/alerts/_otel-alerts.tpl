@@ -29,7 +29,7 @@ groups:
       summary:  OTel log volume is increasing, check log volume.
   - alert: LogsTestAlertManagerGreenhouse
     expr: otelcol_exporter_sent_log_records_total !=0 
-    for: 6h
+    for: 5m
     labels:
       context: logshipping
       service: otel
@@ -42,7 +42,7 @@ groups:
       summary:  This is just a test alert for AlertManager Greenhouse.
   - alert: LogsTestAlertManagerSCI
     expr: otelcol_exporter_sent_log_records_total !=0 
-    for: 6h
+    for: 5m
     labels:
       context: logshipping
       service: otel
