@@ -222,6 +222,14 @@ build-argora-operator-remote:
 	@$(SED) -i 's/serviceAccountName.*$$/serviceAccountName: default/g' argora-operator-remote/templates/deployment.yaml
 	@$(SED) -i 's/kind: Role/kind: ClusterRole/g' argora-operator-remote/managedresources/kustomize.yaml
 
+build-khalkeon-remote:
+	@helm template khalkeon khalkeon-remote/charts/khalkeon* \
+		-f khalkeon-remote/values.yaml \
+		-f khalkeon-remote/values-managed-resources.yaml |\
+		$(SED) 's/kind: Role/kind: ClusterRole/g' - |\
+		yq eval 'select(.kind != "Service")' - >\
+		khalkeon-remote/managedresources/crds-and-rbac.yaml
+
 # chart name, source url, tag
 define build-chart
 @echo "Generating Helm chart for $(1) version $(3)"
