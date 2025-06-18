@@ -15,7 +15,6 @@ metadata:
   namespace: {{ .Release.Namespace }}
 spec:
   clusterOptionOverrides:
-  {{- $root := .Values }}
   {{- range $serviceName, $serviceSpecs := .Values.kubeMonitoring.services}}
   {{- range $cluster, $additionalSettings := $serviceSpecs.clusters }}
   - clusterName: {{ $cluster }}
@@ -52,22 +51,6 @@ spec:
       value: thanos-{{ $cluster }}-metrics-objectstore
     - name: kubeMonitoring.prometheus.prometheusSpec.thanos.objectStorageConfig.existingSecret.key
       value: thanos.yaml
-  {{- end }}
-  {{- $found := false -}}
-  {{- range $root.thanos.globalClusters }}
-  {{- if eq .name $cluster -}}
-  {{- $found = true -}}  
-  {{- end -}}
-  {{- end -}}
-  {{- if $found }}
-    - name: blackboxExporter.enabled
-      value: true
-    - name: blackboxExporter.extraVolumes
-      value: 
-        - name: blackbox-exporter-tls
-          secret:
-            defaultMode: 420
-            secretName: thanos-global-{{ $cluster }}-tls
   {{- end }}
   {{- if index $serviceSpecs "extraSpecs" }}
   {{- index $serviceSpecs "extraSpecs" | toYaml | nindent 4}}
