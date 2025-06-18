@@ -1,3 +1,4 @@
+{{ if not .Values.regionsOverride -}}
 apiVersion: core.gardener.cloud/v1beta1
 kind: Shoot
 metadata:
@@ -15,3 +16,24 @@ spec:
     kubeAPIServer:
       enableAnonymousAuthentication: true # cluster registry version check
       oidcConfig: {{- toYaml .Values.oidcConfig | nindent 8 }}
+{{- end }}
+{{- range $region := .Values.regions }}
+---
+apiVersion: core.gardener.cloud/v1beta1
+kind: Shoot
+metadata:
+  name: metal-operator-{{ $region }}
+  namespace: garden-ccloud
+spec:
+  cloudProfileName: openstack
+  region: {{ $region }}
+  networking:
+    services: 10.55.0.0/16
+  provider:
+    type: openstack
+  kubernetes:
+    version: 1.30.0
+    kubeAPIServer:
+      enableAnonymousAuthentication: true # cluster registry version check
+      oidcConfig: {{- toYaml .Values.oidcConfig | nindent 8 }}
+{{- end }}
