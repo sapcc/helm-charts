@@ -44,11 +44,15 @@ spec:
           imagePullPolicy: IfNotPresent
           {{ include "tmplKeepImagePulled" . }}
         - name: postgres-kubectl
-          image: "{{ .Values.global.registryAlternateRegion }}/shared-app-images/alpine-kubectl:3.21-latest"
+          image: "{{ .Values.global.registryAlternateRegion }}/shared-app-images/alpine-kubectl:latest-latest"
           imagePullPolicy: Always
           {{ include "tmplKeepImagePulled" . }}
         - name: valkey # NOTE: redis-metrics is a separate pod, so we don't need to care about it
           image: "{{.Values.global.registryAlternateRegion}}/shared-app-images/alpine-valkey:{{.Values.redis.image.tag}}"
+          imagePullPolicy: IfNotPresent
+          {{ include "tmplKeepImagePulled" . }}
+        - name: nginx
+          image: "{{ $.Values.global.registryAlternateRegion }}/shared-app-images/alpine-nginx:{{$.Values.keppel.anycast_nginx_tag}}"
           imagePullPolicy: IfNotPresent
           {{ include "tmplKeepImagePulled" . }}
       # sleep(1) doesn't seem to react to SIGTERM at all, so skip right ahead to SIGKILL

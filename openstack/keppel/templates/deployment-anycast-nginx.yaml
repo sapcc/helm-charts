@@ -1,0 +1,63 @@
+{{- if and .Values.keppel.anycast_domain_name .Values.keppel.anycast_ip }}
+kind: Deployment
+apiVersion: apps/v1
+
+metadata:
+  name: keppel-anycast-nginx
+  annotations:
+    secret.reloader.stakater.com/reload: tls-keppel-api-san
+
+spec:
+  revisionHistoryLimit: 5
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      name: keppel-anycast-nginx
+  template:
+    metadata:
+      labels:
+        name: keppel-anycast-nginx
+      annotations:
+        checksum/configmap: {{ include "keppel/templates/configmap-anycast.yaml" . | sha256sum }}
+        kubectl.kubernetes.io/default-container: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: {{ $.Values.global.registryAlternateRegion }}/shared-app-images/alpine-nginx:{{$.Values.keppel.anycast_nginx_tag}}
+        imagePullPolicy: IfNotPresent
+        env:
+          - name: NGINX_ENTRYPOINT_LOCAL_RESOLVERS
+            value: "true"
+          - name: KEPPEL_ANYCAST_DOMAIN_NAME
+            value: {{ .Values.keppel.anycast_domain_name }}
+          - name: NAMESPACE
+            value: {{ .Release.Namespace }}
+          - name: SET_REAL_IP_FROM
+            value: |
+              {{- range .Values.keppel.proxy_protocol_allowed_ips }}
+              set_real_ip_from {{.}};
+              {{- end }}
+        volumeMounts:
+        - name: nginx-config
+          # NOTE: This template will be evaluated by the init script of the nginx container.
+          mountPath: /etc/nginx/templates/proxy.conf.template
+          subPath: proxy.conf.template
+        - name: tls-cert
+          mountPath: /etc/nginx/ssl
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "256Mi"
+          limits:
+            cpu: "100m"
+            memory: "256Mi"
+      volumes:
+      - name: nginx-config
+        configMap:
+          name: keppel-anycast-nginx
+      - name: tls-cert
+        secret:
+          secretName: tls-keppel-api-san
+{{- end }}
