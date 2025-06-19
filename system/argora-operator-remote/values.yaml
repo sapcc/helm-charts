@@ -39,6 +39,18 @@ argora-operator-core:
         ENABLE_WEBHOOKS: "false"
         KUBERNETES_CLUSTER_DOMAIN: "cluster.local"
       volumes:
+      - name: secret-volume
+        mountPath: /etc/credentials
+        readOnly: true
+        source:
+          secret:
+            secretName: argora-operator-secret
+      - name: config-volume
+        mountPath: /etc/config
+        readOnly: true
+        source:
+          secret:
+            secretName: argora-operator-config
       - name: remote-kubeconfig
         mountPath: /var/run/secrets/kubernetes.io/serviceaccount
         readOnly: true
