@@ -1,38 +1,53 @@
+owner-info:
+  support-group: containers
+  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/system/argora-operator-remote
+
 config:
   configJson: '{{ toJson .Values.config }}'
-controllerManager:
-  manager:
-    args:
-      - --health-probe-bind-address=:30081
-      - --metrics-bind-address=127.0.0.1:30082
-    containerSecurityContext:
-      allowPrivilegeEscalation: false
-      capabilities:
-        drop:
-          - ALL
-    env:
-      enableWebhooks: "false"
-      kubernetesServiceHost: apiserver-url
-    image:
-      repository: controller
-      tag: 06b8e140698d509b98376b22f0e06d1dddf51431
-    resources:
-      limits:
-        cpu: 500m
-        memory: 128Mi
-      requests:
-        cpu: 10m
-        memory: 64Mi
-  podSecurityContext:
-    runAsNonRoot: true
-    seccompProfile:
-      type: RuntimeDefault
-  replicas: 1
-  serviceAccount:
-    annotations: {}
-  strategy:
-    type: Recreate
-kubernetesClusterDomain: cluster.local
-secret:
-  credentialsJson: ""
-fullnameOverride: argora-operator
+
+argora-operator-core:
+  rbac:
+    enable: false
+  crd:
+    enable: false
+  metrics:
+    enable: false
+  webhook:
+    enable: false
+  prometheus:
+    enable: false
+  certmanager:
+    enable: false
+  networkPolicy:
+    enable: false
+
+  controllerManager:
+    container:
+      args:
+        - --health-probe-bind-address=:30081
+        - --metrics-bind-address=127.0.0.1:30082
+      containerSecurityContext:
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop:
+            - ALL
+      env:
+        KUBERNETES_SERVICE_HOST: "apiserver-url"
+        ENABLE_WEBHOOKS: "false"
+        KUBERNETES_CLUSTER_DOMAIN: "cluster.local"
+      resources:
+        limits:
+          cpu: 500m
+          memory: 128Mi
+        requests:
+          cpu: 10m
+          memory: 64Mi
+    podSecurityContext:
+      runAsNonRoot: true
+      seccompProfile:
+        type: RuntimeDefault
+    replicas: 1
+    serviceAccount:
+      annotations: {}
+    strategy:
+      type: Recreate
