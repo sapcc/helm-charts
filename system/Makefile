@@ -9,7 +9,6 @@ BOOT_OPERATOR_VERSION ?= fe855e5b44cc7132dff46087cc80ef8d60893f36
 IPXE_OPERATOR_VERSION ?= 28b7ac62711e74db02fe0097bdf474a302a054c6
 FEDHCP_VERSION ?= a59539c62aaa11a96c82fe792c87daaac4cb75bf
 IPAM_VERSION ?= 6faf501000c5d7ff9744a3c111ca5ecf3339c00c
-ARGORA_VERSION ?= 06b8e140698d509b98376b22f0e06d1dddf51431
 
 SHELL := bash
 .ONESHELL:
@@ -203,24 +202,14 @@ build-ipam-operator-remote:
 	@$(SED) -i 's/kind: Role/kind: ClusterRole/g' ipam-operator-remote/managedresources/kustomize.yaml
 
 build-argora-operator-remote:
-	@rm -rf argora-operator-remote
-	@cat kustomize/argora-operator-remote/kustomization.yaml > kustomization.yaml
-	@kubectl kustomize | helmify -crd-dir argora-operator-remote
-	@cp kustomize/argora-operator-remote/remote-kubeconfig.yaml argora-operator-remote/templates
-	@cp kustomize/argora-operator-remote/managedresource.yaml argora-operator-remote/templates
-	@mkdir argora-operator-remote/managedresources
-	@kubectl kustomize kustomize/argora-operator-managedresources > argora-operator-remote/managedresources/kustomize.yaml
-	@cp kustomize/argora-operator-managedresources/updates.yaml argora-operator-remote/managedresources
-	@yq -i '.controllerManager.manager.image.tag="$(ARGORA_VERSION)"' argora-operator-remote/values.yaml
-	@yq -i '.fullnameOverride="argora-operator"' argora-operator-remote/values.yaml
-	@mkdir argora-operator-remote/ci
-	@echo 'config:' >> argora-operator-remote/ci/test-values.yaml
-	@echo '  configJson: {"serverController":"foo","ironCoreTypes":"bar","ironCoreRegion":"ab-cd-1","netboxURL":"https://foo.bar"}' >> argora-operator-remote/ci/test-values.yaml
-	@echo 'secret:' >> argora-operator-remote/ci/test-values.yaml
-	@echo '  credentialsJson: {"bmcUser":"foo","bmcPassword":"bar","netboxToken":"token"}' >> argora-operator-remote/ci/test-values.yaml
-	@yq -i '.version="0.0.4"' argora-operator-remote/Chart.yaml
-	@$(SED) -i 's/serviceAccountName.*$$/serviceAccountName: default/g' argora-operator-remote/templates/deployment.yaml
-	@$(SED) -i 's/kind: Role/kind: ClusterRole/g' argora-operator-remote/managedresources/kustomize.yaml
+	@helm dep up argora-operator-remote
+	@helm template argora-operator argora-operator-remote/charts/argora-* \
+		-n kube-system \
+		-f argora-operator-remote/values-managed-resources.yaml |\
+		$(SED) 's/kind: Role/kind: ClusterRole/g' - |\
+		yq eval 'select(.kind != "Service" and .kind != "ValidatingWebhookConfiguration")' - >\
+		argora-operator-remote/managedresources/crds-and-rbac.yaml
+		yq -i '.version = (.version | split(".") | .[2] = ((.[2] | tonumber) + 1 | tostring) | join("."))' argora-operator-remote/Chart.yaml
 
 build-khalkeon-remote:
 	@helm template khalkeon khalkeon-remote/charts/khalkeon* \
