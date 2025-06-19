@@ -5,7 +5,6 @@ PROVIDER_VSPHERE_VERSION ?= v1.9.3
 PROVIDER_IPAM_VERSION ?= v0.1.1
 PROVIDER_KUBERNIKUS_VERSION ?= 9fd81475b828971913b3b27addf51fdbd0511d85
 BAREMETAL_OPERATOR_VERSION ?= v0.6.0
-BOOT_OPERATOR_VERSION ?= fe855e5b44cc7132dff46087cc80ef8d60893f36
 IPXE_OPERATOR_VERSION ?= 28b7ac62711e74db02fe0097bdf474a302a054c6
 FEDHCP_VERSION ?= a59539c62aaa11a96c82fe792c87daaac4cb75bf
 IPAM_VERSION ?= 6faf501000c5d7ff9744a3c111ca5ecf3339c00c
@@ -141,30 +140,19 @@ build-metal-operator-remote:
 		metal-operator-remote/managedresources/crds-and-rbac.yaml
 
 build-boot-operator-remote:
-	@rm -rf boot-operator-remote
-	@cat kustomize/boot-operator-remote/kustomization.yaml > kustomization.yaml
-	@kubectl kustomize | helmify -crd-dir boot-operator-remote
-	@cp kustomize/boot-operator-remote/remote-kubeconfig.yaml boot-operator-remote/templates
-	@cp kustomize/boot-operator-remote/managedresource.yaml boot-operator-remote/templates
-	@cp kustomize/boot-operator-remote/ingress.yaml boot-operator-remote/templates
-	@cp kustomize/boot-operator-remote/networkpolicy.yaml boot-operator-remote/templates
-	@yq -i '.controllerManager.manager.hostNetwork=false' boot-operator-remote/values.yaml
-	@mkdir boot-operator-remote/ci
-	@echo 'global:' >> boot-operator-remote/ci/test-values.yaml
-	@echo '  region: ab-cd-1' >> boot-operator-remote/ci/test-values.yaml
-	@mkdir boot-operator-remote/managedresources
-	@kubectl kustomize kustomize/boot-operator-managedresources > boot-operator-remote/managedresources/kustomize.yaml
-	@yq -i '.controllerManager.manager.image.tag="$(BOOT_OPERATOR_VERSION)"' boot-operator-remote/values.yaml
-	@yq -i '.fullnameOverride="boot-operator"' boot-operator-remote/values.yaml
-	@yq -i '.version="0.4.5"' boot-operator-remote/Chart.yaml
-	@$(SED) -i 's/serviceAccountName.*$$/serviceAccountName: default/g' boot-operator-remote/templates/deployment.yaml
-	@$(SED) -i 's/kind: Role/kind: ClusterRole/g' boot-operator-remote/managedresources/kustomize.yaml
-	@$(SED) -i 's/hostNetwork: true/hostNetwork: {{ .Values.controllerManager.manager.hostNetwork }}/g' boot-operator-remote/templates/deployment.yaml
+	@helm dep up boot-operator-remote
+	@helm template boot-operator boot-operator-remote/charts/boot-operator* \
+		-n kube-system \
+		-f boot-operator-remote/values-managed-resources.yaml |\
+		$(SED) 's/kind: Role/kind: ClusterRole/g' - |\
+		yq eval 'select(.kind != "Service" and .kind != "ValidatingWebhookConfiguration")' - >\
+		boot-operator-remote/managedresources/crds-and-rbac.yaml
+	yq -i '.version = (.version | split(".") | .[2] = ((.[2] | tonumber) + 1 | tostring) | join("."))' boot-operator-remote/Chart.yaml
 
 build-ipxe-operator:
 	@cat kustomize/ipxe-operator/kustomization.yaml >> kustomization.yaml
 	$(call build-chart,ipxe-operator,https://github.com/ironcore-dev/ipxe-operator//config/default,$(IPXE_OPERATOR_VERSION))
-	@yq -i '.controllerManager.manager.image.tag="$(BOOT_OPERATOR_VERSION)"' ipxe-operator/values.yaml
+	@yq -i '.controllerManager.manager.image.tag="$(IPXE_OPERATOR_VERSION)"' ipxe-operator/values.yaml
 	@yq -i '.fullnameOverride="ipxe-operator"' ipxe-operator/values.yaml
 	@yq -i '.version="0.0.8"' ipxe-operator/Chart.yaml
 
