@@ -1,3 +1,31 @@
+{{- if .Values.updates }}
+{{- range $name, $clusters := .Values.updates }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mr-update-{{ $name }}
+type: Opaque
+stringData:
+  update.yaml: |-
+    apiVersion: argora.cloud.sap/v1alpha1
+    kind: Update
+    metadata:
+      name: {{ $name }}
+    spec:
+      clusters:
+{{ toYaml $clusters | nindent 8 }}
+---
+apiVersion: resources.gardener.cloud/v1alpha1
+kind: ManagedResource
+metadata:
+  name: mr-update-{{ $name }}
+spec:
+  secretRefs:
+    - name: mr-update-{{ $name }}
+  keepObjects: true
+{{- end }}
+{{- end }}
 {{- define "mrname" }}
 {{- /* use uppercase letters of kind as prefix to avoid some naming clashes */ -}}
 {{- $kind := regexFindAll "[A-Z]" .kind -1 | join "" | lower }}
