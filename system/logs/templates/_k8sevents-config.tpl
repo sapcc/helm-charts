@@ -2,9 +2,6 @@
 attributes/k8sevents:
   actions:
     - action: insert
-      key: k8s.node.name
-      value: ${KUBE_NODE_NAME}
-    - action: insert
       key: k8s.cluster.name
       value: ${cluster}
     - action: insert
