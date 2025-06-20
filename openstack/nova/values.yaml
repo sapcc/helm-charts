@@ -1013,3 +1013,29 @@ vpa:
 
 # used to set the PYTHONWARNINGS environment variable everywhere
 python_warnings: "ignore:Unverified HTTPS request,ignore::SyntaxWarning"
+
+# maintenance cronjobs
+nanny:
+  # Archive db rows soft-deleted before more than older_than days to shadow
+  # tables. Use batch size max_rows to limit transaction size.
+  db_archive_deleted_rows:
+    enabled: false
+    # cron schedule (minute | hour | day of month | month | day of week)
+    schedule: "*/15 * * * *"
+    older_than: 21
+    max_rows: 25
+  # Delete db rows soft-deleted before more than older_than days from shadow
+  # tables.
+  db_purge:
+    enabled: false
+    # cron schedule (minute | hour | day of month | month | day of week)
+    schedule: "5-59/15 * * * *"
+    older_than: 42
+  # For each instance, soft-delete the instance_faults db rows that exceed the
+  # count of max_faults. Use batch size max_rows to limit query size.
+  db_soft_delete_excessive_instance_faults:
+    enabled: false
+    # cron schedule (minute | hour | day of month | month | day of week)
+    schedule: "10-59/15 * * * *"
+    max_faults: 10
+    max_rows: 25
