@@ -24,6 +24,8 @@ spec:
         configmap-etc-hash: {{ include (print $.Template.BasePath "/configmap-etc.yaml") . | sha256sum }}
         secret-etc-hash: {{ include (print $.Template.BasePath "/secret-etc.yaml") . | sha256sum }}
     spec:
+      affinity:
+        {{- toYaml $hypervisor.pod.affinity | nindent 8 }}
       hostNetwork: true # TODO: replace with multus
       hostAliases:
       {{- range $ip := .Values.rabbitmq.externalIPs }}
