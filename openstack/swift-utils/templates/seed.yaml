@@ -33,8 +33,8 @@ spec:
         description: 'Swift Account Caretaker'
         password: {{ $.Values.swift_account_caretaker.password }}
         role_assignments:
-          - project: cloud_admin
-            role: admin
+          - project: service
+            role: service
       {{- if $.Values.velero_backup_password }}
       - name: velero_backup
         description: 'Velero Backup'
@@ -43,6 +43,11 @@ spec:
 
     - name: ccadmin
       projects:
+        - name: cloud_admin
+          role_assignments:
+            # permission to enumerate all projects and domains
+            - user: swift_caretaker@Default
+              role: admin
         - name: master
           role_assignments:
             - user: repo@Default
