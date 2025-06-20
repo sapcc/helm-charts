@@ -49,6 +49,9 @@ spec:
       {{- tuple . (dict "name" "barbican-api") | include "utils.topology.constraints" | indent 6 }}
       initContainers:
       {{- tuple . (dict "service" (include "barbican.service_dependencies" .)) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
+      {{- if .Values.proxysql.native_sidecar }}
+      {{- include "utils.proxysql.container" . | indent 6 }}
+      {{- end }}
       containers:
         - name: barbican-api
           image: {{required ".Values.global.registry is missing" .Values.global.registry }}/loci-barbican:{{required "Values.imageVersionBarbicanApi is missing" .Values.imageVersionBarbicanApi}}
@@ -140,7 +143,9 @@ spec:
               mountPath: /thales/
             {{- include "utils.proxysql.volume_mount" . | indent 12 }}
             {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
+        {{- if not .Values.proxysql.native_sidecar }}
         {{- include "utils.proxysql.container" . | indent 8 }}
+        {{- end }}
         - name: lunaclient
           image: {{required ".Values.global.registry is missing" .Values.global.registry }}/loci-barbican:{{required "Values.hsm.luna.image is missing" .Values.hsm.luna.image }}
           imagePullPolicy: Always
