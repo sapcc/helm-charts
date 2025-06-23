@@ -173,17 +173,34 @@ pgmetrics:
         castellum_asset_resize_errors:
           query: >
             WITH latest_finished_operations AS (
-              SELECT DISTINCT ON (asset_id) o.* FROM finished_operations o
+              SELECT DISTINCT ON (asset_id) o.*, r.asset_type FROM finished_operations o
                 JOIN assets a ON a.id = o.asset_id
+                JOIN resources r ON r.id = a.resource_id
               ORDER BY o.asset_id, o.finished_at DESC
             )
             SELECT COUNT(asset_id) as gauge
               FROM latest_finished_operations
-             WHERE outcome = 'errored'
+             WHERE outcome = 'errored' AND asset_type NOT LIKE 'nfs-shares%'
           metrics:
             - gauge:
                 usage: "GAUGE"
-                description: "Total number of assets that failed their last resize"
+                description: "Total number of non-Manila assets that failed their last resize"
+
+        castellum_manila_asset_resize_errors:
+          query: >
+            WITH latest_finished_operations AS (
+              SELECT DISTINCT ON (asset_id) o.*, r.asset_type FROM finished_operations o
+                JOIN assets a ON a.id = o.asset_id
+                JOIN resources r ON r.id = a.resource_id
+              ORDER BY o.asset_id, o.finished_at DESC
+            )
+            SELECT COUNT(asset_id) as gauge
+              FROM latest_finished_operations
+             WHERE outcome = 'errored' AND asset_type LIKE 'nfs-shares%'
+          metrics:
+          - gauge:
+              usage: "GAUGE"
+              description: "Total number of Manila assets that failed their last resize"
 
         # There is a lot to unpack in this query. Reading from the inside out:
         # 1. We want to be alerted when an asset is at a critical usage level, but
