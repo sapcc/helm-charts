@@ -193,7 +193,7 @@ spec:
               isCinderVolumePod if {
                   iro.kind == "Deployment"
                   iro.metadata.namespace == "monsoon3"
-                  regex.match("^cinder-volume(?:-backup)?-vmware-vc-[a-z]-[0-9]+$", iro.metadata.name)
+                  regex.match("^cinder-volume(?:-backup)?-(?:vmware-vc)?(?:netapp|kvm)?-(stnpca[0-9]+-st[0-9]+|[a-z]-[0-9]+)$", iro.metadata.name)
                   helmReleaseName == "<none>" # comes from VCenterTemplate
               }
 
@@ -202,7 +202,7 @@ spec:
                   isCinderVolumePod
                   regex.match("^keppel\\.[a-z0-9-.]+/ccloud/loci-cinder:", container.image)
                   container.name == iro.metadata.name
-                  capability == "SYS_ADMIN"
+                  capability in {"CHOWN", "DAC_OVERRIDE", "DAC_READ_SEARCH", "FOWNER", "NET_ADMIN", "SYS_ADMIN" }
               }
               {{- end }}
 
