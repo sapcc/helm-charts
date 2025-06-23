@@ -68,9 +68,17 @@ spec:
 {{- if .Values.openTelemetryPlugin.openTelemetry.logsCollector.journaldConfig.enabled }}
     {{- include "journald.receiver" . | nindent 6 -}}
 {{ end }}
-{{- if .Values.openTelemetryPlugin.openTelemetry.logsCollector.k8seventsConfig.enabled }}
-      k8s_events:
+{{- if .Values.openTelemetryPlugin.openTelemetry.logsCollector.k8sobjectsConfig.enabled }}
+      k8sobjects:
         auth_type: serviceAccount
+        objects:
+        - name: events
+          mode: watch
+          group: events.k8s.io
+        - name: events
+          mode: watch
+          group: events.k8s.io
+          resource_version: "2"
 {{- end }}
 {{- if and (.Values.openTelemetryPlugin.openTelemetry.logsCollector.containerdConfig.enabled) (.Values.openTelemetryPlugin.openTelemetry.logsCollector.openstackConfig.enabled) }}
 {{- else if .Values.openTelemetryPlugin.openTelemetry.logsCollector.containerdConfig.enabled }}
@@ -146,8 +154,8 @@ spec:
 {{- else if .Values.openTelemetryPlugin.openTelemetry.logsCollector.openstackConfig.enabled }}
     {{- include "openstack.transform" . | nindent 6 -}}
 {{- end }}
-{{- if .Values.openTelemetryPlugin.openTelemetry.logsCollector.k8seventsConfig.enabled }}
-    {{- include "k8sevents.transform" . | nindent 6 -}}
+{{- if .Values.openTelemetryPlugin.openTelemetry.logsCollector.k8sobjectsConfig.enabled }}
+    {{- include "k8sobjects.transform" . | nindent 6 -}}
 {{- end }}
 {{- if .Values.openTelemetryPlugin.openTelemetry.logsCollector.externalConfig.enabled }}
     {{- include "external.transform" . | nindent 6 -}}
@@ -328,8 +336,8 @@ spec:
 {{- else if .Values.openTelemetryPlugin.openTelemetry.logsCollector.openstackConfig.enabled }}
     {{- include "openstack.pipeline" . | nindent 8 -}}
 {{- end }}
-{{- if .Values.openTelemetryPlugin.openTelemetry.logsCollector.k8seventsConfig.enabled }}
-    {{- include "k8sevents.pipeline" . | nindent 8 -}}
+{{- if .Values.openTelemetryPlugin.openTelemetry.logsCollector.k8sobjectsConfig.enabled }}
+    {{- include "k8sobjects.pipeline" . | nindent 8 -}}
 {{- end }}
 {{- if .Values.openTelemetryPlugin.openTelemetry.logsCollector.externalConfig.enabled }}
     {{- include "external.pipeline" . | nindent 8 -}}
