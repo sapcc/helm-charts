@@ -1,0 +1,103 @@
+kind: Deployment
+apiVersion: apps/v1
+
+metadata:
+  name: {{ .Release.Name }}-engine
+  labels:
+    system: openstack
+    type: engine
+    component: {{ .Chart.Name }}
+  annotations:
+    vpa-butler.cloud.sap/main-container: {{ .Chart.Name }}-engine
+    vpa-butler.cloud.sap/update-mode: "Off"
+spec:
+  replicas: {{ .Values.pod.replicas.masakari }}
+  revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revision_history }}
+  strategy:
+    type: {{ .Values.pod.lifecycle.upgrades.deployments.podRemasakariStrategy }}
+    {{ if eq .Values.pod.lifecycle.upgrades.deployments.podRemasakariStrategy "RollingUpdate" }}
+    rollingUpdate:
+      maxUnavailable: {{ .Values.pod.lifecycle.upgrades.deployments.rollingUpdate.maxUnavailable }}
+      maxSurge: {{ .Values.pod.lifecycle.upgrades.deployments.rollingUpdate.maxSurge }}
+    {{ end }}
+  selector:
+    matchLabels:
+      name: {{ .Release.Name }}-engine
+  template:
+    metadata:
+      labels:
+        name: {{ .Release.Name }}-engine
+{{ tuple . .Chart.Name "engine" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
+        alert-tier: os
+        alert-service: {{ .Chart.Name }}
+      annotations:
+        kubectl.kubernetes.io/default-container: {{ .Chart.Name }}-engine
+        configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
+        secrets-hash: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
+        {{- if .Values.proxysql.mode }}
+        prometheus.io/scrape: "true"
+        prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
+        {{- end }}
+        {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
+    spec:
+{{ tuple . "masakari" "engine" | include "kubernetes_pod_anti_affinity" | indent 6 }}
+      {{- include "utils.proxysql.pod_settings" . | indent 6 }}
+      containers:
+      - name: {{ .Chart.Name }}-engine
+        image: {{ required ".Values.global.registry is missing" .Values.global.registry}}/loci-masakari:{{.Values.imageVersion | required "Please set .imageVersion or similar" }}
+        imagePullPolicy: Always
+        command:
+          - /var/lib/openstack/bin/masakari-engine
+        env:
+{{ toYaml .Values.engine.env | indent 8 }}
+        - name: SLACK_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Release.Name }}-etc
+              key: slack_token
+        - name: HOST_DOWN_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Release.Name }}-etc
+              key: host_down_username
+        - name: HOST_DOWN_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Release.Name }}-etc
+              key: host_down_password
+        {{- if .Values.sentry.enabled }}
+        - name: SENTRY_DSN
+          valueFrom:
+            secretKeyRef:
+              name: sentry
+              key: {{ .Chart.Name }}.DSN.python
+        {{- end }}
+        {{- if .Values.python_warnings }}
+        - name: PYTHONWARNINGS
+          value: {{ .Values.python_warnings | quote }}
+        {{- end }}
+        lifecycle:
+          preStop:
+              {{- include "utils.snippets.pre_stop_graceful_shutdown" . | indent 14 }}
+        resources:
+{{ toYaml .Values.pod.resources.masakari | indent 10 }}
+        volumeMounts:
+        - name: masakari-database
+          mountPath: /database
+        - mountPath: /etc/masakari
+          name: masakari-etc
+        - mountPath: /etc/masakari/masakari.conf.d
+          name: masakari-etc-confd
+        {{- include "utils.trust_bundle.volume_mount" . | indent 8 }}
+      volumes:
+      - name: masakari-database
+        persistentVolumeClaim:
+          claimName: masakari-database
+      - name: masakari-etc
+        configMap:
+          name: masakari-etc
+      - name: masakari-etc-confd
+        secret:
+          secretName: masakari-etc
+      {{- include "utils.proxysql.volumes" . | indent 6 }}
+      {{- include "utils.trust_bundle.volumes" . | indent 6 }}
