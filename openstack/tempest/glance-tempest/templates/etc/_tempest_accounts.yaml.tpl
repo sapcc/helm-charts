@@ -1,14 +1,17 @@
-- username: 'tempestuser1'
-  password: {{ .Values.tempestAdminPassword | quote }}
-  tenant_name: 'tempest1'
-  project_name: 'tempest1'
-- username: 'tempestuser2'
-  password: {{ .Values.tempestAdminPassword | quote }}
-  tenant_name: 'tempest2'
-  project_name: 'tempest2'
 - username: 'admin'
-  password: {{ .Values.tempestAdminPassword | quote }}
   tenant_name: 'admin'
+  password: {{ .Values.tempestAdminPassword | quote }}
   project_name: 'admin'
   types:
-  - admin
+   - admin
+   - primary
+- username: 'tempestuser1'
+  tenant_name: 'tempest1'
+  password: {{ .Values.tempestAdminPassword | quote }}
+  project_name: 'tempest1'
+  types:
+   - alt
+- username: 'tempestuser2'
+  tenant_name: 'tempest2'
+  password: {{ .Values.tempestAdminPassword | quote }}
+  project_name: 'tempest2'
