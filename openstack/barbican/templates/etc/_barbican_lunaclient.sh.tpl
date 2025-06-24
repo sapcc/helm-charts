@@ -12,6 +12,7 @@ lunaclient ()
     /thales/safenet/lunaclient/bin/64/configurator setValue -s Chrystoki2 -e LibUNIX -v /thales/safenet/lunaclient/libs/64/libcklog2.so
     /thales/safenet/lunaclient/bin/64/configurator setValue -s Chrystoki2 -e LibUNIX64 -v /thales/safenet/lunaclient/libs/64/libcklog2.so
 
+    # updated library path to libcklog2.so in secrets.yaml
     /thales/safenet/lunaclient/bin/64/configurator setValue -s CkLog2 -e LibUNIX64 -v /thales/safenet/lunaclient/libs/64/libCryptoki2.so
     /thales/safenet/lunaclient/bin/64/configurator setValue -s CkLog2 -e Enabled -v 1
     /thales/safenet/lunaclient/bin/64/configurator setValue -s CkLog2 -e File -v /tmp/cklog.txt
