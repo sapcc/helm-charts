@@ -53,6 +53,9 @@ spec:
       {{- include "utils.proxysql.pod_settings" . | indent 6 }}
       initContainers:
       {{- tuple . (dict "service" "ironic-api,ironic-rabbitmq") | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
+      {{- if .Values.proxysql.native_sidecar }}
+      {{- include "utils.proxysql.container" . | indent 6 }}
+      {{- end }}
       containers:
       - name: ironic-conductor
         image: {{ .Values.global.registry }}/loci-ironic:{{ .Values.imageVersion }}
@@ -153,7 +156,9 @@ spec:
         {{- end }}
         {{- include "utils.proxysql.volume_mount" . | indent 8 }}
         {{- include "utils.trust_bundle.volume_mount" . | indent 8 }}
+      {{- if not .Values.proxysql.native_sidecar }}
       {{- include "utils.proxysql.container" . | indent 6 }}
+      {{- end }}
       - name: console
         image: {{ .Values.global.dockerHubMirror }}/library/{{ .Values.imageVersionNginx | default "nginx:stable-alpine" }}
         imagePullPolicy: IfNotPresent
