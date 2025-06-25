@@ -32,7 +32,11 @@ spec:
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         env:
         - name: GARDEN_CLUSTER_ADDRESS
+          {{- if .Values.gardener.address }}
+          value: "{{ .Values.gardener.address }}"
+          {{- else }}
           value: "https://virtual-garden-kube-apiserver.{{ .Release.Namespace }}.svc.cluster.local"
+          {{- end }}
         volumeMounts:
         - name: config
           mountPath: /etc/metal-token-rotate
