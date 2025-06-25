@@ -86,6 +86,7 @@ vnc_server_header = WebSockify
 attach_encrypted_volume = false
 
 [validation]
+run_validation = false
 image_ssh_user = ccloud
 ssh_key_type = rsa
 
