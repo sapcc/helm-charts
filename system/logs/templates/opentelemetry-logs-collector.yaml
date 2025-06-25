@@ -49,11 +49,6 @@ spec:
   envFrom:
     - secretRef:
          name: otel-basic-auth
-{{- if .Values.openTelemetryPlugin.openTelemetry.prometheus.podMonitor.enabled }}
-  ports:
-    - name: prometheus
-      port: 9999
-{{- end }}
   image: {{ index .Values "openTelemetryPlugin" "opentelemetry-operator" "manager" "collectorImage" "repository" }}:{{ index .Values "openTelemetryPlugin" "opentelemetry-operator" "manager" "collectorImage" "tag" }}
   volumeMounts:
   - mountPath: /var/log
@@ -82,39 +77,23 @@ spec:
     {{- include "external.receiver" . | nindent 6 -}}
 {{- end }}
 
-{{- if .Values.openTelemetryPlugin.openTelemetry.prometheus.podMonitor.enabled }}
-      prometheus/internal:
-        config:
-          scrape_configs:
-            - job_name: 'internal'
-              scrape_interval: 5s
-              static_configs:
-                - targets: ['127.0.0.1:8888']
-{{- end }}
-
     processors:
       batch:
         send_batch_max_size: 5000
         timeout: 5s
         send_batch_size : 100
-
-{{- if .Values.openTelemetryPlugin.openTelemetry.prometheus.podMonitor.enabled }}
-      attributes/prometheus:
-        actions:
-          - action: insert
-            key: k8s_node_name
-            value: ${KUBE_NODE_NAME}
-          - action: insert
-            key: k8s_cluster_name
-            value: ${cluster}
-          - action: insert
-            key: region
-            value: ${region}
-          - action: delete
-            key: service_instance_id
-          - action: delete
-            key: pod
-{{- end }}
+      resource:
+        attributes:
+          actions:
+            - action: insert
+              key: k8s.cluster.name
+              value: ${cluster}
+            - action: insert
+              key: region
+              value: ${region}
+            - action: insert
+              key: k8s.node.name
+              value: ${KUBE_NODE_NAME}
       attributes/cluster:
         actions:
           - action: insert
@@ -298,13 +277,19 @@ spec:
         - basicauth/failover_b
 {{- if .Values.openTelemetryPlugin.openTelemetry.prometheus.podMonitor.enabled }}
       telemetry:
-        metrics:
-          level: detailed
+          metrics:
+            level: detailed
+            readers:
+            - pull:
+                exporter:
+                  prometheus:
+                    host: 0.0.0.0
+                    port: 8888
 {{- end }}
       pipelines:
         logs/forward:
           receivers: [forward]
-          processors: [batch]
+          processors: [batch,resource]
           exporters: [failover/opensearch]
         logs/failover_a:
           receivers: [failover/opensearch]
@@ -314,12 +299,6 @@ spec:
           receivers: [failover/opensearch]
           processors: [attributes/failover_username_b]
           exporters: [opensearch/failover_b]
-{{- if .Values.openTelemetryPlugin.openTelemetry.prometheus.podMonitor.enabled }}
-        metrics/prometheus:
-          receivers: [prometheus/internal]
-          processors: [attributes/prometheus]
-          exporters: [prometheus]
-{{- end }}
 {{- if .Values.openTelemetryPlugin.openTelemetry.logsCollector.journaldConfig.enabled }}
     {{- include "journald.pipeline" . | nindent 8 -}}
 {{- end }}
