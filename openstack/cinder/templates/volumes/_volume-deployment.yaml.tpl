@@ -57,6 +57,15 @@ spec:
         - name: PYTHONWARNINGS
           value: {{ or $volume.python_warnings .Values.python_warnings | quote }}
 {{- end }}
+        securityContext:
+          capabilities:
+            add:
+            - SYS_ADMIN
+            - NET_ADMIN
+            - FOWNER
+            - DAC_READ_SEARCH
+            - DAC_OVERRIDE
+            - CHOWN
         volumeMounts:
         - name: etccinder
           mountPath: /etc/cinder
@@ -64,6 +73,14 @@ spec:
           mountPath: /etc/cinder/cinder.conf
           subPath: cinder.conf
           readOnly: true
+        - name: cinder-etc
+          mountPath: /etc/cinder/rootwrap.conf
+          readOnly: true
+          subPath: rootwrap.conf
+        - name: cinder-etc
+          mountPath: /etc/cinder/rootwrap.d/volume.filters
+          readOnly: true
+          subPath: volume.filters
         - name: cinder-etc-confd
           mountPath: /etc/cinder/cinder.conf.d
         - name: cinder-etc

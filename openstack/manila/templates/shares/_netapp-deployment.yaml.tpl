@@ -49,14 +49,17 @@ spec:
       priorityClassName: {{ .Values.pod.priority_class.default }}
       initContainers:
       {{- tuple . (dict "service" (include "manila.service_dependencies" . )) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 8 }}
-        {{- if not .Values.api_backdoor }}
+      {{- if not .Values.api_backdoor }}
         - name: create-guru-file
           image: {{.Values.global.dockerHubMirror}}/library/busybox
           command: ["/bin/sh", "-c", "touch /shared/guru"]
           volumeMounts:
             - name: etcmanila
               mountPath: /shared
-        {{- end }}
+      {{- end }}
+      {{- if .Values.proxysql.native_sidecar }}
+      {{- include "utils.proxysql.container" . | indent 8 }}
+      {{- end }}
       containers:
         - name: manila-share-netapp-{{$share.name}}
           image: {{.Values.global.registry}}/loci-manila:{{.Values.loci.imageVersion}}
@@ -151,7 +154,9 @@ spec:
               readOnly: true
         {{- end }}
         {{- include "jaeger_agent_sidecar" . | indent 8 }}
+        {{- if not .Values.proxysql.native_sidecar }}
         {{- include "utils.proxysql.container" . | indent 8 }}
+        {{- end }}
       hostname: manila-share-netapp-{{$share.name}}
       volumes:
         - name: etcmanila

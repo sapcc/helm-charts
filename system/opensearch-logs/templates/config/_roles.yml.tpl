@@ -280,6 +280,7 @@ complex-role:
   - 'cluster:admin/opendistro/reports/instance/list'
   - 'cluster:admin/opendistro/reports/instance/get'
   - 'cluster:admin/opendistro/reports/menu/download'
+  - 'cluster:admin/opensearch/ppl'
   index_permissions:
   - index_patterns:
     - "*"
@@ -289,6 +290,9 @@ complex-role:
     - "get"
     - "indices:monitor/settings/get"
     - "indices:admin/create"
+    - 'indices:admin/mappings/get'
+    - 'indices:data/read/search*'
+    - "indices:admin/get"
   tenant_permissions:
   - tenant_patterns:
     - "*"

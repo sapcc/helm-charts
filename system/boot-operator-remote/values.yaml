@@ -1,40 +1,68 @@
+owner-info:
+  support-group: containers
+  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/system/boot-operator-remote
+
+fullnameOverride: boot-operator
+
+boot-operator-core:
+  rbac:
+    enable: false
+  crd:
+    enable: false
+  metrics:
+    enable: false
+  prometheus:
+    enable: false
+  networkPolicy:
+    enable: false
+  certmanager:
+    enable: false
+  webhook:
+    enable: true
+
+  controllerManager:
+    enable: true
+    pod:
+      labels:
+        networking.gardener.cloud/to-dns: allowed
+        networking.gardener.cloud/to-private-networks: allowed
+        networking.gardener.cloud/to-public-networks: allowed
+        networking.gardener.cloud/to-runtime-apiserver: allowed
+        networking.resources.gardener.cloud/to-all-istio-ingresses-istio-ingressgateway-tcp-9443: allowed
+        networking.resources.gardener.cloud/to-kube-apiserver-tcp-443: allowed
+    manager:
+      image:
+        repository: controller
+        tag: fe855e5b44cc7132dff46087cc80ef8d60893f36
+      args:
+        - --health-probe-bind-address=:8081
+        - --metrics-bind-address=127.0.0.1:8080
+        - --leader-elect
+        - --controllers=httpbootconfig,ipxebootconfig,serverbootconfighttp,serverbootconfigpxe
+      env:
+        KUBERNETES_SERVICE_HOST: "apiserver-url"
+        KUBERNETES_CLUSTER_DOMAIN: "cluster.local"
+      ports:
+        - name: ipxe
+          containerPort: 8082
+      volumes:
+        - name: remote-kubeconfig
+          mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          readOnly: true
+          source:
+            secret:
+              secretName: boot-operator-remote-kubeconfig
+              items:
+              - key: token
+                path: token
+              - key: bundle.crt
+                path: ca.crt
+    serviceAccountName: default
+
+
 bootService:
   ports:
     - port: 8082
       protocol: TCP
       targetPort: 8082
   type: ClusterIP
-controllerManager:
-  manager:
-    args:
-      - --health-probe-bind-address=:8081
-      - --metrics-bind-address=127.0.0.1:8080
-      - --leader-elect
-      - --controllers=httpbootconfig,ipxebootconfig,serverbootconfighttp,serverbootconfigpxe
-    containerSecurityContext:
-      allowPrivilegeEscalation: false
-      capabilities:
-        drop:
-          - ALL
-    env:
-      kubernetesServiceHost: apiserver-url
-    image:
-      repository: controller
-      tag: fe855e5b44cc7132dff46087cc80ef8d60893f36
-    resources:
-      limits:
-        cpu: 500m
-        memory: 128Mi
-      requests:
-        cpu: 10m
-        memory: 64Mi
-    hostNetwork: false
-  podSecurityContext:
-    runAsNonRoot: true
-    seccompProfile:
-      type: RuntimeDefault
-  replicas: 1
-  strategy:
-    type: Recreate
-kubernetesClusterDomain: cluster.local
-fullnameOverride: boot-operator

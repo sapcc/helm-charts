@@ -54,6 +54,9 @@ spec:
       priorityClassName: {{ .Values.pod.priority_class.low }}
       initContainers:
       {{- tuple . (dict "service" (include "manila.db_service" .)) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 8 }}
+      {{- if .Values.proxysql.native_sidecar }}
+      {{- include "utils.proxysql.container" . | indent 8 }}
+      {{- end }}
       containers:
         - name: reexport
           image: "{{.Values.global.registry}}/loci-manila:{{.Values.loci.imageVersion}}"
@@ -129,7 +132,9 @@ spec:
             periodSeconds: 5
             initialDelaySeconds: 5
         {{- include "jaeger_agent_sidecar" . | indent 8 }}
+        {{- if not .Values.proxysql.native_sidecar }}
         {{- include "utils.proxysql.container" . | indent 8 }}
+        {{- end }}
       volumes:
         - name: etcmanila
           emptyDir: {}

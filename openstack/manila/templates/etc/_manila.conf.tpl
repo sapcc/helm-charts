@@ -49,6 +49,13 @@ scheduler_default_filters = {{ .Values.scheduler_default_filters | default "Avai
 scheduler_default_weighers = CapacityWeigher,GoodnessWeigher,HostAffinityWeigher
 scheduler_default_share_group_filters = AvailabilityZoneFilter,ConsistentSnapshotFilter,CapabilitiesFilter,DriverFilter
 
+{{- if .Values.external_scheduler_api_url }}
+external_scheduler_api_url = {{ .Values.external_scheduler_api_url }}
+{{- end}}
+{{- if .Values.external_scheduler_timeout }}
+external_scheduler_timeout = {{ .Values.external_scheduler_timeout }}
+{{- end}}
+
 migration_ignore_scheduler = True
 # default time to wait for access rules to become active in migration cutover was 180 seconds
 migration_wait_access_rules_timeout = 3600

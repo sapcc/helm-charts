@@ -59,6 +59,9 @@ health_update_threads = {{ .Values.status_manager.health_update_threads }}
 {{- if .Values.status_manager.stats_update_threads }}
 stats_update_threads = {{ .Values.status_manager.stats_update_threads }}
 {{- end }}
+{{- if .Values.status_manager.failover_timeout }}
+failover_timeout = {{ .Values.status_manager.failover_timeout }}
+{{- end }}
 {{- end }}
 
 {{ if .Values.house_keeping }}

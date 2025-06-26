@@ -42,7 +42,7 @@ groups:
       summary: Server errors on {{ $labels.kubernetes_name }}
 
   - alert: OpenstackLimesNotScraping
-    expr: absent(rate(limes_resource_scrapes{task_outcome="success"}[30m]) > 0)
+    expr: absent(rate(limes_scrapes{task_outcome="success"}[30m]) > 0)
     for: 5m
     labels:
       context: failedscrapes
@@ -95,7 +95,7 @@ groups:
       summary: Limes reports zero capacity for {{ $labels.full_resource }}
 
   - alert: OpenstackLimesFailedScrapes
-    expr: sum(increase(limes_resource_scrapes{task_outcome="failure"}[5m])) BY (service_type, service_name, region) > 0
+    expr: sum(increase(limes_scrapes{task_outcome="failure"}[5m])) BY (service_type, service_name, region) > 0
     for: 1h
     labels:
       context: failedscrapes
@@ -124,40 +124,6 @@ groups:
       playbook: docs/support/playbook/limes/alerts/failed_scrapes
     annotations:
       description: Limes cannot scrape data for projects from {{ title $labels.service_name }}
-        for more than an hour. Please check if {{ title $labels.service_name }} is working.
-        Error messages can be found in <https://dashboard.{{ $labels.region }}.cloud.sap/ccadmin/cloud_admin/cc-tools/limes#/scrape-errors|the Limes Errors view in Elektra>.
-      summary: Limes cannot scrape {{ title $labels.service_name }}
-
-  - alert: OpenstackLimesFailedRateScrapes
-    expr: sum(increase(limes_rate_scrapes{task_outcome="failure"}[5m])) BY (service_type, service_name, region) > 0
-    for: 1h
-    labels:
-      context: failedratescrapes
-      dashboard: limes-overview
-      service: '{{ $labels.service_name }}'
-      severity: info
-      support_group: '{{ if eq $labels.service_name "cronus" -}} email {{- else -}} containers {{- end -}}'
-      tier: os
-      playbook: docs/support/playbook/limes/alerts/failed_scrapes
-    annotations:
-      description: Limes cannot scrape rate data from {{ title $labels.service_name }}
-        for more than an hour. Please check if {{ title $labels.service_name }} is working.
-        Error messages can be found in <https://dashboard.{{ $labels.region }}.cloud.sap/ccadmin/cloud_admin/cc-tools/limes#/rate-scrape-errors|the Limes Errors view in Elektra>.
-      summary: Limes cannot scrape {{ title $labels.service_name }}
-
-  - alert: OpenstackLimesFailingRateScrapes
-    expr: max(limes_failing_rate_scrapes_gauge) BY (service_name, region) > 0
-    for: 1h
-    labels:
-      context: failedscrapes
-      dashboard: limes-overview
-      service: limes
-      severity: warning
-      support_group: containers
-      tier: os
-      playbook: docs/support/playbook/limes/alerts/failed_scrapes
-    annotations:
-      description: Limes cannot scrape rate data for projects from {{ title $labels.service_name }}
         for more than an hour. Please check if {{ title $labels.service_name }} is working.
         Error messages can be found in <https://dashboard.{{ $labels.region }}.cloud.sap/ccadmin/cloud_admin/cc-tools/limes#/scrape-errors|the Limes Errors view in Elektra>.
       summary: Limes cannot scrape {{ title $labels.service_name }}
