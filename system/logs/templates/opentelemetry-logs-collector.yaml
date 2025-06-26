@@ -49,7 +49,7 @@ spec:
   envFrom:
     - secretRef:
          name: otel-basic-auth
-  {{- if .Values.openTelemetryPlugin.openTelemetry.prometheus.podMonitor.enabled }}
+{{- if .Values.openTelemetryPlugin.openTelemetry.prometheus.podMonitor.enabled }}
   ports:
     - name: prometheus
       port: 9999
@@ -82,22 +82,39 @@ spec:
     {{- include "external.receiver" . | nindent 6 -}}
 {{- end }}
 
+{{- if .Values.openTelemetryPlugin.openTelemetry.prometheus.podMonitor.enabled }}
+      prometheus/internal:
+        config:
+          scrape_configs:
+            - job_name: 'internal'
+              scrape_interval: 5s
+              static_configs:
+                - targets: ['127.0.0.1:8888']
+{{- end }}
+
     processors:
       batch:
         send_batch_max_size: 5000
         timeout: 5s
         send_batch_size : 100
-      resource:
-        attributes:
-        - key: k8s.cluster.name
-          action: insert
-          value: ${cluster}
-        - key: region
-          action: insert
-          value: ${region}
-        - key: k8s.node.name
-          action: insert
-          value: ${KUBE_NODE_NAME}
+
+{{- if .Values.openTelemetryPlugin.openTelemetry.prometheus.podMonitor.enabled }}
+      attributes/prometheus:
+        actions:
+          - action: insert
+            key: k8s_node_name
+            value: ${KUBE_NODE_NAME}
+          - action: insert
+            key: k8s_cluster_name
+            value: ${cluster}
+          - action: insert
+            key: region
+            value: ${region}
+          - action: delete
+            key: service_instance_id
+          - action: delete
+            key: pod
+{{- end }}
       attributes/cluster:
         actions:
           - action: insert
@@ -293,7 +310,7 @@ spec:
       pipelines:
         logs/forward:
           receivers: [forward]
-          processors: [batch,resource]
+          processors: [batch]
           exporters: [failover/opensearch]
         logs/failover_a:
           receivers: [failover/opensearch]
@@ -303,6 +320,12 @@ spec:
           receivers: [failover/opensearch]
           processors: [attributes/failover_username_b]
           exporters: [opensearch/failover_b]
+{{- if .Values.openTelemetryPlugin.openTelemetry.prometheus.podMonitor.enabled }}
+        metrics/prometheus:
+          receivers: [prometheus/internal]
+          processors: [attributes/prometheus]
+          exporters: [prometheus]
+{{- end }}
 {{- if .Values.openTelemetryPlugin.openTelemetry.logsCollector.journaldConfig.enabled }}
     {{- include "journald.pipeline" . | nindent 8 -}}
 {{- end }}
