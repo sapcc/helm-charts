@@ -2,8 +2,8 @@
 apiVersion: v1
 kind: Secret
 metadata:
-  name: {{ .Chart.Name }}-auth
-  namespace: {{ .Chart.Name }}
+  name: {{ .Release.Namespace }}-auth
+  namespace: {{ .Release.Namespace }}
 type: greenhouse.sap/orgsecret
 data:
 {{- if .Values.global.oidc.enabled }}
@@ -27,7 +27,7 @@ data:
 apiVersion: greenhouse.sap/v1alpha1
 kind: Organization
 metadata:
-  name: {{ .Chart.Name }}
+  name: {{ .Release.Namespace }}
 spec:
   description: Greenhouse organization
   mappedOrgAdminIdPGroup: {{ required ".Values.teams.admin.mappedIdPGroup missing" .Values.teams.admin.mappedIdPGroup }}
@@ -38,10 +38,10 @@ spec:
       issuer: {{ required ".Values.global.oidc.issuer missing" .Values.global.oidc.issuer }}
       redirectURI: {{ default (printf "https://%s" ( include "idproxy.auth.hostname" .)) .Values.global.oidc.redirectURL }}
       clientIDReference:
-        name: {{ .Chart.Name }}-auth
+        name: {{ .Release.Namespace }}-auth
         key: oidcClientID
       clientSecretReference:
-        name: {{ .Chart.Name }}-auth
+        name: {{ .Release.Namespace }}-auth
         key: oidcClientSecret
     {{- if .Values.organization.oauth2ClientRedirectURIs }}
       oauth2ClientRedirectURIs:
@@ -53,11 +53,11 @@ spec:
       baseURL: {{ required ".Values.scim.baseURL" .Values.scim.baseURL }}
       basicAuthUser:
         secret:
-          name: {{ .Chart.Name }}-auth
+          name: {{ .Release.Namespace }}-auth
           key: scimBasicAuthUser
       basicAuthPw:
         secret:
-          name: {{ .Chart.Name }}-auth
+          name: {{ .Release.Namespace }}-auth
           key: scimBasicAuthPassword
 {{ end }}
 {{ end }}
