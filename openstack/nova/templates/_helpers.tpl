@@ -27,12 +27,6 @@ connection = {{ tuple . .Values.apidbName .Values.apidbUser .Values.apidbPasswor
     {{- end }}
 {{- end }}
 
-{{- define "cell2_db_path_for_exporter" -}}
-{{- if eq .Values.cell2.enabled true -}}
-mysql://{{ .Values.cell2dbUser | include "mysql_metrics.resolve_secret_for_yaml" }}:{{ default .Values.cell2dbPassword .Values.global.dbPassword | include "mysql_metrics.resolve_secret_for_yaml" }}@tcp(nova-{{.Values.cell2.name}}-mariadb.{{include "svc_fqdn" .}}:3306)/{{.Values.cell2dbName}}
-{{- end -}}
-{{- end -}}
-
 {{- define "cell2_transport_url" -}}
 {{- $data := merge (pick .Values.rabbitmq_cell2 "port" "virtual_host") .Values.rabbitmq_cell2.users.default }}
 {{- $_ := set $data "host" (printf "%s-%s-rabbitmq" .Release.Name .Values.cell2.name) }}
