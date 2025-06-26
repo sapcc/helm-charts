@@ -60,6 +60,31 @@ spec:
       {{- if .Values.proxysql.native_sidecar }}
       {{- include "utils.proxysql.container" . | indent 8 }}
       {{- end }}
+        - name: generate-backend-secret-conf
+          image: {{.Values.global.dockerHubMirror}}/library/busybox
+          command:
+          - /bin/sh
+          - -c
+          - |
+            cat <<EOF > /shared/backend-secret.conf
+            [{{ $share.name }}]
+            netapp_login=${NETAPP_USERNAME}
+            netapp_password=${NETAPP_PASSWORD}
+            EOF
+          env:
+            - name: NETAPP_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: manila-share-netapp-{{ include "filerNameFromHost" $share.host }}
+                  key: username
+            - name: NETAPP_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: manila-share-netapp-{{ include "filerNameFromHost" $share.host }}
+                  key: password
+          volumeMounts:
+            - name: etcmanila
+              mountPath: /shared
       containers:
         - name: manila-share-netapp-{{$share.name}}
           image: {{.Values.global.registry}}/loci-manila:{{.Values.loci.imageVersion}}
@@ -108,10 +133,6 @@ spec:
             - name: backend-config
               mountPath: /etc/manila/backend.conf
               subPath: backend.conf
-              readOnly: true
-            - name: backend-secret
-              mountPath: /etc/manila/backend-secret.conf
-              subPath: backend-secret.conf
               readOnly: true
             {{- include "utils.proxysql.volume_mount" . | indent 12 }}
             {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
@@ -174,9 +195,6 @@ spec:
         - name: backend-config
           configMap:
             name: {{ .Release.Name }}-share-netapp-{{$share.name}}
-        - name: backend-secret
-          secret:
-            secretName: {{ .Release.Name }}-share-netapp-{{$share.name}}-secret
         {{- include "utils.proxysql.volumes" . | indent 8 }}
         {{- include "utils.trust_bundle.volumes" . | indent 8 }}
 {{ end }}
