@@ -3,7 +3,7 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: kube-monitoring-ingress-ca
-  namespace: {{ .Chart.Name }}
+  namespace: {{ .Release.Namespace }}
 data:
   ca.crt: {{ required ".Values.monitoring.ingress.tlsClientAuth.cacrt missing" .Values.monitoring.ingress.tlsClientAuth.cacrt | b64enc | quote }}
 ---
@@ -12,7 +12,7 @@ kind: Secret
 type: Opaque
 metadata:
   name: thanos-metrics-objectstore
-  namespace: {{ .Chart.Name }}
+  namespace: {{ .Release.Namespace }}
 data:
   thanos.yaml: {{ toYaml .Values.monitoring.thanosObjectstoreConfig | b64enc | quote }}
 ---
@@ -20,14 +20,14 @@ apiVersion: greenhouse.sap/v1alpha1
 kind: Plugin
 metadata:
   name: kube-monitoring
-  namespace: {{ .Chart.Name }}
+  namespace: {{ .Release.Namespace }}
 spec:
   disabled: false
   pluginDefinition: kube-monitoring
   optionValues:
   - name: kubeMonitoring.prometheus.prometheusSpec.externalLabels
     value:
-      organization: {{ .Chart.Name }}
+      organization: {{ .Release.Namespace }}
 {{- if and .Values.monitoring.extLabels.cluster .Values.monitoring.extLabels.region }}
       cluster: {{ .Values.monitoring.extLabels.cluster }}
       region: {{ .Values.monitoring.extLabels.region }}
