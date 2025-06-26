@@ -7,6 +7,8 @@ metadata:
   {{- if .Values.openTelemetryPlugin.openTelemetry.customLabels }}
   {{ toYaml .Values.openTelemetryPlugin.openTelemetry.customLabels | nindent 4 }}
   {{- end }}
+  annotations:
+    prometheus.io/scrape: "false"
 spec:
   mode: daemonset
   tolerations:
@@ -50,6 +52,9 @@ spec:
     - secretRef:
          name: otel-basic-auth
 {{- if .Values.openTelemetryPlugin.openTelemetry.prometheus.podMonitor.enabled }}
+  ports:
+    - name: prometheus
+      port: 8888
 {{- end }}
   image: {{ index .Values "openTelemetryPlugin" "opentelemetry-operator" "manager" "collectorImage" "repository" }}:{{ index .Values "openTelemetryPlugin" "opentelemetry-operator" "manager" "collectorImage" "tag" }}
   volumeMounts:
