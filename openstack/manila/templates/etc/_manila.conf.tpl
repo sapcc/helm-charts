@@ -82,7 +82,6 @@ share_replicas = {{ .Values.quota.share_replicas }}
 replica_gigabytes = {{ .Values.quota.replica_gigabytes }}
 
 [neutron]
-auth_strategy = keystone
 url = {{.Values.global.neutron_api_endpoint_protocol_internal | default "http"}}://{{include "neutron_api_endpoint_host_internal" .}}:{{ .Values.global.neutron_api_port_internal | default 9696}}
 auth_url = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
 auth_type = v3password
