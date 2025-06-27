@@ -4,7 +4,6 @@ debug = {{.Values.debug }}
 log_config_append = /etc/manila/logging.ini
 {{- include "ini_sections.logging_format" . }}
 
-use_forwarded_for = true
 # rate limiting is handled outside
 api_rate_limit = {{ .Values.api_rate_limit.enabled | default false }}
 
@@ -101,6 +100,9 @@ rabbit_interval_max = {{ .Values.rabbitmq.max_reconnect_interval | default 3 }}
 
 [oslo_concurrency]
 lock_path = /var/lib/manila/tmp
+
+[oslo_middleware]
+enable_proxy_headers_parsing = True
 
 {{ include "ini_sections.coordination" . }}
 
