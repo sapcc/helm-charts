@@ -8,6 +8,8 @@
   value: {{ .Values.monsoon_dashboard_region | quote }}
 - name: MONSOON_DASHBOARD_LANDSCAPE
   value: {{ .Values.monsoon_dashboard_landscape | quote }}
+- name: LIMES_MAIL_SERVER_API_ENDPOINT
+  value: {{ .Values.limes_mail_server_endpoint | quote }}
 - name: MONSOON_DASHBOARD_MAIL_SERVER
   value: {{ .Values.monsoon_dashboard_mail_server | quote }}
 - name: MONSOON_DASHBOARD_MAIL_SERVER_PORT
