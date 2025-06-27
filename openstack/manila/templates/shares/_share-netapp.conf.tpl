@@ -16,6 +16,8 @@ backend_url = file://$state_path
 {{- $share_backend := $share.backend_name | default $share.vserver | default "netapp-multi"}}
 
 [{{$share.name}}]
+netapp_use_legacy_client={{ $share.use_zapi | default "True" }}
+
 share_backend_name={{ $share_backend }}
 replication_domain={{ $share.replication_domain | default $share_backend }}
 share_driver=manila.share.drivers.netapp.common.NetAppDriver
