@@ -1,0 +1,35 @@
+{{/* 
+SPDX-FileCopyrightText: 2024 SAP SE or an SAP affiliate company and Greenhouse contributors
+SPDX-License-Identifier: Apache-2.0
+*/}}
+
+{{- if .Values.ingress.enabled }}
+apiVersion: greenhouse.sap/v1alpha1
+kind: Plugin
+metadata:
+  name: ingress-nginx
+  namespace: {{ .Release.Namespace }}
+spec:
+  pluginDefinition: ingress-nginx
+  disabled: false
+  optionValues:
+    # Remove after all components were moved to greenhouse namespace.
+    - name: controller.ingressClassResource.default
+      value: true
+    - name: controller.scope.enabled
+      value: false
+    - name: controller.config
+      value:
+        allow-cross-namespace-resources: true
+        # oauth2-proxy uses large headers
+        large-client-header-buffers: "4 32k"
+    {{- if .Values.ingress.loadBalancerIP }}
+    - name: controller.service.loadBalancerIP
+      value: {{ .Values.ingress.loadBalancerIP | quote }}
+    {{- end }}
+    {{- if .Values.ingress.annotations }}
+    - name: controller.service.annotations
+      value:
+        {{- .Values.ingress.annotations | toYaml | nindent 8 }}
+  {{- end }}
+{{- end }}
