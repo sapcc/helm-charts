@@ -1,3 +1,4 @@
+{{- if eq .Values.garden.backup.provider "aws" }}
 ---
 apiVersion: v1
 kind: Secret
@@ -10,6 +11,26 @@ data:
   accessKeyID: {{ required "backup.accessKeyID missing" .accessKeyID | b64enc }}
   secretAccessKey: {{ required "backup.secretAccessKey missing" .secretAccessKey | b64enc }}
   region: {{ required "backup.region missing" .region | b64enc }}
+{{- end }}
+{{- end }}
+{{- if eq .Values.garden.backup.provider "openstack" }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: virtual-garden-etcd-main-backup-openstack
+  namespace: garden
+type: Opaque
+data:
+{{- with .Values.garden.backup }}
+  applicationCredentialID: {{ required "backup.applicationCredentialID missing" .applicationCredentialID | b64enc }}
+  applicationCredentialName: {{ required "backup.applicationCredentialName missing" .applicationCredentialName | b64enc }}
+  applicationCredentialSecret: {{ required "backup.applicationCredentialSecret missing" .applicationCredentialSecret | b64enc }}
+  authURL: {{ required "backup.authURL missing" .authURL | b64enc }}
+  domainName: {{ required "backup.domainName missing" .domainName | b64enc }}
+  region: {{ required "backup.region missing" .region | b64enc }}
+  tenantName: {{ required "backup.tenantName missing" .tenantName | b64enc }}
+{{- end }}
 {{- end }}
 ---
 apiVersion: operator.gardener.cloud/v1alpha1
@@ -42,10 +63,15 @@ spec:
     etcd:
       main:
         backup:
-          provider: aws
+          provider: {{ required ".buckup.provider missing" .Values.garden.backup.provider | quote }}
           bucketName: {{ required ".buckup.bucket missing" .Values.garden.backup.bucket | quote }}
           secretRef:
+{{- if eq .Values.garden.backup.provider "aws" }}
             name: virtual-garden-etcd-main-backup-s3
+{{- end }}
+{{- if eq .Values.garden.backup.provider "openstack" }}
+            name: virtual-garden-etcd-main-backup-openstack
+{{- end }}
         storage:
           capacity: 10Gi
       events:
