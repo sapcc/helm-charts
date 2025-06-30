@@ -3,6 +3,10 @@
 rabbit_ha_queues = {{ .Values.rabbitmq_ha_queues | default .Values.global.rabbitmq_ha_queues | default "true" }}
 rabbit_transient_queues_ttl = {{ .Values.rabbit_transient_queues_ttl | default .Values.global.rabbit_transient_queues_ttl | default 60 }}
 heartbeat_in_pthread = False
+    {{- $rabbitmq_ssl := .Values.rabbitmq_ssl | default (dig "global" "rabbitmq_ssl" false ( .Values | dict )) }}
+    {{- if $rabbitmq_ssl }}
+ssl = {{ $rabbitmq_ssl }}
+    {{- end }}
 {{- end }}
 
 {{- define "ini_sections.default_transport_url" }}
@@ -21,11 +25,13 @@ heartbeat_in_pthread = False
 transport_url = {{ include "utils.rabbitmq_url" . }}
 {{- end }}
 
-
 {{- define "utils.rabbitmq_url" -}}
-{{- $envAll := index . 0 -}}
-{{- $data := index . 1 -}}
-rabbit://{{ include "resolve_secret_urlquery" $data.user }}:{{ include "resolve_secret_urlquery" $data.password }}@{{ $data.host | default (print $envAll.Release.Name "-rabbitmq") }}:{{ $data.port | default 5672 }}/{{ $data.virtual_host | default "" }}
+    {{- $envAll := index . 0 }}
+    {{- $data := index . 1 }}
+    {{- /* Global, as it is a setting in [oslo_messaging_rabbit] */}}
+    {{- $rabbitmq_ssl := $envAll.Values.rabbitmq_ssl | default (dig "global" "rabbitmq_ssl" false ( $envAll.Values | dict )) }}
+    {{- $defaultPort := ternary 5671 5672 $rabbitmq_ssl -}}
+rabbit://{{ include "resolve_secret_urlquery" $data.user }}:{{ include "resolve_secret_urlquery" $data.password }}@{{ $data.host | default (print $envAll.Release.Name "-rabbitmq") }}:{{ $data.port | default $defaultPort }}/{{ $data.virtual_host | default "" }}
 {{- end -}}
 
 {{- define "ini_sections.database_options_mysql" }}
