@@ -55,12 +55,18 @@ template: |
           vcenter: {= host =}
           datacenter: {= availability_zone =}
           vccluster: {= cluster_name =}
+          {{- if .Values.manage_service_user_passwords }}
+          vcenter-operator-secret-version: {= service_user_version =}
+          {{- end }}
         annotations:
           prometheus.io/scrape: "true"
           prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
           {{- include "utils.linkerd.pod_and_service_annotation" . | indent 10 }}
           configmap-etc-hash: {{ include (print .Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
           configmap-nova-compute-hash: {= "vcenter_cluster/{{ .Release.Namespace }}/vcenter-cluster-nova-compute-configmap.yaml.j2" | render | sha256sum =}
+          {{- if .Values.manage_service_user_passwords }}
+          uses-service-user: nova
+          {{- end }}
       spec:
         {{- tuple . "{= availability_zone =}" | include "utils.kubernetes_pod_az_affinity" | nindent 8 }}
         {{- include "kubernetes_maintenance_affinity" . | nindent 4 }}
