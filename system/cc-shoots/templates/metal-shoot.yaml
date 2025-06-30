@@ -1,7 +1,9 @@
+{{ if not .Values.regions -}}
+{{- $shootName := default (printf "met-op-%s" .Values.global.region) .Values.shootName }}
 apiVersion: core.gardener.cloud/v1beta1
 kind: Shoot
 metadata:
-  name: metal-operator
+  name: {{ $shootName }}
   namespace: garden-ccloud
 spec:
   cloudProfileName: openstack
@@ -15,3 +17,27 @@ spec:
     kubeAPIServer:
       enableAnonymousAuthentication: true # cluster registry version check
       oidcConfig: {{- toYaml .Values.oidcConfig | nindent 8 }}
+{{- end }}
+{{- range $region := .Values.regions }}
+---
+apiVersion: core.gardener.cloud/v1beta1
+kind: Shoot
+metadata:
+  name: met-op-{{ $region }}
+  namespace: garden-ccloud
+spec:
+  cloudProfileName: openstack
+  region: {{ $region }}
+  networking:
+    services: 10.55.0.0/16
+  provider:
+    type: openstack
+  kubernetes:
+    version: 1.30.0
+    kubeAPIServer:
+      enableAnonymousAuthentication: true # cluster registry version check
+      oidcConfig: {{- toYaml $.Values.oidcConfig | nindent 8 }}
+  seedSelector:
+    matchLabels:
+      name.seed.gardener.cloud/soil-{{ $region }}: "true"
+{{- end }}

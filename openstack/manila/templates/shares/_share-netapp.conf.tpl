@@ -16,6 +16,8 @@ backend_url = file://$state_path
 {{- $share_backend := $share.backend_name | default $share.vserver | default "netapp-multi"}}
 
 [{{$share.name}}]
+netapp_use_legacy_client={{ $share.use_zapi | default "True" }}
+
 share_backend_name={{ $share_backend }}
 replication_domain={{ $share.replication_domain | default $share_backend }}
 share_driver=manila.share.drivers.netapp.common.NetAppDriver
@@ -99,7 +101,7 @@ netapp_hardware_state = {{ $share.hardware_state | default "live" }}
 {{- if eq 100 (int $share.reserved_share_percentage)}}
 reserved_share_percentage = 100
 {{- else }}
-reserved_share_percentage = {{ $share.reserved_share_percentage | default 25 }}
+reserved_share_percentage = {{ $share.reserved_share_percentage | default 30 }}
 {{- end }}
 
 {{- if eq 100 (int $share.reserved_share_extend_percentage)}}
@@ -132,7 +134,7 @@ max_shares_per_share_server = {{ $share.max_shares_per_share_server | default $c
 max_share_server_size  = {{ $share.max_share_server_size | default $context.Values.max_share_server_size | default 10240 }}
 
 filter_function = {{ $share.filter_function | default "stats.provisioned_capacity_gb / stats.total_capacity_gb <= 0.7" }}
-goodness_function = {{ $share.goodness_function | default "((share.share_proto == 'CIFS') and (capabilities.channel_binding_support)) ? 100 : 50" }}
+goodness_function = {{ $share.goodness_function | default "100 - capabilities.utilization" }}
 
 {{- end -}}
 {{- end }}

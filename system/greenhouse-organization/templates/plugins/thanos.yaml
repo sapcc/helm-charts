@@ -1,0 +1,48 @@
+{{- if .Values.thanos.enabled }}
+apiVersion: greenhouse.sap/v1alpha1
+kind: Plugin
+metadata:
+  name: thanos
+  namespace: {{ .Release.Namespace }}
+spec:
+  disabled: false
+  optionValues:
+    {{- if and .Values.global.quayIoMirror .Values.global.ghcrIoMirror .Values.global.dockerHubMirror }}
+    - name: thanos.image.repository
+      value: {{ printf "%s/thanos/thanos" .Values.global.quayIoMirror }}
+    - name: thanos.initChownData.image.registry
+      value: {{ .Values.global.dockerHubMirror }}
+    - name: testFramework.image.registry
+      value: {{ .Values.global.ghcrIoMirror }}
+    {{- end }}
+    - name: thanos.query.autoDownsampling
+      value: true
+    - name: thanos.query.standalone
+      value: false
+    - name: thanos.query.stores
+      value: []
+    - name: thanos.query.ingress.enabled
+      value: true
+    - name: thanos.query.ingress.hosts
+      value:
+        - host: thanos.{{ .Values.global.dnsDomain }}
+          paths:
+            - path: /
+              pathType: Prefix
+    - name: thanos.query.ingress.tls
+      value:
+      - hosts:
+          - thanos.{{ .Values.global.dnsDomain }}
+        secretName: tls-thanos-{{ .Values.global.dnsDomain | replace "." "-" }}
+    - name: thanos.query.ingress.annotations
+      value:
+        disco: "true"
+        kubernetes.io/tls-acme: "true"
+    - name: thanos.ruler.enabled
+      value: false
+    - name: thanos.store.enabled
+      value: true
+    - name: thanos.compactor.enabled
+      value: true
+  pluginDefinition: thanos
+{{- end }}

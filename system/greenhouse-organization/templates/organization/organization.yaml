@@ -1,0 +1,64 @@
+{{- if or .Values.global.oidc.enabled .Values.scim.enabled }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ .Release.Namespace }}-auth
+  namespace: {{ .Release.Namespace }}
+type: greenhouse.sap/orgsecret
+data:
+{{- if .Values.global.oidc.enabled }}
+  oidcClientID: {{ required ".Values.global.oidc.clientID missing" .Values.global.oidc.clientID | b64enc }}
+  oidcClientSecret: {{ required ".Values.global.oidc.clientSecret missing" .Values.global.oidc.clientSecret | b64enc }}
+{{ end }}
+{{- if .Values.scim.enabled }}
+{{- if .Values.scim.username }}
+  scimBasicAuthUser: {{ .Values.scim.username | b64enc }}
+{{ end }}
+{{- if .Values.scim.username }}
+  scimBasicAuthPassword: {{ .Values.scim.password | b64enc }}
+{{ end }}
+{{- if .Values.scim.bearerToken }}
+  scimBearerToken: {{ .Values.scim.bearerToken | b64enc }}
+{{ end }}
+{{ end }}
+{{ end }}
+---
+{{ if .Values.organization.enabled }}
+apiVersion: greenhouse.sap/v1alpha1
+kind: Organization
+metadata:
+  name: {{ .Release.Namespace }}
+spec:
+  description: Greenhouse organization
+  mappedOrgAdminIdPGroup: {{ required ".Values.teams.admin.mappedIdPGroup missing" .Values.teams.admin.mappedIdPGroup }}
+{{- if or .Values.global.oidc.enabled .Values.scim.enabled }}
+  authentication:
+{{- if.Values.global.oidc.enabled }}
+    oidc:
+      issuer: {{ required ".Values.global.oidc.issuer missing" .Values.global.oidc.issuer }}
+      redirectURI: {{ default (printf "https://%s" ( include "idproxy.auth.hostname" .)) .Values.global.oidc.redirectURL }}
+      clientIDReference:
+        name: {{ .Release.Namespace }}-auth
+        key: oidcClientID
+      clientSecretReference:
+        name: {{ .Release.Namespace }}-auth
+        key: oidcClientSecret
+    {{- if .Values.organization.oauth2ClientRedirectURIs }}
+      oauth2ClientRedirectURIs:
+        {{- .Values.organization.oauth2ClientRedirectURIs | toYaml | nindent 10 }}
+    {{- end -}}
+{{- end }}
+{{- if .Values.scim.enabled }}
+    scim:
+      baseURL: {{ required ".Values.scim.baseURL" .Values.scim.baseURL }}
+      basicAuthUser:
+        secret:
+          name: {{ .Release.Namespace }}-auth
+          key: scimBasicAuthUser
+      basicAuthPw:
+        secret:
+          name: {{ .Release.Namespace }}-auth
+          key: scimBasicAuthPassword
+{{ end }}
+{{ end }}
+{{ end }}

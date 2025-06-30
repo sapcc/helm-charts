@@ -68,13 +68,24 @@ function start_tempest_tests {
   export OS_PROJECT_NAME="neutron-tempest-admin1"
   export MYTIMESTAMP=$(date -u +%Y%m%d%H%M%S)
   cd /home/rally/.rally/verification/verifier*/for-deployment* && tar cfvz /tmp/tempest-log.tar.gz ./tempest.log
-  openstack object create reports/{{ index (split "-" .Chart.Name)._0 }} /tmp/tempest-log.tar.gz --name $(echo $OS_REGION_NAME)-$(echo $MYTIMESTAMP)-log.tar.gz
-  openstack object create reports/{{ index (split "-" .Chart.Name)._0 }} /tmp/tempest-log.tar.gz --name $(echo $OS_REGION_NAME)-log-latest.tar.gz
-  openstack object create reports/{{ index (split "-" .Chart.Name)._0 }} /tmp/report.html --name $(echo $OS_REGION_NAME)-$(echo $MYTIMESTAMP).html
-  openstack object create reports/{{ index (split "-" .Chart.Name)._0 }} /tmp/report.html --name $(echo $OS_REGION_NAME)-latest.html
-  openstack object create reports/{{ index (split "-" .Chart.Name)._0 }} /tmp/report.json --name $(echo $OS_REGION_NAME)-$(echo $MYTIMESTAMP).json
-  openstack object create reports/{{ index (split "-" .Chart.Name)._0 }} /tmp/report.json --name $(echo $OS_REGION_NAME)-latest.json
-  export SERVICE_NAME={{ index (split "-" .Chart.Name)._0 }}
+  if [[ $SERVICE_NAME == "cinder-tempest-vmdk" ]]; then
+      openstack object create reports/cinder-vmdk /tmp/tempest-log.tar.gz --name $(echo $OS_REGION_NAME)-$(echo $MYTIMESTAMP)-log.tar.gz
+      openstack object create reports/cinder-vmdk /tmp/tempest-log.tar.gz --name $(echo $OS_REGION_NAME)-log-latest.tar.gz
+      openstack object create reports/cinder-vmdk /tmp/report.html --name $(echo $OS_REGION_NAME)-$(echo $MYTIMESTAMP).html
+      openstack object create reports/cinder-vmdk /tmp/report.html --name $(echo $OS_REGION_NAME)-latest.html
+      openstack object create reports/cinder-vmdk /tmp/report.json --name $(echo $OS_REGION_NAME)-$(echo $MYTIMESTAMP).json
+      openstack object create reports/cinder-vmdk /tmp/report.json --name $(echo $OS_REGION_NAME)-latest.json
+      export VERIFICIATION_ID=$(jq -r '.verifications | keys[0]' /tmp/report.json)
+  else
+      openstack object create reports/{{ index (split "-" .Chart.Name)._0 }} /tmp/tempest-log.tar.gz --name $(echo $OS_REGION_NAME)-$(echo $MYTIMESTAMP)-log.tar.gz
+      openstack object create reports/{{ index (split "-" .Chart.Name)._0 }} /tmp/tempest-log.tar.gz --name $(echo $OS_REGION_NAME)-log-latest.tar.gz
+      openstack object create reports/{{ index (split "-" .Chart.Name)._0 }} /tmp/report.html --name $(echo $OS_REGION_NAME)-$(echo $MYTIMESTAMP).html
+      openstack object create reports/{{ index (split "-" .Chart.Name)._0 }} /tmp/report.html --name $(echo $OS_REGION_NAME)-latest.html
+      openstack object create reports/{{ index (split "-" .Chart.Name)._0 }} /tmp/report.json --name $(echo $OS_REGION_NAME)-$(echo $MYTIMESTAMP).json
+      openstack object create reports/{{ index (split "-" .Chart.Name)._0 }} /tmp/report.json --name $(echo $OS_REGION_NAME)-latest.json
+      export SERVICE_NAME={{ index (split "-" .Chart.Name)._0 }}
+
+  fi
   export VERIFICIATION_ID=$(jq -r '.verifications | keys[0]' /tmp/report.json)
   export STATUS=$(jq -r '.verifications."'${VERIFICIATION_ID}'".status' /tmp/report.json)
   export FAILED=$(jq -r '.verifications."'${VERIFICIATION_ID}'".failures' /tmp/report.json)
