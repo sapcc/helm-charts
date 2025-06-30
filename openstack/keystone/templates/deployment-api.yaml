@@ -82,6 +82,9 @@ spec:
           value: {{ include "keystone.service_dependencies" . | quote }}
         - name: COMMAND
           value: "true"
+      {{- if .Values.proxysql.native_sidecar }}
+      {{- include "utils.proxysql.container" . | indent 6 }}
+      {{- end }}
       containers:
         - name: keystone-api
           image: {{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{ .Values.api.image }}:{{ required ".Values.api.imageTag is missing" .Values.api.imageTag }}
@@ -220,8 +223,10 @@ spec:
 {{ toYaml .Values.api.metrics.resources | indent 12 }}
           {{- end }}
         {{- end }}
-{{- include "jaeger_agent_sidecar" . | indent 8 }}
-{{- include "utils.proxysql.container" . | indent 8 }}
+      {{- include "jaeger_agent_sidecar" . | indent 8 }}
+      {{- if not .Values.proxysql.native_sidecar }}
+      {{- include "utils.proxysql.container" . | indent 8 }}
+      {{- end }}
       volumes:
         - name: etc-keystone
           emptyDir: {}
