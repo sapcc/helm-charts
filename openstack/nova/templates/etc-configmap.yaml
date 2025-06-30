@@ -52,6 +52,10 @@ data:
   nova-cell2-conductor.conf: |
 {{ include "util.helpers.valuesToIni" .Values.cell2.conductor.config_file | indent 4 }}
 {{- end }}
+{{- if .Values.rate_limit.enabled }}
+  ratelimit.yaml: |
+{{ include (print .Template.BasePath "/etc/_ratelimit.yaml.tpl") . | indent 4 }}
+{{- end }}
   statsd-exporter.yaml: |
     defaults:
       timer_type: histogram
