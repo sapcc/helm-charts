@@ -130,9 +130,11 @@ hostAliases:
   {{- if .Values.proxysql }}
     {{- if .Values.proxysql.mode }}
 {{- include "utils.proxysql.pod_settings" . }}
+      {{- if not .Values.proxysql.native_sidecar }}
 shareProcessNamespace: true
 securityContext:
   runAsUser: 65534
+      {{- end }}
     {{- end }}
   {{- end }}
 {{- end }}
@@ -142,7 +144,9 @@ securityContext:
 {{- define "utils.proxysql.proxysql_signal_stop_script" }}
   {{- if .Values.proxysql }}
     {{- if .Values.proxysql.mode -}}
+      {{- if not .Values.proxysql.native_sidecar }}
 pkill proxysql || true
+      {{- end }}
     {{- end }}
   {{- end }}
 {{- end }}
