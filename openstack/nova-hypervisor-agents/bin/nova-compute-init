@@ -35,6 +35,9 @@ def _get_hypervisor():
     except (novaexceptions.NotFound, IndexError):
         return None
 
-hypervisor = _get_hypervisor()
-if hypervisor:
-    pathlib.Path("/var/lib/nova/compute_id").write_text(hypervisor.id)
+compute_id = pathlib.Path("/var/lib/nova/compute_id")
+
+if not compute_id.exists():
+    hypervisor = _get_hypervisor()
+    if hypervisor:
+        pathlib.Path("/var/lib/nova/compute_id").write_text(hypervisor.id)
