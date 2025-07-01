@@ -22,6 +22,6 @@ attributes/k8sevents:
 {{- define "k8sevents.pipeline" }}
 logs/k8sevents:
   receivers: [k8s_events]
-  processors: [attributes/k8sevents]
+  processors: [attributes/k8sevents, k8sattributes]
   exporters: [forward]
 {{- end }}
