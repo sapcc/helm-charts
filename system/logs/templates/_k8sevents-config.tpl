@@ -17,7 +17,7 @@ attributes/k8sevents:
       key: log.type
       value: "k8sevents"
 
- resource/consolidate_namespace:
+ resource/consolidate_label:
     attributes:
       - key: k8s.namespace.name
         from_attribute: attributes.k8s.namespace.name
