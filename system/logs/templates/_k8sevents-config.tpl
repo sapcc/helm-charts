@@ -20,7 +20,7 @@ attributes/k8sevents:
 resource/consolidate_label:
   attributes:
     - key: k8s.namespace.name
-      from_attribute: attributes.k8s.namespace.name
+      from_attribute: k8s.namespace.name
       action: upsert
 
 {{- end }}
