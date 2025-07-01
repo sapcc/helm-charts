@@ -2,6 +2,11 @@
 
 This file is used to list changes made in each version of the common chart rabbitmq.
 
+## 0.18.3 - 2025/07/01
+
+- Default to ClusterIssuer with the name "digicert-issuer"
+
+
 ## 0.18.2 - 2025/06/30
 
 - Removed the default for CN (common name) from the certificate, as it is too long
