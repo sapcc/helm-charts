@@ -12,7 +12,7 @@ attributes/k8sevents:
       value: "k8sevents"
 
 resource/k8sevents:
-  actions:
+  attributes:
     - action: insert
       key: k8s.node.name
       value: ${KUBE_NODE_NAME}
