@@ -31,6 +31,6 @@ processors:
 {{- define "k8sevents.pipeline" }}
 logs/k8sevents:
   receivers: [k8s_events]
-  processors: [attributes/k8sevents,resource/consolidate_label]
+  processors: [attributes/k8sevents,transform/consolidate_label]
   exporters: [forward]
 {{- end }}
