@@ -17,14 +17,14 @@ attributes/k8sevents:
       key: log.type
       value: "k8sevents"
 
-processors:
-  transform/consolidate_label:
-    error_mode: ignore
-    log_statements:
-      - context: resource
-        statements:
-          - set(resource.attributes["k8s.namespace.name"], attributes["k8s.namespace.name"])
-
+transform/consolidate_label:
+# this consolidates the k8s labels coming from resource and attributes into a single label
+  error_mode: ignore
+  log_statements:
+    - context: log
+      statements:
+        - set(resource.attributes["k8s.namespace.name"], attributes["k8s.namespace.name"])
+        - set(resource.attributes["k8s.node.name"], attributes["k8s.node.name"])
 
 {{- end }}
 
