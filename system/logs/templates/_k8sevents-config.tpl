@@ -17,11 +17,17 @@ attributes/k8sevents:
       key: log.type
       value: "k8sevents"
 
+ resource/consolidate_namespace:
+    attributes:
+      - key: k8s.namespace.name
+        from_attribute: attributes.k8s.namespace.name
+        action: upsert
+
 {{- end }}
 
 {{- define "k8sevents.pipeline" }}
 logs/k8sevents:
   receivers: [k8s_events]
-  processors: [attributes/k8sevents, k8sattributes]
+  processors: [attributes/k8sevents,resource/consolidate_label]
   exporters: [forward]
 {{- end }}
