@@ -49,12 +49,22 @@ flavor = keystone
 enable_proxy_headers_parsing = true
 
 [glance_store]
-stores = {{ .Values.stores | default "file" | quote }}
-default_store = {{ .Values.default_store | default "file" | quote }}
+stores = rbd, swift
+default_store = {{ .Values.default_store | default "rbd" | quote }}
 
 {{- if .Values.file.persistence.enabled }}
 filesystem_store_datadir = /glance_store
 {{- end }}
+
+{{- if .Values.ceph.enabled }}
+# Ceph (RBD) configuration
+[ceph_store]
+rbd_store_ceph_conf = /etc/glance/ceph.conf
+rbd_store_user = glance
+rbd_store_pool = images
+rbd_store_chunk_size = 8
+rbd_store_access_timeout = 30
+{{- end}}
 
 {{- if .Values.swift.enabled }}
 swift_store_region={{.Values.global.region}}
