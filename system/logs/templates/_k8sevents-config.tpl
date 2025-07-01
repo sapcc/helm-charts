@@ -19,7 +19,7 @@ resource/k8sevents:
     - action: insert
       key: k8s.namespace.name
       from_attribute: k8s.namespace.name
-
+{{- end }}
 
 {{- define "k8sevents.pipeline" }}
 logs/k8sevents:
