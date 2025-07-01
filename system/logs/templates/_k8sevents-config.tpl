@@ -17,11 +17,11 @@ attributes/k8sevents:
       key: log.type
       value: "k8sevents"
 
- resource/consolidate_label:
-    attributes:
-      - key: k8s.namespace.name
-        from_attribute: attributes.k8s.namespace.name
-        action: upsert
+resource/consolidate_label:
+  attributes:
+    - key: k8s.namespace.name
+      from_attribute: attributes.k8s.namespace.name
+      action: upsert
 
 {{- end }}
 
