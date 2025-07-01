@@ -4,15 +4,11 @@
 "context_is_editor": "rule:context_is_image_admin or role:member"
 "context_is_viewer": "rule:context_is_editor or role:image_viewer"
 
-"domain_is_iaas": "domain_id in ['bfbe478529c444d3b8397f3a16f82a75']"
-"image_is_public": "visibility:public"
-"image_is_community": "visibility:community"
-
 "default": "rule:context_is_admin"
 "add_image": "rule:context_is_editor"
 "delete_image": "rule:context_is_image_admin"
-"get_image": "rule:context_is_viewer and (not rule:domain_is_iaas or (not rule:image_is_public and not rule:image_is_community))"
-"get_images": "rule:context_is_viewer and (not rule:domain_is_iaas or (not rule:image_is_public and not rule:image_is_community))"
+"get_image": "rule:context_is_viewer and not ('public':%(visibility)s and project_id:53adf75e3447499389e2a5d4095a639a)"
+"get_images": "rule:context_is_viewer and not ('public':%(visibility)s and project_id:53adf75e3447499389e2a5d4095a639a)"
 "modify_image": "rule:context_is_image_admin"
 "publicize_image": "rule:context_is_cloud_admin or role:image_publicize_admin"
 "communitize_image": "rule:context_is_editor"
