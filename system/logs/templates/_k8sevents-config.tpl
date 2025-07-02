@@ -2,6 +2,12 @@
 attributes/k8sevents:
   actions:
     - action: insert
+      key: k8s.node.name
+      value: ${KUBE_NODE_NAME}
+    - action: insert
+      key: k8s.namespace.name
+      from_attribute: k8s.namespace.name
+    - action: insert
       key: k8s.cluster.name
       value: ${cluster}
     - action: insert
@@ -11,19 +17,20 @@ attributes/k8sevents:
       key: log.type
       value: "k8sevents"
 
-resource/k8sevents:
-  attributes:
-    - action: insert
-      key: k8s.node.name
-      value: ${KUBE_NODE_NAME}
-    - action: insert
-      key: k8s.namespace.name
-      from_attribute: k8s.namespace.name
+transform/consolidate_label:
+# this consolidates the k8s labels coming from resource and attributes into a single label
+  error_mode: ignore
+  log_statements:
+    - context: log
+      statements:
+        - set(resource.attributes["k8s.namespace.name"], attributes["k8s.namespace.name"])
+        - set(resource.attributes["k8s.node.name"], attributes["k8s.node.name"])
+
 {{- end }}
 
 {{- define "k8sevents.pipeline" }}
 logs/k8sevents:
   receivers: [k8s_events]
-  processors: [attributes/k8sevents,resource/k8sevents]
+  processors: [attributes/k8sevents,transform/consolidate_label]
   exporters: [forward]
 {{- end }}
