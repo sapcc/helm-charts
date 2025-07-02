@@ -3,8 +3,11 @@ groups:
   rules:
   - alert: VCenterRedundancyLostHAPolicyFaulty
     expr: |
-      sum by (vccluster, vcenter) (vrops_cluster_configuration_dasconfig_enabled{vccluster=~"production.*"}) unless
-      sum by (vccluster, vcenter) (vrops_hostsystem_configuration_dasconfig_admissioncontrolpolicy_failoverhost{vccluster=~"production.*"}) != 0
+      vrops_cluster_configuration_dasconfig_enabled{vccluster=~"^productionbb\\d+$"}
+      unless on (vccluster) ((vrops_hostsystem_configuration_dasconfig_admissioncontrolpolicy_failoverhost{vccluster=~"^productionbb\\d+$"} != 0
+      and on (hostsystem) vrops_hostsystem_runtime_maintenancestate{state!="inMaintenance"})
+      or (vrops_cluster_summary_custom_tag_openstack_nova_traits_decommissioning{summary_custom_tag_openstack_nova_traits_decommissioning="true", vccluster=~"^productionbb\\d+$"}
+      and on (vccluster) vrops_cluster_cluster_running_vms == 0))
     for: 30m
     labels:
       severity: critical

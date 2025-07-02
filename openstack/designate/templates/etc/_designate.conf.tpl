@@ -182,6 +182,32 @@ enabled_extensions_v2 = quotas, reports
 #pecan_debug = False
 
 #-----------------------
+# Keystone
+#-----------------------
+[keystone]
+# The maximum number of retries that should be attempted for connection errors.
+# (integer value)
+connect_retries = 20
+
+# Delay (in seconds) between two retries for connection errors. If not set,
+# exponential retry starting with 0.5 seconds up to a maximum of 60 seconds is
+# used. (floating point value)
+connect_retry_delay = 0.5
+
+# The maximum number of retries that should be attempted for retriable HTTP
+# status codes. (integer value)
+status_code_retries = 20
+
+# Delay (in seconds) between two retries for retriable status codes. If not set,
+# exponential retry starting with 0.5 seconds up to a maximum of 60 seconds is
+# used. (floating point value)
+status_code_retry_delay = 0.5
+
+# List of retriable HTTP status codes that should be retried. If not set default
+# to  [503] (list value)
+retriable_status_codes = 500, 502, 503, 504
+
+#-----------------------
 # Keystone Middleware
 #-----------------------
 [keystone_authtoken]

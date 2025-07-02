@@ -1,18 +1,16 @@
-{{ $chartName := .Chart.Name }}
 {{ range $roleBinding := .Values.teamRoleBindings }}
 {{- if and $roleBinding.teamRef $roleBinding.teamRoleRef $roleBinding.clusterSelector }}
 ---
-apiVersion: greenhouse.sap/v1alpha2
+apiVersion: greenhouse.sap/v1alpha1
 kind: TeamRoleBinding
 metadata:
   name: {{ printf "%s-%s" $roleBinding.teamRef $roleBinding.teamRoleRef | trunc 63 | trimSuffix "-" }}
-  namespace: {{ $chartName }}
+  namespace: {{ $.Release.Namespace }}
 spec:
   teamRef: {{ $roleBinding.teamRef }}
   teamRoleRef: {{ $roleBinding.teamRoleRef }}
   clusterSelector:
-    labelSelector:
-    {{- $roleBinding.clusterSelector | toYaml | nindent 6 }}
+    {{- $roleBinding.clusterSelector | toYaml | nindent 4 }}
 {{- if $roleBinding.usernames }}
   usernames:
 {{- range $username := $roleBinding.usernames }}
