@@ -1,20 +1,6 @@
 groups:
 - name: cc3test-network-seperation.alerts
   rules:
-  - alert: NetworkSegTestFailed
-    expr: |
-        last_over_time(cc3test_status{type="logical_network_separation", phase="call"}[7d]) == 0
-    for: 120m
-    labels:
-      severity: warning
-      service: cc3test
-      context: '{{ $labels.type }}'
-      meta: 'Network Seperation Test {{ $labels.name }} got Failed'
-      report: 'cc3test/regression/object-storage/swift/containers/cc3test/objects/{{ $labels.base64path }}'
-    annotations:
-      description: 'Network Seperation test {{ $labels.name }}/ {{ $labels.type }} got Failed'
-      summary: 'Network Seperation test {{ $labels.name }}/ {{ $labels.type }} got Failed'
-
   - alert: NetworkSegTestSetupFailed
     expr: |
         last_over_time(cc3test_status{type="logical_network_separation", phase="setup"}[7d]) == 0
@@ -23,8 +9,8 @@ groups:
       severity: warning
       service: cc3test
       context: '{{ $labels.type }}'
-      meta: 'Network Seperation Test {{ $labels.name }} is not running'
+      meta: 'Network Seperation Test {{ $labels.name }} got failed in setup phase'
       report: 'cc3test/regression/object-storage/swift/containers/cc3test/objects/{{ $labels.base64path }}'
     annotations:
       description: 'Network Seperation test {{ $labels.name }}/ {{ $labels.type }} got failed in setup phase'
-      summary: 'Network Seperation test {{ $labels.name }}/ {{ $labels.type }} got failed in setup phase'
+      summary: 'Network Seperation test {{ $labels.name }}/ {{ $labels.type }} got  failed in setup phase'
