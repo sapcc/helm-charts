@@ -55,7 +55,7 @@ spec:
       - name: nova-compute-init
         image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/{{ .Values.imageName }}:{{ .Values.imageVersion | required "Please set imageVersion similar" }}
         command: ["/container.init/nova-compute-init"]
-        workingDir: /etc/nova/nova-compute.conf.d
+        workingDir: /etc/nova
         volumeMounts:
           - mountPath: /container.init
             name: bin
@@ -158,8 +158,6 @@ spec:
             name: run
           - mountPath: /etc/nova
             name: nova-etc
-          - mountPath: /etc/nova/nova-compute.conf.d
-            name: nova-compute-etc
           - mountPath: /var/lib/nova/mnt
             mountPropagation: Bidirectional
             name: mnt
@@ -203,13 +201,6 @@ spec:
           command:
           - /container.init/nova-libvirt-start
           env:
-          {{- if .Values.sentry.enabled }}
-          - name: SENTRY_DSN
-            valueFrom:
-              secretKeyRef:
-                name: sentry
-                key: {{ .Chart.Name }}.DSN.python
-          {{- end }}
           volumeMounts:
           - mountPath: /var/lib/nova/instances
             name: instances
@@ -217,11 +208,6 @@ spec:
             name: libvirt
           - mountPath: /run
             name: run
-          - mountPath: /etc/nova
-            name: nova-etc
-            readOnly: true
-          - mountPath: /etc/nova/nova-compute.conf.d
-            name: nova-compute-etc
           - mountPath: /etc/libvirt
             name: etclibvirt
           - mountPath: /etc/libvirt/libvirtd.conf
@@ -238,13 +224,6 @@ spec:
           command:
           - /usr/sbin/virtlogd
           env:
-          {{- if .Values.sentry.enabled }}
-          - name: SENTRY_DSN
-            valueFrom:
-              secretKeyRef:
-                name: sentry
-                key: {{ .Chart.Name }}.DSN.python
-          {{- end }}
           volumeMounts:
           - mountPath: /var/lib/nova/instances
             name: instances
@@ -334,9 +313,6 @@ spec:
               items:
               - key: sudoers-nova
                 path: nova
-      - name: nova-compute-etc
-        emptyDir:
-          medium: Memory
       - name: nova-etc
         projected:
           sources:
