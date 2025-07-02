@@ -205,7 +205,7 @@ status_code_retry_delay = 0.5
 
 # List of retriable HTTP status codes that should be retried. If not set default
 # to  [503] (list value)
-retriable_status_codes = [500, 502, 503, 504]
+retriable_status_codes = 500, 502, 503, 504
 
 #-----------------------
 # Keystone Middleware
