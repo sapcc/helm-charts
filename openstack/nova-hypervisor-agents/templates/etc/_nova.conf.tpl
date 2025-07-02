@@ -26,8 +26,6 @@ sync_power_state_pool_size = {{ .Values.sync_power_state_pool_size | default 500
 sync_power_state_interval = {{ .Values.sync_power_state_interval | default 1200 }}
 sync_power_state_unexpected_call_stop = false
 
-prepare_empty_host_for_spawning_interval = 600
-
 {{ template "utils.snippets.debug.eventlet_backdoor_ini" "nova" }}
 
 # usage refreshes on new reservations, 0 means disabled
