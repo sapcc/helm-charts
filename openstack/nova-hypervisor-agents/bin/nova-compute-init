@@ -1,18 +1,12 @@
 #!/var/lib/openstack/bin/python3
-import json
-import os
+import configparser
 import pathlib
 import platform
 import socket
-import subprocess
-import textwrap
 import uuid
-
-import requests
 
 from novaclient import client as novaclient
 from novaclient import exceptions as novaexceptions
-import configparser
 
 
 def _get_hypervisor():
@@ -35,9 +29,16 @@ def _get_hypervisor():
     except (novaexceptions.NotFound, IndexError):
         return None
 
+
 compute_id = pathlib.Path("/var/lib/nova/compute_id")
 
 if not compute_id.exists():
     hypervisor = _get_hypervisor()
     if hypervisor:
-        pathlib.Path("/var/lib/nova/compute_id").write_text(hypervisor.id)
+        compute_id.write_text(hypervisor.id)
+    else:
+        node = platform.node().split(".", 1)[0]
+        compute_uuid = uuid.uuid5(
+            uuid.UUID("408adaa7-5ff0-4740-b8c8-c46f79f09080"), node
+        )
+        compute_id.write_text(str(compute_uuid))
