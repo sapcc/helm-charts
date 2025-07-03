@@ -390,6 +390,14 @@ maillog:
     - "read"
     - "indices:monitor/settings/get"
     - "indices:monitor/stats"
+  - index_patterns:
+    - "logs-*"
+    allowed_actions:
+    - "read"
+    - "indices:data/read/search*"
+    - "indices:data/read/get"
+    - "indices:monitor/settings/get"
+    - "indices:monitor/stats"
 
 jupyterhub:
   reserved: false
