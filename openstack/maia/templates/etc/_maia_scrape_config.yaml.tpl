@@ -100,7 +100,7 @@
       - '{__name__=~"^limes_(?:project|domain)_(?:quota|usage|committed_per_az|usage_per_az|commitment_min_expires_at)$",namespace="limes"}' # the namespace match filters limes-global
       - '{__name__=~"^limes_swift_.+",project_id!="",namespace="limes"}'
       - '{__name__=~"^keppel_.+",project_id!=""}'
-      - '{__name__=_"^andromada_.+",project_id!=""}'
+      - '{__name__=~"^andromada_.+",project_id!=""}'
 
 - job_name: 'prometheus-infra-collector'
   scrape_interval: 1m
