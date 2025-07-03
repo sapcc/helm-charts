@@ -1,6 +1,10 @@
 # Changelog
 
-## v0.25.0 - 2025-07-02
+## v0.25.1 - 2025/07/18
+* `maria-back-me-up` updated to `20250717142353`
+* chart version bumped
+
+## v0.25.0 - 2025/07/02
 * MariaDB version updated to [10.11.13](https://mariadb.com/kb/en/mariadb-10-11-13-release-notes/)
   * See https://mariadb.com/kb/en/changes-improvements-in-mariadb-1011/
 * mysql-exporter version updated to [v0.17.2](https://github.com/prometheus/mysqld_exporter/releases/tag/v0.17.2)
