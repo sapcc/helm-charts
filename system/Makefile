@@ -189,13 +189,18 @@ build-ipam-operator-remote:
 	@$(SED) -i 's/serviceAccountName.*$$/serviceAccountName: default/g' ipam-operator-remote/templates/deployment.yaml
 	@$(SED) -i 's/kind: Role/kind: ClusterRole/g' ipam-operator-remote/managedresources/kustomize.yaml
 
+
+build-argora-operator:
+	@helm dep up argora-operator
+	@yq -i '.version = (.version | split(".") | .[2] = ((.[2] | tonumber) + 1 | tostring) | join("."))' argora-operator/Chart.yaml
+
 build-argora-operator-remote:
 	@helm dep up argora-operator-remote
 	@helm template argora-operator argora-operator-remote/charts/argora-* \
 		-n kube-system \
 		-f argora-operator-remote/values-managed-resources.yaml |\
 		$(SED) 's/kind: Role/kind: ClusterRole/g' - |\
-		yq eval 'select(.kind != "Service" and .kind != "ValidatingWebhookConfiguration")' - >\
+		yq eval 'select(.kind != "Service" and .kind != "ValidatingWebhookConfiguration" and .kind != "ConfigMap" and .kind != "Secret")' - >\
 		argora-operator-remote/managedresources/crds-and-rbac.yaml
 		yq -i '.version = (.version | split(".") | .[2] = ((.[2] | tonumber) + 1 | tostring) | join("."))' argora-operator-remote/Chart.yaml
 
