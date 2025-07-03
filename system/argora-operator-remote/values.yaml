@@ -2,9 +2,6 @@ owner-info:
   support-group: containers
   helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/system/argora-operator-remote
 
-config:
-  configJson: '{{ toJson .Values.config }}'
-
 kubernetesClusterDomain: cluster.local
 fullnameOverride: argora-operator
 
@@ -36,18 +33,6 @@ argora-operator-core:
         ENABLE_WEBHOOKS: "false"
         KUBERNETES_CLUSTER_DOMAIN: "cluster.local"
       volumes:
-      - name: secret-volume
-        mountPath: /etc/credentials
-        readOnly: true
-        source:
-          secret:
-            secretName: argora-operator-secret
-      - name: config-volume
-        mountPath: /etc/config
-        readOnly: true
-        source:
-          configMap:
-            name: argora-operator-config
       - name: remote-kubeconfig
         mountPath: /var/run/secrets/kubernetes.io/serviceaccount
         readOnly: true
@@ -85,3 +70,9 @@ argora-operator-core:
         networking.resources.gardener.cloud/to-kube-apiserver-tcp-443: allowed
     serviceAccountName: default
     hostNetwork: false
+
+  config:
+    configJson: "{}"
+
+  secret:
+    credentialsJson: "{}"
