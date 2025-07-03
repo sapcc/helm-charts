@@ -1,7 +1,7 @@
 {{ range $roleBinding := .Values.teamRoleBindings }}
 {{- if and $roleBinding.teamRef $roleBinding.teamRoleRef $roleBinding.clusterSelector }}
 ---
-apiVersion: greenhouse.sap/v1alpha1
+apiVersion: greenhouse.sap/v1alpha2
 kind: TeamRoleBinding
 metadata:
   name: {{ printf "%s-%s" $roleBinding.teamRef $roleBinding.teamRoleRef | trunc 63 | trimSuffix "-" }}
@@ -10,7 +10,8 @@ spec:
   teamRef: {{ $roleBinding.teamRef }}
   teamRoleRef: {{ $roleBinding.teamRoleRef }}
   clusterSelector:
-    {{- $roleBinding.clusterSelector | toYaml | nindent 4 }}
+    labelSelector:
+    {{- $roleBinding.clusterSelector | toYaml | nindent 6 }}
 {{- if $roleBinding.usernames }}
   usernames:
 {{- range $username := $roleBinding.usernames }}
