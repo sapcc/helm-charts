@@ -7,11 +7,11 @@ rally_debug = True
 [auth]
 use_dynamic_credentials = False
 create_isolated_networks = False
-test_accounts_file = /{{ .Chart.Name }}-etc/tempest_accounts.yaml
+test_accounts_file = /{{ .Chart.Name }}-etc-secret/tempest_accounts.yaml
 default_credentials_domain_name = tempest
 admin_project_name = {{ default "neutron-tempest-admin1" (index .Values (print .Chart.Name | replace "-" "_")).tempest.admin_project_name }}
 admin_username = {{ default "neutron-tempest-admin1" (index .Values (print .Chart.Name | replace "-" "_")).tempest.admin_name }}
-admin_password = {{ required "A valid .Values.tempestAdminPassword required!" .Values.tempestAdminPassword }}
+admin_password = {{ required "A valid .Values.tempestAdminPassword required!" .Values.tempestAdminPassword | include "tempest-base.resolve_secret" }}
 admin_domain_name = tempest
 admin_domain_scope = True
 
@@ -25,12 +25,12 @@ admin_domain_scope = False
 disable_ssl_certificate_validation = True
 auth_version = v3
 username = {{ default "neutron-tempest-admin1" (index .Values (print .Chart.Name | replace "-" "_")).tempest.admin_name }}
-password = {{ required "A valid .Values.tempestAdminPassword required!" .Values.tempestAdminPassword }}
+password = {{ required "A valid .Values.tempestAdminPassword required!" .Values.tempestAdminPassword | include "tempest-base.resolve_secret"}}
 domain_name = tempest
 admin_role = admin
 admin_domain_name = tempest
 admin_username = {{ default "neutron-tempest-admin1" (index .Values (print .Chart.Name | replace "-" "_")).tempest.admin_name }}
-admin_password = {{ required "A valid .Values.tempestAdminPassword required!" .Values.tempestAdminPassword }}
+admin_password = {{ required "A valid .Values.tempestAdminPassword required!" .Values.tempestAdminPassword | include "tempest-base.resolve_secret"}}
 catalog_type = identity
 user_unique_last_password_count = 5
 user_lockout_duration = 300
@@ -81,7 +81,7 @@ flavor_ref = 20
 flavor_ref_alt = 30
 min_microversio = 2.1
 max_microversion = latest
-fixed_network_name = {{ (index .Values (print .Chart.Name | replace "-" "_")).tempest.fixed_network_name }}
+fixed_network_name = {{ default "" (index .Values (print .Chart.Name | replace "-" "_")).tempest.fixed_network_name }}
 build_timeout=600
 compute_volume_common_az = qa-de-1b
 
@@ -98,9 +98,9 @@ spice_console = False
 attach_encrypted_volume = False
 
 [share]
-share_network_id = {{ (index .Values (print .Chart.Name | replace "-" "_")).tempest.share_network_id }}
-alt_share_network_id = {{ (index .Values (print .Chart.Name | replace "-" "_")).tempest.alt_share_network_id }}
-admin_share_network_id = {{ (index .Values (print .Chart.Name | replace "-" "_")).tempest.admin_share_network_id }}
+share_network_id = {{ default "" (index .Values (print .Chart.Name | replace "-" "_")).tempest.share_network_id }}
+alt_share_network_id = {{ default "" (index .Values (print .Chart.Name | replace "-" "_")).tempest.alt_share_network_id }}
+admin_share_network_id = {{ default "" (index .Values (print .Chart.Name | replace "-" "_")).tempest.admin_share_network_id }}
 run_revert_to_snapshot_tests = False
 run_multiple_share_replicas_tests = False
 run_share_group_tests = False
