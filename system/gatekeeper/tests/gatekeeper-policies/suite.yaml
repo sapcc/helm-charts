@@ -626,19 +626,42 @@ tests:
   - name: pod-security-v2-allow-capabilities
     object: fixtures/pod-security-v2/capabilities-allow.yaml
     assertions:
-    - violations: no  
-  - name: pod-security-v2-reject-host-path-volumes
-    object: fixtures/pod-security-v2/host-path-volumes-reject.yaml
+    - violations: no 
+  - name: pod-security-v2-reject-host-path-volumes-r
+    object: fixtures/pod-security-v2/host-path-volumes-reject-r.yaml
+    assertions:
+    - violations: 1
+      message: '^\{"support_group":"none","service":"none"\} >> container \"foo-container\" in this pod is not allowed to mount hostPath volumes with path \"/\" \(readonly = true\)$'
+  - name: pod-security-v2-reject-host-path-volumes-rw
+    object: fixtures/pod-security-v2/host-path-volumes-reject-rw.yaml
     assertions:
     - violations: 1
       message: '^\{"support_group":"none","service":"none"\} >> container \"foo-container\" in this pod is not allowed to mount hostPath volumes with path \"/\" \(readonly = false\)$'
-  - name: pod-security-v2-no-rule-for-host-path-volumes
-    object: fixtures/pod-security-v2/host-path-volumes-no-rule.yaml
+  - name: pod-security-v2-reject-host-path-volumes-w
+    object: fixtures/pod-security-v2/host-path-volumes-reject-w.yaml
     assertions:
     - violations: 1
       message: '^\{"support_group":"none","service":"none"\} >> container \"foo-container\" in this pod is not allowed to mount hostPath volumes with path \"/\" \(readonly = false\)$'
-  - name: pod-security-v2-allow-host-path-volumes
-    object: fixtures/pod-security-v2/host-path-volumes-allow.yaml
+  - name: pod-security-v2-no-rule-for-host-path-volumes-r
+    object: fixtures/pod-security-v2/host-path-volumes-no-rule-r.yaml
+    assertions:
+    - violations: 1
+      message: '^\{"support_group":"none","service":"none"\} >> container \"foo-container\" in this pod is not allowed to mount hostPath volumes with path \"/\" \(readonly = true\)$'
+  - name: pod-security-v2-no-rule-for-host-path-volumes-w
+    object: fixtures/pod-security-v2/host-path-volumes-no-rule-w.yaml
+    assertions:
+    - violations: 1
+      message: '^\{"support_group":"none","service":"none"\} >> container \"foo-container\" in this pod is not allowed to mount hostPath volumes with path \"/\" \(readonly = false\)$'
+  - name: pod-security-v2-allow-host-path-volumes-r
+    object: fixtures/pod-security-v2/host-path-volumes-allow-r.yaml
+    assertions:
+    - violations: no
+  - name: pod-security-v2-allow-host-path-volumes-rw
+    object: fixtures/pod-security-v2/host-path-volumes-allow-rw.yaml
+    assertions:
+    - violations: no
+  - name: pod-security-v2-allow-host-path-volumes-w
+    object: fixtures/pod-security-v2/host-path-volumes-allow-w.yaml
     assertions:
     - violations: no
   - name: pod-security-v2-check-image-repo-parsing
