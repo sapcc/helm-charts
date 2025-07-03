@@ -1,0 +1,124 @@
+{{- if .Values.opensearch.enabled -}}
+{{- range $r := $.Values.opensearch.clusters }}
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: opensearch-basic-auth-{{ $r.cluster }}
+  namespace: {{ $.Release.Namespace }}
+data:
+  admin_username: {{ required "$r.users.admin.username missing" $r.users.admin.username | b64enc }}
+  admin_password: {{ required "$r.users.admin.password missing" $r.users.admin.password | b64enc }}
+  admin_hash: {{ required "$r.users.admin.hash missing" $r.users.admin.hash | b64enc }}
+  logs_username: {{ required "$r.users.logs.username missing" $r.users.logs.username | b64enc }}
+  logs_password: {{ required "$r.users.logs.password missing" $r.users.logs.password | b64enc }}
+  logs2_username: {{ required "$r.users.logs2.username missing" $r.users.logs2.username | b64enc }}
+  logs2_password: {{ required "$r.users.logs2.password missing" $r.users.logs2.password | b64enc }}
+  dashboards_username: {{ required "$r.users.dashboards.username missing" $r.users.dashboards.username | b64enc }}
+  dashboards_password: {{ required "$r.users.dashboards.password missing" $r.users.dashboards.password | b64enc }}
+  dashboards2_username: {{ required "$r.users.dashboards2.username missing" $r.users.dashboards2.username | b64enc }}
+  dashboards2_password: {{ required "$r.users.dashboards2.password missing" $r.users.dashboards2.password | b64enc }}
+{{- end }}
+
+---
+apiVersion: greenhouse.sap/v1alpha1
+kind: PluginPreset
+metadata:
+  name: opensearch
+  namespace: {{ $.Release.Namespace }}
+spec:
+  clusterSelector:
+    matchLabels:
+      greenhouse.sap/cluster-presets-enabled: "true"
+    matchExpressions:
+      - key: greenhouse.sap/pluginpreset
+        operator: In
+        values:
+          - "true"
+      - key: cluster-type
+        operator: In
+        values:
+          - "observability"
+  clusterOptionOverrides:
+  {{- range $r := $.Values.opensearch.clusters }}
+  - clusterName: {{ $r.cluster }}
+    overrides:
+      - name: cluster.cluster.general.monitoring.labels
+        value:
+          plugin: 'kube-monitoring-{{ $r.cluster }}'
+      - name: certManager.httpDnsNames
+        value: {{ $r.endpoint | toYaml | nindent 10 }}
+      - name: cluster.usersCredentials.logs.username
+        valueFrom:
+          secret:
+            key: logs_username
+            name: opensearch-basic-auth-{{ $r.cluster }}
+      - name: cluster.usersCredentials.logs.password
+        valueFrom:
+          secret:
+            key: logs_password
+            name: opensearch-basic-auth-{{ $r.cluster }}
+      - name: cluster.usersCredentials.logs2.username
+        valueFrom:
+          secret:
+            key: logs2_username
+            name: opensearch-basic-auth-{{ $r.cluster }}
+      - name: cluster.usersCredentials.logs2.password
+        valueFrom:
+          secret:
+            key: logs2_password
+            name: opensearch-basic-auth-{{ $r.cluster }}
+      - name: cluster.usersCredentials.admin.username
+        valueFrom:
+          secret:
+            key: admin_username
+            name: opensearch-basic-auth-{{ $r.cluster }}
+      - name: cluster.usersCredentials.admin.password
+        valueFrom:
+          secret:
+            key: admin_password
+            name: opensearch-basic-auth-{{ $r.cluster }}
+      - name: cluster.usersCredentials.admin.hash
+        valueFrom:
+          secret:
+            key: admin_hash
+            name: opensearch-basic-auth-{{ $r.cluster }}
+      - name: cluster.usersCredentials.dashboards.username
+        valueFrom:
+          secret:
+            key: dashboards_username
+            name: opensearch-basic-auth-{{ $r.cluster }}
+      - name: cluster.usersCredentials.dashboards.password
+        valueFrom:
+          secret:
+            key: dashboards_password
+            name: opensearch-basic-auth-{{ $r.cluster }}
+      - name: cluster.usersCredentials.dashboards2.username
+        valueFrom:
+          secret:
+            key: dashboards2_username
+            name: opensearch-basic-auth-{{ $r.cluster }}
+      - name: cluster.usersCredentials.dashboards2.password
+        valueFrom:
+          secret:
+            key: dashboards2_password
+            name: opensearch-basic-auth-{{ $r.cluster }}
+      - name: cluster.cluster.ingress.opensearch.enabled
+        value: {{ $r.ingress.enabled | default false }}
+      - name: cluster.cluster.ingress.opensearch.className
+        value: {{ $r.ingress.className | default "nginx" }}
+      - name: cluster.cluster.ingress.opensearch.annotations
+        value: {{ $r.ingress.annotations | toYaml | nindent 10 }}
+      - name: cluster.cluster.ingress.opensearch.hosts
+        value: {{ $r.ingress.hosts | toYaml | nindent 10 }}
+      - name: cluster.cluster.ingress.opensearch.tls
+        value: {{ $r.ingress.tls | toYaml | nindent 10 }}
+  {{ end -}}
+  plugin:
+    pluginDefinition: opensearch
+    releaseNamespace: logs
+    optionValues:
+      - name: cluster.cluster.general.monitoring.additionalRuleLabels
+        value: {{ .Values.opensearch.additionalRuleLabels | toYaml | nindent 10 }}
+{{- end -}}
