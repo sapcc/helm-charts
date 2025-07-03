@@ -1,3 +1,5 @@
+{{- $dhMirror := .Values.surveyor.primary_dockerhub_mirror | required "missing value for .Values.surveyor.primary_dockerhub_mirror" -}}
+
 kind: Deployment
 apiVersion: apps/v1
 
@@ -54,6 +56,8 @@ spec:
               value: /etc/surveyor/config.json
             - name: SURVEYOR_GIT_CACHE_DIR
               value: /var/cache/surveyor
+            - name: SURVEYOR_IMAGE_PULL_REWRITE_RULES
+              value: '[{ "key": "(?:index\\.)?docker\\.io/(.*)", "value": "{{ $dhMirror }}/$1"}]'
             {{- range (keys .Values.surveyor.secrets | sortAlpha) }}
             - name: {{ quote . }}
               valueFrom:
