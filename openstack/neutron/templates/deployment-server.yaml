@@ -1,4 +1,4 @@
-kind: Deployment
+kind: {{ .Values.pod.neutron_server_kind | default "Deployment" }}
 apiVersion: apps/v1
 
 metadata:
@@ -14,6 +14,7 @@ metadata:
 spec:
   replicas: {{ if not .Values.pod.debug.server }}{{ .Values.pod.replicas.server }}{{ else }} 1 {{ end }}
   revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revision_history }}
+  {{- if ne .Values.pod.neutron_server_kind "statefulset" }}
   strategy:
     type: {{ .Values.pod.lifecycle.upgrades.deployments.pod_replacement_strategy }}
     {{ if eq .Values.pod.lifecycle.upgrades.deployments.pod_replacement_strategy "RollingUpdate" }}
@@ -21,6 +22,7 @@ spec:
       maxUnavailable: {{ .Values.pod.lifecycle.upgrades.deployments.rolling_update.max_unavailable }}
       maxSurge: {{ .Values.pod.lifecycle.upgrades.deployments.rolling_update.max_surge }}
     {{ end }}
+  {{- end }}
   selector:
     matchLabels:
       name: neutron-server
@@ -200,6 +202,12 @@ spec:
               name: neutron-etc-vendor
               subPath: ml2-conf-asr1k.ini
               readOnly: true
+            {{- if .Values.ovn.enabled }}
+            - mountPath: /etc/neutron/plugins/ml2/ml2-conf-ovn.ini
+              name: neutron-etc-vendor
+              subPath: ml2-conf-ovn.ini
+              readOnly: true
+            {{- end }}
             {{- if .Values.bgp_vpn.enabled }}
             - mountPath: /etc/neutron/networking-bgpvpn.conf
               name: neutron-etc

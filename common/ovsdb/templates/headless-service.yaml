@@ -1,0 +1,18 @@
+{{- if .Values.relay.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "ovsdb.fullname" . }}-headless
+  labels:
+    {{ include "ovsdb.labels" . | nindent 4 }}
+spec:
+  type: ClusterIP
+  clusterIP: None
+  ports:
+    - port: {{ .Values.DB_PORT }}
+      targetPort: {{ .Values.DB_PORT }}
+      protocol: TCP
+      name: ovsdb
+  selector:
+    {{ include "ovsdb.selectorLabels" . | nindent 4 }}
+{{- end }}
