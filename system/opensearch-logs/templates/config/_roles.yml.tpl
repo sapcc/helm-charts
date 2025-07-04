@@ -28,18 +28,12 @@ data:
   - index_patterns:
     - "deployments-datastream"
     - "alerts-datastream"
-    - "logstash-*"
     - "logs-datastream"
     - "logs-swift-datastream"
-    - "systemd-*"
-    - "compute-*"
-    - "qade2-logstash-*"
-    - "qade3-logstash-*"
-    - "qade5-logstash-*"
-    - "greenhouse-*"
-    - "storage-*"
-    - "alerts-*"
-    - "deployments-*"
+    - "compute-datastream"
+    - "storage-datastream"
+    - "alerts-datastream"
+    - "deployments-datastream"
     allowed_actions:
     - "indices:admin/template/get"
     - "indices:admin/template/put"
@@ -286,6 +280,7 @@ complex-role:
   - 'cluster:admin/opendistro/reports/instance/list'
   - 'cluster:admin/opendistro/reports/instance/get'
   - 'cluster:admin/opendistro/reports/menu/download'
+  - 'cluster:admin/opensearch/ppl'
   index_permissions:
   - index_patterns:
     - "*"
@@ -294,6 +289,10 @@ complex-role:
     - "read"
     - "get"
     - "indices:monitor/settings/get"
+    - "indices:admin/create"
+    - 'indices:admin/mappings/get'
+    - 'indices:data/read/search*'
+    - "indices:admin/get"
   tenant_permissions:
   - tenant_patterns:
     - "*"

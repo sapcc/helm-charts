@@ -36,20 +36,12 @@ spec:
     - key: cluster
       operator: In
       values:
-{{- range $cluster, $additionalSettings := .Values.kubeMonitoring.cephClusters }}
+{{- range $serviceName, $serviceSpecs := .Values.kubeMonitoring.services }}
+{{- range $cluster, $additionalSettings := $serviceSpecs.clusters }}
     {{- if index $additionalSettings "thanos" }}
       - {{ $cluster }}
     {{- end }}
 {{- end }}
-{{- range $cluster, $additionalSettings := .Values.kubeMonitoring.computeClusters }}
-    {{- if index $additionalSettings "thanos" }}
-      - {{ $cluster }}
-    {{- end }}
-{{- end }}
-{{- range $cluster, $additionalSettings := .Values.kubeMonitoring.obsClusters }}
-    {{- if index $additionalSettings "thanos" }}
-      - {{ $cluster }}
-    {{- end }}
 {{- end }}
   plugin:
     displayName: Thanos
@@ -88,4 +80,8 @@ spec:
       value: true
     - name: thanos.query.ingress.grpc.ingressClassName
       value: nginx
+    - name: thanos.serviceMonitor.alertLabels
+      value: |
+        support_group: observability
+        service: metrics
 {{- end -}}

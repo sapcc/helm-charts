@@ -1,5 +1,21 @@
 # Changelog
 
+## v0.25.0 - 2025-07-02
+* MariaDB version updated to [10.11.13](https://mariadb.com/kb/en/mariadb-10-11-13-release-notes/)
+  * See https://mariadb.com/kb/en/changes-improvements-in-mariadb-1011/
+* mysql-exporter version updated to [v0.17.2](https://github.com/prometheus/mysqld_exporter/releases/tag/v0.17.2)
+* chart version bumped
+
+## v0.24.2 - 2025/05/27
+* MariaDB version bumped to [10.6.22](https://mariadb.com/kb/en/mariadb-10-6-22-release-notes/)
+  * InnoDB race condition has been fixed
+  * [CVEs fixed](https://mariadb.com/kb/en/security/#full-list-of-cves-fixed-in-mariadb):
+    * [CVE-2025-30722](http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2025-30722)
+    * [CVE-2025-30693](http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2025-30693)
+    * [CVE-2023-52970](http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2023-52970)
+    * [CVE-2023-52969](http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2023-52969)
+* chart version bumped
+
 ## v0.24.1 - 2025/05/14
 * Set `max_connect_errors` option in my.cnf to maximal possible value `4294967295`.
 * Set `skip_name_resolve` option to `ON` and `host_cache_size` to 0.

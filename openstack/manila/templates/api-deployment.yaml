@@ -11,8 +11,10 @@ metadata:
     system: openstack
     component: manila
     type: api
-  {{- if .Values.vpa.set_main_container }}
   annotations:
+    secret.reloader.stakater.com/reload: "{{ .Release.Name }}-secrets"
+    deployment.reloader.stakater.com/pause-period: "60s"
+  {{- if .Values.vpa.set_main_container }}
     vpa-butler.cloud.sap/main-container: manila-api
   {{- end }}
 spec:
@@ -67,6 +69,9 @@ spec:
         command: ["sh", "-c", "chown -R 42424:42424 /var/lib/manila/coordination"]
         volumeMounts:
         {{- include "utils.coordination.volume_mount" . | indent 10 }}
+      {{- end }}
+      {{- if .Values.proxysql.native_sidecar }}
+      {{- tuple . .Values.wsgi_processes | include "utils.proxysql.container" | indent 6 }}
       {{- end }}
       containers:
         - name: manila-api
@@ -212,7 +217,9 @@ spec:
           resources:
             {{- toYaml .Values.pod.resources.api_statsd | trim | nindent 12 }}
           {{- end }}
+        {{- if not .Values.proxysql.native_sidecar }}
         {{- tuple . .Values.wsgi_processes | include "utils.proxysql.container" | indent 8 }}
+        {{- end }}
  {{- if .Values.osprofiler.enabled }}
  {{- include "jaeger_agent_sidecar" . | indent 8 }}
  {{- end }}

@@ -1,0 +1,39 @@
+{{/* This check is disabled entirely in the lab clusters to avoid needlessly obstructing the development of changes to the core components. */}}
+{{/* In the QA cluster, this check is in audit-only mode. Service owners can set up new deployments there and then ask for an extension of the allowlist based on that template. */}}
+{{- if ne .Values.cluster_layer "labs" }}
+
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: GkPodSecurityV2
+metadata:
+  name: podsecurityv2
+  annotations:
+    {{- include "sources" (tuple "pod-security-v2" "pod-security-v2") | indent 4 }}
+    {{- include "docstring" (tuple $ "GkPodSecurityV2") | indent 4 }}
+  labels:
+    severity: 'debug'
+spec:
+  enforcementAction: dryrun
+  match: {{ include "match_pods_and_pod_owners" . | indent 4 }}
+  parameters:
+    allowlist:
+      ### unit tests
+      {{- if eq .Values.cluster_type "test" }}
+      - matchNamespace: foo
+        matchRepository: test-app/unprivileged
+        mayUseCapabilities:
+          - FOO
+      - matchNamespace: foo
+        matchRepository: test-app/highly-privileged
+        mayUseHostNetwork: true
+        mayUseHostPID: true
+        mayUsePrivilegeEscalation: true
+        mayBePrivileged: true
+        mayUseCapabilities:
+          - FOO
+          - SYS_ADMIN
+        mayReadHostPathVolumes:
+          - /
+        mayWriteHostPathVolumes:
+          - /
+      {{- end }}
+{{- end }}

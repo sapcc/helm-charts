@@ -2,8 +2,8 @@
 
 - setup operator CRDs
 ```sh
-k apply -f https://raw.githubusercontent.com/gardener/gardener/refs/tags/v1.116.4/charts/gardener/operator/templates/crd-extensions.yaml
-k apply -f https://raw.githubusercontent.com/gardener/gardener/refs/tags/v1.116.4/charts/gardener/operator/templates/crd-gardens.yaml
+k apply -f https://raw.githubusercontent.com/gardener/gardener/refs/tags/v1.117.5/charts/gardener/operator/templates/crd-extensions.yaml
+k apply -f https://raw.githubusercontent.com/gardener/gardener/refs/tags/v1.117.5/charts/gardener/operator/templates/crd-gardens.yaml
 k label crd gardens.operator.gardener.cloud extensions.operator.gardener.cloud app.kubernetes.io/managed-by=Helm
 k annotate crd gardens.operator.gardener.cloud extensions.operator.gardener.cloud meta.helm.sh/release-name=cc-gardener meta.helm.sh/release-namespace=garden
 ```
@@ -15,6 +15,7 @@ k annotate crd gardens.operator.gardener.cloud extensions.operator.gardener.clou
 - upgrade with proper secrets-injector ca (`k get secret ca-bundle-***** -o yaml`)
 - upgrade enable openstack extension
 - upgrade enable gardenlet
+    - add additional seeds to `.gardenlet.additionalSeedRegions`
 
 # Upgrade
 - read [the changelog](https://github.com/gardener/gardener/releases)
@@ -24,4 +25,4 @@ k annotate crd gardens.operator.gardener.cloud extensions.operator.gardener.clou
 - change `.operator.image.tag` in `values.yaml`
 - `helm dep up`
 - mirror gardenlet helm chart
-    - `helm pull oci://keppel.eu-de-1.cloud.sap/ccloud-europe-docker-pkg-dev-mirror/gardener-project/releases/charts/gardener/gardenlet:v1.116.4`
+    - `helm pull oci://keppel.eu-de-1.cloud.sap/ccloud-europe-docker-pkg-dev-mirror/gardener-project/releases/charts/gardener/gardenlet:v1.117.5`

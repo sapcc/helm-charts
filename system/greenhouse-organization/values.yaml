@@ -1,0 +1,152 @@
+global:
+  # The DNS domain to be used for all Greenhouse components.
+  dnsDomain:
+  dockerHubMirror:
+  # OIDC configuration for Greenhouse.
+  oidc:
+    issuer:
+    redirectURL:
+    clientID:
+    clientSecret:
+
+# Organization & IDProxy should be enabled only after the initial install of greenhouse
+organization:
+  enabled: true
+  oauth2ClientRedirectURIs:
+    - "http://localhost:33768/auth/callback"
+    - "http://localhost:8000"
+    - "http://localhost:18000"
+
+scim:
+  enabled: false
+  # authType: basic | token
+  # username:
+  # password:
+  # bearerToken:
+  # bearerHeader:
+  # bearerPrefix:
+
+# Configures core Greenhouse teams.
+teams:
+  # An admin team must be specified. Additional teams are optional.
+  # admin:
+  #   description:
+  #   mappedIdPGroup:
+
+### Configure several Plugins for the Greenhouse organization below.
+
+certManager:
+  webhook:
+    timeoutSeconds: 15
+# Configures the DigiCert issuer for the Greenhouse organization,
+# which enables obtaining DigiCert certificates via the cert-manager.
+digicertIssuer:
+  enabled: false
+  apiToken:
+  organizationID:
+  organizationUnits:
+  caCertID:
+
+# Configures the DISCO, Designate Ingress CNAME operator, for the Greenhouse organization,
+# which enables automated management of DNS records with OpenStack Designate.
+disco:
+  enabled: false
+  record:
+  zoneName:
+  authURL:
+  regionName:
+  username:
+  userDomainName:
+  password:
+  projectName:
+  projectDomainName:
+
+# Configures the NGINX ingress for the Greenhouse organization, which enables external access.
+ingress:
+  enabled: true
+  # Specify the loadBalancer IP for the ingress service.
+  # loadBalancerIP:
+
+monitoring:
+  enabled: false
+  alertmanager:
+    enabled: false
+
+thanos:
+  enabled: false
+
+alerts:
+  enabled: false
+  # Supernova options.
+  endpoint:
+
+  slack:
+    channel:
+    webhookURL:
+
+  ingress:
+    host:
+
+  filterLabels:
+    - app
+    - service
+    - severity
+    - organization
+  silenceExcludedLabels:
+    - pod
+    - pod_name
+    - instance
+  silenceTemplates: []
+
+  predefinedFilters: []
+
+  # Alertmanager options.
+  alertmanager:
+    # Whether to deploy the alertmanager.
+    enabled: false
+
+logshipping:
+  enabled: false
+  fluent-bit:
+    image:
+      repository: cr.fluentbit.io/fluent/fluent-bit
+    hotReload:
+      image:
+        repository: ghcr.io/jimmidyson/configmap-reload
+
+openTelemetry:
+  enabled: false
+# set via secrets
+  #   region:
+  #   cluster:
+  #   openSearchLogs
+  #     username:
+  #     password:
+  #     endpoint:
+  logsCollector:
+    enabled: true
+  metricsCollector:
+    enabled: true
+  prometheus:
+    podMonitor:
+      enabled: true
+    serviceMonitor:
+      enabled: true
+  admissionWebhooks:
+    certManager:
+      enabled: true
+    autoGenerateCert:
+      enabled: false
+      recreate: false
+  kubeRBACProxy:
+    enabled: false
+  manager:
+    prometheusRule:
+      defaultRules:
+        enabled: false
+      enabled: false
+perses:
+  enabled: true
+
+plutono:
+  enabled: true

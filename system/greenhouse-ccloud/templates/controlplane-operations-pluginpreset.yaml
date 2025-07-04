@@ -1,0 +1,29 @@
+{{- if and .Values.pluginPreset.enabled .Values.kubeMonitoring.enabled .Values.controlplaneOperations.enabled }}
+apiVersion: greenhouse.sap/v1alpha1
+kind: PluginPreset
+metadata:
+  name: controlplane-operations
+  namespace: {{ .Release.Namespace }}
+spec:
+  clusterSelector:
+    matchLabels:
+      greenhouse.sap/cluster-presets-enabled: "true"
+    matchExpressions:
+      - key: cluster-type
+        operator: In
+        values:
+          - sci-k8s-runtime
+          - sci-k8s-management
+  plugin:
+    pluginDefinition: controlplane-operations
+    releaseNamespace: controlplane-operations
+    optionValues:
+      - name: prometheusRules.ruleSelectors
+        value:
+          - name: plugin
+            value: 'kube-monitoring-{{ "{{ .Values.global.greenhouse.clusterName }}" }}'
+      - name: prometheusRules.additionalRuleLabels
+        value:
+          service: cc-cp
+          support_group: containers
+{{- end -}}

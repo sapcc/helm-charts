@@ -25,13 +25,16 @@ spec:
       runtimeClusterValues:
         replicaCount: 1
         image:
-          tag: v1.61.2
+          tag: v1.62.1
         config:
           etcd:
             storage:
-              provisioner: rancher.io/local-path
+              provisioner: {{ .Values.extensions.storage.provisioner | quote }}
+              {{- if .Values.extensions.storage.parameters }}
+              parameters: {{ .Values.extensions.storage.parameters | toYaml | nindent 16 }}
+              {{- end }}
       helm:
         ociRepository:
-          tag: 1.61.2
-          repository: keppel.eu-de-1.cloud.sap/ccloud-helm/gardener-extension-provider-aws
+          tag: v1.62.1
+          repository: keppel.eu-de-1.cloud.sap/ccloud-europe-docker-pkg-dev-mirror/gardener-project/releases/charts/gardener/extensions/provider-aws
       policy: OnDemand

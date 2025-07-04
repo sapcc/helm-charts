@@ -216,11 +216,29 @@ docker_create_db_directories() {
 			find "${SOCKET%/*}" -maxdepth 0 \! -user mysql \( -exec chown mysql: '{}' \; -o -true \)
 		fi
 
+		# memory.pressure
+		local cgroup; cgroup=$(</proc/self/cgroup)
+		local mempressure="/sys/fs/cgroup/${cgroup:3}/memory.pressure"
+		if [ -w "$mempressure" ]; then
+			chown mysql: "$mempressure" || mysql_warn "unable to change ownership of $mempressure, functionality unavailable to MariaDB"
+		else
+			mysql_warn "$mempressure not writable, functionality unavailable to MariaDB"
+		fi
 	fi
 }
 
 _mariadb_version() {
-	echo -n "10.6.21-MariaDB"
+	# MARIADB_MAJOR=10.6 defined by https://github.com/MariaDB/mariadb-docker/blob/87a043a031e8c56ba66a0ad06e633417ae75ee1e/10.6/Dockerfile#L82-L83
+	# mariadb --version returns something like:
+	# mariadb  Ver 15.1 Distrib 10.6.21-MariaDB, for debian-linux-gnu (aarch64) using readline 5.2
+	# the perl-regexp option is required for \K
+	# \K resets the starting point of the reported match. Any previously consumed characters are no longer included in the final match
+	# the only-matching option returns only the matching part of the version string
+	# Example result: 10.6.21-MariaDB
+
+	local version
+	version=$(mariadb --version | grep --only-matching --perl-regexp --regexp="^mariadb  Ver [0-9][0-9].[0-9] Distrib \K([0-9]+\.[0-9]+\.[0-9]+-MariaDB)")
+	echo -n "${version}"
 }
 
 # initializes the database directory
@@ -493,7 +511,7 @@ docker_mariadb_init()
 			if [ -f "$DATADIR/.init/backup-my.cnf" ]; then
 				mv "$DATADIR/.init/backup-my.cnf" "$DATADIR/.my.cnf"
 				mysql_note "Adding startup configuration:"
-				my_print_defaults --defaults-file="$DATADIR/.my.cnf" --mysqld
+				my_print_defaults --defaults-file="$DATADIR/.my.cnf" --mariadbd
 			fi
 			rm -rf "$DATADIR"/.init "$DATADIR"/.restore
 			if [ "$(id -u)" = "0" ]; then

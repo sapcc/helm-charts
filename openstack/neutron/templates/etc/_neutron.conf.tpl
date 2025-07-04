@@ -53,10 +53,24 @@ owner_check_cache_expiration_time = {{ .Values.api.owner_check_cache_expiration_
 
 {{- template "utils.snippets.debug.eventlet_backdoor_ini" "neutron" }}
 
+[oslo_policy]
+enforce_scope = False
+enforce_new_defaults = False
+
 [nova]
 auth_url = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000 }}/v3
 # DEPRECATED: auth_plugin
 auth_plugin = v3password
+auth_type = v3password
+region_name = {{.Values.global.region}}
+user_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}
+project_name = {{.Values.global.keystone_service_project | default "service"}}
+project_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}
+insecure = True
+endpoint_type = internal
+
+[placement]
+auth_url = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000 }}/v3
 auth_type = v3password
 region_name = {{.Values.global.region}}
 user_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}

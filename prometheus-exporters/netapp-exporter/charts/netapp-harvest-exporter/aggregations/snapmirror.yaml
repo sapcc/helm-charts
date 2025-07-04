@@ -15,7 +15,7 @@ groups:
         label_replace (
         label_replace (
         label_replace (
-          max by (app, availability_zone, filer, project_id, share_id, share_name, svm, volume) (netapp_volume_labels:manila),
+          max by (app, availability_zone, project_id, share_id, share_name, svm, volume) (netapp_volume_labels:manila{volume_type="rw"}),
           "source_availability_zone", "$1", "availability_zone", "(.*)"),
           "source_volume", "$1", "volume", "(.*)"),
           "source_vserver", "$1", "svm", "(.*)"),
@@ -48,20 +48,23 @@ groups:
 
     # Enrich netapp_snapmirror_endpoint_labels.
     # Add openstack labels, such as project_id, share_id and share_name.
-    # Add source_cluster label.
+    # Add source_az and source_cluster.
+    # Modify destination_vserver: remove ".x" added by vserver peering 
     - record: netapp_snapmirror_endpoint_labels:enhanced
       expr: |
-        netapp_snapmirror_endpoint_labels * on (source_vserver, source_volume)
-        group_left (source_availability_zone, source_cluster, project_id, share_id, share_name)
         label_replace(
         label_replace(
-        label_replace(
-        label_replace(
-          max by (availability_zone, filer, project_id, share_id, share_name, svm, volume) (netapp_volume_labels:manila),
-          "source_availability_zone", "$1", "availability_zone", "(.*)"),
-          "source_volume", "$1", "volume", "(.*)"),
-          "source_vserver", "$1", "svm", "(.*)"),
-          "source_cluster", "$1", "filer", "(.*)")
+          netapp_snapmirror_endpoint_labels
+          * on (filer, source_vserver, source_volume) group_left (source_availability_zone, project_id, share_id, share_name)
+          label_replace(
+          label_replace(
+          label_replace(
+            max by (availability_zone, project_id, share_id, share_name, filer, svm, volume) (netapp_volume_labels:manila{volume_type="rw"}),
+            "source_availability_zone", "$1", "availability_zone", "(.*)"),
+            "source_volume", "$1", "volume", "(.*)"),
+            "source_vserver", "$1", "svm", "(.*)"),
+          "source_cluster", "$1", "filer", "(.*)"),
+          "destination_vserver", "$1", "destination_vserver", "(.*_[BD])\\.[1-9]")
 
     # Add destination_cluster label, which is the filer label from harvester. 
     - record: netapp_snapmirror_lag_time:enhanced

@@ -43,12 +43,19 @@ spec:
             - --container-namespace-label={{ required ".Values.recommender.prometheus.containerNamespaceLabel missing" .Values.recommender.prometheus.containerNamespaceLabel }}
             - --container-pod-name-label={{ required ".Values.recommender.prometheus.containerPodNameLabel missing" .Values.recommender.prometheus.containerPodNameLabel }}
             - --container-name-label={{ required ".Values.recommender.prometheus.containerNameLabel missing" .Values.recommender.prometheus.containerNameLabel }}
+            - --leader-elect-resource-namespace={{ .Release.Namespace }}
             {{- end }}
             {{- if .Values.recommender.marginFraction }}
             - --recommendation-margin-fraction={{ .Values.recommender.marginFraction }}
             {{- end }}
             {{- if .Values.recommender.podMinMemoryMB }}
             - --pod-recommendation-min-memory-mb={{ .Values.recommender.podMinMemoryMB }}
+            {{- end }}
+            {{- if .Values.recommender.recommendationMaxAllowed.cpu }}
+            - --container-recommendation-max-allowed-cpu={{ .Values.recommender.recommendationMaxAllowed.cpu }}
+            {{- end }}
+            {{- if .Values.recommender.recommendationMaxAllowed.memory }}
+            - --container-recommendation-max-allowed-memory={{ .Values.recommender.recommendationMaxAllowed.memory }}
             {{- end }}
           resources:
             limits:

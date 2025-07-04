@@ -4,16 +4,18 @@ global:
 operator:
   image:
     repository: keppel.global.cloud.sap/ccloud-europe-docker-pkg-dev-mirror/gardener-project/releases/gardener/operator
-    tag: v1.116.4 # also the gardener version, which will be used
+    tag: v1.117.5 # also the gardener version, which will be used
 garden:
   name: garden
   # externalIP: ""
   managedresources: true # disable on inital deployment
   backup:
-  # accessKeyID: ""
-  # secretAccessKey: ""
-  # region: ""
-  # bucket: ""
+    # accessKeyID: ""
+    # secretAccessKey: ""
+    # region: ""
+    # bucket: ""
+  # dns:
+  #   region: ""
   runtimeCluster:
     zones: []
     # - "eu-de-1a"
@@ -32,7 +34,6 @@ garden:
 secretsInjector:
   replicaCount: 2
   topologyKey: ""
-  virtualGardenCA: "" # base64 encoded
   image:
     repository: ""
     tag: ""
@@ -46,6 +47,9 @@ secretsInjector:
       mirrorJitter: 1.1
     cleartext: asLiteral
 extensions:
+  storage:
+    provisioner: "rancher.io/local-path"
+    parameters: {}
   kubernetesVersions: []
   calico:
     enabled: false
@@ -59,7 +63,7 @@ extensions:
     machineImages: []
     providerConfig:
       machineImages: []
-    zones: []
+    regions: []
   metal:
     enabled: false
     image:
@@ -72,13 +76,14 @@ extensions:
       mcm:
         repository: ghcr.io/ironcore-dev/machine-controller-manager-provider-ironcore-metal
         tag: sha-068b0c7
+    regions: []
 gardenlet:
   enabled: false
+  additionalSeedRegions: []
 cloudProfileSync:
   enabled: false
   replicaCount: 1
   topologyKey: ""
-  virtualGardenCA: "" # base64 encoded
   image:
     repository: cloud-profile-sync
     tag: v0.1.0

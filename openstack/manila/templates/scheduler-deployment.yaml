@@ -7,8 +7,10 @@ metadata:
     system: openstack
     type: backend
     component: manila
-  {{- if .Values.vpa.set_main_container }}
   annotations:
+    secret.reloader.stakater.com/reload: "{{ .Release.Name }}-secrets"
+    deployment.reloader.stakater.com/pause-period: "60s"
+  {{- if .Values.vpa.set_main_container }}
     vpa-butler.cloud.sap/main-container: manila-scheduler
   {{- end }}
 spec:
@@ -62,6 +64,9 @@ spec:
           volumeMounts:
             - name: etcmanila
               mountPath: /shared
+        {{- end }}
+        {{- if .Values.proxysql.native_sidecar }}
+        {{- tuple . .Values.rpc_workers | include "utils.proxysql.container" | indent 8 }}
         {{- end }}
       containers:
         - name: manila-scheduler
@@ -143,7 +148,9 @@ spec:
               readOnly: true
         {{- end }}
         {{- include "jaeger_agent_sidecar" . | indent 8 }}
+        {{- if not .Values.proxysql.native_sidecar }}
         {{- tuple . .Values.rpc_workers | include "utils.proxysql.container" | indent 8 }}
+        {{- end }}
       volumes:
         - name: etcmanila
           emptyDir: {}

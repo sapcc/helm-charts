@@ -1,0 +1,20 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: ingress-to-metal-operator-metal-registry-service-tcp-10000-from-kube-system
+spec:
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: kube-system
+    ports:
+    - port: 10000
+      protocol: TCP
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/instance: metal-operator-remote
+      app.kubernetes.io/name: metal-operator-core
+      control-plane: controller-manager
+  policyTypes:
+  - Ingress

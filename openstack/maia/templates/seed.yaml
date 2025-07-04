@@ -11,9 +11,10 @@ metadata:
     component: maia
 spec:
   requires:
+  - {{ .Values.global.keystoneNamespace }}/{{ .Values.global.is_global_region | ternary "keystone-global-seed" "keystone-seed" }}
   {{- range $domains}}
   {{- if not (hasPrefix "iaas-" .)}}
-  - monsoon3/domain-{{ replace "_" "-" . | lower }}-seed
+  - {{ $.Values.global.keystoneNamespace }}/domain-{{ replace "_" "-" . | lower }}-seed
   {{- end}}
   {{- end}}
 
