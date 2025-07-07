@@ -16,6 +16,9 @@ metadata:
     ccloud/service: ironic
 spec:
   template:
+    metadata:
+      annotations:
+        {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
     spec:
       restartPolicy: OnFailure
       initContainers:
@@ -32,6 +35,7 @@ spec:
         - |
           set -e
           ironic-inspector-dbsync upgrade
+          {{- include "utils.script.job_finished_hook" . | nindent 10 }}
         env:
         - name: PGAPPNAME
           valueFrom:
