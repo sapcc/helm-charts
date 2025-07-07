@@ -21,6 +21,7 @@ spec:
     metadata:
       annotations:
         kubectl.kubernetes.io/default-container: octavia-migration
+        {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
     spec:
       restartPolicy: OnFailure
     {{- if $proxysql }}
@@ -52,7 +53,7 @@ spec:
             - |
               set -euo pipefail
               octavia-db-manage upgrade head
-              {{ include "utils.proxysql.proxysql_signal_stop_script" . | trim }}
+              {{- include "utils.script.job_finished_hook" . | nindent 14 }}
           env:
             {{- if .Values.sentry.enabled }}
             - name: SENTRY_DSN
