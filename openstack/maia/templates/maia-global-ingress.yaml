@@ -1,26 +1,24 @@
-{{- if not .Values.global.is_global_region }}
-{{- if .Values.maia.enabled }}
+{{- if .Values.global.is_global_region }}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
-
 metadata:
-  name: maia
-  namespace: maia
+  name: maia-global
+  namespace: maia-global
   annotations:
     {{- if .Values.maia.tls }}
     kubernetes.io/tls-acme: "true"
+    disco: "true"
     {{- end}}
     {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
     ingress.kubernetes.io/service-upstream: "true"
     nginx.ingress.kubernetes.io/service-upstream: "true"
     {{- end }}
-
 spec:
   tls:
-     - secretName: tls-{{ .Values.maia.endpoint_host_public | replace "." "-" }}
-       hosts: [{{ required "maia.endpoint_host_public variable missing" .Values.maia.endpoint_host_public }}]
+    - secretName: tls-{{ .Values.maia_global.endpoint_host_public | replace "." "-" }}
+      hosts: [{{ required "maia_global.endpoint_host_public variable missing" .Values.maia_global.endpoint_host_public }}]
   rules:
-    - host: {{.Values.maia.endpoint_host_public}}
+    - host: {{.Values.maia_global.endpoint_host_public}}
       http:
         paths:
         - path: /
@@ -30,8 +28,4 @@ spec:
               name: maia
               port:
                 number: {{.Values.maia.listen_port}}
-# uncomment to expose Prometheus UI instead of Maia
-#            serviceName: prometheus-maia
-#            servicePort: 9090 
-{{- end }}
 {{- end }}
