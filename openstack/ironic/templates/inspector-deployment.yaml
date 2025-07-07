@@ -43,6 +43,9 @@ spec:
       {{- include "utils.proxysql.pod_settings" . | indent 6 }}
       initContainers:
       {{- tuple . (dict "service" "ironic-api,ironic-rabbitmq") | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
+      {{- if .Values.proxysql.native_sidecar }}
+      {{- tuple . .Values.api.api_workers | include "utils.proxysql.container" | indent 6 }}
+      {{- end }}
       containers:
       - name: ironic-inspector
         {{- if .Values.oslo_metrics.enabled }}
@@ -102,7 +105,9 @@ spec:
           readOnly: true
         {{- include "utils.proxysql.volume_mount" . | indent 8 }}
         {{- include "utils.trust_bundle.volume_mount" . | indent 8 }}
+      {{- if not .Values.proxysql.native_sidecar }}
       {{- tuple . .Values.api.api_workers | include "utils.proxysql.container" | indent 6 }}
+      {{- end }}
       {{- if and .Values.global.ironic_tftp_ip .Values.inspector.dhcp.range .Values.inspector.dhcp.options.router }}
       - name: dhcp
         image: {{ .Values.global.registry }}/ubuntu-source-staticdhcpd:{{.Values.imageVersionStaticdhcpd | default .Values.imageVersion | required "Please set ironic.imageVersion or similar"}}

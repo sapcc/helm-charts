@@ -441,7 +441,7 @@ api-ratelimit-redis:
     support_group: network-api
 
 rate_limit:
-  enabled: false
+  enabled: true
   backend_secret_file: /etc/designate/ratelimit-backend-secret.conf
   rate_limit_by: target_project_id
   max_sleep_time_seconds: 0
@@ -450,6 +450,7 @@ rate_limit:
   whitelist:
     - Default/service
     - Default/admin
+    - tempest/performance-testing
     - ccadmin/cloud_admin
     - ccadmin/master
   whitelist_users: null
@@ -463,27 +464,31 @@ rate_limit:
     default:
       zones:
         - action: read/list
+          limit: 200r/m
+        - action: create
           limit: 100r/m
       zones/zone:
         - action: read/list
+          limit: 200r/m
+        - action: write
           limit: 100r/m
-      zones/zone/recordsets:
+      zones/zone/*:
         - action: read/list
           limit: 100r/m
-      zones/tasks/imports/import:
+        - action: create
+          limit: 100r/m
+        - action: write
+          limit: 100r/m
+      recordsets:
         - action: read/list
           limit: 100r/m
-      zones/tasks/imports:
-        - action: read/list
-          limit: 100r/m
-      zones/tasks/exports/export:
-        - action: read/list
-          limit: 100r/m
-      zones/tasks/exports:
+      reverse/floatingips:
         - action: read/list
           limit: 100r/m
       reverse/floatingips/*:
         - action: read/list
+          limit: 100r/m
+        - action: write
           limit: 100r/m
       tsigkeys:
         - action: read/list
@@ -497,3 +502,16 @@ rate_limit:
       pools:
         - action: read/list
           limit: 100r/m
+      limits:
+        - action: read/list
+          limit: 100r/m
+      quotas:
+        - action: read/list
+          limit: 100r/m
+      service_statuses/*:
+        - action: read/list
+          limit: 100r/m
+      service_statuses:
+        - action: read/list
+          limit: 100r/m
+

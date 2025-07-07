@@ -10,7 +10,37 @@ ipPool:
   gateway: 1.2.3.4
 
 machineTemplate:
-  matchLabels:
-    node-role.kubernetes.io/master: ""
   metadata:
-    node-role.kubernetes.io/master: ""
+    node-role.kubernetes.io/cp: ""
+
+controlplane:
+  machineTemplate:
+    matchLabels:
+      node-role.kubernetes.io/cp: "" 
+
+worker:
+  machineTemplate:
+    matchLabels:
+      node-role.kubernetes.io/worker: ""
+
+secret:
+  metalKubeConfig: |
+    apiVersion: v1
+    clusters:
+    - cluster:
+        certificate-authority-data: "REDACTED"
+        server: https://api.test-1.metal.example.com:6443
+      name: metal-test-1
+    contexts:
+    - context:
+        cluster: metal-test-1
+        user: metal-user
+      name: metal-test-1-context
+    current-context: metal-test-1-context
+    kind: Config
+    preferences: {}
+    users:
+    - name: metal-user
+      user:
+        client-certificate-data: "REDACTED"
+        client-key-data: "REDACTED"

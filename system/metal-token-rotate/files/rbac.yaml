@@ -2,6 +2,10 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   name: metal-token-rotate
+  annotations:
+    authorization.gardener.cloud/extensions-serviceaccount-selector: '{"matchLabels":{"metal.ironcore.dev/token-rotate": "true"}}'
+  labels:
+    authorization.gardener.cloud/custom-extensions-permissions: "true"
 rules:
 - apiGroups:
   - ""
@@ -13,16 +17,3 @@ rules:
   - watch
   - update
   - patch
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  name: metal-token-rotate
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: metal-token-rotate
-subjects:
-- kind: ServiceAccount
-  name: metal-token-rotate
-  namespace: garden

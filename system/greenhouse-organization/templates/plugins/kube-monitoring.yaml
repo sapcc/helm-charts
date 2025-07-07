@@ -1,0 +1,70 @@
+{{- if .Values.monitoring.enabled }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: kube-monitoring-ingress-ca
+  namespace: {{ .Release.Namespace }}
+data:
+  ca.crt: {{ required ".Values.monitoring.ingress.tlsClientAuth.cacrt missing" .Values.monitoring.ingress.tlsClientAuth.cacrt | b64enc | quote }}
+---
+apiVersion: v1
+kind: Secret
+type: Opaque
+metadata:
+  name: thanos-metrics-objectstore
+  namespace: {{ .Release.Namespace }}
+data:
+  thanos.yaml: {{ toYaml .Values.monitoring.thanosObjectstoreConfig | b64enc | quote }}
+---
+apiVersion: greenhouse.sap/v1alpha1
+kind: Plugin
+metadata:
+  name: kube-monitoring
+  namespace: {{ .Release.Namespace }}
+spec:
+  disabled: false
+  pluginDefinition: kube-monitoring
+  optionValues:
+  - name: kubeMonitoring.prometheus.prometheusSpec.externalLabels
+    value:
+      organization: {{ .Release.Namespace }}
+{{- if and .Values.monitoring.extLabels.cluster .Values.monitoring.extLabels.region }}
+      cluster: {{ .Values.monitoring.extLabels.cluster }}
+      region: {{ .Values.monitoring.extLabels.region }}
+{{- end }}
+  - name: kubeMonitoring.prometheus.ingress.annotations.nginx\.ingress\.kubernetes\.io/auth-tls-secret
+    value: greenhouse/kube-monitoring-ingress-ca
+  - name: kubeMonitoring.prometheus.ingress.enabled
+    value: true
+  - name: kubeMonitoring.prometheus.ingress.hosts
+    value:
+    - {{ required ".Values.monitoring.ingress.host missing" .Values.monitoring.ingress.host }}
+  - name: kubeMonitoring.prometheus.prometheusSpec.thanos.objectStorageConfig.existingSecret.key
+    value: thanos.yaml
+  - name: kubeMonitoring.prometheus.prometheusSpec.thanos.objectStorageConfig.existingSecret.name
+    value: thanos-metrics-objectstore
+  - name: kubeMonitoring.prometheus.ingress.tls
+    value:
+    - hosts:
+      - {{ required ".Values.monitoring.ingress.host missing" .Values.monitoring.ingress.host }}
+      secretName: tls-{{ .Values.monitoring.ingress.host | replace "." "-" }}
+  - name: alerts.enabled
+    value: true
+{{- if and .Values.monitoring.alertmanager.enabled .Values.monitoring.alertmanager.hosts }}
+  - name: alerts.alertmanagers.hosts
+    value:
+      {{- toYaml .Values.monitoring.alertmanager.hosts | nindent 8 }}
+{{- end }}
+{{- if .Values.monitoring.tlsSecretName }}
+  - name: alerts.alertmanagers.tlsConfig.cert
+    valueFrom:
+      secret:
+        key: "tls.crt"
+        name: {{ .Values.monitoring.tlsSecretName }}
+  - name: alerts.alertmanagers.tlsConfig.key
+    valueFrom:
+      secret:
+        key: "tls.key"
+        name: {{ .Values.monitoring.tlsSecretName }}
+{{- end }}
+{{ end }}

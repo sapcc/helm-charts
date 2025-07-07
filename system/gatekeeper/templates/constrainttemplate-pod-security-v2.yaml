@@ -39,7 +39,13 @@ spec:
                       type: string
                     minItems: 0
                   # volume-level properties
-                  mayMountHostPathVolumes:
+                  mayReadHostPathVolumes:
+                    type: array
+                    items:
+                      description: host path of the volume
+                      type: string
+                    minItems: 0
+                  mayWriteHostPathVolumes:
                     type: array
                     items:
                       description: host path of the volume
@@ -188,7 +194,15 @@ spec:
               isContainerAllowedToAccessHostPath(container, hostPath, readOnly) if {
                   entry := input.parameters.allowlist[_]
                   isMatchingContainer(entry, container)
-                  hostPath in entry.mayMountHostPathVolumes
+                  readOnly
+                  hostPath in entry.mayReadHostPathVolumes
+              }
+
+              isContainerAllowedToAccessHostPath(container, hostPath, readOnly) if {
+                  entry := input.parameters.allowlist[_]
+                  isMatchingContainer(entry, container)
+                  not readOnly
+                  hostPath in entry.mayWriteHostPathVolumes
               }
 
               ########################################################################

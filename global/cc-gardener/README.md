@@ -15,6 +15,7 @@ k annotate crd gardens.operator.gardener.cloud extensions.operator.gardener.clou
 - upgrade with proper secrets-injector ca (`k get secret ca-bundle-***** -o yaml`)
 - upgrade enable openstack extension
 - upgrade enable gardenlet
+    - add additional seeds to `.gardenlet.additionalSeedRegions`
 
 # Upgrade
 - read [the changelog](https://github.com/gardener/gardener/releases)

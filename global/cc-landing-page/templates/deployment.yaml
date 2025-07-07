@@ -1,0 +1,84 @@
+kind: Deployment
+apiVersion: apps/v1
+
+metadata:
+  name: cc-landing-page
+  namespace: elektra
+spec:
+  selector:
+    matchLabels:
+      app: cc-landing-page
+  revisionHistoryLimit: 3
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 2
+  template:
+    metadata:
+      labels:
+        app: cc-landing-page
+      annotations:
+        checksum/index-html-configmap: {{ include (print $.Template.BasePath "/index-html-configmap.yaml") . | sha256sum }}
+        checksum/nginx-configmap: {{ include (print $.Template.BasePath "/nginx-configmap.yaml") . | sha256sum }}
+    spec:
+      # The preStop hook below sleeps 30 seconds, extend the gracePeriod accordingly
+      terminationGracePeriodSeconds: 60
+      containers:
+        - name: cc-landing-page
+          image: "{{ .Values.global.dockerHubMirror }}/library/nginx:alpine"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 80
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256M"
+            limits:
+              cpu: "100m"
+              memory: "256M"
+              
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+            timeoutSeconds: 10
+            periodSeconds: 60
+            initialDelaySeconds: 60
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            timeoutSeconds: 5
+            periodSeconds: 5
+          resources:
+            limits:
+              cpu: "1000m"
+              memory: "256Mi"
+            requests:
+              cpu: "1000m"
+              memory: "256Mi"
+          lifecycle:
+            preStop:
+              exec:
+                #Give the ingress some time to reload its config
+                command: ["/bin/sh", "-c", "sleep 30"]
+          volumeMounts:
+            - name: nginx-conf
+              mountPath: /etc/nginx/conf.d/
+            - name: index-html
+              mountPath: /usr/share/nginx/html/
+      volumes:
+        - name: nginx-conf
+          configMap:
+            defaultMode: 420
+            name: nginx-configmap
+            items:
+              - key: nginx.conf
+                path: default.conf
+        - name: index-html
+          configMap:
+            defaultMode: 420
+            name: index-html-configmap
