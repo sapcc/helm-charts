@@ -1,0 +1,85 @@
+{{- if .Values.ovn.enabled }}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: neutron-ovn-db-sync-{{ randAlphaNum 4 | lower }}
+  labels:
+    system: openstack
+    type: configuration
+    component: neutron
+spec:
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/default-container: "{{ .Release.Name }}-ovn-db-sync"
+    spec:
+      restartPolicy: OnFailure
+      {{ include "utils.proxysql.job_pod_settings" . | nindent 6 }}
+      initContainers:
+        - name: dependencies
+          image: {{.Values.global.registry}}/loci-neutron:{{default .Values.imageVersion | required "Please set neutron.imageVersion or similar"}}
+          imagePullPolicy: IfNotPresent
+          command:
+            - kubernetes-entrypoint
+          env:
+            - name: COMMAND
+              value: "true"
+            - name: NAMESPACE
+              value: {{ .Release.Namespace }}
+            - name: DEPENDENCY_SERVICE
+              value: "{{ .Release.Name }}-ovsdb-nb,{{ .Release.Name }}-ovsdb-sb,{{ .Release.Name }}-mariadb"
+            {{ include "utils.sentry_config" . | nindent 12 }}
+      containers:
+        - name: {{ .Release.Name }}-ovn-db-sync
+          image: {{.Values.global.registry}}/loci-neutron:{{default .Values.imageVersion | required "Please set neutron.imageVersion or similar"}}
+          imagePullPolicy: IfNotPresent
+          command: ["dumb-init", "--"]
+          args:
+            - bash
+            - -c
+            - |
+              set -e
+              neutron-ovn-db-sync-util \
+              --config-file /etc/neutron/neutron.conf \
+              --config-file /etc/neutron/ml2-conf.ini \
+              --config-file /etc/neutron/ml2-conf-ovn.ini \
+              --config-dir /etc/neutron/secrets \
+              --ovn-neutron_sync_mod repair
+              {{ include "utils.script.job_finished_hook" . | nindent 14 }}
+          env:
+            {{ include "utils.trust_bundle.env" . | nindent 12 }}
+          volumeMounts:
+            - mountPath: /etc/neutron
+              name: etc-neutron
+              readOnly: true
+            {{ include "utils.trust_bundle.volume_mount" . | nindent 12 }}
+            {{ include "utils.proxysql.volume_mount" . | nindent 12 }}
+          {{ include "utils.proxysql.container" . | nindent 8 }}
+      volumes:
+        - name: etc-neutron
+          projected:
+            defaultMode: 420
+            sources:
+            - configMap:
+                name: neutron-etc
+                items:
+                - key: neutron.conf
+                  path: neutron.conf
+                - key: ml2-conf.ini
+                  path: ml2-conf.ini
+                - key: logging.conf
+                  path: logging.conf
+            - configMap:
+                name: neutron-etc-vendor
+                items:
+                - key: ml2-conf-ovn.ini
+                  path: ml2-conf-ovn.ini
+            - secret:
+                name: neutron-server-secrets
+                items:
+                  - key: neutron-server-secrets.conf
+                    path: secrets/neutron-server-secrets.conf
+        {{ include "utils.trust_bundle.volumes" . | nindent 8 }}
+        {{ include "utils.proxysql.volumes" . | nindent 8 }}
+{{- end }}

@@ -38,7 +38,7 @@ pod:
   replicas:
     server: 3
     rpc_server: 2
-    ovn_db: 3
+    ovn_northd: 2
   lifecycle:
     upgrades:
       deployments:
@@ -248,10 +248,12 @@ ovn:
   image: "keppel.eu-de-1.cloud.sap/ccloud/cobaltcore-dev/openstack-ovn-controller"
   imageVersionOVN: "latest"
 
-  # -- Use SSL transport to NB/SB db and northd
-  enableSsl: false
-
 ovsdb-sb:
+  service:
+    # requirements to be accessible from outside with Calico
+    type: LoadBalancer
+    external_traffic_policy: Local
+  replicaCount: 3
   RAFT_PORT: 6644
   DB_TYPE: sb
   DB_PORT: 6442
@@ -259,12 +261,16 @@ ovsdb-sb:
   OVN_ELECTION_TIMER: "10000"
   OVN_INACTIVITY_PROBE: "60000"
   OVN_PROBE_INTERVAL_TO_ACTIVE: "60000"
-  service:
-    # requirements to be accessible from outside with Calico
-    type: LoadBalancer
-    external_traffic_policy: Local
+  resources:
+    limits:
+      cpu: 200m
+      memory: 1Gi
+    requests:
+      cpu: 50m
+      memory: 512Mi
 
 ovsdb-nb:
+  replicaCount: 3
   RAFT_PORT: 6643
   DB_TYPE: nb
   DB_PORT: 6441
@@ -272,6 +278,13 @@ ovsdb-nb:
   OVN_ELECTION_TIMER: "10000"
   OVN_INACTIVITY_PROBE: "60000"
   OVN_PROBE_INTERVAL_TO_ACTIVE: "60000"
+  resources:
+    limits:
+      cpu: 200m
+      memory: 512Mi
+    requests:
+      cpu: 50m
+      memory: 128Mi
 
 asr:
   config_agents: []
@@ -465,6 +478,12 @@ logging_sapccsentry:
     networking_arista:
       handlers: stdout, sentry_events, sentry_breadcrumbs
       level: DEBUG
+    neutron.plugins.ml2.drivers.ovn.mech_driver.ovsdb.ovsdb_monitor:
+      handlers: stdout, sentry_events, sentry_breadcrumbs
+      level: DEBUG
+    neutron.common.ovn.hash_ring_manager:
+      handlers: stdout, sentry_events, sentry_breadcrumbs
+      level: INFO
 
 
 pgmetrics:

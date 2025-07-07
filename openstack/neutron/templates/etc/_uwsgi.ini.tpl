@@ -1,7 +1,7 @@
 [uwsgi]
 # This is running standalone
 master = true
-pyargv = --config-file /etc/neutron/neutron.conf --config-dir /etc/neutron/neutron.conf.d --config-dir /etc/neutron/secrets --config-file /etc/neutron/plugins/ml2/ml2-conf.ini --config-file /etc/neutron/plugins/ml2/ml2-conf-manila.ini --config-file /etc/neutron/plugins/ml2/ml2-conf-arista.ini --config-file /etc/neutron/plugins/ml2/ml2-conf-asr1k.ini --config-file /etc/neutron/plugins/asr1k-global.ini {{- if .Values.bgp_vpn.enabled }} --config-file /etc/neutron/networking-bgpvpn.conf{{- end }}{{- if .Values.interconnection.enabled }} --config-file /etc/neutron/networking-interconnection.conf{{- end }}{{- if .Values.fwaas.enabled }} --config-file /etc/neutron/neutron-fwaas.ini{{- end }}{{- if .Values.cc_fabric.enabled }} --config-file /etc/neutron/plugins/ml2/ml2_conf_cc-fabric.ini {{- end }}
+pyargv = --config-file /etc/neutron/neutron.conf --config-dir /etc/neutron/neutron.conf.d --config-dir /etc/neutron/secrets --config-file /etc/neutron/plugins/ml2/ml2-conf.ini --config-file /etc/neutron/plugins/ml2/ml2-conf-manila.ini --config-file /etc/neutron/plugins/ml2/ml2-conf-arista.ini --config-file /etc/neutron/plugins/ml2/ml2-conf-asr1k.ini --config-file /etc/neutron/plugins/asr1k-global.ini {{- if .Values.ovn.enabled }} --config-file /etc/neutron/plugins/ml2/ml2-conf-ovn.ini {{- end }} {{- if .Values.bgp_vpn.enabled }} --config-file /etc/neutron/networking-bgpvpn.conf{{- end }}{{- if .Values.interconnection.enabled }} --config-file /etc/neutron/networking-interconnection.conf{{- end }}{{- if .Values.fwaas.enabled }} --config-file /etc/neutron/neutron-fwaas.ini{{- end }}{{- if .Values.cc_fabric.enabled }} --config-file /etc/neutron/plugins/ml2/ml2_conf_cc-fabric.ini {{- end }}
 wsgi-file = /var/lib/openstack/bin/neutron-api
 enable-threads = true
 processes = {{.Values.api.processes}}
@@ -12,6 +12,9 @@ gid = neutron
 http = :{{.Values.global.neutron_api_port_internal | default 9696}}
 plugins-dir = /var/lib/openstack/lib
 need-plugins = shortmsecs
+
+# For ML2/OVN hash register initialization
+start-time = %t
 
 # Connection tuning
 vacuum = true
@@ -41,8 +44,10 @@ memory-report = true
 http-timeout = 120
 
 # Limits, Kill requests after 120 seconds
+{{ if not .Values.ovn.enabled -}}
 harakiri = 120
 harakiri-verbose = true
+{{ end -}}
 {{ if .Values.api.uwsgi_enable_harakiri_graceful_signal -}}
 # Send SIGWINCH signal to trigger guru_meditation report creation
 harakiri-graceful-signal = 28

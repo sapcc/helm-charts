@@ -3,7 +3,7 @@ kind: Service
 metadata:
   name: {{ include "ovsdb.fullname" . }}
   labels:
-    {{- include "ovsdb.labels" . | nindent 4 }}
+    {{ include "ovsdb.labels" . | nindent 4 }}
 spec:
   type: {{ .Values.service.type }}
   ports:
@@ -16,7 +16,11 @@ spec:
       targetPort: {{ .Values.RAFT_PORT }}
       protocol: TCP
   selector:
-    {{- include "ovsdb.selectorLabels" . | nindent 4 }}
+    {{- if .Values.relay.enabled }}
+      {{ include "ovsdb.relay.selectorLabels" . | nindent 4 }}
+    {{- else }}
+      {{ include "ovsdb.selectorLabels" . | nindent 4 }}
+    {{- end }}
   {{- with .Values.EXTERNAL_IP }}
   externalIPs: [ {{ . | quote }} ]
   {{- end }}
