@@ -2,6 +2,12 @@
 
 This file is used to list changes made in each version of the common chart rabbitmq.
 
+## 0.18.4 - 2025/07/01
+
+- Drop `externalIps` from certificate, as they are unsupported by our certificate provider.
+  They still can be added with `certificate.ipAddresses`
+
+
 ## 0.18.3 - 2025/07/01
 
 - Default to ClusterIssuer with the name "digicert-issuer"

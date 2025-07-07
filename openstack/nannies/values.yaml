@@ -13,41 +13,6 @@ from_nova:
     dbPassword: "will_be_set_by_helm_deployment"
 current_region: "will_be_set_by_helm_deployment"
 
-# nova nanny
-nova_nanny:
-  image_version: '20240815091601'
-  enabled: false
-  # run the pod with an infinite sleep loop for debugging
-  debug: false
-  # run the nanny every n minutes
-  interval: 15
-  db_purge:
-    enabled: false
-    # dry run mode, i.e. just pretend to purge the entries
-    dry_run: true
-    # purge instance entries older than n days
-    older_than: 21
-    # batch size for the purging, still everything matching the older_than limit above is being purged
-    # too large numbers here might give problems with the sql query lenght due to too large foreign key 'in' queries
-    max_number: 25
-  consistency:
-    enabled: false
-    # dry run mode, i.e. just check for consistency without fixing it
-    dry_run: true
-    # detect problems in the instance mappings we saw in queens
-    queens_instance_mapping_enabled: true
-    # dry run mode, i.e. just check for consistency without fixing it
-    queens_instance_mapping_dry_run: true
-    # purge deleted block_device_mappings and reservations older than n days
-    older_than: 21
-    # keep at max n instance fault entries per instance
-    max_instance_faults: 10
-    # how many inconsistencies to fix at max - otherwise fixing will be denied
-    fix_limit: 25
-  cell2:
-    # this should be true if we have a second cell defined in this region
-    enabled: false
-
 # cinder nanny
 cinder_nanny:
   image_version: '20240815091601'
@@ -106,10 +71,6 @@ alerts:
 # currently used by glance nanny only
 sentry:
   enabled: true
-
-nova:
-  mariadb:
-    enabled: false
 
 owner-info:
   support-group: compute-storage-api
