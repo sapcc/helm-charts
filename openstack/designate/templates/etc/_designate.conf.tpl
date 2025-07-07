@@ -156,10 +156,10 @@ enabled_extensions_v2 = quotas, reports
 
 # Default per-page limit for the V2 API, a value of None means show all results
 # by default
-#default_limit_v2 = 20
+default_limit_v2 = 200
 
 # Max page size in the V2 API
-#max_limit_v2 = 1000
+max_limit_v2 = 1000
 
 # Enable Admin API (experimental)
 #enable_api_admin = True
