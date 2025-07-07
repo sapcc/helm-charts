@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.5.1 - 2026/07/07
+
+* Update sql-exporter version to 0.8.0 (2025-07-07)
+
 ## v0.5.0 - 2025/06/10
 
 * Update sql-exporter version to 0.6.0 (2025-06-10)
