@@ -1,0 +1,121 @@
+{{- if .Values.snmp_exporter.hsm.alerts.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+
+metadata:
+  name: snmp-exporter-hsm
+  labels:
+    app: snmp-exporter
+    prometheus: {{ required ".Values.snmp_exporter.hsm.alerts.prometheus missing" .Values.snmp_exporter.hsm.alerts.prometheus }}
+
+spec:
+groups:
+- name: snmp-hsm.alerts
+  rules:
+  - alert: hsmPartitionStorageAvailibilityLessThan5Percentage
+    expr: snmp_hsm_hsmPartitionStorageAvailableBytes{hsmModel!="Luna G7"} < 5000
+    for: 1d
+    labels:
+      severity: info
+      service: barbican
+      context: hsm
+      meta: "Partition {{`{{ $labels.hsmPartitionSerialNumber}}` }} has less than 5% storage availability"
+      dashboard: hsm
+      no_alert_on_absence: "true"
+      support_group: identity
+    annotations:
+      description: "Partition {{`{{ $labels.hsmPartitionSerialNumber }}`}} in {{`{{ $labels.devicename }}`}} has {{`{{ $value}}` }}kb storage availability"
+      summary: "Partition {{`{{ $labels.hsmPartitionSerialNumber }}`}} has less than 5% storage availability"
+
+  - alert: hsmAribaClientsMoreThan14
+    expr: sum((snmp_hsm_hsmClientName{hsmClientName!~"barb.*"})) by (devicename) > 14
+    for: 15d
+    labels:
+      severity: info
+      service: barbican
+      context: hsm
+      meta: "HSM Client License in {{`{{ $labels.devicename `}}`}} is {{`{{ $value }}`}}"
+      dashboard: hsm
+      no_alert_on_absence: "true"
+      support_group: identity
+    annotations:
+      description: "HSM Client License in {{`{{ $labels.devicename }}`}} is {{`{{ $value }}`}}"
+      summary: "HSM Client License in {{`{{ $labels.devicename }}`}} is {{`{{ $value }}`}}"
+
+  - alert: hsmOperationalErrors
+    expr: sum(rate(snmp_hsm_hsmOperationErrors[5m])) by (devicename) > 0
+    for: 15m
+    labels:
+      severity: info
+      service: barbican
+      context: hsm
+      meta: "HSM Operational Errors in {{`{{ $labels.devicename }}`}}"
+      dashboard: hsm
+      no_alert_on_absence: "true"
+      support_group: identity
+    annotations:
+      description: "HSM Operational Errors in {{`{{ $labels.devicename }}`}}"
+      summary: "HSM Operational Errors in {{`{{ $labels.devicename }}`}}"
+
+  - alert: hsmSensorTemperatureIsCritical
+    expr: sum by(devicename, lmTempSensorsDevice) (snmp_hsm_lmTempSensorsValue{lmTempSensorsDevice!~"loc1"}) > 70000
+    for: 15m
+    labels:
+      severity: info
+      service: barbican
+      context: hsm
+      meta: "HSM Sensor {{`{{ $labels.lmTempSensorsDevice }}`}} in {{`{{ $labels.devicename }}`}} Temperature is Critical"
+      dashboard: hsm
+      no_alert_on_absence: "true"
+      support_group: identity
+      playbook: /docs/support/playbook/barbican/alerts/hsm/
+    annotations:
+      description: "HSM Sensor {{`{{ $labels.lmTempSensorsDevice }}`}} in {{`{{ $labels.devicename }}`}} Temperature is {{`{{ $value }}`}}"
+      summary: "HSM Sensor {{`{{ $labels.lmTempSensorsDevice }}`}} in {{`{{ $labels.devicename }}`}} Temperature is {{`{{ $value }}`}}"
+
+  - alert: hsmClientsMoreThan20
+    expr: sum(snmp_hsm_hsmClientName) by (devicename) > 20
+    for: 15d
+    labels:
+      severity: info
+      service: barbican
+      context: hsm
+      meta: "HSM Client License in {{`{{ $labels.devicename }}`}} is {{`{{ $value }}`}}"
+      dashboard: hsm
+      no_alert_on_absence: "true"
+      support_group: identity
+    annotations:
+      description: "HSM Client License in {{`{{ $labels.devicename }}`}} is {{`{{ $value }}`}}"
+      summary: "HSM Client License in {{`{{ $labels.devicename }}`}} is {{`{{ $value }}`}}"
+
+  - alert: hsmBarbicanClientsMoreThan4
+    expr: sum((snmp_hsm_hsmClientName{hsmClientName=~"barb.*"})) by (devicename) > 4
+    for: 15d
+    labels:
+      severity: info
+      service: barbican
+      context: hsm
+      meta: "HSM Client License in {{`{{ $labels.devicename }}`}} is {{`{{ $value }}`}}"
+      dashboard: hsm
+      no_alert_on_absence: "true"
+      support_group: identity
+    annotations:
+      description: "HSM Client License in {{`{{ $labels.devicename }}`}} is {{`{{ $value }}`}}"
+      summary: "HSM Client License in {{`{{ $labels.devicename }}`}} is {{`{{ $value }}`}}"
+
+  - alert: hsmDeviceIsUnReachable
+    expr: count(up{job="scrapeConfig/infra-monitoring/snmp-exporter-hsm"} == 0 or absent(up{job="scrapeConfig/infra-monitoring/snmp-exporter-hsm"})) by (name, device_type)
+    for: 15m
+    labels:
+      severity: warning
+      service: barbican
+      context: hsm
+      meta: "{{`{{ $labels.name }}`}} {{`{{ $labels.device_type }}`}} Device is UnReachable"
+      dashboard: hsm
+      no_alert_on_absence: "true"
+      support_group: identity
+      playbook: /docs/support/playbook/barbican/alerts/hsm/
+    annotations:
+      description: "{{`{{ $labels.name }}`}} {{`{{ $labels.device_type }}`}} Device is UnReachable"
+      summary: "{{`{{ $labels.name }}`}} {{`{{ $labels.device_type }}`}} Device is UnReachable"
+{{- end }}
