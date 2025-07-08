@@ -83,6 +83,13 @@ spec:
         enableAnonymousAuthentication: true # cluster registry version check
         oidcConfig:
           {{- toYaml .Values.garden.virtualCluster.oidcConfig | nindent 10 }}
+{{- if hasPrefix "rtc-" .Values.global.cluster }}
+        authentication:
+          webhook:
+            kubeconfigSecretName: authentication-webhook-config
+            cacheTTL: 30s
+            version: v1beta1
+{{- end }}
     gardener:
       clusterIdentity: local
       gardenerAPIServer:
