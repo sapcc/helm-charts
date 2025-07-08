@@ -3,7 +3,7 @@ apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 
 metadata:
-  name: {{ printf "snmp-exporter-hsm" }}
+  name: snmp-exporter-hsm
   labels:
     app: snmp-exporter
     prometheus: {{ required ".Values.snmp_exporter.hsm.alerts.prometheus missing" .Values.snmp_exporter.hsm.alerts.prometheus }}
@@ -25,7 +25,7 @@ groups:
       support_group: identity
     annotations:
       description: "Partition {{`{{ $labels.hsmPartitionSerialNumber }}`}} in {{`{{ $labels.devicename }}`}} has {{`{{ $value}}` }}kb storage availability"
-      summary: "Partition {{ $labels.hsmPartitionSerialNumber }} has less than 5% storage availability"
+      summary: "Partition {{`{{ $labels.hsmPartitionSerialNumber }}`}} has less than 5% storage availability"
 
   - alert: hsmAribaClientsMoreThan14
     expr: sum((snmp_hsm_hsmClientName{hsmClientName!~"barb.*"})) by (devicename) > 14
