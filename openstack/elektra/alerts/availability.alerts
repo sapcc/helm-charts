@@ -1,0 +1,16 @@
+groups:
+- name: availability.alerts
+  rules:
+  - alert: OpenstackElektraPodAvailabilityLow
+    expr: (sum(up{name="elektra", container="rails"}) BY (region) / count(up{name="elektra", container="rails"}) BY (region)) < 0.5
+    for: 3m
+    labels:
+      context: openstack
+      dashboard: elektra-details
+      service: elektra
+      severity: warning
+      tier: os
+      support_group: containers
+    annotations:
+      description: 'Elektra pod availability is {{ $value | humanizePercentage }} which is below the 50% threshold in region {{ $labels.region }}.'
+      summary: Elektra pod availability low
