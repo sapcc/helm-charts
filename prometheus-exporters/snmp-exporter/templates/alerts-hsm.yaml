@@ -3,7 +3,7 @@ apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
  
 metadata:
-  name: snmp-exporter-hsm
+  name: snmp-exporter-alerts-snmp-hsm.alerts
   labels:
     app: snmp-exporter
     prometheus: {{ required ".Values.snmp_exporter.hsm.alerts.prometheus missing" .Values.snmp_exporter.hsm.alerts.prometheus }}
@@ -18,12 +18,12 @@ spec:
         severity: info
         service: barbican
         context: hsm
-        meta: "Partition {{`{{ $labels.hsmPartitionSerialNumber}}` }} has less than 5% storage availability"
+        meta: "Partition {{`{{ $labels.hsmPartitionSerialNumber }}` }} has less than 5% storage availability"
         dashboard: hsm
         no_alert_on_absence: "true"
         support_group: identity
       annotations:
-        description: "Partition {{`{{ $labels.hsmPartitionSerialNumber }}`}} in {{`{{ $labels.devicename }}`}} has {{`{{ $value}}` }}kb storage availability"
+        description: "Partition {{`{{ $labels.hsmPartitionSerialNumber }}`}} in {{`{{ $labels.devicename }}`}} has {{`{{ $value }}` }}kb storage availability"
         summary: "Partition {{`{{ $labels.hsmPartitionSerialNumber }}`}} has less than 5% storage availability"
   
     - alert: hsmAribaClientsMoreThan14
