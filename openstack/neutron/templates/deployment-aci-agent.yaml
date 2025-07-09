@@ -30,6 +30,8 @@ spec:
       annotations:
         kubectl.kubernetes.io/default-container: neutron-aci-agent
         pod.beta.kubernetes.io/hostname:  aci-agent-pet
+        prometheus.io/scrape: "true"
+        prometheus.io/targets: "{{ required "$.Values.metrics.prometheus missing" $.Values.metrics.prometheus }}"
         configmap-etc-hash: {{ include (print $.Template.BasePath "/configmap-etc.yaml") . | sha256sum }}
         configmap-etc-aci-hash: {{ include (print $.Template.BasePath "/configmap-etc-aci.yaml") . | sha256sum }}
         configmap-etc-vendor-hash: {{ include (print $.Template.BasePath "/configmap-etc-vendor.yaml") . | sha256sum }}
@@ -48,6 +50,9 @@ spec:
             initialDelaySeconds: 30
             periodSeconds: 30
             timeoutSeconds: 10
+          ports:
+            - containerPort: 9090
+              name: metrics
           resources:
 {{ toYaml .Values.pod.resources.aci_agent | indent 12 }}
           env:
