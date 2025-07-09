@@ -19,7 +19,7 @@ for i in $(curl -s -u ${BASIC_AUTH_HEADER} "${CLUSTER_HOST}/_cat/indices?v"|awk 
   do
     # Delete all dashboard pattern to update all fields, reload if dashboard patterns is not supported via api
     curl -s --fail -XDELETE -u ${BASIC_AUTH_HEADER} "${DASHBOARD_HOST}/api/saved_objects/index-pattern/${i}-*"
-    curl -s -XPOST --header "content-type: application/JSON" -u ${BASIC_AUTH_HEADER} "${DASHBOARD_HOST}/api/saved_objects/index-pattern/${i}-*" -H "osd-xsrf: true" -d "{ \"attributes\": { \"title\": \"${i}\", \"timeFieldName\": \"@timestamp\" } }"
+    curl -s -XPOST --header "content-type: application/JSON" -u ${BASIC_AUTH_HEADER} "${DASHBOARD_HOST}/api/saved_objects/index-pattern/${i}-*" -H "osd-xsrf: true" -d "{ \"attributes\": { \"title\": \"${i}-*\", \"timeFieldName\": \"@timestamp\" } }"
 done
 
 # Creating Dashboards index pattern for all available datastreams
@@ -33,6 +33,6 @@ for i in $(curl -s -u ${BASIC_AUTH_HEADER} "https://opensearch-logs-client.scale
         echo "index ${i} already exists in Opensearch dashboard"
     else
       echo "INFO: creating index-pattern in Dashboards for datastream $i"
-      curl -s -XPOST --header "content-type: application/JSON" -u ${BASIC_AUTH_HEADER} "${DASHBOARD_HOST}/api/saved_objects/index-pattern/${i}-*" -H "osd-xsrf: true" -d "{ \"attributes\": { \"title\": \"${i}\", \"timeFieldName\": \"@timestamp\" } }"
+      curl -s -XPOST --header "content-type: application/JSON" -u ${BASIC_AUTH_HEADER} "${DASHBOARD_HOST}/api/saved_objects/index-pattern/${i}-*" -H "osd-xsrf: true" -d "{ \"attributes\": { \"title\": \"${i}-*\", \"timeFieldName\": \"@timestamp\" } }"
     fi
 done
