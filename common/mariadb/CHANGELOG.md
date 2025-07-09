@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.25.1 - 2025/07/09
+* Set `kubectl.kubernetes.io/default-container` annotation for all chart deployments, cronjobs and jobs
+* chart version bumped
+
 ## v0.25.0 - 2025-07-02
 * MariaDB version updated to [10.11.13](https://mariadb.com/kb/en/mariadb-10-11-13-release-notes/)
   * See https://mariadb.com/kb/en/changes-improvements-in-mariadb-1011/
