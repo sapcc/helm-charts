@@ -5,6 +5,11 @@
 {{- define "watcher_pipe" -}}
 {{- if .Values.watcher.enabled }} watcher{{- end -}}
 {{- end -}}
+
+{{- define "rate_limit_pipe" -}}
+{{- if .Values.rate_limit.enabled }} rate_limit{{- end -}}
+{{- end }}
+
 ############
 # Metadata #
 ############
@@ -41,7 +46,7 @@ use = call:nova.api.openstack.urlmap:urlmap_factory
 
 [composite:openstack_compute_api_v21]
 use = call:nova.api.auth:pipeline_factory_v21
-keystone = cors http_proxy_to_wsgi compute_req_id faultwrap request_log sizelimit {{- include "osprofiler_pipe" . }} authtoken keystonecontext {{- include "watcher_pipe" . }} sentry {{- include "audit_pipe" . }} osapi_compute_app_v21
+keystone = cors http_proxy_to_wsgi compute_req_id faultwrap request_log sizelimit {{- include "osprofiler_pipe" . }} authtoken keystonecontext {{- include "watcher_pipe" . }} {{- include "rate_limit_pipe" . }} sentry {{- include "audit_pipe" . }} osapi_compute_app_v21
 
 [composite:openstack_compute_api_v21_legacy_v2_compatible]
 use = call:nova.api.auth:pipeline_factory_v21
@@ -123,4 +128,18 @@ metrics_enabled = {{ if .Values.audit.metrics_enabled -}}True{{- else -}}False{{
 use = egg:watcher-middleware#watcher
 service_type = compute
 config_file = /etc/nova/watcher.yaml
+{{- end }}
+
+{{ if .Values.rate_limit.enabled -}}
+[filter:rate_limit]
+use = egg:rate-limit-middleware#rate-limit
+config_file = /etc/designate/ratelimit.yaml
+service_type = dns
+rate_limit_by = {{ .Values.rate_limit.rate_limit_by }}
+max_sleep_time_seconds: {{ .Values.rate_limit.max_sleep_time_seconds }}
+clock_accuracy = 1ns
+log_sleep_time_seconds: {{ .Values.rate_limit.log_sleep_time_seconds }}
+backend_host = {{ .Release.Name }}-api-ratelimit-redis
+backend_port = 6379
+backend_timeout_seconds = {{ .Values.rate_limit.backend_timeout_seconds }}
 {{- end }}
