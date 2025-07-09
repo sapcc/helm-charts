@@ -2,6 +2,11 @@
 
 This file is used to list changes made in each version of the common chart rabbitmq.
 
+## 0.18.5 - 2025/07/07
+
+- RabbitMQ [4.1.2 Release notes](https://github.com/rabbitmq/rabbitmq-server/releases/tag/v4.1.2)
+- Chart version bumped
+
 ## 0.18.4 - 2025/07/01
 
 - Drop `externalIps` from certificate, as they are unsupported by our certificate provider.
