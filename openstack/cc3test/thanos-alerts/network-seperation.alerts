@@ -7,6 +7,7 @@ groups:
     for: 120m
     labels:
       severity: warning
+      support_group: observability
       service: cc3test
       context: '{{ $labels.type }}'
       meta: 'Network Seperation Test {{ $labels.name }} got failed in setup phase'
@@ -14,3 +15,19 @@ groups:
     annotations:
       description: 'Network Seperation test {{ $labels.name }}/ {{ $labels.type }} got failed in setup phase'
       summary: 'Network Seperation test {{ $labels.name }}/ {{ $labels.type }} got  failed in setup phase'
+
+  - alert: NetworkSegTestCallFailed
+    expr: |
+        last_over_time(cc3test_status{type="logical_network_separation", phase="call"}[7d]) == 0
+    for: 120m
+    labels:
+      severity: warning
+      support_group: observability
+      service: cc3test
+      context: '{{ $labels.type }}'
+      meta: 'Network Seperation Test {{ $labels.name }} got failed in call phase'
+      report: 'cc3test/regression/object-storage/swift/containers/cc3test/objects/{{ $labels.base64path }}'
+    annotations:
+      description: 'Network Seperation test {{ $labels.name }}/ {{ $labels.type }} got failed in call phase'
+      summary: 'Network Seperation test {{ $labels.name }}/ {{ $labels.type }} got  failed in call phase'
+
