@@ -16,7 +16,7 @@
 
 if [ -z "$ISM_INDEXES" ]
 then
-      echo "No indicies exist, nothing to do"
+      echo "No indices exist, nothing to do"
       exit 0
 else
 
