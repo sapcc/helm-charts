@@ -5,22 +5,43 @@ set -o pipefail
 {{- include "tempest-base.function_start_tempest_tests" . }}
 
 function cleanup_ports_and_networks() {
-  for network in $(openstack network list | grep -E "tempest-test-network" | awk '{ print $4 }');
-  do
-      for port in $(openstack port list --network $network | awk 'NR > 3 { print $2 }');
+      for network in $(openstack network list | grep -E "tempest-test-network" | awk '{ print $4 }');
       do
-          echo "Port $port will be disabled and deleted";
-          openstack port set ${port} --disable --no-fixed-ip && openstack port delete ${port};
+          for port in $(openstack port list --network $network | awk 'NR > 3 { print $2 }');
+          do
+              echo "Port $port will be disabled and deleted";
+              device_owner=$(openstack port show $port -f value -c device_owner)
+              if [[ $device_owner == "network:router_interface" ]]; then
+                router_id=$(openstack port show $port -f value -c device_id);
+                echo "Port ${port} will be removed from router $router_id";
+                openstack router remove port ${router_id} ${port};
+                echo "Router to delete $router_id";
+                openstack router delete ${router_id}
+              else
+                openstack port set ${port} --disable --no-fixed-ip;
+                openstack port delete ${port};
+              fi
+          done
+          echo "Network $network will be deleted";
+          openstack network delete $network;
       done
-      echo "Network $network will be deleted";
-      openstack network delete $network;
-  done
  for network in $(openstack network list | grep -oP "tempest-\w*[A-Z]+\S+");
  do
       for port in $(openstack port list --network $network | awk 'NR > 3 { print $2 }');
       do
           echo "Port $port will be disabled and deleted";
-          openstack port set ${port} --disable --no-fixed-ip && openstack port delete ${port};
+          device_owner=$(openstack port show $port -f value -c device_owner)
+          if [[ $device_owner == "network:router_interface" ]]; then
+            router_id=$(openstack port show $port -f value -c device_id);
+            echo "Port ${port} will be removed from router $router_id";
+            openstack router remove port ${router_id} ${port};
+            echo "Router to delete $router_id";
+            openstack router delete ${router_id}
+          else
+            openstack port set ${port} --disable --no-fixed-ip;
+            openstack port delete ${port};
+          fi
+
       done
       echo "Network $network will be deleted";
       openstack network delete $network;
@@ -85,9 +106,10 @@ function cleanup_tempest_leftovers() {
     export OS_TENANT_NAME=$TEMPESTPROJECT
     export OS_PROJECT_NAME=$TEMPESTPROJECT
     for ip in $(openstack floating ip list | grep 10. | awk '{ print $2 }'); do openstack floating ip delete ${ip}; done
-    for router in $(openstack router list | grep -E "tempest|test|abc" | awk '{ print $2 }'); do openstack router delete ${router}; done
+    cleanup_ports_and_networks
     for subnet in $(openstack subnet list | grep -E "tempest-lb_member" | awk '{ print $4 }'); do echo Subnet ${subnet} will be deleted; openstack subnet delete ${subnet}; done
     for pool in $(openstack subnet pool list | grep -E "tempest" | awk '{ print $2 }'); do openstack subnet pool delete ${pool}; done
+    for router in $(openstack router list | grep -E "tempest|abc" | awk '{ print $2 }'); do openstack router delete ${router}; done
     cleanup_ports_and_networks
     cleanup_security_groups
   done
@@ -104,6 +126,8 @@ function cleanup_tempest_leftovers() {
   for addscope in $(openstack address scope list | grep "tempest-\w*" |  awk '{ print $2 }'); do
     openstack address scope delete ${addscope}
   done
+  for router in $(openstack router list | grep -E "tempest|abc" | awk '{ print $2 }'); do openstack router delete ${router}; done
+  cleanup_ports_and_networks
   cleanup_security_groups
 }
 
