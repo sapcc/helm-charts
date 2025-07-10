@@ -23,6 +23,7 @@ keystone-manage --config-file=/etc/keystone/keystone.conf --config-file=/etc/key
 echo "DB Version after migration:"
 keystone-manage --config-file=/etc/keystone/keystone.conf --config-file=/etc/keystone/keystone.conf.d/secrets.conf db_version
 
+set +e
 echo "Keystone doctor:"
 keystone-manage --config-file=/etc/keystone/keystone.conf --config-file=/etc/keystone/keystone.conf.d/secrets.conf doctor
 
