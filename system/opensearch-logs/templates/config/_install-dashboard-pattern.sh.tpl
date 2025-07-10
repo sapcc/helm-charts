@@ -23,7 +23,7 @@ for i in $(curl -s -u ${BASIC_AUTH_HEADER} "${CLUSTER_HOST}/_cat/indices?v"|awk 
 done
 
 # Creating Dashboards index pattern for all available datastreams
-for i in $(curl -s -u ${BASIC_AUTH_HEADER} "https://opensearch-logs-client.scaleout.qa-de-1.cloud.sap:9200/_data_stream/*?pretty=true"|grep name|grep -v "index_name"|grep -v "@timestamp"|awk -F: '{ print $2}'|awk -F\" '{ print $2 }'|sed 's/...........$//')
+for i in $(curl -s -u ${BASIC_AUTH_HEADER} "${CLUSTER_HOST}/_data_stream/*?pretty=true"|grep name|grep -v "index_name"|grep -v "@timestamp"|awk -F: '{ print $2}'|awk -F\" '{ print $2 }'|sed 's/...........$//')
   do
     echo "using datastream $i from Opensearch-Logs"
     echo "setting OpenSearch dashboard index mapping for index $i"
