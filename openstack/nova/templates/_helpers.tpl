@@ -1,16 +1,16 @@
 {{- define "api_db_path" }}
   {{- $context := dict "target" "api" "defaultUsers" .Values.defaultUsersMariaDB "users" .Values.mariadb_api.users }}
-  {{- tuple . .Values.apidbName (include "nova.helpers.default_db_user" $context) (include "nova.helpers.default_user_password" $context) .Values.mariadb_api.name .Values.apidbType | include "utils.db_url" }}
+  {{- tuple . .Values.apidbName (include "nova.helpers.default_db_user" $context) (include "nova.helpers.default_user_password" $context) (include "nova.helpers.api_db_name" .) .Values.apidbType | include "utils.db_url" }}
 {{- end }}
 
 {{- define "cell0_db_path" }}
   {{- $context := dict "target" "cell0" "defaultUsers" .Values.defaultUsersMariaDB "users" .Values.mariadb.users }}
-  {{- tuple . .Values.cell0dbName (include "nova.helpers.default_db_user" $context) (include "nova.helpers.default_user_password" $context) .Values.mariadb.name .Values.cell0dbType | include "utils.db_url" }}
+  {{- tuple . .Values.cell0dbName (include "nova.helpers.default_db_user" $context) (include "nova.helpers.default_user_password" $context) (include "nova.helpers.cell01_db_name" .) .Values.cell0dbType | include "utils.db_url" }}
 {{- end }}
 
 {{- define "cell1_db_path" -}}
   {{- $context := dict "target" "cell1" "defaultUsers" .Values.defaultUsersMariaDB "users" .Values.mariadb.users }}
-  {{- tuple . .Values.dbName (include "nova.helpers.default_db_user" $context) (include "nova.helpers.default_user_password" $context) .Values.mariadb.name .Values.cell1dbType | include "utils.db_url" }}
+  {{- tuple . .Values.dbName (include "nova.helpers.default_db_user" $context) (include "nova.helpers.default_user_password" $context) (include "nova.helpers.cell01_db_name" .) .Values.cell1dbType | include "utils.db_url" }}
 {{- end }}
 
 {{- define "cell1_transport_url" -}}
@@ -27,14 +27,14 @@
 
 {{- define "cell2_db_path" -}}
   {{- $context := dict "target" "cell2" "defaultUsers" .Values.defaultUsersMariaDB "users" .Values.mariadb_cell2.users }}
-  {{- tuple . .Values.cell2dbName (include "nova.helpers.default_db_user" $context) (include "nova.helpers.default_user_password" $context) .Values.mariadb_cell2.name .Values.cell2dbType | include "utils.db_url" }}
+  {{- tuple . .Values.cell2dbName (include "nova.helpers.default_db_user" $context) (include "nova.helpers.default_user_password" $context) (include "nova.helpers.cell2_db_name" .) .Values.cell2dbType | include "utils.db_url" }}
 {{- end }}
 
 {{- define "cell2_db_path_for_exporter" -}}
 {{- if eq .Values.cell2.enabled true -}}
   {{- $user := include "mysql_metrics.resolve_secret_for_yaml" .Values.cell2dbUser }}
   {{- $password := include "mysql_metrics.resolve_secret_for_yaml" (default .Values.cell2dbPassword .Values.db_password .Values.global.dbPassword) -}}
-mysql://{{ $user }}:{{ $password }}@tcp(nova-{{ .Values.cell2.name }}-mariadb.{{ include "svc_fqdn" . }}:3306)/{{ .Values.cell2dbName }}
+mysql://{{ $user }}:{{ $password }}@tcp({{ include "nova.helpers.cell2_db" . }}.{{ include "svc_fqdn" . }}:3306)/{{ .Values.cell2dbName }}
 {{- end -}}
 {{- end -}}
 
@@ -131,6 +131,16 @@ annotations:
   {{- end }}
 {{- end }}
 
+{{- define "nova.helpers.api_db_name" }}
+  {{- if eq .Values.apidbType "mariadb" }}
+    {{- print .Values.mariadb_api.name }}
+  {{- else if eq .Values.apidbType "pxc-db" }}
+    {{- print .Values.pxc_db_api.name }}
+  {{- else }}
+    {{- fail (print "Unsupported database type for api_db") }}
+  {{- end }}
+{{- end }}
+
 {{- define "nova.helpers.cell01_db" }}
   {{- if eq .Values.cell1dbType "mariadb" }}
     {{- print .Values.mariadb.name "-mariadb" }}
@@ -141,11 +151,31 @@ annotations:
   {{- end }}
 {{- end }}
 
+{{- define "nova.helpers.cell01_db_name" }}
+  {{- if eq .Values.cell1dbType "mariadb" }}
+    {{- print .Values.mariadb.name }}
+  {{- else if eq .Values.cell1dbType "pxc-db" }}
+    {{- print .Values.pxc_db.name }}
+  {{- else }}
+    {{- fail (print "Unsupported database type for cell0 and cell1") }}
+  {{- end }}
+{{- end }}
+
 {{- define "nova.helpers.cell2_db" }}
   {{- if eq .Values.cell2dbType "mariadb" }}
     {{- print .Values.mariadb_cell2.name "-mariadb" }}
   {{- else if eq .Values.cell2dbType "pxc-db" }}
     {{- print .Values.pxc_db_cell2.name "-db-haproxy" }}
+  {{- else }}
+    {{- fail (print "Unsupported database type for cell2") }}
+  {{- end }}
+{{- end }}
+
+{{- define "nova.helpers.cell2_db_name" }}
+  {{- if eq .Values.cell2dbType "mariadb" }}
+    {{- print .Values.mariadb_cell2.name }}
+  {{- else if eq .Values.cell2dbType "pxc-db" }}
+    {{- print .Values.pxc_db_cell2.name }}
   {{- else }}
     {{- fail (print "Unsupported database type for cell2") }}
   {{- end }}
