@@ -1,0 +1,18 @@
+# SPDX-FileCopyrightText: 2024 SAP SE or an SAP affiliate company and Greenhouse contributors
+# SPDX-License-Identifier: Apache-2.0
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: audit-logs-collector
+  labels:
+    app: audit-logs-collector
+    {{- include "plugin.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: audit-logs-collector
+subjects:
+  - kind: ServiceAccount
+    name: audit-logs-collector
+    namespace: {{ .Release.Namespace }}
