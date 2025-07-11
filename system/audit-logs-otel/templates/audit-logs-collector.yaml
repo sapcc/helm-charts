@@ -9,8 +9,8 @@ metadata:
   name: audit-logs
   labels:
   {{- include "plugin.labels" . | nindent 4 }} 
-  {{- if .Values.auditLogs.customLabels }}
-  {{ toYaml .Values.auditLogs.customLabels | nindent 4 }}
+  {{- if .Values.openTelemetryPlugin.openTelemetry.customLabels }}
+  {{ toYaml .Values.openTelemetryPlugin.openTelemetry.customLabels | nindent 4 }}
   {{- end }}
 spec:
   mode: daemonset
@@ -31,20 +31,20 @@ spec:
           apiVersion: v1
           fieldPath: status.podIP
     - name: cluster
-      value: "{{ .Values.auditLogs.cluster }}"
+      value: "{{ .Values.openTelemetryPlugin.openTelemetry.cluster }}"
     - name: region
-      value: "{{ .Values.auditLogs.region }}"
+      value: "{{ .Values.openTelemetryPlugin.openTelemetry.region }}"
     - name: index
-      value: "{{ .Values.auditLogs.openSearchLogs.index }}"
+      value: "{{ .Values.openTelemetryPlugin.openTelemetry.openSearchLogs.index }}"
   envFrom:
     - secretRef:
          name: audit-logs-basic-auth
-{{- if .Values.auditLogs.prometheus.podMonitor.enabled }}
+{{- if .Values.openTelemetryPlugin.openTelemetry.prometheus.podMonitor.enabled }}
   ports:
     - name: prometheus
       port: 9999
 {{- end }}
-  image: {{ .Values.auditLogs.collectorImage.repository }}:{{ .Values.auditLogs.collectorImage.tag }}
+  image: {{ index .Values "openTelemetryPlugin" "opentelemetry-operator" "manager" "collectorImage" "repository" }}:{{ index .Values "openTelemetryPlugin" "opentelemetry-operator" "manager" "collectorImage" "tag" }}
   volumeMounts:
   - mountPath: /var/log
     name: varlog
@@ -82,7 +82,7 @@ spec:
             field: attributes["log.type"]
             value: "containerd"
 
-{{- if .Values.auditLogs.prometheus.podMonitor.enabled }}
+{{- if .Values.openTelemetryPlugin.openTelemetry.prometheus.podMonitor.enabled }}
       prometheus/internal:
         config:
           scrape_configs:
@@ -98,7 +98,7 @@ spec:
         timeout: 5s
         send_batch_size : 10
 
-{{- if .Values.auditLogs.prometheus.podMonitor.enabled }}
+{{- if .Values.openTelemetryPlugin.openTelemetry.prometheus.podMonitor.enabled }}
       attributes/prometheus:
         actions:
           - action: insert
@@ -152,7 +152,7 @@ spec:
             key: failover_username_opensearch
             value: ${failover_username_a}
 
-{{- if .Values.auditLogs.openSearchLogs.failover.enabled }}
+{{- if .Values.openTelemetryPlugin.openTelemetry.openSearchLogs.failover.enabled }}
     {{- include "failover.attributes" . | nindent 6 -}}
 {{- end }}
 
@@ -289,10 +289,10 @@ spec:
         http:
           auth:
             authenticator: basicauth/failover_a
-          endpoint: {{ .Values.auditLogs.openSearchLogs.endpoint }}
+          endpoint: {{ .Values.openTelemetryPlugin.openTelemetry.openSearchLogs.endpoint }}
         logs_index: ${index}-datastream
 
-{{- if .Values.auditLogs.openSearchLogs.failover.enabled }}
+{{- if .Values.openTelemetryPlugin.openTelemetry.openSearchLogs.failover.enabled }}
     {{- include "failover.exporter" . | nindent 6 -}}
 {{- end }}
 
@@ -305,7 +305,7 @@ spec:
           username: ${failover_username_a}
           password: ${failover_password_a}
 
-{{- if .Values.auditLogs.openSearchLogs.failover.enabled }}
+{{- if .Values.openTelemetryPlugin.openTelemetry.openSearchLogs.failover.enabled }}
     {{- include "failover.extension" . | nindent 6 -}}
 {{- end }}
 
@@ -315,7 +315,7 @@ spec:
       failover:
         priority_levels:
           - [logs/failover_a]
-{{- if .Values.auditLogs.openSearchLogs.failover.enabled }}
+{{- if .Values.openTelemetryPlugin.openTelemetry.openSearchLogs.failover.enabled }}
           - [logs/failover_b]
 {{- end }}
         retry_interval: 2m
@@ -324,11 +324,11 @@ spec:
     service:
       extensions:
         - basicauth/failover_a
-{{- if .Values.auditLogs.openSearchLogs.failover.enabled }}
+{{- if .Values.openTelemetryPlugin.openTelemetry.openSearchLogs.failover.enabled }}
         - basicauth/failover_b
 {{- end }}
 
-{{- if .Values.auditLogs.prometheus.podMonitor.enabled }}
+{{- if .Values.openTelemetryPlugin.openTelemetry.prometheus.podMonitor.enabled }}
       telemetry:
         metrics:
           address: 127.0.0.1:8888
@@ -345,7 +345,7 @@ spec:
           processors: [attributes/failover_username_a]
           exporters: [opensearch/failover_a]
 
-{{- if .Values.auditLogs.openSearchLogs.failover.enabled }}
+{{- if .Values.openTelemetryPlugin.openTelemetry.openSearchLogs.failover.enabled }}
     {{- include "failover.pipeline" . | nindent 8 -}}
 {{- end }}
 
@@ -361,7 +361,7 @@ spec:
           receivers: [journald]
           processors: [attributes/cluster,transform/journal]
           exporters: [forward]
-{{- if .Values.auditLogs.prometheus.podMonitor.enabled }}
+{{- if .Values.openTelemetryPlugin.openTelemetry.prometheus.podMonitor.enabled }}
         metrics/prometheus:
           receivers: [prometheus/internal]
           processors: [attributes/prometheus]

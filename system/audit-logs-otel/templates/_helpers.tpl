@@ -15,17 +15,17 @@ plugindefinition: audit-logs
 
 {{/* Generate prometheus specific labels */}}
 {{- define "plugin.prometheusLabels" }}
-{{- if .Values.auditLogs.prometheus.additionalLabels }}
-{{- tpl (toYaml .Values.auditLogs.prometheus.additionalLabels) . }}
+{{- if .Values.openTelemetryPlugin.openTelemetry.prometheus.additionalLabels }}
+{{- tpl (toYaml .Values.openTelemetryPlugin.openTelemetry.prometheus.additionalLabels) . }}
 {{- end }}
-{{- if .Values.auditLogs.prometheus.rules.labels }}
-{{ tpl (toYaml .Values.auditLogs.prometheus.rules.labels) . }}
+{{- if .Values.openTelemetryPlugin.openTelemetry.prometheus.rules.labels }}
+{{ tpl (toYaml .Values.openTelemetryPlugin.openTelemetry.prometheus.rules.labels) . }}
 {{- end }}
 {{- end }}
 
 {{/* Generate prometheus rule labels for alerts */}}
 {{- define "plugin.additionalRuleLabels" -}}
-{{- if .Values.auditLogs.prometheus.rules.additionalRuleLabels }}
-{{- tpl (toYaml .Values.auditLogs.prometheus.rules.additionalRuleLabels) . }}
+{{- if .Values.openTelemetryPlugin.openTelemetry.prometheus.rules.additionalRuleLabels }}
+{{- tpl (toYaml .Values.openTelemetryPlugin.openTelemetry.prometheus.rules.additionalRuleLabels) . }}
 {{- end }}
 {{- end }}
