@@ -1,0 +1,86 @@
+# SPDX-FileCopyrightText: 2024 SAP SE or an SAP affiliate company and Greenhouse contributors
+# SPDX-License-Identifier: Apache-2.0
+
+apiVersion: greenhouse.sap/v1alpha1
+kind: PluginDefinition
+metadata:
+    name: audit-logs
+spec:
+    version: 0.0.2
+    displayName: OpenTelemetry for Audit Logs
+    description: Audit Logs relevant Observability framework for instrumenting, generating, collecting, and exporting telemetry data such as traces, metrics, and logs.
+    icon: https://raw.githubusercontent.com/cloudoperators/greenhouse-extensions/main/audit-logs/logo.png
+    helmChart:
+        name: 'audit-logs'
+        repository: oci://ghcr.io/cloudoperators/greenhouse-extensions/charts
+        version: 0.0.2
+    options:
+        - name: auditLogs.region
+          description: Region label for logging
+          required: false
+          type: string
+        - name: auditLogs.cluster
+          description: Cluster label for logging
+          required: false
+          type: string
+        - name: auditLogs.openSearchLogs.endpoint
+          description: Endpoint URL for OpenSearch
+          required: false
+          type: string
+        - name: auditLogs.openSearchLogs.index
+          description: auditLogs.openSearchLogs.index
+          required: false
+          type: string
+        - name: auditLogs.openSearchLogs.failover_username_a
+          description: Username for OpenSearch endpoint
+          required: true
+          type: secret
+        - name: auditLogs.openSearchLogs.failover_password_a
+          description: Password for OpenSearch endpoint
+          required: true
+          type: secret
+        - name: auditLogs.openSearchLogs.failover.enabled
+          default: false
+          description: Activates the a failover mechanism for a second user (in case the first user is invalidated)
+          required: false
+          type: bool
+        - name: auditLogs.openSearchLogs.failover_username_b
+          description: Second Username (as a failover) for OpenSearch endpoint
+          required: false
+          type: secret
+        - name: auditLogs.openSearchLogs.failover_password_b
+          description: Second Username (as a failover) for OpenSearch endpoint
+          required: false
+          type: secret  
+        - name: auditLogs.prometheus.podMonitor.enabled
+          default: false
+          description: auditLogs.prometheus.podMonitor.enabled
+          required: false
+          type: bool
+        - name: auditLogs.prometheus.serviceMonitor.enabled
+          default: false
+          description: auditLogs.prometheus.serviceMonitor.enabled
+          required: false
+          type: bool
+        - name: auditLogs.prometheus.rules.create
+          description: auditLogs.prometheus.rules.create
+          required: false
+          type: bool
+        - name: auditLogs.prometheus.additionalLabels
+          description: Label selector for Prometheus resources to be picked-up by the operator
+          required: false
+          type: map
+        - name: auditLogs.prometheus.rules.additionalRuleLabels
+          description: Additional labels for PrometheusRule alerts
+          required: false
+          type: map
+        - name: auditLogs.collectorImage.repository
+          default: ghcr.io/cloudoperators/opentelemetry-collector-contrib
+          description: Collector image repository
+          required: false
+          type: string
+        - name: auditLogs.collectorImage.tag
+          default: "5b6e153"
+          description: Collector image tag
+          required: false
+          type: string
