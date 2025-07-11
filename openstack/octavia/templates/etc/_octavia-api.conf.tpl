@@ -12,7 +12,7 @@ CustomLog /dev/stdout proxy env=forwarded
 <VirtualHost *:{{.Values.api_port_internal}}>
     KeepAliveTimeout 61
 
-    WSGIDaemonProcess octavia-wsgi user=octavia group=octavia processes=1 threads=100 display-name=%{GROUP}
+    WSGIDaemonProcess octavia-wsgi user=octavia group=octavia processes=1 threads={{.Values.api_wsgi_threads}} display-name=%{GROUP}
     WSGIProcessGroup octavia-wsgi
     WSGIScriptAlias / /var/lib/openstack/bin/octavia-wsgi
     WSGIApplicationGroup %{GLOBAL}
