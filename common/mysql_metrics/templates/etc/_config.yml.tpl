@@ -9,9 +9,6 @@ jobs:
     {{- end }}
   {{- else }}
   - '{{ include "mysql_metrics.db_path_for_exporter" . }}'
-    {{- if .Values.queryCell2 }}
-  - '{{ include "cell2_db_path_for_exporter" . }}'
-    {{- end }}
   {{- end }}
   queries:
 {{ toYaml .Values.customMetrics | indent 4 }}

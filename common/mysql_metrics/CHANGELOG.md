@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.5.1 - 2025/07/11
+* Remove `queryCell2` option, `connections` are now used for multiple database targets
+* Bump linkerd-support chart dependency to `1.1.0`
+
 ## v0.5.0 - 2025/06/10
 
 * Update sql-exporter version to 0.6.0 (2025-06-10)
