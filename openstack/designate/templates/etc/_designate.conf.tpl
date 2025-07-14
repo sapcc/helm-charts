@@ -213,10 +213,14 @@ retriable_status_codes = 500, 502, 503, 504
 [keystone_authtoken]
 auth_type = v3password
 auth_version = v3
+{{- if .Values.global.is_global_region }}
+auth_interface = public
+{{- else }}
 auth_interface = internal
+{{- end }}
 www_authenticate_uri = https://{{include "keystone_api_endpoint_host_public" .}}/v3
 {{- if .Values.global.is_global_region }}
-auth_url = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{ .Values.global.keystone_internal_ip }}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
+auth_url = https://{{include "keystone_api_endpoint_host_public" .}}/v3
 {{- else }}
 auth_url = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
 {{- end }}
@@ -229,7 +233,11 @@ memcached_servers = "{{ include "helm-toolkit.utils.joinListWithComma" .Values.m
 {{- else }}
 memcached_servers = {{.Release.Name}}-memcached.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.global.memcached_port_public | default 11211}}
 {{- end }}
+{{- if .Values.global.is_global_region }}
+insecure = False
+{{- else }}
 insecure = True
+{{- end }}
 token_cache_time = 600
 include_service_catalog = true
 service_type = dns
