@@ -11,12 +11,12 @@ spec:
   revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revision_history }}
   selector:
     matchLabels:
-      name: nova-compute-kvm
+      name: {{ .Release.Name }}
   template:
     metadata:
       labels:
 {{ tuple . "nova" "compute" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
-        name: nova-compute-kvm
+        name: {{ .Release.Name }}
         alert-tier: os
         alert-service: nova
         hypervisor: "kvm"
@@ -327,7 +327,7 @@ spec:
               - key: compute.filters
                 path: rootwrap.conf.d/compute.filters
           - configMap:
-              name: nova-compute-kvm
+              name: {{ .Release.Name }}-compute
               items:
               - key: nova-compute.conf
                 path: nova-compute.conf
