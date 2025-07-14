@@ -2,7 +2,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: nova-compute-kvm
+  name: {{ .Release.Name }}-compute
   labels:
     system: openstack
     type: configuration
