@@ -1,0 +1,50 @@
+{{- if .Values.relay.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "ovsdb.fullname" . }}-relay
+  labels:
+    {{ include "ovsdb.relay.labels" . | nindent 8 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.relay.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{ include "ovsdb.relay.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        {{- with .Values.podAnnotations }}
+        {{ toYaml  | nindent 8 }}
+        {{- end }}
+      labels:
+        {{ include "ovsdb.relay.labels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{ toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      containers:
+        - name: ovsdb-relay
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["dumb-init"]
+          args:
+            - "ovsdb-server"
+            - "--verbose"
+            - "--remote=ptcp:{{ .Values.DB_PORT }}"
+            {{- $db_type := ternary "OVN_Northbound" "OVN_Southbound" (eq .Values.DB_TYPE "nb") }}
+            - "relay:{{ $db_type }}:tcp:{{ include "ovsdb.fqdnHeadless" .}}:{{ .Values.DB_PORT }}"
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{ toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{ toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{ toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

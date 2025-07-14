@@ -42,11 +42,25 @@ app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- end }}
 
+{{- define "ovsdb.relay.labels" -}}
+helm.sh/chart: {{ include "ovsdb.chart" . }}
+{{ include "ovsdb.relay.selectorLabels" . }}
+{{- if .Chart.AppVersion }}
+app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
+{{- end }}
+app.kubernetes.io/managed-by: {{ .Release.Service }}
+{{- end }}
+
 {{/*
 Selector labels
 */}}
 {{- define "ovsdb.selectorLabels" -}}
 app.kubernetes.io/name: {{ include "ovsdb.name" . }}
+app.kubernetes.io/instance: {{ .Release.Name }}
+{{- end }}
+
+{{- define "ovsdb.relay.selectorLabels" -}}
+app.kubernetes.io/name: {{ include "ovsdb.name" . }}-relay
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 
@@ -59,4 +73,16 @@ Create the name of the service account to use
 {{- else }}
 {{- default "default" .Values.serviceAccount.name }}
 {{- end }}
+{{- end }}
+
+{{/*
+Get FQDN for resolving service in SCI
+*/}}
+{{- define "ovsdb.fqdnHeadless" -}}
+{{- printf "%s-headless.%s.svc.kubernetes.%s.%s"
+  ( include "ovsdb.fullname" . )
+  .Release.Namespace
+  .Values.global.region
+  .Values.global.tld
+}}
 {{- end }}
