@@ -1,16 +1,11 @@
-{{/*
-SPDX-FileCopyrightText: 2024 SAP SE or an SAP affiliate company and Greenhouse contributors
-SPDX-License-Identifier: Apache-2.0
-*/}}
-
 apiVersion: opentelemetry.io/v1beta1
 kind: OpenTelemetryCollector
 metadata:
-  name: audit-logs
+  name: audit-logs-otel
   labels:
   {{- include "plugin.labels" . | nindent 4 }} 
-  {{- if .Values.openTelemetryPlugin.openTelemetry.customLabels }}
-  {{ toYaml .Values.openTelemetryPlugin.openTelemetry.customLabels | nindent 4 }}
+  {{- if .Values.openTelemetryPlugin.auditLogs.customLabels }}
+  {{ toYaml .Values.openTelemetryPlugin.auditLogs.customLabels | nindent 4 }}
   {{- end }}
 spec:
   mode: daemonset
@@ -31,15 +26,15 @@ spec:
           apiVersion: v1
           fieldPath: status.podIP
     - name: cluster
-      value: "{{ .Values.openTelemetryPlugin.openTelemetry.cluster }}"
+      value: "{{ .Values.openTelemetryPlugin.auditLogs.cluster }}"
     - name: region
-      value: "{{ .Values.openTelemetryPlugin.openTelemetry.region }}"
+      value: "{{ .Values.openTelemetryPlugin.auditLogs.region }}"
     - name: index
-      value: "{{ .Values.openTelemetryPlugin.openTelemetry.openSearchLogs.index }}"
+      value: "{{ .Values.openTelemetryPlugin.auditLogs.openSearchLogs.index }}"
   envFrom:
     - secretRef:
-         name: audit-logs-basic-auth
-{{- if .Values.openTelemetryPlugin.openTelemetry.prometheus.podMonitor.enabled }}
+         name:  audit-logs-otel-basic-auth-manual
+{{- if .Values.openTelemetryPlugin.auditLogs.prometheus.podMonitor.enabled }}
   ports:
     - name: prometheus
       port: 9999
@@ -49,40 +44,62 @@ spec:
   - mountPath: /var/log
     name: varlog
     readOnly: true
+  - name: bin
+    mountPath: /hostfs/bin
+    readOnly: true
+  - name: sbin
+    mountPath: /hostfs/sbin
+    readOnly: true
+  - name: usrbin
+    mountPath: /hostfs/usr/bin
+    readOnly: true
+  - name: usrsbin
+    mountPath: /hostfs/usr/sbin
+    readOnly: true
+  - name: etc
+    mountPath: /hostfs/etc
+    readOnly: true
+  # Directory with root filesystems of containers executed with containerd, this can be
+  # different with other runtimes. This volume is needed to monitor the file integrity
+  # of files in containers.
+  - name: run-containerd
+    mountPath: /run/containerd
+    readOnly: true
   volumes:
   - name: varlog
     hostPath:
       path: /var/log
+  - name: bin
+    hostPath:
+      path: /bin
+  - name: usrbin
+    hostPath:
+      path: /usr/bin
+  - name: sbin
+    hostPath:
+      path: /sbin
+  - name: usrsbin
+    hostPath:
+      path: /usr/sbin
+  - name: etc
+    hostPath:
+      path: /etc
+  - name: run-containerd
+    hostPath:
+      path: /run/containerd
+      type: DirectoryOrCreate
   config:
     receivers:
-      journald:
-        directory: /var/log/journal
-        operators:
-          - id: journal-label
-            type: add
-            field: attributes["log.type"]
-            value: "journald"
+
+
+{{- if .Values.openTelemetryPlugin.auditLogs.logsCollector.filewatchConfig.enabled }}
+    {{- include "filewatch.receiver" . | nindent 6 -}}
+{{- end }}
 
       k8s_events:
         auth_type: serviceAccount
 
-      filelog/containerd:
-        include_file_path: true
-        include: [ /var/log/pods/*/*/*.log ]
-        exclude: [ /var/log/pods/otel_logs-*, /var/log/pods/logs_* ]
-        operators:
-          - id: container-parser
-            type: container
-          - id: parser-containerd
-            type: add
-            field: resource["container.runtime"]
-            value: "containerd"
-          - id: container-label
-            type: add
-            field: attributes["log.type"]
-            value: "containerd"
-
-{{- if .Values.openTelemetryPlugin.openTelemetry.prometheus.podMonitor.enabled }}
+{{- if .Values.openTelemetryPlugin.auditLogs.prometheus.podMonitor.enabled }}
       prometheus/internal:
         config:
           scrape_configs:
@@ -98,7 +115,12 @@ spec:
         timeout: 5s
         send_batch_size : 10
 
-{{- if .Values.openTelemetryPlugin.openTelemetry.prometheus.podMonitor.enabled }}
+
+{{- if .Values.openTelemetryPlugin.auditLogs.logsCollector.filewatchConfig.enabled }}
+    {{- include "filewatch.processors" . | nindent 6 -}}
+{{- end }}
+
+{{- if .Values.openTelemetryPlugin.auditLogs.prometheus.podMonitor.enabled }}
       attributes/prometheus:
         actions:
           - action: insert
@@ -152,7 +174,7 @@ spec:
             key: failover_username_opensearch
             value: ${failover_username_a}
 
-{{- if .Values.openTelemetryPlugin.openTelemetry.openSearchLogs.failover.enabled }}
+{{- if .Values.openTelemetryPlugin.auditLogs.openSearchLogs.failover.enabled }}
     {{- include "failover.attributes" . | nindent 6 -}}
 {{- end }}
 
@@ -289,10 +311,10 @@ spec:
         http:
           auth:
             authenticator: basicauth/failover_a
-          endpoint: {{ .Values.openTelemetryPlugin.openTelemetry.openSearchLogs.endpoint }}
+          endpoint: {{ .Values.openTelemetryPlugin.auditLogs.openSearchLogs.endpoint }}
         logs_index: ${index}-datastream
 
-{{- if .Values.openTelemetryPlugin.openTelemetry.openSearchLogs.failover.enabled }}
+{{- if .Values.openTelemetryPlugin.auditLogs.openSearchLogs.failover.enabled }}
     {{- include "failover.exporter" . | nindent 6 -}}
 {{- end }}
 
@@ -305,7 +327,7 @@ spec:
           username: ${failover_username_a}
           password: ${failover_password_a}
 
-{{- if .Values.openTelemetryPlugin.openTelemetry.openSearchLogs.failover.enabled }}
+{{- if .Values.openTelemetryPlugin.auditLogs.openSearchLogs.failover.enabled }}
     {{- include "failover.extension" . | nindent 6 -}}
 {{- end }}
 
@@ -315,7 +337,7 @@ spec:
       failover:
         priority_levels:
           - [logs/failover_a]
-{{- if .Values.openTelemetryPlugin.openTelemetry.openSearchLogs.failover.enabled }}
+{{- if .Values.openTelemetryPlugin.auditLogs.openSearchLogs.failover.enabled }}
           - [logs/failover_b]
 {{- end }}
         retry_interval: 2m
@@ -324,11 +346,11 @@ spec:
     service:
       extensions:
         - basicauth/failover_a
-{{- if .Values.openTelemetryPlugin.openTelemetry.openSearchLogs.failover.enabled }}
+{{- if .Values.openTelemetryPlugin.auditLogs.openSearchLogs.failover.enabled }}
         - basicauth/failover_b
 {{- end }}
 
-{{- if .Values.openTelemetryPlugin.openTelemetry.prometheus.podMonitor.enabled }}
+{{- if .Values.openTelemetryPlugin.auditLogs.prometheus.podMonitor.enabled }}
       telemetry:
         metrics:
           address: 127.0.0.1:8888
@@ -345,23 +367,15 @@ spec:
           processors: [attributes/failover_username_a]
           exporters: [opensearch/failover_a]
 
-{{- if .Values.openTelemetryPlugin.openTelemetry.openSearchLogs.failover.enabled }}
-    {{- include "failover.pipeline" . | nindent 8 -}}
+
+{{- if .Values.openTelemetryPlugin.auditLogs.logsCollector.filewatchConfig.enabled }}
+    {{- include "filewatch.pipelines" . | nindent 8 -}}
 {{- end }}
 
-        logs/containerd:
-          receivers: [filelog/containerd]
-          processors: [k8sattributes,attributes/cluster,transform/ingress]
-          exporters: [forward]
-        logs/k8sevents:
-          receivers: [k8s_events]
-          processors: [attributes/k8sevents]
-          exporters: [forward]
-        logs/journald:
-          receivers: [journald]
-          processors: [attributes/cluster,transform/journal]
-          exporters: [forward]
-{{- if .Values.openTelemetryPlugin.openTelemetry.prometheus.podMonitor.enabled }}
+{{- if .Values.openTelemetryPlugin.auditLogs.openSearchLogs.failover.enabled }}
+    {{- include "failover.pipeline" . | nindent 8 -}}
+{{- end }}
+{{- if .Values.openTelemetryPlugin.auditLogs.prometheus.podMonitor.enabled }}
         metrics/prometheus:
           receivers: [prometheus/internal]
           processors: [attributes/prometheus]
