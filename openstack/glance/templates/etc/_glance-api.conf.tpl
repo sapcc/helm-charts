@@ -12,6 +12,8 @@ node_staging_uri = file:///tmp/staging
 
 show_image_direct_url = True
 
+show_domain_name = True
+
 #disable default admin rights for role 'admin'
 admin_role = ''
 
@@ -94,3 +96,11 @@ enforce_scope=False
 
 [barbican]
 auth_endpoint = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
+
+[service_user]
+auth_url = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
+username = glance
+project_name = master
+user_domain_name = Default
+project_domain_name = ccadmin
+password = secret
