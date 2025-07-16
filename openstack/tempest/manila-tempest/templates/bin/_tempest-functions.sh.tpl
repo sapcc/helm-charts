@@ -1,4 +1,4 @@
-#!/usr/env/bin bash
+#!/usr/bin/env bash
 
 function delete_share_network() {
     local share_network_id=$1
