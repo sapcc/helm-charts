@@ -7,7 +7,7 @@ groups:
           summary: Perses service is down.
         expr: |
           absent(up{job=~".*perses.*"} == 1)
-        for: 5m
+        for: 10m
         labels:
           severity: warning
           playbook: https://github.com/cloudoperators/greenhouse-extensions/tree/main/perses/playbooks/playbook.md
@@ -35,7 +35,7 @@ groups:
           /
             sum(rate(perses_http_request_total[5m]))
           ) * 100 > 5
-        for: 5m
+        for: 10m
         labels:
           severity: warning
           playbook: https://github.com/cloudoperators/greenhouse-extensions/tree/main/perses/playbooks/playbook.md
@@ -75,7 +75,7 @@ groups:
           summary: Perses plugin schema loading has failures.
         expr: |
           sum(perses_plugin_schemas_load_attempts{status="error"}) > 0
-        for: 5m
+        for: 10m
         labels:
           severity: warning
           playbook: https://github.com/cloudoperators/greenhouse-extensions/tree/main/perses/playbooks/playbook.md
@@ -99,7 +99,7 @@ groups:
           summary: Perses service has restarted.
         expr: |
           time() - process_start_time_seconds < 300
-        for: 1m
+        for: 5m
         labels:
           severity: info
           playbook: https://github.com/cloudoperators/greenhouse-extensions/tree/main/perses/playbooks/playbook.md
