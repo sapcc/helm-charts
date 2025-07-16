@@ -68,39 +68,3 @@ groups:
           severity: warning
           playbook: https://github.com/cloudoperators/greenhouse-extensions/tree/main/perses/playbooks/playbook.md
           {{- include "perses.alertLabels" . | nindent 10 }}
-
-      - alert: PersesHighFileDescriptorUsage
-        annotations:
-          description: Perses is using {{`{{$value | humanize}}`}}% of available file descriptors.
-          summary: Perses file descriptor usage is high.
-        expr: |
-          (process_open_fds / process_max_fds) * 100 > 70
-        for: 15m
-        labels:
-          severity: info
-          playbook: https://github.com/cloudoperators/greenhouse-extensions/tree/main/perses/playbooks/playbook.md
-          {{- include "perses.alertLabels" . | nindent 10 }}
-
-      - alert: PersesServiceRestart
-        annotations:
-          description: Perses service has restarted in the last 5 minutes.
-          summary: Perses service has restarted.
-        expr: |
-          time() - process_start_time_seconds < 300
-        for: 5m
-        labels:
-          severity: info
-          playbook: https://github.com/cloudoperators/greenhouse-extensions/tree/main/perses/playbooks/playbook.md
-          {{- include "perses.alertLabels" . | nindent 10 }}
-
-      - alert: PersesGcDurationSpike
-        annotations:
-          description: Perses garbage collection is taking longer than normal ({{`{{$value}}`}} seconds).
-          summary: Perses garbage collection duration is elevated.
-        expr: |
-          go_gc_duration_seconds{quantile="0.75"} > 0.001
-        for: 15m
-        labels:
-          severity: info
-          playbook: https://github.com/cloudoperators/greenhouse-extensions/tree/main/perses/playbooks/playbook.md
-          {{- include "perses.alertLabels" . | nindent 10 }}
