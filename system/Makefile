@@ -64,9 +64,9 @@ build-provider-helm:
 	@find provider-helm/crds -type f -exec $(SED) -i -e 's#capi-system#capi#g' {} \;
 	@find provider-helm/templates -type f -exec $(SED) -i -e 's#/{{ include "provider-helm.fullname" . }}-system/#/#g' {} \;
 	@find provider-helm/templates -type f -exec $(SED) -i -e 's#-system.#.#g' {} \;
-	@yq -i '.controllerManager.manager.image.tag="$(CLUSTER_API_VERSION)"' provider-helm/values.yaml
+	@yq -i '.controllerManager.manager.image.tag="$(PROVIDER_HELM)"' provider-helm/values.yaml
 	@yq -i '.fullnameOverride="capi"' provider-helm/values.yaml
-	@yq -i '.version="0.0.1"' provider-helm/Chart.yaml
+	@yq -i '.version="0.0.2"' provider-helm/Chart.yaml
 
 build-provider-vsphere:
 	$(call build-chart,provider-vsphere,https://github.com/kubernetes-sigs/cluster-api-provider-vsphere//config/default,$(PROVIDER_VSPHERE_VERSION))
