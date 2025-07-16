@@ -5,24 +5,24 @@ metadata:
   name: ceph-operations
   namespace: {{ .Release.Namespace }}
 spec:
-{{- with .Values.cephOperations.clusterOptionOverrides }}
-  clusterOptionOverrides:
-    {{ toYaml . | nindent 4 }}
-{{- end }}
   clusterSelector:
     matchLabels:
       greenhouse.sap/cluster-presets-enabled: "true"
       cluster-type: "storage"
-  plugin:
-    pluginDefinition: ceph-operations
-    releaseNamespace: rook-ceph
-    optionValues:
+  clusterOptionOverrides:
+  {{- range $r := $.Values.global.clusters }}
+  - clusterName: {{ $r.cluster }}
+    overrides:
       - name: prometheusRules.ruleSelectors
         value:
           - name: plugin
-            value: 'kube-monitoring-{{ "{{ .Values.global.greenhouse.clusterName }}" }}'
+            value: 'kube-monitoring-{{ $r.cluster }}'
       - name: prometheusRules.additionalRuleLabels
         value:
           service: ceph
           support_group: storage
+  {{- end }}
+  plugin:
+    pluginDefinition: ceph-operations
+    releaseNamespace: rook-ceph
 {{- end -}}

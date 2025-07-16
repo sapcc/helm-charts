@@ -9,20 +9,24 @@ spec:
     matchLabels:
       greenhouse.sap/cluster-presets-enabled: "true"
       cluster-type: "compute"
-  plugin:
-    pluginDefinition: kvm-monitoring
-    releaseNamespace: kvm-monitoring
-    optionValues:
+  clusterOptionOverrides:
+  {{- range $r := $.Values.global.clusters }}
+  - clusterName: {{ $r.cluster }}
+    overrides:
       - name: serviceMonitorLabels
         value:
-          plugin: 'kube-monitoring-{{ "{{ .Values.global.greenhouse.clusterName }}" }}'
+          plugin: 'kube-monitoring-{{ $r.cluster }}'
       - name: prometheusRules.ruleSelectors
         value:
           - name: plugin
-            value: 'kube-monitoring-{{ "{{ .Values.global.greenhouse.clusterName }}" }}'
+            value: 'kube-monitoring-{{ $r.cluster }}'
       - name: prometheusRules.additionalRuleLabels
         value:
           service: kvm
-          # Uncoment this to fire alerts to the slack compute slack channels 
+          # Uncoment this to fire alerts to the slack compute slack channels
           # support_group: "compute"
+  {{- end }}
+  plugin:
+    pluginDefinition: kvm-monitoring
+    releaseNamespace: kvm-monitoring
 {{- end -}}
