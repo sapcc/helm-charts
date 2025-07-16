@@ -13,7 +13,7 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- end}}
 
 {{- define "perses.alertLabels" -}}
-{{- if not (empty .Values.greenhouse.alertLabels) }}
-{{- toYaml .Values.greenhouse.alertLabels  -}}
+{{- if not (empty .Values.alertLabels) }}
+{{- toYaml .Values.alertLabels  -}}
 {{- end }}
 {{- end }}
