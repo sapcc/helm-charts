@@ -1,6 +1,4 @@
 {{- define "perses.labels" -}}
-plugindefinition: perses
-plugin: {{ .Release.Name }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- if .Values.global.commonLabels }}
 {{ tpl (toYaml .Values.global.commonLabels) . }}
