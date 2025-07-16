@@ -1,0 +1,63 @@
+controllerManager:
+  manager:
+    args:
+      - --leader-elect
+      - --diagnostics-address=:8443
+      - --insecure-diagnostics=false
+      - --sync-period=10m
+      - --v=2
+    containerSecurityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+          - ALL
+      privileged: false
+      readOnlyRootFilesystem: true
+      runAsGroup: 65532
+      runAsUser: 65532
+    env:
+      kubecachedir: /tmp/.kube/cache
+      xdgCacheHome: /tmp/xdg/.cache
+      xdgConfigDirs: /tmp/xdg
+      xdgConfigHome: /tmp/xdg/.config
+      xdgDataHome: /tmp/xdg/.data
+      xdgStateHome: /tmp/xdg/.state
+    image:
+      repository: gcr.io/k8s-staging-cluster-api-helm/cluster-api-helm-controller
+      tag: v1.10.2
+    imagePullPolicy: Always
+  podSecurityContext:
+    runAsNonRoot: true
+    seccompProfile:
+      type: RuntimeDefault
+  replicas: 1
+  serviceAccount:
+    annotations: {}
+kubernetesClusterDomain: cluster.local
+managerConfig:
+  controllerManagerConfigYaml: |-
+    apiVersion: controller-runtime.sigs.k8s.io/v1alpha1
+    kind: ControllerManagerConfig
+    health:
+      healthProbeBindAddress: :8081
+    metrics:
+      bindAddress: :8443
+    webhook:
+      port: 9443
+    leaderElection:
+      leaderElect: true
+      resourceName: 5a2dee3e.cluster.x-k8s.io
+metricsService:
+  ports:
+    - name: https
+      port: 8443
+      protocol: TCP
+      targetPort: 8443
+  type: ClusterIP
+webhookService:
+  ports:
+    - port: 443
+      protocol: TCP
+      targetPort: 9443
+  type: ClusterIP
+fullnameOverride: capi
