@@ -6,7 +6,7 @@ groups:
     for: 120m
     labels:
       context: logshipping
-      service: otel
+      service: logs
       severity: warning
       support_group: observability
       tier: os
@@ -19,7 +19,7 @@ groups:
     for: 6h
     labels:
       context: logshipping
-      service: otel
+      service: logs
       severity: info
       support_group: observability
       tier: os
@@ -32,7 +32,7 @@ groups:
     for: 2h
     labels:
       context: logshipping
-      service: otel
+      service: logs
       severity: info
       support_group: observability
       tier: os
