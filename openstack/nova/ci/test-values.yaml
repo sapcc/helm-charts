@@ -1,3 +1,4 @@
+---
 global:
   accessControlAllowOrigin: '*'
   region: regionOne
@@ -18,36 +19,62 @@ global:
     - bar
   nova_metadata_secret: topSecretWouldBuyAgain
 
-imageVersion: myTag
+cell2:
+  enabled: true
+  name: cell-b-2
+
+defaultUsersMariaDB:
+  api: nova_api
+  cell0: nova_cell0
+  cell1: nova
+  cell2: nova_cell2
+
+imageVersion: my-tag
 imageVersionVspc: vspc-latest-tag
 imageVersionConsoleMks: console-mks-tag
 
 mariadb:
-  root_password: rootroot
-  enabled: false
-  backup:
-    enabled: false
+  enabled: true
+  root_password: rootrootCell1
   backup_v2:
     enabled: false
   users:
     nova:
       name: nova
-      password: password
+      password: passwordCell1
+    nova_cell0:
+      name: nova_cell0
+      password: passwordCell0
 
-dbPassword: top-secret
-cell0dbPassword: very-secret
-apidbPassword: much-secret
+mysql_metrics:
+  db_password: passwordCell1
+  queryCell2: true
+  cell2:
+    enabled: true
+    name: cell-b-2
+  cell2dbUser: nova_cell2
+  cell2dbName: nova_cell2
+
+mariadb_cell2:
+  enabled: true
+  name: nova-cell-b-2
+  root_password: rootrootCell2
+  backup_v2:
+    enabled: false
+  users:
+    nova_cell2:
+      name: nova_cell2
+      password: passwordCell2
 
 mariadb_api:
-  enabled: false
-  backup:
-    enabled: false
+  enabled: true
+  root_password: rootrootApi
   backup_v2:
     enabled: false
   users:
     nova_api:
       name: nova_api
-      password: password
+      password: passwordApi
 
 rabbitmq:
   users:
@@ -56,7 +83,18 @@ rabbitmq:
     default:
       password: defaultdefault
   metrics:
-    password: metricsmetrics
+    password: passwordMetrics
+
+rabbitmq_cell2:
+  users:
+    admin:
+      name: admin
+      password: adminadmin
+    default:
+      name: default
+      password: defaultdefault
+  metrics:
+    password: passwordMetrics
 
 cors:
   enabled: true

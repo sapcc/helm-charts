@@ -1,0 +1,87 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "provider-helm.fullname" . }}-controller-manager
+  labels:
+    cluster.x-k8s.io/provider: helm
+    control-plane: controller-manager
+  {{- include "provider-helm.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.controllerManager.replicas }}
+  selector:
+    matchLabels:
+      cluster.x-k8s.io/provider: helm
+      control-plane: controller-manager
+    {{- include "provider-helm.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        cluster.x-k8s.io/provider: helm
+        control-plane: controller-manager
+      {{- include "provider-helm.selectorLabels" . | nindent 8 }}
+      annotations:
+        kubectl.kubernetes.io/default-container: manager
+    spec:
+      containers:
+      - args: {{- toYaml .Values.controllerManager.manager.args | nindent 8 }}
+        env:
+        - name: XDG_DATA_HOME
+          value: {{ quote .Values.controllerManager.manager.env.xdgDataHome }}
+        - name: XDG_CONFIG_HOME
+          value: {{ quote .Values.controllerManager.manager.env.xdgConfigHome }}
+        - name: XDG_STATE_HOME
+          value: {{ quote .Values.controllerManager.manager.env.xdgStateHome }}
+        - name: XDG_CACHE_HOME
+          value: {{ quote .Values.controllerManager.manager.env.xdgCacheHome }}
+        - name: XDG_CONFIG_DIRS
+          value: {{ quote .Values.controllerManager.manager.env.xdgConfigDirs }}
+        - name: KUBECACHEDIR
+          value: {{ quote .Values.controllerManager.manager.env.kubecachedir }}
+        - name: KUBERNETES_CLUSTER_DOMAIN
+          value: {{ quote .Values.kubernetesClusterDomain }}
+        image: {{ .Values.controllerManager.manager.image.repository }}:{{ .Values.controllerManager.manager.image.tag
+          | default .Chart.AppVersion }}
+        imagePullPolicy: {{ .Values.controllerManager.manager.imagePullPolicy }}
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: healthz
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        name: manager
+        ports:
+        - containerPort: 9443
+          name: webhook-server
+          protocol: TCP
+        - containerPort: 9440
+          name: healthz
+          protocol: TCP
+        - containerPort: 8443
+          name: metrics
+          protocol: TCP
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: healthz
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        resources: {}
+        securityContext: {{- toYaml .Values.controllerManager.manager.containerSecurityContext
+          | nindent 10 }}
+        volumeMounts:
+        - mountPath: /tmp/k8s-webhook-server/serving-certs
+          name: cert
+          readOnly: true
+        - mountPath: /tmp
+          name: tmp
+      securityContext: {{- toYaml .Values.controllerManager.podSecurityContext | nindent
+        8 }}
+      serviceAccountName: {{ include "provider-helm.fullname" . }}-controller-manager
+      terminationGracePeriodSeconds: 10
+      volumes:
+      - name: cert
+        secret:
+          defaultMode: 420
+          secretName: webhook-server-cert
+      - emptyDir: {}
+        name: tmp

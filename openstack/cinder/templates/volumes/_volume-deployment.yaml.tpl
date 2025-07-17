@@ -40,7 +40,7 @@ spec:
       hostname: {{ .Release.Name }}-volume-{{ $name }}
 {{ include "utils.proxysql.pod_settings" . | indent 6 }}
       containers:
-      - name: cinder-volume
+      - name: cinder-volume-{{ $name }}
         image: {{required ".Values.global.registry is missing" .Values.global.registry}}/loci-cinder:{{.Values.imageVersionCinderVolume | default .Values.imageVersion | required "Please set cinder.imageVersion or similar" }}
         imagePullPolicy: IfNotPresent
         command:

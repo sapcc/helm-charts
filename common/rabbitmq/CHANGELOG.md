@@ -2,6 +2,22 @@
 
 This file is used to list changes made in each version of the common chart rabbitmq.
 
+## 0.18.4 - 2025/07/01
+
+- Drop `externalIps` from certificate, as they are unsupported by our certificate provider.
+  They still can be added with `certificate.ipAddresses`
+
+
+## 0.18.3 - 2025/07/01
+
+- Default to ClusterIssuer with the name "digicert-issuer"
+
+
+## 0.18.2 - 2025/06/30
+
+- Removed the default for CN (common name) from the certificate, as it is too long
+- Switched ClusterIssuer group from `cert-manager.io` to `certmanager.cloud.sap`
+
 ## 0.18.1 - 2025/06/12
 
 - RabbitMQ [4.1.1 Release Notes](https://github.com/rabbitmq/rabbitmq-server/releases/tag/v4.1.1)

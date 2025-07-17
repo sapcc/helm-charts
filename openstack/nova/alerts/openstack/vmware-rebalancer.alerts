@@ -1,0 +1,17 @@
+groups:
+  - name: vmware-rebalancer.alerts
+    rules:
+      - alert: VcenterLowNumberOfPlaceableVms
+        expr: wm_vmware_rebalancer_placeable_vms_per_vcenter{has_bbs_without_custom_hana_exclusive_host="True",flavor="g_c128_m512"} <= 3
+        for: 30m
+        labels:
+          severity: warning
+          service: compute
+          support_group: compute
+          tier: vmware
+          playbook: docs/devops/alert/vcenter/#vcenterlownumberofplaceablevms
+          context: "vCenter Capacity {{ $labels.vcenter }}"
+          meta: "The vCenter `{{ $labels.vcenter }}` is (almost) full and only allows scheduling less than 4 VMs of flavor {{ $labels.flavor }}."
+        annotations:
+          description: "The vCenter `{{ $labels.vcenter }}` is (almost) full and only allows scheduling less than 4 VMs of flavor {{ $labels.flavor }}."
+          summary: "VMware Rebalancer Metric to check if the vCenter has enough remaining capacity."

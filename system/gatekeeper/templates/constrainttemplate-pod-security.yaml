@@ -194,7 +194,8 @@ spec:
                   iro.kind == "Deployment"
                   iro.metadata.namespace == "monsoon3"
                   regex.match("^cinder-volume(?:-backup)?-(?:vmware-vc)?(?:netapp|kvm)?-(stnpca[0-9]+-st[0-9]+|[a-z]-[0-9]+)$", iro.metadata.name)
-                  helmReleaseName == "<none>" # comes from VCenterTemplate
+                  # Temporary removing the helm check as we are not yet ready with the NetApp operator, and we are deploying the pods via helm
+                  # helmReleaseName == "<none>" # comes from VCenterTemplate
               }
 
               # TODO: Why do cinder-volume-vmware pods need CAP_SYS_ADMIN?
@@ -863,4 +864,25 @@ spec:
               isContainerAllowedToAccessHostPath(container, hostPath, readOnly) if {
                   isFlatcarUpdateAgentPod
                   hostPath in {"/etc/flatcar", "/etc/os-release", "/usr/share/flatcar", "/var/run/dbus"}
+              }
+
+              ########################################################################
+              # allowlist for archer network injection agent, works similar to neutron-network-agent
+
+              isArcherNetworkInjectionAgentPod if {
+                  iro.kind == "Deployment"
+                  iro.metadata.namespace == "monsoon3"
+                  startswith(iro.metadata.name, "archer-agent-")
+                  helmReleaseName == "archer"
+              }
+
+              isContainerAllowedToBePrivileged(container) if {
+                  isArcherNetworkInjectionAgentPod
+                  container.name == "archer-agent-ni"
+              }
+
+              isContainerAllowedToUseCapability(container, capability) if {
+                  isArcherNetworkInjectionAgentPod
+                  container.name == "neutron-linuxbridge-agent"
+                  capability in {"DAC_OVERRIDE", "DAC_READ_SEARCH", "NET_ADMIN", "SYS_ADMIN", "SYS_PTRACE"}
               }

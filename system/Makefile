@@ -3,6 +3,7 @@ PROVIDER_METAL3_VERSION ?= v1.10.0
 PROVIDER_METAL_VERSION ?= 00d028c4aac7fa1e168c5ec9fab74e197530e37c
 PROVIDER_VSPHERE_VERSION ?= v1.9.3
 PROVIDER_IPAM_VERSION ?= v0.1.1
+PROVIDER_HELM ?= v0.3.2
 PROVIDER_KUBERNIKUS_VERSION ?= 9fd81475b828971913b3b27addf51fdbd0511d85
 BAREMETAL_OPERATOR_VERSION ?= v0.6.0
 IPXE_OPERATOR_VERSION ?= 28b7ac62711e74db02fe0097bdf474a302a054c6
@@ -56,6 +57,16 @@ build-bootstrap-kubeadm:
 	@yq -i '.controllerManager.manager.image.tag="$(CLUSTER_API_VERSION)"' bootstrap-kubeadm/values.yaml
 	@yq -i '.fullnameOverride="capi-kubeadm-bootstrap"' bootstrap-kubeadm/values.yaml
 	@yq -i '.version="0.2.4"' bootstrap-kubeadm/Chart.yaml
+
+build-provider-helm:
+	$(call build-chart,provider-helm,https://github.com/kubernetes-sigs/cluster-api-addon-provider-helm//config/default,$(PROVIDER_HELM))
+	$(call fix-crds,provider-helm)
+	@find provider-helm/crds -type f -exec $(SED) -i -e 's#capi-system#capi#g' {} \;
+	@find provider-helm/templates -type f -exec $(SED) -i -e 's#/{{ include "provider-helm.fullname" . }}-system/#/#g' {} \;
+	@find provider-helm/templates -type f -exec $(SED) -i -e 's#-system.#.#g' {} \;
+	@yq -i '.controllerManager.manager.image.tag="$(PROVIDER_HELM)"' provider-helm/values.yaml
+	@yq -i '.fullnameOverride="caaph"' provider-helm/values.yaml
+	@yq -i '.version="0.0.3"' provider-helm/Chart.yaml
 
 build-provider-vsphere:
 	$(call build-chart,provider-vsphere,https://github.com/kubernetes-sigs/cluster-api-provider-vsphere//config/default,$(PROVIDER_VSPHERE_VERSION))
@@ -189,13 +200,17 @@ build-ipam-operator-remote:
 	@$(SED) -i 's/serviceAccountName.*$$/serviceAccountName: default/g' ipam-operator-remote/templates/deployment.yaml
 	@$(SED) -i 's/kind: Role/kind: ClusterRole/g' ipam-operator-remote/managedresources/kustomize.yaml
 
+build-argora-operator:
+	@helm dep up argora-operator
+	@yq -i '.version = (.version | split(".") | .[2] = ((.[2] | tonumber) + 1 | tostring) | join("."))' argora-operator/Chart.yaml
+
 build-argora-operator-remote:
 	@helm dep up argora-operator-remote
 	@helm template argora-operator argora-operator-remote/charts/argora-* \
 		-n kube-system \
 		-f argora-operator-remote/values-managed-resources.yaml |\
 		$(SED) 's/kind: Role/kind: ClusterRole/g' - |\
-		yq eval 'select(.kind != "Service" and .kind != "ValidatingWebhookConfiguration")' - >\
+		yq eval 'select(.kind != "Service" and .kind != "ValidatingWebhookConfiguration" and .kind != "ConfigMap" and .kind != "Secret")' - >\
 		argora-operator-remote/managedresources/crds-and-rbac.yaml
 		yq -i '.version = (.version | split(".") | .[2] = ((.[2] | tonumber) + 1 | tostring) | join("."))' argora-operator-remote/Chart.yaml
 

@@ -5,7 +5,7 @@ kind: ServiceAccount
 metadata:
   labels:
     app.kubernetes.io/version: "0.1.0"
-    helm.sh/chart: "0.0.0-f242a68-crds"
+    helm.sh/chart: "0.0.0-db89395-crds"
     app.kubernetes.io/name: argora
     app.kubernetes.io/instance: argora-operator
     app.kubernetes.io/managed-by: Helm
@@ -18,7 +18,7 @@ kind: CustomResourceDefinition
 metadata:
   labels:
     app.kubernetes.io/version: "0.1.0"
-    helm.sh/chart: "0.0.0-f242a68-crds"
+    helm.sh/chart: "0.0.0-db89395-crds"
     app.kubernetes.io/name: argora
     app.kubernetes.io/instance: argora-operator
     app.kubernetes.io/managed-by: Helm
@@ -155,7 +155,7 @@ kind: ClusterRole
 metadata:
   labels:
     app.kubernetes.io/version: "0.1.0"
-    helm.sh/chart: "0.0.0-f242a68-crds"
+    helm.sh/chart: "0.0.0-db89395-crds"
     app.kubernetes.io/name: argora
     app.kubernetes.io/instance: argora-operator
     app.kubernetes.io/managed-by: Helm
@@ -164,6 +164,7 @@ rules:
   - apiGroups:
       - ""
     resources:
+      - configmaps
       - secrets
     verbs:
       - create
@@ -173,6 +174,13 @@ rules:
       - patch
       - update
       - watch
+  - apiGroups:
+      - ""
+    resources:
+      - events
+    verbs:
+      - create
+      - patch
   - apiGroups:
       - apiextensions.k8s.io
     resources:
@@ -218,6 +226,18 @@ rules:
       - update
       - watch
   - apiGroups:
+      - coordination.k8s.io
+    resources:
+      - leases
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
       - metal.ironcore.dev
     resources:
       - bmcs
@@ -250,7 +270,7 @@ kind: ClusterRoleBinding
 metadata:
   labels:
     app.kubernetes.io/version: "0.1.0"
-    helm.sh/chart: "0.0.0-f242a68-crds"
+    helm.sh/chart: "0.0.0-db89395-crds"
     app.kubernetes.io/name: argora
     app.kubernetes.io/instance: argora-operator
     app.kubernetes.io/managed-by: Helm
@@ -259,73 +279,6 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: argora-manager-role
-subjects:
-  - kind: ServiceAccount
-    name: argora-controller-manager
-    namespace: kube-system
----
-# Source: argora/templates/rbac/leader_election_role.yaml
-# permissions to do leader election.
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  labels:
-    app.kubernetes.io/version: "0.1.0"
-    helm.sh/chart: "0.0.0-f242a68-crds"
-    app.kubernetes.io/name: argora
-    app.kubernetes.io/instance: argora-operator
-    app.kubernetes.io/managed-by: Helm
-  namespace: kube-system
-  name: argora-leader-election-role
-rules:
-  - apiGroups:
-      - ""
-    resources:
-      - configmaps
-    verbs:
-      - get
-      - list
-      - watch
-      - create
-      - update
-      - patch
-      - delete
-  - apiGroups:
-      - coordination.k8s.io
-    resources:
-      - leases
-    verbs:
-      - get
-      - list
-      - watch
-      - create
-      - update
-      - patch
-      - delete
-  - apiGroups:
-      - ""
-    resources:
-      - events
-    verbs:
-      - create
-      - patch
----
-# Source: argora/templates/rbac/leader_election_role_binding.yaml
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  labels:
-    app.kubernetes.io/version: "0.1.0"
-    helm.sh/chart: "0.0.0-f242a68-crds"
-    app.kubernetes.io/name: argora
-    app.kubernetes.io/instance: argora-operator
-    app.kubernetes.io/managed-by: Helm
-  namespace: kube-system
-  name: argora-leader-election-rolebinding
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: argora-leader-election-role
 subjects:
   - kind: ServiceAccount
     name: argora-controller-manager
