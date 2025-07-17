@@ -7,3 +7,7 @@ config.reload.automatic: true
 config.reload.interval: 60s
 log.level: warn
 log.format: json
+
+api.enabled: true
+api.http.host: 0.0.0.0
+api.http.port: 9600
