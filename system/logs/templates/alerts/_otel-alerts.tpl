@@ -9,7 +9,6 @@ groups:
       service: logs
       severity: warning
       support_group: observability
-      tier: os
       playbook: 'docs/support/playbook/logs/otel-logs-missing'
     annotations:
       description: 'OpenTelemetry Collector on {{`{{ $labels.k8s_node_name }}`}} in {{`{{ $labels.region }}`}} is not shipping logs. Please check.'
@@ -22,7 +21,6 @@ groups:
       service: logs
       severity: info
       support_group: observability
-      tier: os
       playbook: 'docs/support/playbook/logs/otel-logs-increasing'
     annotations:
       description: 'OTel logs on {{`{{ $labels.k8s_cluster_name }}`}} in {{`{{ $labels.region }}`}} is sending 4 times more logs in the last 6h. Please check.'
@@ -35,7 +33,6 @@ groups:
       service: logs
       severity: info
       support_group: observability
-      tier: os
       playbook: 'docs/support/playbook/logs/otel-logs-decreasing'
     annotations:
       description: 'OTel on {{`{{ $labels.k8s_cluster_name }}`}} in {{`{{ $labels.region }}`}} is sending 4 times fewer logs in the last 2h. Please check.'
