@@ -40,24 +40,29 @@ spec:
       regex: '(\w*-\w*-\w*)-(\S*)'
       replacement: '$1'
       targetLabel: availability_zone
-    - source_labels: [ltmVirtualServStatName]
+    - sourceLabels: [ltmVirtualServStatName]
       regex: /Common.*
       action: drop
-    - source_labels: [ltmVirtualServStatName]
-      target_label: project_id
+    - action: replace
+      sourceLabels: [ltmVirtualServStatName]
+      targetLabel: project_id
       regex: /Project_(.*)/Project_.*
-    - source_labels: [ltmVirtualServStatName]
-      target_label: lb_id
+    - action: replace
+      sourceLabels: [ltmVirtualServStatName]
+      targetLabel: lb_id
       regex: /Project_.*/Project_(.*)
-    - source_labels: [ltmVirtualServStatName]
-      target_label: network_id
+    - action: replace
+      sourceLabels: [ltmVirtualServStatName]
+      targetLabel: network_id
       regex: /net_(.+)_(.+)_(.+)_(.+)_(.+)/lb_.*
       replacement: $1-$2-$3-$4-$5
-    - source_labels: [ltmVirtualServStatName]
-      target_label: lb_id
+    - action: replace
+      sourceLabels: [ltmVirtualServStatName]
+      targetLabel: lb_id
       regex: /net_.*/lb_(.*)/listener_.*
-    - source_labels: [ltmVirtualServStatName]
-      target_label: listener_id
+    - action: replace
+      sourceLabels: [ltmVirtualServStatName]
+      targetLabel: listener_id
       regex: /net_.*/lb_.*/listener_(.*)
     - sourceLabels: [__name__]
       regex: 'snmp_f5_ltmVirtualServStatClientBytesIn'
