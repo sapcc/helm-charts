@@ -1,0 +1,40 @@
+apiVersion: addons.cluster.x-k8s.io/v1alpha1
+kind: HelmChartProxy
+metadata:
+  name: nginx-ingress
+spec:
+  clusterSelector:
+    matchLabels:
+      cluster.x-k8s.io/cluster-name: rt-{{ .Values.global.region }}
+  repoURL: oci://keppel.eu-de-1.cloud.sap/ccloud-helm
+  chartName: calico-cni
+  options:
+    waitForJobs: true
+    wait: true
+    timeout: 5m
+    install:
+      createNamespace: true
+  valuesTemplate: |
+    calico:
+      global:
+        clusterCIDR: {{ .Values.controlplane.podSubnet }}
+      config:
+        monitoring:
+          enabled: false
+        felix:
+          ipip:
+            enabled: true
+        multus:
+          enabled: false
+        cniConfName: "10-calico.conflist"
+      ipip:
+        enabled: true
+        mode: Always
+      bgp:
+        enabled: false
+    alerts:
+      enabled: false
+    cni-nanny:
+      enabled: false
+    calico-apiserver:
+      enabled: false
