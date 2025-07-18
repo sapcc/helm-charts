@@ -125,7 +125,7 @@ transform/kvm-ha-service:
       conditions:
       - resource.attributes["k8s.container.name"] == "kvm-ha-service-container"
       statements:
-      - set(attributes["kvm_ha"], ParseKeyValue(target=log.body)) here IsMatch(log.body, "^time")
+      - set(attributes["kvm_ha"], ParseKeyValue(target=log.body)) where IsMatch(log.body, "^time")
 
 transform/elektra:
   error_mode: ignore
