@@ -193,6 +193,23 @@ groups:
   #   annotations:
   #     description: "Host `{{ $labels.hostsystem }}` is in maintenance mode for at least 72 hours. ({{ $labels.vcenter }})."
   #     summary: "Host `{{ $labels.hostsystem }}` is in maintenance mode for at least 72 hours. ({{ $labels.vcenter }})."
+ 
+  - alert: HADetectedAPossibleHostFailure-testing
+    expr: |
+      vrops_hostsystem_alert_info{alert_name="vSphere High Availability (HA) has detected a possible host failure"}
+      and on (hostsystem) vrops_hostsystem_runtime_maintenancestate{vccluster!~".*controlplane-swift"}
+    labels:
+      severity: info
+      tier: vmware
+      service: compute
+      support_group: compute
+      context: "{{ $labels.hostsystem }} failure"
+      meta: "vSphere High Availability (HA) has detected a possible host failure for `{{ $labels.hostsystem }}`. ({{ $labels.vcenter }})."
+      playbook: docs/devops/alert/vcenter/#hadetectedapossiblehostfailure
+      no_alert_on_absence: "true"
+    annotations:
+      description: "vSphere High Availability (HA) has detected a possible host failure for `{{ $labels.hostsystem }}`. ({{ $labels.vcenter }})."
+      summary: "vSphere High Availability (HA) has detected a possible host failure for `{{ $labels.hostsystem }}`. ({{ $labels.vcenter }})."
 
   - alert: HADetectedAPossibleHostFailure
     expr: |
