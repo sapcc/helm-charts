@@ -61,12 +61,10 @@ build-bootstrap-kubeadm:
 build-provider-helm:
 	$(call build-chart,provider-helm,https://github.com/kubernetes-sigs/cluster-api-addon-provider-helm//config/default,$(PROVIDER_HELM))
 	$(call fix-crds,provider-helm)
-	@find provider-helm/crds -type f -exec $(SED) -i -e 's#capi-system#capi#g' {} \;
-	@find provider-helm/templates -type f -exec $(SED) -i -e 's#/{{ include "provider-helm.fullname" . }}-system/#/#g' {} \;
-	@find provider-helm/templates -type f -exec $(SED) -i -e 's#-system.#.#g' {} \;
+	@find provider-helm/templates -type f -exec $(SED) -i -e 's#webhook-server-cert#caaph-webhook-server-cert#g' {} \;
 	@yq -i '.controllerManager.manager.image.tag="$(PROVIDER_HELM)"' provider-helm/values.yaml
 	@yq -i '.fullnameOverride="caaph"' provider-helm/values.yaml
-	@yq -i '.version="0.0.3"' provider-helm/Chart.yaml
+	@yq -i '.version="0.0.4"' provider-helm/Chart.yaml
 
 build-provider-vsphere:
 	$(call build-chart,provider-vsphere,https://github.com/kubernetes-sigs/cluster-api-provider-vsphere//config/default,$(PROVIDER_VSPHERE_VERSION))
