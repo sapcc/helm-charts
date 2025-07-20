@@ -12,7 +12,7 @@ node_staging_uri = file:///tmp/staging
 
 show_image_direct_url = True
 
-show_domain_name = True
+show_project_tags = True
 
 #disable default admin rights for role 'admin'
 admin_role = ''
@@ -97,10 +97,12 @@ enforce_scope=False
 [barbican]
 auth_endpoint = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
 
-[service_user]
+[glance_service_user]
+enabled = true
 auth_url = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
-username = glance
-project_name = master
-user_domain_name = Default
-project_domain_name = ccadmin
-password = secret
+username = TM3_I331795_02
+# password = {{ required ".Values.global.glance_service_password is missing" .Values.global.glance_service_password | include "resolve_secret" }}
+password = SECRETS
+user_domain_name = monsoon3
+project_name = cc-demo
+project_domain_name = monsoon3
