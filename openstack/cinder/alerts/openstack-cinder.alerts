@@ -45,3 +45,21 @@ groups:
     annotations:
       description: Volume {{ $labels.display_name }} with {{ $labels.id }} in Detaching State
       summary: Cinder Volumes taking more than 15s to detach
+  # Use rate() to make spiky signals flatter, so that the alert can be fired
+  - alert: OpenstackCinderApiRatelimitExceeded
+    expr: sum by (action, target_type_uri, project_id) (
+      label_replace(rate(openstack_ratelimit_requests_ratelimit_total{service="volume"}[5m]), "project_id", "$0", "target_project_id", ".*")
+      ) * on(project_id) group_left(project_name, domain_name)(openstack_projects_count_gauge) > 0
+    for: 2m
+    labels:
+      context: cinder-rate-limit
+      dashboard: cinder
+      meta: cinder api rate limits exceeded
+      service: cinder
+      severity: info
+      no_alert_on_absence: "true"
+      tier: os
+      support_group: compute-storage-api
+    annotations:
+      description: "Rate limit for {{ $labels.target_type_uri }} with action {{ $labels.action }} exceeded. Target project: {{ $labels.domain_name }}/{{ $labels.project_name }} ({{ $labels.project_id }})."
+      summary: Cinder API rate limit exceeded
