@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.26.1 - 2025/07/22
+* `maria-back-me-up` updated to `20250722132533`
+* chart version bumped
+
 ## v0.26.0 - 2025/07/22
 * MariaDB `userstat` plugin is enabled
 * mysqld-exporter now collects user statistics
