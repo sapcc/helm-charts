@@ -18,8 +18,8 @@ fi
 for i in $(curl -s -u ${BASIC_AUTH_HEADER} "${CLUSTER_HOST}/_cat/indices?v"|awk '{ print $3 }'|grep -v "^\."|sort|sed 's/-[0-9].*\.[0-9].*\.[0-9].*$//'|uniq|grep -v index|grep -v "alerts-other"|grep -v deployments|grep -v maillog|grep -v ss4o|grep -v sample |grep -v awx | grep -v alias| grep -v top_queries)
   do
     # Delete all dashboard pattern to update all fields, reload if dashboard patterns is not supported via api
-    curl -s --fail -XDELETE -u ${BASIC_AUTH_HEADER} "${DASHBOARD_HOST}/api/saved_objects/index-pattern/${i}-*"
-    curl -s -XPOST --header "content-type: application/JSON" -u ${BASIC_AUTH_HEADER} "${DASHBOARD_HOST}/api/saved_objects/index-pattern/${i}-*" -H "osd-xsrf: true" -d "{ \"attributes\": { \"title\": \"${i}-*\", \"timeFieldName\": \"@timestamp\" } }"
+    curl -s --fail -XDELETE -u ${BASIC_AUTH_HEADER} "${DASHBOARD_HOST}/api/saved_objects/index-pattern/${i}*"
+    curl -s -XPOST --header "content-type: application/JSON" -u ${BASIC_AUTH_HEADER} "${DASHBOARD_HOST}/api/saved_objects/index-pattern/${i}*" -H "osd-xsrf: true" -d "{ \"attributes\": { \"title\": \"${i}*\", \"timeFieldName\": \"@timestamp\" } }"
 done
 
 # Creating Dashboards index pattern for all available datastreams
@@ -27,12 +27,12 @@ for i in $(curl -s -u ${BASIC_AUTH_HEADER} "${CLUSTER_HOST}/_data_stream/*?prett
   do
     echo "using datastream $i from Opensearch-Logs"
     echo "setting OpenSearch dashboard index mapping for index $i"
-    curl -s --fail -XGET -u ${BASIC_AUTH_HEADER} "${DASHBOARD_HOST}/api/saved_objects/index-pattern/${i}-*"
+    curl -s --fail -XGET -u ${BASIC_AUTH_HEADER} "${DASHBOARD_HOST}/api/saved_objects/index-pattern/${i}*"
     if [ $? -eq 0 ]
     then
         echo "index ${i} already exists in Opensearch dashboard"
     else
       echo "INFO: creating index-pattern in Dashboards for datastream $i"
-      curl -s -XPOST --header "content-type: application/JSON" -u ${BASIC_AUTH_HEADER} "${DASHBOARD_HOST}/api/saved_objects/index-pattern/${i}-*" -H "osd-xsrf: true" -d "{ \"attributes\": { \"title\": \"${i}-*\", \"timeFieldName\": \"@timestamp\" } }"
+      curl -s -XPOST --header "content-type: application/JSON" -u ${BASIC_AUTH_HEADER} "${DASHBOARD_HOST}/api/saved_objects/index-pattern/${i}*" -H "osd-xsrf: true" -d "{ \"attributes\": { \"title\": \"${i}*\", \"timeFieldName\": \"@timestamp\" } }"
     fi
 done
