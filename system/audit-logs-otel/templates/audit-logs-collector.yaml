@@ -1,4 +1,4 @@
-apiVersion: opentelemetry.io/v1beta1
+apiVersion: opentelemetry.io/v2beta1
 kind: OpenTelemetryCollector
 metadata:
   name: audit-logs-otel
@@ -8,6 +8,16 @@ metadata:
   {{ toYaml .Values.openTelemetryPlugin.auditLogs.customLabels | nindent 4 }}
   {{- end }}
 spec:
+  hostPID: true
+  securityContext:
+    privileged: true
+    runAsUser: 0
+    capabilities:
+      add:
+        # Capabilities needed for auditd
+        - 'AUDIT_READ'
+        - 'AUDIT_WRITE'
+        - 'AUDIT_CONTROL'
   mode: daemonset
   tolerations:
   - operator: Exists
@@ -33,12 +43,17 @@ spec:
       value: "{{ .Values.openTelemetryPlugin.auditLogs.openSearchLogs.index }}"
   envFrom:
     - secretRef:
+         #name: audit-logs-otel-basic-auth
          name:  audit-logs-otel-basic-auth-manual
 {{- if .Values.openTelemetryPlugin.auditLogs.prometheus.podMonitor.enabled }}
   ports:
     - name: prometheus
       port: 9999
 {{- end }}
+
+  initContainers:
+{{- include "auditd.initContainer" . | nindent 2 -}}
+
   image: {{ index .Values "openTelemetryPlugin" "opentelemetry-operator" "manager" "collectorImage" "repository" }}:{{ index .Values "openTelemetryPlugin" "opentelemetry-operator" "manager" "collectorImage" "tag" }}
   volumeMounts:
   - mountPath: /var/log
@@ -66,6 +81,7 @@ spec:
     mountPath: /run/containerd
     readOnly: true
   volumes:
+{{- include "auditd.initContainerVolumes" . | nindent 2 -}}
   - name: varlog
     hostPath:
       path: /var/log
@@ -91,6 +107,9 @@ spec:
   config:
     receivers:
 
+{{- if .Values.openTelemetryPlugin.auditLogs.logsCollector.auditdConfig.enabled }}
+    {{- include "auditd.receiver" . | nindent 6 -}}
+{{- end }}
 
 {{- if .Values.openTelemetryPlugin.auditLogs.logsCollector.filewatchConfig.enabled }}
     {{- include "filewatch.receiver" . | nindent 6 -}}
@@ -115,6 +134,9 @@ spec:
         timeout: 5s
         send_batch_size : 10
 
+{{- if .Values.openTelemetryPlugin.auditLogs.logsCollector.auditdConfig.enabled }}
+    {{- include "auditd.processors" . | nindent 6 -}}
+{{- end }}
 
 {{- if .Values.openTelemetryPlugin.auditLogs.logsCollector.filewatchConfig.enabled }}
     {{- include "filewatch.processors" . | nindent 6 -}}
@@ -367,6 +389,9 @@ spec:
           processors: [attributes/failover_username_a]
           exporters: [opensearch/failover_a]
 
+{{- if .Values.openTelemetryPlugin.auditLogs.logsCollector.auditdConfig.enabled }}
+    {{- include "auditd.pipelines" . | nindent 8 -}}
+{{- end }}
 
 {{- if .Values.openTelemetryPlugin.auditLogs.logsCollector.filewatchConfig.enabled }}
     {{- include "filewatch.pipelines" . | nindent 8 -}}

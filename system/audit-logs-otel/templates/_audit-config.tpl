@@ -1,39 +1,184 @@
-{{- define "audit.processors" }}
+{{- define "auditd.initContainer" }}
+- name: init
+  image: keppel.global.cloud.sap/ccloud-dockerhub-mirror/library/alpine:latest
+  securityContext:
+    privileged: true
+  command:
+    - sh
+    - -c
+  args:
+    - |-
+      chroot /host systemctl status auditd
+      chroot /host systemctl stop auditd
+      chroot /host systemctl disable auditd
+      chroot /host systemctl status auditd
+      echo "done"
+  volumeMounts:
+    - name: host
+      mountPath: "/host"
+  env:
+    - name: NODE
+      valueFrom:
+        fieldRef:
+          fieldPath: spec.nodeName
+{{ end }}
+
+{{- define "auditd.initContainerVolumes" }}
+- name: host
+  hostPath:
+    path: "/"
+{{ end }}
+
+{{- define "auditd.receiver" }}
+auditd/audit_logs:
+  rules:
+    ## First rule - delete all
+    #-D
+
+    ## Increase the buffers to survive stress events.
+    ## Make this bigger for busy systems
+    #-b 8192
+
+    ## This determine how long to wait in burst of events
+    #--backlog_wait_time 60000
+
+    ## Set failure mode to syslog
+    #-f 1
+
+    ## The purpose of these rules is to meet the pci-dss v3.1 auditing requirements
+    ## These rules depends on having 10-base-config.rules & 99-finalize.rules
+    ## installed.
+
+    ## NOTE:
+    ## 1) if this is being used on a 32 bit machine, comment out the b64 lines
+    ## 2) These rules assume that login under the root account is not allowed.
+    ## 3) It is also assumed that 1000 represents the first usable user account. To
+    ##    be sure, look at UID_MIN in /etc/login.defs.
+    ## 4) If these rules generate too much spurious data for your tastes, limit the
+    ##    syscall file rules with a directory, like -F dir=/etc
+    ## 5) You can search for the results on the key fields in the rules
+    ##
+
+
+    ## 10.1 Implement audit trails to link all access to individual user.
+    ##  This requirement is implicitly met
+
+    ## 10.2.1 Implement audit trails to detect user accesses to cardholder data
+    ## This would require a watch on the database that excludes the daemon's
+    ## access. This rule is commented out due to needing a path name
+    #-a always,exit -F path=path-to-db -F auid>=1000 -F auid!=unset -F uid!=daemon-acct -F perm=r -F key=10.2.1-cardholder-access
+
+    ## 10.2.2 Log administrative action. To meet this, you need to enable tty
+    ## logging. The pam config below should be placed into su and sudo pam stacks.
+    ## session   required pam_tty_audit.so disable=* enable=root
+    #-a exit,always -F arch=b64 -F euid=0 -S execve -k root_acct
+    #-a exit,always -F arch=b32 -F euid=0 -S execve -k root_acct
+    #-a exit,always -F arch=b64 -F euid>=500 -S execve -k user_acct
+    #-a exit,always -F arch=b32 -F euid>=500 -S execve -k user_acct
+
+    ## Watch for configuration changes to privilege escalation.
+    - "-a always,exit -F path=/hostfs/etc/sudoers -F perm=wa -F key=10.2.2-priv-config-changes"
+    - "-a always,exit -F dir=/hostfs/etc/sudoers.d/ -F perm=wa -F key=10.2.2-priv-config-changes"
+
+    ## 10.2.3 Access to all audit trails.
+    #-a always,exit -F dir=/hostfs/var/log/audit/ -F perm=r -F auid>=1000 -F auid!=unset -F key=10.2.3-access-audit-trail
+    #-a always,exit -F path=/hostfs/usr/sbin/ausearch -F perm=x -F key=10.2.3-access-audit-trail
+    #-a always,exit -F path=/hostfs/usr/sbin/aureport -F perm=x -F key=10.2.3-access-audit-trail
+    - "-a always,exit -F path=/hostfs/usr/bin/aulast -F perm=x -F key=10.2.3-access-audit-trail"
+    #-a always,exit -F path=/hostfs/usr/sbin/aulastlogin -F perm=x -F key=10.2.3-access-audit-trail
+    - "-a always,exit -F path=/hostfs/usr/bin/auvirt -F perm=x -F key=10.2.3-access-audit-trail"
+
+    ## 10.2.4 Invalid logical access attempts. This is naturally met by pam. You
+    ## can find these events with: ausearch --start today -m user_login -sv no -i
+
+    ## 10.2.5.a Use of I&A mechanisms is logged. Pam naturally handles this.
+    ## you can find the events with:
+    ##   ausearch --start today -m user_auth,user_chauthtok -i
+
+    ## 10.2.5.b All elevation of privileges is logged
+    - "-a always,exit -F arch=b64 -S setuid -F a0=0 -F exe=/usr/bin/su -F key=10.2.5.b-elevated-privs-session"
+    - "-a always,exit -F arch=b32 -S setuid -F a0=0 -F exe=/usr/bin/su -F key=10.2.5.b-elevated-privs-session"
+    - "-a always,exit -F arch=b64 -S setresuid -F a0=0 -F exe=/usr/bin/sudo -F key=10.2.5.b-elevated-privs-session"
+    - "-a always,exit -F arch=b32 -S setresuid -F a0=0 -F exe=/usr/bin/sudo -F key=10.2.5.b-elevated-privs-session"
+    - "-a always,exit -F arch=b64 -S execve -C uid!=euid -F euid=0 -F key=10.2.5.b-elevated-privs-setuid"
+    - "-a always,exit -F arch=b32 -S execve -C uid!=euid -F euid=0 -F key=10.2.5.b-elevated-privs-setuid"
+
+    ## 10.2.5.c All changes, additions, or deletions to any account are logged
+    ## This is implicitly covered by shadow-utils. We will place some rules
+    ## in case someone tries to hand edit the trusted databases
+    - "-a always,exit -F path=/hostfs/etc/group -F perm=wa -F key=10.2.5.c-accounts"
+    - "-a always,exit -F path=/hostfs/etc/passwd -F perm=wa -F key=10.2.5.c-accounts"
+    - "-a always,exit -F path=/hostfs/etc/gshadow -F perm=wa -F key=10.2.5.c-accounts"
+    - "-a always,exit -F path=/hostfs/etc/shadow -F perm=wa -F key=10.2.5.c-accounts"
+    - "-a always,exit -F path=/hostfs/etc/security/opasswd -F perm=wa -F key=10.2.5.c-accounts"
+
+    ## 10.2.6 Verify the following are logged:
+    ## Initialization of audit logs
+    ## Stopping or pausing of audit logs.
+    ## These are handled implicitly by auditd
+
+    ## 10.2.7 Creation and deletion of system-level objects
+    ## This requirement seems to be database table related and not audit
+
+    ## 10.3 Record at least the following audit trail entries
+    ## 10.3.1 through 10.3.6 are implicitly met by the audit system.
+
+    ## 10.4.2b Time data is protected.
+    ## We will place rules to check time synchronization
+    #-a always,exit -F arch=b32 -S adjtimex,settimeofday,stime -F key=10.4.2b-time-change
+    #-a always,exit -F arch=b64 -S adjtimex,settimeofday -F key=10.4.2b-time-change
+    #-a always,exit -F arch=b32 -S clock_settime -F a0=0x0 -F key=10.4.2b-time-change
+    #-a always,exit -F arch=b64 -S clock_settime -F a0=0x0 -F key=10.4.2b-time-change
+    # Introduced in 2.6.39, commented out because it can make false positives
+    #-a always,exit -F arch=b32 -S clock_adjtime -F key=10.4.2b-time-change
+    #-a always,exit -F arch=b64 -S clock_adjtime -F key=10.4.2b-time-change
+    #-w /hostfs/etc/localtime -p wa -k 10.4.2b-time-change
+
+    ## 10.5 Secure audit trails so they cannot be altered
+    ## The audit system protects audit logs by virtue of being the root user.
+    ## That means that no normal user can tamper with the audit trail. If for
+    ## some reason you suspect that admins may be malicious or that their acct
+    ## could be compromised, then enable the remote logging plugin and get the
+    ## logs off the system to assure that there is an unaltered copy.
+
+    ## 10.5.1 Limit viewing of audit trails to those with a job-related need.
+    ## The audit daemon by default limits viewing of the audit trail to root.
+    ## If someone that is not an admin has a job related need to see logs, then
+    ## create a unique group for people with this need and set the log_group
+    ## configuration item in auditd.conf
+
+    ## 10.5.2 Protect audit trail files from unauthorized modifications.
+    ## See discussion in 10.5 above
+
+    ## 10.5.3 Promptly back up audit trail files to a centralized log server
+    ## See discussion in 10.5 above
+
+    ## 10.5.4 Write logs for external-facing technologies onto a secure,
+    ## centralized, internal log serve
+    ## See discussion in 10.5 above
+
+    ## 10.5.5 Use file-integrity monitoring or change-detection software on logs
+    #-a always,exit -F dir=/hostfs/var/log/audit/ -F perm=wa -F key=10.5.5-modification-audit
+
+    ## Feel free to add watches on other critical logs
+    # -a always,exit -F path=path-to-log -F perm=wa -F key=10.5.5-modification-log
+
+    ## Make the configuration immutable - reboot is required to change audit rules
+    #-e 2
+{{ end }}
+
+{{- define "auditd.processors" }}
 attributes/audit_logs:
   actions:
     - action: insert
-      key: audit.timestamp"
-      value: "audit"
-    - action: insert
-      key: audit.action.operation"
-      value: "audit"
-    - action: insert
-      key: audit.initiator.name"
-      value: "audit"
-    - action: insert
-      key: audit.resource.name"
-      value: "audit"
-    - action: insert
-      key: audit.action.resource.type"
-      value: "audit"
-    - action: insert
-      key: audit.result"
-      value: "audit"
-    - action: insert
-      key: audit.logsource"
-      value: "audit"
+      key: log.type
+      value: "auditd"
 {{ end }}
-{{- define "audit.pipeline" }}
-logs/audit_journald:
-  receivers: [filelog/journald]
-  processors: [k8sattributes,attributes/cluster]
-  exporters: [forward]
-logs/audit_containerd:
-  receivers: [filelog/containerd]
-  processors: [k8sattributes,attributes/cluster]
-  exporters: [forward]
-logs/audit_filelog:
-  receivers: [filelog/audit_logs]
-  processors: [k8sattributes,attributes/cluster]
+
+{{- define "auditd.pipelines" }}
+logs/auditd_logs:
+  receivers: [auditd/audit_logs]
+  processors: [attributes/audit_logs,k8sattributes,attributes/cluster]
   exporters: [forward]
 {{- end }}
+
