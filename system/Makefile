@@ -141,22 +141,10 @@ build-baremetal-operator:
 	@yq -i '.version="1.0.1"' baremetal-operator-core/Chart.yaml
 
 build-metal-operator-remote:
-	@helm template metal-operator metal-operator-remote/charts/metal-operator* \
-		-n kube-system \
-		-f metal-operator-remote/values-managed-resources.yaml |\
-		$(SED) 's/kind: Role/kind: ClusterRole/g' - |\
-		yq eval 'select(.kind != "Service" and .kind != "ValidatingWebhookConfiguration")' - >\
-		metal-operator-remote/managedresources/crds-and-rbac.yaml
+	$(call build-remote-chart,metal-operator)
 
 build-boot-operator-remote:
-	@helm dep up boot-operator-remote
-	@helm template boot-operator boot-operator-remote/charts/boot-operator* \
-		-n kube-system \
-		-f boot-operator-remote/values-managed-resources.yaml |\
-		$(SED) 's/kind: Role/kind: ClusterRole/g' - |\
-		yq eval 'select(.kind != "Service" and .kind != "ValidatingWebhookConfiguration")' - >\
-		boot-operator-remote/managedresources/crds-and-rbac.yaml
-	yq -i '.version = (.version | split(".") | .[2] = ((.[2] | tonumber) + 1 | tostring) | join("."))' boot-operator-remote/Chart.yaml
+	$(call build-remote-chart,boot-operator)
 
 build-ipxe-operator:
 	@cat kustomize/ipxe-operator/kustomization.yaml >> kustomization.yaml
@@ -203,22 +191,10 @@ build-argora-operator:
 	@yq -i '.version = (.version | split(".") | .[2] = ((.[2] | tonumber) + 1 | tostring) | join("."))' argora-operator/Chart.yaml
 
 build-argora-operator-remote:
-	@helm dep up argora-operator-remote
-	@helm template argora-operator argora-operator-remote/charts/argora-* \
-		-n kube-system \
-		-f argora-operator-remote/values-managed-resources.yaml |\
-		$(SED) 's/kind: Role/kind: ClusterRole/g' - |\
-		yq eval 'select(.kind != "Service" and .kind != "ValidatingWebhookConfiguration" and .kind != "ConfigMap" and .kind != "Secret")' - >\
-		argora-operator-remote/managedresources/crds-and-rbac.yaml
-		yq -i '.version = (.version | split(".") | .[2] = ((.[2] | tonumber) + 1 | tostring) | join("."))' argora-operator-remote/Chart.yaml
+	$(call build-remote-chart,argora-operator)
 
 build-khalkeon-remote:
-	@helm template khalkeon khalkeon-remote/charts/khalkeon* \
-		-f khalkeon-remote/values.yaml \
-		-f khalkeon-remote/values-managed-resources.yaml |\
-		$(SED) 's/kind: Role/kind: ClusterRole/g' - |\
-		yq eval 'select(.kind != "Service")' - >\
-		khalkeon-remote/managedresources/crds-and-rbac.yaml
+	$(call build-remote-chart,khalkeon)
 
 # chart name, source url, tag
 define build-chart
@@ -237,4 +213,17 @@ define fix-crds
 @# delete pre-filled caBundle
 @find $(1)/crds -type f | xargs -n1 yq -i 'del(.spec.conversion.webhook.clientConfig.caBundle)'
 @find $(1)/crds -type f | xargs -n1 yq -i 'del(.metadata.creationTimestamp)'
+endef
+
+# chart name
+define build-remote-chart
+@echo "Generating remote helm chart for $(1)"
+@helm dep up $(1)-remote
+@helm template $(1) $(shell find $(1)-remote/charts -type f ! -name "owner-info*") \
+	-n kube-system \
+	-f $(1)-remote/values-managed-resources.yaml |\
+	$(SED) 's/kind: Role/kind: ClusterRole/g' - |\
+	yq eval 'select(.kind == "CustomResourceDefinition" or .kind == "ServiceAccount" or .kind == "ClusterRole" or .kind == "ClusterRoleBinding")' - >\
+	$(1)-remote/managedresources/crds-and-rbac.yaml
+@yq -i '.version = (.version | split(".") | .[2] = ((.[2] | tonumber) + 1 | tostring) | join("."))' $(1)-remote/Chart.yaml
 endef
