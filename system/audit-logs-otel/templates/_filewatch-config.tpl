@@ -29,6 +29,6 @@ attributes/filewatch:
 {{- define "filewatch.pipelines" }}
 logs/audit_filelog:
   receivers: [filewatch/audit_logs]
-  processors: [attributes/filewatch,attributes/cluster]
+  processors: [attributes/filewatch,k8sattributes,attributes/cluster]
   exporters: [forward]
 {{- end }}
