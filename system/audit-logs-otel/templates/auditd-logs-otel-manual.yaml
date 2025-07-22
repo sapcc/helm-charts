@@ -1,0 +1,148 @@
+################################################################################
+# HANDLE WITH GREAT CARE - THIS WILL REMOVE ALL DATA FROM SELECTED NODES/DISKS #
+################################################################################
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: audit-logs-otel-manual
+spec:
+  selector:
+    matchLabels:
+      app: audit-logs-otel-manual
+  template:
+    metadata:
+      labels:
+        app: audit-logs-otel-manual
+    spec:
+      hostPID: true
+      serviceAccount: audit-logs-otel-collector
+      initContainers:
+        - name: init
+          image: keppel.global.cloud.sap/ccloud-dockerhub-mirror/library/alpine:latest
+          securityContext:
+            privileged: true
+          command:
+            - sh
+            - -c
+          args:
+            - |-
+              chroot /host systemctl stop auditd
+              chroot /host systemctl disable auditd
+              chroot /host systemctl status auditd
+              echo "done"
+          volumeMounts:
+            - name: host
+              mountPath: "/host"
+          env:
+            - name: NODE
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+      containers:
+        - args:
+          - --config=/conf/collector.yaml
+          env:
+          - name: NAMESPACE
+            valueFrom:
+              fieldRef:
+                apiVersion: v1
+                fieldPath: metadata.namespace
+          - name: KUBE_NODE_NAME
+            valueFrom:
+              fieldRef:
+                apiVersion: v1
+                fieldPath: spec.nodeName
+          - name: MY_POD_IP
+            valueFrom:
+              fieldRef:
+                apiVersion: v1
+                fieldPath: status.podIP
+          - name: cluster
+            value: qa-de-1
+          - name: region
+            value: qa-de-1
+          - name: index
+            value: audit
+          - name: POD_NAME
+            valueFrom:
+              fieldRef:
+                apiVersion: v1
+                fieldPath: metadata.name
+          envFrom:
+          - secretRef:
+              name: audit-logs-otel-basic-auth-manual
+          image: keppel.eu-de-1.cloud.sap/ccloud/opentelemetry-collector-contrib:olandr-filewatcherauditd-v0.129.3
+          imagePullPolicy: IfNotPresent
+          name: otc-container
+          ports:
+          - containerPort: 8888
+            name: metrics
+            protocol: TCP
+          resources: {}
+          securityContext:
+            capabilities:
+              add:
+              - AUDIT_READ
+              - AUDIT_WRITE
+              - AUDIT_CONTROL
+            privileged: true
+            runAsUser: 0
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /conf
+            name: otc-internal
+          - mountPath: /var/log
+            name: varlog
+            readOnly: true
+          - mountPath: /hostfs/bin
+            name: bin
+            readOnly: true
+          - mountPath: /hostfs/sbin
+            name: sbin
+            readOnly: true
+          - mountPath: /hostfs/usr/bin
+            name: usrbin
+            readOnly: true
+          - mountPath: /hostfs/usr/sbin
+            name: usrsbin
+            readOnly: true
+          - mountPath: /hostfs/etc
+            name: etc
+            readOnly: true
+          - mountPath: /run/containerd
+            name: run-containerd
+            readOnly: true
+      volumes:
+      - configMap:
+          defaultMode: 420
+          items:
+          - key: collector.yaml
+            path: collector.yaml
+          name: audit-logs-otel-collector-3484daa2
+        name: otc-internal
+      - name: host
+        hostPath:
+          path: "/"
+      - name: varlog
+        hostPath:
+          path: /var/log
+      - name: bin
+        hostPath:
+          path: /bin
+      - name: usrbin
+        hostPath:
+          path: /usr/bin
+      - name: sbin
+        hostPath:
+          path: /sbin
+      - name: usrsbin
+        hostPath:
+          path: /usr/sbin
+      - name: etc
+        hostPath:
+          path: /etc
+      - name: run-containerd
+        hostPath:
+          path: /run/containerd
+          type: DirectoryOrCreate
