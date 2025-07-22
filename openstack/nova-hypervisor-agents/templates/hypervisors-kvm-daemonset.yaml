@@ -54,12 +54,9 @@ spec:
       - name: nova-compute-init
         image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/{{ .Values.imageName }}:{{ .Values.imageVersion | required "Please set imageVersion similar" }}
         command: ["/container.init/nova-compute-init"]
-        workingDir: /etc/nova
         volumeMounts:
           - mountPath: /container.init
             name: bin
-          - mountPath: /etc/nova
-            name: nova-etc
           - mountPath: /var/lib/nova
             name: var-lib-nova
       {{- if and .Values.hypervisor_on_host .Values.defaults.hypervisor.kvm.instance_nfs_share }}
