@@ -80,6 +80,27 @@ spec:
               {{- end }}
               - name: sd-config
                 mountPath: /conf/sd
+              {{- if hasKey $.Values.query "resources" }}
+              resources:
+                {{- if hasKey $.Values.query.resources "requests" }}
+                requests:
+                  {{- if not (empty $.Values.query.resources.requests.cpu) }}
+                  cpu: {{ $.Values.query.resources.requests.cpu }}
+                  {{- end }}
+                  {{- if not (empty $.Values.query.resources.requests.memory) }}
+                  memory: {{ $.Values.query.resources.requests.memory }}
+                  {{- end }}
+                {{- end }}
+                {{- if hasKey $.Values.query.resources "limits" }}
+                limits:
+                  {{- if not (empty $.Values.query.resources.limits.cpu) }}
+                  cpu: {{ $.Values.query.resources.limits.cpu }}
+                  {{- end }}
+                  {{- if not (empty $.Values.query.resources.limits.memory) }}
+                  memory: {{ $.Values.query.resources.limits.memory }}
+                  {{- end }}
+                {{- end }}
+              {{- end }}
             securityContext:
               fsGroup: 0
               runAsGroup: 0
