@@ -2,8 +2,8 @@ groups:
   - name: vmware-rebalancer.alerts
     rules:
       - alert: VcenterLowNumberOfPlaceableVms
-        expr: wm_vmware_rebalancer_placeable_vms_per_vcenter{has_bbs_without_custom_hana_exclusive_host="True",flavor="g_c128_m512"} <= 3
-        for: 30m
+        expr: sum(wm_vmware_rebalancer_placeable_vms_per_vcenter{flavor="g_c128_m512",has_bbs_without_custom_hana_exclusive_host="True"}) by (flavor, vcenter, az) < 3
+        for: 3h
         labels:
           severity: warning
           service: compute
