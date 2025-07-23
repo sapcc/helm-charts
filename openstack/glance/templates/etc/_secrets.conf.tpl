@@ -23,3 +23,9 @@ user = {{ .Values.swift.projectName }}:{{ .Values.global.glance_service_user | d
 {{- if .Values.osprofiler.enabled }}
 {{- include "osprofiler" . }}
 {{- end }}
+
+{{- if .Values.domain_info.enabled }}
+[glance_service_user]
+username = {{- if .Values.domain_info.user }}
+password = {{- if .Values.domain_info.pwd }}
+{{- end }}
