@@ -451,3 +451,6 @@ ml_full_access:
         - "*"
       allowed_actions:
         - "indices_monitor"
+
+security_analytics_full_access:
+  reserved: true
