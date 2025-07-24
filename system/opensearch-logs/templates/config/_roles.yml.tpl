@@ -465,6 +465,8 @@ security_analytics_full_access:
     - 'cluster:admin/opensearch/securityanalytics/mapping/*'
     - 'cluster:admin/opensearch/securityanalytics/rule/*'
     - 'cluster:admin/opensearch/securityanalytics/threatintel/*'
+    - 'cluster:admin/opendistro/ad/detector/*'
+    - 'cluster:admin/opensearch/notifications/*'
   index_permissions:
     - index_patterns:
         - '*'
