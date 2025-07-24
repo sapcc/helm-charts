@@ -209,6 +209,24 @@ mysql_metrics:
         GROUP BY loadbalancer_host, loadbalancer_status, loadbalancer_project, loadbalancer_availabilityzone;
       values:
         - "count_gauge"
+    - name: octavia_listeners
+      labels:
+        - "listener_id"
+        - "listener_name"
+        - "loadbalancer_id"
+        - "loadbalancer_name"
+      help: Total Listener Count
+      query: |
+        SELECT
+          1 AS value,
+          l.id AS listener_id,
+          l.name AS listener_name,
+          lb.id AS loadbalancer_id,
+          lb.name AS loadbalancer_name
+        FROM load_balancer AS lb JOIN listener AS l ON l.load_balancer_id = lb.id
+        WHERE l.provisioning_status != 'DELETED' AND lb.provisioning_status != 'DELETED';
+      values:
+        - "value"
     - name: octavia_seconds_since_last_nonpending_status
       labels:
         - "loadbalancer_id"

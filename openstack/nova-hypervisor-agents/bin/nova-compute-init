@@ -1,44 +1,13 @@
 #!/var/lib/openstack/bin/python3
-import configparser
 import pathlib
 import platform
-import socket
 import uuid
-
-from novaclient import client as novaclient
-from novaclient import exceptions as novaexceptions
-
-
-def _get_hypervisor():
-    config = configparser.ConfigParser()
-    config.read("/etc/nova/nova.conf.d/keystoneauth-secrets.conf")
-    authtoken = config["service_user"]
-    auth_endpoint = socket.gethostbyname_ex("identity-3")[1][0]
-    client = novaclient.Client(
-        "2.53",
-        authtoken["username"],
-        authtoken["password"],
-        user_domain_name="default",
-        project_domain_name="default",
-        project_name="service",
-        auth_url=f"https://{auth_endpoint}/v3",
-    )
-    node = platform.node().split(".", 1)[0]
-    try:
-        return client.hypervisors.search(node, detailed=True)[0]
-    except (novaexceptions.NotFound, IndexError):
-        return None
-
 
 compute_id = pathlib.Path("/var/lib/nova/compute_id")
 
 if not compute_id.exists():
-    hypervisor = _get_hypervisor()
-    if hypervisor:
-        compute_id.write_text(hypervisor.id)
-    else:
-        node = platform.node().split(".", 1)[0]
-        compute_uuid = uuid.uuid5(
-            uuid.UUID("408adaa7-5ff0-4740-b8c8-c46f79f09080"), node
-        )
-        compute_id.write_text(str(compute_uuid))
+    node = platform.node().split(".", 1)[0]
+    compute_uuid = uuid.uuid5(
+        uuid.UUID("408adaa7-5ff0-4740-b8c8-c46f79f09080"), node
+    )
+    compute_id.write_text(str(compute_uuid))

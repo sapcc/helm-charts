@@ -30,14 +30,6 @@
   {{- tuple . .Values.cell2dbName (include "nova.helpers.default_db_user" $context) (include "nova.helpers.default_user_password" $context) .Values.mariadb_cell2.name | include "utils.db_url" }}
 {{- end }}
 
-{{- define "cell2_db_path_for_exporter" -}}
-{{- if eq .Values.cell2.enabled true -}}
-  {{- $user := include "mysql_metrics.resolve_secret_for_yaml" .Values.cell2dbUser }}
-  {{- $password := include "mysql_metrics.resolve_secret_for_yaml" (default .Values.cell2dbPassword .Values.db_password .Values.global.dbPassword) -}}
-mysql://{{ $user }}:{{ $password }}@tcp(nova-{{ .Values.cell2.name }}-mariadb.{{ include "svc_fqdn" . }}:3306)/{{ .Values.cell2dbName }}
-{{- end -}}
-{{- end -}}
-
 {{- define "cell2_transport_url" -}}
   {{- $context := dict "target" "cell2" "defaultUsers" .Values.defaultUsersRabbitMQ "users" .Values.rabbitmq_cell2.users }}
   {{- $data := dict

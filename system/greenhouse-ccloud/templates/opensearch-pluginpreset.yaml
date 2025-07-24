@@ -119,8 +119,18 @@ spec:
     pluginDefinition: opensearch
     releaseNamespace: opensearch-logs
     optionValues:
+      - name: operator.manager.image.repository
+        value: "{{ .Values.global.dockerHubMirror }}/opensearchproject/opensearch-operator"
+      - name: operator.kubeRbacProxy.image.repository
+        value: "{{ .Values.global.quayIoMirror }}/brancz/kube-rbac-proxy"
+      - name: cluster.cluster.general.image
+        value: "{{ .Values.global.dockerHubMirror }}/opensearchproject/opensearch"
       - name: cluster.cluster.general.monitoring.additionalRuleLabels
         value: {{ .Values.opensearch.additionalRuleLabels | toYaml | nindent 10 }}
       - name: cluster.cluster.dashboards.service.labels
         value: {{ .Values.opensearch.dashboards.service.labels | toYaml | nindent 10 }}
+      - name: certManager.issuer.digicert
+        value: {{ .Values.opensearch.certManager.digicert | toYaml | nindent 10 }}
+      - name: cluster.usersRoleBinding
+        value: {{ .Values.opensearch.usersRoleBinding | toYaml | nindent 10 }}
 {{- end -}}

@@ -11,12 +11,12 @@ spec:
   revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revision_history }}
   selector:
     matchLabels:
-      name: nova-compute-kvm
+      name: {{ .Release.Name }}
   template:
     metadata:
       labels:
 {{ tuple . "nova" "compute" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
-        name: nova-compute-kvm
+        name: {{ .Release.Name }}
         alert-tier: os
         alert-service: nova
         hypervisor: "kvm"
@@ -54,12 +54,9 @@ spec:
       - name: nova-compute-init
         image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/{{ .Values.imageName }}:{{ .Values.imageVersion | required "Please set imageVersion similar" }}
         command: ["/container.init/nova-compute-init"]
-        workingDir: /etc/nova
         volumeMounts:
           - mountPath: /container.init
             name: bin
-          - mountPath: /etc/nova
-            name: nova-etc
           - mountPath: /var/lib/nova
             name: var-lib-nova
       {{- if and .Values.hypervisor_on_host .Values.defaults.hypervisor.kvm.instance_nfs_share }}
@@ -258,6 +255,7 @@ spec:
       - name: modules
         hostPath:
           path: /lib/modules
+          type: Directory
       - name: etclibvirt
         emptyDir:
           medium: Memory
@@ -265,21 +263,27 @@ spec:
       - name: instances
         hostPath:
           path: /var/lib/nova/instances
+          type: DirectoryOrCreate
       - name: nova-ssh
         hostPath:
           path: /var/lib/nova/.ssh
+          type: DirectoryOrCreate
       - name: libvirt
         hostPath:
           path: /var/lib/libvirt
+          type: Directory
       - name: run
         hostPath:
           path: /run
+          type: Directory
       - name: host
         hostPath:
           path: /
+          type: Directory
       - name: usr-share-qemu
         hostPath:
           path: /usr/share/qemu
+          type: Directory
 {{- end }}
       - name: mnt
 {{- if not .Values.hypervisor_on_host }}
@@ -288,22 +292,28 @@ spec:
 {{- else }}
         hostPath:
           path: /var/lib/nova/mnt
+          type: DirectoryOrCreate
 {{- end }}
       - name: sys
         hostPath:
           path: /sys
+          type: Directory
       - name: dev
         hostPath:
           path: /dev
+          type: Directory
       - name: multipath-etc
         hostPath:
           path: /etc/multipath
+          type: Directory
       - name: iscsi-etc
         hostPath:
           path: /etc/iscsi
+          type: Directory
       - name: nfs
         hostPath:
           path: /var/lib/nfs
+          type: Directory
       - name: sudoers-etc
         projected:
           sources:
@@ -327,7 +337,7 @@ spec:
               - key: compute.filters
                 path: rootwrap.conf.d/compute.filters
           - configMap:
-              name: nova-compute-kvm
+              name: {{ .Release.Name }}-compute
               items:
               - key: nova-compute.conf
                 path: nova-compute.conf

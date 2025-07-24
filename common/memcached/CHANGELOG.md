@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.6.11 - 2025/07/23
+* Use `1.6.38-alpine3.22` image
+* SASL fixes:
+  * change data key name in `memcached-config` ConfigMap to `data`
+  * set pod hostname when SASL is enabled
+  * add newline to `sasl_pwdb` secret and pod hostname to the username
+
 ## v0.6.10 - 2025/04/14
 * add option to set vpa main container
 

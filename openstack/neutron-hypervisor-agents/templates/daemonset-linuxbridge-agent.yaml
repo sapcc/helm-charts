@@ -69,7 +69,19 @@ spec:
                 - DAC_OVERRIDE
                 - DAC_READ_SEARCH
                 - SYS_PTRACE
-          command: ["neutron-linuxbridge-agent", "--debug"]
+          command: ["sh", "-c"]
+          args:
+            - |
+              set -xe
+              # Ensure that the iptables legacy binaries are used
+              if [ -x /usr/sbin/iptables-legacy ]; then
+                update-alternatives --set iptables /usr/sbin/iptables-legacy || true
+                update-alternatives --set ip6tables /usr/sbin/ip6tables-legacy || true
+                update-alternatives --set ebtables /usr/sbin/ebtables-legacy || true
+              fi
+
+              # Start the linuxbridge agent
+              exec neutron-linuxbridge-agent --debug
           env:
             - name: BUILDING_BLOCK
               valueFrom:
