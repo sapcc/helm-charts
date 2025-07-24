@@ -454,3 +454,20 @@ ml_full_access:
 
 security_analytics_full_access:
   reserved: true
+  cluster_permissions:
+    - 'cluster:admin/opensearch/securityanalytics/alerts/*'
+    - 'cluster:admin/opensearch/securityanalytics/connections/*'
+    - 'cluster:admin/opensearch/securityanalytics/correlationAlerts/*'
+    - 'cluster:admin/opensearch/securityanalytics/correlations/*'
+    - 'cluster:admin/opensearch/securityanalytics/detector/*'
+    - 'cluster:admin/opensearch/securityanalytics/findings/*'
+    - 'cluster:admin/opensearch/securityanalytics/logtype/*'
+    - 'cluster:admin/opensearch/securityanalytics/mapping/*'
+    - 'cluster:admin/opensearch/securityanalytics/rule/*'
+    - 'cluster:admin/opensearch/securityanalytics/threatintel/*'
+  index_permissions:
+    - index_patterns:
+        - '*'
+      allowed_actions:
+        - 'indices:admin/mapping/put'
+        - 'indices:admin/mappings/get'

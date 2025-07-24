@@ -137,7 +137,6 @@ anonymous_health_role:
   - "opendistro_security_anonymous_backendrole"
 
 security_analytics_full_access:
-  reserved: true
+  reserved: false
   backend_roles:
   - CC_IAS_OPERATIONS_UI_KIBANA_SUPPORT
-
