@@ -2,6 +2,25 @@
 
 This file is used to list changes made in each version of the common chart rabbitmq.
 
+## 0.19.0 - 2025/07/24
+
+- Added an option to disable a user
+
+Usage example:
+```yaml
+rabbitmq:
+  users:
+    default:
+      enabled: false
+    user1:
+      user: user1
+      password: secret
+    user2:
+      user: user2
+      password: secret
+```
+This will result in the `default` user being removed from the RabbitMQ users secret.
+
 ## 0.18.5 - 2025/07/07
 
 - RabbitMQ [4.1.2 Release notes](https://github.com/rabbitmq/rabbitmq-server/releases/tag/v4.1.2)
