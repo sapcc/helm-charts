@@ -60,13 +60,6 @@ defaults:
         statsd_enabled: true
       ironic:
         serial_console_state_timeout: 10
-    kvm:
-      default:
-        compute_driver: libvirt.LibvirtDriver
-        firewall_driver: nova.virt.firewall.NoopFirewallDriver
-        resume_guests_state_on_host_boot: true
-        # enables collecting metrics for RPC calls
-        statsd_enabled: true
 
 pod:
   replicas:
@@ -124,22 +117,24 @@ pod:
 
 debug: "True"
 
+defaultUsersRabbitMQ:
+  cell1: default
+  cell2: default
+
+defaultUsersMariaDB:
+  api: nova_api
+  cell0: nova_cell0
+  cell1: nova
+  cell2: null
+
 dbName: nova
-dbUser: nova
-dbPassword: null
 
 cell0dbName: nova_cell0
-cell0dbUser: nova_cell0
-cell0dbPassword: null
 
 # cell2dbName should be the same as mariadb_cell2 backup_v2 DB name!
 cell2dbName: nova_cell2
-cell2dbUser: nova_cell2
-cell2dbPassword: null
 
 apidbName: nova_api
-apidbUser: nova_api
-apidbPassword: null
 
 loci:
   nova: false
@@ -162,6 +157,7 @@ imageVersionNovaNovncproxy: null
 imageVersionNovaShellinaboxproxy: null
 imageVersionNovaSpicehtml5proxy: null
 imageVersionNovaScheduler: null
+imageVersionNovaNanny: null
 imageVersionBitnamiOpenResty: 1.21.4-1-debian-11-r57
 
 imageVersionVspc: null
@@ -720,6 +716,7 @@ mysql_metrics:
         FROM instances i
         INNER JOIN instance_migrations im ON i.uuid = im.instance_uuid
         WHERE i.deleted = 0 AND i.vm_state = 'error' AND im.rn = 1 AND im.status = 'error'
+        UNION ALL SELECT 'i-uuid', 'im-uuid', 'None', 0;
       values:
         - "gauge"
 
@@ -1013,3 +1010,29 @@ vpa:
 
 # used to set the PYTHONWARNINGS environment variable everywhere
 python_warnings: "ignore:Unverified HTTPS request,ignore::SyntaxWarning"
+
+# maintenance cronjobs
+nanny:
+  # Archive db rows soft-deleted before more than older_than days to shadow
+  # tables. Use batch size max_rows to limit transaction size.
+  db_archive_deleted_rows:
+    enabled: true
+    # cron schedule (minute | hour | day of month | month | day of week)
+    schedule: "0 * * * *"
+    older_than: 21
+    max_rows: 250
+  # Delete db rows soft-deleted before more than older_than days from shadow
+  # tables.
+  db_purge:
+    enabled: true
+    # cron schedule (minute | hour | day of month | month | day of week)
+    schedule: "15 * * * *"
+    older_than: 42
+  # For each instance, soft-delete the instance_faults db rows that exceed the
+  # count of max_faults. Use batch size max_rows to limit query size.
+  db_soft_delete_excessive_instance_faults:
+    enabled: true
+    # cron schedule (minute | hour | day of month | month | day of week)
+    schedule: "30 * * * *"
+    max_faults: 10
+    max_rows: 25

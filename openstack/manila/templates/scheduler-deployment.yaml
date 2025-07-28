@@ -65,6 +65,9 @@ spec:
             - name: etcmanila
               mountPath: /shared
         {{- end }}
+        {{- if .Values.proxysql.native_sidecar }}
+        {{- tuple . .Values.rpc_workers | include "utils.proxysql.container" | indent 8 }}
+        {{- end }}
       containers:
         - name: manila-scheduler
           image: {{.Values.global.registry}}/loci-manila:{{.Values.loci.imageVersion}}
@@ -145,7 +148,9 @@ spec:
               readOnly: true
         {{- end }}
         {{- include "jaeger_agent_sidecar" . | indent 8 }}
+        {{- if not .Values.proxysql.native_sidecar }}
         {{- tuple . .Values.rpc_workers | include "utils.proxysql.container" | indent 8 }}
+        {{- end }}
       volumes:
         - name: etcmanila
           emptyDir: {}

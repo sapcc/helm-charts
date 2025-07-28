@@ -3,14 +3,12 @@ PROVIDER_METAL3_VERSION ?= v1.10.0
 PROVIDER_METAL_VERSION ?= 00d028c4aac7fa1e168c5ec9fab74e197530e37c
 PROVIDER_VSPHERE_VERSION ?= v1.9.3
 PROVIDER_IPAM_VERSION ?= v0.1.1
+PROVIDER_HELM ?= v0.3.2
 PROVIDER_KUBERNIKUS_VERSION ?= 9fd81475b828971913b3b27addf51fdbd0511d85
 BAREMETAL_OPERATOR_VERSION ?= v0.6.0
-METAL_OPERATOR_VERSION ?= 09f58322e41696a1c07e738ea295dcd4beb3a700
-BOOT_OPERATOR_VERSION ?= fe855e5b44cc7132dff46087cc80ef8d60893f36
 IPXE_OPERATOR_VERSION ?= 28b7ac62711e74db02fe0097bdf474a302a054c6
 FEDHCP_VERSION ?= a59539c62aaa11a96c82fe792c87daaac4cb75bf
 IPAM_VERSION ?= 6faf501000c5d7ff9744a3c111ca5ecf3339c00c
-ARGORA_VERSION ?= 06b8e140698d509b98376b22f0e06d1dddf51431
 
 SHELL := bash
 .ONESHELL:
@@ -59,6 +57,14 @@ build-bootstrap-kubeadm:
 	@yq -i '.controllerManager.manager.image.tag="$(CLUSTER_API_VERSION)"' bootstrap-kubeadm/values.yaml
 	@yq -i '.fullnameOverride="capi-kubeadm-bootstrap"' bootstrap-kubeadm/values.yaml
 	@yq -i '.version="0.2.4"' bootstrap-kubeadm/Chart.yaml
+
+build-provider-helm:
+	$(call build-chart,provider-helm,https://github.com/kubernetes-sigs/cluster-api-addon-provider-helm//config/default,$(PROVIDER_HELM))
+	$(call fix-crds,provider-helm)
+	@find provider-helm/templates -type f -exec $(SED) -i -e 's#webhook-server-cert#caaph-webhook-server-cert#g' {} \;
+	@yq -i '.controllerManager.manager.image.tag="$(PROVIDER_HELM)"' provider-helm/values.yaml
+	@yq -i '.fullnameOverride="caaph"' provider-helm/values.yaml
+	@yq -i '.version="0.0.4"' provider-helm/Chart.yaml
 
 build-provider-vsphere:
 	$(call build-chart,provider-vsphere,https://github.com/kubernetes-sigs/cluster-api-provider-vsphere//config/default,$(PROVIDER_VSPHERE_VERSION))
@@ -135,56 +141,27 @@ build-baremetal-operator:
 	@yq -i '.version="1.0.1"' baremetal-operator-core/Chart.yaml
 
 build-metal-operator-remote:
-	@rm -rf metal-operator-remote
-	@cat kustomize/metal-operator-remote/kustomization.yaml > kustomization.yaml
-	@kubectl kustomize | helmify -crd-dir metal-operator-remote
-	@cp kustomize/metal-operator-remote/remote-kubeconfig.yaml metal-operator-remote/templates
-	@cp kustomize/metal-operator-remote/rotate-kubeconfig.yaml metal-operator-remote/templates
-	@cp kustomize/metal-operator-remote/managedresource.yaml metal-operator-remote/templates
-	@cp kustomize/metal-operator-remote/macdb.yaml metal-operator-remote/templates
-	@cp kustomize/metal-operator-remote/ingress.yaml metal-operator-remote/templates
-	@cp kustomize/metal-operator-remote/networkpolicy.yaml metal-operator-remote/templates
-	@mkdir metal-operator-remote/managedresources
-	@kubectl kustomize kustomize/metal-operator-managedresources > metal-operator-remote/managedresources/kustomize.yaml
-	@cp kustomize/metal-operator-managedresources/rbac.yaml metal-operator-remote/managedresources
-	@yq -i '.controllerManager.manager.image.tag="$(METAL_OPERATOR_VERSION)"' metal-operator-remote/values.yaml
-	@yq -i '.fullnameOverride="metal-operator"' metal-operator-remote/values.yaml
-	@yq -i '.remote.ca=""' metal-operator-remote/values.yaml
-	@yq -i '.controllerManager.manager.hostNetwork=false' metal-operator-remote/values.yaml
-	@echo 'macdb: {}' >> metal-operator-remote/values.yaml
-	@mkdir metal-operator-remote/ci
-	@echo 'global:' >> metal-operator-remote/ci/test-values.yaml
-	@echo '  region: ab-cd-1' >> metal-operator-remote/ci/test-values.yaml
-	@yq -i '.version="0.4.5"' metal-operator-remote/Chart.yaml
-	@$(SED) -i 's/serviceAccountName.*$$/serviceAccountName: default/g' metal-operator-remote/templates/deployment.yaml
-	@$(SED) -i 's/kind: Role/kind: ClusterRole/g' metal-operator-remote/managedresources/kustomize.yaml
-	@$(SED) -i 's/hostNetwork: true/hostNetwork: {{ .Values.controllerManager.manager.hostNetwork }}/g' metal-operator-remote/templates/deployment.yaml
+	@helm template metal-operator metal-operator-remote/charts/metal-operator* \
+		-n kube-system \
+		-f metal-operator-remote/values-managed-resources.yaml |\
+		$(SED) 's/kind: Role/kind: ClusterRole/g' - |\
+		yq eval 'select(.kind != "Service" and .kind != "ValidatingWebhookConfiguration")' - >\
+		metal-operator-remote/managedresources/crds-and-rbac.yaml
 
 build-boot-operator-remote:
-	@rm -rf boot-operator-remote
-	@cat kustomize/boot-operator-remote/kustomization.yaml > kustomization.yaml
-	@kubectl kustomize | helmify -crd-dir boot-operator-remote
-	@cp kustomize/boot-operator-remote/remote-kubeconfig.yaml boot-operator-remote/templates
-	@cp kustomize/boot-operator-remote/managedresource.yaml boot-operator-remote/templates
-	@cp kustomize/boot-operator-remote/ingress.yaml boot-operator-remote/templates
-	@cp kustomize/boot-operator-remote/networkpolicy.yaml boot-operator-remote/templates
-	@yq -i '.controllerManager.manager.hostNetwork=false' boot-operator-remote/values.yaml
-	@mkdir boot-operator-remote/ci
-	@echo 'global:' >> boot-operator-remote/ci/test-values.yaml
-	@echo '  region: ab-cd-1' >> boot-operator-remote/ci/test-values.yaml
-	@mkdir boot-operator-remote/managedresources
-	@kubectl kustomize kustomize/boot-operator-managedresources > boot-operator-remote/managedresources/kustomize.yaml
-	@yq -i '.controllerManager.manager.image.tag="$(BOOT_OPERATOR_VERSION)"' boot-operator-remote/values.yaml
-	@yq -i '.fullnameOverride="boot-operator"' boot-operator-remote/values.yaml
-	@yq -i '.version="0.4.5"' boot-operator-remote/Chart.yaml
-	@$(SED) -i 's/serviceAccountName.*$$/serviceAccountName: default/g' boot-operator-remote/templates/deployment.yaml
-	@$(SED) -i 's/kind: Role/kind: ClusterRole/g' boot-operator-remote/managedresources/kustomize.yaml
-	@$(SED) -i 's/hostNetwork: true/hostNetwork: {{ .Values.controllerManager.manager.hostNetwork }}/g' boot-operator-remote/templates/deployment.yaml
+	@helm dep up boot-operator-remote
+	@helm template boot-operator boot-operator-remote/charts/boot-operator* \
+		-n kube-system \
+		-f boot-operator-remote/values-managed-resources.yaml |\
+		$(SED) 's/kind: Role/kind: ClusterRole/g' - |\
+		yq eval 'select(.kind != "Service" and .kind != "ValidatingWebhookConfiguration")' - >\
+		boot-operator-remote/managedresources/crds-and-rbac.yaml
+	yq -i '.version = (.version | split(".") | .[2] = ((.[2] | tonumber) + 1 | tostring) | join("."))' boot-operator-remote/Chart.yaml
 
 build-ipxe-operator:
 	@cat kustomize/ipxe-operator/kustomization.yaml >> kustomization.yaml
 	$(call build-chart,ipxe-operator,https://github.com/ironcore-dev/ipxe-operator//config/default,$(IPXE_OPERATOR_VERSION))
-	@yq -i '.controllerManager.manager.image.tag="$(BOOT_OPERATOR_VERSION)"' ipxe-operator/values.yaml
+	@yq -i '.controllerManager.manager.image.tag="$(IPXE_OPERATOR_VERSION)"' ipxe-operator/values.yaml
 	@yq -i '.fullnameOverride="ipxe-operator"' ipxe-operator/values.yaml
 	@yq -i '.version="0.0.8"' ipxe-operator/Chart.yaml
 
@@ -221,25 +198,27 @@ build-ipam-operator-remote:
 	@$(SED) -i 's/serviceAccountName.*$$/serviceAccountName: default/g' ipam-operator-remote/templates/deployment.yaml
 	@$(SED) -i 's/kind: Role/kind: ClusterRole/g' ipam-operator-remote/managedresources/kustomize.yaml
 
+build-argora-operator:
+	@helm dep up argora-operator
+	@yq -i '.version = (.version | split(".") | .[2] = ((.[2] | tonumber) + 1 | tostring) | join("."))' argora-operator/Chart.yaml
+
 build-argora-operator-remote:
-	@rm -rf argora-operator-remote
-	@cat kustomize/argora-operator-remote/kustomization.yaml > kustomization.yaml
-	@kubectl kustomize | helmify -crd-dir argora-operator-remote
-	@cp kustomize/argora-operator-remote/remote-kubeconfig.yaml argora-operator-remote/templates
-	@cp kustomize/argora-operator-remote/managedresource.yaml argora-operator-remote/templates
-	@mkdir argora-operator-remote/managedresources
-	@kubectl kustomize kustomize/argora-operator-managedresources > argora-operator-remote/managedresources/kustomize.yaml
-	@cp kustomize/argora-operator-managedresources/updates.yaml argora-operator-remote/managedresources
-	@yq -i '.controllerManager.manager.image.tag="$(ARGORA_VERSION)"' argora-operator-remote/values.yaml
-	@yq -i '.fullnameOverride="argora-operator"' argora-operator-remote/values.yaml
-	@mkdir argora-operator-remote/ci
-	@echo 'config:' >> argora-operator-remote/ci/test-values.yaml
-	@echo '  configJson: {"serverController":"foo","ironCoreTypes":"bar","ironCoreRegion":"ab-cd-1","netboxURL":"https://foo.bar"}' >> argora-operator-remote/ci/test-values.yaml
-	@echo 'secret:' >> argora-operator-remote/ci/test-values.yaml
-	@echo '  credentialsJson: {"bmcUser":"foo","bmcPassword":"bar","netboxToken":"token"}' >> argora-operator-remote/ci/test-values.yaml
-	@yq -i '.version="0.0.4"' argora-operator-remote/Chart.yaml
-	@$(SED) -i 's/serviceAccountName.*$$/serviceAccountName: default/g' argora-operator-remote/templates/deployment.yaml
-	@$(SED) -i 's/kind: Role/kind: ClusterRole/g' argora-operator-remote/managedresources/kustomize.yaml
+	@helm dep up argora-operator-remote
+	@helm template argora-operator argora-operator-remote/charts/argora-* \
+		-n kube-system \
+		-f argora-operator-remote/values-managed-resources.yaml |\
+		$(SED) 's/kind: Role/kind: ClusterRole/g' - |\
+		yq eval 'select(.kind != "Service" and .kind != "ValidatingWebhookConfiguration" and .kind != "ConfigMap" and .kind != "Secret")' - >\
+		argora-operator-remote/managedresources/crds-and-rbac.yaml
+		yq -i '.version = (.version | split(".") | .[2] = ((.[2] | tonumber) + 1 | tostring) | join("."))' argora-operator-remote/Chart.yaml
+
+build-khalkeon-remote:
+	@helm template khalkeon khalkeon-remote/charts/khalkeon* \
+		-f khalkeon-remote/values.yaml \
+		-f khalkeon-remote/values-managed-resources.yaml |\
+		$(SED) 's/kind: Role/kind: ClusterRole/g' - |\
+		yq eval 'select(.kind != "Service")' - >\
+		khalkeon-remote/managedresources/crds-and-rbac.yaml
 
 # chart name, source url, tag
 define build-chart

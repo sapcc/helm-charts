@@ -1,5 +1,24 @@
 # Changelog
 
+## v0.26.1 - 2025/07/22
+* `maria-back-me-up` updated to `20250722132533`
+* chart version bumped
+
+## v0.26.0 - 2025/07/22
+* MariaDB `userstat` plugin is enabled
+* mysqld-exporter now collects user statistics
+* chart version bumped
+
+## v0.25.1 - 2025/07/09
+* Set `kubectl.kubernetes.io/default-container` annotation for all chart deployments, cronjobs and jobs
+* chart version bumped
+
+## v0.25.0 - 2025/07/02
+* MariaDB version updated to [10.11.13](https://mariadb.com/kb/en/mariadb-10-11-13-release-notes/)
+  * See https://mariadb.com/kb/en/changes-improvements-in-mariadb-1011/
+* mysql-exporter version updated to [v0.17.2](https://github.com/prometheus/mysqld_exporter/releases/tag/v0.17.2)
+* chart version bumped
+
 ## v0.24.2 - 2025/05/27
 * MariaDB version bumped to [10.6.22](https://mariadb.com/kb/en/mariadb-10-6-22-release-notes/)
   * InnoDB race condition has been fixed

@@ -62,3 +62,18 @@ groups:
     annotations:
       description: 'Opensearch cluster *opensearch-logs* is *RED*. Please check all nodes.'
       summary: '*opensearch-logs* cluster is *RED*'
+
+  - alert: OpenSearchIndexSizeTooLarge
+    expr: max by (index) (opensearch_index_store_size_bytes{index=~".ds.*", context="primaries"} / (1024^3) > 200)
+    for: 30m
+    labels:
+      context: nodes
+      service: opensearch-logs
+      severity: warning
+      support_group: observability
+      tier: os
+      playbook: 'docs/support/playbook/opensearch/generic/index-too-large'
+      dashboard: health-opensearch?var-cluster=opensearch-logs
+    annotations:
+      description: "The index {{ $labels.index }} has exceeded 200 GB in size. Please check the rollover status."
+      summary: "Index size of ({{ $labels.index }}) has exceeeded the threshold."

@@ -216,6 +216,14 @@ docker_create_db_directories() {
 			find "${SOCKET%/*}" -maxdepth 0 \! -user mysql \( -exec chown mysql: '{}' \; -o -true \)
 		fi
 
+		# memory.pressure
+		local cgroup; cgroup=$(</proc/self/cgroup)
+		local mempressure="/sys/fs/cgroup/${cgroup:3}/memory.pressure"
+		if [ -w "$mempressure" ]; then
+			chown mysql: "$mempressure" || mysql_warn "unable to change ownership of $mempressure, functionality unavailable to MariaDB"
+		else
+			mysql_warn "$mempressure not writable, functionality unavailable to MariaDB"
+		fi
 	fi
 }
 
@@ -503,7 +511,7 @@ docker_mariadb_init()
 			if [ -f "$DATADIR/.init/backup-my.cnf" ]; then
 				mv "$DATADIR/.init/backup-my.cnf" "$DATADIR/.my.cnf"
 				mysql_note "Adding startup configuration:"
-				my_print_defaults --defaults-file="$DATADIR/.my.cnf" --mysqld
+				my_print_defaults --defaults-file="$DATADIR/.my.cnf" --mariadbd
 			fi
 			rm -rf "$DATADIR"/.init "$DATADIR"/.restore
 			if [ "$(id -u)" = "0" ]; then

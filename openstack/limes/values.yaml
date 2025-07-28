@@ -50,6 +50,7 @@ limes:
       with_subcapacities: true
       with_volume_subresources: true
       with_snapshot_subresources: true
+      ignore_public_volume_types: "tempest.+"
 
     ironic:
       with_subcapacities: true
@@ -157,20 +158,6 @@ pgmetrics:
             - gauge:
                 usage: "GAUGE"
                 description: "Total number of projects that are failing quota/usage scrape"
-
-        limes_failing_rate_scrapes:
-          # Same strategy as above for `limes_failing_scrapes`.
-          query: >
-            SELECT ps.type AS service_name, SUM(CASE WHEN ps.rates_scrape_error_message = '' THEN 0 ELSE 1 END) AS gauge
-              FROM project_services ps
-             GROUP BY ps.type
-          metrics:
-            - service_name:
-                usage: "LABEL"
-                description: "Service type"
-            - gauge:
-                usage: "GAUGE"
-                description: "Total number of projects that are failing rate data scrape"
 
         limes_mismatch_project_quota:
           # The UNION SELECT adds a dummy row to satisfy the absent-metrics-operator.

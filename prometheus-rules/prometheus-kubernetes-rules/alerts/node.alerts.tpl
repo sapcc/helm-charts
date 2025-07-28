@@ -129,7 +129,7 @@ groups:
       tier: {{ required ".Values.tier missing" .Values.tier }}
       support_group: {{ required ".Values.supportGroup missing" .Values.supportGroup }}
       service: {{ required ".Values.service missing" .Values.service }}
-      severity: critical
+      severity: warning
       context: threads
       meta: "Very high number of threads on {{`{{ $labels.node }}`}}. Forking problems are imminent."
       playbook: "docs/support/playbook/kubernetes/k8s_high_threads"

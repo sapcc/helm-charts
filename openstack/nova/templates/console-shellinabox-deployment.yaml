@@ -37,6 +37,7 @@ spec:
         {{- end }}
         {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
         config-hash: {{ print (.Files.Glob "console/shellinabox/*").AsConfig (.Files.Glob "console/common/*").AsConfig (include "nova.etc_config_lua" .) | sha256sum }}
+        secret-hash: {{ include (print $.Template.BasePath "/console-shellinabox-secret.yaml") . | sha256sum }}
     spec:
       securityContext:
         runAsUser: 33
