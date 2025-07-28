@@ -31,17 +31,22 @@ spec:
       containers:
         - name: bots4devsupport
           image: "{{ required ".Values.global.registry variable missing" .Values.global.registry }}/{{ .Values.image }}:{{ $.Values.imageTag }}"
-          command: [ "/run/bots4devsupport" ]
-          args: ["-config", "/etc/config/config.yaml"]
           livenessProbe:
             httpGet:
               path: /live
-              port: 2112
+              port: 8501
+              initialDelaySeconds: 30
+              timeoutSeconds: 5
+              periodSeconds: 10
+              failureThreshold: 3
           readinessProbe:
             httpGet:
               path: /ready
-              port: 2112
+              port: 8501
             initialDelaySeconds: 30
+            timeoutSeconds: 5
+            periodSeconds: 10
+            failureThreshold: 3
           resources:
             limits:
               memory: 200Mi
