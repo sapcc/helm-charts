@@ -8,6 +8,9 @@ options:
   jinja2_options:
     variable_start_string: '{='
     variable_end_string: '=}'
+    {{- if .Values.manage_service_user_passwords }}
+    uses-service-user: cinder
+    {{- end }}
 template: |
   kind: Deployment
   apiVersion: apps/v1
@@ -38,6 +41,9 @@ template: |
         labels:
           name: cinder-volume-backup-vmware-{= name =}
           {{- tuple . "cinder" "volume-backup-vmware" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | nindent 10 }}
+          {{- if .Values.manage_service_user_passwords }}
+          vcenter-operator-secret-version: {= service_user_version | quote =}
+          {{- end }}
         annotations:
           vcenter: {= host =}
           datacenter: {= availability_zone =}
@@ -48,6 +54,9 @@ template: |
           prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
           {{- end }}
           {{- include "utils.linkerd.pod_and_service_annotation" . | indent 10 }}
+          {{- if .Values.manage_service_user_passwords }}
+          uses-service-user: cinder
+          {{- end }}
       spec:
         hostname: cinder-volume-backup-vmware-{= name =}
         {{- include "utils.proxysql.pod_settings" . | nindent 8 }}
