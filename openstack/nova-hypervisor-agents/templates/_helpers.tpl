@@ -21,7 +21,7 @@ novncproxy_base_url = https://{{include "nova_console_endpoint_host_public" .}}:
       "password" (include "nova.helpers.default_user_password" $context)
       "port" .Values.rabbitmq.port
       "virtual_host" .Values.rabbitmq.virtual_host
-      "host" (printf "%s-rabbitmq" .Release.Name)
+      "host" (default (printf "%s-rabbitmq" .Release.Name) .Values.rabbitmq.host)
     }}
   {{- include "utils.rabbitmq_url" (tuple . $data) }}
 {{- end -}}
