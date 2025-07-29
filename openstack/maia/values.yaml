@@ -8,10 +8,12 @@ global:
     skip_hcm_domain: false
   # for openstack seeds
   keystoneNamespace: monsoon3
+  globalKeystoneNamespace: monsoon3global
   # Set to true for global regions
   is_global_region: false
 
 linkerd-support:
+  enabled: true
   annotate_namespace: true
 
 maia:
@@ -38,6 +40,18 @@ maia:
     user_domain_name:    Default
     project_name:        service
     project_domain_name: Default
+
+  # Global Keystone configuration
+  global_keystone:
+    enabled: false  # Set to true in regions that should connect to global Keystone
+    auth_url: ""    # URL of the global Keystone service
+    # Defaults are used if not set and are required to connect properly
+    # username: "maia"  
+    # password: ""
+    # user_domain_name: "Default"
+    # project_name: "service"
+    # project_domain_name: "Default"
+
   resources:
     # reasonable defaults, should be reduced for small regions
     memory:
@@ -125,6 +139,11 @@ aggregations:
   prometheus: maia-oprom
 
 cronus:
+  enabled: false
+
+# This is for the global seed deployment.
+# This allows maia to be false, while seed is true only deploying the seed.
+seed:
   enabled: false
 
 authentication:

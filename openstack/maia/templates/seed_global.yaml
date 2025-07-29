@@ -1,0 +1,22 @@
+{{- if .Values.global.is_global_region }}
+apiVersion: "openstack.stable.sap.cc/v1"
+kind: "OpenstackSeed"
+metadata:
+  name: maia-seed
+  labels:
+    component: maia
+spec:
+  requires:
+  - {{ .Values.global.globalKeystoneNamespace }}/keystone-global-seed
+
+  domains:
+  # seed technical service user
+  - name: {{.Values.maia.service_user.user_domain_name}}
+    users:
+    - name: {{.Values.maia.service_user.name}}
+      description: 'Maia API User'
+      password: {{ .Values.maia.service_user.password | quote }}
+      role_assignments:
+      - project: {{.Values.maia.service_user.project_name}}
+        role: service
+{{- end }}

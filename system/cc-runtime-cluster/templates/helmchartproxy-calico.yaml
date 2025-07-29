@@ -1,0 +1,112 @@
+apiVersion: addons.cluster.x-k8s.io/v1alpha1
+kind: HelmChartProxy
+metadata:
+  name: calico-cni
+spec:
+  clusterSelector:
+    matchLabels:
+      cluster.x-k8s.io/cluster-name: rt-{{ .Values.global.region }}
+  repoURL: oci://keppel.eu-de-1.cloud.sap/ccloud-helm
+  chartName: calico-cni
+  namespace: kube-system
+  options:
+    waitForJobs: true
+    wait: true
+    timeout: 5m
+    install:
+      createNamespace: true
+  valuesTemplate: |
+    global:
+      registryAlternateRegion: keppel.global.cloud.sap/ccloud
+      dockerHubMirrorAlternateRegion: keppel.global.cloud.sap/ccloud-dockerhub-mirror
+    calico:
+      global:
+        clusterCIDR: {{ .Values.controlplane.podSubnet }}
+      config:
+        monitoring:
+          enabled: false
+        felix:
+          ipip:
+            enabled: true
+        multus:
+          enabled: false
+        cniConfName: "10-calico.conflist"
+        kubeConfig: /etc/kubernetes/kubelet.conf
+      ipip:
+        enabled: true
+        mode: Always
+      bgp:
+        enabled: false
+      images:
+        calicoNode:
+          image: calico/node
+          tag: v3.29.3
+        calicoCni:
+          image: calico/cni
+          tag: v3.29.3
+        calicoTypha:
+          image: calico/typha
+          tag: v3.29.3
+        calicoKubeControllers:
+          image: calico/kube-controllers
+          tag: v3.29.3
+        kubelet:
+          image: kubelet
+          tag: v1.31.5
+        exporter:
+          image: sapcc/bird_exporter
+          tag: "sha-ca566bea1de71d9d9411943fca74f011dec4d259"
+      node:
+        tolerations:
+          - effect: NoSchedule
+            operator: Exists
+          - key: CriticalAddonsOnly
+            operator: Exists
+          - effect: NoExecute
+            operator: Exists
+      typha:
+        tolerations:
+          - effect: NoSchedule
+            operator: Exists
+          - key: CriticalAddonsOnly
+            operator: Exists
+          - effect: NoExecute
+            operator: Exists
+        affinity:
+          podAntiAffinity:
+            preferredDuringSchedulingIgnoredDuringExecution:
+              - weight: 100
+                podAffinityTerm:
+                  topologyKey: kubernetes.io/hostname
+                  labelSelector:
+                    matchExpressions:
+                      - key: k8s-app
+                        operator: In
+                        values:
+                          - calico-typha
+      kubeControllers:
+        tolerations:
+          - effect: NoSchedule
+            operator: Exists
+          - key: CriticalAddonsOnly
+            operator: Exists
+          - effect: NoExecute
+            operator: Exists
+        affinity:
+          podAntiAffinity:
+            preferredDuringSchedulingIgnoredDuringExecution:
+              - weight: 100
+                podAffinityTerm:
+                  topologyKey: kubernetes.io/hostname
+                  labelSelector:
+                    matchExpressions:
+                      - key: k8s-app
+                        operator: In
+                        values:
+                          - calico-kube-controllers
+    alerts:
+      enabled: false
+    cni-nanny:
+      enabled: false
+    calico-apiserver:
+      enabled: false

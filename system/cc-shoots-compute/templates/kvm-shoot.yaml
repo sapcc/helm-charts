@@ -26,11 +26,17 @@ spec:
       overlay:
         enabled: false
         createPodRoutes: true
+      {{- if $cluster.networking.birdExporter }}
+      birdExporter:
+        enabled: {{ $cluster.networking.birdExporter.enabled | default false }}
+      {{- end }}
   kubernetes:
     version: {{ $cluster.version }}
     kubeAPIServer:
       enableAnonymousAuthentication: true # cluster registry version check
       oidcConfig: {{- toYaml $.Values.oidcConfig | nindent 8 }}
+    verticalPodAutoscaler:
+      enabled: false
   maintenance:
     autoUpdate:
       kubernetesVersion: false

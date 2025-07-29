@@ -1,11 +1,20 @@
 apiVersion: core.gardener.cloud/v1beta1
 kind: Shoot
 metadata:
-  name: rtc-{{ required "missing value for .Values.global.region" .Values.global.region }}
+  name: rtc-{{ required "missing value for .Values.global.region" .Values.global.region }}{{ if .Values.global.landscape }}-{{ .Values.global.landscape }}{{ end }}
 spec:
   cloudProfileName: openstack
   region: {{ required "missing value for .Values.global.region" .Values.global.region }}
   secretBindingName: openstack-{{ .Values.global.region }}
+{{- if .Values.highAvailability.enabled }}
+  controlPlane:
+    highAvailability:
+      failureTolerance:
+        type: zone
+{{- end }}
+{{- if .Values.seedName }}
+  seedName: {{ .Values.seedName }}
+{{- end }}
   provider:
     type: openstack
     infrastructureConfig:

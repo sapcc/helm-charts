@@ -61,6 +61,7 @@ template: |
           {{- include "utils.linkerd.pod_and_service_annotation" . | indent 10 }}
           configmap-etc-hash: {{ include (print .Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
           configmap-nova-compute-hash: {= "vcenter_cluster/{{ .Release.Namespace }}/vcenter-cluster-nova-compute-configmap.yaml.j2" | render | sha256sum =}
+          secret-etc-hash: {{ include (print .Template.BasePath "/etc-secret.yaml") . | sha256sum }}
       spec:
         {{- tuple . "{= availability_zone =}" | include "utils.kubernetes_pod_az_affinity" | nindent 8 }}
         {{- include "kubernetes_maintenance_affinity" . | nindent 4 }}
@@ -93,9 +94,6 @@ template: |
           volumeMounts:
           - mountPath: /etc/nova
             name: nova-etc
-          - mountPath: /etc/sudoers
-            name: sudoers
-            subPath: sudoers
           {{- include "utils.trust_bundle.volume_mount" . | indent 10 }}
         - name: statsd
           image: {{ required ".Values.global.dockerHubMirror is missing" .Values.global.dockerHubMirror}}/prom/statsd-exporter:v0.8.1
@@ -125,10 +123,6 @@ template: |
                   path: policy.yaml
                 - key: logging.ini
                   path: logging.ini
-                - key: rootwrap.conf
-                  path: rootwrap.conf
-                - key: compute.filters
-                  path: rootwrap.d/compute.filters
             - configMap:
                 name: nova-compute-vmware-{= name =}
                 items:
@@ -159,14 +153,6 @@ template: |
                 items:
                 - key: nova-compute-secrets.conf
                   path: nova.conf.d/nova-compute-secrets.conf
-        - name: sudoers
-          projected:
-            sources:
-            - configMap:
-                name: nova-etc
-                items:
-                - key: sudoers
-                  path: sudoers
         - name: statsd-etc
           projected:
             sources:

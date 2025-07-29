@@ -91,6 +91,7 @@ project_domain_name = ccadmin
 insecure = True
 allow_reverse_dns_lookup = {{.Values.global.designate_allow_reverse_dns_lookup | default "False"}}
 ipv4_ptr_zone_prefix_size = 24
+ptr_zone_email = dns@sap-ag.de
 
 [oslo_concurrency]
 lock_path = /var/lib/neutron/tmp
