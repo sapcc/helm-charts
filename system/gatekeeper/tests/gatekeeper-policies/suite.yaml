@@ -134,31 +134,36 @@ tests:
   template: ../rendered-chart/gatekeeper/templates/constrainttemplate-forbidden-clusterwide-objects.yaml
   constraint: ../rendered-chart/gatekeeper-config/templates/constraint-forbidden-clusterwide-objects.yaml
   cases:
-  - name: gatekeeper-validating-webhook-configuration
-    object: fixtures/forbidden-clusterwide-objects/gatekeeper-validating-webhook-configuration.yaml
+  - name: mutating-webhook-allow
+    object: fixtures/forbidden-clusterwide-objects/mutating-webhook-allow.yaml
     assertions:
     - violations: no
-  - name: cert-manager-mutating-webhook
-    object: fixtures/forbidden-clusterwide-objects/cert-manager-mutating-webhook.yaml
+  - name: mutating-webhook-reject-name
+    object: fixtures/forbidden-clusterwide-objects/mutating-webhook-reject-name.yaml
     assertions:
-    # TODO: repair this
     - violations: 1
-      message: '^\{"support_group":"foo-group","service":"dummy"\} >> webhook "webhook.cert-manager.io" does not match our allowlist$'
-  - name: cert-manager-validating-webhook
-    object: fixtures/forbidden-clusterwide-objects/cert-manager-validating-webhook.yaml
+      message: '^\{"support_group":"none","service":"none"\} >> webhook "foo-webhook" does not match our allowlist$'
+  - name: mutating-webhook-reject-namespace
+    object: fixtures/forbidden-clusterwide-objects/mutating-webhook-reject-namespace.yaml
     assertions:
-    # TODO: repair this
     - violations: 1
-      message: '^\{"support_group":"foo-group","service":"dummy"\} >> webhook "webhook.cert-manager.io" does not match our allowlist$'
-  - name: seeder.cloud.sap
-    object: fixtures/forbidden-clusterwide-objects/seeder.cloud.sap.yaml
+      message: '^\{"support_group":"none","service":"none"\} >> webhook "foo-webhook" does not match our allowlist$'
+  - name: validating-webhook-allow
+    object: fixtures/forbidden-clusterwide-objects/validating-webhook-allow.yaml
     assertions:
-    # TODO: repair this
+    - violations: no
+  - name: validating-webhook-reject-name
+    object: fixtures/forbidden-clusterwide-objects/validating-webhook-reject-name.yaml
+    assertions:
     - violations: 1
-      message: '^\{"support_group":"foo-group","service":"dummy"\} >> webhook "validate-networks.spec.openstack.networks.seeder.cloud.sap" does not match our allowlist$'
+      message: '^\{"support_group":"none","service":"none"\} >> webhook "foo-webhook" does not match our allowlist$'
+  - name: validating-webhook-reject-namespace
+    object: fixtures/forbidden-clusterwide-objects/validating-webhook-reject-namespace.yaml
+    assertions:
     - violations: 1
-      message: '^\{"support_group":"foo-group","service":"dummy"\} >> webhook "validate-domains.spec.openstack.domains.seeder.cloud.sap" does not match our allowlist$'
-
+      message: '^\{"support_group":"none","service":"none"\} >> webhook "foo-webhook" does not match our allowlist$'
+  # TODO: Add test case for allowing all webhooks where the namespace selector only selects the same namespace 
+  
 - name: high-cpu-requests
   template: ../rendered-chart/gatekeeper/templates/constrainttemplate-high-cpu-requests.yaml
   constraint: ../rendered-chart/gatekeeper-config/templates/constraint-high-cpu-requests.yaml

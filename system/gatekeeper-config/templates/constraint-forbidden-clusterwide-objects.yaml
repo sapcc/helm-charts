@@ -9,11 +9,36 @@ metadata:
     severity: 'debug'
 spec:
   enforcementAction: dryrun
-  match:
-    kinds:
-      - apiGroups: [ admissionregistration.k8s.io ]
-        kinds: [ MutatingWebhookConfiguration, ValidatingWebhookConfiguration ]
-
-# NOTE: When we want to move into `enforcementMode: deny` for some of these
-# kinds, the plan is to make a new constraint config and move the respective
-# kinds over into it.
+  match: {{ include "match_webhook_configs" . | indent 4 }}
+  parameters:
+    allowlist:
+      {{- if eq .Values.cluster_type "test" }}
+      - kind: ValidatingWebhookConfiguration
+        releaseName: foo-operator
+        releaseNamespace: foo
+      - kind: MutatingWebhookConfiguration
+        releaseName: foo-operator
+        releaseNamespace: foo
+      {{- end }}
+      # TODO: Extend: curl -s https://doop-api.global.cloud.sap/v2/violations'?template_kind=GkForbiddenClusterwideObjects'
+      - kind: ValidatingWebhookConfiguration
+        releaseName: gatekeeper-validating-webhook-configuration
+        releaseNamespace: kube-system
+      - kind: ValidatingWebhookConfiguration
+        releaseName: gatekeeper-validating-webhook-configuration
+        releaseNamespace: monsoon3
+      {{- if eq .Values.cluster_type "kubernikus" "virtual" "metal" }}
+      - kind: ValidatingWebhookConfiguration
+        releaseName: kube-system-{{ .Values.cluster_type }}-cert-manager-webhook
+        releaseNamespace: kube-system
+      - kind: MutatingWebhookConfiguration
+        releaseName: kube-system-{{ .Values.cluster_type }}-cert-manager-webhook
+        releaseNamespace: kube-system
+      {{- else }}
+      - kind: ValidatingWebhookConfiguration
+        releaseName: kube-system-cert-manager-webhook
+        releaseNamespace: kube-system
+      - kind: MutatingWebhookConfiguration
+        releaseName: kube-system-cert-manager-webhook
+        releaseNamespace: kube-system
+      {{- end }}

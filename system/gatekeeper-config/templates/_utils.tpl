@@ -30,6 +30,13 @@ kinds:
     kinds: ["CronJob", "Job"]
 {{- end }}
 
+{{/* Matches all kinds of admission webhooks. */}}
+{{- define "match_webhook_configs" }}
+kinds:
+  - apiGroups: [ admissionregistration.k8s.io ]
+    kinds: [ MutatingWebhookConfiguration, ValidatingWebhookConfiguration ]
+{{- end }}
+
 {{/* This generates annotations that the DOOP dashboard reads to link back to the source code of constraint templates and constraints. */}}
 {{- define "sources" }}
 template-source:   'https://github.com/sapcc/helm-charts/tree/master/system/gatekeeper/templates/constrainttemplate-{{ index . 0 }}.yaml'
