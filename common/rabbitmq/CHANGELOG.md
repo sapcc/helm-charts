@@ -2,6 +2,11 @@
 
 This file is used to list changes made in each version of the common chart rabbitmq.
 
+## 0.18.6 - 2025/07/30
+
+- Update [user-credential-updater](https://github.com/sapcc/rabbitmq-user-credential-updater) sidecar container to `20250730094138` version with bugfixes.
+- Chart version bumped
+
 ## 0.18.5 - 2025/07/07
 
 - RabbitMQ [4.1.2 Release notes](https://github.com/rabbitmq/rabbitmq-server/releases/tag/v4.1.2)
