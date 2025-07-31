@@ -30,6 +30,21 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
     {{- end }}
 {{- end }}
 
+{{- define "rabbitmq.serviceName" -}}
+"{{ template "fullname" . }}.{{ .Release.Namespace }}.svc.kubernetes.{{ .Values.global.region | required "global.region missing" }}.{{ .Values.global.tld | required "global.tld missing" }}"
+{{- end }}
+
+{{/* By default, the name is the dns name, but that may be too long, so we might to have to shorten it.
+     If the actual value matters to you, set it directly. */}}
+{{- define "rabbitmq.defaultCommonName" -}}
+{{- $serviceName := include "rabbitmq.serviceName" . }}
+  {{- if le (len $serviceName) 64 }}
+    {{- $serviceName }}
+  {{- else -}}
+    "{{ template "fullname" . }}.{{ .Values.global.region | required "global.region missing" }}.{{ .Values.global.tld | required "global.tld missing" }}"
+  {{- end }}
+{{- end }}
+
 {{/* Generate the service label for the templated Prometheus alerts. */}}
 {{- define "alerts.service" -}}
 {{- if .Values.alerts.service -}}
