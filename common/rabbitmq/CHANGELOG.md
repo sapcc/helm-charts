@@ -2,6 +2,11 @@
 
 This file is used to list changes made in each version of the common chart rabbitmq.
 
+## 0.18.7 - 2025/07/31
+
+- Limit default commonName in certificate to 64 characters as that is the limit.
+
+
 ## 0.18.6 - 2025/07/30
 
 - Update [user-credential-updater](https://github.com/sapcc/rabbitmq-user-credential-updater) sidecar container to `20250730094138` version with bugfixes.
