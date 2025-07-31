@@ -2,6 +2,28 @@
 
 This file is used to list changes made in each version of the common chart rabbitmq.
 
+## 0.19.0 - 2025/07/31
+
+- Added an option to skip creation of default user
+
+Usage example:
+```yaml
+rabbitmq:
+  addDefaultUser: false
+  users:
+    default:
+      user: test
+      password: secret
+    user1:
+      user: user1
+      password: secret
+    user2:
+      user: user2
+      password: secret
+```
+This will result in the `default` user not being added to the RabbitMQ
+users secret
+
 ## 0.18.6 - 2025/07/30
 
 - Update [user-credential-updater](https://github.com/sapcc/rabbitmq-user-credential-updater) sidecar container to `20250730094138` version with bugfixes.
