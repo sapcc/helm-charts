@@ -16,7 +16,7 @@ SHELL := bash
 UNAME_S := $(shell uname -s)
 SED := sed
 ifeq ($(UNAME_S),Darwin)
-    SED := gsed
+	SED := gsed
 endif
 
 build: build-cluster-api-core build-bootstrap-kubeadm build-provider-metal3 build-provider-kubernikus
@@ -107,9 +107,11 @@ build-provider-metal3:
 	@find provider-metal3/crds -type f -exec $(SED) -i -e 's#capm3-system/#capi/#g' {} \;
 	@find provider-metal3/templates -type f -exec $(SED) -i -e 's#.capm3-system.#.capi.#g' {} \;
 	@find provider-metal3/templates -type f -exec $(SED) -i -e 's#/{{ include "provider-metal3.fullname" . }}-system/#/#g' {} \;
+	@# fix for "no matches for kind "IPClaim" 
+	@curl -sSL https://raw.githubusercontent.com/metal3-io/ip-address-manager/$(PROVIDER_METAL3_VERSION)/config/crd/bases/ipam.metal3.io_ipclaims.yaml -o provider-metal3/crds/ipam.metal3.io_ipclaims.yaml
 	@yq -i '.controllerManager.manager.image.tag="$(PROVIDER_METAL3_VERSION)"' provider-metal3/values.yaml
 	@yq -i '.fullnameOverride="capm3"' provider-metal3/values.yaml
-	@yq -i '.version="0.2.5"' provider-metal3/Chart.yaml
+	@yq -i '.version="0.2.6"' provider-metal3/Chart.yaml
 
 build-provider-metal:
 	$(call build-chart,provider-metal,https://github.com/ironcore-dev/cluster-api-provider-ironcore-metal//config/default,$(PROVIDER_METAL_VERSION))
