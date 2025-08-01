@@ -313,3 +313,4 @@
   <store>
     @type null
   </store>
+</match>
