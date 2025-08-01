@@ -465,11 +465,19 @@ security_analytics_full_access:
     - 'cluster:admin/opensearch/securityanalytics/mapping/*'
     - 'cluster:admin/opensearch/securityanalytics/rule/*'
     - 'cluster:admin/opensearch/securityanalytics/threatintel/*'
-    - 'cluster:admin/opendistro/ad/detector/*'
+    - 'cluster:admin/opendistro/ad/*'
     - 'cluster:admin/opensearch/notifications/*'
+    - 'cluster:admin/opendistro/ism/policy/search'
+    - 'cluster:admin/opendistro/ism/managedindex/explain'
+    - 'cluster:monitor/tasks/lists'
+    - 'cluster:monitor/remote/info'
+    - 'cluster:admin/opendistro/ism/policy/search'
   index_permissions:
     - index_patterns:
         - '*'
       allowed_actions:
         - 'indices:admin/mapping/put'
         - 'indices:admin/mappings/get'
+        - 'indices:admin/template/get'
+        - 'indices:admin/data_stream/get'
+        - 'indices:monitor/recovery'
