@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.27.0 - 2025/07/31
+* Added an option to drop the database user using the values configuration
+
+Example:
+```yaml
+mariadb:
+  users:
+    test:
+      enabled: false
+```
+This will result in the `test` user being dropped from the MariaDB.
+
 ## v0.26.1 - 2025/07/22
 * `maria-back-me-up` updated to `20250722132533`
 * chart version bumped
