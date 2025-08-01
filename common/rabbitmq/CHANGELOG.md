@@ -2,6 +2,25 @@
 
 This file is used to list changes made in each version of the common chart rabbitmq.
 
+## 0.19.0 - 2025/08/01
+
+- Added an option to disable a user
+
+Usage example:
+```yaml
+rabbitmq:
+  users:
+    default:
+      enabled: false
+    user1:
+      user: user1
+      password: secret
+    user2:
+      user: user2
+      password: secret
+```
+This will result in the `default` user being removed from the RabbitMQ users secret.
+
 ## 0.18.8 - 2025/08/01
 
 - Remove version label from RabbitMQ deployment pod template, related configmaps and secrets to avoid unnecessary  restarts on simple chart version update
