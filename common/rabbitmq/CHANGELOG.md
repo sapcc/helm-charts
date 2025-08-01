@@ -2,6 +2,10 @@
 
 This file is used to list changes made in each version of the common chart rabbitmq.
 
+## 0.18.8 - 2025/08/01
+
+- Remove version label from RabbitMQ deployment pod template, related configmaps and secrets to avoid unnecessary  restarts on simple chart version update
+
 ## 0.18.7 - 2025/07/31
 
 - Limit default commonName in certificate to 64 characters as that is the limit.
