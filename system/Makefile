@@ -143,12 +143,14 @@ build-baremetal-operator:
 	@yq -i '.version="1.0.1"' baremetal-operator-core/Chart.yaml
 
 build-metal-operator-remote:
+	@helm dep up metal-operator-remote
 	@helm template metal-operator metal-operator-remote/charts/metal-operator* \
 		-n kube-system \
 		-f metal-operator-remote/values-managed-resources.yaml |\
 		$(SED) 's/kind: Role/kind: ClusterRole/g' - |\
 		yq eval 'select(.kind != "Service" and .kind != "ValidatingWebhookConfiguration")' - >\
 		metal-operator-remote/managedresources/crds-and-rbac.yaml
+	yq -i '.version = (.version | split(".") | .[2] = ((.[2] | tonumber) + 1 | tostring) | join("."))' metal-operator-remote/Chart.yaml
 
 build-boot-operator-remote:
 	@helm dep up boot-operator-remote
