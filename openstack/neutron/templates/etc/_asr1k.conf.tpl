@@ -50,6 +50,12 @@ use_bdvif = {{$hosting_device.use_bdvif | default "True"}}
 
 [AGENT]
 scheduling_disabled = {{ or ($config_agent.scheduling_disabled | default false) ($config_agent.decommissioning | default false) }}
+{{- if $config_agent.required_traits }}
+required_traits = {{ $config_agent.required_traits | join "," }}
+{{- end }}
+{{- if $config_agent.optional_traits }}
+optional_traits = {{ $config_agent.optional_traits | join "," }}
+{{- end }}
 {{- if $config_agent.availability_zone  }}
 availability_zone = {{$config_agent.availability_zone}}
 {{ end }}
