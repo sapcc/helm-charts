@@ -144,3 +144,46 @@ config.linkerd.io/opaque-ports: "3306,3307,3009,4444,4567,4568,33060,33062"
         {{ $str | replace "'" "''" | squote }}
 {{- end -}}
 {{- end -}}
+
+{{/*
+Create the config map content for sync pod
+*/}}
+{{- define "pxc-db.sync.configmap" -}}
+region: {{ $.Values.global.region }}
+loglevel: "info"
+backup:
+  service: {{ .Values.job.migration.sync.service | default .Values.name }}
+  swift:
+    container: "mariadb-backup-{{ $.Values.global.region }}"
+    creds:
+      identityEndpoint:  "https://identity-3.{{ $.Values.global.region }}.cloud.sap/v3"
+      user: "db_backup"
+      userDomain: "Default"
+      project: "master"
+      projectDomain: "ccadmin"
+  s3:
+    sseCustomerAlgorithm: "AES256"
+    region: {{ required "missing AWS region" $.Values.global.mariadb.backup_v2.aws.region }}
+    bucketName: "mariadb-backup-{{ $.Values.global.region }}"
+replication:
+  sourceDB:
+    host: {{ .Values.job.migration.source.host | default (printf "%s-mariadb.%s" .Values.name .Release.Namespace) | quote }}
+    port: "3306"
+    user: "root"
+  targetDB:
+    host: {{ printf "%s-db-haproxy.%s" .Values.name .Release.Namespace | quote }}
+    port: "3306"
+    user: "root"
+  schemas:
+  {{- if eq (len .Values.job.migration.sync.databases) 0 }}
+    {{- range $db := .Values.databases }}
+    - "{{$db}}"
+    {{- end }}
+  {{- else }}
+    {{- range $db := .Values.job.migration.sync.databases }}
+    - "{{$db}}"
+    {{- end }}
+  {{- end }}
+  serverID: 991
+  binlogMaxReconnectAttempts: {{ .Values.job.migration.binlog_max_reconnect_attempts }}
+{{- end }}
