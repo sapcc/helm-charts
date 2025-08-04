@@ -17,15 +17,19 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
 
 {{- define "rabbitmq._validate_users" -}}
     {{- $users := . -}}
-    {{- range $path, $v := $users }}
-      {{- if not $v.user }}
-          {{- fail (printf "%v.user missing" $path) }}
-      {{- else if hasPrefix "-" $v.user }}
-          {{- fail (printf "%v.user starts with hypen" $path) }}
-      {{- else if not $v.password }}
-          {{- fail (printf "%v.password missing" $path) }}
-      {{- else if hasPrefix "-" $v.password }}
-          {{- fail (printf "%v.password starts with hypen" $path) }}
+    {{- range $key, $user := $users }}
+      {{- if not
+        (and (hasKey $user "enabled") (eq (typeOf $user.enabled) "bool") (eq $user.enabled false))
+      }}
+        {{- if not $user.user }}
+            {{- fail (printf "%v.user missing" $key) }}
+        {{- else if hasPrefix "-" $user.user }}
+            {{- fail (printf "%v.user starts with hypen" $key) }}
+        {{- else if not $user.password }}
+            {{- fail (printf "%v.password missing" $key) }}
+        {{- else if hasPrefix "-" $user.password }}
+            {{- fail (printf "%v.password starts with hypen" $key) }}
+        {{- end }}
       {{- end }}
     {{- end }}
 {{- end }}
