@@ -134,6 +134,7 @@ transform/elektra:
       conditions:
         - resource.attributes["k8s.deployment.name"] == "elektra"
       statements:
+  timeout: 30s
         - merge_maps(log.attributes, ExtractGrokPatterns(log.body, "\\[%{NOTSPACE:request}\\] %{WORD} %{WORD:method} \"%{NOTSPACE:url} %{WORD} %{IP:ip} %{WORD} %{TIMESTAMP_ISO8601}", true), "upsert")
         - merge_maps(log.attributes, ExtractGrokPatterns(log.body, "\\[%{NOTSPACE:request}\\] %{WORD} %{NUMBER:response}", true), "upsert")
         - merge_maps(log.attributes, ExtractGrokPatterns(log.body, "\\[%{NOTSPACE:request}\\]", true), "upsert")
@@ -178,9 +179,11 @@ opensearch/failover_a_swift:
     enabled: true
     max_elapsed_time: 0s
   sending_queue:
-    enabled: true
-    queue_size: 10000
     block_on_overflow: true
+    enabled: true
+    num_consumers: 10
+    queue_size: 10000
+    sizer: requests
   timeout: 30s
 opensearch/failover_b_swift:
   http:
@@ -192,9 +195,11 @@ opensearch/failover_b_swift:
     enabled: true
     max_elapsed_time: 0s
   sending_queue:
-    enabled: true
-    queue_size: 10000
     block_on_overflow: true
+    enabled: true
+    num_consumers: 10
+    queue_size: 10000
+    sizer: requests
   timeout: 30s
 {{- end }}
 
