@@ -1,0 +1,28 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-datasource-config
+  labels:
+    perses.dev/resource: "true"
+data:
+  datasource.json: |
+    {
+      "kind": "GlobalDatasource",
+      "metadata": {
+        "name": "PrometheusDemo"
+      },
+      "spec": {
+        "default": true,
+        "plugin": {
+          "kind": "PrometheusDatasource",
+          "spec": {
+            "proxy": {
+              "kind": "HTTPProxy",
+              "spec": {
+                "url": "{{ .Values.sapCloudInfrastructure.thanosDatasourceURL}}"
+              }
+            }
+          }
+        }
+      }
+    }
