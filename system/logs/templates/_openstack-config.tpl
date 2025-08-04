@@ -134,7 +134,6 @@ transform/elektra:
       conditions:
         - resource.attributes["k8s.deployment.name"] == "elektra"
       statements:
-  timeout: 30s
         - merge_maps(log.attributes, ExtractGrokPatterns(log.body, "\\[%{NOTSPACE:request}\\] %{WORD} %{WORD:method} \"%{NOTSPACE:url} %{WORD} %{IP:ip} %{WORD} %{TIMESTAMP_ISO8601}", true), "upsert")
         - merge_maps(log.attributes, ExtractGrokPatterns(log.body, "\\[%{NOTSPACE:request}\\] %{WORD} %{NUMBER:response}", true), "upsert")
         - merge_maps(log.attributes, ExtractGrokPatterns(log.body, "\\[%{NOTSPACE:request}\\]", true), "upsert")
