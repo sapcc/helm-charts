@@ -48,6 +48,10 @@ spec:
     spec:
 {{ tuple . "neutron" "rpc" | include "kubernetes_pod_anti_affinity" | indent 6 }}
       {{- include "utils.proxysql.pod_settings" . | indent 6 }}
+      initContainers:
+        {{- if .Values.proxysql.native_sidecar }}
+        {{- tuple . (add .Values.rpc_workers .Values.rpc_state_workers)| include "utils.proxysql.container" | indent 8 }}
+        {{- end }}
       containers:
         - name: neutron-rpc-server
           image: {{.Values.global.registry}}/loci-neutron:{{.Values.imageVersionServerRPC | default .Values.imageVersionServer | default .Values.imageVersion | required "Please set neutron.imageVersion or similar"}}
@@ -156,7 +160,9 @@ spec:
             {{- include "utils.proxysql.volume_mount" . | indent 12 }}
             {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
             {{- include "utils.coordination.volume_mount"  . | indent 12 }}
+        {{- if not .Values.proxysql.native_sidecar }}
         {{- tuple . (add .Values.rpc_workers .Values.rpc_state_workers)| include "utils.proxysql.container" | indent 8 }}
+        {{- end }}
 {{- include "jaeger_agent_sidecar" . | indent 8 }}
       volumes:
         - name: empty-dir

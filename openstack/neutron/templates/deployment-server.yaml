@@ -49,6 +49,14 @@ spec:
     spec:
 {{ tuple . "neutron" "api" | include "kubernetes_pod_anti_affinity" | indent 6 }}
       {{- include "utils.proxysql.pod_settings" . | indent 6 }}
+      initContainers:
+{{- if .Values.proxysql.native_sidecar }}
+{{- if not .Values.api.uwsgi }}
+        {{- tuple . (add .Values.api_workers .Values.rpc_workers .Values.rpc_state_workers) | include "utils.proxysql.container" | indent 8 }}
+{{- else }}
+        {{- tuple . .Values.api.processes | include "utils.proxysql.container" | indent 8 }}
+{{- end }}
+{{- end }}
       containers:
         - name: neutron-server
           image: {{.Values.global.registry}}/loci-neutron:{{.Values.imageVersionServerAPI | default .Values.imageVersionServer | default .Values.imageVersion | required "Please set neutron.imageVersion or similar"}}
@@ -254,10 +262,12 @@ spec:
             {{- include "utils.proxysql.volume_mount" . | indent 12 }}
             {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
             {{- include "utils.coordination.volume_mount"  . | indent 12 }}
+{{- if not .Values.proxysql.native_sidecar }}
 {{- if not .Values.api.uwsgi }}
         {{- tuple . (add .Values.api_workers .Values.rpc_workers .Values.rpc_state_workers) | include "utils.proxysql.container" | indent 8 }}
 {{- else }}
         {{- tuple . .Values.api.processes | include "utils.proxysql.container" | indent 8 }}
+{{- end }}
 {{- end }}
         - name: statsd
           image: {{.Values.global.dockerHubMirror}}/prom/statsd-exporter:v0.8.1
