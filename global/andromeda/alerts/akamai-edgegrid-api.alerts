@@ -1,0 +1,15 @@
+groups:
+ - name: akamai.edgegrid.api.alerts
+   rules:
+   - alert: andromeda-akamai-edgegrid-api-too-many-errors
+     expr: (sum(increase(akamai_edgegrid_requests_total{code=~"3..|4..|5.."}[5m])) / sum(increase(akamai_edgegrid_requests_total[5m])) > 0.05)
+     for: 5m
+     labels:
+       context: availability
+       service: andromeda
+       severity: warning
+       tier: os
+       support_group: containers
+     annotations:
+       description: 'Akamai EdgeGrid API too many errors'
+       summary: 'More than 5% of all Akamai EdgeGrid API requests returned status code > 299 over the last 5 minutes'
