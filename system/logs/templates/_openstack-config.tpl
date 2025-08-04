@@ -178,9 +178,11 @@ opensearch/failover_a_swift:
     enabled: true
     max_elapsed_time: 0s
   sending_queue:
-    enabled: true
-    queue_size: 10000
     block_on_overflow: true
+    enabled: true
+    num_consumers: 10
+    queue_size: 10000
+    sizer: requests
   timeout: 30s
 opensearch/failover_b_swift:
   http:
@@ -192,9 +194,11 @@ opensearch/failover_b_swift:
     enabled: true
     max_elapsed_time: 0s
   sending_queue:
-    enabled: true
-    queue_size: 10000
     block_on_overflow: true
+    enabled: true
+    num_consumers: 10
+    queue_size: 10000
+    sizer: requests
   timeout: 30s
 {{- end }}
 
