@@ -9,10 +9,5 @@
 
 
 {{- define "placement.db_name" }}
-  {{- if or (eq .Values.dbType "mariadb") (eq .Values.dbType "pxc-db") }}
 {{- include "utils.db_host" . -}}
-{{/* Use nova-api-mariadb database, if no database is selected explicitly */}}
-  {{- else -}}
-"nova-api-mariadb"
-  {{- end }}
 {{- end }}
