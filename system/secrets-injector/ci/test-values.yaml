@@ -16,12 +16,23 @@ webhook:
     expression: 'object.metadata.?annotations["cloud.sap/inject-secrets"].orValue("") != "hidden"'
   clientCA:
     enabled: true
+    deploy: true
     resourceType: secret
     resourceName: abc
     keyName: client-ca.crt
+    value: |
+      -----BEGIN CERTIFICATE-----
+      -----END CERTIFICATE-----
   namespaceSelector:
     matchExpressions:
     - key: kubernetes.io/metadata.name
       operator: In
       values:
       - kube-system
+config:
+  accounts:
+    - approle:
+        roleID: "4711"
+        secretID: "0815"
+        mount: "secrets-example"
+      url: "https://vault.example.bar"

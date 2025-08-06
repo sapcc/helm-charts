@@ -23,19 +23,14 @@ webhook:
   extraConditions: []
   clientCA:
     enabled: false
-    # resourceType: secret
-    # resourceName: abc
-    # keyName: client-ca.crt
+    # preconfigured secret -> deploy: false
+    # generate secret from webhook.clientCA.value -> deploy: true
+    deploy: false
+    resourceType: secret
+    resourceName: secrets-injector-client-truststore
+    keyName: client-ca.crt
+    # content of client-ca.crt
+    value: ""
 alerts:
   ruleSelector:
     prometheus: kubernetes
-
-# -- Deploy extra K8s manifests
-extraObjects: []
-  # - apiVersion: v1
-  #   kind: Secret
-  #   metadata:
-  #     name: truststore-secrets-injector
-  #   type: Opaque
-  #   data:
-  #     client-ca.crt: my-base64-ca-cert
