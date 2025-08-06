@@ -51,9 +51,12 @@ spec:
       port: 9999
 {{- end }}
 
+{{- if .Values.openTelemetryPlugin.auditLogs.logsCollector.auditdConfig.enabled }}
   initContainers:
 {{- include "auditd.initContainer" . | nindent 2 -}}
+{{- end }}
 
+  hostPID: true
   image: {{ index .Values "openTelemetryPlugin" "opentelemetry-operator" "manager" "collectorImage" "repository" }}:{{ index .Values "openTelemetryPlugin" "opentelemetry-operator" "manager" "collectorImage" "tag" }}
   volumeMounts:
   - mountPath: /var/log
@@ -81,7 +84,6 @@ spec:
     mountPath: /run/containerd
     readOnly: true
   volumes:
-{{- include "auditd.initContainerVolumes" . | nindent 2 -}}
   - name: varlog
     hostPath:
       path: /var/log
@@ -104,15 +106,18 @@ spec:
     hostPath:
       path: /run/containerd
       type: DirectoryOrCreate
+{{- if .Values.openTelemetryPlugin.auditLogs.logsCollector.auditdConfig.enabled }}
+{{- include "auditd.initContainerVolumes" . | nindent 2 -}}
+{{- end }}
+
   config:
     receivers:
-
 {{- if .Values.openTelemetryPlugin.auditLogs.logsCollector.auditdConfig.enabled }}
-    {{- include "auditd.receiver" . | nindent 6 -}}
+  {{- include "auditd.receiver" . | nindent 6 -}}
 {{- end }}
 
 {{- if .Values.openTelemetryPlugin.auditLogs.logsCollector.filewatchConfig.enabled }}
-    {{- include "filewatch.receiver" . | nindent 6 -}}
+  {{- include "filewatch.receiver" . | nindent 6 -}}
 {{- end }}
 
       k8s_events:
@@ -135,11 +140,11 @@ spec:
         send_batch_size : 10
 
 {{- if .Values.openTelemetryPlugin.auditLogs.logsCollector.auditdConfig.enabled }}
-    {{- include "auditd.processors" . | nindent 6 -}}
+  {{- include "auditd.processors" . | nindent 6 -}}
 {{- end }}
 
 {{- if .Values.openTelemetryPlugin.auditLogs.logsCollector.filewatchConfig.enabled }}
-    {{- include "filewatch.processors" . | nindent 6 -}}
+  {{- include "filewatch.processors" . | nindent 6 -}}
 {{- end }}
 
 {{- if .Values.openTelemetryPlugin.auditLogs.prometheus.podMonitor.enabled }}
@@ -197,7 +202,7 @@ spec:
             value: ${failover_username_a}
 
 {{- if .Values.openTelemetryPlugin.auditLogs.openSearchLogs.failover.enabled }}
-    {{- include "failover.attributes" . | nindent 6 -}}
+  {{- include "failover.attributes" . | nindent 6 -}}
 {{- end }}
 
       transform/journal:
@@ -337,7 +342,7 @@ spec:
         logs_index: ${index}-datastream
 
 {{- if .Values.openTelemetryPlugin.auditLogs.openSearchLogs.failover.enabled }}
-    {{- include "failover.exporter" . | nindent 6 -}}
+  {{- include "failover.exporter" . | nindent 6 -}}
 {{- end }}
 
       prometheus:
@@ -350,7 +355,7 @@ spec:
           password: ${failover_password_a}
 
 {{- if .Values.openTelemetryPlugin.auditLogs.openSearchLogs.failover.enabled }}
-    {{- include "failover.extension" . | nindent 6 -}}
+  {{- include "failover.extension" . | nindent 6 -}}
 {{- end }}
 
 
@@ -390,15 +395,15 @@ spec:
           exporters: [opensearch/failover_a]
 
 {{- if .Values.openTelemetryPlugin.auditLogs.logsCollector.auditdConfig.enabled }}
-    {{- include "auditd.pipelines" . | nindent 8 -}}
+{{- include "auditd.pipelines" . | nindent 8 -}}
 {{- end }}
 
 {{- if .Values.openTelemetryPlugin.auditLogs.logsCollector.filewatchConfig.enabled }}
-    {{- include "filewatch.pipelines" . | nindent 8 -}}
+{{- include "filewatch.pipelines" . | nindent 8 -}}
 {{- end }}
 
 {{- if .Values.openTelemetryPlugin.auditLogs.openSearchLogs.failover.enabled }}
-    {{- include "failover.pipeline" . | nindent 8 -}}
+{{- include "failover.pipeline" . | nindent 8 -}}
 {{- end }}
 {{- if .Values.openTelemetryPlugin.auditLogs.prometheus.podMonitor.enabled }}
         metrics/prometheus:
