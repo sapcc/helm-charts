@@ -2,6 +2,12 @@
 
 This file is used to list changes made in each version of the common chart rabbitmq.
 
+## 0.19.1 - 2025/08/06
+
+- RabbitMQ [4.1.3 Release notes](https://github.com/rabbitmq/rabbitmq-server/releases/tag/v4.1.3)
+- several bugfixes for queues
+- Chart version bumped
+
 ## 0.19.0 - 2025/08/01
 
 - Added an option to disable a user
