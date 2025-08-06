@@ -1,3 +1,5 @@
+{{- $dhMirror := .Values.surveyor.primary_dockerhub_mirror | required "missing value for .Values.surveyor.primary_dockerhub_mirror" -}}
+
 kind: Deployment
 apiVersion: apps/v1
 
@@ -54,6 +56,12 @@ spec:
               value: /etc/surveyor/config.json
             - name: SURVEYOR_GIT_CACHE_DIR
               value: /var/cache/surveyor
+            - name: SURVEYOR_IMAGE_PULL_REWRITE_RULES
+              # Docker Hub has tight ratelimits, so pull from our Keppel mirror instead
+              value: '[{ "key": "(?:index\\.)?docker\\.io/(.*)", "value": "{{ $dhMirror }}/$1"}]'
+            - name: SURVEYOR_IMAGE_PULL_PLATFORM_FILTERS
+              # most of our Keppel mirrors only hold linux/amd64 images
+              value: '[{ "key": "keppel\..*", "value": [{ "architecture": "amd64", "os": "linux" }]}]'
             {{- range (keys .Values.surveyor.secrets | sortAlpha) }}
             - name: {{ quote . }}
               valueFrom:

@@ -1,0 +1,84 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: slack-command-devsupport
+  namespace: {{ .Values.namespace }}
+  labels:
+    app.kubernetes.io/name: {{ template "name" . }}
+    helm.sh/chart: {{ include "chart" $ }}
+    app.kubernetes.io/instance: {{ template "name" . }}
+    app.kubernetes.io/version: "{{ $.Values.imageTag }}"
+    app.kubernetes.io/component: "app"
+    app.kubernetes.io/part-of: "slack-command-devsupport"
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    alert-service: "slack-command-devsupport"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ template "name" . }}
+      app.kubernetes.io/component: "app"
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ template "name" . }}
+        app.kubernetes.io/version: "{{ $.Values.imageTag }}"
+        app.kubernetes.io/component: "app"
+      annotations:
+        checksum/secret: {{ include ( print $.Template.BasePath "/secrets.yaml" ) . | sha256sum }}
+        checksum/config: {{ include ( print $.Template.BasePath "/config.yaml" ) . | sha256sum }}
+    spec:
+      containers:
+        - name: slack-command-devsupport
+          image: "{{ required ".Values.global.registry variable missing" .Values.global.registry }}/{{ .Values.image }}:{{ $.Values.imageTag }}"
+          resources:
+            limits:
+              memory: 200Mi
+              cpu: 200m
+            requests:
+              memory: 100Mi
+              cpu: 100m
+          env:
+            - name: AICORE_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: slack-command-devsupport
+                  key: aicoreId
+            - name: AICORE_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: slack-command-devsupport
+                  key: aicoreSecrets
+            - name: AICORE_AUTH_URL
+              valueFrom:
+                secretKeyRef:
+                  name: slack-command-devsupport
+                  key: aicoreAuthUrl
+            - name: AICORE_BASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: slack-command-devsupport
+                  key: aicoreBaseUrl
+            - name: AICORE_RESOURCE_GROUP
+              valueFrom:
+                secretKeyRef:
+                  name: slack-command-devsupport
+                  key: aicoreResourceGroup
+            - name: SLACK_APP_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: slack-command-devsupport
+                  key: slackAppToken
+            - name: SLACK_BOT_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: slack-command-devsupport
+                  key: slackBotToken
+
+          volumeMounts:
+              - name: slack-command-devsupport-config-volume
+                mountPath: /etc/config
+      volumes:
+        - name: slack-command-devsupport-config-volume
+          configMap:
+            name: slack-command-devsupport

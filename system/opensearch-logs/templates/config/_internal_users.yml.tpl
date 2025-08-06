@@ -56,6 +56,17 @@ compute2:
   backend_roles:
   - "compute"
 
+audit:
+  hash: "{{ .Values.users.audit.nohash }}"
+  reserved: true
+  backend_roles:
+  - "audit"
+
+audit2:
+  hash: "{{ .Values.users.audit2.nohash }}"
+  reserved: true
+  backend_roles:
+  - "audit"
 
 {{- if .Values.qalogs.enabled }}
 dataqade2:
@@ -69,18 +80,6 @@ dataqade3:
   reserved: true
   backend_roles:
   - "data"
-
-audit:
-  hash: "{{ .Values.users.audit.nohash }}"
-  reserved: true
-  backend_roles:
-  - "audit"
-
-audit2:
-  hash: "{{ .Values.users.audit2.nohash }}"
-  reserved: true
-  backend_roles:
-  - "audit"
 
 otel:
   hash: "{{ .Values.users.otel.nohash }}"

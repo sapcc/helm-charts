@@ -26,6 +26,12 @@ spec:
     spec:
       hostNetwork: {{ .Values.dnsmasq.hostNetwork }}
       affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: node.kubernetes.io/exclude-from-external-load-balancers
+                operator: DoesNotExist
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
           - podAffinityTerm:

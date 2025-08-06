@@ -1,6 +1,31 @@
 # Changelog
 
-## v0.25.0 - 2025-07-02
+## v0.27.0 - 2025/07/31
+* Added an option to drop the database user using the values configuration
+
+Example:
+```yaml
+mariadb:
+  users:
+    test:
+      enabled: false
+```
+This will result in the `test` user being dropped from the MariaDB.
+
+## v0.26.1 - 2025/07/22
+* `maria-back-me-up` updated to `20250722132533`
+* chart version bumped
+
+## v0.26.0 - 2025/07/22
+* MariaDB `userstat` plugin is enabled
+* mysqld-exporter now collects user statistics
+* chart version bumped
+
+## v0.25.1 - 2025/07/09
+* Set `kubectl.kubernetes.io/default-container` annotation for all chart deployments, cronjobs and jobs
+* chart version bumped
+
+## v0.25.0 - 2025/07/02
 * MariaDB version updated to [10.11.13](https://mariadb.com/kb/en/mariadb-10-11-13-release-notes/)
   * See https://mariadb.com/kb/en/changes-improvements-in-mariadb-1011/
 * mysql-exporter version updated to [v0.17.2](https://github.com/prometheus/mysqld_exporter/releases/tag/v0.17.2)

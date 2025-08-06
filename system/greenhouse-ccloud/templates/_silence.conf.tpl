@@ -176,3 +176,43 @@
   editable_labels_default_values:
     - ".*"
     - ".*"
+- status: "active"
+  title: "CEPH - more than 10% of OSDs are down"
+  description: "CEPH OSD down related alert suppression"
+  fixed_labels:
+    alertname: "CephOSDDownHigh"
+    support_group: "storage"
+    service: "ceph"
+    severity: "high"
+  editable_labels:
+    - region
+- status: "active"
+  title: "CEPH - The following OSD host are offline"
+  description: "CEPH OSD host down related alert suppression"
+  fixed_labels:
+    alertname: "CephOSDHostDown"
+    support_group: "storage"
+    service: "ceph"
+    severity: "warning"
+  editable_labels:
+    - region
+- status: "active"
+  title: "CEPH - an OSD has been marked down"
+  description: "CEPH OSD down related alert suppression"
+  fixed_labels:
+    alertname: "CephOSDDown"
+    support_group: "storage"
+    service: "ceph"
+    severity: "warning"
+  editable_labels:
+    - region  
+- status: "active"
+  title: "CEPH - One or more monitors down"
+  description: "CEPH Monitor down related alert suppression"
+  fixed_labels:
+    alertname: "CephMonDown"
+    support_group: "storage"
+    service: "ceph"
+    severity: "warning"
+  editable_labels:
+    - region

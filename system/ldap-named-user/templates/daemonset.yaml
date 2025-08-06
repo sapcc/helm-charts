@@ -2,8 +2,6 @@ apiVersion: apps/v1
 kind: DaemonSet
 metadata:
   name: {{ include "ldap-named-user.fullname" . }}
-  annotations:
-    secret/checksum: {{ include ( print $.Template.BasePath "/secret.yaml" ) . | sha256sum }}
   labels:
     k8s-app: ldap-named-user
 spec:
@@ -16,6 +14,8 @@ spec:
     type: RollingUpdate
   template:
     metadata:
+      annotations:
+        secret/checksum: {{ include ( print $.Template.BasePath "/secret.yaml" ) . | sha256sum }}
       labels:
         k8s-app: ldap-named-user
         {{- include "ldap-named-user.labels" . | nindent 8 }}

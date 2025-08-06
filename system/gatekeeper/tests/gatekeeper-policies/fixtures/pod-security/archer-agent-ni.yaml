@@ -1,0 +1,117 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    meta.helm.sh/release-name: archer
+    meta.helm.sh/release-namespace: monsoon3
+  labels:
+    app.kubernetes.io/managed-by: Helm
+  name: archer-agent-swift-qa-de-1a
+  namespace: monsoon3
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: agent
+      app.kubernetes.io/instance: archer
+      app.kubernetes.io/name: archer
+      cloud.sap/host: ap001
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/component: agent
+        app.kubernetes.io/instance: archer
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: archer
+        app.kubernetes.io/version: "1.0"
+        helm.sh/chart: archer-0.1.0
+    spec:
+      containers:
+      - name: archer-agent-ni
+        securityContext:
+          privileged: true
+        volumeMounts:
+        - mountPath: /etc/archer
+          name: etc-archer
+          readOnly: true
+        - mountPath: /var/run/socat-proxy
+          name: socat-proxy
+      - name: neutron-linuxbridge-agent
+        securityContext:
+          capabilities:
+            add:
+            - NET_ADMIN
+            - SYS_ADMIN
+            - DAC_OVERRIDE
+            - DAC_READ_SEARCH
+            - SYS_PTRACE
+        volumeMounts:
+        - mountPath: /lib/modules
+          name: modules
+          readOnly: true
+        - mountPath: /etc/neutron
+          name: etc-neutron-linuxbridge-agent
+          readOnly: true
+        - mountPath: /etc/sudoers
+          name: neutron-etc
+          readOnly: true
+          subPath: sudoers
+      dnsPolicy: ClusterFirst
+      hostname: archer-agent-swift-qa-de-1a
+      initContainers:
+      - name: wait-for-server
+      nodeSelector:
+        kubernetes.cloud.sap/apod: ap001
+        multus: bond1
+        topology.kubernetes.io/zone: qa-de-1a
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - emptyDir: {}
+        name: socat-proxy
+      - hostPath:
+          path: /lib/modules
+          type: ""
+        name: modules
+      - configMap:
+          defaultMode: 420
+          name: neutron-etc
+        name: neutron-etc
+      - name: etc-neutron-linuxbridge-agent
+        projected:
+          defaultMode: 420
+          sources:
+          - configMap:
+              items:
+              - key: neutron.conf
+                path: neutron.conf
+              - key: logging.conf
+                path: logging.conf
+              - key: rootwrap.conf
+                path: rootwrap.conf
+              - key: ml2-conf.ini
+                path: ml2-conf.ini
+              - key: linux-bridge.ini
+                path: linux-bridge.ini
+              name: neutron-etc
+          - secret:
+              items:
+              - key: neutron-common-secrets.conf
+                path: secrets/neutron-common-secrets.conf
+              name: neutron-common-secrets
+      - name: etc-archer
+        projected:
+          defaultMode: 420
+          sources:
+          - configMap:
+              items:
+              - key: archer.ini
+                path: archer.ini
+              name: archer-etc
+          - configMap:
+              items:
+              - key: ni.ini
+                path: ni.ini
+              name: archer-etc-swift

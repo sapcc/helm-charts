@@ -32,14 +32,30 @@ spec:
       regex: '(\w*-\w*-\w*)-(\S*)'
       replacement: '$1'
       targetLabel: availability_zone
-    - sourceLabels: [devicename]
-      regex: '(\w*-\w*-\w*)-(\S*)'
-      replacement: '$2'
-      targetLabel: device
     - sourceLabels: [__name__, snmp_f5_sysProductVersion]
       regex: 'snmp_f5_sysProductVersion;(.*)'
       replacement: '$1'
       targetLabel: image_version
+    - sourceLabels: [devicename]
+      regex: '(\w*-\w*-\w*)-(\S*)'
+      replacement: '$1'
+      targetLabel: availability_zone
+    - sourceLabels: [ltmVirtualServStatName]
+      regex: /Common.*
+      action: drop
+    - action: replace
+      sourceLabels: [ltmVirtualServStatName]
+      targetLabel: network_id
+      regex: /net_(.+)_(.+)_(.+)_(.+)_(.+)/lb_.*
+      replacement: $1-$2-$3-$4-$5
+    - action: replace
+      sourceLabels: [ltmVirtualServStatName]
+      targetLabel: lb_id
+      regex: /net_.*/lb_(.*)/listener_.*
+    - action: replace
+      sourceLabels: [snmp_f5_ltmVirtualServStatName]
+      targetLabel: listener_id
+      regex: /net_.*/lb_.*/listener_(.*)
     - sourceLabels: [__name__]
       regex: 'snmp_f5_ltmVirtualServStatClientBytesIn'
       targetLabel: __name__

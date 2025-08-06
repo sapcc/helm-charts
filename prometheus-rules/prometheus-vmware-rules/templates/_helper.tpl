@@ -16,5 +16,5 @@ Description:
 {{- define "bedrockConfirm.expr" -}}
 {{- $expr := index . 0 -}}
 {{- $mappingKey := index . 1 -}}
-({{ $expr }}) + on({{ $mappingKey }}) group_left(bedrock) label_replace(vrops_hostsystem_vsphere_tags, "bedrock", "true", "vsphere_tags", ".*IAAS.*") * 0
+({{ $expr }}) + on({{ $mappingKey }}) group_left(bedrock) label_replace(vrops_hostsystem_hostgroups, "bedrock", "true", "hostgroups", ".*iaas.*") * 0
 {{- end -}}

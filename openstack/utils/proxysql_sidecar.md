@@ -61,6 +61,7 @@ To add the ProxySQL side-car to a pod you need to add at least three parts:
 and can be placed under the containers. It takes an optional integer specifying the number of processes (default 1)
 as a multiplier for `proxysql.max_connections_per_proc` resulting in the same number of maximum connections per pod as the
 per process setting `max_connections` of the sqlalchemy pool.
+This macro can also take an optional boolean as a third argument, specifying whether this sidecar requires extended transaction and query timeouts.
 2. The volume with the unix socket is defined in `utils.proxysql.volumes`, and goes into the "volumes" section of the spec
 3. To tie everything together, the volume needs to be mounted in each container accessing ProxySQL. This is done with the macro `utils.proxysql.volume_mount`. This is only necessary for the mode `unix_socket`.
 4. For the host-alias to work, we need to annotate the pod-spec with `utils.proxysql.job_pod_settings`, so it sets the hostAlias field
@@ -98,6 +99,21 @@ If the restart-policy is "Never", then we need to stop the ProxySQL process at e
 That can be done by placing the following snippet before any possible exit:
 ```
 trap "{{ include "utils.proxysql.proxysql_signal_stop_script" . }}" EXIT
+```
+
+When using the macro in a Job, you can pass a third argument (`true`) to indicate that this ProxySQL needs to run with increased query and transaction timeouts.
+
+This will adjust ProxSQL runtime variables to ensure that those timeouts are set to extended values to allow individual queries or transactions in database migrations to run longer than the default 60s/120s:
+```
+SET mysql-max_transaction_time=14400000;
+SET mysql-default_query_timeout=36000000;
+```
+
+Example:
+```
+      containers:
+      ...
+      {{- tuple . 1 true | include "utils.proxysql.container" | indent 8 }}
 ```
 
 Following all those steps should give you an app running over a ProxySQL-sidecar container.

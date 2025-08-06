@@ -1,0 +1,153 @@
+{{- $hypervisor := merge .Values.defaults.network.ovs .Values.defaults.network.common }}
+kind: DaemonSet
+apiVersion: apps/v1
+metadata:
+  name: neutron-openvswitch-agent
+  labels:
+    system: openstack
+    type: backend
+    component: neutron
+spec:
+  revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revision_history }}
+  selector:
+    matchLabels:
+      name: neutron-openvswitch-agent
+  template:
+    metadata:
+      labels:
+        {{- tuple . "neutron" "openvswitch-agent" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | nindent 8 }}
+        name: neutron-openvswitch-agent
+        alert-tier: os
+        alert-service: neutron
+        ml2-driver: "ovs"
+      annotations:
+        configmap-etc-hash: {{ include (print $.Template.BasePath "/configmap-etc.yaml") . | sha256sum }}
+        secret-etc-hash: {{ include (print $.Template.BasePath "/secret-etc.yaml") . | sha256sum }}
+    spec:
+      affinity:
+        {{- toYaml $hypervisor.pod.affinity | nindent 8 }}
+      hostNetwork: true
+      hostPID: true
+      hostIPC: true
+      hostAliases:
+      {{- range $ip := .Values.rabbitmq.externalIPs }}
+      - ip: {{ $ip }}
+        hostnames:
+        - {{ required "Please set rabbitmq.host" $.Values.rabbitmq.host }}
+      {{- end }}
+      tolerations:
+      {{- range $k, $v :=  $hypervisor.pod.tolerations }}
+      - # {{ $k }}
+      {{- toYaml $v | nindent 8 }}
+      {{- end }}
+      nodeSelector:
+      {{- range $k, $v := $hypervisor.pod.nodeSelector }}
+        {{ $k }}: {{ $v }}
+      {{- end }}
+      containers:
+        - name: neutron-openvswitch-agent
+          image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/loci-neutron:{{ .Values.imageVersion | required "Please set imageVersion or similar" }}
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            privileged: true
+          command:
+          - neutron-openvswitch-agent
+          env:
+            - name: BUILDING_BLOCK
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.labels['kubernetes.metal.cloud.sap/bb']
+            - name: OS_OVS__BRIDGE_MAPPINGS
+              value: "$(BUILDING_BLOCK):br-ex"
+            - name: OS_SECURITYGROUP__FIREWALL_DRIVER
+              value: "openvswitch"
+          volumeMounts:
+          - mountPath: /etc/neutron
+            name: etcneutron
+          - mountPath: /etc/neutron/neutron-openvswitch-agent.conf.d
+            name: etcneutronagentconfd
+          - mountPath: /etc/neutron/neutron.conf
+            name: etc
+            subPath: neutron.conf
+          - mountPath: /etc/neutron/logging.ini
+            name: etc
+            subPath: logging.ini
+          - mountPath: /etc/neutron/rootwrap.conf
+            name: etc
+            subPath: rootwrap.conf
+          - mountPath: /etc/neutron/neutron.conf.d/ml2.conf
+            name: etc
+            subPath: ml2-conf.conf
+          - mountPath: /etc/neutron/neutron.conf.d/vpod.conf
+            name: etc-vpod
+            subPath: vpod.conf
+          - mountPath: /etc/neutron/neutron.conf.d/secret.conf
+            name: etc-secrets
+            subPath: secret.conf
+          - mountPath: /etc/sudoers
+            name: etc
+            subPath: sudoers
+          - mountPath: /run
+            name: run
+          - mountPath: /lib/modules
+            name: modules
+            readOnly: true
+{{- if not .Values.ovsOnHost }}
+        - name: ovsdb-server
+          image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/loci-neutron:{{ .Values.imageVersion | required "Please set .imageVersion" }}
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            privileged: true
+          command:
+          - start-ovsdb-server
+          env:
+          volumeMounts:
+          - mountPath: /run
+            name: run
+          - mountPath: /usr/local/bin
+            name: bin
+        - name: ovs-vswitchd
+          image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/loci-neutron:{{ .Values.imageVersion | required "Please set imageVersion or similar" }}
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            privileged: true
+          command:
+          - start-ovs-vswitchd
+          volumeMounts:
+          - mountPath: /run
+            name: run
+          - mountPath: /lib/modules
+            name: modules
+            readOnly: true
+          - mountPath: /usr/local/bin
+            name: bin
+{{- end }}
+      dnsConfig:
+        searches:
+          - {{ .Values.global.region }}.{{ .Values.global.tld }}
+      volumes:
+      - name: run
+        hostPath:
+          path: /run
+      - name: etcneutron
+        emptyDir:
+          medium: Memory
+      - name: etcneutronagentconfd
+        emptyDir:
+          medium: Memory
+      - name: modules
+        hostPath:
+          path: /lib/modules
+      - name: etc-secrets
+        secret:
+          secretName: {{ .Release.Name }}-etc
+      - name: etc
+        configMap:
+          name: {{ .Release.Name }}-etc
+      - name: etc-vpod
+        configMap:
+          name: {{ .Release.Name }}-etc-vpod
+      - name: bin
+        configMap:
+          name: {{ .Release.Name }}-bin
+          defaultMode: 0755

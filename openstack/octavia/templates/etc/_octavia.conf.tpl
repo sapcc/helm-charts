@@ -145,3 +145,10 @@ enabled = true
 service_type = loadbalancer
 config_file = /etc/octavia/watcher.yaml
 {{- end }}
+
+{{ if .Values.rate_limit.enabled }}
+[rate_limit]
+enabled = true
+service_type = loadbalancer
+config_file = /etc/octavia/ratelimit.yaml
+{{- end }}

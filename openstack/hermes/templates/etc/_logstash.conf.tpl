@@ -62,7 +62,7 @@ filter {
        # use proper CADF taxonomy for actions
        "action", "created\.", "create/",
        "action", "deleted\.", "delete/",
-       "action", "updated\.", "create/",
+       "action", "updated\.", "update/",
        "action", "disabled\.", "disable/",
        "action", "\.", "/",
        # fix the eventTime format to be ISO8601

@@ -1,0 +1,111 @@
+defaults:
+  network:
+    common:
+      pod:
+        tolerations: {}
+        nodeSelector: {}
+        affinity:
+          nodeAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+              nodeSelectorTerms:
+                - matchExpressions:
+                  # Do not schedule without that label, we need it in the pod
+                  - key: kubernetes.metal.cloud.sap/bb
+                    operator: Exists
+    ovs: {}
+    ovn: {}
+    linuxbridge: {}
+
+rabbitmq:
+  host: "neutron-rabbitmq"
+  externalIPs: []
+  users:
+    default:
+      user: rabbitmq
+
+ovsOnHost: true
+agent: {}
+osprofiler: {}
+ovn:
+  external_ids: {}
+vpods: {}
+
+cc_fabric: {}
+
+vpods_conf:
+  ovs:
+    # bridge_mappings: "{{ segment }}:br-ex" Set dynamically script
+    enable_tunneling: False
+    ovsdb_connection: "unix:/var/run/openvswitch/db.sock"
+
+pod:
+  lifecycle:
+    upgrades:
+      deployments:
+        revision_history: 5
+        pod_replacement_strategy: RollingUpdate
+        rolling_update:
+          max_unavailable: 10%
+          max_surge: 25%
+  tolerations: {}
+
+
+logging:
+  formatters:
+    context:
+      class: oslo_log.formatters.ContextFormatter
+    default:
+      format: "%(message)s"
+  handlers:
+    stdout:
+      class: StreamHandler
+      args: "(sys.stdout,)"
+      formatter: context
+    "null":
+      class: logging.NullHandler
+      formatter: default
+      args: "()"
+    sentry:
+      class: "raven.handlers.logging.SentryHandler"
+      level: ERROR
+      args: "()"
+  loggers:
+    root:
+      handlers: stdout, sentry
+      level: WARNING
+    neutron:
+      handlers: stdout, sentry
+      level: WARNING
+    neutron.pecan_wsgi.hooks.policy_enforcement:
+      handlers: stdout, sentry
+      level: INFO
+    neutron.api.rpc:
+      handlers: stdout, sentry
+      level: INFO
+    neutron.wsgi:
+      handlers: stdout, sentry
+      level: INFO
+    suds:
+      handlers: "null"
+      level: ERROR
+    eventlet.wsgi.server:
+      handlers: stdout, sentry
+      level: INFO
+    networking_aci.plugins.ml2.drivers.mech_aci.allocations_manager:
+      handlers: stdout, sentry
+      level: WARNING
+    auditmiddleware:
+      handlers: stdout, sentry
+      level: INFO
+    rate_limit.rate_limit:
+      handlers: stdout, sentry
+      level: INFO
+
+owner-info:
+  support-group: network-api
+  maintainers:
+    - Sebastian Lohff
+    - Andrew Karpow
+    - Fabian Wiesel
+    - mchristianl
+  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/openstack/neutron-hypervisor-agent

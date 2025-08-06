@@ -19,6 +19,9 @@ template: |
       component: cinder
       vcenter: {= host =}
       datacenter: {= availability_zone =}
+    annotations:
+      secret.reloader.stakater.com/reload: "{{ .Release.Name }}-secrets"
+      deployment.reloader.stakater.com/pause-period: "60s"
   spec:
     replicas: 1
     revisionHistoryLimit: 5
@@ -52,6 +55,9 @@ template: |
         {{- include "utils.proxysql.pod_settings" . | nindent 8 }}
         initContainers:
         {{- tuple . (dict "service" (include "cinder.service_dependencies" . )) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 8 }}
+        {{- if .Values.proxysql.native_sidecar }}
+        {{- include "utils.proxysql.container" . | indent 8 }}
+        {{- end }}
         containers:
         - name: cinder-volume-vmware-{= name =}
           image: {{required ".Values.global.registry is missing" .Values.global.registry}}/loci-cinder:{{.Values.imageVersionCinderScheduler | default .Values.imageVersion | required "Please set cinder.imageVersion or similar" }}
@@ -117,7 +123,9 @@ template: |
             readOnly: true
           {{- include "utils.proxysql.volume_mount" . | indent 10 }}
           {{- include "utils.coordination.volume_mount" . | indent 10 }}
+        {{- if not .Values.proxysql.native_sidecar }}
         {{- include "utils.proxysql.container" . | indent 8 }}
+        {{- end }}
         {{- include "jaeger_agent_sidecar" . | indent 8 }}
         volumes:
         - name: etccinder

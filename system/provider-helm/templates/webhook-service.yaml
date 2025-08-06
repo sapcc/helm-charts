@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "provider-helm.fullname" . }}-webhook-service
+  labels:
+    cluster.x-k8s.io/provider: helm
+  {{- include "provider-helm.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.webhookService.type }}
+  selector:
+    cluster.x-k8s.io/provider: helm
+    control-plane: controller-manager
+    {{- include "provider-helm.selectorLabels" . | nindent 4 }}
+  ports:
+  {{- .Values.webhookService.ports | toYaml | nindent 2 }}

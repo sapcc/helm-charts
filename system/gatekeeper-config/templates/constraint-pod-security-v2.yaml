@@ -16,6 +16,7 @@ spec:
   match: {{ include "match_pods_and_pod_owners" . | indent 4 }}
   parameters:
     allowlist:
+      ### unit tests
       {{- if eq .Values.cluster_type "test" }}
       - matchNamespace: foo
         matchRepository: test-app/unprivileged
@@ -30,17 +31,9 @@ spec:
         mayUseCapabilities:
           - FOO
           - SYS_ADMIN
-        mayMountHostPathVolumes:
+        mayReadHostPathVolumes:
           - /
-      {{- end }}
-
-      {{- if eq .Values.cluster_type "baremetal" }}
-      - matchNamespace:  infra-monitoring
-        matchRepository: ccloud-dockerhub-mirror/cloudprober/cloudprober
-        mayUseCapabilities: [ NET_RAW ] # cloudprober needs to send pings
-
-      - matchNamespace:  cni-nanny
-        matchRepository: ccloud-ghcr-io-mirror/sapcc/cni-nanny
-        mayUseHostNetwork: true # TODO: why?
+        mayWriteHostPathVolumes:
+          - /
       {{- end }}
 {{- end }}

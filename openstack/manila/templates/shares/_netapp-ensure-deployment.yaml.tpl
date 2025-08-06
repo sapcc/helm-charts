@@ -64,21 +64,10 @@ spec:
           - -c
           - |
             cat <<EOF > /shared/backend-secret.conf
-            [{{ $share.name }}]
-            netapp_login=${NETAPP_USERNAME}
-            netapp_password=${NETAPP_PASSWORD}
+            {{- include "backendCredentialConf" .Values.global.netapp | indent 12 }}
             EOF
           env:
-            - name: NETAPP_USERNAME
-              valueFrom:
-                secretKeyRef:
-                  name: manila-share-netapp-{{ include "filerNameFromHost" $share.host }}
-                  key: username
-            - name: NETAPP_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: manila-share-netapp-{{ include "filerNameFromHost" $share.host }}
-                  key: password
+            {{- include "backendCredentialEnvs" .Values.global.netapp | indent 12 }}
           volumeMounts:
             - name: etcmanila
               mountPath: /shared

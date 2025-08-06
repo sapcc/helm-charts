@@ -22,6 +22,7 @@ input {
     ssl_enabled => true
     ssl_certificate => '/tls-secret/tls.crt'
     ssl_key => '/usr/share/logstash/config/tls.key'
+    ssl_supported_protocols => ['TLSv1.2', 'TLSv1.3']
     threads => 12
 {{- end }}
   }

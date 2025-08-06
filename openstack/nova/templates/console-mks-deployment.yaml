@@ -44,6 +44,7 @@ spec:
         {{- end }}
         {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
         config-hash: {{ print (.Files.Glob "console/mks/*").AsConfig (.Files.Glob "console/common/*").AsConfig (include "nova.etc_config_lua" .) | sha256sum }}
+        secret-hash: {{ include (print $.Template.BasePath "/console-mks-secret.yaml") . | sha256sum }}
     spec:
       {{- tuple . "nova" (print "console-" $cell_name "-mks") | include "kubernetes_pod_anti_affinity" | nindent 6 }}
       {{- include "utils.proxysql.pod_settings" . | nindent 6 }}

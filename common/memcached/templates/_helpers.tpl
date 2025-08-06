@@ -53,9 +53,9 @@ Memcached doesn't provide any means to use escaping in the string, so we only ha
 Note: In oslo.cache services [cache] configuration $ symbol should be escaped as \$ or $$
 We've chosen not to use colons in these memcache secrets
 */}}
-{{- define "memcached.sasl_pwdb" -}}
-{{ include "memcached.resolve_secret" .Values.auth.username }}:{{ include "memcached.resolve_secret" .Values.auth.password }}
-{{- end -}}
+{{- define "memcached.sasl_pwdb" }}
+{{ include "memcached.resolve_secret" .Values.auth.username }}@{{ template "fullname" . }}:{{ include "memcached.resolve_secret" .Values.auth.password }}
+{{- end }}
 
 {{- define "memcached_maintenance_affinity" }}
           - weight: 1

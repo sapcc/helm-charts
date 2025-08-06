@@ -1,11 +1,11 @@
-- username: 'tempestuser1'
+- username: 'tempestuser3'
   password: {{ .Values.tempestAdminPassword | quote }}
-  tenant_name: 'tempest1'
-  project_name: 'tempest1'
-- username: 'tempestuser2'
+  tenant_name: 'tempest3'
+  project_name: 'tempest3'
+- username: 'tempestuser4'
   password: {{ .Values.tempestAdminPassword | quote }}
-  tenant_name: 'tempest2'
-  project_name: 'tempest2'
+  tenant_name: 'tempest4'
+  project_name: 'tempest4'
 - username: 'admin'
   password: {{ .Values.tempestAdminPassword | quote }}
   tenant_name: 'admin'

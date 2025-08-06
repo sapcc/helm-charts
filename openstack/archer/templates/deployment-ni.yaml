@@ -16,6 +16,8 @@ spec:
       {{- include "archer.selectorLabels" $ | nindent 6 }}
       app.kubernetes.io/component: agent
       cloud.sap/host: {{ $apod }}
+  strategy:
+    type: Recreate
   template:
     metadata:
       {{- with $.Values.podAnnotations }}
@@ -26,6 +28,7 @@ spec:
         kubectl.kubernetes.io/default-container: archer-agent-ni
         {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
         linkerd.io/inject: enabled
+        config.linkerd.io/skip-inbound-ports: "{{ $env.service_port }}"
         {{- end }}
         {{- toYaml . | nindent 8 }}
       {{- end }}
@@ -166,7 +169,7 @@ spec:
           imagePullPolicy: IfNotPresent
           args:
             - "UNIX-LISTEN:/var/run/socat-proxy/proxy.sock,fork,reuseaddr,unlink-early,user=nobody,group=nobody,mode=777"
-            - "TCP:{{ $env.cp_endpoint }}.{{ include "host_fqdn" $ }}:{{ $env.cp_port }}"
+            - "TCP:{{ $env.cp_endpoint }}:{{ $env.cp_port }}"
           resources:
             {{- toYaml $.Values.resources.socat | nindent 12 }}
           volumeMounts:
