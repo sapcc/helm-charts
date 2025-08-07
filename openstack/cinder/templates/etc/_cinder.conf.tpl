@@ -57,6 +57,9 @@ allow_migration_on_attach = {{ .Values.cinder_api_allow_migration_on_attach }}
 sap_disable_incremental_backup = {{ .Values.sap_disable_incremental_backup }}
 sap_allow_independent_snapshots = {{ .Values.sap_allow_independent_snapshots }}
 sap_allow_independent_clone = {{ .Values.sap_allow_independent_clone }}
+{{- if .Values.sap_barbican_acl_user_id }}
+sap_barbican_acl_user_id = {{ .Values.sap_barbican_acl_user_id }}
+{{- end }}
 
 {{ include "ini_sections.oslo_messaging_rabbit" . }}
 
