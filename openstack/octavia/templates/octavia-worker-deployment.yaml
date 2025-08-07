@@ -42,6 +42,10 @@ spec:
     spec:
       priorityClassName: critical-payload
 {{ include "utils.proxysql.pod_settings" . | indent 6 }}
+      initContainers:
+      {{- if .Values.proxysql.native_sidecar }}
+      {{- include "utils.proxysql.container" . | indent 6 }}
+      {{- end }}
       containers:
         - name: octavia-worker
           image: {{required ".Values.global.registry is missing" .Values.global.registry}}/loci-octavia:{{required "Values.imageVersion is missing" .Values.imageVersion}}
@@ -149,7 +153,9 @@ spec:
             {{- end }}
             - name: OS_F5_AGENT__PROMETHEUS_PORT
               value: "8001"
+        {{- if not .Values.proxysql.native_sidecar }}
         {{- include "utils.proxysql.container" . | indent 8 }}
+        {{- end }}
       volumes:
         - name: octavia-etc
           configMap:
