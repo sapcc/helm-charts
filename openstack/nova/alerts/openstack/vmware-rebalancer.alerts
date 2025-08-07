@@ -2,7 +2,17 @@ groups:
   - name: vmware-rebalancer.alerts
     rules:
       - alert: VcenterLowNumberOfPlaceableVms
-        expr: sum(wm_vmware_rebalancer_placeable_vms_per_vcenter{flavor="g_c128_m512",has_bbs_without_custom_hana_exclusive_host="True"}) by (flavor, vcenter, az) < 3
+        expr: |
+          sum(
+            wm_vmware_rebalancer_placeable_vms_per_vcenter{
+              flavor="g_c128_m512",
+              has_bbs_without_custom_hana_exclusive_host="True",
+              # >=64 (counted without mutlithreading while the flavor is multithreaded)
+              largest_non_hana_host_system_cpu_cores=~"(6[4-9]|[7-9][0-9]|[1-9][0-9]{2,})",
+              # >=512 GiB = 512 * 1024 * 1024 KiB = 536 870 912 KiB
+              largest_non_hana_host_system_memory_kilobytes=~"(5[3-9][6-9][8-9][7-9][0-9]9[1-9][2-9]|[6-9][0-9]{8}|[1-9][0-9]{9,})(.[0-9]+)?"
+            }
+          ) by (flavor, vcenter, az) < 3
         for: 3h
         labels:
           severity: warning
