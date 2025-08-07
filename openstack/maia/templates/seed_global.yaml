@@ -9,6 +9,22 @@ spec:
   requires:
   - {{ .Values.global.globalKeystoneNamespace }}/keystone-global-seed
 
+  roles:
+  - name: monitoring_viewer
+  - name: monitoring_admin
+
+  services:
+  # register Maia in the global OpenStack service catalog
+  - name: maia
+    type: metrics
+    description: Expose Prometheus metrics as multi-tenant OpenStack service
+    enabled: true
+    endpoints:
+    - region: {{.Values.global.region}}
+      interface: public
+      enabled: true
+      url: '{{.Values.maia_global.endpoint_protocol_public | default "https"}}://{{.Values.maia_global.endpoint_host_public}}:{{.Values.maia_global.endpoint_port_public | default "443"}}'
+
   domains:
   # seed technical service user
   - name: {{.Values.maia.service_user.user_domain_name}}
@@ -19,4 +35,17 @@ spec:
       role_assignments:
       - project: {{.Values.maia.service_user.project_name}}
         role: service
+    - name: admin
+      role_assignments:
+      - domain: Default
+        role: monitoring_viewer
+      - project: admin
+        role: monitoring_viewer
+    groups:
+    - name: administrators
+      role_assignments:
+      - domain: Default
+        role: monitoring_viewer
+      - project: admin
+        role: monitoring_viewer
 {{- end }}
