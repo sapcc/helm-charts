@@ -187,16 +187,14 @@ pgmetrics:
           # considers quota inconsistencies in Swift if they are large (in specific, larger than 1 TiB = 1099511627776 byte).
           query: >
             WITH tmp AS (
-              SELECT 1 
+              SELECT 1
               FROM project_az_resources pazr
               JOIN cluster_az_resources cazr ON cazr.id = pazr.az_resource_id
               JOIN cluster_resources cr ON cr.id = cazr.resource_id
-              JOIN cluster_services cs ON cs.id = cr.service_id
               JOIN project_resources pr ON pr.resource_id = cr.id AND pr.project_id = pazr.project_id
-              JOIN project_services ps ON ps.service_id = cs.id AND ps.project_id = pr.project_id
-              GROUP BY ps.id, cs.type, cr.name, pr.quota
+              GROUP BY pr.project_id, cr.path, pr.quota
               HAVING SUM(pazr.usage) > pr.quota
-                AND NOT (cs.type = 'swift' AND cr.name = 'capacity' AND SUM(pazr.usage) < pr.quota + 1099511627776)
+                AND NOT (cr.path = 'swift/capacity' AND SUM(pazr.usage) < pr.quota + 1099511627776)
             )
             SELECT COUNT(*) AS count FROM tmp
           metrics:
@@ -240,10 +238,9 @@ pgmetrics:
             JOIN projects p ON p.domain_id = d.id
             JOIN project_az_resources pazr ON pazr.project_id = p.id
             JOIN cluster_az_resources cazr ON cazr.id = pazr.az_resource_id
-            JOIN cluster_resources cr ON cr.id = cazr.resource_id 
-            JOIN cluster_services cs ON cs.id = cr.service_id
+            JOIN cluster_resources cr ON cr.id = cazr.resource_id
             JOIN project_resources pr ON pr.resource_id = cr.id AND pr.project_id = pazr.project_id
-            WHERE cs.type = 'swift' AND cazr.az = 'any'
+            WHERE cr.path = 'swift/capacity' AND cazr.az = 'any'
           metrics:
             - gauge:
                 usage: "GAUGE"
