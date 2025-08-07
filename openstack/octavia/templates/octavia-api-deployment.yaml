@@ -123,6 +123,10 @@ spec:
               mountPath: /etc/octavia/ratelimit.yaml
               subPath: ratelimit.yaml
               readOnly: true
+            - name: redis-ratelimit-secret
+              mountPath: {{ .Values.rate_limit.backend_secret_file }}
+              subPath: password
+              readOnly: true
             {{- end }}
             {{- if not .Values.api_backdoor }}
             - name: octavia-etc
@@ -158,5 +162,10 @@ spec:
         - name: octavia-etc-confd
           secret:
             secretName: {{ .Release.Name }}-secrets
+{{- if .Values.rate_limit.enabled }}
+        - name: redis-ratelimit-secret
+          secret:
+            secretName: {{ .Release.Name }}-api-ratelimit-redis-user-default
+{{- end }}
         {{- include "utils.proxysql.volumes" . | indent 8 }}
         {{- include "utils.trust_bundle.volumes" . | indent 8 }}
