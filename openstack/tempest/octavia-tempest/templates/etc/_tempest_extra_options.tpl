@@ -48,7 +48,7 @@ security_compliance = True
 [network]
 project_network_cidr = 10.199.0.0/16
 public_network_id = {{ .Values.tempest_common.public_network_id }}
-subnet_id = a5703f23-ffcb-4ca7-9dfe-ab9861d91bf5
+subnet_id = {{ .Values.tempest_common.public_subnet_id }}
 endpoint_type = public
 shared_physical_network= {{ .Values.tempest_common.shared_physical_network | default true }}
 
