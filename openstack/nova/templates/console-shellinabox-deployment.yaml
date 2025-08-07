@@ -46,6 +46,10 @@ spec:
       {{- tuple . "nova" "console-cell1-shellinabox" | include "kubernetes_pod_anti_affinity" | nindent 6 }}
       {{- include "utils.proxysql.pod_settings" . | nindent 6 }}
       {{- tuple . (dict "name" "nova-console-cell1-shellinabox") | include "utils.topology.constraints" | indent 6 }}
+      initContainers:
+      {{- if .Values.proxysql.native_sidecar }}
+      {{- include "utils.proxysql.container" . | indent 6 }}
+      {{- end }}
       containers:
       - name: nova-console-cell1-shellinabox
         image: {{ required ".Values.global.dockerHubMirror is missing" .Values.global.dockerHubMirror }}/bitnami/openresty:{{ .Values.imageVersionBitnamiOpenResty }}
@@ -76,7 +80,9 @@ spec:
             port: {{ .Values.consoles.shellinabox.portInternal }}
           initialDelaySeconds: 1
           timeoutSeconds: 5
+      {{- if not .Values.proxysql.native_sidecar }}
       {{- include "utils.proxysql.container" . | indent 6 }}
+      {{- end }}
       volumes:
       - name: temp
         emptyDir: {}
