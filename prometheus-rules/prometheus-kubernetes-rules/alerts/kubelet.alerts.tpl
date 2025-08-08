@@ -64,34 +64,6 @@ groups:
       description: Kubelet is full
       summary: Kubelet Kubelet {{`{{$labels.node}}`}} is running {{`{{ $value }}`}} pods. That's too much!
 
-  - alert: KubeletHighNumberOfGoRoutines
-    expr: go_goroutines{job="kubernetes-kubelet"} > {{ default "5000" .Values.kubelet.goroutinesHighCount }}
-    for: 5m
-    labels:
-      tier: {{ required ".Values.tier missing" .Values.tier }}
-      support_group: {{ required ".Values.supportGroup missing" .Values.supportGroup }}
-      service: {{ required ".Values.service missing" .Values.service }}
-      severity: warning
-      context: kubelet
-      meta: "{{`{{ $labels.node }}`}}"
-    annotations:
-      description: Kublet on {{`{{ $labels.node }}`}} might be unresponsive due to a high number of go routines
-      summary: High number of Go routines
-
-  - alert: KubeletPredictHighNumberOfGoRoutines
-    expr: abs(predict_linear(go_goroutines{job="kubernetes-kubelet"}[1h], 2*3600)) > {{ default "10000" .Values.kubelet.goroutinesPredictHighCount }}
-    for: 5m
-    labels:
-      tier: {{ required ".Values.tier missing" .Values.tier }}
-      support_group: {{ required ".Values.supportGroup missing" .Values.supportGroup }}
-      service: {{ required ".Values.service missing" .Values.service }}
-      severity: warning
-      context: kubelet
-      meta: "{{`{{ $labels.node }}`}}"
-    annotations:
-      description: Kublet on {{`{{$labels.node}}`}} might become unresponsive due to a high number of go routines within 2 hours, take a look at the node and wait if it stabilizes.
-      summary: Predicting high number of Go routines
-
   - alert: KubeletManyRequestErrors
     expr: |
       (sum(rate(rest_client_requests_total{code=~"5.*", component="kubelet"}[5m])) by (node)
