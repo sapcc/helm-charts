@@ -1,3 +1,4 @@
+{{- if and .Values.alerts.enabled (lookup "apiextensions.k8s.io/v1" "CustomResourceDefinition" "" "prometheusrules.monitoring.coreos.com") }}
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
@@ -45,3 +46,4 @@ spec:
         service: secrets-injector
         severity: warning
         support_group: "{{`{{ if $labels.label_ccloud_support_group }}{{ $labels.label_ccloud_support_group }}{{ else }}containers{{ end }}`}}"
+{{- end -}}
