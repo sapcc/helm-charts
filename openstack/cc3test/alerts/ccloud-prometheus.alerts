@@ -62,7 +62,7 @@ groups:
       summary: 'CCloud Prometheus {{ $labels.name }} is flapping'
 
   - alert: PrometheusSSOCertificateExpiresInLessThan2Week
-    expr: cc3test_cert_expires_in_days{type="prometheus-sso"} < 15
+    expr: last_over_time(cc3test_cert_expires_in_days{type="prometheus-sso"}[1d]) < 15
     # we want a critical alert 15 days before (fixing during business hours is sufficient -> warning)
     labels:
       severity: warning
@@ -77,7 +77,7 @@ groups:
       summary: Certificate expires
 
   - alert: PrometheusSSOCertificateExpiresInLessThan4Week
-    expr: cc3test_cert_expires_in_days{type="prometheus-sso"} < 30
+    expr: last_over_time(cc3test_cert_expires_in_days{type="prometheus-sso"}[1d]) < 30
     # we want a warning alert 30 days before
     labels:
       severity: info
