@@ -12,7 +12,7 @@ groups:
       severity: info
       context: memory
       meta: "Pod {{`{{ $labels.namespace }}`}}/{{`{{ $labels.pod_name }}`}} OOMKilled"
-      playbook: 'docs/support/playbook/kubernetes/k8s_pod_oomkilled'
+      playbook: 'https://operations.global.cloud.sap/docs/support/playbook/kubernetes/k8s_pod_oomkilled'
       no_alert_on_absence: "true" # the underlying metric is only generated after the first oomkill
     annotations:
       summary: Pod was oomkilled recently
@@ -28,7 +28,7 @@ groups:
       severity: warning
       context: memory
       meta: "Pod {{`{{ $labels.namespace }}`}}/{{`{{ $labels.pod_name }}`}} constantly OOMKilled"
-      playbook: 'docs/support/playbook/kubernetes/k8s_pod_oomkilled'
+      playbook: 'https://operations.global.cloud.sap/docs/support/playbook/kubernetes/k8s_pod_oomkilled'
       no_alert_on_absence: "true" # the underlying metric is only generated after the first oomkill
     annotations:
       summary: Pod was oomkilled more than 2 times in 30 minutes
