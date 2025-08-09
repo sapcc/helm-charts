@@ -606,6 +606,29 @@ spec:
               }
 
               ########################################################################
+              # allowlist for neutron-netns-prober
+
+              {{- if eq .Values.cluster_type "baremetal" "test" }}
+              default isNeutronNetnsProberPod := false
+              isNeutronNetnsProberPod if {
+                  iro.kind == "DaemonSet"
+                  iro.metadata.namespace == "neutron-netns-prober"
+                  iro.metadata.name == "neutron-netns-prober"
+                  helmReleaseName == "neutron-netns-prober"
+              }
+
+              # The neutron-netns-prober needs to reach into all network namespaces.
+              isPodAllowedToUseHostPID if {
+                  isNeutronNetnsProberPod
+              }
+
+              isContainerAllowedToBePrivileged(container) if {
+                  isNeutronNetnsProberPod
+                  container.name == "prober"
+              }
+              {{- end }}
+
+              ########################################################################
               # allowlist for neutron-network-agent
 
               {{- if eq .Values.cluster_type "baremetal" "test" }}
