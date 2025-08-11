@@ -324,7 +324,7 @@ spec:
             value: global|{{ without .Values.regions "qa-de-1" | join "|" }}
           - name: support_group
             matchType: "=~"
-            value: {{ without .Values.supportGroups "compute" "compute-storage-api" "email" "identity" "foundation"  "network-api" "observability" "containers" | join "|" }}
+            value: {{ without .Values.supportGroups "compute" "compute-storage-api" "email" "identity" "foundation"  "network-api" "observability" "containers" "iaas-support" "kvm" | join "|" }}
 
       - receiver: support_group_alerts_warning
         continue: true
@@ -533,20 +533,6 @@ spec:
           - name: bedrock
             matchType: "="
             value: "true"
-
-      # Test Channel for CC KVM Alerting slack_alert_kvm_test
-      - receiver: slack_alert_kvm_test
-        continue: true
-        matchers:
-          - name: service
-            matchType: "="
-            value: kvm
-          - name: severity
-            matchType: "=~"
-            value: info|warning|critical
-          - name: region
-            matchType: "=~"
-            value: {{ .Values.regions | join "|" }}
 
   receivers:
     - name: slack
