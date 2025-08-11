@@ -15,7 +15,7 @@ groups:
       context: node
       meta: "High CPU usage on {{`{{ $labels.node }}`}}"
       dashboard: kubernetes-node?var-server={{`{{$labels.node}}`}}
-      playbook: docs/support/playbook/kubernetes/k8s_node_host_high_cpu_usage
+      playbook: 'https://operations.global.cloud.sap/docs/support/playbook/kubernetes/k8s_node_host_high_cpu_usage
     annotations:
       summary: High CPU load on node
       description: "Node {{`{{ $labels.node }}`}} has more than {{`{{ humanize $value }}`}}% CPU load for 6h"
@@ -30,7 +30,7 @@ groups:
       severity: info
       context: availability
       meta: "Kernel deadlock on {{`{{ $labels.node }}`}}"
-      playbook: docs/support/playbook/k8s_node_safe_rebooting
+      playbook: 'https://operations.global.cloud.sap/docs/support/playbook/k8s_node_safe_rebooting
     annotations:
       description: Node kernel has deadlock
       summary: Permanent kernel deadlock on {{`{{ $labels.node }}`}}. Please drain and reboot node
