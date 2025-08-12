@@ -11,7 +11,7 @@ filewatch/audit_logs:
     - '~$'
     - '/\.git($|/)'
   events:
-    - "notify.InAccess"
+    #- "notify.InAccess" # Commented out this event as it is very noisy
     - "notify.InCreate"
     - "notify.InDelete"
     - "notify.InCloseWrite"

@@ -1,4 +1,4 @@
-apiVersion: opentelemetry.io/v2beta1
+apiVersion: opentelemetry.io/v1beta1
 kind: OpenTelemetryCollector
 metadata:
   name: audit-logs-otel
@@ -21,6 +21,21 @@ spec:
   mode: daemonset
   tolerations:
   - operator: Exists
+  podAnnotations:
+    kubectl.kubernetes.io/default-container: "otc-container"
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: cloud.sap/deployment-state
+            operator: NotIn
+            values:
+            - reinstalling
+          - key: cloud.sap/esx-in-maintenance
+            operator: NotIn
+            values:
+            - alarm
   env:
     - name: NAMESPACE
       valueFrom:
@@ -43,8 +58,7 @@ spec:
       value: "{{ .Values.openTelemetryPlugin.auditLogs.openSearchLogs.index }}"
   envFrom:
     - secretRef:
-         #name: audit-logs-otel-basic-auth
-         name:  audit-logs-otel-basic-auth-manual
+          name: audit-logs-otel-basic-auth
 {{- if .Values.openTelemetryPlugin.auditLogs.prometheus.podMonitor.enabled }}
   ports:
     - name: prometheus
@@ -112,6 +126,9 @@ spec:
 
   config:
     receivers:
+      k8s_events:
+        auth_type: serviceAccount
+
 {{- if .Values.openTelemetryPlugin.auditLogs.logsCollector.auditdConfig.enabled }}
   {{- include "auditd.receiver" . | nindent 6 -}}
 {{- end }}
@@ -120,24 +137,11 @@ spec:
   {{- include "filewatch.receiver" . | nindent 6 -}}
 {{- end }}
 
-      k8s_events:
-        auth_type: serviceAccount
-
-{{- if .Values.openTelemetryPlugin.auditLogs.prometheus.podMonitor.enabled }}
-      prometheus/internal:
-        config:
-          scrape_configs:
-            - job_name: 'internal'
-              scrape_interval: 5s
-              static_configs:
-                - targets: ['127.0.0.1:8888']
-{{- end }}
-
     processors:
       batch:
-        send_batch_max_size: 500
+        send_batch_max_size: 5000
         timeout: 5s
-        send_batch_size : 10
+        send_batch_size : 100
 
 {{- if .Values.openTelemetryPlugin.auditLogs.logsCollector.auditdConfig.enabled }}
   {{- include "auditd.processors" . | nindent 6 -}}
@@ -341,12 +345,16 @@ spec:
           endpoint: {{ .Values.openTelemetryPlugin.auditLogs.openSearchLogs.endpoint }}
         logs_index: ${index}-datastream
 
+      opensearch/failover_b:
+        http:
+          auth:
+            authenticator: basicauth/failover_b
+          endpoint: {{ .Values.openTelemetryPlugin.auditLogs.openSearchLogs.endpoint }}
+        logs_index: ${index}-datastream
+
 {{- if .Values.openTelemetryPlugin.auditLogs.openSearchLogs.failover.enabled }}
   {{- include "failover.exporter" . | nindent 6 -}}
 {{- end }}
-
-      prometheus:
-        endpoint: 0.0.0.0:9999
 
     extensions:
       basicauth/failover_a:
@@ -367,8 +375,8 @@ spec:
 {{- if .Values.openTelemetryPlugin.auditLogs.openSearchLogs.failover.enabled }}
           - [logs/failover_b]
 {{- end }}
-        retry_interval: 2m
-        retry_gap: 30s
+        retry_interval: 20m
+        retry_gap: 5m
         max_retries: 0
     service:
       extensions:
@@ -380,8 +388,22 @@ spec:
 {{- if .Values.openTelemetryPlugin.auditLogs.prometheus.podMonitor.enabled }}
       telemetry:
         metrics:
-          address: 127.0.0.1:8888
           level: detailed
+          readers:
+          - pull:
+              exporter:
+                prometheus:
+                  host: 0.0.0.0
+                  port: 9999
+                  with_resource_constant_labels:
+                    included:
+                    - k8s_node_name
+                    - k8s_cluster_name
+                    - region
+        resource:
+          k8s_cluster_name: ${cluster}
+          k8s_node_name: ${KUBE_NODE_NAME}
+          region: ${region}
 {{- end }}
 
       pipelines:
@@ -393,6 +415,10 @@ spec:
           receivers: [failover]
           processors: [attributes/failover_username_a]
           exporters: [opensearch/failover_a]
+        logs/failover_b:
+          receivers: [failover/opensearch]
+          processors: [attributes/failover_username_b]
+          exporters: [opensearch/failover_b]
 
 {{- if .Values.openTelemetryPlugin.auditLogs.logsCollector.auditdConfig.enabled }}
 {{- include "auditd.pipelines" . | nindent 8 -}}
@@ -404,10 +430,4 @@ spec:
 
 {{- if .Values.openTelemetryPlugin.auditLogs.openSearchLogs.failover.enabled }}
 {{- include "failover.pipeline" . | nindent 8 -}}
-{{- end }}
-{{- if .Values.openTelemetryPlugin.auditLogs.prometheus.podMonitor.enabled }}
-        metrics/prometheus:
-          receivers: [prometheus/internal]
-          processors: [attributes/prometheus]
-          exporters: [prometheus]
 {{- end }}
