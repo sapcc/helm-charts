@@ -1,4 +1,4 @@
 key "nsi-key" {
     algorithm hmac-sha512;
-    secret "{{ .Values.nsi_key | include "resolve_secret" }}";
+    secret {{ tpl $.Values.nsi_key $ | include "resolve_secret" | quote }};
 };
