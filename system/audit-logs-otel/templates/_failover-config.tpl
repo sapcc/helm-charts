@@ -11,7 +11,7 @@ opensearch/failover_b:
   http:
     auth:
       authenticator: basicauth/failover_b
-    endpoint: {{ .Values.openTelemetryPlugin.openTelemetry.openSearchLogs.endpoint }}
+    endpoint: {{ .Values.openTelemetryPlugin.auditLogs.openSearchLogs.endpoint }}
   logs_index: ${index}-datastream
 {{- end }}
 
