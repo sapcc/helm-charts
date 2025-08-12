@@ -48,7 +48,7 @@ groups:
       severity: warning
       context: maintenance-controller
       meta: "Cluster {{`{{ $labels.cluster }}`}} has a disparity in flatcar versions."
-      playbook: docs/support/playbook/kubernetes/flatcar_version_disparity
+      playbook: 'https://operations.global.cloud.sap/docs/support/playbook/kubernetes/flatcar_version_disparity'
     annotations:
       summary: More than 2 flatcar versions
       description: "Cluster {{`{{ $labels.cluster }}`}} has a disparity in flatcar versions. This indicates some issue with the maintenance-controller."

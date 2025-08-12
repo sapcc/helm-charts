@@ -8,7 +8,7 @@
       context: availability
       service: {{  index .Values "owner-info" "service" | quote }}
       tier: os
-      playbook: "docs/support/playbook/database/percona_xtradb_cluster_operator_not_ready/"
+      playbook: 'https://operations.global.cloud.sap/docs/support/playbook/database/percona_xtradb_cluster_operator_not_ready/'
       support_group: {{  index .Values "owner-info" "support-group" | quote }}
     annotations:
       description: percona-xtradb-cluster-operator is not ready for 10 minutes.

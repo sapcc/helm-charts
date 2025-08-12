@@ -9,7 +9,7 @@ groups:
       service: logs
       severity: warning
       support_group: observability
-      playbook: 'docs/support/playbook/logs/otel-logs-missing'
+      playbook: 'https://operations.global.cloud.sap/docs/support/playbook/logs/otel-logs-missing'
     annotations:
       description: 'OpenTelemetry Collector on {{`{{ $labels.k8s_node_name }}`}} in {{`{{ $labels.region }}`}} is not shipping logs. Please check.'
       summary: OTel is not shipping logs
@@ -21,7 +21,7 @@ groups:
       service: logs
       severity: info
       support_group: observability
-      playbook: 'docs/support/playbook/logs/otel-logs-increasing'
+      playbook: 'https://operations.global.cloud.sap/docs/support/playbook/logs/otel-logs-increasing'
     annotations:
       description: 'OTel logs on {{`{{ $labels.k8s_cluster_name }}`}} in {{`{{ $labels.region }}`}} is sending 4 times more logs in the last 6h. Please check.'
       summary:  OTel log volume is increasing, check log volume.
@@ -33,7 +33,7 @@ groups:
       service: logs
       severity: info
       support_group: observability
-      playbook: 'docs/support/playbook/logs/otel-logs-decreasing'
+      playbook: 'https://operations.global.cloud.sap/docs/support/playbook/logs/otel-logs-decreasing'
     annotations:
       description: 'OTel on {{`{{ $labels.k8s_cluster_name }}`}} in {{`{{ $labels.region }}`}} is sending 4 times fewer logs in the last 2h. Please check.'
       summary:  OTel log volume is decreasing, check log volume.

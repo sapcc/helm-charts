@@ -10,7 +10,7 @@ groups:
         support_group: {{ default "observability" .Values.alerts.support_group }}
         severity: warning
         meta: Thanos Sidecar bucket operations are failing for Prometheus `{{`{{ $labels.prometheus }}`}}`
-        playbook: docs/support/playbook/prometheus/thanos_sidecar
+        playbook: 'https://operations.global.cloud.sap/docs/support/playbook/prometheus/thanos_sidecar'
         no_alert_on_absence: "true"
       annotations:
         description: |
@@ -30,7 +30,7 @@ groups:
         support_group: {{ default "observability" .Values.alerts.support_group }}
         severity: warning
         meta: Thanos Sidecar cannot access Prometheus `{{`{{ $labels.prometheus }}`}}`'.
-        playbook: docs/support/playbook/prometheus/thanos_sidecar
+        playbook: 'https://operations.global.cloud.sap/docs/support/playbook/prometheus/thanos_sidecar'
       annotations:
         description: |
           Thanos Sidecar cannot access Prometheus `{{`{{ $labels.prometheus }}`}}`',

@@ -8,7 +8,7 @@
       service: {{ include "pxc-db.alerts.service" . }}
       severity: info
       tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
-      playbook: 'docs/support/playbook/database/db_pxc_mysql_alerts#GaleraClusterDBTooManyConnections'
+      playbook: 'https://operations.global.cloud.sap/docs/support/playbook/database/db_pxc_mysql_alerts#GaleraClusterDBTooManyConnections'
       support_group: {{ required ".Values.alerts.support_group missing" .Values.alerts.support_group }}
     annotations:
       description: {{ include "pxc-db.fullname" . }} has too many connections open. Please check the service containers.
@@ -22,7 +22,7 @@
       service: {{ include "pxc-db.alerts.service" . }}
       severity: info
       tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
-      playbook: 'docs/support/playbook/database/db_pxc_mysql_alerts#GaleraClusterDBSlowQueries'
+      playbook: 'https://operations.global.cloud.sap/docs/support/playbook/database/db_pxc_mysql_alerts#GaleraClusterDBSlowQueries'
       support_group: {{ required ".Values.alerts.support_group missing" .Values.alerts.support_group }}
     annotations:
       description: {{ include "pxc-db.fullname" . }} has reported slow queries. Please check the DB.
@@ -36,7 +36,7 @@
       service: {{ include "pxc-db.alerts.service" . }}
       severity: warning
       tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
-      playbook: 'docs/support/playbook/database/db_pxc_mysql_alerts#GaleraClusterDBWaitingForLock'
+      playbook: 'https://operations.global.cloud.sap/docs/support/playbook/database/db_pxc_mysql_alerts#GaleraClusterDBWaitingForLock'
       support_group: {{ required ".Values.alerts.support_group missing" .Values.alerts.support_group }}
     annotations:
       description: {{ include "pxc-db.fullname" . }} has queries waiting for lock more than 20 sec. Deadlock possible.
@@ -50,7 +50,7 @@
       service: {{ include "pxc-db.alerts.service" . }}
       severity: info
       tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
-      playbook: 'docs/support/playbook/database/db_pxc_mysql_alerts#GaleraClusterDBHighRunningThreads'
+      playbook: 'https://operations.global.cloud.sap/docs/support/playbook/database/db_pxc_mysql_alerts#GaleraClusterDBHighRunningThreads'
       support_group: {{ required ".Values.alerts.support_group missing" .Values.alerts.support_group }}
     annotations:
       description: {{ include "pxc-db.fullname" . }} has more than 20 running threads.
@@ -64,7 +64,7 @@
       service: {{ include "pxc-db.alerts.service" . }}
       severity: info
       tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
-      playbook: 'docs/support/playbook/database/db_pxc_mysql_alerts#GaleraClusterInnoDBLogWaits'
+      playbook: 'https://operations.global.cloud.sap/docs/support/playbook/database/db_pxc_mysql_alerts#GaleraClusterInnoDBLogWaits'
       support_group: {{ required ".Values.alerts.support_group missing" .Values.alerts.support_group }}
     annotations:
       description: {{ include "pxc-db.fullname" . }} InnoDB log writes stalling.
@@ -78,7 +78,7 @@
       service: {{ include "pxc-db.alerts.service" . }}
       severity: warning
       tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
-      playbook: 'docs/support/playbook/database/db_pxc_galera_alerts#GaleraClusterIncomplete'
+      playbook: 'https://operations.global.cloud.sap/docs/support/playbook/database/db_pxc_galera_alerts#GaleraClusterIncomplete'
       support_group: {{ required ".Values.alerts.support_group missing" .Values.alerts.support_group }}
     annotations:
       description: {{ include "pxc-db.fullname" . }} reports cluster size of less than 3 nodes.
@@ -92,7 +92,7 @@
       service: {{ include "pxc-db.alerts.service" . }}
       severity: info
       tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
-      playbook: 'docs/support/playbook/database/db_pxc_galera_alerts#GaleraClusterNodeNotReady'
+      playbook: 'https://operations.global.cloud.sap/docs/support/playbook/database/db_pxc_galera_alerts#GaleraClusterNodeNotReady'
       support_group: {{ required ".Values.alerts.support_group missing" .Values.alerts.support_group }}
     annotations:
       description: {{ include "pxc-db.fullname" . }} Cluster node not ready.
@@ -106,7 +106,7 @@
       service: {{ include "pxc-db.alerts.service" . }}
       severity: info
       tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
-      playbook: 'docs/support/playbook/database/db_pxc_galera_alerts#GaleraClusterNodeNotSynced'
+      playbook: 'https://operations.global.cloud.sap/docs/support/playbook/database/db_pxc_galera_alerts#GaleraClusterNodeNotSynced'
       support_group: {{ required ".Values.alerts.support_group missing" .Values.alerts.support_group }}
     annotations:
       description: {{ include "pxc-db.fullname" . }} Cluster node out of sync.
@@ -120,7 +120,7 @@
       service: {{ include "pxc-db.alerts.service" . }}
       severity: info
       tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
-      playbook: 'docs/support/playbook/database/db_pxc_galera_alerts#GaleraClusterNodeSyncDelayed'
+      playbook: 'https://operations.global.cloud.sap/docs/support/playbook/database/db_pxc_galera_alerts#GaleraClusterNodeSyncDelayed'
       support_group: {{ required ".Values.alerts.support_group missing" .Values.alerts.support_group }}
     annotations:
       description: "{{ include "pxc-db.fullname" . }} Galera cluster reports at least 1 node with substantial replication delay in the last 30 minutes"
@@ -134,7 +134,7 @@
       service: {{ include "pxc-db.alerts.service" . }}
       severity: info
       tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
-      playbook: 'docs/support/playbook/database/db_pxc_galera_alerts#GaleraClusterNodeReplicationPaused'
+      playbook: 'https://operations.global.cloud.sap/docs/support/playbook/database/db_pxc_galera_alerts#GaleraClusterNodeReplicationPaused'
       support_group: {{ required ".Values.alerts.support_group missing" .Values.alerts.support_group }}
     annotations:
       description: "{{ include "pxc-db.fullname" . }} Galera cluster reports at least 1 node with 25% paused replication in the last 30 minutes"
@@ -148,7 +148,7 @@
       service: {{ include "pxc-db.alerts.service" . }}
       severity: info
       tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
-      playbook: 'docs/support/playbook/database/db_pxc_state_alerts#GaleraClusterResourceNotReady'
+      playbook: 'https://operations.global.cloud.sap/docs/support/playbook/database/db_pxc_state_alerts#GaleraClusterResourceNotReady'
       support_group: {{ required ".Values.alerts.support_group missing" .Values.alerts.support_group }}
     annotations:
       description: "{{ include "pxc-db.fullname" . }} cluster resource is not in ready state."

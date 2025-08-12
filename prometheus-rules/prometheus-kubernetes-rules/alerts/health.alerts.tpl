@@ -13,7 +13,7 @@ groups:
       context: node
       meta: "{{`{{ $value }}`}} nodes NotReady"
       dashboard: kubernetes-health
-      playbook: docs/support/playbook/kubernetes/k8s_node_not_ready
+      playbook: 'https://operations.global.cloud.sap/docs/support/playbook/kubernetes/k8s_node_not_ready'
     annotations:
       summary: Many Nodes are NotReady
       description: "{{`{{ $value }}`}} nodes are NotReady for more than an hour"
@@ -29,7 +29,7 @@ groups:
       context: node
       meta: "{{`{{ $labels.node }}`}} is NotReady"
       dashboard: nodes?var-server={{`{{$labels.node}}`}}
-      playbook: docs/support/playbook/kubernetes/k8s_node_not_ready
+      playbook: 'https://operations.global.cloud.sap/docs/support/playbook/kubernetes/k8s_node_not_ready'
       inhibited_by: node-maintenance
     annotations:
       summary: Node status is NotReady
@@ -74,7 +74,7 @@ groups:
       severity: warning
       context: pod
       meta: "Pod {{`{{ $labels.namespace }}`}}/{{`{{ $labels.pod }}`}} is restarting constantly"
-      playbook: docs/support/playbook/kubernetes/k8s_pod_restarting
+      playbook: 'https://operations.global.cloud.sap/docs/support/playbook/kubernetes/k8s_pod_restarting'
     annotations:
       description: Container {{`{{ $labels.container }}`}} of pod {{`{{ $labels.namespace }}`}}/{{`{{ $labels.pod }}`}} is restarting constantly.{{`{{ if eq $labels.support_group "containers"}}`}} Is `owner-info` set --> Contact respective service owner! If not, try finding him/her and make sure, `owner-info` is set!{{`{{ end }}`}}
       summary: Pod is in a restart loop
@@ -171,7 +171,7 @@ groups:
       service: {{ include "serviceFromLabelsOrDefault" "k8s" }}
       support_group: {{ include "supportGroupFromLabelsOrDefault" .Values.supportGroup }}
       severity: warning
-      playbook: docs/support/playbook/kubernetes/target_scraped_multiple_times
+      playbook: 'https://operations.global.cloud.sap/docs/support/playbook/kubernetes/target_scraped_multiple_times'
       meta: 'Prometheus is scraping {{`{{ $labels.pod }}`}} pods more than once.'
     annotations:
       description: Prometheus is scraping `{{`{{ $labels.pod }}`}}` pods in namespace `{{`{{ $labels.namespace }}`}}` multiple times. This is likely caused due to incorrectly placed scrape annotations.

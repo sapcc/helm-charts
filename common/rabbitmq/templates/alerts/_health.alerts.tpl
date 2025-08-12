@@ -13,7 +13,7 @@
       service: {{ include "alerts.service" . }}
       dashboard: rabbitmq
       tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
-      playbook: 'docs/devops/alert/rabbitmq/'
+      playbook: 'https://operations.global.cloud.sap/docs/devops/alert/rabbitmq/'
       support_group: {{ required ".Values.alerts.support_group missing" .Values.alerts.support_group }}
     annotations:
       description: {{ include "fullname" . }} is not ready for 10 minutes.

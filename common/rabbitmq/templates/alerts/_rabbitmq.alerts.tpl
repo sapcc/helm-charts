@@ -12,7 +12,7 @@ groups:
       context: '{{`{{ $labels.app_kubernetes_io_instance }}`}}'
       dashboard: rabbitmq
       meta: '{{`{{ $labels.app_kubernetes_io_instance }}`}} has over {{ .Values.alerts.rabbit_queue_length | default 1000 }} unacknowledged messages.'
-      playbook: 'docs/devops/alert/rabbitmq/'
+      playbook: 'https://operations.global.cloud.sap/docs/devops/alert/rabbitmq/'
     annotations:
       description: 'RPC Messages are not being collected. {{`{{ $labels.app_kubernetes_io_instance }}`}} has over {{ .Values.alerts.rabbit_queue_length | default 1000 }} unacknowledged messages.'
       summary: 'RPC messages are not being collected.'
@@ -28,7 +28,7 @@ groups:
       context: '{{`{{ $labels.app_kubernetes_io_instance }}`}}'
       dashboard: rabbitmq
       meta: 'RPC Messages are not being collected. {{`{{ $labels.app_kubernetes_io_instance }}`}} has over {{ .Values.alerts.rabbit_queue_length | default 1000 }} rpc messages waiting.'
-      playbook: 'docs/devops/alert/rabbitmq/'
+      playbook: 'https://operations.global.cloud.sap/docs/devops/alert/rabbitmq/'
     annotations:
       description: 'RPC Messages are not being collected. {{`{{ $labels.app_kubernetes_io_instance }}`}} has over {{ .Values.alerts.rabbit_queue_length | default 1000 }} rpc messages waiting.'
       summary: 'RPC messages are not being collected.'

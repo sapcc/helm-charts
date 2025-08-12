@@ -22,7 +22,7 @@
       severity: info
       tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
       support_group: {{ required ".Values.alerts.support_group missing" .Values.alerts.support_group }}
-      playbook: 'docs/support/playbook/database/MariaDBSlowQueries'
+      playbook: 'https://operations.global.cloud.sap/docs/support/playbook/database/MariaDBSlowQueries'
     annotations:
       description: {{ include "fullName" . }} has reported slow queries. Please check the DB.
       summary: {{ include "fullName" . }} reports slow queries.
@@ -49,7 +49,7 @@
       severity: info
       tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
       support_group: {{ required ".Values.alerts.support_group missing" .Values.alerts.support_group }}
-      playbook: 'docs/support/playbook/manila/mariadb_high_running_threads'
+      playbook: 'https://operations.global.cloud.sap/docs/support/playbook/manila/mariadb_high_running_threads'
     annotations:
       description: {{ include "fullName" . }} has more than 20 running threads.
       summary: {{ include "fullName" . }} running threads high.

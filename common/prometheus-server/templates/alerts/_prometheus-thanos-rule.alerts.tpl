@@ -28,7 +28,7 @@ groups:
       service: {{ include "alertServiceLabelOrDefault" "metrics" }}
       support_group: {{ include "alertSupportGroupOrDefault" "observability" }}
       severity: warning
-      playbook: docs/support/playbook/kubernetes/target_scraped_multiple_times
+      playbook: 'https://operations.global.cloud.sap/docs/support/playbook/kubernetes/target_scraped_multiple_times'
       meta: Prometheus is scraping `{{`{{ $labels.pod }}`}}` pods more than once.
     annotations:
       description: Prometheus is scraping `{{`{{ $labels.pod }}`}}` pods in namespace `{{`{{ $labels.namespace }}`}}` multiple times. This is likely caused due to incorrectly placed scrape annotations. <https://{{ include "prometheus.externalURL" . }}/graph?g0.expr={{ urlquery `up * on(instance) group_left() (sum by(instance) (up{kubernetes_pod_name=~"PLACEHOLDER.*"}) > 1)` | replace "PLACEHOLDER" "{{ $labels.pod }}"}}|Affected targets>

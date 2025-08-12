@@ -102,7 +102,7 @@ groups:
         service: {{ default "metrics" $root.Values.alerts.service }}
         support_group: {{ default "observability" $root.Values.alerts.support_group }}
         severity: warning
-        playbook: docs/support/playbook/prometheus/thanos_compaction
+        playbook: 'https://operations.global.cloud.sap/docs/support/playbook/prometheus/thanos_compaction'
         meta: Thanos Compact `{{`{{ $labels.thanos }}`}}` has disappeared.
       annotations:
         description: |

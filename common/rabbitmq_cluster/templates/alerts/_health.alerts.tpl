@@ -9,7 +9,7 @@
       service: {{ include "alerts.service" . }}
       dashboard: rabbitmq
       tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
-      playbook: 'docs/devops/alert/rabbitmq/'
+      playbook: 'https://operations.global.cloud.sap/docs/devops/alert/rabbitmq/'
     annotations:
       description: {{ include "fullname" . }} is not ready for 10 minutes.
       summary: {{ include "fullname" . }} is not ready for 10 minutes. Please check the pod.

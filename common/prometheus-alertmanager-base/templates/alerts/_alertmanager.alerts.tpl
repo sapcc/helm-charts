@@ -8,7 +8,7 @@ groups:
       context: availability
       service: alertmanager
       severity: critical
-      playbook: 'docs/support/playbook/prometheus/failed_config_reload'
+      playbook: 'https://operations.global.cloud.sap/docs/support/playbook/prometheus/failed_config_reload'
       meta: 'Alertmanager {{`{{ $labels.alertmanager }}`}} failed to load it`s configuration.'
       support_group: {{ include "alerts.support_group" . }}
     annotations:
@@ -22,7 +22,7 @@ groups:
       context: availability
       service: alerting
       severity: info
-      playbook: 'docs/support/playbook/prometheus/alertmanager_failed_notifications'
+      playbook: 'https://operations.global.cloud.sap/docs/support/playbook/prometheus/alertmanager_failed_notifications'
       meta: 'Alertmanager {{`{{ $labels.alertmanager }}`}} failing sending notifications.'
       support_group: {{ include "alerts.support_group" . }}
     annotations:
@@ -36,7 +36,7 @@ groups:
       context: availability
       service: alertmanager
       severity: warning
-      playbook: 'docs/support/playbook/prometheus/alertmanager_alerts/cluster-messages-pruned'
+      playbook: 'https://operations.global.cloud.sap/docs/support/playbook/prometheus/alertmanager_alerts/cluster-messages-pruned'
       meta: 'Alertmanager {{`{{ $labels.alertmanager }}`}} is pruning the cluster message queue.'
       support_group: {{ include "alerts.support_group" . }}
     annotations:
@@ -50,7 +50,7 @@ groups:
       context: availability
       service: alerting
       severity: info
-      playbook: 'docs/support/playbook/prometheus/alertmanager_alerts/cluster-messages-queued'
+      playbook: 'https://operations.global.cloud.sap/docs/support/playbook/prometheus/alertmanager_alerts/cluster-messages-queued'
       meta: 'Alertmanager {{`{{ $labels.alertmanager }}`}} is queing cluster messages.'
       support_group: {{ include "alerts.support_group" . }}
     annotations:

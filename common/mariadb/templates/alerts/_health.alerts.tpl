@@ -9,7 +9,7 @@
       severity: critical
       tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
       support_group: {{ required ".Values.alerts.support_group missing" .Values.alerts.support_group }}
-      playbook: 'docs/support/playbook/db_crashloop'
+      playbook: 'https://operations.global.cloud.sap/docs/support/playbook/db_crashloop'
     annotations:
       description: No {{ include "fullName" . }} database is ready for 10 minutes.
       summary: No {{ include "fullName" . }} is ready for 10 minutes. Please check the pod.

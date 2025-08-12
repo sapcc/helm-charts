@@ -23,7 +23,7 @@ groups:
         service: {{ default "metrics" .Values.alerts.service }}
         support_group: {{ default "observability" .Values.alerts.support_group }}
         severity: info
-        playbook: 'docs/support/playbook/prometheus/thanos_compaction'
+        playbook: 'https://operations.global.cloud.sap/docs/support/playbook/prometheus/thanos_compaction'
         meta: Thanos Compact `{{`{{ $labels.prometheus }}`}}` has failed to run and is now halted.
       annotations:
         description: |
@@ -45,7 +45,7 @@ groups:
         service: {{ default "metrics" .Values.alerts.service }}
         support_group: {{ default "observability" .Values.alerts.support_group }}
         severity: info
-        playbook: 'docs/support/playbook/prometheus/thanos_compaction'
+        playbook: 'https://operations.global.cloud.sap/docs/support/playbook/prometheus/thanos_compaction'
         meta: Thanos Compact `{{`{{ $labels.prometheus }}`}}` is failing to execute compactions.
       annotations:
         description: |
@@ -67,7 +67,7 @@ groups:
         service: {{ default "metrics" .Values.alerts.service }}
         support_group: {{ default "observability" .Values.alerts.support_group }}
         severity: info
-        playbook: 'docs/support/playbook/prometheus/thanos_compaction'
+        playbook: 'https://operations.global.cloud.sap/docs/support/playbook/prometheus/thanos_compaction'
         meta: Thanos Compact `{{`{{ $labels.prometheus }}`}}` bucket is having a high number of operation failures.
       annotations:
         description: |
@@ -83,7 +83,7 @@ groups:
         service: {{ default "metrics" .Values.alerts.service }}
         support_group: {{ default "observability" .Values.alerts.support_group }}
         severity: info
-        playbook: 'docs/support/playbook/prometheus/thanos_compaction'
+        playbook: 'https://operations.global.cloud.sap/docs/support/playbook/prometheus/thanos_compaction'
         meta: Thanos Compact `{{`{{ $labels.prometheus }}`}}` has not uploaded anything for last 24 hours.
       annotations:
         description: |
@@ -100,7 +100,7 @@ groups:
         service: {{ default "metrics" .Values.alerts.service }}
         support_group: {{ default "observability" .Values.alerts.support_group }}
         severity: warning
-        playbook: docs/support/playbook/prometheus/thanos_compaction
+        playbook: 'https://operations.global.cloud.sap/docs/support/playbook/prometheus/thanos_compaction'
         meta: Thanos Compact `{{`{{ $labels.prometheus }}`}}` has disappeared.
       annotations:
         description: |

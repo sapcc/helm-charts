@@ -13,7 +13,7 @@ groups:
         context: apiserver
         support_group: containers
         dashboard: kubernetes-health
-        playbook: docs/support/playbook/kubernetes/k8s_apiserver_down
+        playbook: 'https://operations.global.cloud.sap/docs/support/playbook/kubernetes/k8s_apiserver_down'
       annotations:
         description: Failed to probe ApiServer on {{`{{ $labels.instance }}`}}. 
         summary: An ApiServer is DOWN
@@ -27,7 +27,7 @@ groups:
         tier: k8s
         service: k8s
         support_group: containers
-        playbook: docs/support/playbook/kubernetes/k8s_cp_filer_down
+        playbook: 'https://operations.global.cloud.sap/docs/support/playbook/kubernetes/k8s_cp_filer_down'
       annotations:
         description: |
           Failed to probe Controlplane filer on {{`{{ $labels.instance }}`}} in region {{`{{ $labels.probeRegion }}`}}.

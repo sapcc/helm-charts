@@ -8,7 +8,7 @@
       service: {{ include "pxc-db.alerts.service" . }}
       severity: info
       tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
-      playbook: 'docs/support/playbook/database/db_pxc_state_alerts#GaleraClusterBackupNotSucceeded'
+      playbook: 'https://operations.global.cloud.sap/docs/support/playbook/database/db_pxc_state_alerts#GaleraClusterBackupNotSucceeded'
       support_group: {{ required ".Values.alerts.support_group missing" .Values.alerts.support_group }}
     annotations:
       description: "{{ include "pxc-db.fullname" . }} cluster backup is not succeeded."
@@ -22,7 +22,7 @@
       service: {{ include "pxc-db.alerts.service" . }}
       severity: info
       tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
-      playbook: 'docs/support/playbook/database/db_pxc_state_alerts#GaleraClusterBackupMissing'
+      playbook: 'https://operations.global.cloud.sap/docs/support/playbook/database/db_pxc_state_alerts#GaleraClusterBackupMissing'
       support_group: {{ required ".Values.alerts.support_group missing" .Values.alerts.support_group }}
     annotations:
       description: "{{ include "pxc-db.fullname" . }} cluster has no new full backups completed earlier than 36 hours ago."
@@ -37,7 +37,7 @@
       service: {{ include "pxc-db.alerts.service" . }}
       severity: info
       tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
-      playbook: 'docs/support/playbook/database/db_pxc_state_alerts#GaleraClusterBinlogProcessingTooOld'
+      playbook: 'https://operations.global.cloud.sap/docs/support/playbook/database/db_pxc_state_alerts#GaleraClusterBinlogProcessingTooOld'
       support_group: {{ required ".Values.alerts.support_group missing" .Values.alerts.support_group }}
     annotations:
       description: "More than 30 minutes passed since the last cluster {{ include "pxc-db.fullname" . }} binlog processing."
@@ -51,7 +51,7 @@
       service: {{ include "pxc-db.alerts.service" . }}
       severity: info
       tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
-      playbook: 'docs/support/playbook/database/db_pxc_state_alerts#GaleraClusterBinlogUploadTooOld'
+      playbook: 'https://operations.global.cloud.sap/docs/support/playbook/database/db_pxc_state_alerts#GaleraClusterBinlogUploadTooOld'
       support_group: {{ required ".Values.alerts.support_group missing" .Values.alerts.support_group }}
     annotations:
       description: "More than 30 minutes passed since the last cluster {{ include "pxc-db.fullname" . }} binlog upload."

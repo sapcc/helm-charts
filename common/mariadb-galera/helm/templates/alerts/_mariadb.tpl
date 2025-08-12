@@ -21,7 +21,7 @@
       severity: "info"
       tier: {{ required "$.Values.monitoring.prometheus.alerts missing, but required for Prometheus alert definitions" $.Values.monitoring.prometheus.alerts.tier | quote }}
       support_group: {{ required "$.Values.monitoring.prometheus.alerts.support_group missing, but required for Prometheus alert definitions" $.Values.monitoring.prometheus.alerts.support_group | quote }}
-      playbook: 'docs/support/playbook/database/MariaDBSlowQueries'
+      playbook: 'https://operations.global.cloud.sap/docs/support/playbook/database/MariaDBSlowQueries'
     annotations:
       description: "At least one {{ (include "nodeNamePrefix" (dict "global" $ "component" "database")) }} database node reports slow queries in the last 10 minutes"
       summary: "{{ (include "nodeNamePrefix" (dict "global" $ "component" "database")) }} reports slow queries"
@@ -46,7 +46,7 @@
       severity: "info"
       tier: {{ required "$.Values.monitoring.prometheus.alerts missing, but required for Prometheus alert definitions" $.Values.monitoring.prometheus.alerts.tier | quote }}
       support_group: {{ required "$.Values.monitoring.prometheus.alerts.support_group missing, but required for Prometheus alert definitions" $.Values.monitoring.prometheus.alerts.support_group | quote }}
-      playbook: 'docs/support/playbook/manila/mariadb_high_running_threads'
+      playbook: 'https://operations.global.cloud.sap/docs/support/playbook/manila/mariadb_high_running_threads'
     annotations:
       description: "At least one {{ (include "nodeNamePrefix" (dict "global" $ "component" "database")) }} database node has more than 20 running threads in the last 10 minutes"
       summary: "{{ (include "nodeNamePrefix" (dict "global" $ "component" "database")) }} has a lot of running threads"

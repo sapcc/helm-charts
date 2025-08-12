@@ -12,7 +12,7 @@ groups:
       severity: critical
       context: kubelet
       dashboard: kubernetes-health
-      playbook: docs/support/playbook/kubernetes/k8s_node_not_ready
+      playbook: 'https://operations.global.cloud.sap/docs/support/playbook/kubernetes/k8s_node_not_ready'
     annotations:
       description: Many Kubelets are DOWN
       summary: More than 2 Kubelets are DOWN
@@ -28,7 +28,7 @@ groups:
       context: kubelet
       meta: "{{`{{ $labels.node }}`}}"
       dashboard: kubernetes-health
-      playbook: docs/support/playbook/kubernetes/k8s_node_not_ready
+      playbook: 'https://operations.global.cloud.sap/docs/support/playbook/kubernetes/k8s_node_not_ready'
       inhibited_by: node-maintenance
     annotations:
       description: Kublet on {{`{{ $labels.node }}`}} is DOWN.

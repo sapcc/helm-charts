@@ -13,7 +13,7 @@ groups:
         severity: warning
         context: availability
         support_group: {{ .Values.alerts.supportGroup }}
-        playbook: "docs/support/playbook/kubernetes/k8s_node_bgp_neighbor"
+        playbook: 'https://operations.global.cloud.sap/docs/support/playbook/kubernetes/k8s_node_bgp_neighbor'
       annotations:
         description: Node {{`{{ $labels.node }}`}} has less than {{ .Values.bgpNeighborCount }} BGP neighbors. BGP peer {{`{{ $labels.neighbor }}`}} is not established. Network datapath threatened! Switch upgrades or misconfiguration?
         summary: Node {{`{{ $labels.node }}`}} has less than {{ .Values.bgpNeighborCount }} BGP neighbors.
@@ -28,7 +28,7 @@ groups:
         severity: critical
         context: availability
         support_group: {{ .Values.alerts.supportGroup }}
-        playbook: "docs/support/playbook/kubernetes/k8s_node_bgp_neighbor"
+        playbook: 'https://operations.global.cloud.sap/docs/support/playbook/kubernetes/k8s_node_bgp_neighbor'
       annotations:
         description: Node {{`{{ $labels.node }}`}} has no BGP neighbors. Network datapath is down! Switch upgrades or misconfiguration?
         summary: Node {{`{{ $labels.node }}`}} has no BGP neighbors.
@@ -42,7 +42,7 @@ groups:
         severity: warning
         context: availability
         support_group: {{ .Values.alerts.supportGroup }}
-        playbook: "docs/support/playbook/kubernetes/k8s_node_bgp_neighbor"
+        playbook: 'https://operations.global.cloud.sap/docs/support/playbook/kubernetes/k8s_node_bgp_neighbor'
       annotations:
         description: Calico is not running on all nodes that are Ready.
         summary: Calico is not running on all bare metal nodes that are Ready. Network datapath threatened!
@@ -56,7 +56,7 @@ groups:
         severity: warning
         context: availability
         support_group: {{ .Values.alerts.supportGroup }}
-        playbook: "docs/support/playbook/kubernetes/k8s_node_bgp_neighbor"
+        playbook: 'https://operations.global.cloud.sap/docs/support/playbook/kubernetes/k8s_node_bgp_neighbor'
       annotations:
         description: Calico-Node Pod is not Ready on all nodes.
         summary: Calico-Node is not healthy on all bare metal nodes that are Ready. Risk of stale BGP advertisement. Network datapath threatened!
