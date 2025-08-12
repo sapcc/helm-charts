@@ -34,6 +34,13 @@ data:
       serial-query-rate {{.Values.serial_query_rate | default 20}};
       notify-rate {{.Values.notify_rate | default 20}};
       startup-notify-rate {{.Values.startup_notify_rate | default 20}};
+      {{- if .Values.pool_catalog }}
+      catalog-zones {
+        zone "catalog.pool.{{ .Values.pool_catalog }}"
+          default-primaries { {{ .Values.master_server }}; }
+          in-memory no
+          min-update-interval 5;
+      {{- end }}
      };
      server {{ .Values.master_server }} {
       keys tsig-key;
@@ -49,6 +56,13 @@ data:
      statistics-channels {
        inet 127.0.0.1 port 8053 allow { 127.0.0.1; };
      };
+     {{- if .Values.pool_catalog }}
+     zone "catalog.pool.{{ .Values.pool_catalog }}" {
+       type secondary;
+       file "catalog.pool.{{ .Values.pool_catalog }}";
+       primaries { {{ .Values.master_server }}; };
+     };
+     {{- end }}
 {{ end }}
 ---
 {{ if .Values.zabbix.enabled }}
