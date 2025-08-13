@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.27.1 - 2025/08/13
+* MariaDB version updated to [10.11.14](https://mariadb.com/docs/release-notes/community-server/mariadb-10-11-series/mariadb-10.11.14-release-notes)
+  * several critical (InnoDB) fixes
+* chart version bumped
+
 ## v0.27.0 - 2025/07/31
 * Added an option to drop the database user using the values configuration
 
