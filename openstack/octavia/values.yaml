@@ -312,7 +312,7 @@ pod:
         cpu: 50m
     worker:
       limits:
-        memory: 512Mi
+        memory: 1024Mi
         cpu: 1000m
       requests:
         memory: 256Mi
@@ -448,44 +448,64 @@ rate_limit:
   blacklist: null
   blacklist_users: null
   groups:
-    write:
-      - delete
-      - update
+    delete_or_update:
+    - delete
+    - update
   rates:
     default:
       lbaas/loadbalancers:
         - action: read/list
           limit: 100r/m
-      lbaas/loadbalancers/loadbalancer:
-        - action: read/list
-          limit: 100r/m
         - action: create
+          limit: 100r/m
+      lbaas/loadbalancers/loadbalancer:
+        - action: read
+          limit: 100r/m
+        - action: delete_or_update
+          limit: 100r/m
+      lbaas/loadbalancers/loadbalancer/stats:
+        - action: read
+          limit: 100r/m
+      lbaas/loadbalancers/loadbalancer/status:
+        - action: read
+          limit: 100r/m
+      lbaas/loadbalancers/loadbalancer/failover:
+        - action: update
           limit: 100r/m
       lbaas/listeners:
         - action: read/list
           limit: 100r/m
-      lbaas/listeners/listener:
-        - action: read/list
+        - action: create
           limit: 100r/m
-        - action: write
+      lbaas/listeners/listener:
+        - action: read
+          limit: 100r/m
+        - action: delete_or_update
+          limit: 100r/m
+      lbaas/listeners/listener/stats:
+        - action: read
           limit: 100r/m
       lbaas/pools:
         - action: read/list
           limit: 100r/m
+        - action: create
+          limit: 100r/m
       lbaas/pools/pool:
-        - action: read/list
+        - action: read
           limit: 100r/m
-        - action: write
+        - action: delete_or_update
           limit: 100r/m
-      lbaas/pools/*/members:
+      lbaas/pools/pool/members:
         - action: read/list
           limit: 100r/m
         - action: create
           limit: 100r/m
-      lbaas/pools/*/members/member:
-        - action: read/list
+        - action: update
           limit: 100r/m
-        - action: write
+      lbaas/pools/pool/members/member:
+        - action: read
+          limit: 100r/m
+        - action: delete_or_update
           limit: 100r/m
       lbaas/healthmonitors:
         - action: read/list
@@ -493,9 +513,9 @@ rate_limit:
         - action: create
           limit: 100r/m
       lbaas/healthmonitors/healthmonitor:
-        - action: read/list
+        - action: read
           limit: 100r/m
-        - action: write
+        - action: delete_or_update
           limit: 100r/m
       lbaas/l7policies:
         - action: read/list
@@ -503,17 +523,17 @@ rate_limit:
         - action: create
           limit: 100r/m
       lbaas/l7policies/l7policy:
-        - action: read/list
+        - action: read
           limit: 100r/m
-        - action: write
+        - action: delete_or_update
           limit: 100r/m
-      lbaas/l7policies/*/rules:
-        - action: read/list
+      lbaas/l7policies/l7policy/rules:
+        - action: read
           limit: 100r/m
         - action: create
           limit: 100r/m
-      lbaas/l7policies/*/rules/rule:
-        - action: read/list
+      lbaas/l7policies/l7policy/rules/rule:
+        - action: read
           limit: 100r/m
-        - action: write
+        - action: delete_or_update
           limit: 100r/m
