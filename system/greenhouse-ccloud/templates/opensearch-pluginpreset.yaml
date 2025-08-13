@@ -48,7 +48,9 @@ spec:
         value:
           plugin: 'kube-monitoring-{{ $r.cluster }}'
       - name: certManager.httpDnsNames
-        value: {{ $r.endpoint | toYaml | nindent 10 }}
+        value: {{ $r.endpoints.client | toYaml | nindent 10 }}
+      - name: certManager.dashboardsDnsNames
+        value: {{ $r.endpoints.dashboards | toYaml | nindent 10 }}
       - name: cluster.usersCredentials.logs.username
         valueFrom:
           secret:
@@ -114,6 +116,16 @@ spec:
         value: {{ $r.ingress.hosts | toYaml | nindent 10 }}
       - name: cluster.cluster.ingress.opensearch.tls
         value: {{ $r.ingress.tls | toYaml | nindent 10 }}
+      - name: cluster.cluster.ingress.dashboards.enabled
+        value: {{ $r.dashboards.ingress.enabled }}
+      - name: cluster.cluster.ingress.dashboards.className
+        value: {{ $r.dashboards.ingress.className }}
+      - name: cluster.cluster.ingress.dashboards.annotations
+        value: {{ $r.dashboards.ingress.annotations | toYaml | nindent 10 }}
+      - name: cluster.cluster.ingress.dashboards.hosts
+        value: {{ $r.dashboards.ingress.hosts | toYaml | nindent 10 }}
+      - name: cluster.cluster.ingress.dashboards.tls
+        value: {{ $r.dashboards.ingress.tls | toYaml | nindent 10 }}
   {{ end -}}
   plugin:
     pluginDefinition: opensearch
