@@ -2,6 +2,7 @@
 whitelist:
   - Default/service
   - monsoon3/cc-demo
+  - monsoon3/ml-benchmarks
 
 whitelist_users:
   - TS4_S4_SMTP_01
