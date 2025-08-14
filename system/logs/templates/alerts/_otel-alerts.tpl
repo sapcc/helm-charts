@@ -23,10 +23,10 @@ groups:
       support_group: observability
       playbook: 'docs/support/playbook/logs/otel-logs-increasing'
     annotations:
-      description: 'OTel logs on {{`{{ $labels.k8s_cluster_name }}`}} in {{`{{ $labels.region }}`}} is sending 4 times more logs in the last 6h. Please check.'
+          description: 'OTel logs rate on {{`{{ $labels.k8s_cluster_name }}`}} in {{`{{ $labels.region }}`}} increased to 400% relative to 2h ago. Please check.'
       summary:  OTel log volume is increasing, check log volume.
   - alert: LogsOTelLogsDecreasing
-    expr: sum(rate(otelcol_exporter_sent_log_records_total{job="logs/opentelemetry-collector-logs"}[1h]offset 2h)) by (k8s_cluster_name)/sum(rate(otelcol_exporter_sent_log_records_total{job="logs/opentelemetry-collector-logs"}[1h])) by (k8s_cluster_name) > 4
+    expr: sum(increase(otelcol_exporter_sent_log_records_total{job="logs/opentelemetry-collector-logs"}[1h])) by (k8s_cluster_name) / sum(increase(otelcol_exporter_sent_log_records_total{job="logs/opentelemetry-collector-logs"}[1h]offset 2h)) by (k8s_cluster_name) < 0.25
     for: 2h
     labels:
       context: logshipping
@@ -35,6 +35,5 @@ groups:
       support_group: observability
       playbook: 'docs/support/playbook/logs/otel-logs-decreasing'
     annotations:
-      description: 'OTel on {{`{{ $labels.k8s_cluster_name }}`}} in {{`{{ $labels.region }}`}} is sending 4 times fewer logs in the last 2h. Please check.'
+      description: 'OTel logs rate on {{`{{ $labels.k8s_cluster_name }}`}} in {{`{{ $labels.region }}`}} decreased to 25% relative to 2h ago. Please check.'
       summary:  OTel log volume is decreasing, check log volume.
-
