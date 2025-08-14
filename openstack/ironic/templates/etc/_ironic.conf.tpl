@@ -137,3 +137,18 @@ disable_deep_image_inspection = {{ .Values.conductor.defaults.conductor.disable_
 permitted_image_formats = {{ .Values.conductor.defaults.conductor.permitted_image_formats }}
   {{- end }}
 {{- end }}
+
+{{ if .Values.rate_limit.enabled }}
+[rate_limit]
+enabled = true
+service_type = baremetal
+config_file = /etc/ironic/ratelimit.yaml
+rate_limit_by = {{ .Values.rate_limit.rate_limit_by }}
+max_sleep_time_seconds: {{ .Values.rate_limit.max_sleep_time_seconds }}
+clock_accuracy = 1ns
+log_sleep_time_seconds: {{ .Values.rate_limit.log_sleep_time_seconds }}
+backend_host = {{ .Release.Name }}-api-ratelimit-redis
+backend_port = 6379
+backend_secret_file = {{ .Values.rate_limit.backend_secret_file }}
+backend_timeout_seconds = {{ .Values.rate_limit.backend_timeout_seconds }}
+{{- end }}
