@@ -57,6 +57,7 @@
     - host: {{ $srv.ip }}
       port: 53
     {{- end}}
+  targets: []
   catalog_zone:
       catalog_zone_fqdn: catalog.pool.{{ $pool.name }}.
       catalog_zone_refresh: 60
