@@ -61,7 +61,7 @@
       catalog_zone_fqdn: catalog.pool.{{ $pool.name }}.
       catalog_zone_refresh: 60
       catalog_zone_tsig_key: {{ tpl $pool.tsigkey $ | include "resolve_secret" }}
-      catalog_zone_tsig_algorithm: {{ tpl ($pool.tsigkeyalgorithm | default hmac-sha512) $ | include "resolve_secret" }}
+      catalog_zone_tsig_algorithm: {{ tpl ($pool.tsigkeyalgorithm | default "hmac-sha512") $ | include "resolve_secret" }}
 {{- end }}
 {{- range $pool := .Values.akamai_pools_v2 }}
 - name: {{ $pool.name }}
