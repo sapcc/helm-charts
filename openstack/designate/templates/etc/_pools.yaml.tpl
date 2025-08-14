@@ -57,6 +57,11 @@
     - host: {{ $srv.ip }}
       port: 53
     {{- end}}
+  also_notifies:
+    {{- range $prio, $srv := $pool.nameservers}}
+    - host: {{ $srv.ip }}
+      port: 53
+    {{- end}}
   targets: []
   catalog_zone:
       catalog_zone_fqdn: catalog.pool.{{ $pool.name }}.
