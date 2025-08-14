@@ -53,17 +53,15 @@ spec:
       - name: nova-console-mks
         image: {{ required ".Values.global.registry is missing" .Values.global.registry}}/nova-console-mks:{{ required ".Values.imageVersionConsoleMks is missing" .Values.imageVersionConsoleMks }}
         imagePullPolicy: IfNotPresent
-        command:
-        - /opt/bitnami/scripts/openresty/run.sh
         ports:
         - name: mks
           containerPort: {{ .Values.consoles.mks.portInternal }}
         volumeMounts:
-        - mountPath: /opt/bitnami/openresty/site/lualib
+        - mountPath: /usr/local/openresty/site/lualib
           name: lualib
-        - mountPath: /opt/bitnami/openresty/nginx/conf/server_blocks
+        - mountPath: /etc/nginx/conf.d
           name: config
-        - mountPath: /opt/bitnami/openresty/nginx/tmp
+        - mountPath: /usr/local/openresty/nginx/tmp
           name: temp
         {{- include "utils.proxysql.volume_mount" . | indent 8 }}
         livenessProbe:
