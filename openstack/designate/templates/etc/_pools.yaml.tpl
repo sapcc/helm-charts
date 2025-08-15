@@ -62,7 +62,17 @@
     - host: {{ $srv.ip }}
       port: 53
     {{- end}}
-  targets: []
+  targets:
+    {{- range $idx, $srv := $pool.nameservers}}
+    - type: fake
+      description: Dummy Server {{ add1 $idx }}
+      masters:
+        - host: {{ $.Values.global.designate_mdns_external_ip }}
+          port: 5354
+      options:
+        host: {{$srv.ip}}
+        port: 53
+    {{- end}}
   catalog_zone:
       catalog_zone_fqdn: catalog.pool.{{ $pool.name }}.
       catalog_zone_refresh: 60
