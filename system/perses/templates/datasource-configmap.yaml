@@ -1,3 +1,4 @@
+{{- if .Values.sapCloudInfrastructure.regionalDatasource.enabled }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -5,28 +6,29 @@ metadata:
   labels:
     perses.dev/resource: "true"
 data:
-  datasource.json: |
+  {{ .Release.Name }}-regional-thanos-datasource.json: |
     {
       "kind": "GlobalDatasource",
       "metadata": {
-        "name": "{{ .Values.sapCloudInfrastructure.datasource.name }}",
+        "name": "{{ .Values.sapCloudInfrastructure.regionalDatasource.name }}"
       },
       "spec": {
         "display": {
-          "name": "{{ .Values.sapCloudInfrastructure.datasource.displayName }}",
-          "description": "{{ .Values.sapCloudInfrastructure.datasource.description }}"
+          "name": "{{ .Values.sapCloudInfrastructure.regionalDatasource.displayName }}",
+          "description": "{{ .Values.sapCloudInfrastructure.regionalDatasource.description }}"
         },
-        "default": true,
+        "default": {{ .Values.sapCloudInfrastructure.regionalDatasource.default }},
         "plugin": {
           "kind": "PrometheusDatasource",
           "spec": {
             "proxy": {
               "kind": "HTTPProxy",
               "spec": {
-                "url": "{{ .Values.sapCloudInfrastructure.datasource.URL}}"
+                "url": "{{ .Values.sapCloudInfrastructure.regionalDatasource.URL }}"
               }
             }
           }
         }
       }
     }
+{{- end }}
