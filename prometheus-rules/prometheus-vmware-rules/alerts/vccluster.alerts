@@ -3,8 +3,11 @@ groups:
   rules:
   - alert: VCenterRedundancyLostHAPolicyFaulty
     expr: |
-      sum by (vccluster, vcenter) (vrops_cluster_configuration_dasconfig_enabled{vccluster=~"production.*"}) unless
-      sum by (vccluster, vcenter) (vrops_hostsystem_configuration_dasconfig_admissioncontrolpolicy_failoverhost{vccluster=~"production.*"}) != 0
+      vrops_cluster_configuration_dasconfig_enabled{vccluster=~"^productionbb\\d+$"}
+      unless on (vccluster) ((vrops_hostsystem_configuration_dasconfig_admissioncontrolpolicy_failoverhost{vccluster=~"^productionbb\\d+$"} != 0
+      and on (hostsystem) vrops_hostsystem_runtime_maintenancestate{state!="inMaintenance"})
+      or (vrops_cluster_summary_custom_tag_openstack_nova_traits_decommissioning{summary_custom_tag_openstack_nova_traits_decommissioning="true", vccluster=~"^productionbb\\d+$"}
+      and on (vccluster) vrops_cluster_cluster_running_vms == 0))
     for: 30m
     labels:
       severity: critical
@@ -33,9 +36,13 @@ groups:
       description: "VC {{ $labels.vcenter }} {{ $labels.vccluster }} has a faulty AdmissionControlPolicy. Failover will not work."
       summary: "VC {{ $labels.vcenter }} {{ $labels.vccluster }} has a faulty AdmissionControlPolicy. Failover will not work."
 
-  - alert: VCenterWrongHALevelConfiguration
+  - alert: VCClusterFailoverHostCountMismatch
     expr: |
-      count by (vccluster, vcenter) (vrops_hostsystem_configuration_dasconfig_admissioncontrolpolicy_failoverhost{vccluster=~"production.*"} == 1) > 2
+      (count by (vccluster, vcenter) (vrops_hostsystem_runtime_connectionstate{vccluster=~"^productionbb\\d+$"}) <= 10
+      and on (vccluster) sum by (vccluster) (vrops_hostsystem_configuration_dasconfig_admissioncontrolpolicy_failoverhost{vccluster=~"^productionbb\\d+$"}) > 1)
+      or (sum by (vccluster, vcenter) (vrops_hostsystem_configuration_dasconfig_admissioncontrolpolicy_failoverhost{vccluster=~"^productionbb\\d+$"}) > 2)
+      unless on (vccluster) (vrops_cluster_summary_custom_tag_openstack_nova_traits_decommissioning{summary_custom_tag_openstack_nova_traits_decommissioning="true", vccluster=~"^productionbb\\d+$"}
+      and vrops_cluster_cluster_running_vms == 0)
     for: 30m
     labels:
       severity: warning
@@ -43,11 +50,11 @@ groups:
       service: compute
       support_group: compute
       context: "Cluster HA policy"
-      meta: "VC {{ $labels.vcenter }} {{ $labels.vccluster }} has more than two failover host configured, it should be no more than 2."
-      playbook: docs/devops/alert/vcenter/#restore-ha-redundancy-in-vcenter
+      meta: "`{{ $labels.vccluster }}` cluster has more failover hosts configured than expected. For clusters with 10 or fewer hosts, it should be 1; for larger clusters, it should be no more than 2. \nLink to the vCenter: --> <https://{{ $labels.vcenter }}|{{ $labels.vcenter }}>"
+      playbook: docs/devops/alert/vcenter/#vcclusterfailoverhostcountmismatch
     annotations:
-      description: "VC {{ $labels.vcenter }} {{ $labels.vccluster }} has more than two failover host configured, it should be no more than 2."
-      summary: "VC {{ $labels.vcenter }} {{ $labels.vccluster }} has more than two failover host configured, it should be no more than 2."
+      description: "`{{ $labels.vccluster }}` cluster has more failover hosts configured than expected. For clusters with 10 or fewer hosts, it should be 1; for larger clusters, it should be no more than 2. \nLink to the vCenter: --> <https://{{ $labels.vcenter }}|{{ $labels.vcenter }}>"
+      summary: "`{{ $labels.vccluster }}` cluster has more failover hosts configured than expected. For clusters with 10 or fewer hosts, it should be 1; for larger clusters, it should be no more than 2. \nLink to the vCenter: --> <https://{{ $labels.vcenter }}|{{ $labels.vcenter }}>"
 
   - alert: VCenterRedundancyLostHALevelNotSet
     expr: count by (vccluster, vcenter) (vrops_hostsystem_configuration_dasconfig_admissioncontrolpolicy_failoverhost{vccluster=~"production.*"} == 1) == 0

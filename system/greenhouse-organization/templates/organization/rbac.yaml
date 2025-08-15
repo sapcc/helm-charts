@@ -1,0 +1,17 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: greenhouse:cluster-admin
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+  # Bootstrap problem.
+  - apiGroup: rbac.authorization.k8s.io
+    kind: Group
+    name: {{ required ".Values.teams.admin.mappedIdPGroup missing" .Values.teams.admin.mappedIdPGroup }}
+  # After idproxy.
+  - apiGroup: rbac.authorization.k8s.io
+    kind: Group
+    name: role:{{ .Release.Namespace }}:admin

@@ -1,0 +1,94 @@
+{{- range $key, $cluster := .Values.mgmtShoots }}
+---
+apiVersion: core.gardener.cloud/v1beta1
+kind: Shoot
+metadata:
+  name: mgmt-{{ $key }}
+  namespace: garden-ccloud
+spec:
+  cloudProfileName: ironcore-metal
+  secretBindingName: metal-{{ $key }}
+  region: {{ $key }}
+  networking:
+    pods: {{ required ".Values.networking.pods is required" $.Values.networking.pods }}
+    services: {{ required ".Values.networking.services is required" $.Values.networking.services }}
+    nodes: {{ required "networking.nodes is required" $cluster.networking.nodes }}
+    type: calico
+    providerConfig:
+      apiVersion: calico.networking.extensions.gardener.cloud/v1alpha1
+      kind: NetworkConfig
+      backend: bird
+      vethMTU: "8950"
+      ipam:
+        type: host-local
+        cidr: usePodCIDR
+      overlay:
+        enabled: false
+        createPodRoutes: true
+  kubernetes:
+    version: {{ required "version is required" $cluster.version }}
+    kubeAPIServer:
+      enableAnonymousAuthentication: true # cluster registry version check
+      oidcConfig: {{- toYaml $.Values.oidcConfig | nindent 8 }}
+    verticalPodAutoscaler:
+      enabled: false
+  maintenance:
+    autoUpdate:
+      kubernetesVersion: false
+      machineImageVersion: false
+  provider:
+    type: ironcore-metal
+    infrastructureConfig:
+      apiVersion: ironcore-metal.provider.extensions.gardener.cloud/v1alpha1
+      kind: InfrastructureConfig
+      {{- toYaml $cluster.infrastructureConfig | nindent 6 }}
+    controlPlaneConfig:
+      apiVersion: ironcore-metal.provider.extensions.gardener.cloud/v1alpha1
+      kind: ControlPlaneConfig
+      {{- toYaml $cluster.controlPlaneConfig | nindent 6 }}
+    workers:
+    {{- range $workerkey, $worker := $cluster.workers }}
+      - name: mgmt-{{ $workerkey }}
+        machine:
+          architecture: amd64
+          image:
+            name: gardenlinux
+            version: {{ $cluster.imageVersion }}
+          type: baremetal
+        minimum: {{ $worker.poolSize }}
+        maximum: {{ $worker.poolSize }}
+        maxSurge: 0
+        maxUnavailable: 1
+        zones:
+        - {{ $workerkey }}
+        machineControllerManager:
+          machineCreationTimeout: 1h30m0s
+          machineHealthTimeout: 1h0m0s
+          machineDrainTimeout: 1h30m0s
+        providerConfig:
+          apiVersion: ironcore-metal.provider.extensions.gardener.cloud/v1alpha1
+          kind: WorkerConfig
+          extraServerLabels:
+            topology.kubernetes.io/zone: {{ $workerkey }}
+            kubernetes.metal.cloud.sap/cluster: mgmt-{{ $key }}
+          metadata:
+            interfaces: {{ $cluster.networking.interfaces }}
+            vlan: {{ $cluster.networking.vlan | quote}}
+            region: {{ $key }}
+          ipamConfig:
+          - metadataKey: bond
+            ipamRef:
+              apiGroup: ipam.cluster.x-k8s.io
+              kind: GlobalInClusterIPPool
+              name: mgmt-{{ $workerkey }}
+          extraIgnition:
+            override: false
+            raw: |
+            {{- if $cluster.extraIgnition }}
+              {{ $cluster.extraIgnition | nindent 14 }}
+            {{- end }}
+            {{- if $.Values.extraIgnition }}
+              {{ $.Values.extraIgnition | nindent 14 }}
+            {{- end }}
+    {{- end }}
+{{- end }}

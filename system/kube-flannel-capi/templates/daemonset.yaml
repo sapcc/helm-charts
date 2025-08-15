@@ -61,7 +61,6 @@ spec:
           - "--kube-subnet-mgr"
           - "--iface=$(POD_IP)"
           - "--healthz-port=30670"
-          - "-kubeconfig-file={{ .Values.kubeConfig }}"
         securityContext:
           privileged: true
         ports:
@@ -95,9 +94,6 @@ spec:
             mountPath: /etc/kube-flannel/
           - name: cni-cfg
             mountPath: /etc/cni/net.d
-          - name: etc-kubernetes
-            mountPath: /etc/kubernetes
-            readOnly: true
           - name: kubelet-dir
             mountPath: /var/lib/kubelet
             readOnly: true
@@ -111,9 +107,6 @@ spec:
         - name: cni-cfg
           hostPath:
             path: /etc/cni/net.d
-        - name: etc-kubernetes
-          hostPath:
-            path: /etc/kubernetes
         - name: kubelet-dir
           hostPath:
             path: /var/lib/kubelet

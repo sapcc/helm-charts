@@ -14,12 +14,12 @@
     secretKeyRef:
       name: vcf-secret
       key: pulumi_config_passphrase
-- name: VCF_OS_USERNAME
+- name: OS_USERNAME
   valueFrom:
     secretKeyRef:
       name: vcf-secret
       key: os_username
-- name: VCF_OS_PASSWORD
+- name: OS_PASSWORD
   valueFrom:
     secretKeyRef:
       name: vcf-secret

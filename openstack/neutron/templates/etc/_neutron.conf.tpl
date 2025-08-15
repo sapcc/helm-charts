@@ -15,7 +15,7 @@ max_routes = {{.Values.max_routes | default 256}}
 allow_overlapping_ips = true
 core_plugin = ml2
 
-service_plugins = {{required "A valid .Values.service_plugins required!" .Values.service_plugins}}{{- if .Values.interconnection.enabled }},networking-interconnection{{- end}}
+service_plugins = {{required "A valid .Values.service_plugins required!" .Values.service_plugins}},flavors{{- if .Values.interconnection.enabled }},networking-interconnection{{- end}}
 
 default_router_type = {{required "A valid .Values.default_router_type required!" .Values.default_router_type}}
 router_scheduler_driver = {{required "A valid .Values.router_scheduler_driver required!" .Values.router_scheduler_driver}}
@@ -52,6 +52,9 @@ owner_check_cache_expiration_time = {{ .Values.api.owner_check_cache_expiration_
 {{- end }}
 
 {{- template "utils.snippets.debug.eventlet_backdoor_ini" "neutron" }}
+
+[service_providers]
+service_provider = L3_ROUTER_NAT:asr1k:asr1k_neutron_l3.neutron.services.service_providers.asr1k_router.ASR1KRouterDriver:default
 
 [oslo_policy]
 enforce_scope = False
@@ -91,6 +94,7 @@ project_domain_name = ccadmin
 insecure = True
 allow_reverse_dns_lookup = {{.Values.global.designate_allow_reverse_dns_lookup | default "False"}}
 ipv4_ptr_zone_prefix_size = 24
+ptr_zone_email = dns@sap-ag.de
 
 [oslo_concurrency]
 lock_path = /var/lib/neutron/tmp

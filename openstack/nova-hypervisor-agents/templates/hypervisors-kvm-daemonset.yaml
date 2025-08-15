@@ -1,0 +1,362 @@
+{{- $hypervisor := merge .Values.defaults.hypervisor.kvm .Values.defaults.hypervisor.common }}
+kind: DaemonSet
+apiVersion: apps/v1
+metadata:
+  name: {{ .Release.Name }}-compute-kvm
+  labels:
+    system: openstack
+    type: backend
+    component: nova
+spec:
+  revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revision_history }}
+  selector:
+    matchLabels:
+      name: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+{{ tuple . "nova" "compute" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
+        name: {{ .Release.Name }}
+        alert-tier: os
+        alert-service: nova
+        hypervisor: "kvm"
+      annotations:
+        configmap-etc-hash: {{ include (print .Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
+        configmap-kvm-etc-hash: {{ include "kvm_configmap" . | sha256sum }}
+    spec:
+      terminationGracePeriodSeconds: {{ $hypervisor.default.graceful_shutdown_timeout | default .Values.defaults.default.graceful_shutdown_timeout | add 5 }}
+      hostNetwork: true
+      hostPID: true
+      hostIPC: true
+      securityContext:
+        supplementalGroups: [476, 477]
+        fsGroup: 42436
+      tolerations:
+      {{- range $k, $v := merge $hypervisor.pod.tolerations .Values.pod.tolerations }}
+      - # {{ $k }}
+      {{- toYaml $v | nindent 8 }}
+      {{- end }}
+      {{- if $hypervisor.pod.nodeSelector }}
+      nodeSelector:
+        {{- $hypervisor.pod.nodeSelector | toYaml| nindent 8 }}
+      {{- end }}
+      {{- if $hypervisor.pod.affinity }}
+      affinity:
+        {{- $hypervisor.pod.affinity | toYaml| nindent 8 }}
+      {{- end }}
+      hostAliases:
+      {{- range $ip := .Values.rabbitmq.externalIPs }}
+      - ip: {{ $ip }}
+        hostnames:
+        - {{ $.Values.rabbitmq.host }}
+      {{- end }}
+      initContainers:
+      - name: nova-compute-init
+        image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/{{ .Values.imageName }}:{{ .Values.imageVersion | required "Please set imageVersion similar" }}
+        command: ["/container.init/nova-compute-init"]
+        volumeMounts:
+          - mountPath: /container.init
+            name: bin
+          - mountPath: /var/lib/nova
+            name: var-lib-nova
+      {{- if and .Values.hypervisor_on_host .Values.defaults.hypervisor.kvm.instance_nfs_share }}
+      - name: setup-nfs
+        image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/{{ .Values.imageName }}:{{ .Values.imageVersion | required "Please set imageVersion similar" }}
+        imagePullPolicy: IfNotPresent
+        securityContext:
+          privileged: true
+          runAsUser: 0
+        command:
+        - bash
+        - -c
+        - |
+          set -euxo pipefail
+          DIR=/var/lib/nova/instances
+          mount -t nfs -o {{ dig "config_file" "libvirt" "nfs_mount_options" "defaults" $hypervisor }} {{ .Values.defaults.hypervisor.kvm.instance_nfs_share }} "$DIR"
+          chgrp 64055 "$DIR"
+          chown 42436 "$DIR"
+        volumeMounts:
+        - mountPath: /var/lib/nfs
+          name: nfs
+        - mountPath: /sys
+          name: sys
+        - mountPath: /var/lib/nova/instances
+          mountPropagation: Bidirectional
+          name: instances
+      {{- end }}
+      {{- if not .Values.hypervisor_on_host }}
+      - name: load-kernel-mod
+        image: {{ required ".Values.global.dockerHubMirror is missing" .Values.global.dockerHubMirror }}/library/busybox
+        command:
+        - modprobe
+        - kvm
+        volumeMounts:
+        - mountPath: /lib/modules
+          name: modules
+          readOnly: true
+      - name: fix-permission-instance-volume
+        image: {{ required ".Values.global.dockerHubMirror is missing" .Values.global.dockerHubMirror }}/library/busybox
+        command: ["sh", "-c", "chown -R 42436:42436 /var/lib/nova/instances"]
+        volumeMounts:
+        - mountPath: /var/lib/nova/instances
+          name: instances
+      {{- end }}
+      containers:
+        - name: nova-compute
+          image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/{{ .Values.imageName }}:{{ .Values.imageVersion | required "Please set imageVersion similar" }}
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            privileged: true
+            runAsUser: 42436
+          command:
+          - "nova-compute"
+          env:
+            - name: OS_LIBVIRT__LIVE_MIGRATION_INBOUND_ADDR
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.hostIP
+            - name: OS_VNC__SERVER_LISTEN
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.hostIP
+            - name: OS_VNC__SERVER_PROXYCLIENT_ADDRESS
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.hostIP
+            - name: OS_SPICE__SERVER_LISTEN
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.hostIP
+            - name: OS_SPICE__SERVER_PROXYCLIENT_ADDRESS
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.hostIP
+          {{- if .Values.sentry.enabled }}
+          - name: SENTRY_DSN
+            valueFrom:
+              secretKeyRef:
+                name: sentry
+                key: nova.DSN.python
+            {{- end }}
+{{- if or $hypervisor.python_warnings .Values.python_warnings }}
+          - name: PYTHONWARNINGS
+            value: {{ or $hypervisor.python_warnings .Values.python_warnings | quote }}
+{{- end }}
+          volumeMounts:
+          - mountPath: /var/lib/nova
+            name: var-lib-nova
+          - mountPath: /var/lib/nova/instances
+            name: instances
+          - mountPath: /var/lib/libvirt
+            name: libvirt
+            readOnly: true
+          - mountPath: /run
+            name: run
+          - mountPath: /etc/nova
+            name: nova-etc
+          - mountPath: /var/lib/nova/mnt
+            mountPropagation: Bidirectional
+            name: mnt
+          - mountPath: /var/lib/nfs
+            name: nfs
+          - mountPath: /sys
+            name: sys
+          - mountPath: /dev
+            name: dev
+          - mountPath: /etc/multipath
+            name: multipath-etc
+          - mountPath: /etc/iscsi
+            name: iscsi-etc
+          {{- if .Values.hypervisor_on_host }}
+          - mountPath: /usr/local/sbin/iscsiadm
+            subPath: iscsiadm
+            name: bin
+          - mountPath: /usr/local/sbin/multipath
+            subPath: multipath
+            name: bin
+          - mountPath: /usr/local/sbin/multipathd
+            subPath: multipathd
+            name: bin
+          - mountPath: /host
+            name: host
+          - mountPath: /var/lib/nova/.ssh
+            name: nova-ssh
+          - mountPath: /usr/share/qemu
+            name: usr-share-qemu
+          - mountPath: /etc/sudoers.d/nova
+            name: sudoers-etc
+            subPath: nova
+            readOnly: true
+          {{- end }}
+         {{- if not .Values.hypervisor_on_host }}
+        - name: nova-libvirt
+          image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/{{ .Values.imageName }}:{{ .Values.imageVersion | required "Please set imageVersion similar" }}
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            privileged: true
+          command:
+          - /container.init/nova-libvirt-start
+          env:
+          volumeMounts:
+          - mountPath: /var/lib/nova/instances
+            name: instances
+          - mountPath: /var/lib/libvirt
+            name: libvirt
+          - mountPath: /run
+            name: run
+          - mountPath: /etc/libvirt
+            name: etclibvirt
+          - mountPath: /etc/libvirt/libvirtd.conf
+            name: hypervisor-config
+            subPath: libvirtd.conf
+            readOnly: true
+          - mountPath: /container.init
+            name: bin
+        - name: nova-virtlog
+          image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/{{ .Values.imageName }}:{{ .Values.imageVersion | required "Please set imageVersion similar" }}
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            privileged: true
+          command:
+          - /usr/sbin/virtlogd
+          env:
+          volumeMounts:
+          - mountPath: /var/lib/nova/instances
+            name: instances
+          - mountPath: /var/lib/libvirt
+            name: libvirt
+          - mountPath: /var/run
+            name: run
+          - mountPath: /etc/libvirt
+            name: etclibvirt
+          - mountPath: /etc/libvirt/libvirtd.conf
+            name: hypervisor-config
+            subPath: libvirtd.conf
+            readOnly: true
+          - mountPath: /container.init
+            name: bin
+      {{- end }}
+      dnsConfig:
+        searches:
+          - {{ .Values.global.region }}.{{ .Values.global.tld }}
+      volumes:
+      - name: var-lib-nova
+        emptyDir: {}
+{{- if not .Values.hypervisor_on_host }}
+      - name: instances
+        persistentVolumeClaim:
+          claimName: nova-kvm-shared
+      - name: libvirt
+        emptyDir:
+          medium: Memory
+      - name: run
+        emptyDir:
+          medium: Memory
+      - name: modules
+        hostPath:
+          path: /lib/modules
+          type: Directory
+      - name: etclibvirt
+        emptyDir:
+          medium: Memory
+{{- else }}
+      - name: instances
+        hostPath:
+          path: /var/lib/nova/instances
+          type: DirectoryOrCreate
+      - name: nova-ssh
+        hostPath:
+          path: /var/lib/nova/.ssh
+          type: DirectoryOrCreate
+      - name: libvirt
+        hostPath:
+          path: /var/lib/libvirt
+          type: Directory
+      - name: run
+        hostPath:
+          path: /run
+          type: Directory
+      - name: host
+        hostPath:
+          path: /
+          type: Directory
+      - name: usr-share-qemu
+        hostPath:
+          path: /usr/share/qemu
+          type: Directory
+{{- end }}
+      - name: mnt
+{{- if not .Values.hypervisor_on_host }}
+        emptyDir:
+          medium: Memory
+{{- else }}
+        hostPath:
+          path: /var/lib/nova/mnt
+          type: DirectoryOrCreate
+{{- end }}
+      - name: sys
+        hostPath:
+          path: /sys
+          type: Directory
+      - name: dev
+        hostPath:
+          path: /dev
+          type: Directory
+      - name: multipath-etc
+        hostPath:
+          path: /etc/multipath
+          type: Directory
+      - name: iscsi-etc
+        hostPath:
+          path: /etc/iscsi
+          type: Directory
+      - name: nfs
+        hostPath:
+          path: /var/lib/nfs
+          type: Directory
+      - name: sudoers-etc
+        projected:
+          sources:
+          - configMap:
+              name: {{ .Release.Name }}-etc
+              items:
+              - key: sudoers-nova
+                path: nova
+      - name: nova-etc
+        projected:
+          sources:
+          - configMap:
+              name: {{ .Release.Name }}-etc
+              items:
+              - key: nova.conf
+                path: nova.conf
+              - key: logging.ini
+                path: logging.ini
+              - key: rootwrap.conf
+                path: rootwrap.conf
+              - key: compute.filters
+                path: rootwrap.conf.d/compute.filters
+          - configMap:
+              name: {{ .Release.Name }}-compute
+              items:
+              - key: nova-compute.conf
+                path: nova-compute.conf
+          - secret:
+              name: {{ .Release.Name }}-etc
+              items:
+              - key: cell.conf
+                path: nova.conf.d/cell.conf
+              - key: keystoneauth-secrets.conf
+                path: nova.conf.d/keystoneauth-secrets.conf
+      - name: statsd-etc
+        projected:
+          sources:
+          - configMap:
+              name: {{ .Release.Name }}-etc
+              items:
+              - key:  statsd-exporter.yaml
+                path: statsd-exporter.yaml
+      - name: bin
+        configMap:
+          name: {{ .Release.Name }}-bin
+          defaultMode: 0755

@@ -70,6 +70,9 @@ spec:
         volumeMounts:
         {{- include "utils.coordination.volume_mount" . | indent 10 }}
       {{- end }}
+      {{- if .Values.proxysql.native_sidecar }}
+      {{- tuple . .Values.wsgi_processes | include "utils.proxysql.container" | indent 6 }}
+      {{- end }}
       containers:
         - name: manila-api
           image: {{.Values.global.registry}}/loci-manila:{{.Values.loci.imageVersion}}
@@ -214,7 +217,9 @@ spec:
           resources:
             {{- toYaml .Values.pod.resources.api_statsd | trim | nindent 12 }}
           {{- end }}
+        {{- if not .Values.proxysql.native_sidecar }}
         {{- tuple . .Values.wsgi_processes | include "utils.proxysql.container" | indent 8 }}
+        {{- end }}
  {{- if .Values.osprofiler.enabled }}
  {{- include "jaeger_agent_sidecar" . | indent 8 }}
  {{- end }}

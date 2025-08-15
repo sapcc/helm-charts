@@ -10,19 +10,15 @@ spec:
   secretTemplate:
     labels:
       {{- include "rabbitmq.labels" (list $ "version" "rabbitmq" "deployment" "messagequeue") | indent 6 }}
-  commonName: "{{ template "fullname" . }}.{{ .Release.Namespace }}.svc.kubernetes.{{ .Values.global.region | required "global.region missing" }}.{{ .Values.global.tld | required "global.tld missing" }}"
   dnsNames:
-    - "{{ template "fullname" . }}.{{ .Release.Namespace }}.svc.kubernetes.{{ .Values.global.region | required "global.region missing" }}.{{ .Values.global.tld | required "global.tld missing" }}"
+    - {{ include "rabbitmq.serviceName" . }}
   {{- if .Values.externalNames }}
     {{- range .Values.externalNames }}
     - "{{ . }}"
     {{- end }}
   {{- end }}
-  {{- if .Values.externalIPs }}
-  ipAddresses:
-    {{- range .Values.externalIPs }}
-    - "{{ . }}"
-    {{- end }}
+  {{- if not .Values.certificate.commonName }}
+  commonName: {{ include "rabbitmq.defaultCommonName" . }}
   {{- end }}
   {{- .Values.certificate | toYaml | nindent 2 }}
 {{- end }}
