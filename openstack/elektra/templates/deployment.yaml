@@ -23,8 +23,7 @@ spec:
       labels:
         name: elektra
       annotations:
-        # We scrape the request metrics via annotation on the elektra service
-        # This annotation is for the puma metrics exporter
+        # This is needed to ensure that the service is scraped by prometheus
         prometheus.io/scrape: "true"
         prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
         # ensure deployment's annotation section is updated if support-configmap file changes
@@ -118,19 +117,3 @@ spec:
             limits:
               cpu: "2000m"
               memory: "2Gi"
-        - name: puma-metrics
-          image: {{.Values.global.registry}}/puma-exporter:latest
-          ports:
-            - name: metrics-puma
-              containerPort: 9235
-          # NOTE: observed resource usage in eu-de-2 (as of 2022-06)
-          # - CPU: 12m with 8 replicas was running into throttling, so give plenty headroom
-          # - RAM: levels off around 128Mi
-          # k -n elektra describe vpa puma-metrics
-          resources:
-            requests:
-              cpu: "120m"
-              memory: "200Mi"
-            limits:
-              cpu: "120m"
-              memory: "200Mi"
