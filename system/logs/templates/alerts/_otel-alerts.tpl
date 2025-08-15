@@ -23,7 +23,7 @@ groups:
       support_group: observability
       playbook: 'docs/support/playbook/logs/otel-logs-increasing'
     annotations:
-          description: 'OTel logs rate on {{`{{ $labels.k8s_cluster_name }}`}} in {{`{{ $labels.region }}`}} increased to 400% relative to 2h ago. Please check.'
+      description: 'OTel logs rate on {{`{{ $labels.k8s_cluster_name }}`}} in {{`{{ $labels.region }}`}} increased to 400% relative to 2h ago. Please check.'
       summary:  OTel log volume is increasing, check log volume.
   - alert: LogsOTelLogsDecreasing
     expr: sum(increase(otelcol_exporter_sent_log_records_total{job="logs/opentelemetry-collector-logs"}[1h])) by (k8s_cluster_name) / sum(increase(otelcol_exporter_sent_log_records_total{job="logs/opentelemetry-collector-logs"}[1h]offset 2h)) by (k8s_cluster_name) < 0.25
