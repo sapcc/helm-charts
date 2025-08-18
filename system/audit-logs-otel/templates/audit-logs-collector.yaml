@@ -97,6 +97,11 @@ spec:
   - name: run-containerd
     mountPath: /run/containerd
     readOnly: true
+{{- if .Values.openTelemetryPlugin.auditLogs.logsCollector.auditpollerConfig.enabled }}
+  - name: audit-poller-dir
+    mountPath: /audit
+    readOnly: true
+{{- end}}
   volumes:
   - name: varlog
     hostPath:
@@ -120,6 +125,11 @@ spec:
     hostPath:
       path: /run/containerd
       type: DirectoryOrCreate
+{{- if .Values.openTelemetryPlugin.auditLogs.logsCollector.auditpollerConfig.enabled }}
+  - name: audit-poller-dir
+    hostPath:
+      path: /audit
+{{- end }}
 {{- if .Values.openTelemetryPlugin.auditLogs.logsCollector.auditdConfig.enabled }}
 {{- include "auditd.initContainerVolumes" . | nindent 2 -}}
 {{- end }}
@@ -128,6 +138,10 @@ spec:
     receivers:
       k8s_events:
         auth_type: serviceAccount
+
+{{- if .Values.openTelemetryPlugin.auditLogs.logsCollector.auditpollerConfig.enabled }}
+  {{- include "auditpoller.receiver" . | nindent 6 -}}
+{{- end }}
 
 {{- if .Values.openTelemetryPlugin.auditLogs.logsCollector.auditdConfig.enabled }}
   {{- include "auditd.receiver" . | nindent 6 -}}
@@ -142,6 +156,10 @@ spec:
         send_batch_max_size: 5000
         timeout: 5s
         send_batch_size : 100
+
+{{- if .Values.openTelemetryPlugin.auditLogs.logsCollector.auditpollerConfig.enabled }}
+  {{- include "auditpoller.processors" . | nindent 6 -}}
+{{- end }}
 
 {{- if .Values.openTelemetryPlugin.auditLogs.logsCollector.auditdConfig.enabled }}
   {{- include "auditd.processors" . | nindent 6 -}}
@@ -416,9 +434,13 @@ spec:
           processors: [attributes/failover_username_a]
           exporters: [opensearch/failover_a]
         logs/failover_b:
-          receivers: [failover/opensearch]
+          receivers: [failover]
           processors: [attributes/failover_username_b]
           exporters: [opensearch/failover_b]
+
+{{- if .Values.openTelemetryPlugin.auditLogs.logsCollector.auditpollerConfig.enabled }}
+  {{- include "auditpoller.pipelines" . | nindent 8 -}}
+{{- end }}
 
 {{- if .Values.openTelemetryPlugin.auditLogs.logsCollector.auditdConfig.enabled }}
 {{- include "auditd.pipelines" . | nindent 8 -}}
