@@ -115,6 +115,16 @@ spec:
           subPath: watcher.yaml
           readOnly: true
         {{- end }}
+        {{- if .Values.rate_limit.enabled }}
+        - mountPath: /etc/ironic/ratelimit.yaml
+          name: ironic-etc
+          subPath: ratelimit.yaml
+          readOnly: true
+        - name: redis-ratelimit-secret
+          mountPath: {{ .Values.rate_limit.backend_secret_file }}
+          subPath: password
+          readOnly: true
+        {{- end }}
         {{- include "utils.proxysql.volume_mount" . | indent 8 }}
         {{- include "utils.trust_bundle.volume_mount" . | indent 8 }}
       {{- if not .Values.proxysql.native_sidecar }}
@@ -148,6 +158,11 @@ spec:
       - secret:
           secretName: {{ .Release.Name }}-secrets
         name: ironic-secrets
+{{- if .Values.rate_limit.enabled }}
+        - name: redis-ratelimit-secret
+          secret:
+            secretName: {{ .Release.Name }}-api-ratelimit-redis-user-default
+{{- end }}
       {{- include "utils.proxysql.volumes" . | indent 6 }}
       {{- include "utils.trust_bundle.volumes" . | indent 6 }}
       {{- tuple . .Values.api.override "ironic-api" .Values.global.ironicApiPortInternal | include "utils.snippets.debug.debug_port_volumes_and_configmap" }}
