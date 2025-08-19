@@ -1,17 +1,89 @@
 groups:
 - name: snmp-f5-enrich-project-id
   rules:
+  # --------------------------------------------------------------------------
+  # We no longer have network_id, lb_id, and listener_id. I do not know why
+  # To have project_id attached again via the data we have, this will work. 
+  # It may be too slow. It may be a bad solution. Olaf will have to evaluate. 
+  # --------------------------------------------------------------------------
+  - record: snmp_f5_virtual_info:maia
+    expr: |
+      max by (ltmVirtualServStatName, project_id, network_id, lb_id, listener_id) (
+        (
+          label_replace(
+            label_replace(
+              label_replace(
+                snmp_f5_ltmVirtualServStatName{module="f5customer"},
+                "network_id", "$1-$2-$3-$4-$5", "ltmVirtualServStatName",
+                ".*/net_([0-9a-f]{8})_([0-9a-f]{4})_([0-9a-f]{4})_([0-9a-f]{4})_([0-9a-f]{12})/.*"
+              ),
+              "listener_id", "$1", "ltmVirtualServStatName", ".*/listener_([0-9a-f-]{36}).*"
+            ),
+            "lb_id", "$1", "ltmVirtualServStatName", ".*/lb_([0-9a-f-]{36})/.*"
+          )
+          * on(network_id) group_left(project_id)
+          openstack_neutron_networks_projects
+        )
+      )
+
+  # --------------------------------------------------------------------------
+  # Join each F5 metric to the index on ltmVirtualServStatName to inherit:
+  #   project_id, network_id, lb_id, listener_id
+  # --------------------------------------------------------------------------
+
   - record: snmp_f5_ltmVirtualServStatClientBytesIn
-    expr: (sum(snmp_f5_ltmVirtualServStatClientBytesIn{module="f5customer"}) by (network_id, lb_id, listener_id) * on(network_id) group_left(project_id) openstack_neutron_networks_projects)
+    expr: |
+      sum by (project_id, network_id, lb_id, listener_id) (
+        snmp_f5_ltmVirtualServStatClientBytesIn{module="f5customer"}
+        * on(ltmVirtualServStatName) group_left(project_id, network_id, lb_id, listener_id)
+        snmp_f5_virtual_info:maia
+      )
+
   - record: snmp_f5_ltmVirtualServStatClientBytesOut
-    expr: (sum(snmp_f5_ltmVirtualServStatClientBytesOut{module="f5customer"}) by (network_id, lb_id, listener_id) * on(network_id) group_left(project_id) openstack_neutron_networks_projects)
+    expr: |
+      sum by (project_id, network_id, lb_id, listener_id) (
+        snmp_f5_ltmVirtualServStatClientBytesOut{module="f5customer"}
+        * on(ltmVirtualServStatName) group_left(project_id, network_id, lb_id, listener_id)
+        snmp_f5_virtual_info:maia
+      )
+
   - record: snmp_f5_ltmVirtualServStatClientCurConns
-    expr: (sum(snmp_f5_ltmVirtualServStatClientCurConns{module="f5customer"}) by (network_id, lb_id, listener_id) * on(network_id) group_left(project_id) openstack_neutron_networks_projects)
+    expr: |
+      sum by (project_id, network_id, lb_id, listener_id) (
+        snmp_f5_ltmVirtualServStatClientCurConns{module="f5customer"}
+        * on(ltmVirtualServStatName) group_left(project_id, network_id, lb_id, listener_id)
+        snmp_f5_virtual_info:maia
+      )
+
   - record: snmp_f5_ltmVirtualServStatClientMaxConns
-    expr: (sum(snmp_f5_ltmVirtualServStatClientMaxConns{module="f5customer"}) by (network_id, lb_id, listener_id) * on(network_id) group_left(project_id) openstack_neutron_networks_projects)
+    expr: |
+      sum by (project_id, network_id, lb_id, listener_id) (
+        snmp_f5_ltmVirtualServStatClientMaxConns{module="f5customer"}
+        * on(ltmVirtualServStatName) group_left(project_id, network_id, lb_id, listener_id)
+        snmp_f5_virtual_info:maia
+      )
+
   - record: snmp_f5_ltmVirtualServStatClientTotConns
-    expr: (sum(snmp_f5_ltmVirtualServStatClientTotConns{module="f5customer"}) by (network_id, lb_id, listener_id) * on(network_id) group_left(project_id) openstack_neutron_networks_projects)
+    expr: |
+      sum by (project_id, network_id, lb_id, listener_id) (
+        snmp_f5_ltmVirtualServStatClientTotConns{module="f5customer"}
+        * on(ltmVirtualServStatName) group_left(project_id, network_id, lb_id, listener_id)
+        snmp_f5_virtual_info:maia
+      )
+
   - record: snmp_f5_ltmVirtualServStatTotRequests
-    expr: (sum(snmp_f5_ltmVirtualServStatTotRequests{module="f5customer"}) by (network_id, lb_id, listener_id) * on(network_id) group_left(project_id) openstack_neutron_networks_projects)
+    expr: |
+      sum by (project_id, network_id, lb_id, listener_id) (
+        snmp_f5_ltmVirtualServStatTotRequests{module="f5customer"}
+        * on(ltmVirtualServStatName) group_left(project_id, network_id, lb_id, listener_id)
+        snmp_f5_virtual_info:maia
+      )
+
+  # Optional: keep a "Name" series enriched too (uses the index; no self-reference).
   - record: snmp_f5_ltmVirtualServStatName
-    expr: (sum(snmp_f5_ltmVirtualServStatName{module="f5customer"}) by (network_id, lb_id, listener_id) * on(network_id) group_left(project_id) openstack_neutron_networks_projects)
+    expr: |
+      max by (project_id, network_id, lb_id, listener_id, ltmVirtualServStatName) (
+        snmp_f5_ltmVirtualServStatName{module="f5customer"}
+        * on(ltmVirtualServStatName) group_left(project_id, network_id, lb_id, listener_id)
+        snmp_f5_virtual_info:maia
+      )
