@@ -2,6 +2,9 @@
 {{- range $az_long, $apods := $.Values.global.apods }}
 {{- if or (not $env.availability_zone) (eq $env.availability_zone $az_long) }}
 {{- $apod := first $apods }}
+{{- with $env.physical_network }}
+  {{- $apod = . }}
+{{- end }}
 ---
 apiVersion: apps/v1
 kind: Deployment
