@@ -38,6 +38,47 @@
         clean_zonefile: {{ $pool.clean_zonefile | default "False" }}
     {{- end}}
 {{- end }}
+{{- range $pool := .Values.catz_pools }}
+- name: {{ $pool.name }}
+  description: Catz Pool
+  {{- if $pool.attributes}}
+  attributes:
+   {{- range $attr := $pool.attributes}}
+    {{ $attr.tag }}
+   {{- end }}
+  {{- end }}
+  ns_records:
+    {{- range $idx, $srv := $pool.ns_records}}
+    - hostname: {{ $srv.hostname }}
+      priority: {{ add1 $idx }}
+    {{- end}}
+  nameservers:
+    {{- range $prio, $srv := $pool.nameservers}}
+    - host: {{ $srv.ip }}
+      port: 53
+    {{- end}}
+  also_notifies:
+    {{- range $prio, $srv := $pool.nameservers}}
+    - host: {{ $srv.ip }}
+      port: 53
+    {{- end}}
+  targets:
+    {{- range $idx, $srv := $pool.nameservers}}
+    - type: fake
+      description: Dummy Server {{ add1 $idx }}
+      masters:
+        - host: {{ $.Values.global.designate_mdns_external_ip }}
+          port: 5354
+      options:
+        host: {{$srv.ip}}
+        port: 53
+    {{- end}}
+  catalog_zone:
+      catalog_zone_fqdn: catalog.pool.{{ $pool.name }}.
+      catalog_zone_refresh: 60
+      catalog_zone_tsig_key: {{ tpl $pool.tsigkey $ | include "resolve_secret" }}
+      catalog_zone_tsig_algorithm: {{ tpl ($pool.tsigkeyalgorithm | default "hmac-sha512") $ | include "resolve_secret" }}
+{{- end }}
 {{- range $pool := .Values.akamai_pools_v2 }}
 - name: {{ $pool.name }}
   description: Akamai Edge DNS v2 Pool

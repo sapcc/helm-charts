@@ -1,0 +1,19 @@
+apiVersion: addons.cluster.x-k8s.io/v1alpha1
+kind: HelmChartProxy
+metadata:
+  name: calico-crds
+spec:
+  clusterSelector:
+    matchLabels:
+      cluster.x-k8s.io/cluster-name: rt-{{ .Values.global.region }}
+  repoURL: oci://keppel.eu-de-1.cloud.sap/ccloud-helm
+  chartName: calico-crds
+  releaseName: calico-crds
+  version: 3.29.1
+  namespace: kube-system
+  options:
+    waitForJobs: true
+    wait: true
+    timeout: 5m
+  valuesTemplate: |
+    installCRDs: true

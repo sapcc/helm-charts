@@ -67,6 +67,9 @@ spec:
               {{- end }}
               - --store.sd-files=/conf/sd/servicediscovery.yaml
               - --store.sd-interval={{ default "5m" $.Values.querySDInterval }}
+              {{- if $.Values.query.requestLog.enabled }}
+              - --request.logging-config-file=/conf/query/request_log.yaml
+              {{- end }}
               {{- range $.Values.query.extraArgs}}
               - {{ . }}
               {{- end }}
@@ -81,6 +84,10 @@ spec:
               {{- end }}
               - name: sd-config
                 mountPath: /conf/sd
+              {{- if $.Values.query.requestLog.enabled }}
+              - name: requestlog
+                mountPath: /conf/query
+              {{- end }}
               {{- if hasKey $.Values.query "resources" }}
               resources:
                 {{- if hasKey $.Values.query.resources "requests" }}
@@ -121,6 +128,12 @@ spec:
                 defaultMode: 420
                 name: {{ include "thanos.fullName" (list $name $root) }}-query-sd-configmap
               name: sd-config
+            {{- if $.Values.query.requestLog }}
+            - configMap:
+                defaultMode: 420
+                name: {{ include "thanos.fullName" (list $name $root) }}-query-requestlog-configmap
+              name: requestlog
+            {{- end }}
             {{- end }}
   {{- if $.Values.deployWholeThanos }}
   storeGateway:
@@ -149,6 +162,9 @@ spec:
             containers:
             - image: {{ include "thanosimage" $root }}
               name: store
+              resources:
+                requests:
+                  ephemeral-storage: {{ $.Values.store.resources.requests.ephemeralStorage }}
             securityContext:
               fsGroup: 0
               runAsGroup: 0

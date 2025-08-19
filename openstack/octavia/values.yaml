@@ -31,6 +31,7 @@ db_name: octavia
 proxysql:
   mode: ""
   forceSecretCreation: true
+  native_sidecar: true
 
 rabbitmq:
   alerts:
@@ -47,6 +48,10 @@ rabbitmq_notifications:
     enabled: true
     sidecar:
       enabled: false
+
+api-ratelimit-redis:
+  alerts:
+    support_group: network-api
 
 memcached:
   alerts:
@@ -308,7 +313,7 @@ pod:
         cpu: 50m
     worker:
       limits:
-        memory: 512Mi
+        memory: 1024Mi
         cpu: 1000m
       requests:
         memory: 256Mi
@@ -425,3 +430,111 @@ vpa:
   # The maximum available capacity is split evenly across containers specified in the Deployment, StatefulSet or DaemonSet to derive the upper recommendation bound. This does not work out for pods with a single resource-hungry container with several sidecar containers
   # Annotate the Deployment, StatefulSet or DaemonSet with vpa-butler.cloud.sap/main-container=$MAIN_CONTAINER. That will distribute 75% of the maximum available capacity to the main container and the rest evenly across all others
   set_main_container: true
+
+
+# openstack-rate-limit
+rate_limit:
+  enabled: false
+  backend_secret_file: /etc/octavia/ratelimit-backend-secret.conf
+  rate_limit_by: target_project_id
+  max_sleep_time_seconds: 0
+  log_sleep_time_seconds: 10
+  backend_timeout_seconds: 1
+  whitelist:
+    - Default/service
+    - Default/admin
+    - ccadmin/cloud_admin
+    - ccadmin/master
+  whitelist_users: null
+  blacklist: null
+  blacklist_users: null
+  groups:
+    delete_or_update:
+    - delete
+    - update
+  rates:
+    default:
+      lbaas/loadbalancers:
+        - action: read/list
+          limit: 100r/m
+        - action: create
+          limit: 100r/m
+      lbaas/loadbalancers/loadbalancer:
+        - action: read
+          limit: 100r/m
+        - action: delete_or_update
+          limit: 100r/m
+      lbaas/loadbalancers/loadbalancer/stats:
+        - action: read
+          limit: 100r/m
+      lbaas/loadbalancers/loadbalancer/status:
+        - action: read
+          limit: 100r/m
+      lbaas/loadbalancers/loadbalancer/failover:
+        - action: update
+          limit: 100r/m
+      lbaas/listeners:
+        - action: read/list
+          limit: 100r/m
+        - action: create
+          limit: 100r/m
+      lbaas/listeners/listener:
+        - action: read
+          limit: 100r/m
+        - action: delete_or_update
+          limit: 100r/m
+      lbaas/listeners/listener/stats:
+        - action: read
+          limit: 100r/m
+      lbaas/pools:
+        - action: read/list
+          limit: 100r/m
+        - action: create
+          limit: 100r/m
+      lbaas/pools/pool:
+        - action: read
+          limit: 100r/m
+        - action: delete_or_update
+          limit: 100r/m
+      lbaas/pools/pool/members:
+        - action: read/list
+          limit: 100r/m
+        - action: create
+          limit: 100r/m
+        - action: update
+          limit: 100r/m
+      lbaas/pools/pool/members/member:
+        - action: read
+          limit: 100r/m
+        - action: delete_or_update
+          limit: 100r/m
+      lbaas/healthmonitors:
+        - action: read/list
+          limit: 100r/m
+        - action: create
+          limit: 100r/m
+      lbaas/healthmonitors/healthmonitor:
+        - action: read
+          limit: 100r/m
+        - action: delete_or_update
+          limit: 100r/m
+      lbaas/l7policies:
+        - action: read/list
+          limit: 100r/m
+        - action: create
+          limit: 100r/m
+      lbaas/l7policies/l7policy:
+        - action: read
+          limit: 100r/m
+        - action: delete_or_update
+          limit: 100r/m
+      lbaas/l7policies/l7policy/rules:
+        - action: read
+          limit: 100r/m
+        - action: create
+          limit: 100r/m
+      lbaas/l7policies/l7policy/rules/rule:
+        - action: read
+          limit: 100r/m
+        - action: delete_or_update
+          limit: 100r/m

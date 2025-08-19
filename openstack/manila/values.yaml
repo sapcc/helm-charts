@@ -459,12 +459,17 @@ mysql_metrics:
       name: manila_share_servers_count_gauge
       query: |
         SELECT
-          host AS manila_host,
-          share_network_subnet_id,
-          status,
+          ss.host AS manila_host,
+          ss.status,
+          ssnsm.share_network_subnet_id,
           COUNT(*) AS count_gauge
-        FROM share_servers
-        GROUP BY manila_host, share_network_subnet_id, status;
+        FROM share_servers AS ss
+        JOIN share_server_share_network_subnet_mappings AS ssnsm
+          ON ss.id = ssnsm.share_server_id
+        GROUP BY
+          manila_host,
+          ss.status,
+          ssnsm.share_network_subnet_id;
       values:
         - "count_gauge"
     - help: Manila Share servers Stuck Count
@@ -476,19 +481,36 @@ mysql_metrics:
       name: manila_share_servers_stuck_count_gauge
       query: |
         SELECT
-          host as manila_host,
-          id,
-          share_network_subnet_id,
-          status,
+          ss.host AS manila_host,
+          ss.id,
+          ss.status,
+          ssnsm.share_network_subnet_id,
           COUNT(*) AS count_gauge
-        FROM share_servers
-        WHERE deleted='False' AND status in ('deleting','creating','error','error_unmanage','error_manage') AND (COALESCE(updated_at, created_at) < DATE_SUB(now(), INTERVAL 15 MINUTE))
+        FROM share_servers AS ss
+        JOIN share_server_share_network_subnet_mappings AS ssnsm
+          ON ss.id = ssnsm.share_server_id
+        WHERE
+          ss.deleted = 'False' AND ss.status IN (
+            'deleting',
+            'creating',
+            'error',
+            'error_unmanage',
+            'error_manage'
+          ) AND (
+            COALESCE(ss.updated_at, ss.created_at) < DATE_SUB(NOW(), INTERVAL 15 MINUTE)
+          )
         GROUP BY
           manila_host,
-          id,
-          share_network_subnet_id,
-          status
-        UNION SELECT 'none' AS manila_host, 'none' AS id, 'none' AS share_network_subnet_id, 'none' AS status, 0 AS count_gauge;
+          ss.id,
+          ss.status,
+          ssnsm.share_network_subnet_id
+        UNION
+        SELECT
+          'none' AS manila_host,
+          'none' AS id,
+          'none' AS share_network_subnet_id,
+          'none' AS status,
+          0 AS count_gauge;
       values:
         - "count_gauge"
     - help: Manila Share servers Stuck Duration in Seconds
@@ -500,14 +522,31 @@ mysql_metrics:
       name: manila_share_servers_stuck_duration_seconds
       query: |
         SELECT
-          host AS manila_host,
-          id,
-          share_network_subnet_id,
-          status,
-          UNIX_TIMESTAMP(NOW()) - UNIX_TIMESTAMP(COALESCE(updated_at, created_at)) AS duration
-        FROM share_servers
-        WHERE deleted='False' AND status in ('deleting','creating','error','error_unmanage','error_manage') AND (COALESCE(updated_at, created_at) < DATE_SUB(now(), INTERVAL 15 MINUTE))
-        UNION SELECT 'none' AS manila_host, 'none' AS id, 'none' AS share_network_subnet_id, 'none' AS status, 0 AS duration;
+          ss.host AS manila_host,
+          ss.id,
+          ssnsm.share_network_subnet_id,
+          ss.status,
+          UNIX_TIMESTAMP(NOW()) - UNIX_TIMESTAMP(COALESCE(ss.updated_at, ss.created_at)) AS duration
+        FROM share_servers AS ss
+        JOIN share_server_share_network_subnet_mappings AS ssnsm
+          ON ss.id = ssnsm.share_server_id
+        WHERE
+          ss.deleted = 'False' AND ss.status IN (
+            'deleting',
+            'creating',
+            'error',
+            'error_unmanage',
+            'error_manage'
+          ) AND (
+            COALESCE(ss.updated_at, ss.created_at) < DATE_SUB(NOW(), INTERVAL 15 MINUTE)
+          )
+        UNION
+        SELECT
+          'none' AS manila_host,
+          'none' AS id,
+          'none' AS share_network_subnet_id,
+          'none' AS status,
+          0 AS duration;
       values:
         - "duration"
     - help: Manila Share Access Stuck Max Duration
@@ -806,7 +845,7 @@ audit:
 # openstack-ratelimit-middleware
 api_rate_limit:
   enabled: false
-  backend_secret_file: /etc/manila/ratelimit-backend-secret.conf
+  backend_secret_file: /etc/manila/ratelimit-backend-secret.txt
   rate_limit_by: "target_project_id"
   max_sleep_time_seconds: 15
   log_sleep_time_seconds: 10

@@ -8,7 +8,7 @@ metadata:
     app.kubernetes.io/name: jumpserver
 spec:
   httpSDConfigs:
-    {{- range $jumpserver := .Values.http_sd_configs.tls }}
+    {{- range $jumpserver := tuple "jump01" "jump02"}}
     - url: {{ $.Values.http_sd_configs.netbox_production_url }}/virtual-machines/?custom_labels=job=jumpserver&target=primary_ip&obj_types=virtualization.virtualmachine&tenant=converged-cloud&platform=vmware-esxi&q={{ $jumpserver }}&region={{ $.Values.global.region }}
       refreshInterval: {{ $.Values.http_sd_configs.refresh_interval }}
       tlsConfig:
@@ -20,6 +20,13 @@ spec:
           key: key
           name: {{ $jumpserver }}-node-exporter
     {{- end }}
+  basicAuth:
+     username:
+       key: username
+       name: jumpserver-node-exporter-auth
+     password:
+       key: password 
+       name: jumpserver-node-exporter-auth
   metricsPath: /metrics
   scheme: HTTPS
   scrapeInterval: 60s

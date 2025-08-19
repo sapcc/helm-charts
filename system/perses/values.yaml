@@ -1,17 +1,11 @@
 global:
+  linkerd_requested: true
   # -- Labels to add to all resources.
   # This can be used to add a `support_group` or `service` label to all resources and alerting rules.
   commonLabels: {}
 
-# -- Certificate data for TLS secret (to be provided via secrets repository)
-# These values should be populated from the secrets repository
-certificates:
-  # -- TLS certificate. Vault URL is used to fetch the certificate.
-  tlsCert: ""
-  # -- TLS private key. Vault URL is used to fetch the private key.
-  tlsKey: ""
-  # -- CA certificate. Vault URL is used to fetch the CA certificate.
-  caCert: ""
+linkerd-support:
+  annotate_namespace: true
 
 persesPlugin:
   perses:
@@ -122,7 +116,7 @@ persesPlugin:
     # -- TLS configuration for mounting certificates from Kubernetes secrets
     tls:
       # -- Enable TLS certificate mounting
-      enabled: true
+      enabled: false
 
       # -- CA Certificate configuration
       # Certificates will be mounted to the directory specified in mountPath
@@ -139,7 +133,7 @@ persesPlugin:
       # Certificates will be mounted to the directory specified in mountPath
       clientCert:
         # -- Enable client certificate mounting
-        enabled: true
+        enabled: false
         # -- Name of the Kubernetes secret containing the client certificate and key
         # Defaults to "release-name-tls" if not specified
         secretName: ""
@@ -213,14 +207,14 @@ persesPlugin:
       # -- Label value to watch for ConfigMaps containing Perses resources
       labelValue: "true"
       # -- check for configmaps from all namespaces. When set to false, it will only check for configmaps in the same namespace as the Perses instance
-      allNamespaces: true
+      allNamespaces: false
       # -- add additional environment variables to sidecar container. you can look at the k8s-sidecar documentation for more information - https://github.com/kiwigrid/k8s-sidecar
       extraEnvVars:
-        []
-        # - name: RESOURCE
-        #   value: both
+        # -- This environment variable is required due to a bug in the upstream k8s-sidecar image. link to issue: https://github.com/kiwigrid/k8s-sidecar/issues/400
+        - name: SKIP_TLS_VERIFY
+          value: "true"
       # -- Enable secret access permissions in the cluster role. When enabled, the sidecar will have permissions to read secrets and use them.
-      enableSecretAccess: true
+      enableSecretAccess: false
 
     # -- Persistence parameters
     persistence:
@@ -285,6 +279,28 @@ persesPlugin:
     # -- Labels to add to the PrometheusRules alerts.
     # @default -- <pre> alertLabels: \| <br>   support_group: "default" <br>   meta: "" </pre>
     alertLabels: {}
+
+# -- All the SAP Cloud Infrastructure specific values should go here.
+sapCloudInfrastructure:
+  regionalDatasource:
+    enabled: true
+    URL: "http://thanos-regional-query.thanos.svc:10902"
+    name: "thanos-regional-query"
+    displayName: "Thanos Regional Query"
+    description: "Provides long-term metrics for this region."
+    # -- Set this datasource as the default datasource
+    default: true
+
+  globalDatasource:
+    enabled: false
+    URL: "http://thanos-global-query.thanos.svc:10902"
+    name: "thanos-global-query"
+    displayName: "Thanos Global Query"
+    description: "Thanos Global Query provides long-term aggregated metrics across all regions."
+    # -- Set this datasource as the default datasource
+    default: true
+    label: "perses.dev/global-resource"
+    labelValue: "true"
 
 owner-info:
   service: perses

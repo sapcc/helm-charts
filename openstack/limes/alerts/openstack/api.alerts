@@ -104,7 +104,7 @@ groups:
       severity: info
       support_group: '{{ if eq $labels.service_name "cinder" "ironic" "nova" "manila" -}} compute-storage-api {{- else if eq $labels.service_name "archer" "designate" "neutron" "octavia" -}} network-api {{- else if eq $labels.service_name "ceph" "swift" -}} storage {{- else -}} containers {{- end -}}'
       tier: os
-      playbook: docs/support/playbook/limes/alerts/failed_scrapes
+      playbook: 'https://operations.global.cloud.sap/docs/support/playbook/limes/alerts/failed_scrapes'
     annotations:
       description: Limes cannot scrape data from {{ title $labels.service_name }}
         for more than an hour. Please check if {{ title $labels.service_name }} is working.
@@ -121,7 +121,7 @@ groups:
       severity: warning
       support_group: containers
       tier: os
-      playbook: docs/support/playbook/limes/alerts/failed_scrapes
+      playbook: 'https://operations.global.cloud.sap/docs/support/playbook/limes/alerts/failed_scrapes'
     annotations:
       description: Limes cannot scrape data for projects from {{ title $labels.service_name }}
         for more than an hour. Please check if {{ title $labels.service_name }} is working.
@@ -203,7 +203,7 @@ groups:
       service: limes
       context: data-completeness
       meta: "Incomplete project resource data for {{$labels.service}}/{{$labels.resource}}"
-      playbook: docs/support/playbook/limes/alerts/incomplete_project_resource_data
+      playbook: 'https://operations.global.cloud.sap/docs/support/playbook/limes/alerts/incomplete_project_resource_data'
     annotations:
       summary: Incomplete project resource data in Limes DB
       description: Some or all projects are missing an entry in the "project_resources" table for resource
@@ -252,7 +252,7 @@ groups:
       support_group: '{{ $labels.support_group }}'
       tier: os
       service: '{{ $labels.service_name }}'
-      playbook: docs/support/playbook/limes/alerts/non_growing_quota
+      playbook: 'https://operations.global.cloud.sap/docs/support/playbook/limes/alerts/non_growing_quota'
     annotations:
       summary: Non-growing quota almost exhausted
       description: |
@@ -273,7 +273,7 @@ groups:
       description: |
         In the project {{ $labels.project_id }} ({{ $labels.domain }}/{{ $labels.project }}), the quota override for {{ $labels.service }}/{{ $labels.resource }} is ineffective.
         The actual quota is {{ $value }}, which differs from the configured quota override.
-        Please check the Resource Management UI of the project. If the quota override cannot be enforced because commitments or usage are higher than it, the override needs to be removed (from quota-overrides.yaml in cc/secrets).
+        Please check the <https://dashboard.{{ $labels.region }}.cloud.sap/_/{{ $labels.project_id }}/resources/v2/project|Resource Management UI of the project>. If the quota override cannot be enforced because commitments or usage are higher than it, the override needs to be removed (from quota-overrides.yaml in cc/secrets).
         The opposite case (a quota below the configured override) needs to be triaged by a Limes expert.
 
   - alert: OpenstackLimesCinderCapacityWithUnknownVolumeType

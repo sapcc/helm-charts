@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.6.12 - 2025/08/04
+
+memcached [version](https://github.com/memcached/memcached/wiki/ReleaseNotes1639) bumped to `1.6.39-alpine3.22`
+  * TLS and proxy fixes
+* chart version bumped
+
 ## v0.6.11 - 2025/07/23
 * Use `1.6.38-alpine3.22` image
 * SASL fixes:
