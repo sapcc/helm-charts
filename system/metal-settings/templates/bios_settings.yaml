@@ -2,9 +2,6 @@
 
 {{- range $path, $_  := $.Files.Glob "bios_settings/**" }}
 {{- $name := base (dir $path) }}
-
-
-
 {{- if eq (len (splitList "/" $path)) 5 -}}
 
 {{- $folders := splitList "/" $path }}
@@ -15,7 +12,7 @@
 {{- $version := replace "." "-" $version}}
 {{- $version := replace "-yaml" "" $version}}
 
-{{- range $path, $_ := $.Files.Glob (printf "bios_settings/%s/%s/%s/*.yaml" $vendor $model $clusterType) -}}
+{{ range $path, $_ := $.Files.Glob (printf "bios_settings/%s/%s/%s/*.yaml" $vendor $model $clusterType) -}}
 apiVersion: v1
 kind: BIOSSettingsSet
 metadata:
@@ -27,7 +24,6 @@ spec:
       kubernetes.metal.cloud.sap/cluster-type: {{ $clusterType }}
   biosSettingsTemplate:
     serverMaintenancePolicy: Approval
-
 {{- if $.Files.Lines $path | len | eq 2 }}
 {{ $.Files.Get (printf "bios_settings/%s/default.yaml" $vendor) | trim | indent 2 }}
 {{ $.Files.Get $path | trim | indent 2 }}
@@ -36,6 +32,6 @@ model: {{ $model }}
 {{ $.Files.Get $path | trim | indent 2 }}
 {{- end }}
 ---
-{{- end }}
-{{- end }}
-{{- end }}
+{{- end -}}
+{{- end -}}
+{{- end -}}
