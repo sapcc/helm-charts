@@ -1,3 +1,8 @@
+## 8.0.7
+
+* Upgrade Prometheus to v3.5.0
+* Improved VPA alerting with blaming respective container
+
 ## 8.0.0
 
 * Upgrade Prometheus to v3.2.1
