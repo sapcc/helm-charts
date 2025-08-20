@@ -39,6 +39,7 @@
   'cloud_network_admin':%(target.role.name)s or
   'cloud_dns_admin':%(target.role.name)s or
   'cloud_dns_viewer':%(target.role.name)s or
+  'cloud_dns_backup':%(target.role.name)s or
   'dns_admin':%(target.role.name)s or
   'dns_hostmaster':%(target.role.name)s or
   'dns_zonemaster':%(target.role.name)s or

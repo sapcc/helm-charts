@@ -16,6 +16,7 @@ member_and_shared: role:member and rule:owner_or_zone_shared
 viewer: role:dns_viewer and rule:owner
 viewer_and_shared: role:dns_viewer and rule:owner_or_zone_shared
 cloud_dns_viewer: role:cloud_dns_viewer
+cloud_dns_backup: role:cloud_dns_backup
 
 context_is_cloud_admin: role:cloud_dns_admin
 context_is_dns_ops: rule:context_is_cloud_admin or role:cloud_dns_ops or rule:admin
@@ -25,13 +26,13 @@ context_is_hostmaster: rule:context_is_dns_support or (role:dns_hostmaster and r
 context_is_mailmaster: rule:context_is_dns_support or (role:dns_mailmaster and rule:owner_or_zone_shared)
 context_is_webmaster: rule:context_is_dns_support or rule:context_is_mailmaster or rule:context_is_hostmaster or (role:dns_webmaster and rule:owner_or_zone_shared)
 context_is_editor: rule:dns_admin or rule:member or rule:admin
-context_is_viewer: rule:viewer_and_shared or rule:member_and_shared or rule:context_is_master or rule:context_is_editor or rule:viewer or rule:member or rule:cloud_dns_viewer
+context_is_viewer: rule:viewer_and_shared or rule:member_and_shared or rule:context_is_master or rule:context_is_editor or rule:viewer or rule:member or rule:cloud_dns_viewer or rule:cloud_dns_backup
 context_is_master: rule:context_is_dns_support or rule:context_is_zonemaster or rule:context_is_hostmaster or rule:context_is_mailmaster or rule:context_is_webmaster or rule:context_is_editor
 
 zone_primary_or_dns_ops: "('PRIMARY':%(zone_type)s and rule:context_is_dns_ops) or ('SECONDARY':%(zone_type)s and is_admin:True)"
 
 default: rule:admin_or_owner_or_zone_shared
-all_tenants: rule:context_is_dns_support or rule:cloud_dns_viewer
+all_tenants: rule:context_is_dns_support or rule:cloud_dns_viewer or rule:cloud_dns_backup
 edit_managed_records: rule:context_is_master
 use_low_ttl: rule:context_is_dns_support
 get_quotas: rule:context_is_viewer
@@ -44,8 +45,8 @@ get_tld: rule:admin
 update_tld: rule:admin
 delete_tld: rule:admin
 create_tsigkey: rule:admin
-find_tsigkeys: rule:admin
-get_tsigkey: rule:admin
+find_tsigkeys: rule:admin or rule:cloud_dns_backup
+get_tsigkey: rule:admin or rule:cloud_dns_backup
 update_tsigkey: rule:admin
 delete_tsigkey: rule:admin
 find_tenants: rule:admin or rule:context_is_dns_ops
