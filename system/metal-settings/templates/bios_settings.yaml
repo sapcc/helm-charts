@@ -1,5 +1,3 @@
-{{- $processedDict := dict -}}
-
 {{- range $path, $_  := $.Files.Glob "bios_settings/**" }}
 {{- $name := base (dir $path) }}
 {{- if eq (len (splitList "/" $path)) 5 -}}
@@ -9,8 +7,8 @@
 {{- $vendor := index $folders 1 }}
 {{- $model := index $folders 2 }}
 {{- $clusterType := index $folders 3 }}
-{{- $version := replace "." "-" $version}}
-{{- $version := replace "-yaml" "" $version}}
+{{- $version := replace "_" "-" $version}}
+{{- $version := replace ".yaml" "" $version}}
 
 {{ range $path, $_ := $.Files.Glob (printf "bios_settings/%s/%s/%s/*.yaml" $vendor $model $clusterType) -}}
 apiVersion: metal.ironcore.dev/v1alpha1
