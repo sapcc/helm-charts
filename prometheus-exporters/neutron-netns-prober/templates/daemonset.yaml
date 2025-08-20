@@ -35,8 +35,6 @@ spec:
         env:
           - name: OS_AUTH_URL
             value: {{ required ".Values.authURL missing" .Values.authURL }}
-          - name: OS_USERNAME
-            value: {{ .Values.username }}
           - name: OS_DOMAIN_NAME
             value: {{ .Values.userDomainName }}
           - name: OS_PROJECT_NAME
@@ -45,6 +43,8 @@ spec:
             value: {{ .Values.projectDomainName }}
           - name: OS_PASSWORD
             valueFrom: { secretKeyRef:    { name: neutron-netns-prober, key: password } }
+          - name: OS_USERNAME
+            valueFrom: { secretKeyRef:    { name: neutron-netns-prober, key: username } }
         imagePullPolicy: IfNotPresent
         name: prober
         securityContext:
