@@ -13,7 +13,7 @@
 {{- $version := replace "-yaml" "" $version}}
 
 {{ range $path, $_ := $.Files.Glob (printf "bios_settings/%s/%s/%s/*.yaml" $vendor $model $clusterType) -}}
-apiVersion: v1
+apiVersion: metal.ironcore.dev/v1alpha1
 kind: BIOSSettingsSet
 metadata:
   name: {{ $vendor }}-{{ $model }}-{{ $clusterType }}
@@ -25,10 +25,10 @@ spec:
   biosSettingsTemplate:
     serverMaintenancePolicy: Approval
 {{- if $.Files.Lines $path | len | eq 2 }}
-{{ $.Files.Get (printf "bios_settings/%s/default.yaml" $vendor) | trim | indent 2 }}
-{{ $.Files.Get $path | trim | indent 2 }}
+{{ $.Files.Get (printf "bios_settings/%s/default.yaml" $vendor) | trim | indent 4 }}
+{{ $.Files.Get $path | trim | indent 4 }}
 {{- else }}
-{{ $.Files.Get $path | trim | indent 2 }}
+{{ $.Files.Get $path | trim | indent 4 }}
 {{- end }}
 ---
 {{- end -}}
