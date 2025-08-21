@@ -18,6 +18,9 @@ metadata:
     "helm.sh/hook-delete-policy": "before-hook-creation"
 spec:
   template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/default-container: octavia-migration
     spec:
       restartPolicy: OnFailure
     {{- if $proxysql }}
@@ -35,6 +38,9 @@ spec:
               value: {{ include "octavia.db_service" . }}
             - name: NAMESPACE
               value: {{ .Release.Namespace }}
+        {{- if .Values.proxysql.native_sidecar }}
+        {{- include "utils.proxysql.container" . | indent 8 }}
+        {{- end }}
       containers:
         - name: octavia-migration
           image: {{required ".Values.global.registry is missing" .Values.global.registry}}/loci-octavia:{{required "Values.imageVersion is missing" .Values.imageVersion}}
@@ -70,7 +76,9 @@ spec:
             {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
     {{- if $proxysql }}
             {{- include "utils.proxysql.volume_mount" . | indent 12 }}
+        {{- if not .Values.proxysql.native_sidecar }}
         {{- include "utils.proxysql.container" . | indent 8 }}
+        {{- end }}
     {{- end }}
       volumes:
         - name: octavia-etc

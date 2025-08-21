@@ -1036,3 +1036,51 @@ nanny:
     schedule: "30 * * * *"
     max_faults: 10
     max_rows: 25
+
+# openstack-rate-limit
+rate_limit:
+  enabled: false
+  rate_limit_by: target_project_id
+  max_sleep_time_seconds: 0
+  log_sleep_time_seconds: 10
+  backend_timeout_seconds: 1
+  whitelist:
+    - Default/service
+    - Default/admin
+    - tempest/performance-testing
+    - ccadmin/cloud_admin
+    - ccadmin/master
+  whitelist_users: null
+  blacklist: null
+  blacklist_users: null
+  groups:
+    write:
+      - delete
+      - update
+  rates:
+    default:
+      servers:
+        - action: read/list
+          limit: 100r/m
+        - action: create
+          limit: 100r/m
+      servers/server:
+        - action: read/list
+          limit: 100r/m
+        - action: write
+          limit: 100r/m
+      servers/server/migrations:
+        - action: read/list
+          limit: 100r/m
+      servers/server/migrations/migration:
+        - action: read/list
+          limit: 100r/m
+      servers/server/action:
+        - action: create
+          limit: 100r/m
+      flavors:
+        - action: read/list
+          limit: 100r/m
+      servers/server/remote-consoles:
+        - action: create
+          limit: 100r/m

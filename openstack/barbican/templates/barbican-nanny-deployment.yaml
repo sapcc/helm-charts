@@ -47,6 +47,10 @@ spec:
         {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
     spec:
       {{ include "utils.proxysql.pod_settings" . | indent 6 }}
+      initContainers:
+      {{- if .Values.proxysql.native_sidecar }}
+      {{- tuple . 1 | include "utils.proxysql.container" | indent 6 }}
+      {{- end }}
       containers:
 {{- if .Values.barbican_nanny.db_secret_move.enabled }}
       - name: move-secrets
@@ -98,7 +102,9 @@ spec:
           readOnly: true
         {{- include "utils.proxysql.volume_mount" . | indent 8 }}
         {{- include "utils.trust_bundle.volume_mount" . | indent 8 }}
+      {{- if not .Values.proxysql.native_sidecar }}
       {{- tuple . 1 | include "utils.proxysql.container" | indent 6 }}
+      {{- end }}
       volumes:
       - name: barbican-etc
         configMap:
