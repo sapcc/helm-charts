@@ -382,18 +382,3 @@ groups:
     annotations:
       description: "aPod node `{{ $labels.hostsystem }}` runs multiple vCenter VMs. ({{ $labels.vcenter }})"
       summary: "aPod node `{{ $labels.hostsystem }}` runs multiple vCenter VMs. ({{ $labels.vcenter }})"
-
-  - alert: HostStoragePathCheck
-    expr: vrops_hostsystem_storage_number_of_path < on(vccluster) group_left() (max(vrops_hostsystem_storage_number_of_path) by(vccluster))
-    for: 30m
-    labels:
-      severity: info
-      tier: vmware
-      service: compute
-      support_group: compute
-      context: "{{ $labels.hostsystem }} storage paths"
-      meta: "storage paths for `{{ $labels.hostsystem }}` is less than other hosts in the `{{ $labels.vccluster }}`. ({{ $labels.vcenter }})"
-      no_alert_on_absence: "true"
-    annotations:
-      description: "storage paths for `{{ $labels.hostsystem }}` is less than other hosts in the `{{ $labels.vccluster }}`. ({{ $labels.vcenter }})"
-      summary: "storage paths for `{{ $labels.hostsystem }}` is less than other hosts in the `{{ $labels.vccluster }}`. ({{ $labels.vcenter }})"
