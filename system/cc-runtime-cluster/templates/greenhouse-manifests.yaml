@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: greenhouse-manifests
+  data:
+    data: |-
+      apiVersion: rbac.authorization.k8s.io/v1
+      kind: ClusterRoleBinding
+      metadata:
+        name: greenhouse-oidc-access
+      subjects:
+        - kind: User
+          apiGroup: rbac.authorization.k8s.io
+          name: greenhouse:system:serviceaccount:{{ .Values.greenhouse.org }}:rt-{{ .Values.global.region }}
+      roleRef:
+        apiGroup: rbac.authorization.k8s.io
+        kind: ClusterRole
+        name: cluster-admin
