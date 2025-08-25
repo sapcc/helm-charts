@@ -235,6 +235,9 @@ spec:
       # match kubelet with KCP version
       - IMAGE={{ $.Values.images.kubelet.repository }}:{{ .Values.controlplane.version }}
       - while true; do ctr image pull $IMAGE && break; done
+      # stop services if running to avoid "Text file busy" error
+      - systemctl stop kubelet || true
+      - systemctl stop kubeadm || true
       - ctr run --rm --mount type=bind,src=/usr/bin,dst=/mnt,options=rbind $IMAGE extract-files sh -c "cp --preserve=mode /usr/local/bin/kubeadm /mnt/kubeadm && cp --preserve=mode /usr/local/bin/kubelet /mnt/kubelet"
       # https://github.com/kube-vip/kube-vip/issues/684
       - |
