@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.27.2 - 2025/08/23
+Add missing secret resolve in `init.sql`, when user is disabled, so the generated comment would contain the actual username instead of the vault reference if the vault secret is being used for the username value
+* chart version bumped
+
 ## v0.27.1 - 2025/08/13
 * MariaDB version updated to [10.11.14](https://mariadb.com/docs/release-notes/community-server/mariadb-10-11-series/mariadb-10.11.14-release-notes)
   * several critical (InnoDB) fixes
