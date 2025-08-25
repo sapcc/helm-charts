@@ -47,6 +47,9 @@ spec:
       hostname: nova-scheduler
       initContainers:
       {{- tuple . (dict "service" (include "nova.helpers.cell01_services" .)) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
+      {{- if .Values.proxysql.native_sidecar }}
+      {{- tuple . .Values.scheduler.workers | include "utils.proxysql.container" | indent 6 }}
+      {{- end }}
       containers:
         - name: nova-scheduler
           image: {{ tuple . "scheduler" | include "container_image_nova" }}
@@ -81,7 +84,9 @@ spec:
             mountPath: /etc/nova
           {{- include "utils.proxysql.volume_mount" . | indent 10 }}
           {{- include "utils.trust_bundle.volume_mount" . | indent 10 }}
+        {{- if not .Values.proxysql.native_sidecar }}
         {{- tuple . .Values.scheduler.workers | include "utils.proxysql.container" | indent 8 }}
+        {{- end }}
         {{- if .Values.scheduler.rpc_statsd_enabled }}
         - name: statsd
           image: {{ required ".Values.global.dockerHubMirror is missing" .Values.global.dockerHubMirror}}/prom/statsd-exporter:v0.8.1
