@@ -49,14 +49,14 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: {{ .Release.Name }}-redfish-certrobot
-                  key: ipmi_user_name
+                  key: bmc_certrobot_username
             - name: BMC_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: {{ .Release.Name }}-redfish-certrobot
-                  key: ipmi_user_passwd
+                  key: bmc_certrobot_passwd
             - name: NETBOX_URL
-              value: "{{ required "netbox.url is required" .Values.netbox.url }}"
+              value: "{{ required ".Values.cert_robot.netbox_url is required" .Values.cert_robot.netbox_url }}"
             - name: OS_CLIENT_SECURE_FILE # gophercloud doesn't interprete that variable, but openstacksdk does
               value: "/etc/openstack/sdk.yaml"
             {{- include "values_to_env" .Values.cert_robot.env | indent 12 }}
