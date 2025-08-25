@@ -174,12 +174,32 @@ opensearch/failover_a_swift:
       authenticator: basicauth/failover_a
     endpoint: {{ .Values.openTelemetryPlugin.openTelemetry.openSearchLogs.endpoint }}
   logs_index: ${index}-swift-datastream
+  retry_on_failure:
+    enabled: true
+    max_elapsed_time: 0s
+  sending_queue:
+    block_on_overflow: true
+    enabled: true
+    num_consumers: 10
+    queue_size: 10000
+    sizer: requests
+  timeout: 30s
 opensearch/failover_b_swift:
   http:
     auth:
       authenticator: basicauth/failover_b
     endpoint: {{ .Values.openTelemetryPlugin.openTelemetry.openSearchLogs.endpoint }}
   logs_index: ${index}-swift-datastream
+  retry_on_failure:
+    enabled: true
+    max_elapsed_time: 0s
+  sending_queue:
+    block_on_overflow: true
+    enabled: true
+    num_consumers: 10
+    queue_size: 10000
+    sizer: requests
+  timeout: 30s
 {{- end }}
 
 {{- define "openstack.pipeline" }}

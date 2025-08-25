@@ -1,0 +1,93 @@
+kind: DaemonSet
+apiVersion: apps/v1
+metadata:
+  name: {{ .Release.Name }}
+  labels:
+    component: coredump-exporter
+spec:
+  revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revision_history }}
+  selector:
+    matchLabels:
+      name: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        name: {{ .Release.Name }}
+    spec:
+      securityContext:
+        runAsUser: 0
+      hostNetwork: true
+      tolerations:
+      {{- range $k, $v := .Values.pod.tolerations }}
+      - # {{ $k }}
+      {{- toYaml $v | nindent 8 }}
+      {{- end }}
+      {{- if .Values.pod.nodeSelector }}
+      nodeSelector:
+        {{- .Values.pod.nodeSelector | toYaml| nindent 8 }}
+      {{- end }}
+      {{- if .Values.pod.affinity }}
+      affinity:
+        {{- .Values.pod.affinity | toYaml| nindent 8 }}
+      {{- end }}
+      containers:
+      - name: coredump-exporter
+        image: {{ .Values.imageName }}:{{ .Values.imageVersion | required "Please set imageVersion similar" }}
+        imagePullPolicy: IfNotPresent
+        command:
+        - "sh"
+        - "-c"
+        - |
+          while read line; do export "$line" ; done < /etc/os-release
+          rclone {{ .Values.rcloneOperation }} \
+            --header-upload "X-Delete-After: {{ .Values.swiftDeleteAfter }}" \
+            --header-upload "X-Object-Meta-gardenlinux-version: $GARDENLINUX_VERSION" \
+            --header-upload "X-Object-Meta-gardenlinux-cname: $GARDENLINUX_CNAME" \
+            --header-upload "X-Object-Meta-gardenlinux-commit-id: $GARDENLINUX_COMMIT_ID" \
+            --header-upload "X-Object-Meta-hostname: $HOSTNAME" \
+            -M . swift://coredump-exporter/
+
+          while sleep {{ .Values.pollingDelay }}; do
+            rclone {{ .Values.rcloneOperation }} \
+              --max-age {{ add .Values.pollingDelay .Values.pollingFudging }}
+              --header-upload "X-Delete-After: 864000" \
+              --header-upload "X-Object-Meta-gardenlinux-version: $GARDENLINUX_VERSION" \
+              --header-upload "X-Object-Meta-gardenlinux-cname: $GARDENLINUX_CNAME" \
+              --header-upload "X-Object-Meta-gardenlinux-commit-id: $GARDENLINUX_COMMIT_ID" \
+              --header-upload "X-Object-Meta-hostname: $HOSTNAME" \
+              -M . swift://coredump-exporter/
+          done
+        env:
+        - name: OS_AUTH_URL
+          value: {{ .Values.osAuthUrl | required ".Values.osAuthUrl missing" }}
+        - name: OS_APPLICATION_CREDENTIAL_ID
+          value: {{ .Values.osApplicationCredentialId | required ".Values.osApplicationCredentialId missing" }}
+        - name: OS_APPLICATION_CREDENTIAL_NAME
+          value: {{ .Values.osApplicationCredentialName | required ".Values.osApplicationCredentialName missing" }}
+        - name: OS_APPLICATION_CREDENTIAL_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Release.Name }}
+              key: osApplicationCredentialSecret
+        volumeMounts:
+        - mountPath: /data
+          name: data
+          readOnly: true
+        - mountPath: /etc/os-release
+          name: os-release
+          readOnly: true
+        - mountPath: /config/rclone
+          name: config
+          readOnly: true
+      volumes:
+      - name: data
+        hostPath:
+          path: /var/lib/systemd/coredump/
+          type: Directory
+      - name: os-release
+        hostPath:
+          path: /etc/os-release
+          type: File
+      - name: config
+        configMap:
+          name: {{ .Release.Name }}

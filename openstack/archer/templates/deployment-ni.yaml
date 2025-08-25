@@ -2,6 +2,9 @@
 {{- range $az_long, $apods := $.Values.global.apods }}
 {{- if or (not $env.availability_zone) (eq $env.availability_zone $az_long) }}
 {{- $apod := first $apods }}
+{{- with $env.physical_network }}
+  {{- $apod = . }}
+{{- end }}
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -16,6 +19,8 @@ spec:
       {{- include "archer.selectorLabels" $ | nindent 6 }}
       app.kubernetes.io/component: agent
       cloud.sap/host: {{ $apod }}
+  strategy:
+    type: Recreate
   template:
     metadata:
       {{- with $.Values.podAnnotations }}
@@ -26,6 +31,7 @@ spec:
         kubectl.kubernetes.io/default-container: archer-agent-ni
         {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
         linkerd.io/inject: enabled
+        config.linkerd.io/skip-inbound-ports: "{{ $env.service_port }}"
         {{- end }}
         {{- toYaml . | nindent 8 }}
       {{- end }}

@@ -4,7 +4,7 @@ PROVIDER_METAL_VERSION ?= 00d028c4aac7fa1e168c5ec9fab74e197530e37c
 PROVIDER_VSPHERE_VERSION ?= v1.9.3
 PROVIDER_IPAM_VERSION ?= v0.1.1
 PROVIDER_HELM ?= v0.3.2
-PROVIDER_KUBERNIKUS_VERSION ?= 9fd81475b828971913b3b27addf51fdbd0511d85
+PROVIDER_KUBERNIKUS_VERSION ?= b6d18b8c8e26336aec34ecadb76d8ec78cdaf67d
 BAREMETAL_OPERATOR_VERSION ?= v0.6.0
 IPXE_OPERATOR_VERSION ?= 28b7ac62711e74db02fe0097bdf474a302a054c6
 FEDHCP_VERSION ?= a59539c62aaa11a96c82fe792c87daaac4cb75bf
@@ -16,7 +16,7 @@ SHELL := bash
 UNAME_S := $(shell uname -s)
 SED := sed
 ifeq ($(UNAME_S),Darwin)
-    SED := gsed
+	SED := gsed
 endif
 
 build: build-cluster-api-core build-bootstrap-kubeadm build-provider-metal3 build-provider-kubernikus
@@ -107,9 +107,11 @@ build-provider-metal3:
 	@find provider-metal3/crds -type f -exec $(SED) -i -e 's#capm3-system/#capi/#g' {} \;
 	@find provider-metal3/templates -type f -exec $(SED) -i -e 's#.capm3-system.#.capi.#g' {} \;
 	@find provider-metal3/templates -type f -exec $(SED) -i -e 's#/{{ include "provider-metal3.fullname" . }}-system/#/#g' {} \;
+	@# fix for "no matches for kind "IPClaim" 
+	@curl -sSL https://raw.githubusercontent.com/metal3-io/ip-address-manager/$(PROVIDER_METAL3_VERSION)/config/crd/bases/ipam.metal3.io_ipclaims.yaml -o provider-metal3/crds/ipam.metal3.io_ipclaims.yaml
 	@yq -i '.controllerManager.manager.image.tag="$(PROVIDER_METAL3_VERSION)"' provider-metal3/values.yaml
 	@yq -i '.fullnameOverride="capm3"' provider-metal3/values.yaml
-	@yq -i '.version="0.2.5"' provider-metal3/Chart.yaml
+	@yq -i '.version="0.2.6"' provider-metal3/Chart.yaml
 
 build-provider-metal:
 	$(call build-chart,provider-metal,https://github.com/ironcore-dev/cluster-api-provider-ironcore-metal//config/default,$(PROVIDER_METAL_VERSION))
@@ -122,7 +124,7 @@ build-provider-kubernikus:
 	$(call build-chart,provider-kubernikus,https://github.com/sapcc/cluster-api-control-plane-provider-kubernikus//config/default,$(PROVIDER_KUBERNIKUS_VERSION))
 	@yq -i '.controllerManager.manager.image.tag="$(PROVIDER_KUBERNIKUS_VERSION)"' provider-kubernikus/values.yaml
 	@yq -i '.fullnameOverride="capi-cp-provider-kubernikus"' provider-kubernikus/values.yaml
-	@yq -i '.version="0.1.8"' provider-kubernikus/Chart.yaml
+	@yq -i '.version="0.1.9"' provider-kubernikus/Chart.yaml
 
 build-baremetal-operator:
 	@yq -i '.namespace = "baremetal-operator=system"' kustomization.yaml
@@ -141,12 +143,14 @@ build-baremetal-operator:
 	@yq -i '.version="1.0.1"' baremetal-operator-core/Chart.yaml
 
 build-metal-operator-remote:
+	@helm dep up metal-operator-remote
 	@helm template metal-operator metal-operator-remote/charts/metal-operator* \
 		-n kube-system \
 		-f metal-operator-remote/values-managed-resources.yaml |\
 		$(SED) 's/kind: Role/kind: ClusterRole/g' - |\
 		yq eval 'select(.kind != "Service" and .kind != "ValidatingWebhookConfiguration")' - >\
 		metal-operator-remote/managedresources/crds-and-rbac.yaml
+	yq -i '.version = (.version | split(".") | .[2] = ((.[2] | tonumber) + 1 | tostring) | join("."))' metal-operator-remote/Chart.yaml
 
 build-boot-operator-remote:
 	@helm dep up boot-operator-remote

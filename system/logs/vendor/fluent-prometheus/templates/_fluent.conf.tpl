@@ -164,6 +164,11 @@
     pattern /rejected_execution_exception/
     tag "OTELBACKPRESSURE.${tag}"
   </rule>
+  <rule>
+    key log
+    pattern /illegal_argument_exception/
+    tag "PARSINGEXCEPTION.${tag}"
+  </rule>
 </match>
 
 <match FLUENTDTAILSTALLED.**>
@@ -276,6 +281,26 @@
     @type prometheus
     <metric>
       name prom_otel_rejected_execution_exception
+      type counter
+      desc The total number of OTEL failed to send logs
+      <labels>
+        nodename "#{ENV['K8S_NODE_NAME']}"
+        fluent_container $.kubernetes.pod_name
+        daemontype $.kubernetes.container_name
+      </labels>
+    </metric>
+  </store>
+  <store>
+    @type null
+  </store>
+</match>
+
+<match PARSINGEXCEPTION.**>
+  @type copy
+  <store>
+    @type prometheus
+    <metric>
+      name prom_otel_parsing_exception
       type counter
       desc The total number of OTEL failed to send logs
       <labels>
