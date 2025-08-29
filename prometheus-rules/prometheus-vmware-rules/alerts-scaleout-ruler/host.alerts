@@ -5,9 +5,10 @@
         expr: |
           count_over_time((present_over_time(vrops_hostsystem_runtime_maintenancestate{state="inMaintenance"}[1d]))[15d:1d]) >= 10
           and on (hostsystem) (vrops_hostsystem_runtime_maintenancestate{state="inMaintenance"})
-          unless on (hostsystem) (vrops_hostsystem_custom_attributes_hw_info == 1 )
+          unless on (hostsystem) (vrops_hostsystem_custom_attributes_hw_info == 1)
           unless on (hostsystem) (vrops_hostsystem_custom_attributes_change_request_info == 1)
-          unless on (vccluster) (vrops_cluster_summary_custom_tag_openstack_nova_traits_decommissioning == 1)
+          unless on (hostsystem) (vrops_hostsystem_runtime_connectionstate == 0)
+          unless on (vccluster) (vrops_cluster_summary_custom_tag_openstack_nova_traits_compute_status_disabled == 1)
         labels:
           severity: warning
           service: compute
@@ -16,7 +17,7 @@
           no_alert_on_absence: "true"
           context: "{{ $labels.hostsystem }} maintenance"
           meta: "Host `{{ $labels.hostsystem }}` is in maintenance mode for at least 10 days with no custom attributes tag. ({{ $labels.vcenter }})."
-          playbook: docs/devops/alert/vcenter/#host_in_maintenance_mode_for_at_least_10d
+          playbook: docs/devops/alert/vcenter/hostinmaintenance/
         annotations:
           summary: "Host `{{ $labels.hostsystem }}` is in maintenance mode for at least 10 days with no custom attributes tag. ({{ $labels.vcenter }})."
           description: "Host `{{ $labels.hostsystem }}` is in maintenance mode for at least 10 days with no custom attributes tag. ({{ $labels.vcenter }})."
