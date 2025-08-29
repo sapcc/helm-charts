@@ -1013,10 +1013,17 @@ python_warnings: "ignore:Unverified HTTPS request,ignore::SyntaxWarning"
 
 # maintenance cronjobs
 nanny:
+  # Defaults for all nanny cronjobs
+  default:
+    enabled: true
+    add_cell1_conf: false
+    resources:
+      requests:
+        memory: "500Mi"
+        cpu: "100m"
   # Archive db rows soft-deleted before more than older_than days to shadow
   # tables. Use batch size max_rows to limit transaction size.
   db_archive_deleted_rows:
-    enabled: true
     # cron schedule (minute | hour | day of month | month | day of week)
     schedule: "0 * * * *"
     older_than: 21
@@ -1024,18 +1031,24 @@ nanny:
   # Delete db rows soft-deleted before more than older_than days from shadow
   # tables.
   db_purge:
-    enabled: true
     # cron schedule (minute | hour | day of month | month | day of week)
     schedule: "15 * * * *"
     older_than: 42
   # For each instance, soft-delete the instance_faults db rows that exceed the
   # count of max_faults. Use batch size max_rows to limit query size.
   db_soft_delete_excessive_instance_faults:
-    enabled: true
     # cron schedule (minute | hour | day of month | month | day of week)
     schedule: "30 * * * *"
     max_faults: 10
     max_rows: 25
+  sap_map_instances:
+    # cron schedule (minute | hour | day of month | month | day of week)
+    schedule: "45 * * * *"
+    # Requires only a single cell config to derive the DB type in
+    # _regex_instance_filter()
+    add_cell1_conf: true
+    max_rows: 250
+    fetch_instances_max_retries: 100
 
 # openstack-rate-limit
 rate_limit:
