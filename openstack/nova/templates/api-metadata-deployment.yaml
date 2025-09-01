@@ -50,6 +50,9 @@ spec:
       hostname: nova-api-metadata
       initContainers:
       {{- tuple . (dict "service" (print .Values.mariadb_api.name "-mariadb") "jobs" (tuple . "db-migrate" | include "job_name")) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
+      {{- if .Values.proxysql.native_sidecar }}
+      {{- tuple . .Values.api_metadata.config_file.DEFAULT.metadata_workers | include "utils.proxysql.container" | indent 6 }}
+      {{- end }}
       containers:
         - name: nova-api-metadata
           image: {{ tuple . "api" | include "container_image_nova" }}
@@ -100,7 +103,9 @@ spec:
             name: nova-etc
           {{- include "utils.proxysql.volume_mount" . | indent 10 }}
           {{- include "utils.trust_bundle.volume_mount" . | indent 10 }}
+        {{- if not .Values.proxysql.native_sidecar }}
         {{- tuple . .Values.api_metadata.config_file.DEFAULT.metadata_workers | include "utils.proxysql.container" | indent 8 }}
+        {{- end }}
         - name: statsd
           image: {{ required ".Values.global.dockerHubMirror is missing" .Values.global.dockerHubMirror}}/prom/statsd-exporter:v0.8.1
           imagePullPolicy: IfNotPresent
