@@ -156,3 +156,19 @@ rules:
   - get
   - list
   - watch
+---
+{{ if .Values.adminLDAPUsers}}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: ldap-cluster-admins
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+  {{- range $val := .Values.adminLDAPUsers }}
+  - kind: User
+    name: {{ $val }}
+  {{- end }}
+{{ end }}
