@@ -18,3 +18,28 @@ spec:
       control-plane: controller-manager
   policyTypes:
   - Ingress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: egress-to-kube-system-ingress-nginx-controller-tcp-443
+spec:
+  egress:
+  - ports:
+    - port: 443
+      protocol: TCP
+    to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: kube-system
+      podSelector:
+        matchLabels:
+          app.kubernetes.io/name: ingress-nginx
+          app.kubernetes.io/component: controller
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/instance: metal-operator-remote
+      app.kubernetes.io/name: metal-operator-core
+      control-plane: controller-manager
+  policyTypes:
+  - Egress
