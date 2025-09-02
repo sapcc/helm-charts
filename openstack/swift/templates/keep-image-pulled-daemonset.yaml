@@ -35,6 +35,10 @@ spec:
       annotations:
         linkerd.io/inject: disabled # This pod does not interact with the network.
     spec:
+      priorityClassName: important-infrastructure
+      # sleep(1) doesn't seem to react to SIGTERM at all, so skip right ahead to SIGKILL
+      terminationGracePeriodSeconds: 1
+
       # NOTE: observed resource usage in eu-de-1 (as of 2020-02-26)
       # - no measurable CPU usage once started
       # - RAM max. 1.5 MiB (but it turns out that k8s itself runs into OOM when
