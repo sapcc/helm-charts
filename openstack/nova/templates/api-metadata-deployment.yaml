@@ -49,7 +49,7 @@ spec:
       terminationGracePeriodSeconds: {{ .Values.defaults.default.graceful_shutdown_timeout | add 5 }}
       hostname: nova-api-metadata
       initContainers:
-      {{- tuple . (dict "service" (print .Values.mariadb_api.name "-mariadb") "jobs" (tuple . "db-migrate" | include "job_name")) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
+      {{- tuple . (dict "service" (include "nova.helpers.api_db" .) "jobs" (tuple . "db-migrate" | include "job_name")) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
       {{- if .Values.proxysql.native_sidecar }}
       {{- tuple . .Values.api_metadata.config_file.DEFAULT.metadata_workers | include "utils.proxysql.container" | indent 6 }}
       {{- end }}
