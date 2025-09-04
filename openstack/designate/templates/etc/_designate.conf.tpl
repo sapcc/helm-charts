@@ -33,7 +33,7 @@ api_paste_config = /etc/designate/api-paste.ini
 network_api = neutron
 
 # Supported record types
-#supported_record_type = A,AAAA,CNAME,MX,SRV,TXT,SPF,NS,PTR,SSHFP,SOA,NAPTR,CAA,CERT
+#supported_record_type = A,AAAA,CNAME,MX,SRV,TXT,SPF,NS,PTR,SSHFP,SOA,NAPTR,CAA,CERT,HTTPS,SVCB
 
 # Setting SOA defaults
 default_soa_refresh_min = 3500
