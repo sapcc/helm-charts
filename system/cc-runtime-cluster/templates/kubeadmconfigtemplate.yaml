@@ -21,7 +21,13 @@ spec:
       ignition:
         containerLinuxConfig:
           additionalConfig: |-
-{{ tpl .Values.controlplane.additionalConfig . | indent 12 }}
+            storage:
+              files:
+{{ tpl .Values.additionalConfig.files . | indent 16 }}
+{{ tpl .Values.worker.additionalConfig.files . | indent 16 }}
+            systemd:
+              units:
+{{ tpl .Values.worker.additionalConfig.units . | indent 16 }}
       users:
         - name: {{ $.Values.user.name }}
           passwd: {{ $.Values.user.passwordhash }}

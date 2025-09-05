@@ -8,18 +8,40 @@ controlplane:
   address: 192.168.1.100
   version: v1.31.5
   uplinkInterface:
-  additionalConfig: |
-    storage:
-      files:
-        - path: /etc/ssh/sshd_config
-          filesystem: root
-          mode: 0644
-          overwrite: true
-            inline: |
-              Foo Bar
+
+additionalConfig:
+  files: |
+    - path: /etc/ssh/sshd_config
+      filesystem: root
+      mode: 0644
+      overwrite: true
+        inline: |
+          Foo Bar
 
 worker:
   replicas: 3
+  additionalConfig:
+    files: |
+      - path: /etc/ssh/sshd_config
+        filesystem: root
+        mode: 0644
+        overwrite: true
+          inline: |
+            Foo Bar
+    units: |
+      - name: sshd
+        enabled: true
+        contents: |
+          [Unit]
+          Description=OpenSSH server daemon
+          After=network.target
+
+          [Service]
+          ExecStart=/usr/sbin/sshd -D
+          Restart=always
+
+          [Install]
+          WantedBy=multi-user.target
 
 greenhouse:
   org: sci
