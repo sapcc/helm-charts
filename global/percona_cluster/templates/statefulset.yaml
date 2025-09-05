@@ -22,6 +22,7 @@ spec:
         release: "{{ .Release.Name }}"
         heritage: "{{ .Release.Service }}"
       annotations:
+        kubectl.kubernetes.io/default-container: database
         {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
         linkerd.io/inject: enabled
         config.linkerd.io/opaque-ports: "3306,4444,4567,4568"
@@ -53,8 +54,20 @@ spec:
                   values:
                   - {{.Values.global.db_region}}a
       initContainers:
+      - name: "pxc-permissions-init"
+        command:
+        - "/bin/sh"
+        - "-c"
+        - "chown -R 1001:1001 /var/lib/mysql"
+        image: "{{ required ".Values.global.dockerHubMirrorAlternateRegion is missing" .Values.global.dockerHubMirrorAlternateRegion }}/library/busybox:1.37.0"
+        imagePullPolicy: IfNotPresent
+        securityContext:
+          runAsUser: 0
+        volumeMounts:
+        - name: "{{ .Values.persistence.claimName }}"
+          mountPath: /var/lib/mysql
       - name: "remove-lost-found"
-        image: "{{ required ".Values.global.dockerHubMirrorAlternateRegion is missing" .Values.global.dockerHubMirrorAlternateRegion }}/library/busybox:1.34.1"
+        image: "{{ required ".Values.global.dockerHubMirrorAlternateRegion is missing" .Values.global.dockerHubMirrorAlternateRegion }}/library/busybox:1.37.0"
         imagePullPolicy: IfNotPresent
         command:
         - "rm"
@@ -93,13 +106,11 @@ spec:
             secretKeyRef:
               name: {{ include "fullName" . }}
               key: xtrabackup-password
-        {{- if .Values.metricsExporter.enabled }}
-        - name: METRICS_EXPORTER_PASSWORD
+        - name: MONITOR_PASSWORD
           valueFrom:
             secretKeyRef:
               name: {{ include "fullName" . }}
-              key: exporter-password
-        {{- end }}
+              key: monitor-password
         - name: MYSQL_USER
           value: {{ default "" .Values.db_user | quote }}
         - name: MYSQL_DATABASE
@@ -117,7 +128,7 @@ spec:
         - name: PXC_FORCE_BOOTSTRAP
           value: "false"
         - name: DEBUG
-          value: "true"
+          value: {{ default "true" .Values.debug | quote }}
         ports:
         - name: mysql
           containerPort: 3306
@@ -147,6 +158,9 @@ spec:
           mountPath: /startup-scripts
         - name: mysql-config-files
           mountPath: /etc/mysql/conf.d
+        - name: initdb-root
+          mountPath: /etc/mysql/init-file/init.sql
+          subPath: init.sql
         - name: slash-root
           mountPath: /root
         - name: var-log
@@ -155,42 +169,26 @@ spec:
         - name: certificates
           mountPath: /ssl
         {{- end }}
-      {{ if .Values.logTail }}
-      - name: "logs"
-        image: "{{ required ".Values.global.dockerHubMirrorAlternateRegion is missing" .Values.global.dockerHubMirrorAlternateRegion }}/library/busybox:1.34.1"
-        imagePullPolicy: IfNotPresent
-        command:
-        - "tail"
-        - "-f"
-        - "/var/log/mysqld.log"
-        volumeMounts:
-        - name: var-log
-          mountPath: /var/log
-      {{ end }}
-      {{ if .Values.metricsExporter.enabled }}
+      {{- if .Values.metrics.enabled }}
       - name: metrics
-        {{- if .Values.metricsExporter.tag }}
-        image: {{ required ".Values.global.dockerHubMirrorAlternateRegion is missing" .Values.global.dockerHubMirrorAlternateRegion }}/prom/mysqld-exporter:{{ .Values.metricsExporter.tag }}
+        {{- if .Values.metrics.tag }}
+        image: {{ required ".Values.global.dockerHubMirrorAlternateRegion is missing" .Values.global.dockerHubMirrorAlternateRegion }}/prom/mysqld-exporter:{{ .Values.metrics.tag }}
         {{- else }}
         image: {{ required ".Values.global.dockerHubMirrorAlternateRegion is missing" .Values.global.dockerHubMirrorAlternateRegion }}/prom/mysqld-exporter
         {{- end }}
         imagePullPolicy: IfNotPresent
-{{- if .Values.metricsExporter.commandOverrides }}
-        command:
-{{ toYaml .Values.metricsExporter.commandOverrides | indent 8 }}
-{{- end }}
-{{- if .Values.metricsExporter.argsOverrides }}
         args:
-{{ toYaml .Values.metricsExporter.argsOverrides | indent 8 }}
-{{- end }}
+          - "--mysqld.username=monitor"
+          - "--mysqld.address=localhost:3306"
+        {{- range $flag := .Values.metrics.flags }}
+          - "--{{$flag}}"
+        {{- end }}
         env:
-        - name: METRICS_EXPORTER_PASSWORD
+        - name: MYSQLD_EXPORTER_PASSWORD
           valueFrom:
             secretKeyRef:
               name: {{ include "fullName" . }}
-              key: exporter-password
-        - name: DATA_SOURCE_NAME
-          value: "exporter:$(METRICS_EXPORTER_PASSWORD)@(localhost:3306)/"
+              key: monitor-password
         ports:
         - name: metrics
           containerPort: 9104
@@ -207,7 +205,7 @@ spec:
             command: ["wget","-q","-O","-","localhost:9104"]
           initialDelaySeconds: 30
           timeoutSeconds: 2
-      {{ end }}
+      {{- end }}
       priorityClassName: {{ default "critical-infrastructure" .Values.priority_class | quote }}
       volumes:
       - name: slash-root
@@ -220,6 +218,10 @@ spec:
       - name: mysql-startup-scripts
         configMap:
           name: {{ include "fullName" . }}-startup-scripts
+      - name: initdb-root
+        secret:
+          secretName: {{ include "fullName" . }}-initdb-root
+          defaultMode: 0644
       {{- if not .Values.persistence.enabled }}
       - name: "{{ .Values.persistence.claimName }}"
         emptyDir: {}
