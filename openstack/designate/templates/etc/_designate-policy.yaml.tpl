@@ -95,6 +95,8 @@ create_SRV_recordset: rule:context_is_webmaster or rule:context_is_editor
 create_SSHFP_recordset: rule:admin
 create_NAPTR_recordset: rule:admin
 create_TXT_recordset: rule:context_is_webmaster or rule:context_is_editor
+create_HTTPS_recordset: rule:context_is_webmaster or rule:context_is_editor
+create_SVCB_recordset: rule:context_is_webmaster or rule:context_is_editor
 
 update_A_recordset: rule:context_is_webmaster or rule:context_is_editor
 update_AAAA_recordset: rule:context_is_webmaster or rule:context_is_editor
@@ -110,6 +112,8 @@ update_SRV_recordset: rule:context_is_webmaster or rule:context_is_editor
 update_SSHFP_recordset: rule:admin
 update_NAPTR_recordset: rule:admin
 update_TXT_recordset: rule:context_is_webmaster or rule:context_is_editor
+update_HTTPS_recordset: rule:context_is_webmaster or rule:context_is_editor
+update_SVCB_recordset: rule:context_is_webmaster or rule:context_is_editor
 
 delete_A_recordset: (role:dns_webmaster and (project_id:%(recordset_project_id)s)) or rule:context_is_editor or rule:context_is_dns_support
 delete_AAAA_recordset: (role:dns_webmaster and (project_id:%(recordset_project_id)s)) or rule:context_is_editor or rule:context_is_dns_support
@@ -125,6 +129,8 @@ delete_SRV_recordset: (role:dns_webmaster and (project_id:%(recordset_project_id
 delete_SSHFP_recordset: rule:admin
 delete_NAPTR_recordset: rule:admin
 delete_TXT_recordset: (role:dns_webmaster and (project_id:%(recordset_project_id)s)) or rule:context_is_editor or rule:context_is_dns_support
+delete_HTTPS_recordset: (role:dns_webmaster and (project_id:%(recordset_project_id)s)) or rule:context_is_editor or rule:context_is_dns_support
+delete_SVCB_recordset: (role:dns_webmaster and (project_id:%(recordset_project_id)s)) or rule:context_is_editor or rule:context_is_dns_support
 
 get_recordsets: rule:context_is_viewer
 get_recordset: rule:context_is_viewer

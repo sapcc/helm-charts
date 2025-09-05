@@ -249,7 +249,7 @@ scheduler:
   rpc_statsd_port: 9125
   # enables collecting metrics for RPC calls
   rpc_statsd_enabled: true
-  default_filters: "CpuInfoMigrationFilter, ShardFilter, AggregateMultiTenancyIsolation, ComputeFilter, ComputeCapabilitiesFilter, HANAMemoryMaxUnitFilter, ResizeVcpuMaxUnitFilter, BigVmFlavorHostSizeFilter, VmSizeThresholdFilter, ImagePropertiesFilter, ServerGroupAntiAffinityFilter, ServerGroupAffinityFilter"
+  default_filters: "ShardFilter, AggregateMultiTenancyIsolation, ComputeFilter, ComputeCapabilitiesFilter, HANAMemoryMaxUnitFilter, ResizeVcpuMaxUnitFilter, BigVmFlavorHostSizeFilter, VmSizeThresholdFilter, ImagePropertiesFilter, ServerGroupAntiAffinityFilter, ServerGroupAffinityFilter"
   vm_size_threshold_vm_size_mb: "16385"
   vm_size_threshold_hv_size_mb: "819200"
   ram_weight_multiplier: 1.0
@@ -748,15 +748,6 @@ mariadb:
   databases:
   - nova
   - nova_cell0
-  users:
-    nova:
-      name: nova
-      grants:
-      - "ALL PRIVILEGES on nova.*"
-    nova_cell0:
-      name: nova_cell0
-      grants:
-      - "ALL PRIVILEGES on nova_cell0.*"
   persistence_claim:
     name: db-nova-pvc
     size: "50Gi"
@@ -795,11 +786,6 @@ mariadb_api:
     enabled: true
   databases:
   - nova_api
-  users:
-    nova_api:
-      name: nova_api
-      grants:
-      - "ALL PRIVILEGES on nova_api.*"
   persistence_claim:
     name: db-nova-api-pvc
     size: "50Gi"
@@ -865,8 +851,6 @@ rabbitmq_cell2:
     support_group: compute-storage-api
   metrics:
     enabled: true
-    sidecar:
-      enabled: false
     enableDetailedMetrics: true
     enablePerObjectMetrics: true
 audit:
@@ -886,11 +870,7 @@ rabbitmq:
   persistence:
     enabled: false
   metrics:
-    password: null
     enabled: true
-    addMetricsUser: true
-    sidecar:
-      enabled: false
     enableDetailedMetrics: true
     enablePerObjectMetrics: true
   resources:
