@@ -14,7 +14,9 @@
     "domain_config" $domain_config
 }}
 
+{{- if not $.Values.hostNetworking }}
 {{ include "nad_multus" $ctxDomain }}
+{{- end }}
 
 {{- range $afi := (include "bird.afis" $ctxDomain | fromJsonArray) }}
 {{- $ctxAfi := mergeOverwrite $ctxDomain (dict "afi" $afi) }}
