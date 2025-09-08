@@ -27,11 +27,11 @@ groups:
     # does not terminate, then new jobs were no longer scheduled. So we cover
     # non-terminating jobs by the second part.
     expr: >
-      time() - kube_cronjob_created{cronjob=~"cinder-nanny-.*"} >= 24*60*60
-      and on(cronjob) (time() - kube_cronjob_status_last_successful_time{cronjob=~"cinder-nanny-.*"}
-        or on(cronjob) kube_cronjob_status_last_schedule_time{cronjob=~"cinder-nanny-.*"}) >= 24*60*60
-      and on(cronjob) (time() - kube_cronjob_status_last_schedule_time{cronjob=~"cinder-nanny-.*"} < 24*60*60
-        or on(cronjob) kube_cronjob_status_active{cronjob=~"cinder-nanny-.*"} >= 1)
+      time() - kube_cronjob_created{cronjob=~"cinder-nanny-.*", cronjob!~"cinder-nanny-consistency.*"} >= 24*60*60
+      and on(cronjob) (time() - kube_cronjob_status_last_successful_time{cronjob=~"cinder-nanny-.*", cronjob!~"cinder-nanny-consistency.*"}
+        or on(cronjob) kube_cronjob_status_last_schedule_time{cronjob=~"cinder-nanny-.*", cronjob!~"cinder-nanny-consistency.*"}) >= 24*60*60
+      and on(cronjob) (time() - kube_cronjob_status_last_schedule_time{cronjob=~"cinder-nanny-.*", cronjob!~"cinder-nanny-consistency.*"} < 24*60*60
+        or on(cronjob) kube_cronjob_status_active{cronjob=~"cinder-nanny-.*", cronjob!~"cinder-nanny-consistency.*"} >= 1)
     labels:
       service: cinder
       severity: info
