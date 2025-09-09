@@ -20,15 +20,6 @@ log() {
 	set -x
 }
 
-is_object_exist() {
-	local bucket="$1"
-	local object="$2"
-
-	if [[ -n "$(mc -C /tmp/mc ${INSECURE_ARG} --json ls "dest/$bucket/$object" | jq '.status')" ]]; then
-		return 1
-	fi
-}
-
 function request_streaming() {
     local LOCAL_IP=$(hostname -i)
 

@@ -11,6 +11,7 @@ SOCAT_OPTS="TCP-LISTEN:4444,reuseaddr,retry=30"
 
 FIRST_RECEIVED=0
 SST_FAILED=0
+# shellcheck disable=SC2329
 handle_sigterm() {
 	if (($FIRST_RECEIVED == 0)); then
 		pid_s=$(ps -C socat -o pid= || true)
