@@ -5,7 +5,7 @@
 ## ref: https://hub.docker.com/r/percona/percona-xtradb-cluster/tags/
 image:
   repository: "percona/percona-xtradb-cluster"
-  tag: "5.7.44-31.65"
+  tag: "8.0.42-33.1"
   pullPolicy: IfNotPresent
 
 # Desired number of members (Per region)
@@ -71,7 +71,7 @@ configFiles:
     wsrep_slave_threads             = 8
     wsrep_log_conflicts             = ON
     wsrep_cluster_address           = gcomm://
-    wsrep_provider                  = /usr/lib64/galera3/libgalera_smm.so
+    wsrep_provider                  = /usr/lib64/galera4/libgalera_smm.so
     wsrep_cluster_name              = galera
     wsrep_sst_method                = xtrabackup-v2
     wsrep_debug                     = 1
@@ -150,8 +150,11 @@ gmcast_segment: 1
 
 backup:
   enabled: false
-  image: percona/percona-xtradb-cluster-operator
-  image_tag: "1.14.1-pxc5.7-backup-pxb2.4.29"  # NOTE: this is the last version with included peer-list binary
+  image: percona/percona-xtrabackup
+  image_tag: "8.0.35-34.1"
+  init:
+    image: percona/percona-xtradb-cluster-operator
+    image_tag: "1.18.0"  # NOTE: this image includes peer-list binary
   schedule: "30 * * * *"
   claimName: backup-pvc
   security_context_ids: 1000
