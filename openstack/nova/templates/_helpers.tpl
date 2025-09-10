@@ -1,16 +1,16 @@
 {{- define "api_db_path" }}
   {{- $context := dict "target" "api" "defaultUsers" .Values.defaultUsersMariaDB "users" .Values.mariadb_api.users }}
-  {{- tuple . .Values.apidbName (include "nova.helpers.default_db_user" $context) (include "nova.helpers.default_user_password" $context) .Values.mariadb_api.name | include "utils.db_url" }}
+  {{- tuple . .Values.apidbName (include "nova.helpers.default_db_user" $context) (include "nova.helpers.default_user_password" $context) .Values.mariadb_api.name .Values.apidbType | include "utils.db_url" }}
 {{- end }}
 
 {{- define "cell0_db_path" }}
   {{- $context := dict "target" "cell0" "defaultUsers" .Values.defaultUsersMariaDB "users" .Values.mariadb.users }}
-  {{- tuple . .Values.cell0dbName (include "nova.helpers.default_db_user" $context) (include "nova.helpers.default_user_password" $context) | include "utils.db_url" }}
+  {{- tuple . .Values.cell0dbName (include "nova.helpers.default_db_user" $context) (include "nova.helpers.default_user_password" $context) .Values.mariadb.name .Values.cell0dbType | include "utils.db_url" }}
 {{- end }}
 
 {{- define "cell1_db_path" -}}
   {{- $context := dict "target" "cell1" "defaultUsers" .Values.defaultUsersMariaDB "users" .Values.mariadb.users }}
-  {{- tuple . .Values.dbName (include "nova.helpers.default_db_user" $context) (include "nova.helpers.default_user_password" $context) | include "utils.db_url" }}
+  {{- tuple . .Values.dbName (include "nova.helpers.default_db_user" $context) (include "nova.helpers.default_user_password" $context) .Values.mariadb.name .Values.cell1dbType | include "utils.db_url" }}
 {{- end }}
 
 {{- define "cell1_transport_url" -}}
@@ -27,7 +27,7 @@
 
 {{- define "cell2_db_path" -}}
   {{- $context := dict "target" "cell2" "defaultUsers" .Values.defaultUsersMariaDB "users" .Values.mariadb_cell2.users }}
-  {{- tuple . .Values.cell2dbName (include "nova.helpers.default_db_user" $context) (include "nova.helpers.default_user_password" $context) .Values.mariadb_cell2.name | include "utils.db_url" }}
+  {{- tuple . .Values.cell2dbName (include "nova.helpers.default_db_user" $context) (include "nova.helpers.default_user_password" $context) .Values.mariadb_cell2.name .Values.cell2dbType | include "utils.db_url" }}
 {{- end }}
 
 {{- define "cell2_transport_url" -}}
