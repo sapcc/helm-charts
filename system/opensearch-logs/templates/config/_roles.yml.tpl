@@ -304,13 +304,13 @@ promrole:
   reserved: false
   hidden: false
   cluster_permissions:
-    - "cluster:monitor/prometheus/metrics"
-    - "cluster:monitor/health"
-    - "cluster:monitor/state"
-    - "cluster:monitor/nodes/info"
-    - "cluster:monitor/nodes/stats"
-    - "indices:data/read/scroll*"
-    - "indices:data/read/msearch"
+  - "cluster:monitor/prometheus/metrics"
+  - "cluster:monitor/health"
+  - "cluster:monitor/state"
+  - "cluster:monitor/nodes/info"
+  - "cluster:monitor/nodes/stats"
+  - "indices:data/read/scroll*"
+  - "indices:data/read/msearch"
   index_permissions:
   - index_patterns:
     - "*"
@@ -329,17 +329,80 @@ promrole:
     allowed_actions:
     - "kibana_all_write"
 
+auditorrole:
+  reserved: false
+  hidden: false
+  cluster_permissions:
+  - "cluster:monitor/prometheus/metrics"
+  - "cluster:monitor/health"
+  - "cluster:monitor/state"
+  - "cluster:monitor/nodes/info"
+  - "cluster:monitor/nodes/stats"
+  - "indices:data/read/scroll*"
+  - "indices:data/read/msearch"
+  - "cluster_monitor"
+  - "cluster_composite_ops"
+  - "cluster:admin/ingest/pipeline/put"
+  - "cluster:admin/ingest/pipeline/get"
+  - "indices:admin/template/get"
+  - "cluster_manage_index_templates"
+  - "cluster:admin/opensearch/ml/predict"
+    index_permissions:
+  - index_patterns:
+    - "alerts-sem-datastream"
+    allowed_actions:
+    - "indices:admin/template/get"
+    - "indices:admin/template/put"
+    - "indices:admin/mapping/put"
+    - "indices:admin/create"
+    - "indices:data/write/bulk*"
+    - "indices:data/write/index"
+  - index_patterns:
+    - "*"
+    allowed_actions:
+    - "indices:monitor/stats"
+    - "indices:admin/mappings/get"
+    - "indices:admin/aliases/get"
+    - "indices:data/read/scroll"
+    - "indices:data/read/scroll/clear"
+    - "indices:data/read/search"
+    - "indices:data/read/search*"
+    - "read"
+  tenant_permissions:
+  - tenant_patterns:
+    - "*"
+    allowed_actions:
+    - "kibana_all_write"
+
+  index_permissions:
+  - index_patterns:
+    - "deployments-datastream"
+    - "alerts-datastream"
+    - "logs-datastream"
+    - "logs-swift-datastream"
+    - "compute-datastream"
+    - "storage-datastream"
+    - "alerts-datastream"
+    - "deployments-datastream"
+    allowed_actions:
+    - "indices:admin/template/get"
+    - "indices:admin/template/put"
+    - "indices:admin/mapping/put"
+    - "indices:admin/create"
+    - "indices:data/write/bulk*"
+    - "indices:data/write/index"
+
 oraboskvmrole:
   reserved: false
   hidden: false
   cluster_permissions:
-    - "cluster:monitor/prometheus/metrics"
-    - "cluster:monitor/health"
-    - "cluster:monitor/state"
-    - "cluster:monitor/nodes/info"
-    - "cluster:monitor/nodes/stats"
-    - "indices:data/read/scroll*"
-    - "indices:data/read/msearch"
+  - "cluster:monitor/prometheus/metrics"
+  - "cluster:monitor/health"
+  - "cluster:monitor/state"
+  - "cluster:monitor/nodes/info"
+  - "cluster:monitor/nodes/stats"
+  - "indices:data/read/scroll*"
+  - "indices:data/read/msearch"
   index_permissions:
   - index_patterns:
     - "*"
@@ -403,14 +466,14 @@ jupyterhub:
   reserved: false
   hidden: false
   cluster_permissions:
-    - "cluster:monitor/prometheus/metrics"
-    - "cluster:monitor/health"
-    - "cluster:monitor/main"
-    - "cluster:monitor/state"
-    - "cluster:monitor/nodes/info"
-    - "cluster:monitor/nodes/stats"
-    - "indices:data/read/scroll*"
-    - "indices:data/read/msearch"
+  - "cluster:monitor/prometheus/metrics"
+  - "cluster:monitor/health"
+  - "cluster:monitor/main"
+  - "cluster:monitor/state"
+  - "cluster:monitor/nodes/info"
+  - "cluster:monitor/nodes/stats"
+  - "indices:data/read/scroll*"
+  - "indices:data/read/msearch"
   index_permissions:
   - index_patterns:
     - "*"
@@ -442,12 +505,12 @@ mlrole:
 ml_full_access:
   reserved: true
   cluster_permissions:
-    - "cluster:admin/opensearch/ml/*"
-    - "cluster_monitor"
-    - "cluster:admin/opensearch/mlinternal/*"
-    - "cluster:admin/ingest/*"
+  - "cluster:admin/opensearch/ml/*"
+  - "cluster_monitor"
+  - "cluster:admin/opensearch/mlinternal/*"
+  - "cluster:admin/ingest/*"
   index_permissions:
-    - index_patterns:
-        - "*"
-      allowed_actions:
-        - "indices_monitor"
+  - index_patterns:
+    - "*"
+    allowed_actions:
+    - "indices_monitor"

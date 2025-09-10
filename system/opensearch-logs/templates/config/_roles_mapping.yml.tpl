@@ -108,6 +108,12 @@ promrole:
   backend_roles:
   - CC_IAS_OPERATIONS_UI_KIBANA_SUPPORT
 
+auditorrole:
+  reserved: false
+  users:
+  - "alerting"
+  - "alerting2"
+
 jupyterhub:
   reserved: false
   users:
