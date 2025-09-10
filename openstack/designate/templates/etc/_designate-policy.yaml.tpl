@@ -54,6 +54,7 @@ get_tenant: rule:admin or rule:context_is_dns_ops
 count_tenants: rule:admin or rule:context_is_dns_ops
 share_zone: rule:context_is_master
 unshare_zone: rule:context_is_master
+create_iaas_zone: rule:context_is_master
 create_zone: rule:context_is_dns_ops
 move_zone: rule:context_is_dns_ops
 pool_move_zone: rule:context_is_dns_ops
