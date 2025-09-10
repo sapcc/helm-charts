@@ -216,3 +216,12 @@
     severity: "warning"
   editable_labels:
     - region
+- status: "active"
+  title: "NetApp Storage - Maintenance Mode "
+  description: "Set NetApp storage cluster in Maintenance Mode"
+  fixed_labels:
+    support_group: "storage"
+    job: "harvest-service-discovery"
+  editable_labels:
+    - datacenter
+    - cluster
