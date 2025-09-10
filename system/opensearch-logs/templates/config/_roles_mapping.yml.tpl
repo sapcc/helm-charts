@@ -141,3 +141,8 @@ syslog:
 anonymous_health_role:
   backend_roles:
   - "opendistro_security_anonymous_backendrole"
+
+security_analytics_full_access:
+  reserved: false
+  backend_roles:
+  - CC_IAS_OPERATIONS_UI_KIBANA_SUPPORT
