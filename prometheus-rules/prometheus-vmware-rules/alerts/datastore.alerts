@@ -105,7 +105,7 @@ groups:
 
   - alert: NVMeSwapDatastoreMissing
     expr: |
-      vrops_hostsystem_hardware_model{vccluster=~"^productionbb\\d+$", hardware_model!~"^Cisco Systems Inc.+"}
+      vrops_hostsystem_hardware_model{vccluster=~"productionbb\\d+", hardware_model!~"Cisco Systems Inc.+"}
       and on (hostsystem) vrops_hostsystem_runtime_maintenancestate{state!="inMaintenance"}
       unless on (hostsystem) (label_replace(label_join(vrops_datastore_summary_datastore_accessible{type="NVMe"}, "hostsystem", "", "datastore", "vcenter"), "hostsystem", "$1$2", "hostsystem", "(.+)-swapvc-[a-z]-\\d+(.+)")
       or vrops_hostsystem_summary_custom_tag_nvme{summary_custom_tag_nvme="false"})
@@ -309,7 +309,7 @@ groups:
 
   - alert: CinderTagAddedForReservedDatastore
     expr: |
-      vrops_datastore_summary_custom_tag_cinder_state{type=~"^(vmfs_s_hdd|vmfs_p_ssd)$", summary_custom_tag_cinder_state="reserved"}
+      vrops_datastore_summary_custom_tag_cinder_state{type=~"(vmfs_s_hdd|vmfs_p_ssd)", summary_custom_tag_cinder_state="reserved"} > 0
       and on (datastore) vrops_datastore_summary_tag{tag_cinder=~"cinder|slow"}
     for: 1h
     labels:
@@ -325,8 +325,8 @@ groups:
 
   - alert: VMFSDatastoreHostcountMismatch
     expr: |
-      vrops_datastore_hostcount{type=~"^(vmfs_s_hdd|vmfs_p_ssd)$"} < on (vcenter) group_left
-      count by (vcenter) (vrops_hostsystem_runtime_connectionstate{state="connected", vccluster=~"^productionbb\\d+$"}
+      vrops_datastore_hostcount{type=~"(vmfs_s_hdd|vmfs_p_ssd)"} < on (vcenter) group_left
+      count by (vcenter) (vrops_hostsystem_runtime_connectionstate{state="connected", vccluster=~"productionbb\\d+"}
       unless on (hostsystem) (vrops_hostsystem_runtime_maintenancestate{state="inMaintenance"}))
     for: 60m
     labels:
@@ -343,7 +343,7 @@ groups:
   - alert: NFSDatastoreHostcountMismatch
     expr: |
       vrops_datastore_hostcount{type="nfs"} < on (vcenter) group_left
-      count by (vcenter) (vrops_hostsystem_runtime_connectionstate{state="connected", vccluster=~"^productionbb\\d+$"})
+      count by (vcenter) (vrops_hostsystem_runtime_connectionstate{state="connected", vccluster=~"productionbb\\d+"})
     for: 60m
     labels:
       severity: info
