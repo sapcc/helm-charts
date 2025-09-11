@@ -1,5 +1,5 @@
 [placement_database]
-connection = {{ include "utils.db_url" . }}
+connection = {{ include "placement.helpers.db_url" . }}
 
 [keystone_authtoken]
 username = {{ .Values.global.placement_service_user | default "placement" | include "resolve_secret" }}
