@@ -154,14 +154,14 @@ groups:
 
   - alert: NSXTMgmtVMsOddDistributionSDRSAntiaffinity
     expr: >
-      count (vrops_storagepod_config_sdrsconfig_vmstorageantiaffinityrules{storagepod!~"SDRS_MGMT_BB\\d+"}) by (rule_name, vcenter) != 3
+      count  (vrops_storagepod_config_sdrsconfig_vmstorageantiaffinityrules{storagepod!~"SDRS_MGMT_BB\\d+"}) by (rule_name, vccluster, vcenter) != 3
     labels:
       severity: warning
       tier: vmware
       service: network
       support_group: compute
       context: "NSXTMgmtVMsOddDistributionSDRS"
-      dashboard: management-cluster-resources/management-cluster-resources?orgId=1&var-pod=All&var-clusters={{ $labels.vccluster }}&var-hosts={{ $labels.hostsystem }}
+      dashboard: management-cluster-resources/management-cluster-resources?orgId=1&var-pod=All&var-clusters={{ $labels.vccluster }}
       meta: "NSX-T VMs not part of SDRS anti-affinity rule  {{ $labels.rule_name }}. ({{ $labels.vcenter }})"
       playbook: docs/devops/alert/vcenter/#nsxtmgmtvmsodddistributionsdrs
       no_alert_on_absence: "true"
