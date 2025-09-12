@@ -78,24 +78,38 @@ groups:
       description: "Non IaaS virtual machine(s) running on IaaS ESXi host {{ $labels.hostsystem }}"
       summary: "Non IaaS virtual machine(s) running on IaaS ESXi host {{ $labels.hostsystem }}"
 
-  - alert: IaasVmOnNonIaasHost
+  - alert: IaasHostsAlmostOutOfMemory
     expr: |
-      count by (hostsystem) (
-        (
-          group by (project, hostsystem, virtualmachine)(vrops_virtualmachine_system_powered_on{}==1)
-          and on(project)
-          group by(project) (label_replace(limes_project_usage{domain=~"iaas-.*"}, "project", "$1", "project_id", "(.*)"))
-        )
+      count by (vccluster) (
+        (vrops_hostsystem_memory_usage_percentage > 75)
+        and on(hostsystem)
+        vrops_hostsystem_hostgroups{hostgroups=~".*iaas.*"}
+        unless on(hostsystem)
+        vrops_hostsystem_configuration_dasconfig_admissioncontrolpolicy_failoverhost{} == 1
       )
-      and on(hostsystem) vrops_hostsystem_hostgroups{hostgroups!~".*iaas.*"}
-    for: 30m
+      == on(vccluster)
+      count by (vccluster) (
+        vrops_hostsystem_memory_usage_percentage
+        and on(hostsystem)
+        vrops_hostsystem_hostgroups{hostgroups=~".*iaas.*"}
+        unless on(hostsystem)
+        vrops_hostsystem_configuration_dasconfig_admissioncontrolpolicy_failoverhost{} == 1
+      )
+      and on(vccluster)
+      count by (vccluster) (
+        vrops_hostsystem_memory_usage_percentage
+        and on(hostsystem)
+        vrops_hostsystem_hostgroups{hostgroups=~".*iaas.*"}
+        unless on(hostsystem)
+        vrops_hostsystem_configuration_dasconfig_admissioncontrolpolicy_failoverhost{} == 1
+      ) > 0
+    for: 60m
     labels:
-      severity: warning
+      severity: critical
       service: compute
       support_group: iaas-support
-      context: "IaaS vm on non IaaS cluster"
-      meta: "IaaS virtual machine(s) running on Non IaaS ESXi host {{ $labels.hostsystem }}"
+      context: "IaaS hosts in cluster are almost out of memory"
+      meta: "All IaaS hosts in cluster {{ $labels.vccluster }} are above 75% memory"
     annotations:
-      description: "IaaS virtual machine(s) running on non IaaS ESXi host {{ $labels.hostsystem }}"
-      summary: "IaaS virtual machine(s) running on non IaaS ESXi host {{ $labels.hostsystem }}"
-
+      description: "All IaaS hosts in cluster {{ $labels.vccluster }} are above 75% memory"
+      summary: "All IaaS hosts in cluster {{ $labels.vccluster }} are above 75% memory"
