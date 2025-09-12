@@ -54,7 +54,7 @@ spec:
               mountPath: /startup-scripts
             env:
             - name: PXC_GROUP
-              value: "{{ .Release.Name }}-pxc"
+              value: {{ template "percona-cluster.shortname" . }}
             - name: PXC_SERVICE
               value: "{{ include "fullName" . }}"
             - name: NODE_NAME
@@ -66,6 +66,9 @@ spec:
                 secretKeyRef:
                   name: {{ include "fullName" . }}
                   key: xtrabackup-password
+            ports:
+            - name: state-snapshot
+              containerPort: 4444
           restartPolicy: OnFailure
           volumes:
           - name: mysql-startup-scripts
