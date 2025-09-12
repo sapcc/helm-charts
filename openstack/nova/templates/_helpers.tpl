@@ -1,15 +1,40 @@
+{{- define "nova.helpers.db_configuration" }}
+{{- $allArgs := index . 0}}
+{{- $dbType := index . 1 }}
+{{- $dbConfigSuffix := index . 2 }}
+{{- $dbConfigTypes := dict
+  "mariadb" "mariadb"
+  "pxc-db" "pxc_db"
+}}
+{{- $dbKeyBase := get $dbConfigTypes $dbType }}
+{{- if not $dbKeyBase }}
+  {{- fail (printf "Unsupported dbType '%s' in nova.helpers.db_configuration. Supported types are: %s" $dbType (keys $dbConfigTypes | join ", ")) }}
+{{- end }}
+{{- $dbKey := $dbKeyBase }}
+{{- if and $dbConfigSuffix (ne $dbConfigSuffix "") }}
+  {{- $dbKey = printf "%s_%s" $dbKeyBase $dbConfigSuffix }}
+{{- end }}
+{{- if not (hasKey $allArgs.Values $dbKey) }}
+  {{- fail (print "Database configuration for key " $dbKey " is missing") }}
+{{- end }}
+{{- get $allArgs.Values $dbKey | toYaml }}
+{{- end }}
+
 {{- define "api_db_path" }}
-  {{- $context := dict "target" "api" "defaultUsers" .Values.defaultUsersMariaDB "users" .Values.mariadb_api.users }}
+  {{- $dbConfig := include "nova.helpers.db_configuration" (tuple . .Values.apidbType "api") | fromYaml }}
+  {{- $context := dict "target" "api" "defaultUsers" .Values.defaultUsersMariaDB "users" $dbConfig.users }}
   {{- tuple . .Values.apidbName (include "nova.helpers.default_db_user" $context) (include "nova.helpers.default_user_password" $context) (include "nova.helpers.api_db_name" .) .Values.apidbType | include "utils.db_url" }}
 {{- end }}
 
 {{- define "cell0_db_path" }}
-  {{- $context := dict "target" "cell0" "defaultUsers" .Values.defaultUsersMariaDB "users" .Values.mariadb.users }}
+  {{- $dbConfig := include "nova.helpers.db_configuration" (tuple . .Values.cell0dbType "") | fromYaml }}
+  {{- $context := dict "target" "cell0" "defaultUsers" .Values.defaultUsersMariaDB "users" $dbConfig.users }}
   {{- tuple . .Values.cell0dbName (include "nova.helpers.default_db_user" $context) (include "nova.helpers.default_user_password" $context) (include "nova.helpers.cell01_db_name" .) .Values.cell0dbType | include "utils.db_url" }}
 {{- end }}
 
 {{- define "cell1_db_path" -}}
-  {{- $context := dict "target" "cell1" "defaultUsers" .Values.defaultUsersMariaDB "users" .Values.mariadb.users }}
+  {{- $dbConfig := include "nova.helpers.db_configuration" (tuple . .Values.cell1dbType "") | fromYaml }}
+  {{- $context := dict "target" "cell1" "defaultUsers" .Values.defaultUsersMariaDB "users" $dbConfig.users }}
   {{- tuple . .Values.dbName (include "nova.helpers.default_db_user" $context) (include "nova.helpers.default_user_password" $context) (include "nova.helpers.cell01_db_name" .) .Values.cell1dbType | include "utils.db_url" }}
 {{- end }}
 
@@ -26,7 +51,8 @@
 {{- end -}}
 
 {{- define "cell2_db_path" -}}
-  {{- $context := dict "target" "cell2" "defaultUsers" .Values.defaultUsersMariaDB "users" .Values.mariadb_cell2.users }}
+  {{- $dbConfig := include "nova.helpers.db_configuration" (tuple . .Values.cell2dbType "cell2") | fromYaml }}
+  {{- $context := dict "target" "cell2" "defaultUsers" .Values.defaultUsersMariaDB "users" $dbConfig.users }}
   {{- tuple . .Values.cell2dbName (include "nova.helpers.default_db_user" $context) (include "nova.helpers.default_user_password" $context) (include "nova.helpers.cell2_db_name" .) .Values.cell2dbType | include "utils.db_url" }}
 {{- end }}
 
