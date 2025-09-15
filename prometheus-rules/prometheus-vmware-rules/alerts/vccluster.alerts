@@ -3,10 +3,10 @@ groups:
   rules:
   - alert: VCenterRedundancyLostHAPolicyFaulty
     expr: |
-      vrops_cluster_configuration_dasconfig_enabled{vccluster=~"^productionbb\\d+$"}
-      unless on (vccluster) ((vrops_hostsystem_configuration_dasconfig_admissioncontrolpolicy_failoverhost{vccluster=~"^productionbb\\d+$"} != 0
+      vrops_cluster_configuration_dasconfig_enabled{vccluster=~"productionbb\\d+"}
+      unless on (vccluster) ((vrops_hostsystem_configuration_dasconfig_admissioncontrolpolicy_failoverhost{vccluster=~"productionbb\\d+"} != 0
       and on (hostsystem) vrops_hostsystem_runtime_maintenancestate{state!="inMaintenance"})
-      or (vrops_cluster_summary_custom_tag_openstack_nova_traits_decommissioning{summary_custom_tag_openstack_nova_traits_decommissioning="true", vccluster=~"^productionbb\\d+$"}
+      or (vrops_cluster_summary_custom_tag_openstack_nova_traits_decommissioning{summary_custom_tag_openstack_nova_traits_decommissioning="true", vccluster=~"productionbb\\d+"}
       and on (vccluster) vrops_cluster_cluster_running_vms == 0))
     for: 30m
     labels:
@@ -38,10 +38,10 @@ groups:
 
   - alert: VCClusterFailoverHostCountMismatch
     expr: |
-      (count by (vccluster, vcenter) (vrops_hostsystem_runtime_connectionstate{vccluster=~"^productionbb\\d+$"}) <= 10
-      and on (vccluster) sum by (vccluster) (vrops_hostsystem_configuration_dasconfig_admissioncontrolpolicy_failoverhost{vccluster=~"^productionbb\\d+$"}) > 1)
-      or (sum by (vccluster, vcenter) (vrops_hostsystem_configuration_dasconfig_admissioncontrolpolicy_failoverhost{vccluster=~"^productionbb\\d+$"}) > 2)
-      unless on (vccluster) (vrops_cluster_summary_custom_tag_openstack_nova_traits_decommissioning{summary_custom_tag_openstack_nova_traits_decommissioning="true", vccluster=~"^productionbb\\d+$"}
+      (count by (vccluster, vcenter) (vrops_hostsystem_runtime_connectionstate{vccluster=~"productionbb\\d+"}) <= 10
+      and on (vccluster) sum by (vccluster) (vrops_hostsystem_configuration_dasconfig_admissioncontrolpolicy_failoverhost{vccluster=~"productionbb\\d+"}) > 1)
+      or (sum by (vccluster, vcenter) (vrops_hostsystem_configuration_dasconfig_admissioncontrolpolicy_failoverhost{vccluster=~"productionbb\\d+"}) > 2)
+      unless on (vccluster) (vrops_cluster_summary_custom_tag_openstack_nova_traits_decommissioning{summary_custom_tag_openstack_nova_traits_decommissioning="true", vccluster=~"productionbb\\d+"}
       and vrops_cluster_cluster_running_vms == 0)
     for: 30m
     labels:
@@ -91,8 +91,9 @@ groups:
 
   - alert: VCClusterCannotDistributeNSXTControllers
     expr: |
-      count(
-        (   max_over_time(vrops_hostsystem_memory_capacity_available_to_vms_kilobytes{vccluster=~".*management"}[1h])
+      count by(vccluster, vcenter) (
+        (
+          max_over_time(vrops_hostsystem_memory_capacity_available_to_vms_kilobytes{vccluster=~".*management"}[1h])
           - max_over_time(vrops_hostsystem_memory_consumed_by_vms_kilobytes[1h])
         ) / 1024 / 1024 >= 48
       ) < 3
