@@ -30,21 +30,21 @@ groups:
           summary: "KeystoneLogsGrokParsing not working"
 
       - alert: OctobusKeystoneLogshipperEndpointDown
-        expr: elasticsearch_octobus_keystone_logs_doc_count{logs="keystone-api"} == 0 and on  (region) == 0
+        expr: elasticsearch_octobus_keystone_logs_doc_count{logs="keystone-api"} == 0
         for: 15m
         labels:
           severity: critical
           service: audit
           support_group: "observability"
-          meta: "Keystone to Octobus Endpoint in-https is down"
+          meta: "Keystone to Octobus Endpoint is down"
           playbook: 'docs/support/playbook/opensearch/octobus/data-in-not-reachable'
           dashboard: audit-log-shipping
         annotations:
-          description: "Octobus Keystone endpoint: `in-https` is down in region `{{ $labels.region }}`"
-          summary: "Octobus Keystone endpoint: `in-https` is down in region `{{ $labels.region }}`"
+          description: "Octobus Keystone endpoint is down"
+          summary: "Octobus Keystone endpoint is down"
 
       - alert: OctobusJumpserverLogshipperEndpointDown
-        expr: elasticsearch_octobus_jumpserver_logs_doc_count == 0 and on  (region) == 0
+        expr: elasticsearch_octobus_jumpserver_logs_doc_count == 0
         for: 15m
         labels:
           severity: critical
@@ -54,5 +54,5 @@ groups:
           playbook: 'docs/support/playbook/opensearch/octobus/data-in-not-reachable'
           dashboard: audit-log-shipping
         annotations:
-          description: "Octobus Jumpserver endpoint: `in-beats` is down in region `{{ $labels.region }}`"
-          summary: "Octobus Jumpserver  endpoint: `in-beats` is down in region `{{ $labels.region }}`"
+          description: "Octobus Jumpserver endpoint is down `{{ $labels.logs }}`"
+          summary: "Octobus Jumpserver endpoint is down `{{ $labels.logs }}`"
