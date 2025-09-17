@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.28.0 - 2025/08/28
+* default binary log format changed from MIXED to ROW
+* chart version bumped
+
 ## v0.27.2 - 2025/08/23
 Add missing secret resolve in `init.sql`, when user is disabled, so the generated comment would contain the actual username instead of the vault reference if the vault secret is being used for the username value
 * chart version bumped
