@@ -1,0 +1,15 @@
+groups:
+- name: andromeda.alerts
+  rules:
+  - alert: andromeda-akamai-domains-above-half-capacity
+    expr: andromeda_domains_count_gauge{provider="akamai"} > 50
+    for: 5m
+    labels:
+      context: provider-limits
+      service: andromeda
+      severity: warning
+      tier: os
+      support_group: containers
+    annotations:
+      summary: 'Andromeda domains (provider = Akamai) above 50% capacity'
+      description: 'Andromeda has reached {{ $value }} Akamai domains (capacity = 100 Akamai domains)'
