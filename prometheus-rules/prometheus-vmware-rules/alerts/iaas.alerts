@@ -1,33 +1,7 @@
-# Check also iaas-templated-alerts.yaml if you dont find a alert.
+# Check also iaas-templated-alerts.yaml if you dont find an alert.
 groups:
 - name: iaas.alerts
   rules:
-  - alert: IaasHostMemoryUsage
-    expr: vrops_hostsystem_memory_usage_percentage > 75 and on (hostsystem) vrops_hostsystem_hostgroups{hostgroups=~".*iaas.*"}
-    for: 30m
-    labels:
-      severity: warning
-      service: compute
-      support_group: iaas-support
-      context: "esxi host memory usage"
-      meta: "Memory usage of ESXi host {{ $labels.hostsystem}} is above 75%"
-    annotations:
-      description: "Memory usage of ESXi host {{ $labels.hostsystem}} is above 75%"
-      summary: "Memory usage of ESXi host {{ $labels.hostsystem}} is above 75%"
-
-  - alert: IaasHostMemoryUsage
-    expr: vrops_hostsystem_memory_usage_percentage > 90 and on (hostsystem) vrops_hostsystem_hostgroups{hostgroups=~".*iaas.*"}
-    for: 30m
-    labels:
-      severity: critical
-      service: compute
-      support_group: iaas-support
-      context: "esxi host memory usage"
-      meta: "Memory usage of ESXi host {{ $labels.hostsystem}} is above 90%"
-    annotations:
-      description: "Memory usage of ESXi host {{ $labels.hostsystem}} is above 90%"
-      summary: "Memory usage of ESXi host {{ $labels.hostsystem}} is above 90%"
-
   - alert: IaasHostLicenseKey
     expr: vrops_hostsystem_license_key{license_key!~"GM693.*"} + on (hostsystem) group_right(license_key) vrops_hostsystem_hostgroups{hostgroups=~".*iaas.*"} > 0
     for: 30m
