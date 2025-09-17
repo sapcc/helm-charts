@@ -16,6 +16,19 @@ server_proxyclient_address = $my_ip
 {{- end }}
 {{- end }}
 
+{{- define "console-serial.conf" }}
+{{- $cell_name := index . 1 }}
+{{- $config := index . 2 }}
+{{- with index . 0 }}
+[serial_console]
+enabled = {{ $config.enabled }}
+  {{- if $config.enabled }}
+base_url = https://{{include "nova_console_endpoint_host_public" .}}:{{ .Values.global.novaConsolePortPublic }}/{{ $cell_name }}/serial
+proxyclient_address = $my_ip
+  {{- end }}
+{{- end }}
+{{- end }}
+
 {{- define "cell1_transport_url" -}}
   {{- $context := dict "target" "cell1" "defaultUsers" .Values.defaultUsersRabbitMQ "users" .Values.rabbitmq.users }}
   {{- $data := dict
