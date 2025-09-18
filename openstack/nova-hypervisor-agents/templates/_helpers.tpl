@@ -10,6 +10,8 @@ https://identity-3.{{.Values.global.region}}.{{.Values.global.tld}}/v3
 enabled = {{ $config.enabled }}
 {{- if $config.enabled }}
 novncproxy_base_url = https://{{include "nova_console_endpoint_host_public" .}}:{{ .Values.global.novaConsolePortPublic }}/{{ $cell_name }}/novnc/vnc_auto.html?path=/{{ $cell_name }}/novnc/websockify
+server_listen = $my_ip
+server_proxyclient_address = $my_ip
 {{- end }}
 {{- end }}
 {{- end }}
