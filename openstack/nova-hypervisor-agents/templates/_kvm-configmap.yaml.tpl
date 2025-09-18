@@ -19,4 +19,5 @@ data:
     log_level = 3
     log_outputs = "3:stderr"
     listen_addr = "127.0.0.1"
+    live_migration_inbound_addr = $my_ip
 {{- end }}
