@@ -138,6 +138,10 @@ spec:
               subPath: ratelimit.yaml
               readOnly: true
             {{- end }}
+            {{- if .Values.hsm.utimaco_hsm.enabled }}
+            - name: utimaco-volume
+              mountPath: /utimaco/
+            {{- end }}
         {{- if .Values.hsm.enabled }}
             - name: luna
               mountPath: /thales/
@@ -183,6 +187,17 @@ spec:
               value: "/etc/utimaco/cs_pkcs11_R3.cfg"
           command: [ "/bin/bash", "-c", "--" ]
           args: [ "while true; do sleep 30; done;" ]
+          lifecycle:
+            postStart:
+              exec:
+                command: [ "/bin/bash", "/scripts/barbican_utimaco.sh" ]
+          volumeMounts:
+            - name: hsm-utimaco
+              mountPath: /scripts/
+              subPath:
+              readOnly: true
+            - name: utimaco-volume
+              mountPath: /utimaco/
         {{- end }}
         {{- end }}
         - name: statsd
@@ -213,7 +228,6 @@ spec:
               mountPath: /etc/statsd/statsd-exporter.yaml
               subPath: statsd-exporter.yaml
               readOnly: true
-
       volumes:
         - name: barbican-etc
           configMap:
@@ -237,5 +251,16 @@ spec:
         - name: luna
           emptyDir: {}
         {{ end }}
+        {{- if .Values.hsm.utimaco_hsm.enabled }}
+        - name: hsm-utimaco
+          secret:
+            secretName: {{ .Release.Name }}-secrets
+            defaultMode: 0744
+            items:
+            - key: barbican_utimaco.sh
+              path: barbican_utimaco.sh
+        - name: utimaco-volume
+          emptyDir: {}
+        {{- end }}
         {{- include "utils.proxysql.volumes" . | indent 8 }}
         {{- include "utils.trust_bundle.volumes" . | indent 8 }}
