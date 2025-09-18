@@ -71,6 +71,10 @@ spec:
           - name: ChrystokiConfigurationPath
             value: "/thales/safenet/lunaclient/config"
           {{- end }}
+          {{- if .Values.hsm.utimaco_hsm.enabled }}
+          - name: CS_PKCS11_R3_CFG
+            value: "/utimaco/cs_pkcs11_R3.cfg"
+          {{- end }}
           {{- if .Values.api.resources.enabled }}
           resources:
             limits:
@@ -184,7 +188,7 @@ spec:
           imagePullPolicy: Always
           env:
             - name: CS_PKCS11_R3_CFG
-              value: "/etc/utimaco/cs_pkcs11_R3.cfg"
+              value: "/utimaco/cs_pkcs11_R3.cfg"
           command: [ "/bin/bash", "-c", "--" ]
           args: [ "while true; do sleep 30; done;" ]
           lifecycle:
