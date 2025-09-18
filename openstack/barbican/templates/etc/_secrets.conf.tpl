@@ -28,11 +28,11 @@ aes_gcm_generate_iv = {{ .Values.lunaclient.conn.aes_gcm_generate_iv }}
 {{- if .Values.hsm.utimaco_hsm.enabled }}
 [hsm_partition_crypto_plugin:utimaco_hsm]
 library_path = /opt/utimaco/lib/libcs_pkcs11_R3.so
-login = 123456
+login = ox6t6U3I
 mkek_label = mkek_utimaco
 mkek_length = 32
 hmac_label = hmac_utimaco
-slot_id = 1
+slot_id = 0
 encryption_mechanism = CKM_AES_CBC
 hmac_keywrap_mechanism = CKM_AES_MAC
 {{- end }}
