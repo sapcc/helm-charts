@@ -1,0 +1,61 @@
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "database-sync.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "database-sync.labels" (list $ "version" "database-sync" "sts" "database") | nindent 4 }}
+spec:
+  replicas: 1
+  serviceName: {{ include "database-sync.fullname" . }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: go-maria-sync
+      app.kubernetes.io/instance: {{ include "database-sync.fullname" . }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/version: {{ .Values.image.tag }}
+        app.kubernetes.io/name: go-maria-sync
+        app.kubernetes.io/instance: {{ include "database-sync.fullname" . }}
+      annotations:
+        kubectl.kubernetes.io/default-container: "sync"
+        {{- if and (and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested) $.Values.linkerd.enabled }}
+        {{- include "database-sync.linkerdPodAnnotations" . | indent 8 }}
+        {{- end }}
+    spec:
+      terminationGracePeriodSeconds: 10
+      containers:
+      - name: sync
+        image: {{ required ".Values.global.registry variable missing" $.Values.global.registry }}/{{ .Values.image.name }}:{{ .Values.image.tag }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        command:
+          - sync
+        ports:
+          - containerPort: 8080
+            name: metrics
+            protocol: TCP
+        resources:
+          limits:
+            cpu: 500m
+            memory: 2Gi
+          requests:
+            cpu: 50m
+            memory: 30Mi
+        env:
+        - name: "CONFIG"
+          value: "/etc/config/config.yaml"
+        - name: "DOWNLOAD_DIR"
+          value: "/home/appuser/backup"
+        envFrom:
+        - secretRef:
+            name: {{ include "database-sync.fullname" . }}-secrets
+        volumeMounts:
+        - name: mariadb-sync-etc
+          mountPath: /etc/config
+          readOnly: true
+      volumes:
+        - name: mariadb-sync-etc
+          configMap:
+            name: {{ include "database-sync.fullname" . }}-config
