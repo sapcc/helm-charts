@@ -33,6 +33,7 @@ spec:
 {{ toYaml .Values.podAnnotations | indent 8 }}
     {{- end }}
     spec:
+      terminationGracePeriodSeconds: 360
       affinity:
         nodeAffinity:
 {{- if .Values.nodeAffinity }}
@@ -83,6 +84,10 @@ spec:
         command:
         - "/bin/bash"
         - "/startup-scripts/entrypoint.sh"
+        lifecycle:
+          preStop:
+            exec:
+              command: ["/bin/bash","-c","sleep 300"]
         resources:
 {{ toYaml .Values.resources | indent 10 }}
         env:
