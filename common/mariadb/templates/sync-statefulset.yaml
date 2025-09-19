@@ -1,0 +1,60 @@
+{{- if .Values.sync.enabled }}
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "fullName" . }}-sync
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "mariadb.labels" (list $ "version" "database-sync" "sts" "database") | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: go-maria-sync
+      app.kubernetes.io/instance: {{ include "fullName" . }}-sync
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/version: {{ .Values.sync.image.tag }}
+        app.kubernetes.io/name: go-maria-sync
+        app.kubernetes.io/instance: {{ include "fullName" . }}-sync
+      annotations:
+        kubectl.kubernetes.io/default-container: "sync"
+        {{- include "mariadb.linkerdPodAnnotations" . | indent 8 }}
+    spec:
+      terminationGracePeriodSeconds: 10
+      containers:
+      - name: sync
+        image: {{ required ".Values.global.registry variable missing" .Values.global.registry }}/{{ .Values.sync.image.name }}:{{ .Values.sync.image.tag }}
+        imagePullPolicy: {{ .Values.sync.imagePullPolicy }}
+        command:
+          - sync
+        ports:
+          - containerPort: 8080
+            name: metrics
+            protocol: TCP
+        resources:
+          limits:
+            cpu: 500m
+            memory: 2Gi
+          requests:
+            cpu: 50m
+            memory: 30Mi
+        env:
+        - name: "CONFIG"
+          value: "/etc/config/config.yaml"
+        - name: "DOWNLOAD_DIR"
+          value: "/home/appuser/backup"
+        envFrom:
+        - secretRef:
+            name: {{ include "fullName" . }}-sync-secrets
+        volumeMounts:
+        - name: mariadb-sync-etc
+          mountPath: /etc/config
+          readOnly: true
+      volumes:
+        - name: mariadb-sync-etc
+          configMap:
+            name: {{ include "fullName" . }}-sync-config
+{{- end }}
