@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.27.3 - 2025/09/22
+* updated sidecar images:
+  * `maria-back-me-up` image updated to `20250922093701`
+  * `user-credentials-updater` image updated to `python3.13-alpine3.22-20250818200546`
+  * `pod-readiness` image updated to `20250922092006`
+* chart version bumped
+
 ## v0.27.2 - 2025/08/23
 Add missing secret resolve in `init.sql`, when user is disabled, so the generated comment would contain the actual username instead of the vault reference if the vault secret is being used for the username value
 * chart version bumped
