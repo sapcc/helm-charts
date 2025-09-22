@@ -1,3 +1,18 @@
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: perses-content-pvc
+  namespace: perses  # Adjust namespace as needed
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 1Gi  # Adjust size as needed
+  storageClassName: nfs  # Use appropriate storage class that supports RWX
+
+---
 apiVersion: batch/v1
 kind: CronJob
 metadata:
@@ -15,7 +30,7 @@ spec:
           restartPolicy: OnFailure
           containers:
           - name: content-sync
-            image:keppel.eu-de-1.cloud.sap/ccloud-gcr-mirror/go-containerregistry/crane:debug
+            image: keppel.eu-de-1.cloud.sap/ccloud-gcr-mirror/go-containerregistry/crane:debug
             command: ["/bin/sh"]
             args:
               - -c
@@ -55,6 +70,7 @@ spec:
             volumeMounts:
             - name: perses-content-volume
               mountPath: /etc/perses/provisioning
+            
             resources:
               requests:
                 memory: "128Mi"
@@ -62,6 +78,7 @@ spec:
               limits:
                 memory: "256Mi"
                 cpu: "200m"
+          
           volumes:
           - name: perses-content-volume
             persistentVolumeClaim:
