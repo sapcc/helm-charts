@@ -224,4 +224,4 @@
     job: "harvest-service-discovery"
   editable_labels:
     - datacenter
-    - cluster
+    - netapp_cluster

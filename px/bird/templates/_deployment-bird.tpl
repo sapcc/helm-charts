@@ -116,6 +116,7 @@ spec:
           initialDelaySeconds: 5
           periodSeconds: 5
         resources: {{ toYaml .top.Values.resources.bird | nindent 10 }}
+{{- if .top.Values.sidecars.exporter.enabled }}
       - name: exporter
         image: keppel.{{ .top.Values.registry }}.cloud.sap/{{required "bird_exporter_image must be set" .top.Values.bird_exporter_image}}
         args: ["-format.new=true", "-bird.v2", "-bird.socket=/var/run/bird/bird.ctl", "-proto.ospf=false", "-proto.direct=false"]
@@ -127,6 +128,8 @@ spec:
         ports:
         - containerPort: 9324
           name: metrics
+{{- end }}
+{{- if .top.Values.sidecars.lookingGlass.enabled }}
       - name: lgproxy
         image: keppel.{{ .top.Values.registry }}.cloud.sap/{{ required "lg_image must be set" .top.Values.lg_image }}
         command: ["/venv/bin/python3"]
@@ -151,6 +154,7 @@ spec:
         ports:
         - containerPort: 5005
           name: lgadminproxy
+{{- end }}
       volumes:
         - name: config
           configMap:
