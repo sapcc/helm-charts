@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.27.3 - 2025/09/24
+* Add an option to enable `owner-info` dependency chart to be able to install `mariadb` as a stand-alone chart
+* chart version bumped
+
 ## v0.27.2 - 2025/08/23
 Add missing secret resolve in `init.sql`, when user is disabled, so the generated comment would contain the actual username instead of the vault reference if the vault secret is being used for the username value
 * chart version bumped
