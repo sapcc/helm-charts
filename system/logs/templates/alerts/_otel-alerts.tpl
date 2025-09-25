@@ -25,6 +25,18 @@ groups:
     annotations:
       description: 'OTel logs on {{`{{ $labels.k8s_cluster_name }}`}} in {{`{{ $labels.region }}`}} is sending 4 times more logs in the last 6h. Please check.'
       summary:  OTel log volume is increasing, check log volume.
+  - alert: LogsOTelLogsDecreasing
+    expr: sum(rate(otelcol_exporter_sent_log_records_total{job="logs/opentelemetry-collector-logs"}[1h]offset 2h)) by (k8s_cluster_name)/sum(rate(otelcol_exporter_sent_log_records_total{job="logs/opentelemetry-collector-logs"}[1h])) by (k8s_cluster_name) > 4
+    for: 2h
+    labels:
+      context: logshipping
+      service: logs
+      severity: info
+      support_group: observability
+      playbook: 'docs/support/playbook/logs/otel-logs-decreasing'
+    annotations:
+      description: 'OTel on {{`{{ $labels.k8s_cluster_name }}`}} in {{`{{ $labels.region }}`}} is sending 4 times fewer logs in the last 2h. Please check.'
+      summary:  OTel log volume is decreasing, check log volume.
   - alert: LogsOTelLogsExportingFailed
     expr: sum(increase(otelcol_exporter_sent_log_records_total{job="logs/opentelemetry-collector-logs"}[1h])) by (k8s_cluster_name)/ sum(increase(otelcol_exporter_send_failed_log_records_total{job="logs/opentelemetry-collector-logs"}[1h]) + increase(otelcol_exporter_sent_log_records_total{job="logs/opentelemetry-collector-logs"}[1h])) by (k8s_cluster_name) < 0.9
     for: 1h
