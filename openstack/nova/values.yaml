@@ -128,13 +128,17 @@ defaultUsersMariaDB:
   cell2: null
 
 dbName: nova
+cell1dbType: mariadb
 
 cell0dbName: nova_cell0
+cell0dbType: mariadb
 
 # cell2dbName should be the same as mariadb_cell2 backup_v2 DB name!
 cell2dbName: nova_cell2
+cell2dbType: mariadb
 
 apidbName: nova_api
+apidbType: mariadb
 
 loci:
   nova: false
@@ -773,6 +777,43 @@ mariadb:
           enabled: true
           allTables: true
 
+pxc_db:
+  enabled: false
+  name: nova
+  alerts:
+    support_group: "compute-storage-api"
+  ccroot_user:
+    enabled: true
+  databases:
+    - nova
+    - nova_cell0
+  users:
+    nova:
+      name: nova
+      grants:
+        - "ALL PRIVILEGES on nova.*"
+    nova_cell0:
+      name: nova_cell0
+      grants:
+        - "ALL PRIVILEGES on nova_cell0.*"
+  pxc:
+    configuration:
+      options:
+        max_connections: "2048"
+        innodb_buffer_pool_size: "4096M"
+        innodb_log_file_size: "1024M"
+        long_query_time: "8"
+    persistence:
+      size: 50Gi
+  backup:
+    enabled: true
+    s3:
+      secrets:
+        aws_access_key_id: null
+        aws_secret_access_key: null
+    pitr:
+      enabled: true
+
 mariadb_api:
   enabled: false
   buffer_pool_size: "4096M"
@@ -810,6 +851,37 @@ mariadb_api:
           enabled: true
           allTables: true
 
+pxc_db_api:
+  enabled: false
+  name: nova-api
+  alerts:
+    support_group: "compute-storage-api"
+  ccroot_user:
+    enabled: true
+  databases:
+    - nova_api
+  users:
+    nova_api:
+      name: nova_api
+      grants:
+        - "ALL PRIVILEGES on nova_api.*"
+  pxc:
+    configuration:
+      options:
+        innodb_buffer_pool_size: "4096M"
+        innodb_log_file_size: "1024M"
+        long_query_time: "8"
+    persistence:
+      size: 50Gi
+  backup:
+    enabled: true
+    s3:
+      secrets:
+        aws_access_key_id: null
+        aws_secret_access_key: null
+    pitr:
+      enabled: true
+
 mariadb_cell2:
   enabled: false
   buffer_pool_size: "4096M"
@@ -837,6 +909,31 @@ mariadb_cell2:
         analyzeTable:
           enabled: true
           allTables: true
+
+pxc_db_cell2:
+  enabled: false
+  alerts:
+    support_group: "compute-storage-api"
+  ccroot_user:
+    enabled: true
+  databases: []
+  users: []
+  pxc:
+    configuration:
+      options:
+        innodb_buffer_pool_size: "4096M"
+        innodb_log_file_size: "1024M"
+        long_query_time: "8"
+    persistence:
+      size: 50Gi
+  backup:
+    enabled: true
+    s3:
+      secrets:
+        aws_access_key_id: null
+        aws_secret_access_key: null
+    pitr:
+      enabled: true
 
 rabbitmq_cell2:
   nameOverride: cell2-rabbitmq
