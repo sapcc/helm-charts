@@ -206,7 +206,7 @@ maillog2:
   hash: "{{ .Values.users.maillog2.nohash }}"
   reserved: true
   backend_roles:
-  - "maillog2"
+  - "maillog"
 
 jupyterhub:
   hash: "{{ .Values.users.jupyterhub.nohash }}"
@@ -219,3 +219,15 @@ jupyterhub2:
   reserved: true
   backend_roles:
   - "jupyterhub"
+
+alerting:
+  hash: "{{ .Values.users.alerting.nohash }}"
+  reserved: true
+  backend_roles:
+  - "auditorrole"
+
+alerting2:
+  hash: "{{ .Values.users.alerting2.nohash }}"
+  reserved: true
+  backend_roles:
+  - "auditorrole"
