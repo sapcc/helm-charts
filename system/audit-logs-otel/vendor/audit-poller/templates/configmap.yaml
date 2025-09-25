@@ -1,0 +1,90 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name:  audit-poller-etc
+  namespace: {{ .Values.namespace }}
+  labels:
+    app.kubernetes.io/name: audit-poller
+    helm.sh/chart: {{ include "audit-poller.chart" $ }}
+    app.kubernetes.io/instance: audit-poller-{{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+data:
+  config.yaml: |
+    apiClients:
+      iasAPI:
+        user: {{ required "IAS API user" .Values.iasApi.user }}
+        tokenURL: {{ required "IAS API tokenURL" .Values.iasApi.tokenURL }}
+        apiURL: {{ required "missing required IAS API apiURL" .Values.iasApi.apiURL }}
+        alternateApiURL: {{ required "missing required IAS API alternateApiURL" .Values.iasApi.alternateApiURL }}
+        fileName: {{ required "IAS API fileName" .Values.iasApi.fileName }}
+        interval: {{ required "IAS API interval" .Values.iasApi.interval }}
+        {{- if .Values.iasApi.syncFrom }}
+        syncFrom: {{ .Values.iasApi.syncFrom }}
+        {{- end }}
+      iasChangelog:
+        user: {{ required "IAS Changelog user" .Values.iasChangelog.user }}
+        url: {{ required "IAS Changelog tokenURL" .Values.iasChangelog.url }}
+        fileName: {{ required "IAS Changelog fileName" .Values.iasChangelog.fileName }}
+        interval: {{ required "IAS Changelog interval" .Values.iasChangelog.interval }}
+        {{- if .Values.iasChangelog.syncFrom }}
+        syncFrom: {{ .Values.iasChangelog.syncFrom }}
+        {{- end }}
+    logLevel: {{ .Values.logLevel }}
+    logDir: {{ .Values.logDir }}
+    metricsPort: {{ .Values.metricsPort }}
+{{- if .Values.sidecar.fluent.enabled }}
+  fluent-bit.conf: |-
+    [SERVICE]
+        Flush        1
+        Daemon       Off
+        Log_Level    warn
+        Log_File     /audit/fluent.log
+        parsers_file parsers.conf
+        HTTP_Server  On
+        HTTP_Listen  0.0.0.0
+        HTTP_Port    {{ .Values.sidecar.fluent.metricsPort }}
+        Health_Check On
+    [INPUT]
+        Name           tail
+        Path           {{ .Values.logDir }}/{{ .Values.iasApi.fileName }}
+        Tag            api.*
+        Mem_Buf_Limit  5MB
+        DB             {{ .Values.logDir }}/position.pos.db
+        Parser         ias_api_json
+        Read_from_Head true
+    [INPUT]
+        Name           tail
+        Path           {{ .Values.logDir }}/{{ .Values.iasChangelog.fileName }}
+        Tag            changelog.*
+        Mem_Buf_Limit  5MB
+        DB             {{ .Values.logDir }}/position.pos.db
+        Parser         ias_api_json
+        Read_from_Head true
+    [FILTER]
+        Name record_modifier
+        Match api.*
+        Record sap.cc.audit.source ias-auditlog
+    [FILTER]
+        Name record_modifier
+        Match changelog.*
+        Record sap.cc.audit.source ias-changelog
+    [FILTER]
+        Name nest
+        Match *
+        Operation lift
+        Nested_under log
+    [OUTPUT]
+        Name stdout
+        Match *
+        Format json_lines
+        json_date_key created
+        json_date_format iso8601
+  parsers.conf: |-
+    [PARSER]
+        Name           ias_api_json
+        Format         json
+        Time_Key       time
+        Time_Format    %Y-%m-%dT%H:%M:%S
+        Decode_Field_As escaped log do_next
+        Decode_Field json log
+{{- end }}
