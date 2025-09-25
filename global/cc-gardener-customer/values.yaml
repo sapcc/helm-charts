@@ -1,0 +1,106 @@
+global:
+  region: ""
+  cluster: ""
+operator:
+  image:
+    repository: keppel.global.cloud.sap/ccloud-europe-docker-pkg-dev-mirror/gardener-project/releases/gardener/operator
+    tag: v1.117.5 # also the gardener version, which will be used
+garden:
+  name: garden
+  # externalIP: ""
+  managedresources: true # disable on inital deployment
+  backup:
+  # accessKeyID: ""
+  # secretAccessKey: ""
+  # region: ""
+  # bucket: ""
+  runtimeCluster:
+    zones: []
+    # - "eu-de-1a"
+    # Those CIDRs have been chosen to match with the runtime cluster configuration (see example/gardener-local/kind/cluster/values.yaml).
+    # Generally, they have to match the CIDRs of the runtime cluster.
+    networking:
+    # nodes: 
+      pods: ["10.42.0.0/16"] # k3s default
+      services: ["10.43.0.0/16"] # k3s default
+  virtualCluster:
+    version: "1.29.6"
+    # oidcConfig:
+    networking:
+      services: ["100.64.0.0/13"]
+    adminUsers: []
+secretsInjector:
+  replicaCount: 2
+  topologyKey: ""
+  image:
+    repository: ""
+    tag: ""
+    pullPolicy: IfNotPresent
+  config:
+    accounts: []
+    intervals:
+      rotationPeriod: 5m
+      rotationJitter: 1.1
+      mirrorPeriod: 1m
+      mirrorJitter: 1.1
+    cleartext: asLiteral
+extensions:
+  storage:
+    provisioner: "rancher.io/local-path"
+    parameters: {}
+  kubernetesVersions: []
+  calico:
+    enabled: false
+  gardenlinux:
+    enabled: false
+  flatcar:
+    enabled: false
+  openstack:
+    enabled: false
+    machineTypes: []
+    machineImages: []
+    providerConfig:
+      machineImages: []
+    zones: []
+  metal:
+    enabled: false
+    image:
+      repository: ghcr.io/ironcore-dev/gardener-extension-provider-ironcore-metal
+      tag: sha-354b215
+    imageVectorOverwrite: 
+      ccm:
+        repository: ghcr.io/ironcore-dev/metal-cloud-controller-manager
+        tag: sha-c9b7c07
+      mcm:
+        repository: ghcr.io/ironcore-dev/machine-controller-manager-provider-ironcore-metal
+        tag: sha-068b0c7
+gardenlet:
+  enabled: false
+cloudProfileSync:
+  enabled: false
+  replicaCount: 1
+  topologyKey: ""
+  image:
+    repository: cloud-profile-sync
+    tag: v0.1.0
+    pullPolicy: IfNotPresent
+  config:
+    cloudProfile: ironcore-metal
+    source:
+      name: gardenlinux
+      oci:
+        registry: ""
+        repository: ""
+    provider:
+      ironcore:
+        registry: ""
+        repository: ""
+        imageName: ""
+owner-info:
+  support-group: containers
+  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/global/cc-gardener-customer
+  service: cc-gardener-customer
+  maintainers:
+  - Caio Ronchi
+  - Jan Knipper
+  - Sandro Jaeckel
