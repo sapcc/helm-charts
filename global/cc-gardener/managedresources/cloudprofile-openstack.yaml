@@ -14,7 +14,11 @@ spec:
   providerConfig: # https://github.com/gardener/gardener-extension-provider-openstack/blob/master/pkg/apis/openstack/types_cloudprofile.go
     apiVersion: openstack.provider.extensions.gardener.cloud/v1alpha1
     kind: CloudProfileConfig
-    keystoneURL: https://identity-3.{{ .Values.global.region }}.cloud.sap/v3
+    keystoneURLs:
+    {{- range $region := .Values.extensions.openstack.regions }}
+    - region: {{ $region.name | quote }}
+      url: "https://identity-3.{{ $region.name }}.cloud.sap/v3"
+    {{- end }}
     useOctavia: true
     constraints:
       floatingPools:
