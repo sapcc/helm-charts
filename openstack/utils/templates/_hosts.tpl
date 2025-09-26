@@ -333,7 +333,7 @@ Custom DB URL for the global services using percona_cluster
 
 {{define "cinder_db_host"}}cinder-mariadb.{{ include "svc_fqdn" . }}{{end}}
 {{define "cinder_api_endpoint_host_admin"}}cinder-api.{{ include "svc_fqdn" . }}{{end}}
-{{define "cinder_api_endpoint_host_internal"}}cinder-api.{{ include "svc_fqdn" . }}{{end}}
+{{define "cinder_api_endpoint_host_internal"}}cinder-api-internal.{{ include "svc_fqdn" . }}{{end}}
 {{define "cinder_api_endpoint_host_public"}}volume-3.{{ include "host_fqdn" . }}{{end}}
 
 {{define "manila_db_host"}}manila-mariadb.{{ include "svc_fqdn" . }}{{end}}
