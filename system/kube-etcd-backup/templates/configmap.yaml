@@ -1,0 +1,37 @@
+{{- if .Values.configmap.enable }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: etcd-kcp
+  namespace: kube-system
+  labels:
+  {{- include "chart.labels" . | nindent 4 }}
+data:
+  etcd.conf.yaml: |
+    name: etcd-kcp
+    data-dir: /var/lib/etcd
+    advertise-client-urls:
+      etcd-kcp:
+        - https://etcd-kcp.kube-system.svc.cluster.local:2379
+    initial-advertise-peer-urls:
+      etcd-kcp:
+        - https://etcd-kcp.kube-system.svc.cluster.local:2380
+    initial-cluster: etcd-kcp=https://etcd-kcp.kube-system.svc.cluster.local:2380
+    initial-cluster-state: existing
+    listen-client-urls: https://etcd-kcp.kube-system.svc.cluster.local:2379
+    listen-peer-urls: https://etcd-kcp.kube-system.svc.cluster.local:2380
+    listen-metrics-urls: http://etcd-kcp.kube-system.svc.cluster.local:2381
+    snapshot-count: 10000
+    client-transport-security:
+      auto-tls: false
+      cert-file: /etc/kubernetes/pki/etcd/server.crt
+      client-cert-auth: true
+      key-file: /etc/kubernetes/pki/etcd/server.key
+      trusted-ca-file: /etc/kubernetes/pki/etcd/ca.crt
+    peer-transport-security:
+      auto-tls: false
+      cert-file: /etc/kubernetes/pki/etcd/peer.crt
+      client-cert-auth: true
+      key-file: /etc/kubernetes/pki/etcd/peer.key
+      trusted-ca-file: /etc/kubernetes/pki/etcd/ca.crt
+{{- end }}
