@@ -205,7 +205,9 @@ fi
 
 # run the recommended optimization by pg_upgrade to mitigate performance decreases after an upgrade
 if [[ $updated_db == true ]]; then
-  vacuumdb --all --analyze-in-stages
+  vacuumdb --all --analyze-in-stages --missing-stats-only
+  vacuumdb --all --analyze-only
+  psql -f "$PGDATA/update_extensions.sql"
 fi
 
 # maintain password of superuser account "postgres" (this is required because this password is different on each run)
