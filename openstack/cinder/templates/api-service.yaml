@@ -1,3 +1,39 @@
+{{- define "cinder.api.service" -}}
+{{- $type := index . 1 -}}
+{{- with index . 0 -}}
+---
+kind: Service
+apiVersion: v1
+
+metadata:
+  name: cinder-api-{{ $type }}
+  labels:
+    system: openstack
+    type: api
+    component: cinder
+  annotations:
+    prometheus.io/scrape: "true"
+    {{- /* I'm not sure what this does and whether we need it for the internal service */}}
+    maia.io/scrape: "true"
+    prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
+    {{- include "utils.topology.service_topology_mode" . | indent 2 }}
+    {{- include "utils.linkerd.pod_and_service_annotation" . | indent 4 }}
+spec:
+  selector:
+    name: cinder-api-{{ $type }}
+  ports:
+    - name: cinder-api
+      port: {{ .Values.cinderApiPortInternal }}
+    - name: metrics
+      port: {{ .Values.port_metrics }}
+{{- end }}
+{{- end }}
+
+{{- include "cinder.api.service" (tuple . "external") }}
+{{- include "cinder.api.service" (tuple . "internal") }}
+---
+{{- /* For migration purposes, we keep the old service name cinder-api alive until everything (including Keystone) points there
+    We do not need scraping for it, though, as we already have the new service for that. */}}
 kind: Service
 apiVersion: v1
 
@@ -8,14 +44,14 @@ metadata:
     type: api
     component: cinder
   annotations:
-    prometheus.io/scrape: "true"
-    maia.io/scrape: "true"
+    prometheus.io/scrape: "false"
+    maia.io/scrape: "false"
     prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
     {{- include "utils.topology.service_topology_mode" . | indent 2 }}
     {{- include "utils.linkerd.pod_and_service_annotation" . | indent 4 }}
 spec:
   selector:
-    name: cinder-api
+    name: cinder-api-external
   ports:
     - name: cinder-api
       port: {{ .Values.cinderApiPortInternal }}
