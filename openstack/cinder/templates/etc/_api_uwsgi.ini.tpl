@@ -1,3 +1,4 @@
+{{- $conf := . -}}
 [uwsgi]
 need-app = true
 http-socket = :{{ .Values.cinderApiPortInternal }}
@@ -14,5 +15,5 @@ exit-on-reload = false
 die-on-term = true
 master = true
 memory-report = true
-processes = {{ .Values.api.workers }}
+processes = {{ $conf.workers }}
 wsgi-file = /var/lib/openstack/bin/cinder-wsgi

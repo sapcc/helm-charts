@@ -1,3 +1,18 @@
+{{- define "audit_pipe" -}}
+{{- if .Values.audit.enabled }} audit{{- end -}}
+{{- end -}}
+
+{{- define "watcher_pipe" -}}
+{{- if .Values.watcher.enabled }} watcher{{- end -}}
+{{- end -}}
+
+{{- define "rate_limit_pipe" -}}
+{{- if .rate_limit.enabled }} rate_limit{{- end -}}
+{{- end -}}
+
+{{- $type := index . 1 -}}
+{{- $conf := index . 2 -}}
+{{- with index . 0 -}}
 #############
 # OpenStack #
 #############
@@ -8,28 +23,16 @@ use = call:cinder.api:root_app_factory
 /v2: openstack_volume_api_v2
 /v3: openstack_volume_api_v3
 
-{{- define "audit_pipe" -}}
-{{- if .Values.audit.enabled }} audit{{- end -}}
-{{- end }}
-
-{{- define "watcher_pipe" -}}
-{{- if .Values.watcher.enabled }} watcher{{- end -}}
-{{- end }}
-
-{{- define "rate_limit_pipe" -}}
-{{- if .Values.api_rate_limit.enabled }} rate_limit{{- end -}}
-{{- end }}
-
 [composite:openstack_volume_api_v2]
 use = call:cinder.api.middleware.auth:pipeline_factory
 noauth = cors http_proxy_to_wsgi request_id {{- include "watcher_pipe" . }} faultwrap sentry sizelimit {{- include "osprofiler_pipe" . }} noauth apiv2
-keystone = cors http_proxy_to_wsgi request_id faultwrap sentry sizelimit {{- include "osprofiler_pipe" . }} authtoken keystonecontext {{- include "watcher_pipe" . }} {{- include "audit_pipe" . }} {{- include "rate_limit_pipe" . }} apiv2
+keystone = cors http_proxy_to_wsgi request_id faultwrap sentry sizelimit {{- include "osprofiler_pipe" . }} authtoken keystonecontext {{- include "watcher_pipe" . }} {{- include "audit_pipe" . }} {{- include "rate_limit_pipe" $conf }} apiv2
 keystone_nolimit = cors http_proxy_to_wsgi request_id faultwrap sentry sizelimit {{- include "osprofiler_pipe" . }} authtoken keystonecontext {{- include "watcher_pipe" . }} {{- include "audit_pipe" . }} apiv2
 
 [composite:openstack_volume_api_v3]
 use = call:cinder.api.middleware.auth:pipeline_factory
 noauth = cors http_proxy_to_wsgi request_id {{- include "watcher_pipe" . }} faultwrap sentry sizelimit {{- include "osprofiler_pipe" . }} noauth apiv3
-keystone = cors http_proxy_to_wsgi request_id faultwrap sentry sizelimit {{- include "osprofiler_pipe" . }} authtoken keystonecontext {{- include "watcher_pipe" . }} {{- include "audit_pipe" . }} {{- include "rate_limit_pipe" . }} apiv3
+keystone = cors http_proxy_to_wsgi request_id faultwrap sentry sizelimit {{- include "osprofiler_pipe" . }} authtoken keystonecontext {{- include "watcher_pipe" . }} {{- include "audit_pipe" . }} {{- include "rate_limit_pipe" $conf }} apiv3
 keystone_nolimit = cors http_proxy_to_wsgi request_id faultwrap sentry sizelimit {{- include "osprofiler_pipe" . }} authtoken keystonecontext {{- include "watcher_pipe" . }} {{- include "audit_pipe" . }} apiv3
 
 [filter:request_id]
@@ -101,17 +104,18 @@ service_type = volume
 config_file = /etc/cinder/watcher.yaml
 {{- end }}
 
-{{ if .Values.api_rate_limit.enabled -}}
+{{ if $conf.rate_limit.enabled -}}
 [filter:rate_limit]
 use = egg:rate-limit-middleware#rate-limit
 config_file = /etc/cinder/ratelimit.yaml
 service_type = volume
-rate_limit_by = {{ .Values.api_rate_limit.rate_limit_by }}
-max_sleep_time_seconds = {{ .Values.api_rate_limit.max_sleep_time_seconds }}
+rate_limit_by = {{ $conf.rate_limit.rate_limit_by }}
+max_sleep_time_seconds = {{ $conf.rate_limit.max_sleep_time_seconds }}
 clock_accuracy = 1ns
-log_sleep_time_seconds = {{ .Values.api_rate_limit.log_sleep_time_seconds }}
-backend_host = {{ .Release.Name }}-api-ratelimit-redis
+log_sleep_time_seconds = {{ $conf.rate_limit.log_sleep_time_seconds }}
+backend_host = {{ .Release.Name }}-api-{{ $type }}-ratelimit-redis
 backend_port = 6379
-backend_secret_file = {{ .Values.api_rate_limit.backend_secret_file }}
-backend_timeout_seconds = {{ .Values.api_rate_limit.backend_timeout_seconds }}
+backend_secret_file = {{ $conf.rate_limit.backend_secret_file }}
+backend_timeout_seconds = {{ $conf.rate_limit.backend_timeout_seconds }}
+{{- end }}
 {{- end }}
