@@ -16,7 +16,8 @@ osprofiler:
 
 pod:
   replicas:
-    api: 4
+    api_external: 4
+    api_internal: 2
     scheduler: 1
   lifecycle:
     upgrades:
@@ -27,7 +28,11 @@ pod:
           maxUnavailable: 0
           maxSurge: 1
   resources:
-    api:
+    api_external:
+      requests:
+        cpu: "1500m"
+        memory: "3Gi"
+    api_internal:
       requests:
         cpu: "1500m"
         memory: "3Gi"
@@ -85,11 +90,35 @@ defaults:
 volumes: {}
 
 
-api:
+api_external:
   use_uwsgi: false
   # bare in mind, that with use_uwsgi=false, these workers also have
   # greenthreads
   workers: 10
+  # openstack-rate-limit-middleware
+  rate_limit:
+    enabled: true
+    backend_secret_file: /etc/cinder/ratelimit-backend-secret.conf
+    rate_limit_by: "target_project_id"
+    max_sleep_time_seconds: 15
+    log_sleep_time_seconds: 10
+    backend_timeout_seconds: 15
+    project_whitelist: []
+
+api_internal:
+  use_uwsgi: false
+  # bare in mind, that with use_uwsgi=false, these workers also have
+  # greenthreads
+  workers: 10
+  # openstack-rate-limit-middleware
+  rate_limit:
+    enabled: true
+    backend_secret_file: /etc/cinder/ratelimit-backend-secret.conf
+    rate_limit_by: "target_project_id"
+    max_sleep_time_seconds: 15
+    log_sleep_time_seconds: 10
+    backend_timeout_seconds: 15
+    project_whitelist: []
 
 use_tls_acme: true
 
@@ -437,16 +466,6 @@ logging:
       handlers: "null"
       level: ERROR
 
-# openstack-rate-limit-middleware
-api_rate_limit:
-  enabled: true
-  backend_secret_file: /etc/cinder/ratelimit-backend-secret.conf
-  rate_limit_by: "target_project_id"
-  max_sleep_time_seconds: 15
-  log_sleep_time_seconds: 10
-  backend_timeout_seconds: 15
-  project_whitelist: []
-
 # openstack-watcher-middleware
 watcher:
   enabled: true
@@ -477,7 +496,11 @@ owner-info:
 
 coordinationBackend: "file"
 
-api-ratelimit-redis:
+api-external-ratelimit-redis:
+  alerts:
+    support_group: compute-storage-api
+
+api-internal-ratelimit-redis:
   alerts:
     support_group: compute-storage-api
 
