@@ -153,7 +153,7 @@ cluster.local
 {{- $root := index . 1 -}}
 {{/* Thanos Query discovery within the cluster */}}
 {{- if $root.Values.queryDiscovery -}}
-- targets:
+- endpoints:
 {{- $clusterList := list }}
 {{- range $index, $service := (lookup "v1" "Service" "" "").items }}
 {{- if and (hasPrefix "thanos" $service.metadata.name) (contains "query" $service.metadata.name) (not (contains "maia" $service.metadata.name)) (not (contains "metal" $service.metadata.name)) (not (contains "scaleout" $service.metadata.name)) (not (contains "regional" $service.metadata.name)) (not (contains "global" $service.metadata.name)) }}
@@ -163,11 +163,11 @@ cluster.local
 {{- end }}
 {{- end }}
 {{- range $clusterList | sortAlpha }}
-  - {{ . }}
+  - address: {{ . }}
 {{- end }}
 {{/* Global Thanos Query Store API endpoints */}}
 {{- else if and $root.Values.useQueryRegions $root.Values.queryStoreAPIs -}}
-- targets:
+- endpoints:
 {{- $globalList := list }}
 {{- range $region := $root.Values.queryRegions -}}
 {{- range $cluster := $root.Values.queryStoreAPIs -}}
@@ -180,11 +180,11 @@ cluster.local
 {{- $globalList = append $globalList $storeItem -}}
 {{- end -}}
 {{- range $globalList | sortAlpha }}
-  - {{ . }}:443
+  - address: {{ . }}:443
 {{- end }}
 {{/* Regional Thanos Query Store API endpoints */}}
 {{- else if and (not $root.Values.useQueryRegions) $root.Values.queryStoreAPIs -}}
-- targets:
+- endpoints:
 {{- $regionalList := list }}
 {{- range $cluster := $root.Values.queryStoreAPIs }}
 {{- $storeItem := printf "thanos-%s-grpc.%s.%s" $cluster $root.Values.global.region $root.Values.global.tld -}}
@@ -195,7 +195,7 @@ cluster.local
 {{- $regionalList = append $regionalList $storeItem -}}
 {{- end -}}
 {{- range $regionalList | sortAlpha }}
-  - {{ . }}:443
+  - address: {{ . }}:443
 {{- end }}
 {{- end }}
 {{- end }}
