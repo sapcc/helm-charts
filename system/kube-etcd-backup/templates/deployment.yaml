@@ -1,0 +1,99 @@
+{{- if .Values.deployment.enable }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: etcd-kcp
+  namespace: kube-system
+  labels:
+    {{- include "chart.labels" . | nindent 4 }}
+    etcd-kcp: backup
+spec:
+  replicas:  {{ .Values.deployment.replicas }}
+  selector:
+    matchLabels:
+      {{- include "chart.selectorLabels" . | nindent 6 }}
+      etcd-kcp: backup
+  template:
+    metadata:
+      labels:
+        {{- include "chart.labels" . | nindent 8 }}
+        etcd-kcp: backup
+    spec:
+      containers:
+        - name: manager
+          command:
+            - /etcdbrctl
+          args:
+            - server
+            - '--schedule=15 * * * *'
+            - '--data-dir=/var/lib/etcd/backup'
+            - '--restoration-temp-snapshots-dir=/var/lib/etcd/backup/restoration.temp'
+            - '--snapstore-temp-directory=/var/lib/etcd/backup/temp'
+            - '--endpoints=https://etcd-kcp.kube-system.svc.cluster.local:2379'
+            - '--storage-provider=S3'
+            - '--delta-snapshot-period=30s'
+            - '--garbage-collection-period=3600s'
+            - '--garbage-collection-policy=Exponential'
+            - '--cacert=/etc/kubernetes/pki/etcd/ca.crt'
+            - '--cert=/etc/kubernetes/pki/apiserver-etcd-client.crt'
+            - '--key=/etc/kubernetes/pki/apiserver-etcd-client.key'
+            - '--insecure-transport=false'
+            - '--insecure-skip-tls-verify=true'
+          image: {{ .Values.deployment.container.image.repository }}:{{ .Values.deployment.container.image.tag }}
+          {{- if .Values.deployment.container.env }}
+          env:
+            - name: AWS_APPLICATION_CREDENTIALS
+              value: /etc/aws/credentials
+            - name: STORAGE_CONTAINER
+              value: etcd-kcp-backup
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              value: kube-system
+          {{- end }}
+          resources:
+            {{- toYaml .Values.deployment.container.resources | nindent 12 }}
+          securityContext:
+            {{- toYaml .Values.deployment.container.securityContext | nindent 12 }}
+          volumeMounts:
+            - name: etcd-config
+              mountPath: /var/etcd/config
+            - name: etcd-data
+              mountPath: /var/lib/etcd
+            - name: pki-certs
+              readOnly: true
+              mountPath: /etc/kubernetes/pki
+            - name: aws-credentials
+              readOnly: true
+              mountPath: /etc/aws/credentials
+      securityContext:
+        {{- toYaml .Values.deployment.securityContext | nindent 8 }}
+      serviceAccountName: {{ .Values.deployment.serviceAccountName }}
+      terminationGracePeriodSeconds: {{ .Values.deployment.terminationGracePeriodSeconds }}
+      volumes:
+        - name: etcd-config
+          configMap:
+            name: etcd-kcp
+        - name: etcd-data
+          hostPath:
+            path: /var/lib/etcd
+            type: DirectoryOrCreate
+        - name: pki-certs
+          hostPath:
+            path: /etc/kubernetes/pki
+            type: DirectoryOrCreate
+        - name: aws-credentials
+          secret:
+            secretName: etcd-kcp-aws
+            items:
+              - key: access-key-id
+                path: accessKeyID
+              - key: region
+                path: region
+              - key: secret-access-key
+                path: secretAccessKey
+            defaultMode: 420
+{{- end }}
