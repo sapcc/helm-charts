@@ -397,3 +397,29 @@ groups:
     annotations:
       description: "storage paths for `{{ $labels.hostsystem }}` is less than other hosts in the `{{ $labels.vccluster }}`. ({{ $labels.vcenter }})"
       summary: "storage paths for `{{ $labels.hostsystem }}` is less than other hosts in the `{{ $labels.vccluster }}`. ({{ $labels.vcenter }})"
+
+  - alert: FailoverHostInMaintenance
+    expr: |
+      (
+        vrops_hostsystem_runtime_maintenancestate{state="inMaintenance"}
+        and on (hostsystem)
+        vrops_hostsystem_configuration_dasconfig_admissioncontrolpolicy_failoverhost == 1
+      )
+      unless on (vccluster)
+      (
+      (count by (vccluster) (vrops_hostsystem_runtime_maintenancestate{state="inMaintenance"}) /
+      count by (vccluster) (vrops_hostsystem_runtime_connectionstate)) >= 0.5
+      )
+    for: 10m
+    labels:
+      severity: warning
+      tier: vmware
+      service: compute
+      support_group: compute
+      context: "{{ $labels.hostsystem }} is in maintenance while configured as failover"
+      meta: "{{ $labels.hostsystem }} is in maintenance while configured as failover ({{ $labels.vcenter }})."
+      playbook: docs/devops/alert/vcenter/#FailoverHostInMaintenance
+      no_alert_on_absence: "true"
+    annotations:
+      description: "{{ $labels.hostsystem }} is in maintenance while configured as failover ({{ $labels.vcenter }})."
+      summary: "{{ $labels.hostsystem }} is in maintenance while configured as failover ({{ $labels.vcenter }})."
