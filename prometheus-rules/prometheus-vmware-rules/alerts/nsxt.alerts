@@ -254,6 +254,25 @@ groups:
       description: "CRITICAL: NSX-T management service `{{ $labels.nsxt_mgmt_service }}` has failed. ({{ $labels.nsxt_mgmt_node }}, {{ $labels.nsxt_adapter }}) https://{{ $labels.target }}"
       summary: "CRITICAL: NSX-T management service `{{ $labels.nsxt_mgmt_service }}` has failed. ({{ $labels.nsxt_mgmt_node }}, {{ $labels.nsxt_adapter }}) https://{{ $labels.target }}"
 
+  - alert: NSXTTransportNodeControllerConnectivityNotUP
+	  expr: |
+	      vrops_nsxt_transport_node_connectivity_status{state!="SUCCESS"}
+	      and on(hostsystem) vrops_hostsystem_runtime_connectionstate{state!="notResponding"}
+	      and on(hostsystem) vrops_hostsystem_runtime_maintenancestate{state="notInMaintenance"}
+	      and on(hostsystem) vrops_hostsystem_runtime_powerstate{state="Powered On"}
+  	for: 5m		
+    labels:
+      severity: info
+      tier: vmware
+      service: network
+      support_group: compute
+      meta: "Transport node {{ $labels.nsxt_transport_node }} Controller Connectivity status is not UP. https://{{ $labels.target }}."
+      playbook: docs/devops/alert/nsxt/#Transport_node_controller_connectivity_not_UP_in_NSXT
+      no_alert_on_absence: "true"
+    annotations:
+      description: "Transport node {{ $labels.nsxt_transport_node }} Controller Connectivity status is not UP. https://{{ $labels.target }}. "
+      summary: "Transport node {{ $labels.nsxt_transport_node }} Controller Connectivity status is not UP. https://{{ $labels.target }}. "	
+
   - alert: NSXTSslCertificateExpiry
     expr: vrops_nsxt_adapter_alert_info{alert_name="Adapter certificate has expired or will expire shortly"}
          
