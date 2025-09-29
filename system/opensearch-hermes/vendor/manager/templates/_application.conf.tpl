@@ -57,7 +57,7 @@ play.ws.ssl {
 {{- if .Values.global.truststore.enabled }}
       { type = "PKCS12", path = "/opt/cerebro/truststore", password = "{{.Values.global.truststore.cert_pw}}" }
 {{- else -}}
-      { type = "PEM", path = "/opt/certs/tls.crt" }
+      { type = "PEM", path = "/opt/certs/ca.crt" }
 {{- end }}
     ]
   }
