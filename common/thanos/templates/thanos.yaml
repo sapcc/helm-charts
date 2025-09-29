@@ -147,9 +147,17 @@ spec:
               - --endpoint=prometheus-kubernetes:10901
               - --web.external-prefix=/thanos
               - --web.route-prefix=/thanos
-              {{- if $.Values.query.requestLog.enabled }}
+{{- if $.Values.query.requestLog.enabled }}
               - --request.logging-config-file=/conf/query/request_log.yaml
-              {{- end }}
+              volumeMount:
+              - name: requestlog
+                mountPath: /conf/query
+            volume:
+            - configMap:
+                defaultMode: 420
+                name: {{ include "thanos.fullName" (list $name $root) }}-query-requestlog-configmap
+              name: requestlog
+{{- end }}
   storeGateway:
     logLevel: {{ $.Values.logLevel }}
     indexCacheSize: {{ required ".Values.store.indexCacheSize missing" $.Values.store.indexCacheSize }}
