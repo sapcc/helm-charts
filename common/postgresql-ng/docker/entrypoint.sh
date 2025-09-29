@@ -170,6 +170,10 @@ for data in $(find /var/lib/postgresql/ -mindepth 1 -maxdepth 1 -type d -not -na
   # make sure the old pg_hba.conf contains valid entries for us
   echo -e "local  all  postgres  trust\nhost  all  backup  all  $postgres_auth_method\nhost  all  postgres  all  $postgres_auth_method\n" >"$data/pg_hba.conf"
 
+  # PostgreSQL 18 defaults to checksums enabled and requires them when upgrading
+  # Enabling them is safe even if a failure happens according to the Notes in https://www.postgresql.org/docs/18/app-pgchecksums.html
+  pg_checksums --pgdata "$data" --enable --progress
+
   # pg_upgrade wants to have write permission for cwd
   cd /var/lib/postgresql
   pg_upgrade --link --jobs="$(nproc)" \
@@ -201,7 +205,9 @@ fi
 
 # run the recommended optimization by pg_upgrade to mitigate performance decreases after an upgrade
 if [[ $updated_db == true ]]; then
-  vacuumdb --all --analyze-in-stages
+  vacuumdb --all --analyze-in-stages --missing-stats-only
+  vacuumdb --all --analyze-only
+  psql -f "$PGDATA/update_extensions.sql"
 fi
 
 # maintain password of superuser account "postgres" (this is required because this password is different on each run)
