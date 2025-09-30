@@ -127,7 +127,7 @@ transform/coredns_api:
         - set(log.attributes["request_status"], log.cache["status"])
         - set(log.attributes["time"], log.cache["time"])
         - set(log.attributes["url"], log.cache["uri"])
-        - set(log.attributes["request_time"], log.cache["duration"])
+        - set(log.attributes["duration"], log.cache["duration"])
 
 transform/snmp_exporter:
   error_mode: ignore
