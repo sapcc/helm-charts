@@ -22,6 +22,9 @@ global:
 # allows to disable Thanos for specific regions
 enabled: true
 
+# vpaMode deployment annotation
+vpaMode: "Initial"
+
 # Mandatory name for this Thanos.
 name:
 
@@ -54,7 +57,7 @@ clusterDomain:
 # optional
 # namespace:
 
-# used for cross cluster TLS 
+# used for cross cluster TLS
 authentication:
   enabled: false
   GRPCClientCA:
@@ -179,25 +182,20 @@ query:
     level: INFO
 
   webRouteprefix: /thanos
-  # statically specify stores, if deployWholeThanos is set and this is not present, it will default to query the single Prometheus sidecar container prometheus-<thanos-name>:10901
-  # stores from the following list will be build as an cluster internal dns fqdn. Like store1.default.svc.cluster.local:10901
+  # statically specify stores, if deployWholeThanos is set and this is not present, it will default to query prometheus-<thanos-name>:10901 & thanos-<thanos-name>-thanos-<thanos-name>-store:10901
   # stores:
-    # - name: store1
-    #   namespace: default
-    #   port: 10901
-    # - name: storeN
-    #   namespace: default
-    #   port: 10901
+    # - store1
+    # - storeN
 
   extraArgs: []
 
-  resources:
-    requests:
-      cpu:
-      memory:
-    limits:
-      cpu:
-      memory:
+  # resources:
+  #   requests:
+  #     cpu:
+  #     memory:
+  #   limits:
+  #     cpu:
+  #     memory:
 
 ruler:
   enabled: false
@@ -363,7 +361,7 @@ grpcIngress:
 
 alerts:
   # prometheus name picking up the Thanos metrics
-  prometheus: 
+  prometheus:
 
   # service name routing the alerts, defaults to `metrics`
   service:
@@ -377,7 +375,7 @@ vmware: false
 traefik:
   # there are two scenarios when this is needed
   # 1 Should be enabled only if no ingressClass is present in the cluster. Please set grpcIngress.enabled to false and set route.enabled to true.
-  # 
+  #
   # 2 if k8s.io/ingress-nginx and traefik.io/ingress-controller are present, set traefik.enabled: false and route.enabled: true
   # General information: it will spawn a dummy ingress resource to annotate the hostname for dns record creation. However, this dummy will not do anything because the grpc service is not exposing on 80.
   enabled: false

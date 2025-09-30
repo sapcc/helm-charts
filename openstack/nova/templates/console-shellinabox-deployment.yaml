@@ -39,10 +39,6 @@ spec:
         config-hash: {{ print (.Files.Glob "console/shellinabox/*").AsConfig (.Files.Glob "console/common/*").AsConfig (include "nova.etc_config_lua" .) | sha256sum }}
         secret-hash: {{ include (print $.Template.BasePath "/console-shellinabox-secret.yaml") . | sha256sum }}
     spec:
-      securityContext:
-        runAsUser: 33
-        runAsGroup: 33
-        fsGroup: 33
       {{- tuple . "nova" "console-cell1-shellinabox" | include "kubernetes_pod_anti_affinity" | nindent 6 }}
       {{- include "utils.proxysql.pod_settings" . | nindent 6 }}
       {{- tuple . (dict "name" "nova-console-cell1-shellinabox") | include "utils.topology.constraints" | indent 6 }}
@@ -52,19 +48,17 @@ spec:
       {{- end }}
       containers:
       - name: nova-console-cell1-shellinabox
-        image: {{ required ".Values.global.dockerHubMirror is missing" .Values.global.dockerHubMirror }}/bitnami/openresty:{{ .Values.imageVersionBitnamiOpenResty }}
+        image: {{ required ".Values.global.dockerHubMirror is missing" .Values.global.dockerHubMirror }}/openresty/openresty:{{ .Values.imageVersionOpenResty }}
         imagePullPolicy: IfNotPresent
-        command:
-        - /opt/bitnami/scripts/openresty/run.sh
         ports:
         - name: shellinabox
           containerPort: {{ .Values.consoles.shellinabox.portInternal }}
         volumeMounts:
         - mountPath: /app
           name: app
-        - mountPath: /opt/bitnami/openresty/nginx/conf/server_blocks
+        - mountPath: /etc/nginx/conf.d
           name: config
-        - mountPath: /opt/bitnami/openresty/nginx/tmp
+        - mountPath: /usr/local/openresty/nginx/tmp
           name: temp
         {{- include "utils.proxysql.volume_mount" . | indent 8 }}
         livenessProbe:
