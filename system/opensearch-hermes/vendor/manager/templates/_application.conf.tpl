@@ -54,8 +54,11 @@ auth = {
 play.ws.ssl {
   trustManager = {
     stores = [
-{{- if .Values.global.truststore.enabled }}
-      { type = "PKCS12", path = "/opt/cerebro/truststore", password = "{{.Values.global.truststore.cert_pw}}" }
+#{{- if .Values.global.truststore.enabled }}
+#      { type = "PKCS12", path = "/opt/cerebro/truststore", password = "{{.Values.global.truststore.cert_pw}}" }
+#{{- else -}}
+{{- if .Values.global.sapcert.enabled }}
+      { type = "PEM", path = "/opt/certs/tls.crt" }
 {{- else -}}
       { type = "PEM", path = "/opt/certs/ca.crt" }
 {{- end }}

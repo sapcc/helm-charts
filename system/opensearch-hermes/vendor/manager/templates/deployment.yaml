@@ -79,14 +79,19 @@ spec:
           - mountPath: /manager-config/application.conf
             name: manager-secret
             subPath: application.conf
-{{- if .Values.global.truststore.enabled}}
-          - mountPath: /truststore/truststore.crypt
-            name: manager-secret
-            subPath: truststore.crypt
-          - mountPath: /start.sh
-            name: manager-config
-            subPath: start.sh
-{{ else }}
+#{{- if .Values.global.truststore.enabled}}
+#          - mountPath: /truststore/truststore.crypt
+#            name: manager-secret
+#            subPath: truststore.crypt
+#          - mountPath: /start.sh
+#            name: manager-config
+#            subPath: start.sh
+#{{ else }}
+{{- if .Values.global.sapcert.enabled }}
+          - mountPath: /opt/certs/tls.crt
+            name: admin-cert-manager
+            subPath: tls.crt
+{{- else -}}
           - mountPath: /opt/certs/ca.crt
             name: admin-cert-manager
             subPath: ca.crt
