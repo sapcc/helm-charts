@@ -153,7 +153,7 @@ cluster.local
 {{- $root := index . 1 -}}
 {{/* Thanos Query discovery within the cluster */}}
 {{- if $root.Values.queryDiscovery -}}
-- endpoints:
+endpoints:
 {{- $clusterList := list }}
 {{- range $index, $service := (lookup "v1" "Service" "" "").items }}
 {{- if and (hasPrefix "thanos" $service.metadata.name) (contains "query" $service.metadata.name) (not (contains "maia" $service.metadata.name)) (not (contains "metal" $service.metadata.name)) (not (contains "scaleout" $service.metadata.name)) (not (contains "regional" $service.metadata.name)) (not (contains "global" $service.metadata.name)) }}
