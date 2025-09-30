@@ -167,7 +167,7 @@ endpoints:
 {{- end }}
 {{/* Global Thanos Query Store API endpoints */}}
 {{- else if and $root.Values.useQueryRegions $root.Values.queryStoreAPIs -}}
-- endpoints:
+endpoints:
 {{- $globalList := list }}
 {{- range $region := $root.Values.queryRegions -}}
 {{- range $cluster := $root.Values.queryStoreAPIs -}}
@@ -184,7 +184,7 @@ endpoints:
 {{- end }}
 {{/* Regional Thanos Query Store API endpoints */}}
 {{- else if and (not $root.Values.useQueryRegions) $root.Values.queryStoreAPIs -}}
-- endpoints:
+endpoints:
 {{- $regionalList := list }}
 {{- range $cluster := $root.Values.queryStoreAPIs }}
 {{- $storeItem := printf "thanos-%s-grpc.%s.%s" $cluster $root.Values.global.region $root.Values.global.tld -}}
