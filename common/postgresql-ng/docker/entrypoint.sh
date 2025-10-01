@@ -207,8 +207,13 @@ fi
 
 # run the recommended optimization by pg_upgrade to mitigate performance decreases after an upgrade
 if [[ $updated_db == true ]]; then
-  vacuumdb --all --analyze-in-stages --missing-stats-only
-  vacuumdb --all --analyze-only
+  if [[ $PGVERSION -lt 18 ]]; then
+    vacuumdb --all --analyze-in-stages
+  else
+    vacuumdb --all --analyze-in-stages --missing-stats-only
+    vacuumdb --all --analyze-only
+  fi
+
   psql -f "$PGDATA/update_extensions.sql"
 fi
 
