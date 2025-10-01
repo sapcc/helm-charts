@@ -172,7 +172,9 @@ for data in $(find /var/lib/postgresql/ -mindepth 1 -maxdepth 1 -type d -not -na
 
   # PostgreSQL 18 defaults to checksums enabled and requires them when upgrading
   # Enabling them is safe even if a failure happens according to the Notes in https://www.postgresql.org/docs/18/app-pgchecksums.html
-  pg_checksums --pgdata "$data" --enable --progress
+  if [[ $PGVERSION == 18 ]]; then
+    pg_checksums --pgdata "$data" --enable --progress
+  fi
 
   # pg_upgrade wants to have write permission for cwd
   cd /var/lib/postgresql
@@ -216,7 +218,7 @@ PGDATABASE='' process_sql --dbname postgres --set user="$PGUSER" --set password_
   ALTER USER :user WITH PASSWORD :'password';
 EOSQL
 
-if [ -f /sql-on-startup.d/phase1-system.sql ]; then
+if [[ -f /sql-on-startup.d/phase1-system.sql ]]; then
   echo "Processing /sql-on-startup.d/phase1-system.sql..."
   PGDATABASE='postgres' process_sql -f <(substituteSqlEnvs /sql-on-startup.d/phase1-system.sql)
 fi
