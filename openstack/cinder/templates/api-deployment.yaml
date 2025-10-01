@@ -1,8 +1,12 @@
+{{- define "cinder.api.deployment" -}}
+{{- $type := index . 1 -}}
+{{- $conf := index . 2 -}}
+{{- with index . 0 -}}
 kind: Deployment
 apiVersion: apps/v1
 
 metadata:
-  name: cinder-api
+  name: cinder-api-{{ $type }}
   labels:
     system: openstack
     type: api
@@ -11,7 +15,7 @@ metadata:
     secret.reloader.stakater.com/reload: "{{ .Release.Name }}-secrets"
     deployment.reloader.stakater.com/pause-period: "60s"
 spec:
-  replicas: {{ .Values.pod.replicas.api }}
+  replicas: {{ $conf.replicas }}
   revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revisionHistory }}
   strategy:
     type: {{ .Values.pod.lifecycle.upgrades.deployments.podReplacementStrategy }}
@@ -22,25 +26,25 @@ spec:
     {{ end }}
   selector:
     matchLabels:
-      name: cinder-api
+      name: cinder-api-{{ $type }}
   template:
     metadata:
       labels:
-        name: cinder-api
-        {{- tuple . "cinder" "api" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | nindent 8 }}
+        name: cinder-api-{{ $type }}
+        {{- tuple . "cinder" (printf "api-%s" $type) | include "helm-toolkit.snippets.kubernetes_metadata_labels" | nindent 8 }}
         {{- include "utils.topology.pod_label" . | indent 8 }}
       annotations:
-        configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
-        secrets-hash: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
+        configmap-etc-hash: {{ include (print .Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
+        secrets-hash: {{ include (print .Template.BasePath "/secrets.yaml") . | sha256sum }}
         {{- if .Values.proxysql.mode }}
         prometheus.io/scrape: "true"
         prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
         {{- end }}
         {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
     spec:
-      {{- tuple . "cinder" "api" | include "kubernetes_pod_anti_affinity" | nindent 6 }}
+      {{- tuple . "cinder" (printf "api-%s" $type) | include "kubernetes_pod_anti_affinity" | nindent 6 }}
       {{- include "utils.proxysql.pod_settings" . | nindent 6 }}
-      {{- tuple . (dict "name" "cinder-api") | include "utils.topology.constraints" | indent 6 }}
+      {{- tuple . (dict "name" (printf "cinder-api-%s" $type)) | include "utils.topology.constraints" | indent 6 }}
       initContainers:
       {{- tuple . (dict "service" (include "cinder.service_dependencies" . ) "jobs" (include "cinder.migration_job_name" .)) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
       {{- if .Values.proxysql.native_sidecar }}
@@ -51,7 +55,7 @@ spec:
           image: {{required ".Values.global.registry is missing" .Values.global.registry}}/loci-cinder:{{.Values.imageVersionCinderApi | default .Values.imageVersion | required "Please set cinder.imageVersion or similar" }}
           imagePullPolicy: {{ required ".Values.global.imagePullPolicy is missing" .Values.global.imagePullPolicy }}
           command:
-          {{- if .Values.api.use_uwsgi }}
+          {{- if $conf.use_uwsgi }}
             - uwsgi
             - --ini
             - /etc/cinder/api_uwsgi.ini
@@ -70,7 +74,7 @@ spec:
                 name: sentry
                 key: {{ .Chart.Name }}.DSN.python
           {{- end }}
-          {{- if .Values.api.use_uwsgi }}
+          {{- if $conf.use_uwsgi }}
           - name: OS_OSLO_MESSAGING_RABBIT__HEARTBEAT_IN_PTHREAD
             value: "true"
           {{- end }}
@@ -89,64 +93,16 @@ spec:
               port: cinder-api
             initialDelaySeconds: 15
             timeoutSeconds: 5
-          {{- if .Values.pod.resources.api }}
+          {{- if $conf.resources }}
           resources:
-{{ toYaml .Values.pod.resources.api | indent 12 }}
+            {{- toYaml $conf.resources | nindent 12 }}
           {{- end }}
           ports:
             - name: cinder-api
               containerPort: {{.Values.cinderApiPortInternal }}
           volumeMounts:
-            - name: etccinder
+            - name: cinder-etc
               mountPath: /etc/cinder
-            - name: cinder-etc
-              mountPath: /etc/cinder/cinder.conf
-              subPath: cinder.conf
-              readOnly: true
-            - name: cinder-etc-confd
-              mountPath: /etc/cinder/cinder.conf.d
-            - name: cinder-etc
-              mountPath: /etc/cinder/api-paste.ini
-              subPath: api-paste.ini
-              readOnly: true
-           {{- if .Values.api.use_uwsgi }}
-            - mountPath: /etc/cinder/api_uwsgi.ini
-              name: cinder-etc
-              subPath: api_uwsgi.ini
-              readOnly: true
-           {{- end }}
-            - name: cinder-etc
-              mountPath: /etc/cinder/policy.yaml
-              subPath: policy.yaml
-              readOnly: true
-            - name: cinder-etc
-              mountPath: /etc/cinder/logging.ini
-              subPath: logging.ini
-              readOnly: true
-            - name: cinder-etc
-              mountPath: /etc/cinder/cinder_audit_map.yaml
-              subPath: cinder_audit_map.yaml
-              readOnly: true
-            - name: cinder-etc
-              mountPath: /etc/cinder/resource_filters.json
-              subPath: resource_filters.json
-              readOnly: true
-            {{- if .Values.api_rate_limit.enabled }}
-            - name: cinder-etc
-              mountPath: /etc/cinder/ratelimit.yaml
-              subPath: ratelimit.yaml
-              readOnly: true
-            - name: redis-ratelimit-secret
-              mountPath: /etc/cinder/ratelimit-backend-secret.conf
-              subPath: ratelimit-backend-secret.conf
-              readOnly: true
-            {{- end }}
-            {{- if .Values.watcher.enabled }}
-            - name: cinder-etc
-              mountPath: /etc/cinder/watcher.yaml
-              subPath: watcher.yaml
-              readOnly: true
-            {{- end }}
             {{- include "utils.proxysql.volume_mount" . | indent 12 }}
             {{- include "utils.coordination.volume_mount" . | indent 12 }}
         {{- if not .Values.proxysql.native_sidecar }}
@@ -163,27 +119,82 @@ spec:
             - name: metrics
               containerPort: {{ .Values.port_metrics }}
           volumeMounts:
-            - name: cinder-etc
-              mountPath: /etc/statsd/statsd-exporter.yaml
-              subPath: statsd-exporter.yaml
-              readOnly: true
-{{- include "jaeger_agent_sidecar" . | indent 8 }}
+          - name: statsd-etc
+            mountPath: /etc/statsd/statsd-exporter.yaml
+            subPath: statsd-exporter.yaml
+            readOnly: true
+        {{- include "jaeger_agent_sidecar" . | indent 8 }}
       volumes:
-        - name: etccinder
-          emptyDir: {}
-        - name: cinder-etc
-          configMap:
-            name: cinder-etc
-        - name: cinder-etc-confd
-          secret:
-            secretName: {{ .Release.Name }}-secrets
-        {{- include "utils.proxysql.volumes" . | indent 8 }}
-        {{- include "utils.coordination.volumes" . | indent 8 }}
+      - name: cinder-etc
+        projected:
+          sources:
+          - configMap:
+              name: cinder-etc
+              items:
+              - key: cinder.conf
+                path: cinder.conf
+              - key: logging.ini
+                path: logging.ini
+          - secret:
+              name: {{ .Release.Name }}-secrets
+              items:
+              - key: secrets.conf
+                path: cinder.conf.d/secrets.conf
+          - configMap:
+              name: cinder-api-{{ $type }}-etc
+              items:
+              - key: cinder-api.conf
+                path: cinder-api.conf
+              - key: api-paste.ini
+                path: api-paste.ini
+              {{- if $conf.use_uwsgi }}
+              - key: api_uwsgi.ini
+                path: api_uwsgi.ini
+              {{- end }}
+              - key: policy.yaml
+                path: policy.yaml
+              - key: resource_filters.json
+                path: resource_filters.json
+              {{- if .Values.audit.enabled }}
+              - key: cinder_audit_map.yaml
+                path: cinder_audit_map.yaml
+              {{- end }}
+              {{- if .Values.watcher.enabled }}
+              - key: watcher.yaml
+                path: watcher.yaml
+              {{- end }}
+              {{- if $conf.rate_limit.enabled }}
+              - key: ratelimit.yaml
+                path: ratelimit.yaml
+              {{- end }}
+          {{- if $conf.rate_limit.enabled }}
+          - secret:
+              name: cinder-api-{{ $type }}-ratelimit-secret
+              items:
+              - key: ratelimit-backend-secret.conf
+                path: ratelimit-backend-secret.conf
+          {{- end }}
+      - name: statsd-etc
+        projected:
+          sources:
+          - configMap:
+              name: cinder-etc
+              items:
+              - key:  statsd-exporter.yaml
+                path: statsd-exporter.yaml
+      {{- include "utils.proxysql.volumes" . | indent 6 }}
+      {{- include "utils.coordination.volumes" . | indent 6 }}
+{{- end }}
+{{- end }}
 
-        {{- if .Values.api_rate_limit.enabled }}
-        - name: redis-ratelimit-secret
-          secret:
-            secretName: cinder-api-ratelimit-secret
-        {{- end }}
-
-
+{{- include "cinder.api.deployment" (tuple . "external" (
+  dict "replicas" .Values.pod.replicas.api_external
+       "use_uwsgi" .Values.api_external.use_uwsgi
+       "resources" .Values.pod.resources.api_external
+       "rate_limit" .Values.api_external.rate_limit )) }}
+---
+{{ include "cinder.api.deployment" (tuple . "internal" (
+  dict "replicas" .Values.pod.replicas.api_internal
+       "use_uwsgi" .Values.api_internal.use_uwsgi
+       "resources" .Values.pod.resources.api_internal
+       "rate_limit" .Values.api_internal.rate_limit )) }}
