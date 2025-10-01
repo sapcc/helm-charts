@@ -200,9 +200,9 @@ start_postgres
 PGDATABASE='postgres' process_sql -c "SELECT pg_reload_conf()"
 
 # there might be some extensions which we need to enable
-if [[ -f /var/lib/postgresql/update_extensions.sql ]]; then
-  PGDATABASE='' process_sql -f /var/lib/postgresql/update_extensions.sql
-  rm /var/lib/postgresql/update_extensions.sql
+if [[ -f $PGDATA/update_extensions.sql ]]; then
+  PGDATABASE='' process_sql -f "$PGDATA/update_extensions.sql"
+  rm "$PGDATA/update_extensions.sql"
 fi
 
 # run the recommended optimization by pg_upgrade to mitigate performance decreases after an upgrade
@@ -213,8 +213,6 @@ if [[ $updated_db == true ]]; then
     vacuumdb --all --analyze-in-stages --missing-stats-only
     vacuumdb --all --analyze-only
   fi
-
-  psql -f "$PGDATA/update_extensions.sql"
 fi
 
 # maintain password of superuser account "postgres" (this is required because this password is different on each run)
