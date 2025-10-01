@@ -82,25 +82,6 @@ groups:
           send `{{`{{ $value | humanize }}`}}%` gRPC requests.
         summary: Thanos Query is failing to send gRPC requests.
 
-    - alert: ThanosQueryHighDNSFailures
-      expr: |
-        (
-          sum by (thanos) (rate(thanos_query_store_apis_dns_failures_total{job=~".*thanos.*query.*", thanos="{{ include "thanos.name" . }}"}[5m]))
-        /
-          sum by (thanos) (rate(thanos_query_store_apis_dns_lookups_total{job=~".*thanos.*query.*", thanos="{{ include "thanos.name" . }}"}[5m]))
-        ) * 100 > 1
-      for: 15m
-      labels:
-        service: {{ default "metrics" $root.Values.alerts.service }}
-        support_group: {{ default "observability" $root.Values.alerts.support_group }}
-        severity: info
-        meta: Thanos Query `{{`{{ $labels.thanos }}`}}` is having high number of DNS failures.
-      annotations:
-        description: |
-          Thanos Query `{{`{{ $labels.thanos }}`}}` have `{{`{{ $value | humanize }}`}}%`
-          of failing DNS queries for store endpoints.
-        summary: Thanos Query is having high number of DNS failures.
-
     - alert: ThanosQueryInstantLatencyHigh
       expr: |
         (
