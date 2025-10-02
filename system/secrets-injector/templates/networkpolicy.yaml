@@ -1,0 +1,48 @@
+{{- if .Values.networkPolicy.create }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: secrets-injector-allow
+  namespace: {{ .Release.Namespace }}
+spec:
+  podSelector:
+    matchLabels:
+      app: secrets-injector
+  policyTypes:
+    - Ingress
+  {{- if .Values.networkPolicy.ingress }}
+  ingress:
+  {{- range $rule := .Values.networkPolicy.ingress }}
+    - from:
+      {{- range $src := $rule.from }}
+        - {{- if $src.namespaceSelector }}
+          namespaceSelector:
+            matchLabels:
+            {{- range $k, $v := $src.namespaceSelector.matchLabels }}
+              {{ $k }}: {{ $v | quote }}
+            {{- end }}
+          {{- end }}
+          {{- if $src.podSelector }}
+          podSelector:
+            matchLabels:
+            {{- range $k, $v := $src.podSelector.matchLabels }}
+              {{ $k }}: {{ $v | quote }}
+            {{- end }}
+          {{- end }}
+      {{- end }}
+  {{- end }}
+  {{- end }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: secrets-injector-deny
+  namespace: {{ .Release.Namespace }}
+spec:
+  podSelector:
+    matchLabels:
+      app: secrets-injector
+  policyTypes:
+    - Ingress
+  # no ingress rules => deny all
+{{- end }}
