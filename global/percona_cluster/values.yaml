@@ -43,43 +43,6 @@ resources:
     memory: 2048Mi
     cpu: 1000m
 
-configFiles:
-  node.cnf: |+
-    [mysqld]
-    skip-name-resolve               = 1
-    datadir                         = /var/lib/mysql
-    default_storage_engine          = InnoDB
-    binlog_format                   = ROW
-    server-id                       = 1
-    max_connections                 = 1024
-    innodb_flush_log_at_trx_commit  = 2
-    innodb_flush_method             = O_DIRECT
-    innodb_file_per_table           = 1
-    innodb_autoinc_lock_mode        = 2
-    innodb_buffer_pool_size         = 1024M
-    innodb_log_file_size            = 512M
-    innodb_open_files               = 4000
-    innodb_stats_on_metadata        = 0
-    innodb_thread_concurrency       = 0
-    innodb_read_io_threads          = 8
-    innodb_write_io_threads         = 8
-    innodb_print_all_deadlocks      = 1
-    log_bin_trust_function_creators = 1
-    bind_address                    = 0.0.0.0
-    slow_query_log                  = 1
-    long_query_time                 = 5
-    wsrep_slave_threads             = 8
-    wsrep_log_conflicts             = ON
-    wsrep_cluster_address           = gcomm://
-    wsrep_provider                  = /usr/lib64/galera4/libgalera_smm.so
-    wsrep_cluster_name              = galera
-    wsrep_sst_method                = xtrabackup-v2
-    wsrep_debug                     = 1
-    pxc_encrypt_cluster_traffic     = OFF
-    [sst]
-    sst-initial-timeout             = 300
-    encrypt                         = 0
-
 metrics:
   enabled: true
   tag: "v0.18.0"
@@ -124,7 +87,7 @@ prometheus:
 ssl:
   enabled: false
   secret: pxc-ssl-certs
-  certificates:
+  certificates: {}
 #  - name: pxc-ssl-certs
 #    ca: |-
 #      -----BEGIN CERTIFICATE-----
@@ -138,6 +101,16 @@ ssl:
 #      -----BEGIN RSA PRIVATE KEY-----
 #      ...
 #      -----END RSA PRIVATE KEY-----
+certificate:
+  issuerRef:
+    name: "digicert-issuer"
+    kind: "ClusterIssuer"
+    group: "certmanager.cloud.sap"
+  usages:
+    - digital signature
+    - key encipherment
+    - server auth
+    - client auth
 
 podDisruptionBudget:
   enabled: false
