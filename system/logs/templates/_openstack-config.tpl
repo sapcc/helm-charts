@@ -118,16 +118,15 @@ transform/coredns_api:
       statements:
         - merge_maps(log.cache, ParseJSON(log.body), "upsert") where IsMatch(log.body, "^\\{")
         - set(log.attributes["loglevel"], log.cache["level"])
-        - set(log.attributes["component"], log.cache["component"])
-        - set(log.attributes["method"], log.cache["method"])
-        - set(log.attributes["msg"], log.cache["msg"])
-        - set(log.attributes["remote_addr"], log.cache["remote"])
-        - set(log.attributes["requestid"], log.cache["request-id"])
-        - set(log.attributes["size"], log.cache["size"])
-        - set(log.attributes["request_status"], log.cache["status"])
         - set(log.attributes["time"], log.cache["time"])
-        - set(log.attributes["url"], log.cache["uri"])
-        - set(log.attributes["request_time"], log.cache["duration"])
+        - set(log.attributes["request.id"], log.cache["request-id"])
+        - set(log.attributes["duration"], log.cache["duration"])
+        - set(log.attributes["component"], log.cache["component"])
+        - set(log.attributes["action"], log.cache["action"])
+        - set(log.attributes["msg"], log.cache["msg"])
+        - set(log.attributes["error"], log.cache["error"])
+        - set(log.attributes["returned"], log.cache["returned"])
+        - set(log.attributes["request.status"], log.cache["status"])
 
 transform/snmp_exporter:
   error_mode: ignore
