@@ -46,6 +46,7 @@
       regex: 'windows_service_state;(.*)'
       replacement: '$1'
       target_label: 'service_state'
+{{- end }}
 
 {{- $values := .Values.firmware_exporter -}}
 {{- if $values.enabled }}
