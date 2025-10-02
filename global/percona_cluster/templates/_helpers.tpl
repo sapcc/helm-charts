@@ -26,6 +26,21 @@ https://www.percona.com/doc/percona-xtradb-cluster/LATEST/wsrep-system-index.htm
 {{- end -}}
 {{- end -}}
 
+{{- define "percona-cluster.serviceName" -}}
+"{{ template "fullName" . }}.{{ .Release.Namespace }}.svc.kubernetes.{{ .Values.global.db_region | required "global.db_region missing" }}.{{ .Values.global.tld | required "global.tld missing" }}"
+{{- end }}
+
+{{/* By default, the name is the dns name, but that may be too long, so we might to have to shorten it.
+     If the actual value matters to you, set it directly. */}}
+{{- define "percona-cluster.defaultCommonName" -}}
+{{- $serviceName := include "percona-cluster.serviceName" . }}
+  {{- if le (len $serviceName) 64 }}
+    {{- $serviceName }}
+  {{- else -}}
+    "{{ template "fullName" . }}.{{ .Values.global.db_region | required "global.region missing" }}.{{ .Values.global.tld | required "global.tld missing" }}"
+  {{- end }}
+{{- end }}
+
 {{/* Helper to turn list into a comma-separated string */}}
 {{- define "helm-toolkit.utils.joinListWithComma" -}}
 {{- $local := dict "first" true -}}
