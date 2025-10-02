@@ -6,6 +6,13 @@ set -m
 
 SOCAT_OPTS="TCP-LISTEN:4444,reuseaddr,retry=30"
 
+{{ if .Values.ssl.enabled }}
+CA=/ssl/ca.crt
+CERT=/ssl/tls.crt
+KEY=/ssl/tls.key
+SOCAT_OPTS="openssl-listen:4444,reuseaddr,cert=${CERT},key=${KEY},cafile=${CA},verify=1"
+{{- end }}
+
 log() {
 	{ set +x; } 2>/dev/null
 	local level=$1

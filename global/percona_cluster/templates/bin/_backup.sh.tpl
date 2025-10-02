@@ -4,6 +4,15 @@ set -o errexit
 set -o xtrace
 
 GARBD_OPTS="pc.weight=0"
+GARBD_LISTEN_PROTOCOL="tcp"
+
+{{ if .Values.ssl.enabled }}
+CA=/ssl/ca.crt
+CERT=/ssl/tls.crt
+KEY=/ssl/tls.key
+GARBD_OPTS="$GARBD_OPTS;socket.ssl=YES;socket.ssl_ca=${CA};socket.ssl_cert=${CERT};socket.ssl_key=${KEY}"
+GARBD_LISTEN_PROTOCOL="ssl"
+{{- end }}
 
 INSECURE_ARG=""
 if [ -n "$VERIFY_TLS" ] && [[ $VERIFY_TLS == "false" ]]; then
@@ -42,7 +51,7 @@ function request_streaming() {
     set +o errexit
     log 'INFO' 'Garbd was started'
     garbd \
-        --address "gcomm://$NODE_NAME?gmcast.listen_addr=tcp://0.0.0.0:4567" \
+        --address "gcomm://$NODE_NAME?gmcast.listen_addr=$GARBD_LISTEN_PROTOCOL://0.0.0.0:4567" \
         --donor "{{ include "fullName" . }}-0-$DONOR_IP" \
         --group "$PXC_GROUP" \
         --options "$GARBD_OPTS" \

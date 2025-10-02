@@ -54,6 +54,10 @@ spec:
               mountPath: /backup/
             - name: mysql-startup-scripts
               mountPath: /startup-scripts
+            {{- if .Values.ssl.enabled }}
+            - name: certificates
+              mountPath: /ssl
+            {{- end }}
             env:
             - name: PXC_GROUP
               value: {{ template "percona-cluster.shortname" . }}
@@ -82,4 +86,9 @@ spec:
           - name: backup-volume
             persistentVolumeClaim:
               claimName: "{{ include "fullName" . }}-{{ .Values.backup.claimName }}"
+        {{- if .Values.ssl.enabled }}
+          - name: certificates
+            secret:
+              secretName: tls-{{ template "fullName" . }}
+        {{- end }}
 {{- end }}
