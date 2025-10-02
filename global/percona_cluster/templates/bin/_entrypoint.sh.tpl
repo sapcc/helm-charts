@@ -7,6 +7,12 @@ fi
 
 . /startup-scripts/functions.sh
 
+if [ "$PXC_FORCE_BOOTSTRAP" = true ] ; then
+    if [[ -f /var/lib/mysql/grastate.dat ]]; then
+        sed -i 's/safe_to_bootstrap: 0/safe_to_bootstrap: 1/g' /var/lib/mysql/grastate.dat
+    fi
+fi
+
 {{- $current_region := .Values.global.db_region -}}
 {{- $cluster_ips := values .Values.service.regions }}
 
@@ -54,8 +60,6 @@ start_as_primary
 
 if [ "$PXC_FORCE_BOOTSTRAP" = true ] ; then
     echo "Cluster bootstrap forced via PXC_FORCE_BOOTSTRAP variable..."
-    sed -i 's/safe_to_bootstrap: 0/safe_to_bootstrap: 1/' /var/lib/mysql/grastate.dat
-
     start_as_primary
 fi
 
