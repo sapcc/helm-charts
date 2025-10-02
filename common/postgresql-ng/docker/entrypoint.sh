@@ -73,7 +73,10 @@ if [[ $(id -u) == 0 ]]; then
   # we cannot change the owner of the volume mount point or make /var/lib a volume
   if [[ ! -L /var/lib/postgresql || ! -e /data/postgresql ]]; then
     mkdir -p /data/postgresql
-    rmdir /var/lib/postgresql
+    # The directory might not exist when debugging
+    if [[ -d /var/lib/postgresql ]]; then
+      rmdir /var/lib/postgresql
+    fi
     ln -sr /data/postgresql /var/lib/
     chown postgres:postgres /var/lib/postgresql
   fi
