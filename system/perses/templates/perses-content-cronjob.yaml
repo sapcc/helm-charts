@@ -30,26 +30,20 @@ spec:
                 SHA_FILE="/etc/perses/provisioning/.last_sha"
                 
                 # Get current image digest/SHA
-                echo "Fetching current image digest..."
                 CURRENT_SHA=$(crane digest "$IMAGE_REF")
-                echo "Current image SHA: $CURRENT_SHA"
-                
+
                 # Check if we have a previous SHA stored
                 if [ -f "$SHA_FILE" ]; then
                   LAST_SHA=$(cat "$SHA_FILE")
-                  echo "Previous SHA: $LAST_SHA"
-                  
+
                   if [ "$CURRENT_SHA" = "$LAST_SHA" ]; then
-                    echo "✓ Content is the same - no changes detected. Skipping pull and extraction."
-                    echo "Content sync completed at $(date) - no update required"
+                    echo "✓ Content sync completed at $(date) - no update required"
                     exit 0
                   else
                     echo "△ SHA changed - new content detected"
                     echo "  Previous: $LAST_SHA"
                     echo "  Current:  $CURRENT_SHA"
                   fi
-                else
-                  echo "△ No previous SHA found - first run or SHA file missing"
                 fi
                 
                 # Create temp directory for extraction
@@ -60,7 +54,6 @@ spec:
                 echo "Pulling image: $IMAGE_REF"
                 crane export "$IMAGE_REF" - | tar -xf - -C "$TEMP_DIR"
                 
-                # Clear existing content in PVC (optional - remove if you want to keep old files)
                 echo "Clearing existing content..."
                 rm -rf /etc/perses/provisioning/* || true
                 
@@ -86,8 +79,8 @@ spec:
             
             resources:
               requests:
-                memory: "128Mi"
-                cpu: "100m"
+                memory: "256Mi"
+                cpu: "200m"
               limits:
                 memory: "256Mi"
                 cpu: "200m"
