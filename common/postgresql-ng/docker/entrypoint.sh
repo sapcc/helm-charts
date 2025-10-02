@@ -13,6 +13,10 @@ start_postgres() {
 
 stop_postgres() {
   pg_ctl -D "$PGDATA" -m fast -w stop
+  # if we execute pg_checksums directly after stopping the database server, we receive an error similar to this:
+  #   pg_checksums: error: pg_control CRC value is incorrect
+  sleep 1
+  sync -f /var/lib/postgresql/
 }
 
 process_sql() {
