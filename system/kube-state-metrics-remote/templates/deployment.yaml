@@ -27,6 +27,15 @@ spec:
         greenhouse/scrape: "true"
         greenhouse/target: {{ .Values.prometheusName | quote }}
     spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.metal.cloud.sap/role
+                operator: In
+                values:
+                - runtime-controlplane
       automountServiceAccountToken: true
       containers:
       - env:

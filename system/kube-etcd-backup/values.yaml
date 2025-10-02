@@ -1,0 +1,58 @@
+owner-info:
+  support-group: containers
+  helm-chart-url: https://github.com/gardener/etcd-backup-restore
+
+deployment:
+  enable: true
+  replicas: 1
+  container:
+    image:
+      repository: keppel.global.cloud.sap/ccloud-europe-docker-pkg-dev-mirror/gardener-project/releases/gardener/etcdbrctl
+      tag: v0.38.0
+    resources:
+      limits:
+        cpu: 100m
+        memory: 1Gi
+      requests:
+        cpu: 23m
+        memory: 128Mi
+    livenessProbe:
+      initialDelaySeconds: 15
+      periodSeconds: 20
+      httpGet:
+        path: /healthz
+        port: 8081
+    readinessProbe:
+      initialDelaySeconds: 5
+      periodSeconds: 10
+      httpGet:
+        path: /readyz
+        port: 8081
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+          - "ALL"
+  securityContext:
+    runAsNonRoot: true
+    seccompProfile:
+      type: RuntimeDefault
+  terminationGracePeriodSeconds: 30
+  serviceAccountName: etcd-kcp
+
+configmap:
+  enable: true
+
+secret:
+  enable: true
+
+service:
+  enable: true
+
+serviceAccount:
+  enable: true
+
+awsCredentials:
+    accessKeyID: ""
+    secretAccessKey: ""
+    region: ""
