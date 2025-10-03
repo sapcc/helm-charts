@@ -23,7 +23,7 @@ server_proxyclient_address = $my_ip
 [serial_console]
 enabled = {{ $config.enabled }}
   {{- if $config.enabled }}
-base_url = https://{{include "nova_console_endpoint_host_public" .}}:{{ .Values.global.novaConsolePortPublic }}/{{ $cell_name }}/serial
+base_url = https://{{include "nova_console_endpoint_host_public" .}}:{{ .Values.global.novaConsolePortPublic }}/{{ $cell_name }}/serial/
 proxyclient_address = $my_ip
   {{- end }}
 {{- end }}
