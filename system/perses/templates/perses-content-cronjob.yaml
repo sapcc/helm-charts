@@ -20,21 +20,28 @@ spec:
           - name: content-sync
             image: {{ .Values.sapCloudInfrastructure.contentSync.crane.image }}:{{ .Values.sapCloudInfrastructure.contentSync.crane.version }}
             command: ["/busybox/sh"]
+            env:
+            - name: DEBUG
+              value: {{ .Values.sapCloudInfrastructure.contentSync.debug | quote }}
             args:
               - -c
               - |
                 set -e
-                echo "Starting content sync at $(date)"
+
+                [ "$DEBUG" = "true" ] && echo "Starting content sync at $(date)"
 
                 IMAGE_REF="{{ .Values.sapCloudInfrastructure.contentSync.contentImage.name }}:{{ .Values.sapCloudInfrastructure.contentSync.contentImage.version }}"
                 SHA_FILE="/etc/perses/provisioning/.last_sha"
-                
+
                 # Get current image digest/SHA
+                [ "$DEBUG" = "true" ] && echo "Fetching current image digest..."
                 CURRENT_SHA=$(crane digest "$IMAGE_REF")
+                [ "$DEBUG" = "true" ] && echo "Current image SHA: $CURRENT_SHA"
 
                 # Check if we have a previous SHA stored
                 if [ -f "$SHA_FILE" ]; then
                   LAST_SHA=$(cat "$SHA_FILE")
+                  [ "$DEBUG" = "true" ] && echo "Previous SHA: $LAST_SHA"
 
                   if [ "$CURRENT_SHA" = "$LAST_SHA" ]; then
                     echo "✓ Content sync completed at $(date) - no update required"
@@ -44,31 +51,35 @@ spec:
                     echo "  Previous: $LAST_SHA"
                     echo "  Current:  $CURRENT_SHA"
                   fi
+                else
+                  [ "$DEBUG" = "true" ] && echo "No previous SHA found - first run or SHA file missing"
                 fi
-                
+
                 # Create temp directory for extraction
                 TEMP_DIR="/tmp/perses-extract"
                 mkdir -p "$TEMP_DIR"
-                
+
                 # Pull and extract the OCI artifact using crane
-                echo "Pulling image: $IMAGE_REF"
+                [ "$DEBUG" = "true" ] && echo "Pulling image: $IMAGE_REF"
                 crane export "$IMAGE_REF" - | tar -xf - -C "$TEMP_DIR"
-                
-                echo "Clearing existing content..."
+
+                [ "$DEBUG" = "true" ] && echo "Clearing existing content..."
                 rm -rf /etc/perses/provisioning/* || true
-                
+
                 # Copy extracted content to PVC
-                echo "Copying content to PVC..."
+                [ "$DEBUG" = "true" ] && echo "Copying content to PVC..."
                 cp -r "$TEMP_DIR/perses-content"/* /etc/perses/provisioning/
-                
+
                 # Store the current SHA for next comparison
                 echo "$CURRENT_SHA" > "$SHA_FILE"
-                echo "Stored current SHA for future comparison"
-                
+                [ "$DEBUG" = "true" ] && echo "Stored current SHA for future comparison"
+
                 # List copied files for verification
-                echo "Content successfully synced. Files in PVC:"
-                echo "Total JSON files: $(find /etc/perses/provisioning -name "*.json" | wc -l)"
-                
+                if [ "$DEBUG" = "true" ]; then
+                  echo "Content successfully synced. Files in PVC:"
+                  echo "Total JSON files: $(find /etc/perses/provisioning -name "*.json" | wc -l)"
+                fi
+
                 # Cleanup
                 rm -rf "$TEMP_DIR"
                 echo "✓ Content sync completed at $(date) - update successful"
