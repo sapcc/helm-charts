@@ -20,6 +20,8 @@ spec:
             {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
             linkerd.io/inject: enabled
             config.linkerd.io/opaque-ports: "3306,4444,4567,4568"
+            config.linkerd.io/skip-outbound-ports: "4444,4567,4568"
+            config.linkerd.io/skip-inbound-ports: "4444,4567,4568"
             config.alpha.linkerd.io/proxy-enable-native-sidecar: "true"
             {{- end }}
         spec:
@@ -52,9 +54,13 @@ spec:
               mountPath: /backup/
             - name: mysql-startup-scripts
               mountPath: /startup-scripts
+            {{- if .Values.ssl.enabled }}
+            - name: certificates
+              mountPath: /ssl
+            {{- end }}
             env:
             - name: PXC_GROUP
-              value: "{{ .Release.Name }}-pxc"
+              value: {{ template "percona-cluster.shortname" . }}
             - name: PXC_SERVICE
               value: "{{ include "fullName" . }}"
             - name: NODE_NAME
@@ -66,12 +72,23 @@ spec:
                 secretKeyRef:
                   name: {{ include "fullName" . }}
                   key: xtrabackup-password
+            ports:
+            - name: state-snapshot
+              containerPort: 4444
+            - name: galera-repl
+              containerPort: 4567
           restartPolicy: OnFailure
           volumes:
           - name: mysql-startup-scripts
             configMap:
               name: {{ include "fullName" . }}-startup-scripts
+              defaultMode: 0555
           - name: backup-volume
             persistentVolumeClaim:
               claimName: "{{ include "fullName" . }}-{{ .Values.backup.claimName }}"
+        {{- if .Values.ssl.enabled }}
+          - name: certificates
+            secret:
+              secretName: tls-{{ template "fullName" . }}
+        {{- end }}
 {{- end }}
