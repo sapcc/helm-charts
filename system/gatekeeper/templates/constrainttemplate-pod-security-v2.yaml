@@ -273,7 +273,15 @@ spec:
               }
 
               isMatchingContainer(entry, container) if {
+                  entry.matchNamespace != "*"
                   iro.metadata.namespace == entry.matchNamespace
+                  repo := extract_repository(container.image)
+                  repo == entry.matchRepository
+              }
+
+              isMatchingContainer(entry, container) if {
+                  # the special value `*` matches all namespaces (NOTE: this can be expanded into full glob matching later if required)
+                  entry.matchNamespace == "*"
                   repo := extract_repository(container.image)
                   repo == entry.matchRepository
               }
