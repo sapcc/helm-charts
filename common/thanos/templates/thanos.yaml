@@ -41,7 +41,7 @@ spec:
         template:
           metadata:
             annotations:
-              vpa-butler.cloud.sap/update-mode: {{ $.Values.vpaMode }}
+              vpa-butler.cloud.sap/update-mode: {{ $.Values.vpaMode | quote }}
           {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
               linkerd.io/inject: enabled
               config.linkerd.io/proxy-ephemeral-storage-request: 10M
@@ -52,8 +52,8 @@ spec:
               podAntiAffinity:
                 requiredDuringSchedulingIgnoredDuringExecution:
                   - labelSelector:
-                    matchLabels:
-                      {{ toYaml .matchLabels  }}
+                      matchLabels:
+                        {{ toYaml .matchLabels  }}
                     topologyKey: {{ .topologyKey }}
 {{- end }}
             containers:
