@@ -47,6 +47,15 @@ spec:
               config.linkerd.io/proxy-ephemeral-storage-request: 10M
           {{- end }}
           spec:
+{{- with $.Values.affinity }}
+            affinity:
+              podAntiAffinity:
+                requiredDuringSchedulingIgnoredDuringExecution:
+                  - labelSelector:
+                    matchLabels:
+                      {{ toYaml .matchLabels  }}
+                    topologyKey: {{ .topologyKey }}
+{{- end }}
             containers:
             - image: {{ include "thanosimage" $root }}
               name: query
