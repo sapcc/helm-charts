@@ -37,15 +37,6 @@ spec:
         {{- end }}
     deploymentOverrides:
       spec:
-{{- with $.Values.affinity.matchLabels }}
-        affinity:
-          podAntiAffinity:
-            requiredDuringSchedulingIgnoredDuringExecution:
-              - labelSelector:
-                matchLabels:
-                  {{ toYaml .  }}
-                topologyKey: topology.kubernetes.io/zone
-{{- end }}
         replicas: {{ $.Values.query.replicas }}
         template:
           metadata:
@@ -56,6 +47,15 @@ spec:
               config.linkerd.io/proxy-ephemeral-storage-request: 10M
           {{- end }}
           spec:
+{{- with $.Values.affinity.matchLabels }}
+            affinity:
+              podAntiAffinity:
+                requiredDuringSchedulingIgnoredDuringExecution:
+                  - labelSelector:
+                    matchLabels:
+                      {{ toYaml .  }}
+                    topologyKey: topology.kubernetes.io/zone
+{{- end }}
             containers:
             - image: {{ include "thanosimage" $root }}
               name: query
