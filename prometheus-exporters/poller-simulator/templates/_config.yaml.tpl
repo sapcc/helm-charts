@@ -1,5 +1,8 @@
 {{- if .Values.simulator.poller.enabled -}}
 poller:
+  prometheusMetrics:
+    enabled: {{ .Values.simulator.poller.prometheusMetrics.enabled }}
+    listener: :{{ .Values.simulator.poller.prometheusMetrics.listener }}
   prometheusPort: {{ .Values.simulator.poller.prometheusPort }}
   action: {{ .Values.simulator.poller.action }}
   pollInterval: {{ .Values.simulator.poller.pollInterval }}
