@@ -33,8 +33,10 @@ spec:
   kubernetes:
     version: 1.30.0
     kubeAPIServer:
-      enableAnonymousAuthentication: true # cluster registry version check
-      oidcConfig: {{- toYaml $.Values.oidcConfig | nindent 8 }}
+      featureGates:
+        AnonymousAuthConfigurableEndpoints: true
+      structuredAuthentication:
+        configMapName: authentication-config-met-op
   seedSelector:
     matchLabels:
       name.seed.gardener.cloud/soil-{{ $region }}: "true"
