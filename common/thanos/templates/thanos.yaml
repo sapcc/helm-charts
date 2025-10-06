@@ -37,6 +37,15 @@ spec:
         {{- end }}
     deploymentOverrides:
       spec:
+{{- if eq $.Values.name "global" }}
+        affinity:
+          podAntiAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                matchLabels:
+                  app.kubernetes.io/managed-by: thanos-global
+                topologyKey: topology.kubernetes.io/zone
+{{- end }}
         replicas: {{ $.Values.query.replicas }}
         template:
           metadata:
