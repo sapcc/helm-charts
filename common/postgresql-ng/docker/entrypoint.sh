@@ -13,6 +13,10 @@ start_postgres() {
 
 stop_postgres() {
   pg_ctl -D "$PGDATA" -m fast -w stop
+  # if we execute pg_checksums directly after stopping the database server, we receive an error similar to this:
+  #   pg_checksums: error: pg_control CRC value is incorrect
+  sleep 1
+  sync -f /var/lib/postgresql/
 }
 
 process_sql() {
@@ -73,7 +77,10 @@ if [[ $(id -u) == 0 ]]; then
   # we cannot change the owner of the volume mount point or make /var/lib a volume
   if [[ ! -L /var/lib/postgresql || ! -e /data/postgresql ]]; then
     mkdir -p /data/postgresql
-    rmdir /var/lib/postgresql
+    # The directory might not exist when debugging
+    if [[ -d /var/lib/postgresql ]]; then
+      rmdir /var/lib/postgresql
+    fi
     ln -sr /data/postgresql /var/lib/
     chown postgres:postgres /var/lib/postgresql
   fi
