@@ -20,21 +20,16 @@ spec:
       {{- if eq .Values.cluster_type "test" }}
       - matchNamespace: foo
         matchRepository: test-app/unprivileged
-        mayUseCapabilities:
-          - FOO
+        mayUseCapabilities: [ FOO ]
       - matchNamespace: foo
         matchRepository: test-app/highly-privileged
         mayUseHostNetwork: true
         mayUseHostPID: true
         mayUsePrivilegeEscalation: true
         mayBePrivileged: true
-        mayUseCapabilities:
-          - FOO
-          - SYS_ADMIN
-        mayReadHostPathVolumes:
-          - /
-        mayWriteHostPathVolumes:
-          - /
+        mayUseCapabilities: [ FOO, SYS_ADMIN ]
+        mayReadHostPathVolumes: [ / ]
+        mayWriteHostPathVolumes: [ / ]
       {{- end }}
       ### audit-logs-auditbeat
       - matchNamespace: audit-logs
@@ -42,19 +37,9 @@ spec:
         # The "auditbeat" container needs to break out into the host to read
         # and also configure the kernel audit log.
         mayUseHostPID: true
-        mayUseCapabilities:
-          - AUDIT_CONTROL
-          - AUDIT_READ
-          - AUDIT_WRITE
-        mayReadHostPathVolumes:
-          - /bin
-          - /sbin
-          - /usr/bin
-          - /usr/sbin
-          - /etc
-          - /run/containerd
-        mayWriteHostPathVolumes:
-          - /var/lib/auditbeat-data
+        mayUseCapabilities: [ AUDIT_CONTROL, AUDIT_READ, AUDIT_WRITE ]
+        mayReadHostPathVolumes: [ /bin, /sbin, /usr/bin, /usr/sbin, /etc, /run/containerd ]
+        mayWriteHostPathVolumes: [ /var/lib/auditbeat-data ]
       {{- if eq .Values.cluster_type "cloudshell" "concourse" "internet" "scaleout" }}
       - matchNamespace: audit-logs
         matchRepository: ccloud-dockerhub-mirror/library/alpine
@@ -63,8 +48,7 @@ spec:
         # necessary in clusters where the worker nodes are provisioned by
         # OpenStack instead of Terraform).
         mayBePrivileged: true
-        mayWriteHostPathVolumes:
-          - /
+        mayWriteHostPathVolumes: [ / ]
       {{- end }}
       ### automation-jobs
       {{- if eq .Values.cluster_type "scaleout" }}
@@ -73,9 +57,7 @@ spec:
         # TODO: why?
         mayBePrivileged: true
         mayUsePrivilegeEscalation: true
-        mayUseCapabilities:
-          - NET_ADMIN
-          - NET_RAW
+        mayUseCapabilities: [ NET_ADMIN, NET_RAW ]
       {{- end }}
       ### calico
       {{- if eq .Values.cluster_type "baremetal" }}
@@ -98,17 +80,8 @@ spec:
         # TODO: why?
         mayUseHostNetwork: true
         mayBePrivileged: true
-        mayReadHostPathVolumes:
-        - /var/log/calico/cni
-        - /proc
-        mayWriteHostPathVolumes:
-        - /etc/cni/net.d
-        - /run/xtables.lock
-        - /sys/fs/
-        - /sys/fs/bpf
-        - /var/lib/calico
-        - /var/run/calico
-        - /var/run/nodeagent
+        mayReadHostPathVolumes: [ /var/log/calico/cni, /proc ]
+        mayWriteHostPathVolumes: [ /etc/cni/net.d, /run/xtables.lock, /sys/fs/, /sys/fs/bpf, /var/lib/calico, /var/run/calico, /var/run/nodeagent ]
       - matchNamespace: kube-system
         matchRepository: ccloud-ghcr-io-mirror/sapcc/bird_exporter
         # TODO: why?
@@ -119,9 +92,7 @@ spec:
         # Many kube-system components need broad network access (e.g. coredns,
         # CNI, ingress-nginx)
         mayBePrivileged: true
-        mayWriteHostPathVolumes:
-        - /etc/cni/net.d
-        - /opt/cni/bin
+        mayWriteHostPathVolumes: [ /etc/cni/net.d, /opt/cni/bin ]
       - matchNamespace: kube-system
         matchRepository: ccloud-dockerhub-mirror/calico/typha
         # TODO: why?
@@ -132,8 +103,7 @@ spec:
       - matchNamespace: monsoon3
         matchRepository: ccloud/loci-cinder
         # TODO: why?
-        mayUseCapabilities:
-        - SYS_ADMIN
+        mayUseCapabilities: [ SYS_ADMIN ]
       {{- end }}
       ### cloudprober
       {{- if eq .Values.cluster_type "baremetal" }}
@@ -148,22 +118,19 @@ spec:
         matchRepository: ccloud-dockerhub-mirror/haproxytech/kubernetes-ingress
         # TODO: Why does Concourse need its own ingress? And why does it need
         # CAP_NET_BIND_SERVICE instead of being exposed via a k8s Service?
-        mayUseCapabilities:
-          - NET_BIND_SERVICE
+        mayUseCapabilities: [ NET_BIND_SERVICE ]
       - matchNamespace: concourse
         matchRepository: ccloud-dockerhub-mirror/concourse/concourse
         # Concourse worker pods need to access their work directory on the host FS.
         mayBePrivileged: true
-        mayWriteHostPathVolumes:
-          - /concourse-work-dir
+        mayWriteHostPathVolumes: [ /concourse-work-dir ]
       {{- end }}
       ### coredns
       - matchNamespace: kube-system
         matchRepository: ccloud-dockerhub-mirror/coredns/coredns
         # Many kube-system components need broad network access (e.g. coredns,
         # CNI, ingress-nginx)
-        mayUseCapabilities:
-        - NET_BIND_SERVICE
+        mayUseCapabilities: [ NET_BIND_SERVICE ]
       ### csi-cinder-nodeplugin
       - matchNamespace: kube-system
         matchRepository: ccloud-registry-k8s-io-mirror/provider-os/cinder-csi-plugin
@@ -171,48 +138,32 @@ spec:
         mayUseHostNetwork: true
         mayUsePrivilegeEscalation: true
         mayBePrivileged: true
-        mayUseCapabilities:
-        - SYS_ADMIN
-        mayWriteHostPathVolumes:
-        - /var/lib/kubelet
-        - /var/lib/kubelet/plugins/cinder.csi.openstack.org
+        mayUseCapabilities: [ SYS_ADMIN ]
+        mayWriteHostPathVolumes: [ /var/lib/kubelet, /var/lib/kubelet/plugins/cinder.csi.openstack.org ]
       - matchNamespace: kube-system
         matchRepository: ccloud-registry-k8s-io-mirror/sig-storage/livenessprobe
         # TODO: why?
         mayUseHostNetwork: true
         mayUsePrivilegeEscalation: true
         mayBePrivileged: true
-        mayUseCapabilities:
-        - SYS_ADMIN
-        mayWriteHostPathVolumes:
-        - /var/lib/kubelet/plugins/cinder.csi.openstack.org
+        mayUseCapabilities: [ SYS_ADMIN ]
+        mayWriteHostPathVolumes: [ /var/lib/kubelet/plugins/cinder.csi.openstack.org ]
       - matchNamespace: kube-system
         matchRepository: ccloud-registry-k8s-io-mirror/sig-storage/csi-node-driver-registrar
         # TODO: why?
         mayUseHostNetwork: true
-        mayUseCapabilities:
-        - SYS_ADMIN
+        mayUseCapabilities: [ SYS_ADMIN ]
         mayUsePrivilegeEscalation: true
         mayBePrivileged: true
-        mayWriteHostPathVolumes:
-        - /var/lib/kubelet/plugins/cinder.csi.openstack.org
-        - /var/lib/kubelet/plugins_registry/
+        mayWriteHostPathVolumes: [ /var/lib/kubelet/plugins/cinder.csi.openstack.org, /var/lib/kubelet/plugins_registry/ ]
       ### falco
       {{- if eq .Values.cluster_type "baremetal" "concourse" "scaleout" }}
       - matchNamespace: kube-monitoring
         matchRepository: ccloud-dockerhub-mirror/falcosecurity/falco
         # TODO: why?
         mayBePrivileged: true
-        mayReadHostPathVolumes:
-          - /boot
-          - /usr
-          - /etc
-          - /proc
-        mayWriteHostPathVolumes:
-          - /lib/modules
-          - /run/containerd
-          - /run/crio
-          - /var/run
+        mayReadHostPathVolumes: [ /boot, /usr, /etc, /proc ]
+        mayWriteHostPathVolumes: [ /lib/modules, /run/containerd, /run/crio, /var/run ]
       {{- end }}
       ### flannel
       {{- if eq .Values.cluster_type "concourse" "internet" "postfix" "scaleout" }}
@@ -220,50 +171,34 @@ spec:
         matchRepository: ccloud-dockerhub-mirror/flannel/flannel
         # TODO: why?
         mayUseHostNetwork: true
-        mayUseCapabilities:
-        - NET_ADMIN
-        - NET_RAW
-        mayWriteHostPathVolumes:
-        - /run/flannel
-        - /run/xtables.lock
-        - /etc/cni/net.d
+        mayUseCapabilities: [ NET_ADMIN, NET_RAW ]
+        mayWriteHostPathVolumes: [ /run/flannel, /run/xtables.lock, /etc/cni/net.d ]
       - matchNamespace: kube-system
         matchRepository: ccloud-dockerhub-mirror/flannel/flannel-cni-plugin
         # Many kube-system components need broad network access (e.g. coredns,
         # CNI, ingress-nginx)
         mayUseHostNetwork: true
-        mayUseCapabilities:
-        - NET_ADMIN
-        - NET_RAW
-        mayWriteHostPathVolumes:
-        - /opt/cni/bin
+        mayUseCapabilities: [ NET_ADMIN, NET_RAW ]
+        mayWriteHostPathVolumes: [ /opt/cni/bin ]
       {{- end }}
       ### flatcar-linux-update-agent
       - matchNamespace: maintenance-controller
         matchRepository: ccloud/flatcar-linux-update-operator
         # TODO: why?
-        mayWriteHostPathVolumes:
-        - /etc/flatcar
-        - /etc/os-release
-        - /usr/share/flatcar
-        - /var/run/dbus
+        mayWriteHostPathVolumes: [ /etc/flatcar, /etc/os-release, /usr/share/flatcar, /var/run/dbus ]
       ### fluent
       - matchNamespace: audit-logs
         matchRepository: ccloud/elk-fluent
         # Most Fluent pods (except -systemd) need to read container logs.
         # All Fluent pods need to access log files on the host.
-        mayReadHostPathVolumes:
-          - /var/lib/docker/containers
-        mayWriteHostPathVolumes:
-          - /var/log
+        mayReadHostPathVolumes: [ /var/lib/docker/containers ]
+        mayWriteHostPathVolumes: [ /var/log ]
       ### fluent-prometheus
       {{- if eq .Values.cluster_type "baremetal" "scaleout" }}
       - matchNamespace: logs
         matchRepository: ccloud/elk-fluent
-        mayReadHostPathVolumes:
-        - /var/lib/docker/containers
-        mayWriteHostPathVolumes:
-        - /var/log
+        mayReadHostPathVolumes: [ /var/lib/docker/containers ]
+        mayWriteHostPathVolumes: [ /var/log ]
       {{- end }}
       ### ingress-nginx-controller
       {{- if eq .Values.cluster_type "postfix" }}
@@ -271,16 +206,14 @@ spec:
         matchRepository: ingress-nginx/controller
         # TODO: why?
         mayUsePrivilegeEscalation: true
-        mayUseCapabilities:
-        - NET_BIND_SERVICE
+        mayUseCapabilities: [ NET_BIND_SERVICE ]
       {{- end }}
       ### ironic-inspector
       {{- if eq .Values.cluster_type "baremetal" }}
       - matchNamespace: monsoon3
         matchRepository: ccloud/loci-ironic
         # TODO: why?
-        mayUseCapabilities:
-        - NET_ADMIN
+        mayUseCapabilities: [ NET_ADMIN ]
       {{- end }}
       ### kube-cni
       {{- if eq .Values.cluster_type "baremetal" }}
@@ -289,15 +222,13 @@ spec:
         # Many kube-system components need broad network access (e.g. coredns,
         # CNI, ingress-nginx)
         mayUseHostNetwork: true
-        mayWriteHostPathVolumes:
-        - /opt/cni/bin
+        mayWriteHostPathVolumes: [ /opt/cni/bin ]
       - matchNamespace: kube-system
         matchRepository: ccloud/multus-cni
         # Many kube-system components need broad network access (e.g. coredns,
         # CNI, ingress-nginx)
         mayUseHostNetwork: true
-        mayWriteHostPathVolumes:
-        - /opt/cni/bin
+        mayWriteHostPathVolumes: [ /opt/cni/bin ]
       {{- end }}
       ### kube-proxy
       - matchNamespace: kube-system
@@ -306,14 +237,12 @@ spec:
         # kube-proxy, MTU discovery, wormhole to k8s central).
         mayUseHostNetwork: true
         mayBePrivileged: true
-        mayWriteHostPathVolumes:
-        - /run/xtables.lock
+        mayWriteHostPathVolumes: [ /run/xtables.lock ]
       ### kube-system-ingress-nginx-controller
       - matchNamespace: kube-system
         matchRepository: ccloud-registry-k8s-io-mirror/ingress-nginx/controller
         # TODO: why?
-        mayUseCapabilities:
-        - NET_BIND_SERVICE
+        mayUseCapabilities: [ NET_BIND_SERVICE ]
       ### kube-system-ldap-named-user
       {{- if eq .Values.cluster_type "cloudshell" "concourse" "internet" "scaleout" }}
       - matchNamespace: kube-system
@@ -321,8 +250,7 @@ spec:
         # TODO: why?
         mayBePrivileged: true
         mayUseHostPID: true
-        mayWriteHostPathVolumes:
-        - /
+        mayWriteHostPathVolumes: [ / ]
       {{- end }}
       ### linkerd
       - matchNamespace: linkerd
@@ -330,35 +258,25 @@ spec:
         # TODO: why?
         mayUsePrivilegeEscalation: true
         mayBePrivileged: true
-        mayUseCapabilities:
-        - NET_ADMIN
-        - NET_RAW
+        mayUseCapabilities: [ NET_ADMIN, NET_RAW ]
       ### logs-collector
       - matchNamespace: logs
         matchRepository: ccloud/opentelemetry-collector-contrib
         # Most Otel pods need to access log files on the host.
-        mayReadHostPathVolumes:
-        - /var/log
+        mayReadHostPathVolumes: [ /var/log ]
       ### neutron
       {{- if eq .Values.cluster_type "baremetal" }}
       - matchNamespace: monsoon3
         matchRepository: ccloud-dockerhub-mirror/library/alpine
         # The init container mounts the entire host FS to load kernel modules.
         mayBePrivileged: true
-        mayWriteHostPathVolumes:
-        - /
+        mayWriteHostPathVolumes: [ / ]
       - matchNamespace: monsoon3
         matchRepository: ccloud/loci-neutron
         # The agent containers need to reach into most customer networks.
         mayBePrivileged: true
-        mayUseCapabilities:
-        - DAC_OVERRIDE
-        - DAC_READ_SEARCH
-        - NET_ADMIN
-        - SYS_ADMIN
-        - SYS_PTRACE
-        mayWriteHostPathVolumes:
-        - /dev/log
+        mayUseCapabilities: [ DAC_OVERRIDE, DAC_READ_SEARCH, NET_ADMIN, SYS_ADMIN, SYS_PTRACE ]
+        mayWriteHostPathVolumes: [ /dev/log ]
       {{- end }}
       ### nodecidr-controller
       {{- if eq .Values.cluster_type "baremetal" }}
@@ -374,20 +292,13 @@ spec:
         mayUseHostNetwork: true
         mayUseHostPID: true
         # the node exporter needs to inspect the host filesystem to collect metrics
-        mayReadHostPathVolumes:
-        - /
-        - /proc
-        - /sys
-        - /var/run/dbus/system_bus_socket
+        mayReadHostPathVolumes: [ /, /proc, /sys, /var/run/dbus/system_bus_socket ]
       ### node-problem-detector
       - matchNamespace: kube-system
         matchRepository: ccloud-registry-k8s-io-mirror/node-problem-detector/node-problem-detector
         mayUseHostNetwork: true
         mayBePrivileged: true
-        mayWriteHostPathVolumes:
-        - /etc/localtime
-        - /proc
-        - /var/log/
+        mayWriteHostPathVolumes: [ /etc/localtime, /proc, /var/log/ ]
       ### ns-exporter
       {{- if eq .Values.cluster_type "baremetal" }}
       - matchNamespace: ns-exporter
@@ -402,11 +313,8 @@ spec:
         matchRepository: ccloud/kubernetes-oomkill-exporter
         # The oomkill-exporter needs to talk to container runtimes and read the kernel log.
         mayBePrivileged: true
-        mayReadHostPathVolumes:
-        - /dev/kmsg
-        mayWriteHostPathVolumes:
-        - /run/containerd/containerd.sock
-        - /var/run/docker.sock
+        mayReadHostPathVolumes: [ /dev/kmsg ]
+        mayWriteHostPathVolumes: [ /run/containerd/containerd.sock, /var/run/docker.sock ]
       {{- end }}
       ### opensearch-hermes
       {{- if eq .Values.cluster_type "baremetal" }}
@@ -442,27 +350,22 @@ spec:
       - matchNamespace: postfixin
         matchRepository: genady/postfix-exporter
         # TODO: why?
-        mayReadHostPathVolumes:
-        - /var/log/pods/
+        mayReadHostPathVolumes: [ /var/log/pods/ ]
       - matchNamespace: postfixin-bounce
         matchRepository: genady/postfix-exporter
         # TODO: why?
-        mayReadHostPathVolumes:
-        - /var/log/pods/
+        mayReadHostPathVolumes: [ /var/log/pods/ ]
       {{- end }}
       ### postfixout
       {{- if eq .Values.cluster_type "postfix" }}
       - matchNamespace: postfixout
         matchRepository: istio/proxyv2
         # TODO: why?
-        mayUseCapabilities:
-        - NET_ADMIN
-        - NET_RAW
+        mayUseCapabilities: [ NET_ADMIN, NET_RAW ]
       - matchNamespace: postfixout
         matchRepository: genady/postfix-exporter
         # TODO: why?
-        mayReadHostPathVolumes:
-        - /var/log/pods/
+        mayReadHostPathVolumes: [ /var/log/pods/ ]
       {{- end }}
       ### px
       {{- if eq .Values.cluster_type "baremetal" }}
@@ -470,8 +373,7 @@ spec:
         matchRepository: ccloud/px
         # Bird needs to be able to send and receive BGP announcements.
         mayBePrivileged: true
-        mayUseCapabilities:
-        - NET_ADMIN
+        mayUseCapabilities: [ NET_ADMIN ]
       {{- end }}
       ### sporebox
       {{- if eq .Values.cluster_type "baremetal" }}
@@ -494,18 +396,14 @@ spec:
         mayBePrivileged: true
         # All swift components need to access the storage disks (as well as state
         # shared with the drive autopilot)
-        mayWriteHostPathVolumes:
-        - /run/swift-storage/state
-        - /srv/node
-        - /var/cache/swift
+        mayWriteHostPathVolumes: [ /run/swift-storage/state, /srv/node, /var/cache/swift ]
       - matchNamespace: swift
         matchRepository: ccloud/swift-drive-autopilot
         # Swift-drive-autopilot needs far-reaching access to the host FS to
         # find/format/encrypt/decrypt/mount/unmount disks and watch the
         # kernel log for errors
         mayBePrivileged: true
-        mayWriteHostPathVolumes:
-        - /
+        mayWriteHostPathVolumes: [ / ]
       - matchNamespace: swift
         matchRepository: ccloud-dockerhub-mirror/prom/statsd-exporter
         # TODO: why?
@@ -526,20 +424,14 @@ spec:
         # TODO: Why does Tailscale need to be privileged? Is CAP_NET_ADMIN not enough?
         mayBePrivileged: true
         # Tailscale needs CAP_NET_ADMIN to establish its VPN network interface.
-        mayUseCapabilities:
-        - NET_ADMIN
+        mayUseCapabilities: [ NET_ADMIN ]
       {{- end }}
       ### toolbox-init
       - matchNamespace: kube-system
         matchRepository: ccloud/toolbox-docker
         # TODO: why?
         mayBePrivileged: true
-        mayWriteHostPathVolumes:
-        - /etc/sudoers.d/
-        - /opt/bin/
-        - /root
-        - /var/lib
-        - /var/run/docker.sock
+        mayWriteHostPathVolumes: [ /etc/sudoers.d/, /opt/bin/, /root, /var/lib, /var/run/docker.sock ]
       - matchNamespace: kube-system
         matchRepository: ccloud/toolbox-sleep
         # TODO: why?
@@ -559,6 +451,5 @@ spec:
         # kube-proxy, MTU discovery, wormhole to k8s central).
         mayUseHostNetwork: true
         mayBePrivileged: true
-        mayReadHostPathVolumes:
-        - /var/lib/kubelet
+        mayReadHostPathVolumes: [ /var/lib/kubelet ]
 {{- end }}
