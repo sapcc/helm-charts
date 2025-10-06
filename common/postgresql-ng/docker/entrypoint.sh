@@ -13,10 +13,6 @@ start_postgres() {
 
 stop_postgres() {
   pg_ctl -D "$PGDATA" -m fast -w stop
-  # if we execute pg_checksums directly after stopping the database server, we receive an error similar to this:
-  #   pg_checksums: error: pg_control CRC value is incorrect
-  sleep 1
-  sync -f /var/lib/postgresql/
 }
 
 process_sql() {
@@ -174,14 +170,14 @@ for data in $(find /var/lib/postgresql/ -mindepth 1 -maxdepth 1 -type d -not -na
     PGDATA=$old_pgdata
   fi
 
-  # make sure the old pg_hba.conf contains valid entries for us
-  echo -e "local  all  postgres  trust\nhost  all  backup  all  $postgres_auth_method\nhost  all  postgres  all  $postgres_auth_method\n" >"$data/pg_hba.conf"
-
   # PostgreSQL 18 defaults to checksums enabled and requires them when upgrading
   # Enabling them is safe even if a failure happens according to the Notes in https://www.postgresql.org/docs/18/app-pgchecksums.html
   if [[ $PGVERSION == 18 ]]; then
-    pg_checksums --pgdata "$data" --enable --progress
+    "$bindir/pg_checksums" --pgdata "$data" --enable --progress
   fi
+
+  # make sure the old pg_hba.conf contains valid entries for us
+  echo -e "local  all  postgres  trust\nhost  all  backup  all  $postgres_auth_method\nhost  all  postgres  all  $postgres_auth_method\n" >"$data/pg_hba.conf"
 
   # pg_upgrade wants to have write permission for cwd
   cd /var/lib/postgresql
