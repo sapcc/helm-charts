@@ -31,6 +31,11 @@ spec:
         mayReadHostPathVolumes: [ / ]
         mayWriteHostPathVolumes: [ / ]
       {{- end }}
+      ### archer
+      - matchNamespace: monsoon3
+        matchRepository: ccloud/archer
+        # TODO: why?
+        mayBePrivileged: true
       ### audit-logs-auditbeat
       - matchNamespace: audit-logs
         matchRepository: ccloud-elastic-mirror/beats/auditbeat-oss
@@ -85,7 +90,7 @@ spec:
       - matchNamespace: kube-system
         matchRepository: ccloud-ghcr-io-mirror/sapcc/bird_exporter
         # TODO: why?
-        mayReadHostPathVolumes: 
+        mayReadHostPathVolumes:
         - /var/run/calico
       - matchNamespace: kube-system
         matchRepository: ccloud-dockerhub-mirror/calico/cni
@@ -103,7 +108,7 @@ spec:
       - matchNamespace: monsoon3
         matchRepository: ccloud/loci-cinder
         # TODO: why?
-        mayUseCapabilities: [ SYS_ADMIN ]
+        mayUseCapabilities: [ CHOWN, DAC_OVERRIDE, DAC_READ_SEARCH, FOWNER, NET_ADMIN, SYS_ADMIN ]
       {{- end }}
       ### cloudprober
       {{- if eq .Values.cluster_type "baremetal" }}
