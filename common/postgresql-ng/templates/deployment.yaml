@@ -117,8 +117,8 @@ spec:
             command:
             - bash
             - -c
-            - "[[ -e /tmp/in-init ]] && exec pg_isready --host $POD_IP --timeout {{ .Values.probe_timeout_secs }}"
-          initialDelaySeconds: 120
+            - "[[ -e /tmp/init-done ]] && exec pg_isready --host $POD_IP --timeout {{ .Values.probe_timeout_secs }}"
+          initialDelaySeconds: 30
           timeoutSeconds: {{ .Values.probe_timeout_secs }}
           failureThreshold: {{ .Values.probe_failure_threshold }}
         readinessProbe:
@@ -126,9 +126,19 @@ spec:
             command:
             - bash
             - -c
-            - "[[ -e /tmp/in-init ]] && exec pg_isready --host $POD_IP --timeout {{ .Values.probe_timeout_secs }}"
+            - "[[ -e /tmp/init-done ]] && exec pg_isready --host $POD_IP --timeout {{ .Values.probe_timeout_secs }}"
           initialDelaySeconds: 5
+          periodSeconds: 5
           timeoutSeconds: {{ .Values.probe_timeout_secs }}
+        startupProbe:
+          exec:
+            command:
+              - bash
+              - -c
+              - "[[ -e /tmp/init-done ]]"
+            failureThreshold: 720 # lets wait long but not forever
+            initialDelaySeconds: 10
+            periodSeconds: 5
         resources:
           limits: {{ toYaml .Values.resources.limits | nindent 12 }}
           {{- if not (.Values.global.region | regexMatch "^qa-de-[2-6]$") }}
@@ -147,7 +157,7 @@ spec:
         {{- end }}
       {{- if .Values.crontab }}
       - name: cron
-        image: "{{ include "preferredRegistry" . }}/shared-app-images/alpine-psql:3.21-latest"
+        image: "{{ include "preferredRegistry" . }}/shared-app-images/alpine-psql:3.22-latest"
         imagePullPolicy: "Always"
         command:
           - /bin/sh
