@@ -73,11 +73,6 @@ function start_application {
   else
     echo "WARNING: elk password not set"
   fi
-  if [ -f /plutono-secrets/metisdb_password ]; then
-    sed -i "s,__METISDB_PASSWORD__,$(cat /plutono-secrets/metisdb_password),g" /var/lib/plutono/provisioning/datasources/*
-  else
-    echo "WARNING: metis db password not set"
-  fi
   if [ -f /plutono-secrets/opensearch_password ]; then
     sed -i "s,__OPENSEARCH_PASSWORD__,$(cat /plutono-secrets/opensearch_password),g" /var/lib/plutono/provisioning/datasources/*
   else

@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.27.4 - 2025/09/29
+* updated sidecar images:
+  * `mysqld-exporter` image updated to `0.18.0`
+  * `maria-back-me-up` image updated to `20250929115625`
+  * `user-credentials-updater` image updated to `python3.13-alpine3.22-20250818200546`
+  * `pod-readiness` image updated to `20250929115624`
+* chart version bumped
+
+## v0.27.3 - 2025/09/24
+* Add an option to enable `owner-info` dependency chart to be able to install `mariadb` as a stand-alone chart
+* chart version bumped
+
 ## v0.27.2 - 2025/08/23
 Add missing secret resolve in `init.sql`, when user is disabled, so the generated comment would contain the actual username instead of the vault reference if the vault secret is being used for the username value
 * chart version bumped
