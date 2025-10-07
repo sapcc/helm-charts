@@ -61,6 +61,14 @@ spec:
       ##########################################################################
       # Rules for infra-monitoring
 
+      {{- if eq .Values.cluster_type "baremetal" }}
+      - matchNamespace:  infra-monitoring
+        matchRepository: ccloud-dockerhub-mirror/cloudprober/cloudprober
+        justification: |
+          The cloudprober pods need to send pings.
+        mayUseCapabilities: [ NET_RAW ]
+      {{- end }}
+
       ##########################################################################
       # Rules for kube-monitoring
 
