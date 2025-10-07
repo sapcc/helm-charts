@@ -34,5 +34,4 @@ mkek_length = 32
 hmac_label = hmac_utimaco
 slot_id = 0
 encryption_mechanism = CKM_AES_CBC
-hmac_keywrap_mechanism = CKM_AES_MAC
 {{- end }}
