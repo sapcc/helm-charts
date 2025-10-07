@@ -16,24 +16,79 @@ spec:
   match: {{ include "match_pods_and_pod_owners" . | indent 4 }}
   parameters:
     allowlist:
-      ### unit tests
+
+      ##########################################################################
+      # Rules used by unit tests (also documents which keys are available)
+
       {{- if eq .Values.cluster_type "test" }}
       - matchNamespace: foo
         matchRepository: test-app/unprivileged
-        mayUseCapabilities:
-          - FOO
+        justification: |
+          This rule is used in unit tests only.
+          If represents a pod that requests hardly any special privileges.
+        mayUseCapabilities: [ FOO ]
+
       - matchNamespace: foo
         matchRepository: test-app/highly-privileged
+        justification: |
+          This rule is used in unit tests only.
+          It represents a pod that requests every possible type of privilege.
         mayUseHostNetwork: true
         mayUseHostPID: true
         mayUsePrivilegeEscalation: true
         mayBePrivileged: true
-        mayUseCapabilities:
-          - FOO
-          - SYS_ADMIN
-        mayReadHostPathVolumes:
-          - /
-        mayWriteHostPathVolumes:
-          - /
+        mayUseCapabilities: [ FOO, SYS_ADMIN ]
+        mayReadHostPathVolumes: [ / ]
+        mayWriteHostPathVolumes: [ / ]
       {{- end }}
+
+      ##########################################################################
+      # Global rules
+
+      - matchNamespace: '*'
+        matchRepository: ccloud/servicemesh/proxy-init
+        justification: |
+          Linkerd adds a sidecar container to each relevant pod in order to connect the pod network to the service mesh.
+          CAP_NET_ADMIN is needed to modify network interfaces, routing tables, and packet filter rules.
+          CAP_NET_RAW is used to create raw network sockets.
+        mayBePrivileged: true
+        mayUsePrivilegeEscalation: true
+        mayUseCapabilities: [ NET_ADMIN, NET_RAW ]
+
+      ##########################################################################
+      # Rules for ci-tooling
+
+      ##########################################################################
+      # Rules for infra-monitoring
+
+      ##########################################################################
+      # Rules for kube-monitoring
+
+      ##########################################################################
+      # Rules for kube-network
+
+      ##########################################################################
+      # Rules for kube-system
+
+      ##########################################################################
+      # Rules for observability
+
+      ##########################################################################
+      # Rules for openstack-compute
+
+      ##########################################################################
+      # Rules for openstack-network
+
+      ##########################################################################
+      # Rules for openstack-storage
+
+      ##########################################################################
+      # Rules for postfix
+
+      ##########################################################################
+      # Rules for px
+
+      ##########################################################################
+      # End of rules
+
 {{- end }}
