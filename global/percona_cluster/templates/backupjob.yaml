@@ -31,6 +31,18 @@ spec:
           - command:
             - sh
             - -c
+            - "cp /peer-list /opt/backup/bin/peer-list"
+            image: {{ required ".Values.global.dockerHubMirrorAlternateRegion is missing" .Values.global.dockerHubMirrorAlternateRegion }}/{{ .Values.backup.init.image }}:{{ .Values.backup.init.image_tag }}
+            imagePullPolicy: IfNotPresent
+            name: copy-peer-list
+            securityContext:
+              runAsUser: 0
+            volumeMounts:
+            - mountPath: /opt/backup/bin/
+              name: backup-bin
+          - command:
+            - sh
+            - -c
             - "chown -R {{ .Values.backup.security_context_ids }}:{{ .Values.backup.security_context_ids }} /backup"
             image: {{ required ".Values.global.dockerHubMirrorAlternateRegion is missing" .Values.global.dockerHubMirrorAlternateRegion }}/{{ .Values.backup.image }}:{{ .Values.backup.image_tag }}
             imagePullPolicy: IfNotPresent
@@ -50,11 +62,13 @@ spec:
             volumeMounts:
             - name: backup-volume
               mountPath: /backup/
+            - name: backup-bin
+              mountPath: /opt/backup/bin/
             - name: mysql-startup-scripts
               mountPath: /startup-scripts
             env:
             - name: PXC_GROUP
-              value: "{{ .Release.Name }}-pxc"
+              value: {{ template "percona-cluster.shortname" . }}
             - name: PXC_SERVICE
               value: "{{ include "fullName" . }}"
             - name: NODE_NAME
@@ -66,6 +80,11 @@ spec:
                 secretKeyRef:
                   name: {{ include "fullName" . }}
                   key: xtrabackup-password
+            ports:
+            - name: state-snapshot
+              containerPort: 4444
+            - name: galera-repl
+              containerPort: 4567
           restartPolicy: OnFailure
           volumes:
           - name: mysql-startup-scripts
@@ -74,4 +93,6 @@ spec:
           - name: backup-volume
             persistentVolumeClaim:
               claimName: "{{ include "fullName" . }}-{{ .Values.backup.claimName }}"
+          - name: backup-bin
+            emptyDir: {}
 {{- end }}

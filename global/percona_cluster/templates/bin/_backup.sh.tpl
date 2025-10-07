@@ -3,6 +3,8 @@
 set -o errexit
 set -o xtrace
 
+PATH=$PATH:/opt/backup/bin
+
 GARBD_OPTS="pc.weight=0"
 SOCAT_OPTS="TCP-LISTEN:4444,reuseaddr,retry=30"
 SST_INFO_NAME=sst_info

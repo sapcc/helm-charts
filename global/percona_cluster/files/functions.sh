@@ -121,7 +121,7 @@ init_mysql_upgrade() {
     DATADIR="/var/lib/mysql"
 
     if [ ! -f "${DATADIR}/version_info" ]; then
-        echo '5.7.x' > "${DATADIR}/version_info"
+        echo '8.0.x' > "${DATADIR}/version_info"
     fi
 
     if [ -f "$DATADIR/version_info" ] && ! diff /tmp/version_info "${DATADIR}/version_info"; then
