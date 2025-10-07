@@ -64,6 +64,35 @@ spec:
       ##########################################################################
       # Rules for kube-monitoring
 
+      {{- if eq .Values.cluster_type "baremetal" "concourse" "scaleout" }}
+      - matchNamespace: kube-monitoring
+        matchRepository: ccloud-dockerhub-mirror/falcosecurity/falco
+        justification: |
+          TODO
+        mayBePrivileged: true
+        mayReadHostPathVolumes: [ /boot, /usr, /etc, /proc ]
+        mayWriteHostPathVolumes: [ /lib/modules, /run/containerd, /run/crio, /var/run ]
+      {{- end }}
+
+      - matchNamespace: kube-monitoring
+        matchRepository: ccloud-dockerhub-mirror/prom/node-exporter
+        justification: |
+          The node-exporter requires node-level access and needs to inspect the host filesystem
+          in order to collect node metrics.
+        mayUseHostNetwork: true
+        mayUseHostPID: true
+        mayReadHostPathVolumes: [ /, /proc, /sys, /var/run/dbus/system_bus_socket ]
+
+      {{- if eq .Values.cluster_type "baremetal" "concourse" "scaleout" }}
+      - matchNamespace: kube-monitoring
+        matchRepository: ccloud/kubernetes-oomkill-exporter
+        justification: |
+          The oomkill-exporter needs to talk to container runtimes and read the kernel log.
+        mayBePrivileged: true
+        mayReadHostPathVolumes: [ /dev/kmsg ]
+        mayWriteHostPathVolumes: [ /run/containerd/containerd.sock, /var/run/docker.sock ]
+      {{- end }}
+
       ##########################################################################
       # Rules for kube-network
 
