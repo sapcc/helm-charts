@@ -3,8 +3,9 @@ set -ex
 
 utimaco ()
 {
-    mkdir -p /utimaco
-    cp -a /opt/utimaco/. /utimaco/
+    echo "Setting up Utimaco HSM ..."
+    mv /opt/utimaco /utimaco/
+    echo "library_path = .."
     mv /etc/utimaco/cs_pkcs11_R3.cfg /utimaco
     chmod -R a+rX /utimaco
 }

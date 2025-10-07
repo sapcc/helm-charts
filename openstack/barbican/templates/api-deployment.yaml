@@ -68,12 +68,10 @@ spec:
                 key: barbican.DSN.python
           {{- end }}
           {{- if .Values.hsm.enabled }}
-          - name: ChrystokiConfigurationPath
-            value: "/thales/safenet/lunaclient/config"
-          {{- end }}
-          {{- if .Values.hsm.utimaco_hsm.enabled }}
           - name: CS_PKCS11_R3_CFG
             value: "/utimaco/cs_pkcs11_R3.cfg"
+          - name: LD_LIBRARY_PATH
+            value: "/utimaco/lib:/usr/lib:/lib"
           {{- end }}
           {{- if .Values.api.resources.enabled }}
           resources:
@@ -142,67 +140,36 @@ spec:
               subPath: ratelimit.yaml
               readOnly: true
             {{- end }}
-            {{- if .Values.hsm.utimaco_hsm.enabled }}
+        {{- if .Values.hsm.enabled }}
             - name: utimaco-volume
               mountPath: /utimaco/
-            {{- end }}
-        {{- if .Values.hsm.enabled }}
-            - name: luna
-              mountPath: /thales/
             {{- include "utils.proxysql.volume_mount" . | indent 12 }}
             {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
         {{- if not .Values.proxysql.native_sidecar }}
         {{- include "utils.proxysql.container" . | indent 8 }}
         {{- end }}
-        - name: lunaclient
-          image: {{required ".Values.global.registry is missing" .Values.global.registry }}/loci-barbican:{{required "Values.hsm.luna.image is missing" .Values.hsm.luna.image }}
-          imagePullPolicy: Always
-          env:
-            - name: ChrystokiConfigurationPath
-              value: "/thales/safenet/lunaclient/config"
-          command: [ "/bin/bash", "-c", "--" ]
-          args: [ "while true; do sleep 30; done;" ]
-          {{- if .Values.hsm.resources.enabled }}
-          resources:
-            limits:
-              cpu: {{ .Values.hsm.resources.limits.cpu | quote }}
-              memory: {{ .Values.hsm.resources.limits.memory | quote }}
-            requests:
-              cpu: {{ .Values.hsm.resources.requests.cpu | quote }}
-              memory: {{ .Values.hsm.resources.requests.memory | quote }}
-          {{- end }}
-          lifecycle:
-            postStart:
-              exec:
-                command: [ "/bin/bash", "/scripts/barbican_lunaclient.sh" ]
-          volumeMounts:
-            - name: hsm
-              mountPath: /scripts/barbican_lunaclient.sh
-              subPath: barbican_lunaclient.sh
-              readOnly: true
-            - name: luna
-              mountPath: /thales/
-        {{- if .Values.hsm.utimaco_hsm.enabled }}
         - name: utimaco
-          image: {{required ".Values.global.registry is missing" .Values.global.registry }}/loci-barbican:utimaco1
+          image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/loci-barbican:utimaco5
           imagePullPolicy: Always
           env:
-            - name: CS_PKCS11_R3_CFG
-              value: "/utimaco/cs_pkcs11_R3.cfg"
-          command: [ "/bin/bash", "-c", "--" ]
-          args: [ "while true; do sleep 30; done;" ]
-          lifecycle:
-            postStart:
-              exec:
-                command: [ "/bin/bash", "/scripts/barbican_utimaco.sh" ]
+          - name: CS_PKCS11_R3_CFG
+            value: "/utimaco/cs_pkcs11_R3.cfg"
+          command: ["/bin/bash","-lc"]
+          args:
+            - |
+              set -euo pipefail
+              # run the script; make sure it exists and is executable
+              test -x /scripts/barbican_utimaco.sh || chmod +x /scripts/barbican_utimaco.sh
+              /scripts/barbican_utimaco.sh
+              # keep the sidecar alive
+              tail -f /dev/null
           volumeMounts:
             - name: hsm-utimaco
-              mountPath: /scripts/
-              subPath:
+              mountPath: /scripts/barbican_utimaco.sh
+              subPath: barbican_utimaco.sh
               readOnly: true
             - name: utimaco-volume
               mountPath: /utimaco/
-        {{- end }}
         {{- end }}
         - name: statsd
           {{- if hasKey .Values.global "dockerHubMirror"}}
@@ -245,17 +212,6 @@ spec:
         - name: etcbarbican
           emptyDir: {}
         {{- if .Values.hsm.enabled }}
-        - name: hsm
-          secret:
-            secretName: {{ .Release.Name }}-secrets
-            defaultMode: 0744
-            items:
-            - key: barbican_lunaclient.sh
-              path: barbican_lunaclient.sh
-        - name: luna
-          emptyDir: {}
-        {{ end }}
-        {{- if .Values.hsm.utimaco_hsm.enabled }}
         - name: hsm-utimaco
           secret:
             secretName: {{ .Release.Name }}-secrets
@@ -265,6 +221,6 @@ spec:
               path: barbican_utimaco.sh
         - name: utimaco-volume
           emptyDir: {}
-        {{- end }}
+        {{ end }}
         {{- include "utils.proxysql.volumes" . | indent 8 }}
         {{- include "utils.trust_bundle.volumes" . | indent 8 }}
