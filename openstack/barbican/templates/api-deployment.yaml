@@ -184,17 +184,19 @@ spec:
               mountPath: /thales/
         {{- if .Values.hsm.utimaco_hsm.enabled }}
         - name: utimaco
-          image: {{required ".Values.global.registry is missing" .Values.global.registry }}/loci-barbican:utimaco1
+          image: {{required ".Values.global.registry is missing" .Values.global.registry }}/loci-barbican:utimaco5
           imagePullPolicy: Always
           env:
             - name: CS_PKCS11_R3_CFG
               value: "/utimaco/cs_pkcs11_R3.cfg"
-          command: [ "/bin/bash", "-c", "--" ]
-          args: [ "while true; do sleep 30; done;" ]
-          lifecycle:
-            postStart:
-              exec:
-                command: [ "/bin/bash", "/scripts/barbican_utimaco.sh" ]
+          command: [ "bash", "-lc" ]
+          args:
+            - |
+              set -ex
+              echo "$(date) [utimaco] starting init..."
+              /scripts/barbican_utimaco.sh
+              echo "$(date) [utimaco] init complete."
+              exec sleep infinity
           volumeMounts:
             - name: hsm-utimaco
               mountPath: /scripts/
