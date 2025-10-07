@@ -11,7 +11,7 @@ groups:
       support_group: observability
       playbook: 'docs/support/playbook/logs/otel-logs-missing'
     annotations:
-      description: 'OTel Collectors on {{`{{ $labels.k8s_node_name }}`}} in {{`{{ $labels.region }}`}} is not shipping logs. Please check.'
+      description: 'OTel Collectors on {{`{{ $labels.k8s_node_name }}`}} in {{`{{ $labels.region }}`}} are not shipping logs. Please check.'
       summary: OTel is not shipping logs
   - alert: OTelLogsIncreasing
     expr: sum(increase(otelcol_exporter_sent_log_records_total{job="logs/opentelemetry-collector-logs"}[1h])) by (k8s_cluster_name) / sum(increase(otelcol_exporter_sent_log_records_total{job="logs/opentelemetry-collector-logs"}[1h]offset 2h)) by (k8s_cluster_name) > 4
@@ -23,7 +23,7 @@ groups:
       support_group: observability
       playbook: 'docs/support/playbook/logs/otel-logs-increasing'
     annotations:
-      description: 'OTel Collectors on {{`{{ $labels.k8s_cluster_name }}`}} is sending 4 times more logs in the last 6h. Please check.'
+      description: 'OTel Collectors on {{`{{ $labels.k8s_cluster_name }}`}} are sending 4 times more logs in the last 6h. Please check.'
       summary:  OTel log volume is increasing, check log volume.
   - alert: OTelLogsDecreasing
     expr: sum(rate(otelcol_exporter_sent_log_records_total{job="logs/opentelemetry-collector-logs"}[1h]offset 2h)) by (k8s_cluster_name)/sum(rate(otelcol_exporter_sent_log_records_total{job="logs/opentelemetry-collector-logs"}[1h])) by (k8s_cluster_name) > 4
@@ -35,7 +35,7 @@ groups:
       support_group: observability
       playbook: 'docs/support/playbook/logs/otel-logs-decreasing'
     annotations:
-      description: 'OTel Collectors on {{`{{ $labels.k8s_cluster_name }}`}} is sending 4 times fewer logs in the last 2h. Please check.'
+      description: 'OTel Collectors on {{`{{ $labels.k8s_cluster_name }}`}} are sending 4 times fewer logs in the last 2h. Please check.'
       summary:  OTel log volume is decreasing, check log volume.
   - alert: OTelLogsExportingFailed
     expr: sum(increase(otelcol_exporter_sent_log_records_total{job="logs/opentelemetry-collector-logs"}[1h])) by (k8s_cluster_name)/ sum(increase(otelcol_exporter_send_failed_log_records_total{job="logs/opentelemetry-collector-logs"}[1h]) + increase(otelcol_exporter_sent_log_records_total{job="logs/opentelemetry-collector-logs"}[1h])) by (k8s_cluster_name) < 0.9
@@ -47,5 +47,5 @@ groups:
       support_group: observability
       playbook: 'docs/support/playbook/logs/otel-logs-exporting-failed'
     annotations:
-      description: 'OTel Collectors on {{`{{ $labels.k8s_cluster_name }}`}} is exporting logs below 90%. Please check.'
+      description: 'OTel Collectors on {{`{{ $labels.k8s_cluster_name }}`}} are exporting logs below 90%. Please check.'
       summary:  OTel log exporting is failing. Check OTel logs and exporter connectivity.
