@@ -1,15 +1,24 @@
 #!/bin/bash
-set -ex
+set -euo pipefail
+set -x
 
-utimaco ()
-{
-    echo "Setting up Utimaco HSM ..."
-    mv /opt/utimaco /utimaco/
-    echo "library_path = .."
-    mv /etc/utimaco/cs_pkcs11_R3.cfg /utimaco
-    chmod -R a+rX /utimaco
-}
+echo "[utimaco] starting setup"
+mkdir -p /utimaco
 
-{{- if .Values.hsm.utimaco_hsm.enabled }}
-utimaco
-{{- end }}
+if [ -d /opt/utimaco ]; then
+  echo "[utimaco] copying /opt/utimaco -> /utimaco"
+  cp -a /opt/utimaco/. /utimaco/
+else
+  echo "[utimaco][WARN] /opt/utimaco not found"
+fi
+
+if [ -f /etc/utimaco/cs_pkcs11_R3.cfg ]; then
+  echo "[utimaco] copying cs_pkcs11_R3.cfg -> /utimaco"
+  cp -a /etc/utimaco/cs_pkcs11_R3.cfg /utimaco/
+else
+  echo "[utimaco][WARN] config not found"
+fi
+
+chmod -R a+rX /utimaco || true
+echo "[utimaco] final contents:"
+ls -la /utimaco || true
