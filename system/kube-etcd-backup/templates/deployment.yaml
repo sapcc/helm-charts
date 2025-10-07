@@ -19,8 +19,18 @@ spec:
         {{- include "chart.labels" . | nindent 8 }}
         etcd-kcp: backup
     spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.metal.cloud.sap/role
+                operator: In
+                values:
+                - runtime-controlplane
       containers:
         - name: manager
+          image: {{ .Values.deployment.container.image.repository }}:{{ .Values.deployment.container.image.tag }}
           command:
             - /etcdbrctl
           args:
@@ -58,21 +68,23 @@ spec:
             - '--store-prefix={{ .Values.clusterName }}'
             - '--enable-member-lease-renewal=true'
             - '--k8s-heartbeat-duration=10s'
-          image: {{ .Values.deployment.container.image.repository }}:{{ .Values.deployment.container.image.tag }}
-          {{- if .Values.deployment.container.env }}
+          ports:
+          - name: server
+            containerPort: 8080
+            protocol: TCP
           env:
             - name: AWS_APPLICATION_CREDENTIALS
               value: /etc/aws/credentials
             - name: STORAGE_CONTAINER
               value: etcd-kcp-backup
             - name: POD_NAME
-              valueFrom:
-                fieldRef:
-                  apiVersion: v1
-                  fieldPath: metadata.name
+              value: etcd-kcp
+              # valueFrom:
+              #   fieldRef:
+              #     apiVersion: v1
+              #     fieldPath: metadata.name
             - name: POD_NAMESPACE
               value: kube-system
-          {{- end }}
           resources:
             {{- toYaml .Values.deployment.container.resources | nindent 12 }}
           securityContext:
@@ -91,7 +103,12 @@ spec:
       securityContext:
         {{- toYaml .Values.deployment.securityContext | nindent 8 }}
       serviceAccountName: {{ .Values.deployment.serviceAccountName }}
-      terminationGracePeriodSeconds: {{ .Values.deployment.terminationGracePeriodSeconds }}
+      terminationGracePeriodSeconds: 30
+      priorityClassName: system-node-critical
+      priority: 2000001000
+      tolerations:
+        - operator: Exists
+          effect: NoExecute
       volumes:
         - name: etcd-config
           configMap:

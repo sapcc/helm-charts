@@ -19,28 +19,11 @@ deployment:
       requests:
         cpu: 23m
         memory: 128Mi
-    livenessProbe:
-      initialDelaySeconds: 15
-      periodSeconds: 20
-      httpGet:
-        path: /healthz
-        port: 8081
-    readinessProbe:
-      initialDelaySeconds: 5
-      periodSeconds: 10
-      httpGet:
-        path: /readyz
-        port: 8081
     securityContext:
-      allowPrivilegeEscalation: false
-      capabilities:
-        drop:
-          - "ALL"
+      runAsUser: 0
   securityContext:
-    runAsNonRoot: true
     seccompProfile:
       type: RuntimeDefault
-  terminationGracePeriodSeconds: 30
   serviceAccountName: etcd-kcp
 
 configmap:
@@ -59,6 +42,9 @@ clusterRole:
   enable: true
 
 clusterRoleBinding:
+  enable: true
+
+lease:
   enable: true
 
 awsCredentials:
