@@ -70,6 +70,119 @@ spec:
       ##########################################################################
       # Rules for kube-system
 
+      - matchNamespace: kube-system
+        matchRepository: ccloud-dockerhub-mirror/coredns/coredns
+        justification: |
+          Many kube-system components need broad network access (e.g. coredns,
+          CNI, ingress-nginx)
+        mayUseCapabilities: [ NET_BIND_SERVICE ]
+
+      - matchNamespace: kube-system
+        matchRepository: ccloud-registry-k8s-io-mirror/provider-os/cinder-csi-plugin
+        justification: |
+          TODO
+        mayUseHostNetwork: true
+        mayUsePrivilegeEscalation: true
+        mayBePrivileged: true
+        mayUseCapabilities: [ SYS_ADMIN ]
+        mayWriteHostPathVolumes: [ /var/lib/kubelet, /var/lib/kubelet/plugins/cinder.csi.openstack.org ]
+      
+      - matchNamespace: kube-system
+        matchRepository: ccloud-registry-k8s-io-mirror/sig-storage/livenessprobe
+        justification: |
+          TODO
+        mayUseHostNetwork: true
+        mayUsePrivilegeEscalation: true
+        mayBePrivileged: true
+        mayUseCapabilities: [ SYS_ADMIN ]
+        mayWriteHostPathVolumes: [ /var/lib/kubelet/plugins/cinder.csi.openstack.org ]
+      
+      - matchNamespace: kube-system
+        matchRepository: ccloud-registry-k8s-io-mirror/sig-storage/csi-node-driver-registrar
+        justification: |
+          TODO
+        mayUseHostNetwork: true
+        mayUseCapabilities: [ SYS_ADMIN ]
+        mayUsePrivilegeEscalation: true
+        mayBePrivileged: true
+        mayWriteHostPathVolumes: [ /var/lib/kubelet/plugins/cinder.csi.openstack.org, /var/lib/kubelet/plugins_registry/ ]
+
+      - matchNamespace: maintenance-controller
+        matchRepository: ccloud/flatcar-linux-update-operator
+        justification: |
+          TODO
+        mayWriteHostPathVolumes: [ /etc/flatcar, /etc/os-release, /usr/share/flatcar, /var/run/dbus ]
+      
+      - matchNamespace: kube-system
+        matchRepository: ccloud-registry-k8s-io-mirror/ingress-nginx/controller
+        justification: |
+          TODO
+        mayUseCapabilities: [ NET_BIND_SERVICE ]
+
+      {{- if eq .Values.cluster_type "cloudshell" "concourse" "internet" "scaleout" }}
+      - matchNamespace: kube-system
+        matchRepository: ccloud-dockerhub-mirror/library/alpine
+        justification: |
+          TODO
+        mayBePrivileged: true
+        mayUseHostPID: true
+        mayWriteHostPathVolumes: [ / ]
+      {{- end }}
+
+      {{- if eq .Values.cluster_type "baremetal" }}
+      - matchNamespace: kube-system
+        matchRepository: ccloud-ghcr-io-mirror/sapcc/ccloud-nodecidr-controller
+        justification: |
+          TODO
+        mayUseHostNetwork: true
+      {{- end }}
+
+      - matchNamespace: kube-system
+        matchRepository: ccloud-registry-k8s-io-mirror/node-problem-detector/node-problem-detector
+        justification: |
+          TODO
+        mayUseHostNetwork: true
+        mayBePrivileged: true
+        mayWriteHostPathVolumes: [ /etc/localtime, /proc, /var/log/ ]
+
+      {{- if eq .Values.cluster_type "baremetal" }}
+      - matchNamespace: kube-system
+        matchRepository: ccloud/iptables
+        justification: |
+          TODO
+        mayUseHostNetwork: true
+        mayBePrivileged: true
+
+      - matchNamespace: kube-system
+        matchRepository: ccloud-ghcr-io-mirror/sapcc/go-pmtud
+        justification: |
+          TODO
+        mayUseHostNetwork: true
+        mayBePrivileged: true
+      {{- end }}
+
+      {{- if eq .Values.cluster_type "baremetal" }}
+      - matchNamespace: kube-system
+        matchRepository: ccloud/sysctl
+        justification: |
+          TODO
+        mayUseHostNetwork: true
+        mayBePrivileged: true
+      {{- end }}
+
+      - matchNamespace: kube-system
+        matchRepository: ccloud/toolbox-docker
+        justification: |
+          TODO
+        mayBePrivileged: true
+        mayWriteHostPathVolumes: [ /etc/sudoers.d/, /opt/bin/, /root, /var/lib, /var/run/docker.sock ]
+      
+      - matchNamespace: kube-system
+        matchRepository: ccloud/toolbox-sleep
+        justification: |
+          TODO
+        mayBePrivileged: true
+
       ##########################################################################
       # Rules for observability
 
