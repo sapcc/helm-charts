@@ -73,6 +73,70 @@ spec:
       ##########################################################################
       # Rules for observability
 
+      - matchNamespace: audit-logs
+        matchRepository: ccloud-elastic-mirror/beats/auditbeat-oss
+        justification: |
+          The "auditbeat" container needs to break out into the host to read
+          and also configure the kernel audit log.
+        mayUseHostPID: true
+        mayUseCapabilities: [ AUDIT_CONTROL, AUDIT_READ, AUDIT_WRITE ]
+        mayReadHostPathVolumes: [ /bin, /sbin, /usr/bin, /usr/sbin, /etc, /run/containerd ]
+        mayWriteHostPathVolumes: [ /var/lib/auditbeat-data ]
+      
+      {{- if eq .Values.cluster_type "cloudshell" "concourse" "internet" "scaleout" }}
+      - matchNamespace: audit-logs
+        matchRepository: ccloud-dockerhub-mirror/library/alpine
+        justification: |
+          The init container "enable-pamd-tty" needs to break out into the host
+          to setup audit logging for PAM-based authentication (this is only
+          necessary in clusters where the worker nodes are provisioned by
+          OpenStack instead of Terraform).
+        mayBePrivileged: true
+        mayWriteHostPathVolumes: [ / ]
+      {{- end }}
+
+      - matchNamespace: audit-logs
+        matchRepository: ccloud/elk-fluent
+        justification: |
+          Most Fluent pods (except -systemd) need to read container logs.
+          All Fluent pods need to access log files on the host.
+        mayReadHostPathVolumes: [ /var/lib/docker/containers ]
+        mayWriteHostPathVolumes: [ /var/log ]
+
+      {{- if eq .Values.cluster_type "baremetal" "scaleout" }}
+      - matchNamespace: logs
+        matchRepository: ccloud/elk-fluent
+        justification: |
+          Most Fluent pods (except -systemd) need to read container logs.
+          All Fluent pods need to access log files on the host.
+        mayReadHostPathVolumes: [ /var/lib/docker/containers ]
+        mayWriteHostPathVolumes: [ /var/log ]
+      {{- end }}
+
+      - matchNamespace: logs
+        matchRepository: ccloud/opentelemetry-collector-contrib
+        justification: |
+          Most Otel pods need to access log files on the host.
+        mayReadHostPathVolumes: [ /var/log ]
+
+      {{- if eq .Values.cluster_type "baremetal" }}
+      - matchNamespace: hermes
+        matchRepository: ccloud-dockerhub-mirror/opensearchproject/opensearch
+        justification: |
+          Elastic and OpenSearch need to use sysctl to increase `vm.max_map_count`:
+          <https://www.elastic.co/guide/en/elasticsearch/reference/current/vm-max-map-count.html>
+        mayBePrivileged: true
+      {{- end }}
+
+      {{- if eq .Values.cluster_type "scaleout" }}
+      - matchNamespace: opensearch-logs
+        matchRepository: ccloud-dockerhub-mirror/library/busybox
+        justification: |
+          Elastic and OpenSearch need to use sysctl to increase `vm.max_map_count`:
+          <https://www.elastic.co/guide/en/elasticsearch/reference/current/vm-max-map-count.html>
+        mayBePrivileged: true
+      {{- end }}
+
       ##########################################################################
       # Rules for openstack-compute
 
