@@ -2,25 +2,25 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: etcd-kcp
+  name: etcd-kcp-backup
   namespace: {{ .Values.namespace | default "kube-system" }}
   labels:
   {{- include "chart.labels" . | nindent 4 }}
 data:
   etcd.conf.yaml: |
-    name: etcd-kcp
+    name: etcd-kcp-backup
     data-dir: /var/lib/etcd/new.etcd
     advertise-client-urls:
-      etcd-kcp:
-        - https://etcd-kcp.kube-system.svc.cluster.local:2379
+      etcd-kcp-backup:
+        - https://etcd-kcp-backup.kube-system.svc.cluster.local:2379
     initial-advertise-peer-urls:
-      etcd-kcp:
-        - https://etcd-kcp.kube-system.svc.cluster.local:2380
-    initial-cluster: etcd-kcp=https://etcd-kcp.kube-system.svc.cluster.local:2380
+      etcd-kcp-backup:
+        - https://etcd-kcp-backup.kube-system.svc.cluster.local:2380
+    initial-cluster: etcd-kcp-backup=https://etcd-kcp-backup.kube-system.svc.cluster.local:2380
     initial-cluster-state: existing
-    listen-client-urls: https://etcd-kcp.kube-system.svc.cluster.local:2379
-    listen-peer-urls: https://etcd-kcp.kube-system.svc.cluster.local:2380
-    listen-metrics-urls: http://etcd-kcp.kube-system.svc.cluster.local:2381
+    listen-client-urls: https://etcd-kcp-backup.kube-system.svc.cluster.local:2379
+    listen-peer-urls: https://etcd-kcp-backup.kube-system.svc.cluster.local:2380
+    listen-metrics-urls: http://etcd-kcp-backup.kube-system.svc.cluster.local:2381
     snapshot-count: 10000
     client-transport-security:
       auto-tls: false

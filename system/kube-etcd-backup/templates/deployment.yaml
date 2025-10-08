@@ -2,7 +2,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: etcd-kcp
+  name: etcd-kcp-backup
   namespace: {{ .Values.namespace | default "kube-system" }}
   labels:
     {{- include "chart.labels" . | nindent 4 }}
@@ -39,11 +39,11 @@ spec:
             - '--data-dir=/var/lib/etcd/new.etcd'
             - '--restoration-temp-snapshots-dir=/var/lib/etcd/restoration.temp'
             - '--snapstore-temp-directory=/var/lib/etcd/temp'
-            - '--endpoints=https://etcd-kcp.kube-system.svc.cluster.local:2379'
+            - '--endpoints=https://etcd-kcp-backup.kube-system.svc.cluster.local:2379'
             - '--storage-provider=S3'
             - '--enable-snapshot-lease-renewal=true'
-            - '--full-snapshot-lease-name=etcd-kcp-full-snap'
-            - '--delta-snapshot-lease-name=etcd-kcp-delta-snap'
+            - '--full-snapshot-lease-name=etcd-kcp-backup-full-snap'
+            - '--delta-snapshot-lease-name=etcd-kcp-backup-delta-snap'
             - '--delta-snapshot-period=5m0s'
             - '--delta-snapshot-memory-limit=104857600'
             - '--garbage-collection-period=12h0m0s'
@@ -77,7 +77,7 @@ spec:
             - name: STORAGE_CONTAINER
               value: etcd-kcp-backup
             - name: POD_NAME
-              value: etcd-kcp
+              value: etcd-kcp-backup
               # valueFrom:
               #   fieldRef:
               #     apiVersion: v1
@@ -111,7 +111,7 @@ spec:
       volumes:
         - name: etcd-config
           configMap:
-            name: etcd-kcp
+            name: etcd-kcp-backup
         - name: etcd-data
           hostPath:
             path: /var/lib/etcd
@@ -122,7 +122,7 @@ spec:
             type: DirectoryOrCreate
         - name: aws-credentials
           secret:
-            secretName: etcd-kcp-aws
+            secretName: etcd-kcp-backup-aws
             items:
               - key: access-key-id
                 path: accessKeyID
