@@ -67,6 +67,134 @@ spec:
       ##########################################################################
       # Rules for kube-network
 
+      {{- if eq .Values.cluster_type "baremetal" }}
+      - matchNamespace: cni-nanny
+        matchRepository: ccloud-ghcr-io-mirror/sapcc/cni-nanny
+        justification: |
+          TODO
+        mayUseHostNetwork: true
+
+      - matchNamespace: calico-apiserver
+        matchRepository: ccloud-dockerhub-mirror/calico/apiserver
+        justification: |
+          TODO
+        mayUseHostNetwork: true
+
+      - matchNamespace: kube-system
+        matchRepository: ccloud-dockerhub-mirror/calico/kube-controllers
+        justification: |
+          TODO
+        mayUseHostNetwork: true
+      {{- end }}
+
+      {{- if eq .Values.cluster_type "baremetal" "cloudshell" }}
+      - matchNamespace: kube-system
+        matchRepository: ccloud-dockerhub-mirror/calico/node
+        justification: |
+          TODO
+        mayUseHostNetwork: true
+        mayBePrivileged: true
+        mayReadHostPathVolumes: [ /var/log/calico/cni, /proc ]
+        mayWriteHostPathVolumes: [ /etc/cni/net.d, /run/xtables.lock, /sys/fs/, /sys/fs/bpf, /var/lib/calico, /var/run/calico, /var/run/nodeagent ]
+      
+      - matchNamespace: kube-system
+        matchRepository: ccloud-ghcr-io-mirror/sapcc/bird_exporter
+        justification: |
+          TODO
+        mayReadHostPathVolumes:
+        - /var/run/calico
+      
+      - matchNamespace: kube-system
+        matchRepository: ccloud-dockerhub-mirror/calico/cni
+        justification: |
+          Many kube-system components need broad network access (e.g. coredns,
+          CNI, ingress-nginx)
+        mayBePrivileged: true
+        mayWriteHostPathVolumes: [ /etc/cni/net.d, /opt/cni/bin ]
+      
+      - matchNamespace: kube-system
+        matchRepository: ccloud-dockerhub-mirror/calico/typha
+        justification: |
+          TODO
+        mayUseHostNetwork: true
+      {{- end }}
+
+      {{- if eq .Values.cluster_type "concourse" "internet" "postfix" "scaleout" }}
+      - matchNamespace: kube-system
+        matchRepository: ccloud-dockerhub-mirror/flannel/flannel
+        justification: |
+          TODO
+        mayUseHostNetwork: true
+        mayUseCapabilities: [ NET_ADMIN, NET_RAW ]
+        mayWriteHostPathVolumes: [ /run/flannel, /run/xtables.lock, /etc/cni/net.d ]
+      
+      - matchNamespace: kube-system
+        matchRepository: ccloud-dockerhub-mirror/flannel/flannel-cni-plugin
+        justification: |
+          Many kube-system components need broad network access (e.g. coredns,
+          CNI, ingress-nginx)
+        mayUseHostNetwork: true
+        mayUseCapabilities: [ NET_ADMIN, NET_RAW ]
+        mayWriteHostPathVolumes: [ /opt/cni/bin ]
+      {{- end }}
+
+      {{- if eq .Values.cluster_type "baremetal" }}
+      - matchNamespace: kube-system
+        matchRepository: ccloud/cni-plugins
+        justification: |
+          Many kube-system components need broad network access (e.g. coredns,
+          CNI, ingress-nginx)
+        mayUseHostNetwork: true
+        mayWriteHostPathVolumes: [ /opt/cni/bin ]
+
+      - matchNamespace: kube-system
+        matchRepository: ccloud/multus-cni
+        justification: |
+          Many kube-system components need broad network access (e.g. coredns,
+          CNI, ingress-nginx)
+        mayUseHostNetwork: true
+        mayWriteHostPathVolumes: [ /opt/cni/bin ]
+      {{- end }}
+
+      - matchNamespace: kube-system
+        matchRepository: ccloud-registry-k8s-io-mirror/kube-proxy
+        justification: |
+          Many kube-system components need broad node-level access (e.g.
+          kube-proxy, MTU discovery, wormhole to k8s central).
+        mayUseHostNetwork: true
+        mayBePrivileged: true
+        mayWriteHostPathVolumes: [ /run/xtables.lock ]
+
+      {{- if eq .Values.cluster_type "baremetal" }}
+      - matchNamespace: default
+        matchRepository: ccloud/sporebox
+        justification: |
+          Sporebox is used to jump into the namespaces of network agents.
+        mayUseHostNetwork: true
+        mayUseHostPID: true
+        mayBePrivileged: true
+      {{- end }}
+
+      {{- if eq .Values.cluster_type "scaleout" "internet" }}
+      - matchNamespace: tailscale
+        matchRepository: ccloud/tailcontrol
+        justification: |
+          TODO
+          Why does Tailscale need to be privileged? Is CAP_NET_ADMIN not enough?
+          Tailscale needs CAP_NET_ADMIN to establish its VPN network interface.
+        mayBePrivileged: true
+        mayUseCapabilities: [ NET_ADMIN ]
+      {{- end }}
+
+      - matchNamespace: kube-system
+        matchRepository: ccloud/kubernikus
+        justification: |
+          Many kube-system components need broad node-level access (e.g.
+          kube-proxy, MTU discovery, wormhole to k8s central).
+        mayUseHostNetwork: true
+        mayBePrivileged: true
+        mayReadHostPathVolumes: [ /var/lib/kubelet ]
+
       ##########################################################################
       # Rules for kube-system
 
