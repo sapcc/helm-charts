@@ -82,6 +82,43 @@ spec:
       ##########################################################################
       # Rules for openstack-storage
 
+      {{- if eq .Values.cluster_type "baremetal" }}
+      - matchNamespace: monsoon3
+        matchRepository: ccloud/loci-cinder
+        justification: |
+          TODO
+        mayUseCapabilities: [ CHOWN, DAC_OVERRIDE, DAC_READ_SEARCH, FOWNER, NET_ADMIN, SYS_ADMIN ]
+      {{- end }}
+
+      {{- if eq .Values.cluster_type "baremetal" }}
+      - matchNamespace: swift
+        matchRepository: ccloud/swift
+        justification: |
+          Swift storage components inspect the network interfaces to establish
+          their identity within the Swift ring and need to be able to 
+          mount/unmount disks at runtime.
+          All swift components need to access the storage disks (as well as state
+          shared with the drive autopilot).
+        mayUseHostNetwork: true
+        mayBePrivileged: true
+        mayWriteHostPathVolumes: [ /run/swift-storage/state, /srv/node, /var/cache/swift ]
+      
+      - matchNamespace: swift
+        matchRepository: ccloud/swift-drive-autopilot
+        justification: |
+          Swift-drive-autopilot needs far-reaching access to the host FS to
+          find/format/encrypt/decrypt/mount/unmount disks and watch the
+          kernel log for errors.
+        mayBePrivileged: true
+        mayWriteHostPathVolumes: [ / ]
+
+      - matchNamespace: swift
+        matchRepository: ccloud-dockerhub-mirror/prom/statsd-exporter
+        justification: |
+          TODO
+        mayUseHostNetwork: true
+      {{- end }}
+
       ##########################################################################
       # Rules for postfix
 
