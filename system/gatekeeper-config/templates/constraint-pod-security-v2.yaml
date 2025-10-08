@@ -79,6 +79,38 @@ spec:
       ##########################################################################
       # Rules for openstack-network
 
+      - matchNamespace: monsoon3
+        matchRepository: ccloud/archer
+        justification: |
+          TODO
+        mayBePrivileged: true
+
+      {{- if eq .Values.cluster_type "baremetal" }}
+      - matchNamespace: monsoon3
+        matchRepository: ccloud-dockerhub-mirror/library/alpine
+        justification: |
+          The init container mounts the entire host FS to load kernel modules.
+        mayBePrivileged: true
+        mayWriteHostPathVolumes: [ / ]
+      
+      - matchNamespace: monsoon3
+        matchRepository: ccloud/loci-neutron
+        justification: |
+          The agent containers need to reach into most customer networks.
+        mayBePrivileged: true
+        mayUseCapabilities: [ DAC_OVERRIDE, DAC_READ_SEARCH, NET_ADMIN, SYS_ADMIN, SYS_PTRACE ]
+        mayWriteHostPathVolumes: [ /dev/log ]
+      {{- end }}
+
+      {{- if eq .Values.cluster_type "baremetal" }}
+      - matchNamespace: ns-exporter
+        matchRepository: ccloud/ns-exporter
+        justification: |
+          The ns-exporter needs to reach into all network namespaces.
+        mayBePrivileged: true
+        mayUseHostPID: true
+      {{- end }}
+
       ##########################################################################
       # Rules for openstack-storage
 
