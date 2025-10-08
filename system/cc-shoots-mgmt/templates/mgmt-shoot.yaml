@@ -34,7 +34,7 @@ spec:
       structuredAuthentication:
         configMapName: authentication-config-mgmt
     verticalPodAutoscaler:
-      enabled: false
+      enabled: true # VPA needs to enabled for ManagedSeed
   maintenance:
     autoUpdate:
       kubernetesVersion: false
@@ -89,6 +89,9 @@ spec:
             raw: |
             {{- if $cluster.extraIgnition }}
               {{ $cluster.extraIgnition | nindent 14 }}
+            {{- end }}
+            {{- if $.Values.extraIgnition }}
+              {{ $.Values.extraIgnition | nindent 14 }}
             {{- end }}
     {{- end }}
 {{- end }}
