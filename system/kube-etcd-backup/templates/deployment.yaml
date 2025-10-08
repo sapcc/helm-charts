@@ -35,7 +35,7 @@ spec:
             - /etcdbrctl
           args:
             - server
-            - '--schedule=15 * * * *'
+            - '--schedule=0 4 * * *'
             - '--data-dir=/var/lib/etcd/new.etcd'
             - '--restoration-temp-snapshots-dir=/var/lib/etcd/restoration.temp'
             - '--snapstore-temp-directory=/var/lib/etcd/temp'
@@ -45,7 +45,8 @@ spec:
             - '--full-snapshot-lease-name=etcd-kcp-full-snap'
             - '--delta-snapshot-lease-name=etcd-kcp-delta-snap'
             - '--delta-snapshot-period=5m0s'
-            - '--garbage-collection-period=3600s'
+            - '--delta-snapshot-memory-limit=104857600'
+            - '--garbage-collection-period=12h0m0s'
             - '--garbage-collection-policy=Exponential'
             - '--cacert=/etc/kubernetes/pki/etcd/ca.crt'
             - '--cert=/etc/kubernetes/pki/apiserver-etcd-client.crt'
@@ -59,14 +60,12 @@ spec:
             - '--etcd-snapshot-timeout=15m'
             - '--etcd-defrag-timeout=15m'
             - '--etcd-connection-timeout=5m'
-            - '--defragmentation-schedule=0 15 */3 * *'
-            - '--delta-snapshot-lease-name=etcd-kcp-delta-snap'
-            - '--delta-snapshot-period=5m0s'
-            - '--delta-snapshot-memory-limit=104857600'
+            - '--defragmentation-schedule=0 3 */3 * *'
             - '--garbage-collection-policy=Exponential'
             - '--garbage-collection-period=12h0m0s'
             - '--store-prefix={{ .Values.clusterName }}'
             - '--enable-member-lease-renewal=true'
+            - '--embedded-etcd-quota-bytes=8589934592'
             - '--k8s-heartbeat-duration=10s'
           ports:
           - name: server
