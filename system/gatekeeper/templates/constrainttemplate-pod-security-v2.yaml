@@ -22,6 +22,9 @@ spec:
                     type: string
                   matchRepository:
                     type: string
+                  # documentation
+                  justification:
+                    type: string
                   # pod-level properties
                   mayUseHostNetwork:
                     type: boolean
@@ -244,7 +247,7 @@ spec:
                   dot_index < slash_index
                   result := slash_index + 1
               }
-              
+
               end_position(colon_index, at_index, length) = result if {
                   colon_index != -1
                   at_index != -1
@@ -270,7 +273,15 @@ spec:
               }
 
               isMatchingContainer(entry, container) if {
+                  entry.matchNamespace != "*"
                   iro.metadata.namespace == entry.matchNamespace
+                  repo := extract_repository(container.image)
+                  repo == entry.matchRepository
+              }
+
+              isMatchingContainer(entry, container) if {
+                  # the special value `*` matches all namespaces (NOTE: this can be expanded into full glob matching later if required)
+                  entry.matchNamespace == "*"
                   repo := extract_repository(container.image)
                   repo == entry.matchRepository
               }

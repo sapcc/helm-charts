@@ -1,0 +1,42 @@
+{{- range $key, $cluster := .Values.mgmtShoots }}
+---
+apiVersion: seedmanagement.gardener.cloud/v1alpha1
+kind: ManagedSeed
+metadata:
+  name: mgmt-{{ $key }}
+spec:
+  shoot:
+    name: mgmt-{{ $key }}
+  gardenlet:
+    config:
+      apiVersion: gardenlet.config.gardener.cloud/v1alpha1
+      kind: GardenletConfiguration
+      gardenClientConnection:
+        gardenClusterAddress: https://api.virtual-garden.rt-{{ $.Values.global.region }}.{{ $.Values.global.region }}.cloud.sap
+      seedConfig:
+        metadata:
+          labels:
+            environment: production
+        spec:
+          backup:
+            provider: openstack          
+            region: {{ $key }}
+            credentialsRef:
+              apiVersion: v1
+              kind: Secret
+              name: openstack-{{ $key }}
+              namespace: garden
+          settings:
+            excessCapacityReservation:
+              enabled: false
+            dependencyWatchdog:
+              # The prober can start a vicious downscaling cycle from which a shoot cannot recover itself.
+              # Let's assume there is healthy shoot and a machine is added.
+              # This machine now fails to join the cluster temporarly for whatever reason.
+              # This causes the prober to kick in and it will scale down the controller-manager as well as the MCM.
+              # The node now gains network and it's kubelet tries the TLS bootstap.
+              # The bootstrap does not go through, because the kubelets CertificateSigningRequest is never approved, because the controller-manager is scaled down.
+              # Joining the node successfully is unfortunately required to scale up the controller-manager, which is a loop that cannot self-heal.
+              prober:
+                enabled: false
+{{- end }}

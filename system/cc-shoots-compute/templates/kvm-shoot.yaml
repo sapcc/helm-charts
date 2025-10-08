@@ -31,8 +31,10 @@ spec:
   kubernetes:
     version: {{ $cluster.version }}
     kubeAPIServer:
-      enableAnonymousAuthentication: true # cluster registry version check
-      oidcConfig: {{- toYaml $.Values.oidcConfig | nindent 8 }}
+      featureGates:
+        AnonymousAuthConfigurableEndpoints: true
+      structuredAuthentication:
+        configMapName: authentication-config-compute
     verticalPodAutoscaler:
       enabled: false
   maintenance:

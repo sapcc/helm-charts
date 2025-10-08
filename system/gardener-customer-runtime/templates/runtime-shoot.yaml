@@ -1,7 +1,7 @@
 apiVersion: core.gardener.cloud/v1beta1
 kind: Shoot
 metadata:
-  name: rtc-{{ required "missing value for .Values.global.region" .Values.global.region }}{{ if .Values.global.landscape }}-{{ .Values.global.landscape }}{{ end }}
+  name: rtc-{{ required "missing value for .Values.global.region" .Values.global.region }}{{ if .Values.global.landscape }}-{{ .Values.global.landscape }}{{ end }}{{ if .Values.nameSuffix }}-{{ .Values.nameSuffix }}{{ end }}
 spec:
   cloudProfileName: openstack
   region: {{ required "missing value for .Values.global.region" .Values.global.region }}
@@ -27,13 +27,7 @@ spec:
       apiVersion: openstack.provider.extensions.gardener.cloud/v1alpha1
       kind: ControlPlaneConfig
       loadBalancerProvider: f5
-    workers:
-    - name: worker
-      machine:
-        type: g_c4_m16
-      minimum: 3
-      maximum: 6
-      zones: {{ required "missing value for .Values.worker.zones" .Values.worker.zones }}
+    workers: {{ toYaml .Values.workers | nindent 6 }}
   networking:
     pods: 10.44.0.0/16
     services: 10.45.0.0/16

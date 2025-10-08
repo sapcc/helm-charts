@@ -43,4 +43,15 @@ spec:
         value: {{ .Values.global.quayIoMirror }}/jetstack/cert-manager-cainjector
     pluginDefinition: cert-manager
     releaseNamespace: kube-system
+{{- if .Values.certManager.overrideShootNetworkPolicy }}
+    clusterOptionOverrides:
+{{- range $cluster := .Values.certManager.overrideShootNetworkPolicy }}
+      - clusterName: {{ $cluster }}
+        overrides:
+          - name: global.commonLabels
+            value:
+              networking.gardener.cloud/to-apiserver: allowed
+              networking.gardener.cloud/to-dns: allowed
+{{- end }}
+{{- end }}
 {{- end -}}

@@ -37,7 +37,9 @@ spec:
         backup:
           provider: openstack          
           region: {{ .Values.global.region }}
-          secretRef:
+          credentialsRef:
+            apiVersion: v1
+            kind: Secret
             name: openstack-{{ .Values.global.region }}
             namespace: garden
         dns:
@@ -57,6 +59,7 @@ spec:
         provider:
           region: {{ .Values.global.region }}
           type: openstack
+          zones: {{ toYaml .Values.garden.runtimeCluster.zones | nindent 12 }}
         settings:
           excessCapacityReservation:
             enabled: false
@@ -69,5 +72,5 @@ spec:
             # The bootstrap does not go through, because the kubelets CertificateSigningRequest is never approved, because the controller-manager is scaled down.
             # Joining the node successfully is unfortunately required to scale up the controller-manager, which is a loop that cannot self-heal.
             prober:
-              enabled: false    
+              enabled: false
 {{ end -}}

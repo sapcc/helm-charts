@@ -28,6 +28,7 @@ RUN apt-get --update upgrade -y \
     postgresql-15 \
     postgresql-16 \
     postgresql-17 \
+    postgresql-18 \
   && apt-get dist-clean \
   && for conf in /usr/share/postgresql/*/postgresql.conf.sample; do \
     pg_conftool "$conf" set listen_addresses '*' ; \
