@@ -1,4 +1,5 @@
 {{- range $key, $cluster := .Values.mgmtShoots }}
+{{- if (lookup "v1beta1" "Shoot" $.Release.Namespace (print "mgmt-" $key)) }}
 ---
 apiVersion: seedmanagement.gardener.cloud/v1alpha1
 kind: ManagedSeed
@@ -39,4 +40,5 @@ spec:
               # Joining the node successfully is unfortunately required to scale up the controller-manager, which is a loop that cannot self-heal.
               prober:
                 enabled: false
+{{- end }}
 {{- end }}
