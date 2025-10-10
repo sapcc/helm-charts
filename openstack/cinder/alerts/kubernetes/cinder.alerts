@@ -1,0 +1,44 @@
+groups:
+- name: kubernetes-cinder.alerts
+  rules:
+  
+  - alert: OpenstackCinderNannyCronjobNotCompleting
+    # This is a copy of [Sebastian Krott's](https://github.com/seb-kro) 
+    # [nova nanny alert](https://github.com/sapcc/helm-charts/commit/b9cfda5fa068221c19d56d7d34e2bcbf50e214da).
+    #
+    # We need to cover two distinct scenarios. Jobs that consistently terminate
+    # with an error and a jobs that do not terminate. We rely on the following
+    # assumptions
+    # - cronjobs schedule multiple jobs per day
+    # - cronjobs have `concurrencyPolicy: Forbid`, i.e., no new jobs are
+    # scheduled while a previous job is still running
+    # We trigger an alert if all of the three following conditions hold true:
+    # 1) The cronjob was created at least 24h ago.
+    # 2) No job has terminated successfully within the last 24h.
+    # NOTE: `time() - kube_cronjob_status_last_successful_time` does not exist
+    # for a cronjob that has never terminated successfully. In this case, we
+    # use `kube_cronjob_status_last_schedule_time` as a default. This exists as
+    # soon as the first job is running and is always >= 24h since we directly
+    # use the timestamp instead of the timedelta.
+    # 3) A job has been scheduled within the last 24h OR at least one job is
+    # currently active.
+    # NOTE: This prevents the alert from firing if a cronjob is disabled. The
+    # first part holds true for jobs that are consistently failing. But if a job
+    # does not terminate, then new jobs were no longer scheduled. So we cover
+    # non-terminating jobs by the second part.
+    expr: >
+      time() - kube_cronjob_created{cronjob=~"cinder-nanny-.*", cronjob!~"cinder-nanny-consistency.*"} >= 24*60*60
+      and on(cronjob) (time() - kube_cronjob_status_last_successful_time{cronjob=~"cinder-nanny-.*", cronjob!~"cinder-nanny-consistency.*"}
+        or on(cronjob) kube_cronjob_status_last_schedule_time{cronjob=~"cinder-nanny-.*", cronjob!~"cinder-nanny-consistency.*"}) >= 24*60*60
+      and on(cronjob) (time() - kube_cronjob_status_last_schedule_time{cronjob=~"cinder-nanny-.*", cronjob!~"cinder-nanny-consistency.*"} < 24*60*60
+        or on(cronjob) kube_cronjob_status_active{cronjob=~"cinder-nanny-.*", cronjob!~"cinder-nanny-consistency.*"} >= 1)
+    labels:
+      service: cinder
+      severity: info
+      support_group: compute-storage-api
+      tier: os
+      context: "Cinder Nanny Cronjob {{ $labels.cronjob }}"
+      meta: "Cinder Nanny Cronjob {{ $labels.cronjob }} has not successfully completed in the last 24h."
+    annotations:
+      description: "Cinder Nanny Cronjob `{{ $labels.cronjob }}` has not successfully completed in the last 24h."
+      summary: "Openstack Cinder Nanny Cronjob is not completing."

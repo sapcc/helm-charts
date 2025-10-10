@@ -151,3 +151,16 @@ groups:
     annotations:
       description: Nova {{ $labels.name }} is consistently failing to detach a volume/volumes for 90m.
       summary: Nova fails to detach a volume.
+
+  - alert: OpenstackNovaLiveMigrationError
+    expr: sum(openstack_compute_errored_live_migration_gauge) BY (instance_uuid,migration_uuid) > 0
+    for: 1m
+    labels:
+      service: nova
+      playbook: docs/support/playbook/nova/live_migration_error
+      severity: warning
+      support_group: compute-storage-api
+      tier: os
+    annotations:
+      description: Live migration failed for instance={{ $labels.instance_uuid }}, migration_uuid={{ $labels.migration_uuid }}
+      summary: Instances are in error state because live-migration failed.

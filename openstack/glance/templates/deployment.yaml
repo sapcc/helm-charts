@@ -48,6 +48,9 @@ spec:
       {{- tuple . (dict "name" "glance") | include "utils.topology.constraints" | indent 6 }}
       initContainers:
       {{- tuple . (dict "jobs" (tuple . "migration-job" | include "job_name") "service" (include "glance.service_dependencies" .)) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
+      {{- if .Values.proxysql.native_sidecar }}
+      {{- tuple . (add .Values.rpc_workers .Values.workers) | include "utils.proxysql.container" | indent 6 }}
+      {{- end }}
       {{- if .Values.file.persistence.enabled }}
       - name: permissions
         securityContext:
@@ -178,7 +181,9 @@ spec:
         {{- end }}
         {{- include "utils.proxysql.volume_mount" . | indent 8 }}
         {{- include "utils.trust_bundle.volume_mount" . | indent 8 }}
+      {{- if not .Values.proxysql.native_sidecar }}
       {{- tuple . (add .Values.rpc_workers .Values.workers) | include "utils.proxysql.container" | indent 6 }}
+      {{- end }}
       {{- if .Values.imageVersionGlanceRegistry }}
       - name: registry
         image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/ubuntu-source-glance-registry:{{ required "Please set glance.imageVersion or similar" .Values.imageVersion }}

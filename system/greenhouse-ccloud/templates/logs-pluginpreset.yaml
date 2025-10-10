@@ -20,10 +20,20 @@ kind: PluginPreset
 metadata:
   name: logs
   namespace: {{ $.Release.Namespace }}
+  labels:
+    greenhouse.sap/owned-by: observability
+{{- if .Values.global.fluxEnabled }}
+    greenhouse.sap/deployment-tool: "flux"
+  annotations:
+    "greenhouse.sap/propagate-labels": "greenhouse.sap/owned-by,greenhouse.sap/deployment-tool"
+{{- else }}
+  annotations:
+    "greenhouse.sap/propagate-labels": "greenhouse.sap/owned-by"
+{{- end }}
 spec:
   clusterSelector:
     matchLabels:
-      greenhouse.sap/cluster-presets-enabled: "true"
+      greenhouse.sap/pluginpreset: "true"
     matchExpressions:
     - key: greenhouse.sap/pluginpreset
       operator: In
@@ -34,13 +44,16 @@ spec:
       values:
       - "storage"
       - "compute"
+      - "observability"
+      - "sci-k8s-management"
+      - "sci-k8s-runtime"
   clusterOptionOverrides:
   {{- range $r := $.Values.openTelemetry.clusters }}
   - clusterName: {{ $r.cluster }}
     overrides:
     - name: openTelemetry.prometheus.additionalLabels
       value:
-        plugin: 'kube-monitoring-{{ $r.cluster }}'
+        plugin: 'kube-monitoring'
     - name: openTelemetry.openSearchLogs.endpoint
       value: {{ $r.openSearchLogs.endpoint }}
     - name: openTelemetry.openSearchLogs.index

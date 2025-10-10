@@ -3,12 +3,33 @@
 set -o errexit
 set -o xtrace
 
-LIB_PATH='/usr/lib/pxc'
-. ${LIB_PATH}/vault.sh
-
-GARBD_OPTS=""
+GARBD_OPTS="pc.weight=0"
 SOCAT_OPTS="TCP-LISTEN:4444,reuseaddr,retry=30"
 SST_INFO_NAME=sst_info
+
+INSECURE_ARG=""
+if [ -n "$VERIFY_TLS" ] && [[ $VERIFY_TLS == "false" ]]; then
+	INSECURE_ARG="--insecure"
+fi
+
+log() {
+	{ set +x; } 2>/dev/null
+	local level=$1
+	local message=$2
+	local now=$(date '+%F %H:%M:%S')
+
+	echo "${now} [${level}] ${message}"
+	set -x
+}
+
+is_object_exist() {
+	local bucket="$1"
+	local object="$2"
+
+	if [[ -n "$(mc -C /tmp/mc ${INSECURE_ARG} --json ls "dest/$bucket/$object" | jq '.status')" ]]; then
+		return 1
+	fi
+}
 
 function get_backup_source() {
     CLUSTER_SIZE=1
@@ -38,7 +59,8 @@ function request_streaming() {
 
     if [ -z "$NODE_NAME" ]; then
         peer-list -on-start=/usr/bin/get-pxc-state -service=$PXC_SERVICE
-        echo "[ERROR] Cannot find node for backup"
+        log 'ERROR' 'Cannot find node for backup'
+        log 'ERROR' 'Backup was finished unsuccessfull'
         exit 1
     fi
 
@@ -56,7 +78,7 @@ function request_streaming() {
         garbd \
             --address "gcomm://$NODE_NAME?gmcast.listen_addr=tcp://0.0.0.0:4567" \
             --donor "{{ include "fullName" . }}-0-$DONOR_IP" \
-            --group "$PXC_SERVICE" \
+            --group "$PXC_GROUP" \
             --options "$GARBD_OPTS" \
             --sst "xtrabackup-v2:$LOCAL_IP:4444/xtrabackup_sst//1" \
             2>&1 | tee /tmp/garbd.log
@@ -83,56 +105,46 @@ function backup_volume() {
     mkdir -p "$BACKUP_DIR"
     cd "$BACKUP_DIR" || exit
 
-    echo "Backup to $BACKUP_DIR started"
+    log 'INFO' "Backup to $BACKUP_DIR started"
     request_streaming
 
-    echo "Socat to started"
+    log 'INFO' "Socat to started"
 
     socat -u "$SOCAT_OPTS" stdio | xbstream -x
     if [[ $? -ne 0 ]]; then
-        echo "socat(1) failed"
+        log 'ERROR' "socat(1) failed"
         exit 1
     fi
-    echo "socat(1) returned $?"
-    vault_store $BACKUP_DIR/${SST_INFO_NAME}
+    log 'INFO' "socat(1) returned $?"
 
     socat -u "$SOCAT_OPTS" stdio >xtrabackup.stream
     if [[ $? -ne 0 ]]; then
-        echo "socat(2) failed"
+        log 'INFO' "socat(2) failed"
         exit 1
     fi
-    echo "socat(2) returned $?"
+    log 'INFO' "socat(2) returned $?"
 
-    echo "Backup finished"
+    log 'INFO' "Backup finished"
 
     stat xtrabackup.stream
     if (( $(stat -c%s xtrabackup.stream) < 5000000 )); then
-        echo empty backup
+        log 'ERROR' 'empty backup'
         exit 1
     fi
     md5sum xtrabackup.stream | tee md5sum.txt
 }
 
 function remove_old_backups() {
-    echo "Removing backups older than $PXC_DAYS_RETENTION days..."
+    log 'INFO' "Removing backups older than $PXC_DAYS_RETENTION days..."
     find /backup/* -mtime +"$PXC_DAYS_RETENTION" -exec rm -rf {} \;
-}
-
-is_object_exist() {
-    local bucket="$1"
-    local object="$2"
-
-    if [[ -n "$(mc -C /tmp/mc --json ls  "dest/$bucket/$object" | jq '.status')" ]]; then
-        return 1
-    fi
 }
 
 function backup_s3() {
     S3_BUCKET_PATH=${S3_BUCKET_PATH:-$PXC_SERVICE-$(date +%F-%H-%M)-xtrabackup.stream}
 
-    echo "Backup to s3://$S3_BUCKET/$S3_BUCKET_PATH started"
+    log 'INFO' "Backup to s3://$S3_BUCKET/$S3_BUCKET_PATH started"
     { set +x; } 2> /dev/null
-    echo "+ mc -C /tmp/mc config host add dest "${ENDPOINT:-https://s3.amazonaws.com}" ACCESS_KEY_ID SECRET_ACCESS_KEY"
+    log 'INFO' "+ mc -C /tmp/mc config host add dest "${ENDPOINT:-https://s3.amazonaws.com}" ACCESS_KEY_ID SECRET_ACCESS_KEY"
     mc -C /tmp/mc config host add dest "${ENDPOINT:-https://s3.amazonaws.com}" "$ACCESS_KEY_ID" "$SECRET_ACCESS_KEY"
     set -x
     is_object_exist "$S3_BUCKET" "$S3_BUCKET_PATH.$SST_INFO_NAME" || xbcloud delete --storage=s3 --s3-bucket="$S3_BUCKET" "$S3_BUCKET_PATH.$SST_INFO_NAME"
@@ -141,56 +153,26 @@ function backup_s3() {
 
     socat -u "$SOCAT_OPTS" stdio | xbstream -x -C /tmp
     if [[ $? -ne 0 ]]; then
-        echo "socat(1) failed"
+        log 'ERROR' "socat(1) failed"
         exit 1
     fi
-    vault_store /tmp/${SST_INFO_NAME}
     xbstream -C /tmp -c ${SST_INFO_NAME} \
         | xbcloud put --storage=s3 --parallel=10 --md5 --s3-bucket="$S3_BUCKET" "$S3_BUCKET_PATH.$SST_INFO_NAME" 2>&1 |
         (grep -v "error: http request failed: Couldn't resolve host name" || exit 1)
-        
+
     socat -u "$SOCAT_OPTS" stdio |
         xbcloud put --storage=s3 --parallel=10 --md5 --s3-bucket="$S3_BUCKET" "$S3_BUCKET_PATH" 2>&1 |
         (grep -v "error: http request failed: Couldn't resolve host name" || exit 1)
 
-    echo "Backup finished"
+    log 'INFO' "Backup finished"
 
     mc -C /tmp/mc stat "dest/$S3_BUCKET/$S3_BUCKET_PATH.md5"
     md5_size=$(mc -C /tmp/mc stat --json "dest/$S3_BUCKET/$S3_BUCKET_PATH.md5" | sed -e 's/.*"size":\([0-9]*\).*/\1/')
     if [[ $md5_size =~ "Object does not exist" ]] || (( $md5_size < 23000 )); then
-        echo empty backup
+        log 'ERROR' "empty backup"
         exit 1
     fi
 }
-
-#function backup_swift() {
-#    SWIFT_BUCKET_PATH=${SWIFT_BUCKET_PATH:-$PXC_SERVICE-$(date +%F-%H-%M)-xtrabackup.stream}
-#
-#    echo "Backup to s3://$S3_BUCKET/$SWIFT_BUCKET_PATH started"
-#    { set +x; } 2> /dev/null
-#    socat -u "$SOCAT_OPTS" stdio | xbstream -x -C /tmp
-#    if [[ $? -ne 0 ]]; then
-#        echo "socat(1) failed"
-#        exit 1
-#    fi
-#
-#    xtrabackup --backup --stream=xbstream --extra-lsndir=/tmp --target-dir=/tmp \
-#        | xbcloud put --storage=swift \
-#        --swift-container={{ include "fullName" . }}-backup \
-#        --swift-user=test:tester \
-#        --swift-key=testing \
-#        --parallel=10 \
-#        full_backup
-#
-#    echo "Backup finished"
-#
-#    mc -C /tmp/mc stat "dest/$S3_BUCKET/$SWIFT_BUCKET_PATH.md5"
-#    md5_size=$(mc -C /tmp/mc stat --json "dest/$S3_BUCKET/$SWIFT_BUCKET_PATH.md5" | sed -e 's/.*"size":\([0-9]*\).*/\1/')
-#    if [[ $md5_size =~ "Object does not exist" ]] || (( $md5_size < 23000 )); then
-#        echo empty backup
-#        exit 1
-#    fi
-#}
 
 #get_backup_source
 

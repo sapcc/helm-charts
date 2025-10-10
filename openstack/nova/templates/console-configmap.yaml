@@ -2,10 +2,14 @@
 {{- $cell_name := index . 1 }}
 {{- $config := index . 2 }}
 {{- with index . 0 }}
-[serial_console]
-enabled = {{ $config.enabled }}
   {{- if $config.enabled }}
+[serial_console]
+# nova-serialproxy
+serialproxy_port = {{ $config.portInternal }}
+# nova-compute
+enabled = {{ $config.enabled }}
 base_url = https://{{include "nova_console_endpoint_host_public" .}}:{{ .Values.global.novaConsolePortPublic }}/{{ $cell_name }}/serial
+proxyclient_address = $my_ip
   {{- end }}
 {{- end }}
 {{- end }}

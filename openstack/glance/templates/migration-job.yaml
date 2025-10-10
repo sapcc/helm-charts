@@ -28,6 +28,9 @@ spec:
       {{- include "utils.proxysql.job_pod_settings" . | indent 6 }}
       initContainers:
       {{- tuple . (dict "service" (include "glance.db_service" .)) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
+      {{- if .Values.proxysql.native_sidecar }}
+      {{- include "utils.proxysql.container" . | indent 6 }}
+      {{- end }}
       containers:
       - name: glance-migration
         image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/loci-glance:{{ required "Please set glance.imageVersion or similar" .Values.imageVersion }}
@@ -75,7 +78,9 @@ spec:
             subPath: logging.ini
             readOnly: true
           {{- include "utils.proxysql.volume_mount" . | indent 10 }}
+      {{- if not .Values.proxysql.native_sidecar }}
       {{- include "utils.proxysql.container" . | indent 6 }}
+      {{- end }}
       volumes:
       - name: etcglance
         emptyDir: {}

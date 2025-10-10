@@ -4,7 +4,6 @@ apiVersion: core.gardener.cloud/v1beta1
 kind: Shoot
 metadata:
   name: {{ $shootName }}
-  namespace: garden-ccloud
 spec:
   cloudProfileName: openstack
   region: {{ required "missing .Values.global.region" .Values.global.region }}
@@ -13,10 +12,12 @@ spec:
   provider:
     type: openstack
   kubernetes:
-    version: 1.30.0
+    version: 1.31.5
     kubeAPIServer:
-      enableAnonymousAuthentication: true # cluster registry version check
-      oidcConfig: {{- toYaml .Values.oidcConfig | nindent 8 }}
+      featureGates:
+        AnonymousAuthConfigurableEndpoints: true
+      structuredAuthentication:
+        configMapName: authentication-config-met-op
 {{- end }}
 {{- range $region := .Values.regions }}
 ---
@@ -24,7 +25,6 @@ apiVersion: core.gardener.cloud/v1beta1
 kind: Shoot
 metadata:
   name: met-op-{{ $region }}
-  namespace: garden-ccloud
 spec:
   cloudProfileName: openstack
   region: {{ $region }}
@@ -33,11 +33,11 @@ spec:
   provider:
     type: openstack
   kubernetes:
-    version: 1.30.0
+    version: 1.31.5
     kubeAPIServer:
-      enableAnonymousAuthentication: true # cluster registry version check
-      oidcConfig: {{- toYaml $.Values.oidcConfig | nindent 8 }}
-  seedSelector:
-    matchLabels:
-      name.seed.gardener.cloud/soil-{{ $region }}: "true"
+      featureGates:
+        AnonymousAuthConfigurableEndpoints: true
+      structuredAuthentication:
+        configMapName: authentication-config-met-op
+  seedName: rt-{{ $region }}
 {{- end }}

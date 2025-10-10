@@ -1,10 +1,11 @@
+---
 # values for Percona XtraDB Cluster
 
 ## percona image and version
 ## ref: https://hub.docker.com/r/percona/percona-xtradb-cluster/tags/
 image:
   repository: "percona/percona-xtradb-cluster"
-  tag: "5.7.19"
+  tag: "5.7.44-31.65"
   pullPolicy: IfNotPresent
 
 # Desired number of members (Per region)
@@ -35,7 +36,7 @@ nodeAffinity: {}
 tolerations: []
 
 # name of priorityClass to influence scheduling priority
-#priority_class:
+# priority_class:
 
 resources:
   requests:
@@ -45,11 +46,13 @@ resources:
 configFiles:
   node.cnf: |+
     [mysqld]
+    skip-name-resolve               = 1
     datadir                         = /var/lib/mysql
     default_storage_engine          = InnoDB
     binlog_format                   = ROW
+    server-id                       = 1
     max_connections                 = 1024
-    innodb_flush_log_at_trx_commit  = 0
+    innodb_flush_log_at_trx_commit  = 2
     innodb_flush_method             = O_DIRECT
     innodb_file_per_table           = 1
     innodb_autoinc_lock_mode        = 2
@@ -68,20 +71,23 @@ configFiles:
     wsrep_slave_threads             = 8
     wsrep_log_conflicts             = ON
     wsrep_cluster_address           = gcomm://
-    wsrep_provider                  = /usr/lib/galera3/libgalera_smm.so
+    wsrep_provider                  = /usr/lib64/galera3/libgalera_smm.so
     wsrep_cluster_name              = galera
     wsrep_sst_method                = xtrabackup-v2
     wsrep_debug                     = 1
     [sst]
     sst-initial-timeout             = 300
 
-metricsExporter:
+metrics:
   enabled: true
-  tag: "v0.14.0"
-  commandOverrides: []
-  argsOverrides: []
+  tag: "v0.18.0"
   ## Password for exporter user (replaces auto-generated password)
-  exporterPassword: longpassword
+  monitorPassword: longpassword
+  flags:
+    - collect.binlog_size
+    - collect.info_schema.processlist
+    - collect.info_schema.query_response_time
+    - collect.info_schema.innodb_tablespaces
 
 alerts:
   prometheus: openstack
@@ -112,9 +118,6 @@ prometheus:
       ## Label Selector for Prometheus to find ServiceMonitors
       # selector:
       #   prometheus: kube-prometheus
-
-## When set to true will create sidecar to tail mysql log
-logTail: true
 
 ssl:
   enabled: false
@@ -147,11 +150,12 @@ gmcast_segment: 1
 
 backup:
   enabled: false
-  image: perconalab/percona-xtradb-cluster
-  image_tag: "5.7.33-31.49-backup"
+  image: percona/percona-xtradb-cluster-operator
+  image_tag: "1.14.1-pxc5.7-backup-pxb2.4.29"  # NOTE: this is the last version with included peer-list binary
   schedule: "30 * * * *"
   claimName: backup-pvc
   security_context_ids: 1000
+  retentionDays: 7
 
 global:
   region: global

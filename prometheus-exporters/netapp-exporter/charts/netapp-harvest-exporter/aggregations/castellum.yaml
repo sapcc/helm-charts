@@ -14,17 +14,17 @@ groups:
 
       - record: manila_share_size_bytes_for_castellum
         expr: |
-          sum by (app, svm, volume, project_id, share_id, volume_state, volume_type) (
+          max by (app, svm, volume, project_id, share_id, volume_state, volume_type) (
             netapp_volume_provision_case_one * on (app, svm, volume) group_right() netapp_volume_size)
 
       - record: manila_share_used_bytes_for_castellum
         expr: |
-          sum by (app, svm, volume, project_id, share_id, volume_state, volume_type) (
+          max by (app, svm, volume, project_id, share_id, volume_state, volume_type) (
             netapp_volume_provision_case_one * on (app, svm, volume) group_right() netapp_volume_size_used)
 
       - record: manila_share_minimal_size_bytes_for_castellum
         expr: |
-          sum by (app, svm, volume, project_id, share_id, volume_state, volume_type) (
+          max by (app, svm, volume, project_id, share_id, volume_state, volume_type) (
             netapp_volume_provision_case_one * on (app, svm, volume) group_right() (netapp_volume_size_used + netapp_volume_snapshot_reserve_size))
 
       # Case two: new provision style and logical space is NOT enabled
@@ -42,12 +42,12 @@ groups:
 
       - record: manila_share_size_bytes_for_castellum
         expr: |
-          sum by (app, svm, volume, project_id, share_id, volume_state, volume_type) (
+          max by (app, svm, volume, project_id, share_id, volume_state, volume_type) (
             netapp_volume_provision_case_two * on (app, svm, volume) group_right() netapp_volume_size_total)
 
       - record: manila_share_used_bytes_for_castellum
         expr: |
-          sum by (app, svm, volume, project_id, share_id, volume_state, volume_type) (
+          max by (app, svm, volume, project_id, share_id, volume_state, volume_type) (
             netapp_volume_provision_case_two * on (app, svm, volume) group_right() netapp_volume_size_used)
 
       - record: manila_share_minimal_size_bytes_for_castellum
@@ -67,13 +67,13 @@ groups:
 
       - record: manila_share_size_bytes_for_castellum
         expr: |
-          sum by (app, svm, volume, project_id, share_id, volume_state, volume_type) (
+          max by (app, svm, volume, project_id, share_id, volume_state, volume_type) (
             netapp_volume_provision_case_three * on (app, svm, volume) group_right() netapp_volume_size_total)
 
       # netapp_volume_space_logical_used_by_afs considers no snapshot spill
       - record: manila_share_used_bytes_for_castellum
         expr: |
-          sum by (app, svm, volume, project_id, share_id, volume_state, volume_type) (
+          max by (app, svm, volume, project_id, share_id, volume_state, volume_type) (
             netapp_volume_provision_case_three * on (app, svm, volume) group_right() netapp_volume_space_logical_used_by_afs)
 
       - record: manila_share_minimal_size_bytes_for_castellum

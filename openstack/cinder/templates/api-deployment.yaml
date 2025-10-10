@@ -7,6 +7,9 @@ metadata:
     system: openstack
     type: api
     component: cinder
+  annotations:
+    secret.reloader.stakater.com/reload: "{{ .Release.Name }}-secrets"
+    deployment.reloader.stakater.com/pause-period: "60s"
 spec:
   replicas: {{ .Values.pod.replicas.api }}
   revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revisionHistory }}
@@ -40,6 +43,9 @@ spec:
       {{- tuple . (dict "name" "cinder-api") | include "utils.topology.constraints" | indent 6 }}
       initContainers:
       {{- tuple . (dict "service" (include "cinder.service_dependencies" . ) "jobs" (include "cinder.migration_job_name" .)) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
+      {{- if .Values.proxysql.native_sidecar }}
+      {{- include "utils.proxysql.container" . | indent 6 }}
+      {{- end }}
       containers:
         - name: cinder-api
           image: {{required ".Values.global.registry is missing" .Values.global.registry}}/loci-cinder:{{.Values.imageVersionCinderApi | default .Values.imageVersion | required "Please set cinder.imageVersion or similar" }}
@@ -130,6 +136,10 @@ spec:
               mountPath: /etc/cinder/ratelimit.yaml
               subPath: ratelimit.yaml
               readOnly: true
+            - name: redis-ratelimit-secret
+              mountPath: /etc/cinder/ratelimit-backend-secret.conf
+              subPath: ratelimit-backend-secret.conf
+              readOnly: true
             {{- end }}
             {{- if .Values.watcher.enabled }}
             - name: cinder-etc
@@ -139,7 +149,9 @@ spec:
             {{- end }}
             {{- include "utils.proxysql.volume_mount" . | indent 12 }}
             {{- include "utils.coordination.volume_mount" . | indent 12 }}
+        {{- if not .Values.proxysql.native_sidecar }}
         {{- include "utils.proxysql.container" . | indent 8 }}
+        {{- end }}
         - name: statsd
           image: {{ required ".Values.global.dockerHubMirror is missing" .Values.global.dockerHubMirror}}/prom/statsd-exporter:v0.8.1
           imagePullPolicy: IfNotPresent
@@ -155,7 +167,7 @@ spec:
               mountPath: /etc/statsd/statsd-exporter.yaml
               subPath: statsd-exporter.yaml
               readOnly: true
- {{- include "jaeger_agent_sidecar" . | indent 8 }}
+{{- include "jaeger_agent_sidecar" . | indent 8 }}
       volumes:
         - name: etccinder
           emptyDir: {}
@@ -167,3 +179,11 @@ spec:
             secretName: {{ .Release.Name }}-secrets
         {{- include "utils.proxysql.volumes" . | indent 8 }}
         {{- include "utils.coordination.volumes" . | indent 8 }}
+
+        {{- if .Values.api_rate_limit.enabled }}
+        - name: redis-ratelimit-secret
+          secret:
+            secretName: cinder-api-ratelimit-secret
+        {{- end }}
+
+

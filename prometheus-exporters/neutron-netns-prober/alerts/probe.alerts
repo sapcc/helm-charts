@@ -1,0 +1,40 @@
+groups:
+- name: neutron-netns-prober.alerts
+  rules:
+  - alert: NeutronNetworkNamespaceProbesFailed
+    expr: |
+            (
+              sum(changes(neutron_netns_prober_failure_total[5m])) by (network_id, network_name, region, router_id, network_project_id) > 0
+              and on (network_id) neutron_netns_prober_network_age_seconds > 3600
+              and on (router_id) neutron_netns_prober_router_age_seconds > 3600
+            ) unless (
+              sum(changes(neutron_netns_prober_success_total[150s])) by (network_id, network_name, region, router_id, network_project_id) > 0
+              and on (network_id) neutron_netns_prober_network_age_seconds > 3600
+              and on (router_id) neutron_netns_prober_router_age_seconds > 3600
+            )
+    for: 5m
+    labels:
+      context: availability
+      service: neutron-hidden
+      severity: critical
+      support_group: network-api
+      tier: os
+      playbook: 'docs/support/playbook/neutron/networknamespaceprobesfailed'
+      meta: 'Network {{ $labels.network_name }} failed all probes'
+      cloudops: "?searchTerm={{ $labels.network_id }}&type=network"
+    annotations:
+      description: 'The network `{{ $labels.network_name }} ({{ $labels.network_id }})` failed all DNS probes for more than 5 minutes. (<https://dashboard.{{ $externalLabels.region }}.cloud.sap/ccadmin/cloud_admin/cloudops#/universal-search/?searchTerm={{ $labels.router_id }}&type=router|Router {{ $labels.router_id }}>). Please run ```hammer -r {{ $externalLabels.region }} net check {{ $labels.network_id }}``` and post it on the alert Slack thread.'
+      summary: Network probes failed
+  - alert: NeutronNetworkNamespaceProbeMetricsMissing
+    expr: absent(neutron_netns_prober_success_total)
+    for: 10m
+    labels:
+      context: availability
+      service: neutron-hidden
+      severity: warning
+      support_group: network-api
+      tier: os
+      meta: 'Metrics for the namespace prober are missing'
+    annotations:
+      description: 'The metrics from the neutron-neutwork-namespace prober are missing. This suggests there is a problem with its deployment. Check the neutron-netns-prober namespace for running pods.'
+      summary: Metrics for namespace prober are missing

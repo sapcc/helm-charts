@@ -160,6 +160,17 @@ groups:
     - record: netapp_snapmirror_destination_snapshot_count:maia
       expr: '{__name__="netapp_snapmirror_destination_snapshot_count:federated"}'
 
+    # Maia metrics: openstack_manila_share_snapmirror_snapshot_size_bytes
+    # Description: Snapshot size induced by share replicas or other snapmirror relationships
+    - record: netapp_volume_snapmirror_snapshot_size_bytes:maia
+      expr: |
+        sum (
+          sum (
+            netapp_snapshot_size{volume=~"share_.*", snapshot=~"snapmirror.*"}
+          ) by (filer, svm, volume) *
+          on (filer, svm, volume) group_left(share_id, project_id) netapp_volume_labels
+        ) by (share_id, project_id)
+
     #
     # nfs connection metrics
     #

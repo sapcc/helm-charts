@@ -34,6 +34,9 @@ debug: "True"
 kos_conductor: true
 
 cert_robot:
+  bmc_certrobot_username: ipmi_dummy_user
+  bmc_certrobot_passwd: null
+  netbox_url: null
   image_tag: "latest"
   schedule: "13 8,14 * * 1-5" # Monday till Friday at 8:13 and 14:13
   timezone: "Etc/UTC"
@@ -209,10 +212,12 @@ conductor:
       uefi_pxe_bootfile_name: "ipxe.efi"
       uefi_ipxe_bootfile_name: "ipxe.efi"
     redfish:
-      swift_object_expiry_timeout: "5400"
+      use_swift: false
     conductor:
       conductor_always_validates_images: false # We only use the direct interface, so leave it to the agent
       permitted_image_formats: 'raw,qcow2,iso,vmdk'
+      # HDA has a parallelism of 50 nodes, we give a buffer of 10
+      max_concurrent_clean: 60
 
 agent:
   deploy_logs:
@@ -345,6 +350,7 @@ mysql_metrics:
 
 proxysql:
   mode: ""
+  native_sidecar: true
 
 dbType: "mariadb"
 

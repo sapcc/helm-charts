@@ -8,8 +8,8 @@ metadata:
   namespace: garden-ccloud
 spec:
   cloudProfileName: ironcore-metal
-  secretBindingName: metal-{{ $.Values.global.region }}
-  region: {{ required "missing .Values.global.region" $.Values.global.region }}
+  secretBindingName: metal-{{ $cluster.region | default $.Values.global.region }}
+  region: {{ $cluster.region | default $.Values.global.region }}
   networking:
     pods: {{ $cluster.networking.pods }}
     services: {{ $cluster.networking.services }}
@@ -26,11 +26,17 @@ spec:
       overlay:
         enabled: false
         createPodRoutes: true
+      birdExporter:
+        enabled: {{ required ".Values.networking.enableBirdExporter is required" $.Values.networking.enableBirdExporter }}
   kubernetes:
     version: {{ $cluster.version }}
     kubeAPIServer:
-      enableAnonymousAuthentication: true # cluster registry version check
-      oidcConfig: {{- toYaml $.Values.oidcConfig | nindent 8 }}
+      featureGates:
+        AnonymousAuthConfigurableEndpoints: true
+      structuredAuthentication:
+        configMapName: authentication-config-compute
+    verticalPodAutoscaler:
+      enabled: false
   maintenance:
     autoUpdate:
       kubernetesVersion: false
@@ -47,5 +53,8 @@ spec:
       {{- toYaml $cluster.controlPlaneConfig | nindent 6 }}
     workers:
       {{- toYaml $cluster.workers | nindent 6 }}
+  {{- if $cluster.seedSelector }}
+  seedSelector: {{- toYaml $cluster.seedSelector | nindent 4 }}
+  {{- end }}
 {{- end }}
 {{- end }}

@@ -101,7 +101,7 @@ postgresql:
   alerts:
     support_group: containers
   config:
-    log_min_duration_statement: 250
+    log_min_duration_statement: 400
     # We previously had 128, which should technically be enough for 8 API pods and 1 janitor pod (with max. 16 conns each)
     # as well as the pgmetrics and pgbackup pods with 1-2 conns each, but we still had a "too many clients already" issue regardless.
     max_connections: 180
@@ -214,7 +214,7 @@ pgmetrics:
                    EXTRACT(epoch FROM MIN(next_validation_at)) AS min_next_validation_at,
                    SUM(CASE WHEN validation_error_message = '' THEN 0 ELSE 1 END) AS validation_errors,
                    COALESCE(EXTRACT(epoch FROM MIN(trivy_security_info.next_check_at)), 0) AS min_next_trivy_check_at,
-                   SUM(CASE WHEN trivy_security_info.next_check_at > NOW() THEN 0 ELSE 1 END) AS pending_trivy_checks
+                   SUM(CASE WHEN trivy_security_info.next_check_at <= NOW() THEN 1 ELSE 0 END) AS pending_trivy_checks
               FROM manifests
              INNER JOIN trivy_security_info ON trivy_security_info.repo_id = manifests.repo_id AND trivy_security_info.digest = manifests.digest
           metrics:

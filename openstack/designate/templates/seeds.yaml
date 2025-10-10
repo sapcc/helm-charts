@@ -31,6 +31,8 @@ spec:
     description: "DNS Support. Combines all dns_master permissions"
   - name: cloud_dns_viewer
     description: "Designate Read-only across all projects. View DNS zones and recordsets"
+  - name: cloud_dns_backup
+    description: "DNS Backup, includes cloud_dns_viewer, adds read-only access to tsig keys for zone transfers"
   - name: dns_zonemaster
     description: "Manage/create sub-zones for already owned zones, accept/create zone transfers, delete and share zones"
   - name: dns_hostmaster
@@ -258,7 +260,7 @@ spec:
     - name: '{{ required "missing project name in .Values.designate_nanny.credentials.designate_api.project_name" .Values.designate_nanny.credentials.designate_api.project_name }}'
       role_assignments:
       - user: '{{ .Values.designate_nanny.credentials.designate_api.user | include "resolve_secret" }}@{{.Values.designate_nanny.credentials.designate_api.project_user_domain_name }}'
-        role: cloud_dns_viewer
+        role: cloud_dns_backup
     - name: master
       role_assignments:
       - user: '{{ .Values.designate_nanny.credentials.designate_api.user | include "resolve_secret" }}@{{.Values.designate_nanny.credentials.designate_api.project_user_domain_name }}'

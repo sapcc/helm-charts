@@ -154,7 +154,7 @@ spec:
             value: info|warning|critical
           - name: service
             matchType: "=~"
-            value: arc|barbican|cinder|cronus|designate|documentation|elektra|elk|glance|ironic|lyra|manila|neutron|nova|octavia|placement|sentry|snmp
+            value: barbican|cinder|cronus|designate|documentation|elektra|elk|glance|ironic|manila|neutron|nova|octavia|placement|sentry|snmp
           - name: region
             matchType: "=~"
             value: {{ without .Values.regions "qa-de-1" | join "|" }}
@@ -300,6 +300,45 @@ spec:
             matchType: "="
             value: observability
 
+      - receiver: support_group_alerts_critical_storage
+        continue: true
+        matchers:
+          - name: severity
+            matchType: "="
+            value: critical
+          - name: support_group
+            matchType: "="
+            value: storage
+          - name: region
+            matchType: "=~"
+            value: global|{{ without .Values.regions "qa-de-1" | join "|" }}
+
+      - receiver: support_group_alerts_critical_kvm
+        continue: true
+        matchers:
+          - name: severity
+            matchType: "="
+            value: critical
+          - name: region
+            matchType: "=~"
+            value: global|{{ without .Values.regions "qa-de-1" | join "|" }}
+          - name: support_group
+            matchType: "="
+            value: kvm 
+
+      - receiver: support_group_alerts_critical_iaas-support
+        continue: true
+        matchers:
+          - name: severity
+            matchType: "="
+            value: critical
+          - name: region
+            matchType: "=~"
+            value: global|{{ without .Values.regions "qa-de-1" | join "|" }}
+          - name: support_group
+            matchType: "="
+            value: iaas-support
+
       - receiver: support_group_alerts_critical
         continue: true
         matchers:
@@ -311,7 +350,7 @@ spec:
             value: global|{{ without .Values.regions "qa-de-1" | join "|" }}
           - name: support_group
             matchType: "=~"
-            value: {{ without .Values.supportGroups "compute" "compute-storage-api" "email" "identity" "foundation"  "network-api" "observability" "containers" | join "|" }}
+            value: {{ without .Values.supportGroups "compute" "compute-storage-api" "email" "identity" "foundation"  "network-api" "observability" "containers" "iaas-support" "kvm" | join "|" }}
 
       - receiver: support_group_alerts_warning
         continue: true
@@ -502,39 +541,6 @@ spec:
           - name: bedrock
             matchType: "="
             value: "true"
-
-      - receiver: slack_bedrock_info
-        continue: true
-        matchers:
-          - name: severity
-            matchType: "="
-            value: info
-          - name: region
-            matchType: "=~"
-            value: {{ .Values.regions | join "|" }}
-          # Removed for testing purpose
-          #   value: {{ without .Values.regions "qa-de-1" | join "|" }}
-          - name: support_group
-            matchType: "="
-            value: compute
-          - name: bedrock
-            matchType: "="
-            value: "true"
-
-      # Test Channel for CC KVM Alerting slack_alert_kvm_test
-      - receiver: slack_alert_kvm_test
-        continue: true
-        matchers:
-          - name: service
-            matchType: "="
-            value: kvm
-          - name: severity
-            matchType: "=~"
-            value: info|warning|critical
-          - name: region
-            matchType: "=~"
-            value: {{ .Values.regions | join "|" }}
-
   receivers:
     - name: slack
 
@@ -669,14 +675,6 @@ spec:
     - name: slack_hsm
       slackConfigs:
         - channel: '#cc-os-hsm'
-          apiURL:
-            name: alertmanager-{{ include "alertmanagerRelease.name" . }}-slack-secrets
-            key: slack_webhookURL
-          {{- include "slack.template" . | nindent 10 }}
-
-    - name: slack_alert_kvm_test
-      slackConfigs:
-        - channel: '#alert-kvm-test'
           apiURL:
             name: alertmanager-{{ include "alertmanagerRelease.name" . }}-slack-secrets
             key: slack_webhookURL

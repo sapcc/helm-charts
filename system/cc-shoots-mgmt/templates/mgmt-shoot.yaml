@@ -4,14 +4,13 @@ apiVersion: core.gardener.cloud/v1beta1
 kind: Shoot
 metadata:
   name: mgmt-{{ $key }}
-  namespace: garden-ccloud
 spec:
   cloudProfileName: ironcore-metal
   secretBindingName: metal-{{ $key }}
   region: {{ $key }}
   networking:
-    pods: {{ required ".Values.networking.pods is required" $.Values.networking.pods }}
-    services: {{ required ".Values.networking.services is required" $.Values.networking.services }}
+    pods: {{ required "networking.pods is required" $cluster.networking.pods }}
+    services: {{ required "networking.services is required" $cluster.networking.services }}
     nodes: {{ required "networking.nodes is required" $cluster.networking.nodes }}
     type: calico
     providerConfig:
@@ -25,11 +24,17 @@ spec:
       overlay:
         enabled: false
         createPodRoutes: true
+      birdExporter:
+        enabled: {{ required ".Values.networking.enableBirdExporter is required" $.Values.networking.enableBirdExporter }}
   kubernetes:
     version: {{ required "version is required" $cluster.version }}
     kubeAPIServer:
-      enableAnonymousAuthentication: true # cluster registry version check
-      oidcConfig: {{- toYaml $.Values.oidcConfig | nindent 8 }}
+      featureGates:
+        AnonymousAuthConfigurableEndpoints: true
+      structuredAuthentication:
+        configMapName: authentication-config-mgmt
+    verticalPodAutoscaler:
+      enabled: true # VPA needs to enabled for ManagedSeed
   maintenance:
     autoUpdate:
       kubernetesVersion: false
@@ -72,6 +77,7 @@ spec:
           metadata:
             interfaces: {{ $cluster.networking.interfaces }}
             vlan: {{ $cluster.networking.vlan | quote}}
+            region: {{ $key }}
           ipamConfig:
           - metadataKey: bond
             ipamRef:

@@ -118,13 +118,13 @@
     - nsxv3_manager_hostname
 - status: "active"
   title: "VMware maintenance - NSXTNodeConnectivityBroken"
-  description: "Silence NSXTNodeConnectivityBroken based on the region and nsxv3_manager_hostname - use regex like 'nsx-ctl-bb305.*'"
+  description: "Silence NSXTNodeConnectivityBroken based on the region and nsxt_adapter - use regex like 'nsx-ctl-bb305.*'"
   fixed_labels:
     tier: "vmware"
     alertname: "NSXTNodeConnectivityBroken"
   editable_labels:
     - region
-    - nsxv3_manager_hostname
+    - nsxt_adapter
 - status: "active"
   title: "VMware maintenance - VVol alert silence by VVol Name"
   description: "Silence VVol alerts during VVol maintenance by VVol Name, like 'vVOL_BBxxx.'"
@@ -176,3 +176,52 @@
   editable_labels_default_values:
     - ".*"
     - ".*"
+- status: "active"
+  title: "CEPH - more than 10% of OSDs are down"
+  description: "CEPH OSD down related alert suppression"
+  fixed_labels:
+    alertname: "CephOSDDownHigh"
+    support_group: "storage"
+    service: "ceph"
+    severity: "high"
+  editable_labels:
+    - region
+- status: "active"
+  title: "CEPH - The following OSD host are offline"
+  description: "CEPH OSD host down related alert suppression"
+  fixed_labels:
+    alertname: "CephOSDHostDown"
+    support_group: "storage"
+    service: "ceph"
+    severity: "warning"
+  editable_labels:
+    - region
+- status: "active"
+  title: "CEPH - an OSD has been marked down"
+  description: "CEPH OSD down related alert suppression"
+  fixed_labels:
+    alertname: "CephOSDDown"
+    support_group: "storage"
+    service: "ceph"
+    severity: "warning"
+  editable_labels:
+    - region  
+- status: "active"
+  title: "CEPH - One or more monitors down"
+  description: "CEPH Monitor down related alert suppression"
+  fixed_labels:
+    alertname: "CephMonDown"
+    support_group: "storage"
+    service: "ceph"
+    severity: "warning"
+  editable_labels:
+    - region
+- status: "active"
+  title: "NetApp Storage - Maintenance Mode "
+  description: "Set NetApp storage cluster in Maintenance Mode"
+  fixed_labels:
+    support_group: "storage"
+    job: "harvest-service-discovery"
+  editable_labels:
+    - datacenter
+    - netapp_cluster

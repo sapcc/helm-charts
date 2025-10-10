@@ -19,6 +19,7 @@ use_tls_acme: true
 
 proxysql:
   mode: ""
+  native_sidecar: true
 
 defaults:
   default:
@@ -53,12 +54,18 @@ api_db:  # Only used when mariadb.enabled=False to connect to the nova-api-maria
   user: placement
   password: null
 
-dbType: ""
+dbType: "mariadb"
 dbName: "placement"
+
+# databaseOverride: mariadb
+# If set, forces the chart to use the given database config map for the database URL
 
 mariadb:
   enabled: true
   name: placement
+  defaultUser: placement
+  databases:
+    - placement
   alerts:
     support_group: "compute-storage-api"
   ccroot_user:
@@ -74,6 +81,7 @@ mariadb:
 pxc_db:
   enabled: false
   name: placement
+  defaultUser: placement
   alerts:
     support_group: "compute-storage-api"
   ccroot_user:

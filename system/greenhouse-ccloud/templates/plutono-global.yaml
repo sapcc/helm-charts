@@ -5,6 +5,16 @@ kind: PluginPreset
 metadata:
   name: plutono-global
   namespace: {{ .Chart.Name }}
+  labels:
+    greenhouse.sap/owned-by: observability
+{{- if .Values.global.fluxEnabled }}
+    greenhouse.sap/deployment-tool: "flux"
+  annotations:
+    "greenhouse.sap/propagate-labels": "greenhouse.sap/owned-by,greenhouse.sap/deployment-tool"
+{{- else }}
+  annotations:
+    "greenhouse.sap/propagate-labels": "greenhouse.sap/owned-by"
+{{- end }}
 spec:
   clusterSelector:
     matchExpressions:
@@ -24,6 +34,7 @@ spec:
     displayName: Plutono global
     pluginDefinition: plutono
     releaseNamespace: kube-monitoring
+    releaseName: plutono-global
     optionValues:
       - name: plutono.service.labels
         value:

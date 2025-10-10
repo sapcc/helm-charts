@@ -1,6 +1,52 @@
 # Changelog
 
-## v0.25.0 - 2025-07-02
+## v0.27.4 - 2025/09/29
+* updated sidecar images:
+  * `mysqld-exporter` image updated to `0.18.0`
+  * `maria-back-me-up` image updated to `20250929115625`
+  * `user-credentials-updater` image updated to `python3.13-alpine3.22-20250818200546`
+  * `pod-readiness` image updated to `20250929115624`
+* chart version bumped
+
+## v0.27.3 - 2025/09/24
+* Add an option to enable `owner-info` dependency chart to be able to install `mariadb` as a stand-alone chart
+* chart version bumped
+
+## v0.27.2 - 2025/08/23
+Add missing secret resolve in `init.sql`, when user is disabled, so the generated comment would contain the actual username instead of the vault reference if the vault secret is being used for the username value
+* chart version bumped
+
+## v0.27.1 - 2025/08/13
+* MariaDB version updated to [10.11.14](https://mariadb.com/docs/release-notes/community-server/mariadb-10-11-series/mariadb-10.11.14-release-notes)
+  * several critical (InnoDB) fixes
+* chart version bumped
+
+## v0.27.0 - 2025/07/31
+* Added an option to drop the database user using the values configuration
+
+Example:
+```yaml
+mariadb:
+  users:
+    test:
+      enabled: false
+```
+This will result in the `test` user being dropped from the MariaDB.
+
+## v0.26.1 - 2025/07/22
+* `maria-back-me-up` updated to `20250722132533`
+* chart version bumped
+
+## v0.26.0 - 2025/07/22
+* MariaDB `userstat` plugin is enabled
+* mysqld-exporter now collects user statistics
+* chart version bumped
+
+## v0.25.1 - 2025/07/09
+* Set `kubectl.kubernetes.io/default-container` annotation for all chart deployments, cronjobs and jobs
+* chart version bumped
+
+## v0.25.0 - 2025/07/02
 * MariaDB version updated to [10.11.13](https://mariadb.com/kb/en/mariadb-10-11-13-release-notes/)
   * See https://mariadb.com/kb/en/changes-improvements-in-mariadb-1011/
 * mysql-exporter version updated to [v0.17.2](https://github.com/prometheus/mysqld_exporter/releases/tag/v0.17.2)

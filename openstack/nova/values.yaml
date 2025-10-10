@@ -60,13 +60,6 @@ defaults:
         statsd_enabled: true
       ironic:
         serial_console_state_timeout: 10
-    kvm:
-      default:
-        compute_driver: libvirt.LibvirtDriver
-        firewall_driver: nova.virt.firewall.NoopFirewallDriver
-        resume_guests_state_on_host_boot: true
-        # enables collecting metrics for RPC calls
-        statsd_enabled: true
 
 pod:
   replicas:
@@ -124,22 +117,28 @@ pod:
 
 debug: "True"
 
+defaultUsersRabbitMQ:
+  cell1: default
+  cell2: default
+
+defaultUsersMariaDB:
+  api: nova_api
+  cell0: nova_cell0
+  cell1: nova
+  cell2: null
+
 dbName: nova
-dbUser: nova
-dbPassword: null
+cell1dbType: mariadb
 
 cell0dbName: nova_cell0
-cell0dbUser: nova_cell0
-cell0dbPassword: null
+cell0dbType: mariadb
 
 # cell2dbName should be the same as mariadb_cell2 backup_v2 DB name!
 cell2dbName: nova_cell2
-cell2dbUser: nova_cell2
-cell2dbPassword: null
+cell2dbType: mariadb
 
 apidbName: nova_api
-apidbUser: nova_api
-apidbPassword: null
+apidbType: mariadb
 
 loci:
   nova: false
@@ -162,7 +161,8 @@ imageVersionNovaNovncproxy: null
 imageVersionNovaShellinaboxproxy: null
 imageVersionNovaSpicehtml5proxy: null
 imageVersionNovaScheduler: null
-imageVersionBitnamiOpenResty: 1.21.4-1-debian-11-r57
+imageVersionNovaNanny: null
+imageVersionOpenResty: 1.25.3.2-5-bookworm
 
 imageVersionVspc: null
 
@@ -234,6 +234,7 @@ consoles:
   serial:
     enabled: true
     portInternal: '6083'
+    args: "--web /var/lib/openstack/serialproxy-web/"
   shellinabox:
     enabled: true
     portInternal: '6084'
@@ -253,7 +254,7 @@ scheduler:
   rpc_statsd_port: 9125
   # enables collecting metrics for RPC calls
   rpc_statsd_enabled: true
-  default_filters: "CpuInfoMigrationFilter, ShardFilter, AggregateMultiTenancyIsolation, ComputeFilter, ComputeCapabilitiesFilter, HANAMemoryMaxUnitFilter, ResizeVcpuMaxUnitFilter, BigVmFlavorHostSizeFilter, VmSizeThresholdFilter, ImagePropertiesFilter, ServerGroupAntiAffinityFilter, ServerGroupAffinityFilter"
+  default_filters: "ShardFilter, VolumeSizeSameShardResizeFilter, AggregateMultiTenancyIsolation, ComputeFilter, ComputeCapabilitiesFilter, HANAMemoryMaxUnitFilter, ResizeVcpuMaxUnitFilter, BigVmFlavorHostSizeFilter, VmSizeThresholdFilter, ImagePropertiesFilter, ServerGroupAntiAffinityFilter, ServerGroupAffinityFilter"
   vm_size_threshold_vm_size_mb: "16385"
   vm_size_threshold_hv_size_mb: "819200"
   ram_weight_multiplier: 1.0
@@ -291,7 +292,6 @@ scheduler:
 
 compute:
   defaults:
-    host_username: m3novaapiuser@vsphere.local
     default:
       max_concurrent_builds_per_project: 20
       max_concurrent_builds: 50
@@ -720,6 +720,7 @@ mysql_metrics:
         FROM instances i
         INNER JOIN instance_migrations im ON i.uuid = im.instance_uuid
         WHERE i.deleted = 0 AND i.vm_state = 'error' AND im.rn = 1 AND im.status = 'error'
+        UNION ALL SELECT 'i-uuid', 'im-uuid', 'None', 0;
       values:
         - "gauge"
 
@@ -735,6 +736,7 @@ max_overflow: 5
 
 proxysql:
   mode: ""
+  native_sidecar: true
 
 mariadb:
   enabled: false
@@ -750,15 +752,6 @@ mariadb:
   databases:
   - nova
   - nova_cell0
-  users:
-    nova:
-      name: nova
-      grants:
-      - "ALL PRIVILEGES on nova.*"
-    nova_cell0:
-      name: nova_cell0
-      grants:
-      - "ALL PRIVILEGES on nova_cell0.*"
   persistence_claim:
     name: db-nova-pvc
     size: "50Gi"
@@ -785,6 +778,43 @@ mariadb:
           enabled: true
           allTables: true
 
+pxc_db:
+  enabled: false
+  name: nova
+  alerts:
+    support_group: "compute-storage-api"
+  ccroot_user:
+    enabled: true
+  databases:
+    - nova
+    - nova_cell0
+  users:
+    nova:
+      name: nova
+      grants:
+        - "ALL PRIVILEGES on nova.*"
+    nova_cell0:
+      name: nova_cell0
+      grants:
+        - "ALL PRIVILEGES on nova_cell0.*"
+  pxc:
+    configuration:
+      options:
+        max_connections: "2048"
+        innodb_buffer_pool_size: "4096M"
+        innodb_log_file_size: "1024M"
+        long_query_time: "8"
+    persistence:
+      size: 50Gi
+  backup:
+    enabled: true
+    s3:
+      secrets:
+        aws_access_key_id: null
+        aws_secret_access_key: null
+    pitr:
+      enabled: true
+
 mariadb_api:
   enabled: false
   buffer_pool_size: "4096M"
@@ -797,11 +827,6 @@ mariadb_api:
     enabled: true
   databases:
   - nova_api
-  users:
-    nova_api:
-      name: nova_api
-      grants:
-      - "ALL PRIVILEGES on nova_api.*"
   persistence_claim:
     name: db-nova-api-pvc
     size: "50Gi"
@@ -826,6 +851,37 @@ mariadb_api:
         analyzeTable:
           enabled: true
           allTables: true
+
+pxc_db_api:
+  enabled: false
+  name: nova-api
+  alerts:
+    support_group: "compute-storage-api"
+  ccroot_user:
+    enabled: true
+  databases:
+    - nova_api
+  users:
+    nova_api:
+      name: nova_api
+      grants:
+        - "ALL PRIVILEGES on nova_api.*"
+  pxc:
+    configuration:
+      options:
+        innodb_buffer_pool_size: "4096M"
+        innodb_log_file_size: "1024M"
+        long_query_time: "8"
+    persistence:
+      size: 50Gi
+  backup:
+    enabled: true
+    s3:
+      secrets:
+        aws_access_key_id: null
+        aws_secret_access_key: null
+    pitr:
+      enabled: true
 
 mariadb_cell2:
   enabled: false
@@ -855,6 +911,31 @@ mariadb_cell2:
           enabled: true
           allTables: true
 
+pxc_db_cell2:
+  enabled: false
+  alerts:
+    support_group: "compute-storage-api"
+  ccroot_user:
+    enabled: true
+  databases: []
+  users: []
+  pxc:
+    configuration:
+      options:
+        innodb_buffer_pool_size: "4096M"
+        innodb_log_file_size: "1024M"
+        long_query_time: "8"
+    persistence:
+      size: 50Gi
+  backup:
+    enabled: true
+    s3:
+      secrets:
+        aws_access_key_id: null
+        aws_secret_access_key: null
+    pitr:
+      enabled: true
+
 rabbitmq_cell2:
   nameOverride: cell2-rabbitmq
   persistence:
@@ -867,8 +948,6 @@ rabbitmq_cell2:
     support_group: compute-storage-api
   metrics:
     enabled: true
-    sidecar:
-      enabled: false
     enableDetailedMetrics: true
     enablePerObjectMetrics: true
 audit:
@@ -888,11 +967,7 @@ rabbitmq:
   persistence:
     enabled: false
   metrics:
-    password: null
     enabled: true
-    addMetricsUser: true
-    sidecar:
-      enabled: false
     enableDetailedMetrics: true
     enablePerObjectMetrics: true
   resources:
@@ -1013,3 +1088,96 @@ vpa:
 
 # used to set the PYTHONWARNINGS environment variable everywhere
 python_warnings: "ignore:Unverified HTTPS request,ignore::SyntaxWarning"
+
+# maintenance cronjobs
+nanny:
+  # Defaults for all nanny cronjobs
+  default:
+    enabled: true
+    add_cell1_conf: false
+    resources:
+      requests:
+        memory: "500Mi"
+        cpu: "100m"
+  # Archive db rows soft-deleted before more than older_than days to shadow
+  # tables. Use batch size max_rows to limit transaction size.
+  db_archive_deleted_rows:
+    # cron schedule (minute | hour | day of month | month | day of week)
+    schedule: "0 * * * *"
+    older_than: 21
+    max_rows: 250
+  # Delete db rows soft-deleted before more than older_than days from shadow
+  # tables.
+  db_purge:
+    # cron schedule (minute | hour | day of month | month | day of week)
+    schedule: "15 * * * *"
+    older_than: 42
+  # For each instance, soft-delete the instance_faults db rows that exceed the
+  # count of max_faults. Use batch size max_rows to limit query size.
+  db_soft_delete_excessive_instance_faults:
+    # cron schedule (minute | hour | day of month | month | day of week)
+    schedule: "30 * * * *"
+    max_faults: 10
+    max_rows: 25
+  sap_map_instances:
+    # cron schedule (minute | hour | day of month | month | day of week)
+    schedule: "45 * * * *"
+    # Requires only a single cell config to derive the DB type in
+    # _regex_instance_filter()
+    add_cell1_conf: true
+    max_rows: 250
+    fetch_instances_max_retries: 100
+
+# openstack-rate-limit
+rate_limit:
+  enabled: false
+  rate_limit_by: target_project_id
+  max_sleep_time_seconds: 0
+  log_sleep_time_seconds: 10
+  backend_timeout_seconds: 1
+  whitelist:
+    - Default/service
+    - Default/admin
+    - tempest/performance-testing
+    - ccadmin/cloud_admin
+    - ccadmin/master
+  whitelist_users: null
+  blacklist: null
+  blacklist_users: null
+  groups:
+    write:
+      - delete
+      - update
+  rates:
+    default:
+      servers:
+        - action: read/list
+          limit: 100r/m
+        - action: create
+          limit: 100r/m
+      servers/server:
+        - action: read/list
+          limit: 100r/m
+        - action: write
+          limit: 100r/m
+      servers/server/migrations:
+        - action: read/list
+          limit: 100r/m
+      servers/server/migrations/migration:
+        - action: read/list
+          limit: 100r/m
+      servers/server/action:
+        - action: create
+          limit: 100r/m
+      flavors:
+        - action: read/list
+          limit: 100r/m
+      servers/server/remote-consoles:
+        - action: create
+          limit: 100r/m
+
+manage_service_user_passwords: false
+
+api-ratelimit-redis:
+  alerts:
+    support_group: compute-storage-api

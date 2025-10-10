@@ -1,13 +1,9 @@
-Calico CNI templates and CRDs
+Calico CNI templates
 ------------------------
 
-This Helm Chart contains Calico templates and CRDs.
+This Helm Chart contains Calico templates.
 
 Review this chart before upgrading Calico version.
-
-## CRDs
-
-Use `./get-crds <version>` to update the CRDs from the upstream repository.
 
 ## RBAC
 

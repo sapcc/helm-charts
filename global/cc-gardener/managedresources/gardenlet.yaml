@@ -3,7 +3,11 @@
 apiVersion: seedmanagement.gardener.cloud/v1alpha1
 kind: Gardenlet
 metadata:
+  {{- if .Values.gardenlet.nameOverride }}
+  name: {{ .Values.gardenlet.nameOverride | quote }}
+  {{- else }}
   name: soil-{{ .Values.global.region }}
+  {{- end }}
   namespace: garden
 spec:
   deployment:
@@ -25,13 +29,17 @@ spec:
       metadata:
         labels:
           environment: production
+{{- if .Values.extensions.metal.enabled }}
         annotations:
           metal.ironcore.dev/local-metal-api: "true"
+{{- end }}
       spec:
         backup:
           provider: openstack          
           region: {{ .Values.global.region }}
-          secretRef:
+          credentialsRef:
+            apiVersion: v1
+            kind: Secret
             name: openstack-{{ .Values.global.region }}
             namespace: garden
         dns:
@@ -41,7 +49,7 @@ spec:
               name: openstack-{{ .Values.global.region }}
               namespace: garden
         ingress: # see prerequisites
-          domain: {{ required ".Values.global.cluster missing" .Values.global.cluster }}.soil-garden.{{ required ".Values.global.region missing" .Values.global.region }}.cloud.sap
+          domain: {{ required ".Values.global.cluster missing" .Values.global.cluster }}.{{ if hasPrefix "rtc-" .Values.global.cluster -}}soil-customer{{- else -}}soil-garden{{- end }}.{{ required ".Values.global.region missing" .Values.global.region }}.cloud.sap
           controller:
             kind: nginx
         networks:
@@ -51,6 +59,7 @@ spec:
         provider:
           region: {{ .Values.global.region }}
           type: openstack
+          zones: {{ toYaml .Values.garden.runtimeCluster.zones | nindent 12 }}
         settings:
           excessCapacityReservation:
             enabled: false
@@ -63,5 +72,5 @@ spec:
             # The bootstrap does not go through, because the kubelets CertificateSigningRequest is never approved, because the controller-manager is scaled down.
             # Joining the node successfully is unfortunately required to scale up the controller-manager, which is a loop that cannot self-heal.
             prober:
-              enabled: false    
+              enabled: false
 {{ end -}}

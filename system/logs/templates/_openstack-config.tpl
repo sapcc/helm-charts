@@ -109,6 +109,25 @@ transform/network_generic_ssh_exporter:
         - set(log.attributes["command"], log.cache["command"])
         - set(log.attributes["metric"], log.cache["metric"])
 
+transform/coredns_api:
+  error_mode: ignore
+  log_statements:
+    - context: log
+      conditions:
+        - resource.attributes["k8s.deployment.name"] == "coredns-api"
+      statements:
+        - merge_maps(log.cache, ParseJSON(log.body), "upsert") where IsMatch(log.body, "^\\{")
+        - set(log.attributes["loglevel"], log.cache["level"])
+        - set(log.attributes["time"], log.cache["time"])
+        - set(log.attributes["request.id"], log.cache["request-id"])
+        - set(log.attributes["duration"], log.cache["duration"])
+        - set(log.attributes["component"], log.cache["component"])
+        - set(log.attributes["action"], log.cache["action"])
+        - set(log.attributes["msg"], log.cache["msg"])
+        - set(log.attributes["error"], log.cache["error"])
+        - set(log.attributes["returned"], log.cache["returned"])
+        - set(log.attributes["request.status"], log.cache["status"])
+
 transform/snmp_exporter:
   error_mode: ignore
   log_statements:
@@ -117,6 +136,15 @@ transform/snmp_exporter:
         - resource.attributes["k8s.deployment.name"] == "snmp-exporter"
       statements:
         - merge_maps(log.attributes, ExtractGrokPatterns(log.body, "time=%{TIMESTAMP_ISO8601} level=%{NOTSPACE:loglevel} source=%{NOTSPACE} msg=\"%{GREEDYDATA:snmp_error}\" auth=%{NOTSPACE:snmp_auth} target=%{IP:snmp_ip} source_address=(?:%{GREEDYDATA:source}) worker=(?:%{NUMBER}) module=%{NOTSPACE:snmp_module} err=\"%{GREEDYDATA} %{IP}%{NOTSPACE} %{GREEDYDATA:snmp_reason}\"", true), "upsert")
+
+transform/kvm-ha-service:
+  error_mode: ignore
+  log_statements:
+    - context: log
+      conditions:
+      - resource.attributes["k8s.container.name"] == "kvm-ha-service-container"
+      statements:
+      - set(attributes["kvm_ha"], ParseKeyValue(target=log.body)) where IsMatch(log.body, "^time")
 
 transform/elektra:
   error_mode: ignore
@@ -165,12 +193,32 @@ opensearch/failover_a_swift:
       authenticator: basicauth/failover_a
     endpoint: {{ .Values.openTelemetryPlugin.openTelemetry.openSearchLogs.endpoint }}
   logs_index: ${index}-swift-datastream
+  retry_on_failure:
+    enabled: true
+    max_elapsed_time: 0s
+  sending_queue:
+    block_on_overflow: true
+    enabled: true
+    num_consumers: 10
+    queue_size: 10000
+    sizer: requests
+  timeout: 30s
 opensearch/failover_b_swift:
   http:
     auth:
       authenticator: basicauth/failover_b
     endpoint: {{ .Values.openTelemetryPlugin.openTelemetry.openSearchLogs.endpoint }}
   logs_index: ${index}-swift-datastream
+  retry_on_failure:
+    enabled: true
+    max_elapsed_time: 0s
+  sending_queue:
+    block_on_overflow: true
+    enabled: true
+    num_consumers: 10
+    queue_size: 10000
+    sizer: requests
+  timeout: 30s
 {{- end }}
 
 {{- define "openstack.pipeline" }}
@@ -190,7 +238,7 @@ logs/failover_b_swift:
 
 logs/containerd:
   receivers: [filelog/containerd]
-  processors: [k8sattributes,attributes/cluster,transform/ingress,transform/neutron_agent,transform/neutron_errors,transform/openstack_api,transform/non_openstack,transform/network_generic_ssh_exporter,transform/snmp_exporter,transform/elektra,transform/keystone_api]
+  processors: [k8sattributes,attributes/cluster,transform/ingress,transform/neutron_agent,transform/neutron_errors,transform/openstack_api,transform/non_openstack,transform/network_generic_ssh_exporter,transform/snmp_exporter,transform/elektra,transform/keystone_api,transform/kvm-ha-service,transform/coredns_api]
   exporters: [forward]
 
 logs/containerd-swift:

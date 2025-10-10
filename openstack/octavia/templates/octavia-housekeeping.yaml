@@ -25,6 +25,7 @@ spec:
         app.kubernetes.io/name: octavia-housekeeping
         app.kubernetes.io/instance: {{ .Release.Name }}
       annotations:
+        kubectl.kubernetes.io/default-container: octavia-f5-housekeeping
         configmap-etc-hash: {{ include (print $.Template.BasePath "/octavia-etc-configmap.yaml") . | sha256sum }}
         configmap-worker-hash: {{ include (print $.Template.BasePath "/octavia-worker-configmap.yaml") . | sha256sum }}
         secrets-hash: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
@@ -33,6 +34,10 @@ spec:
         {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
     spec:
 {{ include "utils.proxysql.pod_settings" . | indent 6 }}
+      initContainers:
+      {{- if .Values.proxysql.native_sidecar }}
+      {{- include "utils.proxysql.container" . | indent 6 }}
+      {{- end }}
       containers:
         - name: octavia-f5-housekeeping
           image: {{required ".Values.global.registry is missing" .Values.global.registry}}/loci-octavia:{{required "Values.imageVersion is missing" .Values.imageVersion}}
@@ -75,7 +80,9 @@ spec:
                   name: sentry
                   key: octavia.DSN.python
             {{- end }}
+        {{- if not .Values.proxysql.native_sidecar }}
         {{- include "utils.proxysql.container" . | indent 8 }}
+        {{- end }}
       volumes:
         - name: octavia-etc
           configMap:

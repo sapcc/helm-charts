@@ -8,12 +8,17 @@
 # The condition above skips this daemonset on QA and lab regions, because high
 # availability is not a concern there. By omitting the daemonset there, the
 # Helm deployment will finish faster since it does not have to wait on it.
+# This also avoids wasting resources in small lab clusters.
 
 kind: DaemonSet
 apiVersion: apps/v1
 
 metadata:
   name: keep-image-pulled
+  annotations:
+    # This pod intentionally has extremely tight resource requests.
+    # The VerticalPodAutoscaler should never waste resources by increasing those.
+    vpa-butler.cloud.sap/update-mode: "Off"
 
 spec:
   updateStrategy:
@@ -55,6 +60,7 @@ spec:
           image: "{{ $.Values.global.registryAlternateRegion }}/shared-app-images/alpine-nginx:{{$.Values.keppel.anycast_nginx_tag}}"
           imagePullPolicy: IfNotPresent
           {{ include "tmplKeepImagePulled" . }}
+      priorityClassName: important-infrastructure
       # sleep(1) doesn't seem to react to SIGTERM at all, so skip right ahead to SIGKILL
       terminationGracePeriodSeconds: 1
 

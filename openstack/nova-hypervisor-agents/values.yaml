@@ -1,0 +1,174 @@
+global:
+  nova_service_password:
+  dockerHubMirror:
+  registry:
+  novaConsolePortPublic: 443
+
+osprofiler: {}
+sentry: {}
+
+rabbitmq:
+  host: "nova-rabbitmq"
+  users:
+    default:
+      user: rabbitmq
+
+imageName: loci-nova
+imageVersion: null
+hypervisor_on_host: true
+
+cross_az_attach: 'False'
+
+default:
+  password_all_group_samples: 2
+  rpc_ping_enabled: true
+
+pod:
+  lifecycle:
+    upgrades:
+      deployments:
+        revision_history: 5
+  tolerations: {}
+
+
+defaults:
+  default:
+    graceful_shutdown_timeout: 60
+  hypervisor:
+    common:
+      default:
+        reserved_host_memory_mb: 512
+        disk_allocation_ratio: "1.0"
+        reserved_host_disk_mb: "0"
+        statsd_port: 9125
+        default_ephemeral_format: "ext4"
+    kvm:
+      instance_nfs_share: null # NFS Share to mount as /var/lib/nova/instances
+      default:
+        compute_driver: libvirt.LibvirtDriver
+        firewall_driver: nova.virt.firewall.NoopFirewallDriver
+        resume_guests_state_on_host_boot: true
+        # enables collecting metrics for RPC calls
+        statsd_enabled: true
+      vnc:
+        enabled: true
+      serial:
+        enabled: true
+      config_file:
+        default:
+          use_cow_images: "false"
+          reboot_timeout: 3600  # an hour
+          instance_build_timeout: 3600
+          rescue_timeout: 259200 # three days
+          resize_confirm_window: 259200
+        workarounds:
+          skip_cpu_compare_on_dest: true
+          skip_cpu_compare_at_startup: true
+          libvirt_use_host_maxphysaddr: true
+        libvirt:
+          volume_use_multipath: true
+          connection_uri: "qemu:///system"
+          iscsi_iface: "default"
+          nfs_mount_options: "nconnect=16"
+          live_migration_scheme: "tls"
+          # live_migration_permit_post_copy: 'true'
+          live_migration_completion_timeout: '300'
+          live_migration_permit_auto_converge: 'true'
+          live_migration_timeout_action: 'force_complete'
+          live_migration_with_native_tls: 'true'
+          live_migration_parallel_connections: '8'
+          smbios_asset_tag: "SAP CCloud VM"
+          inject_key: true
+          inject_password: true
+          hw_disk_discard: unmap
+          images_type: raw
+          hw_machine_type: q35
+          live_migration_inbound_addr: "$my_ip"
+        os_vif_ovs:
+          ovsdb_connection: "unix:/run/openvswitch/db.sock"
+      pod:
+        tolerations:
+          critical-components-not-ready:
+            effect: NoSchedule
+            key: node.gardener.cloud/critical-components-not-ready
+          network-unavailable:
+            effect: NoSchedule
+            key: node.kubernetes.io/network-unavailable
+          uninitialized:
+            effect: NoSchedule
+            key: node.cloudprovider.kubernetes.io/uninitialized
+            value: "true"
+        nodeSelector:
+          kubernetes.io/os: linux
+          nova.openstack.cloud.sap/virt-driver: libvirt
+
+scheduler:
+  track_instance_changes: false
+  scheduler_instance_sync_interval: 120
+
+logging:
+  formatters:
+    context:
+      class: oslo_log.formatters.ContextFormatter
+    default:
+      format: "%(message)s"
+  handlers:
+    stdout:
+      class: StreamHandler
+      args: "(sys.stdout,)"
+      formatter: context
+    "null":
+      class: logging.NullHandler
+      args: "()"
+      formatter: default
+    sentry:
+      class: raven.handlers.logging.SentryHandler
+      level: ERROR
+      args: "()"
+  loggers:
+    root:
+      handlers: stdout, sentry
+      level: WARNING
+    migrate:
+      handlers: stdout, sentry
+      level: INFO
+    nova:
+      handlers: stdout, sentry
+      level: INFO
+    nova.scheduler:
+      handlers: stdout, sentry
+      level: DEBUG
+    nova.scheduler.host_manager: # You might get problems with unicodedecode errors if you decrease that
+      handlers: stdout, sentry
+      level: INFO
+    nova.virt.vmwareapi:
+      handlers: stdout, sentry
+      level: DEBUG
+    eventlet.wsgi.server:
+      handlers: stdout, sentry
+      level: INFO
+    oslo.privsep:
+      handlers: stdout, sentry
+      level: INFO
+    suds:
+      handlers: "null"
+      level: ERROR
+    oslo_vmware.common.loopingcall:
+      handlers: "null"
+      level: ERROR
+
+libvirt:
+  ca:
+    cert: null
+    key: null
+
+owner-info:
+  support-group: compute-storage-api
+  service: nova
+  maintainers:
+  - Johannes Kulik
+  - Jakob Karge
+  - Andrew Karpow
+  - Fabian Wiesel
+  - mchristianl
+  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/openstack/nova-compute-agent

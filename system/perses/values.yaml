@@ -1,0 +1,335 @@
+global:
+  linkerd_requested: true
+  # -- Labels to add to all resources.
+  # This can be used to add a `support_group` or `service` label to all resources and alerting rules.
+  commonLabels: {}
+
+linkerd-support:
+  annotate_namespace: true
+
+persesPlugin:
+  perses:
+    # Default values for perses.
+    # This is a YAML-formatted file.
+    # Declare variables to be passed into your templates.
+
+    # -- Override name of the chart used in Kubernetes object names.
+    nameOverride: ""
+
+    # -- Override fully qualified app name
+    fullnameOverride: ""
+
+    # -- Image of Perses
+    image:
+      # -- Perses image repository and name
+      name: "keppel.eu-de-1.cloud.sap/ccloud-dockerhub-mirror/persesdev/perses"
+
+      # -- Overrides the image tag whose default is the chart appVersion.
+      version: ""
+
+      # -- Default image pull policy
+      pullPolicy: IfNotPresent
+
+    additionalLabels:
+      {}
+      # app: perses
+
+    # -- Service account for Perses to use.
+    serviceAccount:
+      # -- Specifies whether a service account should be created
+      create: true
+      # -- Annotations to add to the service account
+      annotations: {}
+      # -- The name of the service account to use.
+      # If not set and create is true, a name is generated using the fullname template
+      name: ""
+
+    # -- Expose the Perses service to be accessed from outside the cluster (LoadBalancer service).
+    # or access it from within the cluster (ClusterIP service). Set the service type and the port to serve it.
+    service:
+      # -- Annotations to add to the service
+      annotations: {}
+      # -- Labeles to add to the service
+      labels:
+        greenhouse.sap/expose: "true"
+      # -- Service Type
+      type: "ClusterIP"
+      # -- Service Port Name
+      portName: http
+      # -- Service Port
+      port: 8080
+      # -- Perses running port
+      targetPort: 8080
+
+    serviceMonitor:
+      # -- Create a serviceMonitor for Perses
+      selfMonitor: true
+
+      # -- Labels to add to the ServiceMonitor so that Prometheus can discover it.
+      # These labels should match the 'serviceMonitorSelector.matchLabels' and `ruleSelector.matchLabels` defined in your Prometheus CR.
+      labels:
+        prometheus: infra-collector
+
+      selector:
+        # -- Selector used by the ServiceMonitor to find which Perses service to scrape metrics from.
+        # These matchLabels should match the labels on your Perses service.
+        matchLabels: {}
+
+      # -- Interval for the serviceMonitor
+      interval: 30s
+
+    # -- Statefulset Annotations
+    annotations: {}
+
+    # -- Number of pod replicas.
+    replicas: 1
+
+    # -- Log level for Perses be configured in
+    # available options "panic", "error", "warning", "info", "debug", "trace"
+    logLevel: warning
+
+    # -- Liveness probe configuration
+    # Ref: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/
+    livenessProbe:
+      enabled: true
+      initialDelaySeconds: 10
+      periodSeconds: 60
+      timeoutSeconds: 5
+      successThreshold: 1
+      failureThreshold: 5
+
+    # -- Readiness probe configuration
+    # Ref: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/
+    readinessProbe:
+      enabled: true
+      initialDelaySeconds: 5
+      periodSeconds: 10
+      timeoutSeconds: 5
+      successThreshold: 1
+      failureThreshold: 5
+
+    # -- Additional volumes on the output StatefulSet definition.
+    volumes: []
+
+    # -- Additional VolumeMounts on the output StatefulSet definition.
+    volumeMounts: []
+    # -- TLS configuration for mounting certificates from Kubernetes secrets
+    tls:
+      # -- Enable TLS certificate mounting
+      enabled: false
+
+      # -- CA Certificate configuration
+      # Certificates will be mounted to the directory specified in mountPath
+      caCert:
+        # -- Enable CA certificate mounting
+        enabled: false
+        # -- Name of the Kubernetes secret containing the CA certificate
+        # Defaults to "release-name-tls" if not specified
+        secretName: ""
+        # -- Mount path for the CA certificate directory
+        mountPath: "/ca"
+
+      # -- Client Certificate configuration (contains both cert and key)
+      # Certificates will be mounted to the directory specified in mountPath
+      clientCert:
+        # -- Enable client certificate mounting
+        enabled: false
+        # -- Name of the Kubernetes secret containing the client certificate and key
+        # Defaults to "release-name-tls" if not specified
+        secretName: ""
+        # -- Mount path for the client certificate directory
+        mountPath: "/tls"
+
+    # -- Resource limits & requests.
+    # Update according to your own use case as these values might be too low for a typical deployment.
+    # ref: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+    resources: {}
+
+    # Perses configuration file
+    # ref: https://github.com/perses/perses/blob/main/docs/user-guides/configuration.md
+    config:
+      # -- Annotations for config
+      annotations: {}
+
+      # With this config, the Perses app will be served with the path <api_prefix>/api
+      api_prefix: "/perses"
+
+      security:
+        # -- Configure Perses instance as readonly
+        readonly: false
+        # -- Enable Authentication
+        enable_auth: false
+        # -- cookie config
+        cookie:
+          same_site: lax
+          secure: false
+          # [ same_site: < enum | possibleValue = 'strict' | 'lax' | 'none' > | default = lax ]
+          # Set to true if you host Perses behind HTTPS. Default is false
+          # [ secure: <boolean> | default = false ]
+
+      # -- Schemas paths
+      schemas:
+        panels_path: "/etc/perses/cue/schemas/panels"
+        queries_path: "/etc/perses/cue/schemas/queries"
+        datasources_path: "/etc/perses/cue/schemas/datasources"
+        variables_path: "/etc/perses/cue/schemas/variables"
+        interval: "5m"
+
+      frontend:
+        # -- Information contains markdown content to be displayed on the Perses home page.
+        information: "# Welcome to Perses!\n\n**Perses is now the default visualization tool** for SAP Cloud Infrastructure and will replace Plutono for the visualization of Prometheus and Thanos metrics.\n\n## Documentation\n\n- [Perses Official Documentation](https://perses.dev/)"
+        important_dashboards:
+          []
+          # - project: "perses"
+          #   dashboard: "Demo"
+
+      # -- Database config based on data base type
+      database:
+        # -- file system configs
+        file:
+          folder: /perses
+          extension: json
+
+      # -- provisioning config
+      provisioning:
+        folders:
+          - /etc/perses/provisioning
+        interval: 1m
+
+    # -- Persistence configuration for Perses provisioning. 
+    # For more information on provisioning feature, see: https://perses.dev/perses/docs/configuration/provisioning/
+    # When enabled, a PersistentVolumeClaim (PVC) is created via StatefulSet volumeClaimTemplates.
+    # The PVC will be named: provisioning-<statefulset-name>-<ordinal>
+    # Examples:
+    #   - Release "perses-oci" → PVC: "provisioning-perses-oci-0"
+    #   - Release "my-app" → PVC: "provisioning-my-app-perses-0"
+    # This PVC can be referenced by other workloads (e.g., CronJobs) to write dashboards/datasources.
+    provisioningPersistence:
+      # -- enable persistent volume for provisioning
+      enabled: true
+      # -- storage class for provisioning PVC
+      storageClass: ""
+      # -- access modes for provisioning PVC
+      # ReadWriteOnce: Only one pod can mount (cheaper, single-node storage)
+      # ReadWriteMany: Multiple pods can mount simultaneously (required for CronJobs or multiple replicas)
+      # Note: ReadWriteMany requires storage class that supports it (e.g., NFS, CephFS, Azure Files)
+      accessModes:
+        - ReadWriteMany
+
+    # --  Sidecar configuration that watches for ConfigMaps with the specified label/labelValue and loads them into Perses provisioning
+    sidecar:
+      # -- Enable the sidecar container for ConfigMap provisioning
+      enabled: false
+      image:
+        repository: "keppel.eu-de-1.cloud.sap/ccloud-dockerhub-mirror/kiwigrid/k8s-sidecar"
+      # -- Label key to watch for ConfigMaps containing Perses resources
+      label: "perses.dev/resource"
+      # -- Label value to watch for ConfigMaps containing Perses resources
+      labelValue: "true"
+      # -- check for configmaps from all namespaces. When set to false, it will only check for configmaps in the same namespace as the Perses instance
+      allNamespaces: false
+      # -- add additional environment variables to sidecar container. you can look at the k8s-sidecar documentation for more information - https://github.com/kiwigrid/k8s-sidecar
+      extraEnvVars:
+        # -- This environment variable is required due to a bug in the upstream k8s-sidecar image. link to issue: https://github.com/kiwigrid/k8s-sidecar/issues/400
+        - name: SKIP_TLS_VERIFY
+          value: "true"
+      # -- Enable secret access permissions in the cluster role. When enabled, the sidecar will have permissions to read secrets and use them.
+      enableSecretAccess: false
+
+    # -- Persistence parameters
+    persistence:
+      # -- If disabled, it will use a emptydir volume
+      enabled: false
+
+      # -- Specify the `storageClass` to provision the volume for the PVC. If you don't specify a `storageClass`, a default `storageClass` will be used.
+      # storageClass: ""
+
+      # -- PVC Access Modes for data volume
+      accessModes:
+        - ReadWriteOnce
+
+      # -- PVC Storage Request for data volume
+      size: 8Gi
+
+      # -- Security context for the PVC when persistence is enabled
+      securityContext:
+        fsGroup: 2000
+
+      # -- Labels for the PVC
+      labels: {}
+      # -- Annotations for the PVC
+      annotations: {}
+
+    # -- Configure the ingress resource that allows you to access Perses Frontend
+    # ref: https://kubernetes.io/docs/concepts/services-networking/ingress/
+    ingress:
+      # -- Enable ingress controller resource
+      enabled: false
+
+      # -- Default host for the ingress resource
+      hosts:
+        - host: perses.local
+          paths:
+            - path: /
+              pathType: Prefix
+
+      # -- IngressClass that will be be used to implement the Ingress (Kubernetes 1.18+)
+      # This is supported in Kubernetes 1.18+ and required if you have more than one IngressClass marked as the default for your cluster .
+      # ref: https://kubernetes.io/blog/2020/04/02/improvements-to-the-ingress-api-in-kubernetes-1.18/
+      #
+      ingressClassName: ""
+
+      # -- Additional annotations for the Ingress resource. To enable certificate autogeneration, place here your cert-manager annotations.
+      # For a full list of possible ingress annotations, please see
+      # ref: https://github.com/kubernetes/ingress-nginx/blob/master/docs/user-guide/nginx-configuration/annotations.md
+      annotations: {}
+
+      # -- Ingress TLS configuration
+      tls: []
+    #    - secretName: ingress-cert
+    #      hosts: []
+    testFramework:
+      enabled: false
+
+  greenhouse:
+    defaultDashboards:
+      # -- By setting this to true, You will get Perses Self-monitoring dashboards
+      enabled: false
+
+    # -- Labels to add to the PrometheusRules alerts.
+    # @default -- <pre> alertLabels: \| <br>   support_group: "default" <br>   meta: "" </pre>
+    alertLabels: {}
+
+# -- All the SAP Cloud Infrastructure specific values should go here.
+sapCloudInfrastructure:
+
+  contentSync:
+    # -- Enable content sync CronJob that pulls Perses manifests from OCI artifact
+    enabled: true
+
+    # -- Cron schedule for content sync job (format: "minute hour day month weekday")
+    # Default: every 5 minutes.
+    schedule: "*/5 * * * *"
+
+    # -- Enable debug logging for the content sync CronJob
+    debug: false
+
+    crane:
+      # -- Image of crane OCI artifact tool
+      image: "keppel.eu-de-1.cloud.sap/ccloud-gcr-mirror/go-containerregistry/crane"
+      # -- Version of crane OCI artifact tool
+      version: "debug"
+
+    contentImage:
+      # -- OCI artifact image containing Perses manifests (projects, dashboards, etc.)
+      name: "keppel.eu-de-1.cloud.sap/ccloud/perses-regional-content"
+      # -- Version of the Perses content OCI artifact
+      version: "latest"
+
+owner-info:
+  service: perses
+  support-group: observability
+  maintainers:
+    - Akshay Iyyadurai Balasundaram
+    - Richard Tief
+  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/system/prometheus-operator
