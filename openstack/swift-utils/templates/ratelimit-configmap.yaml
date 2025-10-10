@@ -1,0 +1,57 @@
+{{- if .Values.ratelimits.enabled }}
+apiVersion: v1
+kind: ConfigMap
+
+metadata:
+  name: swift-ratelimit
+  labels:
+    system: openstack
+    service: objectstore
+    component: configuration
+
+data:
+  apply_ratelimit.sh: |
+    #!/bin/bash
+
+    DEFAULT_RATELIMIT={{ .Values.ratelimits.default }}
+
+    declare -A PROJECT_SPECIFIC_RATELIMIT
+
+    PROJECT_SPECIFIC_RATELIMIT=(
+      {{- range $key, $value := .Values.ratelimits.project_specific }}
+      ["{{ $key }}"]={{ $value }}
+      {{- end }}
+    )
+
+    # Need to get all projects i.e. openstack project list
+    ACCOUNT_LIST_SOURCE_REGION="{{ .Values.global.region }}"
+    ACCOUNT_LIST_SOURCE_ACCOUNT="AUTH_1febdcaee6534bb6b03ca8b9d6993f11"
+    ACCOUNT_LIST_URL="https://objectstore-3.${ACCOUNT_LIST_SOURCE_REGION}.cloud.sap/v1/${ACCOUNT_LIST_SOURCE_ACCOUNT}/caretaker/accounts.csv"
+
+    declare -A OPENSTACK_PROJECT_LIST
+    IFS=';'
+    while read line; do
+    FIELDS=( $line )
+    ID=$(echo ${FIELDS[4]} | tr -d '"')
+    NAME_ORG=$(echo ${FIELDS[2]} | tr -d '"')
+    NAME="${NAME_ORG// /_}"
+    if [ "$ID" != "account" ]
+    then
+        OPENSTACK_PROJECT_LIST[$NAME]=$ID
+    fi
+    done < <(curl -s $ACCOUNT_LIST_URL)
+
+    # Need to use swift-account-ratelimit to apply ratelimits
+
+    for key in "${!OPENSTACK_PROJECT_LIST[@]}"
+    do
+    if [[ ${PROJECT_SPECIFIC_RATELIMIT[$key]} ]]; 
+    then 
+        CMD="swift-account-ratelimit -a ${OPENSTACK_PROJECT_LIST[$key]} -l ${PROJECT_SPECIFIC_RATELIMIT[$key]}"
+        echo $CMD
+    else
+        CMD="swift-account-ratelimit -a ${OPENSTACK_PROJECT_LIST[$key]} -l ${DEFAULT_RATELIMIT}"
+        echo $CMD
+    fi
+    done
+{{- end }}
