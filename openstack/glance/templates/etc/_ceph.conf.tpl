@@ -1,12 +1,9 @@
 {{- if .Values.ceph.enabled }}
 [global]
-fsid = <your-ceph-cluster-fsid>
-mon_host = <mon1-ip>,<mon2-ip>,<mon3-ip>
+fsid = {{ .Values.ceph.fsid }}
+mon_host = {{ .Values.ceph.mon_host }}
 auth_cluster_required = cephx
 auth_service_required = cephx
 auth_client_required = cephx
-log_to_stderr = false
-err_to_stderr = false
-clog_to_stderr = false
-log_file = /var/log/ceph/ceph.log
+keyring = /etc/glance/ceph.client.glance.keyring
 {{- end }}

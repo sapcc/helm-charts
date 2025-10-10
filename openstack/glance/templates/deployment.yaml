@@ -139,9 +139,15 @@ spec:
           mountPath: /etc/glance/swift-store.conf
           subPath: swift-store.conf
           readOnly: true
+        {{- end }}
+        {{- if .Values.ceph.enabled }}
         - name: glance-etc
-          mountPath: /etc/glance/ceph.conf
+          mountPath: /etc/ceph/ceph.conf
           subPath: ceph.conf
+          readOnly: true
+        - name: glance-etc
+          mountPath: /etc/ceph/ceph.client.glance.keyring
+          subPath: ceph.client.glance.keyring
           readOnly: true
         {{- end }}
         - name: glance-etc
@@ -239,10 +245,6 @@ spec:
         - name: glance-etc
           mountPath: /etc/glance/swift-store.conf
           subPath: swift-store.conf
-          readOnly: true
-        - name: glance-etc
-          mountPath: /etc/glance/ceph.conf
-          subPath: ceph.conf
           readOnly: true
         {{- end }}
         - name: glance-etc
