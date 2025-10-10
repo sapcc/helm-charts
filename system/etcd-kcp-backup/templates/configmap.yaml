@@ -34,4 +34,23 @@ data:
       client-cert-auth: true
       key-file: /etc/kubernetes/pki/etcd/peer.key
       trusted-ca-file: /etc/kubernetes/pki/etcd/ca.crt
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: etcd-kcp-init-bucket
+  namespace: {{ .Values.namespace | default "kube-system" }}
+  labels:
+  {{- include "chart.labels" . | nindent 4 }}
+data:
+  init_bucket.sh: |
+    #!/usr/bin/env bash
+    set -euo pipefail
+    aws --version
+    if ! aws s3api head-bucket --bucket etcd-kcp-backup-{{ .Values.clusterName }}; then
+      echo "Creating bucket etcd-kcp-backup-{{ .Values.clusterName }}"
+      aws s3api create-bucket --bucket etcd-kcp-backup-{{ .Values.clusterName }} --region ${AWS_REGION} --create-bucket-configuration LocationConstraint=${AWS_REGION}
+    else
+      echo "Bucket etcd-kcp-backup-{{ .Values.clusterName }} already exists"
+    fi
 {{- end }}
