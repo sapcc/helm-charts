@@ -1,0 +1,411 @@
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: audit-logs-otel
+  labels:
+  {{- include "plugin.labels" . | nindent 4 }} 
+  {{- if .Values.openTelemetryPlugin.auditLogs.customLabels }}
+  {{ toYaml .Values.openTelemetryPlugin.auditLogs.customLabels | nindent 4 }}
+  {{- end }}
+spec:
+  mode: daemonset
+  tolerations:
+  - operator: Exists
+  podAnnotations:
+    kubectl.kubernetes.io/default-container: "otc-container"
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: cloud.sap/deployment-state
+            operator: NotIn
+            values:
+            - reinstalling
+          - key: cloud.sap/esx-in-maintenance
+            operator: NotIn
+            values:
+            - alarm
+  env:
+    - name: NAMESPACE
+      valueFrom:
+        fieldRef:
+          fieldPath: metadata.namespace
+    - name: KUBE_NODE_NAME
+      valueFrom:
+        fieldRef:
+          fieldPath: spec.nodeName
+    - name: MY_POD_IP
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: status.podIP
+    - name: cluster
+      value: "{{ .Values.openTelemetryPlugin.auditLogs.cluster }}"
+    - name: region
+      value: "{{ .Values.openTelemetryPlugin.auditLogs.region }}"
+    - name: index
+      value: "{{ .Values.openTelemetryPlugin.auditLogs.openSearchLogs.index }}"
+  envFrom:
+    - secretRef:
+          name: audit-logs-otel-basic-auth
+{{- if .Values.openTelemetryPlugin.auditLogs.prometheus.podMonitor.enabled }}
+  ports:
+    - name: prometheus
+      port: 9999
+{{- end }}
+  image: {{ index .Values "openTelemetryPlugin" "opentelemetry-operator" "manager" "collectorImage" "repository" }}:{{ index .Values "openTelemetryPlugin" "opentelemetry-operator" "manager" "collectorImage" "tag" }}
+  volumeMounts:
+  - mountPath: /var/log
+    name: varlog
+    readOnly: true
+  - name: bin
+    mountPath: /hostfs/bin
+    readOnly: true
+  - name: sbin
+    mountPath: /hostfs/sbin
+    readOnly: true
+  - name: usrbin
+    mountPath: /hostfs/usr/bin
+    readOnly: true
+  - name: usrsbin
+    mountPath: /hostfs/usr/sbin
+    readOnly: true
+  - name: etc
+    mountPath: /hostfs/etc
+    readOnly: true
+  # Directory with root filesystems of containers executed with containerd, this can be
+  # different with other runtimes. This volume is needed to monitor the file integrity
+  # of files in containers.
+  - name: run-containerd
+    mountPath: /run/containerd
+    readOnly: true
+{{- if .Values.openTelemetryPlugin.auditLogs.logsCollector.auditpollerConfig.enabled }}
+  - name: audit-poller-dir
+    mountPath: /audit
+    readOnly: true
+{{- end}}
+  volumes:
+  - name: varlog
+    hostPath:
+      path: /var/log
+  - name: bin
+    hostPath:
+      path: /bin
+  - name: usrbin
+    hostPath:
+      path: /usr/bin
+  - name: sbin
+    hostPath:
+      path: /sbin
+  - name: usrsbin
+    hostPath:
+      path: /usr/sbin
+  - name: etc
+    hostPath:
+      path: /etc
+  - name: run-containerd
+    hostPath:
+      path: /run/containerd
+      type: DirectoryOrCreate
+{{- if .Values.openTelemetryPlugin.auditLogs.logsCollector.auditpollerConfig.enabled }}
+  - name: audit-poller-dir
+    hostPath:
+      path: /audit
+{{- end }}
+
+  config:
+    receivers:
+      k8s_events:
+        auth_type: serviceAccount
+
+{{- if .Values.openTelemetryPlugin.auditLogs.logsCollector.auditpollerConfig.enabled }}
+  {{- include "auditpoller.receiver" . | nindent 6 -}}
+{{- end }}
+
+    processors:
+      batch:
+        send_batch_max_size: 5000
+        timeout: 5s
+        send_batch_size : 100
+
+{{- if .Values.openTelemetryPlugin.auditLogs.logsCollector.auditpollerConfig.enabled }}
+  {{- include "auditpoller.processors" . | nindent 6 -}}
+{{- end }}
+
+{{- if .Values.openTelemetryPlugin.auditLogs.prometheus.podMonitor.enabled }}
+      attributes/prometheus:
+        actions:
+          - action: insert
+            key: k8s_node_name
+            value: ${KUBE_NODE_NAME}
+          - action: insert
+            key: k8s_cluster_name
+            value: ${cluster}
+          - action: insert
+            key: region
+            value: ${region}
+          - action: delete
+            key: service_instance_id
+          - action: delete
+            key: pod
+{{- end }}
+
+      attributes/cluster:
+        actions:
+          - action: insert
+            key: k8s.cluster.name
+            value: ${cluster}
+          - action: insert
+            key: region
+            value: ${region}
+          - action: insert
+            key: k8s.node.name
+            value: ${KUBE_NODE_NAME}
+
+      attributes/k8sevents:
+        actions:
+          - action: insert
+            key: k8s.node.name
+            value: ${KUBE_NODE_NAME}
+          - key: k8s.namespace.name
+            from_attribute: k8s.namespace.name
+            action: insert
+          - action: insert
+            key: k8s.cluster.name
+            value: ${cluster}
+          - action: insert
+            key: region
+            value: ${region}
+          - action: insert
+            key: log.type
+            value: "k8sevents"
+
+      attributes/failover_username_a:
+        actions:
+          - action: insert
+            key: failover_username_opensearch
+            value: ${failover_username_a}
+
+{{- if .Values.openTelemetryPlugin.auditLogs.openSearchLogs.failover.enabled }}
+  {{- include "failover.attributes" . | nindent 6 -}}
+{{- end }}
+
+      transform/journal:
+        error_mode: ignore
+        log_statements:
+          - context: log
+            statements:
+              - merge_maps(cache, body, "upsert") where IsMatch(body, "^\\{")
+              - set(attributes["message"], cache["MESSAGE"])
+              - set(attributes["code_file"], cache["CODE_FILE"])
+              - set(attributes["code_func"], cache["CODE_FUNC"])
+              - set(attributes["code_line"], cache["CODE_LINE"])
+              - set(attributes["incovation_id"], cache["INVOCATION_ID"])
+              - set(attributes["message_id"], cache["MESSAGE_ID"])
+              - set(attributes["priority"], cache["PRIORITY"])
+              - set(attributes["syslog_facility"], cache["SYSLOG_FACILITY"])
+              - set(attributes["syslog_identifier"], cache["SYSLOG_IDENTIFIER"])
+              - set(attributes["tid"], cache["TID"])
+              - set(attributes["unit"], cache["UNIT"])
+              - set(attributes["boot_id"], cache["_BOOT_ID"])
+              - set(attributes["cao_effective"], cache["_CAP_EFFECTIVE"])
+              - set(attributes["cmdline"], cache["_CMDLINE"])
+              - set(attributes["exe"], cache["_EXE"])
+              - set(attributes["gid"], cache["_GID"])
+              - set(attributes["hostname"], cache["_HOSTNAME"])
+              - set(attributes["machine_id"], cache["_MACHINE_ID"])
+              - set(attributes["pid"], cache["_PID"])
+              - set(attributes["runtime_scope"], cache["_RUNTIME_SCOPE"])
+              - set(attributes["selinux_context"], cache["_SELINUX_CONTEXT"])
+              - set(attributes["source_realtime_timestamp"], cache["_SOURCE_REALTIME_TIMESTAMP"])
+              - set(attributes["systemd_cgroup"], cache["_SYSTEMD_CGROUP"])
+              - set(attributes["systemd_slice"], cache["_SYSTEMD_SLICE"])
+              - set(attributes["systemd_unit"], cache["_SYSTEMD_UNIT"])
+              - set(attributes["transport"], cache["_TRANSPORT"])
+              - set(attributes["uid"], cache["_UID"])
+              - set(attributes["cursor"], cache["__CURSOR"])
+              - set(attributes["monotonic_timestamp"], cache["__MONOTONIC_TIMESTAMP"])
+              - delete_key(attributes, "cache")
+
+      transform/ingress:
+        error_mode: ignore
+        log_statements:
+          - context: log
+            conditions:
+              - resource.attributes["app.label.name"] == "ingress-nginx"
+            statements:
+              - merge_maps(attributes, ExtractGrokPatterns(body, "%{IP:client.address} %{NOTSPACE:client.ident} %{NOTSPACE:client.auth} \\[%{HTTPDATE:timestamp}\\] \"%{WORD:request_method} %{NOTSPACE:request_path} %{WORD:network.protocol.name}/%{NOTSPACE:network.protocol.version}\" %{NUMBER:response} %{NUMBER:content_length:int} %{QUOTEDSTRING} \"%{GREEDYDATA:user_agent}\" %{NUMBER:request_length:int} %{BASE10NUM:request_time:float}( \\[%{NOTSPACE:service}\\])? ?(\\[\\])? %{IP:server.address}\\:%{NUMBER:server.port} %{NUMBER:upstream_response_length:int} %{BASE10NUM:upstream_response_time:float} %{NOTSPACE:upstream_status} %{NOTSPACE:request_id}", true),"upsert")
+              - set(attributes["network.protocol.name"], ConvertCase(attributes["network.protocol.name"], "lower")) where attributes["network.protocol.name"] != nil
+              - set(attributes["config.parsed"], "ingress-nginx") where attributes["client.address"] != nil
+
+      transform/files:
+        error_mode: ignore
+        log_statements:
+          - context: log
+            conditions:
+              - resource.attributes["log.type"] == "files"
+            statements:
+              - merge_maps(attributes, ExtractGrokPatterns(body, "%{TIMESTAMP_ISO8601:timestamp}%{SPACE}%{GREEDYDATA:log}", true), "upsert")
+              - set(attributes["config.parsed"], "files") where attributes["log_level"] != nil
+
+      k8sattributes:
+        auth_type: "serviceAccount"
+        passthrough: false
+        filter:
+          node_from_env_var: KUBE_NODE_NAME
+        extract:
+          metadata:
+            - k8s.namespace.name
+            - k8s.pod.name
+            - k8s.pod.uid
+            - k8s.pod.ip
+            - k8s.pod.start_time
+            - k8s.deployment.name
+            - k8s.deployment.uid
+            - k8s.node.name
+            - k8s.replicaset.name
+            - k8s.replicaset.uid
+            - k8s.statefulset.name
+            - k8s.statefulset.uid
+            - k8s.daemonset.name
+            - k8s.daemonset.uid
+            - k8s.job.name
+            - k8s.job.uid
+            - k8s.cronjob.name
+            - k8s.node.uid
+            - k8s.cluster.uid
+            - k8s.container.name
+            - container.image.name
+            - container.image.tag
+          labels:
+            - tag_name: app.label.ingress-nginx
+              key: ingress-nginx
+              from: pod
+            - tag_name: app.label.support-group
+              key: ccloud/support-group
+              from: pod
+            - tag_name: app.label.app_name
+              key: app.kubernetes.io/app_name
+              from: pod
+            - tag_name: app.label.component
+              key: app.kubernetes.io/component
+              from: pod
+            - tag_name: app.label.name
+              key: app.kubernetes.io/name
+              from: pod
+            - tag_name: app.label.instance
+              key: app.kubernetes.io/instance
+              from: pod
+            - tag_name: app.label.pod-template-hash
+              key: app.kubernetes.io/pod-template-hash
+              from: pod
+        pod_association:
+          - sources:
+              - from: resource_attribute
+                name: k8s.pod.ip
+          - sources:
+              - from: resource_attribute
+                name: k8s.pod.uid
+          - sources:
+              - from: resource_attribute
+                name: k8s.pod.name
+          - sources:
+              - from: connection
+      memory_limiter:
+        check_interval: 5s
+        limit_percentage: 80
+        spike_limit_percentage: 30
+
+    exporters:
+      debug:
+        verbosity: basic
+      opensearch/failover_a:
+        http:
+          auth:
+            authenticator: basicauth/failover_a
+          endpoint: {{ .Values.openTelemetryPlugin.auditLogs.openSearchLogs.endpoint }}
+        logs_index: ${index}-datastream
+
+      opensearch/failover_b:
+        http:
+          auth:
+            authenticator: basicauth/failover_b
+          endpoint: {{ .Values.openTelemetryPlugin.auditLogs.openSearchLogs.endpoint }}
+        logs_index: ${index}-datastream
+
+{{- if .Values.openTelemetryPlugin.auditLogs.openSearchLogs.failover.enabled }}
+  {{- include "failover.exporter" . | nindent 6 -}}
+{{- end }}
+
+    extensions:
+      basicauth/failover_a:
+        client_auth:
+          username: ${failover_username_a}
+          password: ${failover_password_a}
+
+{{- if .Values.openTelemetryPlugin.auditLogs.openSearchLogs.failover.enabled }}
+  {{- include "failover.extension" . | nindent 6 -}}
+{{- end }}
+
+
+    connectors:
+      forward: {}
+      failover:
+        priority_levels:
+          - [logs/failover_a]
+{{- if .Values.openTelemetryPlugin.auditLogs.openSearchLogs.failover.enabled }}
+          - [logs/failover_b]
+{{- end }}
+        retry_interval: 20m
+        retry_gap: 5m
+        max_retries: 0
+    service:
+      extensions:
+        - basicauth/failover_a
+{{- if .Values.openTelemetryPlugin.auditLogs.openSearchLogs.failover.enabled }}
+        - basicauth/failover_b
+{{- end }}
+
+{{- if .Values.openTelemetryPlugin.auditLogs.prometheus.podMonitor.enabled }}
+      telemetry:
+        metrics:
+          level: detailed
+          readers:
+          - pull:
+              exporter:
+                prometheus:
+                  host: 0.0.0.0
+                  port: 9999
+                  with_resource_constant_labels:
+                    included:
+                    - k8s_node_name
+                    - k8s_cluster_name
+                    - region
+        resource:
+          k8s_cluster_name: ${cluster}
+          k8s_node_name: ${KUBE_NODE_NAME}
+          region: ${region}
+{{- end }}
+
+      pipelines:
+        logs/forward:
+          receivers: [forward]
+          processors: [batch]
+          exporters: [failover]
+        logs/failover_a:
+          receivers: [failover]
+          processors: [attributes/failover_username_a]
+          exporters: [opensearch/failover_a]
+        logs/failover_b:
+          receivers: [failover]
+          processors: [attributes/failover_username_b]
+          exporters: [opensearch/failover_b]
+
+{{- if .Values.openTelemetryPlugin.auditLogs.logsCollector.auditpollerConfig.enabled }}
+  {{- include "auditpoller.pipelines" . | nindent 8 -}}
+{{- end }}
+
+{{- if .Values.openTelemetryPlugin.auditLogs.openSearchLogs.failover.enabled }}
+{{- include "failover.pipeline" . | nindent 8 -}}
+{{- end }}
