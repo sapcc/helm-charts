@@ -184,7 +184,7 @@ spec:
               mountPath: /thales/
         {{- if .Values.hsm.utimaco_hsm.enabled }}
         - name: utimaco
-          image: {{required ".Values.global.registry is missing" .Values.global.registry }}/loci-barbican:utimaco5
+          image: {{required ".Values.global.registry is missing" .Values.global.registry }}/loci-barbican:{{required "Values.hsm.utimaco_hsm.image is missing" .Values.hsm.utimaco_hsm.image }}
           imagePullPolicy: Always
           env:
             - name: CS_PKCS11_R3_CFG
@@ -204,6 +204,15 @@ spec:
               readOnly: true
             - name: utimaco-volume
               mountPath: /utimaco/
+          {{- if .Values.hsm.resources.enabled }}
+          resources:
+            limits:
+              cpu: {{ .Values.hsm.resources.limits.cpu | quote }}
+              memory: {{ .Values.hsm.resources.limits.memory | quote }}
+            requests:
+              cpu: {{ .Values.hsm.resources.requests.cpu | quote }}
+              memory: {{ .Values.hsm.resources.requests.memory | quote }}
+          {{- end }}
         {{- end }}
         {{- end }}
         - name: statsd
