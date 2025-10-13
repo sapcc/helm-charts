@@ -12,10 +12,12 @@ spec:
   provider:
     type: openstack
   kubernetes:
-    version: 1.30.0
+    version: 1.31.5
     kubeAPIServer:
-      enableAnonymousAuthentication: true # cluster registry version check
-      oidcConfig: {{- toYaml .Values.oidcConfig | nindent 8 }}
+      featureGates:
+        AnonymousAuthConfigurableEndpoints: true
+      structuredAuthentication:
+        configMapName: authentication-config-met-op
 {{- end }}
 {{- range $region := .Values.regions }}
 ---
@@ -31,11 +33,11 @@ spec:
   provider:
     type: openstack
   kubernetes:
-    version: 1.30.0
+    version: 1.31.5
     kubeAPIServer:
-      enableAnonymousAuthentication: true # cluster registry version check
-      oidcConfig: {{- toYaml $.Values.oidcConfig | nindent 8 }}
-  seedSelector:
-    matchLabels:
-      name.seed.gardener.cloud/soil-{{ $region }}: "true"
+      featureGates:
+        AnonymousAuthConfigurableEndpoints: true
+      structuredAuthentication:
+        configMapName: authentication-config-met-op
+  seedName: rt-{{ $region }}
 {{- end }}

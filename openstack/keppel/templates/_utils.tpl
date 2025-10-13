@@ -50,7 +50,7 @@
 - name:  KEPPEL_BURST_MANIFEST_PUSHES
   value: '15'   # per account
 - name:  KEPPEL_BURST_TRIVY_REPORT_RETRIEVALS
-  value: '50'   # per account
+  value: '600'   # per account (this is a full minute worth of burst, because report collection tends to be spiky in nature)
 - name: KEPPEL_DB_USERNAME
   value: 'keppel'
 - name:  KEPPEL_DB_PASSWORD
@@ -151,7 +151,13 @@
 - name:  KEPPEL_RATELIMIT_MANIFEST_PUSHES
   value: '10r/m'   # per account
 - name:  KEPPEL_RATELIMIT_TRIVY_REPORT_RETRIEVALS
-  value: '10r/m'   # per account
+  value: '600r/m'   # per account
+  # NOTE on how we derive this value:
+  # - Testing has established that a single report retrieval uses about 2 ms of CPU.
+  #   (pprof instrumentation gave a lower bound of 1.25ms, CPU metrics in Prometheus gave an upper bound of 2.5 ms)
+  # - In productive deployments, we have 4 API pods with a limit of 500 mcpu each, so 2 CPU cores total.
+  # - 2 CPU cores can sustain 1000r/s (60000r/m) if report retrievals were the only API load.
+  # - Splitting that over an estimate of 100 actively used accounts gives the number above.
 - name: KEPPEL_REDIS_ENABLE
   value: '1'
 - name: KEPPEL_REDIS_HOSTNAME

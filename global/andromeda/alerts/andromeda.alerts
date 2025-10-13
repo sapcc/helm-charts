@@ -1,0 +1,51 @@
+groups:
+- name: andromeda.alerts
+  rules:
+  - alert: andromeda-akamai-domains-above-half-capacity
+    expr: andromeda_domains_count_gauge{provider="akamai"} > 50
+    for: 5m
+    labels:
+      context: provider-limits
+      service: andromeda
+      severity: warning
+      tier: os
+      support_group: containers
+    annotations:
+      summary: 'Andromeda domains (provider = Akamai) above 50% capacity'
+      description: 'Andromeda has reached {{ $value }} Akamai domains (capacity = 100 Akamai domains)'
+  - alert: andromeda-akamai-metrics-collector-last-sync-age-older-than-one-hour
+    expr: ( (time() - max(andromeda_akamai_requests_last_sync)) / 60 ) > 60
+    for: 5m
+    labels:
+      context: provider-metrics-collection
+      service: andromeda
+      severity: warning
+      tier: os
+      support_group: containers
+    annotations:
+      summary: 'Latest successful Andromeda Akamai metrics collection older than an hour'
+      description: 'Andromeda Akamai metrics collection age is expected to be around 5 minutes, actual value = {{ $value }}'
+  - alert: andromeda-akamai-metrics-collector-last-report-period-older-than-one-hour
+    expr: ( (time() - max(andromeda_akamai_requests_last_report_period)) / 60 ) > 60
+    for: 5m
+    labels:
+      context: provider-metrics-collection
+      service: andromeda
+      severity: warning
+      tier: os
+      support_group: containers
+    annotations:
+      summary: 'Latest Andromeda Akamai metrics report older than an hour'
+      description: 'Andromeda Akamai latest metrics report age is expected to be around 20 minutes, actual value = {{ $value }}'
+  - alert: andromeda-akamai-metrics-collector-time-spent-waiting-on-ratelimiter-too-high
+    expr: sum(increase(andromeda_akamai_ratelimiting_duration_seconds[5m])) > 1
+    for: 5m
+    labels:
+      context: provider-metrics-collection
+      service: andromeda
+      severity: warning
+      tier: os
+      support_group: containers
+    annotations:
+      summary: 'Andromeda Akamai metrics collector spending too much time waiting on rate limiter'
+      description: 'Andromeda Akamai metrics collector should spend milliseconds waiting on rate limiter, actual value = {{ $value }}'

@@ -56,6 +56,11 @@ spec:
         enabled: false
       topologyAwareRouting:
         enabled: false
+{{- if .Values.garden.runtimeCluster.loadBalancerFloatingSubnetID }}
+      loadBalancerServices:
+        annotations:
+          loadbalancer.openstack.org/floating-subnet-id: {{ .Values.garden.runtimeCluster.loadBalancerFloatingSubnetID | quote }}
+{{- end }}
   virtualCluster:
     dns:
       domains:
@@ -80,9 +85,10 @@ spec:
     kubernetes:
       version: {{ .Values.garden.virtualCluster.version | quote}}
       kubeAPIServer:
-        enableAnonymousAuthentication: true # cluster registry version check
-        oidcConfig:
-          {{- toYaml .Values.garden.virtualCluster.oidcConfig | nindent 10 }}
+        featureGates:
+          AnonymousAuthConfigurableEndpoints: true
+        structuredAuthentication:
+          configMapName: authentication-config-virtual-cluster
 {{- if hasPrefix "rtc-" .Values.global.cluster }}
         authentication:
           webhook:

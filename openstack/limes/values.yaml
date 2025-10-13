@@ -149,10 +149,10 @@ pgmetrics:
           # all service types without scrape errors. This ensures that an absence
           # of errors does not trigger a metric absence alert.
           query: >
-            SELECT cs.type AS service_name, SUM(CASE WHEN ps.scrape_error_message = '' THEN 0 ELSE 1 END) AS gauge
+            SELECT s.type AS service_name, SUM(CASE WHEN ps.scrape_error_message = '' THEN 0 ELSE 1 END) AS gauge
             FROM project_services ps
-            JOIN services cs ON cs.id = ps.service_id
-            GROUP BY cs.type
+            JOIN services s ON s.id = ps.service_id
+            GROUP BY s.type
           metrics:
             - service_name:
                 usage: "LABEL"
@@ -164,12 +164,12 @@ pgmetrics:
         limes_mismatch_project_quota:
           # The UNION SELECT adds a dummy row to satisfy the absent-metrics-operator.
           query: >
-            SELECT cs.type AS service_name, COUNT(*) as count
+            SELECT s.type AS service_name, COUNT(*) as count
             FROM project_resources pr
-            JOIN resources cr ON cr.id = pr.resource_id
-            JOIN services cs ON cs.id = cr.service_id
+            JOIN resources r ON r.id = pr.resource_id
+            JOIN services s ON s.id = r.service_id
             WHERE pr.backend_quota != pr.quota
-            GROUP BY cs.type
+            GROUP BY s.type
             UNION SELECT 'none' AS service_name, 0 AS count
           metrics:
             - service_name:
@@ -189,12 +189,12 @@ pgmetrics:
             WITH tmp AS (
               SELECT 1
               FROM project_az_resources pazr
-              JOIN az_resources cazr ON cazr.id = pazr.az_resource_id
-              JOIN resources cr ON cr.id = cazr.resource_id
-              JOIN project_resources pr ON pr.resource_id = cr.id AND pr.project_id = pazr.project_id
-              GROUP BY pr.project_id, cr.path, pr.quota
+              JOIN az_resources azr ON azr.id = pazr.az_resource_id
+              JOIN resources r ON r.id = azr.resource_id
+              JOIN project_resources pr ON pr.resource_id = r.id AND pr.project_id = pazr.project_id
+              GROUP BY pr.project_id, r.path, pr.quota
               HAVING SUM(pazr.usage) > pr.quota
-                AND NOT (cr.path = 'swift/capacity' AND SUM(pazr.usage) < pr.quota + 1099511627776)
+                AND NOT (r.path = 'swift/capacity' AND SUM(pazr.usage) < pr.quota + 1099511627776)
             )
             SELECT COUNT(*) AS count FROM tmp
           metrics:
@@ -212,11 +212,11 @@ pgmetrics:
 
         limes_project_resources_by_type:
           query: >
-            SELECT cs.type AS service, cr.name AS resource, COUNT(*) AS count
+            SELECT s.type AS service, r.name AS resource, COUNT(*) AS count
             FROM project_resources pr
-            JOIN resources cr ON cr.id = pr.resource_id
-            JOIN services cs ON cs.id = cr.service_id
-            GROUP BY cs.type, cr.name
+            JOIN resources r ON r.id = pr.resource_id
+            JOIN services s ON s.id = r.service_id
+            GROUP BY s.type, r.name
           metrics:
             - service:
                 usage: "LABEL"
@@ -237,10 +237,10 @@ pgmetrics:
             FROM domains d
             JOIN projects p ON p.domain_id = d.id
             JOIN project_az_resources pazr ON pazr.project_id = p.id
-            JOIN az_resources cazr ON cazr.id = pazr.az_resource_id
-            JOIN resources cr ON cr.id = cazr.resource_id
-            JOIN project_resources pr ON pr.resource_id = cr.id AND pr.project_id = pazr.project_id
-            WHERE cr.path = 'swift/capacity' AND cazr.az = 'any'
+            JOIN az_resources azr ON azr.id = pazr.az_resource_id
+            JOIN resources r ON r.id = azr.resource_id
+            JOIN project_resources pr ON pr.resource_id = r.id AND pr.project_id = pazr.project_id
+            WHERE r.path = 'swift/capacity' AND azr.az = 'any'
           metrics:
             - gauge:
                 usage: "GAUGE"

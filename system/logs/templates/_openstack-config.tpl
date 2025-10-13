@@ -109,6 +109,25 @@ transform/network_generic_ssh_exporter:
         - set(log.attributes["command"], log.cache["command"])
         - set(log.attributes["metric"], log.cache["metric"])
 
+transform/coredns_api:
+  error_mode: ignore
+  log_statements:
+    - context: log
+      conditions:
+        - resource.attributes["k8s.deployment.name"] == "coredns-api"
+      statements:
+        - merge_maps(log.cache, ParseJSON(log.body), "upsert") where IsMatch(log.body, "^\\{")
+        - set(log.attributes["loglevel"], log.cache["level"])
+        - set(log.attributes["time"], log.cache["time"])
+        - set(log.attributes["request.id"], log.cache["request-id"])
+        - set(log.attributes["duration"], log.cache["duration"])
+        - set(log.attributes["component"], log.cache["component"])
+        - set(log.attributes["action"], log.cache["action"])
+        - set(log.attributes["msg"], log.cache["msg"])
+        - set(log.attributes["error"], log.cache["error"])
+        - set(log.attributes["returned"], log.cache["returned"])
+        - set(log.attributes["request.status"], log.cache["status"])
+
 transform/snmp_exporter:
   error_mode: ignore
   log_statements:
@@ -219,7 +238,7 @@ logs/failover_b_swift:
 
 logs/containerd:
   receivers: [filelog/containerd]
-  processors: [k8sattributes,attributes/cluster,transform/ingress,transform/neutron_agent,transform/neutron_errors,transform/openstack_api,transform/non_openstack,transform/network_generic_ssh_exporter,transform/snmp_exporter,transform/elektra,transform/keystone_api,transform/kvm-ha-service]
+  processors: [k8sattributes,attributes/cluster,transform/ingress,transform/neutron_agent,transform/neutron_errors,transform/openstack_api,transform/non_openstack,transform/network_generic_ssh_exporter,transform/snmp_exporter,transform/elektra,transform/keystone_api,transform/kvm-ha-service,transform/coredns_api]
   exporters: [forward]
 
 logs/containerd-swift:

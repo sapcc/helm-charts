@@ -132,11 +132,6 @@ job:
         # @default -- 0.5
         cpu:
 
-pre_change_hook:
-  image:
-    name: "shared-app-images/alpine-kubectl"
-    tag: "3.21-20250214202620"
-
 # name of priorityClass to influence scheduling priority
 priority_class: "critical-infrastructure"
 priority_class_backup: "critical-infrastructure"
@@ -188,20 +183,20 @@ use_alternate_registry: false
 
 readiness:
   image: pod-readiness
-  image_version: "20250225131500"
+  image_version: "20250929115624"
   # set to true if backup_v2 is not enabled, but readiness sidecar is required
   useSidecar: false
 
 credentialUpdater:
   image: 'shared-app-images/alpine-mariadb'
-  imageTag: 'python3.13-alpine3.21-20250305175417'
+  imageTag: 'python3.13-alpine3.22-20250818200546'
   checkInterval: '10'
 
 backup_v2:
   enabled: false
   backup_dir: "./backup"
   image: maria-back-me-up
-  image_version: "20250722132533"
+  image_version: "20250929115625"
   full_backup_cron_schedule: "0 0 * * *"
   incremental_backup_in_minutes: 5
   purge_binlog_after_minutes: 60
@@ -227,7 +222,7 @@ backup_v2:
 metrics:
   enabled: true
   image: prom/mysqld-exporter
-  image_version: v0.17.2
+  image_version: v0.18.0
   port: "9104"
   flags:
     - collect.binlog_size
@@ -286,3 +281,7 @@ tcp_keepalive:
   # Time between retries of unacknowledged keepalive packets. If set to 0, the system dependent default is used https://mariadb.com/kb/en/server-system-variables/#tcp_keepalive_interval
   # default is 0
   interval:
+
+# -- Enable owner_info injector chart dependency to allow installation as stand-alone chart
+owner_info:
+  enabled: false
