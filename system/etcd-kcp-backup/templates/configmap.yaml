@@ -50,10 +50,10 @@ data:
     if ! aws s3api head-bucket --bucket etcd-kcp-backup-{{ .Values.clusterName }}; then
       echo "Creating bucket etcd-kcp-backup-{{ .Values.clusterName }}"
       aws s3api create-bucket --bucket etcd-kcp-backup-{{ .Values.clusterName }} --region ${AWS_REGION} --create-bucket-configuration LocationConstraint=${AWS_REGION}
+      aws s3api put-bucket-policy --bucket etcd-kcp-backup-{{ .Values.clusterName }} --policy file:///scripts/bucket_policy.json
     else
       echo "Bucket etcd-kcp-backup-{{ .Values.clusterName }} already exists"
     fi
-    aws s3api put-bucket-policy --bucket etcd-kcp-backup-{{ .Values.clusterName }} --policy file:///scripts/bucket_policy.json
   bucket_policy.json: |
     {
         "Version": "2012-10-17",
