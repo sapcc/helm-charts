@@ -52,9 +52,12 @@ spec:
                   name: etcd-kcp-backup-aws
                   key: region
           volumeMounts:
-            - name: init-bucket-script
+            - name: bucket-config
               mountPath: /scripts/init_bucket.sh
               subPath: init_bucket.sh
+            - name: bucket-config
+              mountPath: /scripts/bucket_policy.json
+              subPath: bucket_policy.json
       containers:
         - name: manager
           image: {{ .Values.deployment.container.image.repository }}:{{ .Values.deployment.container.image.tag }}
@@ -155,8 +158,8 @@ spec:
               - key: secret-access-key
                 path: secretAccessKey
             defaultMode: 420
-        - name: init-bucket-script
+        - name: bucket-config
           configMap:
-            name: etcd-kcp-init-bucket
+            name: etcd-kcp-bucket
             defaultMode: 0777
 {{- end }}

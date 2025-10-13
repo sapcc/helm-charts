@@ -38,7 +38,7 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: etcd-kcp-init-bucket
+  name: etcd-kcp-bucket
   namespace: {{ .Values.namespace | default "kube-system" }}
   labels:
   {{- include "chart.labels" . | nindent 4 }}
@@ -53,4 +53,43 @@ data:
     else
       echo "Bucket etcd-kcp-backup-{{ .Values.clusterName }} already exists"
     fi
+    aws s3api put-bucket-policy --bucket etcd-kcp-backup-{{ .Values.clusterName }} --policy file:///scripts/bucket_policy.json
+  bucket_policy.json: |
+    {
+        "Version": "2012-10-17",
+        "Statement": [
+            {
+                "Effect": "Allow",
+                "Principal": {
+                    "AWS": "arn:aws:iam::984763948181:user/etcd-kcp-backup"
+                },
+                "Action": [
+                    "s3:GetObject",
+                    "s3:ListBucket",
+                    "s3:PutObject"
+                ],
+                "Resource": [
+                    "arn:aws:s3:::etcd-kcp-backup-{{ .Values.clusterName }}",
+                    "arn:aws:s3:::etcd-kcp-backup-{{ .Values.clusterName }}/*"
+                ]
+            },
+            {
+                "Effect": "Deny",
+                "Principal": "*",
+                "Action": "s3:*",
+                "Resource": [
+                    "arn:aws:s3:::etcd-kcp-backup-{{ .Values.clusterName }}",
+                    "arn:aws:s3:::etcd-kcp-backup-{{ .Values.clusterName }}/*"
+                ],
+                "Condition": {
+                    "Bool": {
+                        "aws:SecureTransport": "false"
+                    },
+                    "NumericLessThan": {
+                        "s3:TlsVersion": "1.2"
+                    }
+                }
+            }
+        ]
+    }
 {{- end }}
