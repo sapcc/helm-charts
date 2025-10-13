@@ -28,6 +28,36 @@ spec:
                 operator: In
                 values:
                 - runtime-controlplane
+      initContainers:
+        - name: init-bucket
+          image: {{ .Values.deployment.initContainer.image.repository }}:{{ .Values.deployment.initContainer.image.tag }}
+          command:
+            - 'sh'
+            - '-c'
+            - '/scripts/init_bucket.sh'
+          env:
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: etcd-kcp-backup-aws
+                  key: access-key-id
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: etcd-kcp-backup-aws
+                  key: secret-access-key
+            - name: AWS_REGION
+              valueFrom:
+                secretKeyRef:
+                  name: etcd-kcp-backup-aws
+                  key: region
+          volumeMounts:
+            - name: bucket-config
+              mountPath: /scripts/init_bucket.sh
+              subPath: init_bucket.sh
+            - name: bucket-config
+              mountPath: /scripts/bucket_policy.json
+              subPath: bucket_policy.json
       containers:
         - name: manager
           image: {{ .Values.deployment.container.image.repository }}:{{ .Values.deployment.container.image.tag }}
@@ -64,7 +94,6 @@ spec:
             - '--schedule=0 4 * * *'
             - '--snapstore-temp-directory=/var/lib/etcd/temp'
             - '--storage-provider=S3'
-            - '--store-prefix={{ .Values.clusterName }}'
           ports:
           - name: server
             containerPort: 8080
@@ -73,7 +102,7 @@ spec:
             - name: AWS_APPLICATION_CREDENTIALS
               value: /etc/aws/credentials
             - name: STORAGE_CONTAINER
-              value: etcd-kcp-backup
+              value: etcd-kcp-backup-{{ .Values.clusterName }}
             - name: POD_NAME
               value: etcd-kcp-backup
               # valueFrom:
@@ -129,4 +158,8 @@ spec:
               - key: secret-access-key
                 path: secretAccessKey
             defaultMode: 420
+        - name: bucket-config
+          configMap:
+            name: etcd-kcp-bucket
+            defaultMode: 0777
 {{- end }}
