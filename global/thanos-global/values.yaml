@@ -4,24 +4,33 @@ owner-info:
   maintainers:
     - Tommy Sauer
     - Richard Tief
+    - Thomas Rouaux
   helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/global/thanos-global
 
 thanos:
   name: global
 
+  vpaMode: "Off"
+
+  affinity:
+    matchLabels:
+      app.kubernetes.io/managed-by: thanos-global
+    topologyKey: kubernetes.io/hostname
+
   query:
     resources:
       requests:
         cpu: 1
-        memory: 48Gi
+        memory: 24Gi
       limits:
-        cpu: 2
-        memory: 52Gi
+        cpu: 1
+        memory: 24Gi
 
     replicas: 8
 
     extraArgs:
-      - --query.promql-engine=thanos
+      - --query.mode=distributed
+      - --query.distributed-with-overlapping-interval
 
     requestLog:
       enabled: true
@@ -52,6 +61,7 @@ thanos:
       - thanos-st1-grpc.na-us-1
       - thanos-st1-grpc.na-us-2
       - thanos-st1-grpc.qa-de-1
+      - thanos-grpc.cc-b0.qa-de-1
       - thanos-grpc.cc-a0.eu-de-2
       - thanos-grpc.cc-b0.eu-de-2
       - thanos-grpc.runtime.eu-de-1

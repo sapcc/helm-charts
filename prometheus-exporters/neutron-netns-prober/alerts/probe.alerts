@@ -4,11 +4,11 @@ groups:
   - alert: NeutronNetworkNamespaceProbesFailed
     expr: |
             (
-              sum(changes(neutron_netns_prober_failure_total[5m])) by (network_id, network_name, region, router_id) > 0
+              sum(changes(neutron_netns_prober_failure_total[5m])) by (network_id, network_name, region, router_id, network_project_id) > 0
               and on (network_id) neutron_netns_prober_network_age_seconds > 3600
               and on (router_id) neutron_netns_prober_router_age_seconds > 3600
             ) unless (
-              sum(changes(neutron_netns_prober_success_total[150s])) by (network_id, network_name, region, router_id) > 0
+              sum(changes(neutron_netns_prober_success_total[150s])) by (network_id, network_name, region, router_id, network_project_id) > 0
               and on (network_id) neutron_netns_prober_network_age_seconds > 3600
               and on (router_id) neutron_netns_prober_router_age_seconds > 3600
             )

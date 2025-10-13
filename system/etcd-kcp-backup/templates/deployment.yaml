@@ -1,0 +1,132 @@
+{{- if .Values.deployment.enable }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: etcd-kcp-backup
+  namespace: {{ .Values.namespace | default "kube-system" }}
+  labels:
+    {{- include "chart.labels" . | nindent 4 }}
+    etcd-kcp: backup
+spec:
+  replicas:  {{ .Values.deployment.replicas }}
+  selector:
+    matchLabels:
+      {{- include "chart.selectorLabels" . | nindent 6 }}
+      etcd-kcp: backup
+  template:
+    metadata:
+      labels:
+        {{- include "chart.labels" . | nindent 8 }}
+        etcd-kcp: backup
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.metal.cloud.sap/role
+                operator: In
+                values:
+                - runtime-controlplane
+      containers:
+        - name: manager
+          image: {{ .Values.deployment.container.image.repository }}:{{ .Values.deployment.container.image.tag }}
+          command:
+            - /etcdbrctl
+          args:
+            - server
+            - '--auto-compaction-mode=periodic'
+            - '--auto-compaction-retention=30m'
+            - '--cacert=/etc/kubernetes/pki/etcd/ca.crt'
+            - '--cert=/etc/kubernetes/pki/apiserver-etcd-client.crt'
+            - '--compress-snapshots=true'
+            - '--compression-policy=gzip'
+            - '--data-dir=/var/lib/etcd/new.etcd'
+            - '--defragmentation-schedule=0 3 */3 * *'
+            - '--delta-snapshot-memory-limit=104857600'
+            - '--delta-snapshot-period=5m'
+            - '--delta-snapshot-lease-name=etcd-kcp-backup-delta-snap'
+            - '--embedded-etcd-quota-bytes=8589934592'
+            - '--enable-member-lease-renewal=true'
+            - '--enable-snapshot-lease-renewal=true'
+            - '--endpoints=https://etcd-kcp-backup.kube-system.svc.cluster.local:2379'
+            - '--etcd-connection-timeout=5m'
+            - '--etcd-defrag-timeout=15m'
+            - '--etcd-snapshot-timeout=15m'
+            - '--full-snapshot-lease-name=etcd-kcp-backup-full-snap'
+            - '--garbage-collection-period=12h'
+            - '--garbage-collection-policy=Exponential'
+            - '--insecure-skip-tls-verify=true'
+            - '--insecure-transport=false'
+            - '--k8s-heartbeat-duration=10s'
+            - '--key=/etc/kubernetes/pki/apiserver-etcd-client.key'
+            - '--restoration-temp-snapshots-dir=/var/lib/etcd/restoration.temp'
+            - '--schedule=0 4 * * *'
+            - '--snapstore-temp-directory=/var/lib/etcd/temp'
+            - '--storage-provider=S3'
+            - '--store-prefix={{ .Values.clusterName }}'
+          ports:
+          - name: server
+            containerPort: 8080
+            protocol: TCP
+          env:
+            - name: AWS_APPLICATION_CREDENTIALS
+              value: /etc/aws/credentials
+            - name: STORAGE_CONTAINER
+              value: etcd-kcp-backup
+            - name: POD_NAME
+              value: etcd-kcp-backup
+              # valueFrom:
+              #   fieldRef:
+              #     apiVersion: v1
+              #     fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              value: kube-system
+          resources:
+            {{- toYaml .Values.deployment.container.resources | nindent 12 }}
+          securityContext:
+            {{- toYaml .Values.deployment.container.securityContext | nindent 12 }}
+          volumeMounts:
+            - name: etcd-config
+              mountPath: /var/etcd/config
+            - name: etcd-data
+              mountPath: /var/lib/etcd
+            - name: pki-certs
+              readOnly: true
+              mountPath: /etc/kubernetes/pki
+            - name: aws-credentials
+              readOnly: true
+              mountPath: /etc/aws/credentials
+      securityContext:
+        {{- toYaml .Values.deployment.securityContext | nindent 8 }}
+      serviceAccountName: {{ .Values.deployment.serviceAccountName }}
+      terminationGracePeriodSeconds: 30
+      priorityClassName: system-node-critical
+      priority: 2000001000
+      tolerations:
+        - operator: Exists
+          effect: NoExecute
+      volumes:
+        - name: etcd-config
+          configMap:
+            name: etcd-kcp-backup
+        - name: etcd-data
+          hostPath:
+            path: /var/lib/etcd
+            type: DirectoryOrCreate
+        - name: pki-certs
+          hostPath:
+            path: /etc/kubernetes/pki
+            type: DirectoryOrCreate
+        - name: aws-credentials
+          secret:
+            secretName: etcd-kcp-backup-aws
+            items:
+              - key: access-key-id
+                path: accessKeyID
+              - key: region
+                path: region
+              - key: secret-access-key
+                path: secretAccessKey
+            defaultMode: 420
+{{- end }}

@@ -118,13 +118,13 @@
     - nsxv3_manager_hostname
 - status: "active"
   title: "VMware maintenance - NSXTNodeConnectivityBroken"
-  description: "Silence NSXTNodeConnectivityBroken based on the region and nsxv3_manager_hostname - use regex like 'nsx-ctl-bb305.*'"
+  description: "Silence NSXTNodeConnectivityBroken based on the region and nsxt_adapter - use regex like 'nsx-ctl-bb305.*'"
   fixed_labels:
     tier: "vmware"
     alertname: "NSXTNodeConnectivityBroken"
   editable_labels:
     - region
-    - nsxv3_manager_hostname
+    - nsxt_adapter
 - status: "active"
   title: "VMware maintenance - VVol alert silence by VVol Name"
   description: "Silence VVol alerts during VVol maintenance by VVol Name, like 'vVOL_BBxxx.'"
@@ -224,4 +224,4 @@
     job: "harvest-service-discovery"
   editable_labels:
     - datacenter
-    - cluster
+    - netapp_cluster
