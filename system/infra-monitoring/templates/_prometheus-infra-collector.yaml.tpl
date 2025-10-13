@@ -31,7 +31,17 @@
   http_sd_configs:
     - url: {{ .Values.http_sd_configs.netbox_production_url }}/virtual-machines/?custom_labels=job={{ $name }}&target=primary_ip&status=active&tenant=converged-cloud&platform=windows-server&tag=active-directory-domain-controller&region={{ .Values.global.region }}
       refresh_interval: {{ .Values.http_sd_configs.refresh_interval }}
+{{- if $values.basic_auth.enabled }}
+  basicAuth:
+     username:
+       key: username
+       name: windows-exporter-auth
+     password:
+       key: password 
+       name: windows-exporter-auth
+{{- end }}
   metrics_path: /metrics
+
   relabel_configs:
     - source_labels: [__address__]
       replacement: $1:{{$values.listen_port}}
