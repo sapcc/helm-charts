@@ -1,0 +1,96 @@
+owner-info:
+  support-group: observability
+  service: audit-logs-otel
+  maintainers:
+    - "Olaf Heydorn"
+    - "Timo Johner"
+    - "Simon Olander"
+  helm-chart-url: "https://github.com/sapcc/helm-charts/tree/master/system/audit-logs-otel"
+
+linkerd-support:
+  annotate_namespace: true
+
+global:
+  region: DEFINED-IN-SECRETS
+  tld: DEFINED-IN-SECRETS
+  prometheus: DEFINED-IN-SECRETS
+  linkerd_requested: true
+  opensearch:
+    data:
+      user: DEFINED-IN-SECRETS
+      password: DEFINED-IN-SECRETS
+    syslog:
+      user: DEFINED-IN-SECRETS
+      password: DEFINED-IN-SECRETS
+    jump:
+      user: DEFINED-IN-SECRETS
+      password: DEFINED-IN-SECRETS
+  metis:
+    user: DEFINED-IN-SECRETS
+    password: DEFINED-IN-SECRETS
+
+openTelemetryPlugin:
+  alerts:
+    enabled: false
+  opentelemetry-operator:
+    admissionWebhooks:
+      failurePolicy: 'Ignore'
+      create: true
+      certManager:
+        enabled: true
+      autoGenerateCert:
+        enabled: false
+        recreate: false
+    manager:
+      image:
+        repository: keppel.eu-de-1.cloud.sap/ccloud-ghcr-io-mirror/open-telemetry/opentelemetry-operator/opentelemetry-operator
+        tag: DEFINED-IN-SECRETS
+      collectorImage:
+        repository: keppel.eu-de-1.cloud.sap/ccloud/opentelemetry-collector-contrib
+        tag: DEFINED-IN-SECRETS
+      prometheusRule:
+        enabled: true
+        defaultRules:
+          enabled: true
+      serviceMonitor:
+        enabled: true
+  auditLogs:
+    customLabels:
+      prometheus: DEFINED-IN-SECRETS
+    openSearchLogs:
+      failover:
+        enabled: true
+      endpoint: DEFINED-IN-SECRETS
+      failover_username_a: DEFINED-IN-SECRETS
+      failover_password_a: DEFINED-IN-SECRETS
+      failover_username_b: DEFINED-IN-SECRETS
+      failover_password_b: DEFINED-IN-SECRETS
+      index: DEFINED-IN-SECRETS
+    cluster: DEFINED-IN-SECRETS
+    region: DEFINED-IN-SECRETS
+    logsCollector:
+      enabled: false
+      auditpollerConfig:
+        enabled: false
+    prometheus:
+      additionalLabels:
+        prometheus: infra-frontend
+      podMonitor:
+        enabled: false
+
+auditPoller:
+  enabled: true
+  logLevel: info
+  iasApi:
+    user: DEFINED-IN-SECRETS
+    password: DEFINED-IN-SECRETS
+    tokenURL: DEFINED-IN-SECRETS
+    apiURL: DEFINED-IN-SECRETS
+    alternateApiURL: DEFINED-IN-SECRETS
+    syncFrom: DEFINED-IN-SECRETS
+  iasChangelog:
+    user: DEFINED-IN-SECRETS
+    password: DEFINED-IN-SECRETS
+    url: DEFINED-IN-SECRETS
+  persistence:
+    enabled: true
