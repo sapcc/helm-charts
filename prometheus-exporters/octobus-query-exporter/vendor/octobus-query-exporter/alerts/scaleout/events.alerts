@@ -51,4 +51,19 @@
           summary: "An Error String related to Mellanox card issue with abort errors "
           description: "This alert is created to prevent the Outage from Mellanox card issue on {{ $labels.hostsystem }}"
 
-  
+      - alert: NSXTDisconnectedNodes
+        expr: >
+                vrops_hostsystem_runtime_connectionstate{state="connected"} and
+                on(hostsystem) vrops_hostsystem_runtime_maintenancestate{state="notInMaintenance"} and
+                on(hostsystem) query_elasticsearch_octobus_nsxt_disconnected_nodes
+        labels:
+          severity: info
+          service: compute
+          tier: vmware
+          support_group: compute
+          no_alert_on_absence: "true"
+          meta: "Alert for NSXT Disconnected nodes"
+          playbook: docs/devops/alert/vcenter/#mellanox_issue
+        annotations:
+          summary: "NSXT Transport nodes is disconnected from the NSXT manager "
+          description: "This alert is created to prevent the inability of neutron to create networks on {{ $labels.hostsystem }}"
