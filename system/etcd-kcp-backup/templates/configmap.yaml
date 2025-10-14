@@ -34,4 +34,62 @@ data:
       client-cert-auth: true
       key-file: /etc/kubernetes/pki/etcd/peer.key
       trusted-ca-file: /etc/kubernetes/pki/etcd/ca.crt
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: etcd-kcp-bucket
+  namespace: {{ .Values.namespace | default "kube-system" }}
+  labels:
+  {{- include "chart.labels" . | nindent 4 }}
+data:
+  init_bucket.sh: |
+    #!/usr/bin/env bash
+    set -euo pipefail
+    aws --version
+    if ! aws s3api head-bucket --bucket etcd-kcp-backup-{{ .Values.clusterName }}; then
+      echo "Creating bucket etcd-kcp-backup-{{ .Values.clusterName }}"
+      aws s3api create-bucket --bucket etcd-kcp-backup-{{ .Values.clusterName }} --region ${AWS_REGION} --create-bucket-configuration LocationConstraint=${AWS_REGION}
+      aws s3api put-bucket-policy --bucket etcd-kcp-backup-{{ .Values.clusterName }} --policy file:///scripts/bucket_policy.json
+    else
+      echo "Bucket etcd-kcp-backup-{{ .Values.clusterName }} already exists"
+    fi
+  bucket_policy.json: |
+    {
+        "Version": "2012-10-17",
+        "Statement": [
+            {
+                "Effect": "Allow",
+                "Principal": {
+                    "AWS": "{{ .Values.awsCredentials.principal }}"
+                },
+                "Action": [
+                    "s3:GetObject",
+                    "s3:ListBucket",
+                    "s3:PutObject"
+                ],
+                "Resource": [
+                    "arn:aws:s3:::etcd-kcp-backup-{{ .Values.clusterName }}",
+                    "arn:aws:s3:::etcd-kcp-backup-{{ .Values.clusterName }}/*"
+                ]
+            },
+            {
+                "Effect": "Deny",
+                "Principal": "*",
+                "Action": "s3:*",
+                "Resource": [
+                    "arn:aws:s3:::etcd-kcp-backup-{{ .Values.clusterName }}",
+                    "arn:aws:s3:::etcd-kcp-backup-{{ .Values.clusterName }}/*"
+                ],
+                "Condition": {
+                    "Bool": {
+                        "aws:SecureTransport": "false"
+                    },
+                    "NumericLessThan": {
+                        "s3:TlsVersion": "1.2"
+                    }
+                }
+            }
+        ]
+    }
 {{- end }}
