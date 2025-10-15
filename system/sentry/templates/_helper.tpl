@@ -290,12 +290,14 @@ Set redis db
 Set redis password
 */}}
 {{- define "sentry.redis.password" -}}
-{{- if .Values.redis.enabled -}}
-{{ .Values.redis.password }}
-{{- else -}}
+{{- if and (.Values.redis.enabled) (.Values.redis.auth.enabled) -}}
+{{ .Values.redis.auth.password }}
+{{- else if .Values.externalRedis.password -}}
 {{ .Values.externalRedis.password }}
+{{- else }}
 {{- end -}}
 {{- end -}}
+
 
 {{/*
 Create the name of the service account to use

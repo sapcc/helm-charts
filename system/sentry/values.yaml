@@ -120,7 +120,11 @@ sentry:
     # if using filestore backend filesystem with RWO access, set strategyType to Recreate
     strategyType: RollingUpdate
     replicas: 1
-    env: []
+    env:
+      - name: GITHUB_BASE_DOMAIN
+        value: "github.wdf.sap.corp"
+      - name: GITHUB_API_DOMAIN
+        value: "github.wdf.sap.corp/api/v3"
     probeFailureThreshold: 5
     probeInitialDelaySeconds: 10
     probePeriodSeconds: 10
@@ -1059,8 +1063,8 @@ zookeeper:
   enabled: true
   image:
     registry: keppel.eu-de-1.cloud.sap
-    repository: ccloud-dockerhub-mirror/bitnami/zookeeper
-    tag: 3.8.0-debian-10-r0
+    repository: ccloud-dockerhub-mirror/bitnamilegacy/zookeeper
+    tag: 3.8.0-debian-11-r9
   nameOverride: zookeeper-clickhouse
   replicaCount: 1
 
@@ -1072,7 +1076,7 @@ kafka:
   replicaCount: 1
   image:
     registry: keppel.eu-de-1.cloud.sap
-    repository: ccloud-dockerhub-mirror/bitnami/kafka
+    repository: ccloud-dockerhub-mirror/bitnamilegacy/kafka
     tag: 3.4.0-debian-11-r33
   allowPlaintextListener: true
   defaultReplicationFactor: 1
@@ -1087,14 +1091,14 @@ kafka:
     enabled: true
     image:
       registry: keppel.eu-de-1.cloud.sap
-      repository: ccloud-dockerhub-mirror/bitnami/bitnami-shell
+      repository: ccloud-dockerhub-mirror/bitnamilegacy/bitnami-shell-archived
       tag: 11-debian-11-r118
   defaultInitContainers:
     volumePermissions:
       enabled: true
       image:
         registry: keppel.eu-de-1.cloud.sap
-        repository: ccloud-dockerhub-mirror/bitnami/bitnami-shell
+        repository: ccloud-dockerhub-mirror/bitnamilegacy/bitnami-shell-archived
         tag: 11-debian-11-r118
   persistence:
     enabled: true
@@ -1146,15 +1150,15 @@ redis:
   auth:
     enabled: true
     sentinel: false
-    existingSecret: newsentry-redis-user-default
+    existingSecret: sentry23-redis-user-default
     existingSecretPasswordKey: password
     ## Just omit the password field if your redis cluster doesn't use password
     # password: redis
-  existingSecret: newsentry-redis-user-default
+  existingSecret: sentry23-redis-user-default
   existingSecretKey: password
   alerts:
       support_group: identity
-  fullnameOverride: newsentry-redis
+  fullnameOverride: sentry23-redis
   # nameOverride: redis
   master:
     persistence:
@@ -1203,10 +1207,10 @@ postgresql:
   users:
       sentry: {}
   tableOwner: sentry
-  fullnameOverride: newsentry-postgresql
+  fullnameOverride: sentry23-postgresql
   auth:
     database: sentry
-    existingSecret: newsentry-pguser-sentry
+    existingSecret: sentry23-pguser-sentry
     secretKeys:
       adminPasswordKey: postgres-password
   replication:
@@ -1235,88 +1239,100 @@ externalPostgresql:
 
 rabbitmq:
   clusterDomain: kubernetes.qa-de-1.cloud.sap
-  ## If disabled, Redis will be used instead as the broker.
   enabled: true
-  image:
-    registry: keppel.eu-de-1.cloud.sap
-    repository: ccloud-dockerhub-mirror/bitnami/rabbitmq
-    tag: 3.11.16-debian-11-r3  
+  users:
+    default:
+      user: rabbitmq
+      password: rabbitmq
+    admin:
+      user: admin
+      password: admin
+      tag: administrator
+  alerts:
+    support_group: identity
   vhost: /
-  volumePermissions:
-    enabled: true
-    image:
-      registry: keppel.eu-de-1.cloud.sap
-      repository: ccloud-dockerhub-mirror/bitnami/bitnami-shell
-      tag: 11-debian-11-r118
-  defaultInitContainers:
-    volumePermissions:
-      enabled: true
-      image:
-        registry: keppel.eu-de-1.cloud.sap
-        repository: ccloud-dockerhub-mirror/bitnami/bitnami-shell
-        tag: 11-debian-11-r118
-  clustering:
-    forceBoot: true
-    rebalance: true
-  replicaCount: 1
-  auth:
-    erlangCookie: pHgpy3Q6adTskzAT6bLHCFqFTF7lMxhA
-    username: guest
-    password: guest
-  nameOverride: ""
 
-  pdb:
-    create: true
-  persistence:
-    enabled: true
-    size: 1Gi
-  resources: {}
-  memoryHighWatermark: {}
-    # enabled: true
-    # type: relative
-    # value: 0.4
+  ## If disabled, Redis will be used instead as the broker.
+  # image:
+  #   registry: keppel.eu-de-1.cloud.sap
+  #   repository: ccloud-dockerhub-mirror/bitnami/rabbitmq
+  #   tag: 3.11.16-debian-11-r3  
+  # vhost: /
+  # volumePermissions:
+  #   enabled: true
+  #   image:
+  #     registry: keppel.eu-de-1.cloud.sap
+  #     repository: ccloud-dockerhub-mirror/bitnamilegacy/bitnami-shell-archived
+  #     tag: 11-debian-11-r118
+  # defaultInitContainers:
+  #   volumePermissions:
+  #     enabled: true
+  #     image:
+  #       registry: keppel.eu-de-1.cloud.sap
+  #       repository: ccloud-dockerhub-mirror/bitnamilegacy/bitnami-shell-archived
+  #       tag: 11-debian-11-r118
+  # clustering:
+  #   forceBoot: true
+  #   rebalance: true
+  # replicaCount: 1
+  # auth:
+  #   erlangCookie: pHgpy3Q6adTskzAT6bLHCFqFTF7lMxhA
+  #   username: guest
+  #   password: guest
+  # nameOverride: ""
 
-  extraSecrets:
-    load-definition:
-      load_definition.json: |
-        {
-          "users": [
-            {
-              "name": "{{ .Values.auth.username }}",
-              "password": "{{ .Values.auth.password }}",
-              "tags": "administrator"
-            }
-          ],
-          "permissions": [{
-            "user": "{{ .Values.auth.username }}",
-            "vhost": "/",
-            "configure": ".*",
-            "write": ".*",
-            "read": ".*"
-          }],
-          "policies": [
-            {
-              "name": "ha-all",
-              "pattern": ".*",
-              "vhost": "/",
-              "definition": {
-                "ha-mode": "all",
-                "ha-sync-mode": "automatic",
-                "ha-sync-batch-size": 1
-              }
-            }
-          ],
-          "vhosts": [
-            {
-              "name": "/"
-            }
-          ]
-        }
-  loadDefinition:
-    enabled: true
-    existingSecret: load-definition
-  extraConfiguration: |
-    load_definitions = /app/load_definition.json
+  # pdb:
+  #   create: true
+  # persistence:
+  #   enabled: true
+  #   size: 1Gi
+  # resources: {}
+  # memoryHighWatermark: {}
+  #   # enabled: true
+  #   # type: relative
+  #   # value: 0.4
+
+  # extraSecrets:
+  #   load-definition:
+  #     load_definition.json: |
+  #       {
+  #         "users": [
+  #           {
+  #             "name": "{{ .Values.auth.username }}",
+  #             "password": "{{ .Values.auth.password }}",
+  #             "tags": "administrator"
+  #           }
+  #         ],
+  #         "permissions": [{
+  #           "user": "{{ .Values.auth.username }}",
+  #           "vhost": "/",
+  #           "configure": ".*",
+  #           "write": ".*",
+  #           "read": ".*"
+  #         }],
+  #         "policies": [
+  #           {
+  #             "name": "ha-all",
+  #             "pattern": ".*",
+  #             "vhost": "/",
+  #             "definition": {
+  #               "ha-mode": "all",
+  #               "ha-sync-mode": "automatic",
+  #               "ha-sync-batch-size": 1
+  #             }
+  #           }
+  #         ],
+  #         "vhosts": [
+  #           {
+  #             "name": "/"
+  #           }
+  #         ]
+  #       }
+  # loadDefinition:
+  #   enabled: true
+  #   existingSecret: load-definition
+  # extraConfiguration: |
+  #   load_definitions = /app/load_definition.json
   ## Use this to enable an extra service account
   # serviceAccount:
   #   create: false
@@ -1324,16 +1340,18 @@ rabbitmq:
 
 memcached:
   clusterDomain: kubernetes.qa-de-1.cloud.sap
-  memoryLimit: "2048"
-  maxItemSize: "26214400"
-  args:
-    - "memcached"
-    - "-u memcached"
-    - "-p 11211"
-    - "-v"
-    - "-m $(MEMCACHED_MEMORY_LIMIT)"
-    - "-I $(MEMCACHED_MAX_ITEM_SIZE)"
-  extraEnvVarsCM: "sentry-memcached"
+  maxItemMemory: 2048
+  alerts:
+    support_group: identity
+  # maxItemSize: "26214400"
+  # args:
+  #   - "memcached"
+  #   - "-u memcached"
+  #   - "-p 11211"
+  #   - "-v"
+  #   - "-m $(MEMCACHED_MEMORY_LIMIT)"
+  #   - "-I $(MEMCACHED_MAX_ITEM_SIZE)"
+  # extraEnvVarsCM: "sentry-memcached"
 
 ## Prometheus Exporter / Metrics
 ##
