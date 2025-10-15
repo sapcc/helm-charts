@@ -216,6 +216,9 @@ if [[ $updated_db == true ]]; then
     vacuumdb --all --analyze-in-stages --missing-stats-only
     vacuumdb --all --analyze-only
   fi
+
+  PGDATABASE='postgres' process_sql -c "ALTER DATABASE \"template1\" REFRESH COLLATION VERSION"
+  PGDATABASE="$DB" process_sql -c "ALTER DATABASE \"$DB\" REFRESH COLLATION VERSION"
 fi
 
 # maintain password of superuser account "postgres" (this is required because this password is different on each run)
