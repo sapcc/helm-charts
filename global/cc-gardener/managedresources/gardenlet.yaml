@@ -73,9 +73,7 @@ spec:
             # Joining the node successfully is unfortunately required to scale up the controller-manager, which is a loop that cannot self-heal.
             prober:
               enabled: false
-{{- if .Values.gardenlet.loadBalancerFloatingSubnetID }}
-          loadBalancerServices:
-            annotations:
-              loadbalancer.openstack.org/floating-subnet-id: {{ .Values.gardenlet.loadBalancerFloatingSubnetID | quote }}
+{{- if .Values.gardenlet.loadBalancerServices }}
+          loadBalancerServices: {{ toYaml .Values.gardenlet.loadBalancerServices | nindent 12 }}
 {{- end }}
 {{ end -}}
