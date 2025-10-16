@@ -124,14 +124,9 @@ spec:
               name: mgmt-{{ $workerkey }}
           extraIgnition:
             override: false
+            secretRef:
+              name: extraignition-mgmt
             raw: |
-              passwd:
-                users:
-                  - name: *vault(path: {{ $.Values.global.region }}/cc-gardener/nodes/compute-user, field: username)
-                    password_hash: *vault(path: {{ $.Values.global.region }}/cc-gardener/nodes/compute-user, field: passwordHash)
-                    groups: [ "wheel" ]
-                    ssh_authorized_keys:
-                      - *vault(path: {{ $.Values.global.region }}/cc-gardener/nodes/compute-pki, field: public)
             {{- if $cluster.extraIgnition }}
               {{ $cluster.extraIgnition | nindent 14 }}
             {{- end }}
