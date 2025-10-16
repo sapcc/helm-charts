@@ -10,9 +10,9 @@ spec:
   seedName: rt-{{ $key }}
   region: {{ $key }}
   networking:
-    pods: {{ required "networking.pods is required" $cluster.networking.pods }}
-    services: {{ required "networking.services is required" $cluster.networking.services }}
-    nodes: {{ required "networking.nodes is required" $cluster.networking.nodes }}
+    pods: {{ default $.Values.networking.pods $cluster.networking.pods }}
+    services: {{ default $.Values.networking.services $cluster.networking.services }}
+    nodes: {{ default $.Values.networking.nodes $cluster.networking.nodes }}
     type: calico
     providerConfig:
       apiVersion: calico.networking.extensions.gardener.cloud/v1alpha1
@@ -28,7 +28,7 @@ spec:
       birdExporter:
         enabled: {{ required ".Values.networking.enableBirdExporter is required" $.Values.networking.enableBirdExporter }}
   kubernetes:
-    version: {{ required "version is required" $cluster.version }}
+    version: {{ default $.Values.kubernetes.version $cluster.version }}
     kubeAPIServer:
       featureGates:
         AnonymousAuthConfigurableEndpoints: true
@@ -45,11 +45,48 @@ spec:
     infrastructureConfig:
       apiVersion: ironcore-metal.provider.extensions.gardener.cloud/v1alpha1
       kind: InfrastructureConfig
-      {{- toYaml $cluster.infrastructureConfig | nindent 6 }}
+      networks:
+      {{- range $cluster.networking.nodeNetworks }}
+      - name: nodenetwork-{{ . | replace "/" "-" | replace "." "-" }}
+        cidr: {{ . }}
+      {{- end }}
     controlPlaneConfig:
       apiVersion: ironcore-metal.provider.extensions.gardener.cloud/v1alpha1
       kind: ControlPlaneConfig
-      {{- toYaml $cluster.controlPlaneConfig | nindent 6 }}
+      cloudControllerManager:
+        networking:
+          configureNodeAddresses: true
+          ipamKind:
+            apiGroup: ipam.cluster.x-k8s.io
+            kind: IPAddress
+      loadBalancerConfig:
+        calicoBgpConfig:
+          asNumber: {{ $cluster.networking.asNumber }}
+          bgpPeer:
+          {{- range $cluster.networking.bgpPeers }}
+          - asNumber: {{ default $cluster.networking.asNumber .asNumber }}
+            nodeSelector: {{ .nodeSelector }}
+            peerIP: {{ .peerIP }}
+# uncomment after Gardener v1.129.0
+#            filters:
+#            - v4filter
+          {{- end }}  
+# uncomment after Gardener v1.129.0
+#          bgpFilter:
+#            - name: v4filter
+#              exportV4:
+#                {{- range $cluster.networking.externalServices }}
+#                - cidr: {{ . }}
+#                  matchOperator: Equal
+#                  action: Reject
+#                {{- end }}
+          nodeToNodeMeshEnabled: true
+          serviceLoadBalancerIPs:
+          {{- toYaml $cluster.networking.externalServices | nindent 10 }}
+        metallbConfig:
+          ipAddressPool:
+          {{- toYaml $cluster.networking.externalServices | nindent 10 }}
+
     workers:
     {{- range $workerkey, $worker := $cluster.workers }}
       - name: mgmt-{{ $workerkey }}
@@ -57,7 +94,7 @@ spec:
           architecture: amd64
           image:
             name: gardenlinux
-            version: {{ $cluster.imageVersion }}
+            version: {{ default $.Values.imageVersion $cluster.imageVersion }}
           type: baremetal
         minimum: {{ $worker.poolSize }}
         maximum: {{ $worker.poolSize }}
@@ -76,8 +113,8 @@ spec:
             topology.kubernetes.io/zone: {{ $workerkey }}
             kubernetes.metal.cloud.sap/cluster: mgmt-{{ $key }}
           metadata:
-            interfaces: {{ $cluster.networking.interfaces }}
-            vlan: {{ $cluster.networking.vlan | quote}}
+            interfaces: {{ default $.Values.networking.interfaces $cluster.networking.interfaces }}
+            vlan: {{ default $.Values.networking.vlan $cluster.networking.vlan | quote }}
             region: {{ $key }}
           ipamConfig:
           - metadataKey: bond
@@ -88,6 +125,13 @@ spec:
           extraIgnition:
             override: false
             raw: |
+              passwd:
+                users:
+                  - name: *vault(path: {{ $.Values.global.region }}/cc-gardener/nodes/compute-user, field: username)
+                    password_hash: *vault(path: {{ $.Values.global.region }}/cc-gardener/nodes/compute-user, field: passwordHash)
+                    groups: [ "wheel" ]
+                    ssh_authorized_keys:
+                      - *vault(path: {{ $.Values.global.region }}/cc-gardener/nodes/compute-pki, field: public)
             {{- if $cluster.extraIgnition }}
               {{ $cluster.extraIgnition | nindent 14 }}
             {{- end }}
