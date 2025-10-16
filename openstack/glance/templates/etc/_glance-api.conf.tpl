@@ -1,6 +1,7 @@
 [DEFAULT]
+{{- if .Values.ceph.enabled }}
 enabled_backends = swift:swift, ceph-rbd:rbd
-
+{{- end }}
 debug = {{.Values.api.debug}}
 
 registry_host = 127.0.0.1
