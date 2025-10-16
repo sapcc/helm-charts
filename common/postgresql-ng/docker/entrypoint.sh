@@ -73,7 +73,10 @@ if [[ $(id -u) == 0 ]]; then
   # we cannot change the owner of the volume mount point or make /var/lib a volume
   if [[ ! -L /var/lib/postgresql || ! -e /data/postgresql ]]; then
     mkdir -p /data/postgresql
-    rmdir /var/lib/postgresql
+    # The directory might not exist when debugging
+    if [[ -d /var/lib/postgresql ]]; then
+      rmdir /var/lib/postgresql
+    fi
     ln -sr /data/postgresql /var/lib/
     chown postgres:postgres /var/lib/postgresql
   fi
@@ -167,12 +170,14 @@ for data in $(find /var/lib/postgresql/ -mindepth 1 -maxdepth 1 -type d -not -na
     PGDATA=$old_pgdata
   fi
 
-  # make sure the old pg_hba.conf contains valid entries for us
-  echo -e "local  all  postgres  trust\nhost  all  backup  all  $postgres_auth_method\nhost  all  postgres  all  $postgres_auth_method\n" >"$data/pg_hba.conf"
-
   # PostgreSQL 18 defaults to checksums enabled and requires them when upgrading
   # Enabling them is safe even if a failure happens according to the Notes in https://www.postgresql.org/docs/18/app-pgchecksums.html
-  pg_checksums --pgdata "$data" --enable --progress
+  if [[ $PGVERSION == 18 ]]; then
+    "$bindir/pg_checksums" --pgdata "$data" --enable --progress
+  fi
+
+  # make sure the old pg_hba.conf contains valid entries for us
+  echo -e "local  all  postgres  trust\nhost  all  backup  all  $postgres_auth_method\nhost  all  postgres  all  $postgres_auth_method\n" >"$data/pg_hba.conf"
 
   # pg_upgrade wants to have write permission for cwd
   cd /var/lib/postgresql
@@ -198,16 +203,19 @@ start_postgres
 PGDATABASE='postgres' process_sql -c "SELECT pg_reload_conf()"
 
 # there might be some extensions which we need to enable
-if [[ -f /var/lib/postgresql/update_extensions.sql ]]; then
-  PGDATABASE='' process_sql -f /var/lib/postgresql/update_extensions.sql
-  rm /var/lib/postgresql/update_extensions.sql
+if [[ -f $PGDATA/update_extensions.sql ]]; then
+  PGDATABASE='' process_sql -f "$PGDATA/update_extensions.sql"
+  rm "$PGDATA/update_extensions.sql"
 fi
 
 # run the recommended optimization by pg_upgrade to mitigate performance decreases after an upgrade
 if [[ $updated_db == true ]]; then
-  vacuumdb --all --analyze-in-stages --missing-stats-only
-  vacuumdb --all --analyze-only
-  psql -f "$PGDATA/update_extensions.sql"
+  if [[ $PGVERSION -lt 18 ]]; then
+    vacuumdb --all --analyze-in-stages
+  else
+    vacuumdb --all --analyze-in-stages --missing-stats-only
+    vacuumdb --all --analyze-only
+  fi
 fi
 
 # maintain password of superuser account "postgres" (this is required because this password is different on each run)
@@ -216,7 +224,7 @@ PGDATABASE='' process_sql --dbname postgres --set user="$PGUSER" --set password_
   ALTER USER :user WITH PASSWORD :'password';
 EOSQL
 
-if [ -f /sql-on-startup.d/phase1-system.sql ]; then
+if [[ -f /sql-on-startup.d/phase1-system.sql ]]; then
   echo "Processing /sql-on-startup.d/phase1-system.sql..."
   PGDATABASE='postgres' process_sql -f <(substituteSqlEnvs /sql-on-startup.d/phase1-system.sql)
 fi

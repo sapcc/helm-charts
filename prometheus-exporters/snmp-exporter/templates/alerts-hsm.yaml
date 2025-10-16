@@ -13,7 +13,7 @@ spec:
     rules:
     - alert: hsmPartitionStorageAvailibilityLessThan5Percentage
       expr: snmp_hsm_hsmPartitionStorageAvailableBytes{hsmModel!="Luna G7"} < 5000
-      for: 1d
+      for: 15m
       labels:
         severity: info
         service: barbican
@@ -28,7 +28,7 @@ spec:
   
     - alert: hsmAribaClientsMoreThan14
       expr: sum((snmp_hsm_hsmClientName{hsmClientName!~"barb.*"})) by (devicename) > 14
-      for: 15d
+      for: 5d
       labels:
         severity: info
         service: barbican
@@ -43,7 +43,7 @@ spec:
   
     - alert: hsmOperationalErrors
       expr: sum(rate(snmp_hsm_hsmOperationErrors[5m])) by (devicename) > 0
-      for: 15m
+      for: 5m
       labels:
         severity: info
         service: barbican
@@ -58,7 +58,7 @@ spec:
   
     - alert: hsmSensorTemperatureIsCritical
       expr: sum by(devicename, lmTempSensorsDevice) (snmp_hsm_lmTempSensorsValue{lmTempSensorsDevice!~"loc1"}) > 70000
-      for: 15m
+      for: 5m
       labels:
         severity: info
         service: barbican
@@ -74,7 +74,7 @@ spec:
   
     - alert: hsmClientsMoreThan20
       expr: sum(snmp_hsm_hsmClientName) by (devicename) > 20
-      for: 15d
+      for: 5d
       labels:
         severity: info
         service: barbican
@@ -89,7 +89,7 @@ spec:
   
     - alert: hsmBarbicanClientsMoreThan4
       expr: sum((snmp_hsm_hsmClientName{hsmClientName=~"barb.*"})) by (devicename) > 4
-      for: 15d
+      for: 5d
       labels:
         severity: info
         service: barbican
@@ -104,7 +104,7 @@ spec:
   
     - alert: hsmDeviceIsUnReachable
       expr: count(up{job="scrapeConfig/infra-monitoring/snmp-exporter-hsm"} == 0 or absent(up{job="scrapeConfig/infra-monitoring/snmp-exporter-hsm"})) by (name, device_type)
-      for: 15m
+      for: 5m
       labels:
         severity: warning
         service: barbican

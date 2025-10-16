@@ -47,7 +47,7 @@ spec:
         # When the podcidr is populated by the nodeCIDR controller, the calico container can start
         {{- if .Values.waitforpodcidr.enabled }}
         - name: wait-for-podcidr
-          image: "{{ required ".Values.global.registryAlternateRegion is missing" $.Values.global.registryAlternateRegion }}/{{ $.Values.images.kubelet.image }}:{{ $.Values.images.kubelet.tag }}"
+          image: "{{ required ".Values.global.registryAlternateRegion is missing" $.Values.global.registryAlternateRegion }}/{{ $.Values.images.kubelet.image }}:{{ $.Capabilities.KubeVersion.Version }}"
           command: ["/bin/sh","-c"]
           args: ["podCIDR=$(kubectl get node $NODE_NAME -ojsonpath={\".spec.podCIDR\"}); printf \"$(date) \"; [ -z \"$podCIDR\" ] && { printf \"cidr not found on node $NODE_NAME. exiting . . .\"; sleep 2; exit 1; } || printf \"found cidr $podCIDR on node $NODE_NAME.\""]
           env:

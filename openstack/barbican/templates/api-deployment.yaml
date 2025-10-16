@@ -71,6 +71,10 @@ spec:
           - name: ChrystokiConfigurationPath
             value: "/thales/safenet/lunaclient/config"
           {{- end }}
+          {{- if .Values.hsm.utimaco_hsm.enabled }}
+          - name: CS_PKCS11_R3_CFG
+            value: "/utimaco/cs_pkcs11_R3.cfg"
+          {{- end }}
           {{- if .Values.api.resources.enabled }}
           resources:
             limits:
@@ -138,6 +142,10 @@ spec:
               subPath: ratelimit.yaml
               readOnly: true
             {{- end }}
+            {{- if .Values.hsm.utimaco_hsm.enabled }}
+            - name: utimaco-volume
+              mountPath: /utimaco/
+            {{- end }}
         {{- if .Values.hsm.enabled }}
             - name: luna
               mountPath: /thales/
@@ -174,6 +182,38 @@ spec:
               readOnly: true
             - name: luna
               mountPath: /thales/
+        {{- if .Values.hsm.utimaco_hsm.enabled }}
+        - name: utimaco
+          image: {{required ".Values.global.registry is missing" .Values.global.registry }}/loci-barbican:{{required "Values.hsm.utimaco_hsm.image is missing" .Values.hsm.utimaco_hsm.image }}
+          imagePullPolicy: Always
+          env:
+            - name: CS_PKCS11_R3_CFG
+              value: "/utimaco/cs_pkcs11_R3.cfg"
+          command: [ "bash", "-lc" ]
+          args:
+            - |
+              set -ex
+              echo "$(date) [utimaco] starting init..."
+              /scripts/barbican_utimaco.sh
+              echo "$(date) [utimaco] init complete."
+              exec sleep infinity
+          volumeMounts:
+            - name: hsm-utimaco
+              mountPath: /scripts/
+              subPath:
+              readOnly: true
+            - name: utimaco-volume
+              mountPath: /utimaco/
+          {{- if .Values.hsm.resources.enabled }}
+          resources:
+            limits:
+              cpu: {{ .Values.hsm.resources.limits.cpu | quote }}
+              memory: {{ .Values.hsm.resources.limits.memory | quote }}
+            requests:
+              cpu: {{ .Values.hsm.resources.requests.cpu | quote }}
+              memory: {{ .Values.hsm.resources.requests.memory | quote }}
+          {{- end }}
+        {{- end }}
         {{- end }}
         - name: statsd
           {{- if hasKey .Values.global "dockerHubMirror"}}
@@ -203,7 +243,6 @@ spec:
               mountPath: /etc/statsd/statsd-exporter.yaml
               subPath: statsd-exporter.yaml
               readOnly: true
-
       volumes:
         - name: barbican-etc
           configMap:
@@ -227,5 +266,16 @@ spec:
         - name: luna
           emptyDir: {}
         {{ end }}
+        {{- if .Values.hsm.utimaco_hsm.enabled }}
+        - name: hsm-utimaco
+          secret:
+            secretName: {{ .Release.Name }}-secrets
+            defaultMode: 0744
+            items:
+            - key: barbican_utimaco.sh
+              path: barbican_utimaco.sh
+        - name: utimaco-volume
+          emptyDir: {}
+        {{- end }}
         {{- include "utils.proxysql.volumes" . | indent 8 }}
         {{- include "utils.trust_bundle.volumes" . | indent 8 }}

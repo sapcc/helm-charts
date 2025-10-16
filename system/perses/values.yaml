@@ -152,7 +152,7 @@ persesPlugin:
       annotations: {}
 
       # With this config, the Perses app will be served with the path <api_prefix>/api
-      api_prefix: "/perses"
+      api_prefix: ""
 
       security:
         # -- Configure Perses instance as readonly
@@ -194,12 +194,32 @@ persesPlugin:
       provisioning:
         folders:
           - /etc/perses/provisioning
-        # interval: 10m
+        interval: 1m
+
+    # -- Persistence configuration for Perses provisioning. 
+    # For more information on provisioning feature, see: https://perses.dev/perses/docs/configuration/provisioning/
+    # When enabled, a PersistentVolumeClaim (PVC) is created via StatefulSet volumeClaimTemplates.
+    # The PVC will be named: provisioning-<statefulset-name>-<ordinal>
+    # Examples:
+    #   - Release "perses-oci" → PVC: "provisioning-perses-oci-0"
+    #   - Release "my-app" → PVC: "provisioning-my-app-perses-0"
+    # This PVC can be referenced by other workloads (e.g., CronJobs) to write dashboards/datasources.
+    provisioningPersistence:
+      # -- enable persistent volume for provisioning
+      enabled: true
+      # -- storage class for provisioning PVC
+      storageClass: ""
+      # -- access modes for provisioning PVC
+      # ReadWriteOnce: Only one pod can mount (cheaper, single-node storage)
+      # ReadWriteMany: Multiple pods can mount simultaneously (required for CronJobs or multiple replicas)
+      # Note: ReadWriteMany requires storage class that supports it (e.g., NFS, CephFS, Azure Files)
+      accessModes:
+        - ReadWriteMany
 
     # --  Sidecar configuration that watches for ConfigMaps with the specified label/labelValue and loads them into Perses provisioning
     sidecar:
       # -- Enable the sidecar container for ConfigMap provisioning
-      enabled: true
+      enabled: false
       image:
         repository: "keppel.eu-de-1.cloud.sap/ccloud-dockerhub-mirror/kiwigrid/k8s-sidecar"
       # -- Label key to watch for ConfigMaps containing Perses resources
@@ -282,25 +302,29 @@ persesPlugin:
 
 # -- All the SAP Cloud Infrastructure specific values should go here.
 sapCloudInfrastructure:
-  regionalDatasource:
-    enabled: true
-    URL: "http://thanos-regional-query.thanos.svc:10902"
-    name: "thanos-regional-query"
-    displayName: "Thanos Regional Query"
-    description: "Provides long-term metrics for this region."
-    # -- Set this datasource as the default datasource
-    default: true
 
-  globalDatasource:
-    enabled: false
-    URL: "http://thanos-global-query.thanos.svc:10902"
-    name: "thanos-global-query"
-    displayName: "Thanos Global Query"
-    description: "Thanos Global Query provides long-term aggregated metrics across all regions."
-    # -- Set this datasource as the default datasource
-    default: true
-    label: "perses.dev/global-resource"
-    labelValue: "true"
+  contentSync:
+    # -- Enable content sync CronJob that pulls Perses manifests from OCI artifact
+    enabled: true
+
+    # -- Cron schedule for content sync job (format: "minute hour day month weekday")
+    # Default: every 5 minutes.
+    schedule: "*/5 * * * *"
+
+    # -- Enable debug logging for the content sync CronJob
+    debug: false
+
+    crane:
+      # -- Image of crane OCI artifact tool
+      image: "keppel.eu-de-1.cloud.sap/ccloud-gcr-mirror/go-containerregistry/crane"
+      # -- Version of crane OCI artifact tool
+      version: "debug"
+
+    contentImage:
+      # -- OCI artifact image containing Perses manifests (projects, dashboards, etc.)
+      name: "keppel.eu-de-1.cloud.sap/ccloud/perses-regional-content"
+      # -- Version of the Perses content OCI artifact
+      version: "latest"
 
 owner-info:
   service: perses

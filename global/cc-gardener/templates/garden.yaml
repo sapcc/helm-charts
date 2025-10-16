@@ -56,10 +56,16 @@ spec:
         enabled: false
       topologyAwareRouting:
         enabled: false
+{{- if .Values.garden.runtimeCluster.loadBalancerServices }}
+      loadBalancerServices: {{ toYaml .Values.garden.runtimeCluster.loadBalancerServices | nindent 8 }}
+{{- end }}
   virtualCluster:
     dns:
       domains:
       - name: virtual-garden.{{ required ".Values.global.cluster missing" .Values.global.cluster }}.{{ required ".Values.global.region missing" .Values.global.region }}.cloud.sap
+      {{- if .Values.garden.virtualCluster.publicDomain }}
+      - name: {{ .Values.garden.virtualCluster.publicDomain }}
+      {{- end }}
     etcd:
       main:
         backup:
@@ -80,9 +86,16 @@ spec:
     kubernetes:
       version: {{ .Values.garden.virtualCluster.version | quote}}
       kubeAPIServer:
-        enableAnonymousAuthentication: true # cluster registry version check
-        oidcConfig:
-          {{- toYaml .Values.garden.virtualCluster.oidcConfig | nindent 10 }}
+        featureGates:
+          AnonymousAuthConfigurableEndpoints: true
+        {{- if .Values.garden.virtualCluster.publicDomain }}
+        sni:
+          domainPatterns:
+          - api.{{ .Values.garden.virtualCluster.publicDomain }}
+          secretName: {{ .Values.garden.name }}-apiserver-public-tls
+        {{- end }}
+        structuredAuthentication:
+          configMapName: authentication-config-virtual-cluster
 {{- if hasPrefix "rtc-" .Values.global.cluster }}
         authentication:
           webhook:

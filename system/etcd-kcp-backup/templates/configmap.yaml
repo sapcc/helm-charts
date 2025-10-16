@@ -1,0 +1,95 @@
+{{- if .Values.configmap.enable }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: etcd-kcp-backup
+  namespace: {{ .Values.namespace | default "kube-system" }}
+  labels:
+  {{- include "chart.labels" . | nindent 4 }}
+data:
+  etcd.conf.yaml: |
+    name: etcd-kcp-backup
+    data-dir: /var/lib/etcd/new.etcd
+    advertise-client-urls:
+      etcd-kcp-backup:
+        - https://etcd-kcp-backup.kube-system.svc.cluster.local:2379
+    initial-advertise-peer-urls:
+      etcd-kcp-backup:
+        - https://etcd-kcp-backup.kube-system.svc.cluster.local:2380
+    initial-cluster: etcd-kcp-backup=https://etcd-kcp-backup.kube-system.svc.cluster.local:2380
+    initial-cluster-state: existing
+    listen-client-urls: https://etcd-kcp-backup.kube-system.svc.cluster.local:2379
+    listen-peer-urls: https://etcd-kcp-backup.kube-system.svc.cluster.local:2380
+    listen-metrics-urls: http://etcd-kcp-backup.kube-system.svc.cluster.local:2381
+    snapshot-count: 10000
+    client-transport-security:
+      auto-tls: false
+      cert-file: /etc/kubernetes/pki/etcd/server.crt
+      client-cert-auth: true
+      key-file: /etc/kubernetes/pki/etcd/server.key
+      trusted-ca-file: /etc/kubernetes/pki/etcd/ca.crt
+    peer-transport-security:
+      auto-tls: false
+      cert-file: /etc/kubernetes/pki/etcd/peer.crt
+      client-cert-auth: true
+      key-file: /etc/kubernetes/pki/etcd/peer.key
+      trusted-ca-file: /etc/kubernetes/pki/etcd/ca.crt
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: etcd-kcp-bucket
+  namespace: {{ .Values.namespace | default "kube-system" }}
+  labels:
+  {{- include "chart.labels" . | nindent 4 }}
+data:
+  init_bucket.sh: |
+    #!/usr/bin/env bash
+    set -euo pipefail
+    aws --version
+    if ! aws s3api head-bucket --bucket etcd-kcp-backup-{{ .Values.clusterName }}; then
+      echo "Creating bucket etcd-kcp-backup-{{ .Values.clusterName }}"
+      aws s3api create-bucket --bucket etcd-kcp-backup-{{ .Values.clusterName }} --region ${AWS_REGION} --create-bucket-configuration LocationConstraint=${AWS_REGION}
+      aws s3api put-bucket-policy --bucket etcd-kcp-backup-{{ .Values.clusterName }} --policy file:///scripts/bucket_policy.json
+    else
+      echo "Bucket etcd-kcp-backup-{{ .Values.clusterName }} already exists"
+    fi
+  bucket_policy.json: |
+    {
+        "Version": "2012-10-17",
+        "Statement": [
+            {
+                "Effect": "Allow",
+                "Principal": {
+                    "AWS": "{{ .Values.awsCredentials.principal }}"
+                },
+                "Action": [
+                    "s3:GetObject",
+                    "s3:ListBucket",
+                    "s3:PutObject"
+                ],
+                "Resource": [
+                    "arn:aws:s3:::etcd-kcp-backup-{{ .Values.clusterName }}",
+                    "arn:aws:s3:::etcd-kcp-backup-{{ .Values.clusterName }}/*"
+                ]
+            },
+            {
+                "Effect": "Deny",
+                "Principal": "*",
+                "Action": "s3:*",
+                "Resource": [
+                    "arn:aws:s3:::etcd-kcp-backup-{{ .Values.clusterName }}",
+                    "arn:aws:s3:::etcd-kcp-backup-{{ .Values.clusterName }}/*"
+                ],
+                "Condition": {
+                    "Bool": {
+                        "aws:SecureTransport": "false"
+                    },
+                    "NumericLessThan": {
+                        "s3:TlsVersion": "1.2"
+                    }
+                }
+            }
+        ]
+    }
+{{- end }}
