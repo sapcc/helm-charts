@@ -80,8 +80,7 @@ transform/openstack_api:
         - resource.attributes["k8s.deployment.name"] == "manila-api"
         - resource.attributes["k8s.deployment.name"] == "ironic-api"
       statements:
-        - merge_maps(log.attributes, ExtractGrokPatterns(log.body, "%{TIMESTAMP_ISO8601} %{NOTSPACE} %{NOTSPACE:loglevel} %{NOTSPACE:logger} (\\[)?(req-)%{NOTSPACE:request.id} ?(g%{NOTSPACE:global_request.id}) ?%{NOTSPACE:user_id} ?%{NOTSPACE:project_id} ?%{NOTSPACE:domain_id} ?%{NOTSPACE:user_domain_id} ?%{NOTSPACE:project_domain_id}\\] %{IPV4:client.address}(,%{IPV4:internal_ip})? \"%{WORD:request.method} %{NOTSPACE:request.path} HTTP/%{NOTSPACE}\" %{NOTSPACE} %{NUMBER:response}?( ).*%{NOTSPACE} %{NUMBER:content_length:int} %{NOTSPACE} %{BASE10NUM:request.
-        time:float} ?%{NOTSPACE} ?%{NOTSPACE:agent}", true), "upsert")
+        - merge_maps(log.attributes, ExtractGrokPatterns(log.body, "%{TIMESTAMP_ISO8601} %{NOTSPACE} %{NOTSPACE:loglevel} %{NOTSPACE:logger} (\\[)?(req-)%{NOTSPACE:request.id} ?(g%{NOTSPACE:global_request.id}) ?%{NOTSPACE:user_id} ?%{NOTSPACE:project_id} ?%{NOTSPACE:domain_id} ?%{NOTSPACE:user_domain_id} ?%{NOTSPACE:project_domain_id}\\] %{IPV4:client.address}(,%{IPV4:internal_ip})? \"%{WORD:request.method} %{NOTSPACE:request.path} HTTP/%{NOTSPACE}\" %{NOTSPACE} %{NUMBER:response}?( ).*%{NOTSPACE} %{NUMBER:content_length:int} %{NOTSPACE} %{BASE10NUM:request.time:float} ?%{NOTSPACE} ?%{NOTSPACE:agent}", true), "upsert")
         - merge_maps(log.attributes, ExtractGrokPatterns(log.body, "%{TIMESTAMP_ISO8601} %{NOTSPACE} %{NOTSPACE:loglevel} %{NOTSPACE:logger} (\\[)?(req-)%{NOTSPACE:request.id} ?(g%{NOTSPACE:global_request.id}) ?%{NOTSPACE:user_id} ?%{NOTSPACE:project_id} ?%{NOTSPACE:domain_id} ?%{NOTSPACE:user_domain_id} ?%{NOTSPACE:project_domain_id}\\]", true), "upsert")
 
 transform/non_openstack:
@@ -153,13 +152,7 @@ transform/elektra:
       conditions:
         - resource.attributes["k8s.deployment.name"] == "elektra"
       statements:
-        - merge_maps(log.attributes, ExtractGrokPatterns(log.body, "\\[%{NOTSPACE:
-        
-        
-        
-        
-        
-        }\\] %{WORD} %{WORD:method} \"%{NOTSPACE:url} %{WORD} %{IP:ip} %{WORD} %{TIMESTAMP_ISO8601}", true), "upsert")
+        - merge_maps(log.attributes, ExtractGrokPatterns(log.body, "\\[%{NOTSPACE:request.id}\\] %{WORD} %{WORD:method} \"%{NOTSPACE:url} %{WORD} %{IP:ip} %{WORD} %{TIMESTAMP_ISO8601}", true), "upsert")
         - merge_maps(log.attributes, ExtractGrokPatterns(log.body, "\\[%{NOTSPACE:request.id}\\] %{WORD} %{NUMBER:response}", true), "upsert")
         - merge_maps(log.attributes, ExtractGrokPatterns(log.body, "\\[%{NOTSPACE:request.id}\\]", true), "upsert")
 
@@ -180,8 +173,7 @@ transform/swift_proxy:
         - resource.attributes["k8s.daemonset.name"] == "swift-proxy-cluster-3"
         - resource.attributes["app.label.component"] == "swift-servers"
       statements:
-        - merge_maps(log.attributes, ExtractGrokPatterns(log.body, "%{SYSLOGTIMESTAMP:date} %{HOSTNAME:host} %{WORD}.%{LOGLEVEL} %{SYSLOGPROG}%{NOTSPACE} %{HOSTNAME:client.address} %{HOSTNAME:remote_addr} %{NOTSPACE:datetime} %{WORD:request.method} %{NOTSPACE:request.path}?( )?(%{NOTSPACE:request.param}) ?(%{NOTSPACE:protocol})?( )%{NUMBER:response} %{NOTSPACE} %{NOTSPACE:user_agent} %{NOTSPACE:auth_token} %{NOTSPACE:bytes_recvd} %{NOTSPACE:bytes_sent} %{NOTSPACE:client.etag} %{NOTSPACE:transaction_id} %{NOTSPACE:headers} %{BASE10NUM:request.time:float} %{NOTSPACE:source} %{NOTSPACE:log_info} %{BASE10NUM:request.start.time} %{BASE10NUM:request.end.
-        time} %{NOTSPACE:policy_index}", true), "upsert")
+        - merge_maps(log.attributes, ExtractGrokPatterns(log.body, "%{SYSLOGTIMESTAMP:date} %{HOSTNAME:host} %{WORD}.%{LOGLEVEL} %{SYSLOGPROG}%{NOTSPACE} %{HOSTNAME:client.address} %{HOSTNAME:remote_addr} %{NOTSPACE:datetime} %{WORD:request.method} %{NOTSPACE:request.path}?( )?(%{NOTSPACE:request.param}) ?(%{NOTSPACE:protocol})?( )%{NUMBER:response} %{NOTSPACE} %{NOTSPACE:user_agent} %{NOTSPACE:auth_token} %{NOTSPACE:bytes_recvd} %{NOTSPACE:bytes_sent} %{NOTSPACE:client.etag} %{NOTSPACE:transaction_id} %{NOTSPACE:headers} %{BASE10NUM:request.time:float} %{NOTSPACE:source} %{NOTSPACE:log_info} %{BASE10NUM:request.start.time} %{BASE10NUM:request.end.time} %{NOTSPACE:policy_index}", true), "upsert")
         - set(log.attributes["bytes_recvd"], 0) where log.attributes["bytes_recvd"] == "-"
         - set(log.attributes["bytes_sent"], 0) where log.attributes["bytes_sent"] == "-"
 
