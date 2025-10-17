@@ -116,6 +116,7 @@ transform/coredns_api:
       conditions:
         - resource.attributes["k8s.deployment.name"] == "coredns-api"
       statements:
+        - merge_maps(log.cache, ParseJSON(log.body), "upsert") where IsMatch(log.body, "^\\{")
         - set(log.attributes["loglevel"], log.cache["level"])
         - set(log.attributes["time"], log.cache["time"])
         - set(log.attributes["request.id"], log.cache["request-id"])
