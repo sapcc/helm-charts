@@ -212,3 +212,13 @@ auths:
     priv_protocol: {{ .Values.snmp_exporter.aristaspine.priv_protocol }}
     priv_password: ${ARISTASPINE_V3_PRIV_PASSWORD}
 {{- end }}
+{{- if .Values.snmp_exporter.utimaco.enabled }}
+  utimaco_v3:
+    version: {{ .Values.snmp_exporter.utimaco.version }}
+    security_level: {{ .Values.snmp_exporter.utimaco.security_level }}
+    username: ${UTIMACO_V3_USERNAME}
+    password: ${UTIMACO_V3_PASSWORD}
+    auth_protocol: {{ .Values.snmp_exporter.utimaco.auth_protocol }}
+    priv_protocol: {{ .Values.snmp_exporter.utimaco.priv_protocol }}
+    priv_password: ${UTIMACO_V3_PRIV_PASSWORD}
+{{- end }}
