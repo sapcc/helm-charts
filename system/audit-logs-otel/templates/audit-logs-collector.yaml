@@ -1,7 +1,7 @@
 apiVersion: opentelemetry.io/v1beta1
 kind: OpenTelemetryCollector
 metadata:
-  name: audit-logs-otel
+  name: audit-logs
   labels:
   {{- include "plugin.labels" . | nindent 4 }} 
   {{- if .Values.openTelemetryPlugin.auditLogs.customLabels }}
@@ -48,7 +48,7 @@ spec:
       value: "{{ .Values.openTelemetryPlugin.auditLogs.openSearchLogs.index }}"
   envFrom:
     - secretRef:
-          name: audit-logs-otel-basic-auth
+          name: audit-logs-basic-auth
 {{- if .Values.openTelemetryPlugin.auditLogs.prometheus.podMonitor.enabled }}
   ports:
     - name: prometheus
@@ -80,11 +80,6 @@ spec:
   - name: run-containerd
     mountPath: /run/containerd
     readOnly: true
-{{- if .Values.openTelemetryPlugin.auditLogs.logsCollector.auditpollerConfig.enabled }}
-  - name: audit-poller-dir
-    mountPath: /audit
-    readOnly: true
-{{- end}}
   volumes:
   - name: varlog
     hostPath:
@@ -108,11 +103,6 @@ spec:
     hostPath:
       path: /run/containerd
       type: DirectoryOrCreate
-{{- if .Values.openTelemetryPlugin.auditLogs.logsCollector.auditpollerConfig.enabled }}
-  - name: audit-poller-dir
-    hostPath:
-      path: /audit
-{{- end }}
 
   config:
     receivers:
