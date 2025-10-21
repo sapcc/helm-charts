@@ -37,7 +37,7 @@ We truncate at 24 chars because some Kubernetes name fields are limited to this 
 {{- default .Chart.AppVersion .Values.images.relay.tag -}}
 {{- end -}}
 {{- define "sentry.image" -}}
-{{- default "getsentry/sentry" .Values.images.sentry.repository -}}
+{{- required ".Values.global.registry is missing" .Values.global.registry }}/{{ .Values.images.sentry.repository }}:{{required ".Values.images.sentry.tag is missing" .Values.images.sentry.tag }}
 :
 {{- default .Chart.AppVersion .Values.images.sentry.tag -}}
 {{- end -}}
