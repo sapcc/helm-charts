@@ -3,6 +3,9 @@
 rabbit_ha_queues = {{ .Values.rabbitmq_ha_queues | default .Values.global.rabbitmq_ha_queues | default "true" }}
 rabbit_transient_queues_ttl = {{ .Values.rabbit_transient_queues_ttl | default .Values.global.rabbit_transient_queues_ttl | default 60 }}
 heartbeat_in_pthread = False
+    {{- if .Values.rabbitmq_ssl_client }}
+ssl = {{ .Values.rabbitmq_ssl_client }}
+    {{- end }}
 {{- end }}
 
 {{- define "ini_sections.default_transport_url" }}
@@ -25,7 +28,8 @@ transport_url = {{ include "utils.rabbitmq_url" . }}
 {{- define "utils.rabbitmq_url" -}}
 {{- $envAll := index . 0 -}}
 {{- $data := index . 1 -}}
-rabbit://{{ include "resolve_secret_urlquery" $data.user }}:{{ include "resolve_secret_urlquery" $data.password }}@{{ $data.host | default (print $envAll.Release.Name "-rabbitmq") }}:{{ $data.port | default 5672 }}/{{ $data.virtual_host | default "" }}
+{{- $ssl := dig "rabbitmq_ssl_client" false $envAll.Values.AsMap }}
+rabbit://{{ include "resolve_secret_urlquery" $data.user }}:{{ include "resolve_secret_urlquery" $data.password }}@{{ $data.host | default (print $envAll.Release.Name "-rabbitmq") }}:{{ $data.port | default (ternary 5671 5672 $ssl) }}/{{ $data.virtual_host | default "" }}
 {{- end -}}
 
 {{- define "ini_sections.database_options_mysql" }}
@@ -56,7 +60,7 @@ enabled = true
 {{- define "ini_sections.audit_middleware_notifications"}}
     {{- if .Values.audit }}
         {{- if .Values.audit.enabled }}
-
+{{ $ssl := dig "rabbitmq_ssl_client" false .Values.AsMap }}
 # this is for the cadf audit messaging
 [audit_middleware_notifications]
 # topics = notifications
@@ -69,7 +73,7 @@ driver = messagingv2
                 {{- include "ini_sections._transport_url" (tuple . $data) }}
             {{- else if .Values.rabbitmq_notifications }}
                 {{- if and .Values.rabbitmq_notifications.ports .Values.rabbitmq_notifications.users }}
-                    {{- $data := dict "user" .Values.rabbitmq_notifications.users.default.user "password" .Values.rabbitmq_notifications.users.default.password "host" (print .Release.Name "-rabbitmq-notifications") "port" .Values.rabbitmq_notifications.ports.public }}
+                    {{- $data := dict "user" .Values.rabbitmq_notifications.users.default.user "password" .Values.rabbitmq_notifications.users.default.password "host" (print .Release.Name "-rabbitmq-notifications") "port" (ternary .Values.rabbitmq_notifications.ports.amqps .Values.rabbitmq_notifications.ports.public $ssl)}}
                     {{- $_ := required ".Values.rabbitmq_notifications.users.default.user is required" $data.user }}
                     {{- $_ := required ".Values.rabbitmq_notifications.users.default.password is required" $data.password }}
                     {{- include "ini_sections._transport_url" (tuple . $data) }}
