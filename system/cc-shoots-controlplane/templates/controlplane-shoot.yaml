@@ -1,0 +1,143 @@
+{{- range $key, $cluster := .Values.cpShoots }}
+---
+apiVersion: core.gardener.cloud/v1beta1
+kind: Shoot
+metadata:
+  name: {{ $key }}
+spec:
+  cloudProfileName: ironcore-metal
+  secretBindingName: metal-{{ $key }}
+  seedName: mgmt-{{ $key }}
+  region: {{ $key }}
+  networking:
+    pods: {{ default $.Values.networking.pods $cluster.networking.pods }}
+    services: {{ default $.Values.networking.services $cluster.networking.services }}
+    nodes: {{ default $.Values.networking.nodes $cluster.networking.nodes }}
+    type: calico
+    providerConfig:
+      apiVersion: calico.networking.extensions.gardener.cloud/v1alpha1
+      kind: NetworkConfig
+      backend: bird
+      vethMTU: "8950"
+      ipam:
+        type: host-local
+        cidr: usePodCIDR
+      overlay:
+        enabled: false
+        createPodRoutes: true
+      birdExporter:
+        enabled: {{ required ".Values.networking.enableBirdExporter is required" $.Values.networking.enableBirdExporter }}
+      multus:
+        enabled: {{ default true (($cluster.networking.multus).enabled) }}
+        installCNIPlugins: {{ default true (($cluster.networking.multus).installCNIPlugins) }}
+  kubernetes:
+    version: {{ default $.Values.kubernetes.version $cluster.version }}
+    kubeAPIServer:
+      featureGates:
+        AnonymousAuthConfigurableEndpoints: true
+      structuredAuthentication:
+        configMapName: authentication-config-cp
+    verticalPodAutoscaler:
+      enabled: true # VPA needs to enabled for ManagedSeed
+  maintenance:
+    autoUpdate:
+      kubernetesVersion: false
+      machineImageVersion: false
+  resources:
+  - name: extraignition-cp-{{ $key }}
+    resourceRef:
+      apiVersion: v1
+      kind: Secret
+      name: extraignition-cp-{{ $key }}
+  provider:
+    type: ironcore-metal
+    infrastructureConfig:
+      apiVersion: ironcore-metal.provider.extensions.gardener.cloud/v1alpha1
+      kind: InfrastructureConfig
+      networks:
+      {{- range $cluster.networking.nodeNetworks }}
+      - name: nodenetwork-{{ . | replace "/" "-" | replace "." "-" }}
+        cidr: {{ . }}
+      {{- end }}
+    controlPlaneConfig:
+      apiVersion: ironcore-metal.provider.extensions.gardener.cloud/v1alpha1
+      kind: ControlPlaneConfig
+      cloudControllerManager:
+        networking:
+          configureNodeAddresses: true
+          ipamKind:
+            apiGroup: ipam.cluster.x-k8s.io
+            kind: IPAddress
+      loadBalancerConfig:
+        calicoBgpConfig:
+          asNumber: {{ $cluster.networking.asNumber }}
+          bgpPeer:
+          {{- range $cluster.networking.bgpPeers }}
+          - asNumber: {{ default $cluster.networking.asNumber .asNumber }}
+            nodeSelector: {{ .nodeSelector }}
+            peerIP: {{ .peerIP }}
+            filters:
+            - v4filter
+          {{- end }}
+          bgpFilter:
+            - name: v4filter
+              exportV4:
+                {{- range $cluster.networking.externalServices }}
+                - cidr: {{ . }}
+                  matchOperator: Equal
+                  action: Reject
+                {{- end }}
+          nodeToNodeMeshEnabled: true
+          serviceLoadBalancerIPs:
+          {{- toYaml $cluster.networking.externalServices | nindent 10 }}
+        metallbConfig:
+          ipAddressPool:
+          {{- toYaml $cluster.networking.externalServices | nindent 10 }}
+
+    workers:
+    {{- range $workerkey, $worker := $cluster.workers }}
+      - name: cp-{{ $workerkey }}
+        machine:
+          architecture: amd64
+          image:
+            name: gardenlinux
+            version: {{ default $.Values.imageVersion $cluster.imageVersion }}
+          type: baremetal
+        minimum: {{ $worker.poolSize }}
+        maximum: {{ $worker.poolSize }}
+        maxSurge: 0
+        maxUnavailable: 1
+        zones:
+        - {{ $workerkey }}
+        machineControllerManager:
+          machineCreationTimeout: 1h30m0s
+          machineHealthTimeout: 1h0m0s
+          machineDrainTimeout: 1h30m0s
+        providerConfig:
+          apiVersion: ironcore-metal.provider.extensions.gardener.cloud/v1alpha1
+          kind: WorkerConfig
+          extraServerLabels:
+            topology.kubernetes.io/zone: {{ $workerkey }}
+            kubernetes.metal.cloud.sap/cluster: {{ $key }}
+          metadata:
+            interfaces: {{ default $.Values.networking.interfaces $cluster.networking.interfaces }}
+            vlan: {{ default $.Values.networking.vlan $cluster.networking.vlan | quote }}
+            region: {{ $key }}
+          ipamConfig:
+          - metadataKey: bond
+            ipamRef:
+              apiGroup: ipam.cluster.x-k8s.io
+              kind: GlobalInClusterIPPool
+              name: cp-{{ $workerkey }}
+          extraIgnition:
+            override: false
+            secretRef: extraignition-cp-{{ $key }}
+            raw: |
+            {{- if $cluster.extraIgnition }}
+              {{ $cluster.extraIgnition | nindent 14 }}
+            {{- end }}
+            {{- if $.Values.extraIgnition }}
+              {{ $.Values.extraIgnition | nindent 14 }}
+            {{- end }}
+    {{- end }}
+{{- end }}
