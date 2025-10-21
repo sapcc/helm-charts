@@ -1,0 +1,113 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "kafka.fullname" . }}
+  labels:
+    {{- include "kafka.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.kafka.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "kafka.selectorLabels" . | nindent 6 }}
+  serviceName: {{ include "kafka.fullname" . }}-headless
+  podManagementPolicy: Parallel
+  template:
+    metadata:
+      labels:
+        {{- include "kafka.selectorLabels" . | nindent 8 }}
+    spec:
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        fsGroupChangePolicy: "OnRootMismatch"
+      initContainers:
+      - name: volume-permissions
+        image: "{{include "dockerHubMirror" .}}/library/busybox"
+        command:
+        - /bin/sh
+        - -c
+        - |
+          chown -R 1000:1000 /var/lib/kafka/data
+        securityContext:
+          runAsUser: 0
+        volumeMounts:
+          - mountPath: /var/lib/kafka/data
+            name: kafka-data
+      containers:
+        - name: kafka
+          image: "{{include "dockerHubMirror" .}}/{{ .Values.kafka.image.repository }}:{{ .Values.kafka.image.tag }}"
+          ports:
+            - name: client
+              containerPort: {{ .Values.kafka.service.ports.client }}
+              protocol: TCP
+            - name: controller
+              containerPort: 9093
+              protocol: TCP
+          env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: KAFKA_CLUSTER_ID
+              value: "GENERATED-CLUSTER-ID" # This will be replaced by the command
+            # === KRaft Settings ===
+            - name: KAFKA_NODE_ID
+              value: "" # This will be set by the command
+            - name: KAFKA_PROCESS_ROLES
+              value: "broker,controller"
+            - name: KAFKA_CONTROLLER_LISTENER_NAMES
+              value: "CONTROLLER"
+            - name: KAFKA_CONTROLLER_QUORUM_VOTERS
+              value: '{{- range $i, $e := until (int .Values.kafka.replicaCount) }}{{ if $i }},{{ end }}{{ $i }}@{{ include "kafka.fullname" $ }}-{{ $i }}.{{ include "kafka.fullname" $ }}-headless:9093{{- end }}'
+
+            # === Listener Settings ===
+            - name: KAFKA_LISTENERS
+              value: "CLIENT://0.0.0.0:{{ .Values.kafka.service.ports.client }},CONTROLLER://0.0.0.0:9093"
+            - name: KAFKA_ADVERTISED_LISTENERS
+              value: "" # This will be set by the command
+            - name: KAFKA_LISTENER_SECURITY_PROTOCOL_MAP
+              value: "CLIENT:PLAINTEXT,CONTROLLER:PLAINTEXT"
+            - name: KAFKA_INTER_BROKER_LISTENER_NAME
+              value: "CLIENT"
+
+            # === Topic Settings ===
+            - name: KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR
+              value: "{{ .Values.kafka.replicaCount }}"
+            - name: KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR
+              value: "{{ .Values.kafka.replicaCount }}"
+            - name: KAFKA_TRANSACTION_STATE_LOG_MIN_ISR
+              value: "{{ .Values.kafka.replicaCount }}"
+
+            # === Other Settings ===
+            - name: KAFKA_LOG_DIRS
+              value: "/var/lib/kafka/data"
+            - name: KAFKA_MESSAGE_MAX_BYTES
+              value: "{{ .Values.kafka.maxMessageBytes }}"
+            - name: KAFKA_SOCKET_REQUEST_MAX_BYTES
+              value: "{{ .Values.kafka.socketRequestMaxBytes }}"
+          command:
+            - "sh"
+            - "-exc"
+            - |
+              export KAFKA_CLUSTER_ID=$(kafka-storage random-uuid)
+              export KAFKA_NODE_ID=${HOSTNAME##*-}
+              export KAFKA_ADVERTISED_LISTENERS=CLIENT://{{ include "kafka.fullname" . }}:{{ .Values.kafka.service.ports.client }}
+              exec /etc/confluent/docker/run
+          volumeMounts:
+            - name: kafka-data
+              mountPath: /var/lib/kafka/data
+  {{- if .Values.kafka.persistence.enabled }}
+  volumeClaimTemplates:
+    - metadata:
+        name: kafka-data
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        resources:
+          requests:
+            storage: {{ .Values.kafka.persistence.size }}
+  {{- else }}
+      volumes:
+        - name: kafka-data
+          emptyDir: {}
+  {{- end }}

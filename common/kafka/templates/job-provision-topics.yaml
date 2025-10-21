@@ -1,0 +1,32 @@
+{{- if .Values.kafka.provisioning.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "kafka.fullname" . }}-topic-provisioner
+  labels:
+    {{- include "kafka.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-weight": "1"
+    "helm.sh/hook-delete-policy": hook-succeeded
+spec:
+  template:
+    metadata:
+      name: {{ include "kafka.fullname" . }}-topic-provisioner
+      labels:
+        {{- include "kafka.selectorLabels" . | nindent 8 }}
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: topic-provisioner
+          image: "{{include "dockerHubMirror" .}}/{{ .Values.kafka.image.repository }}:{{ .Values.kafka.image.tag }}"
+          command: ["/bin/bash", "/etc/kafka-scripts/provision-topics.sh"]
+          volumeMounts:
+            - name: kafka-scripts
+              mountPath: /etc/kafka-scripts
+      volumes:
+        - name: kafka-scripts
+          configMap:
+            name: {{ include "kafka.fullname" . }}-scripts
+            defaultMode: 0755
+{{- end }}
