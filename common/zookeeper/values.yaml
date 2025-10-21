@@ -1,0 +1,79 @@
+replicaCount: 1
+
+image:
+  repository: library/zookeeper
+  tag: 3.9.4
+
+## @param tickTime Basic time unit (in milliseconds) used by ZooKeeper for heartbeats
+##
+tickTime: 2000
+## @param initLimit ZooKeeper uses to limit the length of time the ZooKeeper servers in quorum have to connect to a leader
+##
+initLimit: 10
+## @param syncLimit How far out of date a server can be from a leader
+##
+syncLimit: 5
+## @param preAllocSize Block size for transaction log file
+##
+preAllocSize: 65536
+## @param snapCount The number of transactions recorded in the transaction log before a snapshot can be taken (and the transaction log rolled)
+##
+snapCount: 100000
+## @param maxClientCnxns Limits the number of concurrent connections that a single client may make to a single member of the ZooKeeper ensemble
+##
+maxClientCnxns: 60
+## @param maxSessionTimeout Maximum session timeout (in milliseconds) that the server will allow the client to negotiate
+## Defaults to 20 times the tickTime
+##
+maxSessionTimeout: 40000
+## @param heapSize Size (in MB) for the Java Heap options (Xmx and Xms)
+## This env var is ignored if Xmx an Xms are configured via `jvmFlags`
+##
+heapSize: 1024
+
+## @param containerPorts.client ZooKeeper client container port
+## @param containerPorts.follower ZooKeeper follower container port
+## @param containerPorts.election ZooKeeper election container port
+## @param containerPorts.adminServer ZooKeeper admin server container port
+##
+containerPorts:
+  client: 2181
+  follower: 2888
+  election: 3888
+  adminServer: 8080
+
+service:
+  ## @param service.type Kubernetes Service type
+  ##
+  type: ClusterIP
+  ## @param service.ports.client ZooKeeper client service port
+  ## @param service.ports.follower ZooKeeper follower service port
+  ## @param service.ports.election ZooKeeper election service port
+  ##
+  ports:
+    client: 2181
+    follower: 2888
+    election: 3888
+
+persistence:
+  ## @param persistence.enabled Enable ZooKeeper data persistence using PVC. If false, use emptyDir
+  ##
+  enabled: true
+  ## @param persistence.existingClaim Name of an existing PVC to use (only when deploying a single replica)
+  ##
+  existingClaim: ""
+  ## @param persistence.storageClass PVC Storage Class for ZooKeeper data volume
+  ## If defined, storageClassName: <storageClass>
+  ## If set to "-", storageClassName: "", which disables dynamic provisioning
+  ## If undefined (the default) or set to null, no storageClassName spec is
+  ##   set, choosing the default provisioner.  (gp2 on AWS, standard on
+  ##   GKE, AWS & OpenStack)
+  ##
+  storageClass: ""
+  ## @param persistence.accessModes PVC Access modes
+  ##
+  accessModes:
+    - ReadWriteOnce
+  ## @param persistence.size PVC Storage Request for ZooKeeper data volume
+  ##
+  size: 8Gi
