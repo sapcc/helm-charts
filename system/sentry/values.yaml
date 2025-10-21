@@ -1061,11 +1061,9 @@ externalClickhouse:
 zookeeper:
   clusterDomain: kubernetes.qa-de-1.cloud.sap
   enabled: true
-  image:
-    registry: keppel.eu-de-1.cloud.sap
-    repository: ccloud-dockerhub-mirror/bitnamilegacy/zookeeper
-    tag: 3.8.0-debian-11-r9
   nameOverride: zookeeper-clickhouse
+  persistence:
+    enabled: true
   replicaCount: 1
 
 # Settings for Kafka.
@@ -1074,10 +1072,6 @@ kafka:
   clusterDomain: kubernetes.qa-de-1.cloud.sap
   enabled: true
   replicaCount: 1
-  image:
-    registry: keppel.eu-de-1.cloud.sap
-    repository: ccloud-dockerhub-mirror/bitnamilegacy/kafka
-    tag: 3.4.0-debian-11-r33
   allowPlaintextListener: true
   defaultReplicationFactor: 1
   offsetsTopicReplicationFactor: 1
@@ -1087,19 +1081,6 @@ kafka:
   maxMessageBytes: "50000000"
   # 50 MB
   socketRequestMaxBytes: "50000000"
-  volumePermissions:
-    enabled: true
-    image:
-      registry: keppel.eu-de-1.cloud.sap
-      repository: ccloud-dockerhub-mirror/bitnamilegacy/bitnami-shell-archived
-      tag: 11-debian-11-r118
-  defaultInitContainers:
-    volumePermissions:
-      enabled: true
-      image:
-        registry: keppel.eu-de-1.cloud.sap
-        repository: ccloud-dockerhub-mirror/bitnamilegacy/bitnami-shell-archived
-        tag: 11-debian-11-r118
   persistence:
     enabled: true
     size: 1Gi
@@ -1150,15 +1131,15 @@ redis:
   auth:
     enabled: true
     sentinel: false
-    existingSecret: sentry236-redis-user-default
+    existingSecret: sentry23-redis-user-default
     existingSecretPasswordKey: password
     ## Just omit the password field if your redis cluster doesn't use password
     # password: redis
-  existingSecret: sentry236-redis-user-default
+  existingSecret: sentry23-redis-user-default
   existingSecretKey: password
   alerts:
       support_group: identity
-  fullnameOverride: sentry236-redis
+  fullnameOverride: sentry23-redis
   # nameOverride: redis
   master:
     persistence:
@@ -1207,10 +1188,10 @@ postgresql:
   users:
       sentry: {}
   tableOwner: sentry
-  fullnameOverride: sentry236-postgresql
+  fullnameOverride: sentry23-postgresql
   auth:
     database: sentry
-    existingSecret: sentry236-pguser-sentry
+    existingSecret: sentry23-pguser-sentry
     secretKeys:
       adminPasswordKey: postgres-password
   replication:
