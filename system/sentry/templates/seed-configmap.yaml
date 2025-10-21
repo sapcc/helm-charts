@@ -1,0 +1,10 @@
+{{ if and .Values.adminPassword .Values.adminToken .Values.adminEmail -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "fullname" . }}-seed
+
+data:
+  seed.py: |
+{{ include (print $.Template.BasePath "/_seed.py.tpl") .  | indent 4}}
+{{- end }}
