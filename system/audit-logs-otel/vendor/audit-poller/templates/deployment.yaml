@@ -48,8 +48,8 @@ spec:
             mountPath: /config/config.yaml
             readOnly: true
             subPath: config.yaml
-          - name: audit-poller-dir
-            mountPath: {{ .Values.logDir }}
+          - name: audit-dir
+            mountPath: {{.Values.logDir}}
             readOnly: false
 
 {{- if .Values.sidecar.tail.enabled }}
@@ -57,20 +57,24 @@ spec:
         image: {{ .Values.global.dockerHubMirror }}/library/busybox
         args: [/bin/sh, -c, 'touch {{ .Values.logDir }}/{{ .Values.iasApi.fileName }}; tail -n+1 -F {{ .Values.logDir }}/{{ .Values.iasApi.fileName }}']
         volumeMounts:
-        - name: audit-poller-dir
+        - name: audit-dir
           mountPath: {{ .Values.logDir }}
-
       - name: iaschangelog-stdout
         image: {{ .Values.global.dockerHubMirror }}/library/busybox
         args: [/bin/sh, -c, 'touch {{ .Values.logDir }}/{{ .Values.iasChangelog.fileName }}; tail -n+1 -F {{ .Values.logDir }}/{{ .Values.iasChangelog.fileName }}']
         volumeMounts:
-        - name: audit-poller-dir
+        - name: audit-dir
           mountPath: {{ .Values.logDir }}
 {{- end }}
       volumes:
-        - name: audit-poller-etc
-          configMap:
-            name: audit-poller-etc
-        - name: audit-poller-dir
-          hostPath:
-            path: {{ .Values.logDir }}
+      - name: audit-poller-etc
+        configMap:
+          name: audit-poller-etc 
+      - name: audit-dir
+        {{- if .Values.persistence.enabled }}
+        persistentVolumeClaim:
+          claimName: audit-poller-pvc
+        {{- else }}
+        emptyDir:
+          sizeLimit: 50Mi
+        {{- end }}

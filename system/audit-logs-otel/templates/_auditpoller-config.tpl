@@ -1,8 +1,15 @@
 {{- define "auditpoller.receiver" }}
 filelog/auditpoller:
   include_file_path: true
-  include: [ /audit/*.log ]
-  exclude: [ /audit/*.pos ]
+  include: [ /var/log/pods/audit-logs-otel_audit-poller*/audit-poller/*.log ]
+  exclude: [ /var/log/pods/audit-logs-otel_audit-logs-collector* ]
+  operators:
+    - id: container-parser
+      type: container
+    - id: parser-containerd-auditpoller
+      type: add
+      field: resource["container.runtime"]
+      value: "containerd"
 {{ end }}
 
 {{- define "auditpoller.processors" }}
@@ -20,9 +27,6 @@ attributes/auditpoller:
     - action: insert
       key: log.type
       value: "auditpoller"
-    - action: insert
-      key: audit.source
-      value: "ias-auditlog"
 {{ end }}
 
 {{- define "auditpoller.pipelines" }}
