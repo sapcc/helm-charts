@@ -28,7 +28,7 @@ transport_url = {{ include "utils.rabbitmq_url" . }}
 {{- define "utils.rabbitmq_url" -}}
 {{- $envAll := index . 0 -}}
 {{- $data := index . 1 -}}
-{{- $ssl := dig "rabbitmq_ssl_client" false $envAll.Values.AsMap }}
+{{- $ssl := dig "rabbitmq_ssl_client" false $envAll.Values.AsMap -}}
 rabbit://{{ include "resolve_secret_urlquery" $data.user }}:{{ include "resolve_secret_urlquery" $data.password }}@{{ $data.host | default (print $envAll.Release.Name "-rabbitmq") }}:{{ $data.port | default (ternary 5671 5672 $ssl) }}/{{ $data.virtual_host | default "" }}
 {{- end -}}
 
