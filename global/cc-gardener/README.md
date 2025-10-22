@@ -43,4 +43,5 @@ k annotate crd gardens.operator.gardener.cloud extensions.operator.gardener.clou
 
 # Outdated
 - mirror gardenlet helm chart (is now handled by [garden-pcr](https://ci1.eu-de-2.cloud.sap/teams/services/pipelines/garden-pcr))
-    - `helm pull oci://keppel.eu-de-1.cloud.sap/ccloud-europe-docker-pkg-dev-mirror/gardener-project/releases/charts/gardener/gardenlet:v1.121.5`
+- manual pull:
+    - `helm pull oci://keppel.eu-de-1.cloud.sap/ccloud-europe-docker-pkg-dev-mirror/gardener-project/releases/charts/gardener/gardenlet --version v1.122.3`
