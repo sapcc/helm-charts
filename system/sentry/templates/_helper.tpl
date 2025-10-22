@@ -530,6 +530,17 @@ Common Sentry environment variables
       name: {{ .Values.externalPostgresql.existingSecret }}
       key: {{ default "postgresql-password" .Values.externalPostgresql.existingSecretKey }}
 {{- end }}
+{{- if .Values.redis.enabled }}
+- name: SENTRY_REDIS_HOST
+  value: {{ template "sentry.redis.fullname" . }}
+- name: SENTRY_REDIS_PORT
+  value: "6379"
+- name: SENTRY_REDIS_PASSWORD
+  valueFrom:
+      secretKeyRef:
+        name: {{ default (include "sentry.redis.fullname" .) .Values.redis.auth.existingSecret }}
+        key: {{ default "redis-password" .Values.redis.auth.existingSecretPasswordKey }}
+{{- end }}
 {{- if and (eq .Values.filestore.backend "gcs") .Values.filestore.gcs.secretName }}
 - name: GOOGLE_APPLICATION_CREDENTIALS
   value: /var/run/secrets/google/{{ .Values.filestore.gcs.credentialsFile }}

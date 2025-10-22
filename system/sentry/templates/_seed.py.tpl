@@ -4,7 +4,9 @@ from sentry.app import locks
 from sentry.utils.locking import UnableToAcquireLock
 # We use the 'upgrade' lock to avoid running in a half initialized database
 # https://github.com/getsentry/sentry/blob/d45ae1d1b7a05ca46724a106447320d4932269b7/src/sentry/runner/commands/upgrade.py#L53
-lock = locks.get('upgrade', duration=0)
+lock = locks.get('upgrade', duration=120)
+print(f"Lock created with duration: {lock.duration}")  # Debug print
+print(f"Lock key: {lock.key}")  # Debug print
 
 def ensure_user(email, password):
     try:
@@ -67,17 +69,17 @@ def ensure_api_token(user, token):
     except ApiToken.DoesNotExist:
         token = ApiToken.objects.create(
              user=user,
-             scope_list=["project:read", "project:write", "project:delete", "team:read", "team:write", "org:read", "org:write", "member:read", "member:write", "event:read"],
+             scope_list=["org:read", "org:write", "project:read", "project:write", "team:read", "team:write", "member:read", "member:write", "event:read", "event:write"],
              token=token,
              refresh_token=None,
              expires_at=None,
         )
-
         click.echo("Token created")
 
 try:
     with lock.acquire():
         click.echo("Lock aquired")
+        print(os.environ['ADMIN_EMAIL'], os.environ['ADMIN_PASSWORD'],os.getenv('ORGANIZATION_NAME'), os.getenv('ORGANIZATION_SLUG'))
         user = ensure_user(os.environ['ADMIN_EMAIL'], os.environ['ADMIN_PASSWORD'])
         ensure_api_token(user, os.environ['ADMIN_API_TOKEN'])
 except UnableToAcquireLock:

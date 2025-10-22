@@ -6,6 +6,7 @@ metadata:
   annotations:
     "helm.sh/hook": post-install
     # hooks are not annotated as belonging to the Helm release, so we cannot rely on owner-info injection
+    "helm.sh/hook-delete-policy": "{{ if .Values.hooks.removeOnSuccess }}hook-succeeded,{{ end }}before-hook-creation"
     ccloud/support-group: identity
     ccloud/service: sentry
 spec:
@@ -13,11 +14,15 @@ spec:
     metadata:
       name: {{ template "fullname" . }}-seed
     spec:
+     
       restartPolicy: OnFailure
       volumes:
         - name: seed 
           configMap:
             name: {{ template "fullname" . }}-seed
+        - name: config
+          configMap:
+            name: {{ template "sentry.fullname" . }}-sentry
       containers:
       - name: job 
         image: "{{required ".Values.global.registry is missing" .Values.global.registry }}/{{ .Values.images.sentry.repository }}:{{required ".Values.images.sentry.tag is missing" .Values.images.sentry.tag }}"
@@ -25,13 +30,16 @@ spec:
         volumeMounts:
           - mountPath: /seed
             name: seed
+          - mountPath: /etc/sentry
+            name: config
+            readOnly: true
         env:
           - name: ADMIN_API_TOKEN
-            valueFrom: { secretKeyRef: { name: {{ template "fullname" . }}, key: admin-api-token } }
+            valueFrom: { secretKeyRef: { name: {{ .Release.Name }}, key: admin-api-token } }
           - name: ADMIN_EMAIL
             value: {{ required "missing adminEmail" .Values.adminEmail }}
           - name: ADMIN_PASSWORD
-            valueFrom: { secretKeyRef: { name: {{ template "fullname" . }}, key: admin-password } }
+            valueFrom: { secretKeyRef: { name: {{ .Release.Name }}, key: admin-password } }
           - name: ORGANIZATION_NAME
             value: {{ .Values.organizationName }}
           - name: ORGANIZATION_SLUG
