@@ -45,3 +45,9 @@ k annotate crd gardens.operator.gardener.cloud extensions.operator.gardener.clou
 - mirror gardenlet helm chart (is now handled by [garden-pcr](https://ci1.eu-de-2.cloud.sap/teams/services/pipelines/garden-pcr))
 - manual pull:
     - `helm pull oci://keppel.eu-de-1.cloud.sap/ccloud-europe-docker-pkg-dev-mirror/gardener-project/releases/charts/gardener/gardenlet --version v1.122.3`
+
+# Verify
+- Check pods in the `garden` namespace on the seed cluster. `deployment/gardenlet` should have updated.
+- Check `garden` resource in the on the seed cluster. It should have a new Gardener version.
+- Check `gardenlet` resource in the on the garden cluster.
+- Check `seed` resource in the on the garden cluster.
