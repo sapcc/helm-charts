@@ -91,3 +91,63 @@ groups:
     annotations:
       description: "Exception while applying properties to promoted Replica"
       summary: "Exception while applying properties to promoted Replica"
+
+  - alert: CronusLogsMissing
+    expr: opensearch_logs_cronus_availability_check_daily_logs_buckets == 0
+    for: 1h
+    labels:
+      context: compliance
+      service: cronus
+      severity: critical
+      tier: os
+      support_group: email
+      compliance: E-DPP13_SCI
+      playbook: docs/devops/alert/cronus/log-compliance/
+    annotations:
+      description: 'Cronus logs are missing for the last 30 days in {{ $labels.region }}. This violates E-DPP13_SCI compliance requirements.'
+      summary: 'Cronus logs missing for 30 days - E-DPP13_SCI violation'
+
+  - alert: MaillogMissing
+    expr: opensearch_logs_maillog_availability_check_daily_logs_buckets == 0
+    for: 1h
+    labels:
+      context: compliance
+      service: maillog
+      severity: critical
+      tier: os
+      support_group: email
+      compliance: E-DPP13_SCI
+      playbook: docs/devops/alert/cronus/log-compliance/
+    annotations:
+      description: 'Maillog entries are missing for the last 30 days in {{ $labels.region }}. This violates E-DPP13_SCI compliance requirements.'
+      summary: 'Maillog entries missing for 30 days - E-DPP13_SCI violation'
+
+  - alert: CronusLogsComplianceViolation
+    expr: opensearch_logs_cronus_compliance_violation_old_logs_count_value > 0
+    for: 0m
+    labels:
+      context: compliance
+      service: cronus
+      severity: warning
+      tier: os
+      support_group: email
+      compliance: E-DPP13_SCI
+      playbook: docs/devops/alert/cronus/log-compliance/
+    annotations:
+      description: 'Cronus logs older than 30 days found in {{ $labels.region }}. Count: {{ $value }}. This violates E-DPP13_SCI compliance policy.'
+      summary: 'Cronus logs compliance violation - E-DPP13_SCI'
+
+  - alert: MaillogComplianceViolation
+    expr: opensearch_logs_maillog_compliance_violation_old_logs_count_value > 0
+    for: 0m
+    labels:
+      context: compliance
+      service: maillog
+      severity: warning
+      tier: os
+      support_group: email
+      compliance: E-DPP13_SCI
+      playbook: docs/devops/alert/cronus/log-compliance/
+    annotations:
+      description: 'Maillog entries older than 30 days found in {{ $labels.region }}. Count: {{ $value }}. This violates E-DPP13_SCI compliance policy.'
+      summary: 'Maillog compliance violation - E-DPP13_SCI'
