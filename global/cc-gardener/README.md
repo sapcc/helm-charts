@@ -34,12 +34,12 @@ k annotate crd gardens.operator.gardener.cloud extensions.operator.gardener.clou
     image:
       pullPolicy: IfNotPresent
       repository: europe-docker.pkg.dev/gardener-project/releases/gardener/gardenlet
-      tag: v1.121.5  <<<
+      tag: v1.122.3  <<<
     ```
 - Helm diff
-    `› helm diff upgrade gardenlet oci://keppel.eu-de-1.cloud.sap/ccloud-europe-docker-pkg-dev-mirror/gardener-project/releases/charts/gardener/gardenlet --version v1.121.5 -f gardenlet-values.yaml`
+    `› helm diff upgrade gardenlet oci://keppel.eu-de-1.cloud.sap/ccloud-europe-docker-pkg-dev-mirror/gardener-project/releases/charts/gardener/gardenlet --version v1.122.3 -f gardenlet-values.yaml`
 - Helm upgrade
-    `› helm upgrade gardenlet oci://keppel.eu-de-1.cloud.sap/ccloud-europe-docker-pkg-dev-mirror/gardener-project/releases/charts/gardener/gardenlet --version v1.121.5 -f gardenlet-values.yaml`
+    `› helm upgrade gardenlet oci://keppel.eu-de-1.cloud.sap/ccloud-europe-docker-pkg-dev-mirror/gardener-project/releases/charts/gardener/gardenlet --version v1.122.3 -f gardenlet-values.yaml`
 
 # Outdated
 - mirror gardenlet helm chart (is now handled by [garden-pcr](https://ci1.eu-de-2.cloud.sap/teams/services/pipelines/garden-pcr))
