@@ -11,15 +11,15 @@ data:
 
     echo "Waiting for Kafka to be ready..."
     # A simple wait loop
-    until kafka-topics --bootstrap-server {{ include "kafka.fullname" . }}:{{ .Values.kafka.service.ports.client }} --list; do
+    until kafka-topics --bootstrap-server {{ include "kafka.fullname" . }}:{{ .Values.service.ports.client }} --list; do
       echo "Kafka is not yet available, waiting..."
       sleep 5
     done
 
     echo "Kafka is ready. Provisioning topics..."
 
-    {{- range .Values.kafka.provisioning.topics }}
-    kafka-topics --bootstrap-server {{ include "kafka.fullname" $ }}:{{ $.Values.kafka.service.ports.client }} --create --if-not-exists --topic {{ .name }} --partitions 1 --replication-factor 1
+    {{- range .Values.provisioning.topics }}
+    kafka-topics --bootstrap-server {{ include "kafka.fullname" $ }}:{{ $.Values.service.ports.client }} --create --if-not-exists --topic {{ .name }} --partitions 1 --replication-factor 1
     {{- end }}
 
     echo "Topic provisioning complete."

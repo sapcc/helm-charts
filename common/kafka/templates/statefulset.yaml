@@ -5,7 +5,7 @@ metadata:
   labels:
     {{- include "kafka.labels" . | nindent 4 }}
 spec:
-  replicas: {{ .Values.kafka.replicaCount }}
+  replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
       {{- include "kafka.selectorLabels" . | nindent 6 }}
@@ -36,10 +36,10 @@ spec:
             name: kafka-data
       containers:
         - name: kafka
-          image: "{{include "dockerHubMirror" .}}/{{ .Values.kafka.image.repository }}:{{ .Values.kafka.image.tag }}"
+          image: "{{include "dockerHubMirror" .}}/{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           ports:
             - name: client
-              containerPort: {{ .Values.kafka.service.ports.client }}
+              containerPort: {{ .Values.service.ports.client }}
               protocol: TCP
             - name: controller
               containerPort: 9093
@@ -59,11 +59,11 @@ spec:
             - name: KAFKA_CONTROLLER_LISTENER_NAMES
               value: "CONTROLLER"
             - name: KAFKA_CONTROLLER_QUORUM_VOTERS
-              value: '{{- range $i, $e := until (int .Values.kafka.replicaCount) }}{{ if $i }},{{ end }}{{ $i }}@{{ include "kafka.fullname" $ }}-{{ $i }}.{{ include "kafka.fullname" $ }}-headless:9093{{- end }}'
+              value: '{{- range $i, $e := until (int .Values.replicaCount) }}{{ if $i }},{{ end }}{{ $i }}@{{ include "kafka.fullname" $ }}-{{ $i }}.{{ include "kafka.fullname" $ }}-headless:9093{{- end }}'
 
             # === Listener Settings ===
             - name: KAFKA_LISTENERS
-              value: "CLIENT://0.0.0.0:{{ .Values.kafka.service.ports.client }},CONTROLLER://0.0.0.0:9093"
+              value: "CLIENT://0.0.0.0:{{ .Values.service.ports.client }},CONTROLLER://0.0.0.0:9093"
             - name: KAFKA_ADVERTISED_LISTENERS
               value: "" # This will be set by the command
             - name: KAFKA_LISTENER_SECURITY_PROTOCOL_MAP
@@ -73,31 +73,31 @@ spec:
 
             # === Topic Settings ===
             - name: KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR
-              value: "{{ .Values.kafka.replicaCount }}"
+              value: "{{ .Values.replicaCount }}"
             - name: KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR
-              value: "{{ .Values.kafka.replicaCount }}"
+              value: "{{ .Values.replicaCount }}"
             - name: KAFKA_TRANSACTION_STATE_LOG_MIN_ISR
-              value: "{{ .Values.kafka.replicaCount }}"
+              value: "{{ .Values.replicaCount }}"
 
             # === Other Settings ===
             - name: KAFKA_LOG_DIRS
               value: "/var/lib/kafka/data"
             - name: KAFKA_MESSAGE_MAX_BYTES
-              value: "{{ .Values.kafka.maxMessageBytes }}"
+              value: "{{ .Values.maxMessageBytes }}"
             - name: KAFKA_SOCKET_REQUEST_MAX_BYTES
-              value: "{{ .Values.kafka.socketRequestMaxBytes }}"
+              value: "{{ .Values.socketRequestMaxBytes }}"
           command:
             - "sh"
             - "-exc"
             - |
               export KAFKA_CLUSTER_ID=$(kafka-storage random-uuid)
               export KAFKA_NODE_ID=${HOSTNAME##*-}
-              export KAFKA_ADVERTISED_LISTENERS=CLIENT://{{ include "kafka.fullname" . }}:{{ .Values.kafka.service.ports.client }}
+              export KAFKA_ADVERTISED_LISTENERS=CLIENT://{{ include "kafka.fullname" . }}:{{ .Values.service.ports.client }}
               exec /etc/confluent/docker/run
           volumeMounts:
             - name: kafka-data
               mountPath: /var/lib/kafka/data
-  {{- if .Values.kafka.persistence.enabled }}
+  {{- if .Values.persistence.enabled }}
   volumeClaimTemplates:
     - metadata:
         name: kafka-data
@@ -105,7 +105,7 @@ spec:
         accessModes: [ "ReadWriteOnce" ]
         resources:
           requests:
-            storage: {{ .Values.kafka.persistence.size }}
+            storage: {{ .Values.persistence.size }}
   {{- else }}
       volumes:
         - name: kafka-data
