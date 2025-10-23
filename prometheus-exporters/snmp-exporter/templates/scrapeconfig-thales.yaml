@@ -1,15 +1,15 @@
-{{- if .Values.snmp_exporter.hsm.enabled }}
+{{- if .Values.snmp_exporter.thales.enabled }}
 apiVersion: monitoring.coreos.com/v1alpha1
 kind: ScrapeConfig
 metadata:
-  name: snmp-exporter-hsm
+  name: snmp-exporter-thales
   namespace: infra-monitoring
   labels:
     prometheus: {{ .Values.snmp_exporter.aggregations.prometheus }}
-    app.kubernetes.io/name: snmp-exporter-hsm
+    app.kubernetes.io/name: snmp-exporter-thales
 spec:
   httpSDConfigs:
-    - url: {{ .Values.http_sd_configs.netbox_url }}/devices/?custom_labels=__param_module=hsm;__param_auth=hsm_v3&manufacturer=thales&status=active&region={{ .Values.global.region }}&role=hsm&target_in_name=False
+    - url: {{ .Values.http_sd_configs.netbox_url }}/devices/?custom_labels=__param_module=thales;__param_auth=thales_v3&manufacturer=thales&status=active&region={{ .Values.global.region }}&role=hsm&target_in_name=False
       refreshInterval: {{ .Values.http_sd_configs.refresh_interval }}
   metricsPath: /snmp
   scrapeInterval: 60s
@@ -22,9 +22,9 @@ spec:
     - targetLabel: __address__
       replacement: snmp-exporter:{{.Values.snmp_exporter.listen_port}}
     - targetLabel: module
-      replacement: hsm
+      replacement: thales
     - targetLabel: __param_auth
-      replacement: hsm_v3
+      replacement: thales_v3
   metricRelabelings:
     - sourceLabels: [name]
       targetLabel:  devicename
