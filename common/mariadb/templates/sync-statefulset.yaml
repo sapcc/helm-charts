@@ -1,0 +1,126 @@
+{{- if .Values.sync.enabled }}
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  namespace: {{ .Release.Namespace }}
+  name: {{ include "fullName" . }}-sync
+  labels:
+    app: {{ include "fullName" . }}-sync
+    {{- include "mariadb.labels" (list $ "noversion" "database-sync" "sts" "database") | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: go-maria-sync
+      app.kubernetes.io/instance: {{ include "fullName" . }}-sync
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/version: {{ .Values.sync.image.tag | quote }}
+        app.kubernetes.io/name: go-maria-sync
+        app.kubernetes.io/instance: {{ include "fullName" . }}-sync
+      annotations:
+        kubectl.kubernetes.io/default-container: "sync"
+        {{- include "mariadb.linkerdPodAnnotations" . | indent 8 }}
+    spec:
+      affinity:
+        nodeAffinity:
+{{- if .Values.nodeAffinity }}
+      {{- with .Values.nodeAffinity }}
+{{ toYaml . | indent 10 }}
+      {{- end }}
+{{- include "mariadb_maintenance_affinity" . }}
+{{- include "mariadb_node_reinstall_affinity" . }}
+{{- else }}
+          preferredDuringSchedulingIgnoredDuringExecution:
+{{- include "mariadb_maintenance_affinity" . }}
+{{- include "mariadb_node_reinstall_affinity" . }}
+{{- end }}
+          - weight: 1
+            preference:
+              matchExpressions:
+                - key: "topology.kubernetes.io/zone"
+                  operator: In
+                  values:
+                  - {{.Values.global.region}}a
+        podAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 1
+            podAffinityTerm:
+              topologyKey: "kubernetes.io/hostname"
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - {{ include "fullName" . }}
+      terminationGracePeriodSeconds: 360
+      initContainers:
+      {{- if .Values.sync.init.enabled }}
+      - name: sync-init
+        image: {{ required ".Values.global.registry variable missing" .Values.global.registry }}/{{ .Values.sync.init.image }}:{{ .Values.sync.init.imageTag }}
+        imagePullPolicy: {{ .Values.sync.init.imagePullPolicy | default "IfNotPresent" }}
+        command:
+          - python3
+          - /scripts/mariadb-sync-init.py
+        env:
+        - name: TARGETDB_HOST
+          value: {{ include "fullName" . | quote }}
+        - name: TARGETDB_PORT
+          value: "3306"
+        - name: TARGETDB_USER
+          value: "root"
+        envFrom:
+        - secretRef:
+            name: {{ include "fullName" . }}-sync-secrets
+        volumeMounts:
+        - name: mariadb-sync-etc
+          mountPath: /etc/config
+        - name: mariadb-sync-init-scripts
+          mountPath: /scripts
+      {{- end }}
+      containers:
+      - name: sync
+        image: {{ required ".Values.global.registry variable missing" .Values.global.registry }}/{{ .Values.sync.image.name }}:{{ .Values.sync.image.tag }}
+        imagePullPolicy: {{ .Values.sync.imagePullPolicy | default "IfNotPresent" }}
+        command:
+          - sync
+        lifecycle:
+          preStop:
+            exec:
+              command: ["/bin/bash","-c","sleep 300"]
+        ports:
+          - containerPort: 8080
+            name: metrics
+            protocol: TCP
+        resources:
+          limits:
+            cpu: 500m
+            memory: 2Gi
+          requests:
+            cpu: 50m
+            memory: 30Mi
+        env:
+        - name: CONFIG
+          value: /etc/config/config.yaml
+        - name: DOWNLOAD_DIR
+          value: /home/appuser/backup
+        envFrom:
+        - secretRef:
+            name: {{ include "fullName" . }}-sync-secrets
+        volumeMounts:
+        - name: mariadb-sync-etc
+          mountPath: /etc/config
+          readOnly: true
+      priorityClassName: {{ .Values.priority_class_sync | default "critical-infrastructure" | quote }}
+      volumes:
+        - name: mariadb-sync-etc
+          configMap:
+            name: {{ include "fullName" . }}-sync-config
+        {{- if .Values.sync.init.enabled }}
+        - name: mariadb-sync-init-scripts
+          configMap:
+            name: {{ include "fullName" . }}-sync-init-scripts
+        {{- end }}
+{{- end }}

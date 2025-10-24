@@ -1,15 +1,15 @@
-{{- if .Values.snmp_exporter.hsm.enabled }}
+{{- if .Values.snmp_exporter.utimaco.enabled }}
 apiVersion: monitoring.coreos.com/v1alpha1
 kind: ScrapeConfig
 metadata:
-  name: snmp-exporter-hsm
+  name: snmp-exporter-utimaco
   namespace: infra-monitoring
   labels:
     prometheus: {{ .Values.snmp_exporter.aggregations.prometheus }}
-    app.kubernetes.io/name: snmp-exporter-hsm
+    app.kubernetes.io/name: snmp-exporter-utimaco
 spec:
   httpSDConfigs:
-    - url: {{ .Values.http_sd_configs.netbox_url }}/devices/?custom_labels=__param_module=hsm;__param_auth=hsm_v3&manufacturer=thales&status=active&region={{ .Values.global.region }}&role=hsm&target_in_name=False
+    - url: {{ .Values.http_sd_configs.netbox_url }}/devices/?custom_labels=__param_module=utimaco;__param_auth=utimaco_v3&manufacturer=utimaco&status=active&region={{ .Values.global.region }}&role=hsm&target_in_name=False
       refreshInterval: {{ .Values.http_sd_configs.refresh_interval }}
   metricsPath: /snmp
   scrapeInterval: 60s
@@ -22,9 +22,9 @@ spec:
     - targetLabel: __address__
       replacement: snmp-exporter:{{.Values.snmp_exporter.listen_port}}
     - targetLabel: module
-      replacement: hsm
+      replacement: utimaco
     - targetLabel: __param_auth
-      replacement: hsm_v3
+      replacement: utimaco_v3
   metricRelabelings:
     - sourceLabels: [name]
       targetLabel:  devicename

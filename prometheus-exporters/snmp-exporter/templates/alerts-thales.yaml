@@ -1,0 +1,120 @@
+{{- if .Values.snmp_exporter.thales.alerts.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+ 
+metadata:
+  name: snmp-exporter-alerts-snmp-thales.alerts
+  labels:
+    app: snmp-exporter
+    prometheus: {{ required ".Values.snmp_exporter.thales.alerts.prometheus missing" .Values.snmp_exporter.thales.alerts.prometheus }}
+spec:
+  groups:
+  - name: snmp-thales.alerts
+    rules:
+    - alert: thalesPartitionStorageAvailibilityLessThan5Percentage
+      expr: snmp_thales_thalesPartitionStorageAvailableBytes{thalesModel!="Luna G7"} < 5000
+      for: 15m
+      labels:
+        severity: info
+        service: barbican
+        context: thales
+        meta: "Partition {{`{{ $labels.thalesPartitionSerialNumber }}` }} has less than 5% storage availability"
+        dashboard: thales
+        no_alert_on_absence: "true"
+        support_group: identity
+      annotations:
+        description: "Partition {{`{{ $labels.thalesPartitionSerialNumber }}`}} in {{`{{ $labels.devicename }}`}} has {{`{{ $value }}` }}kb storage availability"
+        summary: "Partition {{`{{ $labels.thalesPartitionSerialNumber }}`}} has less than 5% storage availability"
+  
+    - alert: thalesAribaClientsMoreThan14
+      expr: sum((snmp_thales_thalesClientName{thalesClientName!~"barb.*"})) by (devicename) > 14
+      for: 5d
+      labels:
+        severity: info
+        service: barbican
+        context: thales
+        meta: "THALES Client License in {{`{{ $labels.devicename }}`}} is {{`{{ $value }}`}}"
+        dashboard: thales
+        no_alert_on_absence: "true"
+        support_group: identity
+      annotations:
+        description: "THALES Client License in {{`{{ $labels.devicename }}`}} is {{`{{ $value }}`}}"
+        summary: "THALES Client License in {{`{{ $labels.devicename }}`}} is {{`{{ $value }}`}}"
+  
+    - alert: thalesOperationalErrors
+      expr: sum(rate(snmp_thales_thalesOperationErrors[5m])) by (devicename) > 0
+      for: 5m
+      labels:
+        severity: info
+        service: barbican
+        context: thales
+        meta: "THALES Operational Errors in {{`{{ $labels.devicename }}`}}"
+        dashboard: thales
+        no_alert_on_absence: "true"
+        support_group: identity
+      annotations:
+        description: "THALES Operational Errors in {{`{{ $labels.devicename }}`}}"
+        summary: "THALES Operational Errors in {{`{{ $labels.devicename }}`}}"
+  
+    - alert: thalesSensorTemperatureIsCritical
+      expr: sum by(devicename, lmTempSensorsDevice) (snmp_thales_lmTempSensorsValue{lmTempSensorsDevice!~"loc1"}) > 70000
+      for: 5m
+      labels:
+        severity: info
+        service: barbican
+        context: thales
+        meta: "THALES Sensor {{`{{ $labels.lmTempSensorsDevice }}`}} in {{`{{ $labels.devicename }}`}} Temperature is Critical"
+        dashboard: thales
+        no_alert_on_absence: "true"
+        support_group: identity
+        playbook: /docs/support/playbook/barbican/alerts/thales/
+      annotations:
+        description: "THALES Sensor {{`{{ $labels.lmTempSensorsDevice }}`}} in {{`{{ $labels.devicename }}`}} Temperature is {{`{{ $value }}`}}"
+        summary: "THALES Sensor {{`{{ $labels.lmTempSensorsDevice }}`}} in {{`{{ $labels.devicename }}`}} Temperature is {{`{{ $value }}`}}"
+  
+    - alert: thalesClientsMoreThan20
+      expr: sum(snmp_thales_thalesClientName) by (devicename) > 20
+      for: 5d
+      labels:
+        severity: info
+        service: barbican
+        context: thales
+        meta: "THALES Client License in {{`{{ $labels.devicename }}`}} is {{`{{ $value }}`}}"
+        dashboard: thales
+        no_alert_on_absence: "true"
+        support_group: identity
+      annotations:
+        description: "THALES Client License in {{`{{ $labels.devicename }}`}} is {{`{{ $value }}`}}"
+        summary: "THALES Client License in {{`{{ $labels.devicename }}`}} is {{`{{ $value }}`}}"
+  
+    - alert: thalesBarbicanClientsMoreThan4
+      expr: sum((snmp_thales_thalesClientName{thalesClientName=~"barb.*"})) by (devicename) > 4
+      for: 5d
+      labels:
+        severity: info
+        service: barbican
+        context: thales
+        meta: "THALES Client License in {{`{{ $labels.devicename }}`}} is {{`{{ $value }}`}}"
+        dashboard: thales
+        no_alert_on_absence: "true"
+        support_group: identity
+      annotations:
+        description: "THALES Client License in {{`{{ $labels.devicename }}`}} is {{`{{ $value }}`}}"
+        summary: "THALES Client License in {{`{{ $labels.devicename }}`}} is {{`{{ $value }}`}}"
+  
+    - alert: thalesDeviceIsUnReachable
+      expr: count(up{job="scrapeConfig/infra-monitoring/snmp-exporter-thales"} == 0 or absent(up{job="scrapeConfig/infra-monitoring/snmp-exporter-thales"})) by (name, device_type)
+      for: 5m
+      labels:
+        severity: warning
+        service: barbican
+        context: thales
+        meta: "{{`{{ $labels.name }}`}} {{`{{ $labels.device_type }}`}} Device is UnReachable"
+        dashboard: thales
+        no_alert_on_absence: "true"
+        support_group: identity
+        playbook: /docs/support/playbook/barbican/alerts/thales/
+      annotations:
+        description: "{{`{{ $labels.name }}`}} {{`{{ $labels.device_type }}`}} Device is UnReachable"
+        summary: "{{`{{ $labels.name }}`}} {{`{{ $labels.device_type }}`}} Device is UnReachable"
+{{- end }}
