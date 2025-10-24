@@ -48,10 +48,9 @@ transform/neutron_agent:
   log_statements:
     - context: log
       conditions:
-        - resource.attributes["k8s.container.name"] == "neutron-network-agent"
+        - resource.attributes["k8s.container.name"] == "neutron-metadata-agent"
       statements:
-        - merge_maps(log.attributes, ExtractGrokPatterns(log.body, "%{WORD:loglevel} %{NOTSPACE:logger} \\[-\\] %{GREEDYDATA} %{NOTSPACE} %{WORD:request.method} %{NOTSPACE} %{QUOTEDSTRING:request.path} %{NOTSPACE} %{NUMBER:request.status} %{NOTSPACE} %{IPV4:client.address} %{NOTSPACE} %{NOTSPACE:project_id} %{NOTSPACE} %{NOTSPACE:os_network_id} %{NOTSPACE} %{NOTSPACE:os_router_id} %{NOTSPACE} %{NOTSPACE:os_instance_id} %{NOTSPACE} %{BASE10NUM:request.duration} %{NOTSPACE} %{QUOTEDSTRING:user_agent}", true),"upsert")
-        - merge_maps(log.attributes, ExtractGrokPatterns(log.body, "(%{TIMESTAMP_ISO8601}|)( )?%{TIMESTAMP_ISO8601}.%{NOTSPACE}? %{NUMBER:pid} %{WORD:loglevel} %{NOTSPACE:logger} \\[-\\] %{GREEDYDATA} %{NOTSPACE} %{WORD:request.method} %{NOTSPACE} %{QUOTEDSTRING:request.path} %{NOTSPACE} %{NUMBER:request.status} %{NOTSPACE} %{IPV4:client.address} %{NOTSPACE %{NOTSPACE:project_id} %{NOTSPACE} %{NOTSPACE:os_network_id} %{NOTSPACE} %{NOTSPACE:os_router_id} %{NOTSPACE} %{NOTSPACE:os_instance_id} %{NOTSPACE} %{BASE10NUM:request.duration} %{NOTSPACE} %{QUOTEDSTRING:user_agent}", true),"upsert")
+        - merge_maps(log.attributes, ExtractGrokPatterns(log.body, "(%{TIMESTAMP_ISO8601}|)( )?%{TIMESTAMP_ISO8601}.%{NOTSPACE}? %{NUMBER:pid} %{WORD:loglevel} %{NOTSPACE:logger} \\[-\\] %{GREEDYDATA} %{NOTSPACE} %{WORD:request.method} %{NOTSPACE} %{QUOTEDSTRING:request.path} %{NOTSPACE} %{NUMBER:request.status} %{NOTSPACE} %{IPV4:client.address} %{NOTSPACE} %{NOTSPACE:project_id} %{NOTSPACE} %{NOTSPACE:os_network_id} %{NOTSPACE} %{NOTSPACE:os_router_id} %{NOTSPACE} %{NOTSPACE:os_instance_id} %{NOTSPACE} %{BASE10NUM:request.duration} %{NOTSPACE} %{QUOTEDSTRING:user_agent}", true),"upsert")
 
 transform/neutron_errors:
   error_mode: ignore
