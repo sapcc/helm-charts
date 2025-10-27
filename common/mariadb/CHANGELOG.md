@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.28.1 - 2025/10/27
+* mysqld-exporter now collects data from mysql.user table
+
+New metrics available:
+```
+mysql_mysql_max_connections
+mysql_mysql_max_questions
+mysql_mysql_max_updates
+mysql_mysql_max_user_connections
+```
+
 ## v0.28.0 - 2025/10/22
 * Added an option to run `go-maria-sync`, which could be used to populate empty database with the backup and binary log of another database.
 
