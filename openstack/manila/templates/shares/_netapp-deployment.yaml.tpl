@@ -11,8 +11,9 @@ metadata:
     type: backend
     component: manila
   annotations:
-    secret.reloader.stakater.com/reload: "{{ .Release.Name }}-secrets,{{ .Release.Name }}-share-netapp-{{$share.name}}-secret"
+    secret.reloader.stakater.com/reload: "{{ .Release.Name }}-secrets"
     deployment.reloader.stakater.com/pause-period: "60s"
+    reloader.stakater.com/search: "true"
   {{- if .Values.vpa.set_main_container }}
     vpa-butler.cloud.sap/main-container: manila-share-netapp-{{$share.name}}
   {{- end }}
