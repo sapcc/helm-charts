@@ -1,7 +1,4 @@
 [DEFAULT]
-{{- if .Values.ceph.enabled }}
-enabled_backends = swift:swift, ceph-rbd:rbd, s3:s3
-{{- end }}
 debug = {{.Values.api.debug}}
 
 registry_host = 127.0.0.1
@@ -53,6 +50,30 @@ enable_proxy_headers_parsing = true
 
 [glance_store]
 default_backend = {{ .Values.default_backend | default "swift" | quote }}
+
+{{- $backends := list -}}
+{{- $aliases := list -}}
+{{- if .Values.swift.enabled -}}
+{{- $backends = append $backends "swift:swift" -}}
+{{- $aliases = append $aliases "swift" -}}
+{{- end -}}
+{{- if .Values.ceph.enabled -}}
+{{- $backends = append $backends "ceph-rbd:rbd" -}}
+{{- $aliases = append $aliases "ceph-rbd" -}}
+{{- end -}}
+{{- if .Values.ceph_s3.enabled -}}
+{{- $backends = append $backends "s3:s3" -}}
+{{- $aliases = append $aliases "s3" -}}
+{{- end -}}
+{{- if not $backends -}}
+{{- fail "glance: At least one storage backend must be enabled." -}}
+{{- end }}
+enabled_backends = {{ join ", " $backends }}
+
+{{- $def := (.Values.default_backend | default "swift") -}}
+{{- if not (has $def $aliases) -}}
+{{- fail (printf "glance: default_backend %q is not in enabled_backends %v" $def $aliases) -}}
+{{- end }}
 
 {{- if .Values.file.persistence.enabled }}
 filesystem_store_datadir = /glance_store
