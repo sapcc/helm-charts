@@ -88,21 +88,19 @@ spec:
               value: "{{ .Values.socketRequestMaxBytes }}"
               KAFKA_LOG_CLEANER_ENABLE": "true"
             - name: KAFKA_LOG_CLEANUP_POLICY
-              value: "delete"
+              value: "{{ if .Values.logCleanupPolicy }}{{ .Values.logCleanupPolicy }}{{ else }}delete{{ end }}"
             - name: KAFKA_LOG_RETENTION_BYTES
-              value: "1073741824"
+              value: "{{ .Values.logRetentionBytes }}"
             - name: KAFKA_LOG_RETENTION_CHECK_INTERVAL_MS
-              value: "20000"
+              value: "{{ .Values.logRetentionCheckIntervalMs }}"
             - name: KAFKA_LOG_RETENTION_HOURS
-              value: "2"
+              value: "{{ .Values.logRetentionHours }}"
             - name: KAFKA_LOG_SEGMENT_BYTES
-              value: "107374182"
+              value: "{{ .Values.logSegmentBytes }}"
             - name: KAFKA_LOG_SEGMENT_DELETE_DELAY_MS
-              value: "1000"
+              value: "{{ .Values.logSegmentDeleteDelayMs }}"
             - name: KAFKA_MAX_REQUEST_SIZE
-              value: "50000000" #50MB on requests apparently too
-            - name: KAFKA_MESSAGE_MAX_BYTES
-              value: "50000000" #50MB or bust
+              value: "{{ .Values.maxRequestSize }}"
           command:
             - "sh"
             - "-exc"
