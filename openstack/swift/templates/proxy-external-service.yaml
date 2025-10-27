@@ -1,0 +1,27 @@
+{{- if .Values.proxy_external_service }}
+kind: Service
+apiVersion: v1
+metadata:
+  name: swift-proxy-external-{{ .Values.cluster_name }}
+  labels:
+    release: "{{ .Release.Name }}"
+    os-cluster: {{ .Values.cluster_name }}
+spec:
+  {{- if .Values.external_traffic_policy_local }}
+  type: NodePort
+  externalTrafficPolicy: Local
+  {{- end }}
+  selector:
+    for-service: swift-proxy-{{ .Values.cluster_name }}
+  ports:
+    - name: api
+      port: {{ .Values.proxy_public_port }}
+      targetPort: 443
+    {{- if and .Values.proxy_public_http_port .Values.sans_http }}
+    - name: api-http
+      port: {{ .Values.proxy_public_http_port }}
+      targetPort: 80
+    {{- end }}
+  externalIPs:
+    - {{ .Values.proxy_external_ip }}
+{{- end }}

@@ -1,0 +1,71 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "andromeda.fullname" . }}-migration-{{ .Values.image.tag | required ".Values.image.tag is required" }}
+  labels:
+    helm.sh/chart: {{ template "andromeda.chart" . }}
+    app.kubernetes.io/name: {{ template "andromeda.name" . }}-migration
+    app.kubernetes.io/instance: {{ .Release.Name | quote }}
+  {{- with .Values.labels }}
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  template:
+    spec:
+      restartPolicy: OnFailure
+      serviceAccountName: {{ template "andromeda.serviceAccountName" . }}
+      {{- if not .Values.database_override.enabled }}
+      initContainers:
+        - name: wait-for-db
+          image: "{{ .Values.global.registry }}/kubernetes-entrypoint:{{ .Values.image.kubernetes_entrypoint_version }}"
+          imagePullPolicy: Always
+          env:
+            - name: NAMESPACE
+              value: "{{ .Release.Namespace }}"
+            - name: DEPENDENCY_SERVICE
+              value: "{{ include "andromeda.database_service" . }}"
+            - name: COMMAND
+              value: "true"
+      {{- end }}
+      containers:
+        - name: {{ include "andromeda.fullname" . }}-migration
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | required ".Values.image.tag is required" }}"
+          command: [ "/usr/bin/andromeda-migrate" ]
+          args: ["--config-file", "/etc/andromeda/andromeda.yaml"]
+          env:
+            - name: GOMEMLIMIT
+              valueFrom:
+                resourceFieldRef:
+                  containerName: {{ include "andromeda.fullname" . }}-migration
+                  resource: limits.memory
+            - name: GOMAXPROCS
+              valueFrom:
+                resourceFieldRef:
+                  containerName: {{ include "andromeda.fullname" . }}-migration
+                  resource: limits.cpu
+            - name: SENTRY_DSN
+              valueFrom:
+                secretKeyRef:
+                  name: sentry
+                  key: {{ include "andromeda.fullname" . }}.DSN
+            {{- if .Values.mariadb.enabled }}
+            - name: DATABASE_CONNECTION
+              valueFrom:
+                secretKeyRef:
+                  name: andromeda-secret
+                  key: database_connection
+            {{- end }}
+          volumeMounts:
+            - name: etc-andromeda
+              mountPath: /etc/andromeda
+              readOnly: true
+      volumes:
+        - name: etc-andromeda
+          projected:
+            defaultMode: 420
+            sources:
+              - configMap:
+                  name: andromeda-etc
+                  items:
+                    - key: andromeda.yaml
+                      path: andromeda.yaml

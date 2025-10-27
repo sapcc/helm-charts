@@ -1,0 +1,30 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+
+metadata:
+  name: {{ include "infraMonitoring.fullname" . }}
+  labels:
+    app: {{ include "infraMonitoring.name" . }}
+    chart: {{ include "infraMonitoring.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    system: infra_monitoring
+  annotations:
+    kubernetes.io/tls-acme: {{ default false .Values.ingress.tls | quote }}
+    disco: {{ default false .Values.ingress.disco | quote }}
+
+spec:
+  tls:
+    - secretName: {{ include "infraMonitoring.fullname" . }}
+      hosts: [{{.Values.ingress.hostName}}.{{.Values.global.region}}.{{.Values.global.domain}}]
+  rules:
+    - host: {{.Values.ingress.hostName}}.{{.Values.global.region}}.{{.Values.global.domain}}
+      http:
+        paths:
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: {{ include "infraMonitoring.fullname" . }}
+              port:
+                number: {{ .Values.service.port }}

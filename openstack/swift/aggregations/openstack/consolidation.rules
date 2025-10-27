@@ -1,0 +1,36 @@
+# vim: set ft=yaml:
+
+groups:
+- name: swift-usage
+  rules:
+  - record: global:swift_cluster_storage_used_percent_average
+    expr: avg(swift_cluster_storage_used_percent) by (kubernetes_namespace, system, component)
+
+  - record: swift_async_pendings_rate
+    expr: sum(increase(swift_object_server_async_pendings[5m])) by (kubernetes_namespace)
+
+  - record: swift_opm
+    expr: sum(rate(openstack_watcher_api_requests_total{service="object-store"}[5m]) * 60) by (action, target_type_uri)
+
+  - record: swift_opm_top10
+    expr: topk(10, sum(rate(openstack_watcher_api_requests_total{service="object-store"}[5m]) * 60) by (target_project_id) > 15)
+
+  - record: swift_opm_top10_by_action
+    expr: topk(10, sum(rate(openstack_watcher_api_requests_total{service="object-store"}[5m]) * 60) by (target_project_id, action) > 15)
+
+  - record: swift_node_reboot_ok
+    # Automatic reboots of storage nodes are safe if:
+    # - Replication ages in the last 10m not older than 5m
+    # - No storage node down
+    # - Not more than 2 disks unmounted
+    # - Swift healthy
+    #
+    # The `vector(0) and (...) or vector(1)` forces the timeseries to be either 0 (if the inner query is present) or 1 (if it is absent).
+    expr: vector(0) and (
+        max(max_over_time(swift_cluster_objects_replication_age[10m]) / 60) > 5 or
+        max(max_over_time(swift_cluster_containers_replication_age[10m]) / 60) > 5 or
+        max(max_over_time(swift_cluster_accounts_replication_age[10m]) / 60) > 5 or
+        (max(swift_cluster_md5_errors{kind="ring"}) > 0 or max(min_over_time(swift_cluster_md5_errors{kind="ring"}[10m])) > 0) or
+        max(swift_cluster_drives_unmounted) > 2 or
+        avg_over_time(swift_recon_task_exit_code[10m]) > 0.2 or avg_over_time(swift_dispersion_task_exit_code[10m]) > 0.2 or absent_over_time(swift_dispersion_task_exit_code[10m])
+      ) or vector(1)

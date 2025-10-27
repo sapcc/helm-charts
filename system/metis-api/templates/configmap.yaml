@@ -1,0 +1,23 @@
+{{- if .Values.metisAPI.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name:  metis-api-etc
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "labels" . | indent 4 }}
+data:
+  policy.yaml: |
+    'inventory:get_all' : 'role:cloud_inventory_viewer'
+
+  config.yaml: |-
+    api:
+      hostname: "https://metis.{{ .Values.global.region }}.{{ .Values.global.tld }}"
+      port: {{ .Values.metisAPI.port }}
+      paginationLimit: {{ default 1000 .Values.paginationLimit }}
+{{ include "netapp_filers" $ | indent 6 }}
+{{ include "compute_exclusions" $ | indent 6 }}
+    db:
+      host: metisdb-mariadb.metis
+      port: 3306
+{{- end -}}

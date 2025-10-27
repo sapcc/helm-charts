@@ -1,0 +1,50 @@
+kind: Deployment
+apiVersion: apps/v1
+
+metadata:
+  name: absent-metrics-operator
+
+spec:
+  revisionHistoryLimit: 5
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 2
+  selector:
+    matchLabels:
+      name: absent-metrics-operator
+  template:
+    metadata:
+      labels:
+        name: absent-metrics-operator
+        ccloud/support-group: containers
+        ccloud/service: prometheus
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/targets: "kubernetes"
+    spec:
+      serviceAccount: absent-metrics-operator-service-user
+      serviceAccountName: absent-metrics-operator-service-user
+      containers:
+        - name: operator
+          image: {{ .Values.global.ghcrIoMirror }}/sapcc/absent-metrics-operator:{{ .Values.imageTag }}
+          imagePullPolicy: IfNotPresent
+          {{- with .Values.args }}
+          args:
+           {{- toYaml . | nindent 10 }}
+          {{- end }}
+          # NOTE: observed usage in eu-de-1 (as of 2021-10)
+          # - CPU: ~10m during load
+          # - RAM: ~45Mi during load
+          resources:
+            requests:
+              cpu: "20m"
+              memory: "100Mi"
+            limits:
+              cpu: "20m"
+              memory: "100Mi"
+          ports:
+            - name: metrics
+              containerPort: 9659

@@ -1,0 +1,92 @@
+{{- $secrets := lookup "v1" "Secret" .Release.Namespace (print .Release.Name "-secrets") -}}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: barbican-migration-job
+  labels:
+    system: openstack
+    type: configuration
+    component: barbican
+    # hooks are not annotated as belonging to the Helm release, so we cannot rely on owner-info injection
+    ccloud/support-group: identity
+    ccloud/service: barbican
+  annotations:
+    "helm.sh/hook": "post-install,pre-upgrade"
+    "helm.sh/hook-weight": "-1"
+    "helm.sh/hook-delete-policy": "before-hook-creation"
+spec:
+  template:
+    metadata:
+      labels:
+        alert-tier: os
+        alert-service: barbican
+{{ tuple . "barbican" "migration" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
+      annotations:
+{{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
+    spec:
+      restartPolicy: OnFailure
+      initContainers:
+      {{- tuple . (dict "service" (include "barbican.db_service" .)) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
+      containers:
+        - name: barbican-migration
+          image: {{required ".Values.global.registry is missing" .Values.global.registry}}/loci-barbican:{{required ".Values.imageVersionBarbicanApi is missing" .Values.imageVersionBarbicanApi}}
+          imagePullPolicy: IfNotPresent
+          command:
+          - bash
+          - -c
+          - |
+            barbican-manage db upgrade
+            {{- include "utils.script.job_finished_hook" . | nindent 12 }}
+          env:
+          {{- if .Values.sentry.enabled }}
+          - name: SENTRY_DSN
+            valueFrom:
+              secretKeyRef:
+                name: sentry
+                key: barbican.DSN.python
+          {{- end }}
+          {{- if .Values.api.resources.enabled }}
+          resources:
+            limits:
+              cpu: {{ .Values.api.resources.limits.cpu | quote }}
+              memory: {{ .Values.api.resources.limits.memory | quote }}
+            requests:
+              cpu: {{ .Values.api.resources.requests.cpu | quote }}
+              memory: {{ .Values.api.resources.requests.memory | quote }}
+          {{- end }}
+          volumeMounts:
+            - name: etcbarbican
+              mountPath: /etc/barbican
+            - name: barbican-etc
+              mountPath: /etc/barbican/barbican.conf
+              subPath: barbican.conf
+              readOnly: true
+            - name: barbican-etc
+              mountPath: /etc/barbican/policy.yaml
+              subPath: policy.yaml
+              readOnly: true
+            - name: barbican-etc
+              mountPath: /etc/barbican/logging.ini
+              subPath: logging.ini
+              readOnly: true
+{{- if $secrets }}
+            - name: barbican-etc-confd
+              mountPath: /etc/barbican/barbican.conf.d
+              readOnly: true
+{{- end }}
+            {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
+      volumes:
+        - name: etcbarbican
+          emptyDir: {}
+        - name: barbican-etc
+          configMap:
+            name: barbican-etc
+{{- if $secrets }}
+        - name: barbican-etc-confd
+          secret:
+            secretName: {{ .Release.Name }}-secrets
+            items:
+            - key: secrets.conf
+              path: secrets.conf
+{{- end }}
+        {{- include "utils.trust_bundle.volumes" . | indent 8 }}

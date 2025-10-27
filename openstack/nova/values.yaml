@@ -1,0 +1,1183 @@
+# Default values for nova.
+# This is a YAML-formatted file.
+# Declare name/value pairs to be passed into your templates.
+# name: value
+global:
+  novaApiPortAdmin: '8774'
+  novaApiPortInternal: '8774'
+  novaApiPortPublic: '443'
+  novaApiMetadataPortInternal: '8775'
+  novaConsolePortPublic: '443'
+  master_password: null
+  domain_seeds:
+    skip_hcm_domain: false
+
+  nova_service_user: nova
+
+  hypervisors: []
+  enable_kvm: false
+  # this being an empty list means autodetection by KosOperator
+  hypervisors_kvm: []
+  hypervisors_ironic: []
+  osprofiler: {}
+
+  linkerd_requested: false
+
+osprofiler: {}
+
+auto_assign_aggregates: 'dry_run'
+
+use_tls_acme: true
+
+cell2:
+  name: cell2
+  enabled: false
+  conductor:
+    config_file:
+      DEFAULT:
+        statsd_port: 9125
+        # enables collecting metrics for rpc calls
+        statsd_enabled: true
+      workarounds:
+        skip_hypervisor_version_check_on_lm: true
+
+defaults:
+  default:
+    graceful_shutdown_timeout: 60
+  hypervisor:
+    common:
+      default:
+        reserved_host_memory_mb: 512
+        disk_allocation_ratio: "1.0"
+        reserved_host_disk_mb: "0"
+        statsd_port: 9125
+    ironic:
+      default:
+        reserved_host_memory_mb: "0"
+        compute_driver: ironic.IronicDriver
+        graceful_shutdown_timeout: 1800
+        # enables collecting metrics for RPC calls
+        statsd_enabled: true
+      ironic:
+        serial_console_state_timeout: 10
+
+pod:
+  replicas:
+    api: 6
+    metadata: 2
+    console: 2
+    conductor: 2
+    scheduler: 1
+    vspc: 4
+  lifecycle:
+    upgrades:
+      deployments:
+        revision_history: 5
+        podReplacementStrategy: RollingUpdate
+        rollingUpdate:
+          maxUnavailable: 0
+          maxSurge: 1
+  debug:
+    api: false
+  resources:
+    api:
+      requests:
+        cpu: "4000m"
+        memory: "6Gi"
+    metadata:
+      requests:
+        cpu: "500m"
+        memory: "3Gi"
+    bigvm:
+      requests:
+        cpu: "100m"
+        memory: "256Mi"
+    conductor:
+      requests:
+        cpu: "1500m"
+        memory: "7Gi"
+    scheduler:
+      requests:
+        cpu: "500m"
+        memory: "4Gi"
+    hv_ironic:
+      requests:
+        cpu: "150m"
+        memory: "200Mi"
+    hv_vmware:
+      requests:
+        cpu: "1000m"
+        memory: "1Gi"
+    vspc:
+      requests:
+        cpu: "200m"
+        memory: "2Gi"
+      limits:
+        memory: "12Gi"
+
+debug: "True"
+
+defaultUsersRabbitMQ:
+  cell1: default
+  cell2: default
+
+defaultUsersMariaDB:
+  api: nova_api
+  cell0: nova_cell0
+  cell1: nova
+  cell2: null
+
+dbName: nova
+cell1dbType: mariadb
+
+cell0dbName: nova_cell0
+cell0dbType: mariadb
+
+# cell2dbName should be the same as mariadb_cell2 backup_v2 DB name!
+cell2dbName: nova_cell2
+cell2dbType: mariadb
+
+apidbName: nova_api
+apidbType: mariadb
+
+loci:
+  nova: false
+  # neutron images use loci by default
+
+#TODO we need to move to global or find another way to share image versions
+imageNameNeutron: loci-neutron
+
+imageNameOpenvswitch: loci-neutron
+imageVersionOpenvswitchVswitchd: null
+imageVersionOpenvswitchDbServer: null
+
+imageNameNova: loci-nova
+imageVersionNova: null
+imageVersionNovaApi: null
+imageVersionNovaCompute: null
+imageVersionNovaLibvirt: null
+imageVersionNovaConductor: null
+imageVersionNovaNovncproxy: null
+imageVersionNovaShellinaboxproxy: null
+imageVersionNovaSpicehtml5proxy: null
+imageVersionNovaScheduler: null
+imageVersionNovaNanny: null
+imageVersionOpenResty: 1.25.3.2-5-bookworm
+
+imageVersionVspc: null
+
+vspc:
+  enabled: false
+  telnet:
+    portInternal: 1333
+    portExternal: 1333
+  web:
+    portInternal: 1334
+    portExternal: 1334
+  nodeIP: null
+  url: vmware-vspc
+  pvc:
+    existingClaim: null
+    accessMode: ReadWriteMany
+    size: 10Gi
+
+
+cross_az_attach: 'False'
+# for a total of 11 tries with 0.5s sleep in between we could get away with < 5s of problems
+cinder_http_retries: 10
+neutron_http_retries: 10
+neutron_timeout: 600
+
+api:
+  config_file:
+    DEFAULT:
+      api_paste_config: /etc/nova/api-paste.ini
+      enabled_apis: osapi_compute
+      use_forwarded_for: true
+      osapi_compute_workers: 4
+
+    api:
+      list_records_by_skipping_down_cells: false
+      use_forwarded_for: true
+      disable_hypervisor_uptime_detail: true
+      disable_db_only_delete: true
+
+    wsgi:
+      api_paste_config: /etc/nova/api-paste.ini
+
+  use_uwsgi: false
+  wsgi_processes: 8
+
+api_metadata:
+  config_file:
+    DEFAULT:
+      api_paste_config: /etc/nova/api-paste.ini
+      enabled_apis: metadata
+      use_forwarded_for: true
+      metadata_workers: 4
+
+    api:
+      use_forwarded_for: true
+
+    wsgi:
+      api_paste_config: /etc/nova/api-paste.ini
+
+bigvm:
+  config_file:
+    DEFAULT:
+      bigvm_cluster_max_usage_percent: 100
+
+consoles:
+  novnc:
+    enabled: false
+    portInternal: '6080'
+  serial:
+    enabled: true
+    portInternal: '6083'
+    args: "--web /var/lib/openstack/serialproxy-web/"
+  shellinabox:
+    enabled: true
+    portInternal: '6084'
+    custom_deployment: true
+  spice:
+    enabled: false
+  mks:
+    enabled: true
+    portInternal: '6090'
+    custom_deployment: true
+
+scheduler:
+  driver: "filter_scheduler"
+  workers: 1
+  track_instance_changes: false
+  scheduler_instance_sync_interval: 120
+  rpc_statsd_port: 9125
+  # enables collecting metrics for RPC calls
+  rpc_statsd_enabled: true
+  default_filters: "ShardFilter, VolumeSizeSameShardResizeFilter, AggregateMultiTenancyIsolation, ComputeFilter, ComputeCapabilitiesFilter, HANAMemoryMaxUnitFilter, ResizeVcpuMaxUnitFilter, BigVmFlavorHostSizeFilter, VmSizeThresholdFilter, ImagePropertiesFilter, ServerGroupAntiAffinityFilter, ServerGroupAffinityFilter"
+  vm_size_threshold_vm_size_mb: "16385"
+  vm_size_threshold_hv_size_mb: "819200"
+  ram_weight_multiplier: 1.0
+  cpu_weight_multiplier: 1.0
+  disk_weight_multiplier: 0.0
+  io_ops_weight_multiplier: 0.0
+  soft_affinity_weight_multiplier: 1.0
+  # The following weighers are crutches, but we can't express it otherwise
+  # currently. They should overpower the other weighers even in worst-case
+  # (e.g. least ram available + worst disk weight), so we have to make it >=
+  # len(other_weighers). At the same time, we want a VM to not move on resize,
+  # if it doesn't have to - even if it's in the wrong RAM class currently,
+  # preferring the same host to keep the ephemeral disk on the same
+  # datastore-cluster, but using the same shard if possible for less
+  # volume-migrations.
+  prefer_same_host_resize_weight_multiplier: 1000.0
+  prefer_same_shard_resize_weight_multiplier: 200.0
+  hv_ram_class_weight_multiplier: 100.0
+  # this is a DictOpt and takes the form key1:value1,key2:value2
+  hv_ram_class_weights_gib: "1024:1"
+  # Hosts having the CUSTOM_DECOMMISSIONING trait should be used only if it's
+  # absolutely necessary. Positive values are decreasing the weight in this case.
+  decommissioning_weight_multiplier: 150.0
+  # Hosts having the CUSTOM_HW_SAPPHIRE_RAPIDS trait should be used only if
+  # there are no other usable hosts for this flavor. Positive values decrease
+  # the weight in this case.
+  sapphire_rapids_weight_multiplier: 100.0
+  # When we dedicate hardware to customers, we want them to use it preferrably.
+  # But flavors not meant for SR should still try to go onto non-SR BBs. BBs
+  # currently getting decommissioned, even if they're dedicated to a customer,
+  # should not be preferred.
+  aggregate_multi_tenancy_isolation_weight_multiplier: 50.0
+
+  image_properties_default_architecture: "x86_64"
+
+compute:
+  defaults:
+    default:
+      max_concurrent_builds_per_project: 20
+      max_concurrent_builds: 50
+      ram_allocation_ratio: 1.0
+      cpu_allocation_ratio: 3.0
+      # this will set a 15 mins timeout for blockdevice mapping
+      block_device_allocate_retries: 300
+      rpc_statsd_port: 9125
+      # enables collecting metrics for RPC calls
+      rpc_statsd_enabled: true
+      # confirm automatically a resize after 3 days
+      resize_confirm_window: 259200
+    vmware:
+      insecure: true
+      use_linked_clone: false
+      pbm_enabled: false
+      pbm_default_policy: "nova-ephemeral"
+      smbios_asset_tag: "SAP CCloud VM"
+      bigvm_deployment_free_host_hostgroup_name: "bigvm_free_host_antiaffinity_hostroup"
+      clone_from_snapshot: false
+      full_clone_snapshots: true
+      # maximum of vSphere 7.0u1c
+      default_hw_version: vmx-18
+      memory_reservation_cluster_hosts_max_fail: 2
+      memory_reservation_max_ratio_fallback: 0.8
+      # set this to (a little above) the maximum a flavor ever had in our env
+      # This query can look for currently used resources in Placement:
+      # SELECT a.used, a.consumer_id FROM allocations a
+      #   JOIN resource_providers r ON r.id = a.resource_provider_id
+      #   WHERE resource_class_id = 2 AND r.name like 'domain-%' ORDER BY a.used DESC LIMIT 2;
+      # additionally, the sap-seeds chart contains the flavors we currently have
+      resource_disk_gb_max_unit_limit: 700
+  vmware:
+    vnc:
+      enabled: false
+
+conductor:
+  config_file:
+    DEFAULT:
+      statsd_port: 9125
+      # enables collecting metrics for rpc calls
+      statsd_enabled: true
+    workarounds:
+      skip_hypervisor_version_check_on_lm: true
+    conductor:
+      workers: 8
+
+quota:
+  # most default quotas are 0 to enforce usage of the Resource Management tool in Elektra
+  cores: 0
+  instances: 0
+  ram: 0
+  networks: 0
+
+  server_group_members: 40  # this is set by limes now
+  # we don't want to set unlimited because that has too much potential to break things
+  key_pairs: 10000
+
+mysql_metrics:
+  db_name: nova
+  db_user: nova
+  vpa:
+    set_main_container: true
+  customMetrics:
+    - help: Total Nova VM count
+      labels:
+      - "project_id"
+      - "vm_state"
+      - "nova_host"
+      - "flavor_name"
+      name: openstack_compute_instances_gauge
+      query: |
+        SELECT
+          coalesce(instances.host,'N/A') AS nova_host,
+          instances.project_id,
+          COUNT(*) AS gauge,
+          instances.vm_state,
+          coalesce(JSON_VALUE(instance_extra.flavor, '$.cur."nova_object.data".name'),'N/A') AS flavor_name
+        FROM instances
+        LEFT JOIN instance_extra ON instances.uuid=instance_extra.instance_uuid
+        WHERE instances.deleted = 0
+        GROUP BY instances.vm_state, instances.host, instances.project_id, flavor_name;
+      values:
+      - "gauge"
+    - help: Total Nova VM Stuck count
+      labels:
+      - "project_id"
+      - "task_state"
+      - "nova_host"
+      - "uuid"
+      - "availability_zone"
+      name: openstack_compute_stuck_instances_count_gauge
+      query: |
+        SELECT coalesce(host, 'N/A') AS nova_host,
+          project_id,
+          uuid,
+          availability_zone,
+          task_state,
+          SUM(IF(updated_at < DATE_SUB(now(), INTERVAL 15 MINUTE), 1, 0)) AS count_gauge,
+          MAX((NOW() - updated_at)) AS max_duration_gauge
+        FROM instances
+        WHERE task_state IN ('scheduling','pausing','unpausing','suspending','resuming','rescuing','unrescuing','rebuilding','migrating','deleting','restoring','shelving','unshelving','building','deleting','stopping','starting','spawning','rebooting') AND deleted=0
+        GROUP BY host, project_id, uuid, availability_zone, task_state UNION ALL SELECT 'dummy-row', 'None', 'None', 'None', 'None', 0, 0;
+      values:
+      - "count_gauge"
+    - help: Total Nova VM Stuck count max duration
+      labels:
+      - "project_id"
+      - "task_state"
+      - "nova_host"
+      - "uuid"
+      - "availability_zone"
+      name: openstack_compute_stuck_instances_max_duration_gauge
+      query: |
+        SELECT coalesce(host, 'N/A') AS nova_host,
+          project_id,
+          uuid,
+          availability_zone,
+          task_state,
+          SUM(IF(updated_at < DATE_SUB(now(), INTERVAL 15 MINUTE), 1, 0)) AS count_gauge,
+          MAX((NOW() - updated_at)) AS max_duration_gauge
+        FROM instances
+        WHERE task_state IN ('scheduling','pausing','unpausing','suspending','resuming','rescuing','unrescuing','rebuilding','migrating','deleting','restoring','shelving','unshelving','building','deleting','stopping','starting','spawning','rebooting') AND deleted=0
+        GROUP BY host, project_id, uuid, availability_zone, task_state UNION ALL SELECT 'dummy-row', 'None', 'None', 'None', 'None', 0, 0;
+      values:
+      - "max_duration_gauge"
+    - help: Instance launch time in the last 24 hours
+      labels:
+      - "nova_host"
+      - "project_id"
+      - "uuid"
+      - "vm_state"
+      name: openstack_compute_instance_launch_time_taken_gauge
+      query: |
+        SELECT coalesce(host, 'N/A') AS nova_host,
+          project_id,
+          uuid,
+          vm_state,
+          MAX(launched_at - created_at) AS time_taken_gauge
+        FROM instances
+        WHERE (launched_at IS NOT NULL AND launched_at >= DATE_SUB(now(), INTERVAL 24 HOUR))
+        AND NOT host LIKE 'nova-compute-ironic%'
+        GROUP BY host, project_id, uuid, vm_state;
+      values:
+      - "time_taken_gauge"
+    - help: Instance termination time in the last 24 hours
+      labels:
+      - "nova_host"
+      - "project_id"
+      - "uuid"
+      - "vm_state"
+      name: openstack_compute_instance_termination_time_taken_gauge
+      query: |
+        SELECT coalesce(host, 'N/A') AS nova_host,
+          project_id,
+          uuid,
+          vm_state,
+          MAX(updated_at - terminated_at) AS time_taken_gauge
+        FROM instances
+        WHERE (terminated_at IS NOT NULL AND terminated_at >= DATE_SUB(now(), INTERVAL 24 HOUR))
+        AND NOT host LIKE 'nova-compute-ironic%'
+        GROUP BY host, project_id, uuid, vm_state;
+      values:
+      - "time_taken_gauge"
+    - help: Instances created in the past 24 hours
+      labels:
+      - "nova_host"
+      - "uuid"
+      - "vm_state"
+      name: openstack_compute_instance_created_in_24hrs_gauge
+      query: |
+        SELECT coalesce(host, 'N/A') AS nova_host,
+          uuid,
+          vm_state,
+          COUNT(*) AS in_24hrs_gauge
+        FROM instances
+        WHERE (created_at >= DATE_SUB(now(), INTERVAL 24 HOUR))
+        AND NOT host LIKE 'nova-compute-ironic%'
+        AND deleted=0
+        GROUP BY host, uuid, vm_state;
+      values:
+      - "in_24hrs_gauge"
+    - help: Nodes Launch time in the past 24 hours
+      labels:
+      - "project_id"
+      - "uuid"
+      - "vm_state"
+      - "hostname"
+      - "node"
+      name: openstack_ironic_instances_launch_time_taken_gauge
+      query: |
+        SELECT project_id,
+          uuid,
+          node AS node_id,
+          hostname,
+          vm_state,
+          MAX(launched_at - created_at) AS time_taken_gauge
+        FROM instances
+        WHERE (launched_at IS NOT NULL AND launched_at >= DATE_SUB(now(), INTERVAL 24 HOUR))
+        AND host LIKE 'nova-compute-ironic%'
+        GROUP BY project_id, uuid, vm_state, hostname, node;
+      values:
+      - "time_taken_gauge"
+    - help: Nodes termination time in past 24 hours
+      labels:
+      - "project_id"
+      - "uuid"
+      - "vm_state"
+      - "hostname"
+      - "node"
+      name: openstack_ironic_instances_termination_time_taken_gauge
+      query: |
+        SELECT project_id,
+          uuid,
+          hostname,
+          node AS node_id,
+          vm_state,
+          MAX(updated_at - terminated_at) AS time_taken_gauge
+        FROM instances
+        WHERE (terminated_at IS NOT NULL AND terminated_at >= DATE_SUB(now(), INTERVAL 24 HOUR))
+        AND host LIKE 'nova-compute-ironic%'
+        GROUP BY project_id, uuid, vm_state, hostname, node;
+      values:
+      - "time_taken_gauge"
+    - help: Nodes created in past 24 hours
+      labels:
+      - "uuid"
+      - "vm_state"
+      - "hostname"
+      - "node"
+      name: openstack_ironic_instances_created_in_24hrs
+      query: |
+        SELECT uuid,
+          hostname,
+          node AS node_id,
+          vm_state,
+          COUNT(*) AS in_24hrs
+        FROM instances
+        WHERE (created_at >= DATE_SUB(now(), INTERVAL 24 HOUR))
+        AND host LIKE 'nova-compute-ironic%'
+        GROUP BY uuid, vm_state, hostname, node
+        UNION SELECT 'none' AS uuid, 'none' AS hostname, 'none' AS node_id, 'none' AS vm_state, 0 AS in_24hrs;
+      values:
+      - "in_24hrs"
+    - help: Total Node count
+      labels:
+      - "vm_state"
+      - "project_id"
+      - "flavor_name"
+      - "uuid"
+      - "hostname"
+      - "node_id"
+      name: openstack_ironic_instances_gauge
+      query: |
+        SELECT
+          instances.uuid,
+          instances.node AS node_id,
+          instances.project_id,
+          instances.hostname,
+          instances.vm_state,
+          coalesce(JSON_VALUE(instance_extra.flavor, '$.cur."nova_object.data".name'),'N/A') AS flavor_name,
+          COUNT(*) AS gauge
+        FROM instances
+        LEFT JOIN instance_extra ON instances.uuid=instance_extra.instance_uuid
+        WHERE host LIKE 'nova-compute-ironic%' AND instances.deleted = 0
+        GROUP BY instances.vm_state, instances.project_id, flavor_name, instances.uuid, instances.hostname, instances.node;
+      values:
+      - "gauge"
+    - help: Stats on compute nodes
+      labels:
+      - "nova_host"
+      - "uuid"
+      - "hypervisor_type"
+      name: openstack_compute_nodes_free_disk_gb_gauge
+      query: |
+        SELECT
+          COALESCE(compute_nodes.host, 'N/A') AS nova_host, compute_nodes.uuid, compute_nodes.hypervisor_type,
+          COALESCE(compute_nodes.free_disk_gb, 0) AS free_disk_gb_gauge
+        FROM compute_nodes
+        WHERE compute_nodes.deleted=0;
+      values:
+      - "free_disk_gb_gauge"
+    - help: Stats on compute nodes
+      labels:
+      - "nova_host"
+      - "uuid"
+      - "hypervisor_type"
+      name: openstack_compute_nodes_local_gb_gauge
+      query: |
+        SELECT
+          COALESCE(compute_nodes.host, 'N/A') AS nova_host, compute_nodes.uuid, compute_nodes.hypervisor_type,
+          COALESCE(compute_nodes.local_gb, 0) AS local_gb_gauge
+        FROM compute_nodes
+        WHERE compute_nodes.deleted=0;
+      values:
+      - "local_gb_gauge"
+    - help: Stats on compute nodes
+      labels:
+      - "nova_host"
+      - "uuid"
+      - "hypervisor_type"
+      name: openstack_compute_nodes_local_gb_used_gauge
+      query: |
+        SELECT
+          COALESCE(compute_nodes.host, 'N/A') AS nova_host, compute_nodes.uuid, compute_nodes.hypervisor_type,
+          COALESCE(compute_nodes.local_gb_used, 0) AS local_gb_used_gauge
+        FROM compute_nodes
+        WHERE compute_nodes.deleted=0;
+      values:
+      - "local_gb_used_gauge"
+    - help: Stats on compute nodes
+      labels:
+      - "nova_host"
+      - "uuid"
+      - "hypervisor_type"
+      name: openstack_compute_nodes_free_ram_mb_gauge
+      query: |
+        SELECT
+          COALESCE(compute_nodes.host, 'N/A') AS nova_host, compute_nodes.uuid, compute_nodes.hypervisor_type,
+          COALESCE(compute_nodes.free_ram_mb, 0) AS free_ram_mb_gauge
+        FROM compute_nodes
+        WHERE compute_nodes.deleted=0;
+      values:
+      - "free_ram_mb_gauge"
+    - help: Stats on compute nodes
+      labels:
+      - "nova_host"
+      - "uuid"
+      - "hypervisor_type"
+      name: openstack_compute_nodes_memory_mb_gauge
+      query: |
+        SELECT
+          COALESCE(compute_nodes.host, 'N/A') AS nova_host, compute_nodes.uuid, compute_nodes.hypervisor_type,
+          COALESCE(compute_nodes.memory_mb, 0) AS memory_mb_gauge
+        FROM compute_nodes
+        WHERE compute_nodes.deleted=0;
+      values:
+      - "memory_mb_gauge"
+    - help: Stats on compute nodes
+      labels:
+      - "nova_host"
+      - "uuid"
+      - "hypervisor_type"
+      name: openstack_compute_nodes_memory_mb_used_gauge
+      query: |
+        SELECT
+          COALESCE(compute_nodes.host, 'N/A') AS nova_host, compute_nodes.uuid, compute_nodes.hypervisor_type,
+          COALESCE(compute_nodes.memory_mb_used, 0) AS memory_mb_used_gauge
+        FROM compute_nodes
+        WHERE compute_nodes.deleted=0;
+      values:
+      - "memory_mb_used_gauge"
+    - help: Stats on compute nodes
+      labels:
+      - "nova_host"
+      - "uuid"
+      - "hypervisor_type"
+      name: openstack_compute_nodes_vcpus_used_gauge
+      query: |
+        SELECT
+          COALESCE(compute_nodes.host, 'N/A') AS nova_host, compute_nodes.uuid, compute_nodes.hypervisor_type,
+          COALESCE(compute_nodes.vcpus_used, 0) AS vcpus_used_gauge
+        FROM compute_nodes
+        WHERE compute_nodes.deleted=0;
+      values:
+      - "vcpus_used_gauge"
+    - help: Stats on compute nodes
+      labels:
+      - "nova_host"
+      - "uuid"
+      - "hypervisor_type"
+      name: openstack_compute_nodes_vcpus_gauge
+      query: |
+        SELECT
+          COALESCE(compute_nodes.host, 'N/A') AS nova_host, compute_nodes.uuid, compute_nodes.hypervisor_type,
+          COALESCE(compute_nodes.vcpus, 0) AS vcpus_gauge
+        FROM compute_nodes
+        WHERE compute_nodes.deleted=0;
+      values:
+      - "vcpus_gauge"
+    - help: Stats on compute nodes
+      labels:
+      - "nova_host"
+      - "uuid"
+      - "hypervisor_type"
+      name: openstack_compute_nodes_running_vms_gauge
+      query: |
+        SELECT
+          COALESCE(compute_nodes.host, 'N/A') AS nova_host, compute_nodes.uuid, compute_nodes.hypervisor_type,
+          COALESCE(compute_nodes.running_vms, 0) AS running_vms_gauge
+        FROM compute_nodes
+        WHERE compute_nodes.deleted=0;
+      values:
+      - "running_vms_gauge"
+    - help: Version of the service running
+      labels:
+      - "id"
+      - "nova_host"
+      - "binary"
+      name: openstack_compute_service_version
+      query: |
+        SELECT
+          cast(id as char), coalesce(host, 'N/A') AS nova_host, `binary`, version
+        FROM services
+        WHERE deleted_at is NULL;
+      values:
+      - "version"
+    - help: Errored live-migrations
+      name: openstack_compute_errored_live_migration_gauge
+      labels:
+        - "instance_uuid"
+        - "migration_uuid"
+        - "vm_state"
+      query: |
+        WITH instance_migrations AS (
+            SELECT
+                m.instance_uuid,
+                m.status,
+                m.uuid,
+                ROW_NUMBER() OVER(PARTITION BY m.instance_uuid ORDER BY m.id DESC) AS rn
+            FROM migrations m
+            WHERE m.deleted = 0 AND m.migration_type='live-migration'
+        )
+        SELECT
+            i.uuid as instance_uuid,im.uuid as migration_uuid,i.vm_state,1 as gauge
+        FROM instances i
+        INNER JOIN instance_migrations im ON i.uuid = im.instance_uuid
+        WHERE i.deleted = 0 AND i.vm_state = 'error' AND im.rn = 1 AND im.status = 'error'
+        UNION ALL SELECT 'i-uuid', 'im-uuid', 'None', 0;
+      values:
+        - "gauge"
+
+postgresql:
+  enabled: false
+
+postgresql_cell2:
+  enabled: false
+
+db_name: nova
+max_pool_size: 10
+max_overflow: 5
+
+proxysql:
+  mode: ""
+  native_sidecar: true
+
+mariadb:
+  enabled: false
+  max_connections: 2048
+  buffer_pool_size: "4096M"
+  log_file_size: "1024M"
+  name: nova
+  long_query_time: 8
+  vpa:
+    set_main_container: true
+  ccroot_user:
+    enabled: true
+  databases:
+  - nova
+  - nova_cell0
+  persistence_claim:
+    name: db-nova-pvc
+    size: "50Gi"
+  backup:
+    enabled: false
+  backup_v2:
+    enabled: true
+    databases:
+      - nova
+      - nova_cell0
+    verify_tables:
+      - nova.services
+      - nova.instance_metadata
+      - nova_cell0.instance_metadata
+    oauth:
+      client_id: "nova"
+  alerts:
+    support_group: compute-storage-api
+  job:
+    maintenance:
+      enabled: false
+      function:
+        analyzeTable:
+          enabled: true
+          allTables: true
+
+pxc_db:
+  enabled: false
+  name: nova
+  alerts:
+    support_group: "compute-storage-api"
+  ccroot_user:
+    enabled: true
+  databases:
+    - nova
+    - nova_cell0
+  users:
+    nova:
+      name: nova
+      grants:
+        - "ALL PRIVILEGES on nova.*"
+    nova_cell0:
+      name: nova_cell0
+      grants:
+        - "ALL PRIVILEGES on nova_cell0.*"
+  pxc:
+    configuration:
+      options:
+        max_connections: "2048"
+        innodb_buffer_pool_size: "4096M"
+        innodb_log_file_size: "1024M"
+        long_query_time: "8"
+    persistence:
+      size: 50Gi
+  backup:
+    enabled: true
+    s3:
+      secrets:
+        aws_access_key_id: null
+        aws_secret_access_key: null
+    pitr:
+      enabled: true
+
+mariadb_api:
+  enabled: false
+  buffer_pool_size: "4096M"
+  log_file_size: "1024M"
+  name: nova-api
+  long_query_time: 8
+  vpa:
+    set_main_container: true
+  ccroot_user:
+    enabled: true
+  databases:
+  - nova_api
+  persistence_claim:
+    name: db-nova-api-pvc
+    size: "50Gi"
+  backup:
+    enabled: false
+  backup_v2:
+    enabled: true
+    databases:
+      - nova_api
+      - placement
+    verify_tables:
+      - nova_api.flavors
+      - nova_api.key_pairs
+    oauth:
+      client_id: "nova-api"
+  alerts:
+    support_group: compute-storage-api
+  job:
+    maintenance:
+      enabled: false
+      function:
+        analyzeTable:
+          enabled: true
+          allTables: true
+
+pxc_db_api:
+  enabled: false
+  name: nova-api
+  alerts:
+    support_group: "compute-storage-api"
+  ccroot_user:
+    enabled: true
+  databases:
+    - nova_api
+  users:
+    nova_api:
+      name: nova_api
+      grants:
+        - "ALL PRIVILEGES on nova_api.*"
+  pxc:
+    configuration:
+      options:
+        innodb_buffer_pool_size: "4096M"
+        innodb_log_file_size: "1024M"
+        long_query_time: "8"
+    persistence:
+      size: 50Gi
+  backup:
+    enabled: true
+    s3:
+      secrets:
+        aws_access_key_id: null
+        aws_secret_access_key: null
+    pitr:
+      enabled: true
+
+mariadb_cell2:
+  enabled: false
+  buffer_pool_size: "4096M"
+  log_file_size: "1024M"
+  long_query_time: 8
+  vpa:
+    set_main_container: true
+  ccroot_user:
+    enabled: true
+  persistence_claim:
+    name: db-nova-cell2-pvc
+    size: "50Gi"
+  backup:
+    enabled: false
+  backup_v2:
+    enabled: true
+    oauth:
+      client_id: "nova-cell2"
+  alerts:
+    support_group: compute-storage-api
+  job:
+    maintenance:
+      enabled: false
+      function:
+        analyzeTable:
+          enabled: true
+          allTables: true
+
+pxc_db_cell2:
+  enabled: false
+  alerts:
+    support_group: "compute-storage-api"
+  ccroot_user:
+    enabled: true
+  databases: []
+  users: []
+  pxc:
+    configuration:
+      options:
+        innodb_buffer_pool_size: "4096M"
+        innodb_log_file_size: "1024M"
+        long_query_time: "8"
+    persistence:
+      size: 50Gi
+  backup:
+    enabled: true
+    s3:
+      secrets:
+        aws_access_key_id: null
+        aws_secret_access_key: null
+    pitr:
+      enabled: true
+
+rabbitmq_cell2:
+  nameOverride: cell2-rabbitmq
+  persistence:
+    enabled: false
+  alerts:
+    # unacked/ready messages in rabbitmq
+    rabbit_queue_length: 50
+    unacknowledged_total_wait_for: 10m
+    ready_total_wait_for: 10m
+    support_group: compute-storage-api
+  metrics:
+    enabled: true
+    enableDetailedMetrics: true
+    enablePerObjectMetrics: true
+audit:
+  central_service:
+    user: rabbitmq
+    password: null
+  enabled: false
+  record_payloads: false
+  metrics_enabled: true
+
+rabbitmq:
+  users:
+    default:
+      password: null
+    admin:
+      password: null
+  persistence:
+    enabled: false
+  metrics:
+    enabled: true
+    enableDetailedMetrics: true
+    enablePerObjectMetrics: true
+  resources:
+    requests:
+      memory: 2Gi
+      cpu: 1000m
+
+  alerts:
+    # unacked/ready messages in rabbitmq
+    rabbit_queue_length: 50
+    unacknowledged_total_wait_for: 10m
+    ready_total_wait_for: 10m
+    support_group: compute-storage-api
+
+logging:
+  formatters:
+    context:
+      class: oslo_log.formatters.ContextFormatter
+    default:
+      format: "%(message)s"
+  handlers:
+    stdout:
+      class: StreamHandler
+      args: "(sys.stdout,)"
+      formatter: context
+    "null":
+      class: logging.NullHandler
+      args: "()"
+      formatter: default
+    sentry:
+      class: raven.handlers.logging.SentryHandler
+      level: ERROR
+      args: "()"
+  loggers:
+    root:
+      handlers: stdout, sentry
+      level: WARNING
+    migrate:
+      handlers: stdout, sentry
+      level: INFO
+    nova:
+      handlers: stdout, sentry
+      level: INFO
+    nova.scheduler:
+      handlers: stdout, sentry
+      level: DEBUG
+    nova.scheduler.host_manager: # You might get problems with unicodedecode errors if you decrease that
+      handlers: stdout, sentry
+      level: INFO
+    nova.virt.vmwareapi:
+      handlers: stdout, sentry
+      level: DEBUG
+    eventlet.wsgi.server:
+      handlers: stdout, sentry
+      level: INFO
+    oslo.privsep:
+      handlers: stdout, sentry
+      level: INFO
+    suds:
+      handlers: "null"
+      level: ERROR
+    oslo_vmware.common.loopingcall:
+      handlers: "null"
+      level: ERROR
+
+# openstack-watcher-middleware
+watcher:
+  enabled: true
+
+# Deploy Sentry Prometheus alerts.
+alerts:
+  enabled: true
+  # Name of the Prometheus to which metrics should be exported
+  prometheus: openstack
+
+sentry:
+  enabled: true
+
+nova_bigvm_enabled: true
+
+cors:
+  enabled: true
+  additional_allow_headers: 'X-OpenStack-Nova-API-Version'
+
+memcached:
+  alerts:
+    support_group: compute-storage-api
+    yielded_connections_threshold: 100
+  vpa:
+    set_main_container: true
+
+owner-info:
+  support-group: compute-storage-api
+  service: nova
+  maintainers:
+    - Johannes Kulik
+    - Fabian Wiesel
+    - Marius Leustean
+    - Jakob Karge
+  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/openstack/nova
+
+default:
+  password_all_group_samples: 2
+  rpc_ping_enabled: true
+  # comma-separated list of prefixes for external domains
+  external_customer_domain_name_prefixes: "iaas-"
+
+utils:
+  trust_bundle:
+    enabled: true
+
+vpa:
+  # https://github.com/sapcc/vpa_butler
+  # The maximum available capacity is split evenly across containers specified in the Deployment, StatefulSet or DaemonSet to derive the upper recommendation bound. This does not work out for pods with a single resource-hungry container with several sidecar containers
+  # Annotate the Deployment, StatefulSet or DaemonSet with vpa-butler.cloud.sap/main-container=$MAIN_CONTAINER. That will distribute 75% of the maximum available capacity to the main container and the rest evenly across all others
+  set_main_container: true
+
+
+# used to set the PYTHONWARNINGS environment variable everywhere
+python_warnings: "ignore:Unverified HTTPS request,ignore::SyntaxWarning"
+
+# maintenance cronjobs
+nanny:
+  # Defaults for all nanny cronjobs
+  default:
+    enabled: true
+    add_cell1_conf: false
+    resources:
+      requests:
+        memory: "500Mi"
+        cpu: "100m"
+  # Archive db rows soft-deleted before more than older_than days to shadow
+  # tables. Use batch size max_rows to limit transaction size.
+  db_archive_deleted_rows:
+    # cron schedule (minute | hour | day of month | month | day of week)
+    schedule: "0 * * * *"
+    older_than: 21
+    max_rows: 250
+  # Delete db rows soft-deleted before more than older_than days from shadow
+  # tables.
+  db_purge:
+    # cron schedule (minute | hour | day of month | month | day of week)
+    schedule: "15 * * * *"
+    older_than: 42
+  # For each instance, soft-delete the instance_faults db rows that exceed the
+  # count of max_faults. Use batch size max_rows to limit query size.
+  db_soft_delete_excessive_instance_faults:
+    # cron schedule (minute | hour | day of month | month | day of week)
+    schedule: "30 * * * *"
+    max_faults: 10
+    max_rows: 25
+  sap_map_instances:
+    # cron schedule (minute | hour | day of month | month | day of week)
+    schedule: "45 * * * *"
+    # Requires only a single cell config to derive the DB type in
+    # _regex_instance_filter()
+    add_cell1_conf: true
+    max_rows: 250
+    fetch_instances_max_retries: 100
+
+# openstack-rate-limit
+rate_limit:
+  enabled: false
+  rate_limit_by: target_project_id
+  max_sleep_time_seconds: 0
+  log_sleep_time_seconds: 10
+  backend_timeout_seconds: 1
+  whitelist:
+    - Default/service
+    - Default/admin
+    - tempest/performance-testing
+    - ccadmin/cloud_admin
+    - ccadmin/master
+  whitelist_users: null
+  blacklist: null
+  blacklist_users: null
+  groups:
+    write:
+      - delete
+      - update
+  rates:
+    default:
+      servers:
+        - action: read/list
+          limit: 100r/m
+        - action: create
+          limit: 100r/m
+      servers/server:
+        - action: read/list
+          limit: 100r/m
+        - action: write
+          limit: 100r/m
+      servers/server/migrations:
+        - action: read/list
+          limit: 100r/m
+      servers/server/migrations/migration:
+        - action: read/list
+          limit: 100r/m
+      servers/server/action:
+        - action: create
+          limit: 100r/m
+      flavors:
+        - action: read/list
+          limit: 100r/m
+      servers/server/remote-consoles:
+        - action: create
+          limit: 100r/m
+
+manage_service_user_passwords: false
+
+api-ratelimit-redis:
+  alerts:
+    support_group: compute-storage-api

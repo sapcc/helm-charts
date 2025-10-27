@@ -1,0 +1,66 @@
+global:
+  linkerd_requested: false
+
+owner-info:
+  support-group: observability
+  service: apic-exporter
+  maintainers:
+    - "Martin Vossen"
+    - "Ivo Gosemann"
+  helm-chart-url: "https://github.com/sapcc/helm-charts/tree/master/prometheus-exporters/apic-exporter"
+
+prometheus-monitors:
+  serviceMonitor:
+    enabled: true
+  nameOverride: "apic-exporter"
+  prometheus: "infra-collector"
+  jobLabel: "app"
+  matchLabels:
+    app: apic-exporter
+
+exporter:
+  image:
+    name: apic-exporter
+    tag: DEFINED-IN-PIPELINE
+  log_level: ERROR
+  namespace: infra-monitoring
+  prometheus:
+    port: 9102
+  resources:
+    limits:
+      memory: 500Mi
+      cpu: 300m
+    requests:
+      memory: 300Mi
+      cpu: 150m
+  collector_groups:
+    - name: "1"
+      collectors:
+        - "ApicMcecmProcessesCollector"
+    - name: "2"
+      collectors:
+        - "ApicInterfacesCollector"
+    - name: "3"
+      collectors:
+        - "ApicProcessesCollector"
+    - name: "4"
+      collectors:
+        - "ApicEquipmentCollector"
+        - "ApicHealthCollector"
+        - "ApicIPsCollector"
+        - "ApicMCPCollector"
+        - "ApicSpinePortsCollector"
+        - "ApicLeafCapacityCollector"
+    - name: "5"
+      collectors:
+        - "ApicCoopDbCollector"
+        - "ApicFaultsCollector"
+
+alerts:
+  enabled: true
+  prometheus: infra-collector
+
+podMonitor:
+  enabled: false
+serviceMonitor:
+  enabled: true

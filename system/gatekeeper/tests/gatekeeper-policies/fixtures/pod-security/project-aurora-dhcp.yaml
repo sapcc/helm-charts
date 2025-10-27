@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    meta.helm.sh/release-name: aurora
+    meta.helm.sh/release-namespace: aurora-system
+  labels:
+    app.kubernetes.io/managed-by: Helm
+  name: project-aurora-dhcp
+  namespace: aurora-system
+spec:
+  template:
+    spec:
+      containers:
+        name: server
+        ports:
+        - containerPort: 67
+          hostPort: 67
+          name: dhcp
+          protocol: TCP
+        - containerPort: 69
+          hostPort: 69
+          name: tftp
+          protocol: TCP
+        securityContext:
+          privileged: true
+      hostNetwork: true
+      initContainers:
+        name: init
+        securityContext:
+          privileged: true

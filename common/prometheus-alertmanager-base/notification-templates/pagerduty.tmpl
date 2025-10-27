@@ -1,0 +1,68 @@
+{{ define "pagerduty.sapcc.firing"}}{{ end }}
+
+{{ define "pagerduty.sapcc.description" }}
+{{ if eq .Status "firing" }}{{ if gt (len .Alerts.Firing) 1 }} [{{ .Alerts.Firing | len }} Alerts]{{ end }} {{ end -}}
+{{ if eq .Status "resolved" }}[RESOLVED{{ if gt (len .Alerts.Resolved) 1 }} - {{ .Alerts.Resolved | len }}{{ end }}] {{ end -}}
+[{{ .CommonLabels.region | toUpper }}] {{ .GroupLabels.alertname }} - {{ .CommonAnnotations.summary }}
+{{ end }}
+
+{{ define "pagerduty.sapcc.details" }}
+{{ if eq .Status "firing" }}{{ if gt (len .Alerts.Firing) 1 }} [Firing:{{ .Alerts.Firing | len }}]{{ end }} {{ end -}}
+{{ if eq .Status "resolved" }}[RESOLVED{{ if gt (len .Alerts.Resolved) 1 }} - {{ .Alerts.Resolved | len }}{{ end }}] {{ end -}}
+[{{ .CommonLabels.region | toUpper }}] {{ .GroupLabels.alertname }} - {{ .CommonAnnotations.summary }}
+
+{{ if eq .Status "firing" -}}
+{{ range .Alerts.Firing -}}
+  {{ .Annotations.description }}
+{{ end -}}
+{{ end -}}
+{{ if eq .Status "resolved" -}}
+{{ range .Alerts.Resolved -}}
+  {{ .Annotations.description }}
+{{ end -}}
+{{ end -}}
+{{ end }}
+
+{{ define "pagerduty.sapcc.fingerprint" }}
+{{ range .Alerts -}}
+    {{ .Fingerprint }}
+{{ end -}}
+{{ end }}
+
+{{ define "pagerduty.sapcc.prometheus" }}
+{{ range .Alerts.Firing -}}
+  {{ .GeneratorURL }}
+{{ end -}}
+{{ end }}
+
+{{ define "pagerduty.sapcc.context" }}
+{{ .CommonLabels.context }}
+{{ end }}
+
+{{ define "pagerduty.sapcc.region" }}
+{{ .CommonLabels.region }}
+{{ end }}
+
+{{ define "pagerduty.sapcc.service" }}
+{{ .CommonLabels.service }}
+{{ end }}
+
+{{ define "pagerduty.sapcc.tier" }}
+{{ .CommonLabels.tier }}
+{{ end }}
+
+{{ define "pagerduty.sapcc.dashboard" }}
+{{- if .CommonLabels.dashboard }} https://grafana.{{ .CommonLabels.region }}.cloud.sap/dashboard/db/{{ .CommonLabels.dashboard }}{{ end -}}
+{{ end }}
+
+{{ define "pagerduty.sapcc.sentry" }}
+{{- if .CommonLabels.sentry }} https://sentry.{{ .CommonLabels.region }}.cloud.sap/monsoon/{{ .CommonLabels.sentry }} {{ end -}}
+{{ end }}
+
+{{ define "pagerduty.sapcc.playbook" }}
+{{- if .CommonLabels.playbook }} https://operations.global.cloud.sap/{{ .CommonLabels.playbook }} {{ end -}}
+{{ end }}
+
+{{ define "pagerduty.sapcc.cloudops" }}
+{{- if .CommonLabels.cloudops }} https://dashboard.{{ .CommonLabels.region }}.cloud.sap/ccadmin/cloud_admin/cloudops#/universal-search/{{ .CommonLabels.cloudops }} {{ end -}}
+{{ end }}

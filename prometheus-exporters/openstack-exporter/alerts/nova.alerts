@@ -1,0 +1,27 @@
+groups:
+- name: nova
+  rules:
+  - alert: InhibitionBaselineNovaComputeServiceDisabled
+    expr: >
+      nova_compute_service_status == 0
+    labels:
+      severity: info
+      service: nova
+      context: "inhibition"
+      inhibition_host: "{{ $labels.host }}"
+      meta: "An administrator has disabled nova-compute service on {{ $labels.availability_zone }}/{{ $labels.host }}."
+    annotations:
+      description: "An administrator has disabled nova-compute service on {{ $labels.availability_zone }}/{{ $labels.host }}."
+      summary: "An administrator has disabled nova-compute service on {{ $labels.availability_zone }}/{{ $labels.host }}."
+  - alert: InhibitionBaselineNovaComputeServiceDown
+    expr: >
+      nova_compute_service_state == 0
+    labels:
+      severity: info
+      service: nova
+      context: "inhibition"
+      inhibition_host: "{{ $labels.host }}"
+      meta: "Running nova-compute service on {{ $labels.availability_zone }}/{{ $labels.host }} is down."
+    annotations:
+      description: "Running nova-compute service on {{ $labels.availability_zone }}/{{ $labels.host }} is down."
+      summary: "Running nova-compute service on {{ $labels.availability_zone }}/{{ $labels.host }} is down."

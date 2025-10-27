@@ -1,0 +1,28 @@
+{{- if .Values.rhea.enabled -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: rhea
+  annotations:
+    {{- range $key, $value := .Values.rhea.service.annotations }}
+    {{ $key }}: {{ $value | quote }}
+    {{- end }}
+spec:
+  type: {{ .Values.rhea.service.type }}
+{{- if .Values.rhea.service.externalIPs }}
+  externalIPs: {{ toYaml .Values.rhea.service.externalIPs | nindent 4 }}
+{{- end }}
+{{- if .Values.rhea.service.loadBalancerIP }}
+  loadBalancerIP: {{ .Values.rhea.service.loadBalancerIP }}
+{{- end }}
+{{- if .Values.rhea.service.externalTrafficPolicy }}
+  externalTrafficPolicy: {{ .Values.rhea.service.externalTrafficPolicy }}
+{{- end }}
+  ports:
+    - name: http
+      port: {{ .Values.rhea.server.http }}
+      protocol: TCP
+  selector:
+    name: rhea
+    instance: rhea
+{{- end -}}

@@ -1,0 +1,193 @@
+{{- /*
+Default behaviour, haproxy deployments for every apod defined in Values.global.apods
+If not defined, one haproxy per Values.global.availability_zones to non-apod based AZ
+This and the affinities for 'cp' can be removed if labs are running on apods
+*/ -}}
+{{- $az_apods := dict }}
+{{- if .Values.global.apods }}
+  {{- $az_apods = .Values.global.apods }}
+{{- else }}
+  {{- /* Collect all availability zones and construct the base dict */ -}}
+  {{- range $az := .Values.global.availability_zones }}
+    {{- $non_apods := list }}
+    {{- /* Every availability zones gets an non apod haproxy scheduled if CP is still active */ -}}
+    {{- $non_apods = append $non_apods "cp" }}
+    {{- $az_apods = set $az_apods $az $non_apods }}
+  {{- end }}
+{{- end }}
+{{- range $az, $apods := $az_apods }}
+{{- range $apod := $apods }}
+kind: Deployment
+apiVersion: apps/v1
+
+metadata:
+  name: swift-haproxy-{{ $.Values.cluster_name }}-{{ $az }}{{ if ne $apod "cp" }}-{{ $apod }}{{ end }}
+  labels:
+    release: "{{ $.Release.Name }}"
+    os-cluster: {{ $.Values.cluster_name }}
+spec:
+  revisionHistoryLimit: 5
+  {{- $replicas_az := default 4.0 (index $.Values (printf "haproxy_deployment_replicas_%s" $az)) }}
+  {{- if lt $replicas_az 0.0 }}
+  {{- /* To explicit disable in an AZ, replicas must be set negative, otherwise 0 will trigger the default */ -}}
+  {{- $replicas_az = 0.0 }}
+  {{- end }}
+  replicas: {{ $replicas_az }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      {{- if eq $replicas_az 1.0 }}
+      maxUnavailable: 0
+      {{- else }}
+      maxUnavailable: 1
+      {{- end }}
+      maxSurge: 2
+  selector:
+    matchLabels:
+      component: swift-haproxy-{{ $.Values.cluster_name }}
+  template:
+    metadata:
+      labels:
+        component: swift-haproxy-{{ $.Values.cluster_name }}
+        from: deployment
+        os-cluster: {{ $.Values.cluster_name }}
+        for-service: swift-proxy-{{ $.Values.cluster_name }}
+        availability-zone: {{ $az }}
+        apod: {{ $apod }}
+      annotations:
+        checksum/haproxy.bin: {{ include "swift/templates/haproxy-bin-configmap.yaml" $ | sha256sum }}
+        checksum/haproxy-cluster.etc: {{ include "swift/templates/etc/haproxy-cluster-configmap.yaml" $ | sha256sum }}
+        prometheus.io/scrape: "true"
+        prometheus.io/targets: {{ required ".Values.alerts.prometheus.openstack missing" $.Values.alerts.prometheus.openstack }}
+    spec:
+      {{- if (index $.Values (printf "haproxy_deployment_tolerate_swift_%s_%s" $az $apod)) }}
+      tolerations:
+      - key: "species"
+        operator: "Equal"
+        value: "swift-storage"
+        effect: "NoSchedule"
+      {{- end }}
+      nodeSelector:
+        {{- if eq $apod "cp" }}
+        topology.kubernetes.io/zone: {{ $az }}
+        {{- else }}
+        kubernetes.cloud.sap/apod: {{ $apod }}
+        {{- end }}
+      affinity:
+        {{- if eq $apod "cp" }}
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.cloud.sap/apod
+                operator: DoesNotExist
+        {{- end }}
+        podAntiAffinity:
+          # Prefere to be scheduled on nodes not yet running this proxy from a deplyoment
+          # kubernetes.io/hostname legacy control plane
+          # kubernetes.cloud.sap/host aPod bases control plane
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 1
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: component
+                  operator: In
+                  values:
+                  - swift-haproxy-{{ $.Values.cluster_name }}
+                - key: from
+                  operator: In
+                  values:
+                  - deployment
+              topologyKey: "kubernetes.io/hostname"
+          - weight: 5
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: component
+                  operator: In
+                  values:
+                  - swift-haproxy-{{ $.Values.cluster_name }}
+                - key: from
+                  operator: In
+                  values:
+                  - deployment
+              topologyKey: "kubernetes.cloud.sap/host"
+          # Prefere to be scheduled on nodes not yet running swift-proxy. See bin/haproxy-start for explanation
+          - weight: 5
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: component
+                  operator: In
+                  values:
+                  - swift-proxy-{{ $.Values.cluster_name }}
+              topologyKey: "kubernetes.io/hostname"
+      volumes:
+        - name: tls-secret
+          secret:
+            secretName: tls-swift-{{ $.Values.cluster_name }}
+        - name: haproxy-bin
+          configMap:
+            name: haproxy-bin
+        - name: haproxy-etc-cluster
+          configMap:
+            name: haproxy-etc-{{ $.Values.cluster_name }}
+      containers:
+        - name: haproxy
+          image: {{ $.Values.global.registryAlternateRegion }}/swift-haproxy:{{ $.Values.image_version_haproxy }}
+          command:
+            - /usr/bin/dumb-init
+          args:
+            - /bin/sh
+            - /haproxy-bin/haproxy-start
+          env:
+            - name: DEBUG_CONTAINER
+              value: "false"
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: spec.nodeName
+          # TODO: securityContext: { runAsNonRoot: true }
+          resources:
+            requests:
+              cpu: {{ $.Values.haproxy_deployment_resources_cpu_req | required "haproxy_deployment_resources_cpu_req is required" | quote }}
+              memory: {{ $.Values.haproxy_deployment_resources_memory_req | required "haproxy_deployment_resources_memory_req is required" | quote }}
+            limits:
+              cpu: {{ $.Values.haproxy_deployment_resources_cpu_limit | required "haproxy_deployment_resources_cpu_limit is required" | quote }}
+              memory: {{ $.Values.haproxy_deployment_resources_memory_limit | required "haproxy_deployment_resources_memory_limit is required" | quote }}
+          volumeMounts:
+            - mountPath: /tls-secret
+              name: tls-secret
+            - mountPath: /haproxy-bin
+              name: haproxy-bin
+            - mountPath: /haproxy-etc-cluster
+              name: haproxy-etc-cluster
+          livenessProbe:
+            httpGet:
+              path: /haproxy_test
+              port: 80
+              scheme: HTTP
+            initialDelaySeconds: 10
+            timeoutSeconds: 1
+            periodSeconds: 5
+            failureThreshold: 10
+          readinessProbe:
+            httpGet:
+              path: /healthcheck
+              port: {{ $.Values.proxy_public_port }}
+              scheme: HTTPS
+              httpHeaders:
+                - name: Host
+                  value: {{ include "swift_endpoint_host" $ }}
+            initialDelaySeconds: 10
+            timeoutSeconds: 1
+            periodSeconds: 5
+          ports:
+            - name: metrics
+              containerPort: 8404
+
+---
+{{- end }}
+{{- end }}

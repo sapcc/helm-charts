@@ -1,0 +1,17 @@
+{{- $root := . }}
+{{- if .Values.ruler.alertmanagers.hosts }}
+{{- range $name := coalesce .Values.names .Values.global.targets (list .Values.name) }}
+---
+apiVersion: v1
+kind: Secret
+
+metadata:
+  name: {{ include "thanos.fullName" (list $name $root) }}-alertmanager-config
+  labels:
+    thanos: {{ include "thanos.name" (list $name $root) }}
+
+data:
+  alertManagerConfig.yaml: |
+{{ include (print $.Template.BasePath "/ruler/_alertmanager.yaml.tpl") (list $name $root) | b64enc | indent 4 }}
+{{- end }}
+{{- end }}

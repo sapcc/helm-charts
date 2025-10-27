@@ -1,0 +1,16 @@
+groups:
+- name: fluent_audit_systemd.alerts
+  rules:
+  - alert: AuditLogsControlplaneSystemdAuditLogsMissing
+    expr: sum(rate(fluentd_output_status_emit_count{component="fluent-audit-systemd"}[30m])) by (nodename,kubernetes_pod_name) == 0
+    for: 60m
+    labels:
+      context: logshipping
+      service: logs
+      severity: warning
+      support_group: observability
+      tier: os
+      playbook: 'docs/support/playbook/opensearch/octobus/keystone-api-logs-in-octobus-missing'
+    annotations:
+      description: 'Audit Logs in {{ $labels.region }} `{{ $labels.kubernetes_pod_name }}` pod on `{{ $labels.nodename }}` is not shipping any log line. Please check'
+      summary:  fluent-audit-systemd logs are not shipped

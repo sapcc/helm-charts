@@ -1,0 +1,105 @@
+## Memcached image and tag
+## ref: https://hub.docker.com/r/library/memcached/tags/
+##
+image: library/memcached
+imageTag: 1.6.39-alpine3.22
+# set to true to use .Values.global.dockerHubMirrorAlternateRegion instead of .Values.global.dockerHubMirror
+use_alternate_registry: false
+
+## Specify a imagePullPolicy
+## 'Always' if imageTag is 'latest', else set to 'IfNotPresent'
+## ref: http://kubernetes.io/docs/user-guide/images/#pre-pulling-images
+##
+imagePullPolicy: IfNotPresent
+#
+
+## Affinity for pod assignment
+## Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
+##
+nodeAffinity: {}
+
+# Optionally set externalIP for service:
+#external_ip: ''
+
+# name of priorityClass to influence scheduling priority
+priority_class: "critical-infrastructure"
+
+memcached:
+  ## Various values that get set as command-line flags.
+  ## ref: https://github.com/memcached/memcached/wiki/ConfiguringServer#commandline-arguments
+  ##
+  maxItemMemory: 1024
+  maxConnections: 16384
+  #verbosity: vvv
+  port: 11211
+
+## Configure resource requests and limits
+## ref: http://kubernetes.io/docs/user-guide/compute-resources/
+##
+resources:
+  enabled: true
+  limits:
+    memory: 2048Mi
+    cpu: 500m
+  requests:
+    memory: 1024Mi
+    cpu: 50m
+
+vpa:
+  # https://github.com/sapcc/vpa_butler
+  # The maximum available capacity is split evenly across containers specified in the Deployment, StatefulSet or DaemonSet to derive the upper recommendation bound. This does not work out for pods with a single resource-hungry container with several sidecar containers
+  # Annotate the Deployment, StatefulSet or DaemonSet with vpa-butler.cloud.sap/main-container=$MAIN_CONTAINER. That will distribute 75% of the maximum available capacity to the main container and the rest evenly across all others
+  set_main_container: false
+
+metrics:
+  enabled: true
+  image: "prom/memcached-exporter"
+  imageTag: "v0.15.1"
+
+  port: "9150"
+  resources:
+    enabled: true
+    limits:
+      memory: 64Mi
+      cpu: 300m
+    requests:
+      memory: 36Mi
+      cpu: 100m
+
+replicas: 1
+
+# if both values set - configures SASL for memcached.
+# the client should connect using this username/password combination to
+# connect to memcached.
+auth:
+  username: ""
+  password: ""
+
+upgrades:
+  revisionHistory: 3
+  podReplacementStrategy: RollingUpdate
+  rollingUpdate:
+    maxUnavailable: 1
+    maxSurge: 3
+
+# Default Prometheus alerts and rules.
+alerts:
+  enabled: true
+
+  # Name of the Prometheus supposed to scrape the metrics and to which alerts are assigned.
+  prometheus: openstack
+
+  # The tier of the alert.
+  tier: os
+
+  # Configurable service label of the alerts. Defaults to `.Release.Name`.
+  # service:
+
+  # Define the threshold for the MemcachedManyConnectionsThrottled alert in
+  # yielded connections per minute
+  yielded_connections_threshold: 5
+
+global: {}
+linkerd:
+  #linkerd annotation for the Memcached pod (true/false)
+  enabled: true

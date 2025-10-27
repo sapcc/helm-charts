@@ -1,0 +1,40 @@
+{{ if and .Values.adminPassword .Values.adminToken .Values.adminEmail -}}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ template "fullname" . }}-seed-{{ randAlphaNum 6 |lower }}
+  annotations:
+    "helm.sh/hook": post-install
+    # hooks are not annotated as belonging to the Helm release, so we cannot rely on owner-info injection
+    ccloud/support-group: identity
+    ccloud/service: sentry
+spec:
+  template:
+    metadata:
+      name: {{ template "fullname" . }}-seed
+    spec:
+      restartPolicy: OnFailure
+      volumes:
+        - name: seed 
+          configMap:
+            name: {{ template "fullname" . }}-seed
+      containers:
+      - name: job 
+        image: "{{required ".Values.global.registry is missing" .Values.global.registry }}/{{ .Values.image.repository }}:{{required ".Values.image.tag is missing" .Values.image.tag }}"
+        command: ["sentry",  "exec", "/seed/seed.py"]
+        volumeMounts:
+          - mountPath: /seed
+            name: seed
+        env:
+          - name: ADMIN_API_TOKEN
+            valueFrom: { secretKeyRef: { name: {{ template "fullname" . }}, key: admin-api-token } }
+          - name: ADMIN_EMAIL
+            value: {{ required "missing adminEmail" .Values.adminEmail }}
+          - name: ADMIN_PASSWORD
+            valueFrom: { secretKeyRef: { name: {{ template "fullname" . }}, key: admin-password } }
+          - name: ORGANIZATION_NAME
+            value: {{ .Values.organizationName }}
+          - name: ORGANIZATION_SLUG
+            value: {{ .Values.organizationSlug }}
+{{ include "env-vars" . | indent  10 }}
+{{- end }}

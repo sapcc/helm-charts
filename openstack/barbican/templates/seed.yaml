@@ -1,0 +1,168 @@
+{{- $cdomains := .Values.global.domain_seeds.customer_domains | required "missing value for .Values.global.domain_seeds.customer_domains" -}}
+{{- $domains  := concat (list "ccadmin" "Default") $cdomains -}}
+{{- $cdomainsWithoutSupportProjects := .Values.global.domain_seeds.customer_domains_without_support_projects | required "missing value for .Values.global.domain_seeds.customer_domains_without_support_projects" -}}
+
+apiVersion: "openstack.stable.sap.cc/v1"
+kind: "OpenstackSeed"
+metadata:
+  name: barbican-seed
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+spec:
+  requires:
+  - {{ default .Release.Namespace .Values.global.keystoneNamespace }}/keystone-seed
+  {{- range $domains }}
+  {{- if not (hasPrefix "iaas-" .)}}
+  - monsoon3/domain-{{ replace "_" "-" . | lower }}-seed
+  {{- end }}
+  {{- end }}
+
+  roles:
+  - name: keymanager_viewer
+    description: Barbican secrets read-only
+  - name: keymanager_admin
+    description: Barbican secrets administration
+  - name: cloud_keymanager_admin
+    description: Barbican secrets cloud-administration
+
+  services:
+  - name: barbican
+    type: key-manager
+    description: Openstack Key Management
+    endpoints:
+    - interface: admin
+      region: '{{.Values.global.region}}'
+      url: 'http://{{include "barbican_api_endpoint_host_admin" .}}:{{.Values.api_port_internal}}'
+    - interface: public
+      region: '{{.Values.global.region}}'
+      url: 'https://{{include "barbican_api_endpoint_host_public" .}}'
+    - interface: internal
+      region: '{{.Values.global.region}}'
+      url: 'http://{{include "barbican_api_endpoint_host_internal" .}}:{{.Values.api_port_internal}}'
+
+
+  # default gets special handling
+  # ccadmin gets additional role assignments for projects and some group assignments
+  # iaas- is excluded
+
+  domains:
+  - name: Default
+    users:
+    - name: admin
+      role_assignments:
+      - domain: Default
+        role: cloud_keymanager_admin
+      - project: admin
+        role: cloud_keymanager_admin
+    - name: barbican
+      description: 'Barbican Service'
+      password: '{{ .Values.global.barbican_service_password | include "resolve_secret" }}'
+      role_assignments:
+      - project: service
+        role: service
+
+    groups:
+    - name: administrators
+      role_assignments:
+      - domain: Default
+        role: cloud_keymanager_admin
+      - project: admin
+        role: cloud_keymanager_admin
+
+  {{- range $domains }}
+  {{- if and (ne . "Default") (not (hasPrefix "iaas-" .)) }}
+  - name: {{ . }}
+    {{- if eq . "ccadmin" }}
+    projects:
+    - name: cloud_admin
+      role_assignments:
+      - user: admin@Default
+        role: cloud_keymanager_admin
+    {{- end }}
+    groups:
+    {{- if eq . "ccadmin" }}
+    - name: CCADMIN_CLOUD_ADMINS
+      role_assignments:
+      - project: cloud_admin
+        role: cloud_keymanager_admin
+    {{- end }}
+    {{- if eq . "monsoon3"}}
+    - name: MONSOON3_DOMAIN_ADMINS
+      role_assignments:
+      - project: cc-demo
+        role: keymanager_admin
+    {{- end }}
+    - name: {{ hasPrefix "iaas-" . | ternary . ( upper . ) }}_API_SUPPORT
+      role_assignments:
+      {{- if not (has . $cdomainsWithoutSupportProjects) }}
+      - project: api_support
+        role: keymanager_admin
+      {{- end }}
+      {{- if eq . "ccadmin" }}
+      - project: api_tools
+        role: keymanager_admin
+      {{- end }}
+      - domain: {{ . }}
+        role: keymanager_viewer
+        inherited: true
+    - name: {{ hasPrefix "iaas-" . | ternary . ( upper . ) }}_COMPUTE_SUPPORT
+      role_assignments:
+      {{- if not (has . $cdomainsWithoutSupportProjects) }}
+      - project: compute_support
+        role: keymanager_admin
+      {{- end }}
+      {{- if eq . "ccadmin" }}
+      - project: compute_tools
+        role: keymanager_admin
+      {{- end }}
+      {{- if (has . $cdomainsWithoutSupportProjects) }}
+      - domain: {{ . }}
+        role: keymanager_viewer
+        inherited: true
+      {{- end }}
+    - name: {{ hasPrefix "iaas-" . | ternary . ( upper . ) }}_NETWORK_SUPPORT
+      role_assignments:
+      {{- if not (has . $cdomainsWithoutSupportProjects) }}
+      - project: network_support
+        role: keymanager_admin
+      {{- end }}
+      {{- if eq . "ccadmin" }}
+      - project: network_tools
+        role: keymanager_admin
+      {{- end }}
+      {{- if (has . $cdomainsWithoutSupportProjects) }}
+      - domain: {{ . }}
+        role: keymanager_viewer
+        inherited: true
+      {{- end }}
+    - name: {{ hasPrefix "iaas-" . | ternary . ( upper . ) }}_STORAGE_SUPPORT
+      role_assignments:
+      {{- if not (has . $cdomainsWithoutSupportProjects) }}
+      - project: storage_support
+        role: keymanager_admin
+      {{- end }}
+      {{- if eq . "ccadmin" }}
+      - project: storage_tools
+        role: keymanager_admin
+      {{- end }}
+      {{- if (has . $cdomainsWithoutSupportProjects) }}
+      - domain: {{ . }}
+        role: keymanager_viewer
+        inherited: true
+      {{- end }}
+    - name: {{ hasPrefix "iaas-" . | ternary . ( upper . ) }}_SERVICE_DESK
+      role_assignments:
+      {{- if not (has . $cdomainsWithoutSupportProjects) }}
+      - project: service_desk
+        role: keymanager_admin
+      {{- end }}
+      {{- if (has . $cdomainsWithoutSupportProjects) }}
+      - domain: {{ . }}
+        role: keymanager_viewer
+        inherited: true
+      {{- end }}
+  {{- end}}
+  {{- end}}

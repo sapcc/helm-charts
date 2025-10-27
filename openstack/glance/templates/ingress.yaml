@@ -1,0 +1,32 @@
+kind: Ingress
+apiVersion: networking.k8s.io/v1
+
+metadata:
+  name: glance
+  labels:
+    system: openstack
+    type: api
+    component: glance
+  annotations:
+    ingress.kubernetes.io/proxy-request-buffering: "off"
+    nginx.ingress.kubernetes.io/proxy-request-buffering: "off"
+    {{- if .Values.tlsacme }}
+    kubernetes.io/tls-acme: "true"
+    disco: "true"
+    {{- end }}
+    {{- include "utils.linkerd.ingress_annotation" . | indent 4 }}
+spec:
+  tls:
+    - secretName: tls-{{ include "glance_api_endpoint_host_public" . | replace "." "-" }}
+      hosts: [{{include "glance_api_endpoint_host_public" .}}]
+  rules:
+    - host: {{include "glance_api_endpoint_host_public" .}}
+      http:
+        paths:
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: glance
+              port:
+                number: {{.Values.api_port_internal}}

@@ -1,0 +1,81 @@
+kind: DaemonSet
+apiVersion: apps/v1
+
+metadata:
+  name: fluent-audit-systemd
+  labels:
+    component: fluent-audit-systemd
+spec:
+  selector:
+    matchLabels:
+      component: fluent-audit-systemd
+  minReadySeconds: 15
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: '10%'
+  template:
+    metadata:
+      labels:
+        component: fluent-audit-systemd
+      annotations:
+        kubectl.kubernetes.io/default-container: "fluent-audit-systemd"
+        checksum/configmap.yaml: {{ include  (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        checksum/fluent.conf.tpl: {{ include  (print $.Template.BasePath "/_fluent.conf.tpl") . | sha256sum }}
+        scheduler.alpha.kubernetes.io/tolerations: '[{"key":"species","value":"hypervisor"}]'
+    spec:
+      tolerations:
+      - operator: "Exists"
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: cloud.sap/deployment-state
+                operator: NotIn
+                values:
+                - reinstalling
+              - key: cloud.sap/esx-in-maintenance
+                operator: NotIn
+                values:
+                - alarm
+                - "true"
+              - key: cloud.sap/maintenance-state
+                operator: NotIn
+                values:
+                - in-maintenance
+      volumes:
+        - name: fluent-etc
+          configMap:
+            name: fluent-audit-systemd-etc
+        - name: varlog
+          hostPath:
+            path: /var/log
+      containers:
+        - name: fluent-audit-systemd
+          image: "{{.Values.global.registry}}/elk-fluent:{{.Values.image_version}}"
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: NODENAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+          resources:
+{{ toYaml .Values.resources | indent 12 }}
+          volumeMounts:
+            - name: fluent-etc
+              mountPath: /fluentd/etc
+            - name: varlog
+              mountPath: /var/log
+          ports:
+            - name: fluent
+              containerPort: {{.Values.port}}
+              hostPort: {{.Values.port}}
+              hostIP: 127.0.0.1
+            - name: metrics
+              containerPort: {{.Values.metrics_port}}
+              protocol: TCP

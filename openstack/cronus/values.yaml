@@ -1,0 +1,731 @@
+global:
+  accessKeyRotationDays: 80
+anchors:
+  keystone: &keystone
+    projectName: master
+    projectDomainName: ccadmin
+    userDomainName: Default
+    username: cronus
+    # authUrl: https://identity
+    # region: eu-de-2
+    # endpointType: public
+    # applicationCredentialID: application-credential-id
+    # applicationCredentialSecret: application-credential-secret
+    # applicationCredentialName: application-credential-name
+    # projectID: project-id
+    # projectDomainID: project-domain-id
+    # domainName: domain-name
+    # domainID: domain-id
+    # userID: user-id
+cronus:
+  certPath: /etc/certs
+  enabled: true
+  cacheSize: 256
+  http: 443
+  smtp: 465
+  smtps: 587
+  prometheus: 2772
+  listenProxyProtocol: false
+  proxyHeaderTimeout: 2000ms
+  readTimeout: 30
+  writeTimeout: 30
+  keepAliveTimeout: 61
+  tls:
+    serverTlsName: tls-secret-cronus
+    clientTlsAuth: VerifyClientCertIfGiven
+    # "SAP Cloud Root CA" http://aia.pki.co.sap.com/aia/SAP%20Cloud%20Root%20CA.crt
+    externalServerCertificate: externalServerCertificate
+    clientCA: |
+      -----BEGIN CERTIFICATE-----
+      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
+      -----END CERTIFICATE-----
+  debug: true
+  godebug: netdns=cgo
+  image:
+    name: cronus-repository
+    pullPolicy: IfNotPresent
+    tag: latest
+  service:
+    type: LoadBalancer
+    annotations:
+      disco: "true"
+      disco/record: my-ingress.region.cloud.com.
+  deployment:
+    enabled: true
+    replicas: 1
+  statefulSet:
+    enabled: false
+    replicas: 3
+    podManagementPolicy: OrderedReady
+    annotations: {}
+    labels: {}
+    headless:
+      annotations: {}
+      labels: {}
+      servicePort: 80
+  updateStrategy: RollingUpdate
+  terminationGracePeriod: 60
+  affinity:
+    # don't co-locate cronus replicas on the same node
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        - topologyKey: kubernetes.io/hostname
+          labelSelector:
+            matchExpressions:
+              - key: name
+                operator: In
+                values:
+                  - cronus
+                  - usage
+              - key: instance
+                operator: In
+                values:
+                  - cronus
+  tolerations:
+    - effect: NoSchedule
+      key: dedicated
+      operator: Equal
+      value: cronus
+  # all below can be used only with a deployment style
+  maxSurge: 1
+  maxUnavailable: 0
+  ingressAnnotations:
+    # don't handle this resource by ingress controllers
+    kubernetes.io/ingress.class: cronus
+
+nebula:
+  enabled: true
+  cacheSize: 512
+  http: 1080
+  readTimeout: 30
+  writeTimeout: 30
+  keepAliveTimeout: 61
+  debug: true
+  image:
+    name: nebula-repository
+    pull: IfNotPresent
+    tag: latest
+  statefulSet:
+    enabled: false
+    podManagement: OrderedReady
+    annotations: {}
+    labels: {}
+    headless:
+      annotations: {}
+      labels: {}
+      servicePort: 80
+  updateStrategy: RollingUpdate
+  replicas: 1
+  # all below can be used only with a deployment style
+  maxSurge: 1
+  maxUnavailable: 0
+
+config:
+  keystone: *keystone
+  group: service-group
+  jira:
+    endpoint: http://url-to
+    username: jira-username
+    password: jira-password
+    serviceDeskID: 1
+    requestTypeID: 2
+    customFieldID: 3
+    ticketSummaryTemplate: |
+      Delete {{ $accountID }} account ID
+    ticketDescriptionTemplate: |
+      Please delete the {{ $accountID }} account ID
+  multiCloud:
+    endpoint: http://url-to
+    username: service-username
+    password: service-password
+  intSMTP:
+    username: int-username
+    password: int-password
+    endpoint: https://int-url
+    owners:
+      - user1
+      - user2
+  serviceUsername: service-username
+  servicePassword: service-password
+  awsAccess: aws-access
+  awsSecret: aws-secret
+  technicalUsername: aws-username
+  iamPolicies: {}
+  _iamPolicies: #example for multiple policies
+    cronusSes: | 
+        {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Action": [
+                "ses:SendEmail",
+                "ses:SendRawEmail"
+              ],
+              "Resource": "*"
+            }
+          ]
+        }
+    cronusS3: |
+        {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Action": [
+                "s3:PutObject",
+                "s3:GetObject",
+                "s3:ListBucket"
+              ],
+              "Resource": "*"
+            }
+          ]
+        }
+    cronusSqs: |    
+        {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Action": [
+                "sqs:PutObject",
+                "sqs:GetObject",
+                "sqs:ListBucket"
+              ],
+              "Resource": "*"
+            }
+          ]
+        }
+  policyName: aws-policy
+  roleName: aws-role
+  iamRolePolicyName: aws-role-policy
+  iamRolePolicy: |
+    {
+        "Version": "2012-10-17",
+        "Statement": [
+            {
+                "Effect": "Allow",
+                "Action": [
+                    "ses:*",
+                ],
+                "Resource": "*"
+            }
+        ]
+    }
+  iamRoleTrustPolicy: |
+    {
+        "Version": "2012-10-17",
+        "Statement": [
+            {
+                "Effect": "Allow",
+                "Principal": [
+                    "Service:*",
+                ],
+                "Action": "*"
+            }
+        ]
+    }
+  iamPolicy: |
+    {
+        "Version": "2012-10-17",
+        "Statement": [
+            {
+                "Effect": "Allow",
+                "Action": [
+                    "ses:*",
+                ],
+                "Resource": "*"
+            }
+        ]
+    }
+  forwardUserAgent: false
+  billingCacheTTL: 24h
+  barbicanCacheTTL: 15m
+  awsSignV2TTL: 5m
+  technicalResponsible: technical-responsible@example
+  accountStatusTimeout: 300 # 5m
+  accountStatusPollDelay: 10s
+  verifyEmailDomain: example.com
+  verifyEmailSecret: domainkey
+  useCaseDescription: SES account
+  websiteURL: https://example.com
+  replaceServices: {}
+  allowedServices:
+    email: email-region
+  # extra SMTP backends and a list of recipient domains
+  smtpBackends:
+    - name: int
+      # backend hostname. scheme specifies the encryption method: none, tls, starttls, sesv2, null
+      hosts:
+        10:
+          - scheme://server:port
+      # a list of sender/recipient domains, which will be redirected to this backend
+      domains:
+        - corp.int
+        - .corp.int
+        - int.corp
+        - .int.corp
+      # skipCredentials: true # if credentials should not be mandatory (for null backends)
+  workQueue:
+    enabled: false
+    active: false
+    allowTrigger: false
+    queueName: cronus_work_queue
+    exchangeName: cronus_work_queue_exchange
+    workerPrefetchCount: 1
+    workerPrefetchSize: 0
+    # initial waiting time before retry
+    initialDelayTime: 5m
+    # factor to multiply the waiting time with before each next retry
+    delayGrowthFactor: 2.0
+    # maximum waiting time between retries
+    maxDelayTime: 1h
+    # maximum random delay add on time
+    maxRandomDelayAddOnTime: 5s
+    # maximum total time to retry mail delivery
+    maxTotalQueueTime: 72h
+    maxContainerNum: 6
+    reconnectWatcherLimit: 10
+    jobQueue:
+      deadLetterEnabled: false
+      queueName: cronus_work_queue
+      exchangeName: cronus_work_queue_exchange
+      workerPrefetchCount: 1
+      workerPrefetchSize: 0
+      routingKey: cronus.job
+    waitingQueue:
+      queueName: cronus_waiting_queue
+      exchangeName: cronus_waiting_queue_exchange
+      workerPrefetchCount: 1
+      workerPrefetchSize: 0
+      routingKey: cronus.delayedjob
+      deadLetterEnabled: true
+      maxTTL: 1 # in days
+      deadLetterExchange: cronus_work_queue_exchange
+      deadLetterRoutingKey: cronus.job
+  requestValidate:
+    # the list of domains to be blocked by a proxy server on ses email identity create/delete actions
+    blockedDomains:
+      - example.com # the exact domain
+      - .example.com # all subdomains
+      - sub.example.com # the exact subdomain
+    # A map of headers to track in audit event
+    auditHeaders:
+      ReturnPath: HeaderReturnPath
+      Reply-To: HeaderReplyTo
+    # A map of originator headers to validate https://datatracker.ietf.org/doc/html/rfc5322#section-3.6.2
+    # and a corresponding audit event field
+    # key is a header name to check, value is an audit event key to store the value
+    originatorHeaders:
+      From: HeaderFrom
+      Sender: HeaderSender
+    # needs a ceraful review since newer APIs may contain something like "Sender"
+    allowedGetParams:
+      - BlacklistItemNames
+      - EndDate
+      - NextToken
+      - PageSize
+      - PoolName
+      - Reason
+      - ResourceArn
+      - StartDate
+      - TagKeys
+    # a map of SESv1 actions and identity field names to check
+    sesV1CheckKeys:
+      SendEmail: Source
+      SendRawEmail: Source
+      SendTemplatedEmail: Source
+      SendBulkTemplatedEmail: Source
+      SendCustomVerificationEmail: EmailAddress
+      PutIdentityPolicy: "*"
+    # URL regular expressions and methods to block
+    sesV2ForbidURLs:
+      "/+v2/+email/+identities/+([^/]+)/+policies":
+        - POST
+        - PUT
+  cronusPolicy:
+    project_scope: project_id:%(project_id)s and (role:email_admin or role:email_user or role:cloud_email_admin)
+    domain_scope: domain_id:%(target.project.domain.id)s and (role:email_admin or role:email_user or role:cloud_email_admin)
+    cronus:usage_viewer: rule:project_scope or rule:domain_scope or role:resource_service
+    cronus:aws_proxy: rule:project_scope
+    cronus:smtp_proxy: rule:project_scope
+    warmup_projects_cache: role:resource_service
+  nebulaPolicy:
+    project_scope: project_id:%(project_id)s and (role:email_admin or role:cloud_email_admin)
+    project_client_scope: project_id:%(project_id)s and role:email_user
+    domain_scope: domain_id:%(target.project.domain.id)s and (role:email_admin or role:cloud_email_admin)
+    cluster_scope: (project_domain_name:ccadmin and project_name:cloud_admin) or role:cloud_email_admin
+    cluster_or_domain_scope: rule:cluster_scope or rule:domain_scope
+    nebula:admin: rule:project_scope or rule:cluster_or_domain_scope
+    nebula:client: rule:project_client_scope or rule:project_scope or rule:cluster_or_domain_scope
+    nebula:cloud_admin: rule:cluster_or_domain_scope
+  cronusAuditSink:
+    queueName: notifications.info
+    internalQueueSize: 20
+    contentTypePrefixes:
+      - application/x-www-form-urlencoded
+      - application/json
+      - application/x-amz-json-
+      - text/xml
+    queryKeysToMask:
+      ses:
+        - Message.Subject.Charset
+        - Message.Subject.Data
+        - Message.Body.Text.Charset
+        - Message.Body.Text.Data
+        - Message.Body.Html.Charset
+        - Message.Body.Html.Data
+        - RawMessage.Data
+    jsonKeysToMask:
+      ses:
+        - Content
+        - SigningAttributes
+        - DkimSigningAttributes
+    maxContentLen: 102400 # 100Kb max
+    debug: false
+  nebulaAuditSink:
+    queueName: notifications.info
+    internalQueueSize: 20
+    contentTypePrefixes:
+      - application/json
+    maxContentLen: 102400 # 100Kb max
+    debug: false
+
+service:
+  type: ClusterIP
+
+simulator:
+  enabled: false
+  image:
+    name: cronus-exporter-repository
+    pullPolicy: IfNotPresent
+    tag: latest
+    imagePullSecrets: []
+  statefulSet:
+    enabled: true
+    podManagementPolicy: OrderedReady
+    annotations: {}
+    labels: {}
+    headless:
+      annotations: {}
+      labels: {}
+      servicePort: 80
+  updateStrategy: RollingUpdate
+  replicas: 1
+  nebula:
+  cronus:
+  remote:
+  remoteRegion:
+  remotePassword:
+  slack: slack-url
+  recipient: recipient-email
+  sender: sender-email
+  cronuscli: cronuscli
+  timeWaitInterval: 60
+  shellToUse: bash
+  projectDomainName: project-domain
+  projectName: project-name
+  sesUsername: key-name
+  sesSecret: secret-name
+  smtpPassword: smtp-password
+
+exporter:
+  duration: "10m"
+  period: 10
+  loopInterval: 10
+  pushgatewayUrl: http://localhost:9091
+
+rabbitmq:
+  host: cronus-rabbitmq:5672
+  priority_class: system-cluster-critical
+  users:
+    default:
+      user: default
+      password: defaultpassword
+    admin:
+      user: admin
+      password: defaultpassword
+  persistence:
+    enabled: true
+    accessMode: ReadWriteOnce
+    size: 10Gi
+  metrics:
+    enabled: true
+    sidecar:
+      enabled: false
+    enableDetailedMetrics: true
+    enablePerObjectMetrics: true
+rhea:
+  enabled: false
+  server:
+    http: 443
+    maxRequestSize: 52428800
+  queue:
+    maxTTL: 0s
+    maxTries: 5
+    maxMessages: 0
+  tls:
+    serverTlsName: tls-secret-rhea
+    clientTlsAuth: VerifyClientCertIfGiven
+    # "SAP Cloud Root CA" http://aia.pki.co.sap.com/aia/SAP%20Cloud%20Root%20CA.crt
+    clientCA: |
+      -----BEGIN CERTIFICATE-----
+      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
+      -----END CERTIFICATE-----
+  debug: true
+  godebug: netdns=cgo
+  service:
+    type: LoadBalancer
+    annotations:
+      disco: "true"
+      disco/record: my-ingress.region.cloud.com.
+  deployment:
+    replicas: 1
+  updateStrategy: RollingUpdate
+  terminationGracePeriod: 60
+  # all below can be used only with a deployment style
+  maxSurge: 1
+  maxUnavailable: 0
+  ingressAnnotations:
+    # don't handle this resource by ingress controllers
+    kubernetes.io/ingress.class: rhea
+
+rhea_rabbitmq:
+  host: cronus-rhea-rabbitmq:5672
+  priority_class: system-cluster-critical
+  users:
+    default:
+      user: default
+      password: defaultpassword
+    admin:
+      user: admin
+      password: defaultpassword
+  persistence:
+    enabled: true
+    accessMode: ReadWriteOnce
+    size: 10Gi
+  metrics:
+    enabled: true
+    sidecar:
+      enabled: false
+    enableDetailedMetrics: true
+    enablePerObjectMetrics: true
+
+poller: # service that handles received emails
+  enabled: false
+  # all below can be used only with a deployment style
+  maxSurge: 1
+  maxUnavailable: 0
+  updateStrategy: RollingUpdate
+  replicas: 1
+  image:
+    name: poller-repository
+    pullPolicy: IfNotPresent
+    tag: latest
+    imagePullSecrets: []
+  statefulSet:
+    enabled: false
+  action: forwardEmail # supported values: forwardEmail, activateEmail, simulator
+  pollInterval: 5s # should be less than a default cronus ResponseHeaderTimeout (9 seconds)
+  maxThreads: 5 # maximum amount of queue processing threads.will generate N threads = maxThreads * (maxSendThreads + maxBounceThreads)
+  maxSendThreads: 5 # maximum amount of SMTP send threads per one processing thread
+  maxBounceThreads: 5 # maximum amount of bounce threads per one processing thread
+  bounceSender: mail-daemon@example.com # sender name for bounce emails
+  mtaName: dns; cronus-poller.example.com # The reporting MTA that attempted to deliver the message, formatted as specified in RFC 3464 (https://tools.ietf.org/html/rfc3464) (mta-name-type; mta-name).
+  quarContainer: # quarantine container name in Swift to put messages to
+    name: quarantine
+  errContainer: # container name in Swift to put messages, which cannot be processed for some reasons
+    name: error
+  prettyPrint: false # pretty print message events while uploading them to swift containers
+  printMessage: false # whether to print email details
+  queueName: my-queue-name # a queue name to listen from
+  emailPassVerdicts:
+    enabled: true
+    spam:
+      # The spam scan determined that the message is unlikely to contain spam
+      - PASS
+      # The spam scan determined that the message is likely to contain spam
+      #- FAIL
+      # Amazon SES scanned the email but could not determine with confidence whether it is spam
+      #- GRAY
+      # Amazon SES was unable to scan the email. For example, the email is not a valid MIME message
+      #- PROCESSING_FAILED
+    virus:
+      # The message does not contain a virus
+      - PASS
+      # The message contains a virus
+      #- FAIL
+      # Amazon SES scanned the email but could not determine with confidence whether it contains a virus
+      #- GRAY
+      # Amazon SES is unable to scan the content of the email. For example, the email is not a valid MIME message
+      #- PROCESSING_FAILED
+    spf:
+      # The message passed SPF authentication
+      - PASS
+      # The message failed SPF authentication
+      #- FAIL
+      # There is no SPF policy under the domain used in the MAIL FROM command
+      #- GRAY
+      # There is an issue that prevents Amazon SES from checking the SPF record. For example, DNS queries are failing
+      #- PROCESSING_FAILED
+    dkim:
+      # The message passed DKIM authentication
+      - PASS
+      # The message failed DKIM authentication
+      #- FAIL
+      # # The message is not DKIM-signed
+      #- GRAY
+      # # There is an issue that prevents Amazon SES from checking the DKIM signature. For example, DNS queries are failing or the DKIM signature header is not formatted properly
+      #- PROCESSING_FAILED
+    dmarc:
+      - PASS # The message passed DMARC authentication
+      #- FAIL # The message failed DMARC authentication
+      #- GRAY # At least one of SPF or DKIM passed authentication, but the sending domain does not have a DMARC policy or uses the p=none policy
+      #- PROCESSING_FAILED # There is an issue that prevents Amazon SES from providing a DMARC verdict
+  debug: false # debug HTTP requests
+  retry: # retry settings for failed connections
+    maxConnectionRetries: 5 # 5 retries per connection
+    maxProxyRetries: 2 # 2 retries per connection when in proxy mode
+    retryInterval: 0.5s # 500ms to wait after each try, e.g. in total 2.5 seconds, used in HTTP retry
+    connectionTimeout: 0.5s # 500ms to wait after each try, e.g. in total 2.5 seconds, used in SMTP net retry
+    commandTimeout: 3s
+  endpoint:
+    enabled: false
+    name: http://localhost:5000 # override cronus endpoint URL - REMOVE IF NOT NEEDED
+  aws: # AWS credentials, conflict with keystone credentials - REMOVE IF NOT NEEDED
+    enabled: false
+    access: access
+    secret: secret
+    region: region
+  dnsResolvers: # custom DNS resolvers, when LDAP is not defined - REMOVE IF NOT NEEDED
+    enabled: true
+    dns:
+      - 10.47.10.20:53
+  ldap: # LDAP source for MX records. When not set, system DNS resolver will be used - REMOVE IF NOT NEEDED
+    enabled: false
+    server: server:389
+    username: cn=user,ou=users,ou=SYS,dc=example,dc=com
+    password: password
+    baseDN: dc=DNS
+    tls: false
+    startTLS: false
+    # update interval in seconds
+    # 0 means no periodic updates
+    updateInterval: 300 # 5min
+    # whether to randomize internal DNS MX records (slower DNS response)
+    randomizeEntries: false
+  keystone: # keystone credentials, conflict with aws credentials - REMOVE IF NOT NEEDED
+    enabled: false
+    authUrl: https://identity/v3
+    endpointType: public
+    projectDomainName: default
+    projectName: project
+    region: region
+    userDomainName: default
+    username: username
+    password: password
+  prometheus: 2112 # relevant for action: simulator
+  charSet: UTF-8 # relevant for action: simulator
+  period: 60 # in seconds, relevant for action: simulator
+  cors:
+    enabled: false
+    allowedOrigins:
+    allowedHeaders:
+notifier:
+  enabled: false
+  host: test
+  smtpUsername: test
+  smtpPassword: test
+  sender: test
+  activationTitle: test
+  activationBody: |
+    test
+  deletionTitle: test
+  deletionBody: |
+    test
+
+pki:
+  enabled: false
+  clientID: test
+  accountID: test
+  clientSecret: test
+  authEndpoint: test
+  enrollEndpoint: test
+  subjectPattern: test
+  validityDays: 7
+
+secAttNotifier:
+  sourceEmail: test
+
+owner-info:
+  helm-chart-url: "https://github.com/sapcc/helm-charts/tree/master/openstack/cronus"
+  support-group: email
+
+postfix:
+  postfixEnabled: false
+
+postfixMgmt:
+  clientKeyPath: /etc/certs/ldap.key # we re-use the LDAP certificate for postfix mgmt We should change the name but first we need to adjust the secrets chart
+  clientCertPath: /etc/certs/ldap.crt
+  url: https://management.postfix.{{.Values.global.region}}.cloud.sap
+
+#Chart dependecies
+maillog:
+  enabled: false
+  keystone: *keystone

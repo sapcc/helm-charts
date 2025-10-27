@@ -1,0 +1,79 @@
+kind: Deployment
+apiVersion: apps/v1
+
+metadata:
+  name: tenso-api
+
+spec:
+  revisionHistoryLimit: 5
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  selector:
+    matchLabels:
+      name: tenso-api
+  template:
+    metadata:
+      labels:
+        name: tenso-api
+      annotations:
+        kubectl.kubernetes.io/default-container: api
+        checksum/configmap: {{ include "tenso/templates/configmap.yaml" . | sha256sum }}
+        checksum/secret: {{ include "tenso/templates/secret.yaml" . | sha256sum }}
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: name
+                  operator: In
+                  values:
+                  - tenso-api
+              topologyKey: "kubernetes.io/hostname"
+            weight: 10
+      volumes:
+        - name: config
+          configMap:
+            name: tenso
+        - name: keys
+          secret:
+            secretName: tenso-keys
+      containers:
+        - name: api
+          image: {{ include "tenso_image" $ }}
+          imagePullPolicy: IfNotPresent
+          args: [ api ]
+          env: {{ include "tenso_environment" $ | indent 12 }}
+          securityContext:
+            runAsNonRoot: true
+          volumeMounts:
+            - mountPath: /etc/tenso
+              name: config
+            - mountPath: /etc/tenso-keys
+              name: keys
+          livenessProbe:
+            httpGet:
+              path: /healthcheck
+              port: 80
+            timeoutSeconds: 10
+            periodSeconds: 60
+            initialDelaySeconds: 60
+          readinessProbe:
+            httpGet:
+              path: /healthcheck
+              port: 80
+            timeoutSeconds: 5
+            periodSeconds: 5
+          resources:
+            # TODO: adjust once we have some operating experience
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "200m"
+              memory: "128Mi"

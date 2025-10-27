@@ -1,0 +1,46 @@
+kind: Deployment
+apiVersion: apps/v1
+
+metadata:
+  name: kos-operator
+  labels:
+    system: openstack
+    type: api
+    component: ironic
+spec:
+  replicas: {{ .Values.pod.replicas.operator }}
+  revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revisionHistory }}
+  strategy:
+    type: {{ .Values.pod.lifecycle.upgrades.deployments.podReplacementStrategy }}
+    {{ if eq .Values.pod.lifecycle.upgrades.deployments.podReplacementStrategy "RollingUpdate" }}
+    rollingUpdate:
+      maxUnavailable: {{ .Values.pod.lifecycle.upgrades.deployments.rollingupdate.maxUnavailable }}
+      maxSurge: {{ .Values.pod.lifecycle.upgrades.deployments.rollingupdate.maxSurge }}
+    {{ end }}
+  selector:
+    matchLabels:
+      name: kos-operator
+  template:
+    metadata:
+      annotations:
+        {{- include "utils.linkerd.pod_and_service_annotation" . | nindent 8 }}
+      labels:
+        name: kos-operator
+{{ tuple . "kos-operator" "operator" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
+    spec:
+      serviceAccountName: {{ .Chart.Name }}
+      containers:
+      - name: operator
+        image: {{.Values.global.registry}}/kos-operator:{{ .Values.imageVersionKosOperator | default .Values.kos_operator.image_tag | required "Please set kos_operator.image_tag or similar"}}
+        imagePullPolicy: IfNotPresent
+        command:
+        - kos-operator
+        {{- if .Values.sentry.enabled }}
+        env:
+        - name: SENTRY_DSN
+          valueFrom:
+            secretKeyRef:
+              name: sentry
+              key: {{ .Chart.Name }}.DSN
+        {{- end }}
+

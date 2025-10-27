@@ -1,0 +1,22 @@
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: vpa-admission
+  namespace: {{ .Release.Namespace }}
+spec:
+  selfSigned: {}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: vpa-admission
+  namespace: {{ .Release.Namespace }}
+spec:
+  duration: {{ .Values.admission.certificate.duration | quote }}
+  dnsNames:
+    - vpa-webhook.{{ .Release.Namespace }}.svc
+    - vpa-webhook.{{ .Release.Namespace }}.svc.cluster.local
+  issuerRef:
+    kind: Issuer
+    name: vpa-admission
+  secretName: vpa-admission-tls-certs

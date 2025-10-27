@@ -1,0 +1,51 @@
+# no significant impact to operations and user experience, can tolerate longer downtime, can tolerate scheduling delays, low risk of cascading failures
+---
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: common-payload
+value: 0
+globalDefault: true
+description: "Intended for regular Deployments and StatefulSets."
+---
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: common-infrastructure
+value: 500
+globalDefault: false
+description: "Intended for regular DaemonSets."
+# light impact to operations or user experience, require some uptime, can tolerate scheduling delays
+---
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: important-payload
+value: 1000
+globalDefault: false
+description: "Intended for important Deployments and StatefulSets."
+---
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: important-infrastructure
+value: 1500
+globalDefault: false
+description: "Intended for important DaemonSets."
+# direct impact to user experience, require uptime, cascading failures possible
+---
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: critical-payload
+value: 2000
+globalDefault: false
+description: "Intended for critical Deployments and StatefulSets."
+---
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: critical-infrastructure
+value: 2500
+globalDefault: false
+description: "Intended for critical DaemonSets."

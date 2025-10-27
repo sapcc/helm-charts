@@ -1,0 +1,42 @@
+{{- $root := . }}
+{{- range $name := coalesce .Values.names .Values.global.targets (list .Values.name) }}
+---
+# This ServiceMonitor is used for monitoring the Prometheus itself and - if enabled - its Thanos sidecar deployed alongside.
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+
+metadata:
+  name: {{ include "prometheus.fullName" (list $name $root) }}
+  labels:
+    prometheus: {{ include "prometheus.name" (list $name $root) }}
+
+spec:
+  jobLabel: {{ include "prometheus.name" (list $name $root) }}
+
+  selector:
+    matchLabels:
+      prometheus: {{ include "prometheus.name" (list $name $root) }}
+
+  endpoints:
+    - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+      interval: {{ required "$.Values.serviceDiscoveries.scrapeInterval  missing" $.Values.serviceDiscoveries.scrapeInterval }}
+      scrapeTimeout: {{ required "$.Values.serviceDiscoveries.scrapeTimeout  missing" $.Values.serviceDiscoveries.scrapeTimeout }}
+      port: http
+      scheme: http
+      metricRelabelings:
+        - action: replace
+          sourceLabels:
+            - prometheus
+          targetLabel: prometheus
+          replacement: {{ printf "%s/%s" $.Release.Namespace (include "prometheus.name" (list $name $root)) }}
+      relabelings:
+        - action: labelmap
+          regex: '__meta_kubernetes_service_label_(.+)'
+        - sourceLabels:
+            - __meta_kubernetes_namespace
+          targetLabel: kubernetes_namespace
+        - sourceLabels:
+            - __meta_kubernetes_service_name
+          targetLabel: kubernetes_name
+{{ include "prometheus.defaultRelabelConfig" $root | indent 8 }}
+{{- end }}

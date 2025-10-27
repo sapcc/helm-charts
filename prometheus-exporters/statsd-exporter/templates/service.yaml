@@ -1,0 +1,54 @@
+{{- range $i, $exporter := .Values.exporters -}}
+{{- if $exporter.enabled }}
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "statsd-exporter.fullName" $exporter.name }}
+  labels:
+    {{- include "statsd-exporter.labels" $exporter.name | nindent 4 }}
+spec:
+  selector:
+    {{- include "statsd-exporter.selectorLabels" $exporter.name | nindent 6 }}
+  ports:
+    - name: metrics
+      port: {{ required ".Values.exporters.metricsPort variable missing" $exporter.metricsPort }}
+      targetPort: metrics
+      protocol: TCP
+    - name: statsd-tcp
+      port: {{ required ".Values.exporter.tcpPort variable missing" $exporter.tcpPort }}
+      targetPort: statsd-tcp
+      protocol: TCP
+    - name: statsd-udp
+      port: {{ required ".Values.exporter.udpPort variable missing" $exporter.udpPort }}
+      targetPort: statsd-udp
+      protocol: UDP
+
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+
+metadata:
+  name: {{ include "statsd-exporter.fullName" $exporter.name }}
+  labels:
+    prometheus: {{ required ".Values.exporters.prometheus variable missing" $exporter.prometheus }}
+spec:
+  jobLabel: {{ include "statsd-exporter.fullName" $exporter.name }}
+  selector:
+    matchLabels:
+      {{- include "statsd-exporter.selectorLabels" $exporter.name | nindent 6 }}
+
+  endpoints:
+    - honorLabels: true
+      interval: {{ required ".Values.exporters.scrapeInterval variable missing" $exporter.scrapeInterval }}
+      scrapeTimeout: {{ required ".Values.exporters.scrapeTimeout variable missing" $exporter.scrapeTimeout }}
+      port: metrics
+      scheme: http
+      relabelings:
+        - action: labelmap
+          regex: '__meta_kubernetes_service_label_(.+)'
+        - targetLabel: job
+          replacement: {{ include "statsd-exporter.fullName" $exporter.name }}
+---
+{{ end -}}
+{{ end -}}

@@ -1,0 +1,60 @@
+apiVersion: templates.gatekeeper.sh/v1
+kind: ConstraintTemplate
+metadata:
+  name: gkdeprecatedapiversion
+spec:
+  crd:
+    spec:
+      names:
+        kind: GkDeprecatedApiVersion
+      validation:
+        # Schema for the `parameters` field
+        openAPIV3Schema:
+          type: object
+          properties:
+            helmManifestParserURL:
+              type: string
+            kubernetesVersion:
+              type: string
+            apiVersions:
+              type: array
+              items:
+                type: string
+
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      code:
+        - engine: Rego
+          source:
+            version: "v1"
+            libs:
+              - |
+                {{ .Files.Get "lib/add-support-labels.rego" | nindent 16 }}
+              - |
+                {{ .Files.Get "lib/helm-release.rego" | nindent 16 }}
+            rego: |
+              package deprecatedapiversion
+
+              import data.lib.add_support_labels
+              import data.lib.helm_release
+
+              iro := input.review.object
+
+              release := helm_release.parse_k8s_object(iro, input.parameters.helmManifestParserURL)
+
+              violation contains {"msg": release.error} if {
+                  release.error != ""
+              }
+
+              violation contains {"msg": add_support_labels.from_helm_release(release, msg)} if {
+                  release.error == ""
+
+                  # find objects in the manifest that use deprecated API versions
+                  obj := release.items[_]
+                  input.parameters.apiVersions[_] == obj.apiVersion
+
+                  msg := sprintf(
+                      "%s %s declared with deprecated API version: %s (will break in k8s v%s)",
+                      [obj.kind, obj.metadata.name, obj.apiVersion, input.parameters.kubernetesVersion],
+                  )
+              }

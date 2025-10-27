@@ -1,0 +1,25 @@
+kind: Service
+apiVersion: v1
+
+metadata:
+  name: barbican-api
+  namespace: {{.Release.Namespace}}
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    system: openstack
+    type: api
+    component: barbican
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: {{.Values.statsd.port | quote }}
+    prometheus.io/targets: {{ .Values.alerts.prometheus | quote }}
+    {{- include "utils.linkerd.pod_and_service_annotation" . | indent 4 }}
+spec:
+  selector:
+    name: barbican-api
+  ports:
+    - name: barbican-api
+      port: {{.Values.api_port_internal}}

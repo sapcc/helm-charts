@@ -1,0 +1,163 @@
+{{ $workerSecretsSum := include (print $.Template.BasePath "/worker-secrets.yaml") . | sha256sum }}
+{{ range .Values.teams }}
+{{ if eq .type "standalone" }}
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: {{ $.Values.worker.name }}-{{ .name }}
+  labels:
+    app: {{ $.Values.worker.name }}-{{ .name }}
+    chart: "{{ $.Chart.Name }}-{{ $.Chart.Version }}"
+    release: "{{ $.Release.Name }}"
+spec:
+  updateStrategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app: {{ $.Values.worker.name }}-{{ .name }}
+  template:
+    metadata:
+      annotations:
+        checksum/secrets: {{ $workerSecretsSum }}
+      labels:
+        app: {{ $.Values.worker.name }}-{{ .name }}
+        release: "{{ $.Release.Name }}"
+    spec:
+      nodeSelector:
+        ccloud.sap.com/nodepool: {{ .nodePool | quote }}
+      tolerations:
+      - key: "team"
+        operator: Equal
+        value: {{ .name | quote }}
+        effect: "NoSchedule"
+      serviceAccountName: concourse-worker
+      containers:
+      - name: {{ $.Values.worker.name }}-{{ .name }}
+        image: "{{ $.Values.concourse.image }}:{{ $.Values.concourse.imageTag }}"
+        imagePullPolicy: {{ $.Values.concourse.imagePullPolicy | quote }}
+        command:
+        - dumb-init
+        - sh
+        args:
+        - -ce
+        - |-
+          # fix for cgroups v2, move process to own cgroup
+          mkdir -p /sys/fs/cgroup/entrypoint
+          echo 1 > /sys/fs/cgroup/entrypoint/cgroup.procs
+
+          update-ca-certificates
+
+          exec /usr/local/concourse/bin/concourse worker --name=${NODE_NAME}
+        livenessProbe:
+          failureThreshold: 5
+          initialDelaySeconds: 10
+          periodSeconds: 15
+          timeoutSeconds: 3
+          httpGet:
+            path: /
+            port: 8888
+        lifecycle:
+          preStop:
+            exec:
+              command:
+              - "/land-worker/pre-stop.sh"
+        env:
+        {{- if ne .name "main" }}
+        - name: CONCOURSE_TEAM
+          value: {{ .name | quote }}
+        {{- end }}
+        - name: CONCOURSE_WORK_DIR
+          value: {{ $.Values.concourse.concourse.worker.workDir }}
+        - name: CONCOURSE_BIND_IP
+          value: 127.0.0.1
+        - name: CONCOURSE_BIND_PORT
+          value: "7777"
+        - name: CONCOURSE_LOG_LEVEL
+          value: info
+        - name: CONCOURSE_TSA_HOST
+          value: {{ $.Release.Name }}-web-worker-gateway:2222
+        - name: CONCOURSE_TSA_PUBLIC_KEY
+          value: /concourse-keys/host_key.pub
+        - name: CONCOURSE_TSA_WORKER_PRIVATE_KEY
+        {{- if eq .name "main" }}
+          value: "/concourse-keys/worker_key"
+        {{- else }}
+          value: "/concourse-keys/team_worker_key"
+        {{- end }}
+        - name: CONCOURSE_RUNTIME
+          value: containerd
+        - name: CONCOURSE_CONTAINERD_MAX_CONTAINERS
+          value: "500"
+        - name: CONCOURSE_CONTAINERD_NETWORK_POOL
+          value: 10.254.0.0/16
+        - name: CONCOURSE_CONTAINERD_DNS_PROXY_ENABLE
+          value: "false"
+        - name: CONCOURSE_GARDEN_DNS_PROXY_ENABLE
+          value: "false"
+        - name: CONCOURSE_BAGGAGECLAIM_DRIVER
+          value: overlay
+        - name: LIVENESS_PROBE_FATAL_ERRORS
+          value: |-
+            baggageclaim.api.volume-server.create-volume-async.failed-to-create
+        - name: CONCOURSE_VOLUME_SWEEPER_MAX_IN_FLIGHT
+          value: "5"
+        - name: CONCOURSE_CONTAINER_SWEEPER_MAX_IN_FLIGHT
+          value: "5"
+        - name: CONCOURSE_CERTS_DIR
+          value: /etc/ssl/certs
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+{{- if $.Values.worker.env }}
+{{ toYaml $.Values.worker.env | indent 8 }}
+{{- end }}
+{{- if $.Values.worker.resources }}
+        resources:
+{{ toYaml $.Values.worker.resources | indent 10 }}
+{{- end }}
+        securityContext:
+          privileged: true
+        volumeMounts:
+        - mountPath: /concourse-work-dir
+          name: concourse-work-dir
+        - name: concourse-keys
+          mountPath: /concourse-keys
+          readOnly: true
+        - name: sap-root-certs
+          mountPath: /usr/local/share/ca-certificates
+        - name: pre-stop
+          mountPath: /land-worker
+      terminationGracePeriodSeconds: 240
+      volumes:
+      - name: sap-root-certs
+        secret:
+          secretName: concourse-worker
+          defaultMode: 256
+          items:
+          - key: worker-additional-certs
+            path: sap-root-certs.crt
+      - name: concourse-keys
+        secret:
+          secretName: concourse-worker
+          defaultMode: 0400
+          items:
+          - key: {{ .name }}-team-authorized-key
+            path: team_worker_key.pub
+          - key: {{ .name }}-team-authorized-privkey
+            path: team_worker_key
+          - key: host-key-pub
+            path: host_key.pub
+          - key: worker-key
+            path: worker_key
+      - name: concourse-work-dir
+        hostPath:
+          path: {{ $.Values.concourse.concourse.worker.workDir }}
+          type: DirectoryOrCreate
+      - name: pre-stop
+        configMap:
+          name: land-worker
+          defaultMode: 0755
+---
+{{ end }}
+{{ end }}

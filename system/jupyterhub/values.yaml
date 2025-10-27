@@ -1,0 +1,70 @@
+global:
+  linkerd_requested: true
+
+linkerd-support:
+  annotate_namespace: true
+
+owner-info:
+  support-group: observability
+  service: jupyter
+  maintainers:
+  - "Timo Johner"
+  helm-chart-url: "https://github.com/sapcc/helm-charts/tree/master/system/jupyterhub"
+
+jupyterhub_cron:
+  image:
+    name: notebook-cron
+    tag: DEFINED-IN-PIPELINE
+
+jupyterhub:
+  # scheduling relates to the user-scheduler pods and user-placeholder pods.
+  scheduling:
+    userScheduler:
+      enabled: false
+    userPlaceholder:
+      enabled: false
+
+  ingress:
+    enabled: false
+
+  hub:
+    service:
+      annotations:
+        prometheus.io/targets: infra-frontend
+    networkPolicy:
+      enabled: false
+    config:
+      Authenticator:
+        auto_login: true
+    authenticatePrometheus: false
+    containerSecurityContext:
+      allowPrivilegeEscalation: false
+  singleuser:
+    cloudMetadata:
+      blockWithIptables: false
+    networkPolicy:
+      enabled: false
+    allowPrivilegeEscalation: false
+    startTimeout: 600
+  cull:
+    enabled: true
+    users: true # --cull-users
+    adminUsers: true # --cull-admin-users
+    removeNamedServers: false # --remove-named-servers
+    timeout: 7200 # --timeout 
+    every: 600 # --cull-every 
+    concurrency: 10 # --concurrency
+    maxAge: 0 # --max-age
+
+  prePuller:
+    hook:
+      enabled: false
+    continuous:
+      enabled: false
+  proxy:
+    traefik:
+      networkPolicy:
+        enabled: false
+    chp:
+      networkPolicy:
+        enabled: false

@@ -1,0 +1,60 @@
+{{- if .Values.ingress.enabled }}
+{{- if .Capabilities.APIVersions.Has "networking.k8s.io/v1/Ingress" }}
+apiVersion: networking.k8s.io/v1
+{{- else -}}
+apiVersion: networking.k8s.io/v1beta1
+{{- end }}
+kind: Ingress
+
+metadata:
+  name: {{ include "alertmanager.fullname" . }}
+
+  labels:
+    app: prometheus-alertmanager
+    alertmanager: {{ include "alertmanager.name" . }}
+
+  annotations:
+    kubernetes.io/tls-acme: "true"
+    disco: "true"
+    {{- if $.Values.ingress.authentication.oauth.enabled }}
+    ingress.kubernetes.io/auth-url: {{ required "$.Values.ingress.authentication.oauth.authURL missing" $.Values.ingress.authentication.oauth.authURL }}
+    nginx.ingress.kubernetes.io/auth-url: {{ required "$.Values.ingress.authentication.oauth.authURL missing" $.Values.ingress.authentication.oauth.authURL }}
+    {{- if $.Values.ingress.authentication.oauth.authSignInURL }}
+    ingress.kubernetes.io/auth-signin: {{ $.Values.ingress.authentication.oauth.authSignInURL }}
+    nginx.ingress.kubernetes.io/auth-signin: {{ $.Values.ingress.authentication.oauth.authSignInURL }}
+    {{- end }}
+    {{ end }}
+    {{- if .Values.ingress.authentication.sso.enabled}}
+    ingress.kubernetes.io/auth-tls-secret: {{ required ".Values.ingress.authentication.sso.authTLSSecret missing" .Values.ingress.authentication.sso.authTLSSecret | quote }}
+    nginx.ingress.kubernetes.io/auth-tls-secret: {{ required ".Values.ingress.authentication.sso.authTLSSecret missing" .Values.ingress.authentication.sso.authTLSSecret | quote }}
+    ingress.kubernetes.io/auth-tls-verify-depth: {{ required ".Values.ingress.authentication.sso.authTLSVerifyDepth missing" .Values.ingress.authentication.sso.authTLSVerifyDepth | quote }}
+    nginx.ingress.kubernetes.io/auth-tls-verify-depth: {{ required ".Values.ingress.authentication.sso.authTLSVerifyDepth missing" .Values.ingress.authentication.sso.authTLSVerifyDepth | quote }}
+    ingress.kubernetes.io/auth-tls-verify-client: {{ required ".Values.ingress.authentication.sso.authTLSVerifyClient missing" .Values.ingress.authentication.sso.authTLSVerifyClient | quote }}
+    nginx.ingress.kubernetes.io/auth-tls-verify-client: {{ required ".Values.ingress.authentication.sso.authTLSVerifyClient missing" .Values.ingress.authentication.sso.authTLSVerifyClient | quote }}
+    {{ end }}
+    {{- if .Values.ingress.annotations }}
+{{ toYaml .Values.ingress.annotations | indent 4 }}
+    {{ end }}
+
+spec:
+  rules:
+    - host: {{ include "alertmanager.externalURL" . }}
+      http:
+        paths:
+        - path: /
+          {{- if .Capabilities.APIVersions.Has "networking.k8s.io/v1/Ingress" }}
+          pathType: ImplementationSpecific
+          backend:
+            service:
+              name: {{ include "alertmanager.fullname" . }}
+              port:
+                number: 9093
+          {{- else }}
+          backend:
+            serviceName: {{ include "alertmanager.fullname" . }}
+            servicePort: 9093
+          {{- end }}
+  tls:
+    - secretName: tls-{{ include "alertmanager.externalURL" . | replace "." "-" }}
+      hosts: [{{ include "alertmanager.externalURL" . }}]
+{{ end }}

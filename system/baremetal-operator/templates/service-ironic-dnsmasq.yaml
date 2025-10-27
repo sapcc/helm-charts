@@ -1,0 +1,16 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ironic-dnsmasq
+  namespace: {{ .Release.Namespace }}
+spec:
+  ports:
+  - name: tftp
+    port: {{ .Values.ironic.tftpPort }}
+    protocol: UDP
+    targetPort: {{ .Values.ironic.tftpPort }}
+    nodePort: 30673
+  selector:
+    app.kubernetes.io/component: dnsmasq
+  type: NodePort

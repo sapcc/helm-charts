@@ -1,0 +1,67 @@
+{{- if .Values.s3_cred_cache_prewarm_credentials }}
+
+kind: Deployment
+apiVersion: apps/v1
+
+metadata:
+  name: swift-s3-cache-prewarmer-{{ .Values.cluster_name }}
+  labels:
+    release: "{{ .Release.Name }}"
+spec:
+  revisionHistoryLimit: 5
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      component: swift-s3-cache-prewarmer-{{ .Values.cluster_name }}
+  template:
+    metadata:
+      labels:
+        component: swift-s3-cache-prewarmer-{{ .Values.cluster_name }}
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+        prometheus.io/targets: {{ required ".Values.alerts.prometheus.openstack missing" .Values.alerts.prometheus.openstack }}
+    spec:
+      containers:
+        - name: prewarmer
+          image: {{ include "swift_image" . }}
+          command:
+            - /usr/bin/swift-s3-cache-prewarmer
+            - 'prewarm'
+            - '--listen'
+            - ':8080'
+            - '--conservative'
+            - '--expiry'
+            - "{{ .Values.s3_cred_cache_time }}s"
+            - '--servers'
+            - "memcached.{{ .Release.Namespace }}.svc:11211"
+          args: {{ toJson .Values.s3_cred_cache_prewarm_credentials }}
+          # TODO: securityContext: { runAsNonRoot: true }
+          ports:
+            - name: metrics
+              containerPort: 8080
+          resources:
+            requests:
+              cpu: "20m"
+              memory: "50Mi"
+          env:
+            - name: OS_AUTH_URL
+              value: {{ .Values.keystone_auth_url }}
+            - name: OS_INTERFACE
+              value: {{ .Values.keystone_interface | default "admin" }}
+            - name: OS_PASSWORD
+              value: {{ quote .Values.swift_service_password }}
+            - name: OS_PROJECT_DOMAIN_NAME
+              value: {{ .Values.swift_service_project_domain }}
+            - name: OS_PROJECT_NAME
+              value: {{ .Values.swift_service_project }}
+            - name: OS_REGION_NAME
+              value: {{ .Values.region_name | default .Values.global.region }}
+            - name: OS_USER_DOMAIN_NAME
+              value: {{ .Values.swift_service_user_domain }}
+            - name: OS_USERNAME
+              value: {{ .Values.swift_service_user }}
+
+{{- end }}

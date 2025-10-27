@@ -1,0 +1,31 @@
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: GkOwnerInfoOnHelmReleases
+metadata:
+  name: ownerinfoonhelmreleases
+  annotations:
+    {{- include "sources" (tuple "owner-info-on-helm-releases" "owner-info-on-helm-releases") | indent 4 }}
+    {{- include "docstring" (tuple $ "GkOwnerInfoOnHelmReleases") | indent 4 }}
+  labels:
+    severity: 'error'
+spec:
+  enforcementAction: {{ if (eq .Values.cluster_type "baremetal" "cloudshell" "concourse" "gh-actions" "internet" "scaleout") }}deny{{ else }}dryrun{{ end }}
+  match: {{ include "match_active_helm_releases" . | indent 4 }}
+  parameters:
+    helmManifestParserURL: {{ quote .Values.helm_manifest_parser_url }}
+    knownBrokenReleases:
+      # This is a list of Helm releases (in the format "namespace/name") that
+      # are TEMPORARILY exempted from the owner-info requirement because
+      # their owners do not belong to a support group yet.
+      #
+      # When adding entries, add a comment with the date of inclusion in the
+      # list and the responsible owners for that deployment. We will use this
+      # to regularly follow up with the service owners to check on the state of
+      # their support group assignment.
+      {{- if eq .Values.cluster_type "test" }}
+      - testing/known-broken # used for testing the exception mechanism
+      {{- end }}
+      {{- if and (eq .Values.cluster_type "baremetal") (eq .Values.global.region "qa-de-1") }}
+      - owner-label-injector-staging/owner-label-injector-staging   # staging deployment of owner-label-injector
+      - owner-label-injector-staging/test-chart-without-owner-info  # dummy chart for testing for owner-label-injector
+      - owner-label-injector-staging/test-chart-with-owner-info     # dummy chart for testing for owner-label-injector
+      {{- end }}

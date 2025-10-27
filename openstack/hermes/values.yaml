@@ -1,0 +1,158 @@
+global:
+  linkerd_requested: true
+  clusterType: local
+  users:
+    admin:
+      name: admin
+  # for openstack seeds
+  keystoneNamespace: monsoon3
+  # Set to true for global regions
+  is_global_region: false
+  
+hermes_image_version_logstash: "20250717202634"
+      
+owner-info:
+  support-group: observability
+  service: hermes
+  maintainers:
+    - Nathan Oyler
+  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/openstack/hermes
+
+# global.region: DEFINED_IN_VALUES_FILE
+hermes:
+  debug: 1
+  insecure: 0
+  name: hermes
+  username: hermes
+  rabbitmq:
+    port: 5672
+    user: rabbitmq
+    queue_name: "notifications.info"
+    # hostnames are derived from this template using the key of the targets entry
+    host_template: "%s-rabbitmq-notifications.monsoon3"
+logstash:
+  debug: false
+  swift: true
+  audit: true
+  jdbc:
+    enabled: false
+    schedule: "12 0 * * *"
+    namespace: metis
+    service: metisdb-mariadb
+    db: keystone
+  # Configure Logstash java heap
+  javaopts: "-Dnetworkaddress.cache.ttl=1 -Xmx4g -Xms4g"
+
+## Configure resource requests and limits
+## ref: http://kubernetes.io/docs/user-guide/compute-resources/
+##
+resources_requests_memory_api: "50Mi"
+resources_requests_cpu_api: "250m"
+resources_requests_memory_es: "18Gi"
+resources_requests_cpu_es: "1000m"
+resources_requests_memory_ls: "1536Mi"
+resources_requests_cpu_ls: "250m"
+resources_requests_memory_ki: "256Mi"
+resources_requests_cpu_ki: "250m"
+
+# the elasticsearch disk is 100g, a bit less will be the filesystem and 70g should be below 80% where we would alert
+# Current value get's multipled, and divided to create the volume size. 
+# hermes_elasticsearch_data_retention: DEFINED-IN-REGION-SECRETS
+elasticsearch_pv_size: 92
+
+# image_version_hermes_kibana: DEFINED-IN-REGION-SECRETS
+
+hermes_image_version_elasticsearch_manager: "0.9.4"
+
+rabbitmq_notifications:
+  ## default: {{.Release.Name}}-rabbitmq.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}
+  # host: rabbitmq
+  kind: "statefulset"
+  # required due to circular dependency between keppel, keystone, and hermes
+  use_alternate_registry: true
+  replicas: 3
+  # pod distruption budget
+  pdr: 
+    enabled: true
+    minAvailable: "51%"
+  persistence: 
+    enabled: true
+  metrics:
+    enabled: true
+    sidecar:
+      enabled: false
+  global:
+    rabbitmq:
+      native_sidecar:
+        enabled: false
+  credentialUpdater:
+    enabled: true
+  users:
+    default:
+      user: openstack
+      # password: DEFINED-IN-SECRETS
+    admin:
+      user: admin
+      # password: DEFINED-IN-SECRETS
+  alerts:
+    support_group: observability
+  livenessProbe:
+    enabled: true
+    failureThreshold: 3
+    initialDelaySeconds: 60
+    periodSeconds: 10
+    successThreshold: 1
+    timeoutSeconds: 10
+  readinessProbe:
+    enabled: true
+    failureThreshold: 3
+    initialDelaySeconds: 60 # default 15, need for crash recovery
+    periodSeconds: 10
+    successThreshold: 1
+    timeoutSeconds: 5
+  # service options
+  serviceType: LoadBalancer
+  serviceExternalTrafficPolicy: Local
+  enableSsl: true
+
+# Pod Monitor
+exporter:
+  enabled: false
+  prometheus: openstack
+
+metrics:
+  prometheus: openstack
+
+# Deploy hermes Prometheus alerts.
+alerts:
+  enabled: true
+  support-group: observability
+  # Name of the Prometheus to which the alerts should be assigned to.
+  # Keys = directory names in alerts/ and aggregations/
+  prometheus:
+    openstack: openstack
+    kubernetes: kubernetes
+    thanos-ruler: metal
+
+elasticsearch_hermes:
+  enabled: false
+  http_port: 9200
+  cluster_port: 9301
+  legacy_service_name: true
+  noschedule_port: '63062'
+  replicas: '3'
+  resources:
+    requests:
+      cpu: "2000m"
+      memory: "20Gi"
+    limits:
+      cpu: "4000m"
+  exporter:
+    enabled: true
+    prometheus: openstack
+
+elasticsearch_hermes_kibana:
+  enabled: false
+
+opensearch_hermes:
+  enabled: false

@@ -1,0 +1,20 @@
+{{- if .Values.agent.apod | default false }}
+{{- if .Values.global.apods | default false }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: neutron-etc-apod
+  labels:
+    system: openstack
+    type: configuration
+    component: neutron
+data:
+{{ range $az_long, $apods := .Values.global.apods }}
+{{ range $k, $apod := $apods }}
+  apod-{{ $apod }}.conf: |
+    [linux_bridge]
+    physical_interface_mappings = {{ $apod }}:{{required "A valid .Values.cp_network_interface required!" $.Values.cp_network_interface}}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}

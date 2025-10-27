@@ -1,0 +1,97 @@
+kind: Deployment
+apiVersion: apps/v1
+
+metadata:
+  name: nova-vspc
+  namespace: monsoon3
+  labels:
+    system: openstack
+    type: collector
+    component: nova
+  {{- if .Values.vpa.set_main_container }}
+  annotations:
+    vpa-butler.cloud.sap/main-container: vmware-vspc
+  {{- end }}
+spec:
+  replicas: {{ .Values.pod.replicas.vspc | default 1 }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  selector:
+    matchLabels:
+      name: nova-vspc
+  template:
+    metadata:
+      labels:
+        name: nova-vspc
+        alert-tier: os
+        alert-service: nova
+        {{- tuple . "nova" "vspc" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | nindent 8 }}
+        {{- include "utils.topology.pod_label" . | indent 8 }}
+      annotations:
+        {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
+        configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
+    spec:
+      hostname: nova-vspc
+      {{- tuple . (dict "name" "nova-vspc") | include "utils.topology.constraints" | indent 6 }}
+      containers:
+        - name: vmware-vspc
+          image: {{ required ".Values.global.registry is missing" .Values.global.registry}}/vmware-vspc:{{ required ".Values.imageVersionVspc is missing" .Values.imageVersionVspc }}
+          imagePullPolicy: IfNotPresent
+          command: ['dumb-init', '--', 'vmware-vspc', '--config-file', '/etc/vspc.conf']
+          env:
+            - name: NAMESPACE
+              value: {{ .Release.Namespace }}
+            {{- if .Values.sentry.enabled }}
+            - name: SENTRY_DSN
+              valueFrom:
+                secretKeyRef:
+                  name: sentry
+                  key: {{ .Chart.Name }}.DSN.python
+            {{- end }}
+{{- if .Values.python_warnings }}
+            - name: PYTHONWARNINGS
+              value: {{ .Values.python_warnings | quote }}
+{{- end }}
+          lifecycle:
+            preStop:
+              {{- include "utils.snippets.pre_stop_graceful_shutdown" . | indent 14 }}
+          livenessProbe:
+            exec:
+              command: ["sh", "-c", "echo '' | curl -m 20 telnet://localhost:1333"]
+            initialDelaySeconds: 120
+            periodSeconds: 60
+            timeoutSeconds: 21
+          {{- if .Values.pod.resources.vspc }}
+          resources:
+{{ toYaml .Values.pod.resources.vspc | indent 12 }}
+          {{- end }}
+          ports:
+            - containerPort: {{ .Values.vspc.telnet.portInternal }}
+            - containerPort: {{ .Values.vspc.web.portInternal }}
+          volumeMounts:
+            - mountPath: /var/run/serial_log_dir
+              name: serial-log-dir
+            - mountPath: /etc/vspc.conf
+              name: nova-etc
+              subPath: vspc.conf
+              readOnly: true
+            {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
+        - name: log-nanny
+          image: {{ required ".Values.global.dockerHubMirror: is missing" .Values.global.dockerHubMirror }}/library/busybox
+          args: ['sh', '-c', 'while true; do find /var/run/serial_log_dir -mtime +30 -exec rm {} \;; sleep 1d; done']
+          volumeMounts:
+            - mountPath: /var/run/serial_log_dir
+              name: serial-log-dir
+      volumes:
+        - name: etcnova
+          emptyDir: {}
+        - name: nova-etc
+          configMap:
+            name: nova-etc
+        - name: serial-log-dir
+          persistentVolumeClaim:
+            claimName: {{ .Values.vspc.pvc.existingClaim | default "nova-vspc-pvclaim" }}
+        {{- include "utils.trust_bundle.volumes" . | indent 8 }}

@@ -1,0 +1,32 @@
+{{- if .Values.enabled }}
+{{- $values := .Values -}}
+
+{{- range $i, $prober := .Values.probers -}}
+{{ if ne $i 0 }}---{{ end }}
+
+apiVersion: v1
+kind: Service
+
+metadata:
+  name: cloudprober-{{ printf "%s" $prober.dc | replace "-" "" }}
+  labels:
+    app: cloudprober-{{ printf "%s" $prober.dc | replace "-" "" }}
+
+spec:
+  type: LoadBalancer
+  externalTrafficPolicy: Local
+  selector:
+    name: cloudprober-{{ printf "%s" $prober.dc | replace "-" "" }}
+  externalIPs:
+    - {{$prober.ip}}
+  ports:
+    - name: metrics
+      port: 9313
+      targetPort: 9313
+    - name: web
+      port: 1080
+      targetPort: 8080
+
+---
+{{ end -}}
+{{ end -}}

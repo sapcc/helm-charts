@@ -1,0 +1,23 @@
+{{- $root := . -}}
+{{- $values := .Values -}}
+{{- range $path, $bytes := .Files.Glob "alerts/*.alerts.tpl" }}
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+
+metadata:
+  name: {{ printf "kubernetes-%s" $path | replace "/" "-" | trimSuffix ".tpl" }}
+  labels:
+    tier: {{ required ".Values.tier missing" $values.tier }}
+    type: alerting-rules
+    prometheus: {{ required ".Values.prometheusName missing" $values.prometheusName }}
+    {{- range $i, $target := $.Values.ruleSelectors }}
+    {{ $target.name | required (printf "$.Values.ruleSelector.[%v].name missing" $i) }}: {{ tpl ($target.value | required (printf "$.Values.ruleSelector.[%v].value missing" $i)) $ }}
+    {{- end }}
+
+spec:
+{{- with $root -}}
+{{- $content := printf "%s" $bytes }}
+{{ tpl $content . | indent 2 }}
+{{- end }}
+---
+{{- end }}

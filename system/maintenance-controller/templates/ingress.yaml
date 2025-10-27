@@ -1,0 +1,47 @@
+{{- if .Values.ingress.enabled -}}
+kind: Ingress
+apiVersion: networking.k8s.io/v1
+
+metadata:
+  name: maintenance-controller
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    {{- if .Values.ingress.ca }}
+    ingress.kubernetes.io/auth-tls-pass-certificate-to-upstream: "true"
+    nginx.ingress.kubernetes.io/auth-tls-pass-certificate-to-upstream: "true"
+    ingress.kubernetes.io/auth-tls-secret: kube-system/ingress-cacrt
+    nginx.ingress.kubernetes.io/auth-tls-secret: kube-system/ingress-cacrt
+    ingress.kubernetes.io/auth-tls-verify-client: "optional"
+    nginx.ingress.kubernetes.io/auth-tls-verify-client: "optional"
+    ingress.kubernetes.io/auth-tls-verify-depth: "3"
+    nginx.ingress.kubernetes.io/auth-tls-verify-depth: "3"
+    {{- end }}
+    disco: "true"
+    kubernetes.io/tls-acme: "true"
+    prometheus.io/probe: "true"
+    {{- if .Values.ingress.oauthProxy }}
+    ingress.kubernetes.io/auth-url: "https://auth-internal.{{ .Values.global.region}}.{{ .Values.global.tld}}/oauth2/auth"
+    nginx.ingress.kubernetes.io/auth-url: "https://auth-internal.{{ .Values.global.region}}.{{ .Values.global.tld}}/oauth2/auth"
+    ingress.kubernetes.io/auth-signin: "https://auth-internal.{{ .Values.global.region}}.{{ .Values.global.tld}}/oauth2/start"
+    nginx.ingress.kubernetes.io/auth-signin: "https://auth-internal.{{ .Values.global.region}}.{{ .Values.global.tld}}/oauth2/start"
+    ingress.kubernetes.io/auth-request-redirect: $escaped_request_uri
+    nginx.ingress.kubernetes.io/auth-request-redirect: $escaped_request_uri
+    ingress.kubernetes.io/auth-response-headers: "Authorization, X-Auth-Request-Email, X-Auth-Request-User, X-Forwarded-Access-Token"
+    nginx.ingress.kubernetes.io/auth-response-headers: "Authorization, X-Auth-Request-Email, X-Auth-Request-User, X-Forwarded-Access-Token"
+    {{- end }}
+spec:
+  tls:
+    - secretName: maintenance-controller
+      hosts: [{{ printf "maintenance-controller.%s.%s.cloud.sap" .Values.global.clusterType .Values.global.region | coalesce .Values.ingress.hostOverride | quote }}]
+  rules:
+  - host: {{ printf "maintenance-controller.%s.%s.cloud.sap" .Values.global.clusterType .Values.global.region | coalesce .Values.ingress.hostOverride | quote }}
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: maintenance-controller
+            port:
+              number: 8080
+{{- end }}

@@ -1,0 +1,108 @@
+# The CRDs required can be found in the crds folder and are only applied on helm install.
+# As a convenience when using helm upgrade they are also installed via templates if installCRDs is true.
+# WARNING: Delete with care as removing of the CRDs will remove all instances of it.
+installCRDs: false
+
+image:
+  # Configure the registry for all VPA images.
+  # Default: k8s.gcr.io
+  # In Converged Cloud we use our in-house image registry.
+  registry: keppel.global.cloud.sap/ccloud-registry-k8s-io-mirror
+
+# Additional annotations applied to each pod (recommender, admission, updater).
+additionalPodAnnotations:
+  prometheus.io/targets: "kubernetes"
+
+# The recommender is always enabled.
+recommender:
+  podMinMemoryMB: 48
+  image:
+    # The full image will be $registry/$repository:$tag.
+    repository: autoscaling/vpa-recommender
+    pullPolicy: IfNotPresent
+
+  # How often metrics should be fetched.
+  interval: 2m
+
+  prometheus:
+    # Whether to enable Prometheus for storing metrics.
+    # If disabled, cAdvisor metrics are regularly persisted in-cluster using the VerticalPodAutoscalerCheckoint resource.
+    enabled: true
+    # Where to reach for Prometheus metrics.
+    address: https://prometheus-kubernetes.kube-monitoring.svc
+    # How much time back prometheus have to be queried to get historical metrics.
+    historyLength: 8d
+    # Resolution at which Prometheus is queried for historical metrics.
+    historyResolution: 1h
+    # Name of the prometheus job name which scrapes the cAdvisor metrics.
+    cadvisorJobName: kubernetes-cadvisors
+    # How long to wait before killing long queries.
+    queryTimeout: 5m
+
+    # The below label configuration must be configured according to the relabeling configuration in Prometheus.
+    # The recommender considers the following metrics:
+    #   CPU:    container_cpu_usage_seconds_total
+    #   Memory: container_memory_working_set_bytes
+    # Details: https://github.com/kubernetes/autoscaler/blob/vertical-pod-autoscaler-0.13.0/vertical-pod-autoscaler/pkg/recommender/input/history/history_provider.go#L262-L298
+
+    # Which metric to look for pod labels in metrics.
+    metricForPodLabels: up{job="pods"}
+    # Label name to look for pod namespaces.
+    podNamespaceLabel: namespace
+    # Label name to look for pod names.
+    podNameLabel: pod_name
+    # Label name to look for container namespaces.
+    containerNamespaceLabel: namespace
+    # Label name to look for container pod names.
+    containerPodNameLabel: pod_name
+    # Label name to look for container name.
+    containerNameLabel: container_name
+
+  recommendationMaxAllowed:
+    cpu: "" # resource.Quantity
+    memory: "" # resource.Quantity
+
+  targetPercentile:
+    cpu: "" # float between 0 and 1
+    memory: "" # float between 0 and 1
+  
+  resources:
+    requests:
+      cpu: 50m
+      memory: 500Mi
+    limits:
+      cpu: 200m
+      memory: 1000Mi
+
+admission:
+  enabled: true
+  image:
+    # The full image will be $registry/$repository:$tag.
+    repository: autoscaling/vpa-admission-controller
+    pullPolicy: IfNotPresent
+  replicas: 2
+  certificate:
+    duration: 8760h
+    reload: true
+  resources:
+    requests:
+      cpu: 50m
+      memory: 200Mi
+    limits:
+      cpu: 200m
+      memory: 500Mi
+
+updater:
+  minReplicas: 2
+  enabled: true
+  image:
+    # The full image will be $registry/$repository:$tag.
+    repository: autoscaling/vpa-updater
+    pullPolicy: IfNotPresent
+  resources:
+    requests:
+      cpu: 50m
+      memory: 500Mi
+    limits:
+      cpu: 200m
+      memory: 1000Mi

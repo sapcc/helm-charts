@@ -1,0 +1,24 @@
+{{- if .Capabilities.APIVersions.Has "autoscaling.k8s.io/v1/VerticalPodAutoscaler" }}
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: digicert-issuer
+  namespace: {{ .Release.Namespace }}
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: digicert-issuer
+  updatePolicy:
+    updateMode: Auto
+  resourcePolicy:
+    containerPolicies:
+      - containerName: '*'
+        controlledResources:
+          - cpu
+          - memory
+{{- if and .Values.resources .Values.resources.limits }}
+        maxAllowed:
+{{ toYaml .Values.resources.limits | indent 10 }}
+{{- end }}
+{{end }}

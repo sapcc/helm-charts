@@ -1,0 +1,25 @@
+{{- range tuple "udp" "tcp"}}
+{{- $proto := . }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $.Values.unbound.name }}-{{ $proto }}
+  annotations:
+    parrot.sap.cc/announce: 'true'
+    service.alpha.kubernetes.io/reject-traffic-on-external-ip: "false"
+spec:
+  type: LoadBalancer
+  externalTrafficPolicy: Local
+  selector:
+    app: {{ $.Values.unbound.name }}
+    type: dns
+  ports:
+{{- range $.Values.unbound.externalPorts | required "$.Values.unbound.externalPorts missing" }}
+    - name: dns-{{ $proto }}-{{.}}
+      protocol: {{ $proto | upper }}
+      port: {{.}}
+{{- end }}
+  externalIPs:
+    {{- required "A valid $.Values.unbound.externalIPs required!" $.Values.unbound.externalIPs | toYaml | nindent 2 }}
+{{- end }}

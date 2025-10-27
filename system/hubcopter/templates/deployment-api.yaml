@@ -1,0 +1,127 @@
+{{- range $instance := .Values.hubcopter.instances }}
+---
+kind: Deployment
+apiVersion: apps/v1
+
+metadata:
+  name: hubcopter-api-{{ .id }}
+
+spec:
+  revisionHistoryLimit: 5
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  selector:
+    matchLabels:
+      name: hubcopter-api-{{ .id }}
+  template:
+    metadata:
+      labels:
+        name: hubcopter-api-{{ .id }}
+      annotations:
+        checksum/configmap: {{ include "hubcopter/templates/configmap.yaml" $ | sha256sum }}
+        checksum/secret: {{ include "hubcopter/templates/secret.yaml" $ | sha256sum }}
+        kubectl.kubernetes.io/default-container: api
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: name
+                  operator: In
+                  values:
+                  - hubcopter-api
+              topologyKey: "kubernetes.io/hostname"
+            weight: 10
+      volumes:
+        - name: config
+          configMap:
+            name: hubcopter-config-{{ .id }}
+      initContainers:
+        - name: wait-for-glas
+          env:
+            - &HUBCOPTER_GLAS_URL
+              name:  HUBCOPTER_GLAS_URL
+              value: "http://glas-api.hubcopter.svc:8081"
+          image: "{{ required ".Values.global.registry variable missing" $.Values.global.registry }}/shared-app-images/alpine-busybox:3.22-latest"
+          imagePullPolicy: Always # -> if this pod shows up as having a vulnerable image, a rebuild and restart should suffice to get it back to Clean
+          command: ["sh", "-c", "until wget -O- $HUBCOPTER_GLAS_URL/healthcheck; do echo waiting for glas; sleep 1; done"]
+          securityContext:
+            runAsNonRoot: true
+            runAsUser:    65534 # nobody
+            runAsGroup:   65534 # nobody
+      containers:
+        - name: api
+          image: {{ $.Values.global.registry }}/hubcopter:{{ $.Values.hubcopter.image_tag | required ".Values.hubcopter.image_tag is missing" }}
+          imagePullPolicy: IfNotPresent
+          args: [ ]
+          env:
+            - name:  HUBCOPTER_CONFIG
+              value: '/etc/hubcopter/hubcopter.yaml'
+            - name: HUBCOPTER_CONCOURSE_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: hubcopter-secret
+                  key: concourse_username
+            - name:  HUBCOPTER_CONCOURSE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: hubcopter-secret
+                  key: concourse_password
+            - name:  HUBCOPTER_DEBUG
+              value: 'true' # turn off
+            - *HUBCOPTER_GLAS_URL
+            - name:  OS_AUTH_URL
+              value: "https://identity-3.{{ $.Values.hubcopter.tenso_region }}.{{ $.Values.global.tld }}/v3"
+            - name:  OS_AUTH_VERSION
+              value: '3'
+            - name:  OS_IDENTITY_API_VERSION
+              value: '3'
+            - name:  OS_INTERFACE
+              value: public # Service lives in scaleout and thus needs to go through the public API endpoints
+            - name:  OS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: hubcopter-secret
+                  key: service_user_password
+            - name:  OS_PROJECT_DOMAIN_NAME
+              value: 'ccadmin'
+            - name:  OS_PROJECT_NAME
+              value: 'master'
+            - name:  OS_REGION_NAME
+              value: {{ quote $.Values.hubcopter.tenso_region }}
+            - name:  OS_USER_DOMAIN_NAME
+              value: 'Default'
+            - name:  OS_USERNAME
+              value: 'hubcopter'
+          securityContext:
+            runAsNonRoot: true
+          volumeMounts:
+            - mountPath: /etc/hubcopter
+              name: config
+          livenessProbe:
+            httpGet:
+              path: /healthcheck
+              port: 8080
+            timeoutSeconds: 10
+            periodSeconds: 60
+            initialDelaySeconds: 120
+          readinessProbe:
+            httpGet:
+              path: /healthcheck
+              port: 8080
+            timeoutSeconds: 5
+            periodSeconds: 5
+          resources:
+            requests:
+              cpu: "200m"
+              memory: "128Mi"
+            limits:
+              cpu: "400m"
+              memory: "128Mi"
+{{- end }}

@@ -1,0 +1,20 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+
+metadata:
+  name: gh-actions-exporter
+  labels:
+    prometheus: kubernetes
+
+spec:
+  jobLabel: gh-actions-exporter
+  selector:
+    matchLabels: {}
+  namespaceSelector:
+    matchNames: ["{{(index .Values "gha-runner-scale-set-controller").flags.watchSingleNamespace }}"]
+  podMetricsEndpoints:
+    - interval: 60s
+      scrapeTimeout: 55s
+      port: metrics
+      path: "/metrics"
+      honorLabels: true

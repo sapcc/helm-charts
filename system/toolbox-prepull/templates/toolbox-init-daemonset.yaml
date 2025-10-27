@@ -1,0 +1,74 @@
+{{ if .Values.enabled -}}
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  labels:
+    app: toolbox
+  name: toolbox-init
+spec:
+  selector:
+    matchLabels:
+      app: toolbox
+  updateStrategy:
+    rollingUpdate:
+      maxUnavailable: '10%'
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: toolbox
+      annotations:
+        configmap-toolbox-hash: {{ include (print $.Template.BasePath "/toolbox-init-configmap.yaml") $ | sha256sum }}
+    spec:
+      initContainers:
+        - name: init
+          image: "{{ required ".Values.images.init.image is missing" .Values.images.init.image }}:{{ required ".Values.images.init.tag is missing" .Values.images.init.tag }}"
+          command:
+            - /scripts/toolbox/toolbox-init.sh
+          securityContext:
+            privileged: true
+          volumeMounts:
+            - name: root
+              mountPath: /host/root
+            - name: var-lib
+              mountPath: /host/var/lib
+            - name: opt-bin
+              mountPath: /host/opt/bin
+            - name: etc-sudoers
+              mountPath: /hostmount/etc/sudoers.d
+            - name: docker
+              mountPath: /var/run/docker.sock
+            - name: toolbox-init
+              mountPath: /scripts/toolbox
+      containers:
+      - name: sleep
+        image: "{{ required ".Values.images.sleep.image is missing" .Values.images.sleep.image }}:{{ required ".Values.images.sleep.tag is missing" .Values.images.sleep.tag }}"
+        imagePullPolicy: IfNotPresent
+        command: ["sleep", "inf"]
+        securityContext:
+           privileged: true
+      terminationGracePeriodSeconds: 5
+      tolerations:
+        - operator: "Exists"
+      volumes:
+        - name: toolbox-init
+          configMap:
+            name: toolbox-init
+            defaultMode: 0744
+        - name: var-lib
+          hostPath:
+            path: /var/lib
+        - name: root
+          hostPath:
+            path: /root
+        - name: etc-sudoers
+          hostPath:
+            path: /etc/sudoers.d/
+        - name: opt-bin
+          hostPath:
+            path: /opt/bin/
+        - name: docker
+          hostPath:
+            path: /var/run/docker.sock
+            type: ""
+{{- end }}

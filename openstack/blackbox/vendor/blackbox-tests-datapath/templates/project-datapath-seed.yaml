@@ -1,0 +1,100 @@
+apiVersion: "openstack.stable.sap.cc/v1"
+kind: "OpenstackSeed"
+metadata:
+  name: project-datapath-seed
+  labels:
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+
+spec:
+  requires:
+  - monsoon3/domain-cc3test-seed
+
+  domains:
+  - name: cc3test
+    description: 'Converged Cloud Testing'
+
+    groups:
+    - name: CC3TEST_DOMAIN_ADMINS
+      role_assignments:
+      - project: admin
+        role: admin
+      - project: admin
+        role: volume_admin
+      - project: admin
+        role: sharedfilesystem_admin
+      - project: admin
+        role: network_admin
+      - project: admin
+        role: compute_admin
+      - project: admin
+        role: resource_admin
+      - project: admin
+        role: keymanager_admin
+      - project: admin
+        role: member
+      - project: admin
+        role: audit_viewer
+
+    projects:
+    - name: admin
+      role_assignments:
+      - user: {{.Values.global.openstack.users.admin.username}}
+        role: admin
+      - user: {{.Values.global.openstack.users.admin.username}}
+        role: volume_admin
+      - user: {{.Values.global.openstack.users.admin.username}}
+        role: sharedfilesystem_admin
+      - user: {{.Values.global.openstack.users.admin.username}}
+        role: network_admin
+      - user: {{.Values.global.openstack.users.admin.username}}
+        role: compute_admin
+      - user: {{.Values.global.openstack.users.admin.username}}
+        role: resource_admin
+      - user: {{.Values.global.openstack.users.admin.username}}
+        role: keymanager_admin
+      - user: {{.Values.global.openstack.users.admin.username}}
+        role: member
+      - user: {{.Values.global.openstack.users.admin.username}}
+        role: audit_viewer
+      - user: {{.Values.global.openstack.users.member.username}}
+        role: member
+      network_quota:
+        subnetpool: 5
+        subnet: 5
+        network: 5
+        rbac_policy: 10
+        router: 3
+      networks:
+      - name: private_datapath_admin_cc3test
+        subnets:
+        - name: private_datapath_admin_cc3test_sub
+          cidr: 10.180.0.0/16
+          ip_version: 4
+      - name: private_internet_admin_cc3test
+        subnets:
+        - name : private_internet_admin_cc3test_sub
+          cidr: 10.180.0.0/16
+          ip_version: 4
+      routers:
+      - name: private_datapath_admin_cc3test_router
+        external_gateway_info:
+          network: {{.Values.global.network.monsoon3}}
+          external_fixed_ips:
+          - subnet: {{.Values.global.subnet.monsoon3}}
+        interfaces:
+        - subnet: private_datapath_admin_cc3test_sub
+      - name: private_internet_admin_cc3test_router
+        external_gateway_info:
+          network: {{.Values.global.network.hcp03}}
+          external_fixed_ips:
+          - subnet: {{.Values.global.subnet.hcp03}}
+        interfaces:
+        - subnet: private_internet_admin_cc3test_sub
+
+  rbac_policies:
+  - object_type: network
+    object_name: {{.Values.global.network.monsoon3}}
+    action: access_as_shared
+    target_tenant_name: admin@cc3test

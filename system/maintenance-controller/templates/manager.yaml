@@ -1,0 +1,105 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: maintenance-controller
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: maintenance-controller
+    {{- if .Values.deployment.extraLabels }}
+    {{- .Values.deployment.extraLabels | toYaml | nindent 4 }}
+    {{- end }}
+    {{- if .Values.deployment.extraAnnotations }}
+  annotations:
+    {{- .Values.deployment.extraAnnotations | toYaml | nindent 4 }}
+    {{- end }}
+spec:
+  selector:
+    matchLabels:
+      app: maintenance-controller
+  replicas: {{ .Values.replicaCount }}
+  template:
+    metadata:
+      labels:
+        app: maintenance-controller
+      annotations:
+        {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+        linkerd.io/inject: enabled
+        {{- end }}
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app
+                operator: In
+                values:
+                - maintenance-controller
+            topologyKey: kubernetes.io/hostname
+      {{- if .Values.tolerations }}
+      tolerations:
+        {{- toYaml .Values.tolerations | nindent 8 }}
+      {{- end }}
+      {{- if .Values.priorityClassName }}
+      priorityClassName: {{ .Values.priorityClassName }}
+      {{- end }}
+      containers:
+      - command:
+        - /manager
+        args:
+        - --enable-leader-election
+        {{- if .Values.esx.enabled }}
+        - --enable-esx-maintenance
+        {{- end }}
+        {{- if .Values.kubernikus.enabled }}
+        - --enable-kubernikus-maintenance
+        {{- end }}
+        image: "{{required ".Values.global.registry is missing" .Values.global.registry }}/{{ .Values.image.repository }}:{{required ".Values.image.tag is missing" .Values.image.tag }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        name: manager
+        volumeMounts:
+        - name: config
+          mountPath: "/config"
+          readOnly: true
+        {{- if not .Values.rbac.cloudProviderSecretName | and .Values.kubernikus.enabled }}
+        - name: cloudconfig
+          mountPath: "/provider"
+          readOnly: true
+        {{- end }}
+        env:
+        {{ range $key, $val := .Values.secrets -}}
+        - name: {{ $key | quote }}
+          valueFrom:
+            secretKeyRef:
+              name: maintenance-controller-secrets
+              key: {{ $key | quote }}
+        {{ end -}}
+        resources:
+          limits:
+            cpu: {{ .Values.limits.cpu }}
+            memory: {{ .Values.limits.memory }}
+          requests:
+            cpu: {{ .Values.limits.cpu }}
+            memory: {{ .Values.limits.memory }}
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8081
+          initialDelaySeconds: 3
+          periodSeconds: 3
+        ports:
+          - name: metrics
+            containerPort: 8080
+      volumes:
+      - name: config
+        configMap:
+          name: maintenance-controller
+      {{- if not .Values.rbac.cloudProviderSecretName | and .Values.kubernikus.enabled }}
+      - name: cloudconfig
+        secret:
+          secretName: {{ .Values.kubernikus.cloudconfig }}
+      {{- end }}
+      terminationGracePeriodSeconds: 71 # 65s for last prometheus scrape 5s to shutdown metrics server 1s buffer
+      {{- if .Values.rbac.create }}
+      serviceAccountName: {{ .Values.rbac.serviceAccountName }}
+      {{- end }}

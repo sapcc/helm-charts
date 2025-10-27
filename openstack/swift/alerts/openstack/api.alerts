@@ -1,0 +1,411 @@
+# vim: set ft=yaml:
+
+groups:
+- name: openstack-swift-api.alerts
+  rules:
+  - alert: OpenstackSwiftFirstByteTiming
+    expr: min(sum(irate(swift_proxy_firstbyte_bucket{le="1.0",type!="container",status=~"20[0-9]"}[5m])) by (os_cluster, type, instance) / sum(irate(swift_proxy_firstbyte_bucket{le="+Inf",type!="container",status=~"20[0-9]"}[5m])) by (os_cluster, type, instance)) by (os_cluster, type, instance) < 0.5
+    for: 15m
+    labels:
+      context: firtsbytetiming
+      dashboard: swift-proxy?var-cluster={{ $labels.os_cluster }}&var-proxy={{ $labels.instance }}
+      service: swift
+      severity: info
+      support_group: storage
+      playbook: 'https://operations.global.cloud.sap/docs/operation/storage/swift/swift_health'
+      tier: os
+      meta: first byte timing for {{ $labels.type }} in {{ $labels.os_cluster }} increased
+    annotations:
+      description: This alert indicates the latency in token validation.
+      summary: first byte timing for {{ $labels.type }} in {{ $labels.os_cluster }}
+        increased
+
+  - alert: OpenstackSwift503Responses
+    expr: sum(increase(swift_proxy_count{policy="all", status="503", method!~"PUT|DELETE|POST"}[5m])) by (os_cluster) > 100
+    for: 5m
+    labels:
+      context: serviceunavailable
+      dashboard: swift-proxy?var-cluster={{ $labels.os_cluster }}
+      service: swift
+      severity: warning
+      support_group: storage
+      playbook: 'https://operations.global.cloud.sap/docs/operation/storage/swift/swift_health'
+      tier: os
+      meta: 503 responses from Swift in {{ $labels.os_cluster }}
+    annotations:
+      description: Swift is responding with 503 in {{ $labels.os_cluster }}. Usually the root cause is a broken
+        token validation or overloaded object servers or HEAD requests to non existing objects with offline replica locations (disk failures)
+      summary: swift-service-unavailable
+
+  - alert: OpenstackSwiftHAProxyServer
+    expr: sum by (os_cluster, server) (increase(haproxy_server_redispatch_warnings_total{proxy!="swift_proxy_s3"}[10m])) > 20
+    for: 15m
+    labels:
+      context: haproxyredispatch
+      service: swift
+      severity: info
+      support_group: storage
+      tier: os
+      meta: HAProxy redispatches for server {{ $labels.server }} in {{ $labels.os_cluster }}
+    annotations:
+      description: HAProxy is redispatching requests for the swift-proxy running on node {{ $labels.server }}. Try to delete the
+        swift-proxy-{{ $labels.os_cluster }}-xxxxx on node {{ $labels.server }} to resolve the alert.
+      summary: swift-service-haproxy-redispatch
+
+  - alert: OpenstackSwiftHAProxyServerS3
+    expr: sum by (os_cluster, server) (increase(haproxy_server_redispatch_warnings_total{proxy="swift_proxy_s3"}[10m])) > 100
+    for: 15m
+    labels:
+      context: haproxyredispatch
+      service: swift
+      severity: info
+      support_group: storage
+      tier: os
+      meta: HAProxy redispatches for server {{ $labels.server }} in {{ $labels.os_cluster }}
+    annotations:
+      description: HAProxy is redispatching requests for the swift-proxy running on node {{ $labels.server }}. Check the logs for
+        `NOT retries:0`. Currently it is known for `DELETE` requests.
+      summary: swift-service-haproxy-redispatch
+
+  - alert: OpenstackSwiftHAProxyRedispatchPod
+    expr: sum by(os_cluster, kubernetes_pod_name) (increase(haproxy_server_redispatch_warnings_total{proxy!="swift_proxy_s3"}[10m])) > 50
+    for: 10m
+    labels:
+      context: haproxyredispatch
+      service: swift
+      severity: warning
+      support_group: storage
+      tier: os
+      meta: HAProxy pod {{ $labels.kubernetes_pod_name }} redispatches in {{ $labels.os_cluster }}
+    annotations:
+      description: HAProxy pod {{ $labels.kubernetes_pod_name }} is redispatching requests. Check the logs for
+        `Proxy <abc> reached process FD limit (maxsock=<1234>)`. In that case delete this pod.
+      summary: swift-service-haproxy-redispatch
+
+  - alert: OpenstackSwiftHAProxyRedispatchPodS3
+    expr: sum by(os_cluster, kubernetes_pod_name) (increase(haproxy_server_redispatch_warnings_total{proxy="swift_proxy_s3"}[10m])) > 300
+    for: 10m
+    labels:
+      context: haproxyredispatch
+      service: swift
+      severity: warning
+      support_group: storage
+      tier: os
+      meta: HAProxy pod {{ $labels.kubernetes_pod_name }} redispatches S3 API requests
+    annotations:
+      description: HAProxy pod {{ $labels.kubernetes_pod_name }} is redispatching S3 API requests. Check the logs for
+        `NOT retries:0`. Currently it is known for `DELETE` requests.
+      summary: swift-service-haproxy-redispatch
+
+  - alert: OpenstackSwiftHealthCheck
+    expr: avg(swift_recon_task_exit_code) BY (region) > 0.2 or avg(swift_dispersion_task_exit_code) BY (region) > 0.2 or absent(swift_dispersion_task_exit_code)
+    for: 10m
+    labels:
+      context: health
+      dashboard: swift-overview
+      service: swift
+      severity: warning
+      support_group: storage
+      playbook: 'https://operations.global.cloud.sap/docs/operation/storage/swift/swift_health'
+      tier: os
+      meta: some health checks for Swift are failing
+    annotations:
+      description: Swift health check failures. Run `kubectl logs -l component=swift-health-exporter -c collector` and `kubectl logs -l component=swift-proxy-cluster-3 -c collector` to get details
+      summary: swift-health-check
+
+  - alert: OpenstackSwiftDispersionErrors
+    expr: swift_dispersion_errors > 0
+    for: 10m
+    labels:
+      context: health
+      dashboard: swift-overview
+      service: swift
+      severity: warning
+      support_group: storage
+      playbook: 'https://operations.global.cloud.sap/docs/operation/storage/swift/swift_health'
+      tier: os
+      meta: 'Swift dispersion is reporting {{ $value }} errors'
+    annotations:
+      description: Swift dispersion report tool is reporting errors. Run kubectl log (swift-proxy-... / swift-health-exporter-...) collector to get details
+      summary: swift-dispersion-errors
+
+  - alert: OpenstackSwiftMismatchedRings
+    expr: (sum(max by (storage_ip) (swift_cluster_md5_not_matched{kind="ring"})) - sum(max by (storage_ip) (swift_cluster_md5_errors{kind="ring"}))) > 0
+    for: 25m
+    labels:
+      context: mismatchedrings
+      dashboard: swift-overview
+      service: swift
+      severity: warning
+      support_group: storage
+      playbook: 'https://operations.global.cloud.sap/docs/operation/storage/swift/swift_ring'
+      tier: os
+      meta: Rings are not equal on all Swift nodes
+    annotations:
+      description: Rings are not equal on all nodes
+      summary: swift-mismatched-rings
+
+  - alert: OpenstackSwiftMismatchedConfig
+    expr: (sum(max by (storage_ip) (swift_cluster_md5_not_matched{kind="swiftconf"})) - sum(max by (storage_ip) (swift_cluster_md5_errors{kind="swiftconf"}))) > 0
+    for: 15m
+    labels:
+      context: mismatchedconf
+      dashboard: swift-overview
+      service: swift
+      severity: warning
+      support_group: storage
+      tier: os
+      meta: Configuration is not equal on all Swift nodes
+    annotations:
+      description: Configuration is not equal on all nodes
+      summary: swift-mismatched-config
+
+  - alert: OpenstackSwiftNodeError
+    expr: max by (storage_ip) (swift_cluster_md5_errors{kind="ring"}) > 0
+    for: 15m
+    labels:
+      context: nodeerror
+      dashboard: swift-overview
+      service: swift
+      severity: warning
+      support_group: storage
+      tier: os
+      playbook: 'https://operations.global.cloud.sap/docs/operation/storage/swift/swift_node_error'
+      meta: Swift node {{ $labels.storage_ip }} not reachable
+    annotations:
+      description: Swift node error. Node with IP {{ $labels.storage_ip }} is not reachable.
+      summary: swift-node-error
+
+  - alert: OpenstackSwiftDisksUnmounted
+    expr: max(swift_cluster_drives_unmounted) BY (storage_ip) > 0
+    for: 3m
+    labels:
+      context: drivesunmounted
+      dashboard: swift-overview
+      service: swift
+      severity: info
+      support_group: storage
+      tier: os
+      meta: '{{ $value }} Swift drives not mounted'
+    annotations:
+      description: Swift drives not mounted. Run swift-recon --unmounted to get details.
+        Also check #alert-metal-warning for disk failures. They should get acknowledged there.
+      summary: swift disks unmounted on the server IP {{ $labels.storage_ip }}
+
+  - alert: OpenstackSwiftDiskFailures
+    # Exclude regions qa-de-2 to qa-de-6 as they use iscsi attached disks and no metal tier routing needed
+    expr: max(swift_cluster_drives_audit_errors{region!~"qa-de-[2-6]"}) BY (storage_ip) > 0
+    for: 3m
+    labels:
+      context: drivefailures
+      dashboard: swift-overview
+      service: swift
+      severity: warning
+      support_group: storage
+      tier: metal
+      meta: '{{ $value }} Swift drive failures'
+      playbook: 'https://operations.global.cloud.sap/docs/operation/storage/swift/swift_broken_disks'
+    annotations:
+      description: Swift drive failures. Run swift-recon --driveaudit to get details
+      summary: swift disk failures on the server IP {{ $labels.storage_ip }}
+
+  - alert: OpenstackSwiftAsyncPendings
+    # Exclude the Top1 Project from the expression, to not alert on single containers causing high Async Pendings
+    expr: floor(sum(increase(swift_object_server_async_pendings[5m])) - ignoring(project_id) topk(1, sum(increase(swift_async_pendings_detail[5m]) > 0) by (project_id))) > 5000
+    for: 15m
+    labels:
+      context: asyncpendings
+      dashboard: swift-overview
+      service: swift
+      severity: info
+      support_group: storage
+      tier: os
+      meta: Async Pendings indicate an overload scenario or faulty device(s)
+    annotations:
+      description: Async Pendings indicate an overload scenario or faulty device(s)
+      summary: swift object server async pendings reached 5000
+
+  - alert: OpenstackSwiftRateLimit1000
+    expr: sum(increase(swift_proxy_count{status="498"}[5m])) BY (os_cluster) > 1000
+    for: 3m
+    labels:
+      context: ratelimit
+      dashboard: swift-overview
+      service: swift
+      severity: info
+      support_group: storage
+      tier: os
+      meta: Some accounts/containers are being rate-limited in {{ $labels.os_cluster }}
+    annotations:
+      description: Check kibana for the causing account and container
+      summary: swift rate limit hit in {{ $labels.os_cluster }}
+
+  - alert: OpenstackSwiftRateLimit5000
+    expr: sum(increase(swift_proxy_count{status="498"}[5m])) BY (os_cluster) > 5000
+    for: 3m
+    labels:
+      context: ratelimit
+      dashboard: swift-overview
+      service: swift
+      severity: warning
+      support_group: storage
+      tier: os
+      meta: Some accounts/containers are being rate-limited in {{ $labels.os_cluster }}
+    annotations:
+      description: Check kibana for the causing account and container
+      summary: swift rate limit hit in {{ $labels.os_cluster }}
+
+  - alert: OpenstackSwiftUsedSpaceGrow
+    expr: max(predict_linear(global:swift_cluster_storage_used_percent_average[1w], 60 * 60 * 24 * 30)) > 0.8
+    for: 2d
+    labels:
+      context: usedcapacity
+      service: swift
+      severity: info
+      support_group: storage
+      tier: os
+      meta: Swift storage usage will reach 80% in 30 days. Order hardware now!
+    annotations:
+      description: Swift storage usage will reach 80% in 30 days. Order hardware now!
+      summary: Swift storage expected to be full soon
+
+  - alert: OpenstackSwiftUsedSpace66
+    expr: floor(max(global:swift_cluster_storage_used_percent_average) by (region) * 100) > 66
+    for: 1d
+    labels:
+      context: usedcapacity
+      service: swift
+      severity: info
+      support_group: storage
+      tier: os
+      meta: 'Swift storage usage above {{ $value }}%'
+    annotations:
+      description: 'Swift storage usage above {{ $value }}%'
+      summary: 'Swift storage usage above {{ $value }}%'
+
+ # - alert: OpenstackSwiftGrantedQuota125
+ #   expr: floor(sum(global:limes_consolidated_domain_quota{full_resource="object-store/capacity"}) by (region, full_resource) / max(global:limes_consolidated_cluster_capacity{full_resource="object-store/capacity"}) by (region, full_resource) * 100) > 125
+ #   for: 1d
+ #   labels:
+ #     context: grantedquota
+ #     service: swift
+ #     severity: info
+ #     support_group: storage
+ #     tier: os
+ #     meta: 'Swift storage is overbooked: {{ $value }}%'
+ #   annotations:
+ #     description: 'Swift storage is overbooked: {{ $value }}%'
+ #     summary: 'Swift storage is overbooked: {{ $value }}%'
+
+ # - alert: OpenstackSwiftGrantedQuota150
+ #   expr: floor(sum(global:limes_consolidated_domain_quota{full_resource="object-store/capacity"}) by (region, full_resource) / max(global:limes_consolidated_cluster_capacity{full_resource="object-store/capacity"}) by (region, full_resource) * 100) > 150
+ #   for: 1d
+ #   labels:
+ #     context: grantedquota
+ #     service: swift
+ #     severity: warning
+ #     support_group: storage
+ #     tier: os
+ #     meta: 'Swift storage is overbooked: {{ $value }}%'
+ #   annotations:
+ #     description: 'Swift storage is overbooked: {{ $value }}%'
+ #     summary: 'Swift storage is overbooked: {{ $value }}%'
+
+  - alert: OpenstackSwiftDriveAutopilotConsistencyCheck
+    expr: irate(swift_drive_autopilot_events{type="consistency-check"}[5m]) < 0.02
+    for: 10m
+    labels:
+      context: autopilot
+      dashboard: swift-overview
+      service: swift
+      severity: warning
+      support_group: storage
+      tier: os
+      meta: '{{ $labels.kubernetes_pod_name }} not performing consistency checks on schedule'
+    annotations:
+      description: Autopilot {{ $labels.kubernetes_pod_name }} does not perform its
+        consistency checks on schedule. Please check if it's having a bad time.
+      summary: No consistency checks performed
+
+  - alert: OpenstackSwiftAccountReplicationCheck
+    expr: max(swift_cluster_accounts_replication_age) by (storage_ip) > 3*3600
+    labels:
+      context: accountrepl
+      dashboard: swift-overview
+      service: swift
+      severity: warning
+      support_group: storage
+      tier: os
+      meta: Account replication getting stuck on {{ $labels.storage_ip }}
+    annotations:
+      description: "The last successful account replication age on {{ $labels.storage_ip }}
+        is older than 3 hours. Check the affected node. A restart of the replicator pod
+        might be necessary."
+      summary: Account replication on {{ $labels.storage_ip }} older than 3 hours
+
+  - alert: OpenstackSwiftContainerReplicationCheck
+    expr: max(swift_cluster_containers_replication_age) by (storage_ip) > 3*3600
+    labels:
+      context: containerrepl
+      dashboard: swift-overview
+      service: swift
+      severity: warning
+      support_group: storage
+      tier: os
+      meta: Container replication getting stuck on {{ $labels.storage_ip }}
+    annotations:
+      description: "The last successful container replication age on {{ $labels.storage_ip }}
+        is older than 3 hours. Check the affected node. A restart of the replicator pod might
+        be necessary."
+      summary: Container replication on {{ $labels.storage_ip }} older than 3 hours
+
+  - alert: OpenstackSwiftQuarantinedObjectsCheck
+    expr: max by (storage_ip) (swift_cluster_objects_quarantined) > 0
+    for: 15m
+    labels:
+      context: quarantine
+      dashboard: swift-overview
+      service: swift
+      severity: info
+      support_group: storage
+      tier: os
+      meta: Object auditor quarantined {{ $value }} objects on node {{ $labels.storage_ip }}
+    annotations:
+      description: "The object auditor quarantined {{ $value }} objects on node
+        {{ $labels.storage_ip }}. Exec into the corresponding `swift-server` pod
+        and check `swift-object-info quarantined-object`."
+      summary: "{{ $value }} quarantined objects on node {{ $labels.storage_ip }}"
+
+  - alert: OpenstackSwiftQuarantinedContainersCheck
+    expr: max by (storage_ip) (swift_cluster_containers_quarantined) > 0
+    for: 15m
+    labels:
+      context: quarantine
+      dashboard: swift-overview
+      service: swift
+      severity: info
+      support_group: storage
+      tier: os
+      meta: Container auditor quarantined {{ $value }} containers on node {{ $labels.storage_ip }}
+    annotations:
+      description: "The container auditor quarantined {{ $value }} containers on node
+        {{ $labels.storage_ip }}. Exec into the corresponding `swift-server` pod
+        and check `swift-container-info quarantined-container`."
+      summary: "{{ $value }} quarantined containers on node {{ $labels.storage_ip }}"
+
+  - alert: OpenstackSwiftQuarantinedAccountsCheck
+    expr: max by (storage_ip) (swift_cluster_accounts_quarantined) > 0
+    for: 15m
+    labels:
+      context: quarantine
+      dashboard: swift-overview
+      service: swift
+      severity: info
+      support_group: storage
+      tier: os
+      meta: Account auditor quarantined {{ $value }} accounts on node {{ $labels.storage_ip }}
+    annotations:
+      description: "The account auditor quarantined {{ $value }} accounts on node
+        {{ $labels.storage_ip }}. Exec into the corresponding `swift-server` pod
+        and check `swift-account-info quarantined-account`."
+      summary: "{{ $value }} quarantined accounts on node {{ $labels.storage_ip }}"

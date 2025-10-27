@@ -1,0 +1,20 @@
+{{ if .Values.managedResource.enabled -}}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: metal-token-rotate-rbac
+  namespace: garden
+type: Opaque
+data:
+  rbac.yaml: {{ .Files.Get "files/rbac.yaml" | b64enc }}
+---
+apiVersion: resources.gardener.cloud/v1alpha1
+kind: ManagedResource
+metadata:
+  name: metal-token-rotate
+  namespace: garden
+spec:
+  secretRefs:
+  - name: metal-token-rotate-rbac
+{{ end -}}

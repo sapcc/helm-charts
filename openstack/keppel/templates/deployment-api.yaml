@@ -1,0 +1,84 @@
+kind: Deployment
+apiVersion: apps/v1
+
+metadata:
+  name: keppel-api
+  annotations:
+    secret.reloader.stakater.com/reload: keppel-keys,keppel-secret
+
+spec:
+  revisionHistoryLimit: 5
+  replicas: {{ if .Values.keppel.slim }} 1 {{ else }} {{ .Values.keppel.replicas.api }} {{ end }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 2
+  selector:
+    matchLabels:
+      name: keppel-api
+  template:
+    metadata:
+      labels:
+        name: keppel-api
+      annotations:
+        checksum/configmap: {{ include "keppel/templates/configmap.yaml" . | sha256sum }}
+        checksum/secret: {{ include "keppel/templates/secret.yaml" . | sha256sum }}
+        checksum/secret-keys: {{ include "keppel/templates/secret-keys.yaml" . | sha256sum }}
+        kubectl.kubernetes.io/default-container: api
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: name
+                  operator: In
+                  values:
+                  - keppel-api
+              topologyKey: "kubernetes.io/hostname"
+            weight: 10
+      volumes:
+        - name: config
+          configMap:
+            name: keppel
+        - name: keys
+          secret:
+            secretName: keppel-keys
+      containers:
+        - name: api
+          image: {{include "keppel_image" .}}
+          imagePullPolicy: IfNotPresent
+          args: [ server, api ]
+          env: {{ include "keppel_environment" $ | indent 12 }}
+          securityContext:
+            runAsNonRoot: true
+          volumeMounts:
+            - mountPath: /etc/keppel
+              name: config
+            - mountPath: /etc/keppel-keys
+              name: keys
+          livenessProbe:
+            httpGet:
+              path: /healthcheck
+              port: 80
+            timeoutSeconds: 10
+            periodSeconds: 60
+            initialDelaySeconds: 60
+          readinessProbe:
+            httpGet:
+              path: /healthcheck
+              port: 80
+            timeoutSeconds: 5
+            periodSeconds: 5
+          # NOTE: observed resource usage in eu-de-1 (as of 2024-05)
+          # - CPU: 400m with 6 replicas was running into throttling, so give plenty headroom
+          # - RAM: levels off around 50 Mi
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "128Mi"

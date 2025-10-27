@@ -1,0 +1,50 @@
+{{- if not .Values.redisPassword }}
+{{- $fullname := include "redis.fullname" . -}}
+
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  # This service account is used by the redis pod itself.
+  name: {{ $fullname }}
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ $fullname }}-secrets
+rules:
+  # The init container of the redis pods generates the
+  # `$RELEASE-redis-user-$USERNAME` secrets on first start.
+  - apiGroups: [ "" ]
+    resources: [ secrets ]
+    verbs:     [ get, delete, patch, update ]
+    resourceNames:
+      - {{ $fullname }}-user-default
+
+  # "create" permission cannot be restricted to specific resourceNames
+  # Ref: <https://stackoverflow.com/a/65203104>
+  - apiGroups: [ "" ]
+    resources: [ secrets ]
+    verbs:     [ create ]
+
+  # need the UID of the redis deployment to render an owner reference
+  - apiGroups: [ apps ]
+    resources: [ deployments ]
+    verbs:     [ get ]
+    resourceNames: [ {{ $fullname }} ]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ $fullname }}-secrets
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ $fullname }}-secrets
+subjects:
+  - kind: ServiceAccount
+    name: {{ $fullname }}
+    namespace: {{ .Release.Namespace }}
+
+{{- end }}

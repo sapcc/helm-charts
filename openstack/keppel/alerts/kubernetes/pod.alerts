@@ -1,0 +1,22 @@
+# vim: set ft=yaml:
+
+groups:
+- name: openstack-keppel-pod.alerts
+  rules:
+      - alert: OpenstackKeppelPodCPUThrottling
+        expr: rate(container_cpu_cfs_throttled_periods_total{namespace="keppel",pod!~"keep-image-pulled-.*"}[1h]) / rate(container_cpu_cfs_periods_total{namespace="keppel",pod!~"keep-image-pulled-.*"}[1h]) > 0.8
+        for: 15m
+        labels:
+          no_alert_on_absence: "true" # small regions may have no throttled containers at all, so this may legitimately occur
+          support_group: containers
+          tier: os
+          service: keppel
+          severity: info
+          context: cpu
+          dashboard: keppel-overview
+          meta: "{{ $labels.pod }}/{{ $labels.container }}"
+        annotations:
+          summary: Container is constantly CPU-throttled
+          description: The container {{ $labels.pod }}/{{ $labels.container }} is being CPU-throttled
+            constantly. This is probably impacting performance, so check if we can increase the number
+            of replicas or the resource requests/limits.

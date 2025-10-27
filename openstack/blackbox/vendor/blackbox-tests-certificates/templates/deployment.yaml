@@ -1,0 +1,107 @@
+kind: Deployment
+apiVersion: apps/v1
+
+metadata:
+  name: blackbox-tests-certificates
+  labels:
+    system: openstack
+    component: blackbox-tests
+    type: certificates
+
+spec:
+  replicas: 0
+  revisionHistoryLimit: 5
+  selector:
+    matchLabels:
+      name: blackbox-tests-certificates
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 2
+  template:
+    metadata:
+      labels:
+        name: blackbox-tests-certificates
+    spec:
+      nodeSelector:
+        zone: farm
+      volumes:
+        - name: blackbox-tests-certificates
+          persistentVolumeClaim:
+            claimName: blackbox-tests-certificates
+        - name: statsd-mapping-config
+          configMap:
+            name: blackbox-tests-certificates-statsd-mapping-config
+      containers:
+        - name: pytest
+{{- if typeIs "float64" .Values.global.image.tag  }}{{/* https://github.com/kubernetes/helm/issues/1707 */}}
+          image: {{.Values.global.registry}}/{{.Values.global.image.name}}:{{.Values.global.image.tag | printf "%0.f" }}
+{{- else }}
+          image: {{.Values.global.registry}}/{{.Values.global.image.name}}:{{.Values.global.image.tag}}
+{{- end }}
+          args:
+            - "iterate"
+            - "pytest"
+            - {{ .Values.parallel.workers | printf "-n %.0f" | quote }}
+            - {{ .Values.parallel.timeout.global | printf "--timeout %.0f" | quote }}
+            - "--disable-pytest-warnings"
+            - "-r ap"
+            - "tests/test_certificates.py"
+          volumeMounts:
+            - name: blackbox-tests-certificates
+              mountPath: /opt/logs
+              readOnly: false
+          env:
+            - name: OS_REGION_NAME
+              value: {{ .Values.global.openstack.region_name | quote }}
+            - name: CERTS_ALERT_PERIOD
+              value: {{ .Values.certs.alert_period | quote }}
+            - name: CERTS_NAMES
+              value: {{ .Values.certs.names | quote }}
+            - name: STATSD_HOST
+              value: {{ .Values.statsd.host | quote }}
+            - name: STATSD_PORT
+              value: {{ .Values.statsd.port | quote }}
+            - name: STATSD_PREFIX
+              value: {{ .Values.statsd.prefix | quote }}
+            - name: TIMEOUT
+              value: {{ .Values.parallel.timeout.atomic | quote }}
+            - name: SLEEP_ITERATE
+              value: {{ .Values.parallel.iterator.sleep | quote }}
+            - name: SENTRY_DSN
+              valueFrom:
+                secretKeyRef:
+                  name: sentry
+                  key: blackbox.DSN
+          livenessProbe:
+            exec:
+              command:
+              - pytest
+              - --version
+            timeoutSeconds: 5
+            periodSeconds: 15
+            initialDelaySeconds: 15
+          readinessProbe:
+            exec:
+              command:
+              - pytest
+              - --version
+            timeoutSeconds: 5
+            periodSeconds: 15
+            initialDelaySeconds: 15
+
+        - name: statsd
+          image: {{.Values.global.dockerHubMirror}}/prom/statsd-exporter:v0.12.2
+          imagePullPolicy: IfNotPresent
+          args:
+            - --statsd.mapping-config=/etc/statsd/statsd-mapping.conf
+          ports:
+            - name: statsd
+              containerPort: 9125
+              protocol: UDP
+            - name: metrics
+              containerPort: {{ .Values.global.port_metrics}}
+          volumeMounts:
+            - name: statsd-mapping-config
+              mountPath: /etc/statsd

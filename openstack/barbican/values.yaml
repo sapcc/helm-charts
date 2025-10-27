@@ -1,0 +1,352 @@
+# Default values for barbican.
+# This is a YAML-formatted file.
+# Declare name/value pairs to be passed into your templates.
+# name: value
+#
+#
+global:
+  imageNamespace: monsoon
+  master_password: ""
+  dbUser: barbican
+  domain_seeds:
+    skip_hcm_domain: false
+  linkerd_requested: false
+
+owner-info:
+  support-group: identity
+  service: barbican
+  maintainers:
+    - Rajiv Mucheli
+    - Stefan Hipfel
+  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/openstack/barbican
+
+pod:
+  lifecycle:
+    upgrades:
+      deployments:
+        revisionHistory: 5
+        podReplacementStrategy: RollingUpdate
+        rollingUpdate:
+          maxUnavailable: 0
+          maxSurge: 1
+
+api_port_internal: '9311'
+debug: "True"
+
+statsd:
+  port: 9102
+  image:
+    repository:  prom/statsd-exporter
+    tag: v0.26.0
+  resources:
+    enabled: true
+    limits:
+      memory: 128Mi
+      cpu: 150m
+    requests:
+      memory: 64Mi
+      cpu: 100m
+
+db_name: barbican
+
+postgresql:
+  enabled: false
+
+proxysql:
+  mode: ""  # Cannot use unix_socket, as migration-job is a helm-hook which runs prior to the configmap creation/update
+  native_sidecar: true
+
+mariadb:
+  enabled: true
+  name: barbican
+  initdb_secret: barbican-initdb
+  ccroot_user:
+    enabled: true
+  databases:
+  - barbican
+  users:
+    barbican:
+      name: barbican
+      grants:
+      - "ALL PRIVILEGES on barbican.*"
+  persistence_claim:
+    name: db-barbican-pvclaim
+  backup_v2:
+    enable_init_restore: true
+  alerts:
+    support_group: identity
+
+pxc_db:
+  enabled: false
+  name: barbican
+  alerts:
+    support_group: identity
+  ccroot_user:
+    enabled: true
+  databases:
+    - barbican
+  users:
+    barbican:
+      name: barbican
+      grants:
+        - "ALL PRIVILEGES on barbican.*"
+  pxc:
+    persistence:
+      size: 10Gi
+  backup:
+    enabled: true
+    s3:
+      secrets:
+        aws_access_key_id: null
+        aws_secret_access_key: null
+    pitr:
+      enabled: true
+
+mysql_metrics:
+  db_name: barbican
+  db_user: barbican
+  customMetrics:
+    - help: Barbican container count by type
+      labels:
+      - "id"
+      - "status"
+      - "container_name"
+      - "project_id"
+      - "type"
+      name: openstack_barbican_containers_count_gauge
+      query: |
+        SELECT
+          containers.name  AS container_name,
+          containers.type,
+          containers.id,
+          containers.status,
+          projects.external_id  AS project_id,
+          COUNT(*) AS count_gauge
+        from containers
+        INNER JOIN
+          projects
+        on
+          containers.project_id=projects.id
+        where
+          containers.deleted='false'
+        GROUP BY
+          containers.name,
+          containers.type,
+          containers.id,
+          containers.status,
+          projects.external_id;
+      values:
+      - "count_gauge"
+    - help: Barbican secret count by type
+      labels:
+      - "id"
+      - "status"
+      - "secret_name"
+      - "expiration"
+      - "created_at"
+      - "project_id"
+      - "secret_type"
+      name: openstack_barbican_secrets_count_gauge
+      query: |
+        SELECT
+          secrets.id,
+          secrets.status,
+          COALESCE(secrets.name, "No Secret Name") AS secret_name,
+          secrets.created_at,
+          UNIX_TIMESTAMP(STR_TO_DATE(IFNULL(secrets.expiration,'1970-01-01 00:00:00'), '%Y-%c-%e %T')) AS expiration,
+          projects.external_id  AS project_id,
+          secrets.secret_type,
+          COUNT(*)  AS count_gauge
+        from secrets
+        INNER JOIN projects
+        on secrets.project_id=projects.id
+        WHERE secrets.deleted='false'
+        GROUP BY secrets.id, secrets.status, secrets.name, projects.external_id, secrets.secret_type, secrets.expiration;
+      values:
+      - "count_gauge"
+    - help: Barbican secret count in HSM Backend
+      labels:
+      - "id"
+      - "status"
+      - "secret_name"
+      - "expiration"
+      - "created_at"
+      - "project_id"
+      - "secret_type"
+      name: openstack_barbican_hsm_secrets_count_gauge
+      query: |
+        SELECT
+          secrets.id,
+          secrets.status,
+          COALESCE(secrets.name, "No Secret Name") AS secret_name,
+          secrets.created_at,
+          UNIX_TIMESTAMP(STR_TO_DATE(IFNULL(secrets.expiration,'1970-01-01 00:00:00'), '%Y-%c-%e %T')) AS expiration,
+          projects.external_id  AS project_id,
+          secrets.secret_type,
+          COUNT(*) AS count_gauge
+        FROM encrypted_data
+        JOIN kek_data
+        ON encrypted_data.kek_id = kek_data.id
+        JOIN secrets
+        ON secrets.id = encrypted_data.secret_id
+        JOIN projects
+        ON secrets.project_id=projects.id
+        WHERE kek_data.plugin_name='barbican.plugin.crypto.p11_crypto.P11CryptoPlugin' AND secrets.deleted='false'
+        GROUP BY secrets.id, secrets.status, secrets.name, projects.external_id, secrets.secret_type, secrets.expiration;
+      values:
+      - "count_gauge"
+    - help: Barbican certificate expiration date
+      labels:
+      - "expiration_date"
+      - "certificate_name"
+      - "project_id"
+      - "creator_id"
+      name: openstack_barbican_certificate_expiration_date
+      query: |
+        SELECT
+          CONCAT(
+            UNIX_TIMESTAMP(STR_TO_DATE(IFNULL(secrets.expiration, '1970-01-01 00:00:00'), '%Y-%c-%e %T'))
+          ) AS expiration_date,
+          secrets.name AS certificate_name,
+          secrets.creator_id,
+          projects.external_id AS project_id,
+          COUNT(*) AS count_gauge
+        FROM secrets
+        INNER JOIN projects
+        ON secrets.project_id = projects.id
+        WHERE secret_type = 'certificate' AND expiration != '0'
+        GROUP BY secrets.creator_id, secrets.name, projects.external_id, secrets.expiration;
+      values:
+      - "expiration_date"
+    - help: Barbican opaque certificate expiration date
+      labels:
+      - "expiration_date"
+      - "certificate_name"
+      - "project_id"
+      - "creator_id"
+      name: openstack_barbican_opaque_certificate_expiration_date
+      query: |
+        SELECT
+          CONCAT(
+            UNIX_TIMESTAMP(STR_TO_DATE(IFNULL(secrets.expiration, '1970-01-01 00:00:00'), '%Y-%c-%e %T'))
+          ) AS expiration_date,
+          secrets.name AS certificate_name,
+          secrets.creator_id,
+          projects.external_id AS project_id,
+          COUNT(*) AS count_gauge
+        FROM secrets
+        INNER JOIN projects
+        ON secrets.project_id = projects.id
+        WHERE secret_type = 'opaque' AND expiration != '0'
+        GROUP BY secrets.creator_id, secrets.name, projects.external_id, secrets.expiration;
+      values:
+      - "expiration_date"
+
+memcached:
+  alerts:
+    support_group: identity
+  enabled: true
+  metrics:
+    enabled: true
+
+logging:
+  formatters:
+    context:
+      class: oslo_log.formatters.ContextFormatter
+    default:
+      format: "%(message)s"
+  handlers:
+    stdout:
+      class: StreamHandler
+      args: "(sys.stdout,)"
+      formatter: context
+    "null":
+      class: logging.NullHandler
+      formatter: default
+      args: "()"
+    sentry:
+      class: raven.handlers.logging.SentryHandler
+      level: ERROR
+      args: "()"
+  loggers:
+    root:
+      handlers: stdout, sentry
+      level: WARNING
+    barbican:
+      handlers: stdout, sentry
+      level: INFO
+    eventlet.wsgi.server:
+      handlers: stdout, sentry
+      level: INFO
+    sqlalchemy.engine.base.Engine:
+      handlers: stdout, sentry
+      level: WARNING
+
+sentry:
+  enabled: true
+
+tlsacme: true
+
+# sapcc/openstack-rate-limit-middleware
+sapcc_rate_limit:
+  enabled: true
+
+api-ratelimit-redis:
+  persistence:
+    enabled: false
+  alerts:
+    support_group: identity
+
+# sapcc/openstack-watcher-middleware
+watcher:
+  enabled: true
+
+# sapcc/openstack-audit-middleware
+audit:
+  enabled: true
+  mem_queue_size: 1000
+  central_service:
+    user: rabbitmq
+    password: null
+
+# Deploy Barbican Prometheus alerts.
+alerts:
+  enabled: true
+  # Name of the Prometheus to which the alerts should be assigned to.
+  prometheus: openstack
+
+# HSM-Barbican lunaclient
+hsm:
+  enabled: false
+  luna:
+    image: lunaclient-r9.1
+  multistore:
+    enabled: false
+  ha:
+    enabled: false
+  utimaco_hsm:
+    enabled: false
+    image: utimaco5
+  resources:
+    enabled: true
+    limits:
+      memory: 1Gi
+      cpu: 1
+    requests:
+      memory: 500Mi
+      cpu: 300m
+
+utils:
+  trust_bundle:
+    enabled: true
+
+# barbican nanny
+barbican_nanny:
+  replicas: 1
+  enabled: false
+  # debug mode - no script run in the containers, just a sleep loop
+  debug: false
+  # Sleep time in minutes between runs
+  interval: 1
+  db_secret_move:
+    enabled: false

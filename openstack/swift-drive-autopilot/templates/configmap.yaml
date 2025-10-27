@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: ConfigMap
+
+metadata:
+  name: swift-drive-autopilot
+  labels:
+    system: openstack
+    service: objectstore
+    component: configuration
+
+data:
+  config.yaml: |
+    {{- include "shared_config" . | indent 2 }}
+    drives:
+      - /dev/sd[a-z]
+      - /dev/sd[a-z][a-z]
+  config-multipath.yaml: |
+    {{- include "shared_config" . | indent 2 }}
+    drives:
+      - /dev/mapper/mpath[a-z]
+      - /dev/mapper/mpath[a-z][a-z]

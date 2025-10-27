@@ -1,0 +1,26 @@
+kubernikus:
+  imageTag: a6d875ff7b58eab144505506064490c7982d9353
+  image: keppel.global.cloud.sap/ccloud/kubernikus
+
+  #use a dedicated serviceaccount and proper RBAC rules for this deployment
+  standalone: false
+  useServiceAccount: true
+  includeRBAC: true
+  k8sniff:
+    useRBAC: true
+
+  api:
+    policyFile: /etc/kubernikus/policy-ccadmin.json
+  operator:
+    nodeAffinity: false
+    controllers: [groundctl, deorbiter, migration, servicing, certs]
+  ingress:
+    annotations:
+      disco: "true"
+kubernikus-dex:
+  namespaceOverride: kubernikus
+
+owner-info:
+  support-group: containers
+  service: kubernikus
+  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/system/kubernikus-metal

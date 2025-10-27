@@ -1,0 +1,18 @@
+# vim: set ft=yaml:
+
+groups:
+- name: castellum
+  rules:
+    # aggregate success/failure counters for use in alert expressions
+    - record: castellum_aggregated_asset_resizes
+      expr: sum by (asset) (castellum_asset_resizes{task_outcome="success"})
+    - record: castellum_aggregated_errored_asset_resizes
+      expr: sum by (asset) (castellum_asset_resizes{task_outcome="failure"})
+    - record: castellum_aggregated_failed_asset_scrapes
+      expr: sum by (asset) (castellum_asset_scrapes{task_outcome="failure"})
+    - record: castellum_aggregated_failed_resource_scrapes
+      expr: sum by (asset) (castellum_resource_scrapes{task_outcome="failure"})
+    - record: castellum_aggregated_successful_asset_scrapes
+      expr: sum by (asset) (castellum_asset_scrapes{task_outcome="success"})
+    - record: castellum_aggregated_successful_resource_scrapes
+      expr: sum by (asset) (castellum_resource_scrapes{task_outcome="success"})

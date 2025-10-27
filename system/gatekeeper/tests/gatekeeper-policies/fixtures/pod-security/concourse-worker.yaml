@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  annotations:
+    meta.helm.sh/release-name: concourse-main
+    meta.helm.sh/release-namespace: concourse
+  labels:
+    app.kubernetes.io/managed-by: Helm
+  name: concourse-worker-services
+  namespace: concourse
+spec:
+  template:
+    spec:
+      containers:
+      - name: concourse-worker-services
+        securityContext:
+          privileged: true
+        volumeMounts:
+        - mountPath: /concourse-work-dir
+          name: concourse-work-dir
+        - mountPath: /concourse-keys
+          name: concourse-keys
+          readOnly: true
+        - mountPath: /usr/local/share/ca-certificates
+          name: sap-root-certs
+        - mountPath: /land-worker
+          name: pre-stop
+      nodeSelector:
+        ccloud.sap.com/nodepool: ci-services
+      securityContext: {}
+      tolerations:
+      - effect: NoSchedule
+        key: team
+        operator: Equal
+        value: services
+      volumes:
+      - name: sap-root-certs
+        secret:
+          secretName: concourse-worker
+      - name: concourse-keys
+        secret:
+          secretName: concourse-worker
+      - hostPath:
+          path: /concourse-work-dir
+          type: DirectoryOrCreate
+        name: concourse-work-dir
+      - configMap:
+          name: land-worker
+        name: pre-stop

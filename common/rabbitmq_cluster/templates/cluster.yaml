@@ -1,0 +1,80 @@
+apiVersion: rabbitmq.com/v1beta1
+kind: RabbitmqCluster
+metadata:
+  name: {{ template "fullname" . }}
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    type: rabbitmq
+    component: {{ .Release.Name }}
+    system: openstack
+spec:
+  image: "{{ include "dockerHubMirror" .}}/{{ .Values.image }}:{{.Values.imageTag }}"
+  replicas: {{ default 3 .Values.replicas }}
+  secretBackend:
+    externalSecret:
+      name: {{ template "fullname" . }}-secret
+  resources:
+{{ toYaml .Values.resources | indent 4 }}
+  rabbitmq:
+    additionalConfig: |
+      cluster_partition_handling = pause_minority
+      vm_memory_high_watermark_paging_ratio = 0.95
+      collect_statistics_interval = 10000
+      disk_free_limit.absolute = 1GB
+      ssl_options.verify = {{ default "verify_none"  .Values.ssl_options.verify }}
+{{- if .Values.persistence.enabled }}
+  persistence:
+    storage: {{ .Values.persistence.size }}
+{{- else }}
+  persistence:
+    storage: "0"
+{{- end }}
+  affinity:
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+      - labelSelector:
+          matchExpressions:
+            - key: app.kubernetes.io/name
+              operator: In
+              values:
+              - {{ template "fullname" . }}
+        topologyKey: kubernetes.io/hostname
+    nodeAffinity:
+{{- if .Values.nodeAffinity }}
+      {{- with .Values.nodeAffinity }}
+{{ toYaml . | indent 6 }}
+      {{- end }}
+{{- include "rabbitmq_maintenance_affinity" . }}
+{{- include "rabbitmq_node_reinstall_affinity" . }}
+{{- else }}
+      preferredDuringSchedulingIgnoredDuringExecution:
+{{- include "rabbitmq_maintenance_affinity" . }}
+{{- include "rabbitmq_node_reinstall_affinity" . }}
+{{- end }}
+  override:
+    service:
+      metadata:
+        annotations:
+          prometheus.io/scrape: "true"
+          prometheus.io/targets: openstack
+      spec:
+        ports:
+          - name: metrics
+            protocol: TCP
+            port: 15692
+    statefulSet:
+      spec:
+        template:
+          spec:
+            containers: []
+            priorityClassName: {{ default "critical-infrastructure" .Values.priority_class | quote }}
+            topologySpreadConstraints:
+            - maxSkew: 1
+              topologyKey: "topology.kubernetes.io/zone"
+              whenUnsatisfiable: ScheduleAnyway
+              labelSelector:
+                matchLabels:
+                  app.kubernetes.io/name: {{ template "fullname" . }}

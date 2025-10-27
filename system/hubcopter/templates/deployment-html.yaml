@@ -1,0 +1,70 @@
+kind: Deployment
+apiVersion: apps/v1
+
+metadata:
+  name: hubcopter-html
+
+spec:
+  revisionHistoryLimit: 5
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  selector:
+    matchLabels:
+      name: hubcopter-html
+  template:
+    metadata:
+      labels:
+        name: hubcopter-html
+      annotations:
+        checksum/configmap: {{ include "hubcopter/templates/configmap-html.yaml" . | sha256sum }}
+        kubectl.kubernetes.io/default-container: html
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: name
+                  operator: In
+                  values:
+                  - hubcopter-html
+              topologyKey: "kubernetes.io/hostname"
+            weight: 10
+      volumes:
+        - name: html
+          configMap:
+            name: hubcopter-html
+      containers:
+        - name: html
+          image: {{ .Values.global.registry | required ".Values.global.registry not found" }}/shared-app-images/alpine-nginx:mainline-slim-latest
+          imagePullPolicy: Always # -> if this pod shows up as having a vulnerable image, a rebuild and restart should suffice to get it back to Clean
+          args: [ ]
+          # TODO: securityContext: { runAsNonRoot: true }
+          volumeMounts:
+            - mountPath: /usr/share/nginx/html
+              name: html
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+            timeoutSeconds: 10
+            periodSeconds: 60
+            initialDelaySeconds: 60
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            timeoutSeconds: 5
+            periodSeconds: 5
+          resources:
+            requests:
+              cpu: "10m"
+              memory: "64Mi"
+            limits:
+              cpu: "20m"
+              memory: "128Mi"

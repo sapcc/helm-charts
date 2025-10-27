@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: snmp-ntp-exporter
+  namespace: infra-monitoring
+  labels:
+    app: snmp-ntp-exporter
+    type: exporter
+spec:
+  selector:
+    matchLabels:
+      app: snmp-ntp-exporter
+      type: exporter
+  revisionHistoryLimit: 5
+  replicas: {{ .Values.replicas }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app: snmp-ntp-exporter
+        type: exporter
+      annotations:
+        checksum/configmap.yaml: {{ include  (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        prometheus.io/scrape: "true"
+        prometheus.io/targets: infra-collector
+        prometheus.io/port: "9116"
+    spec:
+      nodeSelector:
+        zone: farm
+      volumes:
+        - name: snmp-ntp-exporter-etc
+          configMap:
+            name: snmp-ntp-exporter
+      containers:
+        - name: snmp-ntp-exporter
+          image: {{ required "docker_repo variable is missing" .Values.docker_repo}}:{{ required "image_version variable is missing" .Values.image_version }}
+          imagePullPolicy: IfNotPresent
+          command:
+            - /bin/snmp_exporter
+          args:
+            - --config.file=/snmp-ntp-exporter-etc/snmp-ntp-exporter.yaml
+          volumeMounts:
+            - mountPath: /snmp-ntp-exporter-etc
+              name: snmp-ntp-exporter-etc
+          ports:
+            - name: metrics
+              containerPort: {{ .Values.snmp_exporter.listen_port }}

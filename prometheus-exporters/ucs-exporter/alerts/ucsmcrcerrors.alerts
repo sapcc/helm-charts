@@ -1,0 +1,37 @@
+# Alerts for port CRC errors
+groups:
+- name: ucsmcrcerrors.alerts
+  rules:
+  - alert: UcsmPortCrcCritical
+    # Filter out Breakout Ports (aggr-port) and Portchannels (pc-)
+    expr: delta(ucsm_crc_error{port !~ ".+/(aggr-port-|pc-).+"}[4h]) > 5
+    for: 20m
+    labels:
+      severity: critical
+      tier: metal
+      service: baremetal
+      support_group: compute
+      context: "{{ $labels.server }}_{{ $labels.port }}"
+      meta: "Server {{ $labels.server }} has an increase of more than 10 crc errors in 2 days for port {{ $labels.port }}"
+      no_alert_on_absence: "true"
+      playbook: docs/devops/alert/baremetal/ucs
+    annotations:
+      description: "CRC errors on server {{ $labels.server }} and port : {{ $labels.port }} are increasing"
+      summary: "CRC errors on server {{ $labels.server }} and port : {{ $labels.port }} are increasing"
+
+  - alert: UcsmBreakoutPortCrcCritical
+    # Only alert on Breakout Ports (aggr-port)
+    expr: delta(ucsm_crc_error{port =~ ".+/aggr-port-.+"}[4h]) > 1000
+    for: 20m
+    labels:
+      severity: warning
+      tier: metal
+      service: baremetal
+      support_group: compute
+      context: "{{ $labels.server }}_{{ $labels.port }}"
+      meta: "Server {{ $labels.server }} has an increase of more than 10 crc errors in 1 day for port {{ $labels.port }}"
+      no_alert_on_absence: "true"
+      playbook: docs/devops/alert/baremetal/ucs
+    annotations:
+      description: "CRC errors on server {{ $labels.server }} and port : {{ $labels.port }} are increasing"
+      summary: "CRC errors on server {{ $labels.server }} and port : {{ $labels.port }} are increasing"

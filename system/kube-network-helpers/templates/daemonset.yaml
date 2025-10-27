@@ -1,0 +1,94 @@
+{{ if .Values.enabled -}}
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  annotations:
+  labels:
+    k8s-app: kube-network-helpers
+  name: kube-network-helpers
+spec:
+  selector:
+    matchLabels:
+      name: kube-network-helpers
+  updateStrategy:
+    rollingUpdate:
+      maxUnavailable: '10%'
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        name: kube-network-helpers
+        k8s-app: kube-network-helpers
+      annotations:
+        configmap-ipmasq-hash: {{ include (print $.Template.BasePath "/configmap-ipmasq.yaml") $ | sha256sum }}  
+    spec:
+      priorityClassName: system-node-critical
+      {{- if .Values.imagePullSecrets }}
+      imagePullSecrets:
+{{ toYaml .Values.imagePullSecrets | indent 8 }}
+      {{- end }}
+      containers:
+{{- if .Values.sidecars.externalip }}
+      - name: externalip
+        image: "{{ required ".Values.images.externalip.image is missing" .Values.images.externalip.image }}:{{ required ".Values.images.externalip.tag is missing" .Values.images.externalip.tag }}"
+        command:
+          - /externalip 
+{{- if .Values.externalip.ignoreaddress }}
+          - --ignore-address={{ .Values.externalip.ignoreaddress}} 
+{{- end }}
+          - --source-address=$(HOST_IP) 
+          - --interface=dummy0 
+          - --logtostderr 
+        env: 
+          - name: HOST_IP
+            valueFrom:
+              fieldRef:
+                fieldPath: status.hostIP
+        securityContext:
+            privileged: true
+{{- end }}
+{{- if .Values.sidecars.nanny }}
+      - name: nanny
+        imagePullPolicy: IfNotPresent
+        image: "{{ required ".Values.images.nanny.image is missing" .Values.images.nanny.image }}:{{ required ".Values.images.nanny.tag is missing" .Values.images.nanny.tag }}"
+        resources:
+          limits:
+            cpu: 100m
+            memory: 128Mi
+          requests:
+            cpu: 100m
+            memory: 64Mi
+        securityContext:
+          capabilities:
+            add:
+            - NET_ADMIN
+{{- end }}
+{{- if .Values.sidecars.ipmasq }}
+      - name: ipmasq
+        image: "{{ required ".Values.images.ipmasq.image is missing" .Values.images.ipmasq.image }}:{{ required ".Values.images.ipmasq.tag is missing" .Values.images.ipmasq.tag }}"
+        securityContext:
+          privileged: false
+          capabilities:
+            add: ["NET_ADMIN", "NET_RAW"]
+        volumeMounts:
+          - name: kube-network-helpers
+            mountPath: /etc/config
+{{- end }}
+      hostNetwork: true
+      nodeSelector:
+        kubernetes.cloud.sap/cp: nextgen
+      serviceAccountName: kube-network-helpers
+      terminationGracePeriodSeconds: 5
+      tolerations:
+{{- if .Values.toleration }}
+        - key: "kubernetes.cloud.sap/unification"
+          operator: "Exists"
+          effect: "NoSchedule"
+{{- else }}
+        - operator: Exists
+{{- end }}
+      volumes:
+        - name: kube-network-helpers
+          configMap:
+            name: kube-network-helpers
+{{- end }}

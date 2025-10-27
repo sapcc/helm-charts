@@ -1,0 +1,50 @@
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: {{ include "fullName" . }}
+  namespace:  {{.Release.Namespace}}
+  labels:
+    {{- include "mariadb.labels" (list $ "noversion" "mariadb" "service" "database") | indent 4 }}
+  annotations:
+{{- if and (and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested) $.Values.linkerd.mariadb.enabled }}
+    linkerd.io/inject: enabled
+{{- end }}
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/component: {{ include "label.component" (list "mariadb" "deployment" "database") }}
+    app.kubernetes.io/instance: {{ $.Release.Name }}-{{ $.Chart.Name }}
+  ports:
+    - name: {{ include "fullName" . }}
+      port: {{.Values.port_public}}
+{{- if or .Values.backup_v2.enabled .Values.readiness.useSidecar }}
+    - name: readiness
+      port: 8080
+{{- end }}
+
+{{- if .Values.backup_v2.enabled }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "fullName" . }}-backup
+  labels:
+    {{- include "mariadb.labels" (list $ "noversion" "mariadb" "service" "backup") | indent 4 }}
+  annotations:
+{{- if and (and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested) $.Values.linkerd.backup.enabled }}
+    linkerd.io/inject: enabled
+{{- end }}
+spec:
+  selector:
+    app.kubernetes.io/component: {{ include "label.component" (list "mariadb" "deployment" "backup") }}
+    app.kubernetes.io/instance: {{ $.Release.Name }}-{{ $.Chart.Name }}
+  ports:
+    - port: 8081
+      name: http
+      targetPort: http
+      protocol: TCP
+    - name: metrics
+      port: 8082
+      protocol: TCP
+{{- end }}

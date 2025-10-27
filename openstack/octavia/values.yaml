@@ -1,0 +1,540 @@
+# Default values for octavia.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+owner-info:
+  support-group: network-api
+  service: octavia
+  maintainers:
+    - Benjamin Ludwig
+    - Andrew Karpow
+  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/openstack/octavia
+
+api_port_internal: 9876
+api_backdoor: false
+
+global:
+  imageNamespace: monsoon
+  dbUser: octavia
+  rpc_response_timeout: 60
+  osprofiler: {}
+  linkerd_requested: true
+
+osprofiler:
+  enabled: false
+
+keystone_authtoken:
+  http_request_max_retries: 10
+
+db_name: octavia
+
+proxysql:
+  mode: ""
+  forceSecretCreation: true
+  native_sidecar: true
+
+rabbitmq:
+  alerts:
+    support_group: network-api
+  metrics:
+    enabled: true
+    sidecar:
+      enabled: false
+
+rabbitmq_notifications:
+  alerts:
+    support_group: network-api
+  metrics:
+    enabled: true
+    sidecar:
+      enabled: false
+
+api-ratelimit-redis:
+  alerts:
+    support_group: network-api
+
+memcached:
+  alerts:
+    support_group: network-api
+
+mariadb:
+  alerts:
+    support_group: network-api
+  enabled: true
+  name: octavia
+  initdb_secret: true
+  persistence_claim:
+    name: db-octavia-pvclaim
+  databases:
+  - octavia
+  users:
+    octavia:
+      name: octavia
+      grants:
+      - "ALL PRIVILEGES on octavia.*"
+  backup_v2:
+    enabled: true
+    databases:
+      - octavia
+    verify_tables:
+      # DB is locked for checksum verification, so don't use too many tables here
+      - octavia.tags
+      - octavia.session_persistence
+    oauth:
+      client_id: octavia
+  ccroot_user:
+    enabled: true
+
+pxc_db:
+  enabled: false
+  name: octavia
+  alerts:
+    support_group: network-api
+  ccroot_user:
+    enabled: true
+  databases:
+    - octavia
+  users:
+    octavia:
+      name: octavia
+      grants:
+        - "ALL PRIVILEGES on octavia.*"
+  pxc:
+    persistence:
+      size: 10Gi
+  backup:
+    enabled: true
+    s3:
+      secrets:
+        aws_access_key_id: null
+        aws_secret_access_key: null
+    pitr:
+      enabled: true
+
+status_manager:
+  health_check_interval: 120
+
+ingress:
+  annotations:
+    kubernetes.io/tls-acme: "true"
+    disco: "true"
+
+mysql_metrics:
+  db_name: octavia
+  db_user: octavia
+  customMetrics:
+    - name: octavia_esd_tags_count_gauge
+      help: Amount of ESD tags used
+      labels:
+        - "status"
+        - "octavia_host"
+      query: |
+        SELECT
+          COUNT(*) AS count_gauge
+        FROM tags
+        WHERE tag='proxy_protocol_2edF_v1_0'
+          OR tag='proxy_protocol_V2_e8f6_v1_0'
+          OR tag='standard_tcp_a3de_v1_0'
+          OR tag='x_forward_5b6e_v1_0'
+          OR tag='one_connect_dd5c_v1_0'
+          OR tag='no_one_connect_3caB_v1_0'
+          OR tag='http_compression_e4a2_v1_0'
+          OR tag='cookie_encryption_b82a_v1_0'
+          OR tag='sso_22b0_v1_0'
+          OR tag='sso_required_f544_v1_0'
+          OR tag='http_redirect_a26c_v1_0'
+          OR tag='ccloud_special_udp_stateless'
+          OR tag='ccloud_special_fastl4_noaging'
+          OR tag='ccloud_special_l4_deactivate_snat'
+          OR tag='ccloud_special_xfh_override';
+      values:
+        - "count_gauge"
+    - name: octavia_esd_l7policies_count_gauge
+      help: Amount of ESD L7policies used
+      labels:
+        - "status"
+        - "octavia_host"
+      query: |
+        SELECT
+          COUNT(*) AS count_gauge
+        FROM l7policy
+        WHERE name='proxy_protocol_2edF_v1_0'
+          OR name='proxy_protocol_V2_e8f6_v1_0'
+          OR name='standard_tcp_a3de_v1_0'
+          OR name='x_forward_5b6e_v1_0'
+          OR name='one_connect_dd5c_v1_0'
+          OR name='no_one_connect_3caB_v1_0'
+          OR name='http_compression_e4a2_v1_0'
+          OR name='cookie_encryption_b82a_v1_0'
+          OR name='sso_22b0_v1_0'
+          OR name='sso_required_f544_v1_0'
+          OR name='http_redirect_a26c_v1_0';
+      values:
+        - "count_gauge"
+    - name: octavia_normal_l7policies_count_gauge
+      help: Amount of non-ESD L7policies used
+      labels:
+        - "status"
+        - "octavia_host"
+      query: |
+        SELECT
+          COUNT(*) AS count_gauge
+        FROM l7policy
+        WHERE name!='proxy_protocol_2edF_v1_0'
+          AND name!='proxy_protocol_V2_e8f6_v1_0'
+          AND name!='standard_tcp_a3de_v1_0'
+          AND name!='x_forward_5b6e_v1_0'
+          AND name!='one_connect_dd5c_v1_0'
+          AND name!='no_one_connect_3caB_v1_0'
+          AND name!='http_compression_e4a2_v1_0'
+          AND name!='cookie_encryption_b82a_v1_0'
+          AND name!='sso_22b0_v1_0'
+          AND name!='sso_required_f544_v1_0'
+          AND name!='http_redirect_a26c_v1_0';
+      values:
+        - "count_gauge"
+    - name: octavia_loadbalancers_count_gauge
+      labels:
+        - "loadbalancer_status"
+        - "loadbalancer_host"
+        - "loadbalancer_project"
+        - "loadbalancer_availabilityzone"
+      help: Total Load Balancer count
+      # We select 'any' for availability_zone if it is null, because it
+      # corresponds to the enum symbol used by Limes:
+      # https://pkg.go.dev/github.com/sapcc/go-api-declarations/limes#AvailabilityZone
+      query: |
+        SELECT
+          COUNT(*) AS count_gauge,
+          provisioning_status AS loadbalancer_status,
+          server_group_id as loadbalancer_host,
+          project_id as loadbalancer_project,
+          IFNULL(availability_zone, 'any') as loadbalancer_availabilityzone
+        FROM load_balancer
+        GROUP BY loadbalancer_host, loadbalancer_status, loadbalancer_project, loadbalancer_availabilityzone;
+      values:
+        - "count_gauge"
+    - name: octavia_listeners
+      labels:
+        - "listener_id"
+        - "listener_name"
+        - "loadbalancer_id"
+        - "loadbalancer_name"
+      help: Total Listener Count
+      query: |
+        SELECT
+          1 AS value,
+          l.id AS listener_id,
+          l.name AS listener_name,
+          lb.id AS loadbalancer_id,
+          lb.name AS loadbalancer_name
+        FROM load_balancer AS lb JOIN listener AS l ON l.load_balancer_id = lb.id
+        WHERE l.provisioning_status != 'DELETED' AND lb.provisioning_status != 'DELETED';
+      values:
+        - "value"
+    - name: octavia_seconds_since_last_nonpending_status
+      labels:
+        - "loadbalancer_id"
+        - "loadbalancer_status"
+        - "loadbalancer_name"
+        - "loadbalancer_host"
+        - "loadbalancer_network"
+        - "loadbalancer_project"
+      help: Seconds since last non-pending state of LB
+      query: |
+        (SELECT
+          UNIX_TIMESTAMP(now()) - UNIX_TIMESTAMP(coalesce(lb.updated_at, lb.created_at)) AS elapsed_time,
+          lb.id AS loadbalancer_id,
+          lb.provisioning_status AS loadbalancer_status,
+          lb.name AS loadbalancer_name,
+          lb.project_id AS loadbalancer_project,
+          lb.server_group_id AS loadbalancer_host,
+          v.network_id AS loadbalancer_network
+        FROM load_balancer AS lb
+        JOIN vip AS v ON v.load_balancer_id=lb.id
+        WHERE lb.provisioning_status LIKE "PENDING_%")
+        UNION (select '0', '', '', '', '', '', '');
+      values:
+        - "elapsed_time"
+    - name: octavia_monitor_agents_heartbeat_seconds
+      help: Worker agent seconds since the last heartbeat
+      labels:
+        - "octavia_host"
+      query: |
+        SELECT
+          compute_flavor AS octavia_host,
+          IFNULL((UNIX_TIMESTAMP(NOW()) - UNIX_TIMESTAMP(MAX(updated_at))), 1000) AS heartbeat_seconds
+        FROM amphora
+        WHERE role = 'MASTER' or role = 'BACKUP'
+        GROUP BY compute_flavor;
+      values:
+        - "heartbeat_seconds"
+    - name: octavia_agent_schedulable
+      help: Octavia target agents ready for scheduling
+      labels:
+        - "agent"
+      query: |
+        SELECT
+          compute_flavor as agent,
+          sum(case role WHEN 'MASTER' THEN 1 WHEN 'BACKUP' THEN 0 END) AS schedulable
+        FROM amphora
+        WHERE
+          (vrrp_interface != 'enabled' OR vrrp_interface IS Null) AND
+          cached_zone is not NULL
+        GROUP BY compute_flavor;
+      values:
+        - "schedulable"
+
+pod:
+  replicas:
+    api: 3
+  lifecycle:
+    upgrades:
+      deployments:
+        revision_history: 5
+        pod_replacement_strategy: RollingUpdate
+        rolling_update:
+          max_unavailable: 0
+          max_surge: 1
+  resources:
+    api:
+      limits:
+        memory: '1200Mi'
+        cpu: '1500m'
+      requests:
+        memory: '384Mi'
+        cpu: '250m'
+    housekeeping:
+      limits:
+        memory: 256Mi
+        cpu: 100m
+      requests:
+        memory: 128Mi
+        cpu: 50m
+    worker:
+      limits:
+        memory: 1024Mi
+        cpu: 1000m
+      requests:
+        memory: 256Mi
+        cpu: 500m
+    status_manager:
+      limits:
+        memory: 1024Mi
+        cpu: 1000m
+      requests:
+        memory: 256Mi
+        cpu: 500m
+    statsd:
+      limits:
+        memory: 64Mi
+        cpu: 50m
+      requests:
+        memory: 24Mi
+        cpu: 10m
+
+providers: "noop_driver: 'The No-Op driver.', f5: 'F5 BigIP driver.', F5Networks: 'F5 BigIP driver'"
+default_provider: "f5"
+default_profiles:
+  profile_http: cc_http_profile
+  profile_http2: cc_http2_profile
+  profile_http_compression: cc_httpcompression_profile
+  profile_l4: cc_fastL4_profile
+  profile_tcp: cc_tcp_profile
+  profile_udp: cc_udp_profile
+  profile_multiplex: cc_oneconnect_profile
+  profile_healthmonitor_tls: cc_serverssl_profile
+external_as3: false
+persist_every: -1
+async_mode: false
+unchecked_mode: false
+
+# Deploy Octavia Prometheus alerts.
+alerts:
+  enabled: true
+  # Name of the Prometheus to which the alerts should be assigned to.
+  prometheus: openstack
+
+sentry:
+  enabled: true
+
+watcher:
+  enabled: false
+
+audit:
+  enabled: true
+  # how many messages to buffer before dumping to log (when rabbit is down or too slow)
+  mem_queue_size: 1000
+
+
+cors:
+  enabled: true
+
+statsd:
+  port: 9102
+  image:
+    repository: prom/statsd-exporter
+    tag: v0.16.0
+
+logging:
+  formatters:
+    context:
+      class: oslo_log.formatters.ContextFormatter
+    default:
+      format: "%(message)s"
+  handlers:
+    stdout:
+      class: StreamHandler
+      args: "(sys.stdout,)"
+      formatter: context
+    "null":
+      class: logging.NullHandler
+      formatter: default
+      args: "()"
+    sentry:
+      class: "raven.handlers.logging.SentryHandler"
+      level: ERROR
+      transport: ThreadedRequestsHTTPTransport
+      args: "()"
+  loggers:
+    root:
+      handlers: stdout, sentry
+      level: WARNING
+    octavia:
+      handlers: stdout, sentry
+      level: DEBUG
+    octavia.common.keystone:
+      handlers: stdout, sentry
+      level: WARNING
+    octavia_f5:
+      handlers: stdout, sentry
+      level: DEBUG
+    octavia_f5.controller.worker.l2_sync_manager:
+      handlers: stdout, sentry
+      level: INFO
+    barbicanclient:
+      handlers: "null"
+      level: ERROR
+    auditmiddleware:
+      handlers: stdout, sentry
+      level: INFO
+    sqlalchemy:
+      handlers: stdout, sentry
+      level: WARNING
+
+utils:
+  trust_bundle:
+    enable: true
+vpa:
+  # https://github.com/sapcc/vpa_butler
+  # The maximum available capacity is split evenly across containers specified in the Deployment, StatefulSet or DaemonSet to derive the upper recommendation bound. This does not work out for pods with a single resource-hungry container with several sidecar containers
+  # Annotate the Deployment, StatefulSet or DaemonSet with vpa-butler.cloud.sap/main-container=$MAIN_CONTAINER. That will distribute 75% of the maximum available capacity to the main container and the rest evenly across all others
+  set_main_container: true
+
+
+# openstack-rate-limit
+rate_limit:
+  enabled: false
+  backend_secret_file: /etc/octavia/ratelimit-backend-secret.conf
+  rate_limit_by: target_project_id
+  max_sleep_time_seconds: 0
+  log_sleep_time_seconds: 10
+  backend_timeout_seconds: 1
+  whitelist:
+    - Default/service
+    - Default/admin
+    - ccadmin/cloud_admin
+    - ccadmin/master
+  whitelist_users: null
+  blacklist: null
+  blacklist_users: null
+  groups:
+    delete_or_update:
+    - delete
+    - update
+  rates:
+    default:
+      lbaas/loadbalancers:
+        - action: read/list
+          limit: 100r/m
+        - action: create
+          limit: 100r/m
+      lbaas/loadbalancers/loadbalancer:
+        - action: read
+          limit: 100r/m
+        - action: delete_or_update
+          limit: 100r/m
+      lbaas/loadbalancers/loadbalancer/stats:
+        - action: read
+          limit: 100r/m
+      lbaas/loadbalancers/loadbalancer/status:
+        - action: read
+          limit: 100r/m
+      lbaas/loadbalancers/loadbalancer/failover:
+        - action: update
+          limit: 100r/m
+      lbaas/listeners:
+        - action: read/list
+          limit: 100r/m
+        - action: create
+          limit: 100r/m
+      lbaas/listeners/listener:
+        - action: read
+          limit: 100r/m
+        - action: delete_or_update
+          limit: 100r/m
+      lbaas/listeners/listener/stats:
+        - action: read
+          limit: 100r/m
+      lbaas/pools:
+        - action: read/list
+          limit: 100r/m
+        - action: create
+          limit: 100r/m
+      lbaas/pools/pool:
+        - action: read
+          limit: 100r/m
+        - action: delete_or_update
+          limit: 100r/m
+      lbaas/pools/pool/members:
+        - action: read/list
+          limit: 100r/m
+        - action: create
+          limit: 100r/m
+        - action: update
+          limit: 100r/m
+      lbaas/pools/pool/members/member:
+        - action: read
+          limit: 100r/m
+        - action: delete_or_update
+          limit: 100r/m
+      lbaas/healthmonitors:
+        - action: read/list
+          limit: 100r/m
+        - action: create
+          limit: 100r/m
+      lbaas/healthmonitors/healthmonitor:
+        - action: read
+          limit: 100r/m
+        - action: delete_or_update
+          limit: 100r/m
+      lbaas/l7policies:
+        - action: read/list
+          limit: 100r/m
+        - action: create
+          limit: 100r/m
+      lbaas/l7policies/l7policy:
+        - action: read
+          limit: 100r/m
+        - action: delete_or_update
+          limit: 100r/m
+      lbaas/l7policies/l7policy/rules:
+        - action: read
+          limit: 100r/m
+        - action: create
+          limit: 100r/m
+      lbaas/l7policies/l7policy/rules/rule:
+        - action: read
+          limit: 100r/m
+        - action: delete_or_update
+          limit: 100r/m

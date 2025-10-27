@@ -1,0 +1,77 @@
+{{- if .Values.poller.enabled }}
+apiVersion: apps/v1
+{{- if .Values.poller.statefulSet.enabled }}
+kind: StatefulSet
+{{- else }}
+kind: Deployment
+{{- end }}
+metadata:
+  name: poller
+  {{- if .Values.poller.annotations }}
+  annotations:
+    {{ toYaml .Values.poller.annotations | indent 4 }}
+  {{- end  }}
+  {{- if .Values.poller.labels }}
+  labels:
+    {{ toYaml .Values.poller.labels | indent 4 }}
+  {{- end }}
+spec:
+  replicas: {{ .Values.poller.replicas }}
+  {{- if .Values.poller.statefulSet.enabled }}
+  podManagementPolicy: {{ .Values.poller.statefulSet.podManagementPolicy }}
+  serviceName: poller
+  updateStrategy:
+  {{- else }}
+  strategy:
+{{- if eq "RollingUpdate" .Values.poller.updateStrategy }}
+    rollingUpdate:
+      maxSurge: {{ .Values.poller.maxSurge }}
+      maxUnavailable: {{ .Values.poller.maxUnavailable }}
+{{- end }}
+  {{- end }}
+    type: {{ .Values.poller.updateStrategy }}
+  selector:
+    matchLabels:
+      name: poller
+      instance: poller
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include "cronus/templates/poller/_config.yaml.tpl" . | sha256sum }}
+      labels:
+        name: poller
+        instance: poller
+    spec:
+      serviceAccountName: poller
+{{- if .Values.poller.affinity }}
+      affinity: {{ toYaml .Values.poller.affinity | nindent 8 }}
+{{- end }}
+      containers:
+        - name: poller
+          image: "{{ .Values.poller.image.name }}:{{ .Values.poller.image.tag }}"
+          imagePullPolicy: {{ .Values.poller.image.pullPolicy }}
+          args:
+            - "-config=/poller/config.yaml"
+          envFrom:
+            - secretRef:
+                name: poller-secret
+          volumeMounts:
+            - name: poller-config
+              mountPath: "/poller/config.yaml"
+              subPath: config.yaml
+          # readinessProbe:
+          #  httpGet:
+          #  initialDelaySeconds: 3
+          ports:
+            - name: metrics
+              containerPort: {{ .Values.poller.prometheus }}
+              protocol: TCP
+      terminationGracePeriodSeconds: {{ .Values.poller.terminationGracePeriod | default 60 }}
+      volumes:
+        - name: poller-config
+          configMap:
+            name: poller-config
+            items:
+              - key: config.yaml
+                path: config.yaml
+{{- end -}}

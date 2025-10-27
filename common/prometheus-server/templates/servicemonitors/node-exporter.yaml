@@ -1,0 +1,43 @@
+{{- $root := . }}
+{{- if .Values.serviceDiscoveries.nodeExporter.enabled }}
+{{- range $name := coalesce .Values.names .Values.global.targets (list .Values.name) }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+
+metadata:
+  name: {{ include "prometheus.fullName" (list $name $root) }}-node-exporters
+  labels:
+    prometheus: {{ include "prometheus.name" (list $name $root) }}
+
+spec:
+  jobLabel: node-exporters
+
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: prometheus-node-exporter
+
+  endpoints:
+    - port: metrics
+      bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+      interval: {{ required "$.Values.serviceDiscoveries.scrapeInterval  missing" $.Values.serviceDiscoveries.scrapeInterval }}
+      scrapeTimeout: {{ required "$.Values.serviceDiscoveries.scrapeTimeout  missing" $.Values.serviceDiscoveries.scrapeTimeout }}
+      scheme: https
+      tlsConfig:
+        insecureSkipVerify: true
+      honorLabels: true
+      relabelings:
+        - targetLabel: component
+          replacement: node-exporter
+        - action: replace
+          sourceLabels: [__meta_kubernetes_endpoint_node_name]
+          targetLabel: node
+        - sourceLabels: [mountpoint]
+          targetLabel: mountpoint
+          regex: '(/host/)(.+)'
+          replacement: '${1}'
+        - targetLabel: job
+          replacement: node-exporters
+{{ include "prometheus.defaultRelabelConfig" $root | indent 8 }}
+{{- end }}
+{{- end }}

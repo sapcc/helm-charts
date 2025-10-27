@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: controller-manager
+  namespace: system
+spec:
+  template:
+    spec:
+      hostNetwork: true
+      containers:
+        - name: manager
+          args:
+            - --health-probe-bind-address=:30081
+            - --metrics-bind-address=127.0.0.1:30082
+          livenessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /healthz
+              port: 30081
+              scheme: HTTP
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          readinessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /readyz
+              port: 30081
+              scheme: HTTP
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          env:
+          - name: ENABLE_WEBHOOKS
+            value: "false"
+          - name: KUBERNETES_SERVICE_HOST
+            value: "apiserver-url"
+          volumeMounts:
+          - name: remote-kubeconfig
+            mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+            readOnly: true
+      volumes:
+      - name: remote-kubeconfig
+        secret:
+          secretName: ipam-operator-remote-kubeconfig
+          items:
+          - key: token
+            path: token
+          - key: bundle.crt
+            path: ca.crt

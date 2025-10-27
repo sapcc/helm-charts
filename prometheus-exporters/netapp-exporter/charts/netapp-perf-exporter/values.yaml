@@ -1,0 +1,79 @@
+fullname: netapp-perf-exporter
+
+prometheus:
+  scrape:  true
+  scrape_service: false
+
+apps:
+  cinder:
+    enabled: false
+    component: "cinder"
+    dupEnabled: false
+    netappsd:
+      query: bb
+  baremetal:
+    enabled: false
+    component: "bare-metal"
+    dupEnabled: false
+    netappsd:
+      query: bm
+  controlplane:
+    enabled: false
+    component: "control-plane"
+    dupEnabled: false
+    netappsd:
+      query: cp
+  manila:
+    enabled: false
+    component: "manila"
+    dupEnabled: false
+
+graphite:
+  enabled: false
+  replicas: 1
+  name: netapp-graphite
+  image: hopsoft/graphite-statsd:v0.9.15-phusion0.9.18
+  resources:
+    requests:
+      memory: 10000Mi
+      cpu: 0.2
+    limits:
+      cpu: 0.4
+
+rbac:
+  create: true
+
+harvest:
+  name: netapp-harvest
+  image: netapp-harvester
+  imageTag: v20221206145524-master-2013c4d
+  resources:
+    requests:
+      cpu: 2000m
+      memory: 1Gi
+    limits:
+      cpu: 6000m
+      memory: 3Gi
+
+exporter:
+  image: prom/graphite-exporter
+  imageTag: v0.8.0
+  memory: 400Mi
+  cpu: 100m
+
+netappsd:
+  image: netappsd
+  imageTag: master-ad6b560-20221007205120
+  memory: 50Mi
+  cpu: 50m
+
+dup:
+  image: keppel.eu-de-1.cloud.sap/ccloud/gotee
+  imageTag: master-57cda30-20200917084241
+
+ports:
+  graphiteInPort: 2003
+  graphiteExporterInPort: 9109
+  graphiteExporterOutPort: 9108
+  dupInPort: 9000
+

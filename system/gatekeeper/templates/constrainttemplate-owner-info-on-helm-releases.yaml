@@ -1,0 +1,84 @@
+apiVersion: templates.gatekeeper.sh/v1
+kind: ConstraintTemplate
+metadata:
+  name: gkownerinfoonhelmreleases
+spec:
+  crd:
+    spec:
+      names:
+        kind: GkOwnerInfoOnHelmReleases
+      validation:
+        # Schema for the `parameters` field
+        openAPIV3Schema:
+          type: object
+          properties:
+            helmManifestParserURL:
+              type: string
+            knownBrokenReleases:
+              type: array
+              items:
+                type: string
+
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      code:
+        - engine: Rego
+          source:
+            version: "v1"
+            libs:
+              - |
+                {{ .Files.Get "lib/add-support-labels.rego" | nindent 16 }}
+              - |
+                {{ .Files.Get "lib/helm-release.rego" | nindent 16 }}
+            rego: |
+              package ownerinfoonhelmreleases
+
+              import data.lib.add_support_labels
+              import data.lib.helm_release
+
+              iro := input.review.object
+              release := helm_release.parse_k8s_object(iro, input.parameters.helmManifestParserURL)
+
+              violation contains {"msg": release.error} if {
+                  release.error != ""
+              }
+
+              configmap_name := sprintf("owner-of-%s", [iro.metadata.labels.name])
+
+              configmaps contains obj if {
+                  release.error == ""
+
+                  obj := release.items[_]
+                  obj.kind == "ConfigMap"
+                  obj.metadata.name == configmap_name
+              }
+
+              violation contains {"msg": add_support_labels.from_helm_release(release, msg)} if {
+                  release.error == ""
+
+                  # Complain if no 'owner-of-<release-name>' ConfigMap exists for this release.
+                  count(configmaps) == 0
+
+                  # Do not complain if this release is part of the knownBrokenReleases.
+                  key := sprintf("%s/%s", [iro.metadata.namespace, iro.metadata.labels.name])
+                  count({k | k := input.parameters.knownBrokenReleases[_]; k == key}) == 0
+
+                  msg := "Chart does not contain owner info. Please add the common/owner-info chart as a direct dependency."
+              }
+
+              violation contains {"msg": add_support_labels.from_helm_release(release, msg)} if {
+                  release.error == ""
+
+                  count(configmaps) > 0
+
+                  # Check if the owner-info chart is not outdated
+                  upToDateVersion := "0.2.0"
+                  obj := configmaps[_]
+                  version := object.get(obj.metadata, ["labels", "owner-info-version"], "")
+                  semver.compare(version, upToDateVersion) < 0
+
+                  msg := sprintf(
+                      "Chart uses outdated owner-info version %q. Please update to at least %q.",
+                      [version, upToDateVersion],
+                  )
+              }

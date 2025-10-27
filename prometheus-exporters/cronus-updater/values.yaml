@@ -1,0 +1,80 @@
+global:
+  alerts:
+    prometheus: promerheus-server
+exporter:
+  enabled: true
+  replicas: 1
+  image:
+    name: cronus-exporter-repository
+    pullPolicy: IfNotPresent
+    tag: latest
+    imagePullSecrets: []
+  duration: "10m"
+  period: 10
+  loopInterval: 10
+  pushgatewayUrl: http://localhost:9091
+  accountStatusTimeout: 5m
+config:
+  multiCloud:
+    endpoint: mcendpoint
+    username: username
+    password: password
+  allowedServices:
+    email: region
+  awsAccess: access
+  awsSecret: secrets
+  keystone:
+    region: region
+
+alerts:
+  enabled: false
+  prometheus: infra-frontend
+
+updater:
+  enabled: false
+  prometheus: :3223
+  prometheusPort: 3223
+  sleepDuration: 1h
+  contacts:
+    - someone@example.com
+  image:
+    name: cronus-updater-repository
+    pullPolicy: IfNotPresent
+    tag: latest
+    imagePullSecrets: []
+  applicationCredentialsProject: project
+  applicationCredentialsDomain: domain
+  applicationCredentialsName: name
+  applicationCredentialsSecret: sec
+  applicationCredentialsId: id
+
+
+secAttNotifier:
+  enabled: false
+  awsAccess: ""
+  awsSecret: ""
+  ec2Access: ""
+  ec2Secret: ""
+  smtpPassword: "" 
+  port: 587
+  smtpHost: ""
+  cronusEndpoint: cronus-endpoint
+  sourceEmail: somesender@example.com
+  secAttNotificationHour: 23
+  secAttNotificationDay: Monday
+  secondDay: Wednesday
+  days: 
+    - Monday
+    - Wednesday
+    - Friday
+  leasedUntilLteMonths: 5
+  charSet: UTF-8
+  body: |
+    email-body
+  subject: "email-subject"
+  contact:
+    - someone@example.com
+
+owner-info:
+  helm-chart-url: 'https://github.com/sapcc/helm-charts/tree/master/prometheus-exporters/cronus-updater'
+  support-group: email

@@ -1,0 +1,59 @@
+{{- $cdomains := .Values.global.domain_seeds.customer_domains | required "missing value for .Values.global.domain_seeds.customer_domains" -}}
+{{- $domains := concat (list "ccadmin") $cdomains -}}
+{{- $cdomainsWithoutSupportProjects := .Values.global.domain_seeds.customer_domains_without_support_projects | required "missing value for .Values.global.domain_seeds.customer_domains_without_support_projects" -}}
+
+apiVersion: "openstack.stable.sap.cc/v1"
+kind: OpenstackSeed
+metadata:
+  name: keppel-support-seed
+
+spec:
+  requires:
+  - keppel/keppel-seed
+  {{- range $domains }}
+  - monsoon3/domain-{{replace "_" "-" .}}-seed
+  {{- end }}
+
+  domains:
+    {{- range $domains }}
+    - name: {{ . | lower }}
+      groups:
+      - name: {{ hasPrefix "iaas-" . | ternary . ( upper . ) }}_API_SUPPORT
+        role_assignments:
+        {{- if not (has . $cdomainsWithoutSupportProjects) }}
+        - project: api_support
+          role: registry_admin
+        {{- end }}
+        {{- if eq . "ccadmin" }}
+        - project: api_tools
+          role: registry_admin
+        {{- end }}
+        # Inherit read-only role within domain
+        - domain: {{ . | lower }}
+          role: registry_viewer
+          inherited: true
+      - name: {{ hasPrefix "iaas-" . | ternary . ( upper . ) }}_STORAGE_SUPPORT
+        role_assignments:
+        {{- if not (has . $cdomainsWithoutSupportProjects) }}
+        - project: storage_support
+          role: registry_admin
+        {{- end }}
+        {{- if eq . "ccadmin" }}
+        - project: storage_tools
+          role: registry_admin
+        {{- end }}
+        # Inherit read-only role within domain
+        - domain: {{ . | lower }}
+          role: registry_viewer
+          inherited: true
+      - name: {{ hasPrefix "iaas-" . | ternary . ( upper . ) }}_SERVICE_DESK
+        role_assignments:
+        {{- if not (has . $cdomainsWithoutSupportProjects) }}
+        - project: service_desk
+          role: registry_admin
+        {{- end }}
+        # Inherit read-only role within domain
+        - domain: {{ . | lower }}
+          role: registry_viewer
+          inherited: true
+    {{- end }}

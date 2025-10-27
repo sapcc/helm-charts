@@ -1,0 +1,911 @@
+{{- $kubeMonitoringReleaseName := "kube-monitoring" }}
+{{- if eq .Values.cluster_type "baremetal" }}
+  {{- $kubeMonitoringReleaseName = "kube-monitoring-metal" }}
+{{- end }}
+{{- if eq .Values.cluster_type "cloudshell" "concourse" "gh-actions" "internet" }}
+  {{- $kubeMonitoringReleaseName = "kube-monitoring-scaleout" }}
+{{- end }}
+{{- if eq .Values.cluster_type "kubernikus" "scaleout" "virtual" "test" }}
+  {{- $kubeMonitoringReleaseName = printf "kube-monitoring-%s" .Values.cluster_type }}
+{{- end -}}
+
+apiVersion: templates.gatekeeper.sh/v1
+kind: ConstraintTemplate
+metadata:
+  name: gkpodsecurity
+spec:
+  crd:
+    spec:
+      names:
+        kind: GkPodSecurity
+
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      code:
+        - engine: Rego
+          source:
+            version: "v1"
+            libs:
+              - |
+                {{ .Files.Get "lib/add-support-labels.rego" | nindent 16 }}
+              - |
+                {{ .Files.Get "lib/traversal.rego" | nindent 16 }}
+            rego: |
+              package podsecurity
+
+              import data.lib.add_support_labels
+              import data.lib.traversal
+
+              iro := input.review.object
+              pod := traversal.find_pod(iro)
+              containers := traversal.find_container_specs(iro)
+
+              helmReleaseName := object.get(iro.metadata, ["annotations", "meta.helm.sh/release-name"], "<none>")
+              helmReleaseNamespace := object.get(iro.metadata, ["annotations", "meta.helm.sh/release-namespace"], "<none>")
+
+              ########################################################################
+              # allowlists: match pods that may use certain privileged features
+              #
+              # By default, everything is forbidden; positive allowlist entries are
+              # at the bottom of this file, ordered by privileged service.
+
+              default isPodAllowedToUseHostNetwork := false
+              default isPodAllowedToUseHostPID := false
+              default isContainerAllowedToUsePrivilegeEscalation(container) := false
+              default isContainerAllowedToBePrivileged(container) := false
+              default isContainerAllowedToUseCapability(container, capability) := false
+              default isContainerAllowedToAccessHostPath(container, hostPath, readOnly) := false
+
+              # We add some blanket allowances for readonly access to certain paths
+              # that are known to not contain credentials.
+              isContainerAllowedToAccessHostPath(container, hostPath, readOnly) if {
+                  readOnly
+                  hostPath in ["/etc/machine-id", "/lib/modules"]
+              }
+
+              ########################################################################
+              # generate violations for all pods using privileged security features
+              # without being allowlisted
+
+              violation contains {"msg": add_support_labels.from_k8s_object(iro, msg)} if {
+                  pod.isFound
+                  object.get(pod.spec, ["hostNetwork"], false)
+                  not isPodAllowedToUseHostNetwork
+                  msg := "pod is not allowed to set spec.hostNetwork = true"
+              }
+
+              violation contains {"msg": add_support_labels.from_k8s_object(iro, msg)} if {
+                  pod.isFound
+                  object.get(pod.spec, ["hostPID"], false)
+                  not isPodAllowedToUseHostPID
+                  msg := "pod is not allowed to set spec.hostPID = true"
+              }
+
+              violation contains {"msg": add_support_labels.from_k8s_object(iro, msg)} if {
+                  container := containers[_]
+                  object.get(container, ["securityContext", "allowPrivilegeEscalation"], false)
+                  not isContainerAllowedToUsePrivilegeEscalation(container)
+                  msg := sprintf("pod is not allowed to set spec.containers[%q].securityContext.allowPrivilegeEscalation = true", [container.name])
+              }
+
+              violation contains {"msg": add_support_labels.from_k8s_object(iro, msg)} if {
+                  container := containers[_]
+                  object.get(container, ["securityContext", "privileged"], false)
+                  not isContainerAllowedToBePrivileged(container)
+                  msg := sprintf("pod is not allowed to set spec.containers[%q].securityContext.privileged = true", [container.name])
+              }
+
+              violation contains {"msg": add_support_labels.from_k8s_object(iro, msg)} if {
+                  container := containers[_]
+                  capabilities := object.get(container, ["securityContext", "capabilities", "add"], [])
+                  capability := capabilities[_]
+                  not isContainerAllowedToUseCapability(container, capability)
+                  msg := sprintf("pod is not allowed to set spec.containers[%q].securityContext.capabilities.add = [%q]", [container.name, capability])
+              }
+
+              violation contains {"msg": add_support_labels.from_k8s_object(iro, msg)} if {
+                  # if pod has a hostPath volume...
+                  pod.isFound
+                  volume := pod.spec.volumes[_]
+                  hostPath := object.get(volume, ["hostPath", "path"], null)
+                  hostPath != null
+
+                  # ...and a container is mounting it...
+                  container := containers[_]
+                  volumeMount := container.volumeMounts[_]
+                  volume.name == volumeMount.name
+                  readOnly := object.get(volumeMount, ["readOnly"], false)
+
+                  # ...it needs to be allowed
+                  not isContainerAllowedToAccessHostPath(container, hostPath, readOnly)
+                  msg := sprintf("container %q in this pod is not allowed to mount hostPath volumes with path %q (readonly = %s)", [container.name, hostPath, readOnly])
+              }
+
+              ########################################################################
+              # allowlist for audit-logs-auditbeat pod (see below for fluent)
+
+              default isAuditbeatPod := false
+              isAuditbeatPod if {
+                  iro.kind == "DaemonSet"
+                  iro.metadata.name == "audit-logs-auditbeat"
+                  iro.metadata.namespace == "audit-logs"
+              }
+
+              # The "auditbeat" container needs to break out into the host to read
+              # and also configure the kernel audit log.
+              isPodAllowedToUseHostNetwork if {
+                  isAuditbeatPod
+              }
+
+              isPodAllowedToUseHostPID if {
+                  isAuditbeatPod
+              }
+              isContainerAllowedToUseCapability(container, capability) if {
+                  isAuditbeatPod
+                  container.name == "auditbeat"
+                  capability in {"AUDIT_CONTROL", "AUDIT_READ", "AUDIT_WRITE"}
+              }
+              isContainerAllowedToAccessHostPath(container, hostPath, readOnly) if {
+                  isAuditbeatPod
+                  container.name == "auditbeat"
+                  readOnly
+                  regex.match("^(?:/s?bin|/usr/s?bin|/etc|/run/containerd)$", hostPath)
+              }
+
+              isContainerAllowedToAccessHostPath(container, hostPath, readOnly) if {
+                  isAuditbeatPod
+                  container.name == "auditbeat"
+                  hostPath == "/var/lib/auditbeat-data"
+              }
+
+              # The init container "enable-pamd-tty" needs to break out into the host
+              # to setup audit logging for PAM-based authentication (this is only
+              # necessary in clusters where the worker nodes are provisioned by
+              # OpenStack instead of Terraform).
+              {{- if eq .Values.cluster_type "cloudshell" "concourse" "gh-actions" "internet" "kubernikus" "scaleout" "test" }}
+              isContainerAllowedToBePrivileged(container) if {
+                  isAuditbeatPod
+                  container.name == "enable-pamd-tty"
+              }
+
+              isContainerAllowedToAccessHostPath(container, hostPath, readOnly) if {
+                  isAuditbeatPod
+                  container.name == "enable-pamd-tty"
+              }
+              {{- end }}
+
+              ########################################################################
+              # allowlist for Calico
+              # NOTE: Most of Calico is covered by the blanket rule for kube-system.
+
+              isPodAllowedToUseHostNetwork if {
+                  iro.kind == "Job"
+                  iro.metadata.namespace == "cni-nanny"
+                  regex.match("^bgp-peer-discovery-.+$", iro.metadata.name)
+                  object.get(iro.metadata.labels, ["app.kubernetes.io/managed-by"], "<none>") == "cni-nanny"
+              }
+
+              ########################################################################
+              # allowlist for Cinder pods
+
+              {{- if eq .Values.cluster_type "baremetal" "test" }}
+              default isCinderVolumePod := false
+              isCinderVolumePod if {
+                  iro.kind == "Deployment"
+                  iro.metadata.namespace == "monsoon3"
+                  regex.match("^cinder-volume(?:-backup)?-(?:vmware-vc)?(?:netapp|kvm)?-(stnpca[0-9]+-st[0-9]+|[a-z]-[0-9]+)$", iro.metadata.name)
+                  # Temporary removing the helm check as we are not yet ready with the NetApp operator, and we are deploying the pods via helm
+                  # helmReleaseName == "<none>" # comes from VCenterTemplate
+              }
+
+              # TODO: Why do cinder-volume-vmware pods need CAP_SYS_ADMIN?
+              isContainerAllowedToUseCapability(container, capability) if {
+                  isCinderVolumePod
+                  regex.match("^keppel\\.[a-z0-9-.]+/ccloud/loci-cinder:", container.image)
+                  container.name == iro.metadata.name
+                  capability in {"CHOWN", "DAC_OVERRIDE", "DAC_READ_SEARCH", "FOWNER", "NET_ADMIN", "SYS_ADMIN" }
+              }
+              {{- end }}
+
+              ########################################################################
+              # allowlist for Cloudprober
+
+              {{- if eq .Values.cluster_type "baremetal" "test" }}
+              default isCloudproberPod := false
+              isCloudproberPod if {
+                  iro.kind == "Deployment"
+                  iro.metadata.namespace == "infra-monitoring"
+                  flatRegion := {{ .Values.global.region | replace "-" "" | quote }} # e.g. "qade1" for qa-de-1
+                  regex.match(sprintf("^cloudprober-%s[a-z]", [flatRegion]), iro.metadata.name)
+                  helmReleaseName == "cloudprober"
+              }
+
+              # The cloudprober pods need CAP_NET_RAW to send pings.
+              isContainerAllowedToUseCapability(container, capability) if {
+                  isCloudproberPod
+                  container.name == "prober"
+                  capability == "NET_RAW"
+              }
+              {{- end }}
+
+              ########################################################################
+              # allowlist for Concourse
+
+              {{- if eq .Values.cluster_type "concourse" "test" }}
+              default isConcourseKubernetesIngressPod := false
+              isConcourseKubernetesIngressPod if {
+                  iro.kind == "Deployment"
+                  iro.metadata.name == sprintf("%s-kubernetes-ingress", [helmReleaseName])
+                  iro.metadata.namespace == "concourse"
+                  startswith(helmReleaseName, "concourse-")
+              }
+
+              default isConcourseKubernetesIngressJobPod := false
+              isConcourseKubernetesIngressJobPod if {
+                  iro.kind == "Job"
+                  startswith(iro.metadata.name, sprintf("%s-kubernetes-ingress-crdjob-", [helmReleaseName]))
+                  iro.metadata.namespace == "concourse"
+                  startswith(helmReleaseName, "concourse-")
+              }
+
+              # TODO: Why does Concourse need its own ingress? And why does it need
+              # CAP_NET_BIND_SERVICE instead of being exposed via a k8s Service?
+              isContainerAllowedToUsePrivilegeEscalation(container) if {
+                  isConcourseKubernetesIngressPod
+              }
+
+              isContainerAllowedToUseCapability(container, capability) if {
+                  isConcourseKubernetesIngressPod
+                  capability == "NET_BIND_SERVICE"
+              }
+
+              isContainerAllowedToUseCapability(container, capability) if {
+                  isConcourseKubernetesIngressJobPod
+                  capability == "NET_BIND_SERVICE"
+              }
+
+              default isConcourseWorkerPod := false
+              isConcourseWorkerPod if {
+                  iro.kind == "DaemonSet"
+                  startswith(iro.metadata.name, "concourse-worker-")
+                  iro.metadata.namespace == "concourse"
+                  startswith(helmReleaseName, "concourse-")
+
+                  # daemonset name (e.g. "concourse-worker-services") must match nodepool (e.g. "ci-services")
+                  nodePool := object.get(pod.spec, ["nodeSelector", "ccloud.sap.com/nodepool"], "<none>")
+                  nodePool == sprintf("ci-%s", [trim_prefix(iro.metadata.name, "concourse-worker-")])
+              }
+
+              # Concourse worker pods need to access their work directory on the host FS.
+              isContainerAllowedToBePrivileged(container) if {
+                  isConcourseWorkerPod
+              }
+
+              isContainerAllowedToAccessHostPath(container, hostPath, readOnly) if {
+                  isConcourseWorkerPod
+                  hostPath == "/concourse-work-dir"
+              }
+              {{- end }}
+
+              ########################################################################
+              # allowlist for OpenSearch
+
+              {{- if eq .Values.cluster_type "baremetal" "scaleout" "test" }}
+              default isOpenSearchPod := false
+
+              {{- if eq .Values.cluster_type "baremetal" "test" }}
+              isOpenSearchPod if {
+                  iro.kind == "StatefulSet"
+                  iro.metadata.namespace == "hermes"
+                  iro.metadata.name in {"opensearch-hermes", "opensearch-hermes-master"}
+                  helmReleaseName == "opensearch-hermes"
+              }
+              {{- end }}
+
+              {{- if eq .Values.cluster_type "scaleout" "test" }}
+              isOpenSearchPod if {
+                  iro.kind == "StatefulSet"
+                  iro.metadata.namespace == "opensearch-logs"
+                  iro.metadata.name in {"opensearch-logs-client", "opensearch-logs-data", "opensearch-logs-master"}
+                  helmReleaseName == "opensearch-logs"
+              }
+              {{- end }}
+
+              # Elastic and OpenSearch need to use sysctl to increase `vm.max_map_count`:
+              # <https://www.elastic.co/guide/en/elasticsearch/reference/current/vm-max-map-count.html>
+              isContainerAllowedToBePrivileged(container) if {
+                  isOpenSearchPod
+                  container.name in {"sysctl", "configure-sysctl"}
+                  container.command[0] == "sysctl"
+              }
+              {{- end }}
+
+              ########################################################################
+              # allowlist for falco
+
+              default isFalcoPod := false
+              isFalcoPod if {
+                  iro.kind == "DaemonSet"
+                  iro.metadata.name == "{{ $kubeMonitoringReleaseName }}-falco"
+                  iro.metadata.namespace == "kube-monitoring"
+              }
+
+              isContainerAllowedToAccessHostPath(container, hostPath, readOnly) if {
+                  isFalcoPod
+                  container.name == "falco"
+                  regex.match("^keppel\\.[a-z0-9-.]+/ccloud-dockerhub-mirror/falcosecurity/falco(-no-driver|-distroless)?:", container.image)
+                  hostPath in ["/boot", "/lib/modules", "/usr", "/etc", "/var/run", "/run/containerd", "/run/crio", "/proc"]
+              }
+
+              isContainerAllowedToBePrivileged(container) if {
+                  isFalcoPod
+                  container.name == "falco"
+                  regex.match("^keppel\\.[a-z0-9-.]+/ccloud-dockerhub-mirror/falcosecurity/falco(-no-driver|-distroless)?:", container.image)
+              }
+
+              ########################################################################
+              # allowlist for fluent and fluent-bit
+
+              # TODO: Would it be advisable to merge all the different Fluent deployments?
+              default isFluentPod := false
+              {{- if eq .Values.cluster_type "baremetal" "scaleout" "test" }}
+              isFluentPod if {
+                  # In the "main" clusters (baremetal and the original scaleouts), Team
+                  # Supervision deploys several fluent daemonsets in the "logs"
+                  # namespace (for ELK) or "opensearch-logs" namespace (for
+                  # OpenSearch).
+                  iro.kind == "DaemonSet"
+                  iro.metadata.namespace in {"logs", "opensearch-logs"}
+                  iro.metadata.name in {"fluent", "fluent-prometheus", "fluent-systemd"}
+                  helmReleaseName == iro.metadata.namespace
+              }
+
+              isFluentPod if {
+                  # In the "main" clusters (baremetal and the original scaleouts), Team
+                  # Supervision deploys a fluent-bit daemonset in the "logs" namespace.
+                  # This daemonset is intended to replace fluent-systemd.
+                  iro.kind == "DaemonSet"
+                  iro.metadata.namespace == "logs"
+                  iro.metadata.name == "logs-fluent-bit-systemd"
+                  helmReleaseName == "logs"
+              }
+              {{- end }}
+              {{- if not (eq .Values.cluster_type "baremetal" "scaleout") }}
+              isFluentPod if {
+                  # In all other clusters, kube-monitoring deploys one fluent-bit daemonset.
+                  iro.kind == "DaemonSet"
+                  iro.metadata.namespace == "kube-monitoring"
+                  iro.metadata.name == "{{ $kubeMonitoringReleaseName }}-fluent-bit"
+                  helmReleaseName == "{{ $kubeMonitoringReleaseName }}"
+              }
+              {{- end }}
+              isFluentPod if {
+                  # The audit-logs deployment also contains another set of Fluent pods
+                  # with different log targets.
+                  iro.kind == "DaemonSet"
+                  iro.metadata.namespace == "audit-logs"
+                  iro.metadata.name in {"fluent-audit-container", "fluent-audit-systemd"}
+                  helmReleaseName == "audit-logs"
+              }
+
+              isContainerAllowedToAccessHostPath(container, hostPath, readOnly) if {
+                  # All Fluent pods need to access log files on the host.
+                  # TODO: Why not readOnly? Can this be restricted to specific subpaths?
+                  isFluentPod
+                  hostPath == "/var/log"
+              }
+
+              isContainerAllowedToAccessHostPath(container, hostPath, readOnly) if {
+                  # Most Fluent pods need to read container logs.
+                  isFluentPod
+                  not endswith(container, "-systemd")
+                  hostPath == "/var/lib/docker/containers"
+                  readOnly
+              }
+
+              ########################################################################
+              # allowlist for opentelemetry
+
+              isOtelPod if {
+                  # In the "main" clusters (baremetal and the original scaleouts), Team
+                  # Supervision deploys several otel daemonsets in the "logs"
+                  # namespace.
+                  iro.kind == "DaemonSet"
+                  iro.metadata.namespace in {"logs"}
+                  iro.metadata.name in {"logs-operator", "logs-collector"}
+                  helmReleaseName == "logs"
+              }
+
+              isContainerAllowedToAccessHostPath(container, hostPath, readOnly) if {
+                  # Most Otel pods need to access log files on the host.
+                  isOtelPod
+                  hostPath == "/var/log"
+                  readOnly
+              }
+
+              ########################################################################
+              # allowlist for Ironic pods
+
+              {{- if eq .Values.cluster_type "baremetal" "test" }}
+              default isIronicInspectorPod := false
+              isIronicInspectorPod if {
+                  iro.kind == "Deployment"
+                  iro.metadata.namespace == "monsoon3"
+                  iro.metadata.name == "ironic-inspector"
+                  helmReleaseName == "ironic"
+              }
+
+              # TODO: Why do ironic-inspector pods need CAP_NET_ADMIN?
+              isContainerAllowedToUseCapability(container, capability) if {
+                  isIronicInspectorPod
+                  regex.match("^keppel\\.[a-z0-9-.]+/ccloud/loci-ironic:", container.image)
+                  container.name == "ironic-inspector"
+                  capability == "NET_ADMIN"
+              }
+              {{- end }}
+
+              ########################################################################
+              # allowlist for kube-monitoring
+
+              default isNodeExporterPod := false
+              isNodeExporterPod if {
+                  iro.kind == "DaemonSet"
+                  iro.metadata.namespace == "kube-monitoring"
+                  iro.metadata.name == "{{ $kubeMonitoringReleaseName }}-prometheus-node-exporter"
+                  helmReleaseName == "{{ $kubeMonitoringReleaseName }}"
+              }
+
+              # node-exporter needs node-level access to collect node metrics
+              isPodAllowedToUseHostNetwork if {
+                  isNodeExporterPod
+              }
+
+              isPodAllowedToUseHostPID if {
+                  isNodeExporterPod
+              }
+
+              isContainerAllowedToAccessHostPath(container, hostPath, readOnly) if {
+                  isNodeExporterPod
+                  container.name == "node-exporter"
+
+                  # the node exporter needs to inspect the host filesystem to collect metrics
+                  readOnly
+              }
+
+              default isOOMKillExporterPod := false
+              isOOMKillExporterPod if {
+                  iro.kind == "DaemonSet"
+                  iro.metadata.namespace == "kube-monitoring"
+                  iro.metadata.name == "oomkill-exporter"
+                  helmReleaseName == "{{ $kubeMonitoringReleaseName }}"
+              }
+
+              # The oomkill-exporter needs to talk to container runtimes and read the kernel log.
+              isContainerAllowedToBePrivileged(container) if {
+                  isOOMKillExporterPod
+                  container.name == "oomkill-exporter"
+              }
+
+              isContainerAllowedToAccessHostPath(container, hostPath, readOnly) if {
+                  isOOMKillExporterPod
+                  container.name == "oomkill-exporter"
+                  hostPath in {"/run/containerd/containerd.sock", "/var/run/docker.sock"}
+              }
+
+              isContainerAllowedToAccessHostPath(container, hostPath, readOnly) if {
+                  isOOMKillExporterPod
+                  container.name == "oomkill-exporter"
+                  hostPath == "/dev/kmsg"
+                  readOnly
+              }
+
+              ########################################################################
+              # allowlist for kube-system namespace (TODO: this is extremely coarse,
+              # break this down into individual services)
+
+              default isKubeSystemPod := false
+              isKubeSystemPod if {
+                  iro.kind in {"CronJob", "DaemonSet", "Deployment"}
+                  iro.metadata.namespace == "kube-system"
+                  # NOTE: In scaleout, this includes daemonsets and deployments that are
+                  # injected by Kubernikus (CNI, Wormhole, kube-proxy, etc.).
+                  # NOTE: "CronJob" refers to "k3s-backup" in the a-clusters.
+              }
+
+              isKubeSystemPod if {
+                  # The calico-cni Helm deployment in kube-system includes some
+                  # components that need to be placed in other namespaces.
+                  iro.kind in {"CronJob", "DaemonSet", "Deployment"}
+                  helmReleaseNamespace == "kube-system"
+              }
+
+              # Many kube-system components need broad node-level access (e.g.
+              # kube-proxy, MTU discovery, wormhole to k8s central).
+              isPodAllowedToUseHostNetwork if {
+                  isKubeSystemPod
+              }
+
+              isPodAllowedToUseHostPID if {
+                  # kube-system-ldap-named-user and nvidia-driver-installer need this
+                  isKubeSystemPod
+              }
+
+              isContainerAllowedToUsePrivilegeEscalation(container) if {
+                  # needed by kube-system-ingress-nginx-external-controller, in scaleout
+                  # also by csi-cinder-node-plugin
+                  isKubeSystemPod
+              }
+
+              isContainerAllowedToBePrivileged(container) if {
+                  isKubeSystemPod
+              }
+
+              isContainerAllowedToUseCapability(container, capability) if {
+                  # many kube-system components need broad network access (e.g. coredns,
+                  # CNI, ingress-nginx)
+                  isKubeSystemPod
+              }
+
+              isContainerAllowedToAccessHostPath(container, hostPath, readOnly) if {
+                  isKubeSystemPod
+              }
+
+              ########################################################################
+              # allowlist for Kubernikus
+
+              {{- if eq .Values.cluster_type "admin" "kubernikus" "virtual" "test" }}
+              isContainerAllowedToUseCapability(container, capability) if {
+                  iro.kind == "Deployment"
+                  iro.metadata.namespace == "kubernikus"
+                  regex.match("-apiserver$", iro.metadata.name)
+                  regex.match("^keppel\\.[a-z0-9-]+\\.cloud\\.sap/ccloud/kubernikus:", container.image)
+
+                  # the wormhole container needs to establish a network tunnel between
+                  # the apiserver pod and the target Kubernikus cluster
+                  capability in {"NET_ADMIN"}
+              }
+              {{- end }}
+
+              ########################################################################
+              # allowlist for linkerd
+
+              default isPodWithLinkerdInit := false
+              isPodWithLinkerdInit if {
+                  # linkerd's own containers specify the linkerd-init container in their Deployment
+                  iro.kind == "Deployment"
+                  iro.metadata.namespace == "linkerd"
+                  iro.metadata.name in {"linkerd-destination", "linkerd-identity", "linkerd-proxy-injector"}
+                  helmReleaseName == "linkerd"
+              }
+
+              isPodWithLinkerdInit if {
+                  # payload containers get linkerd-init via the linkerd mutation webhook, so the init container
+                  # will only be visible on the Pod level, not on PodSpec-owning objects
+                  iro.kind == "Pod"
+              }
+
+              default isLinkerdInitContainer(container) := false
+              isLinkerdInitContainer(container) if {
+                  isPodWithLinkerdInit
+                  container.name == "linkerd-init"
+                  regex.match("^keppel\\.[a-z0-9-]+\\.cloud\\.sap/ccloud/servicemesh/proxy-init:", container.image)
+              }
+
+              isContainerAllowedToUseCapability(container, capability) if {
+                  isLinkerdInitContainer(container)
+                  capability in {"NET_ADMIN", "NET_RAW"}
+              }
+
+              isContainerAllowedToUsePrivilegeEscalation(container) if {
+                  isLinkerdInitContainer(container)
+              }
+
+              isContainerAllowedToBePrivileged(container) if {
+                  isLinkerdInitContainer(container)
+                  container.name == "linkerd-init"
+              }
+
+              ########################################################################
+              # allowlist for neutron-netns-prober
+
+              {{- if eq .Values.cluster_type "baremetal" "test" }}
+              default isNeutronNetnsProberPod := false
+              isNeutronNetnsProberPod if {
+                  iro.kind == "DaemonSet"
+                  iro.metadata.namespace == "neutron-netns-prober"
+                  iro.metadata.name == "neutron-netns-prober"
+                  helmReleaseName == "neutron-netns-prober"
+              }
+
+              # The neutron-netns-prober needs to reach into all network namespaces.
+              isPodAllowedToUseHostPID if {
+                  isNeutronNetnsProberPod
+              }
+
+              isContainerAllowedToBePrivileged(container) if {
+                  isNeutronNetnsProberPod
+                  container.name == "prober"
+              }
+              {{- end }}
+
+              ########################################################################
+              # allowlist for neutron-network-agent
+
+              {{- if eq .Values.cluster_type "baremetal" "test" }}
+              default isNeutronNetworkAgentPod := false
+              isNeutronNetworkAgentPod if {
+                  iro.kind == "StatefulSet"
+                  iro.metadata.namespace == "monsoon3"
+                  startswith(iro.metadata.name, "neutron-network-agent-")
+                  helmReleaseName == "neutron"
+              }
+
+              # The agent containers need to reach into most customer networks.
+              # The init container needs to load required kernel modules.
+              isContainerAllowedToBePrivileged(container) if {
+                  isNeutronNetworkAgentPod
+                  container.name in {"neutron-dhcp-agent", "init"}
+              }
+
+              isContainerAllowedToUseCapability(container, capability) if {
+                  isNeutronNetworkAgentPod
+                  container.name == "neutron-linuxbridge-agent"
+                  capability in {"DAC_OVERRIDE", "DAC_READ_SEARCH", "NET_ADMIN", "SYS_ADMIN", "SYS_PTRACE"}
+              }
+
+              # The init container mounts the entire host FS to load kernel modules.
+              isContainerAllowedToAccessHostPath(container, hostPath, readOnly) if {
+                  isNeutronNetworkAgentPod
+                  container.name == "init"
+              }
+
+              # TODO: Why does the DHCP agent need to write into /dev/log?
+              isContainerAllowedToAccessHostPath(container, hostPath, readOnly) if {
+                  isNeutronNetworkAgentPod
+                  container.name == "neutron-dhcp-agent"
+                  hostPath == "/dev/log"
+              }
+              {{- end }}
+
+              ########################################################################
+              # allowlist for ns-exporter
+
+              {{- if eq .Values.cluster_type "baremetal" "test" }}
+              default isNSExporterPod := false
+              isNSExporterPod if {
+                  iro.kind == "DaemonSet"
+                  iro.metadata.namespace == "ns-exporter"
+                  iro.metadata.name == "ns-exporter"
+                  helmReleaseName == "ns-exporter"
+              }
+
+              # The ns-exporter needs to reach into all network namespaces.
+              isPodAllowedToUseHostPID if {
+                  isNSExporterPod
+              }
+
+              isContainerAllowedToBePrivileged(container) if {
+                  isNSExporterPod
+                  container.name == "exporter"
+              }
+              {{- end }}
+
+              ########################################################################
+              # allowlist for PX components
+
+              {{- if eq .Values.cluster_type "baremetal" "test" }}
+              default isPXBirdPod := false
+              isPXBirdPod if {
+                  iro.kind == "StatefulSet"
+                  iro.metadata.namespace == "px"
+                  regex.match("^routeserver-v(4|6)-service-[1-3]-domain-[1-2]$", iro.metadata.name)
+                  regex.match("^bird-domain[0-2]$", helmReleaseName)
+              }
+
+              isContainerAllowedToBePrivileged(container) if {
+                  isPXBirdPod
+                  container.name == "init-network"
+              }
+
+              # Bird needs to be able to send and receive BGP announcements.
+              isContainerAllowedToUseCapability(container, "NET_ADMIN") if {
+                  isPXBirdPod
+                  container.name == "bird"
+              }
+              {{- end }}
+
+              ########################################################################
+              # allowlist for Sporebox
+
+              {{- if eq .Values.cluster_type "baremetal" "test" }}
+              default isSporeboxPod := false
+              isSporeboxPod if {
+                  iro.kind == "DaemonSet"
+                  iro.metadata.name == "sporebox"
+                  iro.metadata.namespace == "default"
+                  helmReleaseName == "<none>" # deployed by Spore command
+              }
+
+              # Sporebox is used to jump into the namespaces of network agents.
+              # TODO: replace with ephemeral containers on network agent pods
+              isPodAllowedToUseHostNetwork if {
+                  isSporeboxPod
+              }
+
+              isPodAllowedToUseHostPID if {
+                  isSporeboxPod
+              }
+
+              isContainerAllowedToBePrivileged(container) if {
+                  isSporeboxPod
+                  container.name == "sporebox"
+                  regex.match("^keppel\\.[a-z0-9-]+\\.cloud\\.sap/ccloud/sporebox:", container.image)
+              }
+              {{- end }}
+
+              ########################################################################
+              # allowlist for Swift components running on the storage servers
+
+              {{- if eq .Values.cluster_type "baremetal" "test" }}
+              default isSwiftServerPod := false
+              isSwiftServerPod if {
+                  iro.kind == "DaemonSet"
+                  iro.metadata.namespace == "swift"
+                  object.get(pod.spec, ["nodeSelector", "species"], "none") == "swift-storage"
+              }
+
+              # Swift storage components inspect the network interfaces to establish
+              # their identity within the Swift ring
+              isPodAllowedToUseHostNetwork if {
+                  isSwiftServerPod
+              }
+
+              # Swift storage components need to be able to mount/unmount disks at
+              # runtime (TODO: use mount propagation instead)
+              isContainerAllowedToBePrivileged(container) if {
+                  isSwiftServerPod
+              }
+
+              isContainerAllowedToAccessHostPath(container, hostPath, readOnly) if {
+                  isSwiftServerPod
+
+                  # all components need to access the storage disks (as well as state
+                  # shared with the drive autopilot)
+                  regex.match("^/(?:srv/node|var/cache/swift|run/swift-storage/state)($|/)", hostPath)
+              }
+
+              isContainerAllowedToAccessHostPath(container, hostPath, readOnly) if {
+                  isSwiftServerPod
+
+                  # swift-drive-autopilot needs far-reaching access to the host FS to
+                  # find/format/encrypt/decrypt/mount/unmount disks and watch the
+                  # kernel log for errors
+                  regex.match("^keppel\\.[a-z0-9-]+\\.cloud\\.sap/ccloud/swift-drive-autopilot:", container.image)
+                  # any `hostPath` allowed here
+              }
+              {{- end }}
+
+              ########################################################################
+              # allowlist for Tailscale relay
+
+              {{- if eq .Values.cluster_type "internet" "scaleout" "test" }}
+              default isTailcontrolPod := false
+              isTailcontrolPod if {
+                  iro.kind == "Deployment"
+                  iro.metadata.name == "tailcontrol"
+                  iro.metadata.namespace == "tailscale"
+                  helmReleaseName == "tailcontrol"
+              }
+
+              # Tailscale needs CAP_NET_ADMIN to establish its VPN network interface.
+              isContainerAllowedToUseCapability(container, capability) if {
+                  isTailcontrolPod
+                  regex.match("^keppel\\.[a-z0-9-.]+/ccloud/tailcontrol:", container.image)
+                  capability == "NET_ADMIN"
+              }
+
+              # TODO: Why does Tailscale need to be privileged? Is CAP_NET_ADMIN not enough?
+              isContainerAllowedToBePrivileged(container) if {
+                  isTailcontrolPod
+                  regex.match("^keppel\\.[a-z0-9-.]+/ccloud/tailcontrol:", container.image)
+              }
+              {{- end }}
+
+              ########################################################################
+              # allowlist for Unbound (DNS recursor)
+
+              {{- if eq .Values.cluster_type "baremetal" "test" }}
+              default isUnboundPod := false
+              isUnboundPod if {
+                  iro.kind == "Deployment"
+                  iro.metadata.name == helmReleaseName
+                  iro.metadata.namespace == "dns-recursor"
+                  regex.match("^unbound\\d$", helmReleaseName)
+              }
+
+              # TODO: Why does unbound need full privileges? Can this be replaced by a specific privilege?
+              isContainerAllowedToBePrivileged(container) if {
+                  isUnboundPod
+                  regex.match("^keppel\\.[a-z0-9-.]+/ccloud/unbound:", container.image)
+              }
+              {{- end }}
+
+              ########################################################################
+              # allowlist for Workstation deployments (personal cloud IDEs)
+
+              {{- if eq .Values.cluster_type "scaleout" "test" }}
+              default isWorkstationPod := false
+              isWorkstationPod if {
+                  iro.kind == "Deployment"
+                  iro.metadata.name == "workstation"
+                  iro.metadata.namespace == helmReleaseName
+                  regex.match("^ws2-", helmReleaseName)
+              }
+
+              # A Workstation deployment contains a "docker-carrier" container where
+              # a Docker daemon is running. dockerd needs privileged access to the
+              # kernel to run, even when localized into a container.
+              isContainerAllowedToBePrivileged(container) if {
+                  isWorkstationPod
+                  regex.match("^keppel\\.[a-z0-9-.]+/ccloud-dockerhub-mirror/library/docker:(?:[0-9.]+-)?dind$", container.image)
+              }
+              {{- end }}
+
+              ########################################################################
+              # allowlist for project-aurora
+
+              {{- if eq .Values.cluster_type "baremetal" "test" }}
+              default isProjectAuroraPod := false
+              isProjectAuroraPod if {
+                  iro.kind == "Deployment"
+                  iro.metadata.name == "project-aurora-dhcp"
+                  iro.metadata.namespace == "aurora-system"
+                  helmReleaseName == "aurora"
+              }
+
+              # aurora modifies iptables rules
+              isContainerAllowedToBePrivileged(container) if {
+                  isProjectAuroraPod
+              }
+
+              # aurora listens on external IPs
+              isPodAllowedToUseHostNetwork if {
+                  isProjectAuroraPod
+              }
+              {{- end }}
+
+              ########################################################################
+              # allowlist for flatcar-linux-update-agent
+
+              isFlatcarUpdateAgentPod if {
+                  iro.kind == "DaemonSet"
+                  iro.metadata.namespace == "maintenance-controller"
+                  iro.metadata.name == "flatcar-linux-update-agent"
+                  helmReleaseName == "maintenance-controller"
+              }
+
+              isContainerAllowedToAccessHostPath(container, hostPath, readOnly) if {
+                  isFlatcarUpdateAgentPod
+                  hostPath in {"/etc/flatcar", "/etc/os-release", "/usr/share/flatcar", "/var/run/dbus"}
+              }
+
+              ########################################################################
+              # allowlist for archer network injection agent, works similar to neutron-network-agent
+
+              isArcherNetworkInjectionAgentPod if {
+                  iro.kind == "Deployment"
+                  iro.metadata.namespace == "monsoon3"
+                  startswith(iro.metadata.name, "archer-agent-")
+                  helmReleaseName == "archer"
+              }
+
+              isContainerAllowedToBePrivileged(container) if {
+                  isArcherNetworkInjectionAgentPod
+                  container.name == "archer-agent-ni"
+              }
+
+              isContainerAllowedToUseCapability(container, capability) if {
+                  isArcherNetworkInjectionAgentPod
+                  container.name == "neutron-linuxbridge-agent"
+                  capability in {"DAC_OVERRIDE", "DAC_READ_SEARCH", "NET_ADMIN", "SYS_ADMIN", "SYS_PTRACE"}
+              }

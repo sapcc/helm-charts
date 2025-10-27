@@ -1,0 +1,15 @@
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: GkRegionValueMismatch
+metadata:
+  name: regionvaluemismatch
+  annotations:
+    {{- include "sources" (tuple "region-value-mismatch" "region-value-mismatch") | indent 4 }}
+    {{- include "docstring" (tuple $ "GkRegionValueMismatch") | indent 4 }}
+  labels:
+    severity: 'error'
+spec:
+  enforcementAction: deny
+  match: {{ include "match_active_helm_releases" . | indent 4 }}
+  parameters:
+    helmManifestParserURL: {{ quote .Values.helm_manifest_parser_url }}
+    region: {{.Values.global.region | required ".Values.global.region not found"}}

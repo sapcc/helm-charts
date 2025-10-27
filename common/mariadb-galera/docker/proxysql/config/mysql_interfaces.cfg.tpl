@@ -1,0 +1,1 @@
+interfaces="0.0.0.0:${PROXYSQL_MYSQL_PORT};/opt/proxysql/run/proxysql.sock"

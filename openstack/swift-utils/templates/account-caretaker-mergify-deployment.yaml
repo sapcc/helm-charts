@@ -1,0 +1,89 @@
+{{- if .Values.swift_account_caretaker.enable }}
+kind: Deployment
+apiVersion: apps/v1
+
+metadata:
+  name: swift-account-caretaker-mergify
+  labels:
+    release: "{{ .Release.Name }}"
+
+spec:
+  revisionHistoryLimit: 5
+  # this job is not in any critical path, so 1 replica and Recreate is quite enough
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      component: swift-account-caretaker-mergify
+  template:
+    metadata:
+      labels:
+        component: swift-account-caretaker-mergify
+      annotations:
+        checksum/caretaker.etc: {{ include "swift-utils/templates/caretaker-configmap.yaml" . | sha256sum }}
+        checksum/secret: {{ include "swift-utils/templates/secret.yaml" . | sha256sum }}
+        prometheus.io/scrape: "true"
+        prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus }}
+    spec:
+      volumes:
+        - name: caretaker-etc
+          configMap:
+            name: swift-account-caretaker
+      containers:
+        - name: caretaker
+          image: {{ include "swift_image" . }}
+          command:
+            - /usr/bin/dumb-init
+          args:
+            - /bin/bash
+            - /usr/bin/swift-start
+            - account-caretaker-mergify
+          env:
+            - name: DEBUG_CONTAINER
+              value: "false"
+            - name: RUN_INTERVAL
+              value: "7200"
+            - name: CARETAKER_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: swift-utils-secret
+                  key: caretaker_password
+          # TODO: securityContext: { runAsNonRoot: true }
+          volumeMounts:
+            - mountPath: /caretaker-etc
+              name: caretaker-etc
+          {{- if .Values.resources.enabled }}
+          resources:
+            # observed usage: CPU = 1m-15m, RAM = 5-30 MiB
+            requests:
+              cpu: '20m'
+              memory: '64Mi'
+            limits:
+              cpu: '100m'
+              memory: '512Mi'
+          {{- end }}
+        - name: statsd
+          image: {{ .Values.global.dockerHubMirrorAlternateRegion }}/prom/statsd-exporter:{{ .Values.image_version_auxiliary_statsd_exporter }}
+          args:
+            - --statsd.mapping-config=/caretaker-etc/statsd-exporter.yaml
+            - --statsd.listen-udp=:8125
+          ports:
+            - name: statsd
+              containerPort: 8125
+              protocol: UDP
+            - name: metrics
+              containerPort: 9102
+          volumeMounts:
+            - mountPath: /caretaker-etc
+              name: caretaker-etc
+          {{- if .Values.resources.enabled }}
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "100Mi"
+            limits:
+              cpu: "300m"
+              memory: "150Mi"
+          {{- end }}
+{{- end }}

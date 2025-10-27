@@ -1,0 +1,37 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "owner-label-injector.fullname" . }}
+  labels:
+    {{- include "owner-label-injector.labels" . | nindent 4 }}
+spec:
+  schedule: 0 */6 * * *
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          serviceAccountName: {{ include "owner-label-injector.serviceAccountName" . }}
+          restartPolicy: OnFailure
+          containers:
+            - name: {{ .Chart.Name }}
+              args:
+              - --config=/owner-label-injector-config/config.yaml
+              - --cluster-level-apis=false
+              {{ if .Values.staging.enabled }}
+              - --namespace={{ .Values.staging.namespace }}
+              {{ end }}
+              command:
+              - /labeller
+              securityContext:
+                {{- toYaml .Values.securityContext | nindent 16 }}
+              image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+              imagePullPolicy: {{ .Values.image.pullPolicy }}
+              volumeMounts:
+              - mountPath: /owner-label-injector-config
+                name: config
+              resources:
+                {{- toYaml .Values.resources | nindent 16 }}
+          volumes:
+          - name: config
+            configMap:
+              name: {{ include "owner-label-injector.fullname" . }}    

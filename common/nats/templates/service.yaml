@@ -1,0 +1,33 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "nats.fullname" . }}
+  labels:
+    {{- include "nats.labels" . | nindent 4 }}
+  annotations:
+    disco: "true"
+    disco/record: {{ template "nats.fullname" . }}.cc.{{ template "nats.region" . }}.{{.Values.global.tld}}.
+    disco/zone-name: "cc.{{ include "nats.region" . }}.{{.Values.global.tld}}"
+spec:
+  type: {{ .Values.service.type }}
+  {{- if.Values.service.externalIP }}
+  externalIPs:
+    - {{ .Values.service.externalIP }}
+  {{- end }}
+  externalTrafficPolicy: {{ default "Local" .Values.service.externalTrafficPolicy }}
+  ports:
+    - port: 8222
+      targetPort: 8222
+      protocol: TCP
+      name: http
+    - port: {{ .Values.service.port }}
+      targetPort: 4222
+      protocol: TCP
+      name: nats
+    - port: 6222
+      targetPort: 6222
+      protocol: TCP
+      name: nats-cluster
+
+  selector:
+    {{- include "nats.selectorLabels" . | nindent 4 }}

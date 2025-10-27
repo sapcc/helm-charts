@@ -1,0 +1,77 @@
+{{- range $i, $exporter := .Values.exporters -}}
+{{- if $exporter.enabled }}
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "statsd-exporter.fullName" $exporter.name }}
+  labels:
+    {{- include "statsd-exporter.labels" $exporter.name| nindent 4 }}
+spec:
+  replicas: {{ $.Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "statsd-exporter.selectorLabels" $exporter.name | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "statsd-exporter.labels" $exporter.name | nindent 8 }}
+      annotations:
+        {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+        linkerd.io/inject: enabled
+        {{- end }}
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") $ | sha256sum }}
+    spec:
+      containers:
+        - name: {{ include "statsd-exporter.fullName" $exporter.name }}
+          image: "{{ required ".Values.image.repository variable missing" $.Values.image.repository }}:{{ required ".Values.image.tag variable missing" $.Values.image.tag }}"
+          imagePullPolicy: {{ required ".Values.image.pullPolicy variable missing" $.Values.image.pullPolicy }}
+          args:
+            - --web.listen-address={{ include "statsd-ports" $exporter.metricsPort }}
+            - --web.telemetry-path={{ required ".Values.exporters.metricsPath variable missing" $exporter.metricsPath }}
+            - --statsd.cache-size={{ required ".Values.exporters.cacheSize variable missing" $exporter.cacheSize }}
+            - --statsd.event-queue-size={{ required ".Values.exporters.eventQueueSize variable missing" $exporter.eventQueueSize }}
+            - --statsd.event-flush-threshold={{ required ".Values.exporters.eventFlushThreshold variable missing" $exporter.eventFlushThreshold }}
+            - --statsd.event-flush-interval={{ required ".Values.exporter.eventFlushInterval variable missing"  $exporter.eventFlushInterval }}
+            - --statsd.listen-tcp={{ include "statsd-ports" $exporter.tcpPort }}
+            - --statsd.listen-udp={{ include "statsd-ports" $exporter.udpPort }}
+            - --statsd.mapping-config=/etc/prometheus-statsd-exporter/statsd-mappings
+          ports:
+            - name: metrics
+              containerPort: {{ required ".Values.exporters.metricsPort variable missing" $exporter.metricsPort }}
+              protocol: TCP
+            - name: statsd-tcp
+              containerPort: {{ required ".Values.exporter.tcpPort variable missing" $exporter.tcpPort }}
+              protocol: TCP
+            - name: statsd-udp
+              containerPort: {{ required ".Values.exporter.udpPort variable missing" $exporter.udpPort }}
+              protocol: UDP
+          livenessProbe:
+            httpGet:
+              path: /-/healthy
+              port: metrics
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /-/ready
+              port: metrics
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          resources:
+            {{- toYaml $exporter.resources | nindent 12 }}
+{{- if $exporter.mappings }}
+          volumeMounts:
+          - name: statsd-mappings
+            mountPath: /etc/prometheus-statsd-exporter
+      volumes:
+        - name: statsd-mappings
+          configMap:
+            name: {{ include "statsd-exporter.fullName" $exporter.name }}
+            items:
+              - key: statsd.mappings
+                path: statsd-mappings
+{{- end }}
+---
+{{ end -}}
+{{ end -}}

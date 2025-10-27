@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: Service
+
+metadata:
+  name: ntp-exporter
+  labels:
+    app: ntp-exporter
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: {{ required ".Values.metrics.port missing" .Values.metrics.port | quote }}
+    prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
+
+spec:
+  type: ClusterIP
+  clusterIP: None
+  ports:
+  - name: metrics
+    port: {{ required ".Values.metrics.port missing" .Values.metrics.port }}
+    protocol: TCP
+  selector:
+    app: ntp-exporter

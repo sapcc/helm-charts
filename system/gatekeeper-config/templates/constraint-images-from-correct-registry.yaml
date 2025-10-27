@@ -1,0 +1,15 @@
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: GkImagesFromCorrectRegistry
+metadata:
+  name: imagesfromcorrectregistry
+  annotations:
+    {{- include "sources" (tuple "images-from-correct-registry" "images-from-correct-registry") | indent 4 }}
+    {{- include "docstring" (tuple $ "GkImagesFromCorrectRegistry") | indent 4 }}
+  labels:
+    severity: 'info'
+spec:
+  enforcementAction: dryrun
+  match: {{ include "match_pods_and_pod_owners" . | indent 4 }}
+  parameters:
+    registry: {{.Values.global.registry | required ".Values.global.registry not found"}}
+    registryAlternateRegion: {{.Values.global.registryAlternateRegion | required ".Values.global.registryAlternateRegion not found"}}

@@ -1,0 +1,54 @@
+{{- if .Values.keppel.anycast_domain_name }}
+kind: Deployment
+apiVersion: apps/v1
+
+metadata:
+  name: keppel-anycast-monitor
+
+spec:
+  revisionHistoryLimit: 5
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      name: keppel-anycast-monitor
+  template:
+    metadata:
+      labels:
+        name: keppel-anycast-monitor
+      annotations:
+        kubectl.kubernetes.io/default-container: monitor
+        prometheus.io/scrape: "true"
+        prometheus.io/targets: "openstack"
+    spec:
+      containers:
+        - name: monitor
+          image: {{include "keppel_image" .}}
+          imagePullPolicy: IfNotPresent
+          args:
+            - server
+            - anycastmonitor
+            - "https://{{ .Values.keppel.anycast_domain_name }}"
+            - "keppel.{{ .Values.global.region }}.{{ .Values.global.tld }}"
+            - {{ quote .Values.keppel.healthcheck_account }}
+            {{- range .Values.keppel.peers }}
+            - {{ quote .healthcheck_account }}
+            {{- end }}
+          env:
+            - name:  KEPPEL_DEBUG
+              value: 'false'
+          securityContext:
+            runAsNonRoot: true
+          ports:
+            - name: metrics
+              containerPort: 8080
+          # initially same as keppel-health-monitor
+          resources:
+            requests:
+              cpu: "10m"
+              memory: "64Mi"
+            limits:
+              cpu: "10m"
+              memory: "64Mi"
+{{- end }}

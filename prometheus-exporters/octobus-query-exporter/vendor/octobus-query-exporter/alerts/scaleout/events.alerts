@@ -1,0 +1,69 @@
+ groups:
+  - name: events
+    rules:     
+      - alert: EsxiNicError
+        expr: >
+                vrops_hostsystem_runtime_connectionstate{state="connected"} and
+                on(hostsystem) vrops_hostsystem_runtime_maintenancestate{state="notInMaintenance"} and
+                on(hostsystem) elasticsearch_octobus_esxi_nic_error_hostsystem_doc_count
+        labels:
+          severity: critical
+          service: compute
+          tier: vmware
+          support_group: compute
+          no_alert_on_absence: "true"
+          meta: "Alert for query enic_uplink_reset"
+          playbook: docs/devops/alert/vcenter/#test_esxi_hs_5
+        annotations:
+          summary: "An Error String related to possible NIC Failure was captured."
+          description: "This alert is created to prevent the Outage from NIC failure on {{ $labels.hostsystem }}"
+      - alert: MellanoxIssue
+        expr: >
+                vrops_hostsystem_runtime_connectionstate{state="connected"} and
+                on(hostsystem) vrops_hostsystem_runtime_maintenancestate{state="notInMaintenance"} and
+                on(hostsystem) elasticsearch_octobus_Mellanox_issue_hostsystem_doc_count
+        labels:
+          severity: critical
+          service: compute
+          tier: vmware
+          support_group: compute
+          no_alert_on_absence: "true"
+          meta: "Alert for Mellanox card issue with abort errors"
+          playbook: docs/devops/alert/vcenter/#mellanox_issue
+        annotations:
+          summary: "An Error String related to Mellanox card issue with abort errors "
+          description: "This alert is created to prevent the Outage from Mellanox card issue on {{ $labels.hostsystem }}"
+
+      - alert: MellanoxIssue15mins
+        expr: >
+                vrops_hostsystem_runtime_connectionstate{state="connected"} and
+                on(hostsystem) vrops_hostsystem_runtime_maintenancestate{state="notInMaintenance"} and
+                on(hostsystem) elasticsearch_octobus_Mellanox15mins_issue_hostsystem_doc_count
+        labels:
+          severity: info
+          service: compute
+          tier: vmware
+          support_group: compute
+          no_alert_on_absence: "true"
+          meta: "Alert for Mellanox card issue with abort errors"
+          playbook: docs/devops/alert/vcenter/#mellanox_issue
+        annotations:
+          summary: "An Error String related to Mellanox card issue with abort errors "
+          description: "This alert is created to prevent the Outage from Mellanox card issue on {{ $labels.hostsystem }}"
+
+      - alert: NSXTDisconnectedNodes
+        expr: >
+                vrops_hostsystem_runtime_connectionstate{state="connected"} and
+                on(hostsystem) vrops_hostsystem_runtime_maintenancestate{state="notInMaintenance"} and
+                on(hostsystem) elasticsearch_octobus_nsxt_disconnected_nodes_hostsystem_doc_count
+        labels:
+          severity: info
+          service: compute
+          tier: vmware
+          support_group: compute
+          no_alert_on_absence: "true"
+          meta: "Alert for NSXT Disconnected nodes"
+          playbook: docs/devops/alert/nsxt/#troubleshooting-transport-node-controller-status-unknown-in-nsx-t
+        annotations:
+          summary: "NSXT Transport nodes is disconnected from the NSXT manager"
+          description: "NSXT Transport node {{ $labels.hostsystem }} is disconnected from the NSXT Manager, network provisioning and service availability will be impacted"

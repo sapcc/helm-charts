@@ -1,0 +1,20 @@
+{{- if .Values.enabled }}
+{{- $values := .Values }}
+{{- if $values.alerts.enabled }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+
+metadata:
+  name: alerts-prober-static.alerts
+  labels:
+    app: prober-static
+    service: k8s
+    type: alerting-rules
+    prometheus: {{ required ".Values.prometheusName missing" $values.prometheusName }}
+
+spec:
+{{ include (print .Template.BasePath "/alerts/_prober-static.alerts.tpl") . | indent 2 }}
+
+{{- end }}
+{{- end }}

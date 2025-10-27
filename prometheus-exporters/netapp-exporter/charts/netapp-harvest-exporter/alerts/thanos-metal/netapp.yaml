@@ -1,0 +1,24 @@
+groups:
+  - name: netapp-harvest
+    rules:
+      # filer stnpca3.cc.eu-de-1.cloud.sap is scraped with host stnpca3-cp001.cc.eu-de-1.cloud.sap
+      - alert: NetappHarvestManilaFilerNotScraped
+        expr: |
+          count by (share_backend_name, host) (
+            label_replace(
+              label_replace(
+                manila_total_capacity_gb{share_backend_name!~"integration", hardware_state!~"in_decom|in_build"},
+                "share_backend_fqdn", "stnpca3-cp001.cc.eu-de-1.cloud.sap", "share_backend_fqdn", "stnpca3.cc.eu-de-1.cloud.sap"),
+                "host", "$1", "share_backend_fqdn", "(.*)"))
+          unless on (host) netapp_volume_size
+        for: 30m
+        labels:
+          context: netapp-exporter
+          no_alert_on_absence: "true"
+          service: exporter
+          severity: warning
+          support_group: compute-storage-api
+          tier: storage
+        annotations:
+          description: Manila Filer {{ $labels.host }} in production but not scraped by Netapp Harvest.
+

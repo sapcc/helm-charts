@@ -1,0 +1,30 @@
+apiVersion: "openstack.stable.sap.cc/v1"
+kind: "OpenstackSeed"
+metadata:
+  name: openstack-exporter-seed
+spec:
+  requires:
+  - monsoon3/domain-default-seed
+  - monsoon3/domain-ccadmin-seed
+
+  domains:
+  - name: Default
+    users:
+    - name: openstack_exporter{{ .Values.global.user_suffix | default "" }}
+      description: OpenStack exporter user
+      password: {{ required ".Values.global.openstack_exporter_master_password missing" .Values.global.openstack_exporter_master_password | quote }}
+
+  - name: ccadmin
+    projects:
+    - name: cloud_admin
+      role_assignments:
+      # permission to enumerate all projects and domains
+      - user: openstack_exporter{{ .Values.global.user_suffix | default "" }}@Default
+        role: admin
+      # permission to manage all ressources checked by the nanny
+      - user: openstack_exporter{{ .Values.global.user_suffix | default "" }}@Default
+        role: cloud_volume_admin
+      - user: openstack_exporter{{ .Values.global.user_suffix | default "" }}@Default
+        role: cloud_compute_admin
+      - user: openstack_exporter{{ .Values.global.user_suffix | default "" }}@Default
+        role: cloud_sharedfilesystem_admin

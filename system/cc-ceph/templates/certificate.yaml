@@ -1,0 +1,25 @@
+{{- if $.Values.objectstore.gateway.sslCertificateRef }}
+{{- range $key, $record := .Values.objectstore.gateway.dnsNames }}
+{{- if or (not $.Values.dnsNamesSkipCertificate) (not (has $record $.Values.dnsNamesSkipCertificate)) }}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ $record }}
+spec:
+  dnsNames:
+    - "*.{{ $record }}"
+    - "{{ $record }}"
+  uris:
+    - rook-ceph-rgw-{{ $.Values.objectstore.name }}.rook-ceph.svc
+  issuerRef:
+    group: certmanager.cloud.sap
+    kind: ClusterIssuer
+    name: digicert-issuer
+  secretName: {{ $.Values.objectstore.gateway.sslCertificateRef }}
+  usages:
+    - digital signature
+    - key encipherment
+{{- end }}
+{{- end }}
+{{- end }}

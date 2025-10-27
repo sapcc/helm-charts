@@ -1,0 +1,282 @@
+global:
+  linkerd_enabled: false
+  linkerd_requested: true
+  clusterType: local
+  nodepool: "payload"
+  users:
+    admin:
+      name: admin
+  aggregations:
+    prometheus: infra-frontend
+  data_stream:
+    enabled: false
+    alerts:
+      min_index_age: "365d"
+      min_size: "20gb"
+      min_doc_count: 10000000
+    deployments:
+      min_index_age: "365d"
+      min_size: "30gb"
+      min_doc_count: 50000000
+    storage:
+      min_index_age: "7d"
+      min_size: "80gb"
+      min_doc_count: 100000000
+    compute:
+      min_index_age: "7d"
+      min_size: "80gb"
+      min_doc_count: 100000000
+    otel:
+      min_index_age: "7d"
+      min_size: "20gb"
+      min_doc_count: 10000000
+    audit:
+      min_index_age: "7d"
+      min_size: "20gb"
+      min_doc_count: 10000000
+    logs:
+      min_index_age: "7d"
+      min_size: "80gb"
+      min_doc_count: 100000000
+    logs_swift:
+      min_index_age: "14d"
+      min_size: "120gb"
+      min_doc_count: 200000000
+    jump:
+      min_index_age: "7d"
+      min_size: "80gb"
+      min_doc_count: 100000000
+  index:
+    ism_indexes: "logstash"
+    schema_version: "1"
+
+owner-info:
+  support-group: observability
+  service: logs
+  maintainers:
+    - "Timo Johner"
+    - "Olaf Heydorn"
+  helm-chart-url: "https://github.com/sapcc/helm-charts/tree/master/system/opensearch-logs"
+
+qalogs:
+  enabled: false
+scaleout:
+  enabled: false
+
+alerts:
+  enabled: false
+  prometheus: infra-frontend
+
+auth:
+  ca_path: certs/admin/ca.crt
+
+retention:
+  index: "31d"
+  ds: "31d"
+
+opensearch_master:
+  enabled: false
+  nameOverride: "opensearch-logs-master"
+  fullnameOverride: "opensearch-logs-master"
+  nodeGroup: "master"
+  masterService: "opensearch-logs-master"
+  image:
+    tag: 3.2.0
+  roles:
+    - master
+  replicas: 3
+  opensearchJavaOpts: "-Dlog4j2.formatMsgNoLookups=true -XX:MaxRAM=5g -XX:MaxGCPauseMillis=5000"
+  persistence:
+    enabled: true
+    enableInitChown: true
+    size: 1Gi
+    image: "library/busybox"
+  clusterName: "opensearch-logs"
+  secretMounts:
+    - name: opensearch-certificates
+      secretName: cert-manager
+      path: /usr/share/opensearch/config/certs/
+      defaultMode: 0700
+  securityConfig:
+    enabled: false
+    path: "/usr/share/opensearch/config/opensearch-security"
+    config:
+      securityConfigSecret: "security-config"
+  extraEnvs:
+    - name: DISABLE_INSTALL_DEMO_CONFIG
+      value: "true"
+  plugins:
+    enabled: true
+    installList:
+      - https://github.com/opensearch-project/opensearch-prometheus-exporter/releases/download/3.2.0.0/prometheus-exporter-3.2.0.0.zip
+
+opensearch_client:
+  enabled: false
+  image:
+    tag: 3.2.0
+  replicas: 3
+  nameOverride: "opensearch-logs-client"
+  fullnameOverride: "opensearch-logs-client"
+  nodeGroup: "client"
+  masterService: "opensearch-logs-master"
+  podAnnotations:
+    # manual versioning, raise if secrets change
+    versioning: "3"
+  roles:
+    - remote_cluster_client
+  opensearchJavaOpts: "-Dlog4j2.formatMsgNoLookups=true -XX:MaxRAM=5g -XX:MaxGCPauseMillis=5000 -Xms1g -Xmx1g"
+  secretMounts:
+    - name: opensearch-certificates
+      secretName: cert-manager
+      path: /usr/share/opensearch/config/certs/
+      defaultMode: 0700
+  persistence:
+    enabled: false
+    enableInitChown: false
+    image: "library/busybox"
+  service:
+    type: LoadBalancer
+  ingress:
+    enabled: false
+  clusterName: "opensearch-logs"
+  securityConfig:
+    enabled: false
+    path: "/usr/share/opensearch/config/opensearch-security"
+    actionGroupsSecret: "security-config"
+    configSecret: "security-config"
+    internalUsersSecret: "security-config"
+    rolesSecret: "security-config"
+    rolesMappingSecret: "security-config"
+    tenantsSecret: "security-config"
+  extraEnvs:
+    - name: DISABLE_INSTALL_DEMO_CONFIG
+      value: "true"
+  plugins:
+    enabled: true
+    installList:
+      - https://github.com/opensearch-project/opensearch-prometheus-exporter/releases/download/3.2.0.0/prometheus-exporter-3.2.0.0.zip
+
+opensearch_data:
+  enabled: false
+  image:
+    tag: 3.2.0
+  nameOverride: "opensearch-logs-data"
+  fullnameOverride: "opensearch-logs-data"
+  nodeGroup: "data"
+  masterService: "opensearch-logs-master"
+  roles:
+    - ingest
+    - data
+  replicas: 3
+  opensearchJavaOpts: "-Dlog4j2.formatMsgNoLookups=true -XX:MaxRAM=7g -XX:MaxGCPauseMillis=500 -Xms5g -Xmx5g"
+  persistence:
+    enabled: true
+    enableInitChown: true
+    size: 1Ti
+    image: "library/busybox"
+  clusterName: "opensearch-logs"
+  secretMounts:
+    - name: opensearch-certificates
+      secretName: cert-manager
+      path: /usr/share/opensearch/config/certs/
+      defaultMode: 0700
+  plugins:
+    enabled: true
+    installList:
+      - https://github.com/opensearch-project/opensearch-prometheus-exporter/releases/download/3.2.0.0/prometheus-exporter-3.2.0.0.zip
+  securityConfig:
+    enabled: false
+    path: "/usr/share/opensearch/config/opensearch-security"
+    config:
+      securityConfigSecret: "security-config"
+  extraEnvs:
+    - name: DISABLE_INSTALL_DEMO_CONFIG
+      value: "true"
+
+opensearch_ml:
+  enabled: false
+  image:
+    tag: 3.2.0
+  replicas: 2
+  nameOverride: "opensearch-logs-ml"
+  fullnameOverride: "opensearch-logs-ml"
+  nodeGroup: "ml"
+  masterService: "opensearch-logs-master"
+  podAnnotations:
+    # manual versioning, raise if secrets change
+    versioning: "3"
+  roles:
+    - ml
+  opensearchJavaOpts: "-Dlog4j2.formatMsgNoLookups=true -XX:MaxRAM=5g -XX:MaxGCPauseMillis=5000 -Xms1g -Xmx1g"
+  secretMounts:
+    - name: opensearch-certificates
+      secretName: cert-manager
+      path: /usr/share/opensearch/config/certs/
+      defaultMode: 0700
+  persistence:
+    enabled: false
+    enableInitChown: false
+    image: "library/busybox"
+  service:
+    type: LoadBalancer
+  ingress:
+    enabled: false
+  clusterName: "opensearch-logs"
+  securityConfig:
+    enabled: false
+    path: "/usr/share/opensearch/config/opensearch-security"
+    actionGroupsSecret: "security-config"
+    configSecret: "security-config"
+    internalUsersSecret: "security-config"
+    rolesSecret: "security-config"
+    rolesMappingSecret: "security-config"
+    tenantsSecret: "security-config"
+  extraEnvs:
+    - name: DISABLE_INSTALL_DEMO_CONFIG
+      value: "true"
+  plugins:
+    enabled: true
+    installList:
+      - https://github.com/opensearch-project/opensearch-prometheus-exporter/releases/download/3.2.0.0/prometheus-exporter-3.2.0.0.zip
+
+opensearch_dashboards:
+  enabled: false
+  image:
+    tag: "3.2.0"
+  fullnameOverride: opensearch-logs-dashboards
+  nameOverride: opensearch-logs-dashboards
+  serviceAccount:
+    create: true
+    name: "opensearch-logs-dashboards"
+  opensearchAccount:
+    secret: dashboard-secrets
+  ingress:
+    enabled: false
+  logs_endpoint:
+    enabled: false
+  resources:
+    limits:
+      cpu: "4"
+      memory: 4096M
+    requests:
+      cpu: "1"
+      memory: 4096M
+  autoscaling:
+    enabled: true
+    maxReplicas: 4
+  envFrom:
+    - secretRef:
+        name: dashboard-secrets
+
+manager:
+  enabled: false
+  port_internal: '9000'
+  http_port: 9200
+  cluster_port: 9301
+  endpoint_host_public: opensearch-logs-manager.scaleout
+  image_manager: elk-elasticsearch-manager:20250407105643
+  opensearch:
+    enabled: false
+
+elasticdump:
+  enabled: false

@@ -1,0 +1,96 @@
+kind: Deployment
+apiVersion: apps/v1
+
+metadata:
+  name: swift-object-expirer
+  labels:
+    release: "{{ .Release.Name }}"
+
+spec:
+  revisionHistoryLimit: 5
+  # this job is not in any critical path, so 1 replica and Recreate is quite enough
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      component: swift-object-expirer
+  template:
+    metadata:
+      labels:
+        component: swift-object-expirer
+      annotations:
+        {{- include "swift_conf_annotations" . | indent 8 }}
+        prometheus.io/scrape: "true"
+        prometheus.io/targets: {{ required ".Values.alerts.prometheus.openstack missing" $.Values.alerts.prometheus.openstack }}
+    spec:
+      volumes:
+        - name: swift-etc
+          configMap:
+            name: swift-etc
+        - name: swift-rings
+          emptyDir: {}
+      initContainers:
+        {{- include "swift_ringloader_initcontainer" . | indent 8 }}
+      containers:
+        {{- range $i, $e := until (int .Values.object_expirer_processes) }}
+        - name: expirer-{{ $i }}
+          image: {{ include "swift_image" $ }}
+          command:
+            - /usr/bin/dumb-init
+          args:
+            - /bin/bash
+            - /usr/bin/swift-start
+            - object-expirer
+            - --process {{ $i }}
+            - --processes {{ $.Values.object_expirer_processes }}
+          env:
+            - name: DEBUG_CONTAINER
+              value: "false"
+            - name: HASH_PATH_PREFIX
+              valueFrom:
+                secretKeyRef:
+                  name: swift-secret
+                  key: hash_path_prefix
+            - name: HASH_PATH_SUFFIX
+              valueFrom:
+                secretKeyRef:
+                  name: swift-secret
+                  key: hash_path_suffix
+          # TODO: securityContext: { runAsNonRoot: true }
+          resources:
+            # observed usage: CPU = 1m-300m, RAM = 50-180 MiB
+            requests:
+              cpu: '200m'
+              memory: '200Mi'
+            limits:
+              cpu: '400m'
+              memory: '400Mi'
+          volumeMounts:
+            - mountPath: /swift-etc
+              name: swift-etc
+            - mountPath: /swift-rings
+              name: swift-rings
+        {{- end }}
+        - name: statsd
+          image: {{ .Values.global.dockerHubMirrorAlternateRegion }}/prom/statsd-exporter:{{ .Values.image_version_auxiliary_statsd_exporter }}
+          args: [ --statsd.mapping-config=/swift-etc/statsd-exporter.yaml ]
+          securityContext:
+            runAsNonRoot: true
+          resources:
+            # observed usage: CPU = 10m-100m, RAM = 550-950 MiB
+            requests:
+              cpu: "200m"
+              memory: "1024Mi"
+            limits:
+              cpu: "200m"
+              memory: "1024Mi"
+          ports:
+            - name: statsd
+              containerPort: 9125
+              protocol: UDP
+            - name: metrics
+              containerPort: 9102
+          volumeMounts:
+            - mountPath: /swift-etc
+              name: swift-etc

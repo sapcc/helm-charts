@@ -1,0 +1,52 @@
+global:
+  tld: DEFINED_IN_VALUES_FILE
+  region: DEFINED_IN_VALUES_FILE
+  registry: DEFINED_IN_VALUES_FILE
+  linkerd_requested: true
+
+linkerd-support:
+  annotate_namespace: true
+
+owner-info:
+  support-group: containers
+  service: keppel
+  maintainers:
+    - Stefan Majewsky
+    - Sandro Jäckel
+  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/openstack/keppel-trivy
+
+keppel:
+  image_version: DEFINED_IN_VALUES_FILE
+
+trivy:
+  api:
+    # 2 are usually enough to keep the queue from growing
+    # but not enough to decrease it at a good speed
+    replicas: 4
+  server:
+    replicas: 2
+  image_version: DEFINED_IN_VALUES_FILE
+  token: DEFINED_IN_VALUES_FILE
+
+redis:
+  alerts:
+    support_group: containers
+
+  persistence:
+    enabled: true
+    accessMode: ReadWriteOnce
+    size: 20Gi
+
+  config:
+    maxmemory-policy: volatile-ttl
+    maxmemory-samples: 5
+
+  metrics:
+    prometheus: infra-frontend
+    resources:
+      limits:
+        memory: 48Mi
+        cpu: 100m
+      requests:
+        memory: 48Mi
+        cpu: 100m

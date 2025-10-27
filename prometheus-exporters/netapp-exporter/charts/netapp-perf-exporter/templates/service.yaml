@@ -1,0 +1,23 @@
+{{- if .Values.prometheus.scrape_service }}
+{{- range $name, $app := .Values.apps }}
+{{- $fullNameWithComponent := printf "%s-%s" $.Values.fullname $app.component }}
+{{- if $app.enabled }}
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name:  {{ $fullNameWithComponent }}
+  labels:
+    app.kubernetes.io/name: {{ $.Values.fullname }}
+    app.kubernetes.io/component: {{ $app.component }}
+spec:
+  selector:
+    app: {{ $fullNameWithComponent }}
+  ports:
+  - name:  prometheus
+    port:  {{ $.Values.ports.graphiteExporterOutPort }}
+    targetPort: {{ $.Values.ports.graphiteExporterOutPort }}
+{{- end }}
+
+{{- end }}
+{{- end }}

@@ -1,0 +1,76 @@
+# Might we worth building your own ipxe stack here: https://rom-o-matic.eu/
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: ironic-db-migration-{{ randAlphaNum 4 | lower }}
+  labels:
+    system: openstack
+    type: job
+    component: ironic
+  annotations:
+    "helm.sh/hook": "post-install,pre-upgrade"
+    "helm.sh/hook-weight": "-1"
+    "helm.sh/hook-delete-policy": "before-hook-creation"
+    # hooks are not annotated as belonging to the Helm release, so we cannot rely on owner-info injection
+    ccloud/support-group: foundation
+    ccloud/service: ironic
+spec:
+  template:
+    spec:
+      initContainers:
+      {{- tuple . (dict "service" (include "ironic.db_service" . | quote)) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
+      restartPolicy: OnFailure
+      containers:
+      - name: ironic-dbsync
+        image: {{ .Values.global.registry }}/loci-ironic:{{ .Values.imageVersion }}
+        imagePullPolicy: IfNotPresent
+        command:
+        - dumb-init
+        - bash
+        args:
+        - -c
+        - |
+          set -e
+          ironic-dbsync upgrade
+          ironic-dbsync online_data_migrations
+        env:
+        - name: PGAPPNAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        volumeMounts:
+        - mountPath: /etc/ironic
+          name: etcironic
+        - mountPath: /etc/ironic/ironic.conf.d
+          name: ironic-etc-confd
+        - mountPath: /etc/ironic/ironic.conf
+          name: ironic-etc
+          subPath: ironic.conf
+          readOnly: true
+        - mountPath: /etc/ironic/policy.json
+          name: ironic-etc
+          subPath: policy.json
+          readOnly: true
+        - mountPath: /etc/ironic/rootwrap.conf
+          name: ironic-etc
+          subPath: rootwrap.conf
+          readOnly: true
+        - mountPath: /etc/ironic/logging.ini
+          name: ironic-etc
+          subPath: logging.ini
+          readOnly: true
+        {{- include "utils.trust_bundle.volume_mount" . | indent 8 }}
+      volumes:
+      - name: etcironic
+        emptyDir: {}
+      - name: ironic-etc
+        configMap:
+          name: ironic-etc
+          defaultMode: 0444
+      - name: ironic-etc-confd
+        secret:
+          secretName: {{ .Release.Name }}-secrets
+          items:
+          - key: secrets.conf
+            path: secrets.conf
+      {{- include "utils.trust_bundle.volumes" . | indent 6 }}

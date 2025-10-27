@@ -1,0 +1,98 @@
+groups:
+  - name: asr
+    rules:
+    
+    - alert: NetworkAsrInterfaceOverUtilizationOut
+      expr: ((rate(snmp_asr_ifHCOutOctets{ifAlias=~"NEUTRON-UPLINK.*|NEUTRON-LOOPBACK.*"}[5m])  * 8 /1000^ 2) /snmp_asr_ifHighSpeed) > 0.85
+      for: 15m
+      labels:
+        severity: critical
+        support_group: network-data
+        tier: net
+        service: asr
+        context: asr
+        meta: "Interface `{{ $labels.ifDescr }}` of ASR devicename `{{ $labels.devicename }}` experiencing high bandwidth utilization."
+        playbook: 'docs/devops/alert/network/router#NetworkAsrInterfaceOverUtilization'
+        dashboard: neutron-datapath-bandwith
+      annotations:
+        description: "Interface `{{ $labels.ifDescr }}` of ASR devicename `{{ $labels.devicename }}` experiencing high egress bandwidth utilization.Immediate action required"
+        summary: "Interface `{{ $labels.ifDescr }}` of ASR devicename `{{ $labels.devicename }}` crossed bandwidth threshold"
+
+    - alert: NetworkAsrInterfaceOverUtilizationIn
+      expr: ((rate(snmp_asr_ifHCInOctets{ifAlias=~"NEUTRON-UPLINK.*|NEUTRON-LOOPBACK.*"}[5m])  * 8 /1000^ 2) /snmp_asr_ifHighSpeed) > 0.85
+      for: 15m
+      labels:
+        severity: critical
+        support_group: network-data
+        tier: net
+        service: asr
+        context: asr
+        meta: "Interface `{{ $labels.ifDescr }}` of ASR devicename `{{ $labels.devicename }}` experiencing high bandwidth utilization."
+        playbook: 'docs/devops/alert/network/router#NetworkAsrInterfaceOverUtilization'
+        dashboard: neutron-datapath-bandwith
+      annotations:
+        description: "Interface `{{ $labels.ifDescr }}` of ASR devicename `{{ $labels.devicename }}` experiencing high ingress bandwidth utilization.Immediate action required"
+        summary: "Interface `{{ $labels.ifDescr }}` of ASR devicename `{{ $labels.devicename }}` crossed bandwidth threshold"
+    
+    - alert: NetworkAsrHighIosdCpuUtilization
+      expr: >-
+        snmp_asr_cpmProcExtUtil1Min{cpmProcessName=~".*iosd.*"} >= 80
+      for: 5m
+      labels:
+        severity: critical
+        support_group: network-data
+        tier: net
+        service: asr
+        context: asr
+        meta: "IOSD process on `{{ $labels.devicename }}` is using a lot of CPU."
+        playbook: 'docs/devops/alert/network/router#NetworkAsrHighIosdCpuUtilization'
+        dashboard: neutron-router
+      annotations:
+        description: "IOSD process on `{{ $labels.devicename }}` is using a lot of CPU."
+        summary: "IOSD process on `{{ $labels.devicename }}` is using a lot of CPU."
+
+    - alert: NetworkAsrHighCpuUtilization
+      expr: >-
+        snmp_asr_cpmCPULoadAvg1min{model="ASR1002-HX"} > 300 OR snmp_asr_cpmCPULoadAvg1min{model="C8500-12X4QC"} > 500
+      for: 10m
+      labels:
+        severity: critical
+        support_group: network-data
+        tier: net
+        service: asr
+        context: asr
+        meta: "The Control Processor CPU on `{{ $labels.devicename }}` is very busy."
+        playbook: 'docs/devops/alert/network/router#NetworkAsrHighCpuUtilization'
+        dashboard: neutron-router
+      annotations:
+        description: "The Control Processor CPU on `{{ $labels.devicename }}` is very busy."
+        summary: "The Control Processor CPU on `{{ $labels.devicename }}` is very busy."
+#    - alert: OpenstackNeutronPredictOutOfFIP
+#      expr: predict_linear(ssh_nat_static[1d], 3600 * 24 * 4) > 800
+#      for: 10m
+#      labels:
+#        context: floatingip
+#        dashboard: maia-asr-info
+#        service: neutron
+#        severity: warning
+#        tier: os
+#      annotations:
+#        description: 'STILL IN TEST MODE: The Floating IP''s on {{ $labels.devicename }} might possibly get exhausted soon. This is not an exact warning, but a heads up to check the current FIP situation.'
+#        summary: 'STILL IN TEST MODE: Floating IP''s possibly soon exhausted'
+    
+    - alert: NetworkAsrHighQfpCpuUtilization
+      expr: >-
+        snmp_asr_ceqfpUtilProcessingLoad{ceqfpUtilTimeInterval="2"} >= 80
+      for: 5m
+      labels:
+        severity: critical
+        support_group: network-data
+        tier: net
+        service: asr
+        context: asr
+        meta: "A high QFP utilization is seen on `{{ $labels.devicename }}`. This may impact forwarding."
+        playbook: 'docs/devops/alert/network/router#NetworkAsrHighQfpCpuUtilization'
+        dashboard: neutron-router
+      annotations:
+        description: "A high QFP utilization is seen on `{{ $labels.devicename }}`. This may impact forwarding."
+        summary: "A high QFP utilization is seen on `{{ $labels.devicename }}`. This may impact forwarding."

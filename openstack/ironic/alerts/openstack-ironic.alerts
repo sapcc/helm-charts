@@ -1,0 +1,180 @@
+# vim: set ft=yaml:
+
+groups:
+- name: openstack-ironic.alerts
+  rules:
+  - alert: OpenstackIronicUnmatchedNodes
+    expr: max(limes_unmatched_ironic_nodes) > 0
+    for: 1m # metric is measured every 15 minutes, so this is practically identical to "for: 15m" except it appears and resolves faster
+    labels:
+      severity: info
+      support_group: foundation
+      service: ironic
+      context: test
+      tier: os
+      meta: "{{ $value }} Ironic nodes do not match any Nova baremetal flavor"
+      kibana: "app/data-explorer/discover/#?_g=(filters:!(),refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-20m,to:now))&_a=(discover:(columns:!(kubernetes_labels_name,log),interval:auto,sort:!(time,desc)),metadata:(indexPattern:'logstash-*',view:discover))&_q=(filters:!(('$state':(store:appState),meta:(alias:!n,disabled:!f,index:'logstash-*',key:kubernetes_labels_name,negate:!f,params:(query:liquid-ironic),type:phrase),query:(match_phrase:(kubernetes_labels_name:liquid-ironic)))),query:(language:kuery,query:'log:%22baremetal%20flavor%22'))"
+    annotations:
+      description: "{{ $value }} active/available Ironic nodes do not match any Nova
+        baremetal flavor. Make sure that the resource class is maintained on the node,
+        and that the respective flavor appears in the default quota class set in Nova."
+      summary: "{{ $value }} Ironic nodes do not match any Nova baremetal flavor."
+
+  - alert: OpenstackIronicRegressionDown
+    expr: blackbox_regression_status_gauge{service=~"ironic"} == 1
+    for: 5m
+    labels:
+      severity: info
+      support_group: foundation
+      service: ironic
+      context: test
+      tier: os
+      dashboard: ccloud-health-canary-details
+      meta: 'Canary {{ $labels.service }} {{ $labels.check }} is down. See Sentry for details'
+      sentry: 'blackbox/?query=test_{{ $labels.check }}'
+      playbook: 'docs/support/playbook/baremetal/failed_regression_tests'
+      no_alert_on_absence: "true"
+    annotations:
+      description: 'Canary {{ $labels.service }} {{ $labels.check }} is down. See Sentry for details'
+      summary: 'Canary {{ $labels.service }} {{ $labels.check }} is down'
+
+  - alert: OpenstackIronicRegressionTimeout
+    expr: blackbox_regression_status_gauge{service=~"ironic"} == 0.5
+    for: 5m
+    labels:
+      severity: info
+      support_group: foundation
+      service: ironic
+      context: test
+      tier: os
+      dashboard: ccloud-health-canary-details
+      meta: 'Canary {{ $labels.service }} {{ $labels.check }} is timing out. See Sentry for details'
+      sentry: 'blackbox/?query=test_{{ $labels.check }}'
+      playbook: 'docs/devops/alert/{{ $labels.service }}'
+      no_alert_on_absence: "true"
+    annotations:
+      description: 'Canary {{ $labels.service }} {{ $labels.check }} is timing out. See Sentry for details'
+      summary: 'Canary {{ $labels.service }} {{ $labels.check }} is timing out'
+
+  - alert: OpenstackIronicNodeInErrorState
+    expr: count(openstack_ironic_nodes_list_gauge{provision_state='error'}) by (name, last_error) > 0
+    for: 5m
+    labels:
+      severity: info
+      support_group: foundation
+      service: ironic
+      tier: os
+      context: nodes
+      dashboard: ironic-node-overview
+      meta: 'Node {{ $labels.name }} is in error due to {{ $labels.last_error }}'
+      playbook: 'docs/support/playbook/baremetal/bm_node_error_state'
+    annotations:
+      description: 'Node {{ $labels.name }} is in error due to {{ $labels.last_error }}'
+      summary: 'Openstack Ironic Node In Error State'
+
+  - alert: OpenstackIronicNodeInDeployFailedState
+    expr: count(openstack_ironic_nodes_list_gauge{provision_state='deploy failed'}) by (name, last_error) > 0
+    for: 15m
+    labels:
+      severity: warning
+      support_group: foundation
+      service: ironic
+      tier: os
+      context: nodes
+      dashboard: ironic-node-overview
+      meta: 'Node {{ $labels.name }} is in deploy failed state due to {{ $labels.last_error }}'
+      playbook: 'docs/support/playbook/baremetal/bm_node_deploy_fail_state'
+    annotations:
+      description: 'Node {{ $labels.name }} is in deploy failed state due to {{ $labels.last_error }}'
+      summary: 'Openstack Ironic Node In Deploy Failed State'
+
+  - alert: OpenstackIronicNodeInCleanFailedState
+    expr: count(openstack_ironic_nodes_list_gauge{provision_state='clean failed'}) by (name, last_error) > 0
+    for: 15m
+    labels:
+      severity: info
+      support_group: foundation
+      tier: os
+      service: ironic
+      context: nodes
+      dashboard: ironic-node-overview
+      meta: 'Node {{ $labels.name }} is in clean failed state due to {{ $labels.last_error }}'
+      playbook: 'docs/support/playbook/baremetal/bm_node_error_state/#node-in-clean-failed-state'
+    annotations:
+      description: 'Node {{ $labels.name }} is in clean failed state due to {{ $labels.last_error }}'
+      summary: 'Openstack Ironic Node In Clean Failed State'
+
+  - alert: OpenstackIronicApiDown
+    expr: up{application="ironic",component="api"} == 0
+    for: 5m
+    labels:
+      severity: info
+      context: availability
+      dashboard: ironic
+      meta: "an ironic instance went down on {{ $labels.instance }}"
+      service: ironic
+      tier: os
+      support_group: foundation
+    annotations:
+      description: "An ironic-api pod on {{ $labels.instance }} is DOWN. The remaining ones should keep the service up."
+      summary: "An ironic server is DOWN"
+
+  - alert: OpenstackIronicConductorUp
+    expr: up{application="ironic", component="conductor"} == 0
+    for: 5m
+    labels:
+      severity: warning
+      context: availability
+      dashboard: ironic
+      meta: "an ironic conductor instance went down on {{ $labels.instance }}"
+      service: ironic
+      support_group: foundation
+    annotations:
+      description: "A ironic-api pod on {{ $labels.instance }} is DOWN. The remaining ones should keep the service up."
+      summary: "An ironic server is DOWN"
+
+  - alert: OpenstackIronicDatabaseDown
+    expr: count(up{app="ironic-mariadb"} == 0) by (instance) == count(up{app="ironic-mariadb"}) by (instance)
+    for: 5m
+    labels:
+      severity: critical
+      context: availability
+      service: ironic
+      tier: os
+      support_group: foundation
+      dashboard: mariadb-overview?var-host=ironic-mariadb
+      playbook: 'docs/devops/alert/ironic/#database_down'
+    annotations:
+      description: "Ironic database on {{ $labels.instance }} is DOWN."
+      summary: "Ironic Database is DOWN"
+
+  - alert: OpenstackIronicAllDown
+    expr: count(up{component="api",application="ironic"} == 0) == count(up{component="api",application="ironic"})
+    for: 5m
+    labels:
+      severity: critical
+      context: availability
+      meta: all ironic instances are down
+      service: ironic
+      tier: os
+      support_group: foundation
+      dashboard: ironic
+      playbook: 'docs/devops/alert/ironic/#api_down'
+    annotations:
+      description: All ironic-api server pods are down.
+      summary: Ironic is unavailable.
+
+  - alert: OpenstackIronicApiResponseExceeded
+    expr: (irate(openstack_watcher_api_requests_duration_seconds_sum{service="baremetal"}[1m])) /(irate(openstack_watcher_api_requests_duration_seconds_count{service="baremetal"}[1m])) > 3
+    for: 1m
+    labels:
+      severity: info
+      context: availability
+      meta: Api Requests to Ironic take more than 3s
+      service: ironic
+      tier: os
+      support_group: foundation
+      dashboard: ironic
+    annotations:
+      description: Api Requests to Ironic take {{ $value }} s
+      summary: Api Requests to Ironic take {{ $value }} s

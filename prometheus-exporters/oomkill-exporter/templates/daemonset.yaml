@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: {{ template "name" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ template "name" . }}
+spec:
+  updateStrategy:
+    rollingUpdate:
+      maxUnavailable: '50%' # these pods can be rolled rather quickly since they are not in the hot path
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app: {{ template "name" . }}
+  template:
+    metadata:
+      labels:
+        app: {{ template "name" . }}
+    spec:
+{{- if .Values.tolerations }}
+      tolerations:
+{{ toYaml .Values.tolerations | indent 8 }}
+{{- end }}
+      containers:
+      - name: {{ template "name" . }}
+        image: "{{ .Values.image.repository }}:{{ if .Values.image.tag }}{{ .Values.image.tag }}{{ else }}{{ .Chart.AppVersion }}{{ end }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        args:
+        - -logtostderr
+        - -listen-address=:{{ default 9102 .Values.metrics.port }}
+        - -v=0
+        securityContext:
+          privileged: true
+{{- if .Values.resources }}
+        resources:
+{{ toYaml .Values.resources | indent 10 }}
+{{- end }}
+        env:
+        - name: DOCKER_HOST
+          value: "unix:///var/run/docker.sock"
+        volumeMounts:
+        - name: kmsg
+          mountPath: /dev/kmsg
+          readOnly: true
+        - name: docker
+          mountPath: /var/run/docker.sock
+        - name: containerd
+          mountPath: /run/containerd/containerd.sock
+        ports:
+        - name: metrics
+          containerPort: {{ required ".Values.metrics.port missing" .Values.metrics.port }}
+      volumes:
+      - name: kmsg
+        hostPath:
+          path: /dev/kmsg
+      - name: docker
+        hostPath:
+          path: /var/run/docker.sock
+      - name: containerd
+        hostPath:
+          path: /run/containerd/containerd.sock

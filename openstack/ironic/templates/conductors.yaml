@@ -1,0 +1,12 @@
+{{- $envAll := . }}
+{{- range $i, $conductor := $envAll.Values.conductor.hosts }}
+{{ $conductor := merge $conductor $envAll.Values.conductor.defaults }}
+{{ if ne $i 0 }}---{{ end }}
+{{ tuple $envAll $conductor | include "ironic_conductor_deployment" }}
+---
+{{ tuple $envAll $conductor | include "ironic_conductor_configmap" }}
+---
+{{ tuple $envAll $conductor | include "ironic_conductor_console_service" }}
+---
+{{ tuple $envAll $conductor | include "ironic_conductor_console_ingress" }}
+{{- end }}

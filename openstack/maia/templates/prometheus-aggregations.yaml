@@ -1,0 +1,20 @@
+{{- if not .Values.global.is_global_region }}
+{{- $values := .Values }}
+{{- if $values.aggregations.enabled }}
+{{- range $path, $bytes := .Files.Glob "aggregations/*.rules" }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+
+metadata:
+  name: {{ printf "maia-rules-%s" $path | replace "/" "-" }}
+  labels:
+    type: aggregation-rules
+    prometheus: {{ required ".Values.aggregations.prometheus missing" $values.aggregations.prometheus }}
+
+spec:
+{{ printf "%s" $bytes | indent 2 }}
+
+{{- end }}
+{{- end }}
+{{- end }}

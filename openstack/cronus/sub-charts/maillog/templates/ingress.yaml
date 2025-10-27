@@ -1,0 +1,34 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: maillog
+  annotations:
+    ingress.kubernetes.io/auth-tls-secret: kube-system/ingress-cacrt
+    nginx.ingress.kubernetes.io/auth-tls-secret: kube-system/ingress-cacrt
+    ingress.kubernetes.io/auth-tls-pass-certificate-to-upstream: "true"
+    nginx.ingress.kubernetes.io/auth-tls-pass-certificate-to-upstream: "true"
+    ingress.kubernetes.io/auth-tls-verify-client: "optional"
+    nginx.ingress.kubernetes.io/auth-tls-verify-client: "optional"
+    ingress.kubernetes.io/auth-tls-verify-depth: "3"
+    nginx.ingress.kubernetes.io/auth-tls-verify-depth: "3"
+    kubernetes.io/ingress.class: "nginx"
+    disco: "true"
+    kubernetes.io/tls-acme: "true"
+  labels:
+    app: maillog
+spec:
+  rules:
+    - host: maillog.{{ .Values.global.region }}.{{ .Values.global.tld }}
+      http:
+        paths:
+          - backend:
+              service:
+                name: maillog
+                port:
+                  number: {{ .Values.server.http }}
+            path: /
+            pathType: Prefix
+  tls:
+    - hosts:
+      - maillog.{{ .Values.global.region }}.{{ .Values.global.tld }}
+      secretName: tls-secret-maillog

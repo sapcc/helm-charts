@@ -1,0 +1,65 @@
+{{- if and .Values.alerts.enabled .Values.alerts.alertmanager.hosts }}
+apiVersion: greenhouse.sap/v1alpha1
+kind: Plugin
+metadata:
+  name: "alerts"
+  namespace: {{ .Chart.Name }}
+  labels:
+    greenhouse.sap/owned-by: observability
+{{- if .Values.global.fluxEnabled }}
+    greenhouse.sap/deployment-tool: "flux"
+{{- end }}
+  annotations:
+    "greenhouse.sap/propagate-labels": "greenhouse.sap/owned-by"
+spec:
+  pluginDefinition: alerts
+  displayName: Alerts
+  releaseName: alerts-ccloud
+  optionValues:
+    - name: global.caCert
+      valueFrom:
+        secret:
+          key: ca.crt
+          name: ingress-ca-cert
+    - name: global.greenhouse.baseDomain
+      value: {{ .Values.global.dnsDomain }}
+    - name: endpoint
+      value: {{ printf "https://%s/api/v2" (.Values.alerts.alertmanager.hosts | first) }}
+    - name: alerts.alertmanager.enabled
+      value: {{ .Values.alerts.alertmanager.enabled }}
+    - name: alerts.alertmanager.ingress.enabled
+      value: {{ .Values.alerts.alertmanager.enabled }}
+    {{- if .Values.alerts.alertmanager.enabled }}
+    - name: alerts.alertmanager.ingress.annotations
+      value:
+        nginx.ingress.kubernetes.io/auth-tls-secret: ccloud/ingress-ca-cert
+        nginx.ingress.kubernetes.io/auth-tls-verify-client: "true"
+        nginx.ingress.kubernetes.io/auth-tls-verify-depth: "3"
+    - name: alerts.alertmanager.ingress.enabled
+      value: true
+    - name: alerts.alertmanager.ingress.hosts
+      value: 
+        {{ .Values.alerts.alertmanager.hosts | toYaml | nindent 8 }}
+    - name: alerts.alertmanager.ingress.tls
+      value:
+        - hosts:
+            {{ .Values.alerts.alertmanager.hosts | toYaml | nindent 12 }}
+          {{- range $host := .Values.alerts.alertmanager.hosts }}
+          secretName: {{ printf "tls-%s" $host | replace "." "-" }}
+          {{- end }}
+    {{- end }}
+    - name: alerts.defaultRules.create
+      value: {{ .Values.alerts.alertmanager.enabled }}
+    - name: filterLabels
+      value: 
+        {{ .Values.alerts.filterLabels | toYaml | nindent 8 }}
+    - name: silenceExcludedLabels
+      value: 
+        {{ .Values.alerts.silenceExcludedLabels | toYaml | nindent 8 }}
+    - name: silenceTemplates
+      value:
+        {{ include (print .Template.BasePath "/_silence.conf.tpl") . | nindent 8 }}
+    - name: predefinedFilters
+      value:
+        {{ .Values.alerts.predefinedFilters | toYaml | nindent 8 }}
+{{ end }}

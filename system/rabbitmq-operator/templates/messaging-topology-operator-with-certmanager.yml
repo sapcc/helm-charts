@@ -1,0 +1,774 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: messaging-topology-operator
+  namespace: rabbitmq-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  labels:
+    app.kubernetes.io/component: rabbitmq-operator
+    app.kubernetes.io/name: rabbitmq-cluster-operator
+    app.kubernetes.io/part-of: rabbitmq
+  name: messaging-topology-leader-election-role
+  namespace: rabbitmq-system
+rules:
+- apiGroups:
+  - coordination.k8s.io
+  resources:
+  - leases
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - create
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: messaging-topology-manager-role
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - create
+  - get
+  - patch
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  verbs:
+  - create
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - services
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - rabbitmq.com
+  resources:
+  - bindings
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - rabbitmq.com
+  resources:
+  - bindings/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - rabbitmq.com
+  resources:
+  - bindings/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - rabbitmq.com
+  resources:
+  - exchanges
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - rabbitmq.com
+  resources:
+  - exchanges/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - rabbitmq.com
+  resources:
+  - exchanges/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - rabbitmq.com
+  resources:
+  - federations
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - rabbitmq.com
+  resources:
+  - federations/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - rabbitmq.com
+  resources:
+  - federations/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - rabbitmq.com
+  resources:
+  - operatorpolicies
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - rabbitmq.com
+  resources:
+  - operatorpolicies/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - rabbitmq.com
+  resources:
+  - operatorpolicies/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - rabbitmq.com
+  resources:
+  - permissions
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - rabbitmq.com
+  resources:
+  - permissions/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - rabbitmq.com
+  resources:
+  - permissions/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - rabbitmq.com
+  resources:
+  - policies
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - rabbitmq.com
+  resources:
+  - policies/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - rabbitmq.com
+  resources:
+  - policies/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - rabbitmq.com
+  resources:
+  - queues
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - rabbitmq.com
+  resources:
+  - queues/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - rabbitmq.com
+  resources:
+  - queues/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - rabbitmq.com
+  resources:
+  - rabbitmqclusters
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - rabbitmq.com
+  resources:
+  - rabbitmqclusters/status
+  verbs:
+  - get
+- apiGroups:
+  - rabbitmq.com
+  resources:
+  - schemareplications
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - rabbitmq.com
+  resources:
+  - schemareplications/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - rabbitmq.com
+  resources:
+  - schemareplications/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - rabbitmq.com
+  resources:
+  - shovels
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - rabbitmq.com
+  resources:
+  - shovels/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - rabbitmq.com
+  resources:
+  - shovels/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - rabbitmq.com
+  resources:
+  - superstreams
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - rabbitmq.com
+  resources:
+  - superstreams/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - rabbitmq.com
+  resources:
+  - superstreams/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - rabbitmq.com
+  resources:
+  - topicpermissions
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - rabbitmq.com
+  resources:
+  - topicpermissions/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - rabbitmq.com
+  resources:
+  - topicpermissions/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - rabbitmq.com
+  resources:
+  - users
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - rabbitmq.com
+  resources:
+  - users/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - rabbitmq.com
+  resources:
+  - users/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - rabbitmq.com
+  resources:
+  - vhosts
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - rabbitmq.com
+  resources:
+  - vhosts/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - rabbitmq.com
+  resources:
+  - vhosts/status
+  verbs:
+  - get
+  - patch
+  - update
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: messaging-topology-leader-election-rolebinding
+  namespace: rabbitmq-system
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: messaging-topology-leader-election-role
+subjects:
+- kind: ServiceAccount
+  name: messaging-topology-operator
+  namespace: rabbitmq-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: messaging-topology-manager-rolebinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: messaging-topology-manager-role
+subjects:
+- kind: ServiceAccount
+  name: messaging-topology-operator
+  namespace: rabbitmq-system
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: webhook-service
+  namespace: rabbitmq-system
+spec:
+  ports:
+  - port: 443
+    targetPort: 9443
+  selector:
+    app.kubernetes.io/name: messaging-topology-operator
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/component: rabbitmq-operator
+    app.kubernetes.io/name: messaging-topology-operator
+    app.kubernetes.io/part-of: rabbitmq
+  name: messaging-topology-operator
+  namespace: rabbitmq-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: messaging-topology-operator
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/component: rabbitmq-operator
+        app.kubernetes.io/name: messaging-topology-operator
+        app.kubernetes.io/part-of: rabbitmq
+    spec:
+      containers:
+      - command:
+        - /manager
+        env:
+        - name: OPERATOR_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        image: {{ required ".Values.global.dockerHubMirror is missing" .Values.global.dockerHubMirror }}/{{ required ".Values.topology_operator.image_name is missing" .Values.topology_operator.image_name }}:{{ required ".Values.topology_operator.image_tag is missing" .Values.topology_operator.image_tag }}
+        imagePullPolicy: Always
+        name: manager
+        ports:
+        - containerPort: 9443
+          name: webhook-server
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 1000m
+            memory: 1024Mi
+          requests:
+            cpu: 100m
+            memory: 100Mi
+        volumeMounts:
+        - mountPath: /tmp/k8s-webhook-server/serving-certs
+          name: cert
+          readOnly: true
+      serviceAccountName: messaging-topology-operator
+      terminationGracePeriodSeconds: 10
+      volumes:
+      - name: cert
+        secret:
+          defaultMode: 420
+          secretName: webhook-server-cert
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: serving-cert
+  namespace: rabbitmq-system
+spec:
+  dnsNames:
+  - webhook-service.rabbitmq-system.svc
+  - webhook-service.rabbitmq-system.svc.cluster.local
+  issuerRef:
+    kind: Issuer
+    name: selfsigned-issuer
+  secretName: webhook-server-cert
+---
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: selfsigned-issuer
+  namespace: rabbitmq-system
+spec:
+  selfSigned: {}
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  annotations:
+    cert-manager.io/inject-ca-from: rabbitmq-system/serving-cert
+  name: validating-webhook-configuration
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: rabbitmq-system
+      path: /validate-rabbitmq-com-v1beta1-binding
+  failurePolicy: Fail
+  name: vbinding.kb.io
+  rules:
+  - apiGroups:
+    - rabbitmq.com
+    apiVersions:
+    - v1beta1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - bindings
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: rabbitmq-system
+      path: /validate-rabbitmq-com-v1beta1-exchange
+  failurePolicy: Fail
+  name: vexchange.kb.io
+  rules:
+  - apiGroups:
+    - rabbitmq.com
+    apiVersions:
+    - v1beta1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - exchanges
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: rabbitmq-system
+      path: /validate-rabbitmq-com-v1beta1-federation
+  failurePolicy: Fail
+  name: vfederation.kb.io
+  rules:
+  - apiGroups:
+    - rabbitmq.com
+    apiVersions:
+    - v1beta1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - federations
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: rabbitmq-system
+      path: /validate-rabbitmq-com-v1beta1-permission
+  failurePolicy: Fail
+  name: vpermission.kb.io
+  rules:
+  - apiGroups:
+    - rabbitmq.com
+    apiVersions:
+    - v1beta1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - permissions
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: rabbitmq-system
+      path: /validate-rabbitmq-com-v1beta1-policy
+  failurePolicy: Fail
+  name: vpolicy.kb.io
+  rules:
+  - apiGroups:
+    - rabbitmq.com
+    apiVersions:
+    - v1beta1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - policies
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: rabbitmq-system
+      path: /validate-rabbitmq-com-v1beta1-queue
+  failurePolicy: Fail
+  name: vqueue.kb.io
+  rules:
+  - apiGroups:
+    - rabbitmq.com
+    apiVersions:
+    - v1beta1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - queues
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: rabbitmq-system
+      path: /validate-rabbitmq-com-v1beta1-schemareplication
+  failurePolicy: Fail
+  name: vschemareplication.kb.io
+  rules:
+  - apiGroups:
+    - rabbitmq.com
+    apiVersions:
+    - v1beta1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - schemareplications
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: rabbitmq-system
+      path: /validate-rabbitmq-com-v1beta1-shovel
+  failurePolicy: Fail
+  name: vshovel.kb.io
+  rules:
+  - apiGroups:
+    - rabbitmq.com
+    apiVersions:
+    - v1beta1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - shovels
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: rabbitmq-system
+      path: /validate-rabbitmq-com-v1beta1-user
+  failurePolicy: Fail
+  name: vuser.kb.io
+  rules:
+  - apiGroups:
+    - rabbitmq.com
+    apiVersions:
+    - v1beta1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - users
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: rabbitmq-system
+      path: /validate-rabbitmq-com-v1beta1-vhost
+  failurePolicy: Fail
+  name: vvhost.kb.io
+  rules:
+  - apiGroups:
+    - rabbitmq.com
+    apiVersions:
+    - v1beta1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - vhosts
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: rabbitmq-system
+      path: /validate-rabbitmq-com-v1alpha1-superstream
+  failurePolicy: Fail
+  name: vsuperstream.kb.io
+  rules:
+  - apiGroups:
+    - rabbitmq.com
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - superstreams
+  sideEffects: None

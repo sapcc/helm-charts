@@ -1,0 +1,70 @@
+{{- if .Values.alerts.enabled }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: ingress-ca-cert
+data:
+  ca.crt: {{ required "missing ingress ca cert: .Values.global.caCert" .Values.global.caCert | b64enc | quote }}
+---
+apiVersion: greenhouse.sap/v1alpha1
+kind: Plugin
+metadata:
+  name: alerts
+  namespace: {{ .Release.Namespace }}
+  labels:
+    "greenhouse.sap/owned-by": {{ .Values.alerts.supportGroup | default .Values.global.supportGroup }}
+spec:
+  pluginDefinition: alerts
+  releaseName: alerts-greenhouse
+  disabled: false
+  displayName: Alerts
+  optionValues:
+    - name: global.caCert
+      valueFrom:
+        secret:
+          key: ca.crt
+          name: ingress-ca-cert
+    - name: global.greenhouse.baseDomain
+      value: {{ .Values.global.dnsDomain }}
+    - name: alerts.caCert
+      valueFrom:
+        secret:
+          key: ca.crt
+          name: tls-alerts-{{ .Release.Namespace }}-root-ca
+    - name: alerts.alertmanager.enabled
+      value: {{ .Values.alerts.enabled }}
+    - name: alerts.alertmanager.ingress.enabled
+      value: {{ .Values.alerts.enabled }}
+    - name: alerts.defaultRules.create
+      value: {{ .Values.alerts.enabled }}
+    - name: endpoint
+      value: {{ required ".Values.alerts.endpoint missing" .Values.alerts.endpoint }}
+    - name: filterLabels
+      value:
+        {{ .Values.alerts.filterLabels | toYaml | nindent 8 }}
+    - name: silenceExcludedLabels
+      value:
+        {{ .Values.alerts.silenceExcludedLabels | toYaml | nindent 8 }}
+    - name: silenceTemplates
+      value:
+        {{ .Values.alerts.silenceTemplates | toYaml | nindent 8 }}
+    - name: predefinedFilters
+      value:
+        {{ .Values.alerts.predefinedFilters | toYaml | nindent 8 }}
+    - name: alerts.alertmanager.ingress.hosts
+      value:
+      - {{ required ".Values.alerts.ingress.host missing" .Values.alerts.ingress.host }}
+    - name: alerts.alertmanager.ingress.tls
+      value:
+      - hosts:
+        - {{ required ".Values.alerts.ingress.host missing" .Values.alerts.ingress.host }}
+        secretName: tls-{{ .Values.alerts.ingress.host | replace "." "-" }}
+    - name: alerts.alertmanager.alertmanagerSpec.alertmanagerConfigMatcherStrategy
+      value:
+        type: None
+    {{- if .Values.alerts.slack.routes }}
+    - name: alerts.alertmanagerConfig.slack.routes
+      value:
+        {{ .Values.alerts.slack.routes | toYaml | nindent 8 }}
+    {{- end }}
+{{- end }}

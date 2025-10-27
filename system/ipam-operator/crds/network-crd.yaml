@@ -1,0 +1,134 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    cert-manager.io/inject-ca-from: ipam-system/ipam-operator-serving-cert
+    controller-gen.kubebuilder.io/version: v0.14.0
+  name: networks.ipam.metal.ironcore.dev
+spec:
+  group: ipam.metal.ironcore.dev
+  names:
+    kind: Network
+    listKind: NetworkList
+    plural: networks
+    singular: network
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - description: Network Type
+      jsonPath: .spec.type
+      name: Type
+      type: string
+    - description: Reserved Network ID
+      jsonPath: .status.reserved
+      name: Reserved
+      type: string
+    - description: Total IPv4 address capacity in all ranges
+      jsonPath: .status.ipv4Capacity
+      name: IPv4 Capacity
+      type: string
+    - description: Total IPv4 address capacity in all ranges
+      jsonPath: .status.ipv6Capacity
+      name: IPv6 Capacity
+      type: string
+    - description: Description
+      jsonPath: .spec.description
+      name: Description
+      type: string
+    - description: Request state
+      jsonPath: .status.state
+      name: State
+      type: string
+    - description: Message about request processing resutls
+      jsonPath: .status.message
+      name: Message
+      type: string
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: Network is the Schema for the networks API
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: NetworkSpec defines the desired state of Network
+            properties:
+              description:
+                description: Description contains a human readable description of
+                  network
+                type: string
+              id:
+                description: |-
+                  ID is a unique network identifier.
+                  For VXLAN it is a single 24 bit value. First 100 values are reserved.
+                  For GENEVE it is a single 24 bit value. First 100 values are reserved.
+                  For MLPS it is a set of 20 bit values. First 16 values are reserved.
+                  Represented with number encoded to string.
+                type: string
+              type:
+                description: NetworkType is a type of network id is assigned to.
+                enum:
+                - VXLAN
+                - GENEVE
+                - MPLS
+                type: string
+            type: object
+          status:
+            description: NetworkStatus defines the observed state of Network
+            properties:
+              ipv4Capacity:
+                anyOf:
+                - type: integer
+                - type: string
+                description: IPv4Capacity is a total address capacity of all IPv4
+                  CIDRs in Ranges
+                pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                x-kubernetes-int-or-string: true
+              ipv4Ranges:
+                description: IPv4Ranges is a list of IPv4 ranges booked by child subnets
+                items:
+                  type: string
+                type: array
+              ipv6Capacity:
+                anyOf:
+                - type: integer
+                - type: string
+                description: IPv6Capacity is a total address capacity of all IPv4
+                  CIDRs in Ranges
+                pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                x-kubernetes-int-or-string: true
+              ipv6Ranges:
+                description: IPv6Ranges is a list of IPv6 ranges booked by child subnets
+                items:
+                  type: string
+                type: array
+              message:
+                description: Message contains error details if the one has occurred
+                type: string
+              reserved:
+                description: Reserved is a reserved network ID
+                type: string
+              state:
+                description: State is a network creation request processing state
+                type: string
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

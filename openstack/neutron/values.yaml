@@ -1,0 +1,995 @@
+# Default values for neutron.
+# This is a YAML-formatted file.
+# Declare name/value pairs to be passed into your templates.
+# name: value
+network_agents: []
+
+# osprofiler
+osprofiler:
+  enabled: false
+
+global:
+  neutron_service_user: neutron
+  dbUser: neutron
+  # dbPassword:
+  # imageRegistry:
+  metadata_workers: 1
+  rpc_response_timeout: 60
+  domain_seeds:
+    skip_hcm_domain: false
+  linkerd_requested: false
+
+api_workers: 12
+rpc_workers: 5
+rpc_state_workers: 5
+
+owner-info:
+  support-group: network-api
+  service: neutron
+  maintainers:
+    - Sebastian Lohff
+    - Sebastian Wagner
+    - Andrew Karpow
+    - Franziska Lichtblau
+    - Sven Rosenzweig
+  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/openstack/neutron
+
+pod:
+  replicas:
+    server: 3
+    rpc_server: 2
+    network_agent: 15
+    swift_injector: 1
+    ovn_db: 3
+  lifecycle:
+    upgrades:
+      deployments:
+        revision_history: 5
+        pod_replacement_strategy: RollingUpdate
+        rolling_update:
+          max_unavailable: 10%
+          max_surge: 25%
+  tolerations: {}
+  debug:
+    server: false
+    dhcp_agent: false
+    metadata_agent: false
+    aci_agent: false
+    asr_agent: false
+    f5_agent: false
+  resources:
+    metadata_agent:
+      requests:
+        cpu: "250m"
+        memory: "256Mi"
+      limits:
+        cpu: "500m"
+        memory: "512Mi"
+    aci_agent:
+      limits:
+        cpu: '500m'
+        memory: '1Gi'
+      requests:
+        cpu: '250m'
+        memory: '512Mi'
+    asr1k:
+      requests:
+        cpu: "64m"
+        memory: "160Mi"
+      limits:
+        cpu: "256m"
+        memory: "256Mi"
+    asr1k_ml2:
+      requests:
+        cpu: "32m"
+        memory: "160Mi"
+      limits:
+        cpu: "128m"
+        memory: "256Mi"
+    cc_fabric_agent:
+      limits:
+        cpu: '1000m'
+        memory: '1Gi'
+      requests:
+        cpu: '250m'
+        memory: '512Mi'
+    server:
+      requests:
+        cpu: "4000m"
+        memory: "8Gi"
+    rpc_server:
+      requests:
+        cpu: "1000m"
+        memory: "3Gi"
+      limits:
+        cpu: "4000m"
+        memory: "4Gi"
+    uwsgi_server:
+      requests:
+        cpu: "2000m"
+        memory: "2Gi"
+      limits:
+        cpu: "4000m"
+        memory: "3Gi"
+    sftp_backup:
+      requests:
+        cpu: "256m"
+        memory: "64Mi"
+      limits:
+        cpu: "500m"
+        memory: "128Mi"
+    dhcp_agent:
+      requests:
+        cpu: "1000m"
+        memory: "1Gi"
+      limits:
+        cpu: "4000m"
+        memory: "2.5Gi"
+    linuxbridge_agent:
+      requests:
+        cpu: "256m"
+        memory: "512Mi"
+      limits:
+        cpu: "2000m"
+        memory: "1Gi"
+    nsxv3_agent:
+      requests:
+        cpu: "128m"
+        memory: "256Mi"
+      limits:
+        cpu: "256m"
+        memory: "512Mi"
+    nsxv3_exporter:
+      requests:
+        cpu: "32m"
+        memory: "64Mi"
+      limits:
+        cpu: "128m"
+        memory: "128Mi"
+    statsd:
+      requests:
+        cpu: "64m"
+        memory: "64Mi"
+      limits:
+        cpu: "128m"
+        memory: "128Mi"
+    ovn_northd:
+      requests:
+        cpu: "100m"
+        memory: "300Mi"
+
+debug: "True"
+port_metrics: '9102'
+l2_port_metrics: '9102'
+l3_port_metrics: '9103'
+
+new_f5:
+  periodic_interval: 120
+  loadbalancers: []
+  cleanup: true
+
+imageName: 'monsoon/loci-neutron'
+imageNameNetworkAgentDHCPInit: alpine
+# imageVersion:
+# imageVersionServerRPC:
+# imageVersionServerAPI:
+# imageVersionACI:
+# imageVersionCCFabric:
+# imageVersionASR1kML2:
+# imageVersionASR1k:
+# imageVersionNSXv3:
+# imageVersionNSXTExporter:
+# imageVersionNetworkAgent:
+# imageVersionNetworkAgentDHCP:
+# imageVersionNetworkAgentMetadata:
+# imageVersionNetworkAgentL3:
+# imageVersionNetworkAgentOVS:
+# imageVersionIronicAgent:
+imageVersionRedis: 7.0.0-alpine
+imageVersionLogstash: 8.15.1
+imageVersionNetworkAgentDHCPInit: 3.8
+
+api:
+  processes: 8
+  # minimum number of workers to keep at all times
+  cheaper: 0
+  uwsgi: false
+  uwsgi_enable_harakiri_graceful_signal: true
+  # time to cache the OwnerCheck's result in seconds
+  # 0/nil/null results in not setting the config option at all and thus using
+  # the default from Neutron
+  owner_check_cache_expiration_time: null
+
+service_plugins: asr1k_l3_routing
+default_router_type: ASR1k_router
+router_scheduler_driver: neutron.scheduler.l3_agent_scheduler.LeastRoutersScheduler
+
+aci:
+  apic_application_profile: converged_cloud_openstack
+  support_remote_mac_clear: 'True'
+  sync_allocations: 'True'
+  sync_allocations_done_file_path: "/tmp/aci-sync-allocations-done"
+  # apic_hosts: null
+  # apic_user: null
+  # apic_password: null
+  # apic_tenant_name: null
+  configmap_char_limit: 750000
+
+cc_fabric:
+  agent:
+    enabled: false
+    platforms: ['eos', 'nxos']
+
+coordinationBackend: "memcached"
+arista:
+  api_type: nocvx
+  sync_interval: 60
+  conn_timeout: 30
+  lossy_consolidation_limit: 50
+  eapi_host: TODO_REMOVE_ME
+  eapi_username: TODO_REMOVE_ME
+  # eapi_password:
+  # switches:
+  #  - host:
+  #    user:
+  #    password:
+
+bgp_vpn:
+  enabled: false
+
+interconnection:
+  enabled: false
+  user: interconnection
+  password:
+
+fwaas:
+  enabled: false
+
+ovn:
+  enabled: false
+  image: "keppel.eu-de-1.cloud.sap/ccloud/cobaltcore-dev/openstack-ovn-controller"
+  imageVersionOVN: "latest"
+
+  # -- Use SSL transport to NB/SB db and northd
+  enableSsl: false
+
+ovsdb-sb:
+  RAFT_PORT: 6644
+  DB_TYPE: sb
+  DB_PORT: 6442
+  OVN_LOG_LEVEL: "info"
+  OVN_ELECTION_TIMER: "10000"
+  OVN_INACTIVITY_PROBE: "60000"
+  OVN_PROBE_INTERVAL_TO_ACTIVE: "60000"
+  service:
+    # requirements to be accessible from outside with Calico
+    type: LoadBalancer
+    external_traffic_policy: Local
+
+ovsdb-nb:
+  RAFT_PORT: 6643
+  DB_TYPE: nb
+  DB_PORT: 6441
+  OVN_LOG_LEVEL: "info"
+  OVN_ELECTION_TIMER: "10000"
+  OVN_INACTIVITY_PROBE: "60000"
+  OVN_PROBE_INTERVAL_TO_ACTIVE: "60000"
+
+asr:
+  config_agents: []
+
+global_cloud_asn: None
+global_address_scopes: []
+local_address_scopes: []
+
+f5:
+  snat_per_subnet: 1
+  # loadbalancers:
+  #  - name: null
+  #    username:
+  #    password:
+  #    guest_host:
+  #    vcmp_host:
+  #    external_physical_mappings:
+  #    physical_network:
+
+hypervisors_vmware: []
+
+# manila:
+#   physnet:
+
+# SFTP-swift bridge (e.g. for nsx-t backups in control-plane)
+sftp:
+  enabled: false
+  server_key:
+  externalIPs: []
+  user: db_backup
+  logins:
+    db_backup: nsx-t-backup
+    vcsa_backup: vcsa-backups
+
+drivers:
+  nsxv3:
+    defaults:
+      AGENT:
+        polling_interval: 240
+        quitting_rpc_timeout: 120
+        db_max_records_per_query: 1000
+        retry_on_failure_max: 3
+        retry_on_failure_delay: 3
+        resync_objects_based_on_age: false
+      NSXV3:
+        nsxv3_connection_retry_count: 2
+        nsxv3_connection_retry_sleep: 2
+        nsxv3_realization_timeout: 300
+        nsxv3_login_port: 443
+        nsxv3_suppress_ssl_wornings: true
+        nsxv3_max_records_per_query: 200
+        nsxv3_requests_per_second: 80
+        nsxv3_policy_migration_limit: 6
+        nsxv3_remove_orphan_ports_after: 2
+        nsxv3_default_policy_infrastructure_rules: true
+        nsxv3_transport_zone_id_cache_time: 86400
+
+nsxv3_pw_user: m3apiuser0
+
+#ToDo - Remove this migrated to the new sentry logger
+logging:
+  formatters:
+    context:
+      class: oslo_log.formatters.ContextFormatter
+    default:
+      format: "%(message)s"
+  handlers:
+    stdout:
+      class: StreamHandler
+      args: "(sys.stdout,)"
+      formatter: context
+    "null":
+      class: logging.NullHandler
+      formatter: default
+      args: "()"
+    sentry:
+      class: "raven.handlers.logging.SentryHandler"
+      level: ERROR
+      args: "()"
+  loggers:
+    root:
+      handlers: stdout, sentry
+      level: WARNING
+    neutron:
+      handlers: stdout, sentry
+      level: WARNING
+    neutron.pecan_wsgi.hooks.policy_enforcement:
+      handlers: stdout, sentry
+      level: INFO
+    neutron.api.rpc:
+      handlers: stdout, sentry
+      level: INFO
+    neutron.wsgi:
+      handlers: stdout, sentry
+      level: INFO
+    suds:
+      handlers: "null"
+      level: ERROR
+    eventlet.wsgi.server:
+      handlers: stdout, sentry
+      level: INFO
+    networking_aci.plugins.ml2.drivers.mech_aci.allocations_manager:
+      handlers: stdout, sentry
+      level: WARNING
+    auditmiddleware:
+      handlers: stdout, sentry
+      level: INFO
+    rate_limit:
+      handlers: stdout, sentry
+      level: INFO
+    neutron_fwaas:
+      handlers: stdout, sentry
+      level: WARNING
+    neutron_vpnaas:
+      handlers: stdout, sentry
+      level: INFO
+    networking_bgpvpn:
+      handlers: stdout, sentry
+      level: INFO
+
+logging_sapccsentry:
+  formatters:
+    context:
+      class: oslo_log.formatters.ContextFormatter
+    default:
+      format: "%(message)s"
+  handlers:
+    stdout:
+      class: StreamHandler
+      args: "(sys.stdout,)"
+      formatter: context
+    "null":
+      class: logging.NullHandler
+      formatter: default
+      args: "()"
+    sentry_events:
+      class: "sapcc_sentrylogger.handler.EventHandler"
+      level: ERROR
+      args: "()"
+    sentry_breadcrumbs:
+      class: "sapcc_sentrylogger.handler.BreadcrumbHandler"
+      level: INFO
+      args: "()"
+  loggers:
+    root:
+      formatter: context
+      handlers: stdout, sentry_events, sentry_breadcrumbs
+      level: ERROR
+    neutron:
+      handlers: stdout, sentry_events, sentry_breadcrumbs
+      level: DEBUG
+    neutron.pecan_wsgi.hooks.policy_enforcement:
+      handlers: stdout, sentry_events, sentry_breadcrumbs
+      level: INFO
+    neutron.api.rpc:
+      handlers: stdout, sentry_events, sentry_breadcrumbs
+      level: INFO
+    neutron.wsgi:
+      handlers: stdout, sentry_events, sentry_breadcrumbs
+      level: INFO
+    suds:
+      handlers: "null"
+      level: ERROR
+    eventlet.wsgi.server:
+      handlers: stdout, sentry_events, sentry_breadcrumbs
+      level: INFO
+    networking_aci.plugins.ml2.drivers.mech_aci.allocations_manager:
+      handlers: stdout, sentry_events, sentry_breadcrumbs
+      level: WARNING
+    auditmiddleware:
+      handlers: stdout, sentry_events, sentry_breadcrumbs
+      level: INFO
+    rate_limit:
+      handlers: stdout, sentry_events, sentry_breadcrumbs
+      level: INFO
+    neutron_fwaas:
+      handlers: stdout, sentry_events, sentry_breadcrumbs
+      level: WARNING
+    neutron_vpnaas:
+      handlers: stdout, sentry_events, sentry_breadcrumbs
+      level: INFO
+    paste:
+      handlers: stdout, sentry_events, sentry_breadcrumbs
+      level: ERROR
+    networking_aci:
+      handlers: stdout, sentry_events, sentry_breadcrumbs
+      level: INFO
+    networking_nsxv3:
+      handlers: stdout, sentry_events, sentry_breadcrumbs
+      level: INFO
+    neutron.plugins.ml2.drivers.mech_agent:
+      handlers: stdout, sentry_events, sentry_breadcrumbs
+      level: DEBUG
+    asr1k_neutron_l3:
+      handlers: stdout, sentry_events, sentry_breadcrumbs
+      level: DEBUG
+    networking_f5:
+      handlers: stdout, sentry_events, sentry_breadcrumbs
+      level: DEBUG
+    networking_arista:
+      handlers: stdout, sentry_events, sentry_breadcrumbs
+      level: DEBUG
+    networking_bgpvpn:
+      handlers: stdout, sentry_events, sentry_breadcrumbs
+      level: INFO
+
+
+pgmetrics:
+  enabled: false
+
+proxysql:
+  mode: ""
+  native_sidecar: true
+
+db_name: neutron
+
+mariadb:
+  enabled: false
+  max_connections: 2048
+  buffer_pool_size: "4096M"
+  log_file_size: "1024M"
+  name: neutron
+  initdb_secret: true
+  vpa:
+    set_main_container: true
+  ccroot_user:
+    enabled: true
+  persistence_claim:
+    name: db-neutron-pvclaim
+  backup:
+    enabled: false
+  backup_v2:
+    databases: ["neutron"]
+    verify_tables: ["neutron.agents"]
+    oauth:
+      client_id: neutron
+  extraConfigFiles:
+    neutron.cnf: |+
+      [mysqld]
+      innodb_deadlock_detect    = 0
+      innodb_lock_wait_timeout  = 5
+  alerts:
+    support_group: network-api
+
+nsxv3_logstash:
+  dbUser: neutron
+  # dbPassword: _replace_me_
+
+pxc_db:
+  enabled: false
+  name: neutron
+  alerts:
+    support_group: network-api
+  ccroot_user:
+    enabled: true
+  databases:
+    - neutron
+  users:
+    neutron:
+      name: neutron
+      grants:
+        - "ALL PRIVILEGES on neutron.*"
+  pxc:
+    configuration:
+      options:
+        max_connections: "2048"
+        innodb_buffer_pool_size: "4096M"
+        innodb_log_file_size: "1024M"
+        innodb_deadlock_detect: "0"
+        innodb_lock_wait_timeout: "5"
+    persistence:
+      size: 10Gi
+  backup:
+    enabled: true
+    s3:
+      secrets:
+        aws_access_key_id: null
+        aws_secret_access_key: null
+    pitr:
+      enabled: true
+
+mysql_metrics:
+  db_name: neutron
+  db_user: neutron
+  customMetrics:
+    - help: Total Neutron networks count
+      labels:
+      - "status"
+      name: openstack_neutron_networks_count_gauge
+      query: |
+        SELECT
+          COUNT(*) AS count_gauge,
+          status
+        FROM networks
+        GROUP BY networks.status;
+      values:
+      - "count_gauge"
+    - help: Total Neutron Router count
+      labels:
+      - "status"
+      name: openstack_neutron_routers_count_gauge
+      query: |
+        SELECT
+          COUNT(*) AS count_gauge,
+          status
+        FROM routers
+        GROUP BY routers.status;
+      values:
+      - "count_gauge"
+    - help: Neutron SAP Floating IP by status
+      labels:
+      - "floating_network_id"
+      - "network_name"
+      - "status"
+      name: openstack_neutron_SAP_IP_status_gauge
+      query: |
+        SELECT
+          floatingips.floating_network_id,
+          networks.name AS network_name,
+          floatingips.status,
+          COUNT(*) AS count_gauge
+        FROM floatingips
+        INNER JOIN networks
+        ON floatingips.project_id=networks.project_id
+        WHERE floating_ip_address LIKE '10%'
+        GROUP BY floatingips.floating_network_id, floatingips.status, networks.name;
+      values:
+      - "count_gauge"
+    - help: Neutron Internet Floating IP by status
+      labels:
+      - "floating_network_id"
+      - "network_name"
+      - "status"
+      name: openstack_neutron_ext_IP_status_gauge
+      query: |
+        SELECT
+          floatingips.floating_network_id,
+          networks.name AS network_name,
+          floatingips.status,
+          COUNT(*) AS count_gauge
+        FROM floatingips
+        INNER JOIN networks
+        ON floatingips.project_id=networks.project_id
+        WHERE floating_ip_address LIKE '15%'
+        GROUP BY floatingips.floating_network_id, floatingips.status, networks.name;
+      values:
+      - "count_gauge"
+    - help: Neutron SAP Floating IP used per subnet
+      labels:
+      - "subnet_id"
+      - "network_id"
+      name: openstack_neutron_SAP_IPused_per_subnet_gauge
+      query: |
+        SELECT
+          subnet_id,
+          COUNT(*) AS count_gauge,
+          network_id
+        FROM ipallocations
+        WHERE ip_address LIKE '10%'
+        GROUP BY ipallocations.subnet_id, ipallocations.network_id;
+      values:
+      - "count_gauge"
+    - help: Neutron Internet Floating IP used per subnet
+      labels:
+      - "subnet_id"
+      - "network_id"
+      name: openstack_neutron_ext_IPused_per_subnet_gauge
+      query: |
+        SELECT
+          subnet_id,
+          COUNT(*) AS count_gauge,
+          network_id
+        FROM ipallocations
+        WHERE ip_address LIKE '15%'
+        GROUP BY ipallocations.subnet_id, ipallocations.network_id;
+      values:
+      - "count_gauge"
+    - help: Neutron Security Group total count
+      labels: []
+      name: openstack_neutron_sg_count_count
+      query: |
+        SELECT
+          COUNT(*) as count_gauge
+        FROM securitygrouprules;
+      values:
+      - "count_gauge"
+    - help: Neutron agent seconds since the last heartbeat
+      labels:
+      - "neutron_host"
+      - "agent_type"
+      name: openstack_neutron_monitor_agents_heartbeat_seconds
+      query: |
+        SELECT
+          host AS neutron_host,
+          agent_type,
+          (UNIX_TIMESTAMP(NOW()) - UNIX_TIMESTAMP(heartbeat_timestamp)) AS heartbeat_seconds
+        FROM agents
+        WHERE admin_state_up AND heartbeat_timestamp > (DATE_SUB(now(), INTERVAL 90 SECOND));
+      values:
+      - "heartbeat_seconds"
+    - help: Neutron agents load
+      labels:
+      - "neutron_host"
+      - "agent_type"
+      name: openstack_neutron_monitor_agents_load
+      query: |
+        SELECT
+          host AS neutron_host,
+          agent_type,
+          `load`
+        FROM agents
+        WHERE admin_state_up AND heartbeat_timestamp > (DATE_SUB(now(), INTERVAL 90 SECOND));
+      values:
+      - "load"
+    - help: Neturon network project-id mapping
+      labels:
+      - "network_id"
+      - "project_id"
+      name: openstack_neutron_networks_projects
+      query: |
+        SELECT
+          1 AS value,
+          id AS network_id,
+          project_id
+        FROM networks;
+      values:
+      - "value"
+    - help: Neutron maximum possible segment allocations per hostgroup
+      labels:
+      - "hostgroup"
+      name: openstack_neutron_network_segments_total
+      query: |
+        SELECT
+          host AS hostgroup,
+          COUNT(*) AS value
+        FROM aci_port_binding_allocations
+        JOIN (SELECT physical_network pn FROM ml2_vlan_allocations GROUP BY pn) AS mva ON mva.pn = host
+        GROUP BY host;
+      values:
+      - "value"
+    - help: Neutron free available segment allocations per hostgroup
+      labels:
+      - "hostgroup"
+      name: openstack_neutron_network_segments_free
+      query: |
+        SELECT
+          host AS hostgroup,
+          SUM(segment_id IS NULL) AS value
+        FROM aci_port_binding_allocations
+        JOIN (SELECT physical_network pn FROM ml2_vlan_allocations GROUP BY pn) AS mva ON mva.pn = host
+        GROUP BY host;
+      values:
+      - "value"
+    - help: Neutron used routers per project by AZ
+      name: openstack_neutron_routers_used_per_project
+      query: |
+        SELECT
+            r.project_id AS project_id,
+            CASE WHEN a.availability_zone = 'nova' THEN null ELSE a.availability_zone END AS availability_zone,
+            count(r.id) AS count
+        FROM routers r
+        INNER JOIN routerl3agentbindings rabs ON r.id = rabs.router_id
+        INNER JOIN agents a ON a.id = rabs.l3_agent_id
+        GROUP BY r.project_id, a.availability_zone;
+      labels:
+      - project_id
+      - availability_zone
+      values:
+      - count
+
+max_pool_size: 20
+max_overflow: 5
+
+sentry:
+  enabled: true
+
+audit:
+  enabled: false
+  # do by default not attach the request payloads of create/update calls to the event
+  record_payloads: false
+  metrics_enabled: true
+  # how many messages to buffer before dumping to log (when rabbit is down or too slow)
+  mem_queue_size: 1000
+
+rabbitmq:
+  name: neutron
+  persistence:
+    enabled: false
+  default:
+    user: openstack
+  resources:
+    requests:
+      memory: 2Gi
+      cpu: 2000m
+    limits:
+      cpu: 4000m
+  metrics:
+    enabled: true
+    sidecar:
+      enabled: false
+  alerts:
+    support_group: network-api
+
+# openstack-watcher-middleware
+watcher:
+  enabled: true
+
+# openstack-rate-limit
+rate_limit:
+  enabled: false
+  backend_secret_file: /etc/neutron/ratelimit-backend-secret.conf
+  rate_limit_by: target_project_id
+  max_sleep_time_seconds: 0
+  log_sleep_time_seconds: 10
+  backend_timeout_seconds: 1
+  whitelist:
+    - Default/service
+    - Default/admin
+    - ccadmin/cloud_admin
+    - tempest/neutron-tempest-admin1
+    - tempest/neutron-tempest-admin2
+    - tempest/neutron-tempest-admin3
+    - tempest/neutron-tempest-admin4
+    - tempest/neutron-tempest1
+    - tempest/neutron-tempest2
+    - tempest/neutron-tempest3
+    - tempest/neutron-tempest4
+    - tempest/neutron-tempest5
+    - tempest/neutron-tempest6
+    - tempest/neutron-tempest7
+    - tempest/neutron-tempest8
+    - tempest/neutron-tempest9
+    - tempest/neutron-tempest10
+  whitelist_users: null
+  blacklist: null
+  blacklist_users: null
+  groups:
+    write:
+      - delete
+      - update
+  rates:
+    default:
+      address-scopes:
+        - action: read/list
+          limit: 100r/m
+      agents:
+        - action: read/list
+          limit: 300r/m
+      agents/agent/*:
+        - action: read
+          limit: 200r/m
+      extensions:
+        - action: read/list
+          limit: 100r/m
+      extensions/extension:
+        - action: read
+          limit: 100r/m
+      floatingips:
+        - action: read/list
+          limit: 500r/m
+        - action: create
+          limit: 100r/m
+      floatingips.json:
+        - action: read
+          limit: 300r/m
+      floatingips/floatingip:
+        - action: read
+          limit: 100r/m
+        - action: write
+          limit: 100r/m
+      network-ip-availabilities/network-ip-availability:
+        - action: read
+          limit: 100r/m
+      networks:
+        - action: read/list
+          limit: 200r/m
+        - action: create
+          limit: 200r/m
+      networks/default:
+        - action: read
+          limit: 200r/m
+      networks/network:
+        - action: read
+          limit: 300r/m
+      ports:
+        - action: read/list
+          limit: 3100r/m
+        - action: create
+          limit: 100r/m
+      ports.json:
+        - action: read
+          limit: 300r/m
+      ports/port:
+        - action: read
+          limit: 3100r/m
+        - action: write
+          limit: 100r/m
+      ports/port/*:
+        - action: read
+          limit: 100r/m
+      quotas/quota:
+        - action: read
+          limit: 100r/m
+        - action: write
+          limit: 100r/m
+      quotas/quota/*:
+        - action: read
+          limit: 100r/m
+      resource_type/resource/*:
+        - action: write
+          limit: 100r/m
+      routers:
+        - action: read/list
+          limit: 200r/m
+        - action: create
+          limit: 200r/m
+      routers/router:
+        - action: read
+          limit: 700r/m
+        - action: write
+          limit: 200r/m
+      routers/router/add_extraroutes:
+        - action: write
+          limit: 10r/m
+      routers/router/remove_extraroutes:
+        - action: write
+          limit: 10r/m
+      routers/router/*:
+        - action: write
+          limit: 200r/m
+      security-group-rules:
+        - action: create
+          limit: 1000r/m
+        - action: read/list
+          limit: 7700r/m
+      security-group-rules/security-group-rule:
+        - action: read
+          limit: 7700r/m
+        - action: write
+          limit: 100r/m
+      security-groups:
+        - action: read/list
+          limit: 2100r/m
+        - action: create
+          limit: 100r/m
+      security-groups/default:
+        - action: read
+          limit: 100r/m
+      security-groups/security-group:
+        - action: read
+          limit: 2100r/m
+      subnetpools:
+        - action: read/list
+          limit: 100r/m
+      subnetpools/subnetpool:
+        - action: write
+          limit: 100r/m
+      subnets:
+        - action: create
+          limit: 300r/m
+        - action: read/list
+          limit: 300r/m
+      subnets/subnet:
+        - action: read
+          limit: 375r/m
+        - action: write
+          limit: 100r/m
+
+unittest:
+  enabled: false
+
+metrics:
+  prometheus: openstack
+
+# Deploy Neutron Prometheus alerts.
+alerts:
+  enabled: true
+  # Name of the Prometheus to which the alerts should be assigned to.
+  # Keys = directory names in alerts/ and aggregations/
+  prometheus:
+    - name: openstack
+      type: prometheus
+    - name: kubernetes
+      type: prometheus
+    - name: metal
+      type: thanos-ruler
+
+logger:
+  enabled: false
+  logstash: {}
+  persistence:
+    enabled: true
+    accessMode: ReadWriteMany
+    size: 1Gi
+
+agent:
+  controlplane: false
+
+dnsmasq:
+  conf:
+    no-negcache: true
+
+memcached:
+  alerts:
+    support_group: network-api
+
+api-ratelimit-redis:
+  alerts:
+    support_group: network-api
+
+utils:
+  trust_bundle:
+    enable: false
+
+customdns:
+  enabled: false
+  upstream_dns_servers: []
+  project_ids: []
+  domain_name_prefixes: []

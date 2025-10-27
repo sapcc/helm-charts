@@ -1,0 +1,21 @@
+{{- $values := .Values -}}
+{{- if and $values.alerts.enabled (.Capabilities.APIVersions.Has "monitoring.coreos.com/v1/PrometheusRule") }}
+{{- range $path, $bytes := .Files.Glob "alerts/*.alerts" }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+
+metadata:
+  name: {{ printf "digicert-issuer-%s" $path | replace "/" "-" }}
+  labels:
+    app.kubernetes.io/name: digicert-issuer
+    absent-metrics-operator/disable: "true"
+  {{- with $values.alerts.ruleSelector }}
+    {{ tpl (toYaml .) . | nindent 4 }}
+  {{- end }}
+
+spec:
+{{ printf "%s" $bytes | indent 2 }}
+
+{{- end }}
+{{- end }}

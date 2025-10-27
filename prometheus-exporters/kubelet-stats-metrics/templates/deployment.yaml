@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "kubelet-stats-metrics.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels: {{- include "kubelet-stats-metrics.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "kubelet-stats-metrics.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "kubelet-stats-metrics.selectorLabels" . | nindent 8 }}
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9100"
+        prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
+    spec:
+      serviceAccountName: {{ include "kubelet-stats-metrics.fullname" . }}
+      containers:
+        - name: metrics
+          image: {{ .Values.image }}
+          resources:
+            limits:
+              memory: 200Mi
+            requests:
+              cpu: 100m
+              memory: 200Mi
+          ports:
+            - name: http
+              containerPort: 9100
+              protocol: TCP
+          livenessProbe:
+            failureThreshold: 10
+            httpGet:
+              path: /metrics
+              port: 9100
+              scheme: HTTP
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 30
+          readinessProbe:
+            failureThreshold: 10
+            httpGet:
+              path: /metrics
+              port: 9100
+              scheme: HTTP
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 1
+          env:
+            - name: KUBELET_STATS_METRICS_LOG_LEVEL
+              value: "{{ .Values.logLevel }}"
+            - name: KUBELET_STATS_METRICS_INTERVAL
+              value: "{{ .Values.interval }}"

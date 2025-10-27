@@ -1,0 +1,56 @@
+kind: DaemonSet
+apiVersion: apps/v1
+
+metadata:
+  name: swift-statsd-exporter
+  labels:
+    release: "{{ .Release.Name }}"
+    on-upgrade: recreate
+
+spec:
+  minReadySeconds: 15
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: '10%' # these pods can be rolled rather quickly since they are not in the hot path
+  selector:
+    matchLabels:
+      component: swift-statsd-exporter
+      from: daemonset
+      restart: directly
+  template:
+    metadata:
+      labels:
+        component: swift-statsd-exporter
+        from: daemonset
+        restart: directly
+      annotations:
+        {{- include "swift_prometheus_annotations" . | indent 8 }}
+        checksum/swift.etc: {{ include "swift/templates/etc/configmap.yaml" . | sha256sum }}
+    spec:
+      {{- include "swift_daemonset_tolerations" . | indent 6 }}
+      hostNetwork: true
+      nodeSelector:
+        species: {{ .Values.species }}
+      volumes:
+        - name: swift-etc
+          configMap:
+            name: swift-etc
+      containers:
+        - name: statsd
+          image: {{ .Values.global.dockerHubMirrorAlternateRegion }}/prom/statsd-exporter:{{.Values.image_version_auxiliary_statsd_exporter}}
+          args: [ --statsd.mapping-config=/swift-etc/statsd-exporter.yaml ]
+          securityContext:
+            runAsNonRoot: true
+          ports:
+            - name: statsd
+              containerPort: 9125
+              protocol: UDP
+            - name: metrics
+              containerPort: 9102
+          volumeMounts:
+            - mountPath: /swift-etc
+              name: swift-etc
+
+---
+{{ include "swift_vpa_no_autoupdates" "swift-statsd-exporter" }}

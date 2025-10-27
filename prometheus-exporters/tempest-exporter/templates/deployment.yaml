@@ -1,0 +1,31 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: {{ .Chart.Name }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Chart.Name }}
+      type: exporter
+  template:
+    metadata:
+      labels:
+        app: {{ .Chart.Name }}
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/targets: openstack
+        prometheus.io/port: "{{ .Values.port }}"
+    spec:
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag}}"
+          imagePullPolicy: Always
+          env:
+            - name: EXPORTER_PORT
+              value: "{{ .Values.port }}"
+            - name: BASE_URL
+              value: "{{ .Values.exporter.base_url }}"
+          ports:
+            - containerPort: {{ .Values.port }}
+              name: http

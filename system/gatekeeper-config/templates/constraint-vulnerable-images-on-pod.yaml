@@ -1,0 +1,23 @@
+##############################################################################
+# WARNING: This policy is a vital piece of the garbage collection process in #
+# our internal Keppel repositories. Since this policy regularly polls every  #
+# image that is used by live containers, we can rely on the "last_pulled_at" #
+# timestamps of images in active use to never get too old for GC to kick in. #
+##############################################################################
+
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: GkVulnerableImages
+metadata:
+  name: vulnerableimages-on-pod
+  annotations:
+    {{- include "sources" (tuple "vulnerable-images" "vulnerable-images-on-pod") | indent 4 }}
+    {{- include "docstring" (tuple $ "GkVulnerableImages") | indent 4 }}
+  labels:
+    severity: 'warning'
+spec:
+  enforcementAction: dryrun # change to "deny" to enforce
+  match: {{ include "match_pods_only" . | indent 4 }}
+  parameters:
+    doopImageCheckerURL: {{ quote .Values.doop_image_checker_url }}
+    vulnStatusHeader: X-Keppel-Vulnerability-Status
+    reportingLevel: "pod"

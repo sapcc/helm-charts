@@ -1,0 +1,38 @@
+---
+kind: Service
+apiVersion: v1
+
+metadata:
+  name: keppel-api
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/targets: "openstack"
+
+spec:
+  selector:
+    name: keppel-api
+  ports:
+    - name: metrics # this specific name is required for Prometheus scraping
+      port: 80
+      protocol: TCP
+
+{{- if and .Values.keppel.anycast_domain_name .Values.keppel.anycast_ip }}
+---
+kind: Service
+apiVersion: v1
+
+metadata:
+  name: keppel-anycast-api
+
+spec:
+  type: LoadBalancer
+  externalIPs:
+    - {{ .Values.keppel.anycast_ip }}
+  externalTrafficPolicy: Local
+  selector:
+    name: keppel-anycast-nginx
+  ports:
+    - port: 443
+      protocol: TCP
+      targetPort: 443
+{{ end }}

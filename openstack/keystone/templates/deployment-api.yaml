@@ -1,0 +1,269 @@
+kind: Deployment
+apiVersion: apps/v1
+
+metadata:
+  name: {{ .Release.Name }}-api
+  labels:
+    app: {{ template "fullname" . }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    system: openstack
+    component: keystone
+    type: api
+  annotations:
+    secret.reloader.stakater.com/reload: "{{ .Release.Name }}-secrets,{{ .Release.Name }}-federation"
+    deployment.reloader.stakater.com/pause-period: "60s"
+spec:
+  replicas: {{ .Values.api.replicas }}
+  minReadySeconds: {{ .Values.api.minReadySeconds | default 5}}
+  revisionHistoryLimit: {{ .Values.api.upgrades.revisionHistory }}
+  strategy:
+    type: {{ .Values.api.upgrades.podReplacementStrategy }}
+    {{ if eq .Values.api.upgrades.podReplacementStrategy "RollingUpdate" }}
+    rollingUpdate:
+      maxUnavailable: {{ .Values.api.upgrades.rollingUpdate.maxUnavailable }}
+      maxSurge: {{ .Values.api.upgrades.rollingUpdate.maxSurge }}
+    {{ end }}
+  selector:
+    matchLabels:
+      name: {{ .Release.Name }}-api
+  template:
+    metadata:
+      labels:
+        name: {{ .Release.Name }}-api
+        system: openstack
+        component: keystone
+        type: api
+        alert-tier: os
+        alert-service: keystone
+        app: keystone
+      annotations:
+        chart-version: {{.Chart.Version}}
+        configmap-etc-hash: {{ include (print $.Template.BasePath "/configmap-etc.yaml") . | sha256sum }}
+        configmap-bin-hash: {{ include (print $.Template.BasePath "/configmap-bin.yaml") . | sha256sum }}
+        secrets-bin-hash: {{ include (print $.Template.BasePath "/secret-bin.yaml") . | sha256sum }}
+        secrets-hash: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
+        {{- if .Values.federation.oidc.enabled }}
+        federation-hash: {{ include (print $.Template.BasePath "/federation.yaml") . | sha256sum }}
+        {{- end }}
+        {{- if .Values.proxysql.mode }}
+        prometheus.io/scrape: "true"
+        prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
+        {{- end }}
+        {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
+    spec:
+{{- if .Values.rbac.enabled }}
+      serviceAccountName: {{ .Release.Name }}
+{{- end }}
+{{ tuple . "keystone" "keystone" | include "kubernetes_pod_AZ_spread" | indent 6 }}
+      terminationGracePeriodSeconds: {{ .Values.api.terminationGracePeriodSeconds | default "30" }}
+{{ include "utils.proxysql.pod_settings" . | indent 6 }}
+      initContainers:
+      - name: kubernetes-entrypoint
+        #image: quay.io/stackanetes/kubernetes-entrypoint:v0.3.1
+        image: {{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{ .Values.api.image }}:{{ required ".Values.api.imageTag is missing" .Values.api.imageTag }}
+        imagePullPolicy: {{ .Values.api.imagePullPolicy | default "IfNotPresent" | quote }}
+        command:
+          - kubernetes-entrypoint
+        env:
+        - name: NAMESPACE
+          value: {{ .Release.Namespace }}
+{{- if .Release.IsInstall }}
+        - name: DEPENDENCY_JOBS
+          value: "{{ tuple . "job-migration" | include "job_name" }},{{ tuple . "job-bootstrap" | include "job_name" }}"
+{{- else }}
+  {{- if or .Values.run_db_migration }}
+        - name: DEPENDENCY_JOBS
+          value: "{{ tuple . "job-migration" | include "job_name" }}"
+  {{- end }}
+{{- end }}
+        - name: DEPENDENCY_SERVICE
+          value: {{ include "keystone.service_dependencies" . | quote }}
+        - name: COMMAND
+          value: "true"
+      {{- if .Values.proxysql.native_sidecar }}
+      {{- include "utils.proxysql.container" . | indent 6 }}
+      {{- end }}
+      containers:
+        - name: keystone-api
+          image: {{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{ .Values.api.image }}:{{ required ".Values.api.imageTag is missing" .Values.api.imageTag }}
+          imagePullPolicy: {{ .Values.api.imagePullPolicy | default "IfNotPresent" | quote }}
+          command:
+            - /scripts/keystone-api.sh
+            - start
+          env:
+            {{- if .Values.sentry.enabled }}
+            - name: SENTRY_DSN
+            {{- if .Values.sentry.dsn }}
+              value: {{ .Values.sentry.dsn | quote}}
+            {{ else }}
+              valueFrom:
+                secretKeyRef:
+                  name: sentry
+                  key: {{ .Release.Name }}.DSN.python
+            {{- end }}
+            {{- end }}
+            {{- if .Values.api.metrics.enabled }}
+            - name: STATSD_HOST
+              value: "127.0.0.1"
+            - name: STATSD_PORT
+              value: "9125"
+            - name: STATSD_PREFIX
+              value: {{ .Values.api.metrics.prefix | default "openstack" | quote }}
+            {{- end }}
+            - name: PYTHONWARNINGS
+              value: "ignore:Unverified HTTPS request"
+          ports:
+            - name: public
+              containerPort: 5000
+          lifecycle:
+            preStop:
+              exec:
+                command:
+                  - /scripts/keystone-api.sh
+                  - stop
+          readinessProbe:
+            exec:
+              command:
+              - bash
+              - -c
+              - "set -e; curl --fail 127.0.0.1:5000/healthcheck; nc -zvw3 {{ include "keystone.db_service" . }} 3306"
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 20
+          livenessProbe:
+            httpGet:
+              path: /healthcheck
+              port: 5000
+            initialDelaySeconds: 50
+            periodSeconds: 20
+            timeoutSeconds: 20
+          volumeMounts:
+            - name: etc-keystone
+              mountPath: /etc/keystone
+            - name: keystone-etc-confd
+              mountPath: /etc/keystone/keystone.conf.d
+            - name: wsgi-keystone
+              mountPath: /var/www/cgi-bin/keystone
+            - name: keystone-etc
+              mountPath: /etc/keystone/keystone.conf
+              subPath: keystone.conf
+              readOnly: true
+            - name: keystone-etc
+              mountPath: /etc/keystone/policy.yaml
+              subPath: policy.yaml
+              readOnly: true
+            - name: keystone-etc
+              mountPath: /etc/keystone/logging.conf
+              subPath: logging.conf
+              readOnly: true
+            - name: keystone-etc
+              mountPath: /etc/keystone/sso_callback_template.html
+              subPath: sso_callback_template.html
+              readOnly: true
+            {{- if .Values.watcher.enabled }}
+            - name: keystone-etc
+              mountPath: /etc/keystone/watcher.yaml
+              subPath: watcher.yaml
+              readOnly: true
+            {{- end }}
+            - name: keystone-etc
+              mountPath: /etc/apache2/conf-enabled/wsgi-keystone.conf
+              subPath: wsgi-keystone.conf
+              readOnly: true
+            {{- if .Values.federation.oidc.enabled }}
+            - name: keystone-federation
+              mountPath: /etc/apache2/conf-enabled/federation-oidc.conf
+              subPath: federation-oidc.conf
+              readOnly: true
+            {{- end }}
+            - name: keystone-etc
+              mountPath: /etc/apache2/mods-available/mpm_event.conf
+              subPath: mpm_event.conf
+              readOnly: true
+            - name: keystone-etc
+              mountPath: /etc/keystone/access_rules.json
+              subPath: access_rules.json
+              readOnly: true
+            - name: fernet
+              mountPath: /fernet-keys
+              readOnly: true
+            - name: credential-keys
+              mountPath: /credential-keys
+              readOnly: true
+            - name: keystone-bin
+              mountPath: /scripts
+            {{- include "utils.proxysql.volume_mount" . | indent 12 }}
+            {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
+          {{- if .Values.api.resources }}
+          resources:
+{{ toYaml .Values.api.resources | indent 12 }}
+          {{- end }}
+        {{- if .Values.api.metrics.enabled }}
+        - name: keystone-statsd
+          image: "{{.Values.global.dockerHubMirrorAlternateRegion}}/{{ .Values.api.metrics.image }}:{{ .Values.api.metrics.imageTag }}"
+          imagePullPolicy: {{ .Values.api.metrics.imagePullPolicy | default "IfNotPresent" | quote }}
+          command:
+            - /bin/statsd_exporter
+            - --statsd.mapping-config=/etc/statsd/statsd-exporter.yaml
+          volumeMounts:
+            - name: keystone-etc
+              mountPath: /etc/statsd/statsd-exporter.yaml
+              subPath: statsd-exporter.yaml
+              readOnly: true
+          ports:
+            - name: statsd
+              containerPort: 9125
+              protocol: UDP
+            - name: metrics
+              containerPort: {{ .Values.api.metrics.port }}
+          {{- if .Values.api.metrics.resources }}
+          resources:
+{{ toYaml .Values.api.metrics.resources | indent 12 }}
+          {{- end }}
+        {{- end }}
+      {{- include "jaeger_agent_sidecar" . | indent 8 }}
+      {{- if not .Values.proxysql.native_sidecar }}
+      {{- include "utils.proxysql.container" . | indent 8 }}
+      {{- end }}
+      volumes:
+        - name: etc-keystone
+          emptyDir: {}
+        - name: wsgi-keystone
+          emptyDir: {}
+        - name: keystone-etc
+          configMap:
+            name: keystone-etc
+            defaultMode: 0444
+        - name: keystone-etc-confd
+          secret:
+            secretName: {{ .Release.Name }}-secrets
+            defaultMode: 0444
+        {{- if .Values.federation.oidc.enabled }}
+        - name: keystone-federation
+          secret:
+            secretName: {{ .Release.Name }}-federation
+            defaultMode: 0444
+        {{- end }}
+        - name: keystone-bin
+          projected:
+            defaultMode: 0555
+            sources:
+            - configMap:
+                name: keystone-bin
+            - secret:
+                name: keystone-bin-secrets
+                items:
+                  - key: bootstrap
+                    path: bootstrap
+        - name: fernet
+          secret:
+            secretName: keystone-fernet
+            defaultMode: 0555
+        - name: credential-keys
+          secret:
+            secretName: keystone-credential-keys
+            defaultMode: 0555
+        {{- include "utils.proxysql.volumes" . | indent 8 }}
+        {{- include "utils.trust_bundle.volumes" . | indent 8 }}

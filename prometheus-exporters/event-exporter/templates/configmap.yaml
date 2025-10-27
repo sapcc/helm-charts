@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "name" . }}
+  namespace: {{ .Release.Namespace }}
+data:
+  config.yaml: |
+    metrics:
+{{ .Values.metrics | toYaml | indent 4}}
+{{- if .Values.additional_metrics }}
+{{ .Values.additional_metrics | toYaml | indent 4}}
+{{- end }}

@@ -1,0 +1,66 @@
+{{- $region := .Values.global.region | required "missing value for .Values.global.region" -}}
+{{- $tld    := .Values.global.tld    | required "missing value for .Values.global.tld"    -}}
+{{- $limes_url := .Values.limes.clusters.ccloud.catalog_url | required ".Values.limes.clusters.ccloud.catalog_url" -}}
+
+apiVersion: "openstack.stable.sap.cc/v1"
+kind: OpenstackSeed
+metadata:
+  # This is separate from the big limes-seed in order to be easier to reapply.
+  name: limes-catalog-seed
+
+spec:
+  requires: []
+
+  services:
+    - name:        limes
+      type:        resources
+      description: 'Hierarchical quota/usage tracking'
+      enabled:     true
+      endpoints:
+        - region:    '{{ $region }}'
+          interface: public
+          enabled:   true
+          url:       '{{ $limes_url }}'
+        {{- if not .Values.global.is_global_region }}
+        - region:    '{{ $region }}'
+          interface: internal
+          enabled:   true
+          url:       'http://limes-api-ccloud.{{.Release.Namespace}}.svc'
+        {{- end }}
+
+    - name:        limes-rates
+      type:        sapcc-rates
+      description: 'Hierarchical rate limit/usage tracking'
+      enabled:     true
+      endpoints:
+        - region:    '{{ $region }}'
+          interface: public
+          enabled:   true
+          url:       '{{ $limes_url }}/rates'
+        {{- if not .Values.global.is_global_region }}
+        - region:    '{{ $region }}'
+          interface: internal
+          enabled:   true
+          url:       'http://limes-api-ccloud.{{.Release.Namespace}}.svc/rates'
+        {{- end }}
+
+    {{- range $name := sortAlpha (keys .Values.limes.local_liquids) }}
+    {{- $config := index $.Values.limes.local_liquids $name }}
+    {{- if not $config.skip }}
+    - name:        liquid-{{ $name }}
+      type:        liquid-{{ $name }}
+      description: 'Limes integration for {{ title $name }} <https://pkg.go.dev/github.com/sapcc/go-api-declarations/liquid>'
+      enabled:     true
+      endpoints:
+        - region:    '{{ $region }}'
+          interface: public
+          enabled:   true
+          url:       '{{ $limes_url | replace "limes-3" (printf "liquid-%s" $name) }}'
+        {{- if not $.Values.global.is_global_region }}
+        - region:    '{{ $region }}'
+          interface: internal
+          enabled:   true
+          url:       'http://liquid-{{ $name }}.{{ $.Release.Namespace }}.svc'
+        {{- end }}
+    {{- end }}
+    {{- end }}

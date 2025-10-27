@@ -1,0 +1,30 @@
+kind: DaemonSet
+apiVersion: apps/v1
+metadata:
+  name: sysctl
+  namespace: kube-system
+spec:
+  selector:
+    matchLabels:
+      app: sysctl
+  updateStrategy:
+    rollingUpdate:
+      maxUnavailable: '10%'
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: sysctl
+    spec:
+      hostNetwork: true
+      tolerations:
+      - key: "species"
+        operator: "Equal"
+        value: "network"
+        effect: "NoSchedule"
+      containers:
+        - image: "{{ required ".Values.images.sysctl.image is missing" .Values.images.sysctl.image }}:{{ required ".Values.images.sysctl.image is missing" .Values.images.sysctl.tag }}"
+          name: sysctl
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            privileged: true

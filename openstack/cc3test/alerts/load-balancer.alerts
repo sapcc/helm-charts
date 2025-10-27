@@ -1,0 +1,71 @@
+groups:
+- name: cc3test-loadbalancer.alerts
+  rules:
+  - alert: OpenstackOctaviaApiDown
+    expr: |
+        cc3test_status{service="octavia", type="api", phase="call"} == 0
+    for: 16m
+    labels:
+      severity: critical
+      support_group: network-api
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      meta: 'Openstack Octavia API is down'
+      dashboard: 'cc3test-api-status?var-service={{ $labels.service }}'
+      playbook: 'docs/support/playbook/octavia/alerts/cc3test-alert-api/'
+      report: 'cc3test/admin/object-storage/swift/containers/cc3test/objects/{{ $labels.base64path }}'
+    annotations:
+      description: 'Openstack Octavia API is down'
+      summary: 'Openstack Octavia API is down'
+
+  - alert: OpenstackOctaviaApiFlapping
+    expr: |
+        changes(cc3test_status{service="octavia", type="api", phase="call"}[30m]) > 8
+    labels:
+      severity: warning
+      support_group: network-api
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      meta: 'Openstack Octavia API is flapping'
+      dashboard: 'cc3test-api-status?var-service={{ $labels.service }}'
+      playbook: 'docs/support/playbook/octavia/alerts/cc3test-alert-api/'
+      report: 'cc3test/admin/object-storage/swift/containers/cc3test/objects/{{ $labels.base64path }}'
+    annotations:
+      description: 'Openstack Octavia API is flapping'
+      summary: 'Openstack Octavia API is flapping'
+
+  - alert: OpenstackOctaviaCanaryCreatelbaasDown
+    expr: cc3test_status{service="octavia",name=~"TestOctaviaLbaas_create_lbaas.+", phase="call"} == 0
+    for: 3h
+    labels:
+      severity: warning
+      support_group: network-api
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      meta: 'Openstack Octavia Canary is down, see report for more details'
+      dashboard: 'cc3test-canary-status?var-service={{ $labels.service }}'
+      playbook: 'docs/support/playbook/octavia/alerts/cc3test-alert-create-lbaas/'
+      report: 'cc3test/admin/object-storage/swift/containers/cc3test/objects/{{ $labels.base64path }}'
+    annotations:
+      description: 'Openstack Octavia Canary is down, see report for more details'
+      summary: 'Openstack Octavia Canary is down, see report for more details'
+
+  - alert: OpenstackOctaviaCanaryCreatelbaasFlapping
+    expr: changes(cc3test_status{service="octavia",name=~"TestOctaviaLbaas_create_lbaas.+",phase="call"}[2h]) > 8
+    for: 3h
+    labels:
+      severity: info
+      support_group: network-api
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      meta: 'Openstack Octavia Canary is flapping for 2 hours, see last three reports for more details'
+      dashboard: 'cc3test-canary-status?var-service={{ $labels.service }}'
+      playbook: 'docs/support/playbook/octavia/alerts/cc3test-alert-create-lbaas/'
+      report: 'cc3test/admin/object-storage/swift/containers/cc3test/objects/{{ $labels.base64path }}'
+    annotations:
+      description: 'Openstack Octavia Canary is flapping for 2 hours, see last three reports for more details'
+      summary: 'Openstack Octavia Canary is flapping for 2 hours, see last three reports for more details'

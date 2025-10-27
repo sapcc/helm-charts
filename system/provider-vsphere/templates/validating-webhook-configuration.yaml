@@ -1,0 +1,114 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  name: {{ include "provider-vsphere.fullname" . }}-validating-webhook-configuration
+  annotations:
+    cert-manager.io/inject-ca-from: {{ .Release.Namespace }}/{{ include "provider-vsphere.fullname" . }}-serving-cert
+  labels:
+  {{- include "provider-vsphere.labels" . | nindent 4 }}
+webhooks:
+- admissionReviewVersions:
+  - v1beta1
+  clientConfig:
+    service:
+      name: '{{ include "provider-vsphere.fullname" . }}-webhook-service'
+      namespace: '{{ .Release.Namespace }}'
+      path: /validate-infrastructure-cluster-x-k8s-io-v1beta1-vsphereclustertemplate
+  failurePolicy: Fail
+  matchPolicy: Equivalent
+  name: validation.vsphereclustertemplate.infrastructure.x-k8s.io
+  rules:
+  - apiGroups:
+    - infrastructure.cluster.x-k8s.io
+    apiVersions:
+    - v1beta1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - vsphereclustertemplates
+  sideEffects: None
+- admissionReviewVersions:
+  - v1beta1
+  clientConfig:
+    service:
+      name: '{{ include "provider-vsphere.fullname" . }}-webhook-service'
+      namespace: '{{ .Release.Namespace }}'
+      path: /validate-infrastructure-cluster-x-k8s-io-v1beta1-vspherefailuredomain
+  failurePolicy: Fail
+  matchPolicy: Equivalent
+  name: validation.vspherefailuredomain.infrastructure.cluster.x-k8s.io
+  rules:
+  - apiGroups:
+    - infrastructure.cluster.x-k8s.io
+    apiVersions:
+    - v1beta1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - vspherefailuredomains
+  sideEffects: None
+- admissionReviewVersions:
+  - v1beta1
+  clientConfig:
+    service:
+      name: '{{ include "provider-vsphere.fullname" . }}-webhook-service'
+      namespace: '{{ .Release.Namespace }}'
+      path: /validate-infrastructure-cluster-x-k8s-io-v1beta1-vspheremachine
+  failurePolicy: Fail
+  matchPolicy: Equivalent
+  name: validation.vspheremachine.infrastructure.x-k8s.io
+  rules:
+  - apiGroups:
+    - infrastructure.cluster.x-k8s.io
+    apiVersions:
+    - v1beta1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - vspheremachines
+  sideEffects: None
+- admissionReviewVersions:
+  - v1beta1
+  clientConfig:
+    service:
+      name: '{{ include "provider-vsphere.fullname" . }}-webhook-service'
+      namespace: '{{ .Release.Namespace }}'
+      path: /validate-infrastructure-cluster-x-k8s-io-v1beta1-vspheremachinetemplate
+  failurePolicy: Fail
+  matchPolicy: Equivalent
+  name: validation.vspheremachinetemplate.infrastructure.x-k8s.io
+  rules:
+  - apiGroups:
+    - infrastructure.cluster.x-k8s.io
+    apiVersions:
+    - v1beta1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - vspheremachinetemplates
+  sideEffects: None
+- admissionReviewVersions:
+  - v1beta1
+  clientConfig:
+    service:
+      name: '{{ include "provider-vsphere.fullname" . }}-webhook-service'
+      namespace: '{{ .Release.Namespace }}'
+      path: /validate-infrastructure-cluster-x-k8s-io-v1beta1-vspherevm
+  failurePolicy: Fail
+  matchPolicy: Equivalent
+  name: validation.vspherevm.infrastructure.x-k8s.io
+  rules:
+  - apiGroups:
+    - infrastructure.cluster.x-k8s.io
+    apiVersions:
+    - v1beta1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - vspherevms
+  sideEffects: None

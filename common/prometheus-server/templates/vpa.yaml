@@ -1,0 +1,28 @@
+{{- $root := . }}
+{{- range $name := coalesce .Values.names .Values.global.targets (list .Values.name) }}
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: prometheus-{{ include "prometheus.name" (list $name $root) }}
+  namespace: {{ $.Release.Namespace }}
+spec:
+  targetRef:
+    apiVersion: monitoring.coreos.com/v1
+    kind: Prometheus
+    name: {{ include "prometheus.name" (list $name $root) }}
+  updatePolicy:
+    updateMode: {{ default "Off" $.Values.vpaUpdateMode | quote }}
+    minReplicas: 1
+  resourcePolicy:
+    containerPolicies:
+{{- range $_, $vpa := $.Values.vpaResources }}
+      - containerName: {{ $vpa.containerName }}
+        controlledValues: RequestsOnly
+        controlledResources:
+          - cpu
+          - memory
+        maxAllowed:
+{{ toYaml $vpa.maxAllowed | indent 10 }}
+{{- end }}
+{{- end }}

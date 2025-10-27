@@ -1,0 +1,53 @@
+{{- if .Capabilities.APIVersions.Has "batch/v1/CronJob" }}
+apiVersion: batch/v1
+{{- else }}
+apiVersion: batch/v1beta1
+{{- end }}
+kind: CronJob
+metadata:
+  name: volta-rotate-crl
+spec:
+  schedule: '@daily'
+  jobTemplate:
+    spec:
+      ttlSecondsAfterFinished: 172800 #48 hours
+      template:
+        spec:
+          containers:
+          - name: rotate-crl
+            image: keppel.eu-de-1.cloud.sap/ccloud-dockerhub-mirror/library/vault:1.9.5
+            command:
+              - /bin/sh
+              - -ec
+              - |
+                token=$(vault write -field=token auth/approle/login role_id=$APPROLE_ID secret_id=@/creds/secret_id)
+                export VAULT_TOKEN=$token
+                error=0
+                set +e #disable error on exit
+            {{- range $ca := .Values.volta.ca_names }}
+                vault read {{ $ca }}/crl/rotate || error=1
+            {{- end }}
+                exit $error
+            imagePullPolicy: Always
+            env:
+            - name: VAULT_ADDR
+              value: {{ .Values.volta.vault_url | quote }}
+            - name: APPROLE_ID
+              value: {{ .Values.volta.role_id | quote }}
+            - name: APPROLE_SECRET_ID
+              valueFrom:
+                secretKeyRef:
+                  name: volta-secrets
+                  key: secret_id
+            volumeMounts:
+              - name: creds
+                mountPath: /creds
+                readOnly: true
+          volumes:
+            - name: creds
+              secret:
+                secretName: volta-secrets
+                items:
+                - key: secret_id
+                  path: secret_id
+          restartPolicy: Never

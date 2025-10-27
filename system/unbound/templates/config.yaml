@@ -1,0 +1,187 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: {{ .Values.unbound.name }}
+  labels:
+    type: configuration
+    component: unbound
+data:
+  unbound.conf: |
+       server:
+        identity: "{{ $.Release.Name }}.{{ .Values.global.region }}"
+
+        {{- $unbound_modules := "validator iterator" -}}
+
+        {{- if .Values.unbound.bind_rpz_proxy.enabled }}
+        {{- $unbound_modules = cat "respip" $unbound_modules -}}
+        {{- end }}
+
+        module-config: {{ $unbound_modules | quote }}
+
+        # let unbound listen on all the ports we've defined as external
+        # so that we can map them one-to-one
+{{- range $.Values.unbound.externalPorts | required ".Values.unbound.externalPorts missing" }}
+        interface: {{$.Values.unbound.interface}}@{{.}}
+{{- end }}
+
+        do-ip4: yes
+        do-ip6: no
+        do-udp: yes
+        do-tcp: yes
+        do-daemonize: no
+        access-control: 0.0.0.0/0 allow_snoop
+
+        # not more then the number of cpus
+        num-threads: 8
+
+        # power of 2 close to num-threads
+        msg-cache-slabs: 8
+        rrset-cache-slabs: 8
+        infra-cache-slabs: 8
+        key-cache-slabs: 8
+
+        cache-max-negative-ttl: 100
+        cache-max-ttl: 28800
+
+        # time to live for entries in the host cache incl roundtrip timing
+        infra-host-ttl: 900
+        # to keep probing hosts that were marked down
+        infra-keep-probing: yes
+
+        # more cache memory (default is 4m), rrset=msg*2
+        rrset-cache-size: 100m
+        msg-cache-size: 50m
+
+        # prefetch cache before expiration
+        prefetch: yes
+
+        # to serve stale records
+        serve-expired: yes
+        serve-expired-ttl: 86400
+        serve-expired-client-timeout: 1800
+
+        # Faster UDP with multithreading (only on Linux)
+        so-reuseport: yes
+
+        # file is added on image build:
+        root-hints: "/usr/share/unbound/root.hints"
+
+        directory: "/etc/unbound"
+        logfile: ""
+        log-time-ascii: yes
+        log-servfail: yes
+
+        # enable extended statistics (query types, answer codes, status)
+        extended-statistics: {{.Values.unbound.ext_stats}}
+
+        include: /etc/unbound/hosts.conf
+
+        # AS112 zones
+        include: /etc/unbound/as112.conf
+
+        # firewall
+        include: /etc/unbound/firewall.conf
+
+        # Stub and Forward zones
+        include: /etc/unbound/regional.conf
+        include: /etc/unbound/global.conf
+
+       # Remote control config section.
+       remote-control:
+        control-enable: yes
+        control-interface: {{ .Values.unbound.control.socket_path | default "/run/unbound/control.sock" }}
+
+       # dnstap.conf
+       include: /etc/unbound/dnstap.conf
+
+       {{- if .Values.unbound.bind_rpz_proxy.enabled }}
+       include: /etc/unbound/rpz.conf
+       {{- end }}
+
+  dnstap.conf: |
+       dnstap:
+{{- if .Values.unbound.dnstap.enabled }}
+        dnstap-enable: yes
+        dnstap-socket-path: {{ .Values.unbound.dnstap.socket_path | default "/run/dnstap/dnstap.sock" }}
+        dnstap-send-identity: {{ .Values.unbound.dnstap.send_identity | default "no" }}
+        dnstap-send-version: {{ .Values.unbound.dnstap.send_version | default "no" }}
+        dnstap-log-client-query-messages: {{ .Values.unbound.dnstap.log_client_query_messages | default "yes" }}
+        dnstap-log-client-response-messages: {{ .Values.unbound.dnstap.log_client_response_messages | default "yes" }}
+{{- else }}
+        dnstap-enable: no
+{{- end }}
+
+{{- if .Values.unbound.bind_rpz_proxy.enabled }}
+  rpz.conf: |
+    {{- range $rpz_zone := .Values.unbound.rpz.zones }}
+       rpz:
+        name: {{ $rpz_zone | quote }}
+        # let the clients poll the zone SOA for monitoring purposes
+        for-downstream: yes
+        allow-notify: 127.0.0.1
+        primary: 127.0.0.1@55353
+        rpz-log: {{ has $rpz_zone $.Values.unbound.rpz.log | ternary "yes" "no" }}
+        rpz-log-name: {{ $rpz_zone | quote }}
+        rpz-signal-nxdomain-ra: yes
+    {{- end }}
+{{- end }}
+
+  hosts.conf: |
+       {{- range $lzone := .Values.unbound.local_zone}}
+       local-zone: {{ $lzone.local_zone | quote }} nodefault
+       {{- end}}
+       {{- range $ldata := .Values.unbound.local_data}}
+       local-data: {{ $ldata.local_data | quote }}
+       {{- end}}
+
+  firewall.conf: |
+       {{- range $blocklisted := .Values.unbound.blocklisted_zones }}
+       local-zone: {{ tpl $blocklisted $ | quote }} always_nxdomain
+       {{- end }}
+       {{- range $allowlisted := .Values.unbound.allowlisted_zones }}
+       local-zone: {{ tpl $allowlisted $ | quote }} transparent
+       {{- end }}
+
+  as112.conf: |
+       {{- range $zone := concat ( $.Values.unbound.forward_zones_global | default list ) ( $.Values.unbound.forward_zones | default list )}}
+       {{- if $zone.expose_as112 }}
+       local-zone: {{ $zone.forward_zone_name | quote }} {{ $zone.expose_as112 }}
+       {{- end }}
+       {{- end }}
+       {{- range $zone := concat ( $.Values.unbound.stub_zones_global | default list ) ( $.Values.unbound.stub_zones | default list )}}
+       {{- if $zone.expose_as112 }}
+       local-zone: {{ $zone.stub_zone_name | quote }} {{ $zone.expose_as112 }}
+       {{- end }}
+       {{- end }}
+
+  regional.conf: |
+       {{- range $forward := .Values.unbound.forward_zones }}
+       forward-zone:
+                name: "{{ $forward.forward_zone_name}}"
+                  {{- range $faddr := $forward.forward_addresses}}
+                        forward-addr: {{ $faddr.forward_addr}}
+                  {{- end}}
+       {{- end}}
+       {{- range $stub := .Values.unbound.stub_zones }}
+       stub-zone:
+                name: "{{ $stub.stub_zone_name}}"
+                  {{- range $addr := $stub.stub_addresses}}
+                        stub-addr: {{ $addr.stub_addr}}
+                  {{- end}}
+       {{- end}}
+
+  global.conf: |
+       {{- range $forward := .Values.unbound.forward_zones_global }}
+       forward-zone:
+                name: "{{ $forward.forward_zone_name}}"
+                  {{- range $faddr := $forward.forward_addresses}}
+                        forward-addr: {{ $faddr.forward_addr}}
+                  {{- end}}
+       {{- end}}
+       {{- range $stub := .Values.unbound.stub_zones_global }}
+       stub-zone:
+                name: "{{ $stub.stub_zone_name}}"
+                  {{- range $addr := $stub.stub_addresses}}
+                        stub-addr: {{ $addr.stub_addr}}
+                  {{- end}}
+       {{- end}}

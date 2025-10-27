@@ -1,0 +1,97 @@
+{{- if .Values.proxy_deployment_enabled }}
+{{- range $az := .Values.global.availability_zones }}
+kind: Deployment
+apiVersion: apps/v1
+
+metadata:
+  name: swift-proxy-{{ $.Values.cluster_name }}-{{ $az }}
+  labels:
+    release: "{{ $.Release.Name }}"
+    os-cluster: {{ $.Values.cluster_name }}
+spec:
+  revisionHistoryLimit: 5
+  {{- $replicas_az := default 0.0 (index $.Values (printf "proxy_deployment_replicas_%s" $az)) }}
+  replicas: {{ $replicas_az }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      {{- if eq $replicas_az 1.0 }}
+      maxUnavailable: 0
+      {{- else }}
+      maxUnavailable: 1
+      {{- end }}
+      maxSurge: 2
+  selector:
+    matchLabels:
+      component: swift-proxy-{{ $.Values.cluster_name }}
+  template:
+    metadata:
+      labels:
+        component: swift-proxy-{{ $.Values.cluster_name }}
+        from: deployment
+        os-cluster: {{ $.Values.cluster_name }}
+      annotations:
+        checksum/swift-cluster.etc: {{ include "swift/templates/etc/cluster-configmap.yaml" $ | sha256sum }}
+        {{- include "swift_conf_annotations" $ | indent 8 }}
+        {{- if $.Values.health_exporter }}
+        # Prometheus annotations on pod level without port
+        # discovery will find all exposed container ports for exporters running in containers
+        prometheus.io/scrape: "true"
+        prometheus.io/targets: {{ required ".Values.alerts.prometheus.openstack missing" $.Values.alerts.prometheus.openstack }}
+        {{- end }}
+    spec:
+      # No tolerations for swift nodes
+      nodeSelector:
+        topology.kubernetes.io/zone: {{ $az }}
+      affinity:
+        podAntiAffinity:
+          # Prefere to be scheduled on nodes not yet running this proxy from a deployment
+          # kubernetes.io/hostname legacy control plane
+          # kubernetes.cloud.sap/host aPod bases control plane
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 1
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: component
+                  operator: In
+                  values:
+                  - swift-proxy-{{ $.Values.cluster_name }}
+                - key: from
+                  operator: In
+                  values:
+                  - deployment
+              topologyKey: "kubernetes.io/hostname"
+          - weight: 5
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: component
+                  operator: In
+                  values:
+                  - swift-proxy-{{ $.Values.cluster_name }}
+                - key: from
+                  operator: In
+                  values:
+                  - deployment
+              topologyKey: "kubernetes.cloud.sap/host"
+          # Prefere to be scheduled on nodes not yet running haproxy. See bin/haproxy-start for explanation
+          - weight: 5
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: component
+                  operator: In
+                  values:
+                  - swift-haproxy-{{ $.Values.cluster_name }}
+              topologyKey: "kubernetes.io/hostname"
+      volumes:
+        {{- include "swift_proxy_volumes" $ | indent 8 }}
+      initContainers:
+        {{- include "swift_ringloader_initcontainer" $ | indent 8 }}
+      containers:
+        {{- tuple "deployment" $ | include "swift_proxy_containers" | indent 8 }}
+
+---
+{{- end }}
+{{- end }}

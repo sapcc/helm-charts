@@ -1,0 +1,88 @@
+{{- if .Values.openTelemetry.enabled }}
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: otel-basic-auth-users
+  namespace: {{ $.Release.Namespace }}
+data:
+  failover_username_a: {{ required ".Values.openTelemetry.openSearchLogs.failover_username_a missing" .Values.openTelemetry.openSearchLogs.failover_username_a | b64enc }}
+  failover_password_a: {{ required ".Values.openTelemetry.openSearchLogs.failover_password_a missing" .Values.openTelemetry.openSearchLogs.failover_password_a | b64enc }}
+  failover_username_b: {{ required ".Values.openTelemetry.openSearchLogs.failover_username_b missing" .Values.openTelemetry.openSearchLogs.failover_username_b | b64enc }}
+  failover_password_b: {{ required ".Values.openTelemetry.openSearchLogs.failover_password_b missing" .Values.openTelemetry.openSearchLogs.failover_password_b | b64enc }}     
+
+---
+apiVersion: greenhouse.sap/v1alpha1
+kind: Plugin
+metadata:
+  name: logs-greenhouse
+  namespace: {{ .Release.Namespace }}
+  labels:
+    "greenhouse.sap/owned-by": {{ .Values.openTelemetry.supportGroup | default .Values.global.supportGroup }}
+spec:
+  pluginDefinition: logs
+  disabled: false
+  optionValues:
+    - name: openTelemetry.prometheus.additionalLabels
+      value:
+        plugin: 'kube-monitoring'
+    - name: openTelemetry.openSearchLogs.endpoint
+      value: {{ .Values.openTelemetry.openSearchLogs.endpoint }}
+    - name: openTelemetry.openSearchLogs.index
+      value: {{ .Values.openTelemetry.openSearchLogs.index }}
+    - name: openTelemetry.openSearchLogs.failover_username_a
+      valueFrom: 
+        secret: 
+          key: failover_username_a
+          name: otel-basic-auth-users
+    - name: openTelemetry.openSearchLogs.failover_password_a
+      valueFrom: 
+        secret: 
+          key: failover_password_a
+          name: otel-basic-auth-users
+    - name: openTelemetry.openSearchLogs.failover_username_b
+      valueFrom: 
+        secret: 
+          key: failover_username_b
+          name: otel-basic-auth-users
+    - name: openTelemetry.openSearchLogs.failover_password_b
+      valueFrom: 
+        secret: 
+          key: failover_password_b
+          name: otel-basic-auth-users
+    - name: openTelemetry.cluster
+      value: {{ .Values.openTelemetry.cluster }}
+    - name: openTelemetry.region
+      value: {{ .Values.openTelemetry.region }}
+    - name: openTelemetry.logsCollector.enabled
+      value: true
+    - name: openTelemetry.metricsCollector.enabled
+      value: true
+    - name: openTelemetry.prometheus.podMonitor.enabled
+      value: {{ .Values.openTelemetry.prometheus.podMonitor.enabled }}
+    - name: openTelemetry.prometheus.serviceMonitor.enabled
+      value: {{ .Values.openTelemetry.prometheus.serviceMonitor.enabled }}
+    - name: openTelemetry.admissionWebhooks.certManager.enabled
+      value: {{ .Values.openTelemetry.admissionWebhooks.certManager.enabled }}
+    - name: openTelemetry.admissionWebhooks.autoGenerateCert.enabled
+      value: {{ .Values.openTelemetry.admissionWebhooks.autoGenerateCert.enabled }}
+    - name: openTelemetry.admissionWebhooks.autoGenerateCert.recreate
+      value: {{ .Values.openTelemetry.admissionWebhooks.autoGenerateCert.recreate }}
+    - name: openTelemetry.kubeRBACProxy.enabled
+      value: {{ .Values.openTelemetry.kubeRBACProxy.enabled }}
+    - name: openTelemetry.manager.prometheusRule.defaultRules.enabled
+      value: {{ .Values.openTelemetry.manager.prometheusRule.defaultRules.enabled }}
+    - name: openTelemetry.manager.prometheusRule.enabled
+      value: {{ .Values.openTelemetry.manager.prometheusRule.enabled }}
+  {{- if .Values.global.ghcrIoMirror }}
+    - name: opentelemetry-operator.manager.image.repository
+      value: {{ .Values.global.ghcrIoMirror }}/open-telemetry/opentelemetry-operator/opentelemetry-operator
+    - name: opentelemetry-operator.manager.collectorImage.repository
+      value: {{ .Values.global.ghcrIoMirror }}/cloudoperators/opentelemetry-collector-contrib
+    - name: opentelemetry-operator.testFramework.image.repository
+      value: {{ .Values.global.dockerHubMirror }}/library/busybox
+    - name: testFramework.image.registry
+      value: {{ .Values.global.ghcrIoMirror }}
+  {{ end -}}
+{{- end }}

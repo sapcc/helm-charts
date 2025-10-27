@@ -1,0 +1,12 @@
+{{- $val := .Values.poller }}
+{{- if and ($val.enabled) (eq $val.action "forwardEmail") ($val.mxrecords)  -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: configmx-{{ include "poller.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ include "poller.fullname" . }}
+data:
+  mx-records.json: {{ $val.mxrecords | toJson }}
+{{- end }}

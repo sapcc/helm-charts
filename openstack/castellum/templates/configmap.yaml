@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: ConfigMap
+
+metadata:
+  name: castellum
+
+data:
+  castellum.yaml: |
+    max_asset_sizes:
+    {{- range .Values.castellum.max_asset_sizes }}
+    {{- if eq .region "any" $.Values.global.region }}
+      - asset_type: {{ toYaml .asset_type }}
+        scope_uuid: {{ toYaml .scope_uuid }}
+        value:      {{ toYaml .value }}
+    {{- end }}
+    {{- end }}
+    {{- if .Values.castellum.project_seeds }}
+    project_seeds:
+      {{- toYaml .Values.castellum.project_seeds | nindent 6 }}
+    {{- end }}
+
+  policy.json: |
+    {{- .Files.Get "files/policy.yaml" | fromYaml | toPrettyJson | nindent 4 }}

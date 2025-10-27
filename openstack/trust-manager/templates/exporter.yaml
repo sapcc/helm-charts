@@ -1,0 +1,55 @@
+{{ range $i, $namespace := .Values.cert_exporter.namespaces }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/instance: trust-manager
+    app.kubernetes.io/name: cert-exporter
+    app.kubernetes.io/version: v2.13.0
+    cert-exporter.io/type: deployment
+    helm.sh/chart: cert-exporter-3.8.0
+  name: trust-manager-cert-exporter
+  namespace: {{ $namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: trust-manager
+      app.kubernetes.io/name: cert-exporter
+      cert-exporter.io/type: deployment
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/instance: trust-manager
+        app.kubernetes.io/name: cert-exporter
+        cert-exporter.io/type: deployment
+      annotations:
+          prometheus.io/scrape: "true"
+          prometheus.io/targets: openstack
+    spec:
+      containers:
+      - args:
+        - --configmaps-label-selector=trust.cert-manager.io/bundle
+        - --logtostderr
+        command:
+        - ./app
+        image: keppel.eu-de-1.cloud.sap/ccloud-dockerhub-mirror/joeelliott/cert-exporter:v2.13.0
+        imagePullPolicy: IfNotPresent
+        name: cert-exporter
+        ports:
+        - containerPort: 8080
+          name: metrics
+          protocol: TCP
+        livenessProbe:
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          tcpSocket:
+            port: 8080
+        readinessProbe:
+          failureThreshold: 1
+          httpGet:
+            path: /metrics
+            port: 8080
+          periodSeconds: 10
+{{- end }}

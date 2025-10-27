@@ -1,0 +1,57 @@
+{{- if .Values.pluginPreset.enabled }}
+apiVersion: greenhouse.sap/v1alpha1
+kind: PluginPreset
+metadata:
+  name: cert-manager
+  namespace: {{ .Release.Namespace }}
+  labels:
+    greenhouse.sap/owned-by: containers
+{{- if .Values.global.fluxEnabled }}
+    greenhouse.sap/deployment-tool: "flux"
+  annotations:
+    "greenhouse.sap/propagate-labels": "greenhouse.sap/owned-by,greenhouse.sap/deployment-tool"
+{{- else }}
+  annotations:
+    "greenhouse.sap/propagate-labels": "greenhouse.sap/owned-by"
+{{- end }}
+spec:
+  clusterSelector:
+    matchLabels:
+      greenhouse.sap/pluginpreset: "true"
+  plugin:
+    displayName: cert manager
+    optionValues:
+      - name: cert-manager.webhook.timeoutSeconds
+        value: {{ .Values.certManager.webhook.timeoutSeconds }}
+      - name: cert-manager.extraArgs[0]
+        value: --enable-certificate-owner-ref=true
+      - name: cert-manager.ingressShim.defaultIssuerGroup
+        value: certmanager.cloud.sap
+      - name: cert-manager.ingressShim.defaultIssuerKind
+        value: DigicertIssuer
+      - name: cert-manager.ingressShim.defaultIssuerName
+        value: digicert-issuer
+      - name: cert-manager.installCRDs
+        value: false
+      - name: cert-manager.prometheus.enabled
+        value: true
+      - name: cert-manager.image.repository
+        value: {{ .Values.global.quayIoMirror }}/jetstack/cert-manager-controller
+      - name: cert-manager.webhook.image.repository
+        value: {{ .Values.global.quayIoMirror }}/jetstack/cert-manager-webhook
+      - name: cert-manager.cainjector.image.repository
+        value: {{ .Values.global.quayIoMirror }}/jetstack/cert-manager-cainjector
+    pluginDefinition: cert-manager
+    releaseNamespace: kube-system
+{{- if .Values.certManager.overrideShootNetworkPolicy }}
+    clusterOptionOverrides:
+{{- range $cluster := .Values.certManager.overrideShootNetworkPolicy }}
+      - clusterName: {{ $cluster }}
+        overrides:
+          - name: global.commonLabels
+            value:
+              networking.gardener.cloud/to-apiserver: allowed
+              networking.gardener.cloud/to-dns: allowed
+{{- end }}
+{{- end }}
+{{- end -}}

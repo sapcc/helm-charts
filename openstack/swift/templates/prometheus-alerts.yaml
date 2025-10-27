@@ -1,0 +1,118 @@
+{{- if .Values.alerts.enabled }}
+{{- range $target, $unused := .Values.alerts.prometheus }}
+{{- range $path, $bytes := $.Files.Glob (printf "alerts/%s/*.alerts" $target) }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+
+metadata:
+  name: {{ printf "%s" $path | replace "/" "-" }}
+  labels:
+    app: swift
+    tier: os
+    type: alerting-rules
+    prometheus: {{ index $.Values.alerts.prometheus $target | required (printf ".Values.alerts.prometheus.%s missing" $target) }}
+
+spec:
+{{ printf "%s" $bytes | indent 2 }}
+
+{{- end }}
+{{- end }}
+
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+
+# This rule is in here, rather than in a file in alerts/, because we need to use templating.
+metadata:
+  name: alerts-swift-roleassignments.alerts
+  labels:
+    app: swift
+    tier: os
+    type: alerting-rules
+    prometheus: {{ required ".Values.alerts.prometheus.openstack missing" $.Values.alerts.prometheus.openstack }}
+
+spec:
+  groups:
+  - name: openstack-swift-roleassignments.alerts
+    rules:
+      # allowed role assignments for the `cloud_objectstore_admin` role:
+      # - group CCADMIN_CLOUD_ADMINS@ccadmin           in project cloud_admin@ccadmin
+      # - user admin@Default                           in project admin@Default (for openstackseeder to create Swift accounts)
+      # - user ironic@Default                          in project service@Default (to read private OS images)
+      # - user keppel@Default                          in project cloud_admin@ccadmin (to access customers' Keppel containers)
+      # - user limes@Default                           in project cloud_admin@ccadmin (for Limes to get/set quotas)
+      # - user kubernikus@Default                      in project cloud_admin@ccadmin
+      # ONLY EU-NL-1:
+      # - user kubernikus-master@Default               in project cloud_admin@ccadmin
+
+      - alert: OpenstackSwiftUnexpectedCloudAdminRoleAssignments
+        {{- $r := $.Values.global.region }}
+        expr: absent(openstack_assignments_per_role{role_name="cloud_objectstore_admin"}) or max(openstack_assignments_per_role{role_name="cloud_objectstore_admin"}) > 10
+        for: 10m
+        labels:
+          support_group: storage
+          tier: os
+          service: swift
+          severity: info
+          playbook: 'https://operations.global.cloud.sap/docs/support/playbook/unexpected-role-assignments'
+          meta: 'Unexpected role assignments found for Keystone role "cloud_objectstore_admin"'
+        annotations:
+          summary: 'Unexpected role assignments'
+          description: 'The Keystone role "cloud_objectstore_admin" is assigned to more users/groups than expected.'
+
+      # allowed role assignments for the `cloud_objectstore_viewer` role:
+      # - none so far
+
+      - alert: OpenstackSwiftUnexpectedCloudViewerRoleAssignments
+        expr: max(openstack_assignments_per_role{role_name="cloud_objectstore_viewer"}) > 0
+        for: 10m
+        labels:
+          no_alert_on_absence: "true" # Keystone does not generate a zero-valued metric, so this metric is actually absent until an alert happens (TODO: remove this once we add allowed role assignments)
+          support_group: storage
+          tier: os
+          service: swift
+          severity: info
+          playbook: 'https://operations.global.cloud.sap/docs/support/playbook/unexpected-role-assignments'
+          meta: 'Unexpected role assignments found for Keystone role "cloud_objectstore_viewer"'
+        annotations:
+          summary: 'Unexpected role assignments'
+          description: 'The Keystone role "cloud_objectstore_viewer" is assigned to more users/groups than expected.'
+
+{{- end }}
+
+{{- if .Values.s3_cred_cache_prewarm_credentials }}
+---
+
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+
+# This rule is in here, rather than in a file in alerts/, because we need to use templating.
+metadata:
+  name: alerts-swift-s3-cache-prewarmer.alerts
+  labels:
+    app: swift
+    tier: os
+    type: alerting-rules
+    prometheus: {{ required ".Values.alerts.prometheus.openstack missing" $.Values.alerts.prometheus.openstack }}
+
+spec:
+  groups:
+  - name: openstack-swift-s3-cache-prewarmer.alerts
+    rules:
+      - alert: OpenstackSwiftS3CachePrewarmerNotWorking
+        # The cutoff is 10 minutes (600 seconds) here because cache entries
+        # have a TTL of 10 minutes, so if the prewarming cycle takes longer
+        # than that, it's going to be ineffective.
+        expr: max(time() - swift_s3_cache_prewarm_last_run_secs) > 600
+        for: 5m
+        labels:
+          support_group: storage
+          tier: os
+          service: swift
+          severity: info
+          meta: 'Prewarming of S3 credential cache not working'
+        annotations:
+          summary: 'Prewarming of S3 credential cache not working'
+          description: 'The S3 credential cache is not getting prewarmed correctly. Check the logs of the swift-s3-cache-prewarmer-{{ .Values.cluster_name }} pod for details.'
+{{- end }}

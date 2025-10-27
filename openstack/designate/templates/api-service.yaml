@@ -1,0 +1,36 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: {{ .Release.Name }}-api
+  labels:
+    system: openstack
+    application: designate
+    type: api
+    component: api
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/targets: {{ required ".Values.metrics.prometheus missing" .Values.metrics.prometheus | quote }}
+    {{- include "utils.linkerd.pod_and_service_annotation" . | indent 4 }}
+spec:
+{{- if .Values.global.is_global_region }}
+  type: LoadBalancer
+  externalTrafficPolicy: Local
+{{- end }}
+  selector:
+    app: {{ .Release.Name }}-api
+  ports:
+    - name: designate-api
+      port: {{ .Values.global.designate_api_port_internal }}
+    - name: metrics
+      port: {{ .Values.global.designate_metrics_port }}
+{{- if .Values.global.is_global_region }}
+    - name: static
+      port: 80
+  externalIPs:
+{{- if .Values.global.designate_api_external_ip }}
+    - {{ .Values.global.designate_api_external_ip }}
+{{- end }}
+{{- if .Values.global.designate_internal_ip }}
+    - {{ .Values.global.designate_internal_ip }}
+{{- end }}
+{{- end }}

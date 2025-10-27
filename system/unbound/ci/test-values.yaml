@@ -1,0 +1,53 @@
+global:
+  region: test
+  tld: test.corp
+  imageRegistry: testRepo
+  image_namespace: testNamespace
+  registryAlternateRegion: test-1
+
+unbound:
+  name: "testunbound"
+
+  unbound:
+    image: sapcc/unbound
+    image_tag: latest
+
+  unbound_exporter:
+    image: sapcc/unbound_exporter
+    image_tag: latest
+
+  dnstap:
+    image: sapcc/dnstap
+    image_tag: latest
+
+  bind_rpz_proxy:
+    image: sapcc/bind-rpz-proxy
+    image_tag: latest
+    enabled: true
+
+    rndc:
+      keyname: rndc-key
+      algo:    hmac-sha512
+      secret:  MDEyMzQ1Njc4OWFiY2RlZg==
+
+  rpz:
+    tsig:
+      keyname: tsig-key
+      algo:    hmac-sha512
+      secret:  MDEyMzQ1Njc4OWFiY2RlZg==
+    zones: []
+
+  monitoring:
+    dashboard: dns-unbound-performance
+
+  image_pullPolicy: Always
+  port_unbound_exporter: 9107
+  interface: 0.0.0.0
+  failure_domain_zone: a
+  externalIPs:
+    - 127.0.0.1
+  control:
+    socket_path: "/run/unbound/control.sock"
+
+alerts:
+  prometheus: openstack

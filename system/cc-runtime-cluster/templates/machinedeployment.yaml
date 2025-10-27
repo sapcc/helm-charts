@@ -1,0 +1,38 @@
+apiVersion: cluster.x-k8s.io/v1beta1
+kind: MachineDeployment
+metadata:
+  name: worker-rt-{{ .Values.global.region }}
+spec:
+  clusterName: rt-{{ .Values.global.region }}
+  replicas: {{ .Values.worker.replicas }}
+  strategy:
+    rollingUpdate:
+      # We don't have spare nodes in bare metal clusters to spin up a new machine during upgrade.
+      # Therefore we change maxSurge from 1 (default) to 0.
+      # Cluster will be updated by temporary scaling down control plane to 1 machine less.
+      maxSurge: 0
+  selector:
+    matchLabels:
+      kubernetes.metal.cloud.sap/cluster: rt-{{ .Values.global.region }}
+      kubernetes.metal.cloud.sap/role: server
+  template:
+    metadata:
+      labels:
+        kubernetes.metal.cloud.sap/cluster: rt-{{ .Values.global.region }}
+        kubernetes.metal.cloud.sap/role: server
+    spec:
+      bootstrap:
+        configRef:
+          apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
+          kind: KubeadmConfigTemplate
+          name: worker-rt-{{ .Values.global.region }}
+      clusterName: rt-{{ .Values.global.region }}
+      infrastructureRef:
+        kind: IroncoreMetalMachineTemplate
+        apiVersion: infrastructure.cluster.x-k8s.io/v1alpha1
+        name: worker-rt-{{ .Values.global.region }}
+      # to avoid "Node deletion timeout expired, continuing without Node deletion"
+      # https://github.com/kubernetes-sigs/cluster-api/pull/5608
+      nodeDeletionTimeout: "0"
+      nodeDrainTimeout: "0"
+      version: {{ .Values.controlplane.version }}

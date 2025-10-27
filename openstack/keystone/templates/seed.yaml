@@ -1,0 +1,175 @@
+{{- if and (hasKey $.Values "seed") (hasKey $.Values.seed "disabled") ($.Values.seed.disabled) }}
+{{- else }}
+{{/* seeding of global region only happens once */}}
+{{- if or (not .Values.global.is_global_region) (eq .Values.global.db_region "eu-de-2") (eq .Values.global.db_region "qa-de-1") }}
+apiVersion: "openstack.stable.sap.cc/v1"
+kind: "OpenstackSeed"
+metadata:
+  name: {{ .Release.Name }}-seed
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+spec:
+  roles:
+  - name: admin
+    description: Keystone Administrator
+  - name: member
+    description: Keystone Member
+  - name: reader
+    description: Keystone Read-Only
+  - name: service
+    description: Keystone Service
+  - name: cloud_identity_viewer
+    description: Keystone Cloud Read-Only (deprecated)
+  - name: role_admin
+    description: Keystone Role Administrator
+  - name: role_viewer
+    description: Keystone Role Read-Only
+
+  role_inferences:
+    - prior_role: admin
+      implied_role: member
+    - prior_role: member
+      implied_role: reader
+    - prior_role: cloud_identity_viewer
+      implied_role: reader
+    - prior_role: role_admin
+      implied_role: role_viewer
+
+  regions:
+  - id: ap
+    description: 'Asia/Pacific'
+  - id: ap-ae-1
+    description: 'UAE - Dubai'
+    parent_region: ap
+  - id: ap-au-1
+    description: 'Australia - Sydney'
+    parent_region: ap
+  - id: ap-cn-1
+    description: 'China - Shanghai'
+    parent_region: ap
+  - id: ap-jp-1
+    description: 'Japan - Tokyo'
+    parent_region: ap
+  - id: ap-jp-2
+    description: 'Japan - Osaka'
+    parent_region: ap
+  - id: ap-sa-1
+    description: 'Saudi Arabia - Riyadh'
+    parent_region: ap
+  - id: eu
+    description: 'Europe'
+  - id: eu-de-1
+    description: 'Germany - Walldorf/Rot'
+    parent_region: eu
+  - id: eu-de-2
+    description: 'Germany - Frankfurt'
+    parent_region: eu
+  - id: eu-nl-1
+    description: 'Netherlands - Amsterdam'
+    parent_region: eu
+  - id: na
+    description: 'North America'
+  - id: na-ca-1
+    description: 'Canada - Toronto'
+    parent_region: na
+  - id: na-us-1
+    description: 'US East - Newtown Square/Sterling/Ashburn'
+    parent_region: na
+  - id: na-us-2
+    description: 'US Mid - Colorado'
+    parent_region: na
+  - id: na-us-3
+    description: 'US Mid - Chandler AZ'
+    parent_region: na
+  - id: la
+    description: 'Latin America'
+  - id: la-br-1
+    description: 'Brazil - Sao Paolo'
+    parent_region: la
+  - id: staging
+    description: 'Staging'
+    parent_region: eu
+  - id: qa-de-1
+    description: 'QA Germany - Walldorf/Rot'
+    parent_region: eu
+  - id: qa-de-2
+    description: 'QA 2 Germany - Walldorf/Rot'
+    parent_region: eu
+
+  services:
+  - name: keystone
+    type: identity
+    description: Openstack Identity
+    endpoints:
+    - interface: public
+      region: {{ .Values.global.region }}
+{{- if eq .Values.services.public.scheme "https" }}
+      url: https://{{.Values.services.public.host}}.{{.Values.global.region}}.{{.Values.global.tld}}/v3
+{{- else }}
+      url: {{.Values.services.public.scheme}}://{{.Values.services.public.host}}.{{.Values.global.region}}.{{.Values.global.tld}}:5000/v3
+{{- end }}
+    - interface: admin
+      region: {{ .Values.global.region }}
+{{- if eq .Values.services.admin.scheme "https" }}
+      url: https://{{.Values.services.public.host}}.{{.Values.global.region}}.{{.Values.global.tld}}/v3
+{{- else }}
+      url: {{.Values.services.public.scheme}}://{{.Values.services.public.host}}.{{.Values.global.region}}.{{.Values.global.tld}}:5000/v3
+{{- end }}
+    - interface: internal
+      region: {{ .Values.global.region }}
+{{- if .Values.global.clusterDomain }}
+      url: http://keystone.{{.Release.Namespace}}.svc.{{.Values.global.clusterDomain}}:5000/v3
+{{- else if .Values.global.is_global_region }}
+      url: http://{{ .Values.global.keystone_internal_ip }}:5000/v3
+{{- else }}
+      url: http://{{ .Release.Name }}.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}:5000/v3
+{{- end }}
+
+  domains:
+  - name: Default
+    id: default
+    description: Openstack Internal Domain
+    enabled: true
+    users:
+    - name: admin
+      description: Openstack Cloud Administrator
+      enabled: true
+      role_assignments:
+      - domain: Default
+        role: admin
+      - project: admin
+        role: admin
+      - project: service
+        role: admin
+      - system: all
+        role: admin
+
+    groups:
+    - name: administrators
+      description: Administrators
+      role_assignments:
+      - domain: Default
+        role: admin
+      - project: admin
+        role: admin
+      - project: service
+        role: admin
+      - system: all
+        role: admin
+      users:
+      - admin
+    - name: members
+      description: Members
+      role_assignments:
+      - domain: Default
+        role: member
+    projects:
+    - name: admin
+      description: Administrator Project
+    - name: service
+      description: Services Project
+{{- end }}
+{{- end }}

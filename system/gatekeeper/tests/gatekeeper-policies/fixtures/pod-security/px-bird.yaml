@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  annotations:
+    meta.helm.sh/release-name: bird-domain1
+    meta.helm.sh/release-namespace: px
+  labels:
+    app.kubernetes.io/managed-by: Helm
+    ccloud/service: px
+    ccloud/support-group: network-api
+  name: routeserver-v4-service-1-domain-1
+  namespace: px
+spec:
+  template:
+    spec:
+      containers:
+      - name: bird
+        securityContext:
+          capabilities:
+            add:
+            - NET_ADMIN
+      - name: exporter
+      - name: lgproxy
+      - name: lgadminproxy
+      initContainers:
+      - name: init-network
+        securityContext:
+          privileged: true # runs `ip link set $VLAN_INTERFACE promisc on`
+      securityContext: {}

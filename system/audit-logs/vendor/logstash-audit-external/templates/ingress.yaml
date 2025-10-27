@@ -1,0 +1,26 @@
+{{ if eq .Values.global.clusterType  "scaleout" -}}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+
+metadata:
+  name: logstash-audit-external
+  annotations:
+    kubernetes.io/tls-acme: "true"
+    disco: "true"
+
+spec:
+  tls:
+     - secretName: tls-logstash-audit-external
+       hosts: [logstash-audit-external.scaleout.{{.Values.global.region}}.{{.Values.global.tld}}]
+  rules:
+    - host: logstash-audit-external.scaleout.{{.Values.global.region}}.{{.Values.global.tld}}
+      http:
+        paths:
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: logstash-audit-external
+              port:
+                number: {{.Values.input_http_port}}
+{{- end }}

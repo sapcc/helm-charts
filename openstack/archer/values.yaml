@@ -1,0 +1,126 @@
+# Default values for archer.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+debug: false
+
+global:
+  linkerd_requested: true
+  keystoneNamespace: monsoon3
+
+image:
+  neutron_version: caracal-latest
+  kubernetes_entrypoint_version: v0.3.1
+  pullPolicy: IfNotPresent
+
+postgresql:
+  enabled: true
+  alerts:
+    support_group: network-api
+  databases:
+    archer: {}
+  extensions:
+    pgcrypto: []
+  persistence:
+    accessMode: ReadWriteMany
+    size: 1Gi
+  users:
+    archer: {}
+
+pgbackup:
+  alerts:
+    support_group: containers
+
+pgmetrics:
+  alerts:
+    support_group: network-api
+  databases:
+    archer: {}
+
+alerts:
+  enabled: true
+  support_group: containers
+  # Name of the Prometheus to which the alerts should be assigned to.
+  tier: os
+
+owner-info:
+  support-group: containers
+  service: archer
+  maintainers:
+    - Andrew Karpow
+    - Anton Khramov
+  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/openstack/archer
+
+ingress:
+  enabled: true
+  tls: true
+  annotations:
+    kubernetes.io/tls-acme: "true"
+    disco: "true"
+
+metrics:
+  port: 9090
+
+audit:
+  enabled: true
+  user: rabbitmq
+  host: hermes-rabbitmq-notifications.hermes
+  port: 5672
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+cp_network_interface: bond1
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: false
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+podAnnotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/targets: "openstack"
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+service:
+  type: ClusterIP
+  port: 8000
+
+resources:
+  api: {}
+  f5-agent: {}
+  ni-agent: {}
+  linuxbridge_agent: {}
+  socat: {}
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 100
+  targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80
+
+agents:
+  ni: {}
+  f5: {}
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}

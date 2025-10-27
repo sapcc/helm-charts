@@ -1,0 +1,86 @@
+kind: Deployment
+apiVersion: apps/v1
+
+metadata:
+  name: keppel-janitor
+  annotations:
+    configmap.reloader.stakater.com/reload: keppel-auto-managed-accounts
+    secret.reloader.stakater.com/reload: keppel-keys,keppel-secret
+
+spec:
+  revisionHistoryLimit: 5
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      name: keppel-janitor
+  template:
+    metadata:
+      labels:
+        name: keppel-janitor
+      annotations:
+        checksum/configmap: {{ include "keppel/templates/configmap.yaml" . | sha256sum }}
+        checksum/secret: {{ include "keppel/templates/secret.yaml" . | sha256sum }}
+        checksum/secret-keys: {{ include "keppel/templates/secret-keys.yaml" . | sha256sum }}
+        kubectl.kubernetes.io/default-container: janitor
+        prometheus.io/scrape: "true"
+        prometheus.io/targets: "openstack"
+    spec:
+      volumes:
+        - name: config
+          configMap:
+            name: keppel
+        - name: config-auto-managed-accounts
+          configMap:
+            name: keppel-auto-managed-accounts
+        - name: keys
+          secret:
+            secretName: keppel-keys
+      containers:
+        - name: janitor
+          image: {{include "keppel_image" .}}
+          imagePullPolicy: IfNotPresent
+          args: [ server, janitor ]
+          env: {{ include "keppel_environment" $ | indent 12 }}
+            - name: KEPPEL_DRIVER_ACCOUNT_MANAGEMENT
+              value: 'basic'
+            - name: KEPPEL_ACCOUNT_MANAGEMENT_CONFIG_PATH
+              value: /etc/keppel-auto-managed-accounts/config.json
+            - name: KEPPEL_ACCOUNT_MANAGEMENT_PROTECTED_ACCOUNTS
+              value: ccloud ccloud-dockerhub-mirror ccloud-gcr-mirror ccloud-ghcr-io-mirror ccloud-quay-mirror ccloud-registry-k8s-io-mirror
+          securityContext:
+            runAsNonRoot: true
+          volumeMounts:
+            - mountPath: /etc/keppel
+              name: config
+            - mountPath: /etc/keppel-auto-managed-accounts
+              name: config-auto-managed-accounts
+            - mountPath: /etc/keppel-keys
+              name: keys
+          ports:
+            - name: metrics
+              containerPort: 80
+          livenessProbe:
+            httpGet:
+              path: /healthcheck
+              port: 80
+            timeoutSeconds: 10
+            periodSeconds: 60
+            initialDelaySeconds: 60
+          readinessProbe:
+            httpGet:
+              path: /healthcheck
+              port: 80
+            timeoutSeconds: 5
+            periodSeconds: 5
+          # NOTE: observed resource usage in eu-de-1 (as of 2025-03)
+          # - CPU: 800m, spiky
+          # - RAM: settles at about 400Mi after a few hours, leaks about 200Mi per day (but one OOM kill per day is acceptable IMO)
+          resources:
+            requests:
+              cpu: "2"
+              memory: "800Mi"
+            limits:
+              cpu: "2"
+              memory: "800Mi"

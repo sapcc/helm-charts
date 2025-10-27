@@ -1,0 +1,126 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: {{ template "fullname" . }}
+  labels:
+    {{- include "memcached.labels" (list $ "version" "memcached" "deployment" "kvstore") | indent 4 }}
+{{- if .Values.vpa.set_main_container }}
+  annotations:
+    vpa-butler.cloud.sap/main-container: memcached
+{{- end }}
+spec:
+  replicas: {{ .Values.replicas }}
+  revisionHistoryLimit: {{ .Values.upgrades.revisionHistory }}
+  strategy:
+    type: {{ .Values.upgrades.podReplacementStrategy }}
+    {{ if eq .Values.upgrades.podReplacementStrategy "RollingUpdate" }}
+    rollingUpdate:
+      maxUnavailable: {{ .Values.upgrades.rollingUpdate.maxUnavailable }}
+      maxSurge: {{ .Values.upgrades.rollingUpdate.maxSurge }}
+    {{ end }}
+  selector:
+    matchLabels:
+      app: {{ template "fullname" . }}
+  template:
+    metadata:
+      labels:
+        {{- include "memcached.labels" (list $ "version" "memcached" "deployment" "kvstore") | indent 8 }}
+      annotations:
+        {{- if and (and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested) $.Values.linkerd.enabled }}
+        linkerd.io/inject: enabled
+        {{- end }}
+    spec:
+      affinity:
+        nodeAffinity:
+{{- if .Values.nodeAffinity }}
+      {{- with .Values.nodeAffinity }}
+{{ toYaml . | indent 10 }}
+      {{- end }}
+{{- include "memcached_maintenance_affinity" . }}
+{{- include "memcached_node_reinstall_affinity" . }}
+{{- else }}
+          preferredDuringSchedulingIgnoredDuringExecution:
+{{- include "memcached_maintenance_affinity" . }}
+{{- include "memcached_node_reinstall_affinity" . }}
+{{- end }}
+      {{- if and .Values.auth.username .Values.auth.password }}
+      hostname: {{ template "fullname" . }}
+      {{- end }}
+      containers:
+      - name: memcached
+        image: "{{include "dockerHubMirror" .}}/{{ .Values.image }}:{{.Values.imageTag }}"
+        imagePullPolicy: {{ default "IfNotPresent" .Values.imagePullPolicy | quote }}
+        command:
+        - memcached
+        - -m {{ .Values.memcached.maxItemMemory  }}
+        - -c {{ .Values.memcached.maxConnections  }}
+        {{- if and .Values.auth.username .Values.auth.password }}
+        - -S
+        {{- end }}
+        {{- if default "" .Values.memcached.verbosity }}
+        - -{{ .Values.memcached.verbosity }}
+        {{- end }}
+        {{- if and .Values.auth.username .Values.auth.password }}
+        env:
+          - name: MEMCACHED_SASL_PWDB
+            value: "/var/lib/memcached-sasl-db"
+          - name: SASL_CONF_PATH
+            value: "/etc/memcached/memcached.conf"
+        {{- end }}
+        ports:
+        - name: memcache
+          containerPort: {{ default "11211" .Values.memcached.port }}
+        livenessProbe:
+          tcpSocket:
+            port: memcache
+          initialDelaySeconds: 30
+          timeoutSeconds: 5
+        readinessProbe:
+          tcpSocket:
+            port: memcache
+          initialDelaySeconds: 5
+          timeoutSeconds: 1
+        {{- if .Values.resources.enabled }}
+        resources:
+          limits:
+            cpu: {{ .Values.resources.limits.cpu | quote }}
+            memory: {{ .Values.resources.limits.memory | quote }}
+          requests:
+            cpu: {{ .Values.resources.requests.cpu | quote }}
+            memory: {{ .Values.resources.requests.memory | quote }}
+        {{- end }}
+        {{- if and .Values.auth.username .Values.auth.password }}
+        volumeMounts:
+          - mountPath: /etc/memcached/
+            name: memcached-etc
+          - mountPath: /var/lib/memcached-sasl-db
+            name: memcached-sasl-secrets
+            subPath: memcached-sasl-db
+        {{- end }}
+      {{- if .Values.metrics.enabled }}
+      - name: metrics
+        image: {{include "dockerHubMirror" .}}/{{ .Values.metrics.image }}:{{ .Values.metrics.imageTag }}
+        imagePullPolicy: {{ default "IfNotPresent" .Values.metrics.imagePullPolicy | quote }}
+        ports:
+          - name: metrics
+            containerPort: {{ default 9150 .Values.metrics.port }}
+        {{- if .Values.metrics.resources.enabled }}
+        resources:
+          limits:
+            cpu: {{ .Values.metrics.resources.limits.cpu | quote }}
+            memory: {{ .Values.metrics.resources.limits.memory | quote }}
+          requests:
+            cpu: {{ .Values.metrics.resources.requests.cpu | quote }}
+            memory: {{ .Values.metrics.resources.requests.memory | quote }}
+        {{- end }}
+      {{- end }}
+      priorityClassName: {{ .Values.priority_class | default "critical-infrastructure" | quote }}
+{{- if and .Values.auth.username .Values.auth.password }}
+      volumes:
+        - name: memcached-etc
+          configMap:
+            name: {{ .Release.Name }}-memcached-config
+        - name: memcached-sasl-secrets
+          secret:
+            secretName: {{ .Release.Name }}-memcached-secrets
+{{- end }}

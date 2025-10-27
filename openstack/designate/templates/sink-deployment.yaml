@@ -1,0 +1,98 @@
+{{- if .Values.sink_enabled }}
+kind: Deployment
+apiVersion: apps/v1
+
+metadata:
+  name: designate-sink
+  labels:
+    system: openstack
+    type: backend
+    component: designate
+  annotations:
+    secret.reloader.stakater.com/reload: "{{ .Release.Name }}-secrets,{{ .Release.Name }}-secrets-rndc"
+    deployment.reloader.stakater.com/pause-period: "60s"
+  {{- if .Values.vpa.set_main_container }}
+    vpa-butler.cloud.sap/main-container: designate-sink
+  {{- end }}
+spec:
+  replicas: {{ .Values.pod.replicas.sink }}
+  revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revision_history }}
+  strategy:
+    type: {{ .Values.pod.lifecycle.upgrades.deployments.pod_replacement_strategy }}
+    {{ if eq .Values.pod.lifecycle.upgrades.deployments.pod_replacement_strategy "RollingUpdate" }}
+    rollingUpdate:
+      maxUnavailable: {{ .Values.pod.lifecycle.upgrades.deployments.rolling_update.max_unavailable }}
+      maxSurge: {{ .Values.pod.lifecycle.upgrades.deployments.rolling_update.max_surge }}
+    {{ end }}
+  selector:
+    matchLabels:
+      app: designate-sink
+  template:
+    metadata:
+      labels:
+        app: designate-sink
+      annotations:
+        configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
+        configmap-bin-hash: {{ include (print $.Template.BasePath "/bin-configmap.yaml") . | sha256sum }}
+        {{- if .Values.proxysql.mode }}
+        prometheus.io/scrape: "true"
+        prometheus.io/targets: {{ required ".Values.metrics.prometheus missing" .Values.metrics.prometheus | quote }}
+        {{- end }}
+        {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
+    spec:
+{{- if .Values.rbac.enabled }}
+      serviceAccountName: {{ .Release.Name }}
+{{- end }}
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app
+                operator: In
+                values:
+                - designate-sink
+            topologyKey: "kubernetes.io/hostname"
+      initContainers:
+      {{- if .Values.proxysql.native_sidecar }}
+      {{- include "utils.proxysql.container" . | indent 8 }}
+      {{- end }}
+      containers:
+        - name: designate-sink
+          image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/loci-designate:{{ required ".Values.global.image_version_designate is missing" .Values.image_version_designate }}
+          imagePullPolicy: IfNotPresent
+          command:
+            - /container.init/designate-sink-start
+          env:
+            - name: DEBUG_CONTAINER
+              value: "false"
+            {{- if .Values.sentry.enabled }}
+            - name: SENTRY_DSN
+              valueFrom:
+                secretKeyRef:
+                  name: sentry
+                  key: {{ .Release.Name }}.DSN.python
+            {{- end }}
+            {{- if .Values.python_warnings }}
+            - name: PYTHONWARNINGS
+              value: {{ .Values.python_warnings | quote }}
+            {{- end }}
+          volumeMounts:
+            - mountPath: /designate-etc
+              name: designate-etc
+            - mountPath: /container.init
+              name: container-init
+            {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
+        {{- if not .Values.proxysql.native_sidecar }}
+        {{- include "utils.proxysql.container" . | indent 8 }}
+        {{- end }}
+      volumes:
+        - name: designate-etc
+          configMap:
+            name: designate-etc
+        - name: container-init
+          configMap:
+            name: designate-bin
+            defaultMode: 0755
+        {{- include "utils.trust_bundle.volumes" . | indent 8 }}
+{{- end }}

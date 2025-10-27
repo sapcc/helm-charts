@@ -1,0 +1,95 @@
+{{- if $.Values.metis.enabled }}
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: metis
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: metis
+    helm.sh/chart: {{ include "metis.chart" $ }}
+    app.kubernetes.io/instance: metis-{{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    alert-service: "metis"
+  annotations:
+    secret.reloader.stakater.com/reload: "metis-secrets"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: metis
+      app.kubernetes.io/instance: metis-{{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: metis
+        app.kubernetes.io/instance: metis-{{ .Release.Name }}
+        app.kubernetes.io/version: "{{ .Values.metis.imageTag }}"
+        alert-service: "metis"
+      annotations:
+        checksum/config: {{ include ( print $.Template.BasePath "/metis-etc-configmap.yaml" ) . | sha256sum }}
+        checksum/secret: {{ include ( print $.Template.BasePath "/metis-secrets.yaml" ) . | sha256sum }}
+        kubectl.kubernetes.io/default-container: "metis"
+      {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+        linkerd.io/inject: enabled
+      {{- end }}
+    spec:
+      containers:
+      - name: metis
+        image: "{{ required ".Values.global.registry variable missing" .Values.global.registry }}/{{ .Values.metis.image }}:{{ .Values.metis.imageTag }}"
+        ports:
+        - name: metrics
+          containerPort: {{ .Values.metis.metrics.port }}
+          protocol: TCP
+        resources:
+          requests:
+            memory: 50Mi
+            cpu: 50m
+
+        env:
+          - name: API_TOKEN
+            valueFrom:
+              secretKeyRef:
+                name: metis-secrets
+                key: billingToken
+          - name: DB_USER
+            valueFrom:
+              secretKeyRef:
+                name: metis-secrets
+                key: metisAdminUser
+          - name: DB_PASSWD
+            valueFrom:
+              secretKeyRef:
+                name: metis-secrets
+                key: metisAdminPW
+          - name: DB_RONLY_USER
+            valueFrom:
+              secretKeyRef:
+                name: metis-secrets
+                key: metisRonlyUser
+          - name: DB_RONLY_PASSWD
+            valueFrom:
+              secretKeyRef:
+                name: metis-secrets
+                key: metisRonlyPW
+{{- if .Values.metis.vcenter.enabled }}
+          - name: VCENTER_USER
+            valueFrom:
+              secretKeyRef:
+                name: metis-secrets
+                key: vcenterUser
+          - name: VCENTER_PW
+            valueFrom:
+              secretKeyRef:
+                name: metis-secrets
+                key: vcenterPW
+{{- end }}
+        volumeMounts:
+          - name: metis-etc
+            mountPath: /config
+            readOnly: true
+      volumes:
+        - name: metis-etc
+          configMap:
+            name: metis-etc
+{{- end }}

@@ -1,0 +1,73 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: network-generic-ssh-exporter
+  namespace: infra-monitoring
+  labels:
+    component: network-generic-ssh-exporter
+spec:
+  selector:
+    matchLabels:
+      component: network-generic-ssh-exporter
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        component: network-generic-ssh-exporter
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+        linkerd.io/inject: enabled
+        {{- end }}
+        kubectl.kubernetes.io/default-container: "network-generic-ssh-exporter"
+    spec:
+      nodeSelector:
+        zone: farm
+      restartPolicy: Always
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+      volumes:
+        - name: network-generic-ssh-exporter-config
+          configMap:
+            name: network-generic-ssh-exporter-config
+        - name: network-generic-ssh-exporter-credentials
+          secret:
+            secretName: network-generic-ssh-exporter-credentials
+      containers:
+        - name: network-generic-ssh-exporter
+          image:  {{ .Values.global.registry}}/generic_ssh_exporter:{{ required "A version must be passed via CLI" .Values.version }}
+          imagePullPolicy: IfNotPresent
+          args: [ "--config.file=/config/config.yaml", "--config.file=/config/credentials.yaml", "--web.listen-address=:{{ .Values.listen_port }}", "--log.level={{ .Values.log_level }}"]
+          ports:
+            - name: metrics
+              containerPort: {{ .Values.listen_port }}
+          volumeMounts:
+            - mountPath: /config/config.yaml
+              name: network-generic-ssh-exporter-config
+              subPath: config.yaml
+            - mountPath: /config/credentials.yaml
+              name: network-generic-ssh-exporter-credentials
+              subPath: credentials.yaml
+          securityContext:
+            capabilities:
+              drop:
+                - SETPCAP
+                - MKNOD
+                - AUDIT_WRITE
+                - CHOWN
+                - NET_RAW
+                - DAC_OVERRIDE
+                - FOWNER
+                - FSETID
+                - KILL
+                - SETGID
+                - SETUID
+                - NET_BIND_SERVICE
+                - SYS_CHROOT
+                - SETFCAP

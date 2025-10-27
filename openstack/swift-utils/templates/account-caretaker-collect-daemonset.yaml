@@ -1,0 +1,82 @@
+{{- if .Values.swift_account_caretaker.enable }}
+kind: DaemonSet
+apiVersion: apps/v1
+
+metadata:
+  name: swift-account-caretaker-collect
+  labels:
+    release: "{{ .Release.Name }}"
+    on-upgrade: recreate
+
+spec:
+  minReadySeconds: 15
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: '20%' # these pods can be rolled rather quickly since they are not in the hot path
+  selector:
+    matchLabels:
+      component: swift-account-caretaker-collect
+  template:
+    metadata:
+      labels:
+        component: swift-account-caretaker-collect
+        from: daemonset
+      annotations:
+        checksum/caretaker.etc: {{ include "swift-utils/templates/caretaker-configmap.yaml" . | sha256sum }}
+        checksum/secret: {{ include "swift-utils/templates/secret.yaml" . | sha256sum }}
+    spec:
+      tolerations:
+      - key: "species"
+        operator: "Equal"
+        value: "{{ .Values.species }}"
+        effect: "NoSchedule"
+      - key: "species"
+        operator: "Equal"
+        value: "{{ .Values.species }}-multipath"
+        effect: "NoSchedule"
+      # Run daemonset in Hostnetwork to get the real hostname
+      hostNetwork: true
+      nodeSelector:
+        species: {{ .Values.species }}
+      volumes:
+        - name: caretaker-etc
+          configMap:
+            name: swift-account-caretaker
+        - name: swift-drives
+          hostPath:
+            path: /srv/node
+        - name: swift-drive-state
+          hostPath:
+            path: /run/swift-storage/state
+      containers:
+        - name: caretaker
+          image: {{ include "swift_image" . }}
+          command:
+            - /usr/bin/dumb-init
+          args:
+            - /bin/bash
+            - /usr/bin/swift-start
+            - account-caretaker-collect
+          # privileged access required for /swift-bin/unmount-helper (TODO: use shared/slave mount namespace instead)
+          securityContext:
+            runAsUser: 0
+            privileged: true
+          env:
+            - name: DEBUG_CONTAINER
+              value: "false"
+            - name: RUN_INTERVAL
+              value: "7200"
+            - name: CARETAKER_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: swift-utils-secret
+                  key: caretaker_password
+          volumeMounts:
+            - mountPath: /caretaker-etc
+              name: caretaker-etc
+            - mountPath: /srv/node
+              name: swift-drives
+            - mountPath: /swift-drive-state
+              name: swift-drive-state
+{{- end }}

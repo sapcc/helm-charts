@@ -1,0 +1,116 @@
+groups:
+- name: alerts for PX direct link routers
+  rules:
+  
+  - alert: PXTransportDlWanLinkProbesFailing
+    expr: |
+      snmp_pxgeneric_rttMonLatestRttOperSense{rttMonCtrlAdminIndex=~"4.."} != 1
+      or increase(sum(snmp_pxgeneric_rttMonJitterStatsRTTSum{rttMonCtrlAdminIndex=~"4.."}) without (rttMonJitterStatsStartTimeIndex)[5m:]) == 0
+    for: 2m
+    labels:
+      severity: critical
+      support_group: network-wan
+      service: px
+      context: px
+      dashboard: px-wan-data-plane
+      playbook: docs/devops/alert/network/px#PXTransportDlWanLinkProbesFailing
+    annotations:
+      description: "SLA {{ $labels.rttMonCtrlAdminIndex }} on {{ $labels.devicename }} (tag: {{$labels.rttMonCtrlAdminTag}}) is failing."
+      summary: WAN circuit probes are failing
+
+  - alert: PXTransportDlWanLinkProbesHighLatency
+    expr: |
+      (sum(increase(snmp_pxgeneric_rttMonJitterStatsRTTSum{rttMonCtrlAdminTag=~"^RTT5_.*"}[5m])) without(rttMonJitterStatsStartTimeIndex))
+        / (sum(increase(snmp_pxgeneric_rttMonJitterStatsNumOfRTT[5m])) without(rttMonJitterStatsStartTimeIndex)) > 5
+      OR
+      (sum(increase(snmp_pxgeneric_rttMonJitterStatsRTTSum{rttMonCtrlAdminTag=~"^RTT10_.*"}[5m])) without(rttMonJitterStatsStartTimeIndex))
+        / (sum(increase(snmp_pxgeneric_rttMonJitterStatsNumOfRTT[5m])) without(rttMonJitterStatsStartTimeIndex)) > 10
+      OR
+      (sum(increase(snmp_pxgeneric_rttMonJitterStatsRTTSum{rttMonCtrlAdminTag=~"^RTT15_.*"}[5m])) without(rttMonJitterStatsStartTimeIndex))
+        / (sum(increase(snmp_pxgeneric_rttMonJitterStatsNumOfRTT[5m])) without(rttMonJitterStatsStartTimeIndex)) > 15
+      OR
+      (sum(increase(snmp_pxgeneric_rttMonJitterStatsRTTSum{rttMonCtrlAdminTag=~"^RTT25_.*"}[5m])) without(rttMonJitterStatsStartTimeIndex))
+        / (sum(increase(snmp_pxgeneric_rttMonJitterStatsNumOfRTT[5m])) without(rttMonJitterStatsStartTimeIndex)) > 25
+      OR
+      (sum(increase(snmp_pxgeneric_rttMonJitterStatsRTTSum{rttMonCtrlAdminTag=~"^RTT50_.*"}[5m])) without(rttMonJitterStatsStartTimeIndex))
+        / (sum(increase(snmp_pxgeneric_rttMonJitterStatsNumOfRTT[5m])) without(rttMonJitterStatsStartTimeIndex)) > 50
+      OR
+      (sum(increase(snmp_pxgeneric_rttMonJitterStatsRTTSum{rttMonCtrlAdminTag=~"^RTT100_.*"}[5m])) without(rttMonJitterStatsStartTimeIndex))
+        / (sum(increase(snmp_pxgeneric_rttMonJitterStatsNumOfRTT[5m])) without(rttMonJitterStatsStartTimeIndex)) > 100
+      OR
+      (sum(increase(snmp_pxgeneric_rttMonJitterStatsRTTSum{rttMonCtrlAdminTag=~"^RTT120_.*"}[5m])) without(rttMonJitterStatsStartTimeIndex))
+        / (sum(increase(snmp_pxgeneric_rttMonJitterStatsNumOfRTT[5m])) without(rttMonJitterStatsStartTimeIndex)) > 120
+      OR
+      (sum(increase(snmp_pxgeneric_rttMonJitterStatsRTTSum{rttMonCtrlAdminTag=~"^RTT150_.*"}[5m])) without(rttMonJitterStatsStartTimeIndex))
+        / (sum(increase(snmp_pxgeneric_rttMonJitterStatsNumOfRTT[5m])) without(rttMonJitterStatsStartTimeIndex)) > 150
+      OR
+      (sum(increase(snmp_pxgeneric_rttMonJitterStatsRTTSum{rttMonCtrlAdminTag=~"^RTT200_.*"}[5m])) without(rttMonJitterStatsStartTimeIndex))
+        / (sum(increase(snmp_pxgeneric_rttMonJitterStatsNumOfRTT[5m])) without(rttMonJitterStatsStartTimeIndex)) > 200
+      OR
+      (sum(increase(snmp_pxgeneric_rttMonJitterStatsRTTSum{rttMonCtrlAdminTag=~"^RTT250_.*"}[5m])) without(rttMonJitterStatsStartTimeIndex))
+        / (sum(increase(snmp_pxgeneric_rttMonJitterStatsNumOfRTT[5m])) without(rttMonJitterStatsStartTimeIndex)) > 250
+      OR
+      (sum(increase(snmp_pxgeneric_rttMonJitterStatsRTTSum{rttMonCtrlAdminTag=~"^RTT300_.*"}[5m])) without(rttMonJitterStatsStartTimeIndex))
+        / (sum(increase(snmp_pxgeneric_rttMonJitterStatsNumOfRTT[5m])) without(rttMonJitterStatsStartTimeIndex)) > 300
+      OR
+      (sum(increase(snmp_pxgeneric_rttMonJitterStatsRTTSum{rttMonCtrlAdminTag=~"^RTT350_.*"}[5m])) without(rttMonJitterStatsStartTimeIndex))
+        / (sum(increase(snmp_pxgeneric_rttMonJitterStatsNumOfRTT[5m])) without(rttMonJitterStatsStartTimeIndex)) > 350
+      OR
+      (sum(increase(snmp_pxgeneric_rttMonJitterStatsRTTSum{rttMonCtrlAdminTag=~"^RTT400_.*"}[5m])) without(rttMonJitterStatsStartTimeIndex))
+        / (sum(increase(snmp_pxgeneric_rttMonJitterStatsNumOfRTT[5m])) without(rttMonJitterStatsStartTimeIndex)) > 400
+    for: 15m
+    labels:
+      severity: critical
+      support_group: network-wan
+      service: px
+      context: px
+      dashboard: px-wan-data-plane
+      playbook: docs/devops/alert/network/px#PXTransportDlWanLinkProbesHighLatency
+    annotations:
+      description: "SLA {{ $labels.rttMonCtrlAdminIndex }} on {{ $labels.devicename }} (tag: {{$labels.rttMonCtrlAdminTag}}) is measuring more than the specified RTT threshold on the link."
+      summary: WAN circuit measures higher than normal round-trip-time
+
+  - alert: PXTransportDlWanLinkInterfaceDown
+    expr: snmp_pxgeneric_ifLastChange{ifAdminStatus="1", ifType="6", ifAlias=~"WAN.*", ifOperStatus!="1"}
+    for: 5m
+    labels:
+      severity: critical
+      support_group: network-wan
+      service: px
+      context: px
+      dashboard: px-wan-data-plane
+      playbook: docs/devops/alert/network/px#PXTransportDlWanLinkInterfaceDown
+    annotations:
+      description: "{{ $labels.ifDescr }} on {{ $labels.devicename }} which terminates a WAN circuit went down."
+      summary: WAN interface went down
+
+  - alert: PXTransportDlWanLinkInterfaceFlapping
+    expr: resets((snmp_pxgeneric_sysUpTime - on (server_id) group_right(server_name, interface) (snmp_pxgeneric_ifLastChange{ifDescr=~"Ethernet1/11|Ethernet1/12"}))[10m:]) > 1
+    for: 5m
+    labels:
+      severity: critical
+      support_group: network-wan
+      service: px
+      context: px
+      dashboard: px-wan-data-plane
+      playbook: docs/devops/alert/network/px#PXTransportDlWanLinkInterfaceFlapping
+    annotations:
+      description: "{{ $labels.ifDescr }} on {{ $labels.devicename }} is flapping. Find the device in Netbox to determine the WAN circuit related to this interface and alert the WAN team immediatly as this indicates a WAN link failure!"
+      summary: WAN interface flapping
+
+  - alert: PXTransportDlWanLinkProbesPacketLosses
+    expr: |
+      ((sum(increase(snmp_pxgeneric_rttMonJitterStatsPacketLossSD[5m]) + increase(snmp_pxgeneric_rttMonJitterStatsPacketLossDS[5m])) without(rttMonJitterStatsStartTimeIndex))
+       / (sum(increase(snmp_pxgeneric_rttMonJitterStatsNumOfRTT[5m])) without(rttMonJitterStatsStartTimeIndex)))
+       > 0.03
+    for: 5m
+    labels:
+      severity: critical
+      support_group: network-wan
+      service: px
+      context: px
+      dashboard: px-wan-data-plane
+      playbook: docs/devops/alert/network/px#PXTransportDlWanLinkProbesHighLatency
+    annotations:
+      description: "SLA {{ $labels.rttMonCtrlAdminIndex }} on {{ $labels.devicename }} is measuring more than 3% packet loss on the link."
+      summary: WAN circuit packet loss

@@ -1,0 +1,168 @@
+{{- $cdomains := .Values.global.domain_seeds.customer_domains | required "missing value for .Values.global.domain_seeds.customer_domains" -}}
+{{- $domains  := concat (list "Default" "ccadmin") $cdomains -}}
+{{- $cdomainsWithoutSupportProjects := .Values.global.domain_seeds.customer_domains_without_support_projects | required "missing value for .Values.global.domain_seeds.customer_domains_without_support_projects" -}}
+
+
+apiVersion: "openstack.stable.sap.cc/v1"
+kind: "OpenstackSeed"
+metadata:
+  name: glance-seed
+  labels:
+    app: {{ template "name" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+spec:
+  requires:
+  {{- range $domains}}
+  {{- if not (hasPrefix "iaas-" .)}}
+  - monsoon3/domain-{{replace "_" "-" . | lower}}-seed
+  {{- end }}
+  {{- end }}
+  - swift/swift-seed
+
+  roles:
+  - name: cloud_image_admin
+  - name: image_admin
+  - name: image_viewer
+  - name: image_publicize_admin
+
+  services:
+  - name: glance
+    type: image
+    description: Openstack Image
+    endpoints:
+    - interface: admin
+      region: {{ .Values.global.region | quote }}
+      url: http://{{include "glance_api_endpoint_host_admin" .}}:{{.Values.api_port_internal}}
+    - interface: public
+      region: {{ .Values.global.region | quote }}
+      url: https://{{include "glance_api_endpoint_host_public" .}}
+    - interface: internal
+      region: {{ .Values.global.region | quote }}
+      url: http://{{include "glance_api_endpoint_host_internal" .}}:{{.Values.api_port_internal}}
+
+  # default get special handling
+  # ccadmin gets additional role assignments for projects and some group assignments
+  # iaas- is excluded
+
+  domains:
+  - name: Default
+    users:
+    - name: admin
+      role_assignments:
+      - domain: Default
+        role: cloud_image_admin
+      - project: admin
+        role: cloud_image_admin
+    - name: glance
+      description: 'Glance Service'
+      password: '{{.Values.global.glance_service_password}}'
+      role_assignments:
+      - project: service
+        role: service
+    groups:
+    - name: administrators
+      role_assignments:
+      - domain: Default
+        role: cloud_image_admin
+      - project: admin
+        role: cloud_image_admin
+
+  {{- range $domains}}
+  {{- if and (ne . "Default") (not (hasPrefix "iaas-" .))}}
+  - name: {{ . }}
+    {{- if eq . "ccadmin" }}
+    projects:
+    - name: master
+      role_assignments:
+      - user: image-build@Default
+        role: cloud_image_admin
+      - user: glance@Default
+        role: objectstore_admin
+    - name: BaremetalMonitoring
+      description: 'Appliances used for monitoring bare metal servers'
+      role_assignments:
+      - user: image-build@Default
+        role: cloud_image_admin
+    {{- end}}
+    groups:
+    {{- if eq . "ccadmin" }}
+    - name: CCADMIN_CLOUD_ADMINS
+      role_assignments:
+      - project: master
+        role: cloud_image_admin
+      - project: cloud_admin
+        role: cloud_image_admin
+    {{- end}}
+    {{- if eq . "monsoon3"}}
+    - name: MONSOON3_DOMAIN_ADMINS
+      role_assignments:
+      - project: cc-demo
+        role: image_admin
+    {{- end}}
+    - name: {{ hasPrefix "iaas-" . | ternary . ( upper . ) }}_API_SUPPORT
+      role_assignments:
+      {{- if not (has . $cdomainsWithoutSupportProjects) }}
+      - project: api_support
+        role: image_admin
+      {{- end}}
+      {{- if eq . "ccadmin" }}
+      - project: api_tools
+        role: image_admin
+      {{- end}}
+      - domain: {{ . }}
+        role: image_admin
+        inherited: true
+    - name: {{ hasPrefix "iaas-" . | ternary . ( upper . ) }}_COMPUTE_SUPPORT
+      role_assignments:
+      {{- if not (has . $cdomainsWithoutSupportProjects) }}
+      - project: compute_support
+        role: image_admin
+      {{- end}}
+      {{- if eq . "ccadmin" }}
+      - project: compute_tools
+        role: image_admin
+      {{- end}}
+      - domain: {{ . }}
+        role: image_admin
+        inherited: true
+    - name: {{ hasPrefix "iaas-" . | ternary . ( upper . ) }}_NETWORK_SUPPORT
+      role_assignments:
+      {{- if not (has . $cdomainsWithoutSupportProjects) }}
+      - project: network_support
+        role: image_admin
+      {{- end}}
+      {{- if eq . "ccadmin" }}
+      - project: network_tools
+        role: image_admin
+      {{- end}}
+      - domain: {{ . }}
+        role: image_viewer
+        inherited: true
+    - name: {{ hasPrefix "iaas-" . | ternary . ( upper . ) }}_STORAGE_SUPPORT
+      role_assignments:
+      {{- if not (has . $cdomainsWithoutSupportProjects) }}
+      - project: storage_support
+        role: image_admin
+      {{- end}}
+      {{- if eq . "ccadmin" }}
+      - project: storage_tools
+        role: image_admin
+      {{- end}}
+      - domain: {{ . }}
+        role: image_viewer
+        inherited: true
+    - name: {{ hasPrefix "iaas-" . | ternary . ( upper . ) }}_SERVICE_DESK
+      role_assignments:
+      {{- if not (has . $cdomainsWithoutSupportProjects) }}
+      - project: service_desk
+        role: image_admin
+      {{- end}}
+      {{- if ne . "ccadmin" }}
+      - domain: {{ .}}
+        role: image_viewer
+        inherited: true
+      {{- end}}
+  {{- end}}
+  {{- end}}

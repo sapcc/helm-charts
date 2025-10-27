@@ -1,0 +1,34 @@
+{{- range $i, $exporter := .Values.exporters -}}
+{{- if $exporter.enabled }}
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "statsd-exporter.fullName" $exporter.name }}
+  labels:
+    {{- include "statsd-exporter.labels" $exporter.name | nindent 4 }}
+  annotations:
+    {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+    ingress.kubernetes.io/service-upstream: "true"
+    nginx.ingress.kubernetes.io/service-upstream: "true"
+    {{- end }}
+    kubernetes.io/tls-acme: {{ required ".Values.ingress.tls variable missing" $.Values.ingress.tls | quote }}
+    disco: {{ required ".Values.ingress.disco variable missing" $.Values.ingress.disco | quote }}
+spec:
+  tls:
+     - secretName: {{ include "statsd-exporter.fullName" $exporter.name }}
+       hosts: [{{ include "ingress-host" (list $ $exporter) }}]
+  rules:
+    - host: {{ include "ingress-host" (list $ $exporter) }}
+      http:
+        paths:
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: {{ include "statsd-exporter.fullName" $exporter.name }}
+              port:
+                number: {{ required ".Values.exporters.metricsPort variable missing" $exporter.metricsPort }}
+---
+{{ end -}}
+{{ end -}}

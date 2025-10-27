@@ -1,0 +1,21 @@
+{{ if .Values.metricPort -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: frrouting-core-metrics
+  labels:
+    app: frrouting-core
+
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/targets: "kubernetes"
+
+spec:
+  ports:
+  - name: metrics
+    port: {{ required ".Values.metricPort missing" .Values.metricPort }}
+
+  selector:
+    name: frrouting-core
+    k8s-app: frrouting-core
+{{- end }}

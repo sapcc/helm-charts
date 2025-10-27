@@ -1,0 +1,33 @@
+kind: Ingress
+apiVersion: networking.k8s.io/v1
+
+metadata:
+  name: {{ .Release.Name }}-api
+  labels:
+    system: openstack
+    type: api
+    component: manila
+  annotations:
+  {{- if .Values.use_tls_acme }}
+    ingress.kubernetes.io/proxy-read-timeout: "720"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "720"
+    ingress.kubernetes.io/proxy-send-timeout: "720"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "720"
+    kubernetes.io/tls-acme: "true"
+  {{- end }}
+    {{- include "utils.linkerd.ingress_annotation" . | indent 4 }}
+spec:
+  tls:
+     - secretName: tls-{{.Values.seeds.endpoint_prefix}}{{include "manila_api_endpoint_host_public" . | replace "." "-" }}
+       hosts: [{{.Values.seeds.endpoint_prefix}}{{include "manila_api_endpoint_host_public" .}}]
+  rules:
+    - host: {{.Values.seeds.endpoint_prefix}}{{include "manila_api_endpoint_host_public" .}}
+      http:
+        paths:
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: {{.Values.seeds.endpoint_prefix}}manila-api
+              port:
+                number: {{.Values.api_port_internal}}

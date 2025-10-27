@@ -1,0 +1,122 @@
+{{- if .Values.barbican_nanny.enabled }}
+{{- if .Values.barbican_nanny.db_secret_move.enabled }}
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: barbican-nanny
+  labels:
+    app: {{ template "name" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    type: nanny
+    component: barbican
+  annotations:
+    secret.reloader.stakater.com/reload: "{{ .Release.Name }}-secrets"
+    deployment.reloader.stakater.com/pause-period: "60s"
+spec:
+  replicas: {{ .Values.barbican_nanny.replicas }}
+  revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revisionHistory }}
+  strategy:
+    type: {{ .Values.pod.lifecycle.upgrades.deployments.podReplacementStrategy }}
+    {{ if eq .Values.pod.lifecycle.upgrades.deployments.podReplacementStrategy "RollingUpdate" }}
+    rollingUpdate:
+      maxUnavailable: {{ .Values.pod.lifecycle.upgrades.deployments.rollingUpdate.maxUnavailable }}
+      maxSurge: {{ .Values.pod.lifecycle.upgrades.deployments.rollingUpdate.maxSurge }}
+    {{ end }}
+  selector:
+    matchLabels:
+      app: barbican-nanny
+  template:
+    metadata:
+      labels:
+        app: barbican-nanny
+        name: barbican
+        alert-tier: os
+        alert-service: barbican
+        {{- include "utils.topology.pod_label" . | indent 8 }}
+      annotations:
+        chart-version: {{.Chart.Version}}
+        checksum/etc-configmap.conf: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
+        checksum/scripts-configmap.conf: {{ include (print $.Template.BasePath "/scripts-configmap.yaml") . | sha256sum }}
+        secrets-hash: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
+        {{- if .Values.proxysql.mode }}
+        prometheus.io/scrape: "true"
+        prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
+        {{- end }}
+        {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
+    spec:
+      {{ include "utils.proxysql.pod_settings" . | indent 6 }}
+      initContainers:
+      {{- if .Values.proxysql.native_sidecar }}
+      {{- tuple . 1 | include "utils.proxysql.container" | indent 6 }}
+      {{- end }}
+      containers:
+{{- if .Values.barbican_nanny.db_secret_move.enabled }}
+      - name: move-secrets
+        image: {{required ".Values.global.registry is missing" .Values.global.registry }}/loci-barbican:{{required "Values.imageVersionBarbicanApi is missing" .Values.imageVersionBarbicanApi}}
+        imagePullPolicy: IfNotPresent
+        command:
+        - dumb-init
+{{- if not .Values.barbican_nanny.debug }}
+        - /bin/bash
+        - /scripts/move-secrets.sh
+{{- else }}
+        - sleep
+        - inf
+{{- end }}
+        env:
+        - name: BARBICAN_DB_SECRET_MOVE_ENABLED
+          value: {{ .Values.barbican_nanny.db_secret_move.enabled | quote }}
+        - name: BARBICAN_DB_OLD_PROJECT_ID
+          value: {{ .Values.barbican_nanny.db_secret_move.old_project_id | quote }}
+        - name: BARBICAN_DB_NEW_PROJECT_ID
+          value: {{ .Values.barbican_nanny.db_secret_move.new_project_id | quote }}
+        - name: BARBICAN_NANNY_INTERVAL
+          value: {{ .Values.barbican_nanny.interval | quote }}
+        {{- if .Values.sentry.enabled }}
+        - name: SENTRY_DSN
+          valueFrom:
+            secretKeyRef:
+              name: sentry
+              key: barbican.DSN.python
+        {{- end }}
+        resources:
+          requests:
+            memory: "250Mi"
+            cpu: "25m"
+          limits:
+            memory: "250Mi"
+            cpu: "100m"
+        volumeMounts:
+        - name: barbican-scripts
+          mountPath: /scripts/move-secrets.sh
+          subPath: move-secrets.sh
+          readOnly: true
+        - name: barbican-etc
+          mountPath: /etc/barbican/logging.ini
+          subPath: logging.ini
+          readOnly: true
+        - name: barbican-etc-confd
+          mountPath: /etc/barbican/barbican.conf.d
+          readOnly: true
+        {{- include "utils.proxysql.volume_mount" . | indent 8 }}
+        {{- include "utils.trust_bundle.volume_mount" . | indent 8 }}
+      {{- if not .Values.proxysql.native_sidecar }}
+      {{- tuple . 1 | include "utils.proxysql.container" | indent 6 }}
+      {{- end }}
+      volumes:
+      - name: barbican-etc
+        configMap:
+          name: barbican-etc
+      - name: barbican-etc-confd
+        secret:
+          secretName: {{ .Release.Name }}-secrets
+      - name: barbican-scripts
+        configMap:
+          name: barbican-scripts
+      {{- include "utils.proxysql.volumes" . | indent 6 }}
+      {{- include "utils.trust_bundle.volumes" . | indent 6 }}
+{{- end }}
+{{- end }}
+{{- end }}

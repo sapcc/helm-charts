@@ -1,0 +1,552 @@
+# Default values for keystone.
+# This is a YAML-formatted file.
+# Declare name/value pairs to be passed into your templates.
+# name: value
+
+global:
+  # tld: cloud.sap
+  # region: cluster
+  # clusterDomain: cluster.local
+  dbUser: keystone
+  dbPassword: ""
+# registryAlternateRegion: keppel.$REGION.cloud.sap
+  linkerd_requested: false
+  is_global_region: false
+
+owner-info:
+  support-group: identity
+  service: keystone
+  maintainers:
+    - Boris Bobrov
+    - Rajiv Mucheli
+  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/openstack/keystone
+
+debug: false
+insecure_debug: false
+
+# run a db_sync to migrate the db schema ?
+run_db_migration: true
+
+# ignore invalid role assignments
+skipRepairRoleAssignments: false
+
+## Affinity for pod assignment
+## Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
+##
+nodeAffinity: {}
+
+# osprofiler
+osprofiler:
+  enabled: false
+
+federation:
+  oidc:
+    enabled: false
+    provider: ""
+    client_id: ""
+    client_secret: ""
+    crypto_passphrase: ""
+
+api:
+  image: "loci-keystone"
+  #imageTag: latest
+
+  ## Specify a imagePullPolicy
+  ## 'Always' if imageTag is 'latest', else set to 'IfNotPresent'
+  ## ref: http://kubernetes.io/docs/user-guide/images/#pre-pulling-images
+  ##
+  # imagePullPolicy:
+
+  adminUser: admin
+  adminPassword: ""
+  adminProjectName: admin
+  cloudAdminDomainName: Default
+  cloudAdminProjectName: admin
+  cloudAdminProjectId: ""
+
+  ## specify override default tags to be added to each newly created project
+  ## else they will be calculated based on the availability zones
+  # default_tags:
+  #   - vc-a-0
+  #   - vc-b-0
+
+  notifications:
+    enabled: true
+    format: cadf
+    opt_out:
+      # ignore all authentication events since the scope (project_id/domain_id) is missing
+      # Note: exception for *authenticate* event types: the outcome has to be added as suffix to make this work
+      # see https://github.com/openstack/keystone/blob/af4e98c770d771144463e6dd49cb4b559d48c403/keystone/notifications.py#L743
+      - identity.authenticate.pending
+
+  token:
+    provider: fernet
+    # lifetime of a token in seconds
+    expiration: 3600
+    # how long an expired token can be validated with the allow_expired flag (in seconds)
+    allow_expired_window: 28800
+    # maximum size of a token (LDAP seems to go over the default 255)
+    max_token_size: 268
+    # The number of seconds to cache token creation and validation data.
+    cache_time: 3600
+
+  fernet:
+    maxActiveKeys: 3
+    secrets:
+      0: <put-your-fernet-keys-here>
+
+  credentials:
+    secrets:
+      0: <put-your-credential-keys-here>
+
+  auth:
+    # Allowed authentication methods. (list value)
+    # NOTE: this is not the complete list of applied authentication methods.
+    # Depending on the federation configuration, there might be more of them.
+    methods: password,token,totp,external,oauth1,application_credential
+    password: cc_password # CCloud password auth method with EWS mirroring
+    totp: cc_radius # SecurID via totp auth method/plugin
+    external: cc_x509 # x509 client certificate based authentication
+
+  # SecurID authentication settings over Radius (required for cc_radius)
+  cc_radius:
+    host: radius
+    port: 1812
+    secret: <your-shared-secret>
+
+  # OAuth1
+  oauth1:
+    # Number of seconds for the OAuth Request Token to remain valid after being
+    # created. This is the amount of time the user has to authorize the token.
+    # Setting this option to zero means that request tokens will last forever.
+    request_token_duration: 28800
+    # Number of seconds for the OAuth Access Token to remain valid after being
+    # created. This is the amount of time the consumer has to interact with the
+    # service provider (which is typically keystone). Setting this option to zero
+    # means that access tokens will last forever. (integer value)
+    access_token_duration: 0
+
+  identity:
+    # Maximum number of entities that will be returned in an identity collection. 0 disables the limit
+    list_limit: 1500
+
+  metrics:
+    enabled: true
+    port: "9102"
+
+    image: prom/statsd-exporter
+    imageTag: v0.20.1
+    prefix: openstack
+
+    resources:
+      requests:
+        memory: 100Mi
+        cpu: 150m
+      limits:
+        memory: 150Mi
+        cpu: 300m
+
+  terminationGracePeriodSeconds: 30
+  minReadySeconds: 5
+
+  resources:
+    requests:
+      memory: 2Gi
+      cpu: 1500m
+    limits:
+      memory: 3Gi
+
+  replicas: 3
+
+  upgrades:
+    revisionHistory: 3
+    podReplacementStrategy: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+
+  pdb:
+    minAvailable: 1
+
+cron:
+  image: "loci-keystone"
+  #imageTag: latest
+
+  cronSchedule: "0 * * * *"
+
+  replicas: 1
+
+  resources:
+    requests:
+      memory: 2Gi
+      cpu: 500m
+    limits:
+      memory: 3Gi
+      cpu: 1000m
+
+  upgrades:
+    revisionHistory: 3
+    podReplacementStrategy: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 3
+
+cache:
+  expiration_time: 600
+
+tempest:
+  enabled: false
+  domainId: not_set_this_in_production
+  adminProjectId: not_set_in_production
+
+sentry:
+  enabled: true
+# dsn: put-your-sentry-dsn-here or leave it up to the sentry-operator to provide one in a k8s sentry secret
+
+services:
+  type: ClusterIP
+  #  externalip: "192.168.1.100"
+
+  ingress:
+    enabled: false
+    # see https://github.com/kubernetes/ingress/blob/74d57c950282484885a74c92d3413110e3b95c69/controllers/nginx/configuration.md#rate-limiting
+    # limitRps: 100
+    # limitConnections: 100
+
+    # let kubernetes.io/tls-acme manage tls certificates
+    tlsacme: true
+
+    # x509 client certificate support
+    x509:
+      # ca: <your ca certificate>
+      issuer_attribute: HTTP_SSL_CLIENT_I_DN
+      #trusted_issuer: CN=SSO_CA,O=SAP-AG,C=DE
+
+    disco: false
+
+  public:
+    scheme: http
+    host: identity-3
+    #tlsCertificate:
+    #tlsKey:
+
+  admin:
+    scheme: http
+    host: identity-3
+    #tlsCertificate:
+    #tlsKey:
+
+audit:
+  central_service:
+    # user:
+    # password:
+    host: hermes-rabbitmq-notifications.hermes
+    port: 5672
+
+memcached:
+  use_alternate_registry: true
+  memcached:
+    maxItemMemory: 2048
+  alerts:
+    support_group: identity
+
+  resources:
+    enabled: true
+    limits:
+      memory: 2560Mi
+      cpu: 1000m
+    requests:
+      memory: 2560Mi
+      cpu: 500m
+
+  nodeAffinity: {}
+
+proxysql:
+  mode: null  # Disabled
+  native_sidecar: true
+
+percona_cluster:
+  enabled: false
+  db_name: keystone
+  db_user: keystone
+  alerts:
+    support_group: identity
+
+dbName: keystone
+
+mariadb:
+  enabled: true
+  name: keystone
+  initdb_secret: keystone-initdb
+  use_alternate_registry: true
+  alerts:
+    support_group: identity
+
+  persistence_claim:
+    name: db-keystone-pvclaim
+  databases:
+  - keystone
+  users:
+    keystone:
+      name: keystone
+      password: null
+      grants:
+      - "ALL PRIVILEGES on keystone.*"
+  resources:
+    requests:
+      cpu: 1000m
+      memory: 500Mi
+
+  nodeAffinity: {}
+  vpa:
+    # https://github.com/sapcc/vpa_butler
+    # The maximum available capacity is split evenly across containers specified in the Deployment, StatefulSet or DaemonSet to derive the upper recommendation bound. This does not work out for pods with a single resource-hungry container with several sidecar containers
+    # Annotate the Deployment, StatefulSet or DaemonSet with vpa-butler.cloud.sap/main-container=$MAIN_CONTAINER. That will distribute 75% of the maximum available capacity to the main container and the rest evenly across all others
+    set_main_container: true
+  job:
+    maintenance:
+      enabled: false
+      function:
+        analyzeTable:
+          enabled: true
+          allTables: true
+
+pxc_db:
+  enabled: false
+  name: keystone
+  alerts:
+    support_group: identity
+  databases:
+    - keystone
+  users:
+    keystone:
+      name: keystone
+      grants:
+        - "ALL PRIVILEGES on keystone.*"
+  pxc:
+    persistence:
+      size: 10Gi
+  backup:
+    enabled: true
+    s3:
+      secrets:
+        aws_access_key_id: null
+        aws_secret_access_key: null
+    pitr:
+      enabled: true
+
+mysql_metrics:
+  enabled: true
+  db_name: keystone
+  db_user: root
+  #db_password: DEFINED-IN-REGION-CHART
+  nodeAffinity: {}
+  customMetrics:
+    - name: openstack_roles_total
+      help: Total keystone role count
+      query: |
+        SELECT
+          COUNT(*) as roles
+        FROM role
+      values:
+        - "roles"
+    - name: openstack_users_total
+      help: Total keystone user count
+      query: |
+        SELECT
+          COUNT(*) as users
+        FROM id_mapping
+        WHERE entity_type = 'user'
+      values:
+        - "users"
+    - name: openstack_groups_total
+      help: Total keystone group count
+      query: |
+        SELECT
+          COUNT(*) as groups
+        FROM id_mapping
+        WHERE entity_type = 'group'
+      values:
+        - "groups"
+    - name: openstack_domains_total
+      help: Total keystone domain count
+      query: |
+        SELECT
+          COUNT(*) - 1 as domains
+        FROM project
+        WHERE domain_id = '<<keystone.domain.root>>'
+      values:
+        - "domains"
+    - name: openstack_projects_total
+      help: Total keystone project count
+      query: |
+        SELECT
+          COUNT(*) as projects
+        FROM project
+        WHERE domain_id != '<<keystone.domain.root>>'
+      values:
+        - "projects"
+    - name: openstack_projects_count_gauge
+      help: Keystone projects
+      query: |
+        SELECT
+          project.id as project_id,
+          project.name as project_name,
+          coalesce(nullif(project.description, ''), 'EMPTY') as project_description,
+          project.domain_id as domain_id,
+          domain.name as domain_name,
+          COUNT(*) AS count_gauge
+        FROM project
+        JOIN project AS domain ON project.domain_id=domain.id
+        WHERE project.is_domain=0
+        GROUP BY
+          project_id,
+          project_name,
+          project_description,
+          domain_id,
+          domain_name;
+      labels:
+        - "project_id"
+        - "project_name"
+        - "project_description"
+        - "domain_id"
+        - "domain_name"
+      values:
+        - "count_gauge"
+    - name: openstack_assignments_total
+      help: Total keystone role-assignment count
+      query: |
+        SELECT
+          COUNT(*) as role_assignments
+        FROM assignment
+      values:
+        - "role_assignments"
+    - name: openstack_revocations_total
+      help: Total keystone token revocation count
+      query: |
+        SELECT
+          COUNT(*) as revocations
+        FROM revocation_event
+      values:
+        - "revocations"
+    - name: openstack_assignments_per_role
+      help: Total keystone role-assignment count per role
+      labels:
+        - "role_name"
+      query: |
+        SELECT
+          COUNT(*) as assignments,
+          r.name AS role_name
+        FROM assignment a
+        JOIN role r ON r.id = a.role_id
+        GROUP BY r.name
+      values:
+        - "assignments"
+    - name: mysql_database_size
+      help: Total database size
+      labels:
+        - "schema_name"
+      query: |
+        SELECT table_schema AS schema_name,
+          ROUND(SUM(data_length + index_length) / 1024 / 1024, 1) AS size_in_mb
+        FROM information_schema.tables
+        GROUP BY table_schema
+      values:
+        - "size_in_mb"
+    - name: openstack_user_last_active_at
+      help: User list based on last_active_at
+      labels:
+        - "user_id"
+        - "sap_id"
+        - "created_at"
+        - "last_active_at"
+        - "domain_name"
+        - "user_name"
+        - "email_id"
+      query: |
+        SELECT
+          COUNT(*) as user_count,
+          user.id as user_id,
+          COALESCE(id_mapping.local_id, "No User Name") as sap_id,
+          user.created_at as created_at,
+          COALESCE(user.last_active_at, "No last_active_at timestamp") as last_active_at,
+          COALESCE(json_extract(user.extra, '$**.email'), "No Email-ID") AS email_id,
+          json_extract(user.extra, '$**.description') AS user_name,
+          domain.name as domain_name
+        FROM user
+        LEFT JOIN id_mapping ON user.id = id_mapping.public_id
+        JOIN project as domain ON user.domain_id = domain.id
+        WHERE domain.name != 'Default' AND domain.name != 'kubernikus' AND domain.name != 'tempest'
+        GROUP BY id_mapping.public_id
+      values:
+        - "user_count"
+rbac:
+  enabled: true
+
+watcher:
+  enabled: true
+
+lifesaver:
+  enabled: true
+
+cors:
+  enabled: true
+
+# Deploy Keystone Prometheus alerts.
+alerts:
+  enabled: true
+  # Name of the Prometheus to which metrics should be exported
+  prometheus: openstack
+
+# Deploy SRE monitoring & alerting
+sre:
+  enabled: true
+  # Name of the Prometheus to which the sre metrics should be assigned to.
+  prometheus:
+    aggregations: openstack
+
+  periods:
+    - 5m
+    - 30m
+    - 1h
+    - 2h
+    - 6h
+    - 1d
+    - 3d
+
+  # keystone latency slo settings
+  slo:
+    # which 'seconds' bucket in the openstack-watcher histogramm to evaluate (target value)
+    # the chosen value needs to match an existing bucket size in the histogram
+    api_latency_violations_per_request:
+      token_create: 0.25
+      token_validate: 0.1
+    # max. failure rate that is tolerable
+    api_latency_violations_per_request_ratio_percent:
+      token_create: 5
+      token_validate: 2
+
+# optional flag to disable users that have not authenticated for 100 years.
+disable_user_account_days_inactive: 36500
+
+# https://docs.openstack.org/keystone/latest/admin/event_notifications.html#example-notification-invalid-password-authentication
+report_invalid_password_hash:
+  enabled: false
+  # invalid_password_hash_secret_key: ""
+
+2fa:
+  enabled: false
+  replicaCount: 3
+  pollInterval: 1m #how often do we list projects
+  image: 2faproxy
+  imageTag: latest
+  imagePullPolicy: IfNotPresent
+  seed_user: false
+  openstack: {}
+  resources: {}
+  podAnnotations: {}
+
+prodel:
+  # This should be an endpoint implementing oslo.policy HTTPCheck
+  url: "http://prodel.prodel.svc/check-delete_project/%(project_id)s"
+databaseKind: ""

@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: land-worker
+data:
+  pre-stop.sh: |-
+    #!/bin/bash
+    CONCOURSE_PID=$(pidof concourse)
+    kill -s SIGUSR1 ${CONCOURSE_PID}
+    while kill -0 ${CONCOURSE_PID}; do
+      sleep 0.1
+    done
+    exit 0

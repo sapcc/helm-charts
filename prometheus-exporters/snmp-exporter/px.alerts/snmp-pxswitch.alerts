@@ -1,0 +1,18 @@
+groups:
+- name: alerts for PX N9K switches
+  rules:
+  - alert: PXSwitchInterfaceDown
+    expr: |
+      snmp_pxgeneric_ifOperStatus{role="px-switch", ifAdminStatus="1", ifAlias=~"^(TRANSPORT|ROUTE-SERVER|CONSUMER|IPN).*"}
+      != 1
+    for: 5m
+    labels:
+      severity: warning
+      service: px
+      support_group: network-wan
+      context: px
+      dashboard: px-switches-interfaces
+      playbook: docs/devops/alert/network/px#PXSwitchInterfaceDown
+    annotations:
+      description: "Interface {{ $labels.ifDescr }} with description {{ $labels.ifAlias }} on {{ $labels.devicename }} is down."
+      summary: Interface {{ $labels.ifDescr }} with description {{ $labels.ifAlias }} on {{ $labels.devicename }} is down.

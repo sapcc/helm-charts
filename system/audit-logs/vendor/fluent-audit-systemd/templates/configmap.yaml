@@ -1,0 +1,17 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fluent-audit-systemd-etc
+  labels:
+    system: openstack
+    service: logging
+    component: configuration
+
+data:
+  fluent.conf: |
+{{ include (print .Template.BasePath "/_fluent.conf.tpl") . | indent 4 }}
+  prometheus.conf: |
+{{ include (print .Template.BasePath "/_prometheus.conf.tpl") . | indent 4 }}
+  audit.json: |
+{{ include (print .Template.BasePath "/_audit.json.tpl") . | indent 4 }}

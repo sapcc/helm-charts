@@ -1,0 +1,75 @@
+groups:
+- name: CustomerDocsAlerts
+  rules:
+  - alert: CustomerDocumentationUnhealthyPod
+    expr: sum(kube_pod_container_status_running{namespace="documentation"}) / count(kube_pod_container_status_running{namespace="documentation"}) < 1
+    for: 5m
+    labels:
+      meta: Customer documentation - unhealthy pod
+      service: 'documentation'
+      severity: warning
+      tier: os
+      playbook: docs/devops/alert/customer_documentation/#unhealthy_pod
+    annotations:
+      description: grafana - https://grafana.eu-de-1.cloud.sap/d/-EPFx1rGz/documentationhealth?orgId=1 , cc-os-documentation - https://convergedcloud.slack.com/archives/C01JYUG49D1
+      summary: Unhealthy Pods
+  - alert: CustomerDocumentationInvalidSSL
+    expr: probe_http_ssl{instance="https://documentation.global.cloud.sap", job="docs-urls"} == 0
+    for: 5m
+    labels:
+      meta: Customer documentation - invalid SSL
+      service: 'documentation'
+      severity: warning
+      tier: os
+      playbook: docs/devops/alert/customer_documentation/#invalid_ssl
+    annotations:
+      description: grafana - https://grafana.eu-de-1.cloud.sap/d/-EPFx1rGz/documentationhealth?orgId=1 , cc-os-documentation - https://convergedcloud.slack.com/archives/C01JYUG49D1
+      summary: Invalid SSL
+  - alert: CustomerDocumentationDown
+    expr: probe_success{instance="https://documentation.global.cloud.sap", job="docs-urls"} == 0
+    for: 5m
+    labels:
+      meta: Customer documentation - Converged Cloud documentation website is down
+      service: 'documentation'
+      severity: critical
+      tier: os
+      playbook: docs/devops/alert/customer_documentation/#unhealthy_pod
+    annotations:
+      description: grafana - https://grafana.eu-de-1.cloud.sap/d/-EPFx1rGz/documentationhealth?orgId=1 , cc-os-documentation - https://convergedcloud.slack.com/archives/C01JYUG49D1
+      summary: Website is down  
+  - alert: CustomerDocumentationSlowLoading
+    expr: sum(sum_over_time(probe_http_duration_seconds{instance="https://documentation.global.cloud.sap/api/public/project/documentation.global.cloud.sap?version=NULL", job="docs-home-content"}[5m])) > 2
+    for: 5m
+    labels:
+      meta: Customer documentation - Converged Cloud documentation website loading is slow
+      service: 'documentation'
+      severity: warning
+      tier: os
+      playbook: docs/devops/alert/customer_documentation/#slow_loading
+    annotations:
+      description: grafana - https://grafana.eu-de-1.cloud.sap/d/-EPFx1rGz/documentationhealth?orgId=1 , cc-os-documentation - https://convergedcloud.slack.com/archives/C01JYUG49D1
+      summary: Website loading is slow  
+  - alert: CustomerDocumentationTrainingContentError
+    expr: probe_success{job="docs-training-content"} == 0
+    for: 5m
+    labels:
+      meta: Customer documentation - training content error
+      service: 'documentation'
+      severity: warning
+      tier: os
+      playbook: docs/devops/alert/customer_documentation/#content_error
+    annotations:
+      description: grafana - https://grafana.eu-de-1.cloud.sap/d/-EPFx1rGz/documentationhealth?orgId=1 , cc-os-documentation - https://convergedcloud.slack.com/archives/C01JYUG49D1
+      summary: Training content error 
+  - alert: CustomerDocumentationHomeContentError
+    expr: probe_success{job="docs-home-content"} == 0
+    for: 5m
+    labels:
+      meta: Documentation - home content error
+      service: 'documentation'
+      severity: warning
+      tier: os
+      playbook: docs/devops/alert/customer_documentation/#content_error
+    annotations:
+      description: grafana - https://grafana.eu-de-1.cloud.sap/d/-EPFx1rGz/documentationhealth?orgId=1 , cc-os-documentation - https://convergedcloud.slack.com/archives/C01JYUG49D1
+      summary: Home content error

@@ -1,0 +1,33 @@
+{{- define "mrname" }}
+{{- /* use uppercase letters of kind as prefix to avoid some naming clashes */ -}}
+{{- $kind := regexFindAll "[A-Z]" .kind -1 | join "" | lower }}
+{{- $name := .metadata.name | replace "." "-" | replace ":" "-" -}}
+mr-{{ $kind }}-{{ $name }}
+{{- end }}
+
+{{- if .Values.garden.managedresources }}
+{{- range $path, $_ := .Files.Glob "managedresources/*.yaml" }}
+{{- range $_, $doc := (tpl ($.Files.Get $path) $ | splitList "---\n") }}
+{{- $obj := $doc | fromYaml }}
+{{- if not $obj }}
+{{- continue }}
+{{- end }}
+---
+apiVersion: resources.gardener.cloud/v1alpha1
+kind: ManagedResource
+metadata:
+  name: {{ template "mrname" $obj }}
+spec:
+  secretRefs:
+  - name: {{ template "mrname" $obj }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ template "mrname" $obj }}
+type: Opaque
+data:
+  objects.yaml: {{ $doc | b64enc }}
+{{- end }}
+{{- end }}
+{{- end }}

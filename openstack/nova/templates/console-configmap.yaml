@@ -1,0 +1,93 @@
+{{- define "console-serial.conf" }}
+{{- $cell_name := index . 1 }}
+{{- $config := index . 2 }}
+{{- with index . 0 }}
+  {{- if $config.enabled }}
+[serial_console]
+# nova-serialproxy
+serialproxy_port = {{ $config.portInternal }}
+# nova-compute
+enabled = {{ $config.enabled }}
+base_url = https://{{include "nova_console_endpoint_host_public" .}}:{{ .Values.global.novaConsolePortPublic }}/{{ $cell_name }}/serial
+proxyclient_address = $my_ip
+  {{- end }}
+{{- end }}
+{{- end }}
+
+{{- define "console-novnc.conf" }}
+{{- $cell_name := index . 1 }}
+{{- $config := index . 2 }}
+{{- with index . 0 }}
+[vnc]
+enabled = {{ $config.enabled }}
+  {{- if $config.enabled }}
+server_listen = $my_ip
+server_proxyclient_address = $my_ip
+novncproxy_base_url = https://{{include "nova_console_endpoint_host_public" .}}:{{ .Values.global.novaConsolePortPublic }}/{{ $cell_name }}/novnc/vnc_auto.html?path=/{{ $cell_name }}/novnc/websockify
+novncproxy_host = 0.0.0.0
+novncproxy_port = {{ $config.portInternal }}
+  {{- end }}
+{{- end }}
+{{- end }}
+
+{{- define "console-mks.conf" }}
+{{- $cell_name := index . 1 }}
+{{- $config := index . 2 }}
+{{- with index . 0 }}
+[mks]
+enabled = {{ $config.enabled }}
+  {{- if $config.enabled }}
+mksproxy_base_url = https://{{include "nova_console_endpoint_host_public" .}}:{{.Values.global.novaConsolePortPublic}}/{{ $cell_name }}/mks/vnc_auto.html?path={{ $cell_name }}/mks/websockify
+  {{- end }}
+{{- end }}
+{{- end }}
+
+{{- define "console-shellinabox.conf" }}
+{{- $cell_name := index . 1 }}
+{{- $config := index . 2 }}
+{{- with index . 0 }}
+[shellinabox]
+enabled = {{ $config.enabled }}
+  {{- if $config.enabled }}
+host = 0.0.0.0
+port = {{ $config.portInternal }}
+base_url = https://{{include "nova_console_endpoint_host_public" .}}:{{ .Values.global.novaConsolePortPublic }}/{{ $cell_name }}/shellinabox
+proxyclient_url = https://{{include "ironic_console_endpoint_host_public" .}}
+  {{- end }}
+{{- end }}
+{{- end }}
+
+{{- define "console-spice.conf" }}
+{{- $cell_name := index . 1 }}
+{{- $config := index . 2 }}
+{{- with index . 0 }}
+[spice]
+enabled = {{ $config.enabled }}
+  {{- if $config.enabled }}
+html5proxy_base_url = https://{{include "nova_console_endpoint_host_public" .}}:{{.Values.global.novaConsolePortPublic}}/{{ $cell_name }}/spicehtml5/spice_auto.html
+  {{- end }}
+{{- end }}
+{{- end }}
+
+
+{{- $envAll := . }}
+{{- $cells := dict "cell1" true }}
+{{- if .Values.cell2.enabled }}
+  {{- $_ := set $cells .Values.cell2.name true }}
+{{- end }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nova-console
+  labels:
+    system: openstack
+    type: configuration
+    component: nova
+
+data:
+{{- range $cell_name, $is_cell := $cells }}
+  {{- range $type, $config := $envAll.Values.consoles }}
+  console-{{ $cell_name }}-{{ $type }}.conf: |
+    {{- tuple $envAll $cell_name $config | include (print "console-" $type ".conf") | indent 4 }}
+  {{ end }}
+{{- end }}

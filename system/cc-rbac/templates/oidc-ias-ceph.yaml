@@ -1,0 +1,43 @@
+{{- if .Values.oidcIAS.cephAdminGroups -}}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: cc:ceph-admin
+  namespace: metal-st1-{{ .Values.global.region }}
+rules:
+- apiGroups:
+  - cluster.x-k8s.io
+  resources:
+  - machines
+  verbs:
+  - get
+  - list
+  - watch
+  - update
+  - patch
+- apiGroups:
+  - metal3.io
+  resources:
+  - baremetalhosts
+  verbs:
+  - get
+  - list
+  - watch
+  - update
+  - patch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: cc:ceph-admin
+  namespace: metal-st1-{{ .Values.global.region }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: cc:ceph-admin
+subjects:
+{{- range $val := .Values.oidcIAS.cephAdminGroups }}
+- kind: Group
+  name: {{ $val }}
+{{- end }}
+{{- end }}

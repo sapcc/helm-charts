@@ -1,0 +1,66 @@
+apiVersion: templates.gatekeeper.sh/v1
+kind: ConstraintTemplate
+metadata:
+  name: gkregionvaluemissing
+spec:
+  crd:
+    spec:
+      names:
+        kind: GkRegionValueMissing
+      validation:
+        # Schema for the `parameters` field
+        openAPIV3Schema:
+          type: object
+          properties:
+            helmManifestParserURL:
+              type: string
+
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      code:
+        - engine: Rego
+          source:
+            version: "v1"
+            libs:
+              - |
+                {{ .Files.Get "lib/add-support-labels.rego" | nindent 16 }}
+              - |
+                {{ .Files.Get "lib/helm-release.rego" | nindent 16 }}
+              - |
+                {{ .Files.Get "lib/validation.rego" | nindent 16 }}
+            rego: |
+              package gkregionvaluemissing
+
+              import data.lib.add_support_labels
+              import data.lib.helm_release
+              import data.lib.validation
+
+              iro := input.review.object
+              release := helm_release.parse_k8s_object(iro, input.parameters.helmManifestParserURL)
+
+              violation contains {"msg": release.error} if {
+                  release.error != ""
+              }
+
+              violation contains {"msg": add_support_labels.from_helm_release(release, msg)} if {
+                  release.error == ""
+
+                  region := object.get(release, ["values", "global", "region"], "")
+                  not region == "global"
+
+                  not validation.is_region_name(region)
+
+                  msg := "missing or invalid .Values.global.region value"
+              }
+
+              violation contains {"msg": add_support_labels.from_helm_release(release, msg)} if {
+                  release.error == ""
+
+                  region := object.get(release, ["values", "global", "region"], "")
+                  region == "global"
+                  db_region := object.get(release, ["values", "global", "db_region"], "")
+                  
+                  not validation.is_region_name(db_region)
+
+                  msg := "missing or invalid .Values.global.db_region value"
+              }

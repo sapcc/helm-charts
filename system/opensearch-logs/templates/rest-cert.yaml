@@ -1,0 +1,19 @@
+{{- if .Values.scaleout.enabled }}
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: rest-cert-manager
+  namespace: opensearch-logs
+spec:
+  dnsNames:
+  - 'opensearch-logs-client.{{ .Values.global.clusterType }}.{{ .Values.global.region }}.cloud.sap'
+  issuerRef:
+    group: certmanager.cloud.sap
+    kind: DigicertIssuer
+    name: digicert-issuer
+  secretName: rest-cert-manager
+  privateKey:
+    algorithm: RSA
+    encoding: PKCS8
+    size: 2048
+{{- end }}

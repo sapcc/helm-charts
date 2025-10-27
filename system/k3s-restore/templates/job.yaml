@@ -1,0 +1,47 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: restore
+spec:
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: restore
+        image: "{{ .Values.global.registry}}/{{ .Values.images.backup.image }}:{{ .Values.images.backup.tag }}"
+        command:
+          - /backup/restore.sh
+        env:
+        - name: AWS_BUCKET
+          valueFrom:
+            secretKeyRef:
+              key: bucket-name
+              name: cc-admin-k3s-backup-aws
+        - name: AWS_DEFAULT_REGION
+          valueFrom:
+            secretKeyRef:
+              key: region
+              name: cc-admin-k3s-backup-aws
+        - name: AWS_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              key: secret-access-key
+              name: cc-admin-k3s-backup-aws
+        - name: AWS_ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              key: access-key-id
+              name: cc-admin-k3s-backup-aws
+        volumeMounts:
+        - name: script
+          mountPath: /backup
+        - name: slash
+          mountPath: /host
+      volumes:
+      - name: script
+        configMap:
+          name: k3s-backup
+          defaultMode: 0744
+      - name: slash
+        hostPath:
+          path: "/"

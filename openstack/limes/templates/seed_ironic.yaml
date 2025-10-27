@@ -1,0 +1,21 @@
+{{- if not .Values.limes.local_liquids.ironic.skip -}}
+
+apiVersion: "openstack.stable.sap.cc/v1"
+kind: OpenstackSeed
+metadata:
+  name: limes-ironic-seed
+
+spec:
+  requires:
+  - monsoon3/ironic-seed
+  - limes/limes-seed
+
+  domains:
+    - name: ccadmin
+      projects:
+      - name: cloud_admin
+        role_assignments:
+          - user: limes@Default
+            role: cloud_baremetal_admin
+
+{{- end -}}

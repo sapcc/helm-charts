@@ -1,0 +1,58 @@
+#!/bin/sh
+
+CFG_DIR=/usr/local/etc/haproxy
+cp -f /haproxy-etc-cluster/haproxy.cfg ${CFG_DIR}/haproxy.cfg
+cp -f /haproxy-etc-cluster/dhparam.pem ${CFG_DIR}/dhparam.pem
+
+# Remove the K8S Node hosting this HAProxy from the server list
+# Reason: Healthchecks against the NodePort on the local machine will use kube-proxy
+# and therefor end up on swift-proxy annouced by the Endpoint for the NodePort Service.
+# This leads to the situation that the server running this haproxy is considered healthy
+# and all subsequent request with that target will also use kube-proxy, which obfuscates
+# the real target for a request.
+# Worst case, the HAProxy looses one swift-proxy target to load balance to, if a
+# swift-proxy runs on the same K8S node as HAProxy does. Soft anti-affinity rules try
+# to avoid sceduling HAProxy to a node with swift-proxy and vice versa.
+#
+# All servers have a comment at the end with the FQDN --> delete complete line
+[ -n "$NODE_NAME" ] && sed -i "/# $NODE_NAME/d" ${CFG_DIR}/haproxy.cfg
+
+SSL_DIR=${CFG_DIR}/ssl
+mkdir -p ${SSL_DIR}
+cp -f /tls-secret/tls.crt ${SSL_DIR}
+cp -f /tls-secret/tls.key ${SSL_DIR}
+cat /tls-secret/tls.crt /tls-secret/tls.key > ${SSL_DIR}/tls.pem
+
+# in a subshell, run a recurring check for new TLS secrets
+( while true; do
+
+  sleep 30
+
+  # do not attempt to install new cert if the certs are broken (e.g. because we catch
+  # k8s in the middle of mounting a new secret)
+  if ! grep -q 'END CERTIFICATE' /tls-secret/tls.crt; then
+    echo "$(date): cert watch: skipping reload because /tls-secret/tls.crt is broken"
+    continue
+  fi
+  if ! grep -q 'END RSA PRIVATE KEY' /tls-secret/tls.key; then
+    echo "$(date): cert watch: skipping reload because /tls-secret/tls.key is broken"
+    continue
+  fi
+
+  # only reload if secrets have changed
+  if diff -q /tls-secret/tls.crt ${SSL_DIR}/tls.crt && diff -q /tls-secret/tls.key ${SSL_DIR}/tls.key; then
+    : # nothing to do
+  else
+    cp -f /tls-secret/tls.crt ${SSL_DIR}
+    cp -f /tls-secret/tls.key ${SSL_DIR}
+    cat /tls-secret/tls.crt /tls-secret/tls.key > ${SSL_DIR}/tls.pem
+    echo "$(date): cert watch: graceful shutdown haproxy"
+    # TODO: This needs revisting. This is not a reload. Minimum safty measure: Don't start all haproxy at the same time
+    sleep $(( RANDOM % 300 ))
+    kill -USR1 $(pidof haproxy)
+  fi
+
+done ) &
+
+[ "$DEBUG_CONTAINER" = true ] && exec tail -f /dev/null
+haproxy -f ${CFG_DIR}/haproxy.cfg

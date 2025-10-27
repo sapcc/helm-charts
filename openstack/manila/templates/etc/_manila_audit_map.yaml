@@ -1,0 +1,176 @@
+service_type: 'storage/share'
+service_name: 'manila'
+
+prefix: '/v[1-2]'
+
+resources:
+  availability-zones:
+  messages:
+  quota-sets:
+      children:
+          defaults:
+              singleton: true
+          detail:
+              singleton: true
+  quota-class-sets:
+  scheduler-stats:
+    singleton: true
+    children:
+      pools:
+  security-services:
+    # model details listing a action
+    payloads:
+      exclude:
+        - password
+    custom_actions:
+      detail: read/list/details
+  services:
+    singleton: true
+    custom_actions:
+      disable: disable
+      enable: enable
+  shares:
+    custom_actions:
+      access_list: null
+      os-access_list: null
+      allow_access: allow
+      deny_access: deny
+      # model details listing a action
+      detail: read/list/details
+      extend: update/extend
+      force_delete: delete/forced
+      manage: import
+      # legacy migration API
+      os-migrate_share: update/migrate
+      migrate_share: update/migrate
+      # current migration API since 2.15
+      migration_cancel: update/migration_cancel
+      migration_complete: update/migration_complete
+      migration_get_progress: null
+      migration_start: update/migration_start
+      reset_status: update/set/status
+      reset_task_state: update/set/status
+      revert: restore
+      shrink: update/shrink
+      unmanage: unimport
+    children:
+      export-locations:
+        api_name: export_locations
+      metadata:
+        singleton: true
+  share-access-rules:
+    children:
+      metadata:
+        singleton: true
+  share-groups:
+    custom_actions:
+      reset_status: update/set/status
+  share-group-types:
+    children:
+      group-specs:
+        singleton: true
+    custom_actions:
+      reset_status: update/set/status
+      # model details listing a action
+      default: read/list/default
+      addProjectAccess: allow/project-access
+      removeProjectAccess: deny/project-access
+      share_type_access: read/acl
+    custom_attributes:
+      project: data/security/project
+  share-group-snapshots:
+    children:
+      members:
+        type_name: share_group_snapshot_members
+        # list only
+    custom_actions:
+      reset_status: update/set/status
+      detail: read/list/details
+  # somehow support legacy API versions which break support design patterns
+  shares-legacy-1:
+    api_name: os-share-manage
+    type_name: shares
+    type_uri: storage/share/shares
+  shares-legacy-2:
+    api_name: os-share-unmanage
+    type_name: shares
+    type_uri: storage/share/shares
+    custom_actions:
+      unmanage: undeploy
+  share-instances:
+    # for some reason underscores are used here
+    api_name: share_instances
+    custom_actions:
+      # model details listing a action
+      detail: read/list/details
+      force_delete: delete/forced
+      reset_status: update/set/status
+    children:
+      export-locations:
+        api_name: export_locations
+  share-networks:
+    children:
+      subnets:
+        children:
+          metadata:
+            singleton: true
+    custom_actions:
+      # model details listing a action
+      detail: read/list/details
+      add_security_service: update/add/security-service
+      add_security_service_check: update/add/check/security-service
+      remove_security_service: update/remove/security-service
+      reset_status: update/set/status
+      update_security_service: update/security-service
+      update_security_service_check: update/check/security-service
+    custom_attributes:
+      security_service_id: storage/share/security-service
+  share-replicas:
+    custom_actions:
+      force_delete: delete/forced
+      promote: update/promote
+      resync: update/resync
+      reset_status: update/set/status
+      reset_replica_state: update/set/replica-state
+    custom_attributes:
+      # put the share ID right into the event
+      share_id: storage/share/share
+  share-servers:
+    custom_actions:
+      # model details listing a action
+      detail: read/list/details
+      manage: import
+      migration_cancel: update/migration_cancel
+      migration_check: update/migration_check
+      migration_complete: update/migration_complete
+      migration_get_progress: null
+      migration_start: update/migration_start
+      reset_status: update/set/status
+      reset_task_state: update/set/status
+      unmanage: unimport
+  snapshots:
+    custom_actions:
+      # model details listing a action
+      detail: read/list/details
+      force_delete: delete/forced
+      manage: deploy
+      reset_status: update/set/status
+      unmanage: undeploy
+  snapshot-instances:
+    custom_actions:
+      # model details listing a action
+      detail: read/list/details
+      reset_status: update/set/status
+  types:
+    custom_actions:
+      # model details listing a action
+      default: read/list/default
+      addProjectAccess: allow/project-access
+      removeProjectAccess: deny/project-access
+      share_type_access: read/acl
+    custom_attributes:
+      project: data/security/project
+    children:
+      extra-specs:
+        api_name: extra_specs
+        singleton: true

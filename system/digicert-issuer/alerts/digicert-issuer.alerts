@@ -1,0 +1,44 @@
+groups:
+- name: digicert-issuer.alerts
+  rules:
+  - alert: IssuerNotReady
+    expr: increase(digicertissuer_request_errors_total[1h]) > 1
+    for: 5m
+    labels:
+      tier: k8s
+      service: cert-manager
+      severity: warning
+      context: certificate
+      support_group: containers
+      meta: "Digicert Issuer in cluster {{ $labels.cluster }} is not ready."
+    annotations:
+      summary: Digicert Issuer is not ready
+      description: "Digicert Issuer in cluster {{ $labels.cluster }} is not ready. Certificate issuance might be broken. Please see logs of deployment `kube-system/digicert-issuer` for further debugging."
+
+  - alert: CertificateRequestPending
+    expr: increase(digicertissuer_request_pending_total[1h]) > 1
+    for: 5m
+    labels:
+      tier: k8s
+      service: cert-manager
+      severity: warning
+      context: certificate
+      support_group: containers
+      meta: "CertificateRequest {{ $labels.certificate_request }} in cluster {{ $labels.cluster }} is pending for a longer period of time."
+    annotations:
+      summary: CertificateRequest in pending state
+      description: "CertificateRequest {{ $labels.certificate_request }} in cluster {{ $labels.cluster }} is pending for a longer period of time. A manual approval might be neccessary. Please log in to https://www.digicert.com/secure/orders/{{ $labels.order_id }} and contact support."
+
+  - alert: CertificateRequestError
+    expr: increase(digicertissuer_request_errors_total[1h]) > 1
+    for: 5m
+    labels:
+      tier: k8s
+      service: cert-manager
+      severity: warning
+      context: certificate
+      support_group: containers
+      meta: "There are errors processing CertificateRequest {{ $labels.certificate_request }} in cluster {{ $labels.cluster }}."
+    annotations:
+      summary: CertificateRequest failed
+      description: "CertificateRequest {{ $labels.certificate_request }} in cluster {{ $labels.cluster }} is failing. Please see logs of deployment `kube-system/digicert-issuer` for further debugging."

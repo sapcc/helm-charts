@@ -1,0 +1,205 @@
+service_type: 'network'
+service_name: 'neutron'
+
+# prefix: '/v2[0-9\.]*(?:/[0-9a-f\-]+)?'
+prefix: '/v2.0'
+
+resources:
+  # custom endpoint - https://github.com/sapcc/networking-aci
+  aci_ml2:
+    el_type_uri: network/aci_ml2
+    children:
+      config:
+        el_type_uri: network/aci_ml2/config
+      hostgroup-modes:
+      networks:
+      nullroutes:
+      az_aware_subnet_routes:
+  address_groups:
+  address_scopes:
+  #custom endpoint - https://github.com/sapcc/asr1k-neutron-l3
+  asrk1:
+    el_type_uri: network/asrk1
+    singleton: true
+    children:
+      routers:
+      networks:
+      orphans:
+      config:
+        el_type_uri: network/asrk1/config
+      devices:
+      fwaas:
+        el_type_uri: network/asrk1/fwaas
+      interface_statistics:
+      init_scheduler:
+        el_type_uri: network/asrk1/init-scheduler
+      init_bindings:
+      init_atts:
+      init_config:
+        el_type_uri: network/asrk1/init-config
+  agents:
+    children:
+      dhcp-network:
+  auto-allocated-topology:
+  bgpvpn:
+    # BPG VPNs namespace
+    singleton: true
+    children:
+      bgpvpns:
+        type_uri: network/bgpvpns
+        children:
+          network_associations:
+            type_uri: network/bgpvpn/network-associations
+          router_associations:
+            type_uri: network/bgpvpn/router-associations
+          port_associations:
+            type_uri: network/bgpvpn/port-associations
+  #custom endpoint
+  cc-fabric:
+    children:
+      switches:
+        type_uri: network/cc-fabric/switches
+  interconnection:
+    singleton: true
+    children:
+      interconnections:
+        type_uri: network/interconnections
+  flavors:
+  floatingips:
+    children:
+      tags:
+  fw:
+    # FWaaS 1.0 namespace
+    singleton: true
+    type_uri: network/firewalls
+    children:
+      firewalls:
+        type_uri: network/firewalls
+      firewall_policies:
+        type_uri: network/firewall/policies
+        el_type_uri: network/firewall/policy
+      firewall_rules:
+        type_uri: network/firewall/rules
+  fwaas:
+    # FWaas 2.0 namespace (uses same logical resource uris as 1.0)
+    singleton: true
+    type_uri: network/firewalls
+    children:
+      firewall_groups:
+        type_uri: network/firewalls
+      firewall_policies:
+        type_uri: network/firewall/policies
+        el_type_uri: network/firewall/policy
+      firewall_rules:
+        type_uri: network/firewall/rules
+
+  lbaas:
+    # LBaaS 2.0 namespace
+    singleton: true
+    children:
+      healthmonitors:
+        type_uri: network/loadbalancer/healthmonitors
+      loadbalancers:
+        type_uri: network/loadbalancers
+        children:
+          statuses:
+            singleton: true
+      listeners:
+        type_uri: network/loadbalancer/listeners
+      pools:
+        type_uri: network/loadbalancer/pools
+        children:
+          members:
+      l7policies:
+        type_uri: network/loadbalancer/l7policies
+        el_type_uri: network/loadbalancer/l7policy
+        children:
+          rules:
+  log:
+    # logging extension namespace
+    singleton: true
+    children:
+      logs:
+      loggable-resources:
+        singleton: true
+  metering:
+    # metering namespace
+    singleton: true
+    children:
+      metering-labels:
+        type_uri: network/metering/labels
+      metering-label-rules:
+        type_uri: network/metering/label-rules
+  networks:
+    children:
+      dhcp-agents:
+      tags:
+  network-ip-availabilities:
+  ports:
+    custom_attributes:
+      security_groups: network/security-groups
+    children:
+      bindings:
+      tags:
+  quotas:
+    custom_actions:
+      details: read/list/details
+  qos:
+    # qos namespace
+    singleton: true
+    children:
+      policies:
+        children:
+          bandwidth_limit_rules:
+            type_uri: network/qos/bandwidth-limit-rules
+          dscp_marking_rules:
+            type_uri: network/qos/dscp-marking-rules
+          minimum_bandwidth_rules:
+            type_uri: network/qos/minimum-bandwidth-rules
+      rule-types:
+      tags:
+  rbac-policies:
+    el_type_uri: network/rbac-policy
+  routers:
+    custom_actions:
+      add_router_interface: update/add/router-interface
+      remove_router_interface: update/remove/router-interface
+    children:
+      l3-agents:
+      tags:
+  security-groups:
+    children:
+      tags:
+  security-group-rules:
+    # does not have a name field, so let's use the description
+    custom_name: description
+    custom_attributes:
+      security_rule_id: network/security-group-rule
+    children:
+      tags:
+  segments:
+  service-profiles:
+    el_type_uri: network/service-profile
+  subnetpools:
+    children:
+      tags:
+  subnets:
+    children:
+      tags:
+  trunks:
+    children:
+      tags:
+  vpn:
+    # VPNaaS 2.0 namespace
+    singleton: true
+    children:
+      endpoint-groups:
+      ikepolicies:
+        type_uri: network/vpn/ike-policies
+        el_type_uri: network/vpn/ike-policy
+      ipsecpolicies:
+        type_uri: network/vpn/ipsec-policies
+        el_type_uri: network/vpn/ipsec-policy
+      ipsec-site-connections:
+      vpnservices:
+        type_uri: network/vpn/vpn-services

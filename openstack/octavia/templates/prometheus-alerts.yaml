@@ -1,0 +1,20 @@
+{{- $values := .Values }}
+{{- if $values.alerts.enabled }}
+{{- range $path, $bytes := .Files.Glob "alerts/*.alerts" }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+
+metadata:
+  name: {{ printf "octavia-%s" $path | replace "/" "-" }}
+  labels:
+    app: octavia
+    tier: os
+    type: alerting-rules
+    prometheus: {{ required ".Values.alerts.prometheus missing" $values.alerts.prometheus | quote }}
+
+spec:
+{{ printf "%s" $bytes | indent 2 }}
+
+{{- end }}
+{{- end }}

@@ -1,0 +1,79 @@
+# Default values for prometheus-statsd-exporter.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+global:
+  linkerd_requested: false
+image:
+  repository: keppel.eu-de-1.cloud.sap/ccloud-dockerhub-mirror/prom/statsd-exporter
+  tag: latest
+  pullPolicy: IfNotPresent
+
+replicaCount: 1
+
+ingress:
+  enabled: true
+  tls: true
+  disco: true
+  # no_keep_alive: true
+
+exporters:
+  - name: 'statsd-exporter'
+    enabled: true
+    udpPort: '9125' # The UDP port on which to receive statsd metric lines.
+    tcpPort: '9125' # The TCP port on which to receive statsd metric lines.
+    cacheSize: 1000 # Maximum size of your metric mapping cache.
+    eventQueueSize: 10000 # Size of internal queue for processing events.
+    eventFlushThreshold: 1000 # Number of events to hold in queue before flushing.
+    eventFlushInterval: 200ms # Time interval before flushing events in queue.
+    # Metric mapping configuration (see https://github.com/prometheus/statsd_exporter#metric-mapping-and-configuration for details
+    mappings: |-
+      defaults:
+        ttl: 1h # metrics expire after ttl
+    # Resources
+    resources:
+      requests:
+        cpu: 200m
+        memory: 200Mi
+      # limits:
+      #   cpu: 100m
+      #   memory: 128Mi
+    # Prometheus
+    metricsPort: '9102' # The address on which to expose the web interface and generated Prometheus metrics.
+    metricsPath: /metrics # Path under which to expose metrics.
+    prometheus: infra-frontend
+    scrapeInterval: 60s
+    scrapeTimeout: 55s
+
+  - name: 'statsd-exporter-inf'
+    enabled: true
+    udpPort: '9125' # The UDP port on which to receive statsd metric lines.
+    tcpPort: '9125' # The TCP port on which to receive statsd metric lines.
+    cacheSize: 1000 # Maximum size of your metric mapping cache.
+    eventQueueSize: 10000 # Size of internal queue for processing events.
+    eventFlushThreshold: 1000 # Number of events to hold in queue before flushing.
+    eventFlushInterval: 200ms # Time interval before flushing events in queue.
+    # Metric mapping configuration (see https://github.com/prometheus/statsd_exporter#metric-mapping-and-configuration for details
+    mappings: |-
+      defaults:
+          ttl: 0 # metrics do not expire
+    # Resources
+    resources:
+      requests:
+        cpu: 200m
+        memory: 200Mi
+      # limits:
+      #   cpu: 100m
+      #   memory: 128Mi
+    # Prometheus
+    metricsPort: '9102' # The address on which to expose the web interface and generated Prometheus metrics.
+    metricsPath: /metrics # Path under which to expose metrics.
+    prometheus: infra-frontend
+    scrapeInterval: 60s
+    scrapeTimeout: 55s
+
+owner-info:
+  support-group: observability
+  service: cc3test
+  maintainers:
+    - Martin Vossen
+  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/prometheus-exporters/statsd-exporter

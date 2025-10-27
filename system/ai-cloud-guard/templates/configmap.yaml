@@ -1,0 +1,40 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-config
+data:
+  config.yaml: |
+    image:
+      name: {{ .Values.aicloudguard.image.name }}
+    domain: {{ .Values.aicloudguard.domain }}
+    webhook:
+      host: {{ .Values.aicloudguard.webhook.host }}
+      port: {{ .Values.aicloudguard.webhook.port }}
+    slackbotids: 
+      prod: {{ .Values.aicloudguard.slackbotids.prod }}
+      qa: {{ .Values.aicloudguard.slackbotids.qa }}
+      owner_id: {{ .Values.aicloudguard.slackbotids.owner_id }}
+    awx:
+      host: {{ .Values.aicloudguard.awx.host }}
+      token: {{ .Values.aicloudguard.awx.token }}
+    slack:
+      bot_token: {{ .Values.aicloudguard.slack.bot_token }}
+      user_token: {{ .Values.aicloudguard.slack.user_token }}
+      app_token: {{ .Values.aicloudguard.slack.app_token }}
+      workspace: {{ .Values.aicloudguard.slack.workspace }}
+      vmware:
+        info: {{ .Values.aicloudguard.slack.vmware.info }}
+        warning: {{ .Values.aicloudguard.slack.vmware.warning }}
+        critical: {{ .Values.aicloudguard.slack.vmware.critical }}
+      metal:
+        info: {{ .Values.aicloudguard.slack.metal.info }}
+        warning: {{ .Values.aicloudguard.slack.metal.warning }}
+        critical: {{ .Values.aicloudguard.slack.metal.critical }}
+      test_channel: {{ .Values.aicloudguard.slack.test_channel }}
+    parameters:
+      retries_getting_slack_timestamp: {{ .Values.aicloudguard.parameters.retries_getting_slack_timestamp }}
+    alertmanager:
+      key: |-
+        {{ .Values.aicloudguard.alertmanager.key | nindent 6 | trim }}
+      cert: |-
+        {{ .Values.aicloudguard.alertmanager.cert | nindent 6 | trim }}

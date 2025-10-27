@@ -1,0 +1,36 @@
+groups:
+- name: vrops-exporter.alerts
+  rules:
+  - alert: VropsExporterInventoryDataMissing
+    expr: ({__name__=~"^vrops_inventory_(?:vcenters|nsxt_adapter)"}) == 0
+    for: 20m
+    labels:
+      severity: warning
+      service: exporter
+      support_group: observability
+      no_alert_on_absence: "true"
+      playbook: docs/devops/alert/vcenter/vrops/#revalidate-certificate
+      dashboard: vrops-exporter-status/vrops-exporter-status?target={{ $labels.target }}&var-target={{ $labels.target }}
+      meta: "`{{ $labels.target }}` no longer getting any vCenter or NSX-T adapters."
+    annotations:
+      summary: "vrops-inventory no longer getting any vCenter or NSX-T adapters."
+      description: |
+        vrops-exporter collectors no longer getting adapters to build
+        parent-child relationships. The inventory should always provide
+        new iterations of the currentresources available in vRops to
+        stay up to date.
+
+  - alert: VropsExporterInventoryDataStale
+    expr: rate(vrops_inventory_iteration_total[5m]) == 0
+    for: 10m
+    labels:
+      severity: warning
+      service: exporter
+      support_group: observability
+      meta: "`{{ $labels.inventory }}` is running on stale resources. Restart the pod"
+      dashboard:  vrops-exporter-status/vrops-exporter-status?target={{ $labels.target }}&var-target={{ $labels.target }}
+    annotations:
+      summary: "vrops-inventory is running on stale resources"
+      description: |
+        `{{ $labels.inventory }}` is running on stale resources.
+        Restart the pod in namespace: `{{ $labels.namespace }}`.

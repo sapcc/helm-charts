@@ -1,0 +1,13 @@
+groups:
+- name: plutono.alerts
+  rules:
+  - alert: PlutonoContentSyncError
+    expr: rate(git_sync_count_total{status="error"}[5m]) > 0
+    for: 60m
+    labels:
+      service: grafana
+      severity: warning
+      support_group: observability
+    annotations:
+      description: "{{ $labels.namespace }} has issues sync its content from Git repo. Consider a Pod restart"
+      summary: "{{ $labels.namespace }} has issues sync its content from Git repo."

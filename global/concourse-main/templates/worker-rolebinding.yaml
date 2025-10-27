@@ -1,0 +1,16 @@
+apiVersion: rbac.authorization.k8s.io/{{ .Values.concourse.rbac.apiVersion }}
+kind: RoleBinding
+metadata:
+  name: concourse-worker
+  labels:
+    app: concourse-worker
+    chart: {{ .Chart.Name }}-{{ .Chart.Version }}
+    heritage: {{ .Release.Service }}
+    release: {{ .Release.Name }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: concourse-worker
+subjects:
+- kind: ServiceAccount
+  name: concourse-worker

@@ -1,0 +1,88 @@
+{{ if or .Values.oidcIAS.developerUsers .Values.oidcIAS.developerGroups -}}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: rbac-syncer
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: cc:rbac-syncer
+rules:
+- apiGroups:
+  - ''
+  resources:
+  - namespaces
+  verbs:
+  - get
+  - list
+- apiGroups:
+  - rbac.authorization.k8s.io
+  resources:
+    - rolebindings
+  verbs:
+    - '*'
+- apiGroups:
+  - rbac.authorization.k8s.io
+  resources:
+    - clusterroles
+  verbs:
+    - bind
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: cc:rbac-syncer
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cc:rbac-syncer
+subjects:
+  - kind: ServiceAccount
+    name: rbac-syncer
+    namespace: {{ .Release.Namespace }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rbac-syncer
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rbac-syncer
+  template:
+    metadata:
+      labels:
+        app: rbac-syncer
+    spec:
+      serviceAccountName: rbac-syncer
+      containers:
+      - image: keppel.global.cloud.sap/ccloud-dockerhub-mirror/library/alpine
+        name: sync
+        env:
+        - name: KUBECTL_VERSION
+          value: 1.20.14
+        - name: INTERVAL
+          value: "{{ .Values.syncInterval }}"
+        command:
+          - sh
+          - -c
+          - |
+            set -eo pipefail
+
+            wget -O /usr/local/bin/kubectl "https://dl.k8s.io/release/v${KUBECTL_VERSION}/bin/linux/amd64/kubectl"
+            chmod +x /usr/local/bin/kubectl
+            while true
+            do
+              namespaces=$(kubectl get ns -o jsonpath='{range .items[?(@.status.phase=="Active")]}{.metadata.name}{"\n"}{end}'| grep -v{{ range $ns := .Values.adminNamespaces }} -F {{ . | quote}}{{ end }})
+              for ns in $namespaces
+              do
+                echo "Namespace $ns:"
+                kubectl create rolebinding cc:oidc-ias-developer --dry-run=client -o yaml --namespace $ns --clusterrole=cc:admin{{ range $group := .Values.oidcIAS.developerGroups }} --group={{ . }}{{ end }}{{ range $user := .Values.oidcIAS.developerUsers }} --User={{ . }}{{ end }} | grep -v creationTimestamp:| kubectl apply -f -
+                echo
+              done
+              echo "Sleeping for $INTERVAL seconds..."
+              sleep $INTERVAL
+            done
+{{ end }}

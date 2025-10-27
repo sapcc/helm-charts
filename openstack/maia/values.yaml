@@ -1,0 +1,234 @@
+global:
+  # region: DEFINED-IN-REGION-SECRETS
+  # domain: DEFINED-IN-REGION-SECRETS
+  # imageRegistry: DEFINED-IN-REGION-SECRETS
+  linkerd_requested: true
+  clusterType: controlplane
+  domain_seeds:
+    skip_hcm_domain: false
+  # for openstack seeds
+  keystoneNamespace: monsoon3
+  globalKeystoneNamespace: monsoon3global
+  # Set to true for global regions
+  is_global_region: false
+
+linkerd-support:
+  enabled: true
+  annotate_namespace: true
+
+maia:
+  # maia is on in all regions by default
+  enabled: true
+  # kubernetes.io/tls-acme:  is used by default to generate certs
+  tls: true
+  # endpoint_host_public: DEFINED-IN-REGION-SECRETS
+  endpoint_port_public: 443
+  endpoint_protocol_public: https
+  # docker_repo: DEFINED-IN-REGION-SECRETS
+  image_version: '20220810081107'
+  debug: "1"
+  listen_port: 9091
+  # how long will label values be listed by the API (keep minimal)
+  label_value_ttl: "2h"
+  # how long are tokens cached before being revalidated
+  token_cache_time: "900s"
+  # which domain will be assumed for a user if it is not specified via @
+  default_domain: monsoon3
+  service_user:
+    name:  maia
+    # password: DEFINED-IN-REGION-SECRETS
+    user_domain_name:    Default
+    project_name:        service
+    project_domain_name: Default
+
+  # Global Keystone configuration
+  global_keystone:
+    enabled: false  # Set to true in regions that should connect to global Keystone
+    auth_url: ""    # URL of the global Keystone service
+    # Defaults are used if not set and are required to connect properly
+    # username: "maia"  
+    # password: ""
+    # user_domain_name: "Default"
+    # project_name: "service"
+    # project_domain_name: "Default"
+
+  resources:
+    # reasonable defaults, should be reduced for small regions
+    memory:
+      expected: 1000Mi
+      tolerated: 2000Mi
+    cpu:
+      expected: "500m"
+      tolerated: "2000m"
+
+# this is the new reused prometheus
+prometheus_server:
+  enabled: true
+
+  name: maia-oprom
+
+  retentionTime: 24h
+  scrapeInterval: "60s"
+
+  additionalScrapeConfigs:
+    name: maia-sconf
+    key: maia_scrape_config.yaml
+
+  ingress:
+    enabled: false
+    hosts:
+      - prometheus-maia
+
+  service:
+    annotations:
+      prometheus.io/scrape: "true"
+      prometheus.io/targets: "openstack"
+
+  # Store on disk
+  persistence:
+    enabled: true
+    # prom-operator does not support other accessModes than RWO
+    # accessMode: ReadWriteOnce
+    size: 300Gi
+
+  secrets:
+    - prometheus-auth-sso-cert
+
+  # The log level of the Prometheus.
+  logLevel: info
+
+  # Kubernetes resource requests and limits for this Prometheus.
+  # Flagship configuration for now.
+  resources:
+    requests:
+      cpu: 2
+      memory: 8Gi
+    limits:
+      cpu: 8
+      memory: 16Gi
+
+  thanos:
+    enabled: true
+    querier:
+      webRouteprefix: "/"
+  
+  alerts:
+    prometheus: openstack
+    service: maia
+
+    multipleTargetScrapes:
+      enabled: false
+
+    multiplePodScrapes:
+      enabled: false
+
+# Deploy Maia Prometheus alerts.
+alerts:
+  enabled: true
+  # Name of the Prometheus to which the alerts should be assigned to.
+  # Keys = directory names in alerts/ and aggregations/
+  prometheus: 
+    openstack: openstack
+    kubernetes: kubernetes
+    maia-oprom: maia-oprom
+
+# Deploy Maia Prometheus aggregation rules
+aggregations:
+  enabled: true
+  # Name of the Prometheus to which the alerts should be assigned to.
+  prometheus: maia-oprom
+
+cronus:
+  enabled: false
+
+# This is for the global seed deployment.
+# This allows maia to be false, while seed is true only deploying the seed.
+seed:
+  enabled: false
+
+authentication:
+  enabled: false
+
+neo:
+  enabled: false
+
+prometheus_vmware:
+  enabled: true
+  scrape_interval: 1m
+  scrape_timeout: 55s
+  # to avoid HTTP 400 Bad Request (request header too long) with GET /federate
+  # the metrics prefixes are truncated and combined to one query
+  matches:
+    - vrops_virtualmachine_config_hardware_memory_kilobytes
+    - vrops_virtualmachine_cpu_contention_ratio
+    - vrops_virtualmachine_cpu_demand_ratio
+    - vrops_virtualmachine_cpu_usage_ratio
+    - vrops_virtualmachine_cpu_usage_average_mhz
+    - vrops_virtualmachine_cpu_wait_summation_miliseconds
+    - vrops_virtualmachine_cpu_workload_percentage
+    - vrops_virtualmachine_datastore_outstanding_io_requests
+    - vrops_virtualmachine_disk_usage_average_kilobytes_per_second
+    - vrops_virtualmachine_diskspace_gigabytes
+    - vrops_virtualmachine_diskspace_virtual_machine_used_gigabytes
+    - vrops_virtualmachine_guest_os_full_name_info
+    - vrops_virtualmachine_guest_tools_version_info
+    - vrops_virtualmachine_memory_active_ratio
+    - vrops_virtualmachine_memory_activewrite_kilobytes
+    - vrops_virtualmachine_memory_balloning_ratio
+    - vrops_virtualmachine_memory_consumed_kilobytes
+    - vrops_virtualmachine_memory_contention_ratio
+    - vrops_virtualmachine_memory_usage_average
+    - vrops_virtualmachine_network_data_received_kilobytes_per_second
+    - vrops_virtualmachine_network_data_transmitted_kilobytes_per_second
+    - vrops_virtualmachine_network_packets_dropped.+
+    - vrops_virtualmachine_network_packets.+
+    - vrops_virtualmachine_network_usage_average_kilobytes_per_second
+    - vrops_virtualmachine_number_vcpus_total
+    - vrops_virtualmachine_oversized.+
+    - vrops_virtualmachine_power_average_watts
+    - vrops_virtualmachine_runtime_connectionstate
+    - vrops_virtualmachine_runtime_powerstate
+    - vrops_virtualmachine_summary_ethernetcards
+    - vrops_virtualmachine_swapin_memory_kilobytes
+    - vrops_virtualmachine_swapped_memory_kilobytes
+    - vrops_virtualmachine_undersized.+
+    - vrops_virtualmachine_virtual_disk_average.+
+    - vrops_virtualmachine_virtual_disk_read_kilobytes_per_second
+    - vrops_virtualmachine_virtual_disk_write_kilobytes_per_second
+
+  neo:
+    enabled: false
+    matches:
+      - vrops_hostsystem_cpu_model
+      - vrops_hostsystem_cpu_sockets_number
+      - vrops_hostsystem_cpu_usage_average_percentage
+      - vrops_hostsystem_memory_ballooning_kilobytes
+      - vrops_hostsystem_memory_contention_percentage
+
+prometheus_ceph:
+  enabled: false
+  scrape_interval: 1m
+  scrape_timeout: 55s
+  matches:
+    - objectstore_bytes_received_total
+    - objectstore_bytes_sent_total
+    - objectstore_read_ops_total
+    - objectstore_write_ops_total
+    - objectstore_capacity_usage_bytes
+    - objectstore_usage_objects
+    - objectstore_client_io_latency_seconds_avg
+    - objectstore_upload_latency_milliseconds_avg
+    - objectstore_download_latency_milliseconds_avg
+    - objectstore_delete_latency_milliseconds_avg
+    - objectstore_client_error_rate
+    - objectstore_server_error_rate
+
+owner-info:
+  service: maia
+  support-group: observability
+  maintainers: 
+    - Nathan Oyler
+    - Martin Vossen
+    - Richard Tief
+    - Tommy Sauer
+  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/openstack/maia

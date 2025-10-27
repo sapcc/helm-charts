@@ -1,0 +1,11 @@
+{{- if and .Values.auth.username .Values.auth.password }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-memcached-config
+  labels:
+    {{- include "memcached.labels" (list $ "version" "memcached" "configmap" "kvstore") | indent 4 }}
+data:
+  memcached.conf: |
+    mech_list: plain
+{{- end }}

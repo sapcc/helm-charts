@@ -1,0 +1,44 @@
+apiVersion: v1
+kind: ConfigMap
+
+metadata:
+  name: baremetal-temper
+
+data:
+  temper.yaml: |
+    inspector:
+      host: "baremetal-inspector-3.{{ .Values.global.region }}.cloud.sap"
+    redfish:
+      bootImage: "http://jump01.cc.{{ .Values.global.region }}.cloud.sap/repo/iso/bml_current.iso"
+      user: 'support'
+    netbox:
+      host: "netbox.global.cloud.sap"
+    openstack:
+      url: "https://identity-3.{{ .Values.global.region }}.cloud.sap/v3"
+      user:  {{ .Values.global.bm_temper_user }}
+      domainName: "ccadmin"
+      projectName: "master"      
+      projectDomainName: "ccadmin"
+    aci:
+      user: {{ .Values.aci.apic_user }}
+    arista:
+      user: {{ .Values.global.arista_username }}
+      transport: "https"
+      port: 443
+    deployment:
+      image: "vsphere-7.0U1c-amd64-baremetal"
+      flavor: "inspection_test"
+      conductorZone: "nova-compute-ironic-testing"
+      network: "cc-demo_private"
+      openstack:
+        url: "https://identity-3.{{ .Values.global.region }}.cloud.sap/v3"
+        user: {{ .Values.global.bm_temper_user }}
+        projectDomainName: "monsoon3"
+        projectName: "cc-demo"      
+        domainName: "monsoon3"
+    rulesPath: "./etc/config/rules.json"
+    domain: "cc.{{ .Values.global.region }}.cloud.sap"
+    region: "{{ .Values.global.region }}"
+
+  rules.json: |
+{{ .Files.Get "etc/rules.json" | indent 4 }}

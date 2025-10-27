@@ -1,0 +1,161 @@
+# Default values for andromeda.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+
+image:
+  repository: keppel.eu-de-1.cloud.sap/ccloud/andromeda
+  kubernetes_entrypoint_version: v0.3.1
+  pullPolicy: IfNotPresent
+
+postgresql:
+  enabled: false
+  image: keppel.eu-de-1.cloud.sap/ccloud/postgres
+  imageTag: 12.14
+  postgresDatabase: andromeda
+  alerts:
+    support_group: network-api
+  extensions:
+    pgcrypto: []
+  dbInit: andromeda-db-init
+  external:
+    enabled: false
+
+alerts:
+  enabled: true
+  support_group: containers
+  tier: os
+
+mariadb:
+  priority_class: ""
+  alerts:
+    enabled: true
+    support_group: containers
+  enabled: false
+  name: andromeda
+  initdb_configmap: false
+  initdb_secret: true
+  persistence_claim:
+    name: db-andromeda-pvclaim
+    autoprovision: true
+    access_modes: ["ReadWriteOnce"]
+  backup:
+    enabled: false
+  backup_v2:
+    enabled: false
+    verification:
+      enabled: false
+      run_after_inc_backups: 12
+    databases:
+      - andromeda
+    verify_tables:
+      - andromeda.agents
+      - andromeda.schema_migration
+    oauth:
+      client_id: "andromeda"
+  users:
+    andromeda:
+      grants:
+      - "ALL PRIVILEGES on andromeda.*"
+
+mysql_metrics:
+  enabled: true
+  db_name: andromeda
+  db_user: andromeda
+  customMetrics:
+    - name: andromeda_domains_count_gauge
+      help: Total number of domains
+      labels:
+        - "provider"
+      query: |
+        SELECT
+          COUNT(*) AS count_gauge,
+          provider
+        FROM domain
+        GROUP BY provider
+      values:
+        - "count_gauge"
+
+database_override:
+  enabled: false
+
+owner-info:
+  support-group: network-api
+  maintainers:
+    - Andrew Karpow
+  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/global/andromeda
+
+nats:
+  image:
+    repository: keppel.eu-de-1.cloud.sap/ccloud-dockerhub-mirror/library/nats
+  auth:
+    enabled: false
+  service:
+    type: LoadBalancer
+    externalTrafficPolicy: Local
+
+audit:
+  enabled: false
+  user: rabbitmq
+  host: hermes-rabbitmq-notifications.hermes
+  port: 5672
+  queue_name: notifications.info
+
+f5:
+  enabled: false
+
+debug: false
+seed: false
+qa: false
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+service:
+  port: 8000
+  type: LoadBalancer
+  externalTrafficPolicy: Local
+
+ingress:
+  enabled: true
+  annotations:
+    kubernetes.io/tls-acme: "true"
+    disco: "true"
+
+resources: {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}

@@ -1,0 +1,17 @@
+{{- if eq .Values.kind "statefulset" }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ template "fullname" . }}-pods
+  labels:
+    {{- include "rabbitmq.labels" (list $ "version" "rabbitmq" "service" "messagequeue") | indent 4 }}
+  annotations:
+{{- if and (and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested) $.Values.linkerd.enabled }}
+    linkerd.io/inject: enabled
+{{- end }}
+spec:
+  selector:
+    app.kubernetes.io/instance: {{ template "fullname" . }}
+  publishNotReadyAddresses: true  # See https://www.rabbitmq.com/cluster-formation.html#peer-discovery-k8s
+  clusterIP: None
+{{- end }}

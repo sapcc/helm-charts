@@ -1,0 +1,24 @@
+# vim: set ft=yaml:
+
+groups:
+- name: openstack-keppel-resources.alerts
+  rules:
+
+  - alert: OpenstackKeppelQuotaExhausted
+    # NOTE: This alert is not super-urgent because quota bursting gives us a bit of headroom.
+    expr: limes_project_usage{domain="ccadmin",project="master",service="keppel",resource="images"} >= limes_project_quota{domain="ccadmin",project="master",service="keppel",resource="images"}
+    for: 3m
+    labels:
+      context: quota
+      dashboard: keppel-overview
+      service: keppel
+      severity: info
+      support_group: containers
+      tier: os
+      meta: "Keppel quota in ccadmin/master exhausted"
+    annotations:
+      summary: "Keppel quota in ccadmin/master exhausted"
+      description: |
+        Please check if GC is working. Check repos with the highest image
+        counts to see what might be blocking GC. If nothing else helps,
+        increase the quota.

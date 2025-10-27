@@ -1,0 +1,131 @@
+{{ if .Values.enabled }}
+{{- $values := .Values -}}
+
+{{- range $i, $prober := .Values.probers -}}
+{{ if ne $i 0 }}---{{ end }}
+
+apiVersion: v1
+kind: ConfigMap
+
+metadata:
+  name: cloudprober-{{ printf "%s" $prober.dc | replace "-" "" }}
+  labels:
+    app: cloudprober-{{ printf "%s" $prober.dc | replace "-" "" }}
+
+data:
+  cloudprober.cfg: |
+    {{- range $i, $config := $values.targets_icmp }}
+
+    {{- if ne $config.dc $prober.dc}}
+    probe {
+      type: PING
+      ip_version: IPV4
+      name: "{{ $config.name }}"
+      targets {
+        {{ if $config.dns }}
+        host_names: "{{ $config.dns }}"
+        {{ else }}
+        host_names: "{{ $config.ip }}"
+        {{ end }}
+      }
+
+      {{- if $config.dc }}
+      additional_label {
+        key: "dst_dc"
+        value: "{{ $config.dc }}"
+      }
+      {{- end }}
+
+      additional_label {
+        key: "src"
+        value: "{{ $prober.ip }}"
+      }
+
+      additional_label {
+        key: "src_dc"
+        value: "{{ $prober.dc }}"
+      }
+
+      additional_label {
+        key: "rtype"
+        {{- if contains $values.global.region $config.dc }}
+        value: "intra_region"
+        {{- else }}
+        value: "inter_region"
+        {{- end }}
+      }
+
+      ping_probe {
+        use_datagram_socket: false
+      }
+      interval_msec: {{ $values.icmpIntervalMsec }}
+      timeout_msec: {{ $values.icmpTimeoutMsec }}
+
+    }
+    {{- end }}
+    {{- end }}
+
+
+    {{- range $i, $config := $values.targets_http }}
+
+    {{ if ne $config.dc $prober.dc}}
+    probe {
+      type: HTTP
+      name: "{{ $config.name }}"
+      targets {
+        host_names: "{{ $config.ip }}"
+      }
+
+      http_probe {
+        port: {{ $config.port }}
+        relative_url: "/data_1024"
+      }
+
+     {{- if $config.dc }}
+     additional_label {
+       key: "dst_dc"
+       value: "{{ $config.dc }}"
+     }
+     {{- end }}
+
+      additional_label {
+        key: "src"
+        value: "{{ $prober.ip }}"
+      }
+
+      additional_label {
+        key: "src_dc"
+        value: "{{ $prober.dc }}"
+      }
+
+      interval_msec: {{ $values.httpIntervalMsec }}
+      timeout_msec: {{ $values.httpTimeoutMsec }}
+
+      latency_unit: "ms"
+      latency_distribution {
+              explicit_buckets: "2,4,8,16,32,64,128,256,512"
+      }
+    }
+    {{ end }}
+    {{- end }}
+
+    server {
+      type: HTTP
+      http_server {
+        port: 8080
+        pattern_data_handler {
+          response_size: 1024
+        }
+      }
+    }
+    surfacer {
+      type: PROMETHEUS
+
+      prometheus_surfacer {
+        metrics_prefix: "cloudprober_"
+      }
+    }
+
+---
+{{ end -}}
+{{ end -}}

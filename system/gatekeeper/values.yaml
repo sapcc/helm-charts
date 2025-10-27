@@ -1,0 +1,82 @@
+owner-info:
+  support-group: containers
+  service: gatekeeper
+  maintainers:
+    - Stefan Majewsky
+    - Sandro Jäckel
+  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/system/gatekeeper
+
+global:
+  linkerd_requested: true
+
+# documentation for this section: <https://github.com/open-policy-agent/gatekeeper/tree/master/charts/gatekeeper>
+gatekeeper-upstream:
+  createNamespace: false
+  constraintViolationsLimit: 2000
+  logDenies: true
+  disabledBuiltins: [] # do not disable `http.send`
+
+  # We only use Gatekeeper for auditing, not as a validating webhook. Therefore
+  # we don't need multiple replicas for the controller manager: It only needs
+  # to validate templates and create/update/delete CRDs from them.
+  disableValidatingWebhook: true
+  # We also don't use it as a mutating webhook.
+  disableMutation: true
+  replicas: 1
+
+  # TODO: enable once we are on k8s 1.30 everywhere, consider simplifying policies from Rego into CEL where possible
+  enableK8sNativeValidation: false
+
+  # We also don't need a strict pod disruption budget.
+  pdb:
+    controllerManager:
+      minAvailable: 0
+
+  # We have our own Gatekeeper policy to replace PodSecurityPolicy.
+  psp:
+    enabled: false
+
+  # Override container images with our local mirrors and disable jobs that are incompatible with our setup.
+  image:
+    repository: keppel.global.cloud.sap/ccloud-dockerhub-mirror/openpolicyagent/gatekeeper
+    crdRepository: keppel.global.cloud.sap/ccloud-dockerhub-mirror/openpolicyagent/gatekeeper-crds
+  postInstall:
+    labelNamespace:
+      enabled: false
+      image:
+        repository: keppel.global.cloud.sap/ccloud-dockerhub-mirror/openpolicyagent/gatekeeper-crds
+    probeWebhook:
+      image:
+        repository: keppel.global.cloud.sap/ccloud-dockerhub-mirror/curlimages/curl
+  postUpgrade:
+    labelNamespace:
+      enabled: false
+
+  audit:
+    resources:
+      limits:
+        cpu: 2
+        memory: 1024Mi
+      requests:
+        cpu: 500m
+        memory: 256Mi
+
+  podAnnotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/targets: kubernetes
+
+# Must be provided via --set-string; e.g. "qa-de-1" for QA controlplane or "s-qa-de-1" for QA scaleout. Tests will have the bogus value "t-qa-de-1".
+cluster_name: null
+# Must be provided via --set-string; e.g. "labs" or "qa" or "prod". Tests will have the bogus value "test".
+cluster_layer: null
+# Must be provided via --set-string; e.g. "baremetal" or "scaleout". Tests will have the bogus value "test".
+cluster_type: null
+
+gatekeeper_addons:
+  image_tag: null # Must be provided via --set-string.
+
+# NOTE: This section is shared with the `system/doop-central` chart.
+doop:
+  # values with default value null must be provided by values.yaml
+  swift_region: null
+  swift_password: null

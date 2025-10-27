@@ -1,0 +1,282 @@
+global:
+  rbac:
+    create: true
+
+kube-dns:
+  domain:
+  clusterip:
+
+endpoint-watcher:
+  enabled: false
+  image:
+    repository: keppel.global.cloud.sap/ccloud/endpoint-watcher
+
+node-problem-detector:
+  systemLogMonitors:
+    - kernel-monitor.json
+
+  customPluginMonitors:
+    - bridge-monitor.json
+
+  additionalHostVolumeMounts:
+    # Required by the bridge monitor.
+    - name: hostproc
+      hostPath: /proc
+      mountPath: /host/proc
+      readOnly: true
+
+container-linux-update-operator:
+  rbac:
+    create: true
+    serviceAccountName: container-linux-update-operator
+
+cert-manager:
+  installCRDs: true
+  image:
+    repository: keppel.global.cloud.sap/ccloud-quay-mirror/jetstack/cert-manager-controller
+    tag: v1.13.3
+  webhook:
+    image:
+      repository: keppel.global.cloud.sap/ccloud-quay-mirror/jetstack/cert-manager-webhook
+  cainjector:
+    image:
+      repository: keppel.global.cloud.sap/ccloud-quay-mirror/jetstack/cert-manager-cainjector
+    extraArgs:
+    - --leader-elect=false
+  startupapicheck:
+    image:
+      repository: keppel.global.cloud.sap/ccloud-quay-mirror/jetstack/cert-manager-ctl
+  ingressShim:
+    defaultIssuerName: digicert-issuer
+    defaultIssuerKind: ClusterIssuer
+    defaultIssuerGroup: certmanager.cloud.sap
+  prometheus:
+    enabled: true
+  podAnnotations:
+    prometheus.io/targets: "kubernetes"
+  enableCertificateOwnerRef: true
+
+digicert-issuer:
+  provisioner:
+    disableRootCA: "true"
+
+# ingress related but independent values
+ingress:
+  tls_client_auth:
+    enabled: false
+    cacrt: |
+      -----BEGIN CERTIFICATE-----
+      -----END CERTIFICATE-----
+
+  external_public_service:
+    enabled: false
+    #ip:
+    monitor:
+      enabled: false
+      #url:
+      prometheus: kubernetes
+
+ingress-nginx:
+  controller:
+    # Snippet annotations are disabled to prevent unauthorized access to secrets.
+    # See https://github.com/kubernetes/ingress-nginx/issues/7837 .
+    allowSnippetAnnotations: false
+
+    config:
+      custom-http-errors: "495"
+
+  defaultBackend:
+    image:
+      image: ingress-nginx/nginx-errors
+      tag: 1.3.0
+    extraVolumes:
+    - name: custom-error-pages
+      configMap:
+        name: ingress-custom-errors
+    extraVolumeMounts:
+    - name: custom-error-pages
+      mountPath: /www
+
+ingress-nginx-external:
+  enabled: false
+  fullnameOverride: kube-system-ingress-nginx-external
+  releaseLabelOverride: kube-system
+
+  revisionHistoryLimit: 5
+  rbac:
+    create: true
+
+  serviceAccount:
+    create: true
+
+  controller:
+    image:
+      registry: keppel.global.cloud.sap/ccloud-registry-k8s-io-mirror
+
+    minReadySeconds: 60
+    ingressClass: nginx-external
+    electionID: external-ingress-controller-leader
+
+    extraArgs:
+      annotations-prefix: ingress.kubernetes.io
+      # On upgrade to 0.26.1.
+      # enable-dynamic-certificates: true
+      # enable-ssl-chain-completion: false
+
+    updateStrategy:
+      type: RollingUpdate
+      rollingUpdate:
+        maxSurge: 0
+        maxUnavailable: 1
+
+    livenessProbe:
+      initialDelaySeconds: 30
+
+    replicaCount: 3
+
+    service:
+      externalTrafficPolicy: "Local"
+      omitClusterIP: false
+      # clusterIP: ""
+
+    metrics:
+      enabled: true
+      service:
+        omitClusterIP: true
+      serviceMonitor:
+        enabled: true
+        additionalLabels:
+          prometheus: "kubernetes"
+
+    config:
+      http-snippet: |
+        map $ssl_client_s_dn $ssl_client_s_dn_cn {
+            default "anonymous";
+            ~CN=(?<CN>[^/,\"]+) $CN;
+        }
+
+        # Ensure there is a global_request_id for logging
+        map '' $global_request_id {
+            default '-';
+        }
+
+      location-snippet: |
+        proxy_set_header X-REMOTE-USER $ssl_client_s_dn_cn;
+
+      proxy-send-timeout: "300"
+      proxy-read-timeout: "300"
+      proxy-body-size: "0k"
+      server-name-hash-bucket-size: "128"
+      map-hash-bucket-size: "128"
+      disable-ipv6: "true"
+      ssl-redirect: "true"
+      enable-underscores-in-headers: "true"
+      worker-shutdown-timeout: "18000s"
+      worker-processes: "8"
+      use-forwarded-headers: "false"
+      log-format-upstream: >-
+        $remote_addr - $remote_user [$time_local] "$request" $status $body_bytes_sent "$http_referer" "$http_user_agent" $request_length $request_time [$proxy_upstream_name] $upstream_addr $upstream_response_length $upstream_response_time $upstream_status $req_id $global_request_id
+
+    affinity:
+      podAntiAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          - topologyKey: "kubernetes.io/hostname"
+            labelSelector:
+              matchExpressions:
+                - key: app.kubernetes.io/name
+                  operator: In
+                  values:
+                    - ingress-nginx-external
+                - key: app.kubernetes.io/instance
+                  operator: In
+                  values:
+                    - ingress-nginx-external
+                - key: app.kubernetes.io/component
+                  operator: In
+                  values:
+                    - controller
+
+    admissionWebhooks:
+      enabled: false
+      patch:
+        image:
+          registry: keppel.eu-de-1.cloud.sap/ccloud-dockerhub-mirror
+
+  defaultBackend:
+    enabled: true
+    nodeSelector: {}
+
+    image:
+      registry: keppel.global.cloud.sap/ccloud-registry-k8s-io-mirror
+
+    service:
+      omitClusterIP: true
+
+    resources:
+      limits:
+        cpu: 10m
+        memory: 20Mi
+      requests:
+        cpu: 10m
+        memory: 20Mi
+
+    affinity:
+      # don't co-locate replicas of the ingress backend on the same node
+      podAntiAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          - topologyKey: kubernetes.io/hostname
+            labelSelector:
+              matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                    - ingress-nginx-external
+                - key: app.kubernetes.io/component
+                  operator: In
+                  values:
+                    - default-backend
+
+# For now enabled via regional values.
+vertical-pod-autoscaler:
+  enabled: false
+
+# For now enabled via regional values.
+maintenance-controller:
+  enabled: false
+
+# Kubernetes de-scheduler to auto-balance cluster is currently enabled on a regional basis.
+descheduler:
+  enabled: false
+
+metrics-server:
+  image:
+    repository: keppel.global.cloud.sap/ccloud-registry-k8s-io-mirror/metrics-server/metrics-server
+
+  # Workaround for qa landscapes.
+  args:
+    - --kubelet-insecure-tls
+
+  replicas: 3
+  podLabels:
+    k8s-app: metrics-server
+  affinity:
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        - labelSelector:
+            matchLabels:
+              k8s-app: metrics-server
+          namespaces:
+            - kube-system
+          topologyKey: kubernetes.io/hostname
+
+owner-info:
+  support-group: containers
+  service: kube-system
+  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/system/kube-system-metal
+
+secrets-injector:
+  enabled: false
+
+reloader:
+  image:
+    repository: 'keppel.global.cloud.sap/ccloud-ghcr-io-mirror/stakater/reloader'

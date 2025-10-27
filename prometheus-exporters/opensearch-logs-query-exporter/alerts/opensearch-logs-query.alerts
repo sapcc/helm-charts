@@ -1,0 +1,93 @@
+groups:
+- name: opensearchlogsquery.alerts
+  rules:
+  - alert: OpensearchLogsQueryExporterMissing
+    expr: up{job=~"opensearch-logs-query-exporter"} == 0
+    for: 30m
+    labels:
+      context: nodes
+      service: logs
+      severity: info
+      tier: os
+      support_group: observability
+      playbook: docs/operation/monitor/opensearch_query
+    annotations:
+      description: 'opensearch-logs-query-exporter in {{ $labels.region }} is missing.'
+      summary: 'opensearch-logs-query-exporter in {{ $labels.region }} is missing.'
+  - alert: OctobusQueryExporterError
+    expr: opensearch_logs_octobus_exporter_error_hits > 0
+    labels:
+      severity: warning
+      support_group: observability
+    annotations:
+      description: 'octobus-logs-query-exporter had an error in the pod log'
+      summary: 'octobus-logs-query-exporter had an error in the pod log.'
+
+  - alert: OpenstackGlanceReturn50xCode
+    expr: sum(rate(opensearch_openstack_glance_query_return_code_doc_count{glance="/v2/images", code=~"50.*"}[30m]))by(query, code) > 0
+    for: 5m
+    labels:
+      context: nodes
+      service: glance
+      severity: info
+      tier: os
+      kibana: "app/discover#/?_g=(filters:!(),refreshInterval:(pause:!t,value:0),time:(from:now-2h,to:now))&_a=(columns:!(_source),filters:!(),index:'logstash-*',interval:auto,query:(language:lucene,query:'method:{{ $labels.query }}%20AND%20response:{{ $labels.code }}'),sort:!())"
+    annotations:
+      description: "Openstack Glance Returned HTTP {{ $labels.query }} {{ $labels.code }}"
+      summary: 'Openstack Glance Returned HTTP {{ $labels.query }} {{ $labels.code }}'
+
+  - alert: EsxRootPasswordWrong
+    expr: opensearch_esxi_exporter_login_error_container_name_doc_count > 0
+    for: 5m
+    labels:
+      severity: info
+      tier: vmware
+      service: compute
+      no_alert_on_absence: "true"
+      kibana: "app/discover#/?_g=(filters:!(),refreshInterval:(pause:!t,value:0),time:(from:now-5m,to:now))&_a=(columns:!(kubernetes.container_name,log),filters:!(('$state':(store:appState),meta:(alias:!n,disabled:!f,index:'logstash-*',key:kubernetes.container_name.keyword,negate:!f,params:(query:esxi-host-exporter),type:phrase),query:(match_phrase:(kubernetes.container_name.keyword:esxi-host-exporter)))),index:'logstash-*',interval:auto,query:(language:kuery,query:'log:%20%22SSH:%20authentication%20error%22'),sort:!())"
+    annotations:
+      description: "Esxi-exporter can't login with production root password, please check Kibana link."
+      summary: "Login to ESX not possible with production root password"
+
+  - alert: OpensearchLogsExporterMissing
+    expr: up{job=~"opensearch-logs-query-exporter.*"} == 0
+    for: 30m
+    labels:
+      context: nodes
+      service: logs
+      severity: warning
+      support_group: observability
+      tier: os
+      playbook: docs/operation/monitor/opensearch_query
+      dashboard: health-opensearch?var-cluster={{ $labels.elastic_cluster }}
+    annotations:
+      description: 'cluster *{{ $labels.elastic_cluster }}* opensearch-logs-query-exporter in `{{ $labels.region }}` is missing.'
+      summary: 'cluster: *{{ $labels.elastic_cluster }}* opensearch-logs-query-exporter in `{{ $labels.region }}` is missing.'
+
+  - alert: SrcSiemRulesUpdaterLogError
+    expr: opensearch_siem_error_doc_count > 0
+    labels:
+      context: nodes
+      service: logs
+      severity: warning
+      support_group: src
+      tier: os
+      kibana: "goto/5067aac2f56824b074d3874a2c422783"
+      no_alert_on_absence: "true"
+    annotations:
+      description: 'The siem-rules-updater service pod has error logs.'
+      summary: 'The siem-rules-updater service pod has error logs.'
+
+  - alert: OpenstackManilaPromotedReplicaError
+    expr: count_over_time(opensearch_logs_manila_replica_error_doc_count{}[2h]) > 0
+    for: 5m
+    labels:
+      no_alert_on_absence: "true"
+      service: manila
+      severity: info
+      support_group: compute-storage-api
+      tier: os
+      kibana: "app/discover#/?_g=(filters:!(),refreshInterval:(pause:!t,value:0),time:(from:now-15m,to:now))&_a=(columns:!(_source),filters:!(),index:'logstash-*',interval:auto,query:(language:kuery,query:'\"to%20the%20promoted%20replica\"'),sort:!())"
+    annotations:
+      description: "Exception while applying properties to promoted Replica"
+      summary: "Exception while applying properties to promoted Replica"

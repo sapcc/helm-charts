@@ -1,0 +1,64 @@
+{{- if .Values.alerts.enabled }}
+
+{{/* Special characters must be stripped from .Release.Name, e.g. .Release.Name = "concourse-main" becomes $name_prefix = "ConcourseMain". */}}
+{{- $name_prefix   := regexReplaceAll "\\W*" (.Release.Name | title) "" -}}
+{{- $service       := .Values.alerts.service       | default .Release.Name -}}
+{{- $support_group := .Values.alerts.support_group | required ".Values.alerts.support_group missing" -}}
+{{- $db_host       := .Values.database.host        | default (printf "%s-postgresql" .Release.Name) -}}
+
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+
+metadata:
+  name: '{{ .Release.Name }}-pgbackup'
+  labels:
+    prometheus: {{ quote .Values.alerts.prometheus }}
+
+spec:
+  groups:
+  - name: backup.alerts
+    rules:
+    - alert: {{ $name_prefix }}PostgresDatabaseBackupMissing
+      expr: absent(backup_last_success{name="{{ .Release.Name }}-pgbackup"})
+      for: 1h
+      labels:
+        context: backupage
+        service: {{ $service }}
+        severity: warning
+        support_group: {{ $support_group }}
+        tier: os # for backward-compatibility, only
+      annotations:
+        description: Missing database backup for {{ $db_host }}. Please check {{ .Release.Name }}-pgbackup container.
+        summary: Backup missing for {{ $db_host }}
+
+    - alert: {{ $name_prefix }}PostgresDatabaseBackupAge2Hours
+      expr: floor((time() - backup_last_success{name="{{ .Release.Name }}-pgbackup"}) / 60 / 60) >= 2
+      for: 10m
+      labels:
+        context: backupage
+        meta: {{ quote $db_host }}
+        service: {{ $service }}
+        severity: info
+        support_group: {{ $support_group }}
+        tier: os # for backward-compatibility, only
+        playbook: 'https://operations.global.cloud.sap/docs/support/playbook/db_backup_issues'
+      annotations:
+        description: The last successful database backup for {{ $db_host }} is {{`{{ $value }}`}} hours old.
+        summary: Database Backup too old
+
+    - alert: {{ $name_prefix }}PostgresDatabaseBackupAge4Hours
+      expr: floor((time() - backup_last_success{name="{{ .Release.Name }}-pgbackup"}) / 60 / 60) >= 4
+      for: 10m
+      labels:
+        context: backupage
+        meta: {{ quote $db_host }}
+        service: {{ $service }}
+        severity: warning
+        support_group: {{ $support_group }}
+        tier: os # for backward-compatibility, only
+        playbook: 'https://operations.global.cloud.sap/docs/support/playbook/db_backup_issues'
+      annotations:
+        description: The last successful database backup for {{ $db_host }} is {{`{{ $value }}`}} hours old.
+        summary: Database Backup too old
+
+{{- end }}

@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "fullname" . }}-pruning
+  labels:
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ template "fullname" . }}-pruning
+  template:
+    metadata:
+      labels:
+        app: {{ template "fullname" . }}-pruning
+        alert-tier: os
+        alert-service: sentry
+    spec:
+      {{- if .Values.serviceAccount.enabled }}
+      serviceAccountName: {{ .Values.serviceAccount.name }}
+      {{- end }}
+      containers:
+      - name: {{ .Chart.Name }}
+        image: "{{required ".Values.global.registry is missing" .Values.global.registry }}/{{ .Values.image.repository }}:{{required ".Values.image.tag is missing" .Values.image.tag }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        command: [sh]
+        args:
+          - -ec
+          - |
+            while true; do
+              if [ $(date '+%H%M') = '{{ .Values.pruning_time }}' ]; then
+                sentry cleanup --days 7
+              fi
+              sleep 55
+            done
+        env:
+{{ include "env-vars" . | indent  10 }}
+        resources:
+          requests:
+            cpu: {{ .Values.sentry.resources.requests.cpu | quote }}
+            memory: {{ .Values.sentry.resources.requests.memory | quote }}
+          limits:
+            cpu: {{ .Values.sentry.resources.limits.cpu | quote }}
+            memory: {{ .Values.sentry.resources.limits.memory | quote }}

@@ -1,0 +1,17 @@
+groups:
+- name: simulator
+  rules:      
+  - record: cronus_simulator_send_email_rate
+    expr: irate(cronus_simulator_send_email_counter[2m])*60
+  - record: cronus_simulator_receiving_confirmed_email_rate
+    expr: irate(cronus_simulator_receiving_confirmed_email_counter[2m])*60
+  - record: cronus_simulator_send_email_error_rate
+    expr: irate(cronus_simulator_send_email_error_counter[2m])*60
+  - record: cronus_simulator_receiving_unmatched_rate
+    expr: irate(cronus_simulator_receiving_unmatched[2m])*60
+  - record: cronus_event_mails_sent_provider_rate_perminute
+    expr: sum (irate(cronus_event_mails_sent[2m])*60) by (project_id,project_name,domain_id, provider)
+  - record: cronus_event_mails_sent_success_provider_rate_perminute
+    expr: sum (irate(cronus_event_mails_sent {status_code=~"2.*"}[2m]) * 60) by (project_id,project_name,domain_id, provider)
+  - record: cronus_event_mails_sent_error_provider_rate_perminute
+    expr: sum (irate(cronus_event_mails_sent {status_code!~"2.*"}[2m]) * 60) by (project_id,project_name,domain_id, provider)

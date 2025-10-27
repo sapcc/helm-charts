@@ -1,0 +1,309 @@
+---
+suite: storage
+values:
+  - default_values.yaml
+set:
+  mariadb.galera.clustername: "testname"
+release:
+  name: testrelease
+  namespace: testnamespace
+templates:
+  - storageclass.yaml
+tests:
+  - it: storageclass cinder for mariadb data defined
+    documentSelector:
+      path: metadata.name
+      value: testrelease-cinder
+    set:
+      volumeMounts.database.data.enabled: true
+      volumeMounts.database.data.claimName: mariadb
+      volumeMounts.database.data.type: persistentVolume
+      volumeClaimTemplates.mariadb.storageClassName: cinder
+    asserts:
+      - isKind:
+          of: StorageClass
+      - equal:
+          path: metadata.name
+          value: testrelease-cinder
+      - equal:
+          path: provisioner
+          value: cinder.csi.openstack.org
+      - equal:
+          path: reclaimPolicy
+          value: Delete
+      - equal:
+          path: volumeBindingMode
+          value: WaitForFirstConsumer
+      - equal:
+          path: allowVolumeExpansion
+          value: true
+  - it: storageclass nfs for mariadb data defined
+    documentSelector:
+      path: metadata.name
+      value: testrelease-nfs
+    set:
+      volumeMounts.database.data.enabled: true
+      volumeMounts.database.data.claimName: mariadb
+      volumeMounts.database.data.type: persistentVolume
+      volumeClaimTemplates.mariadb.storageClassName: nfs
+    asserts:
+      - isKind:
+          of: StorageClass
+      - equal:
+          path: metadata.name
+          value: testrelease-nfs
+      - equal:
+          path: parameters.pathPattern
+          value: "${.PVC.namespace}-${.PVC.name}"
+      - equal:
+          path: parameters.onDelete
+          value: "delete"
+      - equal:
+          path: parameters.archiveOnDelete
+          value: "true"
+      - equal:
+          path: provisioner
+          value: cluster.local/nfs-subdir-external-provisioner
+      - equal:
+          path: reclaimPolicy
+          value: Delete
+      - equal:
+          path: volumeBindingMode
+          value: WaitForFirstConsumer
+      - equal:
+          path: allowVolumeExpansion
+          value: true
+  - it: no storageclass for mariadb data defined
+    set:
+      volumeMounts.database.data.enabled: true
+      volumeMounts.database.data.claimName: mariadb
+      volumeMounts.database.data.type: persistentVolume
+      volumeClaimTemplates.mariadb.storageClassName:
+    asserts:
+      - hasDocuments:
+          count: 0
+  - it: invalid storageclass for mariadb data defined
+    set:
+      volumeMounts.database.data.enabled: true
+      volumeMounts.database.data.claimName: mariadb
+      volumeMounts.database.data.type: persistentVolume
+      volumeClaimTemplates.mariadb.storageClassName: invalid
+    asserts:
+      - hasDocuments:
+          count: 0
+  - it: storageclass cinder for mariadb log defined
+    documentSelector:
+      path: metadata.name
+      value: testrelease-cinder
+    set:
+      volumeMounts.database.log.enabled: true
+      volumeMounts.database.log.claimName: marialog
+      volumeMounts.database.log.type: persistentVolume
+      volumeClaimTemplates.marialog.storageClassName: cinder
+    asserts:
+      - isKind:
+          of: StorageClass
+      - equal:
+          path: metadata.name
+          value: testrelease-cinder
+      - equal:
+          path: provisioner
+          value: cinder.csi.openstack.org
+      - equal:
+          path: reclaimPolicy
+          value: Delete
+      - equal:
+          path: volumeBindingMode
+          value: WaitForFirstConsumer
+      - equal:
+          path: allowVolumeExpansion
+          value: true
+  - it: storageclass nfs for mariadb log defined
+    documentSelector:
+      path: metadata.name
+      value: testrelease-nfs
+    set:
+      volumeMounts.database.log.enabled: true
+      volumeMounts.database.log.claimName: marialog
+      volumeMounts.database.log.type: persistentVolume
+      volumeClaimTemplates.marialog.storageClassName: nfs
+    asserts:
+      - isKind:
+          of: StorageClass
+      - equal:
+          path: metadata.name
+          value: testrelease-nfs
+      - equal:
+          path: parameters.pathPattern
+          value: "${.PVC.namespace}-${.PVC.name}"
+      - equal:
+          path: parameters.onDelete
+          value: "delete"
+      - equal:
+          path: parameters.archiveOnDelete
+          value: "true"
+      - equal:
+          path: provisioner
+          value: cluster.local/nfs-subdir-external-provisioner
+      - equal:
+          path: reclaimPolicy
+          value: Delete
+      - equal:
+          path: volumeBindingMode
+          value: WaitForFirstConsumer
+      - equal:
+          path: allowVolumeExpansion
+          value: true
+  - it: no storageclass for mariadb log defined
+    set:
+      volumeMounts.database.log.enabled: true
+      volumeMounts.database.log.claimName: marialog
+      volumeMounts.database.log.type: persistentVolume
+      volumeClaimTemplates.marialog.storageClassName:
+    asserts:
+      - hasDocuments:
+          count: 0
+  - it: invalid storageclass for mariadb log defined
+    set:
+      volumeMounts.database.log.enabled: true
+      volumeMounts.database.log.claimName: marialog
+      volumeMounts.database.log.type: persistentVolume
+      volumeClaimTemplates.marialog.storageClassName: invalid
+    asserts:
+      - hasDocuments:
+          count: 0
+  - it: storageclass nfs for kopia backups defined
+    documentSelector:
+      path: metadata.name
+      value: testrelease-nfs
+    set:
+      volumeMounts.backup.kopia.data.enabled: true
+      volumeMounts.backup.kopia.data.claimName: mariabackup
+      volumeMounts.backup.kopia.data.type: persistentVolume
+      volumeClaimTemplates.mariabackup.storageClassName: nfs
+    asserts:
+      - isKind:
+          of: StorageClass
+      - equal:
+          path: metadata.name
+          value: testrelease-nfs
+      - equal:
+          path: parameters.pathPattern
+          value: "${.PVC.namespace}-${.PVC.name}"
+      - equal:
+          path: parameters.onDelete
+          value: "delete"
+      - equal:
+          path: parameters.archiveOnDelete
+          value: "true"
+      - equal:
+          path: provisioner
+          value: cluster.local/nfs-subdir-external-provisioner
+      - equal:
+          path: reclaimPolicy
+          value: Delete
+      - equal:
+          path: volumeBindingMode
+          value: WaitForFirstConsumer
+      - equal:
+          path: allowVolumeExpansion
+          value: true
+  - it: no storageclass for kopia backups defined
+    set:
+      volumeMounts.backup.kopia.data.enabled: true
+      volumeMounts.backup.kopia.data.claimName: mariabackup
+      volumeMounts.backup.kopia.data.type: persistentVolume
+      volumeClaimTemplates.mariabackup.storageClassName:
+    asserts:
+      - hasDocuments:
+          count: 0
+  - it: invalid storageclass for kopia backups defined
+    set:
+      volumeMounts.backup.kopia.data.enabled: true
+      volumeMounts.backup.kopia.data.claimName: mariabackup
+      volumeMounts.backup.kopia.data.type: persistentVolume
+      volumeClaimTemplates.mariabackup.storageClassName: invalid
+    asserts:
+      - hasDocuments:
+          count: 0
+  - it: storageclass cinder for proxysql data defined
+    documentSelector:
+      path: metadata.name
+      value: testrelease-cinder
+    set:
+      volumeMounts.proxy.proxysql.data.enabled: true
+      volumeMounts.proxy.proxysql.data.claimName: proxysql
+      volumeMounts.proxy.proxysql.data.type: persistentVolume
+      volumeClaimTemplates.proxysql.storageClassName: cinder
+    asserts:
+      - isKind:
+          of: StorageClass
+      - equal:
+          path: metadata.name
+          value: testrelease-cinder
+      - equal:
+          path: provisioner
+          value: cinder.csi.openstack.org
+      - equal:
+          path: reclaimPolicy
+          value: Delete
+      - equal:
+          path: volumeBindingMode
+          value: WaitForFirstConsumer
+      - equal:
+          path: allowVolumeExpansion
+          value: true
+  - it: storageclass nfs for proxysql data defined
+    documentSelector:
+      path: metadata.name
+      value: testrelease-nfs
+    set:
+      volumeMounts.proxy.proxysql.data.enabled: true
+      volumeMounts.proxy.proxysql.data.claimName: proxysql
+      volumeMounts.proxy.proxysql.data.type: persistentVolume
+      volumeClaimTemplates.proxysql.storageClassName: nfs
+    asserts:
+      - isKind:
+          of: StorageClass
+      - equal:
+          path: metadata.name
+          value: testrelease-nfs
+      - equal:
+          path: parameters.pathPattern
+          value: "${.PVC.namespace}-${.PVC.name}"
+      - equal:
+          path: parameters.onDelete
+          value: "delete"
+      - equal:
+          path: parameters.archiveOnDelete
+          value: "true"
+      - equal:
+          path: provisioner
+          value: cluster.local/nfs-subdir-external-provisioner
+      - equal:
+          path: reclaimPolicy
+          value: Delete
+      - equal:
+          path: volumeBindingMode
+          value: WaitForFirstConsumer
+      - equal:
+          path: allowVolumeExpansion
+          value: true
+  - it: no storageclass for proxysql data defined
+    set:
+      volumeMounts.proxy.proxysql.data.enabled: true
+      volumeMounts.proxy.proxysql.data.claimName: proxysql
+      volumeMounts.proxy.proxysql.data.type: persistentVolume
+      volumeClaimTemplates.proxysql.storageClassName:
+    asserts:
+      - hasDocuments:
+          count: 0
+  - it: invalid storageclass for proxysql data defined
+    set:
+      volumeMounts.proxy.proxysql.data.enabled: true
+      volumeMounts.proxy.proxysql.data.claimName: proxysql
+      volumeMounts.proxy.proxysql.data.type: persistentVolume
+      volumeClaimTemplates.proxysql.storageClassName: invalid
+    asserts:
+      - hasDocuments:
+          count: 0

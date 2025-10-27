@@ -1,0 +1,23 @@
+{{- $root := . }}
+{{- $values := .Values.vrops }}
+{{- if .Values.vrops.enabled }}
+{{- range $target := .Values.global.targets }}
+{{- if $values.alerts.enabled }}
+{{- range $path, $bytes := $.Files.Glob "alerts/*.alerts" }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+
+metadata:
+  name: {{ include "prometheusVMware.name" (list $target $root) }}{{ printf "-%s" $path | replace "/" "-" }}
+  labels:
+    app: vrops-exporter
+    prometheus: {{ include "prometheusVMware.name" (list $target $root) }}
+
+spec:
+{{ printf "%s" $bytes | indent 2 }}
+
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}

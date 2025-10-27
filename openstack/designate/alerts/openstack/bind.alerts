@@ -1,0 +1,18 @@
+groups:
+- name: designate-bind.alerts
+  rules:
+  - alert: OpenstackDesignateDnsBindDown
+    expr: max(bind_up) BY (region, kubernetes_name) < 1
+    for: 10m
+    labels:
+      context: bind
+      dashboard: designate-bind
+      meta: '{{ $labels.kubernetes_name }}'
+      service: designate
+      severity: critical
+      support_group: coredns
+      tier: os
+      playbook: 'docs/devops/alert/designate/#OpenstackDesignateDnsBindDown'
+    annotations:
+      description: DNS Bind server {{ $labels.kubernetes_name }} down in region {{ $labels.region }}.
+      summary: DNS Bind server {{ $labels.kubernetes_name }} down.

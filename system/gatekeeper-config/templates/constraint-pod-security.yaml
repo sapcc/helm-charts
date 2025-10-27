@@ -1,0 +1,18 @@
+{{/* This check is disabled entirely in the lab clusters to avoid needlessly obstructing the development of changes to the core components. */}}
+{{/* In the QA cluster, this check is in audit-only mode. Service owners can set up new deployments there and then ask for an extension of the allowlist based on that template. */}}
+{{- if ne .Values.cluster_layer "labs" }}
+
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: GkPodSecurity
+metadata:
+  name: podsecurity
+  annotations:
+    {{- include "sources" (tuple "pod-security" "pod-security") | indent 4 }}
+    {{- include "docstring" (tuple $ "GkPodSecurity") | indent 4 }}
+  labels:
+    severity: 'error'
+spec:
+  enforcementAction: {{ if eq .Values.cluster_layer "prod" }}deny{{ else }}dryrun{{ end }}
+  match: {{ include "match_pods_and_pod_owners" . | indent 4 }}
+
+{{- end }}

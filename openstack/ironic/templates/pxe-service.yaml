@@ -1,0 +1,30 @@
+kind: Service
+apiVersion: v1
+
+metadata:
+  name: ironic-pxe
+  labels:
+    system: openstack
+    type: backend
+    component: ironic
+  annotations:
+    {{- include "utils.linkerd.pod_and_service_annotation" . | indent 4 }}
+spec:
+  type: NodePort
+  externalTrafficPolicy: Local
+  selector:
+    name: ironic-pxe
+  ports:
+    - name: ironic-tftp
+      protocol: UDP
+      port: {{.Values.global.ironictftpPortPublic}}
+      targetPort: ironic-tftp
+    - name: ironic-ipxe
+      protocol: TCP
+      port: {{.Values.conductor.deploy.port}}
+      targetPort: ironic-ipxe
+  {{- if .Values.global.ironic_tftp_ip}}
+  externalIPs:
+    - {{.Values.global.ironic_tftp_ip}}
+  {{- end }}
+  sessionAffinity: "ClientIP"

@@ -1,0 +1,17 @@
+{{- if .Values.plutono.content.persistence.enabled }}
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: plutono-content-gitsync-pvc
+  labels:
+    app: "{{ default .Chart.Name .Values.nameOverride }}"
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+spec:
+  accessModes:
+    - {{ .Values.plutono.content.persistence.accessMode | default "ReadWriteOnce" }}
+  resources:
+    requests:
+      storage: {{ .Values.plutono.content.persistence.size | default "1Gi" }}
+{{- end }}

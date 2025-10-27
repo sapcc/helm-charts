@@ -1,0 +1,165 @@
+{{ if .Values.enabled -}}
+{{- if .Values.globalRegion.enabled }}
+{{ range $region, $regionValues := .Values.globalRegion.regions }}
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  annotations:
+  labels:
+    k8s-app: kube-parrot-{{ $region }}
+  name: kube-parrot-{{ $region }}
+spec:
+  selector:
+    matchLabels:
+      name: kube-parrot-{{ $region }}
+  updateStrategy:
+    rollingUpdate:
+      maxUnavailable: '10%'
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        name: kube-parrot-{{ $region }}
+        k8s-app: kube-parrot-{{ $region }}
+        service: kube-parrot-{{ $region }}
+      annotations:
+    spec:
+      priorityClassName: system-node-critical
+      {{- if $.Values.imagePullSecrets }}
+      imagePullSecrets:
+{{ toYaml .Values.imagePullSecrets | indent 8 }}
+      {{- end }}
+      containers:
+      - name: parrot
+        image: "{{ required ".Values.global.ghcrIoMirrorAlternateRegion is missing" $.Values.global.ghcrIoMirrorAlternateRegion }}/{{ $.Values.images.parrot.image }}:{{ $.Values.images.parrot.tag }}"
+        imagePullPolicy: IfNotPresent
+        command:
+          - /parrot
+          - --as={{ $regionValues.as }}
+          - --remote-as={{ $regionValues.remoteAS }}
+          - --podsubnet={{ $.Values.podsubnet }}
+          - --nodename=$(NODE_NAME)
+          - --hostip=$(HOST_IP)
+          - --logtostderr
+          - --neighbor-count={{ $.Values.bgpNeighborCount }}
+{{- if $.Values.metricPort }}
+          - --metric-port={{ $.Values.metricPort }}
+{{- end }}
+        env:
+          - name: NODE_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: spec.nodeName
+          - name: HOST_IP 
+            valueFrom:
+              fieldRef:
+                fieldPath: status.hostIP
+        volumeMounts:
+          - name: etc-kubernetes-kube-parrot
+            mountPath: /etc/kubernetes/kube-parrot
+        {{ if $.Values.metricPort -}}
+        ports:
+          - name: parrot-metrics
+            containerPort: {{ $.Values.metricPort }}
+            hostPort: {{ $.Values.metricPort }}
+        {{- end }}
+      hostNetwork: true
+      nodeSelector:
+        kubernetes.cloud.sap/region: {{ $region }}
+      serviceAccountName: kube-parrot
+      terminationGracePeriodSeconds: 5
+      tolerations:
+{{- if $.Values.toleration }}
+        - key: "kubernetes.cloud.sap/unification"
+          operator: "Exists"
+          effect: "NoSchedule"
+{{- else }}
+        - operator: Exists
+      volumes:
+        - name: etc-kubernetes-kube-parrot
+          hostPath:
+            path: /etc/kubernetes/kube-parrot
+{{- end }}
+{{- end }}
+{{- else }}
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  annotations:
+  labels:
+    k8s-app: kube-parrot
+  name: kube-parrot
+spec:
+  selector:
+    matchLabels:
+      name: kube-parrot
+  updateStrategy:
+    rollingUpdate:
+      maxUnavailable: '10%'
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        name: kube-parrot
+        k8s-app: kube-parrot
+        service: kube-parrot
+      annotations:
+    spec:
+      priorityClassName: system-node-critical
+      {{- if .Values.imagePullSecrets }}
+      imagePullSecrets:
+{{ toYaml .Values.imagePullSecrets | indent 8 }}
+      {{- end }}
+      containers:
+      - name: parrot
+        image: "{{ required ".Values.global.ghcrIoMirrorAlternateRegion is missing" $.Values.global.ghcrIoMirrorAlternateRegion }}/{{ .Values.images.parrot.image }}:{{ .Values.images.parrot.tag }}"
+        imagePullPolicy: IfNotPresent
+        command:
+          - /parrot
+          - --as={{ required ".Values.as" $.Values.as }}
+          - --nodename=$(NODE_NAME)
+          - --hostip=$(HOST_IP)
+          - --logtostderr
+          - --neighbor-count={{ $.Values.bgpNeighborCount }}
+{{- if $.Values.metricPort }}
+          - --metric-port={{ $.Values.metricPort }}
+{{- end }}
+        env:
+          - name: NODE_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: spec.nodeName
+          - name: HOST_IP 
+            valueFrom:
+              fieldRef:
+                fieldPath: status.hostIP
+        volumeMounts:
+          - name: etc-kubernetes-kube-parrot
+            mountPath: /etc/kubernetes/kube-parrot
+        {{ if $.Values.metricPort -}}
+        ports:
+          - name: parrot-metrics
+            containerPort: {{ $.Values.metricPort }}
+            hostPort: {{ $.Values.metricPort }}
+        {{- end }}
+      hostNetwork: true
+      nodeSelector:
+        kubernetes.cloud.sap/cp: nextgen
+      serviceAccountName: kube-parrot
+      terminationGracePeriodSeconds: 5
+      tolerations:
+{{- if $.Values.toleration }}
+        - key: "kubernetes.cloud.sap/unification"
+          operator: "Exists"
+          effect: "NoSchedule"
+{{- else }}
+        - operator: Exists
+      volumes:
+        - name: etc-kubernetes-kube-parrot
+          hostPath:
+            path: /etc/kubernetes/kube-parrot
+{{- end }}
+{{- end }}
+{{- end }}

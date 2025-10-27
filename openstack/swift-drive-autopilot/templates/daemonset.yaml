@@ -1,0 +1,96 @@
+{{- $suffixes := list "" }}
+{{- if .Values.multipath_enabled }}
+{{ $suffixes = append $suffixes "-multipath" }}
+{{- end }}
+{{- range $suffix := $suffixes }}
+---
+kind: DaemonSet
+apiVersion: apps/v1
+
+metadata:
+  name: swift-drive-autopilot{{$suffix}}
+  labels:
+    release: "{{$.Release.Name}}"
+
+spec:
+  minReadySeconds: 15
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 2 # each object has 3 replicas, so we can afford to have 2 servers missing at a time without causing outage
+  selector:
+    matchLabels:
+      component: swift-drive-autopilot{{$suffix}}
+  template:
+    metadata:
+      labels:
+        component: swift-drive-autopilot{{$suffix}}
+        from: daemonset
+        release: "{{$.Release.Name}}"
+      annotations:
+        checksum/configmap: {{ include "swift-drive-autopilot/templates/configmap.yaml" $ | sha256sum }}
+        checksum/secret: {{ include "swift-drive-autopilot/templates/secret.yaml" $ | sha256sum }}
+        prometheus.io/scrape: "true"
+        prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" $.Values.alerts.prometheus }}
+    spec:
+      {{- if $.Values.use_taints }}
+      tolerations:
+      - key: "species"
+        operator: "Equal"
+        value: "{{$.Values.species}}"
+        effect: "NoSchedule"
+      {{- if eq $suffix "-multipath" }}
+      - key: "species"
+        operator: "Equal"
+        value: "{{$.Values.species}}-multipath"
+        effect: "NoSchedule"
+      {{- end }}
+      {{- end }}
+      nodeSelector:
+        species: {{quote $.Values.species}}
+        {{- if eq $suffix "-multipath" }}
+        multipath-disks: "true"
+        {{- else if not $.Values.use_taints }}
+        multipath-disks: "false"
+        {{- end }}
+      volumes:
+        - name: config
+          configMap:
+            name: swift-drive-autopilot
+        - name: coreos
+          hostPath:
+            path: /
+      initContainers:
+      - name: sysctl
+        image: {{$.Values.global.registryAlternateRegion}}/swift-drive-autopilot:{{include "image_version" $}}
+        # Do not panic and hence do not reboot on OOPS. OOPS can occur with defect swift disks, which are handled by
+        # Swift seperatly. Otherwise this can lead to reboot loops.
+        command: ['sysctl', '-w', 'kernel.panic_on_oops=0']
+        securityContext:
+          runAsUser: 0
+          privileged: true
+      containers:
+        - name: boot
+          image: {{$.Values.global.registryAlternateRegion}}/swift-drive-autopilot:{{include "image_version" $}}
+          securityContext:
+            runAsUser: 0
+            privileged: true
+          args:
+            - /etc/drive-autopilot/config{{$suffix}}.yaml
+          env:
+            - name: ENCRYPTION_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: swift-drive-autopilot-secret
+                  key: encryption_key
+          #   - name: 'DEBUG'
+          #     value: '1'
+          volumeMounts:
+            - mountPath: /etc/drive-autopilot
+              name: config
+            - mountPath: /coreos
+              name: coreos
+          ports:
+            - name: metrics
+              containerPort: 9102
+{{- end }}

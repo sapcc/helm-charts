@@ -1,0 +1,28 @@
+{{- range $key, $record := .Values.objectstore.gateway.dnsNames }}
+{{- if or (not $.Values.dnsNamesSkipRecord) (not (has $record $.Values.dnsNamesSkipRecord)) }}
+{{- if $.Values.objectstore.service.externalIP }}
+---
+apiVersion: disco.stable.sap.cc/v1
+kind: Record
+metadata:
+  name: "{{ $record }}"
+spec:
+  type: A
+  record: {{ $.Values.objectstore.service.externalIP }}
+  hosts:
+    - "{{ $record }}."
+{{- if or (not $.Values.dnsNamesSkipRecordWildcard) (not (has $record $.Values.dnsNamesSkipRecordWildcard)) }}
+---
+apiVersion: disco.stable.sap.cc/v1
+kind: Record
+metadata:
+  name: "{{ $record }}-wildcard"
+spec:
+  type: CNAME
+  record: "{{ $record }}."
+  hosts:
+    - "*.{{ $record }}."
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}

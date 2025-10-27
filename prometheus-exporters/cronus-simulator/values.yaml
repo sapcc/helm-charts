@@ -1,0 +1,68 @@
+global:
+  region: cc+ region
+  cronus_service_password: secrets
+  cronus_simulator_slack: secrets
+  alerts:
+    prometheus: infra-frontend
+
+
+config:
+  ## keystone optional authentication methods, add in @SECRETS the relevant method
+  keystone:
+    projectName: master
+    projectDomainName: ccadmin
+    userDomainName: Default
+    username: cronus
+  allowedServices:
+    emails: {}
+
+simulator:
+  enabled: true
+  image:
+    name: cronus-exporter-repository
+    pullPolicy: IfNotPresent
+    tag: latest
+    imagePullSecrets: []
+  statefulSet:
+    enabled: true
+    podManagementPolicy: OrderedReady
+    annotations: {}
+    labels: {}
+    headless:
+      annotations: {}
+      labels: {}
+      servicePort: 80
+  updateStrategy: RollingUpdate
+  replicas: 1
+  nebula: 
+  cronus:
+  remote: 
+  remoteRegion:
+  remotePassword:
+  slack: slack-url
+  recipient: recipient-email
+  cronuscli: cronuscli
+  timeWaitInterval: 60
+  shellToUse: bash
+  projectDomainName: project-domain
+  projectName: project-name
+  testsJsonPath: "/cronus-simulator/tests.json"
+  tests: {}
+  prometheusPort: 2113
+  alerts:
+    enabled: false
+    prometheus: kubernetes
+
+cross:
+  image:
+    name: keppel.eu-de-1.cloud.sap/ccloud/cronus-simulator
+    pullPolicy: IfNotPresent
+    tag: v0.0.7
+  timeWaitInterval: 30
+
+exporter:
+  pushgatewayUrl: CC/SECRETS
+
+owner-info:
+  helm-chart-url: 'https://github.com/sapcc/helm-charts/tree/master/prometheus-exporters/cronus-simulator'
+  support-group: email

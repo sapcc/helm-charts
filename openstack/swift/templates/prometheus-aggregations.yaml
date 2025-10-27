@@ -1,0 +1,21 @@
+{{- if .Values.alerts.enabled }}
+{{- range $target, $unused := .Values.alerts.prometheus }}
+{{- range $path, $bytes := $.Files.Glob (printf "aggregations/%s/*.rules" $target) }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+
+metadata:
+  name: {{ printf "%s" $path | replace "/" "-" }}
+  labels:
+    app: swift
+    tier: os
+    type: aggregation-rules
+    prometheus: {{ index $.Values.alerts.prometheus $target | required (printf ".Values.alerts.prometheus.%s missing" $target) }}
+
+spec:
+{{ printf "%s" $bytes | indent 2 }}
+
+{{- end }}
+{{- end }}
+{{- end }}

@@ -1,0 +1,100 @@
+owner-info:
+  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/openstack/manila-nanny
+  service: manila
+  support-group: compute-storage-api
+  maintainers:
+    - Maurice Escher
+    - Chuan Miao
+
+# debug mode - no script run in the containers, just a sleep loop
+debug: false
+
+imageName: manila-nanny
+imageTag: latest
+
+dependencyService: manila-mariadb,manila-api
+
+sentry:
+  enabled: true
+
+alerts:
+  prometheus: openstack
+
+netapp:
+  username: manilananny
+  password: DEFINED_IN_SECRETS
+
+# interval and resources can be overriden by each nanny
+interval: 3600
+
+resources:
+  requests:
+    memory: "64Mi"
+    cpu: "50m"
+
+nannies:
+  db_purge:
+    enabled: true
+    dry_run: false
+    # purge deleted db entries older than n days
+    older_than: 14
+
+  consistency:
+    enabled: true
+    dry_run: false
+
+  quota_sync:
+    enabled: true
+    dry_run: false
+    prometheus_port: 9501
+    resources:
+      requests:
+        memory: "64Mi"
+        cpu: "300m"
+
+  share_sync:
+    enabled: true
+    dry_run: false
+    http_port: 8002
+    prometheus_port: 9502
+    task_missing_volume: true
+    task_missing_volume_dry_run: true
+    task_offline_volume: true
+    task_offline_volume_dry_run: true
+    task_orphan_volume: true
+    task_orphan_volume_dry_run: true
+    # Fix share size when it does not match volume size
+    task_share_size: true
+    task_share_size_dry_run: false
+    # Fix shares stucked in "deleting", "error_deleteing" or "error_creating" for more than 15 mins
+    task_share_state: true
+    task_share_state_dry_run: false
+
+  share_server:
+    enabled: true
+    listen_port: 8000
+    prometheus_port: 9503
+
+  snapshot:
+    enabled: true
+    listen_port: 8001
+    prometheus_port: 9504
+    task_share_snapshot_state: true
+    task_share_snapshot_state_dry_run: false
+
+  snapshot_missing:
+    enabled: true
+    interval: 1800
+    prometheus_port: 9505
+
+  affinity:
+    enabled: true
+    interval: 86400
+    prometheus_port: 9506
+
+  db_cleanup:
+    enabled: false
+    dry_run: false
+
+global:
+  linkerd_requested: true

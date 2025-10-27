@@ -1,0 +1,13 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: read-endpoints
+  labels:
+{{ include "andromeda.labels" . | indent 4 }}
+subjects:
+- kind: ServiceAccount
+  name: {{ template "andromeda.serviceAccountName" . }}
+roleRef:
+  kind: Role
+  name: endpoint-reader # this must match the name of the Role or ClusterRole you wish to bind to
+  apiGroup: rbac.authorization.k8s.io

@@ -1,0 +1,14 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+
+metadata:
+  name: kubernetes-resource-aggregation-rules
+  labels:
+    tier: {{ required ".Values.tier missing" .Values.tier }}
+    prometheus: {{ if .Values.prometheusCollectorName -}}{{- .Values.prometheusCollectorName -}}{{- else -}}{{- .Values.prometheusName -}}{{- end }}
+    {{- range $i, $target := .Values.ruleSelectors }}
+    {{ $target.name | required (printf "$.Values.ruleSelector.[%v].name missing" $i) }}: {{ tpl ($target.value | required (printf "$.Values.ruleSelector.[%v].value missing" $i)) $ }}
+    {{- end }}
+
+spec:
+{{ include (print .Template.BasePath "/aggregations/collector/_resource.rules.tpl") . | indent 2 }}

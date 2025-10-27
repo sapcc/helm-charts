@@ -1,0 +1,18 @@
+{{ range $i, $exporter := .Values.exporters -}}
+{{- if $exporter.enabled }}
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "statsd-exporter.fullName" $exporter.name }}
+  labels:
+    {{- include "statsd-exporter.labels" $exporter.name | nindent 4 }}
+data:
+{{- if $exporter.mappings }}
+  statsd.mappings: |
+{{- $exporter.mappings | nindent 4 }}
+{{- end }}
+---
+{{ end -}}
+{{ end -}}
+

@@ -1,0 +1,77 @@
+{{- if .Values.backup.enabled }}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "fullName" . }}-backup
+  labels:
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+spec:
+  schedule: {{ .Values.backup.schedule | quote }}
+  concurrencyPolicy: "Forbid"
+  failedJobsHistoryLimit: 3
+  successfulJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      activeDeadlineSeconds: 1200
+      template:
+        metadata:
+          annotations:
+            {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+            linkerd.io/inject: enabled
+            config.linkerd.io/opaque-ports: "3306,4444,4567,4568"
+            config.alpha.linkerd.io/proxy-enable-native-sidecar: "true"
+            {{- end }}
+        spec:
+          securityContext:
+            runAsUser: {{ .Values.backup.security_context_ids }}
+            runAsGroup: {{ .Values.backup.security_context_ids }}
+            fsGroup: {{ .Values.backup.security_context_ids }}
+          initContainers:
+          - command:
+            - sh
+            - -c
+            - "chown -R {{ .Values.backup.security_context_ids }}:{{ .Values.backup.security_context_ids }} /backup"
+            image: {{ required ".Values.global.dockerHubMirrorAlternateRegion is missing" .Values.global.dockerHubMirrorAlternateRegion }}/{{ .Values.backup.image }}:{{ .Values.backup.image_tag }}
+            imagePullPolicy: IfNotPresent
+            name: fix-permissions
+            securityContext:
+              runAsUser: 0
+            volumeMounts:
+            - mountPath: /backup/
+              name: backup-volume
+          containers:
+          - name: backup
+            image: {{ required ".Values.global.dockerHubMirrorAlternateRegion is missing" .Values.global.dockerHubMirrorAlternateRegion }}/{{ .Values.backup.image }}:{{ .Values.backup.image_tag }}
+            imagePullPolicy: IfNotPresent
+            command:
+            - /bin/bash
+            - /startup-scripts/backup.sh
+            volumeMounts:
+            - name: backup-volume
+              mountPath: /backup/
+            - name: mysql-startup-scripts
+              mountPath: /startup-scripts
+            env:
+            - name: PXC_GROUP
+              value: "{{ .Release.Name }}-pxc"
+            - name: PXC_SERVICE
+              value: "{{ include "fullName" . }}"
+            - name: NODE_NAME
+              value: "{{ include "fullName" . }}-repl"
+            - name: PXC_DAYS_RETENTION
+              value: {{ .Values.backup.retentionDays | default '7' | quote }}
+            - name: PXC_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "fullName" . }}
+                  key: xtrabackup-password
+          restartPolicy: OnFailure
+          volumes:
+          - name: mysql-startup-scripts
+            configMap:
+              name: {{ include "fullName" . }}-startup-scripts
+          - name: backup-volume
+            persistentVolumeClaim:
+              claimName: "{{ include "fullName" . }}-{{ .Values.backup.claimName }}"
+{{- end }}

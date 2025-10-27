@@ -1,0 +1,57 @@
+{{- $remoteIdentity := false }}
+{{- range $val := .Values.config }}
+{{- if $val.targetSecretName }}
+{{- $remoteIdentity = true }}
+{{- end }}
+{{- end }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: metal-token-rotate
+  labels:
+    app: metal-token-rotate
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: metal-token-rotate
+  template:
+    metadata:
+      labels:
+        app: metal-token-rotate
+        networking.gardener.cloud/to-dns: allowed
+        networking.gardener.cloud/to-runtime-apiserver: allowed
+        networking.gardener.cloud/to-private-networks: allowed
+        networking.resources.gardener.cloud/to-virtual-garden-kube-apiserver-tcp-443: allowed
+        networking.resources.gardener.cloud/to-all-istio-ingresses-istio-ingressgateway-tcp-9443: allowed
+        networking.resources.gardener.cloud/to-nginx-ingress-controller-tcp-443: allowed
+        {{- if $remoteIdentity }}
+        networking.resources.gardener.cloud/to-all-shoots-kube-apiserver-tcp-443: allowed
+        {{- end }}
+    spec:
+      containers:
+      - name: metal-token-rotate
+        image: {{ .Values.global.registry }}/{{ .Values.image.repository }}:{{ .Values.image.tag }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        env:
+        - name: GARDEN_CLUSTER_ADDRESS
+          {{- if .Values.gardener.address }}
+          value: "{{ .Values.gardener.address }}"
+          {{- else }}
+          value: "https://virtual-garden-kube-apiserver.{{ .Release.Namespace }}.svc.cluster.local"
+          {{- end }}
+        volumeMounts:
+        - name: config
+          mountPath: /etc/metal-token-rotate
+          readOnly: true
+        - name: garden-auth
+          mountPath: /var/run/garden/auth
+          readOnly: true
+      serviceAccountName: metal-token-rotate
+      volumes:
+      - name: config
+        configMap:
+          name: metal-token-rotate
+      - name: garden-auth
+        secret:
+          secretName: metal-token-rotate-garden-token

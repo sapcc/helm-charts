@@ -1,0 +1,121 @@
+{{- $fullname := include "redis.fullname" . -}}
+{{- $registry := .Values.global.registry | required ".Values.global.registry missing" -}}
+{{- if .Values.useAlternateRegion -}}
+  {{- $registry = .Values.global.registryAlternateRegion | required ".Values.global.registryAlternateRegion missing" -}}
+{{- end -}}
+
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: {{ $fullname }}
+spec:
+{{- if .Values.persistence.enabled }}
+  strategy:
+    type: Recreate
+{{- end }}
+  selector:
+    matchLabels:
+      app: {{ $fullname }}
+  template:
+    metadata:
+      labels:
+        app: {{ $fullname }}
+      annotations:
+        kubectl.kubernetes.io/default-container: {{ $fullname }}
+        {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+        linkerd.io/inject: enabled
+        {{- end }}
+        {{- if .Values.config }}
+        checksum/configmap: {{ include (print .Template.BasePath "/configmap.yaml") . | sha256sum }}
+        {{- end }}
+        {{- if .Values.redisPassword }}
+        checksum/secrets: {{ include (print .Template.BasePath "/secrets.yaml") . | sha256sum }}
+        {{- end }}
+    spec:
+      {{- if not .Values.redisPassword }}
+      initContainers:
+      - name: generate-secrets
+        image: {{ $registry }}/shared-app-images/alpine-kubectl:latest-latest
+        imagePullPolicy: Always
+        env:
+        - name: DEBUG
+          value: 'false'
+        - name: DEPLOYMENT_NAME
+          value: {{ $fullname }}
+        - name: USERS
+          value: 'default'
+        - name: ANNOTATE_FOR_RELOADER
+          value: {{ .Values.reloader.annotateGeneratedSecrets | quote }}
+        command: [ ash, -c, {{ .Files.Get "bin/init-generate-secrets.sh" | quote }} ]
+      {{- end }}
+      containers:
+      - name: {{ $fullname }}
+        image: {{ $registry }}/shared-app-images/alpine-valkey:{{ .Values.image.tag }}
+        imagePullPolicy: {{ if contains "latest" .Values.image.tag }}Always{{ else }}IfNotPresent{{ end }}
+        args:
+        {{- if .Values.config }}
+        - /etc/redis/redis.conf
+        {{- end }}
+        - --requirepass
+        - $(REDIS_PASSWORD)
+        env:
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              {{- if .Values.redisPassword }}
+              name: {{ $fullname }}
+              key: redis-password
+              {{- else }}
+              name: {{ $fullname }}-user-default
+              key: password
+              {{- end }}
+        ports:
+        - name: redis
+          containerPort: 6379
+        livenessProbe:
+          exec:
+            command:
+            - redis-cli
+            - ping
+          initialDelaySeconds: 30
+          timeoutSeconds: 5
+        startupProbe:
+          exec:
+            command:
+            - redis-cli
+            - ping
+          initialDelaySeconds: 5
+          failureThreshold: 600 # consider to lower this?
+        readinessProbe:
+          exec:
+            command:
+            - redis-cli
+            - ping
+          initialDelaySeconds: 5
+          timeoutSeconds: 1
+        resources: {{ toYaml .Values.resources | nindent 10 }}
+        volumeMounts:
+        - name: redis-data
+          mountPath: /data
+      {{- if .Values.config }}
+        - name: redis-config
+          mountPath: /etc/redis
+      {{- end }}
+      {{- if not .Values.redisPassword }}
+      serviceAccountName: {{ $fullname }}
+      {{- end }}
+      volumes:
+      - name: redis-data
+      {{- if .Values.persistence.enabled }}
+        persistentVolumeClaim:
+          claimName: {{ $fullname }}
+      {{- else }}
+        emptyDir:
+          medium: Memory
+      {{- end }}
+      {{- if .Values.config }}
+      - name: redis-config
+        configMap:
+          name: {{ $fullname }}
+          defaultMode: 0444
+      {{- end }}

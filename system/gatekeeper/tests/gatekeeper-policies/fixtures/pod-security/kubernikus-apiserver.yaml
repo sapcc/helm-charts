@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    meta.helm.sh/release-name: mycluster-5ebe059a50a84b099655341a652b495a
+    meta.helm.sh/release-namespace: kubernikus
+  labels:
+    app.kubernetes.io/managed-by: Helm
+  name: mycluster-5ebe059a50a84b099655341a652b495a-apiserver
+  namespace: kubernikus
+spec:
+  template:
+    spec:
+      containers:
+      - name: apiserver
+      - name: wormhole
+        image: keppel.eu-de-1.cloud.sap/ccloud/kubernikus:da39a3ee5e6b4b0d3255bfef95601890afd80709
+        securityContext:
+          capabilities:
+            add:
+            - NET_ADMIN
+      - name: fluentd
+      initContainers:
+      - name: etcd-wait
+      - name: auditlog-permission-fix
+      securityContext: {}

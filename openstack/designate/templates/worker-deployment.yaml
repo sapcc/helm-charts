@@ -1,0 +1,127 @@
+{{- if .Values.worker_enabled }}
+kind: Deployment
+apiVersion: apps/v1
+
+metadata:
+  name: {{ .Release.Name }}-worker
+  labels:
+    system: openstack
+    application: designate
+    type: backend
+    component: worker
+  annotations:
+    secret.reloader.stakater.com/reload: "{{ .Release.Name }}-secrets,{{ .Release.Name }}-secrets-rndc"
+    deployment.reloader.stakater.com/pause-period: "60s"
+  {{- if .Values.vpa.set_main_container }}
+    vpa-butler.cloud.sap/main-container: designate-worker
+  {{- end }}
+spec:
+  replicas: {{ .Values.pod.replicas.worker }}
+  revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revision_history }}
+  strategy:
+    type: {{ .Values.pod.lifecycle.upgrades.deployments.pod_replacement_strategy }}
+    {{ if eq .Values.pod.lifecycle.upgrades.deployments.pod_replacement_strategy "RollingUpdate" }}
+    rollingUpdate:
+      maxUnavailable: {{ .Values.pod.lifecycle.upgrades.deployments.rolling_update.max_unavailable }}
+      maxSurge: {{ .Values.pod.lifecycle.upgrades.deployments.rolling_update.max_surge }}
+    {{ end }}
+  selector:
+    matchLabels:
+      app: designate-worker
+  template:
+    metadata:
+      labels:
+        app: designate-worker
+      annotations:
+        kubectl.kubernetes.io/default-container: designate-worker
+        configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
+        configmap-bin-hash: {{ include (print $.Template.BasePath "/bin-configmap.yaml") . | sha256sum }}
+        secrets-hash: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
+        {{- if .Values.proxysql.mode }}
+        prometheus.io/scrape: "true"
+        prometheus.io/targets: {{ required ".Values.metrics.prometheus missing" .Values.metrics.prometheus | quote }}
+        {{- end }}
+        {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
+    spec:
+{{- if .Values.rbac.enabled }}
+      serviceAccountName: {{ .Release.Name }}
+{{- end }}
+{{ tuple . "designate" "worker" | include "kubernetes_pod_anti_affinity" | indent 6 }}
+      {{- include "utils.proxysql.pod_settings" . | indent 6 }}
+      initContainers:
+      {{- tuple . (dict "service" (include "designate.rabbitmq_dependencies" . )) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 8 }}
+      {{- if .Values.proxysql.native_sidecar }}
+      {{- tuple . .Values.worker_workers | include "utils.proxysql.container" | indent 8 }}
+      {{- end }}
+      containers:
+        - name: designate-worker
+          image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/loci-designate:{{ required ".Values.global.image_version_designate is missing" .Values.image_version_designate }}
+          imagePullPolicy: IfNotPresent
+          command:
+            - /container.init/designate-worker-start
+          resources:
+{{ toYaml .Values.resources.worker | indent 12 }}
+          env:
+            - name: DEBUG_CONTAINER
+              value: "false"
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: spec.nodeName
+            {{- if .Values.sentry.enabled }}
+            - name: SENTRY_DSN
+              valueFrom:
+                secretKeyRef:
+                  name: sentry
+                  key: {{ .Release.Name }}.DSN.python
+            {{- end }}
+            {{- if .Values.python_warnings }}
+            - name: PYTHONWARNINGS
+              value: {{ .Values.python_warnings | quote }}
+            {{- end }}
+          livenessProbe:
+            exec:
+              command:
+              - python3
+              - /container.init/health-probe.py
+              - --config-file
+              - /etc/designate/secrets.conf
+              - --config-file
+              - /etc/designate/hostname.conf
+              - --service-name
+              - worker
+              - --liveness-probe
+            initialDelaySeconds: 60
+            periodSeconds: 45
+            timeoutSeconds: 40
+          volumeMounts:
+            - mountPath: /designate-etc
+              name: designate-etc
+            - mountPath: /container.init
+              name: container-init
+            {{- include "utils.proxysql.volume_mount" . | indent 12 }}
+            {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
+        {{- if not .Values.proxysql.native_sidecar }}
+        {{- tuple . .Values.worker_workers | include "utils.proxysql.container" | indent 8 }}
+        {{- end }}
+      volumes:
+        - name: designate-etc
+          projected:
+            sources:
+            - configMap:
+                name: designate-etc
+            - secret:
+                name: {{ .Release.Name }}-secrets
+                items:
+                  - key: secrets.conf
+                    path: secrets.conf
+            - secret:
+                name: {{ .Release.Name }}-secrets-rndc
+        - name: container-init
+          configMap:
+            name: designate-bin
+            defaultMode: 0755
+        {{- include "utils.proxysql.volumes" . | indent 8 }}
+        {{- include "utils.trust_bundle.volumes" . | indent 8 }}
+{{- end }}

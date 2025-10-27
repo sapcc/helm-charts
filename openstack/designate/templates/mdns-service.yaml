@@ -1,0 +1,27 @@
+kind: Service
+apiVersion: v1
+
+metadata:
+  name: {{ .Release.Name }}-mdns
+  # consider that the vcenter operator uses below labels
+  labels:
+    system: openstack
+    application: designate
+    type: backend
+    component: mdns
+  annotations:
+    {{- include "utils.linkerd.pod_and_service_annotation" . | indent 4 }}
+spec:
+  type: LoadBalancer
+  externalTrafficPolicy: Local
+  selector:
+    app: designate-mdns
+  ports:
+    - name: designate-mdns-tcp
+      protocol: TCP
+      port: {{.Values.global.designate_mdns_port_public}}
+    - name: designate-mdns-udp
+      protocol: UDP
+      port: {{.Values.global.designate_mdns_port_public}}
+  externalIPs:
+    - {{ or .Values.global.designate_mdns_service_ip .Values.global.designate_mdns_external_ip}}

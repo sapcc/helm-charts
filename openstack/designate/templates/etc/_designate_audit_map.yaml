@@ -1,0 +1,43 @@
+service_type: 'service/dns'
+{{- if .Values.global.is_global_region }}
+service_name: 'designate-global'
+{{- else }}
+service_name: 'designate'
+{{- end }}
+
+prefix: '/v2'
+
+resources:
+  zones:
+    children:
+      recordsets:
+      tasks:
+        api_name: 'tasks'
+        children:
+          transfer_requests:
+          transfer_accepts:
+          imports:
+          exports:
+        custom_actions:
+          abandon: 'update/abandon'
+          xfr: 'update/xfr'
+          pool_move: 'update/pool_move'
+      shares:
+        # Zone sharing resources
+        api_name: 'shares'
+      nameservers:
+        # Endpoint for retrieving nameservers
+        singleton: true
+  tlds:
+  tsigkeys:
+  blacklists:
+  quotas:
+  reverse:
+    children:
+      floatingips:
+  pools:
+  limits:
+    singleton: true
+  recordsets:
+    # For the global recordsets endpoint
+  service_statuses:

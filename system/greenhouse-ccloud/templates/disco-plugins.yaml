@@ -1,0 +1,54 @@
+{{ range $plugin := .Values.discoPlugins }}
+---
+apiVersion: greenhouse.sap/v1alpha1
+kind: Plugin
+metadata:
+  labels:
+    greenhouse.sap/cluster: {{ required "cluster key missing for disco plugin" $plugin.cluster }}
+    greenhouse.sap/plugindefinition: disco
+    greenhouse.sap/owned-by: containers
+{{- if $.Values.global.fluxEnabled }}
+    greenhouse.sap/deployment-tool: "flux"
+{{- end }}
+  name: disco-{{ $plugin.cluster }}
+spec:
+  clusterName: {{ $plugin.cluster }}
+  displayName: disco {{ $plugin.cluster }}
+  optionValues:
+  - name: openstack.authURL
+    value: https://identity-3.{{ required "region key missing for diso plugin" $plugin.region }}.cloud.sap/v3
+  - name: openstack.password
+    valueFrom:
+      secret:
+        key: discoPassword
+        name: disco-{{ $plugin.region }}
+  - name: openstack.projectDomainName
+    value: ccadmin
+  - name: openstack.projectName
+    value: cloud_admin
+  - name: openstack.regionName
+    value: {{ $plugin.region }}
+  - name: openstack.userDomainName
+    value: Default
+  - name: openstack.username
+    value: disco
+  - name: openstack.zoneName
+    value: {{ default $plugin.region $plugin.zoneNameRegion }}.cloud.sap.
+  - name: record
+    value: {{ $plugin.recordName }}
+{{- if $plugin.overrideShootNetworkPolicy }}
+  - name: controllerLabels
+    value:
+      networking.gardener.cloud/to-apiserver: allowed
+      networking.gardener.cloud/to-dns: allowed
+{{- end }}
+  pluginDefinition: disco
+  releaseNamespace: kube-system
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: disco-{{ $plugin.region }}
+data:
+  discoPassword: {{ required "missing password key for disco plugin" $plugin.password | b64enc  }}
+{{- end }}

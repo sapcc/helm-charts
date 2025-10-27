@@ -1,0 +1,69 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vpa-recommender
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: vpa-recommender
+  template:
+    metadata:
+      labels:
+        app: vpa-recommender
+      annotations:
+        prometheus.io/scrape: "true"
+        {{- if .Values.additionalPodAnnotations }}
+        {{- toYaml .Values.additionalPodAnnotations | nindent 8 -}}
+        {{ end }}
+        {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+        linkerd.io/inject: enabled
+        {{- end }}
+    spec:
+      serviceAccountName: vpa-recommender
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534 # nobody
+      containers:
+        - name: recommender
+          image: {{ include "recommender.image" . }}
+          imagePullPolicy: {{ default "IfNotPresent" .Values.recommender.image.pullPolicy }}
+          args:
+            - --recommender-interval={{ required ".Values.recommender.interval missing" .Values.recommender.interval }}
+            {{- if .Values.recommender.prometheus.enabled }}
+            - --storage=prometheus
+            - --prometheus-address={{ required ".Values.recommender.prometheus.address missing" .Values.recommender.prometheus.address }}
+            - --history-length={{ required ".Values.recommender.prometheus.historyLength missing" .Values.recommender.prometheus.historyLength }}
+            - --history-resolution={{ required ".Values.recommender.prometheus.historyResolution missing" .Values.recommender.prometheus.historyResolution }}
+            - --prometheus-cadvisor-job-name={{ required ".Values.recommender.prometheus.cadvisorJobName missing" .Values.recommender.prometheus.cadvisorJobName }}
+            - --prometheus-query-timeout={{ required ".Values.recommender.prometheus.queryTimeout missing" .Values.recommender.prometheus.queryTimeout }}
+            - --metric-for-pod-labels={{ required ".Values.recommender.prometheus.metricForPodLabels missing" .Values.recommender.prometheus.metricForPodLabels }}
+            - --pod-namespace-label={{ required ".Values.recommender.prometheus.podNamespaceLabel missing" .Values.recommender.prometheus.podNamespaceLabel }}
+            - --pod-name-label={{ required ".Values.recommender.prometheus.podNameLabel missing" .Values.recommender.prometheus.podNameLabel }}
+            - --container-namespace-label={{ required ".Values.recommender.prometheus.containerNamespaceLabel missing" .Values.recommender.prometheus.containerNamespaceLabel }}
+            - --container-pod-name-label={{ required ".Values.recommender.prometheus.containerPodNameLabel missing" .Values.recommender.prometheus.containerPodNameLabel }}
+            - --container-name-label={{ required ".Values.recommender.prometheus.containerNameLabel missing" .Values.recommender.prometheus.containerNameLabel }}
+            - --leader-elect-resource-namespace={{ .Release.Namespace }}
+            {{- end }}
+            {{- if .Values.recommender.marginFraction }}
+            - --recommendation-margin-fraction={{ .Values.recommender.marginFraction }}
+            {{- end }}
+            {{- if .Values.recommender.podMinMemoryMB }}
+            - --pod-recommendation-min-memory-mb={{ .Values.recommender.podMinMemoryMB }}
+            {{- end }}
+            {{- if .Values.recommender.recommendationMaxAllowed.cpu }}
+            - --container-recommendation-max-allowed-cpu={{ .Values.recommender.recommendationMaxAllowed.cpu }}
+            {{- end }}
+            {{- if .Values.recommender.recommendationMaxAllowed.memory }}
+            - --container-recommendation-max-allowed-memory={{ .Values.recommender.recommendationMaxAllowed.memory }}
+            {{- end }}
+            {{- if .Values.recommender.targetPercentile.cpu }}
+            - --target-cpu-percentile={{ .Values.recommender.targetPercentile.cpu }}
+            {{- end }}
+            {{- if .Values.recommender.targetPercentile.memory }}
+            - --target-memory-percentile={{ .Values.recommender.targetPercentile.memory }}
+            {{- end }}
+          resources: {{ toYaml .Values.recommender.resources | nindent 12 }}
+          ports:
+            - name: metrics
+              containerPort: 8942

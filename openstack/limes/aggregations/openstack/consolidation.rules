@@ -1,0 +1,66 @@
+# vim: set ft=yaml:
+
+groups:
+- name: limes
+  rules:
+    ############################################################################
+    # for prometheus-global (used in Grafana dashboards "Capacity Overview" and
+    # "Capacity Details")
+
+    - record: global:limes_consolidated_cluster_capacity
+      expr: max(label_join(limes_cluster_capacity, "full_resource", "/", "service", "resource")) by (full_resource)
+
+    - record: global:limes_consolidated_domain_quota
+      expr: max(label_join(limes_domain_quota, "full_resource", "/", "service", "resource"))
+          by (full_resource,domain)
+
+    - record: global:limes_consolidated_domain_usage
+      expr: sum(max(label_join(limes_project_usage, "full_resource", "/", "service", "resource"))
+          by (full_resource,domain,project)) by (full_resource,domain)
+
+    - record: global:limes_consolidated_domain_physical_usage
+      expr: sum(max(label_join(limes_project_physical_usage, "full_resource", "/", "service", "resource"))
+          by (full_resource,domain,project)) by (full_resource,domain)
+
+    - record: global:limes_consolidated_unit_multiplier
+      expr: max(label_join(limes_unit_multiplier, "full_resource", "/", "service", "resource"))
+          by (full_resource)
+
+    - record: global:limes_consolidated_cluster_capacity_per_az
+      expr: max(label_join(limes_cluster_capacity_per_az, "full_resource", "/", "service", "resource"))
+          by (availability_zone , full_resource)
+
+    - record: global:limes_consolidated_cluster_usage_per_az
+      expr: max(label_join(limes_cluster_usage_per_az, "full_resource", "/", "service", "resource"))
+          by (availability_zone , full_resource)
+
+    ############################################################################
+    # for Maia
+
+    - record: limes_domain_usage
+      expr: sum without (project_id) (max by (domain,domain_id,project_id,service,resource) (limes_project_usage))
+
+    ############################################################################
+    # for capacity alerts
+    #
+    # "Stabilization" refers to these metrics not flapping and changing labels on restarts of limes-collect (e.g. because of deployment):
+    # - Each raw metric is wrapped in `last_over_time(<metric>[15m])` to avoid alerts disappearing when the collector is restarted and the metrics vanish because the new collector takes a few moments to start up.
+    # - Each raw metric is then also wrapped in `max by (<relevant labels>) (<expr>)` to avoid time series from the old and new collector appearing at the same time. This would cause many-to-many matching errors and also cause the alert to flap.
+
+    # How much capacity of a resource is blocked by existing usage and/or confirmed commitments.
+    - record: stabilized:limes_capacity_blocked_percent_per_az
+      expr: 100 * sum by (availability_zone, service, resource) (max by (project_id, availability_zone, service, resource) (last_over_time(limes_project_used_and_or_committed_per_az[15m]))) / max by (availability_zone, service, resource) (last_over_time(limes_cluster_capacity_per_az[15m]))
+
+    # Total amount of all commitments pending confirmation for a resource.
+    #
+    # The `or 0 * ...` part ensures that this metric family always has entries. Without this, we would get an absent metric alert for this metric family when there are no commitments in state "pending".
+    - record: stabilized:limes_pending_commitments_per_az
+      expr: >
+        sum by (availability_zone, service, resource) (max by (project_id, availability_zone, service, resource) (last_over_time(limes_project_committed_per_az{state="pending"}[15m])))
+        or 0 * sum by (availability_zone, service, resource) (max by (project_id, availability_zone, service, resource) (last_over_time(limes_project_committed_per_az{state="active"}[15m])))
+
+    # misc.
+    - record: stabilized:limes_autogrow_quota_overcommit_threshold_percent
+      expr: max by (service, resource) (last_over_time(limes_autogrow_quota_overcommit_threshold_percent[15m]))
+    - record: stabilized:limes_autogrow_growth_multiplier
+      expr: max by (service, resource) (last_over_time(limes_autogrow_growth_multiplier[15m]))

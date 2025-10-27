@@ -1,0 +1,78 @@
+apiVersion: "openstack.stable.sap.cc/v1"
+kind: "OpenstackSeed"
+metadata:
+  name: swift-seed
+  labels:
+    app: {{ tuple .Release .Chart .Values | include "fullname" }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    component: objectstore
+    type: seed
+spec:
+  requires:
+  - monsoon3/domain-default-seed
+  - monsoon3/domain-ccadmin-seed
+  - monsoon3/domain-monsoon3-seed
+  - monsoon3/domain-cc3test-seed
+
+  roles:
+  - name: cloud_objectstore_admin
+  - name: cloud_objectstore_viewer
+  - name: objectstore_admin
+  - name: objectstore_viewer
+  services:
+  - name: swift
+    type: object-store
+    description: Openstack Object Store
+    endpoints:
+    - interface: admin
+      region: '{{ .Values.global.region }}'
+      url: 'https://{{ include "swift_endpoint_host" . }}:{{ .Values.proxy_public_port }}/v1'
+    - interface: internal
+      region: '{{ .Values.global.region }}'
+      url: 'https://{{ include "swift_endpoint_host" . }}:{{ .Values.proxy_public_port }}/v1/AUTH_%(tenant_id)s'
+    - interface: public
+      region: '{{ .Values.global.region }}'
+      url: 'https://{{ include "swift_endpoint_host" . }}:{{ .Values.proxy_public_port }}/v1/AUTH_%(tenant_id)s'
+
+  domains:
+  - name: Default
+    users:
+    - name: admin
+      role_assignments:
+      - project: admin
+        role: cloud_objectstore_admin # used by openstack-seeder to create Swift accounts
+    - name: swift
+      description: 'Swift Service'
+      password: '{{ .Values.swift_service_password }}'
+      role_assignments:
+      - project: service
+        role: service
+    - name: swift_dispersion
+      description: 'Swift Dispersion'
+      password: {{ .Values.dispersion_password }}
+
+  - name: ccadmin
+    projects:
+    - name: cloud_admin
+      role_assignments:
+      - group: CCADMIN_CLOUD_ADMINS
+        role: cloud_objectstore_admin
+    - name: master # Swift account is enabled in swift-utils-seed
+      role_assignments:
+      - group: CCADMIN_CLOUD_ADMINS
+        role: objectstore_admin
+      - group: CCADMIN_DOMAIN_ADMINS
+        role: objectstore_admin
+      - user: db_backup@Default
+        role: objectstore_admin
+      - user: image-build@Default
+        role: objectstore_admin
+
+  - name: monsoon3
+    projects:
+    - name: cc-demo
+      role_assignments:
+      - group: MONSOON3_DOMAIN_ADMINS
+        role: objectstore_admin

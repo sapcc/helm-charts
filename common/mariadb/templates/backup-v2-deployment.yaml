@@ -1,0 +1,110 @@
+{{- if .Values.backup_v2.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "fullName" . }}-backup
+  labels:
+    app: {{ include "fullName" . }}-backup
+    {{- include "mariadb.labels" (list $ "version" "mariadb" "deployment" "backup") | indent 4 }}
+  annotations:
+    secret.reloader.stakater.com/reload: "mariadb-backup-{{.Values.name}}-etc,mariadb-{{.Values.name}}-backup-oauth"
+spec:
+  replicas: 1
+  revisionHistoryLimit: 5
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: {{ include "fullName" . }}-backup
+  template:
+    metadata:
+      labels:
+        app: {{ include "fullName" . }}-backup
+        {{- include "mariadb.labels" (list $ "version" "mariadb" "deployment" "backup") | indent 8 }}
+      annotations:
+        kubectl.kubernetes.io/default-container: backup
+        checksum/etc: {{ include (print $.Template.BasePath  "/config/_backup_config.yaml.tpl") . | sha256sum }}
+{{- if .Values.metrics.enabled }}
+        prometheus.io/scrape: "true"
+        prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
+{{- end }}
+{{- if and (and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested) $.Values.linkerd.backup.enabled }}
+        linkerd.io/inject: enabled
+{{- end }}
+    spec:
+      affinity:
+{{- if .Values.nodeAffinity }}
+      {{- with .Values.nodeAffinity }}
+        nodeAffinity:
+{{ toYaml . | indent 10 }}
+      {{- end }}
+{{- include "mariadb_maintenance_affinity" . }}
+{{- include "mariadb_node_reinstall_affinity" . }}
+{{- else }}
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 1
+            preference:
+              matchExpressions:
+                - key: "topology.kubernetes.io/zone"
+                  operator: In
+                  values:
+                  - {{.Values.global.region}}a
+{{- include "mariadb_maintenance_affinity" . }}
+{{- include "mariadb_node_reinstall_affinity" . }}
+{{- end }}
+      priorityClassName: {{ .Values.priority_class | default "critical-infrastructure" | quote }}
+      containers:
+      - name: backup
+        image: "{{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{ .Values.backup_v2.image }}:{{ .Values.backup_v2.image_version }}"
+        command:
+          - backup
+        ports:
+          - containerPort: 8081
+            name: http
+            protocol: TCP
+          - containerPort: 8082
+            name: metrics
+            protocol: TCP
+        env:
+{{- if .Values.backup_v2.oauth.enabled }}
+        - name: OAUTH_CLIENT_ID
+          valueFrom:
+            secretKeyRef:
+              name: mariadb-{{.Values.name}}-backup-oauth
+              key: OAUTH_CLIENT_ID
+        - name: OAUTH_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: mariadb-{{.Values.name}}-backup-oauth
+              key: OAUTH_CLIENT_SECRET
+        - name: OAUTH_COOKIE_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: mariadb-{{.Values.name}}-backup-oauth
+              key: OAUTH_COOKIE_SECRET
+{{- end }}
+        - name: CONFIG_FILE
+          value: "/etc/config/config.yaml"
+        volumeMounts:
+{{- if .Values.persistence_claim.enabled }}
+        - name: mariadb-persistent-storage
+          mountPath: /var/lib/mysql
+          readOnly: false
+{{- end }}
+        - name: mariadb-backup-etc
+          mountPath: /etc/config
+          readOnly: true
+      volumes:
+        - name: mariadb-etc
+          configMap:
+            name: mariadb-{{.Values.name}}-etc
+{{- if .Values.persistence_claim.enabled }}
+        - name: mariadb-persistent-storage
+          persistentVolumeClaim:
+           claimName: {{ .Values.persistence_claim.name |  default (include "fullName" . ) }}
+{{- end }}
+        - name: mariadb-backup-etc
+          secret:
+            secretName: mariadb-backup-{{.Values.name}}-etc
+{{- end }}

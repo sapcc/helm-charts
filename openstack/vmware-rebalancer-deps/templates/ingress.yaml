@@ -1,0 +1,176 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    disco: "true"
+    kubernetes.io/tls-acme: "true"
+    ingress.kubernetes.io/auth-signin: https://auth-internal.{{ .Values.global.region }}.cloud.sap/oauth2/start
+    ingress.kubernetes.io/auth-url: https://auth-internal.{{ .Values.global.region }}.cloud.sap/oauth2/auth
+    ingress.kubernetes.io/service-upstream: "true"
+    nginx.ingress.kubernetes.io/auth-signin: https://auth-internal.{{ .Values.global.region }}.cloud.sap/oauth2/start
+    nginx.ingress.kubernetes.io/auth-url: https://auth-internal.{{ .Values.global.region }}.cloud.sap/oauth2/auth
+    nginx.ingress.kubernetes.io/service-upstream: "true"
+  name: migration-recommender-service-ingress
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: migration-recommender-service.{{ .Values.global.region }}.cloud.sap
+    http:
+      paths:
+      - backend:
+          service:
+            name: rebalancer-mrs-migration-recommender-service
+            port:
+              number: 8008
+        path: /
+        pathType: ImplementationSpecific
+  tls:
+  - hosts:
+    - migration-recommender-service.{{ .Values.global.region }}.cloud.sap
+    secretName: migration-recommender-service-{{ .Values.global.region }}-cloud-sap
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    disco: "true"
+    ingress.kubernetes.io/service-upstream: "true"
+    nginx.ingress.kubernetes.io/service-upstream: "true"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "1800"
+    nginx.ingress.kubernetes.io/use-regex: 'true'
+  name: migration-recommender-service-ingress-openstack-auth
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: migration-recommender-service.{{ .Values.global.region }}.cloud.sap
+    http:
+      paths:
+      - backend:
+          service:
+            name: rebalancer-mrs-migration-recommender-service
+            port:
+              number: 8008
+        path: /openstack_auth
+        pathType: Prefix
+  tls:
+  - hosts:
+    - migration-recommender-service.{{ .Values.global.region }}.cloud.sap
+    secretName: migration-recommender-service-{{ .Values.global.region }}-cloud-sap
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    disco: "true"
+    ingress.kubernetes.io/service-upstream: "true"
+    nginx.ingress.kubernetes.io/service-upstream: "true"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "1800"
+    nginx.ingress.kubernetes.io/use-regex: 'true'
+  name: migration-recommender-service-ingress-public
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: migration-recommender-service.{{ .Values.global.region }}.cloud.sap
+    http:
+      paths:
+      - backend:
+          service:
+            name: rebalancer-mrs-migration-recommender-service
+            port:
+              number: 8008
+        path: /public
+        pathType: Prefix
+  tls:
+  - hosts:
+    - migration-recommender-service.{{ .Values.global.region }}.cloud.sap
+    secretName: migration-recommender-service-{{ .Values.global.region }}-cloud-sap
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    disco: "true"
+    kubernetes.io/tls-acme: "true"
+    ingress.kubernetes.io/auth-signin: https://auth-internal.{{ .Values.global.region }}.cloud.sap/oauth2/start
+    ingress.kubernetes.io/auth-url: https://auth-internal.{{ .Values.global.region }}.cloud.sap/oauth2/auth
+    ingress.kubernetes.io/service-upstream: "true"
+    nginx.ingress.kubernetes.io/auth-signin: https://auth-internal.{{ .Values.global.region }}.cloud.sap/oauth2/start
+    nginx.ingress.kubernetes.io/auth-url: https://auth-internal.{{ .Values.global.region }}.cloud.sap/oauth2/auth
+    nginx.ingress.kubernetes.io/service-upstream: "true"
+  name: optimization-service-ingress
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: optimization-service.{{ .Values.global.region }}.cloud.sap
+    http:
+      paths:
+      - backend:
+          service:
+            name: rebalancer-os-optimization-service
+            port:
+              number: 8008
+        path: /
+        pathType: ImplementationSpecific
+  tls:
+  - hosts:
+    - optimization-service.{{ .Values.global.region }}.cloud.sap
+    secretName: optimization-service-{{ .Values.global.region }}-cloud-sap
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    disco: "true"
+    kubernetes.io/tls-acme: "true"
+    ingress.kubernetes.io/auth-signin: https://auth-internal.{{ .Values.global.region }}.cloud.sap/oauth2/start
+    ingress.kubernetes.io/auth-url: https://auth-internal.{{ .Values.global.region }}.cloud.sap/oauth2/auth
+    ingress.kubernetes.io/service-upstream: "true"
+    nginx.ingress.kubernetes.io/auth-signin: https://auth-internal.{{ .Values.global.region }}.cloud.sap/oauth2/start
+    nginx.ingress.kubernetes.io/auth-url: https://auth-internal.{{ .Values.global.region }}.cloud.sap/oauth2/auth
+    nginx.ingress.kubernetes.io/service-upstream: "true"
+  name: dc-state-service-ingress
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: dc-state-service.{{ .Values.global.region }}.cloud.sap
+    http:
+      paths:
+      - backend:
+          service:
+            name: rebalancer-dcss-dc-state-service
+            port:
+              number: 8008
+        path: /
+        pathType: Prefix
+  tls:
+  - hosts:
+    - dc-state-service.{{ .Values.global.region }}.cloud.sap
+    secretName: dc-state-service-{{ .Values.global.region }}-cloud-sap
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    disco: "true"
+    ingress.kubernetes.io/service-upstream: "true"
+    nginx.ingress.kubernetes.io/service-upstream: "true"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "1800"
+    nginx.ingress.kubernetes.io/use-regex: 'true'
+  name: dc-state-service-ingress-openstack-auth
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: dc-state-service.{{ .Values.global.region }}.cloud.sap
+    http:
+      paths:
+      - backend:
+          service:
+            name: rebalancer-dcss-dc-state-service
+            port:
+              number: 8008
+        path: /openstack_auth
+        pathType: Prefix
+  tls:
+  - hosts:
+    - dc-state-service.{{ .Values.global.region }}.cloud.sap
+    secretName: dc-state-service-{{ .Values.global.region }}-cloud-sap

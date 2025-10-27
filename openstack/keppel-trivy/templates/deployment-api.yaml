@@ -1,0 +1,72 @@
+kind: Deployment
+apiVersion: apps/v1
+
+metadata:
+  name: trivy-api
+  annotations:
+    secret.reloader.stakater.com/reload: trivy-secret
+
+spec:
+  revisionHistoryLimit: 5
+  # When running the Trivy client against a server, lots of computations are
+  # still performed on the clide side, i.e. in these pods. Therefore we have
+  # this scaled up more than the server itself.
+  replicas: {{ $.Values.trivy.api.replicas }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 2
+      maxSurge: 2
+  selector:
+    matchLabels:
+      name: trivy-api
+  template:
+    metadata:
+      labels:
+        name: trivy-api
+      annotations:
+        checksum/secret: {{ include "keppel-trivy/templates/secret.yaml" . | sha256sum }}
+        kubectl.kubernetes.io/default-container: trivy-api
+    spec:
+      containers:
+        - name: trivy-api
+          image: {{ $.Values.global.registry }}/keppel-trivy:{{ $.Values.keppel.image_version | required ".Values.keppel.image_version is not set!" }}
+          imagePullPolicy: IfNotPresent
+          command: [ "keppel", "server", "trivy-proxy" ]
+          env:
+            - name:  KEPPEL_API_LISTEN_ADDRESS
+              value: ":80"
+            - name: KEPPEL_TRIVY_DB_MIRROR_PREFIX
+              value: {{ $.Values.global.ghcrIoMirror }}
+            - name: KEPPEL_TRIVY_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: trivy-secret
+                  key: trivy_token
+            - name:  KEPPEL_TRIVY_URL
+              value: "http://trivy-server.trivy.svc:8080"
+          securityContext:
+            runAsNonRoot: true
+          livenessProbe:
+            httpGet:
+              path: /healthcheck
+              port: 80
+            timeoutSeconds: 10
+            periodSeconds: 60
+            initialDelaySeconds: 60
+          readinessProbe:
+            httpGet:
+              path: /healthcheck
+              port: 80
+            timeoutSeconds: 5
+            periodSeconds: 5
+          # half of the replicas usually sit at 1Gi RAM usage
+          resources:
+            limits:
+              cpu: 4
+              memory: 2Gi
+            requests:
+              cpu: 4
+              # roughly at least the size of aquasecurity/trivy-java-db and aquasecurity/trivy-db
+              ephemeral-storage: 1Gi
+              memory: 2Gi

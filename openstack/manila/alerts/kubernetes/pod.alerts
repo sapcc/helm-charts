@@ -1,0 +1,80 @@
+# vim: set ft=yaml:
+
+groups:
+- name: openstack-manila-pod.alerts
+  rules:
+    - alert: OpenstackManilaPodSchedulingFailedInsufficientCPU
+      expr: sum(rate(kube_pod_failed_scheduling_cpu_total{pod_name=~"manila-.+"}[30m])) by (pod_name) > 0
+      for: 15m
+      labels:
+        severity: warning
+        tier: os
+        service: manila
+        context: manila-cpu
+        meta: "{{ $labels.pod_name }}"
+        no_alert_on_absence: "true" # the underlying metric is only generated when scheduling fails
+        support_group: compute-storage-api
+      annotations:
+        summary: Scheduling failed due to insufficient cpu
+        description: The pod {{ $labels.pod_name }} failed to be scheduled. Insuffient CPU!
+
+    - alert: OpenstackManilaPodCPUThrottling
+      expr: rate(container_cpu_cfs_throttled_periods_total{pod_name=~"manila-.+"}[1h]) / rate(container_cpu_cfs_periods_total{pod_name=~"manila-.+"}[1h]) > 0.8
+      for: 15m
+      labels:
+        tier: os
+        service: manila
+        severity: info
+        context: manila-cpu
+        meta: "{{ $labels.pod_name }}/{{ $labels.container_name }}"
+        support_group: compute-storage-api
+      annotations:
+        summary: Container is constantly CPU-throttled
+        description: The container {{ $labels.pod_name }}/{{ $labels.container_name }} is being CPU-throttled
+          constantly. This is probably impacting performance, so check if we can increase the number
+          of replicas or the resource requests/limits.
+
+    - alert: OpenstackManilaPodSchedulingInsufficientMemory
+      expr: sum(rate(kube_pod_failed_scheduling_memory_total{pod_name=~"manila-.+"}[30m])) by (pod_name) > 0
+      for: 15m
+      labels:
+        severity: warning
+        tier: os
+        service: manila
+        context: manila-memory
+        meta: "{{ $labels.pod_name }}"
+        no_alert_on_absence: "true" # the underlying metric is only generated when scheduling fails
+        support_group: compute-storage-api
+      annotations:
+        summary: Scheduling failed due to insufficient memory
+        description: The pod {{ $labels.pod_name }} failed to be scheduled. Insuffient memory!
+
+    - alert: OpenstackManilaPodOOMKilled
+      expr: sum(rate(klog_pod_oomkill{pod_name=~"manila-.+"}[30m])) by (pod_name) > 0
+      for: 5m
+      labels:
+        tier: os
+        service: manila
+        severity: info
+        context: manila-memory
+        meta: "{{ $labels.pod_name }}"
+        no_alert_on_absence: "true" # the underlying metric is only generated after the first oomkill
+        support_group: compute-storage-api
+      annotations:
+        summary: Pod was oomkilled
+        description: The pod {{ $labels.pod_name }} was oomkilled recently
+
+    - alert: OpenstackManilaPodOOMExceedingLimits
+      # NOTE: `container_memory_saturation_ratio` ranges from 0 to 1, so 0.7 = 70% and 1.0 = 100%
+      expr: container_memory_saturation_ratio{pod_name=~"manila-.+"} > 0.7 AND predict_linear(container_memory_saturation_ratio{pod_name=~"manila-.+"}[1h], 7*3600) > 1.0
+      for: 30m
+      labels:
+        tier: os
+        service: manila
+        severity: info
+        context: manila-memory
+        meta: "{{ $labels.pod_name }}/{{ $labels.container_name }}"
+        support_group: compute-storage-api
+      annotations:
+        summary: Exceeding memory limits in 8h
+        description: The container {{ $labels.pod_name }}/{{ $labels.container_name }} will exceed its memory limit in 8h.

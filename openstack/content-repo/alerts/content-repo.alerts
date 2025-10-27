@@ -1,0 +1,78 @@
+# vim: set ft=yaml:
+
+groups:
+- name: openstack-content-repo.alerts
+  rules:
+  - alert: OpenstackContentRepoMetricsMissing
+    expr: absent(repo_sync_last_run) or absent(repo_sync_check_success) or absent(repo_sync_check_httpcode)
+    for: 24h
+    labels:
+      support_group: containers
+      tier: os
+      service: repo
+      severity: info
+      context: repo
+    annotations:
+      description: Some content repo metrics have been missing for 24h. Check the logs of the corresponding statsd pod.
+      summary: Some content repo metrics are missing
+
+  - alert: OpenstackRepo
+    expr: floor((time()-repo_sync_last_run{kind="success_timestamp"})/60/60) > 48
+    for: 10m
+    labels:
+      no_alert_on_absence: "true" # See OpenstackContentRepoMetricsMissing alert.
+      support_group: containers
+      tier: os
+      service: repo
+      severity: info
+      context: repo
+      meta: "repo {{ $labels.repo }} is outdated"
+    annotations:
+      description: Content repo {{ $labels.repo }} was not successful updated for at least 48h. Check the logs
+      summary: Content repo {{ $labels.repo }} outdated
+
+  - alert: OpenstackRepoSkippedJobs
+    expr: repo_sync_last_run{kind="jobs_skipped"} > 0
+    for: 10m
+    labels:
+      no_alert_on_absence: "true" # See OpenstackContentRepoMetricsMissing alert.
+      support_group: containers
+      tier: os
+      service: repo
+      severity: info
+      context: repo
+      meta: "repo {{ $labels.repo }} has skipped some sync jobs"
+    annotations:
+      description: Content repo {{ $labels.repo }} has skipped some sync jobs. Check the logs.
+      summary: Content repo {{ $labels.repo }} outdated
+
+  - alert: OpenstackRepoEntitlementForbidden
+    expr: repo_sync_check_success != 1 and repo_sync_check_httpcode == 403
+    for: 1h
+    labels:
+      no_alert_on_absence: "true" # See OpenstackContentRepoMetricsMissing alert.
+      support_group: containers
+      tier: os
+      service: repo
+      severity: info
+      context: repo-{{ $labels.repo }}-entitlement
+      meta: "invalid entitlement for {{ $labels.repo }}"
+      playbook: 'https://operations.global.cloud.sap/docs/support/playbook/repo_rhel_entitlement'
+    annotations:
+      description: Repo {{ $labels.repo }} the entitlement became invalid
+      summary: Repo {{ $labels.repo }} entitlement lost
+
+  - alert: OpenstackRepoEntitlement
+    expr: repo_sync_check_success != 1 and repo_sync_check_httpcode != 403
+    for: 1h
+    labels:
+      no_alert_on_absence: "true" # See OpenstackContentRepoMetricsMissing alert.
+      support_group: containers
+      tier: os
+      service: repo
+      severity: info
+      context: repo-{{ $labels.repo }}-entitlement
+      meta: "entitlement check failed for {{ $labels.repo }}"
+    annotations:
+      description: Repo {{ $labels.repo }} entitlement check failed. Check the logs
+      summary: Repo {{ $labels.repo }} entitlement check failed

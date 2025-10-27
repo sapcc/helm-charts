@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/name: vpa-butler
+  name: vpa-butler
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: vpa-butler
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: vpa-butler
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/targets: kubernetes
+        {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+        linkerd.io/inject: enabled
+        {{- end }}
+    spec:
+      containers:
+      - image: {{ required ".Values.image.repository missing" .Values.image.repository }}:{{ .Values.image.tag }}
+        imagePullPolicy: IfNotPresent
+        name: vpa-butler
+        args:
+          - --default-vpa-update-mode={{ required ".Values.updateMode missing" .Values.updateMode | quote }}
+          - --capacity-percent={{ required ".Values.capacityPercent missing" .Values.capacityPercent }}
+        resources:
+          limits:
+            cpu: {{ .Values.limits.cpu }}
+            memory: {{ .Values.limits.memory }}
+          requests:
+            cpu: {{ .Values.limits.cpu }}
+            memory: {{ .Values.limits.memory }}
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8081
+          initialDelaySeconds: 3
+          periodSeconds: 3
+        ports:
+          - name: metrics
+            containerPort: 8080
+      serviceAccountName: vpa-butler

@@ -1,0 +1,80 @@
+{
+    "properties": {
+        "node": [
+            {
+                "op": "replace",
+                "path": "/name",
+                "value": "{{ .node.Name }}"
+            },
+            {
+                "op": "add",
+                "path": "/driver_info/deploy_kernel",
+                "value": "{{ imageToID `fedipa-kernel` }}"
+            },
+            {
+                "op": "add",
+                "path": "/driver_info/deploy_ramdisk",
+                "value": "{{ imageToID `fedipa-ramdisk` }}"
+            },
+            {
+                "op": "add",
+                "path": "/properties/serial",
+                "value": "{{ .node.InspectionData.Inventory.SystemVendor.SerialNumber }}"
+            },
+            {
+                "op": "add",
+                "path": "/properties/manufacturer",
+                "value": "{{ .node.InspectionData.Inventory.SystemVendor.Manufacturer }}"
+            },
+            {
+                "op": "add",
+                "path": "/properties/model",
+                "value": "{{ .node.InspectionData.Inventory.SystemVendor.ProductName }}"
+            },
+            {
+                "op": "add",
+                "path": "/properties/capabilities",
+                "value": "boot_mode:uefi"
+            },
+            {
+                "op": "add",
+                "path": "/properties/root_device",
+                "value": {
+                "size": "<= {{ getRootDeviceSize }}"
+                }
+            },
+            {
+                "op": "replace",
+                "path": "/resource_class",
+                "value": "{{ getMatchingFlavorForNode }}"
+            }
+        ],
+        "port": [
+            {
+                "op": "add",
+                "path": "/local_link_connection/switch_id",
+                "value": "aa:bb:cc:dd:ee:ff"
+            },
+            {
+                "op": "add",
+                "path": "/local_link_connection/port_id",
+                "value": "Etherneth1/15"
+            },
+            {
+                "op": "add",
+                "path": "/local_link_connection/switch_info",
+                "value": "{{ .node.Name }}"
+            },
+            {
+                "op": "replace",
+                "path": "/pxe_enabled",
+                "value": true
+            },
+            {
+                "op": "add",
+                "path": "/portgroup_uuid",
+                "value": "{{ getPortGroupUUID (printf `pg_%s` .node.Name)}}"
+            }
+        ]
+    }
+}

@@ -1,0 +1,42 @@
+global:
+  imageRegistry: DEFINED_IN_VALUES_FILE
+
+owner-info:
+  support-group: storage
+  service: swift
+  maintainers:
+    # current maintainers in Storage Team
+    - Sumit Arora
+    - Barun Kumar
+    - Adrian Corici
+    - Chandrakanth Renduchintala
+    # previous maintainers in Team Services
+    - Stefan Majewsky
+    - Sandro Jäckel
+  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/openstack/swift-drive-autopilot
+
+encryption_key: DEFINED_IN_VALUES_FILE
+image_version: DEFINED_IN_VALUES_FILE
+species: swift-storage
+
+# This setting means that after every 20 disks allocated on one node, one disk
+# will be set aside as spare capacity. (See swift-drive-autopilot docs for
+# details.)
+one_spare_disk_every: 20
+
+# In prod setups, where the storage nodes are used exclusively by Swift, the
+# nodes are tainted and our daemonsets selectively tolerate those taints.
+#
+# In the small lab setups, we cannot taint the storage nodes since we need
+# their compute capacity for non-Swift payloads. So we need to rely on
+# nodeSelectors exclusively.
+use_taints: true
+
+# This setting enables an additional drive-autopilot daemonset, which is able
+# to handle disks provided through multipathd
+multipath_enabled: false
+
+alerts:
+  enabled: true
+  # Name of the Prometheus to which the alerts should be assigned to.
+  prometheus: openstack

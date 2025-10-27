@@ -1,0 +1,22 @@
+{{- if .Values.metisAPI.enabled }}
+
+apiVersion: v1
+kind: Service
+metadata:
+  name:  metis-api
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "labels" . | indent 4 }}
+  annotations:
+    {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+    linkerd.io/inject: enabled
+    {{- end }}
+spec:
+  selector:
+    app.kubernetes.io/component: "api"
+  ports:
+  - name: http
+    port: {{ .Values.metisAPI.port }}
+    protocol: TCP
+
+{{- end }}

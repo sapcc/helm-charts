@@ -1,0 +1,46 @@
+groups:
+- name: cc3test-absent.alerts
+  rules:
+  - alert: CC3TestScrapeDown
+    expr: up{job=~'prometheus-statsd-exporter(.*)'} == 0
+    for: 30m
+    labels:
+      severity: critical
+      service: cc3test
+      meta: 'Metrics scrape job {{ $labels.job }} is down for more than 30 minutes'
+    annotations:
+      description: 'Metrics scrape job {{ $labels.job }} is down for more than 30 minutes'
+      summary: 'Scrape job {{ $labels.job }}} is down'
+
+  - alert: CC3TestCountersAbsent
+    expr: absent(cc3test_total{when='call'}) == 1
+    for: 30m
+    labels:
+      severity: critical
+      service: cc3test
+      meta: 'cc3test counters for {{ $labels.type }}/{{ $labels.name }} are absent for more than 30 minutes'
+    annotations:
+      description: 'cc3test counters for {{ $labels.type }}/{{ $labels.name }} are absent for more than 30 minutes'
+      summary: 'cc3test counters for {{ $labels.type }}/{{ $labels.name }} are absent'
+
+  - alert: CC3TestMetricsAbsent
+    expr: absent(cc3test_status{type!~'(.+)purge$|purge', phase="call"}) == 1
+    for: 30m
+    labels:
+      severity: warning
+      service: cc3test
+      meta: 'cc3test metrics for {{ $labels.type }}/{{ $labels.name }} are absent for more than 30 minutes'
+    annotations:
+      description: 'cc3test metrics for {{ $labels.type }}/{{ $labels.name }} are absent for more than 30 minutes'
+      summary: 'cc3test metrics for {{ $labels.type }}/{{ $labels.name }} are absent'
+
+  - alert: CC3TestPurgeMetricsAbsent
+    expr: absent(cc3test_status{type=~'(.+)purge$|purge', phase="call"}) == 1
+    for: 30m
+    labels:
+      severity: warning
+      service: cc3test
+      meta: 'purge metrics for {{ $labels.type }}/{{ $labels.name }} are absent for more than 30 minutes'
+    annotations:
+      description: 'purge metrics for {{ $labels.type }}/{{ $labels.name }} are absent for more than 30 minutes'
+      summary: 'purge metrics for {{ $labels.type }}/{{ $labels.name }} are absent'

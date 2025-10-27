@@ -1,0 +1,32 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+
+metadata:
+  name: metisdb-mariadb
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    app.kubernetes.io/name: metisdb-mariadb
+    helm.sh/chart: {{ include "metis.chart" . }}
+    app.kubernetes.io/instance: metisdb-mariadb-{{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    kubernetes.io/tls-acme: "true"
+    disco: {{ default true .Values.ingress.disco | quote }}
+    {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+    ingress.kubernetes.io/service-upstream: "true"
+    nginx.ingress.kubernetes.io/service-upstream: "true"
+    {{- end }}
+spec:
+  tls:
+     - secretName: metisdb
+       hosts: [{{.Values.mariadb.name}}.{{.Values.global.region}}.{{.Values.global.tld}}]
+  rules:
+    - host: {{.Values.mariadb.name}}.{{.Values.global.region}}.{{.Values.global.tld}}
+      http:
+        paths:
+        - path: /
+          pathType: "Prefix"
+          backend:
+            service:
+              name: metisdb-mariadb
+              port:
+                number: {{.Values.mariadb.port_public}}

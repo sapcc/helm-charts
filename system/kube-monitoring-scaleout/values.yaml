@@ -1,0 +1,258 @@
+global:
+  region:
+  domain:
+  clusterType: scaleout
+
+owner-info:
+  support-group: containers
+  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/system/kube-monitoring-scaleout
+  service: kube-monitoring
+
+absent-metrics-operator:
+  enabled: true
+
+# Disable the prometheus-operator kube-state-metrics sub-chart. We deploy independently.
+kubeStateMetrics:
+  enabled: false
+
+# Disable the prometheus-operator prometheus-node-exporter sub-chart. We deploy independently.
+nodeExporter:
+  enabled: false
+
+grafana:
+  image:
+    repository: keppel.global.cloud.sap/ccloud-dockerhub-mirror/grafana/grafana
+    tag: 7.5.16
+
+  testFramework:
+    enabled: false
+  defaultDashboardsEnabled: false
+  admin:
+    existingSecret: kube-monitoring-scaleout-grafana-admin
+    userKey: adminUser
+    passwordKey: adminPassword
+    # Defined via secrets.
+    # username: admin-user
+    # password: admin-password
+
+  rbac:
+    pspEnabled: false
+
+  # Ingress disabled by default as hosts and tls are set via secrets.
+  ingress:
+    enabled: false
+    annotations:
+      kubernetes.io/tls-acme: "true"
+      disco: "true"
+      nginx.ingress.kubernetes.io/auth-tls-secret: "kube-system/ingress-cacrt"
+      nginx.ingress.kubernetes.io/auth-tls-verify-depth: "3"
+      nginx.ingress.kubernetes.io/auth-tls-verify-client: "optional"
+
+    # Defined via secrets.
+    # hosts:
+    #   - grafana.domain.tld
+    #
+    # tls:
+    #  - secretName: tls-grafana-domain-tld
+    #    hosts:
+    #      - grafana.domain.tld
+
+  plugins: grafana-piechart-panel,natel-discrete-panel,grafana-worldmap-panel
+
+  # Sidecar for discovering & reloading dashboard, datasource configmaps.
+  sidecar:
+    image:
+      repository: keppel.global.cloud.sap/ccloud-dockerhub-mirror/kiwigrid/k8s-sidecar
+
+    dashboards:
+      enabled: true
+      label: grafana-dashboard
+      searchNamespace: ALL
+
+    datasources:
+      enabled: true
+      defaultDatasourceEnabled: false
+      # Label that configmaps with datasources should have to be added.
+      label: grafana-datasource
+
+  grafana.ini:
+    paths:
+      data: /var/lib/grafana/data
+      logs: /var/log/grafana
+      plugins: /var/lib/grafana/plugins
+      provisioning: /var/lib/grafana/provisioning
+
+    server:
+      protocol: http
+      http_addr:
+      http_port: 3000
+      domain: localhost
+      enforce_domain: false
+      root_url: "%(protocol)s://%(domain)s:%(http_port)s"
+      router_logging: false
+      static_root_path: public
+      enable_gzip: false
+      cert_file:
+      cert_key:
+      socket: /tmp/grafana.sock
+
+    users:
+      allow_sign_up: false
+      allow_org_create: false
+      auto_assign_org: true
+      auto_assign_org_role: Admin
+      default_theme: dark
+
+    auth.anonymous:
+      enabled: true
+      org_name: Main Org.
+      org_role: Admin
+
+    auth.proxy:
+      enabled: true
+      header_name: X-REMOTE-USER
+      header_property: username
+      auto_sign_up: true
+
+    auth.basic:
+      enabled: false
+
+    smtp:
+      enabled: false
+
+    log:
+      mode: console
+      level: debug
+
+    alerting:
+      enabled: false
+
+http-keep-alive-monitor:
+  image:
+    repository: keppel.global.cloud.sap/ccloud/http-keep-alive-monitor
+
+kube-state-metrics:
+  image:
+    registry: keppel.global.cloud.sap/ccloud-registry-k8s-io-mirror
+    repository: kube-state-metrics/kube-state-metrics
+
+  customLabels:
+    app: kube-state-metrics
+
+  resources:
+    requests:
+      memory: 150Mi
+      cpu: 100m
+
+  # Allow all labels from nodes to be exported.
+  metricLabelsAllowlist:
+    - nodes=[*]
+    - namespaces=[*]
+
+  selfMonitor:
+    enabled: true
+
+kube-state-metrics-exporter:
+  prometheusName: kubernetes
+
+prometheus-node-exporter:
+  image:
+    registry: keppel.global.cloud.sap
+    repository: ccloud-dockerhub-mirror/prom/node-exporter
+
+  service:
+    annotations:
+      # Avoid duplicate scrapes via service.
+      prometheus.io/scrape: "false"
+
+  kubeRBACProxy:
+    enabled: true
+    proxyEndpointsPort: 8889
+    image:
+      registry: keppel.global.cloud.sap
+      repository: ccloud-quay-mirror/brancz/kube-rbac-proxy
+
+  extraArgs:
+    - --collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)
+    - --collector.filesystem.fs-types-exclude=^(autofs|binfmt_misc|bpf|cgroup|configfs|debugfs|devpts|devtmpfs|fusectl|hugetlbfs|mqueue|nsfs|overlay|proc|procfs|pstore|rpc_pipefs|securityfs|selinuxfs|squashfs|sysfs|tmpfs|tracefs)$$
+    - --collector.systemd.enable-task-metrics
+    - --collector.systemd.enable-restarts-metrics
+    - --collector.systemd.enable-start-time-metrics
+    - --collector.processes
+
+  extraHostVolumeMounts:
+    - name: dbus
+      hostPath: /var/run/dbus/system_bus_socket
+      mountPath: /var/run/dbus/system_bus_socket
+      readOnly: true
+
+  resources:
+    requests:
+      memory: 100Mi
+      cpu: 100m
+
+  rbac:
+    pspEnabled: false
+
+prometheus-kubernetes-rules:
+  prometheusName: kubernetes
+
+prometheus-scaleout-rules:
+  prometheusName: kubernetes
+
+falco:
+  enabled: false
+  image:
+    registry: keppel.global.cloud.sap/ccloud-dockerhub-mirror
+
+  driver:
+    loader:
+      initContainer:
+        image:
+          registry: keppel.global.cloud.sap/ccloud-dockerhub-mirror
+
+  controller:
+    daemonset:
+      updateStrategy:
+        type: RollingUpdate
+        rollingUpdate:
+          maxUnavailable: 25%
+
+  falcoctl:
+    image:
+      registry: keppel.global.cloud.sap/ccloud-dockerhub-mirror
+
+  tolerations:
+    - operator: Exists
+
+  extra:
+    args:
+      - -v
+      - --unbuffered
+      - -o
+      - json_output=true
+
+  falco:
+    rules_files:
+      - /etc/falco/rules.d
+    rules:
+      - disable:
+          rule: "*"
+      - enable:
+          tag: pci
+
+x509-certificate-exporter:
+  enabled: false
+  secretsExporter:
+    podAnnotations:
+      prometheus.io/port: "9793"
+      prometheus.io/scrape: "true"
+      prometheus.io/targets: kubernetes
+  hostPathsExporter:
+    daemonSets: null
+  service:
+    create: false
+  prometheusServiceMonitor:
+    create: false
+  prometheusRules:
+    create: false

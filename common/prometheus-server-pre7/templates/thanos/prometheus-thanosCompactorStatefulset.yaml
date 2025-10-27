@@ -1,0 +1,56 @@
+{{- if .Values.thanos.enabled }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "prometheus.fullName" . }}-thanos-compactor
+  labels:
+    prometheus: {{ include "prometheus.name" . }}
+
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: thanos-compactor
+      prometheus: {{ include "prometheus.name" . }}
+  serviceName: thanos-compactor
+  template:
+    metadata:
+      labels:
+        app: thanos-compactor
+        prometheus: {{ include "prometheus.name" . }}
+    spec:
+      containers:
+      - args:
+        - compact
+        - --http-address=0.0.0.0:{{ required ".Values.thanos.compactor.service.httpPort missing" .Values.thanos.compactor.service.httpPort }}
+        - --log.level={{ .Values.logLevel }}
+        - --data-dir=/var/thanos/store
+        - --objstore.config=$(OBJSTORE_CONFIG)
+        - --consistency-delay={{ .Values.thanos.compactor.consistencyDelay }}
+        - --retention.resolution-raw={{ mul 24 60 60 (required ".Values.thanos.compactor.retentionResolutionRaw" .Values.thanos.compactor.retentionResolutionRaw) }}s
+        - --retention.resolution-5m={{ mul 24 60 60 (required ".Values.thanos.compactor.retentionResolution5m" .Values.thanos.compactor.retentionResolution5m) }}s
+        - --retention.resolution-1h={{ mul 24 60 60 (required ".Values.thanos.compactor.retentionResolution1h" .Values.thanos.compactor.retentionResolution1h) }}s
+        - --compact.concurrency=1
+        - --compact.cleanup-interval={{ .Values.thanos.compactor.cleanupInterval }}
+        - --wait
+        - --wait-interval={{ .Values.thanos.compactor.waitInterval }}
+        env:
+        - name: OBJSTORE_CONFIG
+          valueFrom:
+            secretKeyRef:
+              key: {{ include "thanos.objectStorageConfig.key" . }}
+              name: {{ include "thanos.objectStorageConfig.name" . }}
+        image: {{ include "thanos.image" . }}
+        name: thanos-compactor
+        ports:
+        - containerPort: {{ required ".Values.thanos.compactor.service.httpPort missing" .Values.thanos.compactor.service.httpPort }}
+          name: http
+        volumeMounts:
+        - mountPath: /var/thanos/store
+          name: data
+          readOnly: false
+      volumes:
+      - emptyDir: {}
+        name: data
+  volumeClaimTemplates: []
+{{ end }}

@@ -1,0 +1,30 @@
+{{- $dashboardURL := printf "https://dashboard.%s.%s/{{ .DomainName }}/{{ .ProjectName }}/resources/v2/project#/Renewal" $.Values.global.region $.Values.global.tld -}}
+{{- $dashboardInfo := printf "<p>Commitments can be renewed through the resource management <a href=\"%s\">dashboard</a></p>" $dashboardURL -}}
+
+apiVersion: v1
+kind: ConfigMap
+
+metadata:
+  name: limes
+
+data:
+  limes.yaml: |
+    availability_zones:
+    {{- range .Values.global.availability_zones }}
+      - {{ . }}
+    {{- end }}
+    {{- if (ne .Release.Namespace "limes-global") }}
+    mail_notifications:
+      endpoint: {{ .Values.limes.clusters.ccloud.catalog_url | replace "limes-3" "limes-campfire" | trimSuffix "/" }}/
+      templates:
+        confirmed_commitments:
+         subject: {{ .Values.campfire.mail_type.confirmed.subject }}
+         body: {{ tpl (.Files.Get "files/commitment_mail.tpl") (dict "region" .Values.global.region "condition" .Values.campfire.mail_type.confirmed.condition) | toJson }}
+        expiring_commitments:
+         subject: {{ .Values.campfire.mail_type.expire.subject }}
+         body: {{ tpl (.Files.Get "files/commitment_mail.tpl") (dict "region" .Values.global.region "condition" .Values.campfire.mail_type.expire.condition "dashboardInfo" $dashboardInfo)| toJson }}
+    {{- end }}
+{{ toYaml .Values.limes.clusters.ccloud | indent 4 }}
+
+  policy.json: |
+    {{- .Files.Get "files/policy.yaml" | fromYaml | toPrettyJson | nindent 4 }}

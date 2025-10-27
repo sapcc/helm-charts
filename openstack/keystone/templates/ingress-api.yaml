@@ -1,0 +1,129 @@
+{{- if .Values.services.ingress.enabled }}
+{{- if .Values.services.ingress.x509.ca }}
+kind: Secret
+apiVersion: v1
+
+metadata:
+  name: {{ .Release.Name }}-x509-ca
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    component: keystone
+    type: x509-ca
+data:
+  ca.crt: {{ .Values.services.ingress.x509.ca | b64enc }}
+---
+{{- end }}
+{{- if not .Values.services.ingress.tlsacme }}
+{{- if .Values.services.public.tlsCertificate}}
+kind: Secret
+apiVersion: v1
+
+metadata:
+  name: tls-{{.Values.services.public.host}}-{{.Values.global.region}}-{{.Values.global.tld | replace "." "-" }}
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    component: keystone
+    type: config
+data:
+  tls.crt: {{ .Values.services.public.tlsCertificate | b64enc }}
+  tls.key: {{ .Values.services.public.tlsKey | b64enc }}
+---
+{{- end }}
+{{- end }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ .Release.Name }}
+  labels:
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    component: keystone
+    type: api
+  annotations:
+    {{- if .Values.federation.oidc.enabled }}
+    # the affinity bits are required for federation; they do not affect the
+    # cases when the API is used, but will affect browser-based workflows
+    ingress.kubernetes.io/affinity: cookie
+    ingress.kubernetes.io/session-cookie-expires: "3600"
+    ingress.kubernetes.io/session-cookie-max-age: "3600"
+    ingress.kubernetes.io/session-cookie-name: route
+    nginx.ingress.kubernetes.io/affinity: cookie
+    nginx.ingress.kubernetes.io/session-cookie-expires: "3600"
+    nginx.ingress.kubernetes.io/session-cookie-max-age: "3600"
+    nginx.ingress.kubernetes.io/session-cookie-name: route
+    {{- end }}
+    # clear the trusted key header from external requests
+    ingress.kubernetes.io/configuration-snippet: |
+      proxy_set_header X-Trusted-Key        "";
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      proxy_set_header X-Trusted-Key        "";
+    {{- if .Values.services.ingress.limitRps }}
+    ingress.kubernetes.io/limit-rps: {{ .Values.services.ingress.limitRps | quote }}
+    nginx.ingress.kubernetes.io/limit-rps: {{ .Values.services.ingress.limitRps | quote }}
+    {{- end }}
+    {{- if .Values.services.ingress.limitConnections }}
+    ingress.kubernetes.io/limit-connections: {{ .Values.services.ingress.limitConnections | quote }}
+    nginx.ingress.kubernetes.io/limit-connections: {{ .Values.services.ingress.limitConnections | quote }}
+    {{- end }}
+    {{- if .Values.services.ingress.x509.ca }}
+    ingress.kubernetes.io/auth-tls-secret: {{ .Release.Namespace }}/{{ .Release.Name }}-x509-ca
+    nginx.ingress.kubernetes.io/auth-tls-secret: {{ .Release.Namespace }}/{{ .Release.Name }}-x509-ca
+    ingress.kubernetes.io/auth-tls-pass-certificate-to-upstream: "true"
+    nginx.ingress.kubernetes.io/auth-tls-pass-certificate-to-upstream: "true"
+    ingress.kubernetes.io/auth-tls-verify-client: "optional"
+    nginx.ingress.kubernetes.io/auth-tls-verify-client: "optional"
+    ingress.kubernetes.io/auth-tls-verify-depth: "3"
+    nginx.ingress.kubernetes.io/auth-tls-verify-depth: "3"
+    {{- end }}
+    {{- if .Values.services.ingress.tlsacme }}
+    kubernetes.io/tls-acme: "true"
+    {{- end }}
+    {{- if .Values.global.is_global_region }}
+    kubernetes.io/ingress.class: "nginx-external"
+    {{- end }}
+    {{- if .Values.services.ingress.disco }}
+    disco: "true"
+    {{- end }}
+    {{- include "utils.linkerd.ingress_annotation" . | indent 4 }}
+spec:
+{{- if .Values.global.is_global_region }}
+  ingressClassName: "nginx-external"
+{{- end }}
+  tls:
+    {{- if .Values.services.ingress.tlsacme }}
+    - secretName: tls-{{.Values.services.public.host}}-{{.Values.global.region}}-{{.Values.global.tld | replace "." "-" }}
+      hosts: [{{ .Values.services.public.host }}.{{ .Values.global.region }}.{{ .Values.global.tld }}]
+    {{ else }}
+    {{- if .Values.services.public.tlsCertificate }}
+    - secretName: tls-{{.Values.services.public.host}}-{{.Values.global.region}}-{{.Values.global.tld | replace "." "-" }}
+      hosts: [{{ .Values.services.public.host }}.{{ .Values.global.region }}.{{ .Values.global.tld }}]
+    {{- end }}
+    {{- end }}
+
+  rules:
+    - host: {{ .Values.services.public.host }}.{{ .Values.global.region }}.{{ .Values.global.tld }}
+      http:
+        paths:
+        {{- if (index .Values "2fa" "enabled")}}
+        - path: /v3/auth/tokens
+          pathType: Prefix
+          backend:
+            service:
+              name: {{ .Release.Name }}-2faproxy
+              port:
+                number: 8080
+        {{- end }}
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: "{{if .Values.global.is_global_region }}keystone-global{{else}}keystone{{end}}"
+              port:
+                number: 5000
+{{- end }}

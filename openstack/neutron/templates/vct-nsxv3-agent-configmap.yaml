@@ -1,0 +1,55 @@
+{{- if and (.Capabilities.APIVersions.Has "vcenter-operator.stable.sap.cc/v1") (contains ",nsxv3" .Values.ml2_mechanismdrivers ) }}
+apiVersion: vcenter-operator.stable.sap.cc/v1
+kind: VCenterTemplate
+metadata:
+  name: 'neutron-ml2-nsxv3-configmap'
+options:
+  scope: 'cluster'
+  jinja2_options:
+    variable_start_string: '{='
+    variable_end_string: '=}'
+template: |
+  apiVersion: v1
+  kind: ConfigMap
+  metadata:
+    name: neutron-ml2-nsxv3-{= name =}
+    labels:
+      system: openstack
+      type: configuration
+      component: neutron
+      vcenter: {= host =}
+      datacenter: {= availability_zone =}
+      vccluster: {= cluster_name =}
+  data:
+    ml2-nsxv3.ini: |
+      [DEFAULT]
+      # The agent binds only port with the same host
+      host = nova-compute-{= name =}
+
+      [securitygroup]
+      firewall_driver = nsxv3
+
+      [AGENT]
+      {{- range $k, $confvals := .Values.drivers.nsxv3 }}
+      {%- if '{{ $k }}' == name or '{{ $k }}' == 'defaults' %}
+      {{- range $key, $v := $confvals.AGENT }}
+      {{ $key }} = {{ $v }}
+      {{- end }}
+      {%- endif %}
+      {{- end }}
+
+      [cache]
+      enabled = true
+      backend = dogpile.cache.memory
+
+      [NSXV3]
+      {%- set bb = name | replace( "bb", "") | int %}
+      {%- set hostname = "nsx-ctl-" + "bb" + ( '%03d' % bb ) + "." + domain %}
+      nsxv3_login_hostname = {= hostname =}
+
+      {%- set tzname = "bb" + ( '%03d' % bb ) + "-vlan" %}
+      nsxv3_transport_zone_name = {= tzname =}
+      {{- range $k, $v := .Values.drivers.nsxv3.defaults.NSXV3 }}
+      {{ $k }} = {{ $v }}
+      {{- end }}
+{{ end }}

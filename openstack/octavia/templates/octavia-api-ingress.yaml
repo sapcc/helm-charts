@@ -1,0 +1,33 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+
+metadata:
+  name: octavia-api
+  labels:
+    app.kubernetes.io/name: {{ include "octavia.name" . }}
+    helm.sh/chart: {{ include "octavia.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    system: openstack
+    type: api
+    component: octavia
+  annotations:
+    # linkerd annotations
+    {{- include "utils.linkerd.ingress_annotation" . | indent 4 }}
+    # other annotations
+    {{- .Values.ingress.annotations | toYaml | nindent 4 }}
+spec:
+  tls:
+     - secretName: tls-{{ include "octavia_api_endpoint_host_public" . | replace "." "-" }}
+       hosts: [{{include "octavia_api_endpoint_host_public" .}}]
+  rules:
+    - host: {{include "octavia_api_endpoint_host_public" .}}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: octavia-api
+                port:
+                  number: {{.Values.api_port_internal}}

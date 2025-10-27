@@ -1,0 +1,140 @@
+groups:
+- name: openstack-barbican.alerts
+  rules:
+  - alert: OpenstackBarbicanUserCertificateExpiresIn30days
+    expr: 'label_replace(label_replace(openstack_user_last_active_at{email_id!~"No Email-ID"}, "email", "$1", "email_id","(?:\\[\")(.*)(?:\"\\])"),"full_name","$1","user_name","(?:\\[\")(.*)(?:\"\\])") +on (user_id) group_right (email, full_name) (0 <= round((label_replace(openstack_barbican_certificate_expiration_date, "user_id", "$1", "creator_id","(.+)") - time()) / 86400 <= 30))'
+    for: 2d
+    labels:
+      severity: info
+      tier: os
+      service: 'barbican'
+      context: 'certificate'
+      dashboard: barbican
+      support_group: foundation
+      meta: 'Certificate {{ $labels.certificate_name }} will expire in {{ $value }} Days'
+    annotations:
+      description: 'Certificate {{ $labels.certificate_name }} created by {{ $labels.full_name }} in Project_id {{ $labels.project_id }} will expire in {{ $value }} Days'
+      summary: 'Certificate will expire soon'
+
+  - alert: OpenstackBarbicanUserOpaqueCertificateExpiresIn30days
+    expr: 'label_replace(label_replace(openstack_user_last_active_at{email_id!~"No Email-ID"}, "email", "$1", "email_id","(?:\\[\")(.*)(?:\"\\])"),"full_name","$1","user_name","(?:\\[\")(.*)(?:\"\\])") +on (user_id) group_right (email, full_name) (0 <= round((label_replace(openstack_barbican_opaque_certificate_expiration_date, "user_id", "$1", "creator_id","(.+)") - time()) / 86400 <= 30))'
+    for: 2d
+    labels:
+      severity: info
+      tier: os
+      service: 'barbican'
+      context: 'certificate'
+      dashboard: barbican
+      support_group: foundation
+      no_alert_on_absence: "true"
+      meta: 'Certificate {{ $labels.certificate_name }} will expire in {{ $value }} Days'
+    annotations:
+      description: 'Opaque Certificate {{ $labels.certificate_name }} created by {{ $labels.full_name }} in Project_id {{ $labels.project_id }} will expire in {{ $value }} Days'
+      summary: 'Opaque Certificate will expire soon'
+
+  - alert: OpenstackBarbicanUnresolvedSentryIssues
+    expr: sentry_unresolved_issues_count{project="barbican"} > 0
+    for: 3d
+    labels:
+      context: sentry-metrics
+      service: barbican
+      severity: info
+      tier: os
+      sentry: 'barbican/'
+      support_group: foundation
+    annotations:
+      description: barbican has encountered unexpected errors and reported
+        them to Sentry. Please have a look at the list of unresolved issues
+        at <https://sentry.{{ $labels.region }}.cloud.sap/monsoon/barbican/>.
+      summary: barbican has reported issues to Sentry
+
+  - alert: OpenstackBarbicanRateLimitActionIsAbove50
+    expr: sum by(initiator_project_id, action, initiator_user_name) (rate(openstack_ratelimit_requests_ratelimit_total{service="key-manager", container="barbican-api"}[2m]) * 60) > 50
+    for: 1m
+    labels:
+      severity: info
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      dashboard: barbican
+      meta: 'Project {{ $labels.initiator_project_id }} has more than 50 {{ $labels.action }} operations' 
+      no_alert_on_absence: "true"
+      support_group: foundation
+    annotations:
+      description: 'User {{ $labels.initiator_user_name }} has initiated more than 50 {{ $labels.action }} operations' 
+      summary: 'Project {{ $labels.initiator_project_id }} has more than 50 {{ $labels.action }} operations'
+
+  - alert: OpenstackBarbicanScrapeMissing
+    expr: absent(up{component="barbican",type="api"})
+    for: 1h
+    labels:
+      context: availability
+      dashboard: barbican
+      service: barbican
+      severity: info
+      support_group: foundation
+      tier: os
+    annotations:
+      description: barbican failed to be scraped. Monitoring might miss metrics it needs to alert on.
+      summary: barbican cannot be scraped
+
+  - alert: OpenstackBarbicanDatabaseScrapeMissing
+    expr: absent(up{app="barbican-mariadb"})
+    for: 1h
+    labels:
+      context: availability
+      dashboard: barbican
+      service: barbican
+      severity: info
+      support_group: foundation
+      tier: os
+    annotations:
+      description: barbicans database running status failed to be scraped. Monitoring might miss metrics it needs to alert on
+      summary: barbican database cannot be scraped
+
+  - alert: OpenstackBarbicanApiIsDown
+    expr: up{component="barbican",type="api"} == 0
+    for: 5m
+    labels:
+      context: availability
+      dashboard: barbican
+      meta: "a barbican instance went down on {{ $labels.instance }}"
+      service: barbican
+      support_group: foundation
+      severity: info
+      tier: os
+      playbook: 'docs/devops/alert/{{ $labels.service }}'
+    annotations:
+      description: "A barbican-api pod on {{ $labels.instance }} is DOWN. The remaining ones should keep the service up."
+      summary: "A barbican server is DOWN"
+
+  - alert: OpenstackBarbicanDatabaseIsDown
+    expr: count(up{component="barbican-mariadb"} == 0) == count(up{component="barbican-mariadb"})
+    for: 5m
+    labels:
+      context: availability
+      service: barbican
+      severity: info
+      support_group: foundation
+      tier: os
+      dashboard: mariadb-overview?var-host=barbican-mariadb
+      playbook: 'docs/devops/alert/{{ $labels.service }}'
+    annotations:
+      description: "barbican database on {{ $labels.instance }} is DOWN."
+      summary: "barbican Database is DOWN"
+
+  - alert: OpenstackBarbicanApiAllDown
+    expr: count(up{component="barbican",type="api"} == 0) == count(up{component="barbican",type="api"})
+    for: 5m
+    labels:
+      context: availability
+      meta: all barbican instances are down
+      service: barbican
+      severity: warning
+      support_group: foundation
+      tier: os
+      dashboard: barbican
+      playbook: 'docs/devops/alert/{{ $labels.service }}'
+    annotations:
+      description: All barbican-api server pods are down.
+      summary: barbican is unavailable.

@@ -1,0 +1,677 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vrops-exporter-collector-config
+data:
+  collector_config.yaml: |
+    default_collectors:
+    #    - 'NSXTMgmtClusterStatsCollector'
+    #    - 'NSXTMgmtClusterPropertiesCollector'
+    #    - 'NSXTLogicalSwitchPropertiesCollector'
+    #    - 'NSXTMgmtNodeStatsCollector'
+    #    - 'NSXTMgmtNodePropertiesCollector'
+    #    - 'NSXTTransportNodePropertiesCollector'
+        - 'CustomInfoMetricsGenerator'
+        - 'ClusterStatsCollector'
+        - 'ClusterPropertiesCollector'
+        - 'DistributedvSwitchPropertiesCollector'
+        - 'DatastoreStatsCollector'
+        - 'DatastorePropertiesCollector'
+        - 'SDRSStatsCollector'
+        - 'SDRSPropertiesCollector'
+    #    - 'HostSystemStatsCollector'
+    #    - 'HostSystemPropertiesCollector'
+        - 'VCenterStatsCollector'
+        - 'VCenterPropertiesCollector'
+    #    - 'VMPropertiesCollector'
+    #    - 'VMStatsCPUCollector'
+    #    - 'VMStatsNetworkCollector'
+    #    - 'VMStatsVirtualDiskCollector'
+    #    - 'VMStatsMemoryCollector'
+    #    - 'VMStatsDefaultCollector'
+        - 'VcopsSelfMonitoringPropertiesCollector'
+        - 'VcopsSelfMonitoringStatsCollector'
+    ##  INFO - Alerts
+    #    - 'NSXTAdapterAlertCollector'
+    #    - 'NSXTMgmtClusterAlertCollector'
+    #    - 'NSXTMgmtServiceAlertCollector'
+    #    - 'NSXTMgmtNodeAlertCollector'
+    #    - 'NSXTTransportNodeAlertCollector'
+    #    - 'NSXTLogicalSwitchAlertCollector'
+    #    - 'ClusterAlertCollector'
+    #    - 'DatastoreAlertCollector'
+    #    - 'HostSystemAlertCollector'
+    #    - 'VCenterAlertCollector'
+    #    - 'VMAlertCollector'
+    #    - 'VcopsSelfMonitoringAlertCollector'
+    #    - 'SDDCAlertCollector'
+
+    alerts:
+      alertCriticality:
+        - 'CRITICAL'
+        - 'WARNING'
+        - 'IMMEDIATE'
+      activeOnly: True
+
+    CustomInfoMetricsGenerator:
+       - metric: 'vrops_virtualmachine_guest_tools_target_version'
+         values_dict:
+           # A dict with your static input > label: label_value
+           guest_tools_target_version: '12.1.5'
+
+
+    ClusterPropertiesCollector:
+    # INFO - Prefix: vrops_cluster_
+      - metric_suffix: "configuration_dasConfig_enabled"
+        expected: "true"
+        key: "configuration|dasConfig|enabled"
+      - metric_suffix: "configuration_dasConfig_admissionControlEnabled"
+        expected: "true"
+        key: "configuration|dasConfig|admissionControlEnabled"
+      - metric_suffix: "configuration_dasConfig_admissionControlPolicyId"
+        key: "configuration|dasConfig|admissionControlPolicyId"
+      - metric_suffix: "configuration_drsconfig_enabled"
+        expected: "true"
+        key: "configuration|drsConfig|enabled"
+      - metric_suffix: "configuration_drsconfig_defaultVmBehavior"
+        expected: "fullyAutomated"
+        key: "configuration|drsConfig|defaultVmBehavior"
+      - metric_suffix: "configuration_drsConfig_targetBalance"
+        key: "configuration|drsConfig|targetBalance"
+      - metric_suffix: "custom_attributes_info"
+        key: "summary|customTag:INFO|customTagValue"
+      - metric_suffix: "configuration_drsconfiguration_affinity_rules"
+        key: "configuration|drsconfig|affinityRules"
+      - metric_suffix: "custom_attributes_hana_exclusive_info"
+        key: "summary|customTag:hana_exclusive|customTagValue"
+      - metric_suffix: "summary_custom_tag_openstack_nova_traits_compute_status_disabled"
+        key: "summary|customTag:openstack.nova.traits.COMPUTE_STATUS_DISABLED|customTagValue"
+      - metric_suffix: "summary_custom_tag_openstack_nova_traits_decommissioning"
+        key: "summary|customTag:openstack.nova.traits.CUSTOM_DECOMMISSIONING|customTagValue"
+      - metric_suffix: "summary_custom_tag_openstack_nova_traits_hana_exclusive_host"
+        key: "summary|customTag:openstack.nova.traits.CUSTOM_HANA_EXCLUSIVE_HOST|customTagValue"
+
+    ClusterStatsCollector:
+    # INFO - Prefix: vrops_cluster_
+      - metric_suffix: "cpu_capacity_usage_percentage"
+        key: "cpu|capacity_usagepct_average"
+      - metric_suffix: "cpu_usage_mhz"
+        key: "cpu|usagemhz_average"
+      - metric_suffix: "cpu_capacity_mhz"
+        key: "cpu|haTotalCapacity_average"
+      - metric_suffix: "memory_usage_percentage"
+        key: "mem|host_usagePct"
+      - metric_suffix: "memory_usage_kilobytes"
+        key: "mem|host_usage"
+      - metric_suffix: "memory_capacity_kilobytes"
+        key: "mem|totalCapacity_average"
+      - metric_suffix: "cluster_running_hosts"
+        key: "summary|number_running_hosts"
+      - metric_suffix: "cluster_running_vms"
+        key: "summary|number_running_vms"
+      - metric_suffix: "services_totalImbalance"
+        key: "clusterServices|total_imbalance"
+      - metric_suffix: "summary_total_number_vms"
+        key: "summary|total_number_vms"
+      - metric_suffix: "cpu_contention_percentage"
+        key: "cpu|capacity_contentionPct"
+      - metric_suffix: "summary_drs_unhappy_vms"
+        key: "summary|drs_unhappy_vms"
+      - metric_suffix: "badge_efficiency_percentage"
+        key: "badge|efficiency"
+      - metric_suffix: "badge_health_percentage"
+        key: "badge|health"
+      - metric_suffix: "cpu_capacity_total"
+        key: "cpu|capacity_provisioned"
+      - metric_suffix: "memory_capacity_total"
+        key: "mem|host_provisioned"
+      - metric_suffix: "configuration_dasConfig_admissionControlPolicy_cpu_failover_resource_percent"
+        key: "configuration|dasconfig|admissionControlPolicy|cpuFailoverResourcesPercent"
+      - metric_suffix: "configuration_dasConfig_admissionControlPolicy_memory_failover_resource_percent"
+        key: "configuration|dasconfig|admissionControlPolicy|memoryFailoverResourcesPercent"
+
+    DistributedvSwitchPropertiesCollector:
+    # INFO - Prefix: vrops_distributed_virtual_switch_
+      - metric_suffix: "summary_version"
+        key: "summary|version"
+
+    DatastoreStatsCollector:
+    # INFO - Prefix: vrops_datastore_
+      - metric_suffix: "diskspace_total_usage_gigabytes"
+        key: "diskspace|disktotal"
+      - metric_suffix: "diskspace_freespace_gigabytes"
+        key: "diskspace|freespace"
+      - metric_suffix: "diskspace_capacity_gigabytes"
+        key: "diskspace|capacity"
+      - metric_suffix: "summary_total_number_vms"
+        key: "summary|total_number_vms"
+
+    DatastorePropertiesCollector:
+    # INFO - Prefix: vrops_datastore_
+      - metric_suffix: "summary_datastore_accessible"
+        expected: "PoweredOn"
+        key: "summary|accessible"
+      - metric_suffix: "hostcount"
+        key: "datastore|hostcount"
+      - metric_suffix: "summary_tag"
+        key: "summary|tagJson"
+      - metric_suffix: "summary_custom_tag_cinder_state"
+        key: "summary|customTag:cinder_state|customTagValue"
+      - metric_suffix: "summary_custom_tag_cinder_aggregate_id"
+        key: "summary|customTag:cinder_aggregate_id|customTagValue"
+
+    SDRSStatsCollector:
+    # INFO - Prefix: vrops_storagepod_
+      - metric_suffix: "capacity_remaining_percentage"
+        key: "OnlineCapacityAnalytics|capacityRemainingPercentage"
+      - metric_suffix: "capacity_available_space"
+        key: "capacity|available_space"
+      - metric_suffix: "capacity_total"
+        key: "capacity|total_capacity"
+
+    SDRSPropertiesCollector:
+      - metric_suffix: "config_sdrsconfig_vmStorageAntiAffinityRules"
+        key: "config|sdrsconfig|vmStorageAntiAffinityRules"
+
+    HostSystemStatsCollector:
+    # INFO - Prefix: vrops_hostsystem_
+      - metric_suffix: "hardware_number_of_cpu_cores_info"
+        key: "hardware|cpuInfo|num_CpuCores"
+      - metric_suffix: "configuration_dasConfig_admissionControlPolicy_failoverHost"
+        key: "configuration|dasConfig|admissionControlPolicy|failoverHost"
+      - metric_suffix: "cpu_sockets_number"
+        key: "cpu|numpackages"
+      - metric_suffix:  "cpu_usage_megahertz"
+        key: "cpu|usagemhz_average"
+      - metric_suffix: "cpu_capacity_provisioned"
+        key: "cpu|capacity_provisioned"
+      - metric_suffix: "cpu_corecount_provisioned"
+        key: "cpu|corecount_provisioned"
+      - metric_suffix: "cpu_peak_core_usage_percentage"
+        key: "cpu|peak_cpu_core_usage"
+      - metric_suffix: "cpu_core_utilization_percentage"
+        key: "cpu|coreUtilization_average"
+      - metric_suffix: "cpu_demand_percentage"
+        key: "cpu|demandPct"
+      - metric_suffix: "cpu_demand_megahertz"
+        key: "cpu|demandmhz"
+      - metric_suffix: "cpu_usage_average_percentage"
+        key: "cpu|usage_average"
+      - metric_suffix: "cpu_co_stop_miliseconds"
+        key: "cpu|costop_summation"
+      - metric_suffix: "cpu_contention_percentage"
+        key: "cpu|capacity_contentionPct"
+      - metric_suffix: "cpu_io_wait_miliseconds"
+        key: "cpu|iowait"
+      - metric_suffix: "cpu_ready_miliseconds"
+        key: "cpu|ready_summation"
+      - metric_suffix: "cpu_swap_wait_miliseconds"
+        key: "cpu|swapwait_summation"
+      - metric_suffix: "memory_host_usage_kilobytes"
+        key: "mem|host_usage"
+      - metric_suffix: "memory_useable_kilobytes"
+        key: "mem|host_usable"
+      - metric_suffix: "memory_usage_percentage"
+        key: "mem|usage_average"
+      - metric_suffix: "memory_utilization"
+        key: "mem|total_need"
+      - metric_suffix: "memory_contention_percentage"
+        key: "mem|host_contentionPct"
+      - metric_suffix: "memory_ballooning_kilobytes"
+        key: "mem|vmmemctl_average"
+      - metric_suffix: "memory_compressed_kilobytes"
+        key: "mem|compressed_average"
+      - metric_suffix: "memory_activly_used_by_vms_kilobytes"
+        key: "mem|active_average"
+      - metric_suffix: "memory_consumed_by_vms_kilobytes"
+        key: "mem|consumed_average"
+      - metric_suffix: "memory_capacity_available_to_vms_kilobytes"
+        key: "mem|host_provisioned"
+      - metric_suffix: "memory_swap_in_rate_kbps"
+        key: "mem|swapinRate_average"
+      - metric_suffix: "memory_swap_out_rate_kbps"
+        key: "mem|swapoutRate_average"
+      - metric_suffix: "memory_swap_used_rate_kbps"
+        key: "mem|swapused_average"
+      - metric_suffix: "memory_reserved_capacity_percentage"
+        key: "mem|reservedCapacityPct"
+      - metric_suffix: "network_bytes_rx_kbps"
+        key: "net|received_average"
+      - metric_suffix: "network_bytes_tx_kbps"
+        key: "net|transmitted_average"
+      - metric_suffix: "network_packets_dropped_rx_number"
+        key: "net|droppedRx_summation"
+      - metric_suffix: "network_packets_dropped_tx_number"
+        key: "net|droppedTx_summation"
+      - metric_suffix: "network_packets_dropped_percentage"
+        key: "net:Aggregate of all instances|droppedPct"
+      - metric_suffix: "summary_number_VMs_total"
+        key: "summary|total_number_vms"
+      - metric_suffix: "summary_running_VMs_number"
+        key: "summary|number_running_vms"
+      - metric_suffix: "summary_number_running_vcpus_total"
+        key: "summary|number_running_vcpus"
+      - metric_suffix: "summary_number_vmotion_total"
+        key: "summary|number_vmotion"
+      - metric_suffix: "system_uptime_seconds"
+        key: "sys|uptime_latest"
+      - metric_suffix: "diskspace_capacity_gigabytes"
+        key: "diskspace|total_capacity"
+      - metric_suffix: "diskspace_usage_gigabytes"
+        key: "diskspace|total_usage"
+      - metric_suffix: "license_used"
+        key: "Custom|License|Used"
+      - metric_suffix: "license_limit"
+        key: "Custom|License|Limit"
+
+    HostSystemPropertiesCollector:
+    # INFO - Prefix: vrops_hostsystem_
+      - metric_suffix: "runtime_powerState"
+        key: "runtime|powerState"
+        expected: "Powered On"
+      - metric_suffix: "runtime_connectionState"
+        key: "runtime|connectionState"
+        expected: "connected"
+      - metric_suffix: "runtime_maintenanceState"
+        key: "runtime|maintenanceState"
+        expected: "notInMaintenance"
+      - metric_suffix: "summary_version_info"
+        key: "summary|version"
+      - metric_suffix: "custom_attributes_hw_info"
+        key: "summary|customTag:HW|customTagValue"
+      - metric_suffix: "sys_build_info"
+        key: "sys|build"
+      - metric_suffix: "config_diskSpace_bytes"
+        key: "config|diskSpace"
+      - metric_suffix: "config_hyperthread_available"
+        key: "config|hyperThread|available"
+      - metric_suffix: "cpu_model"
+        key: "cpu|cpuModel"
+      - metric_suffix: "hardware_model"
+        key: "hardware|vendorModel"
+      - metric_suffix: "hardware_bios_version"
+        key: "hardware|biosVersion"
+      - metric_suffix: "hardware_memory_size_kilobytes"
+        key: "hardware|memorySize"
+      - metric_suffix: "storage_number_of_active_path"
+        key: "config|storageDevice|multipathInfo|numberofActivePath"
+      - metric_suffix: "storage_number_of_path"
+        key: "config|storageDevice|plugStoreTopology|numberofPath"
+      - metric_suffix: "custom_attributes_change_request_info"
+        key: "summary|customTag:Change_Request|customTagValue"
+      - metric_suffix: "summary_custom_tag_nvme"
+        key: "summary|customTag:nvme|customTagValue"
+      - metric_suffix: "vsphere_tags"
+        key: "summary|tagJson"
+      - metric_suffix: "license_key"
+        key: "Custom|License|Key"
+      - metric_suffix: "hostgroups"
+        key: "Custom|Hostgroup|Name"
+
+    VCenterStatsCollector:
+    # INFO - Prefix: vrops_vcenter_
+      - metric_suffix: "cpu_used_percent"
+        key: "cpu|capacity_usagepct_average"
+      - metric_suffix: "memory_used_percent"
+        key: "mem|host_usagePct"
+      - metric_suffix: "memory_reserved_capacity_average"
+        key: "mem|reservedCapacity_average"
+      - metric_suffix: "diskspace_total_gigabytes"
+        key: "diskspace|total_capacity"
+      - metric_suffix: "diskspace_usage_gigabytes"
+        key: "diskspace|total_usage"
+      - metric_suffix: "summary_number_vms_total"
+        key: "summary|total_number_vms"
+
+    VCenterPropertiesCollector:
+    # INFO - Prefix: vrops_vcenter_
+      - metric_suffix: "summary_version_info"
+        key: "summary|version"
+      - metric_suffix: "vc_fullname_info"
+        key: "summary|vcfullname"
+      - metric_suffix: "summary_certificate_expiry_date"
+        key: "summary|cert_expiry_date"
+      - metric_suffix: "summary_custom_sts_certificate_remaining_days"
+        key: "SummaryCustom|STS Certificate Remaining Days"
+
+    VMPropertiesCollector:
+    # INFO - Prefix: vrops_virtualmachine_
+      - metric_suffix: "runtime_powerState"
+        expected: "Powered On"
+        key: "summary|runtime|powerState"
+      - metric_suffix: "runtime_connectionState"
+        expected: "connected"
+        key: "summary|runtime|connectionState"
+      - metric_suffix: "guest_tools_version"
+        key: "summary|guest|toolsVersion"
+      - metric_suffix: "summary_ethernetCards"
+        key: "summary|config|numEthernetCards"
+      - metric_suffix: "virtualdisk_scsi0_0_datastore"
+        key: "virtualDisk:scsi0:0|datastore"
+      - metric_suffix: "virtualdisk_scsi0_1_datastore"
+        key: "virtualDisk:scsi0:1|datastore"
+      - metric_suffix: "guest_os_full_name"
+        key: "config|guestFullName"
+      - metric_suffix: "config_hardware_memory_kilobytes"
+        key: "config|hardware|memoryKB"
+      - metric_suffix: "disk_space_snapshot_age_days"
+        key: "diskspace|snapshot|snapshotAge"
+      - metric_suffix: "guest_tools_running_status"
+        key: "summary|guest|toolsRunningStatus"
+      - metric_suffix: "guest_tools_version_status"
+        key: "summary|guest|toolsVersionStatus2"
+      - metric_suffix: "summary_datastore"
+        key: "summary|datastore"
+      - metric_suffix: "vsphere_tags"
+        key: "summary|tagJson"
+      - metric_suffix: "config_cpu_allocation_reservation_mhz"
+        key: "config|cpuAllocation|reservation"
+      - metric_suffix: "config_memory_allocation_reservation_kilobytes"
+        key: "config|memoryAllocation|reservation"
+      - metric_suffix: "net_4000_ip_address"
+        key: "net:4000|ip_address"
+      - metric_suffix: "net_4001_ip_address"
+        key: "net:4001|ip_address"
+      - metric_suffix: "net_4002_ip_address"
+        key: "net:4002|ip_address"
+
+    VMStatsMemoryCollector:
+    # INFO - Prefix: vrops_virtualmachine_
+      - metric_suffix: "memory_usage_average"
+        key: "mem|usage_average"
+      - metric_suffix: "memory_kilobytes"
+        key: "mem|guest_provisioned"
+      - metric_suffix: "memory_consumed_kilobytes"
+        key: "mem|consumed_average"
+      - metric_suffix: "memory_consumed_ratio"
+        key: "mem|consumedPct"
+      - metric_suffix: "memory_activewrite_kilobytes"
+        key: "mem|activewrite_average"
+      - metric_suffix: "memory_demand_kilobytes"
+        key: "mem|vmMemoryDemand"
+      - metric_suffix: "memory_active_ratio"
+        key: "mem|guest_activePct"
+      - metric_suffix: "memory_ballooning_ratio"
+        key: "mem|balloonPct"
+      - metric_suffix: "memory_nonzero_active_kilobytes"
+        key: "mem|nonzero_active"
+      - metric_suffix: "memory_contention_ratio"
+        key: "mem|host_contentionPct"
+      - metric_suffix: "swapped_memory_kilobytes"
+        key: "mem|swapped_average"
+      - metric_suffix: "swapin_memory_kilobytes"
+        key: "mem|swapinRate_average"
+      - metric_suffix: "memory_recommended_size_kilobytes"
+        key: "OnlineCapacityAnalytics|mem|recommendedSize"
+      - metric_suffix: "memory_reservation_used"
+        key: "mem|reservation_used"
+      - metric_suffix: "undersized_memory"
+        key: "summary|undersized|memory"
+      - metric_suffix: "oversized_memory"
+        key: "summary|oversized|memory"
+      - metric_suffix: "memory_guest_usage_kilobytes"
+        key: "mem|guest_usage"
+      - metric_suffix: "memory_workload_percentage"
+        key: "mem|workload"
+
+    VMStatsCPUCollector:
+    # INFO - Prefix: vrops_virtualmachine_
+      - metric_suffix: "number_vcpus_total"
+        key: "config|hardware|num_Cpu"
+      - metric_suffix: "cpu_costop_percentage"
+        key: "cpu|costopPct"
+      - metric_suffix: "cpu_demand_mhz"
+        key: "cpu|demandmhz"
+      - metric_suffix: "cpu_demand_ratio"
+        key: "cpu|demandPct"
+      - metric_suffix: "cpu_provisioned_capacity_mhz"
+        key: "cpu|vm_capacity_provisioned"
+      - metric_suffix: "cpu_usage_ratio"
+        key: "cpu|usage_average"
+      - metric_suffix: "cpu_usage_average_mhz"
+        key: "cpu|usagemhz_average"
+      - metric_suffix: "cpu_workload_percentage"
+        key: "cpu|workload"
+      - metric_suffix: "cpu_contention_ratio"
+        key: "cpu|capacity_contentionPct"
+      - metric_suffix: "cpu_contention_miliseconds"
+        key: "cpu|capacity_contention"
+      - metric_suffix: "cpu_ready_ratio"
+        key: "cpu|readyPct"
+      - metric_suffix: "cpu_latency_average"
+        key: "cpu|latency_average"
+      - metric_suffix: "cpu_overlap_summation_miliseconds"
+        key: "cpu|overlap_summation"
+      - metric_suffix: "cpu_wait_summation_miliseconds"
+        key: "cpu|wait_summation"
+      - metric_suffix: "cpu_io_wait_percentage"
+        key: "cpu|iowaitPct"
+      - metric_suffix: "cpu_recommended_size_mhz"
+        key: "OnlineCapacityAnalytics|cpu|recommendedSize"
+      - metric_suffix: "undersized_vcpus"
+        key: "summary|undersized|vcpus"
+      - metric_suffix: "oversized_vcpus"
+        key: "summary|oversized|vcpus"
+      - metric_suffix: "cpu_reservation_used"
+        key: "cpu|reservation_used"
+
+    VMStatsNetworkCollector:
+    # INFO - Prefix: vrops_virtualmachine_
+      - metric_suffix: "network_packets_dropped_rx_number"
+        key: "net|droppedRx_summation"
+      - metric_suffix: "network_packets_dropped_tx_number"
+        key: "net|droppedTx_summation"
+      - metric_suffix: "network_packets_rx_number"
+        key: "net|packetsRx_summation"
+      - metric_suffix: "network_packets_tx_number"
+        key: "net|packetsTx_summation"
+      - metric_suffix: "network_usage_average_kilobytes_per_second"
+        key: "net|usage_average"
+      - metric_suffix: "network_data_received_kilobytes_per_second"
+        key: "net|bytesRx_average"
+      - metric_suffix: "network_data_transmitted_kilobytes_per_second"
+        key: "net|bytesTx_average"
+
+    VMStatsVirtualDiskCollector:
+    # INFO - Prefix: vrops_virtualmachine_
+      - metric_suffix: "virtual_disk_outstanding_io"
+        key: "virtualDisk|vDiskOIO"
+      - metric_suffix: "virtual_disk_read_kilobytes_per_second"
+        key: "virtualDisk|read_average"
+      - metric_suffix: "virtual_disk_write_kilobytes_per_second"
+        key: "virtualDisk|write_average"
+      - metric_suffix: "virtual_disk_outstanding_read_number"
+        key: "virtualDisk|readOIO_latest"
+      - metric_suffix: "virtual_disk_outstanding_write_number"
+        key: "virtualDisk|writeOIO_latest"
+      - metric_suffix: "virtual_disk_average_read_miliseconds"
+        key: "virtualDisk|totalReadLatency_average"
+      - metric_suffix: "virtual_disk_average_write_miliseconds"
+        key: "virtualDisk|totalWriteLatency_average"
+      - metric_suffix: "virtual_disk_average_commands_per_second"
+        key: "virtualDisk:Aggregate of all instances|commandsAveraged_average"
+
+    VMStatsDefaultCollector:
+    # INFO - Prefix: vrops_virtualmachine_
+      - metric_suffix: "power_energy_sum_watt_hours"
+        key: "power|energy_summation_sum"
+      - metric_suffix: "power_average_watts"
+        key: "power|power_average"
+      - metric_suffix: "health"
+        key: "badge|health"
+      - metric_suffix: "undersized"
+        key: "summary|undersized"
+      - metric_suffix: "oversized"
+        key: "summary|oversized"
+      - metric_suffix: "disk_usage_average_kilobytes_per_second"
+        key: "disk|usage_average"
+      - metric_suffix: "diskspace_virtual_machine_used_gigabytes"
+        key: "diskspace|perDsUsed"
+      - metric_suffix: "diskspace_gigabytes"
+        key: "config|hardware|disk_Space"
+      - metric_suffix: "datastore_total"
+        key: "summary|number_datastore"
+      - metric_suffix: "datastore_outstanding_io_requests"
+        key: "datastore|demand_oio"
+      - metric_suffix: "database_disk_usage_gigabytes"
+        key: "guestfilesystem:/storage/db|usage"
+      - metric_suffix: "database_disk_capacity_gigabytes"
+        key: "guestfilesystem:/storage/db|capacity"
+      - metric_suffix: "database_disk_usage_percent"
+        key: "guestfilesystem:/storage/db|percentage"
+      - metric_suffix: "guestfilesystem_storage_log_usage"
+        key: "guestfilesystem:/storage/log|usage"
+      - metric_suffix: "guestfilesystem_storage_log_capacity"
+        key: "guestfilesystem:/storage/log|capacity"
+      - metric_suffix: "guestfilesystem_storage_log_percentage"
+        key: "guestfilesystem:/storage/log|percentage"
+      - metric_suffix: "guestfilesystem_storage_autodeploy_usage"
+        key: "guestfilesystem:/storage/autodeploy|usage"
+      - metric_suffix: "guestfilesystem_storage_autodeploy_capacity"
+        key: "guestfilesystem:/storage/autodeploy|capacity"
+      - metric_suffix: "guestfilesystem_storage_autodeploy_percentage"
+        key: "guestfilesystem:/storage/autodeploy|percentage"
+      - metric_suffix: "guestfilesystem_storage_core_usage"
+        key: "guestfilesystem:/storage/core|usage"
+      - metric_suffix: "guestfilesystem_storage_core_capacity"
+        key: "guestfilesystem:/storage/core|capacity"
+      - metric_suffix: "guestfilesystem_storage_core_percentage"
+        key: "guestfilesystem:/storage/core|percentage"
+      - metric_suffix: "guestfilesystem_storage_dblog_usage"
+        key: "guestfilesystem:/storage/dblog|usage"
+      - metric_suffix: "guestfilesystem_storage_dblog_capacity"
+        key: "guestfilesystem:/storage/dblog|capacity"
+      - metric_suffix: "guestfilesystem_storage_dblog_percentage"
+        key: "guestfilesystem:/storage/dblog|percentage"
+      - metric_suffix: "guestfilesystem_storage_imagebuilder_usage"
+        key: "guestfilesystem:/storage/imagebuilder|usage"
+      - metric_suffix: "guestfilesystem_storage_imagebuilder_capacity"
+        key: "guestfilesystem:/storage/imagebuilder|capacity"
+      - metric_suffix: "guestfilesystem_storage_imagebuilder_percentage"
+        key: "guestfilesystem:/storage/imagebuilder|percentage"
+      - metric_suffix: "guestfilesystem_storage_netdump_usage"
+        key: "guestfilesystem:/storage/netdump|usage"
+      - metric_suffix: "guestfilesystem_storage_netdump_capacity"
+        key: "guestfilesystem:/storage/netdump|capacity"
+      - metric_suffix: "guestfilesystem_storage_netdump_percentage"
+        key: "guestfilesystem:/storage/netdump|percentage"
+      - metric_suffix: "guestfilesystem_storage_seat_usage"
+        key: "guestfilesystem:/storage/seat|usage"
+      - metric_suffix: "guestfilesystem_storage_seat_capacity"
+        key: "guestfilesystem:/storage/seat|capacity"
+      - metric_suffix: "guestfilesystem_storage_seat_percentage"
+        key: "guestfilesystem:/storage/seat|percentage"
+      - metric_suffix: "guestfilesystem_storage_updatemgr_usage"
+        key: "guestfilesystem:/storage/updatemgr|usage"
+      - metric_suffix: "guestfilesystem_storage_updatemgr_capacity"
+        key: "guestfilesystem:/storage/updatemgr|capacity"
+      - metric_suffix: "guestfilesystem_storage_updatemgr_percentage"
+        key: "guestfilesystem:/storage/updatemgr|percentage"
+      - metric_suffix: "guestfilesystem_boot_usage"
+        key: "guestfilesystem:/boot|usage"
+      - metric_suffix: "guestfilesystem_boot_capacity"
+        key: "guestfilesystem:/boot|capacity"
+      - metric_suffix: "guestfilesystem_boot_percentage"
+        key: "guestfilesystem:/boot|percentage"
+      - metric_suffix: "guestfilesystem_usage"
+        key: "guestfilesystem:/|usage"
+      - metric_suffix: "guestfilesystem_capacity"
+        key: "guestfilesystem:/|capacity"
+      - metric_suffix: "guestfilesystem_percentage"
+        key: "guestfilesystem:/|percentage"
+      - metric_suffix: "system_os_uptime_seconds"
+        key: "sys|osUptime_latest"
+      - metric_suffix: "system_powered_on"
+        key: "sys|poweredOn"
+      - metric_suffix: "system_heartbeat_latest"
+        key: "sys|heartbeat_latest"
+
+    NSXTMgmtClusterStatsCollector:
+    # INFO - Prefix: vrops_nsxt_mgmt_cluster_
+      - metric_suffix: "sys_capacity_distributed_firewall_rules_usage_count"
+        key: "System Capacity|Distributed Firewall Rules|UsageCount"
+      - metric_suffix: "sys_capacity_distributed_firewall_rules_max_supported_count"
+        key: "System Capacity|Distributed Firewall Rules|MaxSupportedCount"
+      - metric_suffix: "sys_capacity_distributed_firewall_section_max_supported_count"
+        key: "System Capacity|Distributed Firewall Sections|MaxSupportedCount"
+      - metric_suffix: "sys_capacity_distributed_firewall_section_usage_count"
+        key: "System Capacity|Distributed Firewall Sections|UsageCount"
+      - metric_suffix: "sys_capacity_logical_switches_max_supported_count"
+        key: "System Capacity|Logical Switches|MaxSupportedCount"
+      - metric_suffix: "sys_capacity_logical_switches_usage_count"
+        key: "System Capacity|Logical Switches|UsageCount"
+      - metric_suffix: "sys_capacity_logical_switch_ports_max_supported_count"
+        key: "System Capacity|System-wide Logical Switch Ports|MaxSupportedCount"
+      - metric_suffix: "sys_capacity_logical_switch_ports_usage_count"
+        key: "System Capacity|System-wide Logical Switch Ports|UsageCount"
+      - metric_suffix: "sys_capacity_nsgroups_max_supported_count"
+        key: "System Capacity|Groups|MaxSupportedCount"
+      - metric_suffix: "sys_capacity_nsgroups_usage_count"
+        key: "System Capacity|Groups|UsageCount"
+      - metric_suffix: "sys_capacity_ip_sets_max_supported_count"
+        key: "System Capacity|IP Sets|MaxSupportedCount"
+      - metric_suffix: "sys_capacity_ip_sets_usage_count"
+        key: "System Capacity|IP Sets|UsageCount"
+      - metric_suffix: "sys_capacity_groups_based_in_ip_max_supported_count"
+        key: "System Capacity|Groups Based on IP Sets|MaxSupportedCount"
+      - metric_suffix: "sys_capacity_groups_based_in_ip_usage_count"
+        key: "System Capacity|Groups Based on IP Sets|UsageCount"
+
+    NSXTMgmtClusterPropertiesCollector:
+    # INFO - Prefix: vrops_nsxt_mgmt_cluster_
+      - metric_suffix: "product_version"
+        key: "NSXTProductVersion"
+      - metric_suffix: "management_cluster_connectivity_status"
+        expected: "STABLE"
+        key: "ConnectivityStatus|ClusterStatus|ManagementClusterStatusProperty"
+      - metric_suffix: "controller_cluster_connectivity_status"
+        expected: "STABLE"
+        key: "ConnectivityStatus|ClusterStatus|ControllerClusterStatusProperty"
+
+    NSXTMgmtNodeStatsCollector:
+    # INFO - Prefix: vrops_nsxt_mgmt_node_
+      - metric_suffix: "memory_used"
+        key: "Memory|Used"
+      - metric_suffix: "memory_total"
+        key: "Memory|Total"
+      - metric_suffix: "filesystems_var_log_usedpercentage"
+        key: "FileSystems|/var/log|usedPercentage"
+      - metric_suffix: "filesystems_image_usedpercentage"
+        key: "FileSystems|/image|usedPercentage"
+
+    NSXTMgmtNodePropertiesCollector:
+    # INFO - Prefix: vrops_nsxt_mgmt_node_
+      - metric_suffix: "version"
+        key: "NSXTManagerNodeVersion"
+      - metric_suffix: "connectivity_status"
+        expected: "CONNECTED"
+        key: "ConnectivityStatus|ManagerConnectivityProperty"
+
+    NSXTTransportNodePropertiesCollector:
+    # INFO - Prefix: vrops_nsxt_transport_node_
+      - metric_suffix: "connectivity_status"
+        expected: "SUCCESS"
+        key: "ConnectivityStatus|TransportNodeState"
+      - metric_suffix: "summary_version"
+        key: "summary|SoftwareVersion"
+
+    NSXTLogicalSwitchPropertiesCollector:
+    # INFO - Prefix: vrops_nsxt_logical_switch_
+       - metric_suffix: "state"
+         expected: "SUCCESS"
+         key: "summary|LogicalSwitchStateProperty"
+
+    VcopsSelfMonitoringStatsCollector:
+    # INFO - Prefix: vrops_self_
+       - metric_suffix: "primary_objects_count"
+         key: "PrimaryResourcesCount"
+       - metric_suffix: "primary_metrics_count"
+         key: "PrimaryMetricsCount"
+
+    VcopsSelfMonitoringPropertiesCollector:
+    # INFO - Prefix: vrops_self_
+       - metric_suffix: "build_number"
+         key: "build_number"
+       - metric_suffix: "cluster_state"
+         expected: "ONLINE"
+         key: "ClusterState"

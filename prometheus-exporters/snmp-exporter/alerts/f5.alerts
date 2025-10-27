@@ -1,0 +1,136 @@
+groups:
+  - name: f5
+    rules:
+      - alert: NetworkF5UnboundOffline
+        expr: snmp_f5_ltmPoolMbrStatusAvailState{ltmPoolMbrStatusNodeName=~"/Common/unbound.*.cloud.sap"} != 1
+        for: 5m
+        labels:
+          severity: warning
+          tier: net
+          service: f5
+          context: f5
+          meta: "Unbound pool member {{ $labels.ltmPoolMbrStatusNodeName }}:{{ $labels.ltmPoolMbrStatusPort }} is NOT AVAILABLE."
+          playbook: 'docs/devops/alert/network/f5#unbound-pool-member-down'
+          dashboard: 'dns-f5-and-unbound-performance'
+          support_group: 'network-api'
+        annotations:
+          description: "Unbound pool member {{ $labels.ltmPoolMbrStatusNodeName }}:{{ $labels.ltmPoolMbrStatusPort }} is NOT AVAILABLE."
+          summary: "Unbound pool members helth check reports status other than available."
+      - alert: NetworkF5UnboundConnectionsTooHigh
+        expr: snmp_f5_ltmNodeAddrStatServerCurConns{ltmNodeAddrStatNodeName=~"/Common/unbound.*.cloud.sap"} > 55000
+        for: 5m
+        labels:
+          severity: warning
+          tier: net
+          service: f5
+          context: f5
+          meta: "Current active connections to {{ $labels.ltmNodeAddrStatNodeName }}:{{ $labels.ltmPoolMbrStatusPort }} on F5 {{ $labels.devicename }} are reaching critical threshold."
+          dashboard: 'dns-f5-and-unbound-performance'
+          support_group: 'network-api'
+          playbook: 'docs/devops/alert/network/f5#unbound-connection-count-high'
+        annotations:
+          description: "Number of concurrent connections to {{ $labels.ltmNodeAddrStatNodeName }}:{{ $labels.ltmPoolMbrStatusPort }} on F5 {{ $labels.devicename }} is reaching critical threshold of 65536."
+          summary: "Number of concurrent connections to unbound server(s) is critical."
+      - alert: NetworkF5DirSharedUtil
+        expr: round(100 - ((100 / snmp_f5_sysHostDiskTotalBlocks{sysHostDiskPartition=~"/shared"}) * snmp_f5_sysHostDiskFreeBlocks{sysHostDiskPartition=~"/shared"})) >= 85
+        for: 5m
+        labels:
+          severity: critical
+          support_group: network-lb
+          tier: net
+          service: f5
+          context: f5
+          meta: "F5 - high utilization of the \"/shared\" directory."
+          playbook: 'docs/devops/alert/network/f5#f5_disc_util'
+          dashboard: f5-disc-utilization-regional
+        annotations:
+          description: "Utilization of the \"/shared\" directory on Big-IP device {{ $labels.devicename }} is at {{ $value }}% or more. Proceed with playbook instructions."
+          summary: "F5 - high utilization of the \"/shared\" directory."
+      - alert: NetworkF5DirVarUtil
+        expr: round(100 - ((100 / snmp_f5_sysHostDiskTotalBlocks{sysHostDiskPartition=~"/var"}) * snmp_f5_sysHostDiskFreeBlocks{sysHostDiskPartition=~"/var"})) >= 85
+        for: 5m
+        labels:
+          severity: critical
+          support_group: network-lb
+          tier: net
+          service: f5
+          context: f5
+          meta: "F5 - high utilization of the \"/var\" directory."
+          playbook: 'docs/devops/alert/network/f5#f5_disc_util'
+          dashboard: f5-disc-utilization-regional
+        annotations:
+          description: "Utilization of the \"/var\" directory on Big-IP device {{ $labels.devicename }} is at {{ $value }}% or more. Proceed with playbook instructions."
+          summary: "F5 - high utilization of the \"/var\" directory."
+      - alert: NetworkF5DirVarlogUtil
+        expr: 100 - round(snmp_f5_sysHostDiskFreeBlocks{sysHostDiskPartition="/var/log"} / snmp_f5_sysHostDiskTotalBlocks{sysHostDiskPartition="/var/log"} * 100) >= 95
+        for: 5m
+        labels:
+          severity: critical
+          support_group: network-lb
+          tier: net
+          service: f5
+          context: f5
+          meta: "F5 - high utilization of the \"/var/log\" directory."
+          playbook: 'docs/devops/alert/network/f5#f5_disc_util'
+          dashboard: f5-disc-utilization-regional
+        annotations:
+          description: "Utilization of the \"/var/log\" directory on Big-IP device {{ $labels.devicename }} is at {{ $value }}% or more. Proceed with playbook instructions."
+          summary: "F5 - high utilization of the \"/var/log\" directory."
+      - alert: NetworkF5SyncFailed
+        expr: snmp_f5_sysCmSyncStatusStatus{module="f5customer", snmp_f5_sysCmSyncStatusStatus="Sync Failed"}
+        for: 15m
+        labels:
+          severity: warning
+          tier: net
+          service: f5
+          context: f5
+          meta: "Big-IP device {{ $labels.devicename }} reports config-sync failure."
+          playbook: 'docs/devops/alert/network/f5#config-sync-failure'
+          support_group: network-lb
+        annotations:
+          description: Big-IP device {{ $labels.devicename }} reports config sync failure.
+          summary: Active Big-IP device configuration failed to synchronize to the standby device.
+      - alert: NetworkF5PoolsFlapping
+        expr: (ceil((count by (devicename) (changes(snmp_f5_ltmPoolStatusAvailState[10m]) > 5) / sum by (devicename) (snmp_f5_ltmPoolNumber)) * 100)) > 50
+        for: 5m
+        labels:
+          severity: critical
+          support_group: network-lb
+          tier: net
+          service: f5
+          context: f5
+          meta: "Big-IP device {{ $labels.devicename }} reports that some pools are constantly flapping."
+          playbook: 'docs/devops/alert/network/f5#f5_pool_flapping'
+        annotations:
+          description: "Big-IP device {{ $labels.devicename }} reports {{ $value }}% of pools are flapping."
+          summary: Load balancing pools are flapping.
+      - alert: NetworkF5vNodeIsOffline
+        expr: snmp_f5_ltmPoolMbrStatusAvailState{ltmPoolMbrStatusNodeName=~"/Common/vnode.*.cc.*.cloud.sap"} != 1
+        for: 30m
+        labels:
+          severity: warning
+          tier: net
+          service: f5
+          context: f5
+          meta: "vNode pool member {{ $labels.ltmPoolMbrStatusNodeName }} in pool {{ $labels.ltmPoolMbrStatusPoolName }} on port {{ $labels.ltmPoolMbrStatusPort }} is NOT AVAILABLE. Verify the actual status on F5 device {{ $labels.devicename }} and proceed with playbook instructions."
+          playbook: 'docs/devops/alert/network/f5#f5_vnode_offline'
+          dashboard: none
+          support_group: containers
+        annotations:
+          description: "vNode pool member {{ $labels.ltmPoolMbrStatusNodeName }} in pool {{ $labels.ltmPoolMbrStatusPoolName }} on port {{ $labels.ltmPoolMbrStatusPort }} is NOT AVAILABLE. Verify the actual status on F5 device {{ $labels.devicename }} and proceed with playbook instructions."
+          summary: "F5 health check monitor for a vNode pool member failed."
+      - alert: NetworkF5Admin1IsOffline
+        expr: snmp_f5_ltmPoolMbrStatusAvailState{ltmPoolMbrStatusNodeName=~"/Common/admin1.cc.*.cloud.sap"} != 1
+        for: 30m
+        labels:
+          severity: warning
+          tier: net
+          service: f5
+          context: f5
+          meta: "Admin1 pool member {{ $labels.ltmPoolMbrStatusNodeName }} in pool {{ $labels.ltmPoolMbrStatusPoolName }} on port {{ $labels.ltmPoolMbrStatusPort }} is NOT AVAILABLE. Verify the actual status on F5 device {{ $labels.devicename }} and proceed with playbook instructions."
+          playbook: 'docs/devops/alert/network/f5#f5_admin1_offline'
+          dashboard: none
+          support_group: containers
+        annotations:
+          description: "Admin1 pool member {{ $labels.ltmPoolMbrStatusNodeName }} in pool {{ $labels.ltmPoolMbrStatusPoolName }} on port {{ $labels.ltmPoolMbrStatusPort }} is NOT AVAILABLE. Verify the actual status on F5 device {{ $labels.devicename }} and proceed with playbook instructions."
+          summary: "F5 health check monitor for a admin pool member admin1 failed."

@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: parrot-metrics
+  labels:
+    app: kube-parrot
+
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: {{ required ".Values.metricPort missing" .Values.metricPort | quote }}
+    prometheus.io/targets: "kubernetes"
+
+spec:
+  ports:
+  - name: metrics
+    port: {{ required ".Values.metricPort missing" .Values.metricPort }}
+
+  selector:
+    service: kube-parrot

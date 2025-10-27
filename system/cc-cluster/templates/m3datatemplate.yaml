@@ -1,0 +1,36 @@
+{{- range $key, $cluster := .Values.clusters }}
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+kind: Metal3DataTemplate
+metadata:
+  name: {{ $key }}
+  namespace: metal-{{ $key }}
+spec:
+  clusterName: {{ $key }}
+  metaData:
+    objectNames:
+    - key: name_m3m
+      object: metal3machine
+    - key: name_machine
+      object: machine
+    - key: name_bmh
+      object: baremetalhost
+    fromLabels:
+    - key: zone
+      object: baremetalhost
+      label: topology.kubernetes.io/zone
+    - key: region
+      object: baremetalhost
+      label: topology.kubernetes.io/region
+    - key: bb
+      object: baremetalhost
+      label: kubernetes.metal.cloud.sap/bb
+    - key: role
+      object: baremetalhost
+      label: kubernetes.metal.cloud.sap/role
+    strings:
+    - key: domain
+      value: cc.{{ $.Values.global.region }}.cloud.sap
+    - key: region
+      value: {{ $.Values.global.region }}
+{{- end }}

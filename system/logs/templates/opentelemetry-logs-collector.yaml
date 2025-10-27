@@ -1,0 +1,347 @@
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: logs
+  labels:
+  {{- include "plugin.labels" . | nindent 4 }} 
+  {{- if .Values.openTelemetryPlugin.openTelemetry.customLabels }}
+  {{ toYaml .Values.openTelemetryPlugin.openTelemetry.customLabels | nindent 4 }}
+  {{- end }}
+  annotations:
+    prometheus.io/scrape: "false"
+spec:
+  mode: daemonset
+  tolerations:
+  - operator: Exists
+  podAnnotations:
+    kubectl.kubernetes.io/default-container: "otc-container"
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: cloud.sap/deployment-state
+            operator: NotIn
+            values:
+            - reinstalling
+          - key: cloud.sap/esx-in-maintenance
+            operator: NotIn
+            values:
+            - alarm
+  env:
+    - name: NAMESPACE
+      valueFrom:
+        fieldRef:
+          fieldPath: metadata.namespace
+    - name: KUBE_NODE_NAME
+      valueFrom:
+        fieldRef:
+          fieldPath: spec.nodeName
+    - name: MY_POD_IP
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: status.podIP
+    - name: cluster
+      value: "{{ .Values.openTelemetryPlugin.openTelemetry.cluster }}"
+    - name: region
+      value: "{{ .Values.openTelemetryPlugin.openTelemetry.region }}"
+    - name: index
+      value: "{{ .Values.openTelemetryPlugin.openTelemetry.openSearchLogs.index }}"
+  envFrom:
+    - secretRef:
+         name: otel-basic-auth
+{{- if .Values.openTelemetryPlugin.openTelemetry.prometheus.podMonitor.enabled }}
+  ports:
+    - name: prometheus
+      port: 8888
+{{- end }}
+  image: {{ index .Values "openTelemetryPlugin" "opentelemetry-operator" "manager" "collectorImage" "repository" }}:{{ index .Values "openTelemetryPlugin" "opentelemetry-operator" "manager" "collectorImage" "tag" }}
+  volumeMounts:
+  - mountPath: /var/log
+    name: varlog
+    readOnly: true
+  volumes:
+  - name: varlog
+    hostPath:
+      path: /var/log
+  config:
+    receivers:
+{{- if .Values.openTelemetryPlugin.openTelemetry.logsCollector.journaldConfig.enabled }}
+    {{- include "journald.receiver" . | nindent 6 -}}
+{{ end }}
+{{- if .Values.openTelemetryPlugin.openTelemetry.logsCollector.k8seventsConfig.enabled }}
+      k8s_events:
+        auth_type: serviceAccount
+{{- end }}
+{{- if and (.Values.openTelemetryPlugin.openTelemetry.logsCollector.containerdConfig.enabled) (.Values.openTelemetryPlugin.openTelemetry.logsCollector.openstackConfig.enabled) }}
+{{- else if .Values.openTelemetryPlugin.openTelemetry.logsCollector.containerdConfig.enabled }}
+  {{- include "containerd.receiver" . | nindent 6 -}}
+{{- else if .Values.openTelemetryPlugin.openTelemetry.logsCollector.openstackConfig.enabled }}
+  {{- include "openstack.receiver" . | nindent 6 -}}
+{{- end }}
+{{- if .Values.openTelemetryPlugin.openTelemetry.logsCollector.externalConfig.enabled }}
+    {{- include "external.receiver" . | nindent 6 -}}
+{{- end }}
+
+    processors:
+      batch:
+        send_batch_max_size: 5000
+        timeout: 5s
+        send_batch_size : 100
+
+      attributes/cluster:
+        actions:
+          - action: insert
+            key: k8s.cluster.name
+            value: ${cluster}
+          - action: insert
+            key: region
+            value: ${region}
+          - action: insert
+            key: k8s.node.name
+            value: ${KUBE_NODE_NAME}
+      attributes/failover_username_a:
+        actions:
+          - action: insert
+            key: failover_username_opensearch
+            value: ${failover_username_a}
+      attributes/failover_username_b:
+        actions:
+          - action: insert
+            key: failover_username_opensearch
+            value: ${failover_username_b}
+
+{{- if .Values.openTelemetryPlugin.openTelemetry.logsCollector.journaldConfig.enabled }}
+    {{- include "journald.transform" . | nindent 6 -}}
+{{- end }}
+{{- if and (.Values.openTelemetryPlugin.openTelemetry.logsCollector.containerdConfig.enabled) (.Values.openTelemetryPlugin.openTelemetry.logsCollector.openstackConfig.enabled) }}
+{{- else if .Values.openTelemetryPlugin.openTelemetry.logsCollector.containerdConfig.enabled }}
+    {{- include "containerd.transform" . | nindent 6 -}}
+{{- else if .Values.openTelemetryPlugin.openTelemetry.logsCollector.openstackConfig.enabled }}
+    {{- include "openstack.transform" . | nindent 6 -}}
+{{- end }}
+{{- if .Values.openTelemetryPlugin.openTelemetry.logsCollector.k8seventsConfig.enabled }}
+    {{- include "k8sevents.transform" . | nindent 6 -}}
+{{- end }}
+{{- if .Values.openTelemetryPlugin.openTelemetry.logsCollector.externalConfig.enabled }}
+    {{- include "external.transform" . | nindent 6 -}}
+{{- end }}
+
+
+      k8sattributes:
+        auth_type: "serviceAccount"
+        passthrough: false
+        filter:
+          node_from_env_var: KUBE_NODE_NAME
+        extract:
+          metadata:
+            - k8s.namespace.name
+            - k8s.pod.name
+            - k8s.pod.uid
+            - k8s.pod.ip
+            - k8s.pod.start_time
+            - k8s.deployment.name
+            - k8s.deployment.uid
+            - k8s.node.name
+            - k8s.replicaset.name
+            - k8s.replicaset.uid
+            - k8s.statefulset.name
+            - k8s.statefulset.uid
+            - k8s.daemonset.name
+            - k8s.daemonset.uid
+            - k8s.job.name
+            - k8s.job.uid
+            - k8s.cronjob.name
+            - k8s.node.uid
+            - k8s.cluster.uid
+            - k8s.container.name
+            - container.image.name
+            - container.image.tag
+          labels:
+            - tag_name: app.label.ingress-nginx
+              key: ingress-nginx
+              from: pod
+            - tag_name: app.label.ccloud.support-group
+              key: ccloud/support-group
+              from: pod
+            - tag_name: app.label.ccloud.service
+              key: ccloud/service
+              from: pod
+            - tag_name: app.label.app_name
+              key: app.kubernetes.io/app_name
+              from: pod
+            - tag_name: app.label.cloud.sap.decommissioning
+              key: cloud.sap/decommissioning
+              from: pod
+            - tag_name: app.label.cloud.sap.scheduling-disabled
+              key: cloud.sap/scheduling-disabled
+              from: pod
+            - tag_name: app.label.component
+              key: component
+              from: pod
+            - tag_name: app.label.name
+              key: app.kubernetes.io/name
+              from: pod
+            - tag_name: app.label.instance
+              key: app.kubernetes.io/instance
+              from: pod
+            - tag_name: app.label.pod-template-hash
+              key: pod-template-hash
+              from: pod
+            - tag_name: app.label.release
+              key: release
+              from: pod
+        pod_association:
+          - sources:
+              - from: resource_attribute
+                name: k8s.pod.ip
+          - sources:
+              - from: resource_attribute
+                name: k8s.pod.uid
+          - sources:
+              - from: resource_attribute
+                name: k8s.pod.name
+          - sources:
+              - from: connection
+      memory_limiter:
+        check_interval: 5s
+        limit_percentage: 80
+        spike_limit_percentage: 30
+      resource:
+        attributes:
+        - action: insert
+          key: k8s.cluster.name
+          value: ${cluster}
+        - action: insert
+          key: region
+          value: ${region}
+        - action: insert
+          key: k8s.node.name
+          value: ${KUBE_NODE_NAME}
+    exporters:
+      debug:
+        verbosity: basic
+      opensearch/failover_a:
+        http:
+          auth:
+            authenticator: basicauth/failover_a
+          endpoint: {{ .Values.openTelemetryPlugin.openTelemetry.openSearchLogs.endpoint }}
+        logs_index: ${index}-datastream
+        retry_on_failure:
+          enabled: true
+          max_elapsed_time: 0s
+        sending_queue:
+          block_on_overflow: true
+          enabled: true
+          num_consumers: 10
+          queue_size: 10000
+          sizer: requests
+        timeout: 30s
+      opensearch/failover_b:
+        http:
+          auth:
+            authenticator: basicauth/failover_b
+          endpoint: {{ .Values.openTelemetryPlugin.openTelemetry.openSearchLogs.endpoint }}
+        logs_index: ${index}-datastream
+        retry_on_failure:
+          enabled: true
+          max_elapsed_time: 0s
+        sending_queue:
+          block_on_overflow: true
+          enabled: true
+          num_consumers: 10
+          queue_size: 10000
+          sizer: requests
+        timeout: 30s
+{{- if .Values.openTelemetryPlugin.openTelemetry.logsCollector.openstackConfig.enabled }}
+    {{- include "openstack.exporter" . | nindent 6 -}}
+{{- end }}
+{{- if .Values.openTelemetryPlugin.openTelemetry.logsCollector.externalConfig.enabled }}
+    {{- include "external.exporter" . | nindent 6 -}}
+{{- end }}
+
+    extensions:
+      basicauth/failover_a:
+        client_auth:
+          username: ${failover_username_a}
+          password: ${failover_password_a}
+      basicauth/failover_b:
+        client_auth:
+          username: ${failover_username_b}
+          password: ${failover_password_b}
+
+    connectors:
+      forward: {}
+      forward/swift: {}
+      failover/opensearch:
+        priority_levels:
+          - [logs/failover_a]
+          - [logs/failover_b]
+        retry_interval: 20m
+        retry_gap: 5m
+        max_retries: 0
+      failover/opensearch_swift:
+        priority_levels:
+          - [logs/failover_a_swift]
+          - [logs/failover_b_swift]
+        retry_interval: 1h
+        retry_gap: 15m
+        max_retries: 0
+
+{{- if .Values.openTelemetryPlugin.openTelemetry.logsCollector.externalConfig.enabled }}
+    {{- include "external.connectors" . | nindent 6 -}}
+{{- end }}
+
+    service:
+      extensions:
+        - basicauth/failover_a
+        - basicauth/failover_b
+{{- if .Values.openTelemetryPlugin.openTelemetry.prometheus.podMonitor.enabled }}
+      telemetry:
+        metrics:
+          level: detailed
+          readers:
+          - pull:
+              exporter:
+                prometheus:
+                  host: 0.0.0.0
+                  port: 8888
+                  with_resource_constant_labels:
+                    included:
+                    - k8s_node_name
+                    - k8s_cluster_name
+                    - region
+        resource:
+          k8s_cluster_name: ${cluster}
+          k8s_node_name: ${KUBE_NODE_NAME}
+          region: ${region}
+{{- end }}
+      pipelines:
+        logs/forward:
+          receivers: [forward]
+          processors: [batch]
+          exporters: [failover/opensearch]
+        logs/failover_a:
+          receivers: [failover/opensearch]
+          processors: [attributes/failover_username_a]
+          exporters: [opensearch/failover_a]
+        logs/failover_b:
+          receivers: [failover/opensearch]
+          processors: [attributes/failover_username_b]
+          exporters: [opensearch/failover_b]
+{{- if .Values.openTelemetryPlugin.openTelemetry.logsCollector.journaldConfig.enabled }}
+    {{- include "journald.pipeline" . | nindent 8 -}}
+{{- end }}
+{{- if and (.Values.openTelemetryPlugin.openTelemetry.logsCollector.containerdConfig.enabled) (.Values.openTelemetryPlugin.openTelemetry.logsCollector.openstackConfig.enabled) }}
+{{- else if .Values.openTelemetryPlugin.openTelemetry.logsCollector.containerdConfig.enabled }}
+    {{- include "containerd.pipeline" . | nindent 8 -}}
+{{- else if .Values.openTelemetryPlugin.openTelemetry.logsCollector.openstackConfig.enabled }}
+    {{- include "openstack.pipeline" . | nindent 8 -}}
+{{- end }}
+{{- if .Values.openTelemetryPlugin.openTelemetry.logsCollector.k8seventsConfig.enabled }}
+    {{- include "k8sevents.pipeline" . | nindent 8 -}}
+{{- end }}
+{{- if .Values.openTelemetryPlugin.openTelemetry.logsCollector.externalConfig.enabled }}
+    {{- include "external.pipeline" . | nindent 8 -}}
+{{- end }}

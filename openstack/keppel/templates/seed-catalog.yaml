@@ -1,0 +1,40 @@
+{{- $region := .Values.global.region | required "missing value for .Values.global.region" -}}
+{{- $tld    := .Values.global.tld    | required "missing value for .Values.global.tld"    -}}
+
+apiVersion: "openstack.stable.sap.cc/v1"
+kind: OpenstackSeed
+metadata:
+  # This is separate from the big keppel-seed in order to be easier to reapply.
+  name: keppel-catalog-seed
+
+spec:
+  requires: []
+
+  services:
+    - name:        keppel
+      type:        keppel
+      description: 'Multi-tenant container image registry'
+      enabled:     true
+      endpoints:
+        - region:    '{{ $region }}'
+          interface: public
+          enabled:   true
+          url:       'https://keppel.{{ $region }}.{{ $tld }}'
+        - region:    '{{ $region }}'
+          interface: internal
+          enabled:   true
+          url:       'http://keppel-api.{{ .Release.Namespace }}.svc'
+
+    - name:        liquid-keppel
+      type:        liquid-keppel
+      description: 'Limes integration for Keppel <https://pkg.go.dev/github.com/sapcc/go-api-declarations/liquid>'
+      enabled:     true
+      endpoints:
+        - region:    '{{ $region }}'
+          interface: public
+          enabled:   true
+          url:       'https://keppel.{{ $region }}.{{ $tld }}/liquid/'
+        - region:    '{{ $region }}'
+          interface: internal
+          enabled:   true
+          url:       'http://keppel-api.{{ .Release.Namespace }}.svc/liquid/'

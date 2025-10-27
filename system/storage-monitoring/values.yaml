@@ -1,0 +1,102 @@
+global:
+  domain: cloud.sap
+  clusterType: metal
+
+  linkerd_requested: true
+
+owner-info:
+  service: prometheus
+  support-group: observability
+  maintainers: 
+    - Tommy Sauer
+    - Richard Tief
+  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/system/storage-monitoring
+
+prometheus-server:
+  name: storage
+
+  alertmanagers:
+    hosts:
+      - alertmanager-internal.scaleout.eu-de-1.cloud.sap
+      - alertmanager-internal.scaleout.eu-nl-1.cloud.sap
+  ingress:
+    enabled: true
+    authentication:
+      sso:
+        enabled: true
+        authTLSSecret: kube-system/ingress-cacrt
+        authTLSVerifyDepth: 3
+        authTLSVerifyClient: on
+
+  internalIngress:
+    enabled: true
+
+  persistence:
+    enabled: true
+
+  resources:
+    requests:
+      cpu: 500m
+      memory: 3Gi
+
+  vpaUpdateMode: "Auto"
+  vpaResources:
+    prometheus:
+      containerName: "prometheus"
+      maxAllowed:
+        memory: "50Gi"
+
+  thanos:
+    enabled: true
+
+  additionalScrapeConfigs:
+    name: storage-additional-scrape-config
+    key: scrape-config.yaml
+
+  serviceDiscoveries:
+    scrapeInterval: 60s
+    scrapeTimeout: 55s
+    pods:
+      enabled: true
+
+  alerts:
+    thanos:
+      enabled: true
+      name: metal
+
+thanos:
+  name: storage
+  clusterDomain: kubernetes
+
+  compactor:
+    dataVolume:
+      enabled: true
+
+  deployWholeThanos: true
+
+  grpcIngress:
+    enabled: true
+    hosts:
+      - thanos-storage-grpc
+  serviceAccount:
+    create: false
+
+netapp_cap_exporter:
+  enabled: false
+  apps:
+    manila:
+      scrapeInterval: 2m
+      scrapeTimeout: 110s
+      fullname: "netapp-capacity-exporter-manila"
+    cinder:
+      scrapeInterval: 2m
+      scrapeTimeout: 110s
+      fullname: "netapp-capacity-exporter-cinder"
+    baremetal:
+      scrapeInterval: 2m
+      scrapeTimeout: 110s
+      fullname: "netapp-capacity-exporter-bare-metal"
+    controlplane:
+      scrapeInterval: 2m
+      scrapeTimeout: 110s
+      fullname: "netapp-capacity-exporter-control-plane"

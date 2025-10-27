@@ -1,0 +1,19 @@
+kind: Service
+apiVersion: v1
+
+metadata:
+  name: blackbox-tests-datapath
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: {{ .Values.global.port_metrics | quote }}
+    prometheus.io/targets: {{ .Values.global.alerts.prometheus | quote }}
+  labels:
+    system: openstack
+    component: blackbox-tests
+    type: datapath
+
+spec:
+  selector:
+    name: blackbox-tests-datapath
+  ports:
+    - port: {{ .Values.global.port_metrics }}

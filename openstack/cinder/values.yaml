@@ -1,0 +1,484 @@
+# Default values for cinder.
+# This is a YAML-formatted file.
+# Declare name/value pairs to be passed into your templates.
+# name: value
+global:
+  dbUser: cinder
+  domain_seeds:
+    skip_hcm_domain: false
+
+  linkerd_requested: true
+  osprofiler: {}
+  imagePullPolicy: IfNotPresent
+
+osprofiler:
+  enabled: false
+
+pod:
+  replicas:
+    api: 4
+    scheduler: 1
+  lifecycle:
+    upgrades:
+      deployments:
+        revisionHistory: 5
+        podReplacementStrategy: RollingUpdate
+        rollingUpdate:
+          maxUnavailable: 0
+          maxSurge: 1
+  resources:
+    api:
+      requests:
+        cpu: "1500m"
+        memory: "3Gi"
+    scheduler:
+      requests:
+        cpu: "100m"
+        memory: "300Mi"
+    volume:
+      requests:
+        cpu: "500m"
+        memory: "1.5Gi"
+
+debug: "True"
+
+sentry:
+  enabled: true
+
+port_metrics: 9102
+
+backend_defaults:
+  reserved_percentage: 20
+  suppress_requests_ssl_warnings: True
+  vmware_connection_pool_size: 10
+  vmware_insecure: True
+  vmware_profile_check_on_attach: False
+  vmware_image_transfer_timeout_secs: 72000
+  max_over_subscription_ratio: 1
+  vmware_select_random_best_datastore: True
+  vmware_datastores_as_pools: True
+
+backends:
+  enabled: vmware,standard_hdd
+  vmware:
+    vmware_storage_profile: cinder-vvol
+  standard_hdd:
+    vmware_storage_profile: cinder-standard-hdd
+
+cinderApiPortPublic: 443
+cinderApiPortInternal: 8776
+cinderApiPortAdmin: 8776
+
+defaults:
+  backends:
+    common: {}
+    cinder.volume.drivers.netapp.common.NetAppDriver:
+      netapp_transport_type: https
+      netapp_storage_family: ontap_cluster
+      netapp_storage_protocol: null
+      netapp_vserver: null
+      netapp_server_hostname: null
+      netapp_server_port: 443
+      netapp_login: null
+      netapp_password: null
+
+volumes: {}
+
+
+api:
+  use_uwsgi: false
+  # bare in mind, that with use_uwsgi=false, these workers also have
+  # greenthreads
+  workers: 10
+
+use_tls_acme: true
+
+db_name: cinder
+
+scheduler_default_filters: "AvailabilityZoneFilter,SAPPoolDownFilter,CapabilitiesFilter,ShardFilter,SAPLargeVolumeFilter,SAPDifferentBackendFilter,SAPSameBackendFilter,CapacityFilter"
+scheduler_default_weighers: "CapacityWeigher"
+
+capacity_weight_multiplier: 1.0
+allocated_capacity_weight_multiplier: -1.0
+
+cinder_api_allow_migration_on_attach: True
+
+sap_disable_incremental_backup: True
+sap_allow_independent_snapshots: True
+sap_allow_independent_clone: True
+
+rpc_ping_enabled: true
+
+nanny:
+  lockfiles:
+    enabled: false
+    # daily at 22:00' 
+    crontab_schedule: '0 22 * * *' 
+    verbose: false
+    batch_size: 10000
+    dry_run: true
+  db_purge:
+    enabled: false
+    # daily at 22:10' 
+    crontab_schedule: '10 22 * * *' 
+    age_in_days: 14
+  quota_sync:
+    enabled: false
+    # hourly at 30 minutes past the hour
+    crontab_schedule: '30 * * * *' 
+    dry_run: false
+    silent: false
+  consistency:
+    enabled: false
+    # weekly at sunday 22:20'
+    crontab_schedule: '20 22 * * 0' 
+    # Inconsistencies to fix. Be careful, all options except
+    # error_deleting_snapshots/volumes will manipulate the database
+    # without using the cinder API - which may causes harm.
+    fix: 'error_deleting_snapshots,error_deleting_volumes' 
+    # Number of orphaned volumes to fix in one run. Orphaned volumes not fixed
+    # by default. Thus set to null by default.
+    fix_limit: null
+
+proxysql:
+  mode: null  # Disabled by default
+  native_sidecar: true
+
+mariadb:
+  enabled: true
+  max_connections: 2048
+  buffer_pool_size: "2048M"
+  log_file_size: "512M"
+  ccroot_user:
+    enabled: true
+  name: cinder
+  databases:
+  - cinder
+  users:
+    cinder:
+      name: cinder
+      password: null
+      grants:
+      - "ALL PRIVILEGES on cinder.*"
+  persistence_claim:
+    name: db-cinder-pvclaim
+  extraConfigFiles:
+    cinder.cnf: |+
+      [mysqld]
+      connect_timeout = 15
+  alerts:
+    support_group: compute-storage-api
+  job:
+    maintenance:
+      enabled: false
+      function:
+        analyzeTable:
+          enabled: true
+          allTables: true
+
+pxc_db:
+  enabled: false
+  name: cinder
+  alerts:
+    support_group: compute-storage-api
+  ccroot_user:
+    enabled: true
+  databases:
+    - cinder
+  users:
+    cinder:
+      name: cinder
+      grants:
+        - "ALL PRIVILEGES on cinder.*"
+  pxc:
+    configuration:
+      options:
+        max_connections: "2048"
+        innodb_buffer_pool_size: "2048M"
+        innodb_log_file_size: "512M"
+        connect_timeout: "15"
+    persistence:
+      size: 10Gi
+  backup:
+    enabled: true
+    s3:
+      secrets:
+        aws_access_key_id: null
+        aws_secret_access_key: null
+    pitr:
+      enabled: true
+
+max_pool_size: 15
+max_overflow: 5
+
+mysql_metrics:
+  db_name: cinder
+  db_user: cinder
+  customMetrics:
+    - help: Cinder stuck volumes
+      labels:
+        - "cinder_host"
+        - "availability_zone"
+        - "project_id"
+        - "status"
+        - "id"
+        - "display_name"
+      name: openstack_stuck_volumes_count_gauge
+      query: |
+        SELECT
+          COALESCE(host, "No host") AS cinder_host,
+          project_id,
+          id,
+          display_name,
+          availability_zone,
+          status,
+          COUNT(*) AS count_gauge
+        FROM volumes
+        WHERE
+          status IN ('attaching', 'deleting', 'detaching') AND (updated_at < DATE_SUB(now(), INTERVAL 15 MINUTE))
+        GROUP BY
+          cinder_host,
+          availability_zone,
+          project_id,
+          status,
+          id,
+          display_name;
+      values:
+        - "count_gauge"
+    - help: Cinder stuck volumes max duration
+      labels:
+        - "cinder_host"
+        - "availability_zone"
+        - "project_id"
+        - "status"
+        - "id"
+        - "display_name"
+      name: openstack_stuck_volumes_max_duration_gauge
+      query: |
+        SELECT
+          COALESCE(host, "No host") AS cinder_host,
+          project_id,
+          id,
+          display_name,
+          availability_zone,
+          status,
+          MAX(NOW() - updated_at) AS max_duration_gauge
+        FROM volumes
+        WHERE
+          status IN ('attaching', 'deleting', 'detaching') AND (updated_at < DATE_SUB(now(), INTERVAL 15 MINUTE))
+        GROUP BY
+          cinder_host,
+          availability_zone,
+          project_id,
+          status,
+          id,
+          display_name
+        UNION SELECT 'dummy', 'dummy', 'dummy', 'dummy', 'dummy', 'dummy', 0;
+      values:
+        - "max_duration_gauge"
+    - help: Cinder volumes count
+      labels:
+        - "cinder_host"
+        - "availability_zone"
+        - "volume_type_id"
+        - "project_id"
+        - "status"
+        - "attach_status"
+      name: openstack_volumes_count_gauge
+      query: |
+        SELECT
+          COALESCE(host, "No host") AS cinder_host,
+          availability_zone,
+          volume_type_id,
+          project_id,
+          status,
+          attach_status,
+          COUNT(*) AS count_gauge
+        FROM volumes
+        GROUP BY
+          cinder_host,
+          availability_zone,
+          volume_type_id,
+          project_id,
+          status,
+          attach_status;
+      values:
+        - "count_gauge"
+    - help: Cinder volumes size
+      labels:
+        - "cinder_host"
+        - "availability_zone"
+        - "volume_type_id"
+        - "project_id"
+        - "status"
+        - "attach_status"
+      name: openstack_volumes_size_gauge
+      query: |
+        SELECT
+          COALESCE(host, "No host") AS cinder_host,
+          availability_zone,
+          volume_type_id,
+          project_id,
+          status,
+          attach_status,
+          SUM(size) size_gauge
+        FROM volumes
+        GROUP BY
+          cinder_host,
+          availability_zone,
+          volume_type_id,
+          project_id,
+          status,
+          attach_status;
+      values:
+        - "size_gauge"
+    - help: Cinder Snapshots count
+      labels:
+        - "status"
+        - "project_id"
+        - "cinder_host"
+      name: openstack_snapshots_count_gauge
+      query: |
+        SELECT
+          snapshots.status,
+          snapshots.project_id,
+          COALESCE(volumes.host, "No host") AS cinder_host,
+          COUNT(*) AS count_gauge
+        from snapshots
+        join volumes on snapshots.volume_id=volumes.id
+        GROUP BY
+          snapshots.status,
+          snapshots.project_id,
+          cinder_host;
+      values:
+        - "count_gauge"
+    - help: Cinder Snapshots size
+      labels:
+        - "project_id"
+        - "cinder_host"
+        - "status"
+      name: openstack_snapshots_size_gauge
+      query: |
+        SELECT
+          snapshots.project_id,
+          COALESCE(volumes.host, "No host") AS cinder_host,
+          snapshots.status,
+          SUM(volume_size) size_gauge
+        from snapshots
+        join volumes on snapshots.volume_id=volumes.id
+        GROUP BY
+          snapshots.project_id,
+          cinder_host,
+          snapshots.status;
+      values:
+        - "size_gauge"
+
+audit:
+  enabled: false
+  record_payloads: false
+  metrics_enabled: true
+  central_service:
+    user: rabbitmq
+    password: null
+
+rabbitmq:
+  name: cinder
+  alerts:
+    # unacked/ready messages in rabbitmq
+    rabbit_queue_length: 50
+    unacknowledged_total_wait_for: 60m
+    ready_total_wait_for: 60m
+    support_group: compute-storage-api
+  metrics:
+    enabled: true
+    addMetricsUser: true
+    sidecar:
+      enabled: false
+  enableDetailedMetrics: true
+  enablePerObjectMetrics: true
+rabbitmq_notifications:
+  name: cinder
+logging:
+  formatters:
+    context:
+      class: oslo_log.formatters.ContextFormatter
+    default:
+      format: "%(message)s"
+  handlers:
+    stdout:
+      class: StreamHandler
+      args: "(sys.stdout,)"
+      formatter: context
+    "null":
+      class: logging.NullHandler
+      args: "()"
+      formatter: default
+    sentry:
+      class: raven.handlers.logging.SentryHandler
+      level: ERROR
+      args: "()"
+  loggers:
+    root:
+      handlers: stdout, sentry
+      level: WARNING
+    cinder:
+      handlers: stdout, sentry
+      level: DEBUG
+    taskflow:
+      handlers: stdout, sentry
+      level: DEBUG
+    eventlet.wsgi.server:
+      handlers: stdout, sentry
+      level: INFO
+    sqlalchemy:
+      handlers: stdout, sentry
+      level: WARNING
+    suds:
+      handlers: "null"
+      level: ERROR
+
+# openstack-rate-limit-middleware
+api_rate_limit:
+  enabled: true
+  backend_secret_file: /etc/cinder/ratelimit-backend-secret.conf
+  rate_limit_by: "target_project_id"
+  max_sleep_time_seconds: 15
+  log_sleep_time_seconds: 10
+  backend_timeout_seconds: 15
+  project_whitelist: []
+
+# openstack-watcher-middleware
+watcher:
+  enabled: true
+
+# Deploy Cinder Prometheus alerts.
+alerts:
+  enabled: true
+  # Used for annotation (prometheus.io/targets) value to route metric
+  # scraping to the correct prometheus instance
+  prometheus: openstack
+
+cors:
+  enabled: true
+
+memcached:
+  alerts:
+    support_group: compute-storage-api
+
+owner-info:
+  support-group: compute-storage-api
+  service: cinder
+  maintainers:
+    - Walter Boring IV
+    - Johannes Kulik
+    - Csaba Seres
+    - Marius Leustean
+  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/openstack/cinder
+
+coordinationBackend: "file"
+
+api-ratelimit-redis:
+  alerts:
+    support_group: compute-storage-api
+
+manage_service_user_passwords: false

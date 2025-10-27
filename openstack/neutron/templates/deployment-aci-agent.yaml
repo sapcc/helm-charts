@@ -1,0 +1,100 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: neutron-aci-agent
+  labels:
+    system: openstack
+    type: backend
+    component: neutron
+  annotations:
+    vpa-butler.cloud.sap/main-container: neutron-aci-agent
+spec:
+  replicas: 1
+  revisionHistoryLimit: 5
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 3
+  selector:
+    matchLabels:
+      name: neutron-aci-agent
+  template:
+    metadata:
+      labels:
+        name: neutron-aci-agent
+{{ tuple . "neutron" "aci-agent" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
+      annotations:
+        kubectl.kubernetes.io/default-container: neutron-aci-agent
+        pod.beta.kubernetes.io/hostname:  aci-agent-pet
+        configmap-etc-hash: {{ include (print $.Template.BasePath "/configmap-etc.yaml") . | sha256sum }}
+        configmap-etc-aci-hash: {{ include (print $.Template.BasePath "/configmap-etc-aci.yaml") . | sha256sum }}
+        configmap-etc-vendor-hash: {{ include (print $.Template.BasePath "/configmap-etc-vendor.yaml") . | sha256sum }}
+        {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
+    spec:
+      hostname:  aci-agent-pet
+      containers:
+        - name: neutron-aci-agent
+          image: {{.Values.global.registry}}/loci-neutron:{{.Values.imageVersionACI | default .Values.imageVersion | required "Please set neutron.imageVersionACI or similar"}}
+          imagePullPolicy: IfNotPresent
+          command:
+            - /container.init/neutron-aci-agent-start
+          livenessProbe:
+            exec:
+              command: ["neutron-agent-liveness", "--agent-type", "ACI Agent", "--config-file", "/etc/neutron/neutron.conf", "--config-file", "/etc/neutron/secrets/neutron-common-secrets.conf"]
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 10
+          resources:
+{{ toYaml .Values.pod.resources.aci_agent | indent 12 }}
+          env:
+            - name: DEBUG_CONTAINER
+              value: "false"
+            {{- include "utils.sentry_config" . | nindent 12 }}
+            {{- include "utils.trust_bundle.env" . | indent 12 }}
+          volumeMounts:
+            - mountPath: /neutron-etc
+              name: neutron-etc
+            - mountPath: /etc/neutron/secrets/neutron-common-secrets.conf
+              name: neutron-common-secrets
+              subPath: neutron-common-secrets.conf
+              readOnly: true
+            - mountPath: /etc/neutron/secrets/neutron-aci-secrets.conf
+              name: neutron-aci-secrets
+              subPath: neutron-aci-secrets.conf
+              readOnly: true
+            - mountPath: /neutron-etc-vendor
+              name: neutron-etc-vendor
+            - mountPath: /neutron-etc-aci
+              name: neutron-etc-aci
+            - mountPath: /container.init
+              name: container-init
+            {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
+      volumes:
+        - name: neutron-etc
+          configMap:
+            name: neutron-etc
+        - name: neutron-common-secrets
+          secret:
+            secretName: neutron-common-secrets
+        - name: neutron-aci-secrets
+          secret:
+            secretName: neutron-aci-secrets
+        - name: neutron-etc-aci
+          projected:
+            sources:
+            {{- range until (int (include "neutron.aci_config_count" .)) }}
+            - configMap:
+                name: neutron-etc-aci-{{ printf "%03d" . }}
+                items:
+                - key: ml2-conf-aci.ini
+                  path: ml2-conf-aci-{{ printf "%03d" . }}.ini
+            {{- end }}
+        - name: neutron-etc-vendor
+          configMap:
+            name: neutron-etc-vendor
+        - name: container-init
+          configMap:
+            name: neutron-bin-vendor
+            defaultMode: 0755
+        {{- include "utils.trust_bundle.volumes" . | indent 8 }}

@@ -1,0 +1,69 @@
+groups:
+- name: nsxt.alerts
+  rules:
+  - alert: NSXTAgentTooManyJobs
+    expr: nsxv3_agent_passive_queue_size + nsxv3_agent_active_queue_size > 500
+    for: 120m
+    labels:
+      no_alert_on_absence: "true"
+      severity: info
+      support_group: network-api
+      tier: os
+      service: neutron
+      meta: 'NSX-T Agent has too many queued up Jobs: {{ $labels.name }}'
+      dashboard: nsx-t?var-cluster={{ $labels.name }}
+    annotations:
+      description: 'NSX-T Agent has too many queued up jobs: {{ $labels.name }}, try restarting the agent'
+      summary: 'NSX-T Agent has too many jobs'
+
+  - alert: NSXTManagementNodeOffline
+    expr: nsxv3_cluster_management_offline_nodes > 0
+    for: 5m
+    labels:
+      severity: critical
+      support_group: compute
+      tier: vmware
+      meta: 'NSX-T Management Node offline: {{ $labels.nsxv3_manager_hostname }}'
+      dashboard: nsx-t?var-cluster={{ $labels.name }}
+      playbook: docs/devops/alert/nsxt/#management_node_offline
+    annotations:
+      description: 'NSX-T Management Node offline: {{ $labels.nsxv3_manager_hostname }}'
+      summary: 'NSX-T Management Node offline'
+
+  - alert: NSXTExporterScrapeOlderTwoHours
+    expr: nsxv3_cluster_management_last_successful_data_fetch{name=~"neutron-nsxv3-agent-bb.*"} < (time()-7200)
+    labels:
+      severity: info
+      support_group: network-api
+      tier: vmware
+      meta: 'NSX-T Exporter last success fetch older two hours: {{ $labels.nsxv3_manager_hostname }}'
+      dashboard: nsx-t?var-cluster={{ $labels.name }}
+      playbook: docs/devops/alert/nsxt/#NSXT_ExporterScrapeOlder_OneHour
+    annotations:
+      description:  'NSX-T Exporter last success fetch older two hours: {{ $labels.nsxv3_manager_hostname }}'
+      summary:  'NSX-T Exporter last success fetch older two hours'
+
+  - alert: NSXTExporterNoData
+    expr: absent(nsxv3_cluster_management_last_successful_data_fetch)
+    for: 60m
+    labels:
+      severity: warning
+      support_group: network-api
+      tier: vmware
+      meta: 'NSX-T Exporter has no data'
+      dashboard: nsx-t
+    annotations:
+      description:  'NSX-T Exporter has no data'
+      summary:  'NSX-T Exporter has no data'
+
+  - alert: NSXTFirewallSectionCountDiffersBetweenNodes
+    expr: sum by (name, nsxv3_manager_hostname) (abs(avg without (nsxv3_node_ip)(nsxv3_management_node_firewall_section_count) - ignoring(nsxv3_node_ip) group_right nsxv3_management_node_firewall_section_count)) > 0
+    for: 60m
+    labels:
+      support_group: network-api
+      severity: info
+      tier: vmware
+      meta: 'NSX-T Nodes of cluster {{ $labels.nsxv3_manager_hostname }} have divergent section count'
+    annotations:
+      description: "NSX-T Nodes of cluster {{ $labels.nsxv3_manager_hostname }} have divergent section count"
+      summary: "NSX-T section count differs between nodes"

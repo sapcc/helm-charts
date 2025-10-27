@@ -1,0 +1,34 @@
+groups:
+- name: alerts for the PX EVPN switching fabric
+  rules:
+  - alert: PXSwitchOspfNeighborDown
+    expr: |
+      ((sum(snmp_n9kpx_ospfIfState ==bool 4) by (devicename)
+      - sum(snmp_n9kpx_ospfNbrState ==bool 8) by(devicename)) or (sum(snmp_n9kpx_ospfIfState  ==bool 4)  by (devicename) unless sum(snmp_n9kpx_ospfNbrState ==bool 8) by(devicename)))
+      != 0
+    for: 5m
+    labels:
+      severity: warning
+      service: px
+      support_group: network-wan
+      context: px
+      dashboard: px-switches-routing
+      playbook: docs/devops/alert/network/px#PXSwitchOspfNeighborDown
+    annotations:
+      description: "PX-Switch {{ $labels.devicename }} has at least one missing OSPF adjacency. Redundancy impaired."
+      summary: PX-Switch {{ $labels.devicename }} has at least one missing OSPF adjacency. Redundancy impaired.
+  
+  - alert: PXSwitchBgpDown
+    expr: |
+      (snmp_pxgeneric_cbgpPeer2State{role="px-switch"} + ((snmp_pxgeneric_cbgpPeer2AdminStatus == 2) *0)) !=6
+    for: 5m
+    labels:
+      severity: warning
+      service: px
+      support_group: network-wan
+      context: px
+      dashboard: px-switches-routing
+      playbook: docs/devops/alert/network/px#PXSwitchBgpDown
+    annotations:
+      description: "PX-Switch {{ $labels.devicename }} has lost its BGP EVPN session to {{ $labels.cbgpPeer2RemoteAddr }}. Service impact!"
+      summary: PX-Switch {{ $labels.devicename }} has lost its BGP EVPN session to {{ $labels.cbgpPeer2RemoteAddr }}. Service impact!

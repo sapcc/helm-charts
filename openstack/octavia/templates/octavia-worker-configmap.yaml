@@ -1,0 +1,16 @@
+{{- $envAll := . }}
+{{- range $name, $val := .Values.workers -}}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: octavia-etc-{{ $name }}
+  labels:
+    system: openstack
+    type: configuration
+    component: octavia
+
+data:
+  octavia-worker.conf: |
+{{ tuple $envAll $name $val | include "octavia_worker_conf" | indent 4 }}
+{{ end }}

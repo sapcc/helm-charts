@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  annotations:
+    meta.helm.sh/release-name: kube-monitoring-test
+    meta.helm.sh/release-namespace: kube-monitoring
+  labels:
+    app.kubernetes.io/managed-by: Helm
+    ccloud/support-group: containers
+  name: kube-monitoring-test-prometheus-node-exporter
+  namespace: kube-monitoring
+spec:
+  template:
+    spec:
+      containers:
+      - name: node-exporter
+        image: prom/node-exporter:v1.3.1
+        volumeMounts:
+        - mountPath: /host/proc
+          name: proc
+          readOnly: true
+        - mountPath: /host/sys
+          name: sys
+          readOnly: true
+        - mountPath: /host/root
+          mountPropagation: HostToContainer
+          name: root
+          readOnly: true
+        - mountPath: /var/run/dbus/system_bus_socket
+          name: dbus
+          readOnly: true
+      hostNetwork: true
+      hostPID: true
+      securityContext:
+        fsGroup: 65534
+        runAsGroup: 65534
+        runAsNonRoot: true
+        runAsUser: 65534
+      volumes:
+      - hostPath:
+          path: /proc
+        name: proc
+      - hostPath:
+          path: /sys
+        name: sys
+      - hostPath:
+          path: /
+        name: root
+      - hostPath:
+          path: /var/run/dbus/system_bus_socket
+        name: dbus

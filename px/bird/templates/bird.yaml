@@ -1,0 +1,31 @@
+{{- range $service, $service_config := .Values.config -}}
+{{ if and (hasPrefix "service_" $service) (has $service $.Values.deploy) }}
+
+{{- range $domain, $domain_config := $service_config -}}
+{{ if and (hasPrefix "domain_" $domain) (has $domain $.Values.deploy) }}
+
+{{- $ctxDomain := dict 
+    "top" $
+    "service" $service
+    "service_number" (trimPrefix "service_" $service | int)
+    "service_config" $service_config
+    "domain" $domain
+    "domain_number" (trimPrefix "domain_" $domain | int)
+    "domain_config" $domain_config
+}}
+
+{{- if not $.Values.hostNetworking }}
+{{ include "nad_multus" $ctxDomain }}
+{{- end }}
+
+{{- range $afi := (include "bird.afis" $ctxDomain | fromJsonArray) }}
+{{- $ctxAfi := mergeOverwrite $ctxDomain (dict "afi" $afi) }}
+{{ include "configmap_bird" $ctxAfi }}
+{{ include "deployment_bird" $ctxAfi }}
+{{- end }}
+
+
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}

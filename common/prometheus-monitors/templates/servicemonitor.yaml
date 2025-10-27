@@ -1,0 +1,39 @@
+{{- if .Values.serviceMonitor.enabled }}
+{{- if .Values.podMonitor.enabled }}
+{{ fail "failed to render ServiceMonitor. PodMonitor is also enabed. Only one is allowed."}}
+{{- end }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ default .Release.Namespace .Values.nameOverride }}
+  labels:
+    prometheus-monitor-version: {{ quote .Chart.Version }}
+    prometheus: {{ required "required '.Values.prometheus' is not specified" .Values.prometheus }}
+
+spec:
+{{- if .Values.jobLabel }}
+  jobLabel: {{ .Values.jobLabel }}
+{{- end }}
+  selector:
+{{- if and ( empty .Values.matchLabels ) ( empty .Values.matchExpressions ) }}
+{{ fail "required either '.Values.matchLabels' or '.Values.matchExpressions' but neither is defined" }}
+{{- end }}
+{{- if .Values.matchLabels }}
+    matchLabels:
+{{ .Values.matchLabels | toYaml | indent 6 }}
+{{- end }}
+
+{{- if .Values.matchExpressions }}
+    matchExpressions:
+{{ .Values.matchExpressions | toYaml | indent 6 }}
+{{- end }}
+  
+  namespaceSelector:
+    matchNames:
+{{  default (list .Release.Namespace ) .Values.namespaces | toYaml | indent 6 }}
+  endpoints:
+{{ include "metricsEndpoint" (dict "root" $.Values "endpoint" .Values "isService" true) | indent 4 }}
+{{- range $k, $v := .Values.additionalEndpoints }}
+{{ include "metricsEndpoint" (dict "root" $.Values "endpoint" $v "isService" true) | indent 4 }}
+{{- end }}
+{{- end }}

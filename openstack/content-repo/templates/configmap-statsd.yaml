@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: ConfigMap
+
+metadata:
+  name: statsd-content-repo
+
+data:
+  statsd-exporter.yaml: |
+    defaults:
+      observer_type: histogram
+      histogram_options:
+        buckets: [.025, .1, .25, 1, 2.5]
+      match_type: glob
+      glob_disable_ordering: false
+      ttl: 0 # metrics do not expire
+    mappings:
+    - match: repo.*.last_run.*
+      name: repo_sync_last_run
+      labels:
+        kind: $2
+        repo: $1
+    - match: repo.*.check.success
+      name: repo_sync_check_success
+      labels:
+        rc: $2
+        repo: $1
+    - match: repo.*.check.httpcode
+      name: repo_sync_check_httpcode
+      labels:
+        repo: $1

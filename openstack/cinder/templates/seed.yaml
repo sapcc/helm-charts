@@ -1,0 +1,158 @@
+{{- $cdomains := .Values.global.domain_seeds.customer_domains | required "missing value for .Values.global.domain_seeds.customer_domains" -}}
+{{- $domains  := concat (list "Default" "ccadmin") $cdomains -}}
+{{- $cdomainsWithoutSupportProjects := .Values.global.domain_seeds.customer_domains_without_support_projects | required "missing value for .Values.global.domain_seeds.customer_domains_without_support_projects" -}}
+
+apiVersion: "openstack.stable.sap.cc/v1"
+kind: "OpenstackSeed"
+metadata:
+  name: cinder-seed
+spec:
+  requires:
+  {{- range $domains}}
+  {{- if not (hasPrefix "iaas-" .)}}
+  - monsoon3/domain-{{replace "_" "-" . | lower}}-seed
+  {{- end }}
+  {{- end }}
+
+  roles:
+  - name: cloud_volume_admin
+  - name: volume_admin
+  - name: volume_viewer
+  - name: cloud_compute_admin
+
+  services:
+  - name: cinderv3
+    type: volumev3
+    description: Openstack Block Storage
+    endpoints:
+    - interface: admin
+      region: '{{.Values.global.region}}'
+      url: 'http://{{include "cinder_api_endpoint_host_admin" .}}:{{.Values.cinderApiPortAdmin}}/v3/%(tenant_id)s'
+    - interface: internal
+      region: '{{.Values.global.region}}'
+      url: 'http://{{include "cinder_api_endpoint_host_internal" .}}:{{.Values.cinderApiPortInternal}}/v3/%(tenant_id)s'
+    - interface: public
+      region: '{{.Values.global.region}}'
+      url: 'https://{{include "cinder_api_endpoint_host_public" .}}:{{.Values.cinderApiPortPublic}}/v3/%(tenant_id)s'
+
+
+  # Default is special
+  # cc3test does not get seeds
+  # ccadmin gets role assignments for the cloud_admin project and some additional project assignments
+  # iaas is excluded completely
+  # some domains don't have the support projects
+
+  domains:
+  - name: Default
+    users:
+    - name: cinder
+      description: Cinder Service
+      password: '{{ .Values.global.cinder_service_password | include "resolve_secret" }}'
+      role_assignments:
+      - project: service
+        role: service
+      - project: service
+        role: cloud_volume_admin
+      - project: service
+        role: cloud_compute_admin
+    - name: admin
+      role_assignments:
+      - project: admin
+        role: cloud_volume_admin
+      - domain: Default
+        role: cloud_volume_admin
+    groups:
+    - name: administrators
+      role_assignments:
+      - project: admin
+        role: cloud_volume_admin
+      - domain: Default
+        role: cloud_volume_admin
+
+  {{- range $domains}}
+  {{- if and (ne . "Default") (not (hasPrefix "iaas-" .))}}
+  - name: {{ . }}
+    {{- if eq . "ccadmin"}}
+    projects:
+    - name: cloud_admin
+      role_assignments:
+      - user: admin@Default
+        role: cloud_volume_admin
+      # permission to enumerate all projects and domains
+    {{- end }}
+    groups:
+    {{- if eq . "ccadmin"}}
+    - name: CCADMIN_CLOUD_ADMINS
+      role_assignments:
+      - project: cloud_admin
+        role: cloud_volume_admin
+    {{- end }}
+    {{- if eq . "monsoon3"}}
+    - name: MONSOON3_DOMAIN_ADMINS
+      role_assignments:
+      - project: cc-demo
+        role: volume_admin
+    {{- end }}
+    - name: {{ hasPrefix "iaas-" . | ternary . ( upper . ) }}_API_SUPPORT
+      role_assignments:
+      {{- if not (has . $cdomainsWithoutSupportProjects) }}
+      - project: api_support
+        role: volume_admin
+      {{- end }}
+      {{- if eq . "ccadmin"}}
+      - project: api_tools
+        role: volume_admin
+      {{- end }}
+      - domain: {{ . }}
+        role: volume_admin
+        inherited: true
+    - name: {{ hasPrefix "iaas-" . | ternary . ( upper . ) }}_COMPUTE_SUPPORT
+      role_assignments:
+      {{- if not (has . $cdomainsWithoutSupportProjects) }}
+      - project: compute_support
+        role: volume_admin
+      {{- end }}
+      {{- if eq . "ccadmin"}}
+      - project: compute_tools
+        role: volume_admin
+      {{- end }}
+      - domain: {{ . }}
+        role: volume_viewer
+        inherited: true
+    - name: {{ hasPrefix "iaas-" . | ternary . ( upper . ) }}_NETWORK_SUPPORT
+      role_assignments:
+      {{- if not (has . $cdomainsWithoutSupportProjects) }}
+      - project: network_support
+        role: volume_admin
+      {{- end }}
+      {{- if eq . "ccadmin"}}
+      - project: network_tools
+        role: volume_admin
+      {{- end }}
+      - domain: {{ . }}
+        role: volume_viewer
+        inherited: true
+    - name: {{ hasPrefix "iaas-" . | ternary . ( upper . ) }}_STORAGE_SUPPORT
+      role_assignments:
+      {{- if not (has . $cdomainsWithoutSupportProjects) }}
+      - project: storage_support
+        role: volume_admin
+      {{- end }}
+      {{- if eq . "ccadmin"}}
+      - project: storage_tools
+        role: volume_admin
+      {{- end }}
+      - domain: {{ . }}
+        role: volume_admin
+        inherited: true
+    - name: {{ hasPrefix "iaas-" . | ternary . ( upper . ) }}_SERVICE_DESK
+      role_assignments:
+      {{- if not (has . $cdomainsWithoutSupportProjects) }}
+      - project: service_desk
+        role: volume_admin
+      {{- end }}
+      - domain: {{ . }}
+        role: volume_viewer
+        inherited: true
+  {{- end }}
+  {{- end }}

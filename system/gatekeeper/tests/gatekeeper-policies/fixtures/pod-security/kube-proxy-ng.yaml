@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  annotations:
+    meta.helm.sh/release-name: kube-system-metal
+    meta.helm.sh/release-namespace: kube-system
+  labels:
+    app.kubernetes.io/managed-by: Helm
+    ccloud/support-group: containers
+  name: kube-proxy-ng
+  namespace: kube-system
+spec:
+  template:
+    spec:
+      containers:
+      - name: proxy
+        image: keppel.example.com/ccloud/kube-proxy:v1.23.6
+        securityContext:
+          privileged: true
+        volumeMounts:
+        - mountPath: /var/lib/kube-proxy
+          name: kube-proxy
+        - mountPath: /run/xtables.lock
+          name: xtables-lock
+        - mountPath: /lib/modules
+          name: lib-modules
+          readOnly: true
+      hostNetwork: true
+      securityContext: {}
+      volumes:
+      - configMap:
+          defaultMode: 420
+          name: kube-proxy-ng
+        name: kube-proxy
+      - hostPath:
+          path: /lib/modules
+        name: lib-modules
+      - hostPath:
+          path: /run/xtables.lock
+          type: FileOrCreate
+        name: xtables-lock

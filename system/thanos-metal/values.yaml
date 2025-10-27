@@ -1,0 +1,104 @@
+global:
+  linkerd_requested: true
+
+owner-info:
+  service: prometheus
+  support-group: observability
+  maintainers:
+    - Tommy Sauer
+    - Richard Tief
+  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/system/thanos-metal
+
+thanos:
+  name: metal
+  deployWholeThanos: false
+  ingress:
+    enabled: true
+    hosts:
+      - metrics.metal
+      - thanos-metal
+  internalIngress:
+    enabled: true
+    hosts:
+      - metrics-internal.metal
+      - thanos-internal-metal
+  grpcIngress:
+    enabled: true
+    hosts:
+      - thanos-metal-grpc
+
+  queryDiscovery: true
+
+  query:
+    replicas: 5
+    extraArgs:
+      - --query.mode=distributed
+      - --query.distributed-with-overlapping-interval
+
+  clusterDomain: kubernetes
+
+  ruler:
+    enabled: true
+    loglevel: warn
+    evaluationInterval: 30s
+    alertmanagers:
+      hosts:
+        - alertmanager-internal.scaleout.eu-de-1.cloud.sap
+        - alertmanager-internal.scaleout.eu-nl-1.cloud.sap
+
+  alerts:
+    prometheus: kubernetes
+
+regional_thanos:
+  name: regional
+  loglevel: warn
+  evaluationInterval: 60s
+  deployWholeThanos: false
+  ingress:
+    enabled: true
+    hosts:
+      - metrics
+      - thanos
+
+  internalIngress:
+    enabled: true
+    hosts:
+      - metrics-internal
+      - thanos-internal
+
+  queryDiscovery: false
+
+  query:
+    replicas: 5
+    extraArgs:
+      - --query.mode=distributed
+      - --query.distributed-with-overlapping-interval
+
+  authentication:
+    enabled: true
+
+  queryStoreAPIs:
+    # scaleout includes prometheus-infra, kubernetes-scaleout, vmware-*-*
+    # Regional secrets may override the list of store APIs
+    - scaleout
+    - openstack
+    - infra-collector
+    - storage
+    - kubernetes-metal
+    - kubernetes-virtual
+    - kubernetes-admin
+    - kubernetes-kubernikus
+
+  ruler:
+    enabled: true
+
+    externalClusterLabels:
+      enabled: false
+
+    alertmanagers:
+      hosts:
+        - alertmanager-internal.scaleout.eu-de-1.cloud.sap
+        - alertmanager-internal.scaleout.eu-nl-1.cloud.sap
+
+  alerts:
+    prometheus: kubernetes

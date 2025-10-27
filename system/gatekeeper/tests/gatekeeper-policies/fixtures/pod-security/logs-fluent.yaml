@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  annotations:
+    meta.helm.sh/release-name: logs
+    meta.helm.sh/release-namespace: logs
+  labels:
+    app.kubernetes.io/managed-by: Helm
+  name: fluent
+  namespace: logs
+spec:
+  template:
+    spec:
+      containers:
+      - name: fluent
+        volumeMounts:
+        - mountPath: /fluentd/etc
+          name: fluent-bin
+        - mountPath: /var/log
+          name: varlog
+        - mountPath: /var/lib/docker/containers
+          name: varlibdockercontainers
+          readOnly: true
+      securityContext: {}
+      volumes:
+      - configMap:
+          defaultMode: 420
+          name: fluent-bin
+        name: fluent-bin
+      - hostPath:
+          path: /var/log
+        name: varlog
+      - hostPath:
+          path: /var/lib/docker/containers
+        name: varlibdockercontainers

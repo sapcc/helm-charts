@@ -1,0 +1,13 @@
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: GkOutdatedMirrors
+metadata:
+  name: outdatedmirrors
+  annotations:
+    {{- include "sources" (tuple "outdated-mirrors" "outdated-mirrors") | indent 4 }}
+    {{- include "docstring" (tuple $ "GkOutdatedMirrors") | indent 4 }}
+  labels:
+    severity: 'info'
+spec:
+  enforcementAction: dryrun
+  match: {{ include "match_pods_and_pod_owners" . | indent 4 }}
+

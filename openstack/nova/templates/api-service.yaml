@@ -1,0 +1,23 @@
+kind: Service
+apiVersion: v1
+
+metadata:
+  name: nova-api
+  labels:
+    system: openstack
+    type: api
+    component: nova
+  annotations:
+    prometheus.io/scrape: "true"
+    maia.io/scrape: "true"
+    prometheus.io/port: "9102"
+    prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
+    {{- include "utils.topology.service_topology_mode" . | indent 2 }}
+    {{- include "utils.linkerd.pod_and_service_annotation" . | indent 4 }}
+
+spec:
+  selector:
+    name: nova-api
+  ports:
+    - name: nova-api
+      port: {{.Values.global.novaApiPortInternal}}

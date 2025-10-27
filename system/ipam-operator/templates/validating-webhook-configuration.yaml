@@ -1,0 +1,97 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  name: {{ include "ipam-operator.fullname" . }}-validating-webhook-configuration
+  annotations:
+    cert-manager.io/inject-ca-from: {{ .Release.Namespace }}/{{ include "ipam-operator.fullname" . }}-serving-cert
+  labels:
+  {{- include "ipam-operator.labels" . | nindent 4 }}
+webhooks:
+- admissionReviewVersions:
+  - v1
+  - v1beta1
+  clientConfig:
+    service:
+      name: '{{ include "ipam-operator.fullname" . }}-webhook-service'
+      namespace: '{{ .Release.Namespace }}'
+      path: /validate-ipam-metal-ironcore-dev-v1alpha1-ip
+  failurePolicy: Fail
+  name: vip.kb.io
+  rules:
+  - apiGroups:
+    - ipam.metal.ironcore.dev
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    - DELETE
+    resources:
+    - ips
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  - v1beta1
+  clientConfig:
+    service:
+      name: '{{ include "ipam-operator.fullname" . }}-webhook-service'
+      namespace: '{{ .Release.Namespace }}'
+      path: /validate-ipam-metal-ironcore-dev-v1alpha1-network
+  failurePolicy: Fail
+  name: vnetwork.kb.io
+  rules:
+  - apiGroups:
+    - ipam.metal.ironcore.dev
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    - DELETE
+    resources:
+    - networks
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  - v1beta1
+  clientConfig:
+    service:
+      name: '{{ include "ipam-operator.fullname" . }}-webhook-service'
+      namespace: '{{ .Release.Namespace }}'
+      path: /validate-ipam-metal-ironcore-dev-v1alpha1-networkcounter
+  failurePolicy: Fail
+  name: vnetworkcounter.kb.io
+  rules:
+  - apiGroups:
+    - ipam.metal.ironcore.dev
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    - DELETE
+    resources:
+    - networkcounters
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  - v1beta1
+  clientConfig:
+    service:
+      name: '{{ include "ipam-operator.fullname" . }}-webhook-service'
+      namespace: '{{ .Release.Namespace }}'
+      path: /validate-ipam-metal-ironcore-dev-v1alpha1-subnet
+  failurePolicy: Fail
+  name: vsubnet.kb.io
+  rules:
+  - apiGroups:
+    - ipam.metal.ironcore.dev
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    - DELETE
+    resources:
+    - subnets
+  sideEffects: None

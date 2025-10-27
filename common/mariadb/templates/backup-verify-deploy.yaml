@@ -1,0 +1,55 @@
+{{- if and (.Values.backup_v2.enabled) (.Values.backup_v2.verification.enabled) }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "fullName" . }}-verification
+  labels:
+    {{- include "mariadb.labels" (list $ "version" "mariadb" "deployment" "backupverification") | indent 4 }}
+  annotations:
+    secret.reloader.stakater.com/reload: "mariadb-backup-{{.Values.name}}-etc"
+spec:
+  replicas: 1
+  revisionHistoryLimit: 5
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: {{ include "label.component" (list "mariadb" "deployment" "backupverification") }}
+  template:
+    metadata:
+      labels:
+        {{- include "mariadb.labels" (list $ "version" "mariadb" "deployment" "backupverification") | indent 8 }}
+      annotations:
+        kubectl.kubernetes.io/default-container: mariabackup-verification
+{{- if .Values.metrics.enabled }}
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8082"
+        prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
+{{- end }}
+{{- if and (and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested) $.Values.linkerd.backup.enabled }}
+        linkerd.io/inject: enabled
+{{- end }}
+    spec:
+      serviceAccountName: {{ .Values.name }}-db-backup-v2
+      priorityClassName: {{ .Values.priority_class_backup | default "critical-infrastructure" | quote }}
+      containers:
+      - name: mariabackup-verification
+        image: "{{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{ .Values.backup_v2.image }}:{{ .Values.backup_v2.image_version }}"
+        command:
+          - verification
+        ports:
+          - containerPort: 8082
+            name: metrics
+            protocol: TCP
+        env:
+          - name: CONFIG_FILE
+            value: "/etc/config/config.yaml"
+        volumeMounts:
+          - name: mariadb-backup-etc
+            mountPath: /etc/config
+            readOnly: true
+      volumes:
+        - name: mariadb-backup-etc
+          secret:
+            secretName:  mariadb-backup-{{.Values.name}}-etc
+{{- end }}

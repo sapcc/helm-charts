@@ -1,0 +1,84 @@
+groups:
+- name: maia.alerts
+  rules:
+  - alert: OpenstackMaiaExportersLag
+    expr: predict_linear(scrape_duration_seconds{service="metrics"}[1h], 7 * 24 * 60 * 60) > 60
+    for: 1h
+    labels:
+      component: '{{ $labels.component }}'
+      context: latency
+      dashboard: maia-details
+      service: maia
+      severity: warning
+      support_group: observability
+      tier: os
+      meta: 'Maia exporters lagging'
+    annotations:
+      description: Maia exporter {{ $labels.component }} is predicted to break the 60s limit for data collection 7 days from now.
+      summary: Maia exporters lagging
+
+  - alert: OpenstackMaiaResponsiveness
+    expr: maia_request_duration_seconds{quantile="0.99",namespace="maia"} > 3
+    for: 1h
+    labels:
+      component: '{{ $labels.component }}'
+      context: latency
+      dashboard: maia-details
+      service: maia
+      severity: warning
+      tier: os
+      support_group: observability
+      meta: 'Maia API lags'
+      no_alert_on_absence: "true"
+    annotations:
+      description: Maia API does not fulfill the responsiveness goals (99% responses within 3 seconds)
+      summary: Maia API lags
+
+  - alert: OpenstackMaiaPrometheusAvail
+    expr: rate(maia_tsdb_errors_count{namespace="maia"}[10m]) > 0
+    for: 15m
+    labels:
+      component: '{{ $labels.component }}'
+      context: availability
+      dashboard: maia-details
+      service: maia
+      severity: warning
+      tier: os
+      support_group: observability
+      meta: 'Maia availability affected by Prometheus issues'
+    annotations:
+      description: Maia API is affected by errors when accessing the underlying Prometheus installation
+      summary: Maia availability affected by Prometheus issues
+
+  - alert: OpenstackMaiaKeystoneAvail
+    expr: rate(maia_logon_errors_count{namespace="maia"}[5m]) > 0
+    for: 15m
+    labels:
+      component: '{{ $labels.component }}'
+      context: availability
+      dashboard: maia-details
+      service: maia
+      severity: warning
+      tier: os
+      support_group: observability
+      meta: 'Maia availability affected by Prometheus issues'
+    annotations:
+      description: Maia API is affected by errors when accessing Keystone
+      summary: Maia availability affected by Keystone issues
+
+  - alert: OpenstackMaiaUp
+    expr: up{component="maia",namespace="maia"} < 1
+    for: 10m
+    labels:
+      component: '{{ $labels.component }}'
+      context: availability
+      dashboard: maia-details
+      service: maia
+      severity: critical
+      tier: os
+      support_group: observability
+      meta: "Maia Is not available"
+      playbook: 'docs/support/playbook/maia/alerts/cc3test-alert-api'
+    annotations:
+      description: Maia monitoring endpoint is down => Maia is down
+      summary: Maia is not available

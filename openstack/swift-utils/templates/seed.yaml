@@ -1,0 +1,106 @@
+{{- $cdomains := .Values.global.domain_seeds.customer_domains | required "missing value for .Values.global.domain_seeds.customer_domains" -}}
+{{- $domains  := concat (list "cc3test" "ccadmin" "Default") $cdomains -}}
+
+apiVersion: "openstack.stable.sap.cc/v1"
+kind: "OpenstackSeed"
+metadata:
+  name: swift-utils-seed
+  labels:
+    app: {{ tuple .Release .Chart .Values | include "fullname" }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    component: objectstore
+    type: seed
+
+spec:
+  requires:
+    - swift/swift-seed #  and all its dependencies
+    {{- range $domains }}
+    - monsoon3/domain-{{replace "_" "-" .|lower}}-seed
+    {{- end }}
+
+  domains:
+    - name: Default
+      users:
+      - name: repo # used by content-repo (but seeded here since content-repo runs in scaleout)
+        description: Repo Service User
+        password: {{ .Values.content_repo.service_user_password }}
+        role_assignments:
+          - project: service
+            role: service
+      - name: swift_caretaker
+        description: 'Swift Account Caretaker'
+        password: {{ $.Values.swift_account_caretaker.password }}
+        role_assignments:
+          - project: cloud_admin@ccadmin
+            role: admin
+      {{- if $.Values.velero_backup_password }}
+      - name: velero_backup
+        description: 'Velero Backup'
+        password: {{ .Values.velero_backup_password }}
+      {{- end}}
+
+    - name: ccadmin
+      projects:
+        - name: master
+          role_assignments:
+            - user: repo@Default
+              role: objectstore_admin # required for repo sync (but seeded here because content-repo runs in scaleout)
+          {{- if .Values.velero_backup_password }}
+            - user: velero_backup@Default
+              role: service
+          {{- end }}
+          swift:
+            enabled: true
+            containers:
+              - name: repo
+                metadata:
+                  meta-web-listings: 'true'
+                  meta-web-listings-label: repo.{{ .Values.global.region }}.{{ .Values.global.tld }}
+                  read: .r:*,.rlistings
+              - name: repo_segments
+                metadata:
+                  read: .r:*,.rlistings
+            {{- if .Values.velero_backup_password }}
+              - name: velero-backup
+            {{- end }}
+
+    - name: cc3test
+      projects:
+        - name: swift_dispersion
+          description: 'dispersion of objects and containers'
+          role_assignments:
+            - user: swift_dispersion@Default
+              role: objectstore_admin
+          swift:
+            enabled: true
+        - name: swift_test
+          description: 'used by automatic tests for Swift and related components'
+          role_assignments:
+            - user: swift_caretaker@Default
+              role: objectstore_admin
+          swift:
+            enabled: true
+            containers:
+              - name: caretaker
+                metadata:
+                  read: .r:*,.rlistings
+                  meta-web-listings: 'true'
+      groups:
+        - name: CC3TEST_DOMAIN_ADMINS
+          role_assignments:
+            - project: swift_test
+              role: admin
+            - project: swift_test
+              role: objectstore_admin
+            - project: swift_dispersion
+              role: admin
+            - project: swift_dispersion
+              role: objectstore_admin
+        - name: CC3TEST_STORAGE_SUPPORT
+          role_assignments:
+            - project: swift_test
+              role: objectstore_admin
+            - project: swift_dispersion
+              role: objectstore_admin

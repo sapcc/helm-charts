@@ -1,0 +1,167 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: logstash
+  namespace: hermes
+  labels:
+    system: openstack
+    service: audit
+
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      component: logstash
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        component: logstash
+      annotations:
+        kubectl.kubernetes.io/default-container: "logstash"
+        {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+        linkerd.io/inject: enabled
+        {{- end }}
+        configmap.reloader.stakater.com/reload: "logstash-etc"
+        secret.reloader.stakater.com/reload: "logstash-secret"
+        deployment.reloader.stakater.com/pause-period: "60s"
+    spec:
+      nodeSelector:
+        zone: farm
+      volumes:
+        - name: hermes-etc
+          projected:
+            sources:
+            - secret:
+                name: logstash-secret
+            - configMap:
+                name: logstash-etc
+      containers:
+        - name: logstash
+          image: {{.Values.global.registry}}/hermes-logstash:{{.Values.hermes_image_version_logstash}}
+          imagePullPolicy: IfNotPresent
+          command:
+            - logstash
+          args:
+            {{ if .Values.logstash.debug -}}
+            - --debug
+            {{- end }}
+            - -f
+            - /hermes-etc/logstash.conf
+            - --config.reload.automatic
+            - --path.settings
+            - /hermes-etc/
+          env:
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            
+            - name: LS_JAVA_OPTS
+              value: {{.Values.logstash.javaopts}}
+            
+            - name: CONFIG_HASH
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.annotations['logstash-etc-configmap.yaml']
+            
+            # ======================================================
+            # Dynamically add environment variables for *each* RabbitMQ target
+            # ======================================================
+            {{- range $key, $value := .Values.hermes.rabbitmq.targets }}
+            - name: "RABBITMQ_{{ upper $key }}_USER"
+              valueFrom:
+                secretKeyRef:
+                  name: logstash-secret
+                  key: "RABBITMQ_{{ upper $key }}_USER"
+
+            - name: "RABBITMQ_{{ upper $key }}_PASSWORD"
+              valueFrom:
+                secretKeyRef:
+                  name: logstash-secret
+                  key: "RABBITMQ_{{ upper $key }}_PASSWORD"
+            {{- end }}
+
+            # Metis / DB
+            - name: METIS_USER
+              valueFrom:
+                secretKeyRef:
+                  name: logstash-secret
+                  key: METIS_USER
+
+            - name: METIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: logstash-secret
+                  key: METIS_PASSWORD
+
+            # Swift / S3
+            - name: SWIFT_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: logstash-secret
+                  key: SWIFT_ACCESS_KEY
+
+            - name: SWIFT_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: logstash-secret
+                  key: SWIFT_SECRET_KEY
+
+            # OpenSearch
+            - name: OPENSEARCH_USER
+              valueFrom:
+                secretKeyRef:
+                  name: logstash-secret
+                  key: OPENSEARCH_USER
+
+            - name: OPENSEARCH_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: logstash-secret
+                  key: OPENSEARCH_PASSWORD
+          volumeMounts:
+            - name: hermes-etc
+              mountPath: /hermes-etc
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 9600
+            initialDelaySeconds: 300
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+            successThreshold: 1
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 9600
+            initialDelaySeconds: 60
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+            successThreshold: 3
+          resources:
+            requests:
+              memory: {{required ".Values.resources_requests_memory_ls is missing" .Values.resources_requests_memory_ls}}
+              cpu: {{required ".Values.resources_requests_cpu_ls is missing" .Values.resources_requests_cpu_ls}}
+
+        - name: logstash-exporter
+          image: {{ .Values.global.dockerHubMirror | required ".Values.global.dockerHubMirror is missing" }}/bonniernews/logstash_exporter:v0.1.2
+          imagePullPolicy: IfNotPresent
+          command: ["/bin/sh", "-c"]
+          ## Delay start of logstash-exporter to give logstash more time to come online.
+          args:
+            - >-
+              sleep 120;
+              exec /logstash_exporter
+                --logstash.endpoint=http://localhost:9600
+                --web.listen-address=:9198
+          ports:
+            - name: ls-exporter
+              containerPort: 9198
+              protocol: TCP

@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  labels:
+    k8s-app: pmtud
+  name: pmtud
+spec:
+  selector:
+    matchLabels:
+      name: pmtud
+  updateStrategy:
+    rollingUpdate:
+      maxUnavailable: '10%'
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        name: pmtud
+        k8s-app: pmtud
+      annotations:
+        configmap-pmtud-hash: {{ include (print $.Template.BasePath "/go-pmtud-configmap.yaml") $ | sha256sum }}
+    spec:
+      initContainers:
+        - name: iptables-init
+          image: "{{ required ".Values.images.iptables.image is missing" .Values.images.iptables.image }}:{{ required ".Values.images.iptables.image is missing" .Values.images.iptables.tag }}"
+          command:
+            - /scripts/pmtud/iptables-init.sh
+          securityContext:
+            privileged: true
+          volumeMounts:
+            - name: pmtud
+              mountPath: /scripts/pmtud
+      containers:
+      - name: pmtud
+        image: "{{ required ".Values.images.pmtud.image is missing" .Values.images.pmtud.image }}:{{ required ".Values.images.pmtud.tag is missing" .Values.images.pmtud.tag }}"
+        imagePullPolicy: IfNotPresent
+        lifecycle:
+          preStop:
+            exec:
+              command: ["/scripts/pmtud/iptables-stop.sh"]
+        command:
+          - /go-pmtud
+          - --iface_names={{ required ".Values.pmtud.ifaceNames is required" .Values.pmtud.ifaceNames | join "," }}
+          - --nodename=$(NODE_NAME)
+          - --ttl={{ required ".Values.pmtud.ttl is required" .Values.pmtud.ttl }}
+          - --nflog_group={{ required ".Values.pmtud.nflogGroup is required" .Values.iptables.nflogGroup }}
+          {{- if .Values.pmtud.ifaceMtu }}
+          - --iface_mtu={{ .Values.pmtud.ifaceMtu }}
+          {{- end }}
+        env:
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: spec.nodeName
+        securityContext:
+           privileged: true
+        volumeMounts:
+          - name: pmtud
+            mountPath: /scripts/pmtud
+      hostNetwork: true
+      serviceAccountName: pmtud
+      terminationGracePeriodSeconds: 5
+      tolerations:
+        - operator: "Exists"
+      volumes:
+        - name: pmtud
+          configMap:
+            name: pmtud
+            defaultMode: 0744

@@ -1,0 +1,59 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  name: "secrets-injector.cloud.sap"
+  annotations:
+    cert-manager.io/inject-ca-from: {{ .Release.Namespace }}/secrets-injector
+    {{- if .Values.webhook.labels }}
+  labels:
+    {{- toYaml .Values.webhook.labels | nindent 4 }}
+    {{- end }}
+webhooks:
+- name: "secrets-injector.cloud.sap"
+  failurePolicy: {{ .Values.webhook.failurePolicy }}
+  rules:
+  - apiGroups:   [""]
+    apiVersions: ["v1"]
+    operations:  ["CREATE", "UPDATE"]
+    resources:   ["secrets"]
+    scope:       "Namespaced"
+  clientConfig:
+    service:
+      namespace: {{ .Release.Namespace }}
+      name: secrets-injector
+      path: /mutate--v1-secret
+      port: 9443
+  admissionReviewVersions: ["v1"]
+  sideEffects: None
+  timeoutSeconds: {{ .Values.webhook.timeoutSeconds }}
+  {{- if .Values.webhook.matchConditions }}
+  matchConditions: # webhook is called, when all conditions are true
+  - name: 'exclude-opt-out-secrets'
+    expression: 'object.metadata.?annotations["cloud.sap/inject-secrets"].orValue("") != "false"'
+  - name: 'exclude-owner-cert-manager'
+    expression: 'object.metadata.?ownerReferences.optMap(l, !("cert-manager.io/v1" in l.map(r, r.apiVersion))).orValue(true)'
+  - name: 'exclude-node-bootstrap-token'
+    expression: 'object.type != "bootstrap.kubernetes.io/token"'
+  {{- if .Values.webhook.extraConditions }}
+  {{- toYaml .Values.webhook.extraConditions | nindent 2 }}
+  {{- end }}
+  {{- end }}
+  {{- if .Values.webhook.namespaceSelector }}
+  namespaceSelector:
+  {{- toYaml .Values.webhook.namespaceSelector | nindent 4 }}
+  {{- end }}
+{{- if .Values.webhook.genericRules }}
+- name: "generic.secrets-injector.cloud.sap"
+  failurePolicy: {{ .Values.webhook.failurePolicy }}
+  rules:
+  {{- toYaml .Values.webhook.genericRules | nindent 2 }}
+  clientConfig:
+    service:
+      namespace: {{ .Release.Namespace }}
+      name: secrets-injector
+      path: /mutate-generic
+      port: 9443
+  admissionReviewVersions: ["v1"]
+  sideEffects: None
+  timeoutSeconds: {{ .Values.webhook.timeoutSeconds }}
+{{- end -}}

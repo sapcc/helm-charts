@@ -1,0 +1,115 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: kube-flannel-capi
+  labels:
+    tier: node
+    k8s-app: flannel
+spec:
+  selector:
+    matchLabels:
+      tier: node
+      k8s-app: flannel
+  updateStrategy:
+    rollingUpdate:
+      maxUnavailable: 1
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        tier: node
+        k8s-app: flannel
+{{- if (semverCompare "< 1.13-0" .Capabilities.KubeVersion.GitVersion ) }}
+      annotations:
+        scheduler.alpha.kubernetes.io/critical-pod: ''
+{{- end }}
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernikus.cloud.sap/cni
+                operator: Exists
+{{- if (semverCompare ">= 1.10-0" .Capabilities.KubeVersion.GitVersion) }} 
+      priorityClassName: system-node-critical
+{{- end }}
+{{- if .Values.imagePullSecrets }}
+      imagePullSecrets:
+{{ toYaml .Values.imagePullSecrets | indent 8 }}
+{{- end }}
+      initContainers:
+      - name: flannel-cni
+        image: "{{ required ".Values.image.image is missing" .Values.image.image }}:{{ required ".Values.image.tag is missing" .Values.image.tag }}"
+        command:
+        - cp
+        args:
+        - -f
+        - /tmp/flannel/cni-conf.json
+        - /etc/cni/net.d/10-flannel.conflist
+        volumeMounts:
+        - name: flannel-cfg
+          mountPath: /tmp/flannel/
+        - name: cni-cfg
+          mountPath: /etc/cni/net.d
+      containers:
+      - name: kube-flannel
+        image: "{{ required ".Values.image.image is missing" .Values.image.image }}:{{ required ".Values.image.tag is missing" .Values.image.tag }}"
+        command: 
+          - "/opt/bin/flanneld"
+          - "--ip-masq"
+          - "--kube-subnet-mgr"
+          - "--iface=$(POD_IP)"
+          - "--healthz-port=30670"
+        securityContext:
+          privileged: true
+        ports:
+          - name: healthz
+            containerPort: 30670
+            protocol: TCP
+        livenessProbe:
+          httpGet:
+            host: 127.0.0.1
+            path: /healthz
+            port: 30670
+          initialDelaySeconds: 10
+          timeoutSeconds: 3
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        volumeMounts:
+          - name: run
+            mountPath: /run
+          - name: flannel-cfg
+            mountPath: /etc/kube-flannel/
+          - name: cni-cfg
+            mountPath: /etc/cni/net.d
+          - name: kubelet-dir
+            mountPath: /var/lib/kubelet
+            readOnly: true
+      hostNetwork: true
+      tolerations:
+      - operator: Exists
+      volumes:
+        - name: run
+          hostPath:
+            path: /run
+        - name: cni-cfg
+          hostPath:
+            path: /etc/cni/net.d
+        - name: kubelet-dir
+          hostPath:
+            path: /var/lib/kubelet
+        - name: flannel-cfg
+          configMap:
+            name: flannel-cfg

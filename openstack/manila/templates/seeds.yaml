@@ -1,0 +1,207 @@
+{{- $cdomains := .Values.global.domain_seeds.customer_domains | required "missing value for .Values.global.domain_seeds.customer_domains" -}}
+{{- $domains  := concat (list "Default" "ccadmin") $cdomains -}}
+{{- $cdomainsWithoutSupportProjects := .Values.global.domain_seeds.customer_domains_without_support_projects | required "missing value for .Values.global.domain_seeds.customer_domains_without_support_projects" -}}
+
+{{- if .Release.IsUpgrade }}
+{{- if .Capabilities.APIVersions.Has "openstack.stable.sap.cc/v1"}}
+apiVersion: "openstack.stable.sap.cc/v1"
+kind: "OpenstackSeed"
+metadata:
+  name: {{ .Release.Name }}-seed
+  labels:
+    component: manila
+    app: manila
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+spec:
+  requires:
+  {{- range $domains}}
+  {{- if not (hasPrefix "iaas-" .)}}
+  - monsoon3/domain-{{replace "_" "-" . | lower}}-seed
+  {{- end }}
+  {{- end }}
+  - swift/swift-seed
+
+  services:
+  - name: {{ .Release.Name }}
+    type: {{.Values.seeds.service_type}}
+    description: OpenStack Shared Filesystems
+    endpoints:
+    - interface: admin
+      region: '{{.Values.global.region}}'
+      url: 'http://{{.Values.seeds.endpoint_prefix}}{{include "manila_api_endpoint_host_admin" .}}:{{.Values.api_port_internal}}/v1/%(tenant_id)s'
+    - interface: internal
+      region: '{{.Values.global.region}}'
+      url: 'http://{{.Values.seeds.endpoint_prefix}}{{include "manila_api_endpoint_host_internal" .}}:{{.Values.api_port_internal}}/v1/%(tenant_id)s'
+    - interface: public
+      region: '{{.Values.global.region}}'
+      url: 'https://{{.Values.seeds.endpoint_prefix}}{{include "manila_api_endpoint_host_public" .}}/v1/%(tenant_id)s'
+  - name: {{ .Release.Name }}v2
+    type: {{.Values.seeds.service_type}}v2
+    description: OpenStack Shared Filesystems
+    endpoints:
+    - interface: admin
+      region: '{{.Values.global.region}}'
+      url: 'http://{{.Values.seeds.endpoint_prefix}}{{include "manila_api_endpoint_host_admin" .}}:{{.Values.api_port_internal}}/v2'
+    - interface: internal
+      region: '{{.Values.global.region}}'
+      url: 'http://{{.Values.seeds.endpoint_prefix}}{{include "manila_api_endpoint_host_admin" .}}:{{.Values.api_port_internal}}/v2'
+    - interface: public
+      region: '{{.Values.global.region}}'
+      url: 'https://{{.Values.seeds.endpoint_prefix}}{{include "manila_api_endpoint_host_public" .}}/v2'
+
+{{- if .Values.seeds.all_enabled}}
+  roles:
+  - name: cloud_sharedfilesystem_admin
+  - name: cloud_sharedfilesystem_editor
+  - name: cloud_sharedfilesystem_viewer
+  - name: sharedfilesystem_admin
+  - name: sharedfilesystem_viewer
+
+  # default gets special handling
+  # ccadmin gets additional role assignments for projects and some group assignments
+  # iaas- is excluded
+
+  domains:
+  - name: Default
+    groups:
+    - name: administrators
+      role_assignments:
+      - domain: Default
+        role: cloud_sharedfilesystem_admin
+      - project: admin
+        role: cloud_sharedfilesystem_admin
+    users:
+    - name: admin
+      role_assignments:
+      - domain: Default
+        role: cloud_sharedfilesystem_admin
+      - project: admin
+        role: cloud_sharedfilesystem_admin
+    - name: '{{.Values.global.manila_service_username | include "resolve_secret"}}'
+      description: Manila Service
+      password: '{{.Values.global.manila_service_password | include "resolve_secret"}}'
+      role_assignments:
+      - project: service
+        role: service
+      - project: service
+        role: cloud_network_admin
+      - project: service
+        role: cloud_sharedfilesystem_admin
+    - name: '{{.Values.global.manila_network_username | include "resolve_secret"}}'
+      description: Manila Network
+      password: '{{.Values.global.manila_network_password | include "resolve_secret"}}'
+      role_assignments:
+      - project: service
+        role: service
+      - project: service
+        role: cloud_network_admin
+    {{- if .Values.seeds.backup_user.enabled }}
+    - name: {{ .Values.seeds.backup_user.username }}
+      description: Manila Backup Service
+      password: '{{.Values.seeds.backup_user.password | include "resolve_secret"}}'
+      role_assignments:
+      - project: service
+        role: service
+    {{- end }}
+
+  {{- range $domains}}
+  {{- if and (not (hasPrefix "iaas-" .)) (ne . "Default")}}
+  - name: {{ . }}
+    {{- if eq . "ccadmin" }}
+    projects:
+    - name: cloud_admin
+      role_assignments:
+      - user: admin@Default
+        role: cloud_sharedfilesystem_admin
+      {{- if $.Values.seeds.backup_user.enabled }}
+      - user: {{ $.Values.seeds.backup_user.username }}@Default
+        role: cloud_objectstore_admin
+      - user: {{ $.Values.seeds.backup_user.username }}@Default
+        role: cloud_sharedfilesystem_admin
+      {{- end }}
+    {{- end }}
+    groups:
+    {{- if eq . "ccadmin" }}
+    - name: CCADMIN_CLOUD_ADMINS
+      role_assignments:
+      - project: cloud_admin
+        role: cloud_sharedfilesystem_admin
+    {{- end }}
+    {{- if eq . "monsoon3" }}
+    - name: MONSOON3_DOMAIN_ADMINS
+      role_assignments:
+      - project: cc-demo
+        role: sharedfilesystem_admin
+    {{- end }}
+    - name: {{ hasPrefix "iaas-" . | ternary . ( upper . ) }}_API_SUPPORT
+      role_assignments:
+      {{- if not (has . $cdomainsWithoutSupportProjects) }}
+      - project: api_support
+        role: sharedfilesystem_admin
+      {{- end }}
+      {{- if eq . "ccadmin" }}
+      - project: cloud_admin
+        role: cloud_sharedfilesystem_viewer
+      - project: api_tools
+        role: sharedfilesystem_admin
+      {{- end }}
+      - domain: {{ . }}
+        role: sharedfilesystem_admin
+        inherited: true
+    - name: {{ hasPrefix "iaas-" . | ternary . ( upper . ) }}_COMPUTE_SUPPORT
+      role_assignments:
+      {{- if not (has . $cdomainsWithoutSupportProjects) }}
+      - project: compute_support
+        role: sharedfilesystem_admin
+      {{- end }}
+      {{- if eq . "ccadmin" }}
+      - project: compute_tools
+        role: sharedfilesystem_admin
+      {{- end }}
+      - domain: {{ . }}
+        role: sharedfilesystem_viewer
+        inherited: true
+    - name: {{ hasPrefix "iaas-" . | ternary . ( upper . ) }}_NETWORK_SUPPORT
+      role_assignments:
+      {{- if not (has . $cdomainsWithoutSupportProjects) }}
+      - project: network_support
+        role: sharedfilesystem_admin
+      {{- end }}
+      {{- if eq . "ccadmin" }}
+      - project: network_tools
+        role: sharedfilesystem_admin
+      {{- end }}
+      - domain: {{ . }}
+        role: sharedfilesystem_viewer
+        inherited: true
+    - name: {{ hasPrefix "iaas-" . | ternary . ( upper . ) }}_STORAGE_SUPPORT
+      role_assignments:
+      {{- if not (has . $cdomainsWithoutSupportProjects) }}
+      - project: storage_support
+        role: sharedfilesystem_admin
+      {{- end }}
+      {{- if eq . "ccadmin" }}
+      - project: cloud_admin
+        role: cloud_sharedfilesystem_editor
+      - project: storage_tools
+        role: sharedfilesystem_admin
+      {{- end }}
+      - domain: {{ . }}
+        role: sharedfilesystem_admin
+        inherited: true
+    - name: {{ hasPrefix "iaas-" . | ternary . ( upper . ) }}_SERVICE_DESK
+      role_assignments:
+      {{- if not (has . $cdomainsWithoutSupportProjects) }}
+      - project: service_desk
+        role: sharedfilesystem_admin
+      {{- end }}
+      - domain: {{ . }}
+        role: sharedfilesystem_viewer
+        inherited: true
+  {{- end}}
+  {{- end}}
+{{- end }}
+{{- end }}
+{{- end }}

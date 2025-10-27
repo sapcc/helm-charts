@@ -1,0 +1,21 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: swift-proxy-internal-{{ .Values.cluster_name }}
+  labels:
+    release: "{{ .Release.Name }}"
+    os-cluster: {{ .Values.cluster_name }}
+spec:
+  {{- if .Values.svc_node_port }}
+  type: NodePort
+  externalTrafficPolicy: Local
+  {{- end }}
+  selector:
+    component: swift-proxy-{{ .Values.cluster_name }}
+  ports:
+    - name: proxy
+      port: 8080
+      targetPort: 8080
+      {{- if .Values.svc_node_port }}
+      nodePort: {{ .Values.svc_node_port }}
+      {{- end }}

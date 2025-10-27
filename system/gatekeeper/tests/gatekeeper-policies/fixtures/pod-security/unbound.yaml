@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    meta.helm.sh/release-name: unbound1
+    meta.helm.sh/release-namespace: dns-recursor
+  labels:
+    app.kubernetes.io/managed-by: Helm
+  name: unbound1
+  namespace: dns-recursor
+spec:
+  template:
+    spec:
+      containers:
+      - image: keppel.eu-de-2.cloud.sap/ccloud/unbound:20220523144459
+        name: unbound
+        securityContext:
+          privileged: true
+      - image: keppel.eu-de-2.cloud.sap/ccloud/unbound_exporter:20220523144516
+        name: metric
+      securityContext: {}

@@ -1,0 +1,28 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: andromeda-server
+  labels:
+{{ include "andromeda.labels" . | indent 4 }}
+  {{- with .Values.ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- if eq .Values.global.region "global" }}
+  ingressClassName: nginx-external
+  {{- end }}
+  tls:
+    - hosts: ["{{include "andromeda_api" .}}"]
+      secretName: andromeda
+  rules:
+    - host: {{include "andromeda_api" .}}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: andromeda-server
+                port:
+                  name: http

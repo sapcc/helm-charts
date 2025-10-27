@@ -1,0 +1,88 @@
+kind: Deployment
+apiVersion: apps/v1
+
+metadata:
+  name: limes-api-ccloud
+  labels:
+    app: limes-api
+    release: "{{$.Release.Name}}"
+
+spec:
+  revisionHistoryLimit: 5
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 2
+  selector:
+    matchLabels:
+      name: limes-api-ccloud
+  template:
+    metadata:
+      labels:
+        name: limes-api-ccloud
+        app: limes-api
+      annotations:
+        checksum/configmap: {{ include "limes/templates/configmap.yaml" . | sha256sum }}
+        checksum/secret: {{ include "limes/templates/secret.yaml" . | sha256sum }}
+        kubectl.kubernetes.io/default-container: api
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: name
+                  operator: In
+                  values:
+                  - limes-api-ccloud
+              topologyKey: "kubernetes.io/hostname"
+            weight: 10
+      volumes:
+        - name: config
+          configMap:
+            name: limes
+      containers:
+        - name: api
+          image: {{ include "limes_image" . }}
+          imagePullPolicy: IfNotPresent
+          args:
+            - serve
+            - /etc/limes/limes.yaml
+          env:
+            {{ include "limes_common_envvars" . | indent 12 }}
+            - name: LIMES_API_POLICY_PATH
+              value: /etc/limes/policy.json
+          securityContext:
+            runAsNonRoot: true
+          volumeMounts:
+            - mountPath: /etc/limes
+              name: config
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+            timeoutSeconds: 10
+            periodSeconds: 60
+            initialDelaySeconds: 60
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            timeoutSeconds: 5
+            periodSeconds: 5
+          {{- if .Values.limes.resources.enabled }}
+          resources:
+            # observed usage: CPU <= 50m, RAM = 25-70 MiB
+            #
+            # However, we have some very significant spikes esp. when billing
+            # scrapes us, so we give some extra headroom to stay performant.
+            limits:
+              cpu: '1'
+              memory: '700Mi'
+            requests:
+              cpu: '250m'
+              memory: '700Mi'
+          {{- end }}

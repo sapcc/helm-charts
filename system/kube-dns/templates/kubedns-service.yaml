@@ -1,0 +1,30 @@
+{{- if .Values.kubedns.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: kube-dns
+  namespace: kube-system
+  labels:
+    k8s-app: kube-dns
+    addonmanager.kubernetes.io/mode: Reconcile
+    kubernetes.io/cluster-service: "true"
+    kubernetes.io/name: "KubeDNS"
+spec:
+  selector:
+    k8s-app: kube-dns
+  type: ClusterIP
+  clusterIP: {{ required ".Values.clusterip missing" .Values.clusterip }}
+{{- if .Values.externalIPs }}
+  externalIPs:
+{{ toYaml .Values.externalIPs | indent 4 }}
+{{- end }}
+  ports:
+  - name: dns
+    port: 53
+    protocol: UDP
+    targetPort: 53
+  - name: dns-tcp
+    port: 53
+    protocol: TCP
+    targetPort: 53
+{{ end }}

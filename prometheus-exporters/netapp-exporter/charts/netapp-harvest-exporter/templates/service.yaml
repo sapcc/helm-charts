@@ -1,0 +1,17 @@
+{{- range $appName, $appValues := .Values.apps }}
+{{- with $ }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "netapp-harvest.fullname" . }}-{{ $appName }}-master
+spec:
+  selector:
+    name: {{ include "netapp-harvest.fullname" . }}-{{ $appName }}-master
+  ports:
+  - name: http
+    protocol: TCP
+    port: 8000
+    targetPort: 8000
+---
+{{- end }}
+{{- end }}

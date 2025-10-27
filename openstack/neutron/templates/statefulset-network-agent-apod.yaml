@@ -1,0 +1,288 @@
+{{- $envAll := . }}
+{{- if .Values.agent.apod | default false }}
+{{- if .Values.global.apods | default false }}
+{{ range $az_long, $apods := .Values.global.apods }}
+{{ range $k, $apod := $apods }}
+{{- if not (has $apod ($.Values.disabled_network_agents | default list )) }}
+{{- $az := trimPrefix $.Values.global.region $az_long }}
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: neutron-network-agent-{{ $apod }}
+  labels:
+    system: openstack
+    application: neutron
+    component: agent
+  annotations:
+    vpa-butler.cloud.sap/main-container: neutron-dhcp-agent
+spec:
+  updateStrategy:
+{{- if or (eq $.Values.global.region "qa-de-1") (eq $.Values.global.region "qa-de-2") }}
+    type: RollingUpdate
+{{- else }}
+    type: OnDelete
+{{- end }}
+  selector:
+    matchLabels:
+      name: neutron-network-agent-{{ $apod }}
+  serviceName: neutron-network-agent
+  podManagementPolicy: "Parallel"
+  replicas: {{ $.Values.pod.replicas.network_agent }}
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/default-container: neutron-dhcp-agent
+        k8s.v1.cni.cncf.io/networks: '[{ "name": "cbr1-bridge", "interface":"{{$.Values.cp_network_interface}}" }]'
+        configmap-etc-hash: {{ include (print $.Template.BasePath "/configmap-etc.yaml") $ | sha256sum }}
+        configmap-etc-apod-hash: {{ include (print $.Template.BasePath "/configmap-etc-apod.yaml") $ | sha256sum }}
+        {{- include "utils.linkerd.pod_and_service_annotation" $ | indent 8 }}
+        config.linkerd.io/skip-inbound-ports: "22,53,80,443"
+        config.linkerd.io/skip-outbound-ports: "22,53,80,443"
+      labels:
+        name: neutron-network-agent-{{ $apod }}
+{{ tuple $ "neutron" "agent" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
+    spec:
+      {{- if index $.Values.pod.tolerations $apod }}
+      tolerations:
+        {{- toYaml (index $.Values.pod.tolerations $apod) | nindent 8 }}
+      {{- end }}
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 50
+            podAffinityTerm:
+              topologyKey: kubernetes.io/hostname
+              labelSelector:
+                matchExpressions:
+                - key: component
+                  operator: In
+                  values:
+                  - agent
+          - weight: 100
+            podAffinityTerm:
+              topologyKey: kubernetes.cloud.sap/host
+              labelSelector:
+                matchExpressions:
+                - key: component
+                  operator: In
+                  values:
+                  - agent
+      nodeSelector:
+        multus: bond1
+        topology.kubernetes.io/zone: {{ $az_long }}
+        kubernetes.cloud.sap/apod: {{ $apod }}
+      initContainers:
+        - name: init
+          image: {{$.Values.global.dockerHubMirror}}/library/{{$.Values.imageNameNetworkAgentDHCPInit | required "Please set neutron.imageNameNetworkAgentDHCPInit or similar"}}:{{$.Values.imageVersionNetworkAgentDHCPInit | required "Please set neutron.imageVersionNetworkAgentDHCPInit or similar"}}
+          securityContext:
+            privileged: true
+          command:
+            - sh
+            - -c
+          args:
+            - |-
+              set -xe
+              chroot /host modprobe ebtable_nat
+          volumeMounts:
+            - name: host
+              mountPath: "/host"
+      containers:
+        - name: neutron-dhcp-agent
+          image: {{$.Values.global.registry}}/loci-neutron:{{$.Values.imageVersionNetworkAgentDHCP | default $.Values.imageVersionNetworkAgent | default $.Values.imageVersion | required "Please set neutron.imageVersionNetworkAgentDHCP or similar"}}
+          imagePullPolicy: IfNotPresent
+          command: ["dumb-init", "neutron-dhcp-agent", "--config-file", "/etc/neutron/neutron.conf", "--config-dir", "/etc/neutron/secrets", "--config-file", "/etc/neutron/dhcp-agent.ini", "--config-file", "/etc/neutron/linux-bridge.ini", "--config-file", "/etc/neutron/az-{{ $az }}.conf"]
+          env:
+            {{- include "utils.sentry_config" $ | nindent 12 }}
+            - name: DEBUG_CONTAINER
+              value: "false"
+            - name: SPT_NOENV
+              value: "yes,please"
+            - name: PYTHONWARNINGS
+              value: "ignore:Unverified HTTPS request"
+            {{- include "utils.trust_bundle.env" $ | indent 12 }}
+          readinessProbe:
+            exec:
+              command: ["neutron-dhcp-readiness", "-config-file", "/etc/neutron/neutron.conf", "--config-file", "/etc/neutron/secrets/neutron-common-secrets.conf"]
+            initialDelaySeconds: 30
+            periodSeconds: 60
+            timeoutSeconds: 10
+          securityContext:
+            privileged: true
+          resources:
+{{ toYaml $.Values.pod.resources.dhcp_agent | indent 12 }}
+          volumeMounts:
+            - name: metadata-proxy
+              mountPath: /run/metadata_proxy
+            - name: modules
+              mountPath: /lib/modules
+              readOnly: true
+            - name: logvol
+              mountPath: /dev/log
+              readOnly: false
+            - name: etc-neutron-dhcp-agent
+              mountPath: /etc/neutron
+              readOnly: true
+            - name: neutron-etc
+              mountPath: /etc/sudoers
+              subPath: sudoers
+              readOnly: true
+            {{- include "utils.trust_bundle.volume_mount" $ | indent 12 }}
+        - name: neutron-linuxbridge-agent
+          image: {{$.Values.global.registry}}/loci-neutron:{{$.Values.imageVersionNetworkAgentLinuxBridge | default $.Values.imageVersionNetworkAgent | default $.Values.imageVersion | required "Please set neutron.imageVersionNetworkAgentLinuxBridge or similar"}}
+          imagePullPolicy: IfNotPresent
+          command: ["dumb-init", "neutron-linuxbridge-agent", "--config-file", "/etc/neutron/neutron.conf", "--config-dir", "/etc/neutron/secrets", "--config-file", "/etc/neutron/plugins/ml2/ml2_conf.ini", "--config-file", "/etc/neutron/linux-bridge.ini", "--config-file", "/etc/neutron/apod-{{ $apod }}.conf"]
+          env:
+            {{- include "utils.sentry_config" $ | nindent 12 }}
+            - name: DEBUG_CONTAINER
+              value: "false"
+            - name: PYTHONWARNINGS
+              value: "ignore:Unverified HTTPS request"
+            {{- include "utils.trust_bundle.env" $ | indent 12 }}
+          readinessProbe:
+            exec:
+              command: ["neutron-linuxbridge-readiness", "-config-file", "/etc/neutron/neutron.conf", "--config-file", "/etc/neutron/secrets/neutron-common-secrets.conf"]
+            initialDelaySeconds: 30
+            periodSeconds: 60
+            timeoutSeconds: 10
+          securityContext:
+            capabilities:
+              add:
+                - NET_ADMIN
+                - SYS_ADMIN
+                - DAC_OVERRIDE
+                - DAC_READ_SEARCH
+                - SYS_PTRACE
+          resources:
+{{ toYaml $.Values.pod.resources.linuxbridge_agent | indent 12 }}
+          volumeMounts:
+            - mountPath: /lib/modules
+              name: modules
+              readOnly: true
+            - name: etc-neutron-linuxbridge-agent
+              mountPath: /etc/neutron
+              readOnly: true
+            - name: neutron-etc
+              mountPath: /etc/sudoers
+              subPath: sudoers
+              readOnly: true
+            {{- include "utils.trust_bundle.volume_mount" $ | indent 12 }}
+        - name: neutron-metadata-agent
+          image: {{$.Values.global.registry}}/loci-neutron:{{$.Values.imageVersionNetworkAgentMetadata | default $.Values.imageVersionNetworkAgent | default $.Values.imageVersion | required "Please set neutron.imageVersionNetworkAgentMetadata or similar"}}
+          imagePullPolicy: IfNotPresent
+          command: ["dumb-init", "neutron-metadata-agent", "--config-file", "/etc/neutron/neutron.conf", "--config-dir", "/etc/neutron/secrets","--config-file", "/etc/neutron/metadata-agent.ini"]
+          env:
+            {{- include "utils.sentry_config" $ | nindent 12 }}
+            - name: PYTHONWARNINGS
+              value: "ignore:Unverified HTTPS request"
+            - name: DEBUG_CONTAINER
+              value: "false"
+            {{- include "utils.trust_bundle.env" $ | indent 12 }}
+          resources:
+{{  toYaml $.Values.pod.resources.metadata_agent | indent 12 }}
+          volumeMounts:
+            - name: metadata-proxy
+              mountPath: /run/metadata_proxy
+            - name: etc-neutron-metadata-agent
+              mountPath: /etc/neutron
+              readOnly: true
+            {{- include "utils.trust_bundle.volume_mount" $ | indent 12 }}
+      volumes:
+        - name: metadata-proxy
+          emptyDir: {}
+        - name: modules
+          hostPath:
+            path: /lib/modules
+        - name: logvol
+          hostPath:
+            path: /dev/log
+        - name: neutron-etc
+          configMap:
+            name: neutron-etc
+        - name: host
+          hostPath:
+              path: "/"
+        - name: etc-neutron-dhcp-agent
+          projected:
+            defaultMode: 420
+            sources:
+            - configMap:
+                name: neutron-etc
+                items:
+                - key: neutron.conf
+                  path: neutron.conf
+                - key: logging.conf
+                  path: logging.conf
+                - key: rootwrap.conf
+                  path: rootwrap.conf
+                - key: dnsmasq.conf
+                  path: dnsmasq.conf
+                - key: dhcp.filters
+                  path: rootwrap.d/dhcp.filters
+                - key: linux-bridge.ini
+                  path: linux-bridge.ini
+                - key: dhcp-agent.ini
+                  path: dhcp-agent.ini
+                - key: az-{{$az}}.conf
+                  path: az-{{$az}}.conf
+            - secret:
+                name: neutron-common-secrets
+                items:
+                  - key: neutron-common-secrets.conf
+                    path: secrets/neutron-common-secrets.conf
+        - name: etc-neutron-linuxbridge-agent
+          projected:
+            defaultMode: 420
+            sources:
+            - configMap:
+                name: neutron-etc
+                items:
+                - key: neutron.conf
+                  path: neutron.conf
+                - key: logging.conf
+                  path: logging.conf
+                - key: rootwrap.conf
+                  path: rootwrap.conf
+                - key: linux-bridge.ini
+                  path: linux-bridge.ini
+                - key: ml2-conf.ini
+                  path: plugins/ml2/ml2_conf.ini
+            - configMap:
+                name: neutron-etc-apod
+                items:
+                - key: apod-{{ $apod }}.conf
+                  path: apod-{{ $apod }}.conf
+            - secret:
+                name: neutron-common-secrets
+                items:
+                  - key: neutron-common-secrets.conf
+                    path: secrets/neutron-common-secrets.conf
+        - name: etc-neutron-metadata-agent
+          projected:
+            defaultMode: 420
+            sources:
+            - configMap:
+                name: neutron-etc
+                items:
+                - key: neutron.conf
+                  path: neutron.conf
+                - key: logging.conf
+                  path: logging.conf
+                - key: metadata-agent.ini
+                  path: metadata-agent.ini
+            - secret:
+                name: neutron-common-secrets
+                items:
+                  - key: neutron-common-secrets.conf
+                    path: secrets/neutron-common-secrets.conf
+            - secret:
+                name: neutron-metadata-secrets
+                items:
+                  - key: neutron-metadata-secrets.conf
+                    path: secrets/neutron-metadata-secrets.conf
+        {{- include "utils.trust_bundle.volumes" $ | indent 8 }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}

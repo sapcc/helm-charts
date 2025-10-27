@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: haproxy-etc-{{ .Values.cluster_name }}
+  labels:
+    system: openstack
+    service: objectstore
+    component: configuration
+
+data:
+  dhparam.pem: |
+{{ include "swift/templates/etc/_dhparam.pem.tpl" . | indent 4 }}
+
+  haproxy.cfg: |
+{{ include "haproxy.cfg" . | indent 4 }}

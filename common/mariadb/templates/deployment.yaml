@@ -1,0 +1,270 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "fullName" . }}
+  labels:
+    app: {{ include "fullName" . }}
+    {{- include "mariadb.labels" (list $ "version" "mariadb" "deployment" "database") | indent 4 }}
+{{- if .Values.vpa.set_main_container }}
+  annotations:
+    vpa-butler.cloud.sap/main-container: mariadb
+{{- end }}
+spec:
+  replicas: 1
+  revisionHistoryLimit: 5
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: {{ include "fullName" . }}
+  template:
+    metadata:
+      labels:
+        app: {{ include "fullName" . }}
+        {{- include "mariadb.labels" (list $ "noversion" "mariadb" "deployment" "database") | indent 8 }}
+      annotations:
+        kubectl.kubernetes.io/default-container: mariadb
+        checksum/etc: {{ include (print $.Template.BasePath  "/etc-configmap.yaml") . | sha256sum }}
+        checksum/credential-updater: {{ include (print $.Template.BasePath  "/configmap-mariadb-credential-updater.yaml") . | sha256sum }}
+{{- if .Values.metrics.enabled }}
+        prometheus.io/scrape: "true"
+        prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
+{{- end }}
+{{- if and (and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested) $.Values.linkerd.mariadb.enabled }}
+        linkerd.io/inject: enabled
+{{- end }}
+    spec:
+      affinity:
+        nodeAffinity:
+{{- if .Values.nodeAffinity }}
+      {{- with .Values.nodeAffinity }}
+{{ toYaml . | indent 10 }}
+      {{- end }}
+{{- include "mariadb_maintenance_affinity" . }}
+{{- include "mariadb_node_reinstall_affinity" . }}
+{{- else }}
+          preferredDuringSchedulingIgnoredDuringExecution:
+{{- include "mariadb_maintenance_affinity" . }}
+{{- include "mariadb_node_reinstall_affinity" . }}
+{{- end }}
+          - weight: 1
+            preference:
+              matchExpressions:
+                - key: "topology.kubernetes.io/zone"
+                  operator: In
+                  values:
+                  - {{.Values.global.region}}a
+      initContainers:
+      - name: set-root-password
+        image: {{ required ".Values.global.dockerHubMirrorAlternateRegion is missing" .Values.global.dockerHubMirrorAlternateRegion }}/{{ .Values.image }}
+        imagePullPolicy: {{ default "IfNotPresent" .Values.imagePullPolicy | quote }}
+        command:
+          - /bin/bash
+          - -c
+          - |
+            /configurator/mariadb-set-root-password.sh
+        volumeMounts:
+          - name: set-root-password
+            mountPath: /configurator
+            readOnly: true
+          - name: mysql-users-secret-file
+            mountPath: /etc/mysql/mysql-users-secret
+            readOnly: true
+          - name: init-file-root-sql
+            mountPath: /etc/mysql/init-file
+      containers:
+      - name: mariadb
+        image: {{ required ".Values.global.dockerHubMirrorAlternateRegion is missing" .Values.global.dockerHubMirrorAlternateRegion }}/{{ .Values.image }}
+        imagePullPolicy: {{ default "IfNotPresent" .Values.imagePullPolicy | quote }}
+        lifecycle:
+          postStart:
+            exec:
+              command: ["sh", "-c", "while ! mariadb-admin ping --silent; do sleep 1; done; mariadb-upgrade"]
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mariadb-{{.Values.name}}
+              key: root-password
+        ports:
+          - name: mariadb
+            containerPort: 3306
+        {{- if .Values.livenessProbe.enabled }}
+        livenessProbe:
+          exec:
+            command: ["sh", "-c", "exec mariadb-admin status"]
+          initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.livenessProbe.periodSeconds }}
+          timeoutSeconds: {{ .Values.livenessProbe.timeoutSeconds }}
+          successThreshold: {{ .Values.livenessProbe.successThreshold }}
+          failureThreshold: {{ .Values.livenessProbe.failureThreshold }}
+        {{- end }}
+        {{- if .Values.readinessProbe.enabled }}
+        readinessProbe:
+          exec:
+            command: ["sh", "-c", "exec mariadb-admin status"]
+          initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.readinessProbe.periodSeconds }}
+          timeoutSeconds: {{ .Values.readinessProbe.timeoutSeconds }}
+          successThreshold: {{ .Values.readinessProbe.successThreshold }}
+          failureThreshold: {{ .Values.readinessProbe.failureThreshold }}
+        {{- end }}
+        resources:
+{{ toYaml (required "missing .resources" .Values.resources) | indent 10 }}
+        volumeMounts:
+          - name: mariadb-socket
+            mountPath: /run/mysqld
+{{- if .Values.persistence_claim.enabled }}
+          - name: mariadb-persistent-storage
+            mountPath: /var/lib/mysql
+            readOnly: false
+{{- end }}
+          - mountPath: /usr/local/bin/docker-entrypoint.sh
+            subPath: docker-entrypoint.sh
+            name: mariadb-entrypoint
+            readOnly: true
+          - mountPath: /etc/mysql/mariadb.conf.d/
+            name: mariadb-etc
+          - mountPath: /root/.my.cnf
+            subPath: ".my.cnf"
+            name: mariadb-client
+          - name: initdb
+            mountPath: /docker-entrypoint-initdb.d
+          - name: mysql-users-secret-file
+            mountPath: /etc/mysql/mysql-users-secret
+            readOnly: true
+          - name: init-file-root-sql
+            mountPath: /etc/mysql/init-file
+      - name: user-credential-updater
+        image: "{{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{ .Values.credentialUpdater.image }}:{{ .Values.credentialUpdater.imageTag }}"
+        imagePullPolicy: {{ default "IfNotPresent" .Values.imagePullPolicy | quote }}
+        securityContext:
+          runAsUser: 0
+          privileged: false
+          allowPrivilegeEscalation: false
+        command:
+          - python3
+          - /usr/bin/mariadb-credential-updater.py
+        env:
+          - name: INITDB_FILE_PATH
+            value: /var/lib/initdb/init.sql
+          - name: CHECK_INTERVAL
+            value: {{ .Values.credentialUpdater.checkInterval | quote }}
+          - name: MYSQL_ADDRESS
+            value: /run/mysqld/mysqld.sock
+          - name: MYSQL_CLIENT_CONFIG
+            value: /root/.my.cnf
+        volumeMounts:
+          - mountPath: /run/mysqld
+            name: mariadb-socket
+          - mountPath: /root/.my.cnf
+            subPath: ".my.cnf"
+            name: mariadb-client
+          - mountPath: /usr/bin/mariadb-credential-updater.py
+            subPath: mariadb-credential-updater.py
+            name: mariadb-credential-updater
+            readOnly: true
+          - mountPath: /var/lib/initdb
+            name: initdb
+{{- if or .Values.backup_v2.enabled .Values.readiness.useSidecar }}
+      - name: readiness
+        image: "{{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{ .Values.readiness.image }}:{{ .Values.readiness.image_version }}"
+        command:
+          - pod_readiness
+        readinessProbe:
+          httpGet:
+            path: /healthy
+            port: 8080
+            scheme: HTTP
+          initialDelaySeconds: 5
+          periodSeconds: 3
+          failureThreshold: 1
+          successThreshold: 1
+        ports:
+          - containerPort: 8080
+            name: http
+            protocol: TCP
+{{- end }}
+{{- if .Values.metrics.enabled }}
+      - name: metrics
+        image: "{{ required ".Values.global.dockerHubMirrorAlternateRegion is missing" .Values.global.dockerHubMirrorAlternateRegion }}/{{ .Values.metrics.image }}:{{ .Values.metrics.image_version }}"
+        imagePullPolicy: {{ default "IfNotPresent" .Values.imagePullPolicy | quote }}
+        args:
+          - "--mysqld.username=monitor"
+          - "--mysqld.address=127.0.0.1:3306"
+        {{- range $flag := .Values.metrics.flags }}
+          - "--{{$flag}}"
+        {{- end }}
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 9104
+            scheme: HTTP
+          periodSeconds: 20
+          timeoutSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 9104
+            scheme: HTTP
+          periodSeconds: 20
+          timeoutSeconds: 10
+        env:
+          - name: LOGLEVEL
+            value: {{ default "info" .Values.metrics.loglevel }}
+        ports:
+          - name: metrics
+            containerPort: {{ required ".Values.metrics.port missing" .Values.metrics.port }}
+        {{- if .Values.metrics.resources.enabled }}
+        resources:
+          limits:
+            cpu: {{ .Values.metrics.resources.limits.cpu | quote }}
+            memory: {{ .Values.metrics.resources.limits.memory | quote }}
+          requests:
+            cpu: {{ .Values.metrics.resources.requests.cpu | quote }}
+            memory: {{ .Values.metrics.resources.requests.memory | quote }}
+        {{- end }}
+{{- end }}
+      priorityClassName: {{ .Values.priority_class | default "critical-infrastructure" | quote }}
+      volumes:
+        - name: mariadb-socket
+          emptyDir: {}
+        - name: mariadb-entrypoint
+          configMap:
+            name: mariadb-{{.Values.name}}-entrypoint
+            defaultMode: 0755
+        - name: mariadb-credential-updater
+          configMap:
+            name: mariadb-{{.Values.name}}-credential-updater
+            defaultMode: 0755
+        - name: mariadb-etc
+          configMap:
+            name: mariadb-{{.Values.name}}-etc
+        - name: mariadb-client
+          secret:
+            secretName: mariadb-{{.Values.name}}-client
+            defaultMode: 0600
+{{- if .Values.persistence_claim.enabled }}
+        - name: mariadb-persistent-storage
+          persistentVolumeClaim:
+           claimName: {{ .Values.persistence_claim.name |  default (include "fullName" . ) }}
+{{- end }}
+        - name: initdb
+          secret:
+            secretName: {{ .Values.name }}-initdb
+            defaultMode: 0744
+        - name: init-file-root-sql
+          emptyDir: {}
+        - name: set-root-password
+          configMap:
+            name: mariadb-{{.Values.name}}-set-root-password
+            defaultMode: 0755
+        - name: mysql-users-secret-file
+          projected:
+            sources:
+            - secret:
+                name: mariadb-{{.Values.name}}
+                optional: false
+                items:
+                  - key: root-password
+                    path: root

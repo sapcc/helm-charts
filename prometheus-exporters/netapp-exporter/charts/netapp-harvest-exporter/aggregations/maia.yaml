@@ -1,0 +1,183 @@
+# document: https://documentation.global.cloud.sap/docs/customer/monitoring/operational-metrics--maia/metrics-metrics/#nfs-manila---capacity
+groups:
+  - name: manila-maia
+    rules:
+    #
+    # capacity metrics
+    #
+
+    # TODO  `* on(...) group_left() netapp_volume_labels` does not seem to do anything. Remove them.
+    - record: netapp_volume_snapshot_reserved_bytes:pre
+      expr: label_replace(netapp_volume_snapshot_reserve_size{app="netapp-harvest-exporter-manila"} * on (app, host, svm, volume) group_left() netapp_volume_labels, "vserver", "$1", "svm", "(.*)")
+
+    - record: netapp_volume_snapshot_available_bytes:pre
+      expr: label_replace(netapp_volume_snapshot_reserve_available{app="netapp-harvest-exporter-manila"} * on (app, host, svm, volume) group_left() netapp_volume_labels, "vserver", "$1", "svm", "(.*)")
+
+    - record: netapp_volume_snapshot_used_bytes:pre
+      expr: label_replace(netapp_volume_snapshots_size_used{app="netapp-harvest-exporter-manila"} * on (app, host, svm, volume) group_left() netapp_volume_labels, "vserver", "$1", "svm", "(.*)")
+
+    - record: netapp_volume_inode_files_total:pre
+      expr: label_replace(netapp_volume_inode_files_total{app="netapp-harvest-exporter-manila"} * on (app, host, svm, volume) group_left() netapp_volume_labels, "vserver", "$1", "svm", "(.*)")
+
+    - record: netapp_volume_inode_files_used:pre
+      expr: label_replace(netapp_volume_inode_files_used{app="netapp-harvest-exporter-manila"} * on (app, host, svm, volume) group_left() netapp_volume_labels, "vserver", "$1", "svm", "(.*)")
+
+    #
+    # performance metrics
+    #
+
+    - record: netapp_volume_total_ops:maia
+      expr: avg by (host, vserver, volume, volume_type, share_name, share_id, share_type, project_id, availability_zone) (label_replace(
+        netapp_volume_total_ops * on (app, host, svm, volume)  group_left(project_id, share_id, share_name, share_type, volume_type) netapp_volume_labels:manila,
+        "vserver", "$1", "svm", "(.*)"))
+
+    - record: netapp_volume_read_ops:maia
+      expr: avg by (host, vserver, volume, volume_type, share_name, share_id, share_type, project_id, availability_zone) (label_replace(
+        netapp_volume_read_ops * on (app, host, svm, volume)  group_left(project_id, share_id, share_name, share_type, volume_type) netapp_volume_labels:manila,
+        "vserver", "$1", "svm", "(.*)"))
+
+    - record: netapp_volume_write_ops:maia
+      expr: avg by (host, vserver, volume, volume_type, share_name, share_id, share_type, project_id, availability_zone) (label_replace(
+        netapp_volume_write_ops * on (app, host, svm, volume)  group_left(project_id, share_id, share_name, share_type, volume_type) netapp_volume_labels:manila,
+        "vserver", "$1", "svm", "(.*)"))
+
+    - record: netapp_volume_read_throughput:maia
+      expr: avg by (host, vserver, volume, volume_type, share_name, share_id, share_type, project_id, availability_zone) (label_replace(
+        netapp_volume_read_data * on (app, host, svm, volume)  group_left(project_id, share_id, share_name, share_type, volume_type) netapp_volume_labels:manila,
+        "vserver", "$1", "svm", "(.*)"))
+
+    - record: netapp_volume_write_throughput:maia
+      expr: avg by (host, vserver, volume, volume_type, share_name, share_id, share_type, project_id, availability_zone) (label_replace(
+        netapp_volume_write_data * on (app, host, svm, volume)  group_left(project_id, share_id, share_name, share_type, volume_type) netapp_volume_labels:manila,
+        "vserver", "$1", "svm", "(.*)"))
+
+    - record: netapp_volume_read_latency_microseconds:maia
+      expr: avg by (host, vserver, volume, volume_type, share_name, share_id, share_type, project_id, availability_zone) (label_replace(
+        netapp_volume_read_latency * on (app, host, svm, volume)  group_left(project_id, share_id, share_name, share_type, volume_type) netapp_volume_labels:manila,
+        "vserver", "$1", "svm", "(.*)"))
+
+    - record: netapp_volume_write_latency_microseconds:maia
+      expr: avg by (host, vserver, volume, volume_type, share_name, share_id, share_type, project_id, availability_zone) (label_replace(
+        netapp_volume_write_latency * on (app, host, svm, volume)  group_left(project_id, share_id, share_name, share_type, volume_type) netapp_volume_labels:manila,
+        "vserver", "$1", "svm", "(.*)"))
+
+    #
+    # only keep necessary labels visible to users
+    #
+
+    # We need to take average of the metrics to avoid exporting multiplied values，in case same filer is scraped by multiple harvest worker.
+    - record: netapp_volume_total_bytes:maia2
+      expr: avg by (host, vserver, volume, volume_type, share_name, share_id, share_type, project_id, availability_zone) (netapp_volume_total_bytes:pre{project_id!=""})
+
+    - record: netapp_volume_used_bytes:maia2
+      expr: avg by (host, vserver, volume, volume_type, share_name, share_id, share_type, project_id, availability_zone) (netapp_volume_used_bytes:pre{project_id!=""})
+
+    - record: netapp_volume_available_bytes:maia2
+      expr: netapp_volume_total_bytes:maia2 - netapp_volume_used_bytes:maia2
+
+    - record: netapp_volume_used_percentage:maia2
+      expr: round(netapp_volume_used_bytes:maia2 / netapp_volume_total_bytes:maia2 * 100)
+
+    - record: netapp_volume_snapshot_reserved_bytes:maia2
+      expr: avg by (host, vserver, volume, volume_type, share_name, share_id, share_type, project_id, availability_zone) (netapp_volume_snapshot_reserved_bytes:pre{project_id!=""})
+
+    - record: netapp_volume_snapshot_available_bytes:maia2
+      expr: avg by (host, vserver, volume, volume_type, share_name, share_id, share_type, project_id, availability_zone) (netapp_volume_snapshot_available_bytes:pre{project_id!=""})
+
+    # note: snapshot used is NOT snapshot reserved minus snapshot available, because snapshot split can happen
+    - record: netapp_volume_snapshot_used_bytes:maia2
+      expr: avg by (host, vserver, volume, volume_type, share_name, share_id, share_type, project_id, availability_zone) (netapp_volume_snapshot_used_bytes:pre{project_id!=""})
+
+    - record: netapp_volume_inode_files_total:maia2
+      expr: avg by (host, vserver, volume, volume_type, share_name, share_id, share_type, project_id, availability_zone) (netapp_volume_inode_files_total:pre{project_id!=""})
+
+    - record: netapp_volume_inode_files_used:maia2
+      expr: avg by (host, vserver, volume, volume_type, share_name, share_id, share_type, project_id, availability_zone) (netapp_volume_inode_files_used:pre{project_id!=""})
+
+    - record: netapp_volume_inode_files_used_percentage:maia2
+      expr: round(netapp_volume_inode_files_used:maia2 / netapp_volume_inode_files_total:maia2 * 100)
+
+    #
+    # fall back to old metrics
+    #
+
+    - record: netapp_volume_total_bytes:maia
+      expr: netapp_volume_total_bytes:maia2 or sum (netapp_volume_total_bytes:maia1{project_id!=""}) without (app, instance, job, filer, aggregate, node, snapshot_policy, volume_state)
+
+    - record: netapp_volume_used_bytes:maia
+      expr: netapp_volume_used_bytes:maia2 or sum (netapp_volume_used_bytes:maia1{project_id!=""}) without (app, instance, job, filer, aggregate, node, snapshot_policy, volume_state)
+
+    - record: netapp_volume_available_bytes:maia
+      expr: netapp_volume_available_bytes:maia2 or sum (netapp_volume_available_bytes:maia1{project_id!=""}) without (app, instance, job, filer, aggregate, node, snapshot_policy, volume_state)
+
+    - record: netapp_volume_used_percentage:maia
+      expr: netapp_volume_used_percentage:maia2 or sum (netapp_volume_used_percentage:maia1{project_id!=""}) without (app, instance, job, filer, aggregate, node, snapshot_policy, volume_state)
+
+    - record: netapp_volume_snapshot_reserved_bytes:maia
+      expr: netapp_volume_snapshot_reserved_bytes:maia2 or sum (netapp_volume_snapshot_reserved_bytes:maia1{project_id!=""}) without (app, instance, job, filer, aggregate, node, snapshot_policy, volume_state)
+
+    - record: netapp_volume_snapshot_available_bytes:maia
+      expr: netapp_volume_snapshot_available_bytes:maia2 or sum (netapp_volume_snapshot_available_bytes:maia1{project_id!=""}) without (app, instance, job, filer, aggregate, node, snapshot_policy, volume_state)
+
+    - record: netapp_volume_snapshot_used_bytes:maia
+      expr: netapp_volume_snapshot_used_bytes:maia2 or sum (netapp_volume_snapshot_used_bytes:maia1{project_id!=""}) without (app, instance, job, filer, aggregate, node, snapshot_policy, volume_state)
+
+    - record: netapp_volume_inode_files_total:maia
+      expr: netapp_volume_inode_files_total:maia2 or sum (netapp_volume_inode_files_total:maia1{project_id!=""}) without (app, instance, job, filer, aggregate, node, snapshot_policy, volume_state)
+
+    - record: netapp_volume_inode_files_used:maia
+      expr: netapp_volume_inode_files_used:maia2 or sum (netapp_volume_inode_files_used:maia1{project_id!=""}) without (app, instance, job, filer, aggregate, node, snapshot_policy, volume_state)
+
+    - record: netapp_volume_inode_files_used_percentage:maia
+      expr: netapp_volume_inode_files_used_percentage:maia2 or sum (netapp_volume_inode_files_used_percentage:maia1{project_id!=""}) without (app, instance, job, filer, aggregate, node, snapshot_policy, volume_state)
+
+    #
+    # snampirror relationship
+    #
+    # NOTE: We enrich snapmirror metrics using exported metrics from target region.
+    # It's done via the promquery exporter in `netapp_metrics_federation` subchart.
+    - record: netapp_snapmirror_labels:maia
+      expr: |
+        go_build_info{app_kubernetes_io_instance="netapp-snapmirror-federation",
+          region!~"ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-sa-1|eu-de-1|eu-de-2|eu-nl-1|na-ca-1|na-us-1|na-us-2|na-us-3|qa-de-1"}
+        or {__name__=~"netapp_snapmirror_labels:localbkp|netapp_snapmirror_labels:remotebkp"}
+
+    - record: netapp_snapmirror_lag_time:maia
+      expr: '{__name__="netapp_snapmirror_lag_time:federated"}'
+
+    - record: netapp_snapmirror_last_transfer_size:maia
+      expr: '{__name__="netapp_snapmirror_last_transfer_size:federated"}'
+
+    - record: netapp_snapmirror_last_transfer_duration:maia
+      expr: '{__name__="netapp_snapmirror_last_transfer_duration:federated"}'
+
+    - record: netapp_snapmirror_last_transfer_duration:maia
+      expr: '{__name__="netapp_snapmirror_last_transfer_duration:federated"}'
+
+    - record: netapp_snapmirror_source_snapshot_count:maia
+      expr: '{__name__="netapp_snapmirror_source_snapshot_count:federated"}'
+
+    - record: netapp_snapmirror_destination_snapshot_count:maia
+      expr: '{__name__="netapp_snapmirror_destination_snapshot_count:federated"}'
+
+    # Maia metrics: openstack_manila_share_snapmirror_snapshot_size_bytes
+    # Description: Snapshot size induced by share replicas or other snapmirror relationships
+    - record: netapp_volume_snapmirror_snapshot_size_bytes:maia
+      expr: |
+        sum (
+          sum (
+            netapp_snapshot_size{volume=~"share_.*", snapshot=~"snapmirror.*"}
+          ) by (filer, svm, volume) *
+          on (filer, svm, volume) group_left(share_id, project_id) netapp_volume_labels
+        ) by (share_id, project_id)
+
+    #
+    # nfs connection metrics
+    #
+    # Use this to monitor if the volume is being used by any clients.
+    - record: netapp_volume_connection_count:maia
+      expr: |
+          count (netapp_nfs_clients_idle_duration{app="netapp-harvest-exporter-manila"}) by (volume, filer) *
+          on (volume, filer) group_left (project_id, share_id, share_name, share_type, volume_type)
+          netapp_volume_labels{app="netapp-harvest-exporter-manila", volume=~"share.*"}
+

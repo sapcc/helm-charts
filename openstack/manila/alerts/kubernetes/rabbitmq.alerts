@@ -1,0 +1,17 @@
+groups:
+- name: manila-rabbitmq.health.alerts
+  rules:
+  - alert: ManilaRabbitMQNotReady
+    expr: (sum(kube_pod_status_ready_normalized{condition="true", pod=~"manila-rabbitmq.*", pod!~"manila-rabbitmq-notifications.*"}) < 1)
+    for: 10m
+    labels:
+      severity: critical
+      context: availability
+      service: manila
+      dashboard: rabbitmq
+      tier: os
+      playbook: 'docs/devops/alert/rabbitmq/'
+      support_group: compute-storage-api
+    annotations:
+      description: manila-rabbitmq is not ready for 10 minutes.
+      summary: manila-rabbitmq is not ready for 10 minutes. Please check the pod.

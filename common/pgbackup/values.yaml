@@ -1,0 +1,29 @@
+interval: 1h            # see https://pkg.go.dev/time#ParseDuration for acceptable values
+
+# If enabled, image references use .Values.registryAlternateRegion instead of .Values.registry (this currently only affects the backup container).
+use_alternate_region: false
+
+resources:
+  memory_limit: 256Mi   # needs to be increased for large databases (> 1 GiB)
+  cpu_limit: '1'        # needs to be increased for large databases
+  cpu_request: 100m     # needs to be increased for large databases
+
+database:
+  name: ""              # database name (default is .Release.Name)
+  host: ""              # database hostname (default is "{{.Release.Name}}-postgresql")
+  username: postgres    # name of database user (this user must have full admin access to the DB)
+  password: ""          # password for the aforementioned database user (required)
+
+# if enabled, configures `stakater/Reloader` (annotations) to cause the
+# deployment to do a rolling restart when referenced CMs and Secrets annotated
+# with `reloader.stakater.com/match: "true"` (e.g. Secret with DB password)
+# change
+reloader:
+  enabled: false
+
+# alert configuration for Prometheus
+alerts:
+  enabled: true
+  prometheus: openstack # name of the Prometheus that scrapes the metrics and produces alerts
+  support_group: null   # The support group label of the alerts. Must be given in values.yaml of parent chart.
+  service: ""           # Configurable service label of the alerts. Defaults to `.Release.Name`.

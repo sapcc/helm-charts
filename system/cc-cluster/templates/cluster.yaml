@@ -1,0 +1,19 @@
+{{- range $key, $cluster := .Values.clusters }}
+---
+apiVersion: cluster.x-k8s.io/v1beta1
+kind: Cluster
+metadata:
+  name: {{ $key }}
+  namespace: metal-{{ $key }}
+spec:
+  controlPlaneRef:
+    apiVersion: controlplane.cluster.x-k8s.io/v1alpha1
+    kind: KubernikusControlPlane
+    name: {{ $key }}
+    namespace: metal-{{ $key }}
+  infrastructureRef:
+    apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+    kind: Metal3Cluster
+    name: {{ $key }}
+    namespace: metal-{{ $key }}
+{{- end }}

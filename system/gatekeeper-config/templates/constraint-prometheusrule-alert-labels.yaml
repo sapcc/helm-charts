@@ -1,0 +1,20 @@
+{{/* The postfix clusters do not have prometheus-operator at the moment. */}}
+{{- if ne .Values.cluster_type "postfix" -}}
+
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: GkPrometheusruleAlertLabels
+metadata:
+  name: prometheusrulealertlabels
+  annotations:
+    {{- include "sources" (tuple "prometheusrule-alert-labels" "prometheusrule-alert-labels") | indent 4 }}
+    {{- include "docstring" (tuple $ "GkPrometheusruleAlertLabels") | indent 4 }}
+  labels:
+    severity: 'info'
+spec:
+  enforcementAction: dryrun # change to "deny" to enforce
+  match:
+    kinds:
+      - apiGroups: ["monitoring.coreos.com"]
+        kinds: ["PrometheusRule"]
+
+{{- end -}}

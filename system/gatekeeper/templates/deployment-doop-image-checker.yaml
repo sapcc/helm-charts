@@ -1,0 +1,64 @@
+kind: Deployment
+apiVersion: apps/v1
+
+metadata:
+  name: doop-image-checker
+
+spec:
+  revisionHistoryLimit: 5
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 2
+  selector:
+    matchLabels:
+      name: doop-image-checker
+  template:
+    metadata:
+      labels:
+        name: doop-image-checker
+      annotations:
+        kubectl.kubernetes.io/default-container: parser
+        {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+        linkerd.io/inject: enabled
+        {{- end }}
+    spec:
+      automountServiceAccountToken: false
+      enableServiceLinks: false
+      containers:
+        - name: parser
+          image: {{.Values.global.registry | required ".Values.global.registry"}}/gatekeeper-addons:{{.Values.gatekeeper_addons.image_tag | required ".Values.gatekeeper_addons.image_tag not found"}}
+          imagePullPolicy: IfNotPresent
+          command: [ doop-image-checker ]
+          args: [ ':8080' ]
+          env:
+            - name: LOG_ALL_REQUESTS
+              value: 'false'
+          ports:
+            - name: http
+              containerPort: 8080
+          livenessProbe:
+            httpGet:
+              path: /healthcheck
+              port: 8080
+            timeoutSeconds: 10
+            periodSeconds: 60
+            initialDelaySeconds: 60
+          readinessProbe:
+            httpGet:
+              path: /healthcheck
+              port: 8080
+            timeoutSeconds: 5
+            periodSeconds: 5
+          resources:
+            requests:
+              cpu: "25m"
+              memory: "64Mi"
+            limits:
+              cpu: "25m"
+              memory: "64Mi"
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false

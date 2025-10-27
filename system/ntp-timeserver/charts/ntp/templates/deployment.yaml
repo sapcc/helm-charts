@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ntp
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: ntp
+        component: ntp
+    spec:
+      containers:
+      - name: ntp
+        image: {{.Values.image_ntp}}:{{ .Values.image_ntp_tag}}
+        imagePullPolicy: {{ .Values.image_pullPolicy }}
+        args: ["-d", "-f", "/etc/ntp/ntpd.conf"]
+        securityContext:
+          capabilities:
+            add:
+            - SYS_TIME
+            - SYS_NICE
+        ports:
+          - name: ntp-udp
+            containerPort: 123
+            protocol: UDP
+        volumeMounts:
+          - name: ntp-conf
+            mountPath: /etc/ntp
+        livenessProbe:
+          exec:
+            command:
+              - sh
+              - /etc/ntp/healthz
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        readinessProbe:
+          exec:
+            command:
+              - sh
+              - /etc/ntp/healthz
+          initialDelaySeconds: 5
+          periodSeconds: 5
+      volumes:
+      - name: ntp-conf
+        configMap:
+          name: ntp

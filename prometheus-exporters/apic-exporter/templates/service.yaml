@@ -1,0 +1,18 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: apic-exporter
+  namespace: {{ .Values.exporter.namespace }}
+  annotations:
+    {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+    linkerd.io/inject: enabled
+    {{- end }}
+  labels:
+    app: apic-exporter
+
+spec:
+  selector:
+    app: apic-exporter
+  ports:
+    - name: metrics
+      port: {{ .Values.exporter.prometheus.port }}

@@ -1,0 +1,174 @@
+{{- if or (.Capabilities.APIVersions.Has "vcenter-operator.stable.sap.cc/v1") (.Values.isImageTransportTemplating | default false) }}
+apiVersion: vcenter-operator.stable.sap.cc/v1
+kind: VCenterTemplate
+metadata:
+  name: 'vcenter-cluster-nova-compute-deployment'
+options:
+  scope: 'cluster'
+  jinja2_options:
+    variable_start_string: '{='
+    variable_end_string: '=}'
+    {{- if .Values.manage_service_user_passwords }}
+    uses-service-user: nova
+    {{- end }}
+template: |
+  {%- if cells is not defined %}
+    {%- set cell_name = 'cell1' %}
+  {%- elif 'cell-' + availability_zone in cells %}
+    {%- set cell_name = 'cell-' + availability_zone %}
+  {%- elif 'cell-' + vcenter_name in cells %}
+    {%- set cell_name = 'cell-' + vcenter_name %}
+  {%- else %}
+    {%- set cell_name = 'cell1' %}
+  {%- endif %}
+  apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    name: nova-compute-{= name =}
+    labels:
+      system: openstack
+      type: backend
+      component: nova
+      vcenter: {= host =}
+      datacenter: {= availability_zone =}
+      vccluster: {= cluster_name =}
+    {{- if .Values.vpa.set_main_container }}
+    annotations:
+      vpa-butler.cloud.sap/main-container: nova-compute
+    {{- end }}
+  spec:
+    replicas: 1
+    revisionHistoryLimit: 5
+    strategy:
+      type: RollingUpdate
+      rollingUpdate:
+        maxUnavailable: 0
+        maxSurge: 1
+    selector:
+      matchLabels:
+          name: nova-compute-{= name =}
+    template:
+      metadata:
+        labels:
+          {{- tuple . "nova" "compute" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | nindent 10 }}
+          name: nova-compute-{= name =}
+          alert-tier: os
+          alert-service: nova
+          hypervisor: "vmware"
+          vcenter: {= host =}
+          datacenter: {= availability_zone =}
+          vccluster: {= cluster_name =}
+          {{- if .Values.manage_service_user_passwords }}
+          vcenter-operator-secret-version: {= service_user_version | quote =}
+          {{- end }}
+        annotations:
+          prometheus.io/scrape: "true"
+          prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
+          {{- include "utils.linkerd.pod_and_service_annotation" . | indent 10 }}
+          configmap-etc-hash: {{ include (print .Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
+          configmap-nova-compute-hash: {= "vcenter_cluster/{{ .Release.Namespace }}/vcenter-cluster-nova-compute-configmap.yaml.j2" | render | sha256sum =}
+          secret-etc-hash: {{ include (print .Template.BasePath "/etc-secret.yaml") . | sha256sum }}
+          {{- if .Values.manage_service_user_passwords }}
+          uses-service-user: nova
+          {{- end }}
+      spec:
+        {{- tuple . "{= availability_zone =}" | include "utils.kubernetes_pod_az_affinity" | nindent 8 }}
+        {{- include "kubernetes_maintenance_affinity" . | nindent 4 }}
+        terminationGracePeriodSeconds: 900
+        containers:
+        - name: nova-compute
+          image: {{ tuple . "compute" | include "container_image_nova" }}
+          imagePullPolicy: IfNotPresent
+          command: ["dumb-init", "nova-compute"]
+          env:
+          {{- if .Values.sentry.enabled }}
+          - name: SENTRY_DSN
+            valueFrom:
+              secretKeyRef:
+                name: sentry
+                key: {{ .Chart.Name }}.DSN.python
+          {{- end }}
+          - name: STATSD_HOST
+            value: "localhost"
+          - name: STATSD_PORT
+            value: "9125"
+          {{- if .Values.python_warnings }}
+          - name: PYTHONWARNINGS
+            value: {{ .Values.python_warnings | quote }}
+          {{- end }}
+          {{- if .Values.pod.resources.hv_vmware }}
+          resources:
+{{ toYaml .Values.pod.resources.hv_vmware | indent 12 }}
+          {{- end }}
+          volumeMounts:
+          - mountPath: /etc/nova
+            name: nova-etc
+          {{- include "utils.trust_bundle.volume_mount" . | indent 10 }}
+        - name: statsd
+          image: {{ required ".Values.global.dockerHubMirror is missing" .Values.global.dockerHubMirror}}/prom/statsd-exporter:v0.8.1
+          imagePullPolicy: IfNotPresent
+          args: [ --statsd.mapping-config=/etc/statsd/statsd-exporter.yaml ]
+          ports:
+          - name: statsd
+            containerPort: 9125
+            protocol: UDP
+          - name: metrics
+            containerPort: 9102
+          volumeMounts:
+          - name: statsd-etc
+            mountPath: /etc/statsd/statsd-exporter.yaml
+            subPath: statsd-exporter.yaml
+            readOnly: true
+        volumes:
+        - name: nova-etc
+          projected:
+            sources:
+            - configMap:
+                name: nova-etc
+                items:
+                - key: nova.conf
+                  path: nova.conf
+                - key: policy.yaml
+                  path: policy.yaml
+                - key: logging.ini
+                  path: logging.ini
+            - configMap:
+                name: nova-compute-vmware-{= name =}
+                items:
+                - key: nova-compute.conf
+                  path: nova-compute.conf
+                - key: hostgroup-reservations.json
+                  path: hostgroup-reservations.json
+            - configMap:
+                name: nova-console
+                items:
+                {{- range $type := list "novnc" "spice" "mks" }}
+                - key: console-{= cell_name =}-{{ $type }}.conf
+                  path: nova.conf.d/console-{= cell_name =}-{{ $type }}.conf
+                {{- end }}
+            - secret:
+                name: nova-etc
+                items:
+                - key: {= cell_name =}.conf
+                  path: nova.conf.d/{= cell_name =}-secrets.conf
+                - key: keystoneauth-secrets.conf
+                  path: nova.conf.d/keystoneauth-secrets.conf
+                {{- if .Values.osprofiler.enabled }}
+                - key: osprofiler.conf
+                  path: nova.conf.d/osprofiler.conf
+                {{- end }}
+            - secret:
+                name: nova-compute-vmware-{= name =}
+                items:
+                - key: nova-compute-secrets.conf
+                  path: nova.conf.d/nova-compute-secrets.conf
+        - name: statsd-etc
+          projected:
+            sources:
+            - configMap:
+                name: nova-etc
+                items:
+                - key:  statsd-exporter.yaml
+                  path: statsd-exporter.yaml
+        {{- include "utils.trust_bundle.volumes" . | indent 8 }}
+{{- end }}

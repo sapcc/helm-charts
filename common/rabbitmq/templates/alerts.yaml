@@ -1,0 +1,31 @@
+{{- if and .Values.alerts.enabled .Values.metrics.enabled }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+
+metadata:
+  name: {{ template "fullname" . }}-rabbitmq-alerts
+  labels:
+    prometheus: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus }}
+    {{- include "rabbitmq.labels" (list $ "version" "rabbitmq" "prometheusrule" "alert") | indent 4 }}
+spec:
+{{ include (print .Template.BasePath "/alerts/_rabbitmq.alerts.tpl") . | indent 2 }}
+
+{{- if .Values.alerts.critical_readiness_enabled }}
+---
+
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+
+metadata:
+  name: {{ include "fullname" . }}-health-alerts
+  labels:
+    prometheus: "kubernetes"
+    {{- include "rabbitmq.labels" (list $ "version" "rabbitmq" "prometheusrule" "alert") | indent 4 }}
+
+spec:
+  groups:
+{{ include (print .Template.BasePath "/alerts/_health.alerts.tpl") . | indent 2 }}
+{{- end }}
+
+{{- end }}

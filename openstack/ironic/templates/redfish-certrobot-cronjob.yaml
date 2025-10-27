@@ -1,0 +1,81 @@
+{{- define "_values_to_env" }}
+{{- $prefix := index . 1 }}
+    {{- with $map := index . 0 }}
+        {{- $keys := keys $map | sortAlpha }}
+        {{- range $_, $k := $keys }}
+            {{- $path := append $prefix $k }}
+            {{- $v := get $map $k }}
+            {{- if kindIs "map" $v }}
+                {{- tuple $v $path | include "_values_to_env" }}
+            {{- else }}
+- name: {{ $path | join "_" | upper | quote }}
+{{- if kindIs "slice" $v }}
+  value: {{ $v | join "," | quote }}
+{{- else }}
+  value: {{ $v | quote }}
+{{- end }}
+            {{- end }}
+        {{- end }}
+    {{- end }}
+{{- end }}
+
+{{- define "values_to_env" }}
+{{- tuple . (list) | include "_values_to_env" }}
+{{- end }}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ .Release.Name }}-redfish-certrobot-0
+  annotations:
+    reloader.stakater.com/auto: "true"
+spec:
+  schedule: {{ .Values.cert_robot.schedule | quote }}
+  timeZone:  {{ .Values.cert_robot.timezone | quote }}
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+          - name: redfish-certrobot
+            image: {{ .Values.global.registry }}/redfish-certrobot:{{ .Values.cert_robot.image_tag }}
+            imagePullPolicy: IfNotPresent
+            command:
+            - python
+            - -m
+            - redfish_certrobot
+            env:
+            - name: BMC_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-redfish-certrobot
+                  key: bmc_certrobot_username
+            - name: BMC_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-redfish-certrobot
+                  key: bmc_certrobot_passwd
+            - name: REGION
+              value: "{{ required ".Values.global.region is required" .Values.global.region }}"
+            - name: NETBOX_URL
+              value: "{{ required ".Values.cert_robot.netbox_url is required" .Values.cert_robot.netbox_url }}"
+            - name: OS_CLIENT_SECURE_FILE # gophercloud doesn't interprete that variable, but openstacksdk does
+              value: "/etc/openstack/sdk.yaml"
+            {{- include "values_to_env" .Values.cert_robot.env | indent 12 }}
+            volumeMounts:
+            - name: config
+              mountPath: "/etc/openstack"
+              readOnly: true
+            {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
+          volumes:
+          - name: config
+            projected:
+              sources:
+              - secret:
+                  name: {{ .Release.Name }}-redfish-certrobot
+                  items:
+                  - key: common
+                    path: clouds.yaml
+                  - key: sdk
+                    path: sdk.yaml
+          {{- include "utils.trust_bundle.volumes" . | indent 10 }}

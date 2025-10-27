@@ -1,0 +1,207 @@
+# Deploy a auditbeat instance per node for node metrics retrieval
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: {{ include "auditbeat.fullname" . }}
+  labels:
+    k8s-app: auditbeat
+spec:
+  selector:
+    matchLabels:
+      k8s-app: auditbeat
+  updateStrategy:
+    rollingUpdate:
+      maxUnavailable: '10%'
+    type: RollingUpdate
+  template:
+    metadata:
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/targets: {{ required ".Values.global.prometheus missing" .Values.global.prometheus }}
+      labels:
+        k8s-app: auditbeat
+        {{- include "auditbeat.labels" . | nindent 8 }}
+    spec:
+      tolerations:
+      - operator: Exists
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: cloud.sap/deployment-state
+                operator: NotIn
+                values:
+                - reinstalling
+              - key: cloud.sap/esx-in-maintenance
+                operator: NotIn
+                values:
+                - alarm
+                - "true"
+              - key: cloud.sap/maintenance-state
+                operator: NotIn
+                values:
+                - in-maintenance
+      serviceAccountName: {{ include "auditbeat.serviceAccountName" . }}
+      terminationGracePeriodSeconds: 30
+      hostPID: true  # Required by auditd module
+      dnsPolicy: ClusterFirst
+{{- if .Values.enable_pamd_tty }}
+      initContainers:
+      - name: enable-pamd-tty
+        image: {{ required ".Values.global.dockerHubMirror variable missing" .Values.global.dockerHubMirror }}/library/alpine:latest
+        securityContext:
+          privileged: true
+        command:
+        - sh
+        - -c
+        args:
+        - |-
+          set -xe
+          cp -f /hostfs/usr/lib64/pam.d/system-auth /hostfs/etc/pam.d
+          echo -e "session\trequired\tpam_tty_audit.so enable=*" >> /hostfs/etc/pam.d/system-auth
+        volumeMounts:
+        - name: hostfs
+          mountPath: /hostfs
+          readOnly: false
+{{- end }}
+      containers:
+      - name: exporter
+        image: "{{ required ".Values.global.registry variable missing" .Values.global.registry }}/{{ .Values.exporter.image.repository }}:{{ .Values.exporter.image.tag }}"
+        imagePullPolicy: {{ .Values.exporter.image.pullPolicy }}
+        args:
+          - -p=5066
+          - -m={{ .Values.exporter.metrics.port }}
+        ports:
+        - name: metrics
+          containerPort: {{ .Values.exporter.metrics.port }}
+          protocol: TCP
+        resources:
+          {{- toYaml .Values.exporter.resources | nindent 10 }}
+      - name: auditbeat
+        image: "{{ required ".Values.global.elasticCoMirror variable missing" .Values.global.elasticCoMirror }}/{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        args: [
+          "-c", "/etc/auditbeat.yml",
+          "-e",
+        ]
+        env:
+{{- if .Values.elasticsearch.enabled }}
+        - name: ELASTICSEARCH_HOST
+          value: {{ .Values.elasticsearch.host }}
+        - name: ELASTICSEARCH_PORT
+          value: "{{ .Values.elasticsearch.port }}"
+        - name: ELASTICSEARCH_PROTOCOL
+          value: "{{ .Values.elasticsearch.protocol }}"
+        - name: ELASTICSEARCH_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "auditbeat.fullname" . }}
+              key: es-username
+        - name: ELASTICSEARCH_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "auditbeat.fullname" . }}
+              key: es-password
+{{- end }}
+{{- if .Values.logstash.enabled }}
+        - name: LOGSTASH_HOST
+          value: {{ .Values.logstash.host }}
+        - name: LOGSTASH_PORT
+          value: "{{ .Values.logstash.port }}"
+{{- end }}
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        securityContext:
+          runAsUser: 0
+          # If using Red Hat OpenShift uncomment this:
+          #privileged: true
+          capabilities:
+            add:
+              # Capabilities needed for auditd module
+              - 'AUDIT_READ'
+              - 'AUDIT_WRITE'
+              - 'AUDIT_CONTROL'
+        #ports:
+        #- name: http
+        #  containerPort: 5066
+        #  protocol: TCP
+        #livenessProbe:
+        #  httpGet:
+        #    path: /
+        #    port: http
+        #readinessProbe:
+        #  httpGet:
+        #    path: /
+        #    port: http
+        resources:
+          {{- toYaml .Values.resources | nindent 10 }}
+        volumeMounts:
+        - name: config
+          mountPath: /etc/auditbeat.yml
+          readOnly: true
+          subPath: auditbeat.yml
+        - name: modules
+          mountPath: /usr/share/auditbeat/modules.d
+          readOnly: true
+        - name: data
+          mountPath: /usr/share/auditbeat/data
+        - name: bin
+          mountPath: /hostfs/bin
+          readOnly: true
+        - name: sbin
+          mountPath: /hostfs/sbin
+          readOnly: true
+        - name: usrbin
+          mountPath: /hostfs/usr/bin
+          readOnly: true
+        - name: usrsbin
+          mountPath: /hostfs/usr/sbin
+          readOnly: true
+        - name: etc
+          mountPath: /hostfs/etc
+          readOnly: true
+        # Directory with root filesystems of containers executed with containerd, this can be
+        # different with other runtimes. This volume is needed to monitor the file integrity
+        # of files in containers.
+        - name: run-containerd
+          mountPath: /run/containerd
+          readOnly: true
+      volumes:
+      - name: bin
+        hostPath:
+          path: /bin
+      - name: usrbin
+        hostPath:
+          path: /usr/bin
+      - name: sbin
+        hostPath:
+          path: /sbin
+      - name: usrsbin
+        hostPath:
+          path: /usr/sbin
+      - name: etc
+        hostPath:
+          path: /etc
+      - name: hostfs
+        hostPath:
+          path: /
+      - name: config
+        configMap:
+          defaultMode: 0640
+          name: {{ include "auditbeat.fullname" . }}
+      - name: modules
+        configMap:
+          defaultMode: 0640
+          name: {{ include "auditbeat.fullname" . }}-modules
+      - name: data
+        hostPath:
+          # When auditbeat runs as non-root user, this directory needs to be writable by group (g+w).
+          path: /var/lib/auditbeat-data
+          type: DirectoryOrCreate
+      - name: run-containerd
+        hostPath:
+          path: /run/containerd
+          type: DirectoryOrCreate

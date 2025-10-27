@@ -1,0 +1,120 @@
+kind: Deployment
+apiVersion: apps/v1
+
+metadata:
+  name: elektra
+  annotations:
+    # redeploy on secret "elektra-token" and "elektra-secrets" change so all the elektra pods gets the same secrets
+    secret.reloader.stakater.com/reload: "elektra-token,elektra-secrets"
+
+spec:
+  selector:
+    matchLabels:
+      name: elektra
+  revisionHistoryLimit: 5
+  replicas: {{ .Values.replica_count }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 2
+  template:
+    metadata:
+      labels:
+        name: elektra
+      annotations:
+        # This is needed to ensure that the service is scraped by prometheus
+        prometheus.io/scrape: "true"
+        prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
+        # ensure deployment's annotation section is updated if support-configmap file changes
+        # this logic ensure pod recreation when the configmap changes and elektra is initialized with the new values
+        checksum/configmap: {{ include "elektra/templates/support-config-map.yaml" . | sha256sum }}
+        # ensure mail port is skipeed by linkerd. This is required to allow the mail server to be accessed
+        config.linkerd.io/skip-outbound-ports: {{ .Values.monsoon_dashboard_mail_server_port | quote }}
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              topologyKey: kubernetes.io/hostname
+              labelSelector:
+                matchExpressions:
+                - key: name
+                  operator: In
+                  values:
+                  - elektra
+      volumes:
+        - name: support-config
+          configMap:
+            name: support-config
+      # The preStop hook below sleeps 30 seconds, extend the gracePeriod accordingly
+      terminationGracePeriodSeconds: 60
+      serviceAccountName: elektra
+      initContainers:
+        - name: init-database
+          image: {{.Values.global.registry}}/elektra:{{.Values.image.tag}}
+          command: ['script/init-db.sh']
+          imagePullPolicy: {{.Values.image.pullPolicy}}
+          env:
+{{ include (print .Template.BasePath "/_env.tpl") . | indent 12 }}
+      containers:
+        - name: rails
+          image: {{.Values.global.registry}}/elektra:{{.Values.image.tag}}
+          imagePullPolicy: {{.Values.image.pullPolicy}}
+          ports:
+            - name: metrics-rails
+              containerPort: 80
+          volumeMounts:
+            - name: support-config
+              mountPath: '/home/app/config/support'
+              readOnly: true
+          env:
+{{ include (print .Template.BasePath "/_env.tpl") . | indent 12 }}
+          startupProbe: # The application will have a maximum of 5 minutes (30 * 10 = 300s) to finish its startup.
+            httpGet:
+              path: /system/startprobe
+              port: 80
+              httpHeaders:
+                - name: host
+                  value: elektra.cloud.sap # from rails 6 only hosts defined in config.host are allowed. We are simulating a valid host here.
+            failureThreshold: 30
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /system/liveliness
+              port: 80
+              httpHeaders:
+                - name: host
+                  value: elektra.cloud.sap # from rails 6 only hosts defined in config.host are allowed. We are simulating a valid host here.
+            timeoutSeconds: 10
+            failureThreshold: 3
+            periodSeconds: 60
+            initialDelaySeconds: 60
+          readinessProbe:
+            httpGet:
+              path: /system/readiness
+              port: 80
+              httpHeaders:
+                - name: host
+                  value: elektra.cloud.sap # from rails 6 only hosts defined in config.host are allowed. We are simulating a valid host here.
+            timeoutSeconds: 5
+            periodSeconds: 5
+            failureThreshold: 3
+          lifecycle:
+            preStop:
+              exec:
+                #Give the ingress some time to reload its config
+                command: ["/bin/sh","-c","sleep 30"]
+          # NOTE: observed resource usage in eu-de-2 (as of 2022-06)
+          # - CPU: 49m with 8 replicas was running into throttling, so give plenty headroom
+          # - RAM: levels off around 735 Mi
+          # k -n elektra describe vpa elektra
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "800Mi"
+            limits:
+              cpu: "2000m"
+              memory: "2Gi"
+  

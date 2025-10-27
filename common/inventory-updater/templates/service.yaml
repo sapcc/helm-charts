@@ -1,0 +1,21 @@
+{{- if .Values.updater.api.enabled }}
+kind: Service
+apiVersion: v1
+
+metadata:
+  name: {{ include "fullname" . }}
+  namespace: {{ .Values.updater.namespace }}
+  labels:
+    app: {{ include "fullname" . }}
+    type: service
+
+spec:
+  type: ClusterIP
+  selector:
+    app: {{ include "fullname" . }}
+  ports:
+  - name: http
+    port: {{.Values.updater.api.port}}
+    targetPort: http
+    protocol: TCP
+{{- end}}

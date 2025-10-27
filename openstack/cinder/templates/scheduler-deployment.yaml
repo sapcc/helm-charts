@@ -1,0 +1,109 @@
+kind: Deployment
+apiVersion: apps/v1
+
+metadata:
+  name: cinder-scheduler
+  labels:
+    system: openstack
+    type: backend
+    component: cinder
+  annotations:
+    secret.reloader.stakater.com/reload: "{{ .Release.Name }}-secrets"
+    deployment.reloader.stakater.com/pause-period: "60s"
+spec:
+  replicas: {{ .Values.pod.replicas.scheduler }}
+  revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revisionHistory }}
+  strategy:
+    type: {{ .Values.pod.lifecycle.upgrades.deployments.podReplacementStrategy }}
+    {{ if eq .Values.pod.lifecycle.upgrades.deployments.podReplacementStrategy "RollingUpdate" }}
+    rollingUpdate:
+      maxUnavailable: {{ .Values.pod.lifecycle.upgrades.deployments.rollingUpdate.maxUnavailable }}
+      maxSurge: {{ .Values.pod.lifecycle.upgrades.deployments.rollingUpdate.maxSurge }}
+    {{ end }}
+  selector:
+    matchLabels:
+      name: cinder-scheduler
+  template:
+    metadata:
+      labels:
+        name: cinder-scheduler
+{{ tuple . "cinder" "scheduler" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
+      annotations:
+        configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
+        secrets-hash: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
+        {{- if .Values.proxysql.mode }}
+        prometheus.io/scrape: "true"
+        prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
+        {{- end }}
+        {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
+    spec:
+{{ tuple . "cinder" "scheduler" | include "kubernetes_pod_anti_affinity" | indent 6 }}
+      {{- include "utils.proxysql.pod_settings" . | indent 6 }}
+      hostname: cinder-scheduler
+      initContainers:
+      {{- tuple . (dict "service" (include "cinder.scheduler_service_dependencies" . )) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
+      {{- if .Values.proxysql.native_sidecar }}
+      {{- include "utils.proxysql.container" . | indent 6 }}
+      {{- end }}
+      containers:
+        - name: cinder-scheduler
+          image: {{required ".Values.global.registry is missing" .Values.global.registry}}/loci-cinder:{{.Values.imageVersionCinderScheduler | default .Values.imageVersion | required "Please set cinder.imageVersion or similar" }}
+          imagePullPolicy: {{ required ".Values.global.imagePullPolicy is missing" .Values.global.imagePullPolicy }}
+          command:
+          - cinder-scheduler
+          env:
+          {{- if .Values.sentry.enabled }}
+          - name: SENTRY_DSN
+            valueFrom:
+              secretKeyRef:
+                name: sentry
+                key: {{ .Chart.Name }}.DSN.python
+          {{- end }}
+          livenessProbe:
+            exec:
+              command: ["openstack-agent-liveness", "--component", "cinder", "--config-file", "/etc/cinder/cinder.conf", "--config-file", "/etc/cinder/cinder.conf.d/secrets.conf"]
+            initialDelaySeconds: 60
+            periodSeconds: 60
+            timeoutSeconds: 20
+          {{- if .Values.pod.resources.scheduler }}
+          resources:
+{{ toYaml .Values.pod.resources.scheduler | indent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: etccinder
+              mountPath: /etc/cinder
+            - name: cinder-etc
+              mountPath: /etc/cinder/cinder.conf
+              subPath: cinder.conf
+              readOnly: true
+            - name: cinder-etc-confd
+              mountPath: /etc/cinder/cinder.conf.d
+            - name: cinder-etc
+              mountPath: /etc/cinder/api-paste.ini
+              subPath: api-paste.ini
+              readOnly: true
+            - name: cinder-etc
+              mountPath: /etc/cinder/policy.yaml
+              subPath: policy.yaml
+              readOnly: true
+            - name: cinder-etc
+              mountPath: /etc/cinder/logging.ini
+              subPath: logging.ini
+              readOnly: true
+            {{- include "utils.proxysql.volume_mount" . | indent 12 }}
+            {{- include "utils.coordination.volume_mount" . | indent 12 }}
+        {{- if not .Values.proxysql.native_sidecar }}
+        {{- include "utils.proxysql.container" . | indent 8 }}
+        {{- end }}
+        {{- include "jaeger_agent_sidecar" . | indent 8 }}
+      volumes:
+        - name: etccinder
+          emptyDir: {}
+        - name: cinder-etc
+          configMap:
+            name: cinder-etc
+        - name: cinder-etc-confd
+          secret:
+            secretName: {{ .Release.Name }}-secrets
+        {{- include "utils.proxysql.volumes" . | indent 8 }}
+        {{- include "utils.coordination.volumes" . | indent 8 }}

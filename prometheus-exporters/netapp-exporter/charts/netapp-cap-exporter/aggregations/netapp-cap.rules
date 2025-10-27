@@ -1,0 +1,54 @@
+groups:
+- name: netapp-filer-capacity
+  rules:
+  - record: global:netapp_filer_total_bytes
+    expr: sum by (app, region, filer, availability_zone) (netapp_aggregate_total_bytes{app=~".*cinder|.*manila"})
+  - record: global:netapp_filer_used_bytes
+    expr: sum by (app, region, filer, availability_zone) (netapp_aggregate_used_bytes{app=~".*cinder|.*manila"})
+  - record: global:netapp_filer_available_bytes
+    expr: sum by (app, region, filer, availability_zone) (netapp_aggregate_available_bytes{app=~".*cinder|.*manila"})
+  - record: netapp_aggregate_unencrypted_total:manila
+    expr: count (netapp_aggregate_is_encrypted{app=~".*manila"}==0)
+  - record: netapp_aggregate_encrypted_total:manila
+    expr: count (netapp_aggregate_is_encrypted{app=~".*manila"}==1)
+  - record: global:netapp_volume_unencrypted_total:manila
+    expr: count by (filer) (netapp_volume_is_encrypted{app=~".*manila"}==0)
+  - record: global:netapp_volume_encrypted_total:manila
+    expr: count by (filer) (netapp_volume_is_encrypted{app=~".*manila"}==1)
+
+
+  # metrics for maia
+
+  # sum available_bytes and logical_used_bytes when only space reporting is enabled
+  - record: netapp_volume_total_bytes:maia1
+    expr: ((netapp_volume_available_bytes{app="netapp-capacity-exporter-manila"} + netapp_volume_logical_used_bytes{app="netapp-capacity-exporter-manila"}) and (netapp_volume_is_space_reporting_logical == 1) and (netapp_volume_is_space_enforcement_logical == 0)) or netapp_volume_total_bytes{app="netapp-capacity-exporter-manila"}
+
+  # use logical used bytes when logical space reporting is enabled
+  - record: netapp_volume_used_bytes:maia1
+    expr: (netapp_volume_logical_used_bytes{app="netapp-capacity-exporter-manila"} and (netapp_volume_is_space_reporting_logical == 1)) or netapp_volume_used_bytes{app="netapp-capacity-exporter-manila"}
+
+  # if both logical space settings are enabled: available means total minus logical used
+  # [TODO] maybe this can be added via an own metric netapp_volume_logical_available_bytes
+  - record: netapp_volume_available_bytes:maia1
+    expr: ((netapp_volume_total_bytes{app="netapp-capacity-exporter-manila"} - netapp_volume_logical_used_bytes{app="netapp-capacity-exporter-manila"}) and (netapp_volume_is_space_reporting_logical == 1) and (netapp_volume_is_space_enforcement_logical == 1)) or netapp_volume_available_bytes{app="netapp-capacity-exporter-manila"}
+
+  - record: netapp_volume_used_percentage:maia1
+    expr: round(netapp_volume_used_bytes:maia1 / netapp_volume_total_bytes:maia1 * 100)
+
+  - record: netapp_volume_snapshot_reserved_bytes:maia1
+    expr: netapp_volume_snapshot_reserved_bytes{app="netapp-capacity-exporter-manila"}
+
+  - record: netapp_volume_snapshot_used_bytes:maia1
+    expr: netapp_volume_snapshot_used_bytes{app="netapp-capacity-exporter-manila"}
+
+  - record: netapp_volume_snapshot_available_bytes:maia1
+    expr: netapp_volume_snapshot_available_bytes{app="netapp-capacity-exporter-manila"}
+
+  - record: netapp_volume_inode_files_total:maia1
+    expr: netapp_volume_inode_files_total{app="netapp-capacity-exporter-manila"}
+
+  - record: netapp_volume_inode_files_used:maia1
+    expr: netapp_volume_inode_files_used{app="netapp-capacity-exporter-manila"}
+
+  - record: netapp_volume_inode_files_used_percentage:maia1
+    expr: netapp_volume_inode_files_used_percentage{app="netapp-capacity-exporter-manila"}

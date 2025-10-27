@@ -1,0 +1,44 @@
+{{ if .Values.operator.enabled -}}
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: {{ template "fullname" . }}-operator
+  labels:
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ template "fullname" . }}-operator
+  template:
+    metadata:
+      labels:
+        app: {{ template "fullname" . }}-operator
+        alert-tier: os
+        alert-service: sentry
+    spec:
+      {{- if .Values.serviceAccount.enabled }}
+      serviceAccountName: {{ .Values.serviceAccount.name }}
+      {{- end }}
+      containers:
+        - name: operator
+          image: "{{required ".Values.global.registry is missing" .Values.global.registry }}/{{ required ".Values.operator.image.repository is missing" .Values.operator.image.repository }}:{{ required ".Values.operator.image.tag is missing" .Values.operator.image.tag }}"
+          imagePullPolicy: {{ .Values.operator.image.pullPolicy }}
+          env:
+            - name: SENTRY_ENDPOINT
+              value: {{ .Values.operator.sentryEndpoint }}
+            - name: SENTRY_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ template "fullname" . }}
+                  key: admin-api-token
+            - name: SENTRY_ORGANIZATION
+              value: {{ .Values.organizationSlug }}
+          resources:
+            requests:
+              cpu: {{ .Values.sentry.resources.requests.cpu | quote }}
+              memory: {{ .Values.sentry.resources.requests.memory | quote }}
+            limits:
+              cpu: {{ .Values.sentry.resources.limits.cpu | quote }}
+              memory: {{ .Values.sentry.resources.limits.memory | quote }}
+{{- end }}

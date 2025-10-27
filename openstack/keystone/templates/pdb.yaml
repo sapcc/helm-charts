@@ -1,0 +1,14 @@
+{{- if .Values.api.pdb.minAvailable }}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ .Release.Name }}-api
+spec:
+  minAvailable: {{ .Values.api.pdb.minAvailable }}
+  selector:
+    matchLabels:
+      name: {{ .Release.Name }}-api
+      system: openstack
+      component: keystone
+      type: api
+{{- end }}

@@ -1,0 +1,17 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: snmp-exporter
+  namespace: infra-monitoring
+  labels:
+    app: snmp-exporter
+  annotations:
+    {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+    linkerd.io/inject: enabled
+    {{- end }}
+spec:
+  selector:
+    app: snmp-exporter
+  ports:
+    - name: metrics
+      port: {{.Values.snmp_exporter.listen_port}}

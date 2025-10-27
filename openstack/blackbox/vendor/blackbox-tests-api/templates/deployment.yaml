@@ -1,0 +1,157 @@
+kind: Deployment
+apiVersion: apps/v1
+
+metadata:
+  name: blackbox-tests-api
+  labels:
+    system: openstack
+    component: blackbox-tests
+    type: api
+
+spec:
+  replicas: 0
+  selector:
+    matchLabels:
+      name: blackbox-tests-api
+  revisionHistoryLimit: 5
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 2
+  template:
+    metadata:
+      labels:
+        name: blackbox-tests-api
+    spec:
+      nodeSelector:
+        zone: farm
+      volumes:
+        - name: blackbox-tests-api
+          persistentVolumeClaim:
+            claimName: blackbox-tests-api
+        - name: statsd-mapping-config
+          configMap:
+            name: blackbox-tests-api-statsd-mapping-config
+      containers:
+        - name: pytest
+{{- if typeIs "float64" .Values.global.image.tag  }}{{/* https://github.com/kubernetes/helm/issues/1707 */}}
+          image: {{.Values.global.registry}}/{{.Values.global.image.name}}:{{.Values.global.image.tag | printf "%0.f" }}
+{{- else }}
+          image: {{.Values.global.registry}}/{{.Values.global.image.name}}:{{.Values.global.image.tag}}
+{{- end }}
+          args:
+            - "iterate"
+            - "pytest"
+            - {{ .Values.parallel.workers | printf "-n %.0f" | quote }}
+            - {{ .Values.parallel.timeout.global | printf "--timeout %.0f" | quote }}
+            - "--disable-pytest-warnings"
+            - "-r ap"
+            - "tests/test_api.py"
+          volumeMounts:
+            - name: blackbox-tests-api
+              mountPath: /opt/logs
+              readOnly: false
+          env:
+            - name: OS_AUTH_URL
+              value: {{ .Values.global.openstack.auth_url | quote }}
+            - name: OS_IDENTITY_API_VERSION
+              value: {{ .Values.global.openstack.identity_api_version | quote }}
+            - name: OS_VOLUME_API_VERSION
+              value: {{ .Values.global.openstack.volume_api_version | quote }}
+            - name: OS_USERNAME
+              value: {{ .Values.global.openstack.users.admin.username | quote }}
+            - name: OS_USER_DOMAIN_NAME
+              value: {{ .Values.global.openstack.users.admin.user_domain_name | quote }}
+            - name: OS_PROJECT_NAME
+              value: {{ .Values.global.openstack.users.admin.project_name | quote }}
+            - name: OS_PROJECT_DOMAIN_NAME
+              value: {{ .Values.global.openstack.users.admin.project_domain_name | quote }}
+            - name: OS_REGION_NAME
+              value: {{ .Values.global.openstack.region_name | quote }}
+            - name: VC_USERNAME
+              value: {{ .Values.global.vcenter.username | quote }}
+            - name: F5_USERNAME
+              value: {{ .Values.global.f5.username | quote }}
+            - name: API_F5_AVAILABILITY_ZONES
+              value: {{ .Values.f5_az | quote }}
+            - name: API_BILLING_URL
+              value: {{ .Values.billing_url | quote }}
+            - name: API_LYRA_URL
+              value: {{ .Values.lyra_url | quote }}
+            - name: API_ARC_URL
+              value: {{ .Values.arc_url | quote }}
+            - name: API_IRONIC_URL
+              value: {{ .Values.ironic_url | quote }}
+            - name: API_SECRET_ID
+              value: {{ .Values.secret_id | quote }}
+            - name: API_LIMES_URL
+              value: {{ .Values.limes_url | quote }}
+            - name: API_ELEKTRA_URL
+              value: {{ .Values.elektra_url | quote }}
+            - name: API_VC_NAMES
+              value: {{ .Values.vcenter_names | quote }}
+            - name: API_F5_HOST
+              value: {{ .Values.f5_host | quote }}
+            - name: STATSD_HOST
+              value: {{ .Values.statsd.host | quote }}
+            - name: STATSD_PORT
+              value: {{ .Values.statsd.port | quote }}
+            - name: STATSD_PREFIX
+              value: {{ .Values.statsd.prefix | quote }}
+            - name: TIMEOUT
+              value: {{ .Values.parallel.timeout.atomic | quote }}
+            - name: SLEEP_ITERATE
+              value: {{ .Values.parallel.iterator.sleep | quote }}
+            - name: OS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: blackbox-tests-api
+                  key: os.password
+            - name: VC_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: blackbox-tests-api
+                  key: vc.password
+            - name: F5_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: blackbox-tests-api
+                  key: f5.password
+            - name: SENTRY_DSN
+              valueFrom:
+                secretKeyRef:
+                  name: sentry
+                  key: blackbox.DSN
+
+          livenessProbe:
+            exec:
+              command:
+              - pytest
+              - --version
+            timeoutSeconds: 5
+            periodSeconds: 15
+            initialDelaySeconds: 15
+          readinessProbe:
+            exec:
+              command:
+              - pytest
+              - --version
+            timeoutSeconds: 5
+            periodSeconds: 15
+            initialDelaySeconds: 15
+
+        - name: statsd
+          image: {{.Values.global.dockerHubMirror}}/prom/statsd-exporter:v0.12.2
+          imagePullPolicy: IfNotPresent
+          args:
+            - --statsd.mapping-config=/etc/statsd/statsd-mapping.conf
+          ports:
+            - name: statsd
+              containerPort: 9125
+              protocol: UDP
+            - name: metrics
+              containerPort: {{ .Values.global.port_metrics}}
+          volumeMounts:
+            - name: statsd-mapping-config
+              mountPath: /etc/statsd

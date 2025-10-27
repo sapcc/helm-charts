@@ -1,0 +1,149 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "ipxe-operator.fullname" . }}-manager-role
+  labels:
+  {{- include "ipxe-operator.labels" . | nindent 4 }}
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - boot.ironcore.dev
+  resources:
+  - httpbootconfig
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - watch
+- apiGroups:
+  - boot.ironcore.dev
+  resources:
+  - httpbootconfig/status
+  verbs:
+  - get
+- apiGroups:
+  - boot.ironcore.dev
+  resources:
+  - httpbootconfigs
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - boot.ironcore.dev
+  resources:
+  - httpbootconfigs/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - boot.ironcore.dev
+  resources:
+  - httpbootconfigs/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - boot.ironcore.dev
+  resources:
+  - ipxebootconfig
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - watch
+- apiGroups:
+  - boot.ironcore.dev
+  resources:
+  - ipxebootconfig/status
+  verbs:
+  - get
+- apiGroups:
+  - boot.ironcore.dev
+  resources:
+  - ipxebootconfigs
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - boot.ironcore.dev
+  resources:
+  - ipxebootconfigs/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - boot.ironcore.dev
+  resources:
+  - ipxebootconfigs/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - metal.ironcore.dev
+  resources:
+  - serverbootconfigurations
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - metal.ironcore.dev
+  resources:
+  - serverbootconfigurations/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - metal.ironcore.dev
+  resources:
+  - serverbootconfigurations/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - metal.ironcore.dev
+  resources:
+  - servers
+  verbs:
+  - get
+  - list
+  - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "ipxe-operator.fullname" . }}-manager-rolebinding
+  labels:
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: ipxe-operator
+    app.kubernetes.io/part-of: ipxe-operator
+  {{- include "ipxe-operator.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: '{{ include "ipxe-operator.fullname" . }}-manager-role'
+subjects:
+- kind: ServiceAccount
+  name: '{{ include "ipxe-operator.fullname" . }}-controller-manager'
+  namespace: '{{ .Release.Namespace }}'

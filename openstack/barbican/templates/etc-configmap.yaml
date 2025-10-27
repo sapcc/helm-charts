@@ -1,0 +1,36 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: barbican-etc
+  labels:
+    system: openstack
+    type: configuration
+    component: barbican
+data:
+  barbican-api-paste.ini: |
+{{ include (print .Template.BasePath "/etc/_barbican-api-paste.ini.tpl") . | indent 4 }}
+  barbican.conf: |
+{{ include (print .Template.BasePath "/etc/_barbican.conf.tpl") . | indent 4 }}
+  policy.yaml: |
+{{ include (print .Template.BasePath "/etc/_barbican-policy.yaml.tpl") . | indent 4 }}
+  logging.ini: |
+{{ include "loggerIni" .Values.logging | indent 4 }}
+{{- if .Values.watcher.enabled }}
+  watcher.yaml: |
+{{ include (print .Template.BasePath "/etc/_watcher.yaml.tpl") . | indent 4 }}
+{{- end }}
+{{- if .Values.audit.enabled }}
+  barbican_audit_map.yaml: |
+{{ include (print .Template.BasePath "/etc/_barbican_audit_map.yaml") . | indent 4 }}
+{{- end }}
+{{- if .Values.sapcc_rate_limit.enabled }}
+  ratelimit.yaml: |
+{{ include (print .Template.BasePath "/etc/_ratelimit.yaml.tpl") . | indent 4 }}
+{{- end }}
+  statsd-exporter.yaml: |
+    defaults:
+      timer_type: histogram
+      buckets: [.025, .1, .25, 1, 2.5]
+      match_type: glob
+      glob_disable_ordering: false
+      ttl: 0 # metrics do not expire

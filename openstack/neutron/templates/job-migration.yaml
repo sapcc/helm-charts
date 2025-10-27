@@ -1,0 +1,82 @@
+{{/*
+   With Helm3, we don't force the replacements of job specs anymore, which
+   causes deployment issues since kuberentes job specs are immutable by default.
+   We solve this by generating an image specific name for every deployment,
+   therefor no job will be replaced. Instead, a new job will be spawned while
+   the old one will be deleted.
+*/}}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "neutron.migration_job_name" . }}
+  labels:
+    system: openstack
+    type: configuration
+    component: neutron
+spec:
+  template:
+    spec:
+      restartPolicy: OnFailure
+{{ include "utils.proxysql.job_pod_settings" . | indent 6 }}
+      initContainers:
+        - name: dependencies
+          image: {{.Values.global.registry}}/loci-neutron:{{default .Values.imageVersion | required "Please set neutron.imageVersion or similar"}}
+          imagePullPolicy: IfNotPresent
+          command:
+            - kubernetes-entrypoint
+          env:
+            - name: COMMAND
+              value: "true"
+            - name: NAMESPACE
+              value: {{ .Release.Namespace }}
+            - name: DEPENDENCY_SERVICE
+              value: "{{ include "neutron.db_service" . }}"
+        {{- if .Values.proxysql.native_sidecar }}
+        {{- include "utils.proxysql.container" . | indent 8 }}
+        {{- end }}
+      containers:
+        - name: neutron-migration
+          image: {{.Values.global.registry}}/loci-neutron:{{default .Values.imageVersion | required "Please set neutron.imageVersion or similar"}}
+          imagePullPolicy: IfNotPresent
+          command:
+            - /usr/bin/env
+            - bash
+            - -c
+            - |
+              set -euo pipefail
+              neutron-db-manage --config-file /etc/neutron/neutron.conf --config-file /etc/neutron/secrets/neutron-server-secrets.conf upgrade head
+              {{- include "utils.script.job_finished_hook" . | nindent 14 }}
+          env:
+            - name: PGAPPNAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            {{- include "utils.trust_bundle.env" . | indent 12 }}
+          volumeMounts:
+            - mountPath: /etc/neutron
+              name: etc-neutron
+              readOnly: true
+            {{- include "utils.proxysql.volume_mount" . | indent 12 }}
+            {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
+        {{- if not .Values.proxysql.native_sidecar }}
+        {{- include "utils.proxysql.container" . | indent 8 }}
+        {{- end }}
+      volumes:
+        - name: etc-neutron
+          projected:
+            defaultMode: 420
+            sources:
+            - configMap:
+                items:
+                - key: neutron.conf
+                  path: neutron.conf
+                - key: ml2-conf.ini
+                  path: plugins/ml2/ml2-conf.ini
+                name: neutron-etc
+            - secret:
+                name: neutron-server-secrets
+                items:
+                  - key: neutron-server-secrets.conf
+                    path: secrets/neutron-server-secrets.conf
+        {{- include "utils.proxysql.volumes" . | indent 8 }}
+        {{- include "utils.trust_bundle.volumes" . | indent 8 }}

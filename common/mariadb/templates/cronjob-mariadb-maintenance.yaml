@@ -1,0 +1,83 @@
+{{- if and (hasKey $.Values.job "maintenance") ($.Values.job.maintenance.enabled) ($.Values.job.maintenance.function.analyzeTable.enabled) (or ($.Values.job.maintenance.function.analyzeTable.allTables) ($.Values.job.maintenance.function.analyzeTable.tables)) }}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  namespace: {{ $.Release.Namespace }}
+  name: {{ include "fullName" . }}-maintenance-{{ randAlphaNum 4 | lower }}
+  labels:
+    {{- include "mariadb.labels" (list $ "version" "mariadb" "cronjob" "maintenance") | indent 4 }}
+spec:
+  schedule: {{ include "mariadb.maintenance.schedule.randomize" $ | quote }}
+  startingDeadlineSeconds: {{ $.Values.job.maintenance.startingDeadlineSeconds | default 300 | int }}
+  concurrencyPolicy: {{ $.Values.job.maintenance.concurrencyPolicy | default "Forbid" | quote }}
+  successfulJobsHistoryLimit: {{ $.Values.job.maintenance.successfulJobsHistoryLimit | default 1 | int }}
+  failedJobsHistoryLimit: {{ $.Values.job.maintenance.failedJobsHistoryLimit | default 1 | int }}
+  timeZone: {{ $.Values.job.maintenance.timeZone | default "Etc/UTC" | quote }}
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: {{ include "fullName" . }}-maint
+            {{- include "mariadb.labels" (list $ "version" "mariadb" "cronjob" "maintenance") | indent 12 }}
+          annotations:
+            kubectl.kubernetes.io/default-container: maintenance
+            {{- if and (and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested) $.Values.linkerd.mariadb.enabled }}
+            linkerd.io/inject: enabled
+            {{- end }}
+            checksum/configmap: {{ include (print $.Template.BasePath "/configmap-mariadb-maintenance.yaml") $ | sha256sum }}
+        spec:
+          restartPolicy: {{ $.Values.job.maintenance.jobRestartPolicy | default "OnFailure" | quote }}
+          securityContext:
+            runAsUser: 999
+            runAsGroup: 999
+            fsGroup: 999
+          priorityClassName: {{ $.Values.job.maintenance.priority_class | default "common-payload" | quote }}
+          containers:
+          - name: maintenance
+            image: "{{ required ".Values.global.dockerHubMirrorAlternateRegion is missing" .Values.global.dockerHubMirrorAlternateRegion }}/{{ .Values.image }}"
+            imagePullPolicy: {{ $.Values.imagePullPolicy | default "IfNotPresent" | quote }}
+            securityContext:
+              allowPrivilegeEscalation: false
+            command:
+              - "sh"
+              - "-c"
+              - "/usr/bin/mariadb-cronjob-maintenance.sh"
+            env:
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mariadb-{{.Values.name}}
+                  key: root-password
+            resources:
+              requests:
+                cpu: {{ $.Values.job.maintenance.resources.requests.cpu | default 0.5 }}
+              limits:
+                memory: {{ $.Values.job.maintenance.resources.requests.memory | default "64Mi" | quote }}
+            volumeMounts:
+            - name: mariadb-cronjob-maintenance
+              mountPath: /usr/bin/mariadb-cronjob-maintenance.sh
+              subPath: mariadb-cronjob-maintenance.sh
+              readOnly: true
+            - name: mariadb-cronjob-maintenance
+              mountPath: /usr/bin/common-functions.sh
+              subPath: common-functions.sh
+              readOnly: true
+            - mountPath: /etc/mysql/mariadb.conf.d/
+              name: mariadb-etc
+            - mountPath: /root/.my.cnf
+              subPath: ".my.cnf"
+              name: mariadb-client
+          volumes:
+          - name: mariadb-cronjob-maintenance
+            configMap:
+              name: mariadb-{{ .Values.name }}-cronjob-maintenance
+              defaultMode: 0755
+          - name: mariadb-etc
+            configMap:
+              name: mariadb-{{.Values.name}}-etc
+          - name: mariadb-client
+            secret:
+              secretName: mariadb-{{.Values.name}}-client
+              defaultMode: 0400
+{{- end }}

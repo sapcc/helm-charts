@@ -1,0 +1,45 @@
+kind: Deployment
+apiVersion: apps/v1
+
+metadata:
+  name: vcf
+spec:
+  revisionHistoryLimit: 5
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      name: vcf
+  template:
+    metadata:
+      labels:
+        name: vcf
+      annotations:
+        checksum/configmap: {{ include "vcf/templates/configmap.yaml" . | sha256sum }}
+        checksum/secret: {{ include "vcf/templates/secret.yaml" . | sha256sum }}
+    spec:
+      volumes:
+        - name: pvc
+          persistentVolumeClaim:
+            claimName: vcf-workspace
+        - name: vcf-configs
+          configMap:
+            name: vcf
+      containers:
+        - name: api
+          image: {{include "vcf_image" .}}
+          imagePullPolicy: IfNotPresent
+          args: 
+            - server
+            - --port
+            - {{ .Values.vcf.servicePort | quote }}
+          env: {{ include "vcf_environment" $ | indent 12 }}
+          volumeMounts:
+            - mountPath: /pulumi/etc
+              subPath: etc
+              name: pvc
+            - mountPath: /pulumi/etc/configs
+              name: vcf-configs
+          resources:
+            {{- toYaml .Values.vcf.resources | nindent 12 }}

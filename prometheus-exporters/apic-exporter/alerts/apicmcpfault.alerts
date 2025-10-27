@@ -1,0 +1,16 @@
+groups:
+  - name: apicmcpfault.alerts
+    rules:
+    - alert: NetworkApicMcpFaults
+      expr: sum(network_apic_mcp_fault_counter_total >0) by (apicHost, fault_desc)
+      for: 30m
+      labels:
+        severity: info
+        tier: net
+        service: apic
+        context: apic-health
+        dashboard: apic-health
+        playbook: /docs/devops/alert/network/aci/#Mcp_Fault_Alert
+      annotations:
+        description: MCP fault has been raised for object {{ $labels.fault_summary }} for 30 minutes"
+        summary: "MCP fault has been raised for object {{ $labels.fault_summary }} for 30 minutes"

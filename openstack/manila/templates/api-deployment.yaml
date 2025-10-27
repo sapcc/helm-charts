@@ -1,0 +1,250 @@
+kind: Deployment
+apiVersion: apps/v1
+
+metadata:
+  name: {{ .Release.Name }}-api
+  labels:
+    app: {{ template "fullname" . }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    system: openstack
+    component: manila
+    type: api
+  annotations:
+    secret.reloader.stakater.com/reload: "{{ .Release.Name }}-secrets"
+    deployment.reloader.stakater.com/pause-period: "60s"
+  {{- if .Values.vpa.set_main_container }}
+    vpa-butler.cloud.sap/main-container: manila-api
+  {{- end }}
+spec:
+  replicas: {{ .Values.pod.replicas.api }}
+  revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revision_history }}
+  strategy:
+    type: {{ .Values.pod.lifecycle.upgrades.deployments.pod_replacement_strategy }}
+    {{ if eq .Values.pod.lifecycle.upgrades.deployments.pod_replacement_strategy "RollingUpdate" }}
+    rollingUpdate:
+      maxUnavailable: {{ .Values.pod.lifecycle.upgrades.deployments.rolling_update.max_unavailable }}
+      maxSurge: {{ .Values.pod.lifecycle.upgrades.deployments.rolling_update.max_surge }}
+    {{ end }}
+  selector:
+    matchLabels:
+      name: {{ .Release.Name }}-api
+  template:
+    metadata:
+      labels:
+        name: {{ .Release.Name }}-api
+        alert-tier: os
+        alert-service: manila
+        {{- tuple . "manila" "api" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | nindent 8 }}
+        {{- include "utils.topology.pod_label" . | indent 8 }}
+      annotations:
+        configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
+        configmap-bin-hash: {{ include (print $.Template.BasePath "/bin-configmap.yaml") . | sha256sum }}
+        secrets-hash: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
+        kubectl.kubernetes.io/default-container: manila-api
+        {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
+        {{- if .Values.proxysql.mode }}
+        prometheus.io/scrape: "true"
+        prometheus.io/targets: {{ required ".Values.alerts.prometheus.openstack missing" .Values.alerts.prometheus.openstack | quote }}
+        {{- end }}
+    spec:
+      {{- tuple . "manila" "api" | include "kubernetes_pod_anti_affinity" | nindent 6 }}
+      {{- tuple . (dict "name" (print .Release.Name "-api")) | include "utils.topology.constraints" | indent 6 }}
+      {{- include "utils.proxysql.pod_settings" . | indent 6 }}
+      priorityClassName: {{ .Values.pod.priority_class.default }}
+      initContainers:
+      {{- tuple . (dict "jobs" (print .Release.Name "-migration") "service" (include "manila.api_service_dependencies" . )) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
+      {{- if not .Values.api_backdoor }}
+      - name: create-guru-file
+        image: {{.Values.global.dockerHubMirror}}/library/busybox
+        command: ["/bin/sh", "-c", "touch /shared/guru"]
+        volumeMounts:
+          - name: etcmanila
+            mountPath: /shared
+      {{- end }}
+      {{- if eq .Values.coordinationBackend "file" }}
+      - name: chown
+        image: {{.Values.global.dockerHubMirror}}/library/busybox
+        command: ["sh", "-c", "chown -R 42424:42424 /var/lib/manila/coordination"]
+        volumeMounts:
+        {{- include "utils.coordination.volume_mount" . | indent 10 }}
+      {{- end }}
+      {{- if .Values.proxysql.native_sidecar }}
+      {{- tuple . .Values.wsgi_processes | include "utils.proxysql.container" | indent 6 }}
+      {{- end }}
+      containers:
+        - name: manila-api
+          image: {{.Values.global.registry}}/loci-manila:{{.Values.loci.imageVersion}}
+          imagePullPolicy: IfNotPresent
+          command:
+          {{- if .Values.api_backdoor }}
+            - dumb-init
+            - kubernetes-entrypoint
+          {{- else }}
+            - /scripts/manila-api.sh
+            - start
+          {{- end }}
+          env:
+          {{- if .Values.api_backdoor }}
+            - name: COMMAND
+              value: "manila-api --config-file /etc/manila/manila.conf --config-file /etc/manila/manila.conf.d/secrets.conf"
+          {{- else }}
+            - name: OS_OSLO_MESSAGING_RABBIT__HEARTBEAT_IN_PTHREAD
+              value: "true"
+            - name: OS_OSLO_REPORTS__FILE_EVENT_HANDLER
+              value: "/etc/manila/guru"
+          {{- end }}
+            - name: NAMESPACE
+              value: {{ .Release.Namespace }}
+            - name: STATSD_HOST
+              value: localhost
+            - name: STATSD_PORT
+              value: "9125"
+            - name: DEPENDENCY_SERVICE
+              value: "{{ include "manila.api_service_dependencies" . }}"
+            {{- if .Values.sentry.enabled }}
+            - name: SENTRY_DSN_SSL
+              valueFrom:
+                secretKeyRef:
+                  name: sentry
+                  key: manila.DSN
+            - name: SENTRY_DSN
+              value: $(SENTRY_DSN_SSL)?verify_ssl=0
+            {{- end }}
+          livenessProbe:
+            httpGet:
+              path: /
+              port: {{.Values.api_port_internal}}
+            initialDelaySeconds: 15
+            timeoutSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /healthcheck
+              port: {{.Values.api_port_internal}}
+            initialDelaySeconds: 5
+            timeoutSeconds: 5
+          ports:
+            - name: manila-api
+              containerPort: {{.Values.api_port_internal}}
+          {{- if not .Values.api_backdoor }}
+          lifecycle:
+            preStop:
+              exec:
+                command:
+                  - /scripts/manila-api.sh
+                  - stop
+          {{- end }}
+          volumeMounts:
+            - name: etcmanila
+              mountPath: /etc/manila
+            - name: manila-etc
+              mountPath: /etc/manila/manila.conf
+              subPath: manila.conf
+              readOnly: true
+            - name: manila-etc-confd
+              mountPath: /etc/manila/manila.conf.d
+            {{- if not .Values.api_backdoor }}
+            - name: wsgi-manila
+              mountPath: /var/www/cgi-bin/manila
+            {{- end }}
+            - name: manila-etc
+              mountPath: /etc/manila/api-paste.ini
+              subPath: api-paste.ini
+              readOnly: true
+            - name: manila-etc
+              mountPath: /etc/manila/policy.yaml
+              subPath: policy.yaml
+              readOnly: true
+            - name: manila-etc
+              mountPath: /etc/manila/logging.ini
+              subPath: logging.ini
+              readOnly: true
+            {{- if .Values.audit.enabled }}
+            - name: manila-etc
+              mountPath: /etc/manila/manila_audit_map.yaml
+              subPath: manila_audit_map.yaml
+              readOnly: true
+            {{- end }}
+            {{- if .Values.api_rate_limit.enabled }}
+            - name: manila-etc
+              mountPath: /etc/manila/ratelimit.yaml
+              subPath: ratelimit.yaml
+              readOnly: true
+            - name: redis-ratelimit-secret
+              mountPath: {{ .Values.api_rate_limit.backend_secret_file }}
+              subPath: password
+              readOnly: true
+            {{- end }}
+            {{- if .Values.watcher.enabled }}
+            - name: manila-etc
+              mountPath: /etc/manila/watcher.yaml
+              subPath: watcher.yaml
+              readOnly: true
+            {{- end }}
+            {{- if not .Values.api_backdoor }}
+            - name: manila-etc
+              mountPath: /etc/apache2/conf-enabled/wsgi-manila.conf
+              subPath: wsgi-manila.conf
+              readOnly: true
+            {{- end }}
+            - name: manila-bin
+              mountPath: /scripts
+              readOnly: true
+            {{- include "utils.coordination.volume_mount" . | indent 12 }}
+            {{- include "utils.proxysql.volume_mount" . | indent 12 }}
+            {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
+          {{- if .Values.pod.resources.api }}
+          resources:
+            {{ toYaml .Values.pod.resources.api | nindent 13 }}
+          {{- end }}
+        - name: statsd
+          image: {{.Values.global.dockerHubMirror}}/prom/statsd-exporter:v0.8.1
+          imagePullPolicy: IfNotPresent
+          args: [ --statsd.mapping-config=/etc/statsd/statsd-exporter.yaml ]
+          ports:
+            - name: statsd
+              containerPort: 9125
+              protocol: UDP
+            - name: metrics
+              containerPort: {{ .Values.global.metrics_port }}
+          volumeMounts:
+            - name: manila-etc
+              mountPath: /etc/statsd/statsd-exporter.yaml
+              subPath: statsd-exporter.yaml
+              readOnly: true
+          {{- if .Values.pod.resources.api_statsd }}
+          resources:
+            {{- toYaml .Values.pod.resources.api_statsd | trim | nindent 12 }}
+          {{- end }}
+        {{- if not .Values.proxysql.native_sidecar }}
+        {{- tuple . .Values.wsgi_processes | include "utils.proxysql.container" | indent 8 }}
+        {{- end }}
+ {{- if .Values.osprofiler.enabled }}
+ {{- include "jaeger_agent_sidecar" . | indent 8 }}
+ {{- end }}
+      volumes:
+        - name: etcmanila
+          emptyDir: {}
+        {{- if not .Values.api_backdoor }}
+        - name: wsgi-manila
+          emptyDir: {}
+        {{- end }}
+        - name: manila-etc
+          configMap:
+            name: {{ .Release.Name }}-etc
+        - name: manila-etc-confd
+          secret:
+            secretName: {{ .Release.Name }}-secrets
+{{- if .Values.api_rate_limit.enabled }}
+        - name: redis-ratelimit-secret
+          secret:
+            secretName: {{ .Release.Name }}-api-ratelimit-redis-user-default
+{{- end }}
+        - name: manila-bin
+          configMap:
+            name: {{ .Release.Name }}-bin
+            defaultMode: 0555
+        {{- include "utils.coordination.volumes" . | indent 8 }}
+        {{- include "utils.proxysql.volumes" . | indent 8 }}
+        {{- include "utils.trust_bundle.volumes" . | indent 8 }}

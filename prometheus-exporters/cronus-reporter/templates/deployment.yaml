@@ -1,0 +1,58 @@
+{{- $app := "reporter" }}
+{{- $val := .Values.reporter }}
+{{- if $val.enabled -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: "cronus-{{ $app }}"
+  {{- if $val.annotations }}
+  annotations:
+    {{ toYaml $val.annotations | indent 4 }}
+  {{- end  }}
+  {{- if $val.labels }}
+  labels:
+    {{ toYaml $val.labels | indent 4 }}
+  {{- end }}
+spec:
+  replicas: {{ $val.replicas }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: "cronus-{{ $app }}"
+      app.kubernetes.io/instance: "cronus-{{ $app }}"
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include "cronus-reporter/templates/_config.yaml.tpl" . | sha256sum }}
+        prometheus.io/scrape: "true"
+        prometheus.io/port: {{ $val.prometheusPort | quote}}
+        prometheus.io/targets: {{ required ".Values.global.alerts.prometheus missing" .Values.global.alerts.prometheus | quote }}
+      labels:
+        app.kubernetes.io/name: "cronus-{{ $app }}"
+        app.kubernetes.io/instance: "cronus-{{ $app }}"
+    spec:
+      serviceAccountName: "cronus-{{ $app }}"
+      containers:
+        - name: "cronus-{{ $app }}"
+          image: "{{ $val.image.name }}:{{ $val.image.tag }}"
+          imagePullPolicy: IfNotPresent
+          args:
+            - "-config=/cronus-{{ $app }}/config.yaml"
+          volumeMounts:
+            - name: "cronus-{{ $app }}-config"
+              mountPath: "/cronus-{{ $app }}/config.yaml"
+              subPath: config.yaml
+          ports:
+            - name: http
+              containerPort: {{ $val.prometheusPort }}
+              protocol: TCP
+      restartPolicy: Always
+      volumes:
+        - name: "cronus-{{ $app }}-config"
+          secret:
+            secretName: "cronus-{{ $app }}-config"
+{{ end -}}

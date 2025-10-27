@@ -1,0 +1,46 @@
+kind: DaemonSet
+apiVersion: apps/v1
+
+metadata:
+  name: swift-replicators
+  labels:
+    release: "{{ .Release.Name }}"
+    on-upgrade: recreate
+
+spec:
+  minReadySeconds: 15
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: '20%' # these pods can be rolled rather quickly since they are not in the hot path
+  selector:
+    matchLabels:
+      component: swift-replicators
+      from: daemonset
+      restart: directly
+  template:
+    metadata:
+      labels:
+        component: swift-replicators
+        from: daemonset
+        restart: directly
+      annotations:
+        {{- include "swift_conf_annotations" . | indent 8 }}
+    spec:
+      {{- include "swift_daemonset_tolerations" . | indent 6 }}
+      # replicators need to discover their own IP, and it needs to match the
+      # node IP in the ring file (this extra permission is why the replicators
+      # form a separate daemonset)
+      hostNetwork: true
+      nodeSelector:
+        species: {{ .Values.species }}
+      volumes: {{ include "swift_daemonset_volumes" . | indent 8 }}
+      initContainers:
+        {{- include "swift_ringloader_initcontainer" . | indent 8 }}
+      containers:
+        {{- tuple "account"   "account-replicator"   . | include "swift_standard_container" | indent 8 }}
+        {{- tuple "container" "container-replicator" . | include "swift_standard_container" | indent 8 }}
+        {{- tuple "object"    "object-replicator"    . | include "swift_standard_container" | indent 8 }}
+
+---
+{{ include "swift_vpa_no_autoupdates" "swift-replicators" }}

@@ -1,0 +1,137 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "archer.fullname" . }}-api
+  labels:
+    {{- include "archer.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "archer.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: api
+  template:
+    metadata:
+      annotations:
+        checksum/etc: {{ include (print $.Template.BasePath  "/configmap.yaml") . | sha256sum }}
+        kubectl.kubernetes.io/default-container: {{ include "archer.name" . }}-api
+        {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+        linkerd.io/inject: enabled
+        {{- end }}
+        {{- toYaml .Values.podAnnotations | nindent 8 }}
+      labels:
+        {{- include "archer.labels" . | nindent 8 }}
+        app.kubernetes.io/component: api
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "archer.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      initContainers:
+        - name: wait-for-migration
+          image: "{{ .Values.global.registry }}/kubernetes-entrypoint:{{ .Values.image.kubernetes_entrypoint_version }}"
+          env:
+            - name: NAMESPACE
+              value: "monsoon3"
+            - name: DEPENDENCY_JOBS
+              value: {{ include "archer.fullname" . }}-migration-{{ .Values.image.tag | required ".Values.image.tag is required" }}
+            - name: COMMAND
+              value: "true"
+      containers:
+        - name: {{ include "archer.name" . }}-api
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.global.registry }}/archer:{{ .Values.image.tag | required ".Values.image.tag is required" }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args: ["--config-file=/etc/archer/archer.ini", "--scheme=http"]
+          env:
+            - name: GOMEMLIMIT
+              valueFrom:
+                resourceFieldRef:
+                  containerName: {{ include "archer.name" . }}-api
+                  resource: limits.memory
+            - name: GOMAXPROCS
+              valueFrom:
+                resourceFieldRef:
+                  containerName: {{ include "archer.name" . }}-api
+                  resource: limits.cpu
+            - name: SENTRY_DSN
+              valueFrom:
+                secretKeyRef:
+                  name: sentry
+                  key: archer.DSN
+            - name: HOST
+              value: "0.0.0.0"
+            - name: PORT
+              value: "{{ .Values.service.port }}"
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: archer-pguser-archer
+                  key: postgres-password
+            - name: OS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: archer-secret
+                  key: service_user_password
+            {{- if .Values.audit.enabled }}
+            - name: AUDIT_TRANSPORT_URL
+              valueFrom:
+                secretKeyRef:
+                  name: archer-secret
+                  key: audit_transport_url
+            {{- end }}
+            {{- with not $.Values.global.linkerd_enabled }}
+            - name: LINKERD_AWAIT_DISABLED
+              value: "true"
+            {{- end }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.port }}
+              protocol: TCP
+            - name: metrics
+              containerPort: {{ required ".Values.metrics.port missing" .Values.metrics.port }}
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /healthcheck
+              port: http
+          readinessProbe:
+            httpGet:
+              path: /healthcheck
+              port: http
+          resources:
+            {{- toYaml .Values.resources.api | nindent 12 }}
+          volumeMounts:
+            - name: etc-archer
+              mountPath: /etc/archer
+              readOnly: true
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      volumes:
+        - name: etc-archer
+          projected:
+            defaultMode: 420
+            sources:
+              - configMap:
+                  name: {{ include "archer.fullname" . }}-etc
+                  items:
+                    - key: archer.ini
+                      path: archer.ini
+                    - key: policy.json
+                      path: policy.json

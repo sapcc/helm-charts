@@ -1,0 +1,41 @@
+kind: Deployment
+apiVersion: apps/v1
+
+metadata:
+  name: cc3test-debug
+  namespace: cc3test
+
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: cc3test-debug
+  template:
+    metadata:
+      {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+      annotations:
+        linkerd.io/inject: enabled
+        config.linkerd.io/proxy-admin-shutdown: enabled
+      {{- end }}
+      labels:
+        name: cc3test-debug
+    spec:
+      volumes:
+        - name: cc3test-config
+          configMap:
+            name: cc3test-config
+        - name: cc3test-secrets
+          secret:
+            secretName: cc3test-secrets
+      containers:
+        - name: cc3test-debug
+          image: {{ required ".Values.global.registry variable missing" .Values.global.registry }}/{{ required ".Values.cc3test.image.name variable missing" .Values.cc3test.image.name }}:{{ required ".Values.cc3test.image.tag variable missing" .Values.cc3test.image.tag }}
+          command: ["/bin/sh"]
+          args: ["-c", "while true; do date; sleep 5; done"]
+          volumeMounts:
+            - name: cc3test-config
+              mountPath: /cc3test/config
+              readOnly: true
+            - name: cc3test-secrets
+              mountPath: /cc3test/secrets
+              readOnly: true

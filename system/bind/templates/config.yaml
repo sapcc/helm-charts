@@ -1,0 +1,98 @@
+{{ if .Values.override_conf }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}
+data:
+  named.conf: |
+     options {
+      server-id "{{ .Values.name }}.{{ .Values.global.region }}";
+      directory "/var/lib/bind";
+      dnssec-validation auto;
+      auth-nxdomain no; # conform to RFC1035
+      listen-on { any; };
+      listen-on-v6 { none; };
+      allow-query { any; };
+      {{- if .Values.nsi_key }}
+      allow-transfer { key "nsi-key"; };
+      {{ else }}
+      allow-transfer { none; };
+      {{- end }}
+      allow-new-zones yes;
+      {{- if .Values.nsi_server }}
+      notify yes;
+      also-notify { {{ .Values.nsi_server }}; };
+      {{- end }}
+      request-ixfr no;
+      allow-update { none; };
+      allow-notify { {{ .Values.allow_notify }} };
+      allow-recursion { none; };
+      recursion no;
+      transfers-in {{ .Values.transfers_in | default 100 }};
+      tcp-clients {{ .Values.tcp_clients | default 250 }};
+      tcp-listen-queue {{ .Values.tcp_listen_queue | default 25 }};
+      serial-query-rate {{.Values.serial_query_rate | default 20}};
+      notify-rate {{.Values.notify_rate | default 20}};
+      startup-notify-rate {{.Values.startup_notify_rate | default 20}};
+      {{- if .Values.pool_catalog }}
+      catalog-zones {
+        zone "catalog.pool.{{ .Values.pool_catalog }}"
+          default-primaries { {{ .Values.master_server }} port {{ .Values.master_server_port }}; }
+          in-memory no
+          min-update-interval 5;
+      };
+      {{- end }}
+     };
+     server {{ .Values.master_server }} {
+      keys {{ tpl ( $.Values.tsig_key_name | default "tsig-key" ) $ }};
+     };
+     include "/etc/bind/rndc.key";
+     include "/etc/bind/tsig.key";
+     {{- if .Values.nsi_key }}
+     include "/etc/bind/nsi.key";
+     {{- end }}
+     controls {
+       inet * allow { {{ .Values.rndc_allow }} } keys { {{ tpl ( $.Values.rndc_key_name | default "rndc-key" ) $ }}; };
+     };
+     statistics-channels {
+       inet 127.0.0.1 port 8053 allow { 127.0.0.1; };
+     };
+     {{- if .Values.pool_catalog }}
+     zone "catalog.pool.{{ .Values.pool_catalog }}" {
+       type secondary;
+       file "catalog.pool.{{ .Values.pool_catalog }}";
+       primaries { {{ .Values.master_server }} port {{ .Values.master_server_port }}; };
+     };
+     {{- end }}
+{{ end }}
+---
+{{ if .Values.zabbix.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-zabbix-conf
+data:
+  zabbix-bind.conf: |
+     UserParameter=bind.discoverzones,/usr/bin/bind/scripts/bind-stats.py discoverzones
+     UserParameter=bind.serialzones,/usr/bin/bind/scripts/bind-stats.py serialzones
+     UserParameter=bind.sapcomns,/usr/bin/bind/scripts/bind-stats.sh sapcomns
+     UserParameter=bind.zoneserial[*],/usr/bin/bind/scripts/bind-stats.py zoneserial -z $1
+     UserParameter=bind.counter[*],/usr/bin/bind/scripts/bind-stats.py counter -c $1
+     UserParameter=bind.zonecounter[*],/usr/bin/bind/scripts/bind-stats.py zonecounter -z $1 -c $2
+     UserParameter=bind.zonemaintenancecounter[*],/usr/bin/bind/scripts/bind-stats.py zonemaintenancecounter -c $1
+     UserParameter=bind.resolvercounter[*],/usr/bin/bind/scripts/bind-stats.py resolvercounter -c $1
+     UserParameter=bind.socketcounter[*],/usr/bin/bind/scripts/bind-stats.py socketcounter -c $1
+     UserParameter=bind.incounter[*],/usr/bin/bind/scripts/bind-stats.py incounter -c $1
+     #UserParameter=bind.acounter,/sbin/get_a_query.sh
+     UserParameter=bind.dncounter[*],/usr/bin/bind/scripts/bind-stats.py incounter -c $1
+     UserParameter=bind.outcounter[*],/usr/bin/bind/scripts/bind-stats.py outcounter -c $1
+     UserParameter=bind.memory[*],/usr/bin/bind/scripts/bind-stats.py memory -c $1
+     UserParameter=bind.cache[*],/usr/bin/bind/scripts/bind-stats.py cache -c $1
+     UserParameter=bind[*],/usr/bin/bind/scripts/bind-stats.sh $1
+     UserParameter=bind.zones[*],/usr/bin/bind/scripts/bind-stats.sh zones $1
+     UserParameter=bind.git,/usr/bin/bind/scripts/check_bind_git.sh
+     UserParameter=bind.stats[*],/usr/bin/curl -s http://localhost:8653/json | jq '. | {$1: .$1}'
+     UserParameter=bind.stats.memory,/usr/bin/curl -s http://localhost:8653/json | jq '. | del(.memory.contexts) | {memory: .memory}'
+     Server={{ .Values.zabbix.server }}
+     ServerActive=
+{{ end }}

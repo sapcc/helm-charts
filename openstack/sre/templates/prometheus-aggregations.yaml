@@ -1,0 +1,40 @@
+{{- $values := .Values }}
+
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+
+metadata:
+  name: openstack-sre-aggregations
+  labels:
+    tier: sre
+    type: aggregation-rules
+    prometheus: {{ required ".Values.prometheus.aggregations missing" $values.prometheus.aggregations }}
+
+spec:
+  groups:
+  - name: openstack-sre.aggregations
+    rules:
+{{- range $api, $slo := $values.slo.api_availability_percent }}
+    - record: global:api_availability_warning_slo:percent
+      labels:
+          ingress: {{ $api | quote }}
+          region: {{required ".Values.global.region missing" $values.global.region}}
+      expr: {{ $slo.warning | default $values.slo.defaults.api_availability_percent.warning | quote }}
+{{- end }}
+
+{{- range $api, $slo := $values.slo.api_availability_percent }}
+    - record: global:api_availability_critical_slo:percent
+      labels:
+          ingress: {{ $api | quote }}
+          region: {{required ".Values.global.region missing" $values.global.region}}
+      expr: {{ $slo.critical | default $values.slo.defaults.api_availability_percent.critical | quote }}
+{{- end }}
+
+{{- range $period := $values.periods }}
+    - record: global:api_errors_per_request_sli:ratio_rate{{$period}}
+      expr: |2
+          ((sum by(region, ingress) (rate(nginx_ingress_controller_requests{status=~"5.."}[{{$period}}])) or (0 * count by(region, ingress) (nginx_ingress_controller_requests))) / sum by(region, ingress) (rate(nginx_ingress_controller_requests[{{$period}}])))
+          or
+          ((sum by(region, ingress) (label_replace( ( sum by(region, proxy) (rate(haproxy_backend_http_responses_total{proxy="swift_proxy", code=~"5.."}[{{$period}}])) or (0 * count by(region, proxy) (haproxy_backend_http_responses_total{proxy="swift_proxy"}))) / sum by(region, proxy) (rate(haproxy_backend_http_responses_total{proxy="swift_proxy"}[{{$period}}])) , "ingress", "swift-api", "proxy", "swift_proxy") )))
+
+{{- end }}

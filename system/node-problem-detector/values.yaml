@@ -1,0 +1,42 @@
+# Optional registry for images with full image being $registry/$repository:$tag.
+global:
+  registry:
+
+image:
+  repository: node-problem-detector/node-problem-detector
+  tag: v0.8.18
+
+resources:
+  limits:
+    cpu: 200m
+    memory: 100Mi
+  requests:
+    cpu: 20m
+    memory: 20Mi
+
+rbac:
+  create: true
+  serviceAccountName: node-problem-detector
+
+# Expose additional Prometheus metrics directly.
+prometheus:
+  enabled: true
+  address: 0.0.0.0
+  port: 20257
+  targets: kubernetes
+
+# Additional system log monitors.
+systemLogMonitors:
+  - kernel-monitor.json
+
+# Additional custom plugin monitors.
+customPluginMonitors:
+  # - bridge-monitor.json
+
+# Additional volume mounts from host.
+additionalHostVolumeMounts: []
+  # Required by the bridge monitor.
+  #- name: hostproc
+  #  hostPath: /proc
+  #  mountPath: /host/proc
+  #  readOnly: true

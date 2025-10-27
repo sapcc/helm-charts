@@ -1,0 +1,30 @@
+apiVersion: openstack.stable.sap.cc/v1
+kind: OpenstackSeed
+metadata:
+  name: kubernikus-seed
+
+spec:
+  requires:
+  - {{ .Values.global.keystoneNamespace }}/keystone {{- if eq .Values.global.region "global" -}} -global {{- end -}} -seed
+  - {{ .Values.global.keystoneNamespace }}/domain-ccadmin-seed
+  - {{ .Values.global.keystoneNamespace }}/domain-default-seed
+
+  domains:
+  - name: Default
+    users:
+    - name: kubernikus-terraform
+      description: "Kubernikus Terraform User"
+      password: {{ required "missing .kubernikus_terraform_password" .Values.kubernikus_terraform_password | quote }}
+      role_assignments:
+      - project: cloud_admin@ccadmin
+        role: admin
+      - project: cloud_admin@ccadmin
+        role: cloud_network_admin
+      - project: master@ccadmin
+        role: cloud_dns_admin
+      - project: master@ccadmin
+        role: objectstore_admin
+      - project: cc-gardener@ccadmin
+        role: cloud_dns_admin
+      - domain: cp
+        role: admin

@@ -1,0 +1,72 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  # since this name changes with every image change, removal and creation of
+  # this Job happens on nearly every deployment. Check the helm-chart changes
+  # to see if this needs more review.
+  name: {{ tuple . "db-migrate" | include "job_name" }}
+  labels:
+    system: openstack
+    type: configuration
+    component: nova
+spec:
+  template:
+    metadata:
+      {{- tuple . "db-migrate" | include "job_metadata" | indent 6 }}
+    spec:
+      restartPolicy: OnFailure
+      {{- include "utils.proxysql.job_pod_settings" . | indent 6 }}
+      initContainers:
+      {{- tuple . (dict "service" (include "nova.helpers.database_services" .)) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
+      {{- if .Values.proxysql.native_sidecar }}
+      {{- include "utils.proxysql.container" . | indent 6 }}
+      {{- end }}
+      containers:
+      - name: nova-migration
+        image: {{ tuple . "api" | include "container_image_nova" }}
+        imagePullPolicy: IfNotPresent
+        command:
+        - /container.init/db-migrate
+        env:
+        - name: PYTHONWARNINGS
+          value: {{ .Values.python_warnings | quote }}
+        volumeMounts:
+        - mountPath: /etc/nova
+          name: nova-etc
+        - mountPath: /container.init
+          name: container-init
+        {{- include "utils.proxysql.volume_mount" . | indent 8 }}
+        {{- include "utils.trust_bundle.volume_mount" . | indent 8 }}
+      {{- if not .Values.proxysql.native_sidecar }}
+      {{- include "utils.proxysql.container" . | indent 6 }}
+      {{- end }}
+      volumes:
+      - name: nova-etc
+        projected:
+          sources:
+          - configMap:
+              name: nova-etc
+              items:
+              - key:  nova.conf
+                path: nova.conf
+              - key:  logging.ini
+                path: logging.ini
+          - secret:
+              name: nova-etc
+              items:
+              - key: api-db.conf
+                path: nova.conf.d/api-db.conf
+              - key: cell0.conf
+                path: nova-cell0.conf
+              - key: cell1.conf
+                path: nova-cell1.conf
+              {{- if .Values.cell2.enabled }}
+              - key:  {{ .Values.cell2.name }}.conf
+                path: nova-{{ .Values.cell2.name }}.conf
+              {{- end }}
+      - name: container-init
+        configMap:
+          name: nova-bin
+          defaultMode: 0755
+      {{- include "utils.proxysql.volumes" . | indent 6 }}
+      {{- include "utils.trust_bundle.volumes" . | indent 6 }}

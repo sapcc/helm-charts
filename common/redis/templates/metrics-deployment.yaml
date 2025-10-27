@@ -1,0 +1,63 @@
+{{- if .Values.metrics.enabled }}
+{{- $fullname := include "redis.fullname" . -}}
+
+{{- $dockerHubMirror := .Values.global.dockerHubMirror | required ".Values.global.dockerHubMirror missing" -}}
+{{- if .Values.useAlternateRegion -}}
+  {{- $dockerHubMirror = .Values.global.dockerHubMirrorAlternateRegion | required ".Values.global.dockerHubMirrorAlternateRegion missing" -}}
+{{- end -}}
+
+kind: Deployment
+apiVersion: apps/v1
+
+metadata:
+  name: {{ $fullname }}-exporter
+  labels:
+    app: {{ $fullname }}
+  {{- if .Values.metrics.reloader.enabled }}
+  annotations:
+    reloader.stakater.com/search: "true"
+  {{- end }}
+
+spec:
+  selector:
+    matchLabels:
+      app: {{ $fullname }}
+  template:
+    metadata:
+      labels:
+        app: {{ $fullname }}
+      annotations:
+        kubectl.kubernetes.io/default-container: metrics
+        {{- if .Values.redisPassword }}
+        checksum/secret: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
+        {{- end }}
+        {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+        linkerd.io/inject: enabled
+        {{- end }}
+        prometheus.io/scrape: "true"
+        prometheus.io/targets: {{ quote .Values.metrics.prometheus }}
+    spec:
+      containers:
+        - name: metrics
+          image: {{ $dockerHubMirror }}/oliver006/redis_exporter:{{ .Values.metrics.image.tag }}
+          imagePullPolicy: Always
+          env:
+            - name: REDIS_ADDR
+              value: "{{ $fullname }}:6379"
+            - name: REDIS_ALIAS
+              value: {{ $fullname }}
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  {{- if .Values.redisPassword }}
+                  name: {{ $fullname }}
+                  key: redis-password
+                  {{- else }}
+                  name: {{ $fullname }}-user-default
+                  key: password
+                  {{- end }}
+          ports:
+            - name: metrics
+              containerPort: 9121
+          resources: {{ toYaml .Values.metrics.resources | nindent 12 }}
+{{ end }}

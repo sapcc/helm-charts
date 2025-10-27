@@ -1,0 +1,572 @@
+{{- range $key, $cluster := .Values.clusters }}
+---
+apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
+kind: KubeadmConfigTemplate
+metadata:
+  name: {{ $key }}
+  namespace: metal-{{ $key }}
+spec:
+  template:
+    spec:
+      joinConfiguration:
+        nodeRegistration:
+          kubeletExtraArgs:
+            node-labels: kubernikus.cloud.sap/cni=true,metal3.io/uuid=${uuid},kubernetes.metal.cloud.sap/node-ip=${IP},kubernetes.metal.cloud.sap/host=${name_bmh},kubernetes.metal.cloud.sap/bb=${bb},kubernetes.metal.cloud.sap/role=${role},topology.kubernetes.io/region=${region},topology.kubernetes.io/zone=${zone} {{- if $cluster.maintenanceProfile -}} ,cloud.sap/maintenance-profile={{ $cluster.maintenanceProfile }} {{- end }}
+              {{- with $cluster.extraLabels }}
+                {{- range $label := $cluster.extraLabels -}}
+                  ,{{ $label }}
+                {{- end }}
+              {{- end }}
+            cloud-provider: ""
+            node-ip: ${IP}
+          name: ${name_bmh}
+      format: ignition
+      ignition:
+        containerLinuxConfig:
+          additionalConfig: |-
+            storage:
+              directories:
+              - path: /etc/kubernetes/manifests
+                overwrite: true
+              - path: /etc/systemd/system/kubeadm.service.d
+                mode: 0755
+                overwrite: true
+{{- if $cluster.ignitionDirectories }}
+{{- toYaml $cluster.ignitionDirectories | nindent 14 }}
+{{- end }}
+              files:
+              - path: /etc/containerd/config.toml
+                filesystem: root
+                mode: 0744
+                contents:
+                  inline: |
+                    ## template: jinja
+  
+                    # Use config version 2 to enable new configuration fields.
+                    # Config file is parsed as version 1 by default.
+                    version = 2
+  
+                    imports = ["/etc/containerd/conf.d/*.toml"]
+  
+                    [plugins]
+                      [plugins."io.containerd.grpc.v1.cri"]
+                        sandbox_image = {{ $.Values.image.pause | quote }}
+                        enable_unprivileged_icmp = true
+                        enable_unprivileged_ports = true
+                      [plugins."io.containerd.grpc.v1.cri".containerd.runtimes.runc]
+                        runtime_type = "io.containerd.runc.v2"
+                      [plugins."io.containerd.grpc.v1.cri".containerd.runtimes.runc.options]
+                        SystemdCgroup = true
+                      [plugins."io.containerd.grpc.v1.cri".cni]
+                        bin_dir = "/opt/cni/bin"
+                        conf_dir = "/etc/cni/net.d"
+                        conf_template = ""                        
+              - path: /etc/ssh/sshd_config
+                filesystem: root
+                mode: 393
+                overwrite: true
+                contents:
+                  inline: |
+                    # Use most defaults for sshd configuration.
+                    #Subsystem sftp internal-sftp
+                    ClientAliveInterval 180
+                    UseDNS no
+                    UsePAM yes
+
+                    # handled by PAM
+                    PrintLastLog no
+
+                    # handled by PAM
+                    PrintMotd no
+
+                    Ciphers chacha20-poly1305@openssh.com,aes128-ctr,aes192-ctr,aes256-ctr,aes128-gcm@openssh.com,aes256-gcm@openssh.com
+                    MACs hmac-sha2-256-etm@openssh.com,hmac-sha2-512-etm@openssh.com,hmac-sha2-256,hmac-sha2-512,umac-128-etm@openssh.com,umac-128@openssh.com
+                    KexAlgorithms curve25519-sha256,curve25519-sha256@libssh.org,ecdh-sha2-nistp256,ecdh-sha2-nistp384,ecdh-sha2-nistp521,diffie-hellman-group-exchange-sha256,diffie-hellman-group16-sha512,diffie-hellman-group18-sha512,diffie-hellman-group14-sha256
+              - path: /etc/modprobe.d/blacklist.conf
+                filesystem: root
+                mode: 393
+                contents:
+                  inline: |
+                    blacklist nfs_layout_nfsv41_files
+              - path: /opt/bin/kube.sh
+                filesystem: root
+                mode: 393
+                contents:
+                  inline: |
+                    #!/bin/bash
+                    set -o errexit
+                    set -o pipefail
+
+                    function _with_image_cleanup {
+                       umount -l ${TMPMOUNT} || true
+                       rmdir  ${TMPMOUNT}
+                    }
+
+                    function with_image {
+                      (
+                         TMPMOUNT=$(mktemp -d --suffix=.ctrcp)
+                         trap _with_image_cleanup EXIT
+                         IMAGE=$1
+                         shift
+                         ctr image mount $IMAGE $TMPMOUNT >/dev/null
+                         cd $TMPMOUNT
+                         "$@"
+                         cd /
+                      )
+                    }
+
+                    # loop to ensure network connectivity
+                    while true;do
+                      ctr image pull {{ $.Values.image.kubelet }}:v{{ $cluster.version }} && break
+                    done
+
+                    with_image {{ $.Values.image.kubelet }}:v{{ $cluster.version }} cp --preserve=mode usr/local/bin/{kubeadm,kubelet} /opt/bin/
+
+                    mount --bind /opt/bin /usr/local/bin
+
+                    sed -i '/After\|Requires/d' /etc/systemd/system/kubeadm.service.d/10-flatcar.conf
+              - path: /etc/systemd/resolved.conf
+                filesystem: root
+                mode: 420
+                overwrite: true
+                contents:
+                  inline: |
+                    [Resolve]
+                    DNS={{ $.Values.dnsServers }}
+                    LLMNR=false
+                    DNSStubListener=no
+              - path: /etc/systemd/timesyncd.conf
+                filesystem: root
+                mode: 420
+                overwrite: true
+                contents:
+                  inline: |
+                    [Time]
+                    NTP={{ $.Values.ntpServers }}
+              - path: /etc/crictl.yaml
+                filesystem: root
+                mode: 0644
+                contents:
+                  inline: |
+                    runtime-endpoint: unix:///run/containerd/containerd.sock
+              - path: /etc/profile.d/envs.sh
+                filesystem: root
+                mode: 0644
+                contents:
+                  inline: |
+                    export CONTAINERD_NAMESPACE=k8s.io
+              - path: /etc/systemd/network/50-kubernikus.netdev
+                filesystem: root
+                mode: 0644
+                contents:
+                  inline: |
+                    [NetDev]
+                    Description=Kubernikus Dummy Interface
+                    Name=kubernikus
+                    Kind=dummy
+              - path: /etc/systemd/network/51-kubernikus.network
+                filesystem: root
+                mode: 0644
+                contents:
+                  inline: |
+                    [Match]
+                    Name=kubernikus
+                    [Network]
+                    DHCP=no
+                    Address=1.1.1.1/32
+              - path: /etc/systemd/network/sync.netdev
+                filesystem: root
+                mode: 0644
+                contents:
+                  inline: |
+                    [NetDev]
+                    Name=sync
+                    Kind=vlan
+                    [VLAN]
+                    Id={{ $.Values.syncVlan }}
+              - path: /etc/systemd/network/sync.network
+                filesystem: root
+                mode: 0644
+                contents:
+                  inline: |
+                    [Match]
+                    Name=sync
+                    [Network]
+                    DHCP=no
+              - path: /etc/ssl/certs/SAPGlobalRootCA.pem
+                filesystem: root
+                mode: 0644
+                contents:
+                  inline: |
+                    -----BEGIN CERTIFICATE-----
+                    MIIGTDCCBDSgAwIBAgIQXQPZPTFhXY9Iizlwx48bmTANBgkqhkiG9w0BAQsFADBO
+                    MQswCQYDVQQGEwJERTERMA8GA1UEBwwIV2FsbGRvcmYxDzANBgNVBAoMBlNBUCBB
+                    RzEbMBkGA1UEAwwSU0FQIEdsb2JhbCBSb290IENBMB4XDTEyMDQyNjE1NDE1NVoX
+                    DTMyMDQyNjE1NDYyN1owTjELMAkGA1UEBhMCREUxETAPBgNVBAcMCFdhbGxkb3Jm
+                    MQ8wDQYDVQQKDAZTQVAgQUcxGzAZBgNVBAMMElNBUCBHbG9iYWwgUm9vdCBDQTCC
+                    AiIwDQYJKoZIhvcNAQEBBQADggIPADCCAgoCggIBAOrxJKFFA1eTrZg1Ux8ax6n/
+                    LQRHZlgLc2FZpfyAgwvkt71wLkPLiTOaRb3Bd1dyydpKcwJLy0dzGkunzNkPRSFz
+                    bKy2IPS0RS45hUCCPzhGnqQM6TcDYWeWpSUvygqujgb/cAG0mSJpvzAD3SMDQ+VJ
+                    Az5Ryq4IrP7LkfCb63LKZxLsHEkEcNKoGPsSsd4LTwuEIyM3ZHcCoA97m6hvgLWV
+                    GLzLIQMEblkswqX29z7JZH+zJopoqZB6eEogE2YpExkw52PufytEslDY3dyVubjp
+                    GlvD4T03F2zm6CYleMwgWbATLVYvk2I9WfqPAP+ln2IU9DZzegSMTWHCE+jizaiq
+                    b5f5s7m8f+cz7ndHSrz8KD/S9iNdWpuSlknHDrh+3lFTX/uWNBRs5mC/cdejcqS1
+                    v6erflyIfqPWWO6PxhIs49NL9Lix3ou6opJo+m8K757T5uP/rQ9KYALIXvl2uFP7
+                    0CqI+VGfossMlSXa1keagraW8qfplz6ffeSJQWO/+zifbfsf0tzUAC72zBuO0qvN
+                    E7rSbqAfpav/o010nKP132gbkb4uOkUfZwCuvZjA8ddsQ4udIBRj0hQlqnPLJOR1
+                    PImrAFC3PW3NgaDEo9QAJBEp5jEJmQghNvEsmzXgABebwLdI9u0VrDz4mSb6TYQC
+                    XTUaSnH3zvwAv8oMx7q7AgMBAAGjggEkMIIBIDAOBgNVHQ8BAf8EBAMCAQYwEgYD
+                    VR0TAQH/BAgwBgEB/wIBATAdBgNVHQ4EFgQUg8dB/Q4mTynBuHmOhnrhv7XXagMw
+                    gdoGA1UdIASB0jCBzzCBzAYKKwYBBAGFNgRkATCBvTAmBggrBgEFBQcCARYaaHR0
+                    cDovL3d3dy5wa2kuY28uc2FwLmNvbS8wgZIGCCsGAQUFBwICMIGFHoGCAEMAZQBy
+                    AHQAaQBmAGkAYwBhAHQAZQAgAFAAbwBsAGkAYwB5ACAAYQBuAGQAIABDAGUAcgB0
+                    AGkAZgBpAGMAYQB0AGkAbwBuACAAUAByAGEAYwB0AGkAYwBlACAAUwB0AGEAdABl
+                    AG0AZQBuAHQAIABvAGYAIABTAEEAUAAgAEEARzANBgkqhkiG9w0BAQsFAAOCAgEA
+                    0HpCIaC36me6ShB3oHDexA2a3UFcU149nZTABPKT+yUCnCQPzvK/6nJUc5I4xPfv
+                    2Q8cIlJjPNRoh9vNSF7OZGRmWQOFFrPWeqX5JA7HQPsRVURjJMeYgZWMpy4t1Tof
+                    lF13u6OY6xV6A5kQZIISFj/dOYLT3+O7wME5SItL+YsNh6BToNU0xAZt71Z8JNdY
+                    VJb2xSPMzn6bNXY8ioGzHlVxfEvzMqebV0KY7BTXR3y/Mh+v/RjXGmvZU6L/gnU7
+                    8mTRPgekYKY8JX2CXTqgfuW6QSnJ+88bHHMhMP7nPwv+YkPcsvCPBSY08ykzFATw
+                    SNoKP1/QFtERVUwrUXt3Cufz9huVysiy23dEyfAglgCCRWA+ZlaaXfieKkUWCJaE
+                    Kw/2Jqz02HDc7uXkFLS1BMYjr3WjShg1a+ulYvrBhNtseRoZT833SStlS/jzZ8Bi
+                    c1dt7UOiIZCGUIODfcZhO8l4mtjh034hdARLF0sUZhkVlosHPml5rlxh+qn8yJiJ
+                    GJ7CUQtNCDBVGksVlwew/+XnesITxrDjUMu+2297at7wjBwCnO93zr1/wsx1e2Um
+                    Xn+IfM6K/pbDar/y6uI9rHlyWu4iJ6cg7DAPJ2CCklw/YHJXhDHGwheO/qSrKtgz
+                    PGHZoN9jcvvvWDLUGtJkEotMgdFpEA2XWR83H4fVFVc=
+                    -----END CERTIFICATE-----
+              - path: /etc/ssl/certs/SAPNetCA_G2.pem
+                filesystem: root
+                mode: 0644
+                contents:
+                  inline: |
+                    -----BEGIN CERTIFICATE-----
+                    MIIGLjCCBBagAwIBAgITeQAAABhPSKk6qAD+zgAAAAAAGDANBgkqhkiG9w0BAQsF
+                    ADBOMQswCQYDVQQGEwJERTERMA8GA1UEBwwIV2FsbGRvcmYxDzANBgNVBAoMBlNB
+                    UCBBRzEbMBkGA1UEAwwSU0FQIEdsb2JhbCBSb290IENBMB4XDTI0MDYxMTA2MDky
+                    MFoXDTMyMDQxMTA2MTkyMFowRDELMAkGA1UEBhMCREUxETAPBgNVBAcMCFdhbGxk
+                    b3JmMQwwCgYDVQQKDANTQVAxFDASBgNVBAMMC1NBUE5ldENBX0cyMIICIjANBgkq
+                    hkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAh8EGw9yjA0kzBOhGyihXD0q1zuESZg15
+                    X+LaciH82+eDSM6xCVE3UVeZ6waPvA2lwcdhrSYnheIpy0/0XvMfxhVFaeQErlC0
+                    evJQRLUCRYs+9Xizp6716gAksmxjkQ9xaEfn04rW6jhX9KHxoLQAXep2ZV8rXiAe
+                    DsldIl/N6SQxt1oomANsPqtKn9nKy7N47GUwp2QzkwgU0wL6ygdkzcZJSivWS782
+                    xO437OK0vmoZkBpMs3/EJdb7u7VfkCVs/IF1BXHOz1YyzZkzI/FAOF4sRJFA3zL2
+                    MQmwZ8byJahUBDAV0aBnFRs7lGZLzOdcPxEWrFZQx4apfyIIxlNynvcu+0R/pKmd
+                    kTo+6cl3jalOkgQqJDxkrB4lK5e+V9YGR+8GIHHsUyqmyoD2px6z9twFO/DrxvvE
+                    tvBzh0rKyeR3qEcn4GFmOEY+Y+5nDaJ9wADBlzAq2kV8gZ4/+EY04OXJW8LBMssw
+                    1cr7KaVEZqw5FIlziPyWTgrB4p8716i/ajmOPp+jEX+zyVDnJ5+CQO12twXkET6U
+                    KWZGkZlzJi6zlF8d4W8vcdyj8e6KRW0E+zrJUKLL0QS/zz5ECCca4sWXt/xx194o
+                    hg9pNOExy2xI5HwFYOnYkjPWGS9LDUaRfWGvzYA6k3n+JGnXkG0pvtH0PgxV3uH+
+                    l34FYVauvWsCAwEAAaOCAQ0wggEJMB0GA1UdDgQWBBR+WWFmIyNGWP4yfe/Q9Y+D
+                    +kPxPjAfBgNVHSMEGDAWgBSDx0H9DiZPKcG4eY6GeuG/tddqAzBLBgNVHR8ERDBC
+                    MECgPqA8hjpodHRwOi8vY2RwLnBraS5jby5zYXAuY29tL2NkcC9TQVAlMjBHbG9i
+                    YWwlMjBSb290JTIwQ0EuY3JsMFYGCCsGAQUFBwEBBEowSDBGBggrBgEFBQcwAoY6
+                    aHR0cDovL2FpYS5wa2kuY28uc2FwLmNvbS9haWEvU0FQJTIwR2xvYmFsJTIwUm9v
+                    dCUyMENBLmNydDASBgNVHRMBAf8ECDAGAQH/AgEAMA4GA1UdDwEB/wQEAwIBBjAN
+                    BgkqhkiG9w0BAQsFAAOCAgEAGJwAGBlsUXYNYTJLuXF05EgI1NvqtSLphKnmguRj
+                    xE04BjFiqu1Qpe1wrZF8CXgWoax1H0kN2nmLKFdpIO4LprCXNMrOsT+XjQlD5Y4t
+                    YIKnv86SPLZ0ZddcH+L75ZlcvZ3t44MTevbLxjuhPQ9B1L3L8YpwtLV3FWdNxtaS
+                    FZ+DabUeK4DaluK+vXgOUNIG33zuP6JvWCXOeaKh9MTW7/+OMmovLTuaQAUwWOgn
+                    s+6Q1HJ7GA6WxXn/PIwdtdElix44tqkj2GCrihgM7vF9+y710ErBHnwQizi+8cYA
+                    YrFN4q1Lf4t3ZKlu4Ban8jsm4ZqhqNgB7CYcHxoCuWDrpvqzCJaid4Vs9X2QHHsP
+                    4qneE+17bSO0M75FPm+cfpSk/OsJheIu3WJOyBHrO9QaPnYz78B97IpRoD9haWeR
+                    b71zpmzQBjazbSSWadOMmuuq2D30lMiBkksYduc8BUnMcC0VtuBWlBM6i0/7R7Oj
+                    X1kV6vBXmtM7hErdxAgyDa839UwQ4JGNt9MZc4ewjuH4K7aXwRRxWSjmPcqwvJyr
+                    ePRVq15nQ7LtFz3/qiYVwLMUoTul3S1kqebdheFZW8yFdqgdvu1esjwtOx79Sa53
+                    fyqSClfPMHYbMEjtZmxCHHpZKkTbp0/Uk95mmPw9Vzx9cfgU8S7tDuMaWScrvtwT
+                    OfI=
+                    -----END CERTIFICATE-----
+              - path: /etc/sysctl.d/10-enable-icmp-redirects.conf
+                filesystem: root
+                mode: 0644
+                contents:
+                  inline: |-
+                    net.ipv4.conf.all.accept_redirects=1
+              - path: /etc/sysctl.d/20-inotify-max-user.conf
+                filesystem: root
+                mode: 0644
+                contents:
+                  inline: |-
+                    fs.inotify.max_user_instances=8192
+                    fs.inotify.max_user_watches=524288
+              - path: /etc/flatcar/update.conf
+                filesystem: root
+                mode: 0644
+                contents:
+                  inline: |-
+                    GROUP={{ if eq $key "st1-qa-de-1" }}beta{{ else }}stable{{ end }}
+                    REBOOT_STRATEGY="off"
+              - path: /etc/modules-load.d/br_netfilter.conf
+                filesystem: root
+                mode: 0644
+                contents:
+                  inline: br_netfilter
+              - path: /etc/sysctl.d/30-br_netfilter.conf
+                filesystem: root
+                mode: 0644
+                contents:
+                  inline: |
+                    net.bridge.bridge-nf-call-ip6tables = 1
+                    net.bridge.bridge-nf-call-iptables = 1
+              - path: /etc/systemd/system/kubeadm.service.d/10-flatcar.conf
+                filesystem: root
+                mode: 0644
+                contents:
+                  inline: |
+                    [Unit]
+                    # kubeadm must run after coreos-metadata populated /run/metadata directory.
+                    Requires=kube_up.service
+                    After=kube_up.service
+                    [Service]
+                    # Make metadata environment variables available for pre-kubeadm commands.
+                    EnvironmentFile=/run/metadata/*
+              - path: /opt/bin/garp_update.sh
+                filesystem: root
+                mode: 0744
+                contents:
+                  inline: |
+                    #!/bin/bash
+                    UPLINK_INTERFACE=$(/usr/bin/ip route | grep -v cbr | awk '/default/ { print $5 }')
+                    MY_IP=$(/usr/bin/ip route | grep $UPLINK_INTERFACE | awk '/src/ { print $9 }')
+                    /usr/bin/arping -c 5 -U $MY_IP -I $UPLINK_INTERFACE
+              - path: /opt/network_up.sh
+                filesystem: root
+                mode: 0744
+                contents:
+                  inline: |
+                    #!/bin/bash
+                    PATH=$PATH:/bin
+                    
+                    /usr/bin/mkdir --parent /run/metadata
+                    OUTPUT=/run/metadata/metadata
+
+                    # mount configdrive
+                    mkdir /tmp/configdrive
+                    mount -o ro /dev/disk/by-label/config-2 /tmp/configdrive
+                    CONFIGDRIVE=/tmp/configdrive/openstack/latest
+
+                    # build envs from BaremetalHost CR and metadata
+                    for s in $(cat $CONFIGDRIVE/meta_data.json | jq -r "to_entries|map(\"\(.key)=\(.value|tostring)\")|.[]" ); do
+                      echo $s >> $OUTPUT
+                      # Replace hyphens with underscores in variable names only (keys), not values
+                      key=$(echo "$s" | cut -d'=' -f1 | sed 's/-/_/g')
+                      value=$(echo "$s" | cut -d'=' -f2-)
+                      export $key="$value"
+                    done
+
+                    hostnamectl set-hostname $name_bmh
+                    echo $name_bmh>/etc/hostname
+                    
+                    BONDFILTER=$(cat $CONFIGDRIVE/network_data.json | jq -r .networks[0].link)
+                    VLAN=$(cat $CONFIGDRIVE/network_data.json | jq -r .networks[0].id)
+                    IPADDRESS=$(cat $CONFIGDRIVE/network_data.json | jq -r .networks[0].ip_address)
+                    GATEWAY=$(cat $CONFIGDRIVE/network_data.json | jq -r .networks[0].routes[0].gateway)
+                    
+                    echo "IP=$(echo $IPADDRESS | cut -d/ -f1)" >> ${OUTPUT}
+
+                    /bin/cat > /etc/systemd/network/60-interfaces.network << EOF
+                    [Match]
+                    Name=$BONDFILTER
+                    [Network]
+                    Bond=bond0
+                    EOF
+                    
+                    /bin/cat > /etc/systemd/network/50-bond0.network << EOF
+                    [Match]
+                    Name=bond0
+                    [Network]
+                    VLAN=vlan_$VLAN
+                    VLAN=sync
+                    DHCP=no
+                    EOF
+
+                    /bin/cat > /etc/systemd/network/bond0.netdev << EOF
+                    [NetDev]
+                    Name=bond0
+                    Kind=bond
+                    MTUBytes=8950
+                    [Bond]
+                    Mode=802.3ad
+                    MIIMonitorSec=1s
+                    TransmitHashPolicy=layer3+4
+                    LACPTransmitRate=fast
+                    UpDelaySec=3s
+                    DownDelaySec=3s
+                    MinLinks=1
+                    EOF
+
+                    /bin/cat > /etc/systemd/network/vlan_$VLAN.netdev << EOF
+                    [NetDev]
+                    Name=vlan_$VLAN
+                    Kind=vlan
+                    [VLAN]
+                    Id=$VLAN
+                    EOF
+
+                    /bin/cat > /etc/systemd/network/vlan_$VLAN.network << EOF
+                    [Match]
+                    Name=vlan_$VLAN
+                    [Network]
+                    DHCP=no
+                    Address=$IPADDRESS
+                    Gateway=$GATEWAY
+                    EOF
+
+                    umount /tmp/configdrive
+{{- if $cluster.ignitionFiles }}
+{{- toYaml $cluster.ignitionFiles | nindent 14 }}
+{{- end }}
+            systemd:
+              units:
+              - name: kubelet.service
+                enable: true
+                contents: |
+                  [Unit]
+                  Description=kubelet: The Kubernetes Node Agent
+                  Documentation=https://kubernetes.io/docs/
+                  Wants=network-online.target
+                  After=network-online.target
+
+                  [Service]
+                  ExecStart=/opt/bin/kubelet
+                  Restart=always
+                  StartLimitInterval=0
+                  RestartSec=10
+
+                  [Install]
+                  WantedBy=multi-user.target
+                dropins:
+                - name: 10-kubeadm.conf
+                  contents: |
+                    [Service]
+                    Environment="KUBELET_KUBECONFIG_ARGS=--bootstrap-kubeconfig=/etc/kubernetes/bootstrap-kubelet.conf --kubeconfig=/etc/kubernetes/kubelet.conf"
+                    Environment="KUBELET_CONFIG_ARGS=--config=/var/lib/kubelet/config.yaml"
+                    # This is a file that "kubeadm init" and "kubeadm join" generates at runtime, populating the KUBELET_KUBEADM_ARGS variable dynamically
+                    EnvironmentFile=-/var/lib/kubelet/kubeadm-flags.env
+                    # This is a file that the user can use for overrides of the kubelet args as a last resort. Preferably, the user should use
+                    # the .NodeRegistration.KubeletExtraArgs object in the configuration files instead. KUBELET_EXTRA_ARGS should be sourced from this file.
+                    EnvironmentFile=-/etc/sysconfig/kubelet
+                    ExecStart=
+                    ExecStart=/opt/bin/kubelet $KUBELET_KUBECONFIG_ARGS $KUBELET_CONFIG_ARGS $KUBELET_KUBEADM_ARGS $KUBELET_EXTRA_ARGS
+              - name: updatecertificates.service
+                command: start
+                enable: true
+                contents: |
+                  [Unit]
+                  Description=Update the certificates w/ self-signed root CAs
+                  ConditionPathIsSymbolicLink=!/etc/ssl/certs/381107d7.0
+                  Before=early-docker.service docker.service
+                  [Service]
+                  ExecStart=/usr/sbin/update-ca-certificates
+                  RemainAfterExit=yes
+                  Type=oneshot
+                  [Install]
+                  WantedBy=multi-user.target
+              - name: containerd.service
+                enable: true
+                dropins:
+                  - name: 10-custom-config.conf
+                    contents: |
+                      [Service]
+                      Environment=PATH=/opt/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin
+                      ExecStartPre=mkdir -p /run/docker/libcontainerd
+                      ExecStartPre=ln -fs /run/containerd/containerd.sock /run/docker/libcontainerd/docker-containerd.sock
+                      ExecStart=
+                      ExecStart=/usr/bin/containerd --config /etc/containerd/config.toml
+              - name: docker.service
+                enable: true
+                dropins:
+                  - name: 20-docker-opts.conf
+                    contents: |
+                      [Service]
+                      Environment="DOCKER_OPTS=--iptables=false --bridge=none"
+              - name: audit-rules.service
+                mask: true
+                enable: false
+              - name: flatcar-openstack-hostname.service
+                enabled: false
+                mask: true
+              - name: user-configdrive.service
+                enabled: false
+                mask: true
+              - name: locksmithd.service
+                enabled: false
+                mask: true
+              - name: network_up.service
+                enabled: true
+                contents: |
+                  [Unit]
+                  Description=Service that applies network metadata
+                  Before=network-pre.target
+                  Wants=network-pre.target
+                  Wants=systemd-modules-load.service
+                  After=systemd-modules-load.service 
+                  [Service]
+                  Type=oneshot
+                  Restart=on-failure
+                  RemainAfterExit=yes
+                  ExecStart=/opt/network_up.sh
+                  ExecStartPost=systemctl disable network_up.service
+                  [Install]
+                  WantedBy=network.target
+              - name: kube_up.service
+                enabled: true
+                contents: |
+                  [Unit]
+                  Description=Install kube
+                  Wants=network-online.target
+                  Wants=network_up.target
+                  After=network-online.target
+                  After=network_up.target
+                  [Service]
+                  Type=oneshot
+                  ExecStartPre=/usr/bin/sleep 10
+                  ExecStart=/opt/bin/kube.sh
+                  ExecStartPost=systemctl disable kube_up.service
+                  [Install]
+                  WantedBy=kubeadm.service
+              # needed to register node after kubeadm
+              - name: kubelet_restart.service
+                enabled: true
+                contents: |
+                  [Unit]
+                  Description=Restart kubelet after kubeadm(join workaround)
+                  Requires=kubeadm.service
+                  After=kubeadm.service
+                  [Service]
+                  Type=oneshot
+                  ExecStartPre=/usr/bin/sleep 60
+                  ExecStart=systemctl restart kubelet
+                  ExecStartPost=systemctl disable kubelet_restart.service
+                  [Install]
+                  WantedBy=multi-user.target
+              # send a Gratuitous ARP to upsteam switches when System Boots
+              # this is needed for ACI switches to update their entries in case of MAC address change
+              - name: garp_update.service
+                enabled: true
+                contents: |
+                  [Unit]
+                  Description=Gratuitous ARP notify upstream switches
+                  Wants=network-pre.target
+                  After=network-pre.target
+                  [Service]
+                  Type=oneshot
+                  ExecStartPre=/usr/bin/sleep 10
+                  ExecStart=/opt/bin/garp_update.sh
+                  [Install]
+                  WantedBy=multi-user.target
+{{- if $cluster.ignitionSystemdUnits }}
+{{- toYaml $cluster.ignitionSystemdUnits | nindent 14 }}
+{{- end }}
+      preKubeadmCommands:
+      - envsubst < /etc/kubeadm.yml > /etc/kubeadm.yml.tmp
+      - mv /etc/kubeadm.yml.tmp /etc/kubeadm.yml
+      users:
+      - name: {{ $cluster.userName | default $.Values.user.name }}
+        passwd: {{ $cluster.userPasswordhash | default $.Values.user.passwordhash }}
+        groups: "sudo"
+        sshAuthorizedKeys:
+        - {{ $cluster.userKey | default $.Values.user.key | quote }}
+{{- if $cluster.additionalUsers }}
+{{- toYaml $cluster.additionalUsers | nindent 6 }}
+{{- end }}
+{{- end }}

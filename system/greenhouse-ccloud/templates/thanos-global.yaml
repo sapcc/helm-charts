@@ -1,0 +1,97 @@
+{{- if and .Values.thanos.enabled .Values.thanos.globalClusters -}}
+kind: Secret
+apiVersion: v1
+metadata:
+  name: thanos-{{ .Chart.Name }}-tls
+  namespace: {{ .Chart.Name }}
+type: Opaque
+data:
+  ca.crt: {{ required ".Values.thanos.tls.caCert missing" .Values.thanos.tls.caCert | b64enc | quote }} 
+  tls.crt: {{ required ".Values.thanos.tls.tlsCert missing" .Values.thanos.tls.tlsCert | b64enc | quote }} 
+  tls.key: {{ required ".Values.thanos.tls.tlsKey missing" .Values.thanos.tls.tlsKey | b64enc | quote }}
+---
+apiVersion: greenhouse.sap/v1alpha1
+kind: PluginPreset
+metadata:
+  name: thanos-global
+  namespace: {{ .Chart.Name }}
+  labels:
+    greenhouse.sap/owned-by: observability
+{{- if .Values.global.fluxEnabled }}
+    greenhouse.sap/deployment-tool: "flux"
+  annotations:
+    "greenhouse.sap/propagate-labels": "greenhouse.sap/owned-by,greenhouse.sap/deployment-tool"
+{{- else }}
+  annotations:
+    "greenhouse.sap/propagate-labels": "greenhouse.sap/owned-by"
+{{- end }}
+spec:
+  clusterSelector:
+    matchExpressions:
+    - key: greenhouse.sap/pluginpreset
+      operator: In
+      values:
+      - "true"
+{{- with .Values.thanos.globalClusters }}
+    - key: cluster
+      operator: In
+      values:
+        {{- range $cluster := $.Values.thanos.globalClusters }}
+        - {{ $cluster.name }}
+        {{- end }}
+  clusterOptionOverrides:
+  {{ include "thanos.storeEndpoints" $ | nindent 4 }}
+{{- end }}  
+  plugin:
+    displayName: Thanos global
+    pluginDefinition: thanos
+    releaseNamespace: kube-monitoring
+    optionValues:
+    {{- if and .Values.global.quayIoMirror .Values.global.ghcrIoMirror .Values.global.dockerHubMirror }}
+    - name: thanos.image.repository
+      value: {{ printf "%s/thanos/thanos" .Values.global.quayIoMirror }}
+    - name: thanos.initChownData.image.registry
+      value: {{ .Values.global.dockerHubMirror }}
+    - name: testFramework.image.registry
+      value: {{ .Values.global.ghcrIoMirror }}
+    {{- end }}
+    - name: thanos.query.serviceLabels
+      value:
+        greenhouse.sap/expose: "true"
+        greenhouse.sap/exposeNamedPort: http
+    - name: thanos.query.persesDatasource.create
+      value: true
+    - name: thanos.query.persesDatasource.selector
+      value:
+        perses.dev/global-resource: "true"
+    - name: thanos.query.plutonoDatasource.create
+      value: true
+    - name: thanos.query.plutonoDatasource.selector
+      value:
+        plutono-global: "true"
+    - name: thanos.store.enabled
+      value: false
+    - name: thanos.compactor.enabled
+      value: false
+    - name: thanos.query.tls.data.caCert
+      valueFrom:
+        secret:
+          key: ca.crt
+          name: thanos-{{ .Chart.Name }}-tls
+    - name: thanos.query.tls.data.tlsCert
+      valueFrom:
+        secret:
+          key: tls.crt
+          name: thanos-{{ .Chart.Name }}-tls
+    - name: thanos.query.tls.data.tlsKey
+      valueFrom:
+        secret:
+          key: tls.key
+          name: thanos-{{ .Chart.Name }}-tls
+    - name: thanos.ruler.alertmanagers.authentication.enabled
+      value: false
+    - name: thanos.serviceMonitor.alertLabels
+      value: |
+        support_group: observability
+        service: metrics
+{{- end }}

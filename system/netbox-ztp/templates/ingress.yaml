@@ -1,0 +1,27 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    disco: "true"
+    ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    kubernetes.io/tls-acme: "true"
+  labels:
+    app.kubernetes.io/name: netbox-ztp-web
+  name: netbox-ztp-web
+spec:
+  rules:
+  - host: netbox-ztp-web.{{ .Values.global.region }}.cloud.sap
+    http:
+      paths:
+      - backend:
+          service:
+            name: netbox-ztp-web
+            port:
+              name: http
+        path: /
+        pathType: Prefix
+  tls:
+  - hosts:
+    - netbox-ztp-web.{{ .Values.global.region }}.cloud.sap
+    secretName: netbox-ztp-web

@@ -1,0 +1,65 @@
+kind: Deployment
+apiVersion: apps/v1
+
+metadata:
+  name: validation
+  namespace: {{ .Values.validation.namespace }}
+
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: validation
+  template:
+    metadata:
+      labels:
+        name: validation
+      annotations:
+        {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+        linkerd.io/inject: enabled
+        config.linkerd.io/skip-inbound-ports: "22,443,9125"
+        config.linkerd.io/skip-outbound-ports: "22,443,9125"
+        {{- end }}
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") $ | sha256sum }}
+    spec:
+      volumes:
+        - name: cc3test-config
+          configMap:
+            name: cc3test-config
+        - name: validation-config
+          configMap:
+            name: validation-config
+        - name: cc3test-secrets
+          secret:
+            secretName: cc3test-secrets
+      containers:
+        - name: validation
+          image: {{ required ".Values.global.registry variable missing" .Values.global.registry }}/{{ required ".Values.validation.image.name variable missing" .Values.validation.image.name }}:{{ required ".Values.validation.image.tag variable missing" .Values.validation.image.tag }}
+          command: ["/bin/sh"]
+          args: ["-c", "while true; do date; sleep 5; done"]
+          volumeMounts:
+            - name: cc3test-config
+              mountPath: /cc3test/config
+              readOnly: true
+            - name: validation-config
+              mountPath: /cc3test/validation
+              readOnly: true
+            - name: cc3test-secrets
+              mountPath: /cc3test/secrets
+              readOnly: true
+          livenessProbe:
+            exec:
+              command:
+                - pytest
+                - --version
+            timeoutSeconds: 5
+            periodSeconds: 15
+            initialDelaySeconds: 15
+          readinessProbe:
+            exec:
+              command:
+                - pytest
+                - --version
+            timeoutSeconds: 5
+            periodSeconds: 15
+            initialDelaySeconds: 15

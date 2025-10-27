@@ -1,0 +1,55 @@
+{{ $envAll := . }}
+{{- $cells := dict "cell1" false }}
+{{- if .Values.cell2.enabled }}
+  {{- $_ := set $cells .Values.cell2.name true }}
+{{- end }}
+kind: Ingress
+apiVersion: networking.k8s.io/v1
+
+metadata:
+  name: nova-console
+  labels:
+    system: openstack
+    type: backend
+    component: nova
+  annotations:
+    ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    ingress.kubernetes.io/rewrite-target: "/$1"
+    nginx.ingress.kubernetes.io/rewrite-target: "/$1"
+  {{- if .Values.use_tls_acme }}
+    kubernetes.io/tls-acme: "true"
+  {{- end }}
+    {{- include "utils.linkerd.ingress_annotation" . | indent 4 }}
+spec:
+  tls:
+  - secretName: tls-{{include "nova_console_endpoint_host_public" . | replace "." "-" }}
+    hosts: [{{include "nova_console_endpoint_host_public" .}}]
+  rules:
+  - host: {{include "nova_console_endpoint_host_public" .}}
+    http:
+      paths:
+      {{- range $cell_name, $_ := $cells }}
+        {{- range $type, $config := $envAll.Values.consoles }}
+          {{- if $config.enabled }}
+            {{- $name := print $cell_name "-" $type }}
+      - path: /{{ $cell_name }}/{{ $type }}/?(.*)
+        pathType: Prefix
+        backend:
+          service:
+            name: nova-console-{{ $name }}
+            port:
+              name: {{ $type }}
+          {{- end }}
+        {{- end }}
+      {{- end }}
+
+{{- range $cell_name, $_ := $cells }}
+  {{- range $type, $config := $envAll.Values.consoles }}
+    {{- if $config.enabled }}
+      {{- $name := print $cell_name "-" $type }}
+---
+{{ tuple $envAll $name $type $config | include "nova.console_service"  }}
+    {{- end }}
+  {{- end }}
+{{- end }}

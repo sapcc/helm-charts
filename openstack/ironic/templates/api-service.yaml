@@ -1,0 +1,20 @@
+kind: Service
+apiVersion: v1
+
+metadata:
+  name: ironic-api
+  labels:
+    system: openstack
+    type: api
+    component: ironic
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
+    {{- include "utils.linkerd.pod_and_service_annotation" . | indent 4 }}
+spec:
+  selector:
+    name: ironic-api
+  ports:
+    - name: ironic-api
+      port: {{.Values.global.ironicApiPortInternal}}
+      targetPort: ironic-api

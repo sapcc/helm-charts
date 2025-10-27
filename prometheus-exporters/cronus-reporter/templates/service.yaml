@@ -1,0 +1,21 @@
+{{- $app := "reporter" }}
+{{- $val := .Values.reporter }}
+{{- if $val.enabled -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: "cronus-{{ $app }}"
+  labels:
+    app: "cronus-{{ $app }}"
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: {{ $val.prometheusPort | quote}}
+    prometheus.io/targets: {{ required ".Values.global.alerts.prometheus missing" .Values.global.alerts.prometheus | quote }}
+spec:
+  type: ClusterIP
+  ports:
+    - name: metrics
+      port: {{ $val.prometheusPort }}
+      targetPort: {{ $val.prometheusPort }}
+      protocol: TCP
+{{- end -}}

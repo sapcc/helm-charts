@@ -1,0 +1,84 @@
+{{- if .Values.snmp_exporter.f5.enabled }}
+apiVersion: monitoring.coreos.com/v1alpha1
+kind: ScrapeConfig
+metadata:
+  name: snmp-exporter-f5customer
+  namespace: infra-monitoring
+  labels:
+    prometheus: {{ .Values.snmp_exporter.aggregations.prometheus }}
+    app.kubernetes.io/name: snmp-exporter-f5customer
+spec:
+  httpSDConfigs:
+    - url: {{ .Values.http_sd_configs.netbox_url }}/devices/?custom_labels=__param_module=f5customer;__param_auth=f5_v3&manufacturer=f5&status=active&region={{ .Values.global.region }}&tag=cc-net-f5-guest-lbaas&target_in_name=False
+      refreshInterval: {{ .Values.http_sd_configs.refresh_interval }}
+  metricsPath: /snmp
+  scrapeInterval: 60s
+  scrapeTimeout: 50s
+  relabelings:
+    - sourceLabels: [__address__]
+      targetLabel: __param_target
+    - sourceLabels: [__param_target]
+      targetLabel: instance
+    - targetLabel: __address__
+      replacement: snmp-exporter:{{.Values.snmp_exporter.listen_port}}
+    - targetLabel: module
+      replacement: f5customer
+    - targetLabel: __param_auth
+      replacement: f5_v3
+  metricRelabelings:
+    - sourceLabels: [name]
+      targetLabel:  devicename
+    - sourceLabels: [devicename]
+      regex: '(\w*-\w*-\w*)-(\S*)'
+      replacement: '$1'
+      targetLabel: availability_zone
+    - sourceLabels: [__name__, snmp_f5_sysProductVersion]
+      regex: 'snmp_f5_sysProductVersion;(.*)'
+      replacement: '$1'
+      targetLabel: image_version
+    - sourceLabels: [devicename]
+      regex: '(\w*-\w*-\w*)-(\S*)'
+      replacement: '$1'
+      targetLabel: availability_zone
+    - sourceLabels: [ltmVirtualServStatName]
+      regex: /Common.*
+      action: drop
+    - action: replace
+      sourceLabels: [ltmVirtualServStatName]
+      targetLabel: network_id
+      regex: /net_(.+)_(.+)_(.+)_(.+)_(.+)/lb_.*
+      replacement: $1-$2-$3-$4-$5
+    - action: replace
+      sourceLabels: [ltmVirtualServStatName]
+      targetLabel: loadbalancer_id
+      regex: /net_.*/lb_(.*)/listener_.*
+    - action: replace
+      sourceLabels: [snmp_f5_ltmVirtualServStatName]
+      targetLabel: listener_id
+      regex: /net_.*/lb_.*/listener_(.*)
+      replacement: '$1'
+    - sourceLabels: [__name__]
+      regex: 'snmp_f5_ltmVirtualServStatClientBytesIn'
+      targetLabel: __name__
+      replacement: 'snmp_f5_ltmVirtualServStatClientBytesIn_slb'
+    - sourceLabels: [__name__] 
+      regex: 'snmp_f5_ltmVirtualServStatClientBytesOut'
+      targetLabel: __name__
+      replacement: 'snmp_f5_ltmVirtualServStatClientBytesOut_slb'
+    - sourceLabels: [__name__]
+      regex: 'snmp_f5_ltmVirtualServStatClientCurConns'
+      targetLabel: __name__
+      replacement: 'snmp_f5_ltmVirtualServStatClientCurConns_slb'
+    - sourceLabels: [__name__]
+      regex: 'snmp_f5_ltmVirtualServStatClientMaxConns'
+      targetLabel: __name__
+      replacement: 'snmp_f5_ltmVirtualServStatClientMaxConns_slb'
+    - sourceLabels: [__name__]
+      regex: 'snmp_f5_ltmVirtualServStatClientTotConns'
+      targetLabel: __name__
+      replacement: 'snmp_f5_ltmVirtualServStatClientTotConns_slb'
+    - sourceLabels: [__name__]
+      regex: 'snmp_f5_ltmVirtualServStatTotRequests'
+      targetLabel: __name__
+      replacement: 'snmp_f5_ltmVirtualServStatTotRequests_slb'
+{{- end }}

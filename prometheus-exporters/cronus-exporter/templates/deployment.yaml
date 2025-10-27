@@ -1,0 +1,60 @@
+{{- $values := .Values }}
+{{- if .Values.exporter.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cronus-exporter
+  {{- if .Values.exporter.annotations }}
+  annotations:
+    {{ toYaml .Values.exporter.annotations | indent 4 }}
+  {{- end  }}
+  {{- if .Values.exporter.labels }}
+  labels:
+    {{ toYaml .Values.exporter.labels | indent 4 }}
+  {{- end }}
+spec:
+  replicas: {{ .Values.exporter.replicas }}
+  strategy:
+    type: {{ .Values.exporter.updateStrategy }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: cronus-exporter
+      app.kubernetes.io/instance: cronus-exporter
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include "cronus-exporter/templates/_config.yaml.tpl" . | sha256sum }}
+        prometheus.io/scrape: "true"
+        prometheus.io/port: {{ .Values.exporter.prometheusPort | quote}}
+        prometheus.io/targets: {{ required ".Values.global.alerts.prometheus missing" $values.global.alerts.prometheus | quote }}
+      labels:
+        app.kubernetes.io/name: cronus-exporter
+        app.kubernetes.io/instance: cronus-exporter
+    spec:
+      serviceAccountName: cronus-exporter
+      containers:
+        - name: cronus-exporter
+          image: "{{ .Values.exporter.image.name }}:{{ .Values.exporter.image.tag }}"
+          imagePullPolicy: IfNotPresent
+          args:
+            - "-config=/cronus-exporter/config.yaml"
+          envFrom:
+            - secretRef:
+                name: cronus-exporter-secret
+          volumeMounts:
+            - name: cronus-exporter-config
+              mountPath: "/cronus-exporter/config.yaml"
+              subPath: config.yaml
+          ports:
+            - name: http
+              containerPort: {{ .Values.exporter.prometheusPort }}
+              protocol: TCP
+      restartPolicy: Always
+      volumes:
+        - name: cronus-exporter-config
+          configMap:
+            name: cronus-exporter-config
+            items:
+              - key: config.yaml
+                path: config.yaml
+{{ end -}}

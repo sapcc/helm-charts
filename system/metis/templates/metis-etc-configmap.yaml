@@ -1,0 +1,64 @@
+{{- if .Values.metis.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name:  metis-etc
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: metis
+    app.kubernetes.io/instance: metis-{{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+data:
+  config.yaml: |
+    region: {{ .Values.global.region }}
+    billing:
+      sync_cron_schedule: "0 */6 * * *"
+      api_host: {{ required "Missing required global billing API endpoint" .Values.metis.billingApiHost}}
+    vcenter:
+      enabled: {{ .Values.metis.vcenter.enabled }}
+      sync_cron_schedule: "12 */1 * * *"
+{{- if .Values.metis.prometheus.enabled }}
+    prometheus:
+      enabled: {{ .Values.metis.prometheus.enabled }}
+      prometheusURL: "http://prometheus-openstack.prometheus-openstack.svc:9090"
+      cronSchedule: "*/30 * * * *"
+{{- end }}
+    db:
+      host: metisdb-mariadb.metis
+      port: 3306
+      releaseLocks: {{ .Values.metis.releaseLocks }}
+      migration_version: {{ .Values.metis.migration_version }}
+{{- if .Values.metis.views_enabled }}
+      views:
+  {{- if or ( .Values.metis.requiredDatabases ) ( .Values.metis.extraRequiredDatabases)}}
+        required_databases:
+    {{- if .Values.metis.requiredDatabases }}
+{{ toYaml .Values.metis.requiredDatabases | indent 10 }}
+    {{- end }}
+    {{- if .Values.metis.extraRequiredDatabases }}
+{{ toYaml .Values.metis.extraRequiredDatabases | indent 10 }}
+    {{- end }}
+  {{- end }}
+  {{- if or ( .Values.metis.requiredTables ) ( .Values.metis.extraRequiredTables )}}
+        required_tables:
+    {{- if .Values.metis.requiredTables }}
+{{ toYaml .Values.metis.requiredTables | indent 10 }}
+    {{- end }}
+    {{- if .Values.metis.extraRequiredTables }}
+{{ toYaml .Values.metis.extraRequiredTables | indent 10 }}
+    {{- end }}
+  {{- end }}
+  {{- if or .Values.metis.views .Values.metis.extraViews  }}
+        definitions:
+    {{- if .Values.metis.views }}
+{{ toYaml $.Values.metis.views | indent 10 }}
+    {{- end }}
+    {{- if .Values.metis.extraViews }}
+{{ toYaml $.Values.metis.extraViews | indent 10 }}
+    {{- end }}
+  {{ end }}
+{{- end }}
+    metrics:
+      port: {{ .Values.metis.metrics.port }}
+      path: {{ .Values.metis.metrics.path }}
+{{ end }}

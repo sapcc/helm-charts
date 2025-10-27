@@ -1,0 +1,27 @@
+{{- if or (.Capabilities.APIVersions.Has "vcenter-operator.stable.sap.cc/v1") (.Values.isImageTransportTemplating | default false) }}
+apiVersion: vcenter-operator.stable.sap.cc/v1
+kind: VCenterTemplate
+metadata:
+  name: 'vcenter-datacenter-cinder-backup-configmap'
+options:
+  scope: 'datacenter'
+  jinja2_options:
+    variable_start_string: '{='
+    variable_end_string: '=}'
+template: |
+  apiVersion: v1
+  kind: ConfigMap
+  metadata:
+    name: backup-vmware-{= name =}
+    labels:
+      system: openstack
+      type: configuration
+      component: cinder
+      vcenter: {= host =}
+      datacenter: {= availability_zone =}
+  data:
+    cinder-backup.conf: |
+      [DEFAULT]
+      host = cinder-backup-{= name =}
+      storage_availability_zone = {= availability_zone | quote =}
+{{- end }}

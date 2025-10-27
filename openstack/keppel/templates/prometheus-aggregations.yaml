@@ -1,0 +1,19 @@
+{{- range $target := list "kubernetes" "openstack" }}
+{{- range $path, $bytes := $.Files.Glob (printf "aggregations/%s/*.rules" $target) }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+
+metadata:
+  name: {{ replace "/" "-" $path }}
+  labels:
+    app: keppel-api
+    tier: os
+    type: aggregation-rules
+    prometheus: {{ $target }}
+
+spec:
+{{ printf "%s" $bytes | indent 2 }}
+
+{{- end }}
+{{- end }}

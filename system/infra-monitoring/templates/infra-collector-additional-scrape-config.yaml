@@ -1,0 +1,18 @@
+{{- $values := .Values.prometheus_infra_collector }}
+{{- if $values.enabled }}
+apiVersion: v1
+kind: Secret
+
+metadata:
+  name: {{ $values.name }}-additional-scrape-config
+  labels:
+    prometheus: {{ $values.name }}
+
+data:
+{{- if eq .Values.global.region "qa-de-2"}}
+  scrape-config.yaml: {{ include (print $.Template.BasePath "/_prometheus-infra-collector_qa-de-2.yaml.tpl") . | b64enc }}
+{{- else }}
+  scrape-config.yaml: {{ include (print $.Template.BasePath "/_prometheus-infra-collector.yaml.tpl") . | b64enc }}
+{{- end }}
+
+{{- end }}

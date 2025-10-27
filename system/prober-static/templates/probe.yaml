@@ -1,0 +1,37 @@
+{{- if .Values.enabled }}
+{{- $values := .Values -}}
+
+{{- range $i, $probes := .Values.probes -}}
+{{ if ne $i 0 }}---{{ end }}
+
+apiVersion: monitoring.coreos.com/v1
+kind: Probe
+
+metadata:
+  name: {{$probes.name}}
+  labels:
+    prometheus: {{ $values.prometheusName }}
+
+spec:
+  jobName: {{$probes.name}}
+  prober:
+    url: prober.{{ default $values.global.region $probes.region }}.cloud.sap
+    scheme: {{ $values.scheme }}
+  module: {{ $probes.module }}
+  interval: {{ default $values.scrapeInterval $probes.scrapeInterval }}
+  scrapeTimeout: {{ default $values.scrapeTimeout $probes.scrapeTimeout }}
+  targets:
+    staticConfig:
+      static:
+        {{- range $probes.static_targets }}
+        - {{ . }}
+        {{- end }}
+      labels:
+        region: {{ $values.global.region }}
+{{- if $probes.extraLabels }}
+{{ toYaml $probes.extraLabels | indent 8 }}
+{{- end }}
+
+---
+{{ end -}}
+{{ end -}}

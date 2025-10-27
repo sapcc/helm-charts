@@ -1,0 +1,520 @@
+# Default values for designate.
+# This is a YAML-formatted file.
+# Declare name/value pairs to be passed into your templates.
+# name: value
+#
+debug: "True"
+
+tempest_enabled: false
+nanny_enabled: false
+
+dbType: "mariadb"
+
+sentry:
+  enabled: true
+
+global:
+  db_region: ""
+  dbUser: "designate"
+  designate_api_endpoint_protocol_admin: http
+  designate_api_endpoint_protocol_internal: http
+  designate_api_endpoint_protocol_public: https
+  designate_public_api: ""
+  designate_api_port_internal: '9001'
+  designate_api_port_admin: '9001'
+  designate_api_port_public: '443'
+  designate_metrics_port: '9102'
+  designate_mdns_port_public: '5354'
+  designate_mdns_service_ip:
+  designate_mdns_akamai_ip:
+  designate_service_user: designate
+  is_global_region: false
+  domain_seeds:
+    customer_domains: []
+  linkerd_requested: false
+
+pod:
+  replicas:
+    api: 3
+    central: 3
+    mdns: 2
+    poolmanager: 1
+    producer: 4
+    worker: 3
+    sink: 1
+  lifecycle:
+    upgrades:
+      deployments:
+        revision_history: 5
+        pod_replacement_strategy: RollingUpdate
+        rolling_update:
+          max_unavailable: 0
+          max_surge: 1
+
+mdns_workers: 2
+producer_workers: 2
+worker_workers: 2
+central_workers: 2
+api_workers: 4
+
+# image_version_designate:  DEFINED-IN-REGION-CHART
+imageVersionTempest: "latest"
+
+bind_pools:
+  - name: default
+    nameservers: []
+    options: {}
+
+rndc_keys:
+- name: DEFINED-IN-REGION-CHART
+  algorithm: DEFINED-IN-REGION-CHART
+  secret: DEFINED-IN-REGION-CHART
+
+db_name: designate
+pool_id: 794ccc2c-d751-44fe-b57f-8894c9f5c842
+scheduler_filters: attribute, pool_id_attribute, in_doubt_default_pool, fallback
+sink_enabled: False
+
+quota_api_export_size: 100000
+
+worker_enabled: True
+worker_notify: True
+worker_poll_timeout: '30'
+worker_poll_retry_interval: '15'
+worker_poll_max_retries: '100'
+worker_threshold_percentage: '100'
+worker_poll_max_prop_time: '100'
+worker_poll_delay: '3'
+worker_all_tcp: True
+
+zone_purge:
+  interval: '3600'
+  per_page: '200'
+  time_threshold: '2592000'
+  batch_size: '200'
+
+percona_cluster:
+  enabled: false
+  db_name: designate
+  db_user: designate
+  alerts:
+    support_group: coredns
+
+proxysql:
+  mode: host_alias
+  connect_retries_delay: 1000
+  max_connections_per_proc: 20
+  native_sidecar: true
+
+mariadb:
+  enabled: true
+  name: designate
+  initdb_secret: designate-initdb
+  persistence_claim:
+    name: db-designate-pvclaim
+  alerts:
+    support_group: coredns
+  backup:
+    enabled: false
+  ccroot_user:
+    enabled: true
+  databases:
+  - designate
+  users:
+    designate:
+      name: designate
+      grants:
+      - "ALL PRIVILEGES on designate.*"
+  backup_v2:
+    verification:
+      enabled: false
+      run_after_inc_backups: 12
+    enabled: true
+    databases:
+      - designate
+    verify_tables:
+      - designate.zones
+      - designate.quotas
+    oauth:
+      client_id: "designate"
+
+pxc_db:
+  enabled: false
+  name: designate
+  initdb_job: true
+  alerts:
+    support_group: coredns
+  ccroot_user:
+    enabled: true
+  databases:
+    - designate
+  users:
+    designate:
+      name: designate
+      grants:
+      - "ALL PRIVILEGES on designate.*"
+  pxc:
+    resources:
+      requests:
+        memory: 1Gi
+    persistence:
+      size: 10Gi
+  backup:
+    enabled: false
+    s3:
+      secrets:
+        aws_access_key_id: null
+        aws_secret_access_key: null
+      config:
+        region:  DEFINED-IN-SECRETS
+        endpointUrl: DEFINED-IN-SECRETS
+    pitr:
+      enabled: false
+
+mysql_metrics:
+  enabled: true
+  db_name: designate
+  db_user: designate
+  customMetrics:
+    - name: openstack_designate_zones
+      help: "zones grouped by status and project"
+      labels:
+        - "zone_name"
+        - "status"
+        - "project_id"
+      values:
+        - "count_gauge"
+      query:  |
+              SELECT
+                name AS zone_name,
+                status,
+                tenant_id AS project_id,
+                COUNT(*) AS count_gauge
+              FROM zones
+              GROUP BY
+                name,
+                status,
+                tenant_id
+
+    - name: openstack_designate_zones_stuck_pending
+      help: "zones that stuck in pending state at least for 10 mins"
+      labels:
+        - "zone_name"
+        - "project_id"
+      values:
+        - "count_gauge"
+      query:  |
+              SELECT
+                name AS zone_name,
+                tenant_id AS project_id,
+                updated_at,
+                COUNT(*) AS count_gauge
+              FROM zones
+              WHERE status='PENDING' AND (updated_at < DATE_SUB(now(), INTERVAL 10 MINUTE))
+              GROUP BY
+                name,
+                tenant_id,
+                updated_at
+              UNION SELECT 'none' AS zone_name, 'none' AS project_id, 'none' AS updated_at, 0 AS count_gauge;
+
+    - name: openstack_designate_zones_stuck_max_duration
+      help: "max duration for zones that stuck in non active state"
+      labels:
+        - "zone_name"
+        - "project_id"
+        - "status"
+      values:
+        - "max_duration_gauge"
+      query:  |
+              SELECT
+                name AS zone_name,
+                tenant_id AS project_id,
+                status,
+                MAX(NOW() - updated_at) AS max_duration_gauge
+              FROM zones
+              WHERE deleted=False AND status in ('DELETING','CREATING','PENDING') AND (updated_at < DATE_SUB(now(), INTERVAL 10 MINUTE))
+              GROUP BY
+                name,
+                tenant_id,
+                status
+              UNION SELECT 'none' AS zone_name, 'none' AS project_id, 'none' AS status, 0 AS max_duration_gauge;
+
+    - name: openstack_designate_records
+      help: "records count grouped by status"
+      labels:
+        - "status"
+        - "zone_id"
+      values:
+        - "count_gauge"
+      query:  |
+              SELECT
+                zone_id,
+                status,
+                count(id) AS count_gauge
+              FROM records
+              GROUP BY
+                zone_id,
+                status
+
+cors:
+  enabled: false
+
+logging:
+  formatters:
+    context:
+      class: oslo_log.formatters.ContextFormatter
+    default:
+      format: "%(message)s"
+  handlers:
+    stdout:
+      class: StreamHandler
+      args: "(sys.stdout,)"
+      formatter: context
+    "null":
+      class: logging.NullHandler
+      args: "()"
+      formatter: default
+    sentry:
+      class: raven.handlers.logging.SentryHandler
+      level: ERROR
+      args: "()"
+  loggers:
+    root:
+      handlers: stdout, sentry
+      level: WARNING
+    designate:
+      handlers: stdout, sentry
+      level: DEBUG
+    amqp:
+      handlers: stdout, sentry
+      level: WARNING
+    amqplib:
+      handlers: stdout, sentry
+      level: WARNING
+    boto:
+      handlers: stdout, sentry
+      level: WARNING
+    eventlet.wsgi.server:
+      handlers: stdout, sentry
+      level: INFO
+    sqlalchemy:
+      handlers: stdout, sentry
+      level: WARNING
+    auditmiddleware:
+      handlers: stdout, sentry
+      level: INFO
+
+audit:
+  enabled: true
+  # do by default not attach the request payloads of create/update calls to the event
+  record_payloads: true
+  metrics_enabled: true
+  # how many messages to buffer before dumping to log (when rabbit is down or too slow)
+  mem_queue_size: 1000
+  central_service:
+    user: rabbitmq
+    password: null
+
+memcached:
+  server_ips_ports: []
+  alerts:
+    support_group: coredns
+
+rabbitmq:
+  enabled: true
+  use_alternate_registry: true
+  ports:
+    public: 5672
+    management: 15672
+  name: designate
+  users:
+    default:
+      user: openstack
+      password: welcome
+    admin:
+      user: admin
+      password: secret
+  alerts:
+    support_group: coredns
+  metrics:
+    enabled: true
+    sidecar:
+      enabled: false
+    enableDetailedMetrics: true
+    enablePerObjectMetrics: true
+
+rabbitmq_notifications:
+  use_alternate_registry: true
+  name: designate
+  users:
+    default:
+      user: rabbitmq
+      password: DEFINED-IN-SECRETS
+    admin:
+      user: admin
+      password: DEFINED-IN-SECRETS
+
+resources:
+  api:
+    requests:
+      memory: "256Mi"
+      cpu: "100m"
+    limits:
+      memory: "2048Mi"
+      cpu: "4000m"
+  central:
+    requests:
+      cpu: "250m"
+      memory: "256Mi"
+    limits:
+      cpu: "5000m"
+      memory: "8192Mi"
+  mdns:
+    requests:
+      memory: "256Mi"
+      cpu: "250m"
+    limits:
+      memory: "4096Mi"
+      cpu: "5000m"
+  worker:
+    requests:
+      memory: "256Mi"
+      cpu: "250m"
+    limits:
+      memory: "2048Mi"
+      cpu: "2000m"
+
+# openstack-watcher-middleware
+watcher:
+  enabled: true
+
+rbac:
+  enabled: true
+
+metrics:
+  prometheus: openstack
+
+# Deploy Designate Prometheus alerts.
+alerts:
+  enabled: true
+  # Name of the Prometheus to which the alerts should be assigned to.
+  # Keys = directory names in alerts/ and aggregations/
+  prometheus:
+    openstack: openstack
+    kubernetes: kubernetes
+  support_group: coredns
+
+osprofiler:
+  enabled: false
+
+coordinationBackend: "file"
+coordination:
+  central:
+    enabled: false
+
+owner-info:
+  support-group: coredns
+  service: designate
+  maintainers:
+    - Matthias Braun
+    - Soenke Lange
+    - Florian Streibelt
+    - Vassil Dimitrov
+    - Torsten Sachse
+  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/openstack/designate
+
+utils:
+  trust_bundle:
+    enabled: true
+
+vpa:
+  # https://github.com/sapcc/vpa_butler
+  # The maximum available capacity is split evenly across containers specified in the Deployment, StatefulSet or DaemonSet to derive the upper recommendation bound. This does not work out for pods with a single resource-hungry container with several sidecar containers
+  # Annotate the Deployment, StatefulSet or DaemonSet with vpa-butler.cloud.sap/main-container=$MAIN_CONTAINER. That will distribute 75% of the maximum available capacity to the main container and the rest evenly across all others
+  set_main_container: true
+
+# used to set the PYTHONWARNINGS environment variable everywhere
+python_warnings: "ignore:Unverified HTTPS request,ignore::SyntaxWarning"
+
+# openstack-rate-limit
+api-ratelimit-redis:
+  persistence:
+    enabled: false
+  alerts:
+    support_group: coredns
+
+rate_limit:
+  enabled: true
+  backend_secret_file: /etc/designate/ratelimit-backend-secret.conf
+  rate_limit_by: target_project_id
+  max_sleep_time_seconds: 0
+  log_sleep_time_seconds: 10
+  backend_timeout_seconds: 1
+  whitelist:
+    - Default/service
+    - Default/admin
+    - tempest/performance-testing
+    - ccadmin/cloud_admin
+    - ccadmin/master
+  whitelist_users: null
+  blacklist: null
+  blacklist_users: null
+  groups:
+    write:
+      - delete
+      - update
+  rates:
+    default:
+      zones:
+        - action: read/list
+          limit: 200r/m
+        - action: create
+          limit: 100r/m
+      zones/zone:
+        - action: read/list
+          limit: 200r/m
+        - action: write
+          limit: 100r/m
+      zones/zone/*:
+        - action: read/list
+          limit: 100r/m
+        - action: create
+          limit: 100r/m
+        - action: write
+          limit: 100r/m
+      recordsets:
+        - action: read/list
+          limit: 100r/m
+      reverse/floatingips:
+        - action: read/list
+          limit: 100r/m
+      reverse/floatingips/*:
+        - action: read/list
+          limit: 100r/m
+        - action: write
+          limit: 100r/m
+      tsigkeys:
+        - action: read/list
+          limit: 100r/m
+      blacklists:
+        - action: read/list
+          limit: 100r/m
+      tlds:
+        - action: read/list
+          limit: 100r/m
+      pools:
+        - action: read/list
+          limit: 100r/m
+      limits:
+        - action: read/list
+          limit: 100r/m
+      quotas:
+        - action: read/list
+          limit: 100r/m
+      service_statuses/*:
+        - action: read/list
+          limit: 100r/m
+      service_statuses:
+        - action: read/list
+          limit: 100r/m
+

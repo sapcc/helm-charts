@@ -1,0 +1,20 @@
+{{- $values := .Values -}}
+{{- if $values.snmp_exporter.alerts.enabled }}
+{{- range $path, $bytes := .Files.Glob "alerts/*.alerts" }}
+{{- if contains $values.snmp_ntp_exporter.alerts.routerModel $path }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+
+metadata:
+  name: {{ printf "snmp-ntp-exporter-%s" $path | replace "/" "-" }}
+  labels:
+    app: snmp-ntp-exporter
+    prometheus: {{ required ".Values.snmp_exporter.alerts.prometheus missing" $values.snmp_exporter.alerts.prometheus }}
+    
+spec:
+{{ printf "%s" $bytes | indent 2 }}
+
+{{- end }}
+{{- end }}
+{{- end }}

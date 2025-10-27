@@ -1,0 +1,37 @@
+# vim: set ft=yaml:
+
+groups:
+- name: openstack-manila-nanny.alerts
+  rules:
+
+  - alert: OpenstackManilaShareAffinityViolated
+    expr: count(max by (share_id)(rate(manila_nanny_affinity_rule_violation{share_id!="none"}[15m]))) > 0
+    for: 12h
+    labels:
+      dashboard: manila
+      no_alert_on_absence: "true"
+      playbook: docs/support/playbook/manila/share_affinity
+      service: manila
+      severity: info
+      support_group: storage
+      tier: os
+      context: manila-affinity
+    annotations:
+      description: Shares with violated affinity rules are detected
+      summary: Share affinity rules violated
+
+  - alert: OpenstackManilaShareAntiAffinityViolated
+    expr: count(max by (share_id)(rate(manila_nanny_anti_affinity_rule_violation{share_id!="none"}[15m]))) > 0
+    for: 12h
+    labels:
+      dashboard: manila
+      no_alert_on_absence: "true"
+      playbook: docs/support/playbook/manila/share_affinity
+      service: manila
+      severity: info
+      support_group: storage
+      tier: os
+      context: manila-anti-affinity
+    annotations:
+      description: Shares with violated anti-affinity rules are detected
+      summary: Share anti-affinity rules violated

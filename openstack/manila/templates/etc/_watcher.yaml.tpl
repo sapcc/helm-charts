@@ -1,0 +1,34 @@
+path_keywords:
+  - availability-zones: zone
+  - defaults
+  - export_locations
+  - extensions
+  - extra_specs
+  - limits
+  - messages
+  - metadata: key
+  - os-share-unmanage: share
+  - pools
+  - quota-sets
+  - quota-class-sets
+  - scheduler-stats
+  - security-services
+  - services
+  - share-group-snapshots
+  - share-group-types
+  - share-groups
+  - share-instances
+  - share-networks
+  - share-replicas
+  - share-servers
+  - share_groups
+  - share_instances
+  - shares
+  - snapshot-instances
+  - snapshots
+  - types
+  - exports
+
+keyword_exclusions:
+  - manage
+  - export

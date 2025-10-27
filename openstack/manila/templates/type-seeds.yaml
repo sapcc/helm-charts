@@ -1,0 +1,37 @@
+{{- if .Release.IsUpgrade}}
+{{- if .Values.seeds.all_enabled}}
+{{- if .Capabilities.APIVersions.Has "openstack.stable.sap.cc/v1"}}
+apiVersion: "openstack.stable.sap.cc/v1"
+kind: "OpenstackSeed"
+metadata:
+  name: manila-type-seed
+  labels:
+    component: manila
+    app: manila
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+spec:
+  requires:
+  - monsoon3/manila-seed
+  share_types:
+  {{- range $shareTypeName, $shareTypeValues := .Values.share_types }}
+  {{- $shareTypeValues := kindIs "bool" $shareTypeValues | ternary (dict "enabled" $shareTypeValues) $shareTypeValues }}
+  {{- if $shareTypeValues.enabled }}
+  - name: {{ $shareTypeName }}
+    is_public: {{ $shareTypeValues.is_public | default false }}
+    {{- if $shareTypeValues.description }}
+    description: {{ $shareTypeValues.description | quote }}
+    {{- end }}
+    specs:
+    {{- include "manila_type_seed.specs" . | indent 6 }}
+    extra_specs:
+    {{ $extraSpecs :=  $.Values.share_type_extra_specs | merge (dict "share_backend_name" $shareTypeName) | merge (default (dict) $shareTypeValues.extra_specs) }}
+    {{- range $key, $value := $extraSpecs }}
+      {{ $key }}: {{ $value | quote }}
+    {{- end }}
+  {{- end }}
+  {{- end }}
+{{- end }}
+{{- end }}
+{{- end }}

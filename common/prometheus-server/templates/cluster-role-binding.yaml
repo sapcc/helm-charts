@@ -1,0 +1,23 @@
+{{- $root := . }}
+{{- if .Values.rbac.create }}
+{{- range $name := coalesce .Values.names .Values.global.targets (list .Values.name) }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+
+metadata:
+  name: {{ include "prometheus.fullName" (list $name $root) }}
+  labels:
+    prometheus: {{ include "prometheus.name" (list $name $root) }}
+
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ include "prometheus.fullName" (list $name $root) }}
+
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "serviceAccount.name" (list $name $root) }}
+    namespace: {{ $.Release.Namespace }}
+{{- end }}
+{{- end }}

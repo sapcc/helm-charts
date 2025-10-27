@@ -1,0 +1,16 @@
+{{- range $group := .Values.exporter.collector_groups }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: apic-exporter-{{ $group.name}}
+data:
+  config.yaml: |
+    exporter:
+      log_level: {{ $.Values.exporter.log_level }}
+    aci:
+      apic_hosts: {{ required "missing $.Values.aci.apic_hosts" $.Values.aci.apic_hosts }}
+      apic_user: {{ required "missing $.Values.aci.apic_user" $.Values.aci.apic_user }}
+    collectors:
+{{ toYaml $group.collectors | indent 6 }}
+{{- end }}

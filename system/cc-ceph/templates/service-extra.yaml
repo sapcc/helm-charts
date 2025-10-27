@@ -1,0 +1,31 @@
+{{- if .Values.objectstore.multiInstance.enabled }}
+{{- range $instance := .Values.objectstore.multiInstance.extraInstances }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $instance.service.name }}
+  namespace: {{ $.Release.Namespace }}
+spec:
+{{- if $instance.service.externalIP }}
+  externalIPs:
+  - {{ $instance.service.externalIP }}
+  type: NodePort
+  externalTrafficPolicy: Local
+{{- end }}
+  sessionAffinity: None
+  ports:
+    - port: {{ $instance.service.port }}
+{{- if $instance.gateway.securePort }}
+      targetPort: {{ $instance.service.port }}
+{{- else }}
+      targetPort: 8080 # rgw doesn't listen to 80 port for some reason
+{{- end }}
+      protocol: TCP
+      name: rgw-ssl
+  selector:
+    app: {{ $instance.service.selector.app }}
+    rook_cluster: {{ $instance.service.selector.rook_cluster }}
+    rook_object_store: {{ $instance.name }}
+{{- end }}
+{{- end }}

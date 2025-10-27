@@ -1,0 +1,64 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: {{ include "infraMonitoring.fullname" . }}
+  labels:
+    app: {{ include "infraMonitoring.name" . }}
+    chart: {{ include "infraMonitoring.chart" . }}
+    system: infra_monitoring
+    type: exporter
+spec:
+  selector:
+    matchLabels:
+     app: {{ include "infraMonitoring.name" . }}
+  revisionHistoryLimit: 5
+  replicas: {{ .Values.replicas }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app: {{ include "infraMonitoring.name" . }}
+        release: {{ .Release.Name }}
+        component: ipmi
+    spec:
+      volumes:
+      - name: config
+        configMap:
+          name:  {{ include "infraMonitoring.fullname" . }}
+      containers:
+      - name: {{ include "infraMonitoring.name" . }}
+        volumeMounts:
+        - mountPath: /etc/config
+          name: config
+        resources:
+          requests:
+            memory: "{{ .Values.resources.requests.memory }}"
+            cpu: "{{ .Values.resources.requests.cpu }}"
+          limits:
+            cpu: "{{ .Values.resources.limits.cpu }}"
+            memory: "{{ .Values.resources.limits.memory }}"
+        image: "{{ .Values.global.registry }}/{{ .Values.ipmi_exporter.image.name }}:{{ .Values.ipmi_exporter.image.tag }}"
+        env:
+        - name: APP_ENV
+          value: "{{ .Values.app_env }}"
+        - name: BAREMETAL_IRONIC_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "infraMonitoring.fullname" . }}
+              key: baremetal_ironic_password
+        - name: CP_NETBOX_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "infraMonitoring.fullname" . }}
+              key: cp_netbox_password
+        - name: ESXI_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "infraMonitoring.fullname" . }}
+              key: esxi_password
+        ports:
+        - containerPort: {{ .Values.listen_port }}

@@ -1,0 +1,17 @@
+apiVersion: "openstack.stable.sap.cc/v1"
+kind: "OpenstackSeed"
+metadata:
+  name: sap-flavor-seed
+spec:
+  requires:
+  - monsoon3/nova-flavor-seed
+  flavors:
+{{- range $name := sortAlpha (keys .Values.flavors) }}
+  {{- $values := index $.Values.flavors $name }}
+  {{- if hasKey $values "id" }}
+  - name: {{ $name }}
+    {{- toYaml $values | nindent 4 }}
+  {{- else }}
+  # {{ $name }} has no ID
+  {{- end }}
+{{- end }}

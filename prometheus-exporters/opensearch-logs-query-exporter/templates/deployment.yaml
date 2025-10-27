@@ -1,0 +1,90 @@
+{{- if .Values.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: opensearch-logs-query-exporter
+  namespace: opensearch-logs
+  labels:
+    component: opensearch-logs-query-exporter
+spec:
+  selector:
+    matchLabels:
+      component: opensearch-logs-query-exporter
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        component: opensearch-logs-query-exporter
+      annotations:
+        checksum/configmap.yaml: {{ include  (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        checksum/secrets.yaml: {{ include  (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
+        {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+        linkerd.io/inject: enabled
+        {{- end }}
+        kubectl.kubernetes.io/default-container: "opensearch-logs-query-exporter"
+    spec:
+      nodeSelector:
+        ccloud.sap.com/nodepool: payload
+      restartPolicy: Always
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+      volumes:
+        - name: opensearch-logs-query-exporter
+          configMap:
+            name: opensearch-logs-query-exporter
+      containers:
+        - name: opensearch-logs-query-exporter
+          image: {{.Values.global.registry}}/prometheus-es-exporter:{{ .Values.version }}
+          imagePullPolicy: Always
+          command: [ "prometheus-es-exporter", "-p", "{{.Values.listen_port}}", "--config-dir", "/opensearch-logs-query-exporter/", "--cluster-health-disable", "--indices-stats-disable", "-e", "{{.Values.protocol}}://{{.Values.hostname}}:{{.Values.port}}", "--log-level", "{{.Values.log_level}}", "--nodes-stats-disable" ]
+          env:
+          - name: ES_EXPORTER_BASIC_USER
+            valueFrom:
+              secretKeyRef:
+                name: logs-query-exporter-secrets
+                key: failover_username
+          - name: ES_EXPORTER_BASIC_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: logs-query-exporter-secrets
+                key: failover_password
+          - name: ES_EXPORTER_FAILOVER_BASIC_USER
+            valueFrom:
+              secretKeyRef:
+                name: logs-query-exporter-secrets
+                key: username
+          - name: ES_EXPORTER_FAILOVER_BASIC_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: logs-query-exporter-secrets
+                key: password
+          ports:
+            - name: metrics
+              containerPort: {{ .Values.listen_port }}
+          volumeMounts:
+            - mountPath: /opensearch-logs-query-exporter
+              name: opensearch-logs-query-exporter
+          securityContext:
+            capabilities:
+              drop:
+                - SETPCAP
+                - MKNOD
+                - AUDIT_WRITE
+                - CHOWN
+                - NET_RAW
+                - DAC_OVERRIDE
+                - FOWNER
+                - FSETID
+                - KILL
+                - SETGID
+                - SETUID
+                - NET_BIND_SERVICE
+                - SYS_CHROOT
+                - SETFCAP
+{{- end }}

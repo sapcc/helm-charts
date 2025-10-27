@@ -1,0 +1,47 @@
+{{ if .Values.enabled -}}
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  labels:
+    app.kubernetes.io/name: conntrack-nanny
+  name: conntrack-nanny
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: conntrack-nanny
+  updateStrategy:
+    rollingUpdate:
+      maxUnavailable: '10%'
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: conntrack-nanny
+    spec:
+      priorityClassName: system-node-critical
+      serviceAccountName: conntrack-nanny
+      containers:
+      - name: nanny
+        imagePullPolicy: IfNotPresent
+        image: "{{ required ".Values.images.image is missing" .Values.images.image }}:{{ required ".Values.images.tag is missing" .Values.images.tag }}"
+        securityContext:
+          capabilities:
+            add:
+            - NET_ADMIN
+        resources:
+{{ toYaml .Values.resources | indent 12 }}
+      hostNetwork: true
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+      {{- toYaml . | nindent 8 }}
+      {{- end }}
+      terminationGracePeriodSeconds: 5
+      {{- with .Values.affinity }}
+      affinity:
+      {{ toYaml . | indent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+      {{ toYaml . | indent 8 }}
+      {{- end }}
+{{- end }}

@@ -1,0 +1,89 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: ironic-dnsmasq-b
+  namespace: {{ .Release.Namespace }}
+data:
+  dnsmasq.conf: |
+    interface={{ .Values.dnsmasq.interface }}
+    except-interface=lo
+    bind-dynamic
+    enable-tftp
+    tftp-root=/shared/tftpboot
+    log-queries
+
+    # Configure listening for DNS (0 disables DNS)
+    port=0
+    log-dhcp
+    {{ range $pool := .Values.dnsmasq.dhcpPools }}
+    {{- if ne $pool.dualAz false -}}
+    {{- $ipPoolStart := $pool.ipPoolStart | default (printf "%s.126" $pool.subnetPrefix) -}}
+    {{- $ipPoolEnd := $pool.ipPoolEnd | default (printf "%s.250" $pool.subnetPrefix) -}}
+    dhcp-range=set:{{ $pool.subnetPrefix }},{{ $ipPoolStart }},{{ $ipPoolEnd }},{{ $pool.mask }},{{ $.Values.dnsmasq.leaseTime }}
+    {{ end -}}
+    {{ end }}
+
+    # It can be used when setting DNS or GW variables.
+    # Set default router
+    {{ range $pool := .Values.dnsmasq.dhcpPools }}
+    {{- if ne $pool.dualAz false -}}
+    {{- $router := $pool.router | default (printf "%s.1" $pool.subnetPrefix) -}}
+    dhcp-option=set:{{ $pool.subnetPrefix }},option:router,{{ $router }}
+    {{ end -}}
+    {{ end }}
+
+    # Set dns servers
+    dhcp-option=6,{{ .Values.dnsmasq.dnsServers }}
+    dhcp-option=option:domain-name,cc.{{ .Values.global.region }}.cloud.sap
+
+    # IPv4 Configuration:
+    dhcp-match=ipxe,175
+    # Client is already running iPXE; move to next stage of chainloading
+    dhcp-boot=tag:ipxe,https://metal3-ironic.{{ .Values.global.region }}.{{ .Values.global.tld }}:{{ .Values.ironic.ipxePort }}/boot.ipxe
+
+    # Note: Need to test EFI booting
+    dhcp-match=set:efi,option:client-arch,7
+    dhcp-match=set:efi,option:client-arch,9
+    dhcp-match=set:efi,option:client-arch,11
+    # Client is PXE booting over EFI without iPXE ROM; send EFI version of iPXE chainloader
+    dhcp-boot=tag:efi,tag:!ipxe,snponly.efi
+
+    # Client is running PXE over BIOS; send BIOS version of iPXE chainloader
+    dhcp-boot=/undionly.kpxe,{{ .Values.ironic.externalIP }}
+  rundnsmasq: |
+    #!/usr/bin/bash
+
+    set -eux
+
+    # shellcheck disable=SC1091
+    . /bin/ironic-common.sh
+
+    export HTTP_PORT=${HTTP_PORT:-80}
+    DNSMASQ_EXCEPT_INTERFACE=${DNSMASQ_EXCEPT_INTERFACE:-lo}
+    export DNS_PORT=${DNS_PORT:-0}
+
+    wait_for_interface_or_ip
+    if [[ "${DNS_IP:-}" == "provisioning" ]]; then
+        export DNS_IP="$IRONIC_URL_HOST"
+    fi
+
+    mkdir -p /shared/tftpboot
+    mkdir -p /shared/html/images
+    mkdir -p /shared/html/pxelinux.cfg
+
+    # Copy files to shared mount
+    cp /tftpboot/undionly.kpxe /tftpboot/snponly.efi /shared/tftpboot
+
+    # Template and write dnsmasq.conf
+    # we template via /tmp as sed otherwise creates temp files in /etc directory
+    # where we can't write
+    python3 -c 'import os; import sys; import jinja2; sys.stdout.write(jinja2.Template(sys.stdin.read()).render(env=os.environ))' </etc/dnsmasq.conf.j2 >/tmp/dnsmasq.conf
+
+    for iface in $(echo "$DNSMASQ_EXCEPT_INTERFACE" | tr ',' ' '); do
+        sed -i -e "/^interface=.*/ a\except-interface=${iface}" /tmp/dnsmasq.conf
+    done
+    #cat /tmp/dnsmasq.conf > /etc/dnsmasq.conf
+    #rm /tmp/dnsmasq.conf
+    cat /opt/dnsmasq/dnsmasq.conf > /etc/dnsmasq.conf
+
+    exec /usr/sbin/dnsmasq -d -q -C /etc/dnsmasq.conf

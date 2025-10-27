@@ -1,0 +1,38 @@
+# permissions to approve all sample-issuer.example.com requests
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: cert-manager-controller-approve:digicertissuers-certmanager-cloud-sap
+  labels:
+    app.kubernetes.io/name: digicert-issuer
+rules:
+  - apiGroups:
+      - certmanager.cloud.sap
+    resources:
+      - DigicertIssuer
+    resourceNames:
+      - digicert-issuer
+    verbs:
+      - get
+      - list
+      - patch
+      - update
+      - watch
+      - approve
+---
+# bind the cert-manager internal approver to approve
+# sample-issuer.example.com CertificateRequests
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: cert-manager-controller-approve:digicertissuers-certmanager-cloud-sap
+  labels:
+    app.kubernetes.io/name: digicert-issuer
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cert-manager-controller-approve:digicertissuers-certmanager-cloud-sap
+subjects:
+  - kind: ServiceAccount
+    name: {{ required ".Values.certManager.serviceAccount.name missing" .Values.certManager.serviceAccount.name }}
+    namespace: {{ required ".Values.certManager.serviceAccount.name missing" .Values.certManager.serviceAccount.namespace }}

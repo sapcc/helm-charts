@@ -1,0 +1,77 @@
+apiVersion: templates.gatekeeper.sh/v1
+kind: ConstraintTemplate
+metadata:
+  name: gkimagesfromcorrectregistry
+spec:
+  crd:
+    spec:
+      names:
+        kind: GkImagesFromCorrectRegistry
+      validation:
+        # Schema for the `parameters` field
+        openAPIV3Schema:
+          type: object
+          properties:
+            registry:
+              type: string
+            registryAlternateRegion:
+              type: string
+
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      code:
+        - engine: Rego
+          source:
+            version: "v1"
+            libs:
+              - |
+                {{ .Files.Get "lib/add-support-labels.rego" | nindent 16 }}
+              - |
+                {{ .Files.Get "lib/traversal.rego" | nindent 16 }}
+            rego: |
+              package imagesfromcorrectregistry
+
+              import data.lib.add_support_labels
+              import data.lib.traversal
+
+              extract_keppel_region(image) := region if {
+                  matchList := regex.find_all_string_submatch_n(`^keppel\.([-\w]+)\.[a-zA-Z]+\.[a-zA-Z]+/`, image, 1)
+                  count(matchList) > 0
+                  region = matchList[0][1]
+              }
+
+              extract_image_name_with_tag(image) := image_tag if {
+                  not contains(image, "/")
+                  image_tag = image
+              }
+
+              extract_image_name_with_tag(image) := image_tag if {
+                  contains(image, "/")
+                  sL := split(image, "/")
+                  count(sL) > 0
+                  image_tag = sL[count(sL) - 1]
+              }
+
+              iro := input.review.object
+              containers := traversal.find_container_specs(iro)
+
+              correct_regions contains region if {
+                  region = extract_keppel_region(input.parameters.registry)
+              }
+
+              correct_regions contains alternate_region if {
+                  alternate_region = extract_keppel_region(input.parameters.registryAlternateRegion)
+              }
+
+              violation contains {"msg": add_support_labels.from_k8s_object(iro, msg)} if {
+                  container := containers[_]
+                  image := container.image
+
+                  current_region = extract_keppel_region(image) # this will also check if image is using Keppel or not
+                  current_region != "global" # global registry is also an acceptable source
+                  found := {r | current_region == correct_regions[r]}
+                  count(found) == 0
+
+                  image_name := extract_image_name_with_tag(image)
+                  msg := sprintf("container %q uses incorrect regional registry for image: %s", [container.name, image_name])
+              }

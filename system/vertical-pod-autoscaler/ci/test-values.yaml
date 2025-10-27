@@ -1,0 +1,30 @@
+installCRDs: false
+image:
+  registry: keppel.eu-de-1.cloud.sap/ccloud-registry-k8s-io-mirror
+additionalPodAnnotations:
+  prometheus.io/targets: "kubernetes"
+
+# The recommender is always enabled.
+recommender:
+  image:
+    repository: autoscaling/vpa-recommender
+    pullPolicy: IfNotPresent
+  interval: 5m
+  recommendationMaxAllowed:
+    cpu: 500
+    memory: 1Gi
+
+admission:
+  enabled: true
+  certificate:
+    duration: 24h
+
+updater:
+  enabled: true
+  image:
+    repository: autoscaling/vpa-updater
+    pullPolicy: IfNotPresent
+
+global:
+  linkerd_requested: true
+  linkerd_enabled: true

@@ -1,0 +1,52 @@
+apiVersion: "openstack.stable.sap.cc/v1"
+kind: OpenstackSeed
+metadata:
+  name: tenso-seed
+
+spec:
+  requires:
+    - {{ .Values.global.keystoneNamespace }}/keystone-seed
+    - monsoon3/domain-default-seed
+    - monsoon3/domain-ccadmin-seed
+    - swift/swift-seed
+
+  services:
+    - name:        tenso
+      type:        tenso
+      description: 'Translation and delivery service for lifecycle events'
+      enabled:     true
+      endpoints:
+        - region:    '{{ $.Values.global.region }}'
+          interface: public
+          enabled:   true
+          url:       'https://tenso.{{ $.Values.global.region }}.{{ $.Values.global.tld }}'
+
+  domains:
+    - name: Default
+      users:
+        - name: tenso
+          description: Tenso Service
+          password: '{{ .Values.tenso.service_password | required ".Values.tenso.service_password is missing" }}'
+        - name: tenso-ansible
+          description: Technical User for submitting events into Tenso from Ansible
+          password: '{{ .Values.tenso.ansible_user_password | required ".Values.tenso.ansible_user_password is missing" }}'
+          role_assignments:
+            # The policy identifies this user by name instead of by role, but we need a project role somewhere to discover Tenso via Keystone catalog.
+            - project: service
+              role:    service
+        - name: tenso-concourse
+          description: Technical User for submitting events into Tenso from Concourse
+          password: '{{ .Values.tenso.concourse_user_password | required ".Values.tenso.concourse_user_password is missing" }}'
+          role_assignments:
+            # The policy identifies this user by name instead of by role, but we need a project role somewhere to discover Tenso via Keystone catalog.
+            - project: service
+              role:    service
+
+    - name: ccadmin
+      projects:
+        - name: master
+          role_assignments:
+            - user: tenso@Default
+              role: service       # to validate users' Keystone tokens
+            - user: tenso@Default
+              role: objectstore_admin # to persist events into Swift

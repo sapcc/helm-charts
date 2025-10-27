@@ -1,0 +1,60 @@
+{{- $values := .Values }}
+{{- if .Values.updater.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cronus-updater
+  {{- if .Values.updater.annotations }}
+  annotations:
+    {{ toYaml .Values.updater.annotations | indent 4 }}
+  {{- end  }}
+  {{- if .Values.updater.labels }}
+  labels:
+    {{ toYaml .Values.updater.labels | indent 4 }}
+  {{- end }}
+spec:
+  replicas: {{ .Values.updater.replicas }}
+  strategy:
+    type: {{ .Values.updater.updateStrategy }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: cronus-updater
+      app.kubernetes.io/instance: cronus-updater
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include "cronus-updater/templates/_config.yaml.tpl" . | sha256sum }}
+        prometheus.io/scrape: "true"
+        prometheus.io/port: {{ .Values.updater.prometheusPort | quote}}
+        prometheus.io/targets: {{ required ".Values.global.alerts.prometheus missing" $values.global.alerts.prometheus | quote }}
+      labels:
+        app.kubernetes.io/name: cronus-updater
+        app.kubernetes.io/instance: cronus-updater
+    spec:
+      serviceAccountName: cronus-updater
+      containers:
+        - name: cronus-updater
+          image: "{{ .Values.updater.image.name }}:{{ .Values.updater.image.tag }}"
+          imagePullPolicy: IfNotPresent
+          args:
+            - "-config=/cronus-updater/config.yaml"
+          envFrom:
+            - secretRef:
+                name: cronus-updater-secret
+          volumeMounts:
+            - name: cronus-updater-config
+              mountPath: "/cronus-updater/config.yaml"
+              subPath: config.yaml
+          ports:
+            - name: http
+              containerPort: {{ .Values.updater.prometheusPort }}
+              protocol: TCP
+      restartPolicy: Always
+      volumes:
+        - name: cronus-updater-config
+          configMap:
+            name: cronus-updater-config
+            items:
+              - key: config.yaml
+                path: config.yaml
+{{ end -}}

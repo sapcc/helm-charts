@@ -1,0 +1,153 @@
+{{- if not .Values.global.is_global_region }}
+{{- if or .Values.maia.enabled .Values.seed.enabled}}
+{{- $cdomains := .Values.global.domain_seeds.customer_domains | required "missing value for .Values.global.domain_seeds.customer_domains" -}}
+{{- $domains  := concat (list "cc3test" "ccadmin" "Default") $cdomains -}}
+{{- $cdomainsWithoutSupportProjects := .Values.global.domain_seeds.customer_domains_without_support_projects | required "missing value for .Values.global.domain_seeds.customer_domains_without_support_projects" -}}
+
+apiVersion: "openstack.stable.sap.cc/v1"
+kind: "OpenstackSeed"
+metadata:
+  name: maia-seed
+  labels:
+    component: maia
+spec:
+  requires:
+  - {{ .Values.global.keystoneNamespace }}/{{ .Values.global.is_global_region | ternary "keystone-global-seed" "keystone-seed" }}
+  {{- range $domains}}
+  {{- if not (hasPrefix "iaas-" .)}}
+  - {{ $.Values.global.keystoneNamespace }}/domain-{{ replace "_" "-" . | lower }}-seed
+  {{- end}}
+  {{- end}}
+
+  roles:
+  - name: monitoring_viewer
+  - name: monitoring_admin
+
+  services:
+  # register Maia in the OpenStack service catalog
+  - name: maia
+    type: metrics
+    description: Expose Prometheus metrics as multi-tenant OpenStack service
+    enabled: true
+    endpoints:
+    - region: {{.Values.global.region}}
+      interface: public
+      enabled: true
+      url: '{{.Values.maia.endpoint_protocol_public}}://{{.Values.maia.endpoint_host_public}}:{{.Values.maia.endpoint_port_public}}'
+
+  # Default and cc3test get special handling
+  # ccadmin gets additional role assignments for the master project and tools project
+  # iaas- is excluded
+
+  domains:
+  # seed technical service user
+  - name: {{.Values.maia.service_user.user_domain_name}}
+    users:
+    - name: {{.Values.maia.service_user.name}}
+      description: 'Maia API User'
+      password: {{ .Values.maia.service_user.password | quote }}
+      role_assignments:
+      - project: {{.Values.maia.service_user.project_name}}
+        role: service
+    - name: admin
+      role_assignments:
+      - domain: Default
+        role: monitoring_viewer
+      - project: admin
+        role: audit_viewer
+    groups:
+      - name: administrators
+        role_assignments:
+        - domain: Default
+          role: monitoring_viewer
+        - project: admin
+          role: monitoring_viewer 
+
+  - name: cc3test
+    groups:
+    - name: CC3TEST_DOMAIN_ADMINS
+      role_assignments:
+      - project: admin
+        role: monitoring_viewer
+
+  # grant Maia specific roles to CC groups
+  {{- range $domains}}
+  {{- if and (not (eq . "Default")) (not (eq . "cc3test")) (not (hasPrefix "iaas-" .))}}
+  - name: {{ . }}
+    {{- if eq . "ccadmin"}}
+    projects:
+    - name: master
+      role_assignments:
+      - group: CCADMIN_CLOUD_ADMINS
+        role: monitoring_viewer
+      - group: CCADMIN_DOMAIN_ADMINS
+        role: monitoring_viewer
+      - group: CCADMIN_MONITORING_USERS
+        role: monitoring_viewer
+    {{- end }}
+    groups:
+    - name: {{ hasPrefix "iaas-" . | ternary . ( upper . ) }}_API_SUPPORT
+      role_assignments:
+      {{- if not (has . $cdomainsWithoutSupportProjects) }}
+      - project: api_support
+        role: monitoring_viewer
+      {{- end }}
+      {{- if eq . "ccadmin"}}
+      - project: api_tools
+        role: monitoring_viewer
+      {{- end }}
+      - domain: {{ . }}
+        role: monitoring_viewer
+        inherited: true
+    - name: {{ hasPrefix "iaas-" . | ternary . ( upper . ) }}_COMPUTE_SUPPORT
+      role_assignments:
+      {{- if not (has . $cdomainsWithoutSupportProjects) }}
+      - project: compute_support
+        role: monitoring_viewer
+      {{- end }}
+      {{- if eq . "ccadmin"}}
+      - project: compute_tools
+        role: monitoring_viewer
+      {{- end }}
+      - domain: {{ . }}
+        role: monitoring_viewer
+        inherited: true
+    - name: {{ hasPrefix "iaas-" . | ternary . ( upper . ) }}_NETWORK_SUPPORT
+      role_assignments:
+      {{- if not (has . $cdomainsWithoutSupportProjects) }}
+      - project: network_support
+        role: monitoring_viewer
+      {{- end }}
+      {{- if eq . "ccadmin"}}
+      - project: network_tools
+        role: monitoring_viewer
+      {{- end }}
+      - domain: {{ . }}
+        role: monitoring_viewer
+        inherited: true
+    - name: {{ hasPrefix "iaas-" . | ternary . ( upper . ) }}_STORAGE_SUPPORT
+      role_assignments:
+      {{- if not (has . $cdomainsWithoutSupportProjects) }}
+      - project: storage_support
+        role: monitoring_viewer
+      {{- end }}
+      {{- if eq . "ccadmin"}}
+      - project: storage_tools
+        role: monitoring_viewer
+      {{- end }}
+      - domain: {{.}}
+        role: monitoring_viewer
+        inherited: true
+    - name: {{ hasPrefix "iaas-" . | ternary . ( upper . ) }}_SERVICE_DESK
+      role_assignments:
+      {{- if not (has . $cdomainsWithoutSupportProjects) }}
+      - project: service_desk
+        role: monitoring_viewer
+      {{- end }}
+      - domain: {{ . }}
+        role: monitoring_viewer
+        inherited: true
+  {{- end }}
+  {{- end }}
+{{- end }}
+{{- end }}

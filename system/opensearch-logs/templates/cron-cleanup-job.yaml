@@ -1,0 +1,48 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: index-cleanup
+spec:
+  schedule: "30 0,6,12,18 * * *"
+  jobTemplate:
+    spec:
+      backoffLimit: 3
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+          - name: index-cleanup
+            image: keppel.eu-de-1.cloud.sap/ccloud/opensearch-tools:20240815102459
+            imagePullPolicy: IfNotPresent
+            command: ["/bin/bash", "/scripts/index_cleanup.sh"]
+            env:
+            - name: ADMIN_USER
+              valueFrom:
+                secretKeyRef:
+                  name: cron-secrets
+                  key: ADMIN_USER
+            - name: ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: cron-secrets
+                  key: ADMIN_PASSWORD
+            - name: ADMIN2_USER
+              valueFrom:
+                secretKeyRef:
+                  name: cron-secrets
+                  key: ADMIN2_USER
+            - name: ADMIN2_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: cron-secrets
+                  key: ADMIN2_PASSWORD
+            - name: CLUSTER_HOST
+              value: "https://opensearch-logs-client.{{ .Values.global.clusterType }}.{{ .Values.global.region }}.{{ .Values.global.tld }}:{{ .Values.httpPort }}"
+            volumeMounts:
+            - mountPath: /scripts
+              name: config
+          volumes:
+          - name: config
+            secret:
+              defaultMode: 420
+              secretName: security-config

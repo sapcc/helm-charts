@@ -1,0 +1,38 @@
+{{- if not .Values.tls_crt }}
+kind: Ingress
+apiVersion: networking.k8s.io/v1
+
+metadata:
+  name: swift-{{ .Values.cluster_name }}
+  annotations:
+    # the ingress controller won't pick this up
+    kubernetes.io/ingress.class: "noop.cert-manager"
+    # enable cert-manager
+    kubernetes.io/tls-acme: "true"
+    {{- if .Values.probing }}
+    # enable probing
+    prometheus.io/probe: "true"
+    prometheus.io/probe_path: "/info"
+    {{- end}}
+
+# workaround to enable the vice-president for non-ingress based swift.
+# the vp will only evaluate the following spec.tls section
+spec:
+  tls:
+     - secretName: tls-swift-{{ .Values.cluster_name }}
+       hosts: [{{ .Values.endpoint_host }}.{{ .Values.global.region }}.{{ .Values.global.tld }}
+       {{- range $san := .Values.sans }}, {{ printf "%s.%s.%s" $san $.Values.global.region $.Values.global.tld | quote }}{{ end }}
+       {{- range $san := .Values.sans_fqdn }}, {{ quote $san }}{{ end }}]
+  # the following is mandatory in an ingress resource, but will be ignored by the vice-president
+  rules:
+    - host: {{ .Values.endpoint_host }}.{{ .Values.global.region }}.{{ .Values.global.tld }}
+      http:
+        paths:
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: swift-{{ .Values.cluster_name }}
+              port: 
+                number: 9090
+{{- end }}

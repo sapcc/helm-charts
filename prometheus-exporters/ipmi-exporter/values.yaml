@@ -1,0 +1,39 @@
+owner-info:
+  support-group: foundation
+  service: ipmi-exporter
+  maintainers:
+    - Stefan Hipfel
+  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/prometheus-exporters/ipmi-exporter
+
+enabled: false
+app_env: "production"
+ipmi_exporter:
+  image: 
+    name: ipmi-exporter
+    tag: latest
+replicas: 2
+fullnameOverride: ipmi-exporter
+listen_port: 9290
+ironic:
+  enabled: DEFINED-IN-REGION
+netbox:
+  enabled: DEFINED-IN-REGION
+
+resources: 
+  requests:
+    memory: 250Mi
+    cpu: 500m
+  limits:
+    memory: 500Mi
+    cpu: 800m
+
+aggregations:
+  enabled: true
+  prometheus: infra-collector
+
+alerts:
+  enabled: true
+  prometheus: infra-collector
+
+http_sd_configs:
+  refresh_interval: 60m

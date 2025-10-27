@@ -1,0 +1,15 @@
+{{- if and .Values.alerts.enabled .Values.metrics.enabled }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+
+metadata:
+  name: {{ template "fullname" . }}-memcached-alerts
+  labels:
+    prometheus: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus }}
+    {{- include "memcached.labels" (list $ "version" "memcached" "prometheusrule" "alert") | indent 4 }}
+
+spec:
+{{ include (print .Template.BasePath "/alerts/_memcached.alerts.tpl") . | indent 2 }}
+
+{{- end }}

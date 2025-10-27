@@ -1,0 +1,136 @@
+apiVersion: "openstack.stable.sap.cc/v1"
+kind: "OpenstackSeed"
+metadata:
+  name: octobus-seed
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+spec:
+  requires:
+  - monsoon3/domain-ccadmin-seed
+
+  domains:
+  - name: ccadmin
+    projects:
+    - name: octobus
+      description: 'data collection, monitoring, analytics, event processing and storage infrastructure https://wiki.wdf.sap.corp/wiki/x/mqygd'
+      networks:
+      - name: default
+        subnets:
+        - name: octobus_private
+          cidr: 10.180.0.0/16
+          ip_version: 4
+      routers:
+      - name: default
+        external_gateway_info:
+          network: FloatingIP-external-ccadmin-monitoring@ccadmin-net-infra@ccadmin
+          external_fixed_ips:
+          - subnet: {{ .Values.routerExternalSubnet | default "FloatingIP-sap-ccadmin-monitoring-01@ccadmin-net-infra@ccadmin" }}
+        interfaces:
+        - subnet: octobus_private
+      role_assignments:
+      - user: {{ .Values.technicalUserPerRegion }}
+        role: compute_viewer
+      - user: {{ .Values.technicalUserPerRegion }}
+        role: dns_webmaster
+      - user: {{ .Values.technicalUserPerRegion }}
+        role: kubernetes_admin
+      - user: {{ .Values.technicalUserPerRegion }}
+        role: member
+      - user: {{ .Values.technicalUserPerRegion }}
+        role: monitoring_viewer
+      - user: {{ .Values.technicalUserPerRegion }}
+        role: network_viewer
+      - user: {{ .Values.technicalUserPerRegion }}
+        role: registry_admin
+      - user: {{ .Values.technicalUserPerRegion }}
+        role: resource_viewer
+      - user: {{ .Values.technicalUserPerRegion }}
+        role: securitygroup_admin
+      - user: {{ .Values.technicalUserPerRegion }}
+        role: sharedfilesystem_viewer
+      - user: {{ .Values.technicalUserPerRegion }}
+        role: volume_viewer
+      - user: {{ .Values.technicalUserPerRegion }}
+        role: objectstore_admin
+      - user: {{ .Values.technicalUserSwiftOperator }}
+        role: objectstore_admin
+
+
+    groups:
+    - name: CCADMIN_OCTOBUS-ADM
+      role_assignments:
+      - project: octobus
+        role: admin
+      - project: octobus
+        role: audit_viewer
+      - project: octobus
+        role: automation_admin
+      - project: octobus
+        role: compute_admin
+      - project: octobus
+        role: dns_zonemaster
+      - project: octobus
+        role: image_admin
+      - project: octobus
+        role: keymanager_admin
+      - project: octobus
+        role: kubernetes_admin
+      - project: octobus
+        role: masterdata_admin
+      - project: octobus
+        role: member
+      - project: octobus
+        role: monitoring_viewer
+      - project: octobus
+        role: network_admin
+      - project: octobus
+        role: registry_admin
+      - project: octobus
+        role: resource_admin
+      - project: octobus
+        role: role_admin
+      - project: octobus
+        role: securitygroup_admin
+      - project: octobus
+        role: sharedfilesystem_admin
+      - project: octobus
+        role: objectstore_admin
+      - project: octobus
+        role: volume_admin
+    - name: CCADMIN_OCTOBUS-MEMBER
+      role_assignments:
+      - project: octobus
+        role: audit_viewer
+      - project: octobus
+        role: automation_viewer
+      - project: octobus
+        role: compute_viewer
+      - project: octobus
+        role: dns_viewer
+      - project: octobus
+        role: image_viewer
+      - project: octobus
+        role: keymanager_viewer
+      - project: octobus
+        role: masterdata_viewer
+      - project: octobus
+        role: member
+      - project: octobus
+        role: monitoring_viewer
+      - project: octobus
+        role: network_viewer
+      - project: octobus
+        role: registry_viewer
+      - project: octobus
+        role: resource_viewer
+      - project: octobus
+        role: role_viewer
+      - project: octobus
+        role: sharedfilesystem_viewer
+      - project: octobus
+        role: securitygroup_viewer
+      - project: octobus
+        role: volume_viewer

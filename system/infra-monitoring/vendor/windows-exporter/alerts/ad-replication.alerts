@@ -1,0 +1,29 @@
+groups:
+- name: ad-replication.alerts
+  rules:      
+  - alert: ADPendingReplications
+    expr: count(windows_ad_replication_pending_synchronizations{job="win-exporter-ad"} > 0) by (server_name)
+    for: 2h
+    labels:
+      severity: warning
+      tier: ad
+      service: windows-exporter
+      context: "{{ $labels.server_name }}"
+      meta: "Pending replications on node {{ $labels.server_name }}"
+    annotations:
+      description: "Pending replications on node {{ $labels.server_name }}"
+      summary: "Pending replications on node {{ $labels.server_name }}"
+
+  - alert: ADReplicationFailed
+    expr: count(windows_ad_replication_last_result{job="win-exporter-ad"} > 0) by (server_name, partner)
+    for: 2h
+    labels:
+      severity: warning
+      tier: ad
+      service: windows-exporter
+      context: "{{ $labels.server_name }}_{{ $labels.partner }}"
+      meta: "Replication issue on node {{ $labels.server_name }}"
+      playbook: docs/support/playbook/activedirectory/alerts/#adreplicationfailed
+    annotations:
+      description: "Last replications on node {{ $labels.server_name }} with partner {{ $labels.partner }} failed."
+      summary: "Replication issue on node {{ $labels.server_name }}"

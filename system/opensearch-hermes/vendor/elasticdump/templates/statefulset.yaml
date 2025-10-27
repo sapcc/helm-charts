@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: elasticdump
+  labels:
+    component: elasticdump
+spec:
+  serviceName: elasticdump
+  selector:
+    matchLabels:
+      component: elasticdump
+  replicas: 1
+  updateStrategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        component: elasticdump
+    spec:
+      containers:
+        - name: elasticdump
+          image: keppel.eu-de-1.cloud.sap/ccloud-dockerhub-mirror/elasticdump/elasticsearch-dump:latest
+          imagePullPolicy: IfNotPresent
+          command: ["/bin/bash", "-c", "while true; do sleep 1000; done"]

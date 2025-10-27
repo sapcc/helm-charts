@@ -1,0 +1,91 @@
+owner-info:
+  support-group: observability
+  maintainers:
+    - "Ivo Gosemann"
+    - "Olaf Heydorn"
+  helm-chart-url: "https://github.com/sapcc/helm-charts/tree/master/system/elk"
+
+global:
+  region: DEFINED-IN-SECRETS
+  tld: DEFINED-IN-SECRETS
+  elk_elasticsearch_audit_user: DEFINED-IN-SECRETS
+  elk_elasticsearch_audit_password: DEFINED-IN-SECRETS
+  elk_elasticsearch_http_user: DEFINED-IN-SECRETS
+  elk_elasticsearch_http_password: DEFINED-IN-SECRETS
+  prometheus: infra-frontend
+
+alerts:
+  enabled: true
+  prometheus: infra-frontend
+
+
+es_master:
+  enabled: false
+  http_port: 9200
+  cluster_port: 9301
+  legacy_service_name: true
+  master_dummy_port: '63062'
+  client_replicas: '3'
+  audit: false
+  qalogs:
+    enabled: false
+  exporter:
+    enabled: true
+    prometheus: infra-frontend
+
+es_data:
+  enabled: false
+  qalogs:
+    enabled: false
+  http_port: 9200
+  cluster_port: 9301
+  audit: false
+  resources:
+    requests:
+      cpu: "2000m"
+      memory: "6Gi"
+    limits:
+      cpu: "4000m"
+  exporter:
+    enabled: true
+    prometheus: infra-frontend
+
+es_client:
+  enabled: false
+  http_port: 9200
+  cluster_port: 9301
+  cluster_name: elk-elasticsearch.scaleout
+  audit: false
+  qalogs:
+    enabled: false
+  logger:
+    global: warn
+    root: warn
+    ror: warn
+  exporter:
+    enabled: false
+    prometheus: infra-frontend
+
+es_manager:
+  enabled: false
+  http_port: 9200
+  cluster_port: 9301
+  endpoint_host_internal: es-client
+  image_elasticsearch_manager: lmenezes/cerebro:0.9.4
+  opensearch:
+    enabled: false
+
+
+wall_e:
+  enabled: false
+  http_port: 9200
+  kibana_service: 'kibana'
+  kibana_port_public: 5601
+  endpoint_host_internal: es-client
+
+kibana:
+  enabled: false
+  service_name: 'kibana'
+  port_public: 5601
+  http_port: 9200
+  endpoint_host_internal: es-client

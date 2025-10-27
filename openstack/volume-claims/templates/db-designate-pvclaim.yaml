@@ -1,0 +1,18 @@
+{{- $region := .Values.global.region | required ".Values.global.region missing" }}
+{{/* For some reason, this PVC is controlled by the designate chart ONLY in eu-de-1, so we need to skip it here. */}}
+{{- if ne $region "eu-de-1" }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: db-designate-pvclaim
+  labels:
+    ccloud/support-group: network-api
+    ccloud/service: designate
+spec:
+  accessModes:
+  - ReadWriteMany
+  resources:
+    requests:
+      storage: 10Gi
+{{- end }}

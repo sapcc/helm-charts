@@ -1,0 +1,53 @@
+apiVersion: v2
+name: infra-monitoring
+version: 2.5.31
+description: Prometheus Infrastructure Monitoring and Metrics Collection
+icon: https://raw.githubusercontent.com/prometheus/prometheus/main/web/ui/static/img/prometheus_logo.svg
+dependencies:
+  - name: prometheus-server
+    alias: prometheus_infra_collector
+    repository: oci://keppel.eu-de-1.cloud.sap/ccloud-helm
+    version: 8.0.9
+    condition: prometheus_infra_collector.enabled
+
+  - name: thanos
+    repository: oci://keppel.eu-de-1.cloud.sap/ccloud-helm
+    version: 1.2.9
+
+  - name: blackbox-exporter
+    alias: blackbox_exporter
+    repository: file://vendor/blackbox-exporter
+    version: 0.1.0
+    condition: blackbox_exporter.enabled
+
+  - name: px-exporter
+    alias: px_exporter
+    repository: file://vendor/px-exporter
+    version: 0.2.0
+    condition: px_exporter.enabled
+
+  - name: firmware-exporter
+    alias: firmware_exporter
+    repository: file://vendor/firmware-exporter
+    version: 0.1.1
+    condition: firmware_exporter.enabled
+
+  - name: windows-exporter
+    alias: windows_exporter
+    repository: file://vendor/windows-exporter
+    version: 0.0.3
+    condition: windows_exporter.enabled
+
+  - name: prober-exporter
+    alias: prober_exporter
+    repository: file://vendor/prober-exporter
+    version: 0.1.1
+    condition: prober_exporter.enabled
+
+  - name: owner-info
+    repository: oci://keppel.eu-de-1.cloud.sap/ccloud-helm
+    version: '>= 0.0.0'
+
+  - name: linkerd-support
+    repository: oci://keppel.eu-de-1.cloud.sap/ccloud-helm
+    version: '>= 0.0.0'

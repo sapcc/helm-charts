@@ -1,0 +1,22 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: neutron-server
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    system: openstack
+    component: neutron
+    type: api
+  annotations:
+    maia.io/scrape: "true"
+    {{- include "utils.linkerd.pod_and_service_annotation" . | indent 4 }}
+spec:
+  selector:
+    name: neutron-server
+  ports:
+  - name: neutron-server
+    port: {{.Values.global.neutron_api_port_internal | default 9696}}
+    targetPort: neutron-api

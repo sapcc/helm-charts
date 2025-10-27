@@ -1,0 +1,8 @@
+groups:
+- name: manila
+  rules:
+  - record: netapp_volume_total_ops:maia1
+    expr: netapp_volume_total_ops{app="netapp-perf-exporter-manila", volume=~"share.*"} + on(volume, vserver, filer) group_left(project_id, share_name, share_id) 0 * netapp_volume_total_bytes{volume=~"share.*"}
+
+  - record: netapp_volume_avg_latency_miliseconds:maia1
+    expr: netapp_volume_avg_latency{app="netapp-perf-exporter-manila", volume=~"share.*"} + on(volume, vserver, filer) group_left(project_id, share_name, share_id) 0 * netapp_volume_total_bytes{volume=~"share.*"}

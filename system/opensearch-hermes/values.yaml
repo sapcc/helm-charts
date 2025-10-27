@@ -1,0 +1,203 @@
+global:
+  clusterType: local
+  sapcert:
+    enabled: false
+  truststore:
+    enabled: false
+    cert_pw: DEFINIED-IN-REGIONS
+    cert: DEFINIED-IN-REGIONS
+  linkerd_requested: true
+  region: DEFINED_IN_VALUES_FILE
+  curator_image: "20250409174833"
+  manager:
+    secret: DEFINED_IN_VALUES_FILE
+  users:
+    admin:
+      username: DEFINED_IN_VALUES_FILE
+      password: DEFINED_IN_VALUES_FILE
+      username_resolve: DEFINED_IN_VALUES_FILE
+      password_resolve: DEFINED_IN_VALUES_FILE
+    admin2:
+      username: DEFINED_IN_VALUES_FILE
+      password: DEFINED_IN_VALUES_FILE
+      username_resolve: DEFINED_IN_VALUES_FILE
+      password_resolve: DEFINED_IN_VALUES_FILE
+    audit:
+      username: DEFINED_IN_VALUES_FILE
+      password: DEFINED_IN_VALUES_FILE
+      password_resolve: DEFINED_IN_VALUES_FILE
+    audit2:
+      username: DEFINED_IN_VALUES_FILE
+      password: DEFINED_IN_VALUES_FILE
+      password_resolve: DEFINED_IN_VALUES_FILE
+    kibanaserver:
+      username: DEFINED_IN_VALUES_FILE
+      password: DEFINED_IN_VALUES_FILE
+      username_resolve: DEFINED_IN_VALUES_FILE
+      password_resolve: DEFINED_IN_VALUES_FILE
+    kibanaserver2:
+      username: DEFINED_IN_VALUES_FILE
+      password: DEFINED_IN_VALUES_FILE
+      username_resolve: DEFINED_IN_VALUES_FILE
+      password_resolve: DEFINED_IN_VALUES_FILE
+    promuser:
+      username: DEFINED_IN_VALUES_FILE
+      password: DEFINED_IN_VALUES_FILE
+      password_resolve: DEFINED_IN_VALUES_FILE
+    promuser2:
+      username: DEFINED_IN_VALUES_FILE
+      password: DEFINED_IN_VALUES_FILE
+      password_resolve: DEFINED_IN_VALUES_FILE
+     
+    
+  ldap:
+    host: DEFINED_IN_VALUES_FILE
+    port: DEFINED_IN_VALUES_FILE
+    search_base_dbs: DEFINED_IN_VALUES_FILE
+    bind_dn: DEFINED_IN_VALUES_FILE
+    password: DEFINED_IN_VALUES_FILE
+    userdomain: DEFINED_IN_VALUES_FILE
+    user_group: DEFINED_IN_VALUES_FILE
+    suffix: DEFINED_IN_VALUES_FILE
+
+auth:
+  ca_path: certs/admin/tls.crt
+
+owner-info:
+  support-group: observability
+  service: hermes
+  maintainers:
+    - Olaf Heydorn
+    - Timo Johner
+  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/system/opensearch-hermes
+
+alerts:
+  enabled: false
+  prometheus: DEFINED-IN-SECRETS
+# Pod Monitor
+exporter:
+  enabled: false
+  prometheus: DEFINED-IN-SECRETS
+tag: 3.2.0
+
+linkerd-support:
+  annotate_namespace: true
+
+opensearch_hermes:
+  enabled: false
+  antiAffinityTopologyKey: "kubernetes.io/host"
+  ca:
+    crt: DEFINED-IN-SECRETS
+  image:
+    tag: 3.2.0
+  service:
+    port: 5601
+  nameOverride: "opensearch-hermes"
+  fullnameOverride: "opensearch-hermes"
+  nodeGroup: "data"
+  masterService: "opensearch-hermes-master"
+  roles:
+    - client
+    - ingest
+    - data
+  replicas: 3
+  opensearchJavaOpts: "-Dlog4j2.formatMsgNoLookups=true -XX:MaxRAM=20g -XX:MaxGCPauseMillis=500 -Xms20g -Xmx20g"
+  updateStrategy: RollingUpdate
+  persistence:
+    enabled: true
+    enableInitChown: true
+    size: 100Gi
+    image: "library/busybox"
+  clusterName: "opensearch-hermes"
+  secretMounts:
+    - name: opensearch-certificates
+      secretName: cert-manager
+      path: /usr/share/opensearch/config/certs/
+      defaultMode: 0700
+  plugins:
+    enabled: true
+    installList:
+      - https://repo.eu-de-1.cloud.sap/opensearch/prometheus-exporter-3.2.0.0.zip
+  securityConfig:
+    path: "/usr/share/opensearch/config/opensearch-security"
+    enabled: true
+    config:
+      securityConfigSecret: "security-config"
+  extraEnvs:
+    - name: DISABLE_INSTALL_DEMO_CONFIG
+      value: "true"
+
+opensearch_hermes_master:
+  enabled: false
+  antiAffinityTopologyKey: "kubernetes.io/host"
+  ca:
+    crt: DEFINED-IN-SECRETS
+  image:
+    tag: 3.2.0
+  service:
+    port: 5601
+  nameOverride: "opensearch-hermes-master"
+  fullnameOverride: "opensearch-hermes-master"
+  nodeGroup: "master"
+  masterService: "opensearch-hermes-master"
+  roles:
+    - master
+  replicas: 3
+  opensearchJavaOpts: "-Dlog4j2.formatMsgNoLookups=true -XX:MaxRAM=5g -XX:MaxGCPauseMillis=500 -Xms5g -Xmx5g"
+  updateStrategy: RollingUpdate
+  persistence:
+    enabled: true
+    enableInitChown: true
+    size: 1Gi
+    image: "library/busybox"
+  clusterName: "opensearch-hermes"
+  secretMounts:
+    - name: opensearch-certificates
+      secretName: cert-manager
+      path: /usr/share/opensearch/config/certs/
+      defaultMode: 0700
+  plugins:
+    enabled: true
+    installList:
+      - https://repo.eu-de-1.cloud.sap/opensearch/prometheus-exporter-3.2.0.0.zip
+  securityConfig:
+    path: "/usr/share/opensearch/config/opensearch-security"
+    enabled: true
+    config:
+      securityConfigSecret: "security-config"
+  extraEnvs:
+    - name: DISABLE_INSTALL_DEMO_CONFIG
+      value: "true"
+
+opensearch_hermes_dashboards:
+  enabled: false
+  image:
+    tag: "3.2.0"
+  fullnameOverride: opensearch-hermes-dashboards
+  nameOverride: opensearch-hermes-dashboards
+  serviceAccount:
+    create: true
+    name: "opensearch-hermes-dashboards"
+  opensearchAccount:
+    secret: dashboard-secrets
+  ingress:
+    enabled: false
+  resources:
+    requests:
+      memory: 1024M
+      cpu: 500m
+    limits:
+      memory: 4096M
+      cpu: 1000m
+  envFrom:
+    - secretRef:
+        name: openid-secrets
+
+
+elasticdump:
+  enabled: false
+
+opensearch_hermes_manager:
+  enabled: false
+  port_internal: 9000 
+  image_version: "20240214094510"

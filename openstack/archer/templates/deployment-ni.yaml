@@ -1,0 +1,228 @@
+{{- range $name, $env := $.Values.agents.ni }}
+{{- range $az_long, $apods := $.Values.global.apods }}
+{{- if or (not $env.availability_zone) (eq $env.availability_zone $az_long) }}
+{{- $apod := first $apods }}
+{{- with $env.physical_network }}
+  {{- $apod = . }}
+{{- end }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: archer-agent-{{ $name }}-{{ $az_long }}
+  labels:
+    {{- include "archer.labels" $ | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "archer.selectorLabels" $ | nindent 6 }}
+      app.kubernetes.io/component: agent
+      cloud.sap/host: {{ $apod }}
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      {{- with $.Values.podAnnotations }}
+      annotations:
+        checksum/etc: {{ include (print $.Template.BasePath  "/configmap.yaml") $ | sha256sum }}
+        checksum/etc-ni: {{ include (print $.Template.BasePath  "/configmap-ni.yaml") $ | sha256sum }}
+        k8s.v1.cni.cncf.io/networks: '[{ "name": "cbr1-bridge", "interface":"{{ $.Values.cp_network_interface }}" }]'
+        kubectl.kubernetes.io/default-container: archer-agent-ni
+        {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+        linkerd.io/inject: enabled
+        config.linkerd.io/skip-inbound-ports: "{{ $env.service_port }}"
+        {{- end }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "archer.labels" $ | nindent 8 }}
+        app.kubernetes.io/component: agent
+        cloud.sap/host: {{ $apod }}
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 50
+              podAffinityTerm:
+                topologyKey: kubernetes.io/hostname
+                labelSelector:
+                  matchExpressions:
+                    - key: component
+                      operator: In
+                      values:
+                        - agent
+            - weight: 100
+              podAffinityTerm:
+                topologyKey: kubernetes.cloud.sap/host
+                labelSelector:
+                  matchExpressions:
+                    - key: component
+                      operator: In
+                      values:
+                        - agent
+      nodeSelector:
+        multus: bond1
+        topology.kubernetes.io/zone: {{ $az_long }}
+        kubernetes.cloud.sap/apod: {{ $apod }}
+      hostname: archer-agent-{{ $name }}-{{ $az_long }}
+      initContainers:
+        - name: wait-for-server
+          image: "{{ $.Values.global.registry }}/kubernetes-entrypoint:{{ $.Values.image.kubernetes_entrypoint_version }}"
+          env:
+            - name: NAMESPACE
+              value: "monsoon3"
+            - name: DEPENDENCY_SERVICE
+              value: {{ include "archer.fullname" $ }}
+            - name: COMMAND
+              value: "true"
+      containers:
+        - name: archer-agent-ni
+          securityContext:
+            privileged: true
+          image: "{{ $.Values.global.registry }}/archer:{{ $.Values.image.tag }}"
+          command: ["/usr/bin/archer-ni-agent"]
+          args: ["--config-file=/etc/archer/archer.ini", "--config-file=/etc/archer/ni.ini"]
+          imagePullPolicy: {{ $.Values.image.pullPolicy }}
+          env:
+            - name: GOMEMLIMIT
+              valueFrom:
+                resourceFieldRef:
+                  containerName: archer-agent-ni
+                  resource: limits.memory
+            - name: GOMAXPROCS
+              valueFrom:
+                resourceFieldRef:
+                  containerName: archer-agent-ni
+                  resource: limits.cpu
+            - name: SENTRY_DSN
+              valueFrom:
+                secretKeyRef:
+                  name: sentry
+                  key: archer.DSN
+            - name: AVAILABILITY_ZONE
+              value: {{ $az_long }}
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: archer-pguser-archer
+                  key: postgres-password
+            - name: OS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: archer-secret
+                  key: service_user_password
+          ports:
+            - name: metrics
+              containerPort: {{ required ".Values.metrics.port missing" $.Values.metrics.port }}
+              protocol: TCP
+          resources:
+            {{- toYaml $.Values.resources.ni_agent | nindent 12 }}
+          volumeMounts:
+            - name: etc-archer
+              mountPath: /etc/archer
+              readOnly: true
+            - name: socat-proxy
+              mountPath: /var/run/socat-proxy
+        - name: neutron-linuxbridge-agent
+          image: "{{ $.Values.global.registry }}/loci-neutron:{{ $.Values.image.neutron_version | default "latest" }}"
+          imagePullPolicy: IfNotPresent
+          command: ["dumb-init", "neutron-linuxbridge-agent", "--config-file", "/etc/neutron/neutron.conf", "--config-dir", "/etc/neutron/secrets", "--config-file", "/etc/neutron/ml2-conf.ini", "--config-file", "/etc/neutron/linux-bridge.ini"]
+          env:
+            - name: SENTRY_DSN
+              valueFrom:
+                secretKeyRef:
+                  name: sentry
+                  key: neutron.DSN.python
+            - name: PYTHONWARNINGS
+              value: "ignore:Unverified HTTPS request"
+            - name: OS_LINUX_BRIDGE__PHYSICAL_INTERFACE_MAPPINGS
+              value: {{ $apod }}:{{ required "A valid .Values.cp_network_interface required!" $.Values.cp_network_interface }}
+            - name: OS_GLOBAL__HOST
+              value: archer-agent-{{ $name }}-{{ $az_long }}
+          readinessProbe:
+            exec:
+              command: ["neutron-agent-liveness", "-config-file", "/etc/neutron/neutron.conf", "--config-file", "/etc/neutron/secrets/neutron-common-secrets.conf", "-agent-type", "Linux bridge agent"]
+            initialDelaySeconds: 30
+            periodSeconds: 60
+            timeoutSeconds: 10
+          securityContext:
+            capabilities:
+              add:
+                - NET_ADMIN
+                - SYS_ADMIN
+                - DAC_OVERRIDE
+                - DAC_READ_SEARCH
+                - SYS_PTRACE
+          resources:
+            {{- toYaml $.Values.resources.linuxbridge_agent | nindent 12 }}
+          volumeMounts:
+            - mountPath: /lib/modules
+              name: modules
+              readOnly: true
+            - name: etc-neutron-linuxbridge-agent
+              mountPath: /etc/neutron
+              readOnly: true
+            - name: neutron-etc
+              mountPath: /etc/sudoers
+              subPath: sudoers
+              readOnly: true
+        - name: socat
+          image: "{{ $.Values.global.dockerHubMirror }}/alpine/socat:{{ $.Values.image.socat_version | default "latest" }}"
+          imagePullPolicy: IfNotPresent
+          args:
+            - "UNIX-LISTEN:/var/run/socat-proxy/proxy.sock,fork,reuseaddr,unlink-early,user=nobody,group=nobody,mode=777"
+            - "TCP:{{ $env.cp_endpoint }}:{{ $env.cp_port }}"
+          resources:
+            {{- toYaml $.Values.resources.socat | nindent 12 }}
+          volumeMounts:
+            - name: socat-proxy
+              mountPath: /var/run/socat-proxy
+      volumes:
+        - name: socat-proxy
+          emptyDir: { }
+        - name: modules
+          hostPath:
+            path: /lib/modules
+        - name: neutron-etc
+          configMap:
+            name: neutron-etc
+        - name: etc-neutron-linuxbridge-agent
+          projected:
+            defaultMode: 420
+            sources:
+            - configMap:
+                name: neutron-etc
+                items:
+                  - key: neutron.conf
+                    path: neutron.conf
+                  - key: logging.conf
+                    path: logging.conf
+                  - key: rootwrap.conf
+                    path: rootwrap.conf
+                  - key: ml2-conf.ini
+                    path: ml2-conf.ini
+                  - key: linux-bridge.ini
+                    path: linux-bridge.ini
+            - secret:
+                name: neutron-common-secrets
+                items:
+                  - key: neutron-common-secrets.conf
+                    path: secrets/neutron-common-secrets.conf
+        - name: etc-archer
+          projected:
+            defaultMode: 420
+            sources:
+              - configMap:
+                  name: archer-etc
+                  items:
+                    - key: archer.ini
+                      path: archer.ini
+              - configMap:
+                  name: archer-etc-{{ $name }}
+                  items:
+                    - key: ni.ini
+                      path: ni.ini
+{{- end }}
+{{- end }}
+{{- end }}

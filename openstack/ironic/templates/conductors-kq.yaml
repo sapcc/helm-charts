@@ -1,0 +1,56 @@
+{{- if and (.Capabilities.APIVersions.Has "kos-operator.stable.sap.cc/v1") .Values.kos_conductor }}
+apiVersion: kos-operator.stable.sap.cc/v1
+kind: KosQuery
+metadata:
+  name: ironic-baremetal-blocks
+  namespace: monsoon3
+  annotations:
+    execute: "True"
+    context: "ironic@Default/service"
+requirements:
+- name: ironic-seed
+  kind: OpenstackSeed
+python: |
+    from ironicclient import client as bmclient
+    bm = bmclient.get_client(1, session=os.session, os_ironic_api_version='1.46')
+
+    blocks = dict()
+    nodes = list()
+
+    def append_item(d, k, v):
+        if k is None or v is None:
+          return
+
+        if k not in d:
+            d[k] = v
+        else:
+            vs = d[k]
+            if v not in vs:
+                vs += ',' + v
+
+    for node in bm.node.list(
+            limit=0,
+            fields=['uuid', 'name','driver','properties','conductor_group',
+                    'resource_class','provision_state','maintenance',
+                    'management_interface','inspect_interface','raid_interface',
+                    'storage_interface','boot_interface','vendor_interface',
+                    'network_interface','power_interface','rescue_interface',
+                    'bios_interface','deploy_interface','console_interface']):
+        if node.name is None:
+            continue
+
+        block_name = node.name.split('-')[-1]
+        if block_name in blocks:
+            block = blocks[block_name]
+        else:
+            block = {
+                'name': block_name,
+                'conductor': {'conductor_group': block_name},
+            }
+            blocks[block_name] = block
+        
+        node = node.to_dict()
+        nodes.append(node)
+
+    blocks = blocks.values()
+{{- end  }}

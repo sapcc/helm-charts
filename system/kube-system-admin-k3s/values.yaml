@@ -1,0 +1,76 @@
+global:
+  region:
+  domain:
+
+ingress:
+  tls_client_auth:
+    ca_cert:
+
+traefik:
+  instanceLabelOverride: kube-system
+  updateStrategy: 
+    type: Recreate
+  ingressRoute:
+    dashboard:
+      enabled: false
+  providers:
+    kubernetesCRD:
+      enabled: true
+      allowCrossNamespace: true
+    kubernetesIngress: {}
+  ports:
+    web:
+      expose:
+        default: false
+    websecure:
+      tls:
+        enabled: true
+        options: default
+  tlsOptions:
+    default:
+      minVersion: VersionTLS12
+      cipherSuites:
+        - TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA
+        - TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
+        - TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA
+        - TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+        - TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256
+        - TLS_RSA_WITH_AES_128_CBC_SHA
+        - TLS_RSA_WITH_AES_128_GCM_SHA256
+        - TLS_RSA_WITH_AES_256_CBC_SHA
+        - TLS_RSA_WITH_AES_256_GCM_SHA384
+      preferServerCipherSuites: true
+
+cert-manager:
+  installCRDs: true
+  image:
+    repository: keppel.global.cloud.sap/ccloud-quay-mirror/jetstack/cert-manager-controller
+    tag: v1.13.3
+  webhook:
+    image:
+      repository: keppel.global.cloud.sap/ccloud-quay-mirror/jetstack/cert-manager-webhook
+  cainjector:
+    image:
+      repository: keppel.global.cloud.sap/ccloud-quay-mirror/jetstack/cert-manager-cainjector
+    extraArgs:
+    - --leader-elect=false
+  startupapicheck:
+    image:
+      repository: keppel.global.cloud.sap/ccloud-quay-mirror/jetstack/cert-manager-ctl
+  ingressShim:
+    defaultIssuerName: digicert-issuer
+    defaultIssuerKind: ClusterIssuer
+    defaultIssuerGroup: certmanager.cloud.sap
+  prometheus:
+    enabled: true
+  podAnnotations:
+    prometheus.io/targets: kubernetes
+  enableCertificateOwnerRef: true
+
+owner-info:
+  support-group: containers
+  service: kube-system
+  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/system/kube-system-admin-k3s
+
+secrets-injector:
+  enabled: false

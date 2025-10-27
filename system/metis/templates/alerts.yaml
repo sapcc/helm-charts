@@ -1,0 +1,35 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+
+metadata:
+  name: metis-kubernetes-alerts
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: metisdb
+    helm.sh/chart: {{ include "metis.chart" $ }}
+    app.kubernetes.io/instance: metisdb-{{ $.Release.Name }}
+    app.kubernetes.io/managed-by: {{ $.Release.Service }}
+    prometheus: kubernetes
+
+spec:
+  groups:
+{{ include (print .Template.BasePath "/alerts/_database.alerts.tpl") . | indent 2 }}
+
+{{- range $path, $bytes := .Files.Glob "alerts/*.alerts" }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+
+metadata:
+  name: {{ printf $path | replace "alerts/" "metis-" | replace "." "-" }}
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: metisdb
+    helm.sh/chart: {{ include "metis.chart" $ }}
+    app.kubernetes.io/instance: metisdb-{{ $.Release.Name }}
+    app.kubernetes.io/managed-by: {{ $.Release.Service }}
+    prometheus: {{ required ".Values.alerts.prometheus missing"  $.Values.alerts.prometheus }}
+
+spec:
+{{ printf "%s" $bytes | indent 2 }}
+{{- end }}

@@ -1,0 +1,50 @@
+{{- if .Values.enabled }}
+{{- $values := .Values }}
+
+{{- range $i, $prober := .Values.probers }}
+{{ if ne $i 0 }}---{{ end }}
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+
+metadata:
+  name: cloudprober-{{ printf "%s" $prober.dc | replace "-" "" }}
+  labels:
+    app: cloudprober-{{ printf "%s" $prober.dc | replace "-" "" }}
+  annotations:
+    kubernetes.io/tls-acme: {{ default false $values.ingress.tls | quote }}
+    disco: {{ default false $values.ingress.disco | quote }}
+    cloud.sap/no-http-keep-alive-monitor: {{ default true $values.ingress.no_keep_alive | quote }}
+
+spec:
+  tls:
+    - secretName: cloudprober-{{ printf "%s" $prober.dc | replace "-" "" }}
+      hosts: [{{ $values.ingress.hostName_prefix }}-{{ printf "%s" $prober.dc | replace "-" ""}}.{{ $values.global.region }}.{{ $values.global.tld }}]
+  rules:
+    - host: {{ $values.ingress.hostName_prefix }}-{{ printf "%s" $prober.dc | replace "-" ""}}.{{ $values.global.region }}.{{ $values.global.tld }}
+      http:
+        paths:
+        - path: /metrics
+          pathType: Prefix
+          backend:
+            service:
+              name: cloudprober-{{ printf "%s" $prober.dc | replace "-" "" }}
+              port:
+                name: metrics
+        - path: /config
+          pathType: Prefix
+          backend:
+            service:
+              name: cloudprober-{{ printf "%s" $prober.dc | replace "-" "" }}
+              port:
+                name: metrics
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: cloudprober-{{ printf "%s" $prober.dc | replace "-" "" }}
+              port:
+                name: web
+---
+{{- end }}
+{{- end }}

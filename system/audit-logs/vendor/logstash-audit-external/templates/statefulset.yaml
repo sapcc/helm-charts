@@ -1,0 +1,116 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: logstash-audit-external
+  labels:
+    component: logstash-audit-external
+spec:
+  serviceName: logstash-audit-external
+  selector:
+    matchLabels:
+      component: logstash-audit-external
+  replicas: {{ .Values.replicas }}
+  updateStrategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        component: logstash-audit-external
+      annotations:
+        kubectl.kubernetes.io/default-container: "logstash"
+        checksum/configmap.yaml: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        kubectl.kubernetes.io/default-container: "logstash"
+    spec:
+    {{- if eq .Values.global.clusterType "scaleout" }}
+      nodeSelector:
+        ccloud.sap.com/nodepool: payload
+    {{- else if eq .Values.global.clusterType "metal" }}
+      nodeSelector:
+        zone: farm
+    {{- end }}
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: component
+                operator: In
+                values:
+                - "logstash-audit-external"
+            topologyKey: "kubernetes.io/hostname"
+      volumes:
+        - name: audit-etc
+          configMap:
+            name: logstash-audit-external-etc
+      {{- if .Values.syslog.enabled }}
+        - name: tls-secret
+          secret:
+            secretName: tls-logstash-audit-external
+      {{- end }}
+      containers:
+        - name: logstash
+          image: "{{ .Values.global.registry }}/elk-logstash:{{ .Values.image_version }}"
+          imagePullPolicy: IfNotPresent
+          ports:
+          {{- if .Values.syslog.enabled }}
+            - name: syslogudp
+              containerPort: {{ .Values.input_syslog_port }}
+              protocol: UDP
+            - name: syslogtcp
+              containerPort: {{ .Values.input_syslog_port }}
+              protocol: TCP
+            - name: bigiplogsudp
+              containerPort: {{ .Values.input_bigiplogs_port }}
+              protocol: UDP
+            - name: alertmanagertcp
+              containerPort: {{ .Values.input_alertmanager_port }}
+              protocol: TCP
+            - name: deploymentstcp
+              containerPort: {{ .Values.input_deployments_port }}
+              protocol: TCP
+           {{- end }}
+            - name: https
+              containerPort: {{ .Values.input_http_port }}
+              protocol: TCP
+          command: ["/bin/bash","/audit-etc/start.sh"]
+          env:
+            - name: AUDIT_HTTP_USER
+              valueFrom:
+                secretKeyRef:
+                  name: logstash-audit-external
+                  key: audit_http_user
+            - name: AUDIT_HTTP_PWD
+              valueFrom:
+                secretKeyRef:
+                  name: logstash-audit-external
+                  key: audit_http_pwd
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+          volumeMounts:
+            - name: audit-etc
+              mountPath: /audit-etc
+      {{- if .Values.syslog.enabled }}
+            - mountPath: /tls-secret
+              name: tls-secret
+      {{- end }}
+          resources:
+{{ toYaml .Values.resources | indent 12 }}
+#          livenessProbe:
+#            exec:
+#              command:
+#                - /bin/false
+#            initialDelaySeconds: 60
+        - name: exporter
+          image: {{ .Values.global.dockerHubMirror | required ".Values.global.dockerHubMirror is missing" }}/bonniernews/logstash_exporter:v0.1.2
+          ports:
+            - name: metrics
+              containerPort: 9198
+          resources:
+            limits:
+              memory: 45Mi
+              cpu: 100m
+            requests:
+              memory: 45Mi
+              cpu: 10m

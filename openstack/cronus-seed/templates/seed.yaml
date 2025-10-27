@@ -1,0 +1,140 @@
+{{- $cdomains := .Values.global.domain_seeds.customer_domains | required "missing value for .Values.global.domain_seeds.customer_domains" -}}
+{{- $domains  := concat (list "cc3test" "ccadmin") $cdomains -}}
+
+apiVersion: "openstack.stable.sap.cc/v1"
+kind: OpenstackSeed
+metadata:
+  name: cronus-seed
+
+spec:
+  roles:
+    - name: email_admin
+    - name: email_user
+    - name: cloud_email_admin
+    - name: email_router
+
+  services:
+    - name:        cronus
+      type:        email-aws
+      description: 'Email service'
+      enabled:     true
+      endpoints:
+        - region:    '{{ $.Values.global.region }}'
+          interface: public
+          enabled:   true
+          url:       'https://cronus.{{ $.Values.global.region }}.{{ $.Values.global.tld }}'
+        - region:    '{{ $.Values.global.region }}'
+          interface: internal
+          enabled:   true
+          url:       'https://cronus.{{ $.Values.global.region }}.{{ $.Values.global.tld }}'
+    - name:        nebula
+      type:        nebula
+      description: 'MultiCloud agent'
+      enabled:     true
+      endpoints:
+        - region:    '{{ $.Values.global.region }}'
+          interface: public
+          enabled:   true
+          url:       'https://nebula.{{ $.Values.global.region }}.{{ $.Values.global.tld }}'
+        - region:    '{{ $.Values.global.region }}'
+          interface: internal
+          enabled:   true
+          url:       'https://nebula.{{ $.Values.global.region }}.{{ $.Values.global.tld }}'
+
+  domains:
+    - name: Default
+      users:
+        - name: cronus
+          description: Cronus Service
+          password: '{{ $.Values.global.cronus_service_password }}'
+    - name: monsoon3
+      projects:
+      - name: cronus-simulator
+        role_assignments:
+        - user: cronus@Default
+          role: email_admin # for monitoring
+        - user: cronus@Default
+          role: objectstore_admin # for monitoring
+      - name: consulting_poc
+        role_assignments:
+        - user: cronus@Default
+          role: email_admin # for monitoring
+        - user: cronus@Default
+          role: objectstore_admin # for monitoring
+    - name: hcp03
+      projects:
+      - name: cronus-external
+        role_assignments:
+        - user: cronus@Default
+          role: email_admin # for external access from hyperscaler
+        - user: cronus@Default
+          role: objectstore_admin # for external access from hyperscaler
+    - name: ccadmin
+      projects:
+      - name: master
+        role_assignments:
+        - user: cronus@Default
+          role: keymanager_admin # to manage Barbican secrets
+        - user: cronus@Default
+          role: email_admin # for monitoring and system accounts
+        - user: cronus@Default
+          role: cloud_identity_viewer # for keystone effective role assignment list
+        - user: cronus@Default
+          role: email_router
+        swift:
+          enabled: true
+          containers:
+          # allow a user who has a keymanager_admin role in the project to read and write to a swift container
+          - name: cronus_usage_cache
+            metadata:
+              read: keymanager_admin
+              write: keymanager_admin
+          - name: cronus_inspections_1
+            metadata:
+              read: keymanager_admin
+              write: keymanager_admin
+          - name: email-quarantine
+            metadata:
+              read: keymanager_admin
+              write: keymanager_admin
+          - name: email-error
+            metadata:
+              read: keymanager_admin
+              write: keymanager_admin
+          - name: cronus_queue_1
+            metadata:
+              read: keymanager_admin
+              write: keymanager_admin
+          - name: cronus_queue_2
+            metadata:
+              read: keymanager_admin
+              write: keymanager_admin
+          - name: cronus_queue_3
+            metadata:
+              read: keymanager_admin
+              write: keymanager_admin
+          - name: cronus_queue_4
+            metadata:
+              read: keymanager_admin
+              write: keymanager_admin
+          - name: cronus_queue_5
+            metadata:
+              read: keymanager_admin
+              write: keymanager_admin
+          - name: cronus_queue_6
+            metadata:
+              read: keymanager_admin
+              write: keymanager_admin
+
+    # cloud admin role assignment
+    {{- range $domains}}
+    {{- if not (hasPrefix "iaas-" .)}}
+    - name: {{ . }}
+      groups:
+      - name: {{ hasPrefix "iaas-" . | ternary . ( upper . ) }}_API_SUPPORT
+        role_assignments:
+        - domain: {{ . }}
+          role: cloud_email_admin
+          inherited: true
+    {{- end}}
+    {{- end}}

@@ -1,0 +1,45 @@
+{{- range $name, $config := .Values.limes.local_liquids }}
+{{- if not $config.skip }}
+
+{{- $limes_domain := $.Values.limes.clusters.ccloud.catalog_url | trimPrefix "https://" -}}
+{{- $domain := $limes_domain | replace "limes-3" (printf "liquid-%s" $name) }}
+
+---
+
+kind: Ingress
+apiVersion: networking.k8s.io/v1
+
+metadata:
+  name: liquid-{{ $name }}
+  annotations:
+    kubernetes.io/tls-acme: "true"
+    disco: "true"
+    {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+    ingress.kubernetes.io/service-upstream: "true"
+    nginx.ingress.kubernetes.io/service-upstream: "true"
+    {{- end }}
+    {{- if $.Values.global.is_global_region }}
+    kubernetes.io/ingress.class: "nginx-external"
+    {{- end }}
+
+spec:
+  {{- if $.Values.global.is_global_region }}
+  ingressClassName: "nginx-external"
+  {{- end }}
+  tls:
+    - secretName: tls-liquid-{{ $name }}
+      hosts: [ {{ $domain }} ]
+  rules:
+    - host: {{ $domain }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: liquid-{{ $name }}
+                port:
+                  number: 80
+
+{{- end }}
+{{- end }}

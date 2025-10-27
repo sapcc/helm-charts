@@ -1,0 +1,328 @@
+kind: Deployment
+apiVersion: apps/v1
+
+metadata:
+  name: glance
+  labels:
+    app: {{ template "name" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    type: api
+    component: glance
+  annotations:
+    secret.reloader.stakater.com/reload: "{{ .Release.Name }}-secrets"
+    deployment.reloader.stakater.com/pause-period: "60s"
+spec:
+  replicas: {{ .Values.replicas }}
+  revisionHistoryLimit: {{ .Values.upgrades.revisionHistory }}
+  strategy:
+    type: {{ .Values.upgrades.podReplacementStrategy }}
+    {{ if eq .Values.upgrades.podReplacementStrategy "RollingUpdate" }}
+    rollingUpdate:
+      maxUnavailable: {{ .Values.upgrades.rollingUpdate.maxUnavailable }}
+      maxSurge: {{ .Values.upgrades.rollingUpdate.maxSurge }}
+    {{ end }}
+  selector:
+    matchLabels:
+      app: {{ template "name" . }}
+  template:
+    metadata:
+      labels:
+        app: {{ template "name" . }}
+        name: glance
+        alert-tier: os
+        alert-service: glance
+        {{- include "utils.topology.pod_label" . | indent 8 }}
+      annotations:
+        chart-version: {{.Chart.Version}}
+        checksum/etc-configmap.conf: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
+        secrets-hash: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
+        {{- if .Values.proxysql.mode }}
+        prometheus.io/scrape: "true"
+        prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
+        {{- end }}
+        {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
+    spec:
+      {{ include "utils.proxysql.pod_settings" . | indent 6 }}
+      {{- tuple . (dict "name" "glance") | include "utils.topology.constraints" | indent 6 }}
+      initContainers:
+      {{- tuple . (dict "jobs" (tuple . "migration-job" | include "job_name") "service" (include "glance.service_dependencies" .)) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
+      {{- if .Values.proxysql.native_sidecar }}
+      {{- tuple . (add .Values.rpc_workers .Values.workers) | include "utils.proxysql.container" | indent 6 }}
+      {{- end }}
+      {{- if .Values.file.persistence.enabled }}
+      - name: permissions
+        securityContext:
+          runAsUser: 0
+        image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/loci-glance:{{ required "Please set glance.imageVersion or similar" .Values.imageVersion }}
+        imagePullPolicy: IfNotPresent
+        volumeMounts:
+        - mountPath: /glance_store
+          name: image-store
+        command:
+        - dumb-init
+        - bash
+        args:
+        - -xc
+        - |
+          chown -R glance:glance /glance_store
+      {{- end }}
+      containers:
+      - name: glance-api
+        image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/loci-glance:{{.Values.imageVersionGlanceApi | default .Values.imageVersion | default .Values.image_version | required "Please set glance.imageVersion or similar"}}
+        imagePullPolicy: IfNotPresent
+        lifecycle:
+          preStop:
+            {{- include "utils.snippets.pre_stop_graceful_shutdown" . | indent 12 }}
+        livenessProbe:
+          httpGet:
+            path: /
+            port: {{.Values.api_port_internal}}
+          initialDelaySeconds: 60
+          timeoutSeconds: 10
+          periodSeconds: 60
+          failureThreshold: 15
+        readinessProbe:
+          httpGet:
+            path: /healthcheck
+            port: {{.Values.api_port_internal}}
+          initialDelaySeconds: 5
+          timeoutSeconds: 4
+          periodSeconds: 5
+          failureThreshold: 2
+        command:
+        - dumb-init
+        - /var/lib/openstack/bin/glance-api
+        env:
+        - name: DEBUG_CONTAINER
+          value: "false"
+        {{- include "utils.trust_bundle.env" . | indent 8 }}
+        {{- if .Values.sentry.enabled }}
+        - name: SENTRY_DSN
+          valueFrom:
+            secretKeyRef:
+              name: sentry
+              key: glance.DSN.python
+        {{- end }}
+        {{- if .Values.metrics.enabled }}
+        - name: STATSD_HOST
+          value: "127.0.0.1"
+        - name: STATSD_PORT
+          value: "9125"
+        - name: STATSD_PREFIX
+          value: {{ .Values.metrics.prefix | default "openstack" | quote }}
+        {{- end }}
+        {{- if .Values.api.resources.enabled }}
+        resources:
+          limits:
+            cpu: {{ .Values.api.resources.limits.cpu | quote }}
+            memory: {{ .Values.api.resources.limits.memory | quote }}
+          requests:
+            cpu: {{ .Values.api.resources.requests.cpu | quote }}
+            memory: {{ .Values.api.resources.requests.memory | quote }}
+        {{- end }}
+        ports:
+        - name: api
+          containerPort: {{.Values.api_port_internal}}
+        volumeMounts:
+        - name: swift-buffer
+          mountPath: /upload
+        - name: etcglance
+          mountPath: /etc/glance
+        - name: glance-etc
+          mountPath: /etc/glance/glance-api.conf
+          subPath: glance-api.conf
+          readOnly: true
+        {{- if not .Values.swift.multi_tenant }}
+        - name: glance-etc
+          mountPath: /etc/glance/swift-store.conf
+          subPath: swift-store.conf
+          readOnly: true
+        {{- end }}
+        {{- if .Values.ceph.enabled }}
+        - name: glance-etc
+          mountPath: /etc/ceph/ceph.conf
+          subPath: ceph.conf
+          readOnly: true
+        - name: glance-etc
+          mountPath: /etc/ceph/ceph.client.glance.keyring
+          subPath: ceph.client.glance.keyring
+          readOnly: true
+        {{- end }}
+        - name: glance-etc
+          mountPath: /etc/glance/policy.yaml
+          subPath: policy.yaml
+          readOnly: true
+        - name: glance-etc
+          mountPath: /etc/glance/glance-api-paste.ini
+          subPath: glance-api-paste.ini
+          readOnly: true
+        - name: glance-etc
+          mountPath: /etc/glance/logging.ini
+          subPath: logging.ini
+          readOnly: true
+        - name: glance-etc-confd
+          mountPath: /etc/glance/glance.conf.d
+          readOnly: true
+        - mountPath: /glance_store
+          name: image-store
+        {{- if .Values.watcher.enabled }}
+        - name: glance-etc
+          mountPath: /etc/glance/watcher.yaml
+          subPath: watcher.yaml
+          readOnly: true
+        {{- end }}
+        {{- if .Values.audit.enabled }}
+        - name: glance-etc
+          mountPath: /etc/glance/glance_audit_map.yaml
+          subPath: glance_audit_map.yaml
+          readOnly: true
+        {{- end }}
+        {{- if .Values.sapcc_rate_limit.enabled }}
+        - name: glance-etc
+          mountPath: /etc/glance/ratelimit.yaml
+          subPath: ratelimit.yaml
+          readOnly: true
+        {{- end }}
+        {{- include "utils.proxysql.volume_mount" . | indent 8 }}
+        {{- include "utils.trust_bundle.volume_mount" . | indent 8 }}
+      {{- if not .Values.proxysql.native_sidecar }}
+      {{- tuple . (add .Values.rpc_workers .Values.workers) | include "utils.proxysql.container" | indent 6 }}
+      {{- end }}
+      {{- if .Values.imageVersionGlanceRegistry }}
+      - name: registry
+        image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/ubuntu-source-glance-registry:{{ required "Please set glance.imageVersion or similar" .Values.imageVersion }}
+        imagePullPolicy: IfNotPresent
+        command:
+        - dumb-init
+        - kubernetes-entrypoint
+        lifecycle:
+          preStop:
+            {{- include "utils.snippets.pre_stop_graceful_shutdown" . | indent 12 }}
+        livenessProbe:
+          httpGet:
+            path: /healthcheck
+            port: 9191
+          initialDelaySeconds: 20
+          timeoutSeconds: 5
+        env:
+        - name: COMMAND
+          value: "glance-registry"
+        - name: NAMESPACE
+          value: {{ .Release.Namespace }}
+        - name: DEPENDENCY_SERVICE
+          value: "glance"
+        - name: DEBUG_CONTAINER
+          value: "false"
+        {{- if .Values.sentry.enabled }}
+        - name: SENTRY_DSN
+          valueFrom:
+            secretKeyRef:
+              name: sentry
+              key: glance.DSN.python
+        {{- end }}
+        {{- if .Values.registry.resources.enabled }}
+        resources:
+          limits:
+            cpu: {{ .Values.registry.resources.limits.cpu | quote }}
+            memory: {{ .Values.registry.resources.limits.memory | quote }}
+          requests:
+            cpu: {{ .Values.registry.resources.requests.cpu | quote }}
+            memory: {{ .Values.registry.resources.requests.memory | quote }}
+        {{- end }}
+        ports:
+        - name: registry
+          containerPort: 9191
+        volumeMounts:
+        - name: etcglance
+          mountPath: /etc/glance
+        - name: glance-etc
+          mountPath: /etc/glance/glance-registry.conf
+          subPath: glance-registry.conf
+          readOnly: true
+        {{- if not .Values.swift.multi_tenant }}
+        - name: glance-etc
+          mountPath: /etc/glance/swift-store.conf
+          subPath: swift-store.conf
+          readOnly: true
+        {{- end }}
+        - name: glance-etc
+          mountPath: /etc/glance/policy.yaml
+          subPath: policy.yaml
+          readOnly: true
+        - name: glance-etc
+          mountPath: /etc/glance/glance-registry-paste.ini
+          subPath: glance-registry-paste.ini
+          readOnly: true
+        - name: glance-etc
+          mountPath: /etc/glance/logging.ini
+          subPath: logging.ini
+          readOnly: true
+        - name: glance-etc-confd
+          mountPath: /etc/glance/glance.conf.d
+          readOnly: true
+        {{- if .Values.watcher.enabled }}
+        - name: glance-etc
+          mountPath: /etc/glance/watcher.yaml
+          subPath: watcher.yaml
+          readOnly: true
+        {{- end }}
+        {{- if .Values.audit.enabled }}
+        - name: glance-etc
+          mountPath: /etc/glance/glance_audit_map.yaml
+          subPath: glance_audit_map.yaml
+          readOnly: true
+        {{- end }}
+      {{- end }}
+      {{- if .Values.metrics.enabled }}
+      - name: statsd
+        {{- if hasKey .Values.global "dockerHubMirror"}}
+        image: {{.Values.global.dockerHubMirror}}/{{ .Values.statsd.image.repository }}:{{ .Values.statsd.image.tag }}
+        {{- else }}
+        image: "{{ .Values.statsd.image.repository }}:{{ .Values.statsd.image.tag }}"
+        {{- end }}
+        imagePullPolicy: {{ .Values.metrics.imagePullPolicy | default "IfNotPresent" | quote }}
+        args: [ --statsd.mapping-config=/etc/statsd/statsd-exporter.yaml ]
+        ports:
+        - name: statsd
+          containerPort: 9125
+          protocol: UDP
+        - name: metrics
+          containerPort: {{ .Values.metrics.port }}
+        volumeMounts:
+          - name: glance-etc
+            mountPath: /etc/statsd/statsd-exporter.yaml
+            subPath: statsd-exporter.yaml
+            readOnly: true
+        {{- if .Values.statsd.resources.enabled }}
+        resources:
+          requests:
+            cpu: {{ .Values.statsd.resources.requests.cpu | quote }}
+            memory: {{ .Values.statsd.resources.requests.memory | quote }}
+          limits:
+            cpu: {{ .Values.statsd.resources.limits.cpu | quote }}
+            memory: {{ .Values.statsd.resources.limits.memory | quote }}
+        {{- end }}
+      {{- end }}
+{{- include "jaeger_agent_sidecar" . | indent 6 }}
+      volumes:
+      - name: etcglance
+        emptyDir: {}
+      - name: swift-buffer
+        emptyDir: {}
+      - name: image-store
+      {{- if .Values.file.persistence.enabled }}
+        persistentVolumeClaim:
+          claimName: {{ if .Values.file.persistence.existingClaim }}{{ .Values.file.persistence.existingClaim }}{{- else }}{{ .Release.Name }}-pvc{{- end }}
+      {{- else }}
+        emptyDir: {}
+      {{- end }}
+      - name: glance-etc
+        configMap:
+          name: glance-etc
+      - name: glance-etc-confd
+        secret:
+          secretName: {{ .Release.Name }}-secrets
+      {{- include "utils.proxysql.volumes" . | indent 6 }}
+      {{- include "utils.trust_bundle.volumes" . | indent 6 }}

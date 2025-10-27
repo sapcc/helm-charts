@@ -1,0 +1,74 @@
+# If enabled, image references use `.Values.registryAlternateRegion` etc. instead of `.Values.registry` etc.
+useAlternateRegion: false
+
+image:
+  # This tag must be valid within the Keppel repo ccloud/shared-app-images/alpine-valkey.
+  # To pin to a specific image, replace this with a timestamped tag from there in values.yaml of the parent chart.
+  tag: 8.1-20251006115045
+
+## Redis password
+##
+## WARNING: Setting this password explicitly is deprecated.
+## Leave this field unfilled to have the redis server autogenerate a password on first startup.
+## The password can be consumed from the secret "$RELEASE-redis-user-default" in the key "password".
+## To rotate the secret, delete it and restart the redis container to generate a new one.
+redisPassword: null
+
+## Enable persistence using Persistent Volume Claims
+## ref: http://kubernetes.io/docs/user-guide/persistent-volumes/
+##
+persistence:
+  enabled: true
+  accessMode: ReadWriteMany
+  size: 10Gi
+
+## Configure resource requests and limits
+## ref: http://kubernetes.io/docs/user-guide/compute-resources/
+##
+resources:
+  limits:
+    memory: 128Mi
+    cpu: 350m
+  requests:
+    memory: 128Mi
+    cpu: 100m
+
+# if enabled, annotates generated password Secrets with `stakater/Reloader`
+# annotations to cause the consuming applications annotated with
+# `reloader.stakater.com/auto: "true"` to be restarted when the corresponding
+# Secrets change
+reloader:
+  annotateGeneratedSecrets: false
+
+alerts:
+  enabled: true
+  support_group: null # This field must be filled by the top-level chart.
+  service: null       # defaults to .Release.Name if not set
+
+# Prometheus metrics via oliver006/redis_exporter sidecar.
+metrics:
+  enabled: true
+
+  image:
+    # This tag must be valid within the Docker Hub repo oliver006/redis_exporter.
+    tag: v1.78.0
+
+  # Name of the Prometheus by which the metrics will be scraped.
+  prometheus: openstack
+
+  ## Configure resource requests and limits
+  ## ref: http://kubernetes.io/docs/user-guide/compute-resources
+  resources:
+    limits:
+      memory: 64Mi
+      cpu: 100m
+    requests:
+      memory: 64Mi
+      cpu: 10m
+
+  # if enabled, configures `stakater/Reloader` (annotations) to cause the
+  # deployment to do a rolling restart when referenced CMs and Secrets annotated
+  # with `reloader.stakater.com/match: "true"` (e.g. Secret with DB password)
+  # change
+  reloader:
+    enabled: false

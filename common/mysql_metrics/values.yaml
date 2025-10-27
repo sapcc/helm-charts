@@ -1,0 +1,65 @@
+---
+global:
+  tld: cloud.sap
+  region: local
+  linkerd_requested: true
+
+linkerd:
+  # linkerd annotation for the mysql metrics pod (true/false)
+  enabled: true
+
+db_type: maria
+# db_name: DEFINED-IN-COMPONENT-CHART
+# db_user: DEFINED-IN-COMPONENT-CHART
+# db_password: null
+
+# connections:
+#  default:
+#    db_type: mariadb
+#    db_instance_name: null
+#    db_name: DEFINED-IN-COMPONENT-CHART
+#    db_user: DEFINED-IN-COMPONENT-CHART
+#    db_password: DEFINED-IN-COMPONENT-CHART
+#  custom:
+#    db_type: mariadb
+#    db_instance_name: custom-b-1
+#    db_name: DEFINED-IN-COMPONENT-CHART
+#    db_user: DEFINED-IN-COMPONENT-CHART
+#    db_password: DEFINED-IN-COMPONENT-CHART
+connections: null
+
+port_metrics: '9237'
+# Name of the Prometheus supposed to scrape the metrics
+prometheus: openstack
+loglevel: info
+image: sql-exporter
+imageTag: '20250707094646'
+imagePullPolicy: IfNotPresent
+
+## Affinity for pod assignment
+## Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
+##
+nodeAffinity: {}
+
+resources:
+  limits:
+    cpu: 250m
+    memory: 256Mi
+  requests:
+    cpu: 5m
+    memory: 32Mi
+
+vpa:
+  # https://github.com/sapcc/vpa_butler
+  # The maximum available capacity is split evenly across containers specified in the Deployment, StatefulSet or DaemonSet to derive the upper recommendation bound. This does not work out for pods with a single resource-hungry container with several sidecar containers
+  # Annotate the Deployment, StatefulSet or DaemonSet with vpa-butler.cloud.sap/main-container=$MAIN_CONTAINER. That will distribute 75% of the maximum available capacity to the main container and the rest evenly across all others
+  set_main_container: false
+
+customMetrics: {}
+
+## can be used to add additional metric sources, e.g. a nova cell database in the format:
+## mysql://user:pass@tcp(host:3306)/db_name
+customSources: []
+
+## nova-only switch for adding cell2 db as another source for exporter:
+queryCell2: false

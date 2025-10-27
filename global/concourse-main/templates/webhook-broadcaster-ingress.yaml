@@ -1,0 +1,26 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: webhook-broadcaster
+  annotations:
+    disco: "true"
+    kubernetes.io/tls-acme: "true"
+  labels:
+    app: webhook-broadcaster
+spec:
+  rules:
+  - host: webhook.{{ .Values.concourse.concourse.web.externalDomain }}
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: webhook-broadcaster
+            port:
+              number: 8080
+  tls:
+  - hosts:
+    - webhook.{{ .Values.concourse.concourse.web.externalDomain }}
+    secretName: webhook-broadcaster-tls
+

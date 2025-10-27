@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "fullname" . }}
+  labels:
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+spec:
+  replicas: {{ .Values.serverReplicaCount }}
+  selector:
+    matchLabels:
+      app: {{ template "fullname" . }}
+  template:
+    metadata:
+      labels:
+        app: {{ template "fullname" . }}
+        alert-tier: os
+        alert-service: sentry
+    spec:
+      {{- if .Values.serviceAccount.enabled }}
+      serviceAccountName: {{ .Values.serviceAccount.name }}
+      {{- end }}
+      {{- if .Values.databaseUpgrade.enabled }}
+      initContainers:
+      - name: "upgrade"
+        image: "{{required ".Values.global.registry is missing" .Values.global.registry }}/{{ .Values.image.repository }}:{{required ".Values.image.tag is missing" .Values.image.tag }}"
+        args: ["upgrade", "--noinput", "--lock"]
+        env:
+{{ include "env-vars" . | indent  10 }}
+      {{- end }}
+      containers:
+      - name: {{ .Chart.Name }}
+        image: "{{required ".Values.global.registry is missing" .Values.global.registry }}/{{ .Values.image.repository }}:{{required ".Values.image.tag is missing" .Values.image.tag }}"
+        args: [ run, web ]
+        #command: [tail, -f, /dev/null]
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        ports:
+        - containerPort: {{ .Values.service.internalPort }}
+        livenessProbe:
+          httpGet:
+            path: /_health/
+            port: {{ .Values.service.internalPort }}
+          timeoutSeconds: 5
+        readinessProbe:
+          httpGet:
+            path: /_health/
+            port: {{ .Values.service.internalPort }}
+          timeoutSeconds: 5
+        env:
+{{ include "env-vars" . | indent  10 }}
+        resources:
+          requests:
+            cpu: {{ .Values.sentry.resources.requests.cpu | quote }}
+            memory: {{ .Values.sentry.resources.requests.memory | quote }}
+          limits:
+            cpu: {{ .Values.sentry.resources.limits.cpu | quote }}
+            memory: {{ .Values.sentry.resources.limits.memory | quote }}

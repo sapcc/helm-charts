@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: boot-operator-controller-manager
+  namespace: boot-operator-system
+spec:
+  strategy:
+    type: Recreate
+  template:
+    spec:
+      hostNetwork: true
+      containers:
+        - name: manager
+          args:
+            - --health-probe-bind-address=:8081
+            - --metrics-bind-address=127.0.0.1:8080
+            - --leader-elect
+            - --controllers=httpbootconfig,ipxebootconfig,serverbootconfighttp,serverbootconfigpxe
+          livenessProbe:
+            httpGet:
+              port: 8087
+          readinessProbe:
+            httpGet:
+              port: 8087
+          ports:
+            - containerPort: 8082
+              name: ipxe
+              protocol: TCP

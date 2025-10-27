@@ -1,0 +1,145 @@
+{{- if $.Values.backup_v2.enabled }}
+{{- $common := $.Values.backup_v2 }}
+{{- $global := $.Values.global }}
+{{- range $backup := $.Values.backup_v2.backups }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mariadb-sync-{{ $backup.name }}
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: mariadb-sync
+    helm.sh/chart: {{ include "metis.chart" $ }}
+    app.kubernetes.io/instance: {{ $.Release.Name }}-sync-{{ $backup.name }}-mariadb
+    app.kubernetes.io/managed-by: {{ $.Release.Service }}
+    app.kubernetes.io/version: "{{ $.Values.backup_v2.image_version }}"
+    alert-service: "metis"
+  annotations:
+    {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+    linkerd.io/inject: enabled
+    {{- end }}
+spec:
+  ports:
+  - port: 8080
+    name: metrics
+  clusterIP: None
+  selector:
+    app.kubernetes.io/instance: mariadb-sync-{{ $backup.name }}-{{ $.Release.Name }}
+
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mariadb-sync-{{ $backup.name }}
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: mariadb-sync
+    helm.sh/chart: {{ include "metis.chart" $ }}
+    app.kubernetes.io/instance: {{ $.Release.Name }}-sync-{{ $backup.name }}-mariadb
+    app.kubernetes.io/managed-by: {{ $.Release.Service }}
+    app.kubernetes.io/version: "{{ $.Values.backup_v2.image_version }}"
+    alert-service: "metis"
+  annotations:
+    secret.reloader.stakater.com/reload: "mariadb-sync-secrets,mariadb-sync-{{$backup.name}}-secrets"
+spec:
+  replicas: 1
+  serviceName: mariadb-sync-{{ $backup.name }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: mariadb-sync
+      app.kubernetes.io/instance: mariadb-sync-{{ $backup.name }}-{{ $.Release.Name }}
+  template:
+    metadata:
+      labels:
+        alert-service: "metis"
+        app.kubernetes.io/version: "{{ $.Values.metisSync.imageVersion }}"
+        app.kubernetes.io/name: mariadb-sync
+        app.kubernetes.io/instance: mariadb-sync-{{ $backup.name }}-{{ $.Release.Name }}
+      annotations:
+        {{- $data := dict "common" $common "backup" $backup "mariadb" $.Values.mariadb "root" $ }}
+        checksum/config: {{ include "sync.configmap" $data | sha256sum }}
+        kubectl.kubernetes.io/default-container: "sync"
+        {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+        linkerd.io/inject: enabled
+        {{- end }}
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 1
+            podAffinityTerm:
+              topologyKey: "kubernetes.io/hostname"
+              labelSelector:
+                matchExpressions:
+                - key: app.kubernetes.io/name
+                  operator: In
+                  values:
+                  - mariadb-replication
+                  - mariadb-sync
+                - key: app
+                  operator: In
+                  values:
+                  - {{ $backup.name }}-mariadb
+      terminationGracePeriodSeconds: 10
+      containers:
+      - name: sync
+        image: "{{ required ".Values.global.registry variable missing" $global.registry }}/{{ $.Values.metisSync.image }}:{{ $.Values.metisSync.imageVersion }}"
+        command:
+          - sync
+        ports:
+          - containerPort: 8080
+            name: metrics
+            protocol: TCP
+        resources:
+{{ toYaml (required "missing .resources" $common.resources) | indent 10 }}
+        env:
+        - name: "CONFIG"
+          value: "/etc/config/config.yaml"
+        - name: "DOWNLOAD_DIR"
+          value: "/home/appuser/backup"
+        - name: "SOURCEDB_USER"
+          valueFrom:
+            secretKeyRef:
+              name: mariadb-sync-{{$backup.name}}-secrets
+              key: sourceDBUser
+        - name: "SOURCEDB_PASSWORD"
+          valueFrom:
+            secretKeyRef:
+              name: mariadb-sync-{{$backup.name}}-secrets
+              key: sourceDBPW
+        - name: "TARGETDB_PASSWORD"
+          valueFrom:
+            secretKeyRef:
+              name: mariadb-sync-secrets
+              key: metisAdminPW
+        - name: "OPENSTACK_PASSWORD"
+          valueFrom:
+            secretKeyRef:
+              name: mariadb-sync-secrets
+              key: openstackPW
+        - name: "AWS_ACCESS_KEY_ID"
+          valueFrom:
+            secretKeyRef:
+              name: mariadb-sync-secrets
+              key: awsAccessKeyID
+        - name: "AWS_SECRET_ACCESS_KEY"
+          valueFrom:
+            secretKeyRef:
+              name: mariadb-sync-secrets
+              key: awsSecretAccessKey
+        - name: "SSE_CUSTOMER_KEY"
+          valueFrom:
+            secretKeyRef:
+              name: mariadb-sync-secrets
+              key: awsS3SSECustomerKey
+        volumeMounts:
+        - name: mariadb-sync-etc
+          mountPath: /etc/config
+          readOnly: true
+      volumes:
+        - name: mariadb-sync-etc
+          configMap:
+            name: mariadb-sync-{{ $backup.name }}-etc
+{{- end }}
+{{- end }}

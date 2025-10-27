@@ -1,0 +1,46 @@
+apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
+kind: KubeadmConfigTemplate
+metadata:
+  name: worker-rt-{{ .Values.global.region }}
+spec:
+  template:
+    spec:
+      initConfiguration:
+        nodeRegistration:
+          name: $${METAL_HOSTNAME}
+          kubeletExtraArgs:
+            cloud-provider: external
+          taints: []
+      joinConfiguration:
+        nodeRegistration:
+          name: $${METAL_HOSTNAME}
+          kubeletExtraArgs:
+            cloud-provider: external
+          taints: []
+      format: ignition
+      ignition:
+        containerLinuxConfig:
+          additionalConfig: |-
+            storage:
+              files:
+{{ tpl .Values.additionalConfig.files . | indent 16 }}
+{{ tpl .Values.worker.additionalConfig.files . | indent 16 }}
+            systemd:
+              units:
+{{ tpl .Values.worker.additionalConfig.units . | indent 16 }}
+      users:
+        - name: {{ $.Values.user.name }}
+          passwd: {{ $.Values.user.passwordhash }}
+          groups: "sudo"
+          sshAuthorizedKeys:
+          - {{ $.Values.user.key | quote }}
+      preKubeadmCommands:
+        - hostnamectl set-hostname $${METAL_HOSTNAME}
+        - IMAGE={{ $.Values.images.kubelet.repository }}:{{ .Values.controlplane.version }}
+        - while true; do ctr image pull $IMAGE && break; done
+        # stop services if running to avoid "Text file busy" error
+        - systemctl stop kubelet || true
+        - ctr run --rm --mount type=bind,src=/usr/bin,dst=/mnt,options=rbind $IMAGE extract-files sh -c "cp --preserve=mode /usr/local/bin/kubeadm /mnt/kubeadm && cp --preserve=mode /usr/local/bin/kubelet /mnt/kubelet"
+        # avoid running kubeadm on L1 interface - wait for bond
+        # https://www.freedesktop.org/software/systemd/man/latest/systemd-networkd-wait-online.service.html
+        - /usr/lib/systemd/systemd-networkd-wait-online -i {{ .Values.controlplane.uplinkInterface }} --ipv4 --timeout 0

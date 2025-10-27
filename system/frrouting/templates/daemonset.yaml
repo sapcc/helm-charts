@@ -1,0 +1,108 @@
+{{ if .Values.enabled -}}
+{{- if .Values.globalRegion.enabled }}
+{{ range $region, $regionValues := .Values.globalRegion.regions }}
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  annotations:
+  labels:
+    k8s-app: frrouting-core-{{ $region }}
+  name: frrouting-core-{{ $region }}
+spec:
+  selector:
+    matchLabels:
+      name: frrouting-core-{{ $region }}
+  updateStrategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        name: frrouting-core-{{ $region }}
+        k8s-app: frrouting-core-{{ $region }}
+      annotations:
+    spec:
+      priorityClassName: system-node-critical
+      initContainers:
+      - command:
+        - /opt/frr/frrouting-init.sh
+        image: "{{ $.Values.images.registry }}/{{ $.Values.images.init.image }}:{{ $.Values.images.init.tag }}"
+        imagePullPolicy: Always
+        name: init
+        securityContext:
+          privileged: true
+        volumeMounts:
+        - mountPath: "/host"
+          name: host
+        - mountPath: /etc/frr
+          name: etc-frr
+        - mountPath: /opt/frr
+          name: opt-frr
+      containers:
+      - name: frrouting
+        image: "{{ $.Values.images.registry }}/{{ $.Values.images.frrouting.image }}:{{ $.Values.images.frrouting.tag }}"
+        imagePullPolicy: Always
+        env:
+          - name: NODE_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: spec.nodeName
+          - name: HOST_IP
+            valueFrom:
+              fieldRef:
+                fieldPath: status.hostIP
+        securityContext:
+          privileged: true
+        volumeMounts:
+          - name: etc-frr
+            mountPath: /etc/frr
+        ports:
+        - containerPort: {{ $.Values.metricPort }}
+          hostPort: {{ $.Values.metricPort }}
+          name: metrics
+          protocol: TCP
+        lifecycle:
+          postStart:
+            exec:
+              command:
+              - /bin/bash
+              - -c
+              - /usr/lib/frr/metrics -interval=20 &
+        livenessProbe:
+            httpGet:
+              path: /metrics
+              port: {{ $.Values.metricPort }}
+            periodSeconds: 60
+            timeoutSeconds: 5
+      hostNetwork: true
+      nodeSelector:
+        kubernetes.cloud.sap/region: {{ $region }}
+      terminationGracePeriodSeconds: 5
+      tolerations:
+        - operator: Exists
+      volumes:
+      - name: host
+        hostPath:
+          path: "/"
+      - name: etc-frr
+        emptyDir: {}
+      - name: opt-frr
+        projected:
+          defaultMode: 484
+          sources:
+          - configMap:
+              items:
+              - key: frrouting-init.sh
+                path: frrouting-init.sh
+              - key: etc-frr-daemons
+                path: daemons
+              - key: etc-frr-zebra-conf
+                path: zebra.conf
+              - key: etc-frr-bgpd-conf
+                path: bgpd.conf
+              - key: etc-frr-ospfd-conf
+                path: ospfd.conf
+              name: frrouting-core-{{ $region }}
+{{- end }}
+{{- end }}
+{{- end }}

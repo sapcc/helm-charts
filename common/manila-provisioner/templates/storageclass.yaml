@@ -1,0 +1,17 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: manila-share
+  labels:
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}"
+    release: {{ .Release.Name }}
+provisioner: externalstorage.k8s.io/manila
+parameters:
+  type: default
+  zones: {{ required "A valid availability zone is required." .Values.storageClass.zones }}
+  protocol: {{ required "A valid protocol value is required." .Values.storageClass.protocol }}
+  backend: {{ required "A valid backend value is required." .Values.storageClass.backend }}
+  osSecretName: {{ include "fullname" . }}
+  osSecretNamespace: {{ .Release.Namespace }}
+  osShareNetworkID: {{ required "A valid share networks UUID is required." .Values.storageClass.osShareNetworkID }}
+  nfs-share-client: {{ required "A valid nfs share network is required." (index .Values "storageClass" "nfs-share-client") }}

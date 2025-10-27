@@ -1,0 +1,20 @@
+# vim: set ft=yaml:
+
+groups:
+- name: openstack-keppel-trivy-pod.alerts
+  rules:
+      - alert: OpenstackKeppelTrivyMemoryUsageHigh
+        expr: max by (container,pod)(max_over_time(container_memory_working_set_bytes{namespace="trivy"}[5m]))/ on (container,pod) (max by (container,pod) (kube_pod_container_resource_limits)) * 100 > 90
+        for: 15m
+        labels:
+          support_group: containers
+          tier: os
+          service: keppel
+          severity: info
+          context: memory
+          dashboard: keppel-trivy-vulnerability-check
+          meta: "{{ $labels.pod }}/{{ $labels.container }}"
+        annotations:
+          summary: Container memory is nearly exhausted
+          description: The container {{ $labels.pod }}/{{ $labels.container }} is nearing full RAM.
+            This is especially bad if this container is a Redis. If RAM is going full, Redis is going to evict keys, thereby negatively impacting Trivy's speed to scan images.

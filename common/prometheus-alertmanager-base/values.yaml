@@ -1,0 +1,209 @@
+global:
+  # The OpenStack region.
+  region:
+
+  # The TLD as used in the URL.
+  domain:
+
+# The image for the Prometheus Altermanager. The tag equals the .Chart.appVersion.
+image:
+  repository: keppel.eu-de-1.cloud.sap/ccloud-dockerhub-mirror/prom/alertmanager
+
+# custom specified version only to be set as version string in the alertmanager spec. The image can be different.
+# used to explicitly avoid newly introduced operator settings which might not fit.
+# defaults to .Chart.AppVersion
+version:
+
+# Mandatory name for this Alertmanager.
+name:
+
+# The number of replicas.
+replicas: 1
+
+# Retention for the Alertmanager. Only stores silences.
+# Valid units are ms|s|m|h.
+# 168h = 7 days.
+# 2016h = 3months.
+retention: 2016h
+
+# AdditionalPeers allows injecting a set of additional Alertmanagers to peer with to form a highly available cluster.
+additionalPeers: []
+
+# Optional ClusterAdvertiseAddress is the explicit address to advertise in the Alertmanager cluster.
+# clusterAdvertiseAddress:
+
+# Feature added in v0.26.0. When additionalPeers is used and AMs need to gossip between clusters, they need to have the same clusterLabel set to communicate.
+# If omitted it is generated automatically, which usually leads to different clusterLabels.
+clusterLabel: ccloud
+
+# OnNamespace or None to match all namespaces. Default to None here to be independent from the deployed namespace since it would be locked to release namespace otherwise.
+alertmanagerConfigMatcherStrategy: None
+
+# Alertmanager mesh.
+mesh:
+  port: 9094
+  # Optional Node port to use for alertmanager mesh.
+  # Use in combination with nodeSelector.
+  # nodePort: 6783
+
+forceEnableClusterMode: true
+
+# Alertmanager configuration.
+# See https://prometheus.io/docs/alerting/configuration/#configuration-file .
+config: {}
+
+# Pass Alertmanager configuration through Helm templating.
+tplConfig: false
+
+# Provide Alertmanager configuration vi an existing secret in the same namespace.
+# The secret must be named alertmanager-$name .
+useExistingSecret: false
+
+# Configure notification templates for receivers.
+notificationTemplates:
+  # Enable default notification templates for Slack and Pagerduty,
+  # which can be found in the notification-templates folder mounted to /etc/alertmanager/ .
+  defaultEnabled: true
+
+# List of configmaps in the same namespace as the Alertmanager that should be mounted to /etc/alertmanager/configmaps/< name of configmap > .
+configMaps: []
+# - < name of configmap >
+
+# List of secrets in the same namespace as the Alertmanager that should be mounted to /etc/alertmanager/secrets/< name of secret > .
+secrets: []
+# - < name of secret >
+
+# Optional ingress for this Alertmanager.
+ingress:
+  enabled: false
+
+  # The name is used to generate the external URL Alertmanager will be available under: <host>.<region>.<domain>.
+  # If the ingress is enabled, it's also used for the ingress host.
+  host:
+
+  # Per default the host name is generated following the pattern `<host>.<region>.<domain>.
+  # However the full host name can be set explicitly via the hostNameOverride parameter.
+  # hostNameOverride: something.subDomain.tld
+
+  # Client certificate authentication on ingress level.
+  authentication:
+    oauth:
+      enabled: false
+
+      # The URL to the authentication service.
+      authURL:
+
+      # Optional URL to specify the location of the error page.
+      authSignInURL:
+
+    sso:
+      enabled: true
+
+      # The key (<namespace>/<name>) of the secret containing the CA certificate (`ca.crt`) that is enabled to authenticate against this Ingress.
+      authTLSSecret: kube-system/ingress-cacrt
+
+      # The validation depth between the provided client certificate and the certification authority chain.
+      authTLSVerifyDepth: 3
+
+      # Enables verification of client certificates.
+      authTLSVerifyClient: on
+
+  # Additional annotations for the ingress.
+  annotations: {}
+
+# Optional additional ingress for this Alertmanager.
+internalIngress:
+  enabled: false
+
+  # The name is used to generate the internal URL Alertmanager will be available under: <host>.<region>.<domain>.
+  # If the ingress is enabled, it's also used for the ingress host.
+  host:
+
+  # Per default the host name is generated following the pattern `<host>.<region>.<domain>.
+  # However the full host name can be set explicitly via the hostNameOverride parameter.
+  # hostNameOverride: something.subDomain.tld
+
+  # Client certificate authentication on ingress level.
+  authentication:
+    oauth:
+      enabled: false
+
+      # The URL to the authentication service.
+      authURL:
+
+      # Optional URL to specify the location of the error page.
+      authSignInURL:
+
+    sso:
+      enabled: true
+      # The key (<namespace>/<name>) of the secret containing the CA certificate (`ca.crt`) that is enabled to authenticate against this Ingress.
+      authTLSSecret: kube-system/ingress-cacrt
+
+      # The validation depth between the provided client certificate and the certification authority chain.
+      authTLSVerifyDepth: 3
+
+      # Enables verification of client certificates.
+      authTLSVerifyClient: on
+
+  # Additional annotations for the ingress.
+  annotations: {}
+
+# Enable persistent storage.
+# If disabled, created Silences will be stored in memory and lost on restart.
+persistence:
+  enabled: true
+
+  # Optional name of the PVC. Default: < .Values.name >
+  # name:
+
+  # Access modes of the PVC.
+  accessModes:
+    - ReadWriteOnce
+
+  # Size of the PVC.
+  size: 1Gi
+
+  # Label selector to be be applied to the PVC.
+  selector: {}
+
+# The log level of the Alertmanager.
+logLevel: info
+
+# Kubernetes resource requests and limits for this Alertmanager instance.
+# See: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container .
+resources:
+  requests:
+    cpu: 10m
+    memory: 200Mi
+  limits: {}
+
+# A security context defines privilege and access control settings for a Pod or Container.
+# See: https://kubernetes.io/docs/tasks/configure-pod-container/security-context .
+securityContext:
+  fsGroup: 0
+  runAsUser: 0
+
+# Only one alertmanager instance per node.
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          topologyKey: kubernetes.io/hostname
+          labelSelector:
+            matchLabels:
+              app: prometheus-alertmanager
+
+# Define which Nodes the Pods are scheduled on.
+nodeSelector: {}
+
+# The pod tolerations.
+tolerations: []
+
+# If set .Values.global.tier takes precedence.
+alerts:
+  # support_group for alert routing must be provided in base using alert manager
+  # support_group:
+  support_group: observability
+  # prometheus name picking up the prometheus self metrics, defaults to prometheus.name
+  prometheus:

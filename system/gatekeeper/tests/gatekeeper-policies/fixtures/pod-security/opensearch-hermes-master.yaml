@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  annotations:
+    meta.helm.sh/release-name: opensearch-hermes
+    meta.helm.sh/release-namespace: hermes
+  labels:
+    app.kubernetes.io/managed-by: Helm
+  name: opensearch-hermes-master
+  namespace: hermes
+spec:
+  template:
+    spec:
+      containers:
+      - name: opensearch-hermes-master
+      initContainers:
+      - command:
+        - sysctl
+        - -w
+        - vm.max_map_count=262144
+        name: sysctl
+        resources: {}
+        securityContext:
+          privileged: true
+          runAsUser: 0
+      securityContext: {}

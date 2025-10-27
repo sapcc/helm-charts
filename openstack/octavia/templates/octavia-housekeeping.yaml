@@ -1,0 +1,94 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: octavia-housekeeping
+  labels:
+    app.kubernetes.io/name: octavia-housekeeping
+    helm.sh/chart: {{ include "octavia.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+  annotations:
+    secret.reloader.stakater.com/reload: "{{ .Release.Name }}-secrets"
+    deployment.reloader.stakater.com/pause-period: "60s"
+  {{- if .Values.vpa.set_main_container }}
+    vpa-butler.cloud.sap/main-container: octavia-f5-housekeeping
+  {{- end }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: octavia-housekeeping
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: octavia-housekeeping
+        app.kubernetes.io/instance: {{ .Release.Name }}
+      annotations:
+        kubectl.kubernetes.io/default-container: octavia-f5-housekeeping
+        configmap-etc-hash: {{ include (print $.Template.BasePath "/octavia-etc-configmap.yaml") . | sha256sum }}
+        configmap-worker-hash: {{ include (print $.Template.BasePath "/octavia-worker-configmap.yaml") . | sha256sum }}
+        secrets-hash: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
+        prometheus.io/scrape: "true"
+        prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
+        {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
+    spec:
+{{ include "utils.proxysql.pod_settings" . | indent 6 }}
+      initContainers:
+      {{- if .Values.proxysql.native_sidecar }}
+      {{- include "utils.proxysql.container" . | indent 6 }}
+      {{- end }}
+      containers:
+        - name: octavia-f5-housekeeping
+          image: {{required ".Values.global.registry is missing" .Values.global.registry}}/loci-octavia:{{required "Values.imageVersion is missing" .Values.imageVersion}}
+          imagePullPolicy: IfNotPresent
+          command: ['dumb-init', 'kubernetes-entrypoint']
+          ports:
+            - name: metrics
+              containerPort: 8000
+          resources:
+{{ toYaml .Values.pod.resources.housekeeping | indent 12 }}
+          volumeMounts:
+            - name: octavia-etc
+              mountPath: /etc/octavia/octavia.conf
+              subPath: octavia.conf
+              readOnly: true
+            - name: octavia-etc-confd
+              mountPath: /etc/octavia/octavia.conf.d
+              readOnly: true
+            - name: octavia-etc
+              mountPath: /etc/octavia/logging.ini
+              subPath: logging.ini
+              readOnly: true
+            {{- include "utils.proxysql.volume_mount" . | indent 12 }}
+            {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
+          env:
+            - name: COMMAND
+              value: "octavia-f5-housekeeping --config-file /etc/octavia/octavia.conf"
+            - name: DEPENDENCY_JOBS
+              value: octavia-migration
+            - name: NAMESPACE
+              value: {{ .Release.Namespace }}
+            - name: PYTHONWARNINGS
+              value: "ignore:Unverified HTTPS request"
+            - name: REQUESTS_CA_BUNDLE
+              value: ""
+            {{- if .Values.sentry.enabled }}
+            - name: SENTRY_DSN
+              valueFrom:
+                secretKeyRef:
+                  name: sentry
+                  key: octavia.DSN.python
+            {{- end }}
+        {{- if not .Values.proxysql.native_sidecar }}
+        {{- include "utils.proxysql.container" . | indent 8 }}
+        {{- end }}
+      volumes:
+        - name: octavia-etc
+          configMap:
+            name: octavia-etc
+        - name: octavia-etc-confd
+          secret:
+            secretName: {{ .Release.Name }}-secrets
+        {{- include "utils.proxysql.volumes" . | indent 8 }}
+        {{- include "utils.trust_bundle.volumes" . | indent 8 }}

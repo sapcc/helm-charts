@@ -1,0 +1,105 @@
+nameOverride: ""
+fullNameOverride: ""
+
+# Base name of the CSI Manila driver
+driverName: manila.csi.openstack.org
+
+# Enabled Manila share protocols
+shareProtocols:
+  - protocolSelector: NFS
+    fsGroupPolicy: None
+    fwdNodePluginEndpoint:
+      dir: /var/lib/kubelet/plugins/csi-nfsplugin
+      sockFile: csi.sock
+ # - protocolSelector: CEPHFS
+ #   fwdNodePluginEndpoint:
+ #     dir: /var/lib/kubelet/plugins/cephfs.csi.ceph.com
+ #     sockFile: csi.sock
+
+extraLabels: {}
+# CSI Manila spec
+csimanila:
+  # Set topologyAwarenessEnabled to true to enable topology awareness
+  topologyAwarenessEnabled: false
+  # Runtime configuration
+  runtimeConfig:
+    enabled: false
+    jsonData: |-
+      {
+        "nfs": {
+          "matchExportLocationAddress": "172.168.122.0/24"
+        }
+      }
+
+  # Availability zone for each node. topologyAwarenessEnabled must be set to true for this option to have any effect.
+  # If your Kubernetes cluster runs atop of Nova and want to use Nova AZs as AZs for the nodes of the cluster, uncomment the line below:
+  # nodeAZ: "$(curl http://169.254.169.254/openstack/latest/meta_data.json | jq -r .availability_zone)"
+
+  # You may set ID of the cluster where manila-csi is deployed. This value will be appended
+  # to share metadata in newly provisioned shares as `manila.csi.openstack.org/cluster=<cluster ID>`.
+  clusterID: ""
+
+  # Image spec
+  image:
+    repository: k8scloudprovider/manila-csi-plugin
+    pullPolicy: IfNotPresent
+    tag:  # defaults to .Chart.AppVersion
+
+# DeamonSet deployment
+nodeplugin:
+  # Component name
+  name: nodeplugin
+  # CSI Manila container compute resources constraints
+  nodeplugin:
+    resources: {}
+  # csi-node-driver-registrar
+  registrar:
+    image:
+      repository: k8s.gcr.io/sig-storage/csi-node-driver-registrar
+      tag: v2.4.0
+      pullPolicy: IfNotPresent
+    resources: {}
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  priorityClassName: ""
+  # Use fullnameOverride to fully override the name of this component
+  # fullnameOverride: some-other-name
+
+# StatefulSet deployment
+controllerplugin:
+  name: controllerplugin
+  # CSI Manila container compute resources constraints
+  nodeplugin:
+    resources: {}
+  # CSI external-provisioner container spec
+  provisioner:
+    image:
+      repository: k8s.gcr.io/sig-storage/csi-provisioner
+      tag: v3.0.0
+      pullPolicy: IfNotPresent
+    resources: {}
+  # CSI external-snapshotter container spec
+  snapshotter:
+    image:
+      repository: k8s.gcr.io/sig-storage/csi-snapshotter
+      tag: v5.0.1
+      pullPolicy: IfNotPresent
+    resources: {}
+  # CSI external-resizer container spec
+  resizer:
+    image:
+      repository: k8s.gcr.io/sig-storage/csi-resizer
+      tag: v1.3.0
+      pullPolicy: IfNotPresent
+    resources: {}
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  # Use fullnameOverride to fully override the name of this component
+  # fullnameOverride: some-other-name
+
+# Log verbosity level.
+# See https://github.com/kubernetes/community/blob/master/contributors/devel/sig-instrumentation/logging.md
+# for description of individual verbosity levels.
+logVerbosityLevel: 2

@@ -1,0 +1,17 @@
+{{- if .Values.config.monitoring.enabled }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: calico-controllers-monitoring
+  namespace: {{ .Release.Namespace }}
+  labels:
+    monitoring: calico-kube-controllers
+spec:
+  ports:
+    - port: {{ .Values.config.monitoring.kubeControllersMetricsPort }}
+      targetPort: {{ .Values.config.monitoring.kubeControllersMetricsPort }}
+      name: metrics
+  selector:
+    k8s-app: calico-kube-controllers
+{{- end }}

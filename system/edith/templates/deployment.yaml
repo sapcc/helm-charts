@@ -1,0 +1,35 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}
+  namespace: {{ required ".Values.edith.namespace missing" .Values.edith.namespace }}
+spec:
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}
+    spec:
+      containers:
+         - name: {{ .Release.Name }}
+           image: {{ required ".Values.edith.image.registry missing" .Values.edith.image.registry }}/{{ .Release.Name }}:{{ required ".Values.edith.image.tag missing" .Values.edith.image.tag }}
+           ports:
+             - name: webhook
+               containerPort: {{ required ".Values.edith.port" .Values.edith.port }}
+           command:
+             - python3
+           args:
+             - main.py
+           volumeMounts:
+             - mountPath: /edith/app_config
+               name: {{ .Release.Name }}-config
+               readOnly: true
+      volumes:
+        - configMap:
+            name: {{ .Release.Name }}-config
+          name: {{ .Release.Name }}-config
+  strategy:
+    type: Recreate

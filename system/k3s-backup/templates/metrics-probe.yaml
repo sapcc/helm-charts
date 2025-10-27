@@ -1,0 +1,35 @@
+{{- if .Values.exporter.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: Probe
+
+metadata:
+  name: k3s-backup-s3-exporter
+  labels:
+    prometheus: {{ .Values.exporter.prometheus }}
+    plugin: kube-monitoring
+
+spec:
+  jobName: k3s-backup-s3-exporter
+  prober:
+    url: k3s-backup-s3-exporter-metrics.{{.Release.Namespace}}.svc.cluster.local
+    path: /probe
+  interval: {{ .Values.exporter.scrapeInterval }}
+  scrapeTimeout: {{ .Values.exporter.scrapeTimeout }}
+  targets:
+    staticConfig: 
+      static:
+        - "bucket={{ .Values.aws.bucketName }};prefix={{ .Values.exporter.bucketPrefix }};"
+      labels: 
+        __param_bucket: {{ .Values.aws.bucketName }}
+        __param_prefix: {{ .Values.exporter.bucketPrefix }}
+        {{ if .Values.global.region -}}
+        region: {{ .Values.global.region }}
+        {{- end }}
+        {{ if .Values.global.clusterType -}}
+        cluster_type: {{ .Values.global.clusterType }}
+        {{- end }}
+        {{ if or .Values.global.region .Values.global.cluster -}}
+        cluster: {{ if .Values.global.cluster }}{{ .Values.global.cluster }}{{ else }}{{ .Values.global.region }}{{ end }}
+        {{- end }}
+
+{{- end }}

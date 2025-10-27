@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "netapp-metrics-federation.fullname" . }}
+  labels:
+    {{- include "netapp-metrics-federation.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "netapp-metrics-federation.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        checksum/configmap: {{ include ( print $.Template.BasePath "/configmap.yaml" ) . | sha256sum }}
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      labels:
+        {{- include "netapp-metrics-federation.labels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- if and .Values.global.linkerd_enabled .Values.global.linkerd_requested }}
+        linkerd.io/inject: enabled
+        {{- end }}
+    spec:
+      containers:
+        - name: exporter
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: [ "/usr/bin/promquery" ]
+          args:
+            - -config 
+            - /home/appuser/configs/snapmirror.yaml
+            - -listen-address
+            - :{{ .Values.exporter.port }}
+            - -prom
+            - {{ .Values.exporter.sourcePrometheus.url }}
+            - -cert-path
+            - /home/appuser/sso/cert.pem
+            - -cert-key-path
+            - /home/appuser/sso/key.pem
+            - -scrape-interval
+            - 5m
+          ports:
+            - name: metrics
+              containerPort: {{ .Values.exporter.port }}
+          {{- with .Values.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.volumeMounts }}
+          volumeMounts:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      {{- with .Values.volumes }}
+      volumes:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

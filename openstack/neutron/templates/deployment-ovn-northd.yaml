@@ -1,0 +1,73 @@
+{{- if .Values.ovn.enabled }}
+{{- $ovsdb_nb := index (index .Values "ovsdb-nb") }}
+{{- $ovsdb_sb := index (index .Values "ovsdb-sb") }}
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: neutron-ovn-northd
+  annotations:
+    kubernetes.io/description: This Deployment launches the ovn-northd.
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      name: neutron-ovn-northd
+  strategy:
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+    type: RollingUpdate
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/default-container: ovn-northd
+      labels:
+        name: neutron-ovn-northd
+        component: network
+        type: infra
+        kubernetes.io/os: "linux"
+    spec:
+      priorityClassName: "system-cluster-critical"
+    {{- with .Values.ovn.affinity }}
+      affinity: {{ toYaml . | nindent 8 }}
+    {{- end }}
+      containers:
+      # ovn-northd - v3
+      - name: ovn-northd
+        image: {{ .Values.ovn.image }}:{{ .Values.ovn.imageVersionOVN | required "Please set neutron.imageVersionOVN or similar" }}
+        imagePullPolicy: {{ .Values.ovn.pullPolicy | default "IfNotPresent" }}
+        command: ["/usr/bin/ovn-northd"]
+        args:
+          - "-vfile:off"
+          - "-vconsole:{{ .Values.ovn.logLevel | default "info" }}"
+          - "--n-threads={{ .Values.ovn.nThreads | default 1 }}"
+      {{- if .Values.ovn.enableSsl }}
+          - --certificate=/etc/pki/tls/certs/ovndb.crt
+          - --private_key=/etc/pki/tls/certs/ovndb.key
+          - --ca-cert=/etc/pki/tls/certs/ovndbca.crt
+      {{- end }}
+      {{- with .Values.pod.resources.ovn_northd }}
+        resources: {{ toYaml . | nindent 10 }}
+      {{- end}}
+        env:
+          - name: OVN_RUNDIR
+            value: /tmp
+          - name: OVN_NB_DB
+            value: "tcp:neutron-ovsdb-nb.{{ .Release.Namespace }}.svc.kubernetes.{{ .Values.global.region }}.cloud.sap:{{ $ovsdb_nb.DB_PORT }}"
+          - name: OVN_SB_DB
+            value: "tcp:neutron-ovsdb-sb.{{ .Release.Namespace }}.svc.kubernetes.{{ .Values.global.region }}.cloud.sap:{{ $ovsdb_sb.DB_PORT }}"
+        readinessProbe:
+          exec:
+            command: ["/usr/bin/pidof", "ovn-northd"]
+          initialDelaySeconds: 5
+          timeoutSeconds: 3
+          periodSeconds: 3
+        livenessProbe:
+          exec:
+            command: ["/usr/bin/pidof", "ovn-northd"]
+          initialDelaySeconds: 5
+          timeoutSeconds: 5
+          periodSeconds: 5
+{{- end }}

@@ -1,0 +1,46 @@
+groups:
+  - name: asa
+    rules:
+    - alert: NetworkASAClusterIsDegraded
+      expr: sum(snmp_asa_cfwHardwareStatusValue{cfwHardwareType="7",device=~"ASA0102|ASA0102a|ASA0102fp"}) by (server_name) + sum(snmp_asa_cfwHardwareStatusValue{cfwHardwareType="6",device=~"ASA0102|ASA0102a|ASA0102fp"}) by (server_name) != 19
+      for: 5m
+      labels:
+        severity: critical
+        support_group: network-security
+        tier: net
+        service: asa
+        context: asa
+        meta: "asa device `{{ $labels.server_name }}` CLUSTER-STATE is DEGRADED. Immediate device check required."
+        playbook: 'docs/devops/alert/network/firewall#asa_cluster_degraded'
+      annotations:
+        description: "asa device `{{ $labels.server_name }}` CLUSTER-STATE is DEGRADED. Immediate device check required."
+        summary: "asa device `{{ $labels.server_name }}` CLUSTER-STATE is DEGRADED. Immediate device check required."
+
+    - alert: NetworkASACpuUsageCritical
+      expr: max(snmp_asa_cpmCPUTotal1minRev{devicename=~".*ASA[0-9]{4,6}.?.?$"}) by (devicename) > 90
+      for: 5m
+      labels:
+        severity: critical
+        support_group: network-security
+        tier: net
+        service: asa
+        context: asa
+        meta: "asa device `{{ $labels.devicename }}` is running on high CPU utilisation."
+        playbook: 'docs/devops/alert/network/firewall#asa_cpu_usage'
+      annotations:
+        description: "asa device `{{ $labels.devicename }}` is running on high CPU utilisation."
+        summary: "asa device `{{ $labels.devicename }}` is running on high CPU utilisation."
+
+    - alert: NetworkASACpuUsageWarning
+      expr: max(snmp_asa_cpmCPUTotal1minRev{devicename=~".*ASA[0-9]{4,6}.?.?$"}) by (devicename) > 80
+      for: 5m
+      labels:
+        severity: warning
+        tier: net
+        service: asa
+        context: asa
+        meta: "asa device `{{ $labels.devicename }}` is running on high CPU utilisation."
+        playbook: 'docs/devops/alert/network/firewall#asa_cpu_usage'
+      annotations:
+        description: "asa device `{{ $labels.devicename }}` is running on high CPU utilisation."
+        summary: "asa device `{{ $labels.devicename }}` is running on high CPU utilisation."

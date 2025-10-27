@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: openstack-exporter-openstack-config
+data:
+  openstack-config.yaml: |
+    exporter:
+      log_level: {{ required ".Values.exporter.log_level missing" .Values.exporter.log_level }}
+      prometheus_port: {{ required ".Values.exporter.prometheus_port missing" .Values.exporter.prometheus_port | quote }}
+    openstack:
+      auth_url: https://{{include "keystone_api_endpoint_host_public" .}}/v3
+      user_domain_name: {{ required ".Values.openstack.user_domain_name missing" .Values.openstack.user_domain_name }}
+      project_domain_name: {{ required ".Values.openstack.project_domain_name missing" .Values.openstack.project_domain_name }}
+      project_name: {{ required ".Values.openstack.project_name missing" .Values.openstack.project_name }}
+      region: {{ required ".Values.global.region missing" .Values.global.region }}
+    collectors:
+      cinderbackend:
+        collector: openstack_exporter.collectors.cinderbackend.CinderBackendCollector
+        enabled: True
+        expected_sharding_backends: {{ .Values.collectors.cinderbackend.expected_sharding_backends }}
+        allow_unexpected_backends: {{ .Values.collectors.cinderbackend.set_allow_unexpected_backends }}
+      novaservice:
+        collector: openstack_exporter.collectors.novaservice.NovaServiceCollector
+        enabled: True
+      manilabackend:
+        collector: openstack_exporter.collectors.manilabackend.ManilaBackendCollector
+        enabled: True
+      manilaservice:
+        collector: openstack_exporter.collectors.manilaservice.ManilaServiceCollector
+        enabled: True

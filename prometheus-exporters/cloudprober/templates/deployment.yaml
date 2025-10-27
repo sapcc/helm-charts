@@ -1,0 +1,73 @@
+{{- if .Values.enabled }}
+{{- $values := .Values -}}
+
+{{- range $i, $prober := .Values.probers -}}
+{{ if ne $i 0 }}---{{ end }}
+
+kind: Deployment
+apiVersion: apps/v1
+
+metadata:
+  name: cloudprober-{{ printf "%s" $prober.dc | replace "-" "" }}
+  labels:
+    app: cloudprober-{{ printf "%s" $prober.dc | replace "-" "" }}
+
+spec:
+  revisionHistoryLimit: {{ $values.revisionHistoryLimit }}
+  replicas: {{ $values.replicaCount }}
+  selector:
+    matchLabels:
+      name: cloudprober-{{ printf "%s" $prober.dc | replace "-" "" }}
+  template:
+    metadata:
+      labels:
+        name: cloudprober-{{ printf "%s" $prober.dc | replace "-" "" }}
+        app: cloudprober-{{ printf "%s" $prober.dc | replace "-" "" }}
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/config.yaml") $ | sha256sum }}
+    spec:
+      nodeSelector:
+        topology.kubernetes.io/zone: {{$prober.dc}}
+      volumes:
+        - name: cloudprober
+          configMap:
+            name: cloudprober-{{ printf "%s" $prober.dc | replace "-" "" }}
+
+      containers:
+        - name: prober
+          image: {{$values.global.dockerHubMirror}}/{{ required ".Values.image.name variable missing" $values.image.name }}:{{ required ".Values.image.tag variable missing" $values.image.tag }}
+          imagePullPolicy: {{ required ".Values.image.pullPolicy variable missing" $values.image.pullPolicy }}
+          securityContext:
+            capabilities:
+              add: [ "NET_RAW" ]
+          args: [
+            "--config_file","/cfg/cloudprober.cfg",
+            "--logtostderr"
+          ]
+          volumeMounts:
+          - name: cloudprober
+            mountPath: /cfg
+          ports:
+          - name: metrics
+            containerPort: 9313
+          - name: web
+            containerPort: 80
+          env:
+          - name: CLOUDPROBER_PORT
+            value: "9313"
+          livenessProbe:
+            httpGet:
+              path: /metrics
+              port: metrics
+            timeoutSeconds: 10
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /config
+              port: metrics
+            timeoutSeconds: 5
+            periodSeconds: 15
+
+---
+{{ end -}}
+{{ end -}}

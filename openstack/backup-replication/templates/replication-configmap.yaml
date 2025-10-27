@@ -1,0 +1,47 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: swift-http-import
+  labels:
+    component: backup-replication
+
+data:
+{{- range $source_region, $source := .Values.source }}
+  {{ $source_region }}.yaml: |
+    swift:
+      auth_url: {{ $.Values.target.auth_url }}
+      user_name: db_backup
+      user_domain_name: Default
+      project_name: master
+      project_domain_name: ccadmin
+      password:
+        fromEnv: TARGET_AUTH_PASSWORD
+    statsd:
+      hostname: statsd
+      port: 9125
+      prefix: backup_replication.{{ $source_region }}
+    workers:
+      transfer: 3
+    jobs:
+    {{- range $index, $job := $source.jobs }}
+      - from:
+          auth_url: {{ $source.auth_url }}
+          user_name: db_backup
+          user_domain_name: Default
+          project_name: master
+          project_domain_name: ccadmin
+          password:
+            fromEnv: SOURCE_AUTH_PASSWORD
+          container: {{ $job.from.container }}
+          object_prefix: {{ $job.from.object_prefix }}
+        to:
+          container: {{ $job.to.container }}
+          object_prefix: {{ $job.to.object_prefix }}
+        segmenting:
+          min_bytes: 1073741824 # 1 GiB
+          segment_bytes: 1073741824 # 1 GiB
+        match:
+          not_older_than: 1 day
+        immutable: .sql.gz$
+    {{- end }}
+{{- end }}

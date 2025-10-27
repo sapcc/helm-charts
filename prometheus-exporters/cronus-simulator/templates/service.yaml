@@ -1,0 +1,20 @@
+{{- $values := .Values }}
+{{- if .Values.simulator.enabled -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: cronus-simulator
+  labels:
+    app: cronus-simulator
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: {{ .Values.simulator.prometheusPort | quote}}
+    prometheus.io/targets: {{ required ".Values.global.alerts.prometheus missing" $values.global.alerts.prometheus | quote }}
+spec:
+  type: ClusterIP
+  ports:
+    - name: metrics
+      port: {{ .Values.simulator.prometheusPort }}
+      targetPort: {{ .Values.simulator.prometheusPort }}
+      protocol: TCP
+{{- end -}}

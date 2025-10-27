@@ -1,0 +1,16 @@
+{{- range $path, $bytes := .Files.Glob "alerts/client/*.alerts" }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+
+metadata:
+  name: {{ printf "cronus-openstack-%s" $path | replace "/" "-" }}
+  labels:
+    tier: os
+    type: alerting-rules
+    prometheus: "openstack"
+
+spec:
+{{ printf "%s" $bytes | indent 2 }}
+
+{{- end }}

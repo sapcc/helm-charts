@@ -1,0 +1,29 @@
+{{ if .Values.extensions.openstack.enabled -}}
+---
+apiVersion: core.gardener.cloud/v1beta1
+kind: CloudProfile
+metadata:
+  name: openstack
+spec:
+  type: openstack
+  regions: {{ toYaml .Values.extensions.openstack.regions | nindent 4 }}
+  kubernetes:
+    versions: {{ toYaml .Values.extensions.kubernetesVersions | nindent 6 }}
+  machineTypes: {{ toYaml .Values.extensions.openstack.machineTypes | nindent 4 }}
+  machineImages: {{ toYaml .Values.extensions.openstack.machineImages | nindent 4 }}
+  providerConfig: # https://github.com/gardener/gardener-extension-provider-openstack/blob/master/pkg/apis/openstack/types_cloudprofile.go
+    apiVersion: openstack.provider.extensions.gardener.cloud/v1alpha1
+    kind: CloudProfileConfig
+    keystoneURLs:
+    {{- range $region := .Values.extensions.openstack.regions }}
+    - region: {{ $region.name | quote }}
+      url: "https://identity-3.{{ $region.name }}.cloud.sap/v3"
+    {{- end }}
+    useOctavia: true
+    constraints:
+      floatingPools:
+      - name: fp-pool-1
+      loadBalancerProviders:
+      - name: f5
+    machineImages: {{ toYaml .Values.extensions.openstack.providerConfig.machineImages | nindent 6 }}
+{{ end -}}

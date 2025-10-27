@@ -1,0 +1,97 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "..fullname" . }}
+  labels:
+    {{- include "..labels" . | nindent 4 }}
+spec:
+{{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+{{- end }}
+  selector:
+    matchLabels:
+      {{- include "..selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+    {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+      labels:
+        {{- include "..selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "..serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+          - name: VOLTA_APPROLE_ID
+            value: {{ .Values.volta.role_id }}
+          - name: VOLTA_SECRET_ID
+            valueFrom:
+              secretKeyRef:
+                name: volta-secrets
+                key: secret_id
+          - name: VOLTA_OIDC_ISSUER
+            value: {{ .Values.volta.oidc_provider }}
+          - name: VOLTA_OIDC_CLIENT_ID
+            valueFrom:
+              secretKeyRef:
+                name: volta-secrets
+                key: oidc_client_id
+          - name: VOLTA_OIDC_CLIENT_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: volta-secrets
+                key: oidc_client_secret
+          - name: VOLTA_OIDC_CALLBACK_URL
+            value: {{ .Values.volta.oidc_callback_url }}
+          - name: VOLTA_VAULT_URL
+            value: {{ .Values.volta.vault_url }}
+          - name: VOLTA_LDAP_HOST
+            value: {{ .Values.volta.ldap_host }}
+          - name: VOLTA_LDAP_BIND_DN
+            value: {{ .Values.volta.ldap_bind_dn }}
+          - name: VOLTA_LDAP_BIND_PW
+            valueFrom:
+              secretKeyRef:
+                name: volta-secrets
+                key: ldap_bind_pw
+          - name: VOLTA_LDAP_BASE_DN
+            value: {{ .Values.volta.ldap_base_dn }}
+          - name: VOLTA_UI_APP_URL
+            value: {{ .Values.volta.app_url }}
+          ports:
+            - name: http
+              containerPort: 2345
+              protocol: TCP
+            - name: metrics
+              containerPort: 8086
+              protocol: TCP
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 2345
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

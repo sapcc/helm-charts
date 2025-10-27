@@ -1,0 +1,20 @@
+{{- if .Values.pools -}}
+{{- range $key, $pool := .Values.pools }}
+---
+apiVersion: ipam.cluster.x-k8s.io/v1alpha2
+kind: GlobalInClusterIPPool
+metadata:
+  name: {{ $key }}
+  namespace: metal-servers
+spec:
+spec:
+  addresses:
+{{- toYaml $pool.addresses | nindent 2 }}
+{{- if $pool.excludedAddresses }}
+  excludedAddresses:
+{{- toYaml $pool.excludedAddresses | nindent 2 }}
+{{- end }}
+  prefix: {{ $pool.prefix }}
+  gateway: {{ $pool.gateway }}
+{{- end }}
+{{- end }}

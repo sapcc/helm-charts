@@ -1,0 +1,107 @@
+{{- if .Values.enabled }}
+{{- $manilaFilerYaml := include (print .Template.BasePath "/etc/_netapp_filers.yaml.tpl") . }}
+{{- $configmapTemplate := print .Template.BasePath "/etc/_configmap.yaml.tpl" }}
+{{- range $shortAppName, $app := .Values.apps }}
+{{- $fullNameWithComponent := printf "%s-%s" $.Values.fullname $app.component -}}
+{{- $configmapName := $fullNameWithComponent -}}
+{{- $secretName := $.Values.fullname -}}
+{{- if $app.enabled }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $fullNameWithComponent }}
+  labels:
+    app.kubernetes.io/name: {{ $.Values.fullname }}
+    app.kubernetes.io/component: {{ $app.component }}
+spec:
+  revisionHistoryLimit: 5
+  selector:
+    matchLabels:
+      app: {{ $fullNameWithComponent }}
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: {{ $fullNameWithComponent }}
+        alert-tier: storage
+        alert-service: netapp-exporter
+      {{- if eq $shortAppName "manila" }}
+      annotations:
+        checksum/configmap.yaml: {{ include $configmapTemplate (dict "fullname" $.Values.fullname "appComponent" $app.component "manilaFilerYaml" $manilaFilerYaml) | sha256sum }}
+        {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+        linkerd.io/inject: enabled
+        {{- end }}
+      {{- end }}
+    spec:
+      volumes:
+{{/* manila filers are loaded in configmap from secrets */}}
+        {{- if eq $shortAppName "manila" }}
+        - name: netapp-etc
+          configMap:
+            name: {{ $configmapName }}
+        {{- else }}
+        - name: netapp-data
+          emptyDir: {}
+        {{- end -}}
+{{/***/}}
+      containers:
+        - name: exporter
+          image: {{ $.Values.global.registry }}/{{ required ".Values.exporter.image.repository" $.Values.exporter.image.repository }}:{{ required ".Values.exporter.image.tag" $.Values.exporter.image.tag }}
+          imagePullPolicy: {{ $.Values.exporter.image.pullPolicy | default "IfNotPresent" }}
+          args: [ --config=/etc/netapp/filers.yaml ]
+          env:
+          - name: NETAPP_USERNAME
+            valueFrom:
+              secretKeyRef:
+                name: {{ $secretName }}
+                key: netappUsername
+          - name: NETAPP_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: {{ $secretName }}
+                key: netappPassword
+          ports:
+            - name: prometheus
+              containerPort: {{ $.Values.prometheus.port }}
+          resources:
+            {{- if hasKey $app "resources" }}
+            {{- toYaml $app.resources | nindent 12 }}
+            {{- else }}
+            {{- toYaml $.Values.exporter.resources | nindent 12 }}
+            {{- end }}
+          volumeMounts:
+            {{- if eq $shortAppName "manila" }}
+            - name: netapp-etc
+              mountPath: /etc/netapp
+            {{- else }}
+            - name: netapp-data
+              mountPath: /etc/netapp
+            {{- end }}
+{{/* manila filers are predefined in secrets */}}
+        {{- if ne $shortAppName "manila" }}
+        - name: netappsd
+          args:
+            - -output-file-path
+            - /netapp/filers.yaml
+            - -namespace
+            - {{ $.Release.Namespace }}
+            - -netbox-host
+            - {{ required ".Values.global.netbox_host" $.Values.global.netbox_host }}
+            - -region
+            - {{ required ".Values.global.region" $.Values.global.region }}
+            - -query
+            - {{ required ".Values.apps[].netappsd.query" $app.netappsd.query }}
+          image: {{ $.Values.global.registry }}/{{ required ".Values.netappsd.image.repository" $.Values.netappsd.image.repository }}:{{ required ".Values.netappsd.image.tag" $.Values.netappsd.image.tag }}
+          imagePullPolicy: {{ $.Values.netappsd.image.pullPolicy | default "IfNotPresent" }}
+          resources:
+            {{- toYaml $.Values.netappsd.resources | nindent 12 }}
+          volumeMounts:
+            - name: netapp-data
+              mountPath: /netapp
+        {{- end }}
+{{/***/}}
+
+{{- end }}
+{{- end }}
+{{- end }}

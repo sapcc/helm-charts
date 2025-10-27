@@ -1,0 +1,192 @@
+{{- if eq .Values.kind "deployment" }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "fullname" . }}
+  labels:
+    {{- include "rabbitmq.labels" (list $ "version" "rabbitmq" "deployment" "messagequeue") | indent 4 }}
+spec:
+  replicas: {{ .Values.replicas }}
+  revisionHistoryLimit: {{ .Values.upgrades.revisionHistory }}
+  strategy:
+    type: {{ .Values.upgrades.podReplacementStrategy }}
+    {{ if eq .Values.upgrades.podReplacementStrategy "RollingUpdate" }}
+    rollingUpdate:
+      maxUnavailable: {{ .Values.upgrades.rollingUpdate.maxUnavailable }}
+      maxSurge: {{ .Values.upgrades.rollingUpdate.maxSurge }}
+    {{ end }}
+  selector:
+    matchLabels:
+      app: {{ template "fullname" . }}
+  template:
+    metadata:
+      labels:
+        {{- include "rabbitmq.labels" (list $ "noversion" "rabbitmq" "deployment" "messagequeue") | indent 8 }}
+      annotations:
+        kubectl.kubernetes.io/default-container: rabbitmq
+        checksum/container.init: {{ include (print $.Template.BasePath "/bin-configmap.yaml") . | sha256sum }}
+{{- if not .Values.credentialUpdater.enabled }}
+        checksum/users: {{ include (print $.Template.BasePath "/users-secret.yaml") . | sha256sum }}
+{{- end }}
+{{- if and (and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested) $.Values.linkerd.enabled }}
+        linkerd.io/inject: enabled
+        config.linkerd.io/opaque-ports: "{{ default 5672 .Values.ports.public }}"
+{{- end }}
+{{- if .Values.customConfig }}
+        checksum/custom.conf: {{ include (print .Template.BasePath "/etc/_rabbitmq-custom-config.tpl") . | sha256sum }}
+{{- end }}
+    spec:
+      affinity:
+        nodeAffinity:
+{{- if .Values.nodeAffinity }}
+      {{- with .Values.nodeAffinity }}
+{{ toYaml . | indent 10 }}
+      {{- end }}
+{{- include "rabbitmq_maintenance_affinity" . }}
+{{- include "rabbitmq_node_reinstall_affinity" . }}
+{{- else }}
+          preferredDuringSchedulingIgnoredDuringExecution:
+{{- include "rabbitmq_maintenance_affinity" . }}
+{{- include "rabbitmq_node_reinstall_affinity" . }}
+{{- end }}
+      hostname: {{ template "fullname" . }}
+      securityContext:
+        runAsUser: 999
+        runAsGroup: 999
+        fsGroup: 999
+        fsGroupChangePolicy: "OnRootMismatch"
+      initContainers:
+      {{- if .Values.persistence.enabled }}
+      - name: volume-permissions
+        image: "{{include "dockerHubMirror" .}}/library/busybox"
+        imagePullPolicy: {{ default "IfNotPresent" .Values.imagePullPolicy | quote }}
+        command:
+        - /bin/sh
+        - -c
+        - |
+          [ $(stat -c %u /var/lib/rabbitmq) -eq 999 ] || chown -R 999:999 /var/lib/rabbitmq
+        securityContext:
+          runAsUser: 0
+        volumeMounts:
+          - mountPath: /var/lib/rabbitmq
+            name: rabbitmq-persistent-storage
+      {{- end }}
+      {{- if and (.Values.global.rabbitmq.native_sidecar.enabled) (.Values.credentialUpdater.enabled) }}
+      - name: user-credential-updater
+        image: "{{ include "dockerRegistry" . }}/{{ .Values.credentialUpdater.image }}:{{.Values.credentialUpdater.imageTag }}"
+        imagePullPolicy: {{ default "IfNotPresent" .Values.imagePullPolicy | quote }}
+        restartPolicy: Always
+        volumeMounts:
+          - mountPath: /etc/rabbitmq/secrets
+            name: rabbitmq-users-config
+          - mountPath: /var/lib/rabbitmq
+            name: rabbitmq-persistent-storage
+      {{- end }}
+      containers:
+      - name: rabbitmq
+        image: "{{include "dockerHubMirror" .}}/{{ .Values.image }}:{{.Values.imageTag }}"
+        imagePullPolicy: {{ default "IfNotPresent" .Values.imagePullPolicy | quote }}
+        env:
+          - name: RABBIT_START_TIMEOUT
+            value: {{ .Values.livenessProbe.initialDelaySeconds | quote }}
+        command:
+          - bash
+        args:
+          - /container.init/rabbitmq-start
+        {{- if .Values.livenessProbe.enabled }}
+        livenessProbe:
+          exec:
+            command:
+            - rabbitmqctl
+            - status
+          failureThreshold: {{ .Values.livenessProbe.failureThreshold }}
+          initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.livenessProbe.periodSeconds }}
+          successThreshold: {{ .Values.livenessProbe.successThreshold }}
+          timeoutSeconds: {{ .Values.livenessProbe.timeoutSeconds }}
+        {{- end }}
+        {{- if .Values.readinessProbe.enabled }}
+        readinessProbe:
+          tcpSocket:
+            port: public
+          failureThreshold: {{ .Values.readinessProbe.failureThreshold }}
+          initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.readinessProbe.periodSeconds }}
+          successThreshold: {{ .Values.readinessProbe.successThreshold }}
+          timeoutSeconds: {{ .Values.readinessProbe.timeoutSeconds }}
+        {{- end }}
+        resources:
+{{ toYaml .Values.resources | indent 10 }}
+        ports:
+          - name: public
+            containerPort: {{ .Values.ports.public }}
+          - name: management
+            containerPort: {{ .Values.ports.management }}
+{{- if .Values.enableSsl }}
+          - name: amqps
+            containerPort: {{ .Values.ports.amqps }}
+{{- end }}
+{{- if .Values.metrics.enabled }}
+          - name: metrics
+            containerPort: {{ .Values.metrics.port }}
+{{- end }}
+        volumeMounts:
+          - mountPath: /var/lib/rabbitmq
+            name: rabbitmq-persistent-storage
+          - mountPath: /container.init
+            name: container-init
+          - mountPath: /etc/rabbitmq/secrets
+            name: rabbitmq-users-config
+        {{- if .Values.customConfig }}
+          - mountPath: /etc/rabbitmq/conf.d/20-custom.conf
+            name: rabbitmq-custom-config
+            subPath: 20-custom.conf
+        {{- end }}
+        {{- if .Values.enableSsl }}
+          - mountPath: /etc/rabbitmq/conf.d/30-ssl.conf
+            name: rabbitmq-custom-config
+            subPath: 30-ssl.conf
+          - mountPath: /etc/rabbitmq/ssl
+            name: ssl
+        {{- end }}
+      {{- if and (not .Values.global.rabbitmq.native_sidecar.enabled) (.Values.credentialUpdater.enabled) }}
+      - name: user-credential-updater
+        image: "{{ include "dockerRegistry" . }}/{{ .Values.credentialUpdater.image }}:{{.Values.credentialUpdater.imageTag }}"
+        imagePullPolicy: {{ default "IfNotPresent" .Values.imagePullPolicy | quote }}
+        volumeMounts:
+          - mountPath: /etc/rabbitmq/secrets
+            name: rabbitmq-users-config
+          - mountPath: /var/lib/rabbitmq
+            name: rabbitmq-persistent-storage
+      {{- end }}
+      priorityClassName: {{ .Values.priority_class | default "critical-infrastructure" | quote }}
+      volumes:
+        - name: rabbitmq-persistent-storage
+        {{- if .Values.persistence.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ .Values.persistence.existingClaim | default (include "fullname" .) }}
+          {{- if gt (int .Values.replicas) 1 }}
+            {{- fail "Persistence doesn't work with kind Deployment, and more than one replica" }}
+          {{- end}}
+        {{- else }}
+          emptyDir: {}
+        {{- end }}
+        - name: container-init
+          configMap:
+            name: {{ template "fullname" . }}-bin
+        - name: rabbitmq-users-config
+          projected:
+            sources:
+            - secret:
+                name: {{ template "fullname" . }}-users
+      {{- if or .Values.customConfig .Values.enableSsl }}
+        - name: rabbitmq-custom-config
+          configMap:
+            name: {{ template "fullname" . }}-custom-conf
+      {{- end }}
+      {{- if .Values.enableSsl }}
+        - name: ssl
+          secret:
+            secretName: tls-{{ template "fullname" . }}
+      {{- end }}
+{{- end }}

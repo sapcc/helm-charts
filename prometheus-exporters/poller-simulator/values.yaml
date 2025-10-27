@@ -1,0 +1,170 @@
+rhea:
+  enabled: false
+global:
+  alerts:
+    prometheus: infra-frontend
+config:
+  # Configuration for the poller
+  keystone:
+    enabled: false
+    authUrl: https://identity/v3
+    endpointType: public
+    projectDomainName: default
+    projectName: project
+    region: region
+    userDomainName: default
+    username: username
+    password: password
+  allowedServices:
+    email: eu-central-1
+simulator:
+  sesUsername: username
+  sesSecret: secretkey
+  rhea:
+    enabled: false
+    queueName: incoming
+    domainMode: false
+  smtpPassword: smtppassword
+  cacheRetention: 20s
+  emailBodySize: 10000
+  poller: # service that handles received emails 
+    enabled: false
+    rhea:
+      enabled: false
+      queueName: incoming
+      domainMode: false
+      uri: rhea-uri
+    prometheusPort: 2112
+    prometheus: :2112
+    charSet: UTF-8
+    period: 60
+    certPem: abcd
+    keyPem: abcd
+    service:
+      type: ClusterIP
+    # all below can be used only with a deployment style
+    maxSurge: 1
+    annotations: {}
+    maxUnavailable: 0
+    updateStrategy: RollingUpdate
+    replicas: 1
+    image:
+      name: poller-repository
+      pullPolicy: IfNotPresent
+      tag: latest
+      imagePullSecrets: []
+    statefulSet:
+      enabled: false
+    action: simulator # supported values: forwardEmail, activateEmail
+    pollInterval: 5 # should be less than a default cronus ResponseHeaderTimeout (9 seconds)
+    maxThreads: 5 # maximum amount of queue processing threads.will generate N threads = maxThreads * (maxSendThreads + maxBounceThreads)
+    maxSendThreads: 5 # maximum amount of SMTP send threads per one processing thread
+    maxBounceThreads: 5 # maximum amount of bounce threads per one processing thread
+    bounceSender: mail-daemon@example.com # sender name for bounce emails
+    mtaName: dns; cronus-poller.example.com # The reporting MTA that attempted to deliver the message, formatted as specified in RFC 3464 (https://tools.ietf.org/html/rfc3464) (mta-name-type; mta-name).
+    quarContainer: # quarantine container name in Swift to put messages to
+      name: quarantine
+    errContainer: # container name in Swift to put messages, which cannot be processed for some reasons
+      name: error
+    prettyPrint: false # pretty print message events while uploading them to swift containers
+    sleepDuration: 60s
+    sleepThreads: 60s
+    loaderThreads: 1
+    cacheRetention: 20s
+    emailBodySize: 10000
+    emailSubject: "test run"
+    emailBody: |
+      "test email sending"
+    printMessage: false # whether to print email details
+    queueName: my-queue-name # a queue name to listen from
+    debug: false # debug HTTP requests
+    retry: # retry settings for failed connections
+      maxConnectionRetries: 5 # 5 retries per connection
+      retryInterval: 0.5s # 500ms to wait after each try, e.g. in total 2.5 seconds
+    endpoint: 
+      enabled: false
+      name: http://localhost:5000 # override cronus endpoint URL - REMOVE IF NOT NEEDED
+    aws: # AWS credentials, conflict with keystone credentials - REMOVE IF NOT NEEDED
+      enabled: false
+      access: access
+      secret: secret
+      region: region
+    dnsResolvers: # custom DNS resolvers, when LDAP is not defined - REMOVE IF NOT NEEDED
+      enabled: false
+      dns:
+        - 10.47.10.20:53
+    ldap: # LDAP source for MX records. When not set, system DNS resolver will be used - REMOVE IF NOT NEEDED
+      enabled: false
+      server: server:389
+      username: cn=user,ou=users,ou=SYS,dc=example,dc=com
+      password: password
+      baseDN: dc=DNS
+      tls: false
+      startTLS: false
+      # update interval in seconds
+      # 0 means no periodic updates
+      updateInterval: 300 # 5min
+      # whether to randomize internal DNS MX records (slower DNS response)
+      randomizeEntries: false
+    keystone: # keystone credentials, conflict with aws credentials - REMOVE IF NOT NEEDED
+      enabled: false
+      authUrl: https://identity/v3
+      endpointType: public
+      projectDomainName: default
+      projectName: project
+      region: region
+      userDomainName: default
+      username: username
+      password: password
+    simulator:
+      enabled: false
+      region: region
+      smtpHost: smtp endpoint
+      sesUsername: username
+      sesSecret: secretkey
+      smtpPassword: smtppassword
+      sesApiEndpoint: cronus api endpoint
+      sesRegion: ses region
+      recipient: recipient email
+      sender: sender email
+      tests: {}
+    alerts:
+      enabled: false
+      prometheus: infra-frontend
+    emailPassVerdicts:
+      spam:
+        - PASS
+      virus:
+        - PASS
+      spf:
+        - PASS
+      dkim:
+        - PASS
+        - GRAY
+      dmarc:
+        - PASS
+        - GRAY
+    simulatorTests:
+    - test:
+      enabled: false
+      envelopeFrom: sender@postfix-eude1.cronus-simulator.ccloud.sap-test.de
+      headerFrom: sender@postfix-eude1.cronus-simulator.ccloud.sap-test.de
+      isExpectedReceived: true
+      isTls: true
+      port: 465
+      recipients: [receiving-test@postfix-eude1.cronus-simulator.ccloud.sap-test.de]
+      region: eu-de-1
+      testName: smtpTls
+    - test:
+      enabled: false
+      envelopeFrom: sender@postfix-eude1.cronus-simulator.ccloud.sap-test.de
+      headerFrom: sender@postfix-eude1.cronus-simulator.ccloud.sap-test.de
+      isExpectedReceived: true
+      port: 587
+      recipients: [receiving-test@postfix-eude1.cronus-simulator.ccloud.sap-test.de]
+      region: eu-de-1
+      testName: smtpStls
+
+owner-info:
+  helm-chart-url: 'https://github.com/sapcc/helm-charts/tree/master/prometheus-exporters/poller-simulator'
+  support-group: email

@@ -1,0 +1,23 @@
+project_scope: project_id:%(target.project.id)s
+domain_scope: domain_id:%(target.project.domain.id)s
+cluster_scope: project_domain_name:ccadmin and project_name:cloud_admin
+project_or_domain_scope: rule:project_scope or rule:domain_scope
+
+project:access: rule:project_scope or rule:domain_scope or rule:cluster_scope
+
+project_nfs_editor: role:cloud_sharedfilesystem_admin or (rule:project_or_domain_scope and role:sharedfilesystem_admin)
+project_nfs_viewer: role:cloud_sharedfilesystem_viewer or (rule:project_or_domain_scope and role:sharedfilesystem_viewer) or rule:project_nfs_editor
+
+project:edit:nfs-shares: rule:project_nfs_editor
+project:show:nfs-shares: rule:project_nfs_viewer
+project:edit:nfs-shares-type: rule:project_nfs_editor
+project:show:nfs-shares-type: rule:project_nfs_viewer
+
+project_barbican_viewer: rule:project_scope and (role:keymanager_admin or role:keymanager_viewer)
+project_compute_editor: rule:project_scope and (role:compute_admin or role:compute_admin_wsg or role:member)
+project_compute_viewer: role:compute_viewer
+
+project:edit:server-group: (role:cloud_compute_admin or rule:project_compute_editor) and (role:cloud_keymanager_admin or role:cloud_keymanager_viewer or rule:project_barbican_viewer)
+project:show:server-group: role:cloud_compute_admin or rule:project_compute_editor or rule:project_compute_viewer
+
+cluster:access: role:cloud_support_tools_viewer

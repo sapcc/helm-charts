@@ -1,0 +1,27 @@
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: GkRestrictMonsoon3Namespace
+metadata:
+  name: restrictmonsoon3namespace
+  annotations:
+    {{- include "sources" (tuple "restrict-monsoon3-namespace" "restrict-monsoon3-namespace") | indent 4 }}
+    {{- include "docstring" (tuple $ "GkRestrictMonsoon3Namespace") | indent 4 }}
+  labels:
+    severity: 'error'
+spec:
+  enforcementAction: {{ if eq .Values.cluster_layer "prod" }}deny{{ else }}dryrun{{ end }}
+  match: {{ include "match_active_helm_releases" . | indent 4 }}
+  parameters:
+    patterns:
+      {{- if eq .Values.cluster_type "test" }}
+      monsoon3: "^(?:foo|bar)$"
+      monsoon3global: "^(?:foo-global|bar-global)$"
+      {{- else if eq .Values.cluster_type "baremetal" }}
+      # NOTE: PRs that extend this list with entries for new services will be rejected.
+      #       Please deploy new services into their own namespaces instead.
+      monsoon3: "^(?:archer|barbican|baremetal-temper|bastion|ccloud-seeder|ceph-ceed|cinder|designate|glance|hardware-console-exporter|ironic|keystone|kmip|kubernikus|manila|manila-nanny|nannies|neutron|nova|octavia|octobus|openstack-exporter|openstack-seeder|placement|pyroscope|sap-seeds|seeds|vcenter-operator|volume-claims)$"
+      monsoon3global: "^(?:andromeda|andromeda-seed|designate-global|keystone-global|openstack-seeder-global|seeds-global)$"
+      {{- else }}
+      # no Helm releases allowed at all in these namespaces for this cluster
+      monsoon3: ""
+      monsoon3global: ""
+      {{- end }}

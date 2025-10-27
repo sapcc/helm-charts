@@ -1,0 +1,14 @@
+{{- if .Values.barbican_nanny.db_secret_move.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: barbican-scripts
+  labels:
+    system: openstack
+    type: configuration
+    component: barbican
+
+data:
+  move-secrets.sh: |
+{{ include (print .Template.BasePath "/scripts/_move-secrets.sh.tpl") . | indent 4 }}
+{{- end}}

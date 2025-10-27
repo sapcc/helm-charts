@@ -1,0 +1,50 @@
+{{- if .Values.proxy_daemonset_enabled }}
+kind: DaemonSet
+apiVersion: apps/v1
+
+metadata:
+  name: swift-proxy-{{ .Values.cluster_name }}
+  labels:
+    release: "{{ .Release.Name }}"
+    os-cluster: {{ .Values.cluster_name }}
+
+spec:
+  minReadySeconds: 15
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: '10%' # in large clusters, allow rolling multiple proxies at once
+  selector:
+    matchLabels:
+      component: swift-proxy-{{ .Values.cluster_name }}
+  template:
+    metadata:
+      labels:
+        component: swift-proxy-{{ .Values.cluster_name }}
+        from: daemonset
+        restart: carefully
+        os-cluster: {{ .Values.cluster_name }}
+      annotations:
+        checksum/swift-cluster.etc: {{ include "swift/templates/etc/cluster-configmap.yaml" . | sha256sum }}
+        {{- include "swift_conf_annotations" . | indent 8 }}
+        {{- if .Values.health_exporter }}
+        # Prometheus annotations on pod level without port
+        # discovery will find all exposed container ports for exporters running in containers
+        prometheus.io/scrape: "true"
+        prometheus.io/targets: {{ required ".Values.alerts.prometheus.openstack missing" .Values.alerts.prometheus.openstack }}
+        {{- end }}
+    spec:
+      {{- include "swift_daemonset_tolerations" . | indent 6 }}
+      nodeSelector:
+        species: {{ .Values.species }}
+      volumes:
+        {{- include "swift_proxy_volumes" . | indent 8 }}
+      initContainers:
+        {{- include "swift_ringloader_initcontainer" . | indent 8 }}
+      containers:
+        {{- tuple "daemonset" . | include "swift_proxy_containers" | indent 8 }}
+
+---
+{{ include "swift_vpa_no_autoupdates" (printf "swift-proxy-%s" .Values.cluster_name) }}
+
+{{- end }}

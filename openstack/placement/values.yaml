@@ -1,0 +1,173 @@
+---
+# Default values for placement
+# This is a YAML-formatted file.
+# Declare name/value pairs to be passed into your templates.
+# name: value
+global:
+  placementApiPortAdmin: '8778'
+  placementApiPortInternal: '8778'
+  placementApiPortPublic: '443'
+  dbUser: placement
+  placement_service_user: placement
+  linkerd_requested: false
+
+  osprofiler: {}
+
+osprofiler: {}
+
+use_tls_acme: true
+
+proxysql:
+  mode: ""
+  native_sidecar: true
+
+defaults:
+  default:
+    graceful_shutdown_timeout: 60
+
+pod:
+  replicas:
+    placement: 2
+  lifecycle:
+    upgrades:
+      deployments:
+        revision_history: 5
+        podReplacementStrategy: RollingUpdate
+        rollingUpdate:
+          maxUnavailable: 0
+          maxSurge: 1
+  resources:
+    placement:
+      requests:
+        cpu: "400m"
+        memory: "150Mi"
+
+uwsgi:
+  processes: 10
+  wsgi_file: "/var/lib/openstack/bin/placement-api"
+
+max_pool_size: 10
+max_overflow: 5
+
+api_db:  # Only used when mariadb.enabled=False to connect to the nova-api-mariadb
+  name: placement
+  user: placement
+  password: null
+
+dbType: "mariadb"
+dbName: "placement"
+
+# databaseOverride: mariadb
+# If set, forces the chart to use the given database config map for the database URL
+
+mariadb:
+  enabled: true
+  name: placement
+  defaultUser: placement
+  databases:
+    - placement
+  alerts:
+    support_group: "compute-storage-api"
+  ccroot_user:
+    enabled: true
+  persistence_claim:
+    name: db-placement-pvc
+    size: "10Gi"
+  job:
+    maintenance:
+      enabled: false
+      function:
+        analyzeTable:
+          enabled: true
+          allTables: true
+
+pxc_db:
+  enabled: false
+  name: placement
+  defaultUser: placement
+  alerts:
+    support_group: "compute-storage-api"
+  ccroot_user:
+    enabled: true
+  databases:
+    - placement
+  users:
+    placement:
+      name: placement
+      grants:
+        - "ALL PRIVILEGES on placement.*"
+  pxc:
+    persistence:
+      size: 10Gi
+  backup:
+    enabled: true
+    s3:
+      secrets:
+        aws_access_key_id: null
+        aws_secret_access_key: null
+    pitr:
+      enabled: true
+
+memcached:
+  alerts:
+    support_group: "compute-storage-api"
+  vpa:
+    set_main_container: true
+
+logging:
+  formatters:
+    context:
+      class: oslo_log.formatters.ContextFormatter
+    default:
+      format: "%(message)s"
+  handlers:
+    stdout:
+      class: StreamHandler
+      args: "(sys.stdout,)"
+      formatter: context
+    "null":
+      class: logging.NullHandler
+      args: "()"
+      formatter: default
+    sentry:
+      class: raven.handlers.logging.SentryHandler
+      level: ERROR
+      args: "()"
+  loggers:
+    root:
+      handlers: stdout, sentry
+      level: WARNING
+    migrate:
+      handlers: stdout, sentry
+      level: INFO
+    placement:
+      handlers: stdout, sentry
+      level: INFO
+
+# Deploy Prometheus alerts.
+alerts:
+  enabled: true
+  # Name of the Prometheus to which metrics should be exported
+  prometheus: openstack
+
+sentry:
+  enabled: true
+
+utils:
+  trust_bundle:
+    enabled: true
+
+# Additional sections and values for the placement.conf file
+# Each first level item will become a section, and only on the second-level
+# we have key value pairs
+placement_conf: {}
+
+owner-info:
+  support-group: compute-storage-api
+  service: placement
+  maintainers:
+    - Fabian Wiesel
+    - Johannes Kulik
+    - Jakob Karge
+    - Marius Leustean
+  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/openstack/placement

@@ -1,0 +1,145 @@
+{{- $cdomains := .Values.global.domain_seeds.customer_domains | required "missing value for .Values.global.domain_seeds.customer_domains" -}}
+{{- $domains  := concat (list "cc3test" "ccadmin" "Default") $cdomains -}}
+{{- $cdomainsWithoutSupportProjects := .Values.global.domain_seeds.customer_domains_without_support_projects | required "missing value for .Values.global.domain_seeds.customer_domains_without_support_projects" -}}
+
+apiVersion: "openstack.stable.sap.cc/v1"
+kind: OpenstackSeed
+metadata:
+  name: hermes-seed
+  labels:
+    component: hermes
+spec:
+  requires:
+  - {{ .Values.global.keystoneNamespace }}/{{ .Values.global.is_global_region | ternary "keystone-global-seed" "keystone-seed" }}
+  {{- range $domains}}
+  {{- if not (hasPrefix "iaas-" .)}}
+  - {{ $.Values.global.keystoneNamespace }}/domain-{{ replace "_" "-" . | lower }}-seed
+  {{- end}}
+  {{- end}}
+
+  roles:
+    - name: audit_viewer
+
+  services:
+    - name:        hermes
+      type:        audit-data
+      description: 'OpenStack Audit Data access'
+      enabled:     true
+      endpoints:
+        - region:    '{{.Values.global.region}}'
+          interface: public
+          enabled:   true
+          url:       '{{.Values.hermes.catalog_url}}'
+
+  # Default and cc3test get special handling
+  # ccadmin gets additional role assignments for the master project
+  # iaas- is excluded
+
+  domains:
+    - name: Default
+      users:
+        - name: 'hermes'
+          description: Hermes Service
+          password: '{{.Values.hermes.seed_password}}'
+          role_assignments:
+            - project: service
+              role:    service
+        - name: admin
+          role_assignments:
+          - domain: Default
+            role: audit_viewer
+          - project: admin
+            role: audit_viewer
+      groups:
+        - name: administrators
+          role_assignments:
+            - domain: Default
+              role: audit_viewer
+            - project: admin
+              role: audit_viewer
+
+    - name: cc3test
+      groups:
+      - name: CC3TEST_DOMAIN_ADMINS
+        role_assignments:
+        - project: admin
+          role: audit_viewer
+
+    {{- range $domains}}
+    {{- if and (not (eq . "Default")) (not (eq . "cc3test")) (not (hasPrefix "iaas-" .))}}
+    - name: {{ . }}
+      {{- if eq . "ccadmin"}}
+      projects:
+      - name: master
+        role_assignments:
+        - group: CCADMIN_CLOUD_ADMINS
+          role: audit_viewer
+        - group: CCADMIN_DOMAIN_ADMINS
+          role: audit_viewer
+        - group: CCADMIN_MONITORING_USERS
+          role: audit_viewer
+      {{- end }}
+      groups:
+      - name: {{ hasPrefix "iaas-" . | ternary . ( upper . ) }}_API_SUPPORT
+        role_assignments:
+        {{- if not (has . $cdomainsWithoutSupportProjects) }}
+        - project: api_support
+          role: audit_viewer
+        {{- end }}
+        {{- if eq . "ccadmin"}}
+        - project: api_tools
+          role: audit_viewer
+        {{- end }}
+        - domain: {{ . }}
+          role: audit_viewer
+          inherited: true
+      - name: {{ hasPrefix "iaas-" . | ternary . ( upper . ) }}_COMPUTE_SUPPORT
+        role_assignments:
+        {{- if not (has . $cdomainsWithoutSupportProjects) }}
+        - project: compute_support
+          role: audit_viewer
+        {{- end }}
+        {{- if eq . "ccadmin"}}
+        - project: compute_tools
+          role: audit_viewer
+        {{- end }}
+        - domain: {{ . }}
+          role: audit_viewer
+          inherited: true
+      - name: {{ hasPrefix "iaas-" . | ternary . ( upper . ) }}_NETWORK_SUPPORT
+        role_assignments:
+        {{- if not (has . $cdomainsWithoutSupportProjects) }}
+        - project: network_support
+          role: audit_viewer
+        {{- end }}
+        {{- if eq . "ccadmin"}}
+        - project: network_tools
+          role: audit_viewer
+        {{- end }}
+        - domain: {{ . }}
+          role: audit_viewer
+          inherited: true
+      - name: {{ hasPrefix "iaas-" . | ternary . ( upper . ) }}_STORAGE_SUPPORT
+        role_assignments:
+        {{- if not (has . $cdomainsWithoutSupportProjects) }}
+        - project: storage_support
+          role: audit_viewer
+        {{- end }}
+        {{- if eq . "ccadmin"}}
+        - project: storage_tools
+          role: audit_viewer
+        {{- end }}
+        - domain: {{ . }}
+          role: audit_viewer
+          inherited: true
+      - name: {{ hasPrefix "iaas-" . | ternary . ( upper . ) }}_SERVICE_DESK
+        role_assignments:
+        {{- if not (has . $cdomainsWithoutSupportProjects) }}
+        - project: service_desk
+          role: audit_viewer
+        {{- end }}
+        - domain: {{ . }}
+          role: audit_viewer
+          inherited: true
+    {{- end }}
+    {{- end }}

@@ -1,0 +1,52 @@
+{{- range $group := .Values.exporter.collector_groups }}
+---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: apic-exporter-{{ $group.name }}
+  namespace: {{ $.Values.exporter.namespace }}
+spec:
+  selector:
+    matchLabels:
+      app: apic-exporter
+      group: {{ $group.name | quote }}
+  template:
+    metadata:
+      labels:
+        app: apic-exporter
+        group: {{ $group.name | quote }}
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") $ | sha256sum }}
+        kubectl.kubernetes.io/default-container: "apic-exporter"
+        {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+        linkerd.io/inject: enabled
+        {{- end }}
+    spec:
+      volumes:
+        - name: apic-exporter-config
+          configMap:
+            name: apic-exporter-{{ $group.name }}
+      containers:
+        - name: apic-exporter
+          image: {{ required "$.Values.global.registry variable missing" $.Values.global.registry }}/{{ required "$.Values.exporter.image.name variable missing" $.Values.exporter.image.name }}:{{ required "$.Values.exporter.image.tag variable missing" $.Values.exporter.image.tag }}
+          ports:
+            - name: metrics
+              containerPort: {{ required "$.Values.exporter.prometheus.port missing" $.Values.exporter.prometheus.port }}
+          args:
+            - -c
+            - /apic-config/config.yaml
+            - -p
+            - {{ required "$.Values.exporter.prometheus.port missing" $.Values.exporter.prometheus.port | quote }}
+          volumeMounts:
+            - mountPath: /apic-config
+              name: apic-exporter-config
+              readOnly: true
+          env:
+            - name: APIC_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: apic-exporter-secrets
+                  key: apic_password
+          resources:
+{{ toYaml $.Values.exporter.resources | indent 12 }}
+{{- end }}

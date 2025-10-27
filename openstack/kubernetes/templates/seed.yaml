@@ -1,0 +1,57 @@
+apiVersion: openstack.stable.sap.cc/v1
+kind: OpenstackSeed
+metadata:
+  name: kubernetes-seed
+
+spec:
+  requires:
+  - {{.Values.global.keystoneNamespace}}/keystone-seed
+  - {{.Values.global.keystoneNamespace}}/domain-ccadmin-seed
+  - {{.Values.global.keystoneNamespace}}/kubernikus-seed
+
+  domains:
+  - name: ccadmin
+    projects:
+    - name: kubernetes
+      description: 'Regional Kubernetes Scale-Out Kluster'
+      network_quota:
+        router: 1
+        network: 1
+        subnet: 1
+        port: 512
+        security_group: 4 
+        security_group_rule: 32
+        floatingip: 16
+        loadbalancer: 16
+        healthmonitor: 16
+        listener: 16
+      networks:
+      - name: default
+        subnets:
+         - name: kubernetes
+           cidr: 10.180.0.0/16
+           ip_version: 4
+      routers:
+      - name: default
+        external_gateway_info:
+          network: {{required "missing .external_gateway_info.network_id" .Values.external_gateway_info.network}}
+        interfaces:
+          - subnet: kubernetes
+
+    groups:
+    - name: CCADMIN_CLOUD_ADMINS
+      role_assignments:
+      - project: kubernetes
+        role: admin
+      - project: kubernetes
+        role: volume_admin
+      - project: kubernetes
+        role: compute_admin
+      - project: kubernetes
+        role: volume_admin
+      - project: kubernetes
+        role: network_admin
+      - project: kubernetes
+        role: resource_admin
+      - project: kubernetes
+        role: kubernetes_admin

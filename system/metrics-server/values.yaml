@@ -1,0 +1,17 @@
+replicaCount: 3
+
+image:
+  # Default upstream repository: k8s.gcr.io/metrics-server/metrics-server
+  repository: keppel.global.cloud.sap/ccloud-registry-k8s-io-mirror/metrics-server/metrics-server
+  pullPolicy: IfNotPresent
+
+# Workaround for qa landscapes for now:
+#   - --kubelet-preferred-address-types=InternalIP
+#   - --kubelet-insecure-tls
+# This is the setting we want to use:
+# - --kubelet-preferred-address-types=Hostname,InternalDNS
+additionalArgs:
+  - --kubelet-preferred-address-types=InternalIP
+  - --kubelet-insecure-tls
+  - --kubelet-use-node-status-port
+  - --metric-resolution=15s

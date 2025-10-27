@@ -1,0 +1,25 @@
+{{- if and (.Capabilities.APIVersions.Has "kos-operator.stable.sap.cc/v1") }}
+apiVersion: kos-operator.stable.sap.cc/v1
+kind: KosQuery
+metadata:
+  name: ironic-quota-classes
+  annotations:
+    execute: "True"
+    context: "ironic@Default/service"
+requirements:
+- name: ironic-seed
+  kind: OpenstackSeed
+python: |
+  node_list = os.baremetal.nodes(fields=['resource_class'])
+  resource_classes = {node.resource_class
+                      for node in node_list 
+                      if node.resource_class and not 
+                      node.resource_class.startswith(('tempest-Resource_Class-', 'ResClass-'))}
+  LOG.debug(f"Resource Classes: {resource_classes}")
+  quotas = {f"instances_{r}": 0 for r in resource_classes}
+  endpoint_filter={'service_type': 'compute', 'interface': 'public'}
+  resp = os.session.post('/os-quota-class-sets/flavors',
+                      endpoint_filter=endpoint_filter,
+                      json=dict({"quota_class_set": quotas}))
+  LOG.debug(f"Got response: {resp.status_code}")
+{{- end  }}

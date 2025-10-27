@@ -1,0 +1,118 @@
+{{- if eq .Values.garden.backup.provider "aws" }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: virtual-garden-etcd-main-backup-s3
+  namespace: garden
+type: Opaque
+data:
+{{- with .Values.garden.backup }}
+  accessKeyID: {{ required "backup.accessKeyID missing" .accessKeyID | b64enc }}
+  secretAccessKey: {{ required "backup.secretAccessKey missing" .secretAccessKey | b64enc }}
+  region: {{ required "backup.region missing" .region | b64enc }}
+{{- end }}
+{{- end }}
+{{- if eq .Values.garden.backup.provider "openstack" }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: virtual-garden-etcd-main-backup-openstack
+  namespace: garden
+type: Opaque
+data:
+{{- with .Values.garden.backup }}
+  applicationCredentialID: {{ required "backup.applicationCredentialID missing" .applicationCredentialID | b64enc }}
+  applicationCredentialName: {{ required "backup.applicationCredentialName missing" .applicationCredentialName | b64enc }}
+  applicationCredentialSecret: {{ required "backup.applicationCredentialSecret missing" .applicationCredentialSecret | b64enc }}
+  authURL: {{ required "backup.authURL missing" .authURL | b64enc }}
+  domainName: {{ required "backup.domainName missing" .domainName | b64enc }}
+  region: {{ required "backup.region missing" .region | b64enc }}
+  tenantName: {{ required "backup.tenantName missing" .tenantName | b64enc }}
+{{- end }}
+{{- end }}
+---
+apiVersion: operator.gardener.cloud/v1alpha1
+kind: Garden
+metadata:
+  name: {{ .Values.garden.name }}
+  namespace: garden
+spec:
+  runtimeCluster:
+    ingress:
+      domains:
+      - name: runtime-garden.{{ required ".Values.global.cluster missing" .Values.global.cluster }}.{{ required ".Values.global.region missing" .Values.global.region }}.cloud.sap
+      controller:
+        kind: nginx
+    networking:
+      {{- toYaml .Values.garden.runtimeCluster.networking | nindent 6 }}
+    provider:
+      region: {{ .Values.garden.backup.region | quote }} # as of gardener v1.114.0 not used for dns, just for backup
+      zones:
+      {{- toYaml .Values.garden.runtimeCluster.zones | nindent 6 }}
+    settings:
+      verticalPodAutoscaler:
+        enabled: false
+      topologyAwareRouting:
+        enabled: false
+{{- if .Values.garden.runtimeCluster.loadBalancerServices }}
+      loadBalancerServices: {{ toYaml .Values.garden.runtimeCluster.loadBalancerServices | nindent 8 }}
+{{- end }}
+  virtualCluster:
+    dns:
+      domains:
+      - name: virtual-garden.{{ required ".Values.global.cluster missing" .Values.global.cluster }}.{{ required ".Values.global.region missing" .Values.global.region }}.cloud.sap
+      {{- if .Values.garden.virtualCluster.publicDomain }}
+      - name: {{ .Values.garden.virtualCluster.publicDomain }}
+      {{- end }}
+    etcd:
+      main:
+        backup:
+          provider: {{ required ".buckup.provider missing" .Values.garden.backup.provider | quote }}
+          bucketName: {{ required ".buckup.bucket missing" .Values.garden.backup.bucket | quote }}
+          secretRef:
+{{- if eq .Values.garden.backup.provider "aws" }}
+            name: virtual-garden-etcd-main-backup-s3
+{{- end }}
+{{- if eq .Values.garden.backup.provider "openstack" }}
+            name: virtual-garden-etcd-main-backup-openstack
+{{- end }}
+        storage:
+          capacity: 10Gi
+      events:
+        storage:
+          capacity: 10Gi
+    kubernetes:
+      version: {{ .Values.garden.virtualCluster.version | quote}}
+      kubeAPIServer:
+        featureGates:
+          AnonymousAuthConfigurableEndpoints: true
+        {{- if .Values.garden.virtualCluster.publicDomain }}
+        sni:
+          domainPatterns:
+          - api.{{ .Values.garden.virtualCluster.publicDomain }}
+          secretName: {{ .Values.garden.name }}-apiserver-public-tls
+        {{- end }}
+        structuredAuthentication:
+          configMapName: authentication-config-virtual-cluster
+{{- if hasPrefix "rtc-" .Values.global.cluster }}
+        authentication:
+          webhook:
+            kubeconfigSecretName: authentication-webhook-config
+            cacheTTL: 30s
+            version: v1beta1
+{{- end }}
+    gardener:
+      clusterIdentity: local
+      gardenerAPIServer:
+        admissionPlugins:
+        - name: ShootVPAEnabledByDefault
+      gardenerDashboard: {}
+      gardenerDiscoveryServer: {}
+    maintenance:
+      timeWindow:
+        begin: 130000+0100
+        end: 140000+0100
+    networking:
+      {{- toYaml .Values.garden.virtualCluster.networking | nindent 6 }}

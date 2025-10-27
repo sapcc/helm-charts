@@ -1,0 +1,23 @@
+{{- $values := .Values }}
+{{- range $index, $memcached := .Values.memcached_servers }}
+kind: Service
+apiVersion: v1
+
+metadata:
+  name: {{ $memcached }}
+  labels:
+    release: "{{ $.Release.Name }}"
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "9150"
+    prometheus.io/targets: {{ required ".Values.alerts.prometheus.openstack missing" $values.alerts.prometheus.openstack }}
+
+spec:
+  selector:
+    name: swift-{{ $memcached }}
+  ports:
+  - name: memcached
+    port: 11211
+    targetPort: memcached
+---
+{{end}}

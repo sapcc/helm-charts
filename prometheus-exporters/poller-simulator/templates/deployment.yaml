@@ -1,0 +1,74 @@
+{{- $values := .Values }}
+{{- if .Values.simulator.poller.enabled }}
+apiVersion: apps/v1
+{{- if .Values.simulator.poller.statefulSet.enabled }}
+kind: StatefulSet
+{{- else }}
+kind: Deployment
+{{- end }}
+metadata:
+  name: {{ include "poller-simulator.fullname" . }}
+  {{- if .Values.simulator.poller.labels }}
+  labels:
+    {{ toYaml .Values.simulator.poller.labels | indent 4 }}
+  {{- end }}
+spec:
+  replicas: {{ .Values.simulator.poller.replicas }}
+  {{- if .Values.simulator.poller.statefulSet.enabled }}
+  podManagementPolicy: {{ .Values.poller.statefulSet.podManagementPolicy }}
+  serviceName: {{ include "poller-simulator.fullname" . }}
+  updateStrategy:
+  {{- else }}
+  strategy:
+{{- if eq "RollingUpdate" .Values.simulator.poller.updateStrategy }}
+    rollingUpdate:
+      maxSurge: {{ .Values.simulator.poller.maxSurge }}
+      maxUnavailable: {{ .Values.simulator.poller.maxUnavailable }}
+{{- end }}
+  {{- end }}
+    type: {{ .Values.simulator.poller.updateStrategy }}
+  selector:
+    matchLabels:
+      name: {{ include "poller-simulator.fullname" . }}
+      instance: {{ include "poller-simulator.fullname" . }}
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include "poller-simulator/templates/_config.yaml.tpl" . | sha256sum }}
+        prometheus.io/scrape: "true"
+        prometheus.io/port: {{ .Values.simulator.poller.prometheusPort | quote}}
+        prometheus.io/targets: {{ required ".Values.global.alerts.prometheus missing" $values.global.alerts.prometheus | quote }}
+      labels:
+        name: {{ include "poller-simulator.fullname" . }}
+        instance: {{ include "poller-simulator.fullname" . }}
+    spec:
+      serviceAccountName: {{ include "poller-simulator.fullname" . }}
+{{- if .Values.simulator.poller.affinity }}
+      affinity: {{ toYaml .Values.simulator.poller.affinity | nindent 8 }}
+{{- end }}
+      containers:
+        - name: {{ include "poller-simulator.fullname" . }}
+          image: "{{ .Values.simulator.poller.image.name }}:{{ .Values.simulator.poller.image.tag }}"
+          imagePullPolicy: {{ .Values.simulator.poller.image.pullPolicy }}
+          args:
+            - "-config=/poller/config.yaml"
+          envFrom:
+            - secretRef:
+                name: poller-simulator-secret
+          volumeMounts:
+            - name: poller-simulator-config
+              mountPath: "/poller/config.yaml"
+              subPath: config.yaml
+          ports:
+            - name: http
+              containerPort: {{ .Values.simulator.poller.prometheusPort }}
+              protocol: TCP
+      terminationGracePeriodSeconds: {{ .Values.simulator.poller.terminationGracePeriod | default 60 }}
+      volumes:
+        - name: poller-simulator-config
+          configMap:
+            name: poller-simulator-config
+            items:
+              - key: config.yaml
+                path: config.yaml
+{{- end -}}

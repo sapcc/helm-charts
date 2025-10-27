@@ -1,0 +1,17 @@
+groups:
+- name: api.alerts
+  rules:
+  - alert: OpenstackElektraPostgresDatabasesize
+    expr: max(pg_database_size_bytes{app="elektra-postgresql"}) BY (region) >= 8.589934592e+09
+    for: 3m
+    labels:
+      context: databasesize
+      dashboard: elektra-postgres
+      service: elektra
+      severity: warning
+      tier: os
+      support_group: containers
+    annotations:
+      description: 'The database size for Elektra >= 8 Gb : {{ $value }} bytes.'
+      summary: Elektra Database size too large
+

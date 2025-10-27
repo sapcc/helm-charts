@@ -1,0 +1,53 @@
+groups:
+- name: openstack-keystone.alerts
+  rules:
+  - alert: OpenstackKeystoneApi5xx
+    expr: sum(irate(nginx_ingress_controller_requests{ingress=~"keystone", status=~"5.+"}[5m])) > 0
+    for: 5m
+    labels:
+      severity: warning
+      tier: os
+      service: keystone
+      context: availability
+      dashboard: keystone
+      meta: 'Keystone API ingress endpoint is throwing 5xx. '
+      sentry: 'keystone'
+      playbook: 'docs/devops/alert/keystone/#openstackkeystoneapi5xx'
+      support_group: identity
+    annotations:
+      description: 'The keystone ingress API endpoint is throwing 5xx for 5 min. Check if the keystone-api k8s pods are OK.'
+      summary: 'Keystone API ingress endpoint is not healthy'
+  - alert: OpenstackKeystoneApiInCriticalState
+    expr: sum(irate(nginx_ingress_controller_requests{ingress=~"keystone", status=~"5.+"}[15m])) > 0
+    for: 15m
+    labels:
+      severity: critical
+      tier: os
+      service: keystone
+      context: availability
+      dashboard: keystone
+      meta: 'Keystone API ingress endpoint in Critical State. '
+      sentry: 'keystone'
+      playbook: 'docs/devops/alert/keystone/#openstackkeystoneapi5xx'
+      support_group: identity
+    annotations:
+      description: 'The keystone ingress API endpoint is throwing 5xx for 15 min. Check if the keystone-api k8s pods are OK ASAP.'
+      summary: 'Keystone API ingress endpoint is in Critical State'
+
+  - alert: OpenstackKeystoneApiCPUThrottlingExceeds80Percentage
+    expr: rate(container_cpu_cfs_throttled_periods_total{container="keystone-api"}[5m]) / rate(container_cpu_cfs_periods_total{container="keystone-api"}[5m]) > 0.8
+    for: 10m
+    labels:
+      no_alert_on_absence: "true" # small regions may have no throttled containers at all, so this may legitimately occur
+      support_group: identity
+      tier: os
+      service: keystone
+      severity: medium
+      context: cpu
+      sentry: 'keystone'
+      meta: "{{ $labels.pod }}/{{ $labels.container }}"
+    annotations:
+      summary: API Container is constantly CPU-throttled
+      description: The container {{ $labels.pod }}/{{ $labels.container }} is being CPU-throttled
+        constantly. This is probably impacting performance, so check if we can increase the number
+        of replicas or the resource requests/limits.

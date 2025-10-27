@@ -1,0 +1,38 @@
+{{- $values := .Values -}}
+{{- if $values.snmp_exporter.alerts.enabled }}
+{{- range $path, $bytes := .Files.Glob "alerts/*.alerts" }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+
+metadata:
+  name: {{ printf "snmp-exporter-%s" $path | replace "/" "-" }}
+  labels:
+    app: snmp-exporter
+    prometheus: {{ required ".Values.snmp_exporter.alerts.prometheus missing" $values.snmp_exporter.alerts.prometheus }}
+
+spec:
+{{ printf "%s" $bytes | indent 2 }}
+
+{{- end }}
+{{- end }}
+
+{{- range $path, $bytes := .Files.Glob "px.alerts/*.alerts" }}
+{{- $module_name :=  mustRegexReplaceAll ".*\\/snmp-(\\S+).alerts$" $path "$1" }}
+{{- $module_config := get $values.snmp_exporter.px_alerts $module_name }}
+{{- if default false $module_config.enabled }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+
+metadata:
+  name: {{ printf "snmp-exporter-%s" $module_name }}
+  labels:
+    app: snmp-exporter
+    prometheus: {{ required ".Values.snmp_exporter.alerts.prometheus missing" $values.snmp_exporter.alerts.prometheus }}
+
+spec:
+{{ printf "%s" $bytes | indent 2 }}
+
+{{- end }}
+{{- end }}

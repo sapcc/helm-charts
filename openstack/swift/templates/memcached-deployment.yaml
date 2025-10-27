@@ -1,0 +1,56 @@
+{{- range $index, $memcached := .Values.memcached_servers }}
+kind: Deployment
+apiVersion: apps/v1
+
+metadata:
+  name: swift-{{ $memcached }}
+  labels:
+    release: "{{ $.Release.Name }}"
+spec:
+  revisionHistoryLimit: 5
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 3
+  selector:
+    matchLabels:
+      name: swift-{{ $memcached }}
+  template:
+    metadata:
+      labels:
+        name: swift-{{ $memcached }}
+    spec:
+      containers:
+        - name: memcached
+          image: {{ $.Values.global.dockerHubMirrorAlternateRegion }}/library/memcached:{{ $.Values.image_version_auxiliary_memcached }}
+          # TODO: securityContext: { runAsNonRoot: true }
+          ports:
+            - name: memcached
+              containerPort: 11211
+          command: ["memcached", "-m", "1024", "-c", "16384"]
+          resources:
+            # observed usage: CPU = 15m-100m, RAM = 25-70 MiB
+            requests:
+              cpu: '200m'
+              memory: '1024Mi'
+            limits:
+              cpu: '400m'
+              memory: '2048Mi'
+        - name: metrics
+          image: {{ $.Values.global.dockerHubMirrorAlternateRegion }}/prom/memcached-exporter:{{ $.Values.image_version_auxiliary_memcached_exporter }}
+          # TODO: securityContext: { runAsNonRoot: true }
+          ports:
+            - name: metrics
+              containerPort: 9150
+          resources:
+            # observed usage: CPU <= 2m-4m, RAM = up to 50 MiB
+            requests:
+              cpu: '200m'
+              memory: '64Mi'
+            limits:
+              cpu: '400m'
+              memory: '128Mi'
+---
+{{end}}

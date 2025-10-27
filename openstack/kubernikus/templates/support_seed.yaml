@@ -1,0 +1,51 @@
+{{- if .Values.seedSupportTeams }}
+{{- $domains := list "ccadmin" "bs" "hcm" "hcp03" "hec" "monsoon3" "s4" "wbs" "cp"}}
+apiVersion: "openstack.stable.sap.cc/v1"
+kind: "OpenstackSeed"
+metadata:
+  name: kubernikus-support-seed
+spec:
+  requires:
+  {{- range $domains }}
+  - {{ $.Values.global.keystoneNamespace }}/domain-{{ . | lower }}-seed
+  {{- end }}
+
+  domains:
+    {{- range $domains }}
+    - name: {{ . | lower }}
+      groups:
+      - name: {{ . | upper }}_API_SUPPORT
+        role_assignments:
+        - domain: {{ . | lower }}
+          role: kubernetes_admin
+          inherited: true
+      - name: {{ . | upper }}_COMPUTE_SUPPORT
+        role_assignments:
+        - project: compute_support
+          role: kubernetes_admin
+        - domain: {{ . | lower }}
+          role: kubernetes_member
+          inherited: true
+      - name: {{ . | upper }}_NETWORK_SUPPORT
+        role_assignments:
+        - project: network_support
+          role: kubernetes_admin
+        - domain: {{ . | lower }}
+          role: kubernetes_member
+          inherited: true
+      - name: {{ . | upper }}_STORAGE_SUPPORT
+        role_assignments:
+        - project: storage_support
+          role: kubernetes_admin
+        - domain: {{ . | lower }}
+          role: kubernetes_member
+          inherited: true
+      - name: {{ . | upper }}_SERVICE_DESK
+        role_assignments:
+        - project: service_desk
+          role: kubernetes_admin
+        - domain: {{ . | lower }}
+          role: kubernetes_member
+          inherited: true
+{{- end }}
+{{- end }}

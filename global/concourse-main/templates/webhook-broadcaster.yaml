@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: webhook-broadcaster
+  annotations:
+    secret.reloader.stakater.com/reload: "webhook-broadcaster"
+spec:
+  selector:
+    matchLabels:
+      name: webhook-broadcaster
+  template:
+    metadata:
+      labels:
+        name: webhook-broadcaster
+    spec:
+      containers:
+      - name: webhook-broadcaster
+        image: {{ .Values.webhookBroadcaster.image }}:{{ .Values.webhookBroadcaster.imageTag }}
+        imagePullPolicy: {{ .Values.webhookBroadcaster.imagePullPolicy | quote }}
+        command:
+        - /bin/sh
+        args:
+        - -ce
+        - |-
+          /usr/bin/webhook-broadcaster -concourse-url "$(CONCOURSE_URL)" \
+            -auth-user "$(CONCOURSE_USER)" \
+            -auth-password "$(CONCOURSE_PASSWORD)" \
+            -refresh-interval "$(CONCOURSE_REFRESH_INTERVAL)" \
+            -listen-addr "$(CONCOURSE_LISTEN_ADDRESS)" \
+            -webhook-concurrency "$(CONCOURSE_WEBHOOK_CONCURRENCY)"
+        env:
+        - name: CONCOURSE_URL
+          value: {{ .Values.concourse.concourse.web.externalUrl }} 
+        - name: CONCOURSE_USER
+          valueFrom:
+            secretKeyRef:
+              name: webhook-broadcaster
+              key: admin-user
+        - name: CONCOURSE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: webhook-broadcaster
+              key: admin-password
+        - name: CONCOURSE_REFRESH_INTERVAL
+          value: 10m
+        - name: CONCOURSE_WEBHOOK_CONCURRENCY
+          value: "5"
+        - name: CONCOURSE_LISTEN_ADDRESS
+          value: 0.0.0.0:8080
+        ports:
+        - containerPort: 8080

@@ -1,0 +1,15 @@
+groups:
+- name: ad-replication.alerts
+  rules:      
+  - alert: ADCertCritical
+    expr: sum(windows_ad_certificate_expires_days < 5) by (server_name, value)
+    for: 20m
+    labels:
+      severity: critical
+      tier: ad
+      service: windows-exporter
+      context: "{{ $labels.server_name }}"
+      meta: "Certificate will expire on {{ $labels.server_name }}"
+    annotations:
+      description: "Certificate will expire on {{ $labels.server_name }} in {{ $labels.value }} days!"
+      summary: "Certificate will expire on {{ $labels.server_name }}"

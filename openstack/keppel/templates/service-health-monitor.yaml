@@ -1,0 +1,17 @@
+kind: Service
+apiVersion: v1
+
+metadata:
+  # This is used by the loadbalancer for keppel.global to monitor the health of this region (cf. ingress-api).
+  name: keppel-health-monitor
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/targets: "openstack"
+
+spec:
+  selector:
+    name: keppel-health-monitor
+  ports:
+    - name: metrics # this specific name is required for Prometheus scraping
+      port: 8080
+      protocol: TCP

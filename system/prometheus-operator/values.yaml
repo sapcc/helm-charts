@@ -1,0 +1,96 @@
+global:
+  linkerd_requested: true
+
+linkerd-support:
+  annotate_namespace: true
+
+kube-prometheus-stack:
+  nameOverride: prometheus
+  fullnameOverride: prometheus
+  # Never manage CRDs. They are deployed via prometheus-crds Helm chart.
+  manageCrds: false
+
+  prometheusOperator:
+    image:
+      registry: keppel.eu-de-1.cloud.sap
+      repository: ccloud-quay-mirror/prometheus-operator/prometheus-operator
+
+    resources:
+      limits:
+        cpu: 200m
+        memory: 200Mi
+      requests:
+        cpu: 100m
+        memory: 100Mi
+
+    prometheusConfigReloader:
+      image:
+        registry: keppel.eu-de-1.cloud.sap
+        repository: ccloud-quay-mirror/prometheus-operator/prometheus-config-reloader
+ 
+    thanosImage:
+      registry: keppel.eu-de-1.cloud.sap
+      repository: ccloud-quay-mirror/thanos/thanos
+
+    # Both admissionWebhooks and tls requires admissionregistration.k8s.io/v1 .
+    admissionWebhooks:
+      failurePolicy: Ignore
+      patch:
+        image:
+          registry: keppel.global.cloud.sap
+          repository: ccloud-registry-k8s-io-mirror/ingress-nginx/kube-webhook-certgen
+        podAnnotations:
+          linkerd.io/inject: disabled
+
+    createCustomResource: false
+    serviceAccount:
+      create: true
+    tlsProxy:
+      enabled: false
+
+    serviceMonitor:
+      additionalLabels:
+        prometheus: kubernetes
+      interval: 30s
+      scrapeTimeout: 25s
+
+  operator:
+    serviceAccountName: default
+  # Disable creation of default aggregation and alerting rules.
+  defaultRules:
+    create: false
+  # Disable the Prometheus instance. We deploy our own Prometheis.
+  prometheus:
+    enabled: false
+  # Disable the Alertmanager instance. We deploy our own Alertmanagers.
+  alertmanager:
+    enabled: false
+  # Disable all exporters.
+  kubeApiServer:
+    enabled: false
+  kubelet:
+    enabled: false
+  kubeControllerManager:
+    enabled: false
+  coreDns:
+    enabled: false
+  kubeDns:
+    enabled: false
+  kubeEtcd:
+    enabled: false
+  kubeScheduler:
+    enabled: false
+  nodeExporter:
+    enabled: false
+  grafana:
+    enabled: false
+  kubeStateMetrics:
+    enabled: false
+
+owner-info:
+  service: prometheus
+  support-group: observability
+  maintainers:
+    - Richard Tief
+    - Tommy Sauer
+  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/system/prometheus-operator

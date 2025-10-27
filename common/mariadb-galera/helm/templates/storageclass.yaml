@@ -1,0 +1,58 @@
+{{- $cinderEnabled := false }}
+{{- $nfsEnabled := false }}
+{{- range $volumeClaimTemplatesKey, $volumeClaimTemplatesValue := $.Values.volumeClaimTemplates }}
+  {{- range $volumeMountsKey, $volumeMountsValue := index $.Values.volumeMounts.database }}
+    {{- if $volumeMountsValue.enabled }}
+      {{- if and (hasKey $volumeMountsValue "type") (eq $volumeMountsValue.type "persistentVolume") }}
+        {{- if (hasKey $volumeMountsValue "claimName") }}
+          {{- if eq $volumeClaimTemplatesKey $volumeMountsValue.claimName }}
+            {{- if and (eq $volumeClaimTemplatesValue.storageClassName "cinder") (not $cinderEnabled) }}
+            {{- $cinderEnabled = true }}
+{{- include "storageclassCinder" $ }}
+            {{- end }}
+            {{- if and (eq $volumeClaimTemplatesValue.storageClassName "nfs") (not $nfsEnabled) }}
+            {{- $nfsEnabled = true }}
+{{- include "storageclassNfs" $ }}
+            {{- end }}
+          {{- end }}
+        {{- end }}
+      {{- end }}
+    {{- end }}
+  {{- end }}
+  {{- range $volumeMountsKey, $volumeMountsValue := index $.Values.volumeMounts.proxy.proxysql }}
+    {{- if $volumeMountsValue.enabled }}
+      {{- if and (hasKey $volumeMountsValue "type") (eq $volumeMountsValue.type "persistentVolume") }}
+        {{- if (hasKey $volumeMountsValue "claimName") }}
+          {{- if eq $volumeClaimTemplatesKey $volumeMountsValue.claimName }}
+            {{- if and (eq $volumeClaimTemplatesValue.storageClassName "cinder") (not $cinderEnabled) }}
+            {{- $cinderEnabled = true }}
+{{- include "storageclassCinder" $ }}
+            {{- end }}
+            {{- if and (eq $volumeClaimTemplatesValue.storageClassName "nfs") (not $nfsEnabled) }}
+            {{- $nfsEnabled = true }}
+{{- include "storageclassNfs" $ }}
+            {{- end }}
+          {{- end }}
+        {{- end }}
+      {{- end }}
+    {{- end }}
+  {{- end }}
+  {{- range $volumeMountsKey, $volumeMountsValue := index $.Values.volumeMounts.backup.kopia }}
+    {{- if $volumeMountsValue.enabled }}
+      {{- if and (hasKey $volumeMountsValue "type") (eq $volumeMountsValue.type "persistentVolume") }}
+        {{- if (hasKey $volumeMountsValue "claimName") }}
+          {{- if eq $volumeClaimTemplatesKey $volumeMountsValue.claimName }}
+            {{- if and (eq $volumeClaimTemplatesValue.storageClassName "cinder") (not $cinderEnabled) }}
+            {{- $cinderEnabled = true }}
+{{- include "storageclassCinder" $ }}
+            {{- end }}
+            {{- if and (eq $volumeClaimTemplatesValue.storageClassName "nfs") (not $nfsEnabled) }}
+            {{- $nfsEnabled = true }}
+{{- include "storageclassNfs" $ }}
+            {{- end }}
+          {{- end }}
+        {{- end }}
+      {{- end }}
+    {{- end }}
+  {{- end }}
+{{- end }}

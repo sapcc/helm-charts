@@ -1,0 +1,65 @@
+owner-info:
+  support-group: containers
+  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/system/argora-operator
+
+argora-operator-core:
+  controllerManager:
+    replicas: 1
+    container:
+      args:
+        - "--leader-elect"
+        - "--metrics-bind-address=:8443"
+        - "--health-probe-bind-address=:8081"
+      resources:
+        limits:
+          cpu: 500m
+          memory: 128Mi
+        requests:
+          cpu: 10m
+          memory: 64Mi
+      livenessProbe:
+        initialDelaySeconds: 15
+        periodSeconds: 20
+        httpGet:
+          path: /healthz
+          port: 8081
+      readinessProbe:
+        initialDelaySeconds: 5
+        periodSeconds: 10
+        httpGet:
+          path: /readyz
+          port: 8081
+      securityContext:
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop:
+            - "ALL"
+    securityContext:
+      runAsNonRoot: true
+      seccompProfile:
+        type: RuntimeDefault
+    terminationGracePeriodSeconds: 10
+    serviceAccountName: argora-controller-manager
+
+  rbac:
+    enable: true
+  crd:
+    enable: false
+    keep: true
+  metrics:
+    enable: true
+  prometheus:
+    enable: false
+  certmanager:
+    enable: false
+  networkPolicy:
+    enable: false
+  ironcore:
+    enable: true
+
+  netboxURL: "https://netbox-url"
+
+  credentials:
+    bmcUser: ""
+    bmcPassword: ""
+    netboxToken: ""

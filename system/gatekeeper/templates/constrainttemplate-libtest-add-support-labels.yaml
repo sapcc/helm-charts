@@ -1,0 +1,52 @@
+{{- if eq .Values.cluster_type "test" -}}
+
+apiVersion: templates.gatekeeper.sh/v1
+kind: ConstraintTemplate
+metadata:
+  name: gklibtestaddsupportlabels
+spec:
+  crd:
+    spec:
+      names:
+        kind: GkLibtestAddSupportLabels
+      validation:
+        # Schema for the `parameters` field
+        openAPIV3Schema:
+          type: object
+          properties:
+            helmManifestParserURL:
+              type: string
+
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      code:
+        - engine: Rego
+          source:
+            version: "v1"
+            libs:
+              - |
+                {{ .Files.Get "lib/add-support-labels.rego" | nindent 16 }}
+              - |
+                {{ .Files.Get "lib/helm-release.rego" | nindent 16 }}
+            rego: |
+              package libtestaddsupportlabels
+
+              import data.lib.add_support_labels
+              import data.lib.helm_release
+
+              iro := input.review.object
+
+              violation contains {"msg": add_support_labels.from_helm_release(release, msg)} if {
+                  # from_helm_release() is tested with Secret objects containing Helm releases
+                  iro.kind == "Secret"
+                  release := helm_release.parse_k8s_object(iro, input.parameters.helmManifestParserURL)
+                  release.error == ""
+                  msg := "test for from_helm_release()"
+              }
+
+              violation contains {"msg": add_support_labels.from_k8s_object(iro, msg)} if {
+                  # from_k8s_object() is tested with Pod objects
+                  iro.kind == "Pod"
+                  msg := "test for from_k8s_object()"
+              }
+{{- end -}}

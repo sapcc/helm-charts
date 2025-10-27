@@ -1,0 +1,132 @@
+# Default values for descheduler.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# CronJob or Deployment
+kind: CronJob
+
+image:
+  repository: keppel.global.cloud.sap/ccloud-registry-k8s-io-mirror/descheduler/descheduler
+  # Overrides the image tag whose default is the chart version
+  tag: ""
+  pullPolicy: IfNotPresent
+
+imagePullSecrets: []
+
+resources:
+  requests:
+    cpu: 500m
+    memory: 256Mi
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+nameOverride: ""
+fullnameOverride: ""
+
+# labels that'll be applied to all resources
+commonLabels: {}
+
+cronJobApiVersion: "batch/v1"
+schedule: "0 1 * * *"
+suspend: false
+successfulJobsHistoryLimit: 10
+failedJobsHistoryLimit: 10
+#startingDeadlineSeconds: 200
+
+# Required when running as a Deployment
+deschedulingInterval: 5m
+
+cmdOptions:
+  v: 4
+
+deschedulerPolicy:
+  strategies:
+    RemoveDuplicates:
+      enabled: true
+      params:
+        thresholdPriorityClassName: critical-infrastructure
+    RemovePodsViolatingNodeTaints:
+      enabled: true
+      params:
+        thresholdPriorityClassName: critical-infrastructure
+    RemovePodsViolatingNodeAffinity:
+      enabled: true
+      params:
+        thresholdPriorityClassName: critical-infrastructure
+        nodeAffinityType:
+        - requiredDuringSchedulingIgnoredDuringExecution
+    RemovePodsViolatingInterPodAntiAffinity:
+      enabled: true
+      params:
+        thresholdPriorityClassName: critical-infrastructure
+    LowNodeUtilization:
+      enabled: true
+      params:
+        thresholdPriorityClassName: critical-infrastructure
+        nodeResourceUtilizationThresholds:
+          thresholds:
+            cpu: 20
+            memory: 20
+            pods: 20
+          targetThresholds:
+            cpu: 50
+            memory: 50
+            pods: 50
+    HighNodeUtilization:
+      enabled: true
+      params:
+        thresholdPriorityClassName: critical-infrastructure
+        nodeResourceUtilizationThresholds:
+          thresholds:
+            "cpu" : 20
+            "memory": 20
+            "pods": 20
+
+priorityClassName: system-cluster-critical
+
+nodeSelector: {}
+#  foo: bar
+
+affinity: {}
+# nodeAffinity:
+#   requiredDuringSchedulingIgnoredDuringExecution:
+#     nodeSelectorTerms:
+#     - matchExpressions:
+#       - key: kubernetes.io/e2e-az-name
+#         operator: In
+#         values:
+#         - e2e-az1
+#         - e2e-az2
+
+tolerations: []
+# - key: 'management'
+#   operator: 'Equal'
+#   value: 'tool'
+#   effect: 'NoSchedule'
+
+rbac:
+  # Specifies whether RBAC resources should be created
+  create: true
+
+podSecurityPolicy:
+  # Specifies whether PodSecurityPolicy should be created.
+  create: false
+
+serviceAccount:
+  # Specifies whether a ServiceAccount should be created
+  create: true
+  # The name of the ServiceAccount to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name:
+  # Specifies custom annotations for the serviceAccount
+  annotations: {}
+
+livenessProbe:
+  failureThreshold: 3
+  httpGet:
+    path: /healthz
+    port: 10258
+    scheme: HTTPS
+  initialDelaySeconds: 3
+  periodSeconds: 10

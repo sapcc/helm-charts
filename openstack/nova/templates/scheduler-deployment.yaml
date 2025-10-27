@@ -1,0 +1,147 @@
+kind: Deployment
+apiVersion: apps/v1
+
+metadata:
+  name: nova-scheduler
+  labels:
+    system: openstack
+    type: backend
+    component: nova
+  {{- if .Values.vpa.set_main_container }}
+  annotations:
+    vpa-butler.cloud.sap/main-container: nova-scheduler
+  {{- end }}
+spec:
+  replicas: {{ .Values.pod.replicas.scheduler }}
+  revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revision_history }}
+  strategy:
+    type: {{ .Values.pod.lifecycle.upgrades.deployments.podReplacementStrategy }}
+    {{ if eq .Values.pod.lifecycle.upgrades.deployments.podReplacementStrategy "RollingUpdate" }}
+    rollingUpdate:
+      maxUnavailable: {{ .Values.pod.lifecycle.upgrades.deployments.rollingUpdate.maxUnavailable }}
+      maxSurge: {{ .Values.pod.lifecycle.upgrades.deployments.rollingUpdate.maxSurge }}
+    {{ end }}
+  selector:
+    matchLabels:
+      name: nova-scheduler
+  template:
+    metadata:
+      labels:
+        name: nova-scheduler
+        alert-tier: os
+        alert-service: nova
+        {{- tuple . "nova" "scheduler" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | nindent 8 }}
+      annotations:
+        {{- if or .Values.scheduler.rpc_statsd_enabled .Values.proxysql.mode }}
+        prometheus.io/scrape: "true"
+        prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
+        {{- end }}
+        {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
+        configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
+        configmap-scheduler-etc-hash: {{ include (print $.Template.BasePath "/scheduler-etc-configmap.yaml") . | sha256sum }}
+        secret-etc-hash: {{ include (print $.Template.BasePath "/etc-secret.yaml") . | sha256sum }}
+    spec:
+      {{- tuple . "nova" "scheduler" | include "kubernetes_pod_anti_affinity" | nindent 6 }}
+      {{- include "utils.proxysql.pod_settings" . | nindent 6 }}
+      terminationGracePeriodSeconds: {{ .Values.defaults.default.graceful_shutdown_timeout | add 5 }}
+      hostname: nova-scheduler
+      initContainers:
+      {{- tuple . (dict "service" (include "nova.helpers.cell01_services" .)) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
+      {{- if .Values.proxysql.native_sidecar }}
+      {{- tuple . .Values.scheduler.workers | include "utils.proxysql.container" | indent 6 }}
+      {{- end }}
+      containers:
+        - name: nova-scheduler
+          image: {{ tuple . "scheduler" | include "container_image_nova" }}
+          imagePullPolicy: IfNotPresent
+          command:
+          - dumb-init
+          - nova-scheduler
+          env:
+          {{- if .Values.sentry.enabled }}
+          - name: SENTRY_DSN
+            valueFrom:
+              secretKeyRef:
+                name: sentry
+                key: {{ .Chart.Name }}.DSN.python
+          {{- end }}
+          {{- if .Values.python_warnings}}
+          - name: PYTHONWARNINGS
+            value: {{ .Values.python_warnings | quote }}
+          {{- end }}
+          livenessProbe:
+            exec:
+              command: ["openstack-agent-liveness", "--component", "nova", "--config-file", "/etc/nova/nova.conf", "--config-file", "/etc/nova/nova.conf.d/keystoneauth-secrets.conf", "--token_cache_file", "/tmp/liveness-token.cache"]
+            initialDelaySeconds: 60
+            periodSeconds: 60
+            timeoutSeconds: 20
+          {{- if .Values.pod.resources.scheduler }}
+          resources:
+{{ toYaml .Values.pod.resources.scheduler | indent 12 }}
+          {{- end }}
+          volumeMounts:
+          - name: nova-etc
+            mountPath: /etc/nova
+          {{- include "utils.proxysql.volume_mount" . | indent 10 }}
+          {{- include "utils.trust_bundle.volume_mount" . | indent 10 }}
+        {{- if not .Values.proxysql.native_sidecar }}
+        {{- tuple . .Values.scheduler.workers | include "utils.proxysql.container" | indent 8 }}
+        {{- end }}
+        {{- if .Values.scheduler.rpc_statsd_enabled }}
+        - name: statsd
+          image: {{ required ".Values.global.dockerHubMirror is missing" .Values.global.dockerHubMirror}}/prom/statsd-exporter:v0.8.1
+          imagePullPolicy: IfNotPresent
+          args: [ --statsd.mapping-config=/etc/statsd/statsd-exporter.yaml ]
+          ports:
+          - name: statsd
+            containerPort: {{ .Values.scheduler.rpc_statsd_port }}
+            protocol: UDP
+          - name: metrics
+            containerPort: 9102
+          volumeMounts:
+          - name: statsd-etc
+            mountPath: /etc/statsd/statsd-exporter.yaml
+            subPath: statsd-exporter.yaml
+            readOnly: true
+        {{- end }}
+      volumes:
+      - name: nova-etc
+        projected:
+          sources:
+          - configMap:
+              name: nova-etc
+              items:
+              - key:  nova.conf
+                path: nova.conf
+              - key:  logging.ini
+                path: logging.ini
+          - secret:
+              name: nova-etc
+              items:
+              - key:  api-db.conf
+                path: nova.conf.d/api-db.conf
+              - key: cell1.conf
+                path: nova.conf.d/cell1.conf
+              - key: keystoneauth-secrets.conf
+                path: nova.conf.d/keystoneauth-secrets.conf
+              {{- if .Values.osprofiler.enabled }}
+              - key: osprofiler.conf
+                path: nova.conf.d/osprofiler.conf
+              {{- end }}
+          - configMap:
+              name: nova-scheduler-etc
+              items:
+              - key:  nova-scheduler.conf
+                path: nova-scheduler.conf
+{{- if .Values.scheduler.rpc_statsd_enabled }}
+      - name: statsd-etc
+        projected:
+          sources:
+          - configMap:
+              name: nova-etc
+              items:
+              - key:  statsd-exporter.yaml
+                path: statsd-exporter.yaml
+{{- end }}
+      {{- include "utils.proxysql.volumes" . | indent 6 }}
+      {{- include "utils.trust_bundle.volumes" . | indent 6 }}

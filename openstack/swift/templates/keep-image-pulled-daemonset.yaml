@@ -1,0 +1,106 @@
+{{- if not (.Values.global.region | hasPrefix "qa-") }}
+
+# Swift is the backing store for Keppel. Therefore Swift is instrumental for
+# the continued availability of many other Docker images, so we want to be able
+# to start it reliably and fast. To ensure this, this daemonset (through its
+# existence) keeps the relevant images permanently pulled on all nodes.
+#
+# The condition above skips this daemonset on QA and lab regions, because high
+# availability is not a concern there. By omitting the daemonset there, the
+# Helm deployment will finish faster since it does not have to wait on it.
+# This also avoids wasting resources in small lab clusters.
+
+kind: DaemonSet
+apiVersion: apps/v1
+
+metadata:
+  name: keep-image-pulled
+  annotations:
+    # This pod intentionally has extremely tight resource requests.
+    # The VerticalPodAutoscaler should never waste resources by increasing those.
+    vpa-butler.cloud.sap/update-mode: "Off"
+
+spec:
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1000 # allow updating all pods at once
+  selector:
+    matchLabels:
+      app: keep-image-pulled
+  template:
+    metadata:
+      labels:
+        app: keep-image-pulled
+      annotations:
+        linkerd.io/inject: disabled # This pod does not interact with the network.
+    spec:
+      priorityClassName: important-infrastructure
+      # sleep(1) doesn't seem to react to SIGTERM at all, so skip right ahead to SIGKILL
+      terminationGracePeriodSeconds: 1
+
+      # NOTE: observed resource usage in eu-de-1 (as of 2020-02-26)
+      # - no measurable CPU usage once started
+      # - RAM max. 1.5 MiB (but it turns out that k8s itself runs into OOM when
+      #   starting a container with less than 28 MiB RAM limit)
+      containers:
+        - name: swift
+          image: {{ include "swift_image" . }}
+          imagePullPolicy: IfNotPresent
+          command: [ '/bin/sleep', 'inf' ]
+          securityContext:
+            runAsNonRoot: true
+            runAsUser:    65534 # nobody
+            runAsGroup:   65534 # nobody
+          resources:
+            requests:
+              cpu: "5m"
+              memory: "32Mi"
+            limits:
+              cpu: "5m"
+              memory: "32Mi"
+        - name: swift-rings
+          image: {{ include "swift_rings_image" . }}
+          imagePullPolicy: IfNotPresent
+          command: [ '/bin/sleep', 'inf' ]
+          securityContext:
+            runAsNonRoot: true
+            runAsUser:    65534 # nobody
+            runAsGroup:   65534 # nobody
+          resources:
+            requests:
+              cpu: "5m"
+              memory: "32Mi"
+            limits:
+              cpu: "5m"
+              memory: "32Mi"
+        - name: haproxy
+          image: {{ .Values.global.registryAlternateRegion}}/swift-haproxy:{{ .Values.image_version_haproxy }}
+          imagePullPolicy: IfNotPresent
+          command: [ '/bin/sleep', 'inf' ]
+          securityContext:
+            runAsNonRoot: true
+            runAsUser:    65534 # nobody
+            runAsGroup:   65534 # nobody
+          resources:
+            requests:
+              cpu: "5m"
+              memory: "32Mi"
+            limits:
+              cpu: "5m"
+              memory: "32Mi"
+        - name: statsd
+          image: {{ .Values.global.dockerHubMirrorAlternateRegion }}/prom/statsd-exporter:{{ .Values.image_version_auxiliary_statsd_exporter }}
+          imagePullPolicy: IfNotPresent
+          command: [ '/bin/tail', '-f', '/dev/null' ] # does not support "sleep inf" in the image version currently in use
+          securityContext:
+            runAsNonRoot: true
+          resources:
+            requests:
+              cpu: "5m"
+              memory: "32Mi"
+            limits:
+              cpu: "5m"
+              memory: "32Mi"
+
+{{- end }}

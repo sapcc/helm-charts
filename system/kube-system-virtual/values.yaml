@@ -1,0 +1,115 @@
+global:
+  region:
+  domain:
+
+externalIPs: 
+  ingress: 
+
+ingress:
+  tls_client_auth:
+    ca_cert:
+
+container-linux-update-operator:
+  rbac:
+    create: true
+
+kube-proxy:
+  selector:   false
+  toleration: false
+  images:
+    proxy: 
+      repository: sapcc/hyperkube
+      tag: v1.15.2
+  clusterCIDR: 10.180.0.0/17
+
+  sidecars:
+    parrot:     false
+    externalip: false
+    nanny:      false
+    ipmasq:     false
+
+kube-proxy-capi:
+  selector:   false
+  toleration: false
+  images:
+    proxy: 
+      repository: sapcc/hyperkube
+      tag: v1.15.2
+  clusterCIDR: 10.180.0.0/17
+
+  sidecars:
+    parrot:     false
+    externalip: false
+    nanny:      false
+    ipmasq:     false
+  
+kube-flannel:
+  image:
+    repository: quay.io/coreos/flannel
+    tag: v0.11.0-amd64
+  kubeConfig: /etc/kubernetes/kubelet/kubeconfig
+
+wormhole:
+  interface:
+    ipAddress: 1.1.1.1
+    port: 6443
+  kubeConfig: /etc/kubernetes/kubelet/kubeconfig
+
+cert-manager:
+  installCRDs: true
+  image:
+    repository: keppel.global.cloud.sap/ccloud-quay-mirror/jetstack/cert-manager-controller
+    tag: v1.13.3
+  webhook:
+    image:
+      repository: keppel.global.cloud.sap/ccloud-quay-mirror/jetstack/cert-manager-webhook
+  cainjector:
+    image:
+      repository: keppel.global.cloud.sap/ccloud-quay-mirror/jetstack/cert-manager-cainjector
+    extraArgs:
+    - --leader-elect=false
+  startupapicheck:
+    image:
+      repository: keppel.global.cloud.sap/ccloud-quay-mirror/jetstack/cert-manager-ctl
+  ingressShim:
+    defaultIssuerName: digicert-issuer
+    defaultIssuerKind: ClusterIssuer
+    defaultIssuerGroup: certmanager.cloud.sap
+  prometheus:
+    enabled: true
+  podAnnotations:
+    prometheus.io/targets: kubernetes
+  enableCertificateOwnerRef: true
+
+# For now enabled via regional values.
+maintenance-controller:
+  enabled: false
+
+metrics-server:
+  image:
+    repository: keppel.global.cloud.sap/ccloud-registry-k8s-io-mirror/metrics-server/metrics-server
+
+  # Workaround for qa landscapes.
+  args:
+    - --kubelet-insecure-tls
+
+  replicas: 3
+  podLabels:
+    k8s-app: metrics-server
+  affinity:
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        - labelSelector:
+            matchLabels:
+              k8s-app: metrics-server
+          namespaces:
+            - kube-system
+          topologyKey: kubernetes.io/hostname
+
+owner-info:
+  support-group: containers
+  service: kube-system
+  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/system/kube-system-virtual
+
+secrets-injector:
+  enabled: false

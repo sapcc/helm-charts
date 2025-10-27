@@ -1,0 +1,82 @@
+{{- if not .Values.global.is_global_region }}
+{{- if .Values.maia.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: maia
+  namespace: maia
+  labels:
+    system: openstack
+    service: maia
+
+spec:
+  revisionHistoryLimit: 5
+  replicas: 1
+  selector:
+    matchLabels:
+      component: maia
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        component: maia
+      annotations:
+        checksum/maia-templates-maia-api-secret.yaml: {{ include "maia/templates/maia-api-secret.yaml" . | sha256sum }}
+        kubectl.kubernetes.io/default-container: "maia"
+        secret.reloader.stakater.com/reload: "maia-api-secret"
+        deployment.reloader.stakater.com/pause-period: "60s"
+    spec:
+      nodeSelector:
+        zone: farm
+      volumes:
+        - name: maia-etc
+          secret:
+            secretName: maia-api-secret
+            defaultMode: 420
+      containers:
+        - name: maia
+          # remove the "string:" prefix which is used to prevent helm's --set option from reformatting plain numbers into floats in scientific notation
+          image: {{ required "maia.docker_repo variable is missing" .Values.maia.docker_repo }}:{{ required "maia.image_version variable missing" .Values.maia.image_version }}
+          imagePullPolicy: IfNotPresent
+#          command: ["sh"]
+#          args:
+#           - -c
+#           - "ls /etc/maia; sleep 10000"
+          args: ["serve"]
+          env:
+            - name: MAIA_DEBUG
+              value: {{ $.Values.maia.debug | quote }}
+          resources:
+              requests:
+                  memory: {{ .Values.maia.resources.memory.expected }}
+                  cpu: {{ .Values.maia.resources.cpu.expected }}
+              limits:
+                  memory: {{ .Values.maia.resources.memory.tolerated }}
+                  cpu: {{ .Values.maia.resources.cpu.tolerated }}
+          volumeMounts:
+            - mountPath: /etc/maia
+              name: maia-etc
+          ports:
+            - name: api
+              containerPort: {{ .Values.maia.listen_port }}
+          # http get returns 401 because it requires authentication
+          # Need to add a non-authenticated health endpoint
+          # livenessProbe:
+          #   httpGet:
+          #     path: /
+          #     port: {{ .Values.maia.listen_port }}
+          #   timeoutSeconds: 10
+          #   periodSeconds: 60
+          #   initialDelaySeconds: 60
+          # readinessProbe:
+          #   httpGet:
+          #     path: /
+          #     port: {{ .Values.maia.listen_port }}
+          #   timeoutSeconds: 5
+          #   periodSeconds: 5
+{{- end }}
+{{- end }}

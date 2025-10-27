@@ -1,0 +1,70 @@
+{{- if .Values.internalIngress.enabled }}
+{{- if .Capabilities.APIVersions.Has "networking.k8s.io/v1/Ingress" }}
+apiVersion: networking.k8s.io/v1
+{{- else -}}
+apiVersion: networking.k8s.io/v1beta1
+{{- end }}
+kind: Ingress
+
+metadata:
+  name: {{ include "alertmanager.fullname" . }}-internal
+
+  labels:
+    app: prometheus-alertmanager
+    alertmanager: {{ include "alertmanager.name" . }}
+
+  annotations:
+    kubernetes.io/tls-acme: "true"
+    disco: "true"
+    {{- if .Values.internalIngress.authentication.oauth.enabled }}
+    ingress.kubernetes.io/auth-url: {{ required ".Values.internalIngress.authentication.oauth.authURL missing" .Values.internalIngress.authentication.oauth.authURL }}
+    nginx.ingress.kubernetes.io/auth-url: {{ required ".Values.internalIngress.authentication.oauth.authURL missing" .Values.internalIngress.authentication.oauth.authURL }}
+    {{ if .Values.internalIngress.authentication.oauth.authSignInURL }}ingress.kubernetes.io/auth-signin: {{ .Values.internalIngress.authentication.oauth.authSignInURL }} {{ end }}
+    {{ end }}
+    {{- if .Values.internalIngress.authentication.sso.enabled}}
+    ingress.kubernetes.io/auth-tls-secret: {{ required ".Values.internalIngress.authentication.sso.authTLSSecret missing" .Values.internalIngress.authentication.sso.authTLSSecret | quote }}
+    nginx.ingress.kubernetes.io/auth-tls-secret: {{ required ".Values.internalIngress.authentication.sso.authTLSSecret missing" .Values.internalIngress.authentication.sso.authTLSSecret | quote }}
+    ingress.kubernetes.io/auth-tls-verify-depth: {{ required ".Values.internalIngress.authentication.sso.authTLSVerifyDepth missing" .Values.internalIngress.authentication.sso.authTLSVerifyDepth | quote }}
+    nginx.ingress.kubernetes.io/auth-tls-verify-depth: {{ required ".Values.internalIngress.authentication.sso.authTLSVerifyDepth missing" .Values.internalIngress.authentication.sso.authTLSVerifyDepth | quote }}
+    ingress.kubernetes.io/auth-tls-verify-client: {{ required ".Values.internalIngress.authentication.sso.authTLSVerifyClient missing" .Values.internalIngress.authentication.sso.authTLSVerifyClient | quote }}
+    nginx.ingress.kubernetes.io/auth-tls-verify-client: {{ required ".Values.internalIngress.authentication.sso.authTLSVerifyClient missing" .Values.internalIngress.authentication.sso.authTLSVerifyClient | quote }}
+    {{ end }}
+    {{- if .Values.internalIngress.annotations }}
+{{ toYaml .Values.internalIngress.annotations | indent 4 }}
+    {{ end }}
+
+spec:
+  rules:
+    - host: {{ include "fqdnHelper" (list .Values.internalIngress.host . ) }}
+      http:
+        paths:
+        - path: /api
+          {{- if .Capabilities.APIVersions.Has "networking.k8s.io/v1/Ingress" }}
+          pathType: ImplementationSpecific
+          backend:
+            service:
+              name: {{ include "alertmanager.fullname" . }}
+              port:
+                number: 9093
+          {{- else }}
+          backend:
+            serviceName: {{ include "alertmanager.fullname" . }}
+            servicePort: 9093
+          {{- end }}
+        - path: /-/healthy
+          {{- if .Capabilities.APIVersions.Has "networking.k8s.io/v1/Ingress" }}
+          pathType: ImplementationSpecific
+          backend:
+            service:
+              name: {{ include "alertmanager.fullname" . }}
+              port:
+                number: 9093
+          {{- else }}
+          backend:
+            serviceName: {{ include "alertmanager.fullname" . }}
+            servicePort: 9093
+          {{- end }}
+  tls:
+    - secretName: tls-internal-{{ include "fqdnHelper" (list .Values.internalIngress.host . ) | replace "." "-" }}
+      hosts: [{{ include "fqdnHelper" (list .Values.internalIngress.host . ) }}]
+{{ end }}

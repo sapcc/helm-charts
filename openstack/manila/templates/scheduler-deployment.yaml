@@ -1,0 +1,169 @@
+kind: Deployment
+apiVersion: apps/v1
+
+metadata:
+  name: {{ .Release.Name }}-scheduler
+  labels:
+    system: openstack
+    type: backend
+    component: manila
+  annotations:
+    secret.reloader.stakater.com/reload: "{{ .Release.Name }}-secrets"
+    deployment.reloader.stakater.com/pause-period: "60s"
+  {{- if .Values.vpa.set_main_container }}
+    vpa-butler.cloud.sap/main-container: manila-scheduler
+  {{- end }}
+spec:
+  replicas: {{ .Values.pod.replicas.scheduler }}
+  revisionHistoryLimit: 5
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 3
+  selector:
+    matchLabels:
+      name: {{ .Release.Name }}-scheduler
+  template:
+    metadata:
+      labels:
+        name: {{ .Release.Name }}-scheduler
+        alert-tier: os
+        alert-service: manila
+      annotations:
+        {{- if or .Values.rpc_statsd_enabled .Values.proxysql.mode }}
+        prometheus.io/scrape: "true"
+        prometheus.io/targets: {{ required ".Values.alerts.prometheus.openstack missing" .Values.alerts.prometheus.openstack | quote }}
+        {{- end }}
+        kubectl.kubernetes.io/default-container: manila-scheduler
+        configmap-etc-hash: {{ include (print .Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
+        secrets-hash: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
+        {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
+
+    spec:
+      {{ include "utils.proxysql.pod_settings" . | indent 6 }}
+      priorityClassName: {{ .Values.pod.priority_class.default }}
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: name
+                  operator: In
+                  values:
+                  - {{ .Release.Name }}-scheduler
+              topologyKey: "topology.kubernetes.io/zone"
+      initContainers:
+        {{- tuple . (dict "jobs" (print .Release.Name "-migration") "service" (include "manila.service_dependencies" . )) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 8 }}
+        {{- if not .Values.api_backdoor }}
+        - name: create-guru-file
+          image: {{.Values.global.dockerHubMirror}}/library/busybox
+          command: ["/bin/sh", "-c", "touch /shared/guru"]
+          volumeMounts:
+            - name: etcmanila
+              mountPath: /shared
+        {{- end }}
+        {{- if .Values.proxysql.native_sidecar }}
+        {{- tuple . .Values.rpc_workers | include "utils.proxysql.container" | indent 8 }}
+        {{- end }}
+      containers:
+        - name: manila-scheduler
+          image: {{.Values.global.registry}}/loci-manila:{{.Values.loci.imageVersion}}
+          imagePullPolicy: IfNotPresent
+          command:
+            - dumb-init
+            - manila-scheduler
+            - --config-file
+            - /etc/manila/manila.conf
+            - --config-file
+            - /etc/manila/manila.conf.d/secrets.conf
+          env:
+            {{- if .Values.sentry.enabled }}
+            - name: SENTRY_DSN_SSL
+              valueFrom:
+                secretKeyRef:
+                  name: sentry
+                  key: manila.DSN
+            - name: SENTRY_DSN
+              value: $(SENTRY_DSN_SSL)?verify_ssl=0
+            {{- end }}
+          livenessProbe:
+            exec:
+              command:
+              - cat
+              - /etc/manila/probe
+            initialDelaySeconds: 60
+            periodSeconds: 10
+            timeoutSeconds: 20
+          readinessProbe:
+            exec:
+              command:
+              - sh
+              - /etc/manila/manila.conf.d/healthz
+            timeoutSeconds: 10
+            periodSeconds: 5
+            initialDelaySeconds: 5
+            failureThreshold: 1
+          volumeMounts:
+            - name: etcmanila
+              mountPath: /etc/manila
+            - name: manila-etc
+              mountPath: /etc/manila/manila.conf
+              subPath: manila.conf
+              readOnly: true
+            - name: manila-etc-confd
+              mountPath: /etc/manila/manila.conf.d
+            - name: manila-etc
+              mountPath: /etc/manila/policy.yaml
+              subPath: policy.yaml
+              readOnly: true
+            - name: manila-etc
+              mountPath: /etc/manila/logging.ini
+              subPath: logging.ini
+              readOnly: true
+            {{- include "utils.coordination.volume_mount" . | indent 12 }}
+            {{- include "utils.proxysql.volume_mount" . | indent 12 }}
+            {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
+          {{- if .Values.pod.resources.scheduler }}
+          resources:
+{{ toYaml .Values.pod.resources.scheduler | indent 13 }}
+          {{- end }}
+        {{- if .Values.rpc_statsd_enabled }}
+        - name: statsd
+          image: {{ required ".Values.global.dockerHubMirror is missing" .Values.global.dockerHubMirror}}/prom/statsd-exporter:v0.8.1
+          imagePullPolicy: IfNotPresent
+          args: [ --statsd.mapping-config=/etc/statsd/statsd-rpc-exporter.yaml ]
+          ports:
+          - name: statsd
+            containerPort: {{ .Values.rpc_statsd_port }}
+            protocol: UDP
+          - name: metrics
+            containerPort: 9102
+          volumeMounts:
+            - name: manila-etc
+              mountPath: /etc/statsd/statsd-rpc-exporter.yaml
+              subPath: statsd-rpc-exporter.yaml
+              readOnly: true
+        {{- end }}
+        {{- include "jaeger_agent_sidecar" . | indent 8 }}
+        {{- if not .Values.proxysql.native_sidecar }}
+        {{- tuple . .Values.rpc_workers | include "utils.proxysql.container" | indent 8 }}
+        {{- end }}
+      volumes:
+        - name: etcmanila
+          emptyDir: {}
+        - name: manila-bin
+          configMap:
+            name: {{ .Release.Name }}-bin
+            defaultMode: 0555
+        - name: manila-etc
+          configMap:
+            name: {{ .Release.Name }}-etc
+        - name: manila-etc-confd
+          secret:
+            secretName: {{ .Release.Name }}-secrets
+        {{- include "utils.coordination.volumes" . | indent 8 }}
+        {{- include "utils.proxysql.volumes" . | indent 8 }}
+        {{- include "utils.trust_bundle.volumes" . | indent 8 }}

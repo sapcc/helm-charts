@@ -1,0 +1,18 @@
+{{- $values := .Values }}
+{{- if .Values.enableDatasources }}
+{{- range $path, $bytes := .Files.Glob "datasources/*.yaml" }}
+---
+apiVersion: v1
+kind: ConfigMap
+
+metadata:
+  name: grafana-datasource-{{ printf "%s" $path | replace "/" "-"  }}
+  labels:
+    grafana-datasource: "true"
+
+data:
+{{ printf "%s" $path | replace "/" "-" | indent 2 }}: |
+{{ printf "%s" $bytes | indent 4 }}
+
+{{- end }}
+{{- end }}

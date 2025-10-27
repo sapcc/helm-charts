@@ -1,0 +1,44 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+
+metadata:
+  name: jupyterhub
+  namespace: jupyterhub
+  annotations:
+    {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+    ingress.kubernetes.io/service-upstream: "true"
+    nginx.ingress.kubernetes.io/service-upstream: "true"
+    {{- end }}
+    kubernetes.io/tls-acme: "true"
+    disco: "true"
+    disco/zone-name: global.cloud.sap.
+    ingress.kubernetes.io/affinity: cookie
+    nginx.ingress.kubernetes.io/affinity: cookie
+    ingress.kubernetes.io/proxy-buffer-size: 32k
+    nginx.ingress.kubernetes.io/proxy-buffer-size: 32k
+    ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+
+spec:
+  tls:
+    - secretName: jupyterhub
+      {{- if eq .Values.global.region "qa-de-1" }}
+      hosts: [ jupyterhub.{{ .Values.global.clusterType }}.{{ .Values.global.region }}.{{ .Values.global.tld }} ]
+      {{- else }}
+      hosts: [ jupyterhub.global.{{.Values.global.tld}} ]
+      {{- end }}
+  rules:
+  {{- if eq .Values.global.region "qa-de-1" }}
+    - host: jupyterhub.{{ .Values.global.clusterType }}.{{.Values.global.region}}.{{.Values.global.tld}}
+  {{- else }}
+    - host: jupyterhub.global.{{.Values.global.tld}}
+  {{- end }}
+      http:
+        paths:
+        - path: {{ .Values.jupyterhub.hub.baseUrl | trimSuffix "/" }}/{{ .Values.jupyterhub.ingress.pathSuffix }}
+          pathType: {{ .Values.jupyterhub.ingress.pathType }}
+          backend:
+            service:
+              name: "proxy-public"
+              port:
+                name: http

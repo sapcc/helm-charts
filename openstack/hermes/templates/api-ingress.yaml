@@ -1,0 +1,31 @@
+{{ $config := .Values.hermes.certs }}
+kind: Ingress
+apiVersion: networking.k8s.io/v1
+
+metadata:
+  name: hermes-api
+  namespace: hermes
+  annotations:
+    {{- if .Values.hermes.certs.tls }}
+    kubernetes.io/tls-acme: "true"
+    {{- end}}
+    {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+    ingress.kubernetes.io/service-upstream: "true"
+    nginx.ingress.kubernetes.io/service-upstream: "true"
+    {{- end }}
+
+spec:
+  tls:
+    - secretName: hermes-api
+      hosts: [ {{ $config.domain }} ]
+  rules:
+    - host: {{ $config.domain }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: hermes-api
+                port:
+                  number: 80

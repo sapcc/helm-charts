@@ -1,0 +1,65 @@
+{{- if .Values.alerts.enabled }}
+{{- $service := $.Values.alerts.service | default $.Release.Name }}
+
+{{- range $dbName := keys .Values.databases | sortAlpha }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: {{ $.Release.Name }}-pgmetrics-{{ $dbName }}-alerts
+  labels:
+    prometheus: {{ required ".Values.alerts.prometheus missing" $.Values.alerts.prometheus }}
+spec:
+  groups:
+  - name: pg-database-{{ $dbName }}.alerts
+    rules:
+    - alert: {{ title $service }}StuckTransactions
+      expr: max(pg_stat_activity_max_tx_duration{datname="{{ $dbName }}"}) > 600
+      for: 5m
+      labels:
+        context: database
+        support_group: {{ required ".Values.alerts.support_group missing" $.Values.alerts.support_group }}
+        tier: {{ required ".Values.alerts.tier missing" $.Values.alerts.tier }}
+        service: {{ $service }}
+        severity: info
+        meta: DB transactions are stuck
+      annotations:
+        summary: DB transactions are stuck
+        description: >
+          Some transactions are taking unusually long to complete or not making progress at all.
+          Check the logs of the Postgres container; this could be caused by file locks getting stuck.
+          To see which transactions are stuck, query for
+          `SELECT * FROM pg_stat_activity WHERE state = 'idle in transaction' AND backend_start < NOW() - interval '1 minute'`.
+
+    - alert: {{ title $service }}PostgresMetricsEvalErrors
+      expr: max(pg_exporter_last_scrape_error{kubernetes_namespace="{{ $.Release.Namespace }}",name="{{ $.Release.Name }}-pgmetrics-{{ $dbName }}"}) > 0
+      for: 5m
+      labels:
+        context: database
+        support_group: {{ required ".Values.alerts.support_group missing" $.Values.alerts.support_group }}
+        tier: {{ required ".Values.alerts.tier missing" $.Values.alerts.tier }}
+        service: {{ $service }}
+        severity: info
+        meta: Evaluation error in Postgres DB metrics
+      annotations:
+        summary: Evaluation error in Postgres DB metrics
+        description: >
+          Some of the custom metrics in the postgres-exporter configuration cannot be evaluated. Check the {{ $.Release.Name }}-pgmetrics-{{ $dbName }} pod log for errors.
+
+    - alert: {{ title $service }}PostgresMetricsSlowCollection
+      # slow-moving to avoid flapping during maintenance events etc.
+      expr: max(avg_over_time(scrape_duration_seconds{kubernetes_namespace="{{ $.Release.Namespace }}",name="{{ $.Release.Name }}-pgmetrics-{{ $dbName }}"}[30m])) > {{ $.Values.alerts.scrape_duration_threshold }}
+      for: 5m
+      labels:
+        context: database
+        support_group: {{ required ".Values.alerts.support_group missing" $.Values.alerts.support_group }}
+        tier: {{ required ".Values.alerts.tier missing" $.Values.alerts.tier }}
+        service: {{ $service }}
+        severity: info
+        meta: Slow metrics collection in postgres-exporter
+      annotations:
+        summary: Slow metrics collection in postgres-exporter
+        description: >
+          The {{ $.Release.Name }}-pgmetrics-{{ $dbName }} pod is taking a long time to gather metrics. Check for throttling in the pgmetrics pod. If that's not a problem, this alert can be an early indication that the PostgreSQL server performance is degrading.
+{{- end }}
+{{- end }}

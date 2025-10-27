@@ -1,0 +1,149 @@
+# vim: set ft=yaml:
+
+groups:
+- name: controlplane.alerts
+  rules:
+
+    ### Node Labels ###
+
+    - alert: KubernetesNodeLabelMissingZone
+      expr: sum(kube_node_labels{label_zone!~"farm|petting-zoo"}) by (node,label_zone) > 0
+      for: 15m
+      labels:
+        tier: k8s
+        service: node
+        severity: info
+        context: label
+        meta: "{{ $labels.node }}"
+        support_group: containers
+        playbook: "docs/support/playbook/kubernetes/k8s_label_missing"
+      annotations:
+        description: Node {{ $labels.node }} is missing the correct zone label. It is currently set to zone='{{ $labels.label_zone }}' Possible scheduling issues.
+        summary: Node {{ $labels.node }} is missing the correct zone label.
+
+    - alert: KubernetesNodeLabelMissingSpecies
+      expr: sum(kube_node_labels{node=~"storage.*", label_species!="swift-storage"}) by (node,label_species) > 0 OR sum(kube_node_labels{node=~"network.*", label_species!="network"}) by (node,label_species) > 0 OR sum(kube_node_labels{node=~"master.*", label_species!="master"}) by (node,label_species) > 0
+      for: 15m
+      labels:
+        tier: k8s
+        service: node
+        severity: info
+        context: label
+        meta: "{{ $labels.node }}"
+        support_group: containers
+        playbook: "docs/support/playbook/kubernetes/k8s_label_missing"
+      annotations:
+        description: Node {{ $labels.node }} is missing the correct species label. It is currently set to species='{{ $labels.label_species }}' Possible scheduling issues.
+        summary: Node {{ $labels.node }} is missing the correct species label.
+
+    ### Node Taints ###
+
+    - alert: KubernetesNodeTaintMissing
+      expr: sum(kube_node_spec_taint{node=~"storage.*", value!~"swift-storage.*"}) by (node,value) > 0 OR sum(kube_node_spec_taint{node=~"network.*", value!~"network|alien"}) by (node,value) > 0
+      for: 15m
+      labels:
+        tier: k8s
+        service: node
+        severity: info
+        context: label
+        meta: "{{ $labels.node }}"
+        support_group: containers
+        playbook: "docs/support/playbook/kubernetes/k8s_taint_missing"
+      annotations:
+        description: Node {{ $labels.node }} is missing the correct taint. It is currently set to value='{{ $labels.value}}' Possible scheduling issues.
+        summary: Node {{ $labels.node }} is missing the correct taint label.
+
+    ### Node Bridge ###
+
+    - alert: KubernetesNodeBridgeFilterVLANTagged
+      expr: kube_node_status_condition{condition="BridgeFilterVLANTagged", status="true"} == 1
+      for: 15m
+      labels:
+        tier: k8s
+        service: node
+        severity: info
+        context: label
+        meta: "{{ $labels.node }}"
+        support_group: containers
+        playbook: "docs/support/playbook/kubernetes/k8s_node_bridge_filter_iptables"
+      annotations:
+        description: VLAN-tagged ARP/IP traffic is filtered by ARPtables/IPtables on {{ $labels.node }}. Network datapath threatened!
+        summary: Bridged VLAN-tagged traffic is filtered by IPtables.
+
+    ### Bonding health ###
+  
+    - alert: NodeBondDegradedNetwork
+      expr: sum(node_bonding_active{master="bond1",node=~"[^storage].*cloud.sap"}) by (master, node) < 2
+      for: 15m
+      labels:
+        tier: k8s
+        service: node
+        severity: critical 
+        context: bond 
+        meta: "{{ $labels.node }}"
+        support_group: containers
+        playbook: "docs/support/playbook/kubernetes/k8s_bond_degraded"
+      annotations:
+        description: Bond {{ $labels.master }} on {{ $labels.node }} is degraded.
+        summary: Bond {{ $labels.master }} is degraded. Node network connectivity is not HA. Customer network datapath threatened! Switch failover or ACI upgrade will cause an outage!
+    
+    - alert: NodeBondDegradedMain
+      expr: sum(node_bonding_active{master="bond2",node=~".*cloud.sap"}) by (master, node) < 2
+      for: 15m
+      labels:
+        tier: k8s
+        service: node
+        severity: warning 
+        context: bond 
+        meta: "{{ $labels.node }}"
+        support_group: containers
+        playbook: "docs/support/playbook/kubernetes/k8s_bond_degraded"
+      annotations:
+        description: Bond {{ $labels.master }} on {{ $labels.node }} is degraded. Imminent network outage for this node.
+        summary: Bond {{ $labels.master }} is degraded. Node network connectivity is not HA. Switch failover or ACI upgrade will cause an outage!
+
+    - alert: NodeVirtualInterfaceDown
+      expr: sum(node_network_up{device=~"bond.*|vlan.*"} == 0) by (node, device)
+      for: 15m
+      labels:
+        tier: k8s
+        service: node
+        severity: warning 
+        context: bond 
+        meta: "{{ $labels.node }}"
+        support_group: containers
+        playbook: "docs/support/playbook/kubernetes/k8s_node_interface_down"
+      annotations:
+        description: Interface {{ $labels.device }} on {{ $labels.node }} is down. Tenant network outage for this node.
+        summary: Interface {{ $labels.device }} is down. Node network connectivity is degraded. Check ESX node state in vCenter.
+
+    ### PVC usage ###
+    - alert: KubernetesPVCNoSpaceLeft
+      expr: kubelet_volume_stats_available_percent < 10
+      for: 10m
+      labels:
+        tier: k8s
+        support_group: '{{ if $labels.label_ccloud_support_group }}{{ $labels.label_ccloud_support_group }}{{ else }}containers{{ end }}'
+        service: '{{ if $labels.label_ccloud_service }}{{ $labels.label_ccloud_service }}{{ else }}resources{{ end }}'
+        severity: info
+        context: storage
+        meta: "PVC {{ $labels.namespace }}/{{ $labels.persistentvolumeclaim }} free space is less than 10%."
+        playbook: 'docs/support/playbook/kubernetes/pvc_usage'
+      annotations:
+        description: "The PVC {{ $labels.namespace }}/{{ $labels.persistentvolumeclaim }} is almost full. Increase or delete files."
+        summary: "PVC {{ $labels.namespace }}/{{ $labels.persistentvolumeclaim }} free space is less than 10%."
+
+    - alert: KubernetesPVCNoSpaceLeft
+      expr: kubelet_volume_stats_available_percent < 2 
+      for: 10m
+      labels:
+        tier: k8s
+        support_group: '{{ if $labels.label_ccloud_support_group }}{{ $labels.label_ccloud_support_group }}{{ else }}containers{{ end }}'
+        service: '{{ if $labels.label_ccloud_service }}{{ $labels.label_ccloud_service }}{{ else }}resources{{ end }}'
+        severity: warning
+        context: storage
+        meta: "PVC {{ $labels.namespace }}/{{ $labels.persistentvolumeclaim }} usage is over 98%."
+        playbook: 'docs/support/playbook/kubernetes/pvc_usage'
+      annotations:
+        description: "The PVC {{ $labels.namespace }}/{{ $labels.persistentvolumeclaim }} is full. Programs will stop working if relying upon free storage."
+        summary: "PVC {{ $labels.namespace }}/{{ $labels.persistentvolumeclaim }} usage is over 98%."

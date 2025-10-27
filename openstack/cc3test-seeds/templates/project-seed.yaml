@@ -1,0 +1,119 @@
+---
+{{ $values := .Values }}
+{{- range $i, $project := .Values.projects }}
+apiVersion: "openstack.stable.sap.cc/v1"
+kind: "OpenstackSeed"
+metadata:
+  name: cc3test-{{ $project.name }}-seed
+  labels:
+    component: cc3test
+
+spec:
+  requires:
+  {{- if $values.global.is_global_region }}
+  - monsoon3global/keystone-global-seed
+  {{- else}}
+  - monsoon3/keystone-seed
+  - monsoon3/domain-default-seed
+  - monsoon3/domain-ccadmin-seed
+  - monsoon3/domain-cc3test-seed
+  {{- end }}
+
+  domains:
+  - name: cc3test
+    description: 'Converged Cloud Testing'
+
+    groups:
+    - name: CC3TEST_DOMAIN_ADMINS
+      role_assignments:
+      - project: {{ $project.name }}
+        role: admin
+      - project: {{ $project.name }}
+        role: compute_admin
+      - project: {{ $project.name }}
+        role: keymanager_admin
+      - project: {{ $project.name }}
+        role: kubernetes_admin
+      - project: {{ $project.name }}
+        role: network_admin
+      - project: {{ $project.name }}
+        role: resource_admin
+      - project: {{ $project.name }}
+        role: sharedfilesystem_admin
+      - project: {{ $project.name }}
+        role: objectstore_admin
+      - project: {{ $project.name }}
+        role: volume_admin
+      - project: {{ $project.name }}
+        role: member
+      - project: {{ $project.name }}
+        role: audit_viewer
+      - project: {{ $project.name }}
+        role: monitoring_viewer
+
+    projects:
+    - name: {{ $project.name }}
+      role_assignments:
+      - user: {{ $values.users.admin.username }}
+        role: admin
+      - user: {{ $values.users.admin.username }}
+        role: compute_admin
+      - user: {{ $values.users.admin.username }}
+        role: keymanager_admin
+      - user: {{ $values.users.admin.username }}
+        role: kubernetes_admin
+      - user: {{ $values.users.admin.username }}
+        role: network_admin
+      - user: {{ $values.users.admin.username }}
+        role: resource_admin
+      - user: {{ $values.users.admin.username }}
+        role: sharedfilesystem_admin
+      - user: {{ $values.users.admin.username }}
+        role: objectstore_admin
+      - user: {{ $values.users.admin.username }}
+        role: volume_admin
+      - user: {{ $values.users.admin.username }}
+        role: cloud_dns_ops
+      - user: {{ $values.users.admin.username }}
+        role: member
+      - user: {{ $values.users.admin.username }}
+        role: audit_viewer
+      - user: {{ $values.users.admin.username }}
+        role: monitoring_viewer
+      - user: {{ $values.users.member.username }}
+        role: member
+    {{- if not $values.global.is_global_region}}
+      network_quota:
+        subnetpool: 5
+        subnet: 5
+        network: 5
+        rbac_policy: 10
+        router: 3
+      networks:
+      {{- range $i, $network := $project.networks }}
+      - name: {{ $network.name }}
+        subnets:
+        - name: {{ $network.subnet }}
+          cidr: 10.180.0.0/16
+          ip_version: 4
+      {{- end }}
+      routers:
+      {{- range $i, $router := $project.routers }}
+      - name: {{ $router.name }}
+        external_gateway_info:
+          network: {{ $router.gateway.network }}
+          external_fixed_ips:
+          - subnet: {{ $router.gateway.subnet }}
+        interfaces:
+        - subnet: {{ $router.interface.subnet }}
+      {{- end }}
+    {{- end }}
+{{- if not $values.global.is_global_region}}
+  rbac_policies:
+  - object_type: network
+    object_name: {{ $project.rbac.object_name }}
+    action: access_as_shared
+    target_tenant_name: {{ $project.name }}@cc3test
+{{- end }}
+---
+{{- end }}

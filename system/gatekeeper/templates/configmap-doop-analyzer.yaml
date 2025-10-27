@@ -1,0 +1,213 @@
+{{- $cname     := .Values.cluster_name           | required ".Values.cluster_name not found"           -}}
+{{- $clayer    := .Values.cluster_layer          | required ".Values.cluster_layer not found"          -}}
+{{- $ctype     := .Values.cluster_type           | required ".Values.cluster_type not found"           -}}
+{{- $region    := .Values.global.region          | required ".Values.global.region not found"          -}}
+{{- $altregion := .Values.global.alternateRegion | required ".Values.global.alternateRegion not found" -}}
+
+kind: ConfigMap
+apiVersion: v1
+
+metadata:
+  name: doop-analyzer
+
+data:
+  config.yaml: |
+
+    cluster_identity:
+      layer: {{ quote $clayer }}
+      type:  {{ quote $ctype }}
+
+    swift:
+      # The Kubernikus-related clusters report into a separate dashboard to avoid cluttering up the main dashboard.
+      container_name: doop-analyzer{{ if $cname | regexMatch "^[akv]-" }}-kubernikus{{ end }}
+      object_name: {{ quote $cname }}
+
+    # NOTE: Each rule gets a number like M201 in its description.
+    # This scheme is just used within this Helm chart.
+    # It allows other files to refer back to specific rules within this file.
+    processing_rules:
+
+      ##########################################################################
+      # R1xx: pseudo-Kinds
+
+      - description: 'R101: Rewrite Helm releases into a more readable pseudo-Kind'
+        match:
+          kind: Secret
+        replace:
+          source: name
+          pattern: 'sh\.helm\.release\.v1\.(.*)(\.v\d+)'
+          target:
+            kind: 'Helm 3 release'
+            name: '$1$2'
+
+    merging_rules:
+
+      ##########################################################################
+      # M1xx: pseudo-Kinds
+
+      - description: 'M101: Merge across versions of the same Helm release'
+        match:
+          kind: 'Helm 3 release'
+        replace:
+          source:  name
+          pattern: '(.*)\.v\d+'
+          target:  { name: '$1' }
+
+      ##########################################################################
+      # M2xx: region and cluster names (each both for the "name" field and the "message" field)
+      #
+      # These need to come early because otherwise M405 might misinterpret
+      # e.g. the "-1" in "eu-de-1" as a StatefulSet pod index.
+
+      {{- if ne $cname $region }}
+      - description: 'M201: Merge across clusters (if cluster mentioned in name)'
+        replace:
+          source: name
+          pattern: '(.*){{ $cname }}(.*)'
+          target:
+            name: '$1<cluster>$2'
+
+      - description: 'M202: Merge across clusters (if cluster mentioned in message)'
+        replace:
+          source: message
+          pattern: '(.*){{ $cname }}(.*)'
+          target:
+            message: '$1<cluster>$2'
+      {{- end }}
+
+      - description: 'M211: Merge across regions (if region mentioned in name)'
+        replace:
+          source: name
+          pattern: '(.*){{ $region }}(.*)'
+          target:
+            name: '$1<region>$2'
+
+      - description: 'M212: Merge across regions (if region mentioned in message)'
+        replace:
+          source: message
+          pattern: '(.*){{ $region }}(.*)'
+          target:
+            message: '$1<region>$2'
+
+      {{- if contains "qa" $region }}
+      - description: 'M213: Merge across usages of eu-de-1 as a primary image source (if eu-de-1 mentioned in name)'
+        replace:
+          source: name
+          pattern: '(.*)keppel.eu-de-1(.*)'
+          target:
+            # We want to merge with instances from prod clusters where the image comes from the same cluster,
+            # so we treat eu-de-1 as <region> here even though it technically is not.
+            name: '$1keppel.<region>$2'
+
+      - description: 'M214: Merge across usages of eu-de-1 as a primary image source (if eu-de-1 mentioned in message)'
+        replace:
+          source: message
+          pattern: '(.*)keppel.eu-de-1(.*)'
+          target:
+            message: '$1keppel.<region>$2'
+      {{- end }}
+
+      {{- if ne $altregion $region }}
+      - description: 'M221: Merge across alternate regions (if alternate region mentioned in name)'
+        replace:
+          source: name
+          pattern: '(.*){{ $altregion }}(.*)'
+          target:
+            name: '$1<altregion>$2'
+
+      - description: 'M222: Merge across alternate regions (if alternate region mentioned in message)'
+        replace:
+          source: message
+          pattern: '(.*){{ $altregion }}(.*)'
+          target:
+            message: '$1<altregion>$2'
+      {{- end }}
+
+      ##########################################################################
+      # M3xx: name patterns defined by specific Kubernetes operators
+      #
+      # This section is only for rules that need to take precedence over M4xx.
+      # Most rules for specific Kubernetes operators are in M5xx.
+
+      {{- if eq $ctype "cloudshell" "test" }}
+      - description: 'M301: Merge across pods managed by cloud-shell'
+        match:
+          namespace: cloud-shell
+          kind: Pod
+        replace:
+          source: name
+          pattern: 'shell-(?:c[0-9]{7}|[di][0-9]{6})' # needs to come before M402: '-c01234567' could be misinterpreted as a ReplicaSet suffix
+          target: { name: 'shell-<uid>' }
+      {{- end }}
+
+      ##########################################################################
+      # M4xx: name patterns defined by Kubernetes
+
+      - description: 'M401: Merge across pods in the same DaemonSet, Job or ReplicaSet'
+        match:
+          kind: Pod
+        replace:
+          source: name
+          pattern: '(.+)-[0-9a-z]{5}'
+          target: { name: '$1-<variable>' }
+
+      - description: 'M402: Merge across ReplicaSets in the same Deployment'
+        match:
+          kind: 'Pod|ReplicaSet'
+        replace:
+          source: name
+          pattern: '(.+)-[0-9a-f]{8,10}(?:-<variable>)?' # pods will have -<variable> at the end from M401
+          target: { name: '$1-<variable>' }
+
+      # When a deployment name is very long (more than about 46 chars), the replicaset suffix and pod suffix will not
+      # fit within the limit of 63 chars. The replicaset suffix will then be truncated and the pod suffix will appear
+      # fused into it.
+      - description: 'M403: Merge across pods in ReplicaSets in the same Deployment even if the child suffixes are fused'
+        match:
+          kind: Pod
+          name: '.{63}'
+        replace:
+          source: name
+          pattern: '(.+)-[0-9a-f]{1,10}[0-9a-z]{5}'
+          target: { name: '$1-<variable>' }
+
+      - description: 'M404: Merge across jobs in the same CronJob'
+        match:
+          kind: 'Pod|Job'
+        replace:
+          source: name
+          pattern: '(.+)-[0-9]{8}(?:-<variable>)?' # same structure as M402
+          target: { name: '$1-<variable>' }
+
+      - description: 'M405: Merge across pods in the same StatefulSet'
+        match:
+          kind: Pod
+        replace:
+          source: name
+          pattern: '(.+)-[0-9]{1,2}'
+          target: { name: '$1-<index>' }
+
+      ##########################################################################
+      # M5xx: name patterns defined by specific Kubernetes operators
+
+      {{- if eq $ctype "kubernikus" "test" }}
+      - description: 'M501: Merge across Kubernikus clusters of the same name in different projects'
+        match:
+          namespace: kubernikus
+        replace:
+          source: name
+          pattern: '(.+)-[0-9a-f]{32}(-.+)?'
+          target: { name: '$1-<variable>$2' }
+      {{- end }}
+
+      {{- if eq $ctype "scaleout" "test" }}
+      - description: 'M502: Merge across Grafana deployments managed by the grafana-operator'
+        match:
+          name: 'grafana-.*'
+        replace:
+          source: namespace
+          pattern: '[0-9a-f]{32}'
+          target: { namespace: '<variable>' }
+      {{- end }}
+
+      # TODO: rules for templated pods managed by kos-operator, vmware-operator

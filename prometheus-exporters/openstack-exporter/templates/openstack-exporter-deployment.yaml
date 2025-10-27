@@ -1,0 +1,61 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: openstack-exporter
+  namespace: monsoon3
+spec:
+  selector:
+    matchLabels:
+      app: openstack-exporter
+      type: exporter
+  template:
+    metadata:
+      labels:
+        app: openstack-exporter
+        type: exporter
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/targets: {{ required ".Values.openstack.alerts.prometheus missing" .Values.openstack.alerts.prometheus }}
+        {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
+    spec:
+      containers:
+         - name: openstack-exporter
+           image: {{ required ".Values.global.registry missing" .Values.global.registry }}/{{ required ".Values.openstack.imageName missing" .Values.openstack.imageName }}:{{ required ".Values.openstack.imageVersion missing" .Values.openstack.imageVersion  }}
+           ports:
+             - name: metrics
+               containerPort: {{ required ".Values.exporter.prometheus_port missing" .Values.exporter.prometheus_port }}
+           command:
+             - /usr/bin/openstack_exporter
+           args:
+             - -c
+             - /openstack-config/openstack-config.yaml
+             - --secrets
+             - /openstack-secrets/openstack-secrets.yaml
+           resources:
+             limits:
+                memory: {{ required ".Values.openstack.limits.memory missing" .Values.openstack.limits.memory }}
+                cpu: {{ required ".Values.openstack.limits.cpu missing" .Values.openstack.limits.cpu }}
+             requests:
+                memory: {{ required ".Values.openstack.resources.memory missing" .Values.openstack.resources.memory }}
+                cpu: {{ required ".Values.openstack.resources.cpu missing" .Values.openstack.resources.cpu }}
+           volumeMounts:
+             - mountPath: /openstack-config
+               name: openstack-config
+               readOnly: true
+             - mountPath: /openstack-secrets
+               name: openstack-secrets
+               readOnly: true
+           #livenessProbe:
+              #httpGet:
+                 #path: /metrics
+                 #port: {{ required ".Values.exporter.prometheus_port missing" .Values.exporter.prometheus_port }}
+              #initialDelaySeconds: 30
+              #periodSeconds: 300
+              #timeoutSeconds: 10
+      volumes:
+        - configMap:
+            name: openstack-exporter-openstack-config
+          name: openstack-config
+        - secret:
+            secretName: openstack-exporter-openstack-secrets
+          name: openstack-secrets

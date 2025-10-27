@@ -1,0 +1,72 @@
+{{- $root := . }}
+{{- if .Values.enabled }}
+{{- if .Values.deployWholeThanos }}
+{{- range $name := coalesce .Values.names .Values.global.targets (list .Values.name) }}
+---
+apiVersion: monitoring.banzaicloud.io/v1alpha1
+kind: ObjectStore
+metadata:
+  name: {{ include "thanos.fullName" (list $name $root) }}
+spec:
+  config:
+    mountFrom:
+      secretKeyRef:
+        name: {{ include "thanos.objectStorageConfigName" (list $name $root) }}
+        key: thanos.yaml
+  compactor:
+    {{- if $.Values.compactor.dataVolume.enabled }}
+    dataVolume:
+      pvc:
+        spec:
+          resources:
+            requests:
+              storage: {{ $.Values.compactor.dataVolume.size }}
+          {{- if $.Values.compactor.dataVolume.storageClassName }}
+          storageClassName: {{ $.Values.compactor.dataVolume.storageClassName }}
+          {{- end }}
+    {{ end }}
+    consistencyDelay: {{ required "thanos.compactor.consistencyDelay" $.Values.compactor.consistencyDelay }}
+    retentionResolutionRaw: {{ mul 24 (required "thanos.compactor.retentionResolutionRaw" $.Values.compactor.retentionResolutionRaw) }}h
+    retentionResolution5m: {{ mul 24 (required "thanos.compactor.retentionResolution5m" $.Values.compactor.retentionResolution5m) }}h
+    retentionResolution1h: {{ mul 365 24 (required "thanos.compactor.retentionResolution1h" $.Values.compactor.retentionResolution1h) }}h
+    serviceOverrides:
+      metadata:
+        labels:
+          thanos: {{ default (include "thanos.name" (list $name $root)) $.Values.alerts.prometheus }}
+        {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+        annotations:
+          linkerd.io/inject: enabled
+        {{- end }}
+    deploymentOverrides:
+      spec:
+        strategy:
+          type: Recreate
+        template:
+          {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+          metadata:
+            annotations:
+              linkerd.io/inject: enabled
+              config.linkerd.io/proxy-ephemeral-storage-request: 10M
+          {{- end }}
+          spec:
+            containers:
+            - image: {{ include "thanosimage" $root }}
+              name: compactor
+              {{ if len $.Values.compactor.customArgs -}}
+              args:
+                {{- range $arg := $.Values.compactor.customArgs }}
+                - {{ $arg }}
+                {{- end }}
+              {{- end }}
+              {{- if not $.Values.compactor.dataVolume.enabled }}
+              resources:
+                requests:
+                  ephemeral-storage: {{ $.Values.compactor.resources.requests.ephemeralStorage }}
+              {{- end }}
+            securityContext:
+              fsGroup: 0
+              runAsGroup: 0
+              runAsUser: 0
+{{ end }}
+{{ end }}
+{{ end }}

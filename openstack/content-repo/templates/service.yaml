@@ -1,0 +1,22 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: statsd
+  namespace: content-repo
+  labels:
+    system: openstack
+    component: content-repo
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
+
+spec:
+  selector:
+    component: content-repo-statsd
+  ports:
+    - name: statsd
+      port: 9125
+      protocol: UDP
+    - name: metrics
+      port: 9102
+      protocol: TCP

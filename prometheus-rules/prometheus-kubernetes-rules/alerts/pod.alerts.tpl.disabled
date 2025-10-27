@@ -1,0 +1,138 @@
+# vi:syntax=yaml
+
+### Pod resource usage ###
+groups:
+- name: pod.alerts
+  rules:
+  - alert: ContainerLowMemoryUsage
+    expr: |
+        sum by (pod, namespace, container, label_alert_service, label_alert_tier, label_ccloud_service, label_ccloud_support_group) (
+            (
+                floor(
+                      sum by (namespace, pod, container) (container_memory_working_set_bytes{pod!=""})
+                    / on (namespace, pod, container)
+                      sum by (namespace, pod, container) (kube_pod_container_resource_requests_memory_bytes > 0)
+                  *
+                    100
+                )
+              <
+                10
+            )
+          * on (pod) group_left (label_alert_tier, label_alert_service, label_ccloud_support_group, label_ccloud_service)
+            (max without (uid) (kube_pod_labels))
+        )
+    for: 1d
+    labels:
+      tier: {{ include "alertTierLabelOrDefault" .Values.tier }}
+      service: {{ include "serviceFromLabelsOrDefault" "k8s" }}
+      support_group: {{ include "supportGroupFromLabelsOrDefault" .Values.supportGroup }}
+      severity: info
+      context: container
+      meta: "Low RAM usage on {{`{{ $labels.container }}`}}"
+      playbook: docs/support/playbook/kubernetes/k8s_container_pod_resources/#low-ram-usage
+    annotations:
+      summary: Low RAM usage on container
+      description: "Memory usage for the container {{`{{ $labels.container }}`}} of pod {{`{{ $labels.namespace }}`}}/{{`{{ $labels.pod }}`}} is under `10%` in the last 24h compared to the requested memory resources. Consider reducing `resources.requests.memory`"
+  - alert: ContainerHighMemoryUsage
+    expr: |
+        sum by (pod, namespace, container, label_alert_service, label_alert_tier, label_ccloud_service, label_ccloud_support_group) (
+            (
+                ceil(
+                      sum by (namespace, pod, container) (container_memory_working_set_bytes{pod!=""})
+                    / on (namespace, pod, container)
+                      sum by (namespace, pod, container) (kube_pod_container_resource_requests_memory_bytes > 0)
+                  *
+                    100
+                )
+              >
+                250
+            )
+          * on (pod) group_left (label_alert_tier, label_alert_service, label_ccloud_support_group, label_ccloud_service)
+            (max without (uid) (kube_pod_labels))
+        )
+    for: 1d
+    labels:
+      tier: {{ include "alertTierLabelOrDefault" .Values.tier }}
+      service: {{ include "serviceFromLabelsOrDefault" "k8s" }}
+      support_group: {{ include "supportGroupFromLabelsOrDefault" .Values.supportGroup }}
+      severity: info
+      context: container
+      meta: "High RAM usage on {{`{{ $labels.container }}`}}"
+      playbook: docs/support/playbook/kubernetes/k8s_container_pod_resources/#high-ram-usage
+    annotations:
+      summary: High RAM usage on container
+      description: "Memory usage for the container {{`{{ $labels.container }}`}} of pod {{`{{ $labels.namespace }}`}}/{{`{{ $labels.pod }}`}} is over `250%` in the last 24h compared to the requested memory resources. Consider raising `resources.requests.memory`"
+  - alert: PodWithoutConfiguredMemoryRequests
+    expr: |
+        sum by (namespace, pod, container, label_alert_service, label_alert_tier, label_ccloud_service, label_ccloud_support_group) (
+            (
+              count by (namespace, pod, container) (
+                  sum by (namespace, pod, container) (kube_pod_container_info{container!=""})
+                unless
+                  sum by (namespace, pod, container) (kube_pod_container_resource_requests{resource="ram"})
+              )
+            )
+          * on (pod) group_left (label_alert_tier, label_alert_service, label_ccloud_support_group, label_ccloud_service)
+            (max without (uid) (kube_pod_labels))
+        )
+    for: 1d
+    labels:
+      tier: {{ include "alertTierLabelOrDefault" .Values.tier }}
+      service: {{ include "serviceFromLabelsOrDefault" "k8s" }}
+      support_group: {{ include "supportGroupFromLabelsOrDefault" .Values.supportGroup }}
+      severity: info
+      context: container
+      meta: "No RAM requests configured for {{`{{ $labels.container }}`}}"
+      playbook: docs/support/playbook/kubernetes/k8s_container_pod_resources/#no-ram-requests-configured
+    annotations:
+      summary: No RAM requests configured for container
+      description: "The container {{`{{ $labels.container }}`}} of pod {{`{{ $labels.namespace }}`}}/{{`{{ $labels.pod }}`}} has no `resources.requests.memory` configured."
+  - alert: PodWithoutConfiguredCPURequests
+    expr: |
+        sum by (namespace, pod, container, label_alert_service, label_alert_tier, label_ccloud_service, label_ccloud_support_group) (
+            (
+              count by (namespace, pod, container) (
+                  sum by (namespace, pod, container) (kube_pod_container_info{container!=""})
+                unless
+                  sum by (namespace, pod, container) (kube_pod_container_resource_requests{resource="cpu"})
+              )
+            )
+          * on (pod) group_left (label_alert_tier, label_alert_service, label_ccloud_support_group, label_ccloud_service)
+            (max without (uid) (kube_pod_labels))
+        )
+    for: 1d
+    labels:
+      tier: {{ include "alertTierLabelOrDefault" .Values.tier }}
+      service: {{ include "serviceFromLabelsOrDefault" .Values.service }}
+      support_group: {{ include "supportGroupFromLabelsOrDefault" .Values.supportGroup }}
+      severity: info
+      context: container
+      meta: "No CPU requests configured for {{`{{ $labels.container }}`}}"
+      playbook: docs/support/playbook/kubernetes/k8s_container_pod_resources/#no-cpu-requests-configured
+    annotations:
+      summary: No CPU requests configured for container
+      description: "The container {{`{{ $labels.container }}`}} of pod {{`{{ $labels.namespace }}`}}/{{`{{ $labels.pod }}`}} has no `resources.requests.cpu` configured."
+  - alert: ContainerHighNumberOfThreads
+    expr: |
+        sum by (pod, namespace, container,
+                label_alert_service, label_alert_tier,
+                label_ccloud_service, label_ccloud_support_group) (
+          (
+            container_threads{container!=""} > 8000
+          )
+          * on (pod) group_left (label_alert_tier, label_alert_service,
+                                 label_ccloud_support_group, label_ccloud_service)
+            (max without (uid) (kube_pod_labels))
+        )
+    for: 1h
+    labels:
+      tier: {{ include "alertTierLabelOrDefault" .Values.tier }}
+      service: {{ include "serviceFromLabelsOrDefault" "k8s" }}
+      support_group: {{ include "supportGroupFromLabelsOrDefault" .Values.supportGroup }}
+      severity: info
+      context: threads
+      meta: "Very high number of threads in {{`{{ $labels.container }}`}}"
+      playbook: docs/support/playbook/kubernetes/k8s_high_threads
+    annotations:
+      summary: Very high number of threads in container
+      description: "Very high number of threads in container {{`{{ $labels.container }}`}} of pod {{`{{ $labels.namespace }}`}}/{{`{{ $labels.pod }}`}}. Forking problems are imminent."

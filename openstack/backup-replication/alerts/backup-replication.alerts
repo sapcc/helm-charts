@@ -1,0 +1,22 @@
+# vim: set ft=yaml:
+
+groups:
+- name: openstack-backup-replication.alerts
+  rules:
+  - alert: OpenstackDatabaseBackupReplicationFailure
+    expr: absent(backup_replication_last_run) or (backup_replication_last_run{kind="success"} == 0)
+    # default replication cycle is 1h, see values.yaml swift_http_import/sleep_for
+    for: 3h
+    labels:
+      context: replicationage
+      dashboard: db-backup-replication
+      meta: "{{ $labels.source_region }} > {{ $labels.region }}"
+      service: backup
+      severity: warning
+      support_group: containers
+      tier: os
+      no_alert_on_absence: "true"
+      playbook: 'https://operations.global.cloud.sap/docs/support/playbook/database/db_backup_replication'
+    annotations:
+      description: Database backup failed to replicate from {{ $labels.source_region }} to {{ $labels.region }}.
+      summary: Database Backup Replication Failed in {{ $labels.region }}

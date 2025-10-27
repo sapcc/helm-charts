@@ -1,0 +1,30 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+
+metadata:
+  name: cinder-api
+  labels:
+    system: openstack
+    type: api
+    component: cinder
+  annotations:
+    {{- include "utils.snippets.set_ingress_cors_annotations" . | indent 4 }}
+    {{- include "utils.linkerd.ingress_annotation" . | indent 4 }}
+  {{- if .Values.use_tls_acme }}
+    kubernetes.io/tls-acme: "true"
+  {{- end }}
+spec:
+  tls:
+     - secretName: tls-{{ include "cinder_api_endpoint_host_public" . | replace "." "-"}}
+       hosts: [{{ include "cinder_api_endpoint_host_public" .}}]
+  rules:
+    - host: {{ include "cinder_api_endpoint_host_public" .}}
+      http:
+        paths:
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: cinder-api
+              port:
+                number: {{.Values.cinderApiPortInternal}}

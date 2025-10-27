@@ -1,0 +1,87 @@
+apiVersion: "openstack.stable.sap.cc/v1"
+kind: "OpenstackSeed"
+metadata:
+  name: cc3test-user-seed
+  labels:
+    component: cc3test
+
+spec:
+  requires:
+  {{- if .Values.global.is_global_region }}
+  - monsoon3global/keystone-global-seed
+  {{- else}}
+  - monsoon3/keystone-seed
+  - monsoon3/domain-default-seed
+  - monsoon3/domain-ccadmin-seed
+  - monsoon3/domain-cc3test-seed
+  {{- end }}
+
+  roles:
+  - name: cloud_compute_admin
+  - name: cloud_network_admin
+  - name: cloud_dns_admin
+  - name: cloud_image_admin
+  - name: cloud_keymanager_admin
+  - name: cloud_sharedfilesystem_admin
+  - name: cloud_volume_admin
+  - name: cloud_baremetal_admin
+
+  domains:
+  - name: {{ default "Default" .Values.service_user.user_domain_name | quote }}
+    users:
+    - name: {{ default "cc3test" .Values.service_user.name | quote }}
+      description: 'cc3test service user'
+      password: {{ .Values.service_user.password | quote }}
+      role_assignments:
+      - project: cloud_admin@ccadmin
+        role: admin
+      - project: cloud_admin@ccadmin
+        role: cloud_compute_admin
+      - project: cloud_admin@ccadmin
+        role: cloud_dns_admin
+      - project: cloud_admin@ccadmin
+        role: cloud_image_admin
+      - project: cloud_admin@ccadmin
+        role: cloud_keymanager_admin
+      - project: cloud_admin@ccadmin
+        role: cloud_network_admin
+      - project: cloud_admin@ccadmin
+        role: cloud_sharedfilesystem_admin
+      - project: cloud_admin@ccadmin
+        role: cloud_volume_admin
+      - project: cloud_admin@ccadmin
+        role: cloud_baremetal_admin
+      - project: master@ccadmin
+        role: cloud_dns_admin
+      - domain: Default
+        role: admin
+      - domain: ccadmin
+        role: admin
+    - name: {{ default "cc3test_bkp" .Values.service_user_bkp.name | quote }}
+      description: 'cc3test bkp service user'
+      password: {{ .Values.service_user_bkp.password | quote }}
+      role_assignments:
+        - project: cloud_admin@ccadmin
+          role: admin
+        - project: cloud_admin@ccadmin
+          role: cloud_compute_admin
+        - project: cloud_admin@ccadmin
+          role: cloud_dns_admin
+        - project: cloud_admin@ccadmin
+          role: cloud_image_admin
+        - project: cloud_admin@ccadmin
+          role: cloud_keymanager_admin
+        - project: cloud_admin@ccadmin
+          role: cloud_network_admin
+        - project: cloud_admin@ccadmin
+          role: cloud_sharedfilesystem_admin
+        - project: cloud_admin@ccadmin
+          role: cloud_volume_admin
+        - project: cloud_admin@ccadmin
+          role: cloud_baremetal_admin
+        - project: master@ccadmin
+          role: cloud_dns_admin
+        - domain: Default
+          role: admin
+        - domain: ccadmin
+          role: admin

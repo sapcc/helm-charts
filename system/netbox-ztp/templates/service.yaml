@@ -1,0 +1,24 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: netbox-ztp
+  labels:
+    app.kubernetes.io/name: netbox-ztp
+spec:
+  selector:
+    app.kubernetes.io/name: netbox-ztp
+  type: LoadBalancer
+  externalTrafficPolicy: Local
+{{- if .Values.externalIPs }}
+  externalIPs:
+{{ toYaml .Values.externalIPs | indent 4 }}
+{{- end }}
+  ports:
+  - name: dhcp
+    port: 67
+    protocol: UDP
+    targetPort: 67
+  - name: tftp
+    port: 69
+    protocol: UDP
+    targetPort: 69

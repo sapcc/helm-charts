@@ -1,0 +1,58 @@
+{{- if and .Values.pluginPreset.enabled .Values.logshipping.clusters -}}
+{{- range $r := $.Values.logshipping.clusters }}
+apiVersion: greenhouse.sap/v1alpha1
+kind: Plugin
+metadata:
+  labels:
+    greenhouse.sap/cluster: {{ required "cluster key missing for logpshipping plugin" $r.cluster }}
+    greenhouse.sap/plugindefinition: logshipper
+    greenhouse.sap/owned-by: observability
+{{- if $.Values.global.fluxEnabled }}
+    greenhouse.sap/deployment-tool: "flux"
+{{- end }}
+  name: logshipper-{{ $r.cluster }}
+  namespace: {{ $.Release.Namespace }}
+spec:
+  clusterName: {{ $r.cluster }}
+  displayName: Logshipper {{ $r.cluster | upper }}
+  optionValues:
+  - name: fluent-bit.backend.opensearch.enabled
+    value: true
+  - name: fluent-bit.backend.opensearch.host
+    value: opensearch-logs-client.scaleout.{{required "region key missing for logpshipping plugin" $r.region }}.cloud.sap
+  - name: fluent-bit.backend.opensearch.http_password
+    valueFrom:
+      secret:
+      
+        key: {{ $r.region | replace "-" "" | upper }}{{$r.username | upper}}Password
+        name: ccloud-opensearch
+  - name: fluent-bit.backend.opensearch.http_user
+    valueFrom:
+      secret:
+        key: {{ $r.region | replace "-" "" | upper }}{{$r.username | upper}}User
+        name: ccloud-opensearch
+  - name: fluent-bit.backend.opensearch.logstash_prefix
+    value: {{ $r.username }}
+  - name: fluent-bit.backend.opensearch.port
+    value: "9200"
+  - name: fluent-bit.filter.additionalValues
+    value:
+    - key: region
+      value: {{ $r.region }}
+    - key: cluster
+      value: {{ $r.cluster }}
+  - name: fluent-bit.hotReload.image.repository
+    value: keppel.global.cloud.sap/ccloud-ghcr-io-mirror/jimmidyson/configmap-reload
+  - name: fluent-bit.image.repository
+    value: keppel.global.cloud.sap/ccloud-dockerhub-mirror/fluent/fluent-bit
+  - name: fluent-bit.parser
+    value: cri
+  - name: prometheus.enabled
+    value: true
+  pluginDefinition: logshipper
+  releaseNamespace: logs
+
+---
+
+{{- end }}
+{{- end -}}

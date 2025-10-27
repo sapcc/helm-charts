@@ -1,0 +1,21 @@
+{{- range $target := list "storage" "thanos-metal" }}
+{{- range $path, $bytes := $.Files.Glob (printf "alerts/%s/*.yaml" $target) }}
+{{- with $ }}
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: {{ include "netapp-harvest.fullname" . }}-{{ printf "%s" $path | trimSuffix ".yaml" | replace "/"  "-" }}
+  labels:
+    {{- include "netapp-harvest.labels" . | nindent 4 }}
+    type: alerting-rules
+    {{- if eq (first (splitList "-" $target)) "thanos" }}
+    thanos-ruler: {{ trimPrefix "thanos-" $target }}
+    {{- else }}
+    prometheus: {{ $target }}
+    {{- end }}
+spec:
+  {{ printf "%s" $bytes | nindent 2 }}
+---
+{{- end }}
+{{- end }}
+{{- end }}

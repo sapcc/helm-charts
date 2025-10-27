@@ -1,0 +1,49 @@
+global:
+  prometheus: kubernetes
+image:
+  repository: beats/auditbeat-oss
+  pullPolicy: IfNotPresent
+  tag: "8.17.2-amd64"
+
+enable_pamd_tty: true
+
+elasticsearch:
+  enabled: false
+  #host:
+  port: "443"
+  #username:
+  #password:
+  protocol: https
+
+logstash:
+  enabled: true
+  host: logstash-audit-external-beats
+  port: "5044"
+
+labels: {}
+
+serviceAccount:
+  create: true
+  name: auditbeat
+
+resources:
+  limits:
+    cpu: 1000m
+    memory: 500Mi
+  requests:
+    cpu: 100m
+    memory: 100Mi
+
+exporter:
+  image:
+    repository: auditbeat-exporter
+    tag: "20240731120752"
+    pullPolicy: IfNotPresent
+  metrics:
+    port: "5971"
+  resources:
+    limits:
+      memory: 50Mi
+    requests:
+      cpu: 100m
+      memory: 25Mi

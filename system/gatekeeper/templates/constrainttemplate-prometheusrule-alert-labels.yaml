@@ -1,0 +1,87 @@
+apiVersion: templates.gatekeeper.sh/v1
+kind: ConstraintTemplate
+metadata:
+  name: gkprometheusrulealertlabels
+spec:
+  crd:
+    spec:
+      names:
+        kind: GkPrometheusruleAlertLabels
+
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      code:
+        - engine: Rego
+          source:
+            version: "v1"
+            libs:
+              - |
+                {{ .Files.Get "lib/add-support-labels.rego" | nindent 16 }}
+            rego: |
+              package prometheusrulealertlabels
+
+              import data.lib.add_support_labels
+
+              iro := input.review.object
+
+              alert_rule contains {"rule": rule, "group_name": group.name} if {
+                  # match on all rules that are alerts
+                  iro.kind == "PrometheusRule"
+
+                  group := iro.spec.groups[_]
+                  regex.match(".*\\.alerts$", group.name)
+                  rule := group.rules[_]
+              }
+
+              violation contains {"msg": add_support_labels.from_k8s_object(iro, msg)} if {
+                  alert := alert_rule[_]
+
+                  # warn if we don't have a valid labels.severity
+                  not regex.match("^(?:critical|warning|info|none)$", object.get(alert.rule, ["labels", "severity"], ""))
+
+                  # the special value none is used by alerts which are only used for inhibition rules like NodeInMaintenance
+                  msg := sprintf(
+                      "rule %s in group %s does not have a valid value for labels.severity (\"critical\", \"warning\", \"info\" or \"none\")",
+                      [alert.rule.alert, alert.group_name],
+                  )
+              }
+
+              violation contains {"msg": add_support_labels.from_k8s_object(iro, msg)} if {
+                  alert := alert_rule[_]
+
+                  # warn if we don't have a labels.playbook when labels.severity == "critical"
+                  object.get(alert.rule, ["labels", "severity"], "") == "critical"
+                  object.get(alert.rule, ["labels", "playbook"], "") == ""
+
+                  msg := sprintf(
+                      "rule %s in group %s does not have a valid value for labels.playbook (required for critical alerts)",
+                      [alert.rule.alert, alert.group_name],
+                  )
+              }
+
+              violation contains {"msg": add_support_labels.from_k8s_object(iro, msg)} if {
+                  alert := alert_rule[_]
+
+                  # warn if we don't have something in labels.support_group
+                  not regex.match("\\S", object.get(alert.rule, ["labels", "support_group"], ""))
+
+                  msg := sprintf("rule %s in group %s does not have labels.support_group", [alert.rule.alert, alert.group_name])
+              }
+
+              violation contains {"msg": add_support_labels.from_k8s_object(iro, msg)} if {
+                  alert := alert_rule[_]
+
+                  # warn if we don't have something in annotations.description
+                  not regex.match("\\S", object.get(alert.rule, ["annotations", "description"], ""))
+
+                  msg := sprintf("rule %s in group %s does not have annotations.description", [alert.rule.alert, alert.group_name])
+              }
+
+              violation contains {"msg": add_support_labels.from_k8s_object(iro, msg)} if {
+                  alert := alert_rule[_]
+
+                  # warn if we don't have something in annotations.summary
+                  not regex.match("\\S", object.get(alert.rule, ["annotations", "summary"], ""))
+
+                  msg := sprintf("rule %s in group %s does not have annotations.summary", [alert.rule.alert, alert.group_name])
+              }

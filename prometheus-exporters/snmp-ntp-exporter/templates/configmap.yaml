@@ -1,0 +1,40 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: snmp-ntp-exporter
+data:
+  snmp-ntp-exporter.yaml: |
+    asr04:
+{{ .Files.Get "_snmp-ntp-exporter-asr04.yaml" | indent 4}}
+      version: {{ .Values.snmp_exporter.asr04.version }}
+      max_repetitions: 25
+      retries: 3
+      timeout: 10s
+      auth:
+        security_level: {{ .Values.snmp_exporter.asr04.security_level }}
+        username: {{ .Values.snmp_exporter.asr04.username }}
+        password: {{ .Values.snmp_exporter.asr04.password }}
+        auth_protocol: {{ .Values.snmp_exporter.asr04.auth_protocol }}
+        priv_protocol: {{ .Values.snmp_exporter.asr04.priv_protocol }}
+        priv_password: {{ .Values.snmp_exporter.asr04.priv_password }}
+{{- if .Values.global.n7k.enabled }}
+    n7k:
+{{ .Files.Get "_snmp-ntp-exporter-n7k.yaml" | indent 4}}
+      version: {{ .Values.global.n7k.version }}
+      max_repetitions: 25
+      retries: 3
+      timeout: 10s
+      auth:
+        security_level: {{ .Values.global.n7k.security_level }}
+        username: {{ .Values.global.n7k.username }}
+        password: {{ .Values.global.n7k.password }} 
+        auth_protocol: {{ .Values.global.n7k.auth_protocol }}
+        priv_protocol: {{ .Values.global.n7k.priv_protocol }}
+        priv_password: {{ .Values.global.n7k.priv_password }}
+{{- else if .Values.snmp_exporter.n7k.community }}
+    n7k:
+{{ $.Files.Get "_snmp-ntp-exporter-n7k.yaml" | indent 4}}
+      version: {{ .Values.snmp_exporter.n7k.version }}
+      auth:
+        community: {{ .Values.snmp_exporter.n7k.community }}
+{{- end }}

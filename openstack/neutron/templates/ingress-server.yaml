@@ -1,0 +1,34 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: neutron-server
+  labels:
+    system: openstack
+    type: api
+    component: neutron
+  annotations:
+    kubernetes.io/tls-acme: "true"
+    disco: "true"
+    {{- include "utils.linkerd.ingress_annotation" . | indent 4 }}
+spec:
+  tls:
+     - secretName: tls-{{include "neutron_api_endpoint_host_public" . | replace "." "-" }}
+       hosts: [{{include "neutron_api_endpoint_host_public" .}}]
+  rules:
+    - host: {{include "neutron_api_endpoint_host_public" .}}
+      http:
+        paths:
+        - path: /v2.0/lbaas
+          pathType: Prefix
+          backend:
+            service:
+              name: octavia-api
+              port:
+                number: {{.Values.global.octavia_api_port_internal | default 9876}}
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: neutron-server
+              port:
+                number: {{.Values.global.neutron_api_port_internal | default 9696}}

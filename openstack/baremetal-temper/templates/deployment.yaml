@@ -1,0 +1,56 @@
+kind: Deployment
+apiVersion: apps/v1
+
+metadata:
+  name: baremetal-temper
+spec:
+  revisionHistoryLimit: 5
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      name: baremetal-temper
+  template:
+    metadata:
+      labels:
+        name: baremetal-temper
+        alert-tier: os
+        alert-service: temper
+      annotations:
+        checksum/configmap: {{ include "baremetal-temper/templates/configmap.yaml" . | sha256sum }}
+        checksum/secret: {{ include "baremetal-temper/templates/secret.yaml" . | sha256sum }}
+    spec:
+      volumes:
+        - name: config
+          configMap:
+            name: baremetal-temper
+      containers:
+        - name: api
+          image: {{include "baremetal_temper_image" .}}
+          imagePullPolicy: IfNotPresent
+          args: [ temper ]
+          env: {{ include "baremetal_temper_environment" $ | indent 12 }}
+          volumeMounts:
+            - mountPath: /etc/config
+              name: config
+          livenessProbe:
+            httpGet:
+              path: /api/nodes
+              port: 80
+            timeoutSeconds: 10
+            periodSeconds: 60
+            initialDelaySeconds: 60
+          readinessProbe:
+            httpGet:
+              path: /api/nodes
+              port: 80
+            timeoutSeconds: 5
+            periodSeconds: 5
+          resources:
+            requests:
+              cpu: "150m"
+              memory: "128Mi"
+            limits:
+              cpu: "150m"
+              memory: "128Mi"

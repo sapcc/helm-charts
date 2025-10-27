@@ -1,0 +1,25 @@
+{{ if eq .Release.Namespace "garden-ccloud" -}}
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: garden-ccloud
+  labels:
+    gardener.cloud/role: project
+    project.gardener.cloud/name: ccloud
+---
+apiVersion: core.gardener.cloud/v1beta1
+kind: Project
+metadata:
+  name: ccloud
+spec:
+  namespace: {{ .Release.Namespace }}
+{{- else }}
+---
+apiVersion: core.gardener.cloud/v1beta1
+kind: Project
+metadata:
+  name: cp
+spec:
+  namespace: {{ .Release.Namespace }}
+{{- end }}

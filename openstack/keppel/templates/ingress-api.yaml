@@ -1,0 +1,90 @@
+kind: Ingress
+apiVersion: networking.k8s.io/v1
+
+metadata:
+  name: keppel-api
+  annotations:
+    kubernetes.io/tls-acme: "true"
+    disco: "true"
+    ingress.kubernetes.io/proxy-request-buffering: "off" # to improve push performance
+    nginx.ingress.kubernetes.io/proxy-request-buffering: "off" # to improve push performance
+    {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+    ingress.kubernetes.io/service-upstream: "true"
+    nginx.ingress.kubernetes.io/service-upstream: "true"
+    {{- end }}
+
+spec:
+  tls:
+    - secretName: tls-keppel-api
+      hosts:
+        - 'keppel.{{ .Values.global.region }}.{{ .Values.global.tld }}'
+        - '*.keppel.{{ .Values.global.region }}.{{ .Values.global.tld }}'
+  rules:
+    - host: 'keppel.{{ .Values.global.region }}.{{ .Values.global.tld }}'
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: keppel-api
+                port:
+                  number: 80
+          - path: /healthcheck # this is used by the loadbalancer for keppel.global to monitor the health of this region
+            pathType: Exact
+            backend:
+              service:
+                name: keppel-health-monitor
+                port:
+                  number: 8080
+    - host: '*.keppel.{{ .Values.global.region }}.{{ .Values.global.tld }}'
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: keppel-api
+                port:
+                  number: 80
+
+{{- if .Values.keppel.anycast_domain_name }}
+---
+kind: Ingress
+apiVersion: networking.k8s.io/v1
+
+metadata:
+  name: keppel-api-san
+  annotations:
+    kubernetes.io/tls-acme: "true"
+    disco: "false"
+
+spec:
+  tls:
+    - secretName: tls-keppel-api-san
+      hosts:
+        - '{{ .Values.keppel.anycast_domain_name }}'
+        - '*.{{ .Values.keppel.anycast_domain_name }}'
+  # TODO: remove
+  rules:
+    - host: '{{ .Values.keppel.anycast_domain_name }}'
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: keppel-api
+                port:
+                  number: 80
+    - host: '*.{{ .Values.keppel.anycast_domain_name }}'
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: keppel-api
+                port:
+                  number: 80
+{{ end }}

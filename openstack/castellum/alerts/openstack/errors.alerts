@@ -1,0 +1,305 @@
+# vim: set ft=yaml:
+
+# NOTE on severities: Alerts have `info` if they don't have a playbook, and `warning` if they do.
+
+groups:
+- name: openstack-castellum-errors.alerts
+  rules:
+
+    - alert: OpenstackCastellumDBConnectionPoolNearlyFull
+      expr: avg_over_time(go_sql_stats_connections_in_use{db_name="castellum"}[1h]) > 10
+      for: 5m
+      labels:
+        context: dbconnpool
+        service: castellum
+        severity: info
+        support_group: containers
+        tier: os
+        meta: 'DB connection pool nearly full on {{ $labels.kubernetes_pod_name }}'
+      annotations:
+        summary: 'DB connection pool nearly full on {{ $labels.kubernetes_pod_name }}'
+        description: |
+          The DB connection pool on pod {{ $labels.kubernetes_pod_name }} is filling up. It can
+          go up to 16 connections, but during regular operations we should not go
+          over 3-5 connections to retain some budget for request spikes. Going
+          high on connections for a long time indicates that the pod might be
+          starved for CPU time, so try checking the CPU throttling metrics.
+
+    ############################################################################
+    # alerts concerning pgmetrics collector (alerting this condition separately
+    # allows to avoid a bunch of absent() checks in other alerts' expressions)
+    #
+    # Note that we do not check absent(castellum_min_greenlit_at_gauge). This
+    # condition will occur during normal operation whenever there are no
+    # operations in state "greenlit".
+    #
+    # We also guard absent(castellum_*_min_scraped_at) to avoid false positives
+    # when there are no resources or assets in the DB.
+
+    - alert: OpenstackCastellumMissingDatabaseMetrics
+      expr: absent(castellum_asset_count_gauge) or absent(castellum_resource_count_gauge) or (castellum_resource_count_gauge > 0 and absent(castellum_resource_min_scraped_at)) or (castellum_asset_count_gauge > 0 and absent(castellum_asset_min_scraped_at))
+      for: 10m
+      labels:
+        context: database-metrics
+        service: castellum
+        severity: warning
+        support_group: containers
+        tier: os
+        playbook: 'https://operations.global.cloud.sap/docs/support/playbook/castellum/missing_database_metrics'
+      annotations:
+        description: The pgmetrics deployment is not sending all expected metrics.
+          Other Castellum alerts may not fire because of missing timeseries.
+          Check if castellum-pgmetrics is working correctly.
+        summary: Missing database metrics (alerting reliability impacted)
+
+    ############################################################################
+    # alerts concerning resource scraping in castellum-observer
+
+    - alert: OpenstackCastellumNoResourceScraping
+      expr: absent(rate(castellum_aggregated_successful_resource_scrapes[60m]) > 0)
+        and max(castellum_resource_count_gauge) > 0
+      for: 5m
+      labels:
+        context: resource-scraping
+        service: castellum
+        severity: info
+        support_group: containers
+        tier: os
+        dashboard: castellum
+        meta: "No resource scraping in the last 60 minutes - Is castellum-observer dead!?"
+      annotations:
+        description: |
+          There have been no successful resource scrapes at all in the last hour. Please check if castellum-observer is dead.
+        summary: Castellum is not scraping any resources
+
+    # Resources should be scraped every 30 minutes. We give some extra margin of
+    # 15 minutes for the scrape to take place after it has been scheduled.
+    - alert: OpenstackCastellumResourceScrapingDelayed
+      expr: (max by (asset, region) (time() - castellum_resource_min_next_scrape_at)) / 60 >= 15
+      for: 3m
+      labels:
+        context: resource-scraping
+        service: castellum
+        severity: info
+        support_group: containers
+        tier: os
+        dashboard: castellum
+        meta: "Some {{ $labels.asset }} resource scrapes are taking too long - Check castellum-observer log!"
+      annotations:
+        description: |
+          Some `{{ $labels.asset }}` resources are older than 45 minutes, even though they should be scraped every 30 minutes.
+          The scrapes are either taking too long or failing entirely.
+          In the latter case, check <https://dashboard.{{ $labels.region }}.cloud.sap/ccadmin/cloud_admin/cc-tools/castellum#/resource-scrape-errors|the Castellum Errors view in Elektra>.
+        summary: "`{{ $labels.asset }}` resources scrapes are taking too long"
+
+    - alert: OpenstackCastellumResourceScrapingFailing
+      expr: castellum_resource_scrape_errors_gauge > 0
+      for: 40m # only alert when at least 2 consecutive scrapes failed
+      labels:
+        context: resource-scraping
+        service: castellum
+        severity: warning
+        support_group: containers
+        tier: os
+        dashboard: castellum
+        playbook: 'https://operations.global.cloud.sap/docs/support/playbook/castellum/resource_scraping_failing'
+        meta: "Some resource scrapes are failing!"
+      annotations:
+        description: |
+          Some resources failed to scrape.
+          Check <https://dashboard.{{ $labels.region }}.cloud.sap/ccadmin/cloud_admin/cc-tools/castellum#/resource-scrape-errors|the Castellum Errors view in Elektra>.
+        summary: "Resource scrapes are failing!"
+
+    ############################################################################
+    # alerts concerning asset scraping in castellum-observer
+
+    - alert: OpenstackCastellumNotScrapingAnyAssets
+      expr: absent(rate(castellum_aggregated_successful_asset_scrapes[30m]) > 0)
+        and max(castellum_asset_count_gauge) > 0
+      for: 5m
+      labels:
+        context: asset-scraping
+        service: castellum
+        severity: info
+        support_group: containers
+        tier: os
+        dashboard: castellum
+        meta: "No asset scraping in the last 30 minutes - Is castellum-observer dead!?"
+      annotations:
+        description: |
+          There have been no successful asset scrapes at all in the last hour. Please check if castellum-observer is dead.
+        summary: Castellum is not scraping any assets
+
+    # Assets should be scraped every 5 minutes. We give some extra margin of
+    # 10 minutes for the scrape to take place once it has been scheduled.
+    #
+    # The first alert must have a higher severity than the second one in order to suppress it.
+    - alert: OpenstackCastellumAssetScrapingDelayed
+      expr: (max by (asset, region) (time() - castellum_asset_min_next_scrape_at)) / 60 >= 10
+      for: 3m
+      labels:
+        context: asset-scraping
+        service: castellum
+        severity: info
+        support_group: containers
+        tier: os
+        dashboard: castellum
+        meta: "Some {{ $labels.asset }} asset scrapes are taking too long - Check castellum-observer log!"
+      annotations:
+        description: |
+          Some `{{ $labels.asset }}` assets are older than 15 minutes, even though they should be scraping every 5 minutes.
+          It looks like the asset scraping are either taking too long or failing entirely.
+          In the latter case, check <https://dashboard.{{ $labels.region }}.cloud.sap/ccadmin/cloud_admin/cc-tools/castellum#/asset-scrape-errors|the Castellum Errors view in Elektra>.
+        summary: "`{{ $labels.asset }}` asset scrapes are taking too long"
+
+    - alert: OpenstackCastellumAssetScrapingFailingForFreshAssets
+      expr: castellum_fresh_asset_scrape_errors_gauge > 0
+      for: 4h
+        # As of now, setting the trigger delay shorter causes a ton of misfirings because Manila
+        # frequently creates shares without all the required labels. Therefore the NetApp exporter
+        # does not emit metrics and therefore Castellum cannot scrape the share asset. This gets
+        # fixed by the manila-nanny on the scale of 1-4 hours after share creation.
+      labels:
+        context: asset-scraping
+        service: castellum
+        severity: warning
+        support_group: containers
+        tier: os
+        dashboard: castellum
+        playbook: 'https://operations.global.cloud.sap/docs/support/playbook/castellum/asset_scraping_failing'
+        meta: "Some asset scrapes of fresh assets are failing!"
+      annotations:
+        description: |
+          There are some new assets that we could never successfully scrape as of now.
+          Check <https://dashboard.{{ $labels.region }}.cloud.sap/ccadmin/cloud_admin/cc-tools/castellum#/asset-scrape-errors|the Castellum Errors view in Elektra>.
+        summary: "Scrapes of fresh assets are failing!"
+
+    - alert: OpenstackCastellumAssetScrapingFailingForExistingAssets
+      expr: castellum_existing_asset_scrape_errors_gauge > 0
+      for: 10m # after two consecutive failed scrapes
+      labels:
+        context: asset-scraping
+        service: castellum
+        severity: warning
+        support_group: containers
+        tier: os
+        dashboard: castellum
+        playbook: 'https://operations.global.cloud.sap/docs/support/playbook/castellum/asset_scraping_failing'
+        meta: "Some asset scrapes of existing assets are failing!"
+      annotations:
+        description: |
+          There are some assets that we have successfully scraped in the past, but now we can't.
+          Check <https://dashboard.{{ $labels.region }}.cloud.sap/ccadmin/cloud_admin/cc-tools/castellum#/asset-scrape-errors|the Castellum Errors view in Elektra>.
+        summary: "Scrapes of existing assets are failing!"
+
+    - alert: OpenstackCastellumCriticalAssetNotGettingResized
+      expr: time() - castellum_critical_inactivity_started_at > 900
+      for: 3m
+      labels:
+        context: asset-scraping
+        service: castellum
+        severity: info
+        support_group: containers
+        tier: os
+        dashboard: castellum
+        meta: '{{ $labels.asset }} `{{ $labels.asset_id }}` is stuck in critical usage levels without getting resized'
+      annotations:
+        description: |
+          The {{ $labels.asset }} asset `{{ $labels.asset_id }}` is at critical usage levels,
+          but has not been resized by Castellum for more than 15 minutes.
+          The asset is probably stuck waiting on `expected_size`.
+          If the `expected_size` field is not null in the DB, set it to null and also set `next_scrape_at = NOW()` to force a new scrape.
+          This will do the required resize, then the alert will clear 5 minutes later.
+        summary: Asset is stuck in critical usage levels without getting resized
+
+    ############################################################################
+    # alerts concerning asset resizing in castellum-worker
+
+    - alert: OpenstackCastellumWorkersNotWorking
+      expr: max(time() - castellum_min_greenlit_at_gauge) BY (asset) > 600
+      for: 5m
+      labels:
+        context: asset-resizing
+        service: castellum
+        severity: info
+        support_group: containers
+        tier: os
+        dashboard: castellum
+        meta: '{{ $labels.asset }}'
+      annotations:
+        description: |
+          Resize operations for `{{ $labels.asset }}` are not getting executed in a timely manner.
+          Either the Castellum workers are not doing their job, or resizing is taking too long.
+          The `kubectl logs` for castellum-worker may contain additional info.
+        summary: Resize operations are not getting executed in a timely manner
+
+    - alert: OpenstackCastellumErroredAssetResizes
+      expr: sum(increase(castellum_aggregated_errored_asset_resizes[5m])) BY (asset) > 0
+      for: 10m
+      labels:
+        context: asset-resizing
+        service: castellum
+        severity: info
+        support_group: containers
+        tier: os
+        dashboard: castellum
+      annotations:
+        description: |
+          Castellum cannot resize `{{$labels.asset}}` assets.
+          The `kubectl logs` for castellum-worker contain additional info.
+        summary: Castellum cannot resize `{{$labels.asset}}` assets
+
+    - alert: OpenstackCastellumAssetResizingFailing
+      expr: castellum_asset_resize_errors_gauge > 0
+      for: 5m
+      labels:
+        context: asset-resizing
+        service: castellum
+        severity: warning
+        support_group: containers
+        tier: os
+        playbook: 'https://operations.global.cloud.sap/docs/support/playbook/castellum/asset_resizing_failing'
+        dashboard: castellum
+        meta: "Some non-Manila asset resizes are failing!"
+      annotations:
+        description: |
+          Castellum encountered backend errors while resizing some non-Manila assets.
+          Check <https://dashboard.{{ $labels.region }}.cloud.sap/ccadmin/cloud_admin/cc-tools/castellum#/asset-resize-errors|the Castellum Errors view in Elektra>.
+        summary: Castellum encountered backend errors while resizing some non-Manila assets
+
+    # This alert is separate, to specify the storage support_group directly.
+    - alert: OpenstackCastellumManilaAssetResizingFailing
+      expr: castellum_manila_asset_resize_errors_gauge > 0
+      for: 5m
+      labels:
+        context: asset-resizing
+        service: manila
+        severity: warning
+        support_group: compute-storage-api
+        tier: os
+        playbook: 'https://operations.global.cloud.sap/docs/support/playbook/castellum/manila_asset_resizing_failing'
+        dashboard: castellum
+        meta: "Some Manila asset resizes are failing!"
+      annotations:
+        description: |
+          Castellum encountered backend errors while resizing some Manila assets.
+          Check <https://dashboard.{{ $labels.region }}.cloud.sap/ccadmin/cloud_admin/cc-tools/castellum#/asset-resize-errors|the Castellum Errors view in Elektra>.
+        summary: Castellum encountered backend errors while resizing some Manila assets
+
+    - alert: OpenstackCastellumAuditEventPublishFailing
+      # The underlying metric counts failed submission attempts, e.g. because the hermes-rabbitmq server is restarting.
+      # These are not necessarily fatal because the process will hold them in memory to retry the submission later.
+      # The alert will clear up on its own once submissions start working again.
+      expr: sum by (pod) (changes(audittools_failed_submissions{namespace="castellum"}[1h]) > 0)
+      for: 5m
+      labels:
+        context: auditeventpublish
+        service: castellum
+        severity: info
+        support_group: containers
+        tier: os
+        dashboard: castellum
+        meta: '{{ $labels.pod }}'
+      annotations:
+        summary: "{{ $labels.pod }} cannot publish audit events"
+        description: "Audit events from {{ $labels.pod }} could not be published to the RabbitMQ server. Check the pod log for detailed error messages. Affected audit events are held in memory until publishing succeeds."

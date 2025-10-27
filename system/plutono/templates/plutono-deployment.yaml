@@ -1,0 +1,182 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: plutono
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+        app: plutono
+        component: plutono
+  template:
+    metadata:
+      labels:
+        app: plutono
+        component: plutono
+      annotations:
+        checksum/plutono.etc: {{ include "plutono/templates/plutono-etc-secret.yaml" . | sha256sum }}
+        checksum/plutono.bin: {{ include "plutono/templates/plutono-bin-secret.yaml" . | sha256sum }}
+        checksum/plutono.ini: {{ include "plutono/templates/_plutono.ini.tpl" . | sha256sum }}
+        checksum/plutono-secrets: {{ include "plutono/templates/plutono-secrets.yaml" . | sha256sum }}
+        checksum/ldap.toml: {{ include "plutono/templates/_ldap.toml.tpl" . | sha256sum }}
+        checksum/plutono-start: {{ include "plutono/templates/_plutono-start.tpl" . | sha256sum }}
+        checksum/plutono-initial-setup: {{ include "plutono/templates/_plutono-initial-setup.tpl" . | sha256sum }}
+        pod.alpha.kubernetes.io/initialized: "true"
+    spec:
+      nodeSelector:
+        zone: farm
+      volumes:
+        - name: plutono-bin
+          secret:
+            secretName: plutono-bin
+        - name: plutono-etc
+          secret:
+            secretName: plutono-etc
+{{- if .Values.authentication.enabled }}
+        - name: plutono-secrets
+          secret:
+            secretName: plutono-secrets
+{{- end }}
+        - name: plutono-git
+{{- if .Values.plutono.content.persistence.enabled }}
+          persistentVolumeClaim:
+            claimName: plutono-content-gitsync-pvc
+{{- else }}
+          emptyDir: {}
+{{- end }}
+        - name: plutono-content
+          emptyDir: {}
+      initContainers:
+      - name: fix-permissions
+        image: {{.Values.global.registry}}/shared-app-images/alpine-busybox:latest-latest
+        command: ["/bin/chown","-R","65533:65533", "/git"]
+        volumeMounts:
+        - name: plutono-git
+          mountPath: /git
+      containers:
+        - name: "plutono"
+          image: {{ .Values.global.ghcrIoMirror | required ".Values.global.ghcrIoMirror is missing" }}/{{.Values.plutono.image}}:{{.Values.plutono.image_version}}
+          imagePullPolicy: {{.Values.image.pullPolicy }}
+          command:
+            - /bin/bash
+          args:
+            # - -c
+            # - sleep inf
+            - /plutono-bin/plutono-start
+          env:
+            - name: PL_PATHS_PROVISIONING
+              value: "/var/lib/plutono/provisioning"
+            - name: PL_DATABASE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: '{{ $.Release.Name }}-pguser-plutono'
+                  key: 'postgres-password'
+          ports:
+            # Note: even if the port is called metrics, Grafana UI also runs on it
+            - name: metrics
+              containerPort: 3000
+          volumeMounts:
+            - name: plutono-bin
+              mountPath: /plutono-bin
+            - name: plutono-etc
+              mountPath: /plutono-etc
+{{- if .Values.authentication.enabled }}
+            - name: plutono-secrets
+              mountPath: /plutono-secrets
+{{- end }}
+            - name: plutono-content
+              mountPath: /git
+          resources:
+            requests:
+              memory: "500Mi"
+              cpu: "250m"
+            limits:
+              memory: "500Mi"
+              cpu: "250m"
+          livenessProbe:
+            httpGet:
+              path: /login
+              port: 3000
+            initialDelaySeconds: 120
+            periodSeconds: 30
+        - name: "gitsync"
+          image: {{.Values.global.registryK8sIoMirror}}/git-sync/git-sync:v4.4.0
+          imagePullPolicy: {{.Values.image.pullPolicy}}
+          args:
+            - "--repo={{.Values.plutono.gitsync.repository}}"
+            - "--ref={{.Values.plutono.gitsync.branch}}"
+            - "--period=30s"
+            - "--max-failures=-1"
+            - "--http-bind=:9090"
+            - "--http-metrics"
+          env:
+            - name: GIT_SSL_NO_VERIFY
+              value: "true"
+            - name: GITSYNC_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: plutono-secrets
+                  key: git_sync_user
+            - name: GITSYNC_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: plutono-secrets
+                  key: git_sync_password
+          volumeMounts:
+            - name: plutono-git
+              mountPath: /git
+          resources:
+            requests:
+              memory: "250Mi"
+              cpu: "50m"
+            limits:
+              memory: "250Mi"
+              cpu: "150m"
+          ports:
+            - name: metrics
+              containerPort: 9090
+        - name: "minitrue"
+          image: {{.Values.global.registry}}/plutono-minitrue:{{.Values.plutono.minitrue_version}}
+          imagePullPolicy: {{.Values.image.pullPolicy}}
+          command:
+            - /minitrue.sh
+          env:
+            - name: PATH_IN
+              value: "/gitsync_in/plutono-content"
+            - name: PATH_OUT
+              value: "/minitrue_out/plutono-content"
+            - name: SLEEP_TIME_IN_SEC
+              value: "60"
+          volumeMounts:
+            - name: plutono-git
+              mountPath: /gitsync_in
+            - name: plutono-content
+              mountPath: /minitrue_out
+          resources:
+            requests:
+              memory: "150Mi"
+              cpu: "50m"
+            limits:
+              memory: "150Mi"
+              cpu: "150m"
+{{- if .Values.nginx.enabled }}
+        - name: nginx
+          image: {{.Values.global.registry}}/shared-app-images/alpine-nginx:mainline-slim-latest
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          volumeMounts:
+            - name: plutono-etc
+              mountPath: /etc/nginx/nginx.conf
+              subPath: nginx.conf
+              readOnly: true
+          ports:
+            - name: http
+              containerPort: {{ .Values.nginx.port.public }}
+              protocol: TCP
+          resources:
+            requests:
+              memory: "50Mi"
+              cpu: "150m"
+            limits:
+              memory: "50Mi"
+              cpu: "150m"
+{{- end }}

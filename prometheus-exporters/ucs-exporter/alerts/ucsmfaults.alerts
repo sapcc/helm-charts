@@ -1,0 +1,66 @@
+# We have to create a new label for having a proper context to group the alerts using label_replace function
+# Usually we would use the server as the context but in this case the server is the UCSM Manager and we would match different alerts for different blades/servers in that UCS Manager
+# Hence, we have to build a new label out of the DN of the device without the F-Code
+
+# Example:
+# dn="sys/chassis-6/blade-7/health-led/fault-F1236" is converted into context="chassis-6/blade-7/health-led" with the regex "sys/(.+)/(.*)"
+
+# In UcsmFaultCritical and UcsmFaultWarn we filter out type="fsm"
+# Therefore, we have to add those to UcsmFaultInfo but only display one alert per context. That's why the two expressions are combined with an or (in one or the other vector)
+
+# Cisco UCS Faults and Error Messages Reference
+# https://www.cisco.com/c/en/us/td/docs/unified_computing/ucs/ts/faults/reference/ErrMess/UCS_SEMs.html
+
+groups:
+- name: ucsmfaults.alerts
+  rules:
+  - alert: UcsmFaultCritical
+    expr: count(label_replace(label_replace(max_over_time(ucsm_faults{severity=~"critical", code!~"F0315|F0411|F0675|F0676|F1004|F1365|F1707|F1901|F1913", description !~".+/ext-board-.+", type!~"fsm"}[30m]), "context", "$2", "dn", "(sys|org-root)/(.+)/(.*)"), "ucsm", "$1", "server", "ucscluster-(.+).cc.+")) by (ucsm, severity, code, description, context)
+    for: 10m
+    labels:
+      severity: critical
+      tier: metal
+      service: baremetal
+      support_group: compute
+      context: "{{ $labels.ucsm }}_{{ $labels.context }}"
+      meta: "UCS Manager {{ $labels.ucsm }} has an error with severity {{ $labels.severity }}: {{ $labels.description }} ({{ $labels.code }})"
+      no_alert_on_absence: "true"
+      playbook: docs/devops/alert/baremetal/ucs
+    annotations:
+      description: "UCS Manager {{ $labels.ucsm }} has an error with severity {{ $labels.severity }}: {{ $labels.description }} ({{ $labels.code }})"
+      summary: "UCS Manager {{ $labels.ucsm }} has an error with severity {{ $labels.severity }}"
+
+  - alert: UcsmFaultWarn
+    expr: count(label_replace(label_replace(max_over_time(ucsm_faults{severity=~"critical", code=~"F0315|F0411|F0675|F0676|F1004|F1365|F1707|F1901|F1913", description !~".+/ext-board-.+", type!~"fsm"}[30m]), "context", "$2", "dn", "(sys|org-root)/(.+)/(.*)"), "ucsm", "$1", "server", "ucscluster-(.+).cc.+")) by (ucsm, severity, code, description, context)
+    for: 10m
+    labels:
+      severity: warning
+      tier: metal
+      service: baremetal
+      support_group: compute
+      context: "{{ $labels.ucsm }}_{{ $labels.context }}"
+      meta: "UCS Manager {{ $labels.ucsm }} has an error with severity {{ $labels.severity }}: {{ $labels.description }} ({{ $labels.code }})"
+      no_alert_on_absence: "true"
+      playbook: docs/devops/alert/baremetal/ucs
+    annotations:
+      description: "UCS Manager {{ $labels.ucsm }} has an error with severity {{ $labels.severity }}: {{ $labels.description }} ({{ $labels.code }})"
+      summary: "UCS Manager {{ $labels.ucsm }} has an error with severity {{ $labels.severity }}"
+
+# Filtered alerts:
+# F0909: is an alert about expired self-signed certificates
+# F0436: FirmwarePackItemImageMissing
+  - alert: UcsmFaultInfo
+    expr: count(label_replace(label_replace(max_over_time(ucsm_faults{severity=~"critical", type=~"fsm", code!~"F0436|F0909"}[30m]), "context", "$2", "dn", "(sys|org-root)/(.+)/(.*)"), "ucsm", "$1", "server", "ucscluster-(.+).cc.+")) by (ucsm, severity, code, description, context) or on(ucsm, context) count(label_replace(label_replace(max_over_time(ucsm_faults{severity=~"major", code!~"F0436|F0909"}[30m]), "context", "$2", "dn", "(sys|org-root)/(.+)/(.*)"), "ucsm", "$1", "server", "ucscluster-(.+).cc.+")) by (ucsm, severity, code, description, context)
+    for: 10m
+    labels:
+      severity: info
+      tier: metal
+      service: baremetal
+      support_group: compute
+      context: "{{ $labels.ucsm }}_{{ $labels.context }}"
+      meta: "UCS Manager {{ $labels.ucsm }} has an error with severity {{ $labels.severity }}: {{ $labels.description }} ({{ $labels.code }})"
+      no_alert_on_absence: "true"
+      playbook: docs/devops/alert/baremetal/ucs
+    annotations:
+      description: "UCS Manager {{ $labels.ucsm }} has an error with severity {{ $labels.severity }}: {{ $labels.description }} ({{ $labels.code }})"
+      summary: "UCS Manager {{ $labels.ucsm }} has an error with severity {{ $labels.severity }}"

@@ -1,0 +1,207 @@
+{{- $cdomains := .Values.global.domain_seeds.customer_domains | required "missing value for .Values.global.domain_seeds.customer_domains" -}}
+{{- $domains  := concat (list "Default" "ccadmin") $cdomains -}}
+{{- $cdomainsWithoutSupportProjects := .Values.global.domain_seeds.customer_domains_without_support_projects | required "missing value for .Values.global.domain_seeds.customer_domains_without_support_projects" -}}
+
+apiVersion: "openstack.stable.sap.cc/v1"
+kind: "OpenstackSeed"
+metadata:
+  name: neutron-seed
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+spec:
+  requires:
+  - monsoon3/barbican-seed
+  {{- range $domains}}
+  {{- if not (hasPrefix "iaas-" .)}}
+  - monsoon3/domain-{{ replace "_" "-" . | lower}}-seed
+  {{- end }}
+  {{- end }}
+
+  roles:
+  - name: network_admin
+  - name: network_viewer
+  - name: cloud_network_admin
+  - name: cloud_compute_admin
+  - name: securitygroup_viewer
+  - name: securitygroup_admin
+  - name: compute_admin_wsg
+
+  services:
+  - name: neutron
+    type: network
+    description: Openstack Networking
+    endpoints:
+    - interface: public
+      region: {{ .Values.global.region }}
+      url: https://{{include "neutron_api_endpoint_host_public" .}}
+    - interface: admin
+      region: {{ .Values.global.region }}
+      url: http://neutron-server.{{ .Release.Namespace }}.svc.kubernetes.{{ .Values.global.region }}.{{ .Values.global.tld }}:9696
+    - interface: internal
+      region: {{ .Values.global.region }}
+      url: http://neutron-server.{{ .Release.Namespace }}.svc.kubernetes.{{ .Values.global.region }}.{{ .Values.global.tld }}:9696
+
+  # default gets special handling
+  # ccadmin and monsoon3 get some additional role assignments
+  # Default gets a few role assignment less
+  # iaas- is excluded
+
+  domains:
+  - name: Default
+    projects:
+    - name: l3admin
+      description: Cisco L3 Admin Project
+    users:
+    - name: {{ .Values.global.neutron_service_user }}
+      description: Neutron Service
+      password: {{ .Values.global.neutron_service_password }}
+      role_assignments:
+      - project: service
+        role: service
+      - project: service
+        role: admin
+      - project: service
+        role: cloud_network_admin
+      - project: service
+        role: cloud_compute_admin
+      - project: service
+        role: cloud_keymanager_admin
+      - project: l3admin
+        role: admin
+      - project: l3admin
+        role: cloud_network_admin
+      - project: l3admin
+        role: cloud_compute_admin
+{{- if .Values.interconnection.enabled }}
+    - name: {{ .Values.interconnection.user }}
+      description: Neutron Interconnection Plugin User
+      password: {{ required "Interconnection password is missing" .Values.interconnection.password }}
+      role_assignments:
+      - project: service
+        role: service
+      - project: service
+        role: cloud_network_admin
+      - project: l3admin
+        role: cloud_network_admin
+{{- end }}
+    - name: admin
+      role_assignments:
+      - domain: Default
+        role: cloud_network_admin
+      - project: admin
+        role: cloud_network_admin
+    groups:
+    - name: administrators
+      role_assignments:
+      - domain: Default
+        role: cloud_network_admin
+      - project: admin
+        role: cloud_network_admin
+
+  {{- range $domains}}
+  {{- if and (not (hasPrefix "iaas-" .)) (not (eq "Default" .))}}
+  - name: {{ . }}
+    {{- if eq . "ccadmin" }}
+    projects:
+    - name: cloud_admin
+      role_assignments:
+      - user: admin@Default
+        role: cloud_network_admin
+    - name: master
+      role_assignments:
+      - user: '{{ $.Values.global.neutron_service_user | include "resolve_secret" }}@Default'
+        role: cloud_dns_admin
+    {{- end }}
+    groups:
+    {{- if eq . "ccadmin" }}
+    - name: CCADMIN_CLOUD_ADMINS
+      role_assignments:
+      - project: cloud_admin
+        role: cloud_network_admin
+    {{- end }}
+    {{- if eq . "monsoon3" }}
+    - name: MONSOON3_DOMAIN_ADMINS
+      role_assignments:
+      - project: cc-demo
+        role: network_admin
+    {{- end }}
+    {{- if ne . "default" }}
+    - name: {{ hasPrefix "iaas-" . | ternary . (upper .) }}_DOMAIN_NETWORK_ADMINS
+      role_assignments:
+      - project: {{ . }}-net-infra
+        role: network_admin
+      - project: {{ . }}-net-infra
+        role: cloud_network_admin
+      - project: {{ . }}-shared-infra
+        role: network_admin
+      {{- if eq . "monsoon3" }}
+      - project: cc-demo
+        role: network_admin
+      {{- end }}
+    {{- end }}
+    - name: {{ hasPrefix "iaas-" . | ternary . (upper .) }}_API_SUPPORT
+      role_assignments:
+      {{- if not (has . $cdomainsWithoutSupportProjects) }}
+      - project: api_support
+        role: network_admin
+      {{- end }}
+      {{- if eq . "ccadmin" }}
+      - project: api_tools
+        role: network_admin
+      {{- end }}
+      - domain: {{ . }}
+        role: network_admin
+        inherited: true
+    - name: {{ hasPrefix "iaas-" . | ternary . (upper .) }}_COMPUTE_SUPPORT
+      role_assignments:
+      {{- if not (has . $cdomainsWithoutSupportProjects) }}
+      - project: compute_support
+        role: network_admin
+      {{- end }}
+      {{- if eq . "ccadmin" }}
+      - project: compute_tools
+        role: network_admin
+      {{- end }}
+      - domain: {{ . }}
+        role: {{ eq . "ccadmin" | ternary "network_admin" "network_viewer" }}
+        inherited: true
+    - name: {{ hasPrefix "iaas-" . | ternary . (upper .) }}_NETWORK_SUPPORT
+      role_assignments:
+      {{- if not (has . $cdomainsWithoutSupportProjects) }}
+      - project: network_support
+        role: network_admin
+      {{- end }}
+      {{- if eq . "ccadmin" }}
+      - project: network_tools
+        role: network_admin
+      {{- end }}
+      - domain: {{ . }}
+        role: network_admin
+        inherited: true
+    - name: {{ hasPrefix "iaas-" . | ternary . (upper .) }}_STORAGE_SUPPORT
+      role_assignments:
+      {{- if not (has . $cdomainsWithoutSupportProjects) }}
+      - project: storage_support
+        role: network_admin
+      {{- end }}
+      {{- if eq . "ccadmin" }}
+      - project: storage_tools
+        role: network_admin
+      {{- end }}
+      - domain: {{ . }}
+        role: network_viewer
+        inherited: true
+    - name: {{ hasPrefix "iaas-" . | ternary . (upper .) }}_SERVICE_DESK
+      role_assignments:
+      {{- if not (has . $cdomainsWithoutSupportProjects) }}
+      - project: service_desk
+        role: network_admin
+      {{- end }}
+      - domain: {{ . }}
+        role: network_viewer
+        inherited: true
+  {{- end }}
+  {{- end }}

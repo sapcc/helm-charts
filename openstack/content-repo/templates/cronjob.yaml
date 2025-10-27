@@ -1,0 +1,81 @@
+{{- range $repo, $config := .Values.repos }}
+{{- if not $config.disabled }}
+apiVersion: batch/v1
+kind: CronJob
+
+metadata:
+  name: content-repo-{{ $repo }}
+  labels:
+    system: openstack
+    component: content-repo
+
+spec:
+  concurrencyPolicy: Replace # restarting a hung s-h-i should be safe (Swift will not store objects if the upload connection resets)
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  schedule: "{{ $config.schedule | default "59 23 * * *" }}"
+  timeZone: {{ $.Values.timezone }}
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            component: content-repo-{{ $repo }}
+          annotations:
+            checksum/check.etc: {{ include "content-repo/templates/configmap.yaml" $ | sha256sum }}
+            checksum/check.secrets: {{ include "content-repo/templates/secret.yaml" $ | sha256sum }}
+            checksum/check.secrets-certs: {{ include "content-repo/templates/secret-certs.yaml" $ | sha256sum }}
+            kubectl.kubernetes.io/default-container: swift-http-import
+        spec:
+          restartPolicy: Never # restarting a failed s-h-i does not work because the linkerd-proxy sidecar has been torn down when the s-h-i container shut down
+          volumes:
+          - name: config
+            configMap:
+              name: swift-http-import
+          - name: secret
+            secret:
+              secretName: swift-http-import-certs
+          containers:
+          - name: swift-http-import
+            {{- if $.Values.image_refs.swift_http_import }}
+            image: {{ quote $.Values.image_refs.swift_http_import }}
+            {{- else }}
+            image: {{ $.Values.global.registry }}/swift-http-import:{{ include "image_version" $.Values }}
+            {{- end }}
+            imagePullPolicy: IfNotPresent
+            args:
+              - /etc/http-import/config/{{ $repo }}.yaml
+            env:
+              - name: 'DEBUG'
+                value: 'false'
+            {{ include "secret_env_vars" $ | indent 14 }}
+              - name: 'LOG_TRANSFERS'
+                value: 'true'
+            {{- if or $.Values.debug $config.debug }}
+              - name: 'DEBUG'
+                value: 'true'
+            {{- end }}
+            {{- if not (and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested) }}
+              - name: LINKERD_AWAIT_DISABLED
+                value: "Linkerd was not enabled or not requested"
+            {{- end }}
+            securityContext:
+              runAsNonRoot: true
+            volumeMounts:
+              - mountPath: /etc/http-import/config
+                name: config
+              - mountPath: /etc/http-import/secret
+                name: secret
+            resources:
+              # observed usage in qa-de-1: CPU = 300-400m, RAM = 200-1100 MiB
+              # Note that we can live with the job running throttled since it's a background job anyway.
+              # We also have seen RAM spike as high 2+ GiB if large repo indexes need to be held in memory.
+              limits:
+                cpu: '300m'
+                memory: '3072Mi'
+              requests:
+                cpu: '150m'
+                memory: '3072Mi'
+---
+{{- end }}
+{{- end }}

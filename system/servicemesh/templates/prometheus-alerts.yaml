@@ -1,0 +1,19 @@
+{{- $root := . -}}
+{{- $values := .Values -}}
+{{- if $values.alerts.enabled }}
+{{- range $path, $bytes := .Files.Glob "alerts/*.alerts.tpl" }}
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: {{ printf "servicemesh-%s" $path | replace "/" "-" }}
+  labels:
+    app: linkerd
+    prometheus: {{ required ".Values.alerts.prometheus missing" $values.alerts.prometheus }}
+spec:
+{{- with $root -}}
+{{- $content := printf "%s" $bytes }}
+{{ tpl $content . | indent 2 }}
+{{- end }}
+---
+{{- end }}
+{{- end }}

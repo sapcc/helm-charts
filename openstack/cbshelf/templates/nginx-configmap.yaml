@@ -1,0 +1,96 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-conf
+data:
+  nginx.conf: |
+    user root root;
+    worker_processes  1;
+
+
+    events {
+      worker_connections  10240;
+      multi_accept        on;
+    }
+    http {
+      server {
+          listen       8080;
+           server_name  localhost;
+           root /monsoon/cbshelf;
+
+           access_log logs/access.log;
+           error_log  logs/error.log;
+
+           sendfile on;
+           tcp_nopush on;
+           tcp_nodelay on;
+           keepalive_timeout  65;
+
+          gzip  on;
+          gzip_http_version 1.0;
+          gzip_comp_level 2;
+          gzip_proxied any;
+          gzip_types text/plain text/css application/x-javascript text/xml application/xml application/xml+rss text/javascript;
+
+          include mime.types;
+
+           location /assets/ {
+            alias /app/public/assets/;
+           }
+           location / {
+           expires 365d;
+           add_header    Cache-Control  public;
+           try_files $uri $uri.git @ruby;
+       }
+
+           location ~ /(cookbooks|readymades)/repository/.+\.git/objects {
+           expires 365d;
+           add_header    Cache-Control  public;
+           try_files $uri =404;
+       }
+           location  @ruby {
+            set_by_lua_block $emailAddress {
+            local openssl = require('openssl')
+            local sslCert = ngx.req.get_headers()["ssl-client-cert"]
+            if sslCert == nil then
+              ngx.log(ngx.ERR, "No Cert in request")
+              return "NONE"
+            end
+            local decodedCert = ngx.unescape_uri(sslCert)
+            ngx.log(ngx.ERR, "Done decoding")
+            for k,v in pairs(openssl.x509.read(decodedCert):extensions()) do
+                for k1,v1 in pairs(v:info()) do   -- see https://github.com/zhaozg/lua-openssl/issues/222
+                    if(type(v1)=='table') then
+                        for k2,v2 in pairs(v1) do
+                            if(type(v2)=='table') then
+                                ngx.log(ngx.ERR, "v2 "..table.concat(v2))
+                                for k3,v3 in pairs(v2) do
+                                  if(k3=='rfc822Name') then       -- see http://pkiglobe.org/subject_alt_name.html and https://stackoverflow.com/questions/17172239/on-certificates-what-type-should-e-mail-addresses-be-when-in-subjectaltname
+                                      local email = v3:data()
+                                      ngx.log(ngx.ERR, "found email "..email)
+                                      return email
+                                  end
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+          }
+           proxy_pass http://localhost:3000;
+           #proxy_set_header X-Real-IP  $remote_addr;
+           proxy_set_header X-Forwarded-Proto https;
+           #proxy_set_header        X-SSL-Client-I-Dn $ssl_client_i_dn;
+           #proxy_set_header        X-SSL-Client-S-Dn $ssl_client_s_dn;
+           #proxy_set_header        X-SSL-Client-Verify  $ssl_client_verify;
+           #proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+           proxy_set_header        SSL-Client-I-DN $http_ssl_client_issuer_dn;
+           proxy_set_header        SSL-Client-S-DN $http_ssl_client_subject_dn;
+           proxy_set_header        SSL-Client-Verify  $http_ssl_client_verify;
+           proxy_set_header        SSL-Client-SAN-Email  $emailAddress;
+           proxy_set_header Host $http_host;
+           proxy_http_version 1.1;
+           proxy_buffering off;
+           }
+      }
+    }

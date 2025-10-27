@@ -1,0 +1,178 @@
+{{- range $name, $v := .Values.workers }}
+{{- with $ }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: octavia-worker-{{ $name }}
+  labels:
+    app.kubernetes.io/name: octavia-worker-{{ $name }}
+    helm.sh/chart: {{ include "octavia.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+  annotations:
+    secret.reloader.stakater.com/reload: "{{ .Release.Name }}-secrets,{{ .Release.Name }}-secrets-{{ $name }}"
+    deployment.reloader.stakater.com/pause-period: "60s"
+  {{- if .Values.vpa.set_main_container }}
+    vpa-butler.cloud.sap/main-container: octavia-worker
+  {{- end }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: octavia-worker-{{ $name }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: octavia-worker-{{ $name }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        # Labels used by Limes for capacity discovery (via Prometheus metric "kube_pod_labels")
+        f5-device-model: {{ $v.model }}
+        # AZ value "any" corresponds to the enum symbol used by Limes: https://pkg.go.dev/github.com/sapcc/go-api-declarations/limes#AvailabilityZone
+        availability-zone: {{ $v.availability_zone | default "any" }}
+      annotations:
+        kubectl.kubernetes.io/default-container: octavia-worker
+        configmap-etc-hash: {{ include (print $.Template.BasePath "/octavia-etc-configmap.yaml") . | sha256sum }}
+        configmap-worker-hash: {{ include (print $.Template.BasePath "/octavia-worker-configmap.yaml") . | sha256sum }}
+        secrets-hash: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
+        secrets-worker-hash: {{ include (print $.Template.BasePath "/secrets-worker.yaml") . | sha256sum }}
+        prometheus.io/scrape: "true"
+        prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
+        {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
+    spec:
+      priorityClassName: critical-payload
+{{ include "utils.proxysql.pod_settings" . | indent 6 }}
+      initContainers:
+      {{- if .Values.proxysql.native_sidecar }}
+      {{- include "utils.proxysql.container" . | indent 6 }}
+      {{- end }}
+      containers:
+        - name: octavia-worker
+          image: {{required ".Values.global.registry is missing" .Values.global.registry}}/loci-octavia:{{required "Values.imageVersion is missing" .Values.imageVersion}}
+          imagePullPolicy: IfNotPresent
+          command: ['dumb-init', 'kubernetes-entrypoint']
+          ports:
+            - name: metrics-worker
+              containerPort: 8000
+          resources:
+{{ toYaml .Values.pod.resources.worker | indent 12 }}
+          volumeMounts:
+            - name: octavia-etc
+              mountPath: /etc/octavia/octavia.conf
+              subPath: octavia.conf
+              readOnly: true
+            - name: octavia-etc
+              mountPath: /etc/octavia/esd/esd.json
+              subPath: esd.json
+              readOnly: true
+            - name: octavia-etc
+              mountPath: /etc/octavia/logging.ini
+              subPath: logging.ini
+              readOnly: true
+            - name: octavia-etc-worker
+              mountPath: /etc/octavia/octavia-worker.conf
+              subPath: octavia-worker.conf
+              readOnly: true
+            - name: octavia-etc-confd
+              mountPath: /etc/octavia/octavia.conf.d
+              readOnly: true
+            - name: octavia-etc-worker-secret
+              mountPath: /etc/octavia/octavia-worker-secret.conf
+              subPath: secrets-worker.conf
+              readOnly: true
+            - mountPath: /var/run/octavia
+              name: octavia-var
+            {{- include "utils.proxysql.volume_mount" . | indent 12 }}
+            {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
+          env:
+            - name: COMMAND
+              value: "octavia-worker --config-file /etc/octavia/octavia.conf --config-file /etc/octavia/octavia.conf.d/secrets.conf --config-file /etc/octavia/octavia-worker.conf --config-file /etc/octavia/octavia-worker-secret.conf"
+            - name: DEPENDENCY_JOBS
+              value: octavia-migration
+            - name: NAMESPACE
+              value: {{ .Release.Namespace }}
+            - name: PYTHONWARNINGS
+              value: "ignore:Unverified HTTPS request"
+            - name: REQUESTS_CA_BUNDLE
+              value: ""
+            {{- if .Values.sentry.enabled }}
+            - name: SENTRY_DSN
+              valueFrom:
+                secretKeyRef:
+                  name: sentry
+                  key: octavia.DSN.python
+            {{- end }}
+        - name: octavia-f5-status-manager
+          image: {{required ".Values.global.registry is missing" .Values.global.registry}}/loci-octavia:{{required "Values.imageVersion is missing" .Values.imageVersion}}
+          imagePullPolicy: IfNotPresent
+          command: ['dumb-init', 'kubernetes-entrypoint']
+          ports:
+            - name: metrics-status
+              containerPort: 8001
+          resources:
+{{ toYaml .Values.pod.resources.status_manager | indent 12 }}
+          volumeMounts:
+            - name: octavia-etc
+              mountPath: /etc/octavia/octavia.conf
+              subPath: octavia.conf
+              readOnly: true
+            - name: octavia-etc-confd
+              mountPath: /etc/octavia/octavia.conf.d
+              readOnly: true
+            - name: octavia-etc-worker
+              mountPath: /etc/octavia/octavia-worker.conf
+              subPath: octavia-worker.conf
+              readOnly: true
+            - name: octavia-etc-worker-secret
+              mountPath: /etc/octavia/octavia-worker-secret.conf
+              subPath: secrets-worker.conf
+              readOnly: true
+            - name: octavia-etc
+              mountPath: /etc/octavia/logging.ini
+              subPath: logging.ini
+              readOnly: true
+            {{- include "utils.proxysql.volume_mount" . | indent 12 }}
+            {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
+          env:
+            - name: COMMAND
+              value: "octavia-f5-status-manager --config-file /etc/octavia/octavia.conf --config-file /etc/octavia/octavia.conf.d/secrets.conf --config-file /etc/octavia/octavia-worker.conf --config-file /etc/octavia/octavia-worker-secret.conf"
+            - name: DEPENDENCY_JOBS
+              value: octavia-migration
+            - name: NAMESPACE
+              value: {{ .Release.Namespace }}
+            - name: PYTHONWARNINGS
+              value: "ignore:Unverified HTTPS request"
+            - name: REQUESTS_CA_BUNDLE
+              value: ""
+            {{- if .Values.sentry.enabled }}
+            - name: SENTRY_DSN
+              valueFrom:
+                secretKeyRef:
+                  name: sentry
+                  key: octavia.DSN.python
+            {{- end }}
+            - name: OS_F5_AGENT__PROMETHEUS_PORT
+              value: "8001"
+        {{- if not .Values.proxysql.native_sidecar }}
+        {{- include "utils.proxysql.container" . | indent 8 }}
+        {{- end }}
+      volumes:
+        - name: octavia-etc
+          configMap:
+            name: octavia-etc
+        - name: octavia-etc-confd
+          secret:
+            secretName: {{ .Release.Name }}-secrets
+        - name: octavia-etc-worker
+          configMap:
+            name: octavia-etc-{{ $name }}
+        - name: octavia-etc-worker-secret
+          secret:
+            secretName: {{ .Release.Name }}-secrets-{{ $name }}
+        - name: octavia-var
+          emptyDir: {}
+        {{- include "utils.proxysql.volumes" . | indent 8 }}
+        {{- include "utils.trust_bundle.volumes" . | indent 8 }}
+{{- end }}
+{{- end }}

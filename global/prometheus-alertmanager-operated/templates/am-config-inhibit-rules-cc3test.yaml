@@ -1,0 +1,55 @@
+apiVersion: monitoring.coreos.com/v1alpha1
+kind: AlertmanagerConfig
+metadata:
+  name: inhibit-rules-cc3test
+  labels:
+    alertmanager: {{ include "alertmanagerRelease.name" . }}
+spec:
+  inhibitRules:
+{{- range .Values.regions }}
+    - sourceMatch:
+        - matchType: "="
+          name: alertname
+          value: OpenstackKeystoneApiDown
+        - matchType: "="
+          name: region
+          value: '{{ . }}'
+      targetMatch:
+        - matchType: "=~"
+          name: alertname
+          value: '^CCloud(Limes|Netbox|Billing|Kubernikus|Maia|Hermes).*?ApiDown$'
+        - matchType: "="
+          name: region
+          value: '{{ . }}'
+    - sourceMatch:
+        - matchType: "="
+          name: alertname
+          value: OpenstackKeystoneApiDown
+        - matchType: "="
+          name: region
+          value: '{{ . }}'
+      targetMatch:
+        - matchType: "=~"
+          name: alertname
+          value: '^Openstack(Vcenter|Ironic|Glance|Swift|Barbican|Octavia|Neutron|Cinder|Manila|Designate|Nova).*?ApiDown$'
+        - matchType: "="
+          name: region
+          value: '{{ . }}'
+    - sourceMatch:
+        - matchType: "="
+          name: alertname
+          value: OpenstackDesignateCanaryRecordsetDown
+        - matchType: "="
+          name: region
+          value: '{{ . }}'
+      targetMatch:
+        - matchType: "="
+          name: alertname
+          value: CCloudHermesAuditEventMissing
+        - matchType: "="
+          name: meta
+          value: 'Hermes: TestHermes_hermes_designate missing audit events, see report for more details'
+        - matchType: "="
+          name: region
+          value: '{{ . }}'
+{{- end }}

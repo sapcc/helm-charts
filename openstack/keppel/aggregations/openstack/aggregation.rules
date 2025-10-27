@@ -1,0 +1,10 @@
+# vim: set ft=yaml:
+
+groups:
+- name: keppel
+  rules:
+
+    - record: global:keppel_healthmonitor_result
+      expr: 'avg(keppel_healthmonitor_result)'
+    - record: global:keppel_anycastmonitor_result
+      expr: 'avg by (primary_region) (label_replace(keppel_anycastmonitor_result, "primary_region", "$1", "account", "healthcheck-(.*)"))'

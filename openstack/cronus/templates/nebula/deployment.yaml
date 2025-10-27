@@ -1,0 +1,94 @@
+{{- if .Values.nebula.enabled }}
+apiVersion: apps/v1
+{{- if .Values.nebula.statefulSet.enabled }}
+kind: StatefulSet
+{{- else }}
+kind: Deployment
+{{- end }}
+metadata:
+  name: nebula
+  {{- if .Values.nebula.annotations }}
+  annotations:
+    {{ toYaml .Values.nebula.annotations | indent 4 }}
+  {{- end  }}
+  {{- if .Values.nebula.labels }}
+  labels:
+    {{ toYaml .Values.nebula.labels | indent 4 }}
+  {{- end }}
+spec:
+  replicas: {{ .Values.nebula.replicas }}
+  {{- if .Values.nebula.statefulSet.enabled }}
+  podManagementPolicy: {{ .Values.nebula.statefulSet.podManagementPolicy }}
+  serviceName: nebula
+  updateStrategy:
+  {{- else }}
+  strategy:
+{{- if eq "RollingUpdate" .Values.nebula.updateStrategy }}
+    rollingUpdate:
+      maxSurge: {{ .Values.nebula.maxSurge }}
+      maxUnavailable: {{ .Values.nebula.maxUnavailable }}
+{{- end }}
+  {{- end }}
+    type: {{ .Values.nebula.updateStrategy }}
+  selector:
+    matchLabels:
+      name: nebula
+      instance: nebula
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include "cronus/templates/nebula/_config.yaml.tpl" . | sha256sum }}
+      labels:
+        name: nebula
+        instance: nebula
+    spec:
+      serviceAccountName: nebula
+      containers:
+        - name: nebula
+          image: "{{ .Values.nebula.image.name }}:{{ .Values.nebula.image.tag }}"
+          imagePullPolicy: {{ .Values.nebula.image.pullPolicy }}
+          args:
+            - "-config=/nebula/config.yaml"
+          envFrom:
+            - secretRef:
+                name: nebula-secret  
+          volumeMounts:
+            - name: nebula-config
+              mountPath: "/nebula/"
+            {{- if .Values.postfix.postfixEnabled }}
+            - name: certs
+              mountPath: "/etc/certs"
+              readOnly: true
+            {{- end }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.nebula.http }}
+              protocol: TCP
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 3
+            periodSeconds: 2
+      terminationGracePeriodSeconds: {{ .Values.config.accountStatusTimeout }}
+      volumes:
+        - name: nebula-config
+          configMap:
+            name: nebula-config
+            items:
+            - key: config.yaml
+              path: config.yaml
+{{- if .Values.postfix.postfixEnabled }}
+        - name: certs
+          projected:
+            sources:
+              - secret:
+                  name: ldap-certs
+                  optional: false
+                  items:
+                    - key: tls.crt
+                      path: ldap.crt
+                    - key: tls.key
+                      path: ldap.key
+{{- end -}}
+{{- end -}}

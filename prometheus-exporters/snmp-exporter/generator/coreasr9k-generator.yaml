@@ -1,0 +1,137 @@
+modules:
+  coreasr9k:
+    walk:
+        [
+            bgpPeerRemoteAddr,
+            cempMemPoolHCFree,
+            cempMemPoolHCUsed,
+            cempMemPoolName,
+            cempMemPoolType,
+            cHsrpGrpStandbyState,
+            cHsrpGrpVirtualIpAddr,
+            cbgpPeer2AdminStatus,
+            cbgpPeer2State,
+            cbgpPeerAcceptedPrefixes,
+            cbgpPeerAdvertisedPrefixes,
+            ccmHistoryRunningLastChanged,
+            ccmHistoryRunningLastSaved,
+            cntpSysLeap,
+            cntpSysStratum,
+            cntpSysPrecision,
+            cntpSysPoll,
+            cntpSysPeer,
+            cntpSysRootDelay,
+            cntpSysRootDispersion,
+            cntpSysRefId,
+            cntpSysRefTime,
+            cntpSysClock,
+            cefcFRUPowerAdminStatus,
+            cefcFRUPowerOperStatus,
+            cpmCPUTotal1minRev,
+            cpmCPUTotal5minRev,
+            cpmCPUTotalPhysicalIndex,
+            entPhysicalName,
+            entPhysicalDescr,
+            entSensorThresholdSeverity,
+            entSensorThresholdValue,
+            entSensorType,
+            entSensorValue,
+            ifInDiscards,
+            ifInErrors,
+            ifHCInOctets,
+            ifInUcastPkts,
+            ifInUnknownProtos,
+            ifLastChange,
+            ifOutDiscards,
+            ifOutErrors,
+            ifHCOutOctets,
+            ifOutUcastPkts,
+            ntpEntStatusCurrentMode,
+            sysUpTime,
+            sysDescr,
+        ]
+    lookups:
+      - source_indexes: [ifIndex]
+        lookup: ifDescr
+      - source_indexes: [ifIndex]
+        lookup: ifType
+      - source_indexes: [ifIndex]
+        lookup: ifMtu
+      - source_indexes: [ifIndex]
+        lookup: ifHighSpeed
+      - source_indexes: [ifIndex]
+        lookup: ifPhysAddress
+      - source_indexes: [ifIndex]
+        lookup: ifAdminStatus
+      - source_indexes: [ifIndex]
+        lookup: ifOperStatus
+      - source_indexes: [ifIndex]
+        lookup: ifAlias
+      - source_indexes: [ifIndex]
+        lookup: cHsrpGrpVirtualIpAddr
+      - source_indexes: [entPhysicalIndex]
+        lookup: entPhysicalName
+      - source_indexes: [entPhysicalIndex]
+        lookup: entPhysicalDescr
+      - source_indexes: [entPhysicalIndex]
+        lookup: entSensorType
+      - source_indexes: [entPhysicalIndex]
+        lookup: entSensorThresholdSeverity
+      - source_indexes: [cempMemPoolIndex]
+        lookup: cempMemPoolName
+      - source_indexes: [cempMemPoolIndex]
+        lookup: cempMemPoolType
+    overrides: 
+      cntpSysRootDelay:
+        regex_extracts: 
+          '': 
+            - regex: '(.*)' 
+              value: '$1'
+      cntpSysRootDispersion:
+        regex_extracts: 
+          '': 
+            - regex: '(.*)' 
+              value: '$1'
+      ifAlias:
+        ignore: true # Lookup metric
+      ifDescr:
+        ignore: true
+      ifName:
+        ignore: true
+      ifType:
+        type: EnumAsInfo
+      ifMtu:
+        ignore: true
+      ifHighSpeed:
+        ignore: true
+      ifPhysAddress:
+        type: PhysAddress48
+      ifAdminStatus:
+        ignore: true
+      ifOperStatus:
+        ignore: true
+      cHsrpGrpVirtualIpAddr:
+        ignore: true
+      entPhyscalName:
+        ignore: true
+      entPhysicalDescr:
+        ignore: true
+      cempMemPoolName:
+        ignore: true
+      cempMemPoolType:
+        ignore: true
+      entSensorType:
+        ignore: true
+      cpmCPUTotalPhysicalIndex:
+        ignore: true
+      entSensorThresholdSeverity:
+        ignore: true
+      entPhysicalName:
+        ignore: true
+      cntpSysClock:
+        type: DisplayString
+      cntpSysRefTime:
+        type: DisplayString
+    max_repetitions: 25
+    retries: 3
+    timeout: 10s

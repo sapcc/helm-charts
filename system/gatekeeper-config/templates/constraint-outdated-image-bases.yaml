@@ -1,0 +1,14 @@
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: GkOutdatedImageBases
+metadata:
+  name: outdatedimagebases
+  annotations:
+    {{- include "sources" (tuple "outdated-image-bases" "outdated-image-bases") | indent 4 }}
+    {{- include "docstring" (tuple $ "GkOutdatedImageBases") | indent 4 }}
+  labels:
+    severity: 'info'
+spec:
+  enforcementAction: dryrun # change to "deny" to enforce
+  match: {{ include "match_pods_and_pod_owners" . | indent 4 }}
+  parameters:
+    doopImageCheckerURL: {{ quote .Values.doop_image_checker_url }}

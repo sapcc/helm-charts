@@ -1,0 +1,247 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}
+  labels:
+    app.kubernetes.io/name: {{ .Release.Name }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    helm.sh/chart: {{ include "bind.chart" . }}
+    app: {{ .Release.Name }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/name: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/name: {{ .Release.Name }}
+      annotations:
+        checksum/bind.config: {{ include "bind/templates/config.yaml" . | sha256sum }}
+    spec:
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+{{- include "node_maintenance_affinity" . }}
+{{- include "node_reinstall_affinity" . }}
+        {{ if not .Values.anti_affinity_disabled }}
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: "app"
+                    operator: In
+                    values:
+                    {{ if eq .Values.name (printf "bind1-%s" (.Values.global.region)) }}- bind2-{{.Values.global.region}}{{ end }}
+                    {{ if eq .Values.name (printf "bind2-%s" (.Values.global.region)) }}- bind1-{{.Values.global.region}}{{ end }}
+                    {{ if eq .Values.name (printf "bind1-global-%s" (.Values.global.region)) }}- bind2-global-{{.Values.global.region}}{{ end }}
+                    {{ if eq .Values.name (printf "bind2-global-%s" (.Values.global.region)) }}- bind1-global-{{.Values.global.region}}{{ end }}
+              topologyKey: "kubernetes.io/hostname"
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 1
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                  - key: "app"
+                    operator: In
+                    values:
+                    {{ if eq .Values.name (printf "bind1-%s" (.Values.global.region)) }}- bind2-{{.Values.global.region}}{{ end }}
+                    {{ if eq .Values.name (printf "bind2-%s" (.Values.global.region)) }}- bind1-{{.Values.global.region}}{{ end }}
+                    {{ if eq .Values.name (printf "bind1-global-%s" (.Values.global.region)) }}- bind2-global-{{.Values.global.region}}{{ end }}
+                    {{ if eq .Values.name (printf "bind2-global-%s" (.Values.global.region)) }}- bind1-global-{{.Values.global.region}}{{ end }}
+              topologyKey: "failure-domain.beta.kubernetes.io/zone"
+        {{ end }} 
+      containers:
+      - name: {{ .Release.Name }}
+        image: {{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{.Values.images.bind.image}}:{{ .Values.images.bind.image_tag}}
+        imagePullPolicy: {{ .Values.image_pullPolicy }}
+        resources:
+{{ toYaml .Values.resources.bind | indent 10 }}
+        ports:
+          - name: dns-tcp
+            containerPort: 53
+            protocol: TCP
+          - name: dns-udp
+            containerPort: 53
+            protocol: UDP
+          - name: rndc-tcp
+            containerPort: {{ .Values.rndc_port | default 953 }}
+            protocol: TCP
+{{- if .Values.zabbix.enabled }}
+          - name: zabbix-tcp
+            containerPort: {{ .Values.zabbix.port | default 10050 }}
+            protocol: TCP
+{{- end }}
+{{- if .Values.sshd.enabled }}
+          - name: sshd-tcp
+            containerPort: {{ .Values.sshd.port | default 22 }}
+            protocol: TCP
+          - name: sshd-6c-tcp
+            containerPort: {{ .Values.sshd.port | default 5487 }}
+            protocol: TCP
+{{- end }}
+        {{ if .Values.extra_env }}
+{{ toYaml .Values.extra_env | indent 8 }}
+        {{ end }}
+
+{{- if .Values.secret_env }}
+        envFrom:
+          - secretRef:
+              name: {{ .Release.Name }}-secret-env
+{{- end }}
+
+        volumeMounts:
+          - name: persistent-storage
+            mountPath: {{ .Values.storage_mountpoint | default "/var/lib/bind" }}
+          {{- if .Values.override_conf }}
+          - name: bind-keys-rndc
+            mountPath: "/etc/bind/rndc.key"
+            subPath: rndc.key
+          - name: bind-keys-tsig
+            mountPath: "/etc/bind/tsig.key"
+            subPath: tsig.key
+          {{- if .Values.nsi_key }}
+          - name: bind-keys-nsi
+            mountPath: "/etc/bind/nsi.key"
+            subPath: nsi.key
+          {{- end }}
+          - name: bind-conf
+            mountPath: "/etc/bind/named.conf"
+            subPath: named.conf
+          {{- end }}
+        livenessProbe:
+          exec:
+            command:
+              - rndc
+              - status
+          initialDelaySeconds: 15
+          timeoutSeconds: 5
+          periodSeconds: 10
+        readinessProbe:
+          exec:
+            command:
+              - rndc
+              - status
+          initialDelaySeconds: 15
+          timeoutSeconds: 3
+          periodSeconds: 10
+      - name: metric
+        image: {{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{.Values.images.bind_exporter.image}}:{{ .Values.images.bind_exporter.image_tag }}
+        imagePullPolicy: {{ .Values.image_pullPolicy }}
+        args: ["--bind.stats-url={{ .Values.exporter_stats_url }}","--bind.pid-file=/var/run/named/named.pid","--bind.stats-groups=server,view,tasks"]
+        resources:
+{{ toYaml .Values.resources.metric | indent 10 }}
+{{ if .Values.zabbix.enabled }}
+      - name: zabbix
+        image: {{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{.Values.images.zabbix_agent.image}}:{{ .Values.images.zabbix_agent.image_tag }}
+        imagePullPolicy: {{ .Values.image_pullPolicy }}
+        resources:
+{{ toYaml .Values.resources.zabbix | indent 10 }}
+        env:
+        - name: ZBX_DEBUGLEVEL
+          value: "3"
+        - name: ZBX_TLSCONNECT
+          value: "cert"
+        - name: ZBX_TLSACCEPT
+          value: "cert"
+        - name: ZBX_TLSCAFILE
+          value: "/etc/zabbix/ssl/tls.ca"
+        - name: ZBX_TLSSERVERCERTISSUER
+          value: "CN=SDF Cloud Ops - Monitor,OU=SDF Cloud Ops,O=SAP,C=DE"
+        - name: ZBX_TLSCERTFILE
+          value: "/etc/zabbix/ssl/tls.crt"
+        - name: ZBX_TLSKEYFILE
+          value: "/etc/zabbix/ssl/tls.key"
+        - name: RNDC_BIN
+          value: "/usr/sbin/rndc -k /etc/rndc/rndc.key -s 127.0.0.1 -p 953"
+        volumeMounts:
+          - name: zabbix-tls
+            mountPath: "/etc/zabbix/ssl/"
+          - name: zabbix-conf
+            mountPath: "/etc/zabbix/zabbix_agentd.d/"
+          - name: persistent-storage
+            mountPath: {{ .Values.storage_mountpoint | default "/var/lib/bind" }}
+          - name: bind-rndc-key
+            mountPath: "/etc/bind/rndc.key"
+            subPath: rndc.key
+{{ end }}
+{{ if .Values.sshd.enabled }}
+      - name: sshd
+        image: {{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{.Values.images.sshd.image}}:{{ .Values.images.sshd.image_tag }}
+        imagePullPolicy: {{ .Values.image_pullPolicy }}
+        resources:
+{{ toYaml .Values.resources.sshd | indent 10 }}
+
+{{- if .Values.sshd.env }}
+        env:
+{{ toYaml .Values.sshd.env | indent 10 }}
+{{- end }}
+
+{{- if .Values.sshd.secret_env }}
+        envFrom:
+          - secretRef:
+              name: {{ .Release.Name }}-sshd-secret-env
+{{- end }}
+
+        volumeMounts:
+          - name: persistent-storage
+            mountPath: {{ .Values.storage_mountpoint | default "/var/lib/bind" }}
+          - name: sshd-persistent-storage
+            mountPath: "/etc/ssh/keys"
+          - name: bind-rndc-key
+            mountPath: "/etc/bind/rndc.key"
+            subPath: rndc.key
+{{ end }}
+      volumes:
+      - name: persistent-storage
+        persistentVolumeClaim:
+          claimName: {{ .Release.Name }}
+      {{- if .Values.override_conf }}
+      - name: bind-keys-rndc
+        secret:
+          secretName: {{ .Release.Name }}-keys
+          items:
+          - key: rndc.key
+            path: rndc.key
+      - name: bind-keys-tsig
+        secret:
+          secretName: {{ .Release.Name }}-keys
+          items:
+          - key: tsig.key
+            path: tsig.key
+      - name: bind-conf
+        configMap:
+          name: {{ .Release.Name }}
+      {{- end }}
+      {{- if .Values.nsi_key }}
+      - name: bind-keys-nsi
+        secret:
+          secretName: {{ .Release.Name }}-keys
+          items:
+          - key: nsi.key
+            path: nsi.key
+      {{- end }}
+      {{- if .Values.zabbix.enabled }}
+      - name: zabbix-tls
+        secret:
+          secretName: {{ .Release.Name }}-zabbix-tls
+      - name: zabbix-conf
+        configMap:
+          name: {{ .Release.Name }}-zabbix-conf
+          items:
+          - key: zabbix-bind.conf
+            path: zabbix-bind.conf
+      {{- end }}
+      {{- if or .Values.zabbix.enabled .Values.sshd.enabled }}
+      - name: bind-rndc-key
+        secret:
+          secretName: {{ .Release.Name }}-rndc-key
+      {{- end }}
+      {{- if .Values.sshd.enabled }}
+      - name: sshd-persistent-storage
+        persistentVolumeClaim:
+          claimName: {{ .Release.Name }}-sshd
+      {{- end }}

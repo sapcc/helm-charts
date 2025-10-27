@@ -1,0 +1,79 @@
+kind: Deployment
+apiVersion: apps/v1
+
+metadata:
+  name: ironic-pxe
+  labels:
+    system: openstack
+    type: backend
+    component: ironic
+spec:
+  replicas: {{ .Values.pod.replicas.pxe }}
+  revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revisionHistory }}
+  strategy:
+    type: {{ .Values.pod.lifecycle.upgrades.deployments.podReplacementStrategy }}
+    {{ if eq .Values.pod.lifecycle.upgrades.deployments.podReplacementStrategy "RollingUpdate" }}
+    rollingUpdate:
+      maxUnavailable: {{ .Values.pod.lifecycle.upgrades.deployments.rollingupdate.maxUnavailable }}
+      maxSurge: {{ .Values.pod.lifecycle.upgrades.deployments.rollingupdate.maxSurge }}
+    {{ end }}
+  selector:
+    matchLabels:
+      name: ironic-pxe
+  template:
+    metadata:
+      labels:
+        name: ironic-pxe
+{{ tuple . "ironic" "pxe" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
+      annotations:
+        kubectl.kubernetes.io/default-container: ironic-tftp
+        configmap-pxe-hash: {{ include (print $.Template.BasePath "/pxe-configmap.yaml") . | sha256sum }}
+        {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
+    spec:
+      containers:
+      - name: ironic-tftp
+        image: {{ .Values.global.registry }}/loci-ironic:{{ .Values.imageVersion }}
+        imagePullPolicy: IfNotPresent
+        command: ["ptftpd", "-v", "-d", "ironic.pxe.tftpmap.handle", "eth0", "/tftpboot"]
+        ports:
+        - name: ironic-tftp
+          protocol: UDP
+          containerPort: {{.Values.global.ironic_pxe_port_public}}
+        volumeMounts:
+        - mountPath: /tftpboot
+          name: ironic-tftp
+        {{- include "utils.trust_bundle.volume_mount" . | indent 8 }}
+        resources:
+{{ toYaml .Values.pod.resources.pxe | indent 10 }}
+      - name: ironic-ipxe
+        image: {{ .Values.global.dockerHubMirror }}/library/{{ .Values.imageVersionNginx | default "nginx:stable-alpine" }}
+        imagePullPolicy: IfNotPresent
+        ports:
+        - name: ironic-ipxe
+          protocol: TCP
+          containerPort: 80
+        volumeMounts:
+        - mountPath: /srv/tftpboot
+          name: ironic-tftp
+        - mountPath: /etc/nginx/conf.d
+          name: ironic-pxe
+        lifecycle:
+          preStop:
+            {{- include "utils.snippets.pre_stop_graceful_shutdown" . | indent 12 }}
+        livenessProbe:
+          httpGet:
+            path: /tftpboot/
+            port: ironic-ipxe
+          initialDelaySeconds: 5
+          periodSeconds: 3
+        resources:
+{{ toYaml .Values.pod.resources.pxe | indent 10 }}
+      volumes:
+      - name: ironic-tftp
+        persistentVolumeClaim:
+          claimName: ironic-tftp-pvclaim
+      - name: ironic-pxe
+        configMap:
+          name: ironic-pxe
+          defaultMode: 0444
+      {{- include "utils.trust_bundle.volumes" . | indent 6 }}

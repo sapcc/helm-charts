@@ -1,0 +1,30 @@
+groups:
+- name: apicexporter.alerts
+  rules:
+  - alert: NetworkApicAccessibilityMetricMissing
+    expr: absent(network_apic_accessible{job="apic-exporter"})
+    for: 30m
+    labels:
+      severity: warning
+      service: exporter
+      support_group: "observability"
+      context: apic-exporter-metrics
+      meta: APIC accessibility metrics missing
+      playbook: docs/operation/exporters/apic_exporter/#networkapicmetricsscrapedown
+    annotations:
+      description: "APIC accessibility metrics missing for 30 min"
+      summary: "APIC accessibility metrics missing for 30 min"
+
+  - alert: NetworkApicMetricsScrapeDown
+    expr: absent(up{job="apic-exporter"}) or up{job="apic-exporter"} == 0
+    for: 15m
+    labels:
+      severity: warning
+      service: exporter
+      support_group: "observability"
+      context: apic-exporter-scrape
+      meta: Prometheus cannot scrape APIC exporter
+      playbook: docs/operation/exporters/apic_exporter/#networkapicmetricsscrapedown
+    annotations:
+      description: "Prometheus cannot scrape APIC exporter for 15 min"
+      summary: "Check APIC exporter {{ $labels.kubernetes_pod_name }} for problems"

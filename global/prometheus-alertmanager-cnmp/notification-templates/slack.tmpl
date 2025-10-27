@@ -1,0 +1,27 @@
+{{ define "slack.sapcc.color" }}{{ if .Alerts.Firing | and .Alerts.Resolved }}warning{{ else if .Alerts.Firing }}danger{{ else }}good{{ end }}{{ end }}
+{{ define "slack.sapcc.iconemoji" }}:fire_engine:{{ end }}
+{{ define "slack.sapcc.title" }}{{ end }}
+{{ define "slack.sapcc.titlelink" }}{{ end }}
+{{ define "slack.sapcc.pretext" }} {{- end }}
+
+{{ define "slack.sapcc.text" }}
+{{ if .Alerts.Firing }}*[{{ .CommonLabels.severity | toUpper }}{{ if gt (len .Alerts.Firing) 1 | or .Alerts.Resolved }} - {{ .Alerts.Firing | len }}{{ end }}]* {{ end -}}
+{{ if .Alerts.Resolved }}*[RESOLVED{{ if gt (len .Alerts.Resolved) 1 | or .Alerts.Firing }} - {{ .Alerts.Resolved | len }}{{ end }}]* {{ end -}}
+  *[{{ .CommonLabels.cluster | toUpper }}]* {{ if and .ExternalURL .Receiver }}*<{{ .ExternalURL }}/#/alerts?receiver={{ .Receiver }}&filter=%7Balertname%3D"{{ .GroupLabels.alertname }}"%7D|{{ .GroupLabels.alertname }}>*{{ else }}{{ .GroupLabels.alertname }}{{ end }} - {{ .CommonAnnotations.summary }}
+
+{{- $generatorURL := "" }}
+{{ range .Alerts.Firing -}}
+  {{ if eq .Labels.severity "warning" }}:warning: {{ end -}}
+  {{ if eq .Labels.severity "critical" }}:fire: {{ end -}}
+  {{ if eq .Labels.severity "info" }}:information_source: {{ end -}}
+  {{ .Annotations.description }}
+{{- $generatorURL = .GeneratorURL }}
+{{ end -}}
+{{ range .Alerts.Resolved -}}
+  :white_check_mark: {{ .Annotations.description }}
+{{- if not $generatorURL }}{{ $generatorURL = .GeneratorURL }}{{ end }}
+{{ end -}}
+
+*<{{ $generatorURL }}|Prometheus>*
+{{ if .CommonLabels.dashboard }}*<https://grafana.{{ .CommonLabels.cluster }}.{{ .CommonLabels.region }}.cloud.sap/d/{{ .CommonLabels.dashboard }}|Grafana>* {{ end -}}
+{{ end }}

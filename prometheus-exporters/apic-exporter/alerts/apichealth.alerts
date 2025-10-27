@@ -1,0 +1,44 @@
+groups:
+- name: apichealth.alerts
+  rules:
+  - alert: NetworkApicHostNotResponding
+    expr: sum(network_apic_accessible)/count(network_apic_accessible) == 0
+    for: 5m
+    labels:
+      severity: warning
+      tier: net
+      service: apic
+      context: apic-health
+      dashboard: apic-health
+      playbook: /docs/devops/alert/network/aci/#networkapichostnotresponding
+    annotations:
+      description: "All APICs hosts are not responding for more than 2 minutes"
+      summary: "All APICs hosts are not responding for more than 2 minutes"
+
+  - alert: NetworkApicHostNotResponding
+    expr: network_apic_accessible == 0
+    for: 5m
+    labels:
+      severity: warning
+      tier: net
+      service: apic
+      context: apic-health
+      dashboard: apic-health
+      playbook: /docs/devops/alert/network/aci/#networkapichostnotresponding
+    annotations:
+      description: "APIC host {{ $labels.apicHost }} is not responding for more than 2 minutes"
+      summary: "APIC host {{ $labels.apicHost }} is not responding for more than 2 minutes"
+
+  - alert: NetworkApicHostMissingMetric
+    expr: absent(network_apic_accessible) == 1
+    for: 30m
+    labels:
+      severity: warning
+      service: exporter
+      support_group: "observability"
+      context: apic-health
+      dashboard: apic-health
+      playbook: /docs/devops/alert/network/aci/#networkapichostmissingmetric
+    annotations:
+      description: "APICs host metric is missing"
+      summary: "APICs host metric is missing - alerting is broken"

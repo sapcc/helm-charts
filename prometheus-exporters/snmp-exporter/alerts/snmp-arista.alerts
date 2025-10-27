@@ -1,0 +1,19 @@
+groups:
+- name: snmp-arista.alerts
+  rules:
+  - alert: AristaSwitchCRCErrorCritical
+    # Observation of CRC erros on Arista switch interface
+    expr: delta(snmp_arista_etherStatsCRCAlignErrors[30m]) * on (name,ifIndex) group_right snmp_arista_ifAlias > 500
+    for: 0m
+    labels:
+      severity: critical
+      support_group: network-data
+      tier: net
+      service: arista
+      context: arista
+      meta: "Interface CRC Error on {{ $labels.devicename }}"
+      playbook: /docs/devops/alert/network/switch#arista_if_error
+      dashboard: arista-monitoring-crc
+    annotations:
+      description: "CRC errors on interface {{ $labels.ifDescr }} on {{ $labels.devicename }}"
+      summary: "CRC errors on interface {{ $labels.ifDescr }} on {{ $labels.devicename }}"

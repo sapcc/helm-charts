@@ -1,0 +1,59 @@
+{{- $root := . }}
+{{- range $name := coalesce .Values.names .Values.global.targets (list .Values.name) }}
+---
+# This ServiceMonitor is used for monitoring the Thanos components itself.
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+
+metadata:
+  name: {{ include "thanos.fullName" (list $name $root) }}
+  labels:
+    prometheus: {{ default (include "thanos.name" (list $name $root)) $.Values.alerts.prometheus }}
+
+spec:
+  jobLabel: {{ include "thanos.name" (list $name $root) }}
+
+  selector:
+    matchLabels:
+      thanos: {{ include "thanos.name" (list $name $root) }}
+
+  endpoints:
+    - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+      interval: 30s
+      scrapeTimeout: 25s
+      port: http
+      scheme: http
+      relabelings:
+        - action: replace
+          targetLabel: thanos
+          replacement: {{ include "thanos.name" (list $name $root) }}
+        - action: labelmap
+          regex: '__meta_kubernetes_service_label_(.+)'
+        - sourceLabels:
+            - __meta_kubernetes_namespace
+          targetLabel: kubernetes_namespace
+        - sourceLabels:
+            - __meta_kubernetes_service_name
+          targetLabel: kubernetes_name
+{{ include "thanos.defaultRelabelConfig" $root | indent 8 }}
+{{- if and $.Values.ruler.enabled (eq $.Values.deployWholeThanos false) }}
+    - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+      interval: 30s
+      scrapeTimeout: 25s
+      port: web
+      scheme: http
+      relabelings:
+        - action: replace
+          targetLabel: thanos
+          replacement: {{ include "thanos.name" (list $name $root) }}
+        - action: labelmap
+          regex: '__meta_kubernetes_service_label_(.+)'
+        - sourceLabels:
+            - __meta_kubernetes_namespace
+          targetLabel: kubernetes_namespace
+        - sourceLabels:
+            - __meta_kubernetes_service_name
+          targetLabel: kubernetes_name
+{{ include "thanos.defaultRelabelConfig" $root | indent 8 }}
+{{- end }}
+{{- end }}

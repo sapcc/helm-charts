@@ -1,0 +1,172 @@
+---
+# values for Percona XtraDB Cluster
+
+## percona image and version
+## ref: https://hub.docker.com/r/percona/percona-xtradb-cluster/tags/
+image:
+  repository: "percona/percona-xtradb-cluster"
+  tag: "5.7.44-31.65"
+  pullPolicy: IfNotPresent
+
+# Desired number of members (Per region)
+replicas: 1
+# Desired cluster size (Cross region)
+cluster_size: 3
+
+db_name: test
+pxc_strict_mode: ENFORCING
+allowRootFrom: "%"
+
+root_password: notasecurepassword
+db_user: test
+dbPassword: test
+mysqlAllowEmptyPassword: false
+xtraBackupPassword: test
+
+# claim name is used as a prefix for full release name
+persistence:
+  enabled: true
+  accessMode: ReadWriteMany
+  claimName: db-global
+  size: 100Gi
+  # storageClass: "-"
+
+podAnnotations: {}
+nodeAffinity: {}
+tolerations: []
+
+# name of priorityClass to influence scheduling priority
+# priority_class:
+
+resources:
+  requests:
+    memory: 2048Mi
+    cpu: 1000m
+
+configFiles:
+  node.cnf: |+
+    [mysqld]
+    skip-name-resolve               = 1
+    datadir                         = /var/lib/mysql
+    default_storage_engine          = InnoDB
+    binlog_format                   = ROW
+    server-id                       = 1
+    max_connections                 = 1024
+    innodb_flush_log_at_trx_commit  = 2
+    innodb_flush_method             = O_DIRECT
+    innodb_file_per_table           = 1
+    innodb_autoinc_lock_mode        = 2
+    innodb_buffer_pool_size         = 1024M
+    innodb_log_file_size            = 512M
+    innodb_open_files               = 4000
+    innodb_stats_on_metadata        = 0
+    innodb_thread_concurrency       = 0
+    innodb_read_io_threads          = 8
+    innodb_write_io_threads         = 8
+    innodb_print_all_deadlocks      = 1
+    log_bin_trust_function_creators = 1
+    bind_address                    = 0.0.0.0
+    slow_query_log                  = 1
+    long_query_time                 = 5
+    wsrep_slave_threads             = 8
+    wsrep_log_conflicts             = ON
+    wsrep_cluster_address           = gcomm://
+    wsrep_provider                  = /usr/lib64/galera3/libgalera_smm.so
+    wsrep_cluster_name              = galera
+    wsrep_sst_method                = xtrabackup-v2
+    wsrep_debug                     = 1
+    [sst]
+    sst-initial-timeout             = 300
+
+metrics:
+  enabled: true
+  tag: "v0.18.0"
+  ## Password for exporter user (replaces auto-generated password)
+  monitorPassword: longpassword
+  flags:
+    - collect.binlog_size
+    - collect.info_schema.processlist
+    - collect.info_schema.query_response_time
+    - collect.info_schema.innodb_tablespaces
+
+alerts:
+  prometheus: openstack
+  tier: os
+
+prometheus:
+  operator:
+    ## Setting to true will create Prometheus-Operator specific resources like ServiceMonitors
+    enabled: false
+
+    ## Configures alerts for Prometheus to pick up
+    prometheusRule:
+      enabled: true
+      ## Labels to add to alerts
+      labels: {}
+      ## Namespace which Prometheus is installed in
+      # namespace: monitoring
+      ## Label Selector for Prometheus to find alert rules
+      # selector:
+      #   prometheus: kube-prometheus
+
+    ## Configures targets for Prometheus to pick up
+    serviceMonitor:
+      ## Interval at which Prometheus will scrape metrics exporter
+      interval: 10s
+      ## Namespace which Prometheus is installed in
+      # namespace: monitoring
+      ## Label Selector for Prometheus to find ServiceMonitors
+      # selector:
+      #   prometheus: kube-prometheus
+
+ssl:
+  enabled: false
+  secret: pxc-ssl-certs
+  certificates:
+#  - name: pxc-ssl-certs
+#    ca: |-
+#      -----BEGIN CERTIFICATE-----
+#      ...
+#      -----END CERTIFICATE-----
+#    cert: |-
+#      -----BEGIN CERTIFICATE-----
+#      ...
+#      -----END CERTIFICATE-----
+#    key: |-
+#      -----BEGIN RSA PRIVATE KEY-----
+#      ...
+#      -----END RSA PRIVATE KEY-----
+
+podDisruptionBudget:
+  enabled: false
+  # minAvailable: 1
+  maxUnavailable: 1
+
+tests:
+  enabled: false
+
+# segment to be set different for far locations
+gmcast_segment: 1
+
+backup:
+  enabled: false
+  image: percona/percona-xtradb-cluster-operator
+  image_tag: "1.14.1-pxc5.7-backup-pxb2.4.29"  # NOTE: this is the last version with included peer-list binary
+  schedule: "30 * * * *"
+  claimName: backup-pvc
+  security_context_ids: 1000
+  retentionDays: 7
+
+global:
+  region: global
+  db_region: eu-de-1
+  linkerd_requested: true
+
+# Set 'primary' to true for initiating a bootstrap below:
+service:
+  primary: false
+  headless: false
+  regions:
+    eu-de-1: "10.46.2.111"
+    eu-de-2: "10.46.180.111"
+    eu-nl-1: "10.46.78.111"

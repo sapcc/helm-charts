@@ -1,0 +1,101 @@
+{{- if .Values.thanos.enabled -}}
+apiVersion: greenhouse.sap/v1alpha1
+kind: PluginPreset
+metadata:
+  name: thanos
+  namespace: ccloud
+  labels:
+    greenhouse.sap/owned-by: observability
+{{- if .Values.global.fluxEnabled }}
+    greenhouse.sap/deployment-tool: "flux"
+  annotations:
+    "greenhouse.sap/propagate-labels": "greenhouse.sap/owned-by,greenhouse.sap/deployment-tool"
+{{- else }}
+  annotations:
+    "greenhouse.sap/propagate-labels": "greenhouse.sap/owned-by"
+{{- end }}
+spec:
+  clusterOptionOverrides:
+  {{- range $plugin := .Values.ingressPlugins }}
+  {{- $ingressDomain := trimSuffix "." (trimPrefix "ingress." $plugin.recordName) }}
+  - clusterName: {{ $plugin.cluster }}
+    overrides:
+    - name: thanos.query.ingress.grpc.hosts
+      value:
+        - host: "thanos-grpc.{{ $ingressDomain }}"
+          paths:
+            - path: /
+              pathType: ImplementationSpecific
+    - name: thanos.query.ingress.grpc.tls
+      value:
+        - hosts:
+            - "thanos-grpc.{{ $ingressDomain }}"
+          secretName: {{ printf "tls-thanos-grpc-%s" $ingressDomain | replace "." "-" }}
+    - name: thanos.serviceMonitor.selfMonitor
+      value: true
+    - name: thanos.serviceMonitor.labels
+      value:
+        plugin: "kube-monitoring"
+  {{- end }}
+  clusterSelector:
+    matchExpressions:
+    - key: greenhouse.sap/pluginpreset
+      operator: In
+      values:
+      - "true"
+    - key: cluster
+      operator: In
+      values:
+{{- range $serviceName, $serviceSpecs := .Values.kubeMonitoring.services }}
+{{- range $cluster, $additionalSettings := $serviceSpecs.clusters }}
+    {{- if index $additionalSettings "thanos" }}
+      - {{ $cluster }}
+    {{- end }}
+{{- end }}
+{{- end }}
+  plugin:
+    displayName: Thanos
+    pluginDefinition: thanos
+    releaseNamespace: kube-monitoring
+    optionValues:
+    {{- if and .Values.global.quayIoMirror .Values.global.ghcrIoMirror .Values.global.dockerHubMirror }}
+    - name: thanos.image.repository
+      value: {{ printf "%s/thanos/thanos" .Values.global.quayIoMirror }}
+    - name: thanos.initChownData.image.registry
+      value: {{ .Values.global.dockerHubMirror }}
+    - name: testFramework.image.registry
+      value: {{ .Values.global.ghcrIoMirror }}
+    {{- end }}
+    - name: thanos.ruler.enabled
+      value: false
+    - name: thanos.ruler.alertmanagers.enabled
+      value: true
+    - name: thanos.ruler.alertmanagers.authentication.ssoCert
+      valueFrom:
+        secret:
+          key: tls.crt
+          name: tls-ccloud-prometheus-auth
+    - name: thanos.ruler.alertmanagers.authentication.ssoKey
+      valueFrom:
+        secret:
+          key: tls.key
+          name: tls-ccloud-prometheus-auth
+    - name: thanos.query.ingress.grpc.annotations
+      value:
+        disco: "true"
+        kubernetes.io/tls-acme: "true"
+        nginx.ingress.kubernetes.io/backend-protocol: GRPC
+        nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    - name: thanos.query.ingress.grpc.enabled
+      value: true
+    - name: thanos.query.ingress.grpc.ingressClassName
+      value: nginx
+    - name: thanos.serviceMonitor.alertLabels
+      value: |
+        support_group: observability
+        service: metrics
+    - name: thanos.existingObjectStoreSecret.name
+      value: thanos-metrics-objectstore
+    - name: thanos.existingObjectStoreSecret.configFile
+      value: thanos.yaml
+{{- end -}}

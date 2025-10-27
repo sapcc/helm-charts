@@ -1,0 +1,98 @@
+kind: Deployment
+apiVersion: apps/v1
+
+metadata:
+  name: glas-api
+
+spec:
+  revisionHistoryLimit: 5
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      name: glas-api
+  template:
+    metadata:
+      labels:
+        name: glas-api
+      annotations:
+        kubectl.kubernetes.io/default-container: api
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: name
+                  operator: In
+                  values:
+                  - glas-api
+              topologyKey: "kubernetes.io/hostname"
+            weight: 10
+      volumes:
+        - name: config
+          secret:
+            secretName: glas-secret
+        - name: cache
+          persistentVolumeClaim:
+            claimName: glas-cache-10gib
+      initContainers:
+        - name: chown
+          securityContext:
+            runAsUser: 0
+          image: "{{ required ".Values.global.registry variable missing" $.Values.global.registry }}/shared-app-images/alpine-busybox:3.22-latest"
+          imagePullPolicy: Always # -> if this pod shows up as having a vulnerable image, a rebuild and restart should suffice to get it back to Clean
+          command: ["sh", "-c", "chown -R 4200:4200 /tmp/glas/"]
+          volumeMounts:
+            - name: cache
+              mountPath: /tmp/glas
+      containers:
+        - name: api
+          image: {{ $.Values.global.registry }}/hubcopter:{{ $.Values.hubcopter.image_tag | required ".Values.hubcopter.image_tag is missing" }}
+          imagePullPolicy: IfNotPresent
+          command: [ "/usr/bin/glas" ]
+          args: [ ]
+          env:
+            - name:  GIT_SSH_COMMAND
+              value: 'ssh -o UserKnownHostsFile=/tmp/glas/known_hosts -o StrictHostKeyChecking=accept-new'
+            - name:  GLAS_DEBUG
+              value: 'true'
+            - name: GLAS_DEPLOY_KEYS_PATH
+              value: '/etc/glas'
+            - name:  GLAS_STATE_DIR
+              value: '/tmp/glas'
+          securityContext:
+            runAsNonRoot: true
+          volumeMounts:
+{{- range $k,$v := required ".Values.hubcopter.deploy_keys is missing" .Values.hubcopter.deploy_keys }}
+            - mountPath: /etc/glas/{{ $k }}
+              name: config
+              readOnly: true
+              subPath: {{ $k }}
+{{- end }}
+            - name: cache
+              mountPath: /tmp/glas
+          livenessProbe:
+            httpGet:
+              path: /healthcheck
+              port: 8081
+            timeoutSeconds: 10
+            periodSeconds: 60
+            initialDelaySeconds: 60
+          readinessProbe:
+            httpGet:
+              path: /healthcheck
+              port: 8081
+            timeoutSeconds: 5
+            periodSeconds: 5
+          resources:
+            # getting killed du to memory limits while doing a git clone taints the cache.
+            # To fix that remove the effected repository from the pvc and restart the pod.
+            requests:
+              cpu: "1"
+              memory: "4Gi"
+            limits:
+              cpu: "3"
+              memory: "4Gi"

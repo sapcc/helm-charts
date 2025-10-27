@@ -1,0 +1,68 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    apiserver: "true"
+    k8s-app: calico-apiserver
+  name: calico-apiserver
+  namespace: {{ .Values.namespace }}
+spec:
+  replicas: {{ .Values.replicas }}
+  selector:
+    matchLabels:
+      apiserver: "true"
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        apiserver: "true"
+        k8s-app: calico-apiserver
+      name: calico-apiserver
+      namespace: {{ .Values.namespace }}
+    spec:
+      containers:
+      - args:
+        - --secure-port={{ .Values.securePort }}
+        - -v=5
+        env:
+        - name: DATASTORE_TYPE
+          value: kubernetes
+        image: "{{ required ".Values.global.dockerHubMirrorAlternateRegion is missing" $.Values.global.dockerHubMirrorAlternateRegion }}/{{ $.Values.images.apiserver.image }}:{{ $.Values.images.apiserver.tag }}"
+        name: calico-apiserver
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: {{ .Values.securePort }}
+            scheme: HTTPS
+          timeoutSeconds: 5
+          periodSeconds: 60
+        securityContext:
+          privileged: false
+          runAsUser: 0
+        volumeMounts:
+        - mountPath: /code/apiserver.local.config/certificates
+          name: calico-apiserver-certs
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      serviceAccount: calico-apiserver
+      serviceAccountName: calico-apiserver
+      hostNetwork: true
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+      {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+      {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if .Values.tolerations }}
+      tolerations:
+      {{- with .Values.tolerations }}
+      {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- end }}
+      volumes:
+      - name: calico-apiserver-certs
+        secret:
+          secretName: calico-apiserver-certs

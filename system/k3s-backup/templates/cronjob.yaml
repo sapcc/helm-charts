@@ -1,0 +1,56 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: k3s-backup
+spec:
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    metadata:
+      name: k3s-backup
+    spec:
+      template:
+        metadata:
+          name: k3s-backup
+        spec:
+          restartPolicy: OnFailure
+          containers:
+          - name: backup
+            image: "{{ required ".Values.images.backup.image is missing" .Values.images.backup.image }}:{{ required ".Values.images.backup.tag is missing" .Values.images.backup.tag }}"
+            imagePullPolicy: IfNotPresent
+            command:
+              - /backup/backup.sh
+            env:
+            - name: AWS_BUCKET
+              valueFrom:
+                secretKeyRef:
+                  key: bucket-name
+                  name: cc-admin-k3s-backup-aws
+            - name: AWS_DEFAULT_REGION
+              valueFrom:
+                secretKeyRef:
+                  key: region
+                  name: cc-admin-k3s-backup-aws
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  key: secret-access-key
+                  name: cc-admin-k3s-backup-aws
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  key: access-key-id
+                  name: cc-admin-k3s-backup-aws
+            volumeMounts:
+            - name: script
+              mountPath: /backup
+            - name: slash
+              mountPath: /host
+          volumes:
+          - name: script
+            configMap:
+              name: k3s-backup
+              defaultMode: 0744
+          - name: slash
+            hostPath:
+              path: "/"
+  schedule: "{{ .Values.job.schedule }}"

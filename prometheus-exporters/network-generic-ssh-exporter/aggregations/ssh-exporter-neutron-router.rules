@@ -1,0 +1,27 @@
+groups:
+- name: ssh_neutron_router
+  rules:
+  - record: neutron_router:per_pair_nat_static
+    expr: |
+      max by (site, asr_pair, model)(
+        label_replace(
+          ssh_nat_static{server_name=~".*(asr|rt)([0-9]{2}|0[0-9]{2})[ab]$"},
+          "site", "regional", "statically_setting_a_label", "")
+        or
+        ssh_nat_static{server_name=~".*(asr|rt)[1-9][0-9]{2}[ab]$"})
+  - record: neutron_router:per_pair_nat_dynamic
+    expr: |
+      max by (site, asr_pair, model)(
+        label_replace(
+          ssh_nat_dynamic{server_name=~".*(asr|rt)([0-9]{2}|0[0-9]{2})[ab]$"},
+          "site", "regional", "statically_setting_a_label", "")
+        or
+        ssh_nat_dynamic{server_name=~".*(asr|rt)[1-9][0-9]{2}[ab]$"})
+  - record: neutron_router:per_pair_openstack_vrf_count
+    expr: |
+      max by (site, asr_pair, model)(
+        label_replace(
+          ssh_openstack_vrf_count_total{server_name=~".*(asr|rt)([0-9]{2}|0[0-9]{2})[ab]$"},
+          "site", "regional", "statically_setting_a_label", "")
+        or
+        ssh_openstack_vrf_count_total{server_name=~".*(asr|rt)[1-9][0-9]{2}[ab]$"})

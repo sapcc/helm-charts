@@ -1,0 +1,61 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "archer.fullname" . }}-migration-{{ .Values.image.tag | required ".Values.image.tag is required" }}
+  labels:
+    {{- include "archer.labels" . | nindent 4 }}
+spec:
+  template:
+    metadata:
+      annotations:
+        {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+        linkerd.io/inject: enabled
+        {{- end }}
+    spec:
+      restartPolicy: OnFailure
+      initContainers:
+        - name: wait-for-db
+          image: "{{ .Values.global.registry }}/kubernetes-entrypoint:{{ .Values.image.kubernetes_entrypoint_version }}"
+          imagePullPolicy: Always
+          env:
+            - name: NAMESPACE
+              value: "monsoon3"
+            - name: DEPENDENCY_SERVICE
+              value: "{{ include "archer.fullname" . }}-postgresql"
+            - name: COMMAND
+              value: "true"
+      containers:
+        - name: {{ include "archer.fullname" . }}-migration
+          image: "{{ .Values.global.registry }}/archer:{{ .Values.image.tag | required ".Values.image.tag is required" }}"
+          {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+          command: [ "/bin/sh" ]
+          args: [ "-c", "/usr/bin/archer-migrate --config-file=/etc/archer/archer.ini && wget -O- --post-data hello=shutdown http://0.0.0.0:4191/shutdown" ]
+          {{- else }}
+          command: [ "/usr/bin/archer-migrate" ]
+          args: [ "--config-file=/etc/archer/archer.ini" ]
+          {{- end }}
+          env:
+            - name: SENTRY_DSN
+              valueFrom:
+                secretKeyRef:
+                  name: sentry
+                  key: archer.DSN
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: archer-pguser-archer
+                  key: postgres-password
+          volumeMounts:
+            - name: etc-archer
+              mountPath: /etc/archer
+              readOnly: true
+      volumes:
+        - name: etc-archer
+          projected:
+            defaultMode: 420
+            sources:
+              - configMap:
+                  name: {{ include "archer.fullname" . }}-etc
+                  items:
+                    - key: archer.ini
+                      path: archer.ini

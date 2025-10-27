@@ -1,0 +1,80 @@
+{{- $root := . }}
+{{- if and .Values.ruler.enabled (eq .Values.deployWholeThanos false) }}
+{{- range $name := coalesce .Values.names .Values.global.targets (list .Values.name) }}
+apiVersion: monitoring.coreos.com/v1
+kind: ThanosRuler
+metadata:
+  name: {{ include "thanos.name" (list $name $root) }}
+spec:
+  image: {{ include "thanosimage" $root }}
+  paused: {{ $.Values.ruler.paused }}
+  logLevel: {{ default "info" $.Values.ruler.logLevel }}
+{{- if $.Values.ruler.retention }}
+  retention: {{ $.Values.ruler.retention | quote }}
+{{- end }}
+{{- if $.Values.rbac.create }}
+  serviceAccountName: {{ include "serviceAccount.name" (list $name $root) }}
+{{- end }}
+{{- if $.Values.ruler.externalPrefix }}
+  # if externalPrefix is set, the routePrefix must also be set so that http handlers can be registered there
+  externalPrefix: {{ $.Values.ruler.externalPrefix }}
+  routePrefix: {{ $.Values.ruler.externalPrefix }}
+{{- end }}
+{{- if $.Values.ruler.evaluationInterval }}
+  evaluationInterval: {{ $.Values.ruler.evaluationInterval }}
+{{- end }}
+  ruleSelector: 
+      matchLabels: 
+        thanos-ruler: {{ include "thanos.name" (list $name $root) }}
+
+  # Select rules from all namespaces.
+  ruleNamespaceSelector: {}
+
+  # The labels to add to any alert when communicating with Alertmanager
+  labels:
+    region: {{ required ".Values.global.region missing" $.Values.global.region }}
+{{- if $.Values.ruler.externalClusterLabels.enabled }}
+    cluster: {{ if $.Values.global.cluster }}{{ $.Values.global.cluster }}{{ else }}{{ $.Values.global.region }}{{ end }}
+    cluster_type: {{ required ".Values.global.clusterType missing" $.Values.global.clusterType }}
+{{- else }}
+    cluster: {{ required ".Values.global.region missing" $.Values.global.region }}
+{{- end }}
+  alertQueryUrl: https://{{ include "thanos.externalURL" (list $name $root) }}
+{{ if required "$.Values.ruler.alertmanagers.hosts missing" $.Values.ruler.alertmanagers.hosts }}
+  # Alertmanager configuration.
+  alertmanagersConfig:
+    name: {{ include "thanos.fullName" (list $name $root) }}-alertmanager-config
+    key: alertManagerConfig.yaml
+{{- end }}
+
+{{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+  podMetadata:
+    annotations:
+      linkerd.io/inject: enabled
+{{- end }}
+
+{{ if not $.Values.ruler.queryEndpoints }}
+  queryEndpoints: 
+    - {{ include "thanos.fullName" (list $name $root) }}-query:10902
+{{- else }}
+{{ toYaml $.Values.ruler.queryEndpoints | indent 4 }}
+{{- end }}
+{{- if $.Values.ruler.resources }}
+  resources:
+{{ toYaml $.Values.ruler.resources | indent 4 }}
+{{- end }}
+{{- if $.Values.ruler.alertmanagers.authentication.enabled }}
+  containers:
+    - name: thanos-ruler
+      volumeMounts:
+        - mountPath: /etc/thanos/secrets/{{ include "thanos.fullName" (list $name $root) }}-ruler-alertmanager-sso-cert
+          name: {{ include "thanos.fullName" (list $name $root) }}-ruler-alertmanager-sso-cert
+          readOnly: true
+  volumes:
+    - name: {{ include "thanos.fullName" (list $name $root) }}-ruler-alertmanager-sso-cert
+      secret:
+        secretName: {{ include "thanos.fullName" (list $name $root) }}-ruler-alertmanager-sso-cert
+{{- end }}
+
+{{- end }}
+{{- end }}

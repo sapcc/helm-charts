@@ -1,0 +1,34 @@
+apiVersion: "openstack.stable.sap.cc/v1"
+kind: "OpenstackSeed"
+metadata:
+  name: {{ include "archer.name" . }}-seed
+  namespace: monsoon3
+  labels:
+    {{- include "archer.labels" . | nindent 4 }}
+spec:
+  requires:
+    - {{ required ".Values.global.keystoneNamespace required" .Values.global.keystoneNamespace }}/keystone-seed
+
+  services:
+    - name: {{ include "archer.name" . }}
+      type: endpoint-services
+      description: private endpoint services
+      endpoints:
+        - interface: public
+          region: '{{.Values.global.region}}'
+          url: 'https://{{include "archer_api_endpoint_public" .}}'
+        - interface: internal # Limes accesses backend service APIs using OS_INTERFACE=internal
+          region: '{{.Values.global.region}}'
+          url: 'http://archer.{{ include "svc_fqdn" . }}:{{ .Values.service.port }}'
+
+  domains:
+    - name: Default
+      users:
+        - name: archer
+          description: 'Archer Service'
+          password: {{ printf "%s/%s/archer/keystone-user/service/password" .Values.global.vaultBaseURL .Values.global.region | quote }}
+          role_assignments:
+            - project: service
+              role: service
+            - project: service
+              role: cloud_network_admin

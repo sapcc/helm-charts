@@ -1,0 +1,116 @@
+{{- if .Values.worker_enabled }}
+kind: Deployment
+apiVersion: apps/v1
+
+metadata:
+  name: {{ .Release.Name }}-producer
+  labels:
+    system: openstack
+    type: backend
+    component: designate
+  annotations:
+    secret.reloader.stakater.com/reload: "{{ .Release.Name }}-secrets,{{ .Release.Name }}-secrets-rndc"
+    deployment.reloader.stakater.com/pause-period: "60s"
+  {{- if .Values.vpa.set_main_container }}
+    vpa-butler.cloud.sap/main-container: designate-producer
+  {{- end }}
+spec:
+  replicas: {{ .Values.pod.replicas.producer }}
+  revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revision_history }}
+  strategy:
+    type: {{ .Values.pod.lifecycle.upgrades.deployments.pod_replacement_strategy }}
+    {{ if eq .Values.pod.lifecycle.upgrades.deployments.pod_replacement_strategy "RollingUpdate" }}
+    rollingUpdate:
+      maxUnavailable: {{ .Values.pod.lifecycle.upgrades.deployments.rolling_update.max_unavailable }}
+      maxSurge: {{ .Values.pod.lifecycle.upgrades.deployments.rolling_update.max_surge }}
+    {{ end }}
+  selector:
+    matchLabels:
+      app: designate-producer
+  template:
+    metadata:
+      labels:
+        app: designate-producer
+      annotations:
+        kubectl.kubernetes.io/default-container: designate-producer
+        configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
+        configmap-bin-hash: {{ include (print $.Template.BasePath "/bin-configmap.yaml") . | sha256sum }}
+        secrets-hash: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
+        {{- if .Values.proxysql.mode }}
+        prometheus.io/scrape: "true"
+        prometheus.io/targets: {{ required ".Values.metrics.prometheus missing" .Values.metrics.prometheus | quote }}
+        {{- end }}
+        {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
+    spec:
+{{- if .Values.rbac.enabled }}
+      serviceAccountName: {{ .Release.Name }}
+{{- end }}
+      initContainers:
+      {{- tuple . (dict "service" (include "designate.service_dependencies" . )) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 8 }}
+      containers:
+        - name: designate-producer
+          image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/loci-designate:{{ required ".Values.global.image_version_designate is missing" .Values.image_version_designate }}
+          imagePullPolicy: IfNotPresent
+          command:
+            - /container.init/designate-producer-start
+          resources:
+             requests:
+               memory: "128Mi"
+               cpu: "100m"
+             limits:
+               memory: "512Mi"
+               cpu: "500m"
+          env:
+            - name: DEBUG_CONTAINER
+              value: "false"
+            {{- if .Values.sentry.enabled }}
+            - name: SENTRY_DSN
+              valueFrom:
+                secretKeyRef:
+                  name: sentry
+                  key: {{ .Release.Name }}.DSN.python
+            {{- end }}
+            {{- if .Values.python_warnings }}
+            - name: PYTHONWARNINGS
+              value: {{ .Values.python_warnings | quote }}
+            {{- end }}
+          livenessProbe:
+            exec:
+              command:
+              - python3
+              - /container.init/health-probe.py
+              - --config-file
+              - /etc/designate/secrets.conf
+              - --service-name
+              - producer
+              - --liveness-probe
+            initialDelaySeconds: 60
+            periodSeconds: 45
+            timeoutSeconds: 40
+          volumeMounts:
+            - mountPath: /designate-etc
+              name: designate-etc
+            - mountPath: /container.init
+              name: container-init
+            {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
+            {{- include "utils.coordination.volume_mount" . | indent 12 }}
+      volumes:
+        - name: designate-etc
+          projected:
+            sources:
+            - configMap:
+                name: designate-etc
+            - secret:
+                name: {{ .Release.Name }}-secrets
+                items:
+                  - key: secrets.conf
+                    path: secrets.conf
+            - secret:
+                name: {{ .Release.Name }}-secrets-rndc
+        - name: container-init
+          configMap:
+            name: designate-bin
+            defaultMode: 0755
+        {{- include "utils.coordination.volumes" . | indent 8 }}
+        {{- include "utils.trust_bundle.volumes" . | indent 8 }}
+{{- end }}

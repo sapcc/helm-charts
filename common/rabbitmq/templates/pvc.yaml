@@ -1,0 +1,22 @@
+{{- if and (eq .Values.kind "deployment") .Values.persistence.enabled (not .Values.persistence.existingClaim) -}}
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: {{ template "fullname" . }}
+  labels:
+    {{- include "rabbitmq.labels" (list $ "noversion" "rabbitmq" "persistentvolumeclaim" "messagequeue") | indent 4 }}
+  annotations:
+  {{- if .Values.persistence.storageClass }}
+    volume.beta.kubernetes.io/storage-class: {{ .Values.persistence.storageClass | quote }}
+  {{- end }}
+  {{- if .Values.alerts.support_group }}
+    ccloud/support-group: {{  .Values.alerts.support_group }}
+    ccloud/service: {{ include "alerts.service" . }}
+  {{- end }}
+spec:
+  accessModes:
+    - {{ .Values.persistence.accessMode | quote }}
+  resources:
+    requests:
+      storage: {{ .Values.persistence.size | quote }}
+{{- end -}}

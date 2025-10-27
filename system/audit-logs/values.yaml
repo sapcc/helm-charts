@@ -1,0 +1,126 @@
+owner-info:
+  support-group: observability
+  service: log-collector
+  maintainers:
+    - "Timo Johner"
+    - "Olaf Heydorn"
+    - "Simon Olander"
+  helm-chart-url: "https://github.com/sapcc/helm-charts/tree/master/system/audit-logs"
+
+global:
+  https_port: 443
+  prometheus: kubernetes
+  logstash_external_http_user: DEFINED-IN-SECRETS
+  logstash_external_http_password: DEFINED-IN-SECRETS
+  linkerd_requested: false
+  forwarding:
+    audit:
+      host: DEFINED-IN-SECRETS
+    audit_awx:
+      host: DEFINED-IN-SECRETS
+    audit_tools:
+      host: DEFINED-IN-SECRETS
+    audit_auditbeat:
+      host: DEFINED-IN-SECRETS
+  probe_targets:
+    - DEFINED-IN-SECRETS
+  region: DEFINED-IN-SECRETS
+  tld: DEFINED-IN-SECRETS
+  cluster: DEFINED-IN-SECRETS
+  clusterType: DEFINED-IN-SECRETS
+  vaultBaseURL: DEFINED-IN-SECRETS
+  alternateRegion: DEFINED-IN-SECRETS
+  registry: DEFINED-IN-SECRETS
+  registryAlternateRegion: DEFINED-IN-SECRETS
+  dockerHubMirror: DEFINED-IN-SECRETS
+  dockerHubMirrorAlternateRegion: DEFINED-IN-SECRETS
+  crNetappIoMirror: DEFINED-IN-SECRETS
+  crNetappIoMirrorAlternateRegion: DEFINED-IN-SECRETS
+  elasticCoMirror: DEFINED-IN-SECRETS
+  elasticCoMirrorAlternateRegion: DEFINED-IN-SECRETS
+  gcrIoMirror: DEFINED-IN-SECRETS
+  gcrIoMirrorAlternateRegion: DEFINED-IN-SECRETS
+  ghcrIoMirror: DEFINED-IN-SECRETS
+  ghcrIoMirrorAlternateRegion: DEFINED-IN-SECRETS
+  registryK8sIoMirror: DEFINED-IN-SECRETS
+  registryK8sIoMirrorAlternateRegion: DEFINED-IN-SECRETS
+  quayIoMirror: DEFINED-IN-SECRETS
+  quayIoMirrorAlternateRegion: DEFINED-IN-SECRETS
+  zalandoMirror: DEFINED-IN-SECRETS
+  zalandoMirrorAlternateRegion: DEFINED-IN-SECRETS
+  linkerd_enabled: DEFINED-IN-SECRETS
+
+linkerd-support:
+  annotate_namespace: true
+
+logstash_audit_external:
+  enabled: false
+  image_version: "20250724070755"
+  replicas: 1
+  input_netflow_port: 2055
+  input_syslog_port: 514
+  input_bigiplogs_port: 1513
+  input_alertmanager_port: 1515
+  input_deployments_port: 1516
+  input_http_port: 443
+  syslog:
+    enabled: false
+  http:
+    enabled: true
+  tls:
+    crt: DEFINED-IN-SECRETS
+    key: DEFINED-IN-SECRETS
+  ingress:
+    enabled: false
+  beats:
+    enabled: true
+    port: 5044
+  resources:
+    limits:
+      memory: 4Gi
+      cpu: 2000m
+    requests:
+      memory: 2Gi
+      cpu: 200m
+
+fluent_audit_container:
+  enabled: false
+  port: 8887
+  metrics_port: 24231
+  image_version: "20250206090207"
+  resources:
+    limits:
+      memory: 500Mi
+  forwarding:
+    keystone:
+      host: none
+  alerts:
+    enabled: false
+    # Keys = directory names in alerts/ and aggregations/
+    prometheus:
+      - name: kubernetes
+        type: prometheus
+      - name: metal
+        type: thanos-ruler
+  default_container_logs: []
+
+fluent_audit_systemd:
+  enabled: false
+  image_version: "20250206090207"
+  resources:
+    limits:
+      memory: 500Mi
+  metrics_port: 24231
+  alerts:
+    enabled: false
+    prometheus: infra-collector
+  port: 8888
+
+auditbeat:
+  enabled: false
+
+auditPoller:
+  enabled: false
+
+ocb-datain-static-probes:
+  enabled: false

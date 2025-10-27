@@ -1,0 +1,32 @@
+{{- if .Values.tailcontrol.backup.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: Probe
+
+metadata:
+  name: tailscale-s3-exporter
+  labels:
+    prometheus: {{ .Values.exporter.prometheus }}
+
+spec:
+  jobName: tailscale-s3-exporter
+  prober:
+    url: tailscale-s3-exporter-metrics.{{.Release.Namespace}}.svc.cluster.local
+    path: /probe
+  interval: {{ .Values.exporter.scrapeInterval }}
+  scrapeTimeout: {{ .Values.exporter.scrapeTimeout }}
+  targets:
+    staticConfig: 
+      static:
+        - "bucket={{ .Values.aws.bucketName }};"
+      labels: 
+        __param_bucket: {{ .Values.aws.bucketName }}
+        {{ if .Values.global.region -}}
+        region: {{ .Values.global.region }}
+        {{- end }}
+        {{ if .Values.global.clusterType -}}
+        cluster_type: {{ .Values.global.clusterType }}
+        {{- end }}
+        {{ if or .Values.global.region .Values.global.cluster -}}
+        cluster: {{ if .Values.global.cluster }}{{ .Values.global.cluster }}{{ else }}{{ .Values.global.region }}{{ end }}
+        {{- end }}
+{{- end }}

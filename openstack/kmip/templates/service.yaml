@@ -1,0 +1,33 @@
+kind: Service
+apiVersion: v1
+
+metadata:
+  name: kmip-barbican
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ include "kmip.fullname" . }}-barbican
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    system: openstack
+    type: api
+    component: kmip
+  annotations:
+    {{- include "utils.linkerd.pod_and_service_annotation" . | indent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  externalIPs:
+    - {{ .Values.service.externalIPs }}
+  sessionAffinity: None
+  externalTrafficPolicy: Local
+  selector:
+    app: {{ include "kmip.fullname" . }}-barbican
+  ports:
+    - name: http
+      port: {{ .Values.service.ports.port }}
+      targetPort: 5696
+      protocol: TCP
+    - name: restapi
+      port: 5006
+      targetPort: 5006
+      protocol: TCP

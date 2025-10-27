@@ -1,0 +1,32 @@
+{{- if eq .Values.cluster_type "baremetal" }}
+{{- if eq .Values.global.region "eu-de-2" }}
+apiVersion: "openstack.stable.sap.cc/v1"
+kind: OpenstackSeed
+metadata:
+  name: {{ .Release.Name }}-seed
+
+spec:
+  requires:
+    - monsoon3/keystone-seed
+    - swift/swift-seed
+    - monsoon3/domain-ccadmin-seed
+    - monsoon3/domain-default-seed
+
+  domains:
+    - name: Default
+      users:
+        - name: doop
+          description: DOOP web dashboard for Gatekeeper audit logs
+          password: '{{.Values.doop.swift_password | required ".Values.doop.swift_password not found"}}'
+          role_assignments:
+            - project: service
+              role:    service
+
+    - name: ccadmin
+      projects:
+      - name: master
+        role_assignments:
+          - user: doop@Default
+            role: objectstore_admin
+{{- end }}
+{{- end }}

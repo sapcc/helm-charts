@@ -1,0 +1,24 @@
+{{- if .Values.alerts.enabled }}
+{{- range $target, $cluster := .Values.alerts.prometheus }}
+{{- range $path, $bytes := $.Files.Glob (printf "alerts/%s/*.alerts" $target) }}
+{{- $ruler := "prometheus" -}}
+{{- if eq (first (splitList "-" $target)) "metrics" }}
+{{- $ruler = "thanos-ruler" -}}
+{{- end }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+
+metadata:
+  name: {{ $.Release.Name }}-{{ printf "%s" $path | replace "/" "-" }}
+  labels:
+    app: manila
+    tier: os
+    type: alerting-rules
+    {{ $ruler }}: {{ $cluster| required (printf ".Values.alerts.prometheus.%s missing" $target) }}
+spec:
+{{ printf "%s" $bytes | indent 2 }}
+
+{{- end }}
+{{- end }}
+{{- end }}

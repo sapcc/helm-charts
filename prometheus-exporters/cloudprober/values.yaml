@@ -1,0 +1,395 @@
+# Default values for cloudprober.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+global:
+  linkerd_requested: true
+
+owner-info:
+  maintainers:
+  - Martin Vossen
+  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/prometheus-exporters/cloudprober
+  support-group: observability
+  service: exporter
+
+enabled: false
+
+image:
+  name: cloudprober/cloudprober
+  tag: v0.13.9
+  pullPolicy: IfNotPresent
+
+replicaCount: 1
+revisionHistoryLimit: 5
+namespace: infra-monitoring
+
+metrics:
+  port: 9313
+  prometheus: infra-collector
+  scrapeInterval: 60s
+  scrapeTimeout: 55s
+
+ingress:
+  tls: true
+  disco: true
+  hostName_prefix: cloudprober
+  no_keep_alive: true
+
+icmpIntervalMsec: 5000  # 5s
+icmpTimeoutMsec: 3000   # 3s
+httpIntervalMsec: 5000  # 5s
+httpTimeoutMsec: 3000   # 3s
+
+probers:
+  - DEFINED-IN-REGIONS-SECRETS
+
+targets_icmp:
+# qa-de-1 -------------------------
+#  - name: cc3test-admin-jump-qade1a
+#    ip: 10.237.208.56
+#    dns: jump-qade1a.cc3test-admin.c.qa-de-1.cloud.sap
+#    dc: qa-de-1a
+#  - name: cc3test-admin-jump-qade1b
+#    ip: 10.237.208.91
+#    dns: jump-qade1b.cc3test-admin.c.qa-de-1.cloud.sap
+#    dc: qa-de-1b
+#  - name: cc3test-test-jump-qade1a
+#    ip: 10.237.208.9
+#    dns: jump-qade1a.cc3test-test.c.qa-de-1.cloud.sap
+#    dc: qa-de-1a
+#  - name: cc3test-test-jump-qade1b
+#    ip: 10.237.208.147
+#    dns: jump-qade1b.cc3test-test.c.qa-de-1.cloud.sap
+#    dc: qa-de-1b
+#  - name: cc3test-regression-jump-qade1a
+#    ip: 10.237.208.196
+#    dns: jump-qade1a.cc3test-regression.c.qa-de-1.cloud.sap
+#    dc: qa-de-1a
+#  - name: cc3test-regression-jump-qade1b
+#    ip: 10.237.208.183
+#    dns: jump-qade1b.cc3test-regression.c.qa-de-1.cloud.sap
+#    dc: qa-de-1b
+#  - name: cloudprober-1a
+#    ip: 10.46.101.213
+#    dc: qa-de-1a
+#  - name: cloudrober-1b
+#    ip: 10.46.101.214
+#    dc: qa-de-1b
+# ap-jp-2 -------------------------
+  - name: cc3test-admin-jump-apjp2a
+    ip: 10.236.16.71
+    dns: jump-apjp2a.cc3test-admin.c.ap-jp-2.cloud.sap
+    dc: ap-jp-2a
+  - name: cc3test-test-jump-apjp2a
+    ip: 10.236.16.67
+    dns: jump-apjp2a.cc3test-test.c.ap-jp-2.cloud.sap
+    dc: ap-jp-2a
+  - name: cc3test-regression-jump-apjp2a
+    ip: 10.236.16.74
+    dns: jump-apjp2a.cc3test-regression.c.ap-jp-2.cloud.sap
+    dc: ap-jp-2a
+# ap-sa-2 -------------------------
+  - name: cc3test-admin-jump-apsa2a
+    ip: 10.237.216.168
+    dns: jump-apsa2a.cc3test-admin.c.ap-sa-2.cloud.sap
+    dc: ap-sa-2a
+  - name: cc3test-test-jump-apsa2a
+    ip: 10.237.216.178
+    dns: jump-apsa2a.cc3test-test.c.ap-sa-2.cloud.sap
+    dc: ap-sa-2a
+  - name: cc3test-regression-jump-apsa2a
+    ip: 10.237.217.216
+    dns: jump-apsa2a.cc3test-regression.c.ap-sa-2.cloud.sap
+    dc: ap-sa-2a
+# na-ca-1 -------------------------
+  - name: cc3test-admin-jump-naca1a
+    ip: 10.47.161.98
+    dns: jump-naca1a.cc3test-admin.c.na-ca-1.cloud.sap
+    dc: na-ca-1a
+  - name: cc3test-admin-jump-naca1b
+    ip: 10.47.161.124
+    dns: jump-naca1b.cc3test-admin.c.na-ca-1.cloud.sap
+    dc: na-ca-1b
+  - name: cc3test-test-jump-naca1a
+    ip: 10.47.161.97
+    dns: jump-naca1a.cc3test-test.c.na-ca-1.cloud.sap
+    dc: na-ca-1a
+  - name: cc3test-test-jump-naca1b
+    ip: 10.47.161.45
+    dns: jump-naca1b.cc3test-test.c.na-ca-1.cloud.sap
+    dc: na-ca-1b
+  - name: cc3test-regression-jump-naca1a
+    ip: 10.47.160.113
+    dns: jump-naca1a.cc3test-regression.c.na-ca-1.cloud.sap
+    dc: na-ca-1a
+  - name: cc3test-regression-jump-naca1b
+    ip: 10.47.161.73
+    dns: jump-naca1b.cc3test-regression.c.na-ca-1.cloud.sap
+    dc: na-ca-1b
+# na-us-3 -------------------------
+  - name: cc3test-admin-jump-naus3a
+    ip: 10.47.104.83
+    dns: jump-naus3a.cc3test-admin.c.na-us-3.cloud.sap
+    dc: na-us-3a
+  - name: cc3test-test-jump-naus3a
+    ip: 10.47.106.107
+    dns: jump-naus3a.cc3test-test.c.na-us-3.cloud.sap
+    dc: na-us-3a
+  - name: cc3test-regression-jump-naus3a
+    ip: 10.47.106.131
+    dns: jump-naus3a.cc3test-regression.c.na-us-3.cloud.sap
+    dc: na-us-3a
+# ap-ae-1 -------------------------
+  - name: cc3test-admin-jump-apae1a
+    ip: 10.236.56.46
+    dns: jump-apae1a.cc3test-admin.c.ap-ae-1.cloud.sap
+    dc: ap-ae-1a
+  - name: cc3test-test-jump-apae1a
+    ip: 10.236.56.39
+    dns: jump-apae1a.cc3test-test.c.ap-ae-1.cloud.sap
+    dc: ap-ae-1a
+  - name: cc3test-regression-jump-apae1a
+    ip: 10.236.56.16
+    dns: jump-apae1a.cc3test-regression.c.ap-ae-1.cloud.sap
+    dc: ap-ae-1a
+# ap-au-1 -------------------------
+  - name: cc3test-admin-jump-apau1a
+    ip: 10.47.22.62
+    dns: jump-apau1a.cc3test-admin.c.ap-au-1.cloud.sap
+    dc: ap-au-1a
+  - name: cc3test-admin-jump-apau1b
+    ip: 10.47.22.6
+    dns: jump-apau1b.cc3test-admin.c.ap-au-1.cloud.sap
+    dc: ap-au-1b
+  - name: cc3test-test-jump-apau1a
+    ip: 10.47.22.72
+    dns: jump-apau1a.cc3test-test.c.ap-au-1.cloud.sap
+    dc: ap-au-1a
+  - name: cc3test-test-jump-apau1b
+    ip: 10.47.22.98
+    dns: jump-apau1b.cc3test-test.c.ap-au-1.cloud.sap
+    dc: ap-au-1b
+  - name: cc3test-regression-jump-apau1a
+    ip: 10.47.22.91
+    dns: jump-apau1a.cc3test-regression.c.ap-au-1.cloud.sap
+    dc: ap-au-1a
+  - name: cc3test-regression-jump-apau1b
+    ip: 10.47.22.63
+    dns: jump-apau1b.cc3test-regression.c.ap-au-1.cloud.sap
+    dc: ap-au-1b
+# ap-cn-1 -------------------------
+  - name: cc3test-admin-jump-apcn1a
+    ip: 10.47.84.237
+    dns: jump-apcn1a.cc3test-admin.c.ap-cn-1.cloud.sap
+    dc: ap-cn-1a
+  - name: cc3test-admin-jump-apcn1b
+    ip: 10.47.85.2
+    dns: jump-apcn1b.cc3test-admin.c.ap-cn-1.cloud.sap
+    dc: ap-cn-1b
+  - name: cc3test-test-jump-apcn1a
+    ip: 10.47.85.1
+    dns: jump-apcn1a.cc3test-test.c.ap-cn-1.cloud.sap
+    dc: ap-cn-1a
+  - name: cc3test-test-jump-apcn1b
+    ip: 10.47.84.247
+    dns: jump-apcn1b.cc3test-test.c.ap-cn-1.cloud.sap
+    dc: ap-cn-1b
+  - name: cc3test-regression-jump-apcn1a
+    ip: 10.47.84.217
+    dns: jump-apcn1a.cc3test-regression.c.ap-cn-1.cloud.sap
+    dc: ap-cn-1a
+  - name: cc3test-regression-jump-apcn1b
+    ip: 10.47.84.189
+    dns: jump-apcn1b.cc3test-regression.c.ap-cn-1.cloud.sap
+    dc: ap-cn-1b
+# ap-jp-1 -------------------------
+  - name: cc3test-admin-jump-apjp1a
+    ip: 10.47.124.27
+    dns: jump-apjp1a.cc3test-admin.c.ap-jp-1.cloud.sap
+    dc: ap-jp-1a
+  - name: cc3test-test-jump-apjp1a
+    ip: 10.47.124.86
+    dns: jump-apjp1a.cc3test-test.c.ap-jp-1.cloud.sap
+    dc: ap-jp-1a
+  - name: cc3test-regression-jump-apjp1a
+    ip: 10.47.124.24
+    dns: jump-apjp1a.cc3test-regression.c.ap-jp-1.cloud.sap
+    dc: ap-jp-1a
+# ap-sa-1 -------------------------
+  - name: cc3test-admin-jump-apsa1a
+    ip: 10.236.76.47
+    dns: jump-apsa1a.cc3test-admin.c.ap-sa-1.cloud.sap
+    dc: ap-sa-1a
+  - name: cc3test-test-jump-apsa1a
+    ip: 10.236.76.53
+    dns: jump-apsa1a.cc3test-test.c.ap-sa-1.cloud.sap
+    dc: ap-sa-1a
+  - name: cc3test-regression-jump-apsa1a
+    ip: 10.236.76.51
+    dns: jump-apsa1a.cc3test-regression.c.ap-sa-1.cloud.sap
+    dc: ap-sa-1a
+# la-br-1 -------------------------
+  - name: cc3test-admin-jump-labr1a
+    ip: 10.47.200.55
+    dns: jump-labr1a.cc3test-admin.c.la-br-1.cloud.sap
+    dc: la-br-1a
+  - name: cc3test-test-jump-labr1a
+    ip: 10.47.200.67
+    dns: jump-labr1a.cc3test-test.c.la-br-1.cloud.sap
+    dc: la-br-1a
+  - name: cc3test-regression-jump-labr1a
+    ip: 10.47.200.82
+    dns: jump-labr1a.cc3test-regression.c.la-br-1.cloud.sap
+    dc: la-br-1a
+# eu-de-1 -------------------------
+  - name: cc3test-admin-jump-eude1a
+    ip: 10.237.172.163
+    dns: jump-eude1a.cc3test-admin.c.eu-de-1.cloud.sap
+    dc: eu-de-1a
+  - name: cc3test-admin-jump-eude1b
+    ip: 10.237.172.164
+    dns: jump-eude1b.cc3test-admin.c.eu-de-1.cloud.sap
+    dc: eu-de-1b
+  - name: cc3test-admin-jump-eude1d
+    ip: 10.237.172.144
+    dns: jump-eude1d.cc3test-admin.c.eu-de-1.cloud.sap
+    dc: eu-de-1d
+  - name: cc3test-test-jump-eude1a
+    ip: 10.237.172.174
+    dns: jump-eude1a.cc3test-test.c.eu-de-1.cloud.sap
+    dc: eu-de-1a
+  - name: cc3test-test-jump-eude1b
+    ip: 10.237.172.185
+    dns: jump-eude1b.cc3test-test.c.eu-de-1.cloud.sap
+    dc: eu-de-1b
+  - name: cc3test-test-jump-eude1d
+    ip: 10.237.172.157
+    dns: jump-eude1d.cc3test-test.c.eu-de-1.cloud.sap
+    dc: eu-de-1d
+  - name: cc3test-regression-jump-eude1a
+    ip: 10.237.172.162
+    dns: jump-eude1a.cc3test-regression.c.eu-de-1.cloud.sap
+    dc: eu-de-1a
+  - name: cc3test-regression-jump-eude1b
+    ip: 10.237.172.156
+    dns: jump-eude1b.cc3test-regression.c.eu-de-1.cloud.sap
+    dc: eu-de-1b
+  - name: cc3test-regression-jump-eude1d
+    ip: 10.237.172.129
+    dns: jump-eude1d.cc3test-regression.c.eu-de-1.cloud.sap
+    dc: eu-de-1d
+# eu-de-2 -------------------------
+  - name: cc3test-admin-jump-eude2a
+    ip: 10.237.102.207
+    dns: jump-eude2a.cc3test-admin.c.eu-de-2.cloud.sap
+    dc: eu-de-2a
+  - name: cc3test-admin-jump-eude2b
+    ip: 10.237.102.173
+    dns: jump-eude2b.cc3test-admin.c.eu-de-2.cloud.sap
+    dc: eu-de-2b
+  - name: cc3test-test-jump-eude2a
+    ip: 10.236.192.24
+    dns: jump-eude2a.cc3test-test.c.eu-de-2.cloud.sap
+    dc: eu-de-2a
+  - name: cc3test-test-jump-eude2b
+    ip: 10.236.193.54
+    dns: jump-eude2b.cc3test-test.c.eu-de-2.cloud.sap
+    dc: eu-de-2b
+  - name: cc3test-regression-jump-eude2a
+    ip: 10.236.193.110
+    dns: jump-eude2a.cc3test-regression.c.eu-de-2.cloud.sap
+    dc: eu-de-2a
+  - name: cc3test-regression-jump-eude2b
+    ip: 10.236.193.136
+    dns: jump-eude2b.cc3test-regression.c.eu-de-2.cloud.sap
+    dc: eu-de-2b
+# eu-nl-1 -------------------------
+  - name: cc3test-admin-jump-eunl1a
+    ip: 10.237.144.135
+    dns: jump-eunl1a.cc3test-admin.c.eu-nl-1.cloud.sap
+    dc: eu-nl-1a
+  - name: cc3test-admin-jump-eunl1b
+    ip: 10.47.41.91
+    dns: jump-eunl1b.cc3test-admin.c.eu-nl-1.cloud.sap
+    dc: eu-nl-1b
+  - name: cc3test-test-jump-eunl1a
+    ip: 10.236.240.169
+    dns: jump-eunl1a.cc3test-test.c.eu-nl-1.cloud.sap
+    dc: eu-nl-1a
+  - name: cc3test-test-jump-eunl1b
+    ip: 10.47.42.213
+    dns: jump-eunl1b.cc3test-test.c.eu-nl-1.cloud.sap
+    dc: eu-nl-1b
+  - name: cc3test-regression-jump-eunl1a
+    ip: 10.47.42.132
+    dns: jump-eunl1a.cc3test-regression.c.eu-nl-1.cloud.sap
+    dc: eu-nl-1a
+  - name: cc3test-regression-jump-eunl1b
+    ip: 10.236.243.125
+    dns: jump-eunl1b.cc3test-regression.c.eu-nl-1.cloud.sap
+    dc: eu-nl-1b
+# na-us-1 -------------------------
+  - name: cc3test-admin-jump-naus1a
+    ip: 10.236.250.68
+    dns: jump-naus1a.cc3test-admin.c.na-us-1.cloud.sap
+    dc: na-us-1a
+  - name: cc3test-admin-jump-naus1b
+    ip: 10.236.250.88
+    dns: jump-naus1b.cc3test-admin.c.na-us-1.cloud.sap
+    dc: na-us-1b
+  - name: cc3test-admin-jump-naus1d
+    ip: 10.236.250.83
+    dns: jump-naus1d.cc3test-admin.c.na-us-1.cloud.sap
+    dc: na-us-1d
+  - name: cc3test-test-jump-naus1a
+    ip: 10.236.250.78
+    dns: jump-naus1a.cc3test-test.c.na-us-1.cloud.sap
+    dc: na-us-1a
+  - name: cc3test-test-jump-naus1b
+    ip: 10.236.250.62
+    dns: jump-naus1b.cc3test-test.c.na-us-1.cloud.sap
+    dc: na-us-1b
+  - name: cc3test-test-jump-naus1d
+    ip: 10.236.250.75
+    dns: jump-naus1d.cc3test-test.c.na-us-1.cloud.sap
+    dc: na-us-1d
+  - name: cc3test-regression-jump-naus1a
+    ip: 10.47.60.188
+    dns: jump-naus1a.cc3test-regression.c.na-us-1.cloud.sap
+    dc: na-us-1a
+  - name: cc3test-regression-jump-naus1b
+    ip: 10.47.60.149
+    dns: jump-naus1b.cc3test-regression.c.na-us-1.cloud.sap
+    dc: na-us-1b
+  - name: cc3test-regression-jump-naus1d
+    ip: 10.236.250.77
+    dns: jump-naus1d.cc3test-regression.c.na-us-1.cloud.sap
+    dc: na-us-1d
+# na-us-2 -------------------------
+  - name: cc3test-admin-jump-naus2a
+    ip: 10.236.156.140
+    dns: jump-naus2a.cc3test-admin.c.na-us-2.cloud.sap
+    dc: na-us-2a
+  - name: cc3test-admin-jump-naus2b
+    ip: 10.236.156.161
+    dns: jump-naus2b.cc3test-admin.c.na-us-2.cloud.sap
+    dc: na-us-2b
+  - name: cc3test-test-jump-naus2a
+    ip: 10.236.156.165
+    dns: jump-naus2a.cc3test-test.c.na-us-2.cloud.sap
+    dc: na-us-2a
+  - name: cc3test-test-jump-naus2b
+    ip: 10.236.156.57
+    dns: jump-naus2b.cc3test-test.c.na-us-2.cloud.sap
+    dc: na-us-2b
+  - name: cc3test-regression-jump-naus2a
+    ip: 10.236.156.154
+    dns: jump-naus2a.cc3test-regression.c.na-us-2.cloud.sap
+    dc: na-us-2a
+  - name: cc3test-regression-jump-naus2b
+    ip: 10.236.156.169
+    dns: jump-naus2b.cc3test-regression.c.na-us-2.cloud.sap
+    dc: na-us-2b
+
+targets_http:
+  - DEFINED-IN-REGIONS-SECRETS

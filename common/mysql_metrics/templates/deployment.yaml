@@ -1,0 +1,76 @@
+kind: Deployment
+apiVersion: apps/v1
+
+metadata:
+  name: {{ template "fullname" . }}
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+  annotations:
+    secret.reloader.stakater.com/reload: "{{ template "fullname" . }}-etc"
+{{- if .Values.vpa.set_main_container }}
+    vpa-butler.cloud.sap/main-container: metrics
+{{- end }}
+spec:
+  replicas: 1
+  revisionHistoryLimit: 5
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      name: {{ template "fullname" . }}
+  template:
+    metadata:
+      labels:
+        name: {{ template "fullname" . }}
+      annotations:
+        kubectl.kubernetes.io/default-container: metrics
+        chart-version: {{.Chart.Version}}
+        checksum/etc-secret.yaml: {{ include (print $.Template.BasePath "/etc-secret.yaml") . | sha256sum }}
+        prometheus.io/scrape: "true"
+        prometheus.io/targets: {{ .Values.prometheus }}
+{{- if and (and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested) $.Values.linkerd.enabled }}
+        linkerd.io/inject: enabled
+{{- end }}
+    spec:
+      affinity:
+      {{- with .Values.nodeAffinity }}
+        nodeAffinity:
+{{ toYaml . | indent 10 }}
+      {{- end }}
+      volumes:
+      - name: config-metrics
+        secret:
+          secretName: {{ template "fullname" . }}-etc
+      containers:
+      - name: metrics
+        image: "{{required ".Values.global.registry is missing" .Values.global.registry}}/{{ .Values.image }}:{{ .Values.imageTag }}"
+        imagePullPolicy: {{ default "IfNotPresent" .Values.imagePullPolicy | quote }}
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: {{ .Values.port_metrics }}
+          initialDelaySeconds: 30
+          timeoutSeconds: 10
+        env:
+          - name: LOGLEVEL
+            value: {{ required ".Values.loglevel missing" .Values.loglevel }}
+          - name: CONFIG
+            value: /conf/config.yml
+        ports:
+          - name: metrics
+            containerPort: {{ required ".Values.port_metrics missing" .Values.port_metrics }}
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: {{ required ".Values.port_metrics missing" .Values.port_metrics }}
+          initialDelaySeconds: 10
+          timeoutSeconds: 10
+        resources:
+{{ toYaml (required "missing .resources" .Values.resources) | trim | indent 10 }}
+        volumeMounts:
+          - name: config-metrics
+            mountPath: /conf
+            readOnly: true

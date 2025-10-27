@@ -1,0 +1,22 @@
+{{- $root := . -}}
+{{- $values := .Values -}}
+{{- if $values.alerts.enabled }}
+{{- range $path, $bytes := .Files.Glob "alerts/*.alerts.tpl" }}
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+
+metadata:
+  name: {{ printf "kubelet-stats-metrics-%s" $path | replace "/" "-" }}
+  labels:
+    app: kubelet-stats-metrics
+    prometheus: {{ required ".Values.alerts.prometheus missing" $values.alerts.prometheus }}
+    absent-metrics-operator/disable: "true"
+
+spec:
+{{- with $root -}}
+{{- $content := printf "%s" $bytes }}
+{{ tpl $content . | indent 2 }}
+{{- end }}
+---
+{{- end }}
+{{- end }}

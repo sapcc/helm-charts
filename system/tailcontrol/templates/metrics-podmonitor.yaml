@@ -1,0 +1,30 @@
+{{- if .Values.tailcontrol.backup.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+
+metadata:
+  name: tailscale-s3-exporter
+  labels:
+    prometheus: {{ .Values.exporter.prometheus }}
+
+spec:
+  jobLabel: tailscale-s3-exporter
+
+  selector:
+    matchLabels:
+      app: tailscale-s3-exporter
+
+  # Find pods in any namespace.
+  namespaceSelector:
+    any: true
+
+  podMetricsEndpoints:
+    - interval: {{ .Values.exporter.scrapeInterval }}
+      scrapeTimeout: {{ .Values.exporter.scrapeTimeout }}
+      path: /metrics
+      scheme: http
+      port: metrics
+      relabelings:
+        - targetLabel: job
+          replacement: tailscale-s3-exporter
+{{- end }}

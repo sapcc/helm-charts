@@ -1,0 +1,73 @@
+{{- if .Values.admission.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vpa-admission-controller
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: {{ required ".Values.admission.replicas missing" .Values.admission.replicas }}
+  selector:
+    matchLabels:
+      app: vpa-admission-controller
+  template:
+    metadata:
+      labels:
+        app: vpa-admission-controller
+      annotations:
+        prometheus.io/scrape: "true"
+        {{- if .Values.additionalPodAnnotations }}
+        {{- toYaml .Values.additionalPodAnnotations | nindent 8 -}}
+        {{ end }}
+        {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+        linkerd.io/inject: enabled
+        {{- end }}
+        checksum/certificate: {{ include (print $.Template.BasePath "/admission-certificate.yaml") . | sha256sum }}
+    spec:
+      serviceAccountName: vpa-admission-controller
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534 # nobody
+      topologySpreadConstraints:
+      - maxSkew: 1
+        topologyKey: kubernetes.io/hostname
+        whenUnsatisfiable: DoNotSchedule
+        labelSelector:
+          matchLabels:
+            app: vpa-admission-controller
+      containers:
+        - name: admission-controller
+          image: {{ include "admission.image" . }}
+          imagePullPolicy: {{ default "IfNotPresent" .Values.admission.image.pullPolicy }}
+          args:
+            - --port=8000
+            - --address=0.0.0.0:8944
+            - --client-ca-file=/etc/tls-certs/ca.crt
+            - --tls-cert-file=/etc/tls-certs/tls.crt
+            - --tls-private-key=/etc/tls-certs/tls.key
+            - --register-webhook=false
+            # https://github.com/kubernetes-sigs/controller-runtime/pull/365/files
+            - --kube-api-qps=20.0
+            - --kube-api-burst=30.0
+            {{- if .Values.admission.certificate.reload }}
+            - --reload-cert=true
+            {{- end }}
+          env:
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+          volumeMounts:
+            - name: tls-certs
+              mountPath: "/etc/tls-certs"
+              readOnly: true
+          resources: {{ toYaml .Values.admission.resources | nindent 12 }}
+          ports:
+            - name: webhook
+              containerPort: 8000
+            - name: metrics
+              containerPort: 8944
+      volumes:
+        - name: tls-certs
+          secret:
+            secretName: vpa-admission-tls-certs
+{{ end -}}

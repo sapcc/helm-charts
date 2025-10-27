@@ -1,0 +1,46 @@
+---
+apiVersion: v2
+appVersion: "yoga"
+description: A Helm chart for OpenStack Octavia
+home: https://docs.openstack.org/octavia/latest/
+icon: https://www.openstack.org/themes/openstack/images/project-mascots/Octavia/OpenStack_Project_Octavia_vertical.png
+name: octavia
+sources:
+  - https://git.openstack.org/cgit/openstack/octavia
+  - https://git.openstack.org/cgit/openstack/openstack-helm
+# The versions are defined in the changelog: https://docs.openstack.org/releasenotes/octavia/yoga.html
+version: 10.1.7
+dependencies:
+  - condition: mariadb.enabled
+    name: mariadb
+    repository: oci://keppel.eu-de-1.cloud.sap/ccloud-helm
+    version: 0.27.1
+  - condition: pxc_db.enabled
+    name: pxc-db
+    alias: pxc_db
+    repository: oci://keppel.eu-de-1.cloud.sap/ccloud-helm
+    version: 0.4.1
+  - name: memcached
+    repository: oci://keppel.eu-de-1.cloud.sap/ccloud-helm
+    version: 0.6.12
+  - condition: mariadb.enabled
+    name: mysql_metrics
+    repository: oci://keppel.eu-de-1.cloud.sap/ccloud-helm
+    version: 0.5.2
+  - name: rabbitmq
+    repository: oci://keppel.eu-de-1.cloud.sap/ccloud-helm
+    version: 0.19.1
+  - name: utils
+    repository: oci://keppel.eu-de-1.cloud.sap/ccloud-helm
+    version: 0.29.0
+  - name: owner-info
+    repository: oci://keppel.eu-de-1.cloud.sap/ccloud-helm
+    version: 1.0.0
+  - name: linkerd-support
+    repository: oci://keppel.eu-de-1.cloud.sap/ccloud-helm
+    version: 1.0.0
+  - name: redis
+    alias: api-ratelimit-redis
+    repository: oci://keppel.eu-de-1.cloud.sap/ccloud-helm
+    version: 2.2.19
+    condition: rate_limit.enabled

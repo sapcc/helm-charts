@@ -1,0 +1,45 @@
+# this ingress does not use oauth-proxy
+# instead it enables the builtin TFA method
+{{- if .Values.ingress.enabled }}
+kind: Ingress
+apiVersion: networking.k8s.io/v1
+
+metadata:
+  name: elektra-rsa
+  annotations:
+    {{- if .Values.ingress.ca }}
+    ingress.kubernetes.io/auth-tls-pass-certificate-to-upstream: {{ default true .Values.ingress.pass_certificate_to_upstream | quote }}
+    nginx.ingress.kubernetes.io/auth-tls-pass-certificate-to-upstream: {{ default true .Values.ingress.pass_certificate_to_upstream | quote }}
+    ingress.kubernetes.io/auth-tls-secret: kube-system/ingress-cacrt
+    nginx.ingress.kubernetes.io/auth-tls-secret: kube-system/ingress-cacrt
+    ingress.kubernetes.io/auth-tls-verify-client: "optional"
+    nginx.ingress.kubernetes.io/auth-tls-verify-client: "optional"
+    ingress.kubernetes.io/auth-tls-verify-depth: "3"
+    nginx.ingress.kubernetes.io/auth-tls-verify-depth: "3"
+    {{- end }}
+    {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+    ingress.kubernetes.io/service-upstream: "true"
+    nginx.ingress.kubernetes.io/service-upstream: "true"
+    {{- end }}
+    disco: "true"
+    kubernetes.io/tls-acme: {{ default false .Values.ingress.vice_president | quote }}
+    prometheus.io/probe: {{ default false .Values.ingress.probe | quote }}
+    # this can maybe removed? we are the only ones using this, because the dns entry is already created 
+    dns-manager: "true"
+    dns-manager/zone-name: "dashboard-rsa.{{.Values.global.region}}.{{ .Values.global.tld }}"
+spec:
+  tls:
+    - secretName: elektra-rsa
+      hosts: [dashboard-rsa.{{ .Values.global.region }}.{{ .Values.global.tld }}]
+  rules:
+  - host: dashboard-rsa.{{ .Values.global.region }}.{{ .Values.global.tld }}
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: elektra
+            port:
+              number: 80
+{{- end }}

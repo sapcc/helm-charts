@@ -1,0 +1,33 @@
+replicaCount: 1
+topologyKey: kubernetes.io/hostname
+config:
+  accounts: []
+  intervals:
+    rotationPeriod: 5m
+    rotationJitter: 1.1
+    mirrorPeriod: 1m
+    mirrorJitter: 1.1
+  cleartext: reject
+image:
+  repository: ccloud/secrets-injector
+  tag: latest
+  pullPolicy: IfNotPresent
+webhook:
+  failurePolicy: Fail
+  # between 1 and 30 seconds: https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/#timeouts
+  timeoutSeconds: 15
+  genericRules: []
+  matchConditions: false
+  labels:
+    remediation.webhook.shoot.gardener.cloud/exclude: "true"
+  extraConditions: []
+  clientCA:
+    enabled: false
+    # resourceType: secret
+    # resourceName: abc
+    # keyName: client-ca.crt
+alerts:
+  enabled: true
+  ruleSelector:
+    prometheus: kubernetes
+

@@ -1,0 +1,99 @@
+apiVersion: v1
+kind: ConfigMap
+
+metadata:
+  name: swift-http-import
+  labels:
+    system: openstack
+    component: content-repo
+
+data:
+  # repo configs
+{{- range $repo, $config := .Values.repos }}
+{{- if not $config.disabled }}
+  {{$repo}}.yaml: |
+    swift:
+      auth_url: {{$.Values.auth_url}}
+      user_name: repo
+      user_domain_name: Default
+      project_name: master
+      project_domain_name: ccadmin
+      password: { fromEnv: TARGET_AUTH_PASSWORD }
+
+    gpg:
+      cache_container_name: repo-gpg-cache
+      keyserver_urls:
+        - "https://keyserver.ubuntu.com/pks/lookup?search=0x{keyid}&options=mr&op=get"
+
+    statsd:
+      hostname: {{$.Values.statsd_hostname}}
+      port:     9125
+      prefix:   repo.{{$repo}}
+    {{ if $config.transfer_workers }}
+    workers:
+      transfer: {{$config.transfer_workers}}
+    {{ end }}
+    jobs:
+      {{- range $index, $job := $config.jobs}}
+      - from:
+          {{- if $job.from.url }}
+          url:  {{$job.from.url}}
+          {{- $type := coalesce $job.from.type "''" }}
+          type: {{ $type }}
+          {{- if $job.from.arch }}
+          arch: {{ toJson $job.from.arch }}
+          {{- end }}
+          {{- if $job.from.dist }}
+          dist: {{ toJson $job.from.dist }}
+          {{- end }}
+          {{- if $job.from.token }}
+          token: {{ toJson $job.from.token }}
+          {{- end }}
+          {{- if or (eq $type "yum") (eq $type "debian") }}
+          verify_signature: {{ toJson $job.from.verify_signature }}
+          {{- end }}
+          cert: {{ coalesce $job.from.cert $config.cert "''" }}
+          key:  {{ coalesce $job.from.key $config.key "''" }}
+          ca:   {{ coalesce $job.from.ca $config.ca "''" }}
+          {{- else if $job.from.auth_url }}
+          auth_url:            {{ $job.from.auth_url }}
+          user_name:           {{ $job.from.user_name }}
+          user_domain_name:    {{ $job.from.user_domain_name }}
+          project_name:        {{ $job.from.project_name }}
+          project_domain_name: {{ $job.from.project_domain_name }}
+          password:            {{ $job.from.password }}
+          container:           {{ $job.from.container }}
+          object_prefix:       {{ $job.from.object_prefix | default "''" }}
+          {{- end }}
+        to:
+          container: {{$job.to.container}}
+          object_prefix: {{$job.to.object_prefix}}
+        {{- if $job.segmenting }}
+        segmenting:
+          min_bytes:     {{ $job.segmenting.min_bytes | printf "%0.f" }}
+          segment_bytes: {{ $job.segmenting.segment_bytes | printf "%0.f" }}
+          container:     {{ $job.segmenting.container }}
+        {{- end }}
+        {{- if $job.expiration }}
+        expiration:
+          enabled:       {{ not $job.expiration.disabled }}
+          {{- if $job.expiration.delay_seconds }}
+          delay_seconds: {{ $job.expiration.delay_seconds | printf "%0.f" }}
+          {{- end }}
+        {{- end }}
+        {{- if $config.cleanup_strategy }}
+        cleanup:
+          strategy: {{ $config.cleanup_strategy }}
+        {{- end }}
+        {{- if $job.match }}
+        match:
+          {{- if $job.match.not_older_than }}
+          not_older_than: {{ $job.match.not_older_than }}
+          {{- end }}
+        {{- end }}
+        except:    {{ coalesce $job.except $config.except "''" }}
+        only:      {{ coalesce $job.only $config.only "''" }}
+        immutable: {{ coalesce $job.immutable $config.immutable "''" }}
+      {{- end }}
+{{ end }}
+{{ end }}

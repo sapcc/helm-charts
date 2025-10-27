@@ -1,0 +1,13 @@
+{{- $fullname := include "redis.fullname" . -}}
+
+{{- if .Values.config }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ $fullname }}
+data:
+  redis.conf: |
+{{- range $key, $value := .Values.config }}
+    {{$key}} {{$value}}
+{{- end }}
+{{- end }}

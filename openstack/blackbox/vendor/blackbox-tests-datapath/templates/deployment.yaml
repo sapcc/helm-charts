@@ -1,0 +1,181 @@
+kind: Deployment
+apiVersion: apps/v1
+
+metadata:
+  name: blackbox-tests-datapath
+  labels:
+    system: openstack
+    component: blackbox-tests
+    type: datapath
+
+spec:
+  replicas: 0
+  revisionHistoryLimit: 5
+  selector:
+    matchLabels:
+      name: blackbox-tests-datapath
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 2
+  template:
+    metadata:
+      labels:
+        name: blackbox-tests-datapath
+    spec:
+      nodeSelector:
+        zone: farm
+      volumes:
+        - name: blackbox-tests-datapath
+          persistentVolumeClaim:
+            claimName: blackbox-tests-datapath
+        - name: statsd-mapping-config
+          configMap:
+            name: blackbox-tests-datapath-statsd-mapping-config
+        - name: blackbox-jump-key
+          secret:
+            secretName: blackbox-tests-datapath
+            items:
+              - key: jump.key
+                path: authorized_keys.health
+                mode: 0600
+      containers:
+        - name: pytest
+{{- if typeIs "float64" .Values.global.image.tag  }}{{/* https://github.com/kubernetes/helm/issues/1707 */}}
+          image: {{.Values.global.registry}}/{{.Values.global.image.name}}:{{.Values.global.image.tag | printf "%0.f" }}
+{{- else }}
+          image: {{.Values.global.registry}}/{{.Values.global.image.name}}:{{.Values.global.image.tag}}
+{{- end }}
+          args:
+            - "iterate"
+            - "pytest"
+            - {{ .Values.parallel.workers | printf "-n %.0f" | quote }}
+            - {{ .Values.parallel.timeout.global | printf "--timeout %.0f" | quote }}
+            - "--disable-pytest-warnings"
+            - "-r ap"
+            - "tests/test_datapath.py"
+          volumeMounts:
+            - name: blackbox-tests-datapath
+              mountPath: /opt/logs
+              readOnly: false
+            - name: blackbox-jump-key
+              mountPath: /opt/keys
+              readOnly: true
+          env:
+            - name: OS_AUTH_URL
+              value: {{ .Values.global.openstack.auth_url | quote }}
+            - name: OS_IDENTITY_API_VERSION
+              value: {{ .Values.global.openstack.identity_api_version | quote }}
+            - name: OS_VOLUME_API_VERSION
+              value: {{ .Values.global.openstack.volume_api_version | quote }}
+            - name: OS_USERNAME
+              value: {{ .Values.global.openstack.users.admin.username | quote }}
+            - name: OS_USER_DOMAIN_NAME
+              value: {{ .Values.global.openstack.users.admin.user_domain_name | quote }}
+            - name: OS_PROJECT_NAME
+              value: {{ .Values.global.openstack.users.admin.project_name | quote }}
+            - name: OS_PROJECT_DOMAIN_NAME
+              value: {{ .Values.global.openstack.users.admin.project_domain_name | quote }}
+            - name: OS_REGION_NAME
+              value: {{ .Values.global.openstack.region_name | quote }}
+            - name: JUMP_URL
+              value: {{ .Values.global.jump.url | quote }}
+            - name: JUMP_USER
+              value: {{ .Values.global.jump.user | quote }}
+            - name: DATAPATH_JUMP_HOST_FLOAT_IP
+              value: {{ .Values.jump_host_floating_ip | quote }}
+            - name: CANARY_JUMP_HOST_FLOAT_IPS
+              value: {{ .Values.canary_jump_host_ips | quote }}
+            - name: DATAPATH_SERVER_FIXED_IPS
+              value: {{ .Values.server_fixed_ips | quote }}
+            - name: DATAPATH_SERVER_FLOAT_IPS
+              value: {{ .Values.server_floating_ips | quote }}
+            - name: DATAPATH_SERVER_DNS_NAMES
+              value: {{ .Values.server_dns_names | quote }}
+            - name: DATAPATH_NFS_SERVER_FLOAT_IPS
+              value: {{ .Values.server_nfs_floating_ips | quote }}
+            - name: DATAPATH_LBAAS_FLOAT_IPS
+              value: {{ .Values.lbaas_floating_ips | quote }}
+            - name: DATAPATH_BIND_IPS
+              value: {{ .Values.bind_ips | quote }}
+            - name: DATAPATH_UNBOUND_IPS
+              value: {{ .Values.unbound_ips | quote }}
+            - name: DATAPATH_HIDDEN_MASTER
+              value: {{ .Values.hidden_master | quote }}
+            - name: DATAPATH_REGIONAL_PTR
+              value: {{ .Values.regional_ptr | quote }}
+            - name: DATAPATH_TSIG_KEY
+              value: {{ .Values.tsig_key | quote }}
+            - name: DATAPATH_AD_NODES
+              value: {{ .Values.ad_nodes | quote }}
+            - name: DATAPATH_AD_DNS
+              value: {{ .Values.ad_dns | quote }}
+            - name: DATAPATH_AD_BIND_DN
+              value: {{ .Values.ad_ldap_user | quote }}
+            - name: DATAPATH_AD_BIND_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: blackbox-tests-datapath
+                  key: ldap.password
+            - name: DATAPATH_AD_OU_SUFFIX
+              value: {{ .Values.ad_ldap_suffix | quote }}
+            - name: DATAPATH_AD_GROUP
+              value: {{ .Values.ad_test_group | quote }}
+            - name: DATAPATH_AD_USER
+              value: {{ .Values.ad_test_user | quote }}
+            - name: DATAPATH_EWS_DNS
+              value: {{ .Values.ews_dns | quote }}
+            - name: DATAPATH_S4_FIPS
+              value: {{ .Values.s4_fips | quote }}
+            - name: STATSD_HOST
+              value: {{ .Values.statsd.host | quote }}
+            - name: STATSD_PORT
+              value: {{ .Values.statsd.port | quote }}
+            - name: STATSD_PREFIX
+              value: {{ .Values.statsd.prefix | quote }}
+            - name: TIMEOUT
+              value: {{ .Values.parallel.timeout.atomic | quote }}
+            - name: SLEEP_ITERATE
+              value: {{ .Values.parallel.iterator.sleep | quote }}
+            - name: OS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: blackbox-tests-datapath
+                  key: os.password
+            - name: SENTRY_DSN
+              valueFrom:
+                secretKeyRef:
+                  name: sentry
+                  key: blackbox.DSN
+          livenessProbe:
+            exec:
+              command:
+              - pytest
+              - --version
+            timeoutSeconds: 5
+            periodSeconds: 15
+            initialDelaySeconds: 15
+          readinessProbe:
+            exec:
+              command:
+              - pytest
+              - --version
+            timeoutSeconds: 5
+            periodSeconds: 15
+            initialDelaySeconds: 15
+
+        - name: statsd
+          image: {{.Values.global.dockerHubMirror}}/prom/statsd-exporter:v0.12.2
+          imagePullPolicy: IfNotPresent
+          args:
+            - --statsd.mapping-config=/etc/statsd/statsd-mapping.conf
+          ports:
+            - name: statsd
+              containerPort: 9125
+              protocol: UDP
+            - name: metrics
+              containerPort: {{ .Values.global.port_metrics}}
+          volumeMounts:
+            - name: statsd-mapping-config
+              mountPath: /etc/statsd

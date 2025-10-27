@@ -1,0 +1,42 @@
+{{- if .Values.disco.enabled }}
+apiVersion: greenhouse.sap/v1alpha1
+kind: Plugin
+metadata:
+  name: disco
+  namespace: {{ .Release.Namespace }}
+  labels:
+    "greenhouse.sap/owned-by": {{ .Values.disco.supportGroup | default .Values.global.supportGroup }}
+spec:
+  pluginDefinition: disco
+  disabled: false
+  optionValues:
+    - name: record
+      value: {{ required ".Values.disco.record missing" .Values.disco.record }}
+    - name: openstack.zoneName
+      value: {{ required ".Values.disco.zoneName missing" .Values.disco.zoneName }}
+    - name: openstack.authURL
+      value: {{ required ".Values.disco.enabled missing" .Values.disco.authURL }}
+    - name: openstack.regionName
+      value: {{ required ".Values.disco.enabled missing" .Values.disco.regionName }}
+    - name: openstack.username
+      value: {{ required ".Values.disco.enabled missing" .Values.disco.username }}
+    - name: openstack.userDomainName
+      value: {{ required ".Values.disco.enabled missing" .Values.disco.userDomainName }}
+    - name: openstack.password
+      valueFrom:
+        secret:
+          key: discoPassword
+          name: disco
+    - name: openstack.projectName
+      value: {{ required ".Values.disco.enabled missing" .Values.disco.projectName }}
+    - name: openstack.projectDomainName
+      value: {{ required ".Values.disco.enabled missing" .Values.disco.projectDomainName }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: disco
+  namespace: {{ .Release.Namespace }}
+data:
+  discoPassword: {{ required ".Values.disco.password missing" .Values.disco.password | b64enc }}
+{{- end }}

@@ -1,0 +1,16 @@
+groups:
+- name: blackbox-metal.alerts
+  rules:
+  - alert: BlackboxRegressionTestCreateMetalServerFails
+    expr: blackbox_regression_status_gauge{check=~"create_bm_server-.+",service="ironic",type="regression"} > 0.4
+    for: 3h
+    labels:
+      severity: info
+      tier: metal
+      service: blackbox-tests-regression
+      meta: 'Blackbox-Tests-Regression {{ $labels.check }} fails for 3 h. Check Sentry for details.'
+      sentry: 'blackbox/?query=test_{{ $labels.check }}'
+      no_alert_on_absence: "true"
+    annotations:
+      description: Blackbox-Tests-Regression {{ $labels.check }} fails for 3 h. Check Sentry for details.
+      summary: Blackbox-Tests-Regression {{ $labels.check }} fails for 3 h. Check Sentry for details.

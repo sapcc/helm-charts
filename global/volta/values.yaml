@@ -1,0 +1,98 @@
+# Default values for volta
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# environment vars
+volta:
+  role_id: DEFINED_IN_REGION_VALUES_FILE
+  secret_id: DEFINED_IN_REGION_VALUES_FILE
+  vault_url: DEFINED_IN_REGION_VALUES_FILE
+  oidc_provider: DEFINED_IN_VALUES_FILE
+  oidc_client_id: DEFINED_IN_VALUES_FILE
+  oidc_client_secret: DEFINED_IN_VALUES_FILE
+  oidc_callback_url: DEFINED_IN_REGION_VALUES_FILE
+  ldap_host: DEFINED_IN_VALUES_FILE
+  ldap_bind_dn: DEFINED_IN_VALUES_FILE
+  ldap_base_dn: DEFINED_IN_VALUES_FILE
+  ldap_bind_pw: DEFINED_IN_VALUES_FILE
+  ca_names: [2fa-pki, galvani-pki, mutual_tls-pki]
+  app_url: https://assets.juno.qa-de-1.cloud.sap/apps/widget-loader@latest/build/app.js
+
+replicaCount: 1
+
+image:
+  repository: keppel.eu-de-1.cloud.sap/ccloud/volta
+  pullPolicy: Always
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: "20221219134155"
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+podAnnotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/targets: "kubernetes"
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+service:
+  type: ClusterIP
+  port: 2345
+
+# Ingress is enabled in:
+# - secrets/global/values/volta.yaml
+# - secrets/scaleout/s-qa-de-1/values/volta.yaml
+ingress:
+  enabled: false
+
+resources: {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 100
+  targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+owner-info:
+  helm-chart-url: 'https://github.com/sapcc/helm-charts/tree/master/global/volta'
+  maintainers:
+    - Dimitrios Tassopoulos
+    - Fabian Ruff
+  support-group: src
+  service: volta

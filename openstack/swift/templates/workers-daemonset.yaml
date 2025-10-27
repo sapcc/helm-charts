@@ -1,0 +1,50 @@
+kind: DaemonSet
+apiVersion: apps/v1
+
+metadata:
+  name: swift-workers
+  labels:
+    release: "{{ .Release.Name }}"
+    on-upgrade: recreate
+
+spec:
+  minReadySeconds: 15
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: '20%' # these pods can be rolled rather quickly since they are not in the hot path
+  selector:
+    matchLabels:
+      component: swift-workers
+      from: daemonset
+      restart: directly
+  template:
+    metadata:
+      labels:
+        component: swift-workers
+        from: daemonset
+        restart: directly
+      annotations:
+        {{- include "swift_conf_annotations" . | indent 8 }}
+    spec:
+      {{- include "swift_daemonset_tolerations" . | indent 6 }}
+      hostNetwork: true
+      nodeSelector:
+        species: {{ .Values.species }}
+      volumes: {{ include "swift_daemonset_volumes" . | indent 8 }}
+      initContainers:
+        {{- include "swift_ringloader_initcontainer" . | indent 8 }}
+      containers:
+        {{- tuple "account"   "account-auditor"   . | include "swift_standard_container" | indent 8 }}
+        {{- tuple "account"   "account-reaper"    . | include "swift_standard_container" | indent 8 }}
+        {{- tuple "container" "container-auditor" . | include "swift_standard_container" | indent 8 }}
+        {{- tuple "container" "container-updater" . | include "swift_standard_container" | indent 8 }}
+        {{- if .Values.container_sharder }}
+        {{- tuple "container" "container-sharder" . | include "swift_standard_container" | indent 8 }}
+        {{- end }}
+        {{- tuple "object"    "object-auditor"    . | include "swift_standard_container" | indent 8 }}
+        {{- tuple "object"    "object-updater"    . | include "swift_standard_container" | indent 8 }}
+        {{- tuple "object"    "recon-cron"        . | include "swift_standard_container" | indent 8 }}
+
+---
+{{ include "swift_vpa_no_autoupdates" "swift-workers" }}

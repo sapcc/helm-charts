@@ -1,0 +1,33 @@
+kind: Service
+apiVersion: v1
+
+metadata:
+  name: glance
+  labels:
+    app: {{ template "name" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    component: glance
+    type: api
+  annotations:
+    {{- include "utils.topology.service_topology_mode" . | indent 2 }}
+    {{- include "utils.linkerd.pod_and_service_annotation" . | indent 4 }}
+{{- if .Values.metrics.enabled }}
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "{{.Values.metrics.port}}"
+    prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
+{{- end }}
+spec:
+  selector:
+    app: {{ template "name" . }}
+  type: {{ default "ClusterIP" .Values.services.type | quote }}
+  ports:
+    - name: public
+      port: {{ .Values.api_port_internal }}
+      targetPort: 9292
+{{- if .Values.services.externalip }}
+  externalIPs: [
+    {{ .Values.services.externalip | quote }}
+    ]
+{{- end }}

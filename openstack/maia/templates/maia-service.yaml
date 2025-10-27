@@ -1,0 +1,23 @@
+{{- if not .Values.global.is_global_region }}
+{{- if .Values.maia.enabled }}
+kind: Service
+apiVersion: v1
+metadata:
+  name: maia
+  namespace: maia
+  labels:
+    system: openstack
+    service: maia
+    component: maia
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "{{ .Values.maia.listen_port }}"
+    prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
+spec:
+  selector:
+    component: maia
+  ports:
+    - name: api
+      port: {{ .Values.maia.listen_port }}
+{{- end }}
+{{- end }}

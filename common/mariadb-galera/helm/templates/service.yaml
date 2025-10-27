@@ -1,0 +1,46 @@
+{{/* MariaDB services */}}
+  {{/* backend */}}
+    {{/* per pod service to generate per pod hostnames */}}
+    {{- range $replicaNumber, $err := until ((include "replicaCount" (dict "global" $ "type" "database")) | int) }}
+      {{ include "networkService" (dict "global" $ "type" "backend" "service" (required ".services.database.backend missing" $.Values.services.database.backend) "component" "database" "replica" ($replicaNumber | toString)) }}
+    {{- end }}
+    {{/* shared service for all pods */}}
+    {{ include "networkService" (dict "global" $ "type" "backend" "service" (required ".services.database.backend missing" $.Values.services.database.backend) "component" "database" "replica" "notused") }}
+  {{/* frontend */}}
+  {{/* other frontend services for all pods */}}
+    {{- if not $.Values.proxy.enabled }}
+      {{ include "networkService" (dict "global" $ "type" "frontend" "service" (required ".services.database.frontend missing" $.Values.services.database.frontend) "component" "database" "replica" "notused") }}
+      {{ include "networkService" (dict "global" $ "type" "frontend" "service" (required ".services.database.frontend missing" $.Values.services.database.frontend) "component" "database-direct" "replica" "notused") }}
+    {{- else if $.Values.proxy.enabled }}
+      {{ include "networkService" (dict "global" $ "type" "frontend" "service" (required ".services.database.frontend missing" $.Values.services.database.frontend) "component" "database-direct" "replica" "notused") }}
+    {{- end }}
+
+{{/* ProxySQL services */}}
+{{- if and ($.Values.proxy.enabled) (eq $.Values.proxy.type "proxysql") }}
+  {{/* backend */}}
+    {{/* per pod service to generate per pod hostnames */}}
+    {{- range $replicaNumber, $err := until ((include "replicaCount" (dict "global" $ "type" "proxy")) | int) }}
+      {{ include "networkService" (dict "global" $ "type" "backend" "service" (required ".services.proxy.proxysql.backend missing" $.Values.services.proxy.proxysql.backend) "component" "proxysql" "replica" ($replicaNumber | toString)) }}
+    {{- end }}
+    {{/* shared service for all pods */}}
+    {{ include "networkService" (dict "global" $ "type" "backend" "service" (required ".services.proxy.proxysql.backend missing" $.Values.services.proxy.proxysql.backend) "component" "proxysql" "replica" "notused") }}
+  {{/* frontend */}}
+  {{/* other frontend services for all pods */}}
+    {{- if $.Values.proxy.enabled }}
+      {{ include "networkService" (dict "global" $ "type" "frontend" "service" (required ".services.proxy.proxysql.frontend missing" $.Values.services.proxy.proxysql.frontend) "component" "proxysql" "replica" "notused") }}
+    {{- end }}
+{{- end }}
+
+{{/* Haproxy services */}}
+{{- if and ($.Values.proxy.enabled) (eq $.Values.proxy.type "haproxy") }}
+  {{/* backend */}}
+  {{ include "networkService" (dict "global" $ "type" "backend" "service" (required ".services.proxy.haproxy.backend missing" $.Values.services.proxy.haproxy.backend) "component" "haproxy" "replica" "notused") }}
+  {{/* frontend */}}
+  {{ include "networkService" (dict "global" $ "type" "frontend" "service" (required ".services.proxy.haproxy.frontend missing" $.Values.services.proxy.haproxy.frontend) "component" "haproxy" "replica" "notused") }}
+{{- end }}
+
+{{/* Kopia services */}}
+  {{/* frontend */}}
+    {{- if and (and (hasKey $.Values.mariadb.galera "backup") ($.Values.mariadb.galera.backup.enabled)) (and (hasKey $.Values.mariadb.galera.backup "kopia") ($.Values.mariadb.galera.backup.kopia.enabled)) }}
+      {{ include "networkService" (dict "global" $ "type" "frontend" "service" (required ".services.kopiaserver.frontend missing" $.Values.services.kopiaserver.frontend) "component" "kopiaserver" "replica" "notused") }}
+    {{- end }}

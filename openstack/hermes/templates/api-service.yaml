@@ -1,0 +1,20 @@
+kind: Service
+apiVersion: v1
+
+metadata:
+  name: hermes-api
+  namespace: hermes
+  labels: 
+    system: openstack
+    component: hermes
+  annotations:
+    prometheus.io/targets: {{ required ".Values.metrics.prometheus missing" .Values.metrics.prometheus }}
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "80"
+spec:
+  selector:
+    name: hermes-api
+  ports:
+    - port: 80
+
+---

@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    meta.helm.sh/release-name: ws2-exampleuser
+    meta.helm.sh/release-namespace: ws2-exampleuser
+  labels:
+    app.kubernetes.io/managed-by: Helm
+  name: workstation
+  namespace: ws2-exampleuser
+spec:
+  template:
+    spec:
+      containers:
+      - name: ide
+      - args:
+        - -c
+        - dockerd --host=$DOCKER_HOST
+        - docker-containerd --config /var/run/docker/containerd/containerd.toml
+        command:
+        - /bin/sh
+        env:
+        - name: DOCKER_HOST
+          value: unix:///opt/workspaces/docker/docker.sock
+        - name: SSH_AUTH_SOCK
+          value: /opt/workspaces/ssh/auth/sock
+        image: keppel.example.com/ccloud-dockerhub-mirror/library/docker:20.10.19-dind
+        name: docker-carrier
+        securityContext:
+          privileged: true
+      securityContext: {}

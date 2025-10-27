@@ -1,0 +1,92 @@
+groups:
+- name: openstack-keystone.alerts
+  rules:
+  - alert: OpenstackKeystoneScrapeMissing
+    expr: absent(up{component="keystone",type="api"})
+    for: 1h
+    labels:
+      context: availability
+      dashboard: keystone
+      service: keystone
+      severity: warning
+      tier: os
+      support_group: identity
+    annotations:
+      description: Keystone failed to be scraped. Monitoring might miss metrics it needs to alert on.
+      summary: Keystone cannot be scraped
+
+  - alert: OpenstackKeystoneDatabaseScrapeMissing
+    expr: absent(up{app="keystone-mariadb"})
+    for: 1h
+    labels:
+      context: availability
+      dashboard: keystone
+      service: keystone
+      severity: warning
+      tier: os
+    annotations:
+      description: Keystones database running status failed to be scraped. Monitoring might miss metrics it needs to alert on
+      summary: Keystone database cannot be scraped
+
+  - alert: OpenstackKeystoneApiPodIsDown
+    expr: up{component="keystone",type="api"} == 0
+    for: 5m
+    labels:
+      context: availability
+      dashboard: keystone
+      meta: "a keystone instance went down on {{ $labels.instance }}"
+      service: keystone
+      severity: info
+      tier: os
+      support_group: identity
+      playbook: 'docs/support/playbook/keystone/alerts/cc3test-alert-api'
+    annotations:
+      description: "A keystone-api pod on {{ $labels.instance }} is DOWN. The remaining ones should keep the service up."
+      summary: "A keystone server is DOWN"
+
+  - alert: OpenstackKeystoneDatabaseUp
+    expr: count(up{component="keystone-mariadb"} == 0) == count(up{component="keystone-mariadb"})
+    for: 5m
+    labels:
+      context: availability
+      service: keystone
+      severity: critical
+      tier: os
+      dashboard: mariadb-overview?var-host=keystone-mariadb
+      support_group: identity
+      playbook: 'docs/support/playbook/database'
+    annotations:
+      description: "Keystone database on {{ $labels.instance }} is DOWN."
+      summary: "Keystone Database is DOWN"
+
+  - alert: OpenstackKeystoneAllDown
+    expr: count(up{component="keystone",type="api"} == 0) == count(up{component="keystone",type="api"})
+    for: 5m
+    labels:
+      context: availability
+      meta: all keystone instances are down
+      service: keystone
+      severity: critical
+      tier: os
+      dashboard: keystone
+      support_group: identity
+      playbook: 'docs/support/playbook/keystone/alerts/cc3test-alert-api'
+    annotations:
+      description: All keystone-api server pods are down.
+      summary: Keystone is unavailable.
+
+
+  - alert: OpenstackKeystoneApiRequestsExceeded
+    expr: sum(irate(openstack_watcher_api_requests_total{service="identity"} [1m])) by (status) > 300
+    for: 1m
+    labels:
+      context: availability
+      meta: Api Requests to Keystone Exceeds 300ops
+      service: keystone
+      severity: info
+      tier: os
+      support_group: identity
+      dashboard: keystone
+    annotations:
+      description: Api Requests to Keystone is {{ $value }}ops/s
+      summary: Api Requests to Keystone is {{ $value }}ops/s

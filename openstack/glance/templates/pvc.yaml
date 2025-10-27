@@ -1,0 +1,19 @@
+{{- if .Values.file.persistence.enabled }}
+{{- if not .Values.file.persistence.existingClaim -}}
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: {{ .Release.Name }}-pvc
+  labels:
+    app: {{ template "name" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+spec:
+  accessModes:
+    - {{ .Values.store.file.persistence.accessMode | default "ReadWriteMany" | quote }}
+  resources:
+    requests:
+      storage: {{ .Values.store.file.persistence.size | default "10Gi" | quote }}
+{{- end }}
+{{- end }}

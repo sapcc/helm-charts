@@ -1,0 +1,18 @@
+{{- if .Values.concourse.web.tsaLoadbalancer }}
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: {{ .Release.Name }}-web
+    release: {{ $.Release.Name }}
+  name: {{ .Release.Name }}-web-tsa-lb
+spec:
+  ports:
+  - name: tsa
+    port: 2222
+    protocol: TCP
+    targetPort: tsa
+  selector:
+    app: {{ .Release.Name }}-web
+  type: LoadBalancer
+{{- end }}

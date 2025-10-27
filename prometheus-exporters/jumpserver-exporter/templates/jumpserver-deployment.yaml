@@ -1,0 +1,47 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: jumpserver-exporter 
+  namespace: infra-monitoring
+  annotations:
+    vpa-butler.cloud.sap/update-mode: Auto
+spec:
+  selector:
+    matchLabels:
+      app: jumpserver-exporter 
+      type: exporter
+  template:
+    metadata:
+      labels:
+        app: jumpserver-exporter
+        type: exporter
+      annotations:
+        prometheus.io/targets: {{ required ".Values.jumpserver.alerts.prometheus missing" .Values.jumpserver.alerts.prometheus | quote }}
+        {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+        linkerd.io/inject: enabled
+        {{- end }}
+        kubectl.kubernetes.io/default-container: jumpserver-exporter
+    spec:
+      containers:
+         - name: jumpserver-exporter
+           image: {{ required ".Values.global.registry variable missing" .Values.global.registry }}/{{ .Values.jumpserver.image.name }}:{{ .Values.jumpserver.image.tag }}
+           ports:
+             - name: metrics
+               containerPort: {{ .Values.jumpserver.port_number }}
+           livenessProbe:
+             httpGet:
+               path: /metrics
+               port: {{ .Values.jumpserver.port_number }}
+             initialDelaySeconds: 30
+             timeoutSeconds: 10
+             periodSeconds: 15
+           env:
+           - name: REGION
+             value: {{ .Values.jumpserver.region }}
+           - name: RADIUS_SECRET
+             valueFrom:
+               secretKeyRef:
+                 name: jumpserver-exporter
+                 key: radius
+           - name: EXPORT_PORT
+             value: {{ .Values.jumpserver.port_number | quote }}

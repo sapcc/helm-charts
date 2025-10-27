@@ -1,0 +1,50 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  name: {{ include "owner-label-injector.fullname" . }}
+  labels:
+    {{- include "owner-label-injector.labels" . | nindent 4 }}
+  annotations:
+    cert-manager.io/inject-ca-from: {{ .Release.Namespace }}/{{ include "owner-label-injector.fullname" . }}
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: {{ include "owner-label-injector.fullname" . }}
+      namespace: {{ .Release.Namespace }}
+      path: /mutate-generic
+  failurePolicy: Ignore
+  matchConditions:
+  - name: skip-endpoints
+    expression: "!(object.kind in ['Endpoints', 'EndpointSlice'])"
+  {{ if .Values.staging.enabled }}
+  name: owner-label-injector.generic-staging.ccloud
+  namespaceSelector:
+    matchExpressions:
+    - key: kubernetes.io/metadata.name
+      operator: In
+      values:
+      - "{{ .Values.staging.namespace }}"
+  {{ else }}
+  name: owner-label-injector.generic.ccloud
+  namespaceSelector:
+    matchExpressions:
+    - key: kubernetes.io/metadata.name
+      operator: NotIn
+      values:
+      - "{{ .Values.staging.namespace }}"
+      - kube-node-lease
+  {{ end }}
+  rules:
+  - apiGroups:
+    - '*'
+    apiVersions:
+    - '*'
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - '*'
+  sideEffects: NoneOnDryRun
+

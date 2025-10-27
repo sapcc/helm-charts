@@ -1,0 +1,16 @@
+{{- if .Values.cc_fabric.enabled }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: neutron-etc-cc-fabric
+  labels:
+    system: openstack
+    type: configuration
+    component: neutron
+data:
+  ml2_conf_cc-fabric.ini: |
+{{ include (print .Template.BasePath "/etc/_ml2-conf-cc-fabric.ini.tpl") . | indent 4 }}
+  cc-fabric-driver-config.yaml: |
+{{ toYaml (required "cc_fabric.driver_config cannot be empty" .Values.cc_fabric.driver_config) | indent 4 }}
+{{- end }}

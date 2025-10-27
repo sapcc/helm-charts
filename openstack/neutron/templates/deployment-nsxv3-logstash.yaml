@@ -1,0 +1,107 @@
+{{- if .Values.logger.enabled }}
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: neutron-nsxv3-logstash
+  labels:
+    system: openstack
+    type: backend
+    component: neutron
+  annotations:
+    vpa-butler.cloud.sap/main-container: neutron-nsxv3-logstash
+spec:
+  replicas: {{ .Values.logger.logstash.replicas | default 3 }}
+  revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revision_history }}
+  strategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      name: neutron-nsxv3-logstash
+  template:
+    metadata:
+      labels:
+        name: neutron-nsxv3-logstash
+      annotations:
+        kubectl.kubernetes.io/default-container: neutron-nsxv3-logstash
+        configmap-logger-hash: {{ include (print .Template.BasePath "/configmap-nsxv3-logstash.yaml") . | sha256sum }}
+        {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
+    spec:
+      {{- if .Values.logger.persistence.enabled }}
+      initContainers:
+        - name: fix-volume-permission
+          image: {{.Values.global.dockerHubMirror}}/library/busybox:1.34
+          command: ["sh", "-c", "chown -R 1000:1000 /data"]
+          volumeMounts:
+            - name: logstash-data
+              mountPath: /data
+      {{- end }}
+      containers:
+        - name: neutron-nsxv3-logstash
+          image: {{.Values.global.dockerHubMirror}}/library/logstash:{{.Values.imageVersionLogstash | required "Please set neutron.imageVersionLogstash"}}
+          args: ["sh", "-c", "logstash-plugin install logstash-filter-jdbc_mysql && logstash"]
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 9600
+            initialDelaySeconds: 30
+            timeoutSeconds: 30
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 9600
+            initialDelaySeconds: 180
+            timeoutSeconds: 30
+            periodSeconds: 60
+          env:
+          - name: NEUTRON_DB_USER
+            valueFrom:
+              secretKeyRef:
+                name: neutron-nsxv3-logstash-secret
+                key: NEUTRON_DB_USER
+          - name: NEUTRON_DB_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: neutron-nsxv3-logstash-secret
+                key: NEUTRON_DB_PASSWORD
+          - name: XPACK_MONITORING_ENABLED
+            value: "false"
+          {{- include "utils.trust_bundle.env" . | indent 10 }}
+          ports:
+          - containerPort: 5514
+          volumeMounts:
+          - mountPath: /usr/share/logstash/pipeline/logstash.conf
+            subPath: pipeline.conf
+            name: logger-config
+          {{- include "utils.trust_bundle.volume_mount" . | indent 10 }}
+        {{- if .Values.logger.persistence.enabled }}
+          - name: logstash-data
+            mountPath: /data
+        - name: logrotate
+          image: {{.Values.global.dockerHubMirror}}/blacklabelops/logrotate:1.3
+          env:
+          - name: LOGS_DIRECTORIES
+            value: /data
+          - name: LOGROTATE_SIZE
+            value: 10M
+          - name: LOGROTATE_INTERVAL
+            value: daily
+          - name: LOGROTATE_DATEFORMAT
+            value: "-%Y%m%d"
+          volumeMounts:
+          - name: logstash-data
+            mountPath: /data
+        {{- end }}
+      volumes:
+        - name: logger-config
+          configMap:
+            name: neutron-nsxv3-logstash
+            items:
+            - key: pipeline
+              path: pipeline.conf
+        {{- if .Values.logger.persistence.enabled }}
+        - name: logstash-data
+          persistentVolumeClaim:
+            claimName: neutron-nsxv3-logstash
+        {{- end }}
+        {{- include "utils.trust_bundle.volumes" . | indent 8 }}
+{{- end -}}

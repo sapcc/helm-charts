@@ -1,0 +1,69 @@
+apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  name: {{ .Release.Name }}
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+spec:
+  replicas: {{ .Values.replicas }}
+  revisionHistoryLimit: {{ .Values.upgrades.revisionHistory }}
+  strategy:
+    type: {{ .Values.upgrades.podReplacementStrategy }}
+    {{ if eq .Values.upgrades.podReplacementStrategy "RollingUpdate" }}
+    rollingUpdate:
+      maxUnavailable: {{ .Values.upgrades.rollingUpdate.maxUnavailable }}
+      maxSurge: {{ .Values.upgrades.rollingUpdate.maxSurge }}
+    {{ end }}
+  selector:
+    matchLabels:
+      app: {{ template "fullname" . }}
+  template:
+    metadata:
+      labels:
+        app: {{ template "fullname" . }}
+        name: {{ .Release.Name }}
+      annotations:
+        checksum/bin-configmap.conf: {{ include (print $.Chart.Name "/templates/bin-configmap.yaml") . | sha256sum }}
+        {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
+    spec:
+{{- if .Values.rbac.enabled }}
+      serviceAccountName: {{ .Release.Name }}
+{{- end }}
+      containers:
+        - name: operator
+{{- if typeIs "float64" .Values.imageTag  }}{{/* https://github.com/kubernetes/helm/issues/1707 */}}
+          image: {{ default "keppel.eu-de-1.cloud.sap/ccloud" .Values.global.registry }}/{{ .Values.image }}:{{ .Values.imageTag | printf "%0.f" }}
+{{- else }}
+          image: {{ default "keppel.eu-de-1.cloud.sap/ccloud" .Values.global.registry }}/{{ .Values.image }}:{{ .Values.imageTag }}
+{{- end }}
+          command:
+          - kubernetes-entrypoint
+          env:
+            - name: COMMAND
+              value: "bash /scripts/start"
+            - name: NAMESPACE
+              value: {{ .Release.Namespace }}
+            {{- if .Values.sentry.enabled }}
+            - name: SENTRY_DSN
+            {{- if .Values.sentry.dsn }}
+              value: {{ .Values.sentry.dsn | quote}}
+            {{ else }}
+              valueFrom:
+                secretKeyRef:
+                  name: sentry
+                  key: seeder.DSN
+            {{- end }}
+            {{- end }}
+          resources:
+{{ toYaml .Values.resources | indent 12 }}
+          volumeMounts:
+            - mountPath: /scripts
+              name: scripts
+      volumes:
+        - name: scripts
+          configMap:
+            name: openstack-seeder-bin

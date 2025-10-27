@@ -1,0 +1,20 @@
+# vim: set ft=yaml:
+
+groups:
+- name: openstack-swift-caretaker.alerts
+  rules:
+  - alert: OpenstackSwiftOrphanAccounts
+    expr: max(swift_cluster_accounts_orphan) > 0
+    # Avoid alerting too early if the complete project cleanup is not yet done
+    for: 8h
+    labels:
+      context: orphanaccounts
+      dashboard: swift-overview
+      service: swift
+      severity: info
+#      support_group: storage
+      tier: os
+      meta: '{{ $value }} orphaned Swift accounts'
+    annotations:
+      description: '{{ $value }} Swift accounts are orphaned. An improper project deletion can cause this. Check the logs of pod swift-account-caretaker-mergify-XXX and the <https://dashboard.{{ $externalLabels.region }}.cloud.sap/cc3test/swift_test/object-storage/containers/caretaker/raw/accounts_orphan.csv?inline=1|list of orphaned accounts>.'
+      summary: Swift accounts are orphaned

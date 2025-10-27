@@ -1,0 +1,115 @@
+groups:
+- name: ad-win-exporter.alerts
+  rules:      
+  - alert: ADMetricsDownInfo
+    expr: count(up{job="win-exporter-ad"} == 0) by (server_name, model, manufacturer, serial) 
+    for: 30m
+    labels:
+      severity: warning
+      tier: ad
+      service: windows-exporter
+      context: "{{ $labels.server_name }}"
+      meta: "Windows metrics cannot be fetched from node {{ $labels.server_name }}"
+      playbook: docs/support/playbook/activedirectory/alerts/#admetricsdowninfo
+    annotations:
+      description: "Windows metrics cannot be fetched from node {{ $labels.server_name }}. Check if the windows exporter service is running!"
+      summary: "Windows metrics cannot be fetched from node {{ $labels.server_name }}"
+
+  # the display_name label of a service is only available in the windows_service_info metrics. Hence we have to join the two.
+  # if a service is getting restarted, the process_id changes. So, we have to use count to get a single metric
+  - alert: ADServiceDownWarn
+    expr: count(windows_service_state{state!="running", job="win-exporter-ad",  name=~"adws|dns|ntds"} > 0) by (server_name, name, state) * on(server_name, name) group_left(display_name) count(windows_service_info) by(server_name, name, display_name)
+    for: 30m
+    labels:
+      severity: warning
+      tier: ad
+      service: windows-exporter
+      context: "{{ $labels.server_name }}"
+      meta: "Service {{ $labels.name }} in State {{ $labels.state }} on node {{ $labels.server_name }}"
+      playbook: docs/support/playbook/activedirectory/alerts/#adservicedownwarn
+      no_alert_on_absence: "true"
+    annotations:
+      description: "Service {{ $labels.display_name }} in State {{ $labels.state }} on node {{ $labels.server_name }}. Check the service!"
+      summary: "Service {{ $labels.name }} in State {{ $labels.state }} on node {{ $labels.server_name }}"
+
+  - alert: ADWinServiceDownInfo
+    expr: count(windows_service_state{state!="running", job="win-exporter-ad", name!~"aatpsensor|rscdsvc"} > 0) by (server_name, name, state) * on(server_name, name) group_left(display_name) count(windows_service_info) by(server_name, name, display_name)
+    for: 1h
+    labels:
+      severity: info
+      tier: ad
+      service: windows-exporter
+      context: "{{ $labels.server_name }}"
+      meta: "Service {{ $labels.name }} in State {{ $labels.state }} on node {{ $labels.server_name }}"
+      no_alert_on_absence: "true"
+    annotations:
+      description: "Service {{ $labels.display_name }} in State {{ $labels.state }} on node {{ $labels.server_name }}. Check the service!"
+      summary: "Service {{ $labels.name }} in State {{ $labels.state }} on node {{ $labels.server_name }}"
+
+  - alert: ADWinAATPServiceDownInfo
+    expr: count(windows_service_state{state!="running", job="win-exporter-ad", name="aatpsensor"} > 0) by (server_name, name, state) * on(server_name, name) group_left(display_name) count(windows_service_info) by(server_name, name, display_name)
+    for: 2h
+    labels:
+      severity: info
+      tier: ad
+      service: windows-exporter
+      context: "{{ $labels.server_name }}"
+      meta: "Service {{ $labels.name }} in State {{ $labels.state }} on node {{ $labels.server_name }}"
+      no_alert_on_absence: "true"
+    annotations:
+      description: "Service {{ $labels.display_name }} in State {{ $labels.state }} on node {{ $labels.server_name }}. Check the service!"
+      summary: "Service {{ $labels.name }} in State {{ $labels.state }} on node {{ $labels.server_name }}"
+
+  - alert: ADDiskFullInfo
+    expr: count(100 - (windows_logical_disk_free_bytes{volume!~"HarddiskVolume.*",job="win-exporter-ad"}*100/windows_logical_disk_size_bytes{volume!~"HarddiskVolume.*",job="win-exporter-ad"}) > 80) by (server_name, volume) 
+    for: 1h
+    labels:
+      severity: info
+      tier: ad
+      service: windows-exporter
+      context: "{{ $labels.server_name }}"
+      meta: "Drive {{ $labels.volume }} is getting full on node {{ $labels.server_name }}"
+    annotations:
+      description: "Drive {{ $labels.volume }} is getting full on node {{ $labels.server_name }}. Free up some space!"
+      summary: "Drive {{ $labels.volume }} is getting full on node {{ $labels.server_name }}"
+
+  - alert: ADTooManyProcesses
+    expr: count(windows_os_processes{job="win-exporter-ad"} > 200) by (server_name) 
+    for: 30m
+    labels:
+      severity: warning
+      tier: ad
+      service: windows-exporter
+      context: "{{ $labels.server_name }}"
+      meta: "Too many processes running on node {{ $labels.server_name }}"
+      no_alert_on_absence: "true"
+    annotations:
+      description: "Too many processes running on node {{ $labels.server_name }}. Check the task manager!"
+      summary: "Too many processes running on node {{ $labels.server_name }}"
+
+  - alert: ADHighCpuLoad
+    expr: count(avg by (server_name) (100 - (irate(windows_cpu_time_total{mode="idle", job="win-exporter-ad"}[10m]) * 100)) > 80) 
+    for: 30m
+    labels:
+      severity: info
+      tier: ad
+      service: windows-exporter
+      context: "{{ $labels.server_name }}"
+      meta: "High CPU Load on node {{ $labels.server_name }}"
+    annotations:
+      description: "High CPU Load on node {{ $labels.server_name }}. Check the task manager for processes with high CPU usage!"
+      summary: "High CPU Load on node {{ $labels.server_name }}"
+
+  - alert: ADHighMemUsage
+    expr: count((100 - (100 * windows_os_physical_memory_free_bytes{job="win-exporter-ad"} / windows_cs_physical_memory_bytes{job="win-exporter-ad"})) > 80) by (server_name)
+    for: 30m
+    labels:
+      severity: info
+      tier: ad
+      service: windows-exporter
+      context: "{{ $labels.server_name }}"
+      meta: "High Memory usage on node {{ $labels.server_name }}"
+      no_alert_on_absence: "true"
+    annotations:
+      description: "High Memory usage on node {{ $labels.server_name }}. Check the task manager for processes with high Memory usage!"
+      summary: "High Memory usage on node {{ $labels.server_name }}"

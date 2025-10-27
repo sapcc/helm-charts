@@ -1,0 +1,79 @@
+kind: Deployment
+apiVersion: apps/v1
+
+metadata:
+  name: hermes-api
+  namespace: hermes
+
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: hermes-api
+  template:
+    metadata:
+      labels:
+        name: hermes-api
+      annotations:
+        {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+        linkerd.io/inject: enabled
+        {{- end }}
+        kubectl.kubernetes.io/default-container: "api"
+        secret.reloader.stakater.com/reload: "api-conf,hermes-es-api"
+        deployment.reloader.stakater.com/pause-period: "60s"
+    spec:
+      nodeSelector:
+        zone: farm
+      volumes:
+        - name: config
+          secret:
+            secretName: api-conf
+            defaultMode: 420
+      containers:
+        - name: api
+          image: {{required ".Values.hermes.image is missing" .Values.hermes.image}}:{{.Values.hermes.image_tag | replace "string:" ""}}
+          imagePullPolicy: {{required ".Values.hermes.image_pull_policy is missing" .Values.hermes.image_pull_policy}}
+          args:
+            - -f
+            - /etc/hermes/hermes.conf
+          env:
+            - name: HERMES_DEBUG
+              value: '{{.Values.hermes.debug}}'
+            - name: HERMES_INSECURE
+              value: '{{.Values.hermes.insecure}}' # SSL certificates are hard :(
+            - name: HERMES_ES_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: hermes-es-api
+                  key: HERMES_ES_USERNAME
+            - name: HERMES_ES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: hermes-es-api
+                  key: HERMES_ES_PASSWORD
+          volumeMounts:
+            - mountPath: "/etc/hermes"
+              name: config
+          resources:
+            requests:
+              memory: {{required ".Values.resources_requests_memory_api is missing" .Values.resources_requests_memory_api}}
+              cpu: {{required ".Values.resources_requests_memory_api is missing" .Values.resources_requests_cpu_api}}
+          # livenessProbe:
+          #   #exec: 
+          #   #  command:
+          #   #    - /bin/false
+          #   #  initialDelaySeconds: 21600
+          #   #  periodSeconds: 21600 # restart api every 6 hours
+          #   httpGet:
+          #     path: /v1/
+          #     port: 80
+          #   timeoutSeconds: 10
+          #   periodSeconds: 60
+          #   initialDelaySeconds: 60
+          #   readinessProbe:
+          #     httpGet:
+          #       path: /v1/
+          #       port: 80
+          #     timeoutSeconds: 5
+          #     periodSeconds: 5
+---

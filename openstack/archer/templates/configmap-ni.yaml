@@ -1,0 +1,19 @@
+{{- $envAll := . }}
+{{ range $name, $conf := .Values.agents.ni }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "archer.fullname" $ }}-etc-{{ $name }}
+  labels:
+    {{- include "archer.labels" $ | nindent 4 }}
+data:
+  ni.ini: |
+    [agent]
+    create_service = {{ $conf.create_service }}
+    service_name = {{ $name }}
+    service_port = {{ $conf.service_port }}
+    service_require_approval = {{ $conf.service_require_approval }}
+    {{ with $conf.service_upstream_host }}service_upstream_host = {{ . }}{{ end }}
+    {{ with $conf.service_protocol }}service_protocol = {{ . }}{{ end }}
+{{- end }}

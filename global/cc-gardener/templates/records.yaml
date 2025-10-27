@@ -1,0 +1,39 @@
+{{- if .Values.garden.externalIP }}
+---
+apiVersion: disco.stable.sap.cc/v1
+kind: Record
+metadata:
+  name: virtual-garden-ingress
+  namespace: garden
+spec:
+  record: {{ required ".Values.garden.externalIP missing" .Values.garden.externalIP }}
+  type: A
+  {{- with .Values.global }}
+  hosts:
+  - virtual-garden-ingress.runtime-garden.{{ required ".Values.global.cluster missing" .cluster }}.{{ required ".Values.global.region missing" .region }}.cloud.sap.
+  zoneName: {{ required ".Values.global.region missing" .region }}.cloud.sap.
+  {{- end }}
+---
+apiVersion: disco.stable.sap.cc/v1
+kind: Record
+metadata:
+  name: virtual-garden-cnames
+  namespace: garden
+spec:
+  type: CNAME
+  {{- with .Values.global }}
+  record: virtual-garden-ingress.runtime-garden.{{ required ".Values.global.cluster missing" .cluster }}.{{ required ".Values.global.region missing" .region }}.cloud.sap.
+  hosts:
+  - alertmanager-garden.runtime-garden.{{ required ".Values.global.cluster missing" .cluster }}.{{ required ".Values.global.region missing" .region }}.cloud.sap.
+  - dashboard.runtime-garden.{{ required ".Values.global.cluster missing" .cluster }}.{{ required ".Values.global.region missing" .region }}.cloud.sap.
+  - discovery.runtime-garden.{{ required ".Values.global.cluster missing" .cluster }}.{{ required ".Values.global.region missing" .region }}.cloud.sap.
+  - plutono-garden.runtime-garden.{{ required ".Values.global.cluster missing" .cluster }}.{{ required ".Values.global.region missing" .region }}.cloud.sap.
+  - prometheus-garden.runtime-garden.{{ required ".Values.global.cluster missing" .cluster }}.{{ required ".Values.global.region missing" .region }}.cloud.sap.
+  - prometheus-longterm.runtime-garden.{{ required ".Values.global.cluster missing" .cluster }}.{{ required ".Values.global.region missing" .region }}.cloud.sap.
+  - api.virtual-garden.{{ required ".Values.global.cluster missing" .cluster }}.{{ required ".Values.global.region missing" .region }}.cloud.sap.
+  {{- if $.Values.garden.virtualCluster.publicDomain }}
+  - api.{{ $.Values.garden.virtualCluster.publicDomain }}.
+  {{- end }}
+  zoneName: {{ required ".Values.global.region missing" .region }}.cloud.sap.
+  {{- end }}
+{{- end }}

@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: octavia-etc
+  labels:
+    app.kubernetes.io/name: {{ include "octavia.name" . }}
+    helm.sh/chart: {{ include "octavia.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+data:
+  octavia.conf: |
+{{ include (print .Template.BasePath "/etc/_octavia.conf.tpl") . | indent 4 }}
+  policy.json: |
+{{ include (print .Template.BasePath "/etc/_policy.json.tpl") . | indent 4 }}
+  esd.json: |
+{{ include (print .Template.BasePath "/etc/_esd.json.tpl") . | indent 4 }}
+  logging.ini: |
+{{ include "loggerIni" .Values.logging | indent 4 }}
+  octavia-api.conf: |
+{{ include (print .Template.BasePath "/etc/_octavia-api.conf.tpl") . | indent 4 }}
+  status.conf: |
+{{ include (print .Template.BasePath "/etc/_status.conf.tpl") . | indent 4 }}
+  watcher.yaml: |
+{{ include (print .Template.BasePath "/etc/_watcher.yaml.tpl") . | indent 4 }}
+  octavia_api_audit_map.yaml: |
+{{ include (print .Template.BasePath "/etc/_octavia_api_audit_map.yaml.tpl") . | indent 4 }}
+{{- if .Values.rate_limit.enabled }}
+  ratelimit.yaml: |
+{{ include (print .Template.BasePath "/etc/_ratelimit.yaml.tpl") . | indent 4 }}
+{{- end }}

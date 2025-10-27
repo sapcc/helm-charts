@@ -1,0 +1,13 @@
+{{ if .Values.organization.enabled }}
+{{ range $teamName, $team := .Values.teams }}
+---
+apiVersion: greenhouse.sap/v1alpha1
+kind: Team
+metadata:
+  name: {{ required "Team name missing" $teamName | lower }}
+  namespace: {{ $.Release.Namespace }}
+spec:
+  description: {{ $team.description | default (printf "Team %s" $teamName) }}
+  mappedIdPGroup: {{ required "Team mappedGroupID is missing" $team.mappedIdPGroup }}
+{{- end }}
+{{ end }}

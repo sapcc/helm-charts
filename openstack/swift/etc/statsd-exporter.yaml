@@ -1,0 +1,152 @@
+# Reference for statsd metric names emitted by Swift:
+# <http://docs.openstack.org/developer/swift/admin_guide.html#reporting-metrics-to-statsd>
+# Reference for this file's format:
+# <https://github.com/prometheus/statsd_exporter#metric-mapping-and-configuration>
+
+defaults:
+  ttl: 3h
+
+mappings:
+
+  ##############################################################################
+  # proxy metrics coming from the proxy-logging middleware
+
+- match: swift.proxy-server.*.policy.*.*.*.timing
+  name: swift_proxy
+  labels:
+    method: $3
+    policy: $2
+    status: $4
+    type: $1
+- match: swift.proxy-server.*.policy.*.GET.*.first-byte.timing
+  observer_type: histogram
+  histogram_options:
+    buckets: [0.025, 0.1, 0.25, 1, 2.5]
+  name: swift_proxy_firstbyte
+  labels:
+    policy: $2
+    status: $3
+    type: $1
+- match: swift.proxy-server.*.policy.*.*.*.xfer
+  name: swift_proxy_transfer
+  labels:
+    method: $3
+    policy: $2
+    status: $4
+    type: $1
+- match: swift.proxy-server.*.*.*.timing
+  name: swift_proxy
+  labels:
+    method: $2
+    policy: all
+    status: $3
+    type: $1
+- match: swift.proxy-server.*.GET.*.first-byte.timing
+  observer_type: histogram
+  histogram_options:
+    buckets: [0.025, 0.1, 0.25, 1, 2.5]
+  name: swift_proxy_firstbyte
+  labels:
+    policy: all
+    status: $2
+    type: $1
+- match: swift.proxy-server.*.*.*.xfer
+  name: swift_proxy_transfer
+  labels:
+    method: $2
+    policy: all
+    status: $3
+    type: $1
+
+  ##############################################################################
+  # storage server timing metrics
+
+- match: swift.account-server.*.timing
+  name: swift_storage_server
+  labels:
+    method: $1
+    status: ok
+    type: account
+- match: swift.account-server.*.errors.timing
+  name: swift_storage_server
+  labels:
+    method: $1
+    status: error
+    type: account
+- match: swift.container-server.*.timing
+  name: swift_storage_server
+  labels:
+    method: $1
+    status: ok
+    type: container
+- match: swift.container-server.*.errors.timing
+  name: swift_storage_server
+  labels:
+    method: $1
+    status: error
+    type: container
+- match: swift.object-server.*.timing
+  name: swift_storage_server
+  labels:
+    method: $1
+    status: ok
+    type: object
+- match: swift.object-server.*.errors.timing
+  name: swift_storage_server
+  labels:
+    method: $1
+    status: error
+    type: object
+- match: swift.object-server.*.*.timing
+  name: swift_storage_server_by_device
+  labels:
+    device: $2
+    method: $1
+    status: ok
+    type: object
+
+  ##############################################################################
+  # background service metrics
+
+- match: swift.object-replicator.partition.*.count.*
+  name: swift_object_replicator_partition
+  labels:
+    action: $1
+    device: $2
+- match: swift.object-replicator.partition.*.timing
+  name: swift_object_replicator
+  labels:
+    action: $1
+- match: swift.object-server.async_pendings
+  name: swift_object_server_async_pendings
+  # ttl: 0 does not work, take 60d instead
+  ttl: 1440h
+- match: swift.object-server.async_pendings.project.*.*
+  name: swift_async_pendings_detail
+  # ttl: 0 does not work, take 60d instead
+  ttl: 1440h
+  labels:
+    project_id: $1
+    container:  $2
+
+  ##############################################################################
+  # remove superfluous "timing" word from timer names
+
+- match: swift.account-auditor.timing
+  name: swift_account_auditor
+- match: swift.account-replicator.timing
+  name: swift_account_replicator
+- match: swift.container-auditor.timing
+  name: swift_container_auditor
+- match: swift.container-replicator.timing
+  name: swift_container_replicator
+- match: swift.container-updater.timing
+  name: swift_container_updater
+- match: swift.object-auditor.timing
+  name: swift_object_auditor
+- match: swift.object-expirer.timing
+  name: swift_object_expirer
+- match: swift.object-replicator.timing
+  name: swift_object_replicator
+- match: swift.object-updater.timing
+  name: swift_object_updater

@@ -1,0 +1,16 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: ironic-cert
+spec:
+  dnsNames:
+  - metal3-ironic.{{ .Values.global.region }}.{{ .Values.global.tld }}
+  uris:
+  - ironic
+  - ironic.{{ .Release.Namespace }}.svc
+  - ironic.{{ .Release.Namespace }}.svc.cluster.local
+  issuerRef:
+    group: certmanager.cloud.sap
+    kind: ClusterIssuer
+    name: digicert-issuer
+  secretName: tls-ironic-service

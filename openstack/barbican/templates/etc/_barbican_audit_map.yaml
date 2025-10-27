@@ -1,0 +1,39 @@
+service_type: 'data/security/keymanager'
+service_name: 'barbican'
+
+prefix: '/v1'
+
+resources:
+  secrets:
+    payloads:
+      # Payload can include sensitive info
+      exclude:
+        - payload
+
+    custom_id: secret_ref
+    children:
+      metadata:
+        # collection of fields/keys
+        singleton: true
+        type_name: meta
+      acl:
+        singleton: true
+      payload:
+        singleton: true
+        payloads:
+          # Disable payload recording for this endpoint
+          enabled: False
+  secret-stores:
+    children:
+      preferred:
+        singleton: true
+  containers:
+    custom_id: container_ref
+    children:
+      secrets:
+      acl:
+  project-quotas:
+  consumers:
+  orders:
+  versions:
+    singleton: true

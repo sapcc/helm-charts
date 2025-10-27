@@ -1,0 +1,234 @@
+global:
+  tld: DEFINED_IN_REGION_CHART
+  region: DEFINED_IN_REGION_CHART
+  registryAlternateRegion: DEFINED_IN_REGION_CHART
+  serviceType: object-store
+  serviceName: "service/storage/object"
+
+  domain_seeds:
+    skip_hcm_domain: false
+
+owner-info:
+  support-group: storage
+  service: swift
+  maintainers:
+    # current maintainers in Storage Team
+    - Sumit Arora
+    - Barun Kumar
+    - Adrian Corici
+    - Chandrakanth Renduchintala
+    # previous maintainers in Team Services
+    - Stefan Majewsky
+    - Sandro Jäckel
+  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/openstack/swift
+
+debug: false
+
+species: swift-storage
+
+imageRegistry_repo: swift
+
+# image version of Swift image
+# the version should follow the format openstackreleasename-versionnumber
+# e.g. rocky-12345
+image_version: DEFINED_BY_PIPELINE
+rings_image_version: DEFINED_BY_PIPELINE
+
+# image version of haproxy bundled with dumb-init
+image_version_haproxy: '3.1.8-20250730101259'
+
+# image versions of auxiliary images from other sources
+image_version_auxiliary_memcached: '1.6.38-alpine'
+image_version_auxiliary_memcached_exporter: 'v0.15.3'
+image_version_auxiliary_statsd_exporter: 'v0.28.0'
+
+# shared secrets and credentials
+hash_path_prefix: DEFINED_IN_REGION_CHART
+hash_path_suffix: DEFINED_IN_REGION_CHART
+
+# swift-constraints
+# If keystonemiddleware is configured with `include_service_catalog: true`
+# The header size can become an issue with large catalogs
+# See https://github.com/sapcc/swift/blob/master/etc/swift.conf-sample#L133-L140
+max_header_size: 16384   # default 8192
+
+# S3 API Emulation for seed cluster
+s3api_enabled: true
+
+# Use https://github.com/sapcc/openstack-watcher-middleware for request tracking in all clusters
+watcher_enabled: true
+
+# health check only
+dispersion_auth_url: DEFINED_IN_REGION_CHART
+dispersion_password: DEFINED_IN_REGION_CHART
+
+# Enable cluster health checks: https://github.com/sapcc/swift-health-exporter
+health_exporter: true
+
+# Enable prometheus probing
+probing: true
+
+# number of storage nodes participating in the cluster, can be used to derive some limits like rsync bandwidth
+node_count: 0
+
+# Object Server Configurations
+object_expirer_concurrency: 5
+object_expirer_tasks_per_second: 25
+# Consider that tasks per second rate limit is per process
+object_expirer_processes: 1
+object_replicator_concurrency: 2
+object_replicator_workers: 3           # Availably since Rocky
+object_replicator_rsync_bwlimit: 0
+object_updater_concurrency: 2
+object_updater_workers: 2              # Availably since Rocky
+
+container_sharder: false
+
+# Prevent disks getting 100% full
+fallocate_reserve: 2%                  # Availably since Rocky for all servers
+
+# Swift client timeout in seconds.
+client_timeout: 60 # same as default, but also sets haproxy timeout to a similar value
+
+# Swift node timeout in seconds, default 10
+# With a value 60 there were issue when a single disk was overloaded --> response timeout and the remaining
+# handoffs might raise a 408 (proxy broken pipe). Assumption is currently that the 60s are too long for the
+# haproxy/swift-proxy machinery in front. Producing too many 503. Reducing to 30s seems to have fixed that.
+node_timeout: 30
+
+# Swift node timeout in seconds for GET and HEAD, default 10
+recoverable_node_timeout: 10
+
+# Retry container delete in case of bulk deletes, default 0
+bulk_delete_container_retry_count: 3
+
+# Number of bulk deletes that can be executed in parallel, default 2
+bulk_delete_concurrency: 5
+
+# Number of segments for SLOs (incl. S3Api), default 1000
+max_manifest_segments: 4000
+
+# Don't log requests to object, container or account servers
+log_requests: false
+default_log_level: info # for haproxy log level setting
+
+# Local to advertise the ExternalIP only on nodes that run the pod
+# Only works with ServiceType NodePort
+external_traffic_policy_local: true
+
+# Add additional memcached deployments here
+memcached_servers:
+  - memcached
+#  - memcached-tokens
+
+# Deploy Swift Prometheus alerts.
+alerts:
+  enabled: true
+  # Name of the Prometheus to which the alerts should be assigned to.
+  # Keys = directory names in alerts/ and aggregations/
+  prometheus:
+    openstack: openstack
+    kubernetes: kubernetes
+
+# cluster_name: DEFINED_IN_REGION_CHART
+# endpoint_host: DEFINED_IN_REGION_CHART
+# proxy_public_ip: DEFINED_IN_REGION_CHART
+# proxy_public_port: DEFINED_IN_REGION_CHART
+# keystone_auth_uri: DEFINED_IN_REGION_CHART
+# keystone_auth_url: DEFINED_IN_REGION_CHART
+# swift_service_user: swift
+# swift_service_user_domain: Default
+# swift_service_project: service
+# swift_service_project_domain: Default
+# swift_service_password: DEFINED_IN_REGION_CHART
+
+# # svc_node_port: expose swift internal proxy svc via NodePort, can be used to loadbalance between k8s nodes
+# upstreams:
+#   -target: xxx.xxx.xxx.xxx
+#    name: node1
+
+# haproxy nodes act as LBs in front of the Swift proxies
+haproxy_deployment_resources_cpu_req: "2000m"
+haproxy_deployment_resources_memory_req: "1024Mi"
+
+haproxy_deployment_resources_cpu_limit: "2000m"
+haproxy_deployment_resources_memory_limit: "1024Mi"
+
+# # Swift proxies can be deployed as Deployment, Daemonset or both
+# proxy_deployment_enabled: true
+# proxy_deployment_replicas_az-b: 2           # replicas in availability zone, default 0
+# proxy_deployment_resources_cpu: "2500m"
+# proxy_deployment_resources_memory: "1500Mi"
+
+# proxy_daemonset_enabled: true
+# proxy_daemonset_resources_cpu: "2500m"
+# proxy_daemonset_resources_memory: "1500Mi"
+
+# resource limits for the statsd-exporter container in each swift-proxy pod
+proxy_statsd_exporter_resources_cpu: "200m"      # observed: 10m-100m
+proxy_statsd_exporter_resources_memory: "1024Mi" # observed: 550-950 MiB
+
+# # The default is using the cache.swift for token caching
+# # Specifing a memcached server name here will overrule that, see .Values.memcached_servers
+# token_memcached: memcached-tokens
+# token_cache_time: 600
+
+# # S3 Credential caching will be enabled by specifying the seconds for cache validity
+# # swift service user requires read access to all EC2 credentials in keystone
+# s3_cred_cache_time: 0
+
+# # To enable <https://github.com/sapcc/swift-s3-cache-prewarmer>, give a non-empty list of "userid:accesskey" credentials.
+# s3_cred_cache_prewarm_credentials: []
+
+# # If not defined - vice president takes over
+# tls_key: "" # DEFINED_IN_REGION_CHART
+# tls_crt: "" # DEFINED_IN_REGION_CHART
+
+# # If vice president is active:
+# sans: [repo]
+# sans_fqdn: [repo.example.com]
+
+# # Offer optional HTTP port only for special domains like repo.region.tld
+# proxy_public_http_port: 8080
+# sans_http: [repo]
+
+# # If using other hostnames for objectstore and you can't provide a CName for it, enter them here
+# additional_cname_storage_domains: [example.com,example2.com]
+
+# Use https://github.com/sapcc/openstack-rate-limit-middleware for watcher based rate limiting.
+sapcc_ratelimit:
+  enabled: false
+
+  # Rate limit by tuple of target type URI, action and scope.
+  # The scope can be one of:
+  # - initiator_project_id
+  # - target_project_id
+  # - initiator_host_address
+  rateLimitBy: initiator_project_id
+
+  # The maximal time a request can be suspended.
+  maxSleepTimeSeconds: 20
+
+  # Log requests that are going to be suspended for logSleepTimeSeconds <= t <= maxSleepTimeSeconds.
+  logSleepTimeSeconds: 18
+
+  # The backend used to store rate limits.
+  backend:
+    # Backend port. Defaults to redis port.
+    port: 6379
+
+    # Backend host. Defaults to redis headless service using `{{ .Release.Name }}-sapcc-ratelimit-redis-headless`.
+    # Can be overwritten using the following parameter.
+    # host:
+
+# Redis datastore for sapcc ratelimit middleware.
+# Only deployed if sapcc_ratelimit.enabled=true.
+sapcc-ratelimit-redis:
+
+  # Memory is sufficient.
+  persistence:
+    enabled: false
+
+  # Prometheus metrics via oliver006/redis_exporter sidecar.
+  metrics:
+    enabled: true

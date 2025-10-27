@@ -1,0 +1,16 @@
+{{ if .Values.enabled -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: toolbox-init
+  labels:
+    type: configuration
+    app: toolbox
+data:
+  toolbox-init.sh: |
+{{ include (print .Template.BasePath "/etc/_toolbox_init.tpl") . | indent 4 }}
+{{- if .Values.supporToolbox.enabled }}
+  etc-sudoers-d-toolbox: |
+{{ include (print .Template.BasePath "/etc/_etc_sudoers_d_toolbox.tpl") . | indent 4 }}
+{{- end }}
+{{- end }}

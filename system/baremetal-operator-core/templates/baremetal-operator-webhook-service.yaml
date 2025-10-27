@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "baremetal-operator-core.fullname" . }}-baremetal-operator-webhook-service
+  labels:
+  {{- include "baremetal-operator-core.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.baremetalOperatorWebhookService.type }}
+  selector:
+    control-plane: controller-manager
+    webhook: metal3-io-v1alpha1-baremetalhost
+  {{- include "baremetal-operator-core.selectorLabels" . | nindent 4 }}
+  ports:
+	{{- .Values.baremetalOperatorWebhookService.ports | toYaml | nindent 2 }}

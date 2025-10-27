@@ -1,0 +1,78 @@
+kind: DaemonSet
+apiVersion: apps/v1
+
+metadata:
+  name: swift-servers
+  labels:
+    release: "{{ .Release.Name }}"
+    on-upgrade: rolling-recreate
+
+spec:
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 2 # each object has 3 replicas, so we can afford to have 2 servers missing at a time without causing outage
+  selector:
+    matchLabels:
+      component: swift-servers
+      from: daemonset
+      restart: carefully
+  template:
+    metadata:
+      labels:
+        component: swift-servers
+        from: daemonset
+        restart: carefully
+      annotations:
+        {{- include "swift_conf_annotations" . | indent 8 }}
+    spec:
+      {{- include "swift_daemonset_tolerations" . | indent 6 }}
+      hostNetwork: true
+      nodeSelector:
+        species: {{ .Values.species }}
+      volumes: {{ include "swift_daemonset_volumes" . | indent 8 }}
+      initContainers:
+        {{- include "swift_ringloader_initcontainer" . | indent 8 }}
+      containers:
+        {{- tuple "object"    "object-server"    . | include "swift_standard_container" | indent 8 }}
+          # TODO Consider switching to startupProbe once available 1.16
+          readinessProbe:
+            httpGet:
+              path: /healthcheck
+              port: swift-object
+              scheme: HTTP
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          ports:
+            - name: swift-object
+              hostPort: 6000
+              containerPort: 6000
+        {{- tuple "container" "container-server" . | include "swift_standard_container" | indent 8 }}
+          # TODO Consider switching to startupProbe once available 1.16
+          readinessProbe:
+            httpGet:
+              path: /healthcheck
+              port: swift-container
+              scheme: HTTP
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          ports:
+            - name: swift-container
+              hostPort: 6001
+              containerPort: 6001
+        {{- tuple "account"   "account-server"   . | include "swift_standard_container" | indent 8 }}
+          # TODO Consider switching to startupProbe once available 1.16
+          readinessProbe:
+            httpGet:
+              path: /healthcheck
+              port: swift-account
+              scheme: HTTP
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          ports:
+            - name: swift-account
+              hostPort: 6002
+              containerPort: 6002
+
+---
+{{ include "swift_vpa_no_autoupdates" "swift-servers" }}

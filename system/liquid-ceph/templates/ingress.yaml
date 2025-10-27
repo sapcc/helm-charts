@@ -1,0 +1,27 @@
+{{- $domain := printf "liquid-ceph.st1.%s.%s" $.Values.global.region $.Values.global.tld }}
+kind: Ingress
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: liquid-ceph
+  annotations:
+    kubernetes.io/tls-acme: "true"
+    disco: "true"
+    {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+    ingress.kubernetes.io/service-upstream: "true"
+    nginx.ingress.kubernetes.io/service-upstream: "true"
+    {{- end }}
+spec:
+  tls:
+  - secretName: tls-liquid-ceph
+    hosts: [ {{ $domain }} ]
+  rules:
+  - host: {{ $domain }}
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: liquid-ceph
+            port:
+              number: 8443

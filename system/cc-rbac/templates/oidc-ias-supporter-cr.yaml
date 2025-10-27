@@ -1,0 +1,41 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: cc:supporter
+  labels:
+    #This role will be used for developers as well
+    ccloud.sap/aggregate-to-developer: "true"
+rules:
+- apiGroups:
+  - '*'
+  resources:
+  - '*'
+  verbs:
+  - get
+  - list
+  - watch
+- nonResourceURLs:
+  - '*'
+  verbs:
+  - get
+  - list
+  - watch
+# Allow deleting and exec'ing, port-frowarding into pods
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  - pods/exec
+  - pods/portforward
+  - pods/eviction
+  - pods/proxy
+  verbs:
+  - '*'
+# allow scaling
+- apiGroups: ["apps"]
+  resources: ["deployments/scale", "statefulsets/scale"]
+  verbs: ["patch"]
+# allow to cordon/drain Nodes
+- apiGroups: [""]
+  resources: ["nodes"]
+  verbs: ["get", "patch"]

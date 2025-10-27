@@ -1,0 +1,44 @@
+{{- if .Values.exporter.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: k3s-backup-s3-exporter
+  labels:
+    app: k3s-backup-s3-exporter
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: k3s-backup-s3-exporter
+  template:
+    metadata:
+      labels:
+        app: k3s-backup-s3-exporter
+    spec:
+      containers:
+      - name: s3-exporter
+        image: "{{ required ".Values.images.exporter.image is missing" .Values.images.exporter.image }}:{{ required ".Values.images.exporter.tag is missing" .Values.images.exporter.tag }}"
+        imagePullPolicy: IfNotPresent
+        args:
+          - --web.listen-address=:{{ .Values.exporter.metricsPort }}
+        env:
+        - name: AWS_REGION
+          valueFrom:
+            secretKeyRef:
+              key: region
+              name: cc-admin-k3s-backup-aws
+        - name: AWS_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              key: secret-access-key
+              name: cc-admin-k3s-backup-aws
+        - name: AWS_ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              key: access-key-id
+              name: cc-admin-k3s-backup-aws
+        ports:
+        - containerPort: {{ .Values.exporter.metricsPort }}
+          name: metrics
+          protocol: TCP
+{{- end }}

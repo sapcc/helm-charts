@@ -1,0 +1,100 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+
+metadata:
+  name: openstack-sre-alerts
+  labels:
+    tier: sre
+    type: alerting-rules
+    prometheus: {{ required ".Values.prometheus.alerts missing" .Values.prometheus.alerts }}
+
+spec:
+  # https://landing.google.com/sre/workbook/chapters/alerting-on-slos/#short_and_long_windows_for_alerting
+  groups:
+  - name: openstack-sre.alerts
+    rules:
+    # quick availability check - target updates
+    - alert: ApiAvailabilityWarning2Hour
+      expr: |
+        (
+          (1 - global:api_errors_per_request_sli:ratio_rate2h) * 100
+          <= on (ingress,region) global:api_availability_warning_slo:percent
+        )
+        + ignoring(slo) group_right count_values without() ("slo", global:api_availability_warning_slo:percent) * 0
+      labels:
+        context: sre
+        service: '{{`{{reReplaceAll "^([^-]+)-.*" "${1}" $labels.ingress}}`}}'
+        severity: info
+        tier: os
+        no_alert_on_absence: "true"
+        playbook: 'docs/devops/alert/sre-alerts'
+      annotations:
+        summary: "API availability warning SLO hit: 2h"
+        description: "{{`{{$labels.ingress}}`}} fell below availability warning SLO {{`{{$labels.slo}}`}} in the last 2 hours."
+
+    - alert: ApiAvailabilityCritical2Hour
+      expr: |
+        (
+          (1 - global:api_errors_per_request_sli:ratio_rate2h) * 100
+          <= on (ingress,region) global:api_availability_critical_slo:percent
+        )
+        + ignoring(slo) group_right count_values without() ("slo", global:api_availability_critical_slo:percent) * 0
+      labels:
+        context: sre
+        service: '{{`{{reReplaceAll "^([^-]+)-.*" "${1}" $labels.ingress}}`}}'
+        severity: info
+        tier: os
+        no_alert_on_absence: "true"
+        playbook: 'docs/devops/alert/sre-alerts'
+      annotations:
+        summary: "API availability critical SLO hit: 2h"
+        description: "{{`{{$labels.ingress}}`}} fell below availability critical SLO {{`{{$labels.slo}}`}} in the last 2 hours."
+
+    # rolling 7 days
+    - alert: ApiAvailabilityWarningLast7days
+      expr: |
+        (
+          (1 - global:api_errors_per_request_sli:ratio_rate7d) * 100
+          <= on (ingress,region) global:api_availability_warning_slo:percent
+        )
+        + ignoring(slo) group_right count_values without() ("slo", global:api_availability_warning_slo:percent) * 0
+      labels:
+        context: sre
+        service: '{{`{{reReplaceAll "^([^-]+)-.*" "${1}" $labels.ingress}}`}}'
+        severity: info
+        tier: os
+        no_alert_on_absence: "true"
+        playbook: 'docs/devops/alert/sre-alerts'
+      annotations:
+        summary: "API availability warning SLO hit: 7d"
+        description: "{{`{{$labels.ingress}}`}} fell below weekly availability warning SLO {{`{{$labels.slo}}`}}."
+
+    - alert: ApiAvailabilityCriticalLast7days
+      expr: |
+        (
+          (1 - global:api_errors_per_request_sli:ratio_rate7d) * 100
+          <= on (ingress,region) global:api_availability_critical_slo:percent
+        )
+        + ignoring(slo) group_right count_values without() ("slo", global:api_availability_critical_slo:percent) * 0
+      labels:
+        context: sre
+        service: '{{`{{reReplaceAll "^([^-]+)-.*" "${1}" $labels.ingress}}`}}'
+        severity: info
+        tier: os
+        no_alert_on_absence: "true"
+        playbook: 'docs/devops/alert/sre-alerts'
+      annotations:
+        summary: "API availability critical SLO hit: 7d"
+        description: "{{`{{$labels.ingress}}`}} fell below weekly availability critical SLO {{`{{$labels.slo}}`}}."
+
+    # meta alert
+    - alert: SRE-MetricAbsent
+      expr: absent(global:api_errors_per_request_sli:ratio_rate2h) or absent(global:api_errors_per_request_sli:ratio_rate7d) or absent(global:api_availability_critical_slo:percent)
+      for: 1h
+      labels:
+        context: sre
+        severity: info
+        playbook: 'docs/devops/alert/sre-alerts'
+      annotations:
+        summary: "Aggregated metric is missing."
+        description: "Aggregated metric is missing."

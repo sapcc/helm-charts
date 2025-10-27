@@ -1,0 +1,27 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+
+metadata:
+  name: ironic-api
+  labels:
+    system: openstack
+    type: api
+    component: ironic
+  annotations:
+    kubernetes.io/tls-acme: "true"
+    {{- include "utils.linkerd.ingress_annotation" . | indent 4 }}
+spec:
+  tls:
+     - secretName: tls-{{ include "ironic_api_endpoint_host_public" . | replace "." "-" }}
+       hosts: [{{include "ironic_api_endpoint_host_public" .}}]
+  rules:
+    - host: {{include "ironic_api_endpoint_host_public" .}}
+      http:
+        paths:
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: ironic-api
+              port: 
+                number: {{.Values.global.ironicApiPortInternal}}

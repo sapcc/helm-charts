@@ -1,0 +1,44 @@
+kind: Deployment
+apiVersion: apps/v1
+
+metadata:
+  name: session-pruning
+
+spec:
+  selector:
+    matchLabels:
+      name: session-pruning
+  revisionHistoryLimit: 5
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        name: session-pruning
+    spec:
+      containers:
+        - name: pruning
+          image: {{.Values.global.registry}}/elektra:{{.Values.image.tag}}
+          imagePullPolicy: {{.Values.image.pullPolicy}}
+          args:
+            - sh
+            - -ec
+            - |
+              while true; do
+                if [ $(date '+%H%M') = '{{ .Values.session_cleanup_time }}' ]; then
+                  bin/rake sessions:cleanup object_cache:cleanup
+                  echo "bin/rake sessions:cleanup object_cache:cleanup"
+                fi
+                sleep 55
+              done
+                    # NOTE: observed resource usage in eu-de-2 (as of 2022-06)
+          # - CPU: 12m with 8 replicas was running into throttling, so give plenty headroom
+          # - RAM: levels off around 128Mi
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "512Mi"
+            limits:
+              cpu: "120m"
+              memory: "512Mi"     
+          env:
+{{ include (print .Template.BasePath "/_env.tpl") . | indent 12 }}

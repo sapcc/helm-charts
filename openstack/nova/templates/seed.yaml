@@ -1,0 +1,190 @@
+{{- $cdomains := .Values.global.domain_seeds.customer_domains | required "missing value for .Values.global.domain_seeds.customer_domains" -}}
+{{- $domains  := concat (list "Default" "ccadmin") $cdomains -}}
+{{- $cdomainsWithoutSupportProjects := .Values.global.domain_seeds.customer_domains_without_support_projects | required "missing value for .Values.global.domain_seeds.customer_domains_without_support_projects" -}}
+
+apiVersion: "openstack.stable.sap.cc/v1"
+kind: "OpenstackSeed"
+metadata:
+  name: nova-seed
+spec:
+  requires:
+  {{- range $domains}}
+  {{- if not (hasPrefix "iaas-" .) }}
+  - monsoon3/domain-{{ replace "_" "-" . | lower }}-seed
+  {{- end }}
+  {{- end }}
+
+  roles:
+  - name: compute_admin
+  - name: compute_viewer
+  - name: cloud_compute_admin
+  - name: cloud_network_admin
+  - name: cloud_volume_admin
+  - name: cloud_baremetal_admin
+  - name: objectstore_admin
+  - name: cloud_dns_admin
+  - name: cloud_image_admin
+  - name: cloud_objectstore_admin
+
+  services:
+  - name: nova
+    type: compute
+    description: Openstack Compute
+    endpoints:
+      # Trailing slash is important, otherwise there will be a redirect to http url with slash, even if https terminated
+    - interface: admin
+      region: '{{.Values.global.region}}'
+      url: 'http://{{include "nova_api_endpoint_host_admin" .}}:{{.Values.global.novaApiPortAdmin}}/v2.1/'
+    - interface: internal
+      region: '{{.Values.global.region}}'
+      url: 'http://{{include "nova_api_endpoint_host_internal" .}}:{{.Values.global.novaApiPortInternal}}/v2.1/'
+    - interface: public
+      region: '{{.Values.global.region}}'
+      url: 'https://{{include "nova_api_endpoint_host_public" .}}:{{.Values.global.novaApiPortPublic}}/v2.1/'
+  - name: nova_legacy
+    type: compute_legacy
+    description: Openstack Compute Legacy Service
+    endpoints:
+    - interface: admin
+      region: '{{ .Values.global.region }}'
+      url: 'http://{{include "nova_api_endpoint_host_admin" .}}:{{.Values.global.novaApiPortAdmin}}/v2/%(tenant_id)s'
+    - interface: internal
+      region: '{{ .Values.global.region }}'
+      url: 'http://{{include "nova_api_endpoint_host_internal" .}}:{{.Values.global.novaApiPortInternal}}/v2/%(tenant_id)s'
+    - interface: public
+      region: '{{ .Values.global.region }}'
+      url: 'https://{{include "nova_api_endpoint_host_public" .}}:{{.Values.global.novaApiPortPublic}}/v2/%(tenant_id)s'
+
+  # default gets special handling
+  # ccadmin gets additional role assignments for projects and some group assignments
+  # iaas- is excluded
+
+  domains:
+  - name: Default
+    users:
+    - name: admin
+      role_assignments:
+      - domain: Default
+        role: cloud_compute_admin
+      - project: admin
+        role: cloud_compute_admin
+    - name: '{{ .Values.global.nova_service_user | default "nova" | include "resolve_secret" }}'
+      description: Nova Service
+      password: '{{ required ".Values.global.nova_service_password is missing" .Values.global.nova_service_password | include "resolve_secret" }}'
+      role_assignments:
+      - project: service
+        role: service
+      - project: service
+        role: admin
+      - project: service
+        role: cloud_network_admin
+      - project: service
+        role: cloud_compute_admin
+      - project: service
+        role: cloud_baremetal_admin
+      - project: service
+        role: cloud_volume_admin
+      - project: service
+        role: cloud_dns_admin
+      - project: service
+        role: cloud_image_admin
+      - project: service
+        role: cloud_objectstore_admin
+    groups:
+    - name: administrators
+      role_assignments:
+      - domain: Default
+        role: cloud_compute_admin
+      - project: admin
+        role: cloud_compute_admin
+
+  {{- range $domains}}
+  {{- if and (not (hasPrefix "iaas-" .)) (ne . "Default") }}
+  - name: {{ . }}
+    {{- if eq . "ccadmin"}}
+    projects:
+    - name: cloud_admin
+      role_assignments:
+      - user: admin@Default
+        role: cloud_compute_admin
+    - name: master
+      role_assignments:
+      - user: {{ $.Values.global.nova_service_user | default "nova" }}{{ $.Values.global.user_suffix | default "" }}@Default
+        role: objectstore_admin
+    {{- end }}
+    groups:
+    {{- if eq . "ccadmin"}}
+    - name: CCADMIN_CLOUD_ADMINS
+      role_assignments:
+      - project: cloud_admin
+        role: cloud_compute_admin
+    {{- end }}
+    {{- if eq . "monsoon3"}}
+    - name: MONSOON3_DOMAIN_ADMINS
+      role_assignments:
+      - project: cc-demo
+        role: compute_admin
+    {{- end}}
+    - name: {{ hasPrefix "iaas-" . | ternary . ( upper . ) }}_API_SUPPORT
+      role_assignments:
+      {{- if not (has . $cdomainsWithoutSupportProjects) }}
+      - project: api_support
+        role: {{ eq . "ccadmin" | ternary "cloud_compute_admin" "compute_admin"}}
+      {{- end }}
+      {{- if eq . "ccadmin" }}
+      - project: api_tools
+        role: cloud_compute_admin
+      {{- end }}
+      - domain: {{ . }}
+        role: {{ eq . "ccadmin" | ternary "cloud_compute_admin" "compute_admin"}}
+        inherited: true
+    - name: {{ hasPrefix "iaas-" . | ternary . ( upper . ) }}_COMPUTE_SUPPORT
+      role_assignments:
+      {{- if not (has . $cdomainsWithoutSupportProjects) }}
+      - project: compute_support
+        role: {{ eq . "ccadmin" | ternary "cloud_compute_admin" "compute_admin"}}
+      {{- end }}
+      {{- if eq . "ccadmin" }}
+      - project: compute_tools
+        role: cloud_compute_admin
+      {{- end }}
+      - domain: {{ . }}
+        role: {{ eq . "ccadmin" | ternary "cloud_compute_admin" "compute_admin"}}
+        inherited: true
+    - name: {{ hasPrefix "iaas-" . | ternary . ( upper . ) }}_NETWORK_SUPPORT
+      role_assignments:
+      {{- if not (has . $cdomainsWithoutSupportProjects) }}
+      - project: network_support
+        role: compute_admin
+      {{- end }}
+      {{- if eq . "ccadmin" }}
+      - project: network_tools
+        role: compute_admin
+      {{- end }}
+      - domain: {{ . }}
+        role: compute_viewer
+        inherited: true
+    - name: {{ hasPrefix "iaas-" . | ternary . ( upper . ) }}_STORAGE_SUPPORT
+      role_assignments:
+      {{- if not (has . $cdomainsWithoutSupportProjects) }}
+      - project: storage_support
+        role: compute_admin
+      {{- end }}
+      {{- if eq . "ccadmin" }}
+      - project: storage_tools
+        role: compute_admin
+      {{- end }}
+      - domain: {{ . }}
+        role: compute_viewer
+        inherited: true
+    - name: {{ hasPrefix "iaas-" . | ternary . ( upper . ) }}_SERVICE_DESK
+      role_assignments:
+      {{- if not (has . $cdomainsWithoutSupportProjects) }}
+      - project: service_desk
+        role: compute_admin
+      {{- end }}
+      - domain: {{ . }}
+        role: compute_viewer
+        inherited: true
+  {{- end }}
+  {{- end }}

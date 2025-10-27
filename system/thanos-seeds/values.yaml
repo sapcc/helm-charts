@@ -1,0 +1,50 @@
+owner-info:
+  service: prometheus
+  support-group: observability
+  maintainers:
+    - Tommy Sauer
+    - Richard Tief
+  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/system/thanos-seeds
+
+# this shart shared the regional values file with the respective prometheus
+# global:
+  # targets:
+
+name:
+
+thanosSeeds:
+  seed:
+    # optional to distinguish between Thanos seeds with the same name in different clusters
+    # # clusterType:
+
+    # If disabled the user and container need to exist.
+    enabled: true
+
+    # List of required OpenstackSeeds that need to be resolved before.
+    # Warning: This list is rather specific to SAP Converged Cloud.
+    requires:
+      - swift/swift-seed
+      - monsoon3/domain-ccadmin-seed
+      - monsoon3/domain-default-seed
+
+  # Configuration for OpenStack Swift Thanos storage backend.
+  # Deploy an OpenstackSeed custom resource triggering creation of an Openstack user and Swift container used to persist Prometheus metrics.
+  # See: https://github.com/sapcc/kubernetes-operators/tree/master/openstack-seeder
+  swiftStorageConfig:
+    authURL:
+    userDomainName:
+    password:
+    domainName:
+    projectName:
+    projectDomainName:
+    # all settings below are not mandatory and auto-generated
+    userName:
+    containerName:
+
+    # Currently not supported are:
+    # tenantID:
+    # domainID:
+    # userID:
+
+  # needs to be enabled for vmware-monitoring only
+  vmware: false
