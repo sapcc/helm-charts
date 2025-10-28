@@ -1,4 +1,4 @@
-{{ if and .Values.adminPassword .Values.adminToken .Values.adminEmail -}}
+{{ if and .Values.adminUser.password .Values.adminUser.token .Values.adminUser.email -}}
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -37,7 +37,7 @@ spec:
           - name: ADMIN_API_TOKEN
             valueFrom: { secretKeyRef: { name: {{ .Release.Name }}, key: admin-api-token } }
           - name: ADMIN_EMAIL
-            value: {{ required "missing adminEmail" .Values.adminEmail }}
+            value: {{ required "missing adminEmail" .Values.adminUser.email }}
           - name: ADMIN_PASSWORD
             valueFrom: { secretKeyRef: { name: {{ .Release.Name }}, key: admin-password } }
           - name: ORGANIZATION_NAME
