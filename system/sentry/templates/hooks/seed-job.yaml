@@ -4,9 +4,10 @@ kind: Job
 metadata:
   name: {{ template "fullname" . }}-seed-{{ randAlphaNum 6 |lower }}
   annotations:
-    "helm.sh/hook": post-install
+    "helm.sh/hook": post-install,post-upgrade
     # hooks are not annotated as belonging to the Helm release, so we cannot rely on owner-info injection
     "helm.sh/hook-delete-policy": "{{ if .Values.hooks.removeOnSuccess }}hook-succeeded,{{ end }}before-hook-creation"
+    "helm.sh/hook-weight": "10"
     ccloud/support-group: identity
     ccloud/service: sentry
 spec:
