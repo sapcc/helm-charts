@@ -7,6 +7,7 @@ from sentry.utils.locking import UnableToAcquireLock
 lock = locks.get('upgrade', duration=120)
 
 def ensure_user(email, password):
+    superuser = True
     try:
         user = User.objects.get(email=email)
         click.echo("User already exists")
@@ -14,10 +15,8 @@ def ensure_user(email, password):
             user.set_password(password)
             user.save()
             click.echo("Password updated")
-        return user
 
     except User.DoesNotExist:
-        superuser = True
         #copied from https://github.com/getsentry/sentry/blob/master/src/sentry/runner/commands/createuser.py
         user = User(
             email=email,
@@ -29,37 +28,41 @@ def ensure_user(email, password):
         user.set_password(password)
         user.save()
         click.echo('User created: %s' % (email,))
-        if settings.SENTRY_SINGLE_ORGANIZATION:
-            from sentry.models import (
-                Organization, OrganizationMember, OrganizationMemberTeam, Team
-            )
+    
+    if settings.SENTRY_SINGLE_ORGANIZATION:
+        from sentry.models import (
+            Organization, OrganizationMember, OrganizationMemberTeam, Team, roles
+        )
 
-            org = Organization.get_default()
-            if superuser:
-                role = roles.get_top_dog().id
-            else:
-                role = org.default_role
-            member = OrganizationMember.objects.create(
-                organization=org,
-                user=user,
-                role=role,
-            )
+        org = Organization.get_default()
+        if superuser:
+            role = roles.get_top_dog().id
+        else:
+            role = org.default_role
+        member, created = OrganizationMember.objects.get_or_create(
+            organization=org,
+            user_id=user.id,
+            defaults={
+                'role': role,
+                'user_email': user.email
+            },
+        )
 
-            # if we've only got a single team let's go ahead and give
-            # access to that team as its likely the desired outcome
-            teams = list(Team.objects.filter(organization=org)[0:2])
-            if len(teams) == 1:
-                OrganizationMemberTeam.objects.create(
-                    team=teams[0],
-                    organizationmember=member,
-                )
-            click.echo('Added to organization: %s' % (org.slug,))
-            org.default_role='manager'
-            org.name=os.getenv('ORGANIZATION_NAME', 'Sentry')
-            org.slug=os.getenv('ORGANIZATION_SLUG', 'sentry')
-            org.save()
-            click.echo('Changed default role to manager')
-        return user
+        # if we've only got a single team let's go ahead and give
+        # access to that team as its likely the desired outcome
+        teams = list(Team.objects.filter(organization=org)[0:2])
+        if len(teams) == 1:
+            OrganizationMemberTeam.objects.get_or_create(
+                team=teams[0],
+                organizationmember=member,
+            )
+        click.echo('Added to organization: %s' % (org.slug,))
+        org.default_role='manager'
+        org.name=os.getenv('ORGANIZATION_NAME', 'Sentry')
+        org.slug=os.getenv('ORGANIZATION_SLUG', 'sentry')
+        org.save()
+        click.echo('Changed default role to manager')
+    return user
 
 def ensure_api_token(user, token):
     try:

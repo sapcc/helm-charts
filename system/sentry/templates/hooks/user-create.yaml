@@ -1,4 +1,4 @@
-{{- if and .Values.user.create .Values.hooks.enabled -}}
+{{- if and .Values.adminUser.create .Values.hooks.enabled -}}
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -79,7 +79,7 @@ spec:
             sentry createuser \
               --no-input \
               --superuser \
-              --email "{{ .Values.user.email }}" \
+              --email "{{ .Values.adminUser.email }}" \
               --password "$ADMIN_PASSWORD" || true; \
             if [ $? -eq 0 ] || [ $? -eq 3 ]; then \
               exit 0; \
@@ -88,7 +88,7 @@ spec:
             fi
         env:
 {{ include "sentry.env" . | indent 8 }}
-        {{- if .Values.user.existingSecret }}
+        {{- if .Values.adminUser.existingSecret }}
         - name: ADMIN_PASSWORD
           valueFrom:
             secretKeyRef:
