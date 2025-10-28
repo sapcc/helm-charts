@@ -1,4 +1,7 @@
 [DEFAULT]
+{{- if .Values.ceph.enabled }}
+enabled_backends = swift:swift, ceph-rbd:rbd
+{{- end }}
 debug = {{.Values.api.debug}}
 
 registry_host = 127.0.0.1
@@ -49,14 +52,26 @@ flavor = keystone
 enable_proxy_headers_parsing = true
 
 [glance_store]
-stores = {{ .Values.stores | default "file" | quote }}
-default_store = {{ .Values.default_store | default "file" | quote }}
+default_backend = {{ .Values.default_backend | default "swift" | quote }}
 
 {{- if .Values.file.persistence.enabled }}
 filesystem_store_datadir = /glance_store
 {{- end }}
 
+{{- if .Values.ceph.enabled }}
+# Ceph (RBD) configuration
+[ceph-rbd]
+store_description = "Ceph RBD (fast)"
+rbd_store_ceph_conf = /etc/ceph/ceph.conf
+rbd_store_user = glance
+rbd_store_pool = {{ .Values.ceph.pool }}
+rbd_store_chunk_size = 8
+rbd_store_access_timeout = 30
+{{- end}}
+
 {{- if .Values.swift.enabled }}
+[swift]
+store_description = "Swift storage backend (default)"
 swift_store_region={{.Values.global.region}}
 swift_store_auth_insecure = True
 swift_store_create_container_on_put = True

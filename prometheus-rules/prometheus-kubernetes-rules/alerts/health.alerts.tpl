@@ -2,22 +2,6 @@
 groups:
 - name: kubernetes.alerts
   rules:
-  - alert: KubernetesNodeManyNotReady
-    expr: count((kube_node_status_condition{condition="Ready",status="true"} unless on (node) (kube_node_labels{label_cloud_sap_maintenance_state="in-maintenance"} or kube_node_labels{label_kubernetes_cloud_sap_role="storage"})) == 0) > 4
-    for: 1h
-    labels:
-      tier: {{ required ".Values.tier missing" .Values.tier }}
-      support_group: {{ required ".Values.supportGroup missing" .Values.supportGroup }}
-      service: {{ required ".Values.service missing" .Values.service }}
-      severity: critical
-      context: node
-      meta: "{{`{{ $value }}`}} nodes NotReady"
-      dashboard: kubernetes-health
-      playbook: docs/support/playbook/kubernetes/k8s_node_not_ready
-    annotations:
-      summary: Many Nodes are NotReady
-      description: "{{`{{ $value }}`}} nodes are NotReady for more than an hour"
-
   - alert: KubernetesNodeNotReady
     expr: sum by(node) (kube_node_status_condition{condition="Ready",status="true"} == 0)
     for: 1h
@@ -34,6 +18,37 @@ groups:
     annotations:
       summary: Node status is NotReady
       description: Node {{`{{ $labels.node }}`}} is NotReady for more than an hour
+
+  # Duplicated from maintenance.alerts. It has multiple occurrences; make sure you change all of them if you modify this. 
+  - alert: NodeInMaintenance
+    expr: max by (node) (kube_node_labels{label_cloud_sap_maintenance_state="in-maintenance"}) == 1
+    for: 2m
+    labels:
+      tier: {{ required ".Values.tier missing" .Values.tier }}
+      support_group: {{ required ".Values.supportGroup missing" .Values.supportGroup }}
+      service: {{ required ".Values.service missing" .Values.service }}
+      severity: none
+      context: node
+      meta: "Node {{`{{ $labels.node }}`}} is in maintenance."
+    annotations:
+      summary: Node in maintenance
+      description: "Node {{`{{ $labels.node }}`}} is in scheduled maintenance. Add the label `inhibited_by: node-maintenance` to alerts that should be inhibited while a node is in maintenance"
+
+  - alert: KubernetesNodeManyNotReady
+    expr: count((kube_node_status_condition{condition="Ready",status="true"} unless on (node) (kube_node_labels{label_cloud_sap_maintenance_state="in-maintenance"} or kube_node_labels{label_kubernetes_cloud_sap_role="storage"})) == 0) > 4
+    for: 1h
+    labels:
+      tier: {{ required ".Values.tier missing" .Values.tier }}
+      support_group: {{ required ".Values.supportGroup missing" .Values.supportGroup }}
+      service: {{ required ".Values.service missing" .Values.service }}
+      severity: critical
+      context: node
+      meta: "{{`{{ $value }}`}} nodes NotReady"
+      dashboard: kubernetes-health
+      playbook: docs/support/playbook/kubernetes/k8s_node_not_ready
+    annotations:
+      summary: Many Nodes are NotReady
+      description: "{{`{{ $value }}`}} nodes are NotReady for more than an hour"
 
   - alert: KubernetesNodeNotReadyFlapping
     expr: changes(kube_node_status_condition{condition="Ready",status="true"}[15m]) > 2
