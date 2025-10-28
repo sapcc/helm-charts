@@ -22,9 +22,8 @@ spec:
 {{- include "mariadb.labels" (list $ "version" "mariadb" "job" "rename-check-constraints") | indent 8 }}
       annotations:
         kubectl.kubernetes.io/default-container: rename-check-constraints
-{{- if and (and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested) $.Values.linkerd.mariadb.enabled }}
-        linkerd.io/inject: enabled
-        config.alpha.linkerd.io/proxy-enable-native-sidecar: "true"
+{{- if $.Values.linkerd.mariadb.enabled }}
+        {{- include "mariadb.linkerdPodAnnotations" . | indent 8 }}
 {{- end }}
     spec:
       restartPolicy: {{ .Values.job.renameCheckConstraints.jobRestartPolicy | default "Never" | quote }}

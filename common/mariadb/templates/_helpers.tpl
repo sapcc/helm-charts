@@ -137,9 +137,9 @@ helm.sh/chart: {{ $.Chart.Name }}-{{ $.Chart.Version | replace "+" "_" }}
 Default pod labels for linkerd
 */}}
 {{- define "mariadb.linkerdPodAnnotations" }}
-  {{- if and (and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested) $.Values.linkerd.mariadb.enabled }}
+  {{- if and (and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested) }}
 linkerd.io/inject: enabled
-    {{- if $.Values.global.linkerd_use_native_sidecar }}
+    {{- if or $.Values.global.linkerd_use_native_sidecar $.Values.global.mariadb.native_sidecar.enabled }}
 config.alpha.linkerd.io/proxy-enable-native-sidecar: "true"
     {{- end }}
   {{- end }}
