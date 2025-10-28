@@ -1,4 +1,5 @@
 {{- if .Values.thanos.enabled -}}
+{{- $thanosEngineClusters := .Values.kubeMonitoring.thanosEngineClusters }}
 apiVersion: greenhouse.sap/v1alpha1
 kind: PluginPreset
 metadata:
@@ -36,7 +37,7 @@ spec:
     - name: thanos.serviceMonitor.labels
       value:
         plugin: "kube-monitoring"
-  {{- if has $plugin.cluster .Values.kubeMonitoring.thanosEngineClusters }}
+  {{- if has $plugin.cluster $thanosEngineClusters }}
     - name: thanos.query.engine
       value: true
   {{- end }}
