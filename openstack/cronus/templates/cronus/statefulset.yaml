@@ -19,15 +19,27 @@ spec:
     type: {{ .Values.cronus.updateStrategy }}
   selector:
     matchLabels:
+      {{- if .Values.cronus.deployment.labels}}
+      {{- range $key, $value := .Values.cronus.deployment.labels }}
+      {{ $key }}: {{ $value }}
+      {{- end }}
+      {{- else}}
       name: cronus
       instance: cronus
+      {{- end }}
   template:
     metadata:
       annotations:
         checksum/config: {{ include "cronus/templates/cronus/_config.yaml.tpl" . | sha256sum }}
       labels:
+        {{- if .Values.cronus.deployment.labels}}
+        {{- range $key, $value := .Values.cronus.deployment.labels }}
+        {{ $key }}: {{ $value }}
+        {{- end }}
+        {{- else}}
         name: cronus
         instance: cronus
+        {{- end }}
     spec:
       serviceAccountName: cronus
 {{- if .Values.cronus.affinity }}
