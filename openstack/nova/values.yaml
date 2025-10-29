@@ -723,6 +723,27 @@ mysql_metrics:
         UNION ALL SELECT 'i-uuid', 'im-uuid', 'None', 0;
       values:
         - "gauge"
+    - help: Retried migrations
+      name: openstack_compute_retried_migration_gauge
+      labels:
+        - "instance_uuid"
+        - "source_compute"
+        - "dest_compute"
+      query: |
+        SELECT
+          instance_uuid,
+          source_compute,
+          dest_compute,
+          count(*) AS gauge
+        FROM migrations
+        WHERE
+          deleted=0
+          AND updated_at > NOW() - INTERVAL 15 minute
+        GROUP BY instance_uuid, source_compute, dest_compute
+        HAVING gauge > 1
+        UNION ALL SELECT 'i-uuid', 'source', 'dest', 0;
+      values:
+        - "gauge"
 
 postgresql:
   enabled: false
