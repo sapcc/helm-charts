@@ -225,24 +225,25 @@
   editable_labels:
     - datacenter
     - netapp_cluster
-  title: "Network - NetworkAsrHighQfpCpuUtilization silence"
-  description: "high qfp utilization alert silence for ASR/C8500 routers"
-  fixed_labels:
-    alertname: "NetworkAsrHighQfpCpuUtilization"
-    support_group: "network-data"
-    service: "asr"
-    severity: "critical"
+- description: high qfp utilization alert silence for ASR/C8500 routers
   editable_labels:
-    - region
-    - devicename
-- status: "active"
-  title: "Network - NetworkAsrInterfaceOverUtilizationOut silence"
-  description: "high interface utilization alert silence for ASR/C8500 routers"
+  - region
+  - devicename
   fixed_labels:
-    alertname: "NetworkAsrInterfaceOverUtilizationOut"
-    support_group: "network-data"
-    service: "asr"
-    severity: "critical"
+    alertname: NetworkAsrHighQfpCpuUtilization
+    support_group: network-data
+    service: asr
+    severity: critical
+  status: active
+  title: Network - NetworkAsrHighQfpCpuUtilization silence
+- description: high interface utilization alert silence for ASR/C8500 routers
   editable_labels:
-    - region
-    - devicename
+  - region
+  - devicename
+  fixed_labels:
+    alertname: NetworkAsrInterfaceOverUtilizationOut
+    support_group: network-data
+    service: asr
+    severity: critical
+  status: active
+  title: Network - NetworkAsrInterfaceOverUtilizationOut silence
