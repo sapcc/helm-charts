@@ -744,6 +744,26 @@ mysql_metrics:
         UNION ALL SELECT 'i-uuid', 'source', 'dest', 0;
       values:
         - "gauge"
+    - help: Multiple BDM Volume Attachments
+      name: openstack_compute_multiple_bdm_attachments_gauge
+      labels:
+        - "instance_uuid"
+        - "volume_id"
+      query: |
+        SELECT count(*) AS gauge, bdm.instance_uuid, bdm.volume_id
+        FROM
+          block_device_mapping AS bdm
+          JOIN instances AS i ON i.uuid=bdm.instance_uuid
+        WHERE
+          i.deleted=0
+          AND bdm.deleted=0
+          AND bdm.volume_id IS NOT NULL
+          AND (i.task_state IS NULL OR i.task_state NOT IN ('MIGRATING'))
+        GROUP BY bdm.instance_uuid, volume_id
+        HAVING gauge>1
+        UNION ALL SELECT 'i-uuid', 'v-uuid', 0;
+      values:
+        - "gauge"
 
 postgresql:
   enabled: false
