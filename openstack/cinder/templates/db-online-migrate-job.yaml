@@ -1,0 +1,71 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  # since this name changes with every image change, removal and creation of
+  # this Job happens on nearly every deployment. Check the helm-chart changes
+  # to see if this needs more review.
+  name: {{ tuple . "db-online-migrate" | include "job_name" }}
+  labels:
+    system: openstack
+    type: configuration
+    component: cinder
+spec:
+  template:
+    metadata:
+      {{- tuple . "db-online-migrate" | include "job_metadata" | indent 6 }}
+      annotations:
+        {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
+    spec:
+      restartPolicy: OnFailure
+      {{- include "utils.proxysql.job_pod_settings" . | nindent 6 }}
+      initContainers:
+      {{- $dependencies := dict "jobs" (tuple . "db-migrate" | include "job_name") "service" (include "cinder.helpers.database_services" .) }}
+      {{- tuple . (dict "service" (include "cinder.db_service" . )) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
+      {{- if .Values.proxysql.native_sidecar }}
+      {{- include "utils.proxysql.container" . | indent 6 }}
+      {{- end }}
+      containers:
+        - name: cinder-migration
+          image: {{required ".Values.global.registry is missing" .Values.global.registry}}/loci-cinder:{{.Values.imageVersionCinderApi | default .Values.imageVersion | required "Please set cinder.imageVersion or similar" }}
+          imagePullPolicy: IfNotPresent
+          command:
+            - bash
+            - -c
+            - |
+              cinder-manage db online_data_migrations
+              {{- include "utils.script.job_finished_hook" . | nindent 14 }}
+          volumeMounts:
+            - name: etccinder
+              mountPath: /etc/cinder
+            - name: cinder-etc
+              mountPath: /etc/cinder/cinder.conf
+              subPath: cinder.conf
+              readOnly: true
+            - name: cinder-etc-confd
+              mountPath: /etc/cinder/cinder.conf.d
+            - name: cinder-etc
+              mountPath: /etc/cinder/api-paste.ini
+              subPath: api-paste.ini
+              readOnly: true
+            - name: cinder-etc
+              mountPath: /etc/cinder/policy.yaml
+              subPath: policy.yaml
+              readOnly: true
+            - name: cinder-etc
+              mountPath: /etc/cinder/logging.ini
+              subPath: logging.ini
+              readOnly: true
+            {{- include "utils.proxysql.volume_mount" . | indent 12 }}
+        {{- if not .Values.proxysql.native_sidecar }}
+        {{- include "utils.proxysql.container" . | indent 8 }}
+        {{- end }}
+      volumes:
+        - name: etccinder
+          emptyDir: {}
+        - name: cinder-etc
+          configMap:
+            name: cinder-etc
+        - name: cinder-etc-confd
+          secret:
+            secretName: {{ .Release.Name }}-secrets
+      {{- include "utils.proxysql.volumes" . | indent 8 }}
