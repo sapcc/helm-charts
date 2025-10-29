@@ -240,6 +240,7 @@
   editable_labels:
   - region
   - devicename
+  - ifDescr
   fixed_labels:
     alertname: NetworkAsrInterfaceOverUtilizationOut
     support_group: network-data
@@ -247,3 +248,15 @@
     severity: critical
   status: active
   title: Network - NetworkAsrInterfaceOverUtilizationOut silence
+- description: high interface utilization alert silence for ASR/C8500 routers
+  editable_labels:
+  - region
+  - devicename
+  - ifDescr
+  fixed_labels:
+    alertname: NetworkAsrInterfaceOverUtilizationIn
+    support_group: network-data
+    service: asr
+    severity: critical
+  status: active
+  title: Network - NetworkAsrInterfaceOverUtilizationIn silence
