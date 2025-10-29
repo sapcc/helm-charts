@@ -723,7 +723,40 @@ mysql_metrics:
         UNION ALL SELECT 'i-uuid', 'im-uuid', 'None', 0;
       values:
         - "gauge"
-
+    - help: Misplaced VMs
+      name: openstack_compute_misplaced_vms_gauge
+      labels:
+        - "instance_uuid"
+        - "node"
+        - "current_hypervisor_type"
+        - "expected_hypervisor_type"
+      query: |
+        SELECT
+          i.uuid AS instance_uuid,
+          i.node AS node,
+          cn.hypervisor_type AS current_hypervisor_type,
+          json_extract(ie.flavor, '$.cur."nova_object.data".extra_specs."capabilities:hypervisor_type"') AS expected_hypervisor_type,
+          1 AS gauge
+        FROM
+          instances AS i
+          JOIN instance_extra AS ie ON i.uuid=ie.instance_uuid
+          JOIN compute_nodes AS cn ON i.node=cn.hypervisor_hostname
+        WHERE
+          i.deleted=0
+          AND cn.deleted=0
+          AND cn.hypervisor_type<>json_extract(ie.flavor, '$.cur."nova_object.data".extra_specs."capabilities:hypervisor_type"')
+        UNION ALL SELECT 'i-uuid', 'node', 'ignore', 'ignore', 0;
+      values:
+        - "gauge"
+SELECT i.uuid,i.node,json_extract(ie.flavor, '$.cur."nova_object.data".extra_specs."capabilities:hypervisor_type"') AS should, cn.hypervisor_type AS current
+                            -> FROM
+                            ->   instances as i
+                            ->   JOIN instance_extra as ie on i.uuid=ie.instance_uuid
+                            ->   JOIN compute_nodes as cn on i.node=cn.hypervisor_hostname
+                            -> WHERE
+                            ->   i.deleted=0
+                            ->   AND cn.deleted=0
+                            ->   AND cn.hypervisor_type<>json_extract(ie.flavor, '$.cur."nova_object.data".extra_specs."capabilities:hypervisor_type"')
 postgresql:
   enabled: false
 
