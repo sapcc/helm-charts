@@ -68,29 +68,30 @@ spec:
             apiGroup: ipam.cluster.x-k8s.io
             kind: IPAddress
       loadBalancerConfig:
-        calicoBgpConfig:
-          asNumber: {{ $cluster.networking.asNumber }}
-          bgpPeer:
-          {{- range $cluster.networking.bgpPeers }}
-          - asNumber: {{ default $cluster.networking.asNumber .asNumber }}
-            nodeSelector: {{ .nodeSelector }}
-            peerIP: {{ .peerIP }}
-# uncomment after Gardener v1.129.0
-#            filters:
-#            - v4filter
-          {{- end }}  
-# uncomment after Gardener v1.129.0
-#          bgpFilter:
-#            - name: v4filter
-#              exportV4:
-#                {{- range $cluster.networking.externalServices }}
-#                - cidr: {{ . }}
-#                  matchOperator: Equal
-#                  action: Reject
-#                {{- end }}
-          nodeToNodeMeshEnabled: false
-          serviceLoadBalancerIPs:
-          {{- toYaml $cluster.networking.externalServices | nindent 10 }}
+        calicoConfig:
+          calicoBgpConfig:
+            asNumber: {{ $cluster.networking.asNumber }}
+            bgpPeer:
+            {{- range $cluster.networking.bgpPeers }}
+            - asNumber: {{ default $cluster.networking.asNumber .asNumber }}
+              nodeSelector: {{ .nodeSelector }}
+              peerIP: {{ .peerIP }}
+  # uncomment after Gardener v1.129.0
+  #            filters:
+  #            - v4filter
+            {{- end }}  
+  # uncomment after Gardener v1.129.0
+  #          bgpFilter:
+  #            - name: v4filter
+  #              exportV4:
+  #                {{- range $cluster.networking.externalServices }}
+  #                - cidr: {{ . }}
+  #                  matchOperator: Equal
+  #                  action: Reject
+  #                {{- end }}
+            nodeToNodeMeshEnabled: false
+            serviceLoadBalancerIPs:
+            {{- toYaml $cluster.networking.externalServices | nindent 12 }}
         metallbConfig:
           ipAddressPool:
           {{- toYaml $cluster.networking.externalServices | nindent 10 }}
