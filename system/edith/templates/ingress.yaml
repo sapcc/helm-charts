@@ -1,4 +1,3 @@
----
 {{- $hostname := printf "%s.%s" .Release.Name (required ".Values.edith.domain missing" .Values.edith.domain) -}}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -7,7 +6,7 @@ metadata:
   annotations:
     disco: "true"
     kubernetes.io/tls-acme: "true"
-    {{- with (dig "edith" "ingress" "annotations" dict .Values) }}
+    {{- with .Values.edith.ingress.annotations }}
     {{- toYaml . | nindent 4 }}
     {{- end }}
 spec:
