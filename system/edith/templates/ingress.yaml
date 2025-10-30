@@ -1,4 +1,5 @@
 ---
+{{- $hostname := printf "%s.%s" .Release.Name (required ".Values.aicloudguard.domain missing" .Values.aicloudguard.domain) -}}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -7,7 +8,6 @@ metadata:
     disco: "true"
     kubernetes.io/tls-acme: "true"
 {{ toYaml .Values.edith.ingress.annotations | indent 4 }}
-{{- $hostname :=  print .Release.Name "." .Values.edith.domain }}
 spec:
   rules:
     - host: {{ $hostname }}
