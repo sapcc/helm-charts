@@ -1,0 +1,80 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: audit-poller
+  labels:
+    app.kubernetes.io/name: audit-poller
+    helm.sh/chart: {{ include "audit-poller.chart" $ }}
+    app.kubernetes.io/instance: audit-poller-{{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: audit-poller
+      app.kubernetes.io/instance: audit-poller-{{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: audit-poller
+        app.kubernetes.io/instance: audit-poller-{{ .Release.Name }}
+      annotations:
+        kubectl.kubernetes.io/default-container: "audit-poller"
+        checksum/config: {{ include ( print $.Template.BasePath "/configmap.yaml" ) . | sha256sum }}
+        checksum/secret: {{ include ( print $.Template.BasePath "/secrets.yaml" ) . | sha256sum }}
+    spec:
+      containers:
+      - name: audit-poller
+        image: "{{ required ".Values.global.registry variable missing" .Values.global.registry }}/{{ .Values.image }}:{{ .Values.imageTag }}"
+        ports:
+        - name: metrics
+          containerPort: {{ .Values.metricsPort }}
+          protocol: TCP
+        env:
+          - name: TOKEN_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: audit-poller-secrets
+                key: tokenPassword
+          - name: CHANGELOG_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: audit-poller-secrets
+                key: changelogPassword
+        volumeMounts:
+          - name: audit-poller-etc
+            mountPath: /config/config.yaml
+            readOnly: true
+            subPath: config.yaml
+          - name: audit-dir
+            mountPath: {{.Values.logDir}}
+            readOnly: false
+
+{{- if .Values.sidecar.tail.enabled }}
+      - name: iasapi-stdout
+        image: {{ .Values.global.dockerHubMirror }}/library/busybox
+        args: [/bin/sh, -c, 'touch {{ .Values.logDir }}/{{ .Values.iasApi.fileName }}; tail -n+1 -F {{ .Values.logDir }}/{{ .Values.iasApi.fileName }}']
+        volumeMounts:
+        - name: audit-dir
+          mountPath: {{ .Values.logDir }}
+      - name: iaschangelog-stdout
+        image: {{ .Values.global.dockerHubMirror }}/library/busybox
+        args: [/bin/sh, -c, 'touch {{ .Values.logDir }}/{{ .Values.iasChangelog.fileName }}; tail -n+1 -F {{ .Values.logDir }}/{{ .Values.iasChangelog.fileName }}']
+        volumeMounts:
+        - name: audit-dir
+          mountPath: {{ .Values.logDir }}
+{{- end }}
+      volumes:
+      - name: audit-poller-etc
+        configMap:
+          name: audit-poller-etc 
+      - name: audit-dir
+        {{- if .Values.persistence.enabled }}
+        persistentVolumeClaim:
+          claimName: audit-poller-pvc
+        {{- else }}
+        emptyDir:
+          sizeLimit: 50Mi
+        {{- end }}
