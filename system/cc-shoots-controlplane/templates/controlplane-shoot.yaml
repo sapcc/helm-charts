@@ -39,7 +39,7 @@ spec:
         AnonymousAuthConfigurableEndpoints: true
       structuredAuthentication:
         configMapName: authentication-config-cp
-      {{- if .Values.auditing.enabled }}
+      {{- if $.Values.auditing.enabled }}
       auditConfig:
         auditPolicy:
           configMapRef:
@@ -51,7 +51,7 @@ spec:
     autoUpdate:
       kubernetesVersion: false
       machineImageVersion: false
-  {{- if .Values.auditing.enabled }}
+  {{- if $.Values.auditing.enabled }}
   extensions:
   - type: auditing
     providerConfig:
@@ -59,7 +59,7 @@ spec:
       kind: AuditConfiguration
       backends:
       - http:
-          url: {{ .Values.auditing.url }}
+          url: {{ $.Values.auditing.url }}
           tls:
             secretReferenceName: auditing-mtls-credentials
   {{- end }}
@@ -69,7 +69,7 @@ spec:
       apiVersion: v1
       kind: Secret
       name: extraignition-cp-{{ $key }}
-  {{- if .Values.auditing.enabled }}
+  {{- if $.Values.auditing.enabled }}
   - name: auditing-mtls-credentials
     resourceRef:
       apiVersion: v1
