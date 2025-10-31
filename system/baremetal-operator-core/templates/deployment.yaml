@@ -38,9 +38,9 @@ spec:
         envFrom:
         - configMapRef:
             name: {{ include "baremetal-operator-core.fullname" . }}-ironic
-        image: {{ .Values.baremetalOperatorControllerManager.manager.image.repository }}:{{
+        image: '{{ .Values.baremetalOperatorControllerManager.manager.image.repository }}:{{
           .Values.baremetalOperatorControllerManager.manager.image.tag | default .Chart.AppVersion
-          }}
+          }}'
         imagePullPolicy: {{ .Values.baremetalOperatorControllerManager.manager.imagePullPolicy
           }}
         livenessProbe:
@@ -56,6 +56,9 @@ spec:
         ports:
         - containerPort: 9443
           name: webhook-server
+          protocol: TCP
+        - containerPort: 8443
+          name: https
           protocol: TCP
         readinessProbe:
           failureThreshold: 10
@@ -76,23 +79,8 @@ spec:
         - mountPath: /opt/metal3/auth/ironic
           name: ironic-credentials
           readOnly: true
-      - args: {{- toYaml .Values.baremetalOperatorControllerManager.kubeRbacProxy.args
-          | nindent 8 }}
-        env:
-        - name: KUBERNETES_CLUSTER_DOMAIN
-          value: {{ quote .Values.kubernetesClusterDomain }}
-        image: {{ .Values.baremetalOperatorControllerManager.kubeRbacProxy.image.repository
-          }}:{{ .Values.baremetalOperatorControllerManager.kubeRbacProxy.image.tag | default
-          .Chart.AppVersion }}
-        name: kube-rbac-proxy
-        ports:
-        - containerPort: 8443
-          name: https
-        resources: {}
-      securityContext:
-        runAsNonRoot: true
-        seccompProfile:
-          type: RuntimeDefault
+      securityContext: {{- toYaml .Values.baremetalOperatorControllerManager.podSecurityContext
+        | nindent 8 }}
       serviceAccountName: {{ include "baremetal-operator-core.fullname" . }}-baremetal-operator-controller-manager
       terminationGracePeriodSeconds: 10
       volumes:
