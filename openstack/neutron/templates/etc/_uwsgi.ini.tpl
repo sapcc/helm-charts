@@ -59,3 +59,10 @@ cheaper-initial = {{.Values.api.cheaper}}
 workers = {{.Values.api.processes}}
 cheaper-step = 1
 {{- end }}
+
+# uWSGI Stats Server
+stats = :{{ .Values.api.uwsgi_stats_port }}
+stats-http = true
+# Disable collection of core-related stats to prevent exposing HTTP request parameters
+# (including authentication tokens) from the last processed request
+stats-no-cores = true

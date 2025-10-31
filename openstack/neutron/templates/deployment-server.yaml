@@ -41,8 +41,6 @@ spec:
 {{- else }}
         configmap-bin-hash: {{ include (print $.Template.BasePath "/configmap-bin.yaml") . | sha256sum }}
 {{- end }}
-        prometheus.io/scrape: "true"
-        prometheus.io/targets: {{ required "$.Values.metrics.prometheus missing" $.Values.metrics.prometheus }}
         config.linkerd.io/skip-outbound-ports: "6441,6442" # OVSDB ports
     spec:
 {{ tuple . "neutron" "api" | include "kubernetes_pod_anti_affinity" | indent 6 }}
@@ -267,6 +265,13 @@ spec:
         {{- tuple . .Values.api.processes | include "utils.proxysql.container" | indent 8 }}
 {{- end }}
 {{- end }}
+        - name: uwsgi-exporter
+          image: {{.Values.global.registry}}/uwsgi-exporter:20241009155526
+          imagePullPolicy: IfNotPresent
+          args: [ "--stats.uri=http://0.0.0.0:{{ .Values.api.uwsgi_stats_port }}", "--web.listen-address", ":{{ .Values.api.uwsgi_exporter_port }}" ]
+          ports:
+            - name: uexporter
+              containerPort: {{ .Values.api.uwsgi_exporter_port }}
         - name: statsd
           image: {{.Values.global.dockerHubMirror}}/prom/statsd-exporter:v0.8.1
           imagePullPolicy: IfNotPresent
