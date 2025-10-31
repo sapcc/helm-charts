@@ -16,7 +16,7 @@ ifeq ($(UNAME_S),Darwin)
 	SED := gsed
 endif
 
-build: build-cluster-api-core build-bootstrap-kubeadm build-provider-metal3 build-provider-kubernikus
+build: build-cluster-api-core build-controlplane-kubeadm build-bootstrap-kubeadm build-provider-metal3 build-provider-kubernikus build-provider-helm build-provider-ipam build-ipam-capi-remote build-provider-metal3 build-provider-metal
 
 build-cluster-api-core:
 	$(call build-chart,cluster-api-core,https://github.com/kubernetes-sigs/cluster-api//config/default,$(CLUSTER_API_VERSION))
@@ -79,7 +79,7 @@ build-provider-ipam:
 	@find provider-ipam/templates -type f -exec $(SED) -i -e 's#capi-capi-#capi-#g' {} \;
 	@yq -i '.controllerManager.manager.image.tag="$(PROVIDER_IPAM_VERSION)"' provider-ipam/values.yaml
 	@yq -i '.fullnameOverride="capi-capi-provider-ipam"' provider-ipam/values.yaml
-	@yq -i '.version="0.0.3"' provider-ipam/Chart.yaml
+	@yq -i '.version="0.1.1"' provider-ipam/Chart.yaml
 
 build-ipam-capi-remote:
 	@rm -rf ipam-capi-remote

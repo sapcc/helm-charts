@@ -8,8 +8,6 @@ metadata:
     controller-tools.k8s.io: "1.0"
   {{- include "provider-metal3.labels" . | nindent 4 }}
 spec:
-  strategy:
-    type: {{ .Values.controllerManager.strategy.type | quote }}
   selector:
     matchLabels:
       cluster.x-k8s.io/provider: infrastructure-metal3
@@ -22,8 +20,6 @@ spec:
         cluster.x-k8s.io/provider: infrastructure-metal3
         control-plane: controller-manager
         controller-tools.k8s.io: "1.0"
-        networking.gardener.cloud/to-dns: allowed
-        networking.resources.gardener.cloud/to-kube-apiserver-tcp-443: allowed
       {{- include "provider-metal3.selectorLabels" . | nindent 8 }}
     spec:
       containers:
@@ -31,8 +27,6 @@ spec:
         command:
         - /manager
         env:
-        - name: KUBERNETES_SERVICE_HOST
-          value: {{ quote .Values.controllerManager.manager.env.kubernetesServiceHost }}
         - name: POD_NAMESPACE
           valueFrom:
             fieldRef:
@@ -69,13 +63,9 @@ spec:
           | nindent 10 }}
         terminationMessagePolicy: FallbackToLogsOnError
         volumeMounts:
-        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
-          name: remote-kubeconfig
-          readOnly: true
         - mountPath: /tmp/k8s-webhook-server/serving-certs
           name: cert
           readOnly: true
-      hostNetwork: true
       securityContext: {{- toYaml .Values.controllerManager.podSecurityContext | nindent
         8 }}
       serviceAccountName: {{ include "provider-metal3.fullname" . }}-manager
@@ -86,14 +76,6 @@ spec:
       - effect: NoSchedule
         key: node-role.kubernetes.io/control-plane
       volumes:
-      - name: remote-kubeconfig
-        secret:
-          items:
-          - key: token
-            path: token
-          - key: bundle.crt
-            path: ca.crt
-          secretName: ipam-capi-remote-kubeconfig
       - name: cert
         secret:
           defaultMode: 420
