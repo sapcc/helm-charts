@@ -1,0 +1,23 @@
+{{ if .Values.extensions.auditing.enabled -}}
+apiVersion: operator.gardener.cloud/v1alpha1
+kind: Extension
+metadata:
+  annotations:
+    security.gardener.cloud/pod-security-enforce: baseline
+  name: auditing
+spec:
+  resources:
+  - kind: Extension
+    type: auditing
+  deployment:
+    extension:
+      values:
+        replicaCount: 1
+        image:
+          tag: v0.1.0-dev
+      helm:
+        ociRepository:
+          ref: europe-docker.pkg.dev/gardener-project/public/charts/gardener/extensions/auditing:v0.1.0-dev
+      policy: OnDemand
+{{ end -}}
+
