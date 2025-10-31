@@ -39,19 +39,19 @@ spec:
         AnonymousAuthConfigurableEndpoints: true
       structuredAuthentication:
         configMapName: authentication-config-cp
-      {{ if .Values.auditing.enabled -}}
+      {{- if .Values.auditing.enabled }}
       auditConfig:
         auditPolicy:
           configMapRef:
             name: audit-policy-cp
-      {{ end -}}
+      {{- end }}
     verticalPodAutoscaler:
       enabled: true # VPA needs to enabled for ManagedSeed
   maintenance:
     autoUpdate:
       kubernetesVersion: false
       machineImageVersion: false
-  {{ if .Values.auditing.enabled -}}
+  {{- if .Values.auditing.enabled }}
   extensions:
   - type: auditing
     providerConfig:
@@ -62,20 +62,20 @@ spec:
           url: {{ .Values.auditing.url }}
           tls:
             secretReferenceName: auditing-mtls-credentials
-  {{ end -}}
+  {{- end }}
   resources:
   - name: extraignition-cp-{{ $key }}
     resourceRef:
       apiVersion: v1
       kind: Secret
       name: extraignition-cp-{{ $key }}
-  {{ if .Values.auditing.enabled -}}
+  {{- if .Values.auditing.enabled }}
   - name: auditing-mtls-credentials
     resourceRef:
       apiVersion: v1
       kind: Secret
       name: auditing-mtls-credentials
-  {{ end -}}
+  {{- end }}
   provider:
     type: ironcore-metal
     infrastructureConfig:
