@@ -439,7 +439,7 @@ logging:
 
 # openstack-rate-limit-middleware
 api_rate_limit:
-  enabled: true
+  enabled: false
   backend_secret_file: /etc/cinder/ratelimit-backend-secret.conf
   rate_limit_by: "target_project_id"
   max_sleep_time_seconds: 15
@@ -447,6 +447,16 @@ api_rate_limit:
   backend_timeout_seconds: 15
   project_whitelist: []
 
+# Configuration for custom resource CinderNetappConfig used by
+# kvm-cinder-netapp-operator. Should be enabled only if operator is
+# deployed. The operator deploys the cinder-volume services for NetApp
+# backends and should use a cinder image identical to the one used by this 
+# helm chart.
+cindernetappconfig:
+  enabled: false
+  # template for matching volumes from netapp filer
+  volumeregextemplate: "(^cinder_|^nfs_{{FilerName}}_).*"
+  
 # openstack-watcher-middleware
 watcher:
   enabled: true

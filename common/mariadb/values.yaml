@@ -135,6 +135,7 @@ job:
 # name of priorityClass to influence scheduling priority
 priority_class: "critical-infrastructure"
 priority_class_backup: "critical-infrastructure"
+priority_class_sync: "critical-infrastructure"
 
 persistence_claim:
   enabled: true
@@ -230,6 +231,7 @@ metrics:
     - collect.info_schema.query_response_time
     - collect.info_schema.innodb_tablespaces
     - collect.info_schema.userstats
+    - collect.mysql.user
   resources:
     enabled: true
     limits:
@@ -238,6 +240,29 @@ metrics:
     requests:
       cpu: 5m
       memory: 32Mi
+
+sync:
+  enabled: false
+  init:
+    enabled: false
+    image: 'shared-app-images/alpine-mariadb'
+    imageTag: 'python3.13-alpine3.22-20251016125424'
+  image:
+    name: "go-maria-sync"
+    tag: "20251014143416"
+  backup:
+    service: null
+    swift:
+      password: null
+    s3: {}
+  source:
+    password: null
+  target:
+    password: null
+  databases: []
+  loglevel: info
+  serverID: 899
+  binlogMaxReconnectAttempts: 10
 
 # Default Prometheus alerts and rules.
 alerts:

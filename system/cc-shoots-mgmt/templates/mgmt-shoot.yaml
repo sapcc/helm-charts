@@ -5,7 +5,9 @@ kind: Shoot
 metadata:
   name: mgmt-{{ $key }}
 spec:
-  cloudProfileName: ironcore-metal
+  cloudProfile:
+    kind: CloudProfile
+    name: ironcore-metal
   secretBindingName: metal-{{ $key }}
   seedName: rt-{{ $key }}
   region: {{ $key }}
@@ -66,32 +68,37 @@ spec:
             apiGroup: ipam.cluster.x-k8s.io
             kind: IPAddress
       loadBalancerConfig:
-        calicoBgpConfig:
-          asNumber: {{ $cluster.networking.asNumber }}
-          bgpPeer:
-          {{- range $cluster.networking.bgpPeers }}
-          - asNumber: {{ default $cluster.networking.asNumber .asNumber }}
-            nodeSelector: {{ .nodeSelector }}
-            peerIP: {{ .peerIP }}
-# uncomment after Gardener v1.129.0
-#            filters:
-#            - v4filter
-          {{- end }}  
-# uncomment after Gardener v1.129.0
-#          bgpFilter:
-#            - name: v4filter
-#              exportV4:
-#                {{- range $cluster.networking.externalServices }}
-#                - cidr: {{ . }}
-#                  matchOperator: Equal
-#                  action: Reject
-#                {{- end }}
-          nodeToNodeMeshEnabled: false
-          serviceLoadBalancerIPs:
-          {{- toYaml $cluster.networking.externalServices | nindent 10 }}
-        metallbConfig:
-          ipAddressPool:
-          {{- toYaml $cluster.networking.externalServices | nindent 10 }}
+        calicoConfig:
+          IPPools:
+            {{- range $cluster.networking.externalServices }}
+            - cidr: {{ .cidr }}
+              assignmentMode: {{ default "Automatic" .assignmentMode }}
+            {{- end }}
+          calicoBgpConfig:
+            asNumber: {{ $cluster.networking.asNumber }}
+            bgpPeer:
+            {{- range $cluster.networking.bgpPeers }}
+            - asNumber: {{ default $cluster.networking.asNumber .asNumber }}
+              nodeSelector: {{ .nodeSelector }}
+              peerIP: {{ .peerIP }}
+  # uncomment after Gardener v1.129.0
+  #            filters:
+  #            - v4filter
+            {{- end }}  
+  # uncomment after Gardener v1.129.0
+  #          bgpFilter:
+  #            - name: v4filter
+  #              exportV4:
+  #                {{- range $cluster.networking.externalServices }}
+  #                - cidr: {{ .cidr }}
+  #                  matchOperator: Equal
+  #                  action: Reject
+  #                {{- end }}
+            nodeToNodeMeshEnabled: false
+            serviceLoadBalancerIPs:
+            {{- range $cluster.networking.externalServices }}
+            - {{ .cidr }}
+            {{- end }}
 
     workers:
     {{- range $workerkey, $worker := $cluster.workers }}
