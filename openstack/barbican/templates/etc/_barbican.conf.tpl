@@ -70,7 +70,7 @@ enforce_scope=False
 [secretstore]
 enable_multiple_secret_stores = True
 {{- if .Values.hsm.utimaco_hsm.enabled }}
-stores_lookup_suffix = software, pkcs11, utimaco_hsm
+stores_lookup_suffix = software, pkcs11, utimaco_hsm, thales_hsm
 {{- else }}
 stores_lookup_suffix = software, pkcs11
 {{- end }}
@@ -90,6 +90,10 @@ global_default = True
 [secretstore:utimaco_hsm]
 secret_store_plugin = store_crypto
 crypto_plugin = utimaco_hsm_crypto
+
+[secretstore:thales_hsm]
+secret_store_plugin = store_crypto
+crypto_plugin = thales_hsm_crypto
 
 {{- end }}
 {{- end }}

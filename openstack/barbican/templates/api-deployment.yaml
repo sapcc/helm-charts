@@ -151,6 +151,7 @@ spec:
               mountPath: /thales/
             {{- include "utils.proxysql.volume_mount" . | indent 12 }}
             {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
+        {{- end }}
         {{- if not .Values.proxysql.native_sidecar }}
         {{- include "utils.proxysql.container" . | indent 8 }}
         {{- end }}
@@ -214,6 +215,37 @@ spec:
               memory: {{ .Values.hsm.resources.requests.memory | quote }}
           {{- end }}
         {{- end }}
+        {{- if .Values.hsm.thales_hsm.enabled }}
+        - name: utimaco1
+          image: {{required ".Values.global.registry is missing" .Values.global.registry }}/loci-barbican:{{required "Values.hsm.utimaco_hsm.image is missing" .Values.hsm.utimaco_hsm.image }}
+          imagePullPolicy: Always
+          env:
+            - name: CS_PKCS11_R3_CFG
+              value: "/utimaco/cs_pkcs11_R3_1.cfg"
+          command: [ "bash", "-lc" ]
+          args:
+            - |
+              set -ex
+              echo "$(date) [utimaco] starting init..."
+              /scripts/barbican_utimaco.sh
+              echo "$(date) [utimaco] init complete."
+              exec sleep infinity
+          volumeMounts:
+            - name: hsm-utimaco
+              mountPath: /scripts/
+              subPath:
+              readOnly: true
+            - name: utimaco-volume
+              mountPath: /utimaco/
+          {{- if .Values.hsm.resources.enabled }}
+          resources:
+            limits:
+              cpu: {{ .Values.hsm.resources.limits.cpu | quote }}
+              memory: {{ .Values.hsm.resources.limits.memory | quote }}
+            requests:
+              cpu: {{ .Values.hsm.resources.requests.cpu | quote }}
+              memory: {{ .Values.hsm.resources.requests.memory | quote }}
+          {{- end }}
         {{- end }}
         - name: statsd
           {{- if hasKey .Values.global "dockerHubMirror"}}
@@ -267,6 +299,17 @@ spec:
           emptyDir: {}
         {{ end }}
         {{- if .Values.hsm.utimaco_hsm.enabled }}
+        - name: hsm-utimaco
+          secret:
+            secretName: {{ .Release.Name }}-secrets
+            defaultMode: 0744
+            items:
+            - key: barbican_utimaco.sh
+              path: barbican_utimaco.sh
+        - name: utimaco-volume
+          emptyDir: {}
+        {{- end }}
+                {{- if .Values.hsm.thales_hsm.enabled }}
         - name: hsm-utimaco
           secret:
             secretName: {{ .Release.Name }}-secrets

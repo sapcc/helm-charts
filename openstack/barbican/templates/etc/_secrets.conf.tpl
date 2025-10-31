@@ -34,4 +34,13 @@ mkek_length = 32
 hmac_label = {{ .Values.utimaco_hsm.hmac_label | include "resolve_secret" }}
 slot_id = 0
 encryption_mechanism = CKM_AES_CBC
+
+[hsm_partition_crypto_plugin:thales_hsm]
+library_path = {{ .Values.utimaco_hsm.library_path | include "resolve_secret" }}
+login = {{ .Values.utimaco_hsm.login | include "resolve_secret" }}
+mkek_label = {{ .Values.utimaco_hsm.mkek_label | include "resolve_secret" }}
+mkek_length = 32
+hmac_label = {{ .Values.utimaco_hsm.hmac_label | include "resolve_secret" }}
+slot_id = 0
+encryption_mechanism = CKM_AES_CBC
 {{- end }}
