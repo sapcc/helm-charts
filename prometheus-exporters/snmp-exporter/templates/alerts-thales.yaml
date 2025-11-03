@@ -12,7 +12,7 @@ spec:
   - name: snmp-thales.alerts
     rules:
     - alert: thalesPartitionStorageAvailibilityLessThan5Percentage
-      expr: snmp_thales_thalesPartitionStorageAvailableBytes{thalesModel!="Luna G7"} < 5000
+      expr: snmp_thales_hsmPartitionStorageTotalBytes{thalesModel!="Luna G7"} < 5000
       for: 15m
       labels:
         severity: info
@@ -27,7 +27,7 @@ spec:
         summary: "Partition {{`{{ $labels.thalesPartitionSerialNumber }}`}} has less than 5% storage availability"
   
     - alert: thalesAribaClientsMoreThan14
-      expr: sum((snmp_thales_thalesClientName{thalesClientName!~"barb.*"})) by (devicename) > 14
+      expr: sum((snmp_thales_hsmClientName{thalesClientName!~"barb.*"})) by (devicename) > 14
       for: 5d
       labels:
         severity: info
@@ -42,7 +42,7 @@ spec:
         summary: "THALES Client License in {{`{{ $labels.devicename }}`}} is {{`{{ $value }}`}}"
   
     - alert: thalesOperationalErrors
-      expr: sum(rate(snmp_thales_thalesOperationErrors[5m])) by (devicename) > 0
+      expr: sum(rate(snmp_thales_hsmOperationErrors[5m])) by (devicename) > 0
       for: 5m
       labels:
         severity: info
@@ -73,7 +73,7 @@ spec:
         summary: "THALES Sensor {{`{{ $labels.lmTempSensorsDevice }}`}} in {{`{{ $labels.devicename }}`}} Temperature is {{`{{ $value }}`}}"
   
     - alert: thalesClientsMoreThan20
-      expr: sum(snmp_thales_thalesClientName) by (devicename) > 20
+      expr: sum(snmp_thales_hsmClientName) by (devicename) > 20
       for: 5d
       labels:
         severity: info
@@ -88,7 +88,7 @@ spec:
         summary: "THALES Client License in {{`{{ $labels.devicename }}`}} is {{`{{ $value }}`}}"
   
     - alert: thalesBarbicanClientsMoreThan4
-      expr: sum((snmp_thales_thalesClientName{thalesClientName=~"barb.*"})) by (devicename) > 4
+      expr: sum((snmp_thales_hsmClientName{snmp_thales_hsmClientName=~"barb.*"})) by (devicename) > 4
       for: 5d
       labels:
         severity: info
