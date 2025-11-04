@@ -28,7 +28,7 @@ filter {
     drop { }
   }
 
-  # Drop liveliness check events that server no value
+  # Drop liveliness check events that serve no value
   # Everything in audit-default adds no value, internal communication
   if [initiator][domain_id] == "default" {
     drop { }
