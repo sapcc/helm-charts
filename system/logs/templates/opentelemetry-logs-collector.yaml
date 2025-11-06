@@ -3,7 +3,7 @@ kind: OpenTelemetryCollector
 metadata:
   name: logs
   labels:
-  {{- include "plugin.labels" . | nindent 4 }} 
+  {{- include "plugin.labels" . | nindent 4 }}
   {{- if .Values.openTelemetryPlugin.openTelemetry.customLabels }}
   {{ toYaml .Values.openTelemetryPlugin.openTelemetry.customLabels | nindent 4 }}
   {{- end }}
@@ -115,6 +115,15 @@ spec:
           - action: insert
             key: failover_username_opensearch
             value: ${failover_username_b}
+
+      transform/perses:
+        error_mode: ignore
+        log_statements:
+          - context: log
+            conditions:
+              - resource.attributes["k8s.container.name"] == "perses"
+            statements:
+              - merge_maps(log.attributes, ExtractGrokPatterns(log.body, "time=%{QUOTEDSTRING} level=%{WORD:loglevel}", true),"upsert")
 
 {{- if .Values.openTelemetryPlugin.openTelemetry.logsCollector.journaldConfig.enabled }}
     {{- include "journald.transform" . | nindent 6 -}}
