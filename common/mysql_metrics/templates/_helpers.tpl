@@ -19,12 +19,16 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
 Return the FQDN name of the database instance.
 */}}
 {{- define "mysql_metrics.db_host" -}}
-    {{- if eq .Values.db_type "pxc" -}}
-    {{ .Release.Name }}-percona-pxc.{{ .Release.Namespace }}.svc.kubernetes.{{ .Values.global.db_region }}.{{ .Values.global.tld }}
-    {{- else if eq .Values.db_type "pxc-db" -}}
-    {{ .Release.Name }}-db-haproxy.{{ .Release.Namespace }}.svc.kubernetes.{{ .Values.global.region }}.{{ .Values.global.tld }}
+    {{- if .Values.db_instance_name_literal -}}
+        {{ .Values.db_instance_name_literal }}.{{ .Release.Namespace }}.svc.kubernetes.{{ .Values.global.region }}.{{ .Values.global.tld }}
     {{- else -}}
-    {{ .Release.Name }}-mariadb.{{ .Release.Namespace }}.svc.kubernetes.{{ .Values.global.region }}.{{ .Values.global.tld }}
+        {{- if eq .Values.db_type "pxc" -}}
+        {{ .Release.Name }}-percona-pxc.{{ .Release.Namespace }}.svc.kubernetes.{{ .Values.global.db_region }}.{{ .Values.global.tld }}
+        {{- else if eq .Values.db_type "pxc-db" -}}
+        {{ .Release.Name }}-db-haproxy.{{ .Release.Namespace }}.svc.kubernetes.{{ .Values.global.region }}.{{ .Values.global.tld }}
+        {{- else -}}
+        {{ .Release.Name }}-mariadb.{{ .Release.Namespace }}.svc.kubernetes.{{ .Values.global.region }}.{{ .Values.global.tld }}
+        {{- end -}}
     {{- end -}}
 {{- end }}
 
@@ -82,15 +86,19 @@ For pxc-global returns FQDN of the service in sepcified region.
     {{- $root := index . 0 -}}
     {{- $connection := index . 1 -}}
     {{- $prefix := $root.Release.Name -}}
-    {{- if $connection.db_instance_name -}}
-        {{- $prefix = printf "%s-%s" $root.Release.Name $connection.db_instance_name -}}
-    {{- end -}}
-    {{- if eq $connection.db_type "pxc" -}}
-        {{ $prefix }}-percona-pxc.{{ $root.Release.Namespace }}.svc.kubernetes.{{ $root.Values.global.db_region }}.{{ $root.Values.global.tld }}
-    {{- else if eq $connection.db_type "pxc-db" -}}
-        {{ $prefix }}-db-haproxy.{{ $root.Release.Namespace }}.svc.kubernetes.{{ $root.Values.global.region }}.{{ $root.Values.global.tld }}
+    {{- if $connection.db_instance_name_literal -}}
+        {{ $connection.db_instance_name_literal }}.{{ $root.Release.Namespace }}.svc.kubernetes.{{ $root.Values.global.region }}.{{ $root.Values.global.tld }}
     {{- else -}}
-        {{ $prefix }}-mariadb.{{ $root.Release.Namespace }}.svc.kubernetes.{{ $root.Values.global.region }}.{{ $root.Values.global.tld }}
+        {{- if $connection.db_instance_name -}}
+            {{- $prefix = printf "%s-%s" $root.Release.Name $connection.db_instance_name -}}
+        {{- end -}}
+        {{- if eq $connection.db_type "pxc" -}}
+            {{ $prefix }}-percona-pxc.{{ $root.Release.Namespace }}.svc.kubernetes.{{ $root.Values.global.db_region }}.{{ $root.Values.global.tld }}
+        {{- else if eq $connection.db_type "pxc-db" -}}
+            {{ $prefix }}-db-haproxy.{{ $root.Release.Namespace }}.svc.kubernetes.{{ $root.Values.global.region }}.{{ $root.Values.global.tld }}
+        {{- else -}}
+            {{ $prefix }}-mariadb.{{ $root.Release.Namespace }}.svc.kubernetes.{{ $root.Values.global.region }}.{{ $root.Values.global.tld }}
+        {{- end -}}
     {{- end -}}
 {{- end }}
 
