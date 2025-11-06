@@ -116,15 +116,6 @@ spec:
             key: failover_username_opensearch
             value: ${failover_username_b}
 
-      transform/perses:
-        error_mode: ignore
-        log_statements:
-          - context: log
-            conditions:
-              - resource.attributes["k8s.container.name"] == "perses"
-            statements:
-              - merge_maps(log.attributes, ExtractGrokPatterns(log.body, "time=%{QUOTEDSTRING} level=%{WORD:loglevel} msg=%{GREEDYDATA:msg}", true),"upsert")
-
 {{- if .Values.openTelemetryPlugin.openTelemetry.logsCollector.journaldConfig.enabled }}
     {{- include "journald.transform" . | nindent 6 -}}
 {{- end }}
