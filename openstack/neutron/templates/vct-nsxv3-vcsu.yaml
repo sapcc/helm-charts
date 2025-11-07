@@ -1,0 +1,15 @@
+{{- if or (.Values.isImageTransportTemplating | default false) (and (contains ",nsxv3" .Values.ml2_mechanismdrivers) (.Capabilities.APIVersions.Has "vcenter-operator.stable.sap.cc/v1")) }}
+{{- if .Values.nsxv3_managed_service_users }}
+apiVersion: vcenter-operator.stable.sap.cc/v1
+kind: VCenterServiceUser
+metadata:
+  labels:
+    system: openstack
+    application: {{ .Release.Name }}
+  # Based on the name we match stuff in the vcenter operator.
+  name: nsxt
+spec:
+  # Defines the username prefix
+  username: nsxtagent
+{{- end }}
+{{- end }}
