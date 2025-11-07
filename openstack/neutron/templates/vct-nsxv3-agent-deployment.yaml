@@ -8,6 +8,9 @@ options:
   jinja2_options:
     variable_start_string: '{='
     variable_end_string: '=}'
+    {{- if .Values.nsxv3_managed_service_users }}
+    uses-service-user: nsxt
+    {{- end }}
 template: |
   apiVersion: apps/v1
   kind: Deployment
@@ -20,6 +23,14 @@ template: |
       vcenter: {= host =}
       datacenter: {= availability_zone =}
       vccluster: {= cluster_name =}
+      {{- if .Values.nsxv3_managed_service_users }}
+      vcenter-operator-secret-version: {= service_user_version | quote =}
+      {{- end }}
+    {{- if .Values.nsxv3_managed_service_users }}
+    # Must match vcsu name
+    annotations:
+      uses-service-user: nsxt
+    {{- end }}
   spec:
     replicas: 1
     revisionHistoryLimit: 5
