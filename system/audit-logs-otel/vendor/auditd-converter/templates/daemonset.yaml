@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: auditd-converter
+  labels:
+    app.kubernetes.io/name: auditd-converter
+    helm.sh/chart: {{ include "auditd-converter.chart" $ }}
+    app.kubernetes.io/instance: auditd-converter-{{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+spec:
+  selector:
+    matchLabels:
+      name: auditd-converter
+  template:
+    metadata:
+      labels:
+        name: auditd-converter
+    spec:
+      # Host system access is needed to retrieve the auditd logs
+      hostPID: true
+      containers:
+      - name: auditd-converter
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        securityContext:
+          runAsUser: 0
+          capabilities:
+            add:
+              # Capabilities needed for auditd module
+              - 'AUDIT_READ'
+              - 'AUDIT_WRITE'
+              - 'AUDIT_CONTROL'
+        ports:
+        - name: metrics
+          containerPort: {{ .Values.metricsPort }}
+          protocol: TCP
+        env:
+          - name: LOG_LEVEL
+            value: {{ .Values.logLevel }}

@@ -1,0 +1,14 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+
+metadata:
+  name: "auditd-converter"
+  labels:
+    app.kubernetes.io/name: auditd-converter
+    helm.sh/chart: {{ include "auditd-converter.chart" $ }}
+    app.kubernetes.io/instance: auditd-converter-{{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    prometheus: {{ required ".Values.global.prometheus missing" .Values.global.prometheus | quote }}
+
+spec:
+{{ .Files.Get "alerts/_auditd-converter.alerts" | indent 2 }}
