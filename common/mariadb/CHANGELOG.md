@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.30.0 - 2025/11/10
+* MariaDB version updated to [10.11.15](https://mariadb.com/docs/release-notes/community-server/10.11/10.11.15)
+  * several InnoDB fixes
+* `maria-back-me-up` updated to `20251111085940`
+* `user-credential-updater` updated to `python3.13-alpine3.22-20251015235217`
+* `pod-readiness` updated to `20251110100847`
+* chart version bumped
+
 ## v0.29.0 - 2025/10/28
 * Add an option to run all sidecar containers as a native sidecar.
 
