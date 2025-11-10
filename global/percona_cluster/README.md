@@ -52,7 +52,7 @@ The following table lists the configurable parameters of the Percona chart and t
 
 | Parameter                  | Description                        | Default                                                    |
 | -----------------------    | ---------------------------------- | ---------------------------------------------------------- |
-| `image.repository`         | `percona-xtradb-cluster` image Repo.                 | 5.7.44 release                                        |
+| `image.repository`         | `percona-xtradb-cluster` image Repo.                 | 8.0.42 release                                        |
 | `image.tag`                | `percona-xtradb-cluster` image tag.                 | `percona/percona-xtradb-cluster` |
 | `image.pullPolicy`         | Image pull policy                  | `IfNotPresent` |
 | `replicas`                 | Number of pods to join the Percona XtraDB Cluster   | 3                                         |
@@ -126,7 +126,7 @@ You can change the values.yaml to enable persistence and use a PersistentVolumeC
 
 ## SSL
 
-This chart supports configuring MySQL to use [encrypted connections](https://dev.mysql.com/doc/refman/5.7/en/encrypted-connections.html) with TLS/SSL certificates provided by the user. This is accomplished by storing the required Certificate Authority file, the server public key certificate, and the server private key as a Kubernetes secret. The SSL options for this chart support the following use cases:
+This chart supports configuring MySQL to use [encrypted connections](https://dev.mysql.com/doc/refman/8.0/en/encrypted-connections.html) with TLS/SSL certificates provided by the user. This is accomplished by storing the required Certificate Authority file, the server public key certificate, and the server private key as a Kubernetes secret. The SSL options for this chart support the following use cases:
 
 * Manage certificate secrets with helm
 * Manage certificate secrets outside of helm
