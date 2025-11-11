@@ -1,0 +1,67 @@
+replicaCount: 1
+
+image:
+  repository: keppel.eu-de-1.cloud.sap/ccloud-netops-observabilty/aci-netbox-exporter
+  tag: 1.1.0
+  pullPolicy: Always
+
+service:
+  type: ClusterIP
+  port: 8000
+
+resources:
+  limits: {}
+  requests: {}
+
+# Your app exposes /health; use that for probes
+livenessProbe:
+  path: /health
+  initialDelaySeconds: 10
+  periodSeconds: 10
+
+readinessProbe:
+  path: /health
+  initialDelaySeconds: 5
+  periodSeconds: 10
+
+# Uppercase env-style values: used to render env.yml (and kept as env vars too)
+env:
+  FLASK_HOST: "0.0.0.0"
+  FLASK_PORT: "8000"
+  FLASK_DEBUG: "false"
+  
+  LOG_LEVEL: "INFO"
+  LOG_FILE: "/app/logs/app.log"
+
+  NETBOX_URL: "https://netbox.global.cloud.sap/graphql/"
+  NETBOX_RETRY_ATTEMPTS: "3"
+  NETBOX_RETRY_DELAY_SECONDS: "5"
+  NETBOX_REQUEST_TIMEOUT_SECONDS: "60"
+
+  CACHE_PREFIX: "netbox"
+  CACHE_TTL_SECONDS: "0"
+  CACHE_HOST: "aci-cache-valkey"
+  CACHE_PORT: 6379
+  CACHE_PASSWORD: "S3cureP@ss"
+  CACHE_TIMEOUT: 3
+  BATCH_SIZE: "1000"
+  REFRESH_INTERVAL_SECONDS: "60"
+  SINCE_HOURS_ON_HIT: "1"
+  SAVE_AGGREGATE_CONNECTIONS: "false"
+
+  # Filters
+  INTERFACE_BASE_FILTER: 'cabled: true, device_role: "aci-leaf",region: "qa-au-1"'
+  DEVICE_BASE_FILTER: 'region: "qa-au-1"'
+
+  DEBUG_REFRESH: "false"
+
+# Optional: override VALKEY_URL via Secret (e.g., with password)
+valkeySecret:
+  enabled: false
+  name: ""
+  key: "valkey-url"
+
+podAnnotations: {}
+nodeSelector: {}
+tolerations: []
+affinity: {}

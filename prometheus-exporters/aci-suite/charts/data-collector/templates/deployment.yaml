@@ -1,0 +1,67 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "data-collector.fullname" . }}
+  labels:
+    {{- include "data-collector.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "data-collector.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "data-collector.name" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+      containers:
+        - name: collector
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            {{- if .Values.global.auth.enabled }}
+            - name: ACI_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ default (printf "%s-global-secret" .Release.Name) .Values.global.auth.existingSecret }}
+                  key: {{ .Values.global.secretKeys.aci_user }}
+            - name: ACI_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ default (printf "%s-global-secret" .Release.Name) .Values.global.auth.existingSecret }}
+                  key: {{ .Values.global.secretKeys.aci_password }}
+            - name: CACHE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ default (printf "%s-global-secret" .Release.Name) .Values.global.auth.existingSecret }}
+                  key: {{ .Values.global.secretKeys.cache_password }}
+            {{- else }}
+            - name: ACI_USER
+              value: {{ .Values.env.aci_user | quote }}
+            - name: ACI_PASSWORD
+              value: {{ .Values.env.aci_password | quote }}
+            - name: CACHE_PASSWORD
+              value: {{ .Values.env.cache_password | quote }}
+            {{- end }}
+          volumeMounts:
+            - name: config
+              mountPath: /app/env.yml
+              subPath: env.yml
+              readOnly: true
+          resources:
+{{ toYaml .Values.resources | indent 12 }}
+      volumes:
+        - name: config
+          configMap:
+            name: {{ include "data-collector.fullname" . }}-config
+            items:
+              - key: env.yml
+                path: env.yml
+      nodeSelector:
+{{ toYaml .Values.nodeSelector | indent 8 }}
+      tolerations:
+{{ toYaml .Values.tolerations | indent 8 }}
+      affinity:
+{{ toYaml .Values.affinity | indent 8 }}

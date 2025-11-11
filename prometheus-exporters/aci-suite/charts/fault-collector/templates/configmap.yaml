@@ -1,0 +1,53 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "fault-collector.fullname" . }}-config
+  labels:
+    {{- include "fault-collector.labels" . | nindent 4 }}
+data:
+  env.yml: |-
+    # See config.py for additional documentation,
+    # env.yml and config.py need to be in sync
+
+    # the id to store keys for
+    aci_id: {{ .Values.env.aci_id | quote }}
+
+    # The apic servers
+    apic_servers:
+    {{- range $s := .Values.env.apic_servers }}
+      - {{ $s | quote }}
+    {{- end }}
+
+    # The request timeout parameters to consider
+    apic_reset_timeout: {{ .Values.env.apic_reset_timeout | int }}
+    apic_cookie_timeout: {{ .Values.env.apic_cookie_timeout | int }}
+    apic_request_timeout: {{ .Values.env.apic_request_timeout | int }}
+    apic_login_failed_timeout: {{ .Values.env.apic_login_failed_timeout | int }}
+
+    # websocker parameters to consider
+    apic_ws_subscribe_interval: {{ .Values.env.apic_ws_subscribe_interval | int }}
+    apic_ws_message_process_interval: {{ .Values.env.apic_ws_message_process_interval | int }}
+    apic_ws_message_cache_error_counter: {{ .Values.env.apic_ws_message_cache_error_counter | int }}
+    apic_ws_service_restart_interval: {{ .Values.env.apic_ws_service_restart_interval | int }}
+
+    # the connection parameters to the cache instance
+    cache_host: {{ .Values.env.cache_host | quote }}
+    cache_port: {{ .Values.env.cache_port | int }}
+    cache_timeout: {{ .Values.env.cache_timeout | int }}
+    cache_max_delay: {{ .Values.env.cache_max_delay | int }}
+    cache_max_retries: {{ .Values.env.cache_max_retries | int }}
+
+    # the collector modules to run
+    collectors:
+    {{- range $name, $cfg := .Values.env.collectors }}
+      {{ $name }}:
+      {{- if $cfg }}
+{{ toYaml $cfg | nindent 8 }}
+      {{- else }}
+        {}
+      {{- end }}
+    {{- end }}
+
+    # misc settings for runtime
+    log_level: {{ .Values.env.log_level | quote }}
+    verify_ssl: {{ .Values.env.verify_ssl | toYaml | trim }}

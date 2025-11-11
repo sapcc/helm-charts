@@ -1,0 +1,64 @@
+image:
+  repository: valkey/valkey
+  tag: "7.2"
+  pullPolicy: IfNotPresent
+
+nameOverride: ""
+fullnameOverride: ""
+
+replicaCount: 2
+
+service:
+  type: ClusterIP
+  port: 6379
+  annotations: {}
+  labels: {}
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+persistence:
+  enabled: false
+  accessModes:
+    - ReadWriteOnce
+  size: 8Gi
+  storageClass: ""
+
+auth:
+  enabled: false
+  password: "changeMe!"
+  existingSecret: ""
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+podAnnotations: {}
+podLabels: {}
+
+securityContext:
+  enabled: true
+  runAsUser: 1001
+  runAsNonRoot: true
+  fsGroup: 1001
+
+containerSecurityContext:
+  enabled: true
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+      - ALL
+
+probes:
+  liveness:
+    initialDelaySeconds: 10
+    timeoutSeconds: 5
+  readiness:
+    initialDelaySeconds: 5
+    timeoutSeconds: 3

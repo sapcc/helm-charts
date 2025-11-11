@@ -1,0 +1,41 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "correlator.fullname" . }}-config
+  labels:
+    {{- include "correlator.labels" . | nindent 4 }}
+data:
+  env.yml: |-
+    # See config.py for additional documentation,
+    # env.yml and config.py need to be in sync
+
+    # the id of the aci to query keys from the cache for
+    aci_id: {{ .Values.env.aci_id | quote }}
+
+    apic_host: {{ .Values.env.apic_host | quote }}
+
+    # the connection parameters to the cache instance
+    cache_host: {{ .Values.env.cache_host | quote }}
+    cache_port: {{ .Values.env.cache_port | int }}
+    cache_timeout: {{ .Values.env.cache_timeout | int }}
+    cache_max_delay: {{ .Values.env.cache_max_delay | int }}
+    cache_max_retries: {{ .Values.env.cache_max_retries | int }}
+
+    # the port to serve the metrics on for prometheus
+    metrics_port: {{ .Values.env.metrics_port | int }}
+
+    # The enrichment mapping rules for the enricher:
+    enricher:
+{{- toYaml .Values.env.enricher | nindent 6 }}
+
+    # The correlator mapping rules to apply.
+    correlator:
+{{- toYaml .Values.env.correlator | nindent 6 }}
+
+    # The automation rules and matchers.
+    actions:
+{{- toYaml .Values.env.actions | nindent 6 }}
+
+    # misc settings for runtime
+    log_level: {{ .Values.env.log_level | quote }}
+    verify_ssl: {{ .Values.env.verify_ssl | toYaml | trim }}
