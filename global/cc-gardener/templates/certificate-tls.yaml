@@ -2,7 +2,7 @@
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-  name: auditing-tls-logstash
+  name: auditing-tls-logstash-cert
 spec:
   dnsNames:
   - audit-external.{{ .Values.global.region }}.{{ .Values.global.tld }}
@@ -12,4 +12,12 @@ spec:
     kind: ClusterIssuer
     name: digicert-issuer
   secretName: auditing-mtls-credentials
+---
+apiVersion: resources.gardener.cloud/v1alpha1
+kind: ManagedResource
+metadata:
+  name: auditing-mtls-credentials
+spec:
+  secretRefs:
+  - name: auditing-mtls-credentials
 {{- end }}
