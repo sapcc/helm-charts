@@ -1,3 +1,10 @@
+{{- $dnsRegion := "" }}
+{{- if .Values.dns }}
+{{- $dnsRegion = (default .Values.global.region .Values.dns.region) }}
+{{- else }}
+{{- $dnsRegion = .Values.global.region }}
+{{- end }}
+
 {{- range $key, $cluster := .Values.mgmtShoots }}
 {{- if (lookup "core.gardener.cloud/v1beta1" "Shoot" $.Release.Namespace (print "mgmt-" $key)) }}
 ---
@@ -34,7 +41,7 @@ spec:
                 kind: Secret
                 name: internal-domain-internal-openstack-gardener-cloud
                 namespace: garden
-              domain: internal.rt-{{ $.Values.global.region }}.soil-garden.{{ $.Values.global.region }}.cloud.sap
+              domain: internal.rt-{{ $.Values.global.region }}.soil-garden.{{ $dnsRegion }}.cloud.sap
               type: openstack-designate
             provider:
               secretRef:
