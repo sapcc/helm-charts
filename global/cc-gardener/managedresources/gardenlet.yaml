@@ -45,6 +45,14 @@ spec:
             name: openstack-{{ .Values.global.region }}
             namespace: garden
         dns:
+          internal:
+            credentialsRef:
+              apiVersion: v1
+              kind: Secret
+              name: internal-domain-internal-openstack-gardener-cloud
+              namespace: garden
+            domain: internal.{{ required ".Values.global.cluster missing" .Values.global.cluster }}.{{ if hasPrefix "rtc-" .Values.global.cluster -}}soil-customer{{- else -}}soil-garden{{- end }}.{{ $dnsRegion }}.cloud.sap
+            type: openstack-designate
           provider:
             type: openstack-designate
             secretRef:
