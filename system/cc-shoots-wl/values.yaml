@@ -1,2 +1,42 @@
-authenticationConfig: {}
-clusters: [] # List of clusters
+# Global defaults for all workerless shoots
+global:
+  # Default Kubernetes version (can be overridden per cluster)
+  kubernetes:
+    version: "1.31.5"
+    # Default feature gates (can be overridden per cluster)
+    featureGates:
+      AnonymousAuthConfigurableEndpoints: true
+
+  # Default networking configuration (required by Shoot spec, can be overridden per cluster)
+  networking:
+    services: "10.55.0.0/16"
+
+  # CloudProfile and provider are always openstack for workerless shoots
+  cloudProfile: openstack
+  provider: openstack
+
+# List of workerless shoot clusters/use-cases to deploy
+# Each cluster represents a use-case (e.g., wireApi, lighthouse, metalOperator)
+clusters: []
+  # Example:
+  # - name: wireApi
+  #   regions:
+  #     - eu-central-1
+  #     - us-west-1
+  #   # Required: Authentication configuration for this use-case
+  #   authenticationConfig:
+  #     apiVersion: apiserver.config.k8s.io/v1beta1
+  #     kind: AuthenticationConfiguration
+  #     jwt:
+  #       - issuer:
+  #           url: https://issuer.example.com
+  #           audiences:
+  #             - my-audience
+  #   # Optional: Override global kubernetes settings
+  #   kubernetes:
+  #     version: "1.32.0"
+  #     featureGates:
+  #       SomeFeature: true
+  #   # Optional: Additional shoot spec configuration
+  #   spec: {}
+  #     # Any additional Shoot spec fields can be added here
