@@ -1,0 +1,25 @@
+{{- range $cluster := .Values.clusters -}}
+{{- range $region := $cluster.regions -}}
+apiVersion: core.gardener.cloud/v1beta1
+kind: Shoot
+metadata:
+  name: wl-{{ $cluster.name }}-{{ $region }}
+spec:
+  cloudProfile:
+    kind: CloudProfile
+    name: openstack
+  region: {{ $region }}
+  networking:
+    services: 10.55.0.0/16
+  provider:
+    type: openstack
+  kubernetes:
+    version: 1.31.5
+    kubeAPIServer:
+      featureGates:
+        AnonymousAuthConfigurableEndpoints: true
+      structuredAuthentication:
+        configMapName: authentication-config-wl-{{ $cluster.name }}-{{ $region }}
+  seedName: rt-{{ $region }}
+  {{- end }}
+  {{- end }}
