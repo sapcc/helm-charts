@@ -49,3 +49,39 @@ groups:
     annotations:
       summary: 'Andromeda Akamai metrics collector spending too much time waiting on rate limiter'
       description: 'Andromeda Akamai metrics collector should spend milliseconds waiting on rate limiter, actual value = {{ $value }}'
+  - alert: andromeda-f5-declaration-agent-last-sync-age-older-than-one-hour
+    expr: ( (time() - andromeda_agent_last_sync_timestamp{agent="f5-declaration"}) / 60 ) > 60
+    for: 5m
+    labels:
+      context: provider-sync
+      service: andromeda
+      severity: warning
+      tier: os
+      support_group: containers
+    annotations:
+      summary: 'Latest successful Andromeda f5-declaration agent sync older than an hour'
+      description: 'Andromeda f5-declaration agent last sync age is expected to be around 5 minutes, actual value = {{ $value }}'
+  - alert: andromeda-f5-status-agent-last-sync-age-older-than-one-hour
+    expr: ( (time() - andromeda_agent_last_sync_timestamp{agent="f5-status"}) / 60 ) > 60
+    for: 5m
+    labels:
+      context: provider-sync
+      service: andromeda
+      severity: warning
+      tier: os
+      support_group: containers
+    annotations:
+      summary: 'Latest successful Andromeda f5-status agent sync older than an hour'
+      description: 'Andromeda f5-status agent last sync age is expected to be around 5 minutes, actual value = {{ $value }}'
+  - alert: andromeda-f5-metrics-agent-last-sync-age-older-than-one-hour
+    expr: ( (time() - andromeda_agent_last_sync_timestamp{agent="f5-metrics"}) / 60 ) > 60
+    for: 5m
+    labels:
+      context: provider-sync
+      service: andromeda
+      severity: warning
+      tier: os
+      support_group: containers
+    annotations:
+      summary: 'Latest successful Andromeda f5-metrics agent sync older than an hour'
+      description: 'Andromeda f5-metrics agent last sync age is expected to be around 5 minutes, actual value = {{ $value }}'
