@@ -1,5 +1,13 @@
-{{- $tld := $.Values.global.tld                         | required ".Values.global.tld not found"                      }}
-{{- $regions := .Values.keppel.peer_groups.prod.members | required ".Values.keppel.peer_groups.prod.members not found" }}
+{{- $tld := $.Values.global.tld       | required ".Values.global.tld not found"    }}
+{{- $region := $.Values.global.region | required ".Values.global.region not found" }}
+{{- $regions := list -}}
+
+{{/* report on all regions that are contained in the current region's peer group */}}
+{{- range $group_name, $group_config := .Values.keppel.peer_groups | required ".Values.keppel.peer_groups not found" }}
+  {{- if $group_config.members | has $region }}
+    {{- $regions = $group_config.members }}
+  {{- end }}
+{{- end -}}
 
 apiVersion: v1
 kind: ConfigMap
