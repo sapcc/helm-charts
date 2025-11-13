@@ -1,23 +1,11 @@
 {{- if $.Values.extensions.auditing.enabled }}
-apiVersion: cert-manager.io/v1
+apiVersion: cert.gardener.cloud/v1alpha1
 kind: Certificate
 metadata:
-  name: auditing-tls-logstash-cert
+  name: auditing-mtls-cert
 spec:
-  dnsNames:
-  - audit-external.{{ .Values.global.region }}.{{ .Values.global.tld }}
-  - logstash-audit-external.{{ .Values.global.region }}.{{ .Values.global.tld }}
+  secretRef:
+    name: auditing-mtls-credentials
   issuerRef:
-    group: certmanager.cloud.sap
-    kind: ClusterIssuer
-    name: digicert-issuer
-  secretName: auditing-mtls-credentials
----
-apiVersion: resources.gardener.cloud/v1alpha1
-kind: ManagedResource
-metadata:
-  name: auditing-mtls-credentials
-spec:
-  secretRefs:
-  - name: auditing-mtls-credentials
+    name: garden
 {{- end }}
