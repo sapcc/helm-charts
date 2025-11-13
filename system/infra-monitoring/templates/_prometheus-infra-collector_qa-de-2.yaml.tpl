@@ -23,7 +23,7 @@
   scrape_interval: {{$values.scrapeInterval}}
   scrape_timeout: {{$values.scrapeTimeout}}
   http_sd_configs:
-    - url: {{ .Values.http_sd_configs.netbox_production_url }}/virtual-machines/?custom_labels=job={{ $name }}&target=primary_ip&status=active&tenant=converged-cloud&platform=windows-server&tag=active-directory-domain-controller&region={{ .Values.global.region }}
+    - url: {{ .Values.http_sd_configs.netbox_production_url }}/virtual-machines/?custom_labels=job={{ $name }}&target=primary_ip&status=active&tenant_id=1&platform=windows-server&tag=active-directory-domain-controller&region={{ .Values.global.region }}
       refresh_interval: {{ .Values.http_sd_configs.refresh_interval }}
 {{- if $values.basic_auth.enabled }}
   basicAuth:
