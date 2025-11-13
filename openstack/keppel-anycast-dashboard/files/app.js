@@ -40,7 +40,7 @@
       });
   };
 
-  const promise1 = getMetrics(`max by (region) (keppel_anycastmonitor_membership{region!~"qa.*"})`).then((results) => {
+  const promise1 = getMetrics(`max by (region) (keppel_anycastmonitor_membership)`).then((results) => {
     const valueForRegion = {};
     for (const result of results) {
       const region = result.metric["region"];
@@ -58,7 +58,7 @@
     }
   });
 
-  const promise2 = getMetrics(`max by (account, region) (keppel_anycastmonitor_result{region!~"qa.*"})`).then((results) => {
+  const promise2 = getMetrics(`max by (account, region) (keppel_anycastmonitor_result)`).then((results) => {
     const valueForRegionAndAccount = {};
     for (const result of results) {
       const region = result.metric["region"];
@@ -85,5 +85,9 @@
   Promise.all([promise1, promise2]).then(() => {
     $("p.loading").remove();
   });
+
+  if (/-qa/.test(document.location.hostname)) {
+    $("code#global-hostname").innerText = "keppel-qa.global.cloud.sap";
+  }
 
 })();
