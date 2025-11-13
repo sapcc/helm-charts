@@ -1,0 +1,59 @@
+{{- $tld := $.Values.global.tld                         | required ".Values.global.tld not found"                      }}
+{{- $regions := .Values.keppel.peer_groups.prod.members | required ".Values.keppel.peer_groups.prod.members not found" }}
+
+apiVersion: v1
+kind: ConfigMap
+
+metadata:
+  name: keppel-anycast-dashboard
+
+data:
+  app.js: |
+    {{- .Files.Get "files/app.js" | nindent 4 }}
+  style.css: |
+    {{- .Files.Get "files/style.css" | nindent 4 }}
+  index.html: |
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+      <title>Keppel Anycast Dashboard</title>
+      <link rel="stylesheet" type="text/css" href="/style.css" />
+      <script defer src="/app.js"></script>
+    </head>
+    <body data-prometheus-url="https://metrics-internal.global.{{ $tld }}/api/v1/query">
+      <h1>Keppel Anycast Dashboard</h1>
+      <header>
+        <p class="loading">Loading...</p>
+      </header>
+      <table>
+        <thead>
+          <tr>
+            <th>Keppel<br>in...</th>
+            <th>is a<br>member</th>
+            {{- range $regions }}
+            <th>reaches<br>{{ . }}</th>
+            {{- end }}
+          </tr>
+        </thead>
+        <tbody>
+          {{- range $regions }}
+          <tr data-region="{{ . }}">
+            <th>{{ . }}</th>
+            <td class="member"></td>
+            {{- range $regions }}
+            <td class="reach" data-account="healthcheck-{{ . }}"></td>
+            {{- end }}
+          </tr>
+          {{- end }}
+        </tbody>
+      </table>
+      <footer>
+        <p>The "is a member" check is successful when we can authenticate with <code>keppel.global.cloud.sap</code> within the baremetal cluster of the checking region and get a token issued by our local Keppel instance.</p>
+        <p>The "reaches" check is successful when we can pull an image stored only in the target region from the baremetal cluster of the checking region.</p>
+        <p>This dashboard is a stop-gap measure until <a href="https://github.wdf.sap.corp/sap-cloud-infrastructure/observability-issues/issues/481">Perses gains support for this kind of view</a>.</p>
+      </footer>
+    </body>
+    </html>
