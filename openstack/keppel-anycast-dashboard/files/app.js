@@ -36,7 +36,7 @@
         const p = document.createElement("p");
         p.innerHTML = msg;
         p.classList.add("error");
-        $("div#messages").appendChild(p);
+        $("header").appendChild(p);
       });
   };
 
@@ -75,7 +75,7 @@
     for (const td of $$("td.reach")) {
       const region = td.closest("tr").dataset.region;
       const account = td.dataset.account;
-      const value = valueForRegionAndAccount[region][account];
+      const value = (valueForRegionAndAccount[region] || {})[account];
       td.innerText = value;
       td.classList.toggle("success", value === "1");
       td.classList.toggle("failed", value !== "1");

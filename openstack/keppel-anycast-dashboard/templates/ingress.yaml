@@ -8,10 +8,10 @@ metadata:
   name: keppel-anycast-dashboard
   annotations:
     kubernetes.io/tls-acme: "true"
-    ingress.kubernetes.io/auth-url: "https://auth-internal.eu-de-2.{{ $tld }}/oauth2/auth"
-    nginx.ingress.kubernetes.io/auth-url: "https://auth-internal.eu-de-2.{{ $tld }}/oauth2/auth"
-    ingress.kubernetes.io/auth-signin: "https://auth-internal.eu-de-2.{{ $tld }}/oauth2/start"
-    nginx.ingress.kubernetes.io/auth-signin: "https://auth-internal.eu-de-2.{{ $tld }}/oauth2/start"
+    ingress.kubernetes.io/auth-url: "https://auth-internal.{{ $region }}.{{ $tld }}/oauth2/auth"
+    nginx.ingress.kubernetes.io/auth-url: "https://auth-internal.{{ $region }}.{{ $tld }}/oauth2/auth"
+    ingress.kubernetes.io/auth-signin: "https://auth-internal.{{ $region }}.{{ $tld }}/oauth2/start"
+    nginx.ingress.kubernetes.io/auth-signin: "https://auth-internal.{{ $region }}.{{ $tld }}/oauth2/start"
     ingress.kubernetes.io/auth-request-redirect: $escaped_request_uri
     nginx.ingress.kubernetes.io/auth-request-redirect: $escaped_request_uri
     {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
@@ -29,7 +29,7 @@ spec:
       http:
         paths:
           - path: /
-            pathType: Exact
+            pathType: Prefix
             backend:
               service:
                 name: keppel-anycast-dashboard
