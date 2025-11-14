@@ -512,7 +512,7 @@ filter {
   # Each copy will automatically have a "type" field added
   # corresponding to the name given in the array.
   clone {
-    id => "f27_clone_events_three_times"
+    id => "f27_clone_events"
     clones => ['clone_for_audit', 'clone_for_swift', 'audit']
   }
 }
