@@ -40,7 +40,7 @@ if [ "${DATA_STREAM_ENABLED}" = true ]; then
          curl --netrc-file "${NETRC_FILE}" -H 'Content-Type: application/json' -XPUT "${CLUSTER_HOST}/_index_template/${e}-datastream" -d @"${TMPPATH}/${e}-${DS_TEMPLATE}"
          echo -e "\nUpload of ds template for datastream ${e} done"
      else
-       echo "\n${TMPPATH}/${e}-${DS_TEMPLATE} is missing or the replacement was not successful."
+       echo -e "\n${TMPPATH}/${e}-${DS_TEMPLATE} is missing or the replacement was not successful."
        exit 1
      fi
    done;
