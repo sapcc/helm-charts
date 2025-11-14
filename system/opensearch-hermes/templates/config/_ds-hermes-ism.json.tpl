@@ -24,7 +24,7 @@
                     {
                         "state_name": "rollover",
                         "conditions": {
-                            "min_doc_count": "{{ .Values.global.data_stream.hermes.min_doc_count }}"
+                            "min_doc_count": {{ .Values.global.data_stream.hermes.min_doc_count }}
                         }
                     }
                 ]
