@@ -486,17 +486,22 @@ filter {
 
       # Add primary tenant ID
       primary_tenant = event.get('[@metadata][index]')
-      if !primary_tenant.nil? && primary_tenant != ''
+      if !primary_tenant.nil? && primary_tenant != '' && primary_tenant != 'unavailable'
         tenant_ids << primary_tenant
       end
 
       # Add secondary tenant ID if different
       secondary_tenant = event.get('[@metadata][index2]')
-      if !secondary_tenant.nil? && secondary_tenant != '' && secondary_tenant != primary_tenant
+      if !secondary_tenant.nil? && secondary_tenant != '' && secondary_tenant != primary_tenant && secondary_tenant != 'unavailable'
         tenant_ids << secondary_tenant
       end
 
-      # Set the tenant_ids field (empty array if no tenants found)
+      # Fallback to Default tenant if no valid tenants found
+      if tenant_ids.empty?
+        tenant_ids << 'Default'
+      end
+
+      # Set the tenant_ids field
       event.set('tenant_ids', tenant_ids)
     "
   }
