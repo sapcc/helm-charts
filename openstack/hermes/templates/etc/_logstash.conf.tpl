@@ -508,7 +508,7 @@ filter {
   # corresponding to the name given in the array.
   clone {
     id => "f27_clone_events_three_times"
-    clones => ['clone_for_audit', 'clone_for_swift', 'clone_for_cc', 'audit']
+    clones => ['clone_for_audit', 'clone_for_swift', 'audit']
   }
 }
 
