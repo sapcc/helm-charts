@@ -77,7 +77,7 @@ if [ "${DATA_STREAM_ENABLED}" = true ]; then
         echo -e "\nExisting datastreams: $EXISTING_DS\n"
         echo "$EXISTING_DS" | grep -q "^$e$"
         if [ $? -eq 1 ]; then
-           echo "\nCreating datastream $e\n"
+           echo -e "\nCreating datastream $e\n"
            curl --netrc-file "${NETRC_FILE}" -XPUT "${CLUSTER_HOST}/_data_stream/${e}"
            # Assign ISM policy to newly created datastream
            curl --header 'content-type: application/JSON' --silent --netrc-file "${NETRC_FILE}" -XPOST "${CLUSTER_HOST}/_plugins/_ism/add/.ds-${e}-000001" -d "{ \"policy_id\": \"ds-${e}-ism\" }"
