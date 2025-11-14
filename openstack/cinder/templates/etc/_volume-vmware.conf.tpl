@@ -14,4 +14,9 @@ vmware_host_username = {{$volume.username | replace "$" "$$"}}
 vmware_host_password = {{$volume.password | replace "$" "$$"}}
 vmware_insecure = True
 vmware_storage_profile = cinder-vvol
+{{ if .Values.image_cache.enabled -}}
+image_volume_cache_enabled = True
+image_volume_cache_max_size_gb = {{.Values.image_cache.max_size_gb}}
+image_volume_cache_max_count = {{.Values.image_cache.max_count}}
+{{- end -}}
 {{- end -}}
