@@ -76,7 +76,7 @@ if [ "${DATA_STREAM_ENABLED}" = true ]; then
         #    data_stream example: hermes
 
         export EXISTING_DS=`curl -s --netrc-file "${NETRC_FILE}" -XGET "${CLUSTER_HOST}/_data_stream"|jq .data_streams[].name|tr  -d \"`
-        echo "\nExisting datastreams: $EXISTING_DS\n"
+        echo -e "\nExisting datastreams: $EXISTING_DS\n"
         echo "$EXISTING_DS" | grep -q "^$e$"
         if [ $? -eq 1 ]; then
            echo "\nCreating datastream $e\n"
