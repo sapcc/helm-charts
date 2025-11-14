@@ -522,7 +522,7 @@ output {
     opensearch {
       id => "output_opensearch_datastream"
       index => "hermes"
-      data_stream => "true"
+      data_stream => true
       hosts => ["https://{{.Values.hermes_elasticsearch_host}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.hermes_elasticsearch_port}}"]
       auth_type => {
         type => 'basic'
