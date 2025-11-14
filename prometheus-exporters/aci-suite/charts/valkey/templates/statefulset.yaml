@@ -1,0 +1,144 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "valkey.fullname" . }}
+  labels:
+    {{- include "valkey.labels" . | nindent 4 }}
+spec:
+  serviceName: {{ include "valkey.fullname" . }}
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "valkey.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        {{- include "valkey.labels" . | nindent 8 }}
+        app.kubernetes.io/name: {{ include "valkey.name" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    spec:
+      {{- if .Values.securityContext.enabled }}
+      securityContext:
+        runAsUser: {{ .Values.securityContext.runAsUser }}
+        runAsNonRoot: {{ .Values.securityContext.runAsNonRoot }}
+        fsGroup: {{ .Values.securityContext.fsGroup }}
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: valkey
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: valkey
+              containerPort: {{ .Values.service.port }}
+              protocol: TCP
+          command:
+            - /bin/sh
+            - -ec
+            - |
+              set -e
+              ORDINAL=$(echo "$HOSTNAME" | awk -F- '{print $NF}')
+              {{- if .Values.auth.enabled }}
+              VALKEY_PASSWORD_VALUE="{{ if .Values.auth.existingSecret }}$VALKEY_PASSWORD{{ else }}{{ .Values.auth.password }}{{ end }}"
+              VALKEY_AUTH_ARGS="--requirepass $VALKEY_PASSWORD_VALUE"
+              VALKEY_MASTERAUTH="--masterauth $VALKEY_PASSWORD_VALUE"
+              VALKEY_CLI_AUTH="valkey-cli -a $VALKEY_PASSWORD_VALUE"
+              {{- else }}
+              VALKEY_AUTH_ARGS=""
+              VALKEY_MASTERAUTH=""
+              VALKEY_CLI_AUTH="valkey-cli"
+              {{- end }}
+              PRIMARY_HOST="{{ include "valkey.fullname" . }}-primary"
+              PRIMARY_PORT={{ .Values.service.port }}
+              if [ "$ORDINAL" = "0" ]; then
+                exec valkey-server /etc/valkey/valkey.conf $VALKEY_AUTH_ARGS
+              else
+                for i in $(seq 1 60); do
+                  if $VALKEY_CLI_AUTH -h "$PRIMARY_HOST" -p "$PRIMARY_PORT" ping >/dev/null 2>&1; then
+                    break
+                  fi
+                  sleep 1
+                done
+                exec valkey-server /etc/valkey/valkey.conf $VALKEY_AUTH_ARGS $VALKEY_MASTERAUTH --replicaof "$PRIMARY_HOST" "$PRIMARY_PORT"
+              fi
+          {{- if or .Values.global.auth.enabled .Values.auth.enabled }}
+          env:
+            {{- if .Values.auth.existingSecret }}
+            - name: VALKEY_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ default (printf "%s-global-secret" .Release.Name) .Values.global.auth.existingSecret }}
+                  key: {{ .Values.global.secretKeys.cache_password | default "valkey-password" }}{{ .Values.global.secretKeys.cache_password | default "valkey-password" }}
+            {{- else }}
+            - name: VALKEY_PASSWORD
+              value: "{{ .Values.auth.password }}"
+            {{- end }}
+          {{- end }}
+          livenessProbe:
+            exec:
+              command: ["/bin/sh","-ec", "{{- if .Values.auth.enabled }}valkey-cli -a \"$VALKEY_PASSWORD\" ping | grep -q PONG{{- else }}valkey-cli ping | grep -q PONG{{- end }}"]
+            initialDelaySeconds: {{ .Values.probes.liveness.initialDelaySeconds }}
+            timeoutSeconds: {{ .Values.probes.liveness.timeoutSeconds }}
+          readinessProbe:
+            exec:
+              command: ["/bin/sh","-ec", "{{- if .Values.auth.enabled }}valkey-cli -a \"$VALKEY_PASSWORD\" ping | grep -q PONG{{- else }}valkey-cli ping | grep -q PONG{{- end }}"]
+            initialDelaySeconds: {{ .Values.probes.readiness.initialDelaySeconds }}
+            timeoutSeconds: {{ .Values.probes.readiness.timeoutSeconds }}
+          volumeMounts:
+            - name: config
+              mountPath: /etc/valkey
+            - name: data
+              mountPath: /data
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      {{- if not .Values.persistence.enabled }}
+      volumes:
+        - name: config
+          configMap:
+            name: {{ include "valkey.fullname" . }}
+            items:
+              - key: valkey.conf
+                path: valkey.conf
+        - name: data
+          emptyDir: {}
+      {{- else }}
+      volumes:
+        - name: config
+          configMap:
+            name: {{ include "valkey.fullname" . }}
+            items:
+              - key: valkey.conf
+                path: valkey.conf
+      {{- end }}
+  {{- if .Values.persistence.enabled }}
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: {{ toYaml .Values.persistence.accessModes | nindent 10 }}
+        resources:
+          requests:
+            storage: {{ .Values.persistence.size }}
+        {{- if .Values.persistence.storageClass }}
+        storageClassName: "{{ .Values.persistence.storageClass }}"
+        {{- end }}
+  {{- end }}

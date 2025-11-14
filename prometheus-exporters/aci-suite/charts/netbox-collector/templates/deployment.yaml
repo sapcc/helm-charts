@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "netbox-collector.fullname" . }}
+  labels:
+    {{- include "netbox-collector.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "netbox-collector.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "netbox-collector.name" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+      containers:
+        - name: app
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 8000
+          env:
+            # Inject cache password via global secret or fallback
+            {{- if .Values.global.auth.enabled }}
+            - name: CACHE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ default (printf "%s-global-secret" .Release.Name) .Values.global.auth.existingSecret }}
+                  key: {{ .Values.global.secretKeys.cache_password }}
+            {{- else }}
+            - name: CACHE_PASSWORD
+              value: {{ .Values.env.cache_password | default "" | quote }}
+            {{- end }}
+          volumeMounts:
+            - name: app-config
+              mountPath: /app/env.yml
+              subPath: env.yml
+              readOnly: true
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.livenessProbe.path }}
+              port: http
+            initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.livenessProbe.periodSeconds }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.readinessProbe.path }}
+              port: http
+            initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.readinessProbe.periodSeconds }}
+          resources:
+{{ toYaml .Values.resources | indent 12 }}
+      volumes:
+        - name: app-config
+          configMap:
+            name: {{ include "netbox-collector.fullname" . }}-config
+            items:
+              - key: env.yml
+                path: env.yml

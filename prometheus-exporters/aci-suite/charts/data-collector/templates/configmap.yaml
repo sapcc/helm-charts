@@ -1,0 +1,48 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "data-collector.fullname" . }}-config
+  labels:
+    {{- include "data-collector.labels" . | nindent 4 }}
+data:
+  env.yml: |-
+    # See config.py for additional documentation,
+    # env.yml and config.py need to be in sync
+
+    # the id to store keys for
+    aci_id: {{ .Values.env.aci_id | quote }}
+
+    # The apic servers
+    apic_servers:
+    {{- range $s := .Values.env.apic_servers }}
+      - {{ $s | quote }}
+    {{- end }}
+
+    # The request timeout parameters to consider
+    apic_reset_timeout: {{ .Values.env.apic_reset_timeout | int }}
+    apic_cookie_timeout: {{ .Values.env.apic_cookie_timeout | int }}
+    apic_request_timeout: {{ .Values.env.apic_request_timeout | int }}
+
+    # the connection parameters to the cache instance
+    cache_host: {{ .Values.env.cache_host | quote }}
+    cache_port: {{ .Values.env.cache_port | int }}
+    cache_timeout: {{ .Values.env.cache_timeout | int }}
+    cache_max_delay: {{ .Values.env.cache_max_delay | int }}
+    cache_max_retries: {{ .Values.env.cache_max_retries | int }}
+    cache_availability_interval: {{ .Values.env.cache_availability_interval | int }}
+
+    # the collector modules to run
+    collectors:
+    {{- range $name, $cfg := .Values.env.collectors }}
+      {{ $name }}:
+      {{- if hasKey $cfg "interval" }}
+        interval: {{ $cfg.interval | int }}
+      {{- end }}
+      {{- if hasKey $cfg "once" }}
+        once: {{ $cfg.once | toYaml | trim }}
+      {{- end }}
+    {{- end }}
+
+    # misc settings for runtime
+    log_level: {{ .Values.env.log_level | quote }}
+    verify_ssl: {{ .Values.env.verify_ssl | toYaml | trim }}

@@ -1,0 +1,42 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "netbox-exporter.fullname" . }}-config
+  labels:
+    {{- include "netbox-exporter.labels" . | nindent 4 }}
+data:
+  # Render a full /app/env.yml from the provided .Values.config (uppercase keys)
+  env.yml: |-
+    flask_host: {{ .Values.env.FLASK_HOST | quote }}
+    flask_port: {{ .Values.env.FLASK_PORT | int }}
+    flask_debug: {{ .Values.env.FLASK_DEBUG | lower }}
+
+    log_level: {{ .Values.env.LOG_LEVEL | quote }}
+    log_file: {{ .Values.env.LOG_FILE | quote }}
+
+    netbox_url: {{ .Values.env.NETBOX_URL | quote }}
+    netbox_retry_attempts: {{ .Values.env.NETBOX_RETRY_ATTEMPTS | int }}
+    netbox_retry_delay_seconds: {{ .Values.env.NETBOX_RETRY_DELAY_SECONDS | int }}
+    netbox_request_timeout_seconds: {{ .Values.env.NETBOX_REQUEST_TIMEOUT_SECONDS | int }}
+
+    cache_host: {{ .Values.env.CACHE_HOST | quote }}
+    cache_port: {{ .Values.env.CACHE_PORT | int }}
+    cache_password: {{ .Values.env.CACHE_PASSWORD | quote }}
+    cache_timeout: {{ .Values.env.CACHE_TIMEOUT | int }}
+    cache_prefix: {{ .Values.env.CACHE_PREFIX | quote }}
+    cache_retry_attempts: {{ .Values.env.CACHE_RETRY_ATTEMPTS | int }}
+    cache_retry_delay_seconds: {{ .Values.env.CACHE_RETRY_DELAY_SECONDS | int }}
+    cache_ttl_seconds: {{ .Values.env.CACHE_TTL_SECONDS | int }}
+    batch_size: {{ .Values.env.BATCH_SIZE | int }}
+    refresh_interval_seconds: {{ .Values.env.REFRESH_INTERVAL_SECONDS | int }}
+    since_hours_on_hit: {{ .Values.env.SINCE_HOURS_ON_HIT | int }}
+    save_aggregate_connections: {{ .Values.env.SAVE_AGGREGATE_CONNECTIONS | lower }}
+
+    interface_base_filter: {{ .Values.env.INTERFACE_BASE_FILTER | quote }}
+    device_base_filter: {{ .Values.env.DEVICE_BASE_FILTER | quote }}
+    debug_refresh: {{ .Values.env.DEBUG_REFRESH | lower }}
+
+  # Keep uppercase envs too (backward compatible, in case you use envFrom in the future)
+  {{- range $k, $v := .Values.env }}
+  {{ $k }}: {{ $v | quote }}
+  {{- end }}

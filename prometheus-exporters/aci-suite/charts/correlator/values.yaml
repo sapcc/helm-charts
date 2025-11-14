@@ -1,0 +1,73 @@
+replicaCount: 1
+
+image:
+  repository: keppel.eu-de-1.cloud.sap/ccloud-netops-observabilty/aci-correlator
+  tag: "1.4.0"
+  pullPolicy: Always
+
+resources:
+  limits: {}
+  requests: {}
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+service:
+  type: LoadBalancer
+  port: 11003
+
+env:
+  aci_id: "mock"
+  apic_host: "localhost"
+  cache_host: "aci-cache-valkey"
+  cache_port: 6379
+  cache_timeout: 3
+  cache_max_delay: 1
+  cache_max_retries: 5
+  metrics_port: 11003
+
+  enricher:
+    global_regex:
+      dn: (.*?)(?:\/fault.*)?$
+      psu_slot: /psuslot-(?P<psu_slot>\d+)
+      frozen_eps: ^(?P<frozen_eps>\d+)\sEP
+      node_id: /node-(?P<node_id>\d+)/
+      node_intf: /(phys|if)-\[(?P<node_intf>[eth\d/]+)]/
+      node_pod: /pod-(?P<node_pod>\d+)/
+      node_po: /(aggr|if)-\[(?P<node_po>[po\d]+)]
+      node_vpc_id: /node-\d+/sys/vpc/.+/if-(\d+)/
+      node_vpc_name: (?:stpathatt-\[|accbundle-)([^\]/]+)
+      bgp_peer_ip: /bgp/.+?/peer-\[(?P<bgp_peer_ip>[\d\.]+)/32]/
+
+  correlator:
+    F0299:
+      default_severity: "5"
+      search:
+        F0532:
+          severity: "2"
+          equals: ["node_id", "node_intf"]
+        F1296:
+          severity: "2"
+          equals: ["node_id", "node_intf"]
+    F1296:
+      default_severity: "5"
+      search:
+        F0532:
+          severity: "2"
+          equals: ["node_id", "node_intf"]
+
+  actions:
+    F0299:
+      action: collect_more_data_for_bgp
+      automation: "0"
+      automation_args:
+        node_id: node_id
+        peer_ip: bgp_peer_ip
+      matchers:
+        correlated: ["==", "0"]
+        created: [">", "1d"]
+        device_name: ["NotEmpty"]
+
+  log_level: "INFO"
+  verify_ssl: false

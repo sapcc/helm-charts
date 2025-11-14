@@ -1,0 +1,55 @@
+replicaCount: 1
+
+image:
+  repository: keppel.eu-de-1.cloud.sap/ccloud-netops-observabilty/aci-data-collector
+  tag: "1.1.0"
+  pullPolicy: Always
+
+resources:
+  limits: {}
+  requests: {}
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+env:
+  # See config.py for additional documentation,
+  # env.yml and config.py need to be in sync
+
+  # the id to store keys for
+  aci_id: "mock"
+
+  # The apic servers
+  apic_servers:
+    - 10.17.125.32:443
+    - 10.17.125.30:443
+
+  # The request timeout parameters to consider
+  apic_reset_timeout: 30
+  apic_cookie_timeout: 5
+  apic_request_timeout: 20
+
+  # the connection parameters to the cache instance
+  cache_host: "aci-cache-valkey"
+  cache_port: 6379
+  cache_timeout: 3
+  cache_max_delay: 1
+  cache_max_retries: 5
+  cache_availability_interval: 10
+
+  collectors:
+    BgpPeerPCollector:
+      interval: 10
+    FabricNodeCollector:
+      interval: 10
+    L1PhysIfCollector:
+      interval: 10
+    ConfigJobCollector:
+      interval: 10
+    VpcIfCollector:
+      interval: 10
+
+  # misc settings for runtime
+  log_level: "INFO"
+  verify_ssl: false
