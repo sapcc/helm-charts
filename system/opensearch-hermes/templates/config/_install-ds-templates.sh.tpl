@@ -66,7 +66,7 @@ if [ "${DATA_STREAM_ENABLED}" = true ]; then
      echo -e "\nReturn code is $POLICY_RETURN_CODE\n"
      if [ "${POLICY_RETURN_CODE}" -eq 404 ]; then
         # 1. Part: install of new ds ism policy
-        echo -e "inital upload of datastream ism policy"
+        echo -e "initial upload of datastream ism policy"
         echo -e "Upload ds policy, there is no policy \"ds-${e}-ism\" installed"
         curl --netrc-file "${NETRC_FILE}" -XPUT "${CLUSTER_HOST}/_plugins/_ism/policies/ds-${e}-ism" -H 'Content-Type: application/json' -d @"${TMPPATH}/${DS_ISM_TEMPLATE}"
 
