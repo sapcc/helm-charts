@@ -1,0 +1,67 @@
+{{- if .Values.global.data_stream.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: "install-ds-template"
+  labels:
+    app.kubernetes.io/managed-by: {{ .Release.Service | quote }}
+    app.kubernetes.io/instance: {{ .Release.Name | quote }}
+    app.kubernetes.io/version: {{ .Chart.AppVersion }}
+    helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    ccloud/service: hermes
+    ccloud/support-group: observability
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-weight": "-5"
+spec:
+  template:
+    metadata:
+      name: "install-ds-template"
+      labels:
+        app.kubernetes.io/managed-by: {{ .Release.Service | quote }}
+        app.kubernetes.io/instance: {{ .Release.Name | quote }}
+        helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: install-ds-template
+        image: "{{ .Values.global.registry }}/unified-kubernetes-toolbox:latest"
+        command: ["/bin/bash", "/scripts/install-ds-templates.sh"]
+        env:
+          - name: DATA_STREAM_ENABLED
+            value: "{{ .Values.global.data_stream.enabled }}"
+          - name: DATA_STREAMS
+            value: "{{ .Values.global.data_stream.names }}"
+          - name: FILE_RETENTION_SCHEMA_VERSION
+            value: "{{ .Values.global.data_stream.schema_version }}"
+          - name: ADMIN_USER
+            valueFrom:
+              secretKeyRef:
+                name: cron-secrets
+                key: ADMIN_USER
+          - name: ADMIN_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: cron-secrets
+                key: ADMIN_PASSWORD
+          - name: ADMIN2_USER
+            valueFrom:
+              secretKeyRef:
+                name: cron-secrets
+                key: ADMIN2_USER
+          - name: ADMIN2_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: cron-secrets
+                key: ADMIN2_PASSWORD
+          - name: CLUSTER_HOST
+            value: "https://opensearch-hermes.hermes.svc.kubernetes.{{ .Values.global.region }}.{{ .Values.global.tld }}:9200"
+        volumeMounts:
+        - mountPath: /scripts
+          name: security-config
+      volumes:
+      - name: security-config
+        secret:
+          defaultMode: 420
+          secretName: security-config
+{{- end }}
