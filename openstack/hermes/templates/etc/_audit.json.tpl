@@ -1,6 +1,6 @@
 {
   "index_patterns" : [
-    "audit-*"
+    "hermes*"
   ],
   "settings" : {
     "index" : {
@@ -209,6 +209,9 @@
             "type": "keyword"
           }
         }
+      },
+      "tenant_ids" : {
+        "type" : "keyword"
       },
       "target" : {
         "properties" : {
