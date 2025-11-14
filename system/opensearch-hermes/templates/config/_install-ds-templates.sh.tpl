@@ -29,13 +29,11 @@ if [ "${DATA_STREAM_ENABLED}" = true ]; then
    for e in ${DATA_STREAMS}; do
      export FILEPATH=/scripts
      export TMPPATH=/tmp
-     export DS_TEMPLATE=ds.json
+     export DS_TEMPLATE=audit_ds.json
 
      echo "creating file FILE=${TMPPATH}/${e}"
      cp "/${FILEPATH}/${DS_TEMPLATE}" "${TMPPATH}/${e}-${DS_TEMPLATE}"
      echo "Applying ${e}-${DS_TEMPLATE} to ${CLUSTER_HOST}"
-     sed -i "s/hermes\*/${e}*/g" "${TMPPATH}/${e}-${DS_TEMPLATE}"
-     sed -i "s/hermes-ds/${e}-ds/g" "${TMPPATH}/${e}-${DS_TEMPLATE}"
      if  grep -q "$e" "${TMPPATH}/${e}-${DS_TEMPLATE}" ; then
          curl --netrc-file "${NETRC_FILE}" -H 'Content-Type: application/json' -XPUT "${CLUSTER_HOST}/_index_template/${e}-datastream" -d @"${TMPPATH}/${e}-${DS_TEMPLATE}"
          echo -e "\nUpload of ds template for datastream ${e} done"
