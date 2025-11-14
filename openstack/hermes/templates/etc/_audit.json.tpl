@@ -1,9 +1,10 @@
 {
   "index_patterns" : [
-    "hermes*"
+    "hermes"
   ],
-  "settings" : {
-    "index" : {
+  "data_stream": {},
+  "template": {
+    "settings" : {
       "number_of_shards": 1,
       "number_of_replicas": 1,
       "codec": "best_compression",
