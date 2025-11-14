@@ -341,6 +341,10 @@
 "identity:ec2_delete_credential": "rule:cloud_admin or user_id:%(target.credential.user_id)s"
 
 "identity:ec2_delete_credentials": "rule:identity:ec2_delete_credential"
+
+"identity:ec2tokens_validate": "rule:service_or_admin"
+"identity:s3tokens_validate": "rule:service_or_admin"
+
 # Show endpoint details.
 # GET  /v3/endpoints/{endpoint_id}
 # Intended scope(s): system
