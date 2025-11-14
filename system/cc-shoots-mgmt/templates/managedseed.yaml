@@ -35,6 +35,24 @@ spec:
               name: openstack-{{ default $key $cluster.altRegion }}
               namespace: garden
           dns:
+{{- if $cluster.localDns }}
+            defaults:
+            - credentialsRef:
+                apiVersion: v1
+                kind: Secret
+                name: default-domain-external-openstack-gardener-cloud
+                namespace: garden
+              type: openstack-designate
+              domain: external.mgmt-{{ $.Values.global.region }}.soil-garden.{{ $.Values.global.region }}.cloud.sap
+            internal:
+              credentialsRef:
+                apiVersion: v1
+                kind: Secret
+                name: internal-domain-internal-openstack-gardener-cloud
+                namespace: garden
+              type: openstack-designate
+              domain: internal.mgmt-{{ $.Values.global.region }}.soil-garden.{{ $.Values.global.region }}.cloud.sap
+{{- else }}
             internal:
               credentialsRef:
                 apiVersion: v1
@@ -43,6 +61,7 @@ spec:
                 namespace: garden
               domain: internal.rt-{{ $.Values.global.region }}.soil-garden.{{ $dnsRegion }}.cloud.sap
               type: openstack-designate
+{{- end }}
             provider:
               secretRef:
                 name: default-domain-external-openstack-gardener-cloud
