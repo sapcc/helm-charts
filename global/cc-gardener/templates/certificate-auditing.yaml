@@ -1,11 +1,14 @@
 {{ if .Values.extensions.auditing.enabled -}}
-apiVersion: cert.gardener.cloud/v1alpha1
+apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-  name: auditing-mtls-cert
+  name: auditing-cert
 spec:
-  secretRef:
-    name: auditing-mtls
+  dnsNames:
+  - audit-external.{{ .Values.global.region }}.{{ .Values.global.tld }}
+  - logstash-audit-external.{{ .Values.global.region }}.{{ .Values.global.tld }}
   issuerRef:
-    name: self-signed
+    kind: Issuer
+    name: auditing-selfsigned-issuer
+  secretName: auditing-mtls
 {{ end -}}
