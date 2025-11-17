@@ -10,7 +10,7 @@ spec:
   cloudProfile:
     kind: CloudProfile
     name: ironcore-metal
-  secretBindingName: metal-{{ $key }}
+  credentialsBindingName: metal-{{ $key }}
   seedName: rt-{{ $key }}
   region: {{ $key }}
   networking:
@@ -38,18 +38,43 @@ spec:
         AnonymousAuthConfigurableEndpoints: true
       structuredAuthentication:
         configMapName: authentication-config-mgmt
+      {{- if $.Values.auditing.enabled }}
+      auditConfig:
+        auditPolicy:
+          configMapRef:
+            name: audit-policy-cp
+      {{- end }}
     verticalPodAutoscaler:
       enabled: true # VPA needs to enabled for ManagedSeed
   maintenance:
     autoUpdate:
       kubernetesVersion: false
       machineImageVersion: false
+  {{- if $.Values.auditing.enabled }}
+  extensions:
+  - type: auditing
+    providerConfig:
+      apiVersion: auditing.extensions.gardener.cloud/v1alpha1
+      kind: AuditConfiguration
+      backends:
+      - http:
+          url: {{ $.Values.auditing.url }}
+          tls:
+            secretReferenceName: auditing-mtls
+  {{- end }}
   resources:
   - name: extraignition-mgmt-{{ $key }}
     resourceRef:
       apiVersion: v1
       kind: Secret
       name: extraignition-mgmt-{{ $key }}
+  {{- if $.Values.auditing.enabled }}
+  - name: auditing-mtls
+    resourceRef:
+      apiVersion: v1
+      kind: Secret
+      name: auditing-mtls
+  {{- end }}
   provider:
     type: ironcore-metal
     infrastructureConfig:
