@@ -1,3 +1,4 @@
+{{- $hsm := .Values.hsm }}
 [DEFAULT]
 # Show debugging output in logs (sets DEBUG log level output)
 debug = {{.Values.debug}}
@@ -66,11 +67,11 @@ policy_file = /etc/barbican/policy.yaml
 enforce_new_defaults=False
 enforce_scope=False
 
-{{- if .Values.hsm.multistore.enabled }}
+{{- if and $hsm $hsm.multistore $hsm.multistore.enabled }}
 [secretstore]
 enable_multiple_secret_stores = True
-{{- if .Values.hsm.utimaco_hsm.enabled }}
-stores_lookup_suffix = software, pkcs11, utimaco_hsm, thales_hsm
+{{- if and $hsm.utimaco_hsm $hsm.utimaco_hsm.enabled }}
+stores_lookup_suffix = software, pkcs11, utimaco_hsm
 {{- else }}
 stores_lookup_suffix = software, pkcs11
 {{- end }}
@@ -82,19 +83,18 @@ crypto_plugin = simple_crypto
 
 [secretstore:pkcs11]
 secret_store_plugin = store_crypto
+{{- if and $hsm.enabled $hsm.enabled }}
 crypto_plugin = p11_crypto
+{{- else if and $hsm.utimaco_hsm $hsm.utimaco_hsm.enabled }}
+crypto_plugin = utimaco_hsm_crypto
+{{- else }}
+crypto_plugin = simple_crypto
+{{- end }}
 global_default = True
 
-{{- if .Values.hsm.utimaco_hsm.enabled }}
-
+{{- if and $hsm.utimaco_hsm $hsm.utimaco_hsm.enabled }}
 [secretstore:utimaco_hsm]
 secret_store_plugin = store_crypto
 crypto_plugin = utimaco_hsm_crypto
-
-[secretstore:thales_hsm]
-secret_store_plugin = store_crypto
-crypto_plugin = thales_hsm_crypto
-
 {{- end }}
 {{- end }}
-
