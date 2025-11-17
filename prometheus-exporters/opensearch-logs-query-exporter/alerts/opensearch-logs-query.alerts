@@ -92,35 +92,9 @@ groups:
       description: "Exception while applying properties to promoted Replica"
       summary: "Exception while applying properties to promoted Replica"
 
-  - alert: CronusLogsMissing
-    expr: opensearch_logs_cronus_availability_check_hits == 0
-    for: 1h
-    labels:
-      context: compliance
-      service: cronus
-      severity: warning
-      tier: os
-      support_group: email
-    annotations:
-      description: 'Cronus logs are missing for the last 30 days in {{ $labels.region }}.'
-      summary: 'Cronus logs missing for 30 days'
-
-  - alert: MaillogMissing
-    expr: opensearch_logs_maillog_availability_check_hits == 0
-    for: 1h
-    labels:
-      context: compliance
-      service: maillog
-      severity: warning
-      tier: os
-      support_group: email
-    annotations:
-      description: 'Maillog entries are missing for the last 30 days in {{ $labels.region }}.'
-      summary: 'Maillog entries missing for 30 days'
-
   - alert: CronusLogsComplianceViolation
     expr: opensearch_logs_cronus_old_logs_hits > 0
-    for: 0m
+    for: 5m
     labels:
       context: compliance
       service: cronus
@@ -128,12 +102,12 @@ groups:
       tier: os
       support_group: email
     annotations:
-      description: 'Cronus logs older than 30 days found in {{ $labels.region }}. Count: {{ $value }}.'
+      description: 'Cronus logs older than 30 days found in {{ $labels.region }}.'
       summary: 'Cronus logs compliance violation'
 
   - alert: MaillogComplianceViolation
     expr: opensearch_logs_maillog_old_logs_hits > 0
-    for: 0m
+    for: 5m
     labels:
       context: compliance
       service: maillog
@@ -141,5 +115,5 @@ groups:
       tier: os
       support_group: email
     annotations:
-      description: 'Maillog entries older than 30 days found in {{ $labels.region }}. Count: {{ $value }}.'
+      description: 'Maillog entries older than 30 days found in {{ $labels.region }}.'
       summary: 'Maillog compliance violation'
