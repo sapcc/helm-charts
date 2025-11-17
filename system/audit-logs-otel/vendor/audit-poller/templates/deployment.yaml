@@ -51,21 +51,6 @@ spec:
           - name: audit-dir
             mountPath: {{.Values.logDir}}
             readOnly: false
-
-{{- if .Values.sidecar.tail.enabled }}
-      - name: iasapi-stdout
-        image: {{ .Values.global.dockerHubMirror }}/library/busybox
-        args: [/bin/sh, -c, 'touch {{ .Values.logDir }}/{{ .Values.iasApi.fileName }}; tail -n+1 -F {{ .Values.logDir }}/{{ .Values.iasApi.fileName }}']
-        volumeMounts:
-        - name: audit-dir
-          mountPath: {{ .Values.logDir }}
-      - name: iaschangelog-stdout
-        image: {{ .Values.global.dockerHubMirror }}/library/busybox
-        args: [/bin/sh, -c, 'touch {{ .Values.logDir }}/{{ .Values.iasChangelog.fileName }}; tail -n+1 -F {{ .Values.logDir }}/{{ .Values.iasChangelog.fileName }}']
-        volumeMounts:
-        - name: audit-dir
-          mountPath: {{ .Values.logDir }}
-{{- end }}
       volumes:
       - name: audit-poller-etc
         configMap:
