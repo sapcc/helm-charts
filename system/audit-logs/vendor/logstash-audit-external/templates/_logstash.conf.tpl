@@ -27,6 +27,18 @@ input {
 {{- end }}
   }
 {{- end }}
+{{- if .Values.mtls.enabled }}
+  http {
+    id => "input_mtls"
+    port  => {{.Values.input_mtls_port}}
+    tags => ["k8saudit"]
+    ssl_enabled => true
+    ssl_certificate => '/tls-secret/tls.crt'
+    ssl_key => '/usr/share/logstash/config/tls.key'
+    ssl_supported_protocols => ['TLSv1.2', 'TLSv1.3']
+    threads => 12
+  }
+{{- end }}
 {{- if .Values.beats.enabled }}
   beats {
     id => "input_beats"
@@ -217,5 +229,7 @@ output {
       format => "json"
       http_method => "post"
     }
+  } else if [type] == "k8saudit" in [tags] {
+    stdout { }
   }
 }
