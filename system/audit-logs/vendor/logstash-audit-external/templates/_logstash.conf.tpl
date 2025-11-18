@@ -229,7 +229,7 @@ output {
       format => "json"
       http_method => "post"
     }
-  } else if [type] == "k8saudit" in [tags] {
+  } else if [type] == "k8saudit" or "k8saudit" in [tags] {
     stdout { }
   }
 }
