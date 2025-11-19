@@ -201,28 +201,32 @@ filter {
         }
       }
     }
-    if [items][annotations][shoot.gardener.cloud/name] {
-      split {
-        field => "items"
+    if ("kube-api" in [tags]) {
+            split {
+              field => "items"
+          }
+
+          if [items][annotations][shoot.gardener.cloud/name] {
+            grok {
+              match => { "[items][annotations][shoot.gardener.cloud/name]" => "(?<sap.cc.region>[^-]+-[^-]+-[^-]+)$" }
+            }
+          }
+
+          mutate {
+            add_field => { "[sap][cc][cluster]" => "%{[items][annotations][shoot.gardener.cloud/name]}"}
+            add_field => { "[sap][cc][audit][source]" => "kube-api"}
+            add_field => { "[sap][cc][audit][gardener_seed]" => "%{[items][annotations][seed.gardener.cloud/name]}"}
+          }
+          ruby {
+                 code => '
+                      event.get("items").each { |k, v|
+                          event.set(k,v)
+                          }
+                          event.remove("items")
+                '
+         }
+        }
       }
-      grok {
-        match => { "[items][annotations][shoot.gardener.cloud/name]" => "(?<sap.cc.region>[^-]+-[^-]+-[^-]+)$" }
-      }
-      mutate {
-        add_field => { "[sap][cc][cluster]" => "%{[items][annotations][shoot.gardener.cloud/name]}"}
-        add_field => { "[sap][cc][audit][source]" => "kube-api"}
-        add_field => { "[sap][cc][audit][gardener_seed]" => "%{[items][annotations][seed.gardener.cloud/name]}"}
-      }
-      ruby {
-              code => '
-                  event.get("items").each { |k, v|
-                      event.set(k,v)
-                      }
-                      event.remove("items")
-            '
-      }
-    }
-  }
 
 
 output {
