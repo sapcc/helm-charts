@@ -50,7 +50,7 @@ transform/neutron_agent:
       conditions:
         - resource.attributes["k8s.container.name"] == "neutron-metadata-agent"
       statements:
-        - merge_maps(log.attributes, ExtractGrokPatterns(log.body, "(%{TIMESTAMP_ISO8601}|)( )?%{TIMESTAMP_ISO8601}.%{NOTSPACE}? %{NUMBER:pid} %{WORD:loglevel} %{NOTSPACE:logger} \\[-\\] %{GREEDYDATA} %{NOTSPACE} %{WORD:request.method} %{NOTSPACE} %{QUOTEDSTRING:request.path} %{NOTSPACE} %{NUMBER:request.status} %{NOTSPACE} %{IPV4:client.address} %{NOTSPACE} %{NOTSPACE:project_id} %{NOTSPACE} %{NOTSPACE:os_network_id} %{NOTSPACE} %{NOTSPACE:os_router_id} %{NOTSPACE} %{NOTSPACE:os_instance_id} %{NOTSPACE} %{BASE10NUM:request.duration} %{NOTSPACE} %{QUOTEDSTRING:user_agent}", true),"upsert")
+        - merge_maps(log.attributes, ExtractGrokPatterns(log.body, "(%{TIMESTAMP_ISO8601}|)( )?%{TIMESTAMP_ISO8601}.%{NOTSPACE}? %{NUMBER:pid} %{WORD:log.level} %{NOTSPACE:logger} \\[-\\] %{GREEDYDATA} %{NOTSPACE} %{WORD:request.method} %{NOTSPACE} %{QUOTEDSTRING:request.path} %{NOTSPACE} %{NUMBER:request.status} %{NOTSPACE} %{IPV4:client.address} %{NOTSPACE} %{NOTSPACE:project.id} %{NOTSPACE} %{NOTSPACE:os_network_id} %{NOTSPACE} %{NOTSPACE:os_router_id} %{NOTSPACE} %{NOTSPACE:os_instance_id} %{NOTSPACE} %{BASE10NUM:request.duration} %{NOTSPACE} %{QUOTEDSTRING:user_agent}", true),"upsert")
 
 transform/neutron_errors:
   error_mode: ignore
@@ -60,8 +60,8 @@ transform/neutron_errors:
         - resource.attributes["k8s.container.name"] == "neutron-server"
         - resource.attributes["k8s.container.name"] == "neutron-asr1k"
       statements:
-        - merge_maps(log.attributes, ExtractGrokPatterns(log.body, "%{TIMESTAMP_ISO8601} %{NOTSPACE} %{NOTSPACE:loglevel} %{NOTSPACE:logger} (\\[)?(req-)%{NOTSPACE:request.id} ?(g%{NOTSPACE:global_request.id}) ?%{NOTSPACE:user_id} ?%{NOTSPACE:project_id} ?%{NOTSPACE:domain_id} ?%{NOTSPACE:user_domain_id} ?%{NOTSPACE:project_domain_id}\\] %{IPV4:client.address} \"%{WORD:request.method} %{NOTSPACE:request.path} HTTP/%{NOTSPACE}\" %{NOTSPACE} %{NUMBER:response}?( ).*%{NOTSPACE} %{NUMBER:content_length:int} %{NOTSPACE} %{BASE10NUM:request.time:float} %{NOTSPACE} %{NOTSPACE:agent}", true),"upsert")
-        - merge_maps(log.attributes, ExtractGrokPatterns(log.body, "%{TIMESTAMP_ISO8601} %{NOTSPACE} %{NOTSPACE:loglevel} %{NOTSPACE:logger} (\\[)?(req-)%{NOTSPACE:request.id} ?(g%{NOTSPACE:global_request.id}) ?%{NOTSPACE:user_id} ?%{NOTSPACE:project_id} ?%{NOTSPACE:domain_id} ?%{NOTSPACE:user_domain_id} ?%{NOTSPACE:project_domain_id}\\]", true), "upsert")
+        - merge_maps(log.attributes, ExtractGrokPatterns(log.body, "%{TIMESTAMP_ISO8601} %{NOTSPACE} %{NOTSPACE:log.level} %{NOTSPACE:logger} (\\[)?(req-)%{NOTSPACE:request.id} ?(g%{NOTSPACE:global.request.id}) ?%{NOTSPACE:user.id} ?%{NOTSPACE:project.id} ?%{NOTSPACE:domain.id} ?%{NOTSPACE:user.domain.id} ?%{NOTSPACE:project.domain.id}\\] %{IPV4:client.address} \"%{WORD:request.method} %{NOTSPACE:request.path} HTTP/%{NOTSPACE}\" %{NOTSPACE} %{NUMBER:response}?( ).*%{NOTSPACE} %{NUMBER:content_length:int} %{NOTSPACE} %{BASE10NUM:request.time:float} %{NOTSPACE} %{NOTSPACE:agent}", true),"upsert")
+        - merge_maps(log.attributes, ExtractGrokPatterns(log.body, "%{TIMESTAMP_ISO8601} %{NOTSPACE} %{NOTSPACE:log.level} %{NOTSPACE:logger} (\\[)?(req-)%{NOTSPACE:request.id} ?(g%{NOTSPACE:global.request.id}) ?%{NOTSPACE:user.id} ?%{NOTSPACE:project.id} ?%{NOTSPACE:domain.id} ?%{NOTSPACE:user.domain.id} ?%{NOTSPACE:project.domain.id}\\]", true), "upsert")
         - merge_maps(log.attributes, ExtractGrokPatterns(log.body, "Encoutered a requeable lock exception executing %{WORD:neutronTask:string} for model %{WORD:neutronModel:string} on device %{IP:neutronIp:string}", true),"upsert")
         - merge_maps(log.attributes, ExtractGrokPatterns(log.body, "asr1k_exceptions.InconsistentModelException?(:) %{WORD:neutronTask} for model %{WORD:neutronModel} cannot be executed on %{IP:neutronIp}", true),"upsert")
         - merge_maps(log.attributes, ExtractGrokPatterns(log.body, "%{WORD:neutronTask} for model %{WORD:neutronModel} cannot be executed on %{IP:neutronIp} due to a model/device inconsistency.", true),"upsert")
@@ -79,8 +79,8 @@ transform/openstack_api:
         - resource.attributes["k8s.deployment.name"] == "manila-api"
         - resource.attributes["k8s.deployment.name"] == "ironic-api"
       statements:
-        - merge_maps(log.attributes, ExtractGrokPatterns(log.body, "%{TIMESTAMP_ISO8601} %{NOTSPACE} %{NOTSPACE:loglevel} %{NOTSPACE:logger} (\\[)?(req-)%{NOTSPACE:request.id} ?(g%{NOTSPACE:global_request.id}) ?%{NOTSPACE:user_id} ?%{NOTSPACE:project_id} ?%{NOTSPACE:domain_id} ?%{NOTSPACE:user_domain_id} ?%{NOTSPACE:project_domain_id}\\] %{IPV4:client.address}(,%{IPV4:internal_ip})? \"%{WORD:request.method} %{NOTSPACE:request.path} HTTP/%{NOTSPACE}\" %{NOTSPACE} %{NUMBER:response}?( ).*%{NOTSPACE} %{NUMBER:content_length:int} %{NOTSPACE} %{BASE10NUM:request.time:float} ?%{NOTSPACE} ?%{NOTSPACE:agent}", true), "upsert")
-        - merge_maps(log.attributes, ExtractGrokPatterns(log.body, "%{TIMESTAMP_ISO8601} %{NOTSPACE} %{NOTSPACE:loglevel} %{NOTSPACE:logger} (\\[)?(req-)%{NOTSPACE:request.id} ?(g%{NOTSPACE:global_request.id}) ?%{NOTSPACE:user_id} ?%{NOTSPACE:project_id} ?%{NOTSPACE:domain_id} ?%{NOTSPACE:user_domain_id} ?%{NOTSPACE:project_domain_id}\\]", true), "upsert")
+        - merge_maps(log.attributes, ExtractGrokPatterns(log.body, "%{TIMESTAMP_ISO8601} %{NOTSPACE} %{NOTSPACE:log.level} %{NOTSPACE:logger} (\\[)?(req-)%{NOTSPACE:request.id} ?(g%{NOTSPACE:global.request.id}) ?%{NOTSPACE:user.id} ?%{NOTSPACE:project.id} ?%{NOTSPACE:domain.id} ?%{NOTSPACE:user.domain.id} ?%{NOTSPACE:project.domain.id}\\] %{IPV4:client.address}(,%{IPV4:internal_ip})? \"%{WORD:request.method} %{NOTSPACE:request.path} HTTP/%{NOTSPACE}\" %{NOTSPACE} %{NUMBER:response}?( ).*%{NOTSPACE} %{NUMBER:content_length:int} %{NOTSPACE} %{BASE10NUM:request.time:float} ?%{NOTSPACE} ?%{NOTSPACE:agent}", true), "upsert")
+        - merge_maps(log.attributes, ExtractGrokPatterns(log.body, "%{TIMESTAMP_ISO8601} %{NOTSPACE} %{NOTSPACE:log.level} %{NOTSPACE:logger} (\\[)?(req-)%{NOTSPACE:request.id} ?(g%{NOTSPACE:global.request.id}) ?%{NOTSPACE:user.id} ?%{NOTSPACE:project.id} ?%{NOTSPACE:domain.id} ?%{NOTSPACE:user.domain.id} ?%{NOTSPACE:project.domain.id}\\]", true), "upsert")
 
 transform/non_openstack:
   error_mode: ignore
@@ -100,7 +100,7 @@ transform/network_generic_ssh_exporter:
         - resource.attributes["k8s.container.name"] == "network-generic-ssh-exporter"
       statements:
         - merge_maps(log.cache, ParseJSON(log.body), "upsert") where IsMatch(log.body, "^\\{")
-        - set(log.attributes["loglevel"], log.cache["level"])
+        - set(log.attributes["log.level"], log.cache["level"])
         - set(log.attributes["ts"], log.cache["ts"])
         - set(log.attributes["msg"], log.cache["msg"])
         - set(log.attributes["caller"], log.cache["caller"])
@@ -115,7 +115,7 @@ transform/perses:
       conditions:
         - resource.attributes["k8s.container.name"] == "perses"
       statements:
-        - merge_maps(log.attributes, ExtractGrokPatterns(log.body, "time=%{QUOTEDSTRING} level=%{WORD:loglevel} msg=%{GREEDYDATA:msg}", true),"upsert")
+        - merge_maps(log.attributes, ExtractGrokPatterns(log.body, "time=%{QUOTEDSTRING} level=%{WORD:log.level} msg=%{GREEDYDATA:msg}", true),"upsert")
         - set(log.attributes["config.parsed"], "perses")
 
 transform/coredns_api:
@@ -126,7 +126,7 @@ transform/coredns_api:
         - resource.attributes["k8s.deployment.name"] == "coredns-api"
       statements:
         - merge_maps(log.cache, ParseJSON(log.body), "upsert") where IsMatch(log.body, "^\\{")
-        - set(log.attributes["loglevel"], log.cache["level"])
+        - set(log.attributes["log.level"], log.cache["level"])
         - set(log.attributes["time"], log.cache["time"])
         - set(log.attributes["request.id"], log.cache["request-id"])
         - set(log.attributes["duration"], log.cache["duration"])
@@ -144,7 +144,7 @@ transform/snmp_exporter:
       conditions:
         - resource.attributes["k8s.deployment.name"] == "snmp-exporter"
       statements:
-        - merge_maps(log.attributes, ExtractGrokPatterns(log.body, "time=%{TIMESTAMP_ISO8601} level=%{NOTSPACE:loglevel} source=%{NOTSPACE} msg=\"%{GREEDYDATA:snmp_error}\" auth=%{NOTSPACE:snmp_auth} target=%{IP:snmp_ip} source_address=(?:%{GREEDYDATA:source}) worker=(?:%{NUMBER}) module=%{NOTSPACE:snmp_module} err=\"%{GREEDYDATA} %{IP}%{NOTSPACE} %{GREEDYDATA:snmp_reason}\"", true), "upsert")
+        - merge_maps(log.attributes, ExtractGrokPatterns(log.body, "time=%{TIMESTAMP_ISO8601} level=%{NOTSPACE:log.level} source=%{NOTSPACE} msg=\"%{GREEDYDATA:snmp_error}\" auth=%{NOTSPACE:snmp_auth} target=%{IP:snmp_ip} source_address=(?:%{GREEDYDATA:source}) worker=(?:%{NUMBER}) module=%{NOTSPACE:snmp_module} err=\"%{GREEDYDATA} %{IP}%{NOTSPACE} %{GREEDYDATA:snmp_reason}\"", true), "upsert")
 
 transform/kvm-ha-service:
   error_mode: ignore
@@ -173,7 +173,7 @@ transform/keystone_api:
       conditions:
         - resource.attributes["k8s.container.name"] == "keystone-api"
       statements:
-        - merge_maps(log.attributes, ExtractGrokPatterns(log.body, "%{DATE_EU} %{TIME} %{NUMBER} %{NOTSPACE:loglevel} %{NOTSPACE:component} \\[%{NOTSPACE:request.id} %{NOTSPACE:global.request.id} usr %{NOTSPACE:usr} prj %{NOTSPACE:prj} dom %{NOTSPACE:dom} usr-dom %{NOTSPACE:usr_domain} prj-dom %{NOTSPACE:project_domain_id}\\] %{GREEDYDATA}'%{WORD:method} %{URIPATH:pri_path}' %{WORD:action}", true), "upsert")
+        - merge_maps(log.attributes, ExtractGrokPatterns(log.body, "%{DATE_EU} %{TIME} %{NUMBER} %{NOTSPACE:log.level} %{NOTSPACE:component} \\[%{NOTSPACE:request.id} %{NOTSPACE:global.request.id} usr %{NOTSPACE:user.id} prj %{NOTSPACE:project.id} dom %{NOTSPACE:domain.id} usr-dom %{NOTSPACE:usr.domain.id} prj-dom %{NOTSPACE:project.domain.id}\\] %{GREEDYDATA}'%{WORD:method} %{URIPATH:pri_path}' %{WORD:action}", true), "upsert")
 
 transform/swift_proxy:
   error_mode: ignore
@@ -183,7 +183,7 @@ transform/swift_proxy:
         - resource.attributes["k8s.daemonset.name"] == "swift-proxy-cluster-3"
         - resource.attributes["app.label.component"] == "swift-servers"
       statements:
-        - merge_maps(log.attributes, ExtractGrokPatterns(log.body, "%{SYSLOGTIMESTAMP:date} %{HOSTNAME:host} %{WORD}.%{LOGLEVEL} %{SYSLOGPROG}%{NOTSPACE} %{HOSTNAME:client.address} %{HOSTNAME:remote_addr} %{NOTSPACE:datetime} %{WORD:request.method} %{NOTSPACE:request.path}?( )?(%{NOTSPACE:request.param}) ?(%{NOTSPACE:protocol})?( )%{NUMBER:response} %{NOTSPACE} %{NOTSPACE:user_agent} %{NOTSPACE:auth_token} %{NOTSPACE:bytes_recvd} %{NOTSPACE:bytes_sent} %{NOTSPACE:client.etag} %{NOTSPACE:transaction_id} %{NOTSPACE:headers} %{BASE10NUM:request.time:float} %{NOTSPACE:source} %{NOTSPACE:log_info} %{BASE10NUM:request.start.time} %{BASE10NUM:request.end.time} %{NOTSPACE:policy_index}", true), "upsert")
+        - merge_maps(log.attributes, ExtractGrokPatterns(log.body, "%{SYSLOGTIMESTAMP:date} %{HOSTNAME:host.name} %{WORD}.%{LOGLEVEL} %{SYSLOGPROG}%{NOTSPACE} %{HOSTNAME:client.address} %{HOSTNAME:remote_addr} %{NOTSPACE:datetime} %{WORD:request.method} %{NOTSPACE:request.path}?( )?(%{NOTSPACE:request.param}) ?(%{NOTSPACE:protocol})?( )%{NUMBER:response} %{NOTSPACE} %{NOTSPACE:user_agent} %{NOTSPACE:auth_token} %{NOTSPACE:bytes_recvd} %{NOTSPACE:bytes_sent} %{NOTSPACE:client.etag} %{NOTSPACE:transaction_id} %{NOTSPACE:headers} %{BASE10NUM:request.time:float} %{NOTSPACE:source} %{NOTSPACE:log.info} %{BASE10NUM:request.start.time} %{BASE10NUM:request.end.time} %{NOTSPACE:policy_index}", true), "upsert")
         - set(log.attributes["bytes_recvd"], 0) where log.attributes["bytes_recvd"] == "-"
         - set(log.attributes["bytes_sent"], 0) where log.attributes["bytes_sent"] == "-"
 
