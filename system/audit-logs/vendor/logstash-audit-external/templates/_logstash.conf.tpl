@@ -201,18 +201,25 @@ filter {
         }
       }
     }
-    if [type] == "kube-api" or "kube-api" in [tags] {
-      if [annotations]["shoot.gardener.cloud/name"] exists {
-        filter {
-          grok {
-            match => { [annotations]["shoot.gardener.cloud/name"] => "(?<sap.cc.region>[^-]+-[^-]+-[^-]+)$" }
-          }
-        }
+    if [items][annotations][shoot.gardener.cloud/name] {
+      split {
+        field => "items"
       }
-      mutate{
-          add_field => { "[sap][cc][cluster]" => [annotations]["shoot.gardener.cloud/name"}
-          add_field => { "[sap][cc][audit][source]" => "kube-api"}
-          add_field => { "[sap][cc][audit][gardener_seed]" => [annotations]["seed.gardener.cloud/name"]}
+      grok {
+        match => { "[items][annotations][shoot.gardener.cloud/name]" => "(?<sap.cc.region>[^-]+-[^-]+-[^-]+)$" }
+      }
+      mutate {
+        add_field => { "[sap][cc][cluster]" => "%{[items][annotations][shoot.gardener.cloud/name]}"}
+        add_field => { "[sap][cc][audit][source]" => "kube-api"}
+        add_field => { "[sap][cc][audit][gardener_seed]" => "%{[items][annotations][seed.gardener.cloud/name]}"}
+      }
+      ruby {
+              code => '
+                  event.get("items").each { |k, v|
+                      event.set(k,v)
+                      }
+                      event.remove("items")
+            '
       }
     }
   }
