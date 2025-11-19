@@ -46,6 +46,12 @@ data:
           target: ''
           fields:
             sap.cc.audit.source: flatcar
+      - rename:
+          fields:
+            - from: "file.selinux"
+              to: "file.selinux_context"
+          ignore_missing: true
+          fail_on_error: false
       - drop_fields:
           ignore_missing: true
           fields:
@@ -62,11 +68,6 @@ data:
             - "user.selinux.level"
             - "user.selinux.role"
             - "user.selinux.user"
-            - "file.selinux.category"
-            - "file.selinux.domain"
-            - "file.selinux.level"
-            - "file.selinux.role"
-            - "file.selinux.user"
 
 {{- if .Values.elasticsearch.enabled }}
     output.elasticsearch:
