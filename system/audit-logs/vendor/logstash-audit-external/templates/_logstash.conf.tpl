@@ -31,7 +31,7 @@ input {
   http {
     id => "input_mtls"
     port  => {{.Values.input_mtls_port}}
-    tags => ["k8saudit"]
+    tags => ["kube-api"]
     ssl_enabled => true
     ssl_certificate => '/tls-secret/tls.crt'
     ssl_key => '/usr/share/logstash/config/tls.key'
@@ -201,6 +201,20 @@ filter {
         }
       }
     }
+    if [type] == "kube-api" or "kube-api" in [tags] {
+      if [annotations]["shoot.gardener.cloud/name"] exists {
+        filter {
+          grok {
+            match => { [annotations]["shoot.gardener.cloud/name"] => "(?<sap.cc.region>[^-]+-[^-]+-[^-]+)$" }
+          }
+        }
+      }
+      mutate{
+          add_field => { "[sap][cc][cluster]" => [annotations]["shoot.gardener.cloud/name"}
+          add_field => { "[sap][cc][audit][source]" => "kube-api"}
+          add_field => { "[sap][cc][audit][gardener_seed]" => [annotations]["seed.gardener.cloud/name"]}
+      }
+    }
   }
 
 
@@ -229,7 +243,13 @@ output {
       format => "json"
       http_method => "post"
     }
-  } else if [type] == "k8saudit" or "k8saudit" in [tags] {
-    stdout { }
+  } else if [type] == "kube-api" or "kube-api" in [tags] {
+    http {
+      id => "output_kube-api"
+      ssl_certificate_authorities => ["/usr/share/logstash/config/ca.pem"]
+      url => "https://{{ .Values.global.forwarding.audit.host }}"
+      format => "json"
+      http_method => "post"
+    }
   }
 }
