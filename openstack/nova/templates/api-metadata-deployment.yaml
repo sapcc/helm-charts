@@ -7,8 +7,10 @@ metadata:
     system: openstack
     type: api
     component: nova
-  {{- if .Values.vpa.set_main_container }}
   annotations:
+    secret.reloader.stakater.com/reload: "nova-api-metadata"
+    deployment.reloader.stakater.com/pause-period: "60s"
+  {{- if .Values.vpa.set_main_container }}
     vpa-butler.cloud.sap/main-container: nova-api-metadata
   {{- end }}
 spec:
@@ -34,6 +36,7 @@ spec:
         {{- include "utils.topology.pod_label" . | indent 8 }}
       annotations:
         configmap-etc-hash: {{ include (print .Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
+        secret-etc-hash: {{ include (print $.Template.BasePath "/etc-secret.yaml") . | sha256sum }}
         {{- if or .Values.conductor.config_file.DEFAULT.statsd_enabled .Values.proxysql.mode }}
         prometheus.io/scrape: "true"
         prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
@@ -46,7 +49,10 @@ spec:
       terminationGracePeriodSeconds: {{ .Values.defaults.default.graceful_shutdown_timeout | add 5 }}
       hostname: nova-api-metadata
       initContainers:
-      {{- tuple . (dict "service" (print .Values.mariadb_api.name "-mariadb") "jobs" (tuple . "db-migrate" | include "job_name")) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
+      {{- tuple . (dict "service" (include "nova.helpers.api_db" .) "jobs" (tuple . "db-migrate" | include "job_name")) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
+      {{- if .Values.proxysql.native_sidecar }}
+      {{- tuple . .Values.api_metadata.config_file.DEFAULT.metadata_workers | include "utils.proxysql.container" | indent 6 }}
+      {{- end }}
       containers:
         - name: nova-api-metadata
           image: {{ tuple . "api" | include "container_image_nova" }}
@@ -97,7 +103,9 @@ spec:
             name: nova-etc
           {{- include "utils.proxysql.volume_mount" . | indent 10 }}
           {{- include "utils.trust_bundle.volume_mount" . | indent 10 }}
+        {{- if not .Values.proxysql.native_sidecar }}
         {{- tuple . .Values.api_metadata.config_file.DEFAULT.metadata_workers | include "utils.proxysql.container" | indent 8 }}
+        {{- end }}
         - name: statsd
           image: {{ required ".Values.global.dockerHubMirror is missing" .Values.global.dockerHubMirror}}/prom/statsd-exporter:v0.8.1
           imagePullPolicy: IfNotPresent
@@ -130,10 +138,6 @@ spec:
                 path: policy.yaml
               - key:  logging.ini
                 path: logging.ini
-              - key:  rootwrap.conf
-                path: rootwrap.conf
-              - key:  api-metadata.filters
-                path: rootwrap.d/api-metadata.filters
               - key:  release
                 path: release
               {{- if .Values.api.use_uwsgi }}
@@ -157,6 +161,13 @@ spec:
                 path: nova.conf.d/cell1.conf
               - key: keystoneauth-secrets.conf
                 path: nova.conf.d/keystoneauth-secrets.conf
+              {{- if .Values.osprofiler.enabled }}
+              - key: osprofiler.conf
+                path: nova.conf.d/osprofiler.conf
+              {{- end }}
+          - secret:
+              name: nova-api-metadata
+              items:
               - key: nova-api-metadata-secrets.conf
                 path: nova.conf.d/nova-api-metadata-secrets.conf
       - name: statsd-etc

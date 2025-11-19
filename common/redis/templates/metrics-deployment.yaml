@@ -13,6 +13,10 @@ metadata:
   name: {{ $fullname }}-exporter
   labels:
     app: {{ $fullname }}
+  {{- if .Values.metrics.reloader.enabled }}
+  annotations:
+    reloader.stakater.com/search: "true"
+  {{- end }}
 
 spec:
   selector:
@@ -23,7 +27,7 @@ spec:
       labels:
         app: {{ $fullname }}
       annotations:
-        kubectl.kubernetes.io/default-container: {{ $fullname }}
+        kubectl.kubernetes.io/default-container: metrics
         {{- if .Values.redisPassword }}
         checksum/secret: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
         {{- end }}

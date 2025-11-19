@@ -1,0 +1,44 @@
+kubeStateMetrics:
+  kubeStateMetrics:
+    args:
+      - --port=30090
+      - --telemetry-port=30091
+      - --custom-resource-state-config-file=/etc/config/custom-resource-state.yaml
+      - --custom-resource-state-only=true
+    customResources: ""
+    containerSecurityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+        - ALL
+      readOnlyRootFilesystem: true
+      runAsNonRoot: true
+      runAsUser: 65534
+      seccompProfile:
+        type: RuntimeDefault
+    env:
+      enableWebhooks: "false"
+      kubernetesServiceHost: apiserver-url
+    image:
+      repository: registry.k8s.io/kube-state-metrics/kube-state-metrics
+      tag: v2.15.0
+  nodeSelector:
+    kubernetes.io/os: linux
+  ports:
+  - name: metrics
+    port: 30090
+    targetPort: metrics
+  - name: telemetry
+    port: 30091
+    targetPort: telemetry
+  replicas: 1
+  serviceAccount:
+    annotations: {}
+  strategy:
+    type: Recreate
+  type: ClusterIP
+kubernetesClusterDomain: cluster.local
+config:
+  customResourceStateYaml: ""
+fullnameOverride: kube-state-metrics-remote
+prometheusName: "sci"

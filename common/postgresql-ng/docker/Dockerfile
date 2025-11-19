@@ -3,8 +3,7 @@ FROM debian:stable-slim
 # locale installation based on https://github.com/docker-library/postgres/blob/master/16/bookworm/Dockerfile#L49-L59 licensed under MIT
 
 ARG DEBIAN_FRONTEND=noninteractive
-RUN apt-get update \
-  && apt-get upgrade -y \
+RUN apt-get --update upgrade -y \
   # install locales which are excluded on debian slim variant by default \
   && grep -q '/usr/share/locale' /etc/dpkg/dpkg.cfg.d/docker \
   && sed -ri '/\/usr\/share\/locale/d' /etc/dpkg/dpkg.cfg.d/docker \
@@ -29,13 +28,14 @@ RUN apt-get update \
     postgresql-15 \
     postgresql-16 \
     postgresql-17 \
-  && rm -rf /var/lib/apt/lists/* \
+    postgresql-18 \
+  && apt-get dist-clean \
   && for conf in /usr/share/postgresql/*/postgresql.conf.sample; do \
     pg_conftool "$conf" set listen_addresses '*' ; \
   done \
   # generate locale and update it in case glibc was updated \
   && localedef -i en_US -c -f UTF-8 -A /usr/share/locale/locale.alias en_US.UTF-8 \
-  && mkdir -p /sql-on-create.d /sql-on-startup.d /var/lib/postgresql
+  && mkdir -p /sql-on-startup.d /var/lib/postgresql
 
 COPY ./pg_hba.conf /usr/local/share/
 COPY ./entrypoint.sh /usr/local/bin/

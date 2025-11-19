@@ -53,7 +53,8 @@ postgresql:
   enabled: false
 
 proxysql:
-  mode: "" # Cannot use unix_socket, as migration-job is a helm-hook which runs prior to the configmap creation/update
+  mode: ""  # Cannot use unix_socket, as migration-job is a helm-hook which runs prior to the configmap creation/update
+  native_sidecar: true
 
 mariadb:
   enabled: true
@@ -241,16 +242,6 @@ mysql_metrics:
       values:
       - "expiration_date"
 
-rabbitmq:
-  name: barbican
-  persistence:
-    enabled: false
-  alerts:
-    support_group: identity
-  metrics:
-    enabled: true
-    sidecar:
-      enabled: false
 memcached:
   alerts:
     support_group: identity
@@ -299,8 +290,12 @@ tlsacme: true
 # sapcc/openstack-rate-limit-middleware
 sapcc_rate_limit:
   enabled: true
+
+api-ratelimit-redis:
   persistence:
     enabled: false
+  alerts:
+    support_group: identity
 
 # sapcc/openstack-watcher-middleware
 watcher:
@@ -329,6 +324,9 @@ hsm:
     enabled: false
   ha:
     enabled: false
+  utimaco_hsm:
+    enabled: false
+    image: utimaco5
   resources:
     enabled: true
     limits:

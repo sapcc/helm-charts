@@ -30,7 +30,10 @@ spec:
             - name: NAMESPACE
               value: {{ .Release.Namespace }}
             - name: DEPENDENCY_SERVICE
-              value: "{{ .Release.Name }}-mariadb"
+              value: "{{ include "neutron.db_service" . }}"
+        {{- if .Values.proxysql.native_sidecar }}
+        {{- include "utils.proxysql.container" . | indent 8 }}
+        {{- end }}
       containers:
         - name: neutron-migration
           image: {{.Values.global.registry}}/loci-neutron:{{default .Values.imageVersion | required "Please set neutron.imageVersion or similar"}}
@@ -55,7 +58,9 @@ spec:
               readOnly: true
             {{- include "utils.proxysql.volume_mount" . | indent 12 }}
             {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
+        {{- if not .Values.proxysql.native_sidecar }}
         {{- include "utils.proxysql.container" . | indent 8 }}
+        {{- end }}
       volumes:
         - name: etc-neutron
           projected:

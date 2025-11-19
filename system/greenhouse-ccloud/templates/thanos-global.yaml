@@ -15,6 +15,16 @@ kind: PluginPreset
 metadata:
   name: thanos-global
   namespace: {{ .Chart.Name }}
+  labels:
+    greenhouse.sap/owned-by: observability
+{{- if .Values.global.fluxEnabled }}
+    greenhouse.sap/deployment-tool: "flux"
+  annotations:
+    "greenhouse.sap/propagate-labels": "greenhouse.sap/owned-by,greenhouse.sap/deployment-tool"
+{{- else }}
+  annotations:
+    "greenhouse.sap/propagate-labels": "greenhouse.sap/owned-by"
+{{- end }}
 spec:
   clusterSelector:
     matchExpressions:
@@ -33,7 +43,6 @@ spec:
   {{ include "thanos.storeEndpoints" $ | nindent 4 }}
 {{- end }}  
   plugin:
-    disabled: false
     displayName: Thanos global
     pluginDefinition: thanos
     releaseNamespace: kube-monitoring
@@ -60,8 +69,10 @@ spec:
     - name: thanos.query.plutonoDatasource.selector
       value:
         plutono-global: "true"
-    - name: thanos.query.standalone
-      value: true
+    - name: thanos.store.enabled
+      value: false
+    - name: thanos.compactor.enabled
+      value: false
     - name: thanos.query.tls.data.caCert
       valueFrom:
         secret:
@@ -79,4 +90,8 @@ spec:
           name: thanos-{{ .Chart.Name }}-tls
     - name: thanos.ruler.alertmanagers.authentication.enabled
       value: false
+    - name: thanos.serviceMonitor.alertLabels
+      value: |
+        support_group: observability
+        service: metrics
 {{- end }}

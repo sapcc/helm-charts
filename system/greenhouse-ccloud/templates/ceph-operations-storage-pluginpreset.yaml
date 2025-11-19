@@ -4,20 +4,33 @@ kind: PluginPreset
 metadata:
   name: ceph-operations
   namespace: {{ .Release.Namespace }}
+  labels:
+    greenhouse.sap/owned-by: storage
+{{- if .Values.global.fluxEnabled }}
+    greenhouse.sap/deployment-tool: "flux"
+  annotations:
+    "greenhouse.sap/propagate-labels": "greenhouse.sap/owned-by,greenhouse.sap/deployment-tool"
+{{- else }}
+  annotations:
+    "greenhouse.sap/propagate-labels": "greenhouse.sap/owned-by"
+{{- end }}
 spec:
+{{- with .Values.cephOperations.clusterOptionOverrides }}
+  clusterOptionOverrides:
+    {{ toYaml . | nindent 4 }}
+{{- end }}
   clusterSelector:
     matchLabels:
-      greenhouse.sap/cluster-presets-enabled: "true"
+      greenhouse.sap/pluginpreset: "true"
       cluster-type: "storage"
   plugin:
-    disabled: false
     pluginDefinition: ceph-operations
     releaseNamespace: rook-ceph
     optionValues:
       - name: prometheusRules.ruleSelectors
         value:
           - name: plugin
-            value: 'kube-monitoring-{{ "{{ .Values.global.greenhouse.clusterName }}" }}'
+            value: 'kube-monitoring'
       - name: prometheusRules.additionalRuleLabels
         value:
           service: ceph

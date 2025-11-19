@@ -1,0 +1,18 @@
+groups:
+- name: manila-ec2.alerts
+  rules:
+  - alert: SnapmirrorSetupBroken
+    expr: >
+            count by (volume) (label_replace(
+            netapp_snapmirror_endpoint_labels{destination_vserver!~"ma_[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"},
+            "volume", "$1", "source_volume", "(.*)")) unless count(netapp_snapmirror_capacity_total_bytes:single) by (volume)  > 0
+    for: 5m
+    labels:
+      service: manila
+      context: netapp-snapmirror-broken
+      severity: info
+      tier: os
+      support_group: compute-storage-api
+    annotations:
+      description: Snapmirror setup is inconsistent, please have a look. Having snapmirror endpoint, but not a source.
+      summary: Snapmirror setup is inconsistent

@@ -23,12 +23,15 @@ postgresql:
     enabled: false
 
 alerts:
-  support_group: network-api
+  enabled: true
+  support_group: containers
+  tier: os
 
 mariadb:
   priority_class: ""
   alerts:
-    support_group: network-api
+    enabled: true
+    support_group: containers
   enabled: false
   name: andromeda
   initdb_configmap: false
@@ -57,9 +60,22 @@ mariadb:
       - "ALL PRIVILEGES on andromeda.*"
 
 mysql_metrics:
-  enabled: false
+  enabled: true
   db_name: andromeda
   db_user: andromeda
+  customMetrics:
+    - name: andromeda_domains_count_gauge
+      help: Total number of domains
+      labels:
+        - "provider"
+      query: |
+        SELECT
+          COUNT(*) AS count_gauge,
+          provider
+        FROM domain
+        GROUP BY provider
+      values:
+        - "count_gauge"
 
 database_override:
   enabled: false
@@ -85,6 +101,9 @@ audit:
   host: hermes-rabbitmq-notifications.hermes
   port: 5672
   queue_name: notifications.info
+
+f5:
+  enabled: false
 
 debug: false
 seed: false

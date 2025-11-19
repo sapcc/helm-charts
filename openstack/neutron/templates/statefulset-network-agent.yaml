@@ -24,20 +24,11 @@ spec:
       name: neutron-network-agent-{{ $az }}
   serviceName: neutron-network-agent
   podManagementPolicy: "Parallel"
-{{- if $.Values.pod.replicas.network_agent }}
   replicas: {{ $.Values.pod.replicas.network_agent }}
-{{- else if and (ge $az_count 2) (eq $az "a") }}
-  replicas: 5
-{{- else if and (ge $az_count 2) (eq $az "b") }}
-  replicas: 5
-{{- else if eq $az_count 1 }}
-  replicas: 10
-{{- else }}
-  replicas: 3
-{{- end }}
   template:
     metadata:
       annotations:
+        kubectl.kubernetes.io/default-container: neutron-dhcp-agent
         k8s.v1.cni.cncf.io/networks: '[{ "name": "cbr1-bridge", "interface":"{{$.Values.cp_network_interface}}" }]'
         configmap-etc-hash: {{ include (print $.Template.BasePath "/configmap-etc.yaml") $ | sha256sum }}
         {{- include "utils.linkerd.pod_and_service_annotation" $ | indent 8 }}

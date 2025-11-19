@@ -1,7 +1,7 @@
 {{- $tld     := $.Values.global.tld              | required "missing value for .Values.global.tld"              }}
 {{- $region  := $.Values.global.region           | required "missing value for .Values.global.region"           }}
+{{- $dbRegion  := $.Values.global.db_region      | required "missing value for .Values.global.db_region"        }}
 {{- $cregion := $.Values.campfire.central_region | required "missing value for .Values.campfire.central_region" }}
-{{- $is_global := eq .Release.Namespace "limes-global" }}
 
 kind: Deployment
 apiVersion: apps/v1
@@ -45,9 +45,9 @@ spec:
               value: "monsoon3,hcp03"
 
             # credentials for authenticating incoming requests and talking to the regional masterdata API
-            {{- if $is_global }}
+            {{- if .Values.global.is_global_region }}
             - name: OS_AUTH_URL
-              value: "https://{{ contains "qa" $region | ternary "identity-3-qa" "identity-3" }}.global.{{ $tld }}/v3"
+              value: "https://{{ contains "qa" $dbRegion | ternary "identity-3-qa" "identity-3" }}.global.{{ $tld }}/v3"
             {{- else }}
             - name: OS_AUTH_URL
               value: "http://keystone.{{ $.Values.global.keystoneNamespace }}.svc.kubernetes.{{ $region }}.{{ $tld }}:5000/v3"
@@ -66,7 +66,7 @@ spec:
             - name: OS_PROJECT_NAME
               value: cloud_admin
             - name: OS_REGION_NAME
-              value: {{ quote ($is_global | ternary "global" $region) }}
+              value: {{ quote $region }}
 
             # credentials and configuration for sending mails using Cronus
             - name: CRONUS_AUTH_URL
@@ -74,8 +74,8 @@ spec:
             - name: CRONUS_USER_DOMAIN_NAME
               value: Default
             - name: CRONUS_USERNAME
-              {{- if $is_global }}
-              value: {{ printf "campfire-%s-global" $region | quote }}
+              {{- if .Values.global.is_global_region }}
+              value: {{ printf "campfire-%s-global" $dbRegion | quote }}
               {{- else }}
               value: {{ printf "campfire-%s" $region | quote }}
               {{- end }}

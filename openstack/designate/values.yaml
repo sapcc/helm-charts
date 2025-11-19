@@ -5,7 +5,6 @@
 #
 debug: "True"
 
-global_setup: false
 tempest_enabled: false
 nanny_enabled: false
 
@@ -29,8 +28,9 @@ global:
   designate_mdns_service_ip:
   designate_mdns_akamai_ip:
   designate_service_user: designate
+  is_global_region: false
   domain_seeds:
-    skip_hcm_domain: false
+    customer_domains: []
   linkerd_requested: false
 
 pod:
@@ -98,12 +98,13 @@ percona_cluster:
   db_name: designate
   db_user: designate
   alerts:
-    support_group: network-api
+    support_group: coredns
 
 proxysql:
   mode: host_alias
   connect_retries_delay: 1000
   max_connections_per_proc: 20
+  native_sidecar: true
 
 mariadb:
   enabled: true
@@ -112,7 +113,7 @@ mariadb:
   persistence_claim:
     name: db-designate-pvclaim
   alerts:
-    support_group: network-api
+    support_group: coredns
   backup:
     enabled: false
   ccroot_user:
@@ -142,7 +143,7 @@ pxc_db:
   name: designate
   initdb_job: true
   alerts:
-    support_group: network-api
+    support_group: coredns
   ccroot_user:
     enabled: true
   databases:
@@ -317,7 +318,7 @@ audit:
 memcached:
   server_ips_ports: []
   alerts:
-    support_group: network-api
+    support_group: coredns
 
 rabbitmq:
   enabled: true
@@ -334,7 +335,7 @@ rabbitmq:
       user: admin
       password: secret
   alerts:
-    support_group: network-api
+    support_group: coredns
   metrics:
     enabled: true
     sidecar:
@@ -401,7 +402,7 @@ alerts:
   prometheus:
     openstack: openstack
     kubernetes: kubernetes
-  support_group: network-api
+  support_group: coredns
 
 osprofiler:
   enabled: false
@@ -412,11 +413,14 @@ coordination:
     enabled: false
 
 owner-info:
-  support-group: network-api
+  support-group: coredns
   service: designate
   maintainers:
-    - David Hoeller
-    - Benjamin Tinney
+    - Matthias Braun
+    - Soenke Lange
+    - Florian Streibelt
+    - Vassil Dimitrov
+    - Torsten Sachse
   helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/openstack/designate
 
 utils:
@@ -437,10 +441,11 @@ api-ratelimit-redis:
   persistence:
     enabled: false
   alerts:
-    support_group: network-api
+    support_group: coredns
 
 rate_limit:
-  enabled: false
+  enabled: true
+  backend_secret_file: /etc/designate/ratelimit-backend-secret.conf
   rate_limit_by: target_project_id
   max_sleep_time_seconds: 0
   log_sleep_time_seconds: 10
@@ -462,27 +467,31 @@ rate_limit:
     default:
       zones:
         - action: read/list
+          limit: 200r/m
+        - action: create
           limit: 100r/m
       zones/zone:
         - action: read/list
+          limit: 200r/m
+        - action: write
           limit: 100r/m
-      zones/zone/recordsets:
+      zones/zone/*:
         - action: read/list
           limit: 100r/m
-      zones/tasks/imports/import:
+        - action: create
+          limit: 100r/m
+        - action: write
+          limit: 100r/m
+      recordsets:
         - action: read/list
           limit: 100r/m
-      zones/tasks/imports:
-        - action: read/list
-          limit: 100r/m
-      zones/tasks/exports/export:
-        - action: read/list
-          limit: 100r/m
-      zones/tasks/exports:
+      reverse/floatingips:
         - action: read/list
           limit: 100r/m
       reverse/floatingips/*:
         - action: read/list
+          limit: 100r/m
+        - action: write
           limit: 100r/m
       tsigkeys:
         - action: read/list
@@ -496,3 +505,16 @@ rate_limit:
       pools:
         - action: read/list
           limit: 100r/m
+      limits:
+        - action: read/list
+          limit: 100r/m
+      quotas:
+        - action: read/list
+          limit: 100r/m
+      service_statuses/*:
+        - action: read/list
+          limit: 100r/m
+      service_statuses:
+        - action: read/list
+          limit: 100r/m
+

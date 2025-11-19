@@ -4,6 +4,10 @@ metadata:
   name: {{ template "fullname" . }}
   labels:
     {{- include "memcached.labels" (list $ "version" "memcached" "deployment" "kvstore") | indent 4 }}
+{{- if .Values.vpa.set_main_container }}
+  annotations:
+    vpa-butler.cloud.sap/main-container: memcached
+{{- end }}
 spec:
   replicas: {{ .Values.replicas }}
   revisionHistoryLimit: {{ .Values.upgrades.revisionHistory }}
@@ -39,6 +43,9 @@ spec:
 {{- include "memcached_maintenance_affinity" . }}
 {{- include "memcached_node_reinstall_affinity" . }}
 {{- end }}
+      {{- if and .Values.auth.username .Values.auth.password }}
+      hostname: {{ template "fullname" . }}
+      {{- end }}
       containers:
       - name: memcached
         image: "{{include "dockerHubMirror" .}}/{{ .Values.image }}:{{.Values.imageTag }}"

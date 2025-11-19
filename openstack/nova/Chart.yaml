@@ -1,45 +1,66 @@
+---
 apiVersion: v2
 description: A Helm chart for Kubernetes
 name: nova
 icon: https://www.openstack.org/themes/openstack/images/project-mascots/Nova/OpenStack_Project_Nova_mascot.png
-version: 0.4.1
-appVersion: "rocky"
+version: 0.6.1
+appVersion: "bobcat"
 dependencies:
   - name: mariadb
     condition: mariadb.enabled
     repository: oci://keppel.eu-de-1.cloud.sap/ccloud-helm
-    version: 0.18.2
+    version: 0.27.2
+  - condition: pxc_db.enabled
+    name: pxc-db
+    alias: pxc_db
+    repository: oci://keppel.eu-de-1.cloud.sap/ccloud-helm
+    version: 0.5.0
   - name: mariadb
     alias: mariadb_api
     condition: mariadb_api.enabled
     repository: oci://keppel.eu-de-1.cloud.sap/ccloud-helm
-    version: 0.18.2
+    version: 0.27.2
+  - condition: pxc_db_api.enabled
+    name: pxc-db
+    alias: pxc_db_api
+    repository: oci://keppel.eu-de-1.cloud.sap/ccloud-helm
+    version: 0.5.0
   - name: mysql_metrics
     condition: mariadb.enabled
     repository: oci://keppel.eu-de-1.cloud.sap/ccloud-helm
-    version: 0.4.2
+    version: 0.5.1
   - name: rabbitmq
     repository: oci://keppel.eu-de-1.cloud.sap/ccloud-helm
-    version: 0.17.1
+    version: 0.19.1
   - name: memcached
     repository: oci://keppel.eu-de-1.cloud.sap/ccloud-helm
-    version: 0.6.8
+    version: 0.6.10
   - name: utils
     repository: oci://keppel.eu-de-1.cloud.sap/ccloud-helm
-    version: 0.24.1
+    version: 0.29.0
   - name: mariadb
     alias: mariadb_cell2
     condition: mariadb_cell2.enabled
     repository: oci://keppel.eu-de-1.cloud.sap/ccloud-helm
-    version: 0.18.2
+    version: 0.27.2
+  - condition: pxc_db_cell2.enabled
+    name: pxc-db
+    alias: pxc_db_cell2
+    repository: oci://keppel.eu-de-1.cloud.sap/ccloud-helm
+    version: 0.5.0
   - name: rabbitmq
     alias: rabbitmq_cell2
     condition: cell2.enabled
     repository: oci://keppel.eu-de-1.cloud.sap/ccloud-helm
-    version: 0.17.1
+    version: 0.19.1
   - name: owner-info
     repository: oci://keppel.eu-de-1.cloud.sap/ccloud-helm
     version: 1.0.0
   - name: linkerd-support
     repository: oci://keppel.eu-de-1.cloud.sap/ccloud-helm
     version: 1.1.0
+  - name: redis
+    alias: api-ratelimit-redis
+    repository: oci://keppel.eu-de-1.cloud.sap/ccloud-helm
+    version: 2.2.18
+    condition: rate_limit.enabled

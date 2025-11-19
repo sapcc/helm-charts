@@ -1,0 +1,89 @@
+# Check also iaas-templated-alerts.yaml if you dont find an alert.
+groups:
+- name: iaas.alerts
+  rules:
+  - alert: IaasHostLicenseKey
+    expr: vrops_hostsystem_license_key{license_key!~"TM67X.*"} + on (hostsystem) group_right(license_key) vrops_hostsystem_hostgroups{hostgroups=~".*iaas.*"} > 0
+    for: 30m
+    labels:
+      severity: warning
+      service: compute
+      support_group: iaas-support
+      context: "esxi host license key"
+      meta: "IaaS ESXi host {{ $labels.hostsystem }} in IaaS host group without valid license"
+    annotations:
+      description: "IaaS ESXi host {{ $labels.hostsystem }} in IaaS host group without valid license"
+      summary: "IaaS ESXi host {{ $labels.hostsystem }} in IaaS host group without valid license"
+
+  - alert: IaasClusterWithoutFailoverHost
+    expr: |
+      (count by (vccluster) (vrops_hostsystem_hostgroups{hostgroups=~".*iaas.*"}) > 0)
+      unless (count by (vccluster) (vrops_hostsystem_hostgroups{hostgroups=~".*iaas.*"}
+      and on(hostsystem) vrops_hostsystem_configuration_dasconfig_admissioncontrolpolicy_failoverhost{} == 1 ) > 0)
+    for: 15m
+    labels:
+      severity: critical
+      service: compute
+      support_group: iaas-support
+      context: "IaaS cluster HA policy"
+      meta: "IaaS cluster {{ $labels.vccluster }} has NO failover host configured"
+    annotations:
+      description: "IaaS cluster {{ $labels.vccluster }} has NO failover host configured"
+      summary: "IaaS cluster {{ $labels.vccluster }} has NO failover host configured"
+
+  - alert: NonIaasVmOnIaasHost
+    expr: |
+      count by (hostsystem) (
+        (
+          group by (project, hostsystem, virtualmachine)(vrops_virtualmachine_system_powered_on{}==1)
+          and on(project)
+          group by(project) (label_replace(limes_project_usage{domain!~"iaas-.*"}, "project", "$1", "project_id", "(.*)"))
+        )
+      )
+      and on(hostsystem) vrops_hostsystem_hostgroups{hostgroups=~".*iaas.*"}
+    for: 30m
+    labels:
+      severity: warning
+      service: compute
+      support_group: iaas-support
+      context: "non IaaS vm on IaaS cluster"
+      meta: "Non IaaS virtual machine(s) running on IaaS ESXi host {{ $labels.hostsystem }}"
+    annotations:
+      description: "Non IaaS virtual machine(s) running on IaaS ESXi host {{ $labels.hostsystem }}"
+      summary: "Non IaaS virtual machine(s) running on IaaS ESXi host {{ $labels.hostsystem }}"
+
+  - alert: IaasHostsAlmostOutOfMemory
+    expr: |
+      count by (vccluster) (
+        (vrops_hostsystem_memory_usage_percentage > 75)
+        and on(hostsystem)
+        vrops_hostsystem_hostgroups{hostgroups=~".*iaas.*"}
+        unless on(hostsystem)
+        vrops_hostsystem_configuration_dasconfig_admissioncontrolpolicy_failoverhost{} == 1
+      )
+      == on(vccluster)
+      count by (vccluster) (
+        vrops_hostsystem_memory_usage_percentage
+        and on(hostsystem)
+        vrops_hostsystem_hostgroups{hostgroups=~".*iaas.*"}
+        unless on(hostsystem)
+        vrops_hostsystem_configuration_dasconfig_admissioncontrolpolicy_failoverhost{} == 1
+      )
+      and on(vccluster)
+      count by (vccluster) (
+        vrops_hostsystem_memory_usage_percentage
+        and on(hostsystem)
+        vrops_hostsystem_hostgroups{hostgroups=~".*iaas.*"}
+        unless on(hostsystem)
+        vrops_hostsystem_configuration_dasconfig_admissioncontrolpolicy_failoverhost{} == 1
+      ) > 0
+    for: 60m
+    labels:
+      severity: warning
+      service: compute
+      support_group: iaas-support
+      context: "IaaS hosts in cluster are almost out of memory"
+      meta: "All IaaS hosts in cluster {{ $labels.vccluster }} are above 75% memory"
+    annotations:
+      description: "All IaaS hosts in cluster {{ $labels.vccluster }} are above 75% memory"
+      summary: "All IaaS hosts in cluster {{ $labels.vccluster }} are above 75% memory"

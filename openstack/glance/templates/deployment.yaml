@@ -10,6 +10,9 @@ metadata:
     heritage: "{{ .Release.Service }}"
     type: api
     component: glance
+  annotations:
+    secret.reloader.stakater.com/reload: "{{ .Release.Name }}-secrets"
+    deployment.reloader.stakater.com/pause-period: "60s"
 spec:
   replicas: {{ .Values.replicas }}
   revisionHistoryLimit: {{ .Values.upgrades.revisionHistory }}
@@ -45,6 +48,9 @@ spec:
       {{- tuple . (dict "name" "glance") | include "utils.topology.constraints" | indent 6 }}
       initContainers:
       {{- tuple . (dict "jobs" (tuple . "migration-job" | include "job_name") "service" (include "glance.service_dependencies" .)) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
+      {{- if .Values.proxysql.native_sidecar }}
+      {{- tuple . (add .Values.rpc_workers .Values.workers) | include "utils.proxysql.container" | indent 6 }}
+      {{- end }}
       {{- if .Values.file.persistence.enabled }}
       - name: permissions
         securityContext:
@@ -134,6 +140,16 @@ spec:
           subPath: swift-store.conf
           readOnly: true
         {{- end }}
+        {{- if .Values.ceph.enabled }}
+        - name: glance-etc
+          mountPath: /etc/ceph/ceph.conf
+          subPath: ceph.conf
+          readOnly: true
+        - name: glance-etc
+          mountPath: /etc/ceph/ceph.client.glance.keyring
+          subPath: ceph.client.glance.keyring
+          readOnly: true
+        {{- end }}
         - name: glance-etc
           mountPath: /etc/glance/policy.yaml
           subPath: policy.yaml
@@ -171,7 +187,9 @@ spec:
         {{- end }}
         {{- include "utils.proxysql.volume_mount" . | indent 8 }}
         {{- include "utils.trust_bundle.volume_mount" . | indent 8 }}
+      {{- if not .Values.proxysql.native_sidecar }}
       {{- tuple . (add .Values.rpc_workers .Values.workers) | include "utils.proxysql.container" | indent 6 }}
+      {{- end }}
       {{- if .Values.imageVersionGlanceRegistry }}
       - name: registry
         image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/ubuntu-source-glance-registry:{{ required "Please set glance.imageVersion or similar" .Values.imageVersion }}

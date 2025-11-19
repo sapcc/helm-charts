@@ -1,0 +1,53 @@
+# The runtime values always need to be enabled to manage DNS records in designate + backups in swift.
+{{ if .Values.extensions.openstack.enabled -}}
+apiVersion: operator.gardener.cloud/v1alpha1
+kind: Extension
+metadata:
+  name: provider-openstack
+spec:
+  resources:
+  - kind: BackupBucket
+    type: openstack
+  - kind: BackupEntry
+    type: openstack
+  - kind: Bastion
+    type: openstack
+  - kind: ControlPlane
+    type: openstack
+  - kind: DNSRecord
+    type: openstack-designate
+  - kind: Infrastructure
+    type: openstack
+  - kind: Worker
+    type: openstack
+  deployment:
+    # admission:
+    extension:
+      values:
+        replicaCount: 1
+        image:
+          tag: v1.47.0
+        config:
+          etcd:
+            storage:
+              provisioner: {{ .Values.extensions.storage.provisioner | quote }}
+              {{- if .Values.extensions.storage.parameters }}
+              parameters: {{ .Values.extensions.storage.parameters | toYaml | nindent 16 }}
+              {{- end }}
+      runtimeClusterValues:
+        replicaCount: 1
+        image:
+          tag: v1.47.0
+        config:
+          etcd:
+            storage:
+              provisioner: {{ .Values.extensions.storage.provisioner | quote }}
+              {{- if .Values.extensions.storage.parameters }}
+              parameters: {{ .Values.extensions.storage.parameters | toYaml | nindent 16 }}
+              {{- end }}
+      helm:
+        ociRepository:
+          tag: 1.47.0
+          repository: keppel.eu-de-1.cloud.sap/ccloud-helm/gardener-extension-provider-openstack
+      policy: OnDemand
+{{- end }}

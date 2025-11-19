@@ -1,0 +1,19 @@
+apiVersion: infrastructure.cluster.x-k8s.io/v1alpha1
+kind: IroncoreMetalMachineTemplate
+metadata:
+  name: worker-rt-{{ .Values.global.region }}
+spec:
+  template:
+    spec:
+      serverSelector:
+        matchLabels:
+{{ toYaml .Values.worker.machineTemplate.matchLabels | indent 10 }}
+      image: {{ .Values.machineTemplate.image }}
+      metadata:
+{{ toYaml .Values.machineTemplate.metadata | indent 8 }}
+      ipamConfig:
+      - metadataKey: bond
+        ipamRef:
+          apiGroup: ipam.cluster.x-k8s.io
+          kind: GlobalInClusterIPPool
+          name: globalinclusterippool-rt-{{ .Values.global.region }}

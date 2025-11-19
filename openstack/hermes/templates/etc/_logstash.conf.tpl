@@ -28,6 +28,12 @@ filter {
     drop { }
   }
 
+  # Drop liveliness check events that serve no value
+  # Everything in audit-default adds no value, internal communication
+  if [initiator][domain_id] == "default" {
+    drop { }
+  }
+
   # unwrap messagingv2 envelope
   if [oslo.message] {
     json {
@@ -62,7 +68,7 @@ filter {
        # use proper CADF taxonomy for actions
        "action", "created\.", "create/",
        "action", "deleted\.", "delete/",
-       "action", "updated\.", "create/",
+       "action", "updated\.", "update/",
        "action", "disabled\.", "disable/",
        "action", "\.", "/",
        # fix the eventTime format to be ISO8601

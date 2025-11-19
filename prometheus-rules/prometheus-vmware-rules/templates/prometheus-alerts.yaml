@@ -6,6 +6,7 @@
     {{- $filteredBedrockAlerts = merge $filteredBedrockAlerts (dict $key $value) }}
   {{- end }}
 {{- end }}
+
 {{- range $target := .Values.global.targets }}
 {{- range $path, $bytes := $.Files.Glob "alerts/*.alerts" }}
 ---
@@ -18,25 +19,40 @@ metadata:
     prometheus: {{ include "prometheusVMware.name" (list $target $root) }}
 
 spec:
-{{- $yaml := $bytes | toString | fromYaml }}
-{{- /* 
-Iterate over group elements
-*/}}
-{{- range $group := $yaml.groups }} 
-{{- /*
-Get all rules in group
-*/}}
-{{- range $rule := $group.rules }}
-{{- if has $rule.alert (keys $filteredBedrockAlerts) }}
-{{- /*
-Replace expression for alerts matching alert name in $bedrockAlerts
-*/}}
-      {{- $mappingKey := (printf "%s" (get $bedrockAlerts $rule.alert)) }}
-      {{- $updatedExpression := (include "bedrockConfirm.expr" (list $rule.expr $mappingKey)) }}
-      {{- $_ := set $rule "expr" $updatedExpression }}
-{{- end }} 
-{{- end }}
-{{- end }}
-  groups: {{- $yaml.groups | toYaml | nindent 2 }}
+  {{- $yaml := $bytes | toString | fromYaml }}
+  {{- $finalGroups := list }}
+
+  {{- range $group := $yaml.groups }}
+    {{- $allRulesForGroup := list }}
+    {{- range $rule := $group.rules }}
+      {{- /* append the original rule to the slice of rules */}}
+      {{- $allRulesForGroup = append $allRulesForGroup $rule }}
+
+      {{- /* check, if it is a bedrock related alert */}}
+      {{- if has $rule.alert (keys $filteredBedrockAlerts) }}
+        {{- /* create a copy from the alert */}}
+        {{- $copiedAlert := deepCopy $rule }}
+
+        {{- /* add a prefix to the alert name and override/set the needed labels  */}}
+        {{- $_ := set $copiedAlert "alert" (printf "Iaas%s" $rule.alert) }}
+        {{- $_ := set $copiedAlert.labels "support_group" "iaas_support" }}
+        {{- $_ := set $copiedAlert.labels "bedrock" "true" }}
+
+        {{- /* Modify the expression to only fire, if the host is in the iaas hostgroup as well. */}}
+        {{- $newExpr := printf "(%s) and on(hostsystem) vrops_hostsystem_hostgroups{hostgroups=~'.*iaas.*'}" $rule.expr }}
+        {{- $_ := set $copiedAlert "expr" $newExpr }}
+
+        {{- /* add the copied and modified rule to the group of rules */}}
+        {{- $allRulesForGroup = append $allRulesForGroup $copiedAlert }}
+      {{- end }}
+    {{- end }}
+
+    {{- $newGroup := deepCopy $group }}
+    {{- $_ := set $newGroup "rules" $allRulesForGroup }}
+    {{- $finalGroups = append $finalGroups $newGroup }}
+  {{- end }}
+
+  {{- /* write all rules */}}
+  groups: {{- toYaml $finalGroups | nindent 4 }}
 {{- end }}
 {{- end }}

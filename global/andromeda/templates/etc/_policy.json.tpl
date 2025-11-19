@@ -1,5 +1,5 @@
 {
-  "cloud_admin": "(project_domain_name:ccadmin and project_name:cloud_admin) or (role:admin and (is_admin_project:True or domain_id:default))",
+  "cloud_admin": "(project_domain_name:ccadmin and project_name:cloud_admin) or user_domain_id:default",
   "project_scope": "project_id:%(project_id)s",
   "public_scope": "'public':%(scope)s",
   "shared_scope": "'shared':%(scope)s",
@@ -49,6 +49,7 @@
 
   "andromeda:service:get_all": "rule:cloud_admin",
   "andromeda:sync:post": "rule:cloud_admin",
+  "andromeda:cidr-blocks:get": "rule:context_is_viewer",
 
   "andromeda:quota:get_all": "rule:context_is_viewer",
   "andromeda:quota:get_all-global": "rule:cloud_admin",

@@ -4,13 +4,15 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: metis
-  namespace: {{ .Values.namespace }}
+  namespace: {{ .Release.Namespace }}
   labels:
     app.kubernetes.io/name: metis
     helm.sh/chart: {{ include "metis.chart" $ }}
     app.kubernetes.io/instance: metis-{{ .Release.Name }}
     app.kubernetes.io/managed-by: {{ .Release.Service }}
     alert-service: "metis"
+  annotations:
+    secret.reloader.stakater.com/reload: "metis-secrets"
 spec:
   replicas: 1
   selector:
@@ -28,7 +30,6 @@ spec:
         checksum/config: {{ include ( print $.Template.BasePath "/metis-etc-configmap.yaml" ) . | sha256sum }}
         checksum/secret: {{ include ( print $.Template.BasePath "/metis-secrets.yaml" ) . | sha256sum }}
         kubectl.kubernetes.io/default-container: "metis"
-        secret.reloader.stakater.com/reload: "metis-secrets"
       {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
         linkerd.io/inject: enabled
       {{- end }}

@@ -30,6 +30,9 @@ cephConfig:
     ms_mon_cluster_mode: "secure"
     ms_mon_client_mode: "secure"
     ms_mon_service_mode: "secure"
+  osd:
+    osd_scrub_auto_repair: "true"
+    osd_scrub_auto_repair_num_errors: "5"
 
 clusterName: ceph-cluster
 
@@ -132,6 +135,8 @@ objectstore:
     port: 443
     externalIPs:
       - 10.0.0.1
+    public:
+      enabled: false
   keystone:
     enabled: true
     global_config: true
@@ -195,7 +200,7 @@ objectstore:
       pullPolicy: "Always"
     rgwMetrics:
       enabled: true
-      interval: "10"
+      interval: "60"
       user:
         name: prysm-user
         # name of rgw instance with admin-ops api enabled
@@ -228,7 +233,8 @@ objectstore:
         enabled: false
         configMapName: "prysm-sidecar-config"
         config:
-          LOG_TO_STDOUT: "true"
+          LOG_TO_STDOUT: "false"
+          LOG_LEVEL: "warn"
           LOG_RETENTION_DAYS: "1"
           MAX_LOG_FILE_SIZE: "10"
           PROMETHEUS_PORT: "9090"

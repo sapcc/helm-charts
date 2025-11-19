@@ -4,17 +4,29 @@ kind: PluginPreset
 metadata:
   name: kvm-monitoring
   namespace: {{ .Release.Namespace }}
+{{- if .Values.global.fluxEnabled }}
+  labels:
+    greenhouse.sap/deployment-tool: "flux"
+{{- end }}
 spec:
   clusterSelector:
     matchLabels:
-      greenhouse.sap/cluster-presets-enabled: "true"
+      greenhouse.sap/pluginpreset: "true"
       cluster-type: "compute"
   plugin:
-    disabled: false
     pluginDefinition: kvm-monitoring
-    releaseNamespace: kube-monitoring
+    releaseNamespace: kvm-monitoring
     optionValues:
       - name: serviceMonitorLabels
         value:
-          plugin: 'kube-monitoring-{{ "{{ .Values.global.greenhouse.clusterName }}" }}'
+          plugin: kube-monitoring
+      - name: prometheusRules.ruleSelectors
+        value:
+          - name: plugin
+            value: kube-monitoring
+      - name: prometheusRules.additionalRuleLabels
+        value:
+          service: kvm
+          # Uncoment this to fire alerts to the slack compute slack channels 
+          support_group: "kvm"
 {{- end -}}

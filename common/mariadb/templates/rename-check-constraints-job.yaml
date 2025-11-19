@@ -1,0 +1,68 @@
+{{- if and (hasKey $.Values.job "renameCheckConstraints") ($.Values.job.renameCheckConstraints.enabled) }}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: "{{ include "fullName" . }}-rename-check-constraints"
+  namespace: {{.Release.Namespace}}
+  labels:
+    {{- include "mariadb.labels" (list $ "version" "mariadb" "job" "rename-check-constraints") | indent 4 }}
+# hooks are not annotated as belonging to the Helm release, so we cannot rely on owner-info injection
+    {{- include "mariadb.ownerLabels" . | indent 4 }}
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+    "helm.sh/hook-weight": "3"
+spec:
+  backoffLimit: {{ $.Values.job.renameCheckConstraints.backoffLimit | default 1 | int }}
+  template:
+    metadata:
+      name: "{{ include "fullName" . }}-rename-check-constraints"
+      labels:
+{{- include "mariadb.labels" (list $ "version" "mariadb" "job" "rename-check-constraints") | indent 8 }}
+      annotations:
+        kubectl.kubernetes.io/default-container: rename-check-constraints
+{{- if $.Values.linkerd.mariadb.enabled }}
+        {{- include "mariadb.linkerdPodAnnotations" . | indent 8 }}
+{{- end }}
+    spec:
+      restartPolicy: {{ .Values.job.renameCheckConstraints.jobRestartPolicy | default "Never" | quote }}
+      priorityClassName: {{ .Values.job.renameCheckConstraints.priority_class | default "common-payload" | quote }}
+      containers:
+      - name: rename-check-constraints
+        image: {{ required ".Values.global.dockerHubMirrorAlternateRegion is missing" .Values.global.dockerHubMirrorAlternateRegion }}/{{ .Values.image }}
+        securityContext:
+          allowPrivilegeEscalation: false
+        command:
+          - "sh"
+          - "-c"
+          - "/usr/bin/mariadb-rename-check-constraints.sh"
+        env:
+          - name: MYSQL_ADDRESS
+            value: {{ include "fullName" . }}
+          - name: MYSQL_USERNAME
+            value: 'root'
+          - name: MYSQL_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: mariadb-{{.Values.name}}
+                key: root-password
+        resources:
+          requests:
+            cpu: {{ $.Values.job.renameCheckConstraints.resources.requests.cpu | default 0.5 }}
+            memory: {{ $.Values.job.renameCheckConstraints.resources.requests.memory | default "64Mi" | quote }}
+        volumeMounts:
+          - name: mariadb-rename-check-constraints
+            mountPath: /usr/bin/mariadb-rename-check-constraints.sh
+            subPath: mariadb-rename-check-constraints.sh
+            readOnly: true
+          - name: mariadb-rename-check-constraints
+            mountPath: /usr/bin/common-functions.sh
+            subPath: common-functions.sh
+            readOnly: true
+      volumes:
+        - name: mariadb-rename-check-constraints
+          configMap:
+            name: mariadb-{{ .Values.name }}-rename-check-constraints
+            defaultMode: 0755
+{{- end }}

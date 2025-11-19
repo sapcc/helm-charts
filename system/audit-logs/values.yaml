@@ -8,19 +8,54 @@ owner-info:
   helm-chart-url: "https://github.com/sapcc/helm-charts/tree/master/system/audit-logs"
 
 global:
-  linkerd_requested: false
   https_port: 443
   prometheus: kubernetes
+  logstash_external_http_user: DEFINED-IN-SECRETS
+  logstash_external_http_password: DEFINED-IN-SECRETS
+  linkerd_requested: false
   forwarding:
     audit:
-      host: Non
+      host: DEFINED-IN-SECRETS
+    audit_awx:
+      host: DEFINED-IN-SECRETS
+    audit_tools:
+      host: DEFINED-IN-SECRETS
+    audit_auditbeat:
+      host: DEFINED-IN-SECRETS
+  probe_targets:
+    - DEFINED-IN-SECRETS
+  region: DEFINED-IN-SECRETS
+  tld: DEFINED-IN-SECRETS
+  cluster: DEFINED-IN-SECRETS
+  clusterType: DEFINED-IN-SECRETS
+  vaultBaseURL: DEFINED-IN-SECRETS
+  alternateRegion: DEFINED-IN-SECRETS
+  registry: DEFINED-IN-SECRETS
+  registryAlternateRegion: DEFINED-IN-SECRETS
+  dockerHubMirror: DEFINED-IN-SECRETS
+  dockerHubMirrorAlternateRegion: DEFINED-IN-SECRETS
+  crNetappIoMirror: DEFINED-IN-SECRETS
+  crNetappIoMirrorAlternateRegion: DEFINED-IN-SECRETS
+  elasticCoMirror: DEFINED-IN-SECRETS
+  elasticCoMirrorAlternateRegion: DEFINED-IN-SECRETS
+  gcrIoMirror: DEFINED-IN-SECRETS
+  gcrIoMirrorAlternateRegion: DEFINED-IN-SECRETS
+  ghcrIoMirror: DEFINED-IN-SECRETS
+  ghcrIoMirrorAlternateRegion: DEFINED-IN-SECRETS
+  registryK8sIoMirror: DEFINED-IN-SECRETS
+  registryK8sIoMirrorAlternateRegion: DEFINED-IN-SECRETS
+  quayIoMirror: DEFINED-IN-SECRETS
+  quayIoMirrorAlternateRegion: DEFINED-IN-SECRETS
+  zalandoMirror: DEFINED-IN-SECRETS
+  zalandoMirrorAlternateRegion: DEFINED-IN-SECRETS
+  linkerd_enabled: DEFINED-IN-SECRETS
 
 linkerd-support:
   annotate_namespace: true
 
 logstash_audit_external:
   enabled: false
-  image_version: "20250206090207"
+  image_version: "20250724070755"
   replicas: 1
   input_netflow_port: 2055
   input_syslog_port: 514
@@ -28,7 +63,12 @@ logstash_audit_external:
   input_alertmanager_port: 1515
   input_deployments_port: 1516
   input_http_port: 443
+  input_mtls_port: 1081
   syslog:
+    enabled: false
+  http:
+    enabled: true
+  mtls:
     enabled: false
   tls:
     crt: DEFINED-IN-SECRETS
@@ -54,9 +94,6 @@ fluent_audit_container:
   resources:
     limits:
       memory: 500Mi
-    requests:
-      cpu: 100m
-      memory: 250Mi
   forwarding:
     keystone:
       host: none
@@ -64,7 +101,7 @@ fluent_audit_container:
     enabled: false
     # Keys = directory names in alerts/ and aggregations/
     prometheus:
-      - name: infra-collector
+      - name: kubernetes
         type: prometheus
       - name: metal
         type: thanos-ruler
@@ -76,9 +113,6 @@ fluent_audit_systemd:
   resources:
     limits:
       memory: 500Mi
-    requests:
-      cpu: 100m
-      memory: 250Mi
   metrics_port: 24231
   alerts:
     enabled: false

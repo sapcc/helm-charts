@@ -7,6 +7,9 @@ metadata:
     system: openstack
     type: api
     component: ironic
+  annotations:
+    secret.reloader.stakater.com/reload: "{{ .Release.Name }}-secrets"
+    deployment.reloader.stakater.com/pause-period: "60s"
 spec:
   replicas: {{ .Values.pod.replicas.api }}
   revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revisionHistory }}
@@ -39,6 +42,9 @@ spec:
       {{- include "utils.proxysql.pod_settings" . | indent 6 }}
       initContainers:
       {{- tuple . (dict "service" (include "ironic.service_dependencies" . | quote)) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
+      {{- if .Values.proxysql.native_sidecar }}
+      {{- tuple . .Values.api.api_workers | include "utils.proxysql.container" | indent 6 }}
+      {{- end }}
       containers:
       - name: ironic-api
         image: {{ .Values.global.registry }}/loci-ironic:{{ .Values.imageVersion }}
@@ -111,7 +117,9 @@ spec:
         {{- end }}
         {{- include "utils.proxysql.volume_mount" . | indent 8 }}
         {{- include "utils.trust_bundle.volume_mount" . | indent 8 }}
+      {{- if not .Values.proxysql.native_sidecar }}
       {{- tuple . .Values.api.api_workers | include "utils.proxysql.container" | indent 6 }}
+      {{- end }}
       - name: statsd
         image:  "{{.Values.global.dockerHubMirror}}/{{.Values.statsd.image.repository}}:{{.Values.statsd.image.tag}}"
         imagePullPolicy: IfNotPresent

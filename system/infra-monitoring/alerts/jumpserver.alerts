@@ -80,7 +80,7 @@ groups:
       description: '{{ $labels.server_name }} fs {{ $labels.mountpoint }} is 100% utilized for 10m.'
       summary: 'Check mentioned mount point for a possible cleanup'
   - alert: JumpserverDown
-    expr: up{job="jumpserver"} == 0
+    expr: up{job="jumpserver", instance=~".*:9100"} == 0
     for: 5m
     labels:
       context: availability
@@ -106,7 +106,7 @@ groups:
       description: '{{ $labels.server_name }} fs {{ $labels.mountpoint }} is 100% utilized'
       summary: 'Check what is causing this high CPU usage'
   - alert: JumpserverCriticalServiceFailed
-    expr: node_systemd_unit_state{job="jumpserver", state="active", name=~"filebeataudit.service|auditd.service|filebeat.service|sssd.service|mcafee.ma.service"} == 0
+    expr: node_systemd_unit_state{job="jumpserver", state="active", name=~"filebeataudit.service|auditd.service|otelcol-contrib.service|sssd.service|mcafee.ma.service"} == 0
     for: 10m
     labels:
       context: availability
@@ -122,7 +122,7 @@ groups:
     expr: |
       absent(node_systemd_unit_state{job="jumpserver", name="filebeataudit.service"}) == 1 or
       absent(node_systemd_unit_state{job="jumpserver", name="auditd.service"}) == 1 or
-      absent(node_systemd_unit_state{job="jumpserver", name="filebeat.service"}) == 1 or
+      absent(node_systemd_unit_state{job="jumpserver", name="otelcol-contrib.service"}) == 1 or
       absent(node_systemd_unit_state{job="jumpserver", name="sssd.service"}) == 1 or
       absent(node_systemd_unit_state{job="jumpserver", name="mcafee.ma.service"}) == 1
     for: 10m

@@ -1,3 +1,7 @@
+{{- $cdomains := .Values.global.domain_seeds.customer_domains | required "missing value for .Values.global.domain_seeds.customer_domains" -}}
+{{- $domains  := concat (list "Default" "ccadmin") $cdomains -}}
+{{- $cdomainsWithoutSupportProjects := .Values.global.domain_seeds.customer_domains_without_support_projects | required "missing value for .Values.global.domain_seeds.customer_domains_without_support_projects" -}}
+
 {{- if .Release.IsUpgrade }}
 {{- if .Capabilities.APIVersions.Has "openstack.stable.sap.cc/v1"}}
 apiVersion: "openstack.stable.sap.cc/v1"
@@ -12,22 +16,11 @@ metadata:
     heritage: "{{ .Release.Service }}"
 spec:
   requires:
-  - monsoon3/domain-default-seed
-  - monsoon3/domain-ccadmin-seed
-  - monsoon3/domain-monsoon3-seed
-  - monsoon3/domain-bs-seed
-  - monsoon3/domain-btp-fp-seed
-  - monsoon3/domain-cis-seed
-  - monsoon3/domain-cp-seed
-  - monsoon3/domain-fsn-seed
-  - monsoon3/domain-hda-seed
-  - monsoon3/domain-hcm-seed
-  - monsoon3/domain-hcp03-seed
-  - monsoon3/domain-hec-seed
-  - monsoon3/domain-kyma-seed
-  - monsoon3/domain-neo-seed
-  - monsoon3/domain-s4-seed
-  - monsoon3/domain-wbs-seed
+  {{- range $domains}}
+  {{- if not (hasPrefix "iaas-" .)}}
+  - monsoon3/domain-{{replace "_" "-" . | lower}}-seed
+  {{- end }}
+  {{- end }}
   - swift/swift-seed
 
   services:
@@ -65,6 +58,10 @@ spec:
   - name: cloud_sharedfilesystem_viewer
   - name: sharedfilesystem_admin
   - name: sharedfilesystem_viewer
+
+  # default gets special handling
+  # ccadmin gets additional role assignments for projects and some group assignments
+  # iaas- is excluded
 
   domains:
   - name: Default
@@ -109,588 +106,102 @@ spec:
         role: service
     {{- end }}
 
-  - name: ccadmin
+  {{- range $domains}}
+  {{- if and (not (hasPrefix "iaas-" .)) (ne . "Default")}}
+  - name: {{ . }}
+    {{- if eq . "ccadmin" }}
     projects:
     - name: cloud_admin
       role_assignments:
       - user: admin@Default
         role: cloud_sharedfilesystem_admin
-      {{- if .Values.seeds.backup_user.enabled }}
-      - user: {{ .Values.seeds.backup_user.username }}@Default
+      {{- if $.Values.seeds.backup_user.enabled }}
+      - user: {{ $.Values.seeds.backup_user.username }}@Default
         role: cloud_objectstore_admin
-      - user: {{ .Values.seeds.backup_user.username }}@Default
+      - user: {{ $.Values.seeds.backup_user.username }}@Default
         role: cloud_sharedfilesystem_admin
       {{- end }}
+    {{- end }}
     groups:
+    {{- if eq . "ccadmin" }}
     - name: CCADMIN_CLOUD_ADMINS
       role_assignments:
       - project: cloud_admin
         role: cloud_sharedfilesystem_admin
-    - name: CCADMIN_API_SUPPORT
-      role_assignments:
-      - project: cloud_admin
-        role: cloud_sharedfilesystem_viewer
-      - project: api_support
-        role: sharedfilesystem_admin
-      - project: api_tools
-        role: sharedfilesystem_admin
-      - domain: ccadmin
-        role: sharedfilesystem_admin
-        inherited: true
-    - name: CCADMIN_COMPUTE_SUPPORT
-      role_assignments:
-      - project: compute_support
-        role: sharedfilesystem_admin
-      - project: compute_tools
-        role: sharedfilesystem_admin
-      - domain: ccadmin
-        role: sharedfilesystem_viewer
-        inherited: true
-    - name: CCADMIN_NETWORK_SUPPORT
-      role_assignments:
-      - project: network_support
-        role: sharedfilesystem_admin
-      - project: network_tools
-        role: sharedfilesystem_admin
-      - domain: ccadmin
-        role: sharedfilesystem_viewer
-        inherited: true
-    - name: CCADMIN_STORAGE_SUPPORT
-      role_assignments:
-      - project: cloud_admin
-        role: cloud_sharedfilesystem_editor
-      - project: storage_support
-        role: sharedfilesystem_admin
-      - project: storage_tools
-        role: sharedfilesystem_admin
-      - domain: ccadmin
-        role: sharedfilesystem_admin
-        inherited: true
-    - name: CCADMIN_SERVICE_DESK
-      role_assignments:
-      - project: service_desk
-        role: sharedfilesystem_admin
-      - domain: ccadmin
-        role: sharedfilesystem_viewer
-        inherited: true
-
-  - name: bs
-    groups:
-    - name: BS_API_SUPPORT
-      role_assignments:
-      - project: api_support
-        role: sharedfilesystem_admin
-      - domain: bs
-        role: sharedfilesystem_admin
-        inherited: true
-    - name: BS_COMPUTE_SUPPORT
-      role_assignments:
-      - project: compute_support
-        role: sharedfilesystem_admin
-      - domain: bs
-        role: sharedfilesystem_viewer
-        inherited: true
-    - name: BS_NETWORK_SUPPORT
-      role_assignments:
-      - project: network_support
-        role: sharedfilesystem_admin
-      - domain: bs
-        role: sharedfilesystem_viewer
-        inherited: true
-    - name: BS_STORAGE_SUPPORT
-      role_assignments:
-      - project: storage_support
-        role: sharedfilesystem_admin
-      - domain: bs
-        role: sharedfilesystem_admin
-        inherited: true
-    - name: BS_SERVICE_DESK
-      role_assignments:
-      - project: service_desk
-        role: sharedfilesystem_admin
-      - domain: bs
-        role: sharedfilesystem_viewer
-        inherited: true
-
-  - name: btp_fp
-    groups:
-    - name: BTP_FP_API_SUPPORT
-      role_assignments:
-      - domain: btp_fp
-        role: sharedfilesystem_admin
-        inherited: true
-    - name: BTP_FP_COMPUTE_SUPPORT
-      role_assignments:
-      - domain: btp_fp
-        role: sharedfilesystem_viewer
-        inherited: true
-    - name: BTP_FP_NETWORK_SUPPORT
-      role_assignments:
-      - domain: btp_fp
-        role: sharedfilesystem_viewer
-        inherited: true
-    - name: BTP_FP_STORAGE_SUPPORT
-      role_assignments:
-      - domain: btp_fp
-        role: sharedfilesystem_admin
-        inherited: true
-    - name: BTP_FP_SERVICE_DESK
-      role_assignments:
-      - domain: btp_fp
-        role: sharedfilesystem_viewer
-        inherited: true
-
-  - name: cis
-    groups:
-    - name: CIS_API_SUPPORT
-      role_assignments:
-      - project: api_support
-        role: sharedfilesystem_admin
-      - domain: cis
-        role: sharedfilesystem_admin
-        inherited: true
-    - name: CIS_COMPUTE_SUPPORT
-      role_assignments:
-      - project: compute_support
-        role: sharedfilesystem_admin
-      - domain: cis
-        role: sharedfilesystem_viewer
-        inherited: true
-    - name: CIS_NETWORK_SUPPORT
-      role_assignments:
-      - project: network_support
-        role: sharedfilesystem_admin
-      - domain: cis
-        role: sharedfilesystem_viewer
-        inherited: true
-    - name: CIS_STORAGE_SUPPORT
-      role_assignments:
-      - project: storage_support
-        role: sharedfilesystem_admin
-      - domain: cis
-        role: sharedfilesystem_admin
-        inherited: true
-    - name: CIS_SERVICE_DESK
-      role_assignments:
-      - project: service_desk
-        role: sharedfilesystem_admin
-      - domain: cis
-        role: sharedfilesystem_viewer
-        inherited: true
-
-  - name: cp
-    groups:
-    - name: CP_API_SUPPORT
-      role_assignments:
-      - project: api_support
-        role: sharedfilesystem_admin
-      - domain: cp
-        role: sharedfilesystem_admin
-        inherited: true
-    - name: CP_COMPUTE_SUPPORT
-      role_assignments:
-      - project: compute_support
-        role: sharedfilesystem_admin
-      - domain: cp
-        role: sharedfilesystem_viewer
-        inherited: true
-    - name: CP_NETWORK_SUPPORT
-      role_assignments:
-      - project: network_support
-        role: sharedfilesystem_admin
-      - domain: cp
-        role: sharedfilesystem_viewer
-        inherited: true
-    - name: CP_STORAGE_SUPPORT
-      role_assignments:
-      - project: storage_support
-        role: sharedfilesystem_admin
-      - domain: cp
-        role: sharedfilesystem_admin
-        inherited: true
-    - name: CP_SERVICE_DESK
-      role_assignments:
-      - project: service_desk
-        role: sharedfilesystem_admin
-      - domain: cp
-        role: sharedfilesystem_viewer
-        inherited: true
-
-  - name: fsn
-    groups:
-    - name: FSN_API_SUPPORT
-      role_assignments:
-      - project: api_support
-        role: sharedfilesystem_admin
-      - domain: fsn
-        role: sharedfilesystem_admin
-        inherited: true
-    - name: FSN_COMPUTE_SUPPORT
-      role_assignments:
-      - project: compute_support
-        role: sharedfilesystem_admin
-      - domain: fsn
-        role: sharedfilesystem_viewer
-        inherited: true
-    - name: FSN_NETWORK_SUPPORT
-      role_assignments:
-      - project: network_support
-        role: sharedfilesystem_admin
-      - domain: fsn
-        role: sharedfilesystem_viewer
-        inherited: true
-    - name: FSN_STORAGE_SUPPORT
-      role_assignments:
-      - project: storage_support
-        role: sharedfilesystem_admin
-      - domain: fsn
-        role: sharedfilesystem_admin
-        inherited: true
-    - name: FSN_SERVICE_DESK
-      role_assignments:
-      - project: service_desk
-        role: sharedfilesystem_admin
-      - domain: fsn
-        role: sharedfilesystem_viewer
-        inherited: true
-
-  - name: hda
-    groups:
-    - name: HDA_API_SUPPORT
-      role_assignments:
-      - project: api_support
-        role: sharedfilesystem_admin
-      - domain: hda
-        role: sharedfilesystem_admin
-        inherited: true
-    - name: HDA_COMPUTE_SUPPORT
-      role_assignments:
-      - project: compute_support
-        role: sharedfilesystem_admin
-      - domain: hda
-        role: sharedfilesystem_viewer
-        inherited: true
-    - name: HDA_NETWORK_SUPPORT
-      role_assignments:
-      - project: network_support
-        role: sharedfilesystem_admin
-      - domain: hda
-        role: sharedfilesystem_viewer
-        inherited: true
-    - name: HDA_STORAGE_SUPPORT
-      role_assignments:
-      - project: storage_support
-        role: sharedfilesystem_admin
-      - domain: hda
-        role: sharedfilesystem_admin
-        inherited: true
-    - name: HDA_SERVICE_DESK
-      role_assignments:
-      - project: service_desk
-        role: sharedfilesystem_admin
-      - domain: hda
-        role: sharedfilesystem_viewer
-        inherited: true
-
-{{- if not .Values.global.domain_seeds.skip_hcm_domain }}
-  - name: hcm
-    groups:
-    - name: HCM_API_SUPPORT
-      role_assignments:
-      - project: api_support
-        role: sharedfilesystem_admin
-      - domain: hcm
-        role: sharedfilesystem_admin
-        inherited: true
-    - name: HCM_COMPUTE_SUPPORT
-      role_assignments:
-      - project: compute_support
-        role: sharedfilesystem_admin
-      - domain: hcm
-        role: sharedfilesystem_viewer
-        inherited: true
-    - name: HCM_NETWORK_SUPPORT
-      role_assignments:
-      - project: network_support
-        role: sharedfilesystem_admin
-      - domain: hcm
-        role: sharedfilesystem_viewer
-        inherited: true
-    - name: HCM_STORAGE_SUPPORT
-      role_assignments:
-      - project: storage_support
-        role: sharedfilesystem_admin
-      - domain: hcm
-        role: sharedfilesystem_admin
-        inherited: true
-    - name: HCM_SERVICE_DESK
-      role_assignments:
-      - project: service_desk
-        role: sharedfilesystem_admin
-      - domain: hcm
-        role: sharedfilesystem_viewer
-        inherited: true
-{{- end }}
-
-  - name: hcp03
-    groups:
-    - name: HCP03_API_SUPPORT
-      role_assignments:
-      - project: api_support
-        role: sharedfilesystem_admin
-      - domain: hcp03
-        role: sharedfilesystem_admin
-        inherited: true
-    - name: HCP03_COMPUTE_SUPPORT
-      role_assignments:
-      - project: compute_support
-        role: sharedfilesystem_admin
-      - domain: hcp03
-        role: sharedfilesystem_viewer
-        inherited: true
-    - name: HCP03_NETWORK_SUPPORT
-      role_assignments:
-      - project: network_support
-        role: sharedfilesystem_admin
-      - domain: hcp03
-        role: sharedfilesystem_viewer
-        inherited: true
-    - name: HCP03_STORAGE_SUPPORT
-      role_assignments:
-      - project: storage_support
-        role: sharedfilesystem_admin
-      - domain: hcp03
-        role: sharedfilesystem_admin
-        inherited: true
-    - name: HCP03_SERVICE_DESK
-      role_assignments:
-      - project: service_desk
-        role: sharedfilesystem_admin
-      - domain: hcp03
-        role: sharedfilesystem_viewer
-        inherited: true
-
-  - name: hec
-    groups:
-    - name: HEC_API_SUPPORT
-      role_assignments:
-      - project: api_support
-        role: sharedfilesystem_admin
-      - domain: hec
-        role: sharedfilesystem_admin
-        inherited: true
-    - name: HEC_COMPUTE_SUPPORT
-      role_assignments:
-      - project: compute_support
-        role: sharedfilesystem_admin
-      - domain: hec
-        role: sharedfilesystem_viewer
-        inherited: true
-    - name: HEC_NETWORK_SUPPORT
-      role_assignments:
-      - project: network_support
-        role: sharedfilesystem_admin
-      - domain: hec
-        role: sharedfilesystem_viewer
-        inherited: true
-    - name: HEC_STORAGE_SUPPORT
-      role_assignments:
-      - project: storage_support
-        role: sharedfilesystem_admin
-      - domain: hec
-        role: sharedfilesystem_admin
-        inherited: true
-    - name: HEC_SERVICE_DESK
-      role_assignments:
-      - project: service_desk
-        role: sharedfilesystem_admin
-      - domain: hec
-        role: sharedfilesystem_viewer
-        inherited: true
-
-  - name: kyma
-    groups:
-    - name: KYMA_API_SUPPORT
-      role_assignments:
-      - domain: kyma
-        role: sharedfilesystem_admin
-        inherited: true
-    - name: KYMA_COMPUTE_SUPPORT
-      role_assignments:
-      - domain: kyma
-        role: sharedfilesystem_viewer
-        inherited: true
-    - name: KYMA_NETWORK_SUPPORT
-      role_assignments:
-      - domain: kyma
-        role: sharedfilesystem_viewer
-        inherited: true
-    - name: KYMA_STORAGE_SUPPORT
-      role_assignments:
-      - domain: kyma
-        role: sharedfilesystem_admin
-        inherited: true
-    - name: KYMA_SERVICE_DESK
-      role_assignments:
-      - domain: kyma
-        role: sharedfilesystem_viewer
-        inherited: true
-
-  - name: monsoon3
-    groups:
+    {{- end }}
+    {{- if eq . "monsoon3" }}
     - name: MONSOON3_DOMAIN_ADMINS
       role_assignments:
       - project: cc-demo
         role: sharedfilesystem_admin
-    - name: MONSOON3_API_SUPPORT
+    {{- end }}
+    - name: {{ hasPrefix "iaas-" . | ternary . ( upper . ) }}_API_SUPPORT
       role_assignments:
+      {{- if not (has . $cdomainsWithoutSupportProjects) }}
       - project: api_support
         role: sharedfilesystem_admin
-      - domain: monsoon3
+      {{- end }}
+      {{- if eq . "ccadmin" }}
+      - project: cloud_admin
+        role: cloud_sharedfilesystem_viewer
+      - project: api_tools
+        role: sharedfilesystem_admin
+      {{- end }}
+      - domain: {{ . }}
         role: sharedfilesystem_admin
         inherited: true
-    - name: MONSOON3_COMPUTE_SUPPORT
+    - name: {{ hasPrefix "iaas-" . | ternary . ( upper . ) }}_COMPUTE_SUPPORT
       role_assignments:
+      {{- if not (has . $cdomainsWithoutSupportProjects) }}
       - project: compute_support
         role: sharedfilesystem_admin
-      - domain: monsoon3
+      {{- end }}
+      {{- if eq . "ccadmin" }}
+      - project: compute_tools
+        role: sharedfilesystem_admin
+      {{- end }}
+      - domain: {{ . }}
         role: sharedfilesystem_viewer
         inherited: true
-    - name: MONSOON3_NETWORK_SUPPORT
+    - name: {{ hasPrefix "iaas-" . | ternary . ( upper . ) }}_NETWORK_SUPPORT
       role_assignments:
+      {{- if not (has . $cdomainsWithoutSupportProjects) }}
       - project: network_support
         role: sharedfilesystem_admin
-      - domain: monsoon3
+      {{- end }}
+      {{- if eq . "ccadmin" }}
+      - project: network_tools
+        role: sharedfilesystem_admin
+      {{- end }}
+      - domain: {{ . }}
         role: sharedfilesystem_viewer
         inherited: true
-    - name: MONSOON3_STORAGE_SUPPORT
+    - name: {{ hasPrefix "iaas-" . | ternary . ( upper . ) }}_STORAGE_SUPPORT
       role_assignments:
+      {{- if not (has . $cdomainsWithoutSupportProjects) }}
       - project: storage_support
         role: sharedfilesystem_admin
-      - domain: monsoon3
+      {{- end }}
+      {{- if eq . "ccadmin" }}
+      - project: cloud_admin
+        role: cloud_sharedfilesystem_editor
+      - project: storage_tools
+        role: sharedfilesystem_admin
+      {{- end }}
+      - domain: {{ . }}
         role: sharedfilesystem_admin
         inherited: true
-    - name: MONSOON3_SERVICE_DESK
+    - name: {{ hasPrefix "iaas-" . | ternary . ( upper . ) }}_SERVICE_DESK
       role_assignments:
+      {{- if not (has . $cdomainsWithoutSupportProjects) }}
       - project: service_desk
         role: sharedfilesystem_admin
-      - domain: monsoon3
+      {{- end }}
+      - domain: {{ . }}
         role: sharedfilesystem_viewer
         inherited: true
-
-  - name: neo
-    groups:
-    - name: NEO_API_SUPPORT
-      role_assignments:
-      - project: api_support
-        role: sharedfilesystem_admin
-      - domain: neo
-        role: sharedfilesystem_admin
-        inherited: true
-    - name: NEO_COMPUTE_SUPPORT
-      role_assignments:
-      - project: compute_support
-        role: sharedfilesystem_admin
-      - domain: neo
-        role: sharedfilesystem_viewer
-        inherited: true
-    - name: NEO_NETWORK_SUPPORT
-      role_assignments:
-      - project: network_support
-        role: sharedfilesystem_admin
-      - domain: neo
-        role: sharedfilesystem_viewer
-        inherited: true
-    - name: NEO_STORAGE_SUPPORT
-      role_assignments:
-      - project: storage_support
-        role: sharedfilesystem_admin
-      - domain: neo
-        role: sharedfilesystem_admin
-        inherited: true
-    - name: NEO_SERVICE_DESK
-      role_assignments:
-      - project: service_desk
-        role: sharedfilesystem_admin
-      - domain: neo
-        role: sharedfilesystem_viewer
-        inherited: true
-
-  - name: s4
-    groups:
-    - name: S4_API_SUPPORT
-      role_assignments:
-      - project: api_support
-        role: sharedfilesystem_admin
-      - domain: s4
-        role: sharedfilesystem_admin
-        inherited: true
-    - name: S4_COMPUTE_SUPPORT
-      role_assignments:
-      - project: compute_support
-        role: sharedfilesystem_admin
-      - domain: s4
-        role: sharedfilesystem_viewer
-        inherited: true
-    - name: S4_NETWORK_SUPPORT
-      role_assignments:
-      - project: network_support
-        role: sharedfilesystem_admin
-      - domain: s4
-        role: sharedfilesystem_viewer
-        inherited: true
-    - name: S4_STORAGE_SUPPORT
-      role_assignments:
-      - project: storage_support
-        role: sharedfilesystem_admin
-      - domain: s4
-        role: sharedfilesystem_admin
-        inherited: true
-    - name: S4_SERVICE_DESK
-      role_assignments:
-      - project: service_desk
-        role: sharedfilesystem_admin
-      - domain: s4
-        role: sharedfilesystem_viewer
-        inherited: true
-
-  - name: wbs
-    groups:
-    - name: WBS_API_SUPPORT
-      role_assignments:
-      - project: api_support
-        role: sharedfilesystem_admin
-      - domain: wbs
-        role: sharedfilesystem_admin
-        inherited: true
-    - name: WBS_COMPUTE_SUPPORT
-      role_assignments:
-      - project: compute_support
-        role: sharedfilesystem_admin
-      - domain: wbs
-        role: sharedfilesystem_viewer
-        inherited: true
-    - name: WBS_NETWORK_SUPPORT
-      role_assignments:
-      - project: network_support
-        role: sharedfilesystem_admin
-      - domain: wbs
-        role: sharedfilesystem_viewer
-        inherited: true
-    - name: WBS_STORAGE_SUPPORT
-      role_assignments:
-      - project: storage_support
-        role: sharedfilesystem_admin
-      - domain: wbs
-        role: sharedfilesystem_admin
-        inherited: true
-    - name: WBS_SERVICE_DESK
-      role_assignments:
-      - project: service_desk
-        role: sharedfilesystem_admin
-      - domain: wbs
-        role: sharedfilesystem_viewer
-        inherited: true
+  {{- end}}
+  {{- end}}
 {{- end }}
 {{- end }}
 {{- end }}

@@ -1,17 +1,47 @@
+{{ if not .Values.regions -}}
+{{- $shootName := default (printf "met-op-%s" .Values.global.region) .Values.shootName }}
 apiVersion: core.gardener.cloud/v1beta1
 kind: Shoot
 metadata:
-  name: metal-operator
-  namespace: garden-ccloud
+  name: {{ $shootName }}
 spec:
-  cloudProfileName: openstack
+  cloudProfile:
+    kind: CloudProfile
+    name: openstack
   region: {{ required "missing .Values.global.region" .Values.global.region }}
   networking:
     services: 10.55.0.0/16
   provider:
     type: openstack
   kubernetes:
-    version: 1.30.0
+    version: 1.31.5
     kubeAPIServer:
-      enableAnonymousAuthentication: true # cluster registry version check
-      oidcConfig: {{- toYaml .Values.oidcConfig | nindent 8 }}
+      featureGates:
+        AnonymousAuthConfigurableEndpoints: true
+      structuredAuthentication:
+        configMapName: authentication-config-met-op
+{{- end }}
+{{- range $region := .Values.regions }}
+---
+apiVersion: core.gardener.cloud/v1beta1
+kind: Shoot
+metadata:
+  name: met-op-{{ $region }}
+spec:
+  cloudProfile:
+    kind: CloudProfile
+    name: openstack
+  region: {{ $region }}
+  networking:
+    services: 10.55.0.0/16
+  provider:
+    type: openstack
+  kubernetes:
+    version: 1.31.5
+    kubeAPIServer:
+      featureGates:
+        AnonymousAuthConfigurableEndpoints: true
+      structuredAuthentication:
+        configMapName: authentication-config-met-op
+  seedName: rt-{{ $region }}
+{{- end }}

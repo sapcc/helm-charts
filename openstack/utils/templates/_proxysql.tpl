@@ -16,8 +16,13 @@
 {{- end }}
 
 {{- define "utils.proxysql._container" }}
+  {{- $tupleLen := len .  }}
   {{- $envAll := index . 0 }}
   {{- $scale := index . 1 | int }}
+  {{- $longTimeouts := false }}
+  {{- if (eq $tupleLen 3) }}
+  {{- $longTimeouts = index . 2 }}
+  {{- end }}
   {{- with $envAll }}
     {{- if .Values.proxysql }}
       {{- if .Values.proxysql.mode }}
@@ -28,9 +33,12 @@
           {{ required ".Values.global.dockerHubMirror is missing" .Values.global.dockerHubMirror }}/{{ default "proxysql/proxysql" .Values.proxysql.image }}
         {{- end }}:{{ .Values.proxysql.imageTag | default "2.7.1-debian" }}
   imagePullPolicy: IfNotPresent
+  {{- if .Values.proxysql.native_sidecar }}
+  restartPolicy: Always
+  {{- end }}
   command: ["proxysql"]
   args: ["--config", "/etc/proxysql/proxysql.cnf", "--exit-on-error", "--foreground", "--idle-threads", "--admin-socket", "/run/proxysql/admin.sock", "--no-version-check", "-D", "/run/proxysql"]
-        {{- if gt $scale 1 }}
+        {{- if or (gt $scale 1) ($longTimeouts) }}
           {{- $max_pool_size := coalesce .Values.max_pool_size .Values.global.max_pool_size 50 }}
           {{- $max_overflow := coalesce .Values.max_overflow .Values.global.max_overflow 5 }}
           {{- $max_connections := .Values.proxysql.max_connections_per_proc | default (add $max_pool_size $max_overflow) | mul $scale }}
@@ -48,6 +56,11 @@
             mysql --wait -S /run/proxysql/admin.sock -uadmin -padmin -e '
               UPDATE mysql_servers SET max_connections={{ $max_connections }};
               LOAD MYSQL SERVERS TO RUNTIME;
+              {{- if $longTimeouts }}
+              SET mysql-max_transaction_time=14400000;
+              SET mysql-default_query_timeout=36000000;
+              LOAD MYSQL VARIABLES TO RUNTIME;
+              {{- end }}
             ' && exit 0 || sleep 1
           done
           exit 1

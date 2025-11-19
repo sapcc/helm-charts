@@ -47,7 +47,7 @@ spec:
         # When the podcidr is populated by the nodeCIDR controller, the calico container can start
         {{- if .Values.waitforpodcidr.enabled }}
         - name: wait-for-podcidr
-          image: "{{ required ".Values.global.registryAlternateRegion is missing" $.Values.global.registryAlternateRegion }}/{{ $.Values.images.kubelet.image }}:{{ $.Values.images.kubelet.tag }}"
+          image: "{{ $.Values.images.kubelet.image }}:{{ $.Capabilities.KubeVersion.Version }}"
           command: ["/bin/sh","-c"]
           args: ["podCIDR=$(kubectl get node $NODE_NAME -ojsonpath={\".spec.podCIDR\"}); printf \"$(date) \"; [ -z \"$podCIDR\" ] && { printf \"cidr not found on node $NODE_NAME. exiting . . .\"; sleep 2; exit 1; } || printf \"found cidr $podCIDR on node $NODE_NAME.\""]
           env:
@@ -61,7 +61,7 @@ spec:
         # It can be deleted if this is a fresh installation, or if you have already
         # upgraded to use calico-ipam.
         - name: upgrade-ipam
-          image: "{{ required ".Values.global.dockerHubMirrorAlternateRegion is missing" $.Values.global.dockerHubMirrorAlternateRegion }}/{{ $.Values.images.calicoCni.image }}:{{ $.Values.images.calicoCni.tag }}"
+          image: "{{ $.Values.images.calicoCni.image }}:{{ default .Chart.AppVersion $.Values.images.calicoCni.tag }}"
           imagePullPolicy: IfNotPresent
           command: ["/opt/cni/bin/calico-ipam", "-upgrade"]
           envFrom:
@@ -90,7 +90,7 @@ spec:
         # This container installs the CNI binaries
         # and CNI network config file on each node.
         - name: install-cni
-          image: "{{ required ".Values.global.dockerHubMirrorAlternateRegion is missing" $.Values.global.dockerHubMirrorAlternateRegion }}/{{ $.Values.images.calicoCni.image }}:{{ $.Values.images.calicoCni.tag }}"
+          image: "{{ $.Values.images.calicoCni.image }}:{{ default .Chart.AppVersion $.Values.images.calicoCni.tag }}"
           imagePullPolicy: IfNotPresent
           command: ["/opt/cni/bin/install"]
           envFrom:
@@ -134,7 +134,7 @@ spec:
         # i.e. bpf at /sys/fs/bpf and cgroup2 at /run/calico/cgroup. Calico-node initialisation is executed
         # in best effort fashion, i.e. no failure for errors, to not disrupt pod creation in iptable mode.
         - name: "mount-bpffs"
-          image: "{{ required ".Values.global.registryAlternateRegion is missing" $.Values.global.registryAlternateRegion }}/{{ $.Values.images.calicoNode.image }}:{{ $.Values.images.calicoNode.tag }}"
+          image: "{{ $.Values.images.calicoNode.image }}:{{ default .Chart.AppVersion $.Values.images.calicoNode.tag }}"
           imagePullPolicy: IfNotPresent
           command: ["calico-node", "-init", "-best-effort"]
           volumeMounts:
@@ -161,7 +161,7 @@ spec:
         # container programs network policy and routes on each
         # host.
         - name: calico-node
-          image: "{{ required ".Values.global.dockerHubMirrorAlternateRegion is missing" $.Values.global.dockerHubMirrorAlternateRegion }}/{{ $.Values.images.calicoNode.image }}:{{ $.Values.images.calicoNode.tag }}"
+          image: "{{ $.Values.images.calicoNode.image }}:{{ default .Chart.AppVersion $.Values.images.calicoNode.tag }}"
           imagePullPolicy: IfNotPresent
           envFrom:
           - configMapRef:
@@ -200,7 +200,7 @@ spec:
               value: "autodetect"
             # Auto-detection method.
             - name: IP_AUTODETECTION_METHOD
-              value: "kubernetes-internal-ip"
+              value: {{ .Values.config.ipam.ipAutodetectionMethod | quote }}
             # Aggregate podCIDR.
             - name: USE_POD_CIDR
               value: "true"
@@ -329,11 +329,12 @@ spec:
               readOnly: true
         {{- if .Values.config.monitoring.enabled }}
         - name: exporter
-          image: "{{ required ".Values.global.ghcrIoMirrorAlternateRegion is missing" $.Values.global.ghcrIoMirrorAlternateRegion }}/{{ $.Values.images.exporter.image }}:{{ $.Values.images.exporter.tag }}"
+          image: "{{ $.Values.images.exporter.image }}:{{ $.Values.images.exporter.tag }}"
           args:
             - -format.new=true
             - -bird.socket=/var/run/calico/bird.ctl
             - -bird.ipv6=false
+            - -web.listen-address=:{{ .Values.config.monitoring.birdMetricsPort }}
           resources:
             limits:
               cpu: 100m
@@ -346,7 +347,7 @@ spec:
               mountPath: /var/run/calico
               readOnly: true
           ports:
-            - containerPort: 9324
+            - containerPort: {{ .Values.config.monitoring.birdMetricsPort }}
               name: metrics-bird
               protocol: TCP
         {{- end }}

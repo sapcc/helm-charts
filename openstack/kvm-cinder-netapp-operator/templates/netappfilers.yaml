@@ -1,0 +1,16 @@
+{{- range .Values.netappFilers }}
+apiVersion: kvm.cloud.sap/v1alpha
+kind: NetappFiler
+metadata:
+  labels:
+    app.kubernetes.io/name: kvm-cinder-netapp-operator
+    app.kubernetes.io/managed-by: kustomize
+  name: {{ .name }}
+spec:
+  az: {{ required ".Values.global.availability_zone missing" .Values.global.availability_zone }}
+  filerfqdn: {{ required ".fqdn missing" .fqdn }}
+  filersecretstoconsider: {{ required ".filersecretstoconsider missing" .filersecretstoconsider }}
+  secretname: {{ required ".Values.netapp_secret_name missing" .Values.netapp_secret_name }}
+  volumeregex: {{ required ".volumeregex missing" .volumeregex }}
+---
+{{- end}}

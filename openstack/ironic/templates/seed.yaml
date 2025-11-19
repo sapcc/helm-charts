@@ -13,9 +13,6 @@ spec:
   - monsoon3/domain-{{replace "_" "-" . | lower}}-seed
   {{- end }}
   {{- end }}
-  {{- if .Values.tempest_enabled }}
-  - monsoon3/domain-tempest-seed
-  {{- end }}
   - monsoon3/nova-seed
   - monsoon3/neutron-seed
   - swift/swift-seed
@@ -583,8 +580,19 @@ spec:
       "resources:CUSTOM_HV_S4_C32_M1024_V0": "1"
       {{- tuple . "baremetal" | include "ironic.helpers.extra_specs" | indent 6 }}
 
+  # New Lenovo SR950 V3 with Sapphire Rapids and 16TB
+  - name: "hv_s8_c48_m16384_v0"
+    id: "2044"
+    vcpus: 384
+    ram: 16777216
+    disk: 447
+    is_public: false
+    extra_specs:
+      "catalog:description": BareMetal 8 sockets, 48 cores, 16TB RAM, Sapphire Rapids
+      "resources:CUSTOM_HV_S8_C48_M16384_V0": "1"
+      {{- tuple . "baremetal" | include "ironic.helpers.extra_specs" | indent 6 }}
 
-  # Default and tempest are special
+  # Default are special
   # cc3test does not get seeds
   # ccadmin gets role assignments for the master project and some additional project assignments
   # monsoon3 gets a special role assignment for cc-demo project
@@ -613,32 +621,6 @@ spec:
     - name: ipmi_exporter
       description: IPMI Exporter for MB Monitoring
       password: '{{ required ".Values.global.ipmi_exporter_user_passwd is missing" .Values.global.ipmi_exporter_user_passwd | include "resolve_secret" }}'
-
-  {{- if .Values.tempest_enabled }}
-  - name: tempest
-    projects:
-    - name: tempest1
-      role_assignments:
-      - user: admin@Default
-        role: cloud_baremetal_admin
-    - name: tempest2
-      role_assignments:
-      - user: admin@Default
-        role: cloud_baremetal_admin
-    users:
-    - name: tempestuser1
-      role_assignments:
-      - project: tempest1
-        role: baremetal_admin
-      - domain: tempest
-        role: baremetal_admin
-    - name: tempestuser2
-      role_assignments:
-      - project: tempest2
-        role: baremetal_admin
-      - domain: tempest
-        role: baremetal_admin
-  {{- end }}
 
   {{- range $domains}}
   {{- if and (not (hasPrefix "iaas-" .)) (not (eq . "Default"))}}

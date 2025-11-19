@@ -46,7 +46,7 @@ spec:
     rgwCommandFlags: {{ toYaml .Values.objectstore.gateway.rgwCommandFlags | nindent 6 }}
   {{- end }}
     annotations:
-      checksum/config: {{ include (print $.Template.BasePath "/ceph-config-override.yaml") . | sha256sum }}
+      checksum/config: {{ include (print $.Template.BasePath "/rook-config-override.yaml") . | sha256sum }}
       {{- if and .Values.objectstore.prysm.rgwSidecarWebhook ( .Values.objectstore.prysm.rgwSidecarWebhook.enabled ) ( .Values.objectstore.prysm.rgwSidecarWebhook.sidecarEnvConfig.enabled ) }}
       prysm-sidecar/sidecar-env-configmap: "{{ .Values.objectstore.prysm.rgwSidecarWebhook.sidecarEnvConfig.configMapName }}"
       checksum/sidecar-env-config: {{ include (print $.Template.BasePath "/prysm-rgw-sidecar-webhook-configmap.yaml") . | sha256sum }}
@@ -55,6 +55,8 @@ spec:
       # reload deployment when the sidecar configmap changes
       configmap.reloader.stakater.com/reload: {{ .Values.objectstore.prysm.rgwSidecarWebhook.sidecarEnvConfig.configMapName | quote }}
       {{- end }}
+      # reload deployment when the certificate changes
+      secret.reloader.stakater.com/reload: {{ .Values.objectstore.gateway.sslCertificateRef | quote }}
     {{- if and .Values.objectstore.prysm.rgwSidecarWebhook ( .Values.objectstore.prysm.rgwSidecarWebhook.enabled ) }}
     labels:
       prysm-sidecar: "yes"

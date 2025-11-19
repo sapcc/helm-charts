@@ -214,10 +214,18 @@ data:
   CSI_ENABLE_CSIADDONS: "false"
   ROOK_WATCH_FOR_NODE_FAILURE: "true"
   CSI_GRPC_TIMEOUT_SECONDS: "150"
+  {{- if .Values.cluster.redundancy.topologyDomainLabel }}
+  CSI_ENABLE_TOPOLOGY: "true"
+  CSI_TOPOLOGY_DOMAIN_LABELS: "{{ .Values.cluster.redundancy.topologyDomainLabel }}"
+  {{- else }}
   CSI_ENABLE_TOPOLOGY: "false"
+  {{- end }}
   CSI_CEPHFS_ATTACH_REQUIRED: "true"
   CSI_RBD_ATTACH_REQUIRED: "true"
   CSI_NFS_ATTACH_REQUIRED: "true"
   ROOK_DISABLE_DEVICE_HOTPLUG: "false"
   ROOK_DISCOVER_DEVICES_INTERVAL: "60m"
   ROOK_ENFORCE_HOST_NETWORK: "false"
+  {{- if .Values.cluster.redundancy.customHostnameLabel }}
+  ROOK_CUSTOM_HOSTNAME_LABEL: "{{ .Values.cluster.redundancy.customHostnameLabel }}"
+  {{- end }}

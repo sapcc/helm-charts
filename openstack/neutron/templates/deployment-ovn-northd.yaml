@@ -1,18 +1,19 @@
 {{- if .Values.ovn.enabled }}
+{{- $ovsdb_nb := index (index .Values "ovsdb-nb") }}
+{{- $ovsdb_sb := index (index .Values "ovsdb-sb") }}
 kind: Deployment
 apiVersion: apps/v1
 metadata:
-  name: ovnkube-master
+  name: neutron-ovn-northd
   annotations:
-    kubernetes.io/description: |
-      This Deployment launches the ovn-kubernetes master networking components.
+    kubernetes.io/description: This Deployment launches the ovn-northd.
 spec:
   progressDeadlineSeconds: 600
   replicas: 1
   revisionHistoryLimit: 10
   selector:
     matchLabels:
-      name: ovnkube-master
+      name: neutron-ovn-northd
   strategy:
     rollingUpdate:
       maxSurge: 0
@@ -20,82 +21,53 @@ spec:
     type: RollingUpdate
   template:
     metadata:
+      annotations:
+        kubectl.kubernetes.io/default-container: ovn-northd
       labels:
-        name: ovnkube-master
+        name: neutron-ovn-northd
         component: network
         type: infra
         kubernetes.io/os: "linux"
     spec:
       priorityClassName: "system-cluster-critical"
-      # Requires fairly broad permissions - ability to read all services and network functions as well
-      # as all pods.
-      serviceAccountName: ovnkube-master
-      # XXX check if we need the hostNetwork here
-      #hostNetwork: true
-      #dnsPolicy: Default
-      {{- if .Values.ovn.affinity }}
-      affinity: {{ toYaml .Values.ovn.affinity | nindent 8 }}
-      {{- end }}
+    {{- with .Values.ovn.affinity }}
+      affinity: {{ toYaml . | nindent 8 }}
+    {{- end }}
       containers:
       # ovn-northd - v3
       - name: ovn-northd
-        image: {{ required ".Values.global.ghcrIoMirror is missing" $.Values.global.ghcrIoMirror }}/ovn-org/ovn-kubernetes/ovn-kube-ubuntu:{{ $.Values.ovn.imageVersionOVN | required "Please set neutron.imageVersionOVN or similar" }}
-        imagePullPolicy: "IfNotPresent"
-        command: ["/root/ovnkube.sh", "run-ovn-northd"]
-        securityContext:
-          runAsUser: 0
-          capabilities:
-            add: ["SYS_NICE"]
-        terminationMessagePolicy: FallbackToLogsOnError
-        volumeMounts:
-        # Run directories where we need to be able to access sockets
-        - mountPath: /var/log/openvswitch/
-          name: host-var-log-ovs
-        - mountPath: /var/log/ovn/
-          name: host-var-log-ovs
-        - mountPath: /var/run/openvswitch/
-          name: host-var-run-ovs
-        - mountPath: /var/run/ovn/
-          name: host-var-run-ovs
-        - mountPath: /ovn-cert
-          name: host-ovn-cert
-          readOnly: true
-        resources: {{ toYaml $.Values.pod.resources.ovs_db| nindent 10 }}
+        image: {{ .Values.ovn.image }}:{{ .Values.ovn.imageVersionOVN | required "Please set neutron.imageVersionOVN or similar" }}
+        imagePullPolicy: {{ .Values.ovn.pullPolicy | default "IfNotPresent" }}
+        command: ["/usr/bin/ovn-northd"]
+        args:
+          - "-vfile:off"
+          - "-vconsole:{{ .Values.ovn.logLevel | default "info" }}"
+          - "--n-threads={{ .Values.ovn.nThreads | default 1 }}"
+      {{- if .Values.ovn.enableSsl }}
+          - --certificate=/etc/pki/tls/certs/ovndb.crt
+          - --private_key=/etc/pki/tls/certs/ovndb.key
+          - --ca-cert=/etc/pki/tls/certs/ovndbca.crt
+      {{- end }}
+      {{- with .Values.pod.resources.ovn_northd }}
+        resources: {{ toYaml . | nindent 10 }}
+      {{- end}}
         env:
-        - name: OVN_DAEMONSET_VERSION
-          value: "1.0.0"
-        - name: OVN_LOGLEVEL_NORTHD
-          value: {{ quote .Values.ovn.northdLogLevel }}
-        - name: K8S_APISERVER
-          valueFrom:
-            configMapKeyRef:
-              name: ovn-config
-              key: k8s_apiserver
-        - name: OVN_KUBERNETES_NAMESPACE
-          valueFrom:
-            fieldRef:
-              fieldPath: metadata.namespace
-        - name: OVN_SSL_ENABLE
-          value: {{ quote .Values.ovn.enableSsl }}
+          - name: OVN_RUNDIR
+            value: /tmp
+          - name: OVN_NB_DB
+            value: "tcp:neutron-ovsdb-nb.{{ .Release.Namespace }}.svc.kubernetes.{{ .Values.global.region }}.cloud.sap:{{ $ovsdb_nb.DB_PORT }}"
+          - name: OVN_SB_DB
+            value: "tcp:neutron-ovsdb-sb.{{ .Release.Namespace }}.svc.kubernetes.{{ .Values.global.region }}.cloud.sap:{{ $ovsdb_sb.DB_PORT }}"
         readinessProbe:
           exec:
-            command: ["/usr/bin/ovn-kube-util", "readiness-probe", "-t", "ovn-northd"]
-          initialDelaySeconds: 30
-          timeoutSeconds: 30
-          periodSeconds: 60
-      # end of container
-      volumes:
-      - name: host-var-log-ovs
-        hostPath:
-          path: /var/log/openvswitch
-      - name: host-var-log-ovnkube
-        hostPath:
-          path: /var/log/ovn-kubernetes
-      - name: host-var-run-ovs
-        hostPath:
-          path: /var/run/openvswitch
-      - name: host-ovn-cert
-        hostPath:
-          path: /etc/ovn
-          type: DirectoryOrCreate
+            command: ["/usr/bin/pidof", "ovn-northd"]
+          initialDelaySeconds: 5
+          timeoutSeconds: 3
+          periodSeconds: 3
+        livenessProbe:
+          exec:
+            command: ["/usr/bin/pidof", "ovn-northd"]
+          initialDelaySeconds: 5
+          timeoutSeconds: 5
+          periodSeconds: 5
 {{- end }}

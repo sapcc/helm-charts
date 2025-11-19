@@ -18,10 +18,11 @@ spec:
       name: neutron-swift-injector-{{ $apod }}
   serviceName: neutron-swift-injector
   podManagementPolicy: "Parallel"
-  replicas: {{ $.Values.pod.replicas.network_agent | default "1" }}
+  replicas: {{ $.Values.pod.replicas.swift_injector }}
   template:
     metadata:
       annotations:
+        kubectl.kubernetes.io/default-container: swift-agent
         k8s.v1.cni.cncf.io/networks: '[{ "name": "cbr1-bridge", "interface":"{{$.Values.cp_network_interface}}" }]'
         configmap-etc-hash: {{ include (print $.Template.BasePath "/configmap-etc.yaml") $ | sha256sum }}
         configmap-etc-apod-hash: {{ include (print $.Template.BasePath "/configmap-etc-apod.yaml") $ | sha256sum }}

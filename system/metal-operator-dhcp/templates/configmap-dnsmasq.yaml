@@ -5,7 +5,6 @@ metadata:
   namespace: {{ .Release.Namespace }}
 data:
   dnsmasq.conf: |
-    interface={{ .Values.dnsmasq.interface }}
     except-interface=lo
     bind-dynamic
     enable-tftp
@@ -15,14 +14,27 @@ data:
     # Configure listening for DNS (0 disables DNS)
     port=0
     log-dhcp
-    {{ range $pool := .Values.dnsmasq.dhcpPools }}
-    {{- $ipPoolStart := $pool.ipPoolStart | default (printf "%s.10" $pool.subnetPrefix) -}}
-    {{- $ipPoolEnd := $pool.ipPoolEnd | default (printf "%s.125" $pool.subnetPrefix) -}}
-    {{- if $pool.static -}}
-    dhcp-range=set:{{ $pool.subnetPrefix }},{{ $pool.subnetPrefix }}.0,static,{{ $pool.mask }},{{ $.Values.dnsmasq.leaseTime }}
-    {{ else }}
+
+    {{ if .Values.local }}
+    {{ range $pool := .Values.local.dhcpPools }}
+    {{- $ipPoolStart := $pool.ipPoolStart -}}
+    {{- $ipPoolEnd := $pool.ipPoolEnd -}}
+    {{- $router := $pool.router -}}
     dhcp-range=set:{{ $pool.subnetPrefix }},{{ $ipPoolStart }},{{ $ipPoolEnd }},{{ $pool.mask }},{{ $.Values.dnsmasq.leaseTime }}
-    {{- end -}}
+    dhcp-option=set:{{ $pool.subnetPrefix }},option:router,{{ $router }}
+    dhcp-boot=tag:{{ $pool.subnetPrefix }},tag:ipxe,{{ $.Values.local.url }}/ipxe/${uuid}
+    {{ end }}
+    {{ end }}
+
+    {{ if .Values.remote }}
+    {{ range $pool := .Values.remote.dhcpPools }}
+    {{- $ipPoolStart := $pool.ipPoolStart -}}
+    {{- $ipPoolEnd := $pool.ipPoolEnd -}}
+    {{- $router := $pool.router -}}
+    dhcp-range=set:{{ $pool.subnetPrefix }},{{ $ipPoolStart }},{{ $ipPoolEnd }},{{ $pool.mask }},{{ $.Values.dnsmasq.leaseTime }}
+    dhcp-option=set:{{ $pool.subnetPrefix }},option:router,{{ $router }}
+    dhcp-boot=tag:{{ $pool.subnetPrefix }},tag:ipxe,{{ $.Values.remote.url }}/ipxe/${uuid}
+    {{ end }}
     {{ end }}
 
     {{- if .Values.dnsmasq.staticHosts }}
@@ -31,21 +43,15 @@ data:
     {{- end }} 
     {{- end }} 
 
-    # It can be used when setting DNS or GW variables.
-    # Set default router
-    {{ range $pool := .Values.dnsmasq.dhcpPools }}
-    {{- $router := $pool.router | default (printf "%s.1" $pool.subnetPrefix) -}}
-    dhcp-option=set:{{ $pool.subnetPrefix }},option:router,{{ $router }}
-    {{ end }}
-
     # Set dns servers
     dhcp-option=6,{{ .Values.dnsmasq.dnsServers }}
     dhcp-option=option:domain-name,cc.{{ .Values.global.region }}.cloud.sap
 
+    # Set ntp servers
+    dhcp-option=option:ntp-server,{{ .Values.ntpServers }}
+
     # IPv4 Configuration:
     dhcp-match=ipxe,175
-    # Client is already running iPXE; move to next stage of chainloading
-    dhcp-boot=tag:ipxe,http://{{ .Values.ipxe.host }}:{{ .Values.ipxe.port }}/ipxe/${uuid}
 
     # Note: Need to test EFI booting
     dhcp-match=set:efi,option:client-arch,7
@@ -56,43 +62,47 @@ data:
 
     # Client is running PXE over BIOS; send BIOS version of iPXE chainloader
     dhcp-boot=/undionly.kpxe,{{ .Values.dnsmasq.externalIP }}
-  rundnsmasq: |
-    #!/usr/bin/bash
-
-    set -eux
-
-    # shellcheck disable=SC1091
-    . /bin/ironic-common.sh
-
-    export HTTP_PORT=${HTTP_PORT:-80}
-    DNSMASQ_EXCEPT_INTERFACE=${DNSMASQ_EXCEPT_INTERFACE:-lo}
-    export DNS_PORT=${DNS_PORT:-0}
-
-    wait_for_interface_or_ip
-    if [[ "${DNS_IP:-}" == "provisioning" ]]; then
-        export DNS_IP="$IRONIC_URL_HOST"
-    fi
-
+  initdnsmasq.sh: |
+    #!/usr/bin/env bash
+    set -euxo pipefail
+    
     mkdir -p /shared/tftpboot
-    mkdir -p /shared/html/images
-    mkdir -p /shared/html/pxelinux.cfg
-
-    # Copy files to shared mount
-    cp /tftpboot/undionly.kpxe /tftpboot/snponly.efi /shared/tftpboot
 
     # use ironcore efi
     curl -o /shared/tftpboot/{{ .Values.ipxe.efi.file }} {{ .Values.ipxe.efi.host }}/{{ .Values.ipxe.efi.file }}
 
-    # Template and write dnsmasq.conf
-    # we template via /tmp as sed otherwise creates temp files in /etc directory
-    # where we can't write
-    python3 -c 'import os; import sys; import jinja2; sys.stdout.write(jinja2.Template(sys.stdin.read()).render(env=os.environ))' </etc/dnsmasq.conf.j2 >/tmp/dnsmasq.conf
+    exec /usr/sbin/dnsmasq -d -q -C /opt/dnsmasq/dnsmasq.conf
+  dhcp-init.sh: |
+    #!/usr/bin/env bash
+    set -euxo pipefail
+    # make sure to update dhcp-stop script to keep commands aligned
 
-    for iface in $(echo "$DNSMASQ_EXCEPT_INTERFACE" | tr ',' ' '); do
-        sed -i -e "/^interface=.*/ a\except-interface=${iface}" /tmp/dnsmasq.conf
-    done
-    #cat /tmp/dnsmasq.conf > /etc/dnsmasq.conf
-    #rm /tmp/dnsmasq.conf
-    cat /opt/dnsmasq/dnsmasq.conf > /etc/dnsmasq.conf
+    export INTERFACE=$(/sbin/ip route | grep -v cbr | awk '/default/ { print $5 }')
 
-    exec /usr/sbin/dnsmasq -d -q -C /etc/dnsmasq.conf
+    echo "Outgoing inteface is ${INTERFACE}"
+
+    echo "Adding rule for SNAT DHCP Reply to correct server IP address"
+
+    if iptables-nft -t nat -C POSTROUTING -p udp --sport 67 --dport 67 -j SNAT --to-source ${DHCPSERVERIP} 2>/dev/null; then
+      echo "Rule for SNAT DHCP Reply already present - skipping"
+    else
+      echo "Rule for SNAT DHCP Reply not present - creating rule"
+      iptables-nft -t nat -I POSTROUTING 1 -p udp --sport 67 --dport 67 -j SNAT --to-source ${DHCPSERVERIP}
+    fi
+
+    if iptables-nft -t nat -C POSTROUTING -p udp --sport 69 --dport 69 -j SNAT --to-source ${DHCPSERVERIP} 2>/dev/null; then
+      echo "Rule for SNAT TFTP Reply already present - skipping"
+    else
+      echo "Rule for SNAT TFTP Reply not present - creating rule"
+      iptables-nft -t nat -I POSTROUTING 1 -p udp --sport 69 --dport 69 -j SNAT --to-source ${DHCPSERVERIP}
+    fi
+  dhcp-stop.sh: |
+    #!/usr/bin/env bash
+    set -euxo pipefail
+    # make sure to update dhcp-init script to keep commands aligned
+
+    echo "Deleting rule for SNAT DHCP Reply"
+    iptables-nft -t nat -D POSTROUTING -p udp --sport 67 --dport 67 -j SNAT --to-source ${DHCPSERVERIP}
+
+    echo "Deleting rule for SNAT TFTP Reply"
+    iptables-nft -t nat -D POSTROUTING -p udp --sport 69 --dport 69 -j SNAT --to-source ${DHCPSERVERIP}

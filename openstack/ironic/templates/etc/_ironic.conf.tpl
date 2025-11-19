@@ -123,14 +123,12 @@ record_payloads = {{ if .Values.audit.record_payloads -}}True{{- else -}}False{{
 metrics_enabled = {{ if .Values.audit.metrics_enabled -}}True{{- else -}}False{{- end }}
 {{- end }}
 
-{{- include "osprofiler" . }}
 
 {{- include "ini_sections.cache" . }}
 
 
-{{- if or .Values.conductor.defaults.conductor.permitted_image_formats .Values.conductor.defaults.conductor.disable_deep_image_inspection }}
-
 [conductor]
+{{- if or .Values.conductor.defaults.conductor.permitted_image_formats .Values.conductor.defaults.conductor.disable_deep_image_inspection }}
   {{- if .Values.conductor.defaults.conductor.disable_deep_image_inspection }}
 disable_deep_image_inspection = {{ .Values.conductor.defaults.conductor.disable_deep_image_inspection }}
   {{- end }}
@@ -138,3 +136,5 @@ disable_deep_image_inspection = {{ .Values.conductor.defaults.conductor.disable_
 permitted_image_formats = {{ .Values.conductor.defaults.conductor.permitted_image_formats }}
   {{- end }}
 {{- end }}
+# Make sure to set it in api and conductor
+max_concurrent_clean = {{ .Values.conductor.defaults.conductor.max_concurrent_clean }}

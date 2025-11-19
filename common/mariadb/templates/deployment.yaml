@@ -21,16 +21,17 @@ spec:
     metadata:
       labels:
         app: {{ include "fullName" . }}
-        {{- include "mariadb.labels" (list $ "version" "mariadb" "deployment" "database") | indent 8 }}
+        {{- include "mariadb.labels" (list $ "noversion" "mariadb" "deployment" "database") | indent 8 }}
       annotations:
+        kubectl.kubernetes.io/default-container: mariadb
         checksum/etc: {{ include (print $.Template.BasePath  "/etc-configmap.yaml") . | sha256sum }}
         checksum/credential-updater: {{ include (print $.Template.BasePath  "/configmap-mariadb-credential-updater.yaml") . | sha256sum }}
 {{- if .Values.metrics.enabled }}
         prometheus.io/scrape: "true"
         prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
 {{- end }}
-{{- if and (and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested) $.Values.linkerd.mariadb.enabled }}
-        linkerd.io/inject: enabled
+{{- if $.Values.linkerd.mariadb.enabled }}
+        {{- include "mariadb.linkerdPodAnnotations" . | indent 8 }}
 {{- end }}
     spec:
       affinity:
@@ -71,70 +72,14 @@ spec:
             readOnly: true
           - name: init-file-root-sql
             mountPath: /etc/mysql/init-file
+{{- if .Values.global.mariadb.native_sidecar.enabled }}
+{{- else }}
       containers:
-      - name: mariadb
-        image: {{ required ".Values.global.dockerHubMirrorAlternateRegion is missing" .Values.global.dockerHubMirrorAlternateRegion }}/{{ .Values.image }}
-        imagePullPolicy: {{ default "IfNotPresent" .Values.imagePullPolicy | quote }}
-        lifecycle:
-          postStart:
-            exec:
-              command: ["sh", "-c", "while ! mysqladmin ping --silent; do sleep 1; done; mysql_upgrade"]
-        env:
-        - name: MYSQL_ROOT_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: mariadb-{{.Values.name}}
-              key: root-password
-        ports:
-          - name: mariadb
-            containerPort: 3306
-        {{- if .Values.livenessProbe.enabled }}
-        livenessProbe:
-          exec:
-            command: ["sh", "-c", "exec mysqladmin status"]
-          initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds }}
-          periodSeconds: {{ .Values.livenessProbe.periodSeconds }}
-          timeoutSeconds: {{ .Values.livenessProbe.timeoutSeconds }}
-          successThreshold: {{ .Values.livenessProbe.successThreshold }}
-          failureThreshold: {{ .Values.livenessProbe.failureThreshold }}
-        {{- end }}
-        {{- if .Values.readinessProbe.enabled }}
-        readinessProbe:
-          exec:
-            command: ["sh", "-c", "exec mysqladmin status"]
-          initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}
-          periodSeconds: {{ .Values.readinessProbe.periodSeconds }}
-          timeoutSeconds: {{ .Values.readinessProbe.timeoutSeconds }}
-          successThreshold: {{ .Values.readinessProbe.successThreshold }}
-          failureThreshold: {{ .Values.readinessProbe.failureThreshold }}
-        {{- end }}
-        resources:
-{{ toYaml (required "missing .resources" .Values.resources) | indent 10 }}
-        volumeMounts:
-          - name: mariadb-socket
-            mountPath: /run/mysqld
-{{- if .Values.persistence_claim.enabled }}
-          - name: mariadb-persistent-storage
-            mountPath: /var/lib/mysql
-            readOnly: false
 {{- end }}
-          - mountPath: /usr/local/bin/docker-entrypoint.sh
-            subPath: docker-entrypoint.sh
-            name: mariadb-entrypoint
-            readOnly: true
-          - mountPath: /etc/mysql/mariadb.conf.d/
-            name: mariadb-etc
-          - mountPath: /root/.my.cnf
-            subPath: ".my.cnf"
-            name: mariadb-client
-          - name: initdb
-            mountPath: /docker-entrypoint-initdb.d
-          - name: mysql-users-secret-file
-            mountPath: /etc/mysql/mysql-users-secret
-            readOnly: true
-          - name: init-file-root-sql
-            mountPath: /etc/mysql/init-file
       - name: user-credential-updater
+{{- if .Values.global.mariadb.native_sidecar.enabled }}
+        restartPolicy: Always
+{{- end }}
         image: "{{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{ .Values.credentialUpdater.image }}:{{ .Values.credentialUpdater.imageTag }}"
         imagePullPolicy: {{ default "IfNotPresent" .Values.imagePullPolicy | quote }}
         securityContext:
@@ -167,6 +112,9 @@ spec:
             name: initdb
 {{- if or .Values.backup_v2.enabled .Values.readiness.useSidecar }}
       - name: readiness
+{{- if .Values.global.mariadb.native_sidecar.enabled }}
+        restartPolicy: Always
+{{- end }}
         image: "{{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{ .Values.readiness.image }}:{{ .Values.readiness.image_version }}"
         command:
           - pod_readiness
@@ -186,6 +134,9 @@ spec:
 {{- end }}
 {{- if .Values.metrics.enabled }}
       - name: metrics
+{{- if .Values.global.mariadb.native_sidecar.enabled }}
+        restartPolicy: Always
+{{- end }}
         image: "{{ required ".Values.global.dockerHubMirrorAlternateRegion is missing" .Values.global.dockerHubMirrorAlternateRegion }}/{{ .Values.metrics.image }}:{{ .Values.metrics.image_version }}"
         imagePullPolicy: {{ default "IfNotPresent" .Values.imagePullPolicy | quote }}
         args:
@@ -224,6 +175,71 @@ spec:
             memory: {{ .Values.metrics.resources.requests.memory | quote }}
         {{- end }}
 {{- end }}
+{{- if .Values.global.mariadb.native_sidecar.enabled }}
+      containers:
+{{- end }}
+      - name: mariadb
+        image: {{ required ".Values.global.dockerHubMirrorAlternateRegion is missing" .Values.global.dockerHubMirrorAlternateRegion }}/{{ .Values.image }}
+        imagePullPolicy: {{ default "IfNotPresent" .Values.imagePullPolicy | quote }}
+        lifecycle:
+          postStart:
+            exec:
+              command: ["sh", "-c", "while ! mariadb-admin ping --silent; do sleep 1; done; mariadb-upgrade"]
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mariadb-{{.Values.name}}
+              key: root-password
+        ports:
+          - name: mariadb
+            containerPort: 3306
+        {{- if .Values.livenessProbe.enabled }}
+        livenessProbe:
+          exec:
+            command: ["sh", "-c", "exec mariadb-admin status"]
+          initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.livenessProbe.periodSeconds }}
+          timeoutSeconds: {{ .Values.livenessProbe.timeoutSeconds }}
+          successThreshold: {{ .Values.livenessProbe.successThreshold }}
+          failureThreshold: {{ .Values.livenessProbe.failureThreshold }}
+        {{- end }}
+        {{- if .Values.readinessProbe.enabled }}
+        readinessProbe:
+          exec:
+            command: ["sh", "-c", "exec mariadb-admin status"]
+          initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.readinessProbe.periodSeconds }}
+          timeoutSeconds: {{ .Values.readinessProbe.timeoutSeconds }}
+          successThreshold: {{ .Values.readinessProbe.successThreshold }}
+          failureThreshold: {{ .Values.readinessProbe.failureThreshold }}
+        {{- end }}
+        resources:
+{{ toYaml (required "missing .resources" .Values.resources) | indent 10 }}
+        volumeMounts:
+          - name: mariadb-socket
+            mountPath: /run/mysqld
+{{- if .Values.persistence_claim.enabled }}
+          - name: mariadb-persistent-storage
+            mountPath: /var/lib/mysql
+            readOnly: false
+{{- end }}
+          - mountPath: /usr/local/bin/docker-entrypoint.sh
+            subPath: docker-entrypoint.sh
+            name: mariadb-entrypoint
+            readOnly: true
+          - mountPath: /etc/mysql/mariadb.conf.d/
+            name: mariadb-etc
+          - mountPath: /root/.my.cnf
+            subPath: ".my.cnf"
+            name: mariadb-client
+          - name: initdb
+            mountPath: /docker-entrypoint-initdb.d
+          - name: mysql-users-secret-file
+            mountPath: /etc/mysql/mysql-users-secret
+            readOnly: true
+          - name: init-file-root-sql
+            mountPath: /etc/mysql/init-file
       priorityClassName: {{ .Values.priority_class | default "critical-infrastructure" | quote }}
       volumes:
         - name: mariadb-socket

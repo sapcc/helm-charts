@@ -10,9 +10,10 @@ metadata:
     component: hermes
 spec:
   requires:
+  - {{ .Values.global.keystoneNamespace }}/{{ .Values.global.is_global_region | ternary "keystone-global-seed" "keystone-seed" }}
   {{- range $domains}}
-  {{- if not (contains "iaas-" .)}}
-  - monsoon3/domain-{{ replace "_" "-" . | lower }}-seed
+  {{- if not (hasPrefix "iaas-" .)}}
+  - {{ $.Values.global.keystoneNamespace }}/domain-{{ replace "_" "-" . | lower }}-seed
   {{- end}}
   {{- end}}
 
@@ -65,7 +66,7 @@ spec:
           role: audit_viewer
 
     {{- range $domains}}
-    {{- if and (not (eq . "Default")) (not (eq . "cc3test")) (not (contains "iaas-" .))}}
+    {{- if and (not (eq . "Default")) (not (eq . "cc3test")) (not (hasPrefix "iaas-" .))}}
     - name: {{ . }}
       {{- if eq . "ccadmin"}}
       projects:
@@ -79,7 +80,7 @@ spec:
           role: audit_viewer
       {{- end }}
       groups:
-      - name: {{ contains "iaas-" . | ternary . ( upper . ) }}_API_SUPPORT
+      - name: {{ hasPrefix "iaas-" . | ternary . ( upper . ) }}_API_SUPPORT
         role_assignments:
         {{- if not (has . $cdomainsWithoutSupportProjects) }}
         - project: api_support
@@ -92,7 +93,7 @@ spec:
         - domain: {{ . }}
           role: audit_viewer
           inherited: true
-      - name: {{ contains "iaas-" . | ternary . ( upper . ) }}_COMPUTE_SUPPORT
+      - name: {{ hasPrefix "iaas-" . | ternary . ( upper . ) }}_COMPUTE_SUPPORT
         role_assignments:
         {{- if not (has . $cdomainsWithoutSupportProjects) }}
         - project: compute_support
@@ -105,7 +106,7 @@ spec:
         - domain: {{ . }}
           role: audit_viewer
           inherited: true
-      - name: {{ contains "iaas-" . | ternary . ( upper . ) }}_NETWORK_SUPPORT
+      - name: {{ hasPrefix "iaas-" . | ternary . ( upper . ) }}_NETWORK_SUPPORT
         role_assignments:
         {{- if not (has . $cdomainsWithoutSupportProjects) }}
         - project: network_support
@@ -118,7 +119,7 @@ spec:
         - domain: {{ . }}
           role: audit_viewer
           inherited: true
-      - name: {{ contains "iaas-" . | ternary . ( upper . ) }}_STORAGE_SUPPORT
+      - name: {{ hasPrefix "iaas-" . | ternary . ( upper . ) }}_STORAGE_SUPPORT
         role_assignments:
         {{- if not (has . $cdomainsWithoutSupportProjects) }}
         - project: storage_support
@@ -131,7 +132,7 @@ spec:
         - domain: {{ . }}
           role: audit_viewer
           inherited: true
-      - name: {{ contains "iaas-" . | ternary . ( upper . ) }}_SERVICE_DESK
+      - name: {{ hasPrefix "iaas-" . | ternary . ( upper . ) }}_SERVICE_DESK
         role_assignments:
         {{- if not (has . $cdomainsWithoutSupportProjects) }}
         - project: service_desk

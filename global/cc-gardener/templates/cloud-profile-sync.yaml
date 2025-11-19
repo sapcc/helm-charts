@@ -1,0 +1,85 @@
+{{ if .Values.cloudProfileSync.enabled -}}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cloud-profile-sync
+  labels:
+    app: cloud-profile-sync
+spec:
+  selector:
+    matchLabels:
+      app: cloud-profile-sync
+  replicas: {{ .Values.cloudProfileSync.replicaCount }}
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: cloud-profile-sync
+        networking.gardener.cloud/to-dns: allowed
+        networking.gardener.cloud/to-public-networks: allowed
+        networking.resources.gardener.cloud/to-virtual-garden-kube-apiserver-tcp-443: allowed
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/cloud-profile-sync-config.yaml") . | sha256sum }}
+        kubectl.kubernetes.io/default-container: cloud-profile-sync
+        prometheus.io/scrape: "true"
+        prometheus.io/targets: kubernetes
+    spec:
+      containers:
+      - image: "{{required ".Values.global.registry is missing" .Values.global.registry }}/{{ .Values.cloudProfileSync.image.repository }}:{{required ".Values.cloudProfileSync.image.tag is missing" .Values.cloudProfileSync.image.tag }}"
+        imagePullPolicy: {{ .Values.cloudProfileSync.image.pullPolicy }}
+        name: cloud-profile-sync
+        command: ["/cloud-profile-sync"]
+        env:
+        - name: KUBERNETES_SERVICE_HOST
+          value: virtual-garden-kube-apiserver.garden.svc.cluster.local
+        volumeMounts:
+        - name: config
+          mountPath: "/config"
+          readOnly: true
+        - name: kubeconfig
+          mountPath: "/var/run/secrets/kubernetes.io/serviceaccount"
+        ports:
+        - name: metrics
+          containerPort: 8080
+      {{ if ne .Values.cloudProfileSync.topologyKey "" -}}
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app
+                operator: In
+                values:
+                - cloud-profile-sync
+            topologyKey: {{ .Values.cloudProfileSync.topologyKey }}
+      {{ end -}}
+      volumes:
+        - name: config
+          configMap:
+            name: cloud-profile-sync
+        - name: kubeconfig
+          secret:
+            items:
+            - key: token
+              path: token
+            - key: bundle.crt
+              path: ca.crt
+            secretName: cloud-profile-sync-kubeconfig
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: cloud-profile-sync-kubeconfig
+  labels:
+    resources.gardener.cloud/purpose: token-requestor
+    resources.gardener.cloud/class: shoot
+  annotations:
+    serviceaccount.resources.gardener.cloud/name: cloud-profile-sync
+    serviceaccount.resources.gardener.cloud/namespace: garden
+    serviceaccount.resources.gardener.cloud/inject-ca-bundle: "true"
+stringData:
+  token: ""
+  bundle.crt: ""
+{{ end -}}

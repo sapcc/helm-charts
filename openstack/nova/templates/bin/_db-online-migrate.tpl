@@ -11,13 +11,10 @@ nova_manage_cell2="nova-manage --config-file /etc/nova/nova.conf --config-file /
 
 available_commands_text=$(nova-manage --help | awk '/Command categories/ {getline; print $0}')
 
-{{- if (.Values.imageVersion | hasPrefix "rocky" | not) }}
-
 $nova_manage_cell1 db online_data_migrations
 
 {{- if .Values.cell2.enabled }}
 $nova_manage_cell2 db online_data_migrations
-{{- end }}
 {{- end }}
 
 if echo "${available_commands_text}" | grep -q -E '[{,]placement[},]'; then

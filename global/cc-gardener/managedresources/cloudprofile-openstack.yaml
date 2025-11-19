@@ -6,12 +6,7 @@ metadata:
   name: openstack
 spec:
   type: openstack
-  regions:
-  - name: {{ .Values.global.region }}
-    zones:
-    {{- range .Values.extensions.openstack.zones }}
-    - name: {{ . }}
-    {{- end }}
+  regions: {{ toYaml .Values.extensions.openstack.regions | nindent 4 }}
   kubernetes:
     versions: {{ toYaml .Values.extensions.kubernetesVersions | nindent 6 }}
   machineTypes: {{ toYaml .Values.extensions.openstack.machineTypes | nindent 4 }}
@@ -19,7 +14,11 @@ spec:
   providerConfig: # https://github.com/gardener/gardener-extension-provider-openstack/blob/master/pkg/apis/openstack/types_cloudprofile.go
     apiVersion: openstack.provider.extensions.gardener.cloud/v1alpha1
     kind: CloudProfileConfig
-    keystoneURL: https://identity-3.{{ .Values.global.region }}.cloud.sap/v3
+    keystoneURLs:
+    {{- range $region := .Values.extensions.openstack.regions }}
+    - region: {{ $region.name | quote }}
+      url: "https://identity-3.{{ $region.name }}.cloud.sap/v3"
+    {{- end }}
     useOctavia: true
     constraints:
       floatingPools:

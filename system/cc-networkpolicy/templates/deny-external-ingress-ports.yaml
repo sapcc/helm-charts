@@ -1,0 +1,31 @@
+apiVersion: projectcalico.org/v3
+kind: GlobalNetworkPolicy
+metadata:
+  name: default.deny-external-ingress-ports
+spec:
+  preDNAT: true
+  applyOnForward: true
+  order: 10
+  ingress:
+    - action: Allow
+      source:
+        nets:
+{{ toYaml .Values.clusterCIDR | indent 10 }}
+    - action: Allow
+      source:
+        nets:
+{{ toYaml .Values.nodeNetworks | indent 10 }}
+{{- if .Values.denyExternalTcpPorts }}
+    - action: Deny
+      protocol: TCP
+      destination:
+        ports:
+{{ toYaml .Values.denyExternalTcpPorts | indent 10 }}
+{{- end -}}
+{{- if .Values.denyExternalUdpPorts }}
+    - action: Deny
+      protocol: UDP
+      destination:
+        ports:
+{{ toYaml .Values.denyExternalUdpPorts | indent 10 }}
+{{- end -}}

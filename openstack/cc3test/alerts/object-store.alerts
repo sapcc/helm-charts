@@ -8,7 +8,6 @@ groups:
     labels:
       severity: critical
       support_group: storage
-      tier: os
       service: '{{ $labels.service }}'
       context: '{{ $labels.service }}'
       meta: 'Openstack Swift API is down'
@@ -25,7 +24,6 @@ groups:
     labels:
       severity: warning
       support_group: storage
-      tier: os
       service: '{{ $labels.service }}'
       context: '{{ $labels.service }}'
       meta: 'Openstack Swift API is flapping'
@@ -38,12 +36,11 @@ groups:
 
   - alert: OpenstackCephApiDown
     expr: |
-        cc3test_status{service="ceph", type="api", phase="call"} == 0
-    for: 16m
+        cc3test_status{service="ceph", type="ceph_api", phase="call"} == 0
+    for: 2m
     labels:
       severity: warning
       support_group: storage
-      tier: os
       service: '{{ $labels.service }}'
       context: '{{ $labels.service }}'
       meta: 'Openstack Ceph API is down'
@@ -56,11 +53,11 @@ groups:
 
   - alert: OpenstackCephApiFlapping
     expr: |
-        changes(cc3test_status{service="ceph", type="api", phase="call"}[30m]) > 8
+        changes(cc3test_status{service="ceph", type="ceph_api", phase="call"}[30m]) > 8
+    for: 2m
     labels:
       severity: warning
       support_group: storage
-      tier: os
       service: '{{ $labels.service }}'
       context: '{{ $labels.service }}'
       meta: 'Openstack Ceph API is flapping'
@@ -77,7 +74,6 @@ groups:
     labels:
       severity: warning
       support_group: storage
-      tier: os
       service: '{{ $labels.service }}'
       context: '{{ $labels.service }}'
       meta: 'Openstack Ceph Container Create: {{ $labels.name }} Failed, see report for more details'
@@ -87,3 +83,51 @@ groups:
     annotations:
       description: 'Openstack Ceph Container Create: {{ $labels.name }} Failed, see report for more details'
       summary: 'Openstack Ceph Container Create: {{ $labels.name }} Failed, see report for more details'
+
+  - alert: OpenstackCephS3ApiDown
+    expr: |
+        cc3test_status{service="s3", type="api", phase="call"} == 0
+    for: 16m
+    labels:
+      severity: critical
+      support_group: storage
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      meta: 'Openstack Ceph S3 API is down'
+      dashboard: 'cc3test-api-status?var-service={{ $labels.service }}'
+      playbook: 'docs/operation/storage/ceph/ceph-alert/ceph-api-down/'
+      report: 'cc3test/admin/object-storage/swift/containers/cc3test/objects/{{ $labels.base64path }}'
+    annotations:
+      description: 'Openstack Ceph S3 API is down'
+      summary: 'Openstack Ceph S3 API is down1'
+
+  - alert: OpenstackCephS3ApiFlapping
+    expr: |
+        changes(cc3test_status{service="s3", type="api", phase="call"}[30m]) > 8
+    labels:
+      severity: warning
+      support_group: storage
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      meta: 'Openstack Ceph S3 API is flapping'
+      dashboard: 'cc3test-api-status?var-service={{ $labels.service }}'
+      playbook: 'docs/operation/storage/ceph/ceph-alert/ceph-api-down/'
+      report: 'cc3test/admin/object-storage/swift/containers/cc3test/objects/{{ $labels.base64path }}'
+    annotations:
+      description: 'Openstack Ceph S3 API is flapping'
+      summary: 'Openstack Ceph S3 API is flapping'
+
+  - alert: OpenstackCephCreateS3BucketFailed
+    expr: cc3test_status{service="s3", name=~"TestContainer_create_ceph_s3_bucket", phase="call"} == 0
+    for: 3h
+    labels:
+      severity: warning
+      support_group: storage
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      meta: 'Openstack Ceph S3 Bucket Create: {{ $labels.name }} Failed, see report for more details'
+      dashboard: cc3test-canary-status?var-service={{ $labels.service }}
+      report: 'cc3test/admin/object-storage/swift/containers/cc3test/objects/{{ $labels.base64path }}'
+    annotations:
+      description: 'Openstack Ceph S3 Bucket Creation: {{ $labels.name }} Failed, see report for more details'
+      summary: 'Openstack Ceph S3 Bucket Create : {{ $labels.name }} Failed, see report for more details'

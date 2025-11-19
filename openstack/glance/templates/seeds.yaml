@@ -15,12 +15,9 @@ metadata:
 spec:
   requires:
   {{- range $domains}}
-  {{- if not (contains "iaas-" .)}}
+  {{- if not (hasPrefix "iaas-" .)}}
   - monsoon3/domain-{{replace "_" "-" . | lower}}-seed
   {{- end }}
-  {{- end }}
-  {{- if .Values.tempest.enabled }}
-  - monsoon3/domain-tempest-seed
   {{- end }}
   - swift/swift-seed
 
@@ -45,7 +42,7 @@ spec:
       region: {{ .Values.global.region | quote }}
       url: http://{{include "glance_api_endpoint_host_internal" .}}:{{.Values.api_port_internal}}
 
-  # default and tempest get special handling
+  # default get special handling
   # ccadmin gets additional role assignments for projects and some group assignments
   # iaas- is excluded
 
@@ -72,27 +69,8 @@ spec:
       - project: admin
         role: cloud_image_admin
 
-  {{- if .Values.tempest.enabled }}
-  - name: tempest
-    projects:
-    - name: admin
-      role_assignments:
-      - user: admin
-        role: cloud_image_admin
-      - user: admin@Default
-        role: cloud_image_admin
-    - name: tempest1
-      role_assignments:
-      - user: admin@Default
-        role: cloud_image_admin
-    - name: tempest2
-      role_assignments:
-      - user: admin@Default
-        role: cloud_image_admin
-  {{- end }}
-
   {{- range $domains}}
-  {{- if and (ne . "Default") (not (contains "iaas-" .))}}
+  {{- if and (ne . "Default") (not (hasPrefix "iaas-" .))}}
   - name: {{ . }}
     {{- if eq . "ccadmin" }}
     projects:
@@ -123,7 +101,7 @@ spec:
       - project: cc-demo
         role: image_admin
     {{- end}}
-    - name: {{ contains "iaas-" . | ternary . ( upper . ) }}_API_SUPPORT
+    - name: {{ hasPrefix "iaas-" . | ternary . ( upper . ) }}_API_SUPPORT
       role_assignments:
       {{- if not (has . $cdomainsWithoutSupportProjects) }}
       - project: api_support
@@ -136,7 +114,7 @@ spec:
       - domain: {{ . }}
         role: image_admin
         inherited: true
-    - name: {{ contains "iaas-" . | ternary . ( upper . ) }}_COMPUTE_SUPPORT
+    - name: {{ hasPrefix "iaas-" . | ternary . ( upper . ) }}_COMPUTE_SUPPORT
       role_assignments:
       {{- if not (has . $cdomainsWithoutSupportProjects) }}
       - project: compute_support
@@ -149,7 +127,7 @@ spec:
       - domain: {{ . }}
         role: image_admin
         inherited: true
-    - name: {{ contains "iaas-" . | ternary . ( upper . ) }}_NETWORK_SUPPORT
+    - name: {{ hasPrefix "iaas-" . | ternary . ( upper . ) }}_NETWORK_SUPPORT
       role_assignments:
       {{- if not (has . $cdomainsWithoutSupportProjects) }}
       - project: network_support
@@ -162,7 +140,7 @@ spec:
       - domain: {{ . }}
         role: image_viewer
         inherited: true
-    - name: {{ contains "iaas-" . | ternary . ( upper . ) }}_STORAGE_SUPPORT
+    - name: {{ hasPrefix "iaas-" . | ternary . ( upper . ) }}_STORAGE_SUPPORT
       role_assignments:
       {{- if not (has . $cdomainsWithoutSupportProjects) }}
       - project: storage_support
@@ -175,7 +153,7 @@ spec:
       - domain: {{ . }}
         role: image_viewer
         inherited: true
-    - name: {{ contains "iaas-" . | ternary . ( upper . ) }}_SERVICE_DESK
+    - name: {{ hasPrefix "iaas-" . | ternary . ( upper . ) }}_SERVICE_DESK
       role_assignments:
       {{- if not (has . $cdomainsWithoutSupportProjects) }}
       - project: service_desk

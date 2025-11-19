@@ -10,6 +10,9 @@ kibana_read_only:
 security_rest_api_access:
   reserved: true
 
+anonymous_health_role:
+  cluster_permissions:
+    - cluster:monitor/health
 
 data:
   reserved: false
@@ -23,15 +26,13 @@ data:
   - "cluster:admin/opensearch/ml/predict"
   index_permissions:
   - index_patterns:
+    - "deployments-datastream"
     - "alerts-datastream"
-    allowed_actions:
-    - "indices:admin/template/get"
-    - "indices:admin/template/put"
-    - "indices:admin/mapping/put"
-    - "indices:admin/create"
-    - "indices:data/write/bulk*"
-    - "indices:data/write/index"
-  - index_patterns:
+    - "logs-datastream"
+    - "logs-swift-datastream"
+    - "compute-datastream"
+    - "storage-datastream"
+    - "alerts-datastream"
     - "deployments-datastream"
     allowed_actions:
     - "indices:admin/template/get"
@@ -40,115 +41,6 @@ data:
     - "indices:admin/create"
     - "indices:data/write/bulk*"
     - "indices:data/write/index"
-  - index_patterns:
-    - "logstash-*"
-    allowed_actions:
-    - "indices:admin/template/get"
-    - "indices:admin/template/put"
-    - "indices:admin/mapping/put"
-    - "indices:admin/create"
-    - "indices:data/write/bulk*"
-    - "indices:data/write/index"
-  - index_patterns:
-    - "logs-datastream"
-    allowed_actions:
-    - "indices:admin/template/get"
-    - "indices:admin/template/put"
-    - "indices:admin/mapping/put"
-    - "indices:admin/create"
-    - "indices:data/write/bulk*"
-    - "indices:data/write/index"
-  - index_patterns:
-    - "logs-swift-datastream"
-    allowed_actions:
-    - "indices:admin/template/get"
-    - "indices:admin/template/put"
-    - "indices:admin/mapping/put"
-    - "indices:admin/create"
-    - "indices:data/write/bulk*"
-    - "indices:data/write/index"
-  - index_patterns:
-    - "systemd-*"
-    allowed_actions:
-    - "indices:admin/template/get"
-    - "indices:admin/template/put"
-    - "indices:admin/mapping/put"
-    - "indices:admin/create"
-    - "indices:data/write/bulk*"
-    - "indices:data/write/index"
-  - index_patterns:
-    - "compute-*"
-    allowed_actions:
-    - "indices:admin/template/get"
-    - "indices:admin/template/put"
-    - "indices:admin/mapping/put"
-    - "indices:admin/create"
-    - "indices:data/write/bulk*"
-    - "indices:data/write/index"
-  - index_patterns:
-    - "qade2-logstash-*"
-    allowed_actions:
-    - "indices:admin/template/get"
-    - "indices:admin/template/put"
-    - "indices:admin/mapping/put"
-    - "indices:admin/create"
-    - "indices:data/write/bulk*"
-    - "indices:data/write/index"
-  - index_patterns:
-    - "qade3-logstash-*"
-    allowed_actions:
-    - "indices:admin/template/get"
-    - "indices:admin/template/put"
-    - "indices:admin/mapping/put"
-    - "indices:admin/create"
-    - "indices:data/write/bulk*"
-    - "indices:data/write/index"
-  - index_patterns:
-    - "qade5-logstash-*"
-    allowed_actions:
-    - "indices:admin/template/get"
-    - "indices:admin/template/put"
-    - "indices:admin/mapping/put"
-    - "indices:admin/create"
-    - "indices:data/write/bulk*"
-    - "indices:data/write/index"
-  - index_patterns:
-    - "greenhouse-*"
-    allowed_actions:
-    - "indices:admin/template/get"
-    - "indices:admin/template/put"
-    - "indices:admin/mapping/put"
-    - "indices:admin/create"
-    - "indices:data/write/bulk*"
-    - "indices:data/write/index"
-  - index_patterns:
-    - "storage-*"
-    allowed_actions:
-    - "indices:admin/template/get"
-    - "indices:admin/template/put"
-    - "indices:admin/mapping/put"
-    - "indices:admin/create"
-    - "indices:data/write/bulk*"
-    - "indices:data/write/index"
-  - index_patterns:
-    - "alerts-*"
-    allowed_actions:
-    - "indices:admin/template/get"
-    - "indices:admin/template/put"
-    - "indices:admin/mapping/put"
-    - "indices:admin/create"
-    - "indices:data/write/bulk*"
-    - "indices:data/write/index"
-  - index_patterns:
-    - "deployments-*"
-    allowed_actions:
-    - "indices:admin/template/get"
-    - "indices:admin/template/put"
-    - "indices:admin/mapping/put"
-    - "indices:admin/create"
-    - "indices:data/write/bulk*"
-    - "indices:data/write/index"
-
 jump:
   reserved: false
   cluster_permissions:
@@ -377,6 +269,7 @@ complex-role:
   cluster_permissions:
   - "read"
   - "cluster:monitor/nodes/stats"
+  - "cluster:admin/opensearch/ql/datasources/read"
   - "cluster:monitor/task/get"
   - 'cluster:admin/opendistro/reports/definition/create'
   - 'cluster:admin/opendistro/reports/definition/update'
@@ -387,16 +280,25 @@ complex-role:
   - 'cluster:admin/opendistro/reports/instance/list'
   - 'cluster:admin/opendistro/reports/instance/get'
   - 'cluster:admin/opendistro/reports/menu/download'
+  - 'cluster:admin/opensearch/ppl'
   index_permissions:
   - index_patterns:
     - "*"
     allowed_actions:
+    - "search"
     - "read"
+    - "get"
+    - "indices:monitor/settings/get"
+    - "indices:admin/create"
+    - 'indices:admin/mappings/get'
+    - 'indices:data/read/search*'
+    - "indices:admin/get"
   tenant_permissions:
   - tenant_patterns:
     - "*"
     allowed_actions:
     - "kibana_all_write"
+    - "kibana_all_read"
 
 promrole:
   reserved: false
@@ -486,6 +388,14 @@ maillog:
     - "indices:data/write/update"
     - "indices:data/write/update/byquery"
     - "read"
+    - "indices:monitor/settings/get"
+    - "indices:monitor/stats"
+  - index_patterns:
+    - "logs-*"
+    allowed_actions:
+    - "read"
+    - "indices:data/read/search*"
+    - "indices:data/read/get"
     - "indices:monitor/settings/get"
     - "indices:monitor/stats"
 

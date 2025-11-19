@@ -33,7 +33,7 @@ api_paste_config = /etc/designate/api-paste.ini
 network_api = neutron
 
 # Supported record types
-#supported_record_type = A,AAAA,CNAME,MX,SRV,TXT,SPF,NS,PTR,SSHFP,SOA,NAPTR,CAA,CERT
+#supported_record_type = A,AAAA,CNAME,MX,SRV,TXT,SPF,NS,PTR,SSHFP,SOA,NAPTR,CAA,CERT,HTTPS,SVCB
 
 # Setting SOA defaults
 default_soa_refresh_min = 3500
@@ -156,10 +156,10 @@ enabled_extensions_v2 = quotas, reports
 
 # Default per-page limit for the V2 API, a value of None means show all results
 # by default
-#default_limit_v2 = 20
+default_limit_v2 = 200
 
 # Max page size in the V2 API
-#max_limit_v2 = 1000
+max_limit_v2 = 1000
 
 # Enable Admin API (experimental)
 #enable_api_admin = True
@@ -182,15 +182,45 @@ enabled_extensions_v2 = quotas, reports
 #pecan_debug = False
 
 #-----------------------
+# Keystone
+#-----------------------
+[keystone]
+# The maximum number of retries that should be attempted for connection errors.
+# (integer value)
+connect_retries = 20
+
+# Delay (in seconds) between two retries for connection errors. If not set,
+# exponential retry starting with 0.5 seconds up to a maximum of 60 seconds is
+# used. (floating point value)
+connect_retry_delay = 0.5
+
+# The maximum number of retries that should be attempted for retriable HTTP
+# status codes. (integer value)
+status_code_retries = 20
+
+# Delay (in seconds) between two retries for retriable status codes. If not set,
+# exponential retry starting with 0.5 seconds up to a maximum of 60 seconds is
+# used. (floating point value)
+status_code_retry_delay = 0.5
+
+# List of retriable HTTP status codes that should be retried. If not set default
+# to  [503] (list value)
+retriable_status_codes = 500, 502, 503, 504
+
+#-----------------------
 # Keystone Middleware
 #-----------------------
 [keystone_authtoken]
 auth_type = v3password
 auth_version = v3
+{{- if .Values.global.is_global_region }}
+auth_interface = public
+{{- else }}
 auth_interface = internal
+{{- end }}
 www_authenticate_uri = https://{{include "keystone_api_endpoint_host_public" .}}/v3
-{{- if .Values.global_setup }}
-auth_url = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{ .Values.global.keystone_internal_ip }}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
+{{- if .Values.global.is_global_region }}
+auth_url = https://{{include "keystone_api_endpoint_host_public" .}}/v3
 {{- else }}
 auth_url = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
 {{- end }}
@@ -198,12 +228,16 @@ user_domain_name = {{.Values.global.keystone_service_domain | default "Default"}
 project_name = {{.Values.global.keystone_service_project | default "service"}}
 project_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}
 region_name = {{.Values.global.region}}
-{{- if .Values.global_setup }}
-memcached_servers = "{{ include "helm-toolkit.utils.joinListWithComma" .Values.memcached.server_ips_ports }}"
+{{- if .Values.global.is_global_region }}
+memcached_servers = {{.Release.Name}}-memcached.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.db_region}}.{{.Values.global.tld}}:{{.Values.global.memcached_port_public | default 11211}}
 {{- else }}
 memcached_servers = {{.Release.Name}}-memcached.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.global.memcached_port_public | default 11211}}
 {{- end }}
+{{- if .Values.global.is_global_region }}
+insecure = False
+{{- else }}
 insecure = True
+{{- end }}
 token_cache_time = 600
 include_service_catalog = true
 service_type = dns
@@ -432,7 +466,7 @@ all_tcp = {{ .Values.worker_all_tcp }}
 ##############
 [network_api:neutron]
 # Comma separated list of values, formatted "<name>|<neutron_uri>"
-{{- if eq .Values.global_setup false }}
+{{- if not .Values.global.is_global_region }}
 endpoints = {{ .Values.global.region }}|https://network-3.{{ .Values.global.region }}.{{ .Values.global.tld }}
 endpoint_type = publicURL
 timeout = 30

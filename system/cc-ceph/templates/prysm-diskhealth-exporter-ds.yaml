@@ -16,15 +16,15 @@ spec:
     spec:
       containers:
       - name: prysm
-        image: {{ .Values.objectstore.prysmDiskHealth.repository.image }}:{{ .Values.objectstore.prysm.repository.tag }}
-        imagePullPolicy: {{ .Values.objectstore.prysm.repository.pullPolicy }}
+        image: {{ .Values.objectstore.prysmDiskHealth.repository.image }}:{{ .Values.objectstore.prysmDiskHealth.repository.tag }}
+        imagePullPolicy: {{ .Values.objectstore.prysmDiskHealth.repository.pullPolicy }}
         args:
         - "local-producer"
         - "disk-health-metrics"
         - '--disks={{ .Values.objectstore.prysm.diskHealth.disks }}'
         - '--interval={{ .Values.objectstore.prysm.diskHealth.interval }}'
         - '--prometheus=true'
-        - '-v=info'
+        - '-v=warn'
         securityContext:
           privileged: true # Required to access host devices
         env:
@@ -38,6 +38,9 @@ spec:
           - name: host-proc
             mountPath: /host/proc
             readOnly: true
+          - name: host-rook-ceph
+            mountPath: /var/lib/rook/rook-ceph
+            readOnly: true
         ports:
         - containerPort: 8080
           name: metrics
@@ -49,6 +52,10 @@ spec:
         - name: host-proc
           hostPath:
             path: /proc
+            type: Directory
+        - name: host-rook-ceph
+          hostPath:
+            path: /var/lib/rook/rook-ceph
             type: Directory
       nodeSelector:
 {{ toYaml .Values.objectstore.prysm.diskHealth.nodeSelector | indent 8 }}

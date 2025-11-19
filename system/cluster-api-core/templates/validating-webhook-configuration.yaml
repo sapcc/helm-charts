@@ -3,7 +3,7 @@ kind: ValidatingWebhookConfiguration
 metadata:
   name: {{ include "cluster-api-core.fullname" . }}-validating-webhook-configuration
   annotations:
-    cert-manager.io/inject-ca-from: {{ .Release.Namespace }}/{{ include "cluster-api-core.fullname" . }}-serving-cert
+    cert-manager.io/inject-ca-from: {{ .Release.Namespace }}/capi-serving-cert
   labels:
   {{- include "cluster-api-core.labels" . | nindent 4 }}
 webhooks:
@@ -14,7 +14,7 @@ webhooks:
     service:
       name: '{{ include "cluster-api-core.fullname" . }}-webhook-service'
       namespace: '{{ .Release.Namespace }}'
-      path: /validate-cluster-x-k8s-io-v1beta1-cluster
+      path: /validate-cluster-x-k8s-io-v1beta2-cluster
   failurePolicy: Fail
   matchPolicy: Equivalent
   name: validation.cluster.cluster.x-k8s.io
@@ -22,7 +22,7 @@ webhooks:
   - apiGroups:
     - cluster.x-k8s.io
     apiVersions:
-    - v1beta1
+    - v1beta2
     operations:
     - CREATE
     - UPDATE
@@ -37,7 +37,7 @@ webhooks:
     service:
       name: '{{ include "cluster-api-core.fullname" . }}-webhook-service'
       namespace: '{{ .Release.Namespace }}'
-      path: /validate-cluster-x-k8s-io-v1beta1-clusterclass
+      path: /validate-cluster-x-k8s-io-v1beta2-clusterclass
   failurePolicy: Fail
   matchPolicy: Equivalent
   name: validation.clusterclass.cluster.x-k8s.io
@@ -45,7 +45,7 @@ webhooks:
   - apiGroups:
     - cluster.x-k8s.io
     apiVersions:
-    - v1beta1
+    - v1beta2
     operations:
     - CREATE
     - UPDATE
@@ -60,139 +60,7 @@ webhooks:
     service:
       name: '{{ include "cluster-api-core.fullname" . }}-webhook-service'
       namespace: '{{ .Release.Namespace }}'
-      path: /validate-cluster-x-k8s-io-v1beta1-machine
-  failurePolicy: Fail
-  matchPolicy: Equivalent
-  name: validation.machine.cluster.x-k8s.io
-  rules:
-  - apiGroups:
-    - cluster.x-k8s.io
-    apiVersions:
-    - v1beta1
-    operations:
-    - CREATE
-    - UPDATE
-    resources:
-    - machines
-  sideEffects: None
-- admissionReviewVersions:
-  - v1
-  - v1beta1
-  clientConfig:
-    service:
-      name: '{{ include "cluster-api-core.fullname" . }}-webhook-service'
-      namespace: '{{ .Release.Namespace }}'
-      path: /validate-cluster-x-k8s-io-v1beta1-machinedeployment
-  failurePolicy: Fail
-  matchPolicy: Equivalent
-  name: validation.machinedeployment.cluster.x-k8s.io
-  rules:
-  - apiGroups:
-    - cluster.x-k8s.io
-    apiVersions:
-    - v1beta1
-    operations:
-    - CREATE
-    - UPDATE
-    resources:
-    - machinedeployments
-  sideEffects: None
-- admissionReviewVersions:
-  - v1
-  - v1beta1
-  clientConfig:
-    service:
-      name: '{{ include "cluster-api-core.fullname" . }}-webhook-service'
-      namespace: '{{ .Release.Namespace }}'
-      path: /validate-cluster-x-k8s-io-v1beta1-machinehealthcheck
-  failurePolicy: Fail
-  matchPolicy: Equivalent
-  name: validation.machinehealthcheck.cluster.x-k8s.io
-  rules:
-  - apiGroups:
-    - cluster.x-k8s.io
-    apiVersions:
-    - v1beta1
-    operations:
-    - CREATE
-    - UPDATE
-    resources:
-    - machinehealthchecks
-  sideEffects: None
-- admissionReviewVersions:
-  - v1
-  - v1beta1
-  clientConfig:
-    service:
-      name: '{{ include "cluster-api-core.fullname" . }}-webhook-service'
-      namespace: '{{ .Release.Namespace }}'
-      path: /validate-cluster-x-k8s-io-v1beta1-machineset
-  failurePolicy: Fail
-  matchPolicy: Equivalent
-  name: validation.machineset.cluster.x-k8s.io
-  rules:
-  - apiGroups:
-    - cluster.x-k8s.io
-    apiVersions:
-    - v1beta1
-    operations:
-    - CREATE
-    - UPDATE
-    resources:
-    - machinesets
-  sideEffects: None
-- admissionReviewVersions:
-  - v1
-  - v1beta1
-  clientConfig:
-    service:
-      name: '{{ include "cluster-api-core.fullname" . }}-webhook-service'
-      namespace: '{{ .Release.Namespace }}'
-      path: /validate-runtime-cluster-x-k8s-io-v1alpha1-extensionconfig
-  failurePolicy: Fail
-  matchPolicy: Equivalent
-  name: validation.extensionconfig.runtime.cluster.x-k8s.io
-  rules:
-  - apiGroups:
-    - runtime.cluster.x-k8s.io
-    apiVersions:
-    - v1alpha1
-    operations:
-    - CREATE
-    - UPDATE
-    resources:
-    - extensionconfigs
-  sideEffects: None
-- admissionReviewVersions:
-  - v1
-  - v1beta1
-  clientConfig:
-    service:
-      name: '{{ include "cluster-api-core.fullname" . }}-webhook-service'
-      namespace: '{{ .Release.Namespace }}'
-      path: /validate-cluster-x-k8s-io-v1beta1-machinepool
-  failurePolicy: Fail
-  matchPolicy: Equivalent
-  name: validation.machinepool.cluster.x-k8s.io
-  rules:
-  - apiGroups:
-    - cluster.x-k8s.io
-    apiVersions:
-    - v1beta1
-    operations:
-    - CREATE
-    - UPDATE
-    resources:
-    - machinepools
-  sideEffects: None
-- admissionReviewVersions:
-  - v1
-  - v1beta1
-  clientConfig:
-    service:
-      name: '{{ include "cluster-api-core.fullname" . }}-webhook-service'
-      namespace: '{{ .Release.Namespace }}'
-      path: /validate-addons-cluster-x-k8s-io-v1beta1-clusterresourceset
+      path: /validate-addons-cluster-x-k8s-io-v1beta2-clusterresourceset
   failurePolicy: Fail
   matchPolicy: Equivalent
   name: validation.clusterresourceset.addons.cluster.x-k8s.io
@@ -200,7 +68,7 @@ webhooks:
   - apiGroups:
     - addons.cluster.x-k8s.io
     apiVersions:
-    - v1beta1
+    - v1beta2
     operations:
     - CREATE
     - UPDATE
@@ -214,7 +82,7 @@ webhooks:
     service:
       name: '{{ include "cluster-api-core.fullname" . }}-webhook-service'
       namespace: '{{ .Release.Namespace }}'
-      path: /validate-addons-cluster-x-k8s-io-v1beta1-clusterresourcesetbinding
+      path: /validate-addons-cluster-x-k8s-io-v1beta2-clusterresourcesetbinding
   failurePolicy: Fail
   matchPolicy: Equivalent
   name: validation.clusterresourcesetbinding.addons.cluster.x-k8s.io
@@ -222,7 +90,7 @@ webhooks:
   - apiGroups:
     - addons.cluster.x-k8s.io
     apiVersions:
-    - v1beta1
+    - v1beta2
     operations:
     - CREATE
     - UPDATE
@@ -236,7 +104,161 @@ webhooks:
     service:
       name: '{{ include "cluster-api-core.fullname" . }}-webhook-service'
       namespace: '{{ .Release.Namespace }}'
-      path: /validate-ipam-cluster-x-k8s-io-v1beta1-ipaddress
+      path: /validate-cluster-x-k8s-io-v1beta2-machine
+  failurePolicy: Fail
+  matchPolicy: Equivalent
+  name: validation.machine.cluster.x-k8s.io
+  rules:
+  - apiGroups:
+    - cluster.x-k8s.io
+    apiVersions:
+    - v1beta2
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - machines
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  - v1beta1
+  clientConfig:
+    service:
+      name: '{{ include "cluster-api-core.fullname" . }}-webhook-service'
+      namespace: '{{ .Release.Namespace }}'
+      path: /validate-cluster-x-k8s-io-v1beta2-machinedeployment
+  failurePolicy: Fail
+  matchPolicy: Equivalent
+  name: validation.machinedeployment.cluster.x-k8s.io
+  rules:
+  - apiGroups:
+    - cluster.x-k8s.io
+    apiVersions:
+    - v1beta2
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - machinedeployments
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  - v1beta1
+  clientConfig:
+    service:
+      name: '{{ include "cluster-api-core.fullname" . }}-webhook-service'
+      namespace: '{{ .Release.Namespace }}'
+      path: /validate-cluster-x-k8s-io-v1beta2-machinedrainrule
+  failurePolicy: Fail
+  matchPolicy: Equivalent
+  name: validation.machinedrainrule.cluster.x-k8s.io
+  rules:
+  - apiGroups:
+    - cluster.x-k8s.io
+    apiVersions:
+    - v1beta2
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - machinedrainrules
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  - v1beta1
+  clientConfig:
+    service:
+      name: '{{ include "cluster-api-core.fullname" . }}-webhook-service'
+      namespace: '{{ .Release.Namespace }}'
+      path: /validate-cluster-x-k8s-io-v1beta2-machinehealthcheck
+  failurePolicy: Fail
+  matchPolicy: Equivalent
+  name: validation.machinehealthcheck.cluster.x-k8s.io
+  rules:
+  - apiGroups:
+    - cluster.x-k8s.io
+    apiVersions:
+    - v1beta2
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - machinehealthchecks
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  - v1beta1
+  clientConfig:
+    service:
+      name: '{{ include "cluster-api-core.fullname" . }}-webhook-service'
+      namespace: '{{ .Release.Namespace }}'
+      path: /validate-cluster-x-k8s-io-v1beta2-machineset
+  failurePolicy: Fail
+  matchPolicy: Equivalent
+  name: validation.machineset.cluster.x-k8s.io
+  rules:
+  - apiGroups:
+    - cluster.x-k8s.io
+    apiVersions:
+    - v1beta2
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - machinesets
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  - v1beta1
+  clientConfig:
+    service:
+      name: '{{ include "cluster-api-core.fullname" . }}-webhook-service'
+      namespace: '{{ .Release.Namespace }}'
+      path: /validate-runtime-cluster-x-k8s-io-v1beta2-extensionconfig
+  failurePolicy: Fail
+  matchPolicy: Equivalent
+  name: validation.extensionconfig.runtime.cluster.x-k8s.io
+  rules:
+  - apiGroups:
+    - runtime.cluster.x-k8s.io
+    apiVersions:
+    - v1beta2
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - extensionconfigs
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  - v1beta1
+  clientConfig:
+    service:
+      name: '{{ include "cluster-api-core.fullname" . }}-webhook-service'
+      namespace: '{{ .Release.Namespace }}'
+      path: /validate-cluster-x-k8s-io-v1beta2-machinepool
+  failurePolicy: Fail
+  matchPolicy: Equivalent
+  name: validation.machinepool.cluster.x-k8s.io
+  rules:
+  - apiGroups:
+    - cluster.x-k8s.io
+    apiVersions:
+    - v1beta2
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - machinepools
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  - v1beta1
+  clientConfig:
+    service:
+      name: '{{ include "cluster-api-core.fullname" . }}-webhook-service'
+      namespace: '{{ .Release.Namespace }}'
+      path: /validate-ipam-cluster-x-k8s-io-v1beta2-ipaddress
   failurePolicy: Fail
   matchPolicy: Equivalent
   name: validation.ipaddress.ipam.cluster.x-k8s.io
@@ -244,7 +266,7 @@ webhooks:
   - apiGroups:
     - ipam.cluster.x-k8s.io
     apiVersions:
-    - v1beta1
+    - v1beta2
     operations:
     - CREATE
     - UPDATE
@@ -259,7 +281,7 @@ webhooks:
     service:
       name: '{{ include "cluster-api-core.fullname" . }}-webhook-service'
       namespace: '{{ .Release.Namespace }}'
-      path: /validate-ipam-cluster-x-k8s-io-v1beta1-ipaddressclaim
+      path: /validate-ipam-cluster-x-k8s-io-v1beta2-ipaddressclaim
   failurePolicy: Fail
   matchPolicy: Equivalent
   name: validation.ipaddressclaim.ipam.cluster.x-k8s.io
@@ -267,7 +289,7 @@ webhooks:
   - apiGroups:
     - ipam.cluster.x-k8s.io
     apiVersions:
-    - v1beta1
+    - v1beta2
     operations:
     - CREATE
     - UPDATE

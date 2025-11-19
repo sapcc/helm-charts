@@ -4,6 +4,16 @@ kind: PluginPreset
 metadata:
   name: thanos
   namespace: ccloud
+  labels:
+    greenhouse.sap/owned-by: observability
+{{- if .Values.global.fluxEnabled }}
+    greenhouse.sap/deployment-tool: "flux"
+  annotations:
+    "greenhouse.sap/propagate-labels": "greenhouse.sap/owned-by,greenhouse.sap/deployment-tool"
+{{- else }}
+  annotations:
+    "greenhouse.sap/propagate-labels": "greenhouse.sap/owned-by"
+{{- end }}
 spec:
   clusterOptionOverrides:
   {{- range $plugin := .Values.ingressPlugins }}
@@ -21,6 +31,11 @@ spec:
         - hosts:
             - "thanos-grpc.{{ $ingressDomain }}"
           secretName: {{ printf "tls-thanos-grpc-%s" $ingressDomain | replace "." "-" }}
+    - name: thanos.serviceMonitor.selfMonitor
+      value: true
+    - name: thanos.serviceMonitor.labels
+      value:
+        plugin: "kube-monitoring"
   {{- end }}
   clusterSelector:
     matchExpressions:
@@ -31,23 +46,14 @@ spec:
     - key: cluster
       operator: In
       values:
-{{- range $cluster, $additionalSettings := .Values.kubeMonitoring.cephClusters }}
+{{- range $serviceName, $serviceSpecs := .Values.kubeMonitoring.services }}
+{{- range $cluster, $additionalSettings := $serviceSpecs.clusters }}
     {{- if index $additionalSettings "thanos" }}
       - {{ $cluster }}
     {{- end }}
 {{- end }}
-{{- range $cluster, $additionalSettings := .Values.kubeMonitoring.computeClusters }}
-    {{- if index $additionalSettings "thanos" }}
-      - {{ $cluster }}
-    {{- end }}
-{{- end }}
-{{- range $cluster, $additionalSettings := .Values.kubeMonitoring.obsClusters }}
-    {{- if index $additionalSettings "thanos" }}
-      - {{ $cluster }}
-    {{- end }}
 {{- end }}
   plugin:
-    disabled: false
     displayName: Thanos
     pluginDefinition: thanos
     releaseNamespace: kube-monitoring
@@ -84,4 +90,12 @@ spec:
       value: true
     - name: thanos.query.ingress.grpc.ingressClassName
       value: nginx
+    - name: thanos.serviceMonitor.alertLabels
+      value: |
+        support_group: observability
+        service: metrics
+    - name: thanos.existingObjectStoreSecret.name
+      value: thanos-metrics-objectstore
+    - name: thanos.existingObjectStoreSecret.configFile
+      value: thanos.yaml
 {{- end -}}

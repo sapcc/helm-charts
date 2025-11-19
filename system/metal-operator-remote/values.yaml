@@ -1,44 +1,72 @@
-controllerManager:
-  manager:
-    args:
-      - --mac-prefixes-file=/etc/macdb/macdb.yaml
-      - --probe-image=keppel.eu-de-1.cloud.sap/ccloud-ghcr-io-mirror/ironcore-dev/metalprobe:latest
-      - --probe-os-image=ghcr.io/ironcore-dev/os-images/gardenlinux:1443.3
-      - --insecure=false
-      - --registry-url=http://[2a10:afc0:e013:d002::]:30010
-      - --manager-namespace=metal-operator-system
-    containerSecurityContext:
-      allowPrivilegeEscalation: false
-      capabilities:
-        drop:
-          - ALL
-    env:
-      enableWebhooks: "false"
-      kubernetesServiceHost: apiserver-url
-    image:
-      repository: controller
-      tag: d339e4ef08f0c3208a9d6c9b46c0a5a9b7266a6c
-    resources:
-      limits:
-        cpu: 500m
-        memory: 128Mi
-      requests:
-        cpu: 10m
-        memory: 64Mi
-  podSecurityContext:
-    runAsNonRoot: true
-  replicas: 1
-  strategy:
-    type: Recreate
+owner-info:
+  support-group: containers
+  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/system/metal-operator-remote
+
 kubernetesClusterDomain: cluster.local
 metalRegistryService:
   ports:
-    - nodePort: 30010
-      port: 80
+    - port: 10000
       protocol: TCP
       targetPort: 10000
-  type: NodePort
+  type: ClusterIP
 fullnameOverride: metal-operator
 remote:
   ca: ""
 macdb: {}
+hostNetwork: false
+
+metal-operator-core:
+  rbac:
+    enable: false
+  crd:
+    enable: false
+  metrics:
+    enable: false
+  webhook:
+    enable: false
+  prometheus:
+    enable: false
+  certmanager:
+    enable: false
+  networkPolicy:
+    enable: false
+
+  controllerManager:
+    manager:
+      args:
+        - --mac-prefixes-file=/etc/macdb/macdb.yaml
+        - --probe-image=keppel.eu-de-1.cloud.sap/ccloud-ghcr-io-mirror/ironcore-dev/metalprobe:latest
+        - --probe-os-image=ghcr.io/ironcore-dev/os-images/gardenlinux:1443.3
+        - --insecure=false
+        - --registry-url=http://[2a10:afc0:e013:d002::]:30010
+        - --manager-namespace=metal-operator-system
+      env:
+        KUBERNETES_SERVICE_HOST: "apiserver-url"
+        ENABLE_WEBHOOKS: "false"
+        KUBERNETES_CLUSTER_DOMAIN: "cluster.local"
+      resources:
+        limits:
+          cpu: "5000m"
+          memory: "5120Mi"
+      volumes:
+      - name: remote-kubeconfig
+        mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+        readOnly: true
+        source:
+          secret:
+            secretName: metal-operator-remote-kubeconfig
+            items:
+            - key: token
+              path: token
+            - key: bundle.crt
+              path: ca.crt
+    pod:
+      labels:
+        networking.gardener.cloud/to-dns: allowed
+        networking.gardener.cloud/to-private-networks: allowed
+        networking.gardener.cloud/to-public-networks: allowed
+        networking.gardener.cloud/to-runtime-apiserver: allowed
+        networking.resources.gardener.cloud/to-all-istio-ingresses-istio-ingressgateway-tcp-9443: allowed
+        networking.resources.gardener.cloud/to-kube-apiserver-tcp-443: allowed
+    serviceAccountName: default
+    hostNetwork: false

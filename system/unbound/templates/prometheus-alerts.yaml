@@ -18,7 +18,7 @@ spec:
       for: 60m
       labels:
         context: unbound
-        dashboard: dns-unbound-and-f5-performance
+        dashboard: {{ required "Missing $.Values.unbound.monitoring.dashboard" $.Values.unbound.monitoring.dashboard }}
         meta: {{ $.Values.unbound.name }}
         service: unbound
         severity: info
@@ -26,15 +26,15 @@ spec:
         tier: os
         playbook: 'docs/devops/alert/designate'
       annotations:
-        description: 'Recursor {{ $.Values.unbound.name }} returns lots of SERVFAIL responses in {{ $.Values.global.region }} region.'
-        summary: '{{ $.Values.unbound.name }} returned a lot of SERVFAIL responses in the last hour. Check the logs.'
+        description: '{{ $.Release.Name }} in {{ $.Values.global.region }} returns lots of SERVFAIL responses.'
+        summary: '{{ $.Release.Name }} in {{ $.Values.global.region }} returned a lot of SERVFAIL responses in the last hour. Check the logs.'
 
     - alert: Dns{{ $.Values.unbound.name | title }}Down
       expr: absent(unbound_up{app="{{ $.Values.unbound.name }}"}) == 1 or unbound_up{app="{{ $.Values.unbound.name }}"} != 1
       for: 30m
       labels:
         context: unbound
-        dashboard: dns-unbound-and-f5-performance
+        dashboard: {{ required "Missing $.Values.unbound.monitoring.dashboard" $.Values.unbound.monitoring.dashboard }}
         meta: {{ $.Values.unbound.name }}
         service: unbound
         severity: warning
@@ -42,15 +42,15 @@ spec:
         tier: os
         playbook: 'docs/devops/alert/designate/#test_unbound_endpoint'
       annotations:
-        description: 'DNS {{ $.Values.unbound.name }} recursor is down.'
-        summary: DNS {{ $.Values.unbound.name }} recursor is down. DNS resolution might be handled by another region.
+        description: '{{ $.Release.Name }} in {{ $.Values.global.region }} is down.'
+        summary: '{{ $.Release.Name }} in {{ $.Values.global.region }} is down. DNS resolution might be handled by another region.'
 
     - alert: Dns{{ $.Values.unbound.name | title }}LowTraffic
-      expr: sum(rate(unbound_queries_total{app="{{ $.Values.unbound.name }}", namespace="dns-recursor"}[1m]) or vector(0))/sum(rate(unbound_queries_total{app="{{ $.Values.unbound.name }}", namespace="dns-recursor"}[24h]) or vector(0)) < 0.10
+      expr: sum(rate(unbound_queries_total{app="{{ $.Values.unbound.name }}", namespace="{{ $.Release.Namespace }}"}[1m]) or vector(0))/sum(rate(unbound_queries_total{app="{{ $.Values.unbound.name }}", namespace="{{ $.Release.Namespace }}"}[24h]) or vector(0)) < 0.10
       for: 5m
       labels:
         context: unbound
-        dashboard: dns-unbound-and-f5-performance
+        dashboard: {{ required "Missing $.Values.unbound.monitoring.dashboard" $.Values.unbound.monitoring.dashboard }}
         meta: {{ $.Values.unbound.name }}
         service: unbound
         severity: warning
@@ -58,8 +58,60 @@ spec:
         tier: os
         playbook: 'docs/devops/alert/designate/#test_unbound_endpoint'
       annotations:
-        description: 'DNS {{ $.Values.unbound.name }} recursor in {{ $.Values.global.region }} is getting less than 10% of the usual traffic.'
-        summary: 'DNS {{ $.Values.unbound.name }} recursor in {{ $.Values.global.region }} is getting less than 10% of the usual traffic compared to the 24h avegrage.'
+        description: '{{ $.Release.Name }} in {{ $.Values.global.region }} is getting {{ "{{" }} $value | humanizePercentage {{ "}}" }} of the usual traffic.'
+        summary: '{{ $.Release.Name }} in {{ $.Values.global.region }} is getting {{ "{{" }} $value | humanizePercentage {{ "}}" }} of the usual traffic compared to the 24h avegrage.'
+
+    - alert: Dns{{ $.Values.unbound.name | title }}DisproportionateAmountOfTraffic
+      expr: sum(rate(unbound_queries_total{app="{{ $.Values.unbound.name }}", namespace="{{ $.Release.Namespace }}"}[5m]))/sum(rate(unbound_queries_total{namespace="{{ $.Release.Namespace }}"}[5m]))
+        > {{ add 50 (.Values.unbound.tolerable_traffic_distribution_deviation | default 10) }}/100
+        or  sum(rate(unbound_queries_total{app="{{ $.Values.unbound.name }}", namespace="{{ $.Release.Namespace }}"}[5m]))/sum(rate(unbound_queries_total{namespace="{{ $.Release.Namespace }}"}[5m]))
+        < {{ sub 50 (.Values.unbound.tolerable_traffic_distribution_deviation | default 10) }}/100
+      for: 5m
+      labels:
+        context: unbound
+        dashboard: {{ required "Missing $.Values.unbound.monitoring.dashboard" $.Values.unbound.monitoring.dashboard }}
+        meta: {{ $.Values.unbound.name }}
+        service: unbound
+        severity: warning
+        support_group: coredns
+        tier: os
+        playbook: 'docs/devops/alert/designate/#test_unbound_endpoint'
+      annotations:
+        description: '{{ $.Release.Name }} in {{ $.Values.global.region }} is getting a disproportionate amount of traffic.'
+        summary: '{{ $.Release.Name }} in {{ $.Values.global.region }}
+          has been getting a disproportionate amount of traffic in the past 5 minutes.
+          Expected between
+          {{ sub 50 ($.Values.unbound.tolerable_traffic_distribution_deviation | default 10) }}%
+          and
+          {{ add 50 ($.Values.unbound.tolerable_traffic_distribution_deviation | default 10) }}%
+          of the total traffic, ideally as close to 50% as possible.
+          Currently getting {{ "{{" }} $value | humanizePercentage {{ "}}" }}.'
+
+    - alert: Dns{{ $.Values.unbound.name | title }}DisproportionateAmountOfSERVFAILs
+      expr: sum(rate(unbound_answer_rcodes_total{app="{{ $.Values.unbound.name }}", namespace="{{ $.Release.Namespace }}", rcode="SERVFAIL"}[5m]))/sum(rate(unbound_answer_rcodes_total{namespace="{{ $.Release.Namespace }}", rcode="SERVFAIL"}[5m]))
+        > {{ add 50 (.Values.unbound.tolerable_servfail_distribution_deviation | default 10) }}/100
+        or  sum(rate(unbound_answer_rcodes_total{app="{{ $.Values.unbound.name }}", namespace="{{ $.Release.Namespace }}", rcode="SERVFAIL"}[5m]))/sum(rate(unbound_answer_rcodes_total{namespace="{{ $.Release.Namespace }}", rcode="SERVFAIL"}[5m]))
+        < {{ sub 50 (.Values.unbound.tolerable_servfail_distribution_deviation | default 10) }}/100
+      for: 5m
+      labels:
+        context: unbound
+        dashboard: {{ required "Missing $.Values.unbound.monitoring.dashboard" $.Values.unbound.monitoring.dashboard }}
+        meta: {{ $.Values.unbound.name }}
+        service: unbound
+        severity: warning
+        support_group: coredns
+        tier: os
+        playbook: 'docs/devops/alert/designate/#test_unbound_endpoint'
+      annotations:
+        description: '{{ $.Release.Name }} in {{ $.Values.global.region }} is getting a disproportionate amount of SERVFAIL errors.'
+        summary: '{{ $.Release.Name }} in {{ $.Values.global.region }}
+          has been getting a disproportionate amount of SERVFAIL errors in the past 5 minutes.
+          Expected between
+          {{ sub 50 ($.Values.unbound.tolerable_servfail_distribution_deviation | default 10) }}%
+          and
+          {{ add 50 ($.Values.unbound.tolerable_servfail_distribution_deviation | default 10) }}%
+          of the total amount of SERVFAIL errors, ideally as close to 50% as possible.
+          Currently getting {{ "{{" }} $value | humanizePercentage {{ "}}" }}.'
 
 ---
 apiVersion: "monitoring.coreos.com/v1"
@@ -81,11 +133,11 @@ spec:
 {{- $num_ports := len $.Values.unbound.externalPorts }}
 {{- $num_proto := list "TCP" "UDP" | len }}
 {{- $num_expected_endpoints := mul $num_replicas $num_ports $num_proto }}
-      expr: count(kube_endpoint_address{namespace="dns-recursor",endpoint=~"{{ $.Values.unbound.name }}-.*"}) != {{ $num_expected_endpoints }}
+      expr: count(kube_endpoint_address{namespace="{{ $.Release.Namespace }}",endpoint=~"{{ $.Values.unbound.name }}-.*"}) != {{ $num_expected_endpoints }}
       for: 15m
       labels:
         context: unbound
-        dashboard: dns-unbound-and-f5-performance
+        dashboard: {{ required "Missing $.Values.unbound.monitoring.dashboard" $.Values.unbound.monitoring.dashboard }}
         meta: '{{ $.Values.unbound.name }}'
         service: unbound
         severity: warning
@@ -93,5 +145,5 @@ spec:
         tier: os
         playbook: 'docs/devops/alert/designate/#test_unbound_endpoint'
       annotations:
-        description: 'DNS Unbound {{ $.Values.unbound.name }}: unexpected number of endpoints found in {{ $.Values.global.region }}.'
-        summary: 'DNS Unbound {{ $.Values.unbound.name }}: unexpected number of endpoints found in {{ $.Values.global.region }}. Expected {{ $num_expected_endpoints }}.'
+        description: '{{ $.Release.Name }} in {{ $.Values.global.region }} exposing an unexpected number of endpoints.'
+        summary: '{{ $.Release.Name }} in {{ $.Values.global.region }} exposing an unexpected number of endpoints. Expected {{ $num_expected_endpoints }}. Got {{ "{{" }} $value {{ "}}" }}.'

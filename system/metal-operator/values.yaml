@@ -16,24 +16,35 @@ remoteboard:
     username: DEFINE_IN_REGION_VALUES
     password: DEFINE_IN_REGION_VALUES
 
-dnsmasq:
-  image:
-    repository:
-    tag:
-  dhcpServerPort: 67
-  tftpPort: 69
-  dhcppool:
-  dnsServers:
-  externalIP:
-  interface: ens192
-  leaseTime: 7200h
+port: 10000
 
-ipxe:
-  port: 30007
-  host:
-  efi:
-    host:
-    file:
-
-registry:
-  port: 30010
+metal-operator-core:
+  controllerManager:
+    manager:
+      args:
+        - --leader-elect
+        - --mac-prefixes-file=/etc/macdb/macdb.yaml
+        - --probe-image=keppel.eu-de-1.cloud.sap/ccloud-ghcr-io-mirror/afritzler/metalprobe:latest
+        - --probe-os-image=ghcr.io/ironcore-dev/os-images/gardenlinux:1443.3
+        - --insecure=false
+        - --registry-url=http://[2a10:afc0:e013:d002::]:30010
+      containerSecurityContext:
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop:
+            - ALL
+      image:
+        repository: controller
+        tag: 50e39b7a5c73e808864eea27519bde52a301a503
+      resources:
+        limits:
+          cpu: 300m
+          memory: 200Mi
+        requests:
+          cpu: 300m
+          memory: 50Mi
+    podSecurityContext:
+      runAsNonRoot: true
+    replicas: 1
+    strategy:
+      type: Recreate

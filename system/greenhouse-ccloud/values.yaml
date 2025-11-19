@@ -1,8 +1,11 @@
+global:
+  fluxEnabled: false
+
 mappedOrgAdminIdPGroup:
 
 # enabling pluginPreset.enabled will render PluginPreset
-# These will deploy DigiCert Issuer, CertManager, KubeMonitoring to 
-# all Clusters with label greenhouse.sap/cluster-presets-enabled: "true"
+# These will deploy DigiCert Issuer, CertManager, KubeMonitoring to
+# all Clusters with label greenhouse.sap/pluginpreset: "true"
 pluginPreset:
   enabled: false
 
@@ -30,7 +33,7 @@ oidc:
   clientSecret:
 scim:
   enabled: false
-  # baseURL: 
+  # baseURL:
   # username:
   # password
 
@@ -53,20 +56,25 @@ alerts:
   silenceExcludedLabels:
     - pod
     - pod_name
+    - kubernetes_pod_name
     - instance
   predefinedFilters:
     - name: "prod"
       displayName: "Prod"
       matchers:
-        region: "^(?!qa-de-).*"
+        region: "^(ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|ap-sg-1|eu-de-1|eu-de-2|eu-de-3|eu-nl-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3)$"
     - name: "prod-qa"
       displayName: "Prod + QA"
       matchers:
-        region: "^(?!qa-de-(?!1$)\\d+).*"
+        region: "^(ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|ap-sg-1|eu-de-1|eu-de-2|eu-de-3|eu-nl-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3|qa-de-1)$"
     - name: "labs"
       displayName: "Labs"
       matchers:
         region: "^qa-de-(?!1$)\\d+"
+    - name: "other"
+      displayName: "Other"
+      matchers:
+        region: "^(?!(ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|ap-sg-1|eu-de-1|eu-de-2|eu-de-3|eu-nl-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3|qa-de-1|qa-de-(?!1$)\\d+)$).*"
     - name: "all"
       displayName: "All"
       matchers:
@@ -81,9 +89,21 @@ alerts:
 
 cephOperations:
   enabled: false
+  # clusterOptionOverrides:
+  #   - clusterName: qa-de-999
+  #     overrides:
+  #       - name: foo.bar
+  #         value: true
+
+controlplaneOperations:
+  enabled: false
 
 kvmMonitoring:
   enabled: false
+
+certManager:
+  webhook:
+    timeoutSeconds: 15
 
 digicert:
   enabled: false
@@ -123,13 +143,6 @@ plutono:
   #   - name: global.imageRegistry
   #     value: my-registry.global.com
 
-perses:
-  clusterOptionOverrides: {}
-  # - clusterName: qa-de-999
-  #   overrides:
-  #   - name: global.imageRegistry
-  #     value: my-registry.global.com  
-
 openTelemetry:
   enabled: false
 # set via secrets
@@ -150,7 +163,7 @@ openTelemetry:
     serviceMonitor:
       enabled: true
   admissionWebhooks:
-    certManager: 
+    certManager:
       enabled: true
     autoGenerateCert:
       enabled: false
@@ -162,7 +175,38 @@ openTelemetry:
       defaultRules:
         enabled: false
       enabled: false
-  
+
+opensearch:
+  enabled: false
+  clusters: []
+    # - region: "qa-de-1"
+    #   cluster: "abc-qa-de-999"
+    #   endpoint:
+    #     - opensearch-logs-client.tld
+    #   users:
+    #     admin:
+    #       username: ""
+    #       password: ""
+    #       hash: ""
+    #     logs:
+    #       username: ""
+    #       password: ""
+    #     logs2:
+    #       username: ""
+    #       password: ""
+    #     dashboards:
+    #       username: ""
+    #       password: ""
+    #     dashboards2:
+    #       username: ""
+    #       password: ""
+    #   ingress:
+    #     enabled: true
+    #     className: nginx
+    #     annotations: {}
+    #     hosts: []
+    #     tls: []
+
 thanos:
   enabled: true
   # The cluster to which the global Thanos Query is deployed to
@@ -171,6 +215,9 @@ thanos:
     # - name: abc-qa-de-999
     #   prefixes:
     #     - abc
+    #   additionalStores:
+    #     # '-grpc', region, baseDomain and port will be added automatically
+    #     - thanos-openstack
 
   # TLS config for cross-cluster authentication
   # Deployed as a Secret

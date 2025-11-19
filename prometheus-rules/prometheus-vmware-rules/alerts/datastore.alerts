@@ -1,59 +1,9 @@
 groups:
 - name: datastore.alerts
   rules:
-  - alert: VVolDatastoreNotAccessible
-    expr: |
-      vrops_datastore_summary_datastore_accessible{type='vVOL'} == 0
-    for: 5m
-    labels:
-      severity: critical
-      tier: vmware
-      service: storage
-      support_group: compute
-      context: "{{ $labels.datastore }}"
-      meta: 'Datastore {{ $labels.datastore }} is not accessible. ({{ $labels.vcenter }}, {{ $labels.datacenter }})'
-      playbook: docs/devops/alert/vcenter/vvol_datastore#vvol_1
-    annotations:
-      description: 'Datastore {{ $labels.datastore }} is not accessible. ({{ $labels.vcenter }}, {{ $labels.datacenter }})'
-      summary: 'Datastore {{ $labels.datastore }} is not accessible. ({{ $labels.vcenter }}, {{ $labels.datacenter }})'
-
-  - alert: VVolDatastoreZeroFreeSpace
-    expr: |
-      vrops_datastore_diskspace_freespace_gigabytes{type="vVOL"} == 0
-    for: 10m
-    labels:
-      severity: critical
-      tier: vmware
-      service: storage
-      support_group: compute
-      context: "{{ $labels.datastore }}"
-      meta: 'Datastore {{ $labels.datastore }} has no free space. ({{ $labels.vcenter }}, {{ $labels.datacenter }})'
-      dashboard: vcenter-datastore-utilization
-      playbook: docs/devops/alert/vcenter/vvol_datastore#vvol_4
-    annotations:
-      description: 'Datastore {{ $labels.datastore }} has no free space. ({{ $labels.vcenter }}, {{ $labels.datacenter }})'
-      summary: 'Datastore {{ $labels.datastore }} has no free space. ({{ $labels.vcenter }}, {{ $labels.datacenter }})'
-
-  - alert: VVolDatastoreZeroCapacity
-    expr: |
-      vrops_datastore_diskspace_capacity_gigabytes{type="vVOL"} == 0
-    for: 10m
-    labels:
-      severity: critical
-      tier: vmware
-      service: storage
-      support_group: compute
-      context: "{{ $labels.datastore }}"
-      meta: 'Datastore {{ $labels.datastore }} has zero capacity. ({{ $labels.vcenter }}, {{ $labels.datacenter }})'
-      dashboard: vcenter-datastore-utilization
-      playbook: docs/devops/alert/vcenter/vvol_datastore#vvol_3
-    annotations:
-      description: 'Datastore {{ $labels.datastore }} has zero capacity. ({{ $labels.vcenter }}, {{ $labels.datacenter }})'
-      summary: 'Datastore {{ $labels.datastore }} has zero capacity. ({{ $labels.vcenter }}, {{ $labels.datacenter }})'
-
   - alert: EphemeralDataStoreCapacity
     expr: >
-      vrops_datastore_diskspace_total_usage_gigabytes{type=~"ephemeral"} / vrops_datastore_diskspace_capacity_gigabytes >= 0.85
+      vrops_datastore_diskspace_total_usage_gigabytes{type="ephemeral"} / vrops_datastore_diskspace_capacity_gigabytes >= 0.85
     for: 20m
     labels:
       severity: info
@@ -70,7 +20,7 @@ groups:
 
   - alert: EphemeralDataStoreCapacity
     expr: >
-      vrops_datastore_diskspace_total_usage_gigabytes{type=~"ephemeral"} / vrops_datastore_diskspace_capacity_gigabytes >=  0.9
+      vrops_datastore_diskspace_total_usage_gigabytes{type="ephemeral"} / vrops_datastore_diskspace_capacity_gigabytes >=  0.9
     for: 20m
     labels:
       severity: info
@@ -84,40 +34,6 @@ groups:
     annotations:
       description: "Eph Datastore {{ $labels.datastore }} utilization > 90%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
       summary: "Eph Datastore {{ $labels.datastore }} utilization > 90%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
-
-  - alert: VVolDataStoreCapacity
-    expr: >
-      vrops_datastore_diskspace_total_usage_gigabytes{type="vVOL"} / vrops_datastore_diskspace_capacity_gigabytes >= 0.8
-    for: 20m
-    labels:
-      severity: warning
-      tier: os
-      service: storage
-      support_group: compute
-      context: "{{ $labels.datastore }}"
-      meta: "vVOL Datastore {{ $labels.datastore }} utilization > 80%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
-      dashboard: vcenter-datastore-utilization
-      playbook: docs/support/playbook/cinder/balancing/cinder_balance_alert
-    annotations:
-      description: "vVOL Datastore {{ $labels.datastore }} utilization > 80%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
-      summary: "vVOL Datastore {{ $labels.datastore }} utilization > 80%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
-
-  - alert: VVolDataStoreCapacity
-    expr: >
-      vrops_datastore_diskspace_total_usage_gigabytes{type="vVOL"} / vrops_datastore_diskspace_capacity_gigabytes >=  0.9
-    for: 20m
-    labels:
-      severity: critical
-      tier: os
-      service: storage
-      support_group: compute
-      context: "{{ $labels.datastore }}"
-      meta: "vVOL Datastore {{ $labels.datastore }} utilization > 90%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
-      dashboard: vcenter-datastore-utilization
-      playbook: docs/support/playbook/cinder/balancing/cinder_balance_alert
-    annotations:
-      description: "vVOL Datastore {{ $labels.datastore }} utilization > 90%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
-      summary: "vVOL Datastore {{ $labels.datastore }} utilization > 90%. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
 
   - alert: AverageVmfsDataStoreCapacity
     expr: >
@@ -138,7 +54,7 @@ groups:
 
   - alert: DataStoreCapacity
     expr: >
-      vrops_datastore_diskspace_total_usage_gigabytes{type!~"ephemeral|vVOL|vmfs.+", datastore!~".+swap"} / vrops_datastore_diskspace_capacity_gigabytes >=  0.8
+      vrops_datastore_diskspace_total_usage_gigabytes{type!~"ephemeral|vmfs.+|nfs", datastore!~".+swap"} / vrops_datastore_diskspace_capacity_gigabytes >=  0.8
     for: 20m
     labels:
       severity: warning
@@ -155,7 +71,7 @@ groups:
 
   - alert: DataStoreCapacity
     expr: >
-      vrops_datastore_diskspace_total_usage_gigabytes{type!~"ephemeral|vVOL|vmfs.+", datastore!~".+swap"} / vrops_datastore_diskspace_capacity_gigabytes >=  0.9
+      vrops_datastore_diskspace_total_usage_gigabytes{type!~"ephemeral|vmfs.+|nfs", datastore!~".+swap"} / vrops_datastore_diskspace_capacity_gigabytes >=  0.9
     for: 20m
     labels:
       severity: critical
@@ -188,29 +104,28 @@ groups:
       summary: "NVMe swap datastore {{ $labels.datastore }} is utilized without associated VMs. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
 
   - alert: NVMeSwapDatastoreMissing
-    expr: >
-      vrops_hostsystem_hardware_model{vccluster=~"^productionbb\\d+$", hardware_model!~"^Cisco Systems Inc.+"}
-      and on (hostsystem) vrops_hostsystem_runtime_maintenancestate{state!="inMaintenance"} 
-      unless on (hostsystem) (label_replace(label_join(vrops_datastore_summary_datastore_accessible{type="NVMe"}, "hostsystem", "", "datastore", "vcenter"), "hostsystem", "$1$2", "hostsystem", 
-      "(.+)-swapvc-[a-z]-\\d+(.+)"))
-      unless on (hostsystem) vrops_hostsystem_summary_custom_tag_nvme{summary_custom_tag_nvme="false"}
+    expr: |
+      vrops_hostsystem_hardware_model{vccluster=~"productionbb\\d+", hardware_model!~"Cisco Systems Inc.+"}
+      and on (hostsystem) vrops_hostsystem_runtime_maintenancestate{state!="inMaintenance"}
+      unless on (hostsystem) (label_replace(label_join(vrops_datastore_summary_datastore_accessible{type="NVMe"}, "hostsystem", "", "datastore", "vcenter"), "hostsystem", "$1$2", "hostsystem", "(.+)-swapvc-[a-z]-\\d+(.+)")
+      or vrops_hostsystem_summary_custom_tag_nvme{summary_custom_tag_nvme="false"})
     for: 5m
     labels:
-      severity: info
+      severity: warning
       tier: vmware
       service: storage
       support_group: compute
-      context: "{{ $labels.datastore }}"
-      meta: "NVMe swap Datastore {{ $labels.datastore }} missing. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
+      context: "{{ $labels.hostsystem }}"
+      meta: "NVMe swap datastore on `{{ $labels.hostsystem }}` is missing. Model is _{{$labels.hardware_model}}_ and located in cluster *{{ $labels.vccluster }}*\nLink to the vCenter: --> <https://{{ $labels.vcenter }}|{{ $labels.vcenter }}>"
       playbook: docs/support/playbook/datastore/nvmeswapdatastoremissing
     annotations:
-      description: "NVMe swap datastore {{ $labels.datastore }} missing. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
-      summary: "NVMe swap datastore {{ $labels.datastore }} missing. ({{ $labels.vcenter }}, {{ $labels.datacenter }})"
+      description: "NVMe swap datastore on `{{ $labels.hostsystem }}` is missing. Model is _{{$labels.hardware_model}}_ and located in cluster *{{ $labels.vccluster }}*\nLink to the vCenter: --> <https://{{ $labels.vcenter }}|{{ $labels.vcenter }}>"
+      summary: "NVMe swap datastore on `{{ $labels.hostsystem }}` is missing. Model is _{{$labels.hardware_model}}_ and located in cluster *{{ $labels.vccluster }}*\nLink to the vCenter: --> <https://{{ $labels.vcenter }}|{{ $labels.vcenter }}>"
 
   - alert: DatastoreDisconnectedWithVmsOnIt
     expr: >
       (label_replace(vrops_datastore_summary_total_number_vms, "hostsystem", "$1", "datastore", "(node[0-9]{3}-[^-]*).*") > 0 and on(datastore)
-      vrops_datastore_summary_datastore_accessible{state="PoweredOff",type!~"local"}) unless on (hostsystem)
+      vrops_datastore_summary_datastore_accessible{state="PoweredOff",type!="local"}) unless on (hostsystem)
       label_replace(vrops_hostsystem_runtime_maintenancestate{state="inMaintenance"}, "hostsystem", "$1", "hostsystem", "(node.*)(.cc.*)")
     for: 20m
     labels:
@@ -228,7 +143,7 @@ groups:
   - alert: DatastoreDisconnectedWithoutVmsOnIt
     expr: >
       (label_replace(vrops_datastore_summary_total_number_vms, "hostsystem", "$1", "datastore", "(node[0-9]{3}-[^-]*).*") == 0 and on(datastore)
-      vrops_datastore_summary_datastore_accessible{state="PoweredOff",type!~"local"}) unless on (hostsystem)
+      vrops_datastore_summary_datastore_accessible{state="PoweredOff",type!="local"}) unless on (hostsystem)
       label_replace(vrops_hostsystem_runtime_maintenancestate{state="inMaintenance"}, "hostsystem", "$1", "hostsystem", "(node.*)(.cc.*)")
     for: 20m
     labels:
@@ -346,7 +261,7 @@ groups:
 
   - alert: EphemeralDatastorePartOfIncorrectSDRSCluster
     expr: >
-      vrops_datastore_summary_datastore_accessible{type="ephemeral", storagepod=~".*hgb.*", datastore=~"eph.*hga"} or vrops_datastore_summary_datastore_accessible{type="ephemeral", storagepod=~".*hga.*", datastore=~"eph.*hgb"} > 0
+      (vrops_datastore_summary_datastore_accessible{type="ephemeral", storagepod=~".*hgb.*", datastore=~"eph.*hga"} or vrops_datastore_summary_datastore_accessible{type="ephemeral", storagepod=~".*hga.*", datastore=~"eph.*hgb"}) > 0
     for: 20m
     labels:
       severity: warning
@@ -394,7 +309,7 @@ groups:
 
   - alert: CinderTagAddedForReservedDatastore
     expr: |
-      vrops_datastore_summary_custom_tag_cinder_state{type=~"^(vmfs_s_hdd|vmfs_p_ssd)$", summary_custom_tag_cinder_state="reserved"}
+      vrops_datastore_summary_custom_tag_cinder_state{type=~"(vmfs_s_hdd|vmfs_p_ssd)", summary_custom_tag_cinder_state="reserved"} > 0
       and on (datastore) vrops_datastore_summary_tag{tag_cinder=~"cinder|slow"}
     for: 1h
     labels:
@@ -410,8 +325,8 @@ groups:
 
   - alert: VMFSDatastoreHostcountMismatch
     expr: |
-      vrops_datastore_hostcount{datastore=~"^vmfs_vc_.+"} < on (vcenter) group_left
-      count by (vcenter) (vrops_hostsystem_runtime_connectionstate{state="connected", vccluster=~"^productionbb\\d+$"}
+      vrops_datastore_hostcount{type=~"(vmfs_s_hdd|vmfs_p_ssd)"} < on (vcenter) group_left
+      count by (vcenter) (vrops_hostsystem_runtime_connectionstate{state="connected", vccluster=~"productionbb\\d+"}
       unless on (hostsystem) (vrops_hostsystem_runtime_maintenancestate{state="inMaintenance"}))
     for: 60m
     labels:
@@ -427,8 +342,8 @@ groups:
 
   - alert: NFSDatastoreHostcountMismatch
     expr: |
-      vrops_datastore_hostcount{datastore=~"^nfs_.+"} < on (vcenter) group_left
-      count by (vcenter) (vrops_hostsystem_runtime_connectionstate{state="connected", vccluster=~"^productionbb\\d+$"})
+      vrops_datastore_hostcount{type="nfs"} < on (vcenter) group_left
+      count by (vcenter) (vrops_hostsystem_runtime_connectionstate{state="connected", vccluster=~"productionbb\\d+"})
     for: 60m
     labels:
       severity: info
@@ -440,3 +355,19 @@ groups:
     annotations:
       description: "The `{{ $labels.datastore }}` NFS datastore is not connected to all production ESXi hosts in *{{ $labels.vcenter }}* vCenter.\nLink to the vCenter: --> <https://{{ $labels.vcenter }}|{{ $labels.vcenter }}>"
       summary: "The `{{ $labels.datastore }}` NFS datastore is not connected to all production ESXi hosts in *{{ $labels.vcenter }}* vCenter.\nLink to the vCenter: --> <https://{{ $labels.vcenter }}|{{ $labels.vcenter }}>"
+
+  - alert: NFSDatastoreCinderAggregateIDNotSet
+    expr: |
+      vrops_datastore_summary_datastore_accessible{type="nfs"}
+      unless on(datastore) vrops_datastore_summary_custom_tag_cinder_aggregate_id{type="nfs", summary_custom_tag_cinder_aggregate_id!=""}
+    for: 1h
+    labels:
+      severity: warning
+      tier: vmware
+      service: storage
+      support_group: compute
+      meta: "cinder_aggregate_id is not set for the `{{ $labels.datastore }}` NFS datastore in *{{ $labels.datacenter }}* availability zone.\nLink to the vCenter: --> <https://{{ $labels.vcenter }}|{{ $labels.vcenter }}>"
+      playbook: docs/support/playbook/cinder/cinder-fcd-operations/#nfsdatastorecinderaggregateidnotset
+    annotations:
+      description: "cinder_aggregate_id is not set for the `{{ $labels.datastore }}` NFS datastore in *{{ $labels.datacenter }}* availability zone.\nLink to the vCenter: --> <https://{{ $labels.vcenter }}|{{ $labels.vcenter }}>"
+      summary: "cinder_aggregate_id is not set for the `{{ $labels.datastore }}` NFS datastore in *{{ $labels.datacenter }}* availability zone.\nLink to the vCenter: --> <https://{{ $labels.vcenter }}|{{ $labels.vcenter }}>"

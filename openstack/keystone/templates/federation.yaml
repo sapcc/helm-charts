@@ -1,0 +1,17 @@
+{{- if .Values.federation.oidc.enabled }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ .Release.Name }}-federation
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    component: keystone
+    type: config
+type: Opaque
+data:
+  federation-oidc.conf: |
+    {{ include (print .Template.BasePath "/etc/_federation-oidc.conf.tpl") . | b64enc | indent 4 }}
+{{- end }}

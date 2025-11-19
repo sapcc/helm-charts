@@ -39,18 +39,6 @@
       key: rabbitmq_password
 - name: KEPPEL_AUDIT_RABBITMQ_HOSTNAME
   value: hermes-rabbitmq-notifications.hermes.svc
-- name:  KEPPEL_BURST_ANYCAST_BLOB_PULL_BYTES
-  value: '4718592000' # 4500 MiB per account (see below, near the corresponding ratelimit, for rationale)
-- name:  KEPPEL_BURST_BLOB_PULLS # burst budgets for regular pull/push are all ~30% of the rate limit per minute
-  value: '360' # per account
-- name:  KEPPEL_BURST_BLOB_PUSHES
-  value: '30'  # per account
-- name:  KEPPEL_BURST_MANIFEST_PULLS
-  value: '360'  # per account
-- name:  KEPPEL_BURST_MANIFEST_PUSHES
-  value: '15'   # per account
-- name:  KEPPEL_BURST_TRIVY_REPORT_RETRIEVALS
-  value: '50'   # per account
 - name: KEPPEL_DB_USERNAME
   value: 'keppel'
 - name:  KEPPEL_DB_PASSWORD
@@ -63,15 +51,15 @@
 - name: KEPPEL_DB_CONNECTION_OPTIONS
   value: "sslmode=disable"
 - name:  KEPPEL_DRIVER_AUTH
-  value: 'keystone'
+  value: '{"type":"keystone","params":{"oslo_policy_path":"/etc/keppel/policy.json"}}'
 - name:  KEPPEL_DRIVER_FEDERATION
-  value: 'swift'
+  value: '{"type":"swift","params":{"env_prefix":"KEPPEL_FEDERATION_","container_name":"keppel_federation_db"}}'
 - name:  KEPPEL_DRIVER_INBOUND_CACHE
-  value: 'swift'
+  value: '{"type":"swift","params":{"env_prefix":"KEPPEL_FEDERATION_","container_name":"keppel_inbound_cache","except_hosts":"keppel\\..+"}}'
 - name:  KEPPEL_DRIVER_RATELIMIT
-  value: 'basic'
+  value: {{ include "driver_config_ratelimit" $ | fromYaml | toJson | quote }}
 - name:  KEPPEL_DRIVER_STORAGE
-  value: 'swift'
+  value: '{"type":"swift"}'
 - name:  KEPPEL_FEDERATION_OS_AUTH_URL
   value: "https://identity-3.{{ $.Values.federation.leader_region }}.{{ $.Values.global.tld }}/v3"
 - name:  KEPPEL_FEDERATION_OS_AUTH_VERSION
@@ -95,63 +83,16 @@
   value: 'Default'
 - name:  KEPPEL_FEDERATION_OS_USERNAME
   value: 'keppel'
-- name:  KEPPEL_FEDERATION_SWIFT_CONTAINER
-  value: 'keppel_federation_db'
 - name:  KEPPEL_GUI_URI
   value: {{ quote $.Values.keppel.dashboard_url_pattern }}
-- name:  KEPPEL_INBOUND_CACHE_EXCEPT_HOSTS
-  value: "keppel\\..+"
-- name:  KEPPEL_INBOUND_CACHE_OS_AUTH_URL
-  value: "https://identity-3.{{ $.Values.federation.leader_region }}.{{ $.Values.global.tld }}/v3"
-- name:  KEPPEL_INBOUND_CACHE_OS_AUTH_VERSION
-  value: '3'
-- name:  KEPPEL_INBOUND_CACHE_OS_IDENTITY_API_VERSION
-  value: '3'
-- name:  KEPPEL_INBOUND_CACHE_OS_INTERFACE
-  value: public
-- name:  KEPPEL_INBOUND_CACHE_OS_PASSWORD
-  valueFrom:
-    secretKeyRef:
-      name: keppel-secret
-      key: federation_service_user_password
-- name:  KEPPEL_INBOUND_CACHE_OS_PROJECT_DOMAIN_NAME
-  value: 'ccadmin'
-- name:  KEPPEL_INBOUND_CACHE_OS_PROJECT_NAME
-  value: 'master'
-- name:  KEPPEL_INBOUND_CACHE_OS_REGION_NAME
-  value: {{ quote $.Values.federation.leader_region }}
-- name:  KEPPEL_INBOUND_CACHE_OS_USER_DOMAIN_NAME
-  value: 'Default'
-- name:  KEPPEL_INBOUND_CACHE_OS_USERNAME
-  value: 'keppel'
-- name:  KEPPEL_INBOUND_CACHE_SWIFT_CONTAINER
-  value: 'keppel_inbound_cache'
 - name:  KEPPEL_ISSUER_KEY
   value: '/etc/keppel-keys/issuer-key.pem'
 - name:  KEPPEL_PREVIOUS_ISSUER_KEY
   value: '/etc/keppel-keys/previous-issuer-key.pem'
 - name:  KEPPEL_JANITOR_LISTEN_ADDRESS
   value: ':80'
-- name:  KEPPEL_OSLO_POLICY_PATH
-  value: '/etc/keppel/policy.json'
 - name:  KEPPEL_PEERS
   value: {{ index (include "build_peers" $ | fromYaml) "peers" | toJson | quote }}
-- name:  KEPPEL_RATELIMIT_ANYCAST_BLOB_PULL_BYTES
-  value: '5242880 B/s' # 5 MiB/s per account (very small to discourage continuous use of anycast, but
-                       # the burst budget is very large to enable anycast pulling of large images; the
-                       # actual burst budget is 4500 MiB, which is 15 minutes worth of rate limit)
-- name:  KEPPEL_RATELIMIT_BLOB_PULLS
-  value: '1200r/m' # per account
-- name:  KEPPEL_RATELIMIT_BLOB_PUSHES
-  value: '100r/m'  # per account
-- name:  KEPPEL_RATELIMIT_MANIFEST_PULLS
-  value: '1200r/m'  # per account (used to be smaller than rate limit for blob pulls, but we pulled
-                    # it up to account for clients that just poll the state of certain tags without
-                    # actually pulling the image contents)
-- name:  KEPPEL_RATELIMIT_MANIFEST_PUSHES
-  value: '10r/m'   # per account
-- name:  KEPPEL_RATELIMIT_TRIVY_REPORT_RETRIEVALS
-  value: '10r/m'   # per account
 - name: KEPPEL_REDIS_ENABLE
   value: '1'
 - name: KEPPEL_REDIS_HOSTNAME
@@ -224,4 +165,56 @@ peers:
   use_for_pull_delegation: {{ .use_for_pull_delegation }}
 {{- end -}}
 {{- end -}}
+{{- end -}}
+
+{{- define "driver_config_account_management" -}}
+type: basic
+params:
+  config_path: /etc/keppel-auto-managed-accounts/config.json
+  protected_accounts:
+    - ccloud
+    - ccloud-dockerhub-mirror
+    - ccloud-gcr-mirror
+    - ccloud-ghcr-io-mirror
+    - ccloud-quay-mirror
+    - ccloud-registry-k8s-io-mirror
+    - cloud-infrastructure-ocm
+{{- end -}}
+
+{{- define "driver_config_ratelimit" -}}
+type: basic
+params:
+  # NOTE: All limits and budgets are _per account_.
+  anycast_blob_pull_bytes:
+    # very small to discourage continuous use of anycast,
+    # but the burst budget is very large to enable anycast pulling of large images
+    limit: 5242880 # 5 MiB/s
+    window: s
+    burst: 4718592000 # 4500 MiB (15 minutes worth of rate limit)
+  blob_pulls:
+    limit: 1200
+    window: m
+    burst: 600
+  blob_pushes:
+    limit: 100
+    window: m
+    burst: 50
+  manifest_pulls:
+    limit: 1200
+    window: m
+    burst: 1200 # one minute worth of rate limit, because manifest requests tend to be spiky in nature
+  manifest_pushes:
+    limit: 10
+    window: m
+    burst: 15
+  trivy_report_retrievals:
+    # NOTE on how we derive this value:
+    # - Testing has established that a single report retrieval uses about 2 ms of CPU.
+    #   (pprof instrumentation gave a lower bound of 1.25ms, CPU metrics in Prometheus gave an upper bound of 2.5 ms)
+    # - In productive deployments, we have 4 API pods with a limit of 500 mcpu each, so 2 CPU cores total.
+    # - 2 CPU cores can sustain 1000r/s (60000r/m) if report retrievals were the only API load.
+    # - Splitting that over an estimate of 100 actively used accounts gives the number above.
+    limit: 600
+    window: m
+    burst: 600 # one minute worth of rate limit, because manifest requests tend to be spiky in nature
 {{- end -}}

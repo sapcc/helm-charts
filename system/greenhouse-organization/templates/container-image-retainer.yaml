@@ -1,0 +1,73 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: container-image-retainer
+  namespace: greenhouse
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: container-image-retainer
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - pods
+      - namespaces
+    verbs:
+      - get
+      - watch
+      - list
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: container-image-retainer
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: container-image-retainer
+subjects:
+  - kind: ServiceAccount
+    name: container-image-retainer
+    namespace: greenhouse
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: container-image-retainer
+data:
+  retain.sh: |
+    {{- .Files.Get "etc/retain.sh" | nindent 4 }}
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: container-image-retainer
+spec:
+  schedule: '0 1 * * *'
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      parallelism: 1
+      template:
+        spec:
+          serviceAccountName: container-image-retainer
+          restartPolicy: OnFailure
+          containers:
+            - name: retainer
+              image: {{.Values.global.dockerHubMirror}}/alpine/k8s:1.28.11
+              imagePullPolicy: IfNotPresent
+              command:
+                - /bin/bash
+                - /scripts/retain.sh
+              volumeMounts:
+                - mountPath: /scripts
+                  name: scripts
+                  readOnly: true
+          volumes:
+            - name: scripts
+              configMap:
+                name: container-image-retainer

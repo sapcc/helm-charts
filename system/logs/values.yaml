@@ -29,35 +29,6 @@ global:
     user: DEFINED-IN-SECRETS
     password: DEFINED-IN-SECRETS
 
-fluent:
-  enabled: false
-  port: 8885
-  logstash_shards: 3
-  indexname: logstash
-  image_version: '20241216095826'
-  alerts:
-    enabled: false
-    prometheus: infra-collector
-  metis:
-    enabled: false
-    host: metisdb-mariadb.metis
-    port: 3306
-    db: metis
-  swift:
-    enabled: false
-  logs:
-    unbound:
-      enabled: false
-  opensearch:
-    http_port: 9200
-    indexname: logstash
-    http:
-      endpoint: "opensearch-logs-client.scaleout.qa-de-1"
-    qalogs:
-      enabled: false
-    datastream:
-      enabled: false
-
 openTelemetryPlugin:
   alerts:
     enabled: false
@@ -73,16 +44,18 @@ openTelemetryPlugin:
     manager:
       image:
         repository: keppel.eu-de-1.cloud.sap/ccloud-ghcr-io-mirror/open-telemetry/opentelemetry-operator/opentelemetry-operator
-        tag: v0.120.0
+        tag: DEFINED-IN-SECRETS
       collectorImage:
         repository: keppel.eu-de-1.cloud.sap/ccloud/opentelemetry-collector-contrib
-        tag: "20250319103924"
+        tag: DEFINED-IN-SECRETS
       prometheusRule:
         enabled: true
         defaultRules:
           enabled: true
       serviceMonitor:
         enabled: true
+        extraLabels:
+          prometheus: infra-frontend
   openTelemetry:
     customLabels:
       prometheus: DEFINED-IN-SECRETS
@@ -123,52 +96,6 @@ openTelemetryPlugin:
 fluent_prometheus:
   enabled: false
   port: 8884
-  image_version: '20241216095826'
+  image_version: '20250522093652'
   alerts:
     enabled: false
-
-logstash_external:
-  enabled: false
-  image_version: '20250219122745'
-  replicas: 1
-  input:
-    netflow_port: 2055
-    syslog_port: 514
-    bigiplogs_port: 1513
-    alertmanager_port: 1515
-    deployments_port: 1516
-    http_port: 443
-    beats_port: 5044
-  syslog:
-    enabled: false
-  tls:
-    crt: DEFINED-IN-SECRETS
-    key: DEFINED-IN-SECRETS
-  ingress:
-    enabled: false
-  alerts:
-    enabled: false
-
-k8s_event_logger:
-  enabled: false
-  fullnameOverride: logs-k8s-event-logger
-  image:
-    tag: "20240830133034"
-  env:
-    KUBERNETES_API_URL: https://${KUBERNETES_SERVICE_HOST}:${KUBERNETES_SERVICE_PORT_HTTPS}
-  podAnnotations:
-    kubectl.kubernetes.io/default-container: "app"
-  resources:
-    requests:
-    limits:
-      cpu: 100m
-      memory: 512M
-
-
-fluent_testing:
-  enabled: false
-  image_version: '20241216095826'
-
-fluent_daemonset_testing:
-  enabled: false
-  image_version: '20241216095826'

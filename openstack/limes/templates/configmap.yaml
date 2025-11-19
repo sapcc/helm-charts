@@ -1,3 +1,31 @@
+{{- $dashboardURL := printf "https://dashboard.%s.%s/{{ .DomainName }}/{{ .ProjectName }}/resources/v2/project#/Renewal" $.Values.global.region $.Values.global.tld -}}
+{{- $dashboardInfo := printf "<p>Commitments can be renewed through the resource management <a href=\"%s\">dashboard</a></p>" $dashboardURL -}}
+
+{{/* Most of the config.json file comes verbatim from .Values.limes.clusters.ccloud, except that:
+     - the `availability_zones` key is in a different spot, and
+     - the `mail_notifications` section is generated here if necessary.
+*/}}
+{{- $az_config := dict "availability_zones" .Values.global.availability_zones -}}
+{{- $mail_config := dict -}}
+{{- if (ne .Release.Namespace "limes-global") -}}
+  {{- $mail_config = (dict
+    "mail_notifications" (dict
+      "endpoint" (printf "%s/" (.Values.limes.clusters.ccloud.catalog_url | replace "limes-3" "limes-campfire" | trimSuffix "/"))
+      "templates" (dict
+        "confirmed_commitments" (dict
+          "subject" .Values.campfire.mail_type.confirmed.subject
+          "body" (tpl (.Files.Get "files/commitment_mail.tpl") (dict "region" .Values.global.region "condition" .Values.campfire.mail_type.confirmed.condition) | toJson)
+        )
+        "expiring_commitments" (dict
+          "subject" .Values.campfire.mail_type.expire.subject
+          "body" (tpl (.Files.Get "files/commitment_mail.tpl") (dict "region" .Values.global.region "condition" .Values.campfire.mail_type.expire.condition "dashboardInfo" $dashboardInfo) | toJson)
+        )
+      )
+    )
+  ) -}}
+{{- end -}}
+{{- $full_config := merge .Values.limes.clusters.ccloud $az_config $mail_config -}}
+
 apiVersion: v1
 kind: ConfigMap
 
@@ -5,23 +33,7 @@ metadata:
   name: limes
 
 data:
-  limes.yaml: |
-    availability_zones:
-    {{- range .Values.global.availability_zones }}
-      - {{ . }}
-    {{- end }}
-    {{- if and (eq .Values.global.region "qa-de-1") (ne .Release.Namespace "limes-global") }}
-    mail_notifications:
-      endpoint: {{ .Values.limes.clusters.ccloud.catalog_url | replace "limes-3" "limes-campfire" | trimSuffix "/" }}/
-      templates:
-        confirmed_commitments:
-         subject: {{ .Values.campfire.mail_type.confirmed.subject }}
-         body: {{ tpl (.Files.Get "files/commitment_mail.tpl") (dict "region" .Values.global.region "condition" .Values.campfire.mail_type.confirmed.condition) | toJson }}
-        expiring_commitments:
-         subject: {{ .Values.campfire.mail_type.expire.subject }}
-         body: {{ tpl (.Files.Get "files/commitment_mail.tpl") (dict "region" .Values.global.region "condition" .Values.campfire.mail_type.expire.condition) | toJson }}
-    {{- end }}
-{{ toYaml .Values.limes.clusters.ccloud | indent 4 }}
-
+  limes.json: |
+    {{- toPrettyJson $full_config | nindent 4 }}
   policy.json: |
     {{- .Files.Get "files/policy.yaml" | fromYaml | toPrettyJson | nindent 4 }}

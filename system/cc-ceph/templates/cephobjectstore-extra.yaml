@@ -30,6 +30,15 @@ spec:
         dataNonECPoolName: {{ $target.name }}.rgw.buckets.non-ec
         default: {{ $target.default | default false }}
 {{- end }}
+{{- if  .Values.rgwTargetPlacements.standardPlacements }}
+{{- range $target := .Values.rgwTargetPlacements.standardPlacements }}
+      - name: {{ $target.name }}
+        metadataPoolName: {{ $target.name }}.rgw.buckets.index
+        dataPoolName: {{ $target.name }}.rgw.buckets.data
+        dataNonECPoolName: {{ $target.name }}.rgw.buckets.non-ec
+        default: {{ $target.default | default false }}
+{{- end }}
+{{- end }}
 {{- if .Values.rgwTargetPlacements.placements }}
 {{- range $target := .Values.rgwTargetPlacements.placements }}
       - name: {{ $target.name }} 
@@ -73,6 +82,14 @@ spec:
   {{- if not (empty $instance.gateway.rgwCommandFlags) }}
     rgwCommandFlags: {{ toYaml $instance.gateway.rgwCommandFlags | nindent 6 }}
   {{- end }}
+    annotations:
+      # reload deployment when the rook-config-override configmap changes
+      # we don't use checksum here, because helm values renderer get messed up
+      configmap.reloader.stakater.com/reload: "rook-config-override"
+      {{- if $instance.gateway.securePort }}
+      # reload deployment when the certificate changes
+      secret.reloader.stakater.com/reload: {{ $instance.gateway.sslCertificateRef | default $.Values.objectstore.gateway.sslCertificateRef | quote }}
+      {{- end }}
     labels:
       prysm-sidecar: "no"
     instances: {{ $instance.gateway.instances | default $.Values.objectstore.gateway.instances }}

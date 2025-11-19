@@ -8,8 +8,10 @@ metadata:
     application: designate
     type: api
     component: api
-  {{- if .Values.vpa.set_main_container }}
   annotations:
+    secret.reloader.stakater.com/reload: "{{ .Release.Name }}-secrets,{{ .Release.Name }}-secrets-rndc"
+    deployment.reloader.stakater.com/pause-period: "60s"
+  {{- if .Values.vpa.set_main_container }}
     vpa-butler.cloud.sap/main-container: designate-api
   {{- end }}
 spec:
@@ -111,7 +113,7 @@ spec:
               name: container-init
             - name: wsgi-designate
               mountPath: /var/www/cgi-bin/designate
-{{- if .Values.global_setup }}
+{{- if .Values.global.is_global_region }}
             - mountPath: /var/www/html/test.html
               name: designate-etc
               subPath: test.html
@@ -158,6 +160,13 @@ spec:
                     path: secrets.conf
             - secret:
                 name: {{ .Release.Name }}-secrets-rndc
+{{- if .Values.rate_limit.enabled }}
+            - secret:
+                name: {{ .Release.Name }}-api-ratelimit-redis-user-default
+                items:
+                  - key: password
+                    path: ratelimit-backend-secret.conf
+{{- end }}
         - name: designate-etc-wsgi
           configMap:
             name: designate-etc-wsgi

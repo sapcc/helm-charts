@@ -17,13 +17,13 @@ spec:
             value: barbican
           - name: context
             matchType: "="
-            value: hsm
+            value: thales
           - name: severity
-            matchType: "="
+            matchType: "=~"
             value: critical|warning|info
           - name: region
             matchType: "=~"
-            value: {{ .Values.regions | join "|" }} 
+            value: {{ .Values.regions | join "|" }}
 
       # review for slack_by_cc_service
       - receiver: slack_barbican_certificate
@@ -40,7 +40,7 @@ spec:
             value: info
           - name: region
             matchType: "=~"
-            value: {{ .Values.regions | join "|" }} 
+            value: {{ .Values.regions | join "|" }}
 
       # review for slack_by_cc_service
       - receiver: slack_nannies
@@ -154,7 +154,7 @@ spec:
             value: info|warning|critical
           - name: service
             matchType: "=~"
-            value: arc|barbican|cinder|cronus|designate|documentation|elektra|elk|glance|ironic|lyra|manila|neutron|nova|octavia|placement|sentry|snmp
+            value: barbican|cinder|cronus|designate|documentation|elektra|elk|glance|ironic|manila|neutron|nova|octavia|placement|sentry|snmp
           - name: region
             matchType: "=~"
             value: {{ without .Values.regions "qa-de-1" | join "|" }}
@@ -300,6 +300,58 @@ spec:
             matchType: "="
             value: observability
 
+      - receiver: support_group_alerts_critical_storage
+        continue: true
+        matchers:
+          - name: severity
+            matchType: "="
+            value: critical
+          - name: support_group
+            matchType: "="
+            value: storage
+          - name: region
+            matchType: "=~"
+            value: global|{{ without .Values.regions "qa-de-1" | join "|" }}
+
+      - receiver: support_group_alerts_critical_kvm
+        continue: true
+        matchers:
+          - name: severity
+            matchType: "="
+            value: critical
+          - name: region
+            matchType: "=~"
+            value: global|{{ without .Values.regions "qa-de-1" | join "|" }}
+          - name: support_group
+            matchType: "="
+            value: kvm
+
+      - receiver: support_group_alerts_info_kvm
+        continue: true
+        matchers:
+          - name: severity
+            matchType: "="
+            value: info
+          - name: region
+            matchType: "=~"
+            value: global|{{ without .Values.regions "qa-de-1" | join "|" }}
+          - name: support_group
+            matchType: "="
+            value: kvm
+
+      - receiver: support_group_alerts_critical_iaas-support
+        continue: true
+        matchers:
+          - name: severity
+            matchType: "="
+            value: critical
+          - name: region
+            matchType: "=~"
+            value: global|{{ without .Values.regions "qa-de-1" | join "|" }}
+          - name: support_group
+            matchType: "="
+            value: iaas-support
+
       - receiver: support_group_alerts_critical
         continue: true
         matchers:
@@ -311,7 +363,7 @@ spec:
             value: global|{{ without .Values.regions "qa-de-1" | join "|" }}
           - name: support_group
             matchType: "=~"
-            value: src|network-data|network-security|network-lb|network-wan|storage|capacity-ops
+            value: {{ without .Values.supportGroups "compute" "compute-storage-api" "email" "identity" "foundation"  "network-api" "observability" "containers" "iaas-support" "kvm" | join "|" }}
 
       - receiver: support_group_alerts_warning
         continue: true
@@ -467,77 +519,6 @@ spec:
             matchType: "="
             value: compute
 
-      - receiver: slack_bedrock_critical
-        continue: true
-        matchers:
-          - name: tier
-            matchType: "="
-            value: vmware
-          - name: severity
-            matchType: "="
-            value: critical
-          - name: region
-            matchType: "=~"
-            value: {{ without .Values.regions "qa-de-1" | join "|" }}
-          - name: support_group
-            matchType: "="
-            value: compute
-          - name: bedrock
-            matchType: "="
-            value: "true"
-          
-      - receiver: slack_bedrock_warning
-        continue: true
-        matchers:
-          - name: tier
-            matchType: "="
-            value: vmware
-          - name: severity
-            matchType: "="
-            value: warning
-          - name: region
-            matchType: "=~"
-            value: {{ without .Values.regions "qa-de-1" | join "|" }}
-          - name: support_group
-            matchType: "="
-            value: compute
-          - name: bedrock
-            matchType: "="
-            value: "true"
-
-      - receiver: slack_bedrock_info
-        continue: true
-        matchers:
-          - name: tier
-            matchType: "="
-            value: vmware
-          - name: severity
-            matchType: "="
-            value: info
-          - name: region
-            matchType: "=~"
-            value: {{ without .Values.regions "qa-de-1" | join "|" }}
-          - name: support_group
-            matchType: "="
-            value: compute
-          - name: bedrock
-            matchType: "="
-            value: "true"
-
-      # Test Channel for CC KVM Alerting slack_alert_kvm_test
-      - receiver: slack_alert_kvm_test
-        continue: true
-        matchers:
-          - name: service
-            matchType: "="
-            value: kvm
-          - name: severity
-            matchType: "=~"
-            value: info|warning|critical
-          - name: region
-            matchType: "=~"
-            value: {{ .Values.regions | join "|" }}
-
   receivers:
     - name: slack
 
@@ -600,9 +581,9 @@ spec:
     - name: slack_kks_critical
       slackConfigs:
         - channel: '#cc-kks-critical'
-          apiURL: 
+          apiURL:
             name: alertmanager-{{ include "alertmanagerRelease.name" . }}-slack-secrets
-            key: slack_kubernikus_criticalwebhookURL 
+            key: slack_kubernikus_criticalwebhookURL
           {{- include "slack.template" . | nindent 10 }}
 
     - name: slack_concourse
@@ -615,7 +596,7 @@ spec:
 
     - name: slack_cc-cp
       slackConfigs:
-        - channel: '#cc-cp'
+        - channel: '#cc-cp-internal-alerts'
           apiURL:
             name: alertmanager-{{ include "alertmanagerRelease.name" . }}-slack-secrets
             key: slack_webhookURL
@@ -677,9 +658,9 @@ spec:
             key: slack_webhookURL
           {{- include "slack.template" . | nindent 10 }}
 
-    - name: slack_alert_kvm_test
+    - name: support_group_alerts_info_kvm
       slackConfigs:
-        - channel: '#alert-kvm-test'
+        - channel: '#alert-kvm-info'
           apiURL:
             name: alertmanager-{{ include "alertmanagerRelease.name" . }}-slack-secrets
             key: slack_webhookURL
@@ -721,7 +702,7 @@ spec:
         - channel: '#alert-{{"{{ .CommonLabels.support_group }}"}}-{{"{{ .CommonLabels.severity }}"}}'
           apiURL:
             name: alertmanager-{{ include "alertmanagerRelease.name" . }}-slack-secrets
-            key: slack_webhookURL 
+            key: slack_webhookURL
           {{- include "slack.template" . | nindent 10 }}
 
     - name: support_group_alerts_warning
@@ -729,7 +710,7 @@ spec:
         - channel: '#alert-{{"{{ .CommonLabels.support_group }}"}}-{{"{{ .CommonLabels.severity }}"}}'
           apiURL:
             name: alertmanager-{{ include "alertmanagerRelease.name" . }}-slack-secrets
-            key: slack_webhookURL 
+            key: slack_webhookURL
           {{- include "slack.template" . | nindent 10 }}
 
     - name: support_group_alerts_qa
@@ -737,7 +718,7 @@ spec:
         - channel: '#alert-{{"{{ .CommonLabels.support_group }}"}}-qa'
           apiURL:
             name: alertmanager-{{ include "alertmanagerRelease.name" . }}-slack-secrets
-            key: slack_webhookURL 
+            key: slack_webhookURL
           {{- include "slack.template" . | nindent 10 }}
 
     - name: support_group_alerts_labs

@@ -1,16 +1,13 @@
 kind: Deployment
 apiVersion: apps/v1
-
 metadata:
   name: neutron-server
   labels:
     system: openstack
     type: api
     component: neutron
-  {{- if .Values.vpa.set_main_container }}
   annotations:
     vpa-butler.cloud.sap/main-container: neutron-server
-  {{- end }}
 spec:
   replicas: {{ if not .Values.pod.debug.server }}{{ .Values.pod.replicas.server }}{{ else }} 1 {{ end }}
   revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revision_history }}
@@ -30,6 +27,7 @@ spec:
         name: neutron-server
 {{ tuple . "neutron" "api" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
       annotations:
+        kubectl.kubernetes.io/default-container: neutron-server
         configmap-etc-hash: {{ include (print $.Template.BasePath "/configmap-etc.yaml") . | sha256sum }}
         configmap-etc-aci-hash: {{ include (print $.Template.BasePath "/configmap-etc-aci.yaml") . | sha256sum }}
         configmap-etc-vendor-hash: {{ include (print $.Template.BasePath "/configmap-etc-vendor.yaml") . | sha256sum }}
@@ -45,9 +43,18 @@ spec:
 {{- end }}
         prometheus.io/scrape: "true"
         prometheus.io/targets: {{ required "$.Values.metrics.prometheus missing" $.Values.metrics.prometheus }}
+        config.linkerd.io/skip-outbound-ports: "6441,6442" # OVSDB ports
     spec:
 {{ tuple . "neutron" "api" | include "kubernetes_pod_anti_affinity" | indent 6 }}
       {{- include "utils.proxysql.pod_settings" . | indent 6 }}
+      initContainers:
+{{- if .Values.proxysql.native_sidecar }}
+{{- if not .Values.api.uwsgi }}
+        {{- tuple . (add .Values.api_workers .Values.rpc_workers .Values.rpc_state_workers) | include "utils.proxysql.container" | indent 8 }}
+{{- else }}
+        {{- tuple . .Values.api.processes | include "utils.proxysql.container" | indent 8 }}
+{{- end }}
+{{- end }}
       containers:
         - name: neutron-server
           image: {{.Values.global.registry}}/loci-neutron:{{.Values.imageVersionServerAPI | default .Values.imageVersionServer | default .Values.imageVersion | required "Please set neutron.imageVersion or similar"}}
@@ -95,7 +102,7 @@ spec:
             - name: DEPENDENCY_JOBS
               value: "{{ include "neutron.migration_job_name" . }}"
             - name: DEPENDENCY_SERVICE
-              value: "{{ .Release.Name }}-mariadb,{{ .Release.Name }}-rabbitmq"
+              value: "{{ include "neutron.service_dependencies" . }}"
             - name: STATSD_HOST
               value: "localhost"
             - name: STATSD_PORT
@@ -139,6 +146,11 @@ spec:
             - mountPath: /etc/neutron/secrets/neutron-arista-secrets.conf
               name: neutron-arista-secrets
               subPath: neutron-arista-secrets.conf
+{{- if .Values.rate_limit.enabled }}
+            - mountPath: {{ .Values.rate_limit.backend_secret_file }}
+              name: neutron-ratelimit-backend-secret
+              subPath: ratelimit-backend-secret.conf
+{{- end }}
             - mountPath: /etc/neutron/plugins/asr1k-global.ini
               name: neutron-etc
               subPath: asr1k-global.ini
@@ -248,10 +260,12 @@ spec:
             {{- include "utils.proxysql.volume_mount" . | indent 12 }}
             {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
             {{- include "utils.coordination.volume_mount"  . | indent 12 }}
+{{- if not .Values.proxysql.native_sidecar }}
 {{- if not .Values.api.uwsgi }}
         {{- tuple . (add .Values.api_workers .Values.rpc_workers .Values.rpc_state_workers) | include "utils.proxysql.container" | indent 8 }}
 {{- else }}
         {{- tuple . .Values.api.processes | include "utils.proxysql.container" | indent 8 }}
+{{- end }}
 {{- end }}
         - name: statsd
           image: {{.Values.global.dockerHubMirror}}/prom/statsd-exporter:v0.8.1
@@ -296,6 +310,11 @@ spec:
         - name: neutron-cc-fabric-secrets
           secret:
             secretName: neutron-cc-fabric-secrets
+{{- end }}
+{{- if .Values.rate_limit.enabled }}
+        - name: neutron-ratelimit-backend-secret
+          secret:
+            secretName: neutron-ratelimit-backend-secret
 {{- end }}
         - name: neutron-etc-vendor
           configMap:

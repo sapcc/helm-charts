@@ -7,6 +7,12 @@ fi
 
 . /startup-scripts/functions.sh
 
+if [ "$PXC_FORCE_BOOTSTRAP" = true ] ; then
+    if [[ -f /var/lib/mysql/grastate.dat ]]; then
+        sed -i 's/safe_to_bootstrap: 0/safe_to_bootstrap: 1/g' /var/lib/mysql/grastate.dat
+    fi
+fi
+
 {{- $current_region := .Values.global.db_region -}}
 {{- $cluster_ips := values .Values.service.regions }}
 
@@ -34,15 +40,17 @@ start_as_primary () {
     echo "I am the Primary Node"
     init_mysql
     write_password_file
+    init_mysql_upgrade
+    update_users &
     exec mysqld --user=mysql --wsrep_cluster_name=$SHORT_CLUSTER_NAME --wsrep_node_name=$hostname-$ipaddr \
     --wsrep_cluster_address="gcomm://" --wsrep_sst_method=xtrabackup-v2 \
     --wsrep_sst_auth="xtrabackup:$XTRABACKUP_PASSWORD" \
     --wsrep_node_address="$ipaddr" --pxc_strict_mode="$PXC_STRICT_MODE" \
     --wsrep_provider_options="evs.send_window=128;evs.user_send_window=128;gmcast.segment=$gmcast_segment" \
     --log-bin=$hostname-bin $CMDARG \
+    --init-file=/etc/mysql/init-file/init.sql \
     --skip-name-resolve
 }
-
 
 {{- if eq .Values.service.primary true }}
 
@@ -52,8 +60,6 @@ start_as_primary
 
 if [ "$PXC_FORCE_BOOTSTRAP" = true ] ; then
     echo "Cluster bootstrap forced via PXC_FORCE_BOOTSTRAP variable..."
-    sed -i 's/safe_to_bootstrap: 0/safe_to_bootstrap: 1/' /var/lib/mysql/grastate.dat
-
     start_as_primary
 fi
 
@@ -68,6 +74,7 @@ exec mysqld --user=mysql --wsrep_cluster_name=$SHORT_CLUSTER_NAME --wsrep_node_n
 --wsrep_node_address="$ipaddr" --pxc_strict_mode="$PXC_STRICT_MODE" \
 --wsrep_provider_options="evs.send_window=128;evs.user_send_window=128;gmcast.segment=$gmcast_segment" \
 --log-bin=$hostname-bin $CMDARG \
+--init-file=/etc/mysql/init-file/init.sql \
 --skip-name-resolve
 
 {{- end }}

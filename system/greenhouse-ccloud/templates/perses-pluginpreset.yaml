@@ -4,6 +4,16 @@ kind: PluginPreset
 metadata:
   name: perses
   namespace: {{ .Release.Namespace }}
+  labels:
+    greenhouse.sap/owned-by: observability
+{{- if .Values.global.fluxEnabled }}
+    greenhouse.sap/deployment-tool: "flux"
+  annotations:
+    "greenhouse.sap/propagate-labels": "greenhouse.sap/owned-by,greenhouse.sap/deployment-tool"
+{{- else }}
+  annotations:
+    "greenhouse.sap/propagate-labels": "greenhouse.sap/owned-by"
+{{- end }}
 spec:
   clusterSelector:
     matchExpressions:
@@ -17,12 +27,20 @@ spec:
       - "storage"
       - "compute"
       - "observability"
-  {{- with .Values.perses.clusterOptionOverrides }}
   clusterOptionOverrides:
-    {{ toYaml .Values.perses.clusterOptionOverrides | nindent 4 }}
+  {{- range $plugin := .Values.ingressPlugins }}
+  - clusterName: {{ $plugin.cluster }}
+    overrides:
+    - name: perses.serviceMonitor.selfMonitor
+      value: true
+    - name: perses.serviceMonitor.labels
+      value:
+        plugin: "kube-monitoring"
+    - name: perses.serviceMonitor.selector.matchLabels
+      value:
+        plugin: "perses-{{ $plugin.cluster }}"
   {{- end }}
   plugin:
-    disabled: false
     optionValues:
       - name: perses.sidecar.enabled
         value: true
@@ -36,4 +54,5 @@ spec:
       {{- end }}
     pluginDefinition: perses
     releaseNamespace: kube-monitoring
+    releaseName: perses
 {{- end -}}

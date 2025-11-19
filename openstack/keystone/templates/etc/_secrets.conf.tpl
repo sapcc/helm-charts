@@ -55,3 +55,10 @@ trusted_key_header = {{ .Values.api.cc_external.trusted_key_header | default "HT
 trusted_key_value = {{ .Values.api.cc_external.trusted_key_value }}
 {{- end }}
 {{- end }}
+
+{{- if .Values.report_invalid_password_hash.enabled }}
+[security_compliance]
+report_invalid_password_hash = "event"
+invalid_password_hash_secret_key = {{ required "invalid_password_hash_secret_key value is required when .Values.report_invalid_password_hash.enabled is true" .Values.report_invalid_password_hash.invalid_password_hash_secret_key | include "resolve_secret" }}
+invalid_password_hash_max_chars = 5
+{{- end }}

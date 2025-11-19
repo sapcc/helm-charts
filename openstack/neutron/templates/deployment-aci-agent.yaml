@@ -1,16 +1,13 @@
 kind: Deployment
 apiVersion: apps/v1
-
 metadata:
   name: neutron-aci-agent
   labels:
     system: openstack
     type: backend
     component: neutron
-  {{- if .Values.vpa.set_main_container }}
   annotations:
     vpa-butler.cloud.sap/main-container: neutron-aci-agent
-  {{- end }}
 spec:
   replicas: 1
   revisionHistoryLimit: 5
@@ -28,6 +25,7 @@ spec:
         name: neutron-aci-agent
 {{ tuple . "neutron" "aci-agent" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
       annotations:
+        kubectl.kubernetes.io/default-container: neutron-aci-agent
         pod.beta.kubernetes.io/hostname:  aci-agent-pet
         configmap-etc-hash: {{ include (print $.Template.BasePath "/configmap-etc.yaml") . | sha256sum }}
         configmap-etc-aci-hash: {{ include (print $.Template.BasePath "/configmap-etc-aci.yaml") . | sha256sum }}

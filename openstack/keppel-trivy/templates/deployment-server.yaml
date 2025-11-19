@@ -3,6 +3,8 @@ apiVersion: apps/v1
 
 metadata:
   name: trivy-server
+  annotations:
+    secret.reloader.stakater.com/reload: trivy-secret
 
 spec:
   revisionHistoryLimit: 5
@@ -22,7 +24,6 @@ spec:
       annotations:
         checksum/secret: {{ include "keppel-trivy/templates/secret.yaml" . | sha256sum }}
         kubectl.kubernetes.io/default-container: trivy-server
-        secret.reloader.stakater.com/reload: trivy-secret
     spec:
       containers:
         - name: trivy-server
@@ -62,5 +63,5 @@ spec:
             requests:
               cpu: 2
               # roughly at least the size of aquasecurity/trivy-java-db and aquasecurity/trivy-db
-              ephemeral-storage: 600Mi
+              ephemeral-storage: 1Gi
               memory: 500Mi

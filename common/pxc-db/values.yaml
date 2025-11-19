@@ -78,8 +78,8 @@ job:
     # -- Define the image used by the init-db job
     # @default -- operator image
     image:
-      name: percona/percona-xtradb-cluster-operator
-      tag: 1.16.1-pxc8.0-backup-pxb8.0.35
+      name: percona/percona-xtrabackup
+      tag: 8.0.35-34.1
     # -- Set default character set in init.sql
     character_set_server: utf8mb4
     # -- Set default collation in init.sql
@@ -151,7 +151,7 @@ pause: false
 initContainer:
   image:
     name: percona-xtradb-cluster-operator
-    tag: 1.16.1
+    tag: 1.18.0
     override: null
   resources:
     requests:
@@ -180,7 +180,7 @@ pxc:
   size: 3
   image:
     name: percona/percona-xtradb-cluster
-    tag: 8.0.39-30.1
+    tag: 8.0.42-33.1
     override: null
   imagePullPolicy: IfNotPresent
   annotations: {}
@@ -227,6 +227,7 @@ pxc:
       wsrep_provider_options: "gcache.size=1G; gcache.recover=yes"
       wsrep_applier_threads: 4
       wsrep_retry_autocommit: 3
+      wsrep_sst_allowed_methods: "xtrabackup-v2,clone"
       pxc_strict_mode: MASTER  # default is ENFORCING
       binlog_format: ROW
       binlog_expire_logs_seconds: "345600"  # default 30 days -> 4 days
@@ -332,7 +333,7 @@ haproxy:
   size: 2
   image:
     name: percona/haproxy
-    tag: 2.8.11
+    tag: 2.8.15
     override: null
   imagePullPolicy: Always
   annotations: {}
@@ -439,8 +440,8 @@ backup:
   annotations: {}
   labels: {}
   image:
-    name: percona/percona-xtradb-cluster-operator
-    tag: 1.16.1-pxc8.0-backup-pxb8.0.35
+    name: percona/percona-xtrabackup
+    tag: 8.0.35-34.1
     override: null
   imagePullPolicy: Always
   # -- The number of retries to make a backup
@@ -453,6 +454,11 @@ backup:
   resources:
     requests: {}
     limits: {}
+  #  -- Environment variables for the backup job container
+  containerOptions:
+  # env:
+  #   - name: VERIFY_TLS
+  #     value: "false"
   # -- PiTR configuration
   # When enabled, operator creates a PiTR binlog-collector deployment
   pitr:
