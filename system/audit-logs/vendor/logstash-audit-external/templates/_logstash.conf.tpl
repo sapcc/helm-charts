@@ -201,6 +201,17 @@ filter {
         }
       }
     }
+    if [type] == "k8saudit" or "k8saudit" in [tags] {
+      mutate{
+        {{ if .Values.global.cluster -}}
+          add_field => { "[sap][cc][cluster]" => "{{ .Values.global.cluster }}"}
+        {{ end -}}
+        {{ if .Values.global.region -}}
+          add_field => { "[sap][cc][region]" => "{{ .Values.global.region }}"}
+        {{ end -}}
+          add_field => { "[sap][cc][audit][source]" => "k8saudit"}
+      }
+    }
   }
 
 
@@ -230,6 +241,12 @@ output {
       http_method => "post"
     }
   } else if [type] == "k8saudit" or "k8saudit" in [tags] {
-    stdout { }
+    http {
+      id => "output_k8saudit"
+      ssl_certificate_authorities => ["/usr/share/logstash/config/ca.pem"]
+      url => "https://{{ .Values.global.forwarding.audit.host }}"
+      format => "json"
+      http_method => "post"
+    }
   }
 }
