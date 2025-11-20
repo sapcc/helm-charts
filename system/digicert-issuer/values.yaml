@@ -5,6 +5,9 @@ image:
   pullPolicy: IfNotPresent
   #tag: # defaults to appVersion
 
+# These labels will be set on the digicert deployment
+deploymentLabels: {}
+
 provisioner:
   disableRootCA: false
   validityYears: 1
@@ -21,11 +24,13 @@ provisioner:
 
 metrics:
   port: 8080
-  prometheus: kubernetes
+  podMonitorSelector:
+    prometheus: kubernetes
 
 alerts:
   enabled: true
-  prometheus: kubernetes
+  ruleSelector:
+    prometheus: kubernetes
 
 resources:
   limits:

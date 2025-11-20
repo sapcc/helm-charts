@@ -4,7 +4,7 @@ set -ex
 # seed just enough to have a functional v3 api
 keystone-manage --config-file=/etc/keystone/keystone.conf --config-file=/etc/keystone/keystone.conf.d/secrets.conf bootstrap \
     --bootstrap-username {{ .Values.api.adminUser }} \
-    --bootstrap-password {{ required "A valid .Values.api.adminPassword required!" .Values.api.adminPassword }} \
+    --bootstrap-password {{ required "A valid .Values.api.adminPassword required!" .Values.api.adminPassword | include "resolve_secret" }} \
     --bootstrap-project-name {{ .Values.api.adminProjectName }} \
 {{- if eq .Values.services.admin.scheme "https" }}
     --bootstrap-admin-url https://{{.Values.services.admin.host}}.{{.Values.global.region}}.{{.Values.global.tld}}/v3 \
@@ -18,7 +18,7 @@ keystone-manage --config-file=/etc/keystone/keystone.conf --config-file=/etc/key
 {{- end }}
 {{- if .Values.global.clusterDomain }}
     --bootstrap-internal-url http://keystone.{{.Release.Namespace}}.svc.{{.Values.global.clusterDomain}}:5000/v3 \
-{{- else if .Values.global_setup }}
+{{- else if .Values.global.is_global_region }}
     --bootstrap-internal-url http://{{ .Values.global.keystone_internal_ip }}:5000/v3 \
 {{- else }}
     --bootstrap-internal-url http://keystone.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}:5000/v3 \

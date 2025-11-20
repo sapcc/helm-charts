@@ -1,9 +1,12 @@
+{{- if and .Values.alerts.enabled (.Capabilities.APIVersions.Has "monitoring.coreos.com/v1/PrometheusRule") }}
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
   labels:
-    prometheus: kubernetes
     app: secrets-injector
+  {{- with .Values.alerts.ruleSelector }}
+    {{ tpl (toYaml .) . | nindent 4 }}
+  {{- end }}
   name: secrets-injector-alerts
   namespace: {{ .Release.Namespace }}
 spec:
@@ -12,7 +15,7 @@ spec:
     rules:
     - alert: SecretsInjectorNetworkErrors
       annotations:
-        description: secrets-injector cannot reach vault. Check the logs in the {{ .Release.Namespace }} and the health of vault.
+        description: secrets-injector cannot reach vault. Check the logs in the {{ .Release.Namespace }} namespace and the health of vault.
         summary: secrets-injector has network errors.
       expr: rate(secrets_injector_network_error_count[5m]) > 0
       for: 10m
@@ -21,3 +24,26 @@ spec:
         service: secrets-injector
         severity: warning
         support_group: containers
+    - alert: SecretsInjectorRotationErrors
+      annotations:
+        description: secrets-injector fails to rotate secrets. Check the logs in the {{ .Release.Namespace }} namespace and the health of vault.
+        summary: secrets-injector fails to check secrets for rotation.
+      expr: sum(changes(secrets_injector_rotated_secret_count{result="error"}[11m])) > 0
+      for: 10m
+      labels:
+        context: secrets-injector
+        service: secrets-injector
+        severity: warning
+        support_group: containers
+    - alert: SecretsInjectorReferenceErrors
+      annotations:
+        description: secrets-injector fails to resolve the following credential reference {{ `{{ $labels.reference }}` }} in the {{`{{ $labels.namespace }}`}}/{{`{{ $labels.secret }}`}} secret. Please ensure that the credential exsists in vault and the syntax is correct. If the credential is deleted, remove the reference.
+        summary: secrets-injector fails to resolve a credential reference.
+      expr: sum by (secret,namespace,reference) (changes(secrets_injector_reference_error_count[15m])) * on(secret,namespace) group_left(label_ccloud_support_group) sum by(secret, namespace, label_ccloud_support_group) (kube_secret_labels) > 1
+      for: 15m
+      labels:
+        context: secrets-injector
+        service: secrets-injector
+        severity: warning
+        support_group: "{{`{{ if $labels.label_ccloud_support_group }}{{ $labels.label_ccloud_support_group }}{{ else }}containers{{ end }}`}}"
+{{- end -}}

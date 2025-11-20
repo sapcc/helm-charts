@@ -11,6 +11,8 @@ spec:
     kind: CephObjectStore
     listKind: CephObjectStoreList
     plural: cephobjectstores
+    shortNames:
+      - cephos
     singular: cephobjectstore
   scope: Namespaced
   versions:
@@ -165,7 +167,11 @@ spec:
                           description: Enabled whether this pool is mirrored or not
                           type: boolean
                         mode:
-                          description: 'Mode is the mirroring mode: either pool or image'
+                          description: 'Mode is the mirroring mode: pool, image or init-only.'
+                          enum:
+                            - pool
+                            - image
+                            - init-only
                           type: string
                         peers:
                           description: Peers represents the peers spec
@@ -255,6 +261,7 @@ spec:
                           type: string
                         targetSizeRatio:
                           description: TargetSizeRatio gives a hint (%) to Ceph in terms of expected consumption of the total cluster capacity
+                          minimum: 0
                           type: number
                       required:
                         - size
@@ -281,6 +288,272 @@ spec:
                   description: The rgw pod info
                   nullable: true
                   properties:
+                    additionalVolumeMounts:
+                      description: |-
+                        AdditionalVolumeMounts allows additional volumes to be mounted to the RGW pod.
+                        The root directory for each additional volume mount is `/var/rgw`.
+                        Example: for an additional mount at subPath `ldap`, mounted from a secret that has key
+                        `bindpass.secret`, the file would reside at `/var/rgw/ldap/bindpass.secret`.
+                      items:
+                        description: |-
+                          AdditionalVolumeMount represents the source from where additional files in pod containers
+                          should come from and what subdirectory they are made available in.
+                        properties:
+                          subPath:
+                            description: |-
+                              SubPath defines the sub-path (subdirectory) of the directory root where the volumeSource will
+                              be mounted. All files/keys in the volume source's volume will be mounted to the subdirectory.
+                              This is not the same as the Kubernetes `subPath` volume mount option.
+                              Each subPath definition must be unique and must not contain ':'.
+                            minLength: 1
+                            pattern: ^[^:]+$
+                            type: string
+                          volumeSource:
+                            properties:
+                              configMap:
+                                properties:
+                                  defaultMode:
+                                    format: int32
+                                    type: integer
+                                  items:
+                                    items:
+                                      properties:
+                                        key:
+                                          type: string
+                                        mode:
+                                          format: int32
+                                          type: integer
+                                        path:
+                                          type: string
+                                      required:
+                                        - key
+                                        - path
+                                      type: object
+                                    type: array
+                                    x-kubernetes-list-type: atomic
+                                  name:
+                                    default: ""
+                                    type: string
+                                  optional:
+                                    type: boolean
+                                type: object
+                                x-kubernetes-map-type: atomic
+                              emptyDir:
+                                properties:
+                                  medium:
+                                    type: string
+                                  sizeLimit:
+                                    anyOf:
+                                      - type: integer
+                                      - type: string
+                                    pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                    x-kubernetes-int-or-string: true
+                                type: object
+                              hostPath:
+                                properties:
+                                  path:
+                                    type: string
+                                  type:
+                                    type: string
+                                required:
+                                  - path
+                                type: object
+                              persistentVolumeClaim:
+                                properties:
+                                  claimName:
+                                    type: string
+                                  readOnly:
+                                    type: boolean
+                                required:
+                                  - claimName
+                                type: object
+                              projected:
+                                properties:
+                                  defaultMode:
+                                    format: int32
+                                    type: integer
+                                  sources:
+                                    items:
+                                      properties:
+                                        clusterTrustBundle:
+                                          properties:
+                                            labelSelector:
+                                              properties:
+                                                matchExpressions:
+                                                  items:
+                                                    properties:
+                                                      key:
+                                                        type: string
+                                                      operator:
+                                                        type: string
+                                                      values:
+                                                        items:
+                                                          type: string
+                                                        type: array
+                                                        x-kubernetes-list-type: atomic
+                                                    required:
+                                                      - key
+                                                      - operator
+                                                    type: object
+                                                  type: array
+                                                  x-kubernetes-list-type: atomic
+                                                matchLabels:
+                                                  additionalProperties:
+                                                    type: string
+                                                  type: object
+                                              type: object
+                                              x-kubernetes-map-type: atomic
+                                            name:
+                                              type: string
+                                            optional:
+                                              type: boolean
+                                            path:
+                                              type: string
+                                            signerName:
+                                              type: string
+                                          required:
+                                            - path
+                                          type: object
+                                        configMap:
+                                          properties:
+                                            items:
+                                              items:
+                                                properties:
+                                                  key:
+                                                    type: string
+                                                  mode:
+                                                    format: int32
+                                                    type: integer
+                                                  path:
+                                                    type: string
+                                                required:
+                                                  - key
+                                                  - path
+                                                type: object
+                                              type: array
+                                              x-kubernetes-list-type: atomic
+                                            name:
+                                              default: ""
+                                              type: string
+                                            optional:
+                                              type: boolean
+                                          type: object
+                                          x-kubernetes-map-type: atomic
+                                        downwardAPI:
+                                          properties:
+                                            items:
+                                              items:
+                                                properties:
+                                                  fieldRef:
+                                                    properties:
+                                                      apiVersion:
+                                                        type: string
+                                                      fieldPath:
+                                                        type: string
+                                                    required:
+                                                      - fieldPath
+                                                    type: object
+                                                    x-kubernetes-map-type: atomic
+                                                  mode:
+                                                    format: int32
+                                                    type: integer
+                                                  path:
+                                                    type: string
+                                                  resourceFieldRef:
+                                                    properties:
+                                                      containerName:
+                                                        type: string
+                                                      divisor:
+                                                        anyOf:
+                                                          - type: integer
+                                                          - type: string
+                                                        pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                                        x-kubernetes-int-or-string: true
+                                                      resource:
+                                                        type: string
+                                                    required:
+                                                      - resource
+                                                    type: object
+                                                    x-kubernetes-map-type: atomic
+                                                required:
+                                                  - path
+                                                type: object
+                                              type: array
+                                              x-kubernetes-list-type: atomic
+                                          type: object
+                                        secret:
+                                          properties:
+                                            items:
+                                              items:
+                                                properties:
+                                                  key:
+                                                    type: string
+                                                  mode:
+                                                    format: int32
+                                                    type: integer
+                                                  path:
+                                                    type: string
+                                                required:
+                                                  - key
+                                                  - path
+                                                type: object
+                                              type: array
+                                              x-kubernetes-list-type: atomic
+                                            name:
+                                              default: ""
+                                              type: string
+                                            optional:
+                                              type: boolean
+                                          type: object
+                                          x-kubernetes-map-type: atomic
+                                        serviceAccountToken:
+                                          properties:
+                                            audience:
+                                              type: string
+                                            expirationSeconds:
+                                              format: int64
+                                              type: integer
+                                            path:
+                                              type: string
+                                          required:
+                                            - path
+                                          type: object
+                                      type: object
+                                    type: array
+                                    x-kubernetes-list-type: atomic
+                                type: object
+                              secret:
+                                properties:
+                                  defaultMode:
+                                    format: int32
+                                    type: integer
+                                  items:
+                                    items:
+                                      properties:
+                                        key:
+                                          type: string
+                                        mode:
+                                          format: int32
+                                          type: integer
+                                        path:
+                                          type: string
+                                      required:
+                                        - key
+                                        - path
+                                      type: object
+                                    type: array
+                                    x-kubernetes-list-type: atomic
+                                  optional:
+                                    type: boolean
+                                  secretName:
+                                    type: string
+                                type: object
+                            type: object
+                        required:
+                          - subPath
+                          - volumeSource
+                        type: object
+                      type: array
                     annotations:
                       additionalProperties:
                         type: string
@@ -342,6 +615,70 @@ spec:
                       nullable: true
                       type: object
                       x-kubernetes-preserve-unknown-fields: true
+                    opsLogSidecar:
+                      description: Enable enhanced operation Logs for S3 in a sidecar named ops-log
+                      nullable: true
+                      properties:
+                        resources:
+                          description: Resources represents the way to specify resource requirements for the ops-log sidecar
+                          properties:
+                            claims:
+                              description: |-
+                                Claims lists the names of resources, defined in spec.resourceClaims,
+                                that are used by this container.
+
+                                This is an alpha field and requires enabling the
+                                DynamicResourceAllocation feature gate.
+
+                                This field is immutable. It can only be set for containers.
+                              items:
+                                description: ResourceClaim references one entry in PodSpec.ResourceClaims.
+                                properties:
+                                  name:
+                                    description: |-
+                                      Name must match the name of one entry in pod.spec.resourceClaims of
+                                      the Pod where this field is used. It makes that resource available
+                                      inside a container.
+                                    type: string
+                                  request:
+                                    description: |-
+                                      Request is the name chosen for a request in the referenced claim.
+                                      If empty, everything from the claim is made available, otherwise
+                                      only the result of this request.
+                                    type: string
+                                required:
+                                  - name
+                                type: object
+                              type: array
+                              x-kubernetes-list-map-keys:
+                                - name
+                              x-kubernetes-list-type: map
+                            limits:
+                              additionalProperties:
+                                anyOf:
+                                  - type: integer
+                                  - type: string
+                                pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                x-kubernetes-int-or-string: true
+                              description: |-
+                                Limits describes the maximum amount of compute resources allowed.
+                                More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+                              type: object
+                            requests:
+                              additionalProperties:
+                                anyOf:
+                                  - type: integer
+                                  - type: string
+                                pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                x-kubernetes-int-or-string: true
+                              description: |-
+                                Requests describes the minimum amount of compute resources required.
+                                If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
+                                otherwise to an implementation-defined value. Requests cannot exceed Limits.
+                                More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+                              type: object
+                          type: object
+                      type: object
                     placement:
                       nullable: true
                       properties:
@@ -860,6 +1197,25 @@ spec:
                     priorityClassName:
                       description: PriorityClassName sets priority classes on the rgw pods
                       type: string
+                    readAffinity:
+                      description: |-
+                        ReadAffinity defines the RGW read affinity policy to optimize the read requests for the RGW clients
+                        Note: Only supported from Ceph Tentacle (v20)
+                      properties:
+                        type:
+                          description: |-
+                            Type defines the RGW ReadAffinity type
+                            localize: read from the nearest OSD based on crush location of the RGW client
+                            balance: picks a random OSD from the PG's active set
+                            default: read from the primary OSD
+                          enum:
+                            - localize
+                            - balance
+                            - default
+                          type: string
+                      required:
+                        - type
+                      type: object
                     resources:
                       description: The resource requirements for the rgw pods
                       nullable: true
@@ -921,6 +1277,56 @@ spec:
                           type: object
                       type: object
                       x-kubernetes-preserve-unknown-fields: true
+                    rgwCommandFlags:
+                      additionalProperties:
+                        type: string
+                      description: |-
+                        RgwCommandFlags sets Ceph RGW config values for the gateway clients that serve this object
+                        store. Values are modified at RGW startup, resulting in RGW pod restarts.
+                        This feature is intended for advanced users. It allows breaking configurations to be easily
+                        applied. Use with caution.
+                      nullable: true
+                      type: object
+                    rgwConfig:
+                      additionalProperties:
+                        type: string
+                      description: |-
+                        RgwConfig sets Ceph RGW config values for the gateway clients that serve this object store.
+                        Values are modified at runtime without RGW restart.
+                        This feature is intended for advanced users. It allows breaking configurations to be easily
+                        applied. Use with caution.
+                      nullable: true
+                      type: object
+                    rgwConfigFromSecret:
+                      additionalProperties:
+                        description: SecretKeySelector selects a key of a Secret.
+                        properties:
+                          key:
+                            description: The key of the secret to select from.  Must be a valid secret key.
+                            type: string
+                          name:
+                            default: ""
+                            description: |-
+                              Name of the referent.
+                              This field is effectively required, but due to backwards compatibility is
+                              allowed to be empty. Instances of this type with an empty value here are
+                              almost certainly wrong.
+                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                            type: string
+                          optional:
+                            description: Specify whether the Secret or its key must be defined
+                            type: boolean
+                        required:
+                          - key
+                        type: object
+                        x-kubernetes-map-type: atomic
+                      description: |-
+                        RgwConfigFromSecret works exactly like RgwConfig but takes config value from Secret Key reference.
+                        Values are modified at runtime without RGW restart.
+                        This feature is intended for advanced users. It allows breaking configurations to be easily
+                        applied. Use with caution.
+                      nullable: true
+                      type: object
                     securePort:
                       description: The port the rgw service will be listening on (https)
                       format: int32
@@ -962,7 +1368,7 @@ spec:
                             alive or ready to receive traffic.
                           properties:
                             exec:
-                              description: Exec specifies the action to take.
+                              description: Exec specifies a command to execute in the container.
                               properties:
                                 command:
                                   description: |-
@@ -983,7 +1389,7 @@ spec:
                               format: int32
                               type: integer
                             grpc:
-                              description: GRPC specifies an action involving a GRPC port.
+                              description: GRPC specifies a GRPC HealthCheckRequest.
                               properties:
                                 port:
                                   description: Port number of the gRPC service. Number must be in the range 1 to 65535.
@@ -1001,7 +1407,7 @@ spec:
                                 - port
                               type: object
                             httpGet:
-                              description: HTTPGet specifies the http request to perform.
+                              description: HTTPGet specifies an HTTP GET request to perform.
                               properties:
                                 host:
                                   description: |-
@@ -1066,7 +1472,7 @@ spec:
                               format: int32
                               type: integer
                             tcpSocket:
-                              description: TCPSocket specifies an action involving a TCP port.
+                              description: TCPSocket specifies a connection to a TCP port.
                               properties:
                                 host:
                                   description: 'Optional: Host name to connect to, defaults to the pod IP.'
@@ -1108,7 +1514,7 @@ spec:
                             alive or ready to receive traffic.
                           properties:
                             exec:
-                              description: Exec specifies the action to take.
+                              description: Exec specifies a command to execute in the container.
                               properties:
                                 command:
                                   description: |-
@@ -1129,7 +1535,7 @@ spec:
                               format: int32
                               type: integer
                             grpc:
-                              description: GRPC specifies an action involving a GRPC port.
+                              description: GRPC specifies a GRPC HealthCheckRequest.
                               properties:
                                 port:
                                   description: Port number of the gRPC service. Number must be in the range 1 to 65535.
@@ -1147,7 +1553,7 @@ spec:
                                 - port
                               type: object
                             httpGet:
-                              description: HTTPGet specifies the http request to perform.
+                              description: HTTPGet specifies an HTTP GET request to perform.
                               properties:
                                 host:
                                   description: |-
@@ -1212,7 +1618,7 @@ spec:
                               format: int32
                               type: integer
                             tcpSocket:
-                              description: TCPSocket specifies an action involving a TCP port.
+                              description: TCPSocket specifies a connection to a TCP port.
                               properties:
                                 host:
                                   description: 'Optional: Host name to connect to, defaults to the pod IP.'
@@ -1291,7 +1697,6 @@ spec:
                         If the DNS name corresponds to an endpoint with DNS wildcard support, do not include the
                         wildcard itself in the list of hostnames.
                         E.g., use "mystore.example.com" instead of "*.mystore.example.com".
-                        The feature is supported only for Ceph v18 and later versions.
                       items:
                         type: string
                       type: array
@@ -1363,7 +1768,11 @@ spec:
                           description: Enabled whether this pool is mirrored or not
                           type: boolean
                         mode:
-                          description: 'Mode is the mirroring mode: either pool or image'
+                          description: 'Mode is the mirroring mode: pool, image or init-only.'
+                          enum:
+                            - pool
+                            - image
+                            - init-only
                           type: string
                         peers:
                           description: Peers represents the peers spec
@@ -1453,6 +1862,7 @@ spec:
                           type: string
                         targetSizeRatio:
                           description: TargetSizeRatio gives a hint (%) to Ceph in terms of expected consumption of the total cluster capacity
+                          minimum: 0
                           type: number
                       required:
                         - size
@@ -1481,6 +1891,25 @@ spec:
                 protocols:
                   description: The protocol specification
                   properties:
+                    enableAPIs:
+                      description: |-
+                        Represents RGW 'rgw_enable_apis' config option. See: https://docs.ceph.com/en/reef/radosgw/config-ref/#confval-rgw_enable_apis
+                        If no value provided then all APIs will be enabled: s3, s3website, swift, swift_auth, admin, sts, iam, notifications
+                        If enabled APIs are set, all remaining APIs will be disabled.
+                        This option overrides S3.Enabled value.
+                      items:
+                        enum:
+                          - s3
+                          - s3website
+                          - swift
+                          - swift_auth
+                          - admin
+                          - sts
+                          - iam
+                          - notifications
+                        type: string
+                      nullable: true
+                      type: array
                     s3:
                       description: The spec for S3
                       nullable: true
@@ -1490,7 +1919,9 @@ spec:
                           nullable: true
                           type: boolean
                         enabled:
-                          description: Whether to enable S3. This defaults to true (even if protocols.s3 is not present in the CRD). This maintains backwards compatibility – by default S3 is enabled.
+                          description: |-
+                            Deprecated: use protocol.enableAPIs instead.
+                            Whether to enable S3. This defaults to true (even if protocols.s3 is not present in the CRD). This maintains backwards compatibility – by default S3 is enabled.
                           nullable: true
                           type: boolean
                       type: object
@@ -1575,19 +2006,84 @@ spec:
                       x-kubernetes-validations:
                         - message: object store shared metadata pool is immutable
                           rule: self == oldSelf
+                    poolPlacements:
+                      description: |-
+                        PoolPlacements control which Pools are associated with a particular RGW bucket.
+                        Once PoolPlacements are defined, RGW client will be able to associate pool
+                        with ObjectStore bucket by providing "<LocationConstraint>" during s3 bucket creation
+                        or "X-Storage-Policy" header during swift container creation.
+                        See: https://docs.ceph.com/en/latest/radosgw/placement/#placement-targets
+                        PoolPlacement with name: "default" will be used as a default pool if no option
+                        is provided during bucket creation.
+                        If default placement is not provided, spec.sharedPools.dataPoolName and spec.sharedPools.MetadataPoolName will be used as default pools.
+                        If spec.sharedPools are also empty, then RGW pools (spec.dataPool and spec.metadataPool) will be used as defaults.
+                      items:
+                        properties:
+                          dataNonECPoolName:
+                            description: |-
+                              The data pool used to store ObjectStore data that cannot use erasure coding (ex: multi-part uploads).
+                              If dataPoolName is not erasure coded, then there is no need for dataNonECPoolName.
+                            type: string
+                          dataPoolName:
+                            description: The data pool used to store ObjectStore objects data.
+                            minLength: 1
+                            type: string
+                          default:
+                            description: |-
+                              Sets given placement as default. Only one placement in the list can be marked as default.
+                              Default is false.
+                            type: boolean
+                          metadataPoolName:
+                            description: The metadata pool used to store ObjectStore bucket index.
+                            minLength: 1
+                            type: string
+                          name:
+                            description: Pool placement name. Name can be arbitrary. Placement with name "default" will be used as default.
+                            minLength: 1
+                            pattern: ^[a-zA-Z0-9._/-]+$
+                            type: string
+                          storageClasses:
+                            description: |-
+                              StorageClasses can be selected by user to override dataPoolName during object creation.
+                              Each placement has default STANDARD StorageClass pointing to dataPoolName.
+                              This list allows defining additional StorageClasses on top of default STANDARD storage class.
+                            items:
+                              properties:
+                                dataPoolName:
+                                  description: DataPoolName is the data pool used to store ObjectStore objects data.
+                                  minLength: 1
+                                  type: string
+                                name:
+                                  description: |-
+                                    Name is the StorageClass name. Ceph allows arbitrary name for StorageClasses,
+                                    however most clients/libs insist on AWS names so it is recommended to use
+                                    one of the valid x-amz-storage-class values for better compatibility:
+                                    REDUCED_REDUNDANCY | STANDARD_IA | ONEZONE_IA | INTELLIGENT_TIERING | GLACIER | DEEP_ARCHIVE | OUTPOSTS | GLACIER_IR | SNOW | EXPRESS_ONEZONE
+                                    See AWS docs: https://aws.amazon.com/de/s3/storage-classes/
+                                  minLength: 1
+                                  pattern: ^[a-zA-Z0-9._/-]+$
+                                  type: string
+                              required:
+                                - dataPoolName
+                                - name
+                              type: object
+                            type: array
+                        required:
+                          - dataPoolName
+                          - metadataPoolName
+                          - name
+                        type: object
+                      type: array
                     preserveRadosNamespaceDataOnDelete:
                       description: Whether the RADOS namespaces should be preserved on deletion of the object store
                       type: boolean
-                  required:
-                    - dataPoolName
-                    - metadataPoolName
                   type: object
                 zone:
                   description: The multisite info
                   nullable: true
                   properties:
                     name:
-                      description: RGW Zone the Object Store is in
+                      description: CephObjectStoreZone name this CephObjectStore is part of
                       type: string
                   required:
                     - name

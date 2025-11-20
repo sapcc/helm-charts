@@ -1,4 +1,4 @@
-{{- if .Values.initdb_job }}
+{{- if .Values.job.initdb.enabled }}
 ---
 apiVersion: batch/v1
 kind: Job
@@ -6,6 +6,8 @@ metadata:
   name: "{{ include "pxc-db.fullname" . }}-init-db"
   namespace:  {{.Release.Namespace}}
   labels:
+    # hooks are not annotated as belonging to the Helm release, so we cannot rely on owner-info injection
+{{- include "pxc-db.ownerLabels" . | indent 4 }}
 {{ include "pxc-db.labels" . | indent 4 }}
   annotations:
 {{- if and (and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested) $.Values.linkerd.enabled }}
@@ -15,17 +17,19 @@ metadata:
     "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
     "helm.sh/hook-weight": "3"
 spec:
+  backoffLimit: {{ .Values.job.initdb.jobBackoffLimit | default 1 }}
   template:
     metadata:
       name: "{{ include "pxc-db.fullname" . }}-init-db"
       labels:
 {{ include "pxc-db.labels" . | indent 8 }}
     spec:
-      restartPolicy: Never
+      restartPolicy: {{ .Values.job.initdb.jobRestartPolicy | default "Never" | quote }}
       serviceAccountName: {{ .Values.name }}-init-db
+      priorityClassName: {{ .Values.job.initdb.priority_class | default "critical-infrastructure" | quote }}
       initContainers:
       - name: kubernetes-entrypoint
-        image: {{ $.Values.global.registryAlternateRegion }}/kubernetes-entrypoint:v0.3.1
+        image: {{ required ".Values.global.registryAlternateRegion is missing" $.Values.global.registryAlternateRegion }}/{{ .Values.kubernetes_entrypoint.image.name }}:{{ .Values.kubernetes_entrypoint.image.tag }}
         command:
         - /kubernetes-entrypoint
         env:
@@ -37,7 +41,7 @@ spec:
           value: {{ .Values.name }}-db-haproxy
       containers:
       - name: init-db-job
-        image: {{ required ".Values.global.dockerHubMirrorAlternateRegion is missing" .Values.global.dockerHubMirrorAlternateRegion }}/{{ .Values.initdb.image.name }}:{{ .Values.initdb.image.tag }}
+        image: {{ required ".Values.global.dockerHubMirrorAlternateRegion is missing" $.Values.global.dockerHubMirrorAlternateRegion }}/{{ .Values.job.initdb.image.name }}:{{ .Values.job.initdb.image.tag }}
         command:
           - /bin/bash
           - -c
@@ -53,6 +57,13 @@ spec:
               secretKeyRef:
                 name: pxc-db-{{ .Values.name }}-init-sql
                 key: operator
+        resources:
+          requests:
+            cpu: {{ .Values.job.initdb.resources.requests.cpu | default 0.5 }}
+            memory: {{ .Values.job.initdb.resources.requests.memory | default "128Mi" | quote }}
+          limits:
+            cpu: {{ .Values.job.initdb.resources.limits.cpu | default 0.5 }}
+            memory: {{ .Values.job.initdb.resources.limits.memory | default "128Mi" | quote }}
         volumeMounts:
           - name: initdb
             mountPath: /var/lib/initdb

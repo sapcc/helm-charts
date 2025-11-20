@@ -1,0 +1,38 @@
+{{ if .Values.objectstore.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: rook-config-override
+data:
+{{ if .Values.objectstore.keystone.enabled }}
+{{ $name := .Values.objectstore.name | replace "-" "." }}
+{{- with .Values.objectstore.keystone }}
+  config: |
+{{- if .global_config }}
+    [client]
+{{- else }}
+    [client.rgw.{{ $name }}.a]
+{{- end }}
+{{- if gt (len .auth_order) 0 }}
+    rgw s3 auth order = {{ join "," .auth_order }}
+{{- end }}
+    rgw keystone verify ssl = {{ .verify_ssl }}
+{{- if .accepted_admin_roles }}
+    rgw keystone accepted admin roles = {{ join "," .accepted_admin_roles }}
+{{- end }}
+{{- if .accepted_reader_roles }}
+    rgw keystone accepted reader roles = {{ join "," .accepted_reader_roles }}
+{{- end }}
+{{- if and .barbican .barbican.enabled }}
+    rgw crypt s3 kms backend = barbican
+    rgw barbican url = {{ .barbican.url }}
+    rgw keystone barbican user = {{ .barbican.user }}
+    rgw keystone barbican password = {{ include "cc-ceph.escapePassword" .barbican.password }}
+    rgw keystone barbican project = {{ .barbican.project }}
+    rgw keystone barbican domain = {{ .barbican.domain }}
+{{- end }}
+{{ end }}
+{{ else }}
+  config: ""
+{{ end }}
+{{ end }}

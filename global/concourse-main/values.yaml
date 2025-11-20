@@ -1,5 +1,9 @@
+global:
+  registry: keppel.global.cloud.sap/ccloud
+
 owner-info:
   support-group: containers
+  service: concourse
   helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/global/concourse-main
   maintainers:
   - Jan Knipper
@@ -11,7 +15,7 @@ worker:
 
 concourse:
   image: keppel.global.cloud.sap/ccloud-dockerhub-mirror/concourse/concourse
-  imageTag: "7.11.2"
+  imageTag: "7.14.2"
 
   concourse:
     web:
@@ -52,9 +56,14 @@ concourse:
         mainTeam:
           localUser: "admin"
 
+      postgres:
+        database: concourse
+
   web:
     enabled: true
-    replicas: 1
+    replicas: 3
+    deploymentAnnotations:
+      secret.reloader.stakater.com/reload: "concourse-main-web,concourse-ci2-web,concourse-ci3-web"
     service:
       annotations:
         prometheus.io/targets: "kubernetes"
@@ -88,56 +97,20 @@ concourse:
   worker:
     enabled: false
 
+  # disable bitnami chart coming with concourse
   postgresql:
-    enabled: true
-    image:
-      registry: keppel.global.cloud.sap
-      repository: ccloud-dockerhub-mirror/bitnami/postgresql
-      tag: 11.22.0-debian-11-r4
-    postgresqlUsername: concourse
-    postgresqlDatabase: concourse
-    persistence:
-      enabled: true
-      size: 100Gi
-    resources:
-      requests:
-        memory: 10Gi
-        cpu: "4"
-    pgHbaConfiguration: |-
-      # TYPE  DATABASE        USER            ADDRESS                 METHOD
-      local   all             all                                     trust
-      host    all             all             127.0.0.1/32            trust
-      host    all             all             ::1/128                 trust
-      host    all             all             0.0.0.0/0               password
-    primary:
-      nodeSelector:
-        ccloud.sap.com/nodepool: "ci-system"
-      tolerations:
-        - key: "ci"
-          operator: Equal
-          value: "system"
-          effect: "NoSchedule"
-    extendedConfConfigMap: postgresql-extended-config
-    #metrics:
-    #  enabled: true
-    #  image:
-    #    registry: keppel.eu-de-2.cloud.sap
-    #    repository: ccloud-dockerhub-mirror/bitnami/postgres-exporter
-    #    tag: 0.12.0-debian-11-r71
-    #  service:
-    #    ports:
-    #      metrics: 9187
-    #    annotations:
-    #      prometheus.io/scrape: "true"
-    #      prometheus.io/port: "9187"
+    enabled: false
 
   secrets:
     create: true
 
-webhook-broadcaster:
+webhookBroadcaster:
   image: keppel.global.cloud.sap/ccloud/concourse-webhook-broadcaster
-  imageTag: "0.9.3"
+  imageTag: 3713c78
   pullPolicy: IfNotPresent
+  auth:
+    #username:
+    #password:
 
 # Deploy Concourse Prometheus alerts.
 alerts:
@@ -146,6 +119,7 @@ alerts:
   prometheus: kubernetes
 
 pgbackup:
+  isPostgresNG: true
   global:
     registry: keppel.global.cloud.sap/ccloud
   database:
@@ -155,8 +129,10 @@ pgbackup:
     prometheus: kubernetes
     support_group: containers
     service: concourse
-  swift:
-    os_region_name: eu-de-2
+  resources:
+    memory_limit: 4Gi
+    cpu_limit: "4"
+    cpu_request: "1"
 
 gitResourceProxy:
   enabled: true
@@ -164,10 +140,8 @@ gitResourceProxy:
   timeout: 60s
   debug: true
   image: keppel.global.cloud.sap/ccloud/concourse-git-resource-proxy
-  imageTag: 0.6.0
-  imagePullPolicy: Always
-  podAnnotations:
-    linkerd.io/inject: disabled
+  imageTag: 0.9.0
+  imagePullPolicy: IfNotPresent
 
 kubernetes-ingress:
   controller:
@@ -195,7 +169,7 @@ kubernetes-ingress:
       - --disable-ipv6
       - --namespace-whitelist=concourse
     config:
-      http-keep-alive: "false"
+      http-connection-mode: "httpclose"
       timeout-client: "5m"
       timeout-server: "5m"
       load-balance: "leastconn"
@@ -207,7 +181,33 @@ kubernetes-ingress:
         facility: "daemon"
     defaultTLSSecret:
       enabled: false
-    podAnnotations:
-      linkerd.io/inject: disabled
   defaultBackend:
     enabled: false
+
+postgresql-ng:
+  alerts:
+    support_group: containers
+  postgresVersion: "16"
+  postgresUser: concourse
+  postgresDatabase: concourse
+  tableOwner: concourse
+  createMetricsUser: false
+  users:
+    concourse: {}
+  config:
+    max_connections: "201"
+  persistence:
+    enabled: true
+    size: 100Gi
+    accessMode: ReadWriteOnce
+  resources:
+    requests:
+      memory: 10Gi
+      cpu: "4"
+  nodeSelector:
+    ccloud.sap.com/nodepool: "ci-system"
+  tolerations:
+    - key: "ci"
+      operator: Equal
+      value: "system"
+      effect: "NoSchedule"

@@ -22,6 +22,7 @@ spec:
         component: opensearch-logs-query-exporter
       annotations:
         checksum/configmap.yaml: {{ include  (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        checksum/secrets.yaml: {{ include  (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
         {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
         linkerd.io/inject: enabled
         {{- end }}
@@ -47,8 +48,18 @@ spec:
             valueFrom:
               secretKeyRef:
                 name: logs-query-exporter-secrets
-                key: username
+                key: failover_username
           - name: ES_EXPORTER_BASIC_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: logs-query-exporter-secrets
+                key: failover_password
+          - name: ES_EXPORTER_FAILOVER_BASIC_USER
+            valueFrom:
+              secretKeyRef:
+                name: logs-query-exporter-secrets
+                key: username
+          - name: ES_EXPORTER_FAILOVER_BASIC_PASSWORD
             valueFrom:
               secretKeyRef:
                 name: logs-query-exporter-secrets

@@ -1,3 +1,7 @@
+{{- $cdomains := .Values.global.domain_seeds.customer_domains | required "missing value for .Values.global.domain_seeds.customer_domains" -}}
+{{- $domains  := concat (list "cc3test" "ccadmin" "Default") $cdomains -}}
+{{- $domainsWithoutSupportToolViewers  := list "cis" "ccadmin" -}}
+
 apiVersion: "openstack.stable.sap.cc/v1"
 kind: "OpenstackSeed"
 metadata:
@@ -9,37 +13,12 @@ metadata:
     heritage: "{{ .Release.Service }}"
 spec:
   requires:
-  - monsoon3/domain-default-seed
-  - monsoon3/domain-bs-seed
-  - monsoon3/domain-btp-fp-seed
-  - monsoon3/domain-cp-seed
-  - monsoon3/domain-ccadmin-seed
-  - monsoon3/domain-cis-seed
-  - monsoon3/domain-fsn-seed
-  - monsoon3/domain-hcp03-seed
-  - monsoon3/domain-hcm-seed
-  - monsoon3/domain-hda-seed
-  - monsoon3/domain-hec-seed
-  - monsoon3/domain-iaas-20e8bf-seed
-  - monsoon3/domain-iaas-45b91f-seed
-  - monsoon3/domain-iaas-de5955-seed
-  - monsoon3/domain-iaas-9d6a56-seed
-  - monsoon3/domain-iaas-b56735-seed
-  - monsoon3/domain-iaas-ec5a3e-seed
-  - monsoon3/domain-iaas-d3495f-seed
-  - monsoon3/domain-iaas-90876f-seed
-  - monsoon3/domain-iaas-7ff5dd-seed
-  - monsoon3/domain-iaas-34a24e-seed
-  - monsoon3/domain-kyma-seed
-  - monsoon3/domain-monsoon3-seed
-  - monsoon3/domain-neo-seed
-  - monsoon3/domain-ora-seed
-  - monsoon3/domain-s4-seed
-{{- if .Values.tempest.enabled }}
+  {{- range $domains}}
+  - monsoon3/domain-{{ replace "_" "-" . | lower}}-seed
+  {{- end }}
+  {{- if .Values.tempest.enabled }}
   - monsoon3/domain-tempest-seed
-{{- end }}
-  - monsoon3/domain-wbs-seed
-  - monsoon3/domain-cc3test-seed
+  {{- end }}
 
   services:
   - name: Webcli
@@ -67,6 +46,11 @@ spec:
   - name: domain_support_tools_viewer
   - name: email_user
 
+  # Default is special
+  # cc3test does not get seeds - just a role assignment of the Dashboard user
+  # ccadmin gets a role assignment of the Dashboard user for email sending
+  # iaas is excluded completely
+  # cis and ccadmin don't get the _SUPPORT_TOOL_VIEWERS assignment
   domains:
   - name: Default
     users:
@@ -94,691 +78,66 @@ spec:
         role: cloud_volume_admin
       - project: cloud_admin@ccadmin
         role: cloud_baremetal_admin
-      - domain: Default
+      {{- range $domains}}
+      - domain: {{ . }}
         role: admin
-      - domain: ccadmin
-        role: admin
-      - domain: cp
-        role: admin
-      - domain: bs
-        role: admin
-      - domain: btp_fp
-        role: admin
-      - domain: fsn
-        role: admin
-      - domain: hcp03
-        role: admin
-      - domain: hcm
-        role: admin
-      - domain: hda
-        role: admin
-      - domain: hec
-        role: admin
-      - domain: iaas-20e8bf
-        role: admin
-      - domain: iaas-45b91f
-        role: admin
-      - domain: iaas-de5955
-        role: admin
-      - domain: iaas-9d6a56
-        role: admin
-      - domain: iaas-b56735
-        role: admin
-      - domain: iaas-ec5a3e
-        role: admin
-      - domain: iaas-d3495f
-        role: admin
-      - domain: iaas-90876f
-        role: admin
-      - domain: iaas-7ff5dd
-        role: admin
-      - domain: iaas-34a24e
-        role: admin
-      - domain: kyma
-        role: admin
-      - domain: monsoon3
-        role: admin
-      - domain: neo
-        role: admin
-      - domain: ora
-        role: admin
-      - domain: s4
-        role: admin
-{{- if .Values.tempest.enabled }}
+      {{- end }}
+      {{- if .Values.tempest.enabled }}
       - domain: tempest
         role: admin
-{{- end }}
-      - domain: wbs
-        role: admin
-      - domain: cc3test
-        role: admin
-      - domain: cis
-        role: admin
+      {{- end }}
 
-
-  - name: ccadmin
+  {{- range $domains}}
+  {{ if and (ne . "Default" ) (ne . "cc3test") (not (hasPrefix "iaas-" .))}}
+  - name: {{ . }}
+    {{ if eq . "ccadmin" }}
     projects:
     - name: master
       role_assignments:
       - user: dashboard@Default
         role: email_user # to be able to send emails via cronus
+    {{- end }}
     groups:
-    - name: CCADMIN_API_SUPPORT
+    - name: {{ hasPrefix "iaas-" . | ternary . ( upper . ) }}_API_SUPPORT
       role_assignments:
-      - domain: ccadmin
-        role: cloud_support_tools_viewer
-      - domain: ccadmin
-        role: cloud_support_tools_viewer
-        inherited: true
-    - name: CCADMIN_COMPUTE_SUPPORT
+        - domain: {{ . }}
+          role: cloud_support_tools_viewer
+        - domain: {{ . }}
+          role: cloud_support_tools_viewer
+          inherited: true
+    - name: {{ hasPrefix "iaas-" . | ternary . ( upper . ) }}_COMPUTE_SUPPORT
       role_assignments:
-      - domain: ccadmin
-        role: cloud_support_tools_viewer
-      - domain: ccadmin
-        role: cloud_support_tools_viewer
-        inherited: true
-    - name: CCADMIN_NETWORK_SUPPORT
+        - domain: {{ . }}
+          role: cloud_support_tools_viewer
+        - domain: {{ . }}
+          role: cloud_support_tools_viewer
+          inherited: true
+    - name: {{ hasPrefix "iaas-" . | ternary . ( upper . ) }}_NETWORK_SUPPORT
       role_assignments:
-      - domain: ccadmin
-        role: cloud_support_tools_viewer
-      - domain: ccadmin
-        role: cloud_support_tools_viewer
-        inherited: true
-    - name: CCADMIN_STORAGE_SUPPORT
+        - domain: {{ . }}
+          role: cloud_support_tools_viewer
+        - domain: {{ . }}
+          role: cloud_support_tools_viewer
+          inherited: true
+    - name: {{ hasPrefix "iaas-" . | ternary . ( upper . ) }}_STORAGE_SUPPORT
       role_assignments:
-      - domain: ccadmin
-        role: cloud_support_tools_viewer
-      - domain: ccadmin
-        role: cloud_support_tools_viewer
-        inherited: true
-    - name: CCADMIN_SERVICE_DESK
+        - domain: {{ . }}
+          role: cloud_support_tools_viewer
+        - domain: {{ . }}
+          role: cloud_support_tools_viewer
+          inherited: true
+    - name: {{ hasPrefix "iaas-" . | ternary . ( upper . ) }}_SERVICE_DESK
       role_assignments:
-      - domain: ccadmin
-        role: cloud_support_tools_viewer
-      - domain: ccadmin
-        role: cloud_support_tools_viewer
-        inherited: true
-
-  - name: cis
-    groups:
-    - name: CIS_API_SUPPORT
+        - domain: {{ . }}
+          role: cloud_support_tools_viewer
+        - domain: {{ . }}
+          role: cloud_support_tools_viewer
+          inherited: true
+    {{- if not (has . $domainsWithoutSupportToolViewers) }}
+    - name: {{ hasPrefix "iaas-" . | ternary . ( upper . ) }}_SUPPORT_TOOL_VIEWERS
       role_assignments:
-      - domain: cis
-        role: cloud_support_tools_viewer
-      - domain: cis
-        role: cloud_support_tools_viewer
-        inherited: true
-    - name: CIS_COMPUTE_SUPPORT
-      role_assignments:
-      - domain: cis
-        role: cloud_support_tools_viewer
-      - domain: cis
-        role: cloud_support_tools_viewer
-        inherited: true
-    - name: CIS_NETWORK_SUPPORT
-      role_assignments:
-      - domain: cis
-        role: cloud_support_tools_viewer
-      - domain: cis
-        role: cloud_support_tools_viewer
-        inherited: true
-    - name: CIS_STORAGE_SUPPORT
-      role_assignments:
-      - domain: cis
-        role: cloud_support_tools_viewer
-      - domain: cis
-        role: cloud_support_tools_viewer
-        inherited: true
-    - name: CIS_SERVICE_DESK
-      role_assignments:
-      - domain: cis
-        role: cloud_support_tools_viewer
-      - domain: cis
-        role: cloud_support_tools_viewer
-        inherited: true
-
-  - name: btp_fp
-    groups:
-    - name: BTP_FP_API_SUPPORT
-      role_assignments:
-      - domain: btp_fp
-        role: cloud_support_tools_viewer
-      - domain: btp_fp
-        role: cloud_support_tools_viewer
-        inherited: true
-    - name: BTP_FP_COMPUTE_SUPPORT
-      role_assignments:
-      - domain: btp_fp
-        role: cloud_support_tools_viewer
-      - domain: btp_fp
-        role: cloud_support_tools_viewer
-        inherited: true
-    - name: BTP_FP_NETWORK_SUPPORT
-      role_assignments:
-      - domain: btp_fp
-        role: cloud_support_tools_viewer
-      - domain: btp_fp
-        role: cloud_support_tools_viewer
-        inherited: true
-    - name: BTP_FP_STORAGE_SUPPORT
-      role_assignments:
-      - domain: btp_fp
-        role: cloud_support_tools_viewer
-      - domain: btp_fp
-        role: cloud_support_tools_viewer
-        inherited: true
-    - name: BTP_FP_SERVICE_DESK
-      role_assignments:
-      - domain: btp_fp
-        role: cloud_support_tools_viewer
-      - domain: btp_fp
-        role: cloud_support_tools_viewer
-        inherited: true
-    - name: BTP_FP_SUPPORT_TOOL_VIEWERS
-      role_assignments:
-      - domain: btp_fp
+      - domain: {{ . }}
         role: domain_support_tools_viewer
-      
-  - name: bs
-    groups:
-    - name: BS_API_SUPPORT
-      role_assignments:
-      - domain: bs
-        role: cloud_support_tools_viewer
-      - domain: bs
-        role: cloud_support_tools_viewer
-        inherited: true
-    - name: BS_COMPUTE_SUPPORT
-      role_assignments:
-      - domain: bs
-        role: cloud_support_tools_viewer
-      - domain: bs
-        role: cloud_support_tools_viewer
-        inherited: true
-    - name: BS_NETWORK_SUPPORT
-      role_assignments:
-      - domain: bs
-        role: cloud_support_tools_viewer
-      - domain: bs
-        role: cloud_support_tools_viewer
-        inherited: true
-    - name: BS_STORAGE_SUPPORT
-      role_assignments:
-      - domain: bs
-        role: cloud_support_tools_viewer
-      - domain: bs
-        role: cloud_support_tools_viewer
-        inherited: true
-    - name: BS_SERVICE_DESK
-      role_assignments:
-      - domain: bs
-        role: cloud_support_tools_viewer
-      - domain: bs
-        role: cloud_support_tools_viewer
-        inherited: true
-    - name: BS_SUPPORT_TOOL_VIEWERS
-      role_assignments:
-      - domain: bs
-        role: domain_support_tools_viewer
-
-  - name: cp
-    groups:
-    - name: CP_API_SUPPORT
-      role_assignments:
-      - domain: cp
-        role: cloud_support_tools_viewer
-      - domain: cp
-        role: cloud_support_tools_viewer
-        inherited: true
-    - name: CP_COMPUTE_SUPPORT
-      role_assignments:
-      - domain: cp
-        role: cloud_support_tools_viewer
-      - domain: cp
-        role: cloud_support_tools_viewer
-        inherited: true
-    - name: CP_NETWORK_SUPPORT
-      role_assignments:
-      - domain: cp
-        role: cloud_support_tools_viewer
-      - domain: cp
-        role: cloud_support_tools_viewer
-        inherited: true
-    - name: CP_STORAGE_SUPPORT
-      role_assignments:
-      - domain: cp
-        role: cloud_support_tools_viewer
-      - domain: cp
-        role: cloud_support_tools_viewer
-        inherited: true
-    - name: CP_SERVICE_DESK
-      role_assignments:
-      - domain: cp
-        role: cloud_support_tools_viewer
-      - domain: cp
-        role: cloud_support_tools_viewer
-        inherited: true
-    - name: CP_SUPPORT_TOOL_VIEWERS
-      role_assignments:
-      - domain: cp
-        role: domain_support_tools_viewer
-
-  - name: fsn
-    groups:
-    - name: FSN_API_SUPPORT
-      role_assignments:
-      - domain: fsn
-        role: cloud_support_tools_viewer
-      - domain: fsn
-        role: cloud_support_tools_viewer
-        inherited: true
-    - name: FSN_COMPUTE_SUPPORT
-      role_assignments:
-      - domain: fsn
-        role: cloud_support_tools_viewer
-      - domain: fsn
-        role: cloud_support_tools_viewer
-        inherited: true
-    - name: FSN_NETWORK_SUPPORT
-      role_assignments:
-      - domain: fsn
-        role: cloud_support_tools_viewer
-      - domain: fsn
-        role: cloud_support_tools_viewer
-        inherited: true
-    - name: FSN_STORAGE_SUPPORT
-      role_assignments:
-      - domain: fsn
-        role: cloud_support_tools_viewer
-      - domain: fsn
-        role: cloud_support_tools_viewer
-        inherited: true
-    - name: FSN_SERVICE_DESK
-      role_assignments:
-      - domain: fsn
-        role: cloud_support_tools_viewer
-      - domain: fsn
-        role: cloud_support_tools_viewer
-        inherited: true
-    - name: FSN_SUPPORT_TOOL_VIEWERS
-      role_assignments:
-      - domain: fsn
-        role: domain_support_tools_viewer
-
-  - name: hda
-    groups:
-    - name: HDA_API_SUPPORT
-      role_assignments:
-      - domain: hda
-        role: cloud_support_tools_viewer
-      - domain: hda
-        role: cloud_support_tools_viewer
-        inherited: true
-    - name: HDA_COMPUTE_SUPPORT
-      role_assignments:
-      - domain: hda
-        role: cloud_support_tools_viewer
-      - domain: hda
-        role: cloud_support_tools_viewer
-        inherited: true
-    - name: HDA_NETWORK_SUPPORT
-      role_assignments:
-      - domain: hda
-        role: cloud_support_tools_viewer
-      - domain: hda
-        role: cloud_support_tools_viewer
-        inherited: true
-    - name: HDA_STORAGE_SUPPORT
-      role_assignments:
-      - domain: hda
-        role: cloud_support_tools_viewer
-      - domain: hda
-        role: cloud_support_tools_viewer
-        inherited: true
-    - name: HDA_SERVICE_DESK
-      role_assignments:
-      - domain: hda
-        role: cloud_support_tools_viewer
-      - domain: hda
-        role: cloud_support_tools_viewer
-        inherited: true
-    - name: HDA_SUPPORT_TOOL_VIEWERS
-      role_assignments:
-      - domain: hda
-        role: domain_support_tools_viewer
-  
-  - name: hcm
-    groups:
-    - name: HCM_API_SUPPORT
-      role_assignments:
-      - domain: hcm
-        role: cloud_support_tools_viewer
-      - domain: hcm
-        role: cloud_support_tools_viewer
-        inherited: true
-    - name: HCM_COMPUTE_SUPPORT
-      role_assignments:
-      - domain: hcm
-        role: cloud_support_tools_viewer
-      - domain: hcm
-        role: cloud_support_tools_viewer
-        inherited: true
-    - name: HCM_NETWORK_SUPPORT
-      role_assignments:
-      - domain: hcm
-        role: cloud_support_tools_viewer
-      - domain: hcm
-        role: cloud_support_tools_viewer
-        inherited: true
-    - name: HCM_STORAGE_SUPPORT
-      role_assignments:
-      - domain: hcm
-        role: cloud_support_tools_viewer
-      - domain: hcm
-        role: cloud_support_tools_viewer
-        inherited: true
-    - name: HCM_SERVICE_DESK
-      role_assignments:
-      - domain: hcm
-        role: cloud_support_tools_viewer
-      - domain: hcm
-        role: cloud_support_tools_viewer
-        inherited: true
-    - name: HCM_SUPPORT_TOOL_VIEWERS
-      role_assignments:
-      - domain: hcm
-        role: domain_support_tools_viewer
-
-  - name: hcp03
-    groups:
-    - name: HCP03_API_SUPPORT
-      role_assignments:
-      - domain: hcp03
-        role: cloud_support_tools_viewer
-      - domain: hcp03
-        role: cloud_support_tools_viewer
-        inherited: true
-    - name: HCP03_COMPUTE_SUPPORT
-      role_assignments:
-      - domain: hcp03
-        role: cloud_support_tools_viewer
-      - domain: hcp03
-        role: cloud_support_tools_viewer
-        inherited: true
-    - name: HCP03_NETWORK_SUPPORT
-      role_assignments:
-      - domain: hcp03
-        role: cloud_support_tools_viewer
-      - domain: hcp03
-        role: cloud_support_tools_viewer
-        inherited: true
-    - name: HCP03_STORAGE_SUPPORT
-      role_assignments:
-      - domain: hcp03
-        role: cloud_support_tools_viewer
-      - domain: hcp03
-        role: cloud_support_tools_viewer
-        inherited: true
-    - name: HCP03_SERVICE_DESK
-      role_assignments:
-      - domain: hcp03
-        role: cloud_support_tools_viewer
-      - domain: hcp03
-        role: cloud_support_tools_viewer
-        inherited: true
-    - name: HCP03_SUPPORT_TOOL_VIEWERS
-      role_assignments:
-      - domain: hcp03
-        role: domain_support_tools_viewer
-
-  - name: hec
-    groups:
-    - name: HEC_API_SUPPORT
-      role_assignments:
-      - domain: hec
-        role: cloud_support_tools_viewer
-      - domain: hec
-        role: cloud_support_tools_viewer
-        inherited: true
-    - name: HEC_COMPUTE_SUPPORT
-      role_assignments:
-      - domain: hec
-        role: cloud_support_tools_viewer
-      - domain: hec
-        role: cloud_support_tools_viewer
-        inherited: true
-    - name: HEC_NETWORK_SUPPORT
-      role_assignments:
-      - domain: hec
-        role: cloud_support_tools_viewer
-      - domain: hec
-        role: cloud_support_tools_viewer
-        inherited: true
-    - name: HEC_STORAGE_SUPPORT
-      role_assignments:
-      - domain: hec
-        role: cloud_support_tools_viewer
-      - domain: hec
-        role: cloud_support_tools_viewer
-        inherited: true
-    - name: HEC_SERVICE_DESK
-      role_assignments:
-      - domain: hec
-        role: cloud_support_tools_viewer
-      - domain: hec
-        role: cloud_support_tools_viewer
-        inherited: true
-    - name: HEC_SUPPORT_TOOL_VIEWERS
-      role_assignments:
-      - domain: hec
-        role: domain_support_tools_viewer
-
-  - name: kyma
-    groups:
-    - name: KYMA_API_SUPPORT
-      role_assignments:
-      - domain: kyma
-        role: cloud_support_tools_viewer
-      - domain: kyma
-        role: cloud_support_tools_viewer
-        inherited: true
-    - name: KYMA_COMPUTE_SUPPORT
-      role_assignments:
-      - domain: kyma
-        role: cloud_support_tools_viewer
-      - domain: kyma
-        role: cloud_support_tools_viewer
-        inherited: true
-    - name: KYMA_NETWORK_SUPPORT
-      role_assignments:
-      - domain: kyma
-        role: cloud_support_tools_viewer
-      - domain: kyma
-        role: cloud_support_tools_viewer
-        inherited: true
-    - name: KYMA_STORAGE_SUPPORT
-      role_assignments:
-      - domain: kyma
-        role: cloud_support_tools_viewer
-      - domain: kyma
-        role: cloud_support_tools_viewer
-        inherited: true
-    - name: KYMA_SERVICE_DESK
-      role_assignments:
-      - domain: kyma
-        role: cloud_support_tools_viewer
-      - domain: kyma
-        role: cloud_support_tools_viewer
-        inherited: true
-    - name: KYMA_SUPPORT_TOOL_VIEWERS
-      role_assignments:
-      - domain: kyma
-        role: domain_support_tools_viewer
-
-  - name: monsoon3
-    groups:
-    - name: MONSOON3_API_SUPPORT
-      role_assignments:
-      - domain: monsoon3
-        role: cloud_support_tools_viewer
-      - domain: monsoon3
-        role: cloud_support_tools_viewer
-        inherited: true
-    - name: MONSOON3_COMPUTE_SUPPORT
-      role_assignments:
-      - domain: monsoon3
-        role: cloud_support_tools_viewer
-      - domain: monsoon3
-        role: cloud_support_tools_viewer
-        inherited: true
-    - name: MONSOON3_NETWORK_SUPPORT
-      role_assignments:
-      - domain: monsoon3
-        role: cloud_support_tools_viewer
-      - domain: monsoon3
-        role: cloud_support_tools_viewer
-        inherited: true
-    - name: MONSOON3_STORAGE_SUPPORT
-      role_assignments:
-      - domain: monsoon3
-        role: cloud_support_tools_viewer
-      - domain: monsoon3
-        role: cloud_support_tools_viewer
-        inherited: true
-    - name: MONSOON3_SERVICE_DESK
-      role_assignments:
-      - domain: monsoon3
-        role: cloud_support_tools_viewer
-      - domain: monsoon3
-        role: cloud_support_tools_viewer
-        inherited: true
-    - name: MONSOON3_SUPPORT_TOOL_VIEWERS
-      role_assignments:
-      - domain: monsoon3
-        role: domain_support_tools_viewer
-
-  - name: neo
-    groups:
-    - name: NEO_API_SUPPORT
-      role_assignments:
-      - domain: neo
-        role: cloud_support_tools_viewer
-      - domain: neo
-        role: cloud_support_tools_viewer
-        inherited: true
-    - name: NEO_COMPUTE_SUPPORT
-      role_assignments:
-      - domain: neo
-        role: cloud_support_tools_viewer
-      - domain: neo
-        role: cloud_support_tools_viewer
-        inherited: true
-    - name: NEO_NETWORK_SUPPORT
-      role_assignments:
-      - domain: neo
-        role: cloud_support_tools_viewer
-      - domain: neo
-        role: cloud_support_tools_viewer
-        inherited: true
-    - name: NEO_STORAGE_SUPPORT
-      role_assignments:
-      - domain: neo
-        role: cloud_support_tools_viewer
-      - domain: neo
-        role: cloud_support_tools_viewer
-        inherited: true
-    - name: NEO_SERVICE_DESK
-      role_assignments:
-      - domain: neo
-        role: cloud_support_tools_viewer
-      - domain: neo
-        role: cloud_support_tools_viewer
-        inherited: true
-    - name: NEO_SUPPORT_TOOL_VIEWERS
-      role_assignments:
-      - domain: neo
-        role: domain_support_tools_viewer
-
-  - name: s4
-    groups:
-    - name: S4_API_SUPPORT
-      role_assignments:
-      - domain: s4
-        role: cloud_support_tools_viewer
-      - domain: s4
-        role: cloud_support_tools_viewer
-        inherited: true
-    - name: S4_COMPUTE_SUPPORT
-      role_assignments:
-      - domain: s4
-        role: cloud_support_tools_viewer
-      - domain: s4
-        role: cloud_support_tools_viewer
-        inherited: true
-    - name: S4_NETWORK_SUPPORT
-      role_assignments:
-      - domain: s4
-        role: cloud_support_tools_viewer
-      - domain: s4
-        role: cloud_support_tools_viewer
-        inherited: true
-    - name: S4_STORAGE_SUPPORT
-      role_assignments:
-      - domain: s4
-        role: cloud_support_tools_viewer
-      - domain: s4
-        role: cloud_support_tools_viewer
-        inherited: true
-    - name: S4_SERVICE_DESK
-      role_assignments:
-      - domain: s4
-        role: cloud_support_tools_viewer
-      - domain: s4
-        role: cloud_support_tools_viewer
-        inherited: true
-    - name: S4_SUPPORT_TOOL_VIEWERS
-      role_assignments:
-      - domain: s4
-        role: domain_support_tools_viewer
-
-  - name: wbs
-    groups:
-    - name: WBS_API_SUPPORT
-      role_assignments:
-      - domain: wbs
-        role: cloud_support_tools_viewer
-      - domain: wbs
-        role: cloud_support_tools_viewer
-        inherited: true
-    - name: WBS_COMPUTE_SUPPORT
-      role_assignments:
-      - domain: wbs
-        role: cloud_support_tools_viewer
-      - domain: wbs
-        role: cloud_support_tools_viewer
-        inherited: true
-    - name: WBS_NETWORK_SUPPORT
-      role_assignments:
-      - domain: wbs
-        role: cloud_support_tools_viewer
-      - domain: wbs
-        role: cloud_support_tools_viewer
-        inherited: true
-    - name: WBS_STORAGE_SUPPORT
-      role_assignments:
-      - domain: wbs
-        role: cloud_support_tools_viewer
-      - domain: wbs
-        role: cloud_support_tools_viewer
-        inherited: true
-    - name: WBS_SERVICE_DESK
-      role_assignments:
-      - domain: wbs
-        role: cloud_support_tools_viewer
-      - domain: wbs
-        role: cloud_support_tools_viewer
-        inherited: true
-    - name: WBS_SUPPORT_TOOL_VIEWERS
-      role_assignments:
-      - domain: wbs
-        role: domain_support_tools_viewer
+    {{- end }}
+  {{- end }}
+  {{- end }}

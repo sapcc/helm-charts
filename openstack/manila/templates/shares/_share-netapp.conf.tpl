@@ -16,6 +16,8 @@ backend_url = file://$state_path
 {{- $share_backend := $share.backend_name | default $share.vserver | default "netapp-multi"}}
 
 [{{$share.name}}]
+netapp_use_legacy_client={{ $share.use_zapi | default "True" }}
+
 share_backend_name={{ $share_backend }}
 replication_domain={{ $share.replication_domain | default $share_backend }}
 share_driver=manila.share.drivers.netapp.common.NetAppDriver
@@ -56,8 +58,24 @@ netapp_trace_flags=api,method
 {{- end }}
 
 # Enable the net_capacity provisioning
-netapp_volume_provision_net_capacity = True
+netapp_volume_provision_net_capacity = {{ $share.provision_net_capacity | default "True" }}
 netapp_volume_snapshot_reserve_percent = {{ $share.netapp_volume_snapshot_reserve_percent | default $context.Values.netapp_volume_snapshot_reserve_percent | default 50 }}
+
+# Specify if the FlexGroup pool is enabled. When it is enabled, the
+# driver will report a single pool representing all aggregates (ONTAP
+# chooses on which the share will be allocated). If you want to Manila
+# control the aggregate selection, you can configure its custom
+# FlexGroup pools through netapp_flexgroup_pools option. The FlexGroup
+# placement is done either by ONTAP or Manila, not both. (boolean
+# value)
+netapp_enable_flexgroup = {{ $share.enable_flexgroup | default "False" }}
+{{- if $share.flexgroup_pools }}
+netapp_flexgroup_pools = {{ $share.flexgroup_pools }}
+{{- end }}
+netapp_flexgroup_aggregate_multiplier = {{ $share.flexgroup_aggregate_multiplier | default 4 }}
+# Specify if the FlexVol pools must not be reported when the
+# netapp_enable_flexgroup is enabled. (boolean value)
+netapp_flexgroup_pool_only = {{ $share.disable_flexvol | default "False" }}
 
 # Enable logical space reporting
 netapp_enable_logical_space_reporting = False
@@ -70,6 +88,10 @@ netapp_snapmirror_last_transfer_size_limit = 1099511627776
 # our RPO (Recovery Point Objective) of 2 hours.
 netapp_snapmirror_schedule = "hourly"
 netapp_snapmirror_quiesce_timeout = 7200
+
+# The maximum time in seconds to wait for the completion of a volume move
+# operation after the cutover was triggered. default 3600
+netapp_volume_move_cutover_timeout = {{ $share.volume_move_cutover_timeout | default 7200 }}
 
 # state, that will be reported as pool property. Valid values are `in_build`, `live`, `in_decom` and `replacing_decom`
 netapp_hardware_state = {{ $share.hardware_state | default "live" }}
@@ -112,7 +134,7 @@ max_shares_per_share_server = {{ $share.max_shares_per_share_server | default $c
 max_share_server_size  = {{ $share.max_share_server_size | default $context.Values.max_share_server_size | default 10240 }}
 
 filter_function = {{ $share.filter_function | default "stats.provisioned_capacity_gb / stats.total_capacity_gb <= 0.7" }}
-goodness_function = {{ $share.goodness_function | default "((share.share_proto == 'CIFS') and (capabilities.channel_binding_support)) ? 100 : 50" }}
+goodness_function = {{ $share.goodness_function | default "100 - capabilities.utilization" }}
 
 {{- end -}}
 {{- end }}

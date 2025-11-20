@@ -2,6 +2,8 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: webhook-broadcaster
+  annotations:
+    secret.reloader.stakater.com/reload: "webhook-broadcaster"
 spec:
   selector:
     matchLabels:
@@ -13,15 +15,32 @@ spec:
     spec:
       containers:
       - name: webhook-broadcaster
-        image: "{{ index .Values "webhook-broadcaster" "image" }}:{{ index .Values "webhook-broadcaster" "imageTag" }}"
-        imagePullPolicy: {{ index .Values "webhook-broadcaster" "imagePullPolicy" | quote }}
+        image: {{ .Values.webhookBroadcaster.image }}:{{ .Values.webhookBroadcaster.imageTag }}
+        imagePullPolicy: {{ .Values.webhookBroadcaster.imagePullPolicy | quote }}
+        command:
+        - /bin/sh
+        args:
+        - -ce
+        - |-
+          /usr/bin/webhook-broadcaster -concourse-url "$(CONCOURSE_URL)" \
+            -auth-user "$(CONCOURSE_USER)" \
+            -auth-password "$(CONCOURSE_PASSWORD)" \
+            -refresh-interval "$(CONCOURSE_REFRESH_INTERVAL)" \
+            -listen-addr "$(CONCOURSE_LISTEN_ADDRESS)" \
+            -webhook-concurrency "$(CONCOURSE_WEBHOOK_CONCURRENCY)"
         env:
         - name: CONCOURSE_URL
           value: {{ .Values.concourse.concourse.web.externalUrl }} 
         - name: CONCOURSE_USER
-          value: admin
+          valueFrom:
+            secretKeyRef:
+              name: webhook-broadcaster
+              key: admin-user
         - name: CONCOURSE_PASSWORD
-          value: {{ (split "," (split ":" .Values.concourse.secrets.localUsers)._1)._0 }}
+          valueFrom:
+            secretKeyRef:
+              name: webhook-broadcaster
+              key: admin-password
         - name: CONCOURSE_REFRESH_INTERVAL
           value: 10m
         - name: CONCOURSE_WEBHOOK_CONCURRENCY

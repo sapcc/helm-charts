@@ -1,0 +1,169 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.17.2
+  labels:
+    cluster.x-k8s.io/v1beta1: v1alpha1
+  name: ironcoremetalmachinetemplates.infrastructure.cluster.x-k8s.io
+spec:
+  group: infrastructure.cluster.x-k8s.io
+  names:
+    kind: IroncoreMetalMachineTemplate
+    listKind: IroncoreMetalMachineTemplateList
+    plural: ironcoremetalmachinetemplates
+    singular: ironcoremetalmachinetemplate
+  scope: Namespaced
+  versions:
+    - name: v1alpha1
+      schema:
+        openAPIV3Schema:
+          description: IroncoreMetalMachineTemplate is the Schema for the ironcoremetalmachinetemplates API
+          properties:
+            apiVersion:
+              description: |-
+                APIVersion defines the versioned schema of this representation of an object.
+                Servers should convert recognized schemas to the latest internal value, and
+                may reject unrecognized values.
+                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+              type: string
+            kind:
+              description: |-
+                Kind is a string value representing the REST resource this object represents.
+                Servers may infer this from the endpoint the client submits requests to.
+                Cannot be updated.
+                In CamelCase.
+                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+              type: string
+            metadata:
+              type: object
+            spec:
+              description: IroncoreMetalMachineTemplateSpec defines the desired state of IroncoreMetalMachineTemplate
+              properties:
+                template:
+                  description: IroncoreMetalMachineTemplateResource defines the spec and metadata for IroncoreMetalMachineTemplate supported by capi.
+                  properties:
+                    metadata:
+                      description: |-
+                        Standard object's metadata.
+                        More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata
+                      properties:
+                        annotations:
+                          additionalProperties:
+                            type: string
+                          description: |-
+                            annotations is an unstructured key value map stored with a resource that may be
+                            set by external tools to store and retrieve arbitrary metadata. They are not
+                            queryable and should be preserved when modifying objects.
+                            More info: http://kubernetes.io/docs/user-guide/annotations
+                          type: object
+                        labels:
+                          additionalProperties:
+                            type: string
+                          description: |-
+                            Map of string keys and values that can be used to organize and categorize
+                            (scope and select) objects. May match selectors of replication controllers
+                            and services.
+                            More info: http://kubernetes.io/docs/user-guide/labels
+                          type: object
+                      type: object
+                    spec:
+                      description: IroncoreMetalMachineSpec defines the desired state of IroncoreMetalMachine
+                      properties:
+                        image:
+                          description: Image specifies the boot image to be used for the server.
+                          type: string
+                        ipamConfig:
+                          description: IPAMConfig is a list of references to Network resources that should be used to assign IP addresses to the worker nodes.
+                          items:
+                            description: IPAMConfig is a reference to an IPAM resource.
+                            properties:
+                              ipamRef:
+                                description: IPAMRef is a reference to the IPAM object, which will be used for IP allocation.
+                                properties:
+                                  apiGroup:
+                                    description: APIGroup is the group for the resource being referenced.
+                                    type: string
+                                  kind:
+                                    description: Kind is the type of resource being referenced.
+                                    type: string
+                                  name:
+                                    description: Name is the name of resource being referenced.
+                                    type: string
+                                required:
+                                  - apiGroup
+                                  - kind
+                                  - name
+                                type: object
+                              metadataKey:
+                                description: MetadataKey is the name of metadata key for the network.
+                                type: string
+                            required:
+                              - ipamRef
+                              - metadataKey
+                            type: object
+                          type: array
+                        metadata:
+                          description: Metadata is a key-value map of additional data which should be passed to the Machine.
+                          x-kubernetes-preserve-unknown-fields: true
+                        providerID:
+                          description: ProviderID is the unique identifier as specified by the cloud provider.
+                          type: string
+                        serverSelector:
+                          description: |-
+                            ServerSelector specifies matching criteria for labels on Servers.
+                            This is used to claim specific Server types for a IroncoreMetalMachine.
+                          properties:
+                            matchExpressions:
+                              description: matchExpressions is a list of label selector requirements. The requirements are ANDed.
+                              items:
+                                description: |-
+                                  A label selector requirement is a selector that contains values, a key, and an operator that
+                                  relates the key and values.
+                                properties:
+                                  key:
+                                    description: key is the label key that the selector applies to.
+                                    type: string
+                                  operator:
+                                    description: |-
+                                      operator represents a key's relationship to a set of values.
+                                      Valid operators are In, NotIn, Exists and DoesNotExist.
+                                    type: string
+                                  values:
+                                    description: |-
+                                      values is an array of string values. If the operator is In or NotIn,
+                                      the values array must be non-empty. If the operator is Exists or DoesNotExist,
+                                      the values array must be empty. This array is replaced during a strategic
+                                      merge patch.
+                                    items:
+                                      type: string
+                                    type: array
+                                    x-kubernetes-list-type: atomic
+                                required:
+                                  - key
+                                  - operator
+                                type: object
+                              type: array
+                              x-kubernetes-list-type: atomic
+                            matchLabels:
+                              additionalProperties:
+                                type: string
+                              description: |-
+                                matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+                                map is equivalent to an element of matchExpressions, whose key field is "key", the
+                                operator is "In", and the values array contains only "value". The requirements are ANDed.
+                              type: object
+                          type: object
+                          x-kubernetes-map-type: atomic
+                      required:
+                        - image
+                      type: object
+                  required:
+                    - spec
+                  type: object
+              required:
+                - template
+              type: object
+          type: object
+      served: true
+      storage: true

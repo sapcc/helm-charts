@@ -13,6 +13,25 @@ groups:
     annotations:
       description: There is a connection problem or a store in {{ $labels.region }} is down. Usually GRPC error rate grows as well.
       summary: Thanos global can't reach all stores.
+
+  # Above info alert (same name) is a fallback. Offset can yield a false negative here and above alert is rather generic with less information. If it works, alert below is more accurate and immediately provides affected store. 
+  # Additionally: this alert is not only scoped on the main cluster_types, since we can look at all clusters independently.
+  - alert: ThanosGlobalNotFetchingAllStores
+    expr: |
+      group by (thanos, cluster,cluster_type, region, namespace) (thanos_build_info{cluster=~"^(a|c|s|c|ci|ci2|ci3|v|k|i|gh-actions|st1)-[a-z]{2}-[a-z]{2}-[0-9]{1}?|k-master|^[a-z]{2}-[a-z]{2}-[0-9]{1}?",container="store", pod!~"thanos-vmware.*", region!~"qa-de-2|qa-de-3"} offset 10d)
+      unless 
+      on (thanos, cluster, cluster_type, region, namespace) (thanos_build_info{cluster=~"^(a|c|s|c|ci|ci2|ci3|v|k|i|gh-actions|st1)-[a-z]{2}-[a-z]{2}-[0-9]{1}?|k-master|^[a-z]{2}-[a-z]{2}-[0-9]{1}?",container="store", pod!~"thanos-vmware.*", region!~"qa-de-2|qa-de-3"})
+    for: 10m
+    labels:
+      severity: warning
+      service: metrics 
+      support_group: observability
+      meta: Thanos global can't reach {{ $labels.region }}/{{ $labels.cluster_type }}/{{ $labels.namespace }}/{{ $labels.thanos }} in {{ $labels.cluster }}.
+      playbook: docs/support/playbook/prometheus/thanos_stores/#thanos-global-cant-reach-all-stores
+    annotations:
+      description: Investigate logs and check if respective Thanos is reachable.
+      summary: Thanos global can't reach given store.
+
   - alert: ThanosGlobalMissingVMwareThanos
     expr: |
       (count by (region, thanos) (label_replace(kube_pod_container_info{pod=~"thanos-vmware-vc-.+-store-.+", region!="qa-de-1"}, "thanos", "$2", "pod", "(thanos-)(vmware-vc-.+)(-thanos-vmware-vc-.+)")) * 0 + 1)
@@ -43,3 +62,35 @@ groups:
     annotations:
       description: There is a connection problem to store {{ $labels.thanos }} {{ $labels.region }} or the store itself is down. Usually GRPC error rate grows as well in metrics.scaleout.
       summary: Thanos global can't reach VMware store.
+  
+  # Metric uses prometheus_build_info but is still derived by Thanos. If respective Thanos Querier is not up, the metric will not be available.
+  - alert: GreenhouseThanosNotAvailable
+    expr: |
+      group by (cluster, prometheus) (prometheus_build_info{cluster!~"^(a|c|s|c|ci|ci2|ci3|v|k|i|gh-actions)-[a-z]{2}-[a-z]{2}-[0-9]{1}?|k-master|^[a-z]{2}-[a-z]{2}-[0-9]{1}?"} offset 10d
+      unless 
+      on (cluster, prometheus) prometheus_build_info{cluster!~"^(a|c|s|c|ci|ci2|ci3|v|k|i|gh-actions)-[a-z]{2}-[a-z]{2}-[0-9]{1}?|k-master|^[a-z]{2}-[a-z]{2}-[0-9]{1}?"}) == 1
+    for: 10m
+    labels:
+      severity: info
+      service: metrics 
+      support_group: observability
+      meta: Thanos global can't reach {{ $labels.cluster }}/{{ $labels.namespace }}/thanos-{{ $labels.cluster }}-query.
+      playbook: docs/support/playbook/prometheus/thanos_stores/#thanos-global-cant-reach-vmware-store
+    annotations:
+      description: There is a connection problem to thanos-{{ $labels.cluster }}-query or the store itself is down.
+      summary: Thanos global can't reach Greenhouse store.
+
+  # Fallback alert, if everything is gone.
+  - alert: GreenhouseThanosVanishedAll
+    expr: |
+      absent(prometheus_build_info{cluster!~"^(a|c|s|c|ci|ci2|ci3|v|k|i|gh-actions)-[a-z]{2}-[a-z]{2}-[0-9]{1}?|k-master|^[a-z]{2}-[a-z]{2}-[0-9]{1}?"})
+    for: 10m
+    labels:
+      severity: info
+      service: metrics 
+      support_group: observability
+      meta: Thanos global can't reach any Greenhouse Stores.
+      playbook: docs/support/playbook/prometheus/thanos_stores/#thanos-global-cant-reach-vmware-store
+    annotations:
+      description: There is a connection problem to all Greenhouse Thanos stores. Most likely some configuration change messed this up.
+      summary: Thanos global can't reach any of the onboarded Greenhouse stores.

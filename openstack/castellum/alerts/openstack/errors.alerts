@@ -45,7 +45,7 @@ groups:
         severity: warning
         support_group: containers
         tier: os
-        playbook: 'docs/support/playbook/castellum/missing_database_metrics'
+        playbook: 'https://operations.global.cloud.sap/docs/support/playbook/castellum/missing_database_metrics'
       annotations:
         description: The pgmetrics deployment is not sending all expected metrics.
           Other Castellum alerts may not fire because of missing timeseries.
@@ -102,7 +102,7 @@ groups:
         support_group: containers
         tier: os
         dashboard: castellum
-        playbook: 'docs/support/playbook/castellum/resource_scraping_failing'
+        playbook: 'https://operations.global.cloud.sap/docs/support/playbook/castellum/resource_scraping_failing'
         meta: "Some resource scrapes are failing!"
       annotations:
         description: |
@@ -166,7 +166,7 @@ groups:
         support_group: containers
         tier: os
         dashboard: castellum
-        playbook: 'docs/support/playbook/castellum/asset_scraping_failing'
+        playbook: 'https://operations.global.cloud.sap/docs/support/playbook/castellum/asset_scraping_failing'
         meta: "Some asset scrapes of fresh assets are failing!"
       annotations:
         description: |
@@ -184,7 +184,7 @@ groups:
         support_group: containers
         tier: os
         dashboard: castellum
-        playbook: 'docs/support/playbook/castellum/asset_scraping_failing'
+        playbook: 'https://operations.global.cloud.sap/docs/support/playbook/castellum/asset_scraping_failing'
         meta: "Some asset scrapes of existing assets are failing!"
       annotations:
         description: |
@@ -258,21 +258,40 @@ groups:
         severity: warning
         support_group: containers
         tier: os
-        playbook: 'docs/support/playbook/castellum/asset_resizing_failing'
+        playbook: 'https://operations.global.cloud.sap/docs/support/playbook/castellum/asset_resizing_failing'
         dashboard: castellum
-        meta: "Some asset resizes are failing!"
+        meta: "Some non-Manila asset resizes are failing!"
       annotations:
         description: |
-          Castellum encountered backend errors while resizing some assets.
+          Castellum encountered backend errors while resizing some non-Manila assets.
           Check <https://dashboard.{{ $labels.region }}.cloud.sap/ccadmin/cloud_admin/cc-tools/castellum#/asset-resize-errors|the Castellum Errors view in Elektra>.
-        summary: Castellum encountered backend errors while resizing some assets
+        summary: Castellum encountered backend errors while resizing some non-Manila assets
+
+    # This alert is separate, to specify the storage support_group directly.
+    - alert: OpenstackCastellumManilaAssetResizingFailing
+      expr: castellum_manila_asset_resize_errors_gauge > 0
+      for: 5m
+      labels:
+        context: asset-resizing
+        service: manila
+        severity: warning
+        support_group: compute-storage-api
+        tier: os
+        playbook: 'https://operations.global.cloud.sap/docs/support/playbook/castellum/manila_asset_resizing_failing'
+        dashboard: castellum
+        meta: "Some Manila asset resizes are failing!"
+      annotations:
+        description: |
+          Castellum encountered backend errors while resizing some Manila assets.
+          Check <https://dashboard.{{ $labels.region }}.cloud.sap/ccadmin/cloud_admin/cc-tools/castellum#/asset-resize-errors|the Castellum Errors view in Elektra>.
+        summary: Castellum encountered backend errors while resizing some Manila assets
 
     - alert: OpenstackCastellumAuditEventPublishFailing
-      # Usually, you would check increase() here, but audit events *can* be quite
-      # rare, so we alert if there are any failed audit events at all. To clear this alert,
-      # delete the respective
-      expr: max by (pod) (castellum_failed_auditevent_publish > 0)
-      for: 1h
+      # The underlying metric counts failed submission attempts, e.g. because the hermes-rabbitmq server is restarting.
+      # These are not necessarily fatal because the process will hold them in memory to retry the submission later.
+      # The alert will clear up on its own once submissions start working again.
+      expr: sum by (pod) (changes(audittools_failed_submissions{namespace="castellum"}[1h]) > 0)
+      for: 5m
       labels:
         context: auditeventpublish
         service: castellum
@@ -283,4 +302,4 @@ groups:
         meta: '{{ $labels.pod }}'
       annotations:
         summary: "{{ $labels.pod }} cannot publish audit events"
-        description: "Audit events from {{ $labels.pod }} could not be published to the RabbitMQ server. Check the pod log for details. Once the underlying issue was addressed, delete the offending pod to clear this alert."
+        description: "Audit events from {{ $labels.pod }} could not be published to the RabbitMQ server. Check the pod log for detailed error messages. Affected audit events are held in memory until publishing succeeds."

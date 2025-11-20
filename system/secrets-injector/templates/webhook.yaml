@@ -4,6 +4,10 @@ metadata:
   name: "secrets-injector.cloud.sap"
   annotations:
     cert-manager.io/inject-ca-from: {{ .Release.Namespace }}/secrets-injector
+    {{- if .Values.webhook.labels }}
+  labels:
+    {{- toYaml .Values.webhook.labels | nindent 4 }}
+    {{- end }}
 webhooks:
 - name: "secrets-injector.cloud.sap"
   failurePolicy: {{ .Values.webhook.failurePolicy }}
@@ -23,27 +27,20 @@ webhooks:
   sideEffects: None
   timeoutSeconds: {{ .Values.webhook.timeoutSeconds }}
   {{- if .Values.webhook.matchConditions }}
-  matchConditions:
-  - name: 'exclude-type-bootstrap-token'
-    expression: 'object.?type.orValue("") != "bootstrap.kubernetes.io/token"'
-  - name: 'exclude-type-docker-config-json'
-    expression: 'object.?type.orValue("") != "kubernetes.io/dockerconfigjson"'
-  - name: 'exclude-type-docker-cfg'
-    expression: 'object.?type.orValue("") != "kubernetes.io/dockercfg"'
-  - name: 'exclude-type-service-account-token'
-    expression: 'object.?type.orValue("") != "kubernetes.io/service-account-token"'
+  matchConditions: # webhook is called, when all conditions are true
+  - name: 'exclude-opt-out-secrets'
+    expression: 'object.metadata.?annotations["cloud.sap/inject-secrets"].orValue("") != "false"'
   - name: 'exclude-owner-cert-manager'
-    expression: 'object.metadata.?ownerReferences.optMap(l, !("cert-manager.io" in l.map(r, r.apiVersion))).orValue(true)'
-  - name: 'exclude-owner-prometheus'
-    expression: 'object.metadata.?ownerReferences.optMap(l, !("Prometheus" in l.map(r, r.kind))).orValue(true)'
-  - name: 'exclude-owner-alertmanager'
-    expression: 'object.metadata.?ownerReferences.optMap(l, !("Alertmanager" in l.map(r, r.kind))).orValue(true)'
-  - name: 'exclude-owner-helm'
-    expression: 'object.metadata.?labels["owner"].orValue("") != "helm"'
-  - name: 'exclude-terraform-state'
-    expression: 'object.metadata.?labels["tfstate"].orValue("") != "true"'
-  - name: 'exclude-namespace-kubernikus'
-    expression: 'object.metadata.namespace != "kubernikus"'
+    expression: 'object.metadata.?ownerReferences.optMap(l, !("cert-manager.io/v1" in l.map(r, r.apiVersion))).orValue(true)'
+  - name: 'exclude-node-bootstrap-token'
+    expression: 'object.type != "bootstrap.kubernetes.io/token"'
+  {{- if .Values.webhook.extraConditions }}
+  {{- toYaml .Values.webhook.extraConditions | nindent 2 }}
+  {{- end }}
+  {{- end }}
+  {{- if .Values.webhook.namespaceSelector }}
+  namespaceSelector:
+  {{- toYaml .Values.webhook.namespaceSelector | nindent 4 }}
   {{- end }}
 {{- if .Values.webhook.genericRules }}
 - name: "generic.secrets-injector.cloud.sap"

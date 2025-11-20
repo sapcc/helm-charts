@@ -6,6 +6,7 @@ global:
 owner-info:
   support-group: containers
   helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/system/kube-monitoring-admin-k3s
+  service: kube-monitoring
 
 # Disable the prometheus-operator kube-state-metrics sub-chart. We deploy independently.
 kubeStateMetrics:
@@ -125,6 +126,9 @@ grafana:
 absent-metrics-operator:
   enabled: true
 
+prometheus-crds:
+  enabled: true
+
 kube-state-metrics:
   image:
     registry: keppel.global.cloud.sap/ccloud-registry-k8s-io-mirror
@@ -148,12 +152,20 @@ ping-exporter:
 
 prometheus-node-exporter:
   image:
-    repository: keppel.global.cloud.sap/ccloud-dockerhub-mirror/prom/node-exporter
+    registry: keppel.global.cloud.sap
+    repository: ccloud-dockerhub-mirror/prom/node-exporter
 
   service:
     annotations:
       # Avoid duplicate scrapes via service.
       prometheus.io/scrape: "false"
+
+  kubeRBACProxy:
+    enabled: true
+    proxyEndpointsPort: 8889
+    image:
+      registry: keppel.global.cloud.sap
+      repository: ccloud-quay-mirror/brancz/kube-rbac-proxy
 
   extraArgs:
     - --collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)
@@ -237,35 +249,6 @@ event-exporter:
       labels:
         volume: Message[1]
 
-fluent-bit:
-  backend:
-    opensearch:
-      enabled: false
-      host: DEFINED-IN-SECRETS
-      http_user: DEFINED-IN-SECRETS
-      http_passwd: DEFINED-IN-SECRETS
-      port: DEFINED-IN-SECRETS
-      logstash_prefix: admin
-      tls:
-        enabled: "On"
-        verify: "Off"
-        debug: '1'
-  existingConfigMap: fluent-bit-config
-  dropAnnotations: false
-  extraPorts:
-  - name: prometheus
-    port: 2021
-    containerPort: 2021
-    protocol: TCP
-  livenessProbe:
-    httpGet:
-      path: /
-      port: prometheus
-  readinessProbe:
-    httpGet:
-      path: /api/v1/health
-      port: prometheus
-
 falco:
   enabled: false
   image:
@@ -293,16 +276,19 @@ falco:
 
   extra:
     args:
-      - -t
-      - pci
       - -v
       - --unbuffered
       - -o
       - json_output=true
 
   falco:
-    rules_file:
+    rules_files:
       - /etc/falco/rules.d
+    rules:
+      - disable:
+          rule: "*"
+      - enable:
+          tag: pci
 
 x509-certificate-exporter:
   enabled: false

@@ -5,8 +5,10 @@ _meta:
 
 config:
   dynamic:
+    kibana:
+      server_username: {{ .Values.users.kibanaserver2.username_resolve }}
     http:
-      anonymous_auth_enabled: false
+      anonymous_auth_enabled: true
       xff:
         enabled: false
     authc:
@@ -34,6 +36,6 @@ config:
             enable_ssl: true
             openid_connect_idp:
               enable_ssl: true
-              pemtrustedcas_filepath: /usr/share/opensearch/config/certs/tenant/opensearchCA.crt
+              pemtrustedcas_filepath: {{.Values.auth.ca_path }}
         authentication_backend:
           type: noop

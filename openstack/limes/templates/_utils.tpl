@@ -8,9 +8,7 @@
 
 {{- define "limes_common_envvars" }}
 {{- if $.Values.limes.has_audit_trail }}
-- name: LIMES_AUDIT_ENABLE
-  value: "true"
-- name: LIMES_AUDIT_QUEUE_NAME
+- name: LIMES_AUDIT_RABBITMQ_QUEUE_NAME
   value: "notifications.info"
 - name: LIMES_AUDIT_RABBITMQ_HOSTNAME
   value: "hermes-rabbitmq-notifications.hermes.svc"
@@ -27,8 +25,6 @@
 {{- end }}
 - name: LIMES_AUTHORITATIVE
   value: "true"
-- name: LIMES_CONSTRAINTS_PATH
-  value: "/etc/limes/constraints-ccloud.yaml"
 - name: LIMES_DEBUG
   value: '0'
 - name: LIMES_DB_USERNAME
@@ -46,10 +42,18 @@
 {{- end -}}
 
 {{- define "limes_openstack_envvars" }}
+{{- $limes_url := .Values.limes.clusters.ccloud.catalog_url }}
+{{- if .Values.global.is_global_region }}
+- name: OS_AUTH_URL
+  value: "{{ $limes_url | replace "limes" "identity" }}/v3"
+- name: OS_INTERFACE
+  value: "public"
+{{- else }}
 - name: OS_AUTH_URL
   value: "http://keystone.{{ $.Values.global.keystoneNamespace }}.svc.kubernetes.{{ $.Values.global.region }}.{{ $.Values.global.tld }}:5000/v3"
 - name: OS_INTERFACE
   value: "internal"
+{{- end }}
 - name: OS_USER_DOMAIN_NAME
   value: "Default"
 - name: OS_USERNAME
@@ -63,6 +67,11 @@
   value: "ccadmin"
 - name: OS_PROJECT_NAME
   value: "cloud_admin"
+{{- if .Values.global.is_global_region }}
+- name: OS_REGION_NAME
+  value: global
+{{- else }}
 - name: OS_REGION_NAME
   value: {{ quote $.Values.global.region }}
+{{- end }}
 {{- end -}}

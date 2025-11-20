@@ -3,7 +3,7 @@ kind: MutatingWebhookConfiguration
 metadata:
   name: {{ include "cluster-api-core.fullname" . }}-mutating-webhook-configuration
   annotations:
-    cert-manager.io/inject-ca-from: {{ .Release.Namespace }}/{{ include "cluster-api-core.fullname" . }}-serving-cert
+    cert-manager.io/inject-ca-from: {{ .Release.Namespace }}/capi-serving-cert
   labels:
   {{- include "cluster-api-core.labels" . | nindent 4 }}
 webhooks:
@@ -14,7 +14,7 @@ webhooks:
     service:
       name: '{{ include "cluster-api-core.fullname" . }}-webhook-service'
       namespace: '{{ .Release.Namespace }}'
-      path: /mutate-cluster-x-k8s-io-v1beta1-cluster
+      path: /mutate-cluster-x-k8s-io-v1beta2-cluster
   failurePolicy: Fail
   matchPolicy: Equivalent
   name: default.cluster.cluster.x-k8s.io
@@ -22,7 +22,7 @@ webhooks:
   - apiGroups:
     - cluster.x-k8s.io
     apiVersions:
-    - v1beta1
+    - v1beta2
     operations:
     - CREATE
     - UPDATE
@@ -36,20 +36,20 @@ webhooks:
     service:
       name: '{{ include "cluster-api-core.fullname" . }}-webhook-service'
       namespace: '{{ .Release.Namespace }}'
-      path: /mutate-cluster-x-k8s-io-v1beta1-clusterclass
+      path: /mutate-addons-cluster-x-k8s-io-v1beta2-clusterresourceset
   failurePolicy: Fail
   matchPolicy: Equivalent
-  name: default.clusterclass.cluster.x-k8s.io
+  name: default.clusterresourceset.addons.cluster.x-k8s.io
   rules:
   - apiGroups:
-    - cluster.x-k8s.io
+    - addons.cluster.x-k8s.io
     apiVersions:
-    - v1beta1
+    - v1beta2
     operations:
     - CREATE
     - UPDATE
     resources:
-    - clusterclasses
+    - clusterresourcesets
   sideEffects: None
 - admissionReviewVersions:
   - v1
@@ -58,7 +58,7 @@ webhooks:
     service:
       name: '{{ include "cluster-api-core.fullname" . }}-webhook-service'
       namespace: '{{ .Release.Namespace }}'
-      path: /mutate-cluster-x-k8s-io-v1beta1-machine
+      path: /mutate-cluster-x-k8s-io-v1beta2-machine
   failurePolicy: Fail
   matchPolicy: Equivalent
   name: default.machine.cluster.x-k8s.io
@@ -66,7 +66,7 @@ webhooks:
   - apiGroups:
     - cluster.x-k8s.io
     apiVersions:
-    - v1beta1
+    - v1beta2
     operations:
     - CREATE
     - UPDATE
@@ -80,7 +80,7 @@ webhooks:
     service:
       name: '{{ include "cluster-api-core.fullname" . }}-webhook-service'
       namespace: '{{ .Release.Namespace }}'
-      path: /mutate-cluster-x-k8s-io-v1beta1-machinedeployment
+      path: /mutate-cluster-x-k8s-io-v1beta2-machinedeployment
   failurePolicy: Fail
   matchPolicy: Equivalent
   name: default.machinedeployment.cluster.x-k8s.io
@@ -88,7 +88,7 @@ webhooks:
   - apiGroups:
     - cluster.x-k8s.io
     apiVersions:
-    - v1beta1
+    - v1beta2
     operations:
     - CREATE
     - UPDATE
@@ -102,7 +102,7 @@ webhooks:
     service:
       name: '{{ include "cluster-api-core.fullname" . }}-webhook-service'
       namespace: '{{ .Release.Namespace }}'
-      path: /mutate-cluster-x-k8s-io-v1beta1-machinehealthcheck
+      path: /mutate-cluster-x-k8s-io-v1beta2-machinehealthcheck
   failurePolicy: Fail
   matchPolicy: Equivalent
   name: default.machinehealthcheck.cluster.x-k8s.io
@@ -110,7 +110,7 @@ webhooks:
   - apiGroups:
     - cluster.x-k8s.io
     apiVersions:
-    - v1beta1
+    - v1beta2
     operations:
     - CREATE
     - UPDATE
@@ -124,7 +124,7 @@ webhooks:
     service:
       name: '{{ include "cluster-api-core.fullname" . }}-webhook-service'
       namespace: '{{ .Release.Namespace }}'
-      path: /mutate-cluster-x-k8s-io-v1beta1-machineset
+      path: /mutate-cluster-x-k8s-io-v1beta2-machineset
   failurePolicy: Fail
   matchPolicy: Equivalent
   name: default.machineset.cluster.x-k8s.io
@@ -132,7 +132,7 @@ webhooks:
   - apiGroups:
     - cluster.x-k8s.io
     apiVersions:
-    - v1beta1
+    - v1beta2
     operations:
     - CREATE
     - UPDATE
@@ -146,7 +146,7 @@ webhooks:
     service:
       name: '{{ include "cluster-api-core.fullname" . }}-webhook-service'
       namespace: '{{ .Release.Namespace }}'
-      path: /mutate-runtime-cluster-x-k8s-io-v1alpha1-extensionconfig
+      path: /mutate-runtime-cluster-x-k8s-io-v1beta2-extensionconfig
   failurePolicy: Fail
   matchPolicy: Equivalent
   name: default.extensionconfig.runtime.addons.cluster.x-k8s.io
@@ -154,7 +154,7 @@ webhooks:
   - apiGroups:
     - runtime.cluster.x-k8s.io
     apiVersions:
-    - v1alpha1
+    - v1beta2
     operations:
     - CREATE
     - UPDATE
@@ -168,7 +168,7 @@ webhooks:
     service:
       name: '{{ include "cluster-api-core.fullname" . }}-webhook-service'
       namespace: '{{ .Release.Namespace }}'
-      path: /mutate-cluster-x-k8s-io-v1beta1-machinepool
+      path: /mutate-cluster-x-k8s-io-v1beta2-machinepool
   failurePolicy: Fail
   matchPolicy: Equivalent
   name: default.machinepool.cluster.x-k8s.io
@@ -176,32 +176,10 @@ webhooks:
   - apiGroups:
     - cluster.x-k8s.io
     apiVersions:
-    - v1beta1
+    - v1beta2
     operations:
     - CREATE
     - UPDATE
     resources:
     - machinepools
-  sideEffects: None
-- admissionReviewVersions:
-  - v1
-  - v1beta1
-  clientConfig:
-    service:
-      name: '{{ include "cluster-api-core.fullname" . }}-webhook-service'
-      namespace: '{{ .Release.Namespace }}'
-      path: /mutate-addons-cluster-x-k8s-io-v1beta1-clusterresourceset
-  failurePolicy: Fail
-  matchPolicy: Equivalent
-  name: default.clusterresourceset.addons.cluster.x-k8s.io
-  rules:
-  - apiGroups:
-    - addons.cluster.x-k8s.io
-    apiVersions:
-    - v1beta1
-    operations:
-    - CREATE
-    - UPDATE
-    resources:
-    - clusterresourcesets
   sideEffects: None

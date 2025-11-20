@@ -1,9 +1,30 @@
 global:
   registry: someregistry.local
 webhook:
+  labels:
+    foo: bar
+    test: value
   genericRules:
   - apiGroups:   [""]
     apiVersions: ["v1"]
     operations:  ["CREATE", "UPDATE"]
     resources:   ["pods"]
     scope:       "Namespaced"
+  matchConditions: true
+  extraConditions:
+  - name: 'exclude-opt-out-hidden-secrets'
+    expression: 'object.metadata.?annotations["cloud.sap/inject-secrets"].orValue("") != "hidden"'
+  clientCA:
+    enabled: true
+    resourceType: secret
+    resourceName: abc
+    keyName: client-ca.crt
+  namespaceSelector:
+    matchExpressions:
+    - key: kubernetes.io/metadata.name
+      operator: In
+      values:
+      - kube-system
+secret:
+  annotations:
+    cloud.sap/inject-secrets: "false"

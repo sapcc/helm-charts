@@ -4,13 +4,63 @@ metadata:
   name: {{ .Values.objectstore.name }}
   namespace: {{ .Release.Namespace }}
 spec:
+{{- if .Values.objectstore.multiInstance.enabled }}
+  zone:
+    name: {{ .Values.objectstore.name }} 
+{{- else if and .Values.rgwTargetPlacements.useRookCRD .Values.rgwTargetPlacements.premiumPlacements }}
+  sharedPools:
+    poolPlacements:
+{{- range $target := .Values.rgwTargetPlacements.premiumPlacements }}
+      - name: {{ $target.name }} 
+        metadataPoolName: {{ $target.name }}.rgw.buckets.index
+        dataPoolName: {{ $target.name }}.rgw.buckets.data
+        dataNonECPoolName: {{ $target.name }}.rgw.buckets.non-ec
+        default: {{ $target.default | default false }}
+{{- end }}
+{{- if .Values.rgwTargetPlacements.placements }}
+{{- range $target := .Values.rgwTargetPlacements.placements }}
+      - name: {{ $target.name }} 
+        metadataPoolName: {{ $target.name }}.rgw.buckets.index
+        dataPoolName: {{ $target.name }}.rgw.buckets.data
+        dataNonECPoolName: {{ $target.name }}.rgw.buckets.non-ec
+        default: {{ $target.default | default false }}
+{{- end }}
+{{- end }}
+{{- else }}
   metadataPool: {{ toYaml .Values.objectstore.metadataPool | nindent 4 }}
   dataPool: {{ toYaml .Values.objectstore.dataPool | nindent 4 }}
+{{- end }}
   hosting:
+{{- if and .Values.objectstore.gateway.dnsNames (gt (len .Values.objectstore.gateway.dnsNames) 0) }}
+    advertiseEndpoint:
+      dnsName: {{ .Values.objectstore.gateway.dnsNames | first }}
+      port: 443
+      useTls: true
     dnsNames: {{ toYaml .Values.objectstore.gateway.dnsNames | nindent 8 }}
+{{- end }}
   gateway:
+  {{- if not (empty .Values.objectstore.gateway.rgwConfig) }}
+    rgwConfig: {{ toYaml .Values.objectstore.gateway.rgwConfig | nindent 6 }}
+  {{- end }}
+  {{- if not (empty .Values.objectstore.gateway.rgwCommandFlags) }}
+    rgwCommandFlags: {{ toYaml .Values.objectstore.gateway.rgwCommandFlags | nindent 6 }}
+  {{- end }}
     annotations:
-      checksum/config: {{ include (print $.Template.BasePath "/ceph-config-override.yaml") . | sha256sum }}
+      checksum/config: {{ include (print $.Template.BasePath "/rook-config-override.yaml") . | sha256sum }}
+      {{- if and .Values.objectstore.prysm.rgwSidecarWebhook ( .Values.objectstore.prysm.rgwSidecarWebhook.enabled ) ( .Values.objectstore.prysm.rgwSidecarWebhook.sidecarEnvConfig.enabled ) }}
+      prysm-sidecar/sidecar-env-configmap: "{{ .Values.objectstore.prysm.rgwSidecarWebhook.sidecarEnvConfig.configMapName }}"
+      checksum/sidecar-env-config: {{ include (print $.Template.BasePath "/prysm-rgw-sidecar-webhook-configmap.yaml") . | sha256sum }}
+      {{- end }}
+      {{- if and .Values.objectstore.prysm.rgwSidecarWebhook ( .Values.objectstore.prysm.rgwSidecarWebhook.enabled ) }}
+      # reload deployment when the sidecar configmap changes
+      configmap.reloader.stakater.com/reload: {{ .Values.objectstore.prysm.rgwSidecarWebhook.sidecarEnvConfig.configMapName | quote }}
+      {{- end }}
+      # reload deployment when the certificate changes
+      secret.reloader.stakater.com/reload: {{ .Values.objectstore.gateway.sslCertificateRef | quote }}
+    {{- if and .Values.objectstore.prysm.rgwSidecarWebhook ( .Values.objectstore.prysm.rgwSidecarWebhook.enabled ) }}
+    labels:
+      prysm-sidecar: "yes"
+    {{- end }}
     instances: {{ .Values.objectstore.gateway.instances }}
     {{- if .Values.objectstore.gateway.port }}
     port: {{ .Values.objectstore.gateway.port }}
@@ -32,12 +82,35 @@ spec:
         requiredDuringSchedulingIgnoredDuringExecution:
         - labelSelector:
             matchExpressions:
-            - key: app
+            - key: rgw
               operator: In
               values:
-              - rook-ceph-rgw
+              - {{ .Values.objectstore.name }}
           topologyKey: kubernetes.io/hostname
     priorityClassName: system-cluster-critical
     sslCertificateRef: {{ .Values.objectstore.gateway.sslCertificateRef }}
     resources: {{ toYaml .Values.objectstore.gateway.resources | nindent 6 }}
   preservePoolsOnDelete: true
+{{- if and .Values.objectstore.keystone.enabled }}
+{{- with .Values.objectstore.keystone }}
+  auth:
+    keystone:
+      acceptedRoles:
+{{- range $_, $role := .accepted_roles }}
+        - {{ $role }}
+{{- end }}
+      implicitTenants: {{ .implicit_tenants | quote }}
+      serviceUserSecretName: ceph-keystone-secret
+      tokenCacheSize: {{ .token_cache_size }}
+      url: {{ .url }}
+  protocols:
+{{- if $.Values.objectstore.enabledAPIs }}
+    enableAPIs: {{ toYaml $.Values.objectstore.enabledAPIs | nindent 6 }}
+{{- end }}
+    s3:
+      authUseKeystone: true
+    swift:
+      accountInUrl: {{ .swift_account_in_url }}
+      versioningEnabled: {{ .swift_versioning_enabled }}
+{{- end }}
+{{- end }}

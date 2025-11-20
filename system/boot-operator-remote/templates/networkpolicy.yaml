@@ -1,0 +1,23 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: metalapi-ingress-to-boot-operator-boot-service-tcp-8082
+spec:
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: kube-system
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: ingress-nginx
+    ports:
+    - port: 8082
+      protocol: TCP
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/instance: boot-operator-remote
+      app.kubernetes.io/name: boot-operator-core
+      control-plane: controller-manager
+  policyTypes:
+  - Ingress

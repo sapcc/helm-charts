@@ -14,24 +14,17 @@
     "domain_config" $domain_config
 }}
 
-{{ include "configmap_bird" $ctxDomain }}
+{{- if not $.Values.hostNetworking }}
+{{ include "nad_multus" $ctxDomain }}
+{{- end }}
 
-{{- range $instance, $instance_config := $domain_config -}}
-{{ if and (hasPrefix "instance_" $instance) (has $instance $.Values.deploy) }}
+{{- range $afi := (include "bird.afis" $ctxDomain | fromJsonArray) }}
+{{- $ctxAfi := mergeOverwrite $ctxDomain (dict "afi" $afi) }}
+{{ include "configmap_bird" $ctxAfi }}
+{{ include "deployment_bird" $ctxAfi }}
+{{- end }}
 
-{{- $ctxInstance := mergeOverwrite $ctxDomain (dict 
-        "instance" $instance
-        "instance_number" (trimPrefix "instance_" $instance | int)
-        "instance_config" $instance_config)
-}}
 
----
-{{ include "nad_multus" $ctxInstance }}
-{{ include "deployment_bird" $ctxInstance }}
-{{ include "service_pxrs" $ctxInstance }}
-
-{{- end -}}
-{{- end -}}
 {{- end -}}
 {{- end -}}
 {{- end -}}

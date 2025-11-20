@@ -8,12 +8,17 @@
 # The condition above skips this daemonset on QA and lab regions, because high
 # availability is not a concern there. By omitting the daemonset there, the
 # Helm deployment will finish faster since it does not have to wait on it.
+# This also avoids wasting resources in small lab clusters.
 
 kind: DaemonSet
 apiVersion: apps/v1
 
 metadata:
   name: keep-image-pulled
+  annotations:
+    # This pod intentionally has extremely tight resource requests.
+    # The VerticalPodAutoscaler should never waste resources by increasing those.
+    vpa-butler.cloud.sap/update-mode: "Off"
 
 spec:
   updateStrategy:
@@ -30,6 +35,10 @@ spec:
       annotations:
         linkerd.io/inject: disabled # This pod does not interact with the network.
     spec:
+      priorityClassName: important-infrastructure
+      # sleep(1) doesn't seem to react to SIGTERM at all, so skip right ahead to SIGKILL
+      terminationGracePeriodSeconds: 1
+
       # NOTE: observed resource usage in eu-de-1 (as of 2020-02-26)
       # - no measurable CPU usage once started
       # - RAM max. 1.5 MiB (but it turns out that k8s itself runs into OOM when

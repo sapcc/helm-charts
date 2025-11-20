@@ -1,0 +1,22 @@
+{{- if and .Values.objectstore.prysm.rgwSidecarWebhook ( .Values.objectstore.prysm.rgwSidecarWebhook.enabled ) }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ .Values.objectstore.name }}-rgw-sidecar-exporter
+  labels:
+    plugin: kube-monitoring
+spec:
+  endpoints:
+  - interval: 10s
+    path: /metrics
+    port: metrics
+    relabelings:
+    - targetLabel: cluster
+      replacement: {{ .Values.global.cluster }}
+  namespaceSelector:
+    matchNames:
+    - {{ .Release.Namespace }}
+  selector:
+    matchLabels:
+      app: {{ .Values.objectstore.name }}-rgw-sidecar-exporter
+{{- end }}

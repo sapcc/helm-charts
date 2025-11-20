@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  labels:
+    app: neutron-netns-prober
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+  name: neutron-netns-prober
+spec:
+  revisionHistoryLimit: 3
+  updateStrategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app: neutron-netns-prober
+  template:
+    metadata:
+      labels:
+        app: neutron-netns-prober
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: {{ required ".Values.metrics.port missing" .Values.metrics.port | quote }}
+        prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
+      name: neutron-netns-prober
+    spec:
+      hostPID: true
+      containers:
+      - image: "{{ required ".Values.global.registry missing" .Values.global.registry }}/neutron-netns-prober:{{ required ".Values.image.tag missing" .Values.image.tag }}"
+        args:
+          - -concurrency={{ default 1  .Values.concurrency }}
+          - -interval={{ default "1m" .Values.interval }}
+        ports:
+        - containerPort: {{ required ".Values.metrics.port missing" .Values.metrics.port }}
+          name: metrics
+          protocol: TCP
+        env:
+          - name: OS_AUTH_URL
+            value: {{ required ".Values.authURL missing" .Values.authURL }}
+          - name: OS_DOMAIN_NAME
+            value: {{ .Values.userDomainName }}
+          - name: OS_PROJECT_NAME
+            value: {{ .Values.projectName }}
+          - name: OS_PROJECT_DOMAIN_NAME
+            value: {{ .Values.projectDomainName }}
+          - name: OS_PASSWORD
+            valueFrom: { secretKeyRef:    { name: neutron-netns-prober, key: password } }
+          - name: OS_USERNAME
+            valueFrom: { secretKeyRef:    { name: neutron-netns-prober, key: username } }
+        imagePullPolicy: IfNotPresent
+        name: prober
+        {{- if .Values.resources }}
+        resources:
+{{ toYaml .Values.resources | indent 10 }}
+        {{- end }}
+        securityContext:
+          privileged: true
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+{{ toYaml . | indent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+{{ toYaml . | indent 8 }}
+      {{- end }}

@@ -15,6 +15,9 @@ webhooks:
       namespace: {{ .Release.Namespace }}
       path: /mutate-generic
   failurePolicy: Ignore
+  matchConditions:
+  - name: skip-endpoints
+    expression: "!(object.kind in ['Endpoints', 'EndpointSlice'])"
   {{ if .Values.staging.enabled }}
   name: owner-label-injector.generic-staging.ccloud
   namespaceSelector:
@@ -29,9 +32,10 @@ webhooks:
     matchExpressions:
     - key: kubernetes.io/metadata.name
       operator: NotIn
-      values: 
+      values:
       - "{{ .Values.staging.namespace }}"
       - kube-node-lease
+      - kube-system
   {{ end }}
   rules:
   - apiGroups:

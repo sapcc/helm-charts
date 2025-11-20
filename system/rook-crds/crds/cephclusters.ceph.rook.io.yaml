@@ -11,6 +11,8 @@ spec:
     kind: CephCluster
     listKind: CephClusterList
     plural: cephclusters
+    shortNames:
+      - ceph
     singular: cephcluster
   scope: Namespaced
   versions:
@@ -87,6 +89,34 @@ spec:
                   description: Ceph Config options
                   nullable: true
                   type: object
+                cephConfigFromSecret:
+                  additionalProperties:
+                    additionalProperties:
+                      description: SecretKeySelector selects a key of a Secret.
+                      properties:
+                        key:
+                          description: The key of the secret to select from.  Must be a valid secret key.
+                          type: string
+                        name:
+                          default: ""
+                          description: |-
+                            Name of the referent.
+                            This field is effectively required, but due to backwards compatibility is
+                            allowed to be empty. Instances of this type with an empty value here are
+                            almost certainly wrong.
+                            More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                          type: string
+                        optional:
+                          description: Specify whether the Secret or its key must be defined
+                          type: boolean
+                      required:
+                        - key
+                      type: object
+                      x-kubernetes-map-type: atomic
+                    type: object
+                  description: CephConfigFromSecret works exactly like CephConfig but takes config value from Secret Key reference.
+                  nullable: true
+                  type: object
                 cephVersion:
                   description: The version information that instructs Rook to orchestrate a particular version of Ceph.
                   nullable: true
@@ -145,6 +175,11 @@ spec:
                             - quick
                           type: string
                       type: object
+                    wipeDevicesFromOtherClusters:
+                      description: |-
+                        WipeDevicesFromOtherClusters wipes the OSD disks belonging to other clusters. This is useful in scenarios where ceph cluster
+                        was reinstalled but OSD disk still contains the metadata from previous ceph cluster.
+                      type: boolean
                   type: object
                 continueUpgradeAfterChecksEvenIfNotHealthy:
                   description: ContinueUpgradeAfterChecksEvenIfNotHealthy defines if an upgrade should continue even if PGs are not clean
@@ -242,11 +277,7 @@ spec:
                       format: int64
                       type: integer
                     pgHealthCheckTimeout:
-                      description: |-
-                        PGHealthCheckTimeout is the time (in minutes) that the operator will wait for the placement groups to become
-                        healthy (active+clean) after a drain was completed and OSDs came back up. Rook will continue with the next drain
-                        if the timeout exceeds. It only works if managePodBudgets is true.
-                        No values or 0 means that the operator will wait until the placement groups are healthy before unblocking the next drain.
+                      description: 'DEPRECATED: PGHealthCheckTimeout is no longer implemented'
                       format: int64
                       type: integer
                     pgHealthyRegex:
@@ -324,7 +355,7 @@ spec:
                               alive or ready to receive traffic.
                             properties:
                               exec:
-                                description: Exec specifies the action to take.
+                                description: Exec specifies a command to execute in the container.
                                 properties:
                                   command:
                                     description: |-
@@ -345,7 +376,7 @@ spec:
                                 format: int32
                                 type: integer
                               grpc:
-                                description: GRPC specifies an action involving a GRPC port.
+                                description: GRPC specifies a GRPC HealthCheckRequest.
                                 properties:
                                   port:
                                     description: Port number of the gRPC service. Number must be in the range 1 to 65535.
@@ -363,7 +394,7 @@ spec:
                                   - port
                                 type: object
                               httpGet:
-                                description: HTTPGet specifies the http request to perform.
+                                description: HTTPGet specifies an HTTP GET request to perform.
                                 properties:
                                   host:
                                     description: |-
@@ -428,7 +459,7 @@ spec:
                                 format: int32
                                 type: integer
                               tcpSocket:
-                                description: TCPSocket specifies an action involving a TCP port.
+                                description: TCPSocket specifies a connection to a TCP port.
                                 properties:
                                   host:
                                     description: 'Optional: Host name to connect to, defaults to the pod IP.'
@@ -472,7 +503,7 @@ spec:
                               alive or ready to receive traffic.
                             properties:
                               exec:
-                                description: Exec specifies the action to take.
+                                description: Exec specifies a command to execute in the container.
                                 properties:
                                   command:
                                     description: |-
@@ -493,7 +524,7 @@ spec:
                                 format: int32
                                 type: integer
                               grpc:
-                                description: GRPC specifies an action involving a GRPC port.
+                                description: GRPC specifies a GRPC HealthCheckRequest.
                                 properties:
                                   port:
                                     description: Port number of the gRPC service. Number must be in the range 1 to 65535.
@@ -511,7 +542,7 @@ spec:
                                   - port
                                 type: object
                               httpGet:
-                                description: HTTPGet specifies the http request to perform.
+                                description: HTTPGet specifies an HTTP GET request to perform.
                                 properties:
                                   host:
                                     description: |-
@@ -576,7 +607,7 @@ spec:
                                 format: int32
                                 type: integer
                               tcpSocket:
-                                description: TCPSocket specifies an action involving a TCP port.
+                                description: TCPSocket specifies a connection to a TCP port.
                                 properties:
                                   host:
                                     description: 'Optional: Host name to connect to, defaults to the pod IP.'
@@ -689,6 +720,16 @@ spec:
                       maximum: 9
                       minimum: 0
                       type: integer
+                    externalMonIDs:
+                      description: |-
+                        ExternalMonIDs - optional list of monitor IDs which are deployed externally and not managed by Rook.
+                        If set, Rook will not remove mons with given IDs from quorum.
+                        This parameter is used only for local Rook cluster running in normal mode
+                        and will be ignored if external or stretched mode is used.
+                        leading
+                      items:
+                        type: string
+                      type: array
                     failureDomainLabel:
                       type: string
                     stretchCluster:
@@ -1409,6 +1450,20 @@ spec:
                         Enabled determines whether to create the prometheus rules for the ceph cluster. If true, the prometheus
                         types must exist or the creation will fail. Default is false.
                       type: boolean
+                    exporter:
+                      description: Ceph exporter configuration
+                      properties:
+                        perfCountersPrioLimit:
+                          default: 5
+                          description: Only performance counters greater than or equal to this option are fetched
+                          format: int64
+                          type: integer
+                        statsPeriodSeconds:
+                          default: 5
+                          description: Time to wait before sending requests again to exporter server (seconds)
+                          format: int64
+                          type: integer
+                      type: object
                     externalMgrEndpoints:
                       description: ExternalMgrEndpoints points to an existing Ceph prometheus exporter endpoint
                       items:
@@ -1608,7 +1663,7 @@ spec:
                       type: string
                       x-kubernetes-validations:
                         - message: network provider must be disabled (reverted to empty string) before a new provider is enabled
-                          rule: self == '' || self == oldSelf
+                          rule: self == '' || oldSelf == '' || self == oldSelf
                     selectors:
                       additionalProperties:
                         type: string
@@ -1618,7 +1673,7 @@ spec:
                         other network providers.
 
                         Valid keys are "public" and "cluster". Refer to Ceph networking documentation for more:
-                        https://docs.ceph.com/en/reef/rados/configuration/network-config-ref/
+                        https://docs.ceph.com/en/latest/rados/configuration/network-config-ref/
 
                         Refer to Multus network annotation documentation for help selecting values:
                         https://github.com/k8snetworkplumbingwg/multus-cni/blob/master/docs/how-to-use.md#run-pod-with-network-annotation
@@ -2331,6 +2386,16 @@ spec:
                       minimum: 0
                       nullable: true
                       type: number
+                    migration:
+                      description: Migration handles the OSD migration
+                      properties:
+                        confirmation:
+                          description: |-
+                            A user confirmation to migrate the OSDs. It destroys each OSD one at a time, cleans up the backing disk
+                            and prepares OSD with same ID on that disk
+                          pattern: ^$|^yes-really-migrate-osds$
+                          type: string
+                      type: object
                     nearFullRatio:
                       description: NearFullRatio is the ratio at which the cluster is considered nearly full and will raise a ceph health warning. Default is 0.85.
                       maximum: 1
@@ -2666,6 +2731,9 @@ spec:
                       nullable: true
                       type: array
                     onlyApplyOSDPlacement:
+                      type: boolean
+                    scheduleAlways:
+                      description: Whether to always schedule OSDs on a node even if the node is not currently scheduleable or ready
                       type: boolean
                     storageClassDeviceSets:
                       items:
@@ -4421,6 +4489,12 @@ spec:
                     osd:
                       description: OSDStatus represents OSD status of the ceph Cluster
                       properties:
+                        migrationStatus:
+                          description: MigrationStatus status represents the current status of any OSD migration.
+                          properties:
+                            pending:
+                              type: integer
+                          type: object
                         storeType:
                           additionalProperties:
                             type: integer

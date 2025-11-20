@@ -75,6 +75,7 @@ min_microversio = 2.1
 max_microversion = latest
 fixed_network_name = {{ (index .Values (print .Chart.Name | replace "-" "_")).tempest.fixed_network_name }}
 build_timeout=600
+compute_volume_common_az = qa-de-1b
 
 [compute-feature-enabled]
 resize = true
@@ -119,7 +120,7 @@ endpoint_type = public
 min_microversion = 3.0
 max_microversion = latest
 vendor_name = VMware
-storage_protocol = vmdk
+storage_protocol = vstorageobject
 disk_format = vmdk
 volume_size = 3
 build_timeout=600

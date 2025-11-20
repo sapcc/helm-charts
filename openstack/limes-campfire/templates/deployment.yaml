@@ -1,0 +1,124 @@
+{{- $tld     := $.Values.global.tld              | required "missing value for .Values.global.tld"              }}
+{{- $region  := $.Values.global.region           | required "missing value for .Values.global.region"           }}
+{{- $dbRegion  := $.Values.global.db_region      | required "missing value for .Values.global.db_region"        }}
+{{- $cregion := $.Values.campfire.central_region | required "missing value for .Values.campfire.central_region" }}
+
+kind: Deployment
+apiVersion: apps/v1
+
+metadata:
+  name: campfire
+
+spec:
+  revisionHistoryLimit: 5
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      name: campfire
+  template:
+    metadata:
+      labels:
+        name: campfire
+      annotations:
+        checksum/configmap: {{ include "campfire/templates/configmap.yaml" $ | sha256sum }}
+        kubectl.kubernetes.io/default-container: campfire
+    spec:
+      volumes:
+        - name: config
+          configMap:
+            name: campfire
+      containers:
+        - name: campfire
+          image: {{ include "campfire_image" $ }}
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: CAMPFIRE_API_LISTEN_ADDRESS
+              value: ":80"
+            - name: CAMPFIRE_OSLO_POLICY_PATH
+              value: /etc/campfire/policy.json
+            - name: CAMPFIRE_DOMAIN_EXCLUSION_LIST
+              value: "monsoon3,hcp03"
+
+            # credentials for authenticating incoming requests and talking to the regional masterdata API
+            {{- if .Values.global.is_global_region }}
+            - name: OS_AUTH_URL
+              value: "https://{{ contains "qa" $dbRegion | ternary "identity-3-qa" "identity-3" }}.global.{{ $tld }}/v3"
+            {{- else }}
+            - name: OS_AUTH_URL
+              value: "http://keystone.{{ $.Values.global.keystoneNamespace }}.svc.kubernetes.{{ $region }}.{{ $tld }}:5000/v3"
+            {{- end }}
+            - name: OS_USER_DOMAIN_NAME
+              value: Default
+            - name: OS_USERNAME
+              value: limes
+            - name: OS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: campfire-secret
+                  key: os_password
+            - name: OS_PROJECT_DOMAIN_NAME
+              value: ccadmin
+            - name: OS_PROJECT_NAME
+              value: cloud_admin
+            - name: OS_REGION_NAME
+              value: {{ quote $region }}
+
+            # credentials and configuration for sending mails using Cronus
+            - name: CRONUS_AUTH_URL
+              value: "https://identity-3.{{ $cregion }}.{{ $tld }}/v3"
+            - name: CRONUS_USER_DOMAIN_NAME
+              value: Default
+            - name: CRONUS_USERNAME
+              {{- if .Values.global.is_global_region }}
+              value: {{ printf "campfire-%s-global" $dbRegion | quote }}
+              {{- else }}
+              value: {{ printf "campfire-%s" $region | quote }}
+              {{- end }}
+            - name: CRONUS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: campfire-secret
+                  key: cronus_password
+            - name: CRONUS_PROJECT_DOMAIN_NAME
+              value: ccadmin
+            - name: CRONUS_PROJECT_NAME
+              value: master
+            - name: CRONUS_REGION_NAME
+              value: {{ quote $cregion }}
+            - name: SMTP_HOST
+              value: "cronus.{{ $cregion }}.{{ $tld }}"
+            - name: SMTP_PORT
+              value: "587"
+            - name: SMTP_FROM
+              value: "noreply+%sender%@email.global.{{ $tld }}"
+
+          securityContext:
+            runAsNonRoot: true
+          volumeMounts:
+            - mountPath: /etc/campfire
+              name: config
+          livenessProbe:
+            httpGet:
+              path: /healthcheck
+              port: 80
+            timeoutSeconds: 10
+            periodSeconds: 60
+            initialDelaySeconds: 60
+          readinessProbe:
+            httpGet:
+              path: /healthcheck
+              port: 80
+            timeoutSeconds: 5
+            periodSeconds: 5
+          resources:
+            limits:
+              cpu: '1'
+              memory: {{ .Values.campfire.memory_limit }}
+            requests:
+              cpu: {{ .Values.campfire.cpu_request }}
+              memory: {{ .Values.campfire.memory_limit }}

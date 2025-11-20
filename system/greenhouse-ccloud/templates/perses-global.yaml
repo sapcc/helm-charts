@@ -1,0 +1,51 @@
+{{/* Deployed alongside a global thanos query*/}}
+{{- if and .Values.thanos.enabled .Values.thanos.globalClusters -}}
+apiVersion: greenhouse.sap/v1alpha1
+kind: PluginPreset
+metadata:
+  name: perses-global
+  namespace: {{ .Chart.Name }}
+  labels:
+    greenhouse.sap/owned-by: observability
+{{- if .Values.global.fluxEnabled }}
+    greenhouse.sap/deployment-tool: "flux"
+  annotations:
+    "greenhouse.sap/propagate-labels": "greenhouse.sap/owned-by,greenhouse.sap/deployment-tool"
+{{- else }}
+  annotations:
+    "greenhouse.sap/propagate-labels": "greenhouse.sap/owned-by"
+{{- end }}
+spec:
+  clusterSelector:
+    matchExpressions:
+    - key: greenhouse.sap/pluginpreset
+      operator: In
+      values:
+      - "true"
+{{- with .Values.thanos.globalClusters }}
+    - key: cluster
+      operator: In
+      values:
+        {{- range $cluster := $.Values.thanos.globalClusters }}
+        - {{ $cluster.name }}
+        {{- end }}
+{{- end }}
+  plugin:
+    displayName: Perses global
+    pluginDefinition: perses
+    releaseNamespace: kube-monitoring
+    releaseName: perses-global
+    optionValues:
+      - name: perses.sidecar.enabled
+        value: true
+      - name: perses.sidecar.label
+        value: perses.dev/global-resource
+      {{- if and .Values.global.ghcrIoMirror .Values.global.dockerHubMirror }}
+      - name: perses.image.name
+        value: "{{ .Values.global.dockerHubMirror }}/persesdev/perses"
+      - name: perses.sidecar.image.repository
+        value: "{{ .Values.global.quayIoMirror }}/kiwigrid/k8s-sidecar"
+      - name: perses.testFramework.image.registry
+        value: {{ .Values.global.ghcrIoMirror }}
+      {{- end }}
+{{- end }}

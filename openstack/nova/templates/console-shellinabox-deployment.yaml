@@ -36,30 +36,29 @@ spec:
         prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
         {{- end }}
         {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
-        config-hash: {{ print (.Files.Glob "shellinabox/*").AsConfig (include "nova.etc_config_lua" .) | sha256sum }}
+        config-hash: {{ print (.Files.Glob "console/shellinabox/*").AsConfig (.Files.Glob "console/common/*").AsConfig (include "nova.etc_config_lua" .) | sha256sum }}
+        secret-hash: {{ include (print $.Template.BasePath "/console-shellinabox-secret.yaml") . | sha256sum }}
     spec:
-      securityContext:
-        runAsUser: 33
-        runAsGroup: 33
-        fsGroup: 33
       {{- tuple . "nova" "console-cell1-shellinabox" | include "kubernetes_pod_anti_affinity" | nindent 6 }}
       {{- include "utils.proxysql.pod_settings" . | nindent 6 }}
       {{- tuple . (dict "name" "nova-console-cell1-shellinabox") | include "utils.topology.constraints" | indent 6 }}
+      initContainers:
+      {{- if .Values.proxysql.native_sidecar }}
+      {{- include "utils.proxysql.container" . | indent 6 }}
+      {{- end }}
       containers:
       - name: nova-console-cell1-shellinabox
-        image: {{ required ".Values.global.dockerHubMirror is missing" .Values.global.dockerHubMirror }}/bitnami/openresty:{{ .Values.imageVersionBitnamiOpenResty }}
+        image: {{ required ".Values.global.dockerHubMirror is missing" .Values.global.dockerHubMirror }}/openresty/openresty:{{ .Values.imageVersionOpenResty }}
         imagePullPolicy: IfNotPresent
-        command:
-        - /opt/bitnami/scripts/openresty/run.sh
         ports:
         - name: shellinabox
           containerPort: {{ .Values.consoles.shellinabox.portInternal }}
         volumeMounts:
-        - mountPath: /app
+        - mountPath: /usr/local/openresty/site/lualib
           name: app
-        - mountPath: /opt/bitnami/openresty/nginx/conf/server_blocks
+        - mountPath: /etc/nginx/conf.d
           name: config
-        - mountPath: /opt/bitnami/openresty/nginx/tmp
+        - mountPath: /usr/local/openresty/nginx/tmp
           name: temp
         {{- include "utils.proxysql.volume_mount" . | indent 8 }}
         livenessProbe:
@@ -75,13 +74,20 @@ spec:
             port: {{ .Values.consoles.shellinabox.portInternal }}
           initialDelaySeconds: 1
           timeoutSeconds: 5
+      {{- if not .Values.proxysql.native_sidecar }}
       {{- include "utils.proxysql.container" . | indent 6 }}
+      {{- end }}
       volumes:
       - name: temp
         emptyDir: {}
       - name: config
-        configMap:
-          name: nova-console-cell1-shellinabox
+        projected:
+          sources:
+          - configMap:
+              name: nova-console-cell1-shellinabox
+              items:
+              - key: 10_default_server.conf
+                path: 10_default_server.conf
       - name: app
         projected:
           defaultMode: 420
@@ -91,6 +97,8 @@ spec:
               items:
               - key: revproxy.lua
                 path: revproxy.lua
+              - key: token_lookup.lua
+                path: token_lookup.lua
           - secret:
               name: nova-console-cell1-shellinabox
               items:

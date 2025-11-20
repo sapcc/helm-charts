@@ -1,6 +1,6 @@
 {
     "policy": {
-        "description": "Simple 31d log retention",
+        "description": "Simple {{ .Values.retention.index}} log retention",
         "default_state": "ingest",
         "schema_version": 25,
         "states": [
@@ -11,7 +11,7 @@
                     {
                         "state_name": "delete",
                         "conditions": {
-                            "min_index_age": "31d"
+                            "min_index_age": "{{ .Values.retention.index}}"
                         }
                     }
                 ]
@@ -46,30 +46,6 @@
             },
             {
                 "index_patterns": [
-                    "syslog-*"
-                ],
-                "priority": 1
-            },
-            {
-                "index_patterns": [
-                    "admin-*"
-                ],
-                "priority": 1
-            },
-            {
-                "index_patterns": [
-                    "kubernikus-*"
-                ],
-                "priority": 1
-            },
-            {
-                "index_patterns": [
-                    "virtual-*"
-                ],
-                "priority": 1
-            },
-            {
-                "index_patterns": [
                     "qade2-logstash-*"
                 ],
                 "priority": 1
@@ -94,7 +70,13 @@
             },
             {
                 "index_patterns": [
-                    "scaleout-*"
+                    "compute-*"
+                ],
+                "priority": 1
+            }
+            {
+                "index_patterns": [
+                    "storage-*"
                 ],
                 "priority": 1
             }

@@ -121,3 +121,48 @@ groups:
     annotations:
       description: 'The Load Balancer `{{ $labels.loadbalancer_name }} ({{ $labels.loadbalancer_id }})` of agent `{{ $labels.loadbalancer_host }}` stuck in {{ $labels.loadbalancer_status }} state (<https://dashboard.{{ $externalLabels.region }}.cloud.sap/ccadmin/cloud_admin/cloudops#/universal-search/?searchTerm={{ $labels.loadbalancer_id }}&type=loadbalancer|Dashboard>)'
       summary: Octavia Load-Balancer stuck in PENDING_* state
+  - alert: OctaviaApiFailing
+    expr: max(openstack_watcher_api_requests_duration_seconds{status=~"5.*",service="loadbalancer"})
+    labels:
+      no_alert_on_absence: "true"
+      context: API
+      dashboard: octavia
+      service: octavia
+      severity: info # New Alerts MUST be initially implemented Info.
+      support_group: network-api
+      tier: os
+      meta: 'HTTP 5XX error(s) in Octavia API'
+      playbook: docs/support/playbook/octavia/http5xx
+    annotations:
+      description: 'There was at least one HTTP {{ $labels.status }} error in Octavia API pod {{ $labels.kubernetes_pod_name }} in the last 10 minutes for target type URI {{ $labels.target_type_uri }}'
+      summary: HTTP 5XX in Octavia API
+  - alert: OpenstackOctaviaPodOOMKilled
+    expr: sum(rate(klog_pod_oomkill{pod_name=~"octavia-.+"}[30m])) by (pod_name) > 0
+    for: 5m
+    labels:
+      tier: os
+      service: octavia
+      dashboard: kubernetes-container-resources
+      severity: info
+      context: memory
+      meta: "{{ $labels.pod_name }}"
+      no_alert_on_absence: "true" # the underlying metric is only generated after the first oomkill
+      support_group: network-api
+    annotations:
+      summary: Pod was oomkilled
+      description: The pod {{ $labels.pod_name }} was oomkilled recently
+  - alert: OpenstackOctaviaPodOOMExceedingLimits
+    # NOTE: `container_memory_saturation_ratio` ranges from 0 to 1, so 0.7 = 70% and 1.0 = 100%
+    expr: container_memory_saturation_ratio{pod_name=~"octavia-.+",container_name=~"octavia-.+"} > 0.7 AND predict_linear(container_memory_saturation_ratio{pod_name=~"octavia-.+",container_name=~"octavia-.+"}[1h], 7*3600) > 1.0
+    for: 30m
+    labels:
+      support_group: network-api
+      tier: os
+      service: octavia
+      severity: info
+      context: memory
+      dashboard: kubernetes-container-resources
+      meta: "{{ $labels.pod_name }}"
+    annotations:
+      summary: Exceeding memory limits in 8h
+      description: The pod {{ $labels.pod_name }} will exceed its memory limit in 8h.

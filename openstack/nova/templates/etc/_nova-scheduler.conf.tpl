@@ -9,7 +9,6 @@ statsd_enabled = {{ .Values.scheduler.rpc_statsd_enabled }}
 discover_hosts_in_cells_interval = 60
 workers = {{ .Values.scheduler.workers }}
 driver_task_period = {{ .Values.scheduler.driver_task_period | default 60 }}
-query_placement_for_availability_zone = {{ not (contains "AvailabilityZoneFilter" .Values.scheduler.default_filters) }}
 
 [filter_scheduler]
 available_filters = {{ .Values.scheduler.available_filters | default "nova.scheduler.filters.all_filters" }}
@@ -36,3 +35,10 @@ decommissioning_weight_multiplier = {{ .Values.scheduler.decommissioning_weight_
 sapphire_rapids_weight_multiplier = {{ .Values.scheduler.sapphire_rapids_weight_multiplier }}
 aggregate_multi_tenancy_isolation_weight_multiplier = {{ .Values.scheduler.aggregate_multi_tenancy_isolation_weight_multiplier }}
 image_properties_default_architecture = {{ .Values.scheduler.image_properties_default_architecture }}
+
+{{- if .Values.scheduler.external_scheduler_api_url }}
+external_scheduler_api_url = {{ .Values.scheduler.external_scheduler_api_url }}
+{{- end}}
+{{- if .Values.scheduler.external_scheduler_timeout }}
+external_scheduler_timeout = {{ .Values.scheduler.external_scheduler_timeout }}
+{{- end}}

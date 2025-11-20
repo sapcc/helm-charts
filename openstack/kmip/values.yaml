@@ -8,7 +8,7 @@ global:
 
 owner-info:
   support-group: identity
-  service: barbican
+  service: kmip
   maintainers:
     - Rajiv Mucheli
     - Csaba Seres
@@ -28,6 +28,8 @@ replicaCount: 1
 
 kmip:
   pullPolicy: IfNotPresent
+  image: defined-in-secrets
+  restapi_image: defined-in-secrets
 
 serviceAccount:
   # Specifies whether a service account should be created
@@ -45,10 +47,13 @@ podAnnotations:
   prometheus.io/targets: "openstack"
 
 service:
-  type: LoadBalancer
-  port: 5696
-  targetPort: 5696
-  annotations: {}
+  type: NodePort
+  externalIPs: 10.0.0.2
+  ports:
+    port: 5696
+    targetPort: 5696
+
+tlsacme: true
 
 ingress:
   enabled: true
@@ -107,6 +112,32 @@ mariadb:
       cpu: 0
   backup_v2:
     enable_init_restore: true
+
+pxc_db:
+  enabled: false
+  name: kmip
+  alerts:
+    support_group: identity
+  ccroot_user:
+    enabled: true
+  databases:
+    - kmip
+  users:
+    kmip:
+      name: kmip
+      grants:
+        - "ALL PRIVILEGES on kmip.*"
+  pxc:
+    persistence:
+      size: 10Gi
+  backup:
+    enabled: true
+    s3:
+      secrets:
+        aws_access_key_id: null
+        aws_secret_access_key: null
+    pitr:
+      enabled: true
 
 mysql_metrics:
   db_name: kmip

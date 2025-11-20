@@ -10,9 +10,14 @@ metadata:
 
 spec:
   requires:
+  {{- if $values.global.is_global_region }}
+  - monsoon3global/keystone-global-seed
+  {{- else}}
+  - monsoon3/keystone-seed
   - monsoon3/domain-default-seed
   - monsoon3/domain-ccadmin-seed
   - monsoon3/domain-cc3test-seed
+  {{- end }}
 
   domains:
   - name: cc3test
@@ -24,8 +29,6 @@ spec:
       - project: {{ $project.name }}
         role: admin
       - project: {{ $project.name }}
-        role: automation_admin
-      - project: {{ $project.name }}
         role: compute_admin
       - project: {{ $project.name }}
         role: keymanager_admin
@@ -45,6 +48,8 @@ spec:
         role: member
       - project: {{ $project.name }}
         role: audit_viewer
+      - project: {{ $project.name }}
+        role: monitoring_viewer
 
     projects:
     - name: {{ $project.name }}
@@ -52,8 +57,6 @@ spec:
       - user: {{ $values.users.admin.username }}
         role: admin
       - user: {{ $values.users.admin.username }}
-        role: automation_admin
-      - user: {{ $values.users.admin.username }}
         role: compute_admin
       - user: {{ $values.users.admin.username }}
         role: keymanager_admin
@@ -70,11 +73,16 @@ spec:
       - user: {{ $values.users.admin.username }}
         role: volume_admin
       - user: {{ $values.users.admin.username }}
+        role: cloud_dns_ops
+      - user: {{ $values.users.admin.username }}
         role: member
       - user: {{ $values.users.admin.username }}
         role: audit_viewer
+      - user: {{ $values.users.admin.username }}
+        role: monitoring_viewer
       - user: {{ $values.users.member.username }}
         role: member
+    {{- if not $values.global.is_global_region}}
       network_quota:
         subnetpool: 5
         subnet: 5
@@ -99,11 +107,13 @@ spec:
         interfaces:
         - subnet: {{ $router.interface.subnet }}
       {{- end }}
-
+    {{- end }}
+{{- if not $values.global.is_global_region}}
   rbac_policies:
   - object_type: network
     object_name: {{ $project.rbac.object_name }}
     action: access_as_shared
     target_tenant_name: {{ $project.name }}@cc3test
+{{- end }}
 ---
 {{- end }}

@@ -3,11 +3,11 @@ apiVersion: apps/v1
 metadata:
   name: {{ template "fullname" . }}
   labels:
-    app: {{ template "fullname" . }}
-    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
-    release: "{{ .Release.Name }}"
-    heritage: "{{ .Release.Service }}"
-    {{- include "sharedservices.labels" . | indent 4 }}
+    {{- include "memcached.labels" (list $ "version" "memcached" "deployment" "kvstore") | indent 4 }}
+{{- if .Values.vpa.set_main_container }}
+  annotations:
+    vpa-butler.cloud.sap/main-container: memcached
+{{- end }}
 spec:
   replicas: {{ .Values.replicas }}
   revisionHistoryLimit: {{ .Values.upgrades.revisionHistory }}
@@ -24,9 +24,7 @@ spec:
   template:
     metadata:
       labels:
-        app: {{ template "fullname" . }}
-        component: memcached
-        {{- include "sharedservices.labels" . | indent 8 }}
+        {{- include "memcached.labels" (list $ "version" "memcached" "deployment" "kvstore") | indent 8 }}
       annotations:
         {{- if and (and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested) $.Values.linkerd.enabled }}
         linkerd.io/inject: enabled
@@ -45,6 +43,9 @@ spec:
 {{- include "memcached_maintenance_affinity" . }}
 {{- include "memcached_node_reinstall_affinity" . }}
 {{- end }}
+      {{- if and .Values.auth.username .Values.auth.password }}
+      hostname: {{ template "fullname" . }}
+      {{- end }}
       containers:
       - name: memcached
         image: "{{include "dockerHubMirror" .}}/{{ .Values.image }}:{{.Values.imageTag }}"
@@ -113,13 +114,7 @@ spec:
             memory: {{ .Values.metrics.resources.requests.memory | quote }}
         {{- end }}
       {{- end }}
-      {{- if .Values.priority_class }}
-        {{- if and (kindIs "bool" .Values.priority_class) (eq .Values.priority_class true) }}
-      priorityClassName: "openstack-service-critical"
-        {{- else }}
-      priorityClassName: {{ .Values.priority_class | quote }}
-        {{- end }}
-      {{- end }}
+      priorityClassName: {{ .Values.priority_class | default "critical-infrastructure" | quote }}
 {{- if and .Values.auth.username .Values.auth.password }}
       volumes:
         - name: memcached-etc

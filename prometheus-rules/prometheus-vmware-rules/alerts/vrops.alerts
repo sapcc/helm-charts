@@ -7,7 +7,7 @@ groups:
       count by (target) (vrops_api_response{collector=~"vc.*"}) > 500) 
     for: 10m
     labels:
-      severity: critical
+      severity: warning
       tier: vmware
       service: compute
       support_group: compute
@@ -21,6 +21,67 @@ groups:
         All collectors of the vrops-exporter report HTTP status codes above 500, 
         which indicates that vrops is reporting internal server errors or is unreachable. 
         Check if vrops is running and healthy.
+
+  - alert: VropsAPIDown
+    expr: |
+      (sum by (target) (vrops_api_response{collector=~"vc.*"}) / 
+      count by (target) (vrops_api_response{collector=~"vc.*"}) > 500)                                                                                                                     
+    for: 90m
+    labels:
+      severity: critical
+      tier: vmware
+      service: compute
+      support_group: compute
+      context: vrops
+      playbook: docs/devops/alert/vcenter/vrops#vrops_api_down
+      dashboard: vrops-exporter-status
+      meta: "`https://{{ $labels.target }}` API is down."
+    annotations:
+      summary: "`https://{{ $labels.target }}` API is down."
+      description: |
+        All collectors of the vrops-exporter report HTTP status codes above 500,
+        which indicates that vrops is reporting internal server errors or is unreachable.
+        Check if vrops is running and healthy.
+
+  - alert: VropsAPIDownEntirely
+    expr: |
+      absent(vrops_api_response)
+    for: 10m
+    labels:
+      severity: warning
+      tier: vmware
+      service: compute
+      support_group: compute
+      context: vrops
+      playbook: docs/devops/alert/vcenter/vrops#vrops_api_down_entirely
+      dashboard: vrops-exporter-status
+      meta: "Vrops API is down. All collectors are not reporting anymore."
+    annotations:
+      meta: "Vrops API is down. All collectors are not reporting anymore."
+      description: |
+        Exporters can not connect to vrops anymore. Most likely the VM is stuck.
+        If this alert fires, complete vmware-montioring is down in Prometheus.
+        Ensure vrops is running and healthy.
+
+  - alert: VropsAPIDownEntirely
+    expr: |            
+      absent(vrops_api_response)
+    for: 90m           
+    labels:            
+      severity: critical
+      tier: vmware     
+      service: compute 
+      support_group: compute
+      context: vrops   
+      playbook: docs/devops/alert/vcenter/vrops#vrops_api_down_entirely
+      dashboard: vrops-exporter-status
+      meta: "Vrops API is down. All collectors are not reporting anymore."
+    annotations:       
+      meta: "Vrops API is down. All collectors are not reporting anymore."
+      description: |   
+        Exporters can not connect to vrops anymore. Most likely the VM is stuck.
+        If this alert fires, complete vmware-montioring is down in Prometheus.
+        Ensure vrops is running and healthy.
 
   - alert: VropsTokenAcquisitionFailed
     expr: vrops_api_response{get_request="token"} >= 500

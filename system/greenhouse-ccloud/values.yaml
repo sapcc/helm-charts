@@ -1,8 +1,11 @@
+global:
+  fluxEnabled: false
+
 mappedOrgAdminIdPGroup:
 
-# enabeling pluginPreset.enabled will render PluginPresest
-# These will deploy DigiCert Issuer, CertManager, KubeMonitoring to 
-# all Clusters with label greenhouse.sap/cluster-presets-enabled: "true"
+# enabling pluginPreset.enabled will render PluginPreset
+# These will deploy DigiCert Issuer, CertManager, KubeMonitoring to
+# all Clusters with label greenhouse.sap/pluginpreset: "true"
 pluginPreset:
   enabled: false
 
@@ -12,7 +15,8 @@ teams: {}
   #   mappedIdPGroup: Identity provider group name.
   #   isSupportGroup: true|false
 
-teamRoleBindings: []
+teamRoleBindings:
+  []
   # - teamRef: team1
   #   teamRoleRef: role1
   #   clusterSelector:
@@ -29,7 +33,7 @@ oidc:
   clientSecret:
 scim:
   enabled: false
-  # baseURL: 
+  # baseURL:
   # username:
   # password
 
@@ -52,14 +56,54 @@ alerts:
   silenceExcludedLabels:
     - pod
     - pod_name
+    - kubernetes_pod_name
     - instance
+  predefinedFilters:
+    - name: "prod"
+      displayName: "Prod"
+      matchers:
+        region: "^(ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|ap-sg-1|eu-de-1|eu-de-2|eu-de-3|eu-nl-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3)$"
+    - name: "prod-qa"
+      displayName: "Prod + QA"
+      matchers:
+        region: "^(ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|ap-sg-1|eu-de-1|eu-de-2|eu-de-3|eu-nl-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3|qa-de-1)$"
+    - name: "labs"
+      displayName: "Labs"
+      matchers:
+        region: "^qa-de-(?!1$)\\d+"
+    - name: "other"
+      displayName: "Other"
+      matchers:
+        region: "^(?!(ap-ae-1|ap-au-1|ap-cn-1|ap-jp-1|ap-jp-2|ap-sa-1|ap-sa-2|ap-sg-1|eu-de-1|eu-de-2|eu-de-3|eu-nl-1|la-br-1|na-ca-1|na-us-1|na-us-2|na-us-3|qa-de-1|qa-de-(?!1$)\\d+)$).*"
+    - name: "all"
+      displayName: "All"
+      matchers:
+        region: ".*"
   # silenceTemplates: --> defined in the _silence.conf.tpl
-    
+
   # Alertmanager options.
   alertmanager:
     # Do not deploy the alertmanager.
     enabled: false
     hosts: []
+
+cephOperations:
+  enabled: false
+  # clusterOptionOverrides:
+  #   - clusterName: qa-de-999
+  #     overrides:
+  #       - name: foo.bar
+  #         value: true
+
+controlplaneOperations:
+  enabled: false
+
+kvmMonitoring:
+  enabled: false
+
+certManager:
+  webhook:
+    timeoutSeconds: 15
 
 digicert:
   enabled: false
@@ -86,16 +130,104 @@ kubeMonitoring:
   enabled: false
   ssoCert:
   ssoKey:
-  thanosClusters:
-    - st1-qa-de-1
-    - st1-eu-de-2
-    - st1-na-us-2
+  ## clusterOverrides
+  # cephClusters:
+  #   qa-de-999:
+  #     serviceProxyUrl: https://service-proxy-qa-de-999.cloud.sap
+  #     thanos: false
+
+plutono:
+  clusterOptionOverrides: {}
+  # - clusterName: qa-de-999
+  #   overrides:
+  #   - name: global.imageRegistry
+  #     value: my-registry.global.com
+
+openTelemetry:
+  enabled: false
+# set via secrets
+  # prometheus:
+  # clusters:
+    # - region:
+    #   cluster:
+    #   username:
+    #   password:
+    #   endpoint:
+  logsCollector:
+    enabled: true
+  metricsCollector:
+    enabled: true
+  prometheus:
+    podMonitor:
+      enabled: true
+    serviceMonitor:
+      enabled: true
+  admissionWebhooks:
+    certManager:
+      enabled: true
+    autoGenerateCert:
+      enabled: false
+      recreate: false
+  kubeRBACProxy:
+    enabled: false
+  manager:
+    prometheusRule:
+      defaultRules:
+        enabled: false
+      enabled: false
+
+opensearch:
+  enabled: false
+  clusters: []
+    # - region: "qa-de-1"
+    #   cluster: "abc-qa-de-999"
+    #   endpoint:
+    #     - opensearch-logs-client.tld
+    #   users:
+    #     admin:
+    #       username: ""
+    #       password: ""
+    #       hash: ""
+    #     logs:
+    #       username: ""
+    #       password: ""
+    #     logs2:
+    #       username: ""
+    #       password: ""
+    #     dashboards:
+    #       username: ""
+    #       password: ""
+    #     dashboards2:
+    #       username: ""
+    #       password: ""
+    #   ingress:
+    #     enabled: true
+    #     className: nginx
+    #     annotations: {}
+    #     hosts: []
+    #     tls: []
 
 thanos:
-  enabled: false
+  enabled: true
+  # The cluster to which the global Thanos Query is deployed to
+  # Note: Use 'prefixes' to select the thanos stores
+  globalClusters: []
+    # - name: abc-qa-de-999
+    #   prefixes:
+    #     - abc
+    #   additionalStores:
+    #     # '-grpc', region, baseDomain and port will be added automatically
+    #     - thanos-openstack
+
+  # TLS config for cross-cluster authentication
+  # Deployed as a Secret
+  tls:
+    caCert: ""
+    tlsCert: ""
+    tlsKey: ""
 
 logshipping:
-  # clusters:
+  clusters: []
 # only specify username & password on the first cluster if multiple in the same region use the same creds
     # - region:
     #   cluster:
@@ -127,3 +259,7 @@ heureka:
   enabled: false
   displayName: Heureka
   apiEndpoint:
+
+repoGuard:
+  enabled: false
+  displayName: RepoGuard

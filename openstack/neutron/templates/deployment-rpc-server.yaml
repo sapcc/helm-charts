@@ -1,17 +1,14 @@
 {{- if .Values.api.uwsgi }}
 kind: Deployment
 apiVersion: apps/v1
-
 metadata:
   name: neutron-rpc-server
   labels:
     system: openstack
     type: rpc
     component: neutron
-  {{- if .Values.vpa.set_main_container }}
   annotations:
     vpa-butler.cloud.sap/main-container: neutron-rpc-server
-  {{- end }}
 spec:
   replicas: {{ if not .Values.pod.debug.rpc_server }}{{ .Values.pod.replicas.rpc_server }}{{ else }} 1 {{ end }}
   revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revision_history }}
@@ -31,8 +28,9 @@ spec:
         name: neutron-rpc-server
 {{ tuple . "neutron" "rpc" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
       annotations:
+        kubectl.kubernetes.io/default-container: neutron-rpc-server
         configmap-etc-hash: {{ include (print $.Template.BasePath "/configmap-etc.yaml") . | sha256sum }}
-        configmap-etc-region-hash: {{ include (print $.Template.BasePath "/configmap-etc-region.yaml") . | sha256sum }}
+        configmap-etc-aci-hash: {{ include (print $.Template.BasePath "/configmap-etc-aci.yaml") . | sha256sum }}
         configmap-etc-vendor-hash: {{ include (print $.Template.BasePath "/configmap-etc-vendor.yaml") . | sha256sum }}
         configmap-bin-hash: {{ include (print $.Template.BasePath "/configmap-bin.yaml") . | sha256sum }}
         {{- if .Values.cc_fabric.enabled }}
@@ -44,9 +42,14 @@ spec:
         prometheus.io/targets: {{ required "$.Values.metrics.prometheus missing" $.Values.metrics.prometheus }}
         {{- end }}
         {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
+        config.linkerd.io/skip-outbound-ports: "6441,6442" # OVSDB ports
     spec:
 {{ tuple . "neutron" "rpc" | include "kubernetes_pod_anti_affinity" | indent 6 }}
       {{- include "utils.proxysql.pod_settings" . | indent 6 }}
+      initContainers:
+        {{- if .Values.proxysql.native_sidecar }}
+        {{- tuple . (add .Values.rpc_workers .Values.rpc_state_workers)| include "utils.proxysql.container" | indent 8 }}
+        {{- end }}
       containers:
         - name: neutron-rpc-server
           image: {{.Values.global.registry}}/loci-neutron:{{.Values.imageVersionServerRPC | default .Values.imageVersionServer | default .Values.imageVersion | required "Please set neutron.imageVersion or similar"}}
@@ -54,24 +57,20 @@ spec:
           command: ['dumb-init', 'kubernetes-entrypoint']
           env:
             - name: COMMAND
-              value: "neutron-rpc-server --config-file /etc/neutron/neutron.conf --config-dir /etc/neutron/secrets --config-file /etc/neutron/plugins/ml2/ml2-conf.ini --config-file /etc/neutron/plugins/ml2/ml2-conf-aci.ini --config-file /etc/neutron/plugins/ml2/ml2-conf-manila.ini --config-file /etc/neutron/plugins/ml2/ml2-conf-arista.ini --config-file /etc/neutron/plugins/ml2/ml2-conf-asr1k.ini {{- if .Values.bgp_vpn.enabled }} --config-file /etc/neutron/networking-bgpvpn.conf{{- end }}{{- if .Values.interconnection.enabled }} --config-file /etc/neutron/networking-interconnection.conf{{- end }}{{- if .Values.fwaas.enabled }} --config-file /etc/neutron/neutron-fwaas.ini{{- end }}{{- if .Values.cc_fabric.enabled }} --config-file /etc/neutron/plugins/ml2/ml2_conf_cc-fabric.ini {{- end }}"
+              value: "neutron-rpc-server --config-file /etc/neutron/neutron.conf --config-dir /etc/neutron/neutron.conf.d --config-dir /etc/neutron/secrets --config-file /etc/neutron/plugins/ml2/ml2-conf.ini --config-file /etc/neutron/plugins/ml2/ml2-conf-manila.ini --config-file /etc/neutron/plugins/ml2/ml2-conf-arista.ini --config-file /etc/neutron/plugins/ml2/ml2-conf-asr1k.ini {{- if .Values.bgp_vpn.enabled }} --config-file /etc/neutron/networking-bgpvpn.conf{{- end }}{{- if .Values.interconnection.enabled }} --config-file /etc/neutron/networking-interconnection.conf{{- end }}{{- if .Values.fwaas.enabled }} --config-file /etc/neutron/neutron-fwaas.ini{{- end }}{{- if .Values.cc_fabric.enabled }} --config-file /etc/neutron/plugins/ml2/ml2_conf_cc-fabric.ini {{- end }}"
             - name: NAMESPACE
               value: {{ .Release.Namespace }}
             - name: DEPENDENCY_JOBS
               value: "{{ include "neutron.migration_job_name" . }}"
             - name: DEPENDENCY_SERVICE
-              value: "{{ .Release.Name }}-mariadb,{{ .Release.Name }}-rabbitmq"
+              value: "{{ include "neutron.service_dependencies" . }}"
             - name: STATSD_HOST
               value: "localhost"
             - name: STATSD_PORT
               value: "9125"
             - name: STATSD_PREFIX
               value: "openstack"
-            - name: SENTRY_DSN
-              valueFrom:
-                secretKeyRef:
-                  name: sentry
-                  key: neutron.DSN.python
+            {{- include "utils.sentry_config" . | nindent 12 }}
             - name: PGAPPNAME
               valueFrom:
                 fieldRef:
@@ -120,10 +119,12 @@ spec:
               name: neutron-etc
               subPath: ml2-conf.ini
               readOnly: true
-            - mountPath: /etc/neutron/plugins/ml2/ml2-conf-aci.ini
-              name: neutron-etc-region
+            {{- range until (int (include "neutron.aci_config_count" .)) }}
+            - mountPath: /etc/neutron/neutron.conf.d/ml2-conf-aci-{{ printf "%03d" . }}.conf
+              name: neutron-etc-aci-{{ printf "%03d" . }}
               subPath: ml2-conf-aci.ini
               readOnly: true
+            {{- end }}
             - mountPath: /etc/neutron/plugins/ml2/ml2-conf-arista.ini
               name: neutron-etc-vendor
               subPath: ml2-conf-arista.ini
@@ -157,7 +158,9 @@ spec:
             {{- include "utils.proxysql.volume_mount" . | indent 12 }}
             {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
             {{- include "utils.coordination.volume_mount"  . | indent 12 }}
+        {{- if not .Values.proxysql.native_sidecar }}
         {{- tuple . (add .Values.rpc_workers .Values.rpc_state_workers)| include "utils.proxysql.container" | indent 8 }}
+        {{- end }}
 {{- include "jaeger_agent_sidecar" . | indent 8 }}
       volumes:
         - name: empty-dir
@@ -188,9 +191,11 @@ spec:
         - name: neutron-etc-vendor
           configMap:
             name: neutron-etc-vendor
-        - name: neutron-etc-region
+        {{- range until (int (include "neutron.aci_config_count" .)) }}
+        - name: neutron-etc-aci-{{ printf "%03d" . }}
           configMap:
-            name: neutron-etc-region
+            name: neutron-etc-aci-{{ printf "%03d" . }}
+        {{- end }}
         - name: neutron-bin
           configMap:
             name: neutron-bin

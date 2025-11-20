@@ -1,0 +1,18 @@
+{{- if .Values.alerts.enabled }}
+{{- range $path, $file := .Files.Glob "alerts/*.alerts" }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+
+metadata:
+  name: {{ printf "andromeda-%s" $path | replace "/" "-" }}
+  labels:
+    app: andromeda
+    tier: {{ $.Values.alerts.tier }}
+    type: alerting-rules
+
+spec:
+  {{ printf "%s" $file | nindent 2 }}
+
+{{- end }}
+{{- end }}

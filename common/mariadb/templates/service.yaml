@@ -1,14 +1,11 @@
+---
 kind: Service
 apiVersion: v1
-
 metadata:
   name: {{ include "fullName" . }}
   namespace:  {{.Release.Namespace}}
   labels:
-    system: openstack
-    type: database
-    component: {{.Values.name}}
-    {{- include "sharedservices.labels" . | indent 4 }}
+    {{- include "mariadb.labels" (list $ "noversion" "mariadb" "service" "database") | indent 4 }}
   annotations:
 {{- if and (and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested) $.Values.linkerd.mariadb.enabled }}
     linkerd.io/inject: enabled
@@ -16,7 +13,8 @@ metadata:
 spec:
   type: ClusterIP
   selector:
-    app: {{ include "fullName" . }}
+    app.kubernetes.io/component: {{ include "label.component" (list "mariadb" "deployment" "database") }}
+    app.kubernetes.io/instance: {{ $.Release.Name }}-{{ $.Chart.Name }}
   ports:
     - name: {{ include "fullName" . }}
       port: {{.Values.port_public}}
@@ -32,18 +30,15 @@ kind: Service
 metadata:
   name: {{ include "fullName" . }}-backup
   labels:
-    app: {{ include "fullName" . }}
-    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
-    release: "{{ .Release.Name }}"
-    heritage: "{{ .Release.Service }}"
-    {{- include "sharedservices.labels" . | indent 4 }}
+    {{- include "mariadb.labels" (list $ "noversion" "mariadb" "service" "backup") | indent 4 }}
   annotations:
 {{- if and (and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested) $.Values.linkerd.backup.enabled }}
     linkerd.io/inject: enabled
 {{- end }}
 spec:
   selector:
-    app: {{ include "fullName" . }}-backup
+    app.kubernetes.io/component: {{ include "label.component" (list "mariadb" "deployment" "backup") }}
+    app.kubernetes.io/instance: {{ $.Release.Name }}-{{ $.Chart.Name }}
   ports:
     - port: 8081
       name: http

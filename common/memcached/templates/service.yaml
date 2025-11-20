@@ -3,12 +3,7 @@ kind: Service
 metadata:
   name: {{ template "fullname" . }}
   labels:
-    app: {{ template "fullname" . }}
-    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
-    release: "{{ .Release.Name }}"
-    heritage: "{{ .Release.Service }}"
-    component: memcached
-    {{- include "sharedservices.labels" . | indent 4 }}
+    {{- include "memcached.labels" (list $ "version" "memcached" "service" "kvstore") | indent 4 }}
   annotations:
     {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
     linkerd.io/inject: enabled
@@ -20,12 +15,14 @@ metadata:
     {{- end }}
 spec:
   selector:
-    app: {{ template "fullname" . }}
+    app.kubernetes.io/instance: {{ template "fullname" . }}
   ports:
   - name: memcache
     port: {{ default "11211" .Values.memcached.port }}
     targetPort: memcache
 {{- if .Values.external_ip }}
+  type: LoadBalancer
   externalIPs:
     - {{ .Values.external_ip }}
+  externalTrafficPolicy: Local
 {{- end }}

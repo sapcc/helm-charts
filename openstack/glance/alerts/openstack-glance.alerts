@@ -3,7 +3,7 @@ groups:
   rules:
   - alert: OpenstackGlanceImageInQueuedState
     expr: count(openstack_glance_image_gauge{status="queued"})by(id,image_name,project_id, created_at) > 0
-    for: 30m
+    for: 1d
     labels:
       severity: info
       tier: os
@@ -34,7 +34,7 @@ groups:
 
   - alert: OpenstackGlanceUnresolvedSentryIssues
     expr: sentry_unresolved_issues_count{project="glance"} > 0
-    for: 10m
+    for: 3d
     labels:
       context: sentry-metrics
       service: glance
@@ -50,6 +50,7 @@ groups:
 
   - alert: OpenstackGlanceRateLimitActionIsAbove50
     expr: sum by(initiator_project_id, action, initiator_user_name) (rate(openstack_ratelimit_requests_ratelimit_total{service="key-manager", container="api"}[2m]) * 60) > 50
+    for: 5m
     labels:
       severity: info
       tier: os

@@ -6,6 +6,7 @@ global:
 owner-info:
   support-group: containers
   helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/system/kube-monitoring-scaleout
+  service: kube-monitoring
 
 absent-metrics-operator:
   enabled: true
@@ -156,12 +157,20 @@ kube-state-metrics-exporter:
 
 prometheus-node-exporter:
   image:
-    repository: keppel.global.cloud.sap/ccloud-dockerhub-mirror/prom/node-exporter
+    registry: keppel.global.cloud.sap
+    repository: ccloud-dockerhub-mirror/prom/node-exporter
 
   service:
     annotations:
       # Avoid duplicate scrapes via service.
       prometheus.io/scrape: "false"
+
+  kubeRBACProxy:
+    enabled: true
+    proxyEndpointsPort: 8889
+    image:
+      registry: keppel.global.cloud.sap
+      repository: ccloud-quay-mirror/brancz/kube-rbac-proxy
 
   extraArgs:
     - --collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)
@@ -231,22 +240,6 @@ falco:
           rule: "*"
       - enable:
           tag: pci
-
-fluent-bit:
-  image:
-    repository: keppel.global.cloud.sap/ccloud-dockerhub-mirror/fluent/fluent-bit
-    pullPolicy: IfNotPresent
-  backend:
-    opensearch:
-      host: DEFINED-IN-SECRETS
-      http_user: DEFINED-IN-SECRETS
-      http_passwd: DEFINED-IN-SECRETS
-      port: DEFINED-IN-SECRETS
-      logstash_prefix: virtual
-      tls:
-        enabled: "On"
-        verify: "Off"
-        debug: '1'
 
 x509-certificate-exporter:
   enabled: false

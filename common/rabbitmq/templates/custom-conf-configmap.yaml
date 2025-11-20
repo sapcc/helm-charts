@@ -1,16 +1,20 @@
 ---
-{{ if $.Values.customConfig }}
+{{ if or $.Values.customConfig $.Values.enableSsl }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: {{ template "fullname" . }}-custom-conf
   labels:
-    app: {{ template "fullname" . }}
-    release: "{{ .Release.Name }}"
-    heritage: "{{ .Release.Service }}"
-    component: rabbitmq
-    {{- include "rabbitmq.labels" . | indent 4 }}
+    {{- include "rabbitmq.labels" (list $ "noversion" "rabbitmq" "configmap" "messagequeue") | indent 4 }}
 data:
+  {{- if $.Values.customConfig }}
   20-custom.conf: |
-{{ include (print .Template.BasePath "/etc/_rabbitmq-custom-config.tpl") . | indent 4 }}
+  {{- include (print .Template.BasePath "/etc/_rabbitmq-custom-config.tpl") . | nindent 4 }}
+  {{- end }}
+  {{- if $.Values.enableSsl }}
+  30-ssl.conf: |
+    listeners.ssl.default={{ $.Values.ports.amqps }}
+    ssl_options.certfile=/etc/rabbitmq/ssl/tls.crt
+    ssl_options.keyfile=/etc/rabbitmq/ssl/tls.key
+  {{- end }}
 {{ end }}

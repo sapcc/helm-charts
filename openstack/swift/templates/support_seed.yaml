@@ -1,7 +1,6 @@
-{{- $domains := list "ccadmin" "bs" "cis" "cp" "fsn" "hcp03" "hec" "monsoon3" "neo" "s4" "wbs"}}
-{{- if not .Values.global.domain_seeds.skip_hcm_domain -}}
-  {{- $domains = append $domains "hcm" }}
-{{- end -}}
+{{- $cdomains := .Values.global.domain_seeds.customer_domains | required "missing value for .Values.global.domain_seeds.customer_domains" -}}
+{{- $domains  := concat (list "ccadmin") $cdomains -}}
+{{- $cdomainsWithoutSupportProjects := .Values.global.domain_seeds.customer_domains_without_support_projects | required "missing value for .Values.global.domain_seeds.customer_domains_without_support_projects" -}}
 
 apiVersion: "openstack.stable.sap.cc/v1"
 kind: "OpenstackSeed"
@@ -18,17 +17,19 @@ spec:
   requires:
   - swift/swift-seed
   {{- range $domains }}
-  - monsoon3/domain-{{ . | lower }}-seed
+  - monsoon3/domain-{{replace "_" "-" .|lower}}-seed
   {{- end }}
 
   domains:
     {{- range $domains }}
     - name: {{ . | lower }}
       groups:
-      - name: {{ . | upper }}_API_SUPPORT
+      - name: {{ hasPrefix "iaas-" . | ternary . ( upper . ) }}_API_SUPPORT
         role_assignments:
+        {{- if not (has . $cdomainsWithoutSupportProjects) }}
         - project: api_support
           role: objectstore_admin
+        {{- end }}
         {{- if eq . "ccadmin" }}
         - project: api_tools
           role: objectstore_admin
@@ -37,7 +38,8 @@ spec:
         - domain: {{ . | lower }}
           role: objectstore_admin
           inherited: true
-      - name: {{ . | upper }}_COMPUTE_SUPPORT
+      {{- if not (has . $cdomainsWithoutSupportProjects) }}
+      - name: {{ hasPrefix "iaas-" . | ternary . ( upper . ) }}_COMPUTE_SUPPORT
         role_assignments:
         - project: compute_support
           role: objectstore_admin
@@ -45,8 +47,10 @@ spec:
         - project: compute_tools
           role: objectstore_admin
         {{- end }}
+      {{- end }}
+      {{- if not (has . $cdomainsWithoutSupportProjects) }}
         # No readonly role to inherit within domain
-      - name: {{ . | upper }}_NETWORK_SUPPORT
+      - name: {{ hasPrefix "iaas-" . | ternary . ( upper . ) }}_NETWORK_SUPPORT
         role_assignments:
         - project: network_support
           role: objectstore_admin
@@ -54,11 +58,14 @@ spec:
         - project: network_tools
           role: objectstore_admin
         {{- end }}
+      {{- end }}
         # No readonly role to inherit within domain
-      - name: {{ . | upper }}_STORAGE_SUPPORT
+      - name: {{ hasPrefix "iaas-" . | ternary . ( upper . ) }}_STORAGE_SUPPORT
         role_assignments:
+        {{- if not (has . $cdomainsWithoutSupportProjects) }}
         - project: storage_support
           role: objectstore_admin
+        {{- end }}
         {{- if eq . "ccadmin" }}
         - project: storage_tools
           role: objectstore_admin
@@ -67,9 +74,11 @@ spec:
         - domain: {{ . | lower }}
           role: objectstore_admin
           inherited: true
-      - name: {{ . | upper }}_SERVICE_DESK
+      {{- if not (has . $cdomainsWithoutSupportProjects) }}
+      - name: {{ hasPrefix "iaas-" . | ternary . ( upper . ) }}_SERVICE_DESK
         role_assignments:
         - project: service_desk
           role: objectstore_admin
         # No readonly role to inherit within domain
+      {{- end }}
     {{- end }}

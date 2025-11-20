@@ -1,0 +1,19 @@
+groups:
+- name: kubernetes-sentry.alerts
+  rules:
+  - alert: SentryPVCIsAlmostFull
+    expr: kubelet_volume_stats_available_percent{namespace="sentry"} < 10
+    for: 15m
+    labels:
+      severity: warning
+      tier: os
+      service: sentry
+      context: sentry
+      dashboard: sentry
+      meta: 'PVC {{ $labels.persistentvolumeclaim }} free space is less than 10%.'
+      playbook: 'docs/support/playbook/kubernetes/pvc_usage'
+      support_group: identity
+      no_alert_on_absence: "true"
+    annotations:
+      description: "The PVC {{ $labels.persistentvolumeclaim }} is almost full. Increase or delete files."
+      summary: "PVC {{ $labels.persistentvolumeclaim }} free space is less than 10%."

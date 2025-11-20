@@ -40,6 +40,7 @@ spec:
         {{- end }}
         {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
         configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
+        secret-etc-hash: {{ include (print $.Template.BasePath "/etc-secret.yaml") . | sha256sum }}
     spec:
       {{- tuple . "nova" "conductor" | include "kubernetes_pod_anti_affinity" | nindent 6 }}
       {{- include "utils.proxysql.pod_settings" . | nindent 6 }}
@@ -48,6 +49,9 @@ spec:
       hostname: nova-conductor
       initContainers:
       {{- tuple . (dict "service" (include "nova.helpers.cell2_services" .)) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
+      {{- if .Values.proxysql.native_sidecar }}
+      {{- tuple . .Values.conductor.config_file.conductor.workers | include "utils.proxysql.container" | indent 6 }}
+      {{- end }}
       containers:
         - name: nova-conductor
           image: {{ tuple . "conductor" | include "container_image_nova" }}
@@ -82,7 +86,9 @@ spec:
             mountPath: /etc/nova
           {{- include "utils.proxysql.volume_mount" . | indent 10 }}
           {{- include "utils.trust_bundle.volume_mount" . | indent 10 }}
+        {{- if not .Values.proxysql.native_sidecar }}
         {{- tuple . .Values.conductor.config_file.conductor.workers | include "utils.proxysql.container" | indent 8 }}
+        {{- end }}
         {{- if .Values.cell2.conductor.config_file.DEFAULT.statsd_enabled }}
         - name: statsd
           image: {{ required ".Values.global.dockerHubMirror is missing" .Values.global.dockerHubMirror}}/prom/statsd-exporter:v0.8.1
@@ -122,6 +128,10 @@ spec:
                 path: nova.conf.d/{{ .Values.cell2.name }}.conf
               - key: keystoneauth-secrets.conf
                 path: nova.conf.d/keystoneauth-secrets.conf
+              {{- if .Values.osprofiler.enabled }}
+              - key: osprofiler.conf
+                path: nova.conf.d/osprofiler.conf
+              {{- end }}
       {{- if .Values.cell2.conductor.config_file.DEFAULT.statsd_enabled }}
       - name: statsd-etc
         projected:

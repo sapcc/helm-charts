@@ -22,7 +22,6 @@ simulator:
   timeWaitInterval: {{ .Values.simulator.timeWaitInterval }}
   remote: {{ .Values.simulator.remote }}
   remoteRegion: {{ .Values.config.keystone.region }}
-  remotePassword: {{ .Values.global.cronus_service_password }}
   cronus: {{ .Values.simulator.cronus }}
   nebula: {{ .Values.simulator.nebula }}
   delayTimeSeconds: {{ .Values.simulator.delayTimeSeconds }}

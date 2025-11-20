@@ -1,0 +1,62 @@
+{{- if .Values.kvmShoots -}}
+{{- range $key, $cluster := .Values.kvmShoots }}
+---
+apiVersion: core.gardener.cloud/v1beta1
+kind: Shoot
+metadata:
+  name: {{ $key }}
+  namespace: garden-ccloud
+spec:
+  cloudProfile:
+    kind: CloudProfile
+    name: ironcore-metal
+  credentialsBindingName: metal-{{ $cluster.region | default $.Values.global.region }}
+  region: {{ $cluster.region | default $.Values.global.region }}
+  networking:
+    pods: {{ $cluster.networking.pods }}
+    services: {{ $cluster.networking.services }}
+    nodes: {{ $cluster.networking.nodes }}
+    type: calico
+    providerConfig:
+      apiVersion: calico.networking.extensions.gardener.cloud/v1alpha1
+      kind: NetworkConfig
+      backend: bird
+      vethMTU: "8950"
+      ipam:
+        type: host-local
+        cidr: usePodCIDR
+      overlay:
+        enabled: false
+        createPodRoutes: true
+      birdExporter:
+        enabled: {{ required ".Values.networking.enableBirdExporter is required" $.Values.networking.enableBirdExporter }}
+  kubernetes:
+    version: {{ $cluster.version }}
+    kubeAPIServer:
+      featureGates:
+        AnonymousAuthConfigurableEndpoints: true
+      structuredAuthentication:
+        configMapName: authentication-config-compute
+    verticalPodAutoscaler:
+      enabled: false
+  maintenance:
+    autoUpdate:
+      kubernetesVersion: false
+      machineImageVersion: false
+  provider:
+    type: ironcore-metal
+    infrastructureConfig:
+      apiVersion: ironcore-metal.provider.extensions.gardener.cloud/v1alpha1
+      kind: InfrastructureConfig
+      {{- toYaml $cluster.infrastructureConfig | nindent 6 }}
+    controlPlaneConfig:
+      apiVersion: ironcore-metal.provider.extensions.gardener.cloud/v1alpha1
+      kind: ControlPlaneConfig
+      {{- toYaml $cluster.controlPlaneConfig | nindent 6 }}
+    workers:
+      {{- toYaml $cluster.workers | nindent 6 }}
+  {{- if $cluster.seedSelector }}
+  seedSelector: {{- toYaml $cluster.seedSelector | nindent 4 }}
+  {{- end }}
+{{- end }}
+{{- end }}

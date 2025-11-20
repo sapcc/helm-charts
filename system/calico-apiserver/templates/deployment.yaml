@@ -23,17 +23,17 @@ spec:
     spec:
       containers:
       - args:
-        - --secure-port=5443
+        - --secure-port={{ .Values.securePort }}
         - -v=5
         env:
         - name: DATASTORE_TYPE
           value: kubernetes
-        image: "{{ required ".Values.global.dockerHubMirrorAlternateRegion is missing" $.Values.global.dockerHubMirrorAlternateRegion }}/{{ $.Values.images.apiserver.image }}:{{ $.Values.images.apiserver.tag }}"
+        image: "{{ $.Values.images.apiserver.image }}:{{ default .Chart.AppVersion $.Values.images.apiserver.tag }}"
         name: calico-apiserver
         readinessProbe:
           httpGet:
             path: /readyz
-            port: 5443
+            port: {{ .Values.securePort }}
             scheme: HTTPS
           timeoutSeconds: 5
           periodSeconds: 60

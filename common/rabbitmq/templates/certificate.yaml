@@ -1,0 +1,24 @@
+{{- if .Values.enableSsl }}
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: tls-{{ template "fullname" . }}
+  labels:
+    {{- include "rabbitmq.labels" (list $ "version" "rabbitmq" "deployment" "messagequeue") | indent 4 }}
+spec:
+  secretName: tls-{{ template "fullname" . }}
+  secretTemplate:
+    labels:
+      {{- include "rabbitmq.labels" (list $ "version" "rabbitmq" "deployment" "messagequeue") | indent 6 }}
+  dnsNames:
+    - {{ include "rabbitmq.serviceName" . }}
+  {{- if .Values.externalNames }}
+    {{- range .Values.externalNames }}
+    - "{{ . }}"
+    {{- end }}
+  {{- end }}
+  {{- if not .Values.certificate.commonName }}
+  commonName: {{ include "rabbitmq.defaultCommonName" . }}
+  {{- end }}
+  {{- .Values.certificate | toYaml | nindent 2 }}
+{{- end }}

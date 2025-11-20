@@ -24,60 +24,7 @@
 # All the auto-generated files should use the tag "file.<filename>".
 <source>
   @type tail
-  path /var/log/containers/fluent*
-  exclude_path ["/var/log/containers/fluent-prometheus*","/var/log/containers/fluent-audit*"]
-  pos_file /var/log/fluent-prometheus.pos
-  tag kubernetes.*
-  <parse>
-    @type multi_format
-     <pattern>
-       format regexp
-       expression /^(?<time>.+)\s(?<stream>stdout|stderr)\s(?<logtag>F|P)\s(?<log>.*)$/
-       time_key time
-       time_format '%Y-%m-%dT%H:%M:%S.%NZ'
-       keep_time_key true
-     </pattern>
-     <pattern>
-       format json
-       time_format '%Y-%m-%dT%H:%M:%S.%N%:z'
-       time_key time
-       keep_time_key true
-     </pattern>
-  </parse>
-  read_from_head
-  @log_level warn
-</source>
-
-<source>
-  @type tail
-  path /var/log/containers/es*
-  exclude_path /var/log/containers/fluent-prometheus*
-  pos_file /var/log/fluent-es.pos
-  tag kubernetes.*
-  <parse>
-    @type multi_format
-     <pattern>
-       format regexp
-       expression /^(?<time>.+)\s(?<stream>stdout|stderr)\s(?<logtag>F|P)\s(?<log>.*)$/
-       time_key time
-       time_format '%Y-%m-%dT%H:%M:%S.%NZ'
-       keep_time_key true
-     </pattern>
-     <pattern>
-       format json
-       time_format '%Y-%m-%dT%H:%M:%S.%N%:z'
-       time_key time
-       keep_time_key true
-     </pattern>
-  </parse>
-  read_from_head
-  @log_level warn
-</source>
-
-<source>
-  @type tail
   path /var/log/containers/fluent-audit*
-  exclude_path /var/log/containers/fluent-prometheus*
   pos_file /var/log/fluent-prometheus-audit.pos
   tag audit.*
   <parse>
@@ -104,6 +51,31 @@
   @type null
 </match>
 
+<source>
+  @type tail
+  path /var/log/containers/logs-collector*
+  pos_file /var/log/logs-collector.pos
+  tag otel.*
+  <parse>
+    @type multi_format
+     <pattern>
+       format regexp
+       expression /^(?<time>.+)\s(?<stream>stdout|stderr)\s(?<logtag>F|P)\s(?<log>.*)$/
+       time_key time
+       time_format '%Y-%m-%dT%H:%M:%S.%NZ'
+       keep_time_key true
+     </pattern>
+     <pattern>
+       format json
+       time_format '%Y-%m-%dT%H:%M:%S.%N%:z'
+       time_key time
+       keep_time_key true
+     </pattern>
+  </parse>
+  read_from_head
+  @log_level warn
+</source>
+
 # expose metrics in prometheus format
 
 <source>
@@ -113,13 +85,13 @@
   metrics_path /metrics
 </source>
 
-<filter kubernetes.**>
+<filter audit.**>
   @type kubernetes_metadata
   bearer_token_file /var/run/secrets/kubernetes.io/serviceaccount/token
   ca_file /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
 </filter>
 
-<filter audit.**>
+<filter otel.**>
   @type kubernetes_metadata
   bearer_token_file /var/run/secrets/kubernetes.io/serviceaccount/token
   ca_file /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
@@ -127,19 +99,6 @@
 
 # metrics
 # # count number of incoming records per tag
-<filter kubernetes.**>
-  @type prometheus
-  <metric>
-    name prom_fluentd_input_status_num_records_total
-    type counter
-    desc The total number of incoming records
-    <labels>
-      hostname ${hostname}
-      nodename "#{ENV['K8S_NODE_NAME']}"
-      fluent_namespace $.kubernetes.namespace_name
-    </labels>
-  </metric>
-</filter>
 
 <filter audit.**>
   @type prometheus
@@ -155,284 +114,19 @@
   </metric>
 </filter>
 
-<match kubernetes.**>
-  @type rewrite_tag_filter
-  <rule>
-    key log
-    pattern /ResolvError/
-    tag "FLUENTERROR.${tag}"
-  </rule>
-  <rule>
-    key log
-    pattern /retry succeeded/
-    tag "FLUENTSUCCEED.${tag}"
-  </rule>
-  <rule>
-    key log
-    pattern /Connection reset/
-    tag "FLUENTRESET.${tag}"
-  </rule>
-  <rule>
-    key log
-    pattern /failed to parse field/
-    tag "FLUENTPARSER.${tag}"
-  </rule>
-  <rule>
-    key log
-    pattern /connect_write timeout reached/
-    tag "FLUENTTIMEOUT.${tag}"
-  </rule>
-  <rule>
-    key log
-    pattern /400 - Rejected by/
-    tag "FLUENTREJECTED.${tag}"
-  </rule>
-  <rule>
-    key log
-    pattern /slow_flush_log_threshold/
-    tag "FLUENTSLOWFLUSH.${tag}"
-  </rule>
-  <rule>
-    key log
-    pattern /rejected execution of coordinating operation/
-    tag "FLUENTRATELIMIT.${tag}"
-  </rule>
-  <rule>
-    key log
-    pattern /encountered fetching pod metadata/
-    tag "METADATA.${tag}"
-  </rule>
-  <rule>
-    key log
-    pattern /(unreadable. It is excluded|Skip update_watcher because watcher has been already updated by other inotify event)/
-    tag "FLUENTDTAILSTALLED.${tag}"
-  </rule>
-</match>
-
-<match FLUENTERROR.**>
-  @type copy
-  <store>
-    @type prometheus
-    <metric>
-      name prom_fluentd_output_resolv_error
-      type counter
-      desc The total number of resolve errata to ES
-      <labels>
-        nodename "#{ENV['K8S_NODE_NAME']}"
-        fluent_container $.kubernetes.pod_name
-        daemontype $.kubernetes.container_name
-        fluent_namespace $.kubernetes.namespace_name
-      </labels>
-    </metric>
-  </store>
-  <store>
-    @type null
-  </store>
-</match>
-
-<match FLUENTSUCCEED.**>
-  @type copy
-  <store>
-    @type prometheus
-    <metric>
-      name prom_fluentd_output_retry_succeed
-      type counter
-      desc The total number of sucessfull retries in resolving to Elastic
-      <labels>
-        nodename "#{ENV['K8S_NODE_NAME']}"
-        fluent_container $.kubernetes.pod_name
-        daemontype $.kubernetes.container_name
-        fluent_namespace $.kubernetes.namespace_name
-      </labels>
-    </metric>
-  </store>
-  <store>
-    @type null
-  </store>
-</match>
-
-<match FLUENTRESET.**>
-  @type copy
-  <store>
-    @type prometheus
-    <metric>
-      name prom_fluentd_output_connreset_error
-      type counter
-      desc The total number of connection reset errors
-      <labels>
-        nodename "#{ENV['K8S_NODE_NAME']}"
-        fluent_container $.kubernetes.pod_name
-        daemontype $.kubernetes.container_name
-        fluent_namespace $.kubernetes.namespace_name
-      </labels>
-    </metric>
-  </store>
-  <store>
-    @type null
-  </store>
-</match>
-
-<match FLUENTPARSER.**>
-  @type copy
-  <store>
-    @type prometheus
-    <metric>
-      name prom_fluentd_parser_exception
-      type counter
-      desc The total number of fluent parser exceptions
-      <labels>
-        nodename "#{ENV['K8S_NODE_NAME']}"
-        fluent_container $.kubernetes.pod_name
-        daemontype $.kubernetes.container_name
-        fluent_namespace $.kubernetes.namespace_name
-      </labels>
-    </metric>
-  </store>
-  <store>
-    @type null
-  </store>
-</match>
-
-<match FLUENTREJECTED.**>
-  @type copy
-  <store>
-    @type prometheus
-    <metric>
-      name prom_fluentd_elastic_400
-      type counter
-      desc The total number of elastic rejected 400 error
-      <labels>
-        nodename "#{ENV['K8S_NODE_NAME']}"
-        fluent_container $.kubernetes.pod_name
-        daemontype $.kubernetes.container_name
-        fluent_namespace $.kubernetes.namespace_name
-      </labels>
-    </metric>
-  </store>
-  <store>
-    @type null
-  </store>
-</match>
-
-<match READONLYREST.**>
-  @type copy
-  <store>
-    @type prometheus
-    <metric>
-      name prom_elastic_readonlyrest_error
-      type counter
-      desc The total number of readonlyrest plugin errata
-      <labels>
-        nodename "#{ENV['K8S_NODE_NAME']}"
-        fluent_container $.kubernetes.pod_name
-        fluent_namespace $.kubernetes.namespace_name
-      </labels>
-    </metric>
-  </store>
-  <store>
-    @type null
-  </store>
-</match>
-
-<match FLUENTTIMEOUT.**>
-  @type copy
-  <store>
-    @type prometheus
-    <metric>
-      name prom_fluentd_timeout_error
-      type counter
-      desc The total number of fluent timeout reached errors
-      <labels>
-        nodename "#{ENV['K8S_NODE_NAME']}"
-        fluent_container $.kubernetes.pod_name
-        fluent_namespace $.kubernetes.namespace_name
-      </labels>
-    </metric>
-  </store>
-  <store>
-    @type null
-  </store>
-</match>
-
-<match FLUENTESREADONLY.**>
-  @type copy
-  <store>
-    @type prometheus
-    <metric>
-      name prom_fluentd_readonlyrest_error
-      type counter
-      desc The total number of fluent elastic client readonlyrest errors
-      <labels>
-        nodename "#{ENV['K8S_NODE_NAME']}"
-        fluent_container $.kubernetes.pod_name
-        fluent_namespace $.kubernetes.namespace_name
-      </labels>
-    </metric>
-  </store>
-  <store>
-    @type null
-  </store>
-</match>
-
-<match FLUENTSLOWFLUSH.**>
-  @type copy
-  <store>
-    @type prometheus
-    <metric>
-      name prom_fluentd_slowflush_warn
-      type counter
-      desc The total number of fluent slow flush warnings
-      <labels>
-        nodename "#{ENV['K8S_NODE_NAME']}"
-        fluent_container $.kubernetes.pod_name
-        fluent_namespace $.kubernetes.namespace_name
-      </labels>
-    </metric>
-  </store>
-  <store>
-    @type null
-  </store>
-</match>
-
-<match FLUENTRATELIMIT.**>
-  @type copy
-  <store>
-    @type prometheus
-    <metric>
-      name prom_fluentd_elk_rate_limit
-      type counter
-      desc The total number of fluent elk 429 rate limit
-      <labels>
-        nodename "#{ENV['K8S_NODE_NAME']}"
-        fluent_container $.kubernetes.pod_name
-        fluent_namespace $.kubernetes.namespace_name
-      </labels>
-    </metric>
-  </store>
-  <store>
-    @type null
-  </store>
-</match>
-
-<match METADATA.**>
-  @type copy
-  <store>
-    @type prometheus
-    <metric>
-      name prom_fluentd_kubernetes_api_timeout
-      type counter
-      desc Metadata cannot be fetched from kubernetes api
-      <labels>
-        nodename "#{ENV['K8S_NODE_NAME']}"
-        fluent_container $.kubernetes.pod_name
-        fluent_namespace $.kubernetes.namespace_name
-      </labels>
-    </metric>
-  </store>
-  <store>
-    @type null
-  </store>
-</match>
+<filter otel.**>
+  @type prometheus
+  <metric>
+    name prom_otel_input_status_num_records_total
+    type counter
+    desc The total number of incoming records from opentelemetry
+    <labels>
+      hostname ${hostname}
+      nodename "#{ENV['K8S_NODE_NAME']}"
+      fluent_namespace $.kubernetes.namespace_name
+    </labels>
+  </metric>
+</filter>
 
 <match audit.**>
   @type rewrite_tag_filter
@@ -460,6 +154,20 @@
     key log
     pattern /(unreadable. It is excluded|Skip update_watcher because watcher has been already updated by other inotify event)/
     tag "FLUENTDTAILSTALLED.${tag}"
+  </rule>
+</match>
+
+<match otel.**>
+  @type rewrite_tag_filter
+  <rule>
+    key log
+    pattern /rejected_execution_exception/
+    tag "OTELBACKPRESSURE.${tag}"
+  </rule>
+  <rule>
+    key log
+    pattern /illegal_argument_exception/
+    tag "PARSINGEXCEPTION.${tag}"
   </rule>
 </match>
 
@@ -559,6 +267,46 @@
         fluent_container $.kubernetes.pod_name
         daemontype $.kubernetes.container_name
         fluent_namespace $.kubernetes.namespace_name
+      </labels>
+    </metric>
+  </store>
+  <store>
+    @type null
+  </store>
+</match>
+
+<match OTELBACKPRESSURE.**>
+  @type copy
+  <store>
+    @type prometheus
+    <metric>
+      name prom_otel_rejected_execution_exception
+      type counter
+      desc The total number of OTEL failed to send logs
+      <labels>
+        nodename "#{ENV['K8S_NODE_NAME']}"
+        fluent_container $.kubernetes.pod_name
+        daemontype $.kubernetes.container_name
+      </labels>
+    </metric>
+  </store>
+  <store>
+    @type null
+  </store>
+</match>
+
+<match PARSINGEXCEPTION.**>
+  @type copy
+  <store>
+    @type prometheus
+    <metric>
+      name prom_otel_parsing_exception
+      type counter
+      desc The total number of OTEL failed to send logs
+      <labels>
+        nodename "#{ENV['K8S_NODE_NAME']}"
+        fluent_container $.kubernetes.pod_name
+        daemontype $.kubernetes.container_name
       </labels>
     </metric>
   </store>

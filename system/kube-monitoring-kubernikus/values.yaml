@@ -6,6 +6,8 @@ global:
 owner-info:
   support-group: containers
   helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/system/kube-monitoring-kubernikus
+  service: kube-monitoring
+
 # Disable the prometheus-operator kube-state-metrics sub-chart. We deploy independently.
 kubeStateMetrics:
   enabled: false
@@ -45,12 +47,20 @@ prometheus-kubernetes-rules:
 
 prometheus-node-exporter:
   image:
-    repository: keppel.global.cloud.sap/ccloud-dockerhub-mirror/prom/node-exporter
+    registry: keppel.global.cloud.sap
+    repository: ccloud-dockerhub-mirror/prom/node-exporter
 
   service:
     annotations:
       # Avoid duplicate scrapes via service.
       prometheus.io/scrape: "false"
+
+  kubeRBACProxy:
+    enabled: true
+    proxyEndpointsPort: 8889
+    image:
+      registry: keppel.global.cloud.sap
+      repository: ccloud-quay-mirror/brancz/kube-rbac-proxy
 
   extraArgs:
     - --collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)
@@ -252,24 +262,6 @@ grafana:
 grafana-dashboards-kubernetes:
   enableDatasources: false
 
-fluent-bit:
-  extraVolumeMounts:
-    - mountPath: /fluent-bit/etc/labelmap.json
-      name: config
-      subPath: labelmap.json
-  backend:
-    opensearch:
-      enabled: false
-      host: DEFINED-IN-SECRETS
-      http_user: DEFINED-IN-SECRETS
-      http_passwd: DEFINED-IN-SECRETS
-      port: DEFINED-IN-SECRETS
-      logstash_prefix: kubernikus
-      tls:
-        enabled: "On"
-        verify: "Off"
-        debug: '1'
-
 promtail:
   enabled: false
   pipelineStages:
@@ -310,16 +302,19 @@ falco:
 
   extra:
     args:
-      - -t
-      - pci
       - -v
       - --unbuffered
       - -o
       - json_output=true
 
   falco:
-    rules_file:
+    rules_files:
       - /etc/falco/rules.d
+    rules:
+      - disable:
+          rule: "*"
+      - enable:
+          tag: pci
 
 x509-certificate-exporter:
   enabled: false

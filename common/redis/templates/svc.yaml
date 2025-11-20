@@ -1,12 +1,9 @@
+{{- $fullname := include "redis.fullname" . -}}
+
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ template "redis.fullname" . }}
-  labels:
-    app: {{ template "redis.fullname" . }}
-    chart: "{{ .Chart.Name }}"
-    release: "{{ .Release.Name }}"
-    heritage: "{{ .Release.Service }}"
+  name: {{ $fullname }}
   annotations:
     {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
     linkerd.io/inject: enabled
@@ -14,7 +11,7 @@ metadata:
 spec:
   ports:
   - name: redis
-    port: {{ required ".Values.redisPort missing" .Values.redisPort }}
+    port: 6379
     targetPort: redis
   selector:
-    app: {{ template "redis.fullname" . }}
+    app: {{ $fullname }}

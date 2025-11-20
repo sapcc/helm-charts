@@ -19,6 +19,24 @@ rules:
       - get
       - list
       - watch
+  # Namespaces are watched for LoadBalancer IP allocation with namespace selector support
+  - apiGroups: [""]
+    resources:
+      - namespaces
+    verbs:
+      - get
+      - list
+      - watch
+  # Services are monitored for service LoadBalancer IP allocation
+  - apiGroups: [""]
+    resources:
+      - services
+      - services/status
+    verbs:
+      - get
+      - list
+      - update
+      - watch
   # IPAM resources are manipulated in response to node and block updates, as well as periodic triggers.
   - apiGroups: ["crd.projectcalico.org"]
     resources:
@@ -30,6 +48,7 @@ rules:
       - blockaffinities
       - ipamblocks
       - ipamhandles
+      - tiers
     verbs:
       - get
       - list
@@ -54,6 +73,7 @@ rules:
       - create
       - update
       - delete
+      - watch
   # Needs access to update clusterinformations.
   - apiGroups: ["crd.projectcalico.org"]
     resources:
@@ -71,6 +91,7 @@ rules:
     verbs:
       # read its own config
       - get
+      - list
       # create a default if none exists
       - create
       # update status

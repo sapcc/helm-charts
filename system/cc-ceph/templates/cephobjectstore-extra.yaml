@@ -1,0 +1,153 @@
+{{- if .Values.objectstore.multiInstance.enabled }}
+apiVersion: ceph.rook.io/v1
+kind: CephObjectRealm
+metadata:
+  name: {{ .Values.objectstore.name }}
+  namespace: {{ .Release.Namespace }}
+---
+apiVersion: ceph.rook.io/v1
+kind: CephObjectZoneGroup
+metadata:
+  name: {{ .Values.objectstore.name }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  realm: {{ .Values.objectstore.name }}
+---
+apiVersion: ceph.rook.io/v1
+kind: CephObjectZone
+metadata:
+  name: {{ .Values.objectstore.name }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  zoneGroup: {{ .Values.objectstore.name }}
+{{- if and .Values.rgwTargetPlacements.useRookCRD .Values.rgwTargetPlacements.premiumPlacements }}
+  sharedPools:
+    poolPlacements:
+{{- range $target := .Values.rgwTargetPlacements.premiumPlacements }}
+      - name: {{ $target.name }} 
+        metadataPoolName: {{ $target.name }}.rgw.buckets.index
+        dataPoolName: {{ $target.name }}.rgw.buckets.data
+        dataNonECPoolName: {{ $target.name }}.rgw.buckets.non-ec
+        default: {{ $target.default | default false }}
+{{- end }}
+{{- if  .Values.rgwTargetPlacements.standardPlacements }}
+{{- range $target := .Values.rgwTargetPlacements.standardPlacements }}
+      - name: {{ $target.name }}
+        metadataPoolName: {{ $target.name }}.rgw.buckets.index
+        dataPoolName: {{ $target.name }}.rgw.buckets.data
+        dataNonECPoolName: {{ $target.name }}.rgw.buckets.non-ec
+        default: {{ $target.default | default false }}
+{{- end }}
+{{- end }}
+{{- if .Values.rgwTargetPlacements.placements }}
+{{- range $target := .Values.rgwTargetPlacements.placements }}
+      - name: {{ $target.name }} 
+        metadataPoolName: {{ $target.name }}.rgw.buckets.index
+        dataPoolName: {{ $target.name }}.rgw.buckets.data
+        dataNonECPoolName: {{ $target.name }}.rgw.buckets.non-ec
+        default: {{ $target.default | default false }}
+{{- end }}
+{{- end }}
+{{- else }}
+  metadataPool: {{ toYaml .Values.objectstore.metadataPool | nindent 4 }}
+  dataPool: {{ toYaml .Values.objectstore.dataPool | nindent 4 }}
+{{- end }}
+{{- range $instance := .Values.objectstore.multiInstance.extraInstances }}
+---
+apiVersion: ceph.rook.io/v1
+kind: CephObjectStore
+metadata:
+  name: {{ $instance.name }}
+  namespace: {{ $.Release.Namespace }}
+spec:
+  zone:
+    name: {{ $.Values.objectstore.name }} 
+  hosting:
+{{- if and $instance.gateway.dnsNames (gt (len $instance.gateway.dnsNames) 0) }}
+    advertiseEndpoint:
+      dnsName: {{ $instance.gateway.dnsNames | first }}
+{{- if $instance.gateway.securePort }}
+      port: 443
+      useTls: true
+{{- else }}
+      port: 80
+      useTls: false
+{{- end }}
+    dnsNames: {{ toYaml $instance.gateway.dnsNames | nindent 8 }}
+{{- end }}
+  gateway:
+  {{- if not (empty $instance.gateway.rgwConfig) }}
+    rgwConfig: {{ toYaml $instance.gateway.rgwConfig | nindent 6 }}
+  {{- end }}
+  {{- if not (empty $instance.gateway.rgwCommandFlags) }}
+    rgwCommandFlags: {{ toYaml $instance.gateway.rgwCommandFlags | nindent 6 }}
+  {{- end }}
+    annotations:
+      # reload deployment when the rook-config-override configmap changes
+      # we don't use checksum here, because helm values renderer get messed up
+      configmap.reloader.stakater.com/reload: "rook-config-override"
+      {{- if $instance.gateway.securePort }}
+      # reload deployment when the certificate changes
+      secret.reloader.stakater.com/reload: {{ $instance.gateway.sslCertificateRef | default $.Values.objectstore.gateway.sslCertificateRef | quote }}
+      {{- end }}
+    labels:
+      prysm-sidecar: "no"
+    instances: {{ $instance.gateway.instances | default $.Values.objectstore.gateway.instances }}
+    {{- if or $instance.gateway.port $.Values.objectstore.gateway.port }}
+    port: {{ $instance.gateway.port | default $.Values.objectstore.gateway.port }}
+    {{- end }}
+    {{- if $instance.gateway.securePort }}
+    securePort: {{ $instance.gateway.securePort }}
+    {{- else }}
+    hostNetwork: false # skip hostNetwork for non-secure port
+    {{- end }}
+    placement:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+            - matchExpressions:
+                - key: kubernetes.metal.cloud.sap/role
+                  operator: In
+                  values:
+                    - {{ $.Values.mon.nodeRole }} # ensure the admin RGW pods are not scheduled on the OSD nodes to avoid RGW metrics conflict
+      # since the CephCluster's network provider is "host", we need to isolate 80/443 port listeners from each other
+      podAntiAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+        - labelSelector:
+            matchExpressions:
+            - key: rgw
+              operator: In
+              values:
+              - {{ $instance.name }}
+          topologyKey: kubernetes.io/hostname
+    priorityClassName: system-cluster-critical
+{{- if $instance.gateway.securePort }}
+    sslCertificateRef: {{ $instance.gateway.sslCertificateRef | default $.Values.objectstore.gateway.sslCertificateRef }}
+{{- end }}
+    resources: {{ toYaml ( $instance.gateway.resources | default $.Values.objectstore.gateway.resources) | nindent 6 }}
+  preservePoolsOnDelete: true
+{{- if and $.Values.objectstore.keystone.enabled }}
+{{- with $.Values.objectstore.keystone }}
+  auth:
+    keystone:
+      acceptedRoles:
+{{- range $_, $role := .accepted_roles }}
+        - {{ $role }}
+{{- end }}
+      implicitTenants: {{ .implicit_tenants | quote }}
+      serviceUserSecretName: ceph-keystone-secret
+      tokenCacheSize: {{ .token_cache_size }}
+      url: {{ .url }}
+  protocols:
+{{- if $instance.enabledAPIs }}
+    enableAPIs: {{ toYaml $instance.enabledAPIs | nindent 6 }}
+{{- end }}
+    s3:
+      authUseKeystone: true
+    swift:
+      accountInUrl: {{ .swift_account_in_url }}
+      versioningEnabled: {{ .swift_versioning_enabled }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}

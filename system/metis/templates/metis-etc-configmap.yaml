@@ -3,10 +3,9 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name:  metis-etc
-  namespace: {{ .Values.namespace }}
+  namespace: {{ .Release.Namespace }}
   labels:
     app.kubernetes.io/name: metis
-    helm.sh/chart: {{ include "metis.chart" $ }}
     app.kubernetes.io/instance: metis-{{ .Release.Name }}
     app.kubernetes.io/managed-by: {{ .Release.Service }}
 data:
@@ -25,10 +24,8 @@ data:
       cronSchedule: "*/30 * * * *"
 {{- end }}
     db:
-      user: "root"
       host: metisdb-mariadb.metis
       port: 3306
-      ronly_user: "ronly"
       releaseLocks: {{ .Values.metis.releaseLocks }}
       migration_version: {{ .Values.metis.migration_version }}
 {{- if .Values.metis.views_enabled }}

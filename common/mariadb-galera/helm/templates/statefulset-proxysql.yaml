@@ -14,17 +14,12 @@ kind: StatefulSet
 metadata:
   namespace: {{ $.Release.Namespace }}
   name: {{ (include "nodeNamePrefix" (dict "global" $ "component" "proxysql")) }}
-  labels:
-    app: {{ $.Release.Name }}
-    component: "proxysql"
-    release: {{ $.Release.Name }}
-    {{- include "sharedservices.labels" $ | indent 4 }}
 spec:
   replicas: {{ $.Values.replicas.proxy | default 3 }}
   serviceName: {{ $.Release.Name }}
   selector:
     matchLabels:
-      component: "proxysql"
+      app.kubernetes.io/component: {{ (index $.Values.image (printf "%s" "proxysql")).softwarename }}-sts-proxy
   revisionHistoryLimit: {{ $.Values.revisionHistoryLimit | default 10 | int }}
   podManagementPolicy: {{ $.Values.podManagementPolicy | default "OrderedReady" | quote }}
   updateStrategy:
@@ -32,10 +27,7 @@ spec:
   template:
     metadata:
       labels:
-        app: {{ $.Release.Name }}
-        component: "proxysql"
-        release: {{ $.Release.Name }}
-        {{- include "sharedservices.labels" $ | indent 8 }}
+        {{- include "mariadb-galera.labels" (list $ "version" "proxysql" "sts" "proxy") | indent 8 }}
       annotations:
         {{- if $.Values.monitoring.proxy.enabled }}
         prometheus.io/scrape: "true"
@@ -55,36 +47,36 @@ spec:
               podAffinityTerm:
                 labelSelector:
                   matchExpressions:
-                    - key: "app"
+                    - key: "app.kubernetes.io/part-of"
                       operator: In
                       values:
                         - {{ $.Release.Name | quote }}
-                    - key: "component"
+                    - key: "app.kubernetes.io/component"
                       operator: In
                       values:
-                        - "proxysql"
+                        - {{ (index $.Values.image (printf "%s" "proxysql")).softwarename }}-sts-proxy
                 topologyKey: "topology.kubernetes.io/zone"
             - weight: 2
               podAffinityTerm:
                 labelSelector:
                   matchExpressions:
-                    - key: "app"
+                    - key: "app.kubernetes.io/part-of"
                       operator: In
                       values:
                         - {{ $.Release.Name | quote }}
-                    - key: "component"
+                    - key: "app.kubernetes.io/component"
                       operator: In
                       values:
-                        - "proxysql"
+                        - {{ (index $.Values.image (printf "%s" "proxysql")).softwarename }}-sts-proxy
                 topologyKey: "kubernetes.io/hostname"
       serviceAccount: {{ include "commonPrefix" $ }}-mariadb-galera
       securityContext:
         runAsUser:  {{ $.Values.userId.proxy | default 3100 | int }}
         runAsGroup: {{ $.Values.groupId.proxy | default 3100 | int }}
         fsGroup:  {{ $.Values.groupId.proxy | default 3100 | int }}
-      {{- if and (hasKey $.Values.image.proxy "pullSecret") $.Values.image.proxy.pullSecret }}
+      {{- if and (hasKey $.Values.image.proxysql "pullSecret") $.Values.image.proxysql.pullSecret }}
       imagePullSecrets:
-      - name: {{ include "commonPrefix" $ }}-{{$.Values.image.proxy.pullSecret}}
+      - name: {{ include "commonPrefix" $ }}-{{$.Values.image.proxysql.pullSecret}}
       {{- end }}
       initContainers:
       - name: sysctl-tcp-keepalive
@@ -127,8 +119,8 @@ spec:
       {{- end }}
       containers:
       - name: {{ (include "nodeNamePrefix" (dict "global" $ "component" "proxysql")) }}
-        image: "{{ $.Values.image.proxy.registry }}/{{ $.Values.image.proxy.project }}/{{ $.Values.image.proxy.softwarename }}:{{ $.Values.image.proxy.softwareversion }}-{{ $.Values.image.proxy.imageversion | int }}"
-        imagePullPolicy: {{ $.Values.image.proxy.pullPolicy | default "IfNotPresent" | quote }}
+        image: "{{ $.Values.image.proxysql.registry }}/{{ $.Values.image.proxysql.project }}/{{ $.Values.image.proxysql.softwarename }}:{{ $.Values.image.proxysql.softwareversion }}-{{ $.Values.image.proxysql.imageversion | int }}"
+        imagePullPolicy: {{ $.Values.image.proxysql.pullPolicy | default "IfNotPresent" | quote }}
         securityContext:
           runAsUser:  {{ $.Values.userId.proxy | default 3100 | int }}
           runAsGroup: {{ $.Values.groupId.proxy | default 3100 | int }}

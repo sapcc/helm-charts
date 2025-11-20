@@ -34,7 +34,6 @@ terminal_url_scheme = https://{{ include "ironic_console_endpoint_host_public" .
 
 socket_permission = 0666
 ssh_command_pattern = sshpass -f %(pw_file)s ssh -oLogLevel={{ .Values.console.ssh_loglevel | default "error" }} -oUserKnownHostsFile=/dev/null -oStrictHostKeyChecking=no -oKexAlgorithms=+diffie-hellman-group1-sha1 -c 'aes128-cbc','aes256-cbc','3des-cbc' -l %(username)s %(address)s
-url_auth_digest_secret = {{required "A valid .Values.console.secret required!" .Values.console.secret}}
 
 [deploy]
 # We expose this directory over http and tftp

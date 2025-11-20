@@ -40,11 +40,11 @@ template: |
           datacenter: {= availability_zone =}
           vccluster: {= cluster_name =}
         annotations:
+          kubectl.kubernetes.io/default-container: neutron-nsxv3-agent
           configmap-etc-hash: {{ include (print $.Template.BasePath "/configmap-etc.yaml") . | sha256sum }}
           prometheus.io/scrape: "true"
           prometheus.io/targets: {{ required ".Values.metrics.prometheus missing" .Values.metrics.prometheus | quote }}
           {{- include "utils.linkerd.pod_and_service_annotation" . | indent 10 }}
-          kubectl.kubernetes.io/default-container: neutron-nsxv3-agent
       spec:
         containers:
         - name: neutron-nsxv3-agent
@@ -53,11 +53,7 @@ template: |
           command: ["dumb-init"]
           args: ["neutron-nsxv3-agent", "--config-file", "/etc/neutron/neutron.conf", "--config-dir", "/etc/neutron/secrets", "--config-file", "/etc/neutron/plugins/ml2/ml2-conf.ini", "--config-file", "/etc/neutron/plugins/ml2/ml2-nsxv3.ini"]
           env:
-          - name: SENTRY_DSN
-            valueFrom:
-              secretKeyRef:
-                name: sentry
-                key: neutron.DSN.python
+          {{- include "utils.sentry_config" . | nindent 10 }}
           - name: PYTHONWARNINGS
             value: "ignore:Unverified HTTPS request"
           - name: PGAPPNAME

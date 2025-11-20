@@ -26,7 +26,7 @@ spec:
     spec:
       restartPolicy: OnFailure
       initContainers:
-      {{- tuple . (dict "service" "barbican-mariadb") | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
+      {{- tuple . (dict "service" (include "barbican.db_service" .)) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
       containers:
         - name: barbican-migration
           image: {{required ".Values.global.registry is missing" .Values.global.registry}}/loci-barbican:{{required ".Values.imageVersionBarbicanApi is missing" .Values.imageVersionBarbicanApi}}
@@ -81,7 +81,7 @@ spec:
         - name: barbican-etc
           configMap:
             name: barbican-etc
-{{- if $secrets }}            
+{{- if $secrets }}
         - name: barbican-etc-confd
           secret:
             secretName: {{ .Release.Name }}-secrets

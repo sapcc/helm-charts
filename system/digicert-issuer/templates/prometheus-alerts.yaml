@@ -9,8 +9,10 @@ metadata:
   name: {{ printf "digicert-issuer-%s" $path | replace "/" "-" }}
   labels:
     app.kubernetes.io/name: digicert-issuer
-    prometheus: {{ required ".Values.alerts.prometheus missing" $values.alerts.prometheus }}
     absent-metrics-operator/disable: "true"
+  {{- with $values.alerts.ruleSelector }}
+    {{ tpl (toYaml .) . | nindent 4 }}
+  {{- end }}
 
 spec:
 {{ printf "%s" $bytes | indent 2 }}

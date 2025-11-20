@@ -3,17 +3,14 @@
 ---
 kind: Deployment
 apiVersion: apps/v1
-
 metadata:
   name: neutron-cc-fabric-{{ $platform }}-agent
   labels:
     system: openstack
     type: backend
     component: neutron
-  {{- if $.Values.vpa.set_main_container }}
   annotations:
     vpa-butler.cloud.sap/main-container: neutron-cc-fabric-{{ $platform }}-agent
-  {{- end }}
 spec:
   replicas: 1
   revisionHistoryLimit: 5
@@ -31,6 +28,7 @@ spec:
         name: neutron-cc-fabric-{{ $platform }}-agent
 {{ tuple $ "neutron" (printf "cc-fabric-%s-agent" $platform) | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
       annotations:
+        kubectl.kubernetes.io/default-container: neutron-cc-fabric-{{ $platform }}-agent
         pod.beta.kubernetes.io/hostname:  cc-fabric-{{ $platform }}-agent
         configmap-etc-hash: {{ include (print $.Template.BasePath "/configmap-etc.yaml") $ | sha256sum }}
         configmap-etc-cc-fabric: {{ include (print $.Template.BasePath "/configmap-etc-cc-fabric.yaml") $ | sha256sum }}
@@ -64,11 +62,7 @@ spec:
           resources:
 {{ toYaml $.Values.pod.resources.cc_fabric_agent | indent 12 }}
           env:
-            - name: SENTRY_DSN
-              valueFrom:
-                secretKeyRef:
-                  name: sentry
-                  key: neutron.DSN.python
+            {{- include "utils.sentry_config" $ | nindent 12 }}
             {{- include "utils.trust_bundle.env" $ | indent 12 }}
           ports:
             - containerPort: 9090

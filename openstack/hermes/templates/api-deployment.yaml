@@ -19,6 +19,8 @@ spec:
         linkerd.io/inject: enabled
         {{- end }}
         kubectl.kubernetes.io/default-container: "api"
+        secret.reloader.stakater.com/reload: "api-conf,hermes-es-api"
+        deployment.reloader.stakater.com/pause-period: "60s"
     spec:
       nodeSelector:
         zone: farm
@@ -39,12 +41,12 @@ spec:
               value: '{{.Values.hermes.debug}}'
             - name: HERMES_INSECURE
               value: '{{.Values.hermes.insecure}}' # SSL certificates are hard :(
-            - name: HERMES_ES_USERNAME
+            - name: HERMES_OS_USERNAME
               valueFrom:
                 secretKeyRef:
                   name: hermes-es-api
                   key: HERMES_ES_USERNAME
-            - name: HERMES_ES_PASSWORD
+            - name: HERMES_OS_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: hermes-es-api

@@ -1,0 +1,44 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: cc:oidc-ias-admin
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: gardener.cloud:system:administrators
+subjects:
+- apiGroup: rbac.authorization.k8s.io
+  kind: Group
+  name: {{ if contains "qa-de-" .Values.global.region -}} CC_IAS_CONTROLPLANE_QA_ADMIN {{- else -}} CC_IAS_CONTROLPLANE_PROD_ADMIN {{- end }}
+{{- range $user := .Values.garden.virtualCluster.adminUsers }}
+- apiGroup: rbac.authorization.k8s.io
+  kind: User
+  name: {{ $user | quote }}
+{{- end }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: cc:oidc-ias-viewer
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: gardener.cloud:system:viewers
+subjects:
+- apiGroup: rbac.authorization.k8s.io
+  kind: Group
+  name: {{ if contains "qa-de-" .Values.global.region -}} CC_IAS_CONTROLPLANE_QA_DEVELOPER {{- else -}} CC_IAS_CONTROLPLANE_PROD_DEVELOPER {{- end }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: greenhouse:system:cluster-admin
+subjects:
+  - kind: User
+    apiGroup: rbac.authorization.k8s.io
+    name: greenhouse:system:serviceaccount:sci:{{ default (printf "g-%s" .Values.global.region) .Values.garden.clusterName }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin

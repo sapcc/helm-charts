@@ -11,6 +11,9 @@ metadata:
     system: openstack
     component: keystone
     type: operations
+  annotations:
+    secret.reloader.stakater.com/reload: "{{ .Release.Name }}-secrets"
+    deployment.reloader.stakater.com/pause-period: "60s"
 spec:
   replicas: {{ .Values.cron.replicas }}
   revisionHistoryLimit: {{ .Values.cron.upgrades.revisionHistory }}
@@ -60,13 +63,12 @@ spec:
   {{- end }}
 {{- end }}
         - name: DEPENDENCY_SERVICE
-{{- if .Values.percona_cluster.enabled }}
-          value: "{{ .Release.Name }}-percona-pxc,{{ .Release.Name }}-memcached"
-{{- else }}
-          value: "{{ .Release.Name }}-mariadb,{{ .Release.Name }}-memcached"
-{{- end }}
+          value: {{ include "keystone.service_dependencies" . | quote }}
         - name: COMMAND
           value: "true"
+      {{- if .Values.proxysql.native_sidecar }}
+      {{- include "utils.proxysql.container" . | indent 6 }}
+      {{- end }}
       containers:
         - name: keystone-cron
           image: {{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{ .Values.cron.image }}:{{ required ".Values.cron.imageTag is missing" .Values.cron.imageTag }}
@@ -89,17 +91,10 @@ spec:
             - name: PYTHONWARNINGS
               value: "ignore:Unverified HTTPS request"
           volumeMounts:
-{{- if ne .Values.api.policy "json" }}
             - name: keystone-etc
               mountPath: /etc/keystone/policy.yaml
               subPath: policy.yaml
               readOnly: true
-{{- else }}
-            - name: keystone-etc
-              mountPath: /etc/keystone/policy.json
-              subPath: policy.json
-              readOnly: true
-{{- end }}
             - mountPath: /etc/keystone/keystone.conf
               subPath: keystone.conf
               name: keystone-etc
@@ -122,7 +117,9 @@ spec:
           resources:
 {{ toYaml .Values.cron.resources | indent 12 }}
           {{- end }}
-{{- include "utils.proxysql.container" . | indent 8 }}
+      {{- if not .Values.proxysql.native_sidecar }}
+      {{- include "utils.proxysql.container" . | indent 8 }}
+      {{- end }}
       volumes:
         - name: keystone-etc
           configMap:

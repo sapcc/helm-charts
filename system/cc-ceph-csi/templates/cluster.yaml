@@ -1,0 +1,169 @@
+
+apiVersion: ceph.rook.io/v1
+kind: CephCluster
+metadata:
+  name: rook-ceph
+  namespace: {{ .Release.Namespace }}
+spec:
+  cephVersion:
+    image: {{ .Values.registries.quay }}/{{ .Values.cluster.image }}
+    allowUnsupported: false
+  dataDirHostPath: /var/lib/rook
+  skipUpgradeChecks: false
+  continueUpgradeAfterChecksEvenIfNotHealthy: false
+  waitTimeoutForHealthyOSDInMinutes: 10
+  upgradeOSDRequiresHealthyPGs: false
+  cephConfig: {{ toYaml .Values.cephConfig | nindent 4 }}
+  mon:
+    count: {{ .Values.cluster.monCount }}
+    allowMultiplePerNode: false
+    {{- if .Values.cluster.storage.pvcs.enabled }}
+    volumeClaimTemplate:
+      spec:
+        storageClassName: {{ .Values.cluster.storage.pvcs.storageClass }}
+        resources:
+          requests:
+            storage: {{ .Values.cluster.storage.pvcs.monSize }}
+    {{- end }}
+  mgr:
+    count: {{ .Values.cluster.mgrCount }}
+    allowMultiplePerNode: false
+    modules:
+      - name: rook
+        enabled: true
+  dashboard:
+    enabled: {{ .Values.cluster.dashboard.enabled }}
+    ssl: true
+  monitoring:
+    enabled: {{ .Values.cluster.monitoring.enabled }}
+    metricsDisabled: false
+    exporter:
+      perfCountersPrioLimit: 5
+      statsPeriodSeconds: 5
+  network:
+    connections:
+      encryption:
+        enabled: true
+      compression:
+        enabled: false
+      requireMsgr2: true
+  crashCollector:
+    disable: false
+  logCollector:
+    enabled: true
+    periodicity: daily # one of: hourly, daily, weekly, monthly
+    maxLogSize: 500M # SUFFIX may be 'M' or 'G'. Must be at least 1M.
+  cleanupPolicy:
+    confirmation: ""
+    sanitizeDisks:
+      method: quick
+      dataSource: zero
+      iteration: 1
+    allowUninstallWithVolumes: false
+  resources:
+    mgr:
+      limits:
+        memory: "1024Mi"
+      requests:
+        cpu: "500m"
+        memory: "1024Mi"
+    osd:
+      limits:
+        memory: 8192Mi #no limits for osds leads to osd taking all available memory
+      requests:
+        memory: 8192Mi
+  # The above example requests/limits can also be added to the other components
+  #   mon:
+  removeOSDsIfOutAndSafeToRemove: false
+  priorityClassNames:
+    mon: system-node-critical
+    osd: system-node-critical
+    mgr: system-cluster-critical
+  storage:
+    {{- if .Values.cluster.storage.pvcs.enabled }}
+    storageClassDeviceSets:
+    - name: set1
+      count: {{ .Values.cluster.storage.pvcs.count }}
+      portable:  {{ .Values.cluster.storage.pvcs.portable }}
+      encrypted: false
+      placement:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - rook-ceph-osd
+              topologyKey: kubernetes.io/hostname
+      volumeClaimTemplates:
+      - metadata:
+          name: data
+        spec:
+          resources:
+            requests:
+              storage: {{ .Values.cluster.storage.pvcs.size }}
+          storageClassName: {{ .Values.cluster.storage.pvcs.storageClass }}
+          volumeMode: Block
+          accessModes:
+            - ReadWriteOnce
+    {{- else }}
+    {{- if .Values.cluster.storage.useAllNodes }}
+    useAllNodes: {{ .Values.cluster.storage.useAllNodes }}
+    {{- end }}
+    {{- if .Values.cluster.storage.useAllDevices }}
+    useAllDevices: {{ .Values.cluster.storage.useAllDevices }}
+    {{- end }}
+    {{- if .Values.cluster.storage.deviceFilter }}
+    deviceFilter: {{ .Values.cluster.storage.deviceFilter | quote }}
+    {{- end }}
+{{- if .Values.cluster.storage.nodes }}
+    nodes:
+{{ toYaml .Values.cluster.storage.nodes | indent 6 }}
+{{- end }}
+    config:
+      # crushRoot: "custom-root" # specify a non-default root label for the CRUSH map
+      # metadataDevice: "md0" # specify a non-rotational storage so ceph-volume will use it as block db device of bluestore.
+      # databaseSizeMB: "1024" # uncomment if the disks are smaller than 100 GB
+      osdsPerDevice: "1"
+      encryptedDevice: "true"
+      # deviceClass: "myclass" # specify a device class for OSDs in the cluster
+    allowDeviceClassUpdate: false # whether to allow changing the device class of an OSD after it is created
+    allowOsdCrushWeightUpdate: false # whether to allow resizing the OSD crush weight after osd pvc is increased
+    scheduleAlways: false
+    {{- end }}
+    onlyApplyOSDPlacement: false
+  disruptionManagement:
+    managePodBudgets: true
+    osdMaintenanceTimeout: 30
+    pgHealthCheckTimeout: 0
+  csi:
+    readAffinity:
+      enabled: false
+  healthCheck:
+    daemonHealth:
+      mon:
+        disabled: false
+        interval: 45s
+      osd:
+        disabled: false
+        interval: 60s
+      status:
+        disabled: false
+        interval: 60s
+    livenessProbe:
+      mon:
+        disabled: false
+      mgr:
+        disabled: false
+      osd:
+        disabled: false
+    startupProbe:
+      mon:
+        disabled: false
+      mgr:
+        disabled: false
+      osd:
+        disabled: false

@@ -1,34 +1,36 @@
 groups:
   - name: f5
     rules:
-      - alert: NetworkF5Unbound01IsOffline
-        expr: snmp_f5_ltmPoolMbrStatusAvailState{ltmPoolMbrStatusNodeName=~"/Common/unbound1.*.cloud.sap"} != 1
+      - alert: NetworkF5UnboundOffline
+        expr: snmp_f5_ltmPoolMbrStatusAvailState{ltmPoolMbrStatusNodeName=~"/Common/unbound.*.cloud.sap"} != 1
         for: 5m
         labels:
-          severity: info
+          severity: warning
           tier: net
           service: f5
           context: f5
-          meta: "Unbound pool member {{ $labels.ltmPoolMbrStatusNodeName }} is NOT AVAILABLE. Verify the actual status on F5 device {{ $labels.devicename }} and proceed with playbook instructions."
-          playbook: 'docs/devops/alert/network/f5#f5_unbound_offline'
-          dashboard: f5-dns-resolver-cache-for-unbounds
+          meta: "Unbound pool member {{ $labels.ltmPoolMbrStatusNodeName }}:{{ $labels.ltmPoolMbrStatusPort }} is NOT AVAILABLE."
+          playbook: 'docs/devops/alert/network/f5#unbound-pool-member-down'
+          dashboard: 'dns-f5-and-unbound-performance'
+          support_group: 'network-api'
         annotations:
-          description: "Unbound pool member {{ $labels.ltmPoolMbrStatusNodeName }} is NOT AVAILABLE. Verify the actual status on F5 device {{ $labels.devicename }} and proceed with playbook instructions."
-          summary: "F5 health check monitor for Unbound pool member unbound1 failed."
-      - alert: NetworkF5Unbound02IsOffline
-        expr: snmp_f5_ltmPoolMbrStatusAvailState{ltmPoolMbrStatusNodeName=~"/Common/unbound2.*.cloud.sap"} != 1
+          description: "Unbound pool member {{ $labels.ltmPoolMbrStatusNodeName }}:{{ $labels.ltmPoolMbrStatusPort }} is NOT AVAILABLE."
+          summary: "Unbound pool members helth check reports status other than available."
+      - alert: NetworkF5UnboundConnectionsTooHigh
+        expr: snmp_f5_ltmNodeAddrStatServerCurConns{ltmNodeAddrStatNodeName=~"/Common/unbound.*.cloud.sap"} > 55000
         for: 5m
         labels:
-          severity: info
+          severity: warning
           tier: net
           service: f5
           context: f5
-          meta: "Unbound pool member {{ $labels.ltmPoolMbrStatusNodeName }} is NOT AVAILABLE. Verify the actual status on F5 device {{ $labels.devicename }} and proceed with playbook instructions."
-          playbook: 'docs/devops/alert/network/f5#f5_unbound_offline'
-          dashboard: f5-dns-resolver-cache-for-unbounds
+          meta: "Current active connections to {{ $labels.ltmNodeAddrStatNodeName }}:{{ $labels.ltmPoolMbrStatusPort }} on F5 {{ $labels.devicename }} are reaching critical threshold."
+          dashboard: 'dns-f5-and-unbound-performance'
+          support_group: 'network-api'
+          playbook: 'docs/devops/alert/network/f5#unbound-connection-count-high'
         annotations:
-          description: "Unbound pool member {{ $labels.ltmPoolMbrStatusNodeName }} is NOT AVAILABLE. Verify the actual status on F5 device {{ $labels.devicename }} and proceed with playbook instructions."
-          summary: "F5 health check monitor of Unbound pool member unbound2 failed."
+          description: "Number of concurrent connections to {{ $labels.ltmNodeAddrStatNodeName }}:{{ $labels.ltmPoolMbrStatusPort }} on F5 {{ $labels.devicename }} is reaching critical threshold of 65536."
+          summary: "Number of concurrent connections to unbound server(s) is critical."
       - alert: NetworkF5DirSharedUtil
         expr: round(100 - ((100 / snmp_f5_sysHostDiskTotalBlocks{sysHostDiskPartition=~"/shared"}) * snmp_f5_sysHostDiskFreeBlocks{sysHostDiskPartition=~"/shared"})) >= 85
         for: 5m
@@ -84,6 +86,7 @@ groups:
           context: f5
           meta: "Big-IP device {{ $labels.devicename }} reports config-sync failure."
           playbook: 'docs/devops/alert/network/f5#config-sync-failure'
+          support_group: network-lb
         annotations:
           description: Big-IP device {{ $labels.devicename }} reports config sync failure.
           summary: Active Big-IP device configuration failed to synchronize to the standby device.
@@ -96,7 +99,7 @@ groups:
           tier: net
           service: f5
           context: f5
-          meta: "Big-IP device {{ $labels.devicename }} reports that {{ $value }}% of all pools on the device are flapping."
+          meta: "Big-IP device {{ $labels.devicename }} reports that some pools are constantly flapping."
           playbook: 'docs/devops/alert/network/f5#f5_pool_flapping'
         annotations:
           description: "Big-IP device {{ $labels.devicename }} reports {{ $value }}% of pools are flapping."

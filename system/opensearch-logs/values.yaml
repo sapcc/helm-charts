@@ -1,6 +1,8 @@
 global:
+  linkerd_enabled: false
   linkerd_requested: true
   clusterType: local
+  nodepool: "payload"
   users:
     admin:
       name: admin
@@ -8,10 +10,45 @@ global:
     prometheus: infra-frontend
   data_stream:
     enabled: false
+    alerts:
+      min_index_age: "365d"
+      min_size: "20gb"
+      min_doc_count: 10000000
+    deployments:
+      min_index_age: "365d"
+      min_size: "30gb"
+      min_doc_count: 50000000
+    storage:
+      min_index_age: "7d"
+      min_size: "80gb"
+      min_doc_count: 100000000
+    compute:
+      min_index_age: "7d"
+      min_size: "80gb"
+      min_doc_count: 100000000
+    otel:
+      min_index_age: "7d"
+      min_size: "20gb"
+      min_doc_count: 10000000
+    audit:
+      min_index_age: "7d"
+      min_size: "20gb"
+      min_doc_count: 10000000
+    logs:
+      min_index_age: "7d"
+      min_size: "80gb"
+      min_doc_count: 100000000
+    logs_swift:
+      min_index_age: "14d"
+      min_size: "120gb"
+      min_doc_count: 200000000
+    jump:
+      min_index_age: "7d"
+      min_size: "80gb"
+      min_doc_count: 100000000
   index:
     ism_indexes: "logstash"
     schema_version: "1"
-    
 
 owner-info:
   support-group: observability
@@ -30,6 +67,13 @@ alerts:
   enabled: false
   prometheus: infra-frontend
 
+auth:
+  ca_path: certs/admin/ca.crt
+
+retention:
+  index: "31d"
+  ds: "31d"
+
 opensearch_master:
   enabled: false
   nameOverride: "opensearch-logs-master"
@@ -37,7 +81,7 @@ opensearch_master:
   nodeGroup: "master"
   masterService: "opensearch-logs-master"
   image:
-    tag: 2.16.0
+    tag: 3.2.0
   roles:
     - master
   replicas: 3
@@ -64,12 +108,12 @@ opensearch_master:
   plugins:
     enabled: true
     installList:
-      - https://github.com/Aiven-Open/prometheus-exporter-plugin-for-opensearch/releases/download/2.16.0.0/prometheus-exporter-2.16.0.0.zip
+      - https://github.com/opensearch-project/opensearch-prometheus-exporter/releases/download/3.2.0.0/prometheus-exporter-3.2.0.0.zip
 
 opensearch_client:
   enabled: false
   image:
-    tag: 2.16.0
+    tag: 3.2.0
   replicas: 3
   nameOverride: "opensearch-logs-client"
   fullnameOverride: "opensearch-logs-client"
@@ -110,12 +154,12 @@ opensearch_client:
   plugins:
     enabled: true
     installList:
-      - https://github.com/Aiven-Open/prometheus-exporter-plugin-for-opensearch/releases/download/2.16.0.0/prometheus-exporter-2.16.0.0.zip
+      - https://github.com/opensearch-project/opensearch-prometheus-exporter/releases/download/3.2.0.0/prometheus-exporter-3.2.0.0.zip
 
 opensearch_data:
   enabled: false
   image:
-    tag: 2.16.0
+    tag: 3.2.0
   nameOverride: "opensearch-logs-data"
   fullnameOverride: "opensearch-logs-data"
   nodeGroup: "data"
@@ -139,7 +183,7 @@ opensearch_data:
   plugins:
     enabled: true
     installList:
-      - https://github.com/Aiven-Open/prometheus-exporter-plugin-for-opensearch/releases/download/2.16.0.0/prometheus-exporter-2.16.0.0.zip
+      - https://github.com/opensearch-project/opensearch-prometheus-exporter/releases/download/3.2.0.0/prometheus-exporter-3.2.0.0.zip
   securityConfig:
     enabled: false
     path: "/usr/share/opensearch/config/opensearch-security"
@@ -152,7 +196,7 @@ opensearch_data:
 opensearch_ml:
   enabled: false
   image:
-    tag: 2.16.0
+    tag: 3.2.0
   replicas: 2
   nameOverride: "opensearch-logs-ml"
   fullnameOverride: "opensearch-logs-ml"
@@ -193,12 +237,12 @@ opensearch_ml:
   plugins:
     enabled: true
     installList:
-      - https://github.com/Aiven-Open/prometheus-exporter-plugin-for-opensearch/releases/download/2.16.0.0/prometheus-exporter-2.16.0.0.zip
+      - https://github.com/opensearch-project/opensearch-prometheus-exporter/releases/download/3.2.0.0/prometheus-exporter-3.2.0.0.zip
 
 opensearch_dashboards:
   enabled: false
   image:
-    tag: "2.16.0"
+    tag: "3.2.0"
   fullnameOverride: opensearch-logs-dashboards
   nameOverride: opensearch-logs-dashboards
   serviceAccount:
@@ -212,7 +256,14 @@ opensearch_dashboards:
     enabled: false
   resources:
     limits:
+      cpu: "4"
       memory: 4096M
+    requests:
+      cpu: "1"
+      memory: 4096M
+  autoscaling:
+    enabled: true
+    maxReplicas: 4
   envFrom:
     - secretRef:
         name: dashboard-secrets
@@ -223,7 +274,7 @@ manager:
   http_port: 9200
   cluster_port: 9301
   endpoint_host_public: opensearch-logs-manager.scaleout
-  image_manager: elk-elasticsearch-manager:20240214094510
+  image_manager: elk-elasticsearch-manager:20250407105643
   opensearch:
     enabled: false
 

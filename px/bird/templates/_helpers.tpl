@@ -1,50 +1,93 @@
+{{- define "bird.afis" -}}
+{{ $afis := list }}
+{{- range $k, $v := .domain_config }}
+  {{ if and (hasPrefix "network_v" $k) $v }}
+    {{- $afis = append $afis (trimPrefix "network_" $k) }}
+  {{- end }}
+{{- end }}
+{{ $afis | toJson }}
+{{- end }}
 
-{{- /*
-All bird.domain.* expect a domain-context that should look like the following:
-top: the root helm context including .Files, .Release, .Chart, .Values
-service: service_1
-service_number: 1
-service_config: everything nested under .Values.services_1
-domain_number: 1
-domain_config: everything nested under .Values.service_1.domain_1
-*/}}
-
-{{- define "bird.domain.config_name" -}}
-{{- printf "%s-pxrs-%d-s%d" .top.Values.global.region .domain_number .service_number }}
+{{- define "bird.statefulset.configMapName" -}}
+{{- printf "%s-service-%d-domain-%d" .afi .service_number .domain_number }}
 {{- end }}
 
 {{- define "bird.domain.config_path"}}
-{{- printf "%s%s.conf" .top.Values.bird_config_path  (include "bird.domain.config_name" .) -}}
+{{- /* Try new path first, if we fail fall back to old path */ -}}
+{{- $confFile := printf "%s.conf" (include "bird.statefulset.configMapName" .) -}}
+{{- $filePath := printf "%s%s/%s" .top.Values.bird_config_path .top.Values.global.region $confFile -}}
+{{- $newPath := $filePath -}}
+{{- if not (.top.Files.Glob $filePath) -}}
+  {{- if eq .afi "v6" -}}
+    {{- fail "v6 address family not supported with legacy file path" -}}
+  {{- end }}
+  {{- /* fall back to legacy path */ -}}
+  {{- $confFile = printf "%s-pxrs-%d-s%d.conf" .top.Values.global.region .domain_number .service_number -}}
+  {{- $filePath = printf "%s%s" .top.Values.bird_config_path $confFile -}}
+  {{- if not (.top.Files.Glob $filePath) -}}
+    {{- fail (printf "cannot find bird config file, tried %s and legacy path %s" $newPath $filePath ) -}}
+  {{- end }}
+{{- end }}
+{{- $filePath }}
 {{- end }}
 
-{{- /*
-All bird.instance.* expect a instance-context that should be consisted of
-:<< domainCtx
-instance_number: 1
-instance: instance_1
-instance_config: everything nested under .Values.service_1.domain_1.instance_1
-*/}}
-
-{{- define "bird.instance.deployment_name" }}
-{{- printf "%s-pxrs-%d-s%d-%d" .top.Values.global.region .domain_number .service_number .instance_number}}
+{{- define "bird.statefulset.name" }}
+{{- printf "routeserver-%s-service-%d-domain-%d" .afi .service_number .domain_number }}
 {{- end }}
 
 {{- define "bird.domain.labels" }}
-app: {{ include "bird.instance.deployment_name" . | quote }}
 pxservice: '{{ .service_number }}'
+px.cloud.sap/service: {{ .service_number | quote }}
 pxdomain: '{{ .domain_number }}'
+px.cloud.sap/domain: {{ .domain_number | quote }}
+service: {{ .top.Release.Name | quote }}
 {{- end }}
 
-{{- define "bird.instance.labels" }}
-app: {{ include "bird.instance.deployment_name" . | quote }}
-pxservice: '{{ .service_number }}'
-pxdomain: '{{ .domain_number }}'
-pxinstance: '{{ .instance_number }}'
+{{- define "bird.afi.labels" }}
+px.cloud.sap/afi: {{ .afi | quote }}
 {{- end }}
+
+{{- define "bird.statefulset.labels" }}
+app: {{ include "bird.statefulset.name" . | quote }}
+px.cloud.sap/component: "routeserver"
+{{- include "bird.domain.labels" . }}
+{{- include "bird.afi.labels" . }}
+{{- end }}
+
+
+{{- define "bird.afi.network "}}
+
+{{- end }}
+
 
 {{- define "bird.alert.labels" }}
 alert-tier: px
 alert-service: px
+{{- end }}
+
+
+{{- define "bird.topology_spread" }}
+- maxSkew: 1
+  # minDomains: {{ len .top.Values.global.availability_zones }} 
+  topologyKey: topology.kubernetes.io/zone
+  whenUnsatisfiable: ScheduleAnyway
+  labelSelector: 
+    matchExpressions:
+      - key: px.cloud.sap/component
+        operator: In
+        values:
+        - routeserver
+      - key: px.cloud.sap/afi
+        operator: In
+        values:
+        - {{ .afi | quote }}
+      - key: px.cloud.sap/service
+        operator: In
+        values:
+        - {{ .service_number | quote }}
+  # matchLabelKeys: <list> # optional; beta since v1.27
+  nodeAffinityPolicy: Honor # respect affinities below
+  nodeTaintsPolicy: Ignore # default value 
 {{- end }}
 
 {{- define "bird.domain.affinity" }}
@@ -55,7 +98,7 @@ nodeAffinity:
     requiredDuringSchedulingIgnoredDuringExecution:
       nodeSelectorTerms:
       - matchExpressions:
-        - key: kubernetes.cloud.sap/apod
+        - key: {{ .top.Values.rackKey | quote }}
           operator: In
           values: 
           {{- range $site := keys .top.Values.apods | sortAlpha }}
@@ -64,15 +107,19 @@ nodeAffinity:
           {{- end }}
           {{- end }}
           {{- if .top.Values.prevent_hosts }}
-        - key: kubernetes.cloud.sap/host
+        - key: {{ .top.Values.nodeKey | quote}}
           operator: NotIn
           values: {{ .top.Values.prevent_hosts | toYaml | nindent  10 }}
           {{- end }}
 podAntiAffinity:
     requiredDuringSchedulingIgnoredDuringExecution:
-    - topologyKey: "kubernetes.cloud.sap/host"
+    - topologyKey: {{ .top.Values.nodeKey | quote}}
       labelSelector:
         matchExpressions:
+        - key: px.cloud.sap/afi
+          operator: In
+          values:
+          - {{ .afi | quote }}
         - key: pxservice
           operator: In
           values:
@@ -92,6 +139,10 @@ podAntiAffinity:
           operator: In
           values:
           - {{ .domain_number | quote }}
+        - key: px.cloud.sap/afi
+          operator: In
+          values:
+          - {{ .afi | quote }}
 {{- end }}
 {{- end }}
 

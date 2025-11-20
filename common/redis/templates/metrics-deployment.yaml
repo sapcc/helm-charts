@@ -1,4 +1,5 @@
 {{- if .Values.metrics.enabled }}
+{{- $fullname := include "redis.fullname" . -}}
 
 {{- $dockerHubMirror := .Values.global.dockerHubMirror | required ".Values.global.dockerHubMirror missing" -}}
 {{- if .Values.useAlternateRegion -}}
@@ -9,39 +10,32 @@ kind: Deployment
 apiVersion: apps/v1
 
 metadata:
-  name: {{ template "redis.fullname" . }}-metrics
+  name: {{ $fullname }}-exporter
   labels:
-    app: {{ template "redis.fullname" . }}
-    chart: "{{ .Chart.Name }}"
-    release: "{{ .Release.Name }}"
-    heritage: "{{ .Release.Service }}"
+    app: {{ $fullname }}
+  {{- if .Values.metrics.reloader.enabled }}
+  annotations:
+    reloader.stakater.com/search: "true"
+  {{- end }}
 
 spec:
   selector:
     matchLabels:
-      app: {{ template "redis.fullname" . }}
-      chart: "{{ .Chart.Name }}-1.0.1"
-      # ^ this is a lie, same reason as below
-      release: "{{ .Release.Name }}"
-      heritage: "Tiller"
-      # ^ this is not true when deploying with Helm 3, but existing matchLabels
-      # may not be changed by a Helm upgrade, so we have to stick with this
-      # legacy value (TODO: figure out a way to remove this label entirely)
+      app: {{ $fullname }}
   template:
     metadata:
       labels:
-        app: {{ template "redis.fullname" . }}
-        chart: "{{ .Chart.Name }}-1.0.1"
-        release: "{{ .Release.Name }}"
-        heritage: "Tiller"
+        app: {{ $fullname }}
       annotations:
-        kubectl.kubernetes.io/default-container: {{ template "redis.fullname" . }}
+        kubectl.kubernetes.io/default-container: metrics
+        {{- if .Values.redisPassword }}
         checksum/secret: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
+        {{- end }}
         {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
         linkerd.io/inject: enabled
         {{- end }}
         prometheus.io/scrape: "true"
-        prometheus.io/targets: {{ required ".Values.metrics.prometheus missing" .Values.metrics.prometheus | quote }}
+        prometheus.io/targets: {{ quote .Values.metrics.prometheus }}
     spec:
       containers:
         - name: metrics
@@ -49,19 +43,21 @@ spec:
           imagePullPolicy: Always
           env:
             - name: REDIS_ADDR
-              value: {{ printf "%s:%d" ( include "redis.fullname" . ) (int .Values.redisPort) | quote }}
+              value: "{{ $fullname }}:6379"
             - name: REDIS_ALIAS
-              value: {{ template "redis.fullname" . }}
-            {{ if .Values.redisPassword }}
+              value: {{ $fullname }}
             - name: REDIS_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: {{ template "redis.fullname" . }}
+                  {{- if .Values.redisPassword }}
+                  name: {{ $fullname }}
                   key: redis-password
-            {{ end }}
+                  {{- else }}
+                  name: {{ $fullname }}-user-default
+                  key: password
+                  {{- end }}
           ports:
             - name: metrics
-              containerPort: {{ required ".Values.metrics.port missing" .Values.metrics.port }}
-          resources:
-{{ toYaml .Values.metrics.resources | indent 12 }}
+              containerPort: 9121
+          resources: {{ toYaml .Values.metrics.resources | nindent 12 }}
 {{ end }}

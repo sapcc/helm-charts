@@ -1,0 +1,70 @@
+name:                     SnapMirrorEndpoint
+query:                    api/snapmirror/relationships
+object:                   snapmirror_endpoint
+
+counters:
+  - ^^uuid                               => relationship_id
+  - ^^destination.path                   => destination_location
+  - ^destination.cluster.name            => destination_cluster
+  - ^destination.svm.name                => destination_vserver
+  - ^policy.type                         => policy_type
+  - ^source.path                         => source_location
+  - ^source.svm.name                     => source_vserver
+  - filter:
+    - list_destinations_only=true
+
+plugins:
+  - LabelAgent:
+      split:
+      # vserver_a:volume_a
+      # -> volume_a
+        - destination_location `:` ,destination_volume
+        - source_location `:` ,source_volume
+
+export_options:
+  instance_keys:
+    - destination_location
+    - destination_cluster
+    - destination_volume
+    - destination_vserver
+    - relationship_id
+    - source_location
+    - source_volume
+    - source_vserver
+  instance_labels:
+    - policy_type
+
+# example response of GET api/snapmirror/relationships?list_destinations_only=true
+# there is not much more info available
+# in big contrast to the rich dataset you get without the `list_destinations_only` filter
+
+  #  {
+  #   "destination": {
+  #    "cluster": {
+  #     "_link": {
+  #      "self": {
+  #       "href": "/api/cluster/peers/3de03572-c1f8-11eb-ae3b-d039ea28826e"
+  #      }
+  #     },
+  #     "name": "my-destination-cluster-name",
+  #     "uuid": "3de03572-c1f8-11eb-ae3b-d039ea28826e"
+  #    },
+  #    "path": "vserver_a:volume_a",
+  #    "svm": {
+  #     "name": "vserver_a",
+  #     "uuid": "781a3bdd-a828-11ef-aa28-d039ea28826e"
+  #    }
+  #   },
+  #   "group_type": "none",
+  #   "policy": {
+  #    "type": "async"
+  #   },
+  #   "source": {
+  #    "path": "vserver_b:volume_b",
+  #    "svm": {
+  #     "name": "vserver_b",
+  #     "uuid": "7b78027e-8ea9-11ee-b22a-d039ea4cc3f4"
+  #    }
+  #   },
+  #   "uuid": "c3c06aac-a829-11ef-aa28-d039ea28826e"
+  #  }

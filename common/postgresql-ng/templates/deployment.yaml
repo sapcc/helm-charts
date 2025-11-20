@@ -1,3 +1,11 @@
+{{- $userNames := keys .Values.users | sortAlpha }}
+{{- if .Values.persistence.createBackupUser }}
+  {{- $userNames = append $userNames "backup" }}
+{{- end }}
+{{- if .Values.createMetricsUser }}
+  {{- $userNames = append $userNames "metrics" }}
+{{- end }}
+
 {{- $deployment_name := include "postgres.fullname" . -}}
 kind: Deployment
 apiVersion: apps/v1
@@ -44,7 +52,7 @@ spec:
 
       initContainers:
       - name: generate-secrets
-        image: "{{ include "preferredRegistry" . }}/shared-app-images/alpine-kubectl:3.20-latest"
+        image: "{{ include "preferredRegistry" . }}/shared-app-images/alpine-kubectl:latest-latest"
         imagePullPolicy: "Always"
         env:
         - name: DEBUG
@@ -54,7 +62,12 @@ spec:
         - name: DEPLOYMENT_NAME
           value: {{ $deployment_name }}
         - name: USERS
-          value: {{ keys (.Values.users | required ".Values.users must be configured") | sortAlpha | join " " | quote }}
+          value: "{{- range $user := $userNames }}
+            {{- $settings := index $.Values.users $user | default (dict) }}
+            {{- hasKey $settings "secretName" | ternary "" (printf "%s " $user) }}
+          {{- end }}"
+        - name: ANNOTATE_FOR_RELOADER
+          value: {{ .Values.reloader.annotateGeneratedSecrets | quote }}
         command: [ ash, -c, {{ .Files.Get "bin/init-generate-secrets.sh" | quote }} ]
 
       containers:
@@ -74,8 +87,6 @@ spec:
           value: "/var/lib/postgresql/{{ .Values.postgresVersion}}"
         - name: PGVERSION
           value: {{ .Values.postgresVersion | quote }}
-        - name: PGDATABASE
-          value: {{ .Values.postgresDatabase | quote }}
         - name: PGUSER
           value: postgres
         - name: PGAUTHMETHOD
@@ -84,12 +95,18 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.podIP
-        {{- range $user, $settings := .Values.users }}
+        {{- range $user := $userNames }}
+        {{- $settings := index $.Values.users $user | default (dict) }}
         - name: USER_PASSWORD_{{ $user | replace "-" "_" }}
           valueFrom:
             secretKeyRef:
+              {{- if (and (hasKey $settings "secretName") (hasKey $settings "secretKey")) }}
+              name: {{ $settings.secretName }}
+              key:  {{ $settings.secretKey }}
+              {{- else }}
               name: {{ $.Release.Name }}-pguser-{{ $user }}
               key: postgres-password
+              {{- end }}
         {{- end }}
 
         ports:
@@ -100,6 +117,7 @@ spec:
             command:
             - bash
             - -c
+            # We need to become live and ready in startup to be able to create a backup
             - "[[ -e /tmp/in-init ]] || exec pg_isready --host $POD_IP --timeout {{ .Values.probe_timeout_secs }}"
           initialDelaySeconds: 120
           timeoutSeconds: {{ .Values.probe_timeout_secs }}
@@ -109,6 +127,7 @@ spec:
             command:
             - bash
             - -c
+            # We need to become live and ready in startup to be able to create a backup
             - "[[ -e /tmp/in-init ]] || exec pg_isready --host $POD_IP --timeout {{ .Values.probe_timeout_secs }}"
           initialDelaySeconds: 5
           timeoutSeconds: {{ .Values.probe_timeout_secs }}
@@ -122,10 +141,6 @@ spec:
           mountPath: /data
         - name: postgres-etc
           mountPath: /etc/postgresql
-        {{- if .Values.sqlOnCreate }}
-        - name: sql-on-create
-          mountPath: /sql-on-create.d
-        {{- end }}
         - name: sql-on-startup
           mountPath: /sql-on-startup.d
         {{- if .Values.sharedMemoryLimit }}
@@ -134,7 +149,7 @@ spec:
         {{- end }}
       {{- if .Values.crontab }}
       - name: cron
-        image: "{{ include "preferredRegistry" . }}/shared-app-images/alpine-psql:3.20-latest"
+        image: "{{ include "preferredRegistry" . }}/shared-app-images/alpine-psql:3.22-latest"
         imagePullPolicy: "Always"
         command:
           - /bin/sh
@@ -167,11 +182,6 @@ spec:
       - name: crontab
         configMap:
           name: {{ template "postgres.fullname" . }}-crontab
-      {{- end }}
-      {{- if .Values.sqlOnCreate }}
-      - name: sql-on-create
-        configMap:
-          name: {{ template "postgres.fullname" . }}-sql-on-create
       {{- end }}
       - name: sql-on-startup
         configMap:

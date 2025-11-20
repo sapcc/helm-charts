@@ -11,6 +11,8 @@ spec:
     kind: CephBlockPool
     listKind: CephBlockPoolList
     plural: cephblockpools
+    shortNames:
+      - cephbp
     singular: cephblockpool
   scope: Namespaced
   versions:
@@ -130,7 +132,11 @@ spec:
                       description: Enabled whether this pool is mirrored or not
                       type: boolean
                     mode:
-                      description: 'Mode is the mirroring mode: either pool or image'
+                      description: 'Mode is the mirroring mode: pool, image or init-only.'
+                      enum:
+                        - pool
+                        - image
+                        - init-only
                       type: string
                     peers:
                       description: Peers represents the peers spec
@@ -227,6 +233,7 @@ spec:
                       type: string
                     targetSizeRatio:
                       description: TargetSizeRatio gives a hint (%) to Ceph in terms of expected consumption of the total cluster capacity
+                      minimum: 0
                       type: number
                   required:
                     - size
@@ -280,7 +287,7 @@ spec:
                   nullable: true
                   type: object
                 mirroringInfo:
-                  description: MirroringInfoSpec is the status of the pool mirroring
+                  description: MirroringInfoSpec is the status of the pool/radosnamespace mirroring
                   properties:
                     details:
                       type: string
@@ -318,7 +325,7 @@ spec:
                       type: string
                   type: object
                 mirroringStatus:
-                  description: MirroringStatusSpec is the status of the pool mirroring
+                  description: MirroringStatusSpec is the status of the pool/radosNamespace mirroring
                   properties:
                     details:
                       description: Details contains potential status errors
@@ -335,12 +342,68 @@ spec:
                         daemon_health:
                           description: DaemonHealth is the health of the mirroring daemon
                           type: string
+                        group_health:
+                          description: GroupHealth is the health of the mirrored image group
+                          nullable: true
+                          type: string
+                        group_states:
+                          description: GroupStates is the various state for all mirrored image groups
+                          nullable: true
+                          properties:
+                            error:
+                              description: Error is when the mirroring state is errored
+                              type: integer
+                            replaying:
+                              description: Replaying is when the replay of the mirroring journal is on-going
+                              type: integer
+                            starting_replay:
+                              description: StartingReplay is when the replay of the mirroring journal starts
+                              type: integer
+                            stopped:
+                              description: Stopped is when the mirroring state is stopped
+                              type: integer
+                            stopping_replay:
+                              description: StopReplaying is when the replay of the mirroring journal stops
+                              type: integer
+                            syncing:
+                              description: Syncing is when the image is syncing
+                              type: integer
+                            unknown:
+                              description: Unknown is when the mirroring state is unknown
+                              type: integer
+                          type: object
                         health:
                           description: Health is the mirroring health
                           type: string
                         image_health:
                           description: ImageHealth is the health of the mirrored image
                           type: string
+                        image_states:
+                          description: ImageStates is the various state for all mirrored images
+                          nullable: true
+                          properties:
+                            error:
+                              description: Error is when the mirroring state is errored
+                              type: integer
+                            replaying:
+                              description: Replaying is when the replay of the mirroring journal is on-going
+                              type: integer
+                            starting_replay:
+                              description: StartingReplay is when the replay of the mirroring journal starts
+                              type: integer
+                            stopped:
+                              description: Stopped is when the mirroring state is stopped
+                              type: integer
+                            stopping_replay:
+                              description: StopReplaying is when the replay of the mirroring journal stops
+                              type: integer
+                            syncing:
+                              description: Syncing is when the image is syncing
+                              type: integer
+                            unknown:
+                              description: Unknown is when the mirroring state is unknown
+                              type: integer
+                          type: object
                         states:
                           description: States is the various state for all mirrored images
                           nullable: true
@@ -376,6 +439,9 @@ spec:
                 phase:
                   description: ConditionType represent a resource's status
                   type: string
+                poolID:
+                  description: optional
+                  type: integer
                 snapshotScheduleStatus:
                   description: SnapshotScheduleStatusSpec is the status of the snapshot schedule
                   properties:

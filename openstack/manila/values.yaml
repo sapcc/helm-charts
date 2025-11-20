@@ -31,6 +31,7 @@ server_migration_driver_continue_update_interval: 300
 pyreloader_enabled: false
 
 coordinationBackend: 'file'
+rpc_workers: 1
 wsgi_processes: 8
 
 logging:
@@ -97,9 +98,12 @@ memcached:
   enabled: true
   metrics:
     enabled: true
+  priority_class: important-payload
 
 proxysql:
   mode: ""
+  max_transaction_time: "120000"
+  native_sidecar: true
 
 mysql_metrics:
   db_name: manila
@@ -107,6 +111,8 @@ mysql_metrics:
   resources:
     limits:
       memory: 512Mi
+  vpa:
+    set_main_container: true
   customMetrics: # metrics starting "openstack_" and having a project_id label will go to Maia !
     - help: Manila Shares count
       labels:
@@ -453,12 +459,17 @@ mysql_metrics:
       name: manila_share_servers_count_gauge
       query: |
         SELECT
-          host AS manila_host,
-          share_network_subnet_id,
-          status,
+          ss.host AS manila_host,
+          ss.status,
+          ssnsm.share_network_subnet_id,
           COUNT(*) AS count_gauge
-        FROM share_servers
-        GROUP BY manila_host, share_network_subnet_id, status;
+        FROM share_servers AS ss
+        JOIN share_server_share_network_subnet_mappings AS ssnsm
+          ON ss.id = ssnsm.share_server_id
+        GROUP BY
+          manila_host,
+          ss.status,
+          ssnsm.share_network_subnet_id;
       values:
         - "count_gauge"
     - help: Manila Share servers Stuck Count
@@ -470,19 +481,36 @@ mysql_metrics:
       name: manila_share_servers_stuck_count_gauge
       query: |
         SELECT
-          host as manila_host,
-          id,
-          share_network_subnet_id,
-          status,
+          ss.host AS manila_host,
+          ss.id,
+          ss.status,
+          ssnsm.share_network_subnet_id,
           COUNT(*) AS count_gauge
-        FROM share_servers
-        WHERE deleted='False' AND status in ('deleting','creating','error','error_unmanage','error_manage') AND (COALESCE(updated_at, created_at) < DATE_SUB(now(), INTERVAL 15 MINUTE))
+        FROM share_servers AS ss
+        JOIN share_server_share_network_subnet_mappings AS ssnsm
+          ON ss.id = ssnsm.share_server_id
+        WHERE
+          ss.deleted = 'False' AND ss.status IN (
+            'deleting',
+            'creating',
+            'error',
+            'error_unmanage',
+            'error_manage'
+          ) AND (
+            COALESCE(ss.updated_at, ss.created_at) < DATE_SUB(NOW(), INTERVAL 15 MINUTE)
+          )
         GROUP BY
           manila_host,
-          id,
-          share_network_subnet_id,
-          status
-        UNION SELECT 'none' AS manila_host, 'none' AS id, 'none' AS share_network_subnet_id, 'none' AS status, 0 AS count_gauge;
+          ss.id,
+          ss.status,
+          ssnsm.share_network_subnet_id
+        UNION
+        SELECT
+          'none' AS manila_host,
+          'none' AS id,
+          'none' AS share_network_subnet_id,
+          'none' AS status,
+          0 AS count_gauge;
       values:
         - "count_gauge"
     - help: Manila Share servers Stuck Duration in Seconds
@@ -494,14 +522,31 @@ mysql_metrics:
       name: manila_share_servers_stuck_duration_seconds
       query: |
         SELECT
-          host AS manila_host,
-          id,
-          share_network_subnet_id,
-          status,
-          UNIX_TIMESTAMP(NOW()) - UNIX_TIMESTAMP(COALESCE(updated_at, created_at)) AS duration
-        FROM share_servers
-        WHERE deleted='False' AND status in ('deleting','creating','error','error_unmanage','error_manage') AND (COALESCE(updated_at, created_at) < DATE_SUB(now(), INTERVAL 15 MINUTE))
-        UNION SELECT 'none' AS manila_host, 'none' AS id, 'none' AS share_network_subnet_id, 'none' AS status, 0 AS duration;
+          ss.host AS manila_host,
+          ss.id,
+          ssnsm.share_network_subnet_id,
+          ss.status,
+          UNIX_TIMESTAMP(NOW()) - UNIX_TIMESTAMP(COALESCE(ss.updated_at, ss.created_at)) AS duration
+        FROM share_servers AS ss
+        JOIN share_server_share_network_subnet_mappings AS ssnsm
+          ON ss.id = ssnsm.share_server_id
+        WHERE
+          ss.deleted = 'False' AND ss.status IN (
+            'deleting',
+            'creating',
+            'error',
+            'error_unmanage',
+            'error_manage'
+          ) AND (
+            COALESCE(ss.updated_at, ss.created_at) < DATE_SUB(NOW(), INTERVAL 15 MINUTE)
+          )
+        UNION
+        SELECT
+          'none' AS manila_host,
+          'none' AS id,
+          'none' AS share_network_subnet_id,
+          'none' AS status,
+          0 AS duration;
       values:
         - "duration"
     - help: Manila Share Access Stuck Max Duration
@@ -556,10 +601,13 @@ pod:
         revision_history: 5
         pod_replacement_strategy: RollingUpdate
         rolling_update:
-          max_unavailable: 0
-          max_surge: 1
+          max_unavailable: 10%
+          max_surge: 25%
   health:
     use_agent: true
+  priority_class:
+    default: critical-payload
+    low: important-payload
   resources:
     api:
       requests:
@@ -647,6 +695,41 @@ mariadb:
       net_read_timeout = 300
       net_write_timeout = 300
 
+pxc_db:
+  alerts:
+    support_group: compute-storage-api
+  enabled: false
+  name: manila
+  ccroot_user:
+    enabled: true
+  databases:
+    - manila
+  users:
+    manila:
+      name: manila
+      grants:
+        - "ALL PRIVILEGES on manila.*"
+  pxc:
+    configuration:
+      options:
+        innodb_buffer_pool_size: "4096M"
+        innodb_log_file_size: "2048M"
+        net_read_timeout: "300"
+        net_write_timeout: "300"
+    resources:
+      requests:
+        memory: 6Gi
+    persistence:
+      size: 10Gi
+  backup:
+    enabled: true
+    s3:
+      secrets:
+        aws_access_key_id: null
+        aws_secret_access_key: null
+    pitr:
+      enabled: true
+
 # needed for utils ini_sections
 postgresql:
   enabled: false
@@ -665,6 +748,7 @@ rabbitmq:
     enabled: true
   metrics:
     enabled: true
+    addMetricsUser: true
   enableDetailedMetrics: false
   enablePerObjectMetrics: false
 
@@ -674,13 +758,61 @@ seeds:
   all_enabled: true
   service_type: share
   endpoint_prefix: ""
+  backup_user:
+    enabled: false
+    username: manilabackup
+    password: null
 
 share_ensure:
   enabled: true
 
+share_type_extra_specs:
+  compression: "<is> True"
+  create_share_from_snapshot_support: "True"
+  dedupe: "<is> True"
+  replication_type: "readable"
+  revert_to_snapshot_support: "True"
+  netapp:hide_snapdir: "True"
+  netapp:max_files_multiplier: "4.813"  # 33.6925 / 7 -> roughly 1 inode per 7 KB
+  netapp:snapshot_policy: "none"
+  netapp:split_clone_on_create: "True"
+  netapp:tcp_max_xfer_size: "262144"  # ccloud 256 KB, system default for ONTAP 9.5 was 64 KB
+  netapp:thin_provisioned: "True"     # netapp_flexvol_encryption: "True"
+  provisioning:max_share_size: "32768"
+  provisioning:max_share_extend_size: "32768" # keep this in sync with value "max_asset_sizes" of "- asset_type: 'nfs-shares.*'" in openstack/castellum/templates/configmap.yaml
+
 share_types:
-  hypervisor_storage: false
-  btp_backup: false
+  default:
+    enabled: true
+    is_public: true
+    description: "High Performance"
+    extra_specs:
+      share_backend_name: "netapp-multi"
+  integration:
+    enabled: true
+  standard:
+    enabled: false
+    description: "Standard"
+    extra_specs:
+      provisioning:max_share_size: "65536"
+      provisioning:max_share_extend_size: "65536" # keep this in sync with castellum
+  hypervisor_storage_hana_qa:
+    enabled: false
+    extra_specs:
+      provisioning:min_share_size: "2048"
+      provisioning:max_share_size: "40960"
+  hypervisor_storage:
+    enabled: false
+  hypervisor_storage_hanalytics:
+    enabeld: false
+  hypervisor_storage_vim:
+    enabeld: false
+  btp_backup:
+    enabled: false
+
+netapp:
+  filers:
+    username: manilauser
 
 # netapp filer back ends, required input
 # netapp:
@@ -710,18 +842,20 @@ audit:
   # how many messages to buffer before dumping to log (when rabbit is down or too slow)
   mem_queue_size: 1000
 
-rabbitmq_notifications:
-  name: manila
-
 # openstack-ratelimit-middleware
 api_rate_limit:
   enabled: false
+  backend_secret_file: /etc/manila/ratelimit-backend-secret.txt
   rate_limit_by: "target_project_id"
   max_sleep_time_seconds: 15
   log_sleep_time_seconds: 10
   backend_timeout_seconds: 15
   project_whitelist_default:
     - ccadmin/cloud_admin # castellum scraping
+
+api-ratelimit-redis:
+  alerts:
+    support_group: compute-storage-api
 
 # openstack-watcher-middleware
 watcher:

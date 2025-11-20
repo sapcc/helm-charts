@@ -37,8 +37,13 @@ spec:
       containers:
       {{- range $release, $config := .Values.rhn_entitlement_checks }}
       - name: check-{{ $release }}
-        image: {{$.Values.global.registry}}/shared-app-images/alpine-curl:3.20-latest
+        {{- if $.Values.image_refs.alpine_curl }}
+        image: {{ quote $.Values.image_refs.alpine_curl }}
+        imagePullPolicy: IfNotPresent
+        {{- else }}
+        image: {{$.Values.global.registry}}/shared-app-images/alpine-curl:3.22-latest
         imagePullPolicy: Always
+        {{- end }}
         args:
           - /bin/sh
           - /bin-check/check-rhn

@@ -1,0 +1,348 @@
+---
+version:
+  chart: &chartVersion "0.29.5"
+  Image: &ImageVersion "20240724035543"
+  databaseSoftware: &databaseSoftwareVersion "10.5.25"
+  proxysql: &proxysqlSoftwareVersion "2.6.3"
+  haproxy: &haproxySoftwareVersion "2.8.10"
+  kopiabackup: &kopiabackupSoftwareVersion "0.17.0"
+suite: metadata
+values:
+  - default_values.yaml
+set:
+  mariadb.galera.clustername: "testclustername"
+  image.database.softwarename: mariadb-galera
+  image.database.softwareversion: *databaseSoftwareVersion
+  image.database.imageversion: *ImageVersion
+  image.proxysql.softwareversion: *proxysqlSoftwareVersion
+  image.proxysql.imageversion: *ImageVersion
+  image.haproxy.softwareversion: *haproxySoftwareVersion
+  image.haproxy.imageversion: *ImageVersion
+  image.kopiabackup.softwareversion: *kopiabackupSoftwareVersion
+  image.kopiabackup.imageversion: *ImageVersion
+release:
+  name: testrelease
+  namespace: testnamespace
+chart:
+  version: *chartVersion
+  appVersion: *databaseSoftwareVersion
+templates:
+  - statefulset-mariadb.yaml
+  - statefulset-proxysql.yaml
+  - cronjob-kopia-backup.yaml
+  - deployment-haproxy.yaml
+  - deployment-kopia-server.yaml
+  - job-kopia-restore.yaml
+  - job-mariadb-config.yaml
+  - configmap-mariadb-my.cnf.yaml
+  - configmap-mariadb.yaml
+  - configmap-mariadb-job.yaml
+  - configmap-proxysql.yaml
+  - configmap-proxysql.conf.yaml
+  - configmap-haproxy.yaml
+  - configmap-kopia.yaml
+tests:
+  - it: labels for the mariadb-galera statefulset are correct
+    template: statefulset-mariadb.yaml
+    asserts:
+      - isKind:
+          of: StatefulSet
+      - equal:
+          path: spec.template.metadata.labels["app.kubernetes.io/name"]
+          value: "mariadb-galera"
+      - equal:
+          path: spec.template.metadata.labels["app.kubernetes.io/instance"]
+          value: "mariadb-galera-testrelease"
+      - equal:
+          path: spec.template.metadata.labels["app.kubernetes.io/component"]
+          value: "mariadb-galera-sts-database"
+      - equal:
+          path: spec.template.metadata.labels["app.kubernetes.io/part-of"]
+          value: "testrelease"
+      - equal:
+          path: spec.template.metadata.labels["app.kubernetes.io/version"]
+          value: "10.5.25-20240724035543"
+      - equal:
+          path: spec.template.metadata.labels["helm.sh/chart"]
+          value: "mariadb-galera-0.29.5"
+  - it: labels for the proxysql statefulset are correct
+    template: statefulset-proxysql.yaml
+    set:
+      proxy.enabled: true
+      proxy.type: "proxysql"
+    asserts:
+      - isKind:
+          of: StatefulSet
+      - equal:
+          path: spec.template.metadata.labels["app.kubernetes.io/name"]
+          value: "mariadb-galera"
+      - equal:
+          path: spec.template.metadata.labels["app.kubernetes.io/instance"]
+          value: "mariadb-galera-testrelease"
+      - equal:
+          path: spec.template.metadata.labels["app.kubernetes.io/component"]
+          value: "mariadb-galera-proxysql-sts-proxy"
+      - equal:
+          path: spec.template.metadata.labels["app.kubernetes.io/part-of"]
+          value: "testrelease"
+      - equal:
+          path: spec.template.metadata.labels["app.kubernetes.io/version"]
+          value: "2.6.3-20240724035543"
+      - equal:
+          path: spec.template.metadata.labels["helm.sh/chart"]
+          value: "mariadb-galera-0.29.5"
+  - it: labels for the HAProxy deployment are correct
+    template: deployment-haproxy.yaml
+    set:
+      proxy.enabled: true
+      proxy.type: "haproxy"
+    asserts:
+      - isKind:
+          of: Deployment
+      - equal:
+          path: spec.template.metadata.labels["app.kubernetes.io/name"]
+          value: "mariadb-galera"
+      - equal:
+          path: spec.template.metadata.labels["app.kubernetes.io/instance"]
+          value: "mariadb-galera-testrelease"
+      - equal:
+          path: spec.template.metadata.labels["app.kubernetes.io/component"]
+          value: "mariadb-galera-haproxy-deploy-proxy"
+      - equal:
+          path: spec.template.metadata.labels["app.kubernetes.io/part-of"]
+          value: "testrelease"
+      - equal:
+          path: spec.template.metadata.labels["app.kubernetes.io/version"]
+          value: "2.8.10-20240724035543"
+      - equal:
+          path: spec.template.metadata.labels["helm.sh/chart"]
+          value: "mariadb-galera-0.29.5"
+  - it: labels for the kopia-server deployment are correct
+    template: deployment-kopia-server.yaml
+    set:
+      mariadb.galera.backup.enabled: true
+      mariadb.galera.backup.kopia.enabled: true
+      mariadb.galera.backup.kopia.s3.endpoint: "https://s3.eu-de-1.cloud"
+      mariadb.galera.backup.kopia.s3.region: "eu-de-1"
+      mariadb.galera.backup.kopia.s3.bucket: "testbucket"
+    asserts:
+      - isKind:
+          of: Deployment
+      - equal:
+          path: spec.template.metadata.labels["app.kubernetes.io/name"]
+          value: "mariadb-galera"
+      - equal:
+          path: spec.template.metadata.labels["app.kubernetes.io/instance"]
+          value: "mariadb-galera-testrelease"
+      - equal:
+          path: spec.template.metadata.labels["app.kubernetes.io/component"]
+          value: "mariadb-galera-kopia-deploy-server"
+      - equal:
+          path: spec.template.metadata.labels["app.kubernetes.io/part-of"]
+          value: "testrelease"
+      - equal:
+          path: spec.template.metadata.labels["app.kubernetes.io/version"]
+          value: "0.17.0-20240724035543"
+      - equal:
+          path: spec.template.metadata.labels["helm.sh/chart"]
+          value: "mariadb-galera-0.29.5"
+  - it: labels for the kopia-backup cronjob are correct
+    template: cronjob-kopia-backup.yaml
+    set:
+      mariadb.galera.backup.enabled: true
+      mariadb.galera.backup.kopia.enabled: true
+      mariadb.galera.backup.kopia.s3.endpoint: "https://s3.eu-de-1.cloud"
+      mariadb.galera.backup.kopia.s3.region: "eu-de-1"
+      mariadb.galera.backup.kopia.s3.bucket: "testbucket"
+    asserts:
+      - isKind:
+          of: CronJob
+      - equal:
+          path: spec.jobTemplate.spec.template.metadata.labels["app.kubernetes.io/name"]
+          value: "mariadb-galera"
+      - equal:
+          path: spec.jobTemplate.spec.template.metadata.labels["app.kubernetes.io/instance"]
+          value: "mariadb-galera-testrelease"
+      - equal:
+          path: spec.jobTemplate.spec.template.metadata.labels["app.kubernetes.io/component"]
+          value: "mariadb-galera-kopia-cj-backup"
+      - equal:
+          path: spec.jobTemplate.spec.template.metadata.labels["app.kubernetes.io/part-of"]
+          value: "testrelease"
+      - equal:
+          path: spec.jobTemplate.spec.template.metadata.labels["app.kubernetes.io/version"]
+          value: "0.17.0-20240724035543"
+      - equal:
+          path: spec.jobTemplate.spec.template.metadata.labels["helm.sh/chart"]
+          value: "mariadb-galera-0.29.5"
+  - it: labels for the kopia-restore job are correct
+    template: job-kopia-restore.yaml
+    set:
+      mariadb.galera.restore.kopia.enabled: true
+      mariadb.galera.backup.kopia.s3.endpoint: "https://s3.eu-de-1.cloud"
+      mariadb.galera.backup.kopia.s3.region: "eu-de-1"
+      mariadb.galera.backup.kopia.s3.bucket: "testbucket"
+    asserts:
+      - isKind:
+          of: Job
+      - equal:
+          path: spec.template.metadata.labels["app.kubernetes.io/name"]
+          value: "mariadb-galera"
+      - equal:
+          path: spec.template.metadata.labels["app.kubernetes.io/instance"]
+          value: "mariadb-galera-testrelease"
+      - equal:
+          path: spec.template.metadata.labels["app.kubernetes.io/component"]
+          value: "mariadb-galera-kopia-job-restore"
+      - equal:
+          path: spec.template.metadata.labels["app.kubernetes.io/part-of"]
+          value: "testrelease"
+      - equal:
+          path: spec.template.metadata.labels["app.kubernetes.io/version"]
+          value: "0.17.0-20240724035543"
+      - equal:
+          path: spec.template.metadata.labels["helm.sh/chart"]
+          value: "mariadb-galera-0.29.5"
+  - it: labels for the mariadb-galera config job are correct
+    template: job-mariadb-config.yaml
+    asserts:
+      - isKind:
+          of: Job
+      - equal:
+          path: spec.template.metadata.labels["app.kubernetes.io/name"]
+          value: "mariadb-galera"
+      - equal:
+          path: spec.template.metadata.labels["app.kubernetes.io/instance"]
+          value: "mariadb-galera-testrelease"
+      - equal:
+          path: spec.template.metadata.labels["app.kubernetes.io/component"]
+          value: "mariadb-galera-job-config"
+      - equal:
+          path: spec.template.metadata.labels["app.kubernetes.io/part-of"]
+          value: "testrelease"
+      - equal:
+          path: spec.template.metadata.labels["app.kubernetes.io/version"]
+          value: "10.5.25-20240724035543"
+      - equal:
+          path: spec.template.metadata.labels["helm.sh/chart"]
+          value: "mariadb-galera-0.29.5"
+  - it: labels for the mariadb-galera entrypoint configmap are correct
+    template: configmap-mariadb.yaml
+    documentSelector:
+      path: metadata.name
+      value: testrelease-mariadb-entrypoint-sh
+    asserts:
+      - isKind:
+          of: ConfigMap
+      - equal:
+          path: metadata.labels["app.kubernetes.io/name"]
+          value: "mariadb-galera"
+      - equal:
+          path: metadata.labels["app.kubernetes.io/instance"]
+          value: "mariadb-galera-testrelease"
+      - equal:
+          path: metadata.labels["app.kubernetes.io/component"]
+          value: "mariadb-galera-cm-entrypoint"
+      - equal:
+          path: metadata.labels["app.kubernetes.io/part-of"]
+          value: "testrelease"
+  - it: labels for the mariadb-galera functions configmap are correct
+    template: configmap-mariadb.yaml
+    documentSelector:
+      path: metadata.name
+      value: testrelease-mariadb-common-functions-extended-sh
+    asserts:
+      - isKind:
+          of: ConfigMap
+      - equal:
+          path: metadata.labels["app.kubernetes.io/name"]
+          value: "mariadb-galera"
+      - equal:
+          path: metadata.labels["app.kubernetes.io/instance"]
+          value: "mariadb-galera-testrelease"
+      - equal:
+          path: metadata.labels["app.kubernetes.io/component"]
+          value: "mariadb-galera-cm-functions"
+      - equal:
+          path: metadata.labels["app.kubernetes.io/part-of"]
+          value: "testrelease"
+  - it: labels for the mariadb-galera probes configmap are correct
+    template: configmap-mariadb.yaml
+    documentSelector:
+      path: metadata.name
+      value: testrelease-mariadb-probes-sh
+    asserts:
+      - isKind:
+          of: ConfigMap
+      - equal:
+          path: metadata.labels["app.kubernetes.io/name"]
+          value: "mariadb-galera"
+      - equal:
+          path: metadata.labels["app.kubernetes.io/instance"]
+          value: "mariadb-galera-testrelease"
+      - equal:
+          path: metadata.labels["app.kubernetes.io/component"]
+          value: "mariadb-galera-cm-probes"
+      - equal:
+          path: metadata.labels["app.kubernetes.io/part-of"]
+          value: "testrelease"
+  - it: labels for the mariadb-galera hooks configmap are correct
+    template: configmap-mariadb.yaml
+    documentSelector:
+      path: metadata.name
+      value: testrelease-mariadb-hooks-sh
+    asserts:
+      - isKind:
+          of: ConfigMap
+      - equal:
+          path: metadata.labels["app.kubernetes.io/name"]
+          value: "mariadb-galera"
+      - equal:
+          path: metadata.labels["app.kubernetes.io/instance"]
+          value: "mariadb-galera-testrelease"
+      - equal:
+          path: metadata.labels["app.kubernetes.io/component"]
+          value: "mariadb-galera-cm-hooks"
+      - equal:
+          path: metadata.labels["app.kubernetes.io/part-of"]
+          value: "testrelease"
+  - it: labels for the mariadb-galera galerastatus configmap are correct
+    template: configmap-mariadb.yaml
+    documentSelector:
+      path: metadata.name
+      value: testrelease-galerastatus
+    asserts:
+      - isKind:
+          of: ConfigMap
+      - equal:
+          path: metadata.labels["app.kubernetes.io/name"]
+          value: "mariadb-galera"
+      - equal:
+          path: metadata.labels["app.kubernetes.io/instance"]
+          value: "mariadb-galera-testrelease"
+      - equal:
+          path: metadata.labels["app.kubernetes.io/component"]
+          value: "mariadb-galera-cm-status"
+      - equal:
+          path: metadata.labels["app.kubernetes.io/part-of"]
+          value: "testrelease"
+  - it: labels for the mariadb-galera wipedata configmap are correct
+    template: configmap-mariadb.yaml
+    documentSelector:
+      path: metadata.name
+      value: testrelease-mariadb-wipedata
+    asserts:
+      - isKind:
+          of: ConfigMap
+      - equal:
+          path: metadata.labels["app.kubernetes.io/name"]
+          value: "mariadb-galera"
+      - equal:
+          path: metadata.labels["app.kubernetes.io/instance"]
+          value: "mariadb-galera-testrelease"
+      - equal:
+          path: metadata.labels["app.kubernetes.io/component"]
+          value: "mariadb-galera-cm-wipedata"
+      - equal:
+          path: metadata.labels["app.kubernetes.io/part-of"]
+          value: "testrelease"

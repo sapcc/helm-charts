@@ -1,0 +1,94 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+    name: {{ printf "%s-init-network" .Release.Name | quote }}
+data:
+    configure_network.sh: |
+        #!/usr/bin/bash -e
+
+        RS_IP=$(/px-init/calculate_ip_by_statefulset_ordinal.py get-ip-address)
+        ROUTER_ID=$(/px-init/calculate_ip_by_statefulset_ordinal.py get-router-id)
+
+        function ip_assigned() {
+            out=$(ip addr show dev $PX_INTERFACE scope global)
+            if [[ "$out" == *"$RS_IP"* ]] && [[ "$out" == *"tentative"* ]]; then
+                echo "tentative"
+            elif [[ "$out" == *"$RS_IP"* ]]; then
+                echo "assigned"
+            else
+                echo "unassigned"
+            fi
+        }
+
+        function assign_ip_address() {
+            echo "Adding $RS_IP to $PX_INTERFACE"
+            ip addr add $RS_IP dev $PX_INTERFACE
+
+            while [[ $(ip_assigned) == "tentative" ]]; do
+                echo "Waiting for IP address to be assigned, is tentative"
+                sleep 1
+            done;
+
+            if [[ $(ip_assigned) == "unassigned" ]]; then
+                echo "Failed to assign $RS_IP to $PX_INTERFACE"
+                exit -1
+            fi
+
+            echo "Successfully assigned $RS_IP to $PX_INTERFACE"
+            ip addr show dev $PX_INTERFACE scope global
+        }
+
+        if [[ $(ip_assigned) == "unassigned" ]]; then
+            assign_ip_address
+        fi
+
+        echo "Setting promiscious mode on $PX_INTERFACE"
+        ip link set $PX_INTERFACE promisc on
+
+        echo $RS_IP > /var/run/bird/ip
+        echo $PX_INTERFACE > /var/run/bird/interface
+        echo "router id $ROUTER_ID;" | tee /var/run/bird/router_id.conf
+        {
+            echo "define ROUTER_ID = $ROUTER_ID;"
+            echo "define SOURCE_IP = $(echo $RS_IP | cut -d'/' -f 1);"
+        } | tee /var/run/bird/bgp_source.conf
+
+    calculate_ip_by_statefulset_ordinal.py: |
+        #!/usr/bin/python3
+        import argparse
+        import platform
+        import os
+        import sys
+
+        from ipaddress import ip_network
+
+
+        def get_ip_address(ordinal):
+            network = ip_network(os.environ.get('PX_NETWORK'))
+            return f'{network[ordinal]}/{network.prefixlen}'
+
+
+        def get_router_id(ordinal):
+            network = ip_network(os.environ.get('PX_NETWORK_V4'))
+            return f'{network[ordinal]}'
+
+        if __name__ == "__main__":
+
+            parser = argparse.ArgumentParser(description="Calculate IP address or router ID based on the ordinal.")
+            parser.add_argument("command", choices=["get-ip-address", "get-router-id"], help="Command to execute")
+            args = parser.parse_args()
+
+            ordinal = os.environ.get('STATEFULSET_ORDINAL')
+            if ordinal is None:
+                print("STATEFULSET_ORDINAL environment variable is not set.", file=sys.stderr)
+                sys.exit(1)
+            if ordinal.isdigit():
+                ordinal = int(ordinal)
+            else:
+                print("STATEFULSET_ORDINAL must be an integer.", file=sys.stderr)
+                sys.exit(1)
+            if args.command == "get-ip-address":
+                print(get_ip_address(ordinal))
+            elif args.command == "get-router-id":
+                print(get_router_id(ordinal))
+

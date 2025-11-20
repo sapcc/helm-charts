@@ -1,0 +1,87 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: {{ include "netapp-metrics-federation.fullname" . }}
+  labels:
+    {{- include "netapp-metrics-federation.labels" . | nindent 4 }}
+data:
+  snapmirror.yaml: |
+    metrics:
+      - export_name: netapp_snapmirror_labels:remotebkp
+        query: |
+          netapp_snapmirror_endpoint_labels:enhanced{region="{{ .Values.global.region }}", project_id!="", share_id!=""}
+            * on(relationship_id)
+            group_right(project_id, share_id, share_name) netapp_snapmirror_labels:enhanced{share_id=""}
+        label_rules:
+        - type: fill
+          label_name: unhealthy_reason
+        help: "netapp snapmirror labels for remote backup targets"
+      - export_name: netapp_snapmirror_labels:localbkp
+        query: netapp_snapmirror_labels:enhanced{region="{{ .Values.global.region }}", project_id!="",share_id!="", destination_volume!~"share_[0-9a-f]{8}_[0-9a-f]{4}_[0-9a-f]{4}_[0-9a-f]{4}_[0-9a-f]{12}"}
+        label_rules:
+        - type: fill
+          label_name: unhealthy_reason
+        help: "netapp snapmirror labels for local backup targets"
+      - export_name: netapp_snapmirror_lag_time:federated
+        query: |
+          netapp_snapmirror_endpoint_labels:enhanced{region="{{ .Values.global.region }}", project_id!="", share_id!=""}
+            * on (source_vserver, source_volume, destination_cluster, destination_vserver, destination_volume)
+            group_left() netapp_snapmirror_lag_time:enhanced
+        help: "netapp snapmirror lag time"
+      - export_name: netapp_snapmirror_last_transfer_duration:federated
+        query: |
+          netapp_snapmirror_endpoint_labels:enhanced{region="{{ .Values.global.region }}", project_id!="", share_id!=""}
+            * on (source_vserver, source_volume, destination_cluster, destination_vserver, destination_volume)
+            group_left() netapp_snapmirror_last_transfer_duration:enhanced
+      - export_name: netapp_snapmirror_last_transfer_size:federated
+        query: |
+          netapp_snapmirror_endpoint_labels:enhanced{region="{{ .Values.global.region }}", project_id!="", share_id!=""}
+            * on (source_vserver, source_volume, destination_cluster, destination_vserver, destination_volume)
+            group_left() netapp_snapmirror_last_transfer_size:enhanced
+      - export_name: netapp_snapmirror_source_snapshot_count:federated
+        query: |
+          netapp_snapmirror_endpoint_labels:enhanced{region="{{ .Values.global.region }}", project_id!="", share_id!=""}
+          * on (source_cluster, source_vserver, source_volume) group_left()
+          label_replace(label_replace(label_replace(
+            max by (filer, svm, volume) (netapp_volume_snapshot_count),
+            "source_cluster", "$1", "filer", "(.*)"),
+            "source_vserver", "$1", "svm", "(.*)"),
+            "source_volume", "$1", "volume", "(.*)")
+      - export_name: netapp_snapmirror_destination_snapshot_count:federated
+        query: |
+          netapp_snapmirror_endpoint_labels:enhanced{region="{{ .Values.global.region }}", project_id!="", share_id!=""}
+          * on (destination_cluster, destination_vserver, destination_volume) group_left()
+          label_replace(label_replace(label_replace(
+            max by (filer, svm, volume) (netapp_volume_snapshot_count),
+            "destination_cluster", "$1", "filer", "(.*)"),
+            "destination_vserver", "$1", "svm", "(.*)"),
+            "destination_volume", "$1", "volume", "(.*)")
+    label_rules:
+      - type: drop
+        label_prefix: linkerd_
+      - type: drop
+        label_prefix: kubernetes_
+      - type: drop
+        label_prefix: pod_
+      - type: drop
+        label_name: namespace
+      - type: drop
+        label_name: app
+      - type: drop
+        label_name: cluster
+      - type: drop
+        label_name: cluster_type
+      - type: drop
+        label_name: container
+      - type: drop
+        label_name: datacenter
+      - type: drop
+        label_name: instance
+      - type: drop
+        label_name: metrics_path
+      - type: drop
+        label_name: name
+      - type: drop
+        label_name: pod
+      - type: drop
+        label_name: prometheus

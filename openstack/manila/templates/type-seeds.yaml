@@ -15,49 +15,21 @@ spec:
   requires:
   - monsoon3/manila-seed
   share_types:
-  - name: default
-    is_public: true
-    description: "High Performance"
-    specs:
-    {{- include "manila_type_seed.specs" . | indent 6 }}
-    extra_specs:
-      share_backend_name: "netapp-multi"
-      provisioning:max_share_size: "16384"
-      provisioning:max_share_extend_size: "20480" # keep this in sync with value "max_asset_sizes" of "- asset_type: 'nfs-shares.*'" in openstack/castellum/templates/configmap.yaml
-    {{- include "manila_type_seed.extra_specs" . | indent 6 }}
-  - name: integration
-    is_public: false
-    specs:
-    {{- include "manila_type_seed.specs" . | indent 6 }}
-    extra_specs:
-      share_backend_name: "integration"
-      provisioning:max_share_size: "16384"
-      provisioning:max_share_extend_size: "20480" # keep this in sync with value "max_asset_sizes" of "- asset_type: 'nfs-shares.*'" in openstack/castellum/templates/configmap.yaml
-    {{- include "manila_type_seed.extra_specs" . | indent 6 }}
-  {{- range $shareTypeName, $shareTypeEnabled := .Values.share_types }}
-  {{- if $shareTypeEnabled }}
-  {{- if $shareTypeName | hasPrefix "hypervisor_storage" }}
+  {{- range $shareTypeName, $shareTypeValues := .Values.share_types }}
+  {{- $shareTypeValues := kindIs "bool" $shareTypeValues | ternary (dict "enabled" $shareTypeValues) $shareTypeValues }}
+  {{- if $shareTypeValues.enabled }}
   - name: {{ $shareTypeName }}
-    is_public: false
+    is_public: {{ $shareTypeValues.is_public | default false }}
+    {{- if $shareTypeValues.description }}
+    description: {{ $shareTypeValues.description | quote }}
+    {{- end }}
     specs:
     {{- include "manila_type_seed.specs" . | indent 6 }}
     extra_specs:
-      share_backend_name: {{ $shareTypeName | quote }}
-      provisioning:max_share_size: "16384"
-      provisioning:max_share_extend_size: "20480" # keep this in sync with value "max_asset_sizes" of "- asset_type: 'nfs-shares.*'" in openstack/castellum/templates/configmap.yaml
-    {{- include "manila_type_seed.extra_specs" . | indent 6 }}
-  {{- else if $shareTypeName | eq "standard" }} ## share type "standard"
-  - name: {{ $shareTypeName }}
-    is_public: false
-    description: "Standard"
-    specs:
-    {{- include "manila_type_seed.specs" . | indent 6 }}
-    extra_specs:
-      share_backend_name: {{ $shareTypeName | quote }}
-      provisioning:max_share_size: "35840"
-      provisioning:max_share_extend_size: "40960" # keep this in sync with value "max_asset_sizes" of "- asset_type: 'nfs-shares.*'" in openstack/castellum/templates/configmap.yaml
-    {{- include "manila_type_seed.extra_specs" . | indent 6 }}
-  {{- end }}
+    {{ $extraSpecs :=  $.Values.share_type_extra_specs | merge (dict "share_backend_name" $shareTypeName) | merge (default (dict) $shareTypeValues.extra_specs) }}
+    {{- range $key, $value := $extraSpecs }}
+      {{ $key }}: {{ $value | quote }}
+    {{- end }}
   {{- end }}
   {{- end }}
 {{- end }}

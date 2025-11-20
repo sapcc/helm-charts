@@ -29,6 +29,8 @@ spec:
            args:
              - -c
              - /openstack-config/openstack-config.yaml
+             - --secrets
+             - /openstack-secrets/openstack-secrets.yaml
            resources:
              limits:
                 memory: {{ required ".Values.openstack.limits.memory missing" .Values.openstack.limits.memory }}
@@ -39,6 +41,9 @@ spec:
            volumeMounts:
              - mountPath: /openstack-config
                name: openstack-config
+               readOnly: true
+             - mountPath: /openstack-secrets
+               name: openstack-secrets
                readOnly: true
            #livenessProbe:
               #httpGet:
@@ -51,3 +56,6 @@ spec:
         - configMap:
             name: openstack-exporter-openstack-config
           name: openstack-config
+        - secret:
+            secretName: openstack-exporter-openstack-secrets
+          name: openstack-secrets

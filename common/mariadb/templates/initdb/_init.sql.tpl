@@ -6,7 +6,7 @@ SET sql_mode = CONCAT(@@sql_mode, ',NO_BACKSLASH_ESCAPES');
 CREATE DATABASE IF NOT EXISTS {{ . }};
 {{- end }}
 
-{{- if and .Values.global.dbUser .Values.global.dbPassword (not (hasKey .Values.users (default "" .Values.global.dbUser))) (not .Values.custom_initdb_secret) }}
+{{- if and .Values.global.dbUser .Values.global.dbPassword (not (hasKey .Values.users (default "" .Values.global.dbUser))) }}
 CREATE USER IF NOT EXISTS {{ .Values.global.dbUser }};
 GRANT ALL PRIVILEGES ON {{ .Values.name }}.*
   TO {{ include "mariadb.resolve_secret_squote" (.Values.global.dbUser) }}
@@ -15,10 +15,15 @@ GRANT ALL PRIVILEGES ON {{ .Values.name }}.*
 
 {{- range $username, $values := .Values.users }}
     {{- $username := default $username $values.name }}
-    {{- if not $values.password }}
--- Skipping user {{ $username }} without password
+    {{- if (and (hasKey $values "enabled") (eq (typeOf $values.enabled) "bool") (eq $values.enabled false)) }}
+-- Dropping user {{ include "mariadb.resolve_secret_squote" $username }} as it is disabled
+DROP USER IF EXISTS {{ include "mariadb.resolve_secret_squote" $username }}@'%';
+--
+    {{- else if not $values.password }}
+-- Skipping user {{ include "mariadb.resolve_secret_squote" $username }} without password
     {{- else }}
-CREATE USER IF NOT EXISTS {{ include "mariadb.resolve_secret_squote" $username }};
+DROP USER IF EXISTS {{ include "mariadb.resolve_secret_squote" $username }}@'localhost';
+CREATE USER IF NOT EXISTS {{ include "mariadb.resolve_secret_squote" $username }}@'%';
 ALTER USER {{ include "mariadb.resolve_secret_squote" $username }} IDENTIFIED BY {{ include "mariadb.resolve_secret_squote" $values.password }}
 {{- if $values.limits }}
   WITH
@@ -30,6 +35,16 @@ ALTER USER {{ include "mariadb.resolve_secret_squote" $username }} IDENTIFIED BY
 GRANT {{ . }} TO {{ include "mariadb.resolve_secret_squote" $username }};
         {{- end }}
     {{- end }}
+{{- end }}
+
+ALTER USER 'root'@'localhost' IDENTIFIED VIA unix_socket;
+ALTER USER 'root'@'%' IDENTIFIED BY {{ include "mariadb.resolve_secret_squote" .Values.root_password }};
+
+{{- if .Values.metrics.enabled }}
+CREATE USER IF NOT EXISTS 'monitor'@'127.0.0.1' WITH MAX_USER_CONNECTIONS 5;
+GRANT SLAVE MONITOR, PROCESS, REPLICATION CLIENT, SELECT ON *.* TO 'monitor'@'127.0.0.1';
+{{- else }}
+DROP USER IF EXISTS 'monitor'@'127.0.0.1';
 {{- end }}
 
 {{- if (and (hasKey .Values "ccroot_user") (.Values.ccroot_user.enabled)) }}

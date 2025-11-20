@@ -53,7 +53,8 @@ postgresql:
   enabled: false
 
 proxysql:
-  mode: "" # Cannot use unix_socket, as migration-job is a helm-hook which runs prior to the configmap creation/update
+  mode: ""  # Cannot use unix_socket, as migration-job is a helm-hook which runs prior to the configmap creation/update
+  native_sidecar: true
 
 mariadb:
   enabled: true
@@ -74,6 +75,32 @@ mariadb:
     enable_init_restore: true
   alerts:
     support_group: identity
+
+pxc_db:
+  enabled: false
+  name: barbican
+  alerts:
+    support_group: identity
+  ccroot_user:
+    enabled: true
+  databases:
+    - barbican
+  users:
+    barbican:
+      name: barbican
+      grants:
+        - "ALL PRIVILEGES on barbican.*"
+  pxc:
+    persistence:
+      size: 10Gi
+  backup:
+    enabled: true
+    s3:
+      secrets:
+        aws_access_key_id: null
+        aws_secret_access_key: null
+    pitr:
+      enabled: true
 
 mysql_metrics:
   db_name: barbican
@@ -148,7 +175,7 @@ mysql_metrics:
       - "secret_type"
       name: openstack_barbican_hsm_secrets_count_gauge
       query: |
-        SELECT 
+        SELECT
           secrets.id,
           secrets.status,
           COALESCE(secrets.name, "No Secret Name") AS secret_name,
@@ -157,18 +184,18 @@ mysql_metrics:
           projects.external_id  AS project_id,
           secrets.secret_type,
           COUNT(*) AS count_gauge
-        FROM encrypted_data 
-        JOIN kek_data 
-        ON encrypted_data.kek_id = kek_data.id 
-        JOIN secrets 
-        ON secrets.id = encrypted_data.secret_id 
+        FROM encrypted_data
+        JOIN kek_data
+        ON encrypted_data.kek_id = kek_data.id
+        JOIN secrets
+        ON secrets.id = encrypted_data.secret_id
         JOIN projects
         ON secrets.project_id=projects.id
         WHERE kek_data.plugin_name='barbican.plugin.crypto.p11_crypto.P11CryptoPlugin' AND secrets.deleted='false'
         GROUP BY secrets.id, secrets.status, secrets.name, projects.external_id, secrets.secret_type, secrets.expiration;
       values:
       - "count_gauge"
-    - help: Barbican container expiration date
+    - help: Barbican certificate expiration date
       labels:
       - "expiration_date"
       - "certificate_name"
@@ -177,19 +204,21 @@ mysql_metrics:
       name: openstack_barbican_certificate_expiration_date
       query: |
         SELECT
-          UNIX_TIMESTAMP(STR_TO_DATE(IFNULL(secrets.expiration,'1970-01-01 00:00:00'), '%Y-%c-%e %T')) AS expiration_date,
-          secrets.name  AS certificate_name,
-          creator_id,
-          projects.external_id  AS project_id,
-          COUNT(*)  AS count_gauge
-        from secrets
+          CONCAT(
+            UNIX_TIMESTAMP(STR_TO_DATE(IFNULL(secrets.expiration, '1970-01-01 00:00:00'), '%Y-%c-%e %T'))
+          ) AS expiration_date,
+          secrets.name AS certificate_name,
+          secrets.creator_id,
+          projects.external_id AS project_id,
+          COUNT(*) AS count_gauge
+        FROM secrets
         INNER JOIN projects
-        on secrets.project_id=projects.id
-        where secrets.deleted='false' AND secret_type='certificate' AND expiration!='0'
+        ON secrets.project_id = projects.id
+        WHERE secret_type = 'certificate' AND expiration != '0'
         GROUP BY secrets.creator_id, secrets.name, projects.external_id, secrets.expiration;
       values:
       - "expiration_date"
-    - help: Barbican container expiration date
+    - help: Barbican opaque certificate expiration date
       labels:
       - "expiration_date"
       - "certificate_name"
@@ -198,29 +227,21 @@ mysql_metrics:
       name: openstack_barbican_opaque_certificate_expiration_date
       query: |
         SELECT
-          UNIX_TIMESTAMP(STR_TO_DATE(IFNULL(secrets.expiration,'1970-01-01 00:00:00'), '%Y-%c-%e %T')) AS expiration_date,
-          secrets.name  AS certificate_name,
-          creator_id,
-          projects.external_id  AS project_id,
-          COUNT(*)  AS count_gauge
-        from secrets
+          CONCAT(
+            UNIX_TIMESTAMP(STR_TO_DATE(IFNULL(secrets.expiration, '1970-01-01 00:00:00'), '%Y-%c-%e %T'))
+          ) AS expiration_date,
+          secrets.name AS certificate_name,
+          secrets.creator_id,
+          projects.external_id AS project_id,
+          COUNT(*) AS count_gauge
+        FROM secrets
         INNER JOIN projects
-        on secrets.project_id=projects.id
-        where secret_type='opaque' AND expiration!='0'
+        ON secrets.project_id = projects.id
+        WHERE secret_type = 'opaque' AND expiration != '0'
         GROUP BY secrets.creator_id, secrets.name, projects.external_id, secrets.expiration;
       values:
       - "expiration_date"
 
-rabbitmq:
-  name: barbican
-  persistence:
-    enabled: false
-  alerts:
-    support_group: identity
-  metrics:
-    enabled: true
-    sidecar:
-      enabled: false
 memcached:
   alerts:
     support_group: identity
@@ -269,8 +290,12 @@ tlsacme: true
 # sapcc/openstack-rate-limit-middleware
 sapcc_rate_limit:
   enabled: true
+
+api-ratelimit-redis:
   persistence:
     enabled: false
+  alerts:
+    support_group: identity
 
 # sapcc/openstack-watcher-middleware
 watcher:
@@ -294,11 +319,14 @@ alerts:
 hsm:
   enabled: false
   luna:
-    image: lunaclient-r7
+    image: lunaclient-r9.1
   multistore:
     enabled: false
   ha:
     enabled: false
+  utimaco_hsm:
+    enabled: false
+    image: utimaco5
   resources:
     enabled: true
     limits:

@@ -68,11 +68,26 @@ function start_application {
       cp -a $i /var/lib/plutono/provisioning/datasources
     fi
   done
-  sed -i "s,__ELK_PASSWORD__,$(cat /plutono-secrets/elk_password),g" /var/lib/plutono/provisioning/datasources/*
-  sed -i "s,__METISDB_PASSWORD__,$(cat /plutono-secrets/metisdb_password),g" /var/lib/plutono/provisioning/datasources/*
-  sed -i "s,__OPENSEARCH_PASSWORD__,$(cat /plutono-secrets/opensearch_password),g" /var/lib/plutono/provisioning/datasources/*
-  sed -i "s,__PROMETHEUS_REGION__,$(cat /plutono-secrets/region),g" /var/lib/plutono/provisioning/datasources/*
-  sed -i "s,__LOCUST_TIMESCALEDB_PASSWORD__,$(cat /plutono-secrets/locust_timescaledb_password),g" /var/lib/plutono/provisioning/datasources/*
+  if [ -f /plutono-secrets/elk_password ]; then
+    sed -i "s,__ELK_PASSWORD__,$(cat /plutono-secrets/elk_password),g" /var/lib/plutono/provisioning/datasources/*
+  else
+    echo "WARNING: elk password not set"
+  fi
+  if [ -f /plutono-secrets/opensearch_password ]; then
+    sed -i "s,__OPENSEARCH_PASSWORD__,$(cat /plutono-secrets/opensearch_password),g" /var/lib/plutono/provisioning/datasources/*
+  else
+    echo "WARNING: opensearch password not set"
+  fi
+  if [ -f /plutono-secrets/locust_timescaledb_password ]; then
+    sed -i "s,__LOCUST_TIMESCALEDB_PASSWORD__,$(cat /plutono-secrets/locust_timescaledb_password),g" /var/lib/plutono/provisioning/datasources/*
+  else
+    echo "WARNING: locust timescale db password not set"
+  fi
+  if [ -f /plutono-secrets/region ]; then
+    sed -i "s,__PROMETHEUS_REGION__,$(cat /plutono-secrets/region),g" /var/lib/plutono/provisioning/datasources/*
+  else
+    echo "WARNING: plutono region not set"
+  fi
 
   cd /usr/share/plutono
   exec /usr/share/plutono/bin/plutono-server -config /var/lib/plutono/etc/plutono.ini --homepath /usr/share/plutono cfg:default.log.mode=console

@@ -30,3 +30,7 @@ Create chart name and version as used by the chart label.
 {{- define "octavia.chart" -}}
 {{- printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
+
+{{- define "octavia.db_service" }}
+  {{- include "utils.db_host" . }}
+{{- end }}

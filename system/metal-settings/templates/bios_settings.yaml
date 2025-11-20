@@ -1,0 +1,34 @@
+{{- range $path, $_  := $.Files.Glob "bios_settings/**" }}
+{{- $name := base (dir $path) }}
+{{- if eq (len (splitList "/" $path)) 5 -}}
+
+{{- $folders := splitList "/" $path }}
+{{- $version := index $folders 4}}
+{{- $vendor := index $folders 1 }}
+{{- $model := index $folders 2 }}
+{{- $clusterType := index $folders 3 }}
+{{- $version := replace "_" "-" $version}}
+{{- $version := replace ".yaml" "" $version}}
+
+{{ range $path, $_ := $.Files.Glob (printf "bios_settings/%s/%s/%s/*.yaml" $vendor $model $clusterType) -}}
+apiVersion: metal.ironcore.dev/v1alpha1
+kind: BIOSSettingsSet
+metadata:
+  name: {{ $vendor }}-{{ $model }}-{{ $clusterType }}
+spec:
+  serverSelector:
+    matchLabels:
+      kubernetes.metal.cloud.sap/type: {{ $model }}
+      kubernetes.metal.cloud.sap/cluster-type: {{ $clusterType }}
+  biosSettingsTemplate:
+    serverMaintenancePolicy: OwnerApproval
+{{- if lt (len ($.Files.Lines $path)) 3 }}
+{{ $.Files.Get (printf "bios_settings/%s/default.yaml" $vendor) | trim | indent 4 }}
+{{ $.Files.Get $path | trim | indent 4 }}
+{{- else }}
+{{ $.Files.Get $path | trim | indent 4 }}
+{{- end }}
+---
+{{- end -}}
+{{- end -}}
+{{- end -}}

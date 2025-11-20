@@ -1,33 +1,24 @@
 [database]
 # Database connection string - MariaDB for regional setup
 # and Percona Cluster for inter-regional setup:
-{{ if .Values.percona_cluster.enabled -}}
-  {{/* in caase percona is active and we need to switch the connection string to mariadb-galera cluster without removing the percona cluster objects */}}
-  {{- if and .Values.mariadb_galera.enabled .Values.databaseKind (eq .Values.databaseKind "galera") -}}
-connection = mysql+pymysql://{{ .Values.mariadb_galera.mariadb.users.keystone.username }}:{{.Values.mariadb_galera.mariadb.users.keystone.password }}@{{include "db_host" .}}/{{ .Values.mariadb_galera.mariadb.database_name_to_connect }}?charset=utf8
-  {{- else }}
+{{- if or .Values.percona_cluster.enabled (eq .Values.dbType "pxc-global") }}
 connection = {{ include "db_url_pxc" . }}
-  {{- end }}
-{{- else if .Values.global.clusterDomain -}}
-connection = mysql+pymysql://{{ default .Release.Name .Values.global.dbUser }}:{{.Values.global.dbPassword }}@{{include "db_host" .}}/{{ default .Release.Name .Values.mariadb.name }}?charset=utf8
-{{- else if and .Values.mariadb_galera.enabled .Values.databaseKind (eq .Values.databaseKind "galera") -}}
-connection = mysql+pymysql://{{ .Values.mariadb_galera.mariadb.users.keystone.username }}:{{.Values.mariadb_galera.mariadb.users.keystone.password }}@{{include "db_host" .}}/{{ .Values.mariadb_galera.mariadb.database_name_to_connect }}?charset=utf8
 {{- else }}
-connection = {{ include "db_url_mysql" . }}
+connection = {{ include "utils.db_url" . }}
 {{- end }}
 
 {{- if and .Values.memcached.auth.username .Values.memcached.auth.password }}
 [cache]
 memcache_sasl_enabled = True
 memcache_username = {{ .Values.memcached.auth.username }}
-memcache_password = {{ .Values.memcached.auth.password }}
+memcache_password = {{ .Values.memcached.auth.password | include "resolve_secret" }}
 {{- end }}
 
 {{- if not (and (hasKey $.Values "oslo_messaging_notifications") ($.Values.oslo_messaging_notifications.disabled)) }}
 [oslo_messaging_notifications]
 driver = messaging
   {{- if and (.Values.audit.central_service.user) (.Values.audit.central_service.password) }}
-transport_url = rabbit://{{ .Values.audit.central_service.user }}:{{ .Values.audit.central_service.password }}@{{ .Values.audit.central_service.host }}:{{ .Values.audit.central_service.port }}/
+transport_url = rabbit://{{ .Values.audit.central_service.user | include "resolve_secret_urlquery" }}:{{ .Values.audit.central_service.password | include "resolve_secret_urlquery" }}@{{ .Values.audit.central_service.host }}:{{ .Values.audit.central_service.port }}/
 
 [oslo_messaging_rabbit]
 rabbit_retry_interval = {{ .Values.audit.central_service.rabbit_retry_interval | default 1 }}
@@ -40,13 +31,34 @@ heartbeat_timeout_threshold = {{ .Values.audit.central_service.heartbeat_timeout
       It is exploiting a bug in the logic which seems to be triggered
       when rabbit_interval_max >= rabbit_retry_interval
 */}}
-  {{- else if .Values.rabbitmq.host }}
-transport_url = rabbit://{{ .Values.rabbitmq.users.default.user | default "rabbitmq" }}:{{ .Values.rabbitmq.users.default.password }}@{{ .Values.rabbitmq.host }}:{{ .Values.rabbitmq.port | default 5672 }}
-  {{ else }}
-transport_url = rabbit://{{ .Values.rabbitmq.users.default.user | default "rabbitmq" }}:{{ .Values.rabbitmq.users.default.password }}@{{ include "rabbitmq_host" . }}:{{ .Values.rabbitmq.port | default 5672 }}
   {{- end }}
 {{- end }}
 
 {{- if .Values.osprofiler.enabled }}
 {{- include "osprofiler" . }}
+{{- end }}
+
+{{ if .Values.api.cc_radius }}
+[cc_radius]
+host = {{ .Values.api.cc_radius.host | default "radius" }}
+port = {{ .Values.api.cc_radius.port | default "radius" }}
+secret = {{ .Values.api.cc_radius.secret | include "resolve_secret" }}
+{{ end }}
+
+
+{{ if .Values.api.cc_external }}
+[cc_external]
+user_name_header = {{ .Values.api.cc_external.user_name_header | default "HTTP_X_USER_NAME" }}
+user_domain_name_header = {{ .Values.api.cc_external.user_domain_name_header | default "HTTP_X_USER_DOMAIN_NAME" }}
+{{- if .Values.api.cc_external.trusted_key }}
+trusted_key_header = {{ .Values.api.cc_external.trusted_key_header | default "HTTP_X_TRUSTED_KEY" }}
+trusted_key_value = {{ .Values.api.cc_external.trusted_key_value }}
+{{- end }}
+{{- end }}
+
+{{- if .Values.report_invalid_password_hash.enabled }}
+[security_compliance]
+report_invalid_password_hash = "event"
+invalid_password_hash_secret_key = {{ required "invalid_password_hash_secret_key value is required when .Values.report_invalid_password_hash.enabled is true" .Values.report_invalid_password_hash.invalid_password_hash_secret_key | include "resolve_secret" }}
+invalid_password_hash_max_chars = 5
 {{- end }}

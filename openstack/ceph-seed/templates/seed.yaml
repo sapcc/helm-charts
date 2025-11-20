@@ -27,3 +27,14 @@ spec:
         role_assignments:
         - user: ceph@Default
           role: service # for s3tokens auth access
+    - name: Default
+      users:
+        - name: ceph-barbican
+          description: CEPH Object Store Service
+          password: '{{ $.Values.global.ceph_barbican_service_password }}'
+    - name: Default
+      projects:
+      - name: admin
+        role_assignments:
+        - user: ceph-barbican@Default
+          role: reader # ceph-barbican needs as minimal as possible access role, the access to keys is managed by barbican ACL

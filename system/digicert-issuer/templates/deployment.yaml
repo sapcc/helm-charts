@@ -1,8 +1,13 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
+  annotations:
+    secret.reloader.stakater.com/reload: "digicertissuer-secret"
   labels:
     app.kubernetes.io/name: digicert-issuer
+    {{- with .Values.deploymentLabels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
   name: digicert-issuer
   namespace: {{ .Release.Namespace }}
 spec:
@@ -14,10 +19,9 @@ spec:
     metadata:
       labels:
         app.kubernetes.io/name: digicert-issuer
-      annotations:
-        prometheus.io/scrape: "true"
-        prometheus.io/port: {{ required ".Values.metrics.port missing" .Values.metrics.port | quote }}
-        prometheus.io/targets: {{ required ".Values.metrics.prometheus missing" .Values.metrics.prometheus | quote }}
+        {{- with .Values.deploymentLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
     spec:
       containers:
         - args:

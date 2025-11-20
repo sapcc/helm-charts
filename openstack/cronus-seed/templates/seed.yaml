@@ -1,3 +1,6 @@
+{{- $cdomains := .Values.global.domain_seeds.customer_domains | required "missing value for .Values.global.domain_seeds.customer_domains" -}}
+{{- $domains  := concat (list "cc3test" "ccadmin") $cdomains -}}
+
 apiVersion: "openstack.stable.sap.cc/v1"
 kind: OpenstackSeed
 metadata:
@@ -58,6 +61,14 @@ spec:
           role: email_admin # for monitoring
         - user: cronus@Default
           role: objectstore_admin # for monitoring
+    - name: hcp03
+      projects:
+      - name: cronus-external
+        role_assignments:
+        - user: cronus@Default
+          role: email_admin # for external access from hyperscaler
+        - user: cronus@Default
+          role: objectstore_admin # for external access from hyperscaler
     - name: ccadmin
       projects:
       - name: master
@@ -70,6 +81,8 @@ spec:
           role: cloud_identity_viewer # for keystone effective role assignment list
         - user: cronus@Default
           role: email_router
+        - user: cronus@Default
+          role: service
         swift:
           enabled: true
           containers:
@@ -116,130 +129,14 @@ spec:
               write: keymanager_admin
 
     # cloud admin role assignment
-    - name: ccadmin
+    {{- range $domains}}
+    {{- if not (hasPrefix "iaas-" .)}}
+    - name: {{ . }}
       groups:
-      - name: CCADMIN_API_SUPPORT
+      - name: {{ hasPrefix "iaas-" . | ternary . ( upper . ) }}_API_SUPPORT
         role_assignments:
-        - domain: ccadmin
+        - domain: {{ . }}
           role: cloud_email_admin
           inherited: true
-
-    - name: bs
-      groups:
-      - name: BS_API_SUPPORT
-        role_assignments:
-        - domain: bs
-          role: cloud_email_admin
-          inherited: true
-
-    - name: btp_fp
-      groups:
-      - name: BTP_FP_API_SUPPORT
-        role_assignments:
-        - domain: btp_fp
-          role: cloud_email_admin
-          inherited: true
-
-    - name: cis
-      groups:
-      - name: CIS_API_SUPPORT
-        role_assignments:
-        - domain: cis
-          role: cloud_email_admin
-          inherited: true
-
-    - name: cp
-      groups:
-      - name: CP_API_SUPPORT
-        role_assignments:
-        - domain: cp
-          role: cloud_email_admin
-          inherited: true
-
-    - name: hda
-      groups:
-      - name: HDA_API_SUPPORT
-        role_assignments:
-        - domain: hda
-          role: cloud_email_admin
-          inherited: true
-
-    - name: hcm
-      groups:
-      - name: HCM_API_SUPPORT
-        role_assignments:
-        - domain: hcm
-          role: cloud_email_admin
-          inherited: true
-
-    - name: hcp03
-      groups:
-      - name: HCP03_API_SUPPORT
-        role_assignments:
-        - domain: hcp03
-          role: cloud_email_admin
-          inherited: true
-
-    - name: hec
-      groups:
-      - name: HEC_API_SUPPORT
-        role_assignments:
-        - domain: hec
-          role: cloud_email_admin
-          inherited: true
-
-    - name: kyma
-      groups:
-      - name: KYMA_API_SUPPORT
-        role_assignments:
-        - domain: kyma
-          role: cloud_email_admin
-          inherited: true
-
-    - name: monsoon3
-      groups:
-      - name: MONSOON3_API_SUPPORT
-        role_assignments:
-        - domain: monsoon3
-          role: cloud_email_admin
-          inherited: true
-
-    - name: neo
-      groups:
-      - name: NEO_API_SUPPORT
-        role_assignments:
-        - domain: neo
-          role: cloud_email_admin
-          inherited: true
-
-    - name: s4
-      groups:
-      - name: S4_API_SUPPORT
-        role_assignments:
-        - domain: s4
-          role: cloud_email_admin
-          inherited: true
-
-    - name: wbs
-      groups:
-      - name: WBS_API_SUPPORT
-        role_assignments:
-        - domain: wbs
-          role: cloud_email_admin
-          inherited: true
-
-    - name: cc3test
-      groups:
-      - name: CC3TEST_API_SUPPORT
-        role_assignments:
-        - domain: cc3test
-          role: cloud_email_admin
-          inherited: true
-
-    - name: cis
-      groups:
-      - name: CIS_API_SUPPORT
-        role_assignments:
-        - domain: cis
-          role: cloud_email_admin
-          inherited: true
+    {{- end}}
+    {{- end}}

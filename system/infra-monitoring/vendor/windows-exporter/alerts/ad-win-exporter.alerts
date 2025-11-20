@@ -27,12 +27,13 @@ groups:
       context: "{{ $labels.server_name }}"
       meta: "Service {{ $labels.name }} in State {{ $labels.state }} on node {{ $labels.server_name }}"
       playbook: docs/support/playbook/activedirectory/alerts/#adservicedownwarn
+      no_alert_on_absence: "true"
     annotations:
       description: "Service {{ $labels.display_name }} in State {{ $labels.state }} on node {{ $labels.server_name }}. Check the service!"
       summary: "Service {{ $labels.name }} in State {{ $labels.state }} on node {{ $labels.server_name }}"
 
   - alert: ADWinServiceDownInfo
-    expr: count(windows_service_state{state!="running", job="win-exporter-ad", name!="rscdsvc"} > 0) by (server_name, name, state) * on(server_name, name) group_left(display_name) count(windows_service_info) by(server_name, name, display_name)
+    expr: count(windows_service_state{state!="running", job="win-exporter-ad", name!~"aatpsensor|rscdsvc"} > 0) by (server_name, name, state) * on(server_name, name) group_left(display_name) count(windows_service_info) by(server_name, name, display_name)
     for: 1h
     labels:
       severity: info
@@ -40,6 +41,21 @@ groups:
       service: windows-exporter
       context: "{{ $labels.server_name }}"
       meta: "Service {{ $labels.name }} in State {{ $labels.state }} on node {{ $labels.server_name }}"
+      no_alert_on_absence: "true"
+    annotations:
+      description: "Service {{ $labels.display_name }} in State {{ $labels.state }} on node {{ $labels.server_name }}. Check the service!"
+      summary: "Service {{ $labels.name }} in State {{ $labels.state }} on node {{ $labels.server_name }}"
+
+  - alert: ADWinAATPServiceDownInfo
+    expr: count(windows_service_state{state!="running", job="win-exporter-ad", name="aatpsensor"} > 0) by (server_name, name, state) * on(server_name, name) group_left(display_name) count(windows_service_info) by(server_name, name, display_name)
+    for: 2h
+    labels:
+      severity: info
+      tier: ad
+      service: windows-exporter
+      context: "{{ $labels.server_name }}"
+      meta: "Service {{ $labels.name }} in State {{ $labels.state }} on node {{ $labels.server_name }}"
+      no_alert_on_absence: "true"
     annotations:
       description: "Service {{ $labels.display_name }} in State {{ $labels.state }} on node {{ $labels.server_name }}. Check the service!"
       summary: "Service {{ $labels.name }} in State {{ $labels.state }} on node {{ $labels.server_name }}"
@@ -66,6 +82,7 @@ groups:
       service: windows-exporter
       context: "{{ $labels.server_name }}"
       meta: "Too many processes running on node {{ $labels.server_name }}"
+      no_alert_on_absence: "true"
     annotations:
       description: "Too many processes running on node {{ $labels.server_name }}. Check the task manager!"
       summary: "Too many processes running on node {{ $labels.server_name }}"
@@ -92,6 +109,7 @@ groups:
       service: windows-exporter
       context: "{{ $labels.server_name }}"
       meta: "High Memory usage on node {{ $labels.server_name }}"
+      no_alert_on_absence: "true"
     annotations:
       description: "High Memory usage on node {{ $labels.server_name }}. Check the task manager for processes with high Memory usage!"
       summary: "High Memory usage on node {{ $labels.server_name }}"

@@ -29,8 +29,12 @@ spec:
       serviceAccountName: absent-metrics-operator-service-user
       containers:
         - name: operator
-          image: {{ .Values.global.registry }}/absent-metrics-operator:{{ .Values.imageTag }}
+          image: {{ .Values.global.ghcrIoMirror }}/sapcc/absent-metrics-operator:{{ .Values.imageTag }}
           imagePullPolicy: IfNotPresent
+          {{- with .Values.args }}
+          args:
+           {{- toYaml . | nindent 10 }}
+          {{- end }}
           # NOTE: observed usage in eu-de-1 (as of 2021-10)
           # - CPU: ~10m during load
           # - RAM: ~45Mi during load

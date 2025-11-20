@@ -58,16 +58,28 @@ resources:
     migrations_legacy_api:
         api_name: os-migrations
         type_uri: compute/migrations
+    # os-floating-ips is deprecated, but it's still being called so it needs to be mapped.
+    os-floating-ips:
+        type_uri: compute/floating-ips
     os-server-external-events:
         type_uri: compute/servers/external-events
         type_name: events
         custom_id: tag
         custom_attributes:
           server_uuid: compute/server
+    # Deprecated, but still being called. Needs to be mapped.
+    os-security-groups:
+       type_uri: compute/security-group
+    # os-security-group-rules is deprecated, but it's still being called, must be mapped.
+    os-security-group-rules:
+        type_uri: compute/security-group-rules
     os-volumes_boot:
         # this is a legacy alternative to POST /servers used still in Devstack
         type_uri: compute/servers
         type_name: servers
+    # deprecated but still called, must be mapped.
+    os-volumes:
+        type_uri: compute/volumes
     quotas:
         api_name: os-quota-sets
         children:

@@ -1,4 +1,4 @@
-{{- $domain := printf "limes-3.%s.%s" .Values.global.region .Values.global.tld -}}
+{{- $domain := .Values.limes.clusters.ccloud.catalog_url | trimPrefix "https://" -}}
 
 kind: Ingress
 apiVersion: networking.k8s.io/v1
@@ -14,8 +14,14 @@ metadata:
     ingress.kubernetes.io/service-upstream: "true"
     nginx.ingress.kubernetes.io/service-upstream: "true"
     {{- end }}
+    {{- if .Values.global.is_global_region }}
+    kubernetes.io/ingress.class: "nginx-external"
+    {{- end }}
 
 spec:
+  {{- if .Values.global.is_global_region }}
+  ingressClassName: "nginx-external"
+  {{- end }}
   tls:
     - secretName: limes-api-ccloud
       hosts: [ {{ $domain }} ]

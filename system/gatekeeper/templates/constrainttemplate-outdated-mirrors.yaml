@@ -10,31 +10,36 @@ spec:
 
   targets:
     - target: admission.k8s.gatekeeper.sh
-      libs:
-        - |
-          {{ .Files.Get "lib/add-support-labels.rego" | nindent 10 }}
-        - |
-          {{ .Files.Get "lib/traversal.rego" | nindent 10 }}
-      rego: |
-        package outdatedmirrors
-        import data.lib.add_support_labels
-        import data.lib.traversal
+      code:
+        - engine: Rego
+          source:
+            version: "v1"
+            libs:
+              - |
+                {{ .Files.Get "lib/add-support-labels.rego" | nindent 16 }}
+              - |
+                {{ .Files.Get "lib/traversal.rego" | nindent 16 }}
+            rego: |
+              package outdatedmirrors
 
-        iro := input.review.object
-        containers := traversal.find_container_specs(iro)
+              import data.lib.add_support_labels
+              import data.lib.traversal
 
-        violation[{"msg": add_support_labels.from_k8s_object(iro, msg)}] {
-          container := containers[_]
-          image := container.image
+              iro := input.review.object
+              containers := traversal.find_container_specs(iro)
 
-          regex.match("^keppel\\.[^/.]*\\.cloud.sap/ccloud-dockerhub-mirror/sapcc/", image)
-          msg := sprintf("container %q uses image from obsolete mirror: %s", [container.name, image])
-        }
+              violation contains {"msg": add_support_labels.from_k8s_object(iro, msg)} if {
+                  container := containers[_]
+                  image := container.image
 
-        violation[{"msg": add_support_labels.from_k8s_object(iro, msg)}] {
-          container := containers[_]
-          image := container.image
+                  regex.match("^keppel\\.[^/.]*\\.cloud.sap/ccloud-dockerhub-mirror/sapcc/", image)
+                  msg := sprintf("container %q uses image from obsolete mirror: %s", [container.name, image])
+              }
 
-          regex.match("^keppel\\.[^/.]*\\.cloud.sap/ccloud-dockerhub-archive/", image)
-          msg := sprintf("container %q uses image from obsolete mirror: %s (use regular mirror accounts for foreign images, or build via CI and push to ccloud account for own images)", [container.name, image])
-        }
+              violation contains {"msg": add_support_labels.from_k8s_object(iro, msg)} if {
+                  container := containers[_]
+                  image := container.image
+
+                  regex.match("^keppel\\.[^/.]*\\.cloud.sap/ccloud-dockerhub-archive/", image)
+                  msg := sprintf("container %q uses image from obsolete mirror: %s (use regular mirror accounts for foreign images, or build via CI and push to ccloud account for own images)", [container.name, image])
+              }

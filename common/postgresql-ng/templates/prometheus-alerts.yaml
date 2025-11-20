@@ -1,0 +1,44 @@
+{{- if .Values.alerts.enabled -}}
+
+{{- $fullname := include "postgres.fullname" . -}}
+{{- $service  := .Values.alerts.service       | default  .Release.Name -}}
+{{- $sgroup   := .Values.alerts.support_group | required "missing value for .Values.postgresql.alerts.support_group" -}}
+
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+
+metadata:
+  name: {{ $fullname }}
+  labels:
+    prometheus: kubernetes
+
+spec:
+  groups:
+    - name: {{ $fullname }}.alerts
+      rules:
+        - alert: PostgresSecretAboutToExpire
+          expr: max by (namespace, secret) ((time() - kube_secret_created{namespace="{{ .Release.Namespace }}",secret=~"{{ .Release.Name }}-pguser-.*"}) / 86400) >= 330
+          for: 5m
+          labels:
+            context: secret-rotation
+            playbook: 'https://operations.global.cloud.sap/docs/support/playbook/rotate-local-kubernetes-secret'
+            service: {{ quote $service }}
+            severity: info
+            support_group: {{ quote $sgroup }}
+          annotations:
+            summary: 'PostgreSQL user secret will expire soon'
+            description: 'The secret {{`{{`}} $labels.namespace {{`}}/{{`}} $labels.secret {{`}}`}} is nearly 365 days old. Please rotate it soon by following the attached playbook.'
+
+        - alert: PostgresSecretAboutToExpire
+          expr: max by (namespace, secret) ((time() - kube_secret_created{namespace="{{ .Release.Namespace }}",secret=~"{{ .Release.Name }}-pguser-.*"}) / 86400) >= 365
+          for: 5m
+          labels:
+            context: secret-rotation
+            playbook: 'https://operations.global.cloud.sap/docs/support/playbook/rotate-local-kubernetes-secret'
+            service: {{ quote $service }}
+            severity: warning
+            support_group: {{ quote $sgroup }}
+          annotations:
+            summary: 'PostgreSQL user secret is expired'
+            description: 'The secret {{`{{`}} $labels.namespace {{`}}/{{`}} $labels.secret {{`}}`}} is over 365 days old. Please rotate it as soon as possible by following the attached playbook.'
+{{- end -}}

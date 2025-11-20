@@ -44,6 +44,12 @@ swift:
   multi_tenant: true
   # store_large_object_size:
 
+ceph:
+  enabled: false
+
+ceph_s3:
+  enabled: false
+
 api_port_internal: '9292'
 
 replicas: 3
@@ -127,11 +133,13 @@ db_name: glance
 
 proxysql:
   mode: unix_socket
+  native_sidecar: true
 
 mariadb:
   enabled: true
   name: glance
   initdb_secret: glance-initdb
+  binlog_format: "ROW"
   persistence_claim:
     name: db-glance-pvclaim
   databases:
@@ -152,6 +160,32 @@ mariadb:
         memory: 64Mi
   alerts:
     support_group: compute-storage-api
+
+pxc_db:
+  enabled: false
+  name: glance
+  alerts:
+    support_group: compute-storage-api
+  ccroot_user:
+    enabled: true
+  databases:
+    - glance
+  users:
+    glance:
+      name: glance
+      grants:
+        - "ALL PRIVILEGES on glance.*"
+  pxc:
+    persistence:
+      size: 10Gi
+  backup:
+    enabled: true
+    s3:
+      secrets:
+        aws_access_key_id: null
+        aws_secret_access_key: null
+    pitr:
+      enabled: true
 
 memcached:
   alerts:
@@ -326,6 +360,8 @@ alerts:
 # sapcc/openstack-rate-limit-middleware
 sapcc_rate_limit:
   enabled: true
+
+api-ratelimit-redis:
   persistence:
     enabled: false
   resources:
@@ -335,6 +371,8 @@ sapcc_rate_limit:
     requests:
       cpu: 100m
       memory: 128Mi
+  alerts:
+    support_group: compute-storage-api
 
 # osprofiler
 osprofiler:

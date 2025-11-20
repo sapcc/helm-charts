@@ -9,6 +9,7 @@ global:
 owner-info:
   support-group: containers
   helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/system/kube-monitoring-metal
+  service: kube-monitoring
 
 # Disable the prometheus-operator kube-state-metrics sub-chart. We deploy independently. See below.
 kubeStateMetrics:
@@ -47,10 +48,18 @@ prometheus-kubernetes-rules:
 
 prometheus-node-exporter:
   image:
-    repository: keppel.global.cloud.sap/ccloud-dockerhub-mirror/prom/node-exporter
+    registry: keppel.global.cloud.sap
+    repository: ccloud-dockerhub-mirror/prom/node-exporter
 
   serviceAccount:
     create: true
+
+  kubeRBACProxy:
+    enabled: true
+    proxyEndpointsPort: 8889
+    image:
+      registry: keppel.global.cloud.sap
+      repository: ccloud-quay-mirror/brancz/kube-rbac-proxy
 
   extraArgs:
     - --collector.filesystem.ignored-mount-points=^/(sys|proc|dev|host|etc)($$|/)
@@ -60,6 +69,7 @@ prometheus-node-exporter:
     - --collector.systemd.enable-start-time-metrics
     - --collector.processes
     - --collector.mountstats
+    - --collector.bonding
 
   extraHostVolumeMounts:
     - name: dbus
@@ -118,16 +128,19 @@ falco:
 
   extra:
     args:
-      - -t
-      - pci
       - -v
       - --unbuffered
       - -o
       - json_output=true
 
   falco:
-    rules_file:
+    rules_files:
       - /etc/falco/rules.d
+    rules:
+      - disable:
+          rule: "*"
+      - enable:
+          tag: pci
 
 x509-certificate-exporter:
   enabled: false

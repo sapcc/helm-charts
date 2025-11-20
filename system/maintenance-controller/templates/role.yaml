@@ -3,7 +3,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   name: maintenance-controller-role
-  namespace: kube-system
+  namespace: {{ .Release.Namespace }}
 rules:
 - apiGroups:
   - coordination.k8s.io
@@ -75,4 +75,14 @@ rules:
   - get
   - list
   - watch
+{{- if .Values.rbac.cloudProviderSecretName }}
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  verbs:
+  - get
+  resourceNames:
+  - {{ .Values.rbac.cloudProviderSecretName | quote }}
+{{- end }}
 {{- end }}

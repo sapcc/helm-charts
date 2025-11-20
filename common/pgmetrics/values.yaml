@@ -4,16 +4,26 @@ global:
   region: ""
   quayIoMirror: ""
 
-# database name (default is .Release.Name)
-db_name: ""
+# if enabled, configures `stakater/Reloader` (annotations) to cause the
+# deployment to do a rolling restart when referenced CMs and Secrets annotated
+# with `reloader.stakater.com/match: "true"` (e.g. Secret with DB password)
+# change
+reloader:
+  enabled: false
+
 # database hostname (default is "{{.Release.Name}}-postgresql")
 db_host: ""
-# password for the "postgres" database user (required)
-db_password: ""
 
-# whether builtin collectors are enabled in the postgres-exporter (e.g. the
-# bgwriter queries can be quite costly, so you might want to disable them if
-# not used)
+# Which databases to monitor. This is an object with the database names as keys, and optional settings within the value. For example:
+#
+# databases:
+#   first:
+#     customMetrics: ... # same format as `.Values.customMetrics` below
+#   second: {} # no special settings
+databases: {}
+
+# whether builtin collectors are enabled in the postgres-exporter
+# (e.g. the bgwriter queries can be quite costly, so you might want to disable them if not used)
 collectors:
   database: true
   replication_slot: true
@@ -21,7 +31,7 @@ collectors:
 
 image:
   repository: shared-app-images/postgres-exporter
-  tag: 0.15.0-20240907231702
+  tag: 0.18.1-20251106131425
 
 # resource requests and limits <http://kubernetes.io/docs/user-guide/compute-resources/>
 resources:
@@ -48,10 +58,17 @@ alerts:
   # exceeds this threshold (value in seconds).
   scrape_duration_threshold: 5
 
+# Queries defined in this section are executed separately in each database configured in `.Values.databases[]`.
+# In the query string, the placeholder %PGDATABASE% is replaced by the database name.
+#
+# For customMetrics queries that are only applicable to specific databases, please use `.Values.databases[].customMetrics`.
 customMetrics:
   pg_stat_user_tables:
-    query: "SELECT schemaname, relname, seq_scan, seq_tup_read, idx_scan, idx_tup_fetch, n_tup_ins, n_tup_upd, n_tup_del, n_tup_hot_upd, n_live_tup, n_dead_tup, n_mod_since_analyze, last_vacuum, last_autovacuum, last_analyze, last_autoanalyze, vacuum_count, autovacuum_count, analyze_count, autoanalyze_count FROM pg_stat_user_tables"
+    query: "SELECT '%PGDATABASE%' AS datname, schemaname, relname, seq_scan, seq_tup_read, idx_scan, idx_tup_fetch, n_tup_ins, n_tup_upd, n_tup_del, n_tup_hot_upd, n_live_tup, n_dead_tup, n_mod_since_analyze, last_vacuum, last_autovacuum, last_analyze, last_autoanalyze, vacuum_count, autovacuum_count, analyze_count, autoanalyze_count FROM pg_stat_user_tables"
     metrics:
+      - datname:
+          usage: "LABEL"
+          description: "Name of the database that this table is in"
       - schemaname:
           usage: "LABEL"
           description: "Name of the schema that this table is in"
@@ -117,15 +134,21 @@ customMetrics:
           description: "Number of times this table has been analyzed by the autovacuum daemon"
 
   pg_replication:
-    query: "SELECT EXTRACT(EPOCH FROM (now() - pg_last_xact_replay_timestamp()))::INT as lag"
+    query: "SELECT '%PGDATABASE%' AS datname, EXTRACT(EPOCH FROM (now() - pg_last_xact_replay_timestamp()))::INT as lag"
     metrics:
+      - datname:
+          usage: "LABEL"
+          description: "Name of the database that this table is in"
       - lag:
           usage: "GAUGE"
           description: "Replication lag behind master in seconds"
 
   pg_postmaster:
-    query: "SELECT pg_postmaster_start_time as start_time_seconds from pg_postmaster_start_time()"
+    query: "SELECT '%PGDATABASE%' AS datname, pg_postmaster_start_time as start_time_seconds from pg_postmaster_start_time()"
     metrics:
+      - datname:
+          usage: "LABEL"
+          description: "Name of the database that this table is in"
       - start_time_seconds:
           usage: "GAUGE"
           description: "Time at which postmaster started"

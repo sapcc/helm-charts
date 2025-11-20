@@ -7,6 +7,9 @@ metadata:
     system: openstack
     type: api
     component: ironic
+  annotations:
+    secret.reloader.stakater.com/reload: "{{ .Release.Name }}-secrets"
+    deployment.reloader.stakater.com/pause-period: "60s"
 spec:
   replicas: {{ .Values.pod.replicas.api }}
   revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revisionHistory }}
@@ -38,7 +41,10 @@ spec:
 {{ tuple . "ironic" "api" | include "kubernetes_pod_anti_affinity" | indent 6 }}
       {{- include "utils.proxysql.pod_settings" . | indent 6 }}
       initContainers:
-      {{- tuple . (dict "service" "ironic-mariadb,ironic-rabbitmq") | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
+      {{- tuple . (dict "service" (include "ironic.service_dependencies" . | quote)) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
+      {{- if .Values.proxysql.native_sidecar }}
+      {{- tuple . .Values.api.api_workers | include "utils.proxysql.container" | indent 6 }}
+      {{- end }}
       containers:
       - name: ironic-api
         image: {{ .Values.global.registry }}/loci-ironic:{{ .Values.imageVersion }}
@@ -77,8 +83,6 @@ spec:
           name: ironic-etc
           subPath: ironic.conf
           readOnly: true
-        - mountPath: /etc/ironic/ironic.conf.d
-          name: ironic-etc-confd
         - mountPath: /etc/ironic/policy.json
           name: ironic-etc
           subPath: policy.json
@@ -91,21 +95,31 @@ spec:
           name: ironic-etc
           subPath: logging.ini
           readOnly: true
-        {{ if .Values.audit.enabled }}
-        - name: ironic-etc
-          mountPath: /etc/ironic/api_audit_map.yaml
+        - mountPath: /etc/ironic/ironic.conf.d/secrets.conf
+          name: ironic-secrets
+          readOnly: true
+          subPath: secrets.conf
+        {{- if .Values.audit.enabled }}
+        - mountPath: /etc/ironic/api_audit_map.yaml
+          name: ironic-etc
           subPath: api_audit_map.yaml
           readOnly: true
         {{- end }}
         {{- if .Values.watcher.enabled }}
-        - name: ironic-etc
-          mountPath: /etc/ironic/watcher.yaml
+        - mountPath: /etc/ironic/ironic.conf.d/watcher.conf
+          name: ironic-etc
+          subPath: watcher.conf
+          readOnly: true
+        - mountPath: /etc/ironic/watcher.yaml
+          name: ironic-etc
           subPath: watcher.yaml
           readOnly: true
         {{- end }}
         {{- include "utils.proxysql.volume_mount" . | indent 8 }}
         {{- include "utils.trust_bundle.volume_mount" . | indent 8 }}
+      {{- if not .Values.proxysql.native_sidecar }}
       {{- tuple . .Values.api.api_workers | include "utils.proxysql.container" | indent 6 }}
+      {{- end }}
       - name: statsd
         image:  "{{.Values.global.dockerHubMirror}}/{{.Values.statsd.image.repository}}:{{.Values.statsd.image.tag}}"
         imagePullPolicy: IfNotPresent
@@ -124,7 +138,6 @@ spec:
             subPath: statsd-exporter.yaml
             readOnly: true
 {{- tuple . .Values.api.override "ironic-api" | include "utils.snippets.debug.debug_port_container" | indent 6 }}
-{{- include "jaeger_agent_sidecar" . | indent 6 }}
       volumes:
       - name: etcironic
         emptyDir: {}
@@ -132,12 +145,9 @@ spec:
         configMap:
           name: ironic-etc
           defaultMode: 0444
-      - name: ironic-etc-confd
-        secret:
+      - secret:
           secretName: {{ .Release.Name }}-secrets
-          items:
-          - key: secrets.conf
-            path: secrets.conf
+        name: ironic-secrets
       {{- include "utils.proxysql.volumes" . | indent 6 }}
       {{- include "utils.trust_bundle.volumes" . | indent 6 }}
       {{- tuple . .Values.api.override "ironic-api" .Values.global.ironicApiPortInternal | include "utils.snippets.debug.debug_port_volumes_and_configmap" }}

@@ -4,7 +4,6 @@ kind: Deployment
 metadata:
   labels:
     app: oauth2-proxy
-    version: {{.Values.version | quote}}
   name: oauth2-proxy
 spec:
   replicas: {{ .Values.replica_count }}
@@ -17,6 +16,10 @@ spec:
         app: oauth2-proxy
         alert-tier: auth
         alert-service: oauth-proxy
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
     spec:
       containers:
         - args:
@@ -35,7 +38,9 @@ spec:
             - --cookie-domain={{ .Values.oauth_proxy.cookie_domain }}
             - --cookie-expire={{ .Values.oauth_proxy.cookie_expire }}
             - --oidc-email-claim=email
-
+            {{- with .Values.oauth_proxy.metrics_address }}
+            - --metrics-address={{ . }}
+            {{- end }}
           # Register a new application
           # https://github.com/settings/applications/new
           env:
@@ -55,7 +60,11 @@ spec:
                 secretKeyRef:
                   name: oauth-secret
                   key: OAUTH_PROXY_COOKIE_SECRET
-          image: "{{ .Values.global.dockerHubMirror }}/{{.Values.image.name}}:{{ .Values.image.tag }}"    
+          {{- with .Values.oauth_proxy.skipAuthRoutes }}
+            - name: OAUTH2_PROXY_SKIP_AUTH_ROUTES
+              value: {{ . | join "," | quote }}
+          {{- end }}
+          image: "{{ .Values.global.quayIoMirror }}/{{.Values.image.name}}:{{ .Values.image.tag }}"    
           imagePullPolicy: {{.Values.image.pullPolicy}}
           name: oauth2-proxy
           securityContext:
@@ -63,7 +72,11 @@ spec:
           ports:
             - containerPort: 4180
               protocol: TCP
-          
+            {{- if .Values.oauth_proxy.metrics_address }}
+            - containerPort: {{ regexFind `:\d+` .Values.oauth_proxy.metrics_address  | trimPrefix ":" }}
+              protocol: TCP
+              name: metrics
+            {{- end }}
           livenessProbe:
             httpGet:
               path: /ping

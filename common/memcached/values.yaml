@@ -2,7 +2,7 @@
 ## ref: https://hub.docker.com/r/library/memcached/tags/
 ##
 image: library/memcached
-imageTag: 1.6.28-alpine
+imageTag: 1.6.39-alpine3.22
 # set to true to use .Values.global.dockerHubMirrorAlternateRegion instead of .Values.global.dockerHubMirror
 use_alternate_registry: false
 
@@ -22,10 +22,7 @@ nodeAffinity: {}
 #external_ip: ''
 
 # name of priorityClass to influence scheduling priority
-# false = disabled
-# true = enabled and set to 'openstack-service-critical'
-# <string> = set the priorityClassName to that value
-priority_class: true
+priority_class: "critical-infrastructure"
 
 memcached:
   ## Various values that get set as command-line flags.
@@ -48,12 +45,18 @@ resources:
     memory: 1024Mi
     cpu: 50m
 
+vpa:
+  # https://github.com/sapcc/vpa_butler
+  # The maximum available capacity is split evenly across containers specified in the Deployment, StatefulSet or DaemonSet to derive the upper recommendation bound. This does not work out for pods with a single resource-hungry container with several sidecar containers
+  # Annotate the Deployment, StatefulSet or DaemonSet with vpa-butler.cloud.sap/main-container=$MAIN_CONTAINER. That will distribute 75% of the maximum available capacity to the main container and the rest evenly across all others
+  set_main_container: false
+
 metrics:
   enabled: true
-  image: 'prom/memcached-exporter'
-  imageTag: 'v0.14.1'
+  image: "prom/memcached-exporter"
+  imageTag: "v0.15.1"
 
-  port: '9150'
+  port: "9150"
   resources:
     enabled: true
     limits:
@@ -69,8 +72,8 @@ replicas: 1
 # the client should connect using this username/password combination to
 # connect to memcached.
 auth:
-  username: ''
-  password: ''
+  username: ""
+  password: ""
 
 upgrades:
   revisionHistory: 3
@@ -78,7 +81,6 @@ upgrades:
   rollingUpdate:
     maxUnavailable: 1
     maxSurge: 3
-
 
 # Default Prometheus alerts and rules.
 alerts:

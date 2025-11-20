@@ -30,7 +30,7 @@ spec:
         {{- end }}
     spec:
       nodeSelector:
-        ccloud.sap.com/nodepool: payload
+        ccloud.sap.com/nodepool: {{.Values.global.nodepool}}
       volumes:
         - name: manager-etc
           configMap:
@@ -39,10 +39,10 @@ spec:
           secret:
             defaultMode: 420
             secretName: manager-secrets
-        - name: opensearch-certs
+        - name: admin-cert-manager
           secret:
             defaultMode: 420
-            secretName: opensearch-certs
+            secretName: admin-cert-manager
       containers:
       - name: manager
         image: {{.Values.global.registry}}/{{.Values.image_manager}}
@@ -68,8 +68,9 @@ spec:
           - mountPath: /manager-etc/application.conf
             name: manager-secrets
             subPath: application.conf
-          - mountPath: /opt/certs
-            name: opensearch-certs
+          - mountPath: /opt/certs/ca.crt
+            name: admin-cert-manager
+            subPath: ca.crt
         ports:
           - name: manager
             containerPort: {{.Values.port_internal}}

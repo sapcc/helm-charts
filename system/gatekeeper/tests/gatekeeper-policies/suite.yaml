@@ -413,10 +413,6 @@ tests:
     object: fixtures/pod-security/concourse-worker.yaml
     assertions:
     - violations: no
-  - name: pod-security-accept-elasticsearch-hermes
-    object: fixtures/pod-security/elasticsearch-hermes.yaml
-    assertions:
-    - violations: no
   - name: pod-security-accept-opensearch-hermes
     object: fixtures/pod-security/opensearch-hermes.yaml
     assertions:
@@ -431,6 +427,10 @@ tests:
     - violations: no
   - name: pod-security-accept-fluent-bit
     object: fixtures/pod-security/fluent-bit.yaml
+    assertions:
+    - violations: no
+  - name: pod-security-accept-otel
+    object: fixtures/pod-security/otel.yaml
     assertions:
     - violations: no
   - name: pod-security-accept-fluent-bit-systemd
@@ -475,6 +475,10 @@ tests:
     - violations: no
   - name: pod-security-accept-logs-fluent-systemd
     object: fixtures/pod-security/logs-fluent-systemd.yaml
+    assertions:
+    - violations: no
+  - name: pod-security-accept-neutron-netns-prober
+    object: fixtures/pod-security/neutron-netns-prober.yaml
     assertions:
     - violations: no
   - name: pod-security-accept-neutron-network-agent
@@ -529,6 +533,14 @@ tests:
     object: fixtures/pod-security/workstation-deployment.yaml
     assertions:
     - violations: no
+  - name: pod-security-accept-flatcar-linux-update-agent
+    object: fixtures/pod-security/flatcar-linux-update-agent.yaml
+    assertions:
+    - violations: no
+  - name: pod-security-accept-archer-agent-ni
+    object: fixtures/pod-security/archer-agent-ni.yaml
+    assertions:
+    - violations: no
   - name: pod-security-reject-security-nightmare
     object: fixtures/pod-security/invalid.yaml
     assertions:
@@ -541,9 +553,141 @@ tests:
     - violations: 1
       message: '^\{"support_group":"none","service":"none"\} >> pod is not allowed to set spec.containers\["mallory"].securityContext.privileged = true$'
     - violations: 1
-      message: '^\{"support_group":"none","service":"none"\} >> pod is not allowed to set spec.containers\["mallory"].securityContext.capabilities.add = \["CAP_SYS_ADMIN"]$'
+      message: '^\{"support_group":"none","service":"none"\} >> pod is not allowed to set spec.containers\["mallory"].securityContext.capabilities.add = \["SYS_ADMIN"]$'
     - violations: 1
       message: '^\{"support_group":"none","service":"none"\} >> container \"mallory\" in this pod is not allowed to mount hostPath volumes with path \"/\" \(readonly = false\)$'
+
+- name: pod-security-v2
+  template: ../rendered-chart/gatekeeper/templates/constrainttemplate-pod-security-v2.yaml
+  constraint: ../rendered-chart/gatekeeper-config/templates/constraint-pod-security-v2.yaml
+  cases:
+  - name: pod-security-v2-reject-host-network
+    object: fixtures/pod-security-v2/host-network-reject.yaml
+    assertions:
+    - violations: 1
+      message: '^\{"support_group":"none","service":"none"\} >> pod is not allowed to set spec.hostNetwork = true$'
+  - name: pod-security-v2-no-rule-for-host-network
+    object: fixtures/pod-security-v2/host-network-no-rule.yaml
+    assertions:
+    - violations: 1
+      message: '^\{"support_group":"none","service":"none"\} >> pod is not allowed to set spec.hostNetwork = true$'
+  - name: pod-security-v2-allow-host-network
+    object: fixtures/pod-security-v2/host-network-allow.yaml
+    assertions:
+    - violations: no
+  - name: pod-security-v2-reject-host-pid
+    object: fixtures/pod-security-v2/host-pid-reject.yaml
+    assertions:
+    - violations: 1
+      message: '^\{"support_group":"none","service":"none"\} >> pod is not allowed to set spec.hostPID = true$'
+  - name: pod-security-v2-no-rule-for-host-pid
+    object: fixtures/pod-security-v2/host-pid-no-rule.yaml
+    assertions:
+    - violations: 1
+      message: '^\{"support_group":"none","service":"none"\} >> pod is not allowed to set spec.hostPID = true$'
+  - name: pod-security-v2-allow-host-pid
+    object: fixtures/pod-security-v2/host-pid-allow.yaml
+    assertions:
+    - violations: no
+  - name: pod-security-v2-reject-privilege-escalation
+    object: fixtures/pod-security-v2/privilege-escalation-reject.yaml
+    assertions:
+    - violations: 1
+      message: '^\{"support_group":"none","service":"none"\} >> pod is not allowed to set spec.containers\["foo-container"].securityContext.allowPrivilegeEscalation = true$'
+  - name: pod-security-v2-no-rule-for-privilege-escalation
+    object: fixtures/pod-security-v2/privilege-escalation-no-rule.yaml
+    assertions:
+    - violations: 1
+      message: '^\{"support_group":"none","service":"none"\} >> pod is not allowed to set spec.containers\["foo-container"].securityContext.allowPrivilegeEscalation = true$'
+  - name: pod-security-v2-allow-privilege-escalation
+    object: fixtures/pod-security-v2/privilege-escalation-allow.yaml
+    assertions:
+    - violations: no
+  - name: pod-security-v2-reject-privileged
+    object: fixtures/pod-security-v2/is-privileged-reject.yaml
+    assertions:
+    - violations: 1
+      message: '^\{"support_group":"none","service":"none"\} >> pod is not allowed to set spec.containers\["foo-container"].securityContext.privileged = true$'
+  - name: pod-security-v2-no-rule-for-privileged
+    object: fixtures/pod-security-v2/is-privileged-no-rule.yaml
+    assertions:
+    - violations: 1
+      message: '^\{"support_group":"none","service":"none"\} >> pod is not allowed to set spec.containers\["foo-container"].securityContext.privileged = true$'
+  - name: pod-security-v2-allow-privileged
+    object: fixtures/pod-security-v2/is-privileged-allow.yaml
+    assertions:
+    - violations: no
+  - name: pod-security-v2-reject-capabilities
+    object: fixtures/pod-security-v2/capabilities-reject.yaml
+    assertions:
+    - violations: 1
+      message: '^\{"support_group":"none","service":"none"\} >> pod is not allowed to set spec.containers\["foo-container"].securityContext.capabilities.add = \["SYS_ADMIN"]$'
+  - name: pod-security-v2-no-rule-for-capabilities
+    object: fixtures/pod-security-v2/capabilities-no-rule.yaml
+    assertions:
+    - violations: 1
+      message: '^\{"support_group":"none","service":"none"\} >> pod is not allowed to set spec.containers\["foo-container"].securityContext.capabilities.add = \["FOO"]$'
+  - name: pod-security-v2-allow-capabilities
+    object: fixtures/pod-security-v2/capabilities-allow.yaml
+    assertions:
+    - violations: no
+  - name: pod-security-v2-reject-host-path-volumes-r
+    object: fixtures/pod-security-v2/host-path-volumes-reject-r.yaml
+    assertions:
+    - violations: 1
+      message: '^\{"support_group":"none","service":"none"\} >> container \"foo-container\" in this pod is not allowed to mount hostPath volumes with path \"/\" \(readonly = true\)$'
+  - name: pod-security-v2-reject-host-path-volumes-rw
+    object: fixtures/pod-security-v2/host-path-volumes-reject-rw.yaml
+    assertions:
+    - violations: 1
+      message: '^\{"support_group":"none","service":"none"\} >> container \"foo-container\" in this pod is not allowed to mount hostPath volumes with path \"/\" \(readonly = false\)$'
+  - name: pod-security-v2-reject-host-path-volumes-w
+    object: fixtures/pod-security-v2/host-path-volumes-reject-w.yaml
+    assertions:
+    - violations: 1
+      message: '^\{"support_group":"none","service":"none"\} >> container \"foo-container\" in this pod is not allowed to mount hostPath volumes with path \"/\" \(readonly = false\)$'
+  - name: pod-security-v2-no-rule-for-host-path-volumes-r
+    object: fixtures/pod-security-v2/host-path-volumes-no-rule-r.yaml
+    assertions:
+    - violations: 1
+      message: '^\{"support_group":"none","service":"none"\} >> container \"foo-container\" in this pod is not allowed to mount hostPath volumes with path \"/\" \(readonly = true\)$'
+  - name: pod-security-v2-no-rule-for-host-path-volumes-w
+    object: fixtures/pod-security-v2/host-path-volumes-no-rule-w.yaml
+    assertions:
+    - violations: 1
+      message: '^\{"support_group":"none","service":"none"\} >> container \"foo-container\" in this pod is not allowed to mount hostPath volumes with path \"/\" \(readonly = false\)$'
+  - name: pod-security-v2-allow-host-path-volumes-r
+    object: fixtures/pod-security-v2/host-path-volumes-allow-r.yaml
+    assertions:
+    - violations: no
+  - name: pod-security-v2-allow-host-path-volumes-rw
+    object: fixtures/pod-security-v2/host-path-volumes-allow-rw.yaml
+    assertions:
+    - violations: no
+  - name: pod-security-v2-allow-host-path-volumes-w
+    object: fixtures/pod-security-v2/host-path-volumes-allow-w.yaml
+    assertions:
+    - violations: no
+  - name: pod-security-v2-check-image-repo-parsing
+    object: fixtures/pod-security-v2/image-repo-parsing.yaml
+    assertions:
+    - violations: no
+  - name: pod-security-v2-reject-security-nightmare
+    object: fixtures/pod-security-v2/invalid.yaml
+    assertions:
+    - violations: 1
+      message: '^\{"support_group":"none","service":"none"\} >> pod is not allowed to set spec.hostNetwork = true$'
+    - violations: 1
+      message: '^\{"support_group":"none","service":"none"\} >> pod is not allowed to set spec.hostPID = true$'
+    - violations: 1
+      message: '^\{"support_group":"none","service":"none"\} >> pod is not allowed to set spec.containers\["mallory"].securityContext.allowPrivilegeEscalation = true$'
+    - violations: 1
+      message: '^\{"support_group":"none","service":"none"\} >> pod is not allowed to set spec.containers\["mallory"].securityContext.privileged = true$'
+    - violations: 1
+      message: '^\{"support_group":"none","service":"none"\} >> pod is not allowed to set spec.containers\["mallory"].securityContext.capabilities.add = \["SYS_ADMIN"]$'
+    - violations: 1
+      message: '^\{"support_group":"none","service":"none"\} >> container \"mallory\" in this pod is not allowed to mount hostPath volumes with path \"/\" \(readonly = false\)$'
+
 
 - name: prometheus-scrape-annotations
   template: ../rendered-chart/gatekeeper/templates/constrainttemplate-prometheus-scrape-annotations.yaml
@@ -571,7 +715,7 @@ tests:
     object: fixtures/prometheusrule-alert-labels/prometheus-rule-no-label.yaml
     assertions:
     - violations: 1
-      message: '^\{"support_group":"foo-group","service":"dummy"\} >> rule DummyBackupWentMissing in group backup.alerts does not have a valid value for labels.severity \("critical", "warning" or "info"\)$'
+      message: '^\{"support_group":"foo-group","service":"dummy"\} >> rule DummyBackupWentMissing in group backup.alerts does not have a valid value for labels.severity \("critical", "warning", "info" or "none"\)$'
     - violations: 1
       message: '^\{"support_group":"foo-group","service":"dummy"\} >> rule DummyBackupWentMissing in group backup.alerts does not have labels.support_group$'
   - name: prometheus-rule-only-severity
@@ -595,6 +739,15 @@ tests:
     assertions:
     - violations: 1
       message: '^\{"support_group":"foo-group","service":"dummy"\} >> .Values.global.region does not match the deployed region: expected qa-de-1, but found "qa-de-9"$'
+  - name: helm-release-global-mismatch
+    object: fixtures/region-value-mismatch/helm-release-global-mismatch.out.yaml
+    assertions:
+    - violations: 1
+      message: '^\{"support_group":"foo-group","service":"dummy"\} >> .Values.global.db_region does not match the deployed region: expected qa-de-1, but found "qa-de-9"$'
+  - name: helm-release-global-pass
+    object: fixtures/region-value-mismatch/helm-release-global-pass.out.yaml
+    assertions:
+    - violations: no
   - name: helm-release-no-region
     object: fixtures/region-value-mismatch/helm-release-no-region.out.yaml
     assertions:
@@ -617,6 +770,15 @@ tests:
     assertions:
     - violations: 1
       message: '^\{"support_group":"foo-group","service":"dummy"\} >> missing or invalid .Values.global.region value$'
+  - name: helm-release-global-no-db-region
+    object: fixtures/region-value-missing/helm-release-global-no-db-region.out.yaml
+    assertions:
+    - violations: 1
+      message: '^\{"support_group":"foo-group","service":"dummy"\} >> missing or invalid .Values.global.db_region value$'
+  - name: helm-release-global-region-pass
+    object: fixtures/region-value-missing/helm-release-global-region-pass.out.yaml
+    assertions:
+    - violations: no
   - name: helm-release-pass
     object: fixtures/region-value-missing/helm-release-pass.out.yaml
     assertions:
@@ -690,5 +852,27 @@ tests:
       message: '^\{"status":"Unclear","support_group":"foo-group","service":"dummy"\} >> image keppel.example.com/vulnerability:unclear for container "dummy" has "X-Keppel-Vulnerability-Status: Unclear"$'
   - name: pod-clean
     object: fixtures/vulnerable-images/pod-clean.yaml
+    assertions:
+    - violations: no
+
+- name: restrict-monsoon3-releases
+  template: ../rendered-chart/gatekeeper/templates/constrainttemplate-restrict-monsoon3-namespace.yaml
+  constraint: ../rendered-chart/gatekeeper-config/templates/constraint-restrict-monsoon3-namespace.yaml
+  cases:
+  - name: configmap-forbidden-name
+    object: fixtures/restrict-monsoon3-namespace/configmap-forbidden-name.out.yaml
+    assertions:
+    - violations: 1
+      message: 'helm release "forbidden-name" is not allowed in namespace "monsoon3"'
+  - name: configmap-pass
+    object: fixtures/restrict-monsoon3-namespace/configmap-pass.out.yaml
+    assertions:
+    - violations: no
+  - name: configmap-pass-different-namespace
+    object: fixtures/restrict-monsoon3-namespace/configmap-pass-different-namespace.out.yaml
+    assertions:
+    - violations: no
+  - name: not-a-helm-release
+    object: fixtures/restrict-monsoon3-namespace/generic-secret.yaml
     assertions:
     - violations: no

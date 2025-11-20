@@ -43,6 +43,7 @@ spec:
             - --container-namespace-label={{ required ".Values.recommender.prometheus.containerNamespaceLabel missing" .Values.recommender.prometheus.containerNamespaceLabel }}
             - --container-pod-name-label={{ required ".Values.recommender.prometheus.containerPodNameLabel missing" .Values.recommender.prometheus.containerPodNameLabel }}
             - --container-name-label={{ required ".Values.recommender.prometheus.containerNameLabel missing" .Values.recommender.prometheus.containerNameLabel }}
+            - --leader-elect-resource-namespace={{ .Release.Namespace }}
             {{- end }}
             {{- if .Values.recommender.marginFraction }}
             - --recommendation-margin-fraction={{ .Values.recommender.marginFraction }}
@@ -50,13 +51,19 @@ spec:
             {{- if .Values.recommender.podMinMemoryMB }}
             - --pod-recommendation-min-memory-mb={{ .Values.recommender.podMinMemoryMB }}
             {{- end }}
-          resources:
-            limits:
-              cpu: 200m
-              memory: 1000Mi
-            requests:
-              cpu: 50m
-              memory: 500Mi
+            {{- if .Values.recommender.recommendationMaxAllowed.cpu }}
+            - --container-recommendation-max-allowed-cpu={{ .Values.recommender.recommendationMaxAllowed.cpu }}
+            {{- end }}
+            {{- if .Values.recommender.recommendationMaxAllowed.memory }}
+            - --container-recommendation-max-allowed-memory={{ .Values.recommender.recommendationMaxAllowed.memory }}
+            {{- end }}
+            {{- if .Values.recommender.targetPercentile.cpu }}
+            - --target-cpu-percentile={{ .Values.recommender.targetPercentile.cpu }}
+            {{- end }}
+            {{- if .Values.recommender.targetPercentile.memory }}
+            - --target-memory-percentile={{ .Values.recommender.targetPercentile.memory }}
+            {{- end }}
+          resources: {{ toYaml .Values.recommender.resources | nindent 12 }}
           ports:
             - name: metrics
               containerPort: 8942

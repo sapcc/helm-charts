@@ -6,6 +6,7 @@ global:
 owner-info:
   support-group: containers
   helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/system/kube-monitoring-virtual
+  service: kube-monitoring
 
 # Disable the prometheus-operator kube-state-metrics sub-chart. We deploy independently.
 kubeStateMetrics:
@@ -149,12 +150,20 @@ ping-exporter:
 
 prometheus-node-exporter:
   image:
-    repository: keppel.global.cloud.sap/ccloud-dockerhub-mirror/prom/node-exporter
+    registry: keppel.global.cloud.sap
+    repository: ccloud-dockerhub-mirror/prom/node-exporter
 
   service:
     annotations:
       # Avoid duplicate scrapes via service.
       prometheus.io/scrape: "false"
+
+  kubeRBACProxy:
+    enabled: true
+    proxyEndpointsPort: 8889
+    image:
+      registry: keppel.global.cloud.sap
+      repository: ccloud-quay-mirror/brancz/kube-rbac-proxy
 
   extraArgs:
     - --collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)
@@ -187,24 +196,6 @@ prometheus-virtual-rules:
 kubernikus-monitoring:
   prometheusName: kubernetes
 
-fluent-bit:
-  existingConfigMap: fluent-bit-config
-  image:
-    repository: keppel.global.cloud.sap/ccloud-dockerhub-mirror/fluent/fluent-bit
-    pullPolicy: IfNotPresent
-  backend:
-    opensearch:
-      enabled: false
-      host: DEFINED-IN-SECRETS
-      http_user: DEFINED-IN-SECRETS
-      http_passwd: DEFINED-IN-SECRETS
-      port: DEFINED-IN-SECRETS
-      logstash_prefix: virtual
-      tls:
-        enabled: "On"
-        verify: "Off"
-        debug: '1'
-
 falco:
   enabled: false
   image:
@@ -232,16 +223,19 @@ falco:
 
   extra:
     args:
-      - -t
-      - pci
       - -v
       - --unbuffered
       - -o
       - json_output=true
 
   falco:
-    rules_file:
+    rules_files:
       - /etc/falco/rules.d
+    rules:
+      - disable:
+          rule: "*"
+      - enable:
+          tag: pci
 
 x509-certificate-exporter:
   enabled: false

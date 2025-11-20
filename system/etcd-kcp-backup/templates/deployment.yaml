@@ -1,0 +1,164 @@
+{{- if .Values.deployment.enable }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: etcd-kcp-backup
+  namespace: {{ .Values.namespace | default "kube-system" }}
+  labels:
+    {{- include "chart.labels" . | nindent 4 }}
+    etcd-kcp: backup
+spec:
+  replicas:  {{ .Values.deployment.replicas }}
+  selector:
+    matchLabels:
+      {{- include "chart.selectorLabels" . | nindent 6 }}
+      etcd-kcp: backup
+  template:
+    metadata:
+      labels:
+        {{- include "chart.labels" . | nindent 8 }}
+        etcd-kcp: backup
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.metal.cloud.sap/role
+                operator: In
+                values:
+                - runtime-controlplane
+      initContainers:
+        - name: init-bucket
+          image: {{ .Values.deployment.initContainer.image.repository }}:{{ .Values.deployment.initContainer.image.tag }}
+          command:
+            - 'sh'
+            - '-c'
+            - '/scripts/init_bucket.sh'
+          env:
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: etcd-kcp-backup-aws
+                  key: access-key-id
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: etcd-kcp-backup-aws
+                  key: secret-access-key
+            - name: AWS_REGION
+              valueFrom:
+                secretKeyRef:
+                  name: etcd-kcp-backup-aws
+                  key: region
+          volumeMounts:
+            - name: bucket-config
+              mountPath: /scripts/init_bucket.sh
+              subPath: init_bucket.sh
+            - name: bucket-config
+              mountPath: /scripts/bucket_policy.json
+              subPath: bucket_policy.json
+      containers:
+        - name: manager
+          image: {{ .Values.deployment.container.image.repository }}:{{ .Values.deployment.container.image.tag }}
+          command:
+            - /etcdbrctl
+          args:
+            - server
+            - '--auto-compaction-mode=periodic'
+            - '--auto-compaction-retention=30m'
+            - '--cacert=/etc/kubernetes/pki/etcd/ca.crt'
+            - '--cert=/etc/kubernetes/pki/apiserver-etcd-client.crt'
+            - '--compress-snapshots=true'
+            - '--compression-policy=gzip'
+            - '--data-dir=/var/lib/etcd'
+            - '--defragmentation-schedule=0 3 * * *'
+            - '--delta-snapshot-lease-name=etcd-kcp-backup-delta-snap'
+            - '--delta-snapshot-memory-limit=104857600'
+            - '--delta-snapshot-period=5m'
+            - '--embedded-etcd-quota-bytes=8589934592'
+            - '--enable-snapshot-lease-renewal=true'
+            - '--endpoints=https://etcd-kcp-backup.kube-system.svc.cluster.local:2379'
+            - '--etcd-connection-timeout=5m'
+            - '--etcd-defrag-timeout=15m'
+            - '--etcd-snapshot-timeout=15m'
+            - '--full-snapshot-lease-name=etcd-kcp-backup-full-snap'
+            - '--garbage-collection-period=12h'
+            - '--garbage-collection-policy=Exponential'
+            - '--insecure-skip-tls-verify=true'
+            - '--insecure-transport=false'
+            - '--k8s-heartbeat-duration=10s'
+            - '--key=/etc/kubernetes/pki/apiserver-etcd-client.key'
+            - '--restoration-temp-snapshots-dir=/tmp/etcd/restoration'
+            - '--schedule=0 4 * * *'
+            - '--snapstore-temp-directory=/tmp/etcd/snapstore'
+            - '--storage-provider=S3'
+          ports:
+          - name: server
+            containerPort: 8080
+            protocol: TCP
+          env:
+            - name: AWS_APPLICATION_CREDENTIALS
+              value: /etc/aws/credentials
+            - name: STORAGE_CONTAINER
+              value: etcd-kcp-backup-{{ .Values.clusterName }}
+            - name: POD_NAME
+              value: etcd-kcp-backup
+              # valueFrom:
+              #   fieldRef:
+              #     apiVersion: v1
+              #     fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              value: kube-system
+          resources:
+            {{- toYaml .Values.deployment.container.resources | nindent 12 }}
+          securityContext:
+            {{- toYaml .Values.deployment.container.securityContext | nindent 12 }}
+          volumeMounts:
+            - name: etcd-config
+              mountPath: /var/etcd/config
+            - name: etcd-data
+              mountPath: /var/lib/etcd
+            - name: pki-certs
+              readOnly: true
+              mountPath: /etc/kubernetes/pki
+            - name: aws-credentials
+              readOnly: true
+              mountPath: /etc/aws/credentials
+      securityContext:
+        {{- toYaml .Values.deployment.securityContext | nindent 8 }}
+      serviceAccountName: {{ .Values.deployment.serviceAccountName }}
+      terminationGracePeriodSeconds: 30
+      priorityClassName: system-node-critical
+      priority: 2000001000
+      tolerations:
+        - operator: Exists
+          effect: NoExecute
+      volumes:
+        - name: etcd-config
+          configMap:
+            name: etcd-kcp-backup
+        - name: etcd-data
+          hostPath:
+            path: /var/lib/etcd
+            type: DirectoryOrCreate
+        - name: pki-certs
+          hostPath:
+            path: /etc/kubernetes/pki
+            type: DirectoryOrCreate
+        - name: aws-credentials
+          secret:
+            secretName: etcd-kcp-backup-aws
+            items:
+              - key: access-key-id
+                path: accessKeyID
+              - key: region
+                path: region
+              - key: secret-access-key
+                path: secretAccessKey
+            defaultMode: 420
+        - name: bucket-config
+          configMap:
+            name: etcd-kcp-bucket
+            defaultMode: 0777
+{{- end }}

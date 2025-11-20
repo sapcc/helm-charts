@@ -6,6 +6,13 @@ cronus:
   billingCacheTTL: {{ .Values.config.billingCacheTTL }}
   barbicanCacheTTL: {{ .Values.config.barbicanCacheTTL }}
   awsSignV2TTL: {{ .Values.config.awsSignV2TTL }}
+{{- if and .Values.cronus.auth .Values.cronus.auth.allowPasswordsForCIDRs }}
+  auth:
+    allowPasswordsForCIDRs:
+    {{- range $v := .Values.cronus.auth.allowPasswordsForCIDRs }}
+      - {{ $v | quote }}
+    {{- end }}
+{{- end }}
 {{- if .Values.cronus.allowedNdrs }}
   allowedNdrs:
   {{- range $v := .Values.cronus.allowedNdrs }}
@@ -49,6 +56,9 @@ cronus:
   retry:
 {{- if .Values.config.retry.maxConnectionRetries }}
     maxConnectionRetries: {{ .Values.config.retry.maxConnectionRetries }}
+{{- end }}
+{{- if .Values.config.retry.maxProxyRetries }}
+    maxProxyRetries: {{ .Values.config.retry.maxProxyRetries }}
 {{- end }}
 {{- if .Values.config.retry.retryInterval }}
     retryInterval: {{ .Values.config.retry.retryInterval }}
@@ -103,6 +113,24 @@ cronus:
 {{ .Values.cronus.tls.clientCA | default .Values.global.clientCA | indent 8 }}
 {{- end }}
       errInterval: {{ .Values.cronus.tls.errInterval | default "60s" }}
+      {{- if .Values.cronus.tls.enforceForCIDRs }}
+      enforceForCIDRs:
+      {{- range $v := .Values.cronus.tls.enforceForCIDRs }}
+        - {{ $v | quote }}
+      {{- end }}
+      {{- end }}
+      {{- if .Values.global.tls }}
+      {{- if .Values.global.tls.clientCertWarningPeriod }}
+      clientCertWarningPeriod: {{ .Values.global.tls.clientCertWarningPeriod }}
+      {{- end }}
+      {{- if .Values.global.tls.checkRevocations }}
+      checkRevocations: true
+      revokedSerialNumbers:
+      {{- range $v := .Values.global.tls.revokedSerialNumbers }}
+        - {{ $v | quote }}
+      {{- end }}
+      {{- end }}
+      {{- end }}
 {{- end }}
   keystone:
 {{- if .Values.config.keystone }}

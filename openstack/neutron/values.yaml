@@ -38,6 +38,9 @@ pod:
   replicas:
     server: 3
     rpc_server: 2
+    network_agent: 15
+    swift_injector: 1
+    ovn_db: 3
   lifecycle:
     upgrades:
       deployments:
@@ -150,6 +153,10 @@ pod:
       limits:
         cpu: "128m"
         memory: "128Mi"
+    ovn_northd:
+      requests:
+        cpu: "100m"
+        memory: "300Mi"
 
 debug: "True"
 port_metrics: '9102'
@@ -206,6 +213,7 @@ aci:
   # apic_user: null
   # apic_password: null
   # apic_tenant_name: null
+  configmap_char_limit: 750000
 
 cc_fabric:
   agent:
@@ -236,6 +244,36 @@ interconnection:
 
 fwaas:
   enabled: false
+
+ovn:
+  enabled: false
+  image: "keppel.eu-de-1.cloud.sap/ccloud/cobaltcore-dev/openstack-ovn-controller"
+  imageVersionOVN: "latest"
+
+  # -- Use SSL transport to NB/SB db and northd
+  enableSsl: false
+
+ovsdb-sb:
+  RAFT_PORT: 6644
+  DB_TYPE: sb
+  DB_PORT: 6442
+  OVN_LOG_LEVEL: "info"
+  OVN_ELECTION_TIMER: "10000"
+  OVN_INACTIVITY_PROBE: "60000"
+  OVN_PROBE_INTERVAL_TO_ACTIVE: "60000"
+  service:
+    # requirements to be accessible from outside with Calico
+    type: LoadBalancer
+    external_traffic_policy: Local
+
+ovsdb-nb:
+  RAFT_PORT: 6643
+  DB_TYPE: nb
+  DB_PORT: 6441
+  OVN_LOG_LEVEL: "info"
+  OVN_ELECTION_TIMER: "10000"
+  OVN_INACTIVITY_PROBE: "60000"
+  OVN_PROBE_INTERVAL_TO_ACTIVE: "60000"
 
 asr:
   config_agents: []
@@ -279,6 +317,7 @@ drivers:
         db_max_records_per_query: 1000
         retry_on_failure_max: 3
         retry_on_failure_delay: 3
+        resync_objects_based_on_age: false
       NSXV3:
         nsxv3_connection_retry_count: 2
         nsxv3_connection_retry_sleep: 2
@@ -294,6 +333,7 @@ drivers:
 
 nsxv3_pw_user: m3apiuser0
 
+#ToDo - Remove this migrated to the new sentry logger
 logging:
   formatters:
     context:
@@ -347,12 +387,106 @@ logging:
     neutron_fwaas:
       handlers: stdout, sentry
       level: WARNING
+    neutron_vpnaas:
+      handlers: stdout, sentry
+      level: INFO
+    networking_bgpvpn:
+      handlers: stdout, sentry
+      level: INFO
+
+logging_sapccsentry:
+  formatters:
+    context:
+      class: oslo_log.formatters.ContextFormatter
+    default:
+      format: "%(message)s"
+  handlers:
+    stdout:
+      class: StreamHandler
+      args: "(sys.stdout,)"
+      formatter: context
+    "null":
+      class: logging.NullHandler
+      formatter: default
+      args: "()"
+    sentry_events:
+      class: "sapcc_sentrylogger.handler.EventHandler"
+      level: ERROR
+      args: "()"
+    sentry_breadcrumbs:
+      class: "sapcc_sentrylogger.handler.BreadcrumbHandler"
+      level: INFO
+      args: "()"
+  loggers:
+    root:
+      formatter: context
+      handlers: stdout, sentry_events, sentry_breadcrumbs
+      level: ERROR
+    neutron:
+      handlers: stdout, sentry_events, sentry_breadcrumbs
+      level: DEBUG
+    neutron.pecan_wsgi.hooks.policy_enforcement:
+      handlers: stdout, sentry_events, sentry_breadcrumbs
+      level: INFO
+    neutron.api.rpc:
+      handlers: stdout, sentry_events, sentry_breadcrumbs
+      level: INFO
+    neutron.wsgi:
+      handlers: stdout, sentry_events, sentry_breadcrumbs
+      level: INFO
+    suds:
+      handlers: "null"
+      level: ERROR
+    eventlet.wsgi.server:
+      handlers: stdout, sentry_events, sentry_breadcrumbs
+      level: INFO
+    networking_aci.plugins.ml2.drivers.mech_aci.allocations_manager:
+      handlers: stdout, sentry_events, sentry_breadcrumbs
+      level: WARNING
+    auditmiddleware:
+      handlers: stdout, sentry_events, sentry_breadcrumbs
+      level: INFO
+    rate_limit:
+      handlers: stdout, sentry_events, sentry_breadcrumbs
+      level: INFO
+    neutron_fwaas:
+      handlers: stdout, sentry_events, sentry_breadcrumbs
+      level: WARNING
+    neutron_vpnaas:
+      handlers: stdout, sentry_events, sentry_breadcrumbs
+      level: INFO
+    paste:
+      handlers: stdout, sentry_events, sentry_breadcrumbs
+      level: ERROR
+    networking_aci:
+      handlers: stdout, sentry_events, sentry_breadcrumbs
+      level: INFO
+    networking_nsxv3:
+      handlers: stdout, sentry_events, sentry_breadcrumbs
+      level: INFO
+    neutron.plugins.ml2.drivers.mech_agent:
+      handlers: stdout, sentry_events, sentry_breadcrumbs
+      level: DEBUG
+    asr1k_neutron_l3:
+      handlers: stdout, sentry_events, sentry_breadcrumbs
+      level: DEBUG
+    networking_f5:
+      handlers: stdout, sentry_events, sentry_breadcrumbs
+      level: DEBUG
+    networking_arista:
+      handlers: stdout, sentry_events, sentry_breadcrumbs
+      level: DEBUG
+    networking_bgpvpn:
+      handlers: stdout, sentry_events, sentry_breadcrumbs
+      level: INFO
+
 
 pgmetrics:
   enabled: false
 
 proxysql:
   mode: ""
+  native_sidecar: true
 
 db_name: neutron
 
@@ -383,6 +517,43 @@ mariadb:
       innodb_lock_wait_timeout  = 5
   alerts:
     support_group: network-api
+
+nsxv3_logstash:
+  dbUser: neutron
+  # dbPassword: _replace_me_
+
+pxc_db:
+  enabled: false
+  name: neutron
+  alerts:
+    support_group: network-api
+  ccroot_user:
+    enabled: true
+  databases:
+    - neutron
+  users:
+    neutron:
+      name: neutron
+      grants:
+        - "ALL PRIVILEGES on neutron.*"
+  pxc:
+    configuration:
+      options:
+        max_connections: "2048"
+        innodb_buffer_pool_size: "4096M"
+        innodb_log_file_size: "1024M"
+        innodb_deadlock_detect: "0"
+        innodb_lock_wait_timeout: "5"
+    persistence:
+      size: 10Gi
+  backup:
+    enabled: true
+    s3:
+      secrets:
+        aws_access_key_id: null
+        aws_secret_access_key: null
+    pitr:
+      enabled: true
 
 mysql_metrics:
   db_name: neutron
@@ -613,6 +784,7 @@ watcher:
 # openstack-rate-limit
 rate_limit:
   enabled: false
+  backend_secret_file: /etc/neutron/ratelimit-backend-secret.conf
   rate_limit_by: target_project_id
   max_sleep_time_seconds: 0
   log_sleep_time_seconds: 10
@@ -621,6 +793,20 @@ rate_limit:
     - Default/service
     - Default/admin
     - ccadmin/cloud_admin
+    - tempest/neutron-tempest-admin1
+    - tempest/neutron-tempest-admin2
+    - tempest/neutron-tempest-admin3
+    - tempest/neutron-tempest-admin4
+    - tempest/neutron-tempest1
+    - tempest/neutron-tempest2
+    - tempest/neutron-tempest3
+    - tempest/neutron-tempest4
+    - tempest/neutron-tempest5
+    - tempest/neutron-tempest6
+    - tempest/neutron-tempest7
+    - tempest/neutron-tempest8
+    - tempest/neutron-tempest9
+    - tempest/neutron-tempest10
   whitelist_users: null
   blacklist: null
   blacklist_users: null
@@ -720,7 +906,7 @@ rate_limit:
           limit: 200r/m
       security-group-rules:
         - action: create
-          limit: 100r/m
+          limit: 1000r/m
         - action: read/list
           limit: 7700r/m
       security-group-rules/security-group-rule:
@@ -794,12 +980,24 @@ memcached:
   alerts:
     support_group: network-api
 
+api-ratelimit-redis:
+  alerts:
+    support_group: network-api
+
+metadata:
+  rate_limit:
+    enabled: false
+    base_window_duration: 60
+    base_query_rate_limit: 600
+    burst_window_duration: 10
+    burst_query_rate_limit: 250
+
 utils:
   trust_bundle:
     enable: false
 
-vpa:
-  # https://github.com/sapcc/vpa_butler
-  # The maximum available capacity is split evenly across containers specified in the Deployment, StatefulSet or DaemonSet to derive the upper recommendation bound. This does not work out for pods with a single resource-hungry container with several sidecar containers
-  # Annotate the Deployment, StatefulSet or DaemonSet with vpa-butler.cloud.sap/main-container=$MAIN_CONTAINER. That will distribute 75% of the maximum available capacity to the main container and the rest evenly across all others
-  set_main_container: true
+customdns:
+  enabled: false
+  upstream_dns_servers: []
+  project_ids: []
+  domain_name_prefixes: []

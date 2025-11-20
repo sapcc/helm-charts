@@ -4,10 +4,10 @@ kind: Deployment
 metadata:
   name: {{ include "fullName" . }}-backup
   labels:
-    system: openstack
-    type: database
-    component: {{ .Values.name }}
-    {{- include "sharedservices.labels" . | indent 4 }}
+    app: {{ include "fullName" . }}-backup
+    {{- include "mariadb.labels" (list $ "version" "mariadb" "deployment" "backup") | indent 4 }}
+  annotations:
+    secret.reloader.stakater.com/reload: "mariadb-backup-{{.Values.name}}-etc,mariadb-{{.Values.name}}-backup-oauth"
 spec:
   replicas: 1
   revisionHistoryLimit: 5
@@ -20,16 +20,16 @@ spec:
     metadata:
       labels:
         app: {{ include "fullName" . }}-backup
-        name: {{ template "fullName" . }}-backup
-        {{- include "sharedservices.labels" . | indent 8 }}
+        {{- include "mariadb.labels" (list $ "version" "mariadb" "deployment" "backup") | indent 8 }}
       annotations:
+        kubectl.kubernetes.io/default-container: backup
         checksum/etc: {{ include (print $.Template.BasePath  "/config/_backup_config.yaml.tpl") . | sha256sum }}
 {{- if .Values.metrics.enabled }}
         prometheus.io/scrape: "true"
         prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
 {{- end }}
-{{- if and (and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested) $.Values.linkerd.backup.enabled }}
-        linkerd.io/inject: enabled
+{{- if $.Values.linkerd.backup.enabled }}
+        {{- include "mariadb.linkerdPodAnnotations" . | indent 8 }}
 {{- end }}
     spec:
       affinity:
@@ -53,6 +53,7 @@ spec:
 {{- include "mariadb_maintenance_affinity" . }}
 {{- include "mariadb_node_reinstall_affinity" . }}
 {{- end }}
+      priorityClassName: {{ .Values.priority_class | default "critical-infrastructure" | quote }}
       containers:
       - name: backup
         image: "{{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{ .Values.backup_v2.image }}:{{ .Values.backup_v2.image_version }}"
@@ -70,17 +71,17 @@ spec:
         - name: OAUTH_CLIENT_ID
           valueFrom:
             secretKeyRef:
-              name: mariadb-{{.Values.name}}
+              name: mariadb-{{.Values.name}}-backup-oauth
               key: OAUTH_CLIENT_ID
         - name: OAUTH_CLIENT_SECRET
           valueFrom:
             secretKeyRef:
-              name: mariadb-{{.Values.name}}
+              name: mariadb-{{.Values.name}}-backup-oauth
               key: OAUTH_CLIENT_SECRET
         - name: OAUTH_COOKIE_SECRET
           valueFrom:
             secretKeyRef:
-              name: mariadb-{{.Values.name}}
+              name: mariadb-{{.Values.name}}-backup-oauth
               key: OAUTH_COOKIE_SECRET
 {{- end }}
         - name: CONFIG_FILE

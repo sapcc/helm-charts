@@ -11,6 +11,7 @@ global:
   dbPassword: ""
 # registryAlternateRegion: keppel.$REGION.cloud.sap
   linkerd_requested: false
+  is_global_region: false
 
 owner-info:
   support-group: identity
@@ -22,7 +23,6 @@ owner-info:
 
 debug: false
 insecure_debug: false
-global_setup: false
 
 # run a db_sync to migrate the db schema ?
 run_db_migration: true
@@ -38,6 +38,14 @@ nodeAffinity: {}
 # osprofiler
 osprofiler:
   enabled: false
+
+federation:
+  oidc:
+    enabled: false
+    provider: ""
+    client_id: ""
+    client_secret: ""
+    crypto_passphrase: ""
 
 api:
   image: "loci-keystone"
@@ -55,9 +63,6 @@ api:
   cloudAdminDomainName: Default
   cloudAdminProjectName: admin
   cloudAdminProjectId: ""
-
-  # run keystone with pre-stein .json policy file or current train .yaml policy (with system scope support)
-  policy: yaml-instead-of-json
 
   ## specify override default tags to be added to each newly created project
   ## else they will be calculated based on the availability zones
@@ -96,6 +101,8 @@ api:
 
   auth:
     # Allowed authentication methods. (list value)
+    # NOTE: this is not the complete list of applied authentication methods.
+    # Depending on the federation configuration, there might be more of them.
     methods: password,token,totp,external,oauth1,application_credential
     password: cc_password # CCloud password auth method with EWS mirroring
     totp: cc_radius # SecurID via totp auth method/plugin
@@ -256,6 +263,7 @@ memcached:
 
 proxysql:
   mode: null  # Disabled
+  native_sidecar: true
 
 percona_cluster:
   enabled: false
@@ -295,11 +303,37 @@ mariadb:
     # The maximum available capacity is split evenly across containers specified in the Deployment, StatefulSet or DaemonSet to derive the upper recommendation bound. This does not work out for pods with a single resource-hungry container with several sidecar containers
     # Annotate the Deployment, StatefulSet or DaemonSet with vpa-butler.cloud.sap/main-container=$MAIN_CONTAINER. That will distribute 75% of the maximum available capacity to the main container and the rest evenly across all others
     set_main_container: true
+  job:
+    maintenance:
+      enabled: false
+      function:
+        analyzeTable:
+          enabled: true
+          allTables: true
 
-# MariaDB Galera cluster as database backend
-# mariadb.enabled has to be false if Galera is enabled
-mariadb_galera:
+pxc_db:
   enabled: false
+  name: keystone
+  alerts:
+    support_group: identity
+  databases:
+    - keystone
+  users:
+    keystone:
+      name: keystone
+      grants:
+        - "ALL PRIVILEGES on keystone.*"
+  pxc:
+    persistence:
+      size: 10Gi
+  backup:
+    enabled: true
+    s3:
+      secrets:
+        aws_access_key_id: null
+        aws_secret_access_key: null
+    pitr:
+      enabled: true
 
 mysql_metrics:
   enabled: true
@@ -494,6 +528,11 @@ sre:
 
 # optional flag to disable users that have not authenticated for 100 years.
 disable_user_account_days_inactive: 36500
+
+# https://docs.openstack.org/keystone/latest/admin/event_notifications.html#example-notification-invalid-password-authentication
+report_invalid_password_hash:
+  enabled: false
+  # invalid_password_hash_secret_key: ""
 
 2fa:
   enabled: false

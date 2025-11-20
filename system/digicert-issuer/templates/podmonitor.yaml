@@ -1,0 +1,34 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: digicert-issuer
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: digicert-issuer
+  {{- with .Values.metrics.podMonitorSelector }}
+    {{ tpl (toYaml .) . | nindent 4 }}
+  {{- end }}
+spec:
+  selector:
+    matchExpressions:
+      - key: app.kubernetes.io/name
+        operator: In
+        values:
+          - digicert-issuer
+  podMetricsEndpoints:
+    - interval: 30s
+      scrapeTimeout: 25s
+      scheme: http
+      honorLabels: true
+      relabelings:
+        - sourceLabels:
+            - __metrics_path__
+          targetLabel: metrics_path
+        - action: labelmap
+          regex: '__meta_kubernetes_pod_label_(.+)'
+        - sourceLabels:
+            - __meta_kubernetes_namespace
+          targetLabel: kubernetes_namespace
+        - sourceLabels:
+            - __meta_kubernetes_pod_name
+          targetLabel: kubernetes_pod_name

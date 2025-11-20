@@ -20,7 +20,7 @@ swift_expire = 1209600
 # OpenStack configurations
 os_identity_endpoint   = "http://keystone.{{ default .Release.Namespace .Values.global.keystoneNamespace }}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}:5000/v3"
 os_username            = "{{.Values.sftp.user}}"
-os_password            = {{ .Values.sftp.os_password | required "Please set .Values.sftp.os_password" | quote}}
+os_password            = "{{ .Values.sftp.os_password | required "Please set .Values.sftp.os_password" | include "resolve_secret"}}"
 os_user_domain_name    = "Default"
 os_project_name        = "master"
 os_project_domain_name = "ccadmin"

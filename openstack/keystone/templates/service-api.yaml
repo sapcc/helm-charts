@@ -18,6 +18,10 @@ metadata:
 {{- end }}
     {{- include "utils.linkerd.pod_and_service_annotation" . | indent 4 }}
 spec:
+{{- if .Values.global.is_global_region }}
+  type: LoadBalancer
+  externalTrafficPolicy: Local
+{{- end }}
   selector:
     name: {{ .Release.Name }}-api
   type: {{ default "ClusterIP" .Values.services.type }}

@@ -1,0 +1,57 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: "install-dashboard-pattern"
+  labels:
+    app.kubernetes.io/managed-by: {{ .Release.Service | quote }}
+    app.kubernetes.io/instance: {{ .Release.Name | quote }}
+    app.kubernetes.io/version: {{ .Chart.AppVersion }}
+    helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    ccloud/service: logs
+    ccloud/support-group: observability
+spec:
+  schedule: "30 0,6,8,12,18 * * *"
+  jobTemplate:
+    spec:
+      backoffLimit: 3
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+          - name: install-dashboard-pattern 
+            image: "{{ .Values.global.registry }}/unified-kubernetes-toolbox:latest"
+            command: ["/bin/bash", "/scripts/install-dashboard-pattern.sh"]
+            env:
+              - name: ADMIN_USER
+                valueFrom:
+                  secretKeyRef:
+                    name: cron-secrets
+                    key: ADMIN_USER
+              - name: ADMIN_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: cron-secrets
+                    key: ADMIN_PASSWORD
+              - name: ADMIN2_USER
+                valueFrom:
+                  secretKeyRef:
+                    name: cron-secrets
+                    key: ADMIN2_USER
+              - name: ADMIN2_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: cron-secrets
+                    key: ADMIN2_PASSWORD
+              - name: CLUSTER_HOST
+                value: "https://opensearch-logs-client.{{ .Values.global.clusterType }}.{{ .Values.global.region }}.{{ .Values.global.tld }}:{{ .Values.httpPort }}"
+              - name: DASHBOARD_HOST
+                value: "https://logs.{{ .Values.global.region }}.{{ .Values.global.tld }}"
+            volumeMounts:
+            - mountPath: /scripts/install-dashboard-pattern.sh
+              name: security-config
+              subPath: install-dashboard-pattern.sh
+          volumes:
+          - name: security-config
+            secret:
+              defaultMode: 420
+              secretName: security-config

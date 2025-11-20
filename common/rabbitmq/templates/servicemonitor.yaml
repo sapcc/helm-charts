@@ -4,15 +4,8 @@ kind: ServiceMonitor
 metadata:
   name: {{ template "fullname" . }}
   labels:
-    app: {{ template "fullname" . }}
-    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
-    release: "{{ .Release.Name }}"
-    heritage: "{{ .Release.Service }}"
-    type: rabbitmq
-    component: {{ .Release.Name }}
-    system: openstack
     prometheus: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus }}
-    {{- include "rabbitmq.labels" . | indent 4 }}
+    {{- include "rabbitmq.labels" (list $ "version" "rabbitmq" "servicemonitor" "messagequeue") | indent 4 }}
 spec:
   endpoints:
     {{- if .Values.metrics.enableDetailedMetrics }}
@@ -32,5 +25,5 @@ spec:
         - {{ .Release.Namespace }}
   selector:
     matchLabels:
-      app: {{ template "fullname" . }}
+      app.kubernetes.io/instance: {{ template "fullname" . }}
 {{- end }}

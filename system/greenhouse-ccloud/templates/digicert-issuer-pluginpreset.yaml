@@ -14,12 +14,21 @@ kind: PluginPreset
 metadata:
   name: digicert-issuer
   namespace: {{ .Release.Namespace }}
+  labels:
+    greenhouse.sap/owned-by: containers
+{{- if .Values.global.fluxEnabled }}
+    greenhouse.sap/deployment-tool: "flux"
+  annotations:
+    "greenhouse.sap/propagate-labels": "greenhouse.sap/owned-by,greenhouse.sap/deployment-tool"
+{{- else }}
+  annotations:
+    "greenhouse.sap/propagate-labels": "greenhouse.sap/owned-by"
+{{- end }}
 spec:
   clusterSelector:
     matchLabels:
-      greenhouse.sap/cluster-presets-enabled: "true"
+      greenhouse.sap/pluginpreset: "true"
   plugin:
-    disabled: false
     displayName: digicert issuer
     optionValues:
     - name: certManager.serviceAccount.name
@@ -32,9 +41,20 @@ spec:
           key: apiToken
           name: digicert-issuer
     - name: provisioner.organizationID
-      value: {{  required "plugin digicert organization ID is missing" .Values.digicert.provisioner.organizationID }}
+      value: {{  required "plugin digicert organization ID is missing" .Values.digicert.provisioner.organizationID | quote }}
     - name: provisioner.organizationUnits
-      value: {{ required "plugin digicert organization units is missing" .Values.digicert.provisioner.organizationUnits }}
+      value: {{ required "plugin digicert organization units is missing" .Values.digicert.provisioner.organizationUnits | quote }}
     pluginDefinition: digicert-issuer
     releaseNamespace: kube-system
+{{- if .Values.digicert.overrideShootNetworkPolicy }}
+    clusterOptionOverrides:
+{{- range $cluster := .Values.digicert.overrideShootNetworkPolicy }}
+      - clusterName: {{ $cluster }}
+        overrides:
+          - name: deploymentLabels
+            value:
+              networking.gardener.cloud/to-apiserver: allowed
+              networking.gardener.cloud/to-dns: allowed
+{{- end }}
+{{- end }}
 {{- end -}}

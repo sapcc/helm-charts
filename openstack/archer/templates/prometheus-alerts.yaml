@@ -1,0 +1,19 @@
+{{- if .Values.alerts.enabled }}
+{{- range $path, $file := .Files.Glob "alerts/*.alerts" }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+
+metadata:
+  name: {{ printf "archer-%s" $path | replace "/" "-" }}
+  labels:
+    app: archer
+    tier: {{ $.Values.alerts.tier }}
+    type: alerting-rules
+    prometheus: {{ base $path | trimSuffix ".alerts" }}
+
+spec:
+  {{ printf "%s" $file | nindent 2 }}
+
+{{- end }}
+{{- end }}

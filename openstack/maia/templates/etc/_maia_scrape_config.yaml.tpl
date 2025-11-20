@@ -49,13 +49,7 @@
       source_labels: [vmware_name]
       regex: cc3test.*
     - action: labeldrop
-      regex: "instance|job|alert_tier|alert_service"
-    - source_labels: [ltmVirtualServStatName]
-      target_label: project_id
-      regex: /Project_(.*)/Project_.*
-    - source_labels: [ltmVirtualServStatName]
-      target_label: lb_id
-      regex: /Project_.*/Project_(.*)
+      regex: "instance|job|alert_tier|alert_service|snmp_f5_ltmVirtualServStatName"
 
 # expose tenant-specific metrics collected by kube-system monitoring
 #
@@ -93,10 +87,12 @@
     'match[]':
       # import any tenant-specific metric, except for those which already have been imported
       - '{__name__=~"^castellum_aggregated_.+",project_id!=""}'
+      - '{__name__=~"^octavia_listeners"}'
       - '{__name__=~"^openstack_.+",project_id!=""}'
-      - '{__name__=~"^limes_(?:project|domain)_(?:quota|usage|committed_per_az|usage_per_az)$"}'
-      - '{__name__=~"^limes_swift_.+",project_id!=""}'
+      - '{__name__=~"^limes_(?:project|domain)_(?:quota|usage|committed_per_az|usage_per_az|commitment_min_expires_at)$",namespace="limes"}' # the namespace match filters limes-global
+      - '{__name__=~"^limes_swift_.+",project_id!="",namespace="limes"}'
       - '{__name__=~"^keppel_.+",project_id!=""}'
+      - '{__name__=~"^andromeda_.+",project_id!=""}'
 
 - job_name: 'prometheus-infra-collector'
   scrape_interval: 1m
@@ -104,7 +100,10 @@
   static_configs:
     - targets: ['prometheus-infra-collector.infra-monitoring:9090']
   metric_relabel_configs:
-    - regex: "cluster|cluster_type|instance|job|kubernetes_namespace|kubernetes_pod_name|kubernetes_name|pod_template_hash|exported_instance|exported_job|type|name|component|app|system|thanos_cluster|thanos_cluster_type|thanos_region|alert_tier|alert_service"
+    - source_labels: [snmp_f5_ltmVirtualServStatName]
+      target_label: ltmVirtualServStatName
+      action: replace
+    - regex: "cluster|cluster_type|instance|job|kubernetes_namespace|kubernetes_pod_name|kubernetes_name|pod_template_hash|exported_instance|exported_job|type|name|component|app|system|thanos_cluster|thanos_cluster_type|thanos_region|alert_tier|alert_service|snmp_f5_ltmVirtualServStatName"
       action: labeldrop
     - action: drop
       source_labels: [vmware_name]
@@ -112,32 +111,13 @@
     - action: drop
       source_labels: [__name__]
       regex: netapp_volume_saved_.*
-    - source_labels: [ltmVirtualServStatName]
-      regex: /Common.*
-      action: drop
-    - source_labels: [ltmVirtualServStatName]
-      target_label: project_id
-      regex: /Project_(.*)/Project_.*
-    - source_labels: [ltmVirtualServStatName]
-      target_label: lb_id
-      regex: /Project_.*/Project_(.*)
-    - source_labels: [ltmVirtualServStatName]
-      target_label: network_id
-      regex: /net_(.+)_(.+)_(.+)_(.+)_(.+)/lb_.*
-      replacement: $1-$2-$3-$4-$5
-    - source_labels: [ltmVirtualServStatName]
-      target_label: lb_id
-      regex: /net_.*/lb_(.*)/listener_.*
-    - source_labels: [ltmVirtualServStatName]
-      target_label: listener_id
-      regex: /net_.*/lb_.*/listener_(.*)
 
   metrics_path: '/federate'
   params:
     'match[]':
       # import any tenant-specific metric, except for those which already have been imported
       # filter for ltmVirtualServStatName to be present as it relabels into project_id. It gets enriched by "openstack/maia/aggregations/snmp-f5.rules with the openstack metric openstack_neutron_networks_projects"
-      - '{__name__=~"^snmp_f5_.+", ltmVirtualServStatName!=""}'
+      - '{__name__=~"^snmp_f5_.+", snmp_f5_ltmVirtualServStatName!=""}'
       - '{__name__=~"^ssh_nat_limits_miss", project_id!=""}'
       - '{__name__=~"^ssh_nat_limits_use", project_id!=""}'
       - '{__name__=~"^snmp_asr_ifHC.+", project_id!=""}'
@@ -165,7 +145,7 @@
   params:
     'match[]':
       # import any tenant-specific metric, except for those which already have been imported
-      - '{__name__=~"^netapp_volume_.+:maia", project_id!=""}'
+      - '{__name__=~"^netapp_.+:maia", project_id!=""}'
 
 
 # iteration over vmware-monitoring values
@@ -240,4 +220,24 @@
   metric_relabel_configs:
     - action: labeldrop
       regex: "exported_instance|exported_job|instance|job|tags|cluster|cluster_type|multicloud_id|alert_tier|alert_service"
+{{ end }}
+
+{{- if $root.Values.prometheus_ceph.enabled }}
+- job_name: 'prometheus-ceph'
+  scheme: https
+  scrape_interval: "{{ $root.Values.prometheus_ceph.scrape_interval }}"
+  scrape_timeout: "{{ $root.Values.prometheus_ceph.scrape_timeout }}"
+  tls_config:
+    cert_file: /etc/prometheus/secrets/prometheus-auth-sso-cert/sso.crt
+    key_file: /etc/prometheus/secrets/prometheus-auth-sso-cert/sso.key
+  static_configs:
+    - targets:
+      - "prometheus-internal.st1.{{ $root.Values.global.region }}.cloud.sap"
+  metrics_path: '/federate'
+  params:
+    'match[]':
+      - '{__name__=~"{{- include "prometheusCephFederationMatches" $root }}"}'
+  metric_relabel_configs:
+    - regex: "cluster|cluster_type|instance|job|organization|prometheus|prometheus_replica"
+      action: labeldrop
 {{ end }}

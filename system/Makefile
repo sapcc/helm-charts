@@ -1,14 +1,11 @@
-CLUSTER_API_VERSION ?= v1.6.2
-PROVIDER_METAL3_VERSION ?= v1.6.0
-PROVIDER_METAL_VERSION ?= 62d325a558ce09c8d457fb76a13c1dca2bb3d565
+CLUSTER_API_VERSION ?= v1.11.2
+PROVIDER_METAL3_VERSION ?= v1.11.1
+PROVIDER_METAL_VERSION ?= 3c311063d94fe0ce7f229877a9370fb101b32bb2
 PROVIDER_VSPHERE_VERSION ?= v1.9.3
-PROVIDER_IPAM_VERSION ?= v0.1.0
-PROVIDER_KUBERNIKUS_VERSION ?= 9fd81475b828971913b3b27addf51fdbd0511d85
-BAREMETAL_OPERATOR_VERSION ?= v0.6.0
-METAL_OPERATOR_VERSION ?= 99c08918ff17eab322592976fa75afcda9d6db83
-BOOT_OPERATOR_VERSION ?= d3c5d5fdd5617a660265673218bd5efd9d793e7e
-IPXE_OPERATOR_VERSION ?= 61c6898bfd7772008835bdcca8d8a64c1dfc3b32
-FEDHCP_VERSION ?= a59539c62aaa11a96c82fe792c87daaac4cb75bf
+PROVIDER_IPAM_VERSION ?= v1.0.3
+PROVIDER_HELM ?= v0.4.1
+PROVIDER_KUBERNIKUS_VERSION ?= b6d18b8c8e26336aec34ecadb76d8ec78cdaf67d
+BAREMETAL_OPERATOR_VERSION ?= v0.11.1
 
 SHELL := bash
 .ONESHELL:
@@ -16,31 +13,55 @@ SHELL := bash
 UNAME_S := $(shell uname -s)
 SED := sed
 ifeq ($(UNAME_S),Darwin)
-    SED := gsed
+	SED := gsed
 endif
 
-build: build-cluster-api-core build-bootstrap-kubeadm build-provider-metal3 build-provider-kubernikus
+build: build-cluster-api-core build-controlplane-kubeadm build-bootstrap-kubeadm build-provider-metal3 build-provider-kubernikus build-provider-helm build-provider-ipam build-ipam-capi-remote build-provider-metal3 build-provider-metal
 
 build-cluster-api-core:
 	$(call build-chart,cluster-api-core,https://github.com/kubernetes-sigs/cluster-api//config/default,$(CLUSTER_API_VERSION))
 	$(call fix-crds,cluster-api-core)
+	@find cluster-api-core/crds -type f -exec $(SED) -i -e 's#capi-system#capi#g' {} \;
+	@find cluster-api-core/templates -type f -exec $(SED) -i -e 's#/{{ include "cluster-api-core.fullname" . }}-system/#/#g' {} \;
+	@find cluster-api-core/templates -type f -exec $(SED) -i -e 's#-system.#.#g' {} \;
 	@yq -i '.controllerManager.manager.image.tag="$(CLUSTER_API_VERSION)"' cluster-api-core/values.yaml
-	@yq -i '.fullnameOverride="capi-capi"' cluster-api-core/values.yaml
-	@yq -i '.version="0.1.3"' cluster-api-core/Chart.yaml
+	@yq -i '.fullnameOverride="capi"' cluster-api-core/values.yaml
+	@yq -i '.version="1.0.0"' cluster-api-core/Chart.yaml
 
 build-controlplane-kubeadm:
 	$(call build-chart,controlplane-kubeadm,https://github.com/kubernetes-sigs/cluster-api//controlplane/kubeadm/config/default,$(CLUSTER_API_VERSION))
 	$(call fix-crds,controlplane-kubeadm)
+	@find controlplane-kubeadm/crds -type f -exec $(SED) -i -e 's#capi-kubeadm-control-plane-system#capi#g' {} \;
+	@find controlplane-kubeadm/crds -type f -exec $(SED) -i -e 's#capi-kubeadm-control-plane-serving-cert#capi-kubeadm-controlplane-serving-cert#g' {} \;
+	@find controlplane-kubeadm/crds -type f -exec $(SED) -i -e 's#capi-kubeadm-control-plane-webhook-service#capi-kubeadm-controlplane-webhook-service#g' {} \;
+	@find controlplane-kubeadm/templates -type f -exec $(SED) -i -e 's#capi-kubeadm-control-plane-serving-cert#capi-kubeadm-controlplane-serving-cert#g' {} \;
+	@find controlplane-kubeadm/templates -type f -exec $(SED) -i -e 's#capi-kubeadm-control-plane-webhook-service#capi-kubeadm-controlplane-webhook-service#g' {} \;
+	@find controlplane-kubeadm/templates -type f -exec $(SED) -i -e 's#/{{ include "controlplane-kubeadm.fullname" . }}-system/#/#g' {} \;
+	@find controlplane-kubeadm/templates -type f -exec $(SED) -i -e 's#-kubeadm-control-plane-system.#.#g' {} \;
+	@$(SED) -i 's/10240/30720/g' controlplane-kubeadm/crds/*
 	@yq -i '.controllerManager.manager.image.tag="$(CLUSTER_API_VERSION)"' controlplane-kubeadm/values.yaml
-	@yq -i '.fullnameOverride="capi-capi-kubeadm-controlplane"' controlplane-kubeadm/values.yaml
-	@yq -i '.version="0.0.1"' controlplane-kubeadm/Chart.yaml
+	@yq -i '.fullnameOverride="capi-kubeadm-controlplane"' controlplane-kubeadm/values.yaml
+	@yq -i '.version="1.0.0"' controlplane-kubeadm/Chart.yaml
 
+# fix for "spec.ignition.containerLinuxConfig.additionalConfig: Too long: may not be longer than 10240"
 build-bootstrap-kubeadm:
 	$(call build-chart,bootstrap-kubeadm,https://github.com/kubernetes-sigs/cluster-api//bootstrap/kubeadm/config/default,$(CLUSTER_API_VERSION))
 	$(call fix-crds,bootstrap-kubeadm)
+	@find bootstrap-kubeadm/crds -type f -exec $(SED) -i -e 's#capi-kubeadm-bootstrap-system#capi#g' {} \;
+	@find bootstrap-kubeadm/templates -type f -exec $(SED) -i -e 's#/{{ include "bootstrap-kubeadm.fullname" . }}-system/#/#g' {} \;
+	@find bootstrap-kubeadm/templates -type f -exec $(SED) -i -e 's#-kubeadm-bootstrap-system.#.#g' {} \;
+	@$(SED) -i 's/10240/30720/g' bootstrap-kubeadm/crds/*
 	@yq -i '.controllerManager.manager.image.tag="$(CLUSTER_API_VERSION)"' bootstrap-kubeadm/values.yaml
-	@yq -i '.fullnameOverride="capi-capi-kubeadm-bootstrap"' bootstrap-kubeadm/values.yaml
-	@yq -i '.version="0.1.3"' bootstrap-kubeadm/Chart.yaml
+	@yq -i '.fullnameOverride="capi-kubeadm-bootstrap"' bootstrap-kubeadm/values.yaml
+	@yq -i '.version="1.0.0"' bootstrap-kubeadm/Chart.yaml
+
+build-provider-helm:
+	$(call build-chart,provider-helm,https://github.com/kubernetes-sigs/cluster-api-addon-provider-helm//config/default,$(PROVIDER_HELM))
+	$(call fix-crds,provider-helm)
+	@find provider-helm/templates -type f -exec $(SED) -i -e 's#webhook-server-cert#caaph-webhook-server-cert#g' {} \;
+	@yq -i '.controllerManager.manager.image.tag="$(PROVIDER_HELM)"' provider-helm/values.yaml
+	@yq -i '.fullnameOverride="caaph"' provider-helm/values.yaml
+	@yq -i '.version="0.1.0"' provider-helm/Chart.yaml
 
 build-provider-vsphere:
 	$(call build-chart,provider-vsphere,https://github.com/kubernetes-sigs/cluster-api-provider-vsphere//config/default,$(PROVIDER_VSPHERE_VERSION))
@@ -58,31 +79,49 @@ build-provider-ipam:
 	@find provider-ipam/templates -type f -exec $(SED) -i -e 's#capi-capi-#capi-#g' {} \;
 	@yq -i '.controllerManager.manager.image.tag="$(PROVIDER_IPAM_VERSION)"' provider-ipam/values.yaml
 	@yq -i '.fullnameOverride="capi-capi-provider-ipam"' provider-ipam/values.yaml
-	@yq -i '.version="0.0.3"' provider-ipam/Chart.yaml
+	@yq -i '.version="0.1.1"' provider-ipam/Chart.yaml
+
+build-ipam-capi-remote:
+	@rm -rf ipam-capi-remote
+	@cat kustomize/ipam-capi-remote/kustomization.yaml > kustomization.yaml
+	@kubectl kustomize | helmify -crd-dir ipam-capi-remote
+	@cp kustomize/ipam-capi-remote/remote-kubeconfig.yaml ipam-capi-remote/templates
+	@cp kustomize/ipam-capi-remote/managedresource.yaml ipam-capi-remote/templates
+	@mkdir ipam-capi-remote/managedresources
+	@kubectl kustomize kustomize/ipam-capi-remote-managedresources > ipam-capi-remote/managedresources/kustomize.yaml
+	@cp kustomize/ipam-capi-remote-managedresources/rbac.yaml ipam-capi-remote/managedresources
+	@cp kustomize/ipam-capi-remote-managedresources/globalinclusterippool.yaml ipam-capi-remote/managedresources
+	@yq -i '.controllerManager.manager.image.tag="$(PROVIDER_IPAM_VERSION)"' ipam-capi-remote/values.yaml
+	@yq -i '.fullnameOverride="ipam-capi"' ipam-capi-remote/values.yaml
+	@yq -i '.version="1.1.0"' ipam-capi-remote/Chart.yaml
+	@$(SED) -i 's/serviceAccountName.*$$/serviceAccountName: default/g' ipam-capi-remote/templates/deployment.yaml
+	@$(SED) -i 's/kind: Role/kind: ClusterRole/g' ipam-capi-remote/managedresources/kustomize.yaml
 
 build-provider-metal3:
 	$(call build-chart,provider-metal3,https://github.com/metal3-io/cluster-api-provider-metal3//config/default,$(PROVIDER_METAL3_VERSION))
 	$(call fix-crds,provider-metal3)
 	@# hacky fix for ipam
-	@find provider-metal3/crds -type f -exec $(SED) -i -e 's#capm3-system/#capi/capi-#g' {} \;
-	@find provider-metal3/templates -type f -exec $(SED) -i -e 's#-capm3-system/#-#g' {} \;
+	@find provider-metal3/crds -type f -exec $(SED) -i -e 's#capm3-system/#capi/#g' {} \;
 	@find provider-metal3/templates -type f -exec $(SED) -i -e 's#.capm3-system.#.capi.#g' {} \;
-	@yq -i '.capm3ControllerManager.manager.image.tag="$(PROVIDER_METAL3_VERSION)",.ipamControllerManager.manager.image.tag="$(PROVIDER_METAL3_VERSION)"' provider-metal3/values.yaml
-	@yq -i '.fullnameOverride="capi"' provider-metal3/values.yaml
-	@yq -i '.version="0.1.2"' provider-metal3/Chart.yaml
+	@find provider-metal3/templates -type f -exec $(SED) -i -e 's#/{{ include "provider-metal3.fullname" . }}-system/#/#g' {} \;
+	@# fix for "no matches for kind "IPClaim" 
+	@curl -sSL https://raw.githubusercontent.com/metal3-io/ip-address-manager/$(PROVIDER_METAL3_VERSION)/config/crd/bases/ipam.metal3.io_ipclaims.yaml -o provider-metal3/crds/ipam.metal3.io_ipclaims.yaml
+	@yq -i '.controllerManager.manager.image.tag="$(PROVIDER_METAL3_VERSION)"' provider-metal3/values.yaml
+	@yq -i '.fullnameOverride="capm3"' provider-metal3/values.yaml
+	@yq -i '.version="1.0.1"' provider-metal3/Chart.yaml
 
 build-provider-metal:
-	$(call build-chart,provider-metal,https://github.com/ironcore-dev/cluster-api-provider-metal//config/default,$(PROVIDER_METAL_VERSION))
+	$(call build-chart,provider-metal,https://github.com/ironcore-dev/cluster-api-provider-ironcore-metal//config/default,$(PROVIDER_METAL_VERSION))
 	$(call fix-crds,provider-metal)
 	@yq -i '.controllerManager.manager.image.tag="$(PROVIDER_METAL_VERSION)"' provider-metal/values.yaml
 	@yq -i '.fullnameOverride="provider-metal"' provider-metal/values.yaml
-	@yq -i '.version="0.0.3"' provider-metal/Chart.yaml
+	@yq -i '.version="0.1.0"' provider-metal/Chart.yaml
 
 build-provider-kubernikus:
 	$(call build-chart,provider-kubernikus,https://github.com/sapcc/cluster-api-control-plane-provider-kubernikus//config/default,$(PROVIDER_KUBERNIKUS_VERSION))
 	@yq -i '.controllerManager.manager.image.tag="$(PROVIDER_KUBERNIKUS_VERSION)"' provider-kubernikus/values.yaml
 	@yq -i '.fullnameOverride="capi-cp-provider-kubernikus"' provider-kubernikus/values.yaml
-	@yq -i '.version="0.1.8"' provider-kubernikus/Chart.yaml
+	@yq -i '.version="0.2.0"' provider-kubernikus/Chart.yaml
 
 build-baremetal-operator:
 	@yq -i '.namespace = "baremetal-operator=system"' kustomization.yaml
@@ -98,40 +137,49 @@ build-baremetal-operator:
 	@find baremetal-operator-core/templates -type f -exec $(SED) -i -e 's#-baremetal-operator-system/#-#g' {} \;
 	@yq -i '.controllerManager.manager.image.tag="$(BAREMETAL_OPERATOR_VERSION)"' baremetal-operator-core/values.yaml
 	@yq -i '.fullnameOverride="metal3"' baremetal-operator-core/values.yaml
-	@yq -i '.version="1.0.1"' baremetal-operator-core/Chart.yaml
+	@yq -i '.version="1.1.0"' baremetal-operator-core/Chart.yaml
 
-build-metal-operator:
-	@cat kustomize/metal-operator/kustomization.yaml >> kustomization.yaml
-	$(call build-chart,metal-operator-core,https://github.com/ironcore-dev/metal-operator//config/default,$(METAL_OPERATOR_VERSION))
-	$(call fix-crds,metal-operator-core)
-	@find metal-operator-core/crds -type f -exec $(SED) -i -e 's#metal-operator-metal-operator-#metal-#g' {} \;
-	@find metal-operator-core/crds -type f -exec $(SED) -i -e 's#metal-operator-system/metal-operator-serving-cert#metal-operator-system/metal-serving-cert#g' {} \;
-	@find metal-operator-core/templates -type f -exec $(SED) -i -e 's#-metal-operator-webhook-service#-webhook-service#g' {} \;
-	@find metal-operator-core/templates -type f -exec $(SED) -i -e 's#-metal-operator-serving-cert#-serving-cert#g' {} \;
-	@yq -i '.controllerManager.manager.image.tag="$(METAL_OPERATOR_VERSION)"' metal-operator-core/values.yaml
-	@yq -i '.fullnameOverride="metal-operator"' metal-operator-core/values.yaml
-	@yq -i '.version="1.0.8"' metal-operator-core/Chart.yaml
+build-metal-operator-remote:
+	@helm dep up metal-operator-remote
+	@helm template metal-operator metal-operator-remote/charts/metal-operator* \
+		-n kube-system \
+		-f metal-operator-remote/values-managed-resources.yaml |\
+		$(SED) 's/kind: Role/kind: ClusterRole/g' - |\
+		yq eval 'select(.kind != "Service" and .kind != "ValidatingWebhookConfiguration")' - >\
+		metal-operator-remote/managedresources/crds-and-rbac.yaml
+	yq -i '.version = (.version | split(".") | .[2] = ((.[2] | tonumber) + 1 | tostring) | join("."))' metal-operator-remote/Chart.yaml
 
-build-boot-operator:
-	@cat kustomize/boot-operator/kustomization.yaml >> kustomization.yaml
-	$(call build-chart,boot-operator,https://github.com/ironcore-dev/boot-operator//config/default,$(BOOT_OPERATOR_VERSION))
-	@yq -i '.controllerManager.manager.image.tag="$(BOOT_OPERATOR_VERSION)"' boot-operator/values.yaml
-	@yq -i '.fullnameOverride="boot-operator"' boot-operator/values.yaml
-	@yq -i '.version="0.0.8"' boot-operator/Chart.yaml
+build-boot-operator-remote:
+	@helm dep up boot-operator-remote
+	@helm template boot-operator boot-operator-remote/charts/boot-operator* \
+		-n kube-system \
+		-f boot-operator-remote/values-managed-resources.yaml |\
+		$(SED) 's/kind: Role/kind: ClusterRole/g' - |\
+		yq eval 'select(.kind != "Service" and .kind != "ValidatingWebhookConfiguration")' - >\
+		boot-operator-remote/managedresources/crds-and-rbac.yaml
+	yq -i '.version = (.version | split(".") | .[2] = ((.[2] | tonumber) + 1 | tostring) | join("."))' boot-operator-remote/Chart.yaml
 
-build-ipxe-operator:
-	@cat kustomize/ipxe-operator/kustomization.yaml >> kustomization.yaml
-	$(call build-chart,ipxe-operator,https://github.com/ironcore-dev/ipxe-operator//config/default,$(IPXE_OPERATOR_VERSION))
-	@yq -i '.controllerManager.manager.image.tag="$(BOOT_OPERATOR_VERSION)"' ipxe-operator/values.yaml
-	@yq -i '.fullnameOverride="ipxe-operator"' ipxe-operator/values.yaml
-	@yq -i '.version="0.0.8"' ipxe-operator/Chart.yaml
+build-argora-operator:
+	@helm dep up argora-operator
+	@yq -i '.version = (.version | split(".") | .[2] = ((.[2] | tonumber) + 1 | tostring) | join("."))' argora-operator/Chart.yaml
 
-build-fedhcp:
-	@cat kustomize/fedhcp/kustomization.yaml >> kustomization.yaml
-	$(call build-chart,fedhcp,https://github.com/ironcore-dev/fedhcp//config/default,$(FEDHCP_VERSION))
-	@yq -i '.controllerManager.manager.image.tag="$(FEDHCP_VERSION)"' fedhcp/values.yaml
-	@yq -i '.fullnameOverride="fedhcp"' fedhcp/values.yaml
-	@yq -i '.version="0.0.2"' fedhcp/Chart.yaml
+build-argora-operator-remote:
+	@helm dep up argora-operator-remote
+	@helm template argora-operator argora-operator-remote/charts/argora-* \
+		-n kube-system \
+		-f argora-operator-remote/values-managed-resources.yaml |\
+		$(SED) 's/kind: Role/kind: ClusterRole/g' - |\
+		yq eval 'select(.kind != "Service" and .kind != "ValidatingWebhookConfiguration" and .kind != "ConfigMap" and .kind != "Secret")' - >\
+		argora-operator-remote/managedresources/crds-and-rbac.yaml
+		yq -i '.version = (.version | split(".") | .[2] = ((.[2] | tonumber) + 1 | tostring) | join("."))' argora-operator-remote/Chart.yaml
+
+build-khalkeon-remote:
+	@helm template khalkeon khalkeon-remote/charts/khalkeon* \
+		-f khalkeon-remote/values.yaml \
+		-f khalkeon-remote/values-managed-resources.yaml |\
+		$(SED) 's/kind: Role/kind: ClusterRole/g' - |\
+		yq eval 'select(.kind != "Service")' - >\
+		khalkeon-remote/managedresources/crds-and-rbac.yaml
 
 # chart name, source url, tag
 define build-chart

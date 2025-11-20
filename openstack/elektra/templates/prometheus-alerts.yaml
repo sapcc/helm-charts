@@ -1,6 +1,7 @@
 {{- $values := .Values }}
 {{- if $values.alerts.enabled }}
 {{- range $path, $bytes := .Files.Glob "alerts/*.alerts" }}
+{{- $alertName := (base $path) | trimSuffix ".alerts" }}
 ---
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
@@ -8,11 +9,14 @@ kind: PrometheusRule
 metadata:
   name: {{ printf "elektra-%s" $path | replace "/" "-" }}
   labels:
+    {{- if eq $alertName "secrets" }}
+    prometheus: kubernetes
+    {{- else }}
     app: elektra
     tier: os
     type: alerting-rules
     prometheus: {{ required ".Values.alerts.prometheus missing" $values.alerts.prometheus | quote }}
-
+    {{- end }}
 spec:
 {{ printf "%s" $bytes | indent 2 }}
 

@@ -33,6 +33,9 @@ name:
 # A list to deploy multiple Prometheis with the same configuration but different names.
 # names:
 
+# Defaults to Legacy, set to UTF8 to use Prometheus v3 standard
+nameValidationScheme:
+
 # Defines how long data is stored. Format: `[0-9]+(ms|s|m|h|d|w|y)`
 retentionTime: 25h
 
@@ -227,7 +230,7 @@ thanos:
   # See https://github.com/coreos/prometheus-operator/blob/master/Documentation/api.md#thanosspec .
   spec:
     baseImage: keppel.eu-de-1.cloud.sap/ccloud-quay-mirror/thanos/thanos
-    version: v0.36.1
+    version: v0.37.2
 
   # Being one of debug, info, warn, error. Defaults to warn.
   # logLevel: info
@@ -307,6 +310,10 @@ vpaResources:
 # If set to Auto, make sure to enable alerts.thanos.enabled and alerts.thanos.name if you are in any Prometheus but kubernetes and kubernikus. This will deploy needed alerts to Thanos Ruler.
 vpaUpdateMode: "Off"
 
+# One of the supported priorityClasses: common-payload, common-infrastructure, important-payload, important-infrastructure, critical-payload, critical-infrastructure
+# Defaults to important-payload
+priorityClass: ""
+
 # A security context defines privilege and access control settings for a Pod or Container.
 # See: https://kubernetes.io/docs/tasks/configure-pod-container/security-context .
 securityContext:
@@ -367,12 +374,10 @@ serviceDiscoveries:
     allowedMetrics:
       - apiserver_request_total
       - apiserver_longrunning_requests
-      - apiserver_request_duration_seconds
+      - apiserver_request_duration_seconds_(count|sum|bucket)
       - apiserver_dropped_requests_total
       - apiserver_requested_deprecated_apis
       - apiserver_current_inflight_requests
-      - etcd_request_latency_seconds
-      - apiserver_object_counts
       - process_max_fds
       - process_open_fds
       - aggregator_unavailable_apiservice
@@ -398,6 +403,7 @@ serviceDiscoveries:
       - container_network_receive_bytes_total
       - container_network_transmit_bytes_total
       - container_start_time_seconds
+      - container_threads
       - container_oom_events_total
 
   # Scrape kubelet metrics.

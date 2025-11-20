@@ -4,9 +4,8 @@ kind: ConfigMap
 metadata:
   name: {{ .Release.Name }}-memcached-config
   labels:
-    type: configuration
-    application: {{ .Release.Name }}
-stringData:
+    {{- include "memcached.labels" (list $ "version" "memcached" "configmap" "kvstore") | indent 4 }}
+data:
   memcached.conf: |
     mech_list: plain
 {{- end }}

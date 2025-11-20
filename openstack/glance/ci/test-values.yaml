@@ -1,5 +1,8 @@
+---
 global:
+  dbPassword: topSecret
   registry: myRegistry
+  registryAlternateRegion: other.docker.registry
   dockerHubMirror: myRegistry/dockerhub
   dockerHubMirrorAlternateRegion: myRegistry/dockerhubalternate
   glance_service_password: secret
@@ -7,8 +10,10 @@ global:
     - foo
     - bar
   domain_seeds:
+    customer_domains: [bar, foo, baz]
+    customer_domains_without_support_projects: [baz]
     skip_hcm_domain: false
-    
+
 imageVersion: rocky
 
 rabbitmq_notifications:
@@ -21,6 +26,37 @@ mariadb:
   backup_v2:
     swift:
       password: topSecret
+  users:
+    glance:
+      name: glance
+      password: password
+    backup:
+      name: backup
+      password: password
+
+pxc_db:
+  enabled: true
+  users:
+    glance:
+      password: topSecret!
+  system_users:
+    root:
+      password: topSecret!
+    xtrabackup:
+      password: topSecret!
+    monitor:
+      password: topSecret!
+    proxyadmin:
+      password: topSecret!
+    operator:
+      password: topSecret!
+    replication:
+      password: topSecret!
+  backup:
+    s3:
+      secrets:
+        aws_access_key_id: topSecret!
+        aws_secret_access_key: topSecret!
 
 rabbitmq:
   users:
@@ -30,6 +66,11 @@ rabbitmq:
       password: defaultdefault
   metrics:
     password: metricsmetrics
+
+audit:
+  central_service:
+    user: glance
+    password: password
 
 swift:
   enabled: false

@@ -8,8 +8,10 @@ metadata:
     application: designate
     type: backend
     component: mdns
-  {{- if .Values.vpa.set_main_container }}
   annotations:
+    secret.reloader.stakater.com/reload: "{{ .Release.Name }}-secrets,{{ .Release.Name }}-secrets-rndc"
+    deployment.reloader.stakater.com/pause-period: "60s"
+  {{- if .Values.vpa.set_main_container }}
     vpa-butler.cloud.sap/main-container: designate-mdns
   {{- end }}
 spec:
@@ -50,6 +52,9 @@ spec:
       {{- include "utils.proxysql.pod_settings" . | indent 6 }}
       initContainers:
       {{- tuple . (dict "service" (include "designate.service_dependencies" . ) "jobs" (include "migration_job_name" . )) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 8 }}
+      {{- if .Values.proxysql.native_sidecar }}
+      {{- tuple . .Values.mdns_workers | include "utils.proxysql.container" | indent 8 }}
+      {{- end }}
       containers:
         - name: designate-mdns
           image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/loci-designate:{{ required ".Values.image_version_designate is missing" .Values.image_version_designate }}
@@ -73,11 +78,30 @@ spec:
                   name: sentry
                   key: {{ .Release.Name }}.DSN.python
             {{- end }}
+            {{- if .Values.python_warnings }}
+            - name: PYTHONWARNINGS
+              value: {{ .Values.python_warnings | quote }}
+            {{- end }}
           livenessProbe:
             tcpSocket:
-              port: {{.Values.global.designate_mdns_port_public}}
-            initialDelaySeconds: 15
+              port: designate-mdns
+            initialDelaySeconds: 30
+            periodSeconds: 10
             timeoutSeconds: 5
+          readinessProbe:
+            exec:
+              command:
+              - python3
+              - /container.init/health-probe.py
+              - --config-file
+              - /etc/designate/secrets.conf
+              - --config-file
+              - /etc/designate/hostname.conf
+              - --service-name
+              - mdns
+            initialDelaySeconds: 30
+            periodSeconds: 45
+            timeoutSeconds: 40
           ports:
             - name: designate-mdns
               containerPort: {{.Values.global.designate_mdns_port_public}}
@@ -88,7 +112,9 @@ spec:
               name: container-init
             {{- include "utils.proxysql.volume_mount" . | indent 12 }}
             {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
-        {{- include "utils.proxysql.container" . | indent 8 }}
+        {{- if not .Values.proxysql.native_sidecar }}
+        {{- tuple . .Values.mdns_workers | include "utils.proxysql.container" | indent 8 }}
+        {{- end }}
       volumes:
         - name: designate-etc
           projected:

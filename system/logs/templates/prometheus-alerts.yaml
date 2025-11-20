@@ -1,17 +1,16 @@
-{{- if index .Values "fluent-bit" "alerts" "enabled" }}
+{{- if index .Values "openTelemetryPlugin" "alerts" "enabled" }}
 ---
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 
 metadata:
-  name: logs-fluent-bit-systemd-alerts
+  name: logs-otel-alerts
   labels:
-    app: fluent-prometheus
+    app: otel-prometheus
     tier: infra
     type: alerting-rules
     prometheus: {{ index .Values "global" "prometheus" }}
 
 spec:
-{{ include (print .Template.BasePath "/alerts/_fluent-bit-systemd-alerts.tpl") . | indent 2 }}
+{{ include (print .Template.BasePath "/alerts/_otel-alerts.tpl") . | indent 2 }}
 {{- end }}
-

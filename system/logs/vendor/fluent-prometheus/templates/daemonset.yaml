@@ -27,6 +27,19 @@ spec:
         kubectl.kubernetes.io/default-container: "fluent-prometheus"
     spec:
       serviceAccountName: fluentd
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: cloud.sap/deployment-state
+                operator: NotIn
+                values:
+                - reinstalling
+              - key: cloud.sap/esx-in-maintenance
+                operator: NotIn
+                values:
+                - alarm
       tolerations:
       - operator: Exists
       terminationGracePeriodSeconds: 30
@@ -56,9 +69,6 @@ spec:
           resources:
             limits:
               memory: 2000Mi
-            requests:
-              cpu: 100m
-              memory: 1000Mi
           volumeMounts:
             - name: fluent-bin
               mountPath: /fluentd/etc

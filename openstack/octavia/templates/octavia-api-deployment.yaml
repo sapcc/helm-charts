@@ -7,8 +7,10 @@ metadata:
     helm.sh/chart: {{ include "octavia.chart" . }}
     app.kubernetes.io/instance: {{ .Release.Name }}
     app.kubernetes.io/managed-by: {{ .Release.Service }}
-  {{- if .Values.vpa.set_main_container }}
   annotations:
+    secret.reloader.stakater.com/reload: "{{ .Release.Name }}-secrets"
+    deployment.reloader.stakater.com/pause-period: "60s"
+  {{- if .Values.vpa.set_main_container }}
     vpa-butler.cloud.sap/main-container: {{ .Chart.Name }}-api
   {{- end }}
 spec:
@@ -32,6 +34,7 @@ spec:
         app.kubernetes.io/instance: {{ .Release.Name }}
         {{- include "utils.topology.pod_label" . | indent 8 }}
       annotations:
+        kubectl.kubernetes.io/default-container: {{ .Chart.Name }}-api
         configmap-etc-hash: {{ include (print $.Template.BasePath "/octavia-etc-configmap.yaml") . | sha256sum }}
         secrets-hash: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
         {{- if or .Values.watcher.enabled .Values.proxysql.mode }}
@@ -39,10 +42,15 @@ spec:
         prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
         {{- end }}
         {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
-        
+
     spec:
+      priorityClassName: critical-payload
       {{- include "utils.proxysql.pod_settings" . | nindent 6 }}
       {{- tuple . (dict "app.kubernetes.io/name" "octavia-api") | include "utils.topology.constraints" | indent 6 }}
+      initContainers:
+      {{- if .Values.proxysql.native_sidecar }}
+      {{- include "utils.proxysql.container" . | indent 6 }}
+      {{- end }}
       containers:
         - name: {{ .Chart.Name }}-api
           image: {{required ".Values.global.registry is missing" .Values.global.registry}}/loci-octavia:{{required "Values.imageVersion is missing" .Values.imageVersion}}
@@ -115,15 +123,31 @@ spec:
               subPath: watcher.yaml
               readOnly: true
             {{- end }}
+            {{- if .Values.rate_limit.enabled }}
+            - name: octavia-etc
+              mountPath: /etc/octavia/ratelimit.yaml
+              subPath: ratelimit.yaml
+              readOnly: true
+            - name: redis-ratelimit-secret
+              mountPath: {{ .Values.rate_limit.backend_secret_file }}
+              subPath: password
+              readOnly: true
+            {{- end }}
             {{- if not .Values.api_backdoor }}
             - name: octavia-etc
               mountPath: /etc/apache2/conf-enabled/octavia-api.conf
               subPath: octavia-api.conf
               readOnly: true
+            - name: octavia-etc
+              mountPath: /etc/apache2/mods-available/status.conf
+              subPath: status.conf
+              readOnly: true
             {{- end }}
             {{- include "utils.proxysql.volume_mount" . | indent 12 }}
             {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
+        {{- if not .Values.proxysql.native_sidecar }}
         {{- include "utils.proxysql.container" . | indent 8 }}
+        {{- end }}
         {{- include "jaeger_agent_sidecar" . | indent 8 }}
 {{- if .Values.watcher.enabled }}
         - name: statsd
@@ -145,5 +169,10 @@ spec:
         - name: octavia-etc-confd
           secret:
             secretName: {{ .Release.Name }}-secrets
+{{- if .Values.rate_limit.enabled }}
+        - name: redis-ratelimit-secret
+          secret:
+            secretName: {{ .Release.Name }}-api-ratelimit-redis-user-default
+{{- end }}
         {{- include "utils.proxysql.volumes" . | indent 8 }}
         {{- include "utils.trust_bundle.volumes" . | indent 8 }}

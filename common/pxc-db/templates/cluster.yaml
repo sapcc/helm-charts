@@ -3,13 +3,15 @@ apiVersion: pxc.percona.com/v1
 kind: PerconaXtraDBCluster
 metadata:
   namespace: {{ $.Release.Namespace }}
-  name: {{ .Values.name }}-db
+  name: {{ include "pxc-db.clusterName" . }}
   finalizers:
     - percona.com/delete-pxc-pods-in-order
   {{- with .Values.annotations }}
   annotations:
     {{- .  | toYaml | nindent 4 }}
   {{- end }}
+  labels:
+{{- include "pxc-db.labels" . | nindent 4 }}
 spec:
   crVersion: {{ .Chart.AppVersion }}
   {{- if .Values.ignoreAnnotations }}
@@ -28,7 +30,7 @@ spec:
     {{- if $.Values.initContainer.image.override }}
     image: {{ $.Values.initContainer.image.override }}
     {{- else }}
-    image: {{ required ".Values.global.dockerHubMirrorAlternateRegion is missing" .Values.global.dockerHubMirrorAlternateRegion }}/{{ $.Values.initContainer.image.name }}:{{ $.Values.initContainer.image.tag }}
+    image: {{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{ $.Values.initContainer.image.name }}:{{ $.Values.initContainer.image.tag }}
     {{- end }}
     {{- if .Values.initContainer.resources }}
     resources:
@@ -58,6 +60,9 @@ spec:
     apply: disabled
   {{- $pxc := .Values.pxc }}
   pxc:
+    {{- if gt (int $pxc.size) 7 }}
+    {{- fail "The Galera cluster must not be bigger than 7 nodes" }}
+    {{- end }}
     size: {{ $pxc.size }}
     {{- if $pxc.image.override }}
     image: {{ $pxc.image.override }}
@@ -67,11 +72,14 @@ spec:
     annotations:
 {{ merge (include "pxc-db.linkerdPodAnnotations" $ | fromYaml) (include "pxc-db.metricsAnnotations" $ | fromYaml ) ($pxc.annotations) | toYaml | indent 6 }}
     labels:
-{{ $pxc.labels | toYaml | indent 6 }}
-    {{- if $pxc.expose }}
+{{ merge (include "pxc-db.appLabels" $ | fromYaml) ($pxc.labels) | toYaml | indent 6 }}
     expose:
-{{ tpl ($pxc.expose | toYaml) $ | indent 6 }}
-    {{- end }}
+      enabled: {{ $pxc.expose.enabled }}
+      type: {{ $pxc.expose.type }}
+      externalTrafficPolicy: {{ $pxc.expose.externalTrafficPolicy }}
+      internalTrafficPolicy: {{ $pxc.expose.internalTrafficPolicy }}
+      annotations:
+{{ merge (include "pxc-db.linkerdServiceAnnotations" $ | fromYaml) ($pxc.expose.annotations) | toYaml | indent 8 }}
     autoRecovery: {{ $pxc.autoRecovery }}
     readinessDelaySec: 15
     livenessDelaySec: 600
@@ -94,7 +102,7 @@ spec:
       [sst]
       xbstream-opts=--decompress
       [xtrabackup]
-      compress=lz4
+      compress
     {{- end }}
     {{- if $pxc.imagePullPolicy }}
     imagePullPolicy: {{ $pxc.imagePullPolicy }}
@@ -129,7 +137,7 @@ spec:
         - name: MYSQLD_EXPORTER_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: pxc-db-{{.Values.name}}-secrets
+              name: internal-{{ include "pxc-db.clusterName" . }}
               key: monitor
       ports:
         - name: metrics
@@ -162,8 +170,8 @@ spec:
           cpu: 250m
           memory: 256Mi
     {{- end }}
-    {{- if $pxc.priorityClassName }}
-    priorityClassName: {{ $pxc.priorityClassName }}
+    {{- if $pxc.priority_class }}
+    priorityClassName: {{ $pxc.priority_class | default "critical-infrastructure" | quote }}
     {{- end }}
     affinity:
 {{ tpl ($pxc.affinity | toYaml) $ | indent 6 }}
@@ -183,6 +191,19 @@ spec:
           requests:
             storage: {{ $pxc.persistence.size | quote }}
     gracePeriod: 600
+{{- if .Values.custom_users }}
+  users:
+  {{- range $username, $values := .Values.users }}
+    {{- $username := default $username $values.name }}
+    {{- if $values.password }}
+    - name: {{ $values.name }}
+      hosts: []
+      passwordSecretRef:
+        name: pxc-db-{{$.Values.name}}-custom-users-secret
+        key: {{ $username }}
+    {{- end }}
+  {{- end }}
+{{- end }}
   proxysql:
     enabled: false
   {{- $haproxy := .Values.haproxy }}
@@ -200,7 +221,7 @@ spec:
     annotations:
 {{ merge (include "pxc-db.linkerdPodAnnotations" $ | fromYaml) ($haproxy.annotations) | toYaml | indent 6 }}
     labels:
-{{ $haproxy.labels | toYaml | indent 6 }}
+{{ merge (include "pxc-db.appLabels" $ | fromYaml) ($haproxy.labels) | toYaml | indent 6 }}
     readinessDelaySec: 15
     livenessDelaySec: 600
     readinessProbes:
@@ -216,16 +237,26 @@ spec:
 {{ tpl ($haproxy.podSecurityContext | toYaml) $ | indent 6 }}
     {{- end }}
     exposePrimary:
-{{ $haproxy.service.primary | toYaml | indent 6 }}
+      enabled: {{ $haproxy.service.primary.enabled }}
+      type: {{ $haproxy.service.primary.type }}
+      externalTrafficPolicy: {{ $haproxy.service.primary.externalTrafficPolicy }}
+      internalTrafficPolicy: {{ $haproxy.service.primary.internalTrafficPolicy }}
+      annotations:
+{{ merge (include "pxc-db.linkerdServiceAnnotations" $ | fromYaml) ($haproxy.service.primary.annotations) | toYaml | indent 8 }}
     exposeReplicas:
-{{ $haproxy.service.replicas | toYaml | indent 6 }}
+      enabled: {{ $haproxy.service.replicas.enabled }}
+      type: {{ $haproxy.service.replicas.type }}
+      externalTrafficPolicy: {{ $haproxy.service.replicas.externalTrafficPolicy }}
+      internalTrafficPolicy: {{ $haproxy.service.replicas.internalTrafficPolicy }}
+      annotations:
+{{ merge (include "pxc-db.linkerdServiceAnnotations" $ | fromYaml) ($haproxy.service.replicas.annotations) | toYaml | indent 8 }}
     resources:
       requests:
 {{ tpl ($haproxy.resources.requests | toYaml) $ | indent 8 }}
       limits:
 {{ tpl ($haproxy.resources.limits | toYaml) $ | indent 8 }}
-    {{- if $haproxy.priorityClassName }}
-    priorityClassName: {{ $haproxy.priorityClassName }}
+    {{- if $haproxy.priority_class }}
+    priorityClassName: {{ $haproxy.priority_class | default "critical-infrastructure" | quote }}
     {{- end }}
     affinity:
 {{ tpl ($haproxy.affinity | toYaml) $ | indent 6 }}
@@ -242,6 +273,12 @@ spec:
     {{- end }}
     {{- if $backup.imagePullPolicy }}
     imagePullPolicy: {{ $backup.imagePullPolicy }}
+    {{- end }}
+    {{- if $backup.backoffLimit }}
+    backoffLimit: {{ $backup.backoffLimit }}
+    {{- end }}
+    {{- if $backup.activeDeadlineSeconds }}
+    activeDeadlineSeconds: {{ $backup.activeDeadlineSeconds }}
     {{- end }}
     pitr:
     {{- if not $backup.pitr.enabled }}
@@ -263,15 +300,19 @@ spec:
       s3-backups-{{ $storage }}:
         type: s3
         annotations:
-{{ merge (include "pxc-db.linkerdPodAnnotations" $ | fromYaml) ($backup.annotations) | toYaml | indent 10 }}
+{{ merge (include "pxc-db.linkerdPodAnnotations" $ | fromYaml) (include "pxc-db.metricsAnnotations" $ | fromYaml) ($backup.annotations) | toYaml | indent 10 }}
+        labels:
+{{ merge (include "pxc-db.backupLabels" $ | fromYaml) ($backup.labels) | toYaml | indent 10 }}
         resources:
           requests:
 {{ tpl ($backup.resources.requests | toYaml) $ | indent 12 }}
           limits:
 {{ tpl ($backup.resources.limits | toYaml) $ | indent 12 }}
-        {{- if $backup.priorityClassName }}
-        priorityClassName: {{ $backup.priorityClassName }}
+        {{- if $backup.priority_class }}
+        priorityClassName: {{ $backup.priority_class | default "critical-infrastructure" | quote }}
         {{- end }}
+        containerOptions:
+{{ tpl ($backup.containerOptions | toYaml) $ | indent 10 }}
         s3:
 {{ tpl (deepCopy $backup.s3.config | merge (dict "bucket" (get $backup.s3.storages $storage).bucket) | toYaml) $ | indent 10 }}
   {{- end }}

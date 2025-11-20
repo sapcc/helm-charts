@@ -8,7 +8,7 @@ metadata:
 spec:
   interval: 60s
   jobName: ingress-external-public-service
-  module: icmp
+  module: tcp_connect
   prober:
     scheme: https
     url: prober.{{ .Values.global.region }}.cloud.sap
@@ -18,7 +18,7 @@ spec:
       labels:
         region: {{ .Values.global.region }}
       static:
-        - {{ required ".Values.ingress.external_public_service.ip" .Values.ingress.external_public_service.ip }}
+        - {{ required ".Values.ingress.external_public_service.monitor.url" .Values.ingress.external_public_service.monitor.url }}
 ---
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
@@ -41,6 +41,6 @@ spec:
             service: ingress
             severity: critical
             support_group: containers
-            playbook: "/docs/support/playbook/kubernetes/ingress_public_ip_not_reachable"
+            playbook: 'https://operations.global.cloud.sap/docs/support/playbook/kubernetes/ingress_public_ip_not_reachable'
             tier: k8s
 {{- end }}

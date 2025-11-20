@@ -45,8 +45,15 @@ metadata:
     loadbalancer.openstack.org/enable-health-monitor: "false"
   {{- end }}
   labels:
-    app: {{ .global.Release.Name }}
-    {{- include "sharedservices.labels" .global | indent 4 }}
+  {{- if or (eq .component "database") (eq .component "database-direct") }}
+    {{- include "mariadb-galera.labels" (list .global "version" "database" "svc" "database") | indent 4 }}
+  {{- else if eq .component "kopiaserver"}}
+    {{- include "mariadb-galera.labels" (list .global "version" "kopiabackup" "svc" "server") | indent 4 }}
+  {{- else if eq .component "proxysql"}}
+    {{- include "mariadb-galera.labels" (list .global "version" "proxysql" "svc" "proxy") | indent 4 }}
+  {{- else if eq .component "haproxy"}}
+    {{- include "mariadb-galera.labels" (list .global "version" "haproxy" "svc" "proxy") | indent 4 }}
+  {{- end }}
 spec:
   {{- if and (.service.headless) (ne .service.type "LoadBalancer") (eq .replica "notused") }}
   type: {{ required "the network service type has to be defined" .service.type }}
@@ -64,17 +71,21 @@ spec:
   {{- if ne .replica "notused" }}
     statefulset.kubernetes.io/pod-name: {{ (printf "%s-%s" $nodeNamePrefix .replica) }}
   {{- else if and (hasKey .global.Values.mariadb "autostart") (not .global.Values.mariadb.autostart) }}
-    component: "disabledBecauseOf-mariadb.autostart-disabled"
+    app.kubernetes.io/component: "disabledBecauseOf-mariadb.autostart-disabled"
   {{- else if and (.global.Values.command) (hasKey .global.Values.command "database") }}
-    component: "disabledBecauseOf-command.database-defined"
+    app.kubernetes.io/component: "disabledBecauseOf-command.database-defined"
   {{- else if and (hasKey .global.Values.mariadb "wipeDataAndLog") (.global.Values.mariadb.wipeDataAndLog) }}
-    component: "disabledBecauseOf-mariadb.wipeDataAndLog-enabled"
+    app.kubernetes.io/component: "disabledBecauseOf-mariadb.wipeDataAndLog-enabled"
   {{- else if and (hasKey .global.Values.mariadb.galera.restore "kopia") (.global.Values.mariadb.galera.restore.kopia.enabled) }}
-    component: "disabledBecauseOf-mariadb.galera.restore-enabled"
-  {{- else if eq .component "database-direct" }}
-    component: "database"
-  {{- else }}
-    component: {{ .component | quote }}
+    app.kubernetes.io/component: "disabledBecauseOf-mariadb.galera.restore-enabled"
+  {{- else if or (eq .component "database") (eq .component "database-direct") }}
+    app.kubernetes.io/component: {{ (index .global.Values.image (printf "%s" "database")).softwarename }}-sts-database
+  {{- else if eq .component "kopiaserver" }}
+    app.kubernetes.io/component: {{ (index .global.Values.image (printf "%s" "kopiabackup")).softwarename }}-deploy-server
+  {{- else if eq .component "proxysql"}}
+    app.kubernetes.io/component: {{ (index .global.Values.image (printf "%s" "proxysql")).softwarename }}-sts-proxy
+  {{- else if eq .component "haproxy"}}
+    app.kubernetes.io/component: {{ (index .global.Values.image (printf "%s" "haproxy")).softwarename }}-deploy-proxy
   {{- end }}
   ports:
   {{- range $portKey, $portValue := .service.ports }}
@@ -247,7 +258,7 @@ spec:
 
 {{/*
   Generate Kubernetes basic-auth secrets
-  include "generateSecretTypeOpaque" (dict "global" .global "name" $.name "credential" $.credential "suffix" $.suffix)
+  include "generateSecretTypeBasicAuth" (dict "global" .global "name" $.name "credential" $.credential "suffix" $.suffix)
 */}}
 {{- define "generateSecretTypeBasicAuth" }}
 ---
@@ -258,7 +269,7 @@ metadata:
   namespace: {{ $.global.Release.Namespace }}
   name: {{ include "commonPrefix" .global }}-{{ $.suffix }}-{{ $.name }}
   labels:
-    {{- include "sharedservices.labels" .global | indent 4 }}
+    {{- include "mariadb-galera.labels" (list .global "version" "database" "secret" "basic") | indent 4 }}
 data:
   username: {{ (required (printf "%s.users.%s.username is required to configure the Kubernetes secret for the '%s' user" $.suffix $.name $.name) $.credential.username) | b64enc }}
   password: {{ (required (printf "%s.users.%s.password is required to configure the Kubernetes secret for the '%s' user" $.suffix $.name $.name) $.credential.password) | b64enc }}
@@ -276,6 +287,8 @@ type: Opaque
 metadata:
   namespace: {{ $.global.Release.Namespace }}
   name: {{ include "commonPrefix" .global }}-{{ $.suffix }}-{{ $.name }}
+  labels:
+    {{- include "mariadb-galera.labels" (list .global "version" "database" "secret" "opaque") | indent 4 }}
 data:
   password: {{ (required (printf "%s.users.%s.password is required to configure the Kubernetes secret for the '%s' user" $.suffix $.name $.name) $.credential.password) | b64enc }}
 {{- end }}
@@ -292,6 +305,8 @@ type: kubernetes.io/dockerconfigjson
 metadata:
   namespace: {{ $.global.Release.Namespace }}
   name: {{ include "commonPrefix" .global }}-pullsecret-{{ $.name }}
+  labels:
+    {{- include "mariadb-galera.labels" (list .global "version" "database" "secret" "dockerconfigjson") | indent 4 }}
 data:
   .dockerconfigjson: {{ printf "{\"auths\": {\"%s\": {\"auth\": \"%s\"}}}" (required (printf "image.pullSecrets.%s.registry is required to configure the Kubernetes pull secret '%s'" $.name $.name) $.credential.registry) (printf "%s" (required (printf "image.pullSecrets.%s.credential is required to configure the Kubernetes pull secret '%s'" $.name $.name) $.credential.credential) | b64enc) | b64enc }}
 {{- end }}
@@ -308,12 +323,29 @@ data:
   {{- end }}
 {{- end }}
 
-{{- define "sharedservices.labels" }}
+{{/*
+  Generate labels
+  $ = global values
+  version/noversion = enable/disable version fields in labels
+  database = desired component name
+  job = object type
+  config = provided function
+  include "mariadb-galera.labels" (list $ "version" "database" "sts" "database")
+  include "mariadb-galera.labels" (list $ "version" "database" "job" "config")
+*/}}
+{{- define "mariadb-galera.labels" }}
+{{- $ := index . 0 }}
+{{- $component := index . 2 }}
+{{- $type := index . 3 }}
+{{- $function := index . 4 }}
 app.kubernetes.io/name: {{ $.Chart.Name }}
 app.kubernetes.io/instance: {{ $.Chart.Name }}-{{ $.Release.Name }}
-app.kubernetes.io/version: {{ $.Chart.Version }}
-app.kubernetes.io/component: MariaDB-Galera
+app.kubernetes.io/component: {{ (index $.Values.image (printf "%s" $component)).softwarename }}-{{ $type }}-{{ $function }}
 app.kubernetes.io/part-of: {{ $.Release.Name }}
+  {{- if eq (index . 1) "version" }}
+app.kubernetes.io/version: {{ (index $.Values.image (printf "%s" $component)).softwareversion }}-{{ (index $.Values.image (printf "%s" $component)).imageversion | int }}
+helm.sh/chart: {{ $.Chart.Name }}-{{ $.Chart.Version | replace "+" "_" }}
+  {{- end }}
 {{- end }}
 
 {{- define "storageclassCinder" }}
@@ -323,7 +355,7 @@ kind: StorageClass
 metadata:
   name: {{ include "commonPrefix" $ }}-cinder
   labels:
-    {{- include "sharedservices.labels" $ | indent 4 }}
+    {{- include "mariadb-galera.labels" (list $ "version" "database" "sc" "block") | indent 4 }}
 parameters:
   type: vmware
 provisioner: cinder.csi.openstack.org
@@ -339,7 +371,7 @@ kind: StorageClass
 metadata:
   name: {{ include "commonPrefix" $ }}-nfs
   labels:
-    {{- include "sharedservices.labels" $ | indent 4 }}
+    {{- include "mariadb-galera.labels" (list $ "version" "database" "sc" "file") | indent 4 }}
 parameters:
   pathPattern: "${.PVC.namespace}-${.PVC.name}"
   onDelete: "delete"

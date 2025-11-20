@@ -1,7 +1,7 @@
 - name: backup-v2.alerts
   rules:
   - alert: {{ include "alerts.service" . | title }}MariaDatabaseFullBackupMissing
-    expr: maria_backup_status{kind="full_backup", release={{ include "alerts.service" . | quote }} } != 1
+    expr: maria_backup_status{kind="full_backup", app_kubernetes_io_instance=~"{{ include "fullName" . }}" } != 1
     for: 4h
     labels:
       context: "{{ .Release.Name }}"
@@ -14,7 +14,7 @@
       summary: {{ include "fullName" . }} full backup missing
 
   - alert: {{ include "alerts.service" . | title }}MariaDatabaseIncBackupMissing
-    expr: maria_backup_status{kind="inc_backup", release={{ include "alerts.service" . | quote }} } != 1
+    expr: maria_backup_status{kind="inc_backup", app_kubernetes_io_instance=~"{{ include "fullName" . }}" } != 1
     for: {{ mul .Values.backup_v2.incremental_backup_in_minutes 5 }}m
     labels:
       context: "{{ .Release.Name }}"
@@ -28,7 +28,7 @@
 
 {{- if .Values.backup_v2.verification.enabled }}
   - alert: {{ include "alerts.service" . | title }}MariaDatabaseBackupVerificationFailed
-    expr: sum(maria_backup_verify_status{service=~"{{  include "alerts.service" . }}.*" }) < 1
+    expr: sum(maria_backup_verify_status{app_kubernetes_io_instance=~"{{ include "fullName" . }}" }) < 1
     for: 16h
     labels:
       context: "{{ .Release.Name }}"

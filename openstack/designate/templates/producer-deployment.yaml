@@ -8,8 +8,10 @@ metadata:
     system: openstack
     type: backend
     component: designate
-  {{- if .Values.vpa.set_main_container }}
   annotations:
+    secret.reloader.stakater.com/reload: "{{ .Release.Name }}-secrets,{{ .Release.Name }}-secrets-rndc"
+    deployment.reloader.stakater.com/pause-period: "60s"
+  {{- if .Values.vpa.set_main_container }}
     vpa-butler.cloud.sap/main-container: designate-producer
   {{- end }}
 spec:
@@ -43,7 +45,6 @@ spec:
 {{- if .Values.rbac.enabled }}
       serviceAccountName: {{ .Release.Name }}
 {{- end }}
-      {{- include "utils.proxysql.pod_settings" . | indent 6 }}
       initContainers:
       {{- tuple . (dict "service" (include "designate.service_dependencies" . )) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 8 }}
       containers:
@@ -69,30 +70,30 @@ spec:
                   name: sentry
                   key: {{ .Release.Name }}.DSN.python
             {{- end }}
+            {{- if .Values.python_warnings }}
+            - name: PYTHONWARNINGS
+              value: {{ .Values.python_warnings | quote }}
+            {{- end }}
           livenessProbe:
             exec:
               command:
-              - bash
-              - -c
-{{- if .Values.global_setup }}
-              - "set -e; nc -zvw3 designate-global-percona-pxc 3306; nc -zvw3 designate-global-memcached 11211"
-{{- else }}
-              - "set -e; nc -zvw3 designate-mariadb 3306; nc -zvw3 designate-memcached 11211"
-{{- end }}
-            failureThreshold: 3
-            initialDelaySeconds: 5
-            periodSeconds: 10
-            successThreshold: 1
-            timeoutSeconds: 5
+              - python3
+              - /container.init/health-probe.py
+              - --config-file
+              - /etc/designate/secrets.conf
+              - --service-name
+              - producer
+              - --liveness-probe
+            initialDelaySeconds: 60
+            periodSeconds: 45
+            timeoutSeconds: 40
           volumeMounts:
             - mountPath: /designate-etc
               name: designate-etc
             - mountPath: /container.init
               name: container-init
-            {{- include "utils.proxysql.volume_mount" . | indent 12 }}
             {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
             {{- include "utils.coordination.volume_mount" . | indent 12 }}
-        {{- include "utils.proxysql.container" . | indent 8 }}
       volumes:
         - name: designate-etc
           projected:
@@ -111,6 +112,5 @@ spec:
             name: designate-bin
             defaultMode: 0755
         {{- include "utils.coordination.volumes" . | indent 8 }}
-        {{- include "utils.proxysql.volumes" . | indent 8 }}
         {{- include "utils.trust_bundle.volumes" . | indent 8 }}
 {{- end }}

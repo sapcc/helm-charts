@@ -1,0 +1,231 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: rook-ceph-operator-config
+  namespace: {{ .Release.Namespace }}
+data:
+  ROOK_LOG_LEVEL: {{ .Values.operator.LogLevel | quote }}
+  ROOK_OPERATOR_METRICS_BIND_ADDRESS: {{ .Values.operator.metricAddress | quote }}
+  ROOK_CEPH_ALLOW_LOOP_DEVICES: "false"
+  ROOK_USE_CSI_OPERATOR: "false"
+  ROOK_CSI_ENABLE_CEPHFS: "true"
+  ROOK_CSI_ENABLE_RBD: "true"
+  ROOK_CSI_ENABLE_NFS: "false"
+  ROOK_CSI_DISABLE_DRIVER: "false"
+  CSI_ENABLE_ENCRYPTION: "false"
+  CSI_DISABLE_HOLDER_PODS: "true"
+  CSI_PROVISIONER_REPLICAS: {{ .Values.csi.provisioner.replicas | quote }}
+  CSI_ENABLE_CEPHFS_SNAPSHOTTER: "true"
+  CSI_ENABLE_NFS_SNAPSHOTTER: "true"
+  CSI_ENABLE_RBD_SNAPSHOTTER: "true"
+  CSI_ENABLE_VOLUME_GROUP_SNAPSHOT: "true"
+  CSI_FORCE_CEPHFS_KERNEL_CLIENT: "true"
+  CSI_RBD_FSGROUPPOLICY: "File"
+  CSI_CEPHFS_FSGROUPPOLICY: "File"
+  CSI_NFS_FSGROUPPOLICY: "File"
+  CSI_PLUGIN_ENABLE_SELINUX_HOST_MOUNT: "false"
+  ROOK_CSI_CEPH_IMAGE: "{{ .Values.registries.quay }}/{{ .Values.csi.images.csi }}"
+  ROOK_CSI_REGISTRAR_IMAGE: "{{ .Values.registries.k8s }}/{{ .Values.csi.images.registrar }}"
+  ROOK_CSI_RESIZER_IMAGE: "{{ .Values.registries.k8s }}/{{ .Values.csi.images.resizer }}"
+  ROOK_CSI_PROVISIONER_IMAGE: "{{ .Values.registries.k8s }}/{{ .Values.csi.images.provisioner }}"
+  ROOK_CSI_SNAPSHOTTER_IMAGE: "{{ .Values.registries.k8s }}/{{ .Values.csi.images.snapshotter }}"
+  ROOK_CSI_ATTACHER_IMAGE: "{{ .Values.registries.k8s }}/{{ .Values.csi.images.attacher }}"
+  ROOK_CSI_IMAGE_PULL_POLICY: "IfNotPresent"
+  CSI_PLUGIN_PRIORITY_CLASSNAME: "system-node-critical"
+  CSI_PROVISIONER_PRIORITY_CLASSNAME: "system-cluster-critical"
+  CSI_RBD_PROVISIONER_RESOURCE: |
+   - name : csi-provisioner
+     resource:
+       requests:
+         memory: 128Mi
+         cpu: 100m
+       limits:
+         memory: 256Mi
+   - name : csi-resizer
+     resource:
+       requests:
+         memory: 128Mi
+         cpu: 100m
+       limits:
+         memory: 256Mi
+   - name : csi-attacher
+     resource:
+       requests:
+         memory: 128Mi
+         cpu: 100m
+       limits:
+         memory: 256Mi
+   - name : csi-snapshotter
+     resource:
+       requests:
+         memory: 128Mi
+         cpu: 100m
+       limits:
+         memory: 256Mi
+   - name : csi-rbdplugin
+     resource:
+       requests:
+         memory: 512Mi
+         cpu: 250m
+       limits:
+         memory: 1Gi
+   - name : csi-omap-generator
+     resource:
+       requests:
+         memory: 512Mi
+         cpu: 250m
+       limits:
+         memory: 1Gi
+   - name : liveness-prometheus
+     resource:
+       requests:
+         memory: 128Mi
+         cpu: 50m
+       limits:
+         memory: 256Mi
+  CSI_RBD_PLUGIN_RESOURCE: |
+   - name : driver-registrar
+     resource:
+       requests:
+         memory: 128Mi
+         cpu: 50m
+       limits:
+         memory: 256Mi
+   - name : csi-rbdplugin
+     resource:
+       requests:
+         memory: 512Mi
+         cpu: 250m
+       limits:
+         memory: 1Gi
+   - name : liveness-prometheus
+     resource:
+       requests:
+         memory: 128Mi
+         cpu: 50m
+       limits:
+         memory: 256Mi
+  CSI_CEPHFS_PROVISIONER_RESOURCE: |
+   - name : csi-provisioner
+     resource:
+       requests:
+         memory: 128Mi
+         cpu: 100m
+       limits:
+         memory: 256Mi
+   - name : csi-resizer
+     resource:
+       requests:
+         memory: 128Mi
+         cpu: 100m
+       limits:
+         memory: 256Mi
+   - name : csi-attacher
+     resource:
+       requests:
+         memory: 128Mi
+         cpu: 100m
+       limits:
+         memory: 256Mi
+   - name : csi-snapshotter
+     resource:
+       requests:
+         memory: 128Mi
+         cpu: 100m
+       limits:
+         memory: 256Mi
+   - name : csi-cephfsplugin
+     resource:
+       requests:
+         memory: 512Mi
+         cpu: 250m
+       limits:
+         memory: 1Gi
+   - name : liveness-prometheus
+     resource:
+       requests:
+         memory: 128Mi
+         cpu: 50m
+       limits:
+         memory: 256Mi
+  CSI_CEPHFS_PLUGIN_RESOURCE: |
+   - name : driver-registrar
+     resource:
+       requests:
+         memory: 128Mi
+         cpu: 50m
+       limits:
+         memory: 256Mi
+   - name : csi-cephfsplugin
+     resource:
+       requests:
+         memory: 512Mi
+         cpu: 250m
+       limits:
+         memory: 1Gi
+   - name : liveness-prometheus
+     resource:
+       requests:
+         memory: 128Mi
+         cpu: 50m
+       limits:
+         memory: 256Mi
+  CSI_NFS_PROVISIONER_RESOURCE: |
+   - name : csi-provisioner
+     resource:
+       requests:
+         memory: 128Mi
+         cpu: 100m
+       limits:
+         memory: 256Mi
+   - name : csi-nfsplugin
+     resource:
+       requests:
+         memory: 512Mi
+         cpu: 250m
+       limits:
+         memory: 1Gi
+   - name : csi-attacher
+     resource:
+       requests:
+         memory: 128Mi
+         cpu: 100m
+       limits:
+         memory: 256Mi
+  CSI_NFS_PLUGIN_RESOURCE: |
+   - name : driver-registrar
+     resource:
+       requests:
+         memory: 128Mi
+         cpu: 50m
+       limits:
+         memory: 256Mi
+   - name : csi-nfsplugin
+     resource:
+       requests:
+         memory: 512Mi
+         cpu: 250m
+       limits:
+         memory: 1Gi
+  CSI_ENABLE_LIVENESS: "false"
+  ROOK_OBC_WATCH_OPERATOR_NAMESPACE: "true"
+  ROOK_ENABLE_DISCOVERY_DAEMON: "false"
+  ROOK_CEPH_COMMANDS_TIMEOUT_SECONDS: "15"
+  CSI_ENABLE_CSIADDONS: "false"
+  ROOK_WATCH_FOR_NODE_FAILURE: "true"
+  CSI_GRPC_TIMEOUT_SECONDS: "150"
+  {{- if .Values.cluster.redundancy.topologyDomainLabel }}
+  CSI_ENABLE_TOPOLOGY: "true"
+  CSI_TOPOLOGY_DOMAIN_LABELS: "{{ .Values.cluster.redundancy.topologyDomainLabel }}"
+  {{- else }}
+  CSI_ENABLE_TOPOLOGY: "false"
+  {{- end }}
+  CSI_CEPHFS_ATTACH_REQUIRED: "true"
+  CSI_RBD_ATTACH_REQUIRED: "true"
+  CSI_NFS_ATTACH_REQUIRED: "true"
+  ROOK_DISABLE_DEVICE_HOTPLUG: "false"
+  ROOK_DISCOVER_DEVICES_INTERVAL: "60m"
+  ROOK_ENFORCE_HOST_NETWORK: "false"
+  {{- if .Values.cluster.redundancy.customHostnameLabel }}
+  ROOK_CUSTOM_HOSTNAME_LABEL: "{{ .Values.cluster.redundancy.customHostnameLabel }}"
+  {{- end }}

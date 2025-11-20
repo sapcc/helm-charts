@@ -5,6 +5,7 @@ metadata:
   name: keppel-janitor
   annotations:
     configmap.reloader.stakater.com/reload: keppel-auto-managed-accounts
+    secret.reloader.stakater.com/reload: keppel-keys,keppel-secret
 
 spec:
   revisionHistoryLimit: 5
@@ -43,11 +44,7 @@ spec:
           args: [ server, janitor ]
           env: {{ include "keppel_environment" $ | indent 12 }}
             - name: KEPPEL_DRIVER_ACCOUNT_MANAGEMENT
-              value: 'basic'
-            - name: KEPPEL_ACCOUNT_MANAGEMENT_CONFIG_PATH
-              value: /etc/keppel-auto-managed-accounts/config.json
-            - name: KEPPEL_ACCOUNT_MANAGEMENT_PROTECTED_ACCOUNTS
-              value: ccloud ccloud-dockerhub-mirror ccloud-gcr-mirror ccloud-ghcr-io-mirror ccloud-quay-mirror ccloud-registry-k8s-io-mirror
+              value: {{ include "driver_config_account_management" $ | fromYaml | toJson | quote }}
           securityContext:
             runAsNonRoot: true
           volumeMounts:
@@ -73,13 +70,13 @@ spec:
               port: 80
             timeoutSeconds: 5
             periodSeconds: 5
-          # NOTE: observed resource usage in eu-de-1 (as of 2024-07)
-          # - CPU: 100m-500m, spiky
-          # - RAM: settles at about 250Mi after a few hours, leaks about 200Mi per day (but one OOM kill per day is acceptable IMO)
+          # NOTE: observed resource usage in eu-de-1 (as of 2025-03)
+          # - CPU: 800m, spiky
+          # - RAM: settles at about 400Mi after a few hours, leaks about 200Mi per day (but one OOM kill per day is acceptable IMO)
           resources:
             requests:
-              cpu: "1"
-              memory: "600Mi"
+              cpu: "2"
+              memory: "800Mi"
             limits:
-              cpu: "1"
-              memory: "600Mi"
+              cpu: "2"
+              memory: "800Mi"

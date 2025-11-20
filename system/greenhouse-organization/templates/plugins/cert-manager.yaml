@@ -1,0 +1,22 @@
+apiVersion: greenhouse.sap/v1alpha1
+kind: Plugin
+metadata:
+  name: cert-manager
+  namespace: {{ .Release.Namespace }}
+  labels:
+    "greenhouse.sap/owned-by": {{ .Values.certManager.supportGroup | default .Values.global.supportGroup }}
+    "greenhouse.sap/deployment-tool": "flux"
+spec:
+  pluginDefinition: cert-manager
+  disabled: false
+  optionValues:
+    - name: cert-manager.webhook.timeoutSeconds
+      value: {{ .Values.certManager.webhook.timeoutSeconds }}
+{{ if .Values.digicertIssuer.enabled }}
+    - name: cert-manager.ingressShim.defaultIssuerName
+      value: digicert-issuer
+    - name: cert-manager.ingressShim.defaultIssuerKind
+      value: DigicertIssuer
+    - name: cert-manager.ingressShim.defaultIssuerGroup
+      value: certmanager.cloud.sap
+{{ end }}

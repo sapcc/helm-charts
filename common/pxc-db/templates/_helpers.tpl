@@ -24,6 +24,14 @@ If release name contains chart name it will be used as a full name.
 {{- end }}
 
 {{/*
+Generate cluster custom resource name
+Example: test-db
+*/}}
+{{- define "pxc-db.clusterName" -}}
+{{ required ".Values.name is missing" .Values.name }}-db
+{{- end -}}
+
+{{/*
 Create chart name and version as used by the chart label.
 */}}
 {{- define "pxc-db.chart" -}}
@@ -45,9 +53,37 @@ app.kubernetes.io/part-of: {{ .Release.Name }}
 Selector labels
 */}}
 {{- define "pxc-db.selectorLabels" -}}
-app: {{ .Release.Name }}
+{{ include "pxc-db.appLabels" . }}
 app.kubernetes.io/name: {{ include "pxc-db.name" . }}
 app.kubernetes.io/instance: {{ include "pxc-db.name" . }}-{{ .Release.Name }}
+{{- end }}
+
+{{/*
+Application labels
+*/}}
+{{- define "pxc-db.appLabels" -}}
+app: {{ include "pxc-db.fullname" . }}
+name: {{ include "pxc-db.fullname" . }}
+{{- end }}
+
+{{/*
+Charts owner-info labels
+*/}}
+{{- define "pxc-db.ownerLabels" -}}
+{{- if index .Values "owner-info" }}
+ccloud/support-group: {{  index .Values "owner-info" "support-group" | quote }}
+ccloud/service: {{  index .Values "owner-info" "service" | quote }}
+{{- end }}
+{{- end }}
+
+{{/*
+Backup labels
+Add owner-info if exists
+Backup jobs are created by operator and are not inherited from the parent cluster resource
+*/}}
+{{- define "pxc-db.backupLabels" -}}
+{{- include "pxc-db.appLabels" . }}
+{{- include "pxc-db.ownerLabels" . }}
 {{- end }}
 
 {{/*
@@ -68,6 +104,8 @@ Default pod labels for linkerd
 linkerd.io/inject: "enabled"
 config.alpha.linkerd.io/proxy-enable-native-sidecar: "true"
 config.linkerd.io/opaque-ports: "3306,3307,3009,4444,4567,4568,33060,33062"
+config.linkerd.io/skip-outbound-ports: "4444,4567,4568"
+config.linkerd.io/skip-inbound-ports: "4444,4567,4568"
 {{- end }}
 {{- end -}}
 
@@ -78,6 +116,15 @@ Default service labels for linkerd
 {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested $.Values.linkerd.enabled }}
 config.linkerd.io/opaque-ports: "3306,3307,3009,4444,4567,4568,33060,33062"
 {{- end }}
+{{- end -}}
+
+{{/* Generate the service label for the templated Prometheus alerts. */}}
+{{- define "pxc-db.alerts.service" -}}
+{{- if .Values.alerts.service -}}
+{{- .Values.alerts.service -}}
+{{- else -}}
+{{- .Release.Name -}}
+{{- end -}}
 {{- end -}}
 
 {{- define "pxc-db.resolve_secret" -}}

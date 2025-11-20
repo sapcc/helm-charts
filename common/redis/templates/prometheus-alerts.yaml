@@ -1,0 +1,44 @@
+{{- if .Values.alerts.enabled -}}
+
+{{- $fullname := include "redis.fullname" . -}}
+{{- $service  := .Values.alerts.service       | default  .Release.Name -}}
+{{- $sgroup   := .Values.alerts.support_group | required "missing value for .Values.redis.alerts.support_group" -}}
+
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+
+metadata:
+  name: {{ $fullname }}
+  labels:
+    prometheus: kubernetes
+
+spec:
+  groups:
+    - name: {{ $fullname }}.alerts
+      rules:
+        - alert: RedisSecretAboutToExpire
+          expr: max by (namespace, secret) ((time() - kube_secret_created{namespace="{{ .Release.Namespace }}",secret=~"{{ $fullname }}-user-.*"}) / 86400) >= 330
+          for: 5m
+          labels:
+            context: secret-rotation
+            playbook: 'https://operations.global.cloud.sap/docs/support/playbook/rotate-local-kubernetes-secret'
+            service: {{ quote $service }}
+            severity: info
+            support_group: {{ quote $sgroup }}
+          annotations:
+            summary: 'Redis user secret will expire soon'
+            description: 'The secret {{`{{`}} $labels.namespace {{`}}/{{`}} $labels.secret {{`}}`}} is nearly 365 days old. Please rotate it soon by following the attached playbook.'
+
+        - alert: RedisSecretAboutToExpire
+          expr: max by (namespace, secret) ((time() - kube_secret_created{namespace="{{ .Release.Namespace }}",secret=~"{{ $fullname }}-user-.*"}) / 86400) >= 365
+          for: 5m
+          labels:
+            context: secret-rotation
+            playbook: 'https://operations.global.cloud.sap/docs/support/playbook/rotate-local-kubernetes-secret'
+            service: {{ quote $service }}
+            severity: warning
+            support_group: {{ quote $sgroup }}
+          annotations:
+            summary: 'Redis user secret is expired'
+            description: 'The secret {{`{{`}} $labels.namespace {{`}}/{{`}} $labels.secret {{`}}`}} is over 365 days old. Please rotate it as soon as possible by following the attached playbook.'
+{{- end -}}

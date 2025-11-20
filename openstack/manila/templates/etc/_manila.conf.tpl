@@ -4,7 +4,6 @@ debug = {{.Values.debug }}
 log_config_append = /etc/manila/logging.ini
 {{- include "ini_sections.logging_format" . }}
 
-use_forwarded_for = true
 # rate limiting is handled outside
 api_rate_limit = {{ .Values.api_rate_limit.enabled | default false }}
 
@@ -46,8 +45,16 @@ is_deferred_deletion_enabled = {{ .Values.is_deferred_deletion_enabled | default
 periodic_deferred_delete_interval = {{ .Values.periodic_deferred_delete_interval | default 300 }}
 
 scheduler_default_filters = {{ .Values.scheduler_default_filters | default "AvailabilityZoneFilter,CapacityFilter,CapabilitiesFilter,ShareReplicationFilter,AffinityFilter,AntiAffinityFilter,OnlyHostFilter" }}
+scheduler_default_extend_filters = CapacityFilter
 scheduler_default_weighers = CapacityWeigher,GoodnessWeigher,HostAffinityWeigher
 scheduler_default_share_group_filters = AvailabilityZoneFilter,ConsistentSnapshotFilter,CapabilitiesFilter,DriverFilter
+
+{{- if .Values.external_scheduler_api_url }}
+external_scheduler_api_url = {{ .Values.external_scheduler_api_url }}
+{{- end}}
+{{- if .Values.external_scheduler_timeout }}
+external_scheduler_timeout = {{ .Values.external_scheduler_timeout }}
+{{- end}}
 
 migration_ignore_scheduler = True
 # default time to wait for access rules to become active in migration cutover was 180 seconds
@@ -75,7 +82,6 @@ share_replicas = {{ .Values.quota.share_replicas }}
 replica_gigabytes = {{ .Values.quota.replica_gigabytes }}
 
 [neutron]
-auth_strategy = keystone
 url = {{.Values.global.neutron_api_endpoint_protocol_internal | default "http"}}://{{include "neutron_api_endpoint_host_internal" .}}:{{ .Values.global.neutron_api_port_internal | default 9696}}
 auth_url = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
 auth_type = v3password
@@ -94,6 +100,9 @@ rabbit_interval_max = {{ .Values.rabbitmq.max_reconnect_interval | default 3 }}
 
 [oslo_concurrency]
 lock_path = /var/lib/manila/tmp
+
+[oslo_middleware]
+enable_proxy_headers_parsing = True
 
 {{ include "ini_sections.coordination" . }}
 
@@ -119,8 +128,4 @@ service_type = sharev2
 
 {{- if .Values.memcached.enabled }}
 {{- include "ini_sections.cache" . }}
-{{- end }}
-
-{{- if .Values.osprofiler.enabled }}
-{{- include "osprofiler" . }}
 {{- end }}

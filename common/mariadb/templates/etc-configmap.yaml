@@ -3,16 +3,15 @@ kind: ConfigMap
 metadata:
   name: mariadb-{{.Values.name}}-etc
   labels:
-    app: mariadb
-    release: "{{ .Release.Name }}"
-    heritage: "{{ .Release.Service }}"
-    component: database
-    {{- include "sharedservices.labels" . | indent 4 }}
+    {{- include "mariadb.labels" (list $ "noversion" "mariadb" "configmap" "database") | indent 4 }}
 data:
   mariadb.cnf: |
     [mysqld]
     bind_address              = 0.0.0.0
     max_connections           = {{ .Values.max_connections | default 1024 }}
+    max_connect_errors        = 4294967295
+    skip_name_resolve         = ON
+    host_cache_size           = 0
     connect_timeout           = 30
     wait_timeout              = 3800
     interactive_timeout       = 1800
@@ -20,7 +19,6 @@ data:
     innodb_log_file_size      = {{ .Values.log_file_size }}
     innodb_open_files         = 4000
     innodb_stats_on_metadata  = 0
-    innodb_thread_concurrency = 0
     innodb_read_io_threads    = 8
     innodb_write_io_threads   = 8
     innodb_print_all_deadlocks = 1
@@ -28,12 +26,14 @@ data:
     query_cache_size          = {{ .Values.query_cache_size }}
     query_cache_type          = {{ .Values.query_cache_type }}
     join_buffer_size          = {{ .Values.join_buffer_size }}
+    ignore_db_dirs            = "lost+found"
     table_definition_cache    = 800
     sql_mode                  = "TRADITIONAL"
     slow_query_log            = 1
     long_query_time           = {{ .Values.long_query_time }}
     log_warnings              = {{ .Values.log_warnings }}
     general_log_file          = /var/log/mysql/mariadb_general.log
+    userstat                  = ON
 {{- if .Values.db_performance_schema.enabled}}
     performance_schema        = ON
 {{ else }}

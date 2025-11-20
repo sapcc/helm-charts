@@ -1,5 +1,5 @@
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   annotations:
     meta.helm.sh/release-name: bird-domain1
@@ -8,22 +8,22 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     ccloud/service: px
     ccloud/support-group: network-api
-  name: qa-de-1-pxrs-1-s3-2
+  name: routeserver-v4-service-1-domain-1
   namespace: px
 spec:
   template:
     spec:
       containers:
-      - name: qa-de-1-pxrs-1-s3-2
+      - name: bird
         securityContext:
           capabilities:
             add:
             - NET_ADMIN
-      - name: qa-de-1-pxrs-1-s3-2-exporter
-      - name: qa-de-1-pxrs-1-s3-2-lgproxy
-      - name: qa-de-1-pxrs-1-s3-2-lgadminproxy
+      - name: exporter
+      - name: lgproxy
+      - name: lgadminproxy
       initContainers:
-      - name: qa-de-1-pxrs-1-s3-2-init
+      - name: init-network
         securityContext:
           privileged: true # runs `ip link set $VLAN_INTERFACE promisc on`
       securityContext: {}

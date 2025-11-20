@@ -6,8 +6,7 @@ metadata:
   namespace: {{ $.Release.Namespace }}
   name: {{ include "commonPrefix" $ }}-proxysql-entrypoint-sh
   labels:
-    app: {{ $.Release.Name }}
-    {{- include "sharedservices.labels" $ | indent 4 }}
+    {{- include "mariadb-galera.labels" (list $ "noversion" "proxysql" "cm" "entrypoint") | indent 4 }}
 data:
 {{ tpl (.Files.Glob "scripts/proxysql/entrypoint.sh").AsConfig . | indent 2 }}
 ---
@@ -17,8 +16,7 @@ metadata:
   namespace: {{ $.Release.Namespace }}
   name: {{ include "commonPrefix" $ }}-proxysql-common-functions-extended-sh
   labels:
-    app: {{ $.Release.Name }}
-    {{- include "sharedservices.labels" $ | indent 4 }}
+    {{- include "mariadb-galera.labels" (list $ "noversion" "proxysql" "cm" "functions") | indent 4 }}
 data:
 {{ tpl (.Files.Glob "scripts/proxysql/common-functions-extended.sh").AsConfig . | indent 2 }}
 ---
@@ -28,8 +26,7 @@ metadata:
   name: {{ include "commonPrefix" $ }}-proxysql-probes-sh
   namespace: {{ $.Release.Namespace }}
   labels:
-    app: {{ $.Release.Name }}
-    {{- include "sharedservices.labels" $ | indent 4 }}
+    {{- include "mariadb-galera.labels" (list $ "noversion" "proxysql" "cm" "probes") | indent 4 }}
 data:
 {{ tpl (.Files.Glob "scripts/proxysql/startup.sh").AsConfig . | indent 2 }}
 {{ tpl (.Files.Glob "scripts/proxysql/liveness.sh").AsConfig . | indent 2 }}
@@ -41,8 +38,7 @@ metadata:
   namespace: {{ $.Release.Namespace }}
   name: {{ include "commonPrefix" $ }}-proxysql-hooks-sh
   labels:
-    app: {{ $.Release.Name }}
-    {{- include "sharedservices.labels" $ | indent 4 }}
+    {{- include "mariadb-galera.labels" (list $ "noversion" "proxysql" "cm" "hooks") | indent 4 }}
 data:
 {{ tpl (.Files.Glob "scripts/proxysql/pre-stop-hook.sh").AsConfig . | indent 2 }}
 {{ tpl (.Files.Glob "scripts/proxysql/post-start-hook.sh").AsConfig . | indent 2 }}

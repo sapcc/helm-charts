@@ -1,0 +1,37 @@
+apiVersion: "openstack.stable.sap.cc/v1"
+kind: "OpenstackSeed"
+metadata:
+  name: {{ .Chart.Name }}-seed
+  labels:
+    component: ironic
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+spec:
+  requires:
+  - monsoon3/domain-tempest-seed
+
+  domains:
+  - name: tempest
+    projects:
+    - name: tempest1
+      role_assignments:
+      - user: admin@Default
+        role: cloud_baremetal_admin
+    - name: tempest2
+      role_assignments:
+      - user: admin@Default
+        role: cloud_baremetal_admin
+    users:
+    - name: tempestuser1
+      role_assignments:
+      - project: tempest1
+        role: baremetal_admin
+      - domain: tempest
+        role: baremetal_admin
+    - name: tempestuser2
+      role_assignments:
+      - project: tempest2
+        role: baremetal_admin
+      - domain: tempest
+        role: baremetal_admin

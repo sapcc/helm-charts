@@ -4,12 +4,17 @@ metadata:
   name: cc3test-user-seed
   labels:
     component: cc3test
+
 spec:
   requires:
-#  - keystone-seed
+  {{- if .Values.global.is_global_region }}
+  - monsoon3global/keystone-global-seed
+  {{- else}}
+  - monsoon3/keystone-seed
   - monsoon3/domain-default-seed
   - monsoon3/domain-ccadmin-seed
   - monsoon3/domain-cc3test-seed
+  {{- end }}
 
   roles:
   - name: cloud_compute_admin
@@ -52,3 +57,31 @@ spec:
         role: admin
       - domain: ccadmin
         role: admin
+    - name: {{ default "cc3test_bkp" .Values.service_user_bkp.name | quote }}
+      description: 'cc3test bkp service user'
+      password: {{ .Values.service_user_bkp.password | quote }}
+      role_assignments:
+        - project: cloud_admin@ccadmin
+          role: admin
+        - project: cloud_admin@ccadmin
+          role: cloud_compute_admin
+        - project: cloud_admin@ccadmin
+          role: cloud_dns_admin
+        - project: cloud_admin@ccadmin
+          role: cloud_image_admin
+        - project: cloud_admin@ccadmin
+          role: cloud_keymanager_admin
+        - project: cloud_admin@ccadmin
+          role: cloud_network_admin
+        - project: cloud_admin@ccadmin
+          role: cloud_sharedfilesystem_admin
+        - project: cloud_admin@ccadmin
+          role: cloud_volume_admin
+        - project: cloud_admin@ccadmin
+          role: cloud_baremetal_admin
+        - project: master@ccadmin
+          role: cloud_dns_admin
+        - domain: Default
+          role: admin
+        - domain: ccadmin
+          role: admin

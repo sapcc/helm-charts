@@ -15,7 +15,7 @@ groups:
       support_group: containers
       tier: os
       meta: 'Keppel health check is not reporting success'
-      playbook: docs/support/playbook/keppel/down
+      playbook: 'https://operations.global.cloud.sap/docs/support/playbook/keppel/down'
     annotations:
       summary: Keppel health check is not reporting success.
       description: |
@@ -126,11 +126,11 @@ groups:
         starved for CPU time, so try checking the CPU throttling metrics.
 
   - alert: OpenstackKeppelAuditEventPublishFailing
-    # Usually, you would check increase() here, but audit events *can* be quite
-    # rare, so we alert if there are any failed audit events at all. To clear this alert,
-    # delete the respective
-    expr: max by (pod) (keppel_failed_auditevent_publish > 0)
-    for: 1h
+    # The underlying metric counts failed submission attempts, e.g. because the hermes-rabbitmq server is restarting.
+    # These are not necessarily fatal because the process will hold them in memory to retry the submission later.
+    # The alert will clear up on its own once submissions start working again.
+    expr: sum by (pod) (changes(audittools_failed_submissions{namespace="keppel"}[1h]) > 0)
+    for: 5m
     labels:
       context: auditeventpublish
       dashboard: keppel-overview
@@ -141,4 +141,4 @@ groups:
       meta: '{{ $labels.pod }}'
     annotations:
       summary: "{{ $labels.pod }} cannot publish audit events"
-      description: "Audit events from {{ $labels.pod }} could not be published to the RabbitMQ server. Check the pod log for details. Once the underlying issue was addressed, delete the offending pod to clear this alert."
+      description: "Audit events from {{ $labels.pod }} could not be published to the RabbitMQ server. Check the pod log for detailed error messages. Affected audit events are held in memory until publishing succeeds."

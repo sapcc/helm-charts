@@ -37,6 +37,10 @@ spec:
 {{- end }}
       restartPolicy: OnFailure
       {{- include "utils.proxysql.job_pod_settings" . | indent 6 }}
+      initContainers:
+      {{- if .Values.proxysql.native_sidecar }}
+      {{- include "utils.proxysql.container" . | indent 6 }}
+      {{- end }}
       containers:
         - name: keystone-bootstrap
           image: {{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{ .Values.api.image }}:{{ .Values.api.imageTag }}
@@ -49,11 +53,7 @@ spec:
             - name: NAMESPACE
               value: {{ .Release.Namespace }}
             - name: DEPENDENCY_SERVICE
-{{- if .Values.percona_cluster.enabled }}
-              value: "{{ .Release.Name }}-percona-pxc"
-{{- else }}
-              value: "{{ .Release.Name }}-mariadb"
-{{- end }}
+              value: {{ include "keystone.db_service" . | quote }}
             - name: DEPENDENCY_JOBS
               value: "{{ tuple . "job-migration" | include "job_name" }}"
             {{- if .Values.sentry.enabled }}
@@ -76,17 +76,10 @@ spec:
               readOnly: true
             - name: keystone-etc-confd
               mountPath: /etc/keystone/keystone.conf.d
-{{- if ne .Values.api.policy "json" }}
             - name: keystone-etc
               mountPath: /etc/keystone/policy.yaml
               subPath: policy.yaml
               readOnly: true
-{{- else }}
-            - name: keystone-etc
-              mountPath: /etc/keystone/policy.json
-              subPath: policy.json
-              readOnly: true
-{{- end }}
             - name: keystone-etc
               mountPath: /etc/keystone/logging.conf
               subPath: logging.conf
@@ -102,7 +95,9 @@ spec:
               readOnly: true
             {{- include "utils.proxysql.volume_mount" . | indent 12 }}
             {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
+        {{- if not .Values.proxysql.native_sidecar }}
         {{- include "utils.proxysql.container" . | indent 8 }}
+        {{- end }}
       volumes:
         - name: etc-keystone
           emptyDir: {}

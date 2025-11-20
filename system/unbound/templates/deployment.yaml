@@ -18,6 +18,8 @@ spec:
         type: dns
       annotations:
         checksum/unbound.config: {{ include "unbound/templates/config.yaml" . | sha256sum }}
+        prometheus.io/scrape: "true"
+        prometheus.io/targets: {{ required "$.Values.alerts.prometheus missing" $.Values.alerts.prometheus | quote }}
     spec:
       affinity:
         nodeAffinity:
@@ -38,21 +40,23 @@ spec:
               topologyKey: "kubernetes.io/hostname"
       nodeSelector:
         topology.kubernetes.io/zone: {{ .Values.global.region}}{{ .Values.unbound.failure_domain_zone}}
+{{- $sidecars := true }}
+{{- if eq (int .Capabilities.KubeVersion.Major) 0 }}
+{{- $sidecars = false }}
+{{- end }}
+{{- if eq (int .Capabilities.KubeVersion.Major) 1 }}
+{{- $sidecars = and $sidecars (ge (int .Capabilities.KubeVersion.Minor) 29) }}
+{{- end }}
+{{- if ge (int .Capabilities.KubeVersion.Major) 2 }}
+{{- $sidecars = and $sidecars true }}
+{{- end }}
+{{- $sidecars = and $sidecars (dig "sidecars" true .Values.unbound) }}
       containers:
       - name: unbound
         image: {{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{.Values.unbound.unbound.image}}:{{ .Values.unbound.unbound.image_tag}}
         imagePullPolicy: {{ .Values.unbound.image_pullPolicy }}
         resources:
 {{ toYaml .Values.resources.unbound | indent 10 }}
-        securityContext:
-         privileged: true
-        ports:
-          - name: dns-tcp
-            containerPort: 53
-            protocol: TCP
-          - name: dns-udp
-            containerPort: 53
-            protocol: UDP
         volumeMounts:
           - name: unbound-conf
             mountPath: /etc/unbound
@@ -74,13 +78,13 @@ spec:
           initialDelaySeconds: 5
           timeoutSeconds: 3
           periodSeconds: 10
-{{- if ge (int .Capabilities.KubeVersion.Minor) 29 }}
+{{- if $sidecars }}
       initContainers:
 {{- end }}
       - name: metric
         image: {{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{.Values.unbound.unbound_exporter.image}}:{{ .Values.unbound.unbound_exporter.image_tag}}
         imagePullPolicy: {{ .Values.unbound.image_pullPolicy }}
-{{- if ge (int .Capabilities.KubeVersion.Minor) 29 }}
+{{- if $sidecars }}
         restartPolicy: Always
 {{- end }}
         resources:
@@ -96,7 +100,7 @@ spec:
       - name: dnstap
         image: {{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{.Values.unbound.dnstap.image}}:{{ .Values.unbound.dnstap.image_tag}}
         imagePullPolicy: {{ .Values.unbound.image_pullPolicy }}
-{{- if ge (int .Capabilities.KubeVersion.Minor) 29 }}
+{{- if $sidecars }}
         restartPolicy: Always
 {{- end }}
         resources:
@@ -109,9 +113,9 @@ spec:
 {{- if .Values.unbound.dnstap.hec_splunk_url }}
 {{- if .Values.unbound.dnstap.hec_splunk_token }}
           - -H
-          - {{ .Values.unbound.dnstap.hec_splunk_url }}
+          - "$(HEC_SPLUNK_URL)"
           - -token
-          - {{ .Values.unbound.dnstap.hec_splunk_token }}
+          - "$(HEC_SPLUNK_TOKEN)"
 {{- if .Values.unbound.dnstap.hec_splunk_server_uuid }}
           - -server_uuid
           - {{ .Values.unbound.dnstap.hec_splunk_server_uuid }}
@@ -121,6 +125,19 @@ spec:
 {{- if .Values.unbound.dnstap.additional_cmdline_args }}
 {{ toYaml .Values.unbound.dnstap.additional_cmdline_args | indent 10 }}
 {{- end }}
+{{- if and $.Values.unbound.dnstap.hec_splunk_url $.Values.unbound.dnstap.hec_splunk_token }}
+        env:
+        - name: HEC_SPLUNK_URL
+          valueFrom:
+            secretKeyRef:
+              name: {{.Release.Name}}-hec-secrets
+              key: hec_splunk_url
+        - name: HEC_SPLUNK_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: {{.Release.Name}}-hec-secrets
+              key: hec_splunk_token
+{{- end }}
         volumeMounts:
           - name: dnstap-socket
             mountPath: {{ .Values.unbound.dnstap.socket_path | default "/run/dnstap/dnstap.sock" | dir }}
@@ -129,7 +146,7 @@ spec:
       - name: bind-rpz-proxy
         image: {{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{.Values.unbound.bind_rpz_proxy.image}}:{{ .Values.unbound.bind_rpz_proxy.image_tag}}
         imagePullPolicy: {{ .Values.unbound.image_pullPolicy }}
-{{- if ge (int .Capabilities.KubeVersion.Minor) 29 }}
+{{- if $sidecars }}
         restartPolicy: Always
 {{- end }}
         resources:

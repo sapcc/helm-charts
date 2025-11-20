@@ -13,6 +13,9 @@ metadata:
     system: openstack
     type: conductor
     component: ironic
+  annotations:
+    secret.reloader.stakater.com/reload: "{{ .Release.Name }}-secrets"
+    deployment.reloader.stakater.com/pause-period: "60s"
 spec:
   replicas: 1
   revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revisionHistory }}
@@ -50,6 +53,9 @@ spec:
       {{- include "utils.proxysql.pod_settings" . | indent 6 }}
       initContainers:
       {{- tuple . (dict "service" "ironic-api,ironic-rabbitmq") | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
+      {{- if .Values.proxysql.native_sidecar }}
+      {{- include "utils.proxysql.container" . | indent 6 }}
+      {{- end }}
       containers:
       - name: ironic-conductor
         image: {{ .Values.global.registry }}/loci-ironic:{{ .Values.imageVersion }}
@@ -89,7 +95,7 @@ spec:
             command:
             - bash
             - -c
-            - curl -u {{ .Values.rabbitmq.metrics.user }}:{{ .Values.rabbitmq.metrics.password }} ironic-rabbitmq:{{ .Values.rabbitmq.ports.management }}/api/consumers | sed 's/,/\n/g' | grep ironic-conductor-{{$conductor.name}} >/dev/null
+            - curl --netrc-file /etc/ironic/netrc ironic-rabbitmq:{{ .Values.rabbitmq.ports.management }}/api/consumers | sed 's/,/\n/g' | grep ironic-conductor-{{$conductor.name}} >/dev/null
           periodSeconds: 10
           failureThreshold: 30
         livenessProbe:
@@ -103,6 +109,9 @@ spec:
         volumeMounts:
         - mountPath: /etc/ironic
           name: etcironic
+        - mountPath: /etc/ironic/netrc
+          name: curl-netrc
+          subPath: netrc
         - mountPath: /etc/ironic/ironic.conf.d
           name: ironic-etc-confd
         - mountPath: /etc/ironic/ironic.conf
@@ -147,7 +156,9 @@ spec:
         {{- end }}
         {{- include "utils.proxysql.volume_mount" . | indent 8 }}
         {{- include "utils.trust_bundle.volume_mount" . | indent 8 }}
+      {{- if not .Values.proxysql.native_sidecar }}
       {{- include "utils.proxysql.container" . | indent 6 }}
+      {{- end }}
       - name: console
         image: {{ .Values.global.dockerHubMirror }}/library/{{ .Values.imageVersionNginx | default "nginx:stable-alpine" }}
         imagePullPolicy: IfNotPresent
@@ -159,7 +170,13 @@ spec:
             containerPort: 443
         volumeMounts:
           - mountPath: /etc/nginx/conf.d
-            name: ironic-console
+            name: nginx-confd
+          - mountPath: /etc/nginx/conf.d/default.conf
+            name: ironic-console-nginxconf
+            subPath: nginx.conf
+          - mountPath: /etc/nginx/conf.d/dhparam.pem
+            name: ironic-console-dhparam
+            subPath: dhparam.pem
           - mountPath: /shellinabox
             name: shellinabox
           - mountPath: /etc/nginx/certs
@@ -196,7 +213,6 @@ spec:
           subPath: statsd-rpc-exporter.yaml
           readOnly: true
       {{- end }}
- {{- include "jaeger_agent_sidecar" . | indent 6 }}
       volumes:
       - name: etcironic
         emptyDir: {}
@@ -208,6 +224,12 @@ spec:
           items:
           - key: secrets.conf
             path: secrets.conf
+      - name: curl-netrc
+        secret:
+          secretName: {{ .Release.Name }}-secrets
+          items:
+          - key: netrc
+            path: netrc
       - name: ironic-etc
         configMap:
           name: ironic-etc
@@ -218,10 +240,20 @@ spec:
         {{- else }}
           name: ironic-conductor-etc
         {{- end }}
-
-      - name: ironic-console
-        configMap:
-          name: ironic-console
+      - name: nginx-confd
+        emptyDir: {}
+      - name: ironic-console-nginxconf
+        secret:
+          secretName: ironic-console-secret
+          items:
+          - key: nginx.conf
+            path: nginx.conf
+      - name: ironic-console-dhparam
+        secret:
+          secretName: {{ .Release.Name }}-secrets
+          items:
+          - key: dhparam.pem
+            path: dhparam.pem
       - name: ironic-tftp
         persistentVolumeClaim:
           claimName: ironic-tftp-pvclaim

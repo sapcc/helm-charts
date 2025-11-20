@@ -1,9 +1,13 @@
 name: Package Helm Chart and publish to GitHub Packages
 
 on:
+  workflow_dispatch: {}
   push:
     branches:
-        - master
+      - master
+    paths:
+      - common/postgresql-ng/** # Only enable for PostgreSQL-NG chart, disabled for every other chart becuase it can not resolve internal dependencies
+      - common/linkerd-support/**
 
 permissions:
   contents: write
@@ -20,8 +24,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-            fetch-depth: 0
-            token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Configure Git
         run: |
@@ -33,17 +37,16 @@ jobs:
 
       - uses: actions/setup-python@v5
         with:
-            python-version: 3.9
-            check-latest: true
-            token: ${{ secrets.GITHUB_TOKEN }}
+          check-latest: true
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Log into registry ${{ env.REGISTRY }}
         if: github.event_name != 'pull_request'
         uses: docker/login-action@v3
         with:
-            registry: ${{ env.REGISTRY }}
-            username: ${{ github.actor }}
-            password: ${{ secrets.GITHUB_TOKEN }}
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up chart-testing
         uses: helm/chart-testing-action@v2.6.1
@@ -53,13 +56,13 @@ jobs:
         run: |
             changed=$(ct list-changed --config ci/config.yaml --target-branch ${{ github.event.repository.default_branch }})
             if [[ -n "$changed" ]]; then
-            echo "changed=true" >> "$GITHUB_OUTPUT"
+              echo "changed=true" >> "$GITHUB_OUTPUT"
             fi
 
       - name: Run chart-testing (lint)
         if: steps.list-changed.outputs.changed == 'true'
         run: ct lint --chart-yaml-schema ci/chart_schema.yaml --lint-conf ci/lintconf.yaml --config ci/config.yaml --target-branch ${{ github.event.repository.default_branch }}
-    
+
       - name: Check if Helm chart with same version already exists
         id: check-chart
         if: steps.list-changed.outputs.changed == 'true'
@@ -86,8 +89,8 @@ jobs:
         if: steps.list-changed.outputs.changed == 'true' && steps.check-chart.outputs.bump != 'true'
         run: |
             for chart in $(ct list-changed --config ci/config.yaml --target-branch ${{ github.event.repository.default_branch }}); do
-                helm dependency update $chart
-                helm package $chart -d $chart
-                PKG_NAME=`ls $chart/*.tgz`
-                helm push ${PKG_NAME} oci://${{ env.REGISTRY }}/${{ github.repository }}/
+              helm dependency update $chart
+              helm package $chart -d $chart
+              PKG_NAME=`ls $chart/*.tgz`
+              helm push ${PKG_NAME} oci://${{ env.REGISTRY }}/${{ github.repository }}/
             done

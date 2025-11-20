@@ -49,13 +49,10 @@ spec:
       {{- end }}
       containers:
         - name: logstash
-          image: {{ .Values.global.registry }}/elk-logstash:{{ .Values.image_version }}
+          image: "{{ .Values.global.registry }}/elk-logstash:{{ .Values.image_version }}"
           imagePullPolicy: IfNotPresent
           ports:
           {{- if .Values.syslog.enabled }}
-            - name: netflow
-              containerPort: {{ .Values.input_netflow_port }}
-              protocol: UDP
             - name: syslogudp
               containerPort: {{ .Values.input_syslog_port }}
               protocol: UDP
@@ -77,11 +74,16 @@ spec:
               protocol: TCP
           command: ["/bin/bash","/audit-etc/start.sh"]
           env:
-            - name: AUDIT_HTTP_IN
+            - name: AUDIT_HTTP_USER
               valueFrom:
                 secretKeyRef:
                   name: logstash-audit-external
-                  key: auditHTTPIn
+                  key: audit_http_user
+            - name: AUDIT_HTTP_PWD
+              valueFrom:
+                secretKeyRef:
+                  name: logstash-audit-external
+                  key: audit_http_pwd
             - name: NAMESPACE
               valueFrom:
                 fieldRef:

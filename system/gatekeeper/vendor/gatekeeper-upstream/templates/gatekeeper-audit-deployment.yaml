@@ -4,6 +4,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
+    {{- include "gatekeeper.commonLabels" . | nindent 4 }}
     app: '{{ template "gatekeeper.name" . }}'
     chart: '{{ template "gatekeeper.name" . }}'
     control-plane: audit-controller
@@ -63,15 +64,28 @@ spec:
         - --validating-webhook-configuration-name={{ .Values.validatingWebhookName }}
         - --mutating-webhook-configuration-name={{ .Values.mutatingWebhookName }}
         - --audit-from-cache={{ .Values.auditFromCache }}
-        - --audit-chunk-size={{ .Values.auditChunkSize }}
+        {{ if hasKey .Values "auditChunkSize" }}- --audit-chunk-size={{ .Values.auditChunkSize }}{{- end }}
         - --audit-match-kind-only={{ .Values.auditMatchKindOnly }}
-        - --emit-audit-events={{ .Values.emitAuditEvents }}
+        {{ if hasKey .Values "emitAuditEvents" }}- --emit-audit-events={{ .Values.emitAuditEvents }}{{- end }}
+        {{ if hasKey .Values "logStatsAudit" }}- --log-stats-audit={{ .Values.logStatsAudit }}{{- end }}
         - --audit-events-involved-namespace={{ .Values.auditEventsInvolvedNamespace }}
+        
+        {{- if not .Values.audit.disableGenerateOperation }}
+        - --operation=generate
+        {{- end }}
+        {{- if not .Values.audit.disableAuditOperation }}
         - --operation=audit
+        {{- end }}
+        {{- if not .Values.audit.disableStatusOperation }}
         - --operation=status
-        {{ if .Values.audit.enablePubsub}}
-        - --enable-pub-sub={{ .Values.audit.enablePubsub }}
+        {{- end }}
+        {{ if hasKey .Values "enableViolationExport" }}
+        - --enable-violation-export={{ .Values.enableViolationExport }}
+        {{- end }}
+        {{ if hasKey .Values.audit "connection" }}
         - --audit-connection={{ .Values.audit.connection }}
+        {{- end }}
+        {{ if hasKey .Values.audit "channel" }}
         - --audit-channel={{ .Values.audit.channel }}
         {{- end }}
         {{ if not .Values.disableMutation}}- --operation=mutation-status{{- end }}
@@ -98,6 +112,10 @@ spec:
         
         {{- if hasKey .Values "defaultCreateVAPBindingForConstraints"}}
         - --default-create-vap-binding-for-constraints={{ .Values.defaultCreateVAPBindingForConstraints }}
+        {{- end }}
+        
+        {{- if hasKey .Values "defaultWaitForVAPBGeneration"}}
+        - --default-wait-for-vapb-generation={{ .Values.defaultWaitForVAPBGeneration }}
         {{- end }}
         command:
         - /manager
@@ -126,7 +144,7 @@ spec:
             path: /healthz
             port: {{ .Values.audit.healthPort }}
           timeoutSeconds: {{ .Values.audit.livenessTimeout }}
-        name: manager
+        name: '{{ .Values.audit.containerName }}'
         ports:
         - containerPort: {{ .Values.audit.metricsPort }}
           name: metrics
@@ -153,6 +171,13 @@ spec:
           readOnly: true
         - mountPath: /tmp/audit
           name: tmp-volume
+        {{- if and (.Values.enableViolationExport) (eq (.Values.exportBackend | default "" | lower) "disk") }}
+        - mountPath: {{ .Values.audit.exportVolumeMount.path }}
+          name: {{ .Values.audit.exportVolume.name }}
+        {{- end }}
+      {{ if and (.Values.enableViolationExport) (eq (.Values.exportBackend | default "" | lower) "disk") }}
+      - {{ toYaml .Values.audit.exportSidecar | nindent 8 }}
+      {{- end }}
       dnsPolicy: {{ .Values.audit.dnsPolicy }}
       hostNetwork: {{ .Values.audit.hostNetwork }}
       imagePullSecrets:
@@ -173,6 +198,9 @@ spec:
         secret:
           defaultMode: 420
           secretName: gatekeeper-webhook-server-cert
+      {{- if and (.Values.enableViolationExport) (eq (.Values.exportBackend | default "" | lower) "disk") }}
+      - {{- toYaml .Values.audit.exportVolume | nindent 8 }}
+      {{- end }}
       {{- if .Values.audit.writeToRAMDisk }}
       - emptyDir:
           medium: Memory

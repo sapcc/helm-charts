@@ -19,7 +19,7 @@ spec:
     spec:
       restartPolicy: OnFailure
       initContainers:
-      {{- tuple . (dict "service" "ironic-mariadb") | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
+      {{- tuple . (dict "service" (include "ironic.db_service" . | quote)) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
       containers:
       - name: dbsync
         image: {{ .Values.global.registry }}/loci-ironic:{{ .Values.imageVersion }}

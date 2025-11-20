@@ -15,7 +15,7 @@ max_routes = {{.Values.max_routes | default 256}}
 allow_overlapping_ips = true
 core_plugin = ml2
 
-service_plugins = {{required "A valid .Values.service_plugins required!" .Values.service_plugins}}{{- if .Values.interconnection.enabled }},networking-interconnection{{- end}}
+service_plugins = {{required "A valid .Values.service_plugins required!" .Values.service_plugins}},flavors{{- if .Values.interconnection.enabled }},networking-interconnection{{- end}}
 
 default_router_type = {{required "A valid .Values.default_router_type required!" .Values.default_router_type}}
 router_scheduler_driver = {{required "A valid .Values.router_scheduler_driver required!" .Values.router_scheduler_driver}}
@@ -53,10 +53,27 @@ owner_check_cache_expiration_time = {{ .Values.api.owner_check_cache_expiration_
 
 {{- template "utils.snippets.debug.eventlet_backdoor_ini" "neutron" }}
 
+[service_providers]
+service_provider = L3_ROUTER_NAT:asr1k:asr1k_neutron_l3.neutron.services.service_providers.asr1k_router.ASR1KRouterDriver:default
+
+[oslo_policy]
+enforce_scope = False
+enforce_new_defaults = False
+
 [nova]
 auth_url = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000 }}/v3
 # DEPRECATED: auth_plugin
 auth_plugin = v3password
+auth_type = v3password
+region_name = {{.Values.global.region}}
+user_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}
+project_name = {{.Values.global.keystone_service_project | default "service"}}
+project_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}
+insecure = True
+endpoint_type = internal
+
+[placement]
+auth_url = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000 }}/v3
 auth_type = v3password
 region_name = {{.Values.global.region}}
 user_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}
@@ -77,6 +94,7 @@ project_domain_name = ccadmin
 insecure = True
 allow_reverse_dns_lookup = {{.Values.global.designate_allow_reverse_dns_lookup | default "False"}}
 ipv4_ptr_zone_prefix_size = 24
+ptr_zone_email = dns@sap-ag.de
 
 [oslo_concurrency]
 lock_path = /var/lib/neutron/tmp
@@ -139,8 +157,30 @@ quota_security_group_rule = 4
 # Minimum value: 1
 thread_pool_size = 3
 
-{{- if .Values.osprofiler.enabled }}
-{{- include "osprofiler" . }}
-{{- end }}
+[metadata_rate_limiting]
+rate_limit_enabled = {{ .Values.metadata.rate_limit.enabled }}
+base_window_duration = {{ .Values.metadata.rate_limit.base_window_duration }}
+base_query_rate_limit = {{ .Values.metadata.rate_limit.base_query_rate_limit }}
+burst_window_duration = {{ .Values.metadata.rate_limit.burst_window_duration }}
+burst_query_rate_limit = {{ .Values.metadata.rate_limit.burst_query_rate_limit }}
 
 {{- include "ini_sections.cache" . }}
+
+{{- if hasPrefix "caracal" .Values.imageVersion }}
+[experimental]
+linuxbridge = true
+{{- end }}
+{{- if .Values.customdns.enabled }}
+
+[customdns]
+enabled = true
+{{- if .Values.customdns.upstream_dns_servers }}
+upstream_dns_servers = {{ join "," .Values.customdns.upstream_dns_servers }}
+{{- end }}
+{{- if .Values.customdns.project_ids }}
+project_ids = {{ join "," .Values.customdns.project_ids }}
+{{- end }}
+{{- if .Values.customdns.domain_name_prefixes }}
+domain_name_prefixes = {{ join "," .Values.customdns.domain_name_prefixes }}
+{{- end }}
+{{- end }}

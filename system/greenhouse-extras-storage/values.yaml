@@ -5,12 +5,9 @@ prometheus:
     tlsVerifyDepth: 3
     tlsVerifyClient: true
 
-prometheus-kubernetes-rules:
-  ruleSelectors:
-    - name: plugin
-      value: "kube-monitoring-st1-{{ .Values.global.region }}"
-  supportGroup: storage
-  service: ceph
-
 thanos:
   namespace: kube-monitoring
+
+absent-metrics-operator:
+  args:
+    - --prom-rule-name='{{ index .metadata.labels "plugin" }}'

@@ -31,7 +31,7 @@ substituteSqlEnvs() {
     sedArgs+=(-e "s|%$(echo "$line" | cut -d= -f1)%|$(echo "$line" | cut -d= -f2)|g")
   done
 
-  sed -e "s/%PGDATABASE%/$PGDATABASE/g" "${sedArgs[@]}" "$file"
+  sed "${sedArgs[@]}" "$file"
 }
 
 [[ ${DEBUG:-} != false ]] && set -x
@@ -73,7 +73,10 @@ if [[ $(id -u) == 0 ]]; then
   # we cannot change the owner of the volume mount point or make /var/lib a volume
   if [[ ! -L /var/lib/postgresql || ! -e /data/postgresql ]]; then
     mkdir -p /data/postgresql
-    rmdir /var/lib/postgresql
+    # The directory might not exist when debugging
+    if [[ -d /var/lib/postgresql ]]; then
+      rmdir /var/lib/postgresql
+    fi
     ln -sr /data/postgresql /var/lib/
     chown postgres:postgres /var/lib/postgresql
   fi
@@ -86,7 +89,6 @@ if [[ $(id -u) == 0 ]]; then
 fi
 
 export PATH="$PGBIN:$PATH"
-created_db=false
 updated_db=false
 postgres_auth_method=scram-sha-256
 
@@ -103,7 +105,6 @@ export PGPASSWORD
 # create the database if the version file is missing. This is also required when running pg_upgrade.
 if [[ ! -e $PGDATA/PG_VERSION ]]; then
   initdb --username="$PGUSER" --pwfile=<(printf "%s\n" "$PGPASSWORD")
-  created_db=true
 fi
 
 # check for older postgres databases and upgrade from them if possible
@@ -149,7 +150,7 @@ for data in $(find /var/lib/postgresql/ -mindepth 1 -maxdepth 1 -type d -not -na
 
     # start postgres and load current hba conf
     start_postgres
-    PGDATABASE='' process_sql --dbname postgres -c "SELECT pg_reload_conf()"
+    PGDATABASE='postgres' process_sql -c "SELECT pg_reload_conf()"
 
     # we need to retry loop here a bit because the k8s service, through which pgbackup must go, is probably not yet up
     for i in {1..60}; do
@@ -169,6 +170,12 @@ for data in $(find /var/lib/postgresql/ -mindepth 1 -maxdepth 1 -type d -not -na
     PGDATA=$old_pgdata
   fi
 
+  # PostgreSQL 18 defaults to checksums enabled and requires them when upgrading
+  # Enabling them is safe even if a failure happens according to the Notes in https://www.postgresql.org/docs/18/app-pgchecksums.html
+  if [[ $PGVERSION == 18 ]]; then
+    "$bindir/pg_checksums" --pgdata "$data" --enable --progress
+  fi
+
   # make sure the old pg_hba.conf contains valid entries for us
   echo -e "local  all  postgres  trust\nhost  all  backup  all  $postgres_auth_method\nhost  all  postgres  all  $postgres_auth_method\n" >"$data/pg_hba.conf"
 
@@ -178,7 +185,6 @@ for data in $(find /var/lib/postgresql/ -mindepth 1 -maxdepth 1 -type d -not -na
     --old-datadir "$data" --new-datadir "$PGDATA" \
     --old-bindir "$bindir" --new-bindir "$PGBIN"
 
-  created_db=false # database already exists at this point
   updated_db=true
   ./delete_old_cluster.sh
   # postgres 12 generates an additional shellscript which only contains vacuumdb like we run it below
@@ -194,45 +200,40 @@ echo -e "host  all  all  all  $PGAUTHMETHOD\n" >>"$PGDATA/pg_hba.conf"
 # update postgres.conf
 cp /etc/postgresql/postgresql.conf "$PGDATA/postgresql.conf"
 start_postgres
-PGDATABASE='' process_sql --dbname postgres -c "SELECT pg_reload_conf()"
+PGDATABASE='postgres' process_sql -c "SELECT pg_reload_conf()"
 
 # there might be some extensions which we need to enable
-if [[ -f /var/lib/postgresql/update_extensions.sql ]]; then
-  process_sql -f /var/lib/postgresql/update_extensions.sql
-  rm /var/lib/postgresql/update_extensions.sql
+if [[ -f $PGDATA/update_extensions.sql ]]; then
+  PGDATABASE='' process_sql -f "$PGDATA/update_extensions.sql"
+  rm "$PGDATA/update_extensions.sql"
 fi
 
-# run the recommended optimization by pg_upgrade to not mitigate performance decreases after an upgrade
+# run the recommended optimization by pg_upgrade to mitigate performance decreases after an upgrade
 if [[ $updated_db == true ]]; then
-  vacuumdb --all --analyze-in-stages
+  if [[ $PGVERSION -lt 18 ]]; then
+    vacuumdb --all --analyze-in-stages
+  else
+    vacuumdb --all --analyze-in-stages --missing-stats-only
+    vacuumdb --all --analyze-only
+  fi
+
+  PGDATABASE='postgres' process_sql -c "ALTER DATABASE \"template1\" REFRESH COLLATION VERSION"
+  PGDATABASE="$DB" process_sql -c "ALTER DATABASE \"$DB\" REFRESH COLLATION VERSION"
 fi
 
-# if a new db was initted, create the database inside of it and run init scripts
-if [[ $created_db == true ]]; then
-  # shellcheck disable=SC2097,SC2098 # false positive
-  PGDATABASE='' process_sql --dbname postgres --set db="$PGDATABASE" <<-'EOSQL'
-    CREATE DATABASE :"db";
-	EOSQL
-
-  for file in /sql-on-create.d/*.sql; do
-    echo "Processing $file ..."
-    process_sql -f <(substituteSqlEnvs "$file")
-    echo
-  done
-fi
-
-# ensure that the configured password matches the password in the database
-# this was required when upgrading the password hashing algorithm from md5 to scram-sha-256 which was the case when eg. updating from 9.5 to 15
-# this also allows password rotations with restarts
+# maintain password of superuser account "postgres" (this is required because this password is different on each run)
 PGDATABASE='' process_sql --dbname postgres --set user="$PGUSER" --set password_encryption="$postgres_auth_method" --set password="$PGPASSWORD" <<-'EOSQL'
   SET password_encryption = :'password_encryption';
   ALTER USER :user WITH PASSWORD :'password';
 EOSQL
 
-for file in /sql-on-startup.d/*.sql; do
-  echo "Processing $file ..."
-  process_sql -f <(substituteSqlEnvs "$file")
-  echo
+if [[ -f /sql-on-startup.d/phase1-system.sql ]]; then
+  echo "Processing /sql-on-startup.d/phase1-system.sql..."
+  PGDATABASE='postgres' process_sql -f <(substituteSqlEnvs /sql-on-startup.d/phase1-system.sql)
+fi
+for FILE in /sql-on-startup.d/phase2-*.sql; do
+  DB="$(basename "$FILE" | sed 's/^phase2-\(.*\)\.sql$/\1/')"
+  PGDATABASE="$DB" process_sql -f "$FILE"
 done
 
 # stop and exec later to properly attach to forward signals and stdout/stderr properly

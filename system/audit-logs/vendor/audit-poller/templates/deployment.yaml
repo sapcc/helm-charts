@@ -9,6 +9,8 @@ metadata:
     app.kubernetes.io/managed-by: {{ .Release.Service }}
 spec:
   replicas: 1
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app.kubernetes.io/name: audit-poller
@@ -86,5 +88,6 @@ spec:
           persistentVolumeClaim:
             claimName: audit-poller-pvc
           {{- else }}
-            emptyDir: {}
+          emptyDir:
+            sizeLimit: 50Mi
           {{- end }}

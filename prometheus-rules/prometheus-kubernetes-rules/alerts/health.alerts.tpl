@@ -2,22 +2,6 @@
 groups:
 - name: kubernetes.alerts
   rules:
-  - alert: KubernetesNodeManyNotReady
-    expr: count((kube_node_status_condition{condition="Ready",status="true"} unless on (node) (kube_node_labels{label_cloud_sap_maintenance_state="in-maintenance"} or kube_node_labels{label_kubernetes_cloud_sap_role="storage"})) == 0) > 4
-    for: 1h
-    labels:
-      tier: {{ required ".Values.tier missing" .Values.tier }}
-      support_group: {{ required ".Values.supportGroup missing" .Values.supportGroup }}
-      service: {{ required ".Values.service missing" .Values.service }}
-      severity: critical
-      context: node
-      meta: "{{`{{ $value }}`}} nodes NotReady"
-      dashboard: kubernetes-health
-      playbook: docs/support/playbook/kubernetes/k8s_node_not_ready
-    annotations:
-      summary: Many Nodes are NotReady
-      description: "{{`{{ $value }}`}} nodes are NotReady for more than an hour"
-
   - alert: KubernetesNodeNotReady
     expr: sum by(node) (kube_node_status_condition{condition="Ready",status="true"} == 0)
     for: 1h
@@ -34,6 +18,37 @@ groups:
     annotations:
       summary: Node status is NotReady
       description: Node {{`{{ $labels.node }}`}} is NotReady for more than an hour
+
+  # Duplicated from maintenance.alerts. It has multiple occurrences; make sure you change all of them if you modify this. 
+  - alert: NodeInMaintenance
+    expr: max by (node) (kube_node_labels{label_cloud_sap_maintenance_state="in-maintenance"}) == 1
+    for: 2m
+    labels:
+      tier: {{ required ".Values.tier missing" .Values.tier }}
+      support_group: {{ required ".Values.supportGroup missing" .Values.supportGroup }}
+      service: {{ required ".Values.service missing" .Values.service }}
+      severity: none
+      context: node
+      meta: "Node {{`{{ $labels.node }}`}} is in maintenance."
+    annotations:
+      summary: Node in maintenance
+      description: "Node {{`{{ $labels.node }}`}} is in scheduled maintenance. Add the label `inhibited_by: node-maintenance` to alerts that should be inhibited while a node is in maintenance"
+
+  - alert: KubernetesNodeManyNotReady
+    expr: count((kube_node_status_condition{condition="Ready",status="true"} unless on (node) (kube_node_labels{label_cloud_sap_maintenance_state="in-maintenance"} or kube_node_labels{label_kubernetes_cloud_sap_role="storage"})) == 0) > 4
+    for: 1h
+    labels:
+      tier: {{ required ".Values.tier missing" .Values.tier }}
+      support_group: {{ required ".Values.supportGroup missing" .Values.supportGroup }}
+      service: {{ required ".Values.service missing" .Values.service }}
+      severity: critical
+      context: node
+      meta: "{{`{{ $value }}`}} nodes NotReady"
+      dashboard: kubernetes-health
+      playbook: docs/support/playbook/kubernetes/k8s_node_not_ready
+    annotations:
+      summary: Many Nodes are NotReady
+      description: "{{`{{ $value }}`}} nodes are NotReady for more than an hour"
 
   - alert: KubernetesNodeNotReadyFlapping
     expr: changes(kube_node_status_condition{condition="Ready",status="true"}[15m]) > 2
@@ -79,8 +94,8 @@ groups:
       description: Container {{`{{ $labels.container }}`}} of pod {{`{{ $labels.namespace }}`}}/{{`{{ $labels.pod }}`}} is restarting constantly.{{`{{ if eq $labels.support_group "containers"}}`}} Is `owner-info` set --> Contact respective service owner! If not, try finding him/her and make sure, `owner-info` is set!{{`{{ end }}`}}
       summary: Pod is in a restart loop
 
-  - alert: KubernetesPodCannotPullImage
-    expr: label_replace((sum by(pod_name, namespace) (rate(kube_pod_image_pull_backoff_total[15m]))), "pod", "$1", "pod_name", "(.*)") * on (pod) group_left(label_alert_tier, label_alert_service, label_ccloud_support_group, label_ccloud_service) (max without (uid) (kube_pod_labels)) > 0
+  - alert: KubernetesPodCannotPullContainerImage
+    expr: max by (namespace, pod) (kube_pod_container_status_waiting_reason{reason="ImagePullBackOff"} == 1) * on (namespace, pod) group_left(label_alert_tier, label_alert_service, label_ccloud_support_group, label_ccloud_service) (max without (uid) (kube_pod_labels)) > 0
     for: 1h
     labels:
       tier: {{ include "alertTierLabelOrDefault" .Values.tier }}
@@ -88,10 +103,24 @@ groups:
       support_group: {{ include "supportGroupFromLabelsOrDefault" .Values.supportGroup }}
       severity: warning
       context: pod
-      meta: "Pod {{`{{ $labels.namespace }}`}}/{{`{{ $labels.pod }}`}} cannot pull all images"
+      meta: "Pod {{`{{ $labels.namespace }}`}}/{{`{{ $labels.pod }}`}} cannot pull all container images"
     annotations:
-      description: The pod {{`{{ $labels.namespace }}`}}/{{`{{ $labels.pod }}`}} cannot pull all images.{{`{{ if eq $labels.support_group "containers"}}`}} Is `owner-info` set --> Contact respective service owner! If not, try finding him/her and make sure, `owner-info` is set!{{`{{ end }}`}}
-      summary: Pod cannot pull all iamges
+      description: The pod {{`{{ $labels.namespace }}`}}/{{`{{ $labels.pod }}`}} cannot pull all container images.{{`{{ if eq $labels.support_group "containers"}}`}} Is `owner-info` set --> Contact respective service owner! If not, try finding him/her and make sure, `owner-info` is set!{{`{{ end }}`}}
+      summary: Pod cannot pull all container images
+
+  - alert: KubernetesPodCannotPullInitContainerImage
+    expr: max by (namespace, pod) (kube_pod_init_container_status_waiting_reason{reason="ImagePullBackOff"} == 1) * on (namespace, pod) group_left(label_alert_tier, label_alert_service, label_ccloud_support_group, label_ccloud_service) (max without (uid) (kube_pod_labels)) > 0
+    for: 1h
+    labels:
+      tier: {{ include "alertTierLabelOrDefault" .Values.tier }}
+      service: {{ include "serviceFromLabelsOrDefault" "k8s" }}
+      support_group: {{ include "supportGroupFromLabelsOrDefault" .Values.supportGroup }}
+      severity: warning
+      context: pod
+      meta: "Pod {{`{{ $labels.namespace }}`}}/{{`{{ $labels.pod }}`}} cannot pull all init container images"
+    annotations:
+      description: The pod {{`{{ $labels.namespace }}`}}/{{`{{ $labels.pod }}`}} cannot pull all init container images.{{`{{ if eq $labels.support_group "containers"}}`}} Is `owner-info` set --> Contact respective service owner! If not, try finding him/her and make sure, `owner-info` is set!{{`{{ end }}`}}
+      summary: Pod cannot pull all init container images
 
   - alert: KubernetesTooManyOpenFiles
     expr: 100*process_open_fds{job=~"kubernetes-kubelet|kubernetes-apiserver"} / process_max_fds > 50
@@ -134,6 +163,20 @@ groups:
     annotations:
       description: "The pod {{`{{ $labels.namespace }}`}}/{{`{{ $labels.pod }}`}} is not ready for more then 2h."
       summary: "Pod not ready for a long time"
+
+  - alert: PodNotSchedulable
+    expr: max by (namespace, pod) (kube_pod_status_unschedulable > 0) * on (namespace, pod) group_left(label_alert_tier, label_alert_service, label_ccloud_support_group, label_ccloud_service) (max without (uid) (kube_pod_labels))
+    for: 1h
+    labels:
+      tier: {{ include "alertTierLabelOrDefault" .Values.tier }}
+      service: {{ include "serviceFromLabelsOrDefault" "k8s" }}
+      support_group: {{ include "supportGroupFromLabelsOrDefault" .Values.supportGroup }}
+      severity: warning
+      context: pod
+      meta: "Pod {{`{{ $labels.namespace }}`}}/{{`{{ $labels.pod }}`}} cannot be scheduled"
+    annotations:
+      description: The pod {{`{{ $labels.namespace }}`}}/{{`{{ $labels.pod }}`}} cannot be scheduled. Check its event log with "kubectl describe pod" to see why.{{`{{ if eq $labels.support_group "containers"}}`}} Is `owner-info` set --> Contact respective service owner! If not, try finding him/her and make sure, `owner-info` is set!{{`{{ end }}`}}
+      summary: Pod cannot pull all container images
 
   - alert: PrometheusMultiplePodScrapes
     expr: sum by(pod, namespace, label_alert_service, label_alert_tier, label_ccloud_service, label_ccloud_support_group) (label_replace((up * on(instance) group_left() (sum by(instance) (up{job=~".*pod-sd"}) > 1)* on(pod) group_left(label_alert_tier, label_alert_service, label_ccloud_support_group, label_ccloud_service) (max without(uid) (kube_pod_labels))) , "pod", "$1", "kubernetes_pod_name", "(.*)-[0-9a-f]{8,10}-[a-z0-9]{5}"))

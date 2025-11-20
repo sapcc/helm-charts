@@ -1,5 +1,5 @@
 [DEFAULT]
-transport_url = rabbit://{{ .Values.rabbitmq.users.default.user | default "rabbitmq" | include "resolve_secret_urlquery" }}:{{ .Values.rabbitmq.users.default.password | include "resolve_secret_urlquery" }}@{{ include "rabbitmq_host" . }}:{{ .Values.rabbitmq.port | default 5672 }}/
+{{- template "ini_sections.default_transport_url" . }}
 
 [keystone_authtoken]
 username = {{ .Values.global.designate_service_user | default "designate" }}
@@ -11,3 +11,6 @@ password = {{ .Values.global.designate_service_password | include "resolve_secre
 {{ include "designate.db_url" . }}
 
 {{ include "ini_sections.audit_middleware_notifications" . }}
+
+# Tracing
+{{- include "osprofiler" . }}

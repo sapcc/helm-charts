@@ -14,6 +14,7 @@ adminrole:
   reserved: false
   users:
   -  "admin"
+  -  "admin2"
   backend_roles:
   - CC_IAS_TEAM_SUPERVISION
 
@@ -21,21 +22,19 @@ data:
   reserved: false
   users:
   - "data"
+  - "data2"
 
-syslog:
+audit:
   reserved: false
   users:
-  - "syslog"
-
-greenhouse:
-  reserved: false
-  users:
-  - "greenhouse"
+  - "audit"
+  - "audit2"
 
 jump:
   reserved: false
   users:
   - "jump"
+  - "jump2"
 
 logstash:
   reserved: false
@@ -46,31 +45,31 @@ storage:
   reserved: false
   users:
   - "storage"
+  - "storage2"
 
 compute:
   reserved: false
   users:
   - "compute"
+  - "compute2"
+
+awx:
+  reserved: false
+  users:
+  - "awx"
+  - "awx2"
 
 otel:
   reserved: false
   users:
   - "otel"
-
-otellogs:
-  reserved: false
-  users:
-  - "otellogs"
-
-otelstorage:
-  reserved: false
-  users:
-  - "otelstorage"
+  - "otel2"
 
 jaeger:
   reserved: false
   users:
   - "jaeger"
+  - "jaeger2"
 
 complex-role:
   reserved: false
@@ -80,11 +79,6 @@ complex-role:
 
 kibana_user:
   reserved: false
-  backend_roles:
-  - CC_IAS_OPERATIONS_UI_KIBANA_SUPPORT
-
-ml_full_access:
-  reserved: true
   backend_roles:
   - CC_IAS_OPERATIONS_UI_KIBANA_SUPPORT
 
@@ -102,18 +96,15 @@ kibana_server:
   reserved: true
   users:
   - "kibanaserver"
+  - "kibanaserver2"
 
 promrole:
   reserved: false
   users:
   - "promuser"
-  backend_roles:
-  - CC_IAS_OPERATIONS_UI_KIBANA_SUPPORT
-
-oraboskvmrole:
-  reserved: false
-  users:
-  - "oraboskvm"
+  - "promuser2"
+  - "ronly"
+  - "ronly2"
   backend_roles:
   - CC_IAS_OPERATIONS_UI_KIBANA_SUPPORT
 
@@ -121,8 +112,26 @@ jupyterhub:
   reserved: false
   users:
   - "jupyterhub"
+  - "jupyterhub2"
 
 maillog:
   reserved: false
   users:
   - "maillog"
+  - "maillog2"
+
+oraboskvmrole:
+  reserved: false	
+  users:
+  - "oraboskvm"
+  - "oraboskvm2"
+
+syslog:
+  reserved: false
+  users:
+  - "syslog"
+  - "syslog2"
+
+anonymous_health_role:
+  backend_roles:
+  - "opendistro_security_anonymous_backendrole"

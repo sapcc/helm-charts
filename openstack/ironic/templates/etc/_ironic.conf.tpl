@@ -2,12 +2,6 @@
 log_config_append = /etc/ironic/logging.ini
 {{- include "ini_sections.logging_format" . }}
 
-{{- if contains "xena" .Values.imageVersion }}
-pybasedir = /var/lib/openstack/lib/python3.8/site-packages/ironic
-{{- else }}
-pybasedir = /var/lib/openstack/lib/python3.6/site-packages/ironic
-{{- end }}
-
 network_provider = neutron_plugin
 enabled_network_interfaces = noop,flat,neutron
 default_network_interface = neutron
@@ -16,7 +10,7 @@ notification_level = {{ .Values.notification_level }}
 versioned_notifications_topics = {{ .Values.versioned_notifications_topics  | default "ironic_versioned_notifications" | quote }}
 {{- end }}
 
-{{- include "ini_sections.default_transport_url" . }}
+
 
 rpc_response_timeout = {{ .Values.rpc_response_timeout | default .Values.global.rpc_response_timeout | default 100 }}
 executor_thread_pool_size = {{ .Values.rpc_workers | default .Values.global.rpc_workers | default 64 }}
@@ -120,23 +114,27 @@ port_setup_delay = {{ .Values.neutron_port_setup_delay }}
 [oslo_middleware]
 enable_proxy_headers_parsing = True
 
-{{- if .Values.watcher.enabled }}
-[watcher]
-enabled = true
-service_type = baremetal
-config_file = /etc/ironic/watcher.yaml
-{{ end }}
-
-{{ if .Values.audit.enabled }}
+{{ if .Values.audit.enabled -}}
 [audit]
 enabled = True
 audit_map_file = /etc/ironic/api_audit_map.yaml
 ignore_req_list = GET, HEAD
 record_payloads = {{ if .Values.audit.record_payloads -}}True{{- else -}}False{{- end }}
 metrics_enabled = {{ if .Values.audit.metrics_enabled -}}True{{- else -}}False{{- end }}
-
 {{- end }}
 
-{{- include "osprofiler" . }}
 
 {{- include "ini_sections.cache" . }}
+
+
+[conductor]
+{{- if or .Values.conductor.defaults.conductor.permitted_image_formats .Values.conductor.defaults.conductor.disable_deep_image_inspection }}
+  {{- if .Values.conductor.defaults.conductor.disable_deep_image_inspection }}
+disable_deep_image_inspection = {{ .Values.conductor.defaults.conductor.disable_deep_image_inspection }}
+  {{- end }}
+  {{- if .Values.conductor.defaults.conductor.permitted_image_formats }}
+permitted_image_formats = {{ .Values.conductor.defaults.conductor.permitted_image_formats }}
+  {{- end }}
+{{- end }}
+# Make sure to set it in api and conductor
+max_concurrent_clean = {{ .Values.conductor.defaults.conductor.max_concurrent_clean }}

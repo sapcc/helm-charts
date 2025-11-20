@@ -1,3 +1,16 @@
+## 6.7.3 
+
+* Prometheus bump to v2.55.1
+* Thanos bump to v0.37.2
+
+## 6.6.2
+
+* another fix for ThanosStoreSeriesGateLatencyHigh 
+
+## 6.6.1
+
+* fixed missing metric for ThanosStoreSeriesGateLatencyHigh alert 
+
 ## 6.5.8
 
 * Adapting swift credential for kvv2 vault

@@ -15,6 +15,7 @@ owner-info:
 global:
   ironicApiPortInternal: "6385"
   #ironic_tftp_ip: null
+  ironicServiceUser: ironic
   ironictftpPortPublic: "69"
   ironic_pxe_port_public: "69"
   osprofiler: {}
@@ -33,8 +34,12 @@ debug: "True"
 kos_conductor: true
 
 cert_robot:
+  bmc_certrobot_username: ipmi_dummy_user
+  bmc_certrobot_passwd: null
+  netbox_url: null
   image_tag: "latest"
-  schedule: "0 8 * * 1,3,5" # Monday, Wednesday, and Friday at 8:00 (am)
+  schedule: "13 8,14 * * 1-5" # Monday till Friday at 8:13 and 14:13
+  timezone: "Etc/UTC"
   env:
     issuer:
     designate:
@@ -207,9 +212,12 @@ conductor:
       uefi_pxe_bootfile_name: "ipxe.efi"
       uefi_ipxe_bootfile_name: "ipxe.efi"
     redfish:
-      swift_object_expiry_timeout: "5400"
+      use_swift: false
     conductor:
+      conductor_always_validates_images: false # We only use the direct interface, so leave it to the agent
       permitted_image_formats: 'raw,qcow2,iso,vmdk'
+      # HDA has a parallelism of 50 nodes, we give a buffer of 10
+      max_concurrent_clean: 60
 
 agent:
   deploy_logs:
@@ -227,8 +235,8 @@ tftp_files:
 
 portmetrics: "9102"
 
-#network_management_uuid: DEFINE_IN_REGION_CHART
-#network_cleaning_uuid: DEFINE_IN_REGION_CHART
+#network_management_uuid: null
+#network_cleaning_uuid: null
 neutron_url_timeout: 210
 neutron_port_setup_delay: 0
 neutron_connect_retries: 3
@@ -272,13 +280,13 @@ mysql_metrics:
         - "name"
         - "provision_state"
       query: |
-        SELECT 
-          uuid, 
-          name, 
+        SELECT
+          uuid,
+          name,
           provision_state,
           COUNT(*) AS in_24hrs_gauge
-        FROM nodes 
-        WHERE updated_at >= NOW() - INTERVAL 1 DAY 
+        FROM nodes
+        WHERE updated_at >= NOW() - INTERVAL 1 DAY
         GROUP BY uuid, provision_state, name;
       values:
         - "in_24hrs_gauge"
@@ -291,10 +299,10 @@ mysql_metrics:
       values:
         - "node_not_in_maint"
       query: |
-        SELECT 
-          COUNT(case when maintenance = 0 then 1 end) AS node_not_in_maint, 
-          uuid, 
-          name, 
+        SELECT
+          COUNT(case when maintenance = 0 then 1 end) AS node_not_in_maint,
+          uuid,
+          name,
           COALESCE(maintenance_reason,'reason unknown') AS maintenance_reason
         FROM nodes
         GROUP BY
@@ -310,10 +318,10 @@ mysql_metrics:
       values:
         - "node_in_maint"
       query: |
-        SELECT 
-          COUNT(case when maintenance = 1 then 1 end) AS node_in_maint, 
-          uuid, 
-          name, 
+        SELECT
+          COUNT(case when maintenance = 1 then 1 end) AS node_in_maint,
+          uuid,
+          name,
           COALESCE(maintenance_reason,'reason unknown') AS maintenance_reason
         FROM nodes
         GROUP BY
@@ -327,21 +335,24 @@ mysql_metrics:
         - "name"
         - "conductor_group"
       query: |
-        SELECT 
-          uuid, 
-          name, 
+        SELECT
+          uuid,
+          name,
           conductor_group,
           COUNT(conductor_group) AS groups
         FROM nodes
-        GROUP BY 
-          name, 
-          uuid, 
+        GROUP BY
+          name,
+          uuid,
           conductor_group;
       values:
         - "groups"
 
 proxysql:
   mode: ""
+  native_sidecar: true
+
+dbType: "mariadb"
 
 mariadb:
   enabled: true
@@ -372,13 +383,44 @@ mariadb:
     verify_tables:
       - ironic.nodes
       - ironic_inspector.nodes
-
-  root_password: "AHardPa55w0rd!"
+  root_password: null
   initdb_secret: true
   ccroot_user:
     enabled: true
   persistence_claim:
     name: db-ironic-pvclaim
+
+pxc_db:
+  alerts:
+    support_group: foundation
+  enabled: false
+  name: ironic
+  initdb_job: true
+  ccroot_user:
+    enabled: true
+  databases:
+    - ironic
+    - ironic_inspector
+  users:
+    ironic:
+      name: ironic
+      grants:
+        - "ALL PRIVILEGES on ironic.*"
+    ironic_inspector:
+      name: ironic_inspector
+      grants:
+        - "ALL PRIVILEGES on ironic_inspector.*"
+  pxc:
+    persistence:
+      size: 10Gi
+  backup:
+    enabled: true
+    s3:
+      secrets:
+        aws_access_key_id: null
+        aws_secret_access_key: null
+    pitr:
+      enabled: true
 
 dbName: ironic
 #dbPassword: null
@@ -400,6 +442,7 @@ rabbitmq:
     support_group: foundation
   metrics:
     enabled: true
+    addMetricsUser: true
     sidecar:
       enabled: false
 
@@ -440,10 +483,10 @@ watcher:
 audit:
   central_service:
     user: rabbitmq
-    password: DEFINED-IN-SECRETS
-  enabled: false
+    password: null
+  enabled: true
   # how many messages to buffer before dumping to log (when rabbit is down or too slow)
-  mem_queue_size: 100
+  mem_queue_size: 1000
   record_payloads: false
   metrics_enabled: true
 
@@ -472,9 +515,3 @@ alerts:
 utils:
   trust_bundle:
     enabled: true
-
-ironic-exporter:
-  enabled: true
-  notifications: false
-  image:
-    tag: cd8c3866

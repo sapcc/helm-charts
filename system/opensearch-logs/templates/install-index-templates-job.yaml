@@ -7,6 +7,8 @@ metadata:
     app.kubernetes.io/instance: {{ .Release.Name | quote }}
     app.kubernetes.io/version: {{ .Chart.AppVersion }}
     helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    ccloud/service: logs
+    ccloud/support-group: observability
   annotations:
     # This is what defines this resource as a hook. Without this line, the
     # job is considered part of the release.
@@ -21,6 +23,15 @@ spec:
         app.kubernetes.io/instance: {{ .Release.Name | quote }}
         helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
     spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: ccloud.sap.com/nodepool
+                operator: In
+                values:
+                - {{ .Values.global.nodepool }}
       restartPolicy: Never
       containers:
       - name: install-index-templates 
@@ -39,6 +50,16 @@ spec:
               secretKeyRef:
                 name: cron-secrets
                 key: ADMIN_PASSWORD
+          - name: ADMIN2_USER
+            valueFrom:
+              secretKeyRef:
+                name: cron-secrets
+                key: ADMIN2_USER
+          - name: ADMIN2_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: cron-secrets
+                key: ADMIN2_PASSWORD
           - name: CLUSTER_HOST
             value: "https://opensearch-logs-client.{{ .Values.global.clusterType }}.{{ .Values.global.region }}.{{ .Values.global.tld }}:{{ .Values.httpPort }}"
           - name: RETENTION_NAME

@@ -20,6 +20,7 @@ spec:
   template:
     metadata:
       annotations:
+        kubectl.kubernetes.io/default-container: neutron-metadata-agent
         configmap-etc-hash: {{ include (print .Template.BasePath "/configmap-etc.yaml") $ | sha256sum }}
         {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
       labels:
@@ -41,11 +42,7 @@ spec:
           imagePullPolicy: IfNotPresent
           command: ["dumb-init", "bash", "-c", "echo -e \"[DEFAULT]\\nhost = $NODE_NAME\\n\" > /run/hostname.conf && exec neutron-metadata-agent --config-file /etc/neutron/neutron.conf --config-dir /etc/neutron/secrets/ --config-file /etc/neutron/metadata-agent.ini --config-file /run/hostname.conf"]
           env:
-            - name: SENTRY_DSN
-              valueFrom:
-                secretKeyRef:
-                  name: sentry
-                  key: neutron.DSN.python
+            {{- include "utils.sentry_config" . | nindent 12 }}
             - name: DEBUG_CONTAINER
               value: "false"
             - name: NODE_NAME

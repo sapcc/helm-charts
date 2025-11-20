@@ -1,24 +1,25 @@
+{{- range tuple "udp" "tcp"}}
+{{- $proto := . }}
+---
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ .Values.unbound.name }}
+  name: {{ $.Values.unbound.name }}-{{ $proto }}
   annotations:
-    prometheus.io/scrape: "true"
-    prometheus.io/port: "{{.Values.unbound.port_unbound_exporter}}"
-    prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
     parrot.sap.cc/announce: 'true'
     service.alpha.kubernetes.io/reject-traffic-on-external-ip: "false"
 spec:
+  type: LoadBalancer
+  externalTrafficPolicy: Local
   selector:
-    app: {{ .Values.unbound.name }}
+    app: {{ $.Values.unbound.name }}
     type: dns
-  ports: 
-    - name: dns-tcp
-      protocol: TCP
-      port: 53
-      targetPort: dns-tcp
-    - name: dns-udp
-      protocol: UDP
-      port: 53
-      targetPort: dns-udp
-  externalIPs: ["{{ required "A valid .Values.unbound.externalIP required!" .Values.unbound.externalIP }}"]
+  ports:
+{{- range $.Values.unbound.externalPorts | required "$.Values.unbound.externalPorts missing" }}
+    - name: dns-{{ $proto }}-{{.}}
+      protocol: {{ $proto | upper }}
+      port: {{.}}
+{{- end }}
+  externalIPs:
+    {{- required "A valid $.Values.unbound.externalIPs required!" $.Values.unbound.externalIPs | toYaml | nindent 2 }}
+{{- end }}

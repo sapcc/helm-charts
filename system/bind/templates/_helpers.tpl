@@ -28,3 +28,17 @@ Create chart name and version as used by the chart label.
                 values:
                 - reinstalling
 {{- end }}
+
+{{/*
+Convert the supplied secret_env structure into a name: value list
+used by envFrom.secretRef.
+*/}}
+{{- define "setup_secret_env" -}}
+{{- if . }}
+{{- range . }}
+{{ .name }}: {{ .value | include "resolve_secret" | b64enc }}
+{{- end }}
+{{- else }}
+{}
+{{- end }}
+{{- end }}

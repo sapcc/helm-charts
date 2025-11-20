@@ -24,7 +24,7 @@ groups:
       summary: 'octobus-logs-query-exporter had an error in the pod log.'
 
   - alert: OpenstackGlanceReturn50xCode
-    expr: sum(rate(elasticsearch_openstack_glance_query_return_code_doc_count{glance="/v2/images", code=~"50.*"}[30m]))by(query, code) > 0
+    expr: sum(rate(opensearch_openstack_glance_query_return_code_doc_count{glance="/v2/images", code=~"50.*"}[30m]))by(query, code) > 0
     for: 5m
     labels:
       context: nodes
@@ -37,7 +37,7 @@ groups:
       summary: 'Openstack Glance Returned HTTP {{ $labels.query }} {{ $labels.code }}'
 
   - alert: EsxRootPasswordWrong
-    expr: elasticsearch_esxi_exporter_login_error_container_name_doc_count > 0
+    expr: opensearch_esxi_exporter_login_error_container_name_doc_count > 0
     for: 5m
     labels:
       severity: info
@@ -65,14 +65,14 @@ groups:
       summary: 'cluster: *{{ $labels.elastic_cluster }}* opensearch-logs-query-exporter in `{{ $labels.region }}` is missing.'
 
   - alert: SrcSiemRulesUpdaterLogError
-    expr: elasticsearch_siem_error_doc_count > 0
+    expr: opensearch_siem_error_doc_count > 0
     labels:
       context: nodes
       service: logs
       severity: warning
       support_group: src
       tier: os
-      kibana: "goto/4ad456d9ae56ecb44336662641c67935"
+      kibana: "goto/5067aac2f56824b074d3874a2c422783"
       no_alert_on_absence: "true"
     annotations:
       description: 'The siem-rules-updater service pod has error logs.'
@@ -91,3 +91,29 @@ groups:
     annotations:
       description: "Exception while applying properties to promoted Replica"
       summary: "Exception while applying properties to promoted Replica"
+
+  - alert: CronusLogsComplianceViolation
+    expr: opensearch_logs_cronus_old_logs_hits > 0
+    for: 5m
+    labels:
+      context: compliance
+      service: cronus
+      severity: warning
+      tier: os
+      support_group: email
+    annotations:
+      description: 'Cronus logs older than 30 days found in {{ $labels.region }}.'
+      summary: 'Cronus logs compliance violation'
+
+  - alert: MaillogComplianceViolation
+    expr: opensearch_logs_maillog_old_logs_hits > 0
+    for: 5m
+    labels:
+      context: compliance
+      service: maillog
+      severity: warning
+      tier: os
+      support_group: email
+    annotations:
+      description: 'Maillog entries older than 30 days found in {{ $labels.region }}.'
+      summary: 'Maillog compliance violation'

@@ -6,7 +6,7 @@ global:
   dbUser: cinder
   domain_seeds:
     skip_hcm_domain: false
- 
+
   linkerd_requested: true
   osprofiler: {}
   imagePullPolicy: IfNotPresent
@@ -47,7 +47,6 @@ sentry:
 
 port_metrics: 9102
 
-vmware_host_username: m3cinderapiuser@vsphere.local
 backend_defaults:
   reserved_percentage: 20
   suppress_requests_ssl_warnings: True
@@ -110,8 +109,40 @@ sap_allow_independent_clone: True
 
 rpc_ping_enabled: true
 
+nanny:
+  lockfiles:
+    enabled: false
+    # daily at 22:00' 
+    crontab_schedule: '0 22 * * *' 
+    verbose: false
+    batch_size: 10000
+    dry_run: true
+  db_purge:
+    enabled: false
+    # daily at 22:10' 
+    crontab_schedule: '10 22 * * *' 
+    age_in_days: 14
+  quota_sync:
+    enabled: false
+    # hourly at 30 minutes past the hour
+    crontab_schedule: '30 * * * *' 
+    dry_run: false
+    silent: false
+  consistency:
+    enabled: false
+    # weekly at sunday 22:20'
+    crontab_schedule: '20 22 * * 0' 
+    # Inconsistencies to fix. Be careful, all options except
+    # error_deleting_snapshots/volumes will manipulate the database
+    # without using the cinder API - which may causes harm.
+    fix: 'error_deleting_snapshots,error_deleting_volumes' 
+    # Number of orphaned volumes to fix in one run. Orphaned volumes not fixed
+    # by default. Thus set to null by default.
+    fix_limit: null
+
 proxysql:
-  mode: null # Disabled by default
+  mode: null  # Disabled by default
+  native_sidecar: true
 
 mariadb:
   enabled: true
@@ -129,7 +160,6 @@ mariadb:
       password: null
       grants:
       - "ALL PRIVILEGES on cinder.*"
-  initdb_secret: true
   persistence_claim:
     name: db-cinder-pvclaim
   extraConfigFiles:
@@ -138,6 +168,45 @@ mariadb:
       connect_timeout = 15
   alerts:
     support_group: compute-storage-api
+  job:
+    maintenance:
+      enabled: false
+      function:
+        analyzeTable:
+          enabled: true
+          allTables: true
+
+pxc_db:
+  enabled: false
+  name: cinder
+  alerts:
+    support_group: compute-storage-api
+  ccroot_user:
+    enabled: true
+  databases:
+    - cinder
+  users:
+    cinder:
+      name: cinder
+      grants:
+        - "ALL PRIVILEGES on cinder.*"
+  pxc:
+    configuration:
+      options:
+        max_connections: "2048"
+        innodb_buffer_pool_size: "2048M"
+        innodb_log_file_size: "512M"
+        connect_timeout: "15"
+    persistence:
+      size: 10Gi
+  backup:
+    enabled: true
+    s3:
+      secrets:
+        aws_access_key_id: null
+        aws_secret_access_key: null
+    pitr:
+      enabled: true
 
 max_pool_size: 15
 max_overflow: 5
@@ -306,8 +375,6 @@ mysql_metrics:
 
 audit:
   enabled: false
-  # how many messages to buffer before dumping to log (when rabbit is down or too slow)
-  mem_queue_size: 1000
   record_payloads: false
   metrics_enabled: true
   central_service:
@@ -324,10 +391,11 @@ rabbitmq:
     support_group: compute-storage-api
   metrics:
     enabled: true
+    addMetricsUser: true
     sidecar:
       enabled: false
   enableDetailedMetrics: true
-  enablePerObjectMetrics: true 
+  enablePerObjectMetrics: true
 rabbitmq_notifications:
   name: cinder
 logging:
@@ -372,12 +440,23 @@ logging:
 # openstack-rate-limit-middleware
 api_rate_limit:
   enabled: false
+  backend_secret_file: /etc/cinder/ratelimit-backend-secret.conf
   rate_limit_by: "target_project_id"
   max_sleep_time_seconds: 15
   log_sleep_time_seconds: 10
   backend_timeout_seconds: 15
   project_whitelist: []
 
+# Configuration for custom resource CinderNetappConfig used by
+# kvm-cinder-netapp-operator. Should be enabled only if operator is
+# deployed. The operator deploys the cinder-volume services for NetApp
+# backends and should use a cinder image identical to the one used by this 
+# helm chart.
+cindernetappconfig:
+  enabled: false
+  # template for matching volumes from netapp filer
+  volumeregextemplate: "(^cinder_|^nfs_{{FilerName}}_).*"
+  
 # openstack-watcher-middleware
 watcher:
   enabled: true
@@ -385,7 +464,8 @@ watcher:
 # Deploy Cinder Prometheus alerts.
 alerts:
   enabled: true
-  # Name of the Prometheus to which the alerts should be assigned to.
+  # Used for annotation (prometheus.io/targets) value to route metric
+  # scraping to the correct prometheus instance
   prometheus: openstack
 
 cors:
@@ -406,3 +486,9 @@ owner-info:
   helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/openstack/cinder
 
 coordinationBackend: "file"
+
+api-ratelimit-redis:
+  alerts:
+    support_group: compute-storage-api
+
+manage_service_user_passwords: false

@@ -1,0 +1,95 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "andromeda.fullname" . }}-reports-akamai
+  annotations:
+    secret.reloader.stakater.com/reload: "andromeda-secret"
+  labels:
+{{ include "andromeda.labels" . | indent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "andromeda.fullname" . }}-reports-akamai
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "andromeda.fullname" . }}-reports-akamai
+        app.kubernetes.io/instance: {{ .Release.Name }}
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/targets: openstack
+        checksum/etc: {{ include (print $.Template.BasePath  "/configmap.yaml") . | sha256sum }}
+        checksum/etc-akamai: {{ include (print $.Template.BasePath  "/configmap-akamai.yaml") . | sha256sum }}
+    spec:
+      serviceAccountName: {{ template "andromeda.serviceAccountName" . }}
+      initContainers:
+        - name: wait-for-server
+          image: "{{ .Values.global.registry }}/kubernetes-entrypoint:{{ .Values.image.kubernetes_entrypoint_version }}"
+          env:
+            - name: NAMESPACE
+              value: "{{ .Release.Namespace }}"
+            - name: DEPENDENCY_SERVICE
+              value: {{ include "andromeda.fullname" . }}-nats,{{ include "andromeda.fullname" . }}-server
+            - name: COMMAND
+              value: "true"
+      containers:
+      - name: {{ .Chart.Name }}-akamai-reports
+        securityContext:
+          {{- toYaml .Values.securityContext | nindent 12 }}
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        command: ["/usr/bin/andromeda-akamai-reports"]
+        args: ["--config-file", "/etc/andromeda/andromeda.yaml", "--config-file", "/etc/andromeda/akamai.yaml"]
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        env:
+          - name: AKAMAI_LOG
+            value: info
+          - name: GOMEMLIMIT
+            valueFrom:
+              resourceFieldRef:
+                containerName: {{ .Chart.Name }}-akamai-reports
+                resource: limits.memory
+          - name: GOMAXPROCS
+            valueFrom:
+              resourceFieldRef:
+                containerName: {{ .Chart.Name }}-akamai-reports
+                resource: limits.cpu
+          - name: SENTRY_DSN
+            valueFrom:
+              secretKeyRef:
+                name: sentry
+                key: {{ include "andromeda.fullname" . }}.DSN
+        ports:
+          - containerPort: 9090
+            name: metrics
+            protocol: TCP
+        resources:
+          {{- toYaml .Values.resources | nindent 12 }}
+        volumeMounts:
+          - name: etc-andromeda
+            mountPath: /etc/andromeda
+            readOnly: true
+      volumes:
+      - name: etc-edgerc-secret
+        secret:
+          secretName: edgerc
+      - name: etc-andromeda
+        projected:
+          defaultMode: 420
+          sources:
+            - configMap:
+                name: andromeda-etc
+                items:
+                  - key: andromeda.yaml
+                    path: andromeda.yaml
+            - configMap:
+                name: andromeda-etc-akamai
+                items:
+                  - key: akamai.yaml
+                    path: akamai.yaml
+            - secret:
+                name: andromeda-secret
+                items:
+                  - key: edgerc
+                    path: edgerc.conf

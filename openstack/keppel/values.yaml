@@ -34,20 +34,22 @@ keppel:
   # The `healthcheck_account` is only needed for anycast monitoring.
   peers: []
 
+  # The name of the peer group. This is used to find the issuer key for the respective anycast API in Vault.
+  peer_group: ""
+
   # anycast domain name shared between all Keppel instances in the same peer group
   # (Keppel does not care about how the anycasting works exactly; it just means
   # that all Keppels accept HTTP requests for this domain name)
   anycast_domain_name: ""
 
+  anycast_nginx_tag: "1.28-alpine-slim-20251009095043"
+
+  proxy_protocol_allowed_ips: [ ]
+
   dashboard_url_pattern: '' # optional, DEFINED_IN_VALUES_FILE
 
   # name of Keppel account reserved for keppel-health-monitor
   healthcheck_account: healthcheck
-
-  issuer_key.pem: DEFINED_IN_VALUES_FILE
-  previous_issuer_key.pem: ''         # empty = no key rotation in progress
-  anycast_issuer_key.pem: ''          # empty = anycast not enabled
-  anycast_previous_issuer_key.pem: '' # empty = no key rotation in progress
 
 # This refers to the region holding the shared Swift container where the
 # "swift" federation driver tracks account name claims.
@@ -62,13 +64,15 @@ redis:
   persistence:
     enabled: false
   useAlternateRegion: true
-  redisPassword: DEFINED_IN_VALUES_FILE
 
   # evict unused keys automatically
   config:
     maxmemory: 100mb # chosen to match resource limit below
     maxmemory-policy: allkeys-lru
     maxmemory-samples: 5
+
+  alerts:
+    support_group: containers
 
   # observed resource usage for keppel-redis pod as of 2024-05:
   #   CPU up to 0.32% = 5m (average, but we must avoid throttling)
@@ -94,33 +98,31 @@ redis:
         cpu: 5m
 
 postgresql:
+  postgresVersion: 18
   alerts:
     support_group: containers
   config:
-    log_min_duration_statement: 250
-    # We previously had 128, which should technically be enough for 6 API pods and 1 janitor pod (with max. 16 conns each)
+    log_min_duration_statement: 400
+    # We previously had 128, which should technically be enough for 8 API pods and 1 janitor pod (with max. 16 conns each)
     # as well as the pgmetrics and pgbackup pods with 1-2 conns each, but we still had a "too many clients already" issue regardless.
-    max_connections: 160
+    max_connections: 180
   # time is in UTC
   crontab: |
     30 12 * * 1,2,3,4,5 psql -tAd keppel -c "VACUUM ANALYZE"
+  databases:
+    keppel: {}
   persistence:
     enabled: true
     accessMode: ReadWriteOnce # compatibility to allow easy upgrades
     size: 100Gi
-  postgresDatabase: keppel
   probe_timeout_secs: 5
   sharedMemoryLimit: 256Mi
   users:
     keppel: {}
-  tableOwner: keppel
 
 pgbackup:
-  isPostgresNG: true
   alerts:
     support_group: containers
-  database:
-    name: keppel
   resources:
     # complete backups rather fast, to relieve strain on the postgres
     cpu_limit: 2
@@ -128,9 +130,6 @@ pgbackup:
   use_alternate_region: true
 
 pgmetrics:
-  isPostgresNG: true
-  db_name: keppel
-
   alerts:
     support_group: containers
 
@@ -141,175 +140,177 @@ pgmetrics:
     limits:
       cpu: 200m
 
-  customMetrics:
-    keppel_accounts:
-      query: >
-        SELECT COUNT(*) AS count,
-               COALESCE(EXTRACT(epoch FROM MIN(next_blob_sweep_at)), 0) AS min_next_blob_sweep_at,
-               COALESCE(EXTRACT(epoch FROM MIN(next_enforcement_at)), 0) AS min_next_enforcement_at,
-               COALESCE(EXTRACT(epoch FROM MIN(next_storage_sweep_at)), 0) AS min_next_storage_sweep_at,
-               COALESCE(EXTRACT(epoch FROM MIN(next_federation_announcement_at)), 0) AS min_next_federation_announcement_at
-          FROM accounts
-      metrics:
-        - count:
-            usage: "GAUGE"
-            description: "Total number of accounts managed by Keppel"
-        - min_next_blob_sweep_at:
-            usage: "GAUGE"
-            description: "UNIX timestamp of next scheduled blob sweep, or 0 if no accounts have ever been sweeped"
-        - min_next_enforcement_at:
-            usage: "GAUGE"
-            description: "UNIX timestamp of next scheduled managed account run, or 0 if no accounts have ever been managed"
-        - min_next_storage_sweep_at:
-            usage: "GAUGE"
-            description: "UNIX timestamp of next scheduled storage sweep, or 0 if no accounts have ever been sweeped"
-        - min_next_federation_announcement_at:
-            usage: "GAUGE"
-            description: "UNIX timestamp of next scheduled federation announcement, or 0 if no accounts have ever been announced to federation"
-    keppel_blobs:
-      query: "SELECT COUNT(*) AS count, COALESCE(EXTRACT(epoch FROM MIN(can_be_deleted_at)), 0) AS min_can_be_deleted_at, EXTRACT(epoch FROM MIN(next_validation_at)) AS min_next_validation_at, SUM(CASE WHEN validation_error_message = '' THEN 0 ELSE 1 END) AS validation_errors FROM blobs WHERE storage_id != ''"
-      metrics:
-        - count:
-            usage: "GAUGE"
-            description: "Total number of blobs stored in Keppel (except for unbacked blobs)"
-        - min_can_be_deleted_at:
-            usage: "GAUGE"
-            description: "UNIX timestamp of next scheduled blob deletion, or 0 if no blobs are currently marked for deletion"
-        - min_next_validation_at:
-            usage: "GAUGE"
-            description: "UNIX timestamp of oldest blob validation"
-        - validation_errors:
-            usage: "GAUGE"
-            description: "Number of blobs stored in Keppel that failed their last validation"
-    keppel_blob_mounts:
-      query: 'SELECT COALESCE(EXTRACT(epoch FROM MIN(can_be_deleted_at)), 0) AS min_can_be_deleted_at FROM blob_mounts'
-      metrics:
-        - min_can_be_deleted_at:
-            usage: "GAUGE"
-            description: "UNIX timestamp of next scheduled blob mount deletion, or 0 if no blob mounts are currently marked for deletion"
-    keppel_repos:
-      query: 'SELECT COUNT(*) AS count, COALESCE(EXTRACT(epoch FROM MIN(next_blob_mount_sweep_at)), 0) AS min_next_blob_mount_sweep_at, COALESCE(EXTRACT(epoch FROM MIN(next_gc_at)), 0) AS min_next_gc_at FROM repos'
-      metrics:
-        - count:
-            usage: "GAUGE"
-            description: "Total number of repositories stored in Keppel"
-        - min_next_blob_mount_sweep_at:
-            usage: "GAUGE"
-            description: "UNIX timestamp of next scheduled blob mount sweep, or 0 if no repos have ever been sweeped"
-        - min_next_gc_at:
-            usage: "GAUGE"
-            description: "UNIX timestamp of next scheduled image GC, or 0 if no repos have ever been garbage-collected"
-    keppel_replicated_repos:
-      query: "SELECT COUNT(r.id) AS count, COALESCE(EXTRACT(epoch FROM MIN(r.next_manifest_sync_at)), 0) AS min_next_manifest_sync_at FROM repos r JOIN accounts a ON r.account_name = a.name WHERE a.upstream_peer_hostname != ''"
-      metrics:
-        - count:
-            usage: "GAUGE"
-            description: "Total number of repositories in replica accounts stored in Keppel"
-        - min_next_manifest_sync_at:
-            usage: "GAUGE"
-            description: "UNIX timestamp of next scheduled manifest sync, or 0 if no replica repos have ever been synced"
-    keppel_manifests:
-      query: >
-        SELECT COUNT(*) AS count,
-               EXTRACT(epoch FROM MIN(next_validation_at)) AS min_next_validation_at,
-               SUM(CASE WHEN validation_error_message = '' THEN 0 ELSE 1 END) AS validation_errors,
-               COALESCE(EXTRACT(epoch FROM MIN(trivy_security_info.next_check_at)), 0) AS min_next_trivy_check_at,
-               SUM(CASE WHEN trivy_security_info.next_check_at > NOW() THEN 0 ELSE 1 END) AS pending_trivy_checks
-          FROM manifests
-         INNER JOIN trivy_security_info ON trivy_security_info.repo_id = manifests.repo_id AND trivy_security_info.digest = manifests.digest
-      metrics:
-        - count:
-            usage: "GAUGE"
-            description: "Total number of manifests stored in Keppel"
-        - min_next_validation_at:
-            usage: "GAUGE"
-            description: "UNIX timestamp of oldest manifest validation"
-        - validation_errors:
-            usage: "GAUGE"
-            description: "Number of manifests stored in Keppel that failed their last validation"
-        - min_next_trivy_check_at:
-            usage: "GAUGE"
-            description: "UNIX timestamp of next scheduled Trivy security check, or 0 if no manifests have ever been checked for vulnerabilities"
-        - pending_trivy_checks:
-            usage: "GAUGE"
-            description: "Number of manifests stored in Keppel that are currently overdue for their next scheduled Trivy check"
-    keppel_unknown_blobs:
-      query: 'SELECT COALESCE(EXTRACT(epoch FROM MIN(can_be_deleted_at)), 0) AS min_can_be_deleted_at FROM unknown_blobs'
-      metrics:
-        - min_can_be_deleted_at:
-            usage: "GAUGE"
-            description: "UNIX timestamp of next scheduled deletion of an unknown blob, or 0 if there are no unknown blobs at the moment"
-    keppel_unknown_manifests:
-      query: 'SELECT COALESCE(EXTRACT(epoch FROM MIN(can_be_deleted_at)), 0) AS min_can_be_deleted_at FROM unknown_manifests'
-      metrics:
-        - min_can_be_deleted_at:
-            usage: "GAUGE"
-            description: "UNIX timestamp of next scheduled deletion of an unknown manifest, or 0 if there are no unknown manifests at the moment"
-    keppel_tags:
-      query: 'SELECT COUNT(*) AS count FROM tags'
-      metrics:
-        - count:
-            usage: "GAUGE"
-            description: "Total number of tags stored in Keppel"
-    keppel_peers:
-      query: >
-        SELECT hostname, COALESCE(EXTRACT(epoch FROM last_peered_at), 0) AS last_peered_at FROM peers
-      metrics:
-        - hostname:
-            usage: "LABEL"
-            description: "Peer hostname"
-        - last_peered_at:
-            usage: "GAUGE"
-            description: "UNIX timestamp of when we last issued a password for this peer (should happen every 10 minutes)"
-    keppel_blob_replication:
-      query: >
-        SELECT COALESCE(EXTRACT(epoch FROM MIN(since)), 0) AS min_started_at FROM pending_blobs
-      metrics:
-        - min_started_at:
-            usage: "GAUGE"
-            description: "UNIX timestamp when oldest still-running blob replication was started (or 0 when no replication is in progress)"
-    keppel_upload:
-      query: >
-        SELECT COALESCE(EXTRACT(epoch FROM MIN(updated_at)), 0) AS min_updated_at FROM uploads
-      metrics:
-        - min_updated_at:
-            usage: "GAUGE"
-            description: "UNIX timestamp when oldest still-active upload was started (or 0 when no upload is in progress)"
-    keppel_trivy_scan_error:
-      # The UNION SELECT adds a dummy row to satisfy the absent-metrics-operator.
-      query: >
-        SELECT vuln_status, COUNT(*) AS counts FROM trivy_security_info WHERE message != '' GROUP BY vuln_status
-         UNION SELECT 'none' AS vuln_status, 0 AS counts
-      metrics:
-        - vuln_status:
-            usage: "LABEL"
-            description: "Vulnerability status computed by Keppel"
-        - counts:
-            usage: "GAUGE"
-            description: "Total number of manifests where Trivy failed with a specific error message"
-    keppel_manifests_with_unclean_vuln_status:
-      # NOTE: This metric is also exported to Maia and therefore visible to customers. Do not break compatibility unless strictly necessary!
-      query: >
-        SELECT a.name AS account, a.auth_tenant_id AS project_id, r.name AS repo, t.vuln_status AS vuln_status, COUNT(*) AS count
-          FROM manifests m
-          JOIN trivy_security_info t ON t.repo_id = m.repo_id AND t.digest = m.digest
-          JOIN repos r ON m.repo_id = r.id
-          JOIN accounts a ON r.account_name = a.name
-         WHERE t.vuln_status != 'Clean'
-         GROUP BY a.name, a.auth_tenant_id, r.name, t.vuln_status
-      metrics:
-        - account:
-            usage: LABEL
-            description: 'Name of Keppel account'
-        - project_id:
-            usage: LABEL
-            description: 'Project that owns the Keppel account'
-        - repo:
-            usage: LABEL
-            description: 'Name of repository within Keppel account'
-        - vuln_status:
-            usage: LABEL
-            description: 'Vulnerability status by Trivy (or "Pending" for newly pushed images, or "Unsupported" if vulnerability scanning is not possible for this image)'
-        - count:
-            usage: GAUGE
-            description: 'Number of Keppel images per repo and vulnerability status (excluding images with vulnerability status "Clean")'
+  databases:
+    keppel:
+      customMetrics:
+        keppel_accounts:
+          query: >
+            SELECT COUNT(*) AS count,
+                   COALESCE(EXTRACT(epoch FROM MIN(next_blob_sweep_at)), 0) AS min_next_blob_sweep_at,
+                   COALESCE(EXTRACT(epoch FROM MIN(next_enforcement_at)), 0) AS min_next_enforcement_at,
+                   COALESCE(EXTRACT(epoch FROM MIN(next_storage_sweep_at)), 0) AS min_next_storage_sweep_at,
+                   COALESCE(EXTRACT(epoch FROM MIN(next_federation_announcement_at)), 0) AS min_next_federation_announcement_at
+              FROM accounts
+          metrics:
+            - count:
+                usage: "GAUGE"
+                description: "Total number of accounts managed by Keppel"
+            - min_next_blob_sweep_at:
+                usage: "GAUGE"
+                description: "UNIX timestamp of next scheduled blob sweep, or 0 if no accounts have ever been sweeped"
+            - min_next_enforcement_at:
+                usage: "GAUGE"
+                description: "UNIX timestamp of next scheduled managed account run, or 0 if no accounts have ever been managed"
+            - min_next_storage_sweep_at:
+                usage: "GAUGE"
+                description: "UNIX timestamp of next scheduled storage sweep, or 0 if no accounts have ever been sweeped"
+            - min_next_federation_announcement_at:
+                usage: "GAUGE"
+                description: "UNIX timestamp of next scheduled federation announcement, or 0 if no accounts have ever been announced to federation"
+        keppel_blobs:
+          query: "SELECT COUNT(*) AS count, COALESCE(EXTRACT(epoch FROM MIN(can_be_deleted_at)), 0) AS min_can_be_deleted_at, EXTRACT(epoch FROM MIN(next_validation_at)) AS min_next_validation_at, SUM(CASE WHEN validation_error_message = '' THEN 0 ELSE 1 END) AS validation_errors FROM blobs WHERE storage_id != ''"
+          metrics:
+            - count:
+                usage: "GAUGE"
+                description: "Total number of blobs stored in Keppel (except for unbacked blobs)"
+            - min_can_be_deleted_at:
+                usage: "GAUGE"
+                description: "UNIX timestamp of next scheduled blob deletion, or 0 if no blobs are currently marked for deletion"
+            - min_next_validation_at:
+                usage: "GAUGE"
+                description: "UNIX timestamp of oldest blob validation"
+            - validation_errors:
+                usage: "GAUGE"
+                description: "Number of blobs stored in Keppel that failed their last validation"
+        keppel_blob_mounts:
+          query: 'SELECT COALESCE(EXTRACT(epoch FROM MIN(can_be_deleted_at)), 0) AS min_can_be_deleted_at FROM blob_mounts'
+          metrics:
+            - min_can_be_deleted_at:
+                usage: "GAUGE"
+                description: "UNIX timestamp of next scheduled blob mount deletion, or 0 if no blob mounts are currently marked for deletion"
+        keppel_repos:
+          query: 'SELECT COUNT(*) AS count, COALESCE(EXTRACT(epoch FROM MIN(next_blob_mount_sweep_at)), 0) AS min_next_blob_mount_sweep_at, COALESCE(EXTRACT(epoch FROM MIN(next_gc_at)), 0) AS min_next_gc_at FROM repos'
+          metrics:
+            - count:
+                usage: "GAUGE"
+                description: "Total number of repositories stored in Keppel"
+            - min_next_blob_mount_sweep_at:
+                usage: "GAUGE"
+                description: "UNIX timestamp of next scheduled blob mount sweep, or 0 if no repos have ever been sweeped"
+            - min_next_gc_at:
+                usage: "GAUGE"
+                description: "UNIX timestamp of next scheduled image GC, or 0 if no repos have ever been garbage-collected"
+        keppel_replicated_repos:
+          query: "SELECT COUNT(r.id) AS count, COALESCE(EXTRACT(epoch FROM MIN(r.next_manifest_sync_at)), 0) AS min_next_manifest_sync_at FROM repos r JOIN accounts a ON r.account_name = a.name WHERE a.upstream_peer_hostname != ''"
+          metrics:
+            - count:
+                usage: "GAUGE"
+                description: "Total number of repositories in replica accounts stored in Keppel"
+            - min_next_manifest_sync_at:
+                usage: "GAUGE"
+                description: "UNIX timestamp of next scheduled manifest sync, or 0 if no replica repos have ever been synced"
+        keppel_manifests:
+          query: >
+            SELECT COUNT(*) AS count,
+                   EXTRACT(epoch FROM MIN(next_validation_at)) AS min_next_validation_at,
+                   SUM(CASE WHEN validation_error_message = '' THEN 0 ELSE 1 END) AS validation_errors,
+                   COALESCE(EXTRACT(epoch FROM MIN(trivy_security_info.next_check_at)), 0) AS min_next_trivy_check_at,
+                   SUM(CASE WHEN trivy_security_info.next_check_at <= NOW() THEN 1 ELSE 0 END) AS pending_trivy_checks
+              FROM manifests
+             INNER JOIN trivy_security_info ON trivy_security_info.repo_id = manifests.repo_id AND trivy_security_info.digest = manifests.digest
+          metrics:
+            - count:
+                usage: "GAUGE"
+                description: "Total number of manifests stored in Keppel"
+            - min_next_validation_at:
+                usage: "GAUGE"
+                description: "UNIX timestamp of oldest manifest validation"
+            - validation_errors:
+                usage: "GAUGE"
+                description: "Number of manifests stored in Keppel that failed their last validation"
+            - min_next_trivy_check_at:
+                usage: "GAUGE"
+                description: "UNIX timestamp of next scheduled Trivy security check, or 0 if no manifests have ever been checked for vulnerabilities"
+            - pending_trivy_checks:
+                usage: "GAUGE"
+                description: "Number of manifests stored in Keppel that are currently overdue for their next scheduled Trivy check"
+        keppel_unknown_blobs:
+          query: 'SELECT COALESCE(EXTRACT(epoch FROM MIN(can_be_deleted_at)), 0) AS min_can_be_deleted_at FROM unknown_blobs'
+          metrics:
+            - min_can_be_deleted_at:
+                usage: "GAUGE"
+                description: "UNIX timestamp of next scheduled deletion of an unknown blob, or 0 if there are no unknown blobs at the moment"
+        keppel_unknown_manifests:
+          query: 'SELECT COALESCE(EXTRACT(epoch FROM MIN(can_be_deleted_at)), 0) AS min_can_be_deleted_at FROM unknown_manifests'
+          metrics:
+            - min_can_be_deleted_at:
+                usage: "GAUGE"
+                description: "UNIX timestamp of next scheduled deletion of an unknown manifest, or 0 if there are no unknown manifests at the moment"
+        keppel_tags:
+          query: 'SELECT COUNT(*) AS count FROM tags'
+          metrics:
+            - count:
+                usage: "GAUGE"
+                description: "Total number of tags stored in Keppel"
+        keppel_peers:
+          query: >
+            SELECT hostname, COALESCE(EXTRACT(epoch FROM last_peered_at), 0) AS last_peered_at FROM peers
+          metrics:
+            - hostname:
+                usage: "LABEL"
+                description: "Peer hostname"
+            - last_peered_at:
+                usage: "GAUGE"
+                description: "UNIX timestamp of when we last issued a password for this peer (should happen every 10 minutes)"
+        keppel_blob_replication:
+          query: >
+            SELECT COALESCE(EXTRACT(epoch FROM MIN(since)), 0) AS min_started_at FROM pending_blobs
+          metrics:
+            - min_started_at:
+                usage: "GAUGE"
+                description: "UNIX timestamp when oldest still-running blob replication was started (or 0 when no replication is in progress)"
+        keppel_upload:
+          query: >
+            SELECT COALESCE(EXTRACT(epoch FROM MIN(updated_at)), 0) AS min_updated_at FROM uploads
+          metrics:
+            - min_updated_at:
+                usage: "GAUGE"
+                description: "UNIX timestamp when oldest still-active upload was started (or 0 when no upload is in progress)"
+        keppel_trivy_scan_error:
+          # The UNION SELECT adds a dummy row to satisfy the absent-metrics-operator.
+          query: >
+            SELECT vuln_status, COUNT(*) AS counts FROM trivy_security_info WHERE message != '' GROUP BY vuln_status
+             UNION SELECT 'none' AS vuln_status, 0 AS counts
+          metrics:
+            - vuln_status:
+                usage: "LABEL"
+                description: "Vulnerability status computed by Keppel"
+            - counts:
+                usage: "GAUGE"
+                description: "Total number of manifests where Trivy failed with a specific error message"
+        keppel_manifests_with_unclean_vuln_status:
+          # NOTE: This metric is also exported to Maia and therefore visible to customers. Do not break compatibility unless strictly necessary!
+          query: >
+            SELECT a.name AS account, a.auth_tenant_id AS project_id, r.name AS repo, t.vuln_status AS vuln_status, COUNT(*) AS count
+              FROM manifests m
+              JOIN trivy_security_info t ON t.repo_id = m.repo_id AND t.digest = m.digest
+              JOIN repos r ON m.repo_id = r.id
+              JOIN accounts a ON r.account_name = a.name
+             WHERE t.vuln_status != 'Clean'
+             GROUP BY a.name, a.auth_tenant_id, r.name, t.vuln_status
+          metrics:
+            - account:
+                usage: LABEL
+                description: 'Name of Keppel account'
+            - project_id:
+                usage: LABEL
+                description: 'Project that owns the Keppel account'
+            - repo:
+                usage: LABEL
+                description: 'Name of repository within Keppel account'
+            - vuln_status:
+                usage: LABEL
+                description: 'Vulnerability status by Trivy (or "Pending" for newly pushed images, or "Unsupported" if vulnerability scanning is not possible for this image)'
+            - count:
+                usage: GAUGE
+                description: 'Number of Keppel images per repo and vulnerability status (excluding images with vulnerability status "Clean")'

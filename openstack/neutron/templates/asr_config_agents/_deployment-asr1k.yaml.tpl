@@ -11,10 +11,8 @@ metadata:
     system: openstack
     type: backend
     component: neutron
-  {{- if $context.Values.vpa.set_main_container }}
   annotations:
     vpa-butler.cloud.sap/main-container: neutron-asr1k
-  {{- end }}
 spec:
   replicas: 1
   revisionHistoryLimit: 5
@@ -60,11 +58,7 @@ spec:
             {{else}}
               value: "false"
             {{ end }}
-            - name: SENTRY_DSN
-              valueFrom:
-                secretKeyRef:
-                  name: sentry
-                  key: neutron.DSN.python
+            {{- include "utils.sentry_config" $context | nindent 12 }}
             - name: METRICS_PORT
               value: "{{$context.Values.port_l3_metrics |  default 9103 }}"
           volumeMounts:

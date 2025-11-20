@@ -1,33 +1,59 @@
+---
 global:
   registry: myImage
   dbPassword: topSecret
   barbican_service_password: topSecret
+  registryAlternateRegion: other.docker.registry
   dockerHubMirror: myRegistry/dockerhub
   dockerHubMirrorAlternateRegion: myRegistry/dockerhubalternate
   domain_seeds:
-    skip_hcm_domain: false
-    
+    customer_domains: [ bar, foo, baz ]
+    customer_domains_without_support_projects: [ baz ]
+  availability_zones: []
+
 imageVersionBarbicanApi: yoga
 
 dbPassword: topSecret
 mariadb:
   root_password: topSecret
-
-rabbitmq_notifications:
   users:
-    default:
-      password: topSecret
+    barbican:
+      name: barbican
+      password: password
+    backup:
+      name: backup
+      password: password
+
+pxc_db:
+  enabled: true
+  users:
+    barbican:
+      password: topSecret!
+  system_users:
+    root:
+      password: topSecret!
+    xtrabackup:
+      password: topSecret!
+    monitor:
+      password: topSecret!
+    proxyadmin:
+      password: topSecret!
+    operator:
+      password: topSecret!
+    replication:
+      password: topSecret!
+  backup:
+    s3:
+      secrets:
+        aws_access_key_id: topSecret!
+        aws_secret_access_key: topSecret!
 
 api:
   replicas: 2
   resources:
     enabled: false
 
-rabbitmq:
-  users:
-    admin:
-      password: adminadmin
-    default:
-      password: defaultdefault
-  metrics:
-    password: metricsmetrics
+audit:
+  central_service:
+    user: barbican
+    password: password

@@ -1,7 +1,7 @@
-{{- $domains := list "ccadmin" "bs" "cis" "cp" "fsn" "hcp03" "hda" "hec" "monsoon3" "neo" "ora" "s4" "wbs"}}
-{{- if not .Values.global.domain_seeds.skip_hcm_domain -}}
-  {{- $domains = append $domains "hcm" }}
-{{- end -}}
+{{/* cdomains equals [ "global" ] in global region */}}
+{{- $cdomains := .Values.global.domain_seeds.customer_domains | required "missing value for .Values.global.domain_seeds.customer_domains" -}}
+{{- $domains  := concat (list "ccadmin") $cdomains -}}
+{{- $cdomainsWithoutSupportProjects := .Values.global.domain_seeds.customer_domains_without_support_projects | required "missing value for .Values.global.domain_seeds.customer_domains_without_support_projects" -}}
 
 apiVersion: "openstack.stable.sap.cc/v1"
 kind: "OpenstackSeed"
@@ -10,31 +10,36 @@ metadata:
 
 spec:
   requires:
-  - limes/limes-seed
+  - {{ .Release.Namespace }}/limes-seed
   {{- range $domains }}
-  - monsoon3/domain-{{ . | lower }}-seed
+  - {{ $.Values.global.keystoneNamespace }}/domain-{{replace "_" "-" .|lower}}-seed
   {{- end }}
 
   domains:
     {{- range $domains }}
     - name: {{ . | lower }}
       groups:
-      - name: {{ . | upper }}_API_SUPPORT
+      - name: {{ hasPrefix "iaas-" . | ternary . ( upper . ) }}_API_SUPPORT
         role_assignments:
+        {{- if not (has . $cdomainsWithoutSupportProjects) }}
         - project: api_support
           role: resource_admin
+        {{- end }}
         {{- if eq . "ccadmin" }}
         - project: api_tools
           role: resource_admin
-        {{- end }}
+        {{- end}}
         # Inherit read-only role within domain
         - domain: {{ . | lower }}
           role: resource_viewer
           inherited: true
-      - name: {{ . | upper }}_COMPUTE_SUPPORT
+      {{- if ne . "global" }}
+      - name: {{ hasPrefix "iaas-" . | ternary . ( upper . ) }}_COMPUTE_SUPPORT
         role_assignments:
+        {{- if not (has . $cdomainsWithoutSupportProjects) }}
         - project: compute_support
           role: resource_admin
+        {{- end }}
         {{- if eq . "ccadmin" }}
         - project: compute_tools
           role: resource_admin
@@ -43,10 +48,12 @@ spec:
         - domain: {{ . | lower }}
           role: resource_viewer
           inherited: true
-      - name: {{ . | upper }}_NETWORK_SUPPORT
+      - name: {{ hasPrefix "iaas-" . | ternary . ( upper . ) }}_NETWORK_SUPPORT
         role_assignments:
+        {{- if not (has . $cdomainsWithoutSupportProjects) }}
         - project: network_support
           role: resource_admin
+        {{- end }}
         {{- if eq . "ccadmin" }}
         - project: network_tools
           role: resource_admin
@@ -55,10 +62,12 @@ spec:
         - domain: {{ . | lower }}
           role: resource_viewer
           inherited: true
-      - name: {{ . | upper }}_STORAGE_SUPPORT
+      - name: {{ hasPrefix "iaas-" . | ternary . ( upper . ) }}_STORAGE_SUPPORT
         role_assignments:
+        {{- if not (has . $cdomainsWithoutSupportProjects) }}
         - project: storage_support
           role: resource_admin
+        {{- end }}
         {{- if eq . "ccadmin" }}
         - project: storage_tools
           role: resource_admin
@@ -67,12 +76,15 @@ spec:
         - domain: {{ . | lower }}
           role: resource_viewer
           inherited: true
-      - name: {{ . | upper }}_SERVICE_DESK
+      - name: {{ hasPrefix "iaas-" . | ternary . ( upper . ) }}_SERVICE_DESK
         role_assignments:
+        {{- if not (has . $cdomainsWithoutSupportProjects) }}
         - project: service_desk
           role: resource_admin
+        {{- end }}
         # Inherit read-only role within domain
         - domain: {{ . | lower }}
           role: resource_viewer
           inherited: true
+      {{- end }}
     {{- end }}

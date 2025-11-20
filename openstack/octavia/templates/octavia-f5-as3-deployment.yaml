@@ -24,9 +24,10 @@ spec:
         app.kubernetes.io/name: octavia-f5-as3
         app.kubernetes.io/instance: {{ .Release.Name }}
       annotations:
+        kubectl.kubernetes.io/default-container: f5-as3-container
         {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
-
     spec:
+      priorityClassName: critical-payload
       containers:
         - name: f5-as3-container
           image: f5devcentral/f5-as3-container:{{.Values.imageVersionAS3 | default "latest"}}

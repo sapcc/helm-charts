@@ -542,6 +542,12 @@ os_compute_api:os-lock-server:unlock:unlock_override: rule:context_is_admin
 #os_compute_api:os-migrate-server:migrate: rule:system_admin_api
 os_compute_api:os-migrate-server:migrate: rule:context_is_admin
 
+# Cold migrate a server to a specified host
+# POST  /servers/{server_id}/action (migrate)
+# Intended scope(s): project
+#"os_compute_api:os-migrate-server:migrate:host": "rule:context_is_admin"
+"os_compute_api:os-migrate-server:migrate:host": "rule:context_is_admin"
+
 # Live migrate a server to a new host without a reboot
 #   POST /servers/{server_id}/action (os-migrateLive)
 #os_compute_api:os-migrate-server:migrate_live: rule:system_admin_api

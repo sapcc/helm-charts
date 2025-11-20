@@ -13,6 +13,9 @@ metadata:
 spec:
   image: "{{ include "dockerHubMirror" .}}/{{ .Values.image }}:{{.Values.imageTag }}"
   replicas: {{ default 3 .Values.replicas }}
+  secretBackend:
+    externalSecret:
+      name: {{ template "fullname" . }}-secret
   resources:
 {{ toYaml .Values.resources | indent 4 }}
   rabbitmq:
@@ -21,8 +24,6 @@ spec:
       vm_memory_high_watermark_paging_ratio = 0.95
       collect_statistics_interval = 10000
       disk_free_limit.absolute = 1GB
-      default_user = {{ .Values.users.default.user }}
-      default_pass = {{ .Values.users.default.password }}
       ssl_options.verify = {{ default "verify_none"  .Values.ssl_options.verify }}
 {{- if .Values.persistence.enabled }}
   persistence:
@@ -69,7 +70,7 @@ spec:
         template:
           spec:
             containers: []
-            priorityClassName: {{ default "openstack-service-critical" .Values.priority_class | quote }}
+            priorityClassName: {{ default "critical-infrastructure" .Values.priority_class | quote }}
             topologySpreadConstraints:
             - maxSkew: 1
               topologyKey: "topology.kubernetes.io/zone"

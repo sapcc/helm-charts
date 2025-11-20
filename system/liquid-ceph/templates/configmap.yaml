@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: liquid-ceph-policy
+  name: liquid-config
 data:
   policy.yaml: |
     "readwrite": "role:cloud_resource_admin or (user_name:limes and user_domain_name:Default)"
@@ -11,6 +11,10 @@ data:
     "liquid:get_capacity": "rule:readonly"
     "liquid:get_usage": "rule:readonly"
     "liquid:set_quota": "rule:readwrite"
+    "liquid:change_commitments": "rule:readwrite"
+
+  zone-mapping.yaml: | {{- toYaml .Values.ceph.zoneMapping | nindent 4 }} 
+
 ---
 apiVersion: v1
 kind: ConfigMap

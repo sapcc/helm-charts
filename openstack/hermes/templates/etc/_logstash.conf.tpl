@@ -1,21 +1,20 @@
 input {
 
-{{ range $key, $value := .Values.hermes.rabbitmq.targets }}
-{{- $user := $value.user | default $.Values.hermes.rabbitmq.user }}
-{{- $host := printf "%s-rabbitmq.monsoon3.svc.kubernetes.%s.%s" $key $.Values.global.region $.Values.global.tld}}
+{{ range $replica_name, $replica := .Values.hermes.rabbitmq.targets }}
+{{- $host := printf "%s-rabbitmq.monsoon3.svc.kubernetes.%s.%s" $replica_name $.Values.global.region $.Values.global.tld}}
 rabbitmq {
-    id => "{{ printf "logstash_hermes_%s" $key }}"
-    host => "{{ $value.host | default (printf $.Values.hermes.rabbitmq.host_template $key) }}"
-    user => "{{ $user }}"
-    password => "{{ $value.password }}"
+    id => "{{ printf "logstash_hermes_%s" $replica_name }}"
+    host => "{{ $replica.host | default (printf $.Values.hermes.rabbitmq.host_template $replica_name) }}"
+    user => "${RABBITMQ_{{ upper $replica_name }}_USER}"
+    password => "${RABBITMQ_{{ upper $replica_name }}_PASSWORD}"
     port => {{ $.Values.hermes.rabbitmq.port }}
-    queue => "{{ $value.queue_name | default $.Values.hermes.rabbitmq.queue_name }}"
+    queue => "{{ $replica.queue_name | default $.Values.hermes.rabbitmq.queue_name }}"
     subscription_retry_interval_seconds => 60
     automatic_recovery => true
     connection_timeout => 1000
     heartbeat => 5
     connect_retry_interval => 60
-    durable => {{ $value.durable | default false }}
+    durable => {{ $replica.durable | default false }}
   }
 {{ end }}
 }
@@ -26,6 +25,12 @@ filter {
   # Barbican records reads, but has multiple events per read. 
   # This will keep it to one event per action 
   if ([action] == "read/list" or [action] == "read/get") {
+    drop { }
+  }
+
+  # Drop liveliness check events that serve no value
+  # Everything in audit-default adds no value, internal communication
+  if [initiator][domain_id] == "default" {
     drop { }
   }
 
@@ -63,7 +68,7 @@ filter {
        # use proper CADF taxonomy for actions
        "action", "created\.", "create/",
        "action", "deleted\.", "delete/",
-       "action", "updated\.", "create/",
+       "action", "updated\.", "update/",
        "action", "disabled\.", "disable/",
        "action", "\.", "/",
        # fix the eventTime format to be ISO8601
@@ -207,36 +212,19 @@ filter {
   # Log and Correct malformed target.project_id
   # Addresses some castellum events having multiple duplicate target.project_id's
   # with debug logging to track down the issue further.
-  if [target][project_id] {
-   if ([target][project_id] =~ /,/) or (is_array([target][project_id])) {
-      # Log a warning message with the entire event
-      ruby {
-        id => "f27_log_entire_event"
-        code => '
-          event.logger.warn("Malformed target.project_id detected. Event details:", event.to_hash)
-        '
-      }
-
-      # Correct the project_id field
-      ruby {
-        id => "f27_correct_project_id"
-        code => '
-          project_id = event.get("[target][project_id]")
-          if project_id.is_a?(Array)
-            corrected_id = project_id[0]
-            event.logger.warn("target project_id is an array")
-          elsif project_id.is_a?(String)
-            corrected_id = project_id.split(",")[0]
-            event.logger.warn("target project_id is a string that contains a comma")
-          else
-            corrected_id = project_id
-            event.logger.warn("target project_id is not a string or an array")
-          end
-          event.set("[target][project_id]", corrected_id.strip)
-        '
-      }
-    }
+  ruby {
+    id => "f27_correct_project_id"
+    code => '
+      project_id = event.get("[target][project_id]")
+      if project_id.is_a?(Array) || (project_id.is_a?(String) && project_id.include?(","))
+        original_project_id = project_id
+        corrected_id = project_id.is_a?(Array) ? project_id.first : project_id.split(",").first.strip
+        event.set("[target][project_id]", corrected_id)
+        logger.warn("Corrected malformed target.project_id from #{original_project_id.inspect} to #{corrected_id}")
+      end
+    '
   }
+
 
   # With several different event types using jdbc_static, not sure an if makes sense.
   # we will have to handle several events that don't match a query
@@ -304,8 +292,8 @@ filter {
     ]
     staging_directory => "/tmp/logstash/jdbc_static/import_data"
     loader_schedule => "{{ .Values.logstash.jdbc.schedule }}"
-    jdbc_user => "{{ .Values.global.metis.user | default "default" }}"
-    jdbc_password => "{{ .Values.global.metis.password | default "default" }}"
+    jdbc_user => "${METIS_USER}"
+    jdbc_password => "${METIS_PASSWORD}"
     jdbc_driver_class => "com.mysql.cj.jdbc.Driver"
     jdbc_driver_library => ""
     jdbc_connection_string => "jdbc:mysql://{{ .Values.logstash.jdbc.service }}.{{ .Values.logstash.jdbc.namespace }}:3306/{{ .Values.logstash.jdbc.db }}"
@@ -513,8 +501,8 @@ output {
           hosts => ["https://{{.Values.hermes_elasticsearch_host}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.hermes_elasticsearch_port}}"]
           auth_type => {
             type => 'basic'
-            user => "{{.Values.users.audit.username}}"
-            password => "{{.Values.users.audit.password}}"
+            user => "${OPENSEARCH_USER}"
+            password => "${OPENSEARCH_PASSWORD}"
           }
           retry_max_interval => 10
           validate_after_inactivity => 1000
@@ -533,8 +521,8 @@ output {
           validate_after_inactivity => 1000
           auth_type => {
             type => 'basic'
-            user => "{{.Values.users.audit.username}}"
-            password => "{{.Values.users.audit.password}}"
+            user => "${OPENSEARCH_USER}"
+            password => "${OPENSEARCH_PASSWORD}"
           }
           ssl => true
           ssl_certificate_verification => true
@@ -554,8 +542,8 @@ output {
         validate_after_inactivity => 1000
         auth_type => {
           type => 'basic'
-          user => "{{.Values.users.audit.username}}"
-          password => "{{.Values.users.audit.password}}"
+          user => "${OPENSEARCH_USER}"
+          password => "${OPENSEARCH_PASSWORD}"
         }
         ssl => true
         ssl_certificate_verification => true
@@ -567,8 +555,8 @@ output {
     s3 {
       id => "output_s3_for_swift"
       endpoint => "{{.Values.logstash.endpoint}}"
-      access_key_id => "{{.Values.logstash.access_key_id_conf}}"
-      secret_access_key => "{{.Values.logstash.secret_access_key_conf}}"
+      access_key_id => "${SWIFT_ACCESS_KEY}"
+      secret_access_key => "${SWIFT_SECRET_KEY}"
       region => "{{.Values.logstash.region}}"
       bucket => "{{.Values.logstash.bucket}}"
       prefix => "{{.Values.logstash.prefix}}"

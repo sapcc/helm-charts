@@ -7,7 +7,7 @@ pxc-operator:
 
   replicaCount: 1
 
-  operatorImageRepository: keppel.global.cloud.sap/ccloud-dockerhub-mirror/percona/percona-xtradb-cluster-operator
+  operatorImageRepository: keppel.global.cloud.sap/ccloud/percona-xtradb-cluster-operator
   imagePullPolicy: IfNotPresent
   image: ""
 
@@ -72,9 +72,9 @@ pxc-operator:
         weight: 1
 
   podAnnotations:
+    kubectl.kubernetes.io/default-container: 'percona-xtradb-cluster-operator'
     prometheus.io/scrape: "true"
-    prometheus.io/port: "8080"
-    prometheus.io/targets: "kubernetes"
+    prometheus.io/targets: "openstack"
     linkerd.io/inject: enabled
 
   logStructured: true
@@ -85,10 +85,166 @@ pxc-operator:
     - name: CC_FIX_PERMISSIONS
       value: "true"
 
+alerts:
+  enabled: true
+
+kube-state-metrics:
+  image:
+    registry: keppel.global.cloud.sap/ccloud-registry-k8s-io-mirror
+    repository: kube-state-metrics/kube-state-metrics
+  rbac:
+    create: true  # only a limited role is created, because all collectors are disabled, except custom-resource-state
+    extraRules:
+      - apiGroups: ["pxc.percona.com"]
+        resources:
+          - "perconaxtradbclusters"
+          - "perconaxtradbclusterbackups"
+          - "perconaxtradbclusterrestores"
+        verbs:
+          - "list"
+          - "watch"
+
+  customLabels:
+    app: kube-state-metrics
+
+  resources:
+    requests:
+      memory: 150Mi
+      cpu: 100m
+
+  selfMonitor:
+    enabled: true
+  prometheusScrape: false  # don't set prometheus.io/scrape annotation on kube-state-metrics service, because we use ServiceMonitor
+
+  collectors: null
+
+  extraArgs:
+    - --custom-resource-state-only=true
+  customResourceState:
+    enabled: true
+    config:
+      kind: CustomResourceStateMetrics
+      spec:
+        resources:
+          - groupVersionKind:
+              group: pxc.percona.com
+              version: v1
+              kind: PerconaXtraDBCluster
+            labelsFromPath:
+              "*": ["metadata", "labels"]
+              name: ["metadata", "name"]
+              namespace: ["metadata", "namespace"]
+            metrics:
+              - name: perconaxtradbcluster_info
+                help: "Exposes details about the configuration of PerconaXtraDBCluster: CR version and PXC version"
+                each:
+                  type: Info
+                  info:
+                    labelsFromPath:
+                      pxc_version: ["status", "pxc", "version"]
+                      cr_version: ["spec", "crVersion"]
+              - name: perconaxtradbcluster_created
+                help: "Exposes the creation date of this cluster"
+                each:
+                  type: Gauge
+                  gauge:
+                    path: ["metadata", "creationTimestamp"]
+              - name: perconaxtradbcluster_status
+                help: "Status of PerconaXtraDBCluster"
+                each:
+                  type: StateSet
+                  stateSet:
+                    labelName: state
+                    path: ["status", "state"]
+                    list:
+                      - "unknown"
+                      - "initializing"
+                      - "paused"
+                      - "stopping"
+                      - "ready"
+                      - "error"
+              - name: perconaxtradbcluster_pxc_status
+                help: "Status of PerconaXtraDBCluster PXC component"
+                each:
+                  type: StateSet
+                  stateSet:
+                    labelName: state
+                    path: ["status", "pxc", "status"]
+                    list:
+                      - "unknown"
+                      - "initializing"
+                      - "paused"
+                      - "stopping"
+                      - "ready"
+                      - "error"
+              - name: perconaxtradbcluster_pxc_size
+                help: "Total size of PerconaXtraDBCluster"
+                each:
+                  type: Gauge
+                  gauge:
+                    path: ["status", "pxc", "size"]
+              - name: perconaxtradbcluster_pxc_ready
+                help: "Number of ready PXC nodes in the cluster"
+                each:
+                  type: Gauge
+                  gauge:
+                    path: ["status", "pxc", "ready"]
+          - groupVersionKind:
+              group: pxc.percona.com
+              version: v1
+              kind: PerconaXtraDBClusterBackup
+            labelsFromPath:
+              "*": ["metadata", "labels"]
+              name: ["metadata", "name"]
+              namespace: ["metadata", "namespace"]
+            metrics:
+              - name: perconaxtradbclusterbackup_info
+                help: "Information about PerconaXtraDBClusterBackup"
+                each:
+                  type: Info
+                  info:
+                    labelsFromPath:
+                      "*": ["status", "s3"]
+              - name: perconaxtradbclusterbackup_created
+                help: "Creation timestamp of the backup"
+                each:
+                  type: Gauge
+                  gauge:
+                    path: ["metadata", "creationTimestamp"]
+              - name: perconaxtradbclusterbackup_completed
+                help: "Completion timestamp of the backup"
+                each:
+                  type: Gauge
+                  gauge:
+                    path: ["status", "completed"]
+              - name: perconaxtradbclusterbackup_status
+                help: "Status of PerconaXtraDBClusterBackup"
+                each:
+                  type: StateSet
+                  stateSet:
+                    labelName: state
+                    path: ["status", "state"]
+                    list:
+                      - ""              # BackupNew
+                      - "Starting"
+                      - "Running"
+                      - "Failed"
+                      - "Succeeded"
+
+  # collect metrics from ALL namespaces
+  namespaces: ""
+
+  # deploy a ServiceMonitor so the metrics are collected by Prometheus
+  prometheus:
+    monitor:
+      enabled: true
+      additionalLabels:
+        prometheus: openstack
+
 owner-info:
   support-group: network-api
+  service: percona-xtradb-cluster-operator
   maintainers:
     - Vladislav Gusev
-    - Bashar Alkhateeb
     - Birk Bohne
   helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/system/percona-xtradb-cluster-operator

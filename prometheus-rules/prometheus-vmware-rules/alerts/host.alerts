@@ -6,7 +6,7 @@ groups:
       avg_over_time(vrops_hostsystem_runtime_connectionstate{state="notResponding"}[5m])
       and on (hostsystem) avg_over_time(vrops_hostsystem_runtime_powerstate{state!="Powered Off"}[5m])
       and on (hostsystem) vrops_hostsystem_runtime_maintenancestate{state="notInMaintenance"}
-      and on (hostsystem) count(vrops_virtualmachine_runtime_powerstate{virtualmachine!~"vCLS.*", state="Powered On"}) by (hostsystem) > 0
+      and on (hostsystem) count(vrops_virtualmachine_runtime_powerstate{virtualmachine!~"vCLS.*", state!="Powered Off"}) by (hostsystem) > 0
     for: 5m
     labels:
       severity: critical
@@ -110,7 +110,7 @@ groups:
   - alert: HostHasLostRedundantConnectivityToDVPort
     expr: |
       vrops_hostsystem_alert_info{alert_name="The host has lost redundant connectivity to a dvPort"}
-      and on (hostsystem) vrops_hostsystem_runtime_maintenancestate{state!~"inMaintenance"}
+      and on (hostsystem) vrops_hostsystem_runtime_maintenancestate{state!="inMaintenance"}
     labels:
       severity: info
       tier: vmware
@@ -126,8 +126,8 @@ groups:
   
   - alert: HostNicDown
     expr: |
-      vrops_hostsystem_alert_info{alert_name=~"ESXi host has detected a link status down on a physical NIC"}
-      and on (hostsystem) vrops_hostsystem_runtime_maintenancestate{state!~"inMaintenance"}
+      vrops_hostsystem_alert_info{alert_name="ESXi host has detected a link status down on a physical NIC"}
+      and on (hostsystem) vrops_hostsystem_runtime_maintenancestate{state!="inMaintenance"}
     for: 20m
     labels:
       severity: warning
@@ -163,7 +163,7 @@ groups:
   - alert: HostHasLostConnectivityToPhysicalNetwork
     expr: |
       vrops_hostsystem_alert_info{alert_name="The host has lost connectivity to physical network"}
-      and on (hostsystem) vrops_hostsystem_runtime_maintenancestate{state!~"inMaintenance"}
+      and on (hostsystem) vrops_hostsystem_runtime_maintenancestate{state!="inMaintenance"}
     labels:
       severity: warning
       tier: vmware
@@ -193,11 +193,28 @@ groups:
   #   annotations:
   #     description: "Host `{{ $labels.hostsystem }}` is in maintenance mode for at least 72 hours. ({{ $labels.vcenter }})."
   #     summary: "Host `{{ $labels.hostsystem }}` is in maintenance mode for at least 72 hours. ({{ $labels.vcenter }})."
+ 
+  - alert: HADetectedAPossibleHostFailure-testing
+    expr: |
+      vrops_hostsystem_alert_info{alert_name="vSphere High Availability (HA) has detected a possible host failure"}
+      and on (hostsystem) vrops_hostsystem_runtime_maintenancestate{vccluster!~".*controlplane-swift"}
+    labels:
+      severity: info
+      tier: vmware
+      service: compute
+      support_group: compute
+      context: "{{ $labels.hostsystem }} failure"
+      meta: "vSphere High Availability (HA) has detected a possible host failure for `{{ $labels.hostsystem }}`. ({{ $labels.vcenter }})."
+      playbook: docs/devops/alert/vcenter/#hadetectedapossiblehostfailure
+      no_alert_on_absence: "true"
+    annotations:
+      description: "vSphere High Availability (HA) has detected a possible host failure for `{{ $labels.hostsystem }}`. ({{ $labels.vcenter }})."
+      summary: "vSphere High Availability (HA) has detected a possible host failure for `{{ $labels.hostsystem }}`. ({{ $labels.vcenter }})."
 
   - alert: HADetectedAPossibleHostFailure
     expr: |
-      vrops_hostsystem_alert_info{alert_name="vSphere High Availability (HA) has detected a possible host failure"} 
-      and on (hostsystem) vrops_hostsystem_runtime_maintenancestate{state!~"inMaintenance", vccluster!~".*controlplane-swift"}
+      vrops_hostsystem_alert_info{alert_name="vSphere High Availability (HA) has detected a possible host failure"}
+      and on (hostsystem) vrops_hostsystem_runtime_maintenancestate{state!="inMaintenance", vccluster!~".*controlplane-swift"}
     labels:
       severity: critical
       tier: vmware
@@ -242,7 +259,7 @@ groups:
   - alert: HostHighNumberOfPacketsDropped
     expr: |
       vrops_hostsystem_alert_info{alert_name="Host is experiencing high number of packets dropped"}
-      and on (hostsystem) vrops_hostsystem_runtime_maintenancestate{state!~"inMaintenance"}
+      and on (hostsystem) vrops_hostsystem_runtime_maintenancestate{state!="inMaintenance"}
     labels:
       severity: info
       tier: vmware
@@ -258,7 +275,7 @@ groups:
   - alert: HostNicLinkFlappingAlert
     expr: |
       vrops_hostsystem_alert_info{alert_name=~"ESXi host has detected a link status.*flapping.*on a physical NIC"}
-      and on (hostsystem) vrops_hostsystem_runtime_maintenancestate{state!~"inMaintenance"}
+      and on (hostsystem) vrops_hostsystem_runtime_maintenancestate{state!="inMaintenance"}
     labels:
       severity: info
       tier: vmware
@@ -274,7 +291,7 @@ groups:
   - alert: HostSystemEventLogSensorAlert
     expr: |
       vrops_hostsystem_alert_info{alert_name="IPMI System Event Log for the host is becoming full"}
-      and on (hostsystem) vrops_hostsystem_runtime_maintenancestate{state!~"inMaintenance"}
+      and on (hostsystem) vrops_hostsystem_runtime_maintenancestate{state!="inMaintenance"}
     labels:
       severity: info
       tier: vmware
@@ -320,7 +337,7 @@ groups:
   - alert: HAHostAgentError
     expr: |
       vrops_hostsystem_alert_info{alert_name="vSphere High Availability (HA) host agent has encountered an error", vccluster!~".*-controlplane-swift"}
-      and on (hostsystem) vrops_hostsystem_runtime_maintenancestate{state!~"inMaintenance"}
+      and on (hostsystem) vrops_hostsystem_runtime_maintenancestate{state!="inMaintenance"}
     labels:
       severity: warning
       tier: vmware
@@ -337,7 +354,7 @@ groups:
   - alert: HAHostNetworkPartitioned
     expr: |
       vrops_hostsystem_alert_info{alert_name="vSphere High Availability (HA) has detected a network-partitioned host"}
-      and on (hostsystem) vrops_hostsystem_runtime_maintenancestate{state!~"inMaintenance"}
+      and on (hostsystem) vrops_hostsystem_runtime_maintenancestate{state!="inMaintenance"}
     labels:
       severity: warning
       tier: vmware
@@ -380,3 +397,27 @@ groups:
     annotations:
       description: "storage paths for `{{ $labels.hostsystem }}` is less than other hosts in the `{{ $labels.vccluster }}`. ({{ $labels.vcenter }})"
       summary: "storage paths for `{{ $labels.hostsystem }}` is less than other hosts in the `{{ $labels.vccluster }}`. ({{ $labels.vcenter }})"
+
+  - alert: FailoverHostInMaintenance
+    expr: |
+      (
+        vrops_hostsystem_runtime_maintenancestate{state="inMaintenance"}
+        and on (hostsystem)
+        vrops_hostsystem_configuration_dasconfig_admissioncontrolpolicy_failoverhost == 1
+      )
+      unless on (vccluster)
+      (
+      (count by (vccluster) (vrops_hostsystem_runtime_maintenancestate{state="inMaintenance"}) /
+      count by (vccluster) (vrops_hostsystem_runtime_connectionstate)) >= 0.5
+      )
+    for: 10m
+    labels:
+      severity: warning
+      tier: vmware
+      service: compute
+      support_group: compute
+      meta: "{{ $labels.hostsystem }} is in maintenance while configured as failover ({{ $labels.vcenter }})."
+      playbook: docs/devops/alert/vcenter/#failoverhostinmaintenance
+    annotations:
+      description: "{{ $labels.hostsystem }} is in maintenance while configured as failover ({{ $labels.vcenter }})."
+      summary: "{{ $labels.hostsystem }} is in maintenance while configured as failover ({{ $labels.vcenter }})."

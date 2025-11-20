@@ -1,8 +1,11 @@
-{{- if .Values.objectstore.prysm.enabled }}
+{{- if .Values.objectstore.prysm.rgwMetrics.enabled }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ .Values.objectstore.name }}-ext-rgw-exporter
+{{- $secretName := printf "%s-object-user-%s-%s" .Release.Namespace (.Values.objectstore.prysm.rgwMetrics.user.store | default .Values.objectstore.name) .Values.objectstore.prysm.rgwMetrics.user.name }}
+  annotations:
+    secret.reloader.stakater.com/reload: {{ $secretName | quote }}
   labels:
     app: {{ .Values.objectstore.name }}-ext-rgw-exporter
 spec:
@@ -11,10 +14,14 @@ spec:
     matchLabels:
       app: {{ .Values.objectstore.name }}-ext-rgw-exporter
   template:
+{{- $secretName := printf "rook-ceph-object-user-%s-%s" (.Values.objectstore.prysm.rgwMetrics.user.store | default .Values.objectstore.name) .Values.objectstore.prysm.rgwMetrics.user.name }}
     metadata:
       labels:
         app: {{ .Values.objectstore.name }}-ext-rgw-exporter
     spec:
+      # ensure that we use the default service account
+      serviceAccountName: ""
+      serviceAccount: ""
       containers:
       - name: prysm
         image: {{ .Values.objectstore.prysm.repository.image }}:{{ .Values.objectstore.prysm.repository.tag }}
@@ -24,10 +31,23 @@ spec:
         - "radosgw-usage"
         - '--rgw-cluster-id={{ .Values.objectstore.name }}'
         - '--prometheus=true'
-        - '-v=info'
-        envFrom:
-        - secretRef:
-            name: {{ .Values.objectstore.name }}-ext-rgw-exporter
+        - '-v=warn'
+        env:
+        - name: ADMIN_URL
+          value: {{ .Values.objectstore.prysm.rgwAdminUrl | quote }}
+        - name: INTERVAL
+          value: {{ .Values.objectstore.prysm.rgwMetrics.interval | quote }}
+        - name: ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+# see https://github.com/rook/rook/blob/e23e921f2844f9fb9fc46f04dfdf5302ee5df49a/pkg/operator/ceph/object/user/controller.go#L514
+              name: {{ $secretName }}
+              key: AccessKey
+        - name: SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: {{ $secretName }}
+              key: SecretKey
         ports:
         - containerPort: 8080
           name: metrics

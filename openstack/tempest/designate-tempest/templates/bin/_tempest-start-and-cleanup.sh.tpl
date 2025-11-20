@@ -5,6 +5,8 @@ set -o pipefail
 {{- include "tempest-base.function_start_tempest_tests" . }}
 
 function cleanup_tempest_leftovers() {
+  echo "Install stable python-designateclient"
+  pip install git+https://github.com/sapcc/python-designateclient.git@stable/2024.2-m3
 
   echo "Run cleanup"
   export OS_USERNAME=admin
@@ -16,7 +18,7 @@ function cleanup_tempest_leftovers() {
       export OS_PROJECT_NAME=tempest${i}
       PROJECT_ID=$(openstack project show tempest${i} -c id -f value)
       for zone in $(openstack zone list --sudo-project-id $PROJECT_ID | grep -E "testdomain" | awk '{ print $2 }'); do
-          openstack zone delete $zone --sudo-project-id $PROJECT_ID;
+          openstack zone delete $zone --sudo-project-id $PROJECT_ID --delete-shares;
       done
 
       for tld in $(openstack tld list --sudo-project-id  $PROJECT_ID); do

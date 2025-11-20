@@ -135,6 +135,8 @@ prometheus_infra_collector:
         - redfish-bm
         - redfish-fw
         - redfish-perf
+        # opentelemetry collector scrapes its own metrics and annotates them
+        - logs/opentelemetry-collector-logs
  
   thanos:
     enabled: true
@@ -148,6 +150,10 @@ thanos:
     enabled: true
     hosts:
       - thanos-infra-collector-grpc
+
+  compactor:
+    dataVolume:
+      enabled: true
 
 # TODO: this is using a dedicated chart now and needs to be moved
 ipmi_exporter:
@@ -193,12 +199,6 @@ ucs_exporter:
   scrapeInterval: 10m
   scrapeTimeout: 5m
 
-windows_exporter:
-  enabled: true
-  scrapeInterval: 4m
-  scrapeTimeout: 120s
-  listen_port: 9200
-
 prober_exporter:
   enabled: false
 
@@ -213,3 +213,16 @@ http_sd_configs:
   netbox_staging_url: https://netbox-test.global.cloud.sap/api/plugins/atlas
   netbox_production_url: https://netbox.global.cloud.sap/api/plugins/atlas
   refresh_interval: 60m
+
+  basicAuth:
+    jumpserver:
+      username:
+      password:
+
+  tls:
+    jump01:
+      crt:
+      key:
+    jump02:
+      crt:
+      key:

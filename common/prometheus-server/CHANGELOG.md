@@ -1,3 +1,30 @@
+## 8.0.9
+
+* VPA container name was not always shown
+
+## 8.0.8
+
+* Upgrade Prometheus to v3.6.0
+* add default priorityClass for better scheduling 
+
+## 8.0.7
+
+* Upgrade Prometheus to v3.5.0
+* Improved VPA alerting with blaming respective container
+
+## 8.0.0
+
+* Upgrade Prometheus to v3.2.1
+
+## 7.7.2
+
+* Prometheus bump to v2.55.1
+* Thanos bump to v0.37.2
+
+## 7.7.1
+
+* Fix scraping of apiserver_request_duration_seconts histogram
+
 ## 7.7.0
 
 * Prometheus bump to v2.54.1

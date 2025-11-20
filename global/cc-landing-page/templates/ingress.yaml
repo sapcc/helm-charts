@@ -1,0 +1,49 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    kubernetes.io/tls-acme: "true"
+    # disable the idle http timeout check
+    # https://operations.global.cloud.sap/docs/support/playbook/kubernetes/idle_http_keep_alive_timeout.html
+    cloud.sap/no-http-keep-alive-monitor: "true"
+
+  name: cc-landing-page
+  namespace: elektra
+spec:
+  rules:
+    - host: "juno.{{ .Values.global.region }}.{{ .Values.global.tld }}"
+      http:
+        paths:
+          - path: /
+            pathType: Prefix 
+            backend:
+              service: 
+                name: cc-landing-page
+                port: 
+                  number: 80 
+
+# global dns entries are managed in eu-de-1
+{{- if eq .Values.global.region "eu-nl-1" }}
+    {{- range tuple "juno" "ccloud" "convergedcloud" }}
+    - host: "{{ . }}.global.{{ $.Values.global.tld }}"
+      http:
+        paths:
+          - path: /
+            pathType: Prefix 
+            backend:
+              service: 
+                name: cc-landing-page
+                port: 
+                  number: 80 
+    {{- end }}                                
+{{- end }} 
+
+  tls:
+    - hosts: 
+        - "juno.{{ .Values.global.region }}.{{ .Values.global.tld }}"
+{{- if eq .Values.global.region "eu-nl-1" }}    
+        - "juno.global.{{ .Values.global.tld }}"  
+        - "ccloud.global.{{ .Values.global.tld }}"
+        - "convergedcloud.global.{{ .Values.global.tld }}"
+{{- end }}        
+      secretName: "tls-juno-cc-landing-page"

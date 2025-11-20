@@ -1,3 +1,4 @@
+{{ $workerSecretsSum := include (print $.Template.BasePath "/worker-secrets.yaml") . | sha256sum }}
 {{ range .Values.teams }}
 {{ if eq .type "standalone" }}
 apiVersion: apps/v1
@@ -16,6 +17,8 @@ spec:
       app: {{ $.Values.worker.name }}-{{ .name }}
   template:
     metadata:
+      annotations:
+        checksum/secrets: {{ $workerSecretsSum }}
       labels:
         app: {{ $.Values.worker.name }}-{{ .name }}
         release: "{{ $.Release.Name }}"

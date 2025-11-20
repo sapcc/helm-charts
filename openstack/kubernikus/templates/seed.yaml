@@ -5,9 +5,9 @@ metadata:
 
 spec:
   requires:
-  - monsoon3/keystone-seed
-  - monsoon3/domain-ccadmin-seed
-  - monsoon3/domain-default-seed
+  - {{ .Values.global.keystoneNamespace }}/keystone {{- if eq .Values.global.region "global" -}} -global {{- end -}} -seed
+  - {{ .Values.global.keystoneNamespace }}/domain-ccadmin-seed
+  - {{ .Values.global.keystoneNamespace }}/domain-default-seed
 
   domains:
   - name: Default
@@ -24,5 +24,7 @@ spec:
         role: cloud_dns_admin
       - project: master@ccadmin
         role: objectstore_admin
+      - project: cc-gardener@ccadmin
+        role: cloud_dns_admin
       - domain: cp
         role: admin

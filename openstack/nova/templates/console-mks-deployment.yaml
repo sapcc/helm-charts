@@ -1,0 +1,118 @@
+{{ $envAll := . }}
+{{- $cells := dict "cell1" false }}
+{{- if .Values.cell2.enabled }}
+  {{ $_ := set $cells .Values.cell2.name true }}
+{{- end }}
+{{- range $cell_name, $is_cell2 := $cells }}
+{{- with $envAll }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nova-console-{{ $cell_name }}-mks
+  labels:
+    system: openstack
+    type: backend
+    component: nova
+  {{- if .Values.vpa.set_main_container }}
+  annotations:
+    vpa-butler.cloud.sap/main-container: nova-console-mks
+  {{- end }}
+spec:
+  replicas: {{ .Values.pod.replicas.console }}
+  revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revision_history }}
+  strategy:
+    type: {{ .Values.pod.lifecycle.upgrades.deployments.podReplacementStrategy }}
+    {{ if eq .Values.pod.lifecycle.upgrades.deployments.podReplacementStrategy "RollingUpdate" }}
+    rollingUpdate:
+      maxUnavailable: {{ .Values.pod.lifecycle.upgrades.deployments.rollingUpdate.maxUnavailable }}
+      maxSurge: {{ .Values.pod.lifecycle.upgrades.deployments.rollingUpdate.maxSurge }}
+    {{ end }}
+  selector:
+    matchLabels:
+      name: nova-console-{{ $cell_name }}-mks
+  template:
+    metadata:
+      labels:
+        name: nova-console-{{ $cell_name }}-mks
+        {{- tuple . "nova" (print "console-" $cell_name "-mks") | include "helm-toolkit.snippets.kubernetes_metadata_labels" | nindent 8 }}
+        {{- include "utils.topology.pod_label" . | indent 8 }}
+      annotations:
+        {{- if .Values.proxysql.mode }}
+        prometheus.io/scrape: "true"
+        prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
+        {{- end }}
+        {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
+        config-hash: {{ print (.Files.Glob "console/mks/*").AsConfig (.Files.Glob "console/common/*").AsConfig (include "nova.etc_config_lua" .) | sha256sum }}
+        secret-hash: {{ include (print $.Template.BasePath "/console-mks-secret.yaml") . | sha256sum }}
+    spec:
+      {{- tuple . "nova" (print "console-" $cell_name "-mks") | include "kubernetes_pod_anti_affinity" | nindent 6 }}
+      {{- include "utils.proxysql.pod_settings" . | nindent 6 }}
+      {{- tuple . (dict "name" (print "nova-console-" $cell_name "-mks")) | include "utils.topology.constraints" | indent 6 }}
+      initContainers:
+      {{- if .Values.proxysql.native_sidecar }}
+      {{- include "utils.proxysql.container" . | indent 6 }}
+      {{- end }}
+      containers:
+      - name: nova-console-mks
+        image: {{ required ".Values.global.registry is missing" .Values.global.registry}}/nova-console-mks:{{ required ".Values.imageVersionConsoleMks is missing" .Values.imageVersionConsoleMks }}
+        imagePullPolicy: IfNotPresent
+        ports:
+        - name: mks
+          containerPort: {{ .Values.consoles.mks.portInternal }}
+        volumeMounts:
+        - mountPath: /usr/local/openresty/site/lualib
+          name: lualib
+        - mountPath: /etc/nginx/conf.d
+          name: config
+        - mountPath: /usr/local/openresty/nginx/tmp
+          name: temp
+        {{- include "utils.proxysql.volume_mount" . | indent 8 }}
+        livenessProbe:
+          httpGet:
+            path: /status
+            port: {{ .Values.consoles.mks.portInternal }}
+          initialDelaySeconds: 1
+          timeoutSeconds: 10
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /status
+            port: {{ .Values.consoles.mks.portInternal }}
+          initialDelaySeconds: 1
+          timeoutSeconds: 5
+      {{- if not .Values.proxysql.native_sidecar }}
+      {{- include "utils.proxysql.container" . | indent 6 }}
+      {{- end }}
+      volumes:
+      - emptyDir: {}
+        name: temp
+      - name: config
+        projected:
+          defaultMode: 420
+          sources:
+          - configMap:
+              items:
+              - key: 10_default_server.conf
+                path: 10_default_server.conf
+              name: nova-console-{{ $cell_name }}-mks
+      - name: lualib
+        projected:
+          defaultMode: 420
+          sources:
+          - configMap:
+              items:
+              - key: revproxy.lua
+                path: revproxy.lua
+              - key: token_lookup.lua
+                path: token_lookup.lua
+              name: nova-console-{{ $cell_name }}-mks
+          - secret:
+              items:
+              - key: config.lua
+                path: config.lua
+              name: nova-console-{{ $cell_name }}-mks
+      {{- include "utils.proxysql.volumes" . | indent 6 }}
+      {{- include "utils.trust_bundle.volumes" . | indent 6 }}
+{{- end }}
+{{- end }}

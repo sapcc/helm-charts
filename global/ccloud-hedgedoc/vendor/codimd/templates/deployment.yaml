@@ -29,6 +29,7 @@ spec:
         app.kubernetes.io/component: server
         {{- include "codimd.labels" . | nindent 8 }}
       annotations:
+        kubectl.kubernetes.io/default-container: codimd
         checksum/auth-secret: {{ include (print $.Template.BasePath "/auth-secret.yaml") . | sha256sum | quote }}
         {{ if .Values.codimd.security.sessionSecret }}
         checksum/session-secret: {{ include (print $.Template.BasePath "/session-secret.yaml") . | sha256sum | quote }}
@@ -184,6 +185,13 @@ spec:
             periodSeconds: 5
             successThreshold: 1
             timeoutSeconds: 2
+          resources:
+            limits:
+              cpu: 1000m
+              memory: 2Gi
+            requests:
+              cpu: 1000m
+              memory: 2Gi
       restartPolicy: Always
       {{ if .Values.codimd.imageStorePersistentVolume.enabled }}
       volumes:

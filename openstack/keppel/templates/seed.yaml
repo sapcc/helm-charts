@@ -41,6 +41,26 @@ spec:
           description: Keppel End-to-End Test User
           password: {{ printf "%s/%s/keppel/keystone-user/e2e-test/password" $vbase $region | quote }}
         {{- end }}
+        {{- if eq $region "eu-de-1" }}
+        - name: keppel-argo
+          description: Keppel Access User for Argo CD
+          password: {{ printf "%s/%s/keppel/keystone-user/argo/password" $vbase $region | quote }}
+          role_assignments:
+            - project: service
+              role:    registry_viewer # worthless role assignment, used only to enable Keystone login (actual access to relevant Keppel accounts is given by RBAC policies)
+        - name: keppel-concourse
+          description: Keppel Access User for Concourse CI
+          password: {{ printf "%s/%s/keppel/keystone-user/concourse/password" $vbase $region | quote }}
+          role_assignments:
+            - project: service
+              role:    registry_viewer # worthless role assignment, used only to enable Keystone login (actual access to relevant Keppel accounts is given by RBAC policies)
+        - name: keppel-github-actions
+          description: Keppel Access User for GitHub Actions
+          password: {{ printf "%s/%s/keppel/keystone-user/github-actions/password" $vbase $region | quote }}
+          role_assignments:
+            - project: service
+              role:    registry_viewer # worthless role assignment, used only to enable Keystone login (actual access to relevant Keppel accounts is given by RBAC policies)
+        {{- end }}
 
     - name: ccadmin
       groups:
@@ -89,7 +109,7 @@ spec:
     {{- range $domains }}
     - name: {{.}}
       groups:
-        - name: {{. | upper}}_DOMAIN_REGISTRY_ADMINS
+        - name: {{ hasPrefix "iaas-" . | ternary . ( upper . ) }}_DOMAIN_REGISTRY_ADMINS
           role_assignments:
             - domain: {{.}}
               role: registry_admin

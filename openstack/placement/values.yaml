@@ -1,3 +1,4 @@
+---
 # Default values for placement
 # This is a YAML-formatted file.
 # Declare name/value pairs to be passed into your templates.
@@ -18,6 +19,7 @@ use_tls_acme: true
 
 proxysql:
   mode: ""
+  native_sidecar: true
 
 defaults:
   default:
@@ -47,22 +49,79 @@ uwsgi:
 max_pool_size: 10
 max_overflow: 5
 
-api_db: # Only used when mariadb.enabled=False to connect to the nova-api-mariadb
+api_db:  # Only used when mariadb.enabled=False to connect to the nova-api-mariadb
   name: placement
   user: placement
   password: null
 
+dbType: "mariadb"
+dbName: "placement"
+
+# databaseOverride: mariadb
+# If set, forces the chart to use the given database config map for the database URL
+
 mariadb:
   enabled: true
   name: placement
+  defaultUser: placement
+  databases:
+    - placement
   alerts:
     support_group: "compute-storage-api"
   ccroot_user:
     enabled: true
+  persistence_claim:
+    name: db-placement-pvc
+    size: "10Gi"
+  job:
+    maintenance:
+      enabled: false
+      function:
+        analyzeTable:
+          enabled: true
+          allTables: true
+  backup_v2:
+    enabled: true
+    databases:
+      - placement
+    verify_tables:
+      - placement.allocations
+      - placement.resource_providers
+    oauth:
+      client_id: "placement"
+
+pxc_db:
+  enabled: false
+  name: placement
+  defaultUser: placement
+  alerts:
+    support_group: "compute-storage-api"
+  ccroot_user:
+    enabled: true
+  databases:
+    - placement
+  users:
+    placement:
+      name: placement
+      grants:
+        - "ALL PRIVILEGES on placement.*"
+  pxc:
+    persistence:
+      size: 10Gi
+  backup:
+    enabled: true
+    s3:
+      secrets:
+        aws_access_key_id: null
+        aws_secret_access_key: null
+    pitr:
+      enabled: true
 
 memcached:
   alerts:
     support_group: "compute-storage-api"
+  vpa:
+    set_main_container: true
 
 logging:
   formatters:

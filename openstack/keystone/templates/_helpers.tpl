@@ -15,42 +15,29 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
 {{- printf "%s-%s" .Release.Name $name | trunc 63 | replace "_" "-" | trimSuffix "-" -}}
 {{- end -}}
 
-{{- define "db_host" -}}
-{{- if .Values.global.clusterDomain -}}
-{{.Release.Name}}-mariadb.{{.Release.Namespace}}.svc.{{.Values.global.clusterDomain}}
-{{- else if and .Values.mariadb_galera.enabled .Values.databaseKind (eq .Values.databaseKind "galera") -}}
-{{.Release.Name}}-mariadb.{{.Release.Namespace}}
-{{- else -}}
-{{.Release.Name}}-mariadb.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}
-{{- end -}}
-{{- end -}}
-
-{{- define "memcached_host" -}}
-{{- if .Values.global.clusterDomain -}}
-{{.Release.Name}}-memcached.{{.Release.Namespace}}.svc.{{.Values.global.clusterDomain}}
-{{- else if .Values.global_setup -}}
+{{- define "keystone.memcached_host" -}}
+{{- if .Values.global.is_global_region -}}
 {{.Release.Name}}-memcached.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.db_region}}.{{.Values.global.tld}}
 {{- else -}}
 {{.Release.Name}}-memcached.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}
 {{- end -}}
 {{- end -}}
 
-{{- define "rabbitmq_host" -}}
-{{- if .Values.global.clusterDomain -}}
-{{.Release.Name}}-rabbitmq.{{.Release.Namespace}}.svc.{{.Values.global.clusterDomain}}
-{{- else if .Values.global_setup -}}
-{{.Release.Name}}-rabbitmq.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.db_region}}.{{.Values.global.tld}}
-{{- else -}}
-{{.Release.Name}}-rabbitmq.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}
-{{- end -}}
-{{- end -}}
+{{- define "keystone.service_dependencies" }}
+  {{- template "keystone.db_service" . }},{{ template "keystone.memcached_service" . }}
+{{- end }}
 
-{{/*
-To satisfy common/mysql_metrics :(
-*/}}
+{{- define "keystone.db_service" }}
+  {{- if or .Values.percona_cluster.enabled (eq .Values.dbType "pxc-global") }}
+    {{- .Release.Name }}-percona-pxc
+  {{- else }}
+    {{- include "utils.db_host" . }}
+  {{- end }}
+{{- end }}
 
-{{define "keystone_db_host"}}{{- if .Values.global.clusterDomain }}{{.Release.Name}}-mariadb.{{.Release.Namespace}}.svc.{{.Values.global.clusterDomain}}{{ else }}{{.Release.Name}}-mariadb.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{- end -}}{{end}}
-
+{{- define "keystone.memcached_service" }}
+{{- .Release.Name }}-memcached
+{{- end }}
 
 {{- define "2faproxy.selectorLabels" -}}
 app.kubernetes.io/name: 2faproxy

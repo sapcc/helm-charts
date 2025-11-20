@@ -56,7 +56,7 @@ spec:
         {{ end }} 
       containers:
       - name: {{ .Release.Name }}
-        image: {{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{.Values.image_bind}}:{{ .Values.image_bind_tag}}
+        image: {{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{.Values.images.bind.image}}:{{ .Values.images.bind.image_tag}}
         imagePullPolicy: {{ .Values.image_pullPolicy }}
         resources:
 {{ toYaml .Values.resources.bind | indent 10 }}
@@ -86,6 +86,13 @@ spec:
         {{ if .Values.extra_env }}
 {{ toYaml .Values.extra_env | indent 8 }}
         {{ end }}
+
+{{- if .Values.secret_env }}
+        envFrom:
+          - secretRef:
+              name: {{ .Release.Name }}-secret-env
+{{- end }}
+
         volumeMounts:
           - name: persistent-storage
             mountPath: {{ .Values.storage_mountpoint | default "/var/lib/bind" }}
@@ -122,14 +129,14 @@ spec:
           timeoutSeconds: 3
           periodSeconds: 10
       - name: metric
-        image: {{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{.Values.image_bind_exporter}}:{{ .Values.image_bind_exporter_tag }}
+        image: {{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{.Values.images.bind_exporter.image}}:{{ .Values.images.bind_exporter.image_tag }}
         imagePullPolicy: {{ .Values.image_pullPolicy }}
         args: ["--bind.stats-url={{ .Values.exporter_stats_url }}","--bind.pid-file=/var/run/named/named.pid","--bind.stats-groups=server,view,tasks"]
         resources:
 {{ toYaml .Values.resources.metric | indent 10 }}
 {{ if .Values.zabbix.enabled }}
       - name: zabbix
-        image: {{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{.Values.image_zabbix_agent}}:{{ .Values.image_zabbix_agent_tag }}
+        image: {{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{.Values.images.zabbix_agent.image}}:{{ .Values.images.zabbix_agent.image_tag }}
         imagePullPolicy: {{ .Values.image_pullPolicy }}
         resources:
 {{ toYaml .Values.resources.zabbix | indent 10 }}
@@ -163,12 +170,22 @@ spec:
 {{ end }}
 {{ if .Values.sshd.enabled }}
       - name: sshd
-        image: {{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{.Values.image_sshd}}:{{ .Values.image_sshd_tag }}
+        image: {{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{.Values.images.sshd.image}}:{{ .Values.images.sshd.image_tag }}
         imagePullPolicy: {{ .Values.image_pullPolicy }}
         resources:
 {{ toYaml .Values.resources.sshd | indent 10 }}
+
+{{- if .Values.sshd.env }}
         env:
 {{ toYaml .Values.sshd.env | indent 10 }}
+{{- end }}
+
+{{- if .Values.sshd.secret_env }}
+        envFrom:
+          - secretRef:
+              name: {{ .Release.Name }}-sshd-secret-env
+{{- end }}
+
         volumeMounts:
           - name: persistent-storage
             mountPath: {{ .Values.storage_mountpoint | default "/var/lib/bind" }}

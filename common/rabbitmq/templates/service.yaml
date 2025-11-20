@@ -3,14 +3,7 @@ kind: Service
 metadata:
   name: {{ template "fullname" . }}
   labels:
-    app: {{ template "fullname" . }}
-    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
-    release: "{{ .Release.Name }}"
-    heritage: "{{ .Release.Service }}"
-    type: rabbitmq
-    component: {{ .Release.Name }}
-    system: openstack
-    {{- include "rabbitmq.labels" . | indent 4 }}
+    {{- include "rabbitmq.labels" (list $ "version" "rabbitmq" "service" "messagequeue") | indent 4 }}
   annotations:
 {{- if .Values.metrics.enabled }}
     prometheus.io/scrape: "true"
@@ -19,6 +12,7 @@ metadata:
 {{- end }}
 {{- if and (and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested) $.Values.linkerd.enabled }}
     linkerd.io/inject: enabled
+    config.linkerd.io/opaque-ports: "{{ default 5672 .Values.ports.public }}"
 {{- end }}
 spec:
   type: {{ .Values.serviceType }}
@@ -27,11 +21,15 @@ spec:
 {{- end }}
   ports:
     - name: public
-      port: {{ default 5672 .Values.ports.public }}
+      port: {{ .Values.ports.public }}
     - name: management
-      port: {{ default 15672 .Values.ports.management }}
+      port: {{ .Values.ports.management }}
+{{- if .Values.enableSsl }}
+    - name: amqps
+      port: {{ .Values.ports.amqps }}
+{{- end }}
   selector:
-    app: {{ template "fullname" . }}
+    app.kubernetes.io/instance: {{ template "fullname" . }}
   {{- if .Values.externalIPs }}
   externalIPs:
     {{- range .Values.externalIPs }}

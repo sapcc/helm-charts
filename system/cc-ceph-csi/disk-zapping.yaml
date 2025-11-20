@@ -1,0 +1,64 @@
+################################################################################
+# HANDLE WITH GREAT CARE - THIS WILL REMOVE ALL DATA FROM SELECTED NODES/DISKS #
+################################################################################
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: ceph-storage-reset
+spec:
+  selector:
+    matchLabels:
+      app: ceph-storage-reset
+  template:
+    metadata:
+      labels:
+        app: ceph-storage-reset
+    spec:
+      nodeSelector:
+        kubernetes.metal.cloud.sap/role: runtime-worker
+      hostPID: true
+      initContainers:
+        - name: init
+          image: keppel.global.cloud.sap/ccloud-dockerhub-mirror/library/alpine:latest
+          securityContext:
+            privileged: true
+          command:
+            - sh
+            - -c
+          args:
+            - |-
+              set -xe
+
+              apk add sgdisk hdparm lsblk
+              
+              for DISK in $(ls /dev/nvme*n1); do
+                DISK_LABEL=$(lsblk -n -o label "$DISK")
+
+                if [ -z "${DISK_LABEL}" ]; then
+                  echo "Zapping $DISK on node $NODE ..."
+                  chroot /host sgdisk --zap-all $DISK
+                  chroot /host dd if=/dev/zero of="$DISK" bs=1M count=100 oflag=direct,dsync
+                  chroot /host blkdiscard $DISK
+                  chroot /host hdparm -z $DISK
+                else
+                  echo "Skipping $DISK with label $DISK_LABEL on node $NODE"
+                fi
+              done
+
+              echo "Done."
+
+          volumeMounts:
+            - name: host
+              mountPath: "/host"
+          env:
+            - name: NODE
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+      containers:
+        - name: pause
+          image: keppel.global.cloud.sap/ccloud-dockerhub-mirror/sapcc/pause-amd64:3.1
+      volumes:
+        - name: host
+          hostPath:
+              path: "/"

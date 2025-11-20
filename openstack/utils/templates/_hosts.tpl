@@ -11,9 +11,13 @@
     {{- $add_urlquery := index . 1 -}}
     {{- if (hasPrefix "vault+kvv2" $str) -}}
         {{"{{"}} resolve "{{ $str }}" {{ if $add_urlquery }}| urlquery {{ end }}{{"}}"}}
-    {{- else -}}
-        {{ $str }}
-{{- end -}}
+    {{- else if (hasPrefix "{{" $str) }}
+        {{- $str }}
+    {{- else if $add_urlquery }}
+        {{- $str | urlquery }}
+    {{- else }}
+        {{- $str }}
+    {{- end }}
 {{- end -}}
 
 {{- define "resolve_secret" -}}
@@ -36,10 +40,14 @@
         {{- end }}
         {{- if and $dbConfig.users $dbConfig.databases }}
             {{- $db := first $dbConfig.databases }}
-            {{- $user := get $dbConfig.users $db | required (printf ".Values.db.%v.name & .password are required (key comes from first database in databases array)" $db) }}
-            {{- $user.name | required (printf ".Values.db.%v.name is required!" $db ) }}:{{ $user.password | required (printf ".Values.db.%v.password is required!" $db ) }}
+            {{- $defaultUser := default $db $dbConfig.defaultUser }}
+            {{- if and (hasKey .Values.global "db") (hasKey .Values.global.db "defaultUser") (hasKey $dbConfig "defaultUser") }}
+                {{- $defaultUser = coalesce .Values.global.db.defaultUser $dbConfig.defaultUser $db }}
+            {{- end }}
+            {{- $user := get $dbConfig.users $defaultUser | required (printf ".Values.%s.users.%s is required (selected via .Values.%s.defaultUser)" $dbType $defaultUser $dbType) }}
+            {{- $user.name | required (printf ".Values.%s.users.%s.name is required!" $dbType $defaultUser) }}:{{ $user.password | required (printf ".Values.%s.users.%s.password is required!" $dbType $defaultUser) }}
         {{- else }}
-            {{- coalesce $envAll.Values.dbUser $envAll.Values.global.dbUser "root" }}:{{ coalesce $envAll.Values.dbPassword $envAll.Values.global.dbPassword $dbConfig.root_password | required ".Values.db.root_password is required!" }}
+            {{- coalesce $envAll.Values.dbUser $envAll.Values.global.dbUser "root" }}:{{ coalesce $envAll.Values.dbPassword $envAll.Values.global.dbPassword $dbConfig.root_password | required (printf ".Values.%s.root_password is required!" $dbType) }}
         {{- end }}
     {{- else }}
         {{- $user := index $envAll 2 }}
@@ -50,16 +58,41 @@
 
 {{/*
 Choose different db_url function depending on dbType value
-Default: mariadb
+Default db type: mariadb
+
+Can accept tuple or map
+
+Tuple examples:
+4 items:
+    tuple . .Values.apidbName .Values.apidbUser .Values.apidbPassword
+5 items:
+    tuple . .Values.apidbName .Values.apidbUser .Values.apidbPassword .Values.mariadb_api.name
+6 items:
+    tuple . .Values.apidbName .Values.apidbUser .Values.apidbPassword .Values.mariadb_api.name .Values.apidbType
 */}}
 {{- define "utils.db_url" }}
 {{- $dbUrlHelpers := dict
     "mariadb" "utils._db_url_mariadb"
     "pxc-db" "utils._db_url_pxc_db"
 }}
-{{- $dbType := default "mariadb" .Values.dbType }}
-{{- $dbUrl := index $dbUrlHelpers $dbType }}
-{{- include $dbUrl . }}
+{{- if kindIs "map" . }}
+    {{- $dbType := default "mariadb" .Values.dbType }}
+    {{- $dbUrl := index $dbUrlHelpers $dbType }}
+    {{- include $dbUrl . }}
+{{- else }}
+    {{- $dbType := "mariadb" }}
+    {{- $tupleLen := len . }}
+    {{- if or (eq $tupleLen 4) (eq $tupleLen 5) }}
+        {{- $dbUrl := index $dbUrlHelpers $dbType }}
+        {{- include $dbUrl . }}
+    {{- else if eq $tupleLen 6 }}
+        {{- $dbType = index . 5 }}
+        {{- $dbUrl := index $dbUrlHelpers $dbType }}
+        {{- include $dbUrl . }}
+    {{- else }}
+        {{- fail (printf "utils.db_url: supports tuples with 4, 5 or 6 items, or maps, and got tuple with %v items" $tupleLen) }}
+    {{- end }}
+{{- end }}
 {{- end }}
 
 {{/*
@@ -141,10 +174,15 @@ Tuple example: tuple . .Values.apidbName .Values.apidbUser .Values.apidbPassword
     {{- if kindIs "map" . }}
         {{- if and .Values.mariadb.users .Values.mariadb.databases }}
             {{- $db := first .Values.mariadb.databases }}
-            {{- $user := get .Values.mariadb.users $db | required (printf ".Values.mariadb.%v.name & .password are required (key comes from first database in .Values.mariadb.databases)" $db) }}
-            {{- tuple . $db $user.name (required (printf "User with key %v requires password" $db) $user.password) | include "utils._db_url_mariadb" }}
+            {{- $dbConfig := .Values.mariadb }}
+            {{- $defaultUser := default $db $dbConfig.defaultUser }}
+            {{- if and (hasKey .Values.global "db") (hasKey .Values.global.db "defaultUser") (hasKey $dbConfig "defaultUser") }}
+                {{- $defaultUser = coalesce .Values.global.db.defaultUser $dbConfig.defaultUser $db }}
+            {{- end }}
+            {{- $user := get .Values.mariadb.users $defaultUser | required (printf ".Values.mariadb.users.%s is required (selected via .Values.mariadb.defaultUser)" $defaultUser) }}
+            {{- tuple . $db $user.name (required (printf "User with key %v requires password" $defaultUser) $user.password) | include "utils._db_url_mariadb" }}
         {{- else }}
-            {{- tuple . (coalesce .Values.dbName .Values.db_name) (coalesce .Values.dbUser .Values.global.dbUser "root" | include "resolve_secret_urlquery") (coalesce .Values.dbPassword .Values.global.dbPassword .Values.mariadb.root_password | include "resolve_secret_urlquery" | required ".Values.mariadb.root_password is required!") .Values.mariadb.name | include "utils._db_url_mariadb" }}
+            {{- tuple . (coalesce .Values.dbName .Values.db_name) (coalesce .Values.dbUser .Values.global.dbUser "root" ) (coalesce .Values.dbPassword .Values.global.dbPassword .Values.mariadb.root_password | required ".Values.mariadb.root_password is required!") .Values.mariadb.name | include "utils._db_url_mariadb" }}
         {{- end }}
     {{- else -}}
 mysql+pymysql://{{ include "db_credentials" (dict "context" . "dbType" "mariadb") }}@
@@ -183,10 +221,15 @@ Tuple example: tuple . .Values.apidbName .Values.apidbUser .Values.apidbPassword
     {{- if kindIs "map" . }}
         {{- if and .Values.pxc_db.users .Values.pxc_db.databases }}
             {{- $db := first .Values.pxc_db.databases }}
-            {{- $user := get .Values.pxc_db.users $db | required (printf ".Values.pxc_db.%v.name & .password are required (key comes from first database in .Values.pxc_db.databases)" $db) }}
-            {{- tuple . $db $user.name (required (printf "User with key %v requires password" $db) $user.password) | include "utils._db_url_pxc_db" }}
+            {{- $dbConfig := .Values.pxc_db }}
+            {{- $defaultUser := default $db $dbConfig.defaultUser }}
+            {{- if and (hasKey .Values.global "db") (hasKey .Values.global.db "defaultUser") (hasKey $dbConfig "defaultUser") }}
+                {{- $defaultUser = coalesce .Values.global.db.defaultUser $dbConfig.defaultUser $db }}
+            {{- end }}
+            {{- $user := get .Values.pxc_db.users $defaultUser | required (printf ".Values.pxc_db.users.%s is required (selected via .Values.pxc_db.defaultUser)" $defaultUser) }}
+            {{- tuple . $db $user.name (required (printf "User with key %v requires password" $defaultUser) $user.password) | include "utils._db_url_pxc_db" }}
         {{- else }}
-            {{- tuple . (coalesce .Values.dbName .Values.db_name) (coalesce .Values.dbUser .Values.global.dbUser "root" | include "resolve_secret_urlquery") (coalesce .Values.dbPassword .Values.global.dbPassword .Values.pxc_db.root_password | include "resolve_secret_urlquery" | required ".Values.pxc_db.root_password is required!") .Values.pxc_db.name | include "utils._db_url_pxc_db" }}
+            {{- tuple . (coalesce .Values.dbName .Values.db_name) (coalesce .Values.dbUser .Values.global.dbUser "root") (coalesce .Values.dbPassword .Values.global.dbPassword .Values.pxc_db.root_password | required ".Values.pxc_db.root_password is required!") .Values.pxc_db.name | include "utils._db_url_pxc_db" }}
         {{- end }}
     {{- else -}}
 mysql+pymysql://{{ include "db_credentials" (dict "context" . "dbType" "pxc-db") }}@
@@ -309,9 +352,8 @@ Custom DB URL for the global services using percona_cluster
 {{define "octavia_api_endpoint_host_public"}}loadbalancer-3.{{ include "host_fqdn" . }}{{end}}
 
 {{define "andromeda_api_endpoint_public"}}gtm-3.{{ include "host_fqdn" . }}{{end}}
-{{define "arc_api_endpoint_host_public"}}arc.{{ include "host_fqdn" . }}{{end}}
+{{define "andromeda_liquid_server_api_endpoint_public"}}gtm-liquid-3.{{ include "host_fqdn" . }}{{end}}
 {{define "archer_api_endpoint_public"}}archer.{{ include "host_fqdn" . }}{{end}}
-{{define "lyra_api_endpoint_host_public"}}lyra.{{ include "host_fqdn" . }}{{end}}
 {{define "webcli_api_endpoint_host_public"}}webcli.{{ include "host_fqdn" . }}{{end}}
 
 {{define "swift_endpoint_host"}}objectstore-3.{{ include "host_fqdn" . }}{{end}}

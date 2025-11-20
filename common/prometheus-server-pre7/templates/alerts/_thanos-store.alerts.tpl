@@ -24,9 +24,9 @@ groups:
     - alert: ThanosStoreSeriesGateLatencyHigh
       expr: |
         (
-          histogram_quantile(0.99, sum by (prometheus, le) (rate(thanos_bucket_store_series_gate_duration_seconds_bucket{job=~".*thanos.*store.*", prometheus="{{ include "prometheus.name" . }}"}[5m]))) > 2
+          histogram_quantile(0.99, sum by (prometheus, le) (rate(thanos_bucket_store_series_gate_queries_duration_seconds_bucket{job=~".*thanos.*store.*", prometheus="{{ include "prometheus.name" . }}"}[5m]))) > 2
         and
-          sum by (prometheus) (rate(thanos_bucket_store_series_gate_duration_seconds_count{job=~".*thanos.*store.*", prometheus="{{ include "prometheus.name" . }}"}[5m])) > 0
+          sum by (prometheus) (rate(thanos_bucket_store_series_gate_queries_duration_seconds_count{job=~".*thanos.*store.*", prometheus="{{ include "prometheus.name" . }}"}[5m])) > 0
         )
       for: 10m
       labels:

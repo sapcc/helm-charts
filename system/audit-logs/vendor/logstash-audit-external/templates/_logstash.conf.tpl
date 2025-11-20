@@ -1,28 +1,47 @@
 input {
 {{- if .Values.syslog.enabled }}
   udp {
+    id => "input_udp"
     port  => {{.Values.input_syslog_port}}
     type => syslog
   }
   tcp {
+    id => "input_tcp"
     port  => {{.Values.input_syslog_port}}
     type => syslog
   }
 {{- end }}
+{{- if .Values.http.enabled }}
   http {
+    id => "input_http"
     port  => {{.Values.input_http_port}}
     tags => ["audit"]
-    user => '{{.Values.global.logstash_external_http_user}}'
-    password => '${AUDIT_HTTP_IN}'
+    user => '${AUDIT_HTTP_USER}'
+    password => '${AUDIT_HTTP_PWD}'
 {{ if eq .Values.global.clusterType "metal" -}}
     ssl_enabled => true
     ssl_certificate => '/tls-secret/tls.crt'
     ssl_key => '/usr/share/logstash/config/tls.key'
+    ssl_supported_protocols => ['TLSv1.2', 'TLSv1.3']
     threads => 12
 {{- end }}
   }
+{{- end }}
+{{- if .Values.mtls.enabled }}
+  http {
+    id => "input_mtls"
+    port  => {{.Values.input_mtls_port}}
+    tags => ["kube-api"]
+    ssl_enabled => true
+    ssl_certificate => '/tls-secret/tls.crt'
+    ssl_key => '/usr/share/logstash/config/tls.key'
+    ssl_supported_protocols => ['TLSv1.2', 'TLSv1.3']
+    threads => 12
+  }
+{{- end }}
 {{- if .Values.beats.enabled }}
   beats {
+    id => "input_beats"
     port => {{ .Values.beats.port }}
     tags => ["audit"]
   }
@@ -182,12 +201,38 @@ filter {
         }
       }
     }
-  }
+    if ("kube-api" in [tags]) {
+            split {
+              field => "items"
+          }
+
+          if [items][annotations][shoot.gardener.cloud/name] {
+            grok {
+              match => { "[items][annotations][shoot.gardener.cloud/name]" => "(?<sap.cc.region>[^-]+-[^-]+-[^-]+)$" }
+            }
+          }
+
+          mutate {
+            add_field => { "[sap][cc][cluster]" => "%{[items][annotations][shoot.gardener.cloud/name]}"}
+            add_field => { "[sap][cc][audit][source]" => "kube-api"}
+            add_field => { "[sap][cc][audit][gardener_seed]" => "%{[items][annotations][seed.gardener.cloud/name]}"}
+          }
+          ruby {
+                 code => '
+                      event.get("items").each { |k, v|
+                          event.set(k,v)
+                          }
+                          event.remove("items")
+                '
+         }
+        }
+      }
 
 
 output {
   if [sap][cc][audit][source] == "awx" {
     http {
+      id => "output_awx"
       ssl_certificate_authorities => ["/usr/share/logstash/config/ca.pem"]
       url => "https://{{ .Values.global.forwarding.audit_awx.host }}"
       format => "json"
@@ -195,6 +240,7 @@ output {
     }
   } else if [sap][cc][audit][source] == "flatcar" {
     http {
+      id => "output_flatcar"
       ssl_certificate_authorities => ["/usr/share/logstash/config/ca.pem"]
       url => "https://{{ .Values.global.forwarding.audit_auditbeat.host }}"
       format => "json"
@@ -202,6 +248,15 @@ output {
     }
   } else if [type] == "audit" or "audit" in [tags] {
     http {
+      id => "output_else_audit"
+      ssl_certificate_authorities => ["/usr/share/logstash/config/ca.pem"]
+      url => "https://{{ .Values.global.forwarding.audit.host }}"
+      format => "json"
+      http_method => "post"
+    }
+  } else if [type] == "kube-api" or "kube-api" in [tags] {
+    http {
+      id => "output_kube-api"
       ssl_certificate_authorities => ["/usr/share/logstash/config/ca.pem"]
       url => "https://{{ .Values.global.forwarding.audit.host }}"
       format => "json"

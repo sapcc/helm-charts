@@ -5,13 +5,18 @@ metadata:
   namespace: {{ .Release.Namespace }}
   labels:
     app: secrets-injector
+  annotations:
+    secret.reloader.stakater.com/reload: secrets-injector 
 spec:
   selector:
     matchLabels:
       app: secrets-injector
   replicas: {{ .Values.replicaCount }}
   strategy:
-    type: Recreate
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
   template:
     metadata:
       labels:
@@ -33,6 +38,9 @@ spec:
         command: ["/secrets-injector"]
         args:
         - -cert-path=/certs
+        {{- if .Values.webhook.clientCA.enabled }}
+        - -client-ca-name={{ .Values.webhook.clientCA.keyName }}
+        {{- end }}
         env:
         {{ range $index, $account := .Values.config.accounts -}}
         - name: VAULT_ROLE_ID_{{- $index }}
@@ -72,8 +80,14 @@ spec:
       {{ end -}}
       volumes:
         - name: certificate
-          secret:
-            secretName: secrets-injector-server-cert
+          projected:
+            sources:
+            - secret:
+                name: secrets-injector-server-cert
+            {{- if .Values.webhook.clientCA.enabled }}
+            - {{ .Values.webhook.clientCA.resourceType }}:
+                name: {{ .Values.webhook.clientCA.resourceName }}
+            {{- end }}
         - name: config
           configMap:
             name: secrets-injector

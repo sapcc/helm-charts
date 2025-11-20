@@ -3,11 +3,7 @@ kind: ConfigMap
 metadata:
   name: {{ template "fullname" . }}-bin
   labels:
-    app: {{ template "fullname" . }}
-    release: "{{ .Release.Name }}"
-    heritage: "{{ .Release.Service }}"
-    component: rabbitmq
-    {{- include "rabbitmq.labels" . | indent 4 }}
+    {{- include "rabbitmq.labels" (list $ "noversion" "rabbitmq" "configmap" "messagequeue") | indent 4 }}
 data:
   rabbitmq-start: |
 {{ include (print .Template.BasePath "/bin/_rabbitmq-start.tpl") . | indent 4 }}

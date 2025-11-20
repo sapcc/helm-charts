@@ -33,10 +33,13 @@
   'cloud_registry_viewer':%(target.role.name)s or
   'cloud_resource_admin':%(target.role.name)s or
   'cloud_resource_viewer':%(target.role.name)s or
+  'cloud_masterdata_admin':%(target.role.name)s or
+  'cloud_masterdata_viewer':%(target.role.name)s or
   'cloud_baremetal_admin':%(target.role.name)s or
   'cloud_network_admin':%(target.role.name)s or
   'cloud_dns_admin':%(target.role.name)s or
   'cloud_dns_viewer':%(target.role.name)s or
+  'cloud_dns_backup':%(target.role.name)s or
   'dns_admin':%(target.role.name)s or
   'dns_hostmaster':%(target.role.name)s or
   'dns_zonemaster':%(target.role.name)s or
@@ -338,6 +341,10 @@
 "identity:ec2_delete_credential": "rule:cloud_admin or user_id:%(target.credential.user_id)s"
 
 "identity:ec2_delete_credentials": "rule:identity:ec2_delete_credential"
+
+"identity:ec2tokens_validate": "rule:service_or_admin"
+"identity:s3tokens_validate": "rule:service_or_admin"
+
 # Show endpoint details.
 # GET  /v3/endpoints/{endpoint_id}
 # Intended scope(s): system
@@ -938,7 +945,7 @@
 # POST  /v3/projects
 # Intended scope(s): system, domain
 #"identity:create_project": "(role:admin and system_scope:all) or (role:admin and domain_id:%(target.project.domain_id)s)"
-"identity:create_project": "rule:cloud_admin or (role:admin and domain_id:%(target.project.domain_id)s) or (role:admin and project_id:%(target.project.parent_id)s)"
+"identity:create_project": "rule:cloud_admin or (role:admin and domain_id:%(target.project.domain_id)s) or (role:admin and project_id:%(target.project.parent_id)s) or user_domain_id:%(target.project.domain_id)s"
 
 # Update project.
 # PATCH  /v3/projects/{project_id}

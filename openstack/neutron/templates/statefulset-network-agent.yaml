@@ -1,5 +1,4 @@
 {{- $envAll := . }}
-{{- $release_requires_sec_cap:= or (hasPrefix "ussuri" (default .Values.imageVersion .Values.imageVersionServerAPI)) (hasPrefix "yoga" (default .Values.imageVersion .Values.imageVersionServerAPI)) -}}
 {{- if and (.Values.agent.multus | default false) .Values.agent.controlplane }}
 {{- $az_count := len .Values.global.availability_zones -}}
 {{ range $i, $az_long := .Values.global.availability_zones | default (list (printf "%sa" $.Values.global.region) (printf "%sb" $.Values.global.region)) }}
@@ -25,20 +24,11 @@ spec:
       name: neutron-network-agent-{{ $az }}
   serviceName: neutron-network-agent
   podManagementPolicy: "Parallel"
-{{- if $.Values.pod.replicas.network_agent }}
   replicas: {{ $.Values.pod.replicas.network_agent }}
-{{- else if and (ge $az_count 2) (eq $az "a") }}
-  replicas: 5
-{{- else if and (ge $az_count 2) (eq $az "b") }}
-  replicas: 5
-{{- else if eq $az_count 1 }}
-  replicas: 10
-{{- else }}
-  replicas: 3
-{{- end }}
   template:
     metadata:
       annotations:
+        kubectl.kubernetes.io/default-container: neutron-dhcp-agent
         k8s.v1.cni.cncf.io/networks: '[{ "name": "cbr1-bridge", "interface":"{{$.Values.cp_network_interface}}" }]'
         configmap-etc-hash: {{ include (print $.Template.BasePath "/configmap-etc.yaml") $ | sha256sum }}
         {{- include "utils.linkerd.pod_and_service_annotation" $ | indent 8 }}
@@ -90,11 +80,7 @@ spec:
           imagePullPolicy: IfNotPresent
           command: ["dumb-init", "neutron-dhcp-agent", "--config-file", "/etc/neutron/neutron.conf", "--config-dir", "/etc/neutron/secrets", "--config-file", "/etc/neutron/dhcp-agent.ini", "--config-file", "/etc/neutron/linux-bridge.ini", "--config-file", "/etc/neutron/az-{{ $az }}.conf"]
           env:
-            - name: SENTRY_DSN
-              valueFrom:
-                secretKeyRef:
-                  name: sentry
-                  key: neutron.DSN.python
+            {{- include "utils.sentry_config" $ | nindent 12 }}
             - name: DEBUG_CONTAINER
               value: "false"
             - name: SPT_NOENV
@@ -104,7 +90,7 @@ spec:
             {{- include "utils.trust_bundle.env" $ | indent 12 }}
           readinessProbe:
             exec:
-              command: ["neutron-dhcp-readiness", "-config-file", "/etc/neutron/neutron.conf", "--config-file", "/etc/neutron/secrets/neutron-common-secrets.conff"]
+              command: ["neutron-dhcp-readiness", "-config-file", "/etc/neutron/neutron.conf", "--config-file", "/etc/neutron/secrets/neutron-common-secrets.conf"]
             initialDelaySeconds: 30
             periodSeconds: 60
             timeoutSeconds: 10
@@ -167,11 +153,7 @@ spec:
           imagePullPolicy: IfNotPresent
           command: ["dumb-init", "neutron-l3-agent", "--config-file", "/etc/neutron/neutron.conf", "--config-dir", "/etc/neutron/secrets", "--config-file", "/etc/neutron/l3-agent.ini", "--config-file", "/etc/neutron/plugins/ml2/ml2-conf.ini", "--config-file", "/etc/neutron/linux-bridge.ini", "--config-file", "/etc/neutron/az-{{ $az }}.conf"]
           env:
-            - name: SENTRY_DSN
-              valueFrom:
-                secretKeyRef:
-                  name: sentry
-                  key: neutron.DSN.python
+            {{- include "utils.sentry_config" $ | nindent 12 }}
             - name: DEBUG_CONTAINER
               value: "false"
             {{- include "utils.trust_bundle.env" $ | indent 12 }}
@@ -224,11 +206,7 @@ spec:
           imagePullPolicy: IfNotPresent
           command: ["dumb-init", "neutron-linuxbridge-agent", "--config-file", "/etc/neutron/neutron.conf", "--config-dir", "/etc/neutron/secrets", "--config-file", "/etc/neutron/plugins/ml2/ml2_conf.ini", "--config-file", "/etc/neutron/linux-bridge.ini"]
           env:
-            - name: SENTRY_DSN
-              valueFrom:
-                secretKeyRef:
-                  name: sentry
-                  key: neutron.DSN.python
+            {{- include "utils.sentry_config" $ | nindent 12 }}
             - name: DEBUG_CONTAINER
               value: "false"
             - name: PYTHONWARNINGS
@@ -246,12 +224,10 @@ spec:
             capabilities:
               add:
                 - NET_ADMIN
-{{- if $release_requires_sec_cap }}
                 - SYS_ADMIN
                 - DAC_OVERRIDE
                 - DAC_READ_SEARCH
                 - SYS_PTRACE
-{{ end }}
           resources:
 {{ toYaml $.Values.pod.resources.linuxbridge_agent | indent 12 }}
           volumeMounts:

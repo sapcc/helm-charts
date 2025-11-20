@@ -4,11 +4,13 @@ metadata:
   name: {{ .Values.objectstore.service.name }}
   namespace: {{ .Release.Namespace }}
 spec:
+{{- if .Values.objectstore.service.externalIP }}
   externalIPs:
   - {{ .Values.objectstore.service.externalIP }}
   type: NodePort
-  sessionAffinity: None
   externalTrafficPolicy: Local
+{{- end }}
+  sessionAffinity: None
   ports:
     - port: {{ .Values.objectstore.service.port }}
       targetPort: {{ .Values.objectstore.service.port }}

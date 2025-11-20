@@ -5,9 +5,42 @@ service_name: 'neutron'
 prefix: '/v2.0'
 
 resources:
-  #custom endpoint
+  # custom endpoint - https://github.com/sapcc/networking-aci
+  aci_ml2:
+    el_type_uri: network/aci_ml2
+    children:
+      config:
+        el_type_uri: network/aci_ml2/config
+      hostgroup-modes:
+      networks:
+      nullroutes:
+      az_aware_subnet_routes:
+  address_groups:
+  address_scopes:
+  #custom endpoint - https://github.com/sapcc/asr1k-neutron-l3
   asrk1:
+    el_type_uri: network/asrk1
     singleton: true
+    children:
+      routers:
+      networks:
+      orphans:
+      config:
+        el_type_uri: network/asrk1/config
+      devices:
+      fwaas:
+        el_type_uri: network/asrk1/fwaas
+      interface_statistics:
+      init_scheduler:
+        el_type_uri: network/asrk1/init-scheduler
+      init_bindings:
+      init_atts:
+      init_config:
+        el_type_uri: network/asrk1/init-config
+  agents:
+    children:
+      dhcp-network:
+  auto-allocated-topology:
   bgpvpn:
     # BPG VPNs namespace
     singleton: true
@@ -99,12 +132,14 @@ resources:
         type_uri: network/metering/label-rules
   networks:
     children:
+      dhcp-agents:
       tags:
   network-ip-availabilities:
   ports:
     custom_attributes:
       security_groups: network/security-groups
     children:
+      bindings:
       tags:
   quotas:
     custom_actions:
@@ -124,11 +159,13 @@ resources:
       rule-types:
       tags:
   rbac-policies:
+    el_type_uri: network/rbac-policy
   routers:
     custom_actions:
       add_router_interface: update/add/router-interface
       remove_router_interface: update/remove/router-interface
     children:
+      l3-agents:
       tags:
   security-groups:
     children:
@@ -142,6 +179,7 @@ resources:
       tags:
   segments:
   service-profiles:
+    el_type_uri: network/service-profile
   subnetpools:
     children:
       tags:

@@ -1,29 +1,18 @@
+{{- $cdomains := .Values.global.domain_seeds.customer_domains | required "missing value for .Values.global.domain_seeds.customer_domains" -}}
+{{- $domains  := concat (list "ccadmin" "Default") $cdomains -}}
+{{- $cdomainsWithoutSupportProjects := .Values.global.domain_seeds.customer_domains_without_support_projects | required "missing value for .Values.global.domain_seeds.customer_domains_without_support_projects" -}}
+
 apiVersion: "openstack.stable.sap.cc/v1"
 kind: "OpenstackSeed"
 metadata:
   name: ironic-seed
 spec:
   requires:
-  - monsoon3/domain-default-seed
-  - monsoon3/domain-cc3test-seed
-  - monsoon3/domain-ccadmin-seed
-  - monsoon3/domain-bs-seed
-  - monsoon3/domain-btp-fp-seed
-  - monsoon3/domain-cis-seed
-  - monsoon3/domain-cp-seed
-  - monsoon3/domain-fsn-seed
-  - monsoon3/domain-hda-seed
-  - monsoon3/domain-hcm-seed
-  - monsoon3/domain-hcp03-seed
-  - monsoon3/domain-hec-seed
-  - monsoon3/domain-kyma-seed
-  - monsoon3/domain-monsoon3-seed
-  - monsoon3/domain-neo-seed
-  - monsoon3/domain-s4-seed
-  - monsoon3/domain-wbs-seed
-{{- if .Values.tempest_enabled }}
-  - monsoon3/domain-tempest-seed
-{{- end }}
+  {{- range $domains}}
+  {{- if not (hasPrefix "iaas-" .)}}
+  - monsoon3/domain-{{replace "_" "-" . | lower}}-seed
+  {{- end }}
+  {{- end }}
   - monsoon3/nova-seed
   - monsoon3/neutron-seed
   - swift/swift-seed
@@ -85,16 +74,19 @@ spec:
       "resources:CUSTOM_ZG1BCM1_MEDIUM": "1"
       {{- tuple . "baremetal" | include "ironic.helpers.extra_specs" | indent 6 }}
 
-  - name: "zg1bcm1.1medium"
-    id: "915"
-    vcpus: 40
-    ram: 524288
-    disk: 1966
-    extra_specs:
-      "catalog:description": GPU Baremetal 2 Socket Skylake 3xNvidia Tesla V100
-      "resources:CUSTOM_ZG1BCM1_1MEDIUM": "1"
-      {{- tuple . "baremetal" | include "ironic.helpers.extra_specs" | indent 6 }}
+  # GPU Servers Dell PowerEdge R740. Only existing in qa-de-1.
+  # adding for documentation purposes
+  # - name: "zg1bcm1.1medium"
+  #   id: "915"
+  #   vcpus: 40
+  #   ram: 524288
+  #   disk: 1966
+  #   extra_specs:
+  #     "catalog:description": GPU Baremetal 2 Socket Skylake 3xNvidia Tesla V100
+  #     "resources:CUSTOM_ZG1BCM1_1MEDIUM": "1"
+  #     {{- tuple . "baremetal" | include "ironic.helpers.extra_specs" | indent 6 }}
 
+  # Not in use anymore
   # - name: "zh1bcm1.large"
   #   id: "920"
   #   vcpus: 32
@@ -104,6 +96,7 @@ spec:
   #     "catalog:description": HANA Baremetal 2 Socket 384GB Skylake
   #     "resources:CUSTOM_ZH1BCM1_LARGE": "1"
 
+  # Not in use anymore
   # - name: "zg1int1.medium"
   #   id: "921"
   #   vcpus: 32
@@ -236,19 +229,6 @@ spec:
       "catalog:description": Hypervisor Host 2 sockets, 20 cores, 384GB RAM
       "resources:CUSTOM_HV_S2_C20_M384": "1"
       {{- tuple . "baremetal" | include "ironic.helpers.extra_specs" | indent 6 }}
-
-  # aPOD servers Dell PowerEdge R640 for vSMP. Only existing in qa-de-1.
-  # adding for documentation purposes
-  # - name: "hv_s2_c20_m384_vsmp"
-  #   id: "12021"
-  #   vcpus: 40
-  #   ram: 393216
-  #   disk: 240
-  #   is_public: false
-  #   extra_specs:
-  #     "catalog:description": Hypervisor Host 2 sockets, 20 cores, 384GB RAM
-  #     "resources:CUSTOM_HV_S2_C20_M384": "1"
-  #     {{- tuple . "baremetal" | include "ironic.helpers.extra_specs" | indent 6 }}
 
   # vPOD servers Lenovo Thinksystem SR950
   - name: "hv_s8_c24_m6144"
@@ -383,19 +363,6 @@ spec:
   #     "resources:CUSTOM_HV_S2_C32_M2048": "1"
   #     {{- tuple . "baremetal" | include "ironic.helpers.extra_specs" | indent 6 }}
 
-  # Dell R760 only in qa-de-1 currently for testing and not for seeding in other regions
-  # just adding for documentation purposes
-  # - name: "hv_s2_c32_m2048_vsmp"
-  #   id: 12030"
-  #   vcpus: 64
-  #   ram: 2097152
-  #   disk: 480
-  #   is_public: false
-  #   extra_specs:
-  #     "catalog:description": Hypervisor Host 2 sockets, 32 cores, 2TB RAM
-  #     "resources:CUSTOM_HV_S2_C32_M2048_VSMP": "1"
-  #     {{- tuple . "baremetal" | include "ironic.helpers.extra_specs" | indent 6 }}
-
   # New Sapphire Rapids 2S1T
   - name: "hv_s2_c32_m1024_v0"
     id: "2031"
@@ -468,8 +435,20 @@ spec:
       "resources:CUSTOM_BM_S4_C32_M4096_V0": "1"
       {{- tuple . "baremetal" | include "ironic.helpers.extra_specs" | indent 6 }}
 
-  # New Sapphire Rapids 4S2T only for HDA nto as hypervisor
-  # Therefore only as baremetal flavor and not as hypervisor flavor
+  # New Sapphire Rapids 4S2T as Hypervisor in qa
+  - name: "hv_s4_c32_m2048_v0"
+    id: "2035"
+    vcpus: 128
+    ram: 2097152
+    disk: 447
+    is_public: true
+    extra_specs:
+      "catalog:description": Hypervisor 4 sockets, 32 cores, 2TB RAM, Sapphire Rapids
+      "resources:CUSTOM_HV_S4_C32_M2048_V0": "1"
+      {{- tuple . "baremetal" | include "ironic.helpers.extra_specs" | indent 6 }}
+
+  # New Sapphire Rapids 4S2T only for HD&A BM servers.
+  # Therefore only as baremetal flavor and not as hypervisor flavor.
   - name: "bm_s4_c32_m2048_v0"
     id: "22035"
     vcpus: 128
@@ -493,7 +472,7 @@ spec:
       "resources:CUSTOM_HV_S1_C32_M512_V0": "1"
       {{- tuple . "baremetal" | include "ironic.helpers.extra_specs" | indent 6 }}
 
-  # New Sapphire Rapids 8S8T servers
+  # New Sapphire Rapids 8S8T servers HV
   - name: "hv_s8_c32_m8192_v0"
     id: "2037"
     vcpus: 256
@@ -503,6 +482,18 @@ spec:
     extra_specs:
       "catalog:description": Hypervisor 8 socket, 32 cores, 8TB RAM, Sapphire Rapids
       "resources:CUSTOM_HV_S8_C32_M8192_V0": "1"
+      {{- tuple . "baremetal" | include "ironic.helpers.extra_specs" | indent 6 }}
+
+  # Sapphire Rapids 8S8T BM servers
+  - name: "bm_s8_c32_m8192_v0"
+    id: "22037"
+    vcpus: 256
+    ram: 8388608
+    disk: 480
+    is_public: true
+    extra_specs:
+      "catalog:description": Baremetal 8 socket, 32 cores, 8TB RAM, Sapphire Rapids
+      "resources:CUSTOM_BM_S8_C32_M8192_V0": "1"
       {{- tuple . "baremetal" | include "ironic.helpers.extra_specs" | indent 6 }}
 
   # new Sapphire Rapid 8S8T in qa-de-1 with less RAM
@@ -529,21 +520,81 @@ spec:
       "resources:CUSTOM_HV_S1_C24_M192_V0": "1"
       {{- tuple . "baremetal" | include "ironic.helpers.extra_specs" | indent 6 }}
 
-  # HPE Superdome Sapphire Rapid in qa-de-1
-  - name: "bm_s16_c16_m8192_v0"
-    id: "2040"
-    vcpus: 256
-    ram: 8388608
-    disk: 3200
+  #  Superdome Sapphire Rapid with 8TB in qa-de-1 only
+  # - name: "bm_s16_c16_m8192_v0"
+  #   id: "2040"
+  #   vcpus: 256
+  #   ram: 8388608
+  #   disk: 3200
+  #   is_public: true
+  #   extra_specs:
+  #     "catalog:description": BareMetal 16 socket, 16 cores, 8TB RAM, Sapphire Rapids
+  #     "resources:CUSTOM_BM_S16_C16_M8192_V0": "1"
+  #     {{- tuple . "baremetal" | include "ironic.helpers.extra_specs" | indent 6 }}
+
+  # New GPU Nodes Dell PowerEdge XE9680 with Nvidia H200
+  - name: "bg_s2_c48_m2048_v0"
+    id: "2041"
+    vcpus: 96
+    ram: 2097152
+    disk: 447
     is_public: true
     extra_specs:
-      "catalog:description": BareMetal 16 socket, 16 cores, 8TB RAM, Sapphire Rapids
-      "resources:CUSTOM_BM_S16_C16_M8192_V0": "1"
+      "catalog:description": GPU Baremetal 2 Socket Sapphire Rapids 8x Nvidia Tesla H200
+      "resources:CUSTOM_BG_S2_C48_M2048_V0": "1"
+      {{- tuple . "baremetal" | include "ironic.helpers.extra_specs" | indent 6 }}
+
+  # New GPU Nodes Lenovo ThinkSystem SR675 V3 with Nvidia L40S
+  - name: "bg_s2_c96_m1536_v0"
+    id: "2042"
+    vcpus: 192
+    ram: 1572864
+    disk: 1788
+    is_public: true
+    extra_specs:
+      "catalog:description": GPU Baremetal 2 Socket AMD Epyc 8x Nvidia L40S
+      "resources:CUSTOM_BG_S2_C96_M1536_V0": "1"
+      {{- tuple . "baremetal" | include "ironic.helpers.extra_specs" | indent 6 }}
+
+  # New HPE ProLiant DL560 Gen11 as Baremetal
+  - name: "bm_s4_c32_m1024_v0"
+    id: "22043"
+    vcpus: 128
+    ram: 1048576
+    disk: 480
+    is_public: true
+    extra_specs:
+      "catalog:description": BareMetal 4 sockets, 32 cores, 1TB RAM, Sapphire Rapids
+      "resources:CUSTOM_BM_S4_C32_M1024_V0": "1"
+      {{- tuple . "baremetal" | include "ironic.helpers.extra_specs" | indent 6 }}
+
+  # New HPE ProLiant DL560 Gen11 as Hypervisor
+  - name: "hv_s4_c32_m1024_v0"
+    id: "2043"
+    vcpus: 128
+    ram: 1048576
+    disk: 480
+    is_public: false
+    extra_specs:
+      "catalog:description": BareMetal 4 sockets, 32 cores, 1TB RAM, Sapphire Rapids
+      "resources:CUSTOM_HV_S4_C32_M1024_V0": "1"
+      {{- tuple . "baremetal" | include "ironic.helpers.extra_specs" | indent 6 }}
+
+  # New Lenovo SR950 V3 with Sapphire Rapids and 16TB
+  - name: "hv_s8_c48_m16384_v0"
+    id: "2044"
+    vcpus: 384
+    ram: 16777216
+    disk: 447
+    is_public: false
+    extra_specs:
+      "catalog:description": BareMetal 8 sockets, 48 cores, 16TB RAM, Sapphire Rapids
+      "resources:CUSTOM_HV_S8_C48_M16384_V0": "1"
       {{- tuple . "baremetal" | include "ironic.helpers.extra_specs" | indent 6 }}
 
   # new HPE proliant dl345 AMD server
   - name: "hv_s1_c72_m1152_v0"
-    id: "2041"
+    id: "2045"
     vcpus: 72
     ram: 1179648
     disk: 447
@@ -553,12 +604,19 @@ spec:
       "resources:CUSTOM_HV_S1_C72_M1152_V0": "1"
       {{- tuple . "baremetal" | include "ironic.helpers.extra_specs" | indent 6 }}
 
+  # Default are special
+  # cc3test does not get seeds
+  # ccadmin gets role assignments for the master project and some additional project assignments
+  # monsoon3 gets a special role assignment for cc-demo project
+  # s4 gets a special role assignment for S4_CFM_ADMINS group
+  # iaas is excluded completely
+
   domains:
   - name: Default
     users:
-    - name: {{ .Values.global.ironicServiceUser }}{{ .Values.global.user_suffix | default "" }}
+    - name: '{{ .Values.global.ironicServiceUser | default "ironic" | include "resolve_secret" }}'
       description: Ironic Service
-      password: {{ required ".Values.global.ironic_service_password is missing" .Values.global.ironic_service_password | quote }}
+      password: '{{ required ".Values.global.ironic_service_password is missing" .Values.global.ironic_service_password | include "resolve_secret" }}'
       role_assignments:
       - project: service
         role: service
@@ -574,35 +632,12 @@ spec:
         role: cloud_objectstore_admin
     - name: ipmi_exporter
       description: IPMI Exporter for MB Monitoring
-      password: {{ required "ipmi_exporter_user_passwd is missing" .Values.global.ipmi_exporter_user_passwd | quote }}
+      password: '{{ required ".Values.global.ipmi_exporter_user_passwd is missing" .Values.global.ipmi_exporter_user_passwd | include "resolve_secret" }}'
 
-{{- if .Values.tempest_enabled }}
-  - name: tempest
-    projects:
-    - name: tempest1
-      role_assignments:
-      - user: admin@Default
-        role: cloud_baremetal_admin
-    - name: tempest2
-      role_assignments:
-      - user: admin@Default
-        role: cloud_baremetal_admin
-    users:
-    - name: tempestuser1
-      role_assignments:
-      - project: tempest1
-        role: baremetal_admin
-      - domain: tempest
-        role: baremetal_admin
-    - name: tempestuser2
-      role_assignments:
-      - project: tempest2
-        role: baremetal_admin
-      - domain: tempest
-        role: baremetal_admin
-{{- end }}
-
-  - name: ccadmin
+  {{- range $domains}}
+  {{- if and (not (hasPrefix "iaas-" .)) (not (eq . "Default"))}}
+  - name: {{ . }}
+    {{- if eq . "ccadmin"}}
     projects:
     - name: master
       role_assignments:
@@ -614,580 +649,93 @@ spec:
         role: cloud_compute_admin
       - user: ironic@Default
         role: objectstore_admin
+    {{- end }}
     groups:
+    {{- if eq . "ccadmin"}}
     - name: CCADMIN_CLOUD_ADMINS
       role_assignments:
       - project: master
         role: cloud_baremetal_admin
       - project: cloud_admin
         role: cloud_baremetal_admin
-    - name: CCADMIN_API_SUPPORT
+    {{- end }}
+    {{- if eq . "monsoon3"}}
+    - name: MONSOON3_DOMAIN_ADMINS
       role_assignments:
+      - project: cc-demo
+        role: baremetal_admin
+    {{- end }}
+    {{- if eq . "s4"}}
+    - name: S4_CFM_ADMINS
+      role_assignments:
+      - domain: s4
+        role: cloud_baremetal_admin
+        inherited: true
+    {{- end }}
+    - name: {{ hasPrefix "iaas-" . | ternary . ( upper . ) }}_API_SUPPORT
+      role_assignments:
+      {{- if not (has . $cdomainsWithoutSupportProjects) }}
       - project: api_support
         role: baremetal_admin
+      {{- end }}
+      {{- if eq . "ccadmin"}}
       - project: api_tools
         role: baremetal_admin
-      - domain: ccadmin
+      {{- end }}
+      - domain: {{ . }}
         role: baremetal_admin
         inherited: true
-    - name: CCADMIN_COMPUTE_SUPPORT
+    - name: {{ hasPrefix "iaas-" . | ternary . ( upper . ) }}_COMPUTE_SUPPORT
       role_assignments:
+      {{- if not (has . $cdomainsWithoutSupportProjects) }}
       - project: compute_support
         role: baremetal_admin
+      {{- end }}
+      {{- if eq . "ccadmin"}}
       - project: compute_tools
         role: cloud_baremetal_admin
       - project: master
         role: cloud_baremetal_admin
       - project: cloud_admin
         role: cloud_baremetal_admin
-      - domain: ccadmin
+      {{- end }}
+      - domain: {{ . }}
         role: baremetal_admin
         inherited: true
-    - name: CCADMIN_NETWORK_SUPPORT
+    - name: {{ hasPrefix "iaas-" . | ternary . ( upper . ) }}_NETWORK_SUPPORT
       role_assignments:
+      {{- if not (has . $cdomainsWithoutSupportProjects) }}
       - project: network_support
         role: baremetal_admin
+      {{- end }}
+      {{- if eq . "ccadmin"}}
       - project: network_tools
         role: baremetal_admin
-      - domain: ccadmin
+      {{- end }}
+      - domain: {{ . }}
         role: baremetal_viewer
         inherited: true
-    - name: CCADMIN_STORAGE_SUPPORT
+    - name: {{ hasPrefix "iaas-" . | ternary . ( upper . ) }}_STORAGE_SUPPORT
       role_assignments:
+      {{- if not (has . $cdomainsWithoutSupportProjects) }}
       - project: storage_support
         role: baremetal_admin
+      {{- end }}
+      {{- if eq . "ccadmin"}}
       - project: storage_tools
         role: baremetal_admin
-      - domain: ccadmin
+      {{- end }}
+      - domain: {{ . }}
         role: baremetal_viewer
         inherited: true
-    - name: CCADMIN_SERVICE_DESK
+    - name: {{ hasPrefix "iaas-" . | ternary . ( upper . ) }}_SERVICE_DESK
       role_assignments:
+      {{- if not (has . $cdomainsWithoutSupportProjects) }}
       - project: service_desk
         role: baremetal_admin
-      - domain: ccadmin
+      {{- end}}
+      - domain: {{ . }}
         role: baremetal_viewer
         inherited: true
-
-  - name: cis
-    groups:
-    - name: CIS_API_SUPPORT
-      role_assignments:
-      - project: api_support
-        role: baremetal_admin
-      - domain: cis
-        role: baremetal_admin
-        inherited: true
-    - name: CIS_COMPUTE_SUPPORT
-      role_assignments:
-      - project: compute_support
-        role: baremetal_admin
-      - domain: cis
-        role: baremetal_admin
-        inherited: true
-    - name: CIS_NETWORK_SUPPORT
-      role_assignments:
-      - project: network_support
-        role: baremetal_admin
-      - domain: cis
-        role: baremetal_viewer
-        inherited: true
-    - name: CIS_STORAGE_SUPPORT
-      role_assignments:
-      - project: storage_support
-        role: baremetal_admin
-      - domain: cis
-        role: baremetal_viewer
-        inherited: true
-    - name: CIS_SERVICE_DESK
-      role_assignments:
-      - project: service_desk
-        role: baremetal_admin
-      - domain: cis
-        role: baremetal_viewer
-        inherited: true
-
-  - name: bs
-    groups:
-    - name: BS_API_SUPPORT
-      role_assignments:
-      - project: api_support
-        role: baremetal_admin
-      - domain: bs
-        role: baremetal_admin
-        inherited: true
-    - name: BS_COMPUTE_SUPPORT
-      role_assignments:
-      - project: compute_support
-        role: baremetal_admin
-      - domain: bs
-        role: baremetal_admin
-        inherited: true
-    - name: BS_NETWORK_SUPPORT
-      role_assignments:
-      - project: network_support
-        role: baremetal_admin
-      - domain: bs
-        role: baremetal_viewer
-        inherited: true
-    - name: BS_STORAGE_SUPPORT
-      role_assignments:
-      - project: storage_support
-        role: baremetal_admin
-      - domain: bs
-        role: baremetal_viewer
-        inherited: true
-    - name: BS_SERVICE_DESK
-      role_assignments:
-      - project: service_desk
-        role: baremetal_admin
-      - domain: bs
-        role: baremetal_viewer
-        inherited: true
-
-  - name: btp_fp
-    groups:
-    - name: BTP_FP_API_SUPPORT
-      role_assignments:
-      - domain: btp_fp
-        role: baremetal_admin
-        inherited: true
-    - name: BTP_FP_COMPUTE_SUPPORT
-      role_assignments:
-      - domain: btp_fp
-        role: baremetal_admin
-        inherited: true
-    - name: BTP_FP_NETWORK_SUPPORT
-      role_assignments:
-      - domain: btp_fp
-        role: baremetal_viewer
-        inherited: true
-    - name: BTP_FP_STORAGE_SUPPORT
-      role_assignments:
-      - domain: btp_fp
-        role: baremetal_viewer
-        inherited: true
-    - name: BTP_FP_SERVICE_DESK
-      role_assignments:
-      - domain: btp_fp
-        role: baremetal_viewer
-        inherited: true
-
-  - name: cp
-    groups:
-    - name: CP_API_SUPPORT
-      role_assignments:
-      - project: api_support
-        role: baremetal_admin
-      - domain: cp
-        role: baremetal_admin
-        inherited: true
-    - name: CP_COMPUTE_SUPPORT
-      role_assignments:
-      - project: compute_support
-        role: baremetal_admin
-      - domain: cp
-        role: baremetal_admin
-        inherited: true
-    - name: CP_NETWORK_SUPPORT
-      role_assignments:
-      - project: network_support
-        role: baremetal_admin
-      - domain: cp
-        role: baremetal_viewer
-        inherited: true
-    - name: CP_STORAGE_SUPPORT
-      role_assignments:
-      - project: storage_support
-        role: baremetal_admin
-      - domain: cp
-        role: baremetal_viewer
-        inherited: true
-    - name: CP_SERVICE_DESK
-      role_assignments:
-      - project: service_desk
-        role: baremetal_admin
-      - domain: cp
-        role: baremetal_viewer
-        inherited: true
-
-  - name: fsn
-    groups:
-    - name: FSN_API_SUPPORT
-      role_assignments:
-      - project: api_support
-        role: baremetal_admin
-      - domain: fsn
-        role: baremetal_admin
-        inherited: true
-    - name: FSN_COMPUTE_SUPPORT
-      role_assignments:
-      - project: compute_support
-        role: baremetal_admin
-      - domain: fsn
-        role: baremetal_admin
-        inherited: true
-    - name: FSN_NETWORK_SUPPORT
-      role_assignments:
-      - project: network_support
-        role: baremetal_admin
-      - domain: fsn
-        role: baremetal_viewer
-        inherited: true
-    - name: FSN_STORAGE_SUPPORT
-      role_assignments:
-      - project: storage_support
-        role: baremetal_admin
-      - domain: fsn
-        role: baremetal_viewer
-        inherited: true
-    - name: FSN_SERVICE_DESK
-      role_assignments:
-      - project: service_desk
-        role: baremetal_admin
-      - domain: fsn
-        role: baremetal_viewer
-        inherited: true
-
-  - name: hda
-    groups:
-    - name: HDA_API_SUPPORT
-      role_assignments:
-      - project: api_support
-        role: baremetal_admin
-      - domain: hda
-        role: baremetal_admin
-        inherited: true
-    - name: HDA_COMPUTE_SUPPORT
-      role_assignments:
-      - project: compute_support
-        role: baremetal_admin
-      - domain: hda
-        role: baremetal_admin
-        inherited: true
-    - name: HDA_NETWORK_SUPPORT
-      role_assignments:
-      - project: network_support
-        role: baremetal_admin
-      - domain: hda
-        role: baremetal_viewer
-        inherited: true
-    - name: HDA_STORAGE_SUPPORT
-      role_assignments:
-      - project: storage_support
-        role: baremetal_admin
-      - domain: hda
-        role: baremetal_viewer
-        inherited: true
-    - name: HDA_SERVICE_DESK
-      role_assignments:
-      - project: service_desk
-        role: baremetal_admin
-      - domain: hda
-        role: baremetal_viewer
-        inherited: true
-
-{{- if not .Values.global.domain_seeds.skip_hcm_domain }}
-  - name: hcm
-    groups:
-    - name: HCM_API_SUPPORT
-      role_assignments:
-      - project: api_support
-        role: baremetal_admin
-      - domain: hcm
-        role: baremetal_admin
-        inherited: true
-    - name: HCM_COMPUTE_SUPPORT
-      role_assignments:
-      - project: compute_support
-        role: baremetal_admin
-      - domain: hcm
-        role: baremetal_admin
-        inherited: true
-    - name: HCM_NETWORK_SUPPORT
-      role_assignments:
-      - project: network_support
-        role: baremetal_admin
-      - domain: hcm
-        role: baremetal_viewer
-        inherited: true
-    - name: HCM_STORAGE_SUPPORT
-      role_assignments:
-      - project: storage_support
-        role: baremetal_admin
-      - domain: hcm
-        role: baremetal_viewer
-        inherited: true
-    - name: HCM_SERVICE_DESK
-      role_assignments:
-      - project: service_desk
-        role: baremetal_admin
-      - domain: hcm
-        role: baremetal_viewer
-        inherited: true
-{{- end }}
-
-  - name: hcp03
-    groups:
-    - name: HCP03_API_SUPPORT
-      role_assignments:
-      - project: api_support
-        role: baremetal_admin
-      - domain: hcp03
-        role: baremetal_admin
-        inherited: true
-    - name: HCP03_COMPUTE_SUPPORT
-      role_assignments:
-      - project: compute_support
-        role: baremetal_admin
-      - domain: hcp03
-        role: baremetal_admin
-        inherited: true
-    - name: HCP03_NETWORK_SUPPORT
-      role_assignments:
-      - project: network_support
-        role: baremetal_admin
-      - domain: hcp03
-        role: baremetal_viewer
-        inherited: true
-    - name: HCP03_STORAGE_SUPPORT
-      role_assignments:
-      - project: storage_support
-        role: baremetal_admin
-      - domain: hcp03
-        role: baremetal_viewer
-        inherited: true
-    - name: HCP03_SERVICE_DESK
-      role_assignments:
-      - project: service_desk
-        role: baremetal_admin
-      - domain: hcp03
-        role: baremetal_viewer
-        inherited: true
-
-  - name: hec
-    groups:
-    - name: HEC_API_SUPPORT
-      role_assignments:
-      - project: api_support
-        role: baremetal_admin
-      - domain: hec
-        role: baremetal_admin
-        inherited: true
-    - name: HEC_COMPUTE_SUPPORT
-      role_assignments:
-      - project: compute_support
-        role: baremetal_admin
-      - domain: hec
-        role: baremetal_admin
-        inherited: true
-    - name: HEC_NETWORK_SUPPORT
-      role_assignments:
-      - project: network_support
-        role: baremetal_admin
-      - domain: hec
-        role: baremetal_viewer
-        inherited: true
-    - name: HEC_STORAGE_SUPPORT
-      role_assignments:
-      - project: storage_support
-        role: baremetal_admin
-      - domain: hec
-        role: baremetal_viewer
-        inherited: true
-    - name: HEC_SERVICE_DESK
-      role_assignments:
-      - project: service_desk
-        role: baremetal_admin
-      - domain: hec
-        role: baremetal_viewer
-        inherited: true
-
-  - name: kyma
-    groups:
-    - name: KYMA_API_SUPPORT
-      role_assignments:
-      - domain: kyma
-        role: baremetal_admin
-        inherited: true
-    - name: KYMA_COMPUTE_SUPPORT
-      role_assignments:
-      - domain: kyma
-        role: baremetal_admin
-        inherited: true
-    - name: KYMA_NETWORK_SUPPORT
-      role_assignments:
-      - domain: kyma
-        role: baremetal_viewer
-        inherited: true
-    - name: KYMA_STORAGE_SUPPORT
-      role_assignments:
-      - domain: kyma
-        role: baremetal_viewer
-        inherited: true
-    - name: KYMA_SERVICE_DESK
-      role_assignments:
-      - domain: kyma
-        role: baremetal_viewer
-        inherited: true
-
-  - name: monsoon3
-    groups:
-    - name: MONSOON3_DOMAIN_ADMINS
-      role_assignments:
-      - project: cc-demo
-        role: baremetal_admin
-    - name: MONSOON3_API_SUPPORT
-      role_assignments:
-      - project: api_support
-        role: baremetal_admin
-      - domain: monsoon3
-        role: baremetal_admin
-        inherited: true
-    - name: MONSOON3_COMPUTE_SUPPORT
-      role_assignments:
-      - project: compute_support
-        role: baremetal_admin
-      - domain: monsoon3
-        role: baremetal_admin
-        inherited: true
-    - name: MONSOON3_NETWORK_SUPPORT
-      role_assignments:
-      - project: network_support
-        role: baremetal_admin
-      - domain: monsoon3
-        role: baremetal_viewer
-        inherited: true
-    - name: MONSOON3_STORAGE_SUPPORT
-      role_assignments:
-      - project: storage_support
-        role: baremetal_admin
-      - domain: monsoon3
-        role: baremetal_viewer
-        inherited: true
-    - name: MONSOON3_SERVICE_DESK
-      role_assignments:
-      - project: service_desk
-        role: baremetal_admin
-      - domain: monsoon3
-        role: baremetal_viewer
-        inherited: true
-
-  - name: neo
-    groups:
-    - name: NEO_API_SUPPORT
-      role_assignments:
-      - project: api_support
-        role: baremetal_admin
-      - domain: neo
-        role: baremetal_admin
-        inherited: true
-    - name: NEO_COMPUTE_SUPPORT
-      role_assignments:
-      - project: compute_support
-        role: baremetal_admin
-      - domain: neo
-        role: baremetal_admin
-        inherited: true
-    - name: NEO_NETWORK_SUPPORT
-      role_assignments:
-      - project: network_support
-        role: baremetal_admin
-      - domain: neo
-        role: baremetal_viewer
-        inherited: true
-    - name: NEO_STORAGE_SUPPORT
-      role_assignments:
-      - project: storage_support
-        role: baremetal_admin
-      - domain: neo
-        role: baremetal_viewer
-        inherited: true
-    - name: NEO_SERVICE_DESK
-      role_assignments:
-      - project: service_desk
-        role: baremetal_admin
-      - domain: neo
-        role: baremetal_viewer
-        inherited: true
-
-  - name: s4
-    groups:
-    - name: S4_API_SUPPORT
-      role_assignments:
-      - project: api_support
-        role: baremetal_admin
-      - domain: s4
-        role: baremetal_admin
-        inherited: true
-    - name: S4_COMPUTE_SUPPORT
-      role_assignments:
-      - project: compute_support
-        role: baremetal_admin
-      - domain: s4
-        role: baremetal_admin
-        inherited: true
-    - name: S4_NETWORK_SUPPORT
-      role_assignments:
-      - project: network_support
-        role: baremetal_admin
-      - domain: s4
-        role: baremetal_viewer
-        inherited: true
-    - name: S4_STORAGE_SUPPORT
-      role_assignments:
-      - project: storage_support
-        role: baremetal_admin
-      - domain: s4
-        role: baremetal_viewer
-        inherited: true
-    - name: S4_SERVICE_DESK
-      role_assignments:
-      - project: service_desk
-        role: baremetal_admin
-      - domain: s4
-        role: baremetal_viewer
-        inherited: true
-    - name: S4_CFM_ADMINS
-      role_assignments:
-      - domain: s4
-        role: cloud_baremetal_admin
-        inherited: true
-
-  - name: wbs
-    groups:
-    - name: WBS_API_SUPPORT
-      role_assignments:
-      - project: api_support
-        role: baremetal_admin
-      - domain: wbs
-        role: baremetal_admin
-        inherited: true
-    - name: WBS_COMPUTE_SUPPORT
-      role_assignments:
-      - project: compute_support
-        role: baremetal_admin
-      - domain: wbs
-        role: baremetal_admin
-        inherited: true
-    - name: WBS_NETWORK_SUPPORT
-      role_assignments:
-      - project: network_support
-        role: baremetal_admin
-      - domain: wbs
-        role: baremetal_viewer
-        inherited: true
-    - name: WBS_STORAGE_SUPPORT
-      role_assignments:
-      - project: storage_support
-        role: baremetal_admin
-      - domain: wbs
-        role: baremetal_viewer
-        inherited: true
-    - name: WBS_SERVICE_DESK
-      role_assignments:
-      - project: service_desk
-        role: baremetal_admin
-      - domain: wbs
-        role: baremetal_viewer
-        inherited: true
+  {{- end }}
+  {{- end }}

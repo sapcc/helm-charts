@@ -8,7 +8,7 @@ metadata:
     component: backup-replication
 
 spec:
-  concurrencyPolicy: Replace # restarting a hung s-h-i should be safe (Swift will not store objects if the upload connection resets)
+  concurrencyPolicy: Forbid # if large files take longer than 60m to transfer (which can happen esp. with multiple concurrent transfers), we will be stuck in a loop if we replace the job every 60m
   successfulJobsHistoryLimit: 3
   failedJobsHistoryLimit: 3
   schedule: "59 * * * *"
@@ -33,7 +33,11 @@ spec:
               name: swift-http-import
           containers:
           - name: swift-http-import
+            {{- if $.Values.image_refs.swift_http_import }}
+            image: {{ quote $.Values.image_refs.swift_http_import }}
+            {{- else }}
             image: {{ $.Values.global.registry | required ".Values.global.registry not found" }}/swift-http-import:{{ $.Values.swift_http_import.image_tag | required ".Values.swift_http_import.image_tag not found" }}
+            {{- end }}
             imagePullPolicy: IfNotPresent
             args:
             - /etc/swift-http-import/{{ $source_region }}.yaml

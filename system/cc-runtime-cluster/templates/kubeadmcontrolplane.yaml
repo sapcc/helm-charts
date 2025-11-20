@@ -1,0 +1,262 @@
+kind: KubeadmControlPlane
+apiVersion: controlplane.cluster.x-k8s.io/v1beta1
+metadata:
+  name: kcp-rt-{{ .Values.global.region }}
+spec:
+  replicas: {{ default 3 .Values.controlplane.replicas }}
+  version: {{ .Values.controlplane.version }}
+  rolloutStrategy:
+    rollingUpdate:
+      maxSurge: 0
+    type: RollingUpdate
+  machineTemplate:
+    infrastructureRef:
+      kind: IroncoreMetalMachineTemplate
+      apiVersion: infrastructure.cluster.x-k8s.io/v1alpha1
+      name: controlplane-rt-{{ .Values.global.region }}
+    # to avoid "Node deletion timeout expired, continuing without Node deletion"
+    # https://github.com/kubernetes-sigs/cluster-api/pull/5608
+    nodeDeletionTimeout: "0"
+    nodeDrainTimeout: "0"
+  kubeadmConfigSpec:
+    initConfiguration:
+      nodeRegistration:
+        name: $${METAL_HOSTNAME}
+        kubeletExtraArgs:
+          cloud-provider: external
+        taints:
+          - effect: "PreferNoSchedule"
+            key: "node-role.kubernetes.io/control-plane"
+            value: "true"
+      localAPIEndpoint:
+        bindPort: {{ .Values.controlplane.port }}
+    joinConfiguration:
+      controlPlane:
+        localAPIEndpoint:
+          bindPort: {{ .Values.controlplane.port }}
+      nodeRegistration:
+        name: $${METAL_HOSTNAME}
+        kubeletExtraArgs:
+          cloud-provider: external
+        taints:
+          - effect: "PreferNoSchedule"
+            key: "node-role.kubernetes.io/control-plane"
+            value: "true"
+    clusterConfiguration:
+      apiServer:
+        extraArgs:
+          cloud-provider: external
+          secure-port: {{ .Values.controlplane.port | quote }}
+          authentication-config: /etc/kubernetes/authentication.yaml
+        extraVolumes:
+          - name: "authentication-config"
+            hostPath: "/etc/kubernetes/authentication.yaml"
+            mountPath: "/etc/kubernetes/authentication.yaml"
+            readOnly: true
+            pathType: File
+        timeoutForControlPlane: 20m
+      controllerManager:
+        extraArgs:
+          cloud-provider: external
+          allocate-node-cidrs: "true"
+      dns:
+        imageRepository: {{ .Values.images.dns.repository }}
+        imageTag: {{ .Values.images.dns.tag }}
+      networking:
+        dnsDomain: cluster.local
+        podSubnet: {{ .Values.controlplane.podSubnet }}
+        serviceSubnet: {{ .Values.controlplane.serviceSubnet }}
+      imageRepository: {{ .Values.images.repository }}
+      etcd:
+        local:
+          imageRepository: {{ .Values.images.etcd.repository }}
+          imageTag: {{ .Values.images.etcd.tag }}
+    files:
+    - content: |
+        apiVersion: v1
+        kind: Pod
+        metadata:
+          creationTimestamp: null
+          name: kube-vip
+          namespace: kube-system
+        spec:
+          containers:
+          - args:
+            - manager
+            env:
+            - name: vip_arp
+              value: "true"
+            - name: port
+              value: {{ .Values.controlplane.port | quote }}
+            - name: vip_interface
+              value: ""
+            - name: vip_cidr
+              value: "32"
+            - name: cp_enable
+              value: "true"
+            - name: cp_namespace
+              value: kube-system
+            - name: vip_ddns
+              value: "false"
+            - name: svc_enable
+              value: "false"
+            - name: svc_leasename
+              value: plndr-svcs-lock
+            - name: svc_election
+              value: "true"
+            - name: vip_leaderelection
+              value: "true"
+            - name: vip_leasename
+              value: plndr-cp-lock
+            - name: vip_leaseduration
+              value: "15"
+            - name: vip_renewdeadline
+              value: "10"
+            - name: vip_retryperiod
+              value: "2"
+            - name: address
+              value: {{ .Values.controlplane.address }}
+            - name: prometheus_server
+              value: :2112
+            image: {{ .Values.images.kubeVip.repository }}:{{ .Values.images.kubeVip.tag }}
+            imagePullPolicy: IfNotPresent
+            name: kube-vip
+            resources: {}
+            securityContext:
+              capabilities:
+                add:
+                - NET_ADMIN
+                - NET_RAW
+            volumeMounts:
+            - mountPath: /etc/kubernetes/admin.conf
+              name: kubeconfig
+            - mountPath: /etc/hosts
+              name: etchosts
+          hostNetwork: true
+          volumes:
+          - hostPath:
+              path: /etc/kubernetes/admin.conf
+            name: kubeconfig
+          - hostPath:
+              path: /etc/kube-vip.hosts
+              type: File
+            name: etchosts
+        status: {}
+      owner: root:root
+      path: /etc/kubernetes/manifests/kube-vip.yaml
+      permissions: "0644"
+
+    - content: |
+        #!/bin/bash
+        set -uo pipefail
+
+        dataDisk="/var/lib/etcd"
+
+        # Wait for udev to settle before proceeding
+        udevadm settle
+
+        # Find the first NVMe disk by PCI path that is larger than 1TB
+        nvme_target=$(ls /dev/disk/by-path/*nvme* | while read -r disk; do
+          resolved_disk=$(readlink -f "$disk")
+          disk_size=$(blockdev --getsize64 "$resolved_disk" 2>/dev/null || echo 0)
+          if [ "$disk_size" -ge 1099511627776 ]; then
+            echo "$resolved_disk"
+            break
+          fi
+        done)
+
+        # Validate the device path
+        if [ -z "$nvme_target" ]; then
+          echo "No suitable NVMe disk larger than 1TB found."
+          exit 1
+        fi
+
+        # Resolve the symlink to the actual device
+        nvme_target=$(readlink -f "$nvme_target")
+
+        if [ ! -b "$nvme_target" ]; then
+          echo "Error: $nvme_target is not a valid block device."
+          exit 1
+        fi
+
+        echo "Preparing NVMe disk: $nvme_target"
+
+        # Ensure the device is not in use
+        if mount | grep -q "$nvme_target"; then
+          echo "Error: $nvme_target is already mounted."
+          exit 1
+        fi
+
+        # Partition and format the disk
+        sgdisk -Z "$nvme_target" || { echo "Failed to wipe partitions on $nvme_target"; exit 1; }
+        sgdisk -o "$nvme_target" || { echo "Failed to create new partition table on $nvme_target"; exit 1; }
+        mkfs.ext4 -L "ETCD_DISK" "$nvme_target" -F -E lazy_itable_init=1,lazy_journal_init=1 || { echo "Failed to format $nvme_target"; exit 1; }
+        udevadm settle
+        echo "Filesystem created and labeled as 'ETCD_DISK' on $nvme_target"
+
+        # Create the mount point
+        mkdir -p $dataDisk
+
+        # Mount the disk
+        mount "$nvme_target" $dataDisk || { echo "Failed to mount $nvme_target to $dataDisk"; exit 1; }
+        echo "Disk mounted to $dataDisk"
+
+        # Check available space on the disk
+        available_space=$(df --output=avail "$dataDisk" | tail -n 1)
+        if [ "$available_space" -le 1048576 ]; then # Less than 1GB available
+          echo "Error: Not enough space available on $dataDisk. Available: $available_space KB"
+          exit 1
+        fi
+
+        # Add to /etc/fstab for persistence
+        if ! grep -q "$nvme_target" /etc/fstab; then
+          echo "LABEL=ETCD_DISK $dataDisk ext4 defaults 0 0" >> /etc/fstab
+          echo "Added $nvme_target to /etc/fstab"
+        fi
+
+        # https://github.com/kubernetes/kubeadm/issues/2127 and https://github.com/kubernetes-sigs/cluster-api/blob/main/docs/proposals/20200423-etcd-data-disk.md?plain=1#L214-L215
+        rm -rf /var/lib/etcd/*
+
+        echo "NVMe disk preparation complete."
+      owner: root:root
+      path: /opt/etcd_disk.sh
+      permissions: "0744"
+
+    - content: 127.0.0.1 localhost kubernetes
+      owner: root:root
+      path: /etc/kube-vip.hosts
+      permissions: "0644"
+
+    format: ignition
+    ignition:
+      containerLinuxConfig:
+        additionalConfig: |-
+          storage:
+            files:
+{{ tpl .Values.additionalConfig.files . | indent 14 }}
+
+    users:
+      - name: {{ $.Values.user.name }}
+        passwd: {{ $.Values.user.passwordhash }}
+        groups: "sudo"
+        sshAuthorizedKeys:
+        - {{ $.Values.user.key | quote }}
+    preKubeadmCommands:
+      - hostnamectl set-hostname $${METAL_HOSTNAME}
+      - /opt/etcd_disk.sh
+      # match kubelet with KCP version
+      - IMAGE={{ $.Values.images.kubelet.repository }}:{{ .Values.controlplane.version }}
+      - while true; do ctr image pull $IMAGE && break; done
+      # stop services if running to avoid "Text file busy" error
+      - systemctl stop kubelet || true
+      - ctr run --rm --mount type=bind,src=/usr/bin,dst=/mnt,options=rbind $IMAGE extract-files sh -c "cp --preserve=mode /usr/local/bin/kubeadm /mnt/kubeadm && cp --preserve=mode /usr/local/bin/kubelet /mnt/kubelet"
+      # https://github.com/kube-vip/kube-vip/issues/684
+      - |
+        sed -i 's#path: /etc/kubernetes/admin.conf#path: /etc/kubernetes/super-admin.conf#' /etc/kubernetes/manifests/kube-vip.yaml;
+      # avoid running kubeadm on L1 interface - wait for bond
+      # https://www.freedesktop.org/software/systemd/man/latest/systemd-networkd-wait-online.service.html
+      - /usr/lib/systemd/systemd-networkd-wait-online -i {{ .Values.controlplane.uplinkInterface }} --ipv4 --timeout 0
+    postKubeadmCommands:
+     # https://github.com/kube-vip/kube-vip/issues/684
+      - |
+        sed -i 's#path: /etc/kubernetes/super-admin.conf#path: /etc/kubernetes/admin.conf#' /etc/kubernetes/manifests/kube-vip.yaml;

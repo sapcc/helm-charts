@@ -8,6 +8,11 @@ metadata:
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
     release: "{{ .Release.Name }}"
     heritage: "{{ .Release.Service }}"
+  annotations:
+    secret.reloader.stakater.com/reload: "{{ template "fullname" . }}-etc"
+{{- if .Values.vpa.set_main_container }}
+    vpa-butler.cloud.sap/main-container: metrics
+{{- end }}
 spec:
   replicas: 1
   revisionHistoryLimit: 5
@@ -21,6 +26,7 @@ spec:
       labels:
         name: {{ template "fullname" . }}
       annotations:
+        kubectl.kubernetes.io/default-container: metrics
         chart-version: {{.Chart.Version}}
         checksum/etc-secret.yaml: {{ include (print $.Template.BasePath "/etc-secret.yaml") . | sha256sum }}
         prometheus.io/scrape: "true"

@@ -8,6 +8,8 @@ metadata:
   labels:
     {{- include "labels" . | indent 4 }}
     app.kubernetes.io/version: "{{ $.Values.metisAPI.imageTag }}"
+  annotations:
+    secret.reloader.stakater.com/reload: "metis-api-secrets"
 spec:
   replicas: 1
   selector:
@@ -38,6 +40,11 @@ spec:
         resources:
 {{ .Values.metisAPI.resources | toYaml | indent 10 }}
         env:
+          - name: DB_USER
+            valueFrom:
+              secretKeyRef:
+                name: metis-api-secrets
+                key: metisRonlyUser
           - name: DB_PASSWD
             valueFrom:
               secretKeyRef:

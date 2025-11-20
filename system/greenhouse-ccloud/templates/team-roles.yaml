@@ -1,37 +1,74 @@
+---
+# Greenhouse does not provide "pod/exec" permission by default, so we need to create a custom TeamRole to grant this permission.
 apiVersion: greenhouse.sap/v1alpha1
 kind: TeamRole
 metadata:
-  name: plugin-developer
+  name: pod-exec
   namespace: {{ .Release.Namespace }}
+  labels:
+    greenhouse.sap/aggregate-to-developer: "true"
+    greenhouse.sap/owned-by: containers
 spec:
   rules:
     - apiGroups:
-      - '*'
+        - ""
       resources:
-      - '*'
+        - pods/exec
       verbs:
-      - get
-      - list
-      - watch
-    - nonResourceURLs:
-      - '*'
-      verbs:
-      - get
-      - list
-      - watch
-    # Allow deleting and exec'ing, port-frowarding into pods & reading logs
+        - "*"
     - apiGroups:
-      - ""
+        - ""
       resources:
-      - pods
-      - pods/exec
-      - pods/portforward
-      - pods/eviction
-      - pods/proxy
-      - pods/log
+        - pods
       verbs:
-      - '*'
-    # allow scaling
-    - apiGroups: ["apps"]
-      resources: ["deployments/scale", "statefulsets/scale"]
-      verbs: ["patch"]
+        - "get"
+        - "list"
+        - "watch"
+---
+apiVersion: greenhouse.sap/v1alpha1
+kind: TeamRole
+metadata:
+  name: pod-log-viewer
+  namespace: {{ .Release.Namespace }}
+  labels:
+    greenhouse.sap/owned-by: containers
+spec:
+  rules:
+    - apiGroups:
+        - ""
+      resources:
+        - pods
+        - pods/log
+      verbs:
+        - "get"
+        - "list"
+        - "watch"
+---
+apiVersion: greenhouse.sap/v1alpha1
+kind: TeamRole
+metadata:
+  name: machine-controller-manager-editor
+  namespace: {{ .Release.Namespace }}
+  labels:
+    greenhouse.sap/owned-by: containers
+spec:
+  rules:
+    - apiGroups:
+      - machine.sapcloud.io
+      resources:
+      - machineclasses
+      - machineclasses/status
+      - machinedeployments
+      - machinedeployments/status
+      - machines
+      - machines/status
+      - machinesets
+      - machinesets/status
+      verbs:
+      - create
+      - get
+      - list
+      - patch
+      - update
+      - watch
+      - delete

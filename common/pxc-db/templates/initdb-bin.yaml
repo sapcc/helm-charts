@@ -1,4 +1,4 @@
-{{- if .Values.initdb_job }}
+{{- if .Values.job.initdb.enabled }}
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -10,6 +10,8 @@ metadata:
     system: openstack
     type: configuration
     component: database
+    # hooks are not annotated as belonging to the Helm release, so we cannot rely on owner-info injection
+{{- include "pxc-db.ownerLabels" . | indent 4 }}
 {{ include "pxc-db.labels" . | indent 4 }}
   annotations:
     "helm.sh/hook": pre-install,pre-upgrade

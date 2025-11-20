@@ -1,0 +1,22 @@
+{{ if .Values.dnsmasq.service }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: metal-operator-dnsmasq
+spec:
+  selector:
+    app.kubernetes.io/component: dnsmasq
+    app.kubernetes.io/name: metal-dnsmasq
+  ports:
+  - name: dhcp-67
+    port: 67
+    protocol: UDP
+    targetPort: 67
+  - name: dhcp-69
+    port: 69
+    protocol: UDP
+    targetPort: 69
+  type: LoadBalancer
+  loadBalancerIP: {{ .Values.dnsmasq.externalIP }}
+  externalTrafficPolicy: Local
+{{ end }}

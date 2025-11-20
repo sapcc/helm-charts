@@ -4,21 +4,14 @@ kind: Service
 metadata:
   name: {{ template "fullname" . }}-pods
   labels:
-    app: {{ template "fullname" . }}
-    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
-    release: "{{ .Release.Name }}"
-    heritage: "{{ .Release.Service }}"
-    type: rabbitmq
-    component: {{ .Release.Name }}
-    system: openstack
-    {{- include "rabbitmq.labels" . | indent 4 }}
+    {{- include "rabbitmq.labels" (list $ "version" "rabbitmq" "service" "messagequeue") | indent 4 }}
   annotations:
 {{- if and (and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested) $.Values.linkerd.enabled }}
     linkerd.io/inject: enabled
 {{- end }}
 spec:
   selector:
-    app: {{ template "fullname" . }}
+    app.kubernetes.io/instance: {{ template "fullname" . }}
   publishNotReadyAddresses: true  # See https://www.rabbitmq.com/cluster-formation.html#peer-discovery-k8s
   clusterIP: None
 {{- end }}

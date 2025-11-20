@@ -2,7 +2,69 @@ groups:
 - name: namespace-probe.alerts
   rules:
   - alert: NetworkNamespaceProbesFailed
-    expr: sum(changes(ns_exporter_probe_failure_total{network_name !~ "^shoot--.*"}[10m])) by (network_id, network_name, region, router) > 0 unless sum(changes(ns_exporter_probe_success_total{network_name !~ "^shoot--.*"}[5m])) by (network_id, network_name, region, router) > 0
+    expr: |
+            (
+              sum(changes(ns_exporter_probe_failure_total{network_name !~ "^shoot--.*"}[5m])) by (network_id, network_name, region, router_id, network_project_id) > 0
+              and on (network_id) ns_exporter_network_age_seconds > 3600
+              and on (router_id) ns_exporter_router_age_seconds > 3600
+            ) unless (
+              sum(changes(ns_exporter_probe_success_total{network_name !~ "^shoot--.*"}[150s])) by (network_id, network_name, region, router_id, network_project_id) > 0
+              and on (network_id) ns_exporter_network_age_seconds > 3600
+              and on (router_id) ns_exporter_router_age_seconds > 3600
+            )
+    for: 5m
+    labels:
+      context: availability
+      service: neutron
+      severity: critical
+      support_group: network-api
+      tier: os
+      playbook: 'docs/support/playbook/neutron/networknamespaceprobesfailed'
+      meta: 'Network {{ $labels.network_name }} failed all probes'
+      cloudops: "?searchTerm={{ $labels.network_id }}&type=network"
+    annotations:
+      description: 'The network `{{ $labels.network_name }} ({{ $labels.network_id }})` failed all DNS probes for more than 5 minutes. (<https://dashboard.{{ $externalLabels.region }}.cloud.sap/ccadmin/cloud_admin/cloudops#/universal-search/?searchTerm={{ $labels.router_id }}&type=router|Router {{ $labels.router_id }}>). Please run ```hammer -r {{ $externalLabels.region }} net check {{ $labels.network_id }}``` and post it on the alert Slack thread.'
+      summary: Network probes failed
+  - alert: NetworkNamespaceProbesFailedForShootNetwork
+    expr: |
+            (
+              (
+                sum(changes(ns_exporter_probe_failure_total{network_name =~ "^shoot--.*", region!="eu-de-2"}[5m])) by (network_id, network_name, region, router_id, network_project_id) > 0
+                and on (network_id) ns_exporter_network_age_seconds > 3600
+                and on (router_id) ns_exporter_router_age_seconds > 3600
+              ) unless (
+                sum(changes(ns_exporter_probe_success_total{network_name =~ "^shoot--.*", region!="eu-de-2"}[150s])) by (network_id, network_name, region, router_id, network_project_id) > 0
+                and on (network_id) ns_exporter_network_age_seconds > 3600
+                and on (router_id) ns_exporter_router_age_seconds > 3600
+              )
+            )
+    for: 5m
+    labels:
+      context: availability
+      service: neutron
+      severity: critical
+      support_group: network-api
+      tier: os
+      playbook: 'docs/support/playbook/neutron/networknamespaceprobesfailed'
+      meta: 'Network {{ $labels.network_name }} failed all probes'
+      cloudops: "?searchTerm={{ $labels.network_id }}&type=network"
+    annotations:
+      description: 'The network `{{ $labels.network_name }} ({{ $labels.network_id }})` failed all DNS probes for more than 10 minutes. (<https://dashboard.{{ $externalLabels.region }}.cloud.sap/ccadmin/cloud_admin/cloudops#/universal-search/?searchTerm={{ $labels.router_id }}&type=router|Router {{ $labels.router_id }}>).
+Please run ```hammer -r {{ $externalLabels.region }} net check {{ $labels.network_id }}``` and post it on the alert Slack thread.'
+      summary: Network probes failed for `shoot--` networks.
+  - alert: NetworkNamespaceProbesFailedForShootNetworkEUDE2
+    expr: |
+            (
+              (
+                sum(changes(ns_exporter_probe_failure_total{network_name =~ "^shoot--.*", region=~"eu-de-2"}[10m])) by (network_id, network_name, region, router_id, network_project_id) > 0
+                and on (network_id) ns_exporter_network_age_seconds > 3600
+                and on (router_id) ns_exporter_router_age_seconds > 3600
+              ) unless (
+                sum(changes(ns_exporter_probe_success_total{network_name =~ "^shoot--.*", region=~"eu-de-2"}[5m])) by (network_id, network_name, region, router_id, network_project_id) > 0
+                and on (network_id) ns_exporter_network_age_seconds > 3600
+                and on (router_id) ns_exporter_router_age_seconds > 3600
+              )
+            )
     for: 10m
     labels:
       context: availability
@@ -14,40 +76,9 @@ groups:
       meta: 'Network {{ $labels.network_name }} failed all probes'
       cloudops: "?searchTerm={{ $labels.network_id }}&type=network"
     annotations:
-      description: 'The network `{{ $labels.network_name }} ({{ $labels.network_id }})` on agent `{{ $labels.agent }}` failed all DNS probes for more than 10 minutes. (<https://dashboard.{{ $externalLabels.region }}.cloud.sap/ccadmin/cloud_admin/cloudops#/universal-search/?searchTerm={{ $labels.router }}&type=router|Router {{ $labels.router }}>). Please run ```hammer -r {{ $externalLabels.region }} net check {{ $labels.network_id }}``` and post it on the alert Slack thread.'
-      summary: Network probes failed
-  - alert: NetworkNamespaceProbesFailedForShootNetworkWeekdays
-    expr: (sum(changes(ns_exporter_probe_failure_total{network_name =~ "^shoot--.*"}[5m])) by (network_id, network_name, region, router) > 0 unless sum(changes(ns_exporter_probe_success_total{network_name =~ "^shoot--.*"}[150s])) by (network_id, network_name, region, router) > 0) and on () day_of_week() > 0 and on () day_of_week() < 6
-    for: 5m
-    labels:
-      context: availability
-      service: neutron
-      severity: critical
-      support_group: network-api
-      tier: os
-      playbook: 'docs/support/playbook/neutron/networknamespaceprobesfailed'
-      meta: 'Network {{ $labels.network_name }} failed all probes'
-      cloudops: "?searchTerm={{ $labels.network_id }}&type=network"
-    annotations:
-      description: 'The network `{{ $labels.network_name }} ({{ $labels.network_id }})` on agent `{{ $labels.agent }}` failed all DNS probes for more than 10 minutes. (<https://dashboard.{{ $externalLabels.region }}.cloud.sap/ccadmin/cloud_admin/cloudops#/universal-search/?searchTerm={{ $labels.router }}&type=router|Router {{ $labels.router }}>).
+      description: 'The network `{{ $labels.network_name }} ({{ $labels.network_id }})` failed all DNS probes for more than 10 minutes. (<https://dashboard.{{ $externalLabels.region }}.cloud.sap/ccadmin/cloud_admin/cloudops#/universal-search/?searchTerm={{ $labels.router_id }}&type=router|Router {{ $labels.router_id }}>).
 Please run ```hammer -r {{ $externalLabels.region }} net check {{ $labels.network_id }}``` and post it on the alert Slack thread.'
       summary: Network probes failed for `shoot--` networks.
-  - alert: NetworkNamespaceProbesFailedForShootNetworkWeekend
-    expr: (sum(changes(ns_exporter_probe_failure_total{network_name =~ "^shoot--.*"}[5m])) by (network_id, network_name, region, router) > 0 unless sum(changes(ns_exporter_probe_success_total{network_name =~ "^shoot--.*"}[150s])) by (network_id, network_name, region, router) > 0) and on () day_of_week() < 1 and on () day_of_week() > 5
-    for: 5m
-    labels:
-      context: availability
-      service: neutron
-      severity: warning
-      support_group: network-api
-      tier: os
-      playbook: 'docs/support/playbook/neutron/networknamespaceprobesfailed'
-      meta: 'Network {{ $labels.network_name }} failed all probes'
-      cloudops: "?searchTerm={{ $labels.network_id }}&type=network"
-    annotations:
-      description: 'The network `{{ $labels.network_name }} ({{ $labels.network_id }})` on agent `{{ $labels.agent }}` failed all DNS probes for more than 10 minutes. (<https://dashboard.{{ $externalLabels.region }}.cloud.sap/ccadmin/cloud_admin/cloudops#/universal-search/?searchTerm={{ $labels.router }}&type=router|Router {{ $labels.router }}>).
-Please run ```hammer -r {{ $externalLabels.region }} net check {{ $labels.network_id }}``` and post it on the alert Slack thread.'
-      summary: Network probes failed for `shoot` networks.
   - alert: NetworkNamespaceProbeMetricsMissing
     expr: absent(ns_exporter_probe_success_total)
     for: 10m

@@ -12,6 +12,7 @@ dhcp_domain = {{required "A valid .Values.dns_local_domain required!" .Values.dn
 dns_domain = {{required "A valid .Values.dns_local_domain required!" .Values.dns_local_domain}}
 num_sync_threads = {{.Values.agent.dhcp.num_sync_threads | default 4 }}
 edns_client_fingerprint = {{.Values.agent.dhcp.edns_client_fingerprint | default "False" }}
+netns_resolvconf = {{.Values.agent.dhcp.netns_resolvconf | default "False" }}
 enable_router_advertisements = {{.Values.agent.dhcp.enable_router_advertisements | default "False" }}
 
 rpc_response_timeout = {{ .Values.rpc_response_timeout | default .Values.global.rpc_response_timeout | default 50 }}

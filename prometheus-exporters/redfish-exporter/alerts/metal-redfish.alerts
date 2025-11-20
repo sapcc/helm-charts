@@ -31,22 +31,8 @@ groups:
       description: "Server {{ $labels.host }} remote board connectivity error. Instance: {{ $labels.instance }} Manufacturer: {{ $labels.manufacturer }}"
       summary: "Remote board connectivity error for server: {{ $labels.host }}"
 
-  - alert: MetalRedfishCertWarning
-    expr: count(max_over_time(redfish_certificate_valid_days[10m]) < 7) by (host, not_after)
-    for: 1h
-    labels:
-      severity: warning
-      tier: metal
-      service: baremetal
-      support_group: foundation
-      context: "{{ $labels.host }}"
-      meta: "The certificate of the Remote Board of Server {{ $labels.host }} will expire on {{ $labels.not_after }}."
-    annotations:
-      description: "The certificate of the Remote Board of Server {{ $labels.host }} will expire on {{ $labels.not_after }}."
-      summary: "Remote Board Certificate expiration for server {{ $labels.host }}."
-
   - alert: MetalRedfishCertInfo
-    expr: count(max_over_time(redfish_certificate_valid_days[10m]) < 10) by (host, not_after)
+    expr: count by (region)(count by (host, not_after, region) (max_over_time(redfish_certificate_valid_days[10m]) < 10))
     for: 1h
     labels:
       severity: info
@@ -54,7 +40,7 @@ groups:
       service: baremetal
       support_group: foundation
       context: "{{ $labels.host }}"
-      meta: "The certificate of the Remote Board of Server {{ $labels.host }} will expire on {{ $labels.not_after }}."
+      meta: "The certificates of the Remote Boards in region {{ $labels.region }} will expire or are already expired."
     annotations:
-      description: "The certificate of the Remote Board of Server {{ $labels.host }} will expire on {{ $labels.not_after }}."
-      summary: "Remote Board Certificate expiration for server {{ $labels.host }}."
+      description: "Remote Board certificates are expired or will expire less than 10 days. Affected Remote Boards: {{ $value }}"
+      summary: "Remote Board Certificates are expired. in {{ $labels.region }}."

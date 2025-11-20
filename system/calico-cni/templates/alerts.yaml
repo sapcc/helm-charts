@@ -10,7 +10,9 @@ metadata:
     app: calico
     tier: k8s
     type: alerting-rules
-    prometheus: {{ required ".Values.alerts.prometheus missing" $values.alerts.prometheus }}
+  {{- with $values.alerts.ruleSelector }}
+    {{ tpl (toYaml .) . | nindent 4 }}
+  {{- end }}
 
 spec:
 {{ include (print .Template.BasePath "/alerts/_calico.alerts.tpl") . | indent 2 }}

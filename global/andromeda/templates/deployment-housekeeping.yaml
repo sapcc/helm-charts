@@ -2,6 +2,8 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ include "andromeda.fullname" . }}-agent-housekeeping
+  annotations:
+    secret.reloader.stakater.com/reload: "andromeda-secret"
   labels:
 {{ include "andromeda.labels" . | indent 4 }}
 spec:
@@ -55,6 +57,18 @@ spec:
               secretKeyRef:
                 name: sentry
                 key: {{ include "andromeda.fullname" . }}.DSN
+          - name: OS_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: andromeda-secret
+                key: service_user_password
+          {{- if .Values.mariadb.enabled }}
+          - name: DATABASE_CONNECTION
+            valueFrom:
+              secretKeyRef:
+                name: andromeda-secret
+                key: database_connection
+          {{- end }}
         ports:
           - containerPort: 9090
             name: metrics

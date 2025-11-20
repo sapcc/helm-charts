@@ -8,8 +8,10 @@ metadata:
     application: designate
     type: api
     component: api
-  {{- if .Values.vpa.set_main_container }}
   annotations:
+    secret.reloader.stakater.com/reload: "{{ .Release.Name }}-secrets,{{ .Release.Name }}-secrets-rndc"
+    deployment.reloader.stakater.com/pause-period: "60s"
+  {{- if .Values.vpa.set_main_container }}
     vpa-butler.cloud.sap/main-container: designate-api
   {{- end }}
 spec:
@@ -44,7 +46,6 @@ spec:
       serviceAccountName: {{ .Release.Name }}
 {{- end }}
 {{ tuple . "designate" "api" | include "kubernetes_pod_anti_affinity" | indent 6 }}
-      {{- include "utils.proxysql.pod_settings" . | indent 6 }}
       initContainers:
       {{- tuple . (dict "service" (include "designate.service_dependencies" . ) "jobs" (include "migration_job_name" . )) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 8 }}
       containers:
@@ -75,29 +76,33 @@ spec:
                   name: sentry
                   key: {{ .Release.Name }}.DSN.python
             {{- end }}
+            {{- if .Values.python_warnings }}
+            - name: PYTHONWARNINGS
+              value: {{ .Values.python_warnings | quote }}
+            {{- end }}
           lifecycle:
             preStop:
               {{- include "utils.snippets.pre_stop_graceful_shutdown" . | indent 14 }}
           livenessProbe:
-            httpGet:
-              path: /healthcheck
-              port: {{.Values.global.designate_api_port_internal}}
-            initialDelaySeconds: 15
+            tcpSocket:
+              port: designate-api
+            initialDelaySeconds: 30
             periodSeconds: 15
             timeoutSeconds: 10
           readinessProbe:
             exec:
               command:
-              - bash
-              - -c
-{{- if .Values.global_setup }}
-              - "set -e; curl --fail 127.0.0.1:{{.Values.global.designate_api_port_internal}}/healthcheck; nc -zvw3 designate-global-percona-pxc 3306"
-{{- else }}
-              - "set -e; curl --fail 127.0.0.1:{{.Values.global.designate_api_port_internal}}/healthcheck; nc -zvw3 designate-mariadb 3306"
-{{- end }}
-            initialDelaySeconds: 5
+              - python3
+              - /container.init/health-probe.py
+              - --config-file
+              - /etc/designate/secrets.conf
+              - --config-file
+              - /etc/designate/hostname.conf
+              - --service-name
+              - api
+            initialDelaySeconds: 30
             periodSeconds: 10
-            timeoutSeconds: 5
+            timeoutSeconds: 10
           ports:
             - name: designate-api
               containerPort: {{.Values.global.designate_api_port_internal}}
@@ -108,7 +113,7 @@ spec:
               name: container-init
             - name: wsgi-designate
               mountPath: /var/www/cgi-bin/designate
-{{- if .Values.global_setup }}
+{{- if .Values.global.is_global_region }}
             - mountPath: /var/www/html/test.html
               name: designate-etc
               subPath: test.html
@@ -116,9 +121,16 @@ spec:
             - name: designate-etc-wsgi
               mountPath: /etc/apache2/conf-enabled/wsgi-designate.conf
               subPath: wsgi-designate.conf
-            {{- include "utils.proxysql.volume_mount" . | indent 12 }}
+              readOnly: true
+            - name: designate-etc-wsgi
+              mountPath: /etc/apache2/mods-available/mpm_event.conf
+              subPath: mpm_event.conf
+              readOnly: true
+            - name: designate-etc-wsgi
+              mountPath: /etc/apache2/mods-available/status.conf
+              subPath: status.conf
+              readOnly: true
             {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
-        {{- include "utils.proxysql.container" . | indent 8 }}
         - name: statsd
           image: {{ required ".Values.global.dockerHubMirror is missing" .Values.global.dockerHubMirror }}/prom/statsd-exporter:v0.8.1
           imagePullPolicy: IfNotPresent
@@ -148,6 +160,13 @@ spec:
                     path: secrets.conf
             - secret:
                 name: {{ .Release.Name }}-secrets-rndc
+{{- if .Values.rate_limit.enabled }}
+            - secret:
+                name: {{ .Release.Name }}-api-ratelimit-redis-user-default
+                items:
+                  - key: password
+                    path: ratelimit-backend-secret.conf
+{{- end }}
         - name: designate-etc-wsgi
           configMap:
             name: designate-etc-wsgi
@@ -157,5 +176,4 @@ spec:
           configMap:
             name: designate-bin
             defaultMode: 0755
-        {{- include "utils.proxysql.volumes" . | indent 8 }}
         {{- include "utils.trust_bundle.volumes" . | indent 8 }}

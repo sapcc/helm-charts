@@ -1,0 +1,50 @@
+{{- if .Values.pluginPreset.enabled }}
+apiVersion: greenhouse.sap/v1alpha1
+kind: PluginPreset
+metadata:
+  name: plutono
+  namespace: {{ .Release.Namespace }}
+  labels:
+    greenhouse.sap/owned-by: observability
+{{- if .Values.global.fluxEnabled }}
+    greenhouse.sap/deployment-tool: "flux"
+  annotations:
+    "greenhouse.sap/propagate-labels": "greenhouse.sap/owned-by,greenhouse.sap/deployment-tool"
+{{- else }}
+  annotations:
+    "greenhouse.sap/propagate-labels": "greenhouse.sap/owned-by"
+{{- end }}
+spec:
+  clusterSelector:
+    matchExpressions:
+    - key: greenhouse.sap/pluginpreset
+      operator: In
+      values:
+      - "true"
+    - key: cluster-type
+      operator: In
+      values:
+      - "storage"
+      - "compute"
+      - "observability"
+  {{- with .Values.plutono.clusterOptionOverrides }}
+  clusterOptionOverrides:
+    {{ toYaml .Values.plutono.clusterOptionOverrides | nindent 4 }}
+  {{- end }}
+  plugin:
+    optionValues:
+      - name: plutono.service.labels
+        value:
+          greenhouse.sap/expose: "true"
+      {{- if and .Values.global.ghcrIoMirror .Values.global.quayIoMirror }}
+      - name: plutono.image.registry
+        value: {{ .Values.global.ghcrIoMirror }}
+      - name: plutono.sidecar.image.registry
+        value: {{ .Values.global.quayIoMirror }}
+      - name: plutono.testFramework.image.registry
+        value: {{ .Values.global.ghcrIoMirror }}
+      {{- end }}
+    pluginDefinition: plutono
+    releaseNamespace: kube-monitoring
+    releaseName: plutono
+{{- end -}}

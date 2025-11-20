@@ -2,9 +2,16 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: maintenance-controller
-  namespace: kube-system
+  namespace: {{ .Release.Namespace }}
   labels:
     app: maintenance-controller
+    {{- if .Values.deployment.extraLabels }}
+    {{- .Values.deployment.extraLabels | toYaml | nindent 4 }}
+    {{- end }}
+    {{- if .Values.deployment.extraAnnotations }}
+  annotations:
+    {{- .Values.deployment.extraAnnotations | toYaml | nindent 4 }}
+    {{- end }}
 spec:
   selector:
     matchLabels:
@@ -14,17 +21,9 @@ spec:
     metadata:
       labels:
         app: maintenance-controller
-        {{- if .Values.deployment.extraLabels }}
-        {{- .Values.deployment.extraLabels | toYaml | nindent 8 }}
-        {{- end }}
       annotations:
-        prometheus.io/scrape: "true"
-        prometheus.io/targets: kubernetes
         {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
         linkerd.io/inject: enabled
-        {{- end }}
-        {{- if .Values.deployment.extraAnnotations }}
-        {{- .Values.deployment.extraAnnotations | toYaml | nindent 8 }}
         {{- end }}
     spec:
       affinity:
@@ -40,6 +39,9 @@ spec:
       {{- if .Values.tolerations }}
       tolerations:
         {{- toYaml .Values.tolerations | nindent 8 }}
+      {{- end }}
+      {{- if .Values.priorityClassName }}
+      priorityClassName: {{ .Values.priorityClassName }}
       {{- end }}
       containers:
       - command:
@@ -59,7 +61,7 @@ spec:
         - name: config
           mountPath: "/config"
           readOnly: true
-        {{- if .Values.kubernikus.enabled }}
+        {{- if not .Values.rbac.cloudProviderSecretName | and .Values.kubernikus.enabled }}
         - name: cloudconfig
           mountPath: "/provider"
           readOnly: true
@@ -92,7 +94,7 @@ spec:
       - name: config
         configMap:
           name: maintenance-controller
-      {{- if .Values.kubernikus.enabled }}
+      {{- if not .Values.rbac.cloudProviderSecretName | and .Values.kubernikus.enabled }}
       - name: cloudconfig
         secret:
           secretName: {{ .Values.kubernikus.cloudconfig }}

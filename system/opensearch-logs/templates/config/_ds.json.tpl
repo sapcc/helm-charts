@@ -6,7 +6,7 @@
     "settings": {
       "index.number_of_shards": "4",
       "index.number_of_replicas": "1",
-      "index.refresh_interval": "15s"
+      "index.refresh_interval": "60s"
     },
     "aliases": {
       "_DS_NAME_-ds": {}

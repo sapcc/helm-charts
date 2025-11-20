@@ -26,7 +26,6 @@ spec:
         role: manager
       annotations:
         kubectl.kubernetes.io/default-container: "manager"
-        checksum/application.conf.tpl: {{ include  (print $.Template.BasePath "/_application.conf.tpl") . | sha256sum }}
         {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
         linkerd.io/inject: enabled
         {{- end }}
@@ -41,7 +40,7 @@ spec:
           secret:
             defaultMode: 420
             secretName: manager-secret
-        - name: opensearch-certs
+        - name: admin-cert-manager
           secret:
             defaultMode: 420
             secretName: certs
@@ -80,16 +79,14 @@ spec:
           - mountPath: /manager-config/application.conf
             name: manager-secret
             subPath: application.conf
-{{- if .Values.global.truststore.enabled}}
-          - mountPath: /truststore/truststore.crypt
-            name: manager-secret
-            subPath: truststore.crypt
-          - mountPath: /start.sh
-            name: manager-config
-            subPath: start.sh
+{{- if .Values.global.sapcert.enabled }}
+          - mountPath: /opt/certs/tls.crt
+            name: admin-cert-manager
+            subPath: tls.crt
 {{ else }}
-          - mountPath: /opt/certs
-            name: opensearch-certs
+          - mountPath: /opt/certs/ca.crt
+            name: admin-cert-manager
+            subPath: ca.crt
 {{- end }}
         ports:
           - name: manager

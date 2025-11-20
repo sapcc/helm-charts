@@ -10,9 +10,6 @@ octavia_plugins = f5_plugin
 # oslo_messaging rpc timeout
 rpc_response_timeout = {{ .Values.rpc_response_timeout | default .Values.global.rpc_response_timeout | default 60 }}
 
-# Tracing
-{{- include "osprofiler" . }}
-
 [api_settings]
 bind_host = 0.0.0.0
 bind_port = {{.Values.global.octavia_port_internal | default 9876}}
@@ -48,7 +45,7 @@ default_pool_tls_versions = {{ .Values.tls.versions.default.pools | join ", " }}
 backends = octavia_db_check
 
 [controller_worker]
-worker = {{ .Values.worker | default 1 }}
+workers = {{ .Values.worker | default 1 }}
 amphora_driver = {{ .Values.amphora_driver  | default "amphora_noop_driver" }}
 compute_driver = {{ .Values.compute_driver  | default "compute_noop_driver" }}
 network_driver = {{ .Values.network_driver  | default "network_noop_driver" }}
@@ -61,6 +58,9 @@ health_update_threads = {{ .Values.status_manager.health_update_threads }}
 {{- end }}
 {{- if .Values.status_manager.stats_update_threads }}
 stats_update_threads = {{ .Values.status_manager.stats_update_threads }}
+{{- end }}
+{{- if .Values.status_manager.failover_timeout }}
+failover_timeout = {{ .Values.status_manager.failover_timeout }}
 {{- end }}
 {{- end }}
 
@@ -144,4 +144,19 @@ allow_headers = Content-Type,Cache-Control,Content-Language,Expires,Last-Modifie
 enabled = true
 service_type = loadbalancer
 config_file = /etc/octavia/watcher.yaml
+{{- end }}
+
+{{ if .Values.rate_limit.enabled }}
+[rate_limit]
+enabled = true
+service_type = loadbalancer
+config_file = /etc/octavia/ratelimit.yaml
+rate_limit_by = {{ .Values.rate_limit.rate_limit_by }}
+max_sleep_time_seconds: {{ .Values.rate_limit.max_sleep_time_seconds }}
+clock_accuracy = 1ns
+log_sleep_time_seconds: {{ .Values.rate_limit.log_sleep_time_seconds }}
+backend_host = {{ .Release.Name }}-api-ratelimit-redis
+backend_port = 6379
+backend_secret_file = {{ .Values.rate_limit.backend_secret_file }}
+backend_timeout_seconds = {{ .Values.rate_limit.backend_timeout_seconds }}
 {{- end }}

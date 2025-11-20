@@ -8,7 +8,7 @@ metadata:
 data:
   unbound.conf: |
        server:
-        identity: "{{ .Values.unbound.name }}.{{ .Values.global.region }}"
+        identity: "{{ $.Release.Name }}.{{ .Values.global.region }}"
 
         {{- $unbound_modules := "validator iterator" -}}
 
@@ -18,8 +18,12 @@ data:
 
         module-config: {{ $unbound_modules | quote }}
 
-        interface: {{.Values.unbound.interface}}
-        port: 53
+        # let unbound listen on all the ports we've defined as external
+        # so that we can map them one-to-one
+{{- range $.Values.unbound.externalPorts | required ".Values.unbound.externalPorts missing" }}
+        interface: {{$.Values.unbound.interface}}@{{.}}
+{{- end }}
+
         do-ip4: yes
         do-ip6: no
         do-udp: yes
@@ -66,19 +70,26 @@ data:
         logfile: ""
         log-time-ascii: yes
         log-servfail: yes
-        include: /etc/unbound/hosts.conf
 
         # enable extended statistics (query types, answer codes, status)
         extended-statistics: {{.Values.unbound.ext_stats}}
+
+        include: /etc/unbound/hosts.conf
+
+        # AS112 zones
+        include: /etc/unbound/as112.conf
+
+        # firewall
+        include: /etc/unbound/firewall.conf
+
+        # Stub and Forward zones
+        include: /etc/unbound/regional.conf
+        include: /etc/unbound/global.conf
 
        # Remote control config section.
        remote-control:
         control-enable: yes
         control-interface: {{ .Values.unbound.control.socket_path | default "/run/unbound/control.sock" }}
-
-       # Stub and Forward zones
-       include: /etc/unbound/regional.conf
-       include: /etc/unbound/global.conf
 
        # dnstap.conf
        include: /etc/unbound/dnstap.conf
@@ -116,30 +127,32 @@ data:
 {{- end }}
 
   hosts.conf: |
-       local-zone: "168.192.in-addr.arpa." transparent
-       local-zone: "10.in-addr.arpa." transparent
-       local-zone: "16.172.in-addr.arpa." transparent
-       local-zone: "17.172.in-addr.arpa." transparent
-       local-zone: "18.172.in-addr.arpa." transparent
-       local-zone: "19.172.in-addr.arpa." transparent
-       local-zone: "20.172.in-addr.arpa." transparent
-       local-zone: "21.172.in-addr.arpa." transparent
-       local-zone: "22.172.in-addr.arpa." transparent
-       local-zone: "23.172.in-addr.arpa." transparent
-       local-zone: "24.172.in-addr.arpa." transparent
-       local-zone: "25.172.in-addr.arpa." transparent
-       local-zone: "26.172.in-addr.arpa." transparent
-       local-zone: "27.172.in-addr.arpa." transparent
-       local-zone: "28.172.in-addr.arpa." transparent
-       local-zone: "29.172.in-addr.arpa." transparent
-       local-zone: "30.172.in-addr.arpa." transparent
-       local-zone: "31.172.in-addr.arpa." transparent
        {{- range $lzone := .Values.unbound.local_zone}}
        local-zone: {{ $lzone.local_zone | quote }} nodefault
        {{- end}}
        {{- range $ldata := .Values.unbound.local_data}}
        local-data: {{ $ldata.local_data | quote }}
        {{- end}}
+
+  firewall.conf: |
+       {{- range $blocklisted := .Values.unbound.blocklisted_zones }}
+       local-zone: {{ tpl $blocklisted $ | quote }} always_nxdomain
+       {{- end }}
+       {{- range $allowlisted := .Values.unbound.allowlisted_zones }}
+       local-zone: {{ tpl $allowlisted $ | quote }} transparent
+       {{- end }}
+
+  as112.conf: |
+       {{- range $zone := concat ( $.Values.unbound.forward_zones_global | default list ) ( $.Values.unbound.forward_zones | default list )}}
+       {{- if $zone.expose_as112 }}
+       local-zone: {{ $zone.forward_zone_name | quote }} {{ $zone.expose_as112 }}
+       {{- end }}
+       {{- end }}
+       {{- range $zone := concat ( $.Values.unbound.stub_zones_global | default list ) ( $.Values.unbound.stub_zones | default list )}}
+       {{- if $zone.expose_as112 }}
+       local-zone: {{ $zone.stub_zone_name | quote }} {{ $zone.expose_as112 }}
+       {{- end }}
+       {{- end }}
 
   regional.conf: |
        {{- range $forward := .Values.unbound.forward_zones }}

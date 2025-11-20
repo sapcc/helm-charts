@@ -25,6 +25,8 @@ spec:
       description: "Manage GTM objects, create/delete"
     - name: gtm_viewer
       description: "Andromeda Read-Only. View GTM objects"
+    - name: resource_service
+      description: "Manage quota: gets project quota (globally), sets project quota (globally)"
 
   services:
     - name: andromeda
@@ -34,6 +36,14 @@ spec:
         - interface: public
           region: '{{.Values.global.region}}'
           url: 'https://{{include "andromeda_api" .}}/v1'
+    - name: liquid-andromeda
+      type: liquid-andromeda
+      description: GTM - Global load balancer as a Service liquid api
+      endpoints:
+        - interface: public
+          region: '{{.Values.global.region}}'
+          url: 'https://{{include "andromeda_liquid_server_api" .}}'
+
 
   domains:
     - name: Default
@@ -49,7 +59,7 @@ spec:
               role: gtm_admin
         - name: andromeda
           description: 'Andromeda Service User'
-          password: {{ .Values.global.andromeda_service_password | quote }}
+          password: {{ printf "%s/%s/andromeda/keystone-user/service/password" .Values.global.vaultBaseURL .Values.global.region | quote }}
           role_assignments:
             - project: service
               role: service

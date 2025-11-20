@@ -1,5 +1,5 @@
 {
-  "cloud_admin": "project_domain_name:ccadmin and project_name:cloud_admin",
+  "cloud_admin": "(project_domain_name:ccadmin and project_name:cloud_admin) or user_domain_id:default",
   "project_scope": "project_id:%(project_id)s",
   "public_scope": "'public':%(scope)s",
   "shared_scope": "'shared':%(scope)s",
@@ -47,13 +47,14 @@
   "andromeda:geomap:get_one": "rule:context_is_viewer or rule:shared_scope",
   "andromeda:geomap:delete": "rule:context_is_editor",
 
-  "andromeda:service:get_all": "rule:context_is_admin",
-  "andromeda:sync:post": "rule:context_is_admin",
+  "andromeda:service:get_all": "rule:cloud_admin",
+  "andromeda:sync:post": "rule:cloud_admin",
+  "andromeda:cidr-blocks:get": "rule:context_is_viewer",
 
   "andromeda:quota:get_all": "rule:context_is_viewer",
   "andromeda:quota:get_all-global": "rule:cloud_admin",
   "andromeda:quota:get_one": "rule:context_is_viewer",
   "andromeda:quota:get_one-global": "rule:cloud_admin",
-  "andromeda:quota:put": "rule:context_is_admin",
-  "andromeda:quota:delete": "rule:context_is_admin"
+  "andromeda:quota:put": "rule:cloud_admin",
+  "andromeda:quota:delete": "rule:cloud_admin"
 }

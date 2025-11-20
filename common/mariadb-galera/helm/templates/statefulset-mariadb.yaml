@@ -9,17 +9,12 @@ kind: StatefulSet
 metadata:
   namespace: {{ $.Release.Namespace }}
   name: {{ (include "nodeNamePrefix" (dict "global" $ "component" "database")) }}
-  labels:
-    app: {{ $.Release.Name }}
-    component: "database"
-    release: {{ $.Release.Name }}
-    {{- include "sharedservices.labels" $ | indent 4 }}
 spec:
   replicas: {{ ((include "replicaCount" (dict "global" $ "type" "database")) | int) | default 3 }}
   serviceName: {{ $.Release.Name }}
   selector:
     matchLabels:
-      component: "database"
+      app.kubernetes.io/component: {{ (index $.Values.image (printf "%s" "database")).softwarename }}-sts-database
   revisionHistoryLimit: {{ $.Values.revisionHistoryLimit | default 10 | int }}
   podManagementPolicy: {{ $.Values.podManagementPolicy | default "OrderedReady" | quote }}
   updateStrategy:
@@ -27,10 +22,7 @@ spec:
   template:
     metadata:
       labels:
-        app: {{ $.Release.Name }}
-        component: "database"
-        release: {{ $.Release.Name }}
-        {{- include "sharedservices.labels" $ | indent 8 }}
+        {{- include "mariadb-galera.labels" (list $ "version" "database" "sts" "database") | indent 8 }}
       annotations:
         {{- if $.Values.monitoring.mysqld_exporter.enabled }}
         prometheus.io/scrape: "true"
@@ -50,27 +42,27 @@ spec:
               podAffinityTerm:
                 labelSelector:
                   matchExpressions:
-                    - key: "app"
+                    - key: "app.kubernetes.io/part-of"
                       operator: In
                       values:
                         - {{ $.Release.Name | quote }}
-                    - key: "component"
+                    - key: "app.kubernetes.io/component"
                       operator: In
                       values:
-                        - "database"
+                        - {{ (index $.Values.image (printf "%s" "database")).softwarename }}-sts-database
                 topologyKey: "topology.kubernetes.io/zone"
             - weight: 2
               podAffinityTerm:
                 labelSelector:
                   matchExpressions:
-                    - key: "app"
+                    - key: "app.kubernetes.io/part-of"
                       operator: In
                       values:
                         - {{ $.Release.Name | quote }}
-                    - key: "component"
+                    - key: "app.kubernetes.io/component"
                       operator: In
                       values:
-                        - "database"
+                        - {{ (index $.Values.image (printf "%s" "database")).softwarename }}-sts-database
                 topologyKey: "kubernetes.io/hostname"
       serviceAccount: {{ include "commonPrefix" $ }}-mariadb-galera
       automountServiceAccountToken: true

@@ -12,58 +12,126 @@ spec:
   template:
     spec:
       containers:
-      - image: keppel.global.cloud.sap/ccloud-dockerhub-mirror/falcosecurity/falco-no-driver:0.39.0
+      - image: keppel.global.cloud.sap/ccloud-dockerhub-mirror/falcosecurity/falco:1.2.3
         name: falco
         securityContext:
           privileged: true
         volumeMounts:
+        - mountPath: /etc/falco
+          name: rulesfiles-install-dir
+        - mountPath: /usr/share/falco/plugins
+          name: plugins-install-dir
+        - mountPath: /root/.falco
+          name: root-falco-fs
         - mountPath: /host/proc
           name: proc-fs
           readOnly: true
+          recursiveReadOnly: Disabled
         - mountPath: /host/boot
           name: boot-fs
           readOnly: true
+          recursiveReadOnly: Disabled
         - mountPath: /host/lib/modules
           name: lib-modules
         - mountPath: /host/usr
           name: usr-fs
           readOnly: true
+          recursiveReadOnly: Disabled
         - mountPath: /host/etc
           name: etc-fs
           readOnly: true
+          recursiveReadOnly: Disabled
         - mountPath: /host/var/run/
           name: docker-socket
         - mountPath: /host/run/containerd/
           name: containerd-socket
         - mountPath: /host/run/crio/
           name: crio-socket
-      - image: keppel.global.cloud.sap/ccloud-dockerhub-mirror/falcosecurity/falcoctl:0.10.0
+        - mountPath: /etc/falco/falco.yaml
+          name: falco-yaml
+        - mountPath: /etc/falco/rules.d
+          name: rules-volume
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access-jqzkp
+          readOnly: true
+          recursiveReadOnly: Disabled
+      - image: keppel.global.cloud.sap/ccloud-dockerhub-mirror/falcosecurity/falcoctl:1.2.3
       initContainers:
-      - image: keppel.global.cloud.sap/ccloud-dockerhub-mirror/falcosecurity/falcoctl:0.10.0
+      - image: keppel.global.cloud.sap/ccloud-dockerhub-mirror/falcosecurity/falcoctl:1.2.3
         name: falcoctl-artifact-install
       securityContext: {}
       volumes:
-      - name: boot-fs
-        hostPath:
+      - emptyDir: {}
+        name: plugins-install-dir
+      - emptyDir: {}
+        name: rulesfiles-install-dir
+      - emptyDir: {}
+        name: root-falco-fs
+      - hostPath:
           path: /boot
-      - name: lib-modules
-        hostPath:
+          type: ""
+        name: boot-fs
+      - hostPath:
           path: /lib/modules
-      - name: usr-fs
-        hostPath:
+          type: ""
+        name: lib-modules
+      - hostPath:
           path: /usr
-      - name: etc-fs
-        hostPath:
+          type: ""
+        name: usr-fs
+      - hostPath:
           path: /etc
-      - name: docker-socket
-        hostPath:
+          type: ""
+        name: etc-fs
+      - hostPath:
           path: /var/run
-      - name: containerd-socket
-        hostPath:
+          type: ""
+        name: docker-socket
+      - hostPath:
           path: /run/containerd
-      - name: crio-socket
-        hostPath:
+          type: ""
+        name: containerd-socket
+      - hostPath:
           path: /run/crio
-      - name: proc-fs
-        hostPath:
+          type: ""
+        name: crio-socket
+      - hostPath:
           path: /proc
+          type: ""
+        name: proc-fs
+      - configMap:
+          defaultMode: 420
+          items:
+          - key: falcoctl.yaml
+            path: falcoctl.yaml
+          name: kube-monitoring-scaleout-falco-falcoctl
+        name: falcoctl-config-volume
+      - configMap:
+          defaultMode: 420
+          items:
+          - key: falco.yaml
+            path: falco.yaml
+          name: kube-monitoring-scaleout-falco
+        name: falco-yaml
+      - configMap:
+          defaultMode: 420
+          name: kube-monitoring-scaleout-falco-rules
+        name: rules-volume
+      - name: kube-api-access-jqzkp
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace

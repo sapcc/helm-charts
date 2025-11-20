@@ -9,4 +9,3 @@
 {{- define "updater.image" -}}
 {{- required ".Values.image.registry missing" .Values.image.registry -}}/{{- required ".Values.updater.image.repository missing" .Values.updater.image.repository -}}:{{- required ".Chart.AppVersion missing" .Chart.AppVersion -}}
 {{- end -}}
-

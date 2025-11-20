@@ -10,8 +10,11 @@ metadata:
     system: openstack
     type: backend
     component: manila
-  {{- if .Values.vpa.set_main_container }}
   annotations:
+    secret.reloader.stakater.com/reload: "{{ .Release.Name }}-secrets"
+    deployment.reloader.stakater.com/pause-period: "60s"
+    reloader.stakater.com/search: "true"
+  {{- if .Values.vpa.set_main_container }}
     vpa-butler.cloud.sap/main-container: manila-share-netapp-{{$share.name}}
   {{- end }}
 spec:
@@ -44,15 +47,32 @@ spec:
     spec:
 {{ tuple . $availability_zone | include "utils.kubernetes_pod_az_affinity" | indent 6 }}
 {{ include "utils.proxysql.pod_settings" . | indent 6 }}
+      priorityClassName: {{ .Values.pod.priority_class.default }}
       initContainers:
-      {{- tuple . (dict "service" (print .Release.Name "-mariadb," .Release.Name "-rabbitmq")) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 8 }}
-        - name: fetch-rabbitmqadmin
+      {{- tuple . (dict "service" (include "manila.service_dependencies" . )) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 8 }}
+      {{- if not .Values.api_backdoor }}
+        - name: create-guru-file
           image: {{.Values.global.dockerHubMirror}}/library/busybox
-          command: ["/scripts/fetch-rabbitmqadmin.sh"]
+          command: ["/bin/sh", "-c", "touch /shared/guru"]
           volumeMounts:
-            - name: manila-bin
-              mountPath: /scripts
-              readOnly: true
+            - name: etcmanila
+              mountPath: /shared
+      {{- end }}
+      {{- if .Values.proxysql.native_sidecar }}
+      {{- include "utils.proxysql.container" . | indent 8 }}
+      {{- end }}
+        - name: generate-backend-secret-conf
+          image: {{.Values.global.dockerHubMirror}}/library/busybox
+          command:
+          - /bin/sh
+          - -c
+          - |
+            cat <<EOF > /shared/backend-secret.conf
+            {{- include "backendCredentialConf" .Values.global.netapp | indent 12 }}
+            EOF
+          env:
+            {{- include "backendCredentialEnvs" .Values.global.netapp | indent 12 }}
+          volumeMounts:
             - name: etcmanila
               mountPath: /shared
       containers:
@@ -104,10 +124,6 @@ spec:
               mountPath: /etc/manila/backend.conf
               subPath: backend.conf
               readOnly: true
-            - name: backend-secret
-              mountPath: /etc/manila/backend-secret.conf
-              subPath: backend-secret.conf
-              readOnly: true
             {{- include "utils.proxysql.volume_mount" . | indent 12 }}
             {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
           {{- if .Values.pod.resources.share }}
@@ -149,7 +165,9 @@ spec:
               readOnly: true
         {{- end }}
         {{- include "jaeger_agent_sidecar" . | indent 8 }}
+        {{- if not .Values.proxysql.native_sidecar }}
         {{- include "utils.proxysql.container" . | indent 8 }}
+        {{- end }}
       hostname: manila-share-netapp-{{$share.name}}
       volumes:
         - name: etcmanila
@@ -167,9 +185,6 @@ spec:
         - name: backend-config
           configMap:
             name: {{ .Release.Name }}-share-netapp-{{$share.name}}
-        - name: backend-secret
-          secret:
-            secretName: {{ .Release.Name }}-share-netapp-{{$share.name}}-secret
         {{- include "utils.proxysql.volumes" . | indent 8 }}
         {{- include "utils.trust_bundle.volumes" . | indent 8 }}
 {{ end }}

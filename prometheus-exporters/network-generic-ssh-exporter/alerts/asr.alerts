@@ -104,7 +104,7 @@ groups:
     - alert: NetworkAsrBgpFabricPeerDown
       expr: >-
         ((ssh_redundancy_state == 3 ) * 0)
-        + on (name) group_right() ssh_bgp_sessions{vrf!="", vrf=~"CC-CLOUD(0[1-9]|10)"} != 8
+        + on (name) group_right() (ssh_bgp_sessions{vrf!="", vrf=~"CC-CLOUD(0[1-9]|10)"} != 8 and ssh_bgp_sessions_admin_down{vrf!="", vrf=~"CC-CLOUD(0[1-9]|10)"} != 5)
       for: 5m
       labels:
         severity: critical
@@ -123,7 +123,7 @@ groups:
     - alert: NetworkAsrBgpNeutronPeerDown
       expr: >-
         ((ssh_redundancy_state == 3 ) * 0)
-        + on (name) group_right() ssh_bgp_sessions{vrf="", peer_type="internal"} != 8
+        + on (name) group_right() (ssh_bgp_sessions{vrf="", peer_type="internal"} != 8 and ssh_bgp_sessions_admin_down{vrf="", peer_type="internal"} != 5)
       for: 5m
       labels:
         severity: critical
@@ -141,7 +141,7 @@ groups:
     - alert: NetworkAsrBgpCorePeerDown
       expr: >-
         ((ssh_redundancy_state == 3 ) * 0)
-        + on (name) group_right() ssh_bgp_sessions{vrf="", peer_type="external"} != 8
+        + on (name) group_right () (ssh_bgp_sessions{peer_type="external",vrf=""} != 8 and ssh_bgp_sessions_admin_down{peer_type="external",vrf=""} != 5)
       for: 5m
       labels:
         severity: critical
@@ -158,8 +158,9 @@ groups:
 
     - alert: NetworkAsrNatTcpPortPreAllocationLow
       expr: >-
-        sum by (name)
-        (ssh_nat_portblock_tcp_end - ssh_nat_portblock_tcp_start)
+        (sum by (name) (ssh_nat_portblock_tcp_end - ssh_nat_portblock_tcp_start))
+        * on(name) group_left()
+        (snmp_asr_sysDescr{image_version=~"17.6.3.*"})
         < 45000
       for: 5m
       labels:
@@ -176,8 +177,9 @@ groups:
 
     - alert: NetworkAsrNatUdpPortPreAllocationLow
       expr: >-
-        sum by (name)
-        (ssh_nat_portblock_udp_end - ssh_nat_portblock_udp_start)
+        (sum by (name) (ssh_nat_portblock_udp_end - ssh_nat_portblock_udp_start))
+        * on(name) group_left()
+        (snmp_asr_sysDescr{image_version=~"17.6.3.*"})
         < 45000
       for: 5m
       labels:
@@ -219,7 +221,7 @@ groups:
         service: asr
         context: asr
         meta: "Cisco ASR990x device `{{ $labels.name }}` with reference clock `{{ $labels.reference_clock }}` has a high root dispersion."
-        playbook: /docs/devops/alert/network/ntp
+        playbook: 'docs/devops/alert/network/ntp'
       annotations:
         description: "Cisco ASR990x device `{{ $labels.name }}` has a high root dispersion."
         summary: "Cisco ASR990x  device `{{ $labels.name }}` has a high root dispersion."
@@ -234,7 +236,7 @@ groups:
         service: asr
         context: asr
         meta: "Cisco ASR990x device `{{ $labels.name }}` with reference clock `{{ $labels.reference_clock }}` has a high NTP offset."
-        playbook: /docs/devops/alert/network/ntp
+        playbook: 'docs/devops/alert/network/ntp'
       annotations:
         description: "Cisco ASR990x device `{{ $labels.name }}` has a high NTP offset."
         summary: "Cisco ASR990x device `{{ $labels.name }}` has a high NTP offset."

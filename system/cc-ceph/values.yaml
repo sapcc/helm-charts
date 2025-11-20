@@ -30,6 +30,9 @@ cephConfig:
     ms_mon_cluster_mode: "secure"
     ms_mon_client_mode: "secure"
     ms_mon_service_mode: "secure"
+  osd:
+    osd_scrub_auto_repair: "true"
+    osd_scrub_auto_repair_num_errors: "5"
 
 clusterName: ceph-cluster
 
@@ -70,7 +73,7 @@ storage:
   config:
     osdsPerDevice: "1"
   #  metadataDevice: "nvme0n1"
-    databaseSizeMB: "120000"
+  #  databaseSizeMB: "120000"
     encryptedDevice: "true"
   nodes: null
   # - name: a
@@ -90,7 +93,17 @@ dashboard:
 objectstore:
   enabled: true
   name: objectstore
+  enabledAPIs: [] # empty - all enabled. See: https://docs.ceph.com/en/reef/radosgw/config-ref/#confval-rgw_enable_apis
   gateway:
+    # Here we can set RGW config options without restarting RGW daemon
+    # Listed options will be set to mon config db to not restart daemon
+    # All option values should be strings - should be quoted ""
+    # See: https://rook.io/docs/rook/v1.16/CRDs/Object-Storage/ceph-object-store-crd/?h=rgwcon#advanced-configuration
+    rgwConfig: {}
+    # Here we can set RGW config options which requires RGW restart to be applied
+    # Listed options will be set as command line flags to RGW deployment to trigger RGW pod restarts
+    # All option values should be strings - should be quoted ""
+    rgwCommandFlags: {}
     instances: 6
     port: 80
     securePort: 443
@@ -122,12 +135,12 @@ objectstore:
     port: 443
     externalIPs:
       - 10.0.0.1
+    public:
+      enabled: false
   keystone:
     enabled: true
     global_config: true
-    auth_order:
-      - local
-      - external
+    auth_order: []
     url: http://keystone.local:8083
     verify_ssl: true
     implicit_tenants: true
@@ -135,29 +148,144 @@ objectstore:
     swift_versioning_enabled: true
     accepted_roles:
       - objectstore_admin
-      - objectstore_viewer
+    accepted_admin_roles:
+      - cloud_objectstore_admin
     token_cache_size: 1000
     admin_user: XXX
     admin_password: XXX
     admin_domain: XXX
     admin_project: XXX
-    revocation_interval: 25200 # 7h
+    barbican:
+      enabled: true
+      url: http://barbican.local:9311
+      user: XXX
+      password: XXX
+      domain: XXX
+      project: XXX
+  multiInstance:
+    enabled: false
+    extraInstances:
+      # can inherit/override all config options from objectstore:
+    # - name: objectstore-admin
+    #   gateway:
+    #     rgwConfig: {}
+    #     rgwCommandFlags: {}
+    #     instances: 2
+    #     sslCertificateRef: ""
+    #     dnsNames:
+    #     - dns1-adm
+    #     - dns2-adm
+    #     resources:
+    #       requests:
+    #         cpu: 1
+    #         memory: 2Gi
+    #   service:
+    #     name: ceph-objectstore-admin-external
+    #     port: 443
+    #     externalIP: "10.0.0.1"
+    #     selector:
+    #       app: rgw
+    # define other RGW instances here:
+    # - name: other-instance-name
+
   prysm:
-    enabled: true
+    initContainer:
+      repository:
+        image: "k8s.gcr.io/kubectl"
+        tag: "latest"
+        pullPolicy: "Always"
     repository:
       image: "ghcr.io/cobaltcore-dev/prysm"
       tag: "latest"
       pullPolicy: "Always"
-    interval: "10"
+    rgwMetrics:
+      enabled: true
+      interval: "60"
+      user:
+        name: prysm-user
+        # name of rgw instance with admin-ops api enabled
+        # default is objectstore.name
+        store:
+    diskHealth:
+      enabled: true
+      interval: "60"
+      disks: "*"
+      nodeSelector:
+        kubernetes.metal.cloud.sap/role: ceph-osd
+    rgwSidecarWebhook:
+      enabled: false
+      webhook:
+        repository:
+          image: "ghcr.io/cobaltcore-dev/prysm-webhook"
+          tag: "latest"
+          pullPolicy: "Always"
+      injectedSidecar:
+        repository:
+          image: "ghcr.io/cobaltcore-dev/prysm"
+          tag: "latest"
+      replicas: 1
+      servicePort: 443
+      containerPort: 8443
+      certSecretName: "prysm-webhook-cert"
+
+      # Optional configuration for sidecar behavior
+      sidecarEnvConfig:
+        enabled: false
+        configMapName: "prysm-sidecar-config"
+        config:
+          LOG_TO_STDOUT: "false"
+          LOG_LEVEL: "warn"
+          LOG_RETENTION_DAYS: "1"
+          MAX_LOG_FILE_SIZE: "10"
+          PROMETHEUS_PORT: "9090"
+          IGNORE_ANONYMOUS_REQUESTS: "true"
+          TRACK_REQUESTS_BY_IP: "true"
+          TRACK_BYTES_SENT_BY_IP: "true"
+          TRACK_BYTES_RECEIVED_BY_IP: "true"
+          TRACK_ERRORS_BY_IP: "true"
+          TRACK_ERRORS_BY_USER: "true"
+          TRACK_REQUESTS_BY_METHOD: "true"
+          TRACK_REQUESTS_BY_OPERATION: "true"
+          TRACK_REQUESTS_BY_STATUS: "true"
+          TRACK_REQUESTS_BY_BUCKET: "true"
+          TRACK_REQUESTS_BY_USER: "true"
+          TRACK_REQUESTS_BY_TENANT: "true"
+          TRACK_ERRORS_BY_BUCKET: "true"
+          TRACK_ERRORS_BY_STATUS: "true"
+          TRACK_LATENCY_BY_USER: "true"
+          TRACK_LATENCY_BY_BUCKET: "true"
+          TRACK_LATENCY_BY_TENANT: "true"
+
+  prysmDiskHealth:
+    repository:
+      image: "ghcr.io/cobaltcore-dev/prysm"
+      tag: "latest"
+      pullPolicy: "Always"
 
 rgwTargetPlacements:
-  enabled: false 
+  #  enabled: false deprecate rgwTargetPlacements.enabled because it is true on all envs
+  useRookCRD: false # !!!WARNING set 'true' only for new clusters. Upgrade will not work now.
 
-defaultRgwPools:
-  enabled: false # create default rgw pools, see: https://github.com/sapcc/helm-charts/issues/6670
-  crushRoot: default 
-  failureDomain: zone
-  replicated: 4
-  replicasPerFailureDomain: 2
-  subFailureDomain: host
-  deviceClass: nvme
+blockrbdpool:
+  enabled: false
+  pools:
+  - name: rbd-region-premium
+    size: 3
+    failureDomain: zone
+    crushRoot: default
+
+# a list of dnsNames to skip DNS record creation for RGW instances
+dnsNamesSkipRecord: []
+# a list of dnsNames to skip DNS record creation for RGW instances with wildcard
+dnsNamesSkipRecordWildcard: []
+# a list of dnsNames to skip certificate creation for RGW instances
+dnsNamesSkipCertificate: []
+# a list of dnsNames to skip certificate creation for RGW instances with wildcard
+dnsNamesSkipCertificateWildcard: []
+
+# a deloyment reloader that restarts deployments on secrets/configmaps changes
+reloader:
+  enabled: true
+  image:
+    name: keppel.global.cloud.sap/ccloud-ghcr-io-mirror/stakater/reloader
+    tag: v1.3.0

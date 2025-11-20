@@ -1,0 +1,84 @@
+{{- $dnsRegion := "" }}
+{{- if .Values.dns }}
+{{- $dnsRegion = (default .Values.global.region .Values.dns.region) }}
+{{- else }}
+{{- $dnsRegion = .Values.global.region }}
+{{- end }}
+
+{{- range $key, $cluster := .Values.mgmtShoots }}
+{{- if (lookup "core.gardener.cloud/v1beta1" "Shoot" $.Release.Namespace (print "mgmt-" $key)) }}
+---
+apiVersion: seedmanagement.gardener.cloud/v1alpha1
+kind: ManagedSeed
+metadata:
+  name: mgmt-{{ $key }}
+spec:
+  shoot:
+    name: mgmt-{{ $key }}
+  gardenlet:
+    config:
+      apiVersion: gardenlet.config.gardener.cloud/v1alpha1
+      kind: GardenletConfiguration
+      gardenClientConnection:
+        gardenClusterAddress: https://api.virtual-garden.rt-{{ $.Values.global.region }}.{{ $.Values.global.region }}.cloud.sap
+      seedConfig:
+        metadata:
+          labels:
+            environment: production
+        spec:
+          backup:
+            provider: openstack
+            region: {{ default $key $cluster.altRegion }}
+            credentialsRef:
+              apiVersion: v1
+              kind: Secret
+              name: openstack-{{ default $key $cluster.altRegion }}
+              namespace: garden
+          dns:
+{{- if $cluster.localDns }}
+            defaults:
+            - credentialsRef:
+                apiVersion: v1
+                kind: Secret
+                name: default-domain-external-openstack-gardener-cloud
+                namespace: garden
+              type: openstack-designate
+              domain: external.mgmt-{{ $key }}.soil-garden.{{ $key }}.cloud.sap
+            internal:
+              credentialsRef:
+                apiVersion: v1
+                kind: Secret
+                name: internal-domain-internal-openstack-gardener-cloud
+                namespace: garden
+              type: openstack-designate
+              domain: internal.mgmt-{{ $key }}.soil-garden.{{ $key }}.cloud.sap
+{{- else }}
+            internal:
+              credentialsRef:
+                apiVersion: v1
+                kind: Secret
+                name: internal-domain-internal-openstack-gardener-cloud
+                namespace: garden
+              domain: internal.rt-{{ $.Values.global.region }}.soil-garden.{{ $dnsRegion }}.cloud.sap
+              type: openstack-designate
+{{- end }}
+            provider:
+              secretRef:
+                name: default-domain-external-openstack-gardener-cloud
+                namespace: garden
+              type: openstack-designate
+          settings:
+            excessCapacityReservation:
+              enabled: false
+            dependencyWatchdog:
+              # The prober can start a vicious downscaling cycle from which a shoot cannot recover itself.
+              # Let's assume there is healthy shoot and a machine is added.
+              # This machine now fails to join the cluster temporarly for whatever reason.
+              # This causes the prober to kick in and it will scale down the controller-manager as well as the MCM.
+              # The node now gains network and it's kubelet tries the TLS bootstap.
+              # The bootstrap does not go through, because the kubelets CertificateSigningRequest is never approved, because the controller-manager is scaled down.
+              # Joining the node successfully is unfortunately required to scale up the controller-manager, which is a loop that cannot self-heal.
+              prober:
+                enabled: false
+{{- end }}
+{{- end }}

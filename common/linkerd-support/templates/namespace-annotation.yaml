@@ -1,12 +1,11 @@
 {{- if and .Values.global.linkerd_enabled .Values.global.linkerd_requested .Values.annotate_namespace }}
-
+---
 apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: annotate-namespace-for-linkerd
 
 ---
-
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
@@ -18,7 +17,6 @@ rules:
   verbs: [ get, patch ]
 
 ---
-
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
@@ -33,7 +31,6 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
 
 ---
-
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -57,12 +54,11 @@ spec:
       serviceAccountName: annotate-namespace-for-linkerd
       containers:
       - name: annotate
-        image: "{{ .Values.global.dockerHubMirror | required ".Values.global.dockerHubMirror not found" }}/bitnami/kubectl:latest"
+        image: "{{ .Values.global.registry | required ".Values.global.registry not found" }}/shared-app-images/alpine-kubectl:latest-latest"
         command:
           - kubectl
           - annotate
           - ns
           - {{ .Release.Namespace }}
           - linkerd.io/inject=enabled
-
 {{- end }}

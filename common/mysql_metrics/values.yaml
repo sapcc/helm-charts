@@ -1,3 +1,4 @@
+---
 global:
   tld: cloud.sap
   region: local
@@ -8,16 +9,38 @@ linkerd:
   enabled: true
 
 db_type: maria
-#db_name: DEFINED-IN-COMPONENT-CHART
-#db_user: DEFINED-IN-COMPONENT-CHART
-#db_password: null
+
+# db_instance_name_literal: maridb-0
+## Or
+# db_instance_name: mariadb # will be constructed into "<RELEASE>-maridb-<DB_TYPE>"
+
+# db_namespace: dbaas-1
+
+# db_name: DEFINED-IN-COMPONENT-CHART
+# db_user: DEFINED-IN-COMPONENT-CHART
+# db_password: null
+
+# connections:
+#  default:
+#    db_type: mariadb
+#    db_instance_name: null
+#    db_name: DEFINED-IN-COMPONENT-CHART
+#    db_user: DEFINED-IN-COMPONENT-CHART
+#    db_password: DEFINED-IN-COMPONENT-CHART
+#  custom:
+#    db_type: mariadb
+#    db_instance_name: custom-b-1
+#    db_name: DEFINED-IN-COMPONENT-CHART
+#    db_user: DEFINED-IN-COMPONENT-CHART
+#    db_password: DEFINED-IN-COMPONENT-CHART
+connections: null
 
 port_metrics: '9237'
 # Name of the Prometheus supposed to scrape the metrics
 prometheus: openstack
 loglevel: info
 image: sql-exporter
-imageTag: 0.3.0
+imageTag: '20250707094646'
 imagePullPolicy: IfNotPresent
 
 ## Affinity for pod assignment
@@ -32,6 +55,12 @@ resources:
   requests:
     cpu: 5m
     memory: 32Mi
+
+vpa:
+  # https://github.com/sapcc/vpa_butler
+  # The maximum available capacity is split evenly across containers specified in the Deployment, StatefulSet or DaemonSet to derive the upper recommendation bound. This does not work out for pods with a single resource-hungry container with several sidecar containers
+  # Annotate the Deployment, StatefulSet or DaemonSet with vpa-butler.cloud.sap/main-container=$MAIN_CONTAINER. That will distribute 75% of the maximum available capacity to the main container and the rest evenly across all others
+  set_main_container: false
 
 customMetrics: {}
 

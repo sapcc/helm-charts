@@ -56,3 +56,12 @@ prevent_arp_spoofing = False
 
 [vxlan]
 enable_vxlan = false
+
+{{- if .Values.ovn.enabled }}
+
+[ovn]
+{{- $ovsdb_nb := index (index .Values "ovsdb-nb") }}
+{{- $ovsdb_sb := index (index .Values "ovsdb-sb") }}
+ovn_nb_connection = tcp:{{ required "ovsdb-nb.EXTERNAL_IP required!" $ovsdb_nb.EXTERNAL_IP }}:{{ $ovsdb_nb.DB_PORT }}
+ovn_sb_connection = tcp:{{ required "ovsdb-sb.EXTERNAL_IP required!" $ovsdb_sb.EXTERNAL_IP }}:{{ $ovsdb_sb.DB_PORT }}
+{{- end }}

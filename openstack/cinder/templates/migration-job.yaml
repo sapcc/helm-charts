@@ -15,7 +15,10 @@ spec:
       restartPolicy: OnFailure
       {{- include "utils.proxysql.job_pod_settings" . | nindent 6 }}
       initContainers:
-      {{- tuple . (dict "service" (print .Release.Name "-mariadb")) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
+      {{- tuple . (dict "service" (include "cinder.db_service" . )) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
+      {{- if .Values.proxysql.native_sidecar }}
+      {{- include "utils.proxysql.container" . | indent 6 }}
+      {{- end }}
       containers:
         - name: cinder-migration
           image: {{required ".Values.global.registry is missing" .Values.global.registry}}/loci-cinder:{{.Values.imageVersionCinderApi | default .Values.imageVersion | required "Please set cinder.imageVersion or similar" }}
@@ -24,7 +27,7 @@ spec:
             - bash
             - -c
             - |
-              cinder-manage db sync
+              cinder-manage db sync && cinder-manage db online_data_migrations
               {{- include "utils.script.job_finished_hook" . | nindent 14 }}
           volumeMounts:
             - name: etccinder
@@ -48,7 +51,9 @@ spec:
               subPath: logging.ini
               readOnly: true
             {{- include "utils.proxysql.volume_mount" . | indent 12 }}
+        {{- if not .Values.proxysql.native_sidecar }}
         {{- include "utils.proxysql.container" . | indent 8 }}
+        {{- end }}
       volumes:
         - name: etccinder
           emptyDir: {}
