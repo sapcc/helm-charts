@@ -32,10 +32,6 @@ gatekeeper-upstream:
     controllerManager:
       minAvailable: 0
 
-  # We have our own Gatekeeper policy to replace PodSecurityPolicy.
-  psp:
-    enabled: false
-
   # Override container images with our local mirrors and disable jobs that are incompatible with our setup.
   image:
     repository: keppel.global.cloud.sap/ccloud-dockerhub-mirror/openpolicyagent/gatekeeper
@@ -61,7 +57,14 @@ gatekeeper-upstream:
         cpu: 500m
         memory: 256Mi
 
+  # re linkerd.io/inject: Gatekeeper only talks to the Kubernetes API, which is not covered by Linkerd anyway,
+  # and does not expose any APIs of its own.
+  auditPodAnnotations:
+    linkerd.io/inject: disabled
+    prometheus.io/scrape: "true"
+    prometheus.io/targets: kubernetes
   podAnnotations:
+    linkerd.io/inject: disabled
     prometheus.io/scrape: "true"
     prometheus.io/targets: kubernetes
 
