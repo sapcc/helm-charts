@@ -1,0 +1,30 @@
+{{- if .Values.ssl.enabled }}
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: tls-{{ include "fullName" . }}
+  labels:
+    app: {{ include "fullName" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    heritage: "{{ .Release.Service }}"
+    release: "{{ .Release.Name }}"
+spec:
+  secretName: tls-{{ include "fullName" . }}
+  secretTemplate:
+    labels:
+      app: {{ include "fullName" . }}
+      chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+      heritage: "{{ .Release.Service }}"
+      release: "{{ .Release.Name }}"
+  dnsNames:
+    - {{ include "percona-cluster.serviceName" . }}
+  {{- if .Values.externalNames }}
+    {{- range .Values.externalNames }}
+    - "{{ . }}"
+    {{- end }}
+  {{- end }}
+  {{- if not .Values.certificate.commonName }}
+  commonName: {{ include "percona-cluster.defaultCommonName" . }}
+  {{- end }}
+  {{- .Values.certificate | toYaml | nindent 2 }}
+{{- end }}
