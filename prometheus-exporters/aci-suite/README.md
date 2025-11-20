@@ -1,75 +1,103 @@
 # ACI Suite (Umbrella + Subcharts)
 
-Components (deployed by umbrella):
-1) **valkey** (Redis-compatible)
-2) **data-collector**
-3) **netbox-collector**
-4) **fault-collector**
+This umbrella chart deploys the following ACI components:
+
+1) **valkey** (Redis-compatible cache)  
+2) **data-collector**  
+3) **netbox-collector**  
+4) **fault-collector**  
 5) **correlator**
 
-All apps use a shared Secret **aci-shared-secrets** for:
-- `aci_user`
-- `aci_password`
-- `cache_password` (Valkey password)
+Each component is packaged as a **separate Helm subchart** under `charts/`, and each subchart manages **its own Secret**, following the same pattern used in the `netapp-exporter` suite.
 
-## One-time: create the shared Secret
+All subcharts:
 
-```bash
-kubectl apply -f aci-suite/bootstrap/aci-shared-secrets.yaml
+- Create their **own Secret** named after their `fullname` value  
+- Populate the Secret using umbrella-level `global.*` values:  
+  - `global.aci_exporter_user`  
+  - `global.aci_exporter_password`  
+  - `global.cache_password`  
+- Read the list of APIC hosts from umbrella value:  
+  - `aci.apic_hosts`  
+  - Exposed to templates via:  
+    ```yaml
+    {{- $apicHosts := required "missing $.Values.aci.apic_hosts" $.Values.aci.apic_hosts }}
+    ```  
+
+Valkey uses the same `cache_password` and exposes the Redis-compatible service used by the other collectors.
+
+## Umbrella Values Overview
+
+```yaml
+global:
+  prometheus: infra-collector
+  namespace: infra-monitoring
+  linkerd_requested: false
+
+  registry: keppel.eu-de-1.cloud.sap/ccloud-netops-observabilty
+
+  aci_exporter_user: "username"
+  aci_exporter_password: "password"
+  cache_password: "password"
+
+aci:
+  apic_hosts:
+    - 10.17.125.32:443
+    - 10.17.125.30:443
 ```
 
-## Install everything (all components)
+## Installing the ACI Suite
 
 ```bash
 cd aci-suite
 helm dependency update .
-helm upgrade --install aci ./
+helm upgrade --install aci ./aci-suite
 ```
 
-## Install components separately (toggle others off)
+This deploys:
 
-- Install **valkey** only:
-  ```bash
-  helm upgrade --install aci ./aci-suite     --set dataCollector.enabled=false     --set netboxCollector.enabled=false     --set faultCollector.enabled=false     --set correlator.enabled=false
-  ```
+- valkey  
+- data-collector  
+- netbox-collector  
+- fault-collector  
+- correlator  
 
-- Then enable **data-collector**:
-  ```bash
-  helm upgrade aci ./aci-suite --reuse-values     --set dataCollector.enabled=true
-  ```
+in a single command.
 
-- Enable **netbox-collector**:
-  ```bash
-  helm upgrade aci ./aci-suite --reuse-values     --set netboxCollector.enabled=true
-  ```
+## Installing Components Individually (toggle via values)
 
-- Enable **fault-collector** and **correlator**:
-  ```bash
-  helm upgrade aci ./aci-suite --reuse-values     --set faultCollector.enabled=true     --set correlator.enabled=true
-  ```
-
-## Using an external Secret name
-
-If you prefer to reference an existing Secret:
-```yaml
-# aci-suite/values.yaml
-global:
-  auth:
-    enabled: true
-    existingSecret: aci-shared-secrets   # default
-  secretKeys:
-    aci_user: aci_user
-    aci_password: aci_password
-    cache_password: cache_password
+### Install **valkey only**
+```bash
+helm upgrade --install aci ./aci-suite   --set data-collector.enabled=false   --set netbox-collector.enabled=false   --set fault-collector.enabled=false   --set correlator.enabled=false
 ```
 
-> When `global.auth.enabled: true`, **Valkey** reads its password from the same shared Secret, and all other apps connect to Valkey with that password.
+### Enable **data-collector**
+```bash
+helm upgrade aci ./aci-suite --reuse-values   --set data-collector.enabled=true
+```
 
-## Dev mode (no secrets; not recommended)
+### Enable **netbox-collector**
+```bash
+helm upgrade aci ./aci-suite --reuse-values   --set netbox-collector.enabled=true
+```
+
+### Enable **fault-collector** and **correlator**
+```bash
+helm upgrade aci ./aci-suite --reuse-values   --set fault-collector.enabled=true   --set correlator.enabled=true
+```
+
+## Using an External Secret (optional)
+
+You can override the default generated secrets:
 
 ```yaml
-global:
-  auth:
-    enabled: false
+data-collector:
+  existingSecret: my-data-collector-secret
 ```
-Apps fall back to any plaintext values defined in their subchart values.
+
+## Notes
+
+- APIC hosts must be defined in umbrella values under `aci.apic_hosts`.  
+- Each subchart validates this with Helm’s `required` function.  
+- Credentials and cache passwords are consistently passed via per-chart Secrets.  
+- Matches structure of `netapp-exporter` umbrella suites.

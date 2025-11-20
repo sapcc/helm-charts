@@ -1,8 +1,11 @@
+fullname: aci-netbox-collector
+enabled: true
+
 replicaCount: 1
 
 image:
   repository: keppel.eu-de-1.cloud.sap/ccloud-netops-observabilty/aci-netbox-exporter
-  tag: 1.1.0
+  tag: "1.1.0"
   pullPolicy: Always
 
 service:
@@ -29,7 +32,7 @@ env:
   FLASK_HOST: "0.0.0.0"
   FLASK_PORT: "8000"
   FLASK_DEBUG: "false"
-  
+
   LOG_LEVEL: "INFO"
   LOG_FILE: "/app/logs/app.log"
 
@@ -42,8 +45,9 @@ env:
   CACHE_TTL_SECONDS: "0"
   CACHE_HOST: "aci-cache-valkey"
   CACHE_PORT: 6379
-  CACHE_PASSWORD: "S3cureP@ss"
   CACHE_TIMEOUT: 3
+  CACHE_RETRY_ATTEMPTS: "3"
+  CACHE_RETRY_DELAY_SECONDS: "5"
   BATCH_SIZE: "1000"
   REFRESH_INTERVAL_SECONDS: "60"
   SINCE_HOURS_ON_HIT: "1"
@@ -54,12 +58,6 @@ env:
   DEVICE_BASE_FILTER: 'region: "qa-au-1"'
 
   DEBUG_REFRESH: "false"
-
-# Optional: override VALKEY_URL via Secret (e.g., with password)
-valkeySecret:
-  enabled: false
-  name: ""
-  key: "valkey-url"
 
 podAnnotations: {}
 nodeSelector: {}

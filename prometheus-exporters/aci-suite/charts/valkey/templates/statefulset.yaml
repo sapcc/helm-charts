@@ -57,18 +57,15 @@ spec:
             - |
               set -e
               ORDINAL=$(echo "$HOSTNAME" | awk -F- '{print $NF}')
-              {{- if .Values.auth.enabled }}
-              VALKEY_PASSWORD_VALUE="{{ if .Values.auth.existingSecret }}$VALKEY_PASSWORD{{ else }}{{ .Values.auth.password }}{{ end }}"
+
+              VALKEY_PASSWORD_VALUE="$VALKEY_PASSWORD"
               VALKEY_AUTH_ARGS="--requirepass $VALKEY_PASSWORD_VALUE"
               VALKEY_MASTERAUTH="--masterauth $VALKEY_PASSWORD_VALUE"
               VALKEY_CLI_AUTH="valkey-cli -a $VALKEY_PASSWORD_VALUE"
-              {{- else }}
-              VALKEY_AUTH_ARGS=""
-              VALKEY_MASTERAUTH=""
-              VALKEY_CLI_AUTH="valkey-cli"
-              {{- end }}
+
               PRIMARY_HOST="{{ include "valkey.fullname" . }}-primary"
               PRIMARY_PORT={{ .Values.service.port }}
+
               if [ "$ORDINAL" = "0" ]; then
                 exec valkey-server /etc/valkey/valkey.conf $VALKEY_AUTH_ARGS
               else
@@ -80,27 +77,26 @@ spec:
                 done
                 exec valkey-server /etc/valkey/valkey.conf $VALKEY_AUTH_ARGS $VALKEY_MASTERAUTH --replicaof "$PRIMARY_HOST" "$PRIMARY_PORT"
               fi
-          {{- if or .Values.global.auth.enabled .Values.auth.enabled }}
           env:
-            {{- if .Values.auth.existingSecret }}
             - name: VALKEY_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: {{ default (printf "%s-global-secret" .Release.Name) .Values.global.auth.existingSecret }}
-                  key: {{ .Values.global.secretKeys.cache_password | default "valkey-password" }}{{ .Values.global.secretKeys.cache_password | default "valkey-password" }}
-            {{- else }}
-            - name: VALKEY_PASSWORD
-              value: "{{ .Values.auth.password }}"
-            {{- end }}
-          {{- end }}
+                  name: {{ include "valkey.fullname" . }}
+                  key: cache_password
           livenessProbe:
             exec:
-              command: ["/bin/sh","-ec", "{{- if .Values.auth.enabled }}valkey-cli -a \"$VALKEY_PASSWORD\" ping | grep -q PONG{{- else }}valkey-cli ping | grep -q PONG{{- end }}"]
+              command:
+                - /bin/sh
+                - -ec
+                - valkey-cli -a "$VALKEY_PASSWORD" ping | grep -q PONG
             initialDelaySeconds: {{ .Values.probes.liveness.initialDelaySeconds }}
             timeoutSeconds: {{ .Values.probes.liveness.timeoutSeconds }}
           readinessProbe:
             exec:
-              command: ["/bin/sh","-ec", "{{- if .Values.auth.enabled }}valkey-cli -a \"$VALKEY_PASSWORD\" ping | grep -q PONG{{- else }}valkey-cli ping | grep -q PONG{{- end }}"]
+              command:
+                - /bin/sh
+                - -ec
+                - valkey-cli -a "$VALKEY_PASSWORD" ping | grep -q PONG
             initialDelaySeconds: {{ .Values.probes.readiness.initialDelaySeconds }}
             timeoutSeconds: {{ .Values.probes.readiness.timeoutSeconds }}
           volumeMounts:

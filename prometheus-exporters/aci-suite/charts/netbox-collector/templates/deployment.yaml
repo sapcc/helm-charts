@@ -1,21 +1,39 @@
+{{- if .Values.enabled }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "netbox-collector.fullname" . }}
+  name: {{ .Values.fullname }}
   labels:
-    {{- include "netbox-collector.labels" . | nindent 4 }}
+    app.kubernetes.io/name: {{ .Values.fullname }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      app.kubernetes.io/name: {{ include "netbox-collector.name" . }}
+      app.kubernetes.io/name: {{ .Values.fullname }}
       app.kubernetes.io/instance: {{ .Release.Name }}
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: {{ include "netbox-collector.name" . }}
+        app.kubernetes.io/name: {{ .Values.fullname }}
         app.kubernetes.io/instance: {{ .Release.Name }}
+      annotations:
+{{- if .Values.podAnnotations }}
+{{ toYaml .Values.podAnnotations | indent 8 }}
+{{- end }}
     spec:
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       containers:
         - name: app
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
@@ -23,23 +41,22 @@ spec:
           ports:
             - name: http
               containerPort: 8000
-          env:
-            # Inject cache password via global secret or fallback
-            {{- if .Values.global.auth.enabled }}
-            - name: CACHE_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: {{ default (printf "%s-global-secret" .Release.Name) .Values.global.auth.existingSecret }}
-                  key: {{ .Values.global.secretKeys.cache_password }}
-            {{- else }}
-            - name: CACHE_PASSWORD
-              value: {{ .Values.env.cache_password | default "" | quote }}
-            {{- end }}
+
+          # Mount env.yml from ConfigMap at /app/env.yml
           volumeMounts:
             - name: app-config
               mountPath: /app/env.yml
               subPath: env.yml
               readOnly: true
+
+          # Inject cache password via per-chart Secret
+          env:
+            - name: CACHE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.fullname }}
+                  key: cache_password
+
           livenessProbe:
             httpGet:
               path: {{ .Values.livenessProbe.path }}
@@ -54,10 +71,12 @@ spec:
             periodSeconds: {{ .Values.readinessProbe.periodSeconds }}
           resources:
 {{ toYaml .Values.resources | indent 12 }}
+
       volumes:
         - name: app-config
           configMap:
-            name: {{ include "netbox-collector.fullname" . }}-config
+            name: {{ .Values.fullname }}-config
             items:
               - key: env.yml
                 path: env.yml
+{{- end }}

@@ -1,32 +1,34 @@
-# Global settings shared by all subcharts
 global:
-  auth:
-    enabled: true
-    # Shared Secret all apps read from (create once: bootstrap/aci-shared-secrets.yaml)
-    existingSecret: aci-shared-secrets
-  # Keys expected inside the shared Secret
-  secretKeys:
-    aci_user: aci_user
-    aci_password: aci_password
-    cache_password: cache_password
-  # Seed only used if you temporarily remove existingSecret (for local tests)
-  secretsSeed:
-    aci_user: "apic#Netsec_TACACS\C555555"
-    aci_password: "<ISE_password>"
-    cache_password: "password"
+  prometheus: infra-collector
+  namespace: infra-monitoring
+  linkerd_requested: false
 
-# --- Charts enabled by the umbrella ---
+owner-info:
+  helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/prometheus-exporters/aci-exporter
+  maintainers:
+    - Gabriel Rotaru
+
+  # Shared credentials used by ACI suite subcharts
+  aci_user: "username"
+  aci_password: "password"
+  cache_password: "password"
+
+# Shared APIC hosts used by data-collector, fault-collector, correlator
+aci:
+  apic_hosts:
+    - 10.17.125.32:443
+    - 10.17.125.30:443
 
 valkey:
   enabled: true
 
-dataCollector:
+data-collector:
   enabled: true
 
-netboxCollector:
+netbox-collector:
   enabled: true
 
-faultCollector:
+fault-collector:
   enabled: true
 
 correlator:

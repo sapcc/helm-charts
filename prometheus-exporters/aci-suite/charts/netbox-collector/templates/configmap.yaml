@@ -1,11 +1,13 @@
+{{- if .Values.enabled }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ include "netbox-exporter.fullname" . }}-config
+  name: {{ .Values.fullname }}-config
   labels:
-    {{- include "netbox-exporter.labels" . | nindent 4 }}
+    app.kubernetes.io/name: {{ .Values.fullname }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
 data:
-  # Render a full /app/env.yml from the provided .Values.config (uppercase keys)
+  # Render a full /app/env.yml from the provided .Values.env (uppercase keys)
   env.yml: |-
     flask_host: {{ .Values.env.FLASK_HOST | quote }}
     flask_port: {{ .Values.env.FLASK_PORT | int }}
@@ -21,7 +23,6 @@ data:
 
     cache_host: {{ .Values.env.CACHE_HOST | quote }}
     cache_port: {{ .Values.env.CACHE_PORT | int }}
-    cache_password: {{ .Values.env.CACHE_PASSWORD | quote }}
     cache_timeout: {{ .Values.env.CACHE_TIMEOUT | int }}
     cache_prefix: {{ .Values.env.CACHE_PREFIX | quote }}
     cache_retry_attempts: {{ .Values.env.CACHE_RETRY_ATTEMPTS | int }}
@@ -40,3 +41,4 @@ data:
   {{- range $k, $v := .Values.env }}
   {{ $k }}: {{ $v | quote }}
   {{- end }}
+{{- end }}
