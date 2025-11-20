@@ -1,0 +1,72 @@
+{{ if .Values.extensions.auditing.enabled -}}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: auditing-certificate-updater
+spec:
+  schedule: "*/5 * * * *"
+  jobTemplate:
+    spec:
+      successfulJobsHistoryLimit: 1
+      failedJobsHistoryLimit: 5
+      template:
+        metadata:
+          annotations:
+            linkerd.io/inject: disabled
+          labels:
+            app: auditing-certificate-updater-job
+            networking.gardener.cloud/to-dns: allowed
+            networking.resources.gardener.cloud/to-virtual-garden-kube-apiserver-tcp-443: allowed
+        spec:
+          containers:
+          - name: auditing-certificate-updater
+            image: "{{ .Values.global.registry | required ".Values.global.registry not found" }}/shared-app-images/alpine-kubectl:latest-latest"
+            imagePullPolicy: IfNotPresent
+            command: ["/bin/sh", "-c"]
+            args:
+            - kubectl config set-cluster k8s-cluster --server=https://virtual-garden-kube-apiserver.garden.svc.cluster.local:443 --certificate-authority=/var/run/secrets/kubernetes.io/serviceaccount/bundle.crt --embed-certs=true;
+              kubectl config set-credentials auditing-certificate-updater --token=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token);
+              kubectl config set-context k8s-context --cluster k8s-cluster --user auditing-certificate-updater;
+              kubectl config use-context k8s-context;
+              kubectl -n garden create secret generic auditing-mtls --save-config --dry-run=client --from-file=ca.crt=/etc/auditing/certificate/ca.crt --from-file=client.crt=/etc/auditing/certificate/client.crt --from-file=client.key=/etc/auditing/certificate/client.key -o yaml | kubectl apply -f -
+            volumeMounts:
+            - name: kubeconfig
+              mountPath: "/var/run/secrets/kubernetes.io/serviceaccount"
+            - name: certificate
+              mountPath: "/etc/auditing/certificate"
+          restartPolicy: Never
+          volumes:
+          - name: kubeconfig
+            secret:
+              items:
+              - key: token
+                path: token
+              - key: bundle.crt
+                path: bundle.crt
+              secretName: auditing-certificate-updater-kubeconfig
+          - name: certificate
+            secret:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              - key: tls.crt
+                path: client.crt
+              - key: tls.key
+                path: client.key
+              secretName: auditing-mtls
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: auditing-certificate-updater-kubeconfig
+  labels:
+    resources.gardener.cloud/purpose: token-requestor
+    resources.gardener.cloud/class: shoot
+  annotations:
+    serviceaccount.resources.gardener.cloud/name: auditing-certificate-updater
+    serviceaccount.resources.gardener.cloud/namespace: garden
+    serviceaccount.resources.gardener.cloud/inject-ca-bundle: "true"
+stringData:
+  token: ""
+  bundle.crt: ""
+{{ end -}}
