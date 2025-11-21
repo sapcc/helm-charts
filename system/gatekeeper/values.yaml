@@ -32,9 +32,12 @@ gatekeeper-upstream:
     controllerManager:
       minAvailable: 0
 
-  # We have our own Gatekeeper policy to replace PodSecurityPolicy.
-  psp:
-    enabled: false
+  # Gatekeeper only talks to the Kubernetes API, which is not covered by Linkerd anyway,
+  # and does not expose any APIs of its own.
+  auditPodAnnotations:
+    linkerd.io/inject: disabled
+  podAnnotations:
+    linkerd.io/inject: disabled
 
   # Override container images with our local mirrors and disable jobs that are incompatible with our setup.
   image:
