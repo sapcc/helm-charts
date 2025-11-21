@@ -38,7 +38,7 @@ spec:
         AnonymousAuthConfigurableEndpoints: true
       structuredAuthentication:
         configMapName: authentication-config-mgmt
-      {{- if $.Values.auditing.enabled }}
+      {{- if $cluster.auditing.enabled }}
       auditConfig:
         auditPolicy:
           configMapRef:
@@ -50,7 +50,7 @@ spec:
     autoUpdate:
       kubernetesVersion: false
       machineImageVersion: false
-  {{- if $.Values.auditing.enabled }}
+  {{- if $cluster.auditing.enabled }}
   extensions:
   - type: auditing
     providerConfig:
@@ -58,7 +58,7 @@ spec:
       kind: AuditConfiguration
       backends:
       - http:
-          url: {{ $.Values.auditing.url }}
+          url: {{ $cluster.auditing.url }}
           tls:
             secretReferenceName: auditing-mtls
   {{- end }}
@@ -68,7 +68,7 @@ spec:
       apiVersion: v1
       kind: Secret
       name: extraignition-mgmt-{{ $key }}
-  {{- if $.Values.auditing.enabled }}
+  {{- if $cluster.auditing.enabled }}
   - name: auditing-mtls
     resourceRef:
       apiVersion: v1
