@@ -51,12 +51,22 @@ spec:
       valueFrom:
         secret:
           key: tls.crt
-          name: tls-ccloud-prometheus-auth
+          name: tls-prometheus-kube-monitoring
     - name: thanos.ruler.alertmanagers.authentication.ssoKey
       valueFrom:
         secret:
           key: tls.key
-          name: tls-ccloud-prometheus-auth
+          name: tls-prometheus-kube-monitoring
     - name: thanos.ruler.ruleSelector
       value:
         resources.gardener.cloud/managed-by: gardener
+    - name: thanos.ruler.alertRelabelConfigs
+      value:
+        - source_labels: [support_group]
+          target_label: support_group
+          replacement: containers
+          action: replace
+        - source_labels: [playbook]
+          target_label: playbook
+          replacement: https://operations.global.cloud.sap/docs/container/kubernetes/gardener/
+          action: replace
