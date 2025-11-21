@@ -108,19 +108,17 @@ spec:
             - asNumber: {{ default $cluster.networking.asNumber .asNumber }}
               nodeSelector: {{ .nodeSelector }}
               peerIP: {{ .peerIP }}
-  # uncomment after Gardener v1.129.0
-  #            filters:
-  #            - v4filter
+              filters:
+              - v4filter
             {{- end }}  
-  # uncomment after Gardener v1.129.0
-  #          bgpFilter:
-  #            - name: v4filter
-  #              exportV4:
-  #                {{- range $cluster.networking.externalServices }}
-  #                - cidr: {{ .cidr }}
-  #                  matchOperator: Equal
-  #                  action: Reject
-  #                {{- end }}
+            bgpFilter:
+              - name: v4filter
+                exportV4:
+                  {{- range $cluster.networking.externalServices }}
+                  - cidr: {{ .cidr }}
+                    matchOperator: Equal
+                    action: Reject
+                  {{- end }}
             nodeToNodeMeshEnabled: false
             serviceLoadBalancerIPs:
             {{- range $cluster.networking.externalServices }}
