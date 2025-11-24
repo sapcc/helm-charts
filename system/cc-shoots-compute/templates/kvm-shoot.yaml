@@ -37,8 +37,32 @@ spec:
         AnonymousAuthConfigurableEndpoints: true
       structuredAuthentication:
         configMapName: authentication-config-compute
+      {{- if $cluster.auditing.enabled }}
+      auditConfig:
+        auditPolicy:
+          configMapRef:
+            name: audit-policy-cp
+      {{- end }}
     verticalPodAutoscaler:
       enabled: false
+  {{- if $cluster.auditing.enabled }}
+  extensions:
+  - type: auditing
+    providerConfig:
+      apiVersion: auditing.extensions.gardener.cloud/v1alpha1
+      kind: AuditConfiguration
+      backends:
+      - http:
+          url: {{ $cluster.auditing.url }}
+          tls:
+            secretReferenceName: auditing-mtls
+  resources:
+  - name: auditing-mtls
+    resourceRef:
+      apiVersion: v1
+      kind: Secret
+      name: auditing-mtls
+  {{- end }}
   maintenance:
     autoUpdate:
       kubernetesVersion: false
