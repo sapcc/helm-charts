@@ -20,18 +20,42 @@ spec:
         AnonymousAuthConfigurableEndpoints: true
       structuredAuthentication:
         configMapName: authentication-config-met-op
+      {{- if $.Values.auditing.enabled }}
+      auditConfig:
+        auditPolicy:
+          configMapRef:
+            name: audit-policy-cp
+      {{- end }}
+  {{- if $.Values.auditing.enabled }}
+  extensions:
+  - type: auditing
+    providerConfig:
+      apiVersion: auditing.extensions.gardener.cloud/v1alpha1
+      kind: AuditConfiguration
+      backends:
+      - http:
+          url: {{ $.Values.auditing.url }}
+          tls:
+            secretReferenceName: auditing-mtls
+  resources:
+  - name: auditing-mtls
+    resourceRef:
+      apiVersion: v1
+      kind: Secret
+      name: auditing-mtls
+  {{- end }}
 {{- end }}
 {{- range $region := .Values.regions }}
 ---
 apiVersion: core.gardener.cloud/v1beta1
 kind: Shoot
 metadata:
-  name: met-op-{{ $region }}
+  name: met-op-{{ $region.name }}
 spec:
   cloudProfile:
     kind: CloudProfile
     name: openstack
-  region: {{ $region }}
+  region: {{ $region.name }}
   networking:
     services: 10.55.0.0/16
   provider:
@@ -43,5 +67,29 @@ spec:
         AnonymousAuthConfigurableEndpoints: true
       structuredAuthentication:
         configMapName: authentication-config-met-op
-  seedName: rt-{{ $region }}
+      {{- if $region.auditing.enabled }}
+      auditConfig:
+        auditPolicy:
+          configMapRef:
+            name: audit-policy-cp
+      {{- end }}
+  seedName: rt-{{ $region.name }}
+  {{- if $region.auditing.enabled }}
+  extensions:
+  - type: auditing
+    providerConfig:
+      apiVersion: auditing.extensions.gardener.cloud/v1alpha1
+      kind: AuditConfiguration
+      backends:
+      - http:
+          url: {{ $region.auditing.url }}
+          tls:
+            secretReferenceName: auditing-mtls
+  resources:
+  - name: auditing-mtls
+    resourceRef:
+      apiVersion: v1
+      kind: Secret
+      name: auditing-mtls
+  {{- end }}
 {{- end }}
