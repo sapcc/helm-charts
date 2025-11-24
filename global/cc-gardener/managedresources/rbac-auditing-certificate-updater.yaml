@@ -1,0 +1,32 @@
+{{ if .Values.extensions.auditing.enabled -}}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: auditing-certificate-updater
+rules:
+- apiGroups: [""]
+  resources:
+  - secrets
+  verbs:
+  - get
+  - list
+  - patch
+  - create
+  - update
+  - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: auditing-certificate-updater
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: auditing-certificate-updater
+subjects:
+# serviceaccount is ensured by gardener-resource-manager
+- kind: ServiceAccount
+  name: auditing-certificate-updater
+  namespace: garden
+{{ end -}}

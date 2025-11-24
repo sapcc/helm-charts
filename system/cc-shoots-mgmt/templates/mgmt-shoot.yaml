@@ -4,9 +4,13 @@ apiVersion: core.gardener.cloud/v1beta1
 kind: Shoot
 metadata:
   name: mgmt-{{ $key }}
+  annotations:
+    shoot.gardener.cloud/cloud-config-execution-max-delay-seconds: "30" # applies changes to OperatingSystemConfigurations faster
 spec:
-  cloudProfileName: ironcore-metal
-  secretBindingName: metal-{{ $key }}
+  cloudProfile:
+    kind: CloudProfile
+    name: ironcore-metal
+  credentialsBindingName: metal-{{ $key }}
   seedName: rt-{{ $key }}
   region: {{ $key }}
   networking:
@@ -34,18 +38,43 @@ spec:
         AnonymousAuthConfigurableEndpoints: true
       structuredAuthentication:
         configMapName: authentication-config-mgmt
+      {{- if $cluster.auditing.enabled }}
+      auditConfig:
+        auditPolicy:
+          configMapRef:
+            name: audit-policy-cp
+      {{- end }}
     verticalPodAutoscaler:
       enabled: true # VPA needs to enabled for ManagedSeed
   maintenance:
     autoUpdate:
       kubernetesVersion: false
       machineImageVersion: false
+  {{- if $cluster.auditing.enabled }}
+  extensions:
+  - type: auditing
+    providerConfig:
+      apiVersion: auditing.extensions.gardener.cloud/v1alpha1
+      kind: AuditConfiguration
+      backends:
+      - http:
+          url: {{ $cluster.auditing.url }}
+          tls:
+            secretReferenceName: auditing-mtls
+  {{- end }}
   resources:
   - name: extraignition-mgmt-{{ $key }}
     resourceRef:
       apiVersion: v1
       kind: Secret
       name: extraignition-mgmt-{{ $key }}
+  {{- if $cluster.auditing.enabled }}
+  - name: auditing-mtls
+    resourceRef:
+      apiVersion: v1
+      kind: Secret
+      name: auditing-mtls
+  {{- end }}
   provider:
     type: ironcore-metal
     infrastructureConfig:
@@ -66,32 +95,35 @@ spec:
             apiGroup: ipam.cluster.x-k8s.io
             kind: IPAddress
       loadBalancerConfig:
-        calicoBgpConfig:
-          asNumber: {{ $cluster.networking.asNumber }}
-          bgpPeer:
-          {{- range $cluster.networking.bgpPeers }}
-          - asNumber: {{ default $cluster.networking.asNumber .asNumber }}
-            nodeSelector: {{ .nodeSelector }}
-            peerIP: {{ .peerIP }}
-# uncomment after Gardener v1.129.0
-#            filters:
-#            - v4filter
-          {{- end }}  
-# uncomment after Gardener v1.129.0
-#          bgpFilter:
-#            - name: v4filter
-#              exportV4:
-#                {{- range $cluster.networking.externalServices }}
-#                - cidr: {{ . }}
-#                  matchOperator: Equal
-#                  action: Reject
-#                {{- end }}
-          nodeToNodeMeshEnabled: false
-          serviceLoadBalancerIPs:
-          {{- toYaml $cluster.networking.externalServices | nindent 10 }}
-        metallbConfig:
-          ipAddressPool:
-          {{- toYaml $cluster.networking.externalServices | nindent 10 }}
+        calicoConfig:
+          IPPools:
+            {{- range $cluster.networking.externalServices }}
+            - cidr: {{ .cidr }}
+              assignmentMode: {{ default "Automatic" .assignmentMode }}
+            {{- end }}
+          calicoBgpConfig:
+            asNumber: {{ $cluster.networking.asNumber }}
+            bgpPeer:
+            {{- range $cluster.networking.bgpPeers }}
+            - asNumber: {{ default $cluster.networking.asNumber .asNumber }}
+              nodeSelector: {{ .nodeSelector }}
+              peerIP: {{ .peerIP }}
+              filters:
+              - v4filter
+            {{- end }}  
+            bgpFilter:
+              - name: v4filter
+                exportV4:
+                  {{- range $cluster.networking.externalServices }}
+                  - cidr: {{ .cidr }}
+                    matchOperator: Equal
+                    action: Reject
+                  {{- end }}
+            nodeToNodeMeshEnabled: false
+            serviceLoadBalancerIPs:
+            {{- range $cluster.networking.externalServices }}
+            - {{ .cidr }}
+            {{- end }}
 
     workers:
     {{- range $workerkey, $worker := $cluster.workers }}

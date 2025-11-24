@@ -20,9 +20,16 @@ metadata:
   namespace: {{ .Release.Namespace }}
   labels:
     "greenhouse.sap/owned-by": {{ .Values.openTelemetry.supportGroup | default .Values.global.supportGroup }}
+    "greenhouse.sap/deployment-tool": "flux"
 spec:
   pluginDefinition: logs
   disabled: false
+  ignoreDifferences:
+    - version: v1
+      kind: ServiceAccount
+      name: logs-collector
+      paths:
+        - /metadata/labels
   optionValues:
     - name: openTelemetry.prometheus.additionalLabels
       value:

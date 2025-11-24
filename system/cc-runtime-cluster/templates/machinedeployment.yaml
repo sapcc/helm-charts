@@ -8,9 +8,10 @@ spec:
   strategy:
     rollingUpdate:
       # We don't have spare nodes in bare metal clusters to spin up a new machine during upgrade.
-      # Therefore we change maxSurge from 1 (default) to 0.
+      # Therefore we change maxSurge from 1 (default) to 0 and set maxUnavailable to 1.
       # Cluster will be updated by temporary scaling down control plane to 1 machine less.
       maxSurge: 0
+      maxUnavailable: 1
   selector:
     matchLabels:
       kubernetes.metal.cloud.sap/cluster: rt-{{ .Values.global.region }}

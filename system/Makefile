@@ -1,14 +1,11 @@
-CLUSTER_API_VERSION ?= v1.10.2
-PROVIDER_METAL3_VERSION ?= v1.10.0
-PROVIDER_METAL_VERSION ?= 00d028c4aac7fa1e168c5ec9fab74e197530e37c
+CLUSTER_API_VERSION ?= v1.11.2
+PROVIDER_METAL3_VERSION ?= v1.11.1
+PROVIDER_METAL_VERSION ?= 3c311063d94fe0ce7f229877a9370fb101b32bb2
 PROVIDER_VSPHERE_VERSION ?= v1.9.3
-PROVIDER_IPAM_VERSION ?= v0.1.1
-PROVIDER_HELM ?= v0.3.2
+PROVIDER_IPAM_VERSION ?= v1.0.3
+PROVIDER_HELM ?= v0.4.1
 PROVIDER_KUBERNIKUS_VERSION ?= b6d18b8c8e26336aec34ecadb76d8ec78cdaf67d
-BAREMETAL_OPERATOR_VERSION ?= v0.6.0
-IPXE_OPERATOR_VERSION ?= 28b7ac62711e74db02fe0097bdf474a302a054c6
-FEDHCP_VERSION ?= a59539c62aaa11a96c82fe792c87daaac4cb75bf
-IPAM_VERSION ?= 6faf501000c5d7ff9744a3c111ca5ecf3339c00c
+BAREMETAL_OPERATOR_VERSION ?= v0.11.1
 
 SHELL := bash
 .ONESHELL:
@@ -19,7 +16,7 @@ ifeq ($(UNAME_S),Darwin)
 	SED := gsed
 endif
 
-build: build-cluster-api-core build-bootstrap-kubeadm build-provider-metal3 build-provider-kubernikus
+build: build-cluster-api-core build-controlplane-kubeadm build-bootstrap-kubeadm build-provider-metal3 build-provider-kubernikus build-provider-helm build-provider-ipam build-ipam-capi-remote build-provider-metal3 build-provider-metal
 
 build-cluster-api-core:
 	$(call build-chart,cluster-api-core,https://github.com/kubernetes-sigs/cluster-api//config/default,$(CLUSTER_API_VERSION))
@@ -29,7 +26,7 @@ build-cluster-api-core:
 	@find cluster-api-core/templates -type f -exec $(SED) -i -e 's#-system.#.#g' {} \;
 	@yq -i '.controllerManager.manager.image.tag="$(CLUSTER_API_VERSION)"' cluster-api-core/values.yaml
 	@yq -i '.fullnameOverride="capi"' cluster-api-core/values.yaml
-	@yq -i '.version="0.2.2"' cluster-api-core/Chart.yaml
+	@yq -i '.version="1.0.0"' cluster-api-core/Chart.yaml
 
 build-controlplane-kubeadm:
 	$(call build-chart,controlplane-kubeadm,https://github.com/kubernetes-sigs/cluster-api//controlplane/kubeadm/config/default,$(CLUSTER_API_VERSION))
@@ -44,7 +41,7 @@ build-controlplane-kubeadm:
 	@$(SED) -i 's/10240/30720/g' controlplane-kubeadm/crds/*
 	@yq -i '.controllerManager.manager.image.tag="$(CLUSTER_API_VERSION)"' controlplane-kubeadm/values.yaml
 	@yq -i '.fullnameOverride="capi-kubeadm-controlplane"' controlplane-kubeadm/values.yaml
-	@yq -i '.version="0.2.3"' controlplane-kubeadm/Chart.yaml
+	@yq -i '.version="1.0.0"' controlplane-kubeadm/Chart.yaml
 
 # fix for "spec.ignition.containerLinuxConfig.additionalConfig: Too long: may not be longer than 10240"
 build-bootstrap-kubeadm:
@@ -56,7 +53,7 @@ build-bootstrap-kubeadm:
 	@$(SED) -i 's/10240/30720/g' bootstrap-kubeadm/crds/*
 	@yq -i '.controllerManager.manager.image.tag="$(CLUSTER_API_VERSION)"' bootstrap-kubeadm/values.yaml
 	@yq -i '.fullnameOverride="capi-kubeadm-bootstrap"' bootstrap-kubeadm/values.yaml
-	@yq -i '.version="0.2.4"' bootstrap-kubeadm/Chart.yaml
+	@yq -i '.version="1.0.0"' bootstrap-kubeadm/Chart.yaml
 
 build-provider-helm:
 	$(call build-chart,provider-helm,https://github.com/kubernetes-sigs/cluster-api-addon-provider-helm//config/default,$(PROVIDER_HELM))
@@ -64,7 +61,7 @@ build-provider-helm:
 	@find provider-helm/templates -type f -exec $(SED) -i -e 's#webhook-server-cert#caaph-webhook-server-cert#g' {} \;
 	@yq -i '.controllerManager.manager.image.tag="$(PROVIDER_HELM)"' provider-helm/values.yaml
 	@yq -i '.fullnameOverride="caaph"' provider-helm/values.yaml
-	@yq -i '.version="0.0.4"' provider-helm/Chart.yaml
+	@yq -i '.version="0.1.0"' provider-helm/Chart.yaml
 
 build-provider-vsphere:
 	$(call build-chart,provider-vsphere,https://github.com/kubernetes-sigs/cluster-api-provider-vsphere//config/default,$(PROVIDER_VSPHERE_VERSION))
@@ -82,7 +79,7 @@ build-provider-ipam:
 	@find provider-ipam/templates -type f -exec $(SED) -i -e 's#capi-capi-#capi-#g' {} \;
 	@yq -i '.controllerManager.manager.image.tag="$(PROVIDER_IPAM_VERSION)"' provider-ipam/values.yaml
 	@yq -i '.fullnameOverride="capi-capi-provider-ipam"' provider-ipam/values.yaml
-	@yq -i '.version="0.0.3"' provider-ipam/Chart.yaml
+	@yq -i '.version="0.1.1"' provider-ipam/Chart.yaml
 
 build-ipam-capi-remote:
 	@rm -rf ipam-capi-remote
@@ -96,7 +93,7 @@ build-ipam-capi-remote:
 	@cp kustomize/ipam-capi-remote-managedresources/globalinclusterippool.yaml ipam-capi-remote/managedresources
 	@yq -i '.controllerManager.manager.image.tag="$(PROVIDER_IPAM_VERSION)"' ipam-capi-remote/values.yaml
 	@yq -i '.fullnameOverride="ipam-capi"' ipam-capi-remote/values.yaml
-	@yq -i '.version="1.0.3"' ipam-capi-remote/Chart.yaml
+	@yq -i '.version="1.1.0"' ipam-capi-remote/Chart.yaml
 	@$(SED) -i 's/serviceAccountName.*$$/serviceAccountName: default/g' ipam-capi-remote/templates/deployment.yaml
 	@$(SED) -i 's/kind: Role/kind: ClusterRole/g' ipam-capi-remote/managedresources/kustomize.yaml
 
@@ -111,20 +108,20 @@ build-provider-metal3:
 	@curl -sSL https://raw.githubusercontent.com/metal3-io/ip-address-manager/$(PROVIDER_METAL3_VERSION)/config/crd/bases/ipam.metal3.io_ipclaims.yaml -o provider-metal3/crds/ipam.metal3.io_ipclaims.yaml
 	@yq -i '.controllerManager.manager.image.tag="$(PROVIDER_METAL3_VERSION)"' provider-metal3/values.yaml
 	@yq -i '.fullnameOverride="capm3"' provider-metal3/values.yaml
-	@yq -i '.version="0.2.6"' provider-metal3/Chart.yaml
+	@yq -i '.version="1.0.1"' provider-metal3/Chart.yaml
 
 build-provider-metal:
 	$(call build-chart,provider-metal,https://github.com/ironcore-dev/cluster-api-provider-ironcore-metal//config/default,$(PROVIDER_METAL_VERSION))
 	$(call fix-crds,provider-metal)
 	@yq -i '.controllerManager.manager.image.tag="$(PROVIDER_METAL_VERSION)"' provider-metal/values.yaml
 	@yq -i '.fullnameOverride="provider-metal"' provider-metal/values.yaml
-	@yq -i '.version="0.0.7"' provider-metal/Chart.yaml
+	@yq -i '.version="0.1.0"' provider-metal/Chart.yaml
 
 build-provider-kubernikus:
 	$(call build-chart,provider-kubernikus,https://github.com/sapcc/cluster-api-control-plane-provider-kubernikus//config/default,$(PROVIDER_KUBERNIKUS_VERSION))
 	@yq -i '.controllerManager.manager.image.tag="$(PROVIDER_KUBERNIKUS_VERSION)"' provider-kubernikus/values.yaml
 	@yq -i '.fullnameOverride="capi-cp-provider-kubernikus"' provider-kubernikus/values.yaml
-	@yq -i '.version="0.1.9"' provider-kubernikus/Chart.yaml
+	@yq -i '.version="0.2.0"' provider-kubernikus/Chart.yaml
 
 build-baremetal-operator:
 	@yq -i '.namespace = "baremetal-operator=system"' kustomization.yaml
@@ -140,7 +137,7 @@ build-baremetal-operator:
 	@find baremetal-operator-core/templates -type f -exec $(SED) -i -e 's#-baremetal-operator-system/#-#g' {} \;
 	@yq -i '.controllerManager.manager.image.tag="$(BAREMETAL_OPERATOR_VERSION)"' baremetal-operator-core/values.yaml
 	@yq -i '.fullnameOverride="metal3"' baremetal-operator-core/values.yaml
-	@yq -i '.version="1.0.1"' baremetal-operator-core/Chart.yaml
+	@yq -i '.version="1.1.0"' baremetal-operator-core/Chart.yaml
 
 build-metal-operator-remote:
 	@helm dep up metal-operator-remote
@@ -161,46 +158,6 @@ build-boot-operator-remote:
 		yq eval 'select(.kind != "Service" and .kind != "ValidatingWebhookConfiguration")' - >\
 		boot-operator-remote/managedresources/crds-and-rbac.yaml
 	yq -i '.version = (.version | split(".") | .[2] = ((.[2] | tonumber) + 1 | tostring) | join("."))' boot-operator-remote/Chart.yaml
-
-build-ipxe-operator:
-	@cat kustomize/ipxe-operator/kustomization.yaml >> kustomization.yaml
-	$(call build-chart,ipxe-operator,https://github.com/ironcore-dev/ipxe-operator//config/default,$(IPXE_OPERATOR_VERSION))
-	@yq -i '.controllerManager.manager.image.tag="$(IPXE_OPERATOR_VERSION)"' ipxe-operator/values.yaml
-	@yq -i '.fullnameOverride="ipxe-operator"' ipxe-operator/values.yaml
-	@yq -i '.version="0.0.8"' ipxe-operator/Chart.yaml
-
-build-fedhcp:
-	@cat kustomize/fedhcp/kustomization.yaml >> kustomization.yaml
-	$(call build-chart,fedhcp,https://github.com/ironcore-dev/fedhcp//config/default,$(FEDHCP_VERSION))
-	@yq -i '.controllerManager.manager.image.tag="$(FEDHCP_VERSION)"' fedhcp/values.yaml
-	@yq -i '.fullnameOverride="fedhcp"' fedhcp/values.yaml
-	@yq -i '.version="0.0.2"' fedhcp/Chart.yaml
-
-build-ipam-operator:
-	@cat kustomize/ipam-operator/kustomization.yaml >> kustomization.yaml
-	$(call build-chart,ipam-operator,https://github.com/ironcore-dev/ipam//config/default,$(IPAM_VERSION))
-	@find ipam-operator/crds -type f -exec $(SED) -i -e 's#ipam-system/ipam-serving-cert#ipam-system/ipam-operator-serving-cert#g' {} \;
-	@find ipam-operator/templates -type f -exec $(SED) -i -e 's#-ipam-serving-cert#-serving-cert#g' {} \;
-	@find ipam-operator/templates -type f -exec $(SED) -i -e 's#-ipam-webhook-service#-webhook-service#g' {} \;
-	@yq -i '.controllerManager.manager.image.tag="$(IPAM_VERSION)"' ipam-operator/values.yaml
-	@yq -i '.version="0.0.2"' ipam-operator/Chart.yaml
-
-build-ipam-operator-remote:
-	@rm -rf ipam-operator-remote
-	@cat kustomize/ipam-operator-remote/kustomization.yaml > kustomization.yaml
-	@kubectl kustomize | helmify -crd-dir ipam-operator-remote
-	@cp kustomize/ipam-operator-remote/remote-kubeconfig.yaml ipam-operator-remote/templates
-	@cp kustomize/ipam-operator-remote/managedresource.yaml ipam-operator-remote/templates
-	@mkdir ipam-operator-remote/managedresources
-	@kubectl kustomize kustomize/ipam-operator-managedresources > ipam-operator-remote/managedresources/kustomize.yaml
-	@cp kustomize/ipam-operator-managedresources/rbac.yaml ipam-operator-remote/managedresources
-	@cp kustomize/ipam-operator-managedresources/network.yaml ipam-operator-remote/managedresources
-	@cp kustomize/ipam-operator-managedresources/subnet.yaml ipam-operator-remote/managedresources
-	@yq -i '.controllerManager.manager.image.tag="$(IPAM_VERSION)"' ipam-operator-remote/values.yaml
-	@yq -i '.fullnameOverride="ipam-operator"' ipam-operator-remote/values.yaml
-	@yq -i '.version="0.2.2"' ipam-operator-remote/Chart.yaml
-	@$(SED) -i 's/serviceAccountName.*$$/serviceAccountName: default/g' ipam-operator-remote/templates/deployment.yaml
-	@$(SED) -i 's/kind: Role/kind: ClusterRole/g' ipam-operator-remote/managedresources/kustomize.yaml
 
 build-argora-operator:
 	@helm dep up argora-operator
