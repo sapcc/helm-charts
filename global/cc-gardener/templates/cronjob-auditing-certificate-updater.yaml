@@ -24,26 +24,14 @@ spec:
             imagePullPolicy: IfNotPresent
             command: ["/bin/sh", "-c"]
             args:
-            - kubectl config set-cluster k8s-cluster --server=https://virtual-garden-kube-apiserver.garden.svc.cluster.local:443 --certificate-authority=/var/run/secrets/kubernetes.io/serviceaccount/bundle.crt --embed-certs=true;
-              kubectl config set-credentials auditing-certificate-updater --token=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token);
-              kubectl config set-context k8s-context --cluster k8s-cluster --user auditing-certificate-updater;
-              kubectl config use-context k8s-context;
-              kubectl -n garden create secret generic auditing-mtls --save-config --dry-run=client --from-file=client.crt=/etc/auditing/certificate/client.crt --from-file=client.key=/etc/auditing/certificate/client.key -o yaml | kubectl apply -f -
+            - secret=$(kubectl -n garden create secret generic auditing-mtls --save-config --dry-run=client --from-file=client.crt=/etc/auditing/certificate/client.crt --from-file=client.key=/etc/auditing/certificate/client.key -o yaml | base64 -w0);
+              kubectl -n garden patch secret mr-s-auditing-mtls --type=json -p="[{'op':'add','path':'/data/objects.yaml','value':'$secret'}]";
             volumeMounts:
-            - name: kubeconfig
-              mountPath: "/var/run/secrets/kubernetes.io/serviceaccount"
             - name: certificate
               mountPath: "/etc/auditing/certificate"
           restartPolicy: Never
+          serviceAccountName: auditing-certificate-updater
           volumes:
-          - name: kubeconfig
-            secret:
-              items:
-              - key: token
-                path: token
-              - key: bundle.crt
-                path: bundle.crt
-              secretName: auditing-certificate-updater-kubeconfig
           - name: certificate
             secret:
               items:
@@ -54,17 +42,36 @@ spec:
               secretName: auditing-mtls
 ---
 apiVersion: v1
-kind: Secret
+kind: ServiceAccount
 metadata:
-  name: auditing-certificate-updater-kubeconfig
-  labels:
-    resources.gardener.cloud/purpose: token-requestor
-    resources.gardener.cloud/class: shoot
-  annotations:
-    serviceaccount.resources.gardener.cloud/name: auditing-certificate-updater
-    serviceaccount.resources.gardener.cloud/namespace: garden
-    serviceaccount.resources.gardener.cloud/inject-ca-bundle: "true"
-stringData:
-  token: ""
-  bundle.crt: ""
+  name: auditing-certificate-updater
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: auditing-certificate-updater
+rules:
+- apiGroups: [""]
+  resources:
+  - secrets
+  verbs:
+  - get
+  - list
+  - patch
+  - create
+  - update
+  - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: auditing-certificate-updater
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: auditing-certificate-updater
+subjects:
+- kind: ServiceAccount
+  name: auditing-certificate-updater
+  namespace: garden
 {{ end -}}
