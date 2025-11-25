@@ -8,10 +8,12 @@ metadata:
     type: backend
     component: nova
 spec:
-  revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revision_history }}
+  revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.daemonsets.revisionHistory }}
   selector:
     matchLabels:
       name: {{ .Release.Name }}
+  updateStrategy:
+    {{- .Values.pod.lifecycle.upgrades.daemonsets.updateStrategy | toYaml | nindent 4 }}
   template:
     metadata:
       labels:
