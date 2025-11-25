@@ -122,13 +122,10 @@ mysql_metrics:
           containers.status,
           projects.external_id  AS project_id,
           COUNT(*) AS count_gauge
-        from containers
-        INNER JOIN
-          projects
-        on
-          containers.project_id=projects.id
-        where
-          containers.deleted='false'
+        FROM containers
+        INNER JOIN projects
+          ON containers.project_id = projects.id
+        WHERE containers.deleted = 'false'
         GROUP BY
           containers.name,
           containers.type,
@@ -137,6 +134,7 @@ mysql_metrics:
           projects.external_id;
       values:
       - "count_gauge"
+
     - help: Barbican secret count by type
       labels:
       - "id"
@@ -151,19 +149,33 @@ mysql_metrics:
         SELECT
           secrets.id,
           secrets.status,
-          COALESCE(secrets.name, "No Secret Name") AS secret_name,
+          COALESCE(secrets.name, 'No Secret Name') AS secret_name,
           secrets.created_at,
-          UNIX_TIMESTAMP(STR_TO_DATE(IFNULL(secrets.expiration,'1970-01-01 00:00:00'), '%Y-%c-%e %T')) AS expiration,
-          projects.external_id  AS project_id,
+          COALESCE(
+            NULLIF(
+              DATE_FORMAT(secrets.expiration, '%Y-%m-%d %H:%i:%s'),
+              '0000-00-00 00:00:00'
+            ),
+            '1970-01-01 00:00:00'
+          ) AS expiration,
+          projects.external_id AS project_id,
           secrets.secret_type,
-          COUNT(*)  AS count_gauge
-        from secrets
+          COUNT(*) AS count_gauge
+        FROM secrets
         INNER JOIN projects
-        on secrets.project_id=projects.id
-        WHERE secrets.deleted='false'
-        GROUP BY secrets.id, secrets.status, secrets.name, projects.external_id, secrets.secret_type, secrets.expiration;
+          ON secrets.project_id = projects.id
+        WHERE secrets.deleted = 'false'
+        GROUP BY
+          secrets.id,
+          secrets.status,
+          secret_name,
+          secrets.created_at,
+          expiration,
+          projects.external_id,
+          secrets.secret_type;
       values:
       - "count_gauge"
+
     - help: Barbican secret count in HSM Backend
       labels:
       - "id"
@@ -178,23 +190,38 @@ mysql_metrics:
         SELECT
           secrets.id,
           secrets.status,
-          COALESCE(secrets.name, "No Secret Name") AS secret_name,
+          COALESCE(secrets.name, 'No Secret Name') AS secret_name,
           secrets.created_at,
-          UNIX_TIMESTAMP(STR_TO_DATE(IFNULL(secrets.expiration,'1970-01-01 00:00:00'), '%Y-%c-%e %T')) AS expiration,
-          projects.external_id  AS project_id,
+          COALESCE(
+            NULLIF(
+              DATE_FORMAT(secrets.expiration, '%Y-%m-%d %H:%i:%s'),
+              '0000-00-00 00:00:00'
+            ),
+            '1970-01-01 00:00:00'
+          ) AS expiration,
+          projects.external_id AS project_id,
           secrets.secret_type,
           COUNT(*) AS count_gauge
         FROM encrypted_data
         JOIN kek_data
-        ON encrypted_data.kek_id = kek_data.id
+          ON encrypted_data.kek_id = kek_data.id
         JOIN secrets
-        ON secrets.id = encrypted_data.secret_id
+          ON secrets.id = encrypted_data.secret_id
         JOIN projects
-        ON secrets.project_id=projects.id
-        WHERE kek_data.plugin_name='barbican.plugin.crypto.p11_crypto.P11CryptoPlugin' AND secrets.deleted='false'
-        GROUP BY secrets.id, secrets.status, secrets.name, projects.external_id, secrets.secret_type, secrets.expiration;
+          ON secrets.project_id = projects.id
+        WHERE kek_data.plugin_name = 'barbican.plugin.crypto.p11_crypto.P11CryptoPlugin'
+          AND secrets.deleted = 'false'
+        GROUP BY
+          secrets.id,
+          secrets.status,
+          secret_name,
+          secrets.created_at,
+          expiration,
+          projects.external_id,
+          secrets.secret_type;
       values:
       - "count_gauge"
+
     - help: Barbican certificate expiration date
       labels:
       - "expiration_date"
@@ -204,8 +231,13 @@ mysql_metrics:
       name: openstack_barbican_certificate_expiration_date
       query: |
         SELECT
-          CONCAT(
-            UNIX_TIMESTAMP(STR_TO_DATE(IFNULL(secrets.expiration, '1970-01-01 00:00:00'), '%Y-%c-%e %T'))
+          UNIX_TIMESTAMP(
+            CASE
+              WHEN secrets.expiration IS NULL
+                OR secrets.expiration = '0000-00-00 00:00:00'
+              THEN '1970-01-01 00:00:00'
+              ELSE secrets.expiration
+            END
           ) AS expiration_date,
           secrets.name AS certificate_name,
           secrets.creator_id,
@@ -213,11 +245,17 @@ mysql_metrics:
           COUNT(*) AS count_gauge
         FROM secrets
         INNER JOIN projects
-        ON secrets.project_id = projects.id
-        WHERE secret_type = 'certificate' AND expiration != '0'
-        GROUP BY secrets.creator_id, secrets.name, projects.external_id, secrets.expiration;
+          ON secrets.project_id = projects.id
+        WHERE secrets.secret_type = 'certificate'
+          AND secrets.deleted = 'false'
+        GROUP BY
+          secrets.creator_id,
+          secrets.name,
+          projects.external_id,
+          secrets.expiration;
       values:
       - "expiration_date"
+
     - help: Barbican opaque certificate expiration date
       labels:
       - "expiration_date"
@@ -227,8 +265,13 @@ mysql_metrics:
       name: openstack_barbican_opaque_certificate_expiration_date
       query: |
         SELECT
-          CONCAT(
-            UNIX_TIMESTAMP(STR_TO_DATE(IFNULL(secrets.expiration, '1970-01-01 00:00:00'), '%Y-%c-%e %T'))
+          UNIX_TIMESTAMP(
+            CASE
+              WHEN secrets.expiration IS NULL
+                OR secrets.expiration = '0000-00-00 00:00:00'
+              THEN '1970-01-01 00:00:00'
+              ELSE secrets.expiration
+            END
           ) AS expiration_date,
           secrets.name AS certificate_name,
           secrets.creator_id,
@@ -236,12 +279,16 @@ mysql_metrics:
           COUNT(*) AS count_gauge
         FROM secrets
         INNER JOIN projects
-        ON secrets.project_id = projects.id
-        WHERE secret_type = 'opaque' AND expiration != '0'
-        GROUP BY secrets.creator_id, secrets.name, projects.external_id, secrets.expiration;
+          ON secrets.project_id = projects.id
+        WHERE secrets.secret_type = 'opaque'
+          AND secrets.deleted = 'false'
+        GROUP BY
+          secrets.creator_id,
+          secrets.name,
+          projects.external_id,
+          secrets.expiration;
       values:
       - "expiration_date"
-
 memcached:
   alerts:
     support_group: identity
