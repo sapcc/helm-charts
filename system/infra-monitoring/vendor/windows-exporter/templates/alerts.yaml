@@ -1,4 +1,5 @@
-{{- if .Values.alerts.enabled }}
+{{ $values := .Values.windows_exporter }}
+{{- if $values.alerts.enabled }}
 {{- range $path, $bytes := .Files.Glob "alerts/*.alerts" }}
 ---
 apiVersion: monitoring.coreos.com/v1
@@ -7,7 +8,7 @@ metadata:
   name: {{ printf "%s" $path | replace "/" "-" }}
   labels:
     type: alerting-rules
-    prometheus: infra-collector
+    prometheus: {{ $values.alerts.prometheus.name }}
 spec:
 {{ printf "%s" $bytes | indent 2 }}
 {{- end }}
