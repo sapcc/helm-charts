@@ -17,13 +17,13 @@ spec:
             value: barbican
           - name: context
             matchType: "="
-            value: hsm
+            value: thales
           - name: severity
-            matchType: "="
+            matchType: "=~"
             value: critical|warning|info
           - name: region
             matchType: "=~"
-            value: {{ .Values.regions | join "|" }} 
+            value: {{ .Values.regions | join "|" }}
 
       # review for slack_by_cc_service
       - receiver: slack_barbican_certificate
@@ -40,7 +40,7 @@ spec:
             value: info
           - name: region
             matchType: "=~"
-            value: {{ .Values.regions | join "|" }} 
+            value: {{ .Values.regions | join "|" }}
 
       # review for slack_by_cc_service
       - receiver: slack_nannies
@@ -324,7 +324,7 @@ spec:
             value: global|{{ without .Values.regions "qa-de-1" | join "|" }}
           - name: support_group
             matchType: "="
-            value: kvm 
+            value: kvm
 
       - receiver: support_group_alerts_info_kvm
         continue: true
@@ -581,9 +581,9 @@ spec:
     - name: slack_kks_critical
       slackConfigs:
         - channel: '#cc-kks-critical'
-          apiURL: 
+          apiURL:
             name: alertmanager-{{ include "alertmanagerRelease.name" . }}-slack-secrets
-            key: slack_kubernikus_criticalwebhookURL 
+            key: slack_kubernikus_criticalwebhookURL
           {{- include "slack.template" . | nindent 10 }}
 
     - name: slack_concourse
@@ -658,7 +658,7 @@ spec:
             key: slack_webhookURL
           {{- include "slack.template" . | nindent 10 }}
 
-    - name: support_group_alerts_info_kvm 
+    - name: support_group_alerts_info_kvm
       slackConfigs:
         - channel: '#alert-kvm-info'
           apiURL:
@@ -702,7 +702,7 @@ spec:
         - channel: '#alert-{{"{{ .CommonLabels.support_group }}"}}-{{"{{ .CommonLabels.severity }}"}}'
           apiURL:
             name: alertmanager-{{ include "alertmanagerRelease.name" . }}-slack-secrets
-            key: slack_webhookURL 
+            key: slack_webhookURL
           {{- include "slack.template" . | nindent 10 }}
 
     - name: support_group_alerts_warning
@@ -710,7 +710,7 @@ spec:
         - channel: '#alert-{{"{{ .CommonLabels.support_group }}"}}-{{"{{ .CommonLabels.severity }}"}}'
           apiURL:
             name: alertmanager-{{ include "alertmanagerRelease.name" . }}-slack-secrets
-            key: slack_webhookURL 
+            key: slack_webhookURL
           {{- include "slack.template" . | nindent 10 }}
 
     - name: support_group_alerts_qa
@@ -718,7 +718,7 @@ spec:
         - channel: '#alert-{{"{{ .CommonLabels.support_group }}"}}-qa'
           apiURL:
             name: alertmanager-{{ include "alertmanagerRelease.name" . }}-slack-secrets
-            key: slack_webhookURL 
+            key: slack_webhookURL
           {{- include "slack.template" . | nindent 10 }}
 
     - name: support_group_alerts_labs

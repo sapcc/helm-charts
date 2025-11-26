@@ -108,6 +108,16 @@ transform/network_generic_ssh_exporter:
         - set(log.attributes["command"], log.cache["command"])
         - set(log.attributes["metric"], log.cache["metric"])
 
+transform/perses:
+  error_mode: ignore
+  log_statements:
+    - context: log
+      conditions:
+        - resource.attributes["k8s.container.name"] == "perses"
+      statements:
+        - merge_maps(log.attributes, ExtractGrokPatterns(log.body, "time=%{QUOTEDSTRING} level=%{WORD:loglevel} msg=%{GREEDYDATA:msg}", true),"upsert")
+        - set(log.attributes["config.parsed"], "perses")
+
 transform/coredns_api:
   error_mode: ignore
   log_statements:
@@ -164,6 +174,12 @@ transform/keystone_api:
         - resource.attributes["k8s.container.name"] == "keystone-api"
       statements:
         - merge_maps(log.attributes, ExtractGrokPatterns(log.body, "%{DATE_EU} %{TIME} %{NUMBER} %{NOTSPACE:loglevel} %{NOTSPACE:component} \\[%{NOTSPACE:request.id} %{NOTSPACE:global.request.id} usr %{NOTSPACE:usr} prj %{NOTSPACE:prj} dom %{NOTSPACE:dom} usr-dom %{NOTSPACE:usr_domain} prj-dom %{NOTSPACE:project_domain_id}\\] %{GREEDYDATA}'%{WORD:method} %{URIPATH:pri_path}' %{WORD:action}", true), "upsert")
+
+filter/hermes_logstash:
+  error_mode: ignore
+  logs:
+    log_record:
+      - 'IsMatch(body, ".*Authorization: Basic.*")'
 
 transform/swift_proxy:
   error_mode: ignore
@@ -237,7 +253,7 @@ logs/failover_b_swift:
 
 logs/containerd:
   receivers: [filelog/containerd]
-  processors: [k8sattributes,attributes/cluster,transform/ingress,transform/neutron_agent,transform/neutron_errors,transform/openstack_api,transform/non_openstack,transform/network_generic_ssh_exporter,transform/snmp_exporter,transform/elektra,transform/keystone_api,transform/kvm-ha-service,transform/coredns_api]
+  processors: [k8sattributes,attributes/cluster,transform/ingress,transform/neutron_agent,transform/neutron_errors,transform/openstack_api,transform/non_openstack,transform/network_generic_ssh_exporter,transform/snmp_exporter,transform/elektra,transform/keystone_api,transform/kvm-ha-service,transform/coredns_api,transform/perses,filter/hermes_logstash]
   exporters: [forward]
 
 logs/containerd-swift:

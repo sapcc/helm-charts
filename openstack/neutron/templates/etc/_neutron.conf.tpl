@@ -157,6 +157,13 @@ quota_security_group_rule = 4
 # Minimum value: 1
 thread_pool_size = 3
 
+[metadata_rate_limiting]
+rate_limit_enabled = {{ .Values.metadata.rate_limit.enabled }}
+base_window_duration = {{ .Values.metadata.rate_limit.base_window_duration }}
+base_query_rate_limit = {{ .Values.metadata.rate_limit.base_query_rate_limit }}
+burst_window_duration = {{ .Values.metadata.rate_limit.burst_window_duration }}
+burst_query_rate_limit = {{ .Values.metadata.rate_limit.burst_query_rate_limit }}
+
 {{- include "ini_sections.cache" . }}
 
 {{- if hasPrefix "caracal" .Values.imageVersion }}

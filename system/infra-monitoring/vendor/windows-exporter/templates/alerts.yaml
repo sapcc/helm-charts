@@ -1,19 +1,15 @@
-{{- if .Values.alerts.enabled }}
-{{- range $i, $target := .Values.alerts.prometheus }}
-{{- range $path, $bytes := $.Files.Glob (printf "alerts/%s/*.alerts" $target.name) }}
+{{ $values := .Values.windows_exporter }}
+{{- if $values.alerts.enabled }}
+{{- range $path, $bytes := .Files.Glob "alerts/*.alerts" }}
 ---
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
-
 metadata:
   name: {{ printf "%s" $path | replace "/" "-" }}
   labels:
     type: alerting-rules
-    prometheus: {{ $target.name }}
-
+    prometheus: {{ $values.alerts.prometheus.name }}
 spec:
 {{ printf "%s" $bytes | indent 2 }}
-
-{{- end }}
 {{- end }}
 {{- end }}

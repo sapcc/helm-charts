@@ -91,3 +91,29 @@ groups:
     annotations:
       description: "Exception while applying properties to promoted Replica"
       summary: "Exception while applying properties to promoted Replica"
+
+  - alert: CronusLogsComplianceViolation
+    expr: opensearch_logs_cronus_old_logs_hits > 0
+    for: 5m
+    labels:
+      context: compliance
+      service: cronus
+      severity: warning
+      tier: os
+      support_group: email
+    annotations:
+      description: 'Cronus logs older than 30 days found in {{ $labels.region }}.'
+      summary: 'Cronus logs compliance violation'
+
+  - alert: MaillogComplianceViolation
+    expr: opensearch_logs_maillog_old_logs_hits > 0
+    for: 5m
+    labels:
+      context: compliance
+      service: maillog
+      severity: warning
+      tier: os
+      support_group: email
+    annotations:
+      description: 'Maillog entries older than 30 days found in {{ $labels.region }}.'
+      summary: 'Maillog compliance violation'

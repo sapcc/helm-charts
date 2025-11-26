@@ -8,7 +8,7 @@ spec:
   cloudProfile:
     kind: CloudProfile
     name: ironcore-metal
-  secretBindingName: metal-{{ $key }}
+  credentialsBindingName: metal-{{ $key }}
   seedName: mgmt-{{ $key }}
   region: {{ $key }}
   networking:
@@ -39,7 +39,7 @@ spec:
         AnonymousAuthConfigurableEndpoints: true
       structuredAuthentication:
         configMapName: authentication-config-cp
-      {{- if $.Values.auditing.enabled }}
+      {{- if $cluster.auditing.enabled }}
       auditConfig:
         auditPolicy:
           configMapRef:
@@ -51,7 +51,7 @@ spec:
     autoUpdate:
       kubernetesVersion: false
       machineImageVersion: false
-  {{- if $.Values.auditing.enabled }}
+  {{- if $cluster.auditing.enabled }}
   extensions:
   - type: auditing
     providerConfig:
@@ -59,9 +59,9 @@ spec:
       kind: AuditConfiguration
       backends:
       - http:
-          url: {{ $.Values.auditing.url }}
+          url: {{ $cluster.auditing.url }}
           tls:
-            secretReferenceName: auditing-mtls-credentials
+            secretReferenceName: auditing-mtls
   {{- end }}
   resources:
   - name: extraignition-cp-{{ $key }}
@@ -69,12 +69,12 @@ spec:
       apiVersion: v1
       kind: Secret
       name: extraignition-cp-{{ $key }}
-  {{- if $.Values.auditing.enabled }}
-  - name: auditing-mtls-credentials
+  {{- if $cluster.auditing.enabled }}
+  - name: auditing-mtls
     resourceRef:
       apiVersion: v1
       kind: Secret
-      name: auditing-mtls-credentials
+      name: auditing-mtls
   {{- end }}
   provider:
     type: ironcore-metal

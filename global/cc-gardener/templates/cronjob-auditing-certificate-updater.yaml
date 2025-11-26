@@ -1,0 +1,77 @@
+{{ if .Values.extensions.auditing.enabled -}}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: auditing-certificate-updater
+spec:
+  schedule: "*/5 * * * *"
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 2
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          annotations:
+            linkerd.io/inject: disabled
+          labels:
+            app: auditing-certificate-updater-job
+            networking.gardener.cloud/to-dns: allowed
+            networking.gardener.cloud/to-runtime-apiserver: allowed
+        spec:
+          containers:
+          - name: auditing-certificate-updater
+            image: "{{ .Values.global.registry | required ".Values.global.registry not found" }}/shared-app-images/alpine-kubectl:latest-latest"
+            imagePullPolicy: IfNotPresent
+            command: ["/bin/sh", "-c"]
+            args:
+            - secret=$(kubectl -n garden create secret generic auditing-mtls --save-config --dry-run=client --from-file=client.crt=/etc/auditing/certificate/client.crt --from-file=client.key=/etc/auditing/certificate/client.key -o yaml | base64 -w0);
+              kubectl -n garden patch secret mr-s-auditing-mtls --type=json -p="[{'op':'add','path':'/data/objects.yaml','value':'$secret'}]";
+            volumeMounts:
+            - name: certificate
+              mountPath: "/etc/auditing/certificate"
+          restartPolicy: Never
+          serviceAccountName: auditing-certificate-updater
+          volumes:
+          - name: certificate
+            secret:
+              items:
+              - key: tls.crt
+                path: client.crt
+              - key: tls.key
+                path: client.key
+              secretName: auditing-mtls
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: auditing-certificate-updater
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: auditing-certificate-updater
+rules:
+- apiGroups: [""]
+  resources:
+  - secrets
+  verbs:
+  - get
+  - list
+  - patch
+  - create
+  - update
+  - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: auditing-certificate-updater
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: auditing-certificate-updater
+subjects:
+- kind: ServiceAccount
+  name: auditing-certificate-updater
+  namespace: garden
+{{ end -}}
