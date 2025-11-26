@@ -1,0 +1,71 @@
+{{- if .Values.pod.pdb.enabled }}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ .Release.Name }}-api
+spec:
+  minAvailable: {{ .Values.pod.pdb.min_available }}
+  selector:
+    matchLabels:
+      name: {{ .Release.Name }}-api
+      system: openstack
+      application: designate
+      type: api
+      component: api
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ .Release.Name }}-central
+spec:
+  minAvailable: {{ .Values.pod.pdb.min_available }}
+  selector:
+    matchLabels:
+      name: {{ .Release.Name }}-central
+      system: openstack
+      application: designate
+      type: backend
+      component: central
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ .Release.Name }}-mdns
+spec:
+  minAvailable: {{ .Values.pod.pdb.min_available }}
+  selector:
+    matchLabels:
+      name: {{ .Release.Name }}-mdns
+      system: openstack
+      application: designate
+      type: backend
+      component: mdns
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ .Release.Name }}-producer
+spec:
+  minAvailable: {{ .Values.pod.pdb.min_available }}
+  selector:
+    matchLabels:
+      name: {{ .Release.Name }}-producer
+      system: openstack
+      application: designate
+      type: backend
+      component: producer
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ .Release.Name }}-worker
+spec:
+  minAvailable: {{ .Values.pod.pdb.min_available }}
+  selector:
+    matchLabels:
+      name: {{ .Release.Name }}-worker
+      system: openstack
+      application: designate
+      type: backend
+      component: worker
+{{- end }}
