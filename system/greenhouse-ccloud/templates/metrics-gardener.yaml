@@ -14,40 +14,6 @@ metadata:
     "greenhouse.sap/propagate-labels": "greenhouse.sap/owned-by"
 {{- end }}
 spec:
-  clusterOptionOverrides:
-  {{- range $serviceName, $serviceSpecs := .Values.kubeMonitoring.services}}
-  {{- range $cluster, $additionalSettings := $serviceSpecs.clusters }}
-  - clusterName: {{ $cluster }}
-    overrides:
-    - name: global.commonLabels
-      value:
-        service: {{ $serviceName }}
-        support_group: {{ $serviceSpecs.support_group }}
-    - name: kubeMonitoring.prometheus.prometheusSpec.externalLabels
-      value:
-        cluster: {{ $cluster }}
-        cluster_type: {{ $serviceSpecs.cluster_type }}
-        region: {{ default (regexReplaceAll "^(\\w+\\-)" $cluster "") (index $additionalSettings "region") }}
-  {{- if index $additionalSettings "serviceProxyUrl" }}
-    - name: kubeMonitoring.prometheus.prometheusSpec.externalUrl
-      value: {{ index $additionalSettings "serviceProxyUrl" }}
-  {{- end }}
-    - name: kubeMonitoring.kube-state-metrics.prometheus.monitor.http.metricRelabelings
-      value:
-      - action: replace
-        regex: .*
-        replacement: {{ $cluster }}
-        sourceLabels:
-        - __name__
-        targetLabel: cluster
-  {{- if index $additionalSettings "thanos" }}
-    - name: kubeMonitoring.prometheus.prometheusSpec.thanos.objectStorageConfig.existingSecret.name
-      value: thanos-{{ $cluster }}-metrics-objectstore
-    - name: kubeMonitoring.prometheus.prometheusSpec.thanos.objectStorageConfig.existingSecret.key
-      value: thanos.yaml
-  {{- end }}
-  {{- end }}
-  {{- end }}
   clusterSelector:
     matchExpressions:
     - key: greenhouse.sap/pluginpreset
@@ -64,6 +30,27 @@ spec:
       value:
       - alertmanager-internal.scaleout.eu-de-1.cloud.sap
       - alertmanager-internal.scaleout.eu-nl-1.cloud.sap
+    - name: global.commonLabels
+      value:
+        service: foo
+        support_group: observability
+    - name: kubeMonitoring.kube-state-metrics.prometheus.monitor.http.metricRelabelings
+      value:
+      - action: replace
+        regex: .*
+        replacement: a-qa-de-200
+        sourceLabels:
+        - __name__
+        targetLabel: cluster
+    - name: kubeMonitoring.prometheus.prometheusSpec.externalLabels
+      value:
+        cluster: a-qa-de-200
+        cluster_type: foo
+        region: qa-de-1
+    - name: kubeMonitoring.prometheus.prometheusSpec.thanos.objectStorageConfig.existingSecret.name
+      value: thanos-a-qa-de-200-metrics-objectstore
+    - name: kubeMonitoring.prometheus.prometheusSpec.thanos.objectStorageConfig.existingSecret.key
+      value: thanos.yaml
     - name: alerts.alertmanagers.tlsConfig.cert
       valueFrom:
         secret:
@@ -107,6 +94,26 @@ spec:
       value: false
     - name: kubeMonitoring.kubeScheduler.enabled
       value: false
+    - name: kubeMonitoring.prometheus.networkPolicy.enbaled
+      value: true
+    - name: kubeMonitoring.prometheus.networkPolicy.namespace
+      value: garden
+    - name: kubeMonitoring.prometheus.networkPolicy.ingress
+      value:   
+        - from:
+          - namespaceSelector:
+              matchLabels:
+                kubernetes.io/metadata.name: kube-monitoring
+            podSelector:
+              matchLabels:
+                prometheus: kube-monitoring
+          ports:
+          - port: 9090
+            protocol: TCP
+    - name: kubeMonitoring.prometheus.networkPolicy.podSelector
+      value: 
+        matchLabels:
+          prometheus: aggregate
     - name: kubeMonitoringprometheus.prometheusSpec.additionalAlertRelabelConfigs
       value: 
         - source_labels: [support_group]
