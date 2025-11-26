@@ -107,7 +107,6 @@ spec:
       value: false
     - name: kubeMonitoring.kubeScheduler.enabled
       value: false
-
     - name: kubeMonitoringprometheus.prometheusSpec.additionalAlertRelabelConfigs
       value: 
         - source_labels: [support_group]
@@ -119,28 +118,28 @@ spec:
           replacement: https://operations.global.cloud.sap/docs/container/kubernetes/gardener/
           action: replace
     - name: kubeMonitoring.prometheus.prometheusSpec.additionalScrapeConfigs
-              value:
-                - job_name: federate-from-gardener
-                  params:
-                    match[]:
-                    - '{__name__=~".+"}'
-                  scrape_interval: 30s
-                  scrape_timeout: 10s
-                  metrics_path: /federate
-                  enable_http2: true
-                  relabel_configs:
-                  - source_labels: [job]
-                    separator: ;
-                    target_label: __tmp_prometheus_job_name
-                    replacement: $1
-                    action: replace
-                  static_configs:
-                  - targets:
-                    - prometheus-aggregate.garden.svc:80
-                    - prometheus-garden.garden.svc:80
-                    # adding longterm and cache to be able to evaluate all alerts
-                    - prometheus-cache.garden.svc:80
-                    - prometheus-longterm.garden.svc:80
+      value:
+        - job_name: federate-from-gardener
+          params:
+            match[]:
+            - '{__name__=~".+"}'
+          scrape_interval: 30s
+          scrape_timeout: 10s
+          metrics_path: /federate
+          enable_http2: true
+          relabel_configs:
+          - source_labels: [job]
+            separator: ;
+            target_label: __tmp_prometheus_job_name
+            replacement: $1
+            action: replace
+          static_configs:
+          - targets:
+            - prometheus-aggregate.garden.svc:80
+            - prometheus-garden.garden.svc:80
+            # adding longterm and cache to be able to evaluate all alerts
+            - prometheus-cache.garden.svc:80
+            - prometheus-longterm.garden.svc:80
     - name: kubeMonitoring.customRules
       value:
         PrometheusBadConfig:
