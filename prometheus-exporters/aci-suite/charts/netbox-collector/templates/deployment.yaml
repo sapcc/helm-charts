@@ -35,9 +35,9 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       containers:
-        - name: app
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
+        - name: collector
+          image: {{ required "$.Values.global.registry variable missing" $.Values.global.registry }}/{{ required "$.Values.image.name variable missing" $.Values.image.name }}:{{ required "$.Values.image.tag variable missing" $.Values.image.tag }}
+          imagePullPolicy: {{ required ".Values.image.pullPolicy variable missing" $.Values.image.pullPolicy }}
           ports:
             - name: http
               containerPort: 8000

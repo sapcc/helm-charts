@@ -18,9 +18,9 @@ spec:
         app.kubernetes.io/instance: {{ .Release.Name }}
     spec:
       containers:
-        - name: collector
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
+        - name: exporter
+          image: {{ required "$.Values.global.registry variable missing" $.Values.global.registry }}/{{ required "$.Values.image.name variable missing" $.Values.image.name }}:{{ required "$.Values.image.tag variable missing" $.Values.image.tag }}
+          imagePullPolicy: {{ required ".Values.image.pullPolicy variable missing" $.Values.image.pullPolicy }}
           env:
             - name: ACI_USER
               valueFrom:
