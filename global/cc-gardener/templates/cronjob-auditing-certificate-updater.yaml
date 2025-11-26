@@ -24,7 +24,7 @@ spec:
             imagePullPolicy: IfNotPresent
             command: ["/bin/sh", "-c"]
             args:
-            - secret=$(kubectl -n {{ .Values.extensions.auditing.secretNamespace }} create secret generic auditing-mtls --save-config --dry-run=client --from-file=client.crt=/etc/auditing/certificate/client.crt --from-file=client.key=/etc/auditing/certificate/client.key -o yaml | base64 -w0);
+            - secret=$(kubectl -n garden create secret generic auditing-mtls --save-config --dry-run=client --from-file=client.crt=/etc/auditing/certificate/client.crt --from-file=client.key=/etc/auditing/certificate/client.key -o yaml | base64 -w0);
               kubectl -n garden patch secret mr-s-auditing-mtls --type=json -p="[{'op':'add','path':'/data/objects.yaml','value':'$secret'}]";
             volumeMounts:
             - name: certificate
