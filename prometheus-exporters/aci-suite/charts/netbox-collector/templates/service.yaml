@@ -4,12 +4,15 @@ kind: Service
 metadata:
   name: {{ .Values.fullname }}
   labels:
-    app.kubernetes.io/name: {{ .Values.fullname }}
-    app.kubernetes.io/instance: {{ .Release.Name }}
+    {{- include "netbox-collector.labels" . | nindent 4 }}
+  {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+  annotations:
+    linkerd.io/inject: enabled
+  {{- end }}
 spec:
   type: {{ .Values.service.type }}
   selector:
-    app.kubernetes.io/name: {{ .Values.fullname }}
+    app.kubernetes.io/name: {{ include "netbox-collector.name" . }}
     app.kubernetes.io/instance: {{ .Release.Name }}
   ports:
     - name: http

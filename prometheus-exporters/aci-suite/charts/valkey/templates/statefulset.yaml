@@ -17,12 +17,9 @@ spec:
         {{- include "valkey.labels" . | nindent 8 }}
         app.kubernetes.io/name: {{ include "valkey.name" . }}
         app.kubernetes.io/instance: {{ .Release.Name }}
-        {{- with .Values.podLabels }}
-        {{- toYaml . | nindent 8 }}
-        {{- end }}
-      {{- with .Values.podAnnotations }}
+      {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
       annotations:
-        {{- toYaml . | nindent 8 }}
+        linkerd.io/inject: enabled
       {{- end }}
     spec:
       {{- if .Values.securityContext.enabled }}
@@ -30,18 +27,6 @@ spec:
         runAsUser: {{ .Values.securityContext.runAsUser }}
         runAsNonRoot: {{ .Values.securityContext.runAsNonRoot }}
         fsGroup: {{ .Values.securityContext.fsGroup }}
-      {{- end }}
-      {{- with .Values.nodeSelector }}
-      nodeSelector:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-      {{- with .Values.affinity }}
-      affinity:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-      {{- with .Values.tolerations }}
-      tolerations:
-        {{- toYaml . | nindent 8 }}
       {{- end }}
       containers:
         - name: valkey
@@ -105,7 +90,12 @@ spec:
             - name: data
               mountPath: /data
           resources:
-            {{- toYaml .Values.resources | nindent 12 }}
+            requests:
+              cpu: {{ .Values.resources.requests.cpu | quote }}
+              memory: {{ .Values.resources.requests.memory | quote }}
+            limits:
+              cpu: {{ .Values.resources.limits.cpu | quote }}
+              memory: {{ .Values.resources.limits.memory | quote }}
       {{- if not .Values.persistence.enabled }}
       volumes:
         - name: config

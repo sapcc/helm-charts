@@ -16,6 +16,10 @@ spec:
       labels:
         app.kubernetes.io/name: {{ include "correlator.name" . }}
         app.kubernetes.io/instance: {{ .Release.Name }}
+      {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+      annotations:
+        linkerd.io/inject: enabled
+      {{- end }}
     spec:
       containers:
         - name: exporter
@@ -46,7 +50,12 @@ spec:
               subPath: env.yml
               readOnly: true
           resources:
-{{ toYaml .Values.resources | indent 12 }}
+            requests:
+              cpu: {{ .Values.resources.requests.cpu | quote }}
+              memory: {{ .Values.resources.requests.memory | quote }}
+            limits:
+              cpu: {{ .Values.resources.limits.cpu | quote }}
+              memory: {{ .Values.resources.limits.memory | quote }}
       volumes:
         - name: config
           configMap:
@@ -54,10 +63,4 @@ spec:
             items:
               - key: env.yml
                 path: env.yml
-      nodeSelector:
-{{ toYaml .Values.nodeSelector | indent 8 }}
-      tolerations:
-{{ toYaml .Values.tolerations | indent 8 }}
-      affinity:
-{{ toYaml .Values.affinity | indent 8 }}
 {{- end }}

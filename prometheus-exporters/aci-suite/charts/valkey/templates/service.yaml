@@ -1,3 +1,4 @@
+{{- if .Values.enabled }}
 apiVersion: v1
 kind: Service
 metadata:
@@ -5,9 +6,9 @@ metadata:
   labels:
     {{- include "valkey.labels" . | nindent 4 }}
     role: headless
-  {{- with .Values.service.annotations }}
+  {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
   annotations:
-    {{- toYaml . | nindent 4 }}
+    linkerd.io/inject: enabled
   {{- end }}
 spec:
   clusterIP: None
@@ -27,9 +28,9 @@ metadata:
   labels:
     {{- include "valkey.labels" . | nindent 4 }}
     role: primary
-  {{- with .Values.service.annotations }}
+  {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
   annotations:
-    {{- toYaml . | nindent 4 }}
+    linkerd.io/inject: enabled
   {{- end }}
 spec:
   type: {{ .Values.service.type }}
@@ -42,3 +43,4 @@ spec:
     app.kubernetes.io/name: {{ include "valkey.name" . }}
     app.kubernetes.io/instance: {{ .Release.Name }}
     statefulset.kubernetes.io/pod-name: {{ include "valkey.fullname" . }}-0
+{{- end }}
