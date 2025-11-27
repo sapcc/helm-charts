@@ -90,6 +90,16 @@ spec:
       value: false
     - name: kubeMonitoring.kubeDns.enabled
       value: false
+    - name: kubeMonitoring.kubeEtcd.enabled
+      value: false
+    - name: kubeMonitoring.kubeApiServer.enabled
+      value: false
+    - name: kubeMonitoring.kubeEtcd.enabled
+      value: false
+    - name: kubeMonitoring.kubelet.enabled
+      value: false
+    - name: kubeMonitoring.coreDns.enabled
+      value: false
     - name: kubeMonitoring.kubeProxy.enabled
       value: false
     - name: kubeMonitoring.kubeScheduler.enabled
@@ -106,7 +116,7 @@ spec:
                 kubernetes.io/metadata.name: kube-monitoring
             podSelector:
               matchLabels:
-                prometheus: kube-monitoring
+                app.kubernetes.io/name: prometheus
           ports:
           - port: 9090
             protocol: TCP
@@ -147,6 +157,8 @@ spec:
             # adding longterm and cache to be able to evaluate all alerts
             - prometheus-cache.garden.svc:80
             - prometheus-longterm.garden.svc:80
+    - name: kubeMonitoring.prometheus.serviceMonitor.selfMonitor
+      value: false
     - name: kubeMonitoring.customRules
       value:
         PrometheusBadConfig:
