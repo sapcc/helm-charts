@@ -32,16 +32,10 @@ spec:
       - alertmanager-internal.scaleout.eu-nl-1.cloud.sap
     - name: global.commonLabels
       value:
-        service: foo
+        service: gardener
         support_group: observability
-    - name: kubeMonitoring.kube-state-metrics.prometheus.monitor.http.metricRelabelings
-      value:
-      - action: replace
-        regex: .*
-        replacement: a-qa-de-200
-        sourceLabels:
-        - __name__
-        targetLabel: cluster
+    - name: kubeMonitoring.kubeStateMetrics.enabled
+      value: false
     - name: kubeMonitoring.prometheus.prometheusSpec.externalLabels
       value:
         cluster: a-qa-de-200
@@ -116,7 +110,7 @@ spec:
                 kubernetes.io/metadata.name: kube-monitoring
             podSelector:
               matchLabels:
-                app.kubernetes.io/name: prometheus
+                app.kubernetes.io/name: metrics-gardener 
           ports:
           - port: 9090
             protocol: TCP
@@ -156,7 +150,8 @@ spec:
             - prometheus-garden.garden.svc:80
             # adding longterm and cache to be able to evaluate all alerts
             - prometheus-cache.garden.svc:80
-            - prometheus-longterm.garden.svc:80
+            # longterm disabled because the service is not pointing to the Prometheus port
+            #- prometheus-longterm.garden.svc:80
     - name: kubeMonitoring.prometheus.serviceMonitor.selfMonitor
       value: false
     - name: kubeMonitoring.customRules
