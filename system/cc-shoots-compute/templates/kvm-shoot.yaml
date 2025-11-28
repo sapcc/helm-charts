@@ -13,8 +13,8 @@ spec:
   credentialsBindingName: metal-{{ $cluster.region | default $.Values.global.region }}
   region: {{ $cluster.region | default $.Values.global.region }}
   networking:
-    pods: {{ $cluster.networking.pods }}
-    services: {{ $cluster.networking.services }}
+    pods: {{ default $.Values.networking.pods $cluster.networking.pods }}
+    services: {{ default $.Values.networking.services $cluster.networking.services }}
     nodes: {{ $cluster.networking.nodes }}
     type: calico
     providerConfig:
@@ -31,7 +31,7 @@ spec:
       birdExporter:
         enabled: {{ required ".Values.networking.enableBirdExporter is required" $.Values.networking.enableBirdExporter }}
   kubernetes:
-    version: {{ $cluster.version }}
+    version: {{ default $.Values.kubernetes.version $cluster.version }}
     kubeAPIServer:
       featureGates:
         AnonymousAuthConfigurableEndpoints: true
@@ -72,11 +72,56 @@ spec:
     infrastructureConfig:
       apiVersion: ironcore-metal.provider.extensions.gardener.cloud/v1alpha1
       kind: InfrastructureConfig
-      {{- toYaml $cluster.infrastructureConfig | nindent 6 }}
+      networks:
+      {{- if kindIs "slice" $cluster.networking.nodes }}
+      {{- range $cluster.networking.nodes }}
+      - name: nodenetwork-{{ . | replace "/" "-" | replace "." "-" }}
+        cidr: {{ . }}
+      {{- end }}
+      {{- else if $cluster.networking.nodes }}
+      - name: nodenetwork-{{ $cluster.networking.nodes | replace "/" "-" | replace "." "-" }}
+        cidr: {{ $cluster.networking.nodes }}
+      {{- end }}
     controlPlaneConfig:
       apiVersion: ironcore-metal.provider.extensions.gardener.cloud/v1alpha1
       kind: ControlPlaneConfig
-      {{- toYaml $cluster.controlPlaneConfig | nindent 6 }}
+      nodeNamePolicy: "BMCName"
+      cloudControllerManager:
+        networking:
+          configureNodeAddresses: true
+          ipamKind:
+            apiGroup: ipam.cluster.x-k8s.io
+            kind: IPAddress
+      loadBalancerConfig:
+        calicoConfig:
+          IPPools:
+            {{- range $cluster.networking.externalServices }}
+            - cidr: {{ .cidr }}
+              assignmentMode: {{ default "Automatic" .assignmentMode }}
+            {{- end }}
+          calicoBgpConfig:
+            asNumber: {{ $cluster.networking.asNumber }}
+            bgpPeer:
+            {{- range $cluster.networking.bgpPeers }}
+            - asNumber: {{ default $cluster.networking.asNumber .asNumber }}
+              nodeSelector: {{ .nodeSelector }}
+              peerIP: {{ .peerIP }}
+              filters:
+              - v4filter
+            {{- end }}
+            bgpFilter:
+              - name: v4filter
+                exportV4:
+                  {{- range $cluster.networking.externalServices }}
+                  - cidr: {{ .cidr }}
+                    matchOperator: Equal
+                    action: Reject
+                  {{- end }}
+            nodeToNodeMeshEnabled: false
+            serviceLoadBalancerIPs:
+            {{- range $cluster.networking.externalServices }}
+            - {{ .cidr }}
+            {{- end }}
     workers:
       {{- toYaml $cluster.workers | nindent 6 }}
   {{- if $cluster.seedSelector }}
