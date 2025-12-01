@@ -1,0 +1,73 @@
+#!/usr/bin/env python3
+#
+# /// script
+# dependencies = ["openstacksdk"]
+# ///
+
+import datetime
+
+import openstack
+
+TAG = "sci:garbage"
+
+
+def mark(connection, today):
+    compute = connection.compute
+    week = today.isocalendar().week
+    for server in compute.servers(all_projects=True, not_tags=TAG):
+        hypervisor_type = server.flavor.extra_specs.get("capabilities:hypervisor_type")
+        kvm = (server.hypervisor_hostname and "node" in server.hypervisor_hostname) or (
+            hypervisor_type and ("CH" in hypervisor_type or "QEMU" in hypervisor_type)
+        )
+        if not kvm:
+            continue
+        try:
+            server.add_tag(compute, TAG)
+            server.add_tag(compute, f"{TAG}:{week:0>2}")
+        except openstack.exceptions.NotFoundException:
+            print(f"{server.id} is gone")
+        except openstack.exceptions.ConflictException as e:
+            print(f"{server.id} {e}")
+
+
+def sweep(connection, today):
+    compute = connection.compute
+    calendar = today.isocalendar()
+    week = calendar.week
+    for server in compute.servers(all_projects=True, tags=TAG):
+        try:
+            oldest = sorted(tag for tag in server.tags if tag.startswith(TAG))[1]
+            first_tagged = int(oldest[len(TAG) + 1 :])
+
+            if first_tagged <= week:
+                age = week - first_tagged
+            else:
+                first_tagged_date = datetime.date.fromisocalendar(
+                    calendar.year - 1, first_tagged, 1
+                )
+                age = (today - first_tagged_date).days // 7
+
+            if age == 1:
+                if server.vm_state != "stopped":
+                    server.stop(compute)
+                print(f"{server.id} stopped")
+            elif age > 1:
+                server.delete(compute)
+                print(f"{server.id} terminated")
+        except openstack.exceptions.ConflictException as e:
+            print(f"{server.id}: {e}")
+        except openstack.exceptions.NotFoundException:
+            print(f"{server.id} is gone")
+        except openstack.exceptions.HttpException as e:
+            print(f"{server.id}: {e}")
+
+
+def main():
+    today = datetime.date.today()
+    connection = openstack.connect()
+    mark(connection, today)
+    sweep(connection, today)
+
+
+if __name__ == "__main__":
+    main()
