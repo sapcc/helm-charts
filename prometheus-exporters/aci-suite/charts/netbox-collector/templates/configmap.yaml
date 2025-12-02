@@ -1,4 +1,8 @@
 {{- if .Values.enabled }}
+{{- $region := required ".Values.global.region is required" .Values.global.region }}
+{{- $interfaceFilter := printf "%s, region: \"%s\"" .Values.env.INTERFACE_BASE_FILTER $region }}
+{{- $deviceFilter := printf "%s, region: \"%s\"" .Values.env.DEVICE_BASE_FILTER $region }}
+
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -33,8 +37,8 @@ data:
     since_hours_on_hit: {{ .Values.env.SINCE_HOURS_ON_HIT | int }}
     save_aggregate_connections: {{ .Values.env.SAVE_AGGREGATE_CONNECTIONS | lower }}
 
-    interface_base_filter: {{ .Values.env.INTERFACE_BASE_FILTER | quote }}
-    device_base_filter: {{ .Values.env.DEVICE_BASE_FILTER | quote }}
+    interface_base_filter: {{ $interfaceFilter | quote }}
+    device_base_filter: {{ $deviceFilter | quote }}
     debug_refresh: {{ .Values.env.DEBUG_REFRESH | lower }}
 
   # Keep uppercase envs too (backward compatible, in case you use envFrom in the future)
