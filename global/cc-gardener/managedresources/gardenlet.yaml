@@ -1,3 +1,9 @@
+{{- $dnsRegion := "" }}
+{{- if .Values.garden.dns }}
+{{- $dnsRegion = (default .Values.global.region .Values.garden.dns.region) }}
+{{- else }}
+{{- $dnsRegion = .Values.global.region }}
+{{- end }}
 ---
 {{ if .Values.gardenlet.enabled -}}
 apiVersion: seedmanagement.gardener.cloud/v1alpha1
@@ -13,6 +19,8 @@ spec:
   deployment:
     image:
       tag: {{ .Chart.AppVersion }}
+    imageVectorOverwrite: |
+{{ .Values.operator.imageVectorOverwrite | indent 6 }}
     podLabels:
       networking.resources.gardener.cloud/to-virtual-garden-kube-apiserver-tcp-443: allowed
     helm:
@@ -35,7 +43,7 @@ spec:
 {{- end }}
       spec:
         backup:
-          provider: openstack          
+          provider: openstack
           region: {{ .Values.global.region }}
           credentialsRef:
             apiVersion: v1
@@ -43,6 +51,14 @@ spec:
             name: openstack-{{ .Values.global.region }}
             namespace: garden
         dns:
+          internal:
+            credentialsRef:
+              apiVersion: v1
+              kind: Secret
+              name: internal-domain-internal-openstack-gardener-cloud
+              namespace: garden
+            domain: internal.{{ required ".Values.global.cluster missing" .Values.global.cluster }}.{{ if hasPrefix "rtc-" .Values.global.cluster -}}soil-customer{{- else -}}soil-garden{{- end }}.{{ $dnsRegion }}.cloud.sap
+            type: openstack-designate
           provider:
             type: openstack-designate
             secretRef:
@@ -61,6 +77,8 @@ spec:
           type: openstack
           zones: {{ toYaml .Values.garden.runtimeCluster.zones | nindent 12 }}
         settings:
+          verticalPodAutoscaler:
+            enabled: false
           excessCapacityReservation:
             enabled: false
           dependencyWatchdog:
@@ -73,4 +91,7 @@ spec:
             # Joining the node successfully is unfortunately required to scale up the controller-manager, which is a loop that cannot self-heal.
             prober:
               enabled: false
+{{- if .Values.gardenlet.loadBalancerServices }}
+          loadBalancerServices: {{ toYaml .Values.gardenlet.loadBalancerServices | nindent 12 }}
+{{- end }}
 {{ end -}}

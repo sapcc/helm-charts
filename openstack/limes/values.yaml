@@ -9,10 +9,13 @@ campfire:
   mail_type:
     expire:
       subject: "Information about expiring commitments"
-      condition: "about to expire"
+      condition: "are about to expire"
     confirmed:
       subject: "Information about confirmed commitments"
-      condition: "confirmed and ready to use"
+      condition: "were confirmed and are ready to use"
+    transferred:
+      subject: "Information about transferred commitments"
+      condition: "were (partially) transferred to other projects after posting on the public marketplace"
 
 linkerd-support:
   annotate_namespace: true
@@ -112,6 +115,7 @@ limes:
     enabled: false
 
 postgresql:
+  postgresVersion: 18
   persistence:
     enabled: true
     size: 10Gi
@@ -257,7 +261,7 @@ pgmetrics:
 
         limes_support_group:
           query: >
-            SELECT 1 AS mapping, type AS service, CASE
+            SELECT 1 AS mapping, type AS service_name, CASE
               WHEN type IN ('compute', 'cinder', 'ironic', 'manila', 'nova') THEN 'compute-storage-api'
               WHEN type IN ('archer', 'designate', 'neutron', 'octavia')     THEN 'network-api'
               WHEN type IN ('cronus')                                        THEN 'email'
@@ -268,7 +272,7 @@ pgmetrics:
             - mapping:
                 usage: "GAUGE"
                 description: "Mapping between Limes service types and support group names"
-            - service:
+            - service_name:
                 usage: "LABEL"
                 description: "Service type in Limes"
             - support_group:

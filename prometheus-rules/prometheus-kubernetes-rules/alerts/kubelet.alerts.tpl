@@ -2,21 +2,6 @@
 groups:
 - name: kubelet.alerts
   rules:
-  - alert: ManyKubeletDown
-    expr: count(count(up{job="kubernetes-kubelet"} unless on (node) (kube_node_labels{label_cloud_sap_maintenance_state="in-maintenance"} or kube_node_labels{label_kubernetes_cloud_sap_role="storage"})) - sum(up{job="kubernetes-kubelet"} unless on (node) (kube_node_labels{label_cloud_sap_maintenance_state="in-maintenance"} or kube_node_labels{label_kubernetes_cloud_sap_role="storage"}))) > 4
-    for: 10m
-    labels:
-      tier: {{ required ".Values.tier missing" .Values.tier }}
-      support_group: {{ required ".Values.supportGroup missing" .Values.supportGroup }}
-      service: {{ required ".Values.service missing" .Values.service }}
-      severity: critical
-      context: kubelet
-      dashboard: kubernetes-health
-      playbook: docs/support/playbook/kubernetes/k8s_node_not_ready
-    annotations:
-      description: Many Kubelets are DOWN
-      summary: More than 2 Kubelets are DOWN
-
   - alert: KubeletDown
     expr: up{job="kubernetes-kubelet"} == 0
     for: 10m
@@ -33,6 +18,36 @@ groups:
     annotations:
       description: Kublet on {{`{{ $labels.node }}`}} is DOWN.
       summary: A Kubelet is DOWN
+
+  # Duplicated from maintenance.alerts. It has multiple occurrences; make sure you change all of them if you modify this. 
+  - alert: NodeInMaintenance
+    expr: max by (node) (kube_node_labels{label_cloud_sap_maintenance_state="in-maintenance"}) == 1
+    for: 2m
+    labels:
+      tier: {{ required ".Values.tier missing" .Values.tier }}
+      support_group: {{ required ".Values.supportGroup missing" .Values.supportGroup }}
+      service: {{ required ".Values.service missing" .Values.service }}
+      severity: none
+      context: node
+      meta: "Node {{`{{ $labels.node }}`}} is in maintenance."
+    annotations:
+      summary: Node in maintenance
+      description: "Node {{`{{ $labels.node }}`}} is in scheduled maintenance. Add the label `inhibited_by: node-maintenance` to alerts that should be inhibited while a node is in maintenance"
+
+  - alert: ManyKubeletDown
+    expr: count(count(up{job="kubernetes-kubelet"} unless on (node) (kube_node_labels{label_cloud_sap_maintenance_state="in-maintenance"} or kube_node_labels{label_kubernetes_cloud_sap_role="storage"})) - sum(up{job="kubernetes-kubelet"} unless on (node) (kube_node_labels{label_cloud_sap_maintenance_state="in-maintenance"} or kube_node_labels{label_kubernetes_cloud_sap_role="storage"}))) > 4
+    for: 10m
+    labels:
+      tier: {{ required ".Values.tier missing" .Values.tier }}
+      support_group: {{ required ".Values.supportGroup missing" .Values.supportGroup }}
+      service: {{ required ".Values.service missing" .Values.service }}
+      severity: critical
+      context: kubelet
+      dashboard: kubernetes-health
+      playbook: docs/support/playbook/kubernetes/k8s_node_not_ready
+    annotations:
+      description: Many Kubelets are DOWN
+      summary: More than 2 Kubelets are DOWN
 
   - alert: KubeletTooManyPods
     expr: kubelet_running_pods > 225

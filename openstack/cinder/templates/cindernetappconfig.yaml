@@ -1,0 +1,32 @@
+{{- if .Values.cindernetappconfig.enabled }}
+apiVersion: kvm.cloud.sap/v1alpha
+kind: CinderNetappConfig
+metadata:
+  name: default
+  labels:
+    app.kubernetes.io/name: kvm-cinder-netapp-operator
+spec:
+  releasename: cinder
+  pythonwarnings: "ignore:Unverified HTTPS request"
+  sentrydsnkey: "cinder.DSN.python"
+  image: {{required ".Values.global.registry is missing" .Values.global.registry}}/loci-cinder:{{ required ".Values.imageVersion required" .Values.imageVersion }}
+  kubernetesmetadatalabels:
+      application: cinder
+      ccloud/service: cinder
+      ccloud/support-group: compute-storage-api
+      release_name: cinder
+  resourcesrequestscpu: {{required ".Values.pod.resources.volume.requests.cpu is missing" .Values.pod.resources.volume.requests.cpu}}
+  resourcesrequestsmemory: {{required ".Values.pod.resources.volume.requests.memory is missing" .Values.pod.resources.volume.requests.memory}}
+  coordinationbackend: {{required ".Values.coordinationBackend is missing" .Values.coordinationBackend}}
+  coordinationbackendendmountpath: /var/lib/cinder/coordination
+  prometheustarget: {{ required ".Values.alerts.prometheus is missing" .Values.alerts.prometheus }}
+  topologykey: {{ .Values.global.topology_key | default "topology.kubernetes.io/zone" }}
+  proxysqlmodepresent: {{ if .Values.proxysql.mode }}true{{ else }}false{{ end }}
+  proxysqlnativesidecar: {{required ".Values.proxysql.native_sidecar is missing" .Values.proxysql.native_sidecar}}
+  linkerdenabled: {{ if and .Values.global.linkerd_enabled .Values.global.linkerd_requested }}true{{ else }}false{{ end }}
+  manageserviceuserpasswords: {{required ".Values.manage_service_user_passwords is missing" .Values.manage_service_user_passwords}} 
+  proxysqlcontainer:
+  {{- include "utils.proxysql.container" . | indent 2 }}
+  kubernetesentrypointcontainer:
+  {{- tuple . (dict "service" (include "cinder.service_dependencies" . )) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 2 }}
+{{- end }}

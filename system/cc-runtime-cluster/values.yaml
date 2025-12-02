@@ -3,7 +3,7 @@ global:
 
 controlplane:
   replicas: 3
-  podSubnet: 
+  podSubnet:
   serviceSubnet:
   address: 192.168.1.100
   version: v1.31.5
@@ -12,6 +12,13 @@ controlplane:
 additionalConfig:
   files: |
     - path: /etc/ssh/sshd_config
+      filesystem: root
+      mode: 0644
+      overwrite: true
+        inline: |
+          Foo Bar
+  secrets: |
+    - path: /etc/kubernetes/enc/enc.yaml
       filesystem: root
       mode: 0644
       overwrite: true
@@ -48,9 +55,9 @@ greenhouse:
 
 images:
   repository: k8s.gcr.io
-  kubelet: 
+  kubelet:
     repository: k8s.gcr.io
-  pause: 
+  pause:
     repository: k8s.gcr.io
     tag: 3.1
   dns:
@@ -59,6 +66,12 @@ images:
   kubeVip:
     repository: kube-vip/kube-vip
     tag: v0.8.7
+  etcd:
+    repository: k8s.gcr.io
+    tag: 3.5.16-0
+
+etcd:
+  useEncryption: false
 
 user:
   name: admin

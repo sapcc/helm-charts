@@ -47,7 +47,7 @@ defaults:
       default:
         compute_driver: libvirt.LibvirtDriver
         firewall_driver: nova.virt.firewall.NoopFirewallDriver
-        resume_guests_state_on_host_boot: true
+        resume_guests_state_on_host_boot: false # Setting that to true breaks evacuations
         # enables collecting metrics for RPC calls
         statsd_enabled: true
       vnc:
@@ -84,6 +84,8 @@ defaults:
           images_type: raw
           hw_machine_type: q35
           live_migration_inbound_addr: "$my_ip"
+          num_umount_retries: "30"
+          umount_retry_delay: "1.0"
         os_vif_ovs:
           ovsdb_connection: "unix:/run/openvswitch/db.sock"
       pod:

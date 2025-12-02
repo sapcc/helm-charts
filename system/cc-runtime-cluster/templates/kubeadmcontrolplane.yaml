@@ -47,7 +47,7 @@ spec:
         extraArgs:
           cloud-provider: external
           secure-port: {{ .Values.controlplane.port | quote }}
-          authentication-config: /etc/kubernetes/authentication.yaml
+          authentication-config: "/etc/kubernetes/authentication.yaml"
         extraVolumes:
           - name: "authentication-config"
             hostPath: "/etc/kubernetes/authentication.yaml"
@@ -67,6 +67,14 @@ spec:
         podSubnet: {{ .Values.controlplane.podSubnet }}
         serviceSubnet: {{ .Values.controlplane.serviceSubnet }}
       imageRepository: {{ .Values.images.repository }}
+      etcd:
+        local:
+          imageRepository: {{ .Values.images.etcd.repository }}
+          imageTag: {{ .Values.images.etcd.tag }}
+          {{- if .Values.etcd.useEncryption }}
+          extraArgs:
+            encryption-provider-config: "/etc/kubernetes/enc/enc.yaml"
+          {{- end }}
     files:
     - content: |
         apiVersion: v1
@@ -230,6 +238,7 @@ spec:
           storage:
             files:
 {{ tpl .Values.additionalConfig.files . | indent 14 }}
+{{ tpl .Values.additionalConfig.secrets . | indent 14 }}
 
     users:
       - name: {{ $.Values.user.name }}

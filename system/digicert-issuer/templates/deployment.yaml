@@ -27,6 +27,9 @@ spec:
         - args:
             - --metrics-addr=:{{ required ".Values.metrics.port missing" .Values.metrics.port }}
             - --disable-root-ca={{ default "false" .Values.provisioner.disableRootCA }}
+{{- if .Values.provisioner.cacheSyncTimeout }}
+            - --cache-sync-timeout={{ .Values.provisioner.cacheSyncTimeout }}
+{{- end }}
           command:
             - /digicert-issuer
           image: {{ include "image" . }}

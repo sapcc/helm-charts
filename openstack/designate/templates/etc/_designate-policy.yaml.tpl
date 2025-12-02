@@ -82,9 +82,9 @@ count_zones_pending_notify: rule:context_is_viewer
 purge_zones: rule:admin
 touch_zone: rule:context_is_master
 
-create_A_recordset: rule:context_is_webmaster or rule:context_is_editor
-create_AAAA_recordset: rule:context_is_webmaster or rule:context_is_editor
-create_CNAME_recordset: rule:context_is_webmaster or rule:context_is_editor
+create_A_recordset: rule:context_is_webmaster or rule:context_is_editor or rule:context_is_mailmaster
+create_AAAA_recordset: rule:context_is_webmaster or rule:context_is_editor or rule:context_is_mailmaster
+create_CNAME_recordset: rule:context_is_webmaster or rule:context_is_editor or rule:context_is_mailmaster
 create_CAA_recordset: rule:context_is_webmaster or rule:context_is_editor
 create_CERT_recordset: rule:context_is_webmaster or rule:context_is_editor
 create_MX_recordset: rule:context_is_mailmaster
@@ -95,13 +95,13 @@ create_SPF_recordset: rule:context_is_mailmaster
 create_SRV_recordset: rule:context_is_webmaster or rule:context_is_editor
 create_SSHFP_recordset: rule:admin
 create_NAPTR_recordset: rule:admin
-create_TXT_recordset: rule:context_is_webmaster or rule:context_is_editor
+create_TXT_recordset: rule:context_is_webmaster or rule:context_is_editor or rule:context_is_mailmaster
 create_HTTPS_recordset: rule:context_is_webmaster or rule:context_is_editor
 create_SVCB_recordset: rule:context_is_webmaster or rule:context_is_editor
 
-update_A_recordset: rule:context_is_webmaster or rule:context_is_editor
-update_AAAA_recordset: rule:context_is_webmaster or rule:context_is_editor
-update_CNAME_recordset: rule:context_is_webmaster or rule:context_is_editor
+update_A_recordset: rule:context_is_webmaster or rule:context_is_editor or rule:context_is_mailmaster
+update_AAAA_recordset: rule:context_is_webmaster or rule:context_is_editor or rule:context_is_mailmaster
+update_CNAME_recordset: rule:context_is_webmaster or rule:context_is_editor or rule:context_is_mailmaster
 update_CAA_recordset: rule:context_is_webmaster or rule:context_is_editor
 update_CERT_recordset: rule:context_is_webmaster or rule:context_is_editor
 update_MX_recordset: rule:context_is_mailmaster
@@ -112,13 +112,13 @@ update_SPF_recordset: rule:context_is_mailmaster
 update_SRV_recordset: rule:context_is_webmaster or rule:context_is_editor
 update_SSHFP_recordset: rule:admin
 update_NAPTR_recordset: rule:admin
-update_TXT_recordset: rule:context_is_webmaster or rule:context_is_editor
+update_TXT_recordset: rule:context_is_webmaster or rule:context_is_editor or rule:context_is_mailmaster
 update_HTTPS_recordset: rule:context_is_webmaster or rule:context_is_editor
 update_SVCB_recordset: rule:context_is_webmaster or rule:context_is_editor
 
-delete_A_recordset: (role:dns_webmaster and (project_id:%(recordset_project_id)s)) or rule:context_is_editor or rule:context_is_dns_support
-delete_AAAA_recordset: (role:dns_webmaster and (project_id:%(recordset_project_id)s)) or rule:context_is_editor or rule:context_is_dns_support
-delete_CNAME_recordset: (role:dns_webmaster and (project_id:%(recordset_project_id)s)) or rule:context_is_editor or rule:context_is_dns_support
+delete_A_recordset: (role:dns_webmaster and (project_id:%(recordset_project_id)s)) or (role:dns_mailmaster and (project_id:%(recordset_project_id)s)) or rule:context_is_editor or rule:context_is_dns_support
+delete_AAAA_recordset: (role:dns_webmaster and (project_id:%(recordset_project_id)s)) or (role:dns_mailmaster and (project_id:%(recordset_project_id)s)) or rule:context_is_editor or rule:context_is_dns_support
+delete_CNAME_recordset: (role:dns_webmaster and (project_id:%(recordset_project_id)s)) or (role:dns_mailmaster and (project_id:%(recordset_project_id)s)) or rule:context_is_editor or rule:context_is_dns_support
 delete_CAA_recordset: (role:dns_webmaster and (project_id:%(recordset_project_id)s)) or rule:context_is_editor or rule:context_is_dns_support
 delete_CERT_recordset: (role:dns_webmaster and (project_id:%(recordset_project_id)s)) or rule:context_is_editor or rule:context_is_dns_support
 delete_MX_recordset: (role:dns_mailmaster and (project_id:%(recordset_project_id)s)) or rule:context_is_editor or rule:context_is_dns_support
@@ -129,7 +129,7 @@ delete_SPF_recordset: (role:dns_mailmaster and (project_id:%(recordset_project_i
 delete_SRV_recordset: (role:dns_webmaster and (project_id:%(recordset_project_id)s)) or rule:context_is_editor or rule:context_is_dns_support
 delete_SSHFP_recordset: rule:admin
 delete_NAPTR_recordset: rule:admin
-delete_TXT_recordset: (role:dns_webmaster and (project_id:%(recordset_project_id)s)) or rule:context_is_editor or rule:context_is_dns_support
+delete_TXT_recordset: (role:dns_webmaster and (project_id:%(recordset_project_id)s)) or (role:dns_mailmaster and (project_id:%(recordset_project_id)s)) or rule:context_is_editor or rule:context_is_dns_support
 delete_HTTPS_recordset: (role:dns_webmaster and (project_id:%(recordset_project_id)s)) or rule:context_is_editor or rule:context_is_dns_support
 delete_SVCB_recordset: (role:dns_webmaster and (project_id:%(recordset_project_id)s)) or rule:context_is_editor or rule:context_is_dns_support
 
@@ -163,6 +163,7 @@ get_pool: rule:admin or rule:context_is_dns_ops
 update_pool: rule:admin
 delete_pool: rule:admin
 zone_create_forced_pool: rule:admin or role:cloud_dns_support or role:cloud_dns_ops or role:dns_zonemaster
+iaas_zone_create_forced_pool: rule:admin or rule:context_is_master
 
 diagnostics_ping: rule:admin
 diagnostics_sync_zones: rule:admin

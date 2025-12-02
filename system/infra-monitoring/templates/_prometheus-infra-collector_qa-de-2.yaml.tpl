@@ -16,38 +16,6 @@
     - regex: "role|server_id|state"
       action: labeldrop
 
-{{- $values := .Values.windows_exporter -}}
-{{- if $values.enabled }}
-{{- $name := "win-exporter-ad" }}
-- job_name: '{{ $name }}'
-  scrape_interval: {{$values.scrapeInterval}}
-  scrape_timeout: {{$values.scrapeTimeout}}
-  http_sd_configs:
-    - url: {{ .Values.http_sd_configs.netbox_production_url }}/virtual-machines/?custom_labels=job={{ $name }}&target=primary_ip&status=active&tenant=converged-cloud&platform=windows-server&tag=active-directory-domain-controller&region={{ .Values.global.region }}
-      refresh_interval: {{ .Values.http_sd_configs.refresh_interval }}
-  metrics_path: /metrics
-  relabel_configs:
-    - source_labels: [__address__]
-      replacement: $1:{{$values.listen_port}}
-      target_label: __address__
-    - source_labels: [name]
-      target_label: server_name
-    - regex: 'name|state'
-      action: labeldrop
-  metric_relabel_configs:
-    - source_labels: [__name__]
-      regex: '^go_.+'
-      action: drop
-    - source_labels: ['__name__','exported_name']
-      regex: 'windows_service_state;(.*)'
-      replacement: '$1'
-      target_label: 'service_name'
-    - source_labels: ['__name__','exported_state']
-      regex: 'windows_service_state;(.*)'
-      replacement: '$1'
-      target_label: 'service_state'
-{{- end }}
-
 {{- $values := .Values.firmware_exporter -}}
 {{- if $values.enabled }}
 - job_name: 'firmware-exporter'

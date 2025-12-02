@@ -1,8 +1,10 @@
+# vi:syntax=yaml
 ### Maintenance inhibition alerts ###
 
 groups:
 - name: maintenance.alerts
   rules:
+  # duplicated to all alerts which are using this one as a source for inhibition.
   - alert: NodeInMaintenance
     expr: max by (node) (kube_node_labels{label_cloud_sap_maintenance_state="in-maintenance"}) == 1
     for: 2m

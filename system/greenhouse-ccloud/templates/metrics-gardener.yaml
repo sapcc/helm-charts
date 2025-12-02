@@ -1,0 +1,199 @@
+apiVersion: greenhouse.sap/v1alpha1
+kind: PluginPreset
+metadata:
+  name: kube-monitoring-gardener
+  namespace: {{ .Release.Namespace }}
+  labels:
+    greenhouse.sap/owned-by: observability
+{{- if .Values.global.fluxEnabled }}
+    greenhouse.sap/deployment-tool: "flux"
+  annotations:
+    "greenhouse.sap/propagate-labels": "greenhouse.sap/owned-by,greenhouse.sap/deployment-tool"
+{{- else }}
+  annotations:
+    "greenhouse.sap/propagate-labels": "greenhouse.sap/owned-by"
+{{- end }}
+spec:
+  clusterSelector:
+    matchExpressions:
+    - key: greenhouse.sap/pluginpreset
+      operator: In
+      values:
+      - "true"
+    - key: cluster
+      operator: In
+      values:
+        - a-qa-de-200
+  plugin:
+    optionValues:
+    - name: alerts.alertmanagers.hosts
+      value:
+      - alertmanager-internal.scaleout.eu-de-1.cloud.sap
+      - alertmanager-internal.scaleout.eu-nl-1.cloud.sap
+    - name: global.commonLabels
+      value:
+        service: gardener
+        support_group: observability
+    - name: kubeMonitoring.kubeStateMetrics.enabled
+      value: false
+    - name: kubeMonitoring.prometheus.prometheusSpec.externalLabels
+      value:
+        cluster: a-qa-de-200
+        cluster_type: foo
+        region: qa-de-1
+    - name: kubeMonitoring.prometheus.prometheusSpec.thanos.objectStorageConfig.existingSecret.name
+      value: thanos-a-qa-de-200-garden-metrics-objectstore
+    - name: kubeMonitoring.prometheus.prometheusSpec.thanos.objectStorageConfig.existingSecret.key
+      value: thanos.yaml
+    - name: alerts.alertmanagers.tlsConfig.cert
+      valueFrom:
+        secret:
+          key: tls.crt
+          name: ccloud-prometheus-sso-cert
+    - name: alerts.alertmanagers.tlsConfig.key
+      valueFrom:
+        secret:
+          key: tls.key
+          name: ccloud-prometheus-sso-cert
+    - name: alerts.enabled
+      value: true
+    - name: kubeMonitoring.defaultRules.create
+      value: true
+    - name: kubeMonitoring.defaultRules.additionalRuleLabels
+      value:
+        service: metrics
+        support_group: observability
+    - name: kubeMonitoring.prometheus.prometheusSpec.ruleSelector
+      value: 
+        matchLabels: {}
+    - name: kubeMonitoring.prometheus.prometheusSpec.ruleNamespaceSelector
+      value: 
+        matchLabels:
+          name: garden
+    - name: kubeMonitoring.prometheus.prometheusSpec.storageSpec.volumeClaimTemplate.spec.resources.requests.storage
+      value: 100Gi
+    - name: absentMetricsOperator.enabled
+      value: false
+    - name: kubeMonitoring.crds.enabled
+      value: false
+    - name: kubeMonitoring.prometheusOperator.enabled
+      value: false
+    - name: kubeMonitoring.defaultRules.rules.prometheusOperator
+      value: false
+    - name: kubeMonitoring.kubeControllerManager.enabled
+      value: false
+    - name: kubeMonitoring.kubeDns.enabled
+      value: false
+    - name: kubeMonitoring.kubeEtcd.enabled
+      value: false
+    - name: kubeMonitoring.kubeApiServer.enabled
+      value: false
+    - name: kubeMonitoring.kubelet.enabled
+      value: false
+    - name: kubeMonitoring.coreDns.enabled
+      value: false
+    - name: kubeMonitoring.kubeProxy.enabled
+      value: false
+    - name: kubeMonitoring.kubeScheduler.enabled
+      value: false
+    - name: kubeMonitoring.prometheus.networkPolicy.enbaled
+      value: true
+    - name: kubeMonitoring.prometheus.networkPolicy.namespace
+      value: garden
+    - name: kubeMonitoring.prometheus.networkPolicy.ingress
+      value:   
+        - from:
+          - namespaceSelector:
+              matchLabels:
+                kubernetes.io/metadata.name: kube-monitoring
+            podSelector:
+              matchLabels:
+                app.kubernetes.io/name: metrics-gardener
+          ports:
+          - port: 9090
+            protocol: TCP
+    - name: kubeMonitoring.prometheus.networkPolicy.podSelector
+      value: 
+        matchLabels:
+          app.kubernetes.io/name: prometheus
+    - name: kubeMonitoringprometheus.prometheusSpec.additionalAlertRelabelConfigs
+      value: 
+        - source_labels: [support_group]
+          target_label: support_group
+          replacement: containers
+          action: replace
+        - source_labels: [playbook]
+          target_label: playbook
+          replacement: https://operations.global.cloud.sap/docs/container/kubernetes/gardener/
+          action: replace
+    - name: kubeMonitoring.prometheus.prometheusSpec.additionalScrapeConfigs
+      value:
+        - job_name: federate-from-gardener
+          params:
+            match[]:
+            - '{__name__=~".+"}'
+          scrape_interval: 30s
+          scrape_timeout: 10s
+          metrics_path: /federate
+          enable_http2: true
+          relabel_configs:
+          - source_labels: [job]
+            separator: ;
+            target_label: __tmp_prometheus_job_name
+            replacement: $1
+            action: replace
+          static_configs:
+          - targets:
+            - prometheus-aggregate.garden.svc:80
+            - prometheus-garden.garden.svc:80
+            # adding longterm and cache to be able to evaluate all alerts
+            - prometheus-cache.garden.svc:80
+            # longterm disabled because the service is not pointing to the Prometheus port
+            #- prometheus-longterm.garden.svc:80
+    - name: kubeMonitoring.prometheus.serviceMonitor.selfMonitor
+      value: false
+    - name: kubeMonitoring.customRules
+      value:
+        PrometheusBadConfig:
+          severity: warning
+        PrometheusRemoteStorageFailures:
+          severity: warning
+        PrometheusRemoteWriteBehind:
+          severity: warning
+        PrometheusRuleFailures:
+          severity: warning
+        PrometheusTargetSyncFailure:
+          severity: warning
+        PrometheusErrorSendingAlertsToAnyAlertmanager:
+          severity: warning
+{{- if and .Values.global.dockerHubMirror .Values.global.registryK8sIoMirror .Values.global.quayIoMirror .Values.global.ghcrIoMirror }}
+    - name: kubeMonitoring.crds.upgradeJob.image.busybox.registry
+      value: {{ .Values.global.dockerHubMirror }}
+    - name: kubeMonitoring.prometheusOperator.admissionWebhooks.patch.image.registry
+      value: {{ .Values.global.registryK8sIoMirror }}
+    - name: kubeMonitoring.crds.upgradeJob.image.kubectl.registry
+      value: {{ .Values.global.registryK8sIoMirror }}
+    - name: kubeMonitoring.prometheusOperator.admissionWebhooks.patch.image.registry
+      value: {{ .Values.global.registryK8sIoMirror }}
+    - name: kubeMonitoring.kube-state-metrics.image.registry
+      value: {{ .Values.global.registryK8sIoMirror }}
+    - name: kubeMonitoring.prometheusOperator.admissionWebhooks.deployment.image.registry
+      value: {{ .Values.global.quayIoMirror }}
+    - name: kubeMonitoring.prometheusOperator.image.registry
+      value: {{ .Values.global.quayIoMirror }}
+    - name: kubeMonitoring.prometheusOperator.prometheusConfigReloader.image.registry
+      value: {{ .Values.global.quayIoMirror }}
+    - name: kubeMonitoring.prometheusOperator.thanosImage.registry
+      value: {{ .Values.global.quayIoMirror }}
+    - name: kubeMonitoring.prometheus.prometheusSpec.image.registry
+      value: {{ .Values.global.quayIoMirror }}
+    - name: kubeMonitoring.thanosRuler.thanosRulerSpec.image.registry
+      value: {{ .Values.global.quayIoMirror }}
+    - name: kubeMonitoring.prometheus-node-exporter.image.registry
+      value: {{ .Values.global.quayIoMirror }}
+    - name: testFramework.image.registry
+      value: {{ .Values.global.ghcrIoMirror }}
+{{- end }}
+    pluginDefinition: kube-monitoring
+    releaseNamespace: kube-monitoring
+    releaseName: metrics-gardener

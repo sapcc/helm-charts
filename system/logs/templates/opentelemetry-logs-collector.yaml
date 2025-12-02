@@ -3,7 +3,7 @@ kind: OpenTelemetryCollector
 metadata:
   name: logs
   labels:
-  {{- include "plugin.labels" . | nindent 4 }} 
+  {{- include "plugin.labels" . | nindent 4 }}
   {{- if .Values.openTelemetryPlugin.openTelemetry.customLabels }}
   {{ toYaml .Values.openTelemetryPlugin.openTelemetry.customLabels | nindent 4 }}
   {{- end }}
@@ -28,6 +28,10 @@ spec:
             operator: NotIn
             values:
             - alarm
+  updateStrategy:
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 5
   env:
     - name: NAMESPACE
       valueFrom:

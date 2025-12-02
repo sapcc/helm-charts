@@ -4,14 +4,19 @@ apiVersion: core.gardener.cloud/v1beta1
 kind: Shoot
 metadata:
   name: mgmt-{{ $key }}
+  annotations:
+    shoot.gardener.cloud/cloud-config-execution-max-delay-seconds: "30" # applies changes to OperatingSystemConfigurations faster
 spec:
-  cloudProfileName: ironcore-metal
-  secretBindingName: metal-{{ $key }}
+  cloudProfile:
+    kind: CloudProfile
+    name: ironcore-metal
+  credentialsBindingName: metal-{{ $key }}
+  seedName: rt-{{ $key }}
   region: {{ $key }}
   networking:
-    pods: {{ required "networking.pods is required" $cluster.networking.pods }}
-    services: {{ required "networking.services is required" $cluster.networking.services }}
-    nodes: {{ required "networking.nodes is required" $cluster.networking.nodes }}
+    pods: {{ default $.Values.networking.pods $cluster.networking.pods }}
+    services: {{ default $.Values.networking.services $cluster.networking.services }}
+    nodes: {{ default $.Values.networking.nodes $cluster.networking.nodes }}
     type: calico
     providerConfig:
       apiVersion: calico.networking.extensions.gardener.cloud/v1alpha1
@@ -27,28 +32,99 @@ spec:
       birdExporter:
         enabled: {{ required ".Values.networking.enableBirdExporter is required" $.Values.networking.enableBirdExporter }}
   kubernetes:
-    version: {{ required "version is required" $cluster.version }}
+    version: {{ default $.Values.kubernetes.version $cluster.version }}
     kubeAPIServer:
       featureGates:
         AnonymousAuthConfigurableEndpoints: true
       structuredAuthentication:
         configMapName: authentication-config-mgmt
+      {{- if $cluster.auditing.enabled }}
+      auditConfig:
+        auditPolicy:
+          configMapRef:
+            name: audit-policy-cp
+      {{- end }}
     verticalPodAutoscaler:
       enabled: true # VPA needs to enabled for ManagedSeed
   maintenance:
     autoUpdate:
       kubernetesVersion: false
       machineImageVersion: false
+  {{- if $cluster.auditing.enabled }}
+  extensions:
+  - type: auditing
+    providerConfig:
+      apiVersion: auditing.extensions.gardener.cloud/v1alpha1
+      kind: AuditConfiguration
+      backends:
+      - http:
+          url: {{ $cluster.auditing.url }}
+          tls:
+            secretReferenceName: auditing-mtls
+  {{- end }}
+  resources:
+  - name: extraignition-mgmt-{{ $key }}
+    resourceRef:
+      apiVersion: v1
+      kind: Secret
+      name: extraignition-mgmt-{{ $key }}
+  {{- if $cluster.auditing.enabled }}
+  - name: auditing-mtls
+    resourceRef:
+      apiVersion: v1
+      kind: Secret
+      name: auditing-mtls
+  {{- end }}
   provider:
     type: ironcore-metal
     infrastructureConfig:
       apiVersion: ironcore-metal.provider.extensions.gardener.cloud/v1alpha1
       kind: InfrastructureConfig
-      {{- toYaml $cluster.infrastructureConfig | nindent 6 }}
+      networks:
+      {{- range $cluster.networking.nodeNetworks }}
+      - name: nodenetwork-{{ . | replace "/" "-" | replace "." "-" }}
+        cidr: {{ . }}
+      {{- end }}
     controlPlaneConfig:
       apiVersion: ironcore-metal.provider.extensions.gardener.cloud/v1alpha1
       kind: ControlPlaneConfig
-      {{- toYaml $cluster.controlPlaneConfig | nindent 6 }}
+      cloudControllerManager:
+        networking:
+          configureNodeAddresses: true
+          ipamKind:
+            apiGroup: ipam.cluster.x-k8s.io
+            kind: IPAddress
+      loadBalancerConfig:
+        calicoConfig:
+          IPPools:
+            {{- range $cluster.networking.externalServices }}
+            - cidr: {{ .cidr }}
+              assignmentMode: {{ default "Automatic" .assignmentMode }}
+            {{- end }}
+          calicoBgpConfig:
+            asNumber: {{ $cluster.networking.asNumber }}
+            bgpPeer:
+            {{- range $cluster.networking.bgpPeers }}
+            - asNumber: {{ printf "%.0f" (default $cluster.networking.asNumber .asNumber) }}
+              nodeSelector: {{ .nodeSelector }}
+              peerIP: {{ .peerIP }}
+              filters:
+              - v4filter
+            {{- end }}  
+            bgpFilter:
+              - name: v4filter
+                exportV4:
+                  {{- range $cluster.networking.externalServices }}
+                  - cidr: {{ .cidr }}
+                    matchOperator: Equal
+                    action: Reject
+                  {{- end }}
+            nodeToNodeMeshEnabled: false
+            serviceLoadBalancerIPs:
+            {{- range $cluster.networking.externalServices }}
+            - {{ .cidr }}
+            {{- end }}
+
     workers:
     {{- range $workerkey, $worker := $cluster.workers }}
       - name: mgmt-{{ $workerkey }}
@@ -56,7 +132,7 @@ spec:
           architecture: amd64
           image:
             name: gardenlinux
-            version: {{ $cluster.imageVersion }}
+            version: {{ default $.Values.imageVersion $cluster.imageVersion }}
           type: baremetal
         minimum: {{ $worker.poolSize }}
         maximum: {{ $worker.poolSize }}
@@ -75,8 +151,8 @@ spec:
             topology.kubernetes.io/zone: {{ $workerkey }}
             kubernetes.metal.cloud.sap/cluster: mgmt-{{ $key }}
           metadata:
-            interfaces: {{ $cluster.networking.interfaces }}
-            vlan: {{ $cluster.networking.vlan | quote}}
+            interfaces: {{ default $.Values.networking.interfaces $cluster.networking.interfaces }}
+            vlan: {{ default $.Values.networking.vlan $cluster.networking.vlan | quote }}
             region: {{ $key }}
           ipamConfig:
           - metadataKey: bond
@@ -86,6 +162,7 @@ spec:
               name: mgmt-{{ $workerkey }}
           extraIgnition:
             override: false
+            secretRef: extraignition-mgmt-{{ $key }}
             raw: |
             {{- if $cluster.extraIgnition }}
               {{ $cluster.extraIgnition | nindent 14 }}

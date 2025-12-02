@@ -44,11 +44,7 @@ spec:
           args: [ server, janitor ]
           env: {{ include "keppel_environment" $ | indent 12 }}
             - name: KEPPEL_DRIVER_ACCOUNT_MANAGEMENT
-              value: 'basic'
-            - name: KEPPEL_ACCOUNT_MANAGEMENT_CONFIG_PATH
-              value: /etc/keppel-auto-managed-accounts/config.json
-            - name: KEPPEL_ACCOUNT_MANAGEMENT_PROTECTED_ACCOUNTS
-              value: ccloud ccloud-dockerhub-mirror ccloud-gcr-mirror ccloud-ghcr-io-mirror ccloud-quay-mirror ccloud-registry-k8s-io-mirror
+              value: {{ include "driver_config_account_management" $ | fromYaml | toJson | quote }}
           securityContext:
             runAsNonRoot: true
           volumeMounts:
