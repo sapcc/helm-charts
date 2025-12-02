@@ -271,16 +271,16 @@ complex-role:
   - "cluster:monitor/nodes/stats"
   - "cluster:admin/opensearch/ql/datasources/read"
   - "cluster:monitor/task/get"
-  - 'cluster:admin/opendistro/reports/definition/create'
-  - 'cluster:admin/opendistro/reports/definition/update'
-  - 'cluster:admin/opendistro/reports/definition/on_demand'
-  - 'cluster:admin/opendistro/reports/definition/delete'
-  - 'cluster:admin/opendistro/reports/definition/get'
-  - 'cluster:admin/opendistro/reports/definition/list'
-  - 'cluster:admin/opendistro/reports/instance/list'
-  - 'cluster:admin/opendistro/reports/instance/get'
-  - 'cluster:admin/opendistro/reports/menu/download'
-  - 'cluster:admin/opensearch/ppl'
+  - "cluster:admin/opendistro/reports/definition/create"
+  - "cluster:admin/opendistro/reports/definition/update"
+  - "cluster:admin/opendistro/reports/definition/on_demand"
+  - "cluster:admin/opendistro/reports/definition/delete"
+  - "cluster:admin/opendistro/reports/definition/get"
+  - "cluster:admin/opendistro/reports/definition/list"
+  - "cluster:admin/opendistro/reports/instance/list"
+  - "cluster:admin/opendistro/reports/instance/get"
+  - "cluster:admin/opendistro/reports/menu/download"
+  - "cluster:admin/opensearch/ppl"
   index_permissions:
   - index_patterns:
     - "*"
@@ -290,8 +290,8 @@ complex-role:
     - "get"
     - "indices:monitor/settings/get"
     - "indices:admin/create"
-    - 'indices:admin/mappings/get'
-    - 'indices:data/read/search*'
+    - "indices:admin/mappings/get"
+    - "indices:data/read/search*"
     - "indices:admin/get"
   tenant_permissions:
   - tenant_patterns:
@@ -347,7 +347,7 @@ auditorrole:
   - "indices:admin/template/get"
   - "cluster_manage_index_templates"
   - "cluster:admin/opensearch/ml/predict"
-    index_permissions:
+  index_permissions:
   - index_patterns:
     - "alerts-sem-datastream"
     allowed_actions:
@@ -365,16 +365,8 @@ auditorrole:
     - "indices:admin/aliases/get"
     - "indices:data/read/scroll"
     - "indices:data/read/scroll/clear"
-    - "indices:data/read/search"
     - "indices:data/read/search*"
     - "read"
-  tenant_permissions:
-  - tenant_patterns:
-    - "*"
-    allowed_actions:
-    - "kibana_all_write"
-
-  index_permissions:
   - index_patterns:
     - "deployments-datastream"
     - "alerts-datastream"
@@ -391,6 +383,11 @@ auditorrole:
     - "indices:admin/create"
     - "indices:data/write/bulk*"
     - "indices:data/write/index"
+  tenant_permissions:
+  - tenant_patterns:
+    - "*"
+    allowed_actions:
+    - "kibana_all_write"
 
 oraboskvmrole:
   reserved: false
@@ -518,29 +515,29 @@ ml_full_access:
 security_analytics_full_access:
   reserved: true
   cluster_permissions:
-  - 'cluster:admin/opensearch/securityanalytics/alerts/*'
-  - 'cluster:admin/opensearch/securityanalytics/connections/*'
-  - 'cluster:admin/opensearch/securityanalytics/correlationAlerts/*'
-  - 'cluster:admin/opensearch/securityanalytics/correlations/*'
-  - 'cluster:admin/opensearch/securityanalytics/detector/*'
-  - 'cluster:admin/opensearch/securityanalytics/findings/*'
-  - 'cluster:admin/opensearch/securityanalytics/logtype/*'
-  - 'cluster:admin/opensearch/securityanalytics/mapping/*'
-  - 'cluster:admin/opensearch/securityanalytics/rule/*'
-  - 'cluster:admin/opensearch/securityanalytics/threatintel/*'
-  - 'cluster:admin/opendistro/ad/*'
-  - 'cluster:admin/opensearch/notifications/*'
-  - 'cluster:admin/opendistro/ism/policy/search'
-  - 'cluster:admin/opendistro/ism/managedindex/explain'
-  - 'cluster:monitor/tasks/lists'
-  - 'cluster:monitor/remote/info'
-  - 'cluster:admin/opendistro/ism/policy/search'
+  - "cluster:admin/opensearch/securityanalytics/alerts/*"
+  - "cluster:admin/opensearch/securityanalytics/connections/*"
+  - "cluster:admin/opensearch/securityanalytics/correlationAlerts/*"
+  - "cluster:admin/opensearch/securityanalytics/correlations/*"
+  - "cluster:admin/opensearch/securityanalytics/detector/*"
+  - "cluster:admin/opensearch/securityanalytics/findings/*"
+  - "cluster:admin/opensearch/securityanalytics/logtype/*"
+  - "cluster:admin/opensearch/securityanalytics/mapping/*"
+  - "cluster:admin/opensearch/securityanalytics/rule/*"
+  - "cluster:admin/opensearch/securityanalytics/threatintel/*"
+  - "cluster:admin/opendistro/ad/*"
+  - "cluster:admin/opensearch/notifications/*"
+  - "cluster:admin/opendistro/ism/policy/search"
+  - "cluster:admin/opendistro/ism/managedindex/explain"
+  - "cluster:monitor/tasks/lists"
+  - "cluster:monitor/remote/info"
+  - "cluster:admin/opendistro/ism/policy/search"
   index_permissions:
   - index_patterns:
-      - '*'
-      allowed_actions:
-      - 'indices:admin/mapping/put'
-      - 'indices:admin/mappings/get'
-      - 'indices:admin/template/get'
-      - 'indices:admin/data_stream/get'
-      - 'indices:monitor/recovery'
+    - "*"
+    allowed_actions:
+    - "indices:admin/mapping/put"
+    - "indices:admin/mappings/get"
+    - "indices:admin/template/get"
+    - "indices:admin/data_stream/get"
+    - "indices:monitor/recovery"
