@@ -243,6 +243,29 @@ spec:
               mountPath: /etc/statsd/statsd-exporter.yaml
               subPath: statsd-exporter.yaml
               readOnly: true
+        {{- if .Values.barbican_operator.enabled }}
+        - name: barbican-operator
+          image: {{required ".Values.global.registry is missing" .Values.global.registry }}/loci-barbican:{{required "Values.barbican_operator.image.tag is missing" .Values.barbican_operator.image.tag  }}
+          imagePullPolicy: Always
+          command: [ "/bin/bash", "-c", "--" ]
+          args: [ "while true; do sleep 30; done;" ]
+          volumeMounts:
+            - name: hsm-utimaco
+              mountPath: /scripts/
+              subPath:
+              readOnly: true
+            - name: utimaco-volume
+              mountPath: /utimaco/
+          {{- if .Values.hsm.resources.enabled }}
+          resources:
+            limits:
+              cpu: {{ .Values.hsm.resources.limits.cpu | quote }}
+              memory: {{ .Values.hsm.resources.limits.memory | quote }}
+            requests:
+              cpu: {{ .Values.hsm.resources.requests.cpu | quote }}
+              memory: {{ .Values.hsm.resources.requests.memory | quote }}
+          {{- end }}
+        {{- end }}
       volumes:
         - name: barbican-etc
           configMap:
