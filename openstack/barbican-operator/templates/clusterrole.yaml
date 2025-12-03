@@ -1,0 +1,21 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ .Chart.Name }}
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+rules:
+  - apiGroups:
+      - identity.cloud.sap
+    resources:
+      - barbicans
+      - barbicans/status
+      - barbicans/finalizers
+    verbs:
+      - '*'
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["create", "patch"]
