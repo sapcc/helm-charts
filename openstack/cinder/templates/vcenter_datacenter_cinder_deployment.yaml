@@ -59,17 +59,13 @@ template: |
           uses-service-user: cinder
           {{- end }}
       spec:
-{{- if .Values.rbac.enabled }}
-        serviceAccountName: {{ .Release.Name }}
-{{- end }}
-        terminationGracePeriodSeconds: {{ .Values.pod.terminationGracePeriodSeconds.volume }}
         hostname: cinder-volume-vmware-{= name =}
         {{- tuple . "{= availability_zone =}" | include "utils.kubernetes_pod_az_affinity" | nindent 8 }}
         {{- include "utils.proxysql.pod_settings" . | nindent 8 }}
         initContainers:
         {{- tuple . (dict "service" (include "cinder.service_dependencies" . )) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 8 }}
         {{- if .Values.proxysql.native_sidecar }}
-        {{- tuple . (.Values.proxysql.volume.scale | default 1 | int) | include "utils.proxysql.container" | indent 8 }}
+        {{- include "utils.proxysql.container" . | indent 8 }}
         {{- end }}
         containers:
         - name: cinder-volume-vmware-{= name =}
@@ -79,8 +75,6 @@ template: |
             capabilities:
               add: ["SYS_ADMIN"]
           command:
-          - dumb-init
-          - --single-child
           - cinder-volume
           env:
           {{- if .Values.sentry.enabled }}
@@ -138,7 +132,7 @@ template: |
           {{- include "utils.proxysql.volume_mount" . | indent 10 }}
           {{- include "utils.coordination.volume_mount" . | indent 10 }}
         {{- if not .Values.proxysql.native_sidecar }}
-        {{- tuple . (.Values.proxysql.volume.scale | default 1 | int) | include "utils.proxysql.container" | indent 8 }}
+        {{- include "utils.proxysql.container" . | indent 8 }}
         {{- end }}
         {{- include "jaeger_agent_sidecar" . | indent 8 }}
         volumes:
