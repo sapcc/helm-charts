@@ -49,7 +49,7 @@ spec:
         - name: nova-compute
           image: {{ tuple . "compute" | include "container_image_nova" }}
           imagePullPolicy: IfNotPresent
-          command: ["dumb-init", "nova-compute"]
+          command: ["nova-compute"]
           env:
           {{- if .Values.sentry.enabled }}
           - name: SENTRY_DSN

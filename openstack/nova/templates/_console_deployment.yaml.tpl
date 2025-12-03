@@ -88,7 +88,6 @@ spec:
         image: {{ tuple . (print (title $type) "proxy") | include "container_image_nova" }}
         imagePullPolicy: IfNotPresent
         command:
-        - dumb-init
         - nova-{{ $type }}proxy
         {{- if $config.args }}
           {{- range (regexSplit "\\s+" $config.args -1) }}
