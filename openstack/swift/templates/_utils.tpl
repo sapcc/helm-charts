@@ -77,9 +77,8 @@ checksum/swift.secret: {{ include "swift/templates/secret.yaml" . | sha256sum }}
 - name: proxy
   image: {{ include "swift_image" $context }}
   command:
-    - /usr/bin/dumb-init
-  args:
     - /bin/bash
+  args:
     - /usr/bin/swift-start
     - proxy-server
   env:
@@ -129,9 +128,8 @@ checksum/swift.secret: {{ include "swift/templates/secret.yaml" . | sha256sum }}
 - name: collector
   image: {{ include "swift_image" $context }}
   command:
-    - /usr/bin/dumb-init
-  args:
     - /bin/bash
+  args:
     - /usr/bin/swift-start
     - health-exporter
     - --recon.timeout=20
@@ -204,9 +202,8 @@ checksum/swift.secret: {{ include "swift/templates/secret.yaml" . | sha256sum }}
 - name: {{ $service }}
   image: {{ include "swift_image" $context }}
   command:
-    - /usr/bin/dumb-init
-  args:
     - /bin/bash
+  args:
     - /usr/bin/swift-start
     - {{ $service }}
   # privileged access required for /usr/bin/unmount-helper (TODO: use shared/slave mount namespace instead)
