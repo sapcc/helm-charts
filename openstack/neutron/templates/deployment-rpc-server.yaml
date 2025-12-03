@@ -54,7 +54,7 @@ spec:
         - name: neutron-rpc-server
           image: {{.Values.global.registry}}/loci-neutron:{{.Values.imageVersionServerRPC | default .Values.imageVersionServer | default .Values.imageVersion | required "Please set neutron.imageVersion or similar"}}
           imagePullPolicy: IfNotPresent
-          command: ['dumb-init', 'kubernetes-entrypoint']
+          command: ['kubernetes-entrypoint']
           env:
             - name: COMMAND
               value: "neutron-rpc-server --config-file /etc/neutron/neutron.conf --config-dir /etc/neutron/neutron.conf.d --config-dir /etc/neutron/secrets --config-file /etc/neutron/plugins/ml2/ml2-conf.ini --config-file /etc/neutron/plugins/ml2/ml2-conf-manila.ini --config-file /etc/neutron/plugins/ml2/ml2-conf-arista.ini --config-file /etc/neutron/plugins/ml2/ml2-conf-asr1k.ini {{- if .Values.bgp_vpn.enabled }} --config-file /etc/neutron/networking-bgpvpn.conf{{- end }}{{- if .Values.interconnection.enabled }} --config-file /etc/neutron/networking-interconnection.conf{{- end }}{{- if .Values.fwaas.enabled }} --config-file /etc/neutron/neutron-fwaas.ini{{- end }}{{- if .Values.cc_fabric.enabled }} --config-file /etc/neutron/plugins/ml2/ml2_conf_cc-fabric.ini {{- end }}"
