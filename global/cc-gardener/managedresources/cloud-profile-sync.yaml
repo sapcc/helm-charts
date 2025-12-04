@@ -1,4 +1,673 @@
 ---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.18.0
+  name: managedcloudprofiles.cloudprofilesync.cobaltcore.dev
+spec:
+  group: cloudprofilesync.cobaltcore.dev
+  names:
+    kind: ManagedCloudProfile
+    listKind: ManagedCloudProfileList
+    plural: managedcloudprofiles
+    singular: managedcloudprofile
+  scope: Cluster
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .status.status
+      name: Status
+      type: string
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: ManagedCloudProfile is the Schema for the ManagedCloudProfile
+          API.
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            properties:
+              cloudProfile:
+                description: CloudProfile contains the base spec of the CloudProfile.
+                properties:
+                  bastion:
+                    description: Bastion contains the machine and image properties
+                    properties:
+                      machineImage:
+                        description: MachineImage contains the bastions machine image
+                          properties
+                        properties:
+                          name:
+                            description: Name of the machine image
+                            type: string
+                          version:
+                            description: Version of the machine image
+                            type: string
+                        required:
+                        - name
+                        type: object
+                      machineType:
+                        description: MachineType contains the bastions machine type
+                          properties
+                        properties:
+                          name:
+                            description: Name of the machine type
+                            type: string
+                        required:
+                        - name
+                        type: object
+                    type: object
+                  caBundle:
+                    description: CABundle is a certificate bundle which will be installed
+                      onto every host machine of shoot cluster targeting this profile.
+                    type: string
+                  kubernetes:
+                    description: Kubernetes contains constraints regarding allowed
+                      values of the 'kubernetes' block in the Shoot specification.
+                    properties:
+                      versions:
+                        description: Versions is the list of allowed Kubernetes versions
+                          with optional expiration dates for Shoot clusters.
+                        items:
+                          description: ExpirableVersion contains a version and an
+                            expiration date.
+                          properties:
+                            classification:
+                              description: |-
+                                Classification defines the state of a version (preview, supported, deprecated).
+                                To get the currently valid classification, use CurrentLifecycleClassification().
+                              type: string
+                            expirationDate:
+                              description: ExpirationDate defines the time at which
+                                this version expires.
+                              format: date-time
+                              type: string
+                            version:
+                              description: Version is the version identifier.
+                              type: string
+                          required:
+                          - version
+                          type: object
+                        type: array
+                    type: object
+                  limits:
+                    description: |-
+                      Limits configures operational limits for Shoot clusters using this CloudProfile.
+                      See https://github.com/gardener/gardener/blob/master/docs/usage/shoot/shoot_limits.md.
+                    properties:
+                      maxNodesTotal:
+                        description: MaxNodesTotal configures the maximum node count
+                          a Shoot cluster can have during runtime.
+                        format: int32
+                        type: integer
+                    type: object
+                  machineCapabilities:
+                    description: |-
+                      MachineCapabilities contains the definition of all possible capabilities in the CloudProfile.
+                      Only capabilities and values defined here can be used to describe MachineImages and MachineTypes.
+                      The order of values for a given capability is relevant. The most important value is listed first.
+                      During maintenance upgrades, the image that matches most capabilities will be selected.
+                    items:
+                      description: CapabilityDefinition contains the Name and Values
+                        of a capability.
+                      properties:
+                        name:
+                          type: string
+                        values:
+                          description: |-
+                            CapabilityValues contains capability values.
+                            This is a workaround as the Protobuf generator can't handle a map with slice values.
+                          items:
+                            type: string
+                          type: array
+                      required:
+                      - name
+                      - values
+                      type: object
+                    type: array
+                  machineImages:
+                    description: MachineImages contains constraints regarding allowed
+                      values for machine images in the Shoot specification.
+                    items:
+                      description: MachineImage defines the name and multiple versions
+                        of the machine image in any environment.
+                      properties:
+                        name:
+                          description: Name is the name of the image.
+                          type: string
+                        updateStrategy:
+                          description: |-
+                            UpdateStrategy is the update strategy to use for the machine image. Possible values are:
+                             - patch: update to the latest patch version of the current minor version.
+                             - minor: update to the latest minor and patch version.
+                             - major: always update to the overall latest version (default).
+                          type: string
+                        versions:
+                          description: Versions contains versions, expiration dates
+                            and container runtimes of the machine image
+                          items:
+                            description: MachineImageVersion is an expirable version
+                              with list of supported container runtimes and interfaces
+                            properties:
+                              architectures:
+                                description: Architectures is the list of CPU architectures
+                                  of the machine image in this version.
+                                items:
+                                  type: string
+                                type: array
+                              capabilityFlavors:
+                                description: |-
+                                  CapabilityFlavors is an array of MachineImageFlavor. Each entry represents a combination of capabilities that is provided by
+                                  the machine image version.
+                                items:
+                                  description: |-
+                                    MachineImageFlavor is a wrapper for Capabilities.
+                                    This is a workaround as the Protobuf generator can't handle a slice of maps.
+                                  type: object
+                                type: array
+                              classification:
+                                description: |-
+                                  Classification defines the state of a version (preview, supported, deprecated).
+                                  To get the currently valid classification, use CurrentLifecycleClassification().
+                                type: string
+                              cri:
+                                description: CRI list of supported container runtime
+                                  and interfaces supported by this version
+                                items:
+                                  description: CRI contains information about the
+                                    Container Runtimes.
+                                  properties:
+                                    containerRuntimes:
+                                      description: ContainerRuntimes is the list of
+                                        the required container runtimes supported
+                                        for a worker pool.
+                                      items:
+                                        description: ContainerRuntime contains information
+                                          about worker's available container runtime
+                                        properties:
+                                          providerConfig:
+                                            description: ProviderConfig is the configuration
+                                              passed to container runtime resource.
+                                            type: object
+                                            x-kubernetes-preserve-unknown-fields: true
+                                          type:
+                                            description: Type is the type of the Container
+                                              Runtime.
+                                            type: string
+                                        required:
+                                        - type
+                                        type: object
+                                      type: array
+                                    name:
+                                      description: The name of the CRI library. Supported
+                                        values are `containerd`.
+                                      type: string
+                                  required:
+                                  - name
+                                  type: object
+                                type: array
+                              expirationDate:
+                                description: ExpirationDate defines the time at which
+                                  this version expires.
+                                format: date-time
+                                type: string
+                              inPlaceUpdates:
+                                description: InPlaceUpdates contains the configuration
+                                  for in-place updates for this machine image version.
+                                properties:
+                                  minVersionForUpdate:
+                                    description: MinVersionForInPlaceUpdate specifies
+                                      the minimum supported version from which an
+                                      in-place update to this machine image version
+                                      can be performed.
+                                    type: string
+                                  supported:
+                                    description: Supported indicates whether in-place
+                                      updates are supported for this machine image
+                                      version.
+                                    type: boolean
+                                required:
+                                - supported
+                                type: object
+                              kubeletVersionConstraint:
+                                description: |-
+                                  KubeletVersionConstraint is a constraint describing the supported kubelet versions by the machine image in this version.
+                                  If the field is not specified, it is assumed that the machine image in this version supports all kubelet versions.
+                                  Examples:
+                                  - '>= 1.26' - supports only kubelet versions greater than or equal to 1.26
+                                  - '< 1.26' - supports only kubelet versions less than 1.26
+                                type: string
+                              version:
+                                description: Version is the version identifier.
+                                type: string
+                            required:
+                            - version
+                            type: object
+                          type: array
+                      required:
+                      - name
+                      - versions
+                      type: object
+                    type: array
+                  machineTypes:
+                    description: MachineTypes contains constraints regarding allowed
+                      values for machine types in the 'workers' block in the Shoot
+                      specification.
+                    items:
+                      description: MachineType contains certain properties of a machine
+                        type.
+                      properties:
+                        architecture:
+                          description: Architecture is the CPU architecture of this
+                            machine type.
+                          type: string
+                        capabilities:
+                          additionalProperties:
+                            description: |-
+                              CapabilityValues contains capability values.
+                              This is a workaround as the Protobuf generator can't handle a map with slice values.
+                            items:
+                              type: string
+                            type: array
+                          description: Capabilities contains the machine type capabilities.
+                          type: object
+                        cpu:
+                          anyOf:
+                          - type: integer
+                          - type: string
+                          description: CPU is the number of CPUs for this machine
+                            type.
+                          pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                          x-kubernetes-int-or-string: true
+                        gpu:
+                          anyOf:
+                          - type: integer
+                          - type: string
+                          description: GPU is the number of GPUs for this machine
+                            type.
+                          pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                          x-kubernetes-int-or-string: true
+                        memory:
+                          anyOf:
+                          - type: integer
+                          - type: string
+                          description: Memory is the amount of memory for this machine
+                            type.
+                          pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                          x-kubernetes-int-or-string: true
+                        name:
+                          description: Name is the name of the machine type.
+                          type: string
+                        storage:
+                          description: Storage is the amount of storage associated
+                            with the root volume of this machine type.
+                          properties:
+                            class:
+                              description: Class is the class of the storage type.
+                              type: string
+                            minSize:
+                              anyOf:
+                              - type: integer
+                              - type: string
+                              description: |-
+                                MinSize is the minimal supported storage size.
+                                This overrides any other common minimum size configuration from `spec.volumeTypes[*].minSize`.
+                              pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                              x-kubernetes-int-or-string: true
+                            size:
+                              anyOf:
+                              - type: integer
+                              - type: string
+                              description: StorageSize is the storage size.
+                              pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                              x-kubernetes-int-or-string: true
+                            type:
+                              description: Type is the type of the storage.
+                              type: string
+                          required:
+                          - class
+                          - type
+                          type: object
+                        usable:
+                          description: Usable defines if the machine type can be used
+                            for shoot clusters.
+                          type: boolean
+                      required:
+                      - cpu
+                      - gpu
+                      - memory
+                      - name
+                      type: object
+                    type: array
+                  providerConfig:
+                    description: ProviderConfig contains provider-specific configuration
+                      for the profile.
+                    type: object
+                    x-kubernetes-preserve-unknown-fields: true
+                  regions:
+                    description: Regions contains constraints regarding allowed values
+                      for regions and zones.
+                    items:
+                      description: Region contains certain properties of a region.
+                      properties:
+                        accessRestrictions:
+                          description: AccessRestrictions describe a list of access
+                            restrictions that can be used for Shoots using this region.
+                          items:
+                            description: AccessRestriction describes an access restriction
+                              for a Kubernetes cluster (e.g., EU access-only).
+                            properties:
+                              name:
+                                description: Name is the name of the restriction.
+                                type: string
+                            required:
+                            - name
+                            type: object
+                          type: array
+                        labels:
+                          additionalProperties:
+                            type: string
+                          description: |-
+                            Labels is an optional set of key-value pairs that contain certain administrator-controlled labels for this region.
+                            It can be used by Gardener administrators/operators to provide additional information about a region, e.g. wrt
+                            quality, reliability, etc.
+                          type: object
+                        name:
+                          description: Name is a region name.
+                          type: string
+                        zones:
+                          description: Zones is a list of availability zones in this
+                            region.
+                          items:
+                            description: AvailabilityZone is an availability zone.
+                            properties:
+                              name:
+                                description: Name is an availability zone name.
+                                type: string
+                              unavailableMachineTypes:
+                                description: UnavailableMachineTypes is a list of
+                                  machine type names that are not availability in
+                                  this zone.
+                                items:
+                                  type: string
+                                type: array
+                              unavailableVolumeTypes:
+                                description: UnavailableVolumeTypes is a list of volume
+                                  type names that are not availability in this zone.
+                                items:
+                                  type: string
+                                type: array
+                            required:
+                            - name
+                            type: object
+                          type: array
+                      required:
+                      - name
+                      type: object
+                    type: array
+                  seedSelector:
+                    description: |-
+                      SeedSelector contains an optional list of labels on `Seed` resources that marks those seeds whose shoots may use this provider profile.
+                      An empty list means that all seeds of the same provider type are supported.
+                      This is useful for environments that are of the same type (like openstack) but may have different "instances"/landscapes.
+                      Optionally a list of possible providers can be added to enable cross-provider scheduling. By default, the provider
+                      type of the seed must match the shoot's provider.
+                    properties:
+                      matchExpressions:
+                        description: matchExpressions is a list of label selector
+                          requirements. The requirements are ANDed.
+                        items:
+                          description: |-
+                            A label selector requirement is a selector that contains values, a key, and an operator that
+                            relates the key and values.
+                          properties:
+                            key:
+                              description: key is the label key that the selector
+                                applies to.
+                              type: string
+                            operator:
+                              description: |-
+                                operator represents a key's relationship to a set of values.
+                                Valid operators are In, NotIn, Exists and DoesNotExist.
+                              type: string
+                            values:
+                              description: |-
+                                values is an array of string values. If the operator is In or NotIn,
+                                the values array must be non-empty. If the operator is Exists or DoesNotExist,
+                                the values array must be empty. This array is replaced during a strategic
+                                merge patch.
+                              items:
+                                type: string
+                              type: array
+                              x-kubernetes-list-type: atomic
+                          required:
+                          - key
+                          - operator
+                          type: object
+                        type: array
+                        x-kubernetes-list-type: atomic
+                      matchLabels:
+                        additionalProperties:
+                          type: string
+                        description: |-
+                          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+                          map is equivalent to an element of matchExpressions, whose key field is "key", the
+                          operator is "In", and the values array contains only "value". The requirements are ANDed.
+                        type: object
+                      providerTypes:
+                        description: Providers is optional and can be used by restricting
+                          seeds by their provider type. '*' can be used to enable
+                          seeds regardless of their provider type.
+                        items:
+                          type: string
+                        type: array
+                    type: object
+                    x-kubernetes-map-type: atomic
+                  type:
+                    description: Type is the name of the provider.
+                    type: string
+                  volumeTypes:
+                    description: VolumeTypes contains constraints regarding allowed
+                      values for volume types in the 'workers' block in the Shoot
+                      specification.
+                    items:
+                      description: VolumeType contains certain properties of a volume
+                        type.
+                      properties:
+                        class:
+                          description: Class is the class of the volume type.
+                          type: string
+                        minSize:
+                          anyOf:
+                          - type: integer
+                          - type: string
+                          description: MinSize is the minimal supported storage size.
+                          pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                          x-kubernetes-int-or-string: true
+                        name:
+                          description: Name is the name of the volume type.
+                          type: string
+                        usable:
+                          description: Usable defines if the volume type can be used
+                            for shoot clusters.
+                          type: boolean
+                      required:
+                      - class
+                      - name
+                      type: object
+                    type: array
+                required:
+                - kubernetes
+                - type
+                type: object
+              machineImageUpdates:
+                description: MachineImageUpdates contains the source and provider
+                  information to automate machine images.
+                items:
+                  properties:
+                    imageName:
+                      description: ImagesName is the name of the image to maintain
+                        automatically
+                      type: string
+                    provider:
+                      description: Provider contains configuration for a provider
+                        for machine images.
+                      properties:
+                        ironcoreMetal:
+                          description: Ironcore contains configuration to update provider.machineImages
+                            for ironcore-metal CloudProfiles
+                          properties:
+                            registry:
+                              description: Registry contains the hostname and port
+                                of the OCI registry
+                              type: string
+                            repository:
+                              description: Repository contains the repository containing
+                                images
+                              type: string
+                          required:
+                          - registry
+                          - repository
+                          type: object
+                      type: object
+                    source:
+                      description: Source contains configuration for a source for
+                        machine images.
+                      properties:
+                        oci:
+                          description: OCI contains configuration for an OCI source.
+                          properties:
+                            insecure:
+                              description: Insecure disables TLS
+                              type: boolean
+                            password:
+                              description: Password for authentication
+                              properties:
+                                key:
+                                  description: Key within the Secret to use for required
+                                    data.
+                                  type: string
+                                name:
+                                  description: Name of a Secret.
+                                  type: string
+                                namespace:
+                                  description: Namespace of a Secret.
+                                  type: string
+                              required:
+                              - key
+                              - name
+                              - namespace
+                              type: object
+                            registry:
+                              description: Registry contains the hostname and port
+                                of the OCI registry
+                              type: string
+                            repository:
+                              description: Repository contains the monitored repository
+                              type: string
+                            username:
+                              description: Username for authentication
+                              type: string
+                          required:
+                          - registry
+                          - repository
+                          type: object
+                      type: object
+                  required:
+                  - imageName
+                  - provider
+                  - source
+                  type: object
+                type: array
+            required:
+            - cloudProfile
+            type: object
+          status:
+            properties:
+              conditions:
+                description: Conditions represents the latest available observations
+                  of the server's current state.
+                items:
+                  description: Condition contains details for one aspect of the current
+                    state of this API Resource.
+                  properties:
+                    lastTransitionTime:
+                      description: |-
+                        lastTransitionTime is the last time the condition transitioned from one status to another.
+                        This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.
+                      format: date-time
+                      type: string
+                    message:
+                      description: |-
+                        message is a human readable message indicating details about the transition.
+                        This may be an empty string.
+                      maxLength: 32768
+                      type: string
+                    observedGeneration:
+                      description: |-
+                        observedGeneration represents the .metadata.generation that the condition was set based upon.
+                        For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
+                        with respect to the current state of the instance.
+                      format: int64
+                      minimum: 0
+                      type: integer
+                    reason:
+                      description: |-
+                        reason contains a programmatic identifier indicating the reason for the condition's last transition.
+                        Producers of specific condition types may define expected values and meanings for this field,
+                        and whether the values are considered a guaranteed API.
+                        The value should be a CamelCase string.
+                        This field may not be empty.
+                      maxLength: 1024
+                      minLength: 1
+                      pattern: ^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$
+                      type: string
+                    status:
+                      description: status of the condition, one of True, False, Unknown.
+                      enum:
+                      - "True"
+                      - "False"
+                      - Unknown
+                      type: string
+                    type:
+                      description: type of condition in CamelCase or in foo.example.com/CamelCase.
+                      maxLength: 316
+                      pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - message
+                  - reason
+                  - status
+                  - type
+                  type: object
+                type: array
+              status:
+                description: Summarized status of the ManagedCloudProfile
+                type: string
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
