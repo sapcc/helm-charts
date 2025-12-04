@@ -4,7 +4,7 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2da6ee5-crds"
+    helm.sh/chart: "0.0.0-531c593-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -17,13 +17,13 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2da6ee5-crds"
+    helm.sh/chart: "0.0.0-531c593-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
     app.kubernetes.io/managed-by: Helm
   annotations:
-    controller-gen.kubebuilder.io/version: v0.18.0
+    controller-gen.kubebuilder.io/version: v0.19.0
   name: biossettings.metal.ironcore.dev
 spec:
   group: metal.ironcore.dev
@@ -327,13 +327,13 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2da6ee5-crds"
+    helm.sh/chart: "0.0.0-531c593-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
     app.kubernetes.io/managed-by: Helm
   annotations:
-    controller-gen.kubebuilder.io/version: v0.18.0
+    controller-gen.kubebuilder.io/version: v0.19.0
   name: biossettingssets.metal.ironcore.dev
 spec:
   group: metal.ironcore.dev
@@ -562,13 +562,13 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2da6ee5-crds"
+    helm.sh/chart: "0.0.0-531c593-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
     app.kubernetes.io/managed-by: Helm
   annotations:
-    controller-gen.kubebuilder.io/version: v0.18.0
+    controller-gen.kubebuilder.io/version: v0.19.0
   name: biosversions.metal.ironcore.dev
 spec:
   group: metal.ironcore.dev
@@ -824,13 +824,13 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2da6ee5-crds"
+    helm.sh/chart: "0.0.0-531c593-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
     app.kubernetes.io/managed-by: Helm
   annotations:
-    controller-gen.kubebuilder.io/version: v0.18.0
+    controller-gen.kubebuilder.io/version: v0.19.0
   name: biosversionsets.metal.ironcore.dev
 spec:
   group: metal.ironcore.dev
@@ -1064,25 +1064,15 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2da6ee5-crds"
+    helm.sh/chart: "0.0.0-531c593-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
     app.kubernetes.io/managed-by: Helm
   annotations:
-    controller-gen.kubebuilder.io/version: v0.18.0
+    controller-gen.kubebuilder.io/version: v0.19.0
   name: bmcs.metal.ironcore.dev
 spec:
-  conversion:
-    strategy: Webhook
-    webhook:
-      clientConfig:
-        service:
-          namespace: kube-system
-          name: webhook-service
-          path: /convert
-      conversionReviewVersions:
-        - v1
   group: metal.ironcore.dev
   names:
     kind: BMC
@@ -1337,6 +1327,10 @@ spec:
                     IP is the IP address of the BMC.
                     The type is specified as string and is schemaless.
                   type: string
+                lastResetTime:
+                  description: LastResetTime is the timestamp of the last reset operation performed on the BMC.
+                  format: date-time
+                  type: string
                 macAddress:
                   description: |-
                     MACAddress is the MAC address of the BMC.
@@ -1359,7 +1353,10 @@ spec:
                   description: SKU is the stock keeping unit identifier for the BMC.
                   type: string
                 state:
-                  description: State represents the current state of the BMC.
+                  default: Pending
+                  description: |-
+                    State represents the current state of the BMC.
+                    kubebuilder:validation:Enum=Enabled;Error;Pending
                   type: string
               type: object
           type: object
@@ -1373,13 +1370,13 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2da6ee5-crds"
+    helm.sh/chart: "0.0.0-531c593-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
     app.kubernetes.io/managed-by: Helm
   annotations:
-    controller-gen.kubebuilder.io/version: v0.18.0
+    controller-gen.kubebuilder.io/version: v0.19.0
   name: bmcsecrets.metal.ironcore.dev
 spec:
   group: metal.ironcore.dev
@@ -1458,13 +1455,13 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2da6ee5-crds"
+    helm.sh/chart: "0.0.0-531c593-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
     app.kubernetes.io/managed-by: Helm
   annotations:
-    controller-gen.kubebuilder.io/version: v0.18.0
+    controller-gen.kubebuilder.io/version: v0.19.0
   name: bmcsettings.metal.ironcore.dev
 spec:
   group: metal.ironcore.dev
@@ -1476,7 +1473,7 @@ spec:
   scope: Cluster
   versions:
     - additionalPrinterColumns:
-        - jsonPath: .spec.bmcSettings.version
+        - jsonPath: .spec.version
           name: BMCVersion
           type: string
         - jsonPath: .status.state
@@ -1484,9 +1481,6 @@ spec:
           type: string
         - jsonPath: .spec.BMCRef.name
           name: BMCRef
-          type: string
-        - jsonPath: .spec.serverRef.name
-          name: ServerRef
           type: string
       name: v1alpha1
       schema:
@@ -1599,6 +1593,62 @@ spec:
             status:
               description: BMCSettingsStatus defines the observed state of BMCSettings.
               properties:
+                conditions:
+                  description: Conditions represents the latest available observations of the BMC Settings Resource state.
+                  items:
+                    description: Condition contains details for one aspect of the current state of this API Resource.
+                    properties:
+                      lastTransitionTime:
+                        description: |-
+                          lastTransitionTime is the last time the condition transitioned from one status to another.
+                          This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.
+                        format: date-time
+                        type: string
+                      message:
+                        description: |-
+                          message is a human readable message indicating details about the transition.
+                          This may be an empty string.
+                        maxLength: 32768
+                        type: string
+                      observedGeneration:
+                        description: |-
+                          observedGeneration represents the .metadata.generation that the condition was set based upon.
+                          For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
+                          with respect to the current state of the instance.
+                        format: int64
+                        minimum: 0
+                        type: integer
+                      reason:
+                        description: |-
+                          reason contains a programmatic identifier indicating the reason for the condition's last transition.
+                          Producers of specific condition types may define expected values and meanings for this field,
+                          and whether the values are considered a guaranteed API.
+                          The value should be a CamelCase string.
+                          This field may not be empty.
+                        maxLength: 1024
+                        minLength: 1
+                        pattern: ^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$
+                        type: string
+                      status:
+                        description: status of the condition, one of True, False, Unknown.
+                        enum:
+                          - "True"
+                          - "False"
+                          - Unknown
+                        type: string
+                      type:
+                        description: type of condition in CamelCase or in foo.example.com/CamelCase.
+                        maxLength: 316
+                        pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
+                        type: string
+                    required:
+                      - lastTransitionTime
+                      - message
+                      - reason
+                      - status
+                      - type
+                    type: object
+                  type: array
                 state:
                   description: State represents the current state of the BMC configuration task.
                   type: string
@@ -1614,13 +1664,13 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2da6ee5-crds"
+    helm.sh/chart: "0.0.0-531c593-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
     app.kubernetes.io/managed-by: Helm
   annotations:
-    controller-gen.kubebuilder.io/version: v0.18.0
+    controller-gen.kubebuilder.io/version: v0.19.0
   name: bmcversions.metal.ironcore.dev
 spec:
   group: metal.ironcore.dev
@@ -1880,13 +1930,13 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2da6ee5-crds"
+    helm.sh/chart: "0.0.0-531c593-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
     app.kubernetes.io/managed-by: Helm
   annotations:
-    controller-gen.kubebuilder.io/version: v0.18.0
+    controller-gen.kubebuilder.io/version: v0.19.0
   name: bmcversionsets.metal.ironcore.dev
 spec:
   group: metal.ironcore.dev
@@ -2127,13 +2177,13 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2da6ee5-crds"
+    helm.sh/chart: "0.0.0-531c593-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
     app.kubernetes.io/managed-by: Helm
   annotations:
-    controller-gen.kubebuilder.io/version: v0.18.0
+    controller-gen.kubebuilder.io/version: v0.19.0
   name: endpoints.metal.ironcore.dev
 spec:
   group: metal.ironcore.dev
@@ -2200,13 +2250,13 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2da6ee5-crds"
+    helm.sh/chart: "0.0.0-531c593-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
     app.kubernetes.io/managed-by: Helm
   annotations:
-    controller-gen.kubebuilder.io/version: v0.18.0
+    controller-gen.kubebuilder.io/version: v0.19.0
   name: serverbootconfigurations.metal.ironcore.dev
 spec:
   group: metal.ironcore.dev
@@ -2299,6 +2349,62 @@ spec:
             status:
               description: ServerBootConfigurationStatus defines the observed state of ServerBootConfiguration.
               properties:
+                conditions:
+                  description: Conditions represents the latest available observations of the ServerBootConfig's current state.
+                  items:
+                    description: Condition contains details for one aspect of the current state of this API Resource.
+                    properties:
+                      lastTransitionTime:
+                        description: |-
+                          lastTransitionTime is the last time the condition transitioned from one status to another.
+                          This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.
+                        format: date-time
+                        type: string
+                      message:
+                        description: |-
+                          message is a human readable message indicating details about the transition.
+                          This may be an empty string.
+                        maxLength: 32768
+                        type: string
+                      observedGeneration:
+                        description: |-
+                          observedGeneration represents the .metadata.generation that the condition was set based upon.
+                          For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
+                          with respect to the current state of the instance.
+                        format: int64
+                        minimum: 0
+                        type: integer
+                      reason:
+                        description: |-
+                          reason contains a programmatic identifier indicating the reason for the condition's last transition.
+                          Producers of specific condition types may define expected values and meanings for this field,
+                          and whether the values are considered a guaranteed API.
+                          The value should be a CamelCase string.
+                          This field may not be empty.
+                        maxLength: 1024
+                        minLength: 1
+                        pattern: ^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$
+                        type: string
+                      status:
+                        description: status of the condition, one of True, False, Unknown.
+                        enum:
+                          - "True"
+                          - "False"
+                          - Unknown
+                        type: string
+                      type:
+                        description: type of condition in CamelCase or in foo.example.com/CamelCase.
+                        maxLength: 316
+                        pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
+                        type: string
+                    required:
+                      - lastTransitionTime
+                      - message
+                      - reason
+                      - status
+                      - type
+                    type: object
+                  type: array
                 state:
                   description: State represents the current state of the boot configuration.
                   type: string
@@ -2314,25 +2420,15 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2da6ee5-crds"
+    helm.sh/chart: "0.0.0-531c593-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
     app.kubernetes.io/managed-by: Helm
   annotations:
-    controller-gen.kubebuilder.io/version: v0.18.0
+    controller-gen.kubebuilder.io/version: v0.19.0
   name: serverclaims.metal.ironcore.dev
 spec:
-  conversion:
-    strategy: Webhook
-    webhook:
-      clientConfig:
-        service:
-          namespace: kube-system
-          name: webhook-service
-          path: /convert
-      conversionReviewVersions:
-        - v1
   group: metal.ironcore.dev
   names:
     kind: ServerClaim
@@ -2499,13 +2595,13 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2da6ee5-crds"
+    helm.sh/chart: "0.0.0-531c593-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
     app.kubernetes.io/managed-by: Helm
   annotations:
-    controller-gen.kubebuilder.io/version: v0.18.0
+    controller-gen.kubebuilder.io/version: v0.19.0
   name: servermaintenances.metal.ironcore.dev
 spec:
   group: metal.ironcore.dev
@@ -2652,13 +2748,13 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2da6ee5-crds"
+    helm.sh/chart: "0.0.0-531c593-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
     app.kubernetes.io/managed-by: Helm
   annotations:
-    controller-gen.kubebuilder.io/version: v0.18.0
+    controller-gen.kubebuilder.io/version: v0.19.0
   name: servers.metal.ironcore.dev
 spec:
   group: metal.ironcore.dev
@@ -2678,6 +2774,9 @@ spec:
           type: string
         - jsonPath: .status.model
           name: Model
+          type: string
+        - jsonPath: .status.totalSystemMemory
+          name: Memory
           type: string
         - jsonPath: .status.sku
           name: SKU
@@ -3105,19 +3204,49 @@ spec:
                   items:
                     description: NetworkInterface defines the details of a network interface.
                     properties:
+                      carrierStatus:
+                        description: CarrierStatus is the operational carrier status of the network interface.
+                        type: string
                       ip:
                         description: |-
                           IP is the IP address assigned to the network interface.
-                          The type is specified as string and is schemaless.
+                          Deprecated: Use IPs instead. Kept for backward compatibility, always nil.
                         type: string
+                      ips:
+                        description: IPs is a list of IP addresses (both IPv4 and IPv6) assigned to the network interface.
+                        items:
+                          format: ip
+                          type: string
+                        type: array
                       macAddress:
                         description: MACAddress is the MAC address of the network interface.
                         type: string
                       name:
                         description: Name is the name of the network interface.
                         type: string
+                      neighbors:
+                        description: Neighbors contains the LLDP neighbors discovered on this interface.
+                        items:
+                          description: LLDPNeighbor defines the details of an LLDP neighbor.
+                          properties:
+                            macAddress:
+                              description: MACAddress is the MAC address of the LLDP neighbor.
+                              type: string
+                            portDescription:
+                              description: PortDescription is the port description of the LLDP neighbor.
+                              type: string
+                            portID:
+                              description: PortID is the port identifier of the LLDP neighbor.
+                              type: string
+                            systemDescription:
+                              description: SystemDescription is the system description of the LLDP neighbor.
+                              type: string
+                            systemName:
+                              description: SystemName is the system name of the LLDP neighbor.
+                              type: string
+                          type: object
+                        type: array
                     required:
-                      - ip
                       - macAddress
                       - name
                     type: object
@@ -3269,7 +3398,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2da6ee5-crds"
+    helm.sh/chart: "0.0.0-531c593-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3300,7 +3429,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2da6ee5-crds"
+    helm.sh/chart: "0.0.0-531c593-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3337,7 +3466,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2da6ee5-crds"
+    helm.sh/chart: "0.0.0-531c593-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3370,7 +3499,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2da6ee5-crds"
+    helm.sh/chart: "0.0.0-531c593-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3401,7 +3530,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2da6ee5-crds"
+    helm.sh/chart: "0.0.0-531c593-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3438,7 +3567,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2da6ee5-crds"
+    helm.sh/chart: "0.0.0-531c593-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3471,7 +3600,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2da6ee5-crds"
+    helm.sh/chart: "0.0.0-531c593-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3502,7 +3631,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2da6ee5-crds"
+    helm.sh/chart: "0.0.0-531c593-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3539,7 +3668,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2da6ee5-crds"
+    helm.sh/chart: "0.0.0-531c593-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3572,7 +3701,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2da6ee5-crds"
+    helm.sh/chart: "0.0.0-531c593-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3603,7 +3732,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2da6ee5-crds"
+    helm.sh/chart: "0.0.0-531c593-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3640,7 +3769,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2da6ee5-crds"
+    helm.sh/chart: "0.0.0-531c593-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3668,7 +3797,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2da6ee5-crds"
+    helm.sh/chart: "0.0.0-531c593-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3700,7 +3829,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2da6ee5-crds"
+    helm.sh/chart: "0.0.0-531c593-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3728,7 +3857,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2da6ee5-crds"
+    helm.sh/chart: "0.0.0-531c593-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3760,7 +3889,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2da6ee5-crds"
+    helm.sh/chart: "0.0.0-531c593-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3793,7 +3922,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2da6ee5-crds"
+    helm.sh/chart: "0.0.0-531c593-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3824,7 +3953,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2da6ee5-crds"
+    helm.sh/chart: "0.0.0-531c593-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3861,7 +3990,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2da6ee5-crds"
+    helm.sh/chart: "0.0.0-531c593-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3894,7 +4023,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2da6ee5-crds"
+    helm.sh/chart: "0.0.0-531c593-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3925,7 +4054,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2da6ee5-crds"
+    helm.sh/chart: "0.0.0-531c593-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3962,7 +4091,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2da6ee5-crds"
+    helm.sh/chart: "0.0.0-531c593-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3995,7 +4124,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2da6ee5-crds"
+    helm.sh/chart: "0.0.0-531c593-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4026,7 +4155,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2da6ee5-crds"
+    helm.sh/chart: "0.0.0-531c593-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4063,7 +4192,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2da6ee5-crds"
+    helm.sh/chart: "0.0.0-531c593-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4091,7 +4220,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2da6ee5-crds"
+    helm.sh/chart: "0.0.0-531c593-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4123,7 +4252,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2da6ee5-crds"
+    helm.sh/chart: "0.0.0-531c593-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4150,7 +4279,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2da6ee5-crds"
+    helm.sh/chart: "0.0.0-531c593-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4175,7 +4304,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2da6ee5-crds"
+    helm.sh/chart: "0.0.0-531c593-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4192,7 +4321,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2da6ee5-crds"
+    helm.sh/chart: "0.0.0-531c593-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4221,6 +4350,15 @@ rules:
       - get
       - list
       - patch
+      - update
+      - watch
+  - apiGroups:
+      - metal.ironcore.dev
+    resources:
+      - BMC
+    verbs:
+      - get
+      - list
       - update
       - watch
   - apiGroups:
@@ -4296,7 +4434,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2da6ee5-crds"
+    helm.sh/chart: "0.0.0-531c593-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4328,7 +4466,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2da6ee5-crds"
+    helm.sh/chart: "0.0.0-531c593-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4356,7 +4494,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2da6ee5-crds"
+    helm.sh/chart: "0.0.0-531c593-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4388,7 +4526,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2da6ee5-crds"
+    helm.sh/chart: "0.0.0-531c593-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4416,7 +4554,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2da6ee5-crds"
+    helm.sh/chart: "0.0.0-531c593-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4448,7 +4586,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2da6ee5-crds"
+    helm.sh/chart: "0.0.0-531c593-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4481,7 +4619,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2da6ee5-crds"
+    helm.sh/chart: "0.0.0-531c593-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4512,7 +4650,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2da6ee5-crds"
+    helm.sh/chart: "0.0.0-531c593-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4549,7 +4687,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2da6ee5-crds"
+    helm.sh/chart: "0.0.0-531c593-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4576,7 +4714,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2da6ee5-crds"
+    helm.sh/chart: "0.0.0-531c593-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4596,7 +4734,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2da6ee5-crds"
+    helm.sh/chart: "0.0.0-531c593-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4617,7 +4755,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2da6ee5-crds"
+    helm.sh/chart: "0.0.0-531c593-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4662,7 +4800,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2da6ee5-crds"
+    helm.sh/chart: "0.0.0-531c593-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"

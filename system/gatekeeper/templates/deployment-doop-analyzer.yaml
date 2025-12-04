@@ -30,6 +30,7 @@ spec:
         prometheus.io/targets: kubernetes
     spec:
       enableServiceLinks: false
+      minReadySeconds: 15 # pod does not have a readinessProbe; this ensures that `k rollout status` will not consider the pod ready before its startup is finished
       serviceAccountName: doop-agent
       volumes:
         - name: config
@@ -40,7 +41,7 @@ spec:
           image: "{{ $registry }}/gatekeeper-addons:{{ $image_tag }}"
           imagePullPolicy: IfNotPresent
           command: [ doop-analyzer ]
-          args: [ run, /etc/doop-analyzer/config.yaml ]
+          args: [ run, /etc/doop-analyzer/config.json ]
           env:
             - name: OS_AUTH_URL
               value: "https://identity-3.{{ $swift_region }}.cloud.sap/v3"

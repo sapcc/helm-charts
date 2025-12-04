@@ -45,17 +45,17 @@ spec:
       name: auditing-mtls
   {{- end }}
 {{- end }}
-{{- range $region := .Values.regions }}
+{{- range $regionName, $region := .Values.regions }}
 ---
 apiVersion: core.gardener.cloud/v1beta1
 kind: Shoot
 metadata:
-  name: met-op-{{ $region.name }}
+  name: met-op-{{ $regionName }}
 spec:
   cloudProfile:
     kind: CloudProfile
     name: openstack
-  region: {{ $region.name }}
+  region: {{ $regionName }}
   networking:
     services: 10.55.0.0/16
   provider:
@@ -73,7 +73,7 @@ spec:
           configMapRef:
             name: audit-policy-cp
       {{- end }}
-  seedName: rt-{{ $region.name }}
+  seedName: rt-{{ $regionName }}
   {{- if $region.auditing.enabled }}
   extensions:
   - type: auditing

@@ -7,3 +7,14 @@ data:
   nanny.yaml: |
 {{ toYaml .Values.designate_nanny.config | indent 4 }}
 {{- end }}
+{{- if .Values.nanny_oor_enabled }}
+{{/* out of region backup nanny user needs designate api access, but no swift access in this region */}}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-oor
+data:
+  nanny.yaml: |
+{{ toYaml .Values.designate_nanny_oor.config | indent 4 }}
+{{- end }}
