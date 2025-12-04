@@ -8,14 +8,19 @@ metadata:
     release: "{{ .Release.Name }}"
     heritage: "{{ .Release.Service }}"
 rules:
+  # Access to the Barbican CRD
   - apiGroups:
       - identity.cloud.sap
     resources:
       - barbicans
       - barbicans/status
       - barbicans/finalizers
-    verbs: ["*"]
-  - apiGroups: [""]
+    verbs:
+      - '*'
+
+  # Core resources created/managed by the Helm release
+  - apiGroups:
+      - ""
     resources:
       - events
       - secrets
@@ -23,16 +28,26 @@ rules:
       - services
       - serviceaccounts
       - pods
-    verbs: ["*"]
-  - apiGroups: ["apps", "extensions"]
+    verbs:
+      - '*'
+
+  # Workloads
+  - apiGroups:
+      - apps
+      - extensions
     resources:
       - deployments
       - statefulsets
       - daemonsets
       - replicasets
-    verbs: ["*"]
-  - apiGroups: ["batch"]
+    verbs:
+      - '*'
+
+  # Batch resources
+  - apiGroups:
+      - batch
     resources:
       - jobs
       - cronjobs
-    verbs: ["*"]
+    verbs:
+      - '*'
