@@ -1,0 +1,48 @@
+fullname: aci-cache
+enabled: true
+
+image:
+  name: valkey
+  tag: "9.0"
+  pullPolicy: Always
+
+nameOverride: ""
+fullnameOverride: ""
+
+replicaCount: 2
+
+service:
+  type: ClusterIP
+  port: 6379
+
+resources:
+  requests:
+    cpu: "500m"
+    memory: "1Gi"
+  limits:
+    cpu: "1"
+    memory: "2Gi"
+
+persistence:
+  enabled: false
+  accessModes:
+    - ReadWriteOnce
+  size: 2Gi
+  storageClass: ""
+
+securityContext:
+  enabled: true
+  runAsUser: 1001
+  runAsNonRoot: true
+  fsGroup: 1001
+
+probes:
+  liveness:
+    initialDelaySeconds: 10
+    timeoutSeconds: 5
+  readiness:
+    initialDelaySeconds: 5
+    timeoutSeconds: 3
+
+aci:
+  cache_password:
