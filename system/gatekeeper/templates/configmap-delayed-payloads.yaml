@@ -1,0 +1,50 @@
+{{/*
+  This list must contain the YAML definitions of all constraint objects.
+  See templates/job-apply-delayed-payloads.yaml for why we need to wrap constraint objects into a ConfigMap.
+*/}}
+{{- $all_resources := (list
+  (include "unmanaged-pods" .)
+) -}}
+
+{{/* build a lookup table ordered by kind, and then by name */}}
+{{- $lookup_table := dict -}}
+{{- range $yaml := $all_resources -}}
+  {{- $res := fromYaml $yaml -}}
+  {{- if not (hasKey $lookup_table $res.kind) -}}
+    {{- $_ := set $lookup_table $res.kind (dict) -}}
+  {{- end -}}
+  {{- $_ := set (index $lookup_table $res.kind) $res.metadata.name $yaml -}}
+{{- end -}}
+
+kind: ConfigMap
+apiVersion: v1
+
+metadata:
+  name: gatekeeper-delayed-payloads
+
+data:
+  {{- range $kind := keys $lookup_table | sortAlpha }}
+  {{- range $name := keys (index $lookup_table $kind) | sortAlpha }}
+  {{ $name }}.yaml: |
+    {{- index $lookup_table $kind $name | nindent 4 }}
+  {{- end }}
+  {{- end }}
+
+  apply.sh: |
+    set -euo pipefail
+    cd "$(dirname "$0")"
+
+    # This script will intentionally fail if any individual `kubectl apply` call errors, or
+    # if `kubectl get` fails on the respective CRD not being available yet.
+    #
+    # The job running this script will retry until gatekeeper-controller-manager has progressed far enough.
+
+    {{- range $kind := keys $lookup_table | sortAlpha }}
+    {{- $names := keys (index $lookup_table $kind) | sortAlpha }}
+    echo ">> Applying {{ $kind }} objects"
+    {{- range $names }}
+    kubectl apply -f {{ . }}.yaml
+    {{- end }}
+    echo ">> Deleting {{ $kind }} objects that are not one of {{ printf "%v" $names }}"
+    kubectl get {{ $kind }} -o name {{ range $names }}| grep -Ev '/{{.}}$' {{ end }}| xargs -n 10 -r kubectl delete
+    {{- end }}
