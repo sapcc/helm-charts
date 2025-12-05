@@ -1,7 +1,13 @@
+{{/*
+  Constraint objects cannot be included in the Helm manifest directly.
+  See templates/configmap-delayed-payloads.yaml and templates/job-apply-delayed-payloads.yaml for details.
+*/}}
+{{- define "unmanaged-pods" -}}
+
 apiVersion: constraints.gatekeeper.sh/v1beta1
 kind: GkUnmanagedPods
 metadata:
-  name: unmanagedpods
+  name: unmanaged-pods
   annotations:
     {{- include "sources" (tuple "unmanaged-pods" "unmanaged-pods") | indent 4 }}
     {{- include "docstring" (tuple $ "GkUnmanagedPods") | indent 4 }}
@@ -10,3 +16,5 @@ metadata:
 spec:
   enforcementAction: dryrun # change to "deny" to enforce
   match: {{ include "match_pods_only" . | indent 4 }}
+
+{{- end -}}
