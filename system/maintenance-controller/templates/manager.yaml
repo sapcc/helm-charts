@@ -8,8 +8,9 @@ metadata:
     {{- if .Values.deployment.extraLabels }}
     {{- .Values.deployment.extraLabels | toYaml | nindent 4 }}
     {{- end }}
-    {{- if .Values.deployment.extraAnnotations }}
   annotations:
+    checksum/configmap-config: {{ include (print .Template.BasePath "/configmap.yaml") $ | sha256sum }}
+    {{- if .Values.deployment.extraAnnotations }}
     {{- .Values.deployment.extraAnnotations | toYaml | nindent 4 }}
     {{- end }}
 spec:
