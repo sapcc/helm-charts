@@ -48,6 +48,9 @@ spec:
           cloud-provider: external
           secure-port: {{ .Values.controlplane.port | quote }}
           authentication-config: "/etc/kubernetes/authentication.yaml"
+          {{- if .Values.etcd.useEncryption }}
+          encryption-provider-config: "/etc/kubernetes/enc/enc.yaml"
+          {{- end }}
         extraVolumes:
           - name: "authentication-config"
             hostPath: "/etc/kubernetes/authentication.yaml"
@@ -71,10 +74,6 @@ spec:
         local:
           imageRepository: {{ .Values.images.etcd.repository }}
           imageTag: {{ .Values.images.etcd.tag }}
-          {{- if .Values.etcd.useEncryption }}
-          extraArgs:
-            encryption-provider-config: "/etc/kubernetes/enc/enc.yaml"
-          {{- end }}
     files:
     - content: |
         apiVersion: v1
