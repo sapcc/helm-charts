@@ -153,27 +153,27 @@ spec:
           static_configs:
           - targets:
             - prometheus-cache.garden.svc:80
-      - enable_http2: true
-        job_name: federate-from-gardener-garden
-        honor_labels: true
-        metric_relabel_configs:
-        - action: drop
-          regex: (prometheus-garden-0.*)
-          source_labels:
-          - prometheus_replica
-        - action: drop
-          regex: (_year_month.*|_year_month2.*|metering:.*|seed:.*)
-          source_labels:
-          - __name__
-        metrics_path: /federate
-        params:
-          match[]:
-          - '{__name__!~"ALERTS"}'
-        scrape_interval: 30s
-        scrape_timeout: 10s
-        static_configs:
-        - targets:
-          - prometheus-garden.garden.svc:80
+        - enable_http2: true
+          job_name: federate-from-gardener-garden
+          honor_labels: true
+          metric_relabel_configs:
+          - action: drop
+            regex: (prometheus-garden-0.*)
+            source_labels:
+            - prometheus_replica
+          - action: drop
+            regex: (_year_month.*|_year_month2.*|metering:.*|seed:.*)
+            source_labels:
+            - __name__
+          metrics_path: /federate
+          params:
+            match[]:
+            - '{__name__!~"ALERTS"}'
+          scrape_interval: 30s
+          scrape_timeout: 10s
+          static_configs:
+          - targets:
+            - prometheus-garden.garden.svc:80
     - name: kubeMonitoring.prometheus.serviceMonitor.selfMonitor
       value: false
     - name: kubeMonitoring.customRules
