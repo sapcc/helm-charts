@@ -12,7 +12,7 @@ metadata:
     component: manila
   annotations:
     secret.reloader.stakater.com/reload: "{{ .Release.Name }}-secrets"
-    deployment.reloader.stakater.com/pause-period: "60s"
+    deployment.reloader.stakater.com/pause-period: "600s"
     reloader.stakater.com/search: "true"
   {{- if .Values.vpa.set_main_container }}
     vpa-butler.cloud.sap/main-container: manila-share-netapp-{{$share.name}}
