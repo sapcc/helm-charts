@@ -57,6 +57,13 @@ spec:
             mountPath: "/etc/kubernetes/authentication.yaml"
             readOnly: true
             pathType: File
+        {{- if .Values.etcd.useEncryption }}
+          - name: "encryption-config"
+            hostPath: "/etc/kubernetes/enc/enc.yaml"
+            mountPath: "/etc/kubernetes/enc/enc.yaml"
+            readOnly: true
+            pathType: File
+        {{- end }}
         timeoutForControlPlane: 20m
       controllerManager:
         extraArgs:
