@@ -1,18 +1,12 @@
 apiVersion: greenhouse.sap/v1alpha1
 kind: PluginPreset
 metadata:
-  name: kube-monitoring-gardener
+  name: metrics-gardener
   namespace: {{ .Release.Namespace }}
   labels:
     greenhouse.sap/owned-by: observability
-{{- if .Values.global.fluxEnabled }}
-    greenhouse.sap/deployment-tool: "flux"
   annotations:
     "greenhouse.sap/propagate-labels": "greenhouse.sap/owned-by,greenhouse.sap/deployment-tool"
-{{- else }}
-  annotations:
-    "greenhouse.sap/propagate-labels": "greenhouse.sap/owned-by"
-{{- end }}
 spec:
   clusterSelector:
     matchExpressions:
@@ -30,16 +24,10 @@ spec:
       value:
       - alertmanager-internal.scaleout.eu-de-1.cloud.sap
       - alertmanager-internal.scaleout.eu-nl-1.cloud.sap
-    - name: global.commonLabels
-      value:
-        service: gardener
-        support_group: observability
-    - name: kubeMonitoring.kubeStateMetrics.enabled
-      value: false
     - name: kubeMonitoring.prometheus.prometheusSpec.externalLabels
       value:
         cluster: a-qa-de-200
-        cluster_type: foo
+        cluster_type: sci-k8s-admin
         region: qa-de-1
     - name: kubeMonitoring.prometheus.prometheusSpec.thanos.objectStorageConfig.existingSecret.name
       value: thanos-a-qa-de-200-garden-metrics-objectstore
@@ -63,8 +51,8 @@ spec:
       value: true
     - name: kubeMonitoring.defaultRules.additionalRuleLabels
       value:
-        service: metrics
-        support_group: observability
+        service: gardener
+        support_group: containers
     - name: kubeMonitoring.prometheus.prometheusSpec.ruleSelector
       value: 
         matchLabels: {}
@@ -98,6 +86,8 @@ spec:
       value: false
     - name: kubeMonitoring.kubeScheduler.enabled
       value: false
+    - name: kubeMonitoring.kubeStateMetrics.enabled
+      value: false
     - name: kubeMonitoring.prometheus.networkPolicy.enbaled
       value: true
     - name: kubeMonitoring.prometheus.networkPolicy.namespace
@@ -110,7 +100,7 @@ spec:
                 kubernetes.io/metadata.name: kube-monitoring
             podSelector:
               matchLabels:
-                app.kubernetes.io/name: metrics-gardener
+                prometheus: metrics-gardener
           ports:
           - port: 9090
             protocol: TCP
@@ -130,28 +120,51 @@ spec:
           action: replace
     - name: kubeMonitoring.prometheus.prometheusSpec.additionalScrapeConfigs
       value:
-        - job_name: federate-from-gardener
+        - enable_http2: true
+          job_name: federate-from-gardener-aggregate
+          metric_relabel_configs:
+          - action: drop
+            regex: (prometheus-cache-0.*)
+            source_labels:
+            - prometheus_replica
+          - action: drop
+            regex: (_year_month.*|_year_month2.*|metering:.*|seed:.*)
+            source_labels:
+            - __name__
+          metrics_path: /federate
           params:
             match[]:
-            - '{__name__=~".+"}'
+            - '{__name__!~"ALERTS"}'
+          relabel_configs:
+          - action: replace
+            replacement: $1
+            separator: ;
+            source_labels:
+            - job
+            target_label: __tmp_prometheus_job_name
           scrape_interval: 30s
           scrape_timeout: 10s
-          metrics_path: /federate
-          enable_http2: true
-          relabel_configs:
-          - source_labels: [job]
-            separator: ;
-            target_label: __tmp_prometheus_job_name
-            replacement: $1
-            action: replace
           static_configs:
           - targets:
             - prometheus-aggregate.garden.svc:80
-            - prometheus-garden.garden.svc:80
-            # adding longterm and cache to be able to evaluate all alerts
+        - enable_http2: true
+          job_name: federate-from-gardener-cache
+          metrics_path: /federate
+          params:
+            match[]:
+            - '{__name__!~"_year_month.*", job=~"..*"}'
+          relabel_configs:
+          - action: replace
+            replacement: $1
+            separator: ;
+            source_labels:
+            - job
+            target_label: __tmp_prometheus_job_name
+          scrape_interval: 30s
+          scrape_timeout: 10s
+          static_configs:
+          - targets:
             - prometheus-cache.garden.svc:80
-            # longterm disabled because the service is not pointing to the Prometheus port
-            #- prometheus-longterm.garden.svc:80
     - name: kubeMonitoring.prometheus.serviceMonitor.selfMonitor
       value: false
     - name: kubeMonitoring.customRules
