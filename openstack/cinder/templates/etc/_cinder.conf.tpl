@@ -58,6 +58,11 @@ sap_disable_incremental_backup = {{ .Values.sap_disable_incremental_backup }}
 sap_allow_independent_snapshots = {{ .Values.sap_allow_independent_snapshots }}
 sap_allow_independent_clone = {{ .Values.sap_allow_independent_clone }}
 
+{{ if .Values.image_cache.enabled }}
+cinder_internal_tenant_project_id = {{.Values.image_cache.internal_tenant_project_id}}
+cinder_internal_tenant_user_id = {{.Values.image_cache.internal_tenant_user_id}}
+{{- end -}}
+
 {{ include "ini_sections.oslo_messaging_rabbit" . }}
 
 [keystone_authtoken]
