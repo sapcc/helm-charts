@@ -22,6 +22,21 @@ kvmShoots:
     workers:
       test-a:
         poolSize: 1
+        updateStrategy: AutoRollingUpdate
+        inPlaceUpdateTimeout: 2h0m0s
+        bb: test-bb
+        zones:
+          - test-1a
+        sysctls:
+          fooctl: "1"
+          barctl: "test"
     auditing:
       enabled: true
       url: "https://auditing.test.svc.cluster.local"
+
+extraIgnition:
+  commonFiles: |
+    - path: /etc/ssh/sshd_config
+      contents:
+        inline: |
+          foo bar
