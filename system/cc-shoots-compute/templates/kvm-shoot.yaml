@@ -63,7 +63,14 @@ spec:
           url: {{ $cluster.auditing.url }}
           tls:
             secretReferenceName: auditing-mtls
+  {{- end }}
   resources:
+  - name: extraignition-compute-{{ $key }}
+    resourceRef:
+      apiVersion: v1
+      kind: Secret
+      name: extraignition-compute-{{ $key }}
+  {{- if $cluster.auditing.enabled }}
   - name: auditing-mtls
     resourceRef:
       apiVersion: v1
