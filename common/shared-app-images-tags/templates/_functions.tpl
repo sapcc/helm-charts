@@ -3,8 +3,9 @@
   {{- $repo      := index . 1 -}}
   {{- $version   := index . 2 -}}
 
-  {{- $all_tags  := index $ctx.Values "shared-app-images-tags" | required "subchart \"shared-app-images-tags\" may not be declared with an alias" -}}
-  {{- $repo_tags := index $all_tags $repo | required (printf "unknown repo: %q" (printf "shared-app-images/%s" $repo)) -}}
+  {{- $this_chart := index $ctx.Subcharts "shared-app-images-tags" | required "subchart \"shared-app-images-tags\" may not be declared with an alias" -}}
+  {{- $all_tags   := $this_chart.Files.Get "files/tags.json" | fromJson -}}
+  {{- $repo_tags  := index $all_tags $repo | required (printf "unknown repo: %q" (printf "shared-app-images/%s" $repo)) -}}
   {{- index $repo_tags $version | required (printf "no such version in repo: %q (version may have been removed because of EOL)" (printf "shared-app-images/%s:%s" $repo $version)) -}}
 {{- end -}}
 

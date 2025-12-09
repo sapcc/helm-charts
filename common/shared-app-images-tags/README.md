@@ -1,11 +1,11 @@
 # shared-app-images-tags
 
 This helper chart always contains the most recent versions of our `shared-app-images`, as built by
-the internal CI pipeline of the same name. The pipeline will take care of updating this chart's
-`values.yaml` whenever new images are published, so you can receive image updates with a simple
-`helm dep up`.
+the internal CI pipeline of the same name. The pipeline will take care of updating the image
+references stored in this chart whenever new images are published, so you can receive image updates
+with a simple `helm dep up`.
 
-## Correct approach: Use provided template functions
+## Usage
 
 To look up a tag for one of the `shared-app-images`, use the `shared-app-images.tag` function:
 
@@ -28,16 +28,3 @@ There are two different such functions:
 - `shared-app-images.ref_using_alternate` refers to Keppel in the alternate region instead, using
   `.Values.global.registryAlternateRegion` from the global `globals.yaml`. Only use this if you
   cannot depend on the local Keppel to avoid circular dependencies.
-
-## Discouraged: Do not use values directly
-
-Consider this example:
-
-```
-image: {{ .Values.global.registry }}/shared-app-images/alpine-busybox:{{ index .Values "shared-app-images-tags" "alpine-busybox" "3.22" }}
-```
-
-If Alpine 3.22 falls out of support and no matching image is provided anymore, the `index` call will
-return an empty string, which will be accepted by Helm, but then cause errors on Kubernetes level.
-Please avoid this and use the provided template functions, which will provide a more explicit error
-at Helm template evaluation time.
