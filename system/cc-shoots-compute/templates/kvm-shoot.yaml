@@ -142,12 +142,18 @@ spec:
         maximum: {{ $worker.poolSize }}
         maxSurge: 0
         maxUnavailable: {{ default 1 $worker.maxUnavailable }}
+        {{- if $worker.updateStrategy }}
+        updateStrategy: {{ $worker.updateStrategy }}
+        {{- end }}
         zones:
         {{- toYaml $worker.zones | nindent 8 }}
         machineControllerManager:
           machineCreationTimeout: 1h20m0s
           machineHealthTimeout: 1h0m0s
           machineDrainTimeout: {{ default "240h0m0s" $worker.machineDrainTimeout }}
+          {{- if $worker.inPlaceUpdateTimeout }}
+          inPlaceUpdateTimeout: {{ $worker.inPlaceUpdateTimeout }}
+          {{- end }}
         sysctls:
           vm.hugetlb_shm_group: "64055"
           vm.unprivileged_userfaultfd: "1"
