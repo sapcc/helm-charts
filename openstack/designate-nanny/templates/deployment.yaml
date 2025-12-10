@@ -140,6 +140,16 @@ spec:
            value:  "{{ required "missing .Values.designate_nanny_oor.credentials.designate_api.project_name" .Values.designate_nanny_oor.credentials.designate_api.project_name}}"
          - name: OS_PROJECT_DOMAIN_NAME
            value:  "{{ required "missing .Values.designate_nanny_oor.credentials.designate_api.project_domain_name" .Values.designate_nanny_oor.credentials.designate_api.project_domain_name}}"
+         - name: NANNY_SWIFT_USERNAME
+           valueFrom:
+             secretKeyRef:
+               name: designate-nanny-secret
+               key:  designate_nanny_os_username
+         - name: NANNY_SWIFT_PASSWORD
+           valueFrom:
+             secretKeyRef:
+               name: designate-nanny-secret
+               key:  designate_nanny_os_password
          - name: OS_USERNAME
            valueFrom:
              secretKeyRef:
@@ -166,6 +176,6 @@ spec:
      volumes:
      - name: nanny-oor-conf
        configMap:
-         name: {{ .Release.Name }}
+         name: {{ .Release.Name }}-oor
 
 {{- end }}

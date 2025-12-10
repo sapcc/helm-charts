@@ -8,53 +8,17 @@ _meta:
 
 # Define your internal users here
 
-data:
-  hash: "{{ .Values.users.data.nohash }}"
+admin:
+  hash: "{{ .Values.users.admin.nohash }}"
   reserved: true
   backend_roles:
-  - "data"
+  - "adminrole"
 
-data2:
-  hash: "{{ .Values.users.data2.nohash }}"
+admin2:
+  hash: "{{ .Values.users.admin2.nohash }}"
   reserved: true
   backend_roles:
-  - "data"
-
-storage:
-  hash: "{{ .Values.users.storage.nohash }}"
-  reserved: true
-  backend_roles:
-  - "storage"
-
-storage2:
-  hash: "{{ .Values.users.storage2.nohash }}"
-  reserved: true
-  backend_roles:
-  - "storage"
-
-syslog:
-  hash: "{{ .Values.users.syslog.nohash }}"
-  reserved: true
-  backend_roles:
-  - "syslog"
-
-syslog2:
-  hash: "{{ .Values.users.syslog2.nohash }}"
-  reserved: true
-  backend_roles:
-  - "syslog"
-
-compute:
-  hash: "{{ .Values.users.compute.nohash }}"
-  reserved: true
-  backend_roles:
-  - "compute"
-
-compute2:
-  hash: "{{ .Values.users.compute2.nohash }}"
-  reserved: true
-  backend_roles:
-  - "compute"
+  - "adminrole"
 
 audit:
   hash: "{{ .Values.users.audit.nohash }}"
@@ -68,56 +32,6 @@ audit2:
   backend_roles:
   - "audit"
 
-{{- if .Values.qalogs.enabled }}
-dataqade2:
-  hash: "{{ .Values.users.dataqade2.nohash }}"
-  reserved: true
-  backend_roles:
-  - "data"
-
-dataqade3:
-  hash: "{{ .Values.users.dataqade3.nohash }}"
-  reserved: true
-  backend_roles:
-  - "data"
-
-otel:
-  hash: "{{ .Values.users.otel.nohash }}"
-  reserved: true
-  backend_roles:
-  - "otel"
-
-otel2:
-  hash: "{{ .Values.users.otel2.nohash }}"
-  reserved: true
-  backend_roles:
-  - "otel"
-
-ronly:
-  hash: "{{ .Values.users.jupyterhub.nohash }}"
-  reserved: true
-  backend_roles:
-  - "promuser"
-
-ronly2:
-  hash: "{{ .Values.users.jupyterhub2.nohash }}"
-  reserved: true
-  backend_roles:
-  - "promuser"
-
-oraboskvm:
-  hash: "{{ .Values.users.oraboskvm.nohash }}"
-  reserved: true
-  backend_roles:
-  - "oraboskvm"
-
-oraboskvm2:
-  hash: "{{ .Values.users.oraboskvm2.nohash }}"
-  reserved: true
-  backend_roles:
-  - "oraboskvm"
-{{- end }}
-
 awx:
   hash: "{{ .Values.users.awx.nohash }}"
   reserved: true
@@ -129,18 +43,29 @@ awx2:
   reserved: true
   backend_roles:
   - "awx"
-
-jump:
-  hash: "{{ .Values.users.jump.nohash }}"
+compute:
+  hash: "{{ .Values.users.compute.nohash }}"
   reserved: true
   backend_roles:
-  - "jump"
+  - "compute"
 
-jump2:
-  hash: "{{ .Values.users.jump2.nohash }}"
+compute2:
+  hash: "{{ .Values.users.compute2.nohash }}"
   reserved: true
   backend_roles:
-  - "jump"
+  - "compute"
+
+data:
+  hash: "{{ .Values.users.data.nohash }}"
+  reserved: true
+  backend_roles:
+  - "data"
+
+data2:
+  hash: "{{ .Values.users.data2.nohash }}"
+  reserved: true
+  backend_roles:
+  - "data"
 
 jaeger:
   hash: "{{ .Values.users.jaeger.nohash }}"
@@ -154,39 +79,29 @@ jaeger2:
   backend_roles:
   - "jaeger"
 
-promuser:
-  hash: "{{ .Values.users.promuser.nohash }}"
+jump:
+  hash: "{{ .Values.users.jump.nohash }}"
   reserved: true
   backend_roles:
-  - "promuser"
+  - "jump"
 
-promuser2:
-  hash: "{{ .Values.users.promuser2.nohash }}"
+jump2:
+  hash: "{{ .Values.users.jump2.nohash }}"
   reserved: true
   backend_roles:
-  - "promuser"
+  - "jump"
 
-admin:
-  hash: "{{ .Values.users.admin.nohash }}"
+jupyterhub:
+  hash: "{{ .Values.users.jupyterhub.nohash }}"
   reserved: true
   backend_roles:
-  - "adminrole"
+  - "jupyterhub"
 
-admin2:
-  hash: "{{ .Values.users.admin2.nohash }}"
+jupyterhub2:
+  hash: "{{ .Values.users.jupyterhub2.nohash }}"
   reserved: true
   backend_roles:
-  - "adminrole"
-
-dashboard:
-  hash: "{{ .Values.users.dashboard.nohash }}"
-  reserved: true
-  description: "Demo OpenSearch Dashboards user"
-
-dashboard2:
-  hash: "{{ .Values.users.dashboard2.nohash }}"
-  reserved: true
-  description: "Demo OpenSearch Dashboards user"
+  - "jupyterhub"
 
 kibanaserver:
   hash: "{{ .Values.users.kibanaserver.nohash }}"
@@ -208,14 +123,52 @@ maillog2:
   backend_roles:
   - "maillog2"
 
-jupyterhub:
-  hash: "{{ .Values.users.jupyterhub.nohash }}"
+promuser:
+  hash: "{{ .Values.users.promuser.nohash }}"
   reserved: true
   backend_roles:
-  - "jupyterhub"
+  - "promuser"
 
-jupyterhub2:
-  hash: "{{ .Values.users.jupyterhub2.nohash }}"
+promuser2:
+  hash: "{{ .Values.users.promuser2.nohash }}"
   reserved: true
   backend_roles:
-  - "jupyterhub"
+  - "promuser"
+
+storage:
+  hash: "{{ .Values.users.storage.nohash }}"
+  reserved: true
+  backend_roles:
+  - "storage"
+
+storage2:
+  hash: "{{ .Values.users.storage2.nohash }}"
+  reserved: true
+  backend_roles:
+  - "storage"
+
+{{- if .Values.qalogs.enabled }}
+otel:
+  hash: "{{ .Values.users.otel.nohash }}"
+  reserved: true
+  backend_roles:
+  - "otel"
+
+otel2:
+  hash: "{{ .Values.users.otel2.nohash }}"
+  reserved: true
+  backend_roles:
+  - "otel"
+
+ronly:
+  hash: "{{ .Values.users.ronly.nohash }}"
+  reserved: true
+  backend_roles:
+  - "promuser"
+
+ronly2:
+  hash: "{{ .Values.users.ronly.nohash }}"
+  reserved: true
+  backend_roles:
+  - "promuser"
+{{- end }}
