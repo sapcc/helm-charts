@@ -23,12 +23,13 @@ groups:
 
   - alert: CCloudPrometheusDown
     expr: |
+        max_over_time(
         cc3test_status{type="datapath",
             name=~"TestPrometheus_datapath-prometheus.+",
             name!="TestPrometheus_datapath-prometheus_kubernetes_internal_global",
             phase="call"
-        } == 0
-    for: 20m
+        }[20m]) == 0
+    for: 8m 
     labels:
       severity: critical
       support_group: observability
