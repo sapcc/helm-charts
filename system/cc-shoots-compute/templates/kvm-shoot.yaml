@@ -138,12 +138,19 @@ spec:
             {{- end }}
     workers:
     {{- range $workerkey, $worker := $cluster.workers }}
+      {{- $workerChannel := coalesce $worker.channel $cluster.channel "release" }}
       - name: {{ $workerkey }}
         machine:
           architecture: amd64
           image:
             name: gardenlinux
-            version: {{ coalesce $worker.imageVersion $cluster.imageVersion $.Values.imageVersion }}
+            {{- if eq $workerChannel "preRelease" }}
+            version: {{ coalesce $worker.preReleaseImageVersion $cluster.preReleaseImageVersion $.Values.preReleaseImageVersion | quote }}
+            {{- else if eq $workerChannel "release" }}
+            version: {{ coalesce $worker.imageVersion $cluster.imageVersion $.Values.imageVersion | quote }}
+            {{- else }}
+            {{- fail (printf "worker %s has invalid channel '%s': must be either 'release' or 'preRelease'" $workerkey $workerChannel) }}
+            {{- end }}
           type: baremetal
         minimum: {{ $worker.poolSize }}
         maximum: {{ $worker.poolSize }}
@@ -170,11 +177,11 @@ spec:
         {{- if $worker.labels }}
         labels:
           {{- toYaml $worker.labels | nindent 10 }}
-        {{- end }}  
+        {{- end }}
         {{- if $worker.annotations }}
         annotations:
           {{- toYaml $worker.annotations | nindent 10 }}
-        {{- end }}  
+        {{- end }}
         providerConfig:
           apiVersion: ironcore-metal.provider.extensions.gardener.cloud/v1alpha1
           kind: WorkerConfig
