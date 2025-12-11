@@ -90,6 +90,7 @@ spec:
     controlPlaneConfig:
       apiVersion: ironcore-metal.provider.extensions.gardener.cloud/v1alpha1
       kind: ControlPlaneConfig
+      nodeNamePolicy: "BMCName"
       cloudControllerManager:
         networking:
           configureNodeAddresses: true
@@ -154,7 +155,7 @@ spec:
             kubernetes.metal.cloud.sap/cluster: {{ $key }}
             kubernetes.metal.cloud.sap/role: ceph-mon
           metadata:
-            interfaces: {{ default $.Values.networking.interfaces $cluster.networking.interfaces }}
+            interfaces: {{ default $.Values.networking.interfacesMon $cluster.networking.interfacesMon }}
             vlan: {{ default $.Values.networking.vlan $cluster.networking.vlan | quote }}
             region: {{ $region }}
           ipamConfig:
@@ -162,7 +163,7 @@ spec:
             ipamRef:
               apiGroup: ipam.cluster.x-k8s.io
               kind: GlobalInClusterIPPool
-              name: st-{{ $workerkey }}
+              name: storage-{{ $workerkey }}
           extraIgnition:
             override: false
             secretRef: extraignition-storage-{{ $key }}
@@ -200,7 +201,7 @@ spec:
             kubernetes.metal.cloud.sap/cluster: {{ $key }}
             kubernetes.metal.cloud.sap/role: ceph-osd
           metadata:
-            interfaces: {{ default $.Values.networking.interfaces $cluster.networking.interfaces }}
+            interfaces: {{ default $.Values.networking.interfacesOSD $cluster.networking.interfacesOSD }}
             vlan: {{ default $.Values.networking.vlan $cluster.networking.vlan | quote }}
             region: {{ $region }}
           ipamConfig:
@@ -208,7 +209,7 @@ spec:
             ipamRef:
               apiGroup: ipam.cluster.x-k8s.io
               kind: GlobalInClusterIPPool
-              name: st-{{ $workerkey }}
+              name: storage-{{ $workerkey }}
           extraIgnition:
             override: false
             secretRef: extraignition-storage-{{ $key }}
