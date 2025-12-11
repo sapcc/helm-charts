@@ -46,5 +46,5 @@ data:
     kubectl apply -f {{ . }}.yaml
     {{- end }}
     echo ">> Deleting {{ $kind }} objects that are not one of {{ printf "%v" $names }}"
-    kubectl get {{ $kind }} -o name {{ range $names }}| grep -Ev '/{{.}}$' {{ end }}| xargs -n 10 -r kubectl delete
+    kubectl get {{ $kind }} -o name {{ range $names }}| awk -F/ '-vname={{.}}' '$2!=name{print}' {{ end }}| xargs -n 10 -r kubectl delete
     {{- end }}
