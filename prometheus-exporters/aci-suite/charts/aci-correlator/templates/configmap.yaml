@@ -1,0 +1,47 @@
+{{- if .Values.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "aci-correlator.fullname" . }}-config
+  labels:
+    {{- include "aci-correlator.labels" . | nindent 4 }}
+data:
+  env.yml: |-
+    # the id of the aci to query keys from the cache for
+    aci_id: {{ .Values.env.aci_id | quote }}
+    apic_host: {{ .Values.env.apic_hosts | quote }}
+
+    # cache connection (password from env)
+    cache_host: {{ .Values.env.cache_host | quote }}
+    cache_port: {{ .Values.env.cache_port | int }}
+    cache_timeout: {{ .Values.env.cache_timeout | int }}
+    cache_max_delay: {{ .Values.env.cache_max_delay | int }}
+    cache_max_retries: {{ .Values.env.cache_max_retries | int }}
+
+    # the port to serve the metrics on for prometheus
+    metrics_port: {{ .Values.env.metrics_port | int }}
+
+    # The enrichment mapping rules for the enricher:
+    # - global_regex is a set of predefined extraction rules that are referenced from fault_configs/*.yml
+    # Note: there is no regex escaping necessary, every regex must have one at least capture group ()
+    enricher:
+{{- toYaml .Values.env.enricher | nindent 6 }}
+
+    # The correlator mapping rules to apply.
+    # If the first level of the fault matches, the subsequent fault codes
+    # are searched and matched where the fields in equals match.
+    # If there are no matches, default_severity is applied,
+    # otherwise it is severity of the first matching subfault.
+    correlator:
+{{- toYaml .Values.env.correlator | nindent 6 }}
+
+    # settings for REST-API
+    api_host: {{ .Values.env.api_host | quote }}
+    api_port: {{ .Values.env.api_port | int }}
+    api_debug: {{ .Values.env.api_debug }}
+
+    # settings for metric expiration on the automation result
+    automation_result_expiry_days: {{ .Values.env.automation_result_expiry_days | int }}
+
+    log_level: {{ .Values.env.log_level | quote }}
+{{- end }}

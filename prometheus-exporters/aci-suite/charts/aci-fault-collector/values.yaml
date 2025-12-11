@@ -1,0 +1,52 @@
+fullname: aci-fault-collector
+enabled: true
+
+replicaCount: 1
+
+image:
+  name: aci-fault-collector
+  tag: "1.1.0"
+  pullPolicy: Always
+
+resources:
+  requests:
+    cpu: "100m"
+    memory: "256Mi"
+  limits:
+    cpu: "500m"
+    memory: "512Mi"
+
+env:
+  aci_id: "mock"
+
+  # Request timeout parameters
+  apic_reset_timeout: 30
+  apic_cookie_timeout: 5
+  apic_request_timeout: 20
+  apic_login_failed_timeout: 90
+
+  # websocker parameters
+  apic_ws_subscribe_interval: 40
+  apic_ws_message_process_interval: 1
+  apic_ws_message_cache_error_counter: 30
+  apic_ws_service_restart_interval: 30
+
+  # cache connection (host/port only; password from per-chart Secret)
+  cache_host: "aci-cache-valkey"
+  cache_port: 6379
+  cache_timeout: 3
+  cache_max_delay: 1
+  cache_max_retries: 5
+
+  collectors:
+    FaultInst:
+      lc_filter:
+        - raised
+        - soaking
+
+  log_level: "INFO"
+
+aci:
+  aci_user:
+  aci_password:
+  apic_hosts:
