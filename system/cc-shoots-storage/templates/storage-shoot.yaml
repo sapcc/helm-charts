@@ -15,7 +15,7 @@ spec:
     name: ironcore-metal
   credentialsBindingName: metal-{{ $region }}
   seedName: mgmt-{{ $region }}
-  region: {{ $key }}
+  region: {{ $region }}
   networking:
     pods: {{ default $.Values.networking.pods $cluster.networking.pods }}
     services: {{ default $.Values.networking.services $cluster.networking.services }}
@@ -34,9 +34,6 @@ spec:
         createPodRoutes: true
       birdExporter:
         enabled: {{ required ".Values.networking.enableBirdExporter is required" $.Values.networking.enableBirdExporter }}
-      multus:
-        enabled: {{ default true (($cluster.networking.multus).enabled) }}
-        installCNIPlugins: {{ default true (($cluster.networking.multus).installCNIPlugins) }}
   kubernetes:
     version: {{ default $.Values.kubernetes.version $cluster.version }}
     kubeAPIServer:
