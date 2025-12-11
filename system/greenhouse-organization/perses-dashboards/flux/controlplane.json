@@ -1,0 +1,1194 @@
+{
+  "kind": "Dashboard",
+  "metadata": {
+    "name": "flux-control-plane",
+    "createdAt": "2025-12-11T16:08:49.703227778Z",
+    "updatedAt": "2025-12-11T16:09:48.799658388Z",
+    "version": 1,
+    "project": "flux"
+  },
+  "spec": {
+    "display": {
+      "name": "Flux Control Plane"
+    },
+    "panels": {
+      "0": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Controllers"
+          },
+          "plugin": {
+            "kind": "StatChart",
+            "spec": {
+              "calculation": "last",
+              "format": {
+                "decimalPlaces": 0,
+                "unit": "decimal"
+              },
+              "metricLabel": "",
+              "thresholds": {
+                "steps": [
+                  {
+                    "color": "blue",
+                    "value": 0
+                  },
+                  {
+                    "color": "red",
+                    "value": 100
+                  }
+                ]
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "datasource": {
+                      "kind": "PrometheusDatasource"
+                    },
+                    "minStep": "",
+                    "query": "sum(go_info{namespace=\"$namespace\",pod=~\".*-controller-.*\"})",
+                    "seriesNameFormat": "pods"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "1": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Max Work Queue"
+          },
+          "plugin": {
+            "kind": "StatChart",
+            "spec": {
+              "calculation": "last-number",
+              "format": {
+                "unit": "seconds"
+              },
+              "metricLabel": "",
+              "sparkline": {},
+              "thresholds": {
+                "steps": [
+                  {
+                    "color": "blue",
+                    "value": 0
+                  },
+                  {
+                    "color": "#EAB839",
+                    "value": 50
+                  },
+                  {
+                    "color": "red",
+                    "value": 100
+                  }
+                ]
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "datasource": {
+                      "kind": "PrometheusDatasource"
+                    },
+                    "minStep": "",
+                    "query": "max(workqueue_longest_running_processor_seconds{namespace=\"$namespace\",pod=~\".*-controller-.*\"})",
+                    "seriesNameFormat": "seconds"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "2": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Memory"
+          },
+          "plugin": {
+            "kind": "GaugeChart",
+            "spec": {
+              "calculation": "last-number",
+              "thresholds": {
+                "steps": [
+                  {
+                    "color": "blue",
+                    "value": 0
+                  },
+                  {
+                    "color": "#EAB839",
+                    "value": 500000000
+                  },
+                  {
+                    "color": "red",
+                    "value": 900000000
+                  }
+                ]
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "datasource": {
+                      "kind": "PrometheusDatasource"
+                    },
+                    "minStep": "",
+                    "query": "sum(go_memstats_alloc_bytes{namespace=\"$namespace\",pod=~\".*-controller-.*\"})",
+                    "seriesNameFormat": ""
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "3": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "API Requests"
+          },
+          "plugin": {
+            "kind": "StatChart",
+            "spec": {
+              "calculation": "mean",
+              "metricLabel": "",
+              "sparkline": {},
+              "thresholds": {
+                "steps": [
+                  {
+                    "color": "blue",
+                    "value": 0
+                  },
+                  {
+                    "color": "#EAB839",
+                    "value": 50
+                  },
+                  {
+                    "color": "red",
+                    "value": 100
+                  }
+                ]
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "datasource": {
+                      "kind": "PrometheusDatasource"
+                    },
+                    "minStep": "",
+                    "query": "sum(rate(rest_client_requests_total{namespace=\"$namespace\",pod=~\".*-controller-.*\"}[1m]))",
+                    "seriesNameFormat": "requests"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "4": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Kubernetes API Requests"
+          },
+          "plugin": {
+            "kind": "TimeSeriesChart",
+            "spec": {
+              "legend": {
+                "mode": "table",
+                "position": "bottom",
+                "values": [
+                  "mean",
+                  "last-number"
+                ]
+              },
+              "visual": {
+                "areaOpacity": 0.1,
+                "connectNulls": false,
+                "display": "line",
+                "lineWidth": 1
+              },
+              "yAxis": {
+                "format": {
+                  "unit": "decimal"
+                }
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "datasource": {
+                      "kind": "PrometheusDatasource"
+                    },
+                    "minStep": "",
+                    "query": "sum(rate(rest_client_requests_total{namespace=\"$namespace\"}[1m]))",
+                    "seriesNameFormat": "total"
+                  }
+                }
+              }
+            },
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "datasource": {
+                      "kind": "PrometheusDatasource"
+                    },
+                    "minStep": "",
+                    "query": "sum(rate(rest_client_requests_total{namespace=\"$namespace\",code!~\"2..\"}[1m]))",
+                    "seriesNameFormat": "errors"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "5_0": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "CPU Usage"
+          },
+          "plugin": {
+            "kind": "TimeSeriesChart",
+            "spec": {
+              "legend": {
+                "mode": "table",
+                "position": "bottom",
+                "values": [
+                  "mean",
+                  "last-number"
+                ]
+              },
+              "visual": {
+                "areaOpacity": 0.1,
+                "connectNulls": false,
+                "display": "line",
+                "lineWidth": 1,
+                "stack": "all"
+              },
+              "yAxis": {
+                "format": {
+                  "unit": "seconds"
+                }
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "datasource": {
+                      "kind": "PrometheusDatasource"
+                    },
+                    "minStep": "",
+                    "query": "rate(process_cpu_seconds_total{namespace=\"$namespace\",pod=~\".*-controller-.*\"}[1m])",
+                    "seriesNameFormat": "{{pod}}"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "5_1": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Memory Usage"
+          },
+          "plugin": {
+            "kind": "TimeSeriesChart",
+            "spec": {
+              "legend": {
+                "mode": "table",
+                "position": "bottom",
+                "values": [
+                  "mean",
+                  "last-number"
+                ]
+              },
+              "visual": {
+                "areaOpacity": 0.1,
+                "connectNulls": false,
+                "display": "line",
+                "lineWidth": 1,
+                "stack": "all"
+              },
+              "yAxis": {
+                "format": {
+                  "decimalPlaces": 0,
+                  "unit": "bytes"
+                }
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "datasource": {
+                      "kind": "PrometheusDatasource"
+                    },
+                    "minStep": "",
+                    "query": "sum(container_memory_working_set_bytes{namespace=\"$namespace\",container!=\"POD\",container!=\"\",pod=~\".*-controller-.*\"}) by (pod)",
+                    "seriesNameFormat": "{{pod}}"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "6_0": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Cluster Reconciliation Duration"
+          },
+          "plugin": {
+            "kind": "TimeSeriesChart",
+            "spec": {
+              "legend": {
+                "mode": "table",
+                "position": "bottom",
+                "values": [
+                  "mean",
+                  "last-number"
+                ]
+              },
+              "visual": {
+                "areaOpacity": 0.1,
+                "connectNulls": false,
+                "display": "line",
+                "lineWidth": 1
+              },
+              "yAxis": {
+                "format": {
+                  "unit": "seconds"
+                }
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "datasource": {
+                      "kind": "PrometheusDatasource"
+                    },
+                    "minStep": "",
+                    "query": "workqueue_longest_running_processor_seconds{name=\"kustomization\"}",
+                    "seriesNameFormat": "kustomizations"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "6_1": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Cluster Reconciliations ops/min"
+          },
+          "plugin": {
+            "kind": "TimeSeriesChart",
+            "spec": {
+              "legend": {
+                "mode": "table",
+                "position": "bottom",
+                "values": [
+                  "mean",
+                  "last-number"
+                ]
+              },
+              "visual": {
+                "areaOpacity": 1,
+                "connectNulls": false,
+                "display": "bar",
+                "lineWidth": 1
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "datasource": {
+                      "kind": "PrometheusDatasource"
+                    },
+                    "minStep": "",
+                    "query": "sum(increase(controller_runtime_reconcile_total{controller=\"kustomization\",result!=\"error\"}[1m])) by (controller)",
+                    "seriesNameFormat": "successful reconciliations "
+                  }
+                }
+              }
+            },
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "datasource": {
+                      "kind": "PrometheusDatasource"
+                    },
+                    "minStep": "",
+                    "query": "sum(increase(controller_runtime_reconcile_total{controller=\"kustomization\",result=\"error\"}[1m])) by (controller)",
+                    "seriesNameFormat": "failed reconciliations "
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "7_0": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Git Repos ops/min"
+          },
+          "plugin": {
+            "kind": "TimeSeriesChart",
+            "spec": {
+              "legend": {
+                "mode": "table",
+                "position": "bottom",
+                "values": [
+                  "mean",
+                  "last-number"
+                ]
+              },
+              "visual": {
+                "areaOpacity": 1,
+                "connectNulls": false,
+                "display": "bar",
+                "lineWidth": 1
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "datasource": {
+                      "kind": "PrometheusDatasource"
+                    },
+                    "minStep": "",
+                    "query": "sum(increase(controller_runtime_reconcile_total{controller=\"gitrepository\",result!=\"error\"}[1m]))",
+                    "seriesNameFormat": "successful git pulls"
+                  }
+                }
+              }
+            },
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "datasource": {
+                      "kind": "PrometheusDatasource"
+                    },
+                    "minStep": "",
+                    "query": "sum(increase(controller_runtime_reconcile_total{controller=\"gitrepository\",result=\"error\"}[1m]))",
+                    "seriesNameFormat": "failed git pulls"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "7_1": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "OCI Repos ops/min"
+          },
+          "plugin": {
+            "kind": "TimeSeriesChart",
+            "spec": {
+              "legend": {
+                "mode": "table",
+                "position": "bottom",
+                "values": [
+                  "mean",
+                  "last-number"
+                ]
+              },
+              "visual": {
+                "areaOpacity": 1,
+                "connectNulls": false,
+                "display": "bar",
+                "lineWidth": 1
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "datasource": {
+                      "kind": "PrometheusDatasource"
+                    },
+                    "minStep": "",
+                    "query": "sum(increase(controller_runtime_reconcile_total{controller=\"ocirepository\",result!=\"error\"}[1m]))",
+                    "seriesNameFormat": "successful oci pulls"
+                  }
+                }
+              }
+            },
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "datasource": {
+                      "kind": "PrometheusDatasource"
+                    },
+                    "minStep": "",
+                    "query": "sum(increase(controller_runtime_reconcile_total{controller=\"ocirepository\",result=\"error\"}[1m]))",
+                    "seriesNameFormat": "failed oci pulls"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "7_2": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Helm Repos ops/min"
+          },
+          "plugin": {
+            "kind": "TimeSeriesChart",
+            "spec": {
+              "legend": {
+                "mode": "table",
+                "position": "bottom",
+                "values": [
+                  "mean",
+                  "last-number"
+                ]
+              },
+              "visual": {
+                "areaOpacity": 1,
+                "connectNulls": false,
+                "display": "bar",
+                "lineWidth": 1
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "datasource": {
+                      "kind": "PrometheusDatasource"
+                    },
+                    "minStep": "",
+                    "query": "sum(increase(controller_runtime_reconcile_total{controller=\"helmrepository\",result!=\"error\"}[1m]))",
+                    "seriesNameFormat": "successful helm pulls"
+                  }
+                }
+              }
+            },
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "datasource": {
+                      "kind": "PrometheusDatasource"
+                    },
+                    "minStep": "",
+                    "query": "sum(increase(controller_runtime_reconcile_total{controller=\"helmrepository\",result=\"error\"}[1m]))",
+                    "seriesNameFormat": "failed helm pulls"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "7_3": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Buckets ops/min"
+          },
+          "plugin": {
+            "kind": "TimeSeriesChart",
+            "spec": {
+              "legend": {
+                "mode": "table",
+                "position": "bottom",
+                "values": [
+                  "mean",
+                  "last-number"
+                ]
+              },
+              "visual": {
+                "areaOpacity": 1,
+                "connectNulls": false,
+                "display": "bar",
+                "lineWidth": 1
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "datasource": {
+                      "kind": "PrometheusDatasource"
+                    },
+                    "minStep": "",
+                    "query": "sum(increase(controller_runtime_reconcile_total{controller=\"bucket\",result!=\"error\"}[1m]))",
+                    "seriesNameFormat": "successful bucket pulls"
+                  }
+                }
+              }
+            },
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "datasource": {
+                      "kind": "PrometheusDatasource"
+                    },
+                    "minStep": "",
+                    "query": "sum(increase(controller_runtime_reconcile_total{controller=\"bucket\",result=\"error\"}[1m]))",
+                    "seriesNameFormat": "failed bucket pulls"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "8_0": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Helm Release Duration"
+          },
+          "plugin": {
+            "kind": "TimeSeriesChart",
+            "spec": {
+              "visual": {
+                "areaOpacity": 0.1,
+                "connectNulls": false,
+                "display": "line",
+                "lineWidth": 1
+              },
+              "yAxis": {
+                "format": {
+                  "unit": "seconds"
+                }
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "datasource": {
+                      "kind": "PrometheusDatasource"
+                    },
+                    "minStep": "",
+                    "query": "histogram_quantile(0.50, sum(rate(controller_runtime_reconcile_time_seconds_bucket{controller=\"helmrelease\"}[5m])) by (le))",
+                    "seriesNameFormat": "P50"
+                  }
+                }
+              }
+            },
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "datasource": {
+                      "kind": "PrometheusDatasource"
+                    },
+                    "minStep": "",
+                    "query": "histogram_quantile(0.90, sum(rate(controller_runtime_reconcile_time_seconds_bucket{controller=\"helmrelease\"}[5m])) by (le))",
+                    "seriesNameFormat": "P90"
+                  }
+                }
+              }
+            },
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "datasource": {
+                      "kind": "PrometheusDatasource"
+                    },
+                    "minStep": "",
+                    "query": "histogram_quantile(0.99, sum(rate(controller_runtime_reconcile_time_seconds_bucket{controller=\"helmrelease\"}[5m])) by (le))",
+                    "seriesNameFormat": "P99"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "8_1": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Helm Releases ops/min"
+          },
+          "plugin": {
+            "kind": "TimeSeriesChart",
+            "spec": {
+              "legend": {
+                "mode": "table",
+                "position": "bottom",
+                "values": [
+                  "mean",
+                  "last-number"
+                ]
+              },
+              "visual": {
+                "areaOpacity": 1,
+                "connectNulls": false,
+                "display": "bar",
+                "lineWidth": 1
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "datasource": {
+                      "kind": "PrometheusDatasource"
+                    },
+                    "minStep": "",
+                    "query": "sum(increase(controller_runtime_reconcile_total{controller=\"helmrelease\",result!=\"error\"}[1m])) by (controller)",
+                    "seriesNameFormat": "successful reconciliations "
+                  }
+                }
+              }
+            },
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "datasource": {
+                      "kind": "PrometheusDatasource"
+                    },
+                    "minStep": "",
+                    "query": "sum(increase(controller_runtime_reconcile_total{controller=\"helmrelease\",result=\"error\"}[1m])) by (controller)",
+                    "seriesNameFormat": "failed reconciliations "
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "8_2": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Helm Charts ops/min"
+          },
+          "plugin": {
+            "kind": "TimeSeriesChart",
+            "spec": {
+              "legend": {
+                "mode": "table",
+                "position": "bottom",
+                "values": [
+                  "mean",
+                  "last-number"
+                ]
+              },
+              "visual": {
+                "areaOpacity": 1,
+                "connectNulls": false,
+                "display": "bar",
+                "lineWidth": 1
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "datasource": {
+                      "kind": "PrometheusDatasource"
+                    },
+                    "minStep": "",
+                    "query": "sum(increase(controller_runtime_reconcile_total{controller=\"helmchart\",result!=\"error\"}[1m])) by (controller)",
+                    "seriesNameFormat": "successful chart pulls"
+                  }
+                }
+              }
+            },
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "datasource": {
+                      "kind": "PrometheusDatasource"
+                    },
+                    "minStep": "",
+                    "query": "sum(increase(controller_runtime_reconcile_total{controller=\"helmchart\",result=\"error\"}[1m])) by (controller)",
+                    "seriesNameFormat": "failed chart pulls"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "layouts": [
+      {
+        "kind": "Grid",
+        "spec": {
+          "display": {
+            "title": "Panel Group 1",
+            "collapse": {
+              "open": true
+            }
+          },
+          "items": [
+            {
+              "x": 0,
+              "y": 0,
+              "width": 6,
+              "height": 5,
+              "content": {
+                "$ref": "#/spec/panels/0"
+              }
+            },
+            {
+              "x": 6,
+              "y": 0,
+              "width": 6,
+              "height": 5,
+              "content": {
+                "$ref": "#/spec/panels/1"
+              }
+            },
+            {
+              "x": 12,
+              "y": 0,
+              "width": 6,
+              "height": 5,
+              "content": {
+                "$ref": "#/spec/panels/2"
+              }
+            },
+            {
+              "x": 18,
+              "y": 0,
+              "width": 6,
+              "height": 5,
+              "content": {
+                "$ref": "#/spec/panels/3"
+              }
+            },
+            {
+              "x": 0,
+              "y": 5,
+              "width": 24,
+              "height": 8,
+              "content": {
+                "$ref": "#/spec/panels/4"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "kind": "Grid",
+        "spec": {
+          "display": {
+            "title": "Resource Usage",
+            "collapse": {
+              "open": true
+            }
+          },
+          "items": [
+            {
+              "x": 0,
+              "y": 0,
+              "width": 12,
+              "height": 11,
+              "content": {
+                "$ref": "#/spec/panels/5_0"
+              }
+            },
+            {
+              "x": 12,
+              "y": 0,
+              "width": 12,
+              "height": 11,
+              "content": {
+                "$ref": "#/spec/panels/5_1"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "kind": "Grid",
+        "spec": {
+          "display": {
+            "title": "Reconciliation Stats",
+            "collapse": {
+              "open": true
+            }
+          },
+          "items": [
+            {
+              "x": 0,
+              "y": 0,
+              "width": 24,
+              "height": 8,
+              "content": {
+                "$ref": "#/spec/panels/6_0"
+              }
+            },
+            {
+              "x": 0,
+              "y": 8,
+              "width": 24,
+              "height": 8,
+              "content": {
+                "$ref": "#/spec/panels/6_1"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "kind": "Grid",
+        "spec": {
+          "display": {
+            "title": "Sources Stats",
+            "collapse": {
+              "open": true
+            }
+          },
+          "items": [
+            {
+              "x": 0,
+              "y": 0,
+              "width": 12,
+              "height": 9,
+              "content": {
+                "$ref": "#/spec/panels/7_0"
+              }
+            },
+            {
+              "x": 12,
+              "y": 0,
+              "width": 12,
+              "height": 9,
+              "content": {
+                "$ref": "#/spec/panels/7_1"
+              }
+            },
+            {
+              "x": 0,
+              "y": 9,
+              "width": 12,
+              "height": 9,
+              "content": {
+                "$ref": "#/spec/panels/7_2"
+              }
+            },
+            {
+              "x": 12,
+              "y": 9,
+              "width": 12,
+              "height": 9,
+              "content": {
+                "$ref": "#/spec/panels/7_3"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "kind": "Grid",
+        "spec": {
+          "display": {
+            "title": "Helm Stats",
+            "collapse": {
+              "open": true
+            }
+          },
+          "items": [
+            {
+              "x": 0,
+              "y": 0,
+              "width": 24,
+              "height": 8,
+              "content": {
+                "$ref": "#/spec/panels/8_0"
+              }
+            },
+            {
+              "x": 0,
+              "y": 8,
+              "width": 12,
+              "height": 9,
+              "content": {
+                "$ref": "#/spec/panels/8_1"
+              }
+            },
+            {
+              "x": 12,
+              "y": 8,
+              "width": 12,
+              "height": 9,
+              "content": {
+                "$ref": "#/spec/panels/8_2"
+              }
+            }
+          ]
+        }
+      }
+    ],
+    "variables": [
+      {
+        "kind": "ListVariable",
+        "spec": {
+          "display": {
+            "hidden": true
+          },
+          "defaultValue": "Prometheus",
+          "allowAllValue": false,
+          "allowMultiple": false,
+          "plugin": {
+            "kind": "DatasourceVariable",
+            "spec": {
+              "datasourcePluginKind": "prometheus"
+            }
+          },
+          "name": "DS_PROMETHEUS"
+        }
+      },
+      {
+        "kind": "ListVariable",
+        "spec": {
+          "display": {
+            "hidden": false
+          },
+          "defaultValue": "flux-system",
+          "allowAllValue": false,
+          "allowMultiple": false,
+          "sort": "none",
+          "plugin": {
+            "kind": "StaticListVariable",
+            "spec": {
+              "values": [
+                {
+                  "label": "flux-system",
+                  "value": "flux-system"
+                }
+              ]
+            }
+          },
+          "name": "namespace"
+        }
+      }
+    ],
+    "duration": "1h",
+    "refreshInterval": "0s"
+  }
+}
