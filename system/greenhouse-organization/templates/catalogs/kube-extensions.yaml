@@ -1,0 +1,68 @@
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: github-app-secret-sci
+  namespace: {{ .Release.Namespace }}
+  labels:
+    greenhouse.sap/owned-by: containers
+type: Opaque
+data:
+  ca.crt: {{ .Values.catalogs.kube-extensions.internal.githubApp.caCRT | b64enc  }}
+  githubAppBaseURL: {{ .Values.catalogs.kube-extensions.internal.githubApp.baseURL | b64enc  }}
+  githubAppID: {{ .Values.catalogs.kube-extensions.internal.githubApp.appID | b64enc  }}
+  githubAppInstallationID: {{ "9426" | b64enc  }}
+  githubAppPrivateKey: {{ .Values.catalogs.kube-extensions.internal.githubApp.privateKey | b64enc  }}
+---
+apiVersion: greenhouse.sap/v1alpha1
+kind: Catalog
+metadata:
+  name: greenhouse-extensions-latest
+  labels:
+    greenhouse.sap/owned-by: containers
+spec:
+  sources:
+  - repository: https://github.com/cloudoperators/greenhouse-extensions
+    ref:
+    {{ toYaml .Values.catalogs.kube-extensions.external.ref | nindent 6}}
+    resources:
+    - doop/plugindefinition.yaml
+    - exposed-services/plugindefinition.yaml
+    - kubeconfig-generator/plugindefinition.yaml
+    - service-proxy/plugindefinition.yaml
+    - repo-guard/plugindefinition.yaml
+    - cert-manager/plugindefinition.yaml
+    - digicert-issuer/plugindefinition.yaml
+    - disco/plugindefinition.yaml
+    - ingress-nginx/plugindefinition.yaml
+    - reloader/plugindefinition.yaml
+    overrides:
+    - name: exposed-services
+      repository: oci://keppel.eu-de-1.cloud.sap/ccloud-ghcr-io-mirror/cloudoperators/greenhouse-extensions/charts
+    - name: kubeconfig-generator
+      repository: oci://keppel.eu-de-1.cloud.sap/ccloud-ghcr-io-mirror/cloudoperators/greenhouse-extensions/charts
+    - name: repo-guard
+      repository: oci://keppel.eu-de-1.cloud.sap/ccloud-ghcr-io-mirror/cloudoperators/greenhouse-extensions/charts
+    - name: service-proxy
+      repository: oci://keppel.eu-de-1.cloud.sap/ccloud-ghcr-io-mirror/cloudoperators/greenhouse-extensions/charts
+    - name: cert-manager
+      repository: oci://keppel.eu-de-1.cloud.sap/ccloud-ghcr-io-mirror/cloudoperators/greenhouse-extensions/charts
+    - name: digicert-issuer
+      repository: oci://keppel.eu-de-1.cloud.sap/ccloud-ghcr-io-mirror/sapcc/helm-charts
+    - name: disco
+      repository: oci://keppel.eu-de-1.cloud.sap/ccloud-helm
+    - name: ingress-nginx
+      repository: oci://keppel.eu-de-1.cloud.sap/ccloud-registry-k8s-io-mirror/ingress-nginx/charts
+    - name: reloader
+      repository: oci://keppel.eu-de-1.cloud.sap/ccloud-ghcr-io-mirror/stakater/charts
+
+  - repository: https://github.wdf.sap.corp/sap-cloud-infrastructure/greenhouse-extensions
+    ref:
+    {{ toYaml .Values.catalogs.kube-extensions.internal.ref | nindent 6}}
+    resources:
+    - secrets-injector/plugindefinition.yaml
+    - ldap-named-user/plugindefinition.yaml
+    secretName: github-app-secret-sci
+    overrides:
+    - name: secrets-injector
+    - name: ldap-named-user
