@@ -1,3 +1,4 @@
+{{- if .Values.mutatingWebhook.enabled }}
 apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:
@@ -35,6 +36,7 @@ webhooks:
       values:
       - "{{ .Values.staging.namespace }}"
       - kube-node-lease
+      - kube-system
   {{ end }}
   rules:
   - apiGroups:
@@ -47,4 +49,6 @@ webhooks:
     resources:
     - '*'
   sideEffects: NoneOnDryRun
+
+{{- end }}
 

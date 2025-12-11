@@ -824,6 +824,7 @@ os_compute_api:os-server-external-events:create: rule:context_is_admin
 # os_compute_api:servers:create:forced_host rule.
 #   POST /servers
 #compute:servers:create:requested_destination: rule:project_admin_api
+compute:servers:create:requested_destination: rule:compute_admin_all
 
 # Resize a server across cells. By default, this is disabled for all users and
 # recommended to be tested in a deployment for admin users before opening it

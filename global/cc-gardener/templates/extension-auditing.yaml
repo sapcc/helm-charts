@@ -9,11 +9,24 @@ spec:
   resources:
   - kind: Extension
     type: auditing
+    workerlessSupported: true
+    lifecycle:
+      reconcile: BeforeKubeAPIServer
+      delete: AfterKubeAPIServer
+      migrate: AfterKubeAPIServer
   deployment:
+    admission:
+      runtimeCluster:
+        helm:
+          ociRepository:
+            ref: keppel.global.cloud.sap/ccloud-europe-docker-pkg-dev-mirror/gardener-project/snapshots/charts/gardener/extensions/auditing-admission-runtime:v0.1.0-90ed948ecf03fb9af667caa3a8662dd63db16e4b
+      virtualCluster:
+        helm:
+          ociRepository:
+            ref: keppel.global.cloud.sap/ccloud-europe-docker-pkg-dev-mirror/gardener-project/snapshots/charts/gardener/extensions/auditing-admission-application:v0.1.0-90ed948ecf03fb9af667caa3a8662dd63db16e4b
     extension:
       helm:
         ociRepository:
-          ref: keppel.eu-de-1.cloud.sap/ccloud-europe-docker-pkg-dev-mirror/gardener-project/snapshots/charts/gardener/extensions/auditing:v0.1.0-55733335a07f706e192206e53c34343e85c39884
+          ref: keppel.global.cloud.sap/ccloud-europe-docker-pkg-dev-mirror/gardener-project/snapshots/charts/gardener/extensions/auditing:v0.1.0-90ed948ecf03fb9af667caa3a8662dd63db16e4b
       policy: OnDemand
 {{ end -}}
-

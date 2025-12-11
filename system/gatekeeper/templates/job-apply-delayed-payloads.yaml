@@ -1,0 +1,53 @@
+{{/*
+
+Installing Gatekeeper via Helm has a fundamental problem: We cannot put constraints in the Helm manifest directly.
+Constraints are custom resources for CRDs generated from ConstraintTemplate objects by gatekeeper-controller-manager.
+
+At `helm install/upgrade` time, we put in the ConstraintTemplate objects directly, but then Helm cannot apply constraint
+objects at the same time because the templates have not yet been processed and the relevant CRDs may not exist yet.
+
+To work around this, at the Helm level, constraints are wrapped in ConfigMaps with the "gatekeeper-delayed-payload=true"
+label. At the end of `helm install/upgrade`, the hook below runs applies the payloads contained within using kubectl,
+while deleting all resources not belonging to the chart. (The latter is important to be able to remove constraint
+resources from the chart.)
+
+The `kubectl apply` invocations will fail if the respective CRDs have not yet been created, so the job will keep
+restarting until gatekeeper-controller-manager has done its part.
+
+*/}}
+
+{{- $registry := .Values.global.registry | required ".Values.global.registry not found" -}}
+
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: gatekeeper-apply-delayed-payloads
+  labels:
+    # Helm does not write its ownership annotations on hook objects, so the owner-label-injector cannot help us
+    ccloud/support-group: containers
+    ccloud/service: gatekeeper
+  annotations:
+    helm.sh/hook: post-install,post-upgrade
+    linkerd.io/inject: disabled # pod only communicates with the Kubernetes API
+
+spec:
+  ttlSecondsAfterFinished: 300
+  template:
+    metadata:
+      labels:
+        name: gatekeeper-apply-delayed-payloads
+    spec:
+      restartPolicy: OnFailure
+      serviceAccountName: gatekeeper-apply-delayed-payloads
+      volumes:
+        - name: config
+          configMap:
+            name: gatekeeper-delayed-payloads
+      containers:
+        - name: apply
+          image: "{{ $registry }}/shared-app-images/alpine-kubectl:latest-latest"
+          imagePullPolicy: "Always"
+          command: [ ash, /config/apply.sh ]
+          volumeMounts:
+            - name: config
+              mountPath: /config

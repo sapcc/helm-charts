@@ -1,12 +1,14 @@
-{{- if .Values.netapp.enable_watcher }}
+{{- range .Values.netapp.watchers }}
 apiVersion: kvm.cloud.sap/v1alpha
 kind: NetappFilerWatcher
 metadata:
   labels:
     app.kubernetes.io/name: kvm-cinder-netapp-operator
     app.kubernetes.io/managed-by: kustomize
-  name: netappfilerwatcher
+  name: {{ required "watcher name is required" .name }}
 spec: 
-  region: {{ required ".Values.global.region missing" .Values.global.region }}
-  filerexpr: {{ required ".Values.netapp.filerexpr missing" .Values.netapp.filerexpr }}
+  region: {{ required ".Values.global.region missing" $.Values.global.region }}
+  filerexpr: {{ required "watcher filerexpr is missing" .filerexpr }}
+  volumeregextemplate: {{ required "watcher volumeregextemplate is missing" .volumeregextemplate }}
+---
 {{- end}}

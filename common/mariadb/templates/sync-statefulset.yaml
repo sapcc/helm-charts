@@ -1,4 +1,8 @@
 {{- if .Values.sync.enabled }}
+{{- $replicas := .Values.sync.replicas | default 1 | int }}
+{{- if and (ne $replicas 0) (ne $replicas 1) }}
+  {{- fail "sync.replicas must be either 0 or 1" }}
+{{- end }}
 ---
 apiVersion: apps/v1
 kind: StatefulSet
@@ -9,7 +13,7 @@ metadata:
     app: {{ include "fullName" . }}-sync
     {{- include "mariadb.labels" (list $ "noversion" "database-sync" "sts" "database") | nindent 4 }}
 spec:
-  replicas: 1
+  replicas: {{ $replicas }}
   selector:
     matchLabels:
       app.kubernetes.io/name: go-maria-sync
@@ -91,7 +95,7 @@ spec:
         lifecycle:
           preStop:
             exec:
-              command: ["/bin/bash","-c","sleep 300"]
+              command: ["/bin/sh","-c","sleep 300"]
         ports:
           - containerPort: 8080
             name: metrics

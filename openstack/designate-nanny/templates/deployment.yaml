@@ -83,3 +83,99 @@ spec:
          name: {{ .Release.Name }}
 
 {{- end }}
+{{- if .Values.nanny_oor_enabled }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+ name: {{ .Release.Name }}-oor
+ labels:
+    app.kubernetes.io/name: {{ .Release.Name }}-oor
+    app.kubernetes.io/instance: {{ .Release.Name }}-oor
+    app: {{ .Release.Name }}-oor
+    ccloud/support-group: network-api
+    system: openstack
+    application: designate
+spec:
+ replicas: 1
+ selector:
+   matchLabels:
+     app.kubernetes.io/instance: {{ .Release.Name }}-oor
+     app.kubernetes.io/name: {{ .Release.Name }}-oor
+ template:
+   metadata:
+     labels:
+       app.kubernetes.io/instance: {{ .Release.Name }}-oor
+       app.kubernetes.io/name: {{ .Release.Name }}-oor
+     annotations:
+       # port has to be given in the ports spec below with name metrics, otherwise
+       # the pod will be scraped multiple times as there are multiple containers with linkderd
+       # prometheus.io/port: "9102" 
+       prometheus.io/scrape: "true"
+       prometheus.io/targets: openstack
+       {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+       linkerd.io/inject: enabled
+       {{- end }}
+   spec:
+
+     containers:
+     - name: {{ .Release.Name }}
+       image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/{{ .Values.image.name }}:{{required "missing .Values.image.image_tag" .Values.image.image_tag }}
+       {{- if or (eq .Values.global.region "qa-de-1") (eq .Values.global.region "qa-de-2") (.Values.global.is_global_region) }}
+       imagePullPolicy: Always
+       {{- else }}
+       imagePullPolicy: IfNotPresent
+       {{- end }}
+       command: ["/opt/venv/bin/designate-nanny", "autorun"]
+       env:
+         - name: NANNY_CONFIG
+           value: "/srv/nanny.yaml"
+         - name: OS_AUTH_URL
+           value: "{{ required "missing .Values.designate_nanny_oor.credentials.designate_api.auth_url" .Values.designate_nanny_oor.credentials.designate_api.auth_url}}"
+         - name: PYCCLOUD_USE_DUMMY_SECRETS
+           value: "yes"
+         - name: OS_REGION_NAME
+           value: "{{ required "missing .Values.designate_nanny_oor.credentials.designate_api.region" .Values.designate_nanny_oor.credentials.designate_api.region}}"
+         - name: OS_PROJECT_NAME
+           value:  "{{ required "missing .Values.designate_nanny_oor.credentials.designate_api.project_name" .Values.designate_nanny_oor.credentials.designate_api.project_name}}"
+         - name: OS_PROJECT_DOMAIN_NAME
+           value:  "{{ required "missing .Values.designate_nanny_oor.credentials.designate_api.project_domain_name" .Values.designate_nanny_oor.credentials.designate_api.project_domain_name}}"
+         - name: NANNY_SWIFT_USERNAME
+           valueFrom:
+             secretKeyRef:
+               name: designate-nanny-secret
+               key:  designate_nanny_os_username
+         - name: NANNY_SWIFT_PASSWORD
+           valueFrom:
+             secretKeyRef:
+               name: designate-nanny-secret
+               key:  designate_nanny_os_password
+         - name: OS_USERNAME
+           valueFrom:
+             secretKeyRef:
+               name: designate-nanny-oor-secret
+               key:  designate_nanny_os_username
+         - name: OS_PASSWORD
+           valueFrom:
+             secretKeyRef:
+               name: designate-nanny-oor-secret
+               key:  designate_nanny_os_password
+         - name: OS_USER_DOMAIN_NAME
+           value:  "{{ required "missing .Values.designate_nanny_oor.credentials.designate_api.project_user_domain_name" .Values.designate_nanny_oor.credentials.designate_api.project_user_domain_name}}"
+       ports:
+       - containerPort: 9102
+         name: metrics
+         protocol: TCP
+       resources:
+{{ toYaml .Values.resources | indent 8 }}
+       volumeMounts:
+       - mountPath: /srv/nanny.yaml
+         name: nanny-oor-conf
+         subPath: nanny.yaml
+
+     volumes:
+     - name: nanny-oor-conf
+       configMap:
+         name: {{ .Release.Name }}-oor
+
+{{- end }}

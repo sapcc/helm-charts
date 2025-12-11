@@ -9,10 +9,13 @@ campfire:
   mail_type:
     expire:
       subject: "Information about expiring commitments"
-      condition: "about to expire"
+      condition: "are about to expire"
     confirmed:
       subject: "Information about confirmed commitments"
-      condition: "confirmed and ready to use"
+      condition: "were confirmed and are ready to use"
+    transferred:
+      subject: "Information about transferred commitments"
+      condition: "were (partially) transferred to other projects after posting on the public marketplace"
 
 linkerd-support:
   annotate_namespace: true
@@ -112,6 +115,7 @@ limes:
     enabled: false
 
 postgresql:
+  postgresVersion: 18
   persistence:
     enabled: true
     size: 10Gi
@@ -165,10 +169,11 @@ pgmetrics:
           # The UNION SELECT adds a dummy row to satisfy the absent-metrics-operator.
           query: >
             SELECT s.type AS service_name, COUNT(*) as count
-            FROM project_resources pr
-            JOIN resources r ON r.id = pr.resource_id
+            FROM project_az_resources pazr
+            JOIN az_resources azr ON azr.id = pazr.az_resource_id
+            JOIN resources r ON r.id = azr.resource_id
             JOIN services s ON s.id = r.service_id
-            WHERE pr.backend_quota != pr.quota
+            WHERE azr.az = 'total' AND pazr.backend_quota != pazr.quota
             GROUP BY s.type
             UNION SELECT 'none' AS service_name, 0 AS count
           metrics:
@@ -186,17 +191,13 @@ pgmetrics:
           # about it. Just like eventual consistency in general, this is just how Swift behaves. Therefore this metric only
           # considers quota inconsistencies in Swift if they are large (in specific, larger than 1 TiB = 1099511627776 byte).
           query: >
-            WITH tmp AS (
-              SELECT 1
-              FROM project_az_resources pazr
-              JOIN az_resources azr ON azr.id = pazr.az_resource_id
-              JOIN resources r ON r.id = azr.resource_id
-              JOIN project_resources pr ON pr.resource_id = r.id AND pr.project_id = pazr.project_id
-              GROUP BY pr.project_id, r.path, pr.quota
-              HAVING SUM(pazr.usage) > pr.quota
-                AND NOT (r.path = 'swift/capacity' AND SUM(pazr.usage) < pr.quota + 1099511627776)
-            )
-            SELECT COUNT(*) AS count FROM tmp
+            SELECT COUNT(*) AS count
+            FROM project_az_resources pazr
+            JOIN az_resources azr ON azr.id = pazr.az_resource_id
+            JOIN resources r ON r.id = azr.resource_id
+            WHERE azr.az = 'total' 
+              AND pazr.usage > pazr.quota
+              AND NOT (r.path = 'swift/capacity' AND pazr.usage < pazr.quota + 1099511627776)
           metrics:
             - count:
                 usage: "GAUGE"
@@ -233,14 +234,13 @@ pgmetrics:
         # do etcd backups.)
         limes_free_swift_quota:
           query: >
-            SELECT p.uuid AS project_id, p.name AS project, d.name AS domain, GREATEST(pr.backend_quota - pazr.usage, 0) AS gauge
+            SELECT p.uuid AS project_id, p.name AS project, d.name AS domain, GREATEST(pazr.backend_quota - pazr.usage, 0) AS gauge
             FROM domains d
             JOIN projects p ON p.domain_id = d.id
             JOIN project_az_resources pazr ON pazr.project_id = p.id
             JOIN az_resources azr ON azr.id = pazr.az_resource_id
             JOIN resources r ON r.id = azr.resource_id
-            JOIN project_resources pr ON pr.resource_id = r.id AND pr.project_id = pazr.project_id
-            WHERE r.path = 'swift/capacity' AND azr.az = 'any'
+            WHERE r.path = 'swift/capacity' AND azr.az = 'total'
           metrics:
             - gauge:
                 usage: "GAUGE"
@@ -257,7 +257,7 @@ pgmetrics:
 
         limes_support_group:
           query: >
-            SELECT 1 AS mapping, type AS service, CASE
+            SELECT 1 AS mapping, type AS service_name, CASE
               WHEN type IN ('compute', 'cinder', 'ironic', 'manila', 'nova') THEN 'compute-storage-api'
               WHEN type IN ('archer', 'designate', 'neutron', 'octavia')     THEN 'network-api'
               WHEN type IN ('cronus')                                        THEN 'email'
@@ -268,7 +268,7 @@ pgmetrics:
             - mapping:
                 usage: "GAUGE"
                 description: "Mapping between Limes service types and support group names"
-            - service:
+            - service_name:
                 usage: "LABEL"
                 description: "Service type in Limes"
             - support_group:

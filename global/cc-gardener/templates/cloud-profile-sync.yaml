@@ -1,4 +1,3 @@
-{{ if .Values.cloudProfileSync.enabled -}}
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -21,7 +20,6 @@ spec:
         networking.gardener.cloud/to-public-networks: allowed
         networking.resources.gardener.cloud/to-virtual-garden-kube-apiserver-tcp-443: allowed
       annotations:
-        checksum/config: {{ include (print $.Template.BasePath "/cloud-profile-sync-config.yaml") . | sha256sum }}
         kubectl.kubernetes.io/default-container: cloud-profile-sync
         prometheus.io/scrape: "true"
         prometheus.io/targets: kubernetes
@@ -35,9 +33,6 @@ spec:
         - name: KUBERNETES_SERVICE_HOST
           value: virtual-garden-kube-apiserver.garden.svc.cluster.local
         volumeMounts:
-        - name: config
-          mountPath: "/config"
-          readOnly: true
         - name: kubeconfig
           mountPath: "/var/run/secrets/kubernetes.io/serviceaccount"
         ports:
@@ -56,9 +51,6 @@ spec:
             topologyKey: {{ .Values.cloudProfileSync.topologyKey }}
       {{ end -}}
       volumes:
-        - name: config
-          configMap:
-            name: cloud-profile-sync
         - name: kubeconfig
           secret:
             items:
@@ -82,4 +74,3 @@ metadata:
 stringData:
   token: ""
   bundle.crt: ""
-{{ end -}}
