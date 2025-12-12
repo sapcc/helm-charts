@@ -42,22 +42,7 @@ spec:
 {{- end }}
           command:
           - kubernetes-entrypoint
-          env:
-            - name: COMMAND
-              value: "bash /scripts/start"
-            - name: NAMESPACE
-              value: {{ .Release.Namespace }}
-            {{- if .Values.sentry.enabled }}
-            - name: SENTRY_DSN
-            {{- if .Values.sentry.dsn }}
-              value: {{ .Values.sentry.dsn | quote}}
-            {{ else }}
-              valueFrom:
-                secretKeyRef:
-                  name: sentry
-                  key: seeder.DSN
-            {{- end }}
-            {{- end }}
+          env: {{ include "seeder_environment" $ | indent 12 }}
           resources:
 {{ toYaml .Values.resources | indent 12 }}
           volumeMounts:
@@ -67,3 +52,6 @@ spec:
         - name: scripts
           configMap:
             name: openstack-seeder-bin
+        - name: seeder-secret
+          secret:
+            secretName: seeder-secret
