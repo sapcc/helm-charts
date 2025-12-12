@@ -2,11 +2,11 @@
 
 This umbrella chart deploys the following ACI components:
 
-1. **valkey** (Redis-compatible cache)
-2. **data-collector**
-3. **netbox-collector**
-4. **fault-collector**
-5. **correlator**
+1. **aci-cache** (Redis-compatible cache)
+2. **aci-data-collector**
+3. **aci-netbox-collector**
+4. **aci-fault-collector**
+5. **aci-correlator**
 
 Each component is packaged as a **separate Helm subchart** under `charts/`, and each
 subchart manages **its own Secret** and **its own configuration**, while the umbrella
@@ -28,11 +28,11 @@ Each subchart:
 Example per-subchart ACI block (from umbrella values or CI file):
 
 ```yaml
-netbox-collector:
+aci-netbox-collector:
   aci:
     cache_password: cache_password
 
-data-collector:
+aci-data-collector:
   aci:
     aci_user: aci_user
     aci_password: aci_password
@@ -49,9 +49,9 @@ cache_password: {{ required ".Values.aci.cache_password variable is missing" .Va
 
 ---
 
-## Region-Aware Filtering (netbox-collector)
+## Region-Aware Filtering (aci-netbox-collector)
 
-The **netbox-collector** supports user-defined base filters in `values.yaml`:
+The **aci-netbox-collector** supports user-defined base filters in `values.yaml`:
 
 ```yaml
 env:
@@ -90,7 +90,7 @@ aci:
 Per-chart credentials are passed down like:
 
 ```yaml
-netbox-collector:
+aci-netbox-collector:
   aci:
     cache_password: password
 ```
@@ -107,11 +107,11 @@ helm upgrade --install aci ./aci-suite
 
 This deploys:
 
-- valkey  
-- data-collector  
-- netbox-collector  
-- fault-collector  
-- correlator  
+- aci-cache  
+- aci-data-collector  
+- aci-netbox-collector  
+- aci-fault-collector  
+- aci-correlator  
 
 in one command.A
 
@@ -119,28 +119,28 @@ in one command.A
 
 ## Installing Components Individually
 
-### Install only **valkey**
+### Install only **aci-cache**
 
 ```bash
-helm upgrade --install aci ./aci-suite   --set data-collector.enabled=false   --set netbox-collector.enabled=false   --set fault-collector.enabled=false   --set correlator.enabled=false
+helm upgrade --install aci ./aci-suite   --set aci-data-collector.enabled=false   --set aci-netbox-collector.enabled=false   --set aci-fault-collector.enabled=false   --set aci-correlator.enabled=false
 ```
 
 ### Enable **data-collector**
 
 ```bash
-helm upgrade aci ./aci-suite --reuse-values   --set data-collector.enabled=true
+helm upgrade aci ./aci-suite --reuse-values   --set aci-data-collector.enabled=true
 ```
 
 ### Enable **netbox-collector**
 
 ```bash
-helm upgrade aci ./aci-suite --reuse-values   --set netbox-collector.enabled=true
+helm upgrade aci ./aci-suite --reuse-values   --set aci-netbox-collector.enabled=true
 ```
 
 ### Enable **fault-collector** + **correlator**
 
 ```bash
-helm upgrade aci ./aci-suite --reuse-values   --set fault-collector.enabled=true   --set correlator.enabled=true
+helm upgrade aci ./aci-suite --reuse-values   --set aci-fault-collector.enabled=true   --set aci-correlator.enabled=true
 ```
 
 ---
@@ -150,7 +150,7 @@ helm upgrade aci ./aci-suite --reuse-values   --set fault-collector.enabled=true
 Each subchart supports overriding the generated Secret:
 
 ```yaml
-netbox-collector:
+aci-netbox-collector:
   existingSecret: my-secret
 ```
 
