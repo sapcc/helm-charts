@@ -3,7 +3,7 @@
 This umbrella chart deploys the following ACI components:
 
 1. **aci-cache** (Redis-compatible cache)
-2. **aci-ata-collector**
+2. **aci-data-collector**
 3. **aci-netbox-collector**
 4. **aci-fault-collector**
 5. **aci-correlator**
@@ -32,7 +32,7 @@ aci-netbox-collector:
   aci:
     cache_password: cache_password
 
-aci-ata-collector:
+aci-data-collector:
   aci:
     aci_user: aci_user
     aci_password: aci_password
