@@ -4,7 +4,7 @@ enabled: true
 replicaCount: 1
 
 image:
-  name: aci-netbox-exporter
+  name: aci-netbox-collector
   tag: "latest"
   pullPolicy: Always
 
@@ -20,7 +20,6 @@ resources:
     cpu: "1"
     memory: "2Gi"
 
-# Your app exposes /health; use that for probes
 livenessProbe:
   path: /health
   initialDelaySeconds: 10
@@ -31,37 +30,37 @@ readinessProbe:
   initialDelaySeconds: 5
   periodSeconds: 10
 
-# Uppercase env-style values: used to render env.yml (and kept as env vars too)
 env:
-  FLASK_HOST: "0.0.0.0"
-  FLASK_PORT: "8000"
-  FLASK_DEBUG: "false"
+  flask_host: "0.0.0.0"
+  flask_port: 8000
+  flask_debug: false
 
-  LOG_LEVEL: "INFO"
-  LOG_FILE: "/app/logs/app.log"
+  log_level: "INFO"
+  log_file: "/app/logs/app.log"
 
-  NETBOX_URL: "https://netbox.global.cloud.sap/graphql/"
-  NETBOX_RETRY_ATTEMPTS: "3"
-  NETBOX_RETRY_DELAY_SECONDS: "5"
-  NETBOX_REQUEST_TIMEOUT_SECONDS: "60"
+  netbox_url: "https://netbox.global.cloud.sap/graphql/"
+  netbox_retry_attempts: 3
+  netbox_retry_delay_seconds: 5
+  netbox_request_timeout_seconds: 60
 
-  CACHE_PREFIX: "netbox"
-  CACHE_TTL_SECONDS: "0"
-  CACHE_HOST: "aci-cache-valkey"
-  CACHE_PORT: 6379
-  CACHE_TIMEOUT: 3
-  CACHE_RETRY_ATTEMPTS: "3"
-  CACHE_RETRY_DELAY_SECONDS: "5"
-  BATCH_SIZE: "500"
-  REFRESH_INTERVAL_SECONDS: "60"
-  SINCE_HOURS_ON_HIT: "1"
-  SAVE_AGGREGATE_CONNECTIONS: "false"
+  cache_prefix: "netbox"
+  cache_ttl_seconds: 0
+  cache_host: "aci-cache-primary"
+  cache_port: 6379
+  cache_timeout: 3
+  cache_retry_attempts: 3
+  cache_retry_delay_seconds: 5
+
+  batch_size: 500
+  refresh_interval_seconds: 60
+  since_hours_on_hit: 1
+  save_aggregate_connections: false
 
   # Filters
-  INTERFACE_BASE_FILTER: 'cabled: true, device_role: "aci-leaf"'
-  DEVICE_BASE_FILTER: ''
+  interface_base_filter: 'cabled: true, device_role: "aci-leaf"'
+  device_base_filter: ''
 
-  DEBUG_REFRESH: "false"
+  debug_refresh: false
 
 aci:
   cache_password:

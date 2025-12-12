@@ -1,7 +1,7 @@
 {{- if .Values.enabled }}
 {{- $region := required ".Values.global.region is required" .Values.global.region }}
-{{- $interfaceFilter := printf "%s, region: \"%s\"" .Values.env.INTERFACE_BASE_FILTER $region }}
-{{- $deviceFilter := printf "%s, region: \"%s\"" .Values.env.DEVICE_BASE_FILTER $region }}
+{{- $interfaceFilter := printf "%s, region: \"%s\"" .Values.env.interface_base_filter $region }}
+{{- $deviceFilter := printf "%s, region: \"%s\"" .Values.env.device_base_filter $region }}
 
 apiVersion: v1
 kind: ConfigMap
@@ -11,38 +11,34 @@ metadata:
     app.kubernetes.io/name: {{ .Values.fullname }}
     app.kubernetes.io/instance: {{ .Release.Name }}
 data:
-  # Render a full /app/env.yml from the provided .Values.env (uppercase keys)
   env.yml: |-
-    flask_host: {{ .Values.env.FLASK_HOST | quote }}
-    flask_port: {{ .Values.env.FLASK_PORT | int }}
-    flask_debug: {{ .Values.env.FLASK_DEBUG | lower }}
+    flask_host: {{ .Values.env.flask_host | quote }}
+    flask_port: {{ .Values.env.flask_port | int }}
+    flask_debug: {{ .Values.env.flask_debug | toString | lower }}
 
-    log_level: {{ .Values.env.LOG_LEVEL | quote }}
-    log_file: {{ .Values.env.LOG_FILE | quote }}
+    log_level: {{ .Values.env.log_level | quote }}
+    log_file: {{ .Values.env.log_file | quote }}
 
-    netbox_url: {{ .Values.env.NETBOX_URL | quote }}
-    netbox_retry_attempts: {{ .Values.env.NETBOX_RETRY_ATTEMPTS | int }}
-    netbox_retry_delay_seconds: {{ .Values.env.NETBOX_RETRY_DELAY_SECONDS | int }}
-    netbox_request_timeout_seconds: {{ .Values.env.NETBOX_REQUEST_TIMEOUT_SECONDS | int }}
+    netbox_url: {{ .Values.env.netbox_url | quote }}
+    netbox_retry_attempts: {{ .Values.env.netbox_retry_attempts | int }}
+    netbox_retry_delay_seconds: {{ .Values.env.netbox_retry_delay_seconds | int }}
+    netbox_request_timeout_seconds: {{ .Values.env.netbox_request_timeout_seconds | int }}
 
-    cache_host: {{ .Values.env.CACHE_HOST | quote }}
-    cache_port: {{ .Values.env.CACHE_PORT | int }}
-    cache_timeout: {{ .Values.env.CACHE_TIMEOUT | int }}
-    cache_prefix: {{ .Values.env.CACHE_PREFIX | quote }}
-    cache_retry_attempts: {{ .Values.env.CACHE_RETRY_ATTEMPTS | int }}
-    cache_retry_delay_seconds: {{ .Values.env.CACHE_RETRY_DELAY_SECONDS | int }}
-    cache_ttl_seconds: {{ .Values.env.CACHE_TTL_SECONDS | int }}
-    batch_size: {{ .Values.env.BATCH_SIZE | int }}
-    refresh_interval_seconds: {{ .Values.env.REFRESH_INTERVAL_SECONDS | int }}
-    since_hours_on_hit: {{ .Values.env.SINCE_HOURS_ON_HIT | int }}
-    save_aggregate_connections: {{ .Values.env.SAVE_AGGREGATE_CONNECTIONS | lower }}
+    cache_host: {{ .Values.env.cache_host | quote }}
+    cache_port: {{ .Values.env.cache_port | int }}
+    cache_timeout: {{ .Values.env.cache_timeout | int }}
+    cache_prefix: {{ .Values.env.cache_prefix | quote }}
+    cache_retry_attempts: {{ .Values.env.cache_retry_attempts | int }}
+    cache_retry_delay_seconds: {{ .Values.env.cache_retry_delay_seconds | int }}
+    cache_ttl_seconds: {{ .Values.env.cache_ttl_seconds | int }}
+
+    batch_size: {{ .Values.env.batch_size | int }}
+    refresh_interval_seconds: {{ .Values.env.refresh_interval_seconds | int }}
+    since_hours_on_hit: {{ .Values.env.since_hours_on_hit | int }}
+    save_aggregate_connections: {{ .Values.env.save_aggregate_connections | toString | lower }}
 
     interface_base_filter: {{ $interfaceFilter | quote }}
     device_base_filter: {{ $deviceFilter | quote }}
-    debug_refresh: {{ .Values.env.DEBUG_REFRESH | lower }}
 
-  # Keep uppercase envs too (backward compatible, in case you use envFrom in the future)
-  {{- range $k, $v := .Values.env }}
-  {{ $k }}: {{ $v | quote }}
-  {{- end }}
+    debug_refresh: {{ .Values.env.debug_refresh | toString | lower }}
 {{- end }}

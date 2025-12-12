@@ -1,14 +1,15 @@
 {{- if .Values.enabled }}
+{{- $region := required ".Values.global.region is required" .Values.global.region }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ include "aci-fault-collector.fullname" . }}-config
+  name: {{ .Values.fullname }}-config
   labels:
     {{- include "aci-fault-collector.labels" . | nindent 4 }}
 data:
   env.yml: |-
     # the id to store keys for
-    aci_id: {{ .Values.env.aci_id | quote }}
+    aci_id: {{ $region | quote }}
 
     # The apic servers
     {{- $apicHosts := required "missing $.Values.aci.apic_hosts" $.Values.aci.apic_hosts }}
