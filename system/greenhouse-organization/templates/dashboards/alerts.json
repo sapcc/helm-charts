@@ -1,0 +1,1747 @@
+{
+  "kind": "Dashboard",
+  "metadata": {
+    "name": "alerts",
+    "createdAt": "2025-11-19T12:49:11.224195834Z",
+    "updatedAt": "2025-12-12T11:10:59.231707419Z",
+    "version": 18,
+    "project": "greenhouse"
+  },
+  "spec": {
+    "display": {
+      "name": "Alerts"
+    },
+    "panels": {
+      "0d6e7800ea5d4c9680b3009ceb2f2889": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Operator Reconciliation Rate of Failure (%)",
+            "description": "GreenhouseOperatorReconcileErrorsHigh: Percentage of reconciling operations failed for controller is more than 10%"
+          },
+          "plugin": {
+            "kind": "Table",
+            "spec": {
+              "cellSettings": [],
+              "columnSettings": [
+                {
+                  "enableSorting": true,
+                  "header": "operator",
+                  "name": "controller",
+                  "sort": "asc"
+                },
+                {
+                  "hide": true,
+                  "name": "timestamp"
+                },
+                {
+                  "enableSorting": false,
+                  "format": {
+                    "unit": "percent-decimal"
+                  },
+                  "name": "value",
+                  "sort": "desc"
+                }
+              ],
+              "defaultColumnHeight": "auto",
+              "density": "compact",
+              "transforms": []
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "query": "(sum by (controller) (rate(controller_runtime_reconcile_errors_total{job=\"greenhouse-controller-manager-metrics-service\"}[5m]))) / (sum by (controller) (rate(controller_runtime_reconcile_total{job=\"greenhouse-controller-manager-metrics-service\"}[5m]))) > .1",
+                    "seriesNameFormat": "{{ controller }}"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "13a75d7401c44db59abf22e033edfc84": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Number of 5xx Errors for ID-proxy",
+            "description": "Greenhouse id-proxy service - HTTP 5xx errors are high."
+          },
+          "plugin": {
+            "kind": "Table",
+            "spec": {
+              "density": "standard",
+              "columnSettings": [
+                {
+                  "name": "service"
+                },
+                {
+                  "name": "code",
+                  "hide": false
+                },
+                {
+                  "name": "value",
+                  "header": "count"
+                },
+                {
+                  "name": "organization",
+                  "hide": true
+                },
+                {
+                  "name": "pod",
+                  "hide": true
+                },
+                {
+                  "name": "prometheus",
+                  "hide": true
+                },
+                {
+                  "name": "cluster",
+                  "hide": true
+                },
+                {
+                  "name": "endpoint",
+                  "hide": true
+                },
+                {
+                  "name": "container",
+                  "hide": true
+                },
+                {
+                  "name": "instance",
+                  "hide": true
+                },
+                {
+                  "name": "handler",
+                  "hide": true
+                },
+                {
+                  "name": "job",
+                  "hide": true
+                },
+                {
+                  "name": "region",
+                  "hide": true
+                },
+                {
+                  "name": "namespace",
+                  "hide": true
+                },
+                {
+                  "name": "method",
+                  "hide": true
+                },
+                {
+                  "name": "timestamp",
+                  "hide": true
+                }
+              ]
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "query": "rate(http_requests_total{service=\"greenhouse-idproxy\", code=~\"5..\"}[5m])",
+                    "seriesNameFormat": "{{ service }}"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "390248646d0744d0bb45ec92d0d2b2c3": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "P90 Latency of Greenhouse Operator by Webhook",
+            "description": "GreenhouseWebhookLatencyHigh: the 90th percentile latency of Greenhouse Operator webhook"
+          },
+          "plugin": {
+            "kind": "TimeSeriesChart",
+            "spec": {
+              "legend": {
+                "mode": "list",
+                "position": "right",
+                "size": "medium"
+              },
+              "thresholds": {
+                "steps": [
+                  {
+                    "color": "#EA4747",
+                    "value": 0.2
+                  }
+                ]
+              },
+              "yAxis": {
+                "show": true,
+                "label": "",
+                "format": {
+                  "unit": "seconds"
+                }
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "query": "histogram_quantile(0.9, avg(rate(controller_runtime_webhook_latency_seconds_bucket{job=\"greenhouse-controller-manager-metrics-service\"}[5m])) by (webhook, le))",
+                    "seriesNameFormat": "{{ webhook }}"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "46b62abb58da4f86a0b6467b3fd07e43": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Ready Status of TeamRoleBinding by Organization/Team",
+            "description": "GreenhouseTeamRoleBindingNotReady: The TeamRoleBinding in organization for team has not been ready for more than 15 minutes"
+          },
+          "plugin": {
+            "kind": "Table",
+            "spec": {
+              "density": "standard",
+              "columnSettings": [
+                {
+                  "name": "organization",
+                  "width": "auto"
+                },
+                {
+                  "name": "team",
+                  "width": 250
+                },
+                {
+                  "name": "team_role_binding",
+                  "width": 400
+                },
+                {
+                  "name": "value",
+                  "header": "status",
+                  "width": 80,
+                  "hide": false,
+                  "enableSorting": true,
+                  "sort": "desc"
+                },
+                {
+                  "name": "__name__",
+                  "hide": true
+                },
+                {
+                  "name": "cluster",
+                  "hide": true
+                },
+                {
+                  "name": "container",
+                  "hide": true
+                },
+                {
+                  "name": "endpoint",
+                  "hide": true
+                },
+                {
+                  "name": "instance",
+                  "hide": true
+                },
+                {
+                  "name": "job",
+                  "hide": true
+                },
+                {
+                  "name": "namespace",
+                  "hide": true
+                },
+                {
+                  "name": "owned_by",
+                  "hide": true
+                },
+                {
+                  "name": "pod",
+                  "hide": true
+                },
+                {
+                  "name": "prometheus",
+                  "hide": true
+                },
+                {
+                  "name": "region",
+                  "hide": true
+                },
+                {
+                  "name": "service",
+                  "hide": true
+                },
+                {
+                  "name": "timestamp",
+                  "hide": true
+                }
+              ],
+              "cellSettings": [
+                {
+                  "condition": {
+                    "kind": "Value",
+                    "spec": {
+                      "value": "1"
+                    }
+                  },
+                  "text": "Ready",
+                  "backgroundColor": "#2FBF71",
+                  "textColor": "#ffffff"
+                },
+                {
+                  "condition": {
+                    "kind": "Value",
+                    "spec": {
+                      "value": "0"
+                    }
+                  },
+                  "text": "Not Ready",
+                  "textColor": "#ffffff",
+                  "backgroundColor": "#EA4747"
+                }
+              ]
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "query": "greenhouse_team_rbac_ready",
+                    "seriesNameFormat": "{{organization}} | {{team}} | {{ team_role_binding }}"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "5f2c2d5257e14effb0fececb55abb10e": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Kubernetes Update Required For Greenhouse Cluster",
+            "description": "GreenhouseClusterKubernetesVersionOutOfMaintenance: Cluster in namespace is running Kubernetes version which is out of maintenance."
+          },
+          "plugin": {
+            "kind": "StatChart",
+            "spec": {
+              "calculation": "last-number",
+              "format": {
+                "unit": "decimal"
+              },
+              "mappings": [],
+              "sparkline": {},
+              "thresholds": {
+                "defaultColor": "#EA4747"
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "minStep": "",
+                    "query": "greenhouse_cluster_k8s_versions_total{version=~\"v1\\\\.(1[0-9]|2[0-9])\\\\..*\"}",
+                    "seriesNameFormat": "{{cluster}}/{{namespace}}/{{version}}"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "64d2eafe7efd42b5982e2bbd8f7a51cc": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Greenhouse Ready Status",
+            "description": "GreenhouseOrganizationNotReady : Greenhouse Organization has not been ready for more than 15 minutes."
+          },
+          "plugin": {
+            "kind": "Table",
+            "spec": {
+              "density": "standard",
+              "columnSettings": [
+                {
+                  "name": "__name__",
+                  "hide": true
+                },
+                {
+                  "name": "cluster",
+                  "hide": true
+                },
+                {
+                  "name": "container",
+                  "hide": true
+                },
+                {
+                  "name": "endpoint",
+                  "hide": true
+                },
+                {
+                  "name": "instance",
+                  "hide": true
+                },
+                {
+                  "name": "job",
+                  "hide": true
+                },
+                {
+                  "name": "namespace",
+                  "hide": true
+                },
+                {
+                  "name": "organization",
+                  "hide": false
+                },
+                {
+                  "name": "pod",
+                  "hide": true
+                },
+                {
+                  "name": "prometheus",
+                  "hide": true
+                },
+                {
+                  "name": "region",
+                  "hide": true
+                },
+                {
+                  "name": "service",
+                  "hide": true
+                },
+                {
+                  "name": "timestamp",
+                  "hide": true
+                },
+                {
+                  "name": "value",
+                  "header": "status"
+                }
+              ],
+              "cellSettings": [
+                {
+                  "condition": {
+                    "kind": "Value",
+                    "spec": {
+                      "value": "1"
+                    }
+                  },
+                  "text": "Ready",
+                  "backgroundColor": "#2FBF71",
+                  "textColor": "#ffffff"
+                },
+                {
+                  "condition": {
+                    "kind": "Value",
+                    "spec": {
+                      "value": "0"
+                    }
+                  },
+                  "text": "Not Ready",
+                  "backgroundColor": "#EA4747",
+                  "textColor": "#ffffff"
+                }
+              ]
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "query": "greenhouse_organization_ready",
+                    "seriesNameFormat": "{{organization}}"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "65aaceec6e154184b819977871ca9cfc": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "P90 Latency of Greenhouse Proxy",
+            "description": "GreenhouseProxyRequestDurationHigh: A Greenhouse proxy service latency is high"
+          },
+          "plugin": {
+            "kind": "TimeSeriesChart",
+            "spec": {
+              "legend": {
+                "mode": "list",
+                "position": "right",
+                "size": "medium"
+              },
+              "thresholds": {
+                "steps": [
+                  {
+                    "color": "#EA4747",
+                    "value": 0.5
+                  }
+                ]
+              },
+              "visual": {
+                "areaOpacity": 0,
+                "connectNulls": false,
+                "display": "line",
+                "lineWidth": 1.25,
+                "pointRadius": 2.75
+              },
+              "yAxis": {
+                "format": {
+                  "unit": "seconds"
+                },
+                "label": "",
+                "show": true
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "query": "histogram_quantile(0.9, avg(rate(request_duration_seconds_bucket{code=\"200\"}[5m])) by (service, le))",
+                    "seriesNameFormat": "{{ service }}"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "76b2320e907b43e19cc46f5337f70ed3": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Rate of Errors by Webhook (%)",
+            "description": "GreenhouseWebhookErrorsHigh : Errors while reconciling"
+          },
+          "plugin": {
+            "kind": "TimeSeriesChart",
+            "spec": {
+              "legend": {
+                "mode": "list",
+                "position": "right",
+                "size": "medium"
+              },
+              "thresholds": {
+                "steps": [
+                  {
+                    "color": "#EA4747",
+                    "value": 0.1
+                  }
+                ]
+              },
+              "visual": {
+                "areaOpacity": 0,
+                "connectNulls": false,
+                "display": "line",
+                "lineWidth": 1.25,
+                "pointRadius": 2.75
+              },
+              "yAxis": {
+                "format": {
+                  "unit": "percent-decimal"
+                },
+                "label": "",
+                "show": true
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "query": "histogram_quantile(0.9, avg(rate(controller_runtime_webhook_latency_seconds_bucket{job=\"greenhouse-controller-manager-metrics-service\"}[5m])) by (webhook, le))\n",
+                    "seriesNameFormat": "{{ webhook }}"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "7f203ac1a8ae42f2bd66b1651c71b7ee": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Number of Failed Requests by Method/Service",
+            "description": "GreenhouseProxyRequestErrorsHigh: HTTP 5xx errors are high for proxy."
+          },
+          "plugin": {
+            "kind": "TimeSeriesChart",
+            "spec": {
+              "legend": {
+                "mode": "list",
+                "position": "right",
+                "size": "medium"
+              },
+              "thresholds": {
+                "steps": [
+                  {
+                    "color": "#EA4747",
+                    "value": 0.1
+                  }
+                ]
+              },
+              "visual": {
+                "areaOpacity": 0,
+                "connectNulls": false,
+                "display": "line",
+                "lineWidth": 1.25,
+                "pointRadius": 2.75
+              },
+              "yAxis": {
+                "format": {
+                  "unit": "percent-decimal"
+                },
+                "label": "",
+                "show": true
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "query": "(sum by (service, method) (rate(http_requests_total{code=~\"4..\",code!=\"401\", code!=\"403\"}[5m]) or rate(http_requests_total{code=~\"5..\"}[5m]))) / (sum by (service, method) (rate(http_requests_total[5m])))",
+                    "seriesNameFormat": "{{ method }}/{{ service }}"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "ab1303e3f8a24cb3a41106b6a32a86f9": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Existence of 'owned-by' Label by Resource",
+            "description": "GreenhouseResourceOwnedByLabelMissing: The greenhouse.sap/owned-by label is missing on a resource"
+          },
+          "plugin": {
+            "kind": "Table",
+            "spec": {
+              "cellSettings": [
+                {
+                  "backgroundColor": "#EA4747",
+                  "condition": {
+                    "kind": "Value",
+                    "spec": {
+                      "value": "1"
+                    }
+                  },
+                  "text": "Missing 'owned_by' label.",
+                  "textColor": "#ffffff"
+                }
+              ],
+              "columnSettings": [
+                {
+                  "enableSorting": true,
+                  "hide": false,
+                  "name": "organization"
+                },
+                {
+                  "enableSorting": true,
+                  "name": "resource_kind"
+                },
+                {
+                  "enableSorting": true,
+                  "hide": false,
+                  "name": "resource_name"
+                },
+                {
+                  "header": "existence",
+                  "headerDescription": "Is this resource missing 'owned_by' a label?",
+                  "name": "value"
+                },
+                {
+                  "hide": true,
+                  "name": "__name__"
+                },
+                {
+                  "hide": true,
+                  "name": "cluster"
+                },
+                {
+                  "hide": true,
+                  "name": "container"
+                },
+                {
+                  "hide": true,
+                  "name": "endpoint"
+                },
+                {
+                  "hide": true,
+                  "name": "instance"
+                },
+                {
+                  "hide": true,
+                  "name": "job"
+                },
+                {
+                  "hide": true,
+                  "name": "namespace"
+                },
+                {
+                  "hide": true,
+                  "name": "region"
+                },
+                {
+                  "hide": true,
+                  "name": "pod"
+                },
+                {
+                  "hide": true,
+                  "name": "prometheus"
+                },
+                {
+                  "hide": true,
+                  "name": "service"
+                },
+                {
+                  "hide": true,
+                  "name": "timestamp"
+                }
+              ],
+              "defaultColumnHeight": "auto",
+              "defaultColumnWidth": "auto",
+              "density": "compact",
+              "pagination": false,
+              "transforms": []
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "query": "greenhouse_owned_by_label_missing == 1",
+                    "seriesNameFormat": "{{organization}} | {{resource_kind}} | {{resource_name}}"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "b0b67eb6babf48949c74a1e7d35e0e86": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Change in Number of Team Members by Organization/Team",
+            "description": "GreenhouseTeamMembershipCountDrop: The number of members for team {{ $labels.teams }} in organization {{ $labels.namespace }} has dropped by more than 5 in the last 5 minutes."
+          },
+          "plugin": {
+            "kind": "TimeSeriesChart",
+            "spec": {
+              "legend": {
+                "position": "right"
+              },
+              "thresholds": {
+                "steps": [
+                  {
+                    "color": "#EA4747",
+                    "value": -5
+                  }
+                ]
+              },
+              "yAxis": {
+                "format": {
+                  "shortValues": true,
+                  "unit": "decimal"
+                },
+                "label": "",
+                "show": true
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "query": "sum by (namespace, team) (delta(greenhouse_team_members_count{service=\"greenhouse-controller-manager-metrics-service\"}[5m]))",
+                    "seriesNameFormat": "{{namespace}} | {{team}}"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "b46f3a9fa7c54101894557ef319da152": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "KubeConfig Token Lifetime by Cluster/Namespace",
+            "description": "GreenhouseClusterTokenExpiry: The kubeconfig token for cluster in namespace will expire less than 20 hours."
+          },
+          "plugin": {
+            "kind": "TimeSeriesChart",
+            "spec": {
+              "legend": {
+                "position": "bottom"
+              },
+              "thresholds": {
+                "steps": [
+                  {
+                    "color": "#EA4747",
+                    "value": 72000
+                  }
+                ]
+              },
+              "yAxis": {
+                "format": {
+                  "unit": "seconds"
+                },
+                "label": "",
+                "show": true
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "minStep": "15m",
+                    "query": "greenhouse_cluster_kubeconfig_validity_seconds",
+                    "seriesNameFormat": "{{cluster}}/{{namespace}}"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "ed9c3ec270b24c8196484eeec4e653a3": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Greenhouse Ready Status",
+            "description": " GreenhouseClusterNotReady: Cluster in namespace has not been ready for more than 15 minutes."
+          },
+          "plugin": {
+            "kind": "StatusHistoryChart",
+            "spec": {
+              "mappings": [
+                {
+                  "kind": "Value",
+                  "spec": {
+                    "result": {
+                      "color": "#EA4747",
+                      "value": ""
+                    },
+                    "value": "0"
+                  }
+                },
+                {
+                  "kind": "Range",
+                  "spec": {
+                    "from": 1,
+                    "result": {
+                      "color": "#2FBF71",
+                      "value": ""
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "minStep": "",
+                    "query": "sum by (cluster, namespace) (greenhouse_cluster_ready)",
+                    "seriesNameFormat": "{{cluster}} | {{namespace}}"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "a66991e2ccff411ea475db19bfe704e3": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Rate of Workqueue Increase by Operator",
+            "description": "GreenhouseOperatorWorkqueueNotDrained: The workqueue backlog of Greenhouse Operator not being drained."
+          },
+          "plugin": {
+            "kind": "Table",
+            "spec": {
+              "cellSettings": [],
+              "columnSettings": [
+                {
+                  "enableSorting": true,
+                  "header": "operator",
+                  "name": "name",
+                  "sort": "asc",
+                  "hide": false
+                },
+                {
+                  "hide": true,
+                  "name": "timestamp"
+                },
+                {
+                  "enableSorting": false,
+                  "format": {
+                    "unit": "records/sec"
+                  },
+                  "name": "value",
+                  "sort": "desc",
+                  "header": "depth increase"
+                }
+              ],
+              "defaultColumnHeight": "auto",
+              "density": "compact",
+              "transforms": []
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "query": "sum by (name) (rate(workqueue_depth{job=\"greenhouse-controller-manager-metrics-service\"}[5m])) > 0",
+                    "seriesNameFormat": "{{ controller }}"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "4a987c9ac2714d8094a441ccbf57574f": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Reconcile Duration by Operator",
+            "description": "GreenhouseOperatorReconcileDurationHigher10Min: Reconcile duration higher than 10m while reconciling operator"
+          },
+          "plugin": {
+            "kind": "Table",
+            "spec": {
+              "cellSettings": [
+                {
+                  "condition": {
+                    "kind": "Misc",
+                    "spec": {
+                      "value": "NaN"
+                    }
+                  },
+                  "text": "NA"
+                }
+              ],
+              "columnSettings": [
+                {
+                  "enableSorting": true,
+                  "header": "operator",
+                  "name": "controller",
+                  "sort": "asc"
+                },
+                {
+                  "hide": true,
+                  "name": "timestamp"
+                },
+                {
+                  "enableSorting": false,
+                  "format": {
+                    "unit": "seconds"
+                  },
+                  "name": "value",
+                  "sort": "desc"
+                }
+              ],
+              "defaultColumnHeight": "auto",
+              "density": "compact",
+              "transforms": []
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "query": "(sum by (controller) (rate(controller_runtime_reconcile_time_seconds_sum{service=\"greenhouse-controller-manager-metrics-service\"}[5m]))) / (sum by (controller) (rate(controller_runtime_reconcile_time_seconds_count{service=\"greenhouse-controller-manager-metrics-service\"}[5m]))) > 600",
+                    "seriesNameFormat": "{{ controller }}"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "d3f5fea6b42c4e438ccb6b2f3fa4772e": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Greenhouse SCIM Access Ready Status",
+            "description": "GreenhouseOrganizationNotReady : The SCIM access for organization is not ready for more than 15 minutes. Team member sync may not be operational."
+          },
+          "plugin": {
+            "kind": "Table",
+            "spec": {
+              "density": "standard",
+              "columnSettings": [
+                {
+                  "name": "__name__",
+                  "hide": true
+                },
+                {
+                  "name": "cluster",
+                  "hide": true
+                },
+                {
+                  "name": "container",
+                  "hide": true
+                },
+                {
+                  "name": "endpoint",
+                  "hide": true
+                },
+                {
+                  "name": "instance",
+                  "hide": true
+                },
+                {
+                  "name": "job",
+                  "hide": true
+                },
+                {
+                  "name": "namespace",
+                  "hide": true
+                },
+                {
+                  "name": "organization",
+                  "hide": false
+                },
+                {
+                  "name": "pod",
+                  "hide": true
+                },
+                {
+                  "name": "prometheus",
+                  "hide": true
+                },
+                {
+                  "name": "region",
+                  "hide": true
+                },
+                {
+                  "name": "service",
+                  "hide": true
+                },
+                {
+                  "name": "timestamp",
+                  "hide": true
+                },
+                {
+                  "name": "value",
+                  "header": "status"
+                }
+              ],
+              "cellSettings": [
+                {
+                  "condition": {
+                    "kind": "Value",
+                    "spec": {
+                      "value": "1"
+                    }
+                  },
+                  "text": "Ready",
+                  "backgroundColor": "#2FBF71",
+                  "textColor": "#ffffff"
+                },
+                {
+                  "condition": {
+                    "kind": "Value",
+                    "spec": {
+                      "value": "0"
+                    }
+                  },
+                  "text": "Not Ready",
+                  "backgroundColor": "#EA4747",
+                  "textColor": "#ffffff"
+                }
+              ]
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "query": "greenhouse_scim_access_ready",
+                    "seriesNameFormat": "{{organization}}"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "layouts": [
+      {
+        "kind": "Grid",
+        "spec": {
+          "display": {
+            "title": "Cluster Alerts",
+            "collapse": {
+              "open": true
+            }
+          },
+          "items": [
+            {
+              "x": 0,
+              "y": 0,
+              "width": 10,
+              "height": 10,
+              "content": {
+                "$ref": "#/spec/panels/ed9c3ec270b24c8196484eeec4e653a3"
+              }
+            },
+            {
+              "x": 10,
+              "y": 0,
+              "width": 7,
+              "height": 10,
+              "content": {
+                "$ref": "#/spec/panels/b46f3a9fa7c54101894557ef319da152"
+              }
+            },
+            {
+              "x": 17,
+              "y": 0,
+              "width": 7,
+              "height": 10,
+              "content": {
+                "$ref": "#/spec/panels/5f2c2d5257e14effb0fececb55abb10e"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "kind": "Grid",
+        "spec": {
+          "display": {
+            "title": "Operator Alerts",
+            "collapse": {
+              "open": true
+            }
+          },
+          "items": [
+            {
+              "x": 0,
+              "y": 0,
+              "width": 8,
+              "height": 10,
+              "content": {
+                "$ref": "#/spec/panels/0d6e7800ea5d4c9680b3009ceb2f2889"
+              }
+            },
+            {
+              "x": 8,
+              "y": 0,
+              "width": 8,
+              "height": 10,
+              "content": {
+                "$ref": "#/spec/panels/a66991e2ccff411ea475db19bfe704e3"
+              }
+            },
+            {
+              "x": 0,
+              "y": 10,
+              "width": 8,
+              "height": 6,
+              "content": {
+                "$ref": "#/spec/panels/390248646d0744d0bb45ec92d0d2b2c3"
+              }
+            },
+            {
+              "x": 8,
+              "y": 10,
+              "width": 8,
+              "height": 6,
+              "content": {
+                "$ref": "#/spec/panels/76b2320e907b43e19cc46f5337f70ed3"
+              }
+            },
+            {
+              "x": 16,
+              "y": 0,
+              "width": 8,
+              "height": 10,
+              "content": {
+                "$ref": "#/spec/panels/4a987c9ac2714d8094a441ccbf57574f"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "kind": "Grid",
+        "spec": {
+          "display": {
+            "title": "Organization Alerts",
+            "collapse": {
+              "open": true
+            }
+          },
+          "items": [
+            {
+              "x": 0,
+              "y": 0,
+              "width": 5,
+              "height": 4,
+              "content": {
+                "$ref": "#/spec/panels/64d2eafe7efd42b5982e2bbd8f7a51cc"
+              }
+            },
+            {
+              "x": 5,
+              "y": 0,
+              "width": 5,
+              "height": 4,
+              "content": {
+                "$ref": "#/spec/panels/d3f5fea6b42c4e438ccb6b2f3fa4772e"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "kind": "Grid",
+        "spec": {
+          "display": {
+            "title": "Plugin Alerts",
+            "collapse": {
+              "open": true
+            }
+          },
+          "items": []
+        }
+      },
+      {
+        "kind": "Grid",
+        "spec": {
+          "display": {
+            "title": "Proxy Alerts",
+            "collapse": {
+              "open": true
+            }
+          },
+          "items": [
+            {
+              "x": 0,
+              "y": 0,
+              "width": 8,
+              "height": 6,
+              "content": {
+                "$ref": "#/spec/panels/7f203ac1a8ae42f2bd66b1651c71b7ee"
+              }
+            },
+            {
+              "x": 8,
+              "y": 0,
+              "width": 8,
+              "height": 6,
+              "content": {
+                "$ref": "#/spec/panels/65aaceec6e154184b819977871ca9cfc"
+              }
+            },
+            {
+              "x": 16,
+              "y": 0,
+              "width": 8,
+              "height": 6,
+              "content": {
+                "$ref": "#/spec/panels/13a75d7401c44db59abf22e033edfc84"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "kind": "Grid",
+        "spec": {
+          "display": {
+            "title": "Resource Alerts",
+            "collapse": {
+              "open": true
+            }
+          },
+          "items": [
+            {
+              "x": 0,
+              "y": 0,
+              "width": 12,
+              "height": 7,
+              "content": {
+                "$ref": "#/spec/panels/ab1303e3f8a24cb3a41106b6a32a86f9"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "kind": "Grid",
+        "spec": {
+          "display": {
+            "title": "Team Alerts",
+            "collapse": {
+              "open": true
+            }
+          },
+          "items": [
+            {
+              "x": 0,
+              "y": 0,
+              "width": 12,
+              "height": 7,
+              "content": {
+                "$ref": "#/spec/panels/b0b67eb6babf48949c74a1e7d35e0e86"
+              }
+            },
+            {
+              "x": 12,
+              "y": 0,
+              "width": 12,
+              "height": 7,
+              "content": {
+                "$ref": "#/spec/panels/46b62abb58da4f86a0b6467b3fd07e43"
+              }
+            }
+          ]
+        }
+      }
+    ],
+    "variables": [
+      {
+        "kind": "ListVariable",
+        "spec": {
+          "display": {
+            "name": "Cluster Alerts",
+            "hidden": true
+          },
+          "defaultValue": [
+            " GreenhouseClusterKubernetesVersionOutOfMaintenance"
+          ],
+          "allowAllValue": true,
+          "allowMultiple": true,
+          "sort": "alphabetical-asc",
+          "plugin": {
+            "kind": "StaticListVariable",
+            "spec": {
+              "values": [
+                {
+                  "label": "GreenhouseClusterNotReady",
+                  "value": "GreenhouseClusterNotReady"
+                },
+                {
+                  "label": " GreenhouseClusterTokenExpiry",
+                  "value": " GreenhouseClusterTokenExpiry"
+                },
+                {
+                  "label": " GreenhouseClusterKubernetesVersionOutOfMaintenance",
+                  "value": " GreenhouseClusterKubernetesVersionOutOfMaintenance"
+                }
+              ]
+            }
+          },
+          "name": "clusterAlert"
+        }
+      },
+      {
+        "kind": "ListVariable",
+        "spec": {
+          "display": {
+            "name": "Operator Alerts",
+            "hidden": true
+          },
+          "defaultValue": [
+            " GreenhouseOperatorReconcileDurationHigher10Min"
+          ],
+          "allowAllValue": true,
+          "allowMultiple": true,
+          "sort": "alphabetical-asc",
+          "plugin": {
+            "kind": "StaticListVariable",
+            "spec": {
+              "values": [
+                {
+                  "label": "GreenhouseOperatorReconcileErrorsHigh",
+                  "value": "GreenhouseOperatorReconcileErrorsHigh"
+                },
+                {
+                  "label": " GreenhouseOperatorReconcileDurationHigher10Min",
+                  "value": " GreenhouseOperatorReconcileDurationHigher10Min"
+                },
+                {
+                  "label": " GreenhouseOperatorWorkqueueNotDrained",
+                  "value": " GreenhouseOperatorWorkqueueNotDrained"
+                },
+                {
+                  "label": " GreenhouseWebhookLatencyHigh",
+                  "value": " GreenhouseWebhookLatencyHigh"
+                },
+                {
+                  "label": " GreenhouseWebhookErrorsHigh\n",
+                  "value": " GreenhouseWebhookErrorsHigh\n"
+                }
+              ]
+            }
+          },
+          "name": "operatorAlert"
+        }
+      },
+      {
+        "kind": "ListVariable",
+        "spec": {
+          "display": {
+            "name": "Plugin Alerts",
+            "hidden": true
+          },
+          "defaultValue": [
+            " GreenhousePluginConstantlyFailing"
+          ],
+          "allowAllValue": true,
+          "allowMultiple": true,
+          "sort": "alphabetical-asc",
+          "plugin": {
+            "kind": "StaticListVariable",
+            "spec": {
+              "values": [
+                {
+                  "label": "GreenhousePluginNotReady",
+                  "value": "GreenhousePluginNotReady"
+                },
+                {
+                  "label": " GreenhousePluginHelmChartTestFailures",
+                  "value": " GreenhousePluginHelmChartTestFailures"
+                },
+                {
+                  "label": " GreenhousePluginConstantlyFailing",
+                  "value": " GreenhousePluginConstantlyFailing"
+                },
+                {
+                  "label": " GreenhousePluginWorkloadNotReady\n",
+                  "value": " GreenhousePluginWorkloadNotReady\n"
+                }
+              ]
+            }
+          },
+          "name": "pluginAlert"
+        }
+      },
+      {
+        "kind": "ListVariable",
+        "spec": {
+          "display": {
+            "name": "Proxy Alerts",
+            "hidden": true
+          },
+          "defaultValue": [
+            " GreenhouseIDProxyErrorsHigh\n"
+          ],
+          "allowAllValue": true,
+          "allowMultiple": true,
+          "sort": "alphabetical-asc",
+          "plugin": {
+            "kind": "StaticListVariable",
+            "spec": {
+              "values": [
+                {
+                  "label": "GreenhouseProxyRequestErrorsHigh",
+                  "value": "GreenhouseProxyRequestErrorsHigh"
+                },
+                {
+                  "label": " GreenhouseProxyRequestDurationHigh",
+                  "value": " GreenhouseProxyRequestDurationHigh"
+                },
+                {
+                  "label": " GreenhouseIDProxyErrorsHigh\n",
+                  "value": " GreenhouseIDProxyErrorsHigh\n"
+                }
+              ]
+            }
+          },
+          "name": "proxyAlert"
+        }
+      },
+      {
+        "kind": "ListVariable",
+        "spec": {
+          "display": {
+            "name": "Organization Alerts",
+            "hidden": true
+          },
+          "defaultValue": [
+            " GreenhouseSCIMAccessNotReady\n"
+          ],
+          "allowAllValue": true,
+          "allowMultiple": true,
+          "sort": "alphabetical-asc",
+          "plugin": {
+            "kind": "StaticListVariable",
+            "spec": {
+              "values": [
+                {
+                  "label": "GreenhouseOrganizationNotReady",
+                  "value": "GreenhouseOrganizationNotReady"
+                },
+                {
+                  "label": " GreenhouseSCIMAccessNotReady\n",
+                  "value": " GreenhouseSCIMAccessNotReady\n"
+                }
+              ]
+            }
+          },
+          "name": "organizationAlert"
+        }
+      },
+      {
+        "kind": "ListVariable",
+        "spec": {
+          "display": {
+            "name": "Resource alerts",
+            "hidden": true
+          },
+          "defaultValue": [
+            "GreenhouseResourceOwnedByLabelMissing\n"
+          ],
+          "allowAllValue": true,
+          "allowMultiple": true,
+          "sort": "alphabetical-asc",
+          "plugin": {
+            "kind": "StaticListVariable",
+            "spec": {
+              "values": [
+                {
+                  "label": "GreenhouseResourceOwnedByLabelMissing\n",
+                  "value": "GreenhouseResourceOwnedByLabelMissing\n"
+                }
+              ]
+            }
+          },
+          "name": "resourceAlert"
+        }
+      },
+      {
+        "kind": "ListVariable",
+        "spec": {
+          "display": {
+            "name": "Team Alerts",
+            "hidden": true
+          },
+          "defaultValue": [
+            " GreenhouseTeamRoleBindingNotReady\n"
+          ],
+          "allowAllValue": true,
+          "allowMultiple": true,
+          "sort": "alphabetical-asc",
+          "plugin": {
+            "kind": "StaticListVariable",
+            "spec": {
+              "values": [
+                {
+                  "label": "GreenhouseTeamMembershipCountDrop",
+                  "value": "GreenhouseTeamMembershipCountDrop"
+                },
+                {
+                  "label": " GreenhouseTeamRoleBindingNotReady\n",
+                  "value": " GreenhouseTeamRoleBindingNotReady\n"
+                }
+              ]
+            }
+          },
+          "name": "teamAlert"
+        }
+      },
+      {
+        "kind": "ListVariable",
+        "spec": {
+          "display": {
+            "name": "Owner",
+            "hidden": false
+          },
+          "defaultValue": "$__all",
+          "allowAllValue": true,
+          "allowMultiple": true,
+          "sort": "alphabetical-asc",
+          "plugin": {
+            "kind": "PrometheusLabelValuesVariable",
+            "spec": {
+              "labelName": "owned_by",
+              "matchers": [
+                "greenhouse_plugin_ready"
+              ]
+            }
+          },
+          "name": "ownedBy"
+        }
+      },
+      {
+        "kind": "ListVariable",
+        "spec": {
+          "display": {
+            "name": "PluginDefinition",
+            "hidden": false
+          },
+          "defaultValue": "alerts",
+          "allowAllValue": false,
+          "allowMultiple": false,
+          "sort": "alphabetical-asc",
+          "plugin": {
+            "kind": "PrometheusLabelValuesVariable",
+            "spec": {
+              "labelName": "pluginDefinition",
+              "matchers": [
+                "greenhouse_plugin_ready"
+              ]
+            }
+          },
+          "name": "pluginDefinition"
+        }
+      },
+      {
+        "kind": "ListVariable",
+        "spec": {
+          "display": {
+            "name": "Cluster name",
+            "hidden": false
+          },
+          "defaultValue": "$__all",
+          "allowAllValue": true,
+          "allowMultiple": true,
+          "sort": "alphabetical-asc",
+          "plugin": {
+            "kind": "PrometheusLabelValuesVariable",
+            "spec": {
+              "labelName": "clusterName"
+            }
+          },
+          "name": "clusterName"
+        }
+      },
+      {
+        "kind": "ListVariable",
+        "spec": {
+          "display": {
+            "name": "Step size",
+            "hidden": false
+          },
+          "defaultValue": "1m",
+          "allowAllValue": false,
+          "allowMultiple": false,
+          "plugin": {
+            "kind": "StaticListVariable",
+            "spec": {
+              "values": [
+                {
+                  "label": "1m",
+                  "value": "1m"
+                },
+                {
+                  "label": "2m",
+                  "value": "2m"
+                },
+                {
+                  "label": "5m",
+                  "value": "5m"
+                },
+                {
+                  "label": "10m",
+                  "value": "10m"
+                },
+                {
+                  "label": "15m",
+                  "value": "15m"
+                },
+                {
+                  "label": "30m",
+                  "value": "30m"
+                },
+                {
+                  "label": "1h",
+                  "value": "1h"
+                },
+                {
+                  "label": "6h",
+                  "value": "6h"
+                },
+                {
+                  "label": "12h",
+                  "value": "12h"
+                },
+                {
+                  "label": "24h",
+                  "value": "24h"
+                }
+              ]
+            }
+          },
+          "name": "step"
+        }
+      }
+    ],
+    "duration": "12h",
+    "refreshInterval": "0s",
+    "datasources": {}
+  }
+}
