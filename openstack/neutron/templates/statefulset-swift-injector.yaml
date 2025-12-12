@@ -63,7 +63,6 @@ spec:
           image: {{ $.Values.global.registry }}/network-injector:{{ $.Values.imageVersionNetworkInjector | default "latest" }}
           imagePullPolicy: IfNotPresent
           command:
-            - "dumb-init"
             - "/manager"
             - "-upstream-host"
             - {{ include "swift_endpoint_host" $ | quote }}
@@ -111,7 +110,7 @@ spec:
         - name: neutron-linuxbridge-agent
           image: {{$.Values.global.registry}}/loci-neutron:{{$.Values.imageVersionNetworkAgentLinuxBridge | default $.Values.imageVersionNetworkAgent | default $.Values.imageVersion | required "Please set neutron.imageVersionNetworkAgentLinuxBridge or similar"}}
           imagePullPolicy: IfNotPresent
-          command: ["dumb-init", "neutron-linuxbridge-agent", "--config-file", "/etc/neutron/neutron.conf", "--config-dir", "/etc/neutron/secrets", "--config-file", "/etc/neutron/plugins/ml2/ml2_conf.ini", "--config-file", "/etc/neutron/linux-bridge.ini", "--config-file", "/etc/neutron/apod-{{ $apod }}.conf"]
+          command: ["neutron-linuxbridge-agent", "--config-file", "/etc/neutron/neutron.conf", "--config-dir", "/etc/neutron/secrets", "--config-file", "/etc/neutron/plugins/ml2/ml2_conf.ini", "--config-file", "/etc/neutron/linux-bridge.ini", "--config-file", "/etc/neutron/apod-{{ $apod }}.conf"]
           env:
             {{- include "utils.sentry_config" $ | nindent 12 }}
             - name: DEBUG_CONTAINER
@@ -153,7 +152,6 @@ spec:
           image: {{ $.Values.global.registry }}/network-injector:{{ $.Values.imageVersionNetworkInjector | default "latest" }}
           imagePullPolicy: IfNotPresent
           command:
-            - "dumb-init"
             - "socat"
             - "UNIX-LISTEN:/var/run/socat-proxy/proxy.sock,fork,reuseaddr,unlink-early,user=nobody,group=nobody,mode=777"
             - "TCP:swift-proxy-internal-cluster-3.swift.svc.kubernetes.{{ include "host_fqdn" $ }}:8080"
