@@ -204,6 +204,11 @@ spec:
             raw: |
               storage:
                 files:
+                {{- if eq $workerChannel "preRelease" }}
+                {{- if and $worker.extraIgnitionFiles ( typeIs "string" $worker.extraIgnitionFiles ) }}
+                {{- $worker.extraIgnitionFiles | nindent 16 }}
+                {{- end }}
+                {{- end }}
 
                 - path: /etc/default/openvswitch-switch
                   filesystem: root
@@ -316,6 +321,11 @@ spec:
 
               systemd:
                 units:
+                {{- if eq $workerChannel "preRelease" }}
+                {{- if and $worker.extraIgnitionSystemdUnits ( typeIs "string" $worker.extraIgnitionSystemdUnits ) }}
+                {{- $worker.extraIgnitionSystemdUnits | nindent 16 }}
+                {{- end }}
+                {{- end }}
                 - name: ovsdb-server.service
                   dropins:
                     - name: allow-group.conf
