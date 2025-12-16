@@ -5,8 +5,10 @@ metadata:
   name: {{ .Values.fullname }}-metrics
   labels:
     {{- include "aci-correlator.labels" . | nindent 4 }}
-  {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
   annotations:
+    prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
+    prometheus.io/scrape: "true"
+  {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
     linkerd.io/inject: enabled
   {{- end }}
 spec:
