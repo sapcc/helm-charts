@@ -117,7 +117,7 @@ pgmetrics:
                 description: "Lowest greenlit_at timestamp of any pending operation in this project resource"
         castellum_resource:
           query: >
-            SELECT asset_type AS asset, MIN(next_scrape_at) AS min_next_scrape_at
+            SELECT asset_type AS asset, EXTRACT(epoch FROM MIN(next_scrape_at)) AS min_next_scrape_at
               FROM resources
              GROUP BY asset_type
              UNION SELECT 'none' AS asset, EXTRACT(epoch FROM NOW()) AS min_next_scrape_at
@@ -130,7 +130,7 @@ pgmetrics:
                 description: "Lowest next_scrape_at timestamp of any project resource with this asset type"
         castellum_asset:
           query: >
-            SELECT r.asset_type AS asset, MIN(a.next_scrape_at) AS min_next_scrape_at
+            SELECT r.asset_type AS asset, EXTRACT(epoch FROM MIN(a.next_scrape_at)) AS min_next_scrape_at
               FROM resources r
               JOIN assets a ON a.resource_id = r.id
              GROUP BY r.asset_type
