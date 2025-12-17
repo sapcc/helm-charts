@@ -1158,6 +1158,7 @@ nanny:
   # Defaults for all nanny cronjobs
   default:
     enabled: true
+    add_cell0_conf: false
     add_cell1_conf: false
     resources:
       requests:
@@ -1170,6 +1171,16 @@ nanny:
     schedule: "0 * * * *"
     older_than: 21
     max_rows: 250
+  # Purge (with --purge flag) db rows from cell0 that were soft-deleted before
+  # more than older_than days. Cell0 contains instances that failed to get
+  # created. This job uses a shorter older_than to purge data sooner and handle
+  # the high volume of failed creations.
+  db_archive_deleted_rows_cell0:
+    # cron schedule (minute | hour | day of month | month | day of week)
+    schedule: "20 * * * *"
+    older_than: 3
+    max_rows: 1000
+    add_cell0_conf: true
   # Delete db rows soft-deleted before more than older_than days from shadow
   # tables.
   db_purge:
