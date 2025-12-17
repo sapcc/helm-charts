@@ -139,18 +139,20 @@ spec:
     workers:
     {{- range $workerkey, $worker := $cluster.workers }}
       {{- $workerChannel := coalesce $worker.channel $cluster.channel "release" }}
+      {{- $imageVersion:= "unset" }}
+      {{- if eq $workerChannel "preRelease" }}
+      {{- $imageVersion = coalesce $worker.preReleaseImageVersion $cluster.preReleaseImageVersion $.Values.preReleaseImageVersion }}
+      {{- else if eq $workerChannel "release" }}
+      {{- $imageVersion = coalesce $worker.imageVersion $cluster.imageVersion $.Values.imageVersion }}
+      {{- else }}
+      {{- fail (printf "worker %s has invalid channel '%s': must be either 'release' or 'preRelease'" $workerkey $workerChannel) }}
+      {{- end }}
       - name: {{ $workerkey }}
         machine:
           architecture: amd64
           image:
             name: gardenlinux
-            {{- if eq $workerChannel "preRelease" }}
-            version: {{ coalesce $worker.preReleaseImageVersion $cluster.preReleaseImageVersion $.Values.preReleaseImageVersion | quote }}
-            {{- else if eq $workerChannel "release" }}
-            version: {{ coalesce $worker.imageVersion $cluster.imageVersion $.Values.imageVersion | quote }}
-            {{- else }}
-            {{- fail (printf "worker %s has invalid channel '%s': must be either 'release' or 'preRelease'" $workerkey $workerChannel) }}
-            {{- end }}
+            version: {{ $imageVersion | quote }}
           type: baremetal
         minimum: {{ $worker.poolSize }}
         maximum: {{ $worker.poolSize }}
@@ -176,6 +178,7 @@ spec:
           {{- end }}
         labels:
           cloud.sap/channel: {{ $workerChannel }}
+          cloud.sap/imageVersion: {{ $imageVersion | quote }}
           {{- if $worker.labels }}
           {{- toYaml $worker.labels | nindent 10 }}
           {{- end }}
