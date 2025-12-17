@@ -120,6 +120,7 @@ pgmetrics:
             SELECT asset_type AS asset, MIN(next_scrape_at) AS min_next_scrape_at
               FROM resources
              GROUP BY asset_type
+             UNION SELECT 'none' AS asset, EXTRACT(epoch FROM NOW()) AS min_next_scrape_at
           metrics:
             - asset:
                 usage: "LABEL"
@@ -132,7 +133,8 @@ pgmetrics:
             SELECT r.asset_type AS asset, MIN(a.next_scrape_at) AS min_next_scrape_at
               FROM resources r
               JOIN assets a ON a.resource_id = r.id
-              GROUP BY r.asset_type
+             GROUP BY r.asset_type
+             UNION SELECT 'none' AS asset, EXTRACT(epoch FROM NOW()) AS min_next_scrape_at
           metrics:
             - asset:
                 usage: "LABEL"
