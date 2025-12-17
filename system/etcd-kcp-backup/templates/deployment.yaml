@@ -52,47 +52,19 @@ spec:
                   name: etcd-kcp-backup-aws
                   key: region
           volumeMounts:
-            - name: bucket-config
+            - name: etcd-kcp-backup
               mountPath: /scripts/init_bucket.sh
               subPath: init_bucket.sh
-            - name: bucket-config
+            - name: etcd-kcp-backup
               mountPath: /scripts/bucket_policy.json
               subPath: bucket_policy.json
       containers:
-        - name: manager
+        - name: server
           image: {{ .Values.deployment.container.image.repository }}:{{ .Values.deployment.container.image.tag }}
           command:
-            - /etcdbrctl
-          args:
-            - server
-            - '--auto-compaction-mode=periodic'
-            - '--auto-compaction-retention=30m'
-            - '--cacert=/etc/kubernetes/pki/etcd/ca.crt'
-            - '--cert=/etc/kubernetes/pki/apiserver-etcd-client.crt'
-            - '--compress-snapshots=true'
-            - '--compression-policy=gzip'
-            - '--data-dir=/var/lib/etcd'
-            - '--defragmentation-schedule=0 3 * * *'
-            - '--delta-snapshot-lease-name=etcd-kcp-backup-delta-snap'
-            - '--delta-snapshot-memory-limit=104857600'
-            - '--delta-snapshot-period=5m'
-            - '--embedded-etcd-quota-bytes=8589934592'
-            - '--enable-snapshot-lease-renewal=true'
-            - '--endpoints=https://etcd-kcp-backup.kube-system.svc.cluster.local:2379'
-            - '--etcd-connection-timeout=5m'
-            - '--etcd-defrag-timeout=15m'
-            - '--etcd-snapshot-timeout=15m'
-            - '--full-snapshot-lease-name=etcd-kcp-backup-full-snap'
-            - '--garbage-collection-period=12h'
-            - '--garbage-collection-policy=Exponential'
-            - '--insecure-skip-tls-verify=true'
-            - '--insecure-transport=false'
-            - '--k8s-heartbeat-duration=10s'
-            - '--key=/etc/kubernetes/pki/apiserver-etcd-client.key'
-            - '--restoration-temp-snapshots-dir=/tmp/etcd/restoration'
-            - '--schedule=0 4 * * *'
-            - '--snapstore-temp-directory=/tmp/etcd/snapstore'
-            - '--storage-provider=S3'
+            - 'sh'
+            - '-c'
+            - '/scripts/server.sh'
           ports:
           - name: server
             containerPort: 8080
@@ -115,8 +87,12 @@ spec:
           securityContext:
             {{- toYaml .Values.deployment.container.securityContext | nindent 12 }}
           volumeMounts:
-            - name: etcd-config
+            - name: etcd-kcp-backup
+              mountPath: /scripts/server.sh
+              subPath: server.sh
+            - name: etcd-kcp-backup
               mountPath: /var/etcd/config
+              subPath: etcd.conf.yaml
             - name: etcd-data
               mountPath: /var/lib/etcd
             - name: pki-certs
@@ -135,9 +111,10 @@ spec:
         - operator: Exists
           effect: NoExecute
       volumes:
-        - name: etcd-config
+        - name: etcd-kcp-backup
           configMap:
             name: etcd-kcp-backup
+            defaultMode: 0777
         - name: etcd-data
           hostPath:
             path: /var/lib/etcd
@@ -157,8 +134,4 @@ spec:
               - key: secret-access-key
                 path: secretAccessKey
             defaultMode: 420
-        - name: bucket-config
-          configMap:
-            name: etcd-kcp-bucket
-            defaultMode: 0777
 {{- end }}

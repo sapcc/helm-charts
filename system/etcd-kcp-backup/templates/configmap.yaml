@@ -10,15 +10,6 @@ data:
   etcd.conf.yaml: |
     name: {{ .Values.clusterName }}
     initial-cluster: default=http://127.0.0.1:2380
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: etcd-kcp-bucket
-  namespace: {{ .Values.namespace | default "kube-system" }}
-  labels:
-  {{- include "chart.labels" . | nindent 4 }}
-data:
   init_bucket.sh: |
     #!/usr/bin/env bash
     set -euo pipefail
@@ -31,6 +22,39 @@ data:
     fi
     echo "Applying bucket policy"
     aws s3api put-bucket-policy --bucket etcd-kcp-backup-{{ .Values.clusterName }} --policy file:///scripts/bucket_policy.json
+  server.sh: |
+    #!/usr/bin/env bash
+    set -euo pipefail
+    ip=$(ip route get 8.8.8.8 | head -1 | cut -d' ' -f8)
+    /etcdbrctl server \
+      --auto-compaction-mode=periodic \
+      --auto-compaction-retention=30m \
+      --cacert=/etc/kubernetes/pki/etcd/ca.crt \
+      --cert=/etc/kubernetes/pki/apiserver-etcd-client.crt \
+      --compress-snapshots=true \
+      --compression-policy=gzip \
+      --data-dir=/var/lib/etcd \
+      --defragmentation-schedule=0 3 * * * \
+      --delta-snapshot-lease-name=etcd-kcp-backup-delta-snap \
+      --delta-snapshot-memory-limit=104857600 \
+      --delta-snapshot-period=5m \
+      --embedded-etcd-quota-bytes=8589934592 \
+      --enable-snapshot-lease-renewal=true \
+      --endpoints=https://$ip:2379 \
+      --etcd-connection-timeout=5m \
+      --etcd-defrag-timeout=15m \
+      --etcd-snapshot-timeout=15m \
+      --full-snapshot-lease-name=etcd-kcp-backup-full-snap \
+      --garbage-collection-period=12h \
+      --garbage-collection-policy=Exponential \
+      --insecure-skip-tls-verify=true \
+      --insecure-transport=false \
+      --k8s-heartbeat-duration=10s \
+      --key=/etc/kubernetes/pki/apiserver-etcd-client.key \
+      --restoration-temp-snapshots-dir=/tmp/etcd/restoration \
+      --schedule=0 4 * * * \
+      --snapstore-temp-directory=/tmp/etcd/snapstore \
+      --storage-provider=S3
   bucket_policy.json: |
     {
         "Version": "2012-10-17",
