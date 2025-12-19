@@ -1,4 +1,4 @@
-#!/var/lib/openstack/bin/dumb-init bash
+#!/usr/bin/env bash
 
 set -e
 
