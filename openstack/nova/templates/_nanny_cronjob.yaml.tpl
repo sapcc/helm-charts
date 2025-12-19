@@ -49,6 +49,10 @@ spec:
                   items:
                   - key: api-db.conf
                     path: nova.conf.d/api-db.conf
+                  {{- if $values.add_cell0_conf }}
+                  - key: cell0.conf
+                    path: nova.conf.d/cell0.conf
+                  {{- end }}
                   {{- if $values.add_cell1_conf }}
                   - key: cell1.conf
                     path: nova.conf.d/cell1.conf
