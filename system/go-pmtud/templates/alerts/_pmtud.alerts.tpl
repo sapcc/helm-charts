@@ -12,11 +12,11 @@ groups:
         service: go-pmtud
         severity: info
         context: availability
-        support_group: containers
+        support_group: {{ .Values.alerts.supportGroup }}
         playbook: "docs/support/playbook/kubernetes/k8s_path_mtu"
       annotations:
-        description: Path MTU Daemon on node {{ $labels.node }} is not able to send ICMP packet to Peer {{ $labels.peer }}. Path MTU issues possible!
-        summary: Path MTU Daemon on node {{ $labels.node }} is not able to send ICMP packet to Peer {{ $labels.peer }}.
+        description: Path MTU Daemon on node {{`{{ $labels.node }}`}} is not able to send ICMP packet to Peer {{`{{ $labels.peer }}`}}. Path MTU issues possible!
+        summary: Path MTU Daemon on node {{`{{ $labels.node }}`}} is not able to send ICMP packet to Peer {{`{{ $labels.peer }}`}}.
 
     - alert: PmtudPeerArpResolveError
       expr: sum by (node) (rate(go_pmtud_peer_arp_resolve_error[15m])) > 0.1 unless sum by (peer) (rate(go_pmtud_peer_arp_resolve_error[15m])) > 0.1
@@ -26,8 +26,8 @@ groups:
         service: go-pmtud
         severity: warning
         context: availability
-        support_group: containers
+        support_group: {{ .Values.alerts.supportGroup }}
         playbook: "docs/support/playbook/kubernetes/k8s_path_mtu"
       annotations:
-        description: Path MTU Daemon on node {{ $labels.node }} is not able to resolve peer's mac address. Path MTU issues possible!
-        summary: Path MTU Daemon on node {{ $labels.node }} is not able to resolve peer's mac address. Path MTU issues possible!
+        description: Path MTU Daemon on node {{`{{ $labels.node }}`}} is not able to resolve peer's mac address. Path MTU issues possible!
+        summary: Path MTU Daemon on node {{`{{ $labels.node }}`}} is not able to resolve peer's mac address. Path MTU issues possible!
