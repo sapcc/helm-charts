@@ -1,21 +1,20 @@
-{{- if .Values.alerts.enabled }}
-{{- range $path, $bytes := .Files.Glob "alerts/*.alerts" }}
+{{- $values := .Values }}
+{{- if $values.alerts.enabled }}
 ---
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 
 metadata:
-  name: {{ printf "%s" $path | replace "/" "-" }}
+  name: alerts-go-pmtud.alerts
   labels:
     app: go-pmtud
     tier: k8s
     type: alerting-rules
-{{- with $.Values.alerts.ruleSelector }}
+{{- with $values.alerts.ruleSelector }}
     {{ tpl (toYaml .) . | nindent 4 }}
 {{- end }}
 
 spec:
-{{ printf "%s" $bytes | indent 2 }}
+{{ include (print .Template.BasePath "/alerts/_pmtud.alerts.tpl") . | indent 2 }}
 
-{{- end }}
 {{- end }}
