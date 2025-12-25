@@ -2,6 +2,14 @@
 
 This file is used to list changes made in each version of the common chart rabbitmq.
 
+## 0.21.0 - 2025/12/19
+
+- RabbitMQ [4.2.2 Release notes](https://github.com/rabbitmq/rabbitmq-server/releases/tag/v4.2.2)
+  - Python has been removed from the container image
+- `rabbitmq-setup-users` init script adapted to the absence of python interpreter
+- `rabbitmq-user-credential-updater` updated to `20251219114304` version
+- Chart version bumped
+
 ## 0.20.1 - 2025/11/24
 
 - RabbitMQ [4.2.1 Release notes](https://github.com/rabbitmq/rabbitmq-server/releases/tag/v4.2.1)

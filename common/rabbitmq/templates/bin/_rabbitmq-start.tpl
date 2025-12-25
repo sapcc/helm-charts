@@ -32,7 +32,7 @@ rabbitmqctl trace_on
 rabbitmqctl enable_feature_flag all
 {{- end }}
 
-python3 /container.init/rabbitmq-setup-users
+bash /container.init/rabbitmq-setup-users 2>&1
 
 wait $(jobs -rp) || true
 sleep inf
