@@ -8,7 +8,17 @@ metadata:
     release: "{{ .Release.Name }}"
     heritage: "{{ .Release.Service }}"
 rules:
-  # Access to the Barbican CRD
+  # Access to BarbicanOperator CRD (NEW)
+  - apiGroups:
+      - identity.cloud.sap
+    resources:
+      - barbicanoperators
+      - barbicanoperators/status
+      - barbicanoperators/finalizers
+    verbs:
+      - '*'
+
+  # (Optional but safe) Access to legacy Barbican CRD
   - apiGroups:
       - identity.cloud.sap
     resources:
@@ -18,7 +28,7 @@ rules:
     verbs:
       - '*'
 
-  # Core resources created/managed by the Helm release
+  # Core Kubernetes resources
   - apiGroups:
       - ""
     resources:
