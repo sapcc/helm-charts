@@ -179,5 +179,12 @@ mysql_query_rules =
         cache_ttl = 3600000,
         match_pattern = "^SELECT 1$",
     },
+    {
+        rule_id = 1,
+        active = 1,
+        apply = 1,
+        match_pattern = "SELECT VERSION(\s+)?\(\)",
+        replace_pattern = "SELECT VERSION() AS 'VERSION()'",
+    },
 )
 {{- end }}
