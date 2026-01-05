@@ -764,6 +764,20 @@ mysql_metrics:
         UNION ALL SELECT 'i-uuid', 'v-uuid', 0;
       values:
         - "gauge"
+    - help: Compute nodes without service
+      labels:
+      - "uuid"
+      - "nova_host"
+      name: openstack_compute_nodes_no_valid_service
+      query: |
+        SELECT
+          cn.uuid AS uuid, cn.host AS nova_host, 1 AS gauge
+        FROM compute_nodes AS cn
+        LEFT OUTER JOIN services AS s ON s.id = cn.service_id
+        WHERE cn.deleted = 0 AND (s.id IS NULL OR s.deleted <> 0)
+        UNION ALL SELECT 'cn-uuid', 'cn-host', 0;
+      values:
+        - "gauge"
 
 postgresql:
   enabled: false

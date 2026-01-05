@@ -164,3 +164,16 @@ groups:
     annotations:
       description: Live migration failed for instance={{ $labels.instance_uuid }}, migration_uuid={{ $labels.migration_uuid }}
       summary: Instances are in error state because live-migration failed.
+
+  - alert: OpenstackNovaComputeNodeWithoutValidService
+    expr: sum(openstack_compute_nodes_no_valid_service) BY (uuid, nova_host) > 0
+    for: 1h
+    labels:
+      severity: info
+      support_group: compute-storage-api
+      tier: os
+      service: nova
+      context: '{{ $labels.context }}'
+    annotations:
+      summary: A compute node of Nova has no or a deleted service assigned
+      description: Pagination when listing hypervisors in Nova can fail, leading to reduced resources in Cortex/Limes, because compute node {{ $labels.uuid }} of Nova host {{ $labels.nova_host }} does not have a valid service assigned in the database.
