@@ -1,7 +1,13 @@
+{{/*
+  Constraint objects cannot be included in the Helm manifest directly.
+  See templates/configmap-delayed-payloads.yaml and templates/job-apply-delayed-payloads.yaml for details.
+*/}}
+{{- define "restrict-monsoon3-namespace" -}}
+
 apiVersion: constraints.gatekeeper.sh/v1beta1
 kind: GkRestrictMonsoon3Namespace
 metadata:
-  name: restrictmonsoon3namespace
+  name: restrict-monsoon3-namespace
   annotations:
     {{- include "sources" (tuple "restrict-monsoon3-namespace" "restrict-monsoon3-namespace") | indent 4 }}
     {{- include "docstring" (tuple $ "GkRestrictMonsoon3Namespace") | indent 4 }}
@@ -25,3 +31,5 @@ spec:
       monsoon3: ""
       monsoon3global: ""
       {{- end }}
+
+{{- end -}}

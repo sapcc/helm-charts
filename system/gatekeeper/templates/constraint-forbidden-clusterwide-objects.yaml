@@ -1,7 +1,13 @@
+{{/*
+  Constraint objects cannot be included in the Helm manifest directly.
+  See templates/configmap-delayed-payloads.yaml and templates/job-apply-delayed-payloads.yaml for details.
+*/}}
+{{- define "forbidden-clusterwide-objects" -}}
+
 apiVersion: constraints.gatekeeper.sh/v1beta1
 kind: GkForbiddenClusterwideObjects
 metadata:
-  name: forbiddenclusterwideobjects-dryrun
+  name: forbidden-clusterwide-objects
   annotations:
     {{- include "sources" (tuple "forbidden-clusterwide-objects" "forbidden-clusterwide-objects") | indent 4 }}
     {{- include "docstring" (tuple $ "GkForbiddenClusterwideObjects") | indent 4 }}
@@ -17,3 +23,5 @@ spec:
 # NOTE: When we want to move into `enforcementMode: deny` for some of these
 # kinds, the plan is to make a new constraint config and move the respective
 # kinds over into it.
+
+{{- end -}}

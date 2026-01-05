@@ -1,7 +1,13 @@
+{{/*
+  Constraint objects cannot be included in the Helm manifest directly.
+  See templates/configmap-delayed-payloads.yaml and templates/job-apply-delayed-payloads.yaml for details.
+*/}}
+{{- define "outdated-image-bases" -}}
+
 apiVersion: constraints.gatekeeper.sh/v1beta1
 kind: GkOutdatedImageBases
 metadata:
-  name: outdatedimagebases
+  name: outdated-image-bases
   annotations:
     {{- include "sources" (tuple "outdated-image-bases" "outdated-image-bases") | indent 4 }}
     {{- include "docstring" (tuple $ "GkOutdatedImageBases") | indent 4 }}
@@ -12,3 +18,5 @@ spec:
   match: {{ include "match_pods_and_pod_owners" . | indent 4 }}
   parameters:
     doopImageCheckerURL: {{ quote .Values.doop_image_checker_url }}
+
+{{- end -}}

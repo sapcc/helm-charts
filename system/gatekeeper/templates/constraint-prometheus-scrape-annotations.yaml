@@ -1,10 +1,16 @@
+{{/*
+  Constraint objects cannot be included in the Helm manifest directly.
+  See templates/configmap-delayed-payloads.yaml and templates/job-apply-delayed-payloads.yaml for details.
+*/}}
+{{- define "prometheus-scrape-annotations" -}}
+
 {{/* The postfix clusters do not have prometheus-operator at the moment. */}}
 {{- if ne .Values.cluster_type "postfix" -}}
 
 apiVersion: constraints.gatekeeper.sh/v1beta1
 kind: GkPrometheusScrapeAnnotations
 metadata:
-  name: prometheusscrapeannotations
+  name: prometheus-scrape-annotations
   annotations:
     {{- include "sources" (tuple "prometheus-scrape-annotations" "prometheus-scrape-annotations") | indent 4 }}
     {{- include "docstring" (tuple $ "GkPrometheusScrapeAnnotations") | indent 4 }}
@@ -16,5 +22,7 @@ spec:
     kinds:
       - apiGroups: [""]
         kinds: ["Pod", "Service"]
+
+{{- end -}}
 
 {{- end -}}

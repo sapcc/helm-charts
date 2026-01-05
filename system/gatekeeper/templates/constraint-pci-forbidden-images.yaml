@@ -1,7 +1,13 @@
+{{/*
+  Constraint objects cannot be included in the Helm manifest directly.
+  See templates/configmap-delayed-payloads.yaml and templates/job-apply-delayed-payloads.yaml for details.
+*/}}
+{{- define "pci-forbidden-images" -}}
+
 apiVersion: constraints.gatekeeper.sh/v1beta1
 kind: GkPCIForbiddenImages
 metadata:
-  name: pciforbiddenimages
+  name: pci-forbidden-images
   annotations:
     {{- include "sources" (tuple "pci-forbidden-images" "pci-forbidden-images") | indent 4 }}
     {{- include "docstring" (tuple $ "GkPCIForbiddenImages") | indent 4 }}
@@ -17,3 +23,5 @@ spec:
       {{- else }}
       - "/cc-ia/cc-readymade"
       {{- end }}
+
+{{- end -}}
