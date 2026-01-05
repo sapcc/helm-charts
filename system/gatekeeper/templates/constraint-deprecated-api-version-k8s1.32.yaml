@@ -1,7 +1,13 @@
+{{/*
+  Constraint objects cannot be included in the Helm manifest directly.
+  See templates/configmap-delayed-payloads.yaml and templates/job-apply-delayed-payloads.yaml for details.
+*/}}
+{{- define "deprecated-api-version-k8s1.32" -}}
+
 apiVersion: constraints.gatekeeper.sh/v1beta1
 kind: GkDeprecatedApiVersion
 metadata:
-  name: deprecatedapiversion-k8s1.32
+  name: deprecated-api-version-k8s1.32
   annotations:
     {{- include "sources" (tuple "deprecated-api-version" "deprecated-api-version-k8s1.32") | indent 4 }}
     {{- include "docstring" (tuple $ "GkDeprecatedApiVersion") | indent 4 }}
@@ -15,3 +21,5 @@ spec:
     kubernetesVersion: '1.32'
     apiVersions:
       - flowcontrol.apiserver.k8s.io/v1beta3
+
+{{- end -}}

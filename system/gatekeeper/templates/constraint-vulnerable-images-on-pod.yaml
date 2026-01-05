@@ -1,3 +1,9 @@
+{{/*
+  Constraint objects cannot be included in the Helm manifest directly.
+  See templates/configmap-delayed-payloads.yaml and templates/job-apply-delayed-payloads.yaml for details.
+*/}}
+{{- define "vulnerable-images-on-pod" -}}
+
 ##############################################################################
 # WARNING: This policy is a vital piece of the garbage collection process in #
 # our internal Keppel repositories. Since this policy regularly polls every  #
@@ -8,7 +14,7 @@
 apiVersion: constraints.gatekeeper.sh/v1beta1
 kind: GkVulnerableImages
 metadata:
-  name: vulnerableimages-on-pod
+  name: vulnerable-images-on-pod
   annotations:
     {{- include "sources" (tuple "vulnerable-images" "vulnerable-images-on-pod") | indent 4 }}
     {{- include "docstring" (tuple $ "GkVulnerableImages") | indent 4 }}
@@ -21,3 +27,5 @@ spec:
     doopImageCheckerURL: {{ quote .Values.doop_image_checker_url }}
     vulnStatusHeader: X-Keppel-Vulnerability-Status
     reportingLevel: "pod"
+
+{{- end -}}

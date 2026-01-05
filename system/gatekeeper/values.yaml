@@ -9,7 +9,57 @@ owner-info:
 global:
   linkerd_requested: true
 
+# Must be provided via --set-string; e.g. "eu-de-1" or "s-qa-de-1". Tests will use the bogus value "t-qa-de-1".
+cluster_name: null
+# Must be provided via --set-string; e.g. "labs" or "qa" or "prod". Tests will have the bogus value "test".
+cluster_layer: null
+# Must be provided via --set-string; e.g. "baremetal" or "scaleout". Tests will have the bogus value "test".
+cluster_type: null
+
+# Global switch to enable or disable enforcement of policies.
+# Note that some constraints (templates/constraint-*.yaml) are never enforced, even if this is set to true.
+enforcement_mode: false
+
+# Where to find doop-image-checker and helm-manifest-parser.
+# When actually installing this chart, these services are deployed as part of this chart,
+# but we allow an override for running tests outside of Kubernetes (see `ci/test-values.yaml`).
+doop_image_checker_url: http://doop-image-checker.kube-system.svc
+helm_manifest_parser_url: http://helm-manifest-parser.kube-system.svc
+
+gatekeeper_addons:
+  image_tag: null # Must be provided via --set-string.
+
+# NOTE: This section is shared with the `system/doop-central` chart.
+doop:
+  # values with default value null must be provided by values.yaml
+  swift_region: null
+  swift_password: null
+
+# Please keep this list in sync with `global/prometheus-alertmanager-operated/values.yaml` field "supportGroups".
+known_support_groups:
+  - capacity-ops
+  - compute
+  - compute-storage-api
+  - containers
+  - coredns
+  - email
+  - foundation
+  - iaas-support
+  - identity
+  - kvm
+  - network-api
+  - network-data
+  - network-lb
+  - network-security
+  - network-wan
+  - observability
+  - src
+  - storage
+  - workload-management
+
+################################################################################
 # documentation for this section: <https://github.com/open-policy-agent/gatekeeper/tree/master/charts/gatekeeper>
+
 gatekeeper-upstream:
   createNamespace: false
   constraintViolationsLimit: 2000
@@ -31,10 +81,6 @@ gatekeeper-upstream:
   pdb:
     controllerManager:
       minAvailable: 0
-
-  # We have our own Gatekeeper policy to replace PodSecurityPolicy.
-  psp:
-    enabled: false
 
   # Override container images with our local mirrors and disable jobs that are incompatible with our setup.
   image:
@@ -61,22 +107,13 @@ gatekeeper-upstream:
         cpu: 500m
         memory: 256Mi
 
-  podAnnotations:
+  # re linkerd.io/inject: Gatekeeper only talks to the Kubernetes API, which is not covered by Linkerd anyway,
+  # and does not expose any APIs of its own.
+  auditPodAnnotations:
+    linkerd.io/inject: disabled
     prometheus.io/scrape: "true"
     prometheus.io/targets: kubernetes
-
-# Must be provided via --set-string; e.g. "qa-de-1" for QA controlplane or "s-qa-de-1" for QA scaleout. Tests will have the bogus value "t-qa-de-1".
-cluster_name: null
-# Must be provided via --set-string; e.g. "labs" or "qa" or "prod". Tests will have the bogus value "test".
-cluster_layer: null
-# Must be provided via --set-string; e.g. "baremetal" or "scaleout". Tests will have the bogus value "test".
-cluster_type: null
-
-gatekeeper_addons:
-  image_tag: null # Must be provided via --set-string.
-
-# NOTE: This section is shared with the `system/doop-central` chart.
-doop:
-  # values with default value null must be provided by values.yaml
-  swift_region: null
-  swift_password: null
+  podAnnotations:
+    linkerd.io/inject: disabled
+    prometheus.io/scrape: "true"
+    prometheus.io/targets: kubernetes
