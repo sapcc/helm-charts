@@ -33,11 +33,13 @@
 {{/* build a lookup table ordered by kind, and then by name */}}
 {{- $lookup_table := dict -}}
 {{- range $yaml := $all_resources -}}
-  {{- $res := fromYaml $yaml -}}
-  {{- if not (hasKey $lookup_table $res.kind) -}}
-    {{- $_ := set $lookup_table $res.kind (dict) -}}
+  {{- if ne (trim $yaml) "" -}}
+    {{- $res := fromYaml $yaml -}}
+    {{- if not (hasKey $lookup_table $res.kind) -}}
+      {{- $_ := set $lookup_table $res.kind (dict) -}}
+    {{- end -}}
+    {{- $_ := set (index $lookup_table $res.kind) $res.metadata.name $yaml -}}
   {{- end -}}
-  {{- $_ := set (index $lookup_table $res.kind) $res.metadata.name $yaml -}}
 {{- end -}}
 
 kind: ConfigMap
