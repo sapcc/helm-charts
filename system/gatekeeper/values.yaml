@@ -16,10 +16,6 @@ cluster_layer: null
 # Must be provided via --set-string; e.g. "baremetal" or "scaleout". Tests will have the bogus value "test".
 cluster_type: null
 
-# Global switch to enable or disable enforcement of policies.
-# Note that some constraints (templates/constraint-*.yaml) are never enforced, even if this is set to true.
-enforcement_mode: false
-
 # Where to find doop-image-checker and helm-manifest-parser.
 # When actually installing this chart, these services are deployed as part of this chart,
 # but we allow an override for running tests outside of Kubernetes (see `ci/test-values.yaml`).
@@ -66,21 +62,23 @@ gatekeeper-upstream:
   logDenies: true
   disabledBuiltins: [] # do not disable `http.send`
 
-  # We only use Gatekeeper for auditing, not as a validating webhook. Therefore
-  # we don't need multiple replicas for the controller manager: It only needs
-  # to validate templates and create/update/delete CRDs from them.
+  # By default, we only use Gatekeeper for auditing, not as a validating webhook.
+  # In certain clusters, this setting is reverted through adding `--values values-for-enforcement-mode.yaml`.
   disableValidatingWebhook: true
-  # We also don't use it as a mutating webhook.
+  # We never use Gatekeeper as a mutating webhook.
   disableMutation: true
+
+  # When not using webhooks, we don't need multiple replicas for the controller manager:
+  # It only needs to validate templates and create/update/delete CRDs from them.
   replicas: 1
-
-  # TODO: enable once we are on k8s 1.30 everywhere, consider simplifying policies from Rego into CEL where possible
-  enableK8sNativeValidation: false
-
   # We also don't need a strict pod disruption budget.
   pdb:
     controllerManager:
       minAvailable: 0
+  # NOTE: These settings may be reverted to their defaults by `values-for-enforcement-mode.yaml`.
+
+  # TODO: enable once we are on k8s 1.30 everywhere, consider simplifying policies from Rego into CEL where possible
+  enableK8sNativeValidation: false
 
   # Override container images with our local mirrors and disable jobs that are incompatible with our setup.
   image:
