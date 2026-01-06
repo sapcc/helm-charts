@@ -12,7 +12,7 @@ groups:
         service: go-pmtud
         severity: info
         context: availability
-        support_group: {{ .Values.alerts.supportGroup }}
+        support_group: {{ .Values.global.greenhouse.ownedBy | default .Values.alerts.supportGroup }}
         playbook: "docs/support/playbook/kubernetes/k8s_path_mtu"
       annotations:
         description: Path MTU Daemon on node {{`{{ $labels.node }}`}} is not able to send ICMP packet to Peer {{`{{ $labels.peer }}`}}. Path MTU issues possible!
@@ -26,7 +26,7 @@ groups:
         service: go-pmtud
         severity: warning
         context: availability
-        support_group: {{ .Values.alerts.supportGroup }}
+        support_group: {{ .Values.global.greenhouse.ownedBy | default .Values.alerts.supportGroup }}
         playbook: "docs/support/playbook/kubernetes/k8s_path_mtu"
       annotations:
         description: Path MTU Daemon on node {{`{{ $labels.node }}`}} is not able to resolve peer's mac address. Path MTU issues possible!
