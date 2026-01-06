@@ -181,6 +181,7 @@ build-khalkeon-remote:
 		$(SED) 's/kind: Role/kind: ClusterRole/g' - |\
 		yq eval 'select(.kind != "Service")' - >\
 		khalkeon-remote/managedresources/crds-and-rbac.yaml
+	@yq -i '.version = (.version | split(".") | .[2] = ((.[2] | tonumber) + 1 | tostring) | join("."))' khalkeon-remote/Chart.yaml
 
 # chart name, source url, tag
 define build-chart
