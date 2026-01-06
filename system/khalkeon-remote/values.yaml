@@ -3,4 +3,48 @@ owner-info:
   helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/system/khalkeon-remote
 
 khalkeon-core:
-  serviceAccountName: khalkeon-controller-manager
+  serviceAccountName: default
+  rbac:
+    enable: false
+  crd:
+    enable: false
+  metrics:
+    enable: false
+  webhook:
+    enable: false
+  prometheus:
+    enable: false
+  certmanager:
+    enable: false
+  networkPolicy:
+    enable: false
+  controllerManager:
+    manager:
+      env:
+        KUBERNETES_SERVICE_HOST: "apiserver-url"
+        ENABLE_WEBHOOKS: "false"
+        KUBERNETES_CLUSTER_DOMAIN: "cluster.local"
+      resources:
+        limits:
+          cpu: "500m"
+          memory: "512Mi"
+      volumes:
+      - name: remote-kubeconfig
+        mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+        readOnly: true
+        source:
+          secret:
+            secretName: khalkeon-remote-kubeconfig
+            items:
+            - key: token
+              path: token
+            - key: bundle.crt
+              path: ca.crt
+    pod:
+      labels:
+        networking.gardener.cloud/to-dns: allowed
+        networking.gardener.cloud/to-runtime-apiserver: allowed
+        networking.resources.gardener.cloud/to-all-istio-ingresses-istio-ingressgateway-tcp-9443: allowed
+        networking.resources.gardener.cloud/to-kube-apiserver-tcp-443: allowed
+    serviceAccountName: default
+

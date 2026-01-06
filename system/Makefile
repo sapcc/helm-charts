@@ -174,6 +174,7 @@ build-argora-operator-remote:
 		yq -i '.version = (.version | split(".") | .[2] = ((.[2] | tonumber) + 1 | tostring) | join("."))' argora-operator-remote/Chart.yaml
 
 build-khalkeon-remote:
+	@helm dep up khalkeon-remote
 	@helm template khalkeon khalkeon-remote/charts/khalkeon* \
 		-f khalkeon-remote/values.yaml \
 		-f khalkeon-remote/values-managed-resources.yaml |\
