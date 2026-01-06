@@ -21,9 +21,3 @@ fi
       jq --arg key "$KEY" -r '.data[$key]' > "tests/rendered-chart/gatekeeper/constraints/$KEY"
   done
 )
-
-(
-  cd ../../gatekeeper-config
-  [[ ! -d charts ]] && ${HELM} dep up >/dev/null
-  ${HELM} template gatekeeper-config . --values ci/test-values.yaml --output-dir ../gatekeeper/tests/rendered-chart >/dev/null
-)
