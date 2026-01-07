@@ -3,8 +3,8 @@
   "metadata": {
     "name": "plugins",
     "createdAt": "2025-11-18T12:41:05.244229188Z",
-    "updatedAt": "2025-11-19T12:47:48.79907426Z",
-    "version": 24,
+    "updatedAt": "2026-01-07T14:15:27.722988905Z",
+    "version": 27,
     "project": "greenhouse"
   },
   "spec": {
@@ -19,12 +19,82 @@
             "name": "Installed plugins"
           },
           "plugin": {
+            "kind": "Table",
+            "spec": {
+              "density": "standard",
+              "columnSettings": [
+                {
+                  "name": "pluginDefinition",
+                  "enableSorting": true,
+                  "sort": "asc"
+                },
+                {
+                  "name": "value",
+                  "header": "Status",
+                  "enableSorting": true,
+                  "sort": "desc"
+                },
+                {
+                  "name": "timestamp",
+                  "hide": true
+                }
+              ],
+              "cellSettings": [
+                {
+                  "condition": {
+                    "kind": "Value",
+                    "spec": {
+                      "value": "0"
+                    }
+                  },
+                  "text": "Not Installed",
+                  "backgroundColor": "#EA4747",
+                  "textColor": "#ffffff"
+                },
+                {
+                  "condition": {
+                    "kind": "Regex",
+                    "spec": {
+                      "expr": "[1-9]+"
+                    }
+                  },
+                  "textColor": "#ffffff",
+                  "backgroundColor": "#2FBF71",
+                  "text": ""
+                }
+              ]
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "minStep": "",
+                    "query": "sum by(pluginDefinition) (greenhouse_plugin_ready{owned_by=~\"$ownedBy\", clusterName=~\"$clusterName\"})",
+                    "seriesNameFormat": "{{pluginDefinition}}"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "512963ee1ff74a6e89049227f84b17ed": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "GreenhousePluginWorkloadNotReady"
+          },
+          "plugin": {
             "kind": "StatChart",
             "spec": {
               "calculation": "last-number",
               "format": {
                 "decimalPlaces": 0,
-                "shortValues": true,
+                "shortValues": false,
                 "unit": "decimal"
               },
               "mappings": [
@@ -33,19 +103,19 @@
                   "spec": {
                     "result": {
                       "color": "#2FBF71",
-                      "value": ""
+                      "value": "OK"
                     },
-                    "value": "1"
+                    "value": "0"
                   }
                 },
                 {
-                  "kind": "Value",
+                  "kind": "Range",
                   "spec": {
+                    "from": 1,
                     "result": {
                       "color": "#EA4747",
                       "value": ""
-                    },
-                    "value": "0"
+                    }
                   }
                 }
               ],
@@ -63,8 +133,8 @@
                   "kind": "PrometheusTimeSeriesQuery",
                   "spec": {
                     "minStep": "",
-                    "query": "sum by(pluginDefinition) (greenhouse_plugin_ready{owned_by=~\"$ownedBy\", clusterName=~\"$clusterName\"})",
-                    "seriesNameFormat": "{{pluginDefinition}}"
+                    "query": "greenhouse_plugin_workload_status_up{cluster=~\"$clusterName\", owned_by=~\"$ownedBy\"}",
+                    "seriesNameFormat": "{{cluster}} | {{namespace}} | {{owned_by}} | {{plugin}}"
                   }
                 }
               }
@@ -172,6 +242,66 @@
           ]
         }
       },
+      "79c6158acb8c40c59d79711233c531f2": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "GreenhousePluginNotReady"
+          },
+          "plugin": {
+            "kind": "StatChart",
+            "spec": {
+              "calculation": "last-number",
+              "format": {
+                "decimalPlaces": 0,
+                "shortValues": false,
+                "unit": "decimal"
+              },
+              "mappings": [
+                {
+                  "kind": "Value",
+                  "spec": {
+                    "result": {
+                      "color": "#2FBF71",
+                      "value": "OK"
+                    },
+                    "value": "0"
+                  }
+                },
+                {
+                  "kind": "Range",
+                  "spec": {
+                    "from": 1,
+                    "result": {
+                      "color": "#EA4747",
+                      "value": ""
+                    }
+                  }
+                }
+              ],
+              "sparkline": {},
+              "thresholds": {
+                "steps": []
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "minStep": "",
+                    "query": "sum by(plugin, cluster, namespace)(rate(greenhouse_plugin_chart_test_runs_total{cluster=~\"$clusterName\", owned_by=~\"$ownedBy\", result=\"Error\"}[15m])) > 0",
+                    "seriesNameFormat": "{{cluster}} | {{namespace}} | {{owned_by}} | {{plugin}}"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
       "99f96c3238b1405b9b12be3570cce66d": {
         "kind": "Panel",
         "spec": {
@@ -229,40 +359,42 @@
             "name": "GreenhousePluginNotReady"
           },
           "plugin": {
-            "kind": "StatChart",
+            "kind": "Table",
             "spec": {
-              "calculation": "last-number",
-              "format": {
-                "unit": "decimal",
-                "decimalPlaces": 0,
-                "shortValues": false
-              },
-              "mappings": [
+              "cellSettings": [
                 {
-                  "kind": "Value",
-                  "spec": {
-                    "result": {
-                      "color": "#2FBF71",
-                      "value": "OK"
-                    },
-                    "value": "0"
-                  }
-                },
-                {
-                  "kind": "Range",
-                  "spec": {
-                    "result": {
-                      "value": "",
-                      "color": "#EA4747"
-                    },
-                    "from": 1
-                  }
+                  "backgroundColor": "#ff5050",
+                  "condition": {
+                    "kind": "Value",
+                    "spec": {
+                      "value": "0"
+                    }
+                  },
+                  "text": "Not Ready",
+                  "textColor": "#ffffff"
                 }
               ],
-              "thresholds": {
-                "steps": []
-              },
-              "sparkline": {}
+              "columnSettings": [
+                {
+                  "name": "clusterName",
+                  "enableSorting": true,
+                  "sort": "asc"
+                },
+                {
+                  "name": "pluginDefinition"
+                },
+                {
+                  "enableSorting": false,
+                  "header": "Status",
+                  "name": "value",
+                  "width": 50
+                },
+                {
+                  "hide": true,
+                  "name": "timestamp"
+                }
+              ],
+              "density": "standard"
             }
           },
           "queries": [
@@ -273,128 +405,8 @@
                   "kind": "PrometheusTimeSeriesQuery",
                   "spec": {
                     "minStep": "",
-                    "query": "sum by(pluginDefinition) (greenhouse_plugin_ready{clusterName=~\"$clusterName\"}==0)",
+                    "query": "sum by(clusterName, pluginDefinition) (greenhouse_plugin_ready{clusterName=~\"$clusterName\"}==0)",
                     "seriesNameFormat": "{{clusterName}} | {{pluginDefinition}}"
-                  }
-                }
-              }
-            }
-          ]
-        }
-      },
-      "79c6158acb8c40c59d79711233c531f2": {
-        "kind": "Panel",
-        "spec": {
-          "display": {
-            "name": "GreenhousePluginNotReady"
-          },
-          "plugin": {
-            "kind": "StatChart",
-            "spec": {
-              "calculation": "last-number",
-              "format": {
-                "unit": "decimal",
-                "decimalPlaces": 0,
-                "shortValues": false
-              },
-              "mappings": [
-                {
-                  "kind": "Value",
-                  "spec": {
-                    "result": {
-                      "color": "#2FBF71",
-                      "value": "OK"
-                    },
-                    "value": "0"
-                  }
-                },
-                {
-                  "kind": "Range",
-                  "spec": {
-                    "result": {
-                      "value": "",
-                      "color": "#EA4747"
-                    },
-                    "from": 1
-                  }
-                }
-              ],
-              "thresholds": {
-                "steps": []
-              },
-              "sparkline": {}
-            }
-          },
-          "queries": [
-            {
-              "kind": "TimeSeriesQuery",
-              "spec": {
-                "plugin": {
-                  "kind": "PrometheusTimeSeriesQuery",
-                  "spec": {
-                    "minStep": "",
-                    "query": "sum by(plugin, cluster, namespace)(rate(greenhouse_plugin_chart_test_runs_total{cluster=~\"$clusterName\", owned_by=~\"$ownedBy\", result=\"Error\"}[15m])) > 0",
-                    "seriesNameFormat": "{{cluster}} | {{namespace}} | {{owned_by}} | {{plugin}}"
-                  }
-                }
-              }
-            }
-          ]
-        }
-      },
-      "512963ee1ff74a6e89049227f84b17ed": {
-        "kind": "Panel",
-        "spec": {
-          "display": {
-            "name": "GreenhousePluginWorkloadNotReady"
-          },
-          "plugin": {
-            "kind": "StatChart",
-            "spec": {
-              "calculation": "last-number",
-              "format": {
-                "unit": "decimal",
-                "decimalPlaces": 0,
-                "shortValues": false
-              },
-              "mappings": [
-                {
-                  "kind": "Value",
-                  "spec": {
-                    "result": {
-                      "color": "#2FBF71",
-                      "value": "OK"
-                    },
-                    "value": "0"
-                  }
-                },
-                {
-                  "kind": "Range",
-                  "spec": {
-                    "result": {
-                      "value": "",
-                      "color": "#EA4747"
-                    },
-                    "from": 1
-                  }
-                }
-              ],
-              "thresholds": {
-                "steps": []
-              },
-              "sparkline": {}
-            }
-          },
-          "queries": [
-            {
-              "kind": "TimeSeriesQuery",
-              "spec": {
-                "plugin": {
-                  "kind": "PrometheusTimeSeriesQuery",
-                  "spec": {
-                    "minStep": "",
-                    "query": "greenhouse_plugin_workload_status_up{cluster=~\"$clusterName\", owned_by=~\"$ownedBy\"}",
-                    "seriesNameFormat": "{{cluster}} | {{namespace}} | {{owned_by}} | {{plugin}}"
                   }
                 }
               }
@@ -516,7 +528,10 @@
             "name": "Owner",
             "hidden": false
           },
-          "defaultValue": "$__all",
+          "defaultValue": [
+            "compute",
+            "observability"
+          ],
           "allowAllValue": true,
           "allowMultiple": true,
           "sort": "alphabetical-asc",
@@ -539,7 +554,10 @@
             "name": "Cluster name",
             "hidden": false
           },
-          "defaultValue": "$__all",
+          "defaultValue": [
+            "st1-eu-de-1",
+            "cc-a0-eu-de-3"
+          ],
           "allowAllValue": true,
           "allowMultiple": true,
           "sort": "alphabetical-asc",
@@ -559,7 +577,7 @@
             "name": "Step size",
             "hidden": false
           },
-          "defaultValue": "1m",
+          "defaultValue": "5m",
           "allowAllValue": false,
           "allowMultiple": false,
           "plugin": {
