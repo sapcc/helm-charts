@@ -1,0 +1,229 @@
+#!/usr/bin/env bash
+
+set -o pipefail
+
+# Read the resolved password from the secret
+RESOLVED_PASSWORD=$(cat /{{ .Chart.Name }}-etc/tempest-admin-password)
+
+# Copy config files to temp directory and substitute the password placeholder
+cp /{{ .Chart.Name }}-etc/tempest_accounts.yaml /tmp/tempest_accounts.yaml
+sed -i "s|TEMPEST_ADMIN_PASSWORD_PLACEHOLDER|${RESOLVED_PASSWORD}|g" /tmp/tempest_accounts.yaml
+
+cp /{{ .Chart.Name }}-etc/tempest_deployment_config.json /tmp/tempest_deployment_config.json
+sed -i "s|TEMPEST_ADMIN_PASSWORD_PLACEHOLDER|${RESOLVED_PASSWORD}|g" /tmp/tempest_deployment_config.json
+
+# Override the start_tempest_tests function to use /tmp paths
+function start_tempest_tests {
+
+  echo -e "\n === PRE-CONFIG STEP  === \n"
+
+  export OS_USERNAME={{ default "admin" (index .Values (print .Chart.Name | replace "-" "_")).tempest.admin_name | quote }}
+  export OS_TENANT_NAME={{ default "admin" (index .Values (print .Chart.Name | replace "-" "_")).tempest.admin_project_name | quote }}
+  export OS_PROJECT_NAME={{ default "admin" (index .Values (print .Chart.Name | replace "-" "_")).tempest.admin_project_name | quote }}
+
+  # Copy and substitute password in tempest_extra_options
+  cp /{{ .Chart.Name }}-etc/tempest_extra_options /tmp/tempest_extra_options
+  sed -i "s|TEMPEST_ADMIN_PASSWORD_PLACEHOLDER|${RESOLVED_PASSWORD}|g" /tmp/tempest_extra_options
+  sed -i "s|test_accounts_file = /{{ .Chart.Name }}-etc/tempest_accounts.yaml|test_accounts_file = /tmp/tempest_accounts.yaml|g" /tmp/tempest_extra_options
+
+  echo -e "\n === CONFIGURING RALLY & TEMPEST === \n"
+
+  # init exit code vars
+  export TEMPEST_EXIT_CODE=0
+  export RALLY_EXIT_CODE=0
+
+  # ensure rally db is present
+  rally db ensure
+  RALLY_EXIT_CODE=$(($RALLY_EXIT_CODE + $?))
+
+  # configure deployment for current region with existing users - use /tmp path
+  rally deployment create --file /tmp/tempest_deployment_config.json --name tempest_deployment
+  RALLY_EXIT_CODE=$(($RALLY_EXIT_CODE + $?))
+
+  # Install barbican-tempest-plugin for support HTTPS tests for octavia
+  export SERVICE_NAME={{ .Chart.Name }}
+  if [[ $SERVICE_NAME == "octavia-tempest" ]]; then
+    pip install git+https://github.com/sapcc/barbican-tempest-plugin.git@ccloud
+  fi
+
+  # check if we can reach openstack endpoints
+  rally deployment check
+  RALLY_EXIT_CODE=$(($RALLY_EXIT_CODE + $?))
+
+  # create tempest verifier fetched from our repo
+  rally --debug verify create-verifier --type tempest --name {{ .Chart.Name }}-verifier --system-wide --source https://github.com/sapcc/tempest --version {{ default "ccloud-python3" .Values.tempest_branch }}
+  RALLY_EXIT_CODE=$(($RALLY_EXIT_CODE + $?))
+
+  # configure tempest verifier taking into account the auth section values provided in tempest_extra_options file
+  # use config file from PRE_CONFIG STEP from /tmp directory
+  rally --debug verify configure-verifier --extend /tmp/tempest_extra_options
+  rally --debug verify configure-verifier --show
+  RALLY_EXIT_CODE=$(($RALLY_EXIT_CODE + $?))
+
+  # run the actual tempest tests
+  echo -e "\n === STARTING TEMPEST TESTS FOR {{ .Chart.Name }} === \n"
+  rally --debug verify start --concurrency {{ default "1" .Values.concurrency }} --detailed --pattern '{{ required "Missing run_pattern value!" .Values.run_pattern }}' --skip-list /{{ .Chart.Name }}-etc/tempest_skip_list.yaml --xfail-list /{{ .Chart.Name }}-etc/tempest_expected_failures_list.yaml
+  RALLY_EXIT_CODE=$(($RALLY_EXIT_CODE + $?))
+
+  # generate html and json reports
+  rally verify report --type html --to /tmp/report.html
+  rally verify report --type json --to /tmp/report.json
+
+  # upload report and logfile to swift container
+  export OS_USERNAME="neutron-tempestadmin1"
+  export OS_TENANT_NAME="neutron-tempest-admin1"
+  export OS_PROJECT_NAME="neutron-tempest-admin1"
+  export MYTIMESTAMP=$(date -u +%Y%m%d%H%M%S)
+  cd /home/rally/.rally/verification/verifier*/for-deployment* && tar cfvz /tmp/tempest-log.tar.gz ./tempest.log
+  openstack object create reports/{{ index (split "-" .Chart.Name)._0 }} /tmp/tempest-log.tar.gz --name $(echo $OS_REGION_NAME)-$(echo $MYTIMESTAMP)-log.tar.gz
+  openstack object create reports/{{ index (split "-" .Chart.Name)._0 }} /tmp/tempest-log.tar.gz --name $(echo $OS_REGION_NAME)-log-latest.tar.gz
+  openstack object create reports/{{ index (split "-" .Chart.Name)._0 }} /tmp/report.html --name $(echo $OS_REGION_NAME)-$(echo $MYTIMESTAMP).html
+  openstack object create reports/{{ index (split "-" .Chart.Name)._0 }} /tmp/report.html --name $(echo $OS_REGION_NAME)-latest.html
+  openstack object create reports/{{ index (split "-" .Chart.Name)._0 }} /tmp/report.json --name $(echo $OS_REGION_NAME)-$(echo $MYTIMESTAMP).json
+  openstack object create reports/{{ index (split "-" .Chart.Name )._0 }} /tmp/report.json --name $(echo $OS_REGION_NAME)-latest.json
+  export VERIFICIATION_ID=$(jq -r '.verifications | keys[0]' /tmp/report.json)
+  export STATUS=$(jq -r '.verifications."'${VERIFICIATION_ID}'".status' /tmp/report.json)
+  export FAILED=$(jq -r '.verifications."'${VERIFICIATION_ID}'".failures' /tmp/report.json)
+  export SUCCESS=$(jq -r '.verifications."'${VERIFICIATION_ID}'".success' /tmp/report.json)
+  export SLACK_URL={{ .Values.tempest_slack_webhook_url.tempest_tests | quote }}
+  export CC_SLACK_URL={{ (index .Values.tempest_slack_webhook_url (index (split "-" .Chart.Name)._0)) }}
+  export COLOR="#36a64f"
+
+  if [[ "$FAILED" != "0" ]]; then
+    export COLOR="#FF0000";
+  fi
+
+  curl -X POST --header 'Content-Type: application/json' --data-binary '{
+  "attachments": [
+    {
+      "color": "'"$COLOR"'",
+      "blocks": [
+        {
+          "type": "section",
+          "text": {
+            "type": "mrkdwn",
+            "text": "Tempest run completed for '"$SERVICE_NAME"' with status '"$STATUS"':\n Failed  tests: '"$FAILED"'\n Success: '"$SUCCESS"'\n"
+          }
+        }
+      ]
+    }
+  ]
+}' $SLACK_URL
+
+  curl -X POST --header 'Content-Type: application/json' --data-binary '{
+  "attachments": [
+    {
+      "color": "'"$COLOR"'",
+      "blocks": [
+        {
+          "type": "section",
+          "text": {
+            "type": "mrkdwn",
+            "text": "Tempest run completed for '"$SERVICE_NAME"' with status '"$STATUS"':\n Failed  tests: '"$FAILED"'\n Success: '"$SUCCESS"'\n"
+          }
+        }
+      ]
+    }
+  ]
+}' $CC_SLACK_URL
+
+}
+
+{{- include "tempest-base.function_main" . }}
+
+function cleanup_tempest_leftovers() {
+
+  echo "Run cleanup"
+
+  share_network_id={{ (index .Values (print .Chart.Name | replace "-" "_")).tempest.share_network_id }}
+  alt_share_network_id={{ (index .Values (print .Chart.Name | replace "-" "_")).tempest.alt_share_network_id }}
+  admin_share_network_id={{ (index .Values (print .Chart.Name | replace "-" "_")).tempest.admin_share_network_id }}
+  pre_created_share_networks=("$share_network_id" "$alt_share_network_id" "$admin_share_network_id")
+
+  # Helper function to run manila commands with error handling
+  run_cleanup_cmd() {
+    local cmd="$1"
+    eval "$cmd" 2>&1 | grep -v "Gateway Timeout" | grep -v "Service Unavailable" || true
+    sleep 1  # Add delay between operations to avoid overwhelming the API
+  }
+
+  for i in $(seq 1 2); do
+      export OS_USERNAME=manila-tempestuser${i}
+      export OS_TENANT_NAME=tempest${i}
+      export OS_PROJECT_NAME=tempest${i}
+
+      echo "Cleaning up resources for manila-tempestuser${i}..."
+
+      for snap in $(manila --service-type share-epoxyv2 snapshot-list 2>/dev/null | grep -E 'tempest' | awk '{ print $2 }' || true); do
+        run_cleanup_cmd "manila --service-type share-epoxyv2 snapshot-delete ${snap}"
+      done
+
+      for share in $(manila --service-type share-epoxyv2 list 2>/dev/null | grep -E 'tempest|share' | awk '{ print $2 }' || true); do
+        run_cleanup_cmd "manila --service-type share-epoxyv2 reset-state ${share}"
+        run_cleanup_cmd "manila --service-type share-epoxyv2 delete ${share}"
+      done
+
+      for share in $(manila --service-type share-epoxyv2 list 2>/dev/null | grep -E 'tempest|share' | awk '{ print $2 }' || true); do
+        run_cleanup_cmd "manila --service-type share-epoxyv2 reset-task-state ${share}"
+        run_cleanup_cmd "manila --service-type share-epoxyv2 delete ${share}"
+      done
+
+      for net in $(manila --service-type share-epoxyv2 share-network-list 2>/dev/null | grep -E 'tempest|None' | awk '{ print $2 }' || true)
+      do
+        if [[ ! " ${pre_created_share_networks[@]} " =~ " ${net} " ]]; then
+          run_cleanup_cmd "manila --service-type share-epoxyv2 share-network-delete ${net}"
+        fi
+      done
+
+      for ss in $(manila --service-type share-epoxyv2 security-service-list --detailed 1 --columns "id,name,user" 2>/dev/null | grep -E 'tempest|None' | awk '{ print $2 }' || true); do
+        run_cleanup_cmd "manila --service-type share-epoxyv2 security-service-delete ${ss}"
+      done
+  done
+
+  echo "Cleaning up admin resources..."
+  export OS_USERNAME='admin'
+  export OS_TENANT_NAME='admin'
+  export OS_PROJECT_NAME='admin'
+
+  for snap in $(manila --service-type share-epoxyv2 snapshot-list 2>/dev/null | grep -E 'tempest' | awk '{ print $2 }' || true); do
+    run_cleanup_cmd "manila --service-type share-epoxyv2 snapshot-delete ${snap}"
+  done
+
+  for share in $(manila --service-type share-epoxyv2 list 2>/dev/null | grep -E 'tempest|share' | awk '{ print $2 }' || true); do
+    run_cleanup_cmd "manila --service-type share-epoxyv2 reset-state ${share}"
+    run_cleanup_cmd "manila --service-type share-epoxyv2 delete ${share}"
+  done
+
+  for share in $(manila --service-type share-epoxyv2 list 2>/dev/null | grep -E 'tempest|share' | awk '{ print $2 }' || true); do
+    run_cleanup_cmd "manila --service-type share-epoxyv2 reset-task-state ${share}"
+    run_cleanup_cmd "manila --service-type share-epoxyv2 delete ${share}"
+  done
+
+  for ss in $(manila --service-type share-epoxyv2 security-service-list --detailed 1 --columns "id,name,user" 2>/dev/null | grep -E 'tempest|None' | awk '{ print $2 }' || true); do
+    run_cleanup_cmd "manila --service-type share-epoxyv2 security-service-delete ${ss}"
+  done
+
+  for group_type in $(manila --service-type share-epoxyv2 share-group-type-list 2>/dev/null | grep -E 'tempest' | awk '{ print $2 }' || true); do
+    run_cleanup_cmd "manila --service-type share-epoxyv2 share-group-type-delete ${group_type}"
+  done
+
+  for type in $(manila --service-type share-epoxyv2 type-list 2>/dev/null | grep -E 'tempest' | awk '{ print $2 }' || true); do
+    run_cleanup_cmd "manila --service-type share-epoxyv2 type-delete ${type}"
+  done
+
+  for net in $(manila --service-type share-epoxyv2 share-network-list 2>/dev/null | grep -E 'tempest|None' | awk '{ print $2 }' || true)
+  do
+    if [[ ! " ${pre_created_share_networks[@]} " =~ " ${net} " ]]; then
+      run_cleanup_cmd "manila --service-type share-epoxyv2 share-network-delete ${net}"
+    fi
+  done
+
+  echo "Cleanup completed (timeouts ignored)"
+  return 0  # Always return success to not fail the entire job
+
+}
+
+{{- include "tempest-base.function_main" . }}
+
+cleanup_tempest_leftovers
+main

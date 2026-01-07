@@ -1,0 +1,89 @@
+{{- if (index .Values (print .Chart.Name | replace "-" "_")).tempest.enabled}}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ .Chart.Name }}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ .Chart.Name }}
+  labels:
+    system: openstack
+    type: configuration
+    app: {{ .Chart.Name }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+spec:
+  # Keep last 3 successful and 1 failed job for history
+  successfulJobsHistoryLimit: {{ default 3 (index .Values (print .Chart.Name | replace "-" "_")).tempest.successfulJobsHistoryLimit }}
+  failedJobsHistoryLimit: {{ default 1 (index .Values (print .Chart.Name | replace "-" "_")).tempest.failedJobsHistoryLimit }}
+  # Auto-delete job after 24 hours
+  ttlSecondsAfterFinished: {{ default 86400 (index .Values (print .Chart.Name | replace "-" "_")).tempest.ttlSecondsAfterFinished }}
+  # Don't retry on failure - tempest tests should be manually retriggered
+  backoffLimit: {{ default 0 (index .Values (print .Chart.Name | replace "-" "_")).tempest.backoffLimit }}
+  template:
+    metadata:
+      labels:
+        system: openstack
+        type: configuration
+        app: {{ .Chart.Name }}
+        chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+        release: "{{ .Release.Name }}"
+    spec:
+      restartPolicy: Never
+      serviceAccountName: {{ .Chart.Name }}
+      containers:
+        - name: {{ .Chart.Name }}
+          image: {{ default "keppel.eu-de-1.cloud.sap/ccloud" .Values.global.registry}}/{{ default .Chart.Name (index .Values (print .Chart.Name | replace "-" "_")).tempest.imageNameOverride }}-plugin-python3:{{ default "latest" (index .Values (print .Chart.Name | replace "-" "_")).tempest.imageTag}}
+          command:
+            - kubernetes-entrypoint
+          env:
+            - name: COMMAND
+              value: "/container.init/tempest-start-and-cleanup.sh"
+            - name: NAMESPACE
+              value: {{ .Release.Namespace }}
+            - name: OS_REGION_NAME
+              value: {{ required "Missing region value!" .Values.global.region }}
+            - name: OS_USER_DOMAIN_NAME
+              value: "tempest"
+            - name: OS_PROJECT_DOMAIN_NAME
+              value: "tempest"
+            - name: OS_INTERFACE
+              value: "public"
+            - name: OS_ENDPOINT_TYPE
+              value: "public"
+            - name: OS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Chart.Name }}-secret
+                  key: tempest-admin-password
+            - name: OS_IDENTITY_API_VERSION
+              value: "3"
+            - name: OS_AUTH_URL
+              value: "http://{{ if .Values.global.clusterDomain }}keystone.{{.Release.Namespace}}.svc.{{ required "Missing clusterDomain value!" .Values.global.clusterDomain}}{{ else }}keystone.{{.Release.Namespace}}.svc.kubernetes.{{required "Missing region value!" .Values.global.region}}.{{ required "Missing tld value!" .Values.global.tld}}{{end}}:5000/v3"
+          resources:
+            requests:
+              memory: "1024Mi"
+              cpu: "750m"
+            limits:
+              memory: "4096Mi"
+              cpu: "2000m"
+          volumeMounts:
+            - mountPath: /{{ .Chart.Name }}-etc
+              name: {{ .Chart.Name }}-etc
+            - mountPath: /container.init
+              name: container-init
+      volumes:
+        - name: {{ .Chart.Name }}-etc
+          projected:
+            sources:
+            - configMap:
+                name: {{ .Chart.Name }}-etc
+            - secret:
+                name: {{ .Chart.Name }}-secret
+        - name: container-init
+          configMap:
+            name: {{ .Chart.Name }}-bin
+            defaultMode: 0755
+{{- end }}
