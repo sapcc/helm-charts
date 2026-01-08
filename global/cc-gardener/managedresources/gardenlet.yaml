@@ -1,6 +1,6 @@
 {{ if .Values.gardenlet.enabled -}}
 {{- range $index, $seedRegion := .Values.gardenlet.seedRegions }}
-{{- $regionName := default $.Values.global.region $seedRegion.altRegion }}
+{{- $regionName := default $seedRegion.name $seedRegion.altRegion }}
 {{- $clusterName := printf "%s-%s" $.Values.gardenlet.namePrefix $seedRegion.name }}
 ---
 apiVersion: seedmanagement.gardener.cloud/v1alpha1
@@ -50,7 +50,7 @@ spec:
               kind: Secret
               name: openstack-{{ $regionName }}
               namespace: garden
-            domain: external.{{ $clusterName }}.{{ if hasPrefix "rtc-" $clusterName -}}soil-customer{{- else -}}soil-garden{{- end }}.{{ $seedRegion }}.cloud.sap
+            domain: external.{{ $clusterName }}.{{ if hasPrefix "rtc-" $clusterName -}}soil-customer{{- else -}}soil-garden{{- end }}.{{ $seedRegion.name }}.cloud.sap
             type: openstack-designate
           internal:
             credentialsRef:
@@ -58,7 +58,7 @@ spec:
               kind: Secret
               name: openstack-{{ $regionName }}
               namespace: garden
-            domain: internal.{{ $clusterName }}.{{ if hasPrefix "rtc-" $clusterName -}}soil-customer{{- else -}}soil-garden{{- end }}.{{ $seedRegion }}.cloud.sap
+            domain: internal.{{ $clusterName }}.{{ if hasPrefix "rtc-" $clusterName -}}soil-customer{{- else -}}soil-garden{{- end }}.{{ $seedRegion.name }}.cloud.sap
             type: openstack-designate
           provider:
             type: openstack-designate
@@ -66,7 +66,7 @@ spec:
               name: openstack-{{ $regionName }}
               namespace: garden
         ingress: # see prerequisites
-          domain: ingress.{{ $clusterName }}.{{ if hasPrefix "rtc-" $clusterName -}}soil-customer{{- else -}}soil-garden{{- end }}.{{ $seedRegion }}.cloud.sap
+          domain: ingress.{{ $clusterName }}.{{ if hasPrefix "rtc-" $clusterName -}}soil-customer{{- else -}}soil-garden{{- end }}.{{ $seedRegion.name }}.cloud.sap
           controller:
             kind: nginx
         networks:
