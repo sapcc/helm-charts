@@ -444,7 +444,7 @@ os_compute_api:os-hypervisors:uptime: rule:context_is_admin
 # List actions for a server.
 #   GET /servers/{server_id}/os-instance-actions
 #os_compute_api:os-instance-actions:list: rule:system_or_project_reader
-os_compute_api:os-instance-actions:list: rule:context_is_editor
+os_compute_api:os-instance-actions:list: rule:context_is_viewer
 
 # Show action details for a server.
 #   GET /servers/{server_id}/os-instance-actions/{request_id}
