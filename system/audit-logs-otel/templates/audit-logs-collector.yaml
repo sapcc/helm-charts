@@ -8,6 +8,16 @@ metadata:
   {{ toYaml .Values.openTelemetryPlugin.auditLogs.customLabels | nindent 4 }}
   {{- end }}
 spec:
+  hostPID: true
+  securityContext:
+    privileged: true
+    runAsUser: 0
+    capabilities:
+      add:
+        # Capabilities needed for auditd
+        - 'AUDIT_READ'
+        - 'AUDIT_WRITE'
+        - 'AUDIT_CONTROL'
   mode: daemonset
   tolerations:
   - operator: Exists
@@ -54,6 +64,12 @@ spec:
     - name: prometheus
       port: 9999
 {{- end }}
+
+{{- if .Values.openTelemetryPlugin.auditLogs.logsCollector.auditdConfig.enabled }}
+  initContainers:
+{{- include "auditd.initContainer" . | nindent 2 -}}
+{{- end }}
+
   image: "{{ .Values.openTelemetryPlugin.auditLogs.collectorImage.repository}}:{{ .Values.openTelemetryPlugin.auditLogs.collectorImage.tag}}"
   volumeMounts:
   - mountPath: /var/log
@@ -112,6 +128,10 @@ spec:
 {{- if .Values.openTelemetryPlugin.auditLogs.logsCollector.auditpollerConfig.enabled }}
   {{- include "auditpoller.receiver" . | nindent 6 -}}
 {{- end }}
+{{- if .Values.openTelemetryPlugin.auditLogs.logsCollector.auditdConfig.enabled }}
+  {{- include "auditd.receiver" . | nindent 6 -}}
+{{- end }}
+
 
     processors:
       batch:
@@ -122,6 +142,11 @@ spec:
 {{- if .Values.openTelemetryPlugin.auditLogs.logsCollector.auditpollerConfig.enabled }}
   {{- include "auditpoller.processors" . | nindent 6 -}}
 {{- end }}
+
+{{- if .Values.openTelemetryPlugin.auditLogs.logsCollector.auditdConfig.enabled }}
+  {{- include "auditd.processors" . | nindent 6 -}}
+{{- end }}
+
 
 {{- if .Values.openTelemetryPlugin.auditLogs.prometheus.podMonitor.enabled }}
       attributes/prometheus:
@@ -394,6 +419,10 @@ spec:
 
 {{- if .Values.openTelemetryPlugin.auditLogs.logsCollector.auditpollerConfig.enabled }}
   {{- include "auditpoller.pipelines" . | nindent 8 -}}
+{{- end }}
+
+{{- if .Values.openTelemetryPlugin.auditLogs.logsCollector.auditdConfig.enabled }}
+{{- include "auditd.pipelines" . | nindent 8 -}}
 {{- end }}
 
 {{- if .Values.openTelemetryPlugin.auditLogs.openSearchLogs.failover.enabled }}
