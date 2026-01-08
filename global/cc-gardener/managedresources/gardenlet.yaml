@@ -1,31 +1,24 @@
-{{- $dnsRegion := "" }}
-{{- if .Values.garden.dns }}
-{{- $dnsRegion = (default .Values.global.region .Values.garden.dns.region) }}
-{{- else }}
-{{- $dnsRegion = .Values.global.region }}
-{{- end }}
----
 {{ if .Values.gardenlet.enabled -}}
+{{- range $index, $seedRegion := .Values.gardenlet.seedRegions }}
+{{- $regionName := default $seedRegion.name $seedRegion.altRegion }}
+{{- $clusterName := printf "%s-%s" $.Values.gardenlet.namePrefix $seedRegion.name }}
+---
 apiVersion: seedmanagement.gardener.cloud/v1alpha1
 kind: Gardenlet
 metadata:
-  {{- if .Values.gardenlet.nameOverride }}
-  name: {{ .Values.gardenlet.nameOverride | quote }}
-  {{- else }}
-  name: soil-{{ .Values.global.region }}
-  {{- end }}
+  name: {{ $clusterName }}
   namespace: garden
 spec:
   deployment:
     image:
-      tag: {{ .Chart.AppVersion }}
+      tag: {{ $.Chart.AppVersion }}
     imageVectorOverwrite: |
-{{ .Values.operator.imageVectorOverwrite | indent 6 }}
+{{ $.Values.operator.imageVectorOverwrite | indent 6 }}
     podLabels:
       networking.resources.gardener.cloud/to-virtual-garden-kube-apiserver-tcp-443: allowed
     helm:
       ociRepository:
-        ref: keppel.global.cloud.sap/ccloud-europe-docker-pkg-dev-mirror/gardener-project/releases/charts/gardener/gardenlet:{{ .Chart.AppVersion }}
+        ref: keppel.global.cloud.sap/ccloud-europe-docker-pkg-dev-mirror/gardener-project/releases/charts/gardener/gardenlet:{{ $.Chart.AppVersion }}
   config:
     gardenClientConnection:
       kubeconfigSecret:
@@ -37,45 +30,53 @@ spec:
       metadata:
         labels:
           environment: production
-{{- if .Values.extensions.metal.enabled }}
+{{- if $.Values.extensions.metal.enabled }}
         annotations:
           metal.ironcore.dev/local-metal-api: "true"
 {{- end }}
       spec:
         backup:
           provider: openstack
-          region: {{ .Values.global.region }}
+          region: {{ $regionName }}
           credentialsRef:
             apiVersion: v1
             kind: Secret
-            name: openstack-{{ .Values.global.region }}
+            name: openstack-{{ $regionName }}
             namespace: garden
         dns:
+          defaults:
+          - credentialsRef:
+              apiVersion: v1
+              kind: Secret
+              name: openstack-{{ $regionName }}
+              namespace: garden
+            domain: external.{{ $clusterName }}.{{ if hasPrefix "rtc-" $clusterName -}}soil-customer{{- else -}}soil-garden{{- end }}.{{ $seedRegion.name }}.cloud.sap
+            type: openstack-designate
           internal:
             credentialsRef:
               apiVersion: v1
               kind: Secret
-              name: internal-domain-internal-openstack-gardener-cloud
+              name: openstack-{{ $regionName }}
               namespace: garden
-            domain: internal.{{ required ".Values.global.cluster missing" .Values.global.cluster }}.{{ if hasPrefix "rtc-" .Values.global.cluster -}}soil-customer{{- else -}}soil-garden{{- end }}.{{ $dnsRegion }}.cloud.sap
+            domain: internal.{{ $clusterName }}.{{ if hasPrefix "rtc-" $clusterName -}}soil-customer{{- else -}}soil-garden{{- end }}.{{ $seedRegion.name }}.cloud.sap
             type: openstack-designate
           provider:
             type: openstack-designate
             secretRef:
-              name: openstack-{{ .Values.global.region }}
+              name: openstack-{{ $regionName }}
               namespace: garden
         ingress: # see prerequisites
-          domain: {{ required ".Values.global.cluster missing" .Values.global.cluster }}.{{ if hasPrefix "rtc-" .Values.global.cluster -}}soil-customer{{- else -}}soil-garden{{- end }}.{{ required ".Values.global.region missing" .Values.global.region }}.cloud.sap
+          domain: ingress.{{ $clusterName }}.{{ if hasPrefix "rtc-" $clusterName -}}soil-customer{{- else -}}soil-garden{{- end }}.{{ $seedRegion.name }}.cloud.sap
           controller:
             kind: nginx
         networks:
-          nodes: {{ index .Values.garden.runtimeCluster.networking.nodes 0 | quote }}
-          pods: {{ index .Values.garden.runtimeCluster.networking.pods 0 | quote }}
-          services: {{ index .Values.garden.runtimeCluster.networking.services 0 | quote }}
+          nodes: {{ $seedRegion.networks.nodes | quote }}
+          pods: {{ $seedRegion.networks.pods | quote }}
+          services: {{ $seedRegion.networks.services | quote }}
         provider:
-          region: {{ .Values.global.region }}
+          region: {{ $regionName }}
           type: openstack
-          zones: {{ toYaml .Values.garden.runtimeCluster.zones | nindent 12 }}
+          zones: {{ toYaml $seedRegion.zones | nindent 12 }}
         settings:
           verticalPodAutoscaler:
             enabled: false
@@ -91,7 +92,8 @@ spec:
             # Joining the node successfully is unfortunately required to scale up the controller-manager, which is a loop that cannot self-heal.
             prober:
               enabled: false
-{{- if .Values.gardenlet.loadBalancerServices }}
-          loadBalancerServices: {{ toYaml .Values.gardenlet.loadBalancerServices | nindent 12 }}
+{{- if $.Values.gardenlet.loadBalancerServices }}
+          loadBalancerServices: {{ toYaml $.Values.gardenlet.loadBalancerServices | nindent 12 }}
+{{- end }}
 {{- end }}
 {{ end -}}
