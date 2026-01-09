@@ -205,6 +205,19 @@ filter {
             split {
               field => "items"
           }
+          # ---- clean managedFields ----
+          ruby {
+            code => '
+              mf = event.get("[requestObject][managedFields]")
+              if mf.is_a?(Array)
+                mf.each do |entry|
+                  entry.delete(".") if entry.is_a?(Hash)
+                end
+              elsif mf.is_a?(Hash)
+                mf.delete(".")
+              end
+            '
+          }
 
           if [items][annotations][shoot.gardener.cloud/name] {
             grok {
@@ -217,6 +230,7 @@ filter {
             add_field => { "[sap][cc][audit][source]" => "kube-api"}
             add_field => { "[sap][cc][audit][gardener_seed]" => "%{[items][annotations][seed.gardener.cloud/name]}"}
           }
+          # ---- flatten items ----
           ruby {
                  code => '
                       event.get("items").each { |k, v|
