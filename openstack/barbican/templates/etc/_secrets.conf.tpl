@@ -34,4 +34,5 @@ mkek_length = 32
 hmac_label = {{ .Values.utimaco_hsm.hmac_label | include "resolve_secret" }}
 slot_id = 0
 encryption_mechanism = CKM_AES_CBC
+pkek_cache_ttl = 900
 {{- end }}
