@@ -4,6 +4,11 @@ apiVersion: core.gardener.cloud/v1beta1
 kind: Shoot
 metadata:
   name: {{ $shootName }}
+  labels:
+    cluster-type: sci-k8s-metalapi
+    greenhouse.sap/owned-by: containers
+    greenhouse.sap/shoot-grafter-transport: {{ default "greenhouse-prod-sci" $.Values.greenhouseShootGrafter }}
+    metadata.greenhouse.sap/region: {{ required "missing .Values.global.region" .Values.global.region }}
 spec:
   cloudProfile:
     kind: CloudProfile
@@ -51,6 +56,11 @@ apiVersion: core.gardener.cloud/v1beta1
 kind: Shoot
 metadata:
   name: met-op-{{ $regionName }}
+  labels:
+    cluster-type: sci-k8s-metalapi
+    greenhouse.sap/owned-by: containers
+    greenhouse.sap/shoot-grafter-transport: {{ default "greenhouse-prod-sci" $.Values.greenhouseShootGrafter }}
+    metadata.greenhouse.sap/region: {{ $regionName }}
 spec:
   cloudProfile:
     kind: CloudProfile
