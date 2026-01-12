@@ -1,13 +1,13 @@
 {{ $envAll := . }}
-{{- $cells := dict "cell1" false }}
+{{- $cells := list "cell1" }}
 {{- if .Values.cell2.enabled }}
-  {{ $_ := set $cells .Values.cell2.name true }}
+  {{ $cells = append $cells .Values.cell2.name }}
 {{- end }}
-{{- range $cell_name, $is_cell2 := $cells }}
+{{- range $cell_name := $cells }}
   {{- range $type, $config := $envAll.Values.consoles }}
     {{- if and $config.enabled (not $config.custom_deployment) }}
 ---
-{{ tuple $envAll $cell_name $type $is_cell2 $config | include "nova.console_deployment" }}
+{{ tuple $envAll $cell_name $type $config | include "nova.console_deployment" }}
     {{- end }}
   {{- end }}
 {{- end }}
