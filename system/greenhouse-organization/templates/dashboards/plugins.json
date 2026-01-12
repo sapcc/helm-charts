@@ -3,8 +3,8 @@
   "metadata": {
     "name": "plugins",
     "createdAt": "2025-11-18T12:41:05.244229188Z",
-    "updatedAt": "2026-01-07T14:15:27.722988905Z",
-    "version": 27,
+    "updatedAt": "2026-01-12T14:15:12.023654361Z",
+    "version": 30,
     "project": "greenhouse"
   },
   "spec": {
@@ -12,81 +12,12 @@
       "name": "Plugins"
     },
     "panels": {
-      "508ee3b054314c37bf1a47175d56db05": {
+      "245af47f86284426baadfdf2ef36319b": {
         "kind": "Panel",
         "spec": {
           "display": {
-            "name": "Installed plugins"
-          },
-          "plugin": {
-            "kind": "Table",
-            "spec": {
-              "density": "standard",
-              "columnSettings": [
-                {
-                  "name": "pluginDefinition",
-                  "enableSorting": true,
-                  "sort": "asc"
-                },
-                {
-                  "name": "value",
-                  "header": "Status",
-                  "enableSorting": true,
-                  "sort": "desc"
-                },
-                {
-                  "name": "timestamp",
-                  "hide": true
-                }
-              ],
-              "cellSettings": [
-                {
-                  "condition": {
-                    "kind": "Value",
-                    "spec": {
-                      "value": "0"
-                    }
-                  },
-                  "text": "Not Installed",
-                  "backgroundColor": "#EA4747",
-                  "textColor": "#ffffff"
-                },
-                {
-                  "condition": {
-                    "kind": "Regex",
-                    "spec": {
-                      "expr": "[1-9]+"
-                    }
-                  },
-                  "textColor": "#ffffff",
-                  "backgroundColor": "#2FBF71",
-                  "text": ""
-                }
-              ]
-            }
-          },
-          "queries": [
-            {
-              "kind": "TimeSeriesQuery",
-              "spec": {
-                "plugin": {
-                  "kind": "PrometheusTimeSeriesQuery",
-                  "spec": {
-                    "minStep": "",
-                    "query": "sum by(pluginDefinition) (greenhouse_plugin_ready{owned_by=~\"$ownedBy\", clusterName=~\"$clusterName\"})",
-                    "seriesNameFormat": "{{pluginDefinition}}"
-                  }
-                }
-              }
-            }
-          ]
-        }
-      },
-      "512963ee1ff74a6e89049227f84b17ed": {
-        "kind": "Panel",
-        "spec": {
-          "display": {
-            "name": "GreenhousePluginWorkloadNotReady"
+            "name": "Plugin Workload 'Not Ready' for over 15 minutes",
+            "description": "GreenhousePluginWorkloadNotReady: The workload for plugin in organization on cluster as not been ready for more than 15 minutes."
           },
           "plugin": {
             "kind": "StatChart",
@@ -135,6 +66,143 @@
                     "minStep": "",
                     "query": "greenhouse_plugin_workload_status_up{cluster=~\"$clusterName\", owned_by=~\"$ownedBy\"}",
                     "seriesNameFormat": "{{cluster}} | {{namespace}} | {{owned_by}} | {{plugin}}"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "508ee3b054314c37bf1a47175d56db05": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Installed plugins"
+          },
+          "plugin": {
+            "kind": "Table",
+            "spec": {
+              "cellSettings": [
+                {
+                  "backgroundColor": "#EA4747",
+                  "condition": {
+                    "kind": "Value",
+                    "spec": {
+                      "value": "0"
+                    }
+                  },
+                  "text": "Not Installed",
+                  "textColor": "#ffffff"
+                },
+                {
+                  "backgroundColor": "#2FBF71",
+                  "condition": {
+                    "kind": "Regex",
+                    "spec": {
+                      "expr": "[1-9]+"
+                    }
+                  },
+                  "text": "",
+                  "textColor": "#ffffff"
+                }
+              ],
+              "columnSettings": [
+                {
+                  "enableSorting": true,
+                  "name": "pluginDefinition",
+                  "sort": "asc"
+                },
+                {
+                  "enableSorting": true,
+                  "header": "Status",
+                  "name": "value",
+                  "sort": "desc"
+                },
+                {
+                  "hide": true,
+                  "name": "timestamp"
+                }
+              ],
+              "density": "standard"
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "minStep": "",
+                    "query": "sum by(pluginDefinition) (greenhouse_plugin_ready{owned_by=~\"$ownedBy\", clusterName=~\"$clusterName\"})",
+                    "seriesNameFormat": "{{pluginDefinition}}"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "512963ee1ff74a6e89049227f84b17ed": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Plugin Reconciliation is Constantly Failing",
+            "description": "GreenhousePluginConstantlyFailing: Plugin in organization keeps failing with reason"
+          },
+          "plugin": {
+            "kind": "Table",
+            "spec": {
+              "columnSettings": [
+                {
+                  "hide": false,
+                  "name": "clusterName",
+                  "width": 100
+                },
+                {
+                  "enableSorting": true,
+                  "name": "namespace",
+                  "sort": "asc",
+                  "width": 100
+                },
+                {
+                  "enableSorting": true,
+                  "name": "plugin",
+                  "sort": "asc",
+                  "width": 300
+                },
+                {
+                  "enableSorting": true,
+                  "name": "reason",
+                  "sort": "asc"
+                },
+                {
+                  "align": "right",
+                  "format": {
+                    "decimalPlaces": 0,
+                    "unit": "decimal"
+                  },
+                  "header": "count",
+                  "name": "value"
+                },
+                {
+                  "name": "timestamp",
+                  "hide": true
+                }
+              ],
+              "density": "standard"
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "minStep": "",
+                    "query": "sum by (namespace, plugin, reason, clusterName) (increase(greenhouse_plugin_reconcile_total{clusterName=~\"$clusterName\",result=\"error\"}[5m])) > 0",
+                    "seriesNameFormat": ""
                   }
                 }
               }
@@ -246,7 +314,8 @@
         "kind": "Panel",
         "spec": {
           "display": {
-            "name": "GreenhousePluginNotReady"
+            "name": "Helm Chart Test Failing by Plugin ",
+            "description": "GreenhousePluginHelmChartTestFailures: Helm Chart test for plugin in organization on cluster has been failing for the last 30 minutes"
           },
           "plugin": {
             "kind": "StatChart",
@@ -356,7 +425,8 @@
         "kind": "Panel",
         "spec": {
           "display": {
-            "name": "GreenhousePluginNotReady"
+            "name": "Plugins 'Not Ready' for over 15 minutes",
+            "description": "GreenhousePluginNotReady: The plugin in organization on cluster has not been ready for more than 15 minutes."
           },
           "plugin": {
             "kind": "Table",
@@ -376,8 +446,8 @@
               ],
               "columnSettings": [
                 {
-                  "name": "clusterName",
                   "enableSorting": true,
+                  "name": "clusterName",
                   "sort": "asc"
                 },
                 {
@@ -451,6 +521,15 @@
               "height": 12,
               "content": {
                 "$ref": "#/spec/panels/512963ee1ff74a6e89049227f84b17ed"
+              }
+            },
+            {
+              "x": 15,
+              "y": 0,
+              "width": 5,
+              "height": 12,
+              "content": {
+                "$ref": "#/spec/panels/245af47f86284426baadfdf2ef36319b"
               }
             }
           ]
@@ -554,10 +633,7 @@
             "name": "Cluster name",
             "hidden": false
           },
-          "defaultValue": [
-            "st1-eu-de-1",
-            "cc-a0-eu-de-3"
-          ],
+          "defaultValue": "$__all",
           "allowAllValue": true,
           "allowMultiple": true,
           "sort": "alphabetical-asc",
