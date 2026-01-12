@@ -103,7 +103,7 @@ spec:
       ##########################################################################
       # Rules for kube-monitoring
 
-      {{- if eq .Values.cluster_type "baremetal" "concourse" "scaleout" }}
+      {{- if eq .Values.cluster_type "baremetal" "concourse" "cloudshell" "internet" "scaleout" }}
       - matchNamespace: kube-monitoring
         matchRepository: ccloud-dockerhub-mirror/falcosecurity/falco
         justification: |
@@ -122,7 +122,14 @@ spec:
         mayUseHostPID: true
         mayReadHostPathVolumes: [ /, /proc, /sys, /var/run/dbus/system_bus_socket ]
 
-      {{- if eq .Values.cluster_type "baremetal" "concourse" "scaleout" }}
+      - matchNamespace: kube-monitoring
+        matchRepository: ccloud-quay-mirror/brancz/kube-rbac-proxy
+        justification: |
+          TODO
+        mayUseHostNetwork: true
+        mayUseHostPID: true
+
+      {{- if eq .Values.cluster_type "baremetal" "cloudshell" "concourse" "internet" "scaleout" }}
       - matchNamespace: kube-monitoring
         matchRepository: ccloud/kubernetes-oomkill-exporter
         justification: |
@@ -166,11 +173,18 @@ spec:
         mayWriteHostPathVolumes: [ /etc/cni/net.d, /run/xtables.lock, /sys/fs/, /sys/fs/bpf, /var/lib/calico, /var/run/calico, /var/run/nodeagent ]
       
       - matchNamespace: kube-system
-        matchRepository: ccloud-ghcr-io-mirror/sapcc/bird_exporter
+        matchRepository: ccloud-ghcr-io-mirror/czerwonk/bird_exporter
         justification: |
           TODO
+        mayUseHostNetwork: true
         mayReadHostPathVolumes:
         - /var/run/calico
+
+      - matchNamespace: kube-system
+        matchRepository: ccloud/kubelet
+        justification: |
+          TODO
+        mayUseHostNetwork: true
       
       - matchNamespace: kube-system
         matchRepository: ccloud-dockerhub-mirror/calico/cni
@@ -178,6 +192,7 @@ spec:
           Many kube-system components need broad network access (e.g. coredns,
           CNI, ingress-nginx)
         mayBePrivileged: true
+        mayUseHostNetwork: true
         mayWriteHostPathVolumes: [ /etc/cni/net.d, /opt/cni/bin ]
       
       - matchNamespace: kube-system
@@ -189,7 +204,7 @@ spec:
 
       {{- if eq .Values.cluster_type "concourse" "internet" "postfix" "scaleout" }}
       - matchNamespace: kube-system
-        matchRepository: ccloud-dockerhub-mirror/flannel/flannel
+        matchRepository: ccloud-dockerhub-mirror/flannelcni/flannel
         justification: |
           TODO
         mayUseHostNetwork: true
@@ -197,7 +212,7 @@ spec:
         mayWriteHostPathVolumes: [ /run/flannel, /run/xtables.lock, /etc/cni/net.d ]
       
       - matchNamespace: kube-system
-        matchRepository: ccloud-dockerhub-mirror/flannel/flannel-cni-plugin
+        matchRepository: ccloud-dockerhub-mirror/flannelcni/flannel-cni-plugin
         justification: |
           Many kube-system components need broad network access (e.g. coredns,
           CNI, ingress-nginx)
@@ -222,6 +237,13 @@ spec:
           CNI, ingress-nginx)
         mayUseHostNetwork: true
         mayWriteHostPathVolumes: [ /opt/cni/bin ]
+
+      - matchNamespace: kube-system
+        matchRepository: ccloud/pause-amd64
+        justification: |
+          Many kube-system components need broad network access (e.g. coredns,
+          CNI, ingress-nginx)
+        mayUseHostNetwork: true
       {{- end }}
 
       - matchNamespace: kube-system
@@ -232,6 +254,38 @@ spec:
         mayUseHostNetwork: true
         mayBePrivileged: true
         mayWriteHostPathVolumes: [ /run/xtables.lock ]
+      
+      - matchNamespace: kube-system
+        matchRepository: ccloud-ghcr-io-mirror/sapcc/kube-parrot
+        justification: |
+          Many kube-system components need broad node-level access (e.g.
+          kube-proxy, MTU discovery, wormhole to k8s central).
+        mayUseHostNetwork: true
+        mayWriteHostPathVolumes: [ /etc/kubernetes/kube-parrot ]
+
+      - matchNamespace: kube-system
+        matchRepository: ccloud/kube-externalip
+        justification: |
+          Many kube-system components need broad node-level access (e.g.
+          kube-proxy, MTU discovery, wormhole to k8s central).
+        mayUseHostNetwork: true
+        mayBePrivileged: true
+
+      - matchNamespace: kube-system
+        matchRepository: ccloud/ip-masq-agent
+        justification: |
+          Many kube-system components need broad node-level access (e.g.
+          kube-proxy, MTU discovery, wormhole to k8s central).
+        mayUseHostNetwork: true
+        mayUseCapabilities: [ NET_ADMIN, NET_RAW ]
+      
+      - matchNamespace: kube-system
+        matchRepository: ccloud/k8s-conntrack-nanny
+        justification: |
+          Many kube-system components need broad node-level access (e.g.
+          kube-proxy, MTU discovery, wormhole to k8s central).
+        mayUseHostNetwork: true
+        mayUseCapabilities: [ NET_ADMIN ]
 
       {{- if eq .Values.cluster_type "baremetal" }}
       - matchNamespace: default
@@ -261,7 +315,7 @@ spec:
           kube-proxy, MTU discovery, wormhole to k8s central).
         mayUseHostNetwork: true
         mayBePrivileged: true
-        mayReadHostPathVolumes: [ /var/lib/kubelet ]
+        mayReadHostPathVolumes: [ /var/lib/kubelet/ ]
 
       ##########################################################################
       # Rules for kube-system
@@ -281,7 +335,7 @@ spec:
         mayUsePrivilegeEscalation: true
         mayBePrivileged: true
         mayUseCapabilities: [ SYS_ADMIN ]
-        mayWriteHostPathVolumes: [ /var/lib/kubelet, /var/lib/kubelet/plugins/cinder.csi.openstack.org ]
+        mayWriteHostPathVolumes: [ /dev, /var/lib/kubelet, /var/lib/kubelet/plugins/cinder.csi.openstack.org ]
       
       - matchNamespace: kube-system
         matchRepository: ccloud-registry-k8s-io-mirror/sig-storage/livenessprobe
@@ -323,6 +377,12 @@ spec:
         mayBePrivileged: true
         mayUseHostPID: true
         mayWriteHostPathVolumes: [ / ]
+
+      - matchNamespace: kube-system
+        matchRepository: ccloud-dockerhub-mirror/sapcc/pause-amd64
+        justification: |
+          TODO
+        mayUseHostPID: true
       {{- end }}
 
       {{- if eq .Values.cluster_type "baremetal" }}
@@ -339,7 +399,7 @@ spec:
           TODO
         mayUseHostNetwork: true
         mayBePrivileged: true
-        mayWriteHostPathVolumes: [ /etc/localtime, /proc, /var/log/ ]
+        mayReadHostPathVolumes: [ /etc/localtime, /proc, /var/log/ ]
 
       {{- if eq .Values.cluster_type "baremetal" }}
       - matchNamespace: kube-system
@@ -391,6 +451,13 @@ spec:
         mayUseCapabilities: [ AUDIT_CONTROL, AUDIT_READ, AUDIT_WRITE ]
         mayReadHostPathVolumes: [ /bin, /sbin, /usr/bin, /usr/sbin, /etc, /run/containerd ]
         mayWriteHostPathVolumes: [ /var/lib/auditbeat-data ]
+
+      - matchNamespace: audit-logs
+        matchRepository: ccloud/auditbeat-exporter
+        justification: |
+          The "auditbeat" container needs to break out into the host to read
+          and also configure the kernel audit log.
+        mayUseHostPID: true
       
       {{- if eq .Values.cluster_type "cloudshell" "concourse" "internet" "scaleout" }}
       - matchNamespace: audit-logs
@@ -430,7 +497,7 @@ spec:
 
       {{- if eq .Values.cluster_type "baremetal" }}
       - matchNamespace: hermes
-        matchRepository: ccloud-dockerhub-mirror/opensearchproject/opensearch
+        matchRepository: ccloud-dockerhub-mirror/library/busybox
         justification: |
           Elastic and OpenSearch need to use sysctl to increase `vm.max_map_count`:
           <https://www.elastic.co/guide/en/elasticsearch/reference/current/vm-max-map-count.html>
@@ -515,6 +582,16 @@ spec:
         mayUseHostNetwork: true
         mayBePrivileged: true
         mayWriteHostPathVolumes: [ /run/swift-storage/state, /srv/node, /var/cache/swift ]
+
+      - matchNamespace: swift
+        matchRepository: ccloud/swift-rings
+        justification: |
+          Swift storage components inspect the network interfaces to establish
+          their identity within the Swift ring and need to be able to 
+          mount/unmount disks at runtime.
+          All swift components need to access the storage disks (as well as state
+          shared with the drive autopilot).
+        mayUseHostNetwork: true
       
       - matchNamespace: swift
         matchRepository: ccloud/swift-drive-autopilot
@@ -562,6 +639,12 @@ spec:
         mayUseCapabilities: [ NET_ADMIN, NET_RAW ]
       
       - matchNamespace: postfixout
+        matchRepository: genady/postfix-exporter
+        justification: |
+          TODO
+        mayReadHostPathVolumes: [ /var/log/pods/ ]
+
+      - matchNamespace: postfixout-alt
         matchRepository: genady/postfix-exporter
         justification: |
           TODO
