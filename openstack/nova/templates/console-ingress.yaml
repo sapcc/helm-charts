@@ -1,7 +1,7 @@
 {{ $envAll := . }}
-{{- $cells := dict "cell1" false }}
+{{- $cells := list "cell1" }}
 {{- if .Values.cell2.enabled }}
-  {{- $_ := set $cells .Values.cell2.name true }}
+  {{- $cells = append $cells .Values.cell2.name }}
 {{- end }}
 kind: Ingress
 apiVersion: networking.k8s.io/v1
@@ -29,7 +29,7 @@ spec:
   - host: {{include "nova_console_endpoint_host_public" .}}
     http:
       paths:
-      {{- range $cell_name, $_ := $cells }}
+      {{- range $cell_name := $cells }}
         {{- range $type, $config := $envAll.Values.consoles }}
           {{- if $config.enabled }}
             {{- $name := print $cell_name "-" $type }}
@@ -44,7 +44,7 @@ spec:
         {{- end }}
       {{- end }}
 
-{{- range $cell_name, $_ := $cells }}
+{{- range $cell_name := $cells }}
   {{- range $type, $config := $envAll.Values.consoles }}
     {{- if $config.enabled }}
       {{- $name := print $cell_name "-" $type }}

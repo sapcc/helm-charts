@@ -1,8 +1,7 @@
 {{- define "nova.console_deployment" }}
 {{- $cell_name := index . 1 }}
 {{- $type := index . 2 }}
-{{- $is_cell2 := index . 3 }}
-{{- $config := index . 4 }}
+{{- $config := index . 3 }}
 {{- $name := print $cell_name "-" $type }}
 {{- with index . 0 }}
 kind: Deployment
