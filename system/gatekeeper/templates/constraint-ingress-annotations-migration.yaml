@@ -1,0 +1,29 @@
+{{/*
+  Constraint objects cannot be included in the Helm manifest directly.
+  See templates/configmap-delayed-payloads.yaml and templates/job-apply-delayed-payloads.yaml for details.
+*/}}
+{{- define "ingress-annotations-migration" -}}
+
+{{/* The p-clusters do not use our standard ingress-nginx deployment and therefore do not need to be migrated. */}}
+{{- if ne .Values.cluster_type "postfix" -}}
+
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: GkIngressAnnotationsMigration
+metadata:
+  name: ingress-annotations-migration
+  annotations:
+    {{- include "sources" (tuple "ingress-annotations-migration" "ingress-annotations-migration") | indent 4 }}
+    {{- include "docstring" (tuple $ "GkIngressAnnotationsMigration") | indent 4 }}
+  labels:
+    severity: 'error'
+spec:
+  enforcementAction: dryrun # TODO deny
+  match:
+    kinds:
+      - apiGroups: ["networking.k8s.io"]
+        kinds: ["Ingress"]
+
+{{- end -}}
+
+
+{{- end -}}

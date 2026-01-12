@@ -3,13 +3,17 @@ kind: Service
 metadata:
   name: {{ .Values.objectstore.service.name }}
   namespace: {{ .Release.Namespace }}
+{{- if .Values.objectstore.service.annotations }}
+  annotations:
+{{ toYaml .Values.objectstore.service.annotations | indent 4 }}
+{{- end }}
 spec:
 {{- if .Values.objectstore.service.externalIP }}
   externalIPs:
   - {{ .Values.objectstore.service.externalIP }}
-  type: NodePort
-  externalTrafficPolicy: Local
 {{- end }}
+  type: {{ default "NodePort" .Values.objectstore.service.type }}
+  externalTrafficPolicy: Local
   sessionAffinity: None
   ports:
     - port: {{ .Values.objectstore.service.port }}

@@ -1,0 +1,66 @@
+fullname: aci-netbox-collector
+enabled: true
+
+replicaCount: 1
+
+image:
+  name: aci-netbox-collector
+  tag: "latest"
+  pullPolicy: Always
+
+service:
+  type: ClusterIP
+  port: 8000
+
+resources:
+  requests:
+    cpu: "200m"
+    memory: "512Mi"
+  limits:
+    cpu: "1"
+    memory: "2Gi"
+
+livenessProbe:
+  path: /health
+  initialDelaySeconds: 10
+  periodSeconds: 10
+
+readinessProbe:
+  path: /health
+  initialDelaySeconds: 5
+  periodSeconds: 10
+
+env:
+  flask_host: "0.0.0.0"
+  flask_port: 8000
+  flask_debug: false
+
+  log_level: "INFO"
+  log_file: "/app/logs/app.log"
+
+  netbox_url: "https://netbox.global.cloud.sap/graphql/"
+  netbox_retry_attempts: 3
+  netbox_retry_delay_seconds: 5
+  netbox_request_timeout_seconds: 60
+
+  cache_prefix: "netbox"
+  cache_ttl_seconds: 0
+  cache_host: "aci-cache-primary"
+  cache_port: 6379
+  cache_timeout: 3
+  cache_retry_attempts: 3
+  cache_retry_delay_seconds: 5
+
+  batch_size: 500
+  refresh_interval_seconds: 60
+  since_hours_on_hit: 1
+  save_aggregate_connections: false
+
+  # Filters
+  interface_base_filter: 'cabled: true, device_role: "aci-leaf"'
+  device_base_filter: ''
+
+  debug_refresh: false
+
+aci:
+  cache_password:

@@ -174,12 +174,14 @@ build-argora-operator-remote:
 		yq -i '.version = (.version | split(".") | .[2] = ((.[2] | tonumber) + 1 | tostring) | join("."))' argora-operator-remote/Chart.yaml
 
 build-khalkeon-remote:
+	@helm dep up khalkeon-remote
 	@helm template khalkeon khalkeon-remote/charts/khalkeon* \
 		-f khalkeon-remote/values.yaml \
 		-f khalkeon-remote/values-managed-resources.yaml |\
 		$(SED) 's/kind: Role/kind: ClusterRole/g' - |\
 		yq eval 'select(.kind != "Service")' - >\
 		khalkeon-remote/managedresources/crds-and-rbac.yaml
+	@yq -i '.version = (.version | split(".") | .[2] = ((.[2] | tonumber) + 1 | tostring) | join("."))' khalkeon-remote/Chart.yaml
 
 # chart name, source url, tag
 define build-chart

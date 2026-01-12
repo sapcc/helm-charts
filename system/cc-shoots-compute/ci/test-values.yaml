@@ -1,11 +1,17 @@
 global:
   region: qa-de-1
 
+imageVersion: "2025.10.0"
+preReleaseImageVersion: "2025.11.0-prerelease.3"
+
 kubernetes:
   version: 1.31.5
 
 kvmShoots:
   test:
+    region: test-1
+    imageVersion: "2025.11.0"
+    preReleaseImageVersion: "2025.12.0-prerelease.5"
     networking:
       nodes: "12.34.56.78/16"
       pods: "12.34.56.78/16"
@@ -20,7 +26,32 @@ kvmShoots:
         nodeSelector: foo == "bar"
     workers:
       test-a:
+        channel: release  # default
+        imageVersion: "2025.12.0"
         poolSize: 1
+        updateStrategy: AutoRollingUpdate
+        inPlaceUpdateTimeout: 2h0m0s
+        bb: test-bb
+        zones:
+          - test-1a
+        sysctls:
+          fooctl: "1"
+          barctl: "test"
+      test-b:
+        channel: preRelease
+        preReleaseImageVersion: "2026.01.0-prerelease.1"
+        poolSize: 1
+        updateStrategy: AutoRollingUpdate
+        bb: test-bb
+        zones:
+          - test-1a
     auditing:
       enabled: true
       url: "https://auditing.test.svc.cluster.local"
+
+extraIgnition:
+  commonFiles: |
+    - path: /etc/ssh/sshd_config
+      contents:
+        inline: |
+          foo bar

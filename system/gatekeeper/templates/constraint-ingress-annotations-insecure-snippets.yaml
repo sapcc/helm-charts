@@ -1,0 +1,26 @@
+{{/*
+  Constraint objects cannot be included in the Helm manifest directly.
+  See templates/configmap-delayed-payloads.yaml and templates/job-apply-delayed-payloads.yaml for details.
+*/}}
+{{- define "ingress-annotations-insecure-snippets" -}}
+
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: GkIngressAnnotations
+metadata:
+  name: ingress-annotations-insecure-snippets
+  annotations:
+    {{- include "sources" (tuple "ingress-annotations" "ingress-annotations-insecure-snippets") | indent 4 }}
+    {{- include "docstring" (tuple $ "GkIngressAnnotations_InsecureSnippets") | indent 4 }}
+  labels:
+    severity: 'info'
+spec:
+  enforcementAction: dryrun
+  match:
+    kinds:
+      - apiGroups: ["networking.k8s.io"]
+        kinds: ["Ingress"]
+  parameters:
+    hint: 'disabled due to CVE-2021-25742'
+    regexes: [ "^ingress.kubernetes.io/(?:auth|configuration|server|modsecurity)-snippet$" ]
+
+{{- end -}}

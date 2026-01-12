@@ -35,9 +35,8 @@ debug: "True"
 
 statsd:
   port: 9102
-  image:
-    repository:  prom/statsd-exporter
-    tag: v0.26.0
+  image: 'shared-app-images/statsd-exporter'
+  imageTag: '0.28.0-latest'
   resources:
     enabled: true
     limits:
@@ -295,21 +294,34 @@ mysql_metrics:
       - "project_id"
       name: openstack_barbican_orders_count_gauge
       query: |
-        SELECT
-          orders.status,
-          orders.type AS order_type,
-          projects.external_id AS project_id,
-          COUNT(*) AS count_gauge
-        FROM orders
-        INNER JOIN projects
-          ON orders.project_id = projects.id
-        WHERE orders.deleted = 0
-        GROUP BY
-          orders.status,
-          order_type,
-          project_id;
+        SELECT status, order_type, project_id, count_gauge
+        FROM (
+          SELECT
+            orders.status AS status,
+            orders.type AS order_type,
+            projects.external_id AS project_id,
+            COUNT(*) AS count_gauge
+          FROM orders
+          INNER JOIN projects
+            ON orders.project_id = projects.id
+          WHERE orders.deleted = 0
+          GROUP BY
+            orders.status,
+            orders.type,
+            projects.external_id
+          UNION ALL
+          SELECT
+            'none' AS status,
+            'none' AS order_type,
+            'none' AS project_id,
+            0 AS count_gauge
+          WHERE NOT EXISTS (
+            SELECT 1 FROM orders WHERE deleted = 0
+          )
+        ) x;
       values:
       - "count_gauge"
+
 
 # HSM related metrics
 # How many secrets are stored in HSM per crypto plugin
@@ -379,18 +391,16 @@ mysql_metrics:
   # Encrypted_data rows with missing secrets
     - help: Barbican encrypted_data rows with missing secrets
       labels:
-      - "kek_id"
+      - "orphan_type"
       name: openstack_barbican_encrypted_data_missing_secrets_count_gauge
       query: |
         SELECT
-          encrypted_data.kek_id AS kek_id,
+          'missing_secret' AS orphan_type,
           COUNT(*) AS count_gauge
         FROM encrypted_data
         LEFT JOIN secrets
           ON encrypted_data.secret_id = secrets.id
-        WHERE secrets.id IS NULL
-        GROUP BY
-          encrypted_data.kek_id;
+        WHERE secrets.id IS NULL;
       values:
       - "count_gauge"
 

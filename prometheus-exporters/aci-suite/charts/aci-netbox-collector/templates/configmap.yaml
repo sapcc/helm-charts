@@ -1,0 +1,44 @@
+{{- if .Values.enabled }}
+{{- $region := required ".Values.global.region is required" .Values.global.region }}
+{{- $interfaceFilter := printf "%s, region: \"%s\"" .Values.env.interface_base_filter $region }}
+{{- $deviceFilter := printf "%s, region: \"%s\"" .Values.env.device_base_filter $region }}
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.fullname }}-config
+  labels:
+    app.kubernetes.io/name: {{ .Values.fullname }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+data:
+  env.yml: |-
+    flask_host: {{ .Values.env.flask_host | quote }}
+    flask_port: {{ .Values.env.flask_port | int }}
+    flask_debug: {{ .Values.env.flask_debug | toString | lower }}
+
+    log_level: {{ .Values.env.log_level | quote }}
+    log_file: {{ .Values.env.log_file | quote }}
+
+    netbox_url: {{ .Values.env.netbox_url | quote }}
+    netbox_retry_attempts: {{ .Values.env.netbox_retry_attempts | int }}
+    netbox_retry_delay_seconds: {{ .Values.env.netbox_retry_delay_seconds | int }}
+    netbox_request_timeout_seconds: {{ .Values.env.netbox_request_timeout_seconds | int }}
+
+    cache_host: {{ .Values.env.cache_host | quote }}
+    cache_port: {{ .Values.env.cache_port | int }}
+    cache_timeout: {{ .Values.env.cache_timeout | int }}
+    cache_prefix: {{ .Values.env.cache_prefix | quote }}
+    cache_retry_attempts: {{ .Values.env.cache_retry_attempts | int }}
+    cache_retry_delay_seconds: {{ .Values.env.cache_retry_delay_seconds | int }}
+    cache_ttl_seconds: {{ .Values.env.cache_ttl_seconds | int }}
+
+    batch_size: {{ .Values.env.batch_size | int }}
+    refresh_interval_seconds: {{ .Values.env.refresh_interval_seconds | int }}
+    since_hours_on_hit: {{ .Values.env.since_hours_on_hit | int }}
+    save_aggregate_connections: {{ .Values.env.save_aggregate_connections | toString | lower }}
+
+    interface_base_filter: {{ $interfaceFilter | quote }}
+    device_base_filter: {{ $deviceFilter | quote }}
+
+    debug_refresh: {{ .Values.env.debug_refresh | toString | lower }}
+{{- end }}

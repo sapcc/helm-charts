@@ -3,6 +3,10 @@ debug = {{.Values.debug}}
 insecure_debug = {{.Values.insecure_debug}}
 verbose = true
 
+{{- with .Values.max_db_limit }}
+max_db_limit = {{ . }}
+{{- end }}
+
 max_token_size = {{ .Values.api.token.max_token_size | default 255 }}
 
 log_config_append = /etc/keystone/logging.conf

@@ -1,0 +1,57 @@
+fullname: aci-data-collector
+enabled: true
+
+replicaCount: 1
+
+image:
+  name: aci-data-collector
+  tag: "latest"
+  pullPolicy: Always
+
+resources:
+  requests:
+    cpu: "100m"
+    memory: "256Mi"
+  limits:
+    cpu: "500m"
+    memory: "512Mi"
+
+env:
+  aci_id: "mock"
+
+  # Request timeout parameters
+  apic_reset_timeout: 30
+  apic_cookie_timeout: 5
+  apic_request_timeout: 20
+
+  # cache connection (host/port only; password comes from per-chart Secret)
+  cache_host: "aci-cache-primary"
+  cache_port: 6379
+  cache_timeout: 3
+  cache_max_delay: 1
+  cache_max_retries: 5
+  cache_availability_interval: 10
+
+  collectors:
+    BgpPeerPCollector:
+      interval: 60
+    FabricNodeCollector:
+      interval: 60
+    L1PhysIfCollector:
+      interval: 60
+    ConfigJobCollector:
+      interval: 60
+    VpcIfCollector:
+      interval: 60
+    CoopEpDampCollector:
+      interval: 60
+    FabricNodePEpCollector:
+      interval: 60
+
+  log_level: "INFO"
+
+aci:
+  aci_user:
+  aci_password:
+  apic_hosts:
+  cache_password:
