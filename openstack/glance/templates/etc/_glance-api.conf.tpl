@@ -32,12 +32,9 @@
 {{- $def := (.Values.default_backend | default "swift") -}}
 {{- if not (has $def $aliases) -}}
   {{- fail (printf "glance: default_backend %q is not in enabled_backends %v" $def $aliases) -}}
-{{- end -}}
-
-{{- /* Emit enabled_backends only if more than one backend exists */ -}}
-{{- if gt (len $backends) 1 }}
-enabled_backends = {{ join ", " $backends }}
 {{- end }}
+
+enabled_backends = {{ join ", " $backends }}
 
 debug = {{ .Values.api.debug }}
 

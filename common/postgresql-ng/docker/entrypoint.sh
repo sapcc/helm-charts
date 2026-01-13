@@ -218,7 +218,9 @@ if [[ $updated_db == true ]]; then
   fi
 
   PGDATABASE='postgres' process_sql -c "ALTER DATABASE \"template1\" REFRESH COLLATION VERSION"
-  PGDATABASE="$DB" process_sql -c "ALTER DATABASE \"$DB\" REFRESH COLLATION VERSION"
+  for DB in $DATABASES; do
+    PGDATABASE="$DB" process_sql -c "ALTER DATABASE \"$DB\" REFRESH COLLATION VERSION"
+  done
 fi
 
 # maintain password of superuser account "postgres" (this is required because this password is different on each run)
@@ -231,9 +233,8 @@ if [[ -f /sql-on-startup.d/phase1-system.sql ]]; then
   echo "Processing /sql-on-startup.d/phase1-system.sql..."
   PGDATABASE='postgres' process_sql -f <(substituteSqlEnvs /sql-on-startup.d/phase1-system.sql)
 fi
-for FILE in /sql-on-startup.d/phase2-*.sql; do
-  DB="$(basename "$FILE" | sed 's/^phase2-\(.*\)\.sql$/\1/')"
-  PGDATABASE="$DB" process_sql -f "$FILE"
+for DB in $DATABASES; do
+  PGDATABASE="$DB" process_sql -f "/sql-on-startup.d/phase2-$DB.sql"
 done
 
 # stop and exec later to properly attach to forward signals and stdout/stderr properly

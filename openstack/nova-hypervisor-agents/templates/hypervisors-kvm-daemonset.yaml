@@ -8,10 +8,12 @@ metadata:
     type: backend
     component: nova
 spec:
-  revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revision_history }}
+  revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.daemonsets.revisionHistory }}
   selector:
     matchLabels:
       name: {{ .Release.Name }}
+  updateStrategy:
+    {{- .Values.pod.lifecycle.upgrades.daemonsets.updateStrategy | toYaml | nindent 4 }}
   template:
     metadata:
       labels:
@@ -332,14 +334,6 @@ spec:
                 path: nova.conf.d/cell.conf
               - key: keystoneauth-secrets.conf
                 path: nova.conf.d/keystoneauth-secrets.conf
-      - name: statsd-etc
-        projected:
-          sources:
-          - configMap:
-              name: {{ .Release.Name }}-etc
-              items:
-              - key:  statsd-exporter.yaml
-                path: statsd-exporter.yaml
       - name: bin
         configMap:
           name: {{ .Release.Name }}-bin

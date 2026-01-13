@@ -58,7 +58,6 @@ spec:
           image: {{ tuple . "api" | include "container_image_nova" }}
           imagePullPolicy: IfNotPresent
           command:
-          - dumb-init
           - nova-api
           env:
           - name: STATSD_HOST
@@ -107,7 +106,7 @@ spec:
         {{- tuple . .Values.api_metadata.config_file.DEFAULT.metadata_workers | include "utils.proxysql.container" | indent 8 }}
         {{- end }}
         - name: statsd
-          image: {{ required ".Values.global.dockerHubMirror is missing" .Values.global.dockerHubMirror}}/prom/statsd-exporter:v0.8.1
+          image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/{{ required ".Values.statsd.image is missing" .Values.statsd.image }}:{{ required ".Values.statsd.imageTag is missing" .Values.statsd.imageTag }}
           imagePullPolicy: IfNotPresent
           args: [ --statsd.mapping-config=/etc/statsd/statsd-exporter.yaml ]
           ports:

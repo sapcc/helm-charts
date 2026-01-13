@@ -33,17 +33,17 @@ spec:
         severity: info
         service: barbican
         context: thales
-        meta: "THALES Client License in {{`{{ $labels.devicename }}`}} is {{`{{ $value }}`}}"
+        meta: "Ariba Client License in {{`{{ $labels.devicename }}`}} is {{`{{ $value }}`}}"
         dashboard: thales
         no_alert_on_absence: "true"
         support_group: identity
       annotations:
-        description: "THALES Client License in {{`{{ $labels.devicename }}`}} is {{`{{ $value }}`}}"
-        summary: "THALES Client License in {{`{{ $labels.devicename }}`}} is {{`{{ $value }}`}}"
+        description: "Ariba Client License in {{`{{ $labels.devicename }}`}} is {{`{{ $value }}`}}"
+        summary: "Ariba Client License in {{`{{ $labels.devicename }}`}} is {{`{{ $value }}`}}"
   
     - alert: thalesOperationalErrors
       expr: sum(rate(snmp_thales_hsmOperationErrors[5m])) by (devicename) > 0
-      for: 5m
+      for: 15m
       labels:
         severity: info
         service: barbican
@@ -52,6 +52,7 @@ spec:
         dashboard: thales
         no_alert_on_absence: "true"
         support_group: identity
+        playbook: /docs/support/playbook/barbican/alerts/hsm/#thalesoperationalerrors
       annotations:
         description: "THALES Operational Errors in {{`{{ $labels.devicename }}`}}"
         summary: "THALES Operational Errors in {{`{{ $labels.devicename }}`}}"
@@ -67,7 +68,7 @@ spec:
         dashboard: thales
         no_alert_on_absence: "true"
         support_group: identity
-        playbook: /docs/support/playbook/barbican/alerts/thales/
+        playbook: /docs/support/playbook/barbican/alerts/hsm/#thalessensortemperatureiscritical
       annotations:
         description: "THALES Sensor {{`{{ $labels.lmTempSensorsDevice }}`}} in {{`{{ $labels.devicename }}`}} Temperature is {{`{{ $value }}`}}"
         summary: "THALES Sensor {{`{{ $labels.lmTempSensorsDevice }}`}} in {{`{{ $labels.devicename }}`}} Temperature is {{`{{ $value }}`}}"
@@ -94,13 +95,13 @@ spec:
         severity: info
         service: barbican
         context: thales
-        meta: "THALES Client License in {{`{{ $labels.devicename }}`}} is {{`{{ $value }}`}}"
+        meta: "Barbican Client License in {{`{{ $labels.devicename }}`}} is {{`{{ $value }}`}}"
         dashboard: thales
         no_alert_on_absence: "true"
         support_group: identity
       annotations:
-        description: "THALES Client License in {{`{{ $labels.devicename }}`}} is {{`{{ $value }}`}}"
-        summary: "THALES Client License in {{`{{ $labels.devicename }}`}} is {{`{{ $value }}`}}"
+        description: "Barbican Client License in {{`{{ $labels.devicename }}`}} is {{`{{ $value }}`}}"
+        summary: "Barbican Client License in {{`{{ $labels.devicename }}`}} is {{`{{ $value }}`}}"
   
     - alert: thalesDeviceIsUnReachable
       expr: count(up{job="scrapeConfig/infra-monitoring/snmp-exporter-thales"} == 0 or absent(up{job="scrapeConfig/infra-monitoring/snmp-exporter-thales"})) by (name, device_type)
@@ -113,7 +114,7 @@ spec:
         dashboard: thales
         no_alert_on_absence: "true"
         support_group: identity
-        playbook: /docs/support/playbook/barbican/alerts/thales/
+        playbook: /docs/support/playbook/barbican/alerts/hsm/#thalesdeviceisunreachable
       annotations:
         description: "{{`{{ $labels.name }}`}} {{`{{ $labels.device_type }}`}} Device is UnReachable"
         summary: "{{`{{ $labels.name }}`}} {{`{{ $labels.device_type }}`}} Device is UnReachable"

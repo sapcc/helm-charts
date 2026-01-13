@@ -1,9 +1,9 @@
 {{- if .Values.metrics.enabled }}
 {{- $fullname := include "redis.fullname" . -}}
 
-{{- $dockerHubMirror := .Values.global.dockerHubMirror | required ".Values.global.dockerHubMirror missing" -}}
+{{- $registry := .Values.global.registry | required ".Values.global.registry missing" -}}
 {{- if .Values.useAlternateRegion -}}
-  {{- $dockerHubMirror = .Values.global.dockerHubMirrorAlternateRegion | required ".Values.global.dockerHubMirrorAlternateRegion missing" -}}
+  {{- $registry = .Values.global.registryAlternateRegion | required ".Values.global.registryAlternateRegion missing" -}}
 {{- end -}}
 
 kind: Deployment
@@ -39,8 +39,7 @@ spec:
     spec:
       containers:
         - name: metrics
-          image: {{ $dockerHubMirror }}/oliver006/redis_exporter:{{ .Values.metrics.image.tag }}
-          imagePullPolicy: Always
+          image: {{ $registry }}/shared-app-images/redis-exporter:{{ .Values.metrics.image.tag }}
           env:
             - name: REDIS_ADDR
               value: "{{ $fullname }}:6379"

@@ -5,13 +5,20 @@ apiVersion: core.gardener.cloud/v1beta1
 kind: Shoot
 metadata:
   name: {{ $key }}
-  namespace: garden-ccloud
+  labels:
+    cluster-type: sci-k8s-compute
+    greenhouse.sap/owned-by: compute
+    greenhouse.sap/shoot-grafter-transport: {{ default "greenhouse-prod-sci" $.Values.greenhouseShootGrafter }}
+    metadata.greenhouse.sap/region: {{ coalesce $.Values.contextSuffix $cluster.region }}
 spec:
   cloudProfile:
     kind: CloudProfile
     name: ironcore-metal
   credentialsBindingName: metal-{{ $cluster.region | default $.Values.global.region }}
   region: {{ $cluster.region | default $.Values.global.region }}
+  {{- if $cluster.seedSelector }}
+  seedSelector: {{- toYaml $cluster.seedSelector | nindent 4 }}
+  {{- end }}
   networking:
     pods: {{ default $.Values.networking.pods $cluster.networking.pods }}
     services: {{ default $.Values.networking.services $cluster.networking.services }}
@@ -56,7 +63,14 @@ spec:
           url: {{ $cluster.auditing.url }}
           tls:
             secretReferenceName: auditing-mtls
+  {{- end }}
   resources:
+  - name: extraignition-compute-{{ $key }}
+    resourceRef:
+      apiVersion: v1
+      kind: Secret
+      name: extraignition-compute-{{ $key }}
+  {{- if $cluster.auditing.enabled }}
   - name: auditing-mtls
     resourceRef:
       apiVersion: v1
@@ -123,9 +137,299 @@ spec:
             - {{ .cidr }}
             {{- end }}
     workers:
-      {{- toYaml $cluster.workers | nindent 6 }}
-  {{- if $cluster.seedSelector }}
-  seedSelector: {{- toYaml $cluster.seedSelector | nindent 4 }}
-  {{- end }}
+    {{- range $workerkey, $worker := $cluster.workers }}
+      {{- $workerChannel := coalesce $worker.channel $cluster.channel "release" }}
+      {{- $imageVersion:= "unset" }}
+      {{- if eq $workerChannel "preRelease" }}
+      {{- $imageVersion = coalesce $worker.preReleaseImageVersion $cluster.preReleaseImageVersion $.Values.preReleaseImageVersion }}
+      {{- else if eq $workerChannel "release" }}
+      {{- $imageVersion = coalesce $worker.imageVersion $cluster.imageVersion $.Values.imageVersion }}
+      {{- else }}
+      {{- fail (printf "worker %s has invalid channel '%s': must be either 'release' or 'preRelease'" $workerkey $workerChannel) }}
+      {{- end }}
+      - name: {{ $workerkey }}
+        machine:
+          architecture: amd64
+          image:
+            name: gardenlinux
+            version: {{ $imageVersion | quote }}
+          type: baremetal
+        minimum: {{ $worker.poolSize }}
+        maximum: {{ $worker.poolSize }}
+        maxSurge: 0
+        maxUnavailable: {{ default 1 $worker.maxUnavailable }}
+        {{- if $worker.updateStrategy }}
+        updateStrategy: {{ $worker.updateStrategy }}
+        {{- end }}
+        zones:
+        {{- toYaml $worker.zones | nindent 8 }}
+        machineControllerManager:
+          machineCreationTimeout: 1h20m0s
+          machineHealthTimeout: 1h0m0s
+          machineDrainTimeout: {{ default "240h0m0s" $worker.machineDrainTimeout }}
+          {{- if $worker.inPlaceUpdateTimeout }}
+          inPlaceUpdateTimeout: {{ $worker.inPlaceUpdateTimeout }}
+          {{- end }}
+        sysctls:
+          vm.hugetlb_shm_group: "64055"
+          vm.unprivileged_userfaultfd: "1"
+          vm.overcommit_memory: "2"
+          {{- if $worker.sysctls }}
+          {{- toYaml $worker.sysctls | nindent 10 }}
+          {{- end }}
+        labels:
+          cloud.sap/channel: {{ $workerChannel }}
+          cloud.sap/imageVersion: {{ $imageVersion | quote }}
+          {{- if $worker.labels }}
+          {{- toYaml $worker.labels | nindent 10 }}
+          {{- end }}
+        {{- if $worker.annotations }}
+        annotations:
+          {{- toYaml $worker.annotations | nindent 10 }}
+        {{- end }}
+        providerConfig:
+          apiVersion: ironcore-metal.provider.extensions.gardener.cloud/v1alpha1
+          kind: WorkerConfig
+          extraServerLabels:
+            kubernetes.metal.cloud.sap/bb: {{ required "worker.bb is required" $worker.bb }}
+            kubernetes.metal.cloud.sap/cluster: {{ $key }}
+          metadata:
+            interfaces: {{ coalesce $worker.interfaces $cluster.networking.interfaces $.Values.networking.interfaces }}
+            vlan: {{ default $.Values.networking.vlan $cluster.networking.vlan | quote }}
+            region: {{ $cluster.region | default $.Values.global.region }}
+          ipamConfig:
+          - metadataKey: bond
+            ipamRef:
+              apiGroup: ipam.cluster.x-k8s.io
+              kind: GlobalInClusterIPPool
+              name: compute-{{ $key }}
+          extraIgnition:
+            override: false
+            secretRef: extraignition-compute-{{ $key }}
+            raw: |
+              storage:
+                files:
+                {{- if eq $workerChannel "preRelease" }}
+                {{- if and $worker.extraIgnitionFiles ( typeIs "string" $worker.extraIgnitionFiles ) }}
+                {{- $worker.extraIgnitionFiles | nindent 16 }}
+                {{- end }}
+                {{- end }}
+
+                - path: /etc/default/openvswitch-switch
+                  filesystem: root
+                  mode: 0644
+                  overwrite: true
+                  contents:
+                    inline: |
+                      OVS_CTL_OPTS="--ovs-user='root:openvswitch'"
+
+                - path: /etc/polkit-1/rules.d/00-kvm-node-agent.rules
+                  overwrite: true
+                  mode: 0644
+                  contents:
+                    inline: |
+                      // Allow kvm-node-agent to manage specific service units;
+                      // fall back to implicit authorization otherwise.
+
+                      const units = ["libvirtd", "virt-admin"];
+                      polkit.addRule(function(action, subject) {
+                          if (action.id == "org.freedesktop.systemd1.manage-units" &&
+                          subject.user == "kvm-node-agent" &&
+                          units.filter(function (unit) { return action.lookup("unit").startsWith(unit) }).length ) {
+                              return polkit.Result.YES;
+                          }
+                      });
+
+                - path: /etc/systemd/logind.conf.d/00-inhibit-delay-10min.conf
+                  overwrite: yes
+                  mode: 0644
+                  contents:
+                    inline: |
+                      [Login]
+                      # Set the maximum delay for the inhibit delay to 10 minutes
+                      # to give enough time to emergency evacuate the node
+                      InhibitDelayMaxSec=600
+
+                - path: /etc/multipath.conf
+                  overwrite: yes
+                  mode: 0644
+                  contents:
+                    inline: |
+                      defaults {
+                        user_friendly_names         no
+                        find_multipaths             yes
+                        prio                        "alua"
+                        path_grouping_policy        group_by_prio
+                        path_selector               "historical-service-time 0"
+                        failback                    immediate
+                        no_path_retry               1
+                        retain_attached_hw_handler  yes
+                      }
+
+                      blacklist {
+                        protocol scsi:sas
+                        protocol scsi:ata
+                        protocol nvme:pcie
+                      }
+
+                      devices {
+                        device {
+                          vendor              "NETAPP"
+                          product             "*"
+                          hardware_handler    "1 alua"
+                        }
+                      }
+
+                - path: /opt/persist/hugepages.env
+                  overwrite: yes
+                  mode: 0644
+                  contents:
+                    inline: |
+                      ENABLE_HUGEPAGE_SETUP=true
+
+                - path: /etc/libvirt/libvirt.conf
+                  overwrite: yes
+                  mode: 0644
+                  contents:
+                    inline: |
+                      {{- if eq (default "stable" $worker.feature) "qemu" }}
+                      uri_default = "qemu:///system"
+                      {{- else }}
+                      uri_default = "ch:///system"
+                      {{- end }}
+
+                - path: /etc/libvirt/libvirtd.conf
+                  overwrite: yes
+                  mode: 0600
+                  contents:
+                    inline: ""
+
+                {{- if contains "qa" $.Values.global.region }}
+                - path: /etc/systemd/coredump.conf.d/90-qa.conf
+                  overwrite: yes
+                  mode: 0600
+                  contents:
+                    inline: |
+                      [Coredump]
+                      Storage=external
+                      Compress=yes
+                      ExternalSizeMax=32G
+
+                - path: /etc/systemd/system.conf.d/90-qa.conf
+                  overwrite: yes
+                  mode: 0600
+                  contents:
+                    inline: |
+                      [Manager]
+                      DefaultLimitCORE=
+                {{- end}}
+
+              systemd:
+                units:
+                {{- if eq $workerChannel "preRelease" }}
+                {{- if and $worker.extraIgnitionSystemdUnits ( typeIs "string" $worker.extraIgnitionSystemdUnits ) }}
+                {{- $worker.extraIgnitionSystemdUnits | nindent 16 }}
+                {{- end }}
+                {{- end }}
+                - name: ovsdb-server.service
+                  dropins:
+                    - name: allow-group.conf
+                      contents: |
+                        [Service]
+                        UMask=0002
+                        RuntimeDirectoryMode=0775
+
+                - name: libvirtd.service
+                  dropins:
+                    - name: want-tls-socket.conf
+                      contents: |
+                        [Unit]
+                        Wants=libvirtd-tls.socket
+                        After=libvirtd-tls.socket
+                    - name: tls-cert-condition.conf
+                      contents: |
+                        [Unit]
+                        ConditionPathExists=/etc/pki/libvirt/clientcert.pem
+                        ConditionPathExists=/etc/pki/libvirt/private/clientkey.pem
+                        {{- if eq (default "stable" $worker.feature) "qemu" }}
+                        ConditionPathExists=/etc/pki/qemu/client-cert.pem
+                        ConditionPathExists=/etc/pki/qemu/client-key.pem
+                        {{- end }}
+
+                - name: libvirtd.socket
+                  dropins:
+                    - name: no-trigger-limit.conf
+                      contents: |
+                        [Socket]
+                        TriggerLimitIntervalSec=0
+                    - name: require-tls-certs.conf
+                      contents: |
+                        [Unit]
+                        ConditionPathExists=/etc/pki/libvirt/clientcert.pem
+                        ConditionPathExists=/etc/pki/libvirt/private/clientkey.pem
+                        {{- if eq (default "stable" $worker.feature) "qemu" }}
+                        ConditionPathExists=/etc/pki/qemu/client-cert.pem
+                        ConditionPathExists=/etc/pki/qemu/client-key.pem
+                        {{- end }}
+
+                - name: libvirtd-tls.socket
+                  dropins:
+                    - name: require-tls-certs.conf
+                      contents: |
+                        [Unit]
+                        ConditionPathExists=/etc/pki/libvirt/clientcert.pem
+                        ConditionPathExists=/etc/pki/libvirt/private/clientkey.pem
+                        {{- if eq (default "stable" $worker.feature) "qemu" }}
+                        ConditionPathExists=/etc/pki/qemu/client-cert.pem
+                        ConditionPathExists=/etc/pki/qemu/client-key.pem
+                        {{- end }}
+
+                - name: libvirtd-tcp.socket
+                  mask: true
+
+                - name: virt-admin-server-update-tls.service
+                  enabled: false
+                  contents: |
+                    [Unit]
+                    Description=Run virt-admin server-update-tls
+                    Documentation=man:virt-admin(1)
+                    Wants=libvirtd.service
+                    After=libvirtd.service
+                    ConditionVirtualization=!container
+                    ConditionPathExists=/etc/pki/libvirt/clientcert.pem
+                    ConditionPathExists=/etc/pki/libvirt/private/clientkey.pem
+                    {{- if eq (default "stable" $worker.feature) "qemu" }}
+                    ConditionPathExists=/etc/pki/qemu/client-cert.pem
+                    ConditionPathExists=/etc/pki/qemu/client-key.pem
+                    {{- end }}
+
+                    [Service]
+                    Type=oneshot
+                    ExecStart=/usr/bin/virt-admin server-update-tls --server libvirtd
+
+                - name: ovs-br-ex.service
+                  enabled: true
+                  contents: |
+                    [Unit]
+                    Description=Create OVS bridge for external network
+                    DefaultDependencies=no
+                    Wants=ovsdb-server.service
+                    Wants=ovs-vswitchd.service
+                    After=ovsdb-server.service
+                    After=ovs-vswitchd.service
+                    Before=network-online.target
+                    PartOf=network.target
+
+                    [Service]
+                    Type=oneshot
+                    ExecStart=/usr/bin/ovs-vsctl -- --may-exist add-br br-ex
+                    ExecStartPost=-/usr/bin/ip link set br-ex up
+                    RemainAfterExit=yes
+                    TimeoutSec=0
+                    StandardOutput=journal
+
+                    [Install]
+                    WantedBy=default.target
+    {{- end }}
 {{- end }}
 {{- end }}
