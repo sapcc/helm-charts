@@ -1,0 +1,32 @@
+{{- range $path, $_  := $.Files.Glob "bmc_versions/**" }}
+{{- $name := base (dir $path) }}
+{{- if eq (len (splitList "/" $path)) 4 -}}
+
+{{- $folders := splitList "/" $path }}
+{{- $version := index $folders 3}}
+{{- $vendor := index $folders 1 }}
+{{- $model := index $folders 2 }}
+{{- $version := replace "_" "-" $version}}
+{{- $version := replace ".yaml" "" $version}}
+
+{{ range $path, $_ := $.Files.Glob (printf "bmc_versions/%s/%s/*.yaml" $vendor $model) -}}
+apiVersion: metal.ironcore.dev/v1alpha1
+kind: BMCVersionSet
+metadata:
+  name: {{ lower $vendor }}-{{ lower $model }}-{{ lower $version }}
+spec:
+  serverSelector:
+    matchLabels:
+      kubernetes.metal.cloud.sap/type: {{ $model }}
+  bmcVersionTemplate:
+    serverMaintenancePolicy: OwnerApproval
+{{- if $.Files.Lines $path | len | eq 2 }}
+{{ $.Files.Get (printf "bmc_versions/%s/default.yaml" $vendor) | trim | indent 4 }}
+{{ $.Files.Get $path | trim | indent 4 }}
+{{- else }}
+{{ $.Files.Get $path | trim | indent 4 }}
+{{- end }}
+---
+{{- end -}}
+{{- end -}}
+{{- end -}}
