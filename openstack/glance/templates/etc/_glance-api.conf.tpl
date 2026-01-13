@@ -45,8 +45,6 @@ image_member_quota = 500
 log_config_append = /etc/glance/logging.ini
 {{- include "ini_sections.logging_format" . }}
 
-node_staging_uri = file:///tmp/staging
-
 show_image_direct_url = True
 
 #disable default admin rights for role 'admin'
@@ -91,6 +89,12 @@ default_backend = {{ $def | quote }}
 {{- if .Values.file.persistence.enabled }}
 filesystem_store_datadir = /glance_store
 {{- end }}
+
+[os_glance_tasks_store]
+filesystem_store_datadir = /var/lib/glance/tasks_work_dir
+
+[os_glance_staging_store]
+filesystem_store_datadir = /var/lib/glance/staging
 
 {{- if .Values.ceph.enabled }}
 
