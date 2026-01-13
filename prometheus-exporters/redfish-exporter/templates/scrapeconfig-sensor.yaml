@@ -1,0 +1,34 @@
+{{- $values := .Values.redfish_exporter -}}
+{{- if $values.enabled }}
+apiVersion: monitoring.coreos.com/v1alpha1
+kind: ScrapeConfig
+
+metadata:
+  name: 'redfish-sensors'
+  namespace: {{ $values.namespace }}
+  labels:
+    prometheus: {{ required "$values.prometheus missing" $values.prometheus }}
+    app.kubernetes.io/name: 'redfish-sensors'
+
+spec:
+  scrapeInterval: {{$values.scrapeInterval}}
+  scrapeTimeout: {{$values.scrapeTimeout}}
+  httpSDConfigs:
+    - url: {{ $values.httpSDConfigs.netbox_production_url }}/devices/?custom_labels=job=redfish-sensors&target=mgmt_only&status=active&tag=server&tenant_id=1&tag__n=no-redfish&region={{ required ".Values.global.region missing" .Values.global.region }}
+      refreshInterval: {{ $values.httpSDConfigs.refreshInterval }}
+  metricsPath: /sensors
+  params:
+    job: [redfish-sensors]
+  relabelings:
+    - sourceLabels: [job]
+      regex: redfish-sensors
+      action: keep
+    - sourceLabels: [__address__]
+      targetLabel: __param_target
+    - sourceLabels: [__param_target]
+      targetLabel: instance
+    - targetLabel: __address__
+      replacement: "redfish-exporter:{{ required "$values.listen_port missing" $values.listen_port }}"
+    - regex: 'device_type|cluster.*|role|platform|status'
+      action: labeldrop
+{{- end }}
