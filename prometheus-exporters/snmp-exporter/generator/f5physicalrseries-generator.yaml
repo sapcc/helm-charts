@@ -1,29 +1,35 @@
-modules:
-  f5physicalrseries:
-    walk:
-      - sysName
-      - sysSystemUptimeInSec
-      - sysGlobalTmmStatMemoryTotalKb
-      - sysGlobalTmmStatMemoryUsedKb
-      - sysGlobalHostOtherMemTotalKb
-      - sysGlobalHostOtherMemUsedKb
-      - sysGlobalHostSwapTotalKb
-      - sysGlobalHostSwapUsedKb
-      - sysMultiHostCpuUsageRatio5s
-      - sysMultiHostCpuUsageRatio1m
-      - sysProductVersion
-      - sysHostDiskPartition
-      - sysHostDiskBlockSize
-      - sysHostDiskTotalBlocks
-      - sysHostDiskFreeBlocks
-      - sysInterfaceName
-      - sysInterfaceMediaActiveSpeed
-      - sysInterfaceStatus
-      - sysInterfaceStatBytesIn
-      - sysInterfaceStatBytesOut
-      - sysInterfaceStatDropsIn
-      - sysInterfaceStatDropsOut
-      - sysInterfaceStatCollisions
-    max_repetitions: 25
-    retries: 3
-    timeout: 10s
+f5physicalrseries:
+  walk:
+    # Standard system identity and uptime (F5OS does not have sysSystemUptimeInSec)
+    - SNMPv2-MIB::sysName
+    - SNMPv2-MIB::sysUpTime
+    - SNMPv2-MIB::sysDescr
+
+    # F5OS appliance CPU (F5-PLATFORM-STATS-MIB)
+    # cpuTotal5secAvg  = 1.3.6.1.4.1.12276.1.2.1.1.2.1.3.<index>
+    # cpuTotal1minAvg  = 1.3.6.1.4.1.12276.1.2.1.1.2.1.4.<index>
+    - F5-PLATFORM-STATS-MIB::cpuTotal5secAvg
+    - F5-PLATFORM-STATS-MIB::cpuTotal1minAvg
+
+    # F5OS appliance memory (bytes/percent)
+    # memPlatformTotal = 1.3.6.1.4.1.12276.1.2.1.4.1.1.5.<index>
+    # memPlatformUsed  = 1.3.6.1.4.1.12276.1.2.1.4.1.1.6.<index>
+    - F5-PLATFORM-STATS-MIB::memPlatformTotal
+    - F5-PLATFORM-STATS-MIB::memPlatformUsed
+    - F5-PLATFORM-STATS-MIB::memFree
+    - F5-PLATFORM-STATS-MIB::memPercentageUsed
+
+    # Interfaces
+    - IF-MIB::ifTable
+    - IF-MIB::ifXTable
+
+  # Optional: label interface counters with ifName/ifAlias.
+  lookups:
+    - source_indexes: [ifIndex]
+      lookup: IF-MIB::ifName
+    - source_indexes: [ifIndex]
+      lookup: IF-MIB::ifAlias
+
+  max_repetitions: 25
+  retries: 3
+  timeout: 10s
