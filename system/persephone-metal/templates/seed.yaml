@@ -1,0 +1,69 @@
+{{- $vbase           := .Values.global.vaultBaseURL        | required "missing value for .Values.global.vaultBaseURL" -}}
+{{- $region          := .Values.global.region              | required "missing value for .Values.global.region" -}}
+{{- $landscapes      := .Values.persephone.landscapes      | required "missing value for .Values.persephone.landscapes" -}}
+
+apiVersion: "openstack.stable.sap.cc/v1"
+kind: OpenstackSeed
+metadata:
+  name: persephone-seed
+
+spec:
+  requires:
+    # TODO what are we supposed to 'require'?
+  - {{ .Values.global.keystoneNamespace }}/keystone-seed
+  - {{ .Values.global.keystoneNamespace }}/domain-ccadmin-seed
+  - {{ .Values.global.keystoneNamespace }}/domain-default-seed
+
+  domains:
+    - name: Default
+      users:
+      {{- range $_, $landscape := $landscapes }}
+        - name: persephone-{{ $landscape }}-seed
+          description: A service user for the landscape seed
+          password: {{ printf "%s/%s/persephone/keystone-user/persephone-%s-seed/password" $vbase $region $landscape | quote }}
+
+      {{- if eq $region "eu-de-1" }}
+        - name: persephone-{{ $landscape }}-runtime
+          description: A service user for the runtime shoot
+          password: {{ printf "%s/%s/persephone/keystone-user/persephone-%s-runtime/password" $vbase $region $landscape | quote }}
+
+        - name: persephone-{{ $landscape }}-gardener
+          description: A service user for the gardener operator
+          password: {{ printf "%s/%s/persephone/keystone-user/persephone-%s-operator/password" $vbase $region $landscape | quote }}
+
+        - name: persephone-{{ $landscape }}-operator
+          description: A service user for the persephone webhook operator
+          password: {{ printf "%s/%s/persephone/keystone-user/persephone-%s-webhook/password" $vbase $region $landscape | quote }}
+      {{- end }}
+      {{- end }}
+
+    - name: ccadmin
+      projects:
+        - name: cloud_admin
+          role_assignments:
+          {{- range $_, $landscape := $landscapes }}
+          # TODO: we might need this here: "cloud_dns_ops" "compute_admin" "dns_webmaster" "member" "network_admin" "objectstore_admin" "volume_admin"
+          {{- range $_, $roleName := list "member" }}
+            - role: {{ $roleName }}
+              user: persephone-{{ $landscape }}-seed@Default
+          {{ end }}
+
+          {{- if eq $region "eu-de-1" }}
+          # https://pages.github.tools.sap/kubernetes/gardener/docs/guides/sap-internal/cluster-operations/gardener-sapci/#5-assign-access-permissions-for-the-technical-user
+          {{- range $_, $roleName := list "compute_admin" "member" "network_admin" "objectstore_admin" "volume_admin" }}
+            - role: {{ $roleName }}
+              user:  persephone-{{ $landscape }}-runtime@Default
+          {{ end }}
+
+          {{- range $_, $roleName := list "service" }}
+            - role: {{ $roleName }}
+              user: persephone-{{ $landscape }}-gardener@Default
+          {{ end }}
+
+          # The operator creates new users in keystone
+          {{- range $_, $roleName := list "admin" }}
+            - role: {{ $roleName }}
+              user: persephone-{{ $landscape }}-operator@Default
+          {{ end }}
+          {{- end }}
+      {{- end }}
