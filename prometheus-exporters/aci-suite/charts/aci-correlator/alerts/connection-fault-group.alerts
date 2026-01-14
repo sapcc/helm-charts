@@ -1,0 +1,74 @@
+groups:
+  - name: aci-exporter-conn.alerts
+    rules:
+
+      # F0454 (!)
+      # [QA-DE-1-CCACI-2101-Service][eth1/47][qa-de-1-aci-7101][eth2-1] LLDP out of service: Port eth1/47 is out of service due to Unapproved Controller [ACI Leaf, active; ACI APIC, active]
+      - alert: LLDPOutOfService 
+        expr: |
+          sum by (node_name, node_intf, node_role, node_status, device_name, device_intf, device_role, device_status, reason) (aci_obs_lldp_port_out_of_service > 0)
+        for: 5m
+        labels:
+          severity: critical
+          support_group: network-data
+          aci_obs_group: ConnectionFaultGroup
+        annotations:
+          summary: "Connection Faults"
+          description: "[{{ $labels.node_name }}][{{ $labels.node_intf }}][{{ $labels.device_name }}][{{ $labels.device_intf }}] LLDP out of service: {{ $labels.reason }} [{{ $labels.node_role }}, {{ $labels.node_status }}; {{ $labels.device_role }}, {{ $labels.device_status }}]"
+
+      # F1888 (!)
+      # [qa-de-1-aci-2103-bb084][eth1/32] BPDU packets received on interface without VLAN configured: Port eth1/32 is out of service due to Wired to an undiscovered invalid neighbor [ACI Leaf, active]
+      - alert: BPDUReceived 
+        expr: |
+          sum by (node_name, node_intf, node_role, node_status, reason) (aci_obs_invalid_conn_port > 0)
+        for: 5m
+        labels:
+          severity: critical
+          support_group: network-data
+          aci_obs_group: ConnectionFaultGroup
+        annotations:
+          summary: "Connection Faults"
+          description: "[{{ $labels.node_name }}][{{ $labels.node_intf }}] BPDU packets received on interface without VLAN configured: {{ $labels.reason }} [{{ $labels.node_role }}, {{ $labels.node_status }}]"
+
+      # F4368 (!)
+      # [qa-de-1-aci-2103-bb084][eth1/32] Invalid connection port detected: Port eth1/32 is out of service due to Wired to an undiscovered invalid neighbor [ACI Leaf, active]
+      - alert: InvalidConnPort 
+        expr: |
+          sum by (node_name, node_intf, node_role, node_status, reason) (aci_obs_invalid_conn_port > 0)
+        for: 5m
+        labels:
+          severity: critical
+          support_group: network-data
+          aci_obs_group: ConnectionFaultGroup
+        annotations:
+          summary: "Connection Faults"
+          description: "[{{ $labels.node_name }}][{{ $labels.node_intf }}] Invalid connection port detected: {{ $labels.reason }} [{{ $labels.node_role }}, {{ $labels.node_status }}]"
+
+      # F100264 (!)
+      # [qa-de-1-aci-2199][eth1/34][QA-DE-1-CCACI-1101][Ethernet1/19] LLDP out of service: TCA: Ingress Buffer Drop Packets rate(eqptIngrDropPkts5min:bufferRate) value 10 raised above threshold 10 [ACI Leaf, active; ACI Spine, active]
+      - alert: IngressBufDropPacketsRate 
+        expr: |
+          sum by (node_name, node_intf, node_role, node_status, device_name, device_intf, device_role, device_status, reason) (aci_obs_ingr_buffer_drop_packets_rate > 0)
+        for: 5m
+        labels:
+          severity: critical
+          support_group: network-data
+          aci_obs_group: ConnectionFaultGroup
+        annotations:
+          summary: "Connection Faults"
+          description: "[{{ $labels.node_name }}][{{ $labels.node_intf }}][{{ $labels.device_name }}][{{ $labels.device_intf }}] LLDP out of service: {{ $labels.reason }} [{{ $labels.node_role }}, {{ $labels.node_status }}; {{ $labels.device_role }}, {{ $labels.device_status }}]"
+
+      # F100696 (!)
+      # [qa-de-1-aci-2103-bb084][eth1/32] Ingress forwarding drop packets triggered: TCA: Ingress Forwarding Drop Packets rate(eqptIngrDropPkts5min:forwardingRate) value 10 raised above threshold 10 [ACI Leaf, active]
+      - alert: IngressForwardingDropPacketsRate
+        expr: |
+          sum by (node_name, node_intf, node_role, node_status, reason) (aci_obs_ingr_forwarding_drop_packets_rate > 0)
+        for: 5m
+        labels:
+          severity: critical
+          support_group: network-data
+          aci_obs_group: ConnectionFaultGroup
+        annotations:
+          summary: "Connection Faults"
+          description: "[{{ $labels.node_name }}][{{ $labels.node_intf }}] Ingress forwarding drop packets triggered: {{ $labels.reason }} [{{ $labels.node_role }}, {{ $labels.node_status }}]"
+

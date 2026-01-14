@@ -5,7 +5,7 @@ replicaCount: 1
 
 image:
   name: aci-fault-collector
-  tag: "latest"
+  tag: # set by CI pipeline
   pullPolicy: Always
 
 resources:
@@ -16,6 +16,9 @@ resources:
     cpu: "500m"
     memory: "512Mi"
 
+service:
+  type: ClusterIP
+  
 env:
   aci_id: "mock"
 
@@ -38,6 +41,8 @@ env:
   cache_max_delay: 1
   cache_max_retries: 5
 
+  metrics_port: 11005
+
   collectors:
     FaultInst:
       lc_filter:
@@ -51,3 +56,7 @@ aci:
   aci_password:
   apic_hosts:
   cache_password:
+
+alerts:
+  enabled: false
+  prometheus: infra-frontend

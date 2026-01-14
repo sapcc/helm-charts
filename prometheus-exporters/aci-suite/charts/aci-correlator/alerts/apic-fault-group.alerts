@@ -1,5 +1,5 @@
 groups:
-  - name: aci-exporter.alerts
+  - name: aci-exporter-apic.alerts
     rules:
 
       # F0321 (!)
@@ -10,7 +10,7 @@ groups:
         for: 5m
         labels:
           severity: critical
-          team: network
+          support_group: network-data
           aci_obs_group: ApicFaultGroup
         annotations:
           summary: "APIC Faults"
@@ -23,7 +23,7 @@ groups:
         for: 5m
         labels:
           severity: critical
-          team: network
+          support_group: network-data
           aci_obs_group: ApicFaultGroup
         annotations:
           summary: "APIC Faults"
@@ -37,11 +37,11 @@ groups:
         for: 5m
         labels:
           severity: critical
-          team: network
+          support_group: network-data
           aci_obs_group: ApicFaultGroup
         annotations:
           summary: "APIC Faults"
-          description: "[{{ $labels.node_name }}] reporting another controller is not available: {{ $labels.reason }} [{{ $labels.node_role }}, {{ $labels.node_status }}]"
+          description: "[{{ $labels.node_name }}] Controller is not available: {{ $labels.reason }} [{{ $labels.node_role }}, {{ $labels.node_status }}]"
 
       # F0413
       # [QA-DE-1-CCACI-1201] Missing PSU (4): power supply missing [ACI Spine, active]
@@ -50,7 +50,7 @@ groups:
         for: 5m
         labels:
           severity: warning
-          team: network
+          support_group: network-data
           aci_obs_group: ApicFaultGroup
         annotations:
           summary: "APIC Faults"
@@ -63,7 +63,7 @@ groups:
         for: 5m
         labels:
           severity: critical
-          team: network
+          support_group: network-data
           aci_obs_group: ApicFaultGroup
         annotations:
           summary: "APIC Faults"
@@ -76,9 +76,35 @@ groups:
         for: 5m
         labels:
           severity: critical
-          team: network
+          support_group: network-data
           aci_obs_group: ApicFaultGroup
         annotations:
           summary: "APIC Faults"
           description: "[{{ $labels.node_name }}] Storage Capacity > 90%: {{ $labels.reason }} [{{ $labels.node_role }}, {{ $labels.node_status }}]"
+ 
+      # F2547
+      # [qa-de-1-ccaci-2222-bm090][1] node-id to pod-id mapping is wrong: Specified node non-retrievable(3:12) of fabric non-retrievable(3:21363) not present in the specified pod topology/pod-1/node-2222Specified node non-retrievable(3:12) of fabric non-retrievable(3:21363) not present in the specified pod topology/pod-1/node- [ACI Leaf, active]
+      - alert: APICWrongNodeIdPodIdMapping
+        expr: sum by (node_name, node_pod, node_role, node_status, reason) (aci_obs_wrong_mapping_node_id_pod_id > 0)
+        for: 5m
+        labels:
+          severity: critical
+          support_group: network-data
+          aci_obs_group: ApicFaultGroup
+        annotations:
+          summary: "APIC Faults"
+          description: "[{{ $labels.node_name }}][{{ $labels.node_pod }}] node-id to pod-id mapping is wrong: {{ $labels.reason }} [{{ $labels.node_role }}, {{ $labels.node_status }}]"
+ 
+      # F0053
+      # 
+      - alert: ApicConfigBackupFailed
+        expr: sum by (config_job_filename, reason) (aci_obs_backup_failed > 0)
+        for: 5m
+        labels:
+          severity: warning
+          support_group: network-data
+          aci_obs_group: ApicFaultGroup
+        annotations:
+          summary: "APIC Faults"
+          description: "[{{ $labels.config_job_filename }}] Remote backup failed: {{ $labels.reason }}"
  
