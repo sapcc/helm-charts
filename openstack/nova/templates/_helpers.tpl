@@ -117,54 +117,24 @@ annotations:
   {{- tuple . .Values.rabbitmq_cell2 | include "nova.helpers.rabbitmq_name" }}
 {{- end }}
 
-{{- define "nova.helpers.api_db" }}
-  {{- if eq .Values.apidbType "mariadb" }}
-    {{- print .Values.mariadb_api.name "-mariadb" }}
-  {{- else if eq .Values.apidbType "pxc-db" }}
-    {{- print .Values.pxc_db_api.name "-db-haproxy" }}
-  {{- else }}
-    {{- fail (print "Unsupported database type for api_db") }}
-  {{- end }}
-{{- end }}
-
-{{- define "nova.helpers.cell01_db" }}
-  {{- if eq .Values.cell1dbType "mariadb" }}
-    {{- print .Values.mariadb.name "-mariadb" }}
-  {{- else if eq .Values.cell1dbType "pxc-db" }}
-    {{- print .Values.pxc_db.name "-db-haproxy" }}
-  {{- else }}
-    {{- fail (print "Unsupported database type for cell0 and cell1") }}
-  {{- end }}
-{{- end }}
-
-{{- define "nova.helpers.cell2_db" }}
-  {{- if eq .Values.cell2dbType "mariadb" }}
-    {{- print .Values.mariadb_cell2.name "-mariadb" }}
-  {{- else if eq .Values.cell2dbType "pxc-db" }}
-    {{- print .Values.pxc_db_cell2.name "-db-haproxy" }}
-  {{- else }}
-    {{- fail (print "Unsupported database type for cell2") }}
-  {{- end }}
-{{- end }}
-
 {{- define "nova.helpers.cell01_services" }}
-  {{- print (include "nova.helpers.api_db" .) "," (include "nova.helpers.cell01_db" .) "," (include "nova.helpers.cell01_rabbitmq" .) }}
+  {{- print (include "nova.helpers.db_service" (tuple . "api")) "," (include "nova.helpers.db_service" (tuple . "cell1")) "," (include "nova.helpers.cell01_rabbitmq" .) }}
 {{- end }}
 
 {{- define "nova.helpers.cell1_services" }}
-  {{- print (include "nova.helpers.cell01_db" .) "," (include "nova.helpers.cell01_rabbitmq" .) }}
+  {{- print (include "nova.helpers.db_service" (tuple . "cell1")) "," (include "nova.helpers.cell01_rabbitmq" .) }}
 {{- end }}
 
 {{- define "nova.helpers.cell2_services" }}
   {{- if .Values.cell2.enabled }}
-    {{- print (include "nova.helpers.cell2_db" .) "," (include "nova.helpers.cell2_rabbitmq" .) }}
+    {{- print (include "nova.helpers.db_service" (tuple . "cell2")) "," (include "nova.helpers.cell2_rabbitmq" .) }}
   {{- end }}
 {{- end }}
 
 {{- define "nova.helpers.database_services" }}
-  {{- include "nova.helpers.api_db" . }},{{ include "nova.helpers.cell01_db" . }}
+  {{- include "nova.helpers.db_service" (tuple . "api") }},{{ include "nova.helpers.db_service" (tuple . "cell1") }}
   {{- if .Values.cell2.enabled -}}
-    ,{{ include "nova.helpers.cell2_db" . }}
+    ,{{ include "nova.helpers.db_service" (tuple . "cell2") }}
   {{- end }}
 {{- end }}
 
@@ -262,4 +232,18 @@ Params:
   {{- $dbValues := get $envAll.Values $dbChartAlias }}
   {{- $name := $dbValues.name | required (printf "'.Values.%s.name' is required for database '%s'" $dbChartAlias $dbId) }}
   {{- print $name }}
+{{- end }}
+
+{{- define "nova.helpers.db_service" }}
+  {{- $envAll := index . 0 }}
+  {{- $dbId := index . 1 }}
+  {{- $dbType := include "nova.helpers.db_type" . }}
+  {{- $dbName := include "nova.helpers.db_name" . }}
+  {{- if eq $dbType "mariadb" }}
+    {{- print $dbName "-mariadb" }}
+  {{- else if eq $dbType "pxc-db" }}
+    {{- print $dbName "-db-haproxy" }}
+  {{- else }}
+    {{- fail (printf "Unsupported database type '%s' for database '%s'. Supported are: mariadb, pxc-db" $dbType $dbId) }}
+  {{- end }}
 {{- end }}
