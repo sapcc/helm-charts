@@ -2,9 +2,9 @@
   "kind": "Dashboard",
   "metadata": {
     "name": "alerts",
-    "createdAt": "2025-11-19T12:49:11.224195834Z",
-    "updatedAt": "2025-12-15T07:55:47.136517953Z",
-    "version": 23,
+    "createdAt": "2026-01-15T13:50:24.10944938Z",
+    "updatedAt": "2026-01-15T14:11:04.803445754Z",
+    "version": 1,
     "project": "greenhouse"
   },
   "spec": {
@@ -44,7 +44,7 @@
                 }
               ],
               "defaultColumnHeight": "auto",
-              "density": "compact",
+              "density": "standard",
               "transforms": []
             }
           },
@@ -403,17 +403,52 @@
             "description": "GreenhouseClusterKubernetesVersionOutOfMaintenance: Cluster in namespace is running Kubernetes version which is out of maintenance."
           },
           "plugin": {
-            "kind": "StatChart",
+            "kind": "Table",
             "spec": {
-              "calculation": "last-number",
-              "format": {
-                "unit": "decimal"
-              },
-              "mappings": [],
-              "sparkline": {},
-              "thresholds": {
-                "defaultColor": "#EA4747"
-              }
+              "cellSettings": [
+                {
+                  "backgroundColor": "#EA4747",
+                  "condition": {
+                    "kind": "Regex",
+                    "spec": {
+                      "expr": "v1\\.((1|2)[0-9])+\\..*"
+                    }
+                  },
+                  "textColor": "#ffffff"
+                },
+                {
+                  "backgroundColor": "#2FBF71",
+                  "condition": {
+                    "kind": "Regex",
+                    "spec": {
+                      "expr": "v1\\.([3-9][0-9])+\\..*"
+                    }
+                  },
+                  "textColor": "#ffffff"
+                }
+              ],
+              "columnSettings": [
+                {
+                  "name": "clusterName"
+                },
+                {
+                  "name": "namespace"
+                },
+                {
+                  "hide": true,
+                  "name": "timestamp"
+                },
+                {
+                  "hide": true,
+                  "name": "value"
+                },
+                {
+                  "enableSorting": true,
+                  "name": "version",
+                  "sort": "asc"
+                }
+              ],
+              "density": "standard"
             }
           },
           "queries": [
@@ -424,8 +459,8 @@
                   "kind": "PrometheusTimeSeriesQuery",
                   "spec": {
                     "minStep": "",
-                    "query": "greenhouse_cluster_k8s_versions_total{version=~\"v1\\\\.(1[0-9]|2[0-9])\\\\..*\"}",
-                    "seriesNameFormat": "{{cluster}}/{{namespace}}/{{version}}"
+                    "query": "count by (clusterName, namespace, version) (greenhouse_cluster_k8s_versions_total)",
+                    "seriesNameFormat": "{{clusterName}}/{{namespace}}/{{version}}"
                   }
                 }
               }
@@ -964,7 +999,7 @@
                   "spec": {
                     "minStep": "15m",
                     "query": "greenhouse_cluster_kubeconfig_validity_seconds",
-                    "seriesNameFormat": "{{cluster}}/{{namespace}}"
+                    "seriesNameFormat": "{{clusterName}}/{{namespace}}"
                   }
                 }
               }
@@ -1091,30 +1126,55 @@
             "description": " GreenhouseClusterNotReady: Cluster in namespace has not been ready for more than 15 minutes."
           },
           "plugin": {
-            "kind": "StatusHistoryChart",
+            "kind": "Table",
             "spec": {
-              "mappings": [
+              "cellSettings": [
                 {
-                  "kind": "Value",
-                  "spec": {
-                    "result": {
-                      "color": "#EA4747",
-                      "value": ""
-                    },
-                    "value": "0"
-                  }
+                  "backgroundColor": "#2FBF71",
+                  "condition": {
+                    "kind": "Value",
+                    "spec": {
+                      "value": "1"
+                    }
+                  },
+                  "text": "Ready",
+                  "textColor": "#ffffff"
                 },
                 {
-                  "kind": "Range",
-                  "spec": {
-                    "from": 1,
-                    "result": {
-                      "color": "#2FBF71",
-                      "value": ""
+                  "backgroundColor": "#EA4747",
+                  "condition": {
+                    "kind": "Value",
+                    "spec": {
+                      "value": "0"
                     }
-                  }
+                  },
+                  "text": "Not Ready",
+                  "textColor": "#ffffff"
                 }
-              ]
+              ],
+              "columnSettings": [
+                {
+                  "enableSorting": true,
+                  "name": "clusterName",
+                  "sort": "asc"
+                },
+                {
+                  "enableSorting": true,
+                  "name": "namespace",
+                  "sort": "asc"
+                },
+                {
+                  "hide": true,
+                  "name": "timestamp"
+                },
+                {
+                  "enableSorting": true,
+                  "header": "status",
+                  "name": "value",
+                  "sort": "asc"
+                }
+              ],
+              "density": "standard"
             }
           },
           "queries": [
@@ -1125,8 +1185,8 @@
                   "kind": "PrometheusTimeSeriesQuery",
                   "spec": {
                     "minStep": "",
-                    "query": "sum by (cluster, namespace) (greenhouse_cluster_ready)",
-                    "seriesNameFormat": "{{cluster}} | {{namespace}}"
+                    "query": "sum by (clusterName, namespace) (greenhouse_cluster_ready)",
+                    "seriesNameFormat": "{{clusterName}} | {{namespace}}"
                   }
                 }
               }
@@ -1271,10 +1331,11 @@
           "display": {
             "title": "Plugin Alerts",
             "collapse": {
-              "open": true
+              "open": false
             }
           },
-          "items": []
+          "items": [],
+          "repeatVariable": ""
         }
       },
       {
@@ -1740,7 +1801,7 @@
         }
       }
     ],
-    "duration": "12h",
+    "duration": "1w",
     "refreshInterval": "0s"
   }
 }
