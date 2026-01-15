@@ -5,6 +5,26 @@ metadata:
   name: {{ .Values.fullname }}-api
   labels:
     {{- include "aci-netbox-collector.labels" . | nindent 4 }}
+  {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+  annotations:
+    linkerd.io/inject: enabled
+  {{- end }}
+spec:
+  type: {{ .Values.service.type }}
+  selector:
+    app.kubernetes.io/name: {{ include "aci-netbox-collector.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+  ports:
+    - name: api
+      port: {{ .Values.env.flask_port }}
+      targetPort: api
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.fullname }}-metrics
+  labels:
+    {{- include "aci-netbox-collector.labels" . | nindent 4 }}
   annotations:
     prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
     prometheus.io/scrape: "true"
@@ -17,7 +37,9 @@ spec:
     app.kubernetes.io/name: {{ include "aci-netbox-collector.name" . }}
     app.kubernetes.io/instance: {{ .Release.Name }}
   ports:
-    - name: http
-      port: {{ .Values.env.flask_port }}
-      targetPort: http
+    - name: metrics
+      port: {{ .Values.env.metrics_port }}
+      targetPort: metrics
 {{- end }}
+
+
