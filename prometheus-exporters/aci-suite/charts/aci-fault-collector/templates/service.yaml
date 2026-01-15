@@ -2,9 +2,9 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ .Values.fullname }}-api
+  name: {{ .Values.fullname }}-metrics
   labels:
-    {{- include "aci-netbox-collector.labels" . | nindent 4 }}
+    {{- include "aci-fault-collector.labels" . | nindent 4 }}
   annotations:
     prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
     prometheus.io/scrape: "true"
@@ -14,10 +14,10 @@ metadata:
 spec:
   type: {{ .Values.service.type }}
   selector:
-    app.kubernetes.io/name: {{ include "aci-netbox-collector.name" . }}
+    app.kubernetes.io/name: {{ include "aci-fault-collector.name" . }}
     app.kubernetes.io/instance: {{ .Release.Name }}
   ports:
-    - name: http
-      port: {{ .Values.env.flask_port }}
-      targetPort: http
+    - name: metrics
+      port: {{ .Values.env.metrics_port }}
+      targetPort: metrics
 {{- end }}

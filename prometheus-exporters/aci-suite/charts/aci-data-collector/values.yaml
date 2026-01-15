@@ -5,16 +5,19 @@ replicaCount: 1
 
 image:
   name: aci-data-collector
-  tag: "latest"
+  tag: # set by CI pipeline
   pullPolicy: Always
 
 resources:
   requests:
-    cpu: "100m"
-    memory: "256Mi"
-  limits:
-    cpu: "500m"
+    cpu: "1"
     memory: "512Mi"
+  limits:
+    cpu: "2"
+    memory: "1Gi"
+
+service:
+  type: ClusterIP
 
 env:
   aci_id: "mock"
@@ -31,6 +34,8 @@ env:
   cache_max_delay: 1
   cache_max_retries: 5
   cache_availability_interval: 10
+
+  metrics_port: 11004
 
   collectors:
     BgpPeerPCollector:
@@ -55,3 +60,7 @@ aci:
   aci_password:
   apic_hosts:
   cache_password:
+
+alerts:
+  enabled: false
+  prometheus: infra-frontend
