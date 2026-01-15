@@ -23,19 +23,19 @@
 {{- define "api_db_path" }}
   {{- $dbConfig := include "nova.helpers.db_configuration" (tuple . .Values.apidbType "api") | fromYaml }}
   {{- $context := dict "target" "api" "defaultUsers" .Values.defaultUsersMariaDB "users" $dbConfig.users }}
-  {{- tuple . .Values.apidbName (include "nova.helpers.default_db_user" $context) (include "nova.helpers.default_user_password" $context) (include "nova.helpers.api_db_name" .) .Values.apidbType | include "utils.db_url" }}
+  {{- tuple . .Values.apidbName (include "nova.helpers.default_db_user" $context) (include "nova.helpers.default_user_password" $context) (include "nova.helpers.db_name" (tuple . "api")) .Values.apidbType | include "utils.db_url" }}
 {{- end }}
 
 {{- define "cell0_db_path" }}
   {{- $dbConfig := include "nova.helpers.db_configuration" (tuple . .Values.cell0dbType "") | fromYaml }}
   {{- $context := dict "target" "cell0" "defaultUsers" .Values.defaultUsersMariaDB "users" $dbConfig.users }}
-  {{- tuple . .Values.cell0dbName (include "nova.helpers.default_db_user" $context) (include "nova.helpers.default_user_password" $context) (include "nova.helpers.cell01_db_name" .) .Values.cell0dbType | include "utils.db_url" }}
+  {{- tuple . .Values.cell0dbName (include "nova.helpers.default_db_user" $context) (include "nova.helpers.default_user_password" $context) (include "nova.helpers.db_name" (tuple . "cell0")) .Values.cell0dbType | include "utils.db_url" }}
 {{- end }}
 
 {{- define "cell1_db_path" -}}
   {{- $dbConfig := include "nova.helpers.db_configuration" (tuple . .Values.cell1dbType "") | fromYaml }}
   {{- $context := dict "target" "cell1" "defaultUsers" .Values.defaultUsersMariaDB "users" $dbConfig.users }}
-  {{- tuple . .Values.dbName (include "nova.helpers.default_db_user" $context) (include "nova.helpers.default_user_password" $context) (include "nova.helpers.cell01_db_name" .) .Values.cell1dbType | include "utils.db_url" }}
+  {{- tuple . .Values.dbName (include "nova.helpers.default_db_user" $context) (include "nova.helpers.default_user_password" $context) (include "nova.helpers.db_name" (tuple . "cell1")) .Values.cell1dbType | include "utils.db_url" }}
 {{- end }}
 
 {{- define "cell1_transport_url" -}}
@@ -53,7 +53,7 @@
 {{- define "cell2_db_path" -}}
   {{- $dbConfig := include "nova.helpers.db_configuration" (tuple . .Values.cell2dbType "cell2") | fromYaml }}
   {{- $context := dict "target" "cell2" "defaultUsers" .Values.defaultUsersMariaDB "users" $dbConfig.users }}
-  {{- tuple . .Values.cell2dbName (include "nova.helpers.default_db_user" $context) (include "nova.helpers.default_user_password" $context) (include "nova.helpers.cell2_db_name" .) .Values.cell2dbType | include "utils.db_url" }}
+  {{- tuple . .Values.cell2dbName (include "nova.helpers.default_db_user" $context) (include "nova.helpers.default_user_password" $context) (include "nova.helpers.db_name" (tuple . "cell2")) .Values.cell2dbType | include "utils.db_url" }}
 {{- end }}
 
 {{- define "cell2_transport_url" -}}
@@ -149,16 +149,6 @@ annotations:
   {{- end }}
 {{- end }}
 
-{{- define "nova.helpers.api_db_name" }}
-  {{- if eq .Values.apidbType "mariadb" }}
-    {{- print .Values.mariadb_api.name }}
-  {{- else if eq .Values.apidbType "pxc-db" }}
-    {{- print .Values.pxc_db_api.name }}
-  {{- else }}
-    {{- fail (print "Unsupported database type for api_db") }}
-  {{- end }}
-{{- end }}
-
 {{- define "nova.helpers.cell01_db" }}
   {{- if eq .Values.cell1dbType "mariadb" }}
     {{- print .Values.mariadb.name "-mariadb" }}
@@ -169,31 +159,11 @@ annotations:
   {{- end }}
 {{- end }}
 
-{{- define "nova.helpers.cell01_db_name" }}
-  {{- if eq .Values.cell1dbType "mariadb" }}
-    {{- print .Values.mariadb.name }}
-  {{- else if eq .Values.cell1dbType "pxc-db" }}
-    {{- print .Values.pxc_db.name }}
-  {{- else }}
-    {{- fail (print "Unsupported database type for cell0 and cell1") }}
-  {{- end }}
-{{- end }}
-
 {{- define "nova.helpers.cell2_db" }}
   {{- if eq .Values.cell2dbType "mariadb" }}
     {{- print .Values.mariadb_cell2.name "-mariadb" }}
   {{- else if eq .Values.cell2dbType "pxc-db" }}
     {{- print .Values.pxc_db_cell2.name "-db-haproxy" }}
-  {{- else }}
-    {{- fail (print "Unsupported database type for cell2") }}
-  {{- end }}
-{{- end }}
-
-{{- define "nova.helpers.cell2_db_name" }}
-  {{- if eq .Values.cell2dbType "mariadb" }}
-    {{- print .Values.mariadb_cell2.name }}
-  {{- else if eq .Values.cell2dbType "pxc-db" }}
-    {{- print .Values.pxc_db_cell2.name }}
   {{- else }}
     {{- fail (print "Unsupported database type for cell2") }}
   {{- end }}
@@ -273,4 +243,45 @@ Params:
 {{- define "nova.helpers.default_rabbitmq_user" }}
   {{- $params := dict "target" .target "users" .users "defaultUsers" .defaultUsers "key" "user" }}
   {{- include "nova.helpers.default_user_value" $params }}
+{{- end }}
+
+{{- /*
+  Database helper functions require the root context and a database ID as a parameter, e.g., (tuple . "cell1").
+  Database IDs are, e.g., "api", "cell0", "cell1", "cell2".
+*/ -}}
+
+{{- define "nova.helpers.db_type" }}
+  {{- $envAll := index . 0 }}
+  {{- $dbId := index . 1 }}
+  {{- $key := printf "%sdbType" $dbId }}
+  {{- $dbType := get $envAll.Values $key | required (printf "'.Values.%s' is required for database '%s'" $key $dbId) }}
+  {{- $supportedDbTypes := list "mariadb" "pxc-db" }}
+  {{- if not (has $dbType $supportedDbTypes) }}
+    {{- fail (printf "Unsupported database type '%s' for database '%s'. Supported are: %s" $dbType $dbId ($supportedDbTypes | join ", ")) }}
+  {{- end }}
+  {{- print $dbType }}
+{{- end }}
+
+{{- define "nova.helpers.db_chart_alias" }}
+  {{- $envAll := index . 0 }}
+  {{- $dbId := index . 1 }}
+  {{- $dbType := include "nova.helpers.db_type" . }}
+  {{- $aliasSuffix := "" }}
+  {{- if not (has $dbId (list "cell0" "cell1")) }}
+    {{- $aliasSuffix = printf "_%s" $dbId }}
+  {{- end }}
+  {{- $dbChartAlias := printf "%s%s" (replace "-" "_" $dbType) $aliasSuffix }}
+  {{- if not (hasKey $envAll.Values $dbChartAlias) }}
+    {{- fail (printf "No database chart '%s' found for database '%s'" $dbChartAlias $dbId ) }}
+  {{- end }}
+  {{- print $dbChartAlias }}
+{{- end }}
+
+{{- define "nova.helpers.db_name" }}
+  {{- $envAll := index . 0 }}
+  {{- $dbId := index . 1 }}
+  {{- $dbChartAlias := include "nova.helpers.db_chart_alias" . }}
+  {{- $dbValues := get $envAll.Values $dbChartAlias }}
+  {{- $name := $dbValues.name | required (printf "'.Values.%s.name' is required for database '%s'" $dbChartAlias $dbId) }}
+  {{- print $name }}
 {{- end }}
