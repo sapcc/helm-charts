@@ -54,7 +54,7 @@ spec:
               kind: Secret
               name: openstack-{{ $regionName }}
               namespace: garden
-            domain: external.{{ $clusterName }}.{{ if hasPrefix "rtc-" $clusterName -}}soil-customer{{- else -}}soil-garden{{- end }}.{{ $seedRegion.name }}.cloud.sap
+            domain: {{ default (printf "external.%s.%s.%s.cloud.sap" $clusterName (ternary "soil-customer" "soil-garden" (hasPrefix "rtc-" $clusterName)) $seedRegion.name) $seedRegion.externalDomain }}
             type: openstack-designate
           internal:
             credentialsRef:
@@ -62,7 +62,7 @@ spec:
               kind: Secret
               name: openstack-{{ $regionName }}
               namespace: garden
-            domain: internal.{{ $clusterName }}.{{ if hasPrefix "rtc-" $clusterName -}}soil-customer{{- else -}}soil-garden{{- end }}.{{ $seedRegion.name }}.cloud.sap
+            domain: {{ default (printf "internal.%s.%s.%s.cloud.sap" $clusterName (ternary "soil-customer" "soil-garden" (hasPrefix "rtc-" $clusterName)) $seedRegion.name) $seedRegion.internalDomain }}
             type: openstack-designate
           provider:
             type: openstack-designate
@@ -70,7 +70,7 @@ spec:
               name: openstack-{{ $regionName }}
               namespace: garden
         ingress: # see prerequisites
-          domain: ingress.{{ $clusterName }}.{{ if hasPrefix "rtc-" $clusterName -}}soil-customer{{- else -}}soil-garden{{- end }}.{{ $seedRegion.name }}.cloud.sap
+          domain: {{ default (printf "ingress.%s.%s.%s.cloud.sap" $clusterName (ternary "soil-customer" "soil-garden" (hasPrefix "rtc-" $clusterName)) $seedRegion.name) $seedRegion.ingressDomain }}
           controller:
             kind: nginx
         networks:
@@ -78,7 +78,7 @@ spec:
           pods: {{ $seedRegion.networks.pods | quote }}
           services: {{ $seedRegion.networks.services | quote }}
         provider:
-          region: {{ $seedRegion.name }}
+          region: {{ default $seedRegion.name $seedRegion.providerRegion }}
           type: openstack
           zones: {{ toYaml $seedRegion.zones | nindent 12 }}
         settings:
