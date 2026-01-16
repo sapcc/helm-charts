@@ -1,19 +1,22 @@
 {{- define "api_db_path" }}
+  {{- $dbDatabase := include "nova.helpers.db_database" (tuple . "api") }}
   {{- $dbConfig := include "nova.helpers.db_chart_alias" (tuple . "api") | get .Values }}
   {{- $context := dict "target" "api" "defaultUsers" .Values.defaultUsersMariaDB "users" $dbConfig.users }}
-  {{- tuple . .Values.apidbName (include "nova.helpers.default_db_user" $context) (include "nova.helpers.default_user_password" $context) (include "nova.helpers.db_name" (tuple . "api")) .Values.apidbType | include "utils.db_url" }}
+  {{- tuple . $dbDatabase (include "nova.helpers.default_db_user" $context) (include "nova.helpers.default_user_password" $context) (include "nova.helpers.db_name" (tuple . "api")) .Values.apidbType | include "utils.db_url" }}
 {{- end }}
 
 {{- define "cell0_db_path" }}
+  {{- $dbDatabase := include "nova.helpers.db_database" (tuple . "cell0") }}
   {{- $dbConfig := include "nova.helpers.db_chart_alias" (tuple . "cell0") | get .Values }}
   {{- $context := dict "target" "cell0" "defaultUsers" .Values.defaultUsersMariaDB "users" $dbConfig.users }}
-  {{- tuple . .Values.cell0dbName (include "nova.helpers.default_db_user" $context) (include "nova.helpers.default_user_password" $context) (include "nova.helpers.db_name" (tuple . "cell0")) .Values.cell0dbType | include "utils.db_url" }}
+  {{- tuple . $dbDatabase (include "nova.helpers.default_db_user" $context) (include "nova.helpers.default_user_password" $context) (include "nova.helpers.db_name" (tuple . "cell0")) .Values.cell0dbType | include "utils.db_url" }}
 {{- end }}
 
 {{- define "cell1_db_path" -}}
+  {{- $dbDatabase := include "nova.helpers.db_database" (tuple . "cell1") }}
   {{- $dbConfig := include "nova.helpers.db_chart_alias" (tuple . "cell1") | get .Values }}
   {{- $context := dict "target" "cell1" "defaultUsers" .Values.defaultUsersMariaDB "users" $dbConfig.users }}
-  {{- tuple . .Values.dbName (include "nova.helpers.default_db_user" $context) (include "nova.helpers.default_user_password" $context) (include "nova.helpers.db_name" (tuple . "cell1")) .Values.cell1dbType | include "utils.db_url" }}
+  {{- tuple . $dbDatabase (include "nova.helpers.default_db_user" $context) (include "nova.helpers.default_user_password" $context) (include "nova.helpers.db_name" (tuple . "cell1")) .Values.cell1dbType | include "utils.db_url" }}
 {{- end }}
 
 {{- define "cell1_transport_url" -}}
@@ -29,9 +32,10 @@
 {{- end -}}
 
 {{- define "cell2_db_path" -}}
+  {{- $dbDatabase := include "nova.helpers.db_database" (tuple . "cell2") }}
   {{- $dbConfig := include "nova.helpers.db_chart_alias" (tuple . "cell2") | get .Values }}
   {{- $context := dict "target" "cell2" "defaultUsers" .Values.defaultUsersMariaDB "users" $dbConfig.users }}
-  {{- tuple . .Values.cell2dbName (include "nova.helpers.default_db_user" $context) (include "nova.helpers.default_user_password" $context) (include "nova.helpers.db_name" (tuple . "cell2")) .Values.cell2dbType | include "utils.db_url" }}
+  {{- tuple . $dbDatabase (include "nova.helpers.default_db_user" $context) (include "nova.helpers.default_user_password" $context) (include "nova.helpers.db_name" (tuple . "cell2")) .Values.cell2dbType | include "utils.db_url" }}
 {{- end }}
 
 {{- define "cell2_transport_url" -}}
@@ -246,4 +250,22 @@ Params:
   {{- else }}
     {{- fail (printf "Unsupported database type '%s' for database '%s'. Supported are: mariadb, pxc-db" $dbType $dbId) }}
   {{- end }}
+{{- end }}
+
+{{- define "nova.helpers.db_database" }}
+  {{- $envAll := index . 0 }}
+  {{- $dbId := index . 1 }}
+  {{- $dbChartAlias := include "nova.helpers.db_chart_alias" . }}
+  {{- $dbValues := get $envAll.Values $dbChartAlias }}
+  {{- $dbs := get $dbValues "databases" | required (printf "'.Values.%s.databases' is required for database '%s'" $dbChartAlias $dbId) }}
+  {{- $dbDatabase := "" }}
+  {{- if eq $dbId "cell0" }}
+    {{- $dbDatabase = "nova_cell0" }}
+  {{- else }}
+    {{- $dbDatabase = include "nova.helpers.db_name" . | replace "-" "_" }}
+  {{- end }}
+  {{- if not (has $dbDatabase $dbs) }}
+    {{- fail (printf "'.Values.%s.databases' does not contain database '%s'" $dbChartAlias $dbDatabase )}}
+  {{- end }}
+  {{- print $dbDatabase }}
 {{- end }}
