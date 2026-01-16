@@ -18,7 +18,11 @@ if [ -r "/secret-check/${RELEASE}-entitlement.pem" ]; then
   ENTITLEMENT_PREFIX=${RELEASE}
 fi
 
-echo "Starting RedHat CDN entitlement check for ${RELEASE}"
+get_date() {
+  date "+%Y/%m/%d %H:%M:%S"
+}
+
+echo "$(get_date) Starting RedHat CDN entitlement check for ${RELEASE}"
 while true; do
   SUCCESS=0
   STATUS=$(curl --head --silent --write-out '%{http_code}' --output /dev/null \
@@ -29,9 +33,9 @@ while true; do
   if [ "${STATUS}" -eq 200 ]; then
     SUCCESS=1
   elif [ "${STATUS}" -eq 403 ]; then
-    echo "RHN entitlement check for ${RELEASE}: ${STATUS} - Forbidden. Entitlement might need to be renewed"
+    echo "$(get_date) RHN entitlement check for ${RELEASE}: ${STATUS} - Forbidden. Entitlement might need to be renewed"
   else
-    echo "RHN entitlement check for ${RELEASE}: ${STATUS}"
+    echo "$(get_date) RHN entitlement check for ${RELEASE}: ${STATUS}"
   fi
 
   echo "repo.${RELEASE}.check.success:${SUCCESS}|g" | nc -w 1 -u "${STATSD_HOSTNAME}" 9125
