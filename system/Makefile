@@ -139,6 +139,10 @@ build-baremetal-operator:
 	@yq -i '.fullnameOverride="metal3"' baremetal-operator-core/values.yaml
 	@yq -i '.version="1.1.0"' baremetal-operator-core/Chart.yaml
 
+build-metal-operator:
+	@helm dep up metal-operator
+	@yq -i '.version = (.version | split(".") | .[2] = ((.[2] | tonumber) + 1 | tostring) | join("."))' metal-operator/Chart.yaml
+
 build-metal-operator-remote:
 	@helm dep up metal-operator-remote
 	@helm template metal-operator metal-operator-remote/charts/metal-operator* \
@@ -148,6 +152,10 @@ build-metal-operator-remote:
 		yq eval 'select(.kind != "Service" and .kind != "ValidatingWebhookConfiguration")' - >\
 		metal-operator-remote/managedresources/crds-and-rbac.yaml
 	yq -i '.version = (.version | split(".") | .[2] = ((.[2] | tonumber) + 1 | tostring) | join("."))' metal-operator-remote/Chart.yaml
+
+build-boot-operator:
+	@helm dep up boot-operator
+	@yq -i '.version = (.version | split(".") | .[2] = ((.[2] | tonumber) + 1 | tostring) | join("."))' boot-operator/Chart.yaml
 
 build-boot-operator-remote:
 	@helm dep up boot-operator-remote
@@ -174,12 +182,14 @@ build-argora-operator-remote:
 		yq -i '.version = (.version | split(".") | .[2] = ((.[2] | tonumber) + 1 | tostring) | join("."))' argora-operator-remote/Chart.yaml
 
 build-khalkeon-remote:
+	@helm dep up khalkeon-remote
 	@helm template khalkeon khalkeon-remote/charts/khalkeon* \
 		-f khalkeon-remote/values.yaml \
 		-f khalkeon-remote/values-managed-resources.yaml |\
 		$(SED) 's/kind: Role/kind: ClusterRole/g' - |\
 		yq eval 'select(.kind != "Service")' - >\
 		khalkeon-remote/managedresources/crds-and-rbac.yaml
+	@yq -i '.version = (.version | split(".") | .[2] = ((.[2] | tonumber) + 1 | tostring) | join("."))' khalkeon-remote/Chart.yaml
 
 # chart name, source url, tag
 define build-chart

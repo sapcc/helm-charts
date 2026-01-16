@@ -24,6 +24,7 @@ spec:
   - swift/swift-seed
 
   services:
+  {{- if .Values.api_v1_enabled }}
   - name: {{ .Release.Name }}
     type: {{.Values.seeds.service_type}}
     description: OpenStack Shared Filesystems
@@ -37,6 +38,7 @@ spec:
     - interface: public
       region: '{{.Values.global.region}}'
       url: 'https://{{.Values.seeds.endpoint_prefix}}{{include "manila_api_endpoint_host_public" .}}/v1/%(tenant_id)s'
+  {{- end }}
   - name: {{ .Release.Name }}v2
     type: {{.Values.seeds.service_type}}v2
     description: OpenStack Shared Filesystems

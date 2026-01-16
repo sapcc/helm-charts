@@ -519,8 +519,24 @@ spec:
             matchType: "="
             value: compute
 
+      # forwarding to qa fault channel to verify correct behaviour. Everything to qa channel now, needs dedicated channel after go-live 
+      - receiver: slack_aci_exporter
+        continue: true
+        matchers:
+          - name: aci_obs_group 
+            matchType: "=~"
+            value: ".+" 
   receivers:
     - name: slack
+
+    # to be scoped correctly after go-live
+    - name: slack_aci_exporter
+      slackConfigs:
+        - channel: '#alert-network-aci-qa'
+          apiURL:
+            name: alertmanager-{{ include "alertmanagerRelease.name" . }}-slack-secrets
+            key: slack_webhookURL
+          {{- include "slack.template" . | nindent 10 }}
 
     - name: slack_ad_info
       slackConfigs:

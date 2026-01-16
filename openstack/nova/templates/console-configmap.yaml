@@ -71,9 +71,9 @@ html5proxy_base_url = https://{{include "nova_console_endpoint_host_public" .}}:
 
 
 {{- $envAll := . }}
-{{- $cells := dict "cell1" true }}
+{{- $cells := list "cell1" }}
 {{- if .Values.cell2.enabled }}
-  {{- $_ := set $cells .Values.cell2.name true }}
+  {{- $cells = append $cells .Values.cell2.name }}
 {{- end }}
 apiVersion: v1
 kind: ConfigMap
@@ -85,7 +85,7 @@ metadata:
     component: nova
 
 data:
-{{- range $cell_name, $is_cell := $cells }}
+{{- range $cell_name := $cells }}
   {{- range $type, $config := $envAll.Values.consoles }}
   console-{{ $cell_name }}-{{ $type }}.conf: |
     {{- tuple $envAll $cell_name $config | include (print "console-" $type ".conf") | indent 4 }}

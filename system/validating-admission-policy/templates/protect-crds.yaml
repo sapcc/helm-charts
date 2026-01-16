@@ -1,0 +1,25 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicy
+metadata:
+  name: protect-crds.cloud.sap
+spec:
+  failurePolicy: Fail
+  matchConstraints:
+    resourceRules:
+    - apiGroups:   ["*"]
+      apiVersions: ["*"]
+      operations:  ["DELETE"]
+      resources:   ["customresourcedefinitions"]
+  validations:
+  - expression: "oldObject.metadata.annotations['confirmation.cloud.sap/deletion'] == 'true'"
+    message: "You need to add the 'confirmation.cloud.sap/deletion=true' annotation to delete the CRD"
+    reason: Forbidden
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicyBinding
+metadata:
+  name: protect-crds-binding.cloud.sap
+spec:
+  policyName: protect-crds.cloud.sap
+  validationActions: [Deny]
+  matchResources: {}

@@ -23,19 +23,6 @@ groups:
       description: 'octobus-logs-query-exporter had an error in the pod log'
       summary: 'octobus-logs-query-exporter had an error in the pod log.'
 
-  - alert: OpenstackGlanceReturn50xCode
-    expr: sum(rate(opensearch_openstack_glance_query_return_code_doc_count{glance="/v2/images", code=~"50.*"}[30m]))by(query, code) > 0
-    for: 5m
-    labels:
-      context: nodes
-      service: glance
-      severity: info
-      tier: os
-      kibana: "app/discover#/?_g=(filters:!(),refreshInterval:(pause:!t,value:0),time:(from:now-2h,to:now))&_a=(columns:!(_source),filters:!(),index:'logstash-*',interval:auto,query:(language:lucene,query:'method:{{ $labels.query }}%20AND%20response:{{ $labels.code }}'),sort:!())"
-    annotations:
-      description: "Openstack Glance Returned HTTP {{ $labels.query }} {{ $labels.code }}"
-      summary: 'Openstack Glance Returned HTTP {{ $labels.query }} {{ $labels.code }}'
-
   - alert: EsxRootPasswordWrong
     expr: opensearch_esxi_exporter_login_error_container_name_doc_count > 0
     for: 5m
