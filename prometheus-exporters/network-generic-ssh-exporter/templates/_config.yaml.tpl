@@ -370,15 +370,15 @@ metrics:
 
   qfp_nat_datapath_stats:
     regex: >-
-      Subcode #(\d+)\s+(\S+)\s+(\d+)
-    value: $3
+      SC#(\d+)\s+([A-Z_]+)\s+(\d+)\s+(\d+)\s+(\d+)
+    value: $4
     multi_value: true
     labels:
       subcode: $1
       reason: $2
-    description: Drop subcodes and counters for QFP NAT processing
+    description: Drop subcodes and counters for QFP NAT Stats
     metric_type_name: counter
-    command: show platform hardware qfp active feature nat datapath stats
+    command: show platform hardware qfp active feature nat datapath stats diff
     timeout_secs: 10
 
   qfp_nat_datapath_gatein:
