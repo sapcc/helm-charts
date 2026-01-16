@@ -1,24 +1,3 @@
-{{- define "api_db_path" }}
-  {{- $dbDatabase := include "nova.helpers.db_database" (tuple . "api") }}
-  {{- $dbConfig := include "nova.helpers.db_chart_alias" (tuple . "api") | get .Values }}
-  {{- $context := dict "target" "api" "defaultUsers" .Values.defaultUsersMariaDB "users" $dbConfig.users }}
-  {{- tuple . $dbDatabase (include "nova.helpers.default_db_user" $context) (include "nova.helpers.default_user_password" $context) (include "nova.helpers.db_name" (tuple . "api")) .Values.apidbType | include "utils.db_url" }}
-{{- end }}
-
-{{- define "cell0_db_path" }}
-  {{- $dbDatabase := include "nova.helpers.db_database" (tuple . "cell0") }}
-  {{- $dbConfig := include "nova.helpers.db_chart_alias" (tuple . "cell0") | get .Values }}
-  {{- $context := dict "target" "cell0" "defaultUsers" .Values.defaultUsersMariaDB "users" $dbConfig.users }}
-  {{- tuple . $dbDatabase (include "nova.helpers.default_db_user" $context) (include "nova.helpers.default_user_password" $context) (include "nova.helpers.db_name" (tuple . "cell0")) .Values.cell0dbType | include "utils.db_url" }}
-{{- end }}
-
-{{- define "cell1_db_path" -}}
-  {{- $dbDatabase := include "nova.helpers.db_database" (tuple . "cell1") }}
-  {{- $dbConfig := include "nova.helpers.db_chart_alias" (tuple . "cell1") | get .Values }}
-  {{- $context := dict "target" "cell1" "defaultUsers" .Values.defaultUsersMariaDB "users" $dbConfig.users }}
-  {{- tuple . $dbDatabase (include "nova.helpers.default_db_user" $context) (include "nova.helpers.default_user_password" $context) (include "nova.helpers.db_name" (tuple . "cell1")) .Values.cell1dbType | include "utils.db_url" }}
-{{- end }}
-
 {{- define "cell1_transport_url" -}}
   {{- $context := dict "target" "cell1" "defaultUsers" .Values.defaultUsersRabbitMQ "users" .Values.rabbitmq.users }}
   {{- $data := dict
@@ -30,13 +9,6 @@
     }}
   {{- include "utils.rabbitmq_url" (tuple . $data) }}
 {{- end -}}
-
-{{- define "cell2_db_path" -}}
-  {{- $dbDatabase := include "nova.helpers.db_database" (tuple . "cell2") }}
-  {{- $dbConfig := include "nova.helpers.db_chart_alias" (tuple . "cell2") | get .Values }}
-  {{- $context := dict "target" "cell2" "defaultUsers" .Values.defaultUsersMariaDB "users" $dbConfig.users }}
-  {{- tuple . $dbDatabase (include "nova.helpers.default_db_user" $context) (include "nova.helpers.default_user_password" $context) (include "nova.helpers.db_name" (tuple . "cell2")) .Values.cell2dbType | include "utils.db_url" }}
-{{- end }}
 
 {{- define "cell2_transport_url" -}}
   {{- $context := dict "target" "cell2" "defaultUsers" .Values.defaultUsersRabbitMQ "users" .Values.rabbitmq_cell2.users }}
@@ -268,4 +240,17 @@ Params:
     {{- fail (printf "'.Values.%s.databases' does not contain database '%s'" $dbChartAlias $dbDatabase )}}
   {{- end }}
   {{- print $dbDatabase }}
+{{- end }}
+
+{{- define "nova.helpers.db_url" }}
+  {{- $envAll := index . 0 }}
+  {{- $dbId := index . 1 }}
+  {{- $dbValues := include "nova.helpers.db_chart_alias" . | get $envAll.Values }}
+  {{- $dbDatabase := include "nova.helpers.db_database" . }}
+  {{- $dbType := include "nova.helpers.db_type" . }}
+  {{- $dbName := include "nova.helpers.db_name" . }}
+  {{- $context := dict "target" $dbId "defaultUsers" $envAll.Values.defaultUsersMariaDB "users" $dbValues.users }}
+  {{- $dbUser := include "nova.helpers.default_db_user" $context }}
+  {{- $dbPassword := include "nova.helpers.default_user_password" $context }}
+  {{- tuple $envAll $dbDatabase $dbUser $dbPassword $dbName $dbType | include "utils.db_url" }}
 {{- end }}
