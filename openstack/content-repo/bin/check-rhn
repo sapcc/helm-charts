@@ -1,37 +1,41 @@
-#!/bin/sh
+#!/bin/ash
+# shellcheck shell=ash
 
 RELEASE="$1"
 if [ -z "${RELEASE}" ]; then
-    echo "$0: missing release" >&2
-    exit 1
+  echo "$0: missing release" >&2
+  exit 1
 fi
 CHECK_URL="$2"
 if [ -z "${CHECK_URL}" ]; then
-    echo "$0: missing check url" >&2
-    exit 1
+  echo "$0: missing check url" >&2
+  exit 1
 fi
 
 ENTITLEMENT_PREFIX=rhel
 # Check for release specific entitlements
-if [ -r /secret-check/${RELEASE}-entitlement.pem ]; then
+if [ -r "/secret-check/${RELEASE}-entitlement.pem" ]; then
   ENTITLEMENT_PREFIX=${RELEASE}
 fi
 
 echo "Starting RedHat CDN entitlement check for ${RELEASE}"
 while true; do
   SUCCESS=0
-  # curl rhn
-  STATUS=$(curl --head --silent --write-out '%{http_code}' --output /dev/null --cacert /secret-check/${ENTITLEMENT_PREFIX}-ca.pem --cert /secret-check/${ENTITLEMENT_PREFIX}-entitlement.pem --key /secret-check/${ENTITLEMENT_PREFIX}-entitlement-key.pem ${CHECK_URL})
-  if [ ${STATUS} -eq 200 ]; then
+  STATUS=$(curl --head --silent --write-out '%{http_code}' --output /dev/null \
+    --cacert "/secret-check/${ENTITLEMENT_PREFIX}-ca.pem" \
+    --cert "/secret-check/${ENTITLEMENT_PREFIX}-entitlement.pem" \
+    --key "/secret-check/${ENTITLEMENT_PREFIX}-entitlement-key.pem" \
+    "${CHECK_URL}")
+  if [ "${STATUS}" -eq 200 ]; then
     SUCCESS=1
-  elif [ ${STATUS} -eq 403 ]; then
+  elif [ "${STATUS}" -eq 403 ]; then
     echo "RHN entitlement check for ${RELEASE}: ${STATUS} - Forbidden. Entitlement might need to be renewed"
   else
     echo "RHN entitlement check for ${RELEASE}: ${STATUS}"
   fi
 
-  echo "repo.${RELEASE}.check.success:${SUCCESS}|g" | nc -w 1 -u ${STATSD_HOSTNAME} 9125
-  echo "repo.${RELEASE}.check.httpcode:${STATUS}|g" | nc -w 1 -u ${STATSD_HOSTNAME} 9125
+  echo "repo.${RELEASE}.check.success:${SUCCESS}|g" | nc -w 1 -u "${STATSD_HOSTNAME}" 9125
+  echo "repo.${RELEASE}.check.httpcode:${STATUS}|g" | nc -w 1 -u "${STATSD_HOSTNAME}" 9125
 
-  sleep ${CHECK_INTERVAL}
+  sleep "${CHECK_INTERVAL}"
 done
