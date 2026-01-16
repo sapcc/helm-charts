@@ -4,7 +4,7 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2604637-crds"
+    helm.sh/chart: "0.0.0-8d58f19-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -17,7 +17,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2604637-crds"
+    helm.sh/chart: "0.0.0-8d58f19-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -310,7 +310,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2604637-crds"
+    helm.sh/chart: "0.0.0-8d58f19-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -502,7 +502,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2604637-crds"
+    helm.sh/chart: "0.0.0-8d58f19-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -743,7 +743,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2604637-crds"
+    helm.sh/chart: "0.0.0-8d58f19-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -937,7 +937,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2604637-crds"
+    helm.sh/chart: "0.0.0-8d58f19-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -1243,7 +1243,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2604637-crds"
+    helm.sh/chart: "0.0.0-8d58f19-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -1328,7 +1328,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2604637-crds"
+    helm.sh/chart: "0.0.0-8d58f19-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -1378,7 +1378,6 @@ spec:
             metadata:
               type: object
             spec:
-              description: BMCSettingsSpec defines the desired state of BMCSettings.
               properties:
                 BMCRef:
                   description: BMCRef is a reference to a specific BMC to apply setting to.
@@ -1395,7 +1394,7 @@ spec:
                   type: object
                   x-kubernetes-map-type: atomic
                   x-kubernetes-validations:
-                    - message: serverRef is immutable
+                    - message: BMCRef is immutable
                       rule: self == oldSelf
                 serverMaintenancePolicy:
                   description: ServerMaintenancePolicy is a maintenance policy to be applied on the server.
@@ -1443,6 +1442,7 @@ spec:
                   description: Version defines the BMC firmware for which the settings should be applied.
                   type: string
               required:
+                - BMCRef
                 - version
               type: object
             status:
@@ -1514,12 +1514,183 @@ spec:
       subresources:
         status: {}
 ---
+# Source: metal-operator/templates/crd/metal.ironcore.dev_bmcsettingssets.yaml
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  labels:
+    helm.sh/chart: "0.0.0-8d58f19-crds"
+    app.kubernetes.io/name: metal-operator
+    app.kubernetes.io/instance: metal-operator
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.19.0
+  name: bmcsettingssets.metal.ironcore.dev
+spec:
+  group: metal.ironcore.dev
+  names:
+    kind: BMCSettingsSet
+    listKind: BMCSettingsSetList
+    plural: bmcsettingssets
+    singular: bmcsettingsset
+  scope: Cluster
+  versions:
+    - additionalPrinterColumns:
+        - jsonPath: .spec.bmcSettingsTemplate.version
+          name: BMCVersion
+          type: string
+        - jsonPath: .status.fullyLabeledBMCs
+          name: TotalBMCs
+          type: integer
+        - jsonPath: .status.availableBMCSettings
+          name: AvailableBMCSettings
+          type: integer
+        - jsonPath: .status.pendingBMCSettings
+          name: Pending
+          type: integer
+        - jsonPath: .status.inProgressBMCSettings
+          name: InProgress
+          type: integer
+        - jsonPath: .status.completedBMCSettings
+          name: Completed
+          type: integer
+        - jsonPath: .status.failedBMCSettings
+          name: Failed
+          type: integer
+        - jsonPath: .metadata.creationTimestamp
+          name: Age
+          type: date
+      name: v1alpha1
+      schema:
+        openAPIV3Schema:
+          description: BMCSettingsSet is the Schema for the bmcsettingssets API.
+          properties:
+            apiVersion:
+              description: |-
+                APIVersion defines the versioned schema of this representation of an object.
+                Servers should convert recognized schemas to the latest internal value, and
+                may reject unrecognized values.
+                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+              type: string
+            kind:
+              description: |-
+                Kind is a string value representing the REST resource this object represents.
+                Servers may infer this from the endpoint the client submits requests to.
+                Cannot be updated.
+                In CamelCase.
+                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+              type: string
+            metadata:
+              type: object
+            spec:
+              description: BMCSettingsSetSpec defines the desired state of BMCSettingsSet.
+              properties:
+                bmcSelector:
+                  description: ' BMCSelector specifies a label selector to identify the BMCs that are to be selected.'
+                  properties:
+                    matchExpressions:
+                      description: matchExpressions is a list of label selector requirements. The requirements are ANDed.
+                      items:
+                        description: |-
+                          A label selector requirement is a selector that contains values, a key, and an operator that
+                          relates the key and values.
+                        properties:
+                          key:
+                            description: key is the label key that the selector applies to.
+                            type: string
+                          operator:
+                            description: |-
+                              operator represents a key's relationship to a set of values.
+                              Valid operators are In, NotIn, Exists and DoesNotExist.
+                            type: string
+                          values:
+                            description: |-
+                              values is an array of string values. If the operator is In or NotIn,
+                              the values array must be non-empty. If the operator is Exists or DoesNotExist,
+                              the values array must be empty. This array is replaced during a strategic
+                              merge patch.
+                            items:
+                              type: string
+                            type: array
+                            x-kubernetes-list-type: atomic
+                        required:
+                          - key
+                          - operator
+                        type: object
+                      type: array
+                      x-kubernetes-list-type: atomic
+                    matchLabels:
+                      additionalProperties:
+                        type: string
+                      description: |-
+                        matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+                        map is equivalent to an element of matchExpressions, whose key field is "key", the
+                        operator is "In", and the values array contains only "value". The requirements are ANDed.
+                      type: object
+                  type: object
+                  x-kubernetes-map-type: atomic
+                bmcSettingsTemplate:
+                  description: BMCSettingsTemplate defines the template for the BMCSettings Resource to be applied to the BMCs.
+                  properties:
+                    serverMaintenancePolicy:
+                      description: ServerMaintenancePolicy is a maintenance policy to be applied on the server.
+                      type: string
+                    settings:
+                      additionalProperties:
+                        type: string
+                      description: SettingsMap contains bmc settings as map
+                      type: object
+                    version:
+                      description: Version defines the BMC firmware for which the settings should be applied.
+                      type: string
+                  required:
+                    - version
+                  type: object
+              required:
+                - bmcSelector
+                - bmcSettingsTemplate
+              type: object
+            status:
+              description: BMCSettingsSetStatus defines the observed state of BMCSettingsSet.
+              properties:
+                availableBMCSettings:
+                  description: AvailableBMCSettings is the number of BMCSettings currently created by the set.
+                  format: int32
+                  type: integer
+                completedBMCSettings:
+                  description: CompletedBMCSettings is the total number of completed BMC in the set.
+                  format: int32
+                  type: integer
+                failedBMCSettings:
+                  description: FailedBMCSettings is the total number of failed BMC in the set.
+                  format: int32
+                  type: integer
+                fullyLabeledBMCs:
+                  description: FullyLabeledBMCs is the number of BMC in the set.
+                  format: int32
+                  type: integer
+                inProgressBMCSettings:
+                  description: InProgressBMCSettings is the total number of BMC in the set that are currently in progress.
+                  format: int32
+                  type: integer
+                pendingBMCSettings:
+                  description: PendingBMCSettings is the total number of pending BMC in the set.
+                  format: int32
+                  type: integer
+              type: object
+          type: object
+      served: true
+      storage: true
+      subresources:
+        status: {}
+---
 # Source: metal-operator/templates/crd/metal.ironcore.dev_bmcversions.yaml
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2604637-crds"
+    helm.sh/chart: "0.0.0-8d58f19-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -1760,7 +1931,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2604637-crds"
+    helm.sh/chart: "0.0.0-8d58f19-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -1954,7 +2125,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2604637-crds"
+    helm.sh/chart: "0.0.0-8d58f19-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -2027,7 +2198,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2604637-crds"
+    helm.sh/chart: "0.0.0-8d58f19-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -2197,7 +2368,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2604637-crds"
+    helm.sh/chart: "0.0.0-8d58f19-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -2372,7 +2543,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2604637-crds"
+    helm.sh/chart: "0.0.0-8d58f19-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -2525,7 +2696,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2604637-crds"
+    helm.sh/chart: "0.0.0-8d58f19-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3103,7 +3274,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2604637-crds"
+    helm.sh/chart: "0.0.0-8d58f19-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3134,7 +3305,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2604637-crds"
+    helm.sh/chart: "0.0.0-8d58f19-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3171,7 +3342,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2604637-crds"
+    helm.sh/chart: "0.0.0-8d58f19-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3204,7 +3375,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2604637-crds"
+    helm.sh/chart: "0.0.0-8d58f19-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3235,7 +3406,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2604637-crds"
+    helm.sh/chart: "0.0.0-8d58f19-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3272,7 +3443,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2604637-crds"
+    helm.sh/chart: "0.0.0-8d58f19-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3305,7 +3476,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2604637-crds"
+    helm.sh/chart: "0.0.0-8d58f19-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3336,7 +3507,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2604637-crds"
+    helm.sh/chart: "0.0.0-8d58f19-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3373,7 +3544,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2604637-crds"
+    helm.sh/chart: "0.0.0-8d58f19-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3406,7 +3577,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2604637-crds"
+    helm.sh/chart: "0.0.0-8d58f19-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3437,7 +3608,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2604637-crds"
+    helm.sh/chart: "0.0.0-8d58f19-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3474,7 +3645,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2604637-crds"
+    helm.sh/chart: "0.0.0-8d58f19-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3502,7 +3673,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2604637-crds"
+    helm.sh/chart: "0.0.0-8d58f19-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3534,7 +3705,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2604637-crds"
+    helm.sh/chart: "0.0.0-8d58f19-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3562,7 +3733,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2604637-crds"
+    helm.sh/chart: "0.0.0-8d58f19-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3594,7 +3765,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2604637-crds"
+    helm.sh/chart: "0.0.0-8d58f19-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3627,7 +3798,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2604637-crds"
+    helm.sh/chart: "0.0.0-8d58f19-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3658,7 +3829,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2604637-crds"
+    helm.sh/chart: "0.0.0-8d58f19-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3695,7 +3866,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2604637-crds"
+    helm.sh/chart: "0.0.0-8d58f19-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3716,6 +3887,107 @@ rules:
       - bmcsettings/status
     verbs:
       - get
+# Source: metal-operator/templates/rbac/bmcsettingsset_admin_role.yaml
+# This rule is not used by the project metal-operator itself.
+# It is provided to allow the cluster admin to help manage permissions for users.
+#
+# Grants full permissions ('*') over metal.ironcore.dev.
+# This role is intended for users authorized to modify roles and bindings within the cluster,
+# enabling them to delegate specific permissions to other users or groups as needed.
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    helm.sh/chart: "0.0.0-8d58f19-crds"
+    app.kubernetes.io/name: metal-operator
+    app.kubernetes.io/instance: metal-operator
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+  name: bmcsettingsset-admin-role
+rules:
+  - apiGroups:
+      - metal.ironcore.dev
+    resources:
+      - bmcsettingssets
+    verbs:
+      - '*'
+  - apiGroups:
+      - metal.ironcore.dev
+    resources:
+      - bmcsettingssets/status
+    verbs:
+      - get
+# Source: metal-operator/templates/rbac/bmcsettingsset_editor_role.yaml
+# This rule is not used by the project metal-operator itself.
+# It is provided to allow the cluster admin to help manage permissions for users.
+#
+# Grants permissions to create, update, and delete resources within the metal.ironcore.dev.
+# This role is intended for users who need to manage these resources
+# but should not control RBAC or manage permissions for others.
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    helm.sh/chart: "0.0.0-8d58f19-crds"
+    app.kubernetes.io/name: metal-operator
+    app.kubernetes.io/instance: metal-operator
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+  name: bmcsettingsset-editor-role
+rules:
+  - apiGroups:
+      - metal.ironcore.dev
+    resources:
+      - bmcsettingssets
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - metal.ironcore.dev
+    resources:
+      - bmcsettingssets/status
+    verbs:
+      - get
+# Source: metal-operator/templates/rbac/bmcsettingsset_viewer_role.yaml
+# This rule is not used by the project metal-operator itself.
+# It is provided to allow the cluster admin to help manage permissions for users.
+#
+# Grants read-only access to metal.ironcore.dev resources.
+# This role is intended for users who need visibility into these resources
+# without permissions to modify them. It is ideal for monitoring purposes and limited-access viewing.
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    helm.sh/chart: "0.0.0-8d58f19-crds"
+    app.kubernetes.io/name: metal-operator
+    app.kubernetes.io/instance: metal-operator
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+  name: bmcsettingsset-viewer-role
+rules:
+  - apiGroups:
+      - metal.ironcore.dev
+    resources:
+      - bmcsettingssets
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - metal.ironcore.dev
+    resources:
+      - bmcsettingssets/status
+    verbs:
+      - get
 # Source: metal-operator/templates/rbac/bmcversion_admin_role.yaml
 # This rule is not used by the project metal-operator itself.
 # It is provided to allow the cluster admin to help manage permissions for users.
@@ -3728,7 +4000,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2604637-crds"
+    helm.sh/chart: "0.0.0-8d58f19-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3759,7 +4031,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2604637-crds"
+    helm.sh/chart: "0.0.0-8d58f19-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3796,7 +4068,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2604637-crds"
+    helm.sh/chart: "0.0.0-8d58f19-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3829,7 +4101,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2604637-crds"
+    helm.sh/chart: "0.0.0-8d58f19-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3860,7 +4132,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2604637-crds"
+    helm.sh/chart: "0.0.0-8d58f19-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3897,7 +4169,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2604637-crds"
+    helm.sh/chart: "0.0.0-8d58f19-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3925,7 +4197,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2604637-crds"
+    helm.sh/chart: "0.0.0-8d58f19-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3957,7 +4229,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2604637-crds"
+    helm.sh/chart: "0.0.0-8d58f19-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3984,7 +4256,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2604637-crds"
+    helm.sh/chart: "0.0.0-8d58f19-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4009,7 +4281,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2604637-crds"
+    helm.sh/chart: "0.0.0-8d58f19-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4026,7 +4298,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2604637-crds"
+    helm.sh/chart: "0.0.0-8d58f19-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4139,7 +4411,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2604637-crds"
+    helm.sh/chart: "0.0.0-8d58f19-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4171,7 +4443,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2604637-crds"
+    helm.sh/chart: "0.0.0-8d58f19-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4199,7 +4471,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2604637-crds"
+    helm.sh/chart: "0.0.0-8d58f19-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4231,7 +4503,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2604637-crds"
+    helm.sh/chart: "0.0.0-8d58f19-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4259,7 +4531,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2604637-crds"
+    helm.sh/chart: "0.0.0-8d58f19-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4291,7 +4563,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2604637-crds"
+    helm.sh/chart: "0.0.0-8d58f19-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4324,7 +4596,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2604637-crds"
+    helm.sh/chart: "0.0.0-8d58f19-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4355,7 +4627,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2604637-crds"
+    helm.sh/chart: "0.0.0-8d58f19-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4392,7 +4664,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2604637-crds"
+    helm.sh/chart: "0.0.0-8d58f19-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4419,7 +4691,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2604637-crds"
+    helm.sh/chart: "0.0.0-8d58f19-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4439,7 +4711,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2604637-crds"
+    helm.sh/chart: "0.0.0-8d58f19-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4460,7 +4732,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2604637-crds"
+    helm.sh/chart: "0.0.0-8d58f19-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4505,7 +4777,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-2604637-crds"
+    helm.sh/chart: "0.0.0-8d58f19-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
