@@ -196,6 +196,52 @@ opensearch_data:
     - name: DISABLE_INSTALL_DEMO_CONFIG
       value: "true"
 
+opensearch_snapshots:
+  enabled: false
+  image:
+    tag: 3.3.2
+  replicas: 2
+  nameOverride: "opensearch-logs-snapshots"
+  fullnameOverride: "opensearch-logs-snapshots"
+  nodeGroup: "snapshots"
+  masterService: "opensearch-logs-master"
+  podAnnotations:
+    # manual versioning, raise if secrets change
+    versioning: "3"
+  roles:
+    - warm
+  opensearchJavaOpts: "-Dlog4j2.formatMsgNoLookups=true -XX:MaxRAM=5g -XX:MaxGCPauseMillis=5000 -Xms1g -Xmx1g"
+  secretMounts:
+    - name: opensearch-certificates
+      secretName: cert-manager
+      path: /usr/share/opensearch/config/certs/
+      defaultMode: 0700
+  persistence:
+    enabled: false
+    enableInitChown: false
+    image: "library/busybox"
+  service:
+    type: LoadBalancer
+  ingress:
+    enabled: false
+  clusterName: "opensearch-logs"
+  securityConfig:
+    enabled: false
+    path: "/usr/share/opensearch/config/opensearch-security"
+    actionGroupsSecret: "security-config"
+    configSecret: "security-config"
+    internalUsersSecret: "security-config"
+    rolesSecret: "security-config"
+    rolesMappingSecret: "security-config"
+    tenantsSecret: "security-config"
+  extraEnvs:
+    - name: DISABLE_INSTALL_DEMO_CONFIG
+      value: "true"
+  plugins:
+    enabled: true
+    installList:
+      - https://github.com/opensearch-project/opensearch-prometheus-exporter/releases/download/3.3.2.0/prometheus-exporter-3.3.2.0.zip
+
 opensearch_ml:
   enabled: false
   image:
