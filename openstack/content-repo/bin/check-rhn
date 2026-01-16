@@ -25,18 +25,24 @@ get_date() {
 echo "$(get_date) Starting RedHat CDN entitlement check for ${RELEASE}"
 while true; do
   SUCCESS=0
-  STATUS=$(curl --head --silent --write-out '%{http_code}' --output /dev/null \
+  ERR_FILE=$(mktemp)
+  STATUS=$(curl --head --silent --show-error --write-out '%{http_code}' --output /dev/null \
     --cacert "/secret-check/${ENTITLEMENT_PREFIX}-ca.pem" \
     --cert "/secret-check/${ENTITLEMENT_PREFIX}-entitlement.pem" \
     --key "/secret-check/${ENTITLEMENT_PREFIX}-entitlement-key.pem" \
-    "${CHECK_URL}")
-  if [ "${STATUS}" -eq 200 ]; then
+    "${CHECK_URL}" 2> "$ERR_FILE")
+  EXIT_CODE=$?
+  if [ $EXIT_CODE -ne 0 ]; then
+    echo "$(get_date) RHN entitlement check failed: $(cat "$ERR_FILE")"
+  elif [ "${STATUS}" -eq 200 ]; then
     SUCCESS=1
   elif [ "${STATUS}" -eq 403 ]; then
     echo "$(get_date) RHN entitlement check for ${RELEASE}: ${STATUS} - Forbidden. Entitlement might need to be renewed"
   else
     echo "$(get_date) RHN entitlement check for ${RELEASE}: ${STATUS}"
   fi
+
+  rm -f "$ERR_FILE"
 
   echo "repo.${RELEASE}.check.success:${SUCCESS}|g" | nc -w 1 -u "${STATSD_HOSTNAME}" 9125
   echo "repo.${RELEASE}.check.httpcode:${STATUS}|g" | nc -w 1 -u "${STATSD_HOSTNAME}" 9125
