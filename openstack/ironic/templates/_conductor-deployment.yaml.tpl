@@ -160,7 +160,7 @@ spec:
       {{- include "utils.proxysql.container" . | indent 6 }}
       {{- end }}
       - name: console
-        image: {{ .Values.global.dockerHubMirror }}/library/{{ .Values.imageVersionNginx | default "nginx:stable-alpine" }}
+        image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/{{ required ".Values.nginx.image is missing" .Values.nginx.image }}:{{ required ".Values.nginx.imageTag is missing" .Values.nginx.imageTag }}
         imagePullPolicy: IfNotPresent
         resources:
 {{ toYaml .Values.pod.resources.console | indent 10 }}
