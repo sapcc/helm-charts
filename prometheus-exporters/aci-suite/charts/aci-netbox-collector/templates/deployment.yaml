@@ -26,8 +26,10 @@ spec:
           image: {{ required "$.Values.global.registry variable missing" $.Values.global.registry }}/{{ required "$.Values.image.name variable missing" $.Values.image.name }}:{{ required "$.Values.image.tag variable missing" $.Values.image.tag }}
           imagePullPolicy: {{ required ".Values.image.pullPolicy variable missing" $.Values.image.pullPolicy }}
           ports:
-            - name: http
+            - name: api
               containerPort: {{ .Values.env.flask_port }}
+            - name: metrics
+              containerPort: {{ .Values.env.metrics_port }}
           # Mount env.yml from ConfigMap at /app/env.yml
           volumeMounts:
             - name: app-config
