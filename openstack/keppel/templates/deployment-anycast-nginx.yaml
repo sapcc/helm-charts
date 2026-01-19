@@ -1,4 +1,7 @@
-{{- if and .Values.keppel.anycast_domain_name .Values.keppel.anycast_ip }}
+{{- $region := $.Values.global.region | required "missing value for .Values.global.region" -}}
+{{- $peer_group := index $.Values.keppel.peer_groups $.Values.keppel.peer_group -}}
+{{- $has_anycast := $peer_group.exclude_from_anycast | has $region | not -}}
+{{- if and $has_anycast .Values.keppel.anycast_ip }}
 kind: Deployment
 apiVersion: apps/v1
 
@@ -32,7 +35,7 @@ spec:
           - name: NGINX_ENTRYPOINT_LOCAL_RESOLVERS
             value: "true"
           - name: KEPPEL_ANYCAST_DOMAIN_NAME
-            value: {{ .Values.keppel.anycast_domain_name }}
+            value: {{ $peer_group.anycast_domain_name }}
           - name: NAMESPACE
             value: {{ .Release.Namespace }}
           - name: SET_REAL_IP_FROM

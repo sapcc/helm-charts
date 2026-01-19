@@ -23,18 +23,25 @@ keppel:
   replicas:
     api: 4
 
-  # contains objects like:
+  # Contains objects like:
   # ```
-  #   peers:
-  #     - hostname: registry-1.example.com
-  #       healthcheck_account: healthcheck-1
-  #     - hostname: registry-2.example.com
-  #       healthcheck_account: healthcheck-2
+  #   peer_groups:
+  #     prod:
+  #       leader: region-1
+  #       members:
+  #         - region-1
+  #         - region-2
+  #         - region-3
+  #       anycast_domain_name: registry-global.example.com
+  #       exclude_from_pull_delegation: [ region-2 ]
+  #       exclude_from_anycast: [ region-3 ]
   # ```
-  # The `healthcheck_account` is only needed for anycast monitoring.
-  peers: []
+  peer_groups: {}
 
-  # The name of the peer group. This is used to find the issuer key for the respective anycast API in Vault.
+  # The name of the peer group. This is used to pick which key to use from the dict above.
+  #
+  # Our deployment pipeline sets this to whichever key from `.Values.keppel.peer_groups` contains
+  # `.Values.global.region` in its `members` list.
   peer_group: ""
 
   # anycast domain name shared between all Keppel instances in the same peer group
