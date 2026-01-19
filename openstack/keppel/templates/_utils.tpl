@@ -9,7 +9,8 @@
 {{- define "keppel_environment" }}
 {{- $region := $.Values.global.region | required "missing value for .Values.global.region" -}}
 {{- $tld    := $.Values.global.tld    | required "missing value for .Values.global.tld"    -}}
-{{- $peer_group := index $.Values.keppel.peer_groups $.Values.keppel.peer_group }}
+{{- $peer_group := index $.Values.keppel.peer_groups $.Values.keppel.peer_group -}}
+{{- $overrides  := merge (dict) (index $.Values.keppel.region_overrides $region | default (dict)) $.Values.keppel.region_overrides.default }}
 - name:  KEPPEL_DEBUG
   value: 'false'
 - name:  KEPPEL_API_LISTEN_ADDRESS
@@ -85,7 +86,7 @@
 - name:  KEPPEL_FEDERATION_OS_USERNAME
   value: 'keppel'
 - name:  KEPPEL_GUI_URI
-  value: {{ quote $.Values.keppel.dashboard_url_pattern }}
+  value: https://dashboard.{{ $region }}.cloud.sap/_/%AUTH_TENANT_ID%/keppel/#/repo/%ACCOUNT_NAME%/%REPO_NAME%
 - name:  KEPPEL_ISSUER_KEY
   value: '/etc/keppel-keys/issuer-key.pem'
 - name:  KEPPEL_PREVIOUS_ISSUER_KEY
@@ -107,17 +108,15 @@
     secretKeyRef:
       name: keppel-redis-user-default
       key: password
-{{- if .Values.keppel.trivy.hostname }}
 - name: KEPPEL_TRIVY_ADDITIONAL_PULLABLE_REPOS
   value: "ccloud-ghcr-io-mirror/aquasecurity/trivy-db,ccloud-ghcr-io-mirror/aquasecurity/trivy-java-db"
 - name: KEPPEL_TRIVY_URL
-  value: "https://{{ .Values.keppel.trivy.hostname }}"
+  value: "https://keppel-trivy.{{ $overrides.trivy_region | default $region }}.{{ $tld }}"
 - name: KEPPEL_TRIVY_TOKEN
   valueFrom:
     secretKeyRef:
       name: keppel-secret
       key: trivy_token
-{{- end }}
 - name:  OS_AUTH_URL
   value: "http://keystone.{{ $.Values.global.keystoneNamespace }}.svc.kubernetes.{{ $region }}.{{ $tld }}:5000/v3"
 - name:  OS_AUTH_VERSION

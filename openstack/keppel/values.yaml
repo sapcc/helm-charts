@@ -20,8 +20,12 @@ keppel:
 
   slim: false # set to true for deployments to the small QA regions
 
-  replicas:
-    api: 4
+  # May have a key for each region. Certain values can be overridden here
+  # without requiring separate templated values files for each region.
+  region_overrides:
+    default:
+      api_replicas: 4
+      trivy_region: "" # set non-empty in a region override to make Keppel use another region's Trivy
 
   # Contains objects like:
   # ```
@@ -40,7 +44,7 @@ keppel:
 
   # The name of the peer group. This is used to pick which key to use from the dict above.
   #
-  # Our deployment pipeline sets this to whichever key from `.Values.keppel.peer_groups` contains
+  # The pipeline will set this to whichever key from `.Values.keppel.peer_groups` contains
   # `.Values.global.region` in its `members` list.
   peer_group: ""
 
@@ -50,17 +54,6 @@ keppel:
   anycast_domain_name: ""
 
   proxy_protocol_allowed_ips: [ ]
-
-  dashboard_url_pattern: '' # optional, DEFINED_IN_VALUES_FILE
-
-  # name of Keppel account reserved for keppel-health-monitor
-  healthcheck_account: healthcheck
-
-# This refers to the region holding the shared Swift container where the
-# "swift" federation driver tracks account name claims.
-federation:
-  leader_region:    DEFINED_IN_VALUES_FILE
-  service_password: DEFINED_IN_VALUES_FILE
 
 # Redis is used for caching user's Keystone tokens and for tracking the
 # consumption of rate limits. Both usecases are ephemeral, so we don't need
