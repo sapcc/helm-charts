@@ -40,12 +40,16 @@ spec:
 {{- end }}
       spec:
         backup:
-          provider: openstack
-          region: {{ $regionName }}
+          provider: {{ default "aws" $seedRegion.backup.provider | quote }}
+          region: {{ default $regionName $seedRegion.backup.region | quote }}
           credentialsRef:
             apiVersion: v1
             kind: Secret
-            name: openstack-{{ $regionName }}
+            {{- if eq "aws" $seedRegion.backup.provider }}
+            name: {{ (printf "aws-backup-%s" $seedRegion.name) }}
+            {{- else }}
+            name: {{ (printf "openstack-%s" $regionName) }}
+            {{- end }}
             namespace: garden
         dns:
           defaults:
