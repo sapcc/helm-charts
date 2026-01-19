@@ -52,21 +52,3 @@
       - 'prometheus.asr1k-tests-monsoon.c.{{ .Values.global.region }}.cloud.sap:9090'
 {{- end }}
 {{ end }}
-
-#exporter is leveraging service discovery but not part of infrastructure monitoring project itself.
-{{- $values := .Values.ucs_exporter -}}
-{{- if $values.enabled }}
-- job_name: 'ucs'
-  scrape_interval: {{$values.scrapeInterval}}
-  scrape_timeout: {{$values.scrapeTimeout}}
-  kubernetes_sd_configs:
-  - role: service
-    namespaces:
-      names:
-        - infra-monitoring
-  metrics_path: /
-  relabel_configs:
-    - action: keep
-      source_labels: [__meta_kubernetes_service_name]
-      regex: ucs-exporter
-{{- end }}
