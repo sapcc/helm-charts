@@ -197,7 +197,7 @@ spec:
           periodSeconds: 3
       {{- if $conductor.default.statsd_enabled }}
       - name: oslo-exporter
-        image: {{ .Values.global.dockerHubMirror }}/prom/statsd-exporter
+        image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/{{ required ".Values.statsd.image is missing" .Values.statsd.image }}:{{ required ".Values.statsd.imageTag is missing" .Values.statsd.imageTag }}
         args:
         - --statsd.mapping-config=/etc/statsd/statsd-rpc-exporter.yaml
         ports:
