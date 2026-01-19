@@ -1,28 +1,3 @@
-{{- define "cell1_transport_url" -}}
-  {{- $context := dict "target" "cell1" "defaultUsers" .Values.defaultUsersRabbitMQ "users" .Values.rabbitmq.users }}
-  {{- $data := dict
-      "user" (include "nova.helpers.default_rabbitmq_user" $context)
-      "password" (include "nova.helpers.default_user_password" $context)
-      "port" .Values.rabbitmq.port
-      "virtual_host" .Values.rabbitmq.virtual_host
-      "host" (printf "%s-rabbitmq" .Release.Name)
-    }}
-  {{- include "utils.rabbitmq_url" (tuple . $data) }}
-{{- end -}}
-
-{{- define "cell2_transport_url" -}}
-  {{- $context := dict "target" "cell2" "defaultUsers" .Values.defaultUsersRabbitMQ "users" .Values.rabbitmq_cell2.users }}
-  {{- $data := dict
-      "user" (include "nova.helpers.default_rabbitmq_user" $context)
-      "password" (include "nova.helpers.default_user_password" $context)
-      "port" .Values.rabbitmq_cell2.port
-      "virtual_host" .Values.rabbitmq_cell2.virtual_host
-      "host" (printf "%s-%s-rabbitmq" .Release.Name .Values.cell2.name)
-    }}
-  {{- include "utils.rabbitmq_url" (tuple . $data) }}
-{{- end -}}
-
-
 {{- define "container_image_nova" -}}
   {{- $name := index . 1 -}}
   {{- with index . 0 -}}
@@ -243,6 +218,20 @@ Params:
   e.g., "cell0", "cell1", "cell2".
 */ -}}
 
+{{- define "nova.helpers.cell_name" }}
+  {{- $envAll := index . 0 }}
+  {{- $cellId := index . 1 }}
+  {{- $cellName := "" }}
+  {{- if has $cellId (list "cell0" "cell1") }}
+    {{- $cellName = $cellId }}
+  {{- else }}
+    {{- $msgNameReq := printf "'.Values.%s.name' is required for cell '%s'" $cellId $cellId }}
+    {{- $cellValues := get $envAll.Values $cellId | required $msgNameReq }}
+    {{- $cellName = get $cellValues "name" | required $msgNameReq }}
+  {{- end }}
+  {{- print $cellName }}
+{{- end }}
+
 {{- define "nova.helpers.cell_rabbitmq_chart_alias" }}
   {{- $envAll := index . 0 }}
   {{- $cellId := index . 1 }}
@@ -263,4 +252,25 @@ Params:
   {{- $rmqValues := get $envAll.Values $rmqChartAlias }}
   {{- $rmqName := default "rabbitmq" $rmqValues.nameOverride }}
   {{- printf "%s-%s" $envAll.Release.Name $rmqName | trunc 63 | replace "_" "-" | trimSuffix "-" }}
+{{- end }}
+
+{{- define "nova.helpers.cell_rabbitmq_url" }}
+  {{- $envAll := index . 0 }}
+  {{- $cellId := index . 1 }}
+  {{- $rmqHostInfix := "" }}
+  {{- if not (has $cellId (list "cell0" "cell1")) }}
+    {{- $rmqHostInfix = printf "%s-" (include "nova.helpers.cell_name" .) }}
+  {{- end }}
+  {{- $rmqHost := printf "%s-%srabbitmq" $envAll.Release.Name $rmqHostInfix}}
+  {{- $rmqChartAlias := include "nova.helpers.cell_rabbitmq_chart_alias" . }}
+  {{- $rmqValues := get $envAll.Values $rmqChartAlias }}
+  {{- $context := dict "target" $cellId "defaultUsers" $envAll.Values.defaultUsersRabbitMQ "users" $rmqValues.users }}
+  {{- $data := dict
+      "user" (include "nova.helpers.default_rabbitmq_user" $context)
+      "password" (include "nova.helpers.default_user_password" $context)
+      "port" $rmqValues.port
+      "virtual_host" $rmqValues.virtual_host
+      "host" $rmqHost
+    }}
+  {{- include "utils.rabbitmq_url" (tuple $envAll $data) }}
 {{- end }}
