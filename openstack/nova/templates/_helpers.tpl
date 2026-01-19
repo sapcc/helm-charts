@@ -76,34 +76,17 @@ annotations:
   {{- end }}
 {{- end }}
 
-{{/* TODO: Expose and use the logic in the rabbitmq subchart */}}
-{{- define "nova.helpers.rabbitmq_name" }}
-  {{- $vals := index . 1 }}
-  {{- with index . 0 }}
-    {{- $name := default "rabbitmq" $vals.nameOverride -}}
-    {{- printf "%s-%s" .Release.Name $name | trunc 63 | replace "_" "-" | trimSuffix "-" -}}
-  {{- end}}
-{{- end }}
-
-{{- define "nova.helpers.cell01_rabbitmq" }}
-  {{- tuple . .Values.rabbitmq | include "nova.helpers.rabbitmq_name" }}
-{{- end }}
-
-{{- define "nova.helpers.cell2_rabbitmq" }}
-  {{- tuple . .Values.rabbitmq_cell2 | include "nova.helpers.rabbitmq_name" }}
-{{- end }}
-
 {{- define "nova.helpers.cell01_services" }}
-  {{- print (include "nova.helpers.db_service" (tuple . "api")) "," (include "nova.helpers.db_service" (tuple . "cell1")) "," (include "nova.helpers.cell01_rabbitmq" .) }}
+  {{- print (include "nova.helpers.db_service" (tuple . "api")) "," (include "nova.helpers.db_service" (tuple . "cell1")) "," (include "nova.helpers.cell_rabbitmq_service" (tuple . "cell1")) }}
 {{- end }}
 
 {{- define "nova.helpers.cell1_services" }}
-  {{- print (include "nova.helpers.db_service" (tuple . "cell1")) "," (include "nova.helpers.cell01_rabbitmq" .) }}
+  {{- print (include "nova.helpers.db_service" (tuple . "cell1")) "," (include "nova.helpers.cell_rabbitmq_service" (tuple . "cell1")) }}
 {{- end }}
 
 {{- define "nova.helpers.cell2_services" }}
   {{- if .Values.cell2.enabled }}
-    {{- print (include "nova.helpers.db_service" (tuple . "cell2")) "," (include "nova.helpers.cell2_rabbitmq" .) }}
+    {{- print (include "nova.helpers.db_service" (tuple . "cell2")) "," (include "nova.helpers.cell_rabbitmq_service" (tuple . "cell2")) }}
   {{- end }}
 {{- end }}
 
@@ -253,4 +236,31 @@ Params:
   {{- $dbUser := include "nova.helpers.default_db_user" $context }}
   {{- $dbPassword := include "nova.helpers.default_user_password" $context }}
   {{- tuple $envAll $dbDatabase $dbUser $dbPassword $dbName $dbType | include "utils.db_url" }}
+{{- end }}
+
+{{- /*
+  Cell helper functions require the root context and a cell ID as a parameter, e.g., (tuple . "cell1"). Cell IDs are,
+  e.g., "cell0", "cell1", "cell2".
+*/ -}}
+
+{{- define "nova.helpers.cell_rabbitmq_chart_alias" }}
+  {{- $envAll := index . 0 }}
+  {{- $cellId := index . 1 }}
+  {{- $aliasSuffix := "" }}
+  {{- if not (has $cellId (list "cell0" "cell1")) }}
+    {{- $aliasSuffix = printf "_%s" $cellId }}
+  {{- end }}
+  {{- $rmqChartAlias := printf "%s%s" "rabbitmq" $aliasSuffix }}
+  {{- if not (hasKey $envAll.Values $rmqChartAlias) }}
+    {{- fail (printf "No RabbitMQ chart '%s' found for cell '%s'" $rmqChartAlias $cellId )}}
+  {{- end }}
+  {{- print $rmqChartAlias }}
+{{- end }}
+
+{{- define "nova.helpers.cell_rabbitmq_service" }}
+  {{- $envAll := index . 0 }}
+  {{- $rmqChartAlias := include "nova.helpers.cell_rabbitmq_chart_alias" . }}
+  {{- $rmqValues := get $envAll.Values $rmqChartAlias }}
+  {{- $rmqName := default "rabbitmq" $rmqValues.nameOverride }}
+  {{- printf "%s-%s" $envAll.Release.Name $rmqName | trunc 63 | replace "_" "-" | trimSuffix "-" }}
 {{- end }}
