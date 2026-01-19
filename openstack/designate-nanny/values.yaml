@@ -26,15 +26,41 @@ global:
   linkerd_requested: false # overwritten in regions where enabled
   is_global_region: false
 
+seed_users: False
+# defined in secrets:
+#users:
+#  seed_only_user:
+#    # this user is seeded to allow another region accessing the
+#    # openstack/designate API to get zones and zone transfers
+#    seed_enabled: True
+#    username: "vault+kvv2:///..."
+#    password: "vault+kvv2:///..."
+#    user_domain: UserDomain
+#    project_name: UserProject
+#    project_domain_name: ProjectDomain
+#    roles:
+#      SomeDomain:
+#        SomeProjectA:
+#          - cloud_dns_backup
+#        SomeProjectB::
+#          - objectstore_admin
+#
+#  local_user:
+#    # this user is used to locally (in this region) access openstack,
+#    # both designate and swift, to do local backups.
+#    seed_enabled: True
+#
+#  remote_user:
+#    # this user is not seeded here, but in the remot region, like the
+#    # seed_only_user above. It only needs permission to access designate
+#    seed_enabled: False
+#    ...
+#    -> definitions like above, but without roles.
+
 designate_nanny:
 # defined in secrets:
-#  credentials:
-#    designate_api:
-#     user:
-#     password:
-#     project_name:
-#     project_domain_name:
-#     project_user_domain_name:
+#  users:
+#    openstack: local_user
 
   config:
     global:
@@ -72,23 +98,10 @@ designate_nanny:
 # for the out of region backup, if enabled:
 #
 designate_nanny_oor:
-#
-# defined in secrets, point to the REMOTE region:
-#  credentials:
-#    oor_access_creds: <<- set to seed the LOCAL user in THIS region
-#     user:
-#     password:
-#     project_name:
-#     project_domain_name:
-#     project_user_domain_name:
-#    designate_api:
-#     region:           <<- set to REMOTE region
-#     auth_url:         <<- set to REMOTE region
-#     user:
-#     password:
-#     project_name:
-#     project_domain_name:
-#     project_user_domain_name:
+# defined in secrets:
+#  users:
+#    openstack: remote_user  <<- point to user in REMOTE region
+#    swift: local_user      <<- point to user in LOCAL region
 
   config:
     global:
