@@ -2,7 +2,7 @@ groups:
 - name: metal-ironic.alerts
   rules:
   - alert: MetalIronicSensorCritical
-    expr: count(ipmi_sensor_state{job="scrapeConfig/infra-monitoring/ipmi-exporter-ironic", type=~"(Memory|Processor|Critical Interrupt)"} * on(name) group_left(provision_state, instance_uuid) openstack_ironic_nodes_list_gauge{provision_state=~"(deploy|active)"} == 2) by (name, provision_state, type, name, manufacturer, model, serial) 
+    expr: count(ipmi_sensor_state{job="scrapeConfig/infra-monitoring/ipmi-exporter-ironic", type=~"(Memory|Processor|Critical Interrupt)"} * on(name) group_left(provision_state, instance_uuid) openstack_ironic_nodes_list_gauge{provision_state=~"(deploy|active)"} == 2) by (name, provision_state, type, manufacturer, model, serial) 
     for: 1s
     labels:
       severity: critical
@@ -18,7 +18,7 @@ groups:
       summary: "Hardware error for server: {{ $labels.name }}"
       
   - alert: MetalIronicSensorWarning
-    expr: count(ipmi_sensor_state{job="scrapeConfig/infra-monitoring/ipmi-exporter-ironic", type=~"(Memory|Processor|Critical Interrupt)"} * on(name) group_left(provision_state, instance_uuid) openstack_ironic_nodes_list_gauge{provision_state=~"(manageable|available)"} == 2) by (name, provision_state, type, name, manufacturer, model, serial) 
+    expr: count(ipmi_sensor_state{job="scrapeConfig/infra-monitoring/ipmi-exporter-ironic", type=~"(Memory|Processor|Critical Interrupt)"} * on(name) group_left(provision_state, instance_uuid) openstack_ironic_nodes_list_gauge{provision_state=~"(manageable|available)"} == 2) by (name, provision_state, type, manufacturer, model, serial) 
     for: 10m
     labels:
       severity: warning
@@ -33,7 +33,7 @@ groups:
       summary: "Hardware error for server: {{ $labels.name }}"
       
   - alert: MetalIronicSensorInfo
-    expr: count(ipmi_sensor_state{job="scrapeConfig/infra-monitoring/ipmi-exporter-ironic", type=~"(Drive Slot|Power Supply|Cable/Interconnect)"} * on(name) group_left(provision_state, instance_uuid) openstack_ironic_nodes_list_gauge == 2) by (name, provision_state, type, name, manufacturer, model, serial) 
+    expr: count(ipmi_sensor_state{job="scrapeConfig/infra-monitoring/ipmi-exporter-ironic", type=~"(Drive Slot|Power Supply|Cable/Interconnect)"} * on(name) group_left(provision_state, instance_uuid) openstack_ironic_nodes_list_gauge == 2) by (name, provision_state, type, manufacturer, model, serial) 
     for: 10m
     labels:
       severity: info
@@ -48,7 +48,7 @@ groups:
       summary: "Hardware error for server: {{ $labels.name }}"
       
   - alert: MetalIronicMemCritical
-    expr: count(ipmi_memory_state{job="scrapeConfig/infra-monitoring/ipmi-exporter-ironic"} * on(name) group_left(provision_state, instance_uuid) openstack_ironic_nodes_list_gauge{provision_state="active"} == 2) by (name, provision_state, type, name, manufacturer, model, serial) 
+    expr: count(ipmi_memory_state{job="scrapeConfig/infra-monitoring/ipmi-exporter-ironic"} * on(name) group_left(provision_state, instance_uuid) openstack_ironic_nodes_list_gauge{provision_state="active"} == 2) by (name, provision_state, type, manufacturer, model, serial) 
     for: 10m
     labels:
       severity: critical
@@ -64,23 +64,23 @@ groups:
 
 
   - alert: MetalIronicMemWarn
-    expr: count(ipmi_memory_state{job="scrapeConfig/infra-monitoring/ipmi-exporter-ironic"} * on(name) group_left(provision_state, instance_uuid) openstack_ironic_nodes_list_gauge{provision_state!="active"} == 2) by (name, provision_state, type, name, manufacturer, model, serial) 
+    expr: count(ipmi_memory_state{job="scrapeConfig/infra-monitoring/ipmi-exporter-ironic"} * on(name) group_left(provision_state, instance_uuid) openstack_ironic_nodes_list_gauge{provision_state!="active"} == 2) by (name, provision_state, type, manufacturer, model, serial) 
     for: 10m
     labels:
       severity: warning
       tier: metal
       service: baremetal
       support_group: compute
-      context: "{{ $labels.server_name }}"
-      meta: "Ironic node {{ $labels.server_name }} Dimm error. Modul Name: {{ $labels.name }} / Provision_State: {{ $labels.provision_state }}"
+      context: "{{ $labels.name }}"
+      meta: "Ironic node {{ $labels.name }} Dimm error. Modul Name: {{ $labels.name }} / Provision_State: {{ $labels.provision_state }}"
       playbook: docs/devops/alert/baremetal/vpod
     annotations:
-      description: "Ironic node {{ $labels.server_name }} Dimm error. Modul Name: {{ $labels.name }} / Provision_State: {{ $labels.provision_state }} / Manufacturer: {{ $labels.manufacturer }} / Model: {{ $labels.model }} / Serial {{ $labels.serial }}"
-      summary: "Dimm error for server: {{ $labels.server_name }}"
+      description: "Ironic node {{ $labels.name }} Dimm error. Modul Name: {{ $labels.name }} / Provision_State: {{ $labels.provision_state }} / Manufacturer: {{ $labels.manufacturer }} / Model: {{ $labels.model }} / Serial {{ $labels.serial }}"
+      summary: "Dimm error for server: {{ $labels.name }}"
 
 
   - alert: MetalIronicMemInfo
-    expr: sum(ipmi_memory_errors{job="scrapeConfig/infra-monitoring/ipmi-exporter-ironic"} * on(name) group_left(provision_state, instance_uuid) openstack_ironic_nodes_list_gauge{provision_state="active"} > 16000 ) by (name, provision_state, type, name, manufacturer, model, serial) 
+    expr: sum(ipmi_memory_errors{job="scrapeConfig/infra-monitoring/ipmi-exporter-ironic"} * on(name) group_left(provision_state, instance_uuid) openstack_ironic_nodes_list_gauge{provision_state="active"} > 16000 ) by (name, provision_state, type, manufacturer, model, serial) 
     for: 30m
     labels:
       severity: info
@@ -96,7 +96,7 @@ groups:
 
 
   - alert: MetalIronicMemSensorWarn
-    expr: count(ipmi_sensor_state{job="scrapeConfig/infra-monitoring/ipmi-exporter-ironic", type=~"(Memory)"} * on(name) group_left(provision_state, instance_uuid) openstack_ironic_nodes_list_gauge{provision_state="active"} == 1) by (name, provision_state, type, name, manufacturer, model, serial)
+    expr: count(ipmi_sensor_state{job="scrapeConfig/infra-monitoring/ipmi-exporter-ironic", type=~"(Memory)"} * on(name) group_left(provision_state, instance_uuid) openstack_ironic_nodes_list_gauge{provision_state="active"} == 1) by (name, provision_state, type, manufacturer, model, serial)
     for: 10m
     labels:
       severity: warning
@@ -144,19 +144,19 @@ groups:
 
 
   - alert: MetalIronicIPMIDownWarning
-    expr: count(ipmi_up{job="scrapeConfig/infra-monitoring/ipmi-exporter-ironic"} * on(name) group_left(provision_state, instance_uuid) openstack_ironic_nodes_list_gauge{provision_state=~"(deploy|active)"} == 0) by (name, provision_state, type, name, manufacturer, model, serial) 
+    expr: count(ipmi_up{job="scrapeConfig/infra-monitoring/ipmi-exporter-ironic"} * on(name) group_left(provision_state, instance_uuid) openstack_ironic_nodes_list_gauge{provision_state=~"(deploy|active)"} == 0) by (name, provision_state, project_id, type, server_id, maintenance, manufacturer, model, serial) 
     for: 30m
     labels:
       severity: warning
       tier: metal
       service: baremetal
       support_group: compute
-      context: "{{ $labels.server_name }}"
-      meta: "IPMI metrics cannot be fetched from node {{ $labels.server_name }}, maintenance {{ $labels.maintenance }}, state {{ $labels.provision_state}}, serial {{ $labels.serial }}, Project_ID: {{ $labels.project_id }}, Server_ID: {{ $labels.server_id }}"
+      context: "{{ $labels.name }}"
+      meta: "IPMI metrics cannot be fetched from node {{ $labels.name }}, maintenance {{ $labels.maintenance }}, state {{ $labels.provision_state}}, serial {{ $labels.serial }}, Project_ID: {{ $labels.project_id }}, Server_ID: {{ $labels.server_id }}"
       playbook: docs/devops/alert/baremetal
     annotations:
-      description: "IPMI metrics cannot be fetched from node {{ $labels.server_name }}, maintenance {{ $labels.maintenance }} / Provision_State {{ $labels.provision_state}} / Project_ID: {{ $labels.project_id }} / Server_ID: {{ $labels.server_id }} / Manufacturer: {{ $labels.manufacturer }} / Model: {{ $labels.model }} / Serial {{ $labels.serial }}"
-      summary: "ipmi metrics cannot be fetched from node {{ $labels.server_name }}"
+      description: "IPMI metrics cannot be fetched from node {{ $labels.name }}, maintenance {{ $labels.maintenance }} / Provision_State {{ $labels.provision_state}} / Project_ID: {{ $labels.project_id }} / Server_ID: {{ $labels.server_id }} / Manufacturer: {{ $labels.manufacturer }} / Model: {{ $labels.model }} / Serial {{ $labels.serial }}"
+      summary: "ipmi metrics cannot be fetched from node {{ $labels.name }}"
 
 
   - alert: MetalIPMIExpCritical
