@@ -7,22 +7,24 @@
 {{- end -}}
 
 {{- define "keppel_environment" }}
+{{- $region := $.Values.global.region | required "missing value for .Values.global.region" -}}
+{{- $tld    := $.Values.global.tld    | required "missing value for .Values.global.tld"    -}}
+{{- $peer_group := index $.Values.keppel.peer_groups $.Values.keppel.peer_group -}}
+{{- $overrides  := merge (dict) (index $.Values.keppel.region_overrides $region | default (dict)) $.Values.keppel.region_overrides.default }}
 - name:  KEPPEL_DEBUG
   value: 'false'
 - name:  KEPPEL_API_LISTEN_ADDRESS
   value: ':80'
-{{- if $.Values.keppel.anycast_domain_name }}
+{{- if $peer_group.exclude_from_anycast | has $region | not }}
 - name:  KEPPEL_API_ANYCAST_FQDN
-  value: '{{$.Values.keppel.anycast_domain_name}}'
+  value: {{ quote $peer_group.anycast_domain_name }}
 {{- end }}
-{{- if .Values.keppel.peer_group }}
 - name:  KEPPEL_ANYCAST_ISSUER_KEY
   value: '/etc/keppel-keys/anycast-issuer-key.pem'
 - name:  KEPPEL_ANYCAST_PREVIOUS_ISSUER_KEY
   value: '/etc/keppel-keys/anycast-previous-issuer-key.pem'
-{{- end }}
 - name:  KEPPEL_API_PUBLIC_FQDN
-  value: 'keppel.{{$.Values.global.region}}.{{$.Values.global.tld}}'
+  value: 'keppel.{{$region}}.{{$tld}}'
 - name:  KEPPEL_AUDIT_SILENT
   value: "true" # because hermes-rabbitmq connection is enabled
 - name:  KEPPEL_AUDIT_RABBITMQ_QUEUE_NAME
@@ -61,7 +63,7 @@
 - name:  KEPPEL_DRIVER_STORAGE
   value: '{"type":"swift"}'
 - name:  KEPPEL_FEDERATION_OS_AUTH_URL
-  value: "https://identity-3.{{ $.Values.federation.leader_region }}.{{ $.Values.global.tld }}/v3"
+  value: "https://identity-3.{{ $peer_group.leader }}.{{ $tld }}/v3"
 - name:  KEPPEL_FEDERATION_OS_AUTH_VERSION
   value: '3'
 - name:  KEPPEL_FEDERATION_OS_IDENTITY_API_VERSION
@@ -78,13 +80,13 @@
 - name:  KEPPEL_FEDERATION_OS_PROJECT_NAME
   value: 'master'
 - name:  KEPPEL_FEDERATION_OS_REGION_NAME
-  value: {{ quote $.Values.federation.leader_region }}
+  value: {{ quote $peer_group.leader }}
 - name:  KEPPEL_FEDERATION_OS_USER_DOMAIN_NAME
   value: 'Default'
 - name:  KEPPEL_FEDERATION_OS_USERNAME
   value: 'keppel'
 - name:  KEPPEL_GUI_URI
-  value: {{ quote $.Values.keppel.dashboard_url_pattern }}
+  value: https://dashboard.{{ $region }}.cloud.sap/_/%AUTH_TENANT_ID%/keppel/#/repo/%ACCOUNT_NAME%/%REPO_NAME%
 - name:  KEPPEL_ISSUER_KEY
   value: '/etc/keppel-keys/issuer-key.pem'
 - name:  KEPPEL_PREVIOUS_ISSUER_KEY
@@ -106,19 +108,17 @@
     secretKeyRef:
       name: keppel-redis-user-default
       key: password
-{{- if .Values.keppel.trivy.hostname }}
 - name: KEPPEL_TRIVY_ADDITIONAL_PULLABLE_REPOS
   value: "ccloud-ghcr-io-mirror/aquasecurity/trivy-db,ccloud-ghcr-io-mirror/aquasecurity/trivy-java-db"
 - name: KEPPEL_TRIVY_URL
-  value: "https://{{ .Values.keppel.trivy.hostname }}"
+  value: "https://keppel-trivy.{{ $overrides.trivy_region | default $region }}.{{ $tld }}"
 - name: KEPPEL_TRIVY_TOKEN
   valueFrom:
     secretKeyRef:
       name: keppel-secret
       key: trivy_token
-{{- end }}
 - name:  OS_AUTH_URL
-  value: "http://keystone.{{ $.Values.global.keystoneNamespace }}.svc.kubernetes.{{ $.Values.global.region }}.{{ $.Values.global.tld }}:5000/v3"
+  value: "http://keystone.{{ $.Values.global.keystoneNamespace }}.svc.kubernetes.{{ $region }}.{{ $tld }}:5000/v3"
 - name:  OS_AUTH_VERSION
   value: '3'
 - name:  OS_IDENTITY_API_VERSION
@@ -135,7 +135,7 @@
 - name:  OS_PROJECT_NAME
   value: 'cloud_admin'
 - name:  OS_REGION_NAME
-  value: {{ quote $.Values.global.region }}
+  value: {{ quote $region }}
 - name:  OS_USER_DOMAIN_NAME
   value: 'Default'
 - name:  OS_USERNAME
@@ -158,11 +158,14 @@
 {{- end -}}
 
 {{- define "build_peers" -}}
+{{- $region := $.Values.global.region | required "missing value for .Values.global.region" -}}
+{{- $tld    := $.Values.global.tld    | required "missing value for .Values.global.tld"    -}}
+{{- $peer_group := index $.Values.keppel.peer_groups $.Values.keppel.peer_group -}}
 peers:
-{{- range .Values.keppel.peers }}
-- hostname: {{ .hostname }}
-{{- if hasKey . "use_for_pull_delegation" }}
-  use_for_pull_delegation: {{ .use_for_pull_delegation }}
+{{- range $peer_region := without $peer_group.members $region }}
+- hostname: keppel.{{ $peer_region }}.{{ $tld }}
+{{- if $peer_group.exclude_from_pull_delegation | has $peer_region }}
+  use_for_pull_delegation: false
 {{- end -}}
 {{- end -}}
 {{- end -}}
