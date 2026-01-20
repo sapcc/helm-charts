@@ -48,7 +48,7 @@ spec:
       terminationGracePeriodSeconds: {{ .Values.defaults.default.graceful_shutdown_timeout | add 5 }}
       hostname: nova-conductor
       initContainers:
-      {{- tuple . (dict "service" (include "nova.helpers.cell2_services" .)) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
+      {{- tuple . (dict "service" (include "nova.helpers.cell_services" (tuple . "cell2"))) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
       {{- if .Values.proxysql.native_sidecar }}
       {{- tuple . .Values.conductor.config_file.conductor.workers | include "utils.proxysql.container" | indent 6 }}
       {{- end }}
