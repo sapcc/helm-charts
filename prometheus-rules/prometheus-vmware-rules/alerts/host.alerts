@@ -288,6 +288,38 @@ groups:
       description: "`{{ $labels.hostsystem }}` has detected a link status flapping on a physical NIC. ({{ $labels.vcenter }})."
       summary: "`{{ $labels.hostsystem }}` has detected a link status flapping on a physical NIC. ({{ $labels.vcenter }})."
 
+  - alert: HostInProductionWithChangeRequestAttribute
+    expr: |
+      vrops_hostsystem_custom_attributes_change_request_info{region!~"qa-de-1"}==1 and on (hostsystem) (vrops_hostsystem_runtime_maintenancestate{state="notinMaintenance"})
+    for: 12h
+    labels:
+      severity: info
+      tier: vmware
+      service: compute
+      support_group: compute
+      context: "{{ $labels.hostsystem }} is in production, but has change_reqeust attributes"
+      meta: "Host {{ $labels.hostsystem }} is production, but has change_reqeust attributes . ({{ $labels.vcenter }}, {{ $labels.vccluster }})"
+      playbook: docs/compute/playbooks/vcenter/#HostInProductionWithChangeRequest_Or_HWInfoAttribute
+    annotations:
+      description: "Host {{ $labels.hostsystem }} is production, but has change_reqeust attributes. ({{ $labels.vcenter }}, {{ $labels.vccluster }})"
+      summary: "Host {{ $labels.hostsystem }} is production, but has change_reqeust attributes. ({{ $labels.vcenter }}, {{ $labels.vccluster }})"
+      
+  - alert: HostInProductionWithHwInfoAttribute
+    expr: |
+      vrops_hostsystem_custom_attributes_hw_info{region!~"qa-de-1"}==1 and on (hostsystem) (vrops_hostsystem_runtime_maintenancestate{state="notinMaintenance"})
+    for: 12h
+    labels:
+      severity: info
+      tier: vmware
+      service: compute
+      support_group: compute
+      context: "{{ $labels.hostsystem }} is in production, but has HW_info attributes"
+      meta: "Host {{ $labels.hostsystem }} is production, but has hw_info attributes. ({{ $labels.vcenter }}, {{ $labels.vccluster }})"
+      playbook: docs/compute/playbooks/vcenter/#HostInProductionWithChangeRequest_Or_HWInfoAttribute
+    annotations:
+      description: "Host {{ $labels.hostsystem }} is production, but has hw_info attributes. ({{ $labels.vcenter }}, {{ $labels.vccluster }})"
+      summary: "Host {{ $labels.hostsystem }} is production, but has hw_info attributes. ({{ $labels.vcenter }}, {{ $labels.vccluster }})"
+
   - alert: HostSystemEventLogSensorAlert
     expr: |
       vrops_hostsystem_alert_info{alert_name="IPMI System Event Log for the host is becoming full"}
