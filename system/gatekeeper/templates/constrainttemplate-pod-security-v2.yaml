@@ -93,7 +93,8 @@ spec:
               # that are known to not contain credentials.
               isContainerAllowedToAccessHostPath(container, hostPath, readOnly) if {
                   readOnly
-                  hostPath in ["/etc/machine-id", "/lib/modules"]
+                  normalizedHostPath := normalize_path(hostPath)
+                  normalizedHostPath in ["/etc/machine-id", "/lib/modules"]
               }
 
               ########################################################################
@@ -198,18 +199,41 @@ spec:
                   entry := input.parameters.allowlist[_]
                   isMatchingContainer(entry, container)
                   readOnly
-                  hostPath in entry.mayReadHostPathVolumes
+                  normalizedHostPath := normalize_path(hostPath)
+                  some allowedPath in entry.mayReadHostPathVolumes
+                  normalizedAllowedPath := normalize_path(allowedPath)
+                  normalizedHostPath == normalizedAllowedPath
               }
 
               isContainerAllowedToAccessHostPath(container, hostPath, readOnly) if {
                   entry := input.parameters.allowlist[_]
                   isMatchingContainer(entry, container)
-                  not readOnly
-                  hostPath in entry.mayWriteHostPathVolumes
+                  normalizedHostPath := normalize_path(hostPath)
+                  some allowedPath in entry.mayWriteHostPathVolumes
+                  normalizedAllowedPath := normalize_path(allowedPath)
+                  normalizedHostPath == normalizedAllowedPath
               }
 
               ########################################################################
               # helper functions
+
+              # Normalize path by removing trailing slash (except for root "/")
+              normalize_path(path) := result if {
+                  path == "/"
+                  result := path
+              }
+
+              normalize_path(path) := result if {
+                  path != "/"
+                  endswith(path, "/")
+                  result := substring(path, 0, count(path) - 1)
+              }
+
+              normalize_path(path) := result if {
+                  path != "/"
+                  not endswith(path, "/")
+                  result := path
+              }
 
               # Extract repository name from docker image name
               # i.e. keppel.REGION.cloud.sap/ccloud-dockerhub-mirror/cloudprober/cloudprober:v0.13.9
