@@ -51,18 +51,12 @@ annotations:
   {{- end }}
 {{- end }}
 
-{{- define "nova.helpers.cell01_services" }}
-  {{- print (include "nova.helpers.db_service" (tuple . "api")) "," (include "nova.helpers.db_service" (tuple . "cell1")) "," (include "nova.helpers.cell_rabbitmq_service" (tuple . "cell1")) }}
-{{- end }}
-
-{{- define "nova.helpers.cell1_services" }}
-  {{- print (include "nova.helpers.db_service" (tuple . "cell1")) "," (include "nova.helpers.cell_rabbitmq_service" (tuple . "cell1")) }}
-{{- end }}
-
-{{- define "nova.helpers.cell2_services" }}
-  {{- if .Values.cell2.enabled }}
-    {{- print (include "nova.helpers.db_service" (tuple . "cell2")) "," (include "nova.helpers.cell_rabbitmq_service" (tuple . "cell2")) }}
-  {{- end }}
+{{- define "nova.helpers.api_services" }}
+  {{- $services := list }}
+  {{- $services = append $services (include "nova.helpers.db_service" (tuple . "api")) }}
+  {{- $services = append $services (include "nova.helpers.db_service" (tuple . "cell0")) }}
+  {{- $services = append $services (include "nova.helpers.cell_rabbitmq_service" (tuple . "cell1")) }}
+  {{- $services | join "," }}
 {{- end }}
 
 {{- define "nova.helpers.database_services" }}
@@ -72,11 +66,14 @@ annotations:
   {{- end }}
 {{- end }}
 
-{{- define "nova.helpers.all_cell_services" }}
-  {{- include "nova.helpers.cell01_services" . }}
+{{- define "nova.helpers.database_and_rabbitmq_services" }}
+  {{- $services := list }}
+  {{- $services = append $services (include "nova.helpers.db_service" (tuple . "api")) }}
+  {{- $services = append $services (include "nova.helpers.cell_services" (tuple . "cell1")) }}
   {{- if .Values.cell2.enabled -}}
-    ,{{ include "nova.helpers.cell2_services" . }}
+     {{ $services = append $services (include "nova.helpers.cell_services" (tuple . "cell2")) }}
   {{- end }}
+  {{- $services | join "," }}
 {{- end }}
 
 {{- /*
@@ -230,6 +227,15 @@ Params:
     {{- $cellName = get $cellValues "name" | required $msgNameReq }}
   {{- end }}
   {{- print $cellName }}
+{{- end }}
+
+{{- define "nova.helpers.cell_services" }}
+  {{- $envAll := index . 0 }}
+  {{- $cellId := index . 1 }}
+  {{- $services := list }}
+  {{- $services = append $services (include "nova.helpers.db_service" (tuple $envAll $cellId)) }}
+  {{- $services = append $services (include "nova.helpers.cell_rabbitmq_service" (tuple $envAll $cellId)) }}
+  {{- $services | join "," }}
 {{- end }}
 
 {{- define "nova.helpers.cell_rabbitmq_chart_alias" }}
