@@ -1,7 +1,7 @@
 apiVersion: core.gardener.cloud/v1beta1
 kind: Shoot
 metadata:
-  name: prt-{{ required "missing value for .Values.landscapeName" (substr 0 1 .Values.landscapeName) }}-{{ required "missing value for .Values.global.region" .Values.global.region }}
+  name: prt-{{ template "persephone.landscape.short" . }}-{{ required "missing value for .Values.global.region" .Values.global.region }}
 spec:
   cloudProfile:
     kind: CloudProfile
@@ -36,7 +36,7 @@ spec:
     nodes: 10.180.24.0/24 # should match infrastructure CIDR
     type: calico
   kubernetes:
-    version: 1.31.5
+    version: {{ required "missing value for .Values.kubernetes.version" .Values.kubernetes.version }}
 {{- if .Values.oidcConfig.enabled }}
     kubeAPIServer:
       enableAnonymousAuthentication: true
