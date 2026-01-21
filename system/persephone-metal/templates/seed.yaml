@@ -39,31 +39,31 @@ spec:
 
     - name: ccadmin
       projects:
-        - name: cloud_admin
+        {{- range $_, $landscape := $landscapes }}
+        - name: persephone-{{ $landscape }}
           role_assignments:
-          {{- range $_, $landscape := $landscapes }}
-          # TODO: we might need this here: "cloud_dns_ops" "compute_admin" "dns_webmaster" "member" "network_admin" "objectstore_admin" "volume_admin"
-          {{- range $_, $roleName := list "member" }}
+            # TODO: we might need this here: "cloud_dns_ops" "compute_admin" "dns_webmaster" "member" "network_admin" "objectstore_admin" "volume_admin"
+            {{- range $_, $roleName := list "member" }}
             - role: {{ $roleName }}
               user: persephone-{{ $landscape }}-seed@Default
-          {{ end }}
+            {{- end }}
 
-          {{- if eq $region "eu-de-1" }}
-          # https://pages.github.tools.sap/kubernetes/gardener/docs/guides/sap-internal/cluster-operations/gardener-sapci/#5-assign-access-permissions-for-the-technical-user
-          {{- range $_, $roleName := list "compute_admin" "member" "network_admin" "objectstore_admin" "volume_admin" }}
+            {{- if eq $region "eu-de-1" }}
+            # https://pages.github.tools.sap/kubernetes/gardener/docs/guides/sap-internal/cluster-operations/gardener-sapci/#5-assign-access-permissions-for-the-technical-user
+            {{- range $_, $roleName := list "compute_admin" "member" "network_admin" "objectstore_admin" "volume_admin" }}
             - role: {{ $roleName }}
               user:  persephone-{{ $landscape }}-runtime@Default
-          {{ end }}
+            {{- end }}
 
-          {{- range $_, $roleName := list "service" }}
+            {{- range $_, $roleName := list "service" }}
             - role: {{ $roleName }}
               user: persephone-{{ $landscape }}-gardener@Default
-          {{ end }}
+            {{- end }}
 
-          # The operator creates new users in keystone
-          {{- range $_, $roleName := list "admin" }}
+            # The operator creates new users in keystone
+            {{- range $_, $roleName := list "admin" }}
             - role: {{ $roleName }}
               user: persephone-{{ $landscape }}-operator@Default
-          {{ end }}
-          {{- end }}
-      {{- end }}
+            {{ end }}
+            {{- end }}
+        {{- end }}
