@@ -86,6 +86,10 @@ enable_proxy_headers_parsing = true
 [glance_store]
 default_backend = {{ $def | quote }}
 
+[image_format]
+require_image_format_match = false
+vmdk_allowed_types = streamOptimized
+
 {{- if .Values.file.persistence.enabled }}
 filesystem_store_datadir = /glance_store
 {{- end }}
