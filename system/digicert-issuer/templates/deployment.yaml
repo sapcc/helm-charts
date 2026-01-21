@@ -27,8 +27,20 @@ spec:
         - args:
             - --metrics-addr=:{{ required ".Values.metrics.port missing" .Values.metrics.port }}
             - --disable-root-ca={{ default "false" .Values.provisioner.disableRootCA }}
+{{- if .Values.provisioner.clusterIssuerNamespace }}
+            - --cluster-issuer-namespace={{ .Values.provisioner.clusterIssuerNamespace }}
+{{- end }}
 {{- if .Values.provisioner.cacheSyncTimeout }}
             - --cache-sync-timeout={{ .Values.provisioner.cacheSyncTimeout }}
+{{- end }}
+{{- if .Values.provisioner.logLevel }}
+            - --zap-log-level={{ .Values.provisioner.logLevel }}
+{{- end }}
+{{- if .Values.provisioner.backoffDurationProvisionerNotReady }}
+            - --backoff-duration-provisioner-not-ready={{ .Values.provisioner.backoffDurationProvisionerNotReady }}
+{{- end }}
+{{- if .Values.provisioner.backoffDurationRequestPending }}
+            - --backoff-duration-request-pending={{ .Values.provisioner.backoffDurationRequestPending }}
 {{- end }}
           command:
             - /digicert-issuer
