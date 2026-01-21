@@ -1,0 +1,21 @@
+{{- if .Values.provisioner.clusterIssuerNamespace }}
+apiVersion: certmanager.cloud.sap/v1beta1
+kind: ClusterDigicertIssuer
+metadata:
+  name: digicert-issuer
+spec:
+  provisioner:
+{{- if .Values.provisioner.caCertID }}
+    caCertID: {{ .Values.provisioner.caCertID }}
+{{- end }}
+    organizationID: {{ required ".Values.provisioner.organizationID missing" .Values.provisioner.organizationID }}
+    organizationUnits: {{ required ".Values.provisioner.organizationUnits missing" .Values.provisioner.organizationUnits }}
+    validityYears: {{ required ".Values.provisioner.validityYears missing" .Values.provisioner.validityYears }}
+    disableRenewalNotifications: {{ required ".Values.provisioner.disableRenewalNotifications missing" .Values.provisioner.disableRenewalNotifications }}
+    skipApproval: {{ required ".Values.provisioner.skipApproval missing" .Values.provisioner.skipApproval }}
+    paymentMethod: {{ required ".Values.provisioner.paymentMethod missing" .Values.provisioner.paymentMethod }}
+    orderType: {{ required ".Values.provisioner.orderType missing" .Values.provisioner.orderType }}
+    apiTokenReference:
+      name: digicertissuer-secret
+      key: DIGICERT_API_TOKEN
+{{- end }}
