@@ -1,0 +1,55 @@
+{{- if $.Values.alertflow.enabled }}
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: alertflow
+  namespace: {{ .Values.namespace }}
+  labels:
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: alertflow
+  template:
+    metadata:
+      labels:
+        name: alertflow
+    spec:
+      containers:
+      - name: alertflow
+        image: "{{ required ".Values.global.registry variable missing" .Values.global.registry }}/{{ .Values.alertflow.image }}:{{ .Values.alertflow.imageTag }}"
+        resources:
+          requests:
+            memory: 50Mi
+            cpu: 10m
+          limits:
+            memory: 250Mi
+            cpu: 200m
+        env:
+          - name: BILLING_ENDPOINT
+            valueFrom:
+              secretKeyRef:
+                name: alertflow-secrets
+                key: billing_endpoint
+          - name: BILLING_AUTH
+            valueFrom:
+              secretKeyRef:
+                name: alertflow-secrets
+                key: billing_token
+          - name: SMTP_HOST
+            valueFrom:
+              secretKeyRef:
+                name: alertflow-secrets
+                key: smtp_host
+          - name: SMTP_USER
+            valueFrom:
+              secretKeyRef:
+                name: alertflow-secrets
+                key: smtp_user
+          - name: SMTP_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: alertflow-secrets
+                key: smtp_password
+{{- end }}
