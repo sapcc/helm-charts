@@ -1,4 +1,17 @@
 groups:
+- name: IncomingEmails
+  rules:
+  - alert: SESIncomingPollerProjectFailure
+    expr: avg (aws_receiving_cronus_provider) by (metric, project_name) > 10000
+    for: 20m
+    labels:
+      service: email
+      severity: warning
+      tier: os
+      support_group: email
+    annotations:
+      description: incoming SES emails -- Poller fails
+      summary: incoming SES emails -- Poller fails
 - name: SendingGlobalEmails
   rules:
   - alert: SendingEmailsWithSESFails
