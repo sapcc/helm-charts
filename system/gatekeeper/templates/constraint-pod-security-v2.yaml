@@ -210,9 +210,35 @@ spec:
         mayUseHostNetwork: true
         mayUseCapabilities: [ NET_ADMIN, NET_RAW ]
         mayWriteHostPathVolumes: [ /run/flannel, /run/xtables.lock, /etc/cni/net.d ]
+
+      - matchNamespace: kube-system
+        matchRepository: ccloud-dockerhub-mirror/flannel/flannel
+        justification: |
+          TODO
+        mayUseHostNetwork: true
+        mayUseCapabilities: [ NET_ADMIN, NET_RAW ]
+        mayWriteHostPathVolumes: [ /run/flannel, /run/xtables.lock, /etc/cni/net.d ]
       
       - matchNamespace: kube-system
         matchRepository: ccloud-dockerhub-mirror/flannelcni/flannel-cni-plugin
+        justification: |
+          Many kube-system components need broad network access (e.g. coredns,
+          CNI, ingress-nginx)
+        mayUseHostNetwork: true
+        mayUseCapabilities: [ NET_ADMIN, NET_RAW ]
+        mayWriteHostPathVolumes: [ /opt/cni/bin ]
+
+      - matchNamespace: kube-system
+        matchRepository: ccloud-dockerhub-mirror/flannel/flannel-cni-plugin
+        justification: |
+          Many kube-system components need broad network access (e.g. coredns,
+          CNI, ingress-nginx)
+        mayUseHostNetwork: true
+        mayUseCapabilities: [ NET_ADMIN, NET_RAW ]
+        mayWriteHostPathVolumes: [ /opt/cni/bin ]
+
+      - matchNamespace: kube-system
+        matchRepository: ccloud/cni-plugins
         justification: |
           Many kube-system components need broad network access (e.g. coredns,
           CNI, ingress-nginx)
@@ -468,6 +494,7 @@ spec:
           necessary in clusters where the worker nodes are provisioned by
           OpenStack instead of Terraform).
         mayBePrivileged: true
+        mayUseHostPID: true
         mayWriteHostPathVolumes: [ / ]
       {{- end }}
 
