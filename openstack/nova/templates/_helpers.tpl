@@ -60,20 +60,47 @@ annotations:
 {{- end }}
 
 {{- define "nova.helpers.database_services" }}
-  {{- include "nova.helpers.db_service" (tuple . "api") }},{{ include "nova.helpers.db_service" (tuple . "cell1") }}
-  {{- if .Values.cell2.enabled -}}
-    ,{{ include "nova.helpers.db_service" (tuple . "cell2") }}
+  {{- $services := list (include "nova.helpers.db_service" (tuple . "api")) }}
+  {{- $envAll := . }}
+  {{- range $cellId := include "nova.helpers.cell_ids_nonzero" . | fromJsonArray }}
+    {{- $services = append $services (include "nova.helpers.db_service" (tuple $envAll $cellId)) }}
   {{- end }}
+  {{- $services | join "," }}
 {{- end }}
 
 {{- define "nova.helpers.database_and_rabbitmq_services" }}
-  {{- $services := list }}
-  {{- $services = append $services (include "nova.helpers.db_service" (tuple . "api")) }}
-  {{- $services = append $services (include "nova.helpers.cell_services" (tuple . "cell1")) }}
-  {{- if .Values.cell2.enabled -}}
-     {{ $services = append $services (include "nova.helpers.cell_services" (tuple . "cell2")) }}
+  {{- $services := list (include "nova.helpers.db_service" (tuple . "api")) }}
+  {{- $envAll := . }}
+  {{- range $cellId := include "nova.helpers.cell_ids_nonzero" . | fromJsonArray }}
+    {{- $services = append $services (include "nova.helpers.cell_services" (tuple $envAll $cellId)) }}
   {{- end }}
   {{- $services | join "," }}
+{{- end }}
+
+{{- /*
+  Returns a JSON array of the cell IDs of all enabled cells, except for "cell0".
+
+  Example:
+  - include "nova.helpers.cell_ids_nonzero" . | fromJsonArray -> ["cell1", "cell2"]
+*/ -}}
+{{- define "nova.helpers.cell_ids_nonzero" }}
+  {{- $cellIds := list "cell1" }}
+  {{- if .Values.cell2.enabled }}
+    {{- $cellIds = append $cellIds "cell2" }}
+  {{- end }}
+  {{- $cellIds | toJson }}
+{{- end }}
+
+{{- /*
+  Returns a JSON array of the cell IDs of all enabled cells, including "cell0".
+
+  Example:
+  - include "nova.helpers.cell_ids_all" . | fromJsonArray -> ["cell0", "cell1", "cell2"]
+*/ -}}
+{{- define "nova.helpers.cell_ids_all" }}
+  {{- $cellIds := include "nova.helpers.cell_ids_nonzero" . | fromJsonArray }}
+  {{- $cellIds = prepend $cellIds "cell0" }}
+  {{- $cellIds | toJson }}
 {{- end }}
 
 {{- /*
