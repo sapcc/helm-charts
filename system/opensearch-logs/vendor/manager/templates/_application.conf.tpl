@@ -1,5 +1,5 @@
 # Secret will be used to sign session cookies, CSRF tokens and for other encryption utilities.
-secret = "{{ (randAlphaNum 32) }}"
+secret = "{{ (randAlphaNum 64) }}"
 
 # Application base path
 basePath = "/"
