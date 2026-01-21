@@ -1,0 +1,19 @@
+groups:
+- name: thanos-nsxt.alerts
+  rules:
+    - alert: NSXTSslCertificateExpiryForAtLeast10d
+      expr: |
+        count_over_time(ALERTS{alertname="NSXTSslCertificateExpiry", alertstate="firing"}[15d:1d]) >= 10
+      for: 60m
+      labels:
+        severity: warning
+        tier: vmware
+        service: network
+        support_group: compute
+        no_alert_on_absence: "true"
+        context: "nsxt certificate"
+        meta: "Alert *NSXTSslCertificateExpiry* has been firing continuously for at least 10 days for the NSX-T cluster `{{ $labels.nsxt_adapter }}`. Auto-resolution by AiCloudGuard and ccloud-compute on-call remediation may have failed.\nLink to the VMware Aria Operations: --> <https://{{ $labels.target }}>"
+        playbook: docs/compute/playbooks/nsxt/#applying-nsx-t-ssl-certificate-in-the-manager-nodes-and-the-vip
+      annotations:
+        description: "Alert *NSXTSslCertificateExpiry* has been firing continuously for at least 10 days for the NSX-T cluster `{{ $labels.nsxt_adapter }}`. Auto-resolution by AiCloudGuard and ccloud-compute on-call remediation may have failed.\nLink to the VMware Aria Operations: --> <https://{{ $labels.target }}>"
+        summary: "Alert *NSXTSslCertificateExpiry* has been firing continuously for at least 10 days for the NSX-T cluster `{{ $labels.nsxt_adapter }}`. Auto-resolution by AiCloudGuard and ccloud-compute on-call remediation may have failed.\nLink to the VMware Aria Operations: --> <https://{{ $labels.target }}>"
