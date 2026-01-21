@@ -1,0 +1,87 @@
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: migrate-{{ .Values.name }}-db-sync
+  namespace: {{ .Release.Namespace }}
+  labels:
+{{ include "pxc-db.labels" . | indent 4 }}
+spec:
+  replicas: 1
+  serviceName: mariadb-sync-{{ .Values.name }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: go-maria-sync
+      app.kubernetes.io/instance: mariadb-sync-{{ .Values.name }}-to-pxc
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/version: {{ .Values.job.migration.sync.image.tag }}
+        app.kubernetes.io/name: go-maria-sync
+        app.kubernetes.io/instance: mariadb-sync-{{ .Values.name }}-to-pxc
+      annotations:
+        kubectl.kubernetes.io/default-container: "sync"
+{{- if and (and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested) $.Values.linkerd.enabled }}
+{{ include "pxc-db.linkerdPodAnnotations" . | indent 8 }}
+{{- end }}
+    spec:
+      terminationGracePeriodSeconds: 10
+      containers:
+      - name: sync
+        image: {{ required ".Values.global.registryAlternateRegion is missing" $.Values.global.registryAlternateRegion }}/{{ .Values.job.migration.sync.image.name }}:{{ .Values.job.migration.sync.image.tag }}"
+        command:
+          - sync
+        ports:
+          - containerPort: 8080
+            name: metrics
+            protocol: TCP
+        resources:
+          limits:
+            cpu: 500m
+            memory: 2Gi
+          requests:
+            cpu: 50m
+            memory: 30Mi
+        env:
+        - name: "CONFIG"
+          value: "/etc/config/config.yaml"
+        - name: "DOWNLOAD_DIR"
+          value: "/home/appuser/backup"
+        - name: "SOURCEDB_PASSWORD"
+          valueFrom:
+            secretKeyRef:
+              name: migrate-{{ .Values.name }}-db-secrets
+              key: sourceDBPW
+        - name: "TARGETDB_PASSWORD"
+          valueFrom:
+            secretKeyRef:
+              name: migrate-{{ .Values.name }}-db-secrets
+              key: targetDBPW
+        - name: "OPENSTACK_PASSWORD"
+          valueFrom:
+            secretKeyRef:
+              name: migrate-{{ .Values.name }}-db-secrets
+              key: openstackPW
+        - name: "AWS_ACCESS_KEY_ID"
+          valueFrom:
+            secretKeyRef:
+              name: migrate-{{ .Values.name }}-db-secrets
+              key: awsAccessKeyID
+        - name: "AWS_SECRET_ACCESS_KEY"
+          valueFrom:
+            secretKeyRef:
+              name: migrate-{{ .Values.name }}-db-secrets
+              key: awsSecretAccessKey
+        - name: "SSE_CUSTOMER_KEY"
+          valueFrom:
+            secretKeyRef:
+              name: migrate-{{ .Values.name }}-db-secrets
+              key: awsS3SSECustomerKey
+        volumeMounts:
+        - name: mariadb-sync-etc
+          mountPath: /etc/config
+          readOnly: true
+      volumes:
+        - name: mariadb-sync-etc
+          configMap:
+            name: migrate-{{ .Values.name }}-db-maria-to-pxc
