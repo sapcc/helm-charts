@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: barbican-operator
+  labels:
+    name: barbican-operator
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    system: openstack
+    type: api
+    component: barbican
+  annotations:
+    secret.reloader.stakater.com/reload: "{{ .Release.Name }}-secrets"
+    deployment.reloader.stakater.com/pause-period: "60s"
+spec:
+  replicas: {{ .Values.pod.replicas }}
+  revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revisionHistory }}
+  strategy:
+    type: {{ .Values.pod.lifecycle.upgrades.deployments.podReplacementStrategy }}
+    {{- if eq .Values.pod.lifecycle.upgrades.deployments.podReplacementStrategy "RollingUpdate" }}
+    rollingUpdate:
+      maxUnavailable: {{ .Values.pod.lifecycle.upgrades.deployments.rollingUpdate.maxUnavailable }}
+      maxSurge: {{ .Values.pod.lifecycle.upgrades.deployments.rollingUpdate.maxSurge }}
+    {{- end }}
+  selector:
+    matchLabels:
+      name: barbican-operator
+  template:
+    metadata:
+      labels:
+        name: barbican-operator
+{{ tuple . "barbican-operator" "operator" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
+    spec:
+      serviceAccountName: {{ .Chart.Name }}
+      containers:
+        - name: operator
+          image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/loci-barbican:{{ required "Values.operator.image is missing" .Values.operator.image }}
+          imagePullPolicy: IfNotPresent
+
