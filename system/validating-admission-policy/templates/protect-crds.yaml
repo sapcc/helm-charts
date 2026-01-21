@@ -10,8 +10,16 @@ spec:
       apiVersions: ["*"]
       operations:  ["DELETE"]
       resources:   ["customresourcedefinitions"]
+  matchConditions:
+  - name: "matching-crds"
+    expression: >
+      oldObject.spec.group == 'test-crd.cloud.sap' ||
+      oldObject.spec.group == 'cert-manager.io' ||
+      oldObject.spec.group == 'monitoring.coreos.com'
   validations:
-  - expression: "oldObject.metadata.annotations['confirmation.cloud.sap/deletion'] == 'true'"
+  - expression: >
+      oldObject.metadata.annotations.exists(a, a == 'confirmation.cloud.sap/deletion') &&
+      oldObject.metadata.annotations['confirmation.cloud.sap/deletion'] == 'true'
     message: "You need to add the 'confirmation.cloud.sap/deletion=true' annotation to delete the CRD"
     reason: Forbidden
 ---
