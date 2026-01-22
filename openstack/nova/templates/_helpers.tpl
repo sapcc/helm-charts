@@ -136,21 +136,6 @@ Params:
   {{- index $user $key }}
 {{- end }}
 
-{{- define "nova.helpers.default_user_password" }}
-  {{- $params := dict "target" .target "users" .users "defaultUsers" .defaultUsers "key" "password" }}
-  {{- include "nova.helpers.default_user_value" $params }}
-{{- end }}
-
-{{- define "nova.helpers.default_db_user" }}
-  {{- $params := dict "target" .target "users" .users "defaultUsers" .defaultUsers "key" "name" }}
-  {{- include "nova.helpers.default_user_value" $params }}
-{{- end }}
-
-{{- define "nova.helpers.default_rabbitmq_user" }}
-  {{- $params := dict "target" .target "users" .users "defaultUsers" .defaultUsers "key" "user" }}
-  {{- include "nova.helpers.default_user_value" $params }}
-{{- end }}
-
 {{- /*
   Database helper functions require the root context and a database ID as a parameter, e.g., (tuple . "cell1").
   Database IDs are, e.g., "api", "cell0", "cell1", "cell2".
@@ -224,16 +209,29 @@ Params:
   {{- print $dbDatabase }}
 {{- end }}
 
-{{- define "nova.helpers.db_url" }}
+{{- define "nova.helpers.db_default_user" }}
   {{- $envAll := index . 0 }}
   {{- $dbId := index . 1 }}
   {{- $dbValues := include "nova.helpers.db_chart_alias" . | get $envAll.Values }}
+  {{- $params := dict "target" $dbId "users" $dbValues.users "defaultUsers" $envAll.Values.defaultUsersMariaDB "key" "name" }}
+  {{- include "nova.helpers.default_user_value" $params }}
+{{- end }}
+
+{{- define "nova.helpers.db_default_password" }}
+  {{- $envAll := index . 0 }}
+  {{- $dbId := index . 1 }}
+  {{- $dbValues := include "nova.helpers.db_chart_alias" . | get $envAll.Values }}
+  {{- $params := dict "target" $dbId "users" $dbValues.users "defaultUsers" $envAll.Values.defaultUsersMariaDB "key" "password" }}
+  {{- include "nova.helpers.default_user_value" $params }}
+{{- end }}
+
+{{- define "nova.helpers.db_url" }}
+  {{- $envAll := index . 0 }}
   {{- $dbDatabase := include "nova.helpers.db_database" . }}
   {{- $dbType := include "nova.helpers.db_type" . }}
   {{- $dbName := include "nova.helpers.db_name" . }}
-  {{- $context := dict "target" $dbId "defaultUsers" $envAll.Values.defaultUsersMariaDB "users" $dbValues.users }}
-  {{- $dbUser := include "nova.helpers.default_db_user" $context }}
-  {{- $dbPassword := include "nova.helpers.default_user_password" $context }}
+  {{- $dbUser := include "nova.helpers.db_default_user" . }}
+  {{- $dbPassword := include "nova.helpers.db_default_password" . }}
   {{- tuple $envAll $dbDatabase $dbUser $dbPassword $dbName $dbType | include "utils.db_url" }}
 {{- end }}
 
@@ -287,6 +285,22 @@ Params:
   {{- printf "%s-%s" $envAll.Release.Name $rmqName | trunc 63 | replace "_" "-" | trimSuffix "-" }}
 {{- end }}
 
+{{- define "nova.helpers.cell_rabbitmq_default_user" }}
+  {{- $envAll := index . 0 }}
+  {{- $cellId := index . 1 }}
+  {{- $rmqValues := include "nova.helpers.cell_rabbitmq_chart_alias" . | get $envAll.Values }}
+  {{- $params := dict "target" $cellId "users" $rmqValues.users "defaultUsers" $envAll.Values.defaultUsersRabbitMQ "key" "user" }}
+  {{- include "nova.helpers.default_user_value" $params }}
+{{- end }}
+
+{{- define "nova.helpers.cell_rabbitmq_default_password" }}
+  {{- $envAll := index . 0 }}
+  {{- $cellId := index . 1 }}
+  {{- $rmqValues := include "nova.helpers.cell_rabbitmq_chart_alias" . | get $envAll.Values }}
+  {{- $params := dict "target" $cellId "users" $rmqValues.users "defaultUsers" $envAll.Values.defaultUsersRabbitMQ "key" "password" }}
+  {{- include "nova.helpers.default_user_value" $params }}
+{{- end }}
+
 {{- define "nova.helpers.cell_rabbitmq_url" }}
   {{- $envAll := index . 0 }}
   {{- $cellId := index . 1 }}
@@ -297,10 +311,9 @@ Params:
   {{- $rmqHost := printf "%s-%srabbitmq" $envAll.Release.Name $rmqHostInfix}}
   {{- $rmqChartAlias := include "nova.helpers.cell_rabbitmq_chart_alias" . }}
   {{- $rmqValues := get $envAll.Values $rmqChartAlias }}
-  {{- $context := dict "target" $cellId "defaultUsers" $envAll.Values.defaultUsersRabbitMQ "users" $rmqValues.users }}
   {{- $data := dict
-      "user" (include "nova.helpers.default_rabbitmq_user" $context)
-      "password" (include "nova.helpers.default_user_password" $context)
+      "user" (include "nova.helpers.cell_rabbitmq_default_user" .)
+      "password" (include "nova.helpers.cell_rabbitmq_default_password" .)
       "port" $rmqValues.port
       "virtual_host" $rmqValues.virtual_host
       "host" $rmqHost
