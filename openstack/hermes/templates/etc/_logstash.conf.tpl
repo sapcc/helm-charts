@@ -478,77 +478,66 @@ filter {
     id => "f25_kv_source_to_underscore"
     }
 
+  # Build array of tenant IDs for document-level isolation
+  ruby {
+    id => "f26_build_tenant_ids_array"
+    code => "
+      tenant_ids = []
+
+      # Add primary tenant ID
+      primary_tenant = event.get('[@metadata][index]')
+      if !primary_tenant.nil? && primary_tenant != '' && primary_tenant != 'unavailable'
+        tenant_ids << primary_tenant
+      end
+
+      # Add secondary tenant ID if different
+      secondary_tenant = event.get('[@metadata][index2]')
+      if !secondary_tenant.nil? && secondary_tenant != '' && secondary_tenant != primary_tenant && secondary_tenant != 'unavailable'
+        tenant_ids << secondary_tenant
+      end
+
+      # Fallback to Default tenant if no valid tenants found
+      if tenant_ids.empty?
+        tenant_ids << 'Default'
+      end
+
+      # Set the tenant_ids field
+      event.set('tenant_ids', tenant_ids)
+    "
+  }
+
   # The following line will create 2 additional
   # copies of each document (i.e. including the
   # original, 3 in total).
   # Each copy will automatically have a "type" field added
   # corresponding to the name given in the array.
   clone {
-    id => "f26_clone_events_three_times"
-    clones => ['clone_for_audit', 'clone_for_swift', 'clone_for_cc', 'audit']
+    id => "f27_clone_events"
+    clones => ['clone_for_audit', 'clone_for_swift', 'audit']
   }
 }
 
 output {
   if [type] == 'clone_for_audit' {
-    if ([@metadata][index]) {
-      opensearch {
-          id => "output_opensearch_clone_for_audit_1"
-          index => "audit-%{[@metadata][index]}"
-          template => "/hermes-etc/audit.json"
-          template_name => "audit"
-          template_overwrite => true
-          hosts => ["https://{{.Values.hermes_elasticsearch_host}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.hermes_elasticsearch_port}}"]
-          auth_type => {
-            type => 'basic'
-            user => "${OPENSEARCH_USER}"
-            password => "${OPENSEARCH_PASSWORD}"
-          }
-          retry_max_interval => 10
-          validate_after_inactivity => 1000
-          ssl => true
-          ssl_certificate_verification => true
+    opensearch {
+      id => "output_opensearch_datastream"
+      index => "hermes"
+      action => "create"
+      manage_template => false
+      hosts => ["https://{{.Values.hermes_elasticsearch_host}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.hermes_elasticsearch_port}}"]
+      auth_type => {
+        type => 'basic'
+        user => "${OPENSEARCH_USER}"
+        password => "${OPENSEARCH_PASSWORD}"
       }
-    } else {
-      opensearch {
-          id => "output_opensearch_clone_for_audit_2"
-          index => "audit-default"
-          template => "/hermes-etc/audit.json"
-          template_name => "audit"
-          template_overwrite => true
-          hosts => ["https://{{.Values.hermes_elasticsearch_host}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.hermes_elasticsearch_port}}"]
-          retry_max_interval => 10
-          validate_after_inactivity => 1000
-          auth_type => {
-            type => 'basic'
-            user => "${OPENSEARCH_USER}"
-            password => "${OPENSEARCH_PASSWORD}"
-          }
-          ssl => true
-          ssl_certificate_verification => true
-        }
+      retry_max_interval => 10
+      validate_after_inactivity => 1000
+      ssl => true
+      ssl_certificate_verification => true
     }
   }
-  # cc the target tenant
-  if ([@metadata][index2] and [@metadata][index2] != [@metadata][index] and [type] == 'clone_for_cc') {
-    opensearch {
-        id => "output_opensearch_clone_for_cc"
-        index => "audit-%{[@metadata][index2]}"
-        template => "/hermes-etc/audit.json"
-        template_name => "audit"
-        template_overwrite => true
-        hosts => ["https://{{.Values.hermes_elasticsearch_host}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.hermes_elasticsearch_port}}"]
-        retry_max_interval => 10
-        validate_after_inactivity => 1000
-        auth_type => {
-          type => 'basic'
-          user => "${OPENSEARCH_USER}"
-          password => "${OPENSEARCH_PASSWORD}"
-        }
-        ssl => true
-        ssl_certificate_verification => true
-        }
-  }
+  # Multi-tenant access is now handled via tenant_ids array field
+  # No separate output needed for secondary tenants
 
   {{- if .Values.logstash.swift }}
   if [type] == 'clone_for_swift' {
