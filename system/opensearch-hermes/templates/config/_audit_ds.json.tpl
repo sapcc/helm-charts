@@ -5,7 +5,7 @@
   "data_stream": {},
   "template": {
     "settings" : {
-      "number_of_shards": 1,
+      "number_of_shards": 2,
       "number_of_replicas": 1,
       "codec": "best_compression",
       "max_result_window": 20000,
