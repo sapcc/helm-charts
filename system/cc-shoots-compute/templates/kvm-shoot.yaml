@@ -214,6 +214,9 @@ spec:
                 {{- $worker.extraIgnitionFiles | nindent 16 }}
                 {{- end }}
                 {{- end }}
+                {{- if and ( eq $workerChannel "preRelease" ) $worker.defaultIgnitionFiles ( typeIs "string" $worker.defaultIgnitionFiles ) }}
+                {{- $worker.defaultIgnitionFiles | nindent 16 }}
+                {{- else }}
 
                 - path: /etc/default/openvswitch-switch
                   filesystem: root
@@ -322,7 +325,8 @@ spec:
                     inline: |
                       [Manager]
                       DefaultLimitCORE=
-                {{- end}}
+                {{- end }}
+                {{- end }}
 
               systemd:
                 units:
@@ -331,6 +335,9 @@ spec:
                 {{- $worker.extraIgnitionSystemdUnits | nindent 16 }}
                 {{- end }}
                 {{- end }}
+                {{- if and ( eq $workerChannel "preRelease" ) $worker.defaultIgnitionSystemdUnits ( typeIs "string" $worker.defaultIgnitionSystemdUnits ) }}
+                {{- $worker.defaultIgnitionSystemdUnits | nindent 16 }}
+                {{- else }}
                 - name: ovsdb-server.service
                   dropins:
                     - name: allow-group.conf
@@ -430,6 +437,7 @@ spec:
 
                     [Install]
                     WantedBy=default.target
+                {{- end }}
     {{- end }}
 {{- end }}
 {{- end }}
