@@ -8,7 +8,7 @@ metadata:
     release: "{{ .Release.Name }}"
     heritage: "{{ .Release.Service }}"
 rules:
-  # Access to BarbicanOperator CRD (NEW)
+  # Access to BarbicanOperator CRD
   - apiGroups:
       - identity.cloud.sap
     resources:
@@ -18,7 +18,7 @@ rules:
     verbs:
       - '*'
 
-  # (Optional but safe) Access to legacy Barbican CRD
+  # (Optional) Access to legacy Barbican CRD
   - apiGroups:
       - identity.cloud.sap
     resources:
@@ -28,7 +28,7 @@ rules:
     verbs:
       - '*'
 
-  # Core Kubernetes resources
+  # Core Kubernetes resources (NOTE: no ingresses/networkpolicies here)
   - apiGroups:
       - ""
     resources:
@@ -42,7 +42,15 @@ rules:
       - secrets
       - roles
       - rolebindings
+    verbs:
+      - '*'
+
+  # Networking resources (Ingress, NetworkPolicy)
+  - apiGroups:
+      - networking.k8s.io
+    resources:
       - ingresses
+      - ingresses/status
       - networkpolicies
     verbs:
       - '*'
@@ -50,12 +58,21 @@ rules:
   # Workloads
   - apiGroups:
       - apps
-      - extensions
     resources:
       - deployments
       - statefulsets
       - daemonsets
       - replicasets
+    verbs:
+      - '*'
+
+  - apiGroups:
+      - extensions
+    resources:
+      - deployments
+      - daemonsets
+      - replicasets
+      - ingresses
     verbs:
       - '*'
 
