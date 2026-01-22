@@ -10,6 +10,11 @@ metadata:
   labels:
     app: apic-exporter
     prometheus: {{ required "$values.prometheus missing" $values.prometheus }}
+    {{- if eq $path "alerts/apicequipments" }}
+    {{- if or ( eq $values.globals.region "ap-sa-2" ) ( eq $values.globals.region "qa-de-1" ) }}
+    absent-metrics-operator/disable: "true"
+    {{- end }}
+    {{- end }}
 
 spec:
 {{ printf "%s" $bytes | indent 2 }}
