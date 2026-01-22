@@ -698,7 +698,7 @@ metrics:
     labels:
       drop_count: $3
       drop_reason: $1
-    description: ICMP Type 3 Code 4 drop rate monitoring
+    description: ICMP Type 3 Code 4 accept rate monitoring
     metric_type_name: gauge
     command: show lpts pifib hardware static-police location 0/0/CPU0 | include "PUNT_FRAG_NEEDED"
     timeout_secs: 5
