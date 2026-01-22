@@ -8,7 +8,7 @@
       "number_of_shards": 2,
       "number_of_replicas": 1,
       "codec": "best_compression",
-      "max_result_window": 20000,
+      "max_result_window": 100000,
       "analysis": {
         "analyzer": {
           "custom_analyzer": {
