@@ -1,9 +1,20 @@
-{{- if .Values.cell2.enabled }}
+{{- define "nova.conductor_deployment" }}
+{{- $conductorArgs := index . 1 }}
+{{- $name := $conductorArgs.name | required "'name' is required" }}
+{{- $replicas := $conductorArgs.replicas | required "'replicas' is required" }}
+{{- $conductorConfig := $conductorArgs.config_file | required "'config_file' is required" }}
+{{- $dependencies := $conductorArgs.dependencies | required "'depenencies' is required" }}
+{{- $configMapKey := $conductorArgs.config_map_key | required "'config_map_key' is required" }}
+{{- $secretKey := $conductorArgs.secret_key | required "'secret_key' is required" }}
+{{- with index . 0 }}
+{{- $statsdEnabled := dig "DEFAULT" "statsd_enabled" nil $conductorConfig }}
+{{- $statsdPort := dig "DEFAULT" "statsd_port" nil $conductorConfig | required "'config_file.DEFAULT.statsd_port' is required" }}
+{{- $workers := dig "conductor" "workers" nil $conductorConfig | required "'config_file.conductor.workers' is required" }}
 kind: Deployment
 apiVersion: apps/v1
 
 metadata:
-  name: {{ .Release.Name }}-{{ .Values.cell2.name }}-conductor
+  name: {{ $name }}
   labels:
     system: openstack
     type: backend
@@ -13,7 +24,7 @@ metadata:
     vpa-butler.cloud.sap/main-container: nova-conductor
   {{- end }}
 spec:
-  replicas: 1
+  replicas: {{ $replicas }}
   revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revision_history }}
   strategy:
     type: {{ .Values.pod.lifecycle.upgrades.deployments.podReplacementStrategy }}
@@ -34,13 +45,13 @@ spec:
         {{- tuple . "nova" "conductor" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | nindent 8 }}
         {{- include "utils.topology.pod_label" . | indent 8 }}
       annotations:
-        {{- if or .Values.cell2.conductor.config_file.DEFAULT.statsd_enabled .Values.proxysql.mode }}
+        {{- if or $statsdEnabled .Values.proxysql.mode }}
         prometheus.io/scrape: "true"
         prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
         {{- end }}
         {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
-        configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
-        secret-etc-hash: {{ include (print $.Template.BasePath "/etc-secret.yaml") . | sha256sum }}
+        configmap-etc-hash: {{ include (print .Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
+        secret-etc-hash: {{ include (print .Template.BasePath "/etc-secret.yaml") . | sha256sum }}
     spec:
       {{- tuple . "nova" "conductor" | include "kubernetes_pod_anti_affinity" | nindent 6 }}
       {{- include "utils.proxysql.pod_settings" . | nindent 6 }}
@@ -48,9 +59,9 @@ spec:
       terminationGracePeriodSeconds: {{ .Values.defaults.default.graceful_shutdown_timeout | add 5 }}
       hostname: nova-conductor
       initContainers:
-      {{- tuple . (dict "service" (include "nova.helpers.cell_services" (tuple . "cell2"))) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
+      {{- tuple . $dependencies | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
       {{- if .Values.proxysql.native_sidecar }}
-      {{- tuple . .Values.conductor.config_file.conductor.workers | include "utils.proxysql.container" | indent 6 }}
+      {{- tuple . $workers | include "utils.proxysql.container" | indent 6 }}
       {{- end }}
       containers:
         - name: nova-conductor
@@ -81,21 +92,21 @@ spec:
 {{ toYaml .Values.pod.resources.conductor | indent 12 }}
           {{- end }}
           volumeMounts:
-          - name: nova-etc
-            mountPath: /etc/nova
+          - mountPath: /etc/nova
+            name: nova-etc
           {{- include "utils.proxysql.volume_mount" . | indent 10 }}
           {{- include "utils.trust_bundle.volume_mount" . | indent 10 }}
         {{- if not .Values.proxysql.native_sidecar }}
-        {{- tuple . .Values.conductor.config_file.conductor.workers | include "utils.proxysql.container" | indent 8 }}
+        {{- tuple . $workers | include "utils.proxysql.container" | indent 8 }}
         {{- end }}
-        {{- if .Values.cell2.conductor.config_file.DEFAULT.statsd_enabled }}
+        {{- if $statsdEnabled }}
         - name: statsd
           image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/{{ required ".Values.statsd.image is missing" .Values.statsd.image }}:{{ required ".Values.statsd.imageTag is missing" .Values.statsd.imageTag }}
           imagePullPolicy: IfNotPresent
           args: [ --statsd.mapping-config=/etc/statsd/statsd-exporter.yaml ]
           ports:
           - name: statsd
-            containerPort: {{ .Values.conductor.config_file.DEFAULT.statsd_port }}
+            containerPort: {{ $statsdPort }}
             protocol: UDP
           - name: metrics
             containerPort: 9102
@@ -114,7 +125,7 @@ spec:
               items:
               - key:  nova.conf
                 path: nova.conf
-              - key:  nova-conductor.conf
+              - key:  {{ $configMapKey }}
                 path: nova-conductor.conf
               - key:  logging.ini
                 path: logging.ini
@@ -123,15 +134,15 @@ spec:
               items:
               - key: api-db.conf
                 path: nova.conf.d/api-db.conf
-              - key: {{ .Values.cell2.name }}.conf
-                path: nova.conf.d/{{ .Values.cell2.name }}.conf
+              - key: {{ $secretKey }}
+                path: nova.conf.d/{{ $secretKey }}
               - key: keystoneauth-secrets.conf
                 path: nova.conf.d/keystoneauth-secrets.conf
               {{- if .Values.osprofiler.enabled }}
               - key: osprofiler.conf
                 path: nova.conf.d/osprofiler.conf
               {{- end }}
-      {{- if .Values.cell2.conductor.config_file.DEFAULT.statsd_enabled }}
+      {{- if $statsdEnabled }}
       - name: statsd-etc
         projected:
           sources:
@@ -143,4 +154,5 @@ spec:
       {{- end }}
       {{- include "utils.proxysql.volumes" . | indent 6 }}
       {{- include "utils.trust_bundle.volumes" . | indent 6 }}
+{{- end }}
 {{- end }}

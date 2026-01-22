@@ -21,7 +21,18 @@ data:
   nova-bigvm.conf: |
 {{ include "util.helpers.valuesToIni" .Values.bigvm.config_file | indent 4 }}
   nova-conductor.conf: |
-{{ include (print .Template.BasePath "/etc/_nova-conductor.conf.tpl") . | indent 4 }}
+{{ include "util.helpers.valuesToIni" .Values.conductor.config_file | indent 4 }}
+{{- $envAll := . }}
+{{- range $cellId := include "nova.helpers.cell_ids_nonzero" . | fromJsonArray }}
+{{- if ne $cellId "cell1"}}
+{{- $cellName := include "nova.helpers.cell_name" (tuple $envAll $cellId) }}
+{{- $configErrorMsg := printf "'.Values.%[1]s.conductor.config_file' is required for cell '%[1]s'" $cellId }}
+{{- $cellValues := get $envAll.Values $cellId | required $configErrorMsg }}
+{{- $conductorConfig := $cellValues.conductor.config_file | required $configErrorMsg }}
+  nova-{{ $cellName }}-conductor.conf: |
+{{ include "util.helpers.valuesToIni" $conductorConfig | indent 4 }}
+{{- end }}
+{{- end }}
   policy.yaml: |
 {{ include (print .Template.BasePath "/etc/_nova-policy.yaml.tpl") . | indent 4 }}
   logging.ini: |
@@ -38,10 +49,6 @@ data:
 {{- end }}
   vspc.conf: |
 {{ include (print .Template.BasePath "/etc/_vspc.conf.tpl") . | indent 4 }}
-{{- if .Values.cell2.enabled }}
-  nova-cell2-conductor.conf: |
-{{ include "util.helpers.valuesToIni" .Values.cell2.conductor.config_file | indent 4 }}
-{{- end }}
   statsd-exporter.yaml: |
     defaults:
       timer_type: histogram
