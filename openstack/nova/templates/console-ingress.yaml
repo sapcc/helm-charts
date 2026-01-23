@@ -1,8 +1,5 @@
-{{ $envAll := . }}
-{{- $cells := list "cell1" }}
-{{- if .Values.cell2.enabled }}
-  {{- $cells = append $cells .Values.cell2.name }}
-{{- end }}
+{{- $cellsNonzero := include "nova.helpers.cell_ids_nonzero" . | fromJsonArray }}
+{{- $envAll := . }}
 kind: Ingress
 apiVersion: networking.k8s.io/v1
 
@@ -29,11 +26,12 @@ spec:
   - host: {{include "nova_console_endpoint_host_public" .}}
     http:
       paths:
-      {{- range $cell_name := $cells }}
+      {{- range $cellId := $cellsNonzero }}
+        {{- $cellName := include "nova.helpers.cell_name" (tuple $envAll $cellId) }}
         {{- range $type, $config := $envAll.Values.consoles }}
           {{- if $config.enabled }}
-            {{- $name := print $cell_name "-" $type }}
-      - path: /{{ $cell_name }}/{{ $type }}/?(.*)
+            {{- $name := print $cellName "-" $type }}
+      - path: /{{ $cellName }}/{{ $type }}/?(.*)
         pathType: Prefix
         backend:
           service:
@@ -44,10 +42,11 @@ spec:
         {{- end }}
       {{- end }}
 
-{{- range $cell_name := $cells }}
+{{- range $cellId := $cellsNonzero }}
+  {{- $cellName := include "nova.helpers.cell_name" (tuple $envAll $cellId) }}
   {{- range $type, $config := $envAll.Values.consoles }}
     {{- if $config.enabled }}
-      {{- $name := print $cell_name "-" $type }}
+      {{- $name := print $cellName "-" $type }}
 ---
 {{ tuple $envAll $name $type $config | include "nova.console_service"  }}
     {{- end }}
