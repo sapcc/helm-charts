@@ -10,6 +10,11 @@ spec:
       maxSurge: 0
     type: RollingUpdate
   machineTemplate:
+    {{- if .Values.maintenanceController.enabled }}
+    metadata:
+      labels:
+        runtime-extension-maintenance-controller.cloud.sap/enabled: "true"
+    {{- end }}
     infrastructureRef:
       kind: IroncoreMetalMachineTemplate
       apiVersion: infrastructure.cluster.x-k8s.io/v1alpha1
@@ -24,6 +29,9 @@ spec:
         name: $${METAL_HOSTNAME}
         kubeletExtraArgs:
           cloud-provider: external
+          {{- if .Values.maintenanceController.profile -}}
+          node-labels: cloud.sap/maintenance-profile={{ .Values.maintenanceController.profile }}
+          {{- end }}
         taints:
           - effect: "PreferNoSchedule"
             key: "node-role.kubernetes.io/control-plane"
