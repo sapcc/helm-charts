@@ -39,7 +39,8 @@ spec:
     spec:
       containers:
         - name: metrics
-          image: {{ $registry }}/shared-app-images/redis-exporter:{{ .Values.metrics.image.tag }}
+          image: {{ include "redis.shared-app-images.ref" (tuple . "redis-exporter" "latest") }}
+          imagePullPolicy: IfNotPresent
           env:
             - name: REDIS_ADDR
               value: "{{ $fullname }}:6379"
