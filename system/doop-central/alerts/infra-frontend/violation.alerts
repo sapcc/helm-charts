@@ -12,14 +12,7 @@ groups:
         # 1. We want multiple alerts for the same support group to be grouped together in Alertmanager to avoid Slack spam.
         # 2. BUT having different "service" labels would force no grouping.
         # 3. BUT ALSO we cannot just take away the "service" label entirely because we want to refer to the affected service in the alert description.
-        #
-        # NOTE 3: I am incredibly sorry for the gigantic mess of label_replace() that this is wrapped in.
-        # This is necessitated by the positively bizarre encoding of parameters in Greenhouse URLs. In some places, dashes need to be escaped like `foo-bar -> foo~Fbar`.
-        # Unfortunately, Prometheus does not have a function to replace any number of occurrences of a search pattern. label_replace() will do exactly one match and replace and that's it.
-        # Because we have up to two dashes in support group names ("compute-storage-api"), there are two label_replace() rounds that escape dashes.
-        # An additional label_replace() is required to populate the `support_group_escaped_for_greenhouse` label in a way that also works for support groups without dashes in them ("containers", "identity", etc.).
-        # And then, we need to do the same for the `service` label. (╯°□°）╯︵ ┻━┻
-        expr: 'label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(group by (support_group, the_service) (label_join(max_over_time(doop_raw_violations{template_kind="GkVulnerableImages",cluster!~".*qa.*",status=~"Critical|Rotten"}[10m]), "the_service", ",", "service")) > 0, "support_group_escaped_for_greenhouse", "$0", "support_group", ".*"), "support_group_escaped_for_greenhouse", "$1~F$2", "support_group_escaped_for_greenhouse", "([^-]*)-(.*)"), "support_group_escaped_for_greenhouse", "$1~F$2", "support_group_escaped_for_greenhouse", "([^-]*)-(.*)"), "the_service_escaped_for_greenhouse", "$0", "the_service", ".*"), "the_service_escaped_for_greenhouse", "$1~F$2", "the_service_escaped_for_greenhouse", "([^-]*)-(.*)"), "the_service_escaped_for_greenhouse", "$1~F$2", "the_service_escaped_for_greenhouse", "([^-]*)-(.*)")'
+        expr: 'group by (support_group, the_service) (label_join(max_over_time(doop_raw_violations{template_kind="GkVulnerableImages",cluster!~".*qa.*",status=~"Critical|Rotten"}[10m]), "the_service", ",", "service")) > 0'
         for: 15m
         labels:
           context: GkSignificantVulnerableImages
@@ -30,7 +23,7 @@ groups:
         annotations:
           summary: "Significant vulnerable images used in prod deployments"
           description: |
-            Service {{ $labels.the_service }} is running container images with significant vulnerabilities. Please check <https://ccloud.dashboard.greenhouse.global.cloud.sap/?__s=(doop:(f:((key:check~Isupport~Sgroup,label:support_group,value:{{ $labels.support_group_escaped_for_greenhouse }}),(key:check~Iservice,label:service,value:{{ $labels.the_service_escaped_for_greenhouse }}),(key:check~Istatus,value:Rotten),(key:check~Istatus,value:Critical),(key:cluster~Ilayer,value:prod)),s:-+,v:GkVulnerableImages),greenhouse~Fdashboard:(a:doop),supernova:(d:-+,f:(support~Sgroup:({{ $labels.support_group }})),p:prod,s:%27%27))|this view in Greenhouse> for details.
+            Service {{ $labels.the_service }} is running container images with significant vulnerabilities. Please check <https://ccloud.dashboard.greenhouse.global.cloud.sap/doop/violations?f_check%3Asupport_group={{ $labels.support_group }}&f_check%3Aservice={{ $labels.the_service }}&f_check%3Astatus=Rotten,Critical&f_cluster%3Alayer=prod&violationGroup=GkVulnerableImages|this view in Greenhouse> for details.
 
       # alert for vulnerable images in productive deployments of support group "storage" (currently just Swift)
       - alert: GkVulnerableImagesForStorage
@@ -45,7 +38,7 @@ groups:
         annotations:
           summary: "Vulnerable images in prod deployments of {{ title $labels.service }}"
           description: |
-            Please check <https://ccloud.dashboard.greenhouse.global.cloud.sap/?__s=(doop:(f:((key:check~Isupport~Sgroup,label:support_group,value:storage)),s:-+,v:GkVulnerableImages),greenhouse~Fdashboard:(a:doop),supernova:(d:-+,f:(support~Sgroup:(swift)),p:prod,s:%27%27))|this view in Greenhouse> for which images are vulnerable.
+            Please check <https://ccloud.dashboard.greenhouse.global.cloud.sap/doop/violations?f_check%3Asupport_group=storage&violationGroup=GkVulnerableImages|this view in Greenhouse> for which images are vulnerable.
 
       # alert for vulnerable images in productive deployments of support group "foundation"
       - alert: GkVulnerableImagesForFoundation
@@ -60,4 +53,4 @@ groups:
         annotations:
           summary: "Vulnerable images in prod deployments of {{ title $labels.service }}"
           description: |
-            Please check <https://ccloud.dashboard.greenhouse.global.cloud.sap/?__s=(doop:(f:((key:check~Isupport~Sgroup,label:support_group,value:foundation),(key:check~Iservice,value:{{ $labels.service }}),(key:cluster~Ilayer,value:prod)),s:-+,v:GkVulnerableImages),greenhouse~Fdashboard:(a:doop),supernova:(d:-+,f:(support~Sgroup:(foundation)),p:prod,s:%27%27))|this view in Greenhouse> for which images are vulnerable.
+            Please check <https://ccloud.dashboard.greenhouse.global.cloud.sap/doop/violations?f_check%3Asupport_group=foundation&violationGroup=GkVulnerableImages|this view in Greenhouse> for which images are vulnerable.
