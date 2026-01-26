@@ -88,6 +88,9 @@ annotations:
   {{- if .Values.cell2.enabled }}
     {{- $cellIds = append $cellIds "cell2" }}
   {{- end }}
+  {{- if .Values.cell3.enabled }}
+    {{- $cellIds = append $cellIds "cell3" }}
+  {{- end }}
   {{- $cellIds | toJson }}
 {{- end }}
 
