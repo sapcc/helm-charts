@@ -42,6 +42,21 @@ spec:
       value:
         disco: "true"
         kubernetes.io/tls-acme: "true"
+    - name: thanos.query.ingress.grpc.enabled
+      value:
+        - host: thanos-grpc.{{ .Values.global.dnsDomain }}
+          paths:
+            - path: /
+              pathType: ImplementationSpecific 
+    - name: thanos.query.ingress.grpc.tls
+      value:
+      - hosts:
+          - thanos-grpc.{{ .Values.global.dnsDomain }}
+        secretName: tls-thanos-grpc-{{ .Values.global.dnsDomain | replace "." "-" }}
+    - name: thanos.query.ingress.grpc.annotations
+      value:
+        disco: "true"
+        kubernetes.io/tls-acme: "true"
     - name: thanos.ruler.enabled
       value: false
     - name: thanos.store.enabled
