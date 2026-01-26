@@ -32,21 +32,6 @@ groups:
           description: |
             Service {{ $labels.the_service }} is running container images with significant vulnerabilities. Please check <https://ccloud.dashboard.greenhouse.global.cloud.sap/?__s=(doop:(f:((key:check~Isupport~Sgroup,label:support_group,value:{{ $labels.support_group_escaped_for_greenhouse }}),(key:check~Iservice,label:service,value:{{ $labels.the_service_escaped_for_greenhouse }}),(key:check~Istatus,value:Rotten),(key:check~Istatus,value:Critical),(key:cluster~Ilayer,value:prod)),s:-+,v:GkVulnerableImages),greenhouse~Fdashboard:(a:doop),supernova:(d:-+,f:(support~Sgroup:({{ $labels.support_group }})),p:prod,s:%27%27))|this view in Greenhouse> for details.
 
-      # alert for vulnerable images in productive deployments of workgroup "Storage & Resource Services"
-      - alert: GkVulnerableImagesForSRS
-        expr: 'group by (template_kind, service) (max_over_time(doop_raw_violations{template_kind="GkVulnerableImages",cluster!~".*qa.*",support_group="containers",service=~"backup|castellum|gatekeeper|hubcopter|keppel|limes|repo|tenso"}[10m])) > 0'
-        for: 1h # When new images are deployed, we sometimes see a false positive because GkVulnerableImages sees vulnerability status "Pending".
-        labels:
-          context: GkVulnerableImagesForSRS
-          support_group: containers
-          service: "{{ $labels.service }}"
-          severity: info
-          meta: "Vulnerable images in prod deployments of {{ title $labels.service }}"
-        annotations:
-          summary: "Vulnerable images in prod deployments of {{ title $labels.service }}"
-          description: |
-            Please check <https://ccloud.dashboard.greenhouse.global.cloud.sap/?__s=(doop:(f:((key:check~Isupport~Sgroup,label:support_group,value:containers),(key:check~Iservice,value:{{ $labels.service }}),(key:cluster~Ilayer,value:prod)),s:-+,v:GkVulnerableImages),greenhouse~Fdashboard:(a:doop),supernova:(d:-+,f:(support~Sgroup:(containers)),p:prod,s:%27%27))|this view in Greenhouse> for which images are vulnerable.
-
       # alert for vulnerable images in productive deployments of support group "storage" (currently just Swift)
       - alert: GkVulnerableImagesForStorage
         expr: 'group by (template_kind, service) (max_over_time(doop_raw_violations{template_kind="GkVulnerableImages",support_group="storage"}[10m])) > 0'
