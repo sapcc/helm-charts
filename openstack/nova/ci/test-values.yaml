@@ -23,11 +23,16 @@ cell2:
   enabled: true
   name: cell-b-2
 
+cell3:
+  enabled: true
+  name: cell-c-3
+
 defaultUsersMariaDB:
   api: nova_api
   cell0: nova_cell0
   cell1: nova
   cell2: nova_cell2
+  cell3: nova_cell3
 
 imageVersion: my-tag
 imageVersionVspc: vspc-latest-tag
@@ -64,6 +69,40 @@ pxc_db:
 proxysql:
   mode: host_alias
 
+mysql_metrics:
+  connections:
+    default:
+      db_type: mariadb
+      db_instance_name: null  # use default name, based on chart's release name
+      db_name: nova
+      db_user: metrics
+      db_password: passwordMetrics
+    cell2:
+      db_type: mariadb
+      db_instance_name: cell-b-2
+      db_name: nova_cell_b_2
+      db_user: metrics
+      db_password: passwordMetrics
+    cell3:
+      db_type: mariadb
+      db_instance_name: cell-c-3
+      db_name: nova_cell_c_3
+      db_user: metrics
+      db_password: passwordMetrics
+
+mariadb_api:
+  enabled: true
+  root_password: rootrootApi
+  backup_v2:
+    enabled: false
+  users:
+    backup:
+      name: backup
+      password: passwordBackupApi
+    nova_api:
+      name: nova_api
+      password: passwordApi
+
 mariadb:
   enabled: true
   root_password: rootrootCell1
@@ -80,21 +119,6 @@ mariadb:
       name: nova_cell0
       password: passwordCell0
 
-mysql_metrics:
-  connections:
-    default:
-      db_type: mariadb
-      db_instance_name: null  # use default name, based on chart's release name
-      db_name: nova
-      db_user: metrics
-      db_password: passwordMetrics
-    cell2:
-      db_type: mariadb
-      db_instance_name: cell-b-2
-      db_name: nova_cell_b_2
-      db_user: metrics
-      db_password: passwordMetrics
-
 mariadb_cell2:
   enabled: true
   name: nova-cell-b-2
@@ -108,18 +132,18 @@ mariadb_cell2:
       name: nova_cell2
       password: passwordCell2
 
-mariadb_api:
+mariadb_cell3:
   enabled: true
-  root_password: rootrootApi
+  name: nova-cell-c-3
+  root_password: rootrootCell3
+  databases:
+  - nova_cell_c_3
   backup_v2:
     enabled: false
   users:
-    backup:
-      name: backup
-      password: passwordBackupApi
-    nova_api:
-      name: nova_api
-      password: passwordApi
+    nova_cell3:
+      name: nova_cell3
+      password: passwordCell3
 
 rabbitmq:
   users:
@@ -131,6 +155,17 @@ rabbitmq:
     password: passwordMetrics
 
 rabbitmq_cell2:
+  users:
+    admin:
+      name: admin
+      password: adminadmin
+    default:
+      name: default
+      password: defaultdefault
+  metrics:
+    password: passwordMetrics
+
+rabbitmq_cell3:
   users:
     admin:
       name: admin
