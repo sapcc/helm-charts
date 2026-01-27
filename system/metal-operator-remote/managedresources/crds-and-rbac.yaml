@@ -4,3267 +4,13 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-c3e363f-crds"
+    helm.sh/chart: "0.2.2-20260127142324-f345f9c"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
     app.kubernetes.io/managed-by: Helm
   name: metal-operator-controller-manager
   namespace: kube-system
----
-# Source: metal-operator/templates/crd/metal.ironcore.dev_biossettings.yaml
-apiVersion: apiextensions.k8s.io/v1
-kind: CustomResourceDefinition
-metadata:
-  labels:
-    helm.sh/chart: "0.0.0-c3e363f-crds"
-    app.kubernetes.io/name: metal-operator
-    app.kubernetes.io/instance: metal-operator
-    app.kubernetes.io/version: "0.1.0"
-    app.kubernetes.io/managed-by: Helm
-  annotations:
-    controller-gen.kubebuilder.io/version: v0.19.0
-  name: biossettings.metal.ironcore.dev
-spec:
-  group: metal.ironcore.dev
-  names:
-    kind: BIOSSettings
-    listKind: BIOSSettingsList
-    plural: biossettings
-    singular: biossettings
-  scope: Cluster
-  versions:
-    - additionalPrinterColumns:
-        - jsonPath: .spec.version
-          name: BIOSVersion
-          type: string
-        - jsonPath: .spec.serverRef.name
-          name: ServerRef
-          type: string
-        - jsonPath: .spec.serverMaintenanceRef.name
-          name: ServerMaintenanceRef
-          type: string
-        - jsonPath: .status.state
-          name: State
-          type: string
-        - jsonPath: .status.lastAppliedTime
-          name: AppliedOn
-          type: date
-        - jsonPath: .metadata.creationTimestamp
-          name: Age
-          type: date
-      name: v1alpha1
-      schema:
-        openAPIV3Schema:
-          description: BIOSSettings is the Schema for the biossettings API.
-          properties:
-            apiVersion:
-              description: |-
-                APIVersion defines the versioned schema of this representation of an object.
-                Servers should convert recognized schemas to the latest internal value, and
-                may reject unrecognized values.
-                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
-              type: string
-            kind:
-              description: |-
-                Kind is a string value representing the REST resource this object represents.
-                Servers may infer this from the endpoint the client submits requests to.
-                Cannot be updated.
-                In CamelCase.
-                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
-              type: string
-            metadata:
-              type: object
-            spec:
-              description: BIOSSettingsSpec defines the desired state of BIOSSettings.
-              properties:
-                serverMaintenancePolicy:
-                  description: ServerMaintenancePolicy is a maintenance policy to be enforced on the server.
-                  type: string
-                serverMaintenanceRef:
-                  description: ServerMaintenanceRef is a reference to a ServerMaintenance object that BiosSetting has requested for the referred server.
-                  properties:
-                    apiVersion:
-                      description: APIVersion is the API version of the referenced object.
-                      type: string
-                    kind:
-                      description: Kind is the kind of the referenced object.
-                      type: string
-                    name:
-                      description: Name is the name of the referenced object.
-                      type: string
-                    namespace:
-                      description: Namespace is the namespace of the referenced object.
-                      type: string
-                    uid:
-                      description: UID is the uid of the referenced object.
-                      type: string
-                  required:
-                    - apiVersion
-                    - kind
-                    - name
-                    - namespace
-                    - uid
-                  type: object
-                serverRef:
-                  description: ServerRef is a reference to a specific server to apply bios setting on.
-                  properties:
-                    name:
-                      default: ""
-                      description: |-
-                        Name of the referent.
-                        This field is effectively required, but due to backwards compatibility is
-                        allowed to be empty. Instances of this type with an empty value here are
-                        almost certainly wrong.
-                        More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                      type: string
-                  type: object
-                  x-kubernetes-map-type: atomic
-                  x-kubernetes-validations:
-                    - message: serverRef is immutable
-                      rule: self == oldSelf
-                settingsFlow:
-                  description: SettingsFlow contains BIOS settings sequence to apply on the BIOS in given order
-                  items:
-                    properties:
-                      name:
-                        description: Name is the name of the flow item
-                        maxLength: 1000
-                        minLength: 1
-                        type: string
-                      priority:
-                        description: |-
-                          Priority defines the order of applying the settings
-                          any int greater than 0. lower number have higher Priority (ie; lower number is applied first)
-                        format: int32
-                        maximum: 2147483645
-                        minimum: 1
-                        type: integer
-                      settings:
-                        additionalProperties:
-                          type: string
-                        description: 'Settings contains software (eg: BIOS, BMC) settings as map'
-                        type: object
-                    required:
-                      - name
-                      - priority
-                    type: object
-                  type: array
-                version:
-                  description: 'Version contains software (eg: BIOS, BMC) version this settings applies to'
-                  type: string
-              required:
-                - version
-              type: object
-            status:
-              description: BIOSSettingsStatus defines the observed state of BIOSSettings.
-              properties:
-                conditions:
-                  description: Conditions represents the latest available observations of the BIOSSettings's current state.
-                  items:
-                    description: Condition contains details for one aspect of the current state of this API Resource.
-                    properties:
-                      lastTransitionTime:
-                        description: |-
-                          lastTransitionTime is the last time the condition transitioned from one status to another.
-                          This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.
-                        format: date-time
-                        type: string
-                      message:
-                        description: |-
-                          message is a human readable message indicating details about the transition.
-                          This may be an empty string.
-                        maxLength: 32768
-                        type: string
-                      observedGeneration:
-                        description: |-
-                          observedGeneration represents the .metadata.generation that the condition was set based upon.
-                          For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
-                          with respect to the current state of the instance.
-                        format: int64
-                        minimum: 0
-                        type: integer
-                      reason:
-                        description: |-
-                          reason contains a programmatic identifier indicating the reason for the condition's last transition.
-                          Producers of specific condition types may define expected values and meanings for this field,
-                          and whether the values are considered a guaranteed API.
-                          The value should be a CamelCase string.
-                          This field may not be empty.
-                        maxLength: 1024
-                        minLength: 1
-                        pattern: ^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$
-                        type: string
-                      status:
-                        description: status of the condition, one of True, False, Unknown.
-                        enum:
-                          - "True"
-                          - "False"
-                          - Unknown
-                        type: string
-                      type:
-                        description: type of condition in CamelCase or in foo.example.com/CamelCase.
-                        maxLength: 316
-                        pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
-                        type: string
-                    required:
-                      - lastTransitionTime
-                      - message
-                      - reason
-                      - status
-                      - type
-                    type: object
-                  type: array
-                flowState:
-                  description: FlowState is a list of individual BIOSSettings operation flows.
-                  items:
-                    properties:
-                      conditions:
-                        description: Conditions represents the latest available observations of the BIOSSettings's current Flowstate.
-                        items:
-                          description: Condition contains details for one aspect of the current state of this API Resource.
-                          properties:
-                            lastTransitionTime:
-                              description: |-
-                                lastTransitionTime is the last time the condition transitioned from one status to another.
-                                This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.
-                              format: date-time
-                              type: string
-                            message:
-                              description: |-
-                                message is a human readable message indicating details about the transition.
-                                This may be an empty string.
-                              maxLength: 32768
-                              type: string
-                            observedGeneration:
-                              description: |-
-                                observedGeneration represents the .metadata.generation that the condition was set based upon.
-                                For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
-                                with respect to the current state of the instance.
-                              format: int64
-                              minimum: 0
-                              type: integer
-                            reason:
-                              description: |-
-                                reason contains a programmatic identifier indicating the reason for the condition's last transition.
-                                Producers of specific condition types may define expected values and meanings for this field,
-                                and whether the values are considered a guaranteed API.
-                                The value should be a CamelCase string.
-                                This field may not be empty.
-                              maxLength: 1024
-                              minLength: 1
-                              pattern: ^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$
-                              type: string
-                            status:
-                              description: status of the condition, one of True, False, Unknown.
-                              enum:
-                                - "True"
-                                - "False"
-                                - Unknown
-                              type: string
-                            type:
-                              description: type of condition in CamelCase or in foo.example.com/CamelCase.
-                              maxLength: 316
-                              pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
-                              type: string
-                          required:
-                            - lastTransitionTime
-                            - message
-                            - reason
-                            - status
-                            - type
-                          type: object
-                        type: array
-                      flowState:
-                        description: State represents the current state of the bios configuration task for current priority.
-                        type: string
-                      lastAppliedTime:
-                        description: LastAppliedTime represents the timestamp when the last setting was successfully applied.
-                        format: date-time
-                        type: string
-                      name:
-                        description: Name identifies current priority settings from the Spec
-                        type: string
-                      priority:
-                        description: Priority identifies the settings priority from the Spec
-                        format: int32
-                        type: integer
-                    type: object
-                  type: array
-                lastAppliedTime:
-                  description: LastAppliedTime represents the timestamp when the last setting was successfully applied.
-                  format: date-time
-                  type: string
-                state:
-                  description: State represents the current state of the bios configuration task.
-                  type: string
-              type: object
-          type: object
-      served: true
-      storage: true
-      subresources:
-        status: {}
----
-# Source: metal-operator/templates/crd/metal.ironcore.dev_biossettingssets.yaml
-apiVersion: apiextensions.k8s.io/v1
-kind: CustomResourceDefinition
-metadata:
-  labels:
-    helm.sh/chart: "0.0.0-c3e363f-crds"
-    app.kubernetes.io/name: metal-operator
-    app.kubernetes.io/instance: metal-operator
-    app.kubernetes.io/version: "0.1.0"
-    app.kubernetes.io/managed-by: Helm
-  annotations:
-    controller-gen.kubebuilder.io/version: v0.19.0
-  name: biossettingssets.metal.ironcore.dev
-spec:
-  group: metal.ironcore.dev
-  names:
-    kind: BIOSSettingsSet
-    listKind: BIOSSettingsSetList
-    plural: biossettingssets
-    singular: biossettingsset
-  scope: Cluster
-  versions:
-    - additionalPrinterColumns:
-        - jsonPath: .spec.biosSettingsTemplate.version
-          name: BIOSVersion
-          type: string
-        - jsonPath: .status.fullyLabeledServers
-          name: TotalServers
-          type: string
-        - jsonPath: .status.availableBIOSSettings
-          name: AvailableBIOSSettings
-          type: string
-        - jsonPath: .status.pendingBIOSSettings
-          name: Pending
-          type: string
-        - jsonPath: .status.inProgressBIOSSettings
-          name: InProgress
-          type: string
-        - jsonPath: .status.completedBIOSSettings
-          name: Completed
-          type: string
-        - jsonPath: .status.failedBIOSSettings
-          name: Failed
-          type: string
-        - jsonPath: .metadata.creationTimestamp
-          name: Age
-          type: date
-      name: v1alpha1
-      schema:
-        openAPIV3Schema:
-          description: BIOSSettingsSet is the Schema for the biossettingssets API.
-          properties:
-            apiVersion:
-              description: |-
-                APIVersion defines the versioned schema of this representation of an object.
-                Servers should convert recognized schemas to the latest internal value, and
-                may reject unrecognized values.
-                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
-              type: string
-            kind:
-              description: |-
-                Kind is a string value representing the REST resource this object represents.
-                Servers may infer this from the endpoint the client submits requests to.
-                Cannot be updated.
-                In CamelCase.
-                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
-              type: string
-            metadata:
-              type: object
-            spec:
-              description: BIOSSettingsSetSpec defines the desired state of BIOSSettingsSet.
-              properties:
-                biosSettingsTemplate:
-                  description: BiosSettingsTemplate defines the template for the BIOSSettings Resource to be applied to the servers.
-                  properties:
-                    serverMaintenancePolicy:
-                      description: ServerMaintenancePolicy is a maintenance policy to be enforced on the server.
-                      type: string
-                    settingsFlow:
-                      description: SettingsFlow contains BIOS settings sequence to apply on the BIOS in given order
-                      items:
-                        properties:
-                          name:
-                            description: Name is the name of the flow item
-                            maxLength: 1000
-                            minLength: 1
-                            type: string
-                          priority:
-                            description: |-
-                              Priority defines the order of applying the settings
-                              any int greater than 0. lower number have higher Priority (ie; lower number is applied first)
-                            format: int32
-                            maximum: 2147483645
-                            minimum: 1
-                            type: integer
-                          settings:
-                            additionalProperties:
-                              type: string
-                            description: 'Settings contains software (eg: BIOS, BMC) settings as map'
-                            type: object
-                        required:
-                          - name
-                          - priority
-                        type: object
-                      type: array
-                    version:
-                      description: 'Version contains software (eg: BIOS, BMC) version this settings applies to'
-                      type: string
-                  required:
-                    - version
-                  type: object
-                serverSelector:
-                  description: ServerSelector specifies a label selector to identify the servers that are to be selected.
-                  properties:
-                    matchExpressions:
-                      description: matchExpressions is a list of label selector requirements. The requirements are ANDed.
-                      items:
-                        description: |-
-                          A label selector requirement is a selector that contains values, a key, and an operator that
-                          relates the key and values.
-                        properties:
-                          key:
-                            description: key is the label key that the selector applies to.
-                            type: string
-                          operator:
-                            description: |-
-                              operator represents a key's relationship to a set of values.
-                              Valid operators are In, NotIn, Exists and DoesNotExist.
-                            type: string
-                          values:
-                            description: |-
-                              values is an array of string values. If the operator is In or NotIn,
-                              the values array must be non-empty. If the operator is Exists or DoesNotExist,
-                              the values array must be empty. This array is replaced during a strategic
-                              merge patch.
-                            items:
-                              type: string
-                            type: array
-                            x-kubernetes-list-type: atomic
-                        required:
-                          - key
-                          - operator
-                        type: object
-                      type: array
-                      x-kubernetes-list-type: atomic
-                    matchLabels:
-                      additionalProperties:
-                        type: string
-                      description: |-
-                        matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
-                        map is equivalent to an element of matchExpressions, whose key field is "key", the
-                        operator is "In", and the values array contains only "value". The requirements are ANDed.
-                      type: object
-                  type: object
-                  x-kubernetes-map-type: atomic
-              required:
-                - serverSelector
-              type: object
-            status:
-              description: BIOSSettingsSetStatus defines the observed state of BIOSSettingsSet.
-              properties:
-                availableBIOSSettings:
-                  description: AvailableBIOSVersion is the number of Settings current created by the set.
-                  format: int32
-                  type: integer
-                completedBIOSSettings:
-                  description: CompletedBIOSSettings is the total number of completed server in the set.
-                  format: int32
-                  type: integer
-                failedBIOSSettings:
-                  description: FailedBIOSSettings is the total number of failed server in the set.
-                  format: int32
-                  type: integer
-                fullyLabeledServers:
-                  description: FullyLabeledServers is the number of server in the set.
-                  format: int32
-                  type: integer
-                inProgressBIOSSettings:
-                  description: InProgressBIOSSettings is the total number of server in the set that are currently in InProgress.
-                  format: int32
-                  type: integer
-                pendingBIOSSettings:
-                  description: PendingBIOSSettings is the total number of pending server in the set.
-                  format: int32
-                  type: integer
-              type: object
-          type: object
-      served: true
-      storage: true
-      subresources:
-        status: {}
----
-# Source: metal-operator/templates/crd/metal.ironcore.dev_biosversions.yaml
-apiVersion: apiextensions.k8s.io/v1
-kind: CustomResourceDefinition
-metadata:
-  labels:
-    helm.sh/chart: "0.0.0-c3e363f-crds"
-    app.kubernetes.io/name: metal-operator
-    app.kubernetes.io/instance: metal-operator
-    app.kubernetes.io/version: "0.1.0"
-    app.kubernetes.io/managed-by: Helm
-  annotations:
-    controller-gen.kubebuilder.io/version: v0.19.0
-  name: biosversions.metal.ironcore.dev
-spec:
-  group: metal.ironcore.dev
-  names:
-    kind: BIOSVersion
-    listKind: BIOSVersionList
-    plural: biosversions
-    singular: biosversion
-  scope: Cluster
-  versions:
-    - additionalPrinterColumns:
-        - jsonPath: .spec.version
-          name: BIOSVersion
-          type: string
-        - jsonPath: .spec.updateType
-          name: ForceUpdate
-          type: string
-        - jsonPath: .spec.serverRef.name
-          name: ServerRef
-          type: string
-        - jsonPath: .spec.serverMaintenanceRef.name
-          name: ServerMaintenanceRef
-          type: string
-        - jsonPath: .status.upgradeTask.state
-          name: TaskState
-          type: string
-        - jsonPath: .status.upgradeTask.status
-          name: TaskStatus
-          type: string
-        - jsonPath: .status.upgradeTask.percentageComplete
-          name: TaskProgress
-          type: integer
-        - jsonPath: .status.state
-          name: State
-          type: string
-        - jsonPath: .metadata.creationTimestamp
-          name: Age
-          type: date
-      name: v1alpha1
-      schema:
-        openAPIV3Schema:
-          description: BIOSVersion is the Schema for the biosversions API.
-          properties:
-            apiVersion:
-              description: |-
-                APIVersion defines the versioned schema of this representation of an object.
-                Servers should convert recognized schemas to the latest internal value, and
-                may reject unrecognized values.
-                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
-              type: string
-            kind:
-              description: |-
-                Kind is a string value representing the REST resource this object represents.
-                Servers may infer this from the endpoint the client submits requests to.
-                Cannot be updated.
-                In CamelCase.
-                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
-              type: string
-            metadata:
-              type: object
-            spec:
-              description: BIOSVersionSpec defines the desired state of BIOSVersion.
-              properties:
-                image:
-                  description: details regarding the image to use to upgrade to given BIOS version
-                  properties:
-                    URI:
-                      description: The URI of the software image to update/install."
-                      type: string
-                    secretRef:
-                      description: |-
-                        ImageSecretRef is a reference to the Kubernetes Secret (of type SecretTypeBasicAuth) object that contains the credentials
-                        to access the ImageURI. This secret includes sensitive information such as usernames and passwords.
-                      properties:
-                        name:
-                          description: name is unique within a namespace to reference a secret resource.
-                          type: string
-                        namespace:
-                          description: namespace defines the space within which the secret name must be unique.
-                          type: string
-                      type: object
-                      x-kubernetes-map-type: atomic
-                    transferProtocol:
-                      description: The network protocol that the server's update service uses to retrieve 'ImageURI'
-                      type: string
-                  required:
-                    - URI
-                  type: object
-                serverMaintenancePolicy:
-                  description: ServerMaintenancePolicy is a maintenance policy to be enforced on the server.
-                  type: string
-                serverMaintenanceRef:
-                  description: ServerMaintenanceRef is a reference to a ServerMaintenance object that that Controller has requested for the referred server.
-                  properties:
-                    apiVersion:
-                      description: APIVersion is the API version of the referenced object.
-                      type: string
-                    kind:
-                      description: Kind is the kind of the referenced object.
-                      type: string
-                    name:
-                      description: Name is the name of the referenced object.
-                      type: string
-                    namespace:
-                      description: Namespace is the namespace of the referenced object.
-                      type: string
-                    uid:
-                      description: UID is the uid of the referenced object.
-                      type: string
-                  required:
-                    - apiVersion
-                    - kind
-                    - name
-                    - namespace
-                    - uid
-                  type: object
-                serverRef:
-                  description: ServerRef is a reference to a specific server to apply bios upgrade on.
-                  properties:
-                    name:
-                      default: ""
-                      description: |-
-                        Name of the referent.
-                        This field is effectively required, but due to backwards compatibility is
-                        allowed to be empty. Instances of this type with an empty value here are
-                        almost certainly wrong.
-                        More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                      type: string
-                  type: object
-                  x-kubernetes-map-type: atomic
-                  x-kubernetes-validations:
-                    - message: serverRef is immutable
-                      rule: self == oldSelf
-                updatePolicy:
-                  description: UpdatePolicy An indication of whether the server's upgrade service should bypass vendor update policies
-                  type: string
-                version:
-                  description: Version contains a BIOS version to upgrade to
-                  type: string
-              required:
-                - image
-                - version
-              type: object
-            status:
-              description: BIOSVersionStatus defines the observed state of BIOSVersion.
-              properties:
-                conditions:
-                  description: Conditions represents the latest available observations of the Bios version upgrade state.
-                  items:
-                    description: Condition contains details for one aspect of the current state of this API Resource.
-                    properties:
-                      lastTransitionTime:
-                        description: |-
-                          lastTransitionTime is the last time the condition transitioned from one status to another.
-                          This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.
-                        format: date-time
-                        type: string
-                      message:
-                        description: |-
-                          message is a human readable message indicating details about the transition.
-                          This may be an empty string.
-                        maxLength: 32768
-                        type: string
-                      observedGeneration:
-                        description: |-
-                          observedGeneration represents the .metadata.generation that the condition was set based upon.
-                          For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
-                          with respect to the current state of the instance.
-                        format: int64
-                        minimum: 0
-                        type: integer
-                      reason:
-                        description: |-
-                          reason contains a programmatic identifier indicating the reason for the condition's last transition.
-                          Producers of specific condition types may define expected values and meanings for this field,
-                          and whether the values are considered a guaranteed API.
-                          The value should be a CamelCase string.
-                          This field may not be empty.
-                        maxLength: 1024
-                        minLength: 1
-                        pattern: ^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$
-                        type: string
-                      status:
-                        description: status of the condition, one of True, False, Unknown.
-                        enum:
-                          - "True"
-                          - "False"
-                          - Unknown
-                        type: string
-                      type:
-                        description: type of condition in CamelCase or in foo.example.com/CamelCase.
-                        maxLength: 316
-                        pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
-                        type: string
-                    required:
-                      - lastTransitionTime
-                      - message
-                      - reason
-                      - status
-                      - type
-                    type: object
-                  type: array
-                state:
-                  description: State represents the current state of the bios configuration task.
-                  type: string
-                upgradeTask:
-                  description: UpgradeTask contains the state of the Upgrade Task created by the BMC
-                  properties:
-                    URI:
-                      description: URI is the URI of the task created by the BMC for the BIOS upgrade.
-                      type: string
-                    percentageComplete:
-                      description: PercentComplete is the percentage of completion of the task.
-                      format: int32
-                      type: integer
-                    state:
-                      description: State is the current state of the task.
-                      type: string
-                    status:
-                      description: Status is the current status of the task.
-                      type: string
-                  type: object
-              type: object
-          type: object
-      served: true
-      storage: true
-      subresources:
-        status: {}
----
-# Source: metal-operator/templates/crd/metal.ironcore.dev_biosversionsets.yaml
-apiVersion: apiextensions.k8s.io/v1
-kind: CustomResourceDefinition
-metadata:
-  labels:
-    helm.sh/chart: "0.0.0-c3e363f-crds"
-    app.kubernetes.io/name: metal-operator
-    app.kubernetes.io/instance: metal-operator
-    app.kubernetes.io/version: "0.1.0"
-    app.kubernetes.io/managed-by: Helm
-  annotations:
-    controller-gen.kubebuilder.io/version: v0.19.0
-  name: biosversionsets.metal.ironcore.dev
-spec:
-  group: metal.ironcore.dev
-  names:
-    kind: BIOSVersionSet
-    listKind: BIOSVersionSetList
-    plural: biosversionsets
-    singular: biosversionset
-  scope: Cluster
-  versions:
-    - additionalPrinterColumns:
-        - jsonPath: .spec.biosVersionTemplate.version
-          name: BIOSVersion
-          type: string
-        - jsonPath: .status.fullyLabeledServers
-          name: selectedServers
-          type: integer
-        - jsonPath: .status.availableBIOSVersion
-          name: AvailableBIOSVersion
-          type: integer
-        - jsonPath: .status.pendingBIOSVersion
-          name: Pending
-          type: integer
-        - jsonPath: .status.inProgressBIOSVersion
-          name: InProgress
-          type: integer
-        - jsonPath: .status.completedBIOSVersion
-          name: Completed
-          type: integer
-        - jsonPath: .status.failedBIOSVersion
-          name: Failed
-          type: integer
-        - jsonPath: .metadata.creationTimestamp
-          name: Age
-          type: date
-      name: v1alpha1
-      schema:
-        openAPIV3Schema:
-          description: BIOSVersionSet is the Schema for the biosversionsets API.
-          properties:
-            apiVersion:
-              description: |-
-                APIVersion defines the versioned schema of this representation of an object.
-                Servers should convert recognized schemas to the latest internal value, and
-                may reject unrecognized values.
-                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
-              type: string
-            kind:
-              description: |-
-                Kind is a string value representing the REST resource this object represents.
-                Servers may infer this from the endpoint the client submits requests to.
-                Cannot be updated.
-                In CamelCase.
-                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
-              type: string
-            metadata:
-              type: object
-            spec:
-              description: BIOSVersionSetSpec defines the desired state of BIOSVersionSet.
-              properties:
-                biosVersionTemplate:
-                  description: BIOSVersionTemplate defines the template for the BIOSversion Resource to be applied to the servers.
-                  properties:
-                    image:
-                      description: details regarding the image to use to upgrade to given BIOS version
-                      properties:
-                        URI:
-                          description: The URI of the software image to update/install."
-                          type: string
-                        secretRef:
-                          description: |-
-                            ImageSecretRef is a reference to the Kubernetes Secret (of type SecretTypeBasicAuth) object that contains the credentials
-                            to access the ImageURI. This secret includes sensitive information such as usernames and passwords.
-                          properties:
-                            name:
-                              description: name is unique within a namespace to reference a secret resource.
-                              type: string
-                            namespace:
-                              description: namespace defines the space within which the secret name must be unique.
-                              type: string
-                          type: object
-                          x-kubernetes-map-type: atomic
-                        transferProtocol:
-                          description: The network protocol that the server's update service uses to retrieve 'ImageURI'
-                          type: string
-                      required:
-                        - URI
-                      type: object
-                    serverMaintenancePolicy:
-                      description: ServerMaintenancePolicy is a maintenance policy to be enforced on the server.
-                      type: string
-                    updatePolicy:
-                      description: UpdatePolicy An indication of whether the server's upgrade service should bypass vendor update policies
-                      type: string
-                    version:
-                      description: Version contains a BIOS version to upgrade to
-                      type: string
-                  required:
-                    - image
-                    - version
-                  type: object
-                serverSelector:
-                  description: ServerSelector specifies a label selector to identify the servers that are to be selected.
-                  properties:
-                    matchExpressions:
-                      description: matchExpressions is a list of label selector requirements. The requirements are ANDed.
-                      items:
-                        description: |-
-                          A label selector requirement is a selector that contains values, a key, and an operator that
-                          relates the key and values.
-                        properties:
-                          key:
-                            description: key is the label key that the selector applies to.
-                            type: string
-                          operator:
-                            description: |-
-                              operator represents a key's relationship to a set of values.
-                              Valid operators are In, NotIn, Exists and DoesNotExist.
-                            type: string
-                          values:
-                            description: |-
-                              values is an array of string values. If the operator is In or NotIn,
-                              the values array must be non-empty. If the operator is Exists or DoesNotExist,
-                              the values array must be empty. This array is replaced during a strategic
-                              merge patch.
-                            items:
-                              type: string
-                            type: array
-                            x-kubernetes-list-type: atomic
-                        required:
-                          - key
-                          - operator
-                        type: object
-                      type: array
-                      x-kubernetes-list-type: atomic
-                    matchLabels:
-                      additionalProperties:
-                        type: string
-                      description: |-
-                        matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
-                        map is equivalent to an element of matchExpressions, whose key field is "key", the
-                        operator is "In", and the values array contains only "value". The requirements are ANDed.
-                      type: object
-                  type: object
-                  x-kubernetes-map-type: atomic
-              required:
-                - serverSelector
-              type: object
-            status:
-              description: BIOSVersionSetStatus defines the observed state of BIOSVersionSet.
-              properties:
-                availableBIOSVersion:
-                  description: AvailableBIOSVersion is the number of BIOSVersion created by the set.
-                  format: int32
-                  type: integer
-                completedBIOSVersion:
-                  description: CompletedBIOSVersion is the total number of completed BIOSVersion in the set.
-                  format: int32
-                  type: integer
-                failedBIOSVersion:
-                  description: FailedBIOSVersion is the total number of failed BIOSVersion in the set.
-                  format: int32
-                  type: integer
-                fullyLabeledServers:
-                  description: FullyLabeledServers is the number of servers in the set.
-                  format: int32
-                  type: integer
-                inProgressBIOSVersion:
-                  description: InProgressBIOSVersion is the total number of BIOSVersion in the set that are currently in InProgress.
-                  format: int32
-                  type: integer
-                pendingBIOSVersion:
-                  description: PendingBIOSVersion is the total number of pending BIOSVersion in the set.
-                  format: int32
-                  type: integer
-              type: object
-          type: object
-      served: true
-      storage: true
-      subresources:
-        status: {}
----
-# Source: metal-operator/templates/crd/metal.ironcore.dev_bmcs.yaml
-apiVersion: apiextensions.k8s.io/v1
-kind: CustomResourceDefinition
-metadata:
-  labels:
-    helm.sh/chart: "0.0.0-c3e363f-crds"
-    app.kubernetes.io/name: metal-operator
-    app.kubernetes.io/instance: metal-operator
-    app.kubernetes.io/version: "0.1.0"
-    app.kubernetes.io/managed-by: Helm
-  annotations:
-    controller-gen.kubebuilder.io/version: v0.19.0
-  name: bmcs.metal.ironcore.dev
-spec:
-  group: metal.ironcore.dev
-  names:
-    kind: BMC
-    listKind: BMCList
-    plural: bmcs
-    singular: bmc
-  scope: Cluster
-  versions:
-    - additionalPrinterColumns:
-        - jsonPath: .status.macAddress
-          name: MACAddress
-          type: string
-        - jsonPath: .status.ip
-          name: IP
-          type: string
-        - jsonPath: .status.model
-          name: Model
-          type: string
-        - jsonPath: .status.sku
-          name: SKU
-          priority: 100
-          type: string
-        - jsonPath: .status.serialNumber
-          name: SerialNumber
-          priority: 100
-          type: string
-        - jsonPath: .status.firmwareVersion
-          name: FirmwareVersion
-          priority: 100
-          type: string
-        - jsonPath: .status.state
-          name: State
-          type: string
-        - jsonPath: .status.powerState
-          name: PowerState
-          type: string
-        - jsonPath: .metadata.creationTimestamp
-          name: Age
-          type: date
-      name: v1alpha1
-      schema:
-        openAPIV3Schema:
-          description: BMC is the Schema for the bmcs API
-          properties:
-            apiVersion:
-              description: |-
-                APIVersion defines the versioned schema of this representation of an object.
-                Servers should convert recognized schemas to the latest internal value, and
-                may reject unrecognized values.
-                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
-              type: string
-            kind:
-              description: |-
-                Kind is a string value representing the REST resource this object represents.
-                Servers may infer this from the endpoint the client submits requests to.
-                Cannot be updated.
-                In CamelCase.
-                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
-              type: string
-            metadata:
-              type: object
-            spec:
-              description: BMCSpec defines the desired state of BMC
-              properties:
-                access:
-                  description: |-
-                    Endpoint allows inline configuration of network access details for the BMC.
-                    Use this field if access settings like address are to be configured directly within the BMC resource.
-                  properties:
-                    ip:
-                      description: IP is the IP address of the BMC.
-                      type: string
-                    macAddress:
-                      description: MACAddress is the MAC address of the endpoint.
-                      type: string
-                  type: object
-                  x-kubernetes-validations:
-                    - message: access is immutable
-                      rule: self == oldSelf
-                bmcSecretRef:
-                  description: |-
-                    BMCSecretRef is a reference to the Kubernetes Secret object that contains the credentials
-                    required to access the BMC. This secret includes sensitive information such as usernames and passwords.
-                  properties:
-                    name:
-                      default: ""
-                      description: |-
-                        Name of the referent.
-                        This field is effectively required, but due to backwards compatibility is
-                        allowed to be empty. Instances of this type with an empty value here are
-                        almost certainly wrong.
-                        More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                      type: string
-                  type: object
-                  x-kubernetes-map-type: atomic
-                bmcSettingsRef:
-                  description: |-
-                    BMCSettingRef is a reference to a BMCSettings object that specifies
-                    the BMC configuration for this BMC.
-                  properties:
-                    name:
-                      default: ""
-                      description: |-
-                        Name of the referent.
-                        This field is effectively required, but due to backwards compatibility is
-                        allowed to be empty. Instances of this type with an empty value here are
-                        almost certainly wrong.
-                        More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                      type: string
-                  type: object
-                  x-kubernetes-map-type: atomic
-                bmcUUID:
-                  description: BMCUUID is the unique identifier for the BMC as defined in Redfish API.
-                  type: string
-                consoleProtocol:
-                  description: |-
-                    ConsoleProtocol specifies the protocol to be used for console access to the BMC.
-                    This field is optional and can be omitted if console access is not required.
-                  properties:
-                    name:
-                      description: |-
-                        Name specifies the name of the console protocol.
-                        This could be a protocol such as "SSH", "Telnet", etc.
-                      enum:
-                        - IPMI
-                        - SSH
-                        - SSHLenovo
-                      type: string
-                    port:
-                      description: |-
-                        Port specifies the port number used for console access.
-                        This port is used by the specified console protocol to establish connections.
-                      format: int32
-                      type: integer
-                  required:
-                    - name
-                    - port
-                  type: object
-                endpointRef:
-                  description: |-
-                    EndpointRef is a reference to the Kubernetes object that contains the endpoint information for the BMC.
-                    This reference is typically used to locate the BMC endpoint within the cluster.
-                  properties:
-                    name:
-                      default: ""
-                      description: |-
-                        Name of the referent.
-                        This field is effectively required, but due to backwards compatibility is
-                        allowed to be empty. Instances of this type with an empty value here are
-                        almost certainly wrong.
-                        More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                      type: string
-                  type: object
-                  x-kubernetes-map-type: atomic
-                  x-kubernetes-validations:
-                    - message: endpointRef is immutable
-                      rule: self == oldSelf
-                hostname:
-                  description: Hostname is the hostname of the BMC.
-                  type: string
-                protocol:
-                  description: |-
-                    Protocol specifies the protocol to be used for communicating with the BMC.
-                    It could be a standard protocol such as IPMI or Redfish.
-                  properties:
-                    name:
-                      description: |-
-                        Name specifies the name of the protocol.
-                        This could be a protocol such as "IPMI", "Redfish", etc.
-                      type: string
-                    port:
-                      description: |-
-                        Port specifies the port number used for communication.
-                        This port is used by the specified protocol to establish connections.
-                      format: int32
-                      type: integer
-                    scheme:
-                      description: Scheme specifies the scheme used for communication.
-                      type: string
-                  required:
-                    - name
-                    - port
-                  type: object
-              required:
-                - bmcSecretRef
-                - protocol
-              type: object
-              x-kubernetes-validations:
-                - message: exactly one of access or endpointRef needs to be set
-                  rule: has(self.access) != has(self.endpointRef)
-            status:
-              description: BMCStatus defines the observed state of BMC.
-              properties:
-                conditions:
-                  description: Conditions represents the latest available observations of the BMC's current state.
-                  items:
-                    description: Condition contains details for one aspect of the current state of this API Resource.
-                    properties:
-                      lastTransitionTime:
-                        description: |-
-                          lastTransitionTime is the last time the condition transitioned from one status to another.
-                          This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.
-                        format: date-time
-                        type: string
-                      message:
-                        description: |-
-                          message is a human readable message indicating details about the transition.
-                          This may be an empty string.
-                        maxLength: 32768
-                        type: string
-                      observedGeneration:
-                        description: |-
-                          observedGeneration represents the .metadata.generation that the condition was set based upon.
-                          For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
-                          with respect to the current state of the instance.
-                        format: int64
-                        minimum: 0
-                        type: integer
-                      reason:
-                        description: |-
-                          reason contains a programmatic identifier indicating the reason for the condition's last transition.
-                          Producers of specific condition types may define expected values and meanings for this field,
-                          and whether the values are considered a guaranteed API.
-                          The value should be a CamelCase string.
-                          This field may not be empty.
-                        maxLength: 1024
-                        minLength: 1
-                        pattern: ^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$
-                        type: string
-                      status:
-                        description: status of the condition, one of True, False, Unknown.
-                        enum:
-                          - "True"
-                          - "False"
-                          - Unknown
-                        type: string
-                      type:
-                        description: type of condition in CamelCase or in foo.example.com/CamelCase.
-                        maxLength: 316
-                        pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
-                        type: string
-                    required:
-                      - lastTransitionTime
-                      - message
-                      - reason
-                      - status
-                      - type
-                    type: object
-                  type: array
-                firmwareVersion:
-                  description: FirmwareVersion is the version of the firmware currently running on the BMC.
-                  type: string
-                ip:
-                  description: |-
-                    IP is the IP address of the BMC.
-                    The type is specified as string and is schemaless.
-                  type: string
-                lastResetTime:
-                  description: LastResetTime is the timestamp of the last reset operation performed on the BMC.
-                  format: date-time
-                  type: string
-                macAddress:
-                  description: |-
-                    MACAddress is the MAC address of the BMC.
-                    The format is validated using a regular expression pattern.
-                  pattern: ^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$
-                  type: string
-                manufacturer:
-                  description: Manufacturer is the name of the BMC manufacturer.
-                  type: string
-                model:
-                  description: Model is the model number or name of the BMC.
-                  type: string
-                powerState:
-                  description: PowerState represents the current power state of the BMC.
-                  type: string
-                serialNumber:
-                  description: SerialNumber is the serial number of the BMC.
-                  type: string
-                sku:
-                  description: SKU is the stock keeping unit identifier for the BMC.
-                  type: string
-                state:
-                  default: Pending
-                  description: |-
-                    State represents the current state of the BMC.
-                    kubebuilder:validation:Enum=Enabled;Error;Pending
-                  type: string
-              type: object
-          type: object
-      served: true
-      storage: true
-      subresources:
-        status: {}
----
-# Source: metal-operator/templates/crd/metal.ironcore.dev_bmcsecrets.yaml
-apiVersion: apiextensions.k8s.io/v1
-kind: CustomResourceDefinition
-metadata:
-  labels:
-    helm.sh/chart: "0.0.0-c3e363f-crds"
-    app.kubernetes.io/name: metal-operator
-    app.kubernetes.io/instance: metal-operator
-    app.kubernetes.io/version: "0.1.0"
-    app.kubernetes.io/managed-by: Helm
-  annotations:
-    controller-gen.kubebuilder.io/version: v0.19.0
-  name: bmcsecrets.metal.ironcore.dev
-spec:
-  group: metal.ironcore.dev
-  names:
-    kind: BMCSecret
-    listKind: BMCSecretList
-    plural: bmcsecrets
-    singular: bmcsecret
-  scope: Cluster
-  versions:
-    - additionalPrinterColumns:
-        - jsonPath: .metadata.creationTimestamp
-          name: Age
-          type: date
-      name: v1alpha1
-      schema:
-        openAPIV3Schema:
-          description: BMCSecret is the Schema for the bmcsecrets API
-          properties:
-            apiVersion:
-              description: |-
-                APIVersion defines the versioned schema of this representation of an object.
-                Servers should convert recognized schemas to the latest internal value, and
-                may reject unrecognized values.
-                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
-              type: string
-            data:
-              additionalProperties:
-                format: byte
-                type: string
-              description: |-
-                Data contains the secret data. Each key must consist of alphanumeric
-                characters, '-', '_' or '.'. The serialized form of the secret data is a
-                base64 encoded string, representing the arbitrary (possibly non-string)
-                data value here. Described in https://tools.ietf.org/html/rfc4648#section-4
-              type: object
-            immutable:
-              description: |-
-                Immutable, if set to true, ensures that data stored in the Secret cannot
-                be updated (only object metadata can be modified).
-                If not set to true, the field can be modified at any time.
-                Defaulted to nil.
-              type: boolean
-            kind:
-              description: |-
-                Kind is a string value representing the REST resource this object represents.
-                Servers may infer this from the endpoint the client submits requests to.
-                Cannot be updated.
-                In CamelCase.
-                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
-              type: string
-            metadata:
-              type: object
-            stringData:
-              additionalProperties:
-                type: string
-              description: |-
-                stringData allows specifying non-binary secret data in string form.
-                It is provided as a write-only input field for convenience.
-                All keys and values are merged into the data field on write, overwriting any existing values.
-                The stringData field is never output when reading from the API.
-              type: object
-            type:
-              description: |-
-                Used to facilitate programmatic handling of secret data.
-                More info: https://kubernetes.io/docs/concepts/configuration/secret/#secret-types
-              type: string
-          type: object
-      served: true
-      storage: true
-      subresources:
-        status: {}
----
-# Source: metal-operator/templates/crd/metal.ironcore.dev_bmcsettings.yaml
-apiVersion: apiextensions.k8s.io/v1
-kind: CustomResourceDefinition
-metadata:
-  labels:
-    helm.sh/chart: "0.0.0-c3e363f-crds"
-    app.kubernetes.io/name: metal-operator
-    app.kubernetes.io/instance: metal-operator
-    app.kubernetes.io/version: "0.1.0"
-    app.kubernetes.io/managed-by: Helm
-  annotations:
-    controller-gen.kubebuilder.io/version: v0.19.0
-  name: bmcsettings.metal.ironcore.dev
-spec:
-  group: metal.ironcore.dev
-  names:
-    kind: BMCSettings
-    listKind: BMCSettingsList
-    plural: bmcsettings
-    singular: bmcsettings
-  scope: Cluster
-  versions:
-    - additionalPrinterColumns:
-        - jsonPath: .spec.version
-          name: BMCVersion
-          type: string
-        - jsonPath: .status.state
-          name: State
-          type: string
-        - jsonPath: .spec.BMCRef.name
-          name: BMCRef
-          type: string
-      name: v1alpha1
-      schema:
-        openAPIV3Schema:
-          description: BMCSettings is the Schema for the BMCSettings API.
-          properties:
-            apiVersion:
-              description: |-
-                APIVersion defines the versioned schema of this representation of an object.
-                Servers should convert recognized schemas to the latest internal value, and
-                may reject unrecognized values.
-                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
-              type: string
-            kind:
-              description: |-
-                Kind is a string value representing the REST resource this object represents.
-                Servers may infer this from the endpoint the client submits requests to.
-                Cannot be updated.
-                In CamelCase.
-                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
-              type: string
-            metadata:
-              type: object
-            spec:
-              properties:
-                BMCRef:
-                  description: BMCRef is a reference to a specific BMC to apply setting to.
-                  properties:
-                    name:
-                      default: ""
-                      description: |-
-                        Name of the referent.
-                        This field is effectively required, but due to backwards compatibility is
-                        allowed to be empty. Instances of this type with an empty value here are
-                        almost certainly wrong.
-                        More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                      type: string
-                  type: object
-                  x-kubernetes-map-type: atomic
-                  x-kubernetes-validations:
-                    - message: BMCRef is immutable
-                      rule: self == oldSelf
-                serverMaintenancePolicy:
-                  description: ServerMaintenancePolicy is a maintenance policy to be applied on the server.
-                  type: string
-                serverMaintenanceRefs:
-                  description: |-
-                    ServerMaintenanceRefs are references to ServerMaintenance objects which are created by the controller for each
-                    server that needs to be updated with the BMC settings.
-                  items:
-                    description: ServerMaintenanceRefItem is a reference to a ServerMaintenance object.
-                    properties:
-                      serverMaintenanceRef:
-                        description: ServerMaintenanceRef is a reference to a ServerMaintenance object that the BMCSettings has requested for the referred server.
-                        properties:
-                          apiVersion:
-                            description: APIVersion is the API version of the referenced object.
-                            type: string
-                          kind:
-                            description: Kind is the kind of the referenced object.
-                            type: string
-                          name:
-                            description: Name is the name of the referenced object.
-                            type: string
-                          namespace:
-                            description: Namespace is the namespace of the referenced object.
-                            type: string
-                          uid:
-                            description: UID is the uid of the referenced object.
-                            type: string
-                        required:
-                          - apiVersion
-                          - kind
-                          - name
-                          - namespace
-                          - uid
-                        type: object
-                    type: object
-                  type: array
-                settings:
-                  additionalProperties:
-                    type: string
-                  description: SettingsMap contains bmc settings as map
-                  type: object
-                version:
-                  description: Version defines the BMC firmware for which the settings should be applied.
-                  type: string
-              required:
-                - BMCRef
-                - version
-              type: object
-            status:
-              description: BMCSettingsStatus defines the observed state of BMCSettings.
-              properties:
-                conditions:
-                  description: Conditions represents the latest available observations of the BMC Settings Resource state.
-                  items:
-                    description: Condition contains details for one aspect of the current state of this API Resource.
-                    properties:
-                      lastTransitionTime:
-                        description: |-
-                          lastTransitionTime is the last time the condition transitioned from one status to another.
-                          This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.
-                        format: date-time
-                        type: string
-                      message:
-                        description: |-
-                          message is a human readable message indicating details about the transition.
-                          This may be an empty string.
-                        maxLength: 32768
-                        type: string
-                      observedGeneration:
-                        description: |-
-                          observedGeneration represents the .metadata.generation that the condition was set based upon.
-                          For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
-                          with respect to the current state of the instance.
-                        format: int64
-                        minimum: 0
-                        type: integer
-                      reason:
-                        description: |-
-                          reason contains a programmatic identifier indicating the reason for the condition's last transition.
-                          Producers of specific condition types may define expected values and meanings for this field,
-                          and whether the values are considered a guaranteed API.
-                          The value should be a CamelCase string.
-                          This field may not be empty.
-                        maxLength: 1024
-                        minLength: 1
-                        pattern: ^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$
-                        type: string
-                      status:
-                        description: status of the condition, one of True, False, Unknown.
-                        enum:
-                          - "True"
-                          - "False"
-                          - Unknown
-                        type: string
-                      type:
-                        description: type of condition in CamelCase or in foo.example.com/CamelCase.
-                        maxLength: 316
-                        pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
-                        type: string
-                    required:
-                      - lastTransitionTime
-                      - message
-                      - reason
-                      - status
-                      - type
-                    type: object
-                  type: array
-                state:
-                  description: State represents the current state of the BMC configuration task.
-                  type: string
-              type: object
-          type: object
-      served: true
-      storage: true
-      subresources:
-        status: {}
----
-# Source: metal-operator/templates/crd/metal.ironcore.dev_bmcsettingssets.yaml
-apiVersion: apiextensions.k8s.io/v1
-kind: CustomResourceDefinition
-metadata:
-  labels:
-    helm.sh/chart: "0.0.0-c3e363f-crds"
-    app.kubernetes.io/name: metal-operator
-    app.kubernetes.io/instance: metal-operator
-    app.kubernetes.io/version: "0.1.0"
-    app.kubernetes.io/managed-by: Helm
-  annotations:
-    controller-gen.kubebuilder.io/version: v0.19.0
-  name: bmcsettingssets.metal.ironcore.dev
-spec:
-  group: metal.ironcore.dev
-  names:
-    kind: BMCSettingsSet
-    listKind: BMCSettingsSetList
-    plural: bmcsettingssets
-    singular: bmcsettingsset
-  scope: Cluster
-  versions:
-    - additionalPrinterColumns:
-        - jsonPath: .spec.bmcSettingsTemplate.version
-          name: BMCVersion
-          type: string
-        - jsonPath: .status.fullyLabeledBMCs
-          name: TotalBMCs
-          type: integer
-        - jsonPath: .status.availableBMCSettings
-          name: AvailableBMCSettings
-          type: integer
-        - jsonPath: .status.pendingBMCSettings
-          name: Pending
-          type: integer
-        - jsonPath: .status.inProgressBMCSettings
-          name: InProgress
-          type: integer
-        - jsonPath: .status.completedBMCSettings
-          name: Completed
-          type: integer
-        - jsonPath: .status.failedBMCSettings
-          name: Failed
-          type: integer
-        - jsonPath: .metadata.creationTimestamp
-          name: Age
-          type: date
-      name: v1alpha1
-      schema:
-        openAPIV3Schema:
-          description: BMCSettingsSet is the Schema for the bmcsettingssets API.
-          properties:
-            apiVersion:
-              description: |-
-                APIVersion defines the versioned schema of this representation of an object.
-                Servers should convert recognized schemas to the latest internal value, and
-                may reject unrecognized values.
-                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
-              type: string
-            kind:
-              description: |-
-                Kind is a string value representing the REST resource this object represents.
-                Servers may infer this from the endpoint the client submits requests to.
-                Cannot be updated.
-                In CamelCase.
-                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
-              type: string
-            metadata:
-              type: object
-            spec:
-              description: BMCSettingsSetSpec defines the desired state of BMCSettingsSet.
-              properties:
-                bmcSelector:
-                  description: ' BMCSelector specifies a label selector to identify the BMCs that are to be selected.'
-                  properties:
-                    matchExpressions:
-                      description: matchExpressions is a list of label selector requirements. The requirements are ANDed.
-                      items:
-                        description: |-
-                          A label selector requirement is a selector that contains values, a key, and an operator that
-                          relates the key and values.
-                        properties:
-                          key:
-                            description: key is the label key that the selector applies to.
-                            type: string
-                          operator:
-                            description: |-
-                              operator represents a key's relationship to a set of values.
-                              Valid operators are In, NotIn, Exists and DoesNotExist.
-                            type: string
-                          values:
-                            description: |-
-                              values is an array of string values. If the operator is In or NotIn,
-                              the values array must be non-empty. If the operator is Exists or DoesNotExist,
-                              the values array must be empty. This array is replaced during a strategic
-                              merge patch.
-                            items:
-                              type: string
-                            type: array
-                            x-kubernetes-list-type: atomic
-                        required:
-                          - key
-                          - operator
-                        type: object
-                      type: array
-                      x-kubernetes-list-type: atomic
-                    matchLabels:
-                      additionalProperties:
-                        type: string
-                      description: |-
-                        matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
-                        map is equivalent to an element of matchExpressions, whose key field is "key", the
-                        operator is "In", and the values array contains only "value". The requirements are ANDed.
-                      type: object
-                  type: object
-                  x-kubernetes-map-type: atomic
-                bmcSettingsTemplate:
-                  description: BMCSettingsTemplate defines the template for the BMCSettings Resource to be applied to the BMCs.
-                  properties:
-                    serverMaintenancePolicy:
-                      description: ServerMaintenancePolicy is a maintenance policy to be applied on the server.
-                      type: string
-                    settings:
-                      additionalProperties:
-                        type: string
-                      description: SettingsMap contains bmc settings as map
-                      type: object
-                    version:
-                      description: Version defines the BMC firmware for which the settings should be applied.
-                      type: string
-                  required:
-                    - version
-                  type: object
-              required:
-                - bmcSelector
-                - bmcSettingsTemplate
-              type: object
-            status:
-              description: BMCSettingsSetStatus defines the observed state of BMCSettingsSet.
-              properties:
-                availableBMCSettings:
-                  description: AvailableBMCSettings is the number of BMCSettings currently created by the set.
-                  format: int32
-                  type: integer
-                completedBMCSettings:
-                  description: CompletedBMCSettings is the total number of completed BMC in the set.
-                  format: int32
-                  type: integer
-                failedBMCSettings:
-                  description: FailedBMCSettings is the total number of failed BMC in the set.
-                  format: int32
-                  type: integer
-                fullyLabeledBMCs:
-                  description: FullyLabeledBMCs is the number of BMC in the set.
-                  format: int32
-                  type: integer
-                inProgressBMCSettings:
-                  description: InProgressBMCSettings is the total number of BMC in the set that are currently in progress.
-                  format: int32
-                  type: integer
-                pendingBMCSettings:
-                  description: PendingBMCSettings is the total number of pending BMC in the set.
-                  format: int32
-                  type: integer
-              type: object
-          type: object
-      served: true
-      storage: true
-      subresources:
-        status: {}
----
-# Source: metal-operator/templates/crd/metal.ironcore.dev_bmcversions.yaml
-apiVersion: apiextensions.k8s.io/v1
-kind: CustomResourceDefinition
-metadata:
-  labels:
-    helm.sh/chart: "0.0.0-c3e363f-crds"
-    app.kubernetes.io/name: metal-operator
-    app.kubernetes.io/instance: metal-operator
-    app.kubernetes.io/version: "0.1.0"
-    app.kubernetes.io/managed-by: Helm
-  annotations:
-    controller-gen.kubebuilder.io/version: v0.19.0
-  name: bmcversions.metal.ironcore.dev
-spec:
-  group: metal.ironcore.dev
-  names:
-    kind: BMCVersion
-    listKind: BMCVersionList
-    plural: bmcversions
-    singular: bmcversion
-  scope: Cluster
-  versions:
-    - additionalPrinterColumns:
-        - jsonPath: .spec.version
-          name: BMCVersion
-          type: string
-        - jsonPath: .spec.updateType
-          name: updateType
-          type: string
-        - jsonPath: .spec.bmcRef.name
-          name: BMCRef
-          type: string
-        - jsonPath: .status.upgradeTask.percentageComplete
-          name: TaskProgress
-          type: integer
-        - jsonPath: .status.upgradeTask.state
-          name: TaskState
-          type: string
-        - jsonPath: .status.upgradeTask.status
-          name: TaskStatus
-          type: string
-        - jsonPath: .status.state
-          name: State
-          type: string
-        - jsonPath: .metadata.creationTimestamp
-          name: Age
-          type: date
-      name: v1alpha1
-      schema:
-        openAPIV3Schema:
-          description: BMCVersion is the Schema for the bmcversions API.
-          properties:
-            apiVersion:
-              description: |-
-                APIVersion defines the versioned schema of this representation of an object.
-                Servers should convert recognized schemas to the latest internal value, and
-                may reject unrecognized values.
-                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
-              type: string
-            kind:
-              description: |-
-                Kind is a string value representing the REST resource this object represents.
-                Servers may infer this from the endpoint the client submits requests to.
-                Cannot be updated.
-                In CamelCase.
-                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
-              type: string
-            metadata:
-              type: object
-            spec:
-              description: BMCVersionSpec defines the desired state of BMCVersion.
-              properties:
-                bmcRef:
-                  description: BMCRef is a reference to a specific BMC to apply BMC upgrade on.
-                  properties:
-                    name:
-                      default: ""
-                      description: |-
-                        Name of the referent.
-                        This field is effectively required, but due to backwards compatibility is
-                        allowed to be empty. Instances of this type with an empty value here are
-                        almost certainly wrong.
-                        More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                      type: string
-                  type: object
-                  x-kubernetes-map-type: atomic
-                  x-kubernetes-validations:
-                    - message: bmcRef is immutable
-                      rule: self == oldSelf
-                image:
-                  description: details regarding the image to use to upgrade to given BMC version
-                  properties:
-                    URI:
-                      description: The URI of the software image to update/install."
-                      type: string
-                    secretRef:
-                      description: |-
-                        ImageSecretRef is a reference to the Kubernetes Secret (of type SecretTypeBasicAuth) object that contains the credentials
-                        to access the ImageURI. This secret includes sensitive information such as usernames and passwords.
-                      properties:
-                        name:
-                          description: name is unique within a namespace to reference a secret resource.
-                          type: string
-                        namespace:
-                          description: namespace defines the space within which the secret name must be unique.
-                          type: string
-                      type: object
-                      x-kubernetes-map-type: atomic
-                    transferProtocol:
-                      description: The network protocol that the server's update service uses to retrieve 'ImageURI'
-                      type: string
-                  required:
-                    - URI
-                  type: object
-                serverMaintenancePolicy:
-                  description: ServerMaintenancePolicy is a maintenance policy to be enforced on the server managed by referred BMC.
-                  type: string
-                serverMaintenanceRefs:
-                  description: ServerMaintenanceRefs are references to a ServerMaintenance objects that Controller has requested for the each of the related server.
-                  items:
-                    description: ObjectReference is the namespaced name reference to an object.
-                    properties:
-                      apiVersion:
-                        description: APIVersion is the API version of the referenced object.
-                        type: string
-                      kind:
-                        description: Kind is the kind of the referenced object.
-                        type: string
-                      name:
-                        description: Name is the name of the referenced object.
-                        type: string
-                      namespace:
-                        description: Namespace is the namespace of the referenced object.
-                        type: string
-                      uid:
-                        description: UID is the uid of the referenced object.
-                        type: string
-                    required:
-                      - apiVersion
-                      - kind
-                      - name
-                      - namespace
-                      - uid
-                    type: object
-                  type: array
-                updatePolicy:
-                  description: UpdatePolicy is an indication of whether the server's upgrade service should bypass vendor update policies
-                  type: string
-                version:
-                  description: Version contains a BMC version to upgrade to
-                  type: string
-              required:
-                - image
-                - version
-              type: object
-            status:
-              description: BMCVersionStatus defines the observed state of BMCVersion.
-              properties:
-                conditions:
-                  description: Conditions represents the latest available observations of the BMC version upgrade state.
-                  items:
-                    description: Condition contains details for one aspect of the current state of this API Resource.
-                    properties:
-                      lastTransitionTime:
-                        description: |-
-                          lastTransitionTime is the last time the condition transitioned from one status to another.
-                          This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.
-                        format: date-time
-                        type: string
-                      message:
-                        description: |-
-                          message is a human readable message indicating details about the transition.
-                          This may be an empty string.
-                        maxLength: 32768
-                        type: string
-                      observedGeneration:
-                        description: |-
-                          observedGeneration represents the .metadata.generation that the condition was set based upon.
-                          For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
-                          with respect to the current state of the instance.
-                        format: int64
-                        minimum: 0
-                        type: integer
-                      reason:
-                        description: |-
-                          reason contains a programmatic identifier indicating the reason for the condition's last transition.
-                          Producers of specific condition types may define expected values and meanings for this field,
-                          and whether the values are considered a guaranteed API.
-                          The value should be a CamelCase string.
-                          This field may not be empty.
-                        maxLength: 1024
-                        minLength: 1
-                        pattern: ^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$
-                        type: string
-                      status:
-                        description: status of the condition, one of True, False, Unknown.
-                        enum:
-                          - "True"
-                          - "False"
-                          - Unknown
-                        type: string
-                      type:
-                        description: type of condition in CamelCase or in foo.example.com/CamelCase.
-                        maxLength: 316
-                        pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
-                        type: string
-                    required:
-                      - lastTransitionTime
-                      - message
-                      - reason
-                      - status
-                      - type
-                    type: object
-                  type: array
-                state:
-                  description: State represents the current state of the BMC configuration task.
-                  type: string
-                upgradeTask:
-                  description: UpgradeTask contains the state of the Upgrade Task created by the BMC
-                  properties:
-                    URI:
-                      description: URI is the URI of the task created by the BMC for the BIOS upgrade.
-                      type: string
-                    percentageComplete:
-                      description: PercentComplete is the percentage of completion of the task.
-                      format: int32
-                      type: integer
-                    state:
-                      description: State is the current state of the task.
-                      type: string
-                    status:
-                      description: Status is the current status of the task.
-                      type: string
-                  type: object
-              type: object
-          type: object
-      served: true
-      storage: true
-      subresources:
-        status: {}
----
-# Source: metal-operator/templates/crd/metal.ironcore.dev_bmcversionsets.yaml
-apiVersion: apiextensions.k8s.io/v1
-kind: CustomResourceDefinition
-metadata:
-  labels:
-    helm.sh/chart: "0.0.0-c3e363f-crds"
-    app.kubernetes.io/name: metal-operator
-    app.kubernetes.io/instance: metal-operator
-    app.kubernetes.io/version: "0.1.0"
-    app.kubernetes.io/managed-by: Helm
-  annotations:
-    controller-gen.kubebuilder.io/version: v0.19.0
-  name: bmcversionsets.metal.ironcore.dev
-spec:
-  group: metal.ironcore.dev
-  names:
-    kind: BMCVersionSet
-    listKind: BMCVersionSetList
-    plural: bmcversionsets
-    singular: bmcversionset
-  scope: Cluster
-  versions:
-    - additionalPrinterColumns:
-        - jsonPath: .spec.bmcVersionTemplate.version
-          name: BMCVersion
-          type: string
-        - jsonPath: .status.fullyLabeledBMCs
-          name: selectedBMCs
-          type: integer
-        - jsonPath: .status.availableBMCVersion
-          name: AvailableBMCVersion
-          type: integer
-        - jsonPath: .status.pendingBMCVersion
-          name: Pending
-          type: integer
-        - jsonPath: .status.inProgressBMCVersion
-          name: InProgress
-          type: integer
-        - jsonPath: .status.completedBMCVersion
-          name: Completed
-          type: integer
-        - jsonPath: .status.failedBMCVersion
-          name: Failed
-          type: integer
-        - jsonPath: .metadata.creationTimestamp
-          name: Age
-          type: date
-      name: v1alpha1
-      schema:
-        openAPIV3Schema:
-          description: BMCVersionSet is the Schema for the bmcversionsets API.
-          properties:
-            apiVersion:
-              description: |-
-                APIVersion defines the versioned schema of this representation of an object.
-                Servers should convert recognized schemas to the latest internal value, and
-                may reject unrecognized values.
-                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
-              type: string
-            kind:
-              description: |-
-                Kind is a string value representing the REST resource this object represents.
-                Servers may infer this from the endpoint the client submits requests to.
-                Cannot be updated.
-                In CamelCase.
-                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
-              type: string
-            metadata:
-              type: object
-            spec:
-              description: BMCVersionSetSpec defines the desired state of BMCVersionSet.
-              properties:
-                bmcSelector:
-                  description: BMCSelector specifies a label selector to identify the BMC that are to be selected.
-                  properties:
-                    matchExpressions:
-                      description: matchExpressions is a list of label selector requirements. The requirements are ANDed.
-                      items:
-                        description: |-
-                          A label selector requirement is a selector that contains values, a key, and an operator that
-                          relates the key and values.
-                        properties:
-                          key:
-                            description: key is the label key that the selector applies to.
-                            type: string
-                          operator:
-                            description: |-
-                              operator represents a key's relationship to a set of values.
-                              Valid operators are In, NotIn, Exists and DoesNotExist.
-                            type: string
-                          values:
-                            description: |-
-                              values is an array of string values. If the operator is In or NotIn,
-                              the values array must be non-empty. If the operator is Exists or DoesNotExist,
-                              the values array must be empty. This array is replaced during a strategic
-                              merge patch.
-                            items:
-                              type: string
-                            type: array
-                            x-kubernetes-list-type: atomic
-                        required:
-                          - key
-                          - operator
-                        type: object
-                      type: array
-                      x-kubernetes-list-type: atomic
-                    matchLabels:
-                      additionalProperties:
-                        type: string
-                      description: |-
-                        matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
-                        map is equivalent to an element of matchExpressions, whose key field is "key", the
-                        operator is "In", and the values array contains only "value". The requirements are ANDed.
-                      type: object
-                  type: object
-                  x-kubernetes-map-type: atomic
-                bmcVersionTemplate:
-                  description: BMCVersionTemplate defines the template for the BMCversion Resource to be applied to the servers.
-                  properties:
-                    image:
-                      description: details regarding the image to use to upgrade to given BMC version
-                      properties:
-                        URI:
-                          description: The URI of the software image to update/install."
-                          type: string
-                        secretRef:
-                          description: |-
-                            ImageSecretRef is a reference to the Kubernetes Secret (of type SecretTypeBasicAuth) object that contains the credentials
-                            to access the ImageURI. This secret includes sensitive information such as usernames and passwords.
-                          properties:
-                            name:
-                              description: name is unique within a namespace to reference a secret resource.
-                              type: string
-                            namespace:
-                              description: namespace defines the space within which the secret name must be unique.
-                              type: string
-                          type: object
-                          x-kubernetes-map-type: atomic
-                        transferProtocol:
-                          description: The network protocol that the server's update service uses to retrieve 'ImageURI'
-                          type: string
-                      required:
-                        - URI
-                      type: object
-                    serverMaintenancePolicy:
-                      description: ServerMaintenancePolicy is a maintenance policy to be enforced on the server managed by referred BMC.
-                      type: string
-                    updatePolicy:
-                      description: UpdatePolicy is an indication of whether the server's upgrade service should bypass vendor update policies
-                      type: string
-                    version:
-                      description: Version contains a BMC version to upgrade to
-                      type: string
-                  required:
-                    - image
-                    - version
-                  type: object
-              required:
-                - bmcSelector
-              type: object
-            status:
-              description: BMCVersionSetStatus defines the observed state of BMCVersionSet.
-              properties:
-                availableBMCVersion:
-                  description: AvailableBMCVersion is the number of BMCVersion current created by the set.
-                  format: int32
-                  type: integer
-                completedBMCVersion:
-                  description: CompletedBMCVersion is the total number of completed BMCVersion in the set.
-                  format: int32
-                  type: integer
-                failedBMCVersion:
-                  description: FailedBMCVersion is the total number of failed BMCVersion in the set.
-                  format: int32
-                  type: integer
-                fullyLabeledBMCs:
-                  description: FullyLabeledBMCs is the number of server in the set.
-                  format: int32
-                  type: integer
-                inProgressBMCVersion:
-                  description: InProgressBMCVersion is the total number of BMCVersion in the set that are currently in InProgress.
-                  format: int32
-                  type: integer
-                pendingBMCVersion:
-                  description: PendingBMCVersion is the total number of pending BMCVersion in the set.
-                  format: int32
-                  type: integer
-              type: object
-          type: object
-      served: true
-      storage: true
-      subresources:
-        status: {}
----
-# Source: metal-operator/templates/crd/metal.ironcore.dev_endpoints.yaml
-apiVersion: apiextensions.k8s.io/v1
-kind: CustomResourceDefinition
-metadata:
-  labels:
-    helm.sh/chart: "0.0.0-c3e363f-crds"
-    app.kubernetes.io/name: metal-operator
-    app.kubernetes.io/instance: metal-operator
-    app.kubernetes.io/version: "0.1.0"
-    app.kubernetes.io/managed-by: Helm
-  annotations:
-    controller-gen.kubebuilder.io/version: v0.19.0
-  name: endpoints.metal.ironcore.dev
-spec:
-  group: metal.ironcore.dev
-  names:
-    kind: Endpoint
-    listKind: EndpointList
-    plural: endpoints
-    singular: endpoint
-  scope: Cluster
-  versions:
-    - additionalPrinterColumns:
-        - jsonPath: .spec.macAddress
-          name: MACAddress
-          type: string
-        - jsonPath: .spec.ip
-          name: IP
-          type: string
-        - jsonPath: .metadata.creationTimestamp
-          name: Age
-          type: date
-      name: v1alpha1
-      schema:
-        openAPIV3Schema:
-          description: Endpoint is the Schema for the endpoints API
-          properties:
-            apiVersion:
-              description: |-
-                APIVersion defines the versioned schema of this representation of an object.
-                Servers should convert recognized schemas to the latest internal value, and
-                may reject unrecognized values.
-                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
-              type: string
-            kind:
-              description: |-
-                Kind is a string value representing the REST resource this object represents.
-                Servers may infer this from the endpoint the client submits requests to.
-                Cannot be updated.
-                In CamelCase.
-                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
-              type: string
-            metadata:
-              type: object
-            spec:
-              description: EndpointSpec defines the desired state of Endpoint
-              properties:
-                ip:
-                  description: IP is the IP address of the endpoint.
-                  type: string
-                macAddress:
-                  description: MACAddress is the MAC address of the endpoint.
-                  type: string
-              type: object
-            status:
-              description: EndpointStatus defines the observed state of Endpoint
-              type: object
-          type: object
-      served: true
-      storage: true
-      subresources:
-        status: {}
----
-# Source: metal-operator/templates/crd/metal.ironcore.dev_serverbootconfigurations.yaml
-apiVersion: apiextensions.k8s.io/v1
-kind: CustomResourceDefinition
-metadata:
-  labels:
-    helm.sh/chart: "0.0.0-c3e363f-crds"
-    app.kubernetes.io/name: metal-operator
-    app.kubernetes.io/instance: metal-operator
-    app.kubernetes.io/version: "0.1.0"
-    app.kubernetes.io/managed-by: Helm
-  annotations:
-    controller-gen.kubebuilder.io/version: v0.19.0
-  name: serverbootconfigurations.metal.ironcore.dev
-spec:
-  group: metal.ironcore.dev
-  names:
-    kind: ServerBootConfiguration
-    listKind: ServerBootConfigurationList
-    plural: serverbootconfigurations
-    singular: serverbootconfiguration
-  scope: Namespaced
-  versions:
-    - additionalPrinterColumns:
-        - jsonPath: .spec.serverRef.name
-          name: ServerRef
-          type: string
-        - jsonPath: .spec.image
-          name: Image
-          type: string
-        - jsonPath: .spec.ignitionSecretRef.name
-          name: IgnitionRef
-          type: string
-        - jsonPath: .status.state
-          name: State
-          type: string
-        - jsonPath: .metadata.creationTimestamp
-          name: Age
-          type: date
-      name: v1alpha1
-      schema:
-        openAPIV3Schema:
-          description: ServerBootConfiguration is the Schema for the serverbootconfigurations API
-          properties:
-            apiVersion:
-              description: |-
-                APIVersion defines the versioned schema of this representation of an object.
-                Servers should convert recognized schemas to the latest internal value, and
-                may reject unrecognized values.
-                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
-              type: string
-            kind:
-              description: |-
-                Kind is a string value representing the REST resource this object represents.
-                Servers may infer this from the endpoint the client submits requests to.
-                Cannot be updated.
-                In CamelCase.
-                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
-              type: string
-            metadata:
-              type: object
-            spec:
-              description: ServerBootConfigurationSpec defines the desired state of ServerBootConfiguration.
-              properties:
-                ignitionSecretRef:
-                  description: |-
-                    IgnitionSecretRef is a reference to the Kubernetes Secret object that contains
-                    the ignition configuration for the server. This field is optional and can be omitted if not specified.
-                  properties:
-                    name:
-                      default: ""
-                      description: |-
-                        Name of the referent.
-                        This field is effectively required, but due to backwards compatibility is
-                        allowed to be empty. Instances of this type with an empty value here are
-                        almost certainly wrong.
-                        More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                      type: string
-                  type: object
-                  x-kubernetes-map-type: atomic
-                image:
-                  description: |-
-                    Image specifies the boot image to be used for the server.
-                    This field is optional and can be omitted if not specified.
-                  type: string
-                serverRef:
-                  description: ServerRef is a reference to the server for which this boot configuration is intended.
-                  properties:
-                    name:
-                      default: ""
-                      description: |-
-                        Name of the referent.
-                        This field is effectively required, but due to backwards compatibility is
-                        allowed to be empty. Instances of this type with an empty value here are
-                        almost certainly wrong.
-                        More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                      type: string
-                  type: object
-                  x-kubernetes-map-type: atomic
-              required:
-                - serverRef
-              type: object
-            status:
-              description: ServerBootConfigurationStatus defines the observed state of ServerBootConfiguration.
-              properties:
-                conditions:
-                  description: Conditions represents the latest available observations of the ServerBootConfig's current state.
-                  items:
-                    description: Condition contains details for one aspect of the current state of this API Resource.
-                    properties:
-                      lastTransitionTime:
-                        description: |-
-                          lastTransitionTime is the last time the condition transitioned from one status to another.
-                          This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.
-                        format: date-time
-                        type: string
-                      message:
-                        description: |-
-                          message is a human readable message indicating details about the transition.
-                          This may be an empty string.
-                        maxLength: 32768
-                        type: string
-                      observedGeneration:
-                        description: |-
-                          observedGeneration represents the .metadata.generation that the condition was set based upon.
-                          For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
-                          with respect to the current state of the instance.
-                        format: int64
-                        minimum: 0
-                        type: integer
-                      reason:
-                        description: |-
-                          reason contains a programmatic identifier indicating the reason for the condition's last transition.
-                          Producers of specific condition types may define expected values and meanings for this field,
-                          and whether the values are considered a guaranteed API.
-                          The value should be a CamelCase string.
-                          This field may not be empty.
-                        maxLength: 1024
-                        minLength: 1
-                        pattern: ^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$
-                        type: string
-                      status:
-                        description: status of the condition, one of True, False, Unknown.
-                        enum:
-                          - "True"
-                          - "False"
-                          - Unknown
-                        type: string
-                      type:
-                        description: type of condition in CamelCase or in foo.example.com/CamelCase.
-                        maxLength: 316
-                        pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
-                        type: string
-                    required:
-                      - lastTransitionTime
-                      - message
-                      - reason
-                      - status
-                      - type
-                    type: object
-                  type: array
-                state:
-                  description: State represents the current state of the boot configuration.
-                  type: string
-              type: object
-          type: object
-      served: true
-      storage: true
-      subresources:
-        status: {}
----
-# Source: metal-operator/templates/crd/metal.ironcore.dev_serverclaims.yaml
-apiVersion: apiextensions.k8s.io/v1
-kind: CustomResourceDefinition
-metadata:
-  labels:
-    helm.sh/chart: "0.0.0-c3e363f-crds"
-    app.kubernetes.io/name: metal-operator
-    app.kubernetes.io/instance: metal-operator
-    app.kubernetes.io/version: "0.1.0"
-    app.kubernetes.io/managed-by: Helm
-  annotations:
-    controller-gen.kubebuilder.io/version: v0.19.0
-  name: serverclaims.metal.ironcore.dev
-spec:
-  group: metal.ironcore.dev
-  names:
-    kind: ServerClaim
-    listKind: ServerClaimList
-    plural: serverclaims
-    singular: serverclaim
-  scope: Namespaced
-  versions:
-    - additionalPrinterColumns:
-        - jsonPath: .spec.serverRef.name
-          name: Server
-          type: string
-        - jsonPath: .spec.ignitionSecretRef.name
-          name: Ignition
-          type: string
-        - jsonPath: .spec.image
-          name: Image
-          type: string
-        - jsonPath: .status.phase
-          name: Phase
-          type: string
-        - jsonPath: .metadata.creationTimestamp
-          name: Age
-          type: date
-      name: v1alpha1
-      schema:
-        openAPIV3Schema:
-          description: ServerClaim is the Schema for the serverclaims API
-          properties:
-            apiVersion:
-              description: |-
-                APIVersion defines the versioned schema of this representation of an object.
-                Servers should convert recognized schemas to the latest internal value, and
-                may reject unrecognized values.
-                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
-              type: string
-            kind:
-              description: |-
-                Kind is a string value representing the REST resource this object represents.
-                Servers may infer this from the endpoint the client submits requests to.
-                Cannot be updated.
-                In CamelCase.
-                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
-              type: string
-            metadata:
-              type: object
-            spec:
-              description: ServerClaimSpec defines the desired state of ServerClaim.
-              properties:
-                ignitionSecretRef:
-                  description: |-
-                    IgnitionSecretRef is a reference to the Kubernetes Secret object that contains
-                    the ignition configuration for the server. This field is optional and can be omitted if not specified.
-                  properties:
-                    name:
-                      default: ""
-                      description: |-
-                        Name of the referent.
-                        This field is effectively required, but due to backwards compatibility is
-                        allowed to be empty. Instances of this type with an empty value here are
-                        almost certainly wrong.
-                        More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                      type: string
-                  type: object
-                  x-kubernetes-map-type: atomic
-                image:
-                  description: Image specifies the boot image to be used for the server.
-                  type: string
-                power:
-                  description: Power specifies the desired power state of the server.
-                  type: string
-                serverRef:
-                  description: |-
-                    ServerRef is a reference to a specific server to be claimed.
-                    This field is optional and can be omitted if the server is to be selected using ServerSelector.
-                  properties:
-                    name:
-                      default: ""
-                      description: |-
-                        Name of the referent.
-                        This field is effectively required, but due to backwards compatibility is
-                        allowed to be empty. Instances of this type with an empty value here are
-                        almost certainly wrong.
-                        More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                      type: string
-                  type: object
-                  x-kubernetes-map-type: atomic
-                  x-kubernetes-validations:
-                    - message: serverRef is immutable
-                      rule: self == oldSelf
-                serverSelector:
-                  description: |-
-                    ServerSelector specifies a label selector to identify the server to be claimed.
-                    This field is optional and can be omitted if a specific server is referenced using ServerRef.
-                  properties:
-                    matchExpressions:
-                      description: matchExpressions is a list of label selector requirements. The requirements are ANDed.
-                      items:
-                        description: |-
-                          A label selector requirement is a selector that contains values, a key, and an operator that
-                          relates the key and values.
-                        properties:
-                          key:
-                            description: key is the label key that the selector applies to.
-                            type: string
-                          operator:
-                            description: |-
-                              operator represents a key's relationship to a set of values.
-                              Valid operators are In, NotIn, Exists and DoesNotExist.
-                            type: string
-                          values:
-                            description: |-
-                              values is an array of string values. If the operator is In or NotIn,
-                              the values array must be non-empty. If the operator is Exists or DoesNotExist,
-                              the values array must be empty. This array is replaced during a strategic
-                              merge patch.
-                            items:
-                              type: string
-                            type: array
-                            x-kubernetes-list-type: atomic
-                        required:
-                          - key
-                          - operator
-                        type: object
-                      type: array
-                      x-kubernetes-list-type: atomic
-                    matchLabels:
-                      additionalProperties:
-                        type: string
-                      description: |-
-                        matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
-                        map is equivalent to an element of matchExpressions, whose key field is "key", the
-                        operator is "In", and the values array contains only "value". The requirements are ANDed.
-                      type: object
-                  type: object
-                  x-kubernetes-map-type: atomic
-                  x-kubernetes-validations:
-                    - message: serverSelector is immutable
-                      rule: self == oldSelf
-              required:
-                - image
-                - power
-              type: object
-              x-kubernetes-validations:
-                - message: serverRef is required once set
-                  rule: '!has(oldSelf.serverRef) || has(self.serverRef)'
-                - message: serverSelector is required once set
-                  rule: '!has(oldSelf.serverSelector) || has(self.serverSelector)'
-            status:
-              description: ServerClaimStatus defines the observed state of ServerClaim.
-              properties:
-                phase:
-                  description: Phase represents the current phase of the server claim.
-                  type: string
-              type: object
-          type: object
-      served: true
-      storage: true
-      subresources:
-        status: {}
----
-# Source: metal-operator/templates/crd/metal.ironcore.dev_servermaintenances.yaml
-apiVersion: apiextensions.k8s.io/v1
-kind: CustomResourceDefinition
-metadata:
-  labels:
-    helm.sh/chart: "0.0.0-c3e363f-crds"
-    app.kubernetes.io/name: metal-operator
-    app.kubernetes.io/instance: metal-operator
-    app.kubernetes.io/version: "0.1.0"
-    app.kubernetes.io/managed-by: Helm
-  annotations:
-    controller-gen.kubebuilder.io/version: v0.19.0
-  name: servermaintenances.metal.ironcore.dev
-spec:
-  group: metal.ironcore.dev
-  names:
-    kind: ServerMaintenance
-    listKind: ServerMaintenanceList
-    plural: servermaintenances
-    singular: servermaintenance
-  scope: Namespaced
-  versions:
-    - additionalPrinterColumns:
-        - jsonPath: .spec.serverRef.name
-          name: Server
-          type: string
-        - jsonPath: .spec.policy
-          name: Policy
-          type: string
-        - jsonPath: .spec.serverBootConfigurationTemplate.name
-          name: BootConfiguration
-          type: string
-        - jsonPath: .metadata.annotations.metal\.ironcore\.dev\/reason
-          name: Reason
-          type: string
-        - jsonPath: .status.state
-          name: State
-          type: string
-        - jsonPath: .metadata.creationTimestamp
-          name: Age
-          type: date
-      name: v1alpha1
-      schema:
-        openAPIV3Schema:
-          description: ServerMaintenance is the Schema for the ServerMaintenance API
-          properties:
-            apiVersion:
-              description: |-
-                APIVersion defines the versioned schema of this representation of an object.
-                Servers should convert recognized schemas to the latest internal value, and
-                may reject unrecognized values.
-                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
-              type: string
-            kind:
-              description: |-
-                Kind is a string value representing the REST resource this object represents.
-                Servers may infer this from the endpoint the client submits requests to.
-                Cannot be updated.
-                In CamelCase.
-                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
-              type: string
-            metadata:
-              type: object
-            spec:
-              description: ServerMaintenanceSpec defines the desired state of a ServerMaintenance
-              properties:
-                policy:
-                  description: Policy specifies the maintenance policy to be enforced on the server.
-                  type: string
-                serverBootConfigurationTemplate:
-                  description: ServerBootConfigurationTemplate specifies the boot configuration to be applied to the server during maintenance.
-                  properties:
-                    name:
-                      description: Name specifies the name of the boot configuration.
-                      type: string
-                    spec:
-                      description: Parameters specify the parameters to be used for rendering the boot configuration.
-                      properties:
-                        ignitionSecretRef:
-                          description: |-
-                            IgnitionSecretRef is a reference to the Kubernetes Secret object that contains
-                            the ignition configuration for the server. This field is optional and can be omitted if not specified.
-                          properties:
-                            name:
-                              default: ""
-                              description: |-
-                                Name of the referent.
-                                This field is effectively required, but due to backwards compatibility is
-                                allowed to be empty. Instances of this type with an empty value here are
-                                almost certainly wrong.
-                                More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                              type: string
-                          type: object
-                          x-kubernetes-map-type: atomic
-                        image:
-                          description: |-
-                            Image specifies the boot image to be used for the server.
-                            This field is optional and can be omitted if not specified.
-                          type: string
-                        serverRef:
-                          description: ServerRef is a reference to the server for which this boot configuration is intended.
-                          properties:
-                            name:
-                              default: ""
-                              description: |-
-                                Name of the referent.
-                                This field is effectively required, but due to backwards compatibility is
-                                allowed to be empty. Instances of this type with an empty value here are
-                                almost certainly wrong.
-                                More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                              type: string
-                          type: object
-                          x-kubernetes-map-type: atomic
-                      required:
-                        - serverRef
-                      type: object
-                  required:
-                    - name
-                    - spec
-                  type: object
-                serverPower:
-                  description: ServerPower specifies the power state of the server during maintenance.
-                  type: string
-                serverRef:
-                  description: ServerRef is a reference to the server that is to be maintained.
-                  properties:
-                    name:
-                      default: ""
-                      description: |-
-                        Name of the referent.
-                        This field is effectively required, but due to backwards compatibility is
-                        allowed to be empty. Instances of this type with an empty value here are
-                        almost certainly wrong.
-                        More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                      type: string
-                  type: object
-                  x-kubernetes-map-type: atomic
-              required:
-                - serverRef
-              type: object
-            status:
-              description: ServerMaintenanceStatus defines the observed state of a ServerMaintenance
-              properties:
-                state:
-                  description: State specifies the current state of the server maintenance.
-                  type: string
-              type: object
-          type: object
-      served: true
-      storage: true
-      subresources:
-        status: {}
----
-# Source: metal-operator/templates/crd/metal.ironcore.dev_servers.yaml
-apiVersion: apiextensions.k8s.io/v1
-kind: CustomResourceDefinition
-metadata:
-  labels:
-    helm.sh/chart: "0.0.0-c3e363f-crds"
-    app.kubernetes.io/name: metal-operator
-    app.kubernetes.io/instance: metal-operator
-    app.kubernetes.io/version: "0.1.0"
-    app.kubernetes.io/managed-by: Helm
-  annotations:
-    controller-gen.kubebuilder.io/version: v0.19.0
-  name: servers.metal.ironcore.dev
-spec:
-  group: metal.ironcore.dev
-  names:
-    kind: Server
-    listKind: ServerList
-    plural: servers
-    singular: server
-  scope: Cluster
-  versions:
-    - additionalPrinterColumns:
-        - jsonPath: .spec.systemUUID
-          name: SystemUUID
-          type: string
-        - jsonPath: .status.manufacturer
-          name: Manufacturer
-          type: string
-        - jsonPath: .status.model
-          name: Model
-          type: string
-        - jsonPath: .status.totalSystemMemory
-          name: Memory
-          type: string
-        - jsonPath: .status.sku
-          name: SKU
-          priority: 100
-          type: string
-        - jsonPath: .status.serialNumber
-          name: SerialNumber
-          priority: 100
-          type: string
-        - jsonPath: .status.powerState
-          name: PowerState
-          type: string
-        - jsonPath: .status.indicatorLED
-          name: IndicatorLED
-          priority: 100
-          type: string
-        - jsonPath: .status.state
-          name: State
-          type: string
-        - jsonPath: .metadata.creationTimestamp
-          name: Age
-          type: date
-      name: v1alpha1
-      schema:
-        openAPIV3Schema:
-          description: Server is the Schema for the servers API
-          properties:
-            apiVersion:
-              description: |-
-                APIVersion defines the versioned schema of this representation of an object.
-                Servers should convert recognized schemas to the latest internal value, and
-                may reject unrecognized values.
-                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
-              type: string
-            kind:
-              description: |-
-                Kind is a string value representing the REST resource this object represents.
-                Servers may infer this from the endpoint the client submits requests to.
-                Cannot be updated.
-                In CamelCase.
-                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
-              type: string
-            metadata:
-              type: object
-            spec:
-              description: ServerSpec defines the desired state of a Server.
-              properties:
-                biosSettingsRef:
-                  description: |-
-                    BIOSSettingsRef is a reference to a biossettings object that specifies
-                    the BIOS configuration for this server.
-                  properties:
-                    name:
-                      default: ""
-                      description: |-
-                        Name of the referent.
-                        This field is effectively required, but due to backwards compatibility is
-                        allowed to be empty. Instances of this type with an empty value here are
-                        almost certainly wrong.
-                        More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                      type: string
-                  type: object
-                  x-kubernetes-map-type: atomic
-                bmc:
-                  description: |-
-                    BMC contains the access details for the BMC.
-                    This field is optional and can be omitted if no BMC access is specified.
-                  properties:
-                    address:
-                      description: Address is the address of the BMC.
-                      type: string
-                    bmcSecretRef:
-                      description: |-
-                        BMCSecretRef is a reference to the Kubernetes Secret object that contains the credentials
-                        required to access the BMC. This secret includes sensitive information such as usernames and passwords.
-                      properties:
-                        name:
-                          default: ""
-                          description: |-
-                            Name of the referent.
-                            This field is effectively required, but due to backwards compatibility is
-                            allowed to be empty. Instances of this type with an empty value here are
-                            almost certainly wrong.
-                            More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                          type: string
-                      type: object
-                      x-kubernetes-map-type: atomic
-                    protocol:
-                      description: Protocol specifies the protocol to be used for communicating with the BMC.
-                      properties:
-                        name:
-                          description: |-
-                            Name specifies the name of the protocol.
-                            This could be a protocol such as "IPMI", "Redfish", etc.
-                          type: string
-                        port:
-                          description: |-
-                            Port specifies the port number used for communication.
-                            This port is used by the specified protocol to establish connections.
-                          format: int32
-                          type: integer
-                        scheme:
-                          description: Scheme specifies the scheme used for communication.
-                          type: string
-                      required:
-                        - name
-                        - port
-                      type: object
-                  required:
-                    - address
-                    - bmcSecretRef
-                    - protocol
-                  type: object
-                bmcRef:
-                  description: |-
-                    BMCRef is a reference to the BMC object associated with this server.
-                    This field is optional and can be omitted if no BMC is associated with this server.
-                  properties:
-                    name:
-                      default: ""
-                      description: |-
-                        Name of the referent.
-                        This field is effectively required, but due to backwards compatibility is
-                        allowed to be empty. Instances of this type with an empty value here are
-                        almost certainly wrong.
-                        More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                      type: string
-                  type: object
-                  x-kubernetes-map-type: atomic
-                bootConfigurationRef:
-                  description: |-
-                    BootConfigurationRef is a reference to a BootConfiguration object that specifies
-                    the boot configuration for this server. This field is optional and can be omitted
-                    if no boot configuration is specified.
-                  properties:
-                    apiVersion:
-                      description: APIVersion is the API version of the referenced object.
-                      type: string
-                    kind:
-                      description: Kind is the kind of the referenced object.
-                      type: string
-                    name:
-                      description: Name is the name of the referenced object.
-                      type: string
-                    namespace:
-                      description: Namespace is the namespace of the referenced object.
-                      type: string
-                    uid:
-                      description: UID is the uid of the referenced object.
-                      type: string
-                  required:
-                    - apiVersion
-                    - kind
-                    - name
-                    - namespace
-                    - uid
-                  type: object
-                bootOrder:
-                  description: BootOrder specifies the boot order of the server.
-                  items:
-                    description: BootOrder represents the boot order of the server.
-                    properties:
-                      device:
-                        description: Device is the device to boot from.
-                        type: string
-                      name:
-                        description: Name is the name of the boot device.
-                        type: string
-                      priority:
-                        description: Priority is the priority of the boot device.
-                        type: integer
-                    required:
-                      - device
-                      - name
-                      - priority
-                    type: object
-                  type: array
-                indicatorLED:
-                  description: IndicatorLED specifies the desired state of the server's indicator LED.
-                  type: string
-                maintenanceBootConfigurationRef:
-                  description: |-
-                    MaintenanceBootConfigurationRef is a reference to a BootConfiguration object that specifies
-                    the boot configuration for this server during maintenance. This field is optional and can be omitted
-                  properties:
-                    apiVersion:
-                      description: APIVersion is the API version of the referenced object.
-                      type: string
-                    kind:
-                      description: Kind is the kind of the referenced object.
-                      type: string
-                    name:
-                      description: Name is the name of the referenced object.
-                      type: string
-                    namespace:
-                      description: Namespace is the namespace of the referenced object.
-                      type: string
-                    uid:
-                      description: UID is the uid of the referenced object.
-                      type: string
-                  required:
-                    - apiVersion
-                    - kind
-                    - name
-                    - namespace
-                    - uid
-                  type: object
-                power:
-                  description: Power specifies the desired power state of the server.
-                  type: string
-                serverClaimRef:
-                  description: |-
-                    ServerClaimRef is a reference to a ServerClaim object that claims this server.
-                    This field is optional and can be omitted if no claim is associated with this server.
-                  properties:
-                    apiVersion:
-                      description: APIVersion is the API version of the referenced object.
-                      type: string
-                    kind:
-                      description: Kind is the kind of the referenced object.
-                      type: string
-                    name:
-                      description: Name is the name of the referenced object.
-                      type: string
-                    namespace:
-                      description: Namespace is the namespace of the referenced object.
-                      type: string
-                    uid:
-                      description: UID is the uid of the referenced object.
-                      type: string
-                  required:
-                    - apiVersion
-                    - kind
-                    - name
-                    - namespace
-                    - uid
-                  type: object
-                  x-kubernetes-validations:
-                    - message: serverClaimRef cannot be switched directly
-                      rule: self == null || oldSelf == null || self == oldSelf
-                serverMaintenanceRef:
-                  description: ServerMaintenanceRef is a reference to a ServerMaintenance object that maintains this server.
-                  properties:
-                    apiVersion:
-                      description: APIVersion is the API version of the referenced object.
-                      type: string
-                    kind:
-                      description: Kind is the kind of the referenced object.
-                      type: string
-                    name:
-                      description: Name is the name of the referenced object.
-                      type: string
-                    namespace:
-                      description: Namespace is the namespace of the referenced object.
-                      type: string
-                    uid:
-                      description: UID is the uid of the referenced object.
-                      type: string
-                  required:
-                    - apiVersion
-                    - kind
-                    - name
-                    - namespace
-                    - uid
-                  type: object
-                systemURI:
-                  description: SystemURI is the unique URI for the server resource in REDFISH API.
-                  type: string
-                systemUUID:
-                  description: SystemUUID is the unique identifier for the server.
-                  type: string
-                uuid:
-                  description: |-
-                    UUID is the unique identifier for the server.
-                    Deprecated in favor of systemUUID.
-                  type: string
-              required:
-                - systemUUID
-              type: object
-            status:
-              description: ServerStatus defines the observed state of Server.
-              properties:
-                biosVersion:
-                  description: BIOSVersion is the version of the server's BIOS.
-                  type: string
-                conditions:
-                  description: Conditions represents the latest available observations of the server's current state.
-                  items:
-                    description: Condition contains details for one aspect of the current state of this API Resource.
-                    properties:
-                      lastTransitionTime:
-                        description: |-
-                          lastTransitionTime is the last time the condition transitioned from one status to another.
-                          This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.
-                        format: date-time
-                        type: string
-                      message:
-                        description: |-
-                          message is a human readable message indicating details about the transition.
-                          This may be an empty string.
-                        maxLength: 32768
-                        type: string
-                      observedGeneration:
-                        description: |-
-                          observedGeneration represents the .metadata.generation that the condition was set based upon.
-                          For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
-                          with respect to the current state of the instance.
-                        format: int64
-                        minimum: 0
-                        type: integer
-                      reason:
-                        description: |-
-                          reason contains a programmatic identifier indicating the reason for the condition's last transition.
-                          Producers of specific condition types may define expected values and meanings for this field,
-                          and whether the values are considered a guaranteed API.
-                          The value should be a CamelCase string.
-                          This field may not be empty.
-                        maxLength: 1024
-                        minLength: 1
-                        pattern: ^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$
-                        type: string
-                      status:
-                        description: status of the condition, one of True, False, Unknown.
-                        enum:
-                          - "True"
-                          - "False"
-                          - Unknown
-                        type: string
-                      type:
-                        description: type of condition in CamelCase or in foo.example.com/CamelCase.
-                        maxLength: 316
-                        pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
-                        type: string
-                    required:
-                      - lastTransitionTime
-                      - message
-                      - reason
-                      - status
-                      - type
-                    type: object
-                  type: array
-                indicatorLED:
-                  description: IndicatorLED specifies the current state of the server's indicator LED.
-                  type: string
-                manufacturer:
-                  description: Manufacturer is the name of the server manufacturer.
-                  type: string
-                model:
-                  description: Model is the model of the server.
-                  type: string
-                networkInterfaces:
-                  description: NetworkInterfaces is a list of network interfaces associated with the server.
-                  items:
-                    description: NetworkInterface defines the details of a network interface.
-                    properties:
-                      carrierStatus:
-                        description: CarrierStatus is the operational carrier status of the network interface.
-                        type: string
-                      ip:
-                        description: |-
-                          IP is the IP address assigned to the network interface.
-                          Deprecated: Use IPs instead. Kept for backward compatibility, always nil.
-                        type: string
-                      ips:
-                        description: IPs is a list of IP addresses (both IPv4 and IPv6) assigned to the network interface.
-                        items:
-                          format: ip
-                          type: string
-                        type: array
-                      macAddress:
-                        description: MACAddress is the MAC address of the network interface.
-                        type: string
-                      name:
-                        description: Name is the name of the network interface.
-                        type: string
-                      neighbors:
-                        description: Neighbors contains the LLDP neighbors discovered on this interface.
-                        items:
-                          description: LLDPNeighbor defines the details of an LLDP neighbor.
-                          properties:
-                            macAddress:
-                              description: MACAddress is the MAC address of the LLDP neighbor.
-                              type: string
-                            portDescription:
-                              description: PortDescription is the port description of the LLDP neighbor.
-                              type: string
-                            portID:
-                              description: PortID is the port identifier of the LLDP neighbor.
-                              type: string
-                            systemDescription:
-                              description: SystemDescription is the system description of the LLDP neighbor.
-                              type: string
-                            systemName:
-                              description: SystemName is the system name of the LLDP neighbor.
-                              type: string
-                          type: object
-                        type: array
-                    required:
-                      - macAddress
-                      - name
-                    type: object
-                  type: array
-                powerState:
-                  description: PowerState represents the current power state of the server.
-                  type: string
-                processors:
-                  description: Processors is a list of Processors associated with the server.
-                  items:
-                    description: Processor defines the details of a Processor.
-                    properties:
-                      architecture:
-                        description: Architecture is the architecture of the Processor.
-                        type: string
-                      id:
-                        description: ID is the name of the Processor.
-                        type: string
-                      instructionSet:
-                        description: InstructionSet is the instruction set of the Processor.
-                        type: string
-                      manufacturer:
-                        description: Manufacturer is the manufacturer of the Processor.
-                        type: string
-                      maxSpeedMHz:
-                        description: MaxSpeedMHz is the maximum speed of the Processor in MHz.
-                        format: int32
-                        type: integer
-                      model:
-                        description: Model is the model of the Processor.
-                        type: string
-                      totalCores:
-                        description: TotalCores is the total number of cores in the Processor.
-                        format: int32
-                        type: integer
-                      totalThreads:
-                        description: TotalThreads is the total number of threads in the Processor.
-                        format: int32
-                        type: integer
-                      type:
-                        description: Type is the type of the Processor.
-                        type: string
-                    required:
-                      - id
-                    type: object
-                  type: array
-                serialNumber:
-                  description: SerialNumber is the serial number of the server.
-                  type: string
-                sku:
-                  description: SKU is the stock keeping unit identifier for the server.
-                  type: string
-                state:
-                  description: State represents the current state of the server.
-                  type: string
-                storages:
-                  description: Storages is a list of storages associated with the server.
-                  items:
-                    description: Storage defines the details of one storage device
-                    properties:
-                      drives:
-                        description: Drives is a collection of drives associated with this storage.
-                        items:
-                          description: StorageDrive defines the details of one storage drive
-                          properties:
-                            capacity:
-                              anyOf:
-                                - type: integer
-                                - type: string
-                              description: Capacity specifies the size of the storage device in bytes.
-                              pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
-                              x-kubernetes-int-or-string: true
-                            mediaType:
-                              description: MediaType specifies the media type of the storage device.
-                              type: string
-                            model:
-                              description: Model specifies the model of the storage device.
-                              type: string
-                            name:
-                              description: Name is the name of the storage interface.
-                              type: string
-                            state:
-                              description: State specifies the state of the storage device.
-                              type: string
-                            type:
-                              description: Type specifies the type of the storage device.
-                              type: string
-                            vendor:
-                              description: Vendor specifies the vendor of the storage device.
-                              type: string
-                          type: object
-                        type: array
-                      name:
-                        description: Name is the name of the storage interface.
-                        type: string
-                      state:
-                        description: State specifies the state of the storage device.
-                        type: string
-                      volumes:
-                        description: Volumes is a collection of volumes associated with this storage.
-                        items:
-                          description: StorageVolume defines the details of one storage volume
-                          properties:
-                            capacity:
-                              anyOf:
-                                - type: integer
-                                - type: string
-                              description: Capacity specifies the size of the storage device in bytes.
-                              pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
-                              x-kubernetes-int-or-string: true
-                            name:
-                              description: Name is the name of the storage interface.
-                              type: string
-                            raidType:
-                              description: RAIDType specifies the RAID type of the associated Volume.
-                              type: string
-                            state:
-                              description: Status specifies the status of the volume.
-                              type: string
-                            volumeUsage:
-                              description: VolumeUsage specifies the volume usage type for the Volume.
-                              type: string
-                          type: object
-                        type: array
-                    type: object
-                  type: array
-                totalSystemMemory:
-                  anyOf:
-                    - type: integer
-                    - type: string
-                  description: TotalSystemMemory is the total amount of memory in bytes available on the server.
-                  pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
-                  x-kubernetes-int-or-string: true
-              type: object
-          type: object
-      served: true
-      storage: true
-      subresources:
-        status: {}
 # Source: metal-operator/templates/rbac/biossettings_admin_role.yaml
 # This rule is not used by the project metal-operator itself.
 # It is provided to allow the cluster admin to help manage permissions for users.
@@ -3277,7 +23,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-c3e363f-crds"
+    helm.sh/chart: "0.2.2-20260127142324-f345f9c"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3308,7 +54,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-c3e363f-crds"
+    helm.sh/chart: "0.2.2-20260127142324-f345f9c"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3345,7 +91,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-c3e363f-crds"
+    helm.sh/chart: "0.2.2-20260127142324-f345f9c"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3378,7 +124,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-c3e363f-crds"
+    helm.sh/chart: "0.2.2-20260127142324-f345f9c"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3409,7 +155,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-c3e363f-crds"
+    helm.sh/chart: "0.2.2-20260127142324-f345f9c"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3446,7 +192,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-c3e363f-crds"
+    helm.sh/chart: "0.2.2-20260127142324-f345f9c"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3479,7 +225,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-c3e363f-crds"
+    helm.sh/chart: "0.2.2-20260127142324-f345f9c"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3510,7 +256,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-c3e363f-crds"
+    helm.sh/chart: "0.2.2-20260127142324-f345f9c"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3547,7 +293,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-c3e363f-crds"
+    helm.sh/chart: "0.2.2-20260127142324-f345f9c"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3580,7 +326,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-c3e363f-crds"
+    helm.sh/chart: "0.2.2-20260127142324-f345f9c"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3611,7 +357,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-c3e363f-crds"
+    helm.sh/chart: "0.2.2-20260127142324-f345f9c"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3648,7 +394,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-c3e363f-crds"
+    helm.sh/chart: "0.2.2-20260127142324-f345f9c"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3676,7 +422,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-c3e363f-crds"
+    helm.sh/chart: "0.2.2-20260127142324-f345f9c"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3708,7 +454,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-c3e363f-crds"
+    helm.sh/chart: "0.2.2-20260127142324-f345f9c"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3736,7 +482,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-c3e363f-crds"
+    helm.sh/chart: "0.2.2-20260127142324-f345f9c"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3768,7 +514,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-c3e363f-crds"
+    helm.sh/chart: "0.2.2-20260127142324-f345f9c"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3801,7 +547,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-c3e363f-crds"
+    helm.sh/chart: "0.2.2-20260127142324-f345f9c"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3832,7 +578,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-c3e363f-crds"
+    helm.sh/chart: "0.2.2-20260127142324-f345f9c"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3869,7 +615,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-c3e363f-crds"
+    helm.sh/chart: "0.2.2-20260127142324-f345f9c"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3902,7 +648,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-c3e363f-crds"
+    helm.sh/chart: "0.2.2-20260127142324-f345f9c"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3933,7 +679,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-c3e363f-crds"
+    helm.sh/chart: "0.2.2-20260127142324-f345f9c"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3970,7 +716,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-c3e363f-crds"
+    helm.sh/chart: "0.2.2-20260127142324-f345f9c"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4003,7 +749,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-c3e363f-crds"
+    helm.sh/chart: "0.2.2-20260127142324-f345f9c"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4034,7 +780,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-c3e363f-crds"
+    helm.sh/chart: "0.2.2-20260127142324-f345f9c"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4071,7 +817,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-c3e363f-crds"
+    helm.sh/chart: "0.2.2-20260127142324-f345f9c"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4104,7 +850,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-c3e363f-crds"
+    helm.sh/chart: "0.2.2-20260127142324-f345f9c"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4135,7 +881,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-c3e363f-crds"
+    helm.sh/chart: "0.2.2-20260127142324-f345f9c"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4172,7 +918,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-c3e363f-crds"
+    helm.sh/chart: "0.2.2-20260127142324-f345f9c"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4200,7 +946,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-c3e363f-crds"
+    helm.sh/chart: "0.2.2-20260127142324-f345f9c"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4232,7 +978,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-c3e363f-crds"
+    helm.sh/chart: "0.2.2-20260127142324-f345f9c"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4259,7 +1005,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-c3e363f-crds"
+    helm.sh/chart: "0.2.2-20260127142324-f345f9c"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4284,7 +1030,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-c3e363f-crds"
+    helm.sh/chart: "0.2.2-20260127142324-f345f9c"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4301,7 +1047,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-c3e363f-crds"
+    helm.sh/chart: "0.2.2-20260127142324-f345f9c"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4417,7 +1163,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-c3e363f-crds"
+    helm.sh/chart: "0.2.2-20260127142324-f345f9c"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4449,7 +1195,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-c3e363f-crds"
+    helm.sh/chart: "0.2.2-20260127142324-f345f9c"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4477,7 +1223,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-c3e363f-crds"
+    helm.sh/chart: "0.2.2-20260127142324-f345f9c"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4509,7 +1255,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-c3e363f-crds"
+    helm.sh/chart: "0.2.2-20260127142324-f345f9c"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4537,7 +1283,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-c3e363f-crds"
+    helm.sh/chart: "0.2.2-20260127142324-f345f9c"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4569,7 +1315,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-c3e363f-crds"
+    helm.sh/chart: "0.2.2-20260127142324-f345f9c"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4602,7 +1348,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-c3e363f-crds"
+    helm.sh/chart: "0.2.2-20260127142324-f345f9c"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4633,7 +1379,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-c3e363f-crds"
+    helm.sh/chart: "0.2.2-20260127142324-f345f9c"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4670,7 +1416,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-c3e363f-crds"
+    helm.sh/chart: "0.2.2-20260127142324-f345f9c"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4697,7 +1443,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-c3e363f-crds"
+    helm.sh/chart: "0.2.2-20260127142324-f345f9c"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4717,7 +1463,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-c3e363f-crds"
+    helm.sh/chart: "0.2.2-20260127142324-f345f9c"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4738,7 +1484,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-c3e363f-crds"
+    helm.sh/chart: "0.2.2-20260127142324-f345f9c"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4783,7 +1529,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-c3e363f-crds"
+    helm.sh/chart: "0.2.2-20260127142324-f345f9c"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
