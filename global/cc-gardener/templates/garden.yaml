@@ -42,7 +42,11 @@ spec:
   runtimeCluster:
     ingress:
       domains:
+      {{- if .Values.garden.domainOverride }}
+      - name: runtime.{{ .Values.garden.domainOverride }}.{{ required ".Values.global.region missing" .Values.global.region }}.cloud.sap
+      {{- else }}
       - name: runtime-garden.{{ required ".Values.global.cluster missing" .Values.global.cluster }}.{{ required ".Values.global.region missing" .Values.global.region }}.cloud.sap
+      {{- end }}
       controller:
         kind: nginx
     networking:
@@ -62,7 +66,11 @@ spec:
   virtualCluster:
     dns:
       domains:
+      {{- if .Values.garden.domainOverride }}
+      - name: virtual.{{ .Values.garden.domainOverride }}.{{ required ".Values.global.region missing" .Values.global.region }}.cloud.sap
+      {{- else }}
       - name: virtual-garden.{{ required ".Values.global.cluster missing" .Values.global.cluster }}.{{ required ".Values.global.region missing" .Values.global.region }}.cloud.sap
+      {{- end }}
       {{- if .Values.garden.virtualCluster.publicDomain }}
       - name: {{ .Values.garden.virtualCluster.publicDomain }}
       {{- end }}
