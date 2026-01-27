@@ -6,7 +6,7 @@ groups:
       # [qa-de-1-aci-2199][eth1/19, eth1/7][100.65.1.49] Port suspended BGP neighbour down: BGP peer is not established, current state Idle [QA-DE-1-FW103a, QA-DE-1-FW103b, port34, Firewall, ; ACI Leaf, active]
       - alert: BGPNeighbourDown 
         expr: |
-          sum by (node_name, node_role, node_intf, node_status, bgp_peer_ip, device_name, device_intf, device_role, reason) (aci_obs_bgp_fault > 0)
+          sum by (node_name, node_intf, device_name, reason) (aci_obs_bgp_fault{caused_by_id="", deduplicated="", node_status=~"active|", device_status=~"active|"} > 0)
         for: 5m
         labels:
           severity: warning
@@ -14,13 +14,13 @@ groups:
           aci_obs_group: PortFaultGroup
         annotations:
           summary: "Port Faults"
-          description: "[{{ $labels.node_name }}][{{ $labels.node_intf }}][{{ $labels.bgp_peer_ip }}] Port suspended BGP neighbour down: {{ $labels.reason }} [{{ $labels.device_name }}, {{ $labels.device_intf }}, {{ $labels.device_role }}, {{ $labels.device_status }}; {{ $labels.node_role }}, {{ $labels.node_status }}]"
+          description: "[{{ $labels.node_name }}][{{ $labels.node_intf }}][{{ $labels.device_name }}] Port suspended BGP neighbour down: {{ $labels.reason }}"
 
       # F0546 (!)
       # [QA-DE-1-CCACI-BB-2105-BB091-SW1][eth1/48] Port down: Port is down, reason:Error Disabled link Flaps(Err-Disabled), used by:Discovery [ACI Leaf, active]
       - alert: PortDown
         expr: |
-          sum by (node_name, node_role, node_intf, node_status, reason) (aci_obs_port_down > 0)
+          sum by (node_name, node_intf, device_name, reason) (aci_obs_port_down{caused_by_id="", deduplicated="", node_status=~"active|", device_status=~"active|"} > 0)
         for: 5m
         labels:
           severity: warning
@@ -28,13 +28,13 @@ groups:
           aci_obs_group: PortFaultGroup
         annotations:
           summary: "Port Faults"
-          description: "[{{ $labels.node_name }}][{{ $labels.node_intf }}] Port down: {{ $labels.reason }} [{{ $labels.node_role }}, {{ $labels.node_status }}]"
+          description: "[{{ $labels.node_name }}][{{ $labels.node_intf }}][{{ $labels.device_name }}] Port down: {{ $labels.reason }}"
 
       # F0532 (!)
       # [qa-de-1-aci-2225-np091][eth1/17, eth1/18] Port down: Port is down, reason being No Oper Members(Connected), used by EPG on node 2225 of fabric QA-DE-1-ACI with hostname qa-de-1-aci-2225-np091 [ACI Leaf, active]
       - alert: PortDownForEPG 
         expr: |
-          sum by (node_name, node_role, node_intf, node_status, reason) (aci_obs_port_down_for_epg > 0)
+          sum by (node_name, node_intf, device_name, reason) (aci_obs_port_down_for_epg{caused_by_id="", deduplicated="", node_status=~"active|", device_status=~"active|"} > 0)
         for: 5m
         labels:
           severity: warning
@@ -42,13 +42,13 @@ groups:
           aci_obs_group: PortFaultGroup
         annotations:
           summary: "Port Faults"
-          description: "[{{ $labels.node_name }}][{{ $labels.node_intf }}] Port down for epg: {{ $labels.reason }} [{{ $labels.node_role }}, {{ $labels.node_status }}]"
+          description: "[{{ $labels.node_name }}][{{ $labels.node_intf }}][{{ $labels.device_name }}] Port down for EPG: {{ $labels.reason }}"
 
       # F0603 (!)
       # [qa-de-1-aci-2198][eth1/2] Port suspended: Port is operationally individual. [ACI Leaf, active]
       - alert: PortSuspended
         expr: |
-          sum by (node_name, node_role, node_intf, node_status, reason) (aci_obs_port_individual > 0)
+          sum by (node_name, node_intf, device_name, reason) (aci_obs_port_individual{caused_by_id="", deduplicated="", node_status=~"active|", device_status=~"active|"} > 0)
         for: 5m
         labels:
           severity: warning
@@ -56,13 +56,13 @@ groups:
           aci_obs_group: PortFaultGroup
         annotations:
           summary: "Port Faults"
-          description: "[{{ $labels.node_name }}][{{ $labels.node_intf }}] Port suspended: {{ $labels.reason }} [{{ $labels.node_role }}, {{ $labels.node_status }}]"
+          description: "[{{ $labels.node_name }}][{{ $labels.node_intf }}][{{ $labels.device_name }}] Port suspended: {{ $labels.reason }}"
 
       # F0600 (!)
       # [qa-de-1-aci-2225-np091][eth1/14][qa-de-1-rt011b][TenGigabitEthernet0/1/0] Aggregate Port suspended: Port is suspended on node 2225 fabric hostname qa-de-1-aci-2225-np091. [ACI Leaf, active; Neutron Router, active]
       - alert: AggregatePortSuspended
         expr: |
-          sum by (node_name, node_role, node_intf, device_name, device_intf, device_role, device_status, node_status, reason) (aci_obs_aggregate_port_suspended > 0)
+          sum by (node_name, node_intf, device_name) (aci_obs_aggregate_port_suspended{caused_by_id="", deduplicated="", node_status=~"active|", device_status=~"active|"} > 0)
         for: 5m
         labels:
           severity: warning
@@ -70,19 +70,4 @@ groups:
           aci_obs_group: PortFaultGroup
         annotations:
           summary: "Port Faults"
-          description: "[{{ $labels.node_name }}][{{ $labels.node_intf }}][{{ $labels.device_name }}][{{ $labels.device_intf }}] Aggregate Port suspended: {{ $labels.reason }} [{{ $labels.node_role }}, {{ $labels.node_status }}; {{ $labels.device_role }}, {{ $labels.device_status }}]"
-
-      # F1296 (!)
-      # [qa-de-1-aci-2244-bb089][eth1/5][node005-bb089][NIC2-port1] VPC down: vPC BB089_node005-bb089_LAG0 is down in Pod 2 node 2244 fabric hostname qa-de-1-aci-2244-bb089 [ACI Leaf, active; Server, planned]
-      - alert: VPCDown
-        expr: |
-          sum by (node_name, node_role, node_intf, device_name, device_intf, device_role, device_status, node_status, reason) (aci_obs_vpc_down > 0)
-        for: 5m
-        labels:
-          severity: warning
-          support_group: network-data
-          aci_obs_group: PortFaultGroup
-        annotations:
-          summary: "Port Faults"
-          description: "[{{ $labels.node_name }}][{{ $labels.node_intf }}][{{ $labels.device_name }}][{{ $labels.device_intf }}] VPC down: {{ $labels.reason }} [{{ $labels.node_role }}, {{ $labels.node_status }}; {{ $labels.device_role }}, {{ $labels.device_status }}]"
-
+          description: "[{{ $labels.node_name }}][{{ $labels.node_intf }}][{{ $labels.device_name }}] Aggregate Port suspended"
