@@ -1,0 +1,58 @@
+---
+apiVersion: "openstack.stable.sap.cc/v1"
+kind: "OpenstackSeed"
+metadata:
+  name: {{ .Chart.Name }}-seed
+  labels:
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+spec:
+  rbac_policies:
+  - target_tenant_name: {{ required "Missing openstack.project_name value!" .Values.openstack.project_name }}@tempest
+    object_type: network
+    object_name: {{ required "Missing rbac_policy_object_name_shared_network value!" .Values.rbac_policy_object_name_shared_network }}
+    action: access_as_shared
+  domains:
+  - name: tempest
+    groups:
+    - name: administrators
+      description: 'Administrators'
+      users:
+      - {{ required "Missing openstack.username value!" .Values.openstack.username | quote }}
+      role_assignments:
+      - project: {{ required "Missing openstack.project_name value!" .Values.openstack.project_name | quote }}
+        role: admin
+      - project: service
+        role: admin
+      - domain: tempest
+        role: admin
+      - domain: tempest
+        role: resource_admin
+      - domain: tempest
+        role: admin
+        inherited: true
+    projects:
+    - name: {{ required "Missing openstack.project_name value!" .Values.openstack.project_name | quote }}
+      description: sci-smoke Test Project
+    users:
+    - name: {{ required "Missing openstack.username value!" .Values.openstack.username | quote }}
+      description: sci-smoke Administrator
+      password: {{ required "Missing openstack.password value!" .Values.openstack.password | quote }}
+      role_assignments:
+      - project: {{ required "Missing openstack.project_name value!" .Values.openstack.project_name | quote }}
+        role: member
+      - project: {{ required "Missing openstack.project_name value!" .Values.openstack.project_name | quote }}
+        role: admin
+      - project: {{ required "Missing openstack.project_name value!" .Values.openstack.project_name | quote }}
+        role: network_admin
+      - project: {{ required "Missing openstack.project_name value!" .Values.openstack.project_name | quote }}
+        role: compute_admin
+      - project: {{ required "Missing openstack.project_name value!" .Values.openstack.project_name | quote }}
+        role: cloud_compute_admin
+      - project: {{ required "Missing openstack.project_name value!" .Values.openstack.project_name | quote }}
+        role: resource_admin
+      - project: {{ required "Missing openstack.project_name value!" .Values.openstack.project_name | quote }}
+        role: volume_admin
+      - project: {{ required "Missing openstack.project_name value!" .Values.openstack.project_name | quote }}
+        role: cloud_volume_admin
