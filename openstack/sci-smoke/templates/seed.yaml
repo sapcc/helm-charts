@@ -1,0 +1,53 @@
+---
+apiVersion: "openstack.stable.sap.cc/v1"
+kind: "OpenstackSeed"
+metadata:
+  name: {{ .Chart.Name }}-seed
+  labels:
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+spec:
+  domains:
+  - name: tempest
+    groups:
+    - name: administrators
+      description: 'Administrators'
+      users:
+      - sci-smoke-admin
+      role_assignments:
+      - project: sci-smoke
+        role: admin
+      - project: service
+        role: admin
+      - domain: tempest
+        role: admin
+      - domain: tempest
+        role: resource_admin
+      - domain: tempest
+        role: admin
+        inherited: true
+    projects:
+    - name: sci-smoke
+      description: sci-smoke Test Project
+    users:
+    - name: sci-smoke-admin
+      description: sci-smoke Administrator
+      password: {{ required "Missing openstack.password value!" .Values.openstack.password | quote }}
+      role_assignments:
+      - project: sci-smoke
+        role: member
+      - project: sci-smoke
+        role: admin
+      - project: sci-smoke
+        role: network_admin
+      - project: sci-smoke
+        role: compute_admin
+      - project: sci-smoke
+        role: cloud_compute_admin
+      - project: sci-smoke
+        role: resource_admin
+      - project: sci-smoke
+        role: volume_admin
+      - project: sci-smoke
+        role: cloud_volume_admin
