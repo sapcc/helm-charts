@@ -26,7 +26,10 @@ spec:
       values:
         replicaCount: 1
         image:
-          tag: {{ .Values.extensions.openstack.version }}
+          tag: {{ .Values.extensions.openstack.values.image.tag | default .Values.extensions.openstack.version }}
+          {{- if .Values.extensions.openstack.values.image.repository }}
+          repository: {{ .Values.extensions.openstack.values.image.repository }}
+          {{- end }}
         config:
           etcd:
             storage:
@@ -40,7 +43,10 @@ spec:
       runtimeClusterValues:
         replicaCount: 1
         image:
-          tag: {{ .Values.extensions.openstack.version }}
+          tag: {{ .Values.extensions.openstack.runtimeClusterValues.image.tag | default .Values.extensions.openstack.version }}
+          {{- if .Values.extensions.openstack.runtimeClusterValues.image.repository }}
+          repository: {{ .Values.extensions.openstack.runtimeClusterValues.image.repository }}
+          {{- end }}
         config:
           etcd:
             storage:
@@ -50,7 +56,7 @@ spec:
               {{- end }}
       helm:
         ociRepository:
-          tag: {{ .Values.extensions.openstack.version }}
-          repository: keppel.global.cloud.sap/ccloud-europe-docker-pkg-dev-mirror/gardener-project/releases/charts/gardener/extensions/provider-openstack
+          tag: {{ .Values.extensions.openstack.helm.ociRepository.tag | default .Values.extensions.openstack.version }}
+          repository: {{ .Values.extensions.openstack.helm.ociRepository.repository }}
       policy: OnDemand
 {{- end }}
