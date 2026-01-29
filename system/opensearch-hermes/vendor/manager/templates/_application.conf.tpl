@@ -30,6 +30,14 @@ hosts = [
       username = "{{.Values.global.users.admin2.username_resolve}}"
       password = "{{.Values.global.users.admin2.password_resolve}}"
     }
+  },
+  {
+    host = "https://opensearch-hermes.hermes.svc.cluster.local:9200"
+    name = "OpenSearch Hermes local cluster"
+    auth = {
+      username = "{{.Values.global.users.admin2.username_resolve}}"
+      password = "{{.Values.global.users.admin2.password_resolve}}"
+    }
   }
 ]
 
