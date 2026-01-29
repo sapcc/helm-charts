@@ -245,6 +245,9 @@ interconnection:
 fwaas:
   enabled: false
 
+vpnaas:
+  enabled: false
+
 ovn:
   enabled: false
   image: "keppel.eu-de-1.cloud.sap/ccloud/cobaltcore-dev/openstack-ovn-controller"
@@ -390,6 +393,9 @@ logging:
     neutron_vpnaas:
       handlers: stdout, sentry
       level: INFO
+    networking_bgpvpn:
+      handlers: stdout, sentry
+      level: INFO
 
 logging_sapccsentry:
   formatters:
@@ -473,6 +479,9 @@ logging_sapccsentry:
     networking_arista:
       handlers: stdout, sentry_events, sentry_breadcrumbs
       level: DEBUG
+    networking_bgpvpn:
+      handlers: stdout, sentry_events, sentry_breadcrumbs
+      level: INFO
 
 
 pgmetrics:
@@ -743,7 +752,6 @@ max_overflow: 5
 
 sentry:
   enabled: true
-  sapccsentry: false
 
 audit:
   enabled: false
@@ -979,6 +987,14 @@ api-ratelimit-redis:
   alerts:
     support_group: network-api
 
+metadata:
+  rate_limit:
+    enabled: false
+    base_window_duration: 60
+    base_query_rate_limit: 600
+    burst_window_duration: 10
+    burst_query_rate_limit: 250
+
 utils:
   trust_bundle:
     enable: false
@@ -988,3 +1004,7 @@ customdns:
   upstream_dns_servers: []
   project_ids: []
   domain_name_prefixes: []
+
+statsd:
+  image: 'shared-app-images/statsd-exporter'
+  imageTag: '0.28.0-latest'

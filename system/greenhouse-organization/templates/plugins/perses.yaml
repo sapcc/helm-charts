@@ -6,6 +6,7 @@ metadata:
   namespace: {{ .Release.Namespace }}
   labels:
     "greenhouse.sap/owned-by": {{ .Values.perses.supportGroup | default .Values.global.supportGroup }}
+    "greenhouse.sap/deployment-tool": "flux"
 spec:
   disabled: false
   displayName: perses
@@ -31,5 +32,9 @@ spec:
           secretName: {{ printf "tls-%s" (print "perses." .Values.global.dnsDomain | replace "." "-") }}
     - name: perses.sidecar.enabled
       value: true
-  pluginDefinition: perses
+    - name: perses.sidecar.allNamespaces
+      value: false
+  pluginDefinitionRef:
+    kind: PluginDefinition
+    name: perses
 {{ end }}

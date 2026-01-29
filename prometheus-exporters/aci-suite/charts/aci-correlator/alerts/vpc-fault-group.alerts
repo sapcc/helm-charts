@@ -1,0 +1,73 @@
+groups:
+  - name: aci-exporter-vpc.alerts
+    rules:
+
+      # F0518 (!)
+      # [qa-de-1-aci-2299][eth1/7][QA-DE-1-FW203a] VPC configuration inconsistency
+      - alert: VPCConfigInconsistency 
+        expr: |
+          sum by (node_name, node_intf, device_name) (aci_obs_vpc_conf_inconsistency{caused_by_id="", deduplicated="", node_status=~"active|", device_status=~"active|"} > 0)
+        for: 5m
+        labels:
+          severity: warning
+          support_group: network-data
+          aci_obs_group: VpcFaultGroup
+        annotations:
+          summary: "VPC Faults"
+          description: "[{{ $labels.node_name }}][{{ $labels.node_intf }}][{{ $labels.device_name }}] VPC configuration inconsistency"
+
+      # F1296 (!)
+      # [qa-de-1-aci-2244-bb089][Server] VPC down
+      - alert: VPCDown
+        expr: |
+          sum by (node_name, node_intf, device_name) (aci_obs_vpc_down{caused_by_id="", deduplicated="", node_status=~"active|", device_status=~"active|"} > 0)
+        for: 5m
+        labels:
+          severity: warning
+          support_group: network-data
+          aci_obs_group: VpcFaultGroup
+        annotations:
+          summary: "VPC Faults"
+          description: "[{{ $labels.node_name }}][{{ $labels.node_intf }}][{{ $labels.device_name }}] VPC down"
+
+      # F2705 (!)
+      # [qa-de-1-aci-2299][eth1/7][QA-DE-1-FW203a] VPC interface impaired
+      - alert: InterfaceVPCImpaired 
+        expr: |
+          sum by (node_name, node_intf, device_name) (aci_obs_intf_vpc_impaired{caused_by_id="", deduplicated="", node_status=~"active|", device_status=~"active|"} > 0)
+        for: 5m
+        labels:
+          severity: warning
+          support_group: network-data
+          aci_obs_group: VpcFaultGroup
+        annotations:
+          summary: "VPC Faults"
+          description: "[{{ $labels.node_name }}][{{ $labels.node_intf }}][{{ $labels.device_name }}] VPC interface impaired"
+
+      # F3696 (!)
+      # [QA-DE-1-CCACI-1202] 578 EPs are in freeze state: 578 EPs are in freeze state. [ACI Spine, active]
+      - alert: EpsInFreezeState 
+        expr: |
+          sum by (frozen_eps, node_name, node_role, node_status, reason) (aci_obs_ep_freeze_state{caused_by_id="", deduplicated="", node_status=~"active|", device_status=~"active|"} > 0)
+        for: 5m
+        labels:
+          severity: critical
+          support_group: network-data
+          aci_obs_group: VpcFaultGroup
+        annotations:
+          summary: "VPC Faults"
+          description: "[{{ $labels.node_name }}] {{ $labels.frozen_eps }} EPs are in freeze state: {{ $labels.reason }} [{{ $labels.node_role }}, {{ $labels.node_status }}]"
+
+      # F381328 (!)
+      # [qa-de-1-aci-2103-bb084][eth2/22] CRC/FCS align errors triggered over threshold: TCA: CRC Align Errors current value(eqptIngrErrPkts5min:crcLast) value 100% raised above threshold 50% [ACI Leaf, active]
+      - alert: CRCOrFCSOverThreshold 
+        expr: |
+          sum by (node_name, node_intf, node_role, node_status, reason) (aci_obs_crc_fcs_over_threshold{caused_by_id="", deduplicated="", node_status=~"active|", device_status=~"active|"} > 0)
+        for: 5m
+        labels:
+          severity: critical
+          support_group: network-data
+          aci_obs_group: VpcFaultGroup
+        annotations:
+          summary: "VPC Faults"
+          description: "[{{ $labels.node_name }}][{{ $labels.node_intf }}] CRC/FCS align errors triggered over threshold: {{ $labels.reason }} [{{ $labels.node_role }}, {{ $labels.node_status }}]"

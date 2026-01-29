@@ -103,7 +103,7 @@
 <filter audit.**>
   @type prometheus
   <metric>
-    name prom_fluentd_audit_input_status_num_records_total
+    name prom_fluentd_audit_input_status_num_records_count
     type counter
     desc The total number of incoming records from audit fluentds
     <labels>
@@ -117,7 +117,7 @@
 <filter otel.**>
   @type prometheus
   <metric>
-    name prom_otel_input_status_num_records_total
+    name prom_otel_input_status_num_records_count
     type counter
     desc The total number of incoming records from opentelemetry
     <labels>
@@ -176,7 +176,7 @@
   <store>
     @type prometheus
     <metric>
-      name prom_fluentd_tail_stalled
+      name prom_fluentd_tail_stalled_count
       type counter
       desc Tail stalled for a log file
       <labels>
@@ -196,7 +196,7 @@
   <store>
     @type prometheus
     <metric>
-      name prom_fluentd_audit_output_resolv_error
+      name prom_fluentd_audit_output_resolv_error_count
       type counter
       desc The total number of resolve errata to ES for fluent audit
       <labels>
@@ -217,7 +217,7 @@
   <store>
     @type prometheus
     <metric>
-      name prom_fluentd_audit_output_connreset_error
+      name prom_fluentd_audit_output_connreset_error_count
       type counter
       desc The total number of connection reset errors for fluentd audit
       <labels>
@@ -238,7 +238,7 @@
   <store>
     @type prometheus
     <metric>
-      name prom_fluentd_audit_parser_exception
+      name prom_fluentd_audit_parser_exception_count
       type counter
       desc The total number of fluent audit logs parser exceptions
       <labels>
@@ -259,7 +259,7 @@
   <store>
     @type prometheus
     <metric>
-      name prom_fluentd_audit_timeout_error
+      name prom_fluentd_audit_timeout_error_count
       type counter
       desc The total number of fluent audit timeout reached errors
       <labels>
@@ -280,7 +280,7 @@
   <store>
     @type prometheus
     <metric>
-      name prom_otel_rejected_execution_exception
+      name prom_otel_rejected_execution_exception_count
       type counter
       desc The total number of OTEL failed to send logs
       <labels>
@@ -300,7 +300,7 @@
   <store>
     @type prometheus
     <metric>
-      name prom_otel_parsing_exception
+      name prom_otel_parsing_exception_count
       type counter
       desc The total number of OTEL failed to send logs
       <labels>

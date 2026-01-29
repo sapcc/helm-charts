@@ -10,7 +10,8 @@ groups:
       service: 'barbican'
       context: 'certificate'
       dashboard: barbican
-      support_group: foundation
+      support_group: identity
+      no_alert_on_absence: "true"
       meta: 'Certificate {{ $labels.certificate_name }} will expire in {{ $value }} Days'
     annotations:
       description: 'Certificate {{ $labels.certificate_name }} created by {{ $labels.full_name }} in Project_id {{ $labels.project_id }} will expire in {{ $value }} Days'
@@ -25,7 +26,7 @@ groups:
       service: 'barbican'
       context: 'certificate'
       dashboard: barbican
-      support_group: foundation
+      support_group: identity
       no_alert_on_absence: "true"
       meta: 'Certificate {{ $labels.certificate_name }} will expire in {{ $value }} Days'
     annotations:
@@ -41,7 +42,8 @@ groups:
       severity: info
       tier: os
       sentry: 'barbican/'
-      support_group: foundation
+      support_group: identity
+      no_alert_on_absence: "true"
     annotations:
       description: barbican has encountered unexpected errors and reported
         them to Sentry. Please have a look at the list of unresolved issues
@@ -52,14 +54,15 @@ groups:
     expr: sum by(initiator_project_id, action, initiator_user_name) (rate(openstack_ratelimit_requests_ratelimit_total{service="key-manager", container="barbican-api"}[2m]) * 60) > 50
     for: 1m
     labels:
-      severity: info
+      severity: warning
       tier: os
       service: '{{ $labels.service }}'
       context: '{{ $labels.service }}'
       dashboard: barbican
       meta: 'Project {{ $labels.initiator_project_id }} has more than 50 {{ $labels.action }} operations' 
       no_alert_on_absence: "true"
-      support_group: foundation
+      support_group: identity
+      playbook: 'docs/devops/alert/{{ $labels.service }}'
     annotations:
       description: 'User {{ $labels.initiator_user_name }} has initiated more than 50 {{ $labels.action }} operations' 
       summary: 'Project {{ $labels.initiator_project_id }} has more than 50 {{ $labels.action }} operations'
@@ -71,9 +74,11 @@ groups:
       context: availability
       dashboard: barbican
       service: barbican
-      severity: info
-      support_group: foundation
+      severity: warning
+      support_group: identity
       tier: os
+      no_alert_on_absence: "true"
+      playbook: 'docs/devops/alert/{{ $labels.service }}'
     annotations:
       description: barbican failed to be scraped. Monitoring might miss metrics it needs to alert on.
       summary: barbican cannot be scraped
@@ -85,9 +90,11 @@ groups:
       context: availability
       dashboard: barbican
       service: barbican
-      severity: info
-      support_group: foundation
+      severity: critical
+      support_group: identity
       tier: os
+      no_alert_on_absence: "true"
+      playbook: 'docs/devops/alert/{{ $labels.service }}'
     annotations:
       description: barbicans database running status failed to be scraped. Monitoring might miss metrics it needs to alert on
       summary: barbican database cannot be scraped
@@ -100,10 +107,11 @@ groups:
       dashboard: barbican
       meta: "a barbican instance went down on {{ $labels.instance }}"
       service: barbican
-      support_group: foundation
-      severity: info
+      support_group: identity
+      severity: critical
       tier: os
       playbook: 'docs/devops/alert/{{ $labels.service }}'
+      no_alert_on_absence: "true"
     annotations:
       description: "A barbican-api pod on {{ $labels.instance }} is DOWN. The remaining ones should keep the service up."
       summary: "A barbican server is DOWN"
@@ -114,11 +122,12 @@ groups:
     labels:
       context: availability
       service: barbican
-      severity: info
-      support_group: foundation
+      severity: critical
+      support_group: identity
       tier: os
       dashboard: mariadb-overview?var-host=barbican-mariadb
       playbook: 'docs/devops/alert/{{ $labels.service }}'
+      no_alert_on_absence: "true"
     annotations:
       description: "barbican database on {{ $labels.instance }} is DOWN."
       summary: "barbican Database is DOWN"
@@ -130,11 +139,12 @@ groups:
       context: availability
       meta: all barbican instances are down
       service: barbican
-      severity: warning
-      support_group: foundation
+      severity: critical
+      support_group: identity
       tier: os
       dashboard: barbican
       playbook: 'docs/devops/alert/{{ $labels.service }}'
+      no_alert_on_absence: "true"
     annotations:
       description: All barbican-api server pods are down.
       summary: barbican is unavailable.

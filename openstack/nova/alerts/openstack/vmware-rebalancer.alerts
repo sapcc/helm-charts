@@ -15,3 +15,20 @@ groups:
         annotations:
           description: "The vCenter `{{ $labels.vcenter }}` in AZ `{{ $labels.az }}` is (almost) full and only allows scheduling less than 3 VMs of flavor {{ $labels.flavor }}."
           summary: "VMware Rebalancer Metric to check if the vCenter has enough remaining capacity."
+
+      - alert: LowNumberOfPlaceableHanaVms
+        expr: |      
+          wm_vmware_rebalancer_placeable_vms_per_az_for_domain{flavor="hana_c480_m7680_v2", region!="qa-de-1"} <= 3
+          or wm_vmware_rebalancer_placeable_vms_per_az_for_domain{flavor="hana_c240_m3840_v2", region!="qa-de-1"} <= 9
+        for: 3h
+        labels:
+          severity: info
+          service: compute
+          support_group: compute
+          tier: vmware
+          playbook: docs/compute/playbooks
+          context: "Availability Zone Capacity {{ $labels.az }}"
+          meta: "The availability zone *{{ $labels.az }}* is (almost) full and fewer than 3 x 8TB and 3 x 4TB HANA VMs are deployable in the availability zone *{{ $labels.az }}*."
+        annotations:
+          description: "The availability zone *{{ $labels.az }}* is (almost) full and fewer than 3 x 8TB and 3 x 4TB HANA VMs are deployable in the availability zone *{{ $labels.az }}*."
+          summary: "The availability zone *{{ $labels.az }}* is (almost) full and fewer than 3 x 8TB and 3 x 4TB HANA VMs are deployable in the availability zone *{{ $labels.az }}*."

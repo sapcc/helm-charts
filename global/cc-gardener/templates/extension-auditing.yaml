@@ -1,0 +1,43 @@
+{{ if and .Values.extensions.auditing .Values.extensions.auditing.enabled -}}
+apiVersion: operator.gardener.cloud/v1alpha1
+kind: Extension
+metadata:
+  annotations:
+    security.gardener.cloud/pod-security-enforce: baseline
+  name: auditing
+spec:
+  resources:
+  - kind: Extension
+    type: auditing
+    workerlessSupported: true
+    lifecycle:
+      reconcile: BeforeKubeAPIServer
+      delete: AfterKubeAPIServer
+      migrate: AfterKubeAPIServer
+  deployment:
+    admission:
+      runtimeCluster:
+        helm:
+          ociRepository:
+            tag: {{ (.Values.extensions.auditing.runtimeCluster.helm.ociRepository).tag | default .Values.extensions.auditing.version }}
+            {{- if (.Values.extensions.auditing.runtimeCluster.helm.ociRepository).repository }}
+            repository: {{ .Values.extensions.auditing.runtimeCluster.helm.ociRepository.repository }}
+            {{- end }}
+      virtualCluster:
+        helm:
+          ociRepository:
+            tag: {{ (.Values.extensions.auditing.virtualCluster.helm.ociRepository).tag | default .Values.extensions.auditing.version }}
+            {{- if (.Values.extensions.auditing.virtualCluster.helm.ociRepository).repository }}
+            repository: {{ .Values.extensions.auditing.virtualCluster.helm.ociRepository.repository }}
+            {{- end }}
+    extension:
+{{- if .Values.extensions.auditing.imageVectorOverwrite }}
+      values:
+        imageVectorOverwrite: | {{ toYaml .Values.extensions.auditing.imageVectorOverwrite | nindent 10 }}
+{{- end }}
+      helm:
+        ociRepository:
+          tag: {{ (.Values.extensions.auditing.helm.ociRepository).tag | default .Values.extensions.auditing.version }}
+          repository: {{ .Values.extensions.auditing.helm.ociRepository.repository }}
+      policy: OnDemand
+{{ end -}}

@@ -1,0 +1,69 @@
+{{/* seeding of global region only happens once */}}
+{{- if or (not .Values.global.is_global_region) (eq .Values.global.db_region "eu-de-2") (eq .Values.global.db_region "qa-de-1") }}
+{{- if .Values.nanny_enabled }}
+---
+apiVersion: "openstack.stable.sap.cc/v1"
+kind: "OpenstackSeed"
+metadata:
+  name: {{ .Release.Name }}-seed
+spec:
+  requires:
+  - monsoon3/domain-default-seed
+  - monsoon3/domain-ccadmin-seed
+{{- if .Values.global.is_global_region }}
+  - monsoon3/designate-global-seed
+  - monsoon3/domain-global-seed
+{{- else}}
+  - monsoon3/designate-seed
+{{- end }}
+
+  domains:
+  - name: '{{ required "missing user domain in .Values.designate_nanny.credentials.designate_api.project_user_domain_name" .Values.designate_nanny.credentials.designate_api.project_user_domain_name }}'
+    users:
+    - name: '{{ required "missing username in .Values.designate_nanny.credentials.designate_api.user" .Values.designate_nanny.credentials.designate_api.user | include "resolve_secret" }}'
+      description: Designate Nanny
+      password: '{{ required "missing password in .Values.designate_nanny.credentials.designate_api.password" .Values.designate_nanny.credentials.designate_api.password | include "resolve_secret" }}'
+  - name: '{{ required "missing project domain name in .Values.designate_nanny.credentials.designate_api.project_domain_name" .Values.designate_nanny.credentials.designate_api.project_domain_name }}'
+    projects:
+    - name: '{{ required "missing project name in .Values.designate_nanny.credentials.designate_api.project_name" .Values.designate_nanny.credentials.designate_api.project_name }}'
+      role_assignments:
+      - user: '{{ .Values.designate_nanny.credentials.designate_api.user | include "resolve_secret" }}@{{.Values.designate_nanny.credentials.designate_api.project_user_domain_name }}'
+        role: cloud_dns_backup
+    - name: master
+      role_assignments:
+      - user: '{{ .Values.designate_nanny.credentials.designate_api.user | include "resolve_secret" }}@{{.Values.designate_nanny.credentials.designate_api.project_user_domain_name }}'
+        role: objectstore_admin
+
+{{- end }}
+{{- if .Values.nanny_oor_enabled }}
+{{/* out of region backup nanny user needs designate api access, but no swift access in this region */}}
+---
+apiVersion: "openstack.stable.sap.cc/v1"
+kind: "OpenstackSeed"
+metadata:
+  name: {{ .Release.Name }}-oor-seed
+spec:
+  requires:
+  - monsoon3/domain-default-seed
+  - monsoon3/domain-ccadmin-seed
+{{- if .Values.global.is_global_region }}
+  - monsoon3/designate-global-seed
+  - monsoon3/domain-global-seed
+{{- else}}
+  - monsoon3/designate-seed
+{{- end }}
+
+  domains:
+  - name: '{{ required "missing user domain in .Values.designate_nanny_oor.credentials.oor_access_creds.project_user_domain_name" .Values.designate_nanny_oor.credentials.oor_access_creds.project_user_domain_name }}'
+    users:
+    - name: '{{ required "missing username in .Values.designate_nanny_oor.credentials.oor_access_creds.user" .Values.designate_nanny_oor.credentials.oor_access_creds.user | include "resolve_secret" }}'
+      description: Designate Nanny
+      password: '{{ required "missing password in .Values.designate_nanny_oor.credentials.oor_access_creds.password" .Values.designate_nanny_oor.credentials.oor_access_creds.password | include "resolve_secret" }}'
+  - name: '{{ required "missing project domain name in .Values.designate_nanny_oor.credentials.oor_access_creds.project_domain_name" .Values.designate_nanny_oor.credentials.oor_access_creds.project_domain_name }}'
+    projects:
+    - name: '{{ required "missing project name in .Values.designate_nanny_oor.credentials.oor_access_creds.project_name" .Values.designate_nanny_oor.credentials.oor_access_creds.project_name }}'
+      role_assignments:
+      - user: '{{ .Values.designate_nanny_oor.credentials.oor_access_creds.user | include "resolve_secret" }}@{{.Values.designate_nanny_oor.credentials.oor_access_creds.project_user_domain_name }}'
+        role: cloud_dns_backup
+{{- end }}
+{{- end }}

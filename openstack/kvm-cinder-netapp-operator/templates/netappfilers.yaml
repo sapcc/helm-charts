@@ -7,7 +7,10 @@ metadata:
     app.kubernetes.io/managed-by: kustomize
   name: {{ .name }}
 spec:
-  secret_name: {{ .Values.netapp_secret_name }}
-  filer_fqdn: {{ .fqdn }}
+  az: {{ required ".Values.global.availability_zone missing" .Values.global.availability_zone }}
+  filerfqdn: {{ required ".fqdn missing" .fqdn }}
+  filersecretstoconsider: {{ required ".filersecretstoconsider missing" .filersecretstoconsider }}
+  secretname: {{ required ".Values.netapp_secret_name missing" .Values.netapp_secret_name }}
+  volumeregex: {{ required ".volumeregex missing" .volumeregex }}
 ---
 {{- end}}

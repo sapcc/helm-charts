@@ -12,16 +12,20 @@ garden:
     region: "blup"
     bucket: "boom"
   runtimeCluster:
-    zones: ["qa-de-1a"]
+    zones: ["qa-de-1a", "qa-de-1b", "qa-de-1d"]
     networking:
       nodes: 10.41.0.0/16
       pods: 10.42.0.0/16
       services: 10.43.0.0/16
+    loadBalancerServices:
+      annotations:
+        foo: bar
   virtualCluster:
     version: "1.29.6"
-    oidcConfig:
+    authenticationConfig:
       a: b
     adminUsers: ["blup"]
+    publicDomain: nase.example.com
   externalIP: 1.1.1.1
 secretsInjector:
   image:
@@ -37,6 +41,8 @@ extensions:
   openstack:
     enabled: true
     regions:
+    - name: "ab-cd-1"
+      zones: ["ab-cd-1a", "ab-cd-1b"]
     - name: "ab-cd-2"
       zones: ["ab-cd-2a", "ab-cd-2b"]
     machineTypes: []
@@ -45,6 +51,33 @@ extensions:
       machineImages: []
   metal:
     enabled: false
+  auditing:
+    enabled: true
 gardenlet:
   enabled: true
-  additionalSeedRegions: ["ab-cd-1", "ef-gh-2"]
+  namePrefix: test
+  seedRegions:
+  - name: "ab-cd-1"
+    backup:
+      provider: aws
+      region: eu-central-1
+    networks:
+      nodes: 1.2.3.0/26
+      pods: 1.2.3.0/16
+      services: 1.2.3.0/16
+    zones:
+    - "ab-cd-1a"
+    - "ab-cd-1b"
+  - name: "ef-gh-2"
+    altRegion: "ab-cd-2"
+    backup:
+      provider: openstack
+    networks:
+      nodes: 1.2.3.0/26
+      pods: 1.2.3.0/16
+      services: 1.2.3.0/16
+    zones:
+    - "ab-cd-2a"
+  loadBalancerServices:
+    annotations:
+      foo: bar

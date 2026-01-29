@@ -49,7 +49,7 @@ spec:
       terminationGracePeriodSeconds: {{ .Values.defaults.default.graceful_shutdown_timeout | add 5 }}
       hostname: nova-api-metadata
       initContainers:
-      {{- tuple . (dict "service" (print .Values.mariadb_api.name "-mariadb") "jobs" (tuple . "db-migrate" | include "job_name")) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
+      {{- tuple . (dict "service" (include "nova.helpers.db_service" (tuple . "api")) "jobs" (tuple . "db-migrate" | include "job_name")) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
       {{- if .Values.proxysql.native_sidecar }}
       {{- tuple . .Values.api_metadata.config_file.DEFAULT.metadata_workers | include "utils.proxysql.container" | indent 6 }}
       {{- end }}
@@ -58,7 +58,6 @@ spec:
           image: {{ tuple . "api" | include "container_image_nova" }}
           imagePullPolicy: IfNotPresent
           command:
-          - dumb-init
           - nova-api
           env:
           - name: STATSD_HOST
@@ -107,7 +106,7 @@ spec:
         {{- tuple . .Values.api_metadata.config_file.DEFAULT.metadata_workers | include "utils.proxysql.container" | indent 8 }}
         {{- end }}
         - name: statsd
-          image: {{ required ".Values.global.dockerHubMirror is missing" .Values.global.dockerHubMirror}}/prom/statsd-exporter:v0.8.1
+          image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/{{ required ".Values.statsd.image is missing" .Values.statsd.image }}:{{ required ".Values.statsd.imageTag is missing" .Values.statsd.imageTag }}
           imagePullPolicy: IfNotPresent
           args: [ --statsd.mapping-config=/etc/statsd/statsd-exporter.yaml ]
           ports:

@@ -1,0 +1,115 @@
+groups:
+  - name: aci-exporter-apic.alerts
+    rules:
+
+      # F0321 (!)
+      # [qa-de-1-aci-7101] APIC unhealthy: Controller 1 is unhealthy because: Unknown
+      - alert: ApicUnhealthy 
+        expr: |
+          sum by (node_name, reason) (aci_obs_apic_unhealthy{caused_by_id="", deduplicated="", node_status=~"active|", device_status=~"active|"} > 0)
+        for: 5m
+        labels:
+          severity: critical
+          support_group: network-data
+          aci_obs_group: ApicFaultGroup
+        annotations:
+          summary: "APIC Faults"
+          description: "[{{ $labels.node_name }}] APIC unhealthy: {{ $labels.reason }}"
+
+      # F1370 (!)   
+      # [qa-de-1-aci-7202] APIC Cluster illegitimate Controller: Messages from a..
+      - alert: ApicControllerUnhealthy
+        expr: |
+          sum by (node_name, reason) (aci_obs_controller_unhealthy{caused_by_id="", deduplicated="", node_status=~"active|", device_status=~"active|"} > 0)
+        for: 5m
+        labels:
+          severity: critical
+          support_group: network-data
+          aci_obs_group: ApicFaultGroup
+        annotations:
+          summary: "APIC Faults"
+          description: "[{{ $labels.node_name }}] APIC Cluster illegitimate Controller: {{ $labels.reason }}"
+
+      # F3906 (!)
+      # [qa-de-1-aci-7101] Reporting another controller is not available: APIC clustering failure. APIC 2 reports that APIC 1 is not reachable through infra network.
+      - alert: ApicUnavailable
+        expr: |
+          sum by (node_name) (aci_obs_unavailable_apic{caused_by_id="", deduplicated="", node_status=~"active|", device_status=~"active|"} > 0)
+        for: 5m
+        labels:
+          severity: critical
+          support_group: network-data
+          aci_obs_group: ApicFaultGroup
+        annotations:
+          summary: "APIC Faults"
+          description: "[{{ $labels.node_name }}] Controller is not available"
+
+      # F0413
+      # [QA-DE-1-CCACI-1201] Missing PSU: Slot 4
+      - alert: ApicPsuFailed
+        expr: |
+          sum by (node_name, psu_slot) (aci_obs_psu_failed{caused_by_id="", deduplicated="", node_status=~"active|", device_status=~"active|"} > 0)
+        for: 5m
+        labels:
+          severity: warning
+          support_group: network-data
+          aci_obs_group: ApicFaultGroup
+        annotations:
+          summary: "APIC Faults"
+          description: "[{{ $labels.node_name }}] Missing PSU: Slot {{$labels.psu_slot}}"
+
+      # F3073
+      # [][] SSD usage observed is >90%: SSD reached 90% or greater lifetime. Lifetime left is below the major alarm threshold.
+      - alert: ApicSsdUsageIssue
+        expr: | 
+          sum by (node_name) (aci_obs_low_ssd_lifetime{caused_by_id="", deduplicated="", node_status=~"active|", device_status=~"active|"} > 0)
+        for: 5m
+        labels:
+          severity: critical
+          support_group: network-data
+          aci_obs_group: ApicFaultGroup
+        annotations:
+          summary: "APIC Faults"
+          description: "[{{ $labels.node_name }}] SSD reached 90% or greater lifetime"
+
+      # F1529
+      # [qa-de-1-aci-7101][ACI APIC] Storage Capacity > 90% 
+      - alert: ApicStorageIssue
+        expr: | 
+          sum by (node_name) (aci_obs_storage_capacity_high_util{caused_by_id="", deduplicated="", node_status=~"active|", device_status=~"active|"} > 0)
+        for: 5m
+        labels:
+          severity: critical
+          support_group: network-data
+          aci_obs_group: ApicFaultGroup
+        annotations:
+          summary: "APIC Faults"
+          description: "[{{ $labels.node_name }}] Storage Capacity > 90%"
+
+      # F2547
+      # [qa-de-1-ccaci-2222-bm090][ACI Leaf] node-id to pod-id mapping is wrong: Pod 1
+      - alert: APICWrongNodeIdPodIdMapping
+        expr: |
+          sum by (node_name, node_pod) (aci_obs_wrong_mapping_node_id_pod_id{caused_by_id="", deduplicated="", node_status=~"active|", device_status=~"active|"} > 0)
+        for: 5m
+        labels:
+          severity: critical
+          support_group: network-data
+          aci_obs_group: ApicFaultGroup
+        annotations:
+          summary: "APIC Faults"
+          description: "[{{ $labels.node_name }}] node-id to pod-id mapping is wrong: Pod {{ $labels.node_pod }}"
+
+      # F0053
+      # 
+      - alert: ApicConfigBackupFailed
+        expr: sum by (config_job_filename) (aci_obs_backup_failed{caused_by_id="", deduplicated=""} > 0)
+        for: 5m
+        labels:
+          severity: warning
+          support_group: network-data
+          aci_obs_group: ApicFaultGroup
+        annotations:
+          summary: "APIC Faults"
+          description: "Remote backup failed: {{ $labels.config_job_filename }}"
+ 

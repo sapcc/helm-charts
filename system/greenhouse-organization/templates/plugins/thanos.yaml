@@ -6,6 +6,7 @@ metadata:
   namespace: {{ .Release.Namespace }}
   labels:
     "greenhouse.sap/owned-by": {{ .Values.thanos.supportGroup | default .Values.global.supportGroup }}
+    "greenhouse.sap/deployment-tool": "flux"
 spec:
   disabled: false
   optionValues:
@@ -31,6 +32,7 @@ spec:
           paths:
             - path: /
               pathType: Prefix
+              portName: http
     - name: thanos.query.ingress.tls
       value:
       - hosts:
@@ -40,11 +42,36 @@ spec:
       value:
         disco: "true"
         kubernetes.io/tls-acme: "true"
+    - name: thanos.query.ingress.grpc.enabled
+      value: true 
+    - name: thanos.query.ingress.grpc.hosts
+      value:
+        - host: thanos-grpc.{{ .Values.global.dnsDomain }}
+          paths:
+            - path: /
+              pathType: ImplementationSpecific 
+    - name: thanos.query.ingress.grpc.tls
+      value:
+      - hosts:
+          - thanos-grpc.{{ .Values.global.dnsDomain }}
+        secretName: tls-thanos-grpc-{{ .Values.global.dnsDomain | replace "." "-" }}
+    - name: thanos.query.ingress.grpc.annotations
+      value:
+        disco: "true"
+        kubernetes.io/tls-acme: "true"
+        nginx.ingress.kubernetes.io/backend-protocol: GRPC
+        nginx.ingress.kubernetes.io/ssl-redirect: "true"
     - name: thanos.ruler.enabled
       value: false
     - name: thanos.store.enabled
       value: true
     - name: thanos.compactor.enabled
       value: true
-  pluginDefinition: thanos
+    - name: thanos.existingObjectStoreSecret.name
+      value: thanos-metrics-objectstore
+    - name: thanos.existingObjectStoreSecret.configFile
+      value: thanos.yaml
+  pluginDefinitionRef:
+    kind: PluginDefinition
+    name: thanos
 {{- end }}

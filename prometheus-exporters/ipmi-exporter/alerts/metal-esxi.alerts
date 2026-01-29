@@ -35,7 +35,7 @@ groups:
       summary: "Hardware error for server: {{ $labels.name }}"
       
   - alert: MetalESXiSensorWarn
-    expr: count(ipmi_sensor_state{job="scrapeConfig/infra-monitoring/ipmi-exporter-vmware-esxi", type=~"(Memory|Processor|Critical Interrupt|Drive Slot|Power Supply|Cable/Interconnect|Version Change)"} == 2) by (name, type, exported_name, manufacturer, model, serial)
+    expr: count(ipmi_sensor_state{job="scrapeConfig/infra-monitoring/ipmi-exporter-vmware-esxi", type=~"(Memory|Processor|Critical Interrupt|Drive Slot|Power Supply|Cable/Interconnect|Version Change)", exported_name != "DIMMs Disabled"} == 2) by (name, type, exported_name, manufacturer, model, serial)
     for: 10m
     labels:
       severity: warning

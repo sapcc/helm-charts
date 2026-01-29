@@ -1,0 +1,15 @@
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: db-placement-pvc
+  labels:
+    ccloud/support-group: compute-storage-api
+    ccloud/service: placement
+spec:
+  accessModes:
+  - ReadWriteMany
+  resources:
+    requests:
+      {{- $region := .Values.global.region | required ".Values.global.region missing" }}
+      storage: {{ if $region | regexMatch "^(?:qa-de-2|qa-de-3)$" -}} 1Gi {{- else -}} 10Gi {{- end }}

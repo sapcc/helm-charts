@@ -37,7 +37,7 @@
     "default_viewer": "rule:context_is_viewer or rule:shared",
     "default_network_viewer": "rule:context_is_network_viewer or rule:shared",
 
-    "create_subnet": "rule:context_is_admin or (rule:network_admin and rule:network_owner and rule:dhcp_enabled)",
+    "create_subnet": "rule:context_is_admin or (rule:network_admin and rule:network_owner)",
     "create_subnet:segment_id": "rule:context_is_admin",
     "get_subnet": "rule:default_viewer",
     "get_subnet:segment_id": "rule:default_viewer",

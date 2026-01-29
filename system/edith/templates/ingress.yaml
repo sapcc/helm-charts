@@ -1,4 +1,4 @@
----
+{{- $hostname := printf "%s.%s" .Release.Name (required ".Values.edith.domain missing" .Values.edith.domain) -}}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -6,8 +6,9 @@ metadata:
   annotations:
     disco: "true"
     kubernetes.io/tls-acme: "true"
-{{ toYaml .Values.edith.ingress.annotations | indent 4 }}
-{{- $hostname :=  print .Release.Name "." .Values.edith.domain }}
+    {{ with .Values.edith.ingress.annotations }} 
+    {{ toYaml . | nindent 4 }} 
+    {{- end }}
 spec:
   rules:
     - host: {{ $hostname }}
@@ -21,5 +22,6 @@ spec:
                 port:
                   name: webhook
   tls:
-    - hosts: [{{ $hostname }}]
+    - hosts:
+        - {{ $hostname }}
       secretName: tls-{{ .Release.Name }}

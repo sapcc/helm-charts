@@ -54,6 +54,9 @@ spec:
     - name: openTelemetry.prometheus.additionalLabels
       value:
         plugin: 'kube-monitoring'
+    - name: opentelemetry-operator.manager.serviceMonitor.extraLabels
+      value:
+        plugin: 'kube-monitoring'
     - name: openTelemetry.openSearchLogs.endpoint
       value: {{ $r.openSearchLogs.endpoint }}
     - name: openTelemetry.openSearchLogs.index
@@ -94,6 +97,12 @@ spec:
   plugin:
     pluginDefinition: logs
     releaseNamespace: logs
+    ignoreDifferences:
+      - version: v1
+        kind: ServiceAccount
+        name: logs-collector
+        paths:
+          - "/metadata/labels"
     optionValues:
     - name: openTelemetry.logsCollector.enabled
       value: true
@@ -118,7 +127,7 @@ spec:
   {{- if .Values.global.ghcrIoMirror }}
     - name: opentelemetry-operator.manager.image.repository
       value: {{ .Values.global.ghcrIoMirror }}/open-telemetry/opentelemetry-operator/opentelemetry-operator
-    - name: opentelemetry-operator.manager.collectorImage.repository
+    - name: openTelemetry.collectorImage.repository
       value: {{ .Values.global.ghcrIoMirror }}/cloudoperators/opentelemetry-collector-contrib
     - name: opentelemetry-operator.testFramework.image.repository
       value: {{ .Values.global.dockerHubMirror }}/library/busybox

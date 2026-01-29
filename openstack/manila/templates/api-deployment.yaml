@@ -199,7 +199,7 @@ spec:
             {{ toYaml .Values.pod.resources.api | nindent 13 }}
           {{- end }}
         - name: statsd
-          image: {{.Values.global.dockerHubMirror}}/prom/statsd-exporter:v0.8.1
+          image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/{{ required ".Values.statsd.image is missing" .Values.statsd.image }}:{{ required ".Values.statsd.imageTag is missing" .Values.statsd.imageTag }}
           imagePullPolicy: IfNotPresent
           args: [ --statsd.mapping-config=/etc/statsd/statsd-exporter.yaml ]
           ports:

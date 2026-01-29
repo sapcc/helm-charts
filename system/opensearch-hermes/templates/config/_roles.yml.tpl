@@ -95,6 +95,8 @@ audit:
   index_permissions:
   - index_patterns:
     - "audit-*"
+    - "hermes"
+    - ".ds-hermes-*"
     allowed_actions:
     - "indices:admin/template/get"
     - "indices:admin/template/put"

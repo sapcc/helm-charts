@@ -1,5 +1,83 @@
 # Changelog
 
+## v0.31.0 - 2025/11/26
+* Fixed `go-maria-sync` preStop hook command to use `sh` instead of `bash`
+* Added an option to scale down `go-maria-sync` statefulset instead of removing it.
+
+Example:
+```yaml
+mariadb:
+  sync:
+    enabled: true
+    replicas: 0
+```
+
+## v0.30.0 - 2025/11/10
+* MariaDB version updated to [10.11.15](https://mariadb.com/docs/release-notes/community-server/10.11/10.11.15)
+  * several InnoDB fixes
+* `maria-back-me-up` updated to `20251111085940`
+* `user-credential-updater` updated to `python3.13-alpine3.22-20251015235217`
+* `pod-readiness` updated to `20251110100847`
+* chart version bumped
+
+## v0.29.0 - 2025/10/28
+* Add an option to run all sidecar containers as a native sidecar.
+
+This option is enabled by default.
+
+Example configuration values:
+```yaml
+global:
+  mariadb:
+    native_sidecar:
+      enabled: true
+```
+
+## v0.28.1 - 2025/10/27
+* mysqld-exporter now collects data from mysql.user table
+
+New metrics available:
+```
+mysql_mysql_max_connections
+mysql_mysql_max_questions
+mysql_mysql_max_updates
+mysql_mysql_max_user_connections
+```
+
+## v0.28.0 - 2025/10/22
+* Added an option to run `go-maria-sync`, which could be used to populate empty database with the backup and binary log of another database.
+
+Example:
+```yaml
+mariadb:
+  sync:
+    enabled: true
+    backup:
+      service: test
+      swift:
+        password: swiftBackupPassword
+    source:
+      host: some-database-mariadb
+      password: sourceRootPassword
+    target:
+      host: test-mariadb
+      password: targetRootPassword
+    databases:
+      - test
+```
+
+## v0.27.4 - 2025/09/29
+* updated sidecar images:
+  * `mysqld-exporter` image updated to `0.18.0`
+  * `maria-back-me-up` image updated to `20250929115625`
+  * `user-credentials-updater` image updated to `python3.13-alpine3.22-20250818200546`
+  * `pod-readiness` image updated to `20250929115624`
+* chart version bumped
+
+## v0.27.3 - 2025/09/24
+* Add an option to enable `owner-info` dependency chart to be able to install `mariadb` as a stand-alone chart
+* chart version bumped
+
 ## v0.27.2 - 2025/08/23
 Add missing secret resolve in `init.sql`, when user is disabled, so the generated comment would contain the actual username instead of the vault reference if the vault secret is being used for the username value
 * chart version bumped

@@ -70,6 +70,9 @@ mariadb:
     support_group: "compute-storage-api"
   ccroot_user:
     enabled: true
+  persistence_claim:
+    name: db-placement-pvc
+    size: "10Gi"
   job:
     maintenance:
       enabled: false
@@ -77,6 +80,15 @@ mariadb:
         analyzeTable:
           enabled: true
           allTables: true
+  backup_v2:
+    enabled: true
+    databases:
+      - placement
+    verify_tables:
+      - placement.allocations
+      - placement.resource_providers
+    oauth:
+      client_id: "placement"
 
 pxc_db:
   enabled: false

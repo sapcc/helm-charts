@@ -1,6 +1,8 @@
 {{- define "journald.receiver" }}
 journald:
   directory: /var/log/journal
+  storage: file_storage/journald
+  start_at: beginning
   operators:
     - id: journal-label
       type: add

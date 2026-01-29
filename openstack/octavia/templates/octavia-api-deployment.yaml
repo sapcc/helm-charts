@@ -10,9 +10,7 @@ metadata:
   annotations:
     secret.reloader.stakater.com/reload: "{{ .Release.Name }}-secrets"
     deployment.reloader.stakater.com/pause-period: "60s"
-  {{- if .Values.vpa.set_main_container }}
     vpa-butler.cloud.sap/main-container: {{ .Chart.Name }}-api
-  {{- end }}
 spec:
   replicas: {{ .Values.pod.replicas.api }}
   revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revision_history }}
@@ -151,7 +149,7 @@ spec:
         {{- include "jaeger_agent_sidecar" . | indent 8 }}
 {{- if .Values.watcher.enabled }}
         - name: statsd
-          image: {{ required ".Values.global.dockerHubMirror is missing" .Values.global.dockerHubMirror}}/{{.Values.statsd.image.repository}}:{{.Values.statsd.image.tag}}
+          image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/{{ required ".Values.statsd.image is missing" .Values.statsd.image }}:{{ required ".Values.statsd.imageTag is missing" .Values.statsd.imageTag }}
           imagePullPolicy: IfNotPresent
           resources:
 {{ toYaml .Values.pod.resources.statsd | indent 12 }}

@@ -57,13 +57,13 @@ spec:
             {{- if .Values.recommender.recommendationMaxAllowed.memory }}
             - --container-recommendation-max-allowed-memory={{ .Values.recommender.recommendationMaxAllowed.memory }}
             {{- end }}
-          resources:
-            limits:
-              cpu: 200m
-              memory: 1000Mi
-            requests:
-              cpu: 50m
-              memory: 500Mi
+            {{- if .Values.recommender.targetPercentile.cpu }}
+            - --target-cpu-percentile={{ .Values.recommender.targetPercentile.cpu }}
+            {{- end }}
+            {{- if .Values.recommender.targetPercentile.memory }}
+            - --target-memory-percentile={{ .Values.recommender.targetPercentile.memory }}
+            {{- end }}
+          resources: {{ toYaml .Values.recommender.resources | nindent 12 }}
           ports:
             - name: metrics
               containerPort: 8942
