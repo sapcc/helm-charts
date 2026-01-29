@@ -164,9 +164,9 @@ spec:
         zones:
         {{- toYaml $worker.zones | nindent 8 }}
         machineControllerManager:
-          machineCreationTimeout: 1h20m0s
-          machineHealthTimeout: 1h0m0s
-          machineDrainTimeout: {{ default "240h0m0s" $worker.machineDrainTimeout }}
+          machineCreationTimeout: {{ coalesce $worker.machineCreationTimeout $cluster.machineCreationTimeout "1h20m0s" }}
+          machineHealthTimeout: {{ coalesce $worker.machineHealthTimeout $cluster.machineHealthTimeout "1h0m0s" }}
+          machineDrainTimeout: {{ coalesce $worker.machineDrainTimeout $cluster.machineDrainTimeout "240h0m0s" }}
           {{- if $worker.inPlaceUpdateTimeout }}
           inPlaceUpdateTimeout: {{ $worker.inPlaceUpdateTimeout }}
           {{- end }}
