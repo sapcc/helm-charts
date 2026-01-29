@@ -504,11 +504,43 @@ utils:
 
 # barbican nanny
 barbican_nanny:
-  replicas: 1
   enabled: false
-  # debug mode - no script run in the containers, just a sleep loop
+  replicas: 1
+
+  # When true, the container runs `sleep inf` instead of the script
   debug: false
-  # Sleep time in minutes between runs
-  interval: 1
+
+  # Main loop interval (minutes) for the nanny.sh
+  interval: 30
+
+  # Secret movement (sap move_secrets)
   db_secret_move:
     enabled: false
+    old_project_id: ""
+    new_project_id: ""
+
+  # Optional DB cleanup (barbican-manage db clean)
+  # NOTE: disabled by default (safe)
+  db_clean:
+    enabled: false
+
+    # How often to run db clean (minutes). 1440 = once per day
+    interval: 1440
+
+    # Delete soft-deleted entries older than these days (default 180 here)
+    # Barbican default is 90 if you don't pass --min-days
+    min_days: 180
+
+    # Remove projects with no associated resources
+    clean_unassociated_projects: false
+
+    # Soft delete secrets past their expiration date
+    soft_delete_expired_secrets: false
+
+    # Add verbose output
+    verbose: false
+
+    # Guardrail: keep false to prevent accidental `--min-days 0` usage
+    # Only set true for explicit one-off destructive cleanup scenarios.
+    allow_min_days_zero: false
+
