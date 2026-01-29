@@ -252,12 +252,12 @@ os_compute_api:os-attach-interfaces:delete: rule:context_is_editor
 # List port interfaces attached to a server
 #   GET /servers/{server_id}/os-interface
 #os_compute_api:os-attach-interfaces:list: rule:system_or_project_reader
-os_compute_api:os-attach-interfaces:list: rule:context_is_editor
+os_compute_api:os-attach-interfaces:list: rule:context_is_viewer
 
 # Show details of a port interface attached to a server
 #   GET /servers/{server_id}/os-interface/{port_id}
 #os_compute_api:os-attach-interfaces:show: rule:system_or_project_reader
-os_compute_api:os-attach-interfaces:show: rule:context_is_editor
+os_compute_api:os-attach-interfaces:show: rule:context_is_viewer
 
 # Show action details for a server.
 #   GET /os-baremetal-nodes/{node_id}
