@@ -50,18 +50,6 @@ spec:
               user: persephone-{{ $landscape }}-seed@Default
             {{- end }}
 
-            {{- if eq $region "eu-de-1" }}
-            # https://pages.github.tools.sap/kubernetes/gardener/docs/guides/sap-internal/cluster-operations/gardener-sapci/#5-assign-access-permissions-for-the-technical-user
-            {{- range $_, $roleName := list "compute_admin" "member" "network_admin" "objectstore_admin" "volume_admin" }}
-            - role: {{ $roleName }}
-              user:  persephone-{{ $landscape }}-runtime@Default
-            {{- end }}
-
-            {{- range $_, $roleName := list "compute_admin" "dns_webmaster" "member" "network_admin" "objectstore_admin" "volume_admin" }}
-            - role: {{ $roleName }}
-              user: persephone-{{ $landscape }}-gardener@Default
-            {{- end }}
-
             # The operator creates new users in keystone (a dedicated OpenStack user created for a Shoot)
             {{- range $_, $roleName := list "admin" }}
             - role: {{ $roleName }}
@@ -73,5 +61,17 @@ spec:
             - role: {{ $roleName }}
               user: persephone-{{ $landscape }}-webhook@Default
             {{ end }}
+
+            {{- if eq $region "eu-de-1" }}
+            # https://pages.github.tools.sap/kubernetes/gardener/docs/guides/sap-internal/cluster-operations/gardener-sapci/#5-assign-access-permissions-for-the-technical-user
+            {{- range $_, $roleName := list "compute_admin" "member" "network_admin" "objectstore_admin" "volume_admin" }}
+            - role: {{ $roleName }}
+              user:  persephone-{{ $landscape }}-runtime@Default
+            {{- end }}
+
+            {{- range $_, $roleName := list "compute_admin" "dns_webmaster" "member" "network_admin" "objectstore_admin" "volume_admin" }}
+            - role: {{ $roleName }}
+              user: persephone-{{ $landscape }}-gardener@Default
+            {{- end }}
             {{- end }}
         {{- end }}
