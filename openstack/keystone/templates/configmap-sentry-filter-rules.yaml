@@ -1,0 +1,32 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: keystone-sentry-filter-rules
+  labels:
+    app: {{ template "fullname" . }}
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    component: keystone
+    type: config
+data:
+{{- if .Values.sentry.filter_rules }}
+  rules.yaml: {{ .Values.sentry.filter_rules | toYaml | nindent 4 }}
+{{- else }}
+  rules.yaml: |
+    # Sentry filter rules can be added here
+    # Uncomment and edit as needed:
+    # rules:
+    #   sample_token_not_found: # rule name
+    #     exception_type: "TokenNotFound" # exception class name
+    #     sample_rate: 0.01 # sample 1% of these events
+    #   exclude_unauthorized:
+    #     exception_type: "Unauthorized"
+    #     rate_limit: # only report max 5 occurrences within 300 seconds
+    #       max_occurrences: 5 
+    #       time_window: 300 
+    #   invalid_credentials:
+    #     message_pattern: ".*length.*exceeded.*" # python regex match in the error message
+    #   ignore_jaeger_client:
+    #     exception_type: "CommandError"
+    #     message_contains: "jaeger-client" # substring match in the error message
+{{- end }}
