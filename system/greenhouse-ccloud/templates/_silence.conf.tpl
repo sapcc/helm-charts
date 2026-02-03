@@ -221,7 +221,7 @@
     - region
     - cluster
 - status: "active"
-  title: "CEPH - deployment has not matched the expected number of replicas"
+  title: "CEPH - kubernetes deployment has not matched the expected number of replicas"
   description: "CEPH - deployment `kube-system/absent-metrics-operator` has not matched the expected number of replicas for longer than 10 minutes"
   fixed_labels:
     alertname: "KubernetesDeploymentReplicasMismatch"
