@@ -26,7 +26,7 @@ spec:
             args:
             - secret=$(kubectl -n garden create secret generic auditing-mtls --save-config --dry-run=client --from-file=client.crt=/etc/auditing/certificate/client.crt --from-file=client.key=/etc/auditing/certificate/client.key -o yaml | base64 -w0);
               kubectl -n garden patch secret mr-s-auditing-mtls --type=json -p="[{'op':'add','path':'/data/objects.yaml','value':'$secret'}]";
-              kubectl -n garden create secret generic auditing-mtls-garden --save-config --dry-run=client --from-file=client.crt=/etc/auditing/certificate/client.crt --from-file=client.key=/etc/auditing/certificate/client.key -o yaml | kubectl -n garden apply -f -;
+              kubectl -n garden create secret generic auditing-mtls --save-config --dry-run=client --from-file=client.crt=/etc/auditing/certificate/client.crt --from-file=client.key=/etc/auditing/certificate/client.key -o yaml | kubectl -n garden apply -f -;
             volumeMounts:
             - name: certificate
               mountPath: "/etc/auditing/certificate"
@@ -40,7 +40,7 @@ spec:
                 path: client.crt
               - key: tls.key
                 path: client.key
-              secretName: auditing-mtls
+              secretName: auditing-mtls-cert
 ---
 apiVersion: v1
 kind: ServiceAccount
