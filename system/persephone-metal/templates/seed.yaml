@@ -24,10 +24,18 @@ spec:
         - name: persephone-{{ $landscape }}-operator
           description: A service user for the persephone-operator
           password: {{ printf "%s/%s/persephone/keystone-user/persephone-%s-operator/password" $vbase $region $landscape | quote }}
+          # expectation: allow persephone-operator to create service users on the fly with default project ID determined on the fly
+          role_assignments:
+            - domain: persephone
+              role: admin
 
         - name: persephone-{{ $landscape }}-webhook
           description: A service user for the persephone-webhook
           password: {{ printf "%s/%s/persephone/keystone-user/persephone-%s-webhook/password" $vbase $region $landscape | quote }}
+          # expectation: allow persephone-webhook to create service users on the fly with default project ID determined on the fly
+          role_assignments:
+            - domain: persephone
+              role: admin
       {{- if eq $region "eu-de-1" }}
         - name: persephone-{{ $landscape }}-runtime
           description: A service user for the runtime shoot
@@ -49,18 +57,6 @@ spec:
             - role: {{ $roleName }}
               user: persephone-{{ $landscape }}-seed@Default
             {{- end }}
-
-            # The operator creates new users in keystone (a dedicated OpenStack user created for a Shoot)
-            {{- range $_, $roleName := list "admin" }}
-            - role: {{ $roleName }}
-              user: persephone-{{ $landscape }}-operator@Default
-            {{ end }}
-
-            # The webhook creates new users in keystone (a dedicated OpenStack user created for a Shoot)
-            {{- range $_, $roleName := list "admin" }}
-            - role: {{ $roleName }}
-              user: persephone-{{ $landscape }}-webhook@Default
-            {{ end }}
 
             {{- if eq $region "eu-de-1" }}
             # https://pages.github.tools.sap/kubernetes/gardener/docs/guides/sap-internal/cluster-operations/gardener-sapci/#5-assign-access-permissions-for-the-technical-user
