@@ -59,6 +59,12 @@ spec:
               user: persephone-{{ $landscape }}-seed@Default
             {{- end }}
 
+            # TODO: can/should we create these projects in the 'persephone' domain?
+            - role: admin
+              user: persephone-{{ $landscape }}-operator@Default
+            - role: admin
+              user: persephone-{{ $landscape }}-webhook@Default
+
             {{- if eq $region "eu-de-1" }}
             # https://pages.github.tools.sap/kubernetes/gardener/docs/guides/sap-internal/cluster-operations/gardener-sapci/#5-assign-access-permissions-for-the-technical-user
             {{- range $_, $roleName := list "compute_admin" "member" "network_admin" "objectstore_admin" "volume_admin" }}
@@ -71,17 +77,4 @@ spec:
               user: persephone-{{ $landscape }}-gardener@Default
             {{- end }}
             {{- end }}
-        {{- end }}
-
-    # application credentials (which both the persephone-operator and persephone-webhook will read from vault in order to create shoot-specific service users)
-    # must be scoped to a project, therefore we scope the users that we will derive application credentials from to persephone-specific projects.
-    - name: persephone
-      projects:
-        {{- range $_, $landscape := $landscapes }}
-        - name: persephone-{{ $landscape }}
-          role_assignments:
-            - role: admin
-              user: persephone-{{ $landscape }}-operator@Default
-            - role: admin
-              user: persephone-{{ $landscape }}-webhook@Default
         {{- end }}
