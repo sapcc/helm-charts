@@ -72,3 +72,16 @@ spec:
             {{- end }}
             {{- end }}
         {{- end }}
+
+    # application credentials (which both the persephone-operator and persephone-webhook will read from vault in order to create shoot-specific service users)
+    # must be scoped to a project, therefore we scope the users that we will derive application credentials from to persephone-specific projects.
+    - name: persephone
+      projects:
+        {{- range $_, $landscape := $landscapes }}
+        - name: persephone-{{ $landscape }}
+          role_assignments:
+            - role: admin
+              user: persephone-{{ $landscape }}-operator@Default
+            - role: admin
+              user: persephone-{{ $landscape }}-webhook@Default
+        {{- end }}
