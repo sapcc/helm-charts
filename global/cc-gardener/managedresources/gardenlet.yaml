@@ -63,7 +63,7 @@ spec:
               kind: Secret
               name: openstack-{{ $regionName }}
               namespace: garden
-            domain: {{ default (printf "external.%s.%s.%s.cloud.sap" $clusterName (ternary "soil-customer" "soil-garden" (hasPrefix "rtc-" $clusterName)) $seedRegion.name) $seedRegion.externalDomain }}
+            domain: {{ default (printf "external.%s.%s.%s.cloud.sap" $clusterName "soil-garden" $seedRegion.name) $seedRegion.externalDomain }}
             type: openstack-designate
           internal:
             credentialsRef:
@@ -71,7 +71,7 @@ spec:
               kind: Secret
               name: openstack-{{ $regionName }}
               namespace: garden
-            domain: {{ default (printf "internal.%s.%s.%s.cloud.sap" $clusterName (ternary "soil-customer" "soil-garden" (hasPrefix "rtc-" $clusterName)) $seedRegion.name) $seedRegion.internalDomain }}
+            domain: {{ default (printf "internal.%s.%s.%s.cloud.sap" $clusterName "soil-garden" $seedRegion.name) $seedRegion.internalDomain }}
             type: openstack-designate
           provider:
             type: openstack-designate
@@ -79,7 +79,7 @@ spec:
               name: openstack-{{ $regionName }}
               namespace: garden
         ingress: # see prerequisites
-          domain: {{ default (printf "ingress.%s.%s.%s.cloud.sap" $clusterName (ternary "soil-customer" "soil-garden" (hasPrefix "rtc-" $clusterName)) $seedRegion.name) $seedRegion.ingressDomain }}
+          domain: {{ default (printf "ingress.%s.%s.%s.cloud.sap" $clusterName "soil-garden" $seedRegion.name) $seedRegion.ingressDomain }}
           controller:
             kind: nginx
         networks:
@@ -105,8 +105,8 @@ spec:
             # Joining the node successfully is unfortunately required to scale up the controller-manager, which is a loop that cannot self-heal.
             prober:
               enabled: false
-{{- if $.Values.gardenlet.loadBalancerServices }}
-          loadBalancerServices: {{ toYaml $.Values.gardenlet.loadBalancerServices | nindent 12 }}
+{{- if $seedRegion.loadBalancerServices }}
+          loadBalancerServices: {{ toYaml $seedRegion.loadBalancerServices | nindent 12 }}
 {{- end }}
 {{- end }}
 {{ end -}}
