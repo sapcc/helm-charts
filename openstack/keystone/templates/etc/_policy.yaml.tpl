@@ -46,6 +46,8 @@
   'dns_mailmaster':%(target.role.name)s or
   'cloud_image_admin':%(target.role.name)s or
   'cloud_compute_admin':%(target.role.name)s or
+  'cloud_compute_viewer':%(target.role.name)s or
+  'cloud_compute_migrate':%(target.role.name)s or
   'cloud_keymanager_admin':%(target.role.name)s or
   'cloud_volume_admin':%(target.role.name)s or
   'cloud_sharedfilesystem_admin':%(target.role.name)s or
