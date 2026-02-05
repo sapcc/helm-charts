@@ -26,7 +26,7 @@ transform/perses:
       conditions:
         - resource.attributes["k8s.container.name"] == "perses"
       statements:
-        - merge_maps(log.attributes, ExtractGrokPatterns(log.body, "time=%{QUOTEDSTRING} level=%{WORD:loglevel} msg=%{GREEDYDATA:msg}", true),"upsert")
+        - merge_maps(log.attributes, ExtractGrokPatterns(log.body, "time=%{QUOTEDSTRING} level=%{WORD:log.level} msg=%{GREEDYDATA:msg}", true),"upsert")
         - set(log.attributes["config.parsed"], "perses")
 {{ end }}
 
