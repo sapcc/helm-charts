@@ -12,11 +12,9 @@ spec:
   - {{ .Values.global.keystoneNamespace }}/keystone-seed
   - {{ .Values.global.keystoneNamespace }}/domain-ccadmin-seed
   - {{ .Values.global.keystoneNamespace }}/domain-default-seed
+  - {{ .Values.global.keystoneNamespace }}/domain-persephone-seed
 
   domains:
-    # expectation: it creates the 'persephone' domain
-    - name: persephone
-
     - name: Default
       users:
       {{- range $_, $landscape := $landscapes }}
@@ -27,7 +25,7 @@ spec:
         - name: persephone-{{ $landscape }}-operator
           description: A service user for the persephone-operator
           password: {{ printf "%s/%s/persephone/keystone-user/persephone-%s-operator/password" $vbase $region $landscape | quote }}
-          # expectation: allow persephone-operator to create service users on the fly with default project ID determined on the fly
+          # expectation: allow persephone-operator to create service users on the fly with default project ID also determined on the fly
           role_assignments:
             - domain: persephone
               role: admin
@@ -35,7 +33,7 @@ spec:
         - name: persephone-{{ $landscape }}-webhook
           description: A service user for the persephone-webhook
           password: {{ printf "%s/%s/persephone/keystone-user/persephone-%s-webhook/password" $vbase $region $landscape | quote }}
-          # expectation: allow persephone-webhook to create service users on the fly with default project ID determined on the fly
+          # expectation: allow persephone-webhook to create service users on the fly with default project ID also determined on the fly
           role_assignments:
             - domain: persephone
               role: admin
