@@ -178,3 +178,17 @@ groups:
     annotations:
       summary: A compute node of Nova has no or a deleted service assigned
       description: Pagination when listing hypervisors in Nova can fail, leading to reduced resources in Cortex/Limes, because compute node {{ $labels.uuid }} of Nova host {{ $labels.nova_host }} does not have a valid service assigned in the database.
+
+  - alert: OpenstackNovaPurgeBroken
+    expr: openstack_compute_oldest_soft_deleted_instance{uuid!="none"} > 30
+    for: 4h
+    labels:
+      severity: info
+      tier: os
+      service: nova
+      context: nova-db-purge
+      support_group: compute-storage-api
+      playbook: docs/support/playbook/nova/purge_broken
+    annotations:
+      summary: nova db purger not working
+      description: Nova has a soft deleted instance that is older than 30 days, check the db-archive-deleted-rows and db-purge nanny cronjobs.

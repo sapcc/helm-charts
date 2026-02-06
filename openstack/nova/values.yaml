@@ -793,6 +793,23 @@ mysql_metrics:
         UNION ALL SELECT 'cn-uuid', 'cn-host', 0;
       values:
         - "gauge"
+    - help: Nova oldest soft deleted instance in days
+      labels:
+        - "uuid"
+      name: openstack_compute_oldest_soft_deleted_instance
+      query: |
+        SELECT
+          uuid,
+          DATEDIFF(NOW(), deleted_at) AS age_of_oldest_instance_in_days
+        FROM instances
+        WHERE deleted_at IN (
+          SELECT MIN(deleted_at)
+          FROM instances
+          WHERE deleted_at IS NOT NULL
+        )
+        UNION ALL SELECT 'none', 0;
+      values:
+        - "age_of_oldest_instance_in_days"
 
 db_name: nova
 max_pool_size: 10
