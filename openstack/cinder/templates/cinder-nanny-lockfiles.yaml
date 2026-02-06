@@ -35,7 +35,11 @@ spec:
             secret:
               secretName: {{ .Release.Name }}-secrets
           {{- include "utils.proxysql.volumes" . | indent 10 }}
-          {{- include "utils.coordination.volumes" . | indent 10 }} 
+          {{- include "utils.coordination.volumes" . | indent 10 }}
+          initContainers:
+          {{- if .Values.proxysql.native_sidecar }}
+          {{- include "utils.proxysql.container" . | indent 12 }}
+          {{- end }}
           containers:
             - name: lock-files
               image: {{required ".Values.global.registry is missing" .Values.global.registry}}/loci-cinder:{{required ".Values.imageVersion is missing" .Values.imageVersion}}
@@ -69,5 +73,7 @@ spec:
                 limits:
                   memory: "2000Mi"
                   cpu: "200m"
+          {{- if not .Values.proxysql.native_sidecar }}
           {{- include "utils.proxysql.container" . | indent 12 }}
+          {{- end }}
 {{- end }}

@@ -48,17 +48,8 @@
     - action: drop
       source_labels: [vmware_name]
       regex: cc3test.*
-    - source_labels: [snmp_f5_ltmVirtualServStatName]
-      target_label: ltmVirtualServStatName
-      action: replace
     - action: labeldrop
       regex: "instance|job|alert_tier|alert_service|snmp_f5_ltmVirtualServStatName"
-    - source_labels: [ltmVirtualServStatName]
-      target_label: project_id
-      regex: /Project_(.*)/Project_.*
-    - source_labels: [ltmVirtualServStatName]
-      target_label: lb_id
-      regex: /Project_.*/Project_(.*)
 
 # expose tenant-specific metrics collected by kube-system monitoring
 #
@@ -96,10 +87,12 @@
     'match[]':
       # import any tenant-specific metric, except for those which already have been imported
       - '{__name__=~"^castellum_aggregated_.+",project_id!=""}'
+      - '{__name__=~"^octavia_listeners"}'
       - '{__name__=~"^openstack_.+",project_id!=""}'
       - '{__name__=~"^limes_(?:project|domain)_(?:quota|usage|committed_per_az|usage_per_az|commitment_min_expires_at)$",namespace="limes"}' # the namespace match filters limes-global
       - '{__name__=~"^limes_swift_.+",project_id!="",namespace="limes"}'
       - '{__name__=~"^keppel_.+",project_id!=""}'
+      - '{__name__=~"^andromeda_.+",project_id!=""}'
 
 - job_name: 'prometheus-infra-collector'
   scrape_interval: 1m
@@ -118,25 +111,6 @@
     - action: drop
       source_labels: [__name__]
       regex: netapp_volume_saved_.*
-    - source_labels: [ltmVirtualServStatName]
-      regex: /Common.*
-      action: drop
-    - source_labels: [ltmVirtualServStatName]
-      target_label: project_id
-      regex: /Project_(.*)/Project_.*
-    - source_labels: [ltmVirtualServStatName]
-      target_label: lb_id
-      regex: /Project_.*/Project_(.*)
-    - source_labels: [ltmVirtualServStatName]
-      target_label: network_id
-      regex: /net_(.+)_(.+)_(.+)_(.+)_(.+)/lb_.*
-      replacement: $1-$2-$3-$4-$5
-    - source_labels: [ltmVirtualServStatName]
-      target_label: lb_id
-      regex: /net_.*/lb_(.*)/listener_.*
-    - source_labels: [ltmVirtualServStatName]
-      target_label: listener_id
-      regex: /net_.*/lb_.*/listener_(.*)
 
   metrics_path: '/federate'
   params:

@@ -20,7 +20,7 @@
     </head>
     <body>
         <p><b>Dear SAP Cloud Infrastructure user</b>,</p>
-        <p>the following commitments are {{ .condition }} for the
+        <p>the following commitments {{ .condition }} for the
             following project:</p>
         <p>
             <ul>
@@ -35,7 +35,10 @@
             <table>
                 <tr style="background-color: #f2f2f2;">
                     <th>Creator</th>
-                    <th>Amount</th>
+                    <th>{{ if (contains "transferred" .condition) }}Original {{ end }}Amount</th>
+                    {{- if (contains "transferred" .condition) }}
+                    <th>Leftover Amount</th>
+                    {{- end }}
                     <th>Duration</th>
                     <th>Date</th>
                     <th>Service</th>
@@ -46,6 +49,9 @@
                 <tr>
                     <td>{{"{{"}} .Commitment.CreatorName {{"}}"}}</td>
                     <td>{{"{{"}} .Commitment.Amount {{"}}"}}</td>
+                    {{- if (contains "transferred" .condition) }}
+                    <td>{{"{{"}} .LeftoverAmount {{"}}"}}</td>
+                    {{- end }}
                     <td>{{"{{"}} .Commitment.Duration {{"}}"}}</td>
                     <td>{{"{{"}} .DateString {{"}}"}}</td>
                     <td>{{"{{"}} .Resource.ServiceType {{"}}"}}</td>

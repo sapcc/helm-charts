@@ -1,0 +1,31 @@
+{{- if .Values.exporter.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+
+metadata:
+  name: k3s-litestream
+  labels:
+    prometheus: {{ .Values.exporter.prometheus }}
+    plugin: kube-monitoring
+
+spec:
+  jobLabel: k3s-litestream
+
+  selector:
+    matchLabels:
+      k8s-app: k3s-litestream
+
+  # Find pods in any namespace.
+  namespaceSelector:
+    any: true
+
+  podMetricsEndpoints:
+    - interval: {{ .Values.exporter.scrapeInterval }}
+      scrapeTimeout: {{ .Values.exporter.scrapeTimeout }}
+      path: /metrics
+      scheme: http
+      port: metrics
+      relabelings:
+        - targetLabel: job
+          replacement: k3s-litestream
+{{- end }}

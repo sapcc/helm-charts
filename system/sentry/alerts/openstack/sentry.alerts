@@ -1,0 +1,65 @@
+groups:
+- name: openstack-sentry.alerts
+  rules:
+  - alert: OpenstackSentryPostgresIsAlmostFull
+    expr: sum(pg_database_size_bytes{app="sentry-postgresql"}) by (app) > 40000000000
+    for: 15m
+    labels:
+      severity: info
+      tier: os
+      service: sentry
+      context: sentry
+      dashboard: sentry
+      meta: 'sentry postgresql size is above 45Gi'
+      playbook: 'docs/support/playbook/sentry'
+      support_group: foundation
+    annotations:
+      description: 'Current sentry-postgresql size is {{ $value }} will reach 50Gi shortly'
+      summary: 'sentry postgresql size is above 40Gi'
+
+  - alert: OpenstackSentryApiAvailabilityInfo
+    expr: (1 - sum(global:api_errors_per_request_sli:ratio_rate1h{ingress="sentry-sentry"}) by (ingress,region)) * 100 < 100
+    for: 15m
+    labels:
+      severity: info
+      tier: os
+      service: sentry
+      context: sentry
+      dashboard: sentry
+      meta: 'Sentry API Availability is less than 100%'
+      playbook: 'docs/support/playbook/sentry'
+      no_alert_on_absence: "true"
+      support_group: foundation
+    annotations:
+      description: 'Sentry API Availability is less is {{ $value }}'
+      summary: 'Sentry API Availability is less than 100%'
+
+  - alert: SentryDashboardIsDown
+    expr: probe_success{job="sentry-https-probe",namespace="sentry"} == 0
+    for: 15m
+    labels:
+      meta: Sentry Dashboard in {{ $labels.region }} Is Down
+      service: sentry
+      severity: info
+      tier: os
+      playbook: docs/support/playbook/sentry
+      no_alert_on_absence: "true"
+      support_group: foundation
+    annotations:
+      description: Check Sentry Pod Status and Logs, maybe sentry-sentry pod is in Init:CrashLoopBackOff.
+      summary: Sentry Dashboard Is Down
+
+  - alert: SentryDashboardIsLoadingSlowly
+    expr: sum(sum_over_time(probe_http_duration_seconds{job="sentry-https-probe",namespace="sentry"}[5m])) > 4
+    for: 15m
+    labels:
+      meta: Sentry Dashboard in {{ $labels.region }} Is Loading Slowly
+      service: sentry
+      severity: info
+      tier: os
+      playbook: docs/support/playbook/sentry
+      no_alert_on_absence: "true"
+      support_group: foundation
+    annotations:
+      description: Check Sentry Pod Status and Logs, maybe sentry-sentry pod is in Init:CrashLoopBackOff.
+      summary: Sentry Dashboard Is Loading Slowly

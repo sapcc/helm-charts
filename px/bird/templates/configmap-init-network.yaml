@@ -41,12 +41,17 @@ data:
         if [[ $(ip_assigned) == "unassigned" ]]; then
             assign_ip_address
         fi
-        
+
         echo "Setting promiscious mode on $PX_INTERFACE"
         ip link set $PX_INTERFACE promisc on
 
-
+        echo $RS_IP > /var/run/bird/ip
+        echo $PX_INTERFACE > /var/run/bird/interface
         echo "router id $ROUTER_ID;" | tee /var/run/bird/router_id.conf
+        {
+            echo "define ROUTER_ID = $ROUTER_ID;"
+            echo "define SOURCE_IP = $(echo $RS_IP | cut -d'/' -f 1);"
+        } | tee /var/run/bird/bgp_source.conf
 
     calculate_ip_by_statefulset_ordinal.py: |
         #!/usr/bin/python3
@@ -67,24 +72,21 @@ data:
             network = ip_network(os.environ.get('PX_NETWORK_V4'))
             return f'{network[ordinal]}'
 
-
-        def get_ordinal():
-            hostname = platform.node()
-            ordinal = hostname.split('-')[-1]
-            if not ordinal or not ordinal.isdigit():
-                print(f'Invalid hostname "{hostname}", must be statefulset-like ending with an integer ordinal (0 or 1)',
-                    file=sys.stderr)
-                exit(1)
-            return int(ordinal)
-
-
         if __name__ == "__main__":
 
             parser = argparse.ArgumentParser(description="Calculate IP address or router ID based on the ordinal.")
             parser.add_argument("command", choices=["get-ip-address", "get-router-id"], help="Command to execute")
             args = parser.parse_args()
 
-            ordinal = get_ordinal()
+            ordinal = os.environ.get('STATEFULSET_ORDINAL')
+            if ordinal is None:
+                print("STATEFULSET_ORDINAL environment variable is not set.", file=sys.stderr)
+                sys.exit(1)
+            if ordinal.isdigit():
+                ordinal = int(ordinal)
+            else:
+                print("STATEFULSET_ORDINAL must be an integer.", file=sys.stderr)
+                sys.exit(1)
             if args.command == "get-ip-address":
                 print(get_ip_address(ordinal))
             elif args.command == "get-router-id":

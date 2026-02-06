@@ -11,6 +11,8 @@ spec:
     kind: CephCluster
     listKind: CephClusterList
     plural: cephclusters
+    shortNames:
+      - ceph
     singular: cephcluster
   scope: Namespaced
   versions:
@@ -87,6 +89,34 @@ spec:
                   description: Ceph Config options
                   nullable: true
                   type: object
+                cephConfigFromSecret:
+                  additionalProperties:
+                    additionalProperties:
+                      description: SecretKeySelector selects a key of a Secret.
+                      properties:
+                        key:
+                          description: The key of the secret to select from.  Must be a valid secret key.
+                          type: string
+                        name:
+                          default: ""
+                          description: |-
+                            Name of the referent.
+                            This field is effectively required, but due to backwards compatibility is
+                            allowed to be empty. Instances of this type with an empty value here are
+                            almost certainly wrong.
+                            More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                          type: string
+                        optional:
+                          description: Specify whether the Secret or its key must be defined
+                          type: boolean
+                      required:
+                        - key
+                      type: object
+                      x-kubernetes-map-type: atomic
+                    type: object
+                  description: CephConfigFromSecret works exactly like CephConfig but takes config value from Secret Key reference.
+                  nullable: true
+                  type: object
                 cephVersion:
                   description: The version information that instructs Rook to orchestrate a particular version of Ceph.
                   nullable: true
@@ -145,6 +175,11 @@ spec:
                             - quick
                           type: string
                       type: object
+                    wipeDevicesFromOtherClusters:
+                      description: |-
+                        WipeDevicesFromOtherClusters wipes the OSD disks belonging to other clusters. This is useful in scenarios where ceph cluster
+                        was reinstalled but OSD disk still contains the metadata from previous ceph cluster.
+                      type: boolean
                   type: object
                 continueUpgradeAfterChecksEvenIfNotHealthy:
                   description: ContinueUpgradeAfterChecksEvenIfNotHealthy defines if an upgrade should continue even if PGs are not clean
@@ -242,11 +277,7 @@ spec:
                       format: int64
                       type: integer
                     pgHealthCheckTimeout:
-                      description: |-
-                        PGHealthCheckTimeout is the time (in minutes) that the operator will wait for the placement groups to become
-                        healthy (active+clean) after a drain was completed and OSDs came back up. Rook will continue with the next drain
-                        if the timeout exceeds. It only works if managePodBudgets is true.
-                        No values or 0 means that the operator will wait until the placement groups are healthy before unblocking the next drain.
+                      description: 'DEPRECATED: PGHealthCheckTimeout is no longer implemented'
                       format: int64
                       type: integer
                     pgHealthyRegex:
@@ -689,6 +720,16 @@ spec:
                       maximum: 9
                       minimum: 0
                       type: integer
+                    externalMonIDs:
+                      description: |-
+                        ExternalMonIDs - optional list of monitor IDs which are deployed externally and not managed by Rook.
+                        If set, Rook will not remove mons with given IDs from quorum.
+                        This parameter is used only for local Rook cluster running in normal mode
+                        and will be ignored if external or stretched mode is used.
+                        leading
+                      items:
+                        type: string
+                      type: array
                     failureDomainLabel:
                       type: string
                     stretchCluster:
@@ -1622,7 +1663,7 @@ spec:
                       type: string
                       x-kubernetes-validations:
                         - message: network provider must be disabled (reverted to empty string) before a new provider is enabled
-                          rule: self == '' || self == oldSelf
+                          rule: self == '' || oldSelf == '' || self == oldSelf
                     selectors:
                       additionalProperties:
                         type: string

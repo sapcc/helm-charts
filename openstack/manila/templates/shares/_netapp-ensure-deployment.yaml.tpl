@@ -8,8 +8,11 @@ metadata:
   labels:
     system: openstack
     component: manila
-  {{- if .Values.vpa.set_main_container }}
   annotations:
+    secret.reloader.stakater.com/reload: "{{ .Release.Name }}-secrets"
+    deployment.reloader.stakater.com/pause-period: "60s"
+    reloader.stakater.com/search: "true"
+  {{- if .Values.vpa.set_main_container }}
     vpa-butler.cloud.sap/main-container: reexport
   {{- end }}
 spec:
@@ -52,6 +55,23 @@ spec:
       priorityClassName: {{ .Values.pod.priority_class.low }}
       initContainers:
       {{- tuple . (dict "service" (include "manila.db_service" .)) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 8 }}
+      {{- if .Values.proxysql.native_sidecar }}
+      {{- include "utils.proxysql.container" . | indent 8 }}
+      {{- end }}
+        - name: generate-backend-secret-conf
+          image: {{.Values.global.dockerHubMirror}}/library/busybox
+          command:
+          - /bin/sh
+          - -c
+          - |
+            cat <<EOF > /shared/backend-secret.conf
+            {{- include "backendCredentialConf" .Values.global.netapp | indent 12 }}
+            EOF
+          env:
+            {{- include "backendCredentialEnvs" .Values.global.netapp | indent 12 }}
+          volumeMounts:
+            - name: etcmanila
+              mountPath: /shared
       containers:
         - name: reexport
           image: "{{.Values.global.registry}}/loci-manila:{{.Values.loci.imageVersion}}"
@@ -100,10 +120,6 @@ spec:
               mountPath: /etc/manila/backend.conf
               subPath: backend.conf
               readOnly: true
-            - name: backend-secret
-              mountPath: /etc/manila/backend-secret.conf
-              subPath: backend-secret.conf
-              readOnly: true
             {{- include "utils.proxysql.volume_mount" . | indent 12 }}
             {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
           {{- if .Values.pod.resources.share_ensure }}
@@ -127,7 +143,9 @@ spec:
             periodSeconds: 5
             initialDelaySeconds: 5
         {{- include "jaeger_agent_sidecar" . | indent 8 }}
+        {{- if not .Values.proxysql.native_sidecar }}
         {{- include "utils.proxysql.container" . | indent 8 }}
+        {{- end }}
       volumes:
         - name: etcmanila
           emptyDir: {}
@@ -140,9 +158,6 @@ spec:
         - name: backend-config
           configMap:
             name: {{ .Release.Name }}-share-netapp-{{$share.name}}
-        - name: backend-secret
-          secret:
-            secretName: {{ .Release.Name }}-share-netapp-{{$share.name}}-secret
         {{- include "utils.proxysql.volumes" . | indent 8 }}
         {{- include "utils.trust_bundle.volumes" . | indent 8 }}
 {{ end }}

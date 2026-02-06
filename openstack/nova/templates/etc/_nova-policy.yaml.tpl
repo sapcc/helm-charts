@@ -444,7 +444,7 @@ os_compute_api:os-hypervisors:uptime: rule:context_is_admin
 # List actions for a server.
 #   GET /servers/{server_id}/os-instance-actions
 #os_compute_api:os-instance-actions:list: rule:system_or_project_reader
-os_compute_api:os-instance-actions:list: rule:context_is_editor
+os_compute_api:os-instance-actions:list: rule:context_is_viewer
 
 # Show action details for a server.
 #   GET /servers/{server_id}/os-instance-actions/{request_id}
@@ -824,6 +824,7 @@ os_compute_api:os-server-external-events:create: rule:context_is_admin
 # os_compute_api:servers:create:forced_host rule.
 #   POST /servers
 #compute:servers:create:requested_destination: rule:project_admin_api
+compute:servers:create:requested_destination: rule:compute_admin_all
 
 # Resize a server across cells. By default, this is disabled for all users and
 # recommended to be tested in a deployment for admin users before opening it

@@ -17,17 +17,36 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
 
 {{- define "rabbitmq._validate_users" -}}
     {{- $users := . -}}
-    {{- range $path, $v := $users }}
-      {{- if not $v.user }}
-          {{- fail (printf "%v.user missing" $path) }}
-      {{- else if hasPrefix "-" $v.user }}
-          {{- fail (printf "%v.user starts with hypen" $path) }}
-      {{- else if not $v.password }}
-          {{- fail (printf "%v.password missing" $path) }}
-      {{- else if hasPrefix "-" $v.password }}
-          {{- fail (printf "%v.password starts with hypen" $path) }}
+    {{- range $key, $user := $users }}
+      {{- if not
+        (and (hasKey $user "enabled") (eq (typeOf $user.enabled) "bool") (eq $user.enabled false))
+      }}
+        {{- if not $user.user }}
+            {{- fail (printf "%v.user missing" $key) }}
+        {{- else if hasPrefix "-" $user.user }}
+            {{- fail (printf "%v.user starts with hypen" $key) }}
+        {{- else if not $user.password }}
+            {{- fail (printf "%v.password missing" $key) }}
+        {{- else if hasPrefix "-" $user.password }}
+            {{- fail (printf "%v.password starts with hypen" $key) }}
+        {{- end }}
       {{- end }}
     {{- end }}
+{{- end }}
+
+{{- define "rabbitmq.serviceName" -}}
+"{{ template "fullname" . }}.{{ .Release.Namespace }}.svc.kubernetes.{{ .Values.global.region | required "global.region missing" }}.{{ .Values.global.tld | required "global.tld missing" }}"
+{{- end }}
+
+{{/* By default, the name is the dns name, but that may be too long, so we might to have to shorten it.
+     If the actual value matters to you, set it directly. */}}
+{{- define "rabbitmq.defaultCommonName" -}}
+{{- $serviceName := include "rabbitmq.serviceName" . }}
+  {{- if le (len $serviceName) 64 }}
+    {{- $serviceName }}
+  {{- else -}}
+    "{{ template "fullname" . }}.{{ .Values.global.region | required "global.region missing" }}.{{ .Values.global.tld | required "global.tld missing" }}"
+  {{- end }}
 {{- end }}
 
 {{/* Generate the service label for the templated Prometheus alerts. */}}

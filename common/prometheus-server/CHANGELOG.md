@@ -1,3 +1,17 @@
+## 8.0.9
+
+* VPA container name was not always shown
+
+## 8.0.8
+
+* Upgrade Prometheus to v3.6.0
+* add default priorityClass for better scheduling 
+
+## 8.0.7
+
+* Upgrade Prometheus to v3.5.0
+* Improved VPA alerting with blaming respective container
+
 ## 8.0.0
 
 * Upgrade Prometheus to v3.2.1

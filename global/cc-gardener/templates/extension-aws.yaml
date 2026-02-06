@@ -1,4 +1,5 @@
 # The runtime values always need to be enabled to manage backups in s3 for the virtual garden.
+{{- if eq .Values.garden.backup.provider "aws" }}
 apiVersion: operator.gardener.cloud/v1alpha1
 kind: Extension
 metadata:
@@ -25,7 +26,10 @@ spec:
       runtimeClusterValues:
         replicaCount: 1
         image:
-          tag: v1.61.2
+          tag: {{ (.Values.extensions.aws.runtimeClusterValues.image).tag | default .Values.extensions.aws.version }}
+          {{- if (.Values.extensions.aws.runtimeClusterValues.image).repository }}
+          repository: {{ .Values.extensions.aws.runtimeClusterValues.image.repository }}
+          {{- end }}
         config:
           etcd:
             storage:
@@ -33,8 +37,13 @@ spec:
               {{- if .Values.extensions.storage.parameters }}
               parameters: {{ .Values.extensions.storage.parameters | toYaml | nindent 16 }}
               {{- end }}
+      values:
+{{- if and .Values.extensions.aws .Values.extensions.aws.imageVectorOverwrite }}
+        imageVectorOverwrite: | {{ toYaml .Values.extensions.aws.imageVectorOverwrite | nindent 10 }}
+{{- end }}
       helm:
         ociRepository:
-          tag: 1.61.2
-          repository: keppel.eu-de-1.cloud.sap/ccloud-helm/gardener-extension-provider-aws
+          tag: {{ (.Values.extensions.aws.helm.ociRepository).tag | default .Values.extensions.aws.version }}
+          repository: {{ .Values.extensions.aws.helm.ociRepository.repository }}
       policy: OnDemand
+{{- end }}

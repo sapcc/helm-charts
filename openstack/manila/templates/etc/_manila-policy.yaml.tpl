@@ -16,6 +16,9 @@
 
 "availability_zone:index": "rule:context_is_viewer"
 
+# allows to use OnlyHostFilter and see host field of shares and backups
+"context_is_host_admin": "rule:context_is_admin"
+
 "quota_set:update": "rule:context_is_quota_admin"
 "quota_set:show": "rule:context_is_viewer or rule:context_is_quota_admin"
 "quota_set:delete": "rule:context_is_quota_admin"
@@ -56,11 +59,19 @@
 "share:force_delete": "rule:context_is_admin"
 "share:reset_status": "rule:context_is_sharedfilesystem_admin"
 "share:revert_to_snapshot": "rule:context_is_editor"
+"share:update_admin_only_metadata": "rule:context_is_admin"
+
+# recycle bin feature
+"share:soft_delete": "rule:context_is_sharedfilesystem_admin"
+"share:restore": "rule:context_is_sharedfilesystem_admin"
+
 "share_export_location:index": "rule:context_is_viewer"
 "share_export_location:show": "rule:context_is_viewer"
 
 "share_access_rule:get": "rule:context_is_viewer"
 "share_access_rule:index": "rule:context_is_viewer"
+"share_access_rule:update": "rule:context_is_editor"
+
 "share_access_metadata:update": "rule:context_is_editor"
 "share_access_metadata:delete": "rule:context_is_editor"
 
@@ -84,6 +95,10 @@
 "share_snapshot:access_list": "rule:context_is_viewer"
 "share_snapshot:allow_access": "rule:context_is_editor"
 "share_snapshot:deny_access": "rule:context_is_editor"
+"share_snapshot:update_metadata": "rule:context_is_editor"
+"share_snapshot:delete_metadata": "rule:context_is_editor"
+"share_snapshot:get_metadata": "rule:context_is_viewer"
+
 "share_snapshot_export_location:index": "rule:context_is_viewer"
 "share_snapshot_export_location:show": "rule:context_is_viewer"
 
@@ -125,6 +140,12 @@
 "share_server:reset_status": "rule:context_is_admin"
 "share_server:manage_share_server": "rule:context_is_admin"
 "share_server:unmanage_share_server": "rule:context_is_admin"
+"share_server:share_server_migration_start": "rule:context_is_admin"
+"share_server:share_server_migration_check": "rule:context_is_admin"
+"share_server:share_server_migration_complete": "rule:context_is_admin"
+"share_server:share_server_migration_cancel": "rule:context_is_admin"
+"share_server:share_server_migration_get_progress": "rule:context_is_cloud_viewer"
+"share_server:share_server_reset_task_state": "rule:context_is_admin"
 
 "share_network:create": "rule:context_is_sharedfilesystem_admin"
 "share_network:delete": "rule:context_is_sharedfilesystem_admin"
@@ -145,6 +166,9 @@
 "share_network_subnet:delete": "rule:context_is_sharedfilesystem_admin"
 "share_network_subnet:index": "rule:context_is_viewer"
 "share_network_subnet:show": "rule:context_is_viewer"
+"share_network_subnet:update_metadata": "rule:context_is_editor"
+"share_network_subnet:delete_metadata": "rule:context_is_editor"
+"share_network_subnet:get_metadata": "rule:context_is_viewer"
 
 "scheduler_stats:pools:index": "rule:context_is_cloud_viewer"
 "scheduler_stats:pools:detail": "rule:context_is_cloud_viewer"
@@ -196,3 +220,26 @@
 "message:delete": "rule:context_is_sharedfilesystem_admin"
 "message:get": "rule:context_is_viewer"
 "message:get_all": "rule:context_is_viewer"
+
+"resource_lock:get": "rule:context_is_viewer"
+"resource_lock:get_all": "rule:context_is_viewer"
+"resource_lock:get_all_projects": "rule:context_is_cloud_viewer"
+"resource_lock:create": "rule:context_is_sharedfilesystem_admin"
+"resource_lock:update": "rule:context_is_sharedfilesystem_admin"
+"resource_lock:delete": "rule:context_is_sharedfilesystem_admin"
+
+"share_transfer:get_all": "rule:context_is_cloud_viewer"
+"share_transfer:get_all_tenant": "rule:context_is_cloud_viewer"
+"share_transfer:create": "rule:context_is_admin"
+"share_transfer:get": "rule:context_is_cloud_viewer"
+"share_transfer:accept": "rule:context_is_admin"
+"share_transfer:delete": "rule:context_is_admin"
+
+"share_backup:create": "rule:context_is_admin"
+"share_backup:get": "rule:context_is_cloud_viewer"
+"share_backup:get_all": "rule:context_is_cloud_viewer"
+"share_backup:get_all_project": "rule:context_is_cloud_viewer"
+"share_backup:restore": "rule:context_is_admin"
+"share_backup:reset_status": "rule:context_is_admin"
+"share_backup:update": "rule:context_is_admin"
+"share_backup:delete": "rule:context_is_admin"

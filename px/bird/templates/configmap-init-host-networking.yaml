@@ -1,0 +1,67 @@
+{{- if .Values.hostNetworking }}
+kind: ConfigMap
+apiVersion: v1
+metadata:
+    name: {{ printf "%s-init-host-network" .Release.Name | quote }}
+data:
+    validate_native_interface.sh: |
+        #!/bin/sh -e
+
+        # We are getting $PX_NATIVE_INTERFACE from the environment variable, yet we still need to check if
+        # - it is a 1G interface
+        # - it is not a member of a bond
+
+        if [ -z "$PX_NATIVE_INTERFACE" ]; then
+            echo "PX_NATIVE_INTERFACE is not set, exiting"
+            exit 1
+        fi
+
+        # Check if the interface is up
+        if ! ip link show "$PX_NATIVE_INTERFACE" | grep -q 'state UP'; then
+            echo "PX_NATIVE_INTERFACE $PX_NATIVE_INTERFACE is not up, exiting"
+            exit 1
+        fi
+
+        echo "$PX_NATIVE_INTERFACE is up, continuing"
+
+        # Check if the interface is a member of a bond
+        if [ -d "/sys/class/net/$PX_NATIVE_INTERFACE/master" ]; then
+            echo "PX_NATIVE_INTERFACE $PX_NATIVE_INTERFACE is a member of a bond, exiting"
+            exit 1
+        fi
+        echo "$PX_NATIVE_INTERFACE is not a member of a bond, continuing"
+
+        # Check if the interface is 1G (1000Mb/s)
+        SPEED_FILE="/sys/class/net/$PX_NATIVE_INTERFACE/speed"
+        if [ ! -f "$SPEED_FILE" ]; then
+            echo "Could not determine speed for $PX_NATIVE_INTERFACE, exiting"
+            exit 1
+        fi
+
+        SPEED=$(cat "$SPEED_FILE")
+        if [ "$SPEED" != "1000" ]; then
+            echo "PX_NATIVE_INTERFACE $PX_NATIVE_INTERFACE is not a 1G interface (speed: $SPEED Mb/s), exiting"
+            exit 1
+        fi
+
+        echo "$PX_NATIVE_INTERFACE is a valid 1G interface, continuing"
+
+    create_vlan_interface.sh: |
+        #!/bin/sh -e
+
+        if [ -z "$PX_INTERFACE" ] || [ -z "$PX_VLAN" ]; then
+            echo "PX_INTERFACE and PX_VLAN must be set"
+            exit 1
+        fi
+
+        if ip link show "$PX_INTERFACE"; then
+            echo "Interface $PX_INTERFACE already exists, exiting gracefully."
+            exit 0
+        fi
+        
+        echo "Creating VLAN interface $VLAN_DEV on $BASE_DEV with VLAN ID $PX_VLAN"
+        ip link add link "$PX_NATIVE_INTERFACE" name "$PX_INTERFACE" type vlan id "$PX_VLAN"
+        ip link set "$PX_INTERFACE" up
+        echo "VLAN interface $PX_INTERFACE created successfully"
+    
+{{- end }}

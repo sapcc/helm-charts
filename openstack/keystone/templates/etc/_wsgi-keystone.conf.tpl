@@ -56,6 +56,8 @@ CustomLog /dev/stdout proxy env=forwarded
     WSGIApplicationGroup %{GLOBAL}
     WSGIPassAuthorization On
     LimitRequestBody 114688
+    # LimitRequestFieldSize is needed because of OIDC, 2*default
+    LimitRequestFieldSize 16380
     <IfVersion >= 2.4>
       ErrorLogFormat "%{cu}t %M"
     </IfVersion>

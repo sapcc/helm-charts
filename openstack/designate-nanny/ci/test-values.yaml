@@ -4,19 +4,74 @@ global:
   is_global_region: false
 
 nanny_enabled: true
+nanny_oor_enabled: true
+
+seed_users: True
+users:
+  in-region-user:
+    # this is the user we use to access openstack and swift within our
+    # own region when doing backups
+    seed_enabled: True
+    username: user_a_username
+    password: user_a_passwort
+    user_domain: UserDomainA
+    project_name: ProjectA
+    project_domain_name: DomainA
+    roles:
+      somedomain:
+        projectxy:
+          - cloud_dns_backup
+        projectabc:
+          - objectstore_write_backup
+
+  for-other-region-user:
+    # this seeds a user to be used by another region to
+    # access the designate api and pull zones
+    seed_enabled: True
+    username: user_b_username
+    password: user_b_passwort
+    user_domain: UserDomainB
+    project_name: ProjectB
+    project_domain_name: DomainB
+    roles:
+      somedomain:
+        projectB1:
+          - cloud_dns_backupB
+
+  out-region-user:
+    # this only defines a user to be referenced,
+    # used to access designate in another region
+    seed_enabled: False
+    username: user_d_username
+    password: user_d_passwort
+    user_domain: UserDomainD
+    project_name: ProjectD
+    project_domain_name: DomainD
+    auth_url: https://example.com/some/auth/url
+    region: some-region
+    roles:
+      somedomain:
+        projectD1:
+          - cloud_dns_backupD
+        projectD2:
+          - objectstore_write_backupD
 
 designate_nanny:
-  credentials:
-    designate_api:
-      user: nobody
-      password: TopfSecret
-      project_name: "test_project_name"
-      project_domain_name: "test_project_domain_name"
-      project_user_domain_name: "test_user_domain_name"
+  users:
+    openstack: in-region-user
   config:
     nanny-config:
       key-1: "value-1"
     opaque_yaml_values: here
+
+designate_nanny_oor:
+  users:
+    openstack: out-region-user
+    swift: in-region-user
+  config:
+    nanny-config:
+      key-2: "value-2"
+    opaque_yaml_values: "here too"
 
 image:
   image_tag: foo

@@ -3,6 +3,10 @@ debug = {{.Values.debug}}
 insecure_debug = {{.Values.insecure_debug}}
 verbose = true
 
+{{- with .Values.max_db_limit }}
+max_db_limit = {{ . }}
+{{- end }}
+
 max_token_size = {{ .Values.api.token.max_token_size | default 255 }}
 
 log_config_append = /etc/keystone/logging.conf
@@ -66,9 +70,13 @@ access_token_duration = {{ .Values.api.oauth1.access_token_duration | default "0
 {{- end }}
 
 [cache]
+{{- if and .Values.memcached.auth.username .Values.memcached.auth.password }}
+backend = dogpile.cache.bmemcached
+{{- else }}
 backend = dogpile.cache.memcached
+{{- end }}
 {{- if .Values.global.is_global_region }}
-memcached_servers = "{{ include "helm-toolkit.utils.joinListWithComma" .Values.memcached.server_ips_ports }}"
+memcache_servers = "{{ include "helm-toolkit.utils.joinListWithComma" .Values.memcached.server_ips_ports }}"
 {{- else if .Values.memcached.host }}
 memcache_servers = {{ .Values.memcached.host }}:{{.Values.memcached.port | default 11211}}
 {{ else }}

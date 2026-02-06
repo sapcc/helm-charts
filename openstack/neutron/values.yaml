@@ -38,6 +38,8 @@ pod:
   replicas:
     server: 3
     rpc_server: 2
+    network_agent: 15
+    swift_injector: 1
     ovn_db: 3
   lifecycle:
     upgrades:
@@ -243,6 +245,9 @@ interconnection:
 fwaas:
   enabled: false
 
+vpnaas:
+  enabled: false
+
 ovn:
   enabled: false
   image: "keppel.eu-de-1.cloud.sap/ccloud/cobaltcore-dev/openstack-ovn-controller"
@@ -385,6 +390,12 @@ logging:
     neutron_fwaas:
       handlers: stdout, sentry
       level: WARNING
+    neutron_vpnaas:
+      handlers: stdout, sentry
+      level: INFO
+    networking_bgpvpn:
+      handlers: stdout, sentry
+      level: INFO
 
 logging_sapccsentry:
   formatters:
@@ -444,6 +455,9 @@ logging_sapccsentry:
     neutron_fwaas:
       handlers: stdout, sentry_events, sentry_breadcrumbs
       level: WARNING
+    neutron_vpnaas:
+      handlers: stdout, sentry_events, sentry_breadcrumbs
+      level: INFO
     paste:
       handlers: stdout, sentry_events, sentry_breadcrumbs
       level: ERROR
@@ -465,6 +479,9 @@ logging_sapccsentry:
     networking_arista:
       handlers: stdout, sentry_events, sentry_breadcrumbs
       level: DEBUG
+    networking_bgpvpn:
+      handlers: stdout, sentry_events, sentry_breadcrumbs
+      level: INFO
 
 
 pgmetrics:
@@ -472,6 +489,7 @@ pgmetrics:
 
 proxysql:
   mode: ""
+  native_sidecar: true
 
 db_name: neutron
 
@@ -502,6 +520,43 @@ mariadb:
       innodb_lock_wait_timeout  = 5
   alerts:
     support_group: network-api
+
+nsxv3_logstash:
+  dbUser: neutron
+  # dbPassword: _replace_me_
+
+pxc_db:
+  enabled: false
+  name: neutron
+  alerts:
+    support_group: network-api
+  ccroot_user:
+    enabled: true
+  databases:
+    - neutron
+  users:
+    neutron:
+      name: neutron
+      grants:
+        - "ALL PRIVILEGES on neutron.*"
+  pxc:
+    configuration:
+      options:
+        max_connections: "2048"
+        innodb_buffer_pool_size: "4096M"
+        innodb_log_file_size: "1024M"
+        innodb_deadlock_detect: "0"
+        innodb_lock_wait_timeout: "5"
+    persistence:
+      size: 10Gi
+  backup:
+    enabled: true
+    s3:
+      secrets:
+        aws_access_key_id: null
+        aws_secret_access_key: null
+    pitr:
+      enabled: true
 
 mysql_metrics:
   db_name: neutron
@@ -697,7 +752,6 @@ max_overflow: 5
 
 sentry:
   enabled: true
-  sapccsentry: false
 
 audit:
   enabled: false
@@ -742,6 +796,20 @@ rate_limit:
     - Default/service
     - Default/admin
     - ccadmin/cloud_admin
+    - tempest/neutron-tempest-admin1
+    - tempest/neutron-tempest-admin2
+    - tempest/neutron-tempest-admin3
+    - tempest/neutron-tempest-admin4
+    - tempest/neutron-tempest1
+    - tempest/neutron-tempest2
+    - tempest/neutron-tempest3
+    - tempest/neutron-tempest4
+    - tempest/neutron-tempest5
+    - tempest/neutron-tempest6
+    - tempest/neutron-tempest7
+    - tempest/neutron-tempest8
+    - tempest/neutron-tempest9
+    - tempest/neutron-tempest10
   whitelist_users: null
   blacklist: null
   blacklist_users: null
@@ -919,18 +987,24 @@ api-ratelimit-redis:
   alerts:
     support_group: network-api
 
+metadata:
+  rate_limit:
+    enabled: false
+    base_window_duration: 60
+    base_query_rate_limit: 600
+    burst_window_duration: 10
+    burst_query_rate_limit: 250
+
 utils:
   trust_bundle:
     enable: false
-
-vpa:
-  # https://github.com/sapcc/vpa_butler
-  # The maximum available capacity is split evenly across containers specified in the Deployment, StatefulSet or DaemonSet to derive the upper recommendation bound. This does not work out for pods with a single resource-hungry container with several sidecar containers
-  # Annotate the Deployment, StatefulSet or DaemonSet with vpa-butler.cloud.sap/main-container=$MAIN_CONTAINER. That will distribute 75% of the maximum available capacity to the main container and the rest evenly across all others
-  set_main_container: true
 
 customdns:
   enabled: false
   upstream_dns_servers: []
   project_ids: []
   domain_name_prefixes: []
+
+statsd:
+  image: 'shared-app-images/statsd-exporter'
+  imageTag: '0.28.0-latest'

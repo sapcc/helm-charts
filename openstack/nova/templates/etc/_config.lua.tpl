@@ -1,17 +1,15 @@
 {{ define "nova.etc_config_lua" }}
 local _M = {}
 _M.dbs = {
-    { host = '{{ .Release.Name }}-mariadb.{{ include "svc_fqdn" . }}',
-    user = '{{ .Values.mariadb.users.nova.name | include "resolve_secret" }}',
-    password = '{{ .Values.mariadb.users.nova.password | include "resolve_secret" }}',
-    database = 'nova',
+{{- $envAll := . }}
+{{- range $cellId := include "nova.helpers.cell_ids_nonzero" . | fromJsonArray }}
+{{- with $envAll }}
+    { host = '{{ include "nova.helpers.db_service" (tuple . $cellId) }}.{{ include "svc_fqdn" . }}',
+    user = '{{ (include "nova.helpers.db_default_user" (tuple . $cellId)) | include "resolve_secret" }}',
+    password = '{{ (include "nova.helpers.db_default_password" (tuple . $cellId)) | include "resolve_secret" }}',
+    database = '{{ include "nova.helpers.db_database" (tuple . $cellId) }}',
     charset = 'utf8' },
-{{- if .Values.cell2.enabled }}
-    { host = '{{ .Release.Name }}-{{ .Values.cell2.name }}-mariadb.{{ include "svc_fqdn" . }}',
-    user = '{{ .Values.cell2dbUser | include "resolve_secret" }}',
-    password = '{{ default .Values.cell2dbPassword .Values.global.dbPassword | include "resolve_secret" }}',
-    database = '{{ .Values.cell2dbName }}',
-    charset = 'utf8' },
+{{- end }}
 {{- end }}
 }
 

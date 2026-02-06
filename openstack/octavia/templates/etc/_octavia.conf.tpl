@@ -59,6 +59,9 @@ health_update_threads = {{ .Values.status_manager.health_update_threads }}
 {{- if .Values.status_manager.stats_update_threads }}
 stats_update_threads = {{ .Values.status_manager.stats_update_threads }}
 {{- end }}
+{{- if .Values.status_manager.failover_timeout }}
+failover_timeout = {{ .Values.status_manager.failover_timeout }}
+{{- end }}
 {{- end }}
 
 {{ if .Values.house_keeping }}
@@ -141,4 +144,19 @@ allow_headers = Content-Type,Cache-Control,Content-Language,Expires,Last-Modifie
 enabled = true
 service_type = loadbalancer
 config_file = /etc/octavia/watcher.yaml
+{{- end }}
+
+{{ if .Values.rate_limit.enabled }}
+[rate_limit]
+enabled = true
+service_type = loadbalancer
+config_file = /etc/octavia/ratelimit.yaml
+rate_limit_by = {{ .Values.rate_limit.rate_limit_by }}
+max_sleep_time_seconds: {{ .Values.rate_limit.max_sleep_time_seconds }}
+clock_accuracy = 1ns
+log_sleep_time_seconds: {{ .Values.rate_limit.log_sleep_time_seconds }}
+backend_host = {{ .Release.Name }}-api-ratelimit-redis
+backend_port = 6379
+backend_secret_file = {{ .Values.rate_limit.backend_secret_file }}
+backend_timeout_seconds = {{ .Values.rate_limit.backend_timeout_seconds }}
 {{- end }}

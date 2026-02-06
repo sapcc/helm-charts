@@ -1,0 +1,32 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: image-repo-no-rule
+  namespace: foo
+spec:
+  containers:
+  # Check that parsing all of the following images results in "test-app/highly-privileged"
+  - name: foo-container
+    image: foo.image-registry.com/test-app/highly-privileged:v0.13.9
+  - name: bar-container
+    # digest only, no tag
+    image: foo.image-registry.com/test-app/highly-privileged@sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  - name: baz-container
+    # both tag and digest
+    image: foo.image-registry.com/test-app/highly-privileged:v0.13.9@sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  - name: qux-container
+    # neither tag nor digest ("latest" tag is implied)
+    image: foo.image-registry.com/test-app/highly-privileged
+  - name: quux-container
+    # no hostname 
+    image: test-app/highly-privileged:v0.13.9
+  - name: corge-container
+    # no hostname, digest only, no tag
+    image: test-app/highly-privileged@sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  - name: grault-container
+    # no hostname, both tag and digest
+    image: test-app/highly-privileged:v0.13.9@sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  - name: garply-container
+    # no hostname, neither tag nor digest ("latest" tag is implied)
+    image: test-app/highly-privileged
+  hostNetwork: true

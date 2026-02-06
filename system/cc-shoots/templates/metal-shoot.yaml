@@ -1,17 +1,105 @@
+{{ if not .Values.regions -}}
+{{- $shootName := default (printf "met-op-%s" .Values.global.region) .Values.shootName }}
 apiVersion: core.gardener.cloud/v1beta1
 kind: Shoot
 metadata:
-  name: metal-operator
-  namespace: garden-ccloud
+  name: {{ $shootName }}
+  labels:
+    cluster-type: sci-k8s-metalapi
+    greenhouse.sap/owned-by: containers
+    greenhouse.sap/shoot-grafter-transport: {{ default "greenhouse-prod-sci" $.Values.greenhouseShootGrafter }}
+    metadata.greenhouse.sap/region: {{ required "missing .Values.global.region" .Values.global.region }}
 spec:
-  cloudProfileName: openstack
+  cloudProfile:
+    kind: CloudProfile
+    name: openstack
   region: {{ required "missing .Values.global.region" .Values.global.region }}
   networking:
     services: 10.55.0.0/16
   provider:
     type: openstack
   kubernetes:
-    version: 1.30.0
+    version: 1.32.6
     kubeAPIServer:
-      enableAnonymousAuthentication: true # cluster registry version check
-      oidcConfig: {{- toYaml .Values.oidcConfig | nindent 8 }}
+      featureGates:
+        AnonymousAuthConfigurableEndpoints: true
+      structuredAuthentication:
+        configMapName: authentication-config-met-op
+      {{- if $.Values.auditing.enabled }}
+      auditConfig:
+        auditPolicy:
+          configMapRef:
+            name: audit-policy-cp
+      {{- end }}
+  {{- if $.Values.auditing.enabled }}
+  extensions:
+  - type: auditing
+    providerConfig:
+      apiVersion: auditing.extensions.gardener.cloud/v1alpha1
+      kind: AuditConfiguration
+      backends:
+      - http:
+          url: {{ $.Values.auditing.url }}
+          tls:
+            secretReferenceName: auditing-mtls
+  resources:
+  - name: auditing-mtls
+    resourceRef:
+      apiVersion: v1
+      kind: Secret
+      name: auditing-mtls
+  {{- end }}
+{{- end }}
+{{- range $regionName, $region := .Values.regions }}
+---
+apiVersion: core.gardener.cloud/v1beta1
+kind: Shoot
+metadata:
+  name: m-{{ $regionName }}
+  labels:
+    cluster-type: sci-k8s-metalapi
+    greenhouse.sap/owned-by: containers
+    greenhouse.sap/shoot-grafter-transport: {{ default "greenhouse-prod-sci" $.Values.greenhouseShootGrafter }}
+    metadata.greenhouse.sap/region: {{ $regionName }}
+spec:
+  cloudProfile:
+    kind: CloudProfile
+    name: openstack
+  region: {{ $regionName }}
+  networking:
+    services: 10.55.0.0/16
+  provider:
+    type: openstack
+  kubernetes:
+    version: 1.32.6
+    kubeAPIServer:
+      featureGates:
+        AnonymousAuthConfigurableEndpoints: true
+      structuredAuthentication:
+        configMapName: authentication-config-met-op
+      {{- if $region.auditing.enabled }}
+      auditConfig:
+        auditPolicy:
+          configMapRef:
+            name: audit-policy-cp
+      {{- end }}
+  seedName: rt-{{ $regionName }}
+  {{- if $region.auditing.enabled }}
+  extensions:
+  - type: auditing
+    providerConfig:
+      apiVersion: auditing.extensions.gardener.cloud/v1alpha1
+      kind: AuditConfiguration
+      backends:
+      - http:
+          url: {{ $region.auditing.url }}
+          tls:
+            secretReferenceName: auditing-mtls
+  resources:
+  - name: auditing-mtls
+    resourceRef:
+      apiVersion: v1
+      kind: Secret
+      name: auditing-mtls
+  {{- end }}
+{{- end }}

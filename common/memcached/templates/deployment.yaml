@@ -43,6 +43,9 @@ spec:
 {{- include "memcached_maintenance_affinity" . }}
 {{- include "memcached_node_reinstall_affinity" . }}
 {{- end }}
+      {{- if and .Values.auth.username .Values.auth.password }}
+      hostname: {{ template "fullname" . }}
+      {{- end }}
       containers:
       - name: memcached
         image: "{{include "dockerHubMirror" .}}/{{ .Values.image }}:{{.Values.imageTag }}"

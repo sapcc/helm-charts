@@ -5,6 +5,16 @@ kind: PluginPreset
 metadata:
   name: perses-global
   namespace: {{ .Chart.Name }}
+  labels:
+    greenhouse.sap/owned-by: observability
+{{- if .Values.global.fluxEnabled }}
+    greenhouse.sap/deployment-tool: "flux"
+  annotations:
+    "greenhouse.sap/propagate-labels": "greenhouse.sap/owned-by,greenhouse.sap/deployment-tool"
+{{- else }}
+  annotations:
+    "greenhouse.sap/propagate-labels": "greenhouse.sap/owned-by"
+{{- end }}
 spec:
   clusterSelector:
     matchExpressions:
@@ -24,6 +34,7 @@ spec:
     displayName: Perses global
     pluginDefinition: perses
     releaseNamespace: kube-monitoring
+    releaseName: perses-global
     optionValues:
       - name: perses.sidecar.enabled
         value: true

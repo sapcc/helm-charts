@@ -99,6 +99,19 @@ subjects:
   name: {{ if contains "qa-de-" .Values.global.region -}} CC_IAS_CONTROLPLANE_QA_DEVELOPER {{- else -}} CC_IAS_CONTROLPLANE_PROD_DEVELOPER {{- end }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: cc:oidc-ias-servermaintenance-editor
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: servermaintenance-editor-role
+subjects:
+- apiGroup: rbac.authorization.k8s.io
+  kind: Group
+  name: {{ if contains "qa-de-" .Values.global.region -}} CC_IAS_CONTROLPLANE_QA_DEVELOPER {{- else -}} CC_IAS_CONTROLPLANE_PROD_DEVELOPER {{- end }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   name: metal-api-viewer
@@ -143,3 +156,19 @@ rules:
   - get
   - list
   - watch
+---
+{{ if .Values.adminLDAPUsers}}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: ldap-cluster-admins
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+  {{- range $val := .Values.adminLDAPUsers }}
+  - kind: User
+    name: {{ $val }}
+  {{- end }}
+{{ end }}

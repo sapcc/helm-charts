@@ -87,6 +87,32 @@ spec:
           of the total traffic, ideally as close to 50% as possible.
           Currently getting {{ "{{" }} $value | humanizePercentage {{ "}}" }}.'
 
+    - alert: Dns{{ $.Values.unbound.name | title }}DisproportionateAmountOfSERVFAILs
+      expr: sum(rate(unbound_answer_rcodes_total{app="{{ $.Values.unbound.name }}", namespace="{{ $.Release.Namespace }}", rcode="SERVFAIL"}[5m]))/sum(rate(unbound_answer_rcodes_total{namespace="{{ $.Release.Namespace }}", rcode="SERVFAIL"}[5m]))
+        > {{ add 50 (.Values.unbound.tolerable_servfail_distribution_deviation | default 10) }}/100
+        or  sum(rate(unbound_answer_rcodes_total{app="{{ $.Values.unbound.name }}", namespace="{{ $.Release.Namespace }}", rcode="SERVFAIL"}[5m]))/sum(rate(unbound_answer_rcodes_total{namespace="{{ $.Release.Namespace }}", rcode="SERVFAIL"}[5m]))
+        < {{ sub 50 (.Values.unbound.tolerable_servfail_distribution_deviation | default 10) }}/100
+      for: 5m
+      labels:
+        context: unbound
+        dashboard: {{ required "Missing $.Values.unbound.monitoring.dashboard" $.Values.unbound.monitoring.dashboard }}
+        meta: {{ $.Values.unbound.name }}
+        service: unbound
+        severity: warning
+        support_group: coredns
+        tier: os
+        playbook: 'docs/devops/alert/designate/#test_unbound_endpoint'
+      annotations:
+        description: '{{ $.Release.Name }} in {{ $.Values.global.region }} is getting a disproportionate amount of SERVFAIL errors.'
+        summary: '{{ $.Release.Name }} in {{ $.Values.global.region }}
+          has been getting a disproportionate amount of SERVFAIL errors in the past 5 minutes.
+          Expected between
+          {{ sub 50 ($.Values.unbound.tolerable_servfail_distribution_deviation | default 10) }}%
+          and
+          {{ add 50 ($.Values.unbound.tolerable_servfail_distribution_deviation | default 10) }}%
+          of the total amount of SERVFAIL errors, ideally as close to 50% as possible.
+          Currently getting {{ "{{" }} $value | humanizePercentage {{ "}}" }}.'
+
 ---
 apiVersion: "monitoring.coreos.com/v1"
 kind: "PrometheusRule"

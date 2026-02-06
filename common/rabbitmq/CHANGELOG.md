@@ -2,6 +2,107 @@
 
 This file is used to list changes made in each version of the common chart rabbitmq.
 
+## 0.21.1 - 2025/01/26
+
+- RabbitMQ [4.2.3 Release notes](https://github.com/rabbitmq/rabbitmq-server/releases/tag/v4.2.3)
+- `rabbitmq-user-credential-updater` updated to `20260126125551` version
+- Chart version bumped
+
+## 0.21.0 - 2025/12/19
+
+- RabbitMQ [4.2.2 Release notes](https://github.com/rabbitmq/rabbitmq-server/releases/tag/v4.2.2)
+  - Python has been removed from the container image
+- `rabbitmq-setup-users` init script adapted to the absence of python interpreter
+- `rabbitmq-user-credential-updater` updated to `20251219114304` version
+- Chart version bumped
+
+## 0.20.1 - 2025/11/24
+
+- RabbitMQ [4.2.1 Release notes](https://github.com/rabbitmq/rabbitmq-server/releases/tag/v4.2.1)
+- `rabbitmq-user-credential-updater` updated to `20251124094011` version
+- Chart version bumped
+
+## 0.20.0 - 2025/11/03
+
+- RabbitMQ [4.2.0 Release notes](https://github.com/rabbitmq/rabbitmq-server/releases/tag/v4.2.0)
+- `rabbitmq-user-credential-updater` updated to `20251103132104` version
+- Chart version bumped
+
+## 0.19.2 - 2025/09/04
+
+- RabbitMQ [4.1.4 Release notes](https://github.com/rabbitmq/rabbitmq-server/releases/tag/v4.1.4)
+- `rabbitmq-user-credential-updater` updated to `20250904100127` version
+- Chart version bumped
+
+## 0.19.1 - 2025/08/06
+
+- RabbitMQ [4.1.3 Release notes](https://github.com/rabbitmq/rabbitmq-server/releases/tag/v4.1.3)
+- several bugfixes for queues
+- Chart version bumped
+
+## 0.19.0 - 2025/08/01
+
+- Added an option to disable a user
+
+Usage example:
+```yaml
+rabbitmq:
+  users:
+    default:
+      enabled: false
+    user1:
+      user: user1
+      password: secret
+    user2:
+      user: user2
+      password: secret
+```
+This will result in the `default` user being removed from the RabbitMQ users secret.
+
+## 0.18.8 - 2025/08/01
+
+- Remove version label from RabbitMQ deployment pod template, related configmaps and secrets to avoid unnecessary  restarts on simple chart version update
+
+## 0.18.7 - 2025/07/31
+
+- Limit default commonName in certificate to 64 characters as that is the limit.
+
+
+## 0.18.6 - 2025/07/30
+
+- Update [user-credential-updater](https://github.com/sapcc/rabbitmq-user-credential-updater) sidecar container to `20250730094138` version with bugfixes.
+- Chart version bumped
+
+## 0.18.5 - 2025/07/07
+
+- RabbitMQ [4.1.2 Release notes](https://github.com/rabbitmq/rabbitmq-server/releases/tag/v4.1.2)
+- Chart version bumped
+
+## 0.18.4 - 2025/07/01
+
+- Drop `externalIps` from certificate, as they are unsupported by our certificate provider.
+  They still can be added with `certificate.ipAddresses`
+
+
+## 0.18.3 - 2025/07/01
+
+- Default to ClusterIssuer with the name "digicert-issuer"
+
+
+## 0.18.2 - 2025/06/30
+
+- Removed the default for CN (common name) from the certificate, as it is too long
+- Switched ClusterIssuer group from `cert-manager.io` to `certmanager.cloud.sap`
+
+## 0.18.1 - 2025/06/12
+
+- RabbitMQ [4.1.1 Release Notes](https://github.com/rabbitmq/rabbitmq-server/releases/tag/v4.1.1)
+  - only `4.1.x` releases are [supported](https://www.rabbitmq.com/release-information#currently-supported)
+  - [4.1.1 Release Notes](https://github.com/rabbitmq/rabbitmq-server/blob/v4.1.x/release-notes/4.1.1.md)
+  - faster startup with empty classic queues
+  - classic queue compaction performance improvements
+- Chart version bumped
+
 ## 0.18.0 - 2025/04/22
 
 - RabbitMQ [4.1.0 Release Notes](https://github.com/rabbitmq/rabbitmq-server/releases/tag/v4.1.0)
@@ -10,7 +111,6 @@ This file is used to list changes made in each version of the common chart rabbi
   * rabbitmqadmin has been updated to [2.0](https://github.com/rabbitmq/rabbitmqadmin-ng/releases/tag/v2.0.0), but is not yet included in the image
   * RabbitMQ nodes now provide a Prometheus histogram for message sizes published by applications
 - Chart version bumped
-
 
 ## 0.17.2 - 2025/04/10
 

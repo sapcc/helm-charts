@@ -1,0 +1,14 @@
+{{- $region := $.Values.global.region | required "missing value for .Values.global.region" -}}
+{{- $peer_group := index $.Values.keppel.peer_groups $.Values.keppel.peer_group -}}
+{{- $has_anycast := $peer_group.exclude_from_anycast | has $region | not -}}
+{{- if and $has_anycast .Values.keppel.anycast_ip }}
+apiVersion: v1
+kind: ConfigMap
+
+metadata:
+  name: keppel-anycast-nginx
+
+data:
+  proxy.conf.template: |
+    {{- .Files.Get "files/proxy.conf.template" | nindent 4 }}
+{{- end }}

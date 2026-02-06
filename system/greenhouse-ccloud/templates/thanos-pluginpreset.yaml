@@ -4,6 +4,16 @@ kind: PluginPreset
 metadata:
   name: thanos
   namespace: ccloud
+  labels:
+    greenhouse.sap/owned-by: observability
+{{- if .Values.global.fluxEnabled }}
+    greenhouse.sap/deployment-tool: "flux"
+  annotations:
+    "greenhouse.sap/propagate-labels": "greenhouse.sap/owned-by,greenhouse.sap/deployment-tool"
+{{- else }}
+  annotations:
+    "greenhouse.sap/propagate-labels": "greenhouse.sap/owned-by"
+{{- end }}
 spec:
   clusterOptionOverrides:
   {{- range $plugin := .Values.ingressPlugins }}
@@ -25,7 +35,7 @@ spec:
       value: true
     - name: thanos.serviceMonitor.labels
       value:
-        plugin: "kube-monitoring-{{ $plugin.cluster }}"
+        plugin: "kube-monitoring"
   {{- end }}
   clusterSelector:
     matchExpressions:
@@ -36,20 +46,12 @@ spec:
     - key: cluster
       operator: In
       values:
-{{- range $cluster, $additionalSettings := .Values.kubeMonitoring.cephClusters }}
+{{- range $serviceName, $serviceSpecs := .Values.kubeMonitoring.services }}
+{{- range $cluster, $additionalSettings := $serviceSpecs.clusters }}
     {{- if index $additionalSettings "thanos" }}
       - {{ $cluster }}
     {{- end }}
 {{- end }}
-{{- range $cluster, $additionalSettings := .Values.kubeMonitoring.computeClusters }}
-    {{- if index $additionalSettings "thanos" }}
-      - {{ $cluster }}
-    {{- end }}
-{{- end }}
-{{- range $cluster, $additionalSettings := .Values.kubeMonitoring.obsClusters }}
-    {{- if index $additionalSettings "thanos" }}
-      - {{ $cluster }}
-    {{- end }}
 {{- end }}
   plugin:
     displayName: Thanos
@@ -64,6 +66,13 @@ spec:
     - name: testFramework.image.registry
       value: {{ .Values.global.ghcrIoMirror }}
     {{- end }}
+    - name: thanos.query.additionalArgs
+      value:
+      - --query.promql-engine=thanos
+    - name: thanos.query.replicas
+      value: 10
+    - name: thanos.store.replicas
+      value: 10
     - name: thanos.ruler.enabled
       value: false
     - name: thanos.ruler.alertmanagers.enabled
@@ -88,4 +97,12 @@ spec:
       value: true
     - name: thanos.query.ingress.grpc.ingressClassName
       value: nginx
+    - name: thanos.serviceMonitor.alertLabels
+      value: |
+        support_group: observability
+        service: metrics
+    - name: thanos.existingObjectStoreSecret.name
+      value: thanos-metrics-objectstore
+    - name: thanos.existingObjectStoreSecret.configFile
+      value: thanos.yaml
 {{- end -}}

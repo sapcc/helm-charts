@@ -17,7 +17,9 @@ validatingWebhookObjectSelector: {}
 validatingWebhookMatchConditions: []
 validatingWebhookCheckIgnoreFailurePolicy: Fail
 validatingWebhookCustomRules: {}
+validatingWebhookSubResources: ['pods/ephemeralcontainers', 'pods/exec', 'pods/log', 'pods/eviction', 'pods/portforward', 'pods/proxy', 'pods/attach', 'pods/binding', 'pods/resize', 'deployments/scale', 'replicasets/scale', 'statefulsets/scale', 'replicationcontrollers/scale', 'services/proxy', 'nodes/proxy', 'services/status']
 validatingWebhookURL: null
+validatingWebhookScope: '*'
 enableDeleteOperations: false
 enableConnectOperations: false
 enableExternalData: true
@@ -33,7 +35,9 @@ mutatingWebhookObjectSelector: {}
 mutatingWebhookMatchConditions: []
 mutatingWebhookTimeoutSeconds: 1
 mutatingWebhookCustomRules: {}
+mutatingWebhookSubResources: ['pods/ephemeralcontainers', 'pods/exec', 'pods/log', 'pods/eviction', 'pods/portforward', 'pods/proxy', 'pods/attach', 'pods/binding', 'deployments/scale', 'replicasets/scale', 'statefulsets/scale', 'replicationcontrollers/scale', 'services/proxy', 'nodes/proxy', 'services/status']
 mutatingWebhookURL: null
+mutatingWebhookScope: '*'
 mutationAnnotations: false
 auditChunkSize: 500
 logLevel: INFO
@@ -44,17 +48,20 @@ auditEventsInvolvedNamespace: false
 resourceQuota: true
 externaldataProviderResponseCacheTTL: 3m
 enableK8sNativeValidation: true
+commonAnnotations: {}
+extraVolumeMounts: []
+extraVolumes: []
 image:
   repository: openpolicyagent/gatekeeper
   crdRepository: openpolicyagent/gatekeeper-crds
-  release: v3.19.1
+  release: v3.21.0
   pullPolicy: IfNotPresent
   pullSecrets: []
 preInstall:
   crdRepository:
     image:
       repository: null
-      tag: v3.19.1
+      tag: v3.21.0
 postUpgrade:
   labelNamespace:
     serviceAccount:
@@ -63,7 +70,7 @@ postUpgrade:
     enabled: false
     image:
       repository: openpolicyagent/gatekeeper-crds
-      tag: v3.19.1
+      tag: v3.21.0
       pullPolicy: IfNotPresent
       pullSecrets: []
     extraNamespaces: []
@@ -97,7 +104,7 @@ postInstall:
     extraRules: []
     image:
       repository: openpolicyagent/gatekeeper-crds
-      tag: v3.19.1
+      tag: v3.21.0
       pullPolicy: IfNotPresent
       pullSecrets: []
     extraNamespaces: []
@@ -141,7 +148,7 @@ preUninstall:
     enabled: false
     image:
       repository: openpolicyagent/gatekeeper-crds
-      tag: v3.19.1
+      tag: v3.21.0
       pullPolicy: IfNotPresent
       pullSecrets: []
     priorityClassName: ""
@@ -167,6 +174,7 @@ enableRuntimeDefaultSeccompProfile: true
 controllerManager:
   serviceAccount:
     name: gatekeeper-admin
+    automountServiceAccountToken: true
   containerName: manager
   exemptNamespaces: []
   exemptNamespacePrefixes: []
@@ -225,9 +233,39 @@ controllerManager:
       # - from:
       #   - ipBlock:
       #       cidr: 0.0.0.0/0
+  disableWebhookOperation: false
+  disableGenerateOperation: true
+exportBackend: ""
 audit:
+  exportConnection:
+    path: /tmp/violations/topics
+    maxAuditResults: 3
+  exportVolumeMount:
+    path: /tmp/violations
+  exportVolume:
+    name: tmp-violations
+    emptyDir: {}
+  exportSidecar:
+    name: reader
+    image: ghcr.io/open-policy-agent/fake-reader:latest
+    imagePullPolicy: Always
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+        - ALL
+      readOnlyRootFilesystem: true
+      runAsGroup: 999
+      runAsNonRoot: true
+      runAsUser: 1000
+      seccompProfile:
+        type: RuntimeDefault
+    volumeMounts:
+    - mountPath: /tmp/violations
+      name: tmp-violations
   serviceAccount:
     name: gatekeeper-admin
+    automountServiceAccountToken: true
   containerName: manager
   hostNetwork: false
   dnsPolicy: ClusterFirst
@@ -262,6 +300,9 @@ audit:
       - 999
   writeToRAMDisk: false
   extraRules: []
+  disableGenerateOperation: false
+  disableAuditOperation: false
+  disableStatusOperation: false
 crds:
   affinity: {}
   tolerations: []
@@ -281,8 +322,6 @@ pdb:
     minAvailable: 1
 service: {}
 disabledBuiltins: ["{http.send}"]
-psp:
-  enabled: false
 upgradeCRDs:
   serviceAccount:
     create: true

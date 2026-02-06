@@ -11,6 +11,9 @@ metadata:
     system: openstack
     component: keystone
     type: api
+  annotations:
+    secret.reloader.stakater.com/reload: "{{ .Release.Name }}-secrets,{{ .Release.Name }}-federation"
+    deployment.reloader.stakater.com/pause-period: "60s"
 spec:
   replicas: {{ .Values.api.replicas }}
   minReadySeconds: {{ .Values.api.minReadySeconds | default 5}}
@@ -39,6 +42,7 @@ spec:
         chart-version: {{.Chart.Version}}
         configmap-etc-hash: {{ include (print $.Template.BasePath "/configmap-etc.yaml") . | sha256sum }}
         configmap-bin-hash: {{ include (print $.Template.BasePath "/configmap-bin.yaml") . | sha256sum }}
+        sentry-filter-rules-hash: {{ include (print $.Template.BasePath "/configmap-sentry-filter-rules.yaml") . | sha256sum }}
         secrets-bin-hash: {{ include (print $.Template.BasePath "/secret-bin.yaml") . | sha256sum }}
         secrets-hash: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
         {{- if .Values.federation.oidc.enabled }}
@@ -79,6 +83,9 @@ spec:
           value: {{ include "keystone.service_dependencies" . | quote }}
         - name: COMMAND
           value: "true"
+      {{- if .Values.proxysql.native_sidecar }}
+      {{- include "utils.proxysql.container" . | indent 6 }}
+      {{- end }}
       containers:
         - name: keystone-api
           image: {{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{ .Values.api.image }}:{{ required ".Values.api.imageTag is missing" .Values.api.imageTag }}
@@ -108,6 +115,14 @@ spec:
             {{- end }}
             - name: PYTHONWARNINGS
               value: "ignore:Unverified HTTPS request"
+            - name: IMAGE_TAG
+              value: {{ required ".Values.api.imageTag is missing" .Values.api.imageTag | quote }}
+            {{- if .Values.sentry.debug_filtering.enabled }}
+            - name: SENTRY_DEBUG_FILTERING
+              value: "true"
+            {{- end }}
+            - name: SENTRY_FILTER_CONFIG_FILE
+              value: /etc/config/rules.yaml
           ports:
             - name: public
               containerPort: 5000
@@ -188,6 +203,8 @@ spec:
               readOnly: true
             - name: keystone-bin
               mountPath: /scripts
+            - name: sentry-config-volume
+              mountPath: /etc/config
             {{- include "utils.proxysql.volume_mount" . | indent 12 }}
             {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
           {{- if .Values.api.resources }}
@@ -196,7 +213,7 @@ spec:
           {{- end }}
         {{- if .Values.api.metrics.enabled }}
         - name: keystone-statsd
-          image: "{{.Values.global.dockerHubMirrorAlternateRegion}}/{{ .Values.api.metrics.image }}:{{ .Values.api.metrics.imageTag }}"
+          image: "{{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{ .Values.api.metrics.image }}:{{ .Values.api.metrics.imageTag }}"
           imagePullPolicy: {{ .Values.api.metrics.imagePullPolicy | default "IfNotPresent" | quote }}
           command:
             - /bin/statsd_exporter
@@ -217,8 +234,10 @@ spec:
 {{ toYaml .Values.api.metrics.resources | indent 12 }}
           {{- end }}
         {{- end }}
-{{- include "jaeger_agent_sidecar" . | indent 8 }}
-{{- include "utils.proxysql.container" . | indent 8 }}
+      {{- include "jaeger_agent_sidecar" . | indent 8 }}
+      {{- if not .Values.proxysql.native_sidecar }}
+      {{- include "utils.proxysql.container" . | indent 8 }}
+      {{- end }}
       volumes:
         - name: etc-keystone
           emptyDir: {}
@@ -257,5 +276,9 @@ spec:
           secret:
             secretName: keystone-credential-keys
             defaultMode: 0555
+        - name: sentry-config-volume
+          configMap:
+            defaultMode: 420
+            name: keystone-sentry-filter-rules
         {{- include "utils.proxysql.volumes" . | indent 8 }}
         {{- include "utils.trust_bundle.volumes" . | indent 8 }}

@@ -1,0 +1,20 @@
+{{- $envAll := . }}
+{{- range $cellId := include "nova.helpers.cell_ids_nonzero" . | fromJsonArray }}
+  {{- if ne $cellId "cell1" }}
+    {{- with $envAll }}
+      {{- $cellName := include "nova.helpers.cell_name" (tuple . $cellId) }}
+      {{- $cellValues := get .Values $cellId }}
+      {{- $serviceDependencies := include "nova.helpers.cell_services" (tuple . $cellId) }}
+      {{- $conductorArgs := dict
+        "name" (printf "nova-%s-conductor" $cellName)
+        "replicas" 1
+        "config_file" $cellValues.conductor.config_file
+        "dependencies" (dict "service" $serviceDependencies)
+        "config_map_key" (printf "nova-%s-conductor.conf" $cellName)
+        "secret_key" (printf "%s.conf" $cellName)
+      }}
+---
+{{ include "nova.conductor_deployment" (tuple . $conductorArgs) }}
+    {{- end }}
+  {{- end }}
+{{- end }}

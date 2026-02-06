@@ -1,0 +1,63 @@
+{{- $root := . }}
+{{- range $target := .Values.global.targets }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+
+metadata:
+  name: {{ include "prometheusVMware.name" (list $target $root) }}{{ printf "-iaas-templated.alerts" }}
+  labels:
+    prometheus: {{ include "prometheusVMware.name" (list $target $root) }}
+
+spec:
+  groups:
+  - name: iaas.templated.alerts
+    rules:
+    {{- $alertLevels := list
+          (dict "for" "30m" "severity" "warning")
+          (dict "for" "90m" "severity" "critical")
+    }}
+
+    {{- range $level := $alertLevels }}
+      - alert: IaasVmOnNonIaasHost
+        expr: |
+          count by (hostsystem) (
+            (
+              group by (project, hostsystem, virtualmachine)(vrops_virtualmachine_system_powered_on{}==1)
+              and on(project)
+              group by(project) (label_replace(limes_project_usage{domain=~"iaas-.*"}, "project", "$1", "project_id", "(.*)"))
+            )
+          )
+          and on(hostsystem) vrops_hostsystem_hostgroups{hostgroups!~".*iaas.*"}
+        for: {{ $level.for }}
+        labels:
+          severity: {{$level.severity}}
+          service: compute
+          support_group: iaas-support
+          context: "IaaS vm on non IaaS cluster"
+          meta: "IaaS virtual machine(s) running on Non IaaS ESXi host {{ `{{ $labels.hostsystem }}` }}"
+        annotations:
+          description: "IaaS virtual machine(s) running on non IaaS ESXi host {{ `{{ $labels.hostsystem }}` }}"
+          summary: "IaaS virtual machine(s) running on non IaaS ESXi host {{ `{{ $labels.hostsystem }}` }}"
+    {{- end }}
+
+    {{- $alertLevelsIaasHostMemoryUsage := list
+          (dict "for" "30m" "severity" "warning" "percentage" 75)
+          (dict "for" "60m" "severity" "critical" "percentage" 90)
+    }}
+
+    {{- range $level := $alertLevelsIaasHostMemoryUsage }}
+      - alert: IaasHostMemoryUsage
+        expr: vrops_hostsystem_memory_usage_percentage > {{ $level.percentage }} and on (hostsystem) vrops_hostsystem_hostgroups{hostgroups=~".*iaas.*"}
+        for: {{ $level.for }}
+        labels:
+          severity: warning
+          service: compute
+          support_group: iaas-support
+          context: "esxi host memory usage"
+          meta: "Memory usage of ESXi host {{ `{{ $labels.hostsystem }}` }} is above {{ $level.percentage }}%"
+        annotations:
+          description: "Memory usage of ESXi host {{ `{{ $labels.hostsystem }}` }} is above {{ $level.percentage }}%"
+          summary: "Memory usage of ESXi host {{ `{{ $labels.hostsystem }}` }} is above {{ $level.percentage }}%"
+    {{- end }}
+{{- end }}

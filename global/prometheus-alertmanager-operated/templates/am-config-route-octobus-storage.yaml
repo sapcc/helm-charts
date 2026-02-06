@@ -1,0 +1,40 @@
+apiVersion: monitoring.coreos.com/v1alpha1
+kind: AlertmanagerConfig
+metadata:
+  name: route-octobus-storage
+  labels:
+    alertmanager: {{ include "alertmanagerRelease.name" . }}
+spec:
+  route:
+    receiver: octobus-storage
+    matchers:
+      - name: severity
+        matchType: "=~"
+        value: "info|warning|critical"
+      - name: support_group
+        matchType: "="
+        value: storage
+      - name: region
+        matchType: "=~"
+        value: {{ without .Values.regions "qa-de-1" | join "|" }}
+      - name: team
+        matchType: "="
+        value: dme-strg-tools
+
+  receivers:
+    - name: octobus-storage
+      webhookConfigs:
+      - sendResolved: true
+        urlSecret:
+          name: alertmanager-{{ include "alertmanagerRelease.name" . }}-octobus-storage-secrets
+          key: url
+---
+kind: Secret
+apiVersion: v1
+type: Opaque
+metadata:
+  name: alertmanager-{{ include "alertmanagerRelease.name" . }}-octobus-storage-secrets
+  labels:
+    alertmanager: {{ include "alertmanagerRelease.name" . }}
+data:
+  url: {{ required ".Values.octobus.dme_endpoint undefined" .Values.octobus.dme_endpoint | b64enc | quote }}

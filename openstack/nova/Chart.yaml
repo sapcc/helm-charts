@@ -1,45 +1,81 @@
+---
 apiVersion: v2
 description: A Helm chart for Kubernetes
 name: nova
 icon: https://www.openstack.org/themes/openstack/images/project-mascots/Nova/OpenStack_Project_Nova_mascot.png
-version: 0.4.3
+version: 0.6.3
 appVersion: "bobcat"
 dependencies:
-  - name: mariadb
-    condition: mariadb.enabled
+  - condition: mariadb.enabled
+    name: mariadb
     repository: oci://keppel.eu-de-1.cloud.sap/ccloud-helm
-    version: 0.24.1
-  - name: mariadb
-    alias: mariadb_api
+    version: 0.27.2
+  - alias: pxc_db
+    condition: pxc_db.enabled
+    name: pxc-db
+    repository: oci://keppel.eu-de-1.cloud.sap/ccloud-helm
+    version: 0.5.0
+  - alias: mariadb_api
     condition: mariadb_api.enabled
+    name: mariadb
     repository: oci://keppel.eu-de-1.cloud.sap/ccloud-helm
-    version: 0.24.1
-  - name: mysql_metrics
-    condition: mariadb.enabled
+    version: 0.27.2
+  - alias: pxc_db_api
+    condition: pxc_db_api.enabled
+    name: pxc-db
     repository: oci://keppel.eu-de-1.cloud.sap/ccloud-helm
-    version: 0.4.4
+    version: 0.5.0
+  - condition: mariadb.enabled
+    name: mysql_metrics
+    repository: oci://keppel.eu-de-1.cloud.sap/ccloud-helm
+    version: 0.5.1
   - name: rabbitmq
     repository: oci://keppel.eu-de-1.cloud.sap/ccloud-helm
-    version: 0.17.1
+    version: 0.19.1
   - name: memcached
     repository: oci://keppel.eu-de-1.cloud.sap/ccloud-helm
     version: 0.6.10
   - name: utils
     repository: oci://keppel.eu-de-1.cloud.sap/ccloud-helm
-    version: 0.26.0
-  - name: mariadb
-    alias: mariadb_cell2
+    version: 0.32.0
+  - alias: mariadb_cell2
     condition: mariadb_cell2.enabled
+    name: mariadb
     repository: oci://keppel.eu-de-1.cloud.sap/ccloud-helm
-    version: 0.24.1
-  - name: rabbitmq
-    alias: rabbitmq_cell2
+    version: 0.27.2
+  - alias: pxc_db_cell2
+    condition: pxc_db_cell2.enabled
+    name: pxc-db
+    repository: oci://keppel.eu-de-1.cloud.sap/ccloud-helm
+    version: 0.5.0
+  - alias: rabbitmq_cell2
     condition: cell2.enabled
+    name: rabbitmq
     repository: oci://keppel.eu-de-1.cloud.sap/ccloud-helm
-    version: 0.17.1
+    version: 0.19.1
+  - alias: mariadb_cell3
+    condition: mariadb_cell3.enabled
+    name: mariadb
+    repository: oci://keppel.eu-de-1.cloud.sap/ccloud-helm
+    version: 0.27.2
+  - alias: pxc_db_cell3
+    condition: pxc_db_cell3.enabled
+    name: pxc-db
+    repository: oci://keppel.eu-de-1.cloud.sap/ccloud-helm
+    version: 0.5.0
+  - alias: rabbitmq_cell3
+    condition: cell3.enabled
+    name: rabbitmq
+    repository: oci://keppel.eu-de-1.cloud.sap/ccloud-helm
+    version: 0.19.1
   - name: owner-info
     repository: oci://keppel.eu-de-1.cloud.sap/ccloud-helm
     version: 1.0.0
   - name: linkerd-support
     repository: oci://keppel.eu-de-1.cloud.sap/ccloud-helm
     version: 1.1.0
+  - alias: api-ratelimit-redis
+    condition: rate_limit.enabled
+    name: redis
+    repository: oci://keppel.eu-de-1.cloud.sap/ccloud-helm
+    version: 2.2.18

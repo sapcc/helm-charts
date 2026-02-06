@@ -1,0 +1,265 @@
+{{- if .Values.monitoring.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: flux-system
+  namespace: {{ .Release.Namespace }}
+data:
+  config.yaml: |
+    spec:
+      resources:
+        - groupVersionKind:
+            group: kustomize.toolkit.fluxcd.io
+            version: v1
+            kind: Kustomization
+          metricNamePrefix: gotk
+          metrics:
+            - name: "resource_info"
+              help: "The current state of a Flux Kustomization resource."
+              each:
+                type: Info
+                info:
+                  labelsFromPath:
+                    name: [ metadata, name ]
+              labelsFromPath:
+                exported_namespace: [ metadata, namespace ]
+                ready: [ status, conditions, "[type=Ready]", status ]
+                suspended: [ spec, suspend ]
+                revision: [ status, lastAppliedRevision ]
+                source_name: [ spec, sourceRef, name ]
+        - groupVersionKind:
+            group: helm.toolkit.fluxcd.io
+            version: v2
+            kind: HelmRelease
+          metricNamePrefix: gotk
+          metrics:
+            - name: "resource_info"
+              help: "The current state of a Flux HelmRelease resource."
+              each:
+                type: Info
+                info:
+                  labelsFromPath:
+                    name: [ metadata, name ]
+              labelsFromPath:
+                exported_namespace: [ metadata, namespace ]
+                ready: [ status, conditions, "[type=Ready]", status ]
+                suspended: [ spec, suspend ]
+                revision: [ status, history, "0", chartVersion ]
+                chart_name: [ status, history, "0", chartName ]
+                chart_app_version: [ status, history, "0", appVersion ]
+                chart_ref_name: [ spec, chartRef, name ]
+                chart_source_name: [ spec, chart, spec, sourceRef, name ]
+        - groupVersionKind:
+            group: source.toolkit.fluxcd.io
+            version: v1
+            kind: GitRepository
+          metricNamePrefix: gotk
+          metrics:
+            - name: "resource_info"
+              help: "The current state of a Flux GitRepository resource."
+              each:
+                type: Info
+                info:
+                  labelsFromPath:
+                    name: [ metadata, name ]
+              labelsFromPath:
+                exported_namespace: [ metadata, namespace ]
+                ready: [ status, conditions, "[type=Ready]", status ]
+                suspended: [ spec, suspend ]
+                revision: [ status, artifact, revision ]
+                url: [ spec, url ]
+        - groupVersionKind:
+            group: source.toolkit.fluxcd.io
+            version: v1
+            kind: HelmRepository
+          metricNamePrefix: gotk
+          metrics:
+            - name: "resource_info"
+              help: "The current state of a Flux HelmRepository resource."
+              each:
+                type: Info
+                info:
+                  labelsFromPath:
+                    name: [ metadata, name ]
+              labelsFromPath:
+                exported_namespace: [ metadata, namespace ]
+                ready: [ status, conditions, "[type=Ready]", status ]
+                suspended: [ spec, suspend ]
+                revision: [ status, artifact, revision ]
+                url: [ spec, url ]
+        - groupVersionKind:
+            group: source.toolkit.fluxcd.io
+            version: v1
+            kind: HelmChart
+          metricNamePrefix: gotk
+          metrics:
+            - name: "resource_info"
+              help: "The current state of a Flux HelmChart resource."
+              each:
+                type: Info
+                info:
+                  labelsFromPath:
+                    name: [ metadata, name ]
+              labelsFromPath:
+                exported_namespace: [ metadata, namespace ]
+                ready: [ status, conditions, "[type=Ready]", status ]
+                suspended: [ spec, suspend ]
+                revision: [ status, artifact, revision ]
+                chart_name: [ spec, chart ]
+                chart_version: [ spec, version ]
+        - groupVersionKind:
+            group: source.toolkit.fluxcd.io
+            version: v1
+            kind: OCIRepository
+          metricNamePrefix: gotk
+          metrics:
+            - name: "resource_info"
+              help: "The current state of a Flux OCIRepository resource."
+              each:
+                type: Info
+                info:
+                  labelsFromPath:
+                    name: [ metadata, name ]
+              labelsFromPath:
+                exported_namespace: [ metadata, namespace ]
+                ready: [ status, conditions, "[type=Ready]", status ]
+                suspended: [ spec, suspend ]
+                revision: [ status, artifact, revision ]
+                url: [ spec, url ]
+        - groupVersionKind:
+            group: source.toolkit.fluxcd.io
+            version: v1
+            kind: ExternalArtifact
+          metricNamePrefix: gotk
+          metrics:
+            - name: "resource_info"
+              help: "The current state of a Flux ExternalArtifact resource."
+              each:
+                type: Info
+                info:
+                  labelsFromPath:
+                    name: [ metadata, name ]
+              labelsFromPath:
+                exported_namespace: [ metadata, namespace ]
+                ready: [ status, conditions, "[type=Ready]", status ]
+                suspended: [ spec, suspend ]
+                revision: [ status, artifact, revision ]
+                source_ref_kind: [ spec, sourceRef, kind ]
+                source_ref_name: [ spec, sourceRef, name ]
+        - groupVersionKind:
+            group: source.extensions.fluxcd.io
+            version: v1
+            kind: ArtifactGenerators
+          metricNamePrefix: gotk
+          metrics:
+            - name: "resource_info"
+              help: "The current state of a Flux ArtifactGenerator resource."
+              each:
+                type: Info
+                info:
+                  labelsFromPath:
+                    name: [ metadata, name ]
+              labelsFromPath:
+                exported_namespace: [ metadata, namespace ]
+                ready: [ status, conditions, "[type=Ready]", status ]
+                suspended: [ spec, suspend ]
+                observed_source_digest: [ status, observedSourceDigest ]
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: kube-monitoring-ingress-ca
+  namespace: {{ .Release.Namespace }}
+data:
+  ca.crt: {{ required ".Values.monitoring.ingress.tlsClientAuth.cacrt missing" .Values.monitoring.ingress.tlsClientAuth.cacrt | b64enc | quote }}
+---
+apiVersion: v1
+kind: Secret
+type: Opaque
+metadata:
+  name: thanos-metrics-objectstore
+  namespace: {{ .Release.Namespace }}
+data:
+  thanos.yaml: {{ toYaml .Values.monitoring.thanosObjectstoreConfig | b64enc | quote }}
+---
+apiVersion: greenhouse.sap/v1alpha1
+kind: Plugin
+metadata:
+  name: kube-monitoring
+  namespace: {{ .Release.Namespace }}
+  labels:
+    "greenhouse.sap/owned-by": {{ .Values.monitoring.supportGroup | default .Values.global.supportGroup }}
+    "greenhouse.sap/deployment-tool": "flux"
+spec:
+  disabled: false
+  pluginDefinitionRef:
+    kind: PluginDefinition
+    name: kube-monitoring
+  optionValues:
+  - name: kubeMonitoring.prometheus.prometheusSpec.externalLabels
+    value:
+      organization: {{ .Release.Namespace }}
+{{- if and .Values.monitoring.extLabels.cluster .Values.monitoring.extLabels.region }}
+      cluster: {{ .Values.monitoring.extLabels.cluster }}
+      region: {{ .Values.monitoring.extLabels.region }}
+{{- end }}
+  - name: kubeMonitoring.prometheus.ingress.annotations.nginx\.ingress\.kubernetes\.io/auth-tls-secret
+    value: greenhouse/kube-monitoring-ingress-ca
+  - name: kubeMonitoring.prometheus.ingress.enabled
+    value: true
+  - name: kubeMonitoring.prometheus.ingress.hosts
+    value:
+    - {{ required ".Values.monitoring.ingress.host missing" .Values.monitoring.ingress.host }}
+  - name: kubeMonitoring.prometheus.prometheusSpec.thanos.objectStorageConfig.existingSecret.key
+    value: thanos.yaml
+  - name: kubeMonitoring.prometheus.prometheusSpec.thanos.objectStorageConfig.existingSecret.name
+    value: thanos-metrics-objectstore
+  - name: kubeMonitoring.prometheus.ingress.tls
+    value:
+    - hosts:
+      - {{ required ".Values.monitoring.ingress.host missing" .Values.monitoring.ingress.host }}
+      secretName: tls-{{ .Values.monitoring.ingress.host | replace "." "-" }}
+  - name: alerts.enabled
+    value: true
+{{- if and .Values.monitoring.alertmanager.enabled .Values.monitoring.alertmanager.hosts }}
+  - name: alerts.alertmanagers.hosts
+    value:
+      {{- toYaml .Values.monitoring.alertmanager.hosts | nindent 8 }}
+{{- end }}
+{{- if .Values.monitoring.tlsSecretName }}
+  - name: alerts.alertmanagers.tlsConfig.cert
+    valueFrom:
+      secret:
+        key: "tls.crt"
+        name: {{ .Values.monitoring.tlsSecretName }}
+  - name: alerts.alertmanagers.tlsConfig.key
+    valueFrom:
+      secret:
+        key: "tls.key"
+        name: {{ .Values.monitoring.tlsSecretName }}
+{{- end }}
+  - name: kubeMonitoring.kube-state-metrics.customResourceState.enabled
+    value: true
+  - name: kubeMonitoring.kube-state-metrics.customResourceState.create
+    value: false
+  - name: kubeMonitoring.kube-state-metrics.customResourceState.name
+    value: flux-system
+  - name: kubeMonitoring.kube-state-metrics.rbac.extraRules
+    value:
+    - apiGroups:
+        - source.toolkit.fluxcd.io
+        - source.extensions.fluxcd.io
+        - kustomize.toolkit.fluxcd.io
+        - helm.toolkit.fluxcd.io
+      resources:
+        - artifactgenerators
+        - externalartifacts
+        - gitrepositories
+        - helmcharts
+        - helmreleases
+        - helmrepositories
+        - ocirepositories
+        - kustomizations
+      verbs: [ "list", "watch" ]
+{{ end }}

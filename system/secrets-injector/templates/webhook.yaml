@@ -4,6 +4,10 @@ metadata:
   name: "secrets-injector.cloud.sap"
   annotations:
     cert-manager.io/inject-ca-from: {{ .Release.Namespace }}/secrets-injector
+    {{- if .Values.webhook.labels }}
+  labels:
+    {{- toYaml .Values.webhook.labels | nindent 4 }}
+    {{- end }}
 webhooks:
 - name: "secrets-injector.cloud.sap"
   failurePolicy: {{ .Values.webhook.failurePolicy }}
@@ -33,6 +37,10 @@ webhooks:
   {{- if .Values.webhook.extraConditions }}
   {{- toYaml .Values.webhook.extraConditions | nindent 2 }}
   {{- end }}
+  {{- end }}
+  {{- if .Values.webhook.namespaceSelector }}
+  namespaceSelector:
+  {{- toYaml .Values.webhook.namespaceSelector | nindent 4 }}
   {{- end }}
 {{- if .Values.webhook.genericRules }}
 - name: "generic.secrets-injector.cloud.sap"

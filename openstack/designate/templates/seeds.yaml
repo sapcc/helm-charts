@@ -31,6 +31,8 @@ spec:
     description: "DNS Support. Combines all dns_master permissions"
   - name: cloud_dns_viewer
     description: "Designate Read-only across all projects. View DNS zones and recordsets"
+  - name: cloud_dns_backup
+    description: "DNS Backup, includes cloud_dns_viewer, adds read-only access to tsig keys for zone transfers"
   - name: dns_zonemaster
     description: "Manage/create sub-zones for already owned zones, accept/create zone transfers, delete and share zones"
   - name: dns_hostmaster
@@ -121,7 +123,9 @@ spec:
       - user: admin@Default
         role: cloud_dns_admin
       - user: core_dns_registry@Default
-        role: cloud_dns_viewer
+        role: cloud_dns_admin
+      - user: core_dns_registry@Default
+        role: cloud_identity_viewer
       - user: designate@Default
         role: cloud_dns_admin
       - user: TEST_D021500_TA@cc3test
@@ -228,39 +232,4 @@ spec:
   {{- end }}
   {{- end }}
 
-{{- if .Values.nanny_enabled }}
----
-apiVersion: "openstack.stable.sap.cc/v1"
-kind: "OpenstackSeed"
-metadata:
-  name: {{ .Release.Name }}-nanny-seed
-spec:
-  requires:
-  - {{ .Release.Namespace }}/domain-default-seed
-  - {{ .Release.Namespace }}/domain-ccadmin-seed
-{{- if .Values.global.is_global_region }}
-  - {{ .Release.Namespace }}/designate-global-seed
-  - {{ .Release.Namespace }}/domain-global-seed
-{{- else}}
-  - {{ .Release.Namespace }}/designate-seed
-{{- end }}
-
-  domains:
-  - name: '{{ required "missing user domain in .Values.designate_nanny.credentials.designate_api.project_user_domain_name" .Values.designate_nanny.credentials.designate_api.project_user_domain_name }}'
-    users:
-    - name: '{{ required "missing username in .Values.designate_nanny.credentials.designate_api.user" .Values.designate_nanny.credentials.designate_api.user | include "resolve_secret" }}'
-      description: Designate Nanny
-      password: '{{ required "missing password in .Values.designate_nanny.credentials.designate_api.password" .Values.designate_nanny.credentials.designate_api.password | include "resolve_secret" }}'
-  - name: '{{ required "missing project domain name in .Values.designate_nanny.credentials.designate_api.project_domain_name" .Values.designate_nanny.credentials.designate_api.project_domain_name }}'
-    projects:
-    - name: '{{ required "missing project name in .Values.designate_nanny.credentials.designate_api.project_name" .Values.designate_nanny.credentials.designate_api.project_name }}'
-      role_assignments:
-      - user: '{{ .Values.designate_nanny.credentials.designate_api.user | include "resolve_secret" }}@{{.Values.designate_nanny.credentials.designate_api.project_user_domain_name }}'
-        role: cloud_dns_viewer
-    - name: master
-      role_assignments:
-      - user: '{{ .Values.designate_nanny.credentials.designate_api.user | include "resolve_secret" }}@{{.Values.designate_nanny.credentials.designate_api.project_user_domain_name }}'
-        role: objectstore_admin
-
-{{- end }}
 {{- end }}

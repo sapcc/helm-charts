@@ -21,7 +21,6 @@ spec:
         networking.gardener.cloud/to-public-networks: allowed
         networking.resources.gardener.cloud/to-virtual-garden-kube-apiserver-tcp-443: allowed
       annotations:
-        checksum/config: {{ include (print $.Template.BasePath "/cloud-profile-sync-config.yaml") . | sha256sum }}
         kubectl.kubernetes.io/default-container: cloud-profile-sync
         prometheus.io/scrape: "true"
         prometheus.io/targets: kubernetes
@@ -31,15 +30,12 @@ spec:
         imagePullPolicy: {{ .Values.cloudProfileSync.image.pullPolicy }}
         name: cloud-profile-sync
         command: ["/cloud-profile-sync"]
-        args:
-        - -kubeconfig=/kubeconfig/kubeconfig
         env:
+        - name: KUBERNETES_SERVICE_HOST
+          value: virtual-garden-kube-apiserver.garden.svc.cluster.local
         volumeMounts:
-        - name: config
-          mountPath: "/config"
-          readOnly: true
         - name: kubeconfig
-          mountPath: "/kubeconfig"
+          mountPath: "/var/run/secrets/kubernetes.io/serviceaccount"
         ports:
         - name: metrics
           containerPort: 8080
@@ -56,11 +52,13 @@ spec:
             topologyKey: {{ .Values.cloudProfileSync.topologyKey }}
       {{ end -}}
       volumes:
-        - name: config
-          configMap:
-            name: cloud-profile-sync
         - name: kubeconfig
           secret:
+            items:
+            - key: token
+              path: token
+            - key: bundle.crt
+              path: ca.crt
             secretName: cloud-profile-sync-kubeconfig
 ---
 apiVersion: v1
@@ -73,25 +71,8 @@ metadata:
   annotations:
     serviceaccount.resources.gardener.cloud/name: cloud-profile-sync
     serviceaccount.resources.gardener.cloud/namespace: garden
-# cannot use lookup for CA because names from operator are hashed randomly
+    serviceaccount.resources.gardener.cloud/inject-ca-bundle: "true"
 stringData:
-  kubeconfig: |
-    apiVersion: v1
-    clusters:
-    - cluster:
-        certificate-authority-data: {{ .Values.cloudProfileSync.virtualGardenCA }}
-        server: https://virtual-garden-kube-apiserver.garden
-      name: virtual-garden
-    contexts:
-    - context:
-        cluster: virtual-garden
-        user: cloud-profile-sync
-      name: virtual-garden
-    current-context: virtual-garden
-    kind: Config
-    preferences: {}
-    users:
-    - name: cloud-profile-sync
-      user:
-        token: ""
+  token: ""
+  bundle.crt: ""
 {{ end -}}

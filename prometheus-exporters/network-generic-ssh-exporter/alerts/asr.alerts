@@ -158,8 +158,9 @@ groups:
 
     - alert: NetworkAsrNatTcpPortPreAllocationLow
       expr: >-
-        sum by (name)
-        (ssh_nat_portblock_tcp_end - ssh_nat_portblock_tcp_start)
+        (sum by (name) (ssh_nat_portblock_tcp_end - ssh_nat_portblock_tcp_start))
+        * on(name) group_left()
+        (snmp_asr_sysDescr{image_version=~"17.6.3.*"})
         < 45000
       for: 5m
       labels:
@@ -176,8 +177,9 @@ groups:
 
     - alert: NetworkAsrNatUdpPortPreAllocationLow
       expr: >-
-        sum by (name)
-        (ssh_nat_portblock_udp_end - ssh_nat_portblock_udp_start)
+        (sum by (name) (ssh_nat_portblock_udp_end - ssh_nat_portblock_udp_start))
+        * on(name) group_left()
+        (snmp_asr_sysDescr{image_version=~"17.6.3.*"})
         < 45000
       for: 5m
       labels:

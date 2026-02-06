@@ -4,7 +4,14 @@ kind: ServiceAccount
 metadata:
   name: metal-token-rotate
   namespace: garden
-{{- if .Values.targetSecret }}
+{{- $remoteIdentity := false }}
+{{- range $val := .Values.config }}
+{{- if $val.targetSecretName }}
+{{- $remoteIdentity = true }}
+{{- end }}
+{{- end }}
+
+{{- if $remoteIdentity }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -16,7 +23,11 @@ rules:
   resources:
   - secrets
   resourceNames:
-  - {{ (split "/" .Values.targetSecret)._1 | quote }}
+  {{- range $val := .Values.config }}
+  {{- if $val.targetSecretName }}
+  - {{ $val.targetSecretName | quote }}
+  {{- end }}
+  {{- end }}
   verbs:
   - get
   - list
@@ -34,7 +45,20 @@ subjects:
 - kind: ServiceAccount
   name: metal-token-rotate
   namespace: garden
-{{- else }}
+{{- end}}
+
+{{- $serviceAccountNamespace := "" }}
+{{- $serviceAccountName := "" }}
+{{- range $val := .Values.config }}
+{{- if not $val.targetSecretNamespace }}
+{{- if $serviceAccountNamespace }}
+{{- fail "Only one local target is allowed, but multiple were found." }}
+{{- end }}
+{{- $serviceAccountNamespace = $val.serviceAccountNamespace }}
+{{- $serviceAccountName = $val.serviceAccountName }}
+{{- end }}
+{{- end }}
+{{- if $serviceAccountNamespace }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -65,14 +89,14 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: metal-token-rotate
-  namespace: {{ .Values.config.serviceAccountNamespace | quote }}
+  namespace: {{ $serviceAccountNamespace | quote }}
 rules:
 - apiGroups:
   - ""
   resources:
   - serviceaccounts/token
   resourceNames:
-  - {{ .Values.config.serviceAccountName | quote }}
+  - {{ $serviceAccountName | quote }}
   verbs:
   - create
 ---
@@ -80,7 +104,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: metal-token-rotate
-  namespace: {{ .Values.config.serviceAccountNamespace | quote }}
+  namespace: {{ $serviceAccountNamespace | quote }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role

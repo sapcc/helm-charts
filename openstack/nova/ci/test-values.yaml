@@ -1,3 +1,4 @@
+---
 global:
   accessControlAllowOrigin: '*'
   region: regionOne
@@ -18,36 +19,131 @@ global:
     - bar
   nova_metadata_secret: topSecretWouldBuyAgain
 
-imageVersion: myTag
+cell2:
+  enabled: true
+  name: cell-b-2
+
+cell3:
+  enabled: true
+  name: cell-c-3
+
+defaultUsersMariaDB:
+  api: nova_api
+  cell0: nova_cell0
+  cell1: nova
+  cell2: nova_cell2
+  cell3: nova_cell3
+
+imageVersion: my-tag
 imageVersionVspc: vspc-latest-tag
 imageVersionConsoleMks: console-mks-tag
 
-mariadb:
-  root_password: rootroot
+pxc_db:
   enabled: false
-  backup:
-    enabled: false
-  backup_v2:
-    enabled: false
   users:
     nova:
-      name: nova
-      password: password
+      password: topSecret!
+    nova_cell0:
+      password: topSecret!
+    nova_cell1:
+      password: topSecret!
+  system_users:
+    root:
+      password: topSecret!
+    xtrabackup:
+      password: topSecret!
+    monitor:
+      password: topSecret!
+    proxyadmin:
+      password: topSecret!
+    operator:
+      password: topSecret!
+    replication:
+      password: topSecret!
+  backup:
+    s3:
+      secrets:
+        aws_access_key_id: topSecret!
+        aws_secret_access_key: topSecret!
 
-dbPassword: top-secret
-cell0dbPassword: very-secret
-apidbPassword: much-secret
+proxysql:
+  mode: host_alias
+
+mysql_metrics:
+  connections:
+    default:
+      db_type: mariadb
+      db_instance_name: null  # use default name, based on chart's release name
+      db_name: nova
+      db_user: metrics
+      db_password: passwordMetrics
+    cell2:
+      db_type: mariadb
+      db_instance_name: cell-b-2
+      db_name: nova_cell_b_2
+      db_user: metrics
+      db_password: passwordMetrics
+    cell3:
+      db_type: mariadb
+      db_instance_name: cell-c-3
+      db_name: nova_cell_c_3
+      db_user: metrics
+      db_password: passwordMetrics
 
 mariadb_api:
-  enabled: false
-  backup:
-    enabled: false
+  enabled: true
+  root_password: rootrootApi
   backup_v2:
     enabled: false
   users:
+    backup:
+      name: backup
+      password: passwordBackupApi
     nova_api:
       name: nova_api
-      password: password
+      password: passwordApi
+
+mariadb:
+  enabled: true
+  root_password: rootrootCell1
+  backup_v2:
+    enabled: false
+  users:
+    backup:
+      name: backup
+      password: passwordBackup
+    nova:
+      name: nova
+      password: passwordCell1
+    nova_cell0:
+      name: nova_cell0
+      password: passwordCell0
+
+mariadb_cell2:
+  enabled: true
+  name: nova-cell-b-2
+  root_password: rootrootCell2
+  databases:
+  - nova_cell_b_2
+  backup_v2:
+    enabled: false
+  users:
+    nova_cell2:
+      name: nova_cell2
+      password: passwordCell2
+
+mariadb_cell3:
+  enabled: true
+  name: nova-cell-c-3
+  root_password: rootrootCell3
+  databases:
+  - nova_cell_c_3
+  backup_v2:
+    enabled: false
+  users:
+    nova_cell3:
+      name: nova_cell3
+      password: passwordCell3
 
 rabbitmq:
   users:
@@ -56,7 +152,29 @@ rabbitmq:
     default:
       password: defaultdefault
   metrics:
-    password: metricsmetrics
+    password: passwordMetrics
+
+rabbitmq_cell2:
+  users:
+    admin:
+      name: admin
+      password: adminadmin
+    default:
+      name: default
+      password: defaultdefault
+  metrics:
+    password: passwordMetrics
+
+rabbitmq_cell3:
+  users:
+    admin:
+      name: admin
+      password: adminadmin
+    default:
+      name: default
+      password: defaultdefault
+  metrics:
+    password: passwordMetrics
 
 cors:
   enabled: true
@@ -65,3 +183,51 @@ cors:
 utils:
   cors:
     allowed_origin: 'https://test.domain'
+
+# openstack-rate-limit
+rate_limit:
+  enabled: false
+  rate_limit_by: target_project_id
+  max_sleep_time_seconds: 0
+  log_sleep_time_seconds: 10
+  backend_timeout_seconds: 1
+  whitelist:
+    - Default/service
+    - Default/admin
+    - tempest/performance-testing
+    - ccadmin/cloud_admin
+    - ccadmin/master
+  whitelist_users: null
+  blacklist: null
+  blacklist_users: null
+  groups:
+    write:
+      - delete
+      - update
+  rates:
+    default:
+      servers:
+        - action: read/list
+          limit: 100r/m
+        - action: create
+          limit: 100r/m
+      servers/server:
+        - action: read/list
+          limit: 100r/m
+        - action: write
+          limit: 100r/m
+      servers/server/migrations:
+        - action: read/list
+          limit: 100r/m
+      servers/server/migrations/migration:
+        - action: read/list
+          limit: 100r/m
+      servers/server/action:
+        - action: create
+          limit: 100r/m
+      flavors:
+        - action: read/list
+          limit: 100r/m
+      servers/server/remote-consoles:
+        - action: create
+          limit: 100r/m

@@ -1,10 +1,10 @@
 {{- define "nova.console_deployment" }}
-{{- $cell_name := index . 1 }}
+{{- $cellId := index . 1 }}
 {{- $type := index . 2 }}
-{{- $is_cell2 := index . 3 }}
-{{- $config := index . 4 }}
-{{- $name := print $cell_name "-" $type }}
+{{- $config := index . 3 }}
 {{- with index . 0 }}
+{{- $cellName := include "nova.helpers.cell_name" (tuple . $cellId) }}
+{{- $name := print $cellName "-" $type }}
 kind: Deployment
 apiVersion: apps/v1
 
@@ -39,6 +39,7 @@ spec:
         {{- include "utils.topology.pod_label" . | indent 8 }}
       annotations:
         configmap-etc-hash: {{ include (print .Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
+        secret-etc-hash: {{ include (print .Template.BasePath "/etc-secret.yaml") . | sha256sum }}
         {{- if .Values.proxysql.mode }}
         prometheus.io/scrape: "true"
         prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
@@ -65,8 +66,8 @@ spec:
               items:
               - key: api-db.conf
                 path: nova.conf.d/api-db.conf
-              - key: {{ $cell_name }}.conf
-                path: nova.conf.d/{{ $cell_name }}.conf
+              - key: {{ $cellName }}.conf
+                path: nova.conf.d/{{ $cellName }}.conf
               {{- if .Values.osprofiler.enabled }}
               - key: osprofiler.conf
                 path: nova.conf.d/osprofiler.conf
@@ -74,16 +75,19 @@ spec:
           - configMap:
               name: nova-console
               items:
-              - key: console-{{ $cell_name }}-{{ $type }}.conf
-                path: nova.conf.d/console-{{ $cell_name }}-{{ $type }}.conf
+              - key: console-{{ $cellName }}-{{ $type }}.conf
+                path: nova.conf.d/console-{{ $cellName }}-{{ $type }}.conf
       {{- include "utils.proxysql.volumes" . | indent 6 }}
       {{- include "utils.trust_bundle.volumes" . | indent 6 }}
+      initContainers:
+      {{- if .Values.proxysql.native_sidecar }}
+      {{- include "utils.proxysql.container" . | indent 6 }}
+      {{- end }}
       containers:
       - name: nova-console-{{ $type }}
         image: {{ tuple . (print (title $type) "proxy") | include "container_image_nova" }}
         imagePullPolicy: IfNotPresent
         command:
-        - dumb-init
         - nova-{{ $type }}proxy
         {{- if $config.args }}
           {{- range (regexSplit "\\s+" $config.args -1) }}
@@ -105,6 +109,8 @@ spec:
           mountPath: /etc/nova
         {{- include "utils.proxysql.volume_mount" . | indent 8 }}
         {{- include "utils.trust_bundle.volume_mount" . | indent 8 }}
+      {{- if not .Values.proxysql.native_sidecar }}
       {{- include "utils.proxysql.container" . | indent 6 }}
+      {{- end }}
 {{- end }}
 {{- end }}

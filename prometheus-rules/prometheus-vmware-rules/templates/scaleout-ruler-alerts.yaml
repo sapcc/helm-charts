@@ -1,0 +1,15 @@
+{{- range $path, $bytes := .Files.Glob "alerts-scaleout-ruler/*.alerts" }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+
+metadata:
+  name: {{ printf "%s" $path | replace "/" "-" }}
+  labels:
+    type: alerting-rules
+    thanos-ruler: scaleout
+
+spec:
+{{ printf "%s" $bytes | indent 2 }}
+
+{{- end }}

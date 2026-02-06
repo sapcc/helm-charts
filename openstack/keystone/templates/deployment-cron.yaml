@@ -11,6 +11,9 @@ metadata:
     system: openstack
     component: keystone
     type: operations
+  annotations:
+    secret.reloader.stakater.com/reload: "{{ .Release.Name }}-secrets"
+    deployment.reloader.stakater.com/pause-period: "60s"
 spec:
   replicas: {{ .Values.cron.replicas }}
   revisionHistoryLimit: {{ .Values.cron.upgrades.revisionHistory }}
@@ -63,6 +66,9 @@ spec:
           value: {{ include "keystone.service_dependencies" . | quote }}
         - name: COMMAND
           value: "true"
+      {{- if .Values.proxysql.native_sidecar }}
+      {{- include "utils.proxysql.container" . | indent 6 }}
+      {{- end }}
       containers:
         - name: keystone-cron
           image: {{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{ .Values.cron.image }}:{{ required ".Values.cron.imageTag is missing" .Values.cron.imageTag }}
@@ -111,7 +117,9 @@ spec:
           resources:
 {{ toYaml .Values.cron.resources | indent 12 }}
           {{- end }}
-{{- include "utils.proxysql.container" . | indent 8 }}
+      {{- if not .Values.proxysql.native_sidecar }}
+      {{- include "utils.proxysql.container" . | indent 8 }}
+      {{- end }}
       volumes:
         - name: keystone-etc
           configMap:

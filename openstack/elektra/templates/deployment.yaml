@@ -3,6 +3,9 @@ apiVersion: apps/v1
 
 metadata:
   name: elektra
+  annotations:
+    # redeploy on secret "elektra-token" and "elektra-secrets" change so all the elektra pods gets the same secrets
+    secret.reloader.stakater.com/reload: "elektra-token,elektra-secrets"
 
 spec:
   selector:
@@ -20,8 +23,7 @@ spec:
       labels:
         name: elektra
       annotations:
-        #We scrape the request metrics via annotion on the elektra service
-        #This annotation is for the puma metrics exporter
+        # This is needed to ensure that the service is scraped by prometheus
         prometheus.io/scrape: "true"
         prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
         # ensure deployment's annotation section is updated if support-configmap file changes
@@ -29,8 +31,6 @@ spec:
         checksum/configmap: {{ include "elektra/templates/support-config-map.yaml" . | sha256sum }}
         # ensure mail port is skipeed by linkerd. This is required to allow the mail server to be accessed
         config.linkerd.io/skip-outbound-ports: {{ .Values.monsoon_dashboard_mail_server_port | quote }}
-        # redeploy on secret "elektra-token" and "elektra-secrets" change so all the elektra pods gets the same secrets
-        secret.reloader.stakater.com/reload: "elektra-token,elektra-secrets"
     spec:
       affinity:
         podAntiAffinity:
@@ -56,7 +56,7 @@ spec:
           image: {{.Values.global.registry}}/elektra:{{.Values.image.tag}}
           command: ['script/init-db.sh']
           imagePullPolicy: {{.Values.image.pullPolicy}}
-          env: 
+          env:
 {{ include (print .Template.BasePath "/_env.tpl") . | indent 12 }}
       containers:
         - name: rails
@@ -77,7 +77,7 @@ spec:
               port: 80
               httpHeaders:
                 - name: host
-                  value: elektra.cloud.sap # from rails 6 only hosts defined in config.host are allowed. We are simulating a valid host here.                  
+                  value: elektra.cloud.sap # from rails 6 only hosts defined in config.host are allowed. We are simulating a valid host here.
             failureThreshold: 30
             periodSeconds: 10
           livenessProbe:
@@ -116,20 +116,5 @@ spec:
               memory: "800Mi"
             limits:
               cpu: "2000m"
-              memory: "2Gi"                
-        - name: puma-metrics
-          image: {{.Values.global.registry}}/puma-exporter:latest
-          ports:
-            - name: metrics-puma
-              containerPort: 9235
-          # NOTE: observed resource usage in eu-de-2 (as of 2022-06)
-          # - CPU: 12m with 8 replicas was running into throttling, so give plenty headroom
-          # - RAM: levels off around 128Mi
-          # k -n elektra describe vpa puma-metrics
-          resources:
-            requests:
-              cpu: "120m"
-              memory: "200Mi"
-            limits:
-              cpu: "120m"
-              memory: "200Mi"                
+              memory: "2Gi"
+  

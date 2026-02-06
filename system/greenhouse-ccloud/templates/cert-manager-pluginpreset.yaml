@@ -4,10 +4,20 @@ kind: PluginPreset
 metadata:
   name: cert-manager
   namespace: {{ .Release.Namespace }}
+  labels:
+    greenhouse.sap/owned-by: containers
+{{- if .Values.global.fluxEnabled }}
+    greenhouse.sap/deployment-tool: "flux"
+  annotations:
+    "greenhouse.sap/propagate-labels": "greenhouse.sap/owned-by,greenhouse.sap/deployment-tool"
+{{- else }}
+  annotations:
+    "greenhouse.sap/propagate-labels": "greenhouse.sap/owned-by"
+{{- end }}
 spec:
   clusterSelector:
     matchLabels:
-      greenhouse.sap/cluster-presets-enabled: "true"
+      greenhouse.sap/pluginpreset: "true"
   plugin:
     displayName: cert manager
     optionValues:
@@ -33,4 +43,15 @@ spec:
         value: {{ .Values.global.quayIoMirror }}/jetstack/cert-manager-cainjector
     pluginDefinition: cert-manager
     releaseNamespace: kube-system
+{{- if .Values.certManager.overrideShootNetworkPolicy }}
+    clusterOptionOverrides:
+{{- range $cluster := .Values.certManager.overrideShootNetworkPolicy }}
+      - clusterName: {{ $cluster }}
+        overrides:
+          - name: global.commonLabels
+            value:
+              networking.gardener.cloud/to-apiserver: allowed
+              networking.gardener.cloud/to-dns: allowed
+{{- end }}
+{{- end }}
 {{- end -}}

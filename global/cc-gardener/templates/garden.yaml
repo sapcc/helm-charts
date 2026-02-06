@@ -1,3 +1,4 @@
+{{- if eq .Values.garden.backup.provider "aws" }}
 ---
 apiVersion: v1
 kind: Secret
@@ -11,6 +12,26 @@ data:
   secretAccessKey: {{ required "backup.secretAccessKey missing" .secretAccessKey | b64enc }}
   region: {{ required "backup.region missing" .region | b64enc }}
 {{- end }}
+{{- end }}
+{{- if eq .Values.garden.backup.provider "openstack" }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: virtual-garden-etcd-main-backup-openstack
+  namespace: garden
+type: Opaque
+data:
+{{- with .Values.garden.backup }}
+  applicationCredentialID: {{ required "backup.applicationCredentialID missing" .applicationCredentialID | b64enc }}
+  applicationCredentialName: {{ required "backup.applicationCredentialName missing" .applicationCredentialName | b64enc }}
+  applicationCredentialSecret: {{ required "backup.applicationCredentialSecret missing" .applicationCredentialSecret | b64enc }}
+  authURL: {{ required "backup.authURL missing" .authURL | b64enc }}
+  domainName: {{ required "backup.domainName missing" .domainName | b64enc }}
+  region: {{ required "backup.region missing" .region | b64enc }}
+  tenantName: {{ required "backup.tenantName missing" .tenantName | b64enc }}
+{{- end }}
+{{- end }}
 ---
 apiVersion: operator.gardener.cloud/v1alpha1
 kind: Garden
@@ -18,10 +39,32 @@ metadata:
   name: {{ .Values.garden.name }}
   namespace: garden
 spec:
+  {{- if .Values.extensions.auditing.enabled }}
+  extensions:
+  - type: auditing
+    providerConfig:
+      apiVersion: auditing.extensions.gardener.cloud/v1alpha1
+      kind: AuditConfiguration
+      backends:
+      - http:
+          url: {{ .Values.extensions.auditing.url }}
+          tls:
+            secretReferenceName: auditing-mtls
+  resources:
+  - name: auditing-mtls
+    resourceRef:
+      apiVersion: v1
+      kind: Secret
+      name: auditing-mtls
+  {{- end }}
   runtimeCluster:
     ingress:
       domains:
+      {{- if .Values.garden.domainOverride }}
+      - name: runtime.{{ .Values.garden.domainOverride }}.{{ required ".Values.global.region missing" .Values.global.region }}.cloud.sap
+      {{- else }}
       - name: runtime-garden.{{ required ".Values.global.cluster missing" .Values.global.cluster }}.{{ required ".Values.global.region missing" .Values.global.region }}.cloud.sap
+      {{- end }}
       controller:
         kind: nginx
     networking:
@@ -35,17 +78,32 @@ spec:
         enabled: false
       topologyAwareRouting:
         enabled: false
+{{- if .Values.garden.runtimeCluster.loadBalancerServices }}
+      loadBalancerServices: {{ toYaml .Values.garden.runtimeCluster.loadBalancerServices | nindent 8 }}
+{{- end }}
   virtualCluster:
     dns:
       domains:
+      {{- if .Values.garden.domainOverride }}
+      - name: virtual.{{ .Values.garden.domainOverride }}.{{ required ".Values.global.region missing" .Values.global.region }}.cloud.sap
+      {{- else }}
       - name: virtual-garden.{{ required ".Values.global.cluster missing" .Values.global.cluster }}.{{ required ".Values.global.region missing" .Values.global.region }}.cloud.sap
+      {{- end }}
+      {{- if .Values.garden.virtualCluster.publicDomain }}
+      - name: {{ .Values.garden.virtualCluster.publicDomain }}
+      {{- end }}
     etcd:
       main:
         backup:
-          provider: aws
+          provider: {{ required ".buckup.provider missing" .Values.garden.backup.provider | quote }}
           bucketName: {{ required ".buckup.bucket missing" .Values.garden.backup.bucket | quote }}
           secretRef:
+{{- if eq .Values.garden.backup.provider "aws" }}
             name: virtual-garden-etcd-main-backup-s3
+{{- end }}
+{{- if eq .Values.garden.backup.provider "openstack" }}
+            name: virtual-garden-etcd-main-backup-openstack
+{{- end }}
         storage:
           capacity: 10Gi
       events:
@@ -54,14 +112,41 @@ spec:
     kubernetes:
       version: {{ .Values.garden.virtualCluster.version | quote}}
       kubeAPIServer:
-        enableAnonymousAuthentication: true # cluster registry version check
-        oidcConfig:
-          {{- toYaml .Values.garden.virtualCluster.oidcConfig | nindent 10 }}
+        featureGates:
+          AnonymousAuthConfigurableEndpoints: true
+        {{- if .Values.garden.virtualCluster.publicDomain }}
+        sni:
+          domainPatterns:
+          - api.{{ .Values.garden.virtualCluster.publicDomain }}
+          secretName: {{ .Values.garden.name }}-apiserver-public-tls
+        {{- end }}
+        structuredAuthentication:
+          configMapName: authentication-config-virtual-cluster
+        {{- if .Values.extensions.auditing.enabled }}
+        auditConfig:
+          auditPolicy:
+            configMapRef:
+                name: audit-policy-cp
+        {{- end }}
+{{- if hasPrefix "prt-" .Values.global.cluster }}
+        authentication:
+          webhook:
+            kubeconfigSecretName: authentication-webhook-config
+            cacheTTL: 30s
+            version: v1beta1
+{{- end }}
     gardener:
       clusterIdentity: local
       gardenerAPIServer:
         admissionPlugins:
         - name: ShootVPAEnabledByDefault
+          disabled: true
+        {{- if .Values.extensions.auditing.enabled }}
+        auditConfig:
+          auditPolicy:
+            configMapRef:
+              name: audit-policy-cp-garden
+        {{- end }}
       gardenerDashboard: {}
       gardenerDiscoveryServer: {}
     maintenance:

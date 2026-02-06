@@ -22,8 +22,21 @@ input {
     ssl_enabled => true
     ssl_certificate => '/tls-secret/tls.crt'
     ssl_key => '/usr/share/logstash/config/tls.key'
+    ssl_supported_protocols => ['TLSv1.2', 'TLSv1.3']
     threads => 12
 {{- end }}
+  }
+{{- end }}
+{{- if .Values.mtls.enabled }}
+  http {
+    id => "input_mtls"
+    port  => {{.Values.input_mtls_port}}
+    tags => ["kube-api"]
+    ssl_enabled => true
+    ssl_certificate => '/tls-secret/tls.crt'
+    ssl_key => '/usr/share/logstash/config/tls.key'
+    ssl_supported_protocols => ['TLSv1.2', 'TLSv1.3']
+    threads => 12
   }
 {{- end }}
 {{- if .Values.beats.enabled }}
@@ -188,7 +201,46 @@ filter {
         }
       }
     }
-  }
+    if ("kube-api" in [tags]) {
+            split {
+              field => "items"
+          }
+          # ---- clean managedFields ----
+          ruby {
+            code => '
+              mf = event.get("[requestObject][managedFields]")
+              if mf.is_a?(Array)
+                mf.each do |entry|
+                  entry.delete(".") if entry.is_a?(Hash)
+                end
+              elsif mf.is_a?(Hash)
+                mf.delete(".")
+              end
+            '
+          }
+
+          if [items][annotations][shoot.gardener.cloud/name] {
+            grok {
+              match => { "[items][annotations][shoot.gardener.cloud/name]" => "(?<sap.cc.region>[^-]+-[^-]+-[^-]+)$" }
+            }
+          }
+
+          mutate {
+            add_field => { "[sap][cc][cluster]" => "%{[items][annotations][shoot.gardener.cloud/name]}"}
+            add_field => { "[sap][cc][audit][source]" => "kube-api"}
+            add_field => { "[sap][cc][audit][gardener_seed]" => "%{[items][annotations][seed.gardener.cloud/name]}"}
+          }
+          # ---- flatten items ----
+          ruby {
+                 code => '
+                      event.get("items").each { |k, v|
+                          event.set(k,v)
+                          }
+                          event.remove("items")
+                '
+         }
+        }
+      }
 
 
 output {
@@ -211,6 +263,14 @@ output {
   } else if [type] == "audit" or "audit" in [tags] {
     http {
       id => "output_else_audit"
+      ssl_certificate_authorities => ["/usr/share/logstash/config/ca.pem"]
+      url => "https://{{ .Values.global.forwarding.audit.host }}"
+      format => "json"
+      http_method => "post"
+    }
+  } else if [type] == "kube-api" or "kube-api" in [tags] {
+    http {
+      id => "output_kube-api"
       ssl_certificate_authorities => ["/usr/share/logstash/config/ca.pem"]
       url => "https://{{ .Values.global.forwarding.audit.host }}"
       format => "json"

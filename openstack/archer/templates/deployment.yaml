@@ -86,6 +86,10 @@ spec:
                   name: archer-secret
                   key: audit_transport_url
             {{- end }}
+            {{- with not $.Values.global.linkerd_enabled }}
+            - name: LINKERD_AWAIT_DISABLED
+              value: "true"
+            {{- end }}
           ports:
             - name: http
               containerPort: {{ .Values.service.port }}

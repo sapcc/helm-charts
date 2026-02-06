@@ -3,6 +3,9 @@ kind: Deployment
 metadata:
   labels:
     app: disco
+    {{- with .Values.controllerLabels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
   name: disco-controller-manager
 spec:
   replicas: 1
@@ -16,6 +19,9 @@ spec:
         checksum/config: {{ include (print $.Template.BasePath "/disco-config.yaml") . | sha256sum }}
       labels:
         app: disco
+        {{- with .Values.controllerLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
     spec:
       containers:
       - command:

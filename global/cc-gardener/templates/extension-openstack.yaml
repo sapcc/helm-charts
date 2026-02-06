@@ -1,4 +1,5 @@
 # The runtime values always need to be enabled to manage DNS records in designate + backups in swift.
+{{ if .Values.extensions.openstack.enabled -}}
 apiVersion: operator.gardener.cloud/v1alpha1
 kind: Extension
 metadata:
@@ -25,7 +26,10 @@ spec:
       values:
         replicaCount: 1
         image:
-          tag: v1.47.0
+          tag: {{ (.Values.extensions.openstack.values.image).tag | default .Values.extensions.openstack.version }}
+          {{- if (.Values.extensions.openstack.values.image).repository }}
+          repository: {{ .Values.extensions.openstack.values.image.repository }}
+          {{- end }}
         config:
           etcd:
             storage:
@@ -33,10 +37,16 @@ spec:
               {{- if .Values.extensions.storage.parameters }}
               parameters: {{ .Values.extensions.storage.parameters | toYaml | nindent 16 }}
               {{- end }}
+{{- if and .Values.extensions.openstack .Values.extensions.openstack.imageVectorOverwrite }}
+        imageVectorOverwrite: | {{ toYaml .Values.extensions.openstack.imageVectorOverwrite | nindent 10 }}
+{{- end }}
       runtimeClusterValues:
         replicaCount: 1
         image:
-          tag: v1.47.0
+          tag: {{ (.Values.extensions.openstack.runtimeClusterValues.image).tag | default .Values.extensions.openstack.version }}
+          {{- if (.Values.extensions.openstack.runtimeClusterValues.image).repository }}
+          repository: {{ .Values.extensions.openstack.runtimeClusterValues.image.repository }}
+          {{- end }}
         config:
           etcd:
             storage:
@@ -46,6 +56,7 @@ spec:
               {{- end }}
       helm:
         ociRepository:
-          tag: 1.47.0
-          repository: keppel.eu-de-1.cloud.sap/ccloud-helm/gardener-extension-provider-openstack
+          tag: {{ (.Values.extensions.openstack.helm.ociRepository).tag | default .Values.extensions.openstack.version }}
+          repository: {{ .Values.extensions.openstack.helm.ociRepository.repository }}
       policy: OnDemand
+{{- end }}
