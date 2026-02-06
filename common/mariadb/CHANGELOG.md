@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.32.0 - 2025/01/09
+* MariaDB version updated to [11.4.9](https://mariadb.com/docs/release-notes/community-server/11.4/11.4.9)
+  * See https://mariadb.com/docs/release-notes/community-server/11.4/what-is-mariadb-114
+* sidecar images updated
+* `maria-back-me-up` updated to `WIP`, based on 11.4 mariadb imageSW
+* chart version bumped
+
 ## v0.31.0 - 2025/11/26
 * Fixed `go-maria-sync` preStop hook command to use `sh` instead of `bash`
 * Added an option to scale down `go-maria-sync` statefulset instead of removing it.
