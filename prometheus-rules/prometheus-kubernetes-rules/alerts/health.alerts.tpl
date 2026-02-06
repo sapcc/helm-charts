@@ -19,7 +19,7 @@ groups:
       summary: Node status is NotReady
       description: Node {{`{{ $labels.node }}`}} is NotReady for more than an hour
 
-  # Duplicated from maintenance.alerts. It has multiple occurrences; make sure you change all of them if you modify this. 
+  # Duplicated from maintenance.alerts. It has multiple occurrences; make sure you change all of them if you modify this.
   - alert: NodeInMaintenance
     expr: max by (node) (kube_node_labels{label_cloud_sap_maintenance_state="in-maintenance"}) == 1
     for: 2m
@@ -80,7 +80,7 @@ groups:
       summary: Kube state metrics scrape failed
 
   - alert: KubernetesPodRestartingTooMuch
-    expr: (sum by(pod, namespace, container) (rate(kube_pod_container_status_restarts_total[15m]))) * on (pod) group_left(label_alert_tier, label_alert_service, label_ccloud_support_group, label_ccloud_service) (max without (uid) (kube_pod_labels)) > 0
+    expr: (sum by(pod, namespace, container) (rate(kube_pod_container_status_restarts_total[15m]))) * on (pod, namespace) group_left(label_alert_tier, label_alert_service, label_ccloud_support_group, label_ccloud_service) (max without (uid) (kube_pod_labels)) > 0
     for: 1h
     labels:
       tier: {{ include "alertTierLabelOrDefault" .Values.tier }}
