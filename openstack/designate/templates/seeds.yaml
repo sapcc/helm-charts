@@ -232,39 +232,4 @@ spec:
   {{- end }}
   {{- end }}
 
-{{- if .Values.nanny_enabled }}
----
-apiVersion: "openstack.stable.sap.cc/v1"
-kind: "OpenstackSeed"
-metadata:
-  name: {{ .Release.Name }}-nanny-seed
-spec:
-  requires:
-  - {{ .Release.Namespace }}/domain-default-seed
-  - {{ .Release.Namespace }}/domain-ccadmin-seed
-{{- if .Values.global.is_global_region }}
-  - {{ .Release.Namespace }}/designate-global-seed
-  - {{ .Release.Namespace }}/domain-global-seed
-{{- else}}
-  - {{ .Release.Namespace }}/designate-seed
-{{- end }}
-
-  domains:
-  - name: '{{ required "missing user domain in .Values.designate_nanny.credentials.designate_api.project_user_domain_name" .Values.designate_nanny.credentials.designate_api.project_user_domain_name }}'
-    users:
-    - name: '{{ required "missing username in .Values.designate_nanny.credentials.designate_api.user" .Values.designate_nanny.credentials.designate_api.user | include "resolve_secret" }}'
-      description: Designate Nanny
-      password: '{{ required "missing password in .Values.designate_nanny.credentials.designate_api.password" .Values.designate_nanny.credentials.designate_api.password | include "resolve_secret" }}'
-  - name: '{{ required "missing project domain name in .Values.designate_nanny.credentials.designate_api.project_domain_name" .Values.designate_nanny.credentials.designate_api.project_domain_name }}'
-    projects:
-    - name: '{{ required "missing project name in .Values.designate_nanny.credentials.designate_api.project_name" .Values.designate_nanny.credentials.designate_api.project_name }}'
-      role_assignments:
-      - user: '{{ .Values.designate_nanny.credentials.designate_api.user | include "resolve_secret" }}@{{.Values.designate_nanny.credentials.designate_api.project_user_domain_name }}'
-        role: cloud_dns_backup
-    - name: master
-      role_assignments:
-      - user: '{{ .Values.designate_nanny.credentials.designate_api.user | include "resolve_secret" }}@{{.Values.designate_nanny.credentials.designate_api.project_user_domain_name }}'
-        role: objectstore_admin
-
-{{- end }}
 {{- end }}

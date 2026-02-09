@@ -96,6 +96,10 @@ spec:
         volumeMounts:
           - name: persistent-storage
             mountPath: {{ .Values.storage_mountpoint | default "/var/lib/bind" }}
+          {{- if .Values.bind_scripts }}
+          - name: bind-scripts
+            mountPath: /opt/bind/scripts
+          {{- end }}
           {{- if .Values.override_conf }}
           - name: bind-keys-rndc
             mountPath: "/etc/bind/rndc.key"
@@ -199,6 +203,12 @@ spec:
       - name: persistent-storage
         persistentVolumeClaim:
           claimName: {{ .Release.Name }}
+      {{- if .Values.bind_scripts }}
+      - name: bind-scripts
+        configMap:
+          name: {{ .Release.Name }}-bind-scripts
+          defaultMode: 0755
+      {{- end }}
       {{- if .Values.override_conf }}
       - name: bind-keys-rndc
         secret:

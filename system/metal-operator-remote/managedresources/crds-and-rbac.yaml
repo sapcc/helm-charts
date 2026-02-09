@@ -4,7 +4,7 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-531c593-crds"
+    helm.sh/chart: "0.2.2-20260128164713-f07a5ff-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -17,7 +17,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-531c593-crds"
+    helm.sh/chart: "0.2.2-20260128164713-f07a5ff-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -85,45 +85,27 @@ spec:
                   description: ServerMaintenanceRef is a reference to a ServerMaintenance object that BiosSetting has requested for the referred server.
                   properties:
                     apiVersion:
-                      description: API version of the referent.
-                      type: string
-                    fieldPath:
-                      description: |-
-                        If referring to a piece of an object instead of an entire object, this string
-                        should contain a valid JSON/Go field access statement, such as desiredState.manifest.containers[2].
-                        For example, if the object reference is to a container within a pod, this would take on a value like:
-                        "spec.containers{name}" (where "name" refers to the name of the container that triggered
-                        the event) or if no container name is specified "spec.containers[2]" (container with
-                        index 2 in this pod). This syntax is chosen only to have some well-defined way of
-                        referencing a part of an object.
+                      description: APIVersion is the API version of the referenced object.
                       type: string
                     kind:
-                      description: |-
-                        Kind of the referent.
-                        More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+                      description: Kind is the kind of the referenced object.
                       type: string
                     name:
-                      description: |-
-                        Name of the referent.
-                        More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                      description: Name is the name of the referenced object.
                       type: string
                     namespace:
-                      description: |-
-                        Namespace of the referent.
-                        More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/
-                      type: string
-                    resourceVersion:
-                      description: |-
-                        Specific resourceVersion to which this reference is made, if any.
-                        More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#concurrency-control-and-consistency
+                      description: Namespace is the namespace of the referenced object.
                       type: string
                     uid:
-                      description: |-
-                        UID of the referent.
-                        More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids
+                      description: UID is the uid of the referenced object.
                       type: string
+                  required:
+                    - apiVersion
+                    - kind
+                    - name
+                    - namespace
+                    - uid
                   type: object
-                  x-kubernetes-map-type: atomic
                 serverRef:
                   description: ServerRef is a reference to a specific server to apply bios setting on.
                   properties:
@@ -146,7 +128,7 @@ spec:
                   items:
                     properties:
                       name:
-                        description: Name identifies what this settings is doing
+                        description: Name is the name of the flow item
                         maxLength: 1000
                         minLength: 1
                         type: string
@@ -234,6 +216,7 @@ spec:
                     type: object
                   type: array
                 flowState:
+                  description: FlowState is a list of individual BIOSSettings operation flows.
                   items:
                     properties:
                       conditions:
@@ -327,7 +310,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-531c593-crds"
+    helm.sh/chart: "0.2.2-20260128164713-f07a5ff-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -400,55 +383,12 @@ spec:
                     serverMaintenancePolicy:
                       description: ServerMaintenancePolicy is a maintenance policy to be enforced on the server.
                       type: string
-                    serverMaintenanceRef:
-                      description: ServerMaintenanceRef is a reference to a ServerMaintenance object that BiosSetting has requested for the referred server.
-                      properties:
-                        apiVersion:
-                          description: API version of the referent.
-                          type: string
-                        fieldPath:
-                          description: |-
-                            If referring to a piece of an object instead of an entire object, this string
-                            should contain a valid JSON/Go field access statement, such as desiredState.manifest.containers[2].
-                            For example, if the object reference is to a container within a pod, this would take on a value like:
-                            "spec.containers{name}" (where "name" refers to the name of the container that triggered
-                            the event) or if no container name is specified "spec.containers[2]" (container with
-                            index 2 in this pod). This syntax is chosen only to have some well-defined way of
-                            referencing a part of an object.
-                          type: string
-                        kind:
-                          description: |-
-                            Kind of the referent.
-                            More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
-                          type: string
-                        name:
-                          description: |-
-                            Name of the referent.
-                            More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                          type: string
-                        namespace:
-                          description: |-
-                            Namespace of the referent.
-                            More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/
-                          type: string
-                        resourceVersion:
-                          description: |-
-                            Specific resourceVersion to which this reference is made, if any.
-                            More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#concurrency-control-and-consistency
-                          type: string
-                        uid:
-                          description: |-
-                            UID of the referent.
-                            More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids
-                          type: string
-                      type: object
-                      x-kubernetes-map-type: atomic
                     settingsFlow:
                       description: SettingsFlow contains BIOS settings sequence to apply on the BIOS in given order
                       items:
                         properties:
                           name:
-                            description: Name identifies what this settings is doing
+                            description: Name is the name of the flow item
                             maxLength: 1000
                             minLength: 1
                             type: string
@@ -562,7 +502,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-531c593-crds"
+    helm.sh/chart: "0.2.2-20260128164713-f07a5ff-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -644,13 +584,10 @@ spec:
                         to access the ImageURI. This secret includes sensitive information such as usernames and passwords.
                       properties:
                         name:
-                          default: ""
-                          description: |-
-                            Name of the referent.
-                            This field is effectively required, but due to backwards compatibility is
-                            allowed to be empty. Instances of this type with an empty value here are
-                            almost certainly wrong.
-                            More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                          description: name is unique within a namespace to reference a secret resource.
+                          type: string
+                        namespace:
+                          description: namespace defines the space within which the secret name must be unique.
                           type: string
                       type: object
                       x-kubernetes-map-type: atomic
@@ -667,45 +604,27 @@ spec:
                   description: ServerMaintenanceRef is a reference to a ServerMaintenance object that that Controller has requested for the referred server.
                   properties:
                     apiVersion:
-                      description: API version of the referent.
-                      type: string
-                    fieldPath:
-                      description: |-
-                        If referring to a piece of an object instead of an entire object, this string
-                        should contain a valid JSON/Go field access statement, such as desiredState.manifest.containers[2].
-                        For example, if the object reference is to a container within a pod, this would take on a value like:
-                        "spec.containers{name}" (where "name" refers to the name of the container that triggered
-                        the event) or if no container name is specified "spec.containers[2]" (container with
-                        index 2 in this pod). This syntax is chosen only to have some well-defined way of
-                        referencing a part of an object.
+                      description: APIVersion is the API version of the referenced object.
                       type: string
                     kind:
-                      description: |-
-                        Kind of the referent.
-                        More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+                      description: Kind is the kind of the referenced object.
                       type: string
                     name:
-                      description: |-
-                        Name of the referent.
-                        More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                      description: Name is the name of the referenced object.
                       type: string
                     namespace:
-                      description: |-
-                        Namespace of the referent.
-                        More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/
-                      type: string
-                    resourceVersion:
-                      description: |-
-                        Specific resourceVersion to which this reference is made, if any.
-                        More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#concurrency-control-and-consistency
+                      description: Namespace is the namespace of the referenced object.
                       type: string
                     uid:
-                      description: |-
-                        UID of the referent.
-                        More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids
+                      description: UID is the uid of the referenced object.
                       type: string
+                  required:
+                    - apiVersion
+                    - kind
+                    - name
+                    - namespace
+                    - uid
                   type: object
-                  x-kubernetes-map-type: atomic
                 serverRef:
                   description: ServerRef is a reference to a specific server to apply bios upgrade on.
                   properties:
@@ -824,7 +743,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-531c593-crds"
+    helm.sh/chart: "0.2.2-20260128164713-f07a5ff-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -906,13 +825,10 @@ spec:
                             to access the ImageURI. This secret includes sensitive information such as usernames and passwords.
                           properties:
                             name:
-                              default: ""
-                              description: |-
-                                Name of the referent.
-                                This field is effectively required, but due to backwards compatibility is
-                                allowed to be empty. Instances of this type with an empty value here are
-                                almost certainly wrong.
-                                More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                              description: name is unique within a namespace to reference a secret resource.
+                              type: string
+                            namespace:
+                              description: namespace defines the space within which the secret name must be unique.
                               type: string
                           type: object
                           x-kubernetes-map-type: atomic
@@ -925,49 +841,6 @@ spec:
                     serverMaintenancePolicy:
                       description: ServerMaintenancePolicy is a maintenance policy to be enforced on the server.
                       type: string
-                    serverMaintenanceRef:
-                      description: ServerMaintenanceRef is a reference to a ServerMaintenance object that that Controller has requested for the referred server.
-                      properties:
-                        apiVersion:
-                          description: API version of the referent.
-                          type: string
-                        fieldPath:
-                          description: |-
-                            If referring to a piece of an object instead of an entire object, this string
-                            should contain a valid JSON/Go field access statement, such as desiredState.manifest.containers[2].
-                            For example, if the object reference is to a container within a pod, this would take on a value like:
-                            "spec.containers{name}" (where "name" refers to the name of the container that triggered
-                            the event) or if no container name is specified "spec.containers[2]" (container with
-                            index 2 in this pod). This syntax is chosen only to have some well-defined way of
-                            referencing a part of an object.
-                          type: string
-                        kind:
-                          description: |-
-                            Kind of the referent.
-                            More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
-                          type: string
-                        name:
-                          description: |-
-                            Name of the referent.
-                            More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                          type: string
-                        namespace:
-                          description: |-
-                            Namespace of the referent.
-                            More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/
-                          type: string
-                        resourceVersion:
-                          description: |-
-                            Specific resourceVersion to which this reference is made, if any.
-                            More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#concurrency-control-and-consistency
-                          type: string
-                        uid:
-                          description: |-
-                            UID of the referent.
-                            More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids
-                          type: string
-                      type: object
-                      x-kubernetes-map-type: atomic
                     updatePolicy:
                       description: UpdatePolicy An indication of whether the server's upgrade service should bypass vendor update policies
                       type: string
@@ -1064,7 +937,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-531c593-crds"
+    helm.sh/chart: "0.2.2-20260128164713-f07a5ff-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -1230,6 +1103,9 @@ spec:
                   x-kubernetes-validations:
                     - message: endpointRef is immutable
                       rule: self == oldSelf
+                hostname:
+                  description: Hostname is the hostname of the BMC.
+                  type: string
                 protocol:
                   description: |-
                     Protocol specifies the protocol to be used for communicating with the BMC.
@@ -1370,7 +1246,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-531c593-crds"
+    helm.sh/chart: "0.2.2-20260128164713-f07a5ff-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -1455,7 +1331,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-531c593-crds"
+    helm.sh/chart: "0.2.2-20260128164713-f07a5ff-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -1505,7 +1381,6 @@ spec:
             metadata:
               type: object
             spec:
-              description: BMCSettingsSpec defines the desired state of BMCSettings.
               properties:
                 BMCRef:
                   description: BMCRef is a reference to a specific BMC to apply setting to.
@@ -1522,7 +1397,7 @@ spec:
                   type: object
                   x-kubernetes-map-type: atomic
                   x-kubernetes-validations:
-                    - message: serverRef is immutable
+                    - message: BMCRef is immutable
                       rule: self == oldSelf
                 serverMaintenancePolicy:
                   description: ServerMaintenancePolicy is a maintenance policy to be applied on the server.
@@ -1538,45 +1413,27 @@ spec:
                         description: ServerMaintenanceRef is a reference to a ServerMaintenance object that the BMCSettings has requested for the referred server.
                         properties:
                           apiVersion:
-                            description: API version of the referent.
-                            type: string
-                          fieldPath:
-                            description: |-
-                              If referring to a piece of an object instead of an entire object, this string
-                              should contain a valid JSON/Go field access statement, such as desiredState.manifest.containers[2].
-                              For example, if the object reference is to a container within a pod, this would take on a value like:
-                              "spec.containers{name}" (where "name" refers to the name of the container that triggered
-                              the event) or if no container name is specified "spec.containers[2]" (container with
-                              index 2 in this pod). This syntax is chosen only to have some well-defined way of
-                              referencing a part of an object.
+                            description: APIVersion is the API version of the referenced object.
                             type: string
                           kind:
-                            description: |-
-                              Kind of the referent.
-                              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+                            description: Kind is the kind of the referenced object.
                             type: string
                           name:
-                            description: |-
-                              Name of the referent.
-                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                            description: Name is the name of the referenced object.
                             type: string
                           namespace:
-                            description: |-
-                              Namespace of the referent.
-                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/
-                            type: string
-                          resourceVersion:
-                            description: |-
-                              Specific resourceVersion to which this reference is made, if any.
-                              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#concurrency-control-and-consistency
+                            description: Namespace is the namespace of the referenced object.
                             type: string
                           uid:
-                            description: |-
-                              UID of the referent.
-                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids
+                            description: UID is the uid of the referenced object.
                             type: string
+                        required:
+                          - apiVersion
+                          - kind
+                          - name
+                          - namespace
+                          - uid
                         type: object
-                        x-kubernetes-map-type: atomic
                     type: object
                   type: array
                 settings:
@@ -1588,6 +1445,7 @@ spec:
                   description: Version defines the BMC firmware for which the settings should be applied.
                   type: string
               required:
+                - BMCRef
                 - version
               type: object
             status:
@@ -1659,12 +1517,318 @@ spec:
       subresources:
         status: {}
 ---
+# Source: metal-operator/templates/crd/metal.ironcore.dev_bmcsettingssets.yaml
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  labels:
+    helm.sh/chart: "0.2.2-20260128164713-f07a5ff-crds"
+    app.kubernetes.io/name: metal-operator
+    app.kubernetes.io/instance: metal-operator
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.19.0
+  name: bmcsettingssets.metal.ironcore.dev
+spec:
+  group: metal.ironcore.dev
+  names:
+    kind: BMCSettingsSet
+    listKind: BMCSettingsSetList
+    plural: bmcsettingssets
+    singular: bmcsettingsset
+  scope: Cluster
+  versions:
+    - additionalPrinterColumns:
+        - jsonPath: .spec.bmcSettingsTemplate.version
+          name: BMCVersion
+          type: string
+        - jsonPath: .status.fullyLabeledBMCs
+          name: TotalBMCs
+          type: integer
+        - jsonPath: .status.availableBMCSettings
+          name: AvailableBMCSettings
+          type: integer
+        - jsonPath: .status.pendingBMCSettings
+          name: Pending
+          type: integer
+        - jsonPath: .status.inProgressBMCSettings
+          name: InProgress
+          type: integer
+        - jsonPath: .status.completedBMCSettings
+          name: Completed
+          type: integer
+        - jsonPath: .status.failedBMCSettings
+          name: Failed
+          type: integer
+        - jsonPath: .metadata.creationTimestamp
+          name: Age
+          type: date
+      name: v1alpha1
+      schema:
+        openAPIV3Schema:
+          description: BMCSettingsSet is the Schema for the bmcsettingssets API.
+          properties:
+            apiVersion:
+              description: |-
+                APIVersion defines the versioned schema of this representation of an object.
+                Servers should convert recognized schemas to the latest internal value, and
+                may reject unrecognized values.
+                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+              type: string
+            kind:
+              description: |-
+                Kind is a string value representing the REST resource this object represents.
+                Servers may infer this from the endpoint the client submits requests to.
+                Cannot be updated.
+                In CamelCase.
+                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+              type: string
+            metadata:
+              type: object
+            spec:
+              description: BMCSettingsSetSpec defines the desired state of BMCSettingsSet.
+              properties:
+                bmcSelector:
+                  description: ' BMCSelector specifies a label selector to identify the BMCs that are to be selected.'
+                  properties:
+                    matchExpressions:
+                      description: matchExpressions is a list of label selector requirements. The requirements are ANDed.
+                      items:
+                        description: |-
+                          A label selector requirement is a selector that contains values, a key, and an operator that
+                          relates the key and values.
+                        properties:
+                          key:
+                            description: key is the label key that the selector applies to.
+                            type: string
+                          operator:
+                            description: |-
+                              operator represents a key's relationship to a set of values.
+                              Valid operators are In, NotIn, Exists and DoesNotExist.
+                            type: string
+                          values:
+                            description: |-
+                              values is an array of string values. If the operator is In or NotIn,
+                              the values array must be non-empty. If the operator is Exists or DoesNotExist,
+                              the values array must be empty. This array is replaced during a strategic
+                              merge patch.
+                            items:
+                              type: string
+                            type: array
+                            x-kubernetes-list-type: atomic
+                        required:
+                          - key
+                          - operator
+                        type: object
+                      type: array
+                      x-kubernetes-list-type: atomic
+                    matchLabels:
+                      additionalProperties:
+                        type: string
+                      description: |-
+                        matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+                        map is equivalent to an element of matchExpressions, whose key field is "key", the
+                        operator is "In", and the values array contains only "value". The requirements are ANDed.
+                      type: object
+                  type: object
+                  x-kubernetes-map-type: atomic
+                bmcSettingsTemplate:
+                  description: BMCSettingsTemplate defines the template for the BMCSettings Resource to be applied to the BMCs.
+                  properties:
+                    serverMaintenancePolicy:
+                      description: ServerMaintenancePolicy is a maintenance policy to be applied on the server.
+                      type: string
+                    settings:
+                      additionalProperties:
+                        type: string
+                      description: SettingsMap contains bmc settings as map
+                      type: object
+                    version:
+                      description: Version defines the BMC firmware for which the settings should be applied.
+                      type: string
+                  required:
+                    - version
+                  type: object
+              required:
+                - bmcSelector
+                - bmcSettingsTemplate
+              type: object
+            status:
+              description: BMCSettingsSetStatus defines the observed state of BMCSettingsSet.
+              properties:
+                availableBMCSettings:
+                  description: AvailableBMCSettings is the number of BMCSettings currently created by the set.
+                  format: int32
+                  type: integer
+                completedBMCSettings:
+                  description: CompletedBMCSettings is the total number of completed BMC in the set.
+                  format: int32
+                  type: integer
+                failedBMCSettings:
+                  description: FailedBMCSettings is the total number of failed BMC in the set.
+                  format: int32
+                  type: integer
+                fullyLabeledBMCs:
+                  description: FullyLabeledBMCs is the number of BMC in the set.
+                  format: int32
+                  type: integer
+                inProgressBMCSettings:
+                  description: InProgressBMCSettings is the total number of BMC in the set that are currently in progress.
+                  format: int32
+                  type: integer
+                pendingBMCSettings:
+                  description: PendingBMCSettings is the total number of pending BMC in the set.
+                  format: int32
+                  type: integer
+              type: object
+          type: object
+      served: true
+      storage: true
+      subresources:
+        status: {}
+---
+# Source: metal-operator/templates/crd/metal.ironcore.dev_bmcusers.yaml
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  labels:
+    helm.sh/chart: "0.2.2-20260128164713-f07a5ff-crds"
+    app.kubernetes.io/name: metal-operator
+    app.kubernetes.io/instance: metal-operator
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.19.0
+  name: bmcusers.metal.ironcore.dev
+spec:
+  group: metal.ironcore.dev
+  names:
+    kind: BMCUser
+    listKind: BMCUserList
+    plural: bmcusers
+    singular: bmcuser
+  scope: Cluster
+  versions:
+    - name: v1alpha1
+      schema:
+        openAPIV3Schema:
+          description: BMCUser is the Schema for the bmcusers API.
+          properties:
+            apiVersion:
+              description: |-
+                APIVersion defines the versioned schema of this representation of an object.
+                Servers should convert recognized schemas to the latest internal value, and
+                may reject unrecognized values.
+                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+              type: string
+            kind:
+              description: |-
+                Kind is a string value representing the REST resource this object represents.
+                Servers may infer this from the endpoint the client submits requests to.
+                Cannot be updated.
+                In CamelCase.
+                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+              type: string
+            metadata:
+              type: object
+            spec:
+              description: BMCUserSpec defines the desired state of BMCUser.
+              properties:
+                bmcRef:
+                  description: BMCRef references the BMC this user should be created on.
+                  properties:
+                    name:
+                      default: ""
+                      description: |-
+                        Name of the referent.
+                        This field is effectively required, but due to backwards compatibility is
+                        allowed to be empty. Instances of this type with an empty value here are
+                        almost certainly wrong.
+                        More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                      type: string
+                  type: object
+                  x-kubernetes-map-type: atomic
+                bmcSecretRef:
+                  description: |-
+                    BMCSecretRef references the BMCSecret containing the credentials for this user.
+                    If not set, the operator will generate a secure password based on BMC manufacturer requirements.
+                  properties:
+                    name:
+                      default: ""
+                      description: |-
+                        Name of the referent.
+                        This field is effectively required, but due to backwards compatibility is
+                        allowed to be empty. Instances of this type with an empty value here are
+                        almost certainly wrong.
+                        More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                      type: string
+                  type: object
+                  x-kubernetes-map-type: atomic
+                description:
+                  description: Description is an optional description for the BMC user.
+                  type: string
+                roleID:
+                  description: |-
+                    RoleID is the ID of the role to assign to the user.
+                    The available roles depend on the BMC implementation.
+                    For Redfish, common role IDs are "Administrator", "Operator", "ReadOnly".
+                  type: string
+                rotationPeriod:
+                  description: |-
+                    RotationPeriod defines how often the password should be rotated.
+                    if not set, the password will not be rotated.
+                  type: string
+                userName:
+                  description: Username of the BMC user.
+                  type: string
+              required:
+                - roleID
+                - userName
+              type: object
+            status:
+              description: BMCUserStatus defines the observed state of BMCUser.
+              properties:
+                effectiveBMCSecretRef:
+                  description: |-
+                    EffectiveBMCSecretRef references the BMCSecret currently used for this user.
+                    This may differ from Spec.BMCSecretRef if the operator generated a password.
+                  properties:
+                    name:
+                      default: ""
+                      description: |-
+                        Name of the referent.
+                        This field is effectively required, but due to backwards compatibility is
+                        allowed to be empty. Instances of this type with an empty value here are
+                        almost certainly wrong.
+                        More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                      type: string
+                  type: object
+                  x-kubernetes-map-type: atomic
+                id:
+                  description: ID of the user in the BMC system
+                  type: string
+                lastRotation:
+                  description: LastRotation is the timestamp of the last password rotation.
+                  format: date-time
+                  type: string
+                passwordExpiration:
+                  description: PasswordExpiration is the timestamp when the password will expire.
+                  format: date-time
+                  type: string
+              type: object
+          type: object
+      served: true
+      storage: true
+      subresources:
+        status: {}
+---
 # Source: metal-operator/templates/crd/metal.ironcore.dev_bmcversions.yaml
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-531c593-crds"
+    helm.sh/chart: "0.2.2-20260128164713-f07a5ff-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -1760,13 +1924,10 @@ spec:
                         to access the ImageURI. This secret includes sensitive information such as usernames and passwords.
                       properties:
                         name:
-                          default: ""
-                          description: |-
-                            Name of the referent.
-                            This field is effectively required, but due to backwards compatibility is
-                            allowed to be empty. Instances of this type with an empty value here are
-                            almost certainly wrong.
-                            More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                          description: name is unique within a namespace to reference a secret resource.
+                          type: string
+                        namespace:
+                          description: namespace defines the space within which the secret name must be unique.
                           type: string
                       type: object
                       x-kubernetes-map-type: atomic
@@ -1782,51 +1943,29 @@ spec:
                 serverMaintenanceRefs:
                   description: ServerMaintenanceRefs are references to a ServerMaintenance objects that Controller has requested for the each of the related server.
                   items:
-                    description: ServerMaintenanceRefItem is a reference to a ServerMaintenance object.
+                    description: ObjectReference is the namespaced name reference to an object.
                     properties:
-                      serverMaintenanceRef:
-                        description: ServerMaintenanceRef is a reference to a ServerMaintenance object that the BMCSettings has requested for the referred server.
-                        properties:
-                          apiVersion:
-                            description: API version of the referent.
-                            type: string
-                          fieldPath:
-                            description: |-
-                              If referring to a piece of an object instead of an entire object, this string
-                              should contain a valid JSON/Go field access statement, such as desiredState.manifest.containers[2].
-                              For example, if the object reference is to a container within a pod, this would take on a value like:
-                              "spec.containers{name}" (where "name" refers to the name of the container that triggered
-                              the event) or if no container name is specified "spec.containers[2]" (container with
-                              index 2 in this pod). This syntax is chosen only to have some well-defined way of
-                              referencing a part of an object.
-                            type: string
-                          kind:
-                            description: |-
-                              Kind of the referent.
-                              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
-                            type: string
-                          name:
-                            description: |-
-                              Name of the referent.
-                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                            type: string
-                          namespace:
-                            description: |-
-                              Namespace of the referent.
-                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/
-                            type: string
-                          resourceVersion:
-                            description: |-
-                              Specific resourceVersion to which this reference is made, if any.
-                              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#concurrency-control-and-consistency
-                            type: string
-                          uid:
-                            description: |-
-                              UID of the referent.
-                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids
-                            type: string
-                        type: object
-                        x-kubernetes-map-type: atomic
+                      apiVersion:
+                        description: APIVersion is the API version of the referenced object.
+                        type: string
+                      kind:
+                        description: Kind is the kind of the referenced object.
+                        type: string
+                      name:
+                        description: Name is the name of the referenced object.
+                        type: string
+                      namespace:
+                        description: Namespace is the namespace of the referenced object.
+                        type: string
+                      uid:
+                        description: UID is the uid of the referenced object.
+                        type: string
+                    required:
+                      - apiVersion
+                      - kind
+                      - name
+                      - namespace
+                      - uid
                     type: object
                   type: array
                 updatePolicy:
@@ -1930,7 +2069,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-531c593-crds"
+    helm.sh/chart: "0.2.2-20260128164713-f07a5ff-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -2056,13 +2195,10 @@ spec:
                             to access the ImageURI. This secret includes sensitive information such as usernames and passwords.
                           properties:
                             name:
-                              default: ""
-                              description: |-
-                                Name of the referent.
-                                This field is effectively required, but due to backwards compatibility is
-                                allowed to be empty. Instances of this type with an empty value here are
-                                almost certainly wrong.
-                                More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                              description: name is unique within a namespace to reference a secret resource.
+                              type: string
+                            namespace:
+                              description: namespace defines the space within which the secret name must be unique.
                               type: string
                           type: object
                           x-kubernetes-map-type: atomic
@@ -2075,56 +2211,6 @@ spec:
                     serverMaintenancePolicy:
                       description: ServerMaintenancePolicy is a maintenance policy to be enforced on the server managed by referred BMC.
                       type: string
-                    serverMaintenanceRefs:
-                      description: ServerMaintenanceRefs are references to a ServerMaintenance objects that Controller has requested for the each of the related server.
-                      items:
-                        description: ServerMaintenanceRefItem is a reference to a ServerMaintenance object.
-                        properties:
-                          serverMaintenanceRef:
-                            description: ServerMaintenanceRef is a reference to a ServerMaintenance object that the BMCSettings has requested for the referred server.
-                            properties:
-                              apiVersion:
-                                description: API version of the referent.
-                                type: string
-                              fieldPath:
-                                description: |-
-                                  If referring to a piece of an object instead of an entire object, this string
-                                  should contain a valid JSON/Go field access statement, such as desiredState.manifest.containers[2].
-                                  For example, if the object reference is to a container within a pod, this would take on a value like:
-                                  "spec.containers{name}" (where "name" refers to the name of the container that triggered
-                                  the event) or if no container name is specified "spec.containers[2]" (container with
-                                  index 2 in this pod). This syntax is chosen only to have some well-defined way of
-                                  referencing a part of an object.
-                                type: string
-                              kind:
-                                description: |-
-                                  Kind of the referent.
-                                  More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
-                                type: string
-                              name:
-                                description: |-
-                                  Name of the referent.
-                                  More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                type: string
-                              namespace:
-                                description: |-
-                                  Namespace of the referent.
-                                  More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/
-                                type: string
-                              resourceVersion:
-                                description: |-
-                                  Specific resourceVersion to which this reference is made, if any.
-                                  More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#concurrency-control-and-consistency
-                                type: string
-                              uid:
-                                description: |-
-                                  UID of the referent.
-                                  More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids
-                                type: string
-                            type: object
-                            x-kubernetes-map-type: atomic
-                        type: object
-                      type: array
                     updatePolicy:
                       description: UpdatePolicy is an indication of whether the server's upgrade service should bypass vendor update policies
                       type: string
@@ -2177,7 +2263,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-531c593-crds"
+    helm.sh/chart: "0.2.2-20260128164713-f07a5ff-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -2250,7 +2336,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-531c593-crds"
+    helm.sh/chart: "0.2.2-20260128164713-f07a5ff-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -2420,7 +2506,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-531c593-crds"
+    helm.sh/chart: "0.2.2-20260128164713-f07a5ff-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -2595,7 +2681,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-531c593-crds"
+    helm.sh/chart: "0.2.2-20260128164713-f07a5ff-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -2748,7 +2834,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-531c593-crds"
+    helm.sh/chart: "0.2.2-20260128164713-f07a5ff-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -2766,8 +2852,8 @@ spec:
   scope: Cluster
   versions:
     - additionalPrinterColumns:
-        - jsonPath: .spec.uuid
-          name: UUID
+        - jsonPath: .spec.systemUUID
+          name: SystemUUID
           type: string
         - jsonPath: .status.manufacturer
           name: Manufacturer
@@ -2913,45 +2999,27 @@ spec:
                     if no boot configuration is specified.
                   properties:
                     apiVersion:
-                      description: API version of the referent.
-                      type: string
-                    fieldPath:
-                      description: |-
-                        If referring to a piece of an object instead of an entire object, this string
-                        should contain a valid JSON/Go field access statement, such as desiredState.manifest.containers[2].
-                        For example, if the object reference is to a container within a pod, this would take on a value like:
-                        "spec.containers{name}" (where "name" refers to the name of the container that triggered
-                        the event) or if no container name is specified "spec.containers[2]" (container with
-                        index 2 in this pod). This syntax is chosen only to have some well-defined way of
-                        referencing a part of an object.
+                      description: APIVersion is the API version of the referenced object.
                       type: string
                     kind:
-                      description: |-
-                        Kind of the referent.
-                        More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+                      description: Kind is the kind of the referenced object.
                       type: string
                     name:
-                      description: |-
-                        Name of the referent.
-                        More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                      description: Name is the name of the referenced object.
                       type: string
                     namespace:
-                      description: |-
-                        Namespace of the referent.
-                        More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/
-                      type: string
-                    resourceVersion:
-                      description: |-
-                        Specific resourceVersion to which this reference is made, if any.
-                        More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#concurrency-control-and-consistency
+                      description: Namespace is the namespace of the referenced object.
                       type: string
                     uid:
-                      description: |-
-                        UID of the referent.
-                        More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids
+                      description: UID is the uid of the referenced object.
                       type: string
+                  required:
+                    - apiVersion
+                    - kind
+                    - name
+                    - namespace
+                    - uid
                   type: object
-                  x-kubernetes-map-type: atomic
                 bootOrder:
                   description: BootOrder specifies the boot order of the server.
                   items:
@@ -2981,45 +3049,27 @@ spec:
                     the boot configuration for this server during maintenance. This field is optional and can be omitted
                   properties:
                     apiVersion:
-                      description: API version of the referent.
-                      type: string
-                    fieldPath:
-                      description: |-
-                        If referring to a piece of an object instead of an entire object, this string
-                        should contain a valid JSON/Go field access statement, such as desiredState.manifest.containers[2].
-                        For example, if the object reference is to a container within a pod, this would take on a value like:
-                        "spec.containers{name}" (where "name" refers to the name of the container that triggered
-                        the event) or if no container name is specified "spec.containers[2]" (container with
-                        index 2 in this pod). This syntax is chosen only to have some well-defined way of
-                        referencing a part of an object.
+                      description: APIVersion is the API version of the referenced object.
                       type: string
                     kind:
-                      description: |-
-                        Kind of the referent.
-                        More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+                      description: Kind is the kind of the referenced object.
                       type: string
                     name:
-                      description: |-
-                        Name of the referent.
-                        More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                      description: Name is the name of the referenced object.
                       type: string
                     namespace:
-                      description: |-
-                        Namespace of the referent.
-                        More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/
-                      type: string
-                    resourceVersion:
-                      description: |-
-                        Specific resourceVersion to which this reference is made, if any.
-                        More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#concurrency-control-and-consistency
+                      description: Namespace is the namespace of the referenced object.
                       type: string
                     uid:
-                      description: |-
-                        UID of the referent.
-                        More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids
+                      description: UID is the uid of the referenced object.
                       type: string
+                  required:
+                    - apiVersion
+                    - kind
+                    - name
+                    - namespace
+                    - uid
                   type: object
-                  x-kubernetes-map-type: atomic
                 power:
                   description: Power specifies the desired power state of the server.
                   type: string
@@ -3029,45 +3079,27 @@ spec:
                     This field is optional and can be omitted if no claim is associated with this server.
                   properties:
                     apiVersion:
-                      description: API version of the referent.
-                      type: string
-                    fieldPath:
-                      description: |-
-                        If referring to a piece of an object instead of an entire object, this string
-                        should contain a valid JSON/Go field access statement, such as desiredState.manifest.containers[2].
-                        For example, if the object reference is to a container within a pod, this would take on a value like:
-                        "spec.containers{name}" (where "name" refers to the name of the container that triggered
-                        the event) or if no container name is specified "spec.containers[2]" (container with
-                        index 2 in this pod). This syntax is chosen only to have some well-defined way of
-                        referencing a part of an object.
+                      description: APIVersion is the API version of the referenced object.
                       type: string
                     kind:
-                      description: |-
-                        Kind of the referent.
-                        More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+                      description: Kind is the kind of the referenced object.
                       type: string
                     name:
-                      description: |-
-                        Name of the referent.
-                        More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                      description: Name is the name of the referenced object.
                       type: string
                     namespace:
-                      description: |-
-                        Namespace of the referent.
-                        More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/
-                      type: string
-                    resourceVersion:
-                      description: |-
-                        Specific resourceVersion to which this reference is made, if any.
-                        More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#concurrency-control-and-consistency
+                      description: Namespace is the namespace of the referenced object.
                       type: string
                     uid:
-                      description: |-
-                        UID of the referent.
-                        More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids
+                      description: UID is the uid of the referenced object.
                       type: string
+                  required:
+                    - apiVersion
+                    - kind
+                    - name
+                    - namespace
+                    - uid
                   type: object
-                  x-kubernetes-map-type: atomic
                   x-kubernetes-validations:
                     - message: serverClaimRef cannot be switched directly
                       rule: self == null || oldSelf == null || self == oldSelf
@@ -3075,45 +3107,27 @@ spec:
                   description: ServerMaintenanceRef is a reference to a ServerMaintenance object that maintains this server.
                   properties:
                     apiVersion:
-                      description: API version of the referent.
-                      type: string
-                    fieldPath:
-                      description: |-
-                        If referring to a piece of an object instead of an entire object, this string
-                        should contain a valid JSON/Go field access statement, such as desiredState.manifest.containers[2].
-                        For example, if the object reference is to a container within a pod, this would take on a value like:
-                        "spec.containers{name}" (where "name" refers to the name of the container that triggered
-                        the event) or if no container name is specified "spec.containers[2]" (container with
-                        index 2 in this pod). This syntax is chosen only to have some well-defined way of
-                        referencing a part of an object.
+                      description: APIVersion is the API version of the referenced object.
                       type: string
                     kind:
-                      description: |-
-                        Kind of the referent.
-                        More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+                      description: Kind is the kind of the referenced object.
                       type: string
                     name:
-                      description: |-
-                        Name of the referent.
-                        More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                      description: Name is the name of the referenced object.
                       type: string
                     namespace:
-                      description: |-
-                        Namespace of the referent.
-                        More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/
-                      type: string
-                    resourceVersion:
-                      description: |-
-                        Specific resourceVersion to which this reference is made, if any.
-                        More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#concurrency-control-and-consistency
+                      description: Namespace is the namespace of the referenced object.
                       type: string
                     uid:
-                      description: |-
-                        UID of the referent.
-                        More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids
+                      description: UID is the uid of the referenced object.
                       type: string
+                  required:
+                    - apiVersion
+                    - kind
+                    - name
+                    - namespace
+                    - uid
                   type: object
-                  x-kubernetes-map-type: atomic
                 systemURI:
                   description: SystemURI is the unique URI for the server resource in REDFISH API.
                   type: string
@@ -3126,7 +3140,7 @@ spec:
                     Deprecated in favor of systemUUID.
                   type: string
               required:
-                - uuid
+                - systemUUID
               type: object
             status:
               description: ServerStatus defines the observed state of Server.
@@ -3398,7 +3412,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-531c593-crds"
+    helm.sh/chart: "0.2.2-20260128164713-f07a5ff-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3429,7 +3443,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-531c593-crds"
+    helm.sh/chart: "0.2.2-20260128164713-f07a5ff-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3466,7 +3480,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-531c593-crds"
+    helm.sh/chart: "0.2.2-20260128164713-f07a5ff-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3499,7 +3513,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-531c593-crds"
+    helm.sh/chart: "0.2.2-20260128164713-f07a5ff-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3530,7 +3544,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-531c593-crds"
+    helm.sh/chart: "0.2.2-20260128164713-f07a5ff-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3567,7 +3581,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-531c593-crds"
+    helm.sh/chart: "0.2.2-20260128164713-f07a5ff-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3600,7 +3614,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-531c593-crds"
+    helm.sh/chart: "0.2.2-20260128164713-f07a5ff-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3631,7 +3645,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-531c593-crds"
+    helm.sh/chart: "0.2.2-20260128164713-f07a5ff-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3668,7 +3682,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-531c593-crds"
+    helm.sh/chart: "0.2.2-20260128164713-f07a5ff-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3701,7 +3715,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-531c593-crds"
+    helm.sh/chart: "0.2.2-20260128164713-f07a5ff-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3732,7 +3746,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-531c593-crds"
+    helm.sh/chart: "0.2.2-20260128164713-f07a5ff-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3769,7 +3783,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-531c593-crds"
+    helm.sh/chart: "0.2.2-20260128164713-f07a5ff-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3797,7 +3811,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-531c593-crds"
+    helm.sh/chart: "0.2.2-20260128164713-f07a5ff-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3829,7 +3843,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-531c593-crds"
+    helm.sh/chart: "0.2.2-20260128164713-f07a5ff-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3857,7 +3871,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-531c593-crds"
+    helm.sh/chart: "0.2.2-20260128164713-f07a5ff-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3889,7 +3903,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-531c593-crds"
+    helm.sh/chart: "0.2.2-20260128164713-f07a5ff-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3922,7 +3936,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-531c593-crds"
+    helm.sh/chart: "0.2.2-20260128164713-f07a5ff-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3953,7 +3967,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-531c593-crds"
+    helm.sh/chart: "0.2.2-20260128164713-f07a5ff-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3990,7 +4004,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-531c593-crds"
+    helm.sh/chart: "0.2.2-20260128164713-f07a5ff-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4011,6 +4025,208 @@ rules:
       - bmcsettings/status
     verbs:
       - get
+# Source: metal-operator/templates/rbac/bmcsettingsset_admin_role.yaml
+# This rule is not used by the project metal-operator itself.
+# It is provided to allow the cluster admin to help manage permissions for users.
+#
+# Grants full permissions ('*') over metal.ironcore.dev.
+# This role is intended for users authorized to modify roles and bindings within the cluster,
+# enabling them to delegate specific permissions to other users or groups as needed.
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    helm.sh/chart: "0.2.2-20260128164713-f07a5ff-crds"
+    app.kubernetes.io/name: metal-operator
+    app.kubernetes.io/instance: metal-operator
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+  name: bmcsettingsset-admin-role
+rules:
+  - apiGroups:
+      - metal.ironcore.dev
+    resources:
+      - bmcsettingssets
+    verbs:
+      - '*'
+  - apiGroups:
+      - metal.ironcore.dev
+    resources:
+      - bmcsettingssets/status
+    verbs:
+      - get
+# Source: metal-operator/templates/rbac/bmcsettingsset_editor_role.yaml
+# This rule is not used by the project metal-operator itself.
+# It is provided to allow the cluster admin to help manage permissions for users.
+#
+# Grants permissions to create, update, and delete resources within the metal.ironcore.dev.
+# This role is intended for users who need to manage these resources
+# but should not control RBAC or manage permissions for others.
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    helm.sh/chart: "0.2.2-20260128164713-f07a5ff-crds"
+    app.kubernetes.io/name: metal-operator
+    app.kubernetes.io/instance: metal-operator
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+  name: bmcsettingsset-editor-role
+rules:
+  - apiGroups:
+      - metal.ironcore.dev
+    resources:
+      - bmcsettingssets
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - metal.ironcore.dev
+    resources:
+      - bmcsettingssets/status
+    verbs:
+      - get
+# Source: metal-operator/templates/rbac/bmcsettingsset_viewer_role.yaml
+# This rule is not used by the project metal-operator itself.
+# It is provided to allow the cluster admin to help manage permissions for users.
+#
+# Grants read-only access to metal.ironcore.dev resources.
+# This role is intended for users who need visibility into these resources
+# without permissions to modify them. It is ideal for monitoring purposes and limited-access viewing.
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    helm.sh/chart: "0.2.2-20260128164713-f07a5ff-crds"
+    app.kubernetes.io/name: metal-operator
+    app.kubernetes.io/instance: metal-operator
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+  name: bmcsettingsset-viewer-role
+rules:
+  - apiGroups:
+      - metal.ironcore.dev
+    resources:
+      - bmcsettingssets
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - metal.ironcore.dev
+    resources:
+      - bmcsettingssets/status
+    verbs:
+      - get
+# Source: metal-operator/templates/rbac/bmcuser_admin_role.yaml
+# This rule is not used by the project metal-operator itself.
+# It is provided to allow the cluster admin to help manage permissions for users.
+#
+# Grants full permissions ('*') over metal.ironcore.dev.
+# This role is intended for users authorized to modify roles and bindings within the cluster,
+# enabling them to delegate specific permissions to other users or groups as needed.
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    helm.sh/chart: "0.2.2-20260128164713-f07a5ff-crds"
+    app.kubernetes.io/name: metal-operator
+    app.kubernetes.io/instance: metal-operator
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+  name: bmcuser-admin-role
+rules:
+  - apiGroups:
+      - metal.ironcore.dev
+    resources:
+      - bmcusers
+    verbs:
+      - '*'
+  - apiGroups:
+      - metal.ironcore.dev
+    resources:
+      - bmcusers/status
+    verbs:
+      - get
+# Source: metal-operator/templates/rbac/bmcuser_editor_role.yaml
+# This rule is not used by the project metal-operator itself.
+# It is provided to allow the cluster admin to help manage permissions for users.
+#
+# Grants permissions to create, update, and delete resources within the metal.ironcore.dev.
+# This role is intended for users who need to manage these resources
+# but should not control RBAC or manage permissions for others.
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    helm.sh/chart: "0.2.2-20260128164713-f07a5ff-crds"
+    app.kubernetes.io/name: metal-operator
+    app.kubernetes.io/instance: metal-operator
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+  name: bmcuser-editor-role
+rules:
+  - apiGroups:
+      - metal.ironcore.dev
+    resources:
+      - bmcusers
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - metal.ironcore.dev
+    resources:
+      - bmcusers/status
+    verbs:
+      - get
+# Source: metal-operator/templates/rbac/bmcuser_viewer_role.yaml
+# This rule is not used by the project metal-operator itself.
+# It is provided to allow the cluster admin to help manage permissions for users.
+#
+# Grants read-only access to metal.ironcore.dev resources.
+# This role is intended for users who need visibility into these resources
+# without permissions to modify them. It is ideal for monitoring purposes and limited-access viewing.
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    helm.sh/chart: "0.2.2-20260128164713-f07a5ff-crds"
+    app.kubernetes.io/name: metal-operator
+    app.kubernetes.io/instance: metal-operator
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+  name: bmcuser-viewer-role
+rules:
+  - apiGroups:
+      - metal.ironcore.dev
+    resources:
+      - bmcusers
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - metal.ironcore.dev
+    resources:
+      - bmcusers/status
+    verbs:
+      - get
 # Source: metal-operator/templates/rbac/bmcversion_admin_role.yaml
 # This rule is not used by the project metal-operator itself.
 # It is provided to allow the cluster admin to help manage permissions for users.
@@ -4023,7 +4239,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-531c593-crds"
+    helm.sh/chart: "0.2.2-20260128164713-f07a5ff-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4054,7 +4270,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-531c593-crds"
+    helm.sh/chart: "0.2.2-20260128164713-f07a5ff-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4091,7 +4307,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-531c593-crds"
+    helm.sh/chart: "0.2.2-20260128164713-f07a5ff-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4124,7 +4340,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-531c593-crds"
+    helm.sh/chart: "0.2.2-20260128164713-f07a5ff-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4155,7 +4371,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-531c593-crds"
+    helm.sh/chart: "0.2.2-20260128164713-f07a5ff-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4192,7 +4408,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-531c593-crds"
+    helm.sh/chart: "0.2.2-20260128164713-f07a5ff-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4220,7 +4436,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-531c593-crds"
+    helm.sh/chart: "0.2.2-20260128164713-f07a5ff-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4252,7 +4468,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-531c593-crds"
+    helm.sh/chart: "0.2.2-20260128164713-f07a5ff-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4279,7 +4495,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-531c593-crds"
+    helm.sh/chart: "0.2.2-20260128164713-f07a5ff-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4304,7 +4520,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-531c593-crds"
+    helm.sh/chart: "0.2.2-20260128164713-f07a5ff-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4321,7 +4537,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-531c593-crds"
+    helm.sh/chart: "0.2.2-20260128164713-f07a5ff-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4371,6 +4587,8 @@ rules:
       - bmcs
       - bmcsecrets
       - bmcsettings
+      - bmcsettingssets
+      - bmcusers
       - bmcversions
       - bmcversionsets
       - endpoints
@@ -4397,6 +4615,8 @@ rules:
       - bmcs/finalizers
       - bmcsecrets/finalizers
       - bmcsettings/finalizers
+      - bmcsettingssets/finalizers
+      - bmcusers/finalizers
       - bmcversions/finalizers
       - bmcversionsets/finalizers
       - endpoints/finalizers
@@ -4416,6 +4636,8 @@ rules:
       - bmcs/status
       - bmcsecrets/status
       - bmcsettings/status
+      - bmcsettingssets/status
+      - bmcusers/status
       - bmcversions/status
       - bmcversionsets/status
       - endpoints/status
@@ -4434,7 +4656,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-531c593-crds"
+    helm.sh/chart: "0.2.2-20260128164713-f07a5ff-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4466,7 +4688,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-531c593-crds"
+    helm.sh/chart: "0.2.2-20260128164713-f07a5ff-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4494,7 +4716,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-531c593-crds"
+    helm.sh/chart: "0.2.2-20260128164713-f07a5ff-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4526,7 +4748,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-531c593-crds"
+    helm.sh/chart: "0.2.2-20260128164713-f07a5ff-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4554,7 +4776,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-531c593-crds"
+    helm.sh/chart: "0.2.2-20260128164713-f07a5ff-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4586,7 +4808,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-531c593-crds"
+    helm.sh/chart: "0.2.2-20260128164713-f07a5ff-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4619,7 +4841,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-531c593-crds"
+    helm.sh/chart: "0.2.2-20260128164713-f07a5ff-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4650,7 +4872,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-531c593-crds"
+    helm.sh/chart: "0.2.2-20260128164713-f07a5ff-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4687,7 +4909,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-531c593-crds"
+    helm.sh/chart: "0.2.2-20260128164713-f07a5ff-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4714,7 +4936,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-531c593-crds"
+    helm.sh/chart: "0.2.2-20260128164713-f07a5ff-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4734,7 +4956,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-531c593-crds"
+    helm.sh/chart: "0.2.2-20260128164713-f07a5ff-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4755,7 +4977,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-531c593-crds"
+    helm.sh/chart: "0.2.2-20260128164713-f07a5ff-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4800,7 +5022,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   labels:
-    helm.sh/chart: "0.0.0-531c593-crds"
+    helm.sh/chart: "0.2.2-20260128164713-f07a5ff-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"

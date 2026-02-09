@@ -1,0 +1,73 @@
+groups:
+  - name: aci-exporter-conn.alerts
+    rules:
+
+      # F0454 (!)
+      # [QA-DE-1-CCACI-2101-Service][ACI][qa-de-1-aci-7101][eth2-1] LLDP out of service
+      - alert: LLDPOutOfService 
+        expr: |
+          sum by (node_name, node_intf, device_name, reason) (aci_obs_lldp_port_out_of_service{caused_by_id="", deduplicated="", node_status=~"active|", device_status=~"active|"} > 0)
+        for: 5m
+        labels:
+          severity: critical
+          support_group: network-data-aci-obs
+          aci_obs_group: ConnectionFaultGroup
+        annotations:
+          summary: "Connection Faults"
+          description: "[{{ $labels.node_name }}][{{ $labels.node_intf }}][{{ $labels.device_name }}] LLDP out of service: {{ $labels.reason }}"
+
+      # F1888 (!)
+      # [qa-de-1-aci-2103-bb084][ACI Leaf][eth1/32] BPDU packets received on interface without VLAN configured
+      - alert: BPDUReceived 
+        expr: |
+          sum by (node_name, node_intf, device_name) (aci_obs_bdpu_received{caused_by_id="", deduplicated="", node_status=~"active|", device_status=~"active|"} > 0)
+        for: 5m
+        labels:
+          severity: critical
+          support_group: network-data-aci-obs
+          aci_obs_group: ConnectionFaultGroup
+        annotations:
+          summary: "Connection Faults"
+          description: "[{{ $labels.node_name }}][{{ $labels.node_intf }}][{{ $labels.device_name }}] BPDU packets received on interface without VLAN configured"
+
+      # F4368 (!)
+      # [qa-de-1-aci-2103-bb084][ACI Leaf][eth1/32] Invalid connection port detected: Port eth1/32 is out of service due to Wired to an undiscovered invalid neighbor 
+      - alert: InvalidConnPort 
+        expr: |
+          sum by (node_name, node_intf, device_name, reason) (aci_obs_invalid_conn_port{caused_by_id="", deduplicated="", node_status=~"active|", device_status=~"active|"} > 0)
+        for: 5m
+        labels:
+          severity: critical
+          support_group: network-data-aci-obs
+          aci_obs_group: ConnectionFaultGroup
+        annotations:
+          summary: "Connection Faults"
+          description: "[{{ $labels.node_name }}][{{ $labels.node_intf }}][{{ $labels.device_name }}] Invalid connection port detected: {{ $labels.reason }}"
+
+      # F100264 (!)
+      # [qa-de-1-aci-2199][ACI Leaf][eth1/34] Ingress Buffer Drop Packets Rate [QA-DE-1-CCACI-1101][ACI Spine][Ethernet1/19]
+      - alert: IngressBufDropPacketsRate 
+        expr: |
+          sum by (node_name, node_intf, device_name) (aci_obs_ingr_buffer_drop_packets_rate{caused_by_id="", deduplicated="", node_status=~"active|", device_status=~"active|"} > 0)
+        for: 5m
+        labels:
+          severity: critical
+          support_group: network-data-aci-obs
+          aci_obs_group: ConnectionFaultGroup
+        annotations:
+          summary: "Connection Faults"
+          description: "[{{ $labels.node_name }}][{{ $labels.node_intf }}][{{ $labels.device_name }}] Ingress Buffer Drop Packets rate"
+
+      # F100696 (!)
+      # [qa-de-1-aci-2103-bb084][eth1/32] Ingress forwarding drop packets triggered: TCA: Ingress Forwarding Drop Packets rate(eqptIngrDropPkts5min:forwardingRate) value 10 raised above threshold 10 [ACI Leaf, active]
+      - alert: IngressForwardingDropPacketsRate
+        expr: |
+          sum by (node_name, node_intf, device_name) (aci_obs_ingr_forwarding_drop_packets_rate{caused_by_id="", deduplicated="", node_status=~"active|", device_status=~"active|"} > 0)
+        for: 5m
+        labels:
+          severity: critical
+          support_group: network-data-aci-obs
+          aci_obs_group: ConnectionFaultGroup
+        annotations:
+          summary: "Connection Faults"
+          description: "[{{ $labels.node_name }}][{{ $labels.node_intf }}][{{ $labels.device_name }}] Ingress forwarding drop packets triggered"

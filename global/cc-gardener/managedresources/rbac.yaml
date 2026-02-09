@@ -1,3 +1,42 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: cc:oidc-ias-admin-crs
+  labels:
+    gardener.cloud/role: administrators
+rules:
+- apiGroups: ["secrets-injector.cloud.sap"]
+  resources:
+  - secretmetas
+  verbs:
+  - get
+  - list
+  - patch
+  - update
+  - watch
+  - create
+  - delete
+- apiGroups: ["cloudprofilesync.cobaltcore.dev"]
+  resources:
+  - managedcloudprofiles
+  - managedcloudprofiles/status
+  verbs:
+  - get
+  - list
+  - patch
+  - update
+  - watch
+  - create
+  - delete
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: cc:oidc-ias-admin
+aggregationRule:
+  clusterRoleSelectors:
+  - matchLabels:
+      gardener.cloud/role: administrators # should select gardener.cloud:system:administrators as well
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -6,7 +45,7 @@ metadata:
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: gardener.cloud:system:administrators
+  name: cc:oidc-ias-admin
 subjects:
 - apiGroup: rbac.authorization.k8s.io
   kind: Group
@@ -37,7 +76,7 @@ metadata:
 subjects:
   - kind: User
     apiGroup: rbac.authorization.k8s.io
-    name: greenhouse:system:serviceaccount:sci:{{ default (printf "g-%s" .Values.global.region) .Values.garden.clusterName }}
+    name: greenhouse:system:serviceaccount:{{ default "sci" .Values.garden.greenhouseOrg }}:{{ default (printf "g-%s" .Values.global.region) .Values.garden.clusterName }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole

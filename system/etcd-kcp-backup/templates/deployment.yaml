@@ -52,14 +52,14 @@ spec:
                   name: etcd-kcp-backup-aws
                   key: region
           volumeMounts:
-            - name: bucket-config
+            - name: etcd-kcp-backup
               mountPath: /scripts/init_bucket.sh
               subPath: init_bucket.sh
-            - name: bucket-config
+            - name: etcd-kcp-backup
               mountPath: /scripts/bucket_policy.json
               subPath: bucket_policy.json
       containers:
-        - name: manager
+        - name: server
           image: {{ .Values.deployment.container.image.repository }}:{{ .Values.deployment.container.image.tag }}
           command:
             - /etcdbrctl
@@ -78,7 +78,7 @@ spec:
             - '--delta-snapshot-period=5m'
             - '--embedded-etcd-quota-bytes=8589934592'
             - '--enable-snapshot-lease-renewal=true'
-            - '--endpoints=https://etcd-kcp-backup.kube-system.svc.cluster.local:2379'
+            - '--endpoints=https://$(HOST_IP):2379'
             - '--etcd-connection-timeout=5m'
             - '--etcd-defrag-timeout=15m'
             - '--etcd-snapshot-timeout=15m'
@@ -98,6 +98,10 @@ spec:
             containerPort: 8080
             protocol: TCP
           env:
+            - name: HOST_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.hostIP
             - name: AWS_APPLICATION_CREDENTIALS
               value: /etc/aws/credentials
             - name: STORAGE_CONTAINER
@@ -115,8 +119,9 @@ spec:
           securityContext:
             {{- toYaml .Values.deployment.container.securityContext | nindent 12 }}
           volumeMounts:
-            - name: etcd-config
-              mountPath: /var/etcd/config
+            - name: etcd-kcp-backup
+              mountPath: /var/etcd/config/etcd.conf.yaml
+              subPath: etcd.conf.yaml
             - name: etcd-data
               mountPath: /var/lib/etcd
             - name: pki-certs
@@ -135,9 +140,10 @@ spec:
         - operator: Exists
           effect: NoExecute
       volumes:
-        - name: etcd-config
+        - name: etcd-kcp-backup
           configMap:
             name: etcd-kcp-backup
+            defaultMode: 0777
         - name: etcd-data
           hostPath:
             path: /var/lib/etcd
@@ -157,8 +163,4 @@ spec:
               - key: secret-access-key
                 path: secretAccessKey
             defaultMode: 420
-        - name: bucket-config
-          configMap:
-            name: etcd-kcp-bucket
-            defaultMode: 0777
 {{- end }}

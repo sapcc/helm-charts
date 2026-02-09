@@ -121,7 +121,7 @@ spec:
       {{- tuple . .Values.api.api_workers | include "utils.proxysql.container" | indent 6 }}
       {{- end }}
       - name: statsd
-        image:  "{{.Values.global.dockerHubMirror}}/{{.Values.statsd.image.repository}}:{{.Values.statsd.image.tag}}"
+        image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/{{ required ".Values.statsd.image is missing" .Values.statsd.image }}:{{ required ".Values.statsd.imageTag is missing" .Values.statsd.imageTag }}
         imagePullPolicy: IfNotPresent
         args: [ --statsd.mapping-config=/etc/statsd/statsd-exporter.yaml ]
         resources:

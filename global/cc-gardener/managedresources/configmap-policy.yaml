@@ -14,44 +14,41 @@ data:
     omitStages:
       - "RequestReceived"
     rules:
-      - level: RequestResponse
-        resources:
-        - group: ""
-          resources: ["pods"]
       - level: Metadata
+        verbs: ["create"]
         resources:
-        - group: ""
-          resources: ["pods/log", "pods/status"]
-      - level: None
-        resources:
-        - group: ""
-          resources: ["configmaps"]
-          resourceNames: ["controller-leader"]
-      - level: None
-        users: ["system:kube-proxy"]
-        verbs: ["watch"]
-        resources:
-        - group: ""
-          resources: ["endpoints", "services"]
-      - level: None
-        userGroups: ["system:authenticated"]
-        nonResourceURLs:
-        - "/api*"
-        - "/version"
+          - group: "authentication.k8s.io"
+            resources: ["tokenreviews"]
+          - group: "authorization.k8s.io"
+            resources: ["subjectaccessreviews"]
       - level: Request
+        verbs: ["get", "list", "watch"]
         resources:
-        - group: ""
-          resources: ["configmaps"]
-        namespaces: ["kube-system"]
+          - group: ""
+            resources: ["secrets"]
+      - level: Metadata
+        verbs: ["get", "list", "watch"]
+        resources:
+          - group: ""
+            resources: ["configmaps"]
       - level: Metadata
         resources:
-        - group: ""
-          resources: ["secrets", "configmaps"]
-      - level: Request
-        resources:
-        - group: ""
-        - group: "extensions"
+          - group: "apps"
+            resources: ["deployments", "daemonsets", "statefulsets"]
+          - group: ""
+            resources: ["pods"]
       - level: Metadata
-        omitStages:
-          - "RequestReceived"
+        resources:
+          - group: "rbac.authorization.k8s.io"
+            resources:
+              - "roles"
+              - "rolebindings"
+              - "clusterroles"
+              - "clusterrolebindings"
+      - level: Metadata
+        resources:
+          - group: ""
+            resources: ["nodes"]
+      - level: Metadata
+        verbs: ["create", "update", "patch", "delete"]
 {{- end }}

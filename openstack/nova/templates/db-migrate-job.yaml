@@ -56,13 +56,10 @@ spec:
               items:
               - key: api-db.conf
                 path: nova.conf.d/api-db.conf
-              - key: cell0.conf
-                path: nova-cell0.conf
-              - key: cell1.conf
-                path: nova-cell1.conf
-              {{- if .Values.cell2.enabled }}
-              - key:  {{ .Values.cell2.name }}.conf
-                path: nova-{{ .Values.cell2.name }}.conf
+              {{- range $cellId := include "nova.helpers.cell_ids_all" . | fromJsonArray }}
+              {{- $cellName := include "nova.helpers.cell_name" (tuple $ $cellId) }}
+              - key: {{ $cellName }}.conf
+                path: nova-{{ $cellName }}.conf
               {{- end }}
       - name: container-init
         configMap:

@@ -1,0 +1,19 @@
+{{- if .Values.extensions.auditing.enabled }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: audit-policy-cp-garden
+  namespace: garden
+data:
+  policy: |-
+    apiVersion: audit.k8s.io/v1
+    kind: Policy
+    metadata:
+      name: audit-policy-cp-garden
+    omitStages:
+      - "RequestReceived"
+    rules:
+      - level: Metadata
+        verbs: ["create", "update", "patch", "delete"]
+{{- end }}

@@ -1,12 +1,23 @@
-{{- if .Values.nanny_enabled }}
+{{- define "designatenanny.deploytemplate" }}
+{{- /*
+
+    This template is used for the in-region and out-of region nanny, see end of file for the include calls.
+
+ */}}
+{{- $name := .Nanny.nanny }}
+{{- $nanny := index .Values .Nanny.nanny }}
+{{- $nanny_users := required (printf "No users defined in '%s'" $name ) (index $nanny "users") }}
+{{- $openstack_user := required (printf "no openstack user defined in '%s'" $name ) (index $nanny_users "openstack") }}
+{{- $openstack_creds := index .Values.users $openstack_user }}
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
- name: {{ .Release.Name }}
+ name: {{ .Nanny.release }}
  labels:
-    app.kubernetes.io/name: {{ .Release.Name }}
-    app.kubernetes.io/instance: {{ .Release.Name }}
-    app: {{ .Release.Name }}
+    app.kubernetes.io/name: {{ .Nanny.release }}
+    app.kubernetes.io/instance: {{ .Nanny.release }}
+    app: {{ .Nanny.release }}
     ccloud/support-group: network-api
     system: openstack
     application: designate
@@ -14,17 +25,17 @@ spec:
  replicas: 1
  selector:
    matchLabels:
-     app.kubernetes.io/instance: {{ .Release.Name }}
-     app.kubernetes.io/name: {{ .Release.Name }}
+     app.kubernetes.io/instance: {{ .Nanny.release }}
+     app.kubernetes.io/name: {{ .Nanny.release }}
  template:
    metadata:
      labels:
-       app.kubernetes.io/instance: {{ .Release.Name }}
-       app.kubernetes.io/name: {{ .Release.Name }}
+       app.kubernetes.io/instance: {{ .Nanny.release }}
+       app.kubernetes.io/name: {{ .Nanny.release }}
      annotations:
        # port has to be given in the ports spec below with name metrics, otherwise
        # the pod will be scraped multiple times as there are multiple containers with linkderd
-       # prometheus.io/port: "9102" 
+       # prometheus.io/port: "9102"
        prometheus.io/scrape: "true"
        prometheus.io/targets: openstack
        {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
@@ -33,7 +44,7 @@ spec:
    spec:
 
      containers:
-     - name: {{ .Release.Name }}
+     - name: designate-nanny
        image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/{{ .Values.image.name }}:{{required "missing .Values.image.image_tag" .Values.image.image_tag }}
        {{- if or (eq .Values.global.region "qa-de-1") (eq .Values.global.region "qa-de-2") (.Values.global.is_global_region) }}
        imagePullPolicy: Always
@@ -44,28 +55,50 @@ spec:
        env:
          - name: NANNY_CONFIG
            value: "/srv/nanny.yaml"
-         - name: OS_AUTH_URL
-           value: "{{ .Values.global.keystone_api_endpoint_protocol_public | default "https"}}://{{include "keystone_api_endpoint_host_public" .}}/v3"
          - name: PYCCLOUD_USE_DUMMY_SECRETS
            value: "yes"
+{{- /* in case we are doing out of region backups, we overwrite the OpenStack API infos to access designate */}}
+         - name: OS_AUTH_URL
+{{- if hasKey $openstack_creds "auth_url" }}
+           value: "{{ $openstack_creds.auth_url }}"
+{{- else }}
+           value: "{{ .Values.global.keystone_api_endpoint_protocol_public | default "https"}}://{{include "keystone_api_endpoint_host_public" .}}/v3"
+{{- end }}
          - name: OS_REGION_NAME
+{{- if hasKey $openstack_creds "region" }}
+           value: "{{ $openstack_creds.region }}"
+{{- else }}
            value: "{{ required "missing .Values.global.region" .Values.global.region}}"
+{{- end }}
          - name: OS_PROJECT_NAME
-           value:  "{{ required "missing .Values.designate_nanny.credentials.designate_api.project_name" .Values.designate_nanny.credentials.designate_api.project_name}}"
+           value: "{{ required ( printf "missing project_name in user '%s'" $openstack_user ) $openstack_creds.project_name}}"
          - name: OS_PROJECT_DOMAIN_NAME
-           value:  "{{ required "missing .Values.designate_nanny.credentials.designate_api.project_domain_name" .Values.designate_nanny.credentials.designate_api.project_domain_name}}"
+           value: "{{ required ( printf "missing project_domain_name in user '%s'" $openstack_user ) $openstack_creds.project_domain_name}}"
+{{- if hasKey $nanny_users "swift" }}
+{{- /* set credentials for swift access, auth_url etc are in the nanny config file. */}}
+         - name: NANNY_SWIFT_USERNAME
+           valueFrom:
+             secretKeyRef:
+               name: {{ .Nanny.release }}-swift-secret
+               key: os_username
+         - name: NANNY_SWIFT_PASSWORD
+           valueFrom:
+             secretKeyRef:
+               name: {{ .Nanny.release }}-swift-secret
+               key: os_password
+{{- end }}
          - name: OS_USERNAME
            valueFrom:
              secretKeyRef:
-               name: designate-nanny-secret
-               key:  designate_nanny_os_username
+               name: {{ .Nanny.release }}-openstack-secret
+               key: os_username
          - name: OS_PASSWORD
            valueFrom:
              secretKeyRef:
-               name: designate-nanny-secret
-               key:  designate_nanny_os_password
+               name: {{ .Nanny.release }}-openstack-secret
+               key: os_password
          - name: OS_USER_DOMAIN_NAME
-           value:  "{{ required "missing .Values.designate_nanny.credentials.designate_api.project_user_domain_name" .Values.designate_nanny.credentials.designate_api.project_user_domain_name}}"
+           value: "{{ required ( printf "missing user_domain in user '%s'" $openstack_user ) $openstack_creds.user_domain}}"
        ports:
        - containerPort: 9102
          name: metrics
@@ -74,12 +107,31 @@ spec:
 {{ toYaml .Values.resources | indent 8 }}
        volumeMounts:
        - mountPath: /srv/nanny.yaml
-         name: nanny-conf
+         name: {{ .Nanny.release}}-conf
          subPath: nanny.yaml
 
      volumes:
-     - name: nanny-conf
+     - name: {{ .Nanny.release}}-conf
        configMap:
-         name: {{ .Release.Name }}
+         name: {{ .Nanny.release}}
+{{- end }}
+{{- /*
 
+
+  Below we include the 'template' above conditionally for our nanny and the out-of-region nanny.
+
+  To supply parameters to the include, we merge the 'Nanny' dictionary into the global namespace.
+
+
+*/}}
+{{- if .Values.nanny_enabled }}
+{{- $release := printf "%s" .Release.Name }}
+{{- $Nanny := dict "nanny" "designate_nanny" "release" $release }}
+{{- include "designatenanny.deploytemplate" (merge (dict "Nanny" $Nanny) . ) -}}
+{{- end }}
+
+{{- if .Values.nanny_oor_enabled }}
+{{- $release := printf "%s-oor" .Release.Name }}
+{{- $Nanny := dict "nanny" "designate_nanny_oor" "release" $release }}
+{{- include "designatenanny.deploytemplate" (merge (dict "Nanny" $Nanny) . ) -}}
 {{- end }}

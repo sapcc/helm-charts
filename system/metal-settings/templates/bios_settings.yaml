@@ -14,7 +14,7 @@
 apiVersion: metal.ironcore.dev/v1alpha1
 kind: BIOSSettingsSet
 metadata:
-  name: {{ $vendor }}-{{ $model }}-{{ $clusterType }}
+  name: {{ lower $vendor }}-{{ lower $model }}-{{ lower $clusterType }}
 spec:
   serverSelector:
     matchLabels:
@@ -23,7 +23,12 @@ spec:
   biosSettingsTemplate:
     serverMaintenancePolicy: OwnerApproval
 {{- if lt (len ($.Files.Lines $path)) 3 }}
+{{- $modelDefault := printf "bios_settings/%s/%s/default.yaml" $vendor $model }}
+{{- if $.Files.Get $modelDefault }}
+{{ $.Files.Get $modelDefault | trim | indent 4 }}
+{{- else }}
 {{ $.Files.Get (printf "bios_settings/%s/default.yaml" $vendor) | trim | indent 4 }}
+{{- end }}
 {{ $.Files.Get $path | trim | indent 4 }}
 {{- else }}
 {{ $.Files.Get $path | trim | indent 4 }}

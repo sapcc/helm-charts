@@ -1,0 +1,1030 @@
+{
+  "kind": "Dashboard",
+  "metadata": {
+    "name": "flux-cluster",
+    "createdAt": "2025-12-11T16:10:59.502106338Z",
+    "updatedAt": "2025-12-11T16:51:15.79301641Z",
+    "version": 3,
+    "project": "flux"
+  },
+  "spec": {
+    "display": {
+      "name": "Flux Cluster Stats"
+    },
+    "panels": {
+      "0": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Cluster Reconcilers"
+          },
+          "plugin": {
+            "kind": "StatChart",
+            "spec": {
+              "calculation": "last",
+              "format": {
+                "decimalPlaces": 0,
+                "unit": "decimal"
+              },
+              "metricLabel": "",
+              "thresholds": {
+                "steps": [
+                  {
+                    "color": "blue",
+                    "value": 0
+                  },
+                  {
+                    "color": "red",
+                    "value": 100
+                  }
+                ]
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "datasource": {
+                      "kind": "PrometheusDatasource"
+                    },
+                    "minStep": "",
+                    "query": "count(gotk_resource_info{exported_namespace=~\"$namespace\", customresource_kind=~\"Kustomization|HelmRelease\"})",
+                    "seriesNameFormat": ""
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "1": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Failing Reconcilers"
+          },
+          "plugin": {
+            "kind": "StatChart",
+            "spec": {
+              "calculation": "last",
+              "format": {
+                "decimalPlaces": 0,
+                "unit": "decimal"
+              },
+              "metricLabel": "",
+              "sparkline": {},
+              "thresholds": {
+                "steps": [
+                  {
+                    "color": "red",
+                    "value": 0
+                  }
+                ]
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "datasource": {
+                      "kind": "PrometheusDatasource"
+                    },
+                    "minStep": "",
+                    "query": "count(gotk_resource_info{exported_namespace=~\"$namespace\", customresource_kind=~\"Kustomization|HelmRelease\", ready=\"False\"})",
+                    "seriesNameFormat": ""
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "2": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Kubernetes Manifests Sources"
+          },
+          "plugin": {
+            "kind": "StatChart",
+            "spec": {
+              "calculation": "last",
+              "format": {
+                "decimalPlaces": 0,
+                "unit": "decimal"
+              },
+              "metricLabel": "",
+              "thresholds": {
+                "steps": [
+                  {
+                    "color": "blue",
+                    "value": 0
+                  },
+                  {
+                    "color": "red",
+                    "value": 100
+                  }
+                ]
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "datasource": {
+                      "kind": "PrometheusDatasource"
+                    },
+                    "minStep": "",
+                    "query": "count(gotk_resource_info{exported_namespace=~\"$namespace\", customresource_kind=~\"GitRepository|HelmRepository|Bucket|OCIRepository\"})",
+                    "seriesNameFormat": ""
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "3": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Failing Sources"
+          },
+          "plugin": {
+            "kind": "StatChart",
+            "spec": {
+              "calculation": "last",
+              "format": {
+                "decimalPlaces": 0,
+                "unit": "decimal"
+              },
+              "metricLabel": "",
+              "sparkline": {},
+              "thresholds": {
+                "steps": [
+                  {
+                    "color": "red",
+                    "value": 0
+                  }
+                ]
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "datasource": {
+                      "kind": "PrometheusDatasource"
+                    },
+                    "minStep": "",
+                    "query": "count(gotk_resource_info{exported_namespace=~\"$namespace\", customresource_kind=~\"GitRepository|HelmRepository|Bucket|OCIRepository\", ready=\"False\"})",
+                    "seriesNameFormat": ""
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "4": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Reconciler ops avg. duration"
+          },
+          "plugin": {
+            "kind": "BarChart",
+            "spec": {
+              "calculation": "mean",
+              "format": {
+                "unit": "seconds"
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "minStep": "",
+                    "query": "sum(rate(gotk_reconcile_duration_seconds_sum{namespace=~\"$operator_namespace\",exported_namespace=~\"$namespace\",kind=~\"Kustomization|HelmRelease\"}[5m])) by (kind)\n/\n  sum(rate(gotk_reconcile_duration_seconds_count{namespace=~\"$operator_namespace\",exported_namespace=~\"$namespace\",kind=~\"Kustomization|HelmRelease\"}[5m])) by (kind)",
+                    "seriesNameFormat": "{{kind}}"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "5": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Source ops avg. duration"
+          },
+          "plugin": {
+            "kind": "BarChart",
+            "spec": {
+              "calculation": "mean",
+              "format": {
+                "unit": "seconds"
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "minStep": "",
+                    "query": "sum(rate(gotk_reconcile_duration_seconds_sum{namespace=~\"$operator_namespace\",exported_namespace=~\"$namespace\",kind=~\"GitRepository|HelmRepository|Bucket|OCIRepository\"}[5m])) by (kind)\n/\n  sum(rate(gotk_reconcile_duration_seconds_count{namespace=~\"$operator_namespace\",exported_namespace=~\"$namespace\",kind=~\"GitRepository|HelmRepository|Bucket|OCIRepository\"}[5m])) by (kind)",
+                    "seriesNameFormat": "{{kind}}"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "6_0": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Cluster reconciliation readiness "
+          },
+          "plugin": {
+            "kind": "Table",
+            "spec": {
+              "cellSettings": [
+                {
+                  "backgroundColor": "#f2495c",
+                  "condition": {
+                    "kind": "Value",
+                    "spec": {
+                      "value": "False"
+                    }
+                  },
+                  "text": "Not Ready"
+                },
+                {
+                  "backgroundColor": "#5794f2",
+                  "condition": {
+                    "kind": "Value",
+                    "spec": {
+                      "value": "True"
+                    }
+                  },
+                  "text": "Ready"
+                }
+              ],
+              "columnSettings": [
+                {
+                  "hide": true,
+                  "name": "timestamp"
+                },
+                {
+                  "hide": true,
+                  "name": "__name__"
+                },
+                {
+                  "hide": true,
+                  "name": "container"
+                },
+                {
+                  "header": "Namespace",
+                  "hide": false,
+                  "name": "exported_namespace"
+                },
+                {
+                  "hide": true,
+                  "name": "customresource_group"
+                },
+                {
+                  "header": "Kind",
+                  "hide": false,
+                  "name": "customresource_kind"
+                },
+                {
+                  "hide": true,
+                  "name": "customresource_version"
+                },
+                {
+                  "hide": true,
+                  "name": "endpoint"
+                },
+                {
+                  "hide": true,
+                  "name": "instance"
+                },
+                {
+                  "hide": true,
+                  "name": "job"
+                },
+                {
+                  "header": "Name",
+                  "name": "name"
+                },
+                {
+                  "header": "Operator Namespace",
+                  "hide": true,
+                  "name": "namespace"
+                },
+                {
+                  "hide": true,
+                  "name": "pod"
+                },
+                {
+                  "header": "Status",
+                  "hide": false,
+                  "name": "ready"
+                },
+                {
+                  "hide": true,
+                  "name": "service"
+                },
+                {
+                  "header": "",
+                  "hide": true,
+                  "name": "value"
+                },
+                {
+                  "hide": true,
+                  "name": "chart_app_version"
+                },
+                {
+                  "hide": true,
+                  "name": "chart_name"
+                },
+                {
+                  "hide": true,
+                  "name": "chart_source_name"
+                },
+                {
+                  "hide": true,
+                  "name": "cluster"
+                },
+                {
+                  "hide": true,
+                  "name": "organization"
+                },
+                {
+                  "hide": true,
+                  "name": "prometheus"
+                },
+                {
+                  "hide": true,
+                  "name": "region"
+                },
+                {
+                  "hide": true,
+                  "name": "revision"
+                },
+                {
+                  "hide": true,
+                  "name": "source_name"
+                },
+                {
+                  "name": "column_25"
+                }
+              ],
+              "density": "compact"
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "datasource": {
+                      "kind": "PrometheusDatasource"
+                    },
+                    "minStep": "",
+                    "query": "gotk_resource_info{exported_namespace=~\"$namespace\", customresource_kind=~\"Kustomization|HelmRelease\"}",
+                    "seriesNameFormat": ""
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "6_1": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Source acquisition readiness "
+          },
+          "plugin": {
+            "kind": "Table",
+            "spec": {
+              "cellSettings": [
+                {
+                  "backgroundColor": "#f2495c",
+                  "condition": {
+                    "kind": "Value",
+                    "spec": {
+                      "value": "False"
+                    }
+                  },
+                  "text": "Not Ready"
+                },
+                {
+                  "backgroundColor": "#5794f2",
+                  "condition": {
+                    "kind": "Value",
+                    "spec": {
+                      "value": "True"
+                    }
+                  },
+                  "text": "Ready"
+                }
+              ],
+              "columnSettings": [
+                {
+                  "hide": true,
+                  "name": "timestamp"
+                },
+                {
+                  "hide": true,
+                  "name": "__name__"
+                },
+                {
+                  "hide": true,
+                  "name": "container"
+                },
+                {
+                  "header": "Operator Namespace",
+                  "hide": true,
+                  "name": "namespace"
+                },
+                {
+                  "header": "Namespace",
+                  "hide": false,
+                  "name": "exported_namespace"
+                },
+                {
+                  "hide": true,
+                  "name": "customresource_group"
+                },
+                {
+                  "header": "Kind",
+                  "hide": false,
+                  "name": "customresource_kind"
+                },
+                {
+                  "hide": true,
+                  "name": "customresource_version"
+                },
+                {
+                  "hide": true,
+                  "name": "endpoint"
+                },
+                {
+                  "hide": true,
+                  "name": "instance"
+                },
+                {
+                  "hide": true,
+                  "name": "job"
+                },
+                {
+                  "header": "Name",
+                  "name": "name"
+                },
+                {
+                  "hide": true,
+                  "name": "pod"
+                },
+                {
+                  "header": "Status",
+                  "hide": false,
+                  "name": "ready"
+                },
+                {
+                  "hide": true,
+                  "name": "service"
+                },
+                {
+                  "header": "",
+                  "hide": true,
+                  "name": "value"
+                },
+                {
+                  "hide": true,
+                  "name": "Status"
+                },
+                {
+                  "hide": true,
+                  "name": "cluster"
+                },
+                {
+                  "hide": true,
+                  "name": "organization"
+                },
+                {
+                  "hide": true,
+                  "name": "prometheus"
+                },
+                {
+                  "hide": true,
+                  "name": "region"
+                },
+                {
+                  "hide": true,
+                  "name": "revision"
+                },
+                {
+                  "hide": true,
+                  "name": "url"
+                },
+                {
+                  "name": "column_23"
+                }
+              ],
+              "density": "compact"
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "datasource": {
+                      "kind": "PrometheusDatasource"
+                    },
+                    "minStep": "",
+                    "query": "gotk_resource_info{exported_namespace=~\"$namespace\", customresource_kind=~\"GitRepository|HelmRepository|Bucket|OCIRepository\"}",
+                    "seriesNameFormat": ""
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "6_2": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Suspended Objects"
+          },
+          "plugin": {
+            "kind": "Table",
+            "spec": {
+              "columnSettings": [
+                {
+                  "hide": true,
+                  "name": "timestamp"
+                },
+                {
+                  "hide": true,
+                  "name": "__name__"
+                },
+                {
+                  "hide": true,
+                  "name": "container"
+                },
+                {
+                  "hide": true,
+                  "name": "namespace"
+                },
+                {
+                  "header": "Namespace",
+                  "hide": false,
+                  "name": "exported_namespace"
+                },
+                {
+                  "hide": true,
+                  "name": "customresource_group"
+                },
+                {
+                  "header": "Kind",
+                  "hide": false,
+                  "name": "customresource_kind"
+                },
+                {
+                  "hide": true,
+                  "name": "customresource_version"
+                },
+                {
+                  "hide": true,
+                  "name": "endpoint"
+                },
+                {
+                  "hide": true,
+                  "name": "instance"
+                },
+                {
+                  "hide": true,
+                  "name": "job"
+                },
+                {
+                  "header": "Name",
+                  "name": "name"
+                },
+                {
+                  "hide": true,
+                  "name": "pod"
+                },
+                {
+                  "header": "Ready",
+                  "hide": false,
+                  "name": "ready"
+                },
+                {
+                  "hide": true,
+                  "name": "service"
+                },
+                {
+                  "hide": true,
+                  "name": "value"
+                },
+                {
+                  "hide": true,
+                  "name": "chart_app_version"
+                },
+                {
+                  "hide": true,
+                  "name": "chart_name"
+                },
+                {
+                  "hide": true,
+                  "name": "chart_source_name"
+                },
+                {
+                  "hide": true,
+                  "name": "cluster"
+                },
+                {
+                  "hide": true,
+                  "name": "organization"
+                },
+                {
+                  "hide": true,
+                  "name": "prometheus"
+                },
+                {
+                  "hide": true,
+                  "name": "region"
+                },
+                {
+                  "hide": true,
+                  "name": "revision"
+                },
+                {
+                  "header": "Suspended",
+                  "name": "suspended"
+                },
+                {
+                  "name": "column_25"
+                }
+              ],
+              "density": "compact"
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "datasource": {
+                      "kind": "PrometheusDatasource"
+                    },
+                    "minStep": "",
+                    "query": "gotk_resource_info{exported_namespace=~\"$namespace\", suspended=\"true\"}",
+                    "seriesNameFormat": ""
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "7_0": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Cluster reconciliation duration"
+          },
+          "plugin": {
+            "kind": "TimeSeriesChart",
+            "spec": {
+              "legend": {
+                "mode": "table",
+                "position": "right",
+                "values": [
+                  "mean"
+                ]
+              },
+              "visual": {
+                "areaOpacity": 0.1,
+                "connectNulls": false,
+                "display": "line",
+                "lineWidth": 1
+              },
+              "yAxis": {
+                "format": {
+                  "unit": "seconds"
+                }
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "minStep": "",
+                    "query": "sum(rate(gotk_reconcile_duration_seconds_sum{namespace=~\"$operator_namespace\",exported_namespace=~\"$namespace\",kind=~\"Kustomization|HelmRelease\"}[5m])) by (kind, name)\n/\n  sum(rate(gotk_reconcile_duration_seconds_count{namespace=~\"$operator_namespace\",exported_namespace=~\"$namespace\",kind=~\"Kustomization|HelmRelease\"}[5m])) by (kind, name)",
+                    "seriesNameFormat": "{{kind}}/{{name}}"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "7_1": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Source acquisition duration"
+          },
+          "plugin": {
+            "kind": "TimeSeriesChart",
+            "spec": {
+              "legend": {
+                "mode": "table",
+                "position": "right",
+                "values": [
+                  "mean"
+                ]
+              },
+              "visual": {
+                "areaOpacity": 0.1,
+                "connectNulls": false,
+                "display": "line",
+                "lineWidth": 1
+              },
+              "yAxis": {
+                "format": {
+                  "unit": "seconds"
+                }
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "minStep": "",
+                    "query": "sum(rate(gotk_reconcile_duration_seconds_sum{namespace=~\"$operator_namespace\",exported_namespace=~\"$namespace\",kind=~\"GitRepository|HelmRepository|Bucket|OCIRepository\"}[5m])) by (kind, name)\n/\n  sum(rate(gotk_reconcile_duration_seconds_count{namespace=~\"$operator_namespace\",exported_namespace=~\"$namespace\",kind=~\"GitRepository|HelmRepository|Bucket|OCIRepository\"}[5m])) by (kind, name)",
+                    "seriesNameFormat": "{{kind}}/{{name}}"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "layouts": [
+      {
+        "kind": "Grid",
+        "spec": {
+          "display": {
+            "title": "Panel Group 1",
+            "collapse": {
+              "open": true
+            }
+          },
+          "items": [
+            {
+              "x": 0,
+              "y": 0,
+              "width": 6,
+              "height": 5,
+              "content": {
+                "$ref": "#/spec/panels/0"
+              }
+            },
+            {
+              "x": 6,
+              "y": 0,
+              "width": 6,
+              "height": 5,
+              "content": {
+                "$ref": "#/spec/panels/1"
+              }
+            },
+            {
+              "x": 12,
+              "y": 0,
+              "width": 6,
+              "height": 5,
+              "content": {
+                "$ref": "#/spec/panels/2"
+              }
+            },
+            {
+              "x": 18,
+              "y": 0,
+              "width": 6,
+              "height": 5,
+              "content": {
+                "$ref": "#/spec/panels/3"
+              }
+            },
+            {
+              "x": 0,
+              "y": 5,
+              "width": 12,
+              "height": 4,
+              "content": {
+                "$ref": "#/spec/panels/4"
+              }
+            },
+            {
+              "x": 12,
+              "y": 5,
+              "width": 12,
+              "height": 4,
+              "content": {
+                "$ref": "#/spec/panels/5"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "kind": "Grid",
+        "spec": {
+          "display": {
+            "title": "Status",
+            "collapse": {
+              "open": true
+            }
+          },
+          "items": [
+            {
+              "x": 0,
+              "y": 0,
+              "width": 12,
+              "height": 22,
+              "content": {
+                "$ref": "#/spec/panels/6_0"
+              }
+            },
+            {
+              "x": 12,
+              "y": 0,
+              "width": 12,
+              "height": 11,
+              "content": {
+                "$ref": "#/spec/panels/6_1"
+              }
+            },
+            {
+              "x": 12,
+              "y": 11,
+              "width": 12,
+              "height": 11,
+              "content": {
+                "$ref": "#/spec/panels/6_2"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "kind": "Grid",
+        "spec": {
+          "display": {
+            "title": "Timing",
+            "collapse": {
+              "open": true
+            }
+          },
+          "items": [
+            {
+              "x": 0,
+              "y": 0,
+              "width": 24,
+              "height": 8,
+              "content": {
+                "$ref": "#/spec/panels/7_0"
+              }
+            },
+            {
+              "x": 0,
+              "y": 8,
+              "width": 24,
+              "height": 8,
+              "content": {
+                "$ref": "#/spec/panels/7_1"
+              }
+            }
+          ]
+        }
+      }
+    ],
+    "variables": [
+      {
+        "kind": "ListVariable",
+        "spec": {
+          "display": {
+            "hidden": false
+          },
+          "defaultValue": "$__all",
+          "allowAllValue": true,
+          "allowMultiple": true,
+          "sort": "alphabetical-ci-asc",
+          "plugin": {
+            "kind": "PrometheusLabelValuesVariable",
+            "spec": {
+              "labelName": "namespace",
+              "matchers": [
+                "gotk_reconcile_duration_seconds_sum"
+              ]
+            }
+          },
+          "name": "operator_namespace"
+        }
+      },
+      {
+        "kind": "ListVariable",
+        "spec": {
+          "display": {
+            "hidden": false
+          },
+          "defaultValue": "$__all",
+          "allowAllValue": true,
+          "allowMultiple": true,
+          "sort": "none",
+          "plugin": {
+            "kind": "PrometheusLabelValuesVariable",
+            "spec": {
+              "labelName": "exported_namespace",
+              "matchers": [
+                "gotk_resource_info"
+              ]
+            }
+          },
+          "name": "namespace"
+        }
+      },
+      {
+        "kind": "ListVariable",
+        "spec": {
+          "display": {
+            "name": "Datasource",
+            "hidden": false
+          },
+          "defaultValue": "Prometheus",
+          "allowAllValue": false,
+          "allowMultiple": false,
+          "plugin": {
+            "kind": "DatasourceVariable",
+            "spec": {
+              "datasourcePluginKind": "prometheus"
+            }
+          },
+          "name": "DS_PROMETHEUS"
+        }
+      }
+    ],
+    "duration": "1h",
+    "refreshInterval": "0s"
+  }
+}

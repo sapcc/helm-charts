@@ -32,12 +32,9 @@
 {{- $def := (.Values.default_backend | default "swift") -}}
 {{- if not (has $def $aliases) -}}
   {{- fail (printf "glance: default_backend %q is not in enabled_backends %v" $def $aliases) -}}
-{{- end -}}
-
-{{- /* Emit enabled_backends only if more than one backend exists */ -}}
-{{- if gt (len $backends) 1 }}
-enabled_backends = {{ join ", " $backends }}
 {{- end }}
+
+enabled_backends = {{ join ", " $backends }}
 
 debug = {{ .Values.api.debug }}
 
@@ -47,8 +44,6 @@ image_member_quota = 500
 
 log_config_append = /etc/glance/logging.ini
 {{- include "ini_sections.logging_format" . }}
-
-node_staging_uri = file:///tmp/staging
 
 show_image_direct_url = True
 
@@ -91,9 +86,19 @@ enable_proxy_headers_parsing = true
 [glance_store]
 default_backend = {{ $def | quote }}
 
+[image_format]
+require_image_format_match = false
+vmdk_allowed_types = streamOptimized
+
 {{- if .Values.file.persistence.enabled }}
 filesystem_store_datadir = /glance_store
 {{- end }}
+
+[os_glance_tasks_store]
+filesystem_store_datadir = /var/lib/glance/tasks_work_dir
+
+[os_glance_staging_store]
+filesystem_store_datadir = /var/lib/glance/staging
 
 {{- if .Values.ceph.enabled }}
 
