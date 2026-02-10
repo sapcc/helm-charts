@@ -17,20 +17,20 @@ groups:
           description: "Unbound pool member {{ $labels.ltmPoolMbrStatusNodeName }}:{{ $labels.ltmPoolMbrStatusPort }} is NOT AVAILABLE."
           summary: "Unbound pool members helth check reports status other than available."
       - alert: NetworkF5UnboundConnectionsTooHigh
-        expr: snmp_f5_ltmNodeAddrStatServerCurConns{ltmNodeAddrStatNodeName=~"/Common/unbound.*.cloud.sap"} > 55000
+        expr: snmp_f5_ltmPoolMemberStatServerCurConns{module="f5mgmt", ltmPoolMemberStatNodeName=~"/Common/unbound.\\.qa-de-1\\.cloud\\.sap"} > 55000
         for: 5m
         labels:
           severity: warning
           tier: net
           service: f5
           context: f5
-          meta: "Current active connections to {{ $labels.ltmNodeAddrStatNodeName }}:{{ $labels.ltmPoolMbrStatusPort }} on F5 {{ $labels.devicename }} are reaching critical threshold."
+          meta: "Concurrent connections to {{ $labels.ltmPoolMemberStatNodeName }}:{{ $labels.ltmPoolMemberStatPort }} on F5 {{ $labels.devicename }} are reaching critical level."
           dashboard: 'dns-f5-and-unbound-performance'
           support_group: 'network-api'
           playbook: 'docs/devops/alert/network/f5#unbound-connection-count-high'
         annotations:
-          description: "Number of concurrent connections to {{ $labels.ltmNodeAddrStatNodeName }}:{{ $labels.ltmPoolMbrStatusPort }} on F5 {{ $labels.devicename }} is reaching critical threshold of 65536."
-          summary: "Number of concurrent connections to unbound server(s) is critical."
+          description: "Concurrent connections to {{ $labels.ltmPoolMemberStatNodeName }}:{{ $labels.ltmPoolMemberStatPort }} on F5 {{ $labels.devicename }} are reaching critical level."
+          summary: "Concurrent connections to unbound server(s) close to critical level."
       - alert: NetworkF5DirSharedUtil
         expr: round(100 - ((100 / snmp_f5_sysHostDiskTotalBlocks{sysHostDiskPartition=~"/shared"}) * snmp_f5_sysHostDiskFreeBlocks{sysHostDiskPartition=~"/shared"})) >= 85
         for: 5m
