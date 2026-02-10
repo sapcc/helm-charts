@@ -793,6 +793,19 @@ mysql_metrics:
         UNION ALL SELECT 'cn-uuid', 'cn-host', 0;
       values:
         - "gauge"
+    - help: Instance task states
+      name: openstack_compute_instances_task_state_gauge
+      labels:
+        - "task_state"
+      query: |
+        SELECT
+          COALESCE(task_state, 'None') AS task_state, count(*) AS gauge
+        FROM instances
+        WHERE deleted = 0
+        GROUP BY task_state;
+      values:
+        - "gauge"
+
 
 db_name: nova
 max_pool_size: 10
