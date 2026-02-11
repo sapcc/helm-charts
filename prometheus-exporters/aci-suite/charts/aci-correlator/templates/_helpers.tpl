@@ -19,3 +19,9 @@
 app.kubernetes.io/name: {{ include "aci-correlator.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end -}}
+
+{{- define "fqdnHelper" -}}
+{{- $host := index . 0 -}}
+{{- $root := index . 1 -}}
+{{- $host -}}.{{- required ".Values.global.region missing" $root.Values.global.region -}}.{{- required ".Values.global.domain missing" $root.Values.global.domain -}}
+{{- end -}}
