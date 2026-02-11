@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.33.0 - 2026/02/11
+* MariaDB version updated to [11.4.10](https://mariadb.com/docs/release-notes/community-server/11.4/11.4.10)
+  * See https://mariadb.com/docs/release-notes/community-server/11.4/what-is-mariadb-114
+* sidecar images updated
+* `maria-back-me-up` updated to `WIP`, based on 11.4 mariadb imageSW
+* chart version bumped
+
 ## v0.32.0 - 2026/02/10
 * MariaDB version updated to [10.11.16](https://mariadb.com/docs/release-notes/community-server/10.11/10.11.16)
 * `maria-back-me-up` updated to `20260210150801`
