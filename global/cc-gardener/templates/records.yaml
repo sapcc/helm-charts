@@ -1,4 +1,44 @@
 {{- if .Values.garden.externalIP }}
+{{- if .Values.garden.domainOverride }}
+---
+apiVersion: disco.stable.sap.cc/v1
+kind: Record
+metadata:
+  name: virtual-garden-ingress
+  namespace: garden
+spec:
+  record: {{ required ".Values.garden.externalIP missing" .Values.garden.externalIP }}
+  type: A
+  {{- with .Values.global }}
+  hosts:
+  - virtual-garden-ingress.runtime.{{ $.Values.garden.domainOverride }}.{{ required ".Values.global.region missing" .region }}.cloud.sap.
+  zoneName: {{ $.Values.garden.domainOverride }}.{{ required ".Values.global.region missing" .region }}.cloud.sap.
+  {{- end }}
+---
+apiVersion: disco.stable.sap.cc/v1
+kind: Record
+metadata:
+  name: virtual-garden-cnames
+  namespace: garden
+spec:
+  type: CNAME
+  {{- with .Values.global }}
+  record: virtual-garden-ingress.runtime.{{ $.Values.garden.domainOverride }}.{{ required ".Values.global.region missing" .region }}.cloud.sap.
+  hosts:
+  - alertmanager-garden.runtime.{{ $.Values.garden.domainOverride }}.{{ required ".Values.global.region missing" .region }}.cloud.sap.
+  - dashboard.runtime.{{ $.Values.garden.domainOverride }}.{{ required ".Values.global.region missing" .region }}.cloud.sap.
+  - discovery.runtime.{{ $.Values.garden.domainOverride }}.{{ required ".Values.global.region missing" .region }}.cloud.sap.
+  - plutono-garden.runtime.{{ $.Values.garden.domainOverride }}.{{ required ".Values.global.region missing" .region }}.cloud.sap.
+  - prometheus-garden.runtime.{{ $.Values.garden.domainOverride }}.{{ required ".Values.global.region missing" .region }}.cloud.sap.
+  - prometheus-longterm.runtime.{{ $.Values.garden.domainOverride }}.{{ required ".Values.global.region missing" .region }}.cloud.sap.
+  - api.virtual.{{ $.Values.garden.domainOverride }}.{{ required ".Values.global.region missing" .region }}.cloud.sap.
+  - gardener.virtual.{{ $.Values.garden.domainOverride }}.{{ required ".Values.global.region missing" .region }}.cloud.sap.
+  {{- if $.Values.garden.virtualCluster.publicDomain }}
+  - api.{{ $.Values.garden.virtualCluster.publicDomain }}.
+  {{- end }}
+  zoneName: {{ $.Values.garden.domainOverride }}.{{ required ".Values.global.region missing" .region }}.cloud.sap.
+  {{- end }}
+{{- else }}
 ---
 apiVersion: disco.stable.sap.cc/v1
 kind: Record
@@ -37,4 +77,5 @@ spec:
   {{- end }}
   zoneName: {{ required ".Values.global.region missing" .region }}.cloud.sap.
   {{- end }}
+{{- end }}
 {{- end }}

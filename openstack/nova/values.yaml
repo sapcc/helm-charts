@@ -40,6 +40,22 @@ cell2:
         statsd_enabled: true
       workarounds:
         skip_hypervisor_version_check_on_lm: true
+      conductor:
+        workers: 8
+
+cell3:
+  name: cell3
+  enabled: false
+  conductor:
+    config_file:
+      DEFAULT:
+        statsd_port: 9125
+        # enables collecting metrics for rpc calls
+        statsd_enabled: true
+      workarounds:
+        skip_hypervisor_version_check_on_lm: true
+      conductor:
+        workers: 8
 
 defaults:
   default:
@@ -120,24 +136,19 @@ debug: "True"
 defaultUsersRabbitMQ:
   cell1: default
   cell2: default
+  cell3: default
 
 defaultUsersMariaDB:
   api: nova_api
   cell0: nova_cell0
   cell1: nova
   cell2: null
+  cell3: null
 
-dbName: nova
-cell1dbType: mariadb
-
-cell0dbName: nova_cell0
 cell0dbType: mariadb
-
-# cell2dbName should be the same as mariadb_cell2 backup_v2 DB name!
-cell2dbName: nova_cell2
+cell1dbType: mariadb
 cell2dbType: mariadb
-
-apidbName: nova_api
+cell3dbType: mariadb
 apidbType: mariadb
 
 loci:
@@ -782,12 +793,19 @@ mysql_metrics:
         UNION ALL SELECT 'cn-uuid', 'cn-host', 0;
       values:
         - "gauge"
+    - help: Instance task states
+      name: openstack_compute_instances_task_state_gauge
+      labels:
+        - "task_state"
+      query: |
+        SELECT
+          COALESCE(task_state, 'None') AS task_state, count(*) AS gauge
+        FROM instances
+        WHERE deleted = 0
+        GROUP BY task_state;
+      values:
+        - "gauge"
 
-postgresql:
-  enabled: false
-
-postgresql_cell2:
-  enabled: false
 
 db_name: nova
 max_pool_size: 10
@@ -800,6 +818,43 @@ proxysql:
     - backup
     - metrics
     - metis
+
+mariadb_api:
+  enabled: false
+  buffer_pool_size: "4096M"
+  log_file_size: "1024M"
+  name: nova-api
+  long_query_time: 8
+  vpa:
+    set_main_container: true
+  ccroot_user:
+    enabled: true
+  databases:
+  - nova_api
+  persistence_claim:
+    name: db-nova-api-pvc
+    size: "50Gi"
+  backup:
+    enabled: false
+  backup_v2:
+    enabled: true
+    databases:
+      - nova_api
+      - placement
+    verify_tables:
+      - nova_api.flavors
+      - nova_api.key_pairs
+    oauth:
+      client_id: "nova-api"
+  alerts:
+    support_group: compute-storage-api
+  job:
+    maintenance:
+      enabled: false
+      function:
+        analyzeTable:
+          enabled: true
+          allTables: true
 
 mariadb:
   enabled: false
@@ -841,70 +896,52 @@ mariadb:
           enabled: true
           allTables: true
 
-pxc_db:
-  enabled: false
-  name: nova
-  alerts:
-    support_group: "compute-storage-api"
-  ccroot_user:
-    enabled: true
-  databases:
-    - nova
-    - nova_cell0
-  users:
-    nova:
-      name: nova
-      grants:
-        - "ALL PRIVILEGES on nova.*"
-    nova_cell0:
-      name: nova_cell0
-      grants:
-        - "ALL PRIVILEGES on nova_cell0.*"
-  pxc:
-    configuration:
-      options:
-        max_connections: "2048"
-        innodb_buffer_pool_size: "4096M"
-        innodb_log_file_size: "1024M"
-        long_query_time: "8"
-    persistence:
-      size: 50Gi
-  backup:
-    enabled: true
-    s3:
-      secrets:
-        aws_access_key_id: null
-        aws_secret_access_key: null
-    pitr:
-      enabled: true
-
-mariadb_api:
+mariadb_cell2:
   enabled: false
   buffer_pool_size: "4096M"
   log_file_size: "1024M"
-  name: nova-api
   long_query_time: 8
   vpa:
     set_main_container: true
   ccroot_user:
     enabled: true
-  databases:
-  - nova_api
   persistence_claim:
-    name: db-nova-api-pvc
+    name: db-nova-cell2-pvc
     size: "50Gi"
   backup:
     enabled: false
   backup_v2:
     enabled: true
-    databases:
-      - nova_api
-      - placement
-    verify_tables:
-      - nova_api.flavors
-      - nova_api.key_pairs
     oauth:
-      client_id: "nova-api"
+      client_id: "nova-cell2"
+  alerts:
+    support_group: compute-storage-api
+  job:
+    maintenance:
+      enabled: false
+      function:
+        analyzeTable:
+          enabled: true
+          allTables: true
+
+mariadb_cell3:
+  enabled: false
+  buffer_pool_size: "4096M"
+  log_file_size: "1024M"
+  long_query_time: 8
+  vpa:
+    set_main_container: true
+  ccroot_user:
+    enabled: true
+  persistence_claim:
+    name: db-nova-cell3-pvc
+    size: "50Gi"
+  backup:
+    enabled: false
+  backup_v2:
+    enabled: true
+    oauth:
+      client_id: "nova-cell3"
   alerts:
     support_group: compute-storage-api
   job:
@@ -946,33 +983,42 @@ pxc_db_api:
     pitr:
       enabled: true
 
-mariadb_cell2:
+pxc_db:
   enabled: false
-  buffer_pool_size: "4096M"
-  log_file_size: "1024M"
-  long_query_time: 8
-  vpa:
-    set_main_container: true
+  name: nova
+  alerts:
+    support_group: "compute-storage-api"
   ccroot_user:
     enabled: true
-  persistence_claim:
-    name: db-nova-cell2-pvc
-    size: "50Gi"
+  databases:
+    - nova
+    - nova_cell0
+  users:
+    nova:
+      name: nova
+      grants:
+        - "ALL PRIVILEGES on nova.*"
+    nova_cell0:
+      name: nova_cell0
+      grants:
+        - "ALL PRIVILEGES on nova_cell0.*"
+  pxc:
+    configuration:
+      options:
+        max_connections: "2048"
+        innodb_buffer_pool_size: "4096M"
+        innodb_log_file_size: "1024M"
+        long_query_time: "8"
+    persistence:
+      size: 50Gi
   backup:
-    enabled: false
-  backup_v2:
     enabled: true
-    oauth:
-      client_id: "nova-cell2"
-  alerts:
-    support_group: compute-storage-api
-  job:
-    maintenance:
-      enabled: false
-      function:
-        analyzeTable:
-          enabled: true
-          allTables: true
+    s3:
+      secrets:
+        aws_access_key_id: null
+        aws_secret_access_key: null
+    pitr:
+      enabled: true
 
 pxc_db_cell2:
   enabled: false
@@ -999,27 +1045,30 @@ pxc_db_cell2:
     pitr:
       enabled: true
 
-rabbitmq_cell2:
-  nameOverride: cell2-rabbitmq
-  persistence:
-    enabled: false
-  alerts:
-    # unacked/ready messages in rabbitmq
-    rabbit_queue_length: 50
-    unacknowledged_total_wait_for: 10m
-    ready_total_wait_for: 10m
-    support_group: compute-storage-api
-  metrics:
-    enabled: true
-    enableDetailedMetrics: true
-    enablePerObjectMetrics: true
-audit:
-  central_service:
-    user: rabbitmq
-    password: null
+pxc_db_cell3:
   enabled: false
-  record_payloads: false
-  metrics_enabled: true
+  alerts:
+    support_group: "compute-storage-api"
+  ccroot_user:
+    enabled: true
+  databases: []
+  users: []
+  pxc:
+    configuration:
+      options:
+        innodb_buffer_pool_size: "4096M"
+        innodb_log_file_size: "1024M"
+        long_query_time: "8"
+    persistence:
+      size: 50Gi
+  backup:
+    enabled: true
+    s3:
+      secrets:
+        aws_access_key_id: null
+        aws_secret_access_key: null
+    pitr:
+      enabled: true
 
 rabbitmq:
   users:
@@ -1037,13 +1086,50 @@ rabbitmq:
     requests:
       memory: 2Gi
       cpu: 1000m
-
   alerts:
     # unacked/ready messages in rabbitmq
     rabbit_queue_length: 50
     unacknowledged_total_wait_for: 10m
     ready_total_wait_for: 10m
     support_group: compute-storage-api
+
+rabbitmq_cell2:
+  nameOverride: cell2-rabbitmq
+  persistence:
+    enabled: false
+  alerts:
+    # unacked/ready messages in rabbitmq
+    rabbit_queue_length: 50
+    unacknowledged_total_wait_for: 10m
+    ready_total_wait_for: 10m
+    support_group: compute-storage-api
+  metrics:
+    enabled: true
+    enableDetailedMetrics: true
+    enablePerObjectMetrics: true
+
+rabbitmq_cell3:
+  nameOverride: cell3-rabbitmq
+  persistence:
+    enabled: false
+  alerts:
+    # unacked/ready messages in rabbitmq
+    rabbit_queue_length: 50
+    unacknowledged_total_wait_for: 10m
+    ready_total_wait_for: 10m
+    support_group: compute-storage-api
+  metrics:
+    enabled: true
+    enableDetailedMetrics: true
+    enablePerObjectMetrics: true
+
+audit:
+  central_service:
+    user: rabbitmq
+    password: null
+  enabled: false
+  record_payloads: false
+  metrics_enabled: true
 
 logging:
   formatters:

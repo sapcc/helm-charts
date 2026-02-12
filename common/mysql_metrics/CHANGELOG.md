@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.6.1 - 2026/01/19
+* Update sql-exporter version to 0.9.0 (2026-01-19)
+
 ## v0.6.0 - 2025/11/10
 * Add new `db_instance_name_literal` option to override target DB host
 * Add new `db_namespace` option to override target DB namespace

@@ -164,9 +164,9 @@ spec:
         zones:
         {{- toYaml $worker.zones | nindent 8 }}
         machineControllerManager:
-          machineCreationTimeout: 1h20m0s
-          machineHealthTimeout: 1h0m0s
-          machineDrainTimeout: {{ default "240h0m0s" $worker.machineDrainTimeout }}
+          machineCreationTimeout: {{ coalesce $worker.machineCreationTimeout $cluster.machineCreationTimeout "1h20m0s" }}
+          machineHealthTimeout: {{ coalesce $worker.machineHealthTimeout $cluster.machineHealthTimeout "1h0m0s" }}
+          machineDrainTimeout: {{ coalesce $worker.machineDrainTimeout $cluster.machineDrainTimeout "240h0m0s" }}
           {{- if $worker.inPlaceUpdateTimeout }}
           inPlaceUpdateTimeout: {{ $worker.inPlaceUpdateTimeout }}
           {{- end }}
@@ -214,6 +214,9 @@ spec:
                 {{- $worker.extraIgnitionFiles | nindent 16 }}
                 {{- end }}
                 {{- end }}
+                {{- if and ( eq $workerChannel "preRelease" ) $worker.defaultIgnitionFiles ( typeIs "string" $worker.defaultIgnitionFiles ) }}
+                {{- $worker.defaultIgnitionFiles | nindent 16 }}
+                {{- else }}
 
                 - path: /etc/default/openvswitch-switch
                   filesystem: root
@@ -322,7 +325,8 @@ spec:
                     inline: |
                       [Manager]
                       DefaultLimitCORE=
-                {{- end}}
+                {{- end }}
+                {{- end }}
 
               systemd:
                 units:
@@ -331,6 +335,9 @@ spec:
                 {{- $worker.extraIgnitionSystemdUnits | nindent 16 }}
                 {{- end }}
                 {{- end }}
+                {{- if and ( eq $workerChannel "preRelease" ) $worker.defaultIgnitionSystemdUnits ( typeIs "string" $worker.defaultIgnitionSystemdUnits ) }}
+                {{- $worker.defaultIgnitionSystemdUnits | nindent 16 }}
+                {{- else }}
                 - name: ovsdb-server.service
                   dropins:
                     - name: allow-group.conf
@@ -362,15 +369,6 @@ spec:
                       contents: |
                         [Socket]
                         TriggerLimitIntervalSec=0
-                    - name: require-tls-certs.conf
-                      contents: |
-                        [Unit]
-                        ConditionPathExists=/etc/pki/libvirt/clientcert.pem
-                        ConditionPathExists=/etc/pki/libvirt/private/clientkey.pem
-                        {{- if eq (default "stable" $worker.feature) "qemu" }}
-                        ConditionPathExists=/etc/pki/qemu/client-cert.pem
-                        ConditionPathExists=/etc/pki/qemu/client-key.pem
-                        {{- end }}
 
                 - name: libvirtd-tls.socket
                   dropins:
@@ -430,6 +428,7 @@ spec:
 
                     [Install]
                     WantedBy=default.target
+                {{- end }}
     {{- end }}
 {{- end }}
 {{- end }}

@@ -4,7 +4,7 @@ context_is_admin: role:cloud_compute_admin
 
 owner_or_no_project: project_id:%(project_id)s or ccloud_no_project_id_in_target:True
 member: role:member and rule:owner_or_no_project
-viewer: role:compute_viewer and rule:owner_or_no_project
+viewer: (role:compute_viewer and rule:owner_or_no_project) or role:cloud_compute_viewer 
 admin: (role:compute_admin or role:compute_admin_wsg) and rule:owner_or_no_project
 context_is_compute_admin: rule:context_is_admin or rule:admin
 context_is_editor: rule:context_is_compute_admin or rule:member
@@ -12,6 +12,8 @@ context_is_viewer: rule:context_is_editor or rule:viewer
 compute_admin_all: role:compute_admin or role:cloud_compute_admin
 
 context_is_quota_admin: role:resource_service
+context_is_cloud_viewer: role:cloud_compute_viewer
+context_is_cloud_compute_migrate: role:cloud_compute_migrate
 
 
 ### Upstream base rules
@@ -44,12 +46,12 @@ network:attach_external_network: rule:context_is_admin
 # List all servers with detailed information for  all projects
 #   GET /servers/detail
 #os_compute_api:servers:detail:get_all_tenants: rule:system_reader_api
-os_compute_api:servers:detail:get_all_tenants: rule:context_is_admin
+os_compute_api:servers:detail:get_all_tenants: rule:context_is_admin or rule:context_is_cloud_viewer
 
 # List all servers for all projects
 #   GET /servers
 #os_compute_api:servers:index:get_all_tenants: rule:system_reader_api
-os_compute_api:servers:index:get_all_tenants: rule:context_is_admin
+os_compute_api:servers:index:get_all_tenants: rule:context_is_admin or rule:context_is_cloud_viewer
 
 # Confirm a server resize
 #   POST /servers/{server_id}/action (confirmResize)
@@ -137,7 +139,7 @@ os_compute_api:servers:show: rule:context_is_viewer
 #   PUT /servers/{server_id}
 #   POST /servers/{server_id}/action (rebuild)
 #os_compute_api:servers:show:host_status: rule:system_admin_api
-os_compute_api:servers:show:host_status: rule:context_is_admin
+os_compute_api:servers:show:host_status: rule:context_is_admin or rule:context_is_cloud_viewer
 
 # Create an image from a server
 #   POST /servers/{server_id}/action (createImage)
@@ -167,22 +169,22 @@ os_compute_api:servers:trigger_crash_dump: rule:context_is_editor
 # Force an in-progress live migration for a given server to complete
 #   POST /servers/{server_id}/migrations/{migration_id}/action (force_complete)
 #os_compute_api:servers:migrations:force_complete: rule:system_admin_api
-os_compute_api:servers:migrations:force_complete: rule:context_is_admin
+os_compute_api:servers:migrations:force_complete: rule:context_is_admin or rule:context_is_cloud_compute_migrate
 
 # Delete(Abort) an in-progress live migration
 #   DELETE /servers/{server_id}/migrations/{migration_id}
 #os_compute_api:servers:migrations:delete: rule:system_admin_api
-os_compute_api:servers:migrations:delete: rule:context_is_admin
+os_compute_api:servers:migrations:delete: rule:context_is_admin or rule:context_is_cloud_compute_migrate
 
 # Lists in-progress live migrations for a given server
 #   GET /servers/{server_id}/migrations
 #os_compute_api:servers:migrations:index: rule:system_reader_api
-os_compute_api:servers:migrations:index: rule:context_is_admin
+os_compute_api:servers:migrations:index: rule:context_is_admin or rule:context_is_cloud_viewer or rule:context_is_cloud_compute_migrate
 
 # Show details for an in-progress live migration for a given server
 #   GET /servers/{server_id}/migrations/{migration_id}
 #os_compute_api:servers:migrations:show: rule:system_reader_api
-os_compute_api:servers:migrations:show: rule:context_is_admin
+os_compute_api:servers:migrations:show: rule:context_is_admin or rule:context_is_cloud_viewer or rule:context_is_cloud_compute_migrate
 
 # Inject network information into the server
 #   POST /servers/{server_id}/action (injectNetworkInfo)
@@ -202,7 +204,7 @@ os_compute_api:os-admin-password: rule:context_is_editor
 # List all aggregates
 #   GET /os-aggregates
 #os_compute_api:os-aggregates:index: rule:system_reader_api
-os_compute_api:os-aggregates:index: rule:context_is_admin
+os_compute_api:os-aggregates:index: rule:context_is_admin or rule:context_is_cloud_viewer
 
 # Create an aggregate
 #   POST /os-aggregates
@@ -212,7 +214,7 @@ os_compute_api:os-aggregates:create: rule:context_is_admin
 # Show details for an aggregate
 #   GET /os-aggregates/{aggregate_id}
 #os_compute_api:os-aggregates:show: rule:system_reader_api
-os_compute_api:os-aggregates:show: rule:context_is_admin
+os_compute_api:os-aggregates:show: rule:context_is_admin or rule:context_is_cloud_viewer
 
 # Update name and/or availability zone for an aggregate
 #   PUT /os-aggregates/{aggregate_id}
@@ -252,17 +254,17 @@ os_compute_api:os-attach-interfaces:delete: rule:context_is_editor
 # List port interfaces attached to a server
 #   GET /servers/{server_id}/os-interface
 #os_compute_api:os-attach-interfaces:list: rule:system_or_project_reader
-os_compute_api:os-attach-interfaces:list: rule:context_is_editor
+os_compute_api:os-attach-interfaces:list: rule:context_is_editor or rule:context_is_cloud_viewer
 
 # Show details of a port interface attached to a server
 #   GET /servers/{server_id}/os-interface/{port_id}
 #os_compute_api:os-attach-interfaces:show: rule:system_or_project_reader
-os_compute_api:os-attach-interfaces:show: rule:context_is_editor
+os_compute_api:os-attach-interfaces:show: rule:context_is_editor or rule:context_is_cloud_viewer
 
 # Show action details for a server.
 #   GET /os-baremetal-nodes/{node_id}
 #os_compute_api:os-baremetal-nodes:show: rule:system_reader_api
-os_compute_api:os-baremetal-nodes:show: rule:context_is_admin
+os_compute_api:os-baremetal-nodes:show: rule:context_is_admin or rule:context_is_cloud_viewer
 
 # Show console output for a server
 #   POST /servers/{server_id}/action (os-getConsoleOutput)
@@ -343,7 +345,7 @@ os_compute_api:extensions: rule:context_is_viewer
 # to a flavor via an os-flavor-access API.
 #   GET /flavors/{flavor_id}/os-flavor-access
 #os_compute_api:os-flavor-access: rule:system_reader_api
-os_compute_api:os-flavor-access: rule:context_is_editor
+os_compute_api:os-flavor-access: rule:context_is_editor or rule:context_is_cloud_viewer
 
 # Remove flavor access from a tenant
 #   POST /flavors/{flavor_id}/action (removeTenantAccess)
@@ -409,37 +411,37 @@ os_compute_api:os-flavor-manage:delete: rule:context_is_admin
 # List all hypervisors.
 #   GET /os-hypervisors
 #os_compute_api:os-hypervisors:list: rule:system_reader_api
-os_compute_api:os-hypervisors:list: rule:context_is_admin
+os_compute_api:os-hypervisors:list: rule:context_is_admin or rule:context_is_cloud_viewer
 
 # List all hypervisors with details
 #   GET /os-hypervisors/details
 #os_compute_api:os-hypervisors:list-detail: rule:system_reader_api
-os_compute_api:os-hypervisors:list-detail: rule:context_is_admin
+os_compute_api:os-hypervisors:list-detail: rule:context_is_admin or rule:context_is_cloud_viewer
 
 # Search hypervisor by hypervisor_hostname pattern.
 #   GET /os-hypervisors/{hypervisor_hostname_pattern}/search
 #os_compute_api:os-hypervisors:search: rule:system_reader_api
-os_compute_api:os-hypervisors:search: rule:context_is_admin
+os_compute_api:os-hypervisors:search: rule:context_is_admin or rule:context_is_cloud_viewer
 
 # List all servers on hypervisors that can match the provided hypervisor_hostname pattern.
 #   GET /os-hypervisors/{hypervisor_hostname_pattern}/servers
 #os_compute_api:os-hypervisors:servers: rule:system_reader_api
-os_compute_api:os-hypervisors:servers: rule:context_is_admin
+os_compute_api:os-hypervisors:servers: rule:context_is_admin or rule:context_is_cloud_viewer
 
 # Show details for a hypervisor.
 #   GET /os-hypervisors/{hypervisor_id}
 #os_compute_api:os-hypervisors:show: rule:system_reader_api
-os_compute_api:os-hypervisors:show: rule:context_is_admin
+os_compute_api:os-hypervisors:show: rule:context_is_admin or rule:context_is_cloud_viewer
 
 # Show summary statistics for all hypervisors over all compute nodes.
 #   GET /os-hypervisors/statistics
 #os_compute_api:os-hypervisors:statistics: rule:system_reader_api
-os_compute_api:os-hypervisors:statistics: rule:context_is_admin
+os_compute_api:os-hypervisors:statistics: rule:context_is_admin or rule:context_is_cloud_viewer
 
 # Show the uptime of a hypervisor.
 #   GET /os-hypervisors/{hypervisor_id}/uptime
 #os_compute_api:os-hypervisors:uptime: rule:system_reader_api
-os_compute_api:os-hypervisors:uptime: rule:context_is_admin
+os_compute_api:os-hypervisors:uptime: rule:context_is_admin or rule:context_is_cloud_viewer
 
 # List actions for a server.
 #   GET /servers/{server_id}/os-instance-actions
@@ -449,7 +451,7 @@ os_compute_api:os-instance-actions:list: rule:context_is_viewer
 # Show action details for a server.
 #   GET /servers/{server_id}/os-instance-actions/{request_id}
 #os_compute_api:os-instance-actions:show: rule:system_or_project_reader
-os_compute_api:os-instance-actions:show: rule:context_is_editor
+os_compute_api:os-instance-actions:show: rule:context_is_editor or rule:context_is_cloud_viewer
 
 # Add events details in action details for a server.
 # This check is performed only after the check
@@ -460,7 +462,7 @@ os_compute_api:os-instance-actions:show: rule:context_is_editor
 # passes, the name of the host.
 #   GET /servers/{server_id}/os-instance-actions/{request_id}
 #os_compute_api:os-instance-actions:events: rule:system_reader_api
-os_compute_api:os-instance-actions:events: rule:context_is_admin
+os_compute_api:os-instance-actions:events: rule:context_is_admin or rule:context_is_cloud_viewer
 
 # Add "details" key in action events for a server.
 # This check is performed only after the check
@@ -477,13 +479,13 @@ os_compute_api:os-instance-actions:events: rule:context_is_admin
 # List all usage audits.
 #   GET /os-instance_usage_audit_log
 #os_compute_api:os-instance-usage-audit-log:list: rule:system_reader_api
-os_compute_api:os-instance-usage-audit-log:list: rule:context_is_admin
+os_compute_api:os-instance-usage-audit-log:list: rule:context_is_admin or rule:context_is_cloud_viewer
 
 # List all usage audits occurred before a specified time for all servers on all
 # compute hosts where usage auditing is configured
 #   GET /os-instance_usage_audit_log/{before_timestamp}
 #os_compute_api:os-instance-usage-audit-log:show: rule:system_reader_api
-os_compute_api:os-instance-usage-audit-log:show: rule:context_is_admin
+os_compute_api:os-instance-usage-audit-log:show: rule:context_is_admin or rule:context_is_cloud_viewer
 
 # List IP addresses that are assigned to a server
 #   GET /servers/{server_id}/ips
@@ -498,12 +500,12 @@ os_compute_api:ips:show: rule:context_is_viewer
 # List all keypairs
 #   GET /os-keypairs
 #os_compute_api:os-keypairs:index: (rule:system_reader_api) or user_id:%(user_id)s
-os_compute_api:os-keypairs:index: rule:context_is_admin or user_id:%(user_id)s
+os_compute_api:os-keypairs:index: rule:context_is_admin or user_id:%(user_id)s or rule:context_is_cloud_viewer
 
 # Show details of a keypair
 #   GET /os-keypairs/{keypair_name}
 #os_compute_api:os-keypairs:show: (rule:system_reader_api) or user_id:%(user_id)s
-os_compute_api:os-keypairs:show: rule:context_is_admin or user_id:%(user_id)s
+os_compute_api:os-keypairs:show: rule:context_is_admin or user_id:%(user_id)s or rule:context_is_cloud_viewer
 
 # Create a keypair
 #   POST /os-keypairs
@@ -540,18 +542,18 @@ os_compute_api:os-lock-server:unlock:unlock_override: rule:context_is_admin
 # Cold migrate a server to a host
 #   POST /servers/{server_id}/action (migrate)
 #os_compute_api:os-migrate-server:migrate: rule:system_admin_api
-os_compute_api:os-migrate-server:migrate: rule:context_is_admin
+os_compute_api:os-migrate-server:migrate: rule:context_is_admin or rule:context_is_cloud_compute_migrate
 
 # Cold migrate a server to a specified host
 # POST  /servers/{server_id}/action (migrate)
 # Intended scope(s): project
 #"os_compute_api:os-migrate-server:migrate:host": "rule:context_is_admin"
-"os_compute_api:os-migrate-server:migrate:host": "rule:context_is_admin"
+os_compute_api:os-migrate-server:migrate:host: rule:context_is_admin or rule:context_is_cloud_compute_migrate
 
 # Live migrate a server to a new host without a reboot
 #   POST /servers/{server_id}/action (os-migrateLive)
 #os_compute_api:os-migrate-server:migrate_live: rule:system_admin_api
-os_compute_api:os-migrate-server:migrate_live: rule:context_is_admin
+os_compute_api:os-migrate-server:migrate_live: rule:context_is_admin or rule:context_is_cloud_compute_migrate
 
 # Pause a server
 #   POST /servers/{server_id}/action (pause)
@@ -596,7 +598,7 @@ os_compute_api:os-quota-class-sets:update: rule:context_is_admin
 # List quotas for specific quota classs
 #   GET /os-quota-class-sets/{quota_class}
 #os_compute_api:os-quota-class-sets:show: rule:system_reader_api
-os_compute_api:os-quota-class-sets:show: rule:context_is_admin or quota_class:%(quota_class)s
+os_compute_api:os-quota-class-sets:show: rule:context_is_admin or quota_class:%(quota_class)s or rule:context_is_cloud_viewer
 
 # Rescue a server
 #   POST /servers/{server_id}/action (rescue)
@@ -611,7 +613,7 @@ os_compute_api:os-unrescue: rule:context_is_editor
 # Show the usage data for a server
 #   GET /servers/{server_id}/diagnostics
 #os_compute_api:os-server-diagnostics: rule:system_admin_api
-os_compute_api:os-server-diagnostics: rule:context_is_admin
+os_compute_api:os-server-diagnostics: rule:context_is_admin or rule:context_is_cloud_viewer
 
 # Clear the encrypted administrative password of a server
 #   DELETE /servers/{server_id}/os-server-password
@@ -621,7 +623,7 @@ os_compute_api:os-server-password:clear: rule:context_is_editor
 # Show the encrypted administrative password of a server
 #   GET /servers/{server_id}/os-server-password
 #os_compute_api:os-server-password:show: rule:system_or_project_reader
-os_compute_api:os-server-password:show: rule:context_is_editor
+os_compute_api:os-server-password:show: rule:context_is_editor or rule:context_is_cloud_viewer
 
 # Create a new server group
 #   POST /os-server-groups
@@ -636,17 +638,17 @@ os_compute_api:os-server-groups:delete: rule:context_is_editor
 # List all server groups
 #   GET /os-server-groups
 #os_compute_api:os-server-groups:index: rule:system_or_project_reader
-os_compute_api:os-server-groups:index: rule:context_is_editor
+os_compute_api:os-server-groups:index: rule:context_is_editor or rule:context_is_cloud_viewer
 
 # List all server groups for all projects
 #   GET /os-server-groups
 #os_compute_api:os-server-groups:index:all_projects: rule:system_reader_api
-os_compute_api:os-server-groups:index:all_projects: rule:context_is_admin
+os_compute_api:os-server-groups:index:all_projects: rule:context_is_admin or rule:context_is_cloud_viewer
 
 # Show details of a server group
 #   GET /os-server-groups/{server_group_id}
 #os_compute_api:os-server-groups:show: rule:system_or_project_reader
-os_compute_api:os-server-groups:show: rule:context_is_editor
+os_compute_api:os-server-groups:show: rule:context_is_editor or rule:context_is_cloud_viewer
 
 # Edit details of a server group
 # [SAP-custom API extension]
@@ -662,7 +664,7 @@ os_compute_api:os-services:delete: rule:context_is_admin
 # List all running Compute services in a region.
 #   GET /os-services
 #os_compute_api:os-services:list: rule:system_reader_api
-os_compute_api:os-services:list: rule:context_is_admin
+os_compute_api:os-services:list: rule:context_is_admin or rule:context_is_cloud_viewer
 
 # Update a Compute service.
 #   PUT /os-services/{service_id}
@@ -717,7 +719,7 @@ os_compute_api:os-simple-tenant-usage:show: rule:context_is_viewer
 # List per tenant usage statistics for all tenants
 #   GET /os-simple-tenant-usage
 #os_compute_api:os-simple-tenant-usage:list: rule:system_reader_api
-os_compute_api:os-simple-tenant-usage:list: rule:context_is_admin
+os_compute_api:os-simple-tenant-usage:list: rule:context_is_admin or rule:context_is_cloud_viewer
 
 # Suspend server
 #   POST /servers/{server_id}/action (suspend)
@@ -770,7 +772,7 @@ os_compute_api:os-availability-zone:list: rule:context_is_viewer
 # List detailed availability zone information with host information
 #   GET /os-availability-zone/detail
 #os_compute_api:os-availability-zone:detail: rule:system_reader_api
-os_compute_api:os-availability-zone:detail: rule:context_is_admin
+os_compute_api:os-availability-zone:detail: rule:context_is_admin or rule:context_is_cloud_viewer
 
 # Show rate and absolute limits of other project.
 # This policy only checks if the user has access to the requested
@@ -778,12 +780,12 @@ os_compute_api:os-availability-zone:detail: rule:context_is_admin
 # os_compute_api:limits passes
 #   GET /limits
 #os_compute_api:limits:other_project: rule:system_reader_api
-os_compute_api:limits:other_project: rule:context_is_admin
+os_compute_api:limits:other_project: rule:context_is_admin or rule:context_is_cloud_viewer
 
 # List migrations
 #   GET /os-migrations
 #os_compute_api:os-migrations:index: rule:system_reader_api
-os_compute_api:os-migrations:index: rule:context_is_admin
+os_compute_api:os-migrations:index: rule:context_is_admin or rule:context_is_cloud_viewer
 
 # Create an assisted volume snapshot
 #   POST /os-assisted-volume-snapshots
@@ -798,7 +800,7 @@ os_compute_api:os-assisted-volume-snapshots:delete: rule:context_is_admin
 # Show console connection information for a given console authentication token
 #   GET /os-console-auth-tokens/{console_token}
 #os_compute_api:os-console-auth-tokens: rule:system_reader_api
-os_compute_api:os-console-auth-tokens: rule:context_is_admin
+os_compute_api:os-console-auth-tokens: rule:context_is_admin or rule:context_is_cloud_viewer
 
 # Create one or more external events
 #   POST /os-server-external-events
@@ -965,3 +967,21 @@ compute:servers:create:requested_destination: rule:compute_admin_all
 #   PUT /servers/{server_id}
 #   POST /servers/{server_id}/action (rebuild)
 #os_compute_api:servers:show:host_status:unknown-only: rule:system_admin_api
+
+# List SAP admin API endpoints
+# GET  /sap/endpoints
+# Intended scope(s): system, project
+#"os_compute_api:sap:endpoints:list": "rule:admin_api"
+os_compute_api:sap:endpoints:list: rule:context_is_admin or rule:context_is_cloud_viewer
+
+# vMotion a VM inside its cluster
+# POST  /sap/in_cluster_vmotion
+# Intended scope(s): system, project
+#"os_compute_api:sap:in-cluster-vmotion": "rule:admin_api"
+os_compute_api:sap:in-cluster-vmotion: rule:context_is_admin or rule:context_is_cloud_compute_migrate
+
+# Expose the current scheduler settings
+# GET  /sap/get_scheduler_settings
+# Intended scope(s): system, project
+#"os_compute_api:sap:get-scheduler-settings": "rule:admin_api"
+os_compute_api:sap:get-scheduler-settings: rule:context_is_admin or rule:context_is_cloud_viewer

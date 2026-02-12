@@ -1,74 +1,3 @@
-{{- define "nova.helpers.db_configuration" }}
-{{- $allArgs := index . 0}}
-{{- $dbType := index . 1 }}
-{{- $dbConfigSuffix := index . 2 }}
-{{- $dbConfigTypes := dict
-  "mariadb" "mariadb"
-  "pxc-db" "pxc_db"
-}}
-{{- $dbKeyBase := get $dbConfigTypes $dbType }}
-{{- if not $dbKeyBase }}
-  {{- fail (printf "Unsupported dbType '%s' in nova.helpers.db_configuration. Supported types are: %s" $dbType (keys $dbConfigTypes | join ", ")) }}
-{{- end }}
-{{- $dbKey := $dbKeyBase }}
-{{- if and $dbConfigSuffix (ne $dbConfigSuffix "") }}
-  {{- $dbKey = printf "%s_%s" $dbKeyBase $dbConfigSuffix }}
-{{- end }}
-{{- if not (hasKey $allArgs.Values $dbKey) }}
-  {{- fail (print "Database configuration for key " $dbKey " is missing") }}
-{{- end }}
-{{- get $allArgs.Values $dbKey | toYaml }}
-{{- end }}
-
-{{- define "api_db_path" }}
-  {{- $dbConfig := include "nova.helpers.db_configuration" (tuple . .Values.apidbType "api") | fromYaml }}
-  {{- $context := dict "target" "api" "defaultUsers" .Values.defaultUsersMariaDB "users" $dbConfig.users }}
-  {{- tuple . .Values.apidbName (include "nova.helpers.default_db_user" $context) (include "nova.helpers.default_user_password" $context) (include "nova.helpers.api_db_name" .) .Values.apidbType | include "utils.db_url" }}
-{{- end }}
-
-{{- define "cell0_db_path" }}
-  {{- $dbConfig := include "nova.helpers.db_configuration" (tuple . .Values.cell0dbType "") | fromYaml }}
-  {{- $context := dict "target" "cell0" "defaultUsers" .Values.defaultUsersMariaDB "users" $dbConfig.users }}
-  {{- tuple . .Values.cell0dbName (include "nova.helpers.default_db_user" $context) (include "nova.helpers.default_user_password" $context) (include "nova.helpers.cell01_db_name" .) .Values.cell0dbType | include "utils.db_url" }}
-{{- end }}
-
-{{- define "cell1_db_path" -}}
-  {{- $dbConfig := include "nova.helpers.db_configuration" (tuple . .Values.cell1dbType "") | fromYaml }}
-  {{- $context := dict "target" "cell1" "defaultUsers" .Values.defaultUsersMariaDB "users" $dbConfig.users }}
-  {{- tuple . .Values.dbName (include "nova.helpers.default_db_user" $context) (include "nova.helpers.default_user_password" $context) (include "nova.helpers.cell01_db_name" .) .Values.cell1dbType | include "utils.db_url" }}
-{{- end }}
-
-{{- define "cell1_transport_url" -}}
-  {{- $context := dict "target" "cell1" "defaultUsers" .Values.defaultUsersRabbitMQ "users" .Values.rabbitmq.users }}
-  {{- $data := dict
-      "user" (include "nova.helpers.default_rabbitmq_user" $context)
-      "password" (include "nova.helpers.default_user_password" $context)
-      "port" .Values.rabbitmq.port
-      "virtual_host" .Values.rabbitmq.virtual_host
-      "host" (printf "%s-rabbitmq" .Release.Name)
-    }}
-  {{- include "utils.rabbitmq_url" (tuple . $data) }}
-{{- end -}}
-
-{{- define "cell2_db_path" -}}
-  {{- $dbConfig := include "nova.helpers.db_configuration" (tuple . .Values.cell2dbType "cell2") | fromYaml }}
-  {{- $context := dict "target" "cell2" "defaultUsers" .Values.defaultUsersMariaDB "users" $dbConfig.users }}
-  {{- tuple . .Values.cell2dbName (include "nova.helpers.default_db_user" $context) (include "nova.helpers.default_user_password" $context) (include "nova.helpers.cell2_db_name" .) .Values.cell2dbType | include "utils.db_url" }}
-{{- end }}
-
-{{- define "cell2_transport_url" -}}
-  {{- $context := dict "target" "cell2" "defaultUsers" .Values.defaultUsersRabbitMQ "users" .Values.rabbitmq_cell2.users }}
-  {{- $data := dict
-      "user" (include "nova.helpers.default_rabbitmq_user" $context)
-      "password" (include "nova.helpers.default_user_password" $context)
-      "port" .Values.rabbitmq_cell2.port
-      "virtual_host" .Values.rabbitmq_cell2.virtual_host
-      "host" (printf "%s-%s-rabbitmq" .Release.Name .Values.cell2.name)
-    }}
-  {{- include "utils.rabbitmq_url" (tuple . $data) }}
-{{- end -}}
-
-
 {{- define "container_image_nova" -}}
   {{- $name := index . 1 -}}
   {{- with index . 0 -}}
@@ -116,115 +45,65 @@ annotations:
   {{- $name := index . 1 }}
   {{- with index . 0 }}
     {{- $bin := include (print .Template.BasePath "/bin/_" $name ".tpl") . }}
-    {{- $all := list $bin (include "utils.proxysql.job_pod_settings" . ) (include "utils.proxysql.volume_mount" . ) (include "utils.proxysql.container" . ) (include "utils.proxysql.volumes" .) (tuple . (dict) | include "utils.snippets.kubernetes_entrypoint_init_container") | join "\n" }}
+    {{- $all := list $bin (include (print .Template.BasePath "/etc-configmap.yaml") .) (include (print .Template.BasePath "/etc-secret.yaml") .) (include "utils.proxysql.job_pod_settings" . ) (include "utils.proxysql.volume_mount" . ) (include "utils.proxysql.container" . ) (include "utils.proxysql.volumes" .) (tuple . (dict) | include "utils.snippets.kubernetes_entrypoint_init_container") | join "\n" }}
     {{- $hash := empty .Values.proxysql.mode | ternary $bin $all | sha256sum }}
 {{- .Release.Name }}-{{ $name }}-{{ substr 0 4 $hash }}-{{ .Values.imageVersion | required "Please set nova.imageVersion or similar"}}
   {{- end }}
 {{- end }}
 
-{{/* TODO: Expose and use the logic in the rabbitmq subchart */}}
-{{- define "nova.helpers.rabbitmq_name" }}
-  {{- $vals := index . 1 }}
-  {{- with index . 0 }}
-    {{- $name := default "rabbitmq" $vals.nameOverride -}}
-    {{- printf "%s-%s" .Release.Name $name | trunc 63 | replace "_" "-" | trimSuffix "-" -}}
-  {{- end}}
-{{- end }}
-
-{{- define "nova.helpers.cell01_rabbitmq" }}
-  {{- tuple . .Values.rabbitmq | include "nova.helpers.rabbitmq_name" }}
-{{- end }}
-
-{{- define "nova.helpers.cell2_rabbitmq" }}
-  {{- tuple . .Values.rabbitmq_cell2 | include "nova.helpers.rabbitmq_name" }}
-{{- end }}
-
-{{- define "nova.helpers.api_db" }}
-  {{- if eq .Values.apidbType "mariadb" }}
-    {{- print .Values.mariadb_api.name "-mariadb" }}
-  {{- else if eq .Values.apidbType "pxc-db" }}
-    {{- print .Values.pxc_db_api.name "-db-haproxy" }}
-  {{- else }}
-    {{- fail (print "Unsupported database type for api_db") }}
-  {{- end }}
-{{- end }}
-
-{{- define "nova.helpers.api_db_name" }}
-  {{- if eq .Values.apidbType "mariadb" }}
-    {{- print .Values.mariadb_api.name }}
-  {{- else if eq .Values.apidbType "pxc-db" }}
-    {{- print .Values.pxc_db_api.name }}
-  {{- else }}
-    {{- fail (print "Unsupported database type for api_db") }}
-  {{- end }}
-{{- end }}
-
-{{- define "nova.helpers.cell01_db" }}
-  {{- if eq .Values.cell1dbType "mariadb" }}
-    {{- print .Values.mariadb.name "-mariadb" }}
-  {{- else if eq .Values.cell1dbType "pxc-db" }}
-    {{- print .Values.pxc_db.name "-db-haproxy" }}
-  {{- else }}
-    {{- fail (print "Unsupported database type for cell0 and cell1") }}
-  {{- end }}
-{{- end }}
-
-{{- define "nova.helpers.cell01_db_name" }}
-  {{- if eq .Values.cell1dbType "mariadb" }}
-    {{- print .Values.mariadb.name }}
-  {{- else if eq .Values.cell1dbType "pxc-db" }}
-    {{- print .Values.pxc_db.name }}
-  {{- else }}
-    {{- fail (print "Unsupported database type for cell0 and cell1") }}
-  {{- end }}
-{{- end }}
-
-{{- define "nova.helpers.cell2_db" }}
-  {{- if eq .Values.cell2dbType "mariadb" }}
-    {{- print .Values.mariadb_cell2.name "-mariadb" }}
-  {{- else if eq .Values.cell2dbType "pxc-db" }}
-    {{- print .Values.pxc_db_cell2.name "-db-haproxy" }}
-  {{- else }}
-    {{- fail (print "Unsupported database type for cell2") }}
-  {{- end }}
-{{- end }}
-
-{{- define "nova.helpers.cell2_db_name" }}
-  {{- if eq .Values.cell2dbType "mariadb" }}
-    {{- print .Values.mariadb_cell2.name }}
-  {{- else if eq .Values.cell2dbType "pxc-db" }}
-    {{- print .Values.pxc_db_cell2.name }}
-  {{- else }}
-    {{- fail (print "Unsupported database type for cell2") }}
-  {{- end }}
-{{- end }}
-
-{{- define "nova.helpers.cell01_services" }}
-  {{- print (include "nova.helpers.api_db" .) "," (include "nova.helpers.cell01_db" .) "," (include "nova.helpers.cell01_rabbitmq" .) }}
-{{- end }}
-
-{{- define "nova.helpers.cell1_services" }}
-  {{- print (include "nova.helpers.cell01_db" .) "," (include "nova.helpers.cell01_rabbitmq" .) }}
-{{- end }}
-
-{{- define "nova.helpers.cell2_services" }}
-  {{- if .Values.cell2.enabled }}
-    {{- print (include "nova.helpers.cell2_db" .) "," (include "nova.helpers.cell2_rabbitmq" .) }}
-  {{- end }}
+{{- define "nova.helpers.api_services" }}
+  {{- $services := list }}
+  {{- $services = append $services (include "nova.helpers.db_service" (tuple . "api")) }}
+  {{- $services = append $services (include "nova.helpers.db_service" (tuple . "cell0")) }}
+  {{- $services = append $services (include "nova.helpers.cell_rabbitmq_service" (tuple . "cell1")) }}
+  {{- $services | join "," }}
 {{- end }}
 
 {{- define "nova.helpers.database_services" }}
-  {{- include "nova.helpers.api_db" . }},{{ include "nova.helpers.cell01_db" . }}
-  {{- if .Values.cell2.enabled -}}
-    ,{{ include "nova.helpers.cell2_db" . }}
+  {{- $services := list (include "nova.helpers.db_service" (tuple . "api")) }}
+  {{- $envAll := . }}
+  {{- range $cellId := include "nova.helpers.cell_ids_nonzero" . | fromJsonArray }}
+    {{- $services = append $services (include "nova.helpers.db_service" (tuple $envAll $cellId)) }}
   {{- end }}
+  {{- $services | join "," }}
 {{- end }}
 
-{{- define "nova.helpers.all_cell_services" }}
-  {{- include "nova.helpers.cell01_services" . }}
-  {{- if .Values.cell2.enabled -}}
-    ,{{ include "nova.helpers.cell2_services" . }}
+{{- define "nova.helpers.database_and_rabbitmq_services" }}
+  {{- $services := list (include "nova.helpers.db_service" (tuple . "api")) }}
+  {{- $envAll := . }}
+  {{- range $cellId := include "nova.helpers.cell_ids_nonzero" . | fromJsonArray }}
+    {{- $services = append $services (include "nova.helpers.cell_services" (tuple $envAll $cellId)) }}
   {{- end }}
+  {{- $services | join "," }}
+{{- end }}
+
+{{- /*
+  Returns a JSON array of the cell IDs of all enabled cells, except for "cell0".
+
+  Example:
+  - include "nova.helpers.cell_ids_nonzero" . | fromJsonArray -> ["cell1", "cell2"]
+*/ -}}
+{{- define "nova.helpers.cell_ids_nonzero" }}
+  {{- $cellIds := list "cell1" }}
+  {{- if .Values.cell2.enabled }}
+    {{- $cellIds = append $cellIds "cell2" }}
+  {{- end }}
+  {{- if .Values.cell3.enabled }}
+    {{- $cellIds = append $cellIds "cell3" }}
+  {{- end }}
+  {{- $cellIds | toJson }}
+{{- end }}
+
+{{- /*
+  Returns a JSON array of the cell IDs of all enabled cells, including "cell0".
+
+  Example:
+  - include "nova.helpers.cell_ids_all" . | fromJsonArray -> ["cell0", "cell1", "cell2"]
+*/ -}}
+{{- define "nova.helpers.cell_ids_all" }}
+  {{- $cellIds := include "nova.helpers.cell_ids_nonzero" . | fromJsonArray }}
+  {{- $cellIds = prepend $cellIds "cell0" }}
+  {{- $cellIds | toJson }}
 {{- end }}
 
 {{- /*
@@ -260,17 +139,187 @@ Params:
   {{- index $user $key }}
 {{- end }}
 
-{{- define "nova.helpers.default_user_password" }}
-  {{- $params := dict "target" .target "users" .users "defaultUsers" .defaultUsers "key" "password" }}
+{{- /*
+  Database helper functions require the root context and a database ID as a parameter, e.g., (tuple . "cell1").
+  Database IDs are, e.g., "api", "cell0", "cell1", "cell2".
+*/ -}}
+
+{{- define "nova.helpers.db_type" }}
+  {{- $envAll := index . 0 }}
+  {{- $dbId := index . 1 }}
+  {{- $key := printf "%sdbType" $dbId }}
+  {{- $dbType := get $envAll.Values $key | required (printf "'.Values.%s' is required for database '%s'" $key $dbId) }}
+  {{- $supportedDbTypes := list "mariadb" "pxc-db" }}
+  {{- if not (has $dbType $supportedDbTypes) }}
+    {{- fail (printf "Unsupported database type '%s' for database '%s'. Supported are: %s" $dbType $dbId ($supportedDbTypes | join ", ")) }}
+  {{- end }}
+  {{- print $dbType }}
+{{- end }}
+
+{{- define "nova.helpers.db_chart_alias" }}
+  {{- $envAll := index . 0 }}
+  {{- $dbId := index . 1 }}
+  {{- $dbType := include "nova.helpers.db_type" . }}
+  {{- $aliasSuffix := "" }}
+  {{- if not (has $dbId (list "cell0" "cell1")) }}
+    {{- $aliasSuffix = printf "_%s" $dbId }}
+  {{- end }}
+  {{- $dbChartAlias := printf "%s%s" (replace "-" "_" $dbType) $aliasSuffix }}
+  {{- if not (hasKey $envAll.Values $dbChartAlias) }}
+    {{- fail (printf "No database chart '%s' found for database '%s'" $dbChartAlias $dbId ) }}
+  {{- end }}
+  {{- print $dbChartAlias }}
+{{- end }}
+
+{{- define "nova.helpers.db_name" }}
+  {{- $envAll := index . 0 }}
+  {{- $dbId := index . 1 }}
+  {{- $dbChartAlias := include "nova.helpers.db_chart_alias" . }}
+  {{- $dbValues := get $envAll.Values $dbChartAlias }}
+  {{- $name := $dbValues.name | required (printf "'.Values.%s.name' is required for database '%s'" $dbChartAlias $dbId) }}
+  {{- print $name }}
+{{- end }}
+
+{{- define "nova.helpers.db_service" }}
+  {{- $envAll := index . 0 }}
+  {{- $dbId := index . 1 }}
+  {{- $dbType := include "nova.helpers.db_type" . }}
+  {{- $dbName := include "nova.helpers.db_name" . }}
+  {{- if eq $dbType "mariadb" }}
+    {{- print $dbName "-mariadb" }}
+  {{- else if eq $dbType "pxc-db" }}
+    {{- print $dbName "-db-haproxy" }}
+  {{- else }}
+    {{- fail (printf "Unsupported database type '%s' for database '%s'. Supported are: mariadb, pxc-db" $dbType $dbId) }}
+  {{- end }}
+{{- end }}
+
+{{- define "nova.helpers.db_database" }}
+  {{- $envAll := index . 0 }}
+  {{- $dbId := index . 1 }}
+  {{- $dbChartAlias := include "nova.helpers.db_chart_alias" . }}
+  {{- $dbValues := get $envAll.Values $dbChartAlias }}
+  {{- $dbs := get $dbValues "databases" | required (printf "'.Values.%s.databases' is required for database '%s'" $dbChartAlias $dbId) }}
+  {{- $dbDatabase := "" }}
+  {{- if eq $dbId "cell0" }}
+    {{- $dbDatabase = "nova_cell0" }}
+  {{- else }}
+    {{- $dbDatabase = include "nova.helpers.db_name" . | replace "-" "_" }}
+  {{- end }}
+  {{- if not (has $dbDatabase $dbs) }}
+    {{- fail (printf "'.Values.%s.databases' does not contain database '%s'" $dbChartAlias $dbDatabase )}}
+  {{- end }}
+  {{- print $dbDatabase }}
+{{- end }}
+
+{{- define "nova.helpers.db_default_user" }}
+  {{- $envAll := index . 0 }}
+  {{- $dbId := index . 1 }}
+  {{- $dbValues := include "nova.helpers.db_chart_alias" . | get $envAll.Values }}
+  {{- $params := dict "target" $dbId "users" $dbValues.users "defaultUsers" $envAll.Values.defaultUsersMariaDB "key" "name" }}
   {{- include "nova.helpers.default_user_value" $params }}
 {{- end }}
 
-{{- define "nova.helpers.default_db_user" }}
-  {{- $params := dict "target" .target "users" .users "defaultUsers" .defaultUsers "key" "name" }}
+{{- define "nova.helpers.db_default_password" }}
+  {{- $envAll := index . 0 }}
+  {{- $dbId := index . 1 }}
+  {{- $dbValues := include "nova.helpers.db_chart_alias" . | get $envAll.Values }}
+  {{- $params := dict "target" $dbId "users" $dbValues.users "defaultUsers" $envAll.Values.defaultUsersMariaDB "key" "password" }}
   {{- include "nova.helpers.default_user_value" $params }}
 {{- end }}
 
-{{- define "nova.helpers.default_rabbitmq_user" }}
-  {{- $params := dict "target" .target "users" .users "defaultUsers" .defaultUsers "key" "user" }}
+{{- define "nova.helpers.db_url" }}
+  {{- $envAll := index . 0 }}
+  {{- $dbDatabase := include "nova.helpers.db_database" . }}
+  {{- $dbType := include "nova.helpers.db_type" . }}
+  {{- $dbName := include "nova.helpers.db_name" . }}
+  {{- $dbUser := include "nova.helpers.db_default_user" . }}
+  {{- $dbPassword := include "nova.helpers.db_default_password" . }}
+  {{- tuple $envAll $dbDatabase $dbUser $dbPassword $dbName $dbType | include "utils.db_url" }}
+{{- end }}
+
+{{- /*
+  Cell helper functions require the root context and a cell ID as a parameter, e.g., (tuple . "cell1"). Cell IDs are,
+  e.g., "cell0", "cell1", "cell2".
+*/ -}}
+
+{{- define "nova.helpers.cell_name" }}
+  {{- $envAll := index . 0 }}
+  {{- $cellId := index . 1 }}
+  {{- $cellName := "" }}
+  {{- if has $cellId (list "cell0" "cell1") }}
+    {{- $cellName = $cellId }}
+  {{- else }}
+    {{- $msgNameReq := printf "'.Values.%s.name' is required for cell '%s'" $cellId $cellId }}
+    {{- $cellValues := get $envAll.Values $cellId | required $msgNameReq }}
+    {{- $cellName = get $cellValues "name" | required $msgNameReq }}
+  {{- end }}
+  {{- print $cellName }}
+{{- end }}
+
+{{- define "nova.helpers.cell_services" }}
+  {{- $envAll := index . 0 }}
+  {{- $cellId := index . 1 }}
+  {{- $services := list }}
+  {{- $services = append $services (include "nova.helpers.db_service" (tuple $envAll $cellId)) }}
+  {{- $services = append $services (include "nova.helpers.cell_rabbitmq_service" (tuple $envAll $cellId)) }}
+  {{- $services | join "," }}
+{{- end }}
+
+{{- define "nova.helpers.cell_rabbitmq_chart_alias" }}
+  {{- $envAll := index . 0 }}
+  {{- $cellId := index . 1 }}
+  {{- $aliasSuffix := "" }}
+  {{- if not (has $cellId (list "cell0" "cell1")) }}
+    {{- $aliasSuffix = printf "_%s" $cellId }}
+  {{- end }}
+  {{- $rmqChartAlias := printf "%s%s" "rabbitmq" $aliasSuffix }}
+  {{- if not (hasKey $envAll.Values $rmqChartAlias) }}
+    {{- fail (printf "No RabbitMQ chart '%s' found for cell '%s'" $rmqChartAlias $cellId )}}
+  {{- end }}
+  {{- print $rmqChartAlias }}
+{{- end }}
+
+{{- define "nova.helpers.cell_rabbitmq_service" }}
+  {{- $envAll := index . 0 }}
+  {{- $rmqChartAlias := include "nova.helpers.cell_rabbitmq_chart_alias" . }}
+  {{- $rmqValues := get $envAll.Values $rmqChartAlias }}
+  {{- $rmqName := default "rabbitmq" $rmqValues.nameOverride }}
+  {{- printf "%s-%s" $envAll.Release.Name $rmqName | trunc 63 | replace "_" "-" | trimSuffix "-" }}
+{{- end }}
+
+{{- define "nova.helpers.cell_rabbitmq_default_user" }}
+  {{- $envAll := index . 0 }}
+  {{- $cellId := index . 1 }}
+  {{- $rmqValues := include "nova.helpers.cell_rabbitmq_chart_alias" . | get $envAll.Values }}
+  {{- $params := dict "target" $cellId "users" $rmqValues.users "defaultUsers" $envAll.Values.defaultUsersRabbitMQ "key" "user" }}
   {{- include "nova.helpers.default_user_value" $params }}
+{{- end }}
+
+{{- define "nova.helpers.cell_rabbitmq_default_password" }}
+  {{- $envAll := index . 0 }}
+  {{- $cellId := index . 1 }}
+  {{- $rmqValues := include "nova.helpers.cell_rabbitmq_chart_alias" . | get $envAll.Values }}
+  {{- $params := dict "target" $cellId "users" $rmqValues.users "defaultUsers" $envAll.Values.defaultUsersRabbitMQ "key" "password" }}
+  {{- include "nova.helpers.default_user_value" $params }}
+{{- end }}
+
+{{- define "nova.helpers.cell_rabbitmq_url" }}
+  {{- $envAll := index . 0 }}
+  {{- $cellId := index . 1 }}
+  {{- $rmqHostInfix := "" }}
+  {{- if not (has $cellId (list "cell0" "cell1")) }}
+    {{- $rmqHostInfix = printf "%s-" (include "nova.helpers.cell_name" .) }}
+  {{- end }}
+  {{- $rmqHost := printf "%s-%srabbitmq" $envAll.Release.Name $rmqHostInfix}}
+  {{- $rmqChartAlias := include "nova.helpers.cell_rabbitmq_chart_alias" . }}
+  {{- $rmqValues := get $envAll.Values $rmqChartAlias }}
+  {{- $data := dict
+      "user" (include "nova.helpers.cell_rabbitmq_default_user" .)
+      "password" (include "nova.helpers.cell_rabbitmq_default_password" .)
+      "port" $rmqValues.port
+      "virtual_host" $rmqValues.virtual_host
+      "host" $rmqHost
+    }}
+  {{- include "utils.rabbitmq_url" (tuple $envAll $data) }}
 {{- end }}

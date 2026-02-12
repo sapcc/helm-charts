@@ -4,7 +4,7 @@ global:
 operator:
   image:
     repository: keppel.global.cloud.sap/ccloud-europe-docker-pkg-dev-mirror/gardener-project/releases/gardener/operator
-    tag: v1.131.4 # also the gardener version, which will be used
+    tag: v1.135.1 # also the gardener version, which will be used
   imageVectorOverwrite: |
     images:
     # Gardener components
@@ -158,15 +158,84 @@ extensions:
     provisioner: "rancher.io/local-path"
     parameters: {}
   kubernetesVersions: []
+  aws:
+    version: v1.67.2
+    values:
+      image:
+        #tag:
+        #repository:
+    runtimeClusterValues:
+      image:
+        #tag:
+        #repository:
+    helm:
+      ociRepository:
+        repository: keppel.global.cloud.sap/ccloud-europe-docker-pkg-dev-mirror/gardener-project/releases/charts/gardener/extensions/provider-aws
   calico:
     enabled: false
+    version: v1.56.0
+    values:
+      image:
+        #tag:
+        #repository:
+    helm:
+      ociRepository:
+        repository: keppel.global.cloud.sap/ccloud-europe-docker-pkg-dev-mirror/gardener-project/releases/charts/gardener/extensions/networking-calico
+    imageVectorOverwrite:
+      images:
+      - name: calico-node
+        repository: keppel.global.cloud.sap/ccloud-quay-mirror/calico/node
+      - name: calico-cni
+        repository: keppel.global.cloud.sap/ccloud-quay-mirror/calico/cni
+      - name: bird-exporter
+        repository: keppel.global.cloud.sap/ccloud-ghcr-io-mirror/czerwonk/bird_exporter
+      - name: multus-cni
+        repository: keppel.global.cloud.sap/ccloud-ghcr-io-mirror/k8snetworkplumbingwg/multus-cni
+      - name: cni-plugins
+        repository: keppel.global.cloud.sap/ccloud-europe-docker-pkg-dev-mirror/gardener-project/releases/gardener/extensions/cni-plugins
+        tag: v1.54.0
+      - name: calico-typha
+        repository: keppel.global.cloud.sap/ccloud-quay-mirror/calico/typha
+      - name: calico-kube-controllers
+        repository: keppel.global.cloud.sap/ccloud-quay-mirror/calico/kube-controllers
+      - name: calico-cpa
+        repository: keppel.global.cloud.sap/ccloud-registry-k8s-io-mirror/cpa/cluster-proportional-autoscaler
+      - name: calico-cpva
+        repository: keppel.global.cloud.sap/ccloud-registry-k8s-io-mirror/cpa/cpvpa
   gardenlinux:
     enabled: false
+    version: v0.35.0
+    values:
+      image:
+        #tag:
+        #repository:
+    helm:
+      ociRepository:
+        repository: keppel.global.cloud.sap/ccloud-europe-docker-pkg-dev-mirror/gardener-project/releases/charts/gardener/extensions/os-gardenlinux
   flatcar:
     enabled: false
+    version: v1.27.0
+    values:
+      image:
+        #tag:
+        #repository:
+    helm:
+      ociRepository:
+        repository: keppel.global.cloud.sap/ccloud-europe-docker-pkg-dev-mirror/gardener-project/releases/charts/gardener/extensions/os-coreos
   openstack:
     enabled: false
-    version: 1.47.0
+    version: v1.52.0
+    values:
+      image:
+        #tag:
+        #repository:
+    runtimeClusterValues:
+      image:
+        #tag:
+        #repository:
+    helm:
+      ociRepository:
+        repository: keppel.global.cloud.sap/ccloud-europe-docker-pkg-dev-mirror/gardener-project/releases/charts/gardener/extensions/provider-openstack
     machineTypes: []
     machineImages: []
     providerConfig:
@@ -178,15 +247,34 @@ extensions:
       repository: ghcr.io/ironcore-dev/gardener-extension-provider-ironcore-metal
       tag: sha-354b215
     imageVectorOverwrite:
-      ccm:
-        repository: ghcr.io/ironcore-dev/metal-cloud-controller-manager
-        tag: sha-c9b7c07
-      mcm:
-        repository: ghcr.io/ironcore-dev/machine-controller-manager-provider-ironcore-metal
-        tag: sha-068b0c7
+      images:
+        - name: cloud-controller-manager
+          sourceRepository: github.com/ironcore-dev/cloud-provider-metal
+          repository: ghcr.io/ironcore-dev/metal-cloud-controller-manager
+          tag: sha-c9b7c07
+        - name: machine-controller-manager-provider-ironcore-metal
+          sourceRepository: github.com/ironcore-dev/machine-controller-manager-provider-ironcore-metal
+          repository: ghcr.io/ironcore-dev/machine-controller-manager-provider-ironcore-metal
+          tag: sha-068b0c7
     regions: []
   auditing:
     enabled: false
+    url: ""
+    version: v0.2.0
+    runtimeCluster:
+      helm:
+        ociRepository:
+          #tag:
+          repository: keppel.global.cloud.sap/ccloud-europe-docker-pkg-dev-mirror/gardener-project/releases/charts/gardener/extensions/auditing-admission-runtime
+    virtualCluster:
+      helm:
+        ociRepository:
+          #tag:
+          repository: keppel.global.cloud.sap/ccloud-europe-docker-pkg-dev-mirror/gardener-project/releases/charts/gardener/extensions/auditing-admission-application
+    helm:
+      ociRepository:
+        #tag:
+        repository: keppel.global.cloud.sap/ccloud-europe-docker-pkg-dev-mirror/gardener-project/releases/charts/gardener/extensions/auditing
 gardenlet:
   enabled: false
   additionalSeedRegions: []
@@ -198,6 +286,7 @@ gardenlet:
   # applicationCredentialSecretOverride:
   # loadBalancerServices:
 cloudProfileSync:
+  enabled: true
   replicaCount: 1
   topologyKey: ""
   image:
