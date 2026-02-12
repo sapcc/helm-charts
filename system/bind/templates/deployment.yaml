@@ -54,6 +54,8 @@ spec:
                     {{ if eq .Values.name (printf "bind2-global-%s" (.Values.global.region)) }}- bind1-global-{{.Values.global.region}}{{ end }}
               topologyKey: "failure-domain.beta.kubernetes.io/zone"
         {{ end }} 
+      nodeSelector:
+        topology.kubernetes.io/zone: {{ .Values.global.region }}{{ .Values.failure_domain_zone }}
       containers:
       - name: {{ .Release.Name }}
         image: {{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{.Values.images.bind.image}}:{{ .Values.images.bind.image_tag}}
