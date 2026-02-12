@@ -136,5 +136,7 @@ max_share_server_size  = {{ $share.max_share_server_size | default $context.Valu
 filter_function = {{ $share.filter_function | default "stats.provisioned_capacity_gb / stats.total_capacity_gb <= 0.7" }}
 goodness_function = {{ $share.goodness_function | default "100 - capabilities.utilization" }}
 
+# Disable concurrency by default, enable it by setting to a positive value
+share_service_concurrency = {{ $context.Values.share_service_concurrency | default 1 }}
 {{- end -}}
 {{- end }}

@@ -20,10 +20,6 @@ spec:
   clusterName: {{ $plugin.cluster }}
   displayName: ingress nginx {{ $plugin.cluster }}
   optionValues:
-  - name: global.image.registry
-    value: keppel.global.cloud.sap/ccloud-registry-k8s-io-mirror
-  - name: controller.admissionWebhooks.patch.image.registry
-    value: keppel.global.cloud.sap/ccloud-registry-k8s-io-mirror
   - name: controller.ingressClassResource.default
     value: true
   - name: controller.scope.enabled
@@ -55,6 +51,9 @@ spec:
   - name: controller.affinity
     value: {{ toYaml $plugin.affinity | nindent 6 }}
 {{- end }}
-  pluginDefinition: ingress-nginx
+  pluginDefinitionRef:
+    kind: PluginDefinition
+    name:  ingress-nginx
   releaseNamespace: kube-system
+  deletionPolicy: Retain
 {{- end}}
