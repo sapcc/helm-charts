@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.32.0 - 2026/02/10
+* MariaDB version updated to [10.11.16](https://mariadb.com/docs/release-notes/community-server/10.11/10.11.16)
+* `maria-back-me-up` updated to `20260210150801`
+* `user-credential-updater` updated to `python3.13-alpine3.23-20260207085008`
+* `pod-readiness` updated to `20260210104857`
+* `go-maria-sync` updated to `20260205163034`
+* chart version bumped
+
 ## v0.31.0 - 2025/11/26
 * Fixed `go-maria-sync` preStop hook command to use `sh` instead of `bash`
 * Added an option to scale down `go-maria-sync` statefulset instead of removing it.
