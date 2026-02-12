@@ -10,6 +10,10 @@ metadata:
     app: {{ .Release.Name }}
 spec:
   replicas: 1
+{{- if has "ReadWriteOnce" (concat .Values.pvc.bind.accessModes .Values.pvc.sshd.accessModes ) }}
+  strategy:
+    type: Recreate
+{{- end }}
   selector:
     matchLabels:
       app.kubernetes.io/instance: {{ .Release.Name }}
