@@ -41,8 +41,11 @@ spec:
         value: {{ .Values.global.quayIoMirror }}/jetstack/cert-manager-webhook
       - name: cert-manager.cainjector.image.repository
         value: {{ .Values.global.quayIoMirror }}/jetstack/cert-manager-cainjector
-    pluginDefinition: cert-manager
+    pluginDefinitionRef:
+      kind: PluginDefinition
+      name:  cert-manager
     releaseNamespace: kube-system
+    deletionPolicy: Retain
 {{- if .Values.certManager.overrideShootNetworkPolicy }}
     clusterOptionOverrides:
 {{- range $cluster := .Values.certManager.overrideShootNetworkPolicy }}
