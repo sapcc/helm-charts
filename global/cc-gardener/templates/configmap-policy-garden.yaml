@@ -6,14 +6,94 @@ metadata:
   name: audit-policy-cp-garden
   namespace: garden
 data:
-  policy: |-
+  policy: |
     apiVersion: audit.k8s.io/v1
     kind: Policy
     metadata:
       name: audit-policy-cp-garden
     omitStages:
-      - "RequestReceived"
+    - RequestReceived
     rules:
-      - level: Metadata
-        verbs: ["create", "update", "patch", "delete"]
+    - level: Request
+      namespaces:
+      - garden
+      verbs:
+      - create
+      - delete
+      - deletecollection
+      - patch
+      - update
+      resources:
+      - group: core.gardener.cloud
+        resources:
+        - shoots
+    - level: Request
+      verbs:
+      - create
+      - delete
+      - deletecollection
+      - patch
+      - update
+      resources:
+      - group: core.gardener.cloud
+        resources:
+        - cloudprofiles
+        - seeds
+    - level: None
+      userGroups:
+      - gardener.cloud:system:seeds
+      - system:nodes
+    - level: None
+      users:
+      - gardener
+      - gardener.cloud:monitoring
+      - gardener.cloud:monitoring:kube-state-metrics
+      - gardener.cloud:monitoring:prometheus
+      - garden.sapcloud.io:monitoring
+      - garden.sapcloud.io:monitoring:kube-state-metrics
+      - garden.sapcloud.io:monitoring:prometheus
+      - kubelet
+      - system:apiserver
+      - system:kube-addon-manager
+      - system:kube-aggregator
+      - system:kube-controller-manager
+      - system:kube-proxy
+      - system:kube-scheduler
+      - system:serviceaccount:default:app-hub-controller
+      - system:serviceaccount:kube-system:gardener-controller-manager
+      - system:serviceaccount:kube-system:gardener-dashboard
+      - system:serviceaccount:garden:gardener-extension-admission-gcp
+      - system:serviceaccount:garden:gardener-extension-validator-alicloud
+      - system:serviceaccount:garden:gardener-extension-validator-aws
+      - system:serviceaccount:garden:gardener-extension-validator-azure
+      - system:serviceaccount:garden:gardener-extension-validator-openstack
+      - system:serviceaccount:kube-system:gardener-metrics-exporter
+      - system:serviceaccount:kube-system:gardener-scheduler
+      - system:serviceaccount:kube-system:gardener-scheduler
+      - system:serviceaccount:garden:secret-binding-distributor
+      - system:serviceaccount:kube-system:terminal-controller-manager
+      - system:serviceaccount:kube-system:generic-garbage-collector
+      - system:serviceaccount:kube-system:namespace-controller
+      - system:serviceaccount:kube-system:landscape-setup-user
+      - virtual-garden:client:admin
+    - level: None
+      nonResourceURLs:
+      - /healthz*
+      - /version
+      - /openapi/*
+    - level: None
+      resources:
+      - group: ""
+        resources:
+        - events
+    - level: None
+      verbs:
+      - get
+      - list
+      - watch
+    - level: Metadata
+      resources:
+      - group: core.gardener.cloud
+        resources:
+        - controllerdeployments
 {{- end }}
