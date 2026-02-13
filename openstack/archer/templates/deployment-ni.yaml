@@ -31,7 +31,7 @@ spec:
         kubectl.kubernetes.io/default-container: archer-agent-ni
         {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
         linkerd.io/inject: enabled
-        config.linkerd.io/skip-inbound-ports: "{{ $env.service_port }}"
+        config.linkerd.io/skip-inbound-ports: "{{ range $env.service_ports }}{{ . }},{{ end }}"
         {{- end }}
         {{- toYaml . | nindent 8 }}
       {{- end }}
@@ -122,8 +122,6 @@ spec:
             - name: etc-archer
               mountPath: /etc/archer
               readOnly: true
-            - name: socat-proxy
-              mountPath: /var/run/socat-proxy
         - name: neutron-linuxbridge-agent
           image: "{{ $.Values.global.registry }}/loci-neutron:{{ $.Values.image.neutron_version | default "latest" }}"
           imagePullPolicy: IfNotPresent
@@ -167,20 +165,7 @@ spec:
               mountPath: /etc/sudoers
               subPath: sudoers
               readOnly: true
-        - name: socat
-          image: "{{ $.Values.global.dockerHubMirror }}/alpine/socat:{{ $.Values.image.socat_version | default "latest" }}"
-          imagePullPolicy: IfNotPresent
-          args:
-            - "UNIX-LISTEN:/var/run/socat-proxy/proxy.sock,fork,reuseaddr,unlink-early,user=nobody,group=nobody,mode=777"
-            - "TCP:{{ $env.cp_endpoint }}:{{ $env.cp_port }}"
-          resources:
-            {{- toYaml $.Values.resources.socat | nindent 12 }}
-          volumeMounts:
-            - name: socat-proxy
-              mountPath: /var/run/socat-proxy
       volumes:
-        - name: socat-proxy
-          emptyDir: { }
         - name: modules
           hostPath:
             path: /lib/modules
