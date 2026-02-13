@@ -985,3 +985,5 @@ os_compute_api:sap:in-cluster-vmotion: rule:context_is_admin or rule:context_is_
 # Intended scope(s): system, project
 #"os_compute_api:sap:get-scheduler-settings": "rule:admin_api"
 os_compute_api:sap:get-scheduler-settings: rule:context_is_admin or rule:context_is_cloud_viewer
+
+# keep the newline at the end, otherwise helm diff will not render changes to the file correctly!
