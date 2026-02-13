@@ -20,7 +20,7 @@ groups:
       # [qa-de-1-aci-2244-bb089][Server] VPC down
       - alert: VPCDown
         expr: |
-          sum by (node_name, node_intf, device_name) (aci_obs_vpc_down{caused_by_id="", deduplicated="", node_status=~"active|", device_status=~"active|"} > 0)
+          sum by (node_name, node_intf, device_name) (aci_obs_vpc_down{caused_by_id="", deduplicated="", device_role!~"(?i)^(Neutron Router|runtime-controlplane|runtime-worker|Server|HSM)$", node_status=~"active|", device_status=~"active|"} > 0)
         for: 5m
         labels:
           severity: warning
@@ -30,11 +30,25 @@ groups:
           summary: "VPC Faults"
           description: "[{{ $labels.node_name }}][{{ $labels.node_intf }}][{{ $labels.device_name }}] VPC down"
 
+      # F1296 (!)
+      # [qa-de-1-aci-2244-bb089][Server] VPC for Neutron Routers (*a, *b) down
+      - alert: VPCDownNeutronRouters
+        expr: |
+          sum by (cluster, device_name) (label_replace(aci_obs_vpc_down{device_role="Neutron Router", device_name=~".*a", device_status!="decommissioning", deduplicated=""} > 0, "device_name", "$1", "device_name", "(.*)a") AND on (cluster, device_name) label_replace(aci_obs_vpc_down{ device_role="Neutron Router", device_name=~".*b", device_status!="decommissioning", deduplicated=""} > 0, "device_name", "$1", "device_name", "(.*)b"))
+        for: 5m
+        labels:
+          severity: warning
+          support_group: network-data-aci-obs
+          aci_obs_group: VpcFaultGroup
+        annotations:
+          summary: "VPC Faults"
+          description: "[{{ $labels.node_name }}][{{ $labels.node_intf }}][{{ $labels.device_name }}] VPC for Neutron Routers (*a, *b) down"
+
       # F2705 (!)
       # [qa-de-1-aci-2299][eth1/7][QA-DE-1-FW203a] VPC interface impaired
       - alert: InterfaceVPCImpaired 
         expr: |
-          sum by (node_name, node_intf, device_name) (aci_obs_intf_vpc_impaired{caused_by_id="", deduplicated="", node_status=~"active|", device_status=~"active|"} > 0)
+          sum by (node_name, node_intf, device_name) (aci_obs_intf_vpc_impaired{caused_by_id="", deduplicated="", device_role!~"(?i)^(Neutron Router|runtime-controlplane|runtime-worker|Server)$", node_status=~"active|", device_status=~"active|"} > 0)
         for: 5m
         labels:
           severity: warning

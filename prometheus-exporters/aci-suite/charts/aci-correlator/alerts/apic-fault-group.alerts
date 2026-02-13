@@ -45,10 +45,10 @@ groups:
           description: "[{{ $labels.node_name }}] Controller is not available"
 
       # F0413
-      # [QA-DE-1-CCACI-1201] Missing PSU: Slot 4
+      # [QA-DE-1-CCACI-1201] Missing PSU: Slot 3
       - alert: ApicPsuFailed
         expr: |
-          sum by (node_name, psu_slot) (aci_obs_psu_failed{caused_by_id="", deduplicated="", node_status=~"active|", device_status=~"active|"} > 0)
+          sum by (node_name, psu_slot) (aci_obs_psu_failed{caused_by_id="", deduplicated="", psu_slot=~"^[0-3]$", node_status=~"active|", device_status=~"active|"} > 0)
         for: 5m
         labels:
           severity: warning
