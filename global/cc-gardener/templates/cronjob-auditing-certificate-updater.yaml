@@ -27,9 +27,6 @@ spec:
             - secret_garden=$(kubectl -n garden create secret generic auditing-mtls --save-config --dry-run=client --from-file=client.crt=/etc/auditing/certificate/client.crt --from-file=client.key=/etc/auditing/certificate/client.key -o yaml | base64 -w0);
               kubectl -n garden patch secret mr-s-auditing-mtls --type=json -p="[{'op':'add','path':'/data/objects.yaml','value':'$secret_garden'}]";
 
-              secret_garden_ccloud=$(kubectl -n garden-cloud create secret generic auditing-mtls --save-config --dry-run=client --from-file=client.crt=/etc/auditing/certificate/client.crt --from-file=client.key=/etc/auditing/certificate/client.key -o yaml | base64 -w0);
-              kubectl -n garden patch secret mr-s-auditing-mtls-ccloud --type=json -p="[{'op':'add','path':'/data/objects.yaml','value':'$secret_garden_ccloud'}]";
-
               secret_garden_compute=$(kubectl -n garden-compute create secret generic auditing-mtls --save-config --dry-run=client --from-file=client.crt=/etc/auditing/certificate/client.crt --from-file=client.key=/etc/auditing/certificate/client.key -o yaml | base64 -w0);
               kubectl -n garden patch secret mr-s-auditing-mtls-compute --type=json -p="[{'op':'add','path':'/data/objects.yaml','value':'$secret_garden_compute'}]";
 
