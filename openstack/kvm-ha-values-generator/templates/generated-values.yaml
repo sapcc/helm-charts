@@ -1,0 +1,24 @@
+# kvm-ha-service-deps/templates/generated-values.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-generated-values
+data:
+  values.yaml: |
+    kvmHAservice:
+      pod:
+        extraVolumes:
+          {{- include "utils.trust_bundle.volumes" . | trim | nindent 10 }}
+        extraVolumeMounts:
+          {{- include "utils.trust_bundle.volume_mount" . | trim | nindent 10 }}
+    openstack:
+      password: {{ .Values.openstack.password | include "resolve_secret" }}
+    postgresql:
+      auth:
+        username: {{ .Values.postgresql.auth.username | include "resolve_secret" | quote }}
+        password: {{ .Values.postgresql.auth.password | include "resolve_secret" | quote }}
+    redfish:
+      username: {{ .Values.redfish.username | quote }}
+      password: {{ .Values.redfish.password | include "resolve_secret" | quote }}
+  config.yaml: |
+    {{ include (print .Template.BasePath "/etc/_config.yaml.tpl") . | nindent 4 }}
