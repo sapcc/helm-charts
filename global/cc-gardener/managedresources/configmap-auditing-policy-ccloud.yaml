@@ -1,9 +1,10 @@
-{{ if and .Values.extensions.auditing.enabled (has "garden-compute" .Values.extensions.auditing.additionalNamespaces) -}}
+# TO BE DELETED when we get rid of the 200 cluster
+{{ if and .Values.extensions.auditing.enabled (has "garden-ccloud" .Values.extensions.auditing.additionalNamespaces) -}}
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: audit-policy-cp
-  namespace: garden-compute
+  namespace: garden-ccloud
 data:
   policy: |-
     apiVersion: audit.k8s.io/v1
@@ -50,14 +51,4 @@ data:
             resources: ["nodes"]
       - level: Metadata
         verbs: ["create", "update", "patch", "delete"]
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: auditing-mtls-compute
-  namespace: garden-compute
-type: Opaque
-data:
-  client.crt: ""
-  client.key: ""
 {{- end }}
