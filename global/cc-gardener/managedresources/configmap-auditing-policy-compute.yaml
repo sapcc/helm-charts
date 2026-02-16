@@ -1,9 +1,9 @@
-{{ if and .Values.extensions.auditing.enabled (has "garden-storage" .Values.extensions.auditing.additionalNamespaces) -}}
+{{ if and .Values.extensions.auditing.enabled (has "garden-compute" .Values.extensions.auditing.additionalNamespaces) -}}
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: audit-policy-cp
-  namespace: garden-storage
+  namespace: garden-compute
 data:
   policy: |-
     apiVersion: audit.k8s.io/v1
@@ -50,14 +50,4 @@ data:
             resources: ["nodes"]
       - level: Metadata
         verbs: ["create", "update", "patch", "delete"]
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: auditing-mtls-storage
-  namespace: garden-storage
-type: Opaque
-data:
-  client.crt: ""
-  client.key: ""
 {{- end }}
