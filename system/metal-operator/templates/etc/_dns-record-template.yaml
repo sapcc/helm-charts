@@ -1,7 +1,11 @@
-apiVersion: v1
-kind: ConfigMap
+apiVersion: disco.stable.sap.cc/v1
+kind: Record
+
 metadata:
-  name: dns-record-template
+  name: {{ .Hostname }}
   namespace: {{ .Release.Namespace }}
-data:
-  bmc_dns.yaml: {{ include (print .Template.BasePath "/etc/_dns-record-template.yaml") }}
+spec:
+  type: A
+  record: {{ .IP }}
+  hosts:
+    - {{ .Hostname }}
