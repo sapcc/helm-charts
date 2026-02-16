@@ -1,0 +1,68 @@
+{{ if .Values.extensions.auditing.enabled -}}
+kind: Namespace
+apiVersion: v1
+metadata:
+  name: garden-compute
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: audit-policy-cp
+  namespace: garden-compute
+data:
+  policy: |-
+    apiVersion: audit.k8s.io/v1
+    kind: Policy
+    metadata:
+      name: audit-policy-cp
+    omitStages:
+      - "RequestReceived"
+    rules:
+      - level: Metadata
+        verbs: ["create"]
+        resources:
+          - group: "authentication.k8s.io"
+            resources: ["tokenreviews"]
+          - group: "authorization.k8s.io"
+            resources: ["subjectaccessreviews"]
+      - level: Request
+        verbs: ["get", "list", "watch"]
+        resources:
+          - group: ""
+            resources: ["secrets"]
+      - level: Metadata
+        verbs: ["get", "list", "watch"]
+        resources:
+          - group: ""
+            resources: ["configmaps"]
+      - level: Metadata
+        resources:
+          - group: "apps"
+            resources: ["deployments", "daemonsets", "statefulsets"]
+          - group: ""
+            resources: ["pods"]
+      - level: Metadata
+        resources:
+          - group: "rbac.authorization.k8s.io"
+            resources:
+              - "roles"
+              - "rolebindings"
+              - "clusterroles"
+              - "clusterrolebindings"
+      - level: Metadata
+        resources:
+          - group: ""
+            resources: ["nodes"]
+      - level: Metadata
+        verbs: ["create", "update", "patch", "delete"]
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: auditing-mtls-compute
+  namespace: garden-compute
+type: Opaque
+data:
+  client.crt: ""
+  client.key: ""
+{{- end }}
