@@ -1,0 +1,64 @@
+# TO BE DELETED when we get rid of the 200 cluster
+{{ if and .Values.extensions.auditing.enabled (has "garden-ccloud" .Values.extensions.auditing.additionalNamespaces) -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: audit-policy-cp
+  namespace: garden-ccloud
+data:
+  policy: |-
+    apiVersion: audit.k8s.io/v1
+    kind: Policy
+    metadata:
+      name: audit-policy-cp
+    omitStages:
+      - "RequestReceived"
+    rules:
+      - level: Metadata
+        verbs: ["create"]
+        resources:
+          - group: "authentication.k8s.io"
+            resources: ["tokenreviews"]
+          - group: "authorization.k8s.io"
+            resources: ["subjectaccessreviews"]
+      - level: Request
+        verbs: ["get", "list", "watch"]
+        resources:
+          - group: ""
+            resources: ["secrets"]
+      - level: Metadata
+        verbs: ["get", "list", "watch"]
+        resources:
+          - group: ""
+            resources: ["configmaps"]
+      - level: Metadata
+        resources:
+          - group: "apps"
+            resources: ["deployments", "daemonsets", "statefulsets"]
+          - group: ""
+            resources: ["pods"]
+      - level: Metadata
+        resources:
+          - group: "rbac.authorization.k8s.io"
+            resources:
+              - "roles"
+              - "rolebindings"
+              - "clusterroles"
+              - "clusterrolebindings"
+      - level: Metadata
+        resources:
+          - group: ""
+            resources: ["nodes"]
+      - level: Metadata
+        verbs: ["create", "update", "patch", "delete"]
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: auditing-mtls-ccloud
+  namespace: garden-ccloud
+type: Opaque
+data:
+  client.crt: ""
+  client.key: ""
+{{- end }}
