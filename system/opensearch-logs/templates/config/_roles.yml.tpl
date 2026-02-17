@@ -34,6 +34,7 @@ data:
     - "storage-datastream"
     - "alerts-datastream"
     - "deployments-datastream"
+    - "cronus-datastream"
     allowed_actions:
     - "indices:admin/template/get"
     - "indices:admin/template/put"
