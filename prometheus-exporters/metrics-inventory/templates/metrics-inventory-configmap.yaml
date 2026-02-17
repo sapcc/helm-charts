@@ -1,0 +1,36 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: metrics-inventory-config
+data:
+  config.yaml: | 
+    # This variable specifies the port on which the metrics exporter is exposed
+    export_port: {{ .Values.metrics.port_number }}
+    
+    # This variable specifies the path where files for short term storage are saved
+    # follows regex folder/folder/folder
+    filepath: ./store
+    
+    # This variable specifies the time between data fetches in seconds
+    fetch_interval: {{ .Values.metrics.fetch_interval | default 60 }}
+    
+    # This variable specifies the time between metric exports in seconds
+    export_interval: {{ .Values.metrics.export_interval | default 30 }}
+    
+    # This variable specifies the endpoints from which data is fetched
+    # example: prometheus-infra-collector.infra-monitoring.svc.cluster.local
+    endpoints:
+    {{- range .Values.metrics.endpoints }}
+      - {{ . }}.svc.cluster.local
+    {{- end }}
+    
+    # This variable specifies the endpoints for testing
+    # Each endpoint points to a file containing the responses to api requests for prometheus targets and rules
+    # example file structure: /data/prom1/targets.json, rules.json
+    endpoints_testing:
+      - ./data/prom1
+      - ./data/prom2
+      - ./data/prom3
+    
+    # This variable resolves whether testing mode is on or off
+    testing_mode: {{ .Values.metrics.testing_mode | default false }} 

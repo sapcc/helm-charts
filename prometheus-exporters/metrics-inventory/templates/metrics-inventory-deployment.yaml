@@ -1,0 +1,53 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: metrics-inventory 
+  namespace: infra-monitoring
+  annotations:
+    vpa-butler.cloud.sap/update-mode: Auto
+spec:
+  selector:
+    matchLabels:
+      app: metrics-inventory 
+      type: exporter
+  template:
+    metadata:
+      labels:
+        app: metrics-inventory
+        type: exporter
+      annotations:
+        prometheus.io/targets: {{ required ".Values.metrics.prometheus missing" .Values.metrics.prometheus | quote }}
+        {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+        linkerd.io/inject: enabled
+        {{- end }}
+        kubectl.kubernetes.io/default-container: metrics-inventory
+    spec:
+      containers:
+        - name: metrics-inventory
+          image: {{ required ".Values.global.registry variable missing" .Values.global.registry }}/{{ .Values.metrics.image.name }}:{{ .Values.metrics.image.tag }}
+          ports:
+            - name: metrics
+              containerPort: {{ .Values.metrics.port_number }}
+          livenessProbe:
+            httpGet:
+              path: /metrics
+              port: {{ .Values.metrics.port_number }}
+            initialDelaySeconds: 30
+            timeoutSeconds: 10
+            periodSeconds: 15
+          env:
+          - name: CONFIG_FILE
+            value: /config/config.yaml 
+          volumeMounts:
+          - name: config 
+            mountPath: "/config/"
+            readOnly: true
+          - name: metrics-store
+            mountPath: /store
+      volumes:
+        - name: config
+          configMap:
+            name: metrics-inventory-config
+        - name: metrics-store
+          persistentVolumeClaim:
+            claimName: metrics-inventory-store
