@@ -69,8 +69,8 @@ l2_policy = {{ $pc_policy_group.l2_policy }}
 
 {{- range $i, $aci_hostgroup := .Values.aci.aci_hostgroups.hostgroups }}
 [aci-hostgroup:{{ $aci_hostgroup.name }}]
-hosts = {{ $aci_hostgroup.hosts | join "," }}
-bindings = {{ $aci_hostgroup.bindings | join "," }}
+hosts ={{ if $aci_hostgroup.hosts }} {{ $aci_hostgroup.hosts | join "," }}{{ end }}
+bindings ={{ if $aci_hostgroup.bindings }} {{ $aci_hostgroup.bindings | join "," }}{{ end }}
 physical_domain = {{ default $.Values.aci.aci_hostgroups.physical_domains $aci_hostgroup.physical_domains | join "," }}
 physical_network = {{ default $aci_hostgroup.name $aci_hostgroup.physical_network }}
 segment_type  = {{ $.Values.aci.aci_hostgroups.segment_type }}
