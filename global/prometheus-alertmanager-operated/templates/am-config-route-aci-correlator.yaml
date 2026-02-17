@@ -1,0 +1,32 @@
+apiVersion: monitoring.coreos.com/v1alpha1
+kind: AlertmanagerConfig
+metadata:
+  name: route-aci-correlator
+  labels:
+    alertmanager: {{ include "alertmanagerRelease.name" . }}
+spec:
+  route:
+    # Applies ONLY to AutomationGroup alerts
+    receiver: aci_correlator_prod
+    matchers:
+      - name: aci_obs_group
+        matchType: "="
+        value: "AutomationGroup"
+    routes:
+      # QA specific routing
+      - receiver: aci_correlator_qa
+        matchers:
+          - name: region
+            matchType: "="
+            value: qa-de-1
+
+  receivers:
+    - name: aci_correlator_qa
+      webhookConfigs:
+        - sendResolved: true
+          url: https://aci-correlator-internal.scaleout.qa-de-1.cloud.sap/api/awx/webhook
+
+    - name: aci_correlator_prod
+      webhookConfigs:
+        - sendResolved: true
+          url: https://aci-correlator-internal.scaleout.eu-de-1.cloud.sap/api/awx/webhook
