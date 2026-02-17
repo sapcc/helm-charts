@@ -15,6 +15,7 @@ spec:
     routes:
       # QA specific routing
       - receiver: aci_correlator_qa
+        continue: false
         matchers:
           - name: region
             matchType: "="
@@ -24,9 +25,24 @@ spec:
     - name: aci_correlator_qa
       webhookConfigs:
         - sendResolved: true
-          url: https://aci-correlator-internal.scaleout.qa-de-1.cloud.sap/api/awx/webhook
+          urlSecret:
+            name: alertmanager-{{ include "alertmanagerRelease.name" . }}-aci-correlator-secrets
+            key: qa_url
 
     - name: aci_correlator_prod
       webhookConfigs:
         - sendResolved: true
-          url: https://aci-correlator-internal.scaleout.eu-de-1.cloud.sap/api/awx/webhook
+          urlSecret:
+            name: alertmanager-{{ include "alertmanagerRelease.name" . }}-aci-correlator-secrets
+            key: prod_url
+---
+kind: Secret
+apiVersion: v1
+type: Opaque
+metadata:
+  name: alertmanager-{{ include "alertmanagerRelease.name" . }}-aci-correlator-secrets
+  labels:
+    alertmanager: {{ include "alertmanagerRelease.name" . }}
+data:
+  qa_url: {{ required ".Values.aciCorrelator.qaWebhookURL undefined" .Values.aciCorrelator.qaWebhookURL | b64enc | quote }}
+  prod_url: {{ required ".Values.aciCorrelator.prodWebhookURL undefined" .Values.aciCorrelator.prodWebhookURL | b64enc | quote }}
