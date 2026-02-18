@@ -1,0 +1,49 @@
+groups:
+  - name: aci-exporter-automation.alerts
+    rules:      
+      
+      # F0413
+      # [QA-DE-1-CCACI-1201] Missing PSU: Slot 4
+      #- alert: ApicPsuFailed
+      #  expr: |
+      #    sum by (id, node_name, psu_slot) (aci_obs_psu_failed{caused_by_id="", deduplicated="", id!="", node_status=~"active|", device_status=~"active|"} > 0)
+      #  for: 5m
+      #  labels: 
+      #    severity: warning
+      #    support_group: network-data-aci-obs
+      #    aci_obs_group: AutomationGroup
+      #    job_template_id: 7958
+      #  annotations:
+      #    id: "{{ $labels.id }}" 
+      #    summary: "APIC Faults"
+      #    description: "[{{ $labels.node_name }}] Missing PSU: Slot {{$labels.psu_slot}}"
+      
+      # F1529
+      # [qa-de-1-aci-7101][ACI APIC] Storage Capacity > 90% 
+      - alert: ApicStorageIssue
+        expr: | 
+          sum by (node_name) (aci_obs_storage_capacity_high_util{caused_by_id="", deduplicated="", node_status=~"active|", device_status=~"active|"} > 0)
+        for: 5m
+        labels:
+          severity: critical
+          support_group: network-data-aci-obs
+          aci_obs_group: AutomationGroup
+          job_name: aci-automation
+        annotations:
+          summary: "APIC Faults"
+          description: "[{{ $labels.node_name }}] Storage Capacity > 90%"
+
+      # F2547
+      # [qa-de-1-ccaci-2222-bm090][ACI Leaf] node-id to pod-id mapping is wrong: Pod 1
+      - alert: APICWrongNodeIdPodIdMapping
+        expr: |
+          sum by (node_name, node_pod) (aci_obs_wrong_mapping_node_id_pod_id{caused_by_id="", deduplicated="", node_status=~"active|", device_status=~"active|"} > 0)
+        for: 5m
+        labels:
+          severity: critical
+          support_group: network-data-aci-obs
+          aci_obs_group: AutomationGroup
+          job_name: aci-automation
+        annotations:
+          summary: "APIC Faults"
+          description: "[{{ $labels.node_name }}] node-id to pod-id mapping is wrong: Pod {{ $labels.node_pod }}"
