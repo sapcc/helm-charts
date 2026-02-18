@@ -26,7 +26,7 @@ build-cluster-api-core:
 	@find cluster-api-core/templates -type f -exec $(SED) -i -e 's#-system.#.#g' {} \;
 	@yq -i '.controllerManager.manager.image.tag="$(CLUSTER_API_VERSION)"' cluster-api-core/values.yaml
 	@yq -i '.fullnameOverride="capi"' cluster-api-core/values.yaml
-	@yq -i '.version="1.0.0"' cluster-api-core/Chart.yaml
+	@yq -i '.version="1.0.1"' cluster-api-core/Chart.yaml
 
 build-controlplane-kubeadm:
 	$(call build-chart,controlplane-kubeadm,https://github.com/kubernetes-sigs/cluster-api//controlplane/kubeadm/config/default,$(CLUSTER_API_VERSION))
@@ -41,7 +41,7 @@ build-controlplane-kubeadm:
 	@$(SED) -i 's/10240/30720/g' controlplane-kubeadm/crds/*
 	@yq -i '.controllerManager.manager.image.tag="$(CLUSTER_API_VERSION)"' controlplane-kubeadm/values.yaml
 	@yq -i '.fullnameOverride="capi-kubeadm-controlplane"' controlplane-kubeadm/values.yaml
-	@yq -i '.version="1.0.0"' controlplane-kubeadm/Chart.yaml
+	@yq -i '.version="1.0.1"' controlplane-kubeadm/Chart.yaml
 
 # fix for "spec.ignition.containerLinuxConfig.additionalConfig: Too long: may not be longer than 10240"
 build-bootstrap-kubeadm:
@@ -53,7 +53,7 @@ build-bootstrap-kubeadm:
 	@$(SED) -i 's/10240/30720/g' bootstrap-kubeadm/crds/*
 	@yq -i '.controllerManager.manager.image.tag="$(CLUSTER_API_VERSION)"' bootstrap-kubeadm/values.yaml
 	@yq -i '.fullnameOverride="capi-kubeadm-bootstrap"' bootstrap-kubeadm/values.yaml
-	@yq -i '.version="1.0.0"' bootstrap-kubeadm/Chart.yaml
+	@yq -i '.version="1.0.1"' bootstrap-kubeadm/Chart.yaml
 
 build-provider-helm:
 	$(call build-chart,provider-helm,https://github.com/kubernetes-sigs/cluster-api-addon-provider-helm//config/default,$(PROVIDER_HELM))
