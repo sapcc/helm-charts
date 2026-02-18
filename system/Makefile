@@ -1,4 +1,4 @@
-CLUSTER_API_VERSION ?= v1.11.2
+CLUSTER_API_VERSION ?= v1.11.5
 PROVIDER_METAL3_VERSION ?= v1.11.1
 PROVIDER_METAL_VERSION ?= 3c311063d94fe0ce7f229877a9370fb101b32bb2
 PROVIDER_VSPHERE_VERSION ?= v1.9.3
@@ -104,7 +104,7 @@ build-provider-metal3:
 	@find provider-metal3/crds -type f -exec $(SED) -i -e 's#capm3-system/#capi/#g' {} \;
 	@find provider-metal3/templates -type f -exec $(SED) -i -e 's#.capm3-system.#.capi.#g' {} \;
 	@find provider-metal3/templates -type f -exec $(SED) -i -e 's#/{{ include "provider-metal3.fullname" . }}-system/#/#g' {} \;
-	@# fix for "no matches for kind "IPClaim" 
+	@# fix for "no matches for kind "IPClaim"
 	@curl -sSL https://raw.githubusercontent.com/metal3-io/ip-address-manager/$(PROVIDER_METAL3_VERSION)/config/crd/bases/ipam.metal3.io_ipclaims.yaml -o provider-metal3/crds/ipam.metal3.io_ipclaims.yaml
 	@yq -i '.controllerManager.manager.image.tag="$(PROVIDER_METAL3_VERSION)"' provider-metal3/values.yaml
 	@yq -i '.fullnameOverride="capm3"' provider-metal3/values.yaml
