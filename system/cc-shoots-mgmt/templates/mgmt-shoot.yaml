@@ -131,6 +131,11 @@ spec:
                     matchOperator: Equal
                     action: Reject
                   {{- end }}
+                  {{- if $.Values.networking.overlay }}        
+                  - cidr: {{ default $.Values.networking.pods $cluster.networking.pods }}
+                    matchOperator: In
+                    action: Reject
+                  {{- end }}
             {{- if $.Values.networking.overlay }}
             nodeToNodeMeshEnabled: true
             {{- else }}
