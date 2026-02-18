@@ -1,0 +1,16 @@
+{{- if .Values.services.ingress.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-ingress-proxy-headers
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    component: keystone
+    type: ingress-config
+data:
+  # Clear the trusted key header from external requests to prevent header injection
+  X-Trusted-Key: ""
+{{- end }}
