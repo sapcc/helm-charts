@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/targets: {{ required ".Values.metrics.prometheus missing" .Values.metrics.prometheus | quote }}
+  name: metrics-inventory
+  namespace: infra-monitoring
+spec:
+  ports:
+  - name: metrics
+    port: {{ .Values.metrics.port_number }}
+    protocol: TCP
+    targetPort: {{ .Values.metrics.port_number }}
+  selector:
+    app: metrics-inventory
