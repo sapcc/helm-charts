@@ -27,14 +27,21 @@ spec:
     providerConfig:
       apiVersion: calico.networking.extensions.gardener.cloud/v1alpha1
       kind: NetworkConfig
+      {{- if not $.Values.networking.overlay }}
       backend: bird
+      {{- end }}
       vethMTU: "8950"
       ipam:
         type: host-local
         cidr: usePodCIDR
+      {{- if $.Values.networking.overlay }}
+      overlay:
+        enabled: true
+      {{- else }}
       overlay:
         enabled: false
         createPodRoutes: true
+      {{- end }}
       birdExporter:
         enabled: {{ required ".Values.networking.enableBirdExporter is required" $.Values.networking.enableBirdExporter }}
   kubernetes:
@@ -131,7 +138,16 @@ spec:
                     matchOperator: Equal
                     action: Reject
                   {{- end }}
+                  {{- if $.Values.networking.overlay }}        
+                  - cidr: {{ default $.Values.networking.pods $cluster.networking.pods }}
+                    matchOperator: In
+                    action: Reject
+                  {{- end }}
+            {{- if $.Values.networking.overlay }}
+            nodeToNodeMeshEnabled: true
+            {{- else }}
             nodeToNodeMeshEnabled: false
+            {{- end }}
             serviceLoadBalancerIPs:
             {{- range $cluster.networking.externalServices }}
             - {{ .cidr }}
