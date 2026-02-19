@@ -6,7 +6,7 @@ groups:
       # [qa-de-1-aci-7101][ACI APIC] Storage Capacity > 90% 
       - alert: ApicStorageIssue
         expr: | 
-          sum by (node_name) (aci_obs_storage_capacity_high_util{caused_by_id="", deduplicated="", node_status=~"active|", device_status=~"active|"} > 0)
+          sum by (id, node_name) (aci_obs_storage_capacity_high_util{caused_by_id="", deduplicated="", node_status=~"active|", device_status=~"active|", id!=""} > 0)
         for: 5m
         labels:
           severity: critical
@@ -14,6 +14,7 @@ groups:
           aci_obs_group: AutomationGroup
           job_name: aci-automation
         annotations:
+          id: "{{ $labels.id }}"
           summary: "APIC Faults"
           description: "[{{ $labels.node_name }}] Storage Capacity > 90%"
 
@@ -21,7 +22,7 @@ groups:
       # [qa-de-1-ccaci-2222-bm090][ACI Leaf] node-id to pod-id mapping is wrong: Pod 1
       - alert: APICWrongNodeIdPodIdMapping
         expr: |
-          sum by (node_name, node_pod) (aci_obs_wrong_mapping_node_id_pod_id{caused_by_id="", deduplicated="", node_status=~"active|", device_status=~"active|"} > 0)
+          sum by (id, node_name, node_pod) (aci_obs_wrong_mapping_node_id_pod_id{caused_by_id="", deduplicated="", node_status=~"active|", device_status=~"active|", id!=""} > 0)
         for: 5m
         labels:
           severity: critical
@@ -29,5 +30,6 @@ groups:
           aci_obs_group: AutomationGroup
           job_name: aci-automation
         annotations:
+          id: "{{ $labels.id }}"
           summary: "APIC Faults"
           description: "[{{ $labels.node_name }}] node-id to pod-id mapping is wrong: Pod {{ $labels.node_pod }}"
