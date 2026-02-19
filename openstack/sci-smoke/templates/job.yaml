@@ -16,40 +16,17 @@ spec:
       containers:
         - name: sci-smoke
           image: "{{required ".Values.global.registry is missing" .Values.global.registry}}/{{ .Values.image }}:{{ .Values.imageTag }}"
-          command: ["/bin/sh", "-c"]
+          command: ["/usr/bin/sci-smoke"]
           args:
-            - |
-              /usr/bin/sci-smoke -test.v \
-                -verbose="$VERBOSE" \
-                -flavor="$FLAVOR" \
-                -image="$IMAGE" \
-                -boot-from-volume="$BOOT_FROM_VOLUME" \
-                -volume-size="$VOLUME_SIZE" \
-                -volume-type="$VOLUME_TYPE" \
-                -network-cidr="$NETWORK_CIDR" \
-                -floating-network="$FLOATING_NETWORK" \
-                -floating-subnet="$FLOATING_SUBNET" \
-                -availability-zone="$AVAILABILITY_ZONE" \
-                -aggregate="$AGGREGATE" \
-                -timeout="$TIMEOUT" \
-                -cleanup="$CLEANUP" \
-                -reuse="$REUSE" \
-                -skip-preflight="$SKIP_PREFLIGHT" \
-                -skip-connectivity="$SKIP_CONNECTIVITY" \
-                -skip-migration="$SKIP_MIGRATION" \
-                -skip-cold-migration="$SKIP_COLD_MIGRATION" \
-                -skip-live-migration="$SKIP_LIVE_MIGRATION" \
-                -min-instances="$MIN_INSTANCES" \
-                -min-cores="$MIN_CORES" \
-                -min-ram="$MIN_RAM" \
-                -required-trait="$REQUIRED_TRAIT" \
-                -required-trait-strict="$REQUIRED_TRAIT_STRICT" \
-                -output-file="$OUTPUT_FILE"
+            - "-test.v"
+            - "--config=/etc/sci-smoke/config.yaml"
           envFrom:
             - secretRef:
                 name: sci-smoke-openstack-credentials
-            - configMapRef:
-                name: sci-smoke-config
+          volumeMounts:
+            - name: config
+              mountPath: /etc/sci-smoke
+              readOnly: true
           resources:
             requests:
               memory: "64Mi"
@@ -57,3 +34,7 @@ spec:
             limits:
               memory: "128Mi"
               cpu: "200m"
+      volumes:
+        - name: config
+          configMap:
+            name: sci-smoke-config

@@ -60,3 +60,14 @@ Create the name of the service account to use
 {{- default "default" .Values.serviceAccount.name }}
 {{- end }}
 {{- end }}
+
+{{- define "sci-smoke.resolve_secret" -}}
+    {{- $str := . -}}
+    {{- if (hasPrefix "vault+kvv2" $str) -}}
+        {{"{{"}} resolve "{{ $str }}" {{"}}"}}
+    {{- else if (hasPrefix "{{" $str) }}
+        {{- $str }}
+    {{- else }}
+        {{- $str }}
+    {{- end }}
+{{- end -}}
