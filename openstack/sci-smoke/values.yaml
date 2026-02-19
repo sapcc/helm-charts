@@ -6,46 +6,68 @@ openstack:
   project_name: sci-smoke
   username: sci-smoke-admin
   password: null
+  user_domain_name: tempest
+  project_domain_name: tempest
 
-config:
-  # Required Test Parameters
-  flavor: "100403"
-  image: null
-  bootFromVolume: "false"
-  volumeSize: "10"
-  volumeType: "nfs"
-  privateNetworkCIDR: "10.199.0.0/16"
-  floatingNetworkName: "external-network"
-  floatingSubnetName: ""
+# Configuration file for sci-smoke tests
+# This maps directly to the config YAML format used by sci-smoke
+configFile:
+  version: 1
 
-  # Optional Test Parameters
-  serverName: ""                     # Auto-generated if empty: sci-smoke-<random>
-  availabilityZone: ""               # e.g., "nova"
-  aggregate: ""                      # Host aggregate name for hypervisor checks
-  timeout: "5m"                     # Timeout for wait operations
-  outputFile: "-"  # Output file for test results
+  # Default values applied to all scenarios
+  defaults:
+    image: null                        # Required: Image name or ID
+    flavor: null                       # Required: Flavor name or ID
+    network_cidr: "10.199.0.0/16"
+    floating_network: "external-network"
+    floating_subnet: ""
+    timeout: "5m"
+    cleanup: true
+    verbose: true
+    output_file: ""
 
-  # Flags
-  verbose: "true"                    # Enable verbose logging
-  cleanup: "true"                    # Cleanup resources after tests
-  reuse: "false"                     # Reuse existing server instead of creating new
-  skipPreflight: "false"             # Skip preflight checks (quota, hypervisors)
-  skipConnectivity: "false"          # Skip network connectivity test
-  skipMigration: "false"             # Skip all migration tests
-  skipColdMigration: "false"         # Skip cold migration only
-  skipLiveMigration: "false"         # Skip live migration only
+    # Boot from volume settings
+    boot_from_volume: false
+    volume_size: 10
+    volume_type: "nfs"
 
-  # Preflight Check Thresholds
-  minInstances: "1"                  # Minimum available instances required
-  minCores: "2"                      # Minimum available cores required
-  minRam: "2048"                     # Minimum available RAM (MB) required
+    # Availability settings
+    availability_zone: ""
+    aggregate: ""
 
-  # Scheduler Constraints
-  requiredTrait: ""                  # Required scheduler trait for test instance
-  requiredTraitStrict: "false"       # Fail if trait check fails
+    # Reuse previously created resources
+    reuse: false
 
-  # Notification
-  webhookUrl: ""                     # Webhook URL for notifications
+    # Preflight check thresholds
+    min_instances: 1
+    min_cores: 2
+    min_ram: 2048
+
+    # Scheduler constraints
+    required_trait: ""
+    required_trait_strict: false
+
+    # Skip settings (can be overridden per scenario)
+    skip:
+      preflight: false
+      connectivity: false
+      migration: false
+      cold_migration: false
+      live_migration: false
+
+  # Test scenarios - each scenario inherits from defaults
+  # and can override any setting
+  scenarios:
+    - name: default
+      # Uses all defaults, override as needed:
+      # flavor: m1.small
+      # timeout: 10m
+
+# RBAC policy for shared network access (required)
+rbac_policy_object_name_shared_network: ""
+
+# Webhook URL for notifications (optional)
+webhookUrl: ""
 
 owner-info:
   helm-chart-url: 'https://github.com/sapcc/helm-charts/tree/master/openstack/sci-smoke'
