@@ -115,7 +115,7 @@ build-provider-metal:
 	$(call fix-crds,provider-metal)
 	@yq -i '.controllerManager.manager.image.tag="$(PROVIDER_METAL_VERSION)"' provider-metal/values.yaml
 	@yq -i '.fullnameOverride="provider-metal"' provider-metal/values.yaml
-	@yq -i '.version="0.1.0"' provider-metal/Chart.yaml
+	@yq -i '.version="0.2.0"' provider-metal/Chart.yaml
 
 build-provider-kubernikus:
 	$(call build-chart,provider-kubernikus,https://github.com/sapcc/cluster-api-control-plane-provider-kubernikus//config/default,$(PROVIDER_KUBERNIKUS_VERSION))
