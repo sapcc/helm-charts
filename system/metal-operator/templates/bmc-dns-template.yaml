@@ -1,10 +1,10 @@
-{{- if .Values.controllerManager.dnsRecordTemplate.enabled }}
+{{- if (index .Values "metal-operator-core").controllerManager.dnsRecordTemplate.enabled }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: dns-template
   namespace: {{ .Release.Namespace }}
 data:
-  bmc_dns.yaml:
-    {{ include (print .Template.BasePath "/etc/_bmc-dns-template.yaml") . }}
+  bmc_dns.yaml: |
+{{ .Files.Get "files/bmc-dns-template.yaml" | indent 4 }}
 {{- end }}
