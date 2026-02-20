@@ -1,6 +1,6 @@
 CLUSTER_API_VERSION ?= v1.11.5
 PROVIDER_METAL3_VERSION ?= v1.11.1
-PROVIDER_METAL_VERSION ?= f7bd3c35368b4035f70dee137cdc794aac7b3bfc
+PROVIDER_METAL_VERSION ?= 0c030bf7914e9cc4819b6f18954a948b0c2baca1
 PROVIDER_VSPHERE_VERSION ?= v1.9.3
 PROVIDER_IPAM_VERSION ?= v1.0.3
 PROVIDER_HELM ?= v0.4.1
@@ -115,7 +115,7 @@ build-provider-metal:
 	$(call fix-crds,provider-metal)
 	@yq -i '.controllerManager.manager.image.tag="$(PROVIDER_METAL_VERSION)"' provider-metal/values.yaml
 	@yq -i '.fullnameOverride="provider-metal"' provider-metal/values.yaml
-	@yq -i '.version="0.2.0"' provider-metal/Chart.yaml
+	@yq -i '.version="0.2.1"' provider-metal/Chart.yaml
 
 build-provider-kubernikus:
 	$(call build-chart,provider-kubernikus,https://github.com/sapcc/cluster-api-control-plane-provider-kubernikus//config/default,$(PROVIDER_KUBERNIKUS_VERSION))
