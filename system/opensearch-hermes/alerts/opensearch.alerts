@@ -63,3 +63,18 @@ groups:
       description: 'Opensearch cluster *opensearch-hermes* is YELLOW. Please check all nodes.
         nodes one or more are missing.'
       summary: 'Opensearch cluster *opensearch-hermes* is YELLOW'
+
+  - alert: OpenSearchIndexSizeTooLarge
+    expr: opensearch_index_store_size_bytes{index=~".ds.*", context="primaries", elastic_cluster="opensearch-hermes"} / (1024^3) > 200
+    for: 30m
+    labels:
+      context: nodes
+      service: opensearch-hermes
+      severity: warning
+      support_group: observability
+      tier: os
+      playbook: 'docs/support/playbook/opensearch/generic/index-too-large'
+      dashboard: health-opensearch?var-cluster=opensearch-hermes&var-datasource=prometheus-openstack
+    annotations:
+      description: "The index {{ $labels.index }} has exceeded 200 GB in size. Please check the rollover status."
+      summary: "Index size of ({{ $labels.index }}) has exceeeded the threshold."
