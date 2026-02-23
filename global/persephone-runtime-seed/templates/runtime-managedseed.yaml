@@ -1,0 +1,56 @@
+{{- range $key, $cluster := .Values.persephoneShoots }}
+{{- if (lookup "core.gardener.cloud/v1beta1" "Shoot" "garden" (print $key ($cluster.landscapeName | substr 0 1))) }}
+---
+apiVersion: seedmanagement.gardener.cloud/v1alpha1
+kind: ManagedSeed
+metadata:
+  name: {{ $key }}{{ $cluster.landscapeName | substr 0 1 }}
+  namespace: garden
+spec:
+  shoot:
+    name: {{ $key }}{{ $cluster.landscapeName | substr 0 1 }}
+  gardenlet:
+    config:
+      apiVersion: gardenlet.config.gardener.cloud/v1alpha1
+      kind: GardenletConfiguration
+      gardenClientConnection:
+        gardenClusterAddress: https://api.virtual.{{ $cluster.landscapeName }}.persephone.{{ $cluster.region }}.cloud.sap
+      logging:
+        enabled: true
+      seedConfig:
+        metadata:
+          labels:
+            environment: {{ $cluster.landscapeName }}
+        spec:
+          dns:
+            defaults:
+            - credentialsRef:
+                apiVersion: v1
+                kind: Secret
+                name: openstack-infra-creds-seed
+                namespace: garden
+              type: openstack-designate
+              domain: external.{{ $cluster.landscapeName }}.persephone.{{ $cluster.region }}.cloud.sap
+            internal:
+              credentialsRef:
+                apiVersion: v1
+                kind: Secret
+                name: openstack-infra-creds-seed
+                namespace: garden
+              type: openstack-designate
+              domain: internal.{{ $cluster.landscapeName }}.persephone.{{ $cluster.region }}.cloud.sap
+            provider:
+              secretRef:
+                name: openstack-infra-creds-seed
+                namespace: garden
+              type: openstack-designate
+          settings:
+            excessCapacityReservation:
+              enabled: false
+            dependencyWatchdog:
+              prober:
+                enabled: false
+            loadBalancerServices:
+              externalTrafficPolicy: Local
+{{- end }}
+{{- end }}
