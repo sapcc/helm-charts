@@ -41,11 +41,11 @@ spec:
         AnonymousAuthConfigurableEndpoints: true
       structuredAuthentication:
         configMapName: authentication-config-storage
-      {{- if $.Values.auditing.enabled }}
+      {{- if $cluster.auditing.enabled }}
       auditConfig:
         auditPolicy:
           configMapRef:
-            name: audit-policy-storage
+            name: {{ $cluster.auditing.configMapName | default "audit-policy-cp-storage" }}
       {{- end }}
     verticalPodAutoscaler:
       enabled: true
@@ -53,7 +53,7 @@ spec:
     autoUpdate:
       kubernetesVersion: false
       machineImageVersion: false
-  {{- if $.Values.auditing.enabled }}
+  {{- if $cluster.auditing.enabled }}
   extensions:
   - type: auditing
     providerConfig:
@@ -61,9 +61,9 @@ spec:
       kind: AuditConfiguration
       backends:
       - http:
-          url: {{ $.Values.auditing.url }}
+          url: {{ $cluster.auditing.url }}
           tls:
-            secretReferenceName: auditing-mtls-credentials
+            secretReferenceName: auditing-mtls-storage
   {{- end }}
   resources:
   - name: extraignition-storage-{{ $key }}
@@ -71,12 +71,12 @@ spec:
       apiVersion: v1
       kind: Secret
       name: extraignition-storage-{{ $key }}
-  {{- if $.Values.auditing.enabled }}
-  - name: auditing-mtls-credentials
+  {{- if $cluster.auditing.enabled }}
+  - name: auditing-mtls-storage
     resourceRef:
       apiVersion: v1
       kind: Secret
-      name: auditing-mtls-credentials
+      name: {{ $cluster.auditing.secretName | default "auditing-mtls-storage" }}
   {{- end }}
   provider:
     type: ironcore-metal

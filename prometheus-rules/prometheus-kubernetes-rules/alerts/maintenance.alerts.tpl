@@ -12,7 +12,7 @@ groups:
       tier: {{ required ".Values.tier missing" .Values.tier }}
       support_group: {{ required ".Values.supportGroup missing" .Values.supportGroup }}
       service: {{ required ".Values.service missing" .Values.service }}
-      severity: none
+      severity: info
       context: node
       meta: "Node {{`{{ $labels.node }}`}} is in maintenance."
     annotations:

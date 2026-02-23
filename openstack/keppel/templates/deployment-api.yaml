@@ -8,7 +8,10 @@ metadata:
 
 spec:
   revisionHistoryLimit: 5
-  replicas: {{ if .Values.keppel.slim }} 1 {{ else }} {{ .Values.keppel.replicas.api }} {{ end }}
+  {{- $overrides := merge (dict)
+                    (index $.Values.keppel.region_overrides $.Values.global.region | default (dict))
+                    $.Values.keppel.region_overrides.default }}
+  replicas: {{ .Values.keppel.slim | ternary 1 $overrides.api_replicas }}
   strategy:
     type: RollingUpdate
     rollingUpdate:

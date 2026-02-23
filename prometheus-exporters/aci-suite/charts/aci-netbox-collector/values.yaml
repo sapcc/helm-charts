@@ -5,20 +5,19 @@ replicaCount: 1
 
 image:
   name: aci-netbox-collector
-  tag: "latest"
+  tag: # set by CI pipeline
   pullPolicy: Always
 
 service:
   type: ClusterIP
-  port: 8000
 
 resources:
   requests:
-    cpu: "200m"
+    cpu: "500m"
     memory: "512Mi"
   limits:
     cpu: "1"
-    memory: "2Gi"
+    memory: "1Gi"
 
 livenessProbe:
   path: /health
@@ -32,7 +31,7 @@ readinessProbe:
 
 env:
   flask_host: "0.0.0.0"
-  flask_port: 8000
+  flask_port: 8080
   flask_debug: false
 
   log_level: "INFO"
@@ -51,6 +50,8 @@ env:
   cache_retry_attempts: 3
   cache_retry_delay_seconds: 5
 
+  metrics_port: 11006
+
   batch_size: 500
   refresh_interval_seconds: 60
   since_hours_on_hit: 1
@@ -64,3 +65,7 @@ env:
 
 aci:
   cache_password:
+
+alerts:
+  enabled: false
+  prometheus: infra-frontend

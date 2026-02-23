@@ -1,11 +1,14 @@
-{{- if .Values.keppel.anycast_domain_name }}
+{{- $region := $.Values.global.region | required "missing value for .Values.global.region" -}}
+{{- $peer_group := index $.Values.keppel.peer_groups $.Values.keppel.peer_group -}}
+{{- $has_anycast := $peer_group.exclude_from_anycast | has $region | not -}}
+{{- if and $has_anycast .Values.keppel.anycast_ip }}
 apiVersion: disco.stable.sap.cc/v1
 kind: Record
 metadata:
-  name: keppel-global.{{ .Values.global.region }}.{{ .Values.global.tld }}
+  name: keppel-global.{{ $region }}.{{ .Values.global.tld }}
 spec:
   type: A
   record: {{ .Values.keppel.anycast_ip }}
   hosts:
-    - keppel-global.{{ .Values.global.region }}.{{ .Values.global.tld }}
+    - keppel-global.{{ $region }}.{{ .Values.global.tld }}
 {{ end }}

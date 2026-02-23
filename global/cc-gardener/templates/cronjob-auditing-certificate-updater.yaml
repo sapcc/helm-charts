@@ -23,9 +23,21 @@ spec:
             image: "{{ .Values.global.registry | required ".Values.global.registry not found" }}/shared-app-images/alpine-kubectl:latest-latest"
             imagePullPolicy: IfNotPresent
             command: ["/bin/sh", "-c"]
+            # garden-ccloud TO BE DELETED when we get rid of the 200 cluster
             args:
-            - secret=$(kubectl -n garden create secret generic auditing-mtls --save-config --dry-run=client --from-file=client.crt=/etc/auditing/certificate/client.crt --from-file=client.key=/etc/auditing/certificate/client.key -o yaml | base64 -w0);
-              kubectl -n garden patch secret mr-s-auditing-mtls --type=json -p="[{'op':'add','path':'/data/objects.yaml','value':'$secret'}]";
+            - secret_garden=$(kubectl -n garden create secret generic auditing-mtls --save-config --dry-run=client --from-file=client.crt=/etc/auditing/certificate/client.crt --from-file=client.key=/etc/auditing/certificate/client.key -o yaml | base64 -w0);
+              kubectl -n garden patch secret mr-s-auditing-mtls --type=json -p="[{'op':'add','path':'/data/objects.yaml','value':'$secret_garden'}]";
+
+              secret_garden_ccloud=$(kubectl -n garden-ccloud create secret generic auditing-mtls-ccloud --save-config --dry-run=client --from-file=client.crt=/etc/auditing/certificate/client.crt --from-file=client.key=/etc/auditing/certificate/client.key -o yaml | base64 -w0);
+              kubectl -n garden patch secret mr-s-auditing-mtls-ccloud --type=json -p="[{'op':'add','path':'/data/objects.yaml','value':'$secret_garden_ccloud'}]";
+
+              secret_garden_compute=$(kubectl -n garden-compute create secret generic auditing-mtls-compute --save-config --dry-run=client --from-file=client.crt=/etc/auditing/certificate/client.crt --from-file=client.key=/etc/auditing/certificate/client.key -o yaml | base64 -w0);
+              kubectl -n garden patch secret mr-s-auditing-mtls-compute --type=json -p="[{'op':'add','path':'/data/objects.yaml','value':'$secret_garden_compute'}]";
+
+              secret_garden_storage=$(kubectl -n garden-storage create secret generic auditing-mtls-storage --save-config --dry-run=client --from-file=client.crt=/etc/auditing/certificate/client.crt --from-file=client.key=/etc/auditing/certificate/client.key -o yaml | base64 -w0);
+              kubectl -n garden patch secret mr-s-auditing-mtls-storage --type=json -p="[{'op':'add','path':'/data/objects.yaml','value':'$secret_garden_storage'}]";
+
+              kubectl -n garden create secret generic auditing-mtls --save-config --dry-run=client --from-file=client.crt=/etc/auditing/certificate/client.crt --from-file=client.key=/etc/auditing/certificate/client.key -o yaml | kubectl -n garden apply -f -;
             volumeMounts:
             - name: certificate
               mountPath: "/etc/auditing/certificate"
@@ -39,7 +51,7 @@ spec:
                 path: client.crt
               - key: tls.key
                 path: client.key
-              secretName: auditing-mtls
+              secretName: auditing-mtls-cert
 ---
 apiVersion: v1
 kind: ServiceAccount

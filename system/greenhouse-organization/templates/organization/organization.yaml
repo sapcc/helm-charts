@@ -23,6 +23,17 @@ data:
 {{ end }}
 {{ end }}
 ---
+{{ if .Values.organization.registryMirrors }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: registry-mirrors
+data:
+  containerRegistryConfig: |
+    registryMirrors: 
+  {{- .Values.organization.registryMirrors | toYaml | nindent 6 }} 
+{{ end }}
+---
 {{ if .Values.organization.enabled }}
 apiVersion: greenhouse.sap/v1alpha1
 kind: Organization
@@ -31,6 +42,9 @@ metadata:
 spec:
   description: Greenhouse organization
   mappedOrgAdminIdPGroup: {{ required ".Values.teams.admin.mappedIdPGroup missing" .Values.teams.admin.mappedIdPGroup }}
+{{- if .Values.organization.registryMirrors }}
+  configMapRef: registry-mirrors
+{{- end }}
 {{- if or .Values.global.oidc.enabled .Values.scim.enabled }}
   authentication:
 {{- if.Values.global.oidc.enabled }}

@@ -1,6 +1,6 @@
-CLUSTER_API_VERSION ?= v1.11.2
+CLUSTER_API_VERSION ?= v1.11.6
 PROVIDER_METAL3_VERSION ?= v1.11.1
-PROVIDER_METAL_VERSION ?= 3c311063d94fe0ce7f229877a9370fb101b32bb2
+PROVIDER_METAL_VERSION ?= cf12acd520aa203db28f21a326a61fddc9720b95
 PROVIDER_VSPHERE_VERSION ?= v1.9.3
 PROVIDER_IPAM_VERSION ?= v1.0.3
 PROVIDER_HELM ?= v0.4.1
@@ -26,7 +26,7 @@ build-cluster-api-core:
 	@find cluster-api-core/templates -type f -exec $(SED) -i -e 's#-system.#.#g' {} \;
 	@yq -i '.controllerManager.manager.image.tag="$(CLUSTER_API_VERSION)"' cluster-api-core/values.yaml
 	@yq -i '.fullnameOverride="capi"' cluster-api-core/values.yaml
-	@yq -i '.version="1.0.0"' cluster-api-core/Chart.yaml
+	@yq -i '.version="1.0.1"' cluster-api-core/Chart.yaml
 
 build-controlplane-kubeadm:
 	$(call build-chart,controlplane-kubeadm,https://github.com/kubernetes-sigs/cluster-api//controlplane/kubeadm/config/default,$(CLUSTER_API_VERSION))
@@ -41,7 +41,7 @@ build-controlplane-kubeadm:
 	@$(SED) -i 's/10240/30720/g' controlplane-kubeadm/crds/*
 	@yq -i '.controllerManager.manager.image.tag="$(CLUSTER_API_VERSION)"' controlplane-kubeadm/values.yaml
 	@yq -i '.fullnameOverride="capi-kubeadm-controlplane"' controlplane-kubeadm/values.yaml
-	@yq -i '.version="1.0.0"' controlplane-kubeadm/Chart.yaml
+	@yq -i '.version="1.0.1"' controlplane-kubeadm/Chart.yaml
 
 # fix for "spec.ignition.containerLinuxConfig.additionalConfig: Too long: may not be longer than 10240"
 build-bootstrap-kubeadm:
@@ -53,7 +53,7 @@ build-bootstrap-kubeadm:
 	@$(SED) -i 's/10240/30720/g' bootstrap-kubeadm/crds/*
 	@yq -i '.controllerManager.manager.image.tag="$(CLUSTER_API_VERSION)"' bootstrap-kubeadm/values.yaml
 	@yq -i '.fullnameOverride="capi-kubeadm-bootstrap"' bootstrap-kubeadm/values.yaml
-	@yq -i '.version="1.0.0"' bootstrap-kubeadm/Chart.yaml
+	@yq -i '.version="1.0.1"' bootstrap-kubeadm/Chart.yaml
 
 build-provider-helm:
 	$(call build-chart,provider-helm,https://github.com/kubernetes-sigs/cluster-api-addon-provider-helm//config/default,$(PROVIDER_HELM))
@@ -104,7 +104,7 @@ build-provider-metal3:
 	@find provider-metal3/crds -type f -exec $(SED) -i -e 's#capm3-system/#capi/#g' {} \;
 	@find provider-metal3/templates -type f -exec $(SED) -i -e 's#.capm3-system.#.capi.#g' {} \;
 	@find provider-metal3/templates -type f -exec $(SED) -i -e 's#/{{ include "provider-metal3.fullname" . }}-system/#/#g' {} \;
-	@# fix for "no matches for kind "IPClaim" 
+	@# fix for "no matches for kind "IPClaim"
 	@curl -sSL https://raw.githubusercontent.com/metal3-io/ip-address-manager/$(PROVIDER_METAL3_VERSION)/config/crd/bases/ipam.metal3.io_ipclaims.yaml -o provider-metal3/crds/ipam.metal3.io_ipclaims.yaml
 	@yq -i '.controllerManager.manager.image.tag="$(PROVIDER_METAL3_VERSION)"' provider-metal3/values.yaml
 	@yq -i '.fullnameOverride="capm3"' provider-metal3/values.yaml
@@ -115,7 +115,7 @@ build-provider-metal:
 	$(call fix-crds,provider-metal)
 	@yq -i '.controllerManager.manager.image.tag="$(PROVIDER_METAL_VERSION)"' provider-metal/values.yaml
 	@yq -i '.fullnameOverride="provider-metal"' provider-metal/values.yaml
-	@yq -i '.version="0.1.0"' provider-metal/Chart.yaml
+	@yq -i '.version="0.2.2"' provider-metal/Chart.yaml
 
 build-provider-kubernikus:
 	$(call build-chart,provider-kubernikus,https://github.com/sapcc/cluster-api-control-plane-provider-kubernikus//config/default,$(PROVIDER_KUBERNIKUS_VERSION))
@@ -139,6 +139,10 @@ build-baremetal-operator:
 	@yq -i '.fullnameOverride="metal3"' baremetal-operator-core/values.yaml
 	@yq -i '.version="1.1.0"' baremetal-operator-core/Chart.yaml
 
+build-metal-operator:
+	@helm dep up metal-operator
+	@yq -i '.version = (.version | split(".") | .[2] = ((.[2] | tonumber) + 1 | tostring) | join("."))' metal-operator/Chart.yaml
+
 build-metal-operator-remote:
 	@helm dep up metal-operator-remote
 	@helm template metal-operator metal-operator-remote/charts/metal-operator* \
@@ -148,6 +152,10 @@ build-metal-operator-remote:
 		yq eval 'select(.kind != "Service" and .kind != "ValidatingWebhookConfiguration")' - >\
 		metal-operator-remote/managedresources/crds-and-rbac.yaml
 	yq -i '.version = (.version | split(".") | .[2] = ((.[2] | tonumber) + 1 | tostring) | join("."))' metal-operator-remote/Chart.yaml
+
+build-boot-operator:
+	@helm dep up boot-operator
+	@yq -i '.version = (.version | split(".") | .[2] = ((.[2] | tonumber) + 1 | tostring) | join("."))' boot-operator/Chart.yaml
 
 build-boot-operator-remote:
 	@helm dep up boot-operator-remote

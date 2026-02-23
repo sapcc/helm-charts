@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.6.15 - 2026/01/26
+
+* memcached-exporter [version](https://github.com/prometheus/memcached_exporter/releases/tag/v0.15.5) bumped to `v0.15.5`
+* chart version bumped
+
+## v0.6.14 - 2026/01/15
+
+* memcached bumped to `1.6.40-alpine3.23`
+* chart version bumped
+
 ## v0.6.13 - 2025/12/16
 
 * memcached bumped to `1.6.39-alpine3.23`

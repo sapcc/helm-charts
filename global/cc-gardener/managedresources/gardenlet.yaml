@@ -9,6 +9,10 @@ metadata:
   name: {{ $clusterName }}
   namespace: garden
 spec:
+{{- if $seedRegion.bootstrap}}
+  kubeconfigSecretRef:
+    name: secret-to-be-patched-manually
+{{- end }}
   deployment:
     image:
       tag: {{ $.Chart.AppVersion }}
@@ -26,6 +30,8 @@ spec:
         namespace: garden
       kubeconfigValidity:
         validity: 72h
+    logging:
+      enabled: true
     seedConfig:
       metadata:
         labels:
@@ -34,14 +40,21 @@ spec:
         annotations:
           metal.ironcore.dev/local-metal-api: "true"
 {{- end }}
+{{- if $seedRegion.taints }}
+      taints: {{ toYaml $seedRegion.taints | nindent 8 }}
+{{- end }}
       spec:
         backup:
-          provider: openstack
-          region: {{ $regionName }}
+          provider: {{ default "aws" $seedRegion.backup.provider | quote }}
+          region: {{ default $regionName $seedRegion.backup.region | quote }}
           credentialsRef:
             apiVersion: v1
             kind: Secret
-            name: openstack-{{ $regionName }}
+            {{- if eq "aws" $seedRegion.backup.provider }}
+            name: {{ (printf "aws-backup-%s" $seedRegion.name) }}
+            {{- else }}
+            name: {{ (printf "openstack-%s" $regionName) }}
+            {{- end }}
             namespace: garden
         dns:
           defaults:
@@ -50,7 +63,7 @@ spec:
               kind: Secret
               name: openstack-{{ $regionName }}
               namespace: garden
-            domain: external.{{ $clusterName }}.{{ if hasPrefix "rtc-" $clusterName -}}soil-customer{{- else -}}soil-garden{{- end }}.{{ $seedRegion.name }}.cloud.sap
+            domain: {{ default (printf "external.%s.%s.%s.cloud.sap" $clusterName "soil-garden" $seedRegion.name) $seedRegion.externalDomain }}
             type: openstack-designate
           internal:
             credentialsRef:
@@ -58,7 +71,7 @@ spec:
               kind: Secret
               name: openstack-{{ $regionName }}
               namespace: garden
-            domain: internal.{{ $clusterName }}.{{ if hasPrefix "rtc-" $clusterName -}}soil-customer{{- else -}}soil-garden{{- end }}.{{ $seedRegion.name }}.cloud.sap
+            domain: {{ default (printf "internal.%s.%s.%s.cloud.sap" $clusterName "soil-garden" $seedRegion.name) $seedRegion.internalDomain }}
             type: openstack-designate
           provider:
             type: openstack-designate
@@ -66,7 +79,7 @@ spec:
               name: openstack-{{ $regionName }}
               namespace: garden
         ingress: # see prerequisites
-          domain: ingress.{{ $clusterName }}.{{ if hasPrefix "rtc-" $clusterName -}}soil-customer{{- else -}}soil-garden{{- end }}.{{ $seedRegion.name }}.cloud.sap
+          domain: {{ default (printf "ingress.%s.%s.%s.cloud.sap" $clusterName "soil-garden" $seedRegion.name) $seedRegion.ingressDomain }}
           controller:
             kind: nginx
         networks:
@@ -74,7 +87,7 @@ spec:
           pods: {{ $seedRegion.networks.pods | quote }}
           services: {{ $seedRegion.networks.services | quote }}
         provider:
-          region: {{ $seedRegion.name }}
+          region: {{ default $seedRegion.name $seedRegion.providerRegion }}
           type: openstack
           zones: {{ toYaml $seedRegion.zones | nindent 12 }}
         settings:
@@ -92,8 +105,8 @@ spec:
             # Joining the node successfully is unfortunately required to scale up the controller-manager, which is a loop that cannot self-heal.
             prober:
               enabled: false
-{{- if $.Values.gardenlet.loadBalancerServices }}
-          loadBalancerServices: {{ toYaml $.Values.gardenlet.loadBalancerServices | nindent 12 }}
+{{- if $seedRegion.loadBalancerServices }}
+          loadBalancerServices: {{ toYaml $seedRegion.loadBalancerServices | nindent 12 }}
 {{- end }}
 {{- end }}
 {{ end -}}

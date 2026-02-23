@@ -15,17 +15,26 @@ controllerManager:
       runAsUser: 65532
     image:
       repository: gcr.io/k8s-staging-cluster-api/cluster-api-controller
-      tag: v1.11.2
+      tag: v1.11.6
     imagePullPolicy: Always
+  nodeSelector: {}
   podSecurityContext:
     runAsNonRoot: true
     seccompProfile:
       type: RuntimeDefault
   replicas: 1
+  tolerations:
+    - effect: NoSchedule
+      key: node-role.kubernetes.io/master
+    - effect: NoSchedule
+      key: node-role.kubernetes.io/control-plane
+  topologySpreadConstraints: []
 kubernetesClusterDomain: cluster.local
-manager:
-  serviceAccount:
-    annotations: {}
+serviceAccount:
+  annotations: {}
+  automount: true
+  create: true
+  name: ""
 webhookService:
   ports:
     - port: 443
