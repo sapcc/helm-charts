@@ -2,7 +2,13 @@
 
 This file is used to list changes made in each version of the common chart rabbitmq.
 
-## 0.21.1 - 2025/01/26
+## 0.21.2 - 2026/02/23
+
+- RabbitMQ [4.2.4 Release notes](https://github.com/rabbitmq/rabbitmq-server/releases/tag/v4.2.4)
+- `rabbitmq-user-credential-updater` updated to `20260223091825` version
+- Chart version bumped
+
+## 0.21.1 - 2026/01/26
 
 - RabbitMQ [4.2.3 Release notes](https://github.com/rabbitmq/rabbitmq-server/releases/tag/v4.2.3)
 - `rabbitmq-user-credential-updater` updated to `20260126125551` version
