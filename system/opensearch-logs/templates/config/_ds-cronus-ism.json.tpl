@@ -1,7 +1,7 @@
 {
     "policy": {
-        "policy_id": "ds-otel-ism",
-        "description": "Datastream (ds) ism policy for otel-ds",
+        "policy_id": "ds-cronus-ism",
+        "description": "Datastream (ds) ism policy for cronus-ds",
         "schema_version": "{{ .Values.global.data_stream.schema_version }}",
         "default_state": "initial",
         "states": [
@@ -12,19 +12,19 @@
                     {
                         "state_name": "rollover",
                         "conditions": {
-                            "min_index_age": "{{ .Values.global.data_stream.otel.min_index_age }}"
+                            "min_index_age": "{{ .Values.global.data_stream.cronus.min_index_age }}"
                         }
                     },
                     {
                         "state_name": "rollover",
                         "conditions": {
-                            "min_size": "{{ .Values.global.data_stream.otel.min_size }}"
+                            "min_size": "{{ .Values.global.data_stream.cronus.min_size }}"
                         }
                     },
                     {
                         "state_name": "rollover",
                         "conditions": {
-                            "min_doc_count": "{{ .Values.global.data_stream.otel.min_doc_count }}"
+                            "min_doc_count": "{{ .Values.global.data_stream.cronus.min_doc_count }}"
                         }
                     }
                 ]
@@ -49,7 +49,7 @@
                     {
                         "state_name": "delete",
                         "conditions": {
-                            "min_index_age": "{{ .Values.retention.ds }}"
+                            "min_index_age": "7d"
                         }
                     }
                 ]
@@ -72,7 +72,7 @@
         "ism_template":
             {
                 "index_patterns": [
-                    "otel-datastream"
+                    "cronus-datastream"
                 ],
                 "priority": 2
             }

@@ -148,18 +148,6 @@ storage2:
   - "storage"
 
 {{- if .Values.qalogs.enabled }}
-otel:
-  hash: "{{ .Values.users.otel.nohash }}"
-  reserved: true
-  backend_roles:
-  - "otel"
-
-otel2:
-  hash: "{{ .Values.users.otel2.nohash }}"
-  reserved: true
-  backend_roles:
-  - "otel"
-
 ronly:
   hash: "{{ .Values.users.ronly.nohash }}"
   reserved: true
