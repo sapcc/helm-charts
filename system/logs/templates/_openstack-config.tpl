@@ -2,26 +2,11 @@
 filelog/containerd:
   include_file_path: true
   include: [ /var/log/pods/*/*/*.log ]
-  exclude: [ /var/log/pods/logs_logs-*/*/*.log, /var/log/pods/logs_fluent*/*/*.log, /var/log/pods/swift*/*/*.log, /var/log/pods/dns-recursor_unbound*/*/*.log, /var/log/pods/kube-system_wormhole*/*/*.log ]
+  exclude: [ /var/log/pods/logs_logs-*/*/*.log, /var/log/pods/logs_fluent*/*/*.log, /var/log/pods/dns-recursor_unbound*/*/*.log, /var/log/pods/kube-system_wormhole*/*/*.log ]
   operators:
     - id: container-parser
       type: container
     - id: parser-containerd
-      type: add
-      field: resource["container.runtime"]
-      value: "containerd"
-    - id: container-label
-      type: add
-      field: attributes["log.type"]
-      value: "containerd"
-
-filelog/containerd_swift:
-  include_file_path: true
-  include: [ /var/log/pods/swift*/*/*.log ]
-  operators:
-    - id: container-parser-swift
-      type: container
-    - id: parser-containerd-swift
       type: add
       field: resource["container.runtime"]
       value: "containerd"
@@ -153,7 +138,7 @@ transform/kvm-ha-service:
       conditions:
       - resource.attributes["k8s.container.name"] == "kvm-ha-service-container"
       statements:
-      - set(attributes["kvm_ha"], ParseKeyValue(target=log.body)) where IsMatch(log.body, "^time")
+      - set(log.attributes["kvm_ha"], ParseKeyValue(target=log.body)) where IsMatch(log.body, "^time")
 
 transform/elektra:
   error_mode: ignore
@@ -237,27 +222,22 @@ opensearch/failover_b_swift:
 {{- end }}
 
 {{- define "openstack.pipeline" }}
-logs/forward_swift:
-  receivers: [forward/swift]
+logs/containerd:
+  receivers: [filelog/containerd]
+  processors: [k8sattributes,attributes/cluster,transform/ingress,transform/neutron_agent,transform/neutron_errors,transform/openstack_api,transform/non_openstack,transform/network_generic_ssh_exporter,transform/snmp_exporter,transform/elektra,transform/keystone_api,transform/kvm-ha-service,transform/coredns_api,transform/perses,filter/hermes_logstash,transform/swift_proxy,attributes/swift_proxy]
+  exporters: [routing]
+
+logs/route_swift:
+  exporters: [forward/opensearch_swift]
   processors: [batch]
-  exporters: [failover/opensearch_swift]
+  receivers:[routing]
 
 logs/failover_a_swift:
   receivers: [failover/opensearch_swift]
   processors: [attributes/failover_username_a]
-  exporters: [opensearch/failover_a_swift]
+  exporters: [opensearch/swift_failover_a]
 logs/failover_b_swift:
   receivers: [failover/opensearch_swift]
   processors: [attributes/failover_username_b]
-  exporters: [opensearch/failover_b_swift]
-
-logs/containerd:
-  receivers: [filelog/containerd]
-  processors: [k8sattributes,attributes/cluster,transform/ingress,transform/neutron_agent,transform/neutron_errors,transform/openstack_api,transform/non_openstack,transform/network_generic_ssh_exporter,transform/snmp_exporter,transform/elektra,transform/keystone_api,transform/kvm-ha-service,transform/coredns_api,transform/perses,filter/hermes_logstash]
-  exporters: [forward]
-
-logs/containerd-swift:
-  receivers: [filelog/containerd_swift]
-  processors: [k8sattributes,attributes/cluster,transform/ingress,transform/swift_proxy,attributes/swift_proxy]
-  exporters: [forward/swift]
+  exporters: [opensearch/swift_failover_b]
 {{- end }}
