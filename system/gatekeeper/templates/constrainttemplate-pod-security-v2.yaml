@@ -202,7 +202,7 @@ spec:
                   normalizedHostPath := normalize_path(hostPath)
                   some allowedPath in entry.mayReadHostPathVolumes
                   normalizedAllowedPath := normalize_path(allowedPath)
-                  normalizedHostPath == normalizedAllowedPath
+                  is_path_prefix(normalizedAllowedPath, normalizedHostPath)
               }
 
               isContainerAllowedToAccessHostPath(container, hostPath, readOnly) if {
@@ -211,11 +211,26 @@ spec:
                   normalizedHostPath := normalize_path(hostPath)
                   some allowedPath in entry.mayWriteHostPathVolumes
                   normalizedAllowedPath := normalize_path(allowedPath)
-                  normalizedHostPath == normalizedAllowedPath
+                  is_path_prefix(normalizedAllowedPath, normalizedHostPath)
               }
 
               ########################################################################
               # helper functions
+
+              is_path_prefix(prefix, path) if {
+                  # root is a prefix of any path
+                  prefix == "/"
+              }
+
+              is_path_prefix(prefix, path) if {
+                  # a path is a prefix of itself
+                  path == prefix
+              }
+
+              is_path_prefix(prefix, path) if {
+                  prefix != "/"
+                  startswith(path, sprintf("%s/", [prefix]))
+              }
 
               # Normalize path by removing trailing slash (except for root "/")
               normalize_path(path) := result if {
