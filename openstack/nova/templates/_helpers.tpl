@@ -161,7 +161,15 @@ Params:
   {{- $dbId := index . 1 }}
   {{- $dbType := include "nova.helpers.db_type" . }}
   {{- $aliasSuffix := "" }}
-  {{- if not (has $dbId (list "cell0" "cell1")) }}
+  {{- if eq $dbId "cell0" }}
+    {{- $target := $envAll.Values.cell0dbTarget | default "cell1" }}
+    {{- if not (has $target (list "api" "cell1")) }}
+      {{- fail (printf "Invalid cell0dbTarget '%s': must be 'api' or 'cell1'" $target) }}
+    {{- end }}
+    {{- if eq $target "api" }}
+      {{- $aliasSuffix = "_api" }}
+    {{- end }}
+  {{- else if not (has $dbId (list "cell1")) }}
     {{- $aliasSuffix = printf "_%s" $dbId }}
   {{- end }}
   {{- $dbChartAlias := printf "%s%s" (replace "-" "_" $dbType) $aliasSuffix }}

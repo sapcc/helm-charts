@@ -26,13 +26,14 @@ metadata:
 spec:
   replicas: {{ $replicas }}
   revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revision_history }}
+  {{- $strategy := dig "conductor" "podReplacementStrategy" .Values.pod.lifecycle.upgrades.deployments.podReplacementStrategy .Values.pod.lifecycle.upgrades.deployments.overrides }}
   strategy:
-    type: {{ .Values.pod.lifecycle.upgrades.deployments.podReplacementStrategy }}
-    {{ if eq .Values.pod.lifecycle.upgrades.deployments.podReplacementStrategy "RollingUpdate" }}
+    type: {{ $strategy }}
+    {{- if eq $strategy "RollingUpdate" }}
     rollingUpdate:
       maxUnavailable: {{ .Values.pod.lifecycle.upgrades.deployments.rollingUpdate.maxUnavailable }}
       maxSurge: {{ .Values.pod.lifecycle.upgrades.deployments.rollingUpdate.maxSurge }}
-    {{ end }}
+    {{- end }}
   selector:
     matchLabels:
       name: nova-conductor
