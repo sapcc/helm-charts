@@ -714,6 +714,19 @@ mysql_metrics:
         WHERE deleted_at is NULL;
       values:
       - "version"
+    - help: Nova compute service disabled
+      labels:
+        - "uuid"
+        - "nova_host"
+        - "disabled"
+      name: openstack_compute_service_disabled_gauge
+      query: |
+        SELECT
+          uuid, coalesce(host, 'N/A') AS nova_host, disabled
+        FROM services
+        WHERE deleted_at is NULL AND `binary`='nova-compute';
+      values:
+        - "disabled"
     - help: Errored live-migrations
       name: openstack_compute_errored_live_migration_gauge
       labels:
