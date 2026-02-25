@@ -58,3 +58,12 @@ groups:
             max by (availability_zone, project_id, share_id, share_type) (
                 last_over_time(netapp_snapmirror_capacity_used_bytes[15m]))
 
+      - record: netapp_volume_used_bytes_for_limes
+        expr: |
+            max by (availability_zone, project_id, share_id, share_type) (
+                last_over_time(manila_share_used_bytes_for_castellum{project_id!="", share_type!="", share_id!=""}[15m]))
+
+      - record: netapp_snapshot_used_bytes_for_limes
+        expr: |
+            max by (availability_zone, project_id, share_id, share_type) (
+                last_over_time(netapp_volume_snapshots_size_used{app="netapp-harvest-exporter-manila", project_id!="", share_id!="", volume_type!="dp"}[15m]))
