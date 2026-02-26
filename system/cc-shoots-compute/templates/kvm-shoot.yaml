@@ -138,7 +138,7 @@ spec:
                     matchOperator: Equal
                     action: Reject
                   {{- end }}
-                  {{- if $.Values.networking.overlay }}        
+                  {{- if $.Values.networking.overlay }}
                   - cidr: {{ default $.Values.networking.pods $cluster.networking.pods }}
                     matchOperator: In
                     action: Reject
@@ -233,6 +233,19 @@ spec:
                 {{- if and ( eq $workerChannel "preRelease" ) $worker.defaultIgnitionFiles ( typeIs "string" $worker.defaultIgnitionFiles ) }}
                 {{- $worker.defaultIgnitionFiles | nindent 16 }}
                 {{- else }}
+
+                {{- $rootDiskSize := $worker.rootDiskSizeGB | default 500 }}
+                {{- if not (or (kindIs "float64" $rootDiskSize) (kindIs "int64" $rootDiskSize) (kindIs "int" $rootDiskSize)) }}
+                  {{- fail (printf "worker '%s': rootDiskSizeGB must be a number, got '%v'" $workerkey $rootDiskSize) }}
+                {{- end }}
+
+                - path: /opt/persist/root-hints.yaml
+                  overwrite: yes
+                  mode: 0644
+                  contents:
+                    inline: |
+                      hints:
+                        - size: lt {{ int $rootDiskSize }}G
 
                 - path: /etc/default/openvswitch-switch
                   filesystem: root
