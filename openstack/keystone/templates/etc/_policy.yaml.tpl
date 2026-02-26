@@ -958,7 +958,7 @@
 # Intended scope(s): system, domain
 #"identity:delete_project": "(role:admin and system_scope:all) or (role:admin and domain_id:%(target.project.domain_id)s)"
 # The corresponding `prodel` service details are available on GitHub under `cc/prodel`
-"identity:delete_project": "(rule:cloud_admin or (rule:admin_required and (project_id:%(project_id)s or project_id:%(target.project.parent_id)s))) and ({{- if .Values.tempest.enabled }}project_id:{{.Values.tempest.adminProjectId}} or {{ end }}http://prodel.{{- if .Values.global.is_global_region }}monsoon3global{{- else }}prodel{{- end }}.svc/check-delete_project/%(project_id)s)"
+"identity:delete_project": "(rule:cloud_admin or (rule:admin_required and (project_id:%(project_id)s or project_id:%(target.project.parent_id)s))) and ({{- if .Values.tempest.enabled }}project_id:{{.Values.tempest.adminProjectId}} or {{ end }}{{ include "prodel_url" $ }})"
 
 # List tags for a project.
 # GET  /v3/projects/{project_id}/tags
