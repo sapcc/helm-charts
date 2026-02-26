@@ -14,6 +14,11 @@
   {{- $version := index . 2 -}}
 
   {{- $tag      := include "postgresql-ng.shared-app-images.tag" (tuple $ctx $repo $version) -}}
-  {{- $registry := $ctx.Values.global.registry | required "missing value for .Values.global.registry" -}}
+  {{- $registry := "" -}}
+  {{- if $ctx.Values.useAlternateRegion }}
+    {{- $registry = $ctx.Values.global.registryAlternateRegion | required "missing value for .Values.global.registryAlternateRegion" -}}
+  {{- else }}
+    {{- $registry = $ctx.Values.global.registry | required "missing value for .Values.global.registry" -}}
+  {{- end }}
   {{- printf "%s/shared-app-images/%s:%s" $registry $repo $tag -}}
 {{- end -}}
