@@ -60,3 +60,31 @@ Create the name of the service account to use
 {{- default "default" .Values.serviceAccount.name }}
 {{- end }}
 {{- end }}
+
+
+{{/*
+Resolve secret and replace single quote with double single quote
+This resolved secret could be put inside the single-quoted string inside yaml
+*/}}
+{{- define "ldap-named-user.resolve_vault_ref" -}}
+    {{- $str := . -}}
+    {{- if (hasPrefix "vault+kvv2" $str ) -}}
+        {{"{{"}} resolve "{{ $str }}" | replace "'" "''" {{"}}"}}
+    {{- else -}}
+        {{ $str | replace "'" "''" }}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Construct ldapUser
+*/}}
+{{- define "ldap-named-user.ldapUserResolved" -}}
+    {{ include "ldap-named-user.resolve_vault_ref" (required ".Values.ldapBindUser missing" .Values.ldapBindUser) }}
+{{- end -}}
+
+{{/*
+Construct ldapPassword
+*/}}
+{{- define "ldap-named-user.ldapPassResolved" -}}
+    {{ include "ldap-named-user.resolve_vault_ref" (required ".Values.ldapBindPassword missing" .Values.ldapBindPassword) }}
+{{- end -}}
