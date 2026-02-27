@@ -236,8 +236,10 @@ spec:
         logs_index: ${index}-datastream
         retry_on_failure:
           enabled: true
-          max_elapsed_time: 0s
-        timeout: 30s
+          initial_interval: 1s
+          max_interval: 5s
+          max_elapsed_time: 30s
+        timeout: 10s
       opensearch/failover_b:
         http:
           auth:
@@ -246,8 +248,34 @@ spec:
         logs_index: ${index}-datastream
         retry_on_failure:
           enabled: true
-          max_elapsed_time: 0s
-        timeout: 30s
+          initial_interval: 1s
+          max_interval: 5s
+          max_elapsed_time: 30s
+        timeout: 10s
+      opensearch/cronus_failover_a:
+        http:
+          auth:
+            authenticator: basicauth/failover_a
+          endpoint: {{ .Values.openTelemetryPlugin.openTelemetry.openSearchLogs.endpoint }}
+        logs_index: cronus-datastream
+        retry_on_failure:
+          enabled: true
+          initial_interval: 1s
+          max_interval: 5s
+          max_elapsed_time: 30s
+        timeout: 10s
+      opensearch/cronus_failover_b:
+        http:
+          auth:
+            authenticator: basicauth/failover_b
+          endpoint: {{ .Values.openTelemetryPlugin.openTelemetry.openSearchLogs.endpoint }}
+        logs_index: cronus-datastream
+        retry_on_failure:
+          enabled: true
+          initial_interval: 1s
+          max_interval: 5s
+          max_elapsed_time: 30s
+        timeout: 10s
 {{- if .Values.openTelemetryPlugin.openTelemetry.logsCollector.openstackConfig.enabled }}
     {{- include "openstack.exporter" . | nindent 6 -}}
 {{- end }}
@@ -268,8 +296,17 @@ spec:
           password: ${failover_password_b}
 
     connectors:
-      forward: {}
-      forward/swift: {}
+      routing:
+        default_pipelines:
+        - logs/route_default
+        error_mode: ignore
+        table:
+        - pipelines:
+          - logs/route_cronus
+          statement: route() where resource.attributes["k8s.namespace.name"] == "cronus"
+        - pipelines:
+          - logs/route_swift
+          statement: route() where resource.attributes["k8s.namespace.name"] == "swift"
       failover/opensearch:
         priority_levels:
           - [logs/failover_a]
@@ -291,6 +328,17 @@ spec:
           enabled: true
           num_consumers: 10
           queue_size: 10000
+          sizer: requests
+      failover/opensearch_cronus:
+        priority_levels:
+          - [logs/failover_a_cronus]
+          - [logs/failover_b_cronus]
+        retry_interval: 20m
+        sending_queue:
+          block_on_overflow: true
+          enabled: true
+          num_consumers: 2
+          queue_size: 1000
           sizer: requests
 
 
@@ -324,10 +372,26 @@ spec:
           region: ${region}
 {{- end }}
       pipelines:
-        logs/forward:
-          receivers: [forward]
+        logs/route_default:
+          receivers: [routing]
           processors: [batch]
           exporters: [failover/opensearch]
+        logs/route_cronus:
+          receivers: [routing]
+          processors: [batch]
+          exporters: [failover/opensearch_cronus]
+        logs/route_swift:
+          receivers: [routing]
+          processors: [batch]
+          exporters: [failover/opensearch_swift]
+        logs/failover_a_cronus:
+          receivers: [failover/opensearch_cronus]
+          processors: [attributes/failover_username_a]
+          exporters: [opensearch/cronus_failover_a]
+        logs/failover_b_cronus:
+          receivers: [failover/opensearch_cronus]
+          processors: [attributes/failover_username_b]
+          exporters: [opensearch/cronus_failover_b]
         logs/failover_a:
           receivers: [failover/opensearch]
           processors: [attributes/failover_username_a]
