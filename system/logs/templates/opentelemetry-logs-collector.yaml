@@ -370,33 +370,29 @@ spec:
         logs/route_default:
           receivers: [routing]
           processors: [batch]
-          exporters: [forward/default]
+          exporters: [forward/opensearch_default]
         logs/route_cronus:
           receivers: [routing]
           processors: [batch]
-          exporters: [forward/cronus]
-        logs/forward_cronus:
-          receivers: [forward/cronus]
+          exporters: [forward/opensearch_cronus]
+        logs/route_swift:
+          receivers: [routing]
           processors: [batch]
-          exporters: [failover/opensearch_cronus]
-        logs/forward_default:
-          receivers: [forward/default]
-          processors: [batch]
-          exporters: [failover/opensearch]
+          exporters: [forward/opensearch_swift]
         logs/cronus_failover_a:
-          receivers: [failover/opensearch_cronus]
+          receivers: [forward/opensearch_cronus]
           processors: [attributes/failover_username_a]
           exporters: [opensearch/cronus_failover_a]
         logs/cronus_failover_b:
-          receivers: [failover/opensearch_cronus]
+          receivers: [forward/opensearch_cronus]
           processors: [attributes/failover_username_b]
           exporters: [opensearch/cronus_failover_b]
         logs/failover_a:
-          receivers: [failover/opensearch]
+          receivers: [forward/opensearch_default]
           processors: [attributes/failover_username_a]
           exporters: [opensearch/failover_a]
         logs/failover_b:
-          receivers: [failover/opensearch]
+          receivers: [forward/opensearch_default]
           processors: [attributes/failover_username_b]
           exporters: [opensearch/failover_b]
 {{- if .Values.openTelemetryPlugin.openTelemetry.logsCollector.journaldConfig.enabled }}

@@ -187,7 +187,7 @@ attributes/swift_proxy:
 {{- end }}
 
 {{- define "openstack.exporter" }}
-opensearch/failover_a_swift:
+opensearch/swift_failover_a:
   http:
     auth:
       authenticator: basicauth/failover_a
@@ -203,7 +203,7 @@ opensearch/failover_a_swift:
     queue_size: 10000
     sizer: requests
   timeout: 30s
-opensearch/failover_b_swift:
+opensearch/swift_failover_b:
   http:
     auth:
       authenticator: basicauth/failover_b
@@ -228,14 +228,20 @@ logs/containerd:
   exporters: [routing]
 
 logs/route_swift:
-  exporters: [forward/opensearch_swift]
+  receivers: [routing]
   processors: [batch]
-  receivers:[routing]
+  exporters: [forward/opensearch_swift]
+
+logs/forward_swift:
+  receivers: [forward/opensearch_swift]
+  processors: [batch]
+  exporters: [failover/opensearch_swift]
 
 logs/failover_a_swift:
   receivers: [failover/opensearch_swift]
   processors: [attributes/failover_username_a]
   exporters: [opensearch/swift_failover_a]
+
 logs/failover_b_swift:
   receivers: [failover/opensearch_swift]
   processors: [attributes/failover_username_b]
