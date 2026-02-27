@@ -236,8 +236,10 @@ spec:
         logs_index: ${index}-datastream
         retry_on_failure:
           enabled: true
-          max_elapsed_time: 0s
-        timeout: 30s
+          initial_interval: 1s
+          max_interval: 5s
+          max_elapsed_time: 30s
+        timeout: 10s
       opensearch/failover_b:
         http:
           auth:
@@ -246,8 +248,10 @@ spec:
         logs_index: ${index}-datastream
         retry_on_failure:
           enabled: true
-          max_elapsed_time: 0s
-        timeout: 30s
+          initial_interval: 1s
+          max_interval: 5s
+          max_elapsed_time: 30s
+        timeout: 10s
       opensearch/cronus_failover_a:
         http:
           auth:
@@ -256,8 +260,10 @@ spec:
         logs_index: cronus-datastream
         retry_on_failure:
           enabled: true
-          max_elapsed_time: 0s
-        timeout: 30s
+          initial_interval: 1s
+          max_interval: 5s
+          max_elapsed_time: 30s
+        timeout: 10s
       opensearch/cronus_failover_b:
         http:
           auth:
@@ -266,8 +272,10 @@ spec:
         logs_index: cronus-datastream
         retry_on_failure:
           enabled: true
-          max_elapsed_time: 0s
-        timeout: 30s
+          initial_interval: 1s
+          max_interval: 5s
+          max_elapsed_time: 30s
+        timeout: 10s
 {{- if .Values.openTelemetryPlugin.openTelemetry.logsCollector.openstackConfig.enabled }}
     {{- include "openstack.exporter" . | nindent 6 -}}
 {{- end }}
@@ -299,9 +307,6 @@ spec:
         - pipelines:
           - logs/route_swift
           statement: route() where resource.attributes["k8s.namespace.name"] == "swift"
-      forward/opensearch_default: {}
-      forward/opensearch_cronus: {}
-      forward/opensearch_swift: {}
       failover/opensearch:
         priority_levels:
           - [logs/failover_a]
@@ -326,8 +331,8 @@ spec:
           sizer: requests
       failover/opensearch_cronus:
         priority_levels:
-          - [logs/failover_a]
-          - [logs/failover_b]
+          - [logs/failover_a_cronus]
+          - [logs/failover_b_cronus]
         retry_interval: 20m
         sending_queue:
           block_on_overflow: true
@@ -370,29 +375,29 @@ spec:
         logs/route_default:
           receivers: [routing]
           processors: [batch]
-          exporters: [forward/opensearch_default]
+          exporters: [failover/opensearch]
         logs/route_cronus:
           receivers: [routing]
           processors: [batch]
-          exporters: [forward/opensearch_cronus]
+          exporters: [failover/opensearch_cronus]
         logs/route_swift:
           receivers: [routing]
           processors: [batch]
-          exporters: [forward/opensearch_swift]
-        logs/cronus_failover_a:
-          receivers: [forward/opensearch_cronus]
+          exporters: [failover/opensearch_swift]
+        logs/failover_a_cronus:
+          receivers: [failover/opensearch_cronus]
           processors: [attributes/failover_username_a]
           exporters: [opensearch/cronus_failover_a]
-        logs/cronus_failover_b:
-          receivers: [forward/opensearch_cronus]
+        logs/failover_b_cronus:
+          receivers: [failover/opensearch_cronus]
           processors: [attributes/failover_username_b]
           exporters: [opensearch/cronus_failover_b]
         logs/failover_a:
-          receivers: [forward/opensearch_default]
+          receivers: [failover/opensearch]
           processors: [attributes/failover_username_a]
           exporters: [opensearch/failover_a]
         logs/failover_b:
-          receivers: [forward/opensearch_default]
+          receivers: [failover/opensearch]
           processors: [attributes/failover_username_b]
           exporters: [opensearch/failover_b]
 {{- if .Values.openTelemetryPlugin.openTelemetry.logsCollector.journaldConfig.enabled }}

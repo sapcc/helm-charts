@@ -195,14 +195,16 @@ opensearch/swift_failover_a:
   logs_index: ${index}-swift-datastream
   retry_on_failure:
     enabled: true
-    max_elapsed_time: 0s
+    initial_interval: 1s
+    max_interval: 5s
+    max_elapsed_time: 30s
   sending_queue:
     block_on_overflow: true
     enabled: true
     num_consumers: 10
     queue_size: 10000
     sizer: requests
-  timeout: 30s
+  timeout: 10s
 opensearch/swift_failover_b:
   http:
     auth:
@@ -211,14 +213,16 @@ opensearch/swift_failover_b:
   logs_index: ${index}-swift-datastream
   retry_on_failure:
     enabled: true
-    max_elapsed_time: 0s
+    initial_interval: 1s
+    max_interval: 5s
+    max_elapsed_time: 30s
   sending_queue:
     block_on_overflow: true
     enabled: true
     num_consumers: 10
     queue_size: 10000
     sizer: requests
-  timeout: 30s
+  timeout: 10s
 {{- end }}
 
 {{- define "openstack.pipeline" }}
@@ -229,11 +233,6 @@ logs/containerd:
 
 logs/route_swift:
   receivers: [routing]
-  processors: [batch]
-  exporters: [forward/opensearch_swift]
-
-logs/forward_swift:
-  receivers: [forward/opensearch_swift]
   processors: [batch]
   exporters: [failover/opensearch_swift]
 
