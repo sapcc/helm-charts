@@ -4,7 +4,7 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   labels:
-    helm.sh/chart: "0.3.1-20260223170257-587fb33-crds"
+    helm.sh/chart: "0.2.2-20260211081919-3373651-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -17,13 +17,13 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   labels:
-    helm.sh/chart: "0.3.1-20260223170257-587fb33-crds"
+    helm.sh/chart: "0.2.2-20260211081919-3373651-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
     app.kubernetes.io/managed-by: Helm
   annotations:
-    controller-gen.kubebuilder.io/version: v0.20.1
+    controller-gen.kubebuilder.io/version: v0.20.0
   name: biossettings.metal.ironcore.dev
 spec:
   group: metal.ironcore.dev
@@ -31,8 +31,6 @@ spec:
     kind: BIOSSettings
     listKind: BIOSSettingsList
     plural: biossettings
-    shortNames:
-      - bioss
     singular: biossettings
   scope: Cluster
   versions:
@@ -84,7 +82,7 @@ spec:
                   description: ServerMaintenancePolicy is a maintenance policy to be enforced on the server.
                   type: string
                 serverMaintenanceRef:
-                  description: ServerMaintenanceRef is a reference to a ServerMaintenance object that BIOSSettings has requested for the referred server.
+                  description: ServerMaintenanceRef is a reference to a ServerMaintenance object that BiosSetting has requested for the referred server.
                   properties:
                     apiVersion:
                       description: APIVersion is the API version of the referenced object.
@@ -109,7 +107,7 @@ spec:
                     - uid
                   type: object
                 serverRef:
-                  description: ServerRef is a reference to a specific server to apply the BIOS settings on.
+                  description: ServerRef is a reference to a specific server to apply bios setting on.
                   properties:
                     name:
                       default: ""
@@ -126,16 +124,18 @@ spec:
                     - message: serverRef is immutable
                       rule: self == oldSelf
                 settingsFlow:
-                  description: SettingsFlow contains the BIOS settings sequence to apply in the given order.
+                  description: SettingsFlow contains BIOS settings sequence to apply on the BIOS in given order
                   items:
                     properties:
                       name:
-                        description: Name is the name of the flow item.
+                        description: Name is the name of the flow item
                         maxLength: 1000
                         minLength: 1
                         type: string
                       priority:
-                        description: Priority defines the order of applying the settings. Lower numbers have higher priority (i.e. lower numbers are applied first).
+                        description: |-
+                          Priority defines the order of applying the settings
+                          any int greater than 0. lower number have higher Priority (ie; lower number is applied first)
                         format: int32
                         maximum: 2147483645
                         minimum: 1
@@ -143,7 +143,7 @@ spec:
                       settings:
                         additionalProperties:
                           type: string
-                        description: Settings contains software (e.g. BIOS, BMC) settings as a map.
+                        description: 'Settings contains software (eg: BIOS, BMC) settings as map'
                         type: object
                     required:
                       - name
@@ -151,7 +151,7 @@ spec:
                     type: object
                   type: array
                 version:
-                  description: Version specifies the software version (e.g. BIOS, BMC) these settings apply to.
+                  description: 'Version contains software (eg: BIOS, BMC) version this settings applies to'
                   type: string
               required:
                 - version
@@ -276,17 +276,17 @@ spec:
                           type: object
                         type: array
                       flowState:
-                        description: State represents the current state of the BIOS settings update for the current priority.
+                        description: State represents the current state of the bios configuration task for current priority.
                         type: string
                       lastAppliedTime:
                         description: LastAppliedTime represents the timestamp when the last setting was successfully applied.
                         format: date-time
                         type: string
                       name:
-                        description: Name identifies the current priority settings from the spec.
+                        description: Name identifies current priority settings from the Spec
                         type: string
                       priority:
-                        description: Priority identifies the settings priority from the spec.
+                        description: Priority identifies the settings priority from the Spec
                         format: int32
                         type: integer
                     type: object
@@ -296,7 +296,7 @@ spec:
                   format: date-time
                   type: string
                 state:
-                  description: State represents the current state of the BIOS settings update.
+                  description: State represents the current state of the bios configuration task.
                   type: string
               type: object
           type: object
@@ -310,13 +310,13 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   labels:
-    helm.sh/chart: "0.3.1-20260223170257-587fb33-crds"
+    helm.sh/chart: "0.2.2-20260211081919-3373651-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
     app.kubernetes.io/managed-by: Helm
   annotations:
-    controller-gen.kubebuilder.io/version: v0.20.1
+    controller-gen.kubebuilder.io/version: v0.20.0
   name: biossettingssets.metal.ironcore.dev
 spec:
   group: metal.ironcore.dev
@@ -324,8 +324,6 @@ spec:
     kind: BIOSSettingsSet
     listKind: BIOSSettingsSetList
     plural: biossettingssets
-    shortNames:
-      - biosss
     singular: biossettingsset
   scope: Cluster
   versions:
@@ -380,22 +378,24 @@ spec:
               description: BIOSSettingsSetSpec defines the desired state of BIOSSettingsSet.
               properties:
                 biosSettingsTemplate:
-                  description: BIOSSettingsTemplate defines the template for the BIOSSettings resource to be applied to the servers.
+                  description: BiosSettingsTemplate defines the template for the BIOSSettings Resource to be applied to the servers.
                   properties:
                     serverMaintenancePolicy:
                       description: ServerMaintenancePolicy is a maintenance policy to be enforced on the server.
                       type: string
                     settingsFlow:
-                      description: SettingsFlow contains the BIOS settings sequence to apply in the given order.
+                      description: SettingsFlow contains BIOS settings sequence to apply on the BIOS in given order
                       items:
                         properties:
                           name:
-                            description: Name is the name of the flow item.
+                            description: Name is the name of the flow item
                             maxLength: 1000
                             minLength: 1
                             type: string
                           priority:
-                            description: Priority defines the order of applying the settings. Lower numbers have higher priority (i.e. lower numbers are applied first).
+                            description: |-
+                              Priority defines the order of applying the settings
+                              any int greater than 0. lower number have higher Priority (ie; lower number is applied first)
                             format: int32
                             maximum: 2147483645
                             minimum: 1
@@ -403,7 +403,7 @@ spec:
                           settings:
                             additionalProperties:
                               type: string
-                            description: Settings contains software (e.g. BIOS, BMC) settings as a map.
+                            description: 'Settings contains software (eg: BIOS, BMC) settings as map'
                             type: object
                         required:
                           - name
@@ -411,7 +411,7 @@ spec:
                         type: object
                       type: array
                     version:
-                      description: Version specifies the software version (e.g. BIOS, BMC) these settings apply to.
+                      description: 'Version contains software (eg: BIOS, BMC) version this settings applies to'
                       type: string
                   required:
                     - version
@@ -467,27 +467,27 @@ spec:
               description: BIOSSettingsSetStatus defines the observed state of BIOSSettingsSet.
               properties:
                 availableBIOSSettings:
-                  description: AvailableBIOSSettings is the number of BIOSSettings currently created by the set.
+                  description: AvailableBIOSVersion is the number of Settings current created by the set.
                   format: int32
                   type: integer
                 completedBIOSSettings:
-                  description: CompletedBIOSSettings is the total number of completed BIOSSettings in the set.
+                  description: CompletedBIOSSettings is the total number of completed server in the set.
                   format: int32
                   type: integer
                 failedBIOSSettings:
-                  description: FailedBIOSSettings is the total number of failed BIOSSettings in the set.
+                  description: FailedBIOSSettings is the total number of failed server in the set.
                   format: int32
                   type: integer
                 fullyLabeledServers:
-                  description: FullyLabeledServers is the number of servers in the set.
+                  description: FullyLabeledServers is the number of server in the set.
                   format: int32
                   type: integer
                 inProgressBIOSSettings:
-                  description: InProgressBIOSSettings is the total number of BIOSSettings in the set that are currently in progress.
+                  description: InProgressBIOSSettings is the total number of server in the set that are currently in InProgress.
                   format: int32
                   type: integer
                 pendingBIOSSettings:
-                  description: PendingBIOSSettings is the total number of pending BIOSSettings in the set.
+                  description: PendingBIOSSettings is the total number of pending server in the set.
                   format: int32
                   type: integer
               type: object
@@ -502,13 +502,13 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   labels:
-    helm.sh/chart: "0.3.1-20260223170257-587fb33-crds"
+    helm.sh/chart: "0.2.2-20260211081919-3373651-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
     app.kubernetes.io/managed-by: Helm
   annotations:
-    controller-gen.kubebuilder.io/version: v0.20.1
+    controller-gen.kubebuilder.io/version: v0.20.0
   name: biosversions.metal.ironcore.dev
 spec:
   group: metal.ironcore.dev
@@ -516,8 +516,6 @@ spec:
     kind: BIOSVersion
     listKind: BIOSVersionList
     plural: biosversions
-    shortNames:
-      - biosv
     singular: biosversion
   scope: Cluster
   versions:
@@ -525,8 +523,8 @@ spec:
         - jsonPath: .spec.version
           name: BIOSVersion
           type: string
-        - jsonPath: .spec.updatePolicy
-          name: UpdatePolicy
+        - jsonPath: .spec.updateType
+          name: ForceUpdate
           type: string
         - jsonPath: .spec.serverRef.name
           name: ServerRef
@@ -575,13 +573,15 @@ spec:
               description: BIOSVersionSpec defines the desired state of BIOSVersion.
               properties:
                 image:
-                  description: Image specifies the image to use to upgrade to the given BIOS version.
+                  description: details regarding the image to use to upgrade to given BIOS version
                   properties:
                     URI:
-                      description: URI is the URI of the software image to install.
+                      description: The URI of the software image to update/install."
                       type: string
                     secretRef:
-                      description: SecretRef is a reference to the Secret containing the credentials to access the image URI.
+                      description: |-
+                        ImageSecretRef is a reference to the Kubernetes Secret (of type SecretTypeBasicAuth) object that contains the credentials
+                        to access the ImageURI. This secret includes sensitive information such as usernames and passwords.
                       properties:
                         name:
                           description: name is unique within a namespace to reference a secret resource.
@@ -592,7 +592,7 @@ spec:
                       type: object
                       x-kubernetes-map-type: atomic
                     transferProtocol:
-                      description: TransferProtocol is the network protocol used to retrieve the image URI.
+                      description: The network protocol that the server's update service uses to retrieve 'ImageURI'
                       type: string
                   required:
                     - URI
@@ -601,7 +601,7 @@ spec:
                   description: ServerMaintenancePolicy is a maintenance policy to be enforced on the server.
                   type: string
                 serverMaintenanceRef:
-                  description: ServerMaintenanceRef is a reference to a ServerMaintenance object that the controller has requested for the referred server.
+                  description: ServerMaintenanceRef is a reference to a ServerMaintenance object that that Controller has requested for the referred server.
                   properties:
                     apiVersion:
                       description: APIVersion is the API version of the referenced object.
@@ -626,7 +626,7 @@ spec:
                     - uid
                   type: object
                 serverRef:
-                  description: ServerRef is a reference to a specific server to apply the BIOS upgrade on.
+                  description: ServerRef is a reference to a specific server to apply bios upgrade on.
                   properties:
                     name:
                       default: ""
@@ -643,10 +643,10 @@ spec:
                     - message: serverRef is immutable
                       rule: self == oldSelf
                 updatePolicy:
-                  description: UpdatePolicy indicates whether the server's upgrade service should bypass vendor update policies.
+                  description: UpdatePolicy An indication of whether the server's upgrade service should bypass vendor update policies
                   type: string
                 version:
-                  description: Version specifies the BIOS version to upgrade to.
+                  description: Version contains a BIOS version to upgrade to
                   type: string
               required:
                 - image
@@ -656,7 +656,7 @@ spec:
               description: BIOSVersionStatus defines the observed state of BIOSVersion.
               properties:
                 conditions:
-                  description: Conditions represents the latest available observations of the BIOS version upgrade state.
+                  description: Conditions represents the latest available observations of the Bios version upgrade state.
                   items:
                     description: Condition contains details for one aspect of the current state of this API Resource.
                     properties:
@@ -712,7 +712,7 @@ spec:
                     type: object
                   type: array
                 state:
-                  description: State represents the current state of the BIOS upgrade task.
+                  description: State represents the current state of the bios configuration task.
                   type: string
                 upgradeTask:
                   description: UpgradeTask contains the state of the Upgrade Task created by the BMC
@@ -743,13 +743,13 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   labels:
-    helm.sh/chart: "0.3.1-20260223170257-587fb33-crds"
+    helm.sh/chart: "0.2.2-20260211081919-3373651-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
     app.kubernetes.io/managed-by: Helm
   annotations:
-    controller-gen.kubebuilder.io/version: v0.20.1
+    controller-gen.kubebuilder.io/version: v0.20.0
   name: biosversionsets.metal.ironcore.dev
 spec:
   group: metal.ironcore.dev
@@ -757,8 +757,6 @@ spec:
     kind: BIOSVersionSet
     listKind: BIOSVersionSetList
     plural: biosversionsets
-    shortNames:
-      - biosvs
     singular: biosversionset
   scope: Cluster
   versions:
@@ -813,16 +811,18 @@ spec:
               description: BIOSVersionSetSpec defines the desired state of BIOSVersionSet.
               properties:
                 biosVersionTemplate:
-                  description: BIOSVersionTemplate defines the template for the BIOSVersion resource to be applied to the servers.
+                  description: BIOSVersionTemplate defines the template for the BIOSversion Resource to be applied to the servers.
                   properties:
                     image:
-                      description: Image specifies the image to use to upgrade to the given BIOS version.
+                      description: details regarding the image to use to upgrade to given BIOS version
                       properties:
                         URI:
-                          description: URI is the URI of the software image to install.
+                          description: The URI of the software image to update/install."
                           type: string
                         secretRef:
-                          description: SecretRef is a reference to the Secret containing the credentials to access the image URI.
+                          description: |-
+                            ImageSecretRef is a reference to the Kubernetes Secret (of type SecretTypeBasicAuth) object that contains the credentials
+                            to access the ImageURI. This secret includes sensitive information such as usernames and passwords.
                           properties:
                             name:
                               description: name is unique within a namespace to reference a secret resource.
@@ -833,7 +833,7 @@ spec:
                           type: object
                           x-kubernetes-map-type: atomic
                         transferProtocol:
-                          description: TransferProtocol is the network protocol used to retrieve the image URI.
+                          description: The network protocol that the server's update service uses to retrieve 'ImageURI'
                           type: string
                       required:
                         - URI
@@ -842,10 +842,10 @@ spec:
                       description: ServerMaintenancePolicy is a maintenance policy to be enforced on the server.
                       type: string
                     updatePolicy:
-                      description: UpdatePolicy indicates whether the server's upgrade service should bypass vendor update policies.
+                      description: UpdatePolicy An indication of whether the server's upgrade service should bypass vendor update policies
                       type: string
                     version:
-                      description: Version specifies the BIOS version to upgrade to.
+                      description: Version contains a BIOS version to upgrade to
                       type: string
                   required:
                     - image
@@ -918,7 +918,7 @@ spec:
                   format: int32
                   type: integer
                 inProgressBIOSVersion:
-                  description: InProgressBIOSVersion is the total number of BIOSVersion resources in the set that are currently in progress.
+                  description: InProgressBIOSVersion is the total number of BIOSVersion in the set that are currently in InProgress.
                   format: int32
                   type: integer
                 pendingBIOSVersion:
@@ -937,13 +937,13 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   labels:
-    helm.sh/chart: "0.3.1-20260223170257-587fb33-crds"
+    helm.sh/chart: "0.2.2-20260211081919-3373651-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
     app.kubernetes.io/managed-by: Helm
   annotations:
-    controller-gen.kubebuilder.io/version: v0.20.1
+    controller-gen.kubebuilder.io/version: v0.20.0
   name: bmcs.metal.ironcore.dev
 spec:
   group: metal.ironcore.dev
@@ -1011,7 +1011,9 @@ spec:
               description: BMCSpec defines the desired state of BMC
               properties:
                 access:
-                  description: Endpoint specifies inline network access details for the BMC.
+                  description: |-
+                    Endpoint allows inline configuration of network access details for the BMC.
+                    Use this field if access settings like address are to be configured directly within the BMC resource.
                   properties:
                     ip:
                       description: IP is the IP address of the BMC.
@@ -1025,8 +1027,8 @@ spec:
                       rule: self == oldSelf
                 bmcSecretRef:
                   description: |-
-                    BMCSecretRef is a reference to the BMCSecret object that contains the credentials
-                    required to access the BMC.
+                    BMCSecretRef is a reference to the Kubernetes Secret object that contains the credentials
+                    required to access the BMC. This secret includes sensitive information such as usernames and passwords.
                   properties:
                     name:
                       default: ""
@@ -1059,17 +1061,23 @@ spec:
                   description: BMCUUID is the unique identifier for the BMC as defined in Redfish API.
                   type: string
                 consoleProtocol:
-                  description: ConsoleProtocol specifies the protocol to be used for console access to the BMC.
+                  description: |-
+                    ConsoleProtocol specifies the protocol to be used for console access to the BMC.
+                    This field is optional and can be omitted if console access is not required.
                   properties:
                     name:
-                      description: Name specifies the name of the console protocol.
+                      description: |-
+                        Name specifies the name of the console protocol.
+                        This could be a protocol such as "SSH", "Telnet", etc.
                       enum:
                         - IPMI
                         - SSH
                         - SSHLenovo
                       type: string
                     port:
-                      description: Port specifies the port number used for console access.
+                      description: |-
+                        Port specifies the port number used for console access.
+                        This port is used by the specified console protocol to establish connections.
                       format: int32
                       type: integer
                   required:
@@ -1077,7 +1085,9 @@ spec:
                     - port
                   type: object
                 endpointRef:
-                  description: EndpointRef is a reference to the Endpoint object that contains the network access information for the BMC.
+                  description: |-
+                    EndpointRef is a reference to the Kubernetes object that contains the endpoint information for the BMC.
+                    This reference is typically used to locate the BMC endpoint within the cluster.
                   properties:
                     name:
                       default: ""
@@ -1097,13 +1107,19 @@ spec:
                   description: Hostname is the hostname of the BMC.
                   type: string
                 protocol:
-                  description: Protocol specifies the protocol to be used for communicating with the BMC.
+                  description: |-
+                    Protocol specifies the protocol to be used for communicating with the BMC.
+                    It could be a standard protocol such as IPMI or Redfish.
                   properties:
                     name:
-                      description: Name specifies the name of the protocol.
+                      description: |-
+                        Name specifies the name of the protocol.
+                        This could be a protocol such as "IPMI", "Redfish", etc.
                       type: string
                     port:
-                      description: Port specifies the port number used for communication.
+                      description: |-
+                        Port specifies the port number used for communication.
+                        This port is used by the specified protocol to establish connections.
                       format: int32
                       type: integer
                     scheme:
@@ -1183,14 +1199,18 @@ spec:
                   description: FirmwareVersion is the version of the firmware currently running on the BMC.
                   type: string
                 ip:
-                  description: IP is the IP address of the BMC.
+                  description: |-
+                    IP is the IP address of the BMC.
+                    The type is specified as string and is schemaless.
                   type: string
                 lastResetTime:
                   description: LastResetTime is the timestamp of the last reset operation performed on the BMC.
                   format: date-time
                   type: string
                 macAddress:
-                  description: MACAddress is the MAC address of the BMC.
+                  description: |-
+                    MACAddress is the MAC address of the BMC.
+                    The format is validated using a regular expression pattern.
                   pattern: ^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$
                   type: string
                 manufacturer:
@@ -1226,13 +1246,13 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   labels:
-    helm.sh/chart: "0.3.1-20260223170257-587fb33-crds"
+    helm.sh/chart: "0.2.2-20260211081919-3373651-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
     app.kubernetes.io/managed-by: Helm
   annotations:
-    controller-gen.kubebuilder.io/version: v0.20.1
+    controller-gen.kubebuilder.io/version: v0.20.0
   name: bmcsecrets.metal.ironcore.dev
 spec:
   group: metal.ironcore.dev
@@ -1240,8 +1260,6 @@ spec:
     kind: BMCSecret
     listKind: BMCSecretList
     plural: bmcsecrets
-    shortNames:
-      - bmcsec
     singular: bmcsecret
   scope: Cluster
   versions:
@@ -1313,13 +1331,13 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   labels:
-    helm.sh/chart: "0.3.1-20260223170257-587fb33-crds"
+    helm.sh/chart: "0.2.2-20260211081919-3373651-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
     app.kubernetes.io/managed-by: Helm
   annotations:
-    controller-gen.kubebuilder.io/version: v0.20.1
+    controller-gen.kubebuilder.io/version: v0.20.0
   name: bmcsettings.metal.ironcore.dev
 spec:
   group: metal.ironcore.dev
@@ -1363,10 +1381,9 @@ spec:
             metadata:
               type: object
             spec:
-              description: BMCSettingsSpec defines the desired state of BMCSettings.
               properties:
                 BMCRef:
-                  description: BMCRef is a reference to a specific BMC to apply settings to.
+                  description: BMCRef is a reference to a specific BMC to apply setting to.
                   properties:
                     name:
                       default: ""
@@ -1422,10 +1439,10 @@ spec:
                 settings:
                   additionalProperties:
                     type: string
-                  description: SettingsMap contains BMC settings as a map.
+                  description: SettingsMap contains bmc settings as map
                   type: object
                 version:
-                  description: Version specifies the BMC firmware version for which the settings should be applied.
+                  description: Version defines the BMC firmware for which the settings should be applied.
                   type: string
               required:
                 - BMCRef
@@ -1505,13 +1522,13 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   labels:
-    helm.sh/chart: "0.3.1-20260223170257-587fb33-crds"
+    helm.sh/chart: "0.2.2-20260211081919-3373651-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
     app.kubernetes.io/managed-by: Helm
   annotations:
-    controller-gen.kubebuilder.io/version: v0.20.1
+    controller-gen.kubebuilder.io/version: v0.20.0
   name: bmcsettingssets.metal.ironcore.dev
 spec:
   group: metal.ironcore.dev
@@ -1573,7 +1590,7 @@ spec:
               description: BMCSettingsSetSpec defines the desired state of BMCSettingsSet.
               properties:
                 bmcSelector:
-                  description: BMCSelector specifies a label selector to identify the BMCs to be selected.
+                  description: ' BMCSelector specifies a label selector to identify the BMCs that are to be selected.'
                   properties:
                     matchExpressions:
                       description: matchExpressions is a list of label selector requirements. The requirements are ANDed.
@@ -1617,7 +1634,7 @@ spec:
                   type: object
                   x-kubernetes-map-type: atomic
                 bmcSettingsTemplate:
-                  description: BMCSettingsTemplate defines the template for the BMCSettings resource to be applied to the BMCs.
+                  description: BMCSettingsTemplate defines the template for the BMCSettings Resource to be applied to the BMCs.
                   properties:
                     serverMaintenancePolicy:
                       description: ServerMaintenancePolicy is a maintenance policy to be applied on the server.
@@ -1625,10 +1642,10 @@ spec:
                     settings:
                       additionalProperties:
                         type: string
-                      description: SettingsMap contains BMC settings as a map.
+                      description: SettingsMap contains bmc settings as map
                       type: object
                     version:
-                      description: Version specifies the BMC firmware version for which the settings should be applied.
+                      description: Version defines the BMC firmware for which the settings should be applied.
                       type: string
                   required:
                     - version
@@ -1645,23 +1662,23 @@ spec:
                   format: int32
                   type: integer
                 completedBMCSettings:
-                  description: CompletedBMCSettings is the total number of completed BMCSettings in the set.
+                  description: CompletedBMCSettings is the total number of completed BMC in the set.
                   format: int32
                   type: integer
                 failedBMCSettings:
-                  description: FailedBMCSettings is the total number of failed BMCSettings in the set.
+                  description: FailedBMCSettings is the total number of failed BMC in the set.
                   format: int32
                   type: integer
                 fullyLabeledBMCs:
-                  description: FullyLabeledBMCs is the number of BMCs in the set.
+                  description: FullyLabeledBMCs is the number of BMC in the set.
                   format: int32
                   type: integer
                 inProgressBMCSettings:
-                  description: InProgressBMCSettings is the total number of BMCSettings in the set that are currently in progress.
+                  description: InProgressBMCSettings is the total number of BMC in the set that are currently in progress.
                   format: int32
                   type: integer
                 pendingBMCSettings:
-                  description: PendingBMCSettings is the total number of pending BMCSettings in the set.
+                  description: PendingBMCSettings is the total number of pending BMC in the set.
                   format: int32
                   type: integer
               type: object
@@ -1676,13 +1693,13 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   labels:
-    helm.sh/chart: "0.3.1-20260223170257-587fb33-crds"
+    helm.sh/chart: "0.2.2-20260211081919-3373651-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
     app.kubernetes.io/managed-by: Helm
   annotations:
-    controller-gen.kubebuilder.io/version: v0.20.1
+    controller-gen.kubebuilder.io/version: v0.20.0
   name: bmcusers.metal.ironcore.dev
 spec:
   group: metal.ironcore.dev
@@ -1690,31 +1707,10 @@ spec:
     kind: BMCUser
     listKind: BMCUserList
     plural: bmcusers
-    shortNames:
-      - bmcu
     singular: bmcuser
   scope: Cluster
   versions:
-    - additionalPrinterColumns:
-        - jsonPath: .status.id
-          name: ID
-          type: string
-        - jsonPath: .spec.userName
-          name: UserName
-          type: string
-        - jsonPath: .spec.roleID
-          name: RoleID
-          type: string
-        - jsonPath: .status.lastRotation
-          name: LastRotation
-          type: date
-        - jsonPath: .status.passwordExpiration
-          name: PasswordExpiration
-          type: date
-        - jsonPath: .metadata.creationTimestamp
-          name: Age
-          type: date
-      name: v1alpha1
+    - name: v1alpha1
       schema:
         openAPIV3Schema:
           description: BMCUser is the Schema for the bmcusers API.
@@ -1770,18 +1766,21 @@ spec:
                   type: object
                   x-kubernetes-map-type: atomic
                 description:
-                  description: Description is a description for the BMC user.
+                  description: Description is an optional description for the BMC user.
                   type: string
                 roleID:
-                  description: RoleID is the ID of the role to assign to the user.
+                  description: |-
+                    RoleID is the ID of the role to assign to the user.
+                    The available roles depend on the BMC implementation.
+                    For Redfish, common role IDs are "Administrator", "Operator", "ReadOnly".
                   type: string
                 rotationPeriod:
                   description: |-
                     RotationPeriod defines how often the password should be rotated.
-                    If not set, the password will not be rotated.
+                    if not set, the password will not be rotated.
                   type: string
                 userName:
-                  description: UserName is the username of the BMC user.
+                  description: Username of the BMC user.
                   type: string
               required:
                 - roleID
@@ -1807,7 +1806,7 @@ spec:
                   type: object
                   x-kubernetes-map-type: atomic
                 id:
-                  description: ID is the identifier of the user in the BMC system.
+                  description: ID of the user in the BMC system
                   type: string
                 lastRotation:
                   description: LastRotation is the timestamp of the last password rotation.
@@ -1829,13 +1828,13 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   labels:
-    helm.sh/chart: "0.3.1-20260223170257-587fb33-crds"
+    helm.sh/chart: "0.2.2-20260211081919-3373651-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
     app.kubernetes.io/managed-by: Helm
   annotations:
-    controller-gen.kubebuilder.io/version: v0.20.1
+    controller-gen.kubebuilder.io/version: v0.20.0
   name: bmcversions.metal.ironcore.dev
 spec:
   group: metal.ironcore.dev
@@ -1843,8 +1842,6 @@ spec:
     kind: BMCVersion
     listKind: BMCVersionList
     plural: bmcversions
-    shortNames:
-      - bmcv
     singular: bmcversion
   scope: Cluster
   versions:
@@ -1852,8 +1849,8 @@ spec:
         - jsonPath: .spec.version
           name: BMCVersion
           type: string
-        - jsonPath: .spec.updatePolicy
-          name: UpdatePolicy
+        - jsonPath: .spec.updateType
+          name: updateType
           type: string
         - jsonPath: .spec.bmcRef.name
           name: BMCRef
@@ -1916,13 +1913,15 @@ spec:
                     - message: bmcRef is immutable
                       rule: self == oldSelf
                 image:
-                  description: Image specifies the image to use to upgrade to the given BMC version.
+                  description: details regarding the image to use to upgrade to given BMC version
                   properties:
                     URI:
-                      description: URI is the URI of the software image to install.
+                      description: The URI of the software image to update/install."
                       type: string
                     secretRef:
-                      description: SecretRef is a reference to the Secret containing the credentials to access the image URI.
+                      description: |-
+                        ImageSecretRef is a reference to the Kubernetes Secret (of type SecretTypeBasicAuth) object that contains the credentials
+                        to access the ImageURI. This secret includes sensitive information such as usernames and passwords.
                       properties:
                         name:
                           description: name is unique within a namespace to reference a secret resource.
@@ -1933,7 +1932,7 @@ spec:
                       type: object
                       x-kubernetes-map-type: atomic
                     transferProtocol:
-                      description: TransferProtocol is the network protocol used to retrieve the image URI.
+                      description: The network protocol that the server's update service uses to retrieve 'ImageURI'
                       type: string
                   required:
                     - URI
@@ -1942,7 +1941,7 @@ spec:
                   description: ServerMaintenancePolicy is a maintenance policy to be enforced on the server managed by referred BMC.
                   type: string
                 serverMaintenanceRefs:
-                  description: ServerMaintenanceRefs are references to ServerMaintenance objects that the controller has requested for the related servers.
+                  description: ServerMaintenanceRefs are references to a ServerMaintenance objects that Controller has requested for the each of the related server.
                   items:
                     description: ObjectReference is the namespaced name reference to an object.
                     properties:
@@ -1970,10 +1969,10 @@ spec:
                     type: object
                   type: array
                 updatePolicy:
-                  description: UpdatePolicy indicates whether the server's upgrade service should bypass vendor update policies.
+                  description: UpdatePolicy is an indication of whether the server's upgrade service should bypass vendor update policies
                   type: string
                 version:
-                  description: Version specifies the BMC version to upgrade to.
+                  description: Version contains a BMC version to upgrade to
                   type: string
               required:
                 - image
@@ -2042,7 +2041,7 @@ spec:
                   description: State represents the current state of the BMC configuration task.
                   type: string
                 upgradeTask:
-                  description: UpgradeTask contains the state of the upgrade task created by the BMC.
+                  description: UpgradeTask contains the state of the Upgrade Task created by the BMC
                   properties:
                     URI:
                       description: URI is the URI of the task created by the BMC for the BIOS upgrade.
@@ -2070,13 +2069,13 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   labels:
-    helm.sh/chart: "0.3.1-20260223170257-587fb33-crds"
+    helm.sh/chart: "0.2.2-20260211081919-3373651-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
     app.kubernetes.io/managed-by: Helm
   annotations:
-    controller-gen.kubebuilder.io/version: v0.20.1
+    controller-gen.kubebuilder.io/version: v0.20.0
   name: bmcversionsets.metal.ironcore.dev
 spec:
   group: metal.ironcore.dev
@@ -2084,8 +2083,6 @@ spec:
     kind: BMCVersionSet
     listKind: BMCVersionSetList
     plural: bmcversionsets
-    shortNames:
-      - bmcvs
     singular: bmcversionset
   scope: Cluster
   versions:
@@ -2140,7 +2137,7 @@ spec:
               description: BMCVersionSetSpec defines the desired state of BMCVersionSet.
               properties:
                 bmcSelector:
-                  description: BMCSelector specifies a label selector to identify the BMCs to be selected.
+                  description: BMCSelector specifies a label selector to identify the BMC that are to be selected.
                   properties:
                     matchExpressions:
                       description: matchExpressions is a list of label selector requirements. The requirements are ANDed.
@@ -2184,16 +2181,18 @@ spec:
                   type: object
                   x-kubernetes-map-type: atomic
                 bmcVersionTemplate:
-                  description: BMCVersionTemplate defines the template for the BMCVersion resource to be applied to the BMCs.
+                  description: BMCVersionTemplate defines the template for the BMCversion Resource to be applied to the servers.
                   properties:
                     image:
-                      description: Image specifies the image to use to upgrade to the given BMC version.
+                      description: details regarding the image to use to upgrade to given BMC version
                       properties:
                         URI:
-                          description: URI is the URI of the software image to install.
+                          description: The URI of the software image to update/install."
                           type: string
                         secretRef:
-                          description: SecretRef is a reference to the Secret containing the credentials to access the image URI.
+                          description: |-
+                            ImageSecretRef is a reference to the Kubernetes Secret (of type SecretTypeBasicAuth) object that contains the credentials
+                            to access the ImageURI. This secret includes sensitive information such as usernames and passwords.
                           properties:
                             name:
                               description: name is unique within a namespace to reference a secret resource.
@@ -2204,7 +2203,7 @@ spec:
                           type: object
                           x-kubernetes-map-type: atomic
                         transferProtocol:
-                          description: TransferProtocol is the network protocol used to retrieve the image URI.
+                          description: The network protocol that the server's update service uses to retrieve 'ImageURI'
                           type: string
                       required:
                         - URI
@@ -2213,10 +2212,10 @@ spec:
                       description: ServerMaintenancePolicy is a maintenance policy to be enforced on the server managed by referred BMC.
                       type: string
                     updatePolicy:
-                      description: UpdatePolicy indicates whether the server's upgrade service should bypass vendor update policies.
+                      description: UpdatePolicy is an indication of whether the server's upgrade service should bypass vendor update policies
                       type: string
                     version:
-                      description: Version specifies the BMC version to upgrade to.
+                      description: Version contains a BMC version to upgrade to
                       type: string
                   required:
                     - image
@@ -2229,27 +2228,27 @@ spec:
               description: BMCVersionSetStatus defines the observed state of BMCVersionSet.
               properties:
                 availableBMCVersion:
-                  description: AvailableBMCVersion is the number of BMCVersion resources currently created by the set.
+                  description: AvailableBMCVersion is the number of BMCVersion current created by the set.
                   format: int32
                   type: integer
                 completedBMCVersion:
-                  description: CompletedBMCVersion is the total number of completed BMCVersion resources in the set.
+                  description: CompletedBMCVersion is the total number of completed BMCVersion in the set.
                   format: int32
                   type: integer
                 failedBMCVersion:
-                  description: FailedBMCVersion is the total number of failed BMCVersion resources in the set.
+                  description: FailedBMCVersion is the total number of failed BMCVersion in the set.
                   format: int32
                   type: integer
                 fullyLabeledBMCs:
-                  description: FullyLabeledBMCs is the number of BMCs in the set.
+                  description: FullyLabeledBMCs is the number of server in the set.
                   format: int32
                   type: integer
                 inProgressBMCVersion:
-                  description: InProgressBMCVersion is the total number of BMCVersion resources in the set that are currently in progress.
+                  description: InProgressBMCVersion is the total number of BMCVersion in the set that are currently in InProgress.
                   format: int32
                   type: integer
                 pendingBMCVersion:
-                  description: PendingBMCVersion is the total number of pending BMCVersion resources in the set.
+                  description: PendingBMCVersion is the total number of pending BMCVersion in the set.
                   format: int32
                   type: integer
               type: object
@@ -2264,13 +2263,13 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   labels:
-    helm.sh/chart: "0.3.1-20260223170257-587fb33-crds"
+    helm.sh/chart: "0.2.2-20260211081919-3373651-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
     app.kubernetes.io/managed-by: Helm
   annotations:
-    controller-gen.kubebuilder.io/version: v0.20.1
+    controller-gen.kubebuilder.io/version: v0.20.0
   name: endpoints.metal.ironcore.dev
 spec:
   group: metal.ironcore.dev
@@ -2278,8 +2277,6 @@ spec:
     kind: Endpoint
     listKind: EndpointList
     plural: endpoints
-    shortNames:
-      - mep
     singular: endpoint
   scope: Cluster
   versions:
@@ -2339,13 +2336,13 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   labels:
-    helm.sh/chart: "0.3.1-20260223170257-587fb33-crds"
+    helm.sh/chart: "0.2.2-20260211081919-3373651-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
     app.kubernetes.io/managed-by: Helm
   annotations:
-    controller-gen.kubebuilder.io/version: v0.20.1
+    controller-gen.kubebuilder.io/version: v0.20.0
   name: serverbootconfigurations.metal.ironcore.dev
 spec:
   group: metal.ironcore.dev
@@ -2353,8 +2350,6 @@ spec:
     kind: ServerBootConfiguration
     listKind: ServerBootConfigurationList
     plural: serverbootconfigurations
-    shortNames:
-      - sbc
     singular: serverbootconfiguration
   scope: Namespaced
   versions:
@@ -2401,8 +2396,8 @@ spec:
               properties:
                 ignitionSecretRef:
                   description: |-
-                    IgnitionSecretRef is a reference to the Secret object that contains
-                    the ignition configuration for the server.
+                    IgnitionSecretRef is a reference to the Kubernetes Secret object that contains
+                    the ignition configuration for the server. This field is optional and can be omitted if not specified.
                   properties:
                     name:
                       default: ""
@@ -2416,7 +2411,9 @@ spec:
                   type: object
                   x-kubernetes-map-type: atomic
                 image:
-                  description: Image specifies the boot image to be used for the server.
+                  description: |-
+                    Image specifies the boot image to be used for the server.
+                    This field is optional and can be omitted if not specified.
                   type: string
                 serverRef:
                   description: ServerRef is a reference to the server for which this boot configuration is intended.
@@ -2509,13 +2506,13 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   labels:
-    helm.sh/chart: "0.3.1-20260223170257-587fb33-crds"
+    helm.sh/chart: "0.2.2-20260211081919-3373651-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
     app.kubernetes.io/managed-by: Helm
   annotations:
-    controller-gen.kubebuilder.io/version: v0.20.1
+    controller-gen.kubebuilder.io/version: v0.20.0
   name: serverclaims.metal.ironcore.dev
 spec:
   group: metal.ironcore.dev
@@ -2523,8 +2520,6 @@ spec:
     kind: ServerClaim
     listKind: ServerClaimList
     plural: serverclaims
-    shortNames:
-      - scl
     singular: serverclaim
   scope: Namespaced
   versions:
@@ -2571,8 +2566,8 @@ spec:
               properties:
                 ignitionSecretRef:
                   description: |-
-                    IgnitionSecretRef is a reference to the Secret object that contains
-                    the ignition configuration for the server.
+                    IgnitionSecretRef is a reference to the Kubernetes Secret object that contains
+                    the ignition configuration for the server. This field is optional and can be omitted if not specified.
                   properties:
                     name:
                       default: ""
@@ -2592,7 +2587,9 @@ spec:
                   description: Power specifies the desired power state of the server.
                   type: string
                 serverRef:
-                  description: ServerRef is a reference to a specific server to be claimed.
+                  description: |-
+                    ServerRef is a reference to a specific server to be claimed.
+                    This field is optional and can be omitted if the server is to be selected using ServerSelector.
                   properties:
                     name:
                       default: ""
@@ -2609,7 +2606,9 @@ spec:
                     - message: serverRef is immutable
                       rule: self == oldSelf
                 serverSelector:
-                  description: ServerSelector specifies a label selector to identify the server to be claimed.
+                  description: |-
+                    ServerSelector specifies a label selector to identify the server to be claimed.
+                    This field is optional and can be omitted if a specific server is referenced using ServerRef.
                   properties:
                     matchExpressions:
                       description: matchExpressions is a list of label selector requirements. The requirements are ANDed.
@@ -2682,13 +2681,13 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   labels:
-    helm.sh/chart: "0.3.1-20260223170257-587fb33-crds"
+    helm.sh/chart: "0.2.2-20260211081919-3373651-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
     app.kubernetes.io/managed-by: Helm
   annotations:
-    controller-gen.kubebuilder.io/version: v0.20.1
+    controller-gen.kubebuilder.io/version: v0.20.0
   name: servermaintenances.metal.ironcore.dev
 spec:
   group: metal.ironcore.dev
@@ -2696,8 +2695,6 @@ spec:
     kind: ServerMaintenance
     listKind: ServerMaintenanceList
     plural: servermaintenances
-    shortNames:
-      - sm
     singular: servermaintenance
   scope: Namespaced
   versions:
@@ -2717,9 +2714,6 @@ spec:
         - jsonPath: .status.state
           name: State
           type: string
-        - jsonPath: .spec.priority
-          name: Priority
-          type: integer
         - jsonPath: .metadata.creationTimestamp
           name: Age
           type: date
@@ -2751,14 +2745,6 @@ spec:
                 policy:
                   description: Policy specifies the maintenance policy to be enforced on the server.
                   type: string
-                priority:
-                  default: 0
-                  description: |-
-                    Priority determines ordering when multiple ServerMaintenance resources target the same server.
-                    Higher values are processed first. If priorities are equal, older resources are processed first.
-                    If omitted, priority is treated as 0.
-                  format: int32
-                  type: integer
                 serverBootConfigurationTemplate:
                   description: ServerBootConfigurationTemplate specifies the boot configuration to be applied to the server during maintenance.
                   properties:
@@ -2766,12 +2752,12 @@ spec:
                       description: Name specifies the name of the boot configuration.
                       type: string
                     spec:
-                      description: Spec specifies the boot configuration to be rendered.
+                      description: Parameters specify the parameters to be used for rendering the boot configuration.
                       properties:
                         ignitionSecretRef:
                           description: |-
-                            IgnitionSecretRef is a reference to the Secret object that contains
-                            the ignition configuration for the server.
+                            IgnitionSecretRef is a reference to the Kubernetes Secret object that contains
+                            the ignition configuration for the server. This field is optional and can be omitted if not specified.
                           properties:
                             name:
                               default: ""
@@ -2785,7 +2771,9 @@ spec:
                           type: object
                           x-kubernetes-map-type: atomic
                         image:
-                          description: Image specifies the boot image to be used for the server.
+                          description: |-
+                            Image specifies the boot image to be used for the server.
+                            This field is optional and can be omitted if not specified.
                           type: string
                         serverRef:
                           description: ServerRef is a reference to the server for which this boot configuration is intended.
@@ -2846,13 +2834,13 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   labels:
-    helm.sh/chart: "0.3.1-20260223170257-587fb33-crds"
+    helm.sh/chart: "0.2.2-20260211081919-3373651-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
     app.kubernetes.io/managed-by: Helm
   annotations:
-    controller-gen.kubebuilder.io/version: v0.20.1
+    controller-gen.kubebuilder.io/version: v0.20.0
   name: servers.metal.ironcore.dev
 spec:
   group: metal.ironcore.dev
@@ -2860,8 +2848,6 @@ spec:
     kind: Server
     listKind: ServerList
     plural: servers
-    shortNames:
-      - srv
     singular: server
   scope: Cluster
   versions:
@@ -2941,15 +2927,17 @@ spec:
                   type: object
                   x-kubernetes-map-type: atomic
                 bmc:
-                  description: BMC contains the access details for the BMC.
+                  description: |-
+                    BMC contains the access details for the BMC.
+                    This field is optional and can be omitted if no BMC access is specified.
                   properties:
                     address:
                       description: Address is the address of the BMC.
                       type: string
                     bmcSecretRef:
                       description: |-
-                        BMCSecretRef is a reference to the BMCSecret object that contains the credentials
-                        required to access the BMC.
+                        BMCSecretRef is a reference to the Kubernetes Secret object that contains the credentials
+                        required to access the BMC. This secret includes sensitive information such as usernames and passwords.
                       properties:
                         name:
                           default: ""
@@ -2966,10 +2954,14 @@ spec:
                       description: Protocol specifies the protocol to be used for communicating with the BMC.
                       properties:
                         name:
-                          description: Name specifies the name of the protocol.
+                          description: |-
+                            Name specifies the name of the protocol.
+                            This could be a protocol such as "IPMI", "Redfish", etc.
                           type: string
                         port:
-                          description: Port specifies the port number used for communication.
+                          description: |-
+                            Port specifies the port number used for communication.
+                            This port is used by the specified protocol to establish connections.
                           format: int32
                           type: integer
                         scheme:
@@ -2985,7 +2977,9 @@ spec:
                     - protocol
                   type: object
                 bmcRef:
-                  description: BMCRef is a reference to the BMC object associated with this server.
+                  description: |-
+                    BMCRef is a reference to the BMC object associated with this server.
+                    This field is optional and can be omitted if no BMC is associated with this server.
                   properties:
                     name:
                       default: ""
@@ -3001,7 +2995,8 @@ spec:
                 bootConfigurationRef:
                   description: |-
                     BootConfigurationRef is a reference to a BootConfiguration object that specifies
-                    the boot configuration for this server.
+                    the boot configuration for this server. This field is optional and can be omitted
+                    if no boot configuration is specified.
                   properties:
                     apiVersion:
                       description: APIVersion is the API version of the referenced object.
@@ -3051,7 +3046,7 @@ spec:
                 maintenanceBootConfigurationRef:
                   description: |-
                     MaintenanceBootConfigurationRef is a reference to a BootConfiguration object that specifies
-                    the boot configuration for this server during maintenance.
+                    the boot configuration for this server during maintenance. This field is optional and can be omitted
                   properties:
                     apiVersion:
                       description: APIVersion is the API version of the referenced object.
@@ -3079,7 +3074,9 @@ spec:
                   description: Power specifies the desired power state of the server.
                   type: string
                 serverClaimRef:
-                  description: ServerClaimRef is a reference to a ServerClaim object that claims this server.
+                  description: |-
+                    ServerClaimRef is a reference to a ServerClaim object that claims this server.
+                    This field is optional and can be omitted if no claim is associated with this server.
                   properties:
                     apiVersion:
                       description: APIVersion is the API version of the referenced object.
@@ -3322,12 +3319,12 @@ spec:
                 storages:
                   description: Storages is a list of storages associated with the server.
                   items:
-                    description: Storage defines the details of one storage device.
+                    description: Storage defines the details of one storage device
                     properties:
                       drives:
                         description: Drives is a collection of drives associated with this storage.
                         items:
-                          description: StorageDrive defines the details of one storage drive.
+                          description: StorageDrive defines the details of one storage drive
                           properties:
                             capacity:
                               anyOf:
@@ -3343,7 +3340,7 @@ spec:
                               description: Model specifies the model of the storage device.
                               type: string
                             name:
-                              description: Name is the name of the storage drive.
+                              description: Name is the name of the storage interface.
                               type: string
                             state:
                               description: State specifies the state of the storage device.
@@ -3357,7 +3354,7 @@ spec:
                           type: object
                         type: array
                       name:
-                        description: Name is the name of the storage device.
+                        description: Name is the name of the storage interface.
                         type: string
                       state:
                         description: State specifies the state of the storage device.
@@ -3365,7 +3362,7 @@ spec:
                       volumes:
                         description: Volumes is a collection of volumes associated with this storage.
                         items:
-                          description: StorageVolume defines the details of one storage volume.
+                          description: StorageVolume defines the details of one storage volume
                           properties:
                             capacity:
                               anyOf:
@@ -3375,7 +3372,7 @@ spec:
                               pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                               x-kubernetes-int-or-string: true
                             name:
-                              description: Name is the name of the storage volume.
+                              description: Name is the name of the storage interface.
                               type: string
                             raidType:
                               description: RAIDType specifies the RAID type of the associated Volume.
@@ -3415,7 +3412,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.3.1-20260223170257-587fb33-crds"
+    helm.sh/chart: "0.2.2-20260211081919-3373651-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3446,7 +3443,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.3.1-20260223170257-587fb33-crds"
+    helm.sh/chart: "0.2.2-20260211081919-3373651-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3483,7 +3480,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.3.1-20260223170257-587fb33-crds"
+    helm.sh/chart: "0.2.2-20260211081919-3373651-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3516,7 +3513,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.3.1-20260223170257-587fb33-crds"
+    helm.sh/chart: "0.2.2-20260211081919-3373651-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3547,7 +3544,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.3.1-20260223170257-587fb33-crds"
+    helm.sh/chart: "0.2.2-20260211081919-3373651-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3584,7 +3581,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.3.1-20260223170257-587fb33-crds"
+    helm.sh/chart: "0.2.2-20260211081919-3373651-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3617,7 +3614,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.3.1-20260223170257-587fb33-crds"
+    helm.sh/chart: "0.2.2-20260211081919-3373651-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3648,7 +3645,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.3.1-20260223170257-587fb33-crds"
+    helm.sh/chart: "0.2.2-20260211081919-3373651-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3685,7 +3682,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.3.1-20260223170257-587fb33-crds"
+    helm.sh/chart: "0.2.2-20260211081919-3373651-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3718,7 +3715,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.3.1-20260223170257-587fb33-crds"
+    helm.sh/chart: "0.2.2-20260211081919-3373651-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3749,7 +3746,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.3.1-20260223170257-587fb33-crds"
+    helm.sh/chart: "0.2.2-20260211081919-3373651-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3786,7 +3783,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.3.1-20260223170257-587fb33-crds"
+    helm.sh/chart: "0.2.2-20260211081919-3373651-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3819,7 +3816,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.3.1-20260223170257-587fb33-crds"
+    helm.sh/chart: "0.2.2-20260211081919-3373651-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3845,7 +3842,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.3.1-20260223170257-587fb33-crds"
+    helm.sh/chart: "0.2.2-20260211081919-3373651-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3877,7 +3874,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.3.1-20260223170257-587fb33-crds"
+    helm.sh/chart: "0.2.2-20260211081919-3373651-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3910,7 +3907,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.3.1-20260223170257-587fb33-crds"
+    helm.sh/chart: "0.2.2-20260211081919-3373651-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3936,7 +3933,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.3.1-20260223170257-587fb33-crds"
+    helm.sh/chart: "0.2.2-20260211081919-3373651-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -3968,7 +3965,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.3.1-20260223170257-587fb33-crds"
+    helm.sh/chart: "0.2.2-20260211081919-3373651-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4001,7 +3998,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.3.1-20260223170257-587fb33-crds"
+    helm.sh/chart: "0.2.2-20260211081919-3373651-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4032,7 +4029,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.3.1-20260223170257-587fb33-crds"
+    helm.sh/chart: "0.2.2-20260211081919-3373651-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4069,7 +4066,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.3.1-20260223170257-587fb33-crds"
+    helm.sh/chart: "0.2.2-20260211081919-3373651-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4102,7 +4099,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.3.1-20260223170257-587fb33-crds"
+    helm.sh/chart: "0.2.2-20260211081919-3373651-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4133,7 +4130,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.3.1-20260223170257-587fb33-crds"
+    helm.sh/chart: "0.2.2-20260211081919-3373651-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4170,7 +4167,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.3.1-20260223170257-587fb33-crds"
+    helm.sh/chart: "0.2.2-20260211081919-3373651-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4203,7 +4200,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.3.1-20260223170257-587fb33-crds"
+    helm.sh/chart: "0.2.2-20260211081919-3373651-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4234,7 +4231,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.3.1-20260223170257-587fb33-crds"
+    helm.sh/chart: "0.2.2-20260211081919-3373651-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4271,7 +4268,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.3.1-20260223170257-587fb33-crds"
+    helm.sh/chart: "0.2.2-20260211081919-3373651-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4304,7 +4301,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.3.1-20260223170257-587fb33-crds"
+    helm.sh/chart: "0.2.2-20260211081919-3373651-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4335,7 +4332,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.3.1-20260223170257-587fb33-crds"
+    helm.sh/chart: "0.2.2-20260211081919-3373651-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4372,7 +4369,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.3.1-20260223170257-587fb33-crds"
+    helm.sh/chart: "0.2.2-20260211081919-3373651-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4405,7 +4402,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.3.1-20260223170257-587fb33-crds"
+    helm.sh/chart: "0.2.2-20260211081919-3373651-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4436,7 +4433,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.3.1-20260223170257-587fb33-crds"
+    helm.sh/chart: "0.2.2-20260211081919-3373651-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4473,7 +4470,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.3.1-20260223170257-587fb33-crds"
+    helm.sh/chart: "0.2.2-20260211081919-3373651-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4506,7 +4503,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.3.1-20260223170257-587fb33-crds"
+    helm.sh/chart: "0.2.2-20260211081919-3373651-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4532,7 +4529,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.3.1-20260223170257-587fb33-crds"
+    helm.sh/chart: "0.2.2-20260211081919-3373651-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4564,7 +4561,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.3.1-20260223170257-587fb33-crds"
+    helm.sh/chart: "0.2.2-20260211081919-3373651-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4591,7 +4588,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.3.1-20260223170257-587fb33-crds"
+    helm.sh/chart: "0.2.2-20260211081919-3373651-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4616,7 +4613,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.3.1-20260223170257-587fb33-crds"
+    helm.sh/chart: "0.2.2-20260211081919-3373651-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4633,7 +4630,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.3.1-20260223170257-587fb33-crds"
+    helm.sh/chart: "0.2.2-20260211081919-3373651-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4757,7 +4754,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.3.1-20260223170257-587fb33-crds"
+    helm.sh/chart: "0.2.2-20260211081919-3373651-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4783,7 +4780,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.3.1-20260223170257-587fb33-crds"
+    helm.sh/chart: "0.2.2-20260211081919-3373651-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4815,7 +4812,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.3.1-20260223170257-587fb33-crds"
+    helm.sh/chart: "0.2.2-20260211081919-3373651-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4848,7 +4845,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.3.1-20260223170257-587fb33-crds"
+    helm.sh/chart: "0.2.2-20260211081919-3373651-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4874,7 +4871,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.3.1-20260223170257-587fb33-crds"
+    helm.sh/chart: "0.2.2-20260211081919-3373651-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4906,7 +4903,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.3.1-20260223170257-587fb33-crds"
+    helm.sh/chart: "0.2.2-20260211081919-3373651-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4939,7 +4936,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.3.1-20260223170257-587fb33-crds"
+    helm.sh/chart: "0.2.2-20260211081919-3373651-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4965,7 +4962,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.3.1-20260223170257-587fb33-crds"
+    helm.sh/chart: "0.2.2-20260211081919-3373651-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -4997,7 +4994,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.3.1-20260223170257-587fb33-crds"
+    helm.sh/chart: "0.2.2-20260211081919-3373651-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -5030,7 +5027,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.3.1-20260223170257-587fb33-crds"
+    helm.sh/chart: "0.2.2-20260211081919-3373651-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -5061,7 +5058,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.3.1-20260223170257-587fb33-crds"
+    helm.sh/chart: "0.2.2-20260211081919-3373651-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -5098,7 +5095,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.3.1-20260223170257-587fb33-crds"
+    helm.sh/chart: "0.2.2-20260211081919-3373651-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -5125,7 +5122,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   labels:
-    helm.sh/chart: "0.3.1-20260223170257-587fb33-crds"
+    helm.sh/chart: "0.2.2-20260211081919-3373651-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -5145,7 +5142,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   labels:
-    helm.sh/chart: "0.3.1-20260223170257-587fb33-crds"
+    helm.sh/chart: "0.2.2-20260211081919-3373651-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -5166,7 +5163,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: "0.3.1-20260223170257-587fb33-crds"
+    helm.sh/chart: "0.2.2-20260211081919-3373651-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
@@ -5211,7 +5208,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   labels:
-    helm.sh/chart: "0.3.1-20260223170257-587fb33-crds"
+    helm.sh/chart: "0.2.2-20260211081919-3373651-crds"
     app.kubernetes.io/name: metal-operator
     app.kubernetes.io/instance: metal-operator
     app.kubernetes.io/version: "0.1.0"
