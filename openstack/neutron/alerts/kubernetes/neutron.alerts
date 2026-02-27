@@ -15,3 +15,17 @@ groups:
     annotations:
       description: 'Not all networks have been synced by agent for 5 min: {{ $labels.pod }}'
       summary: Openstack Neutron DHCP Agent lost private networks
+
+  - alert: MariaDBEndpointNotReady
+    expr: kube_endpoint_address_not_ready{endpoint=~"neutron-mariadb"} > 0
+    for: 5m
+    labels:
+      severity: warning
+      support_group: network-api
+      tier: os
+      service: neutron
+      context: '{{ $labels.context }}'
+      meta: 'Endpoint{{ $labels.endpoint }} not ready'
+    annotations:
+        description: 'Mariadb Endpoint not ready for 5 min'
+        summary: MaraiDB might not be reachable due to failing readiness checks.'
