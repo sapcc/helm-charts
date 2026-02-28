@@ -1,8 +1,4 @@
 {{- $fullname := include "redis.fullname" . -}}
-{{- $registry := .Values.global.registry | required ".Values.global.registry missing" -}}
-{{- if .Values.useAlternateRegion -}}
-  {{- $registry = .Values.global.registryAlternateRegion | required ".Values.global.registryAlternateRegion missing" -}}
-{{- end -}}
 
 kind: Deployment
 apiVersion: apps/v1
@@ -35,8 +31,8 @@ spec:
       {{- if not .Values.redisPassword }}
       initContainers:
       - name: generate-secrets
-        image: {{ $registry }}/shared-app-images/alpine-kubectl:latest-latest
-        imagePullPolicy: Always
+        image: {{ include "redis.shared-app-images.ref" (tuple . "alpine-kubectl" "latest") }}
+        imagePullPolicy: IfNotPresent
         env:
         - name: DEBUG
           value: 'false'
@@ -50,8 +46,8 @@ spec:
       {{- end }}
       containers:
       - name: {{ $fullname }}
-        image: {{ $registry }}/shared-app-images/alpine-valkey:{{ .Values.image.tag }}
-        imagePullPolicy: {{ if contains "latest" .Values.image.tag }}Always{{ else }}IfNotPresent{{ end }}
+        image: {{ include "redis.shared-app-images.ref" (tuple . "alpine-valkey" "9.0") }}
+        imagePullPolicy: IfNotPresent
         args:
         {{- if .Values.config }}
         - /etc/redis/redis.conf
