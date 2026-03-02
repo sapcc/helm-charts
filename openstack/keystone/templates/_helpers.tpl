@@ -62,3 +62,17 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- .Release.Name }}-{{ $name }}-{{ substr 0 4 $hash }}-{{ .Values.api.imageTag | required "Please set api.imageTag or similar"}}
   {{- end }}
 {{- end }}
+
+{{- define "prodel_url" }}
+    {{- if not (empty .Values.prodel.url) -}}
+        {{- .Values.prodel.url -}}
+    {{- else -}}
+        {{- $ns := "prodel" -}}
+
+        {{- if .Values.global.is_global_region -}}
+        {{- $ns = .Values.global.keystoneNamespace -}}
+        {{- end -}}
+
+        {{- printf "http://prodel.%s.svc/check-delete_project/%%(project_id)s" $ns -}}
+    {{- end }}
+{{- end }}
