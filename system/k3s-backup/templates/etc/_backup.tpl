@@ -5,7 +5,7 @@ BACKUP=Backup-$(date +"%Y-%m-%d-%H%M%S")
 BACKUPDIR=/root/backup/$BACKUP
 
 # backup regular files
-mkdir -p $BACKUPDIR \
+mkdir -p $BACKUPDIR
 cp -r /host/etc/rancher/ $BACKUPDIR
 cp -r /host/var/lib/rancher/k3s/server $BACKUPDIR
 
