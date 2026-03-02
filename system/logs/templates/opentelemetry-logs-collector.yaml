@@ -304,9 +304,11 @@ spec:
         - pipelines:
           - logs/route_cronus
           statement: route() where resource.attributes["k8s.namespace.name"] == "cronus"
+{{- if .Values.openTelemetryPlugin.openTelemetry.logsCollector.openstackConfig.enabled }}
         - pipelines:
           - logs/route_swift
           statement: route() where resource.attributes["k8s.namespace.name"] == "swift"
+{{- end }}
       failover/opensearch:
         priority_levels:
           - [logs/failover_a]
@@ -318,6 +320,7 @@ spec:
           num_consumers: 10
           queue_size: 10000
           sizer: requests
+{{- if .Values.openTelemetryPlugin.openTelemetry.logsCollector.openstackConfig.enabled }}
       failover/opensearch_swift:
         priority_levels:
           - [logs/failover_a_swift]
@@ -329,6 +332,7 @@ spec:
           num_consumers: 10
           queue_size: 10000
           sizer: requests
+{{- end }}
       failover/opensearch_cronus:
         priority_levels:
           - [logs/failover_a_cronus]
@@ -380,10 +384,12 @@ spec:
           receivers: [routing]
           processors: [batch]
           exporters: [failover/opensearch_cronus]
+{{- if .Values.openTelemetryPlugin.openTelemetry.logsCollector.openstackConfig.enabled }}
         logs/route_swift:
           receivers: [routing]
           processors: [batch]
           exporters: [failover/opensearch_swift]
+{{- end }}
         logs/failover_a_cronus:
           receivers: [failover/opensearch_cronus]
           processors: [attributes/failover_username_a]
