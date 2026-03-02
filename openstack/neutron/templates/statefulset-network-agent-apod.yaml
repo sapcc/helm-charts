@@ -91,7 +91,7 @@ spec:
         - name: neutron-dhcp-agent
           image: {{$.Values.global.registry}}/loci-neutron:{{$.Values.imageVersionNetworkAgentDHCP | default $.Values.imageVersionNetworkAgent | default $.Values.imageVersion | required "Please set neutron.imageVersionNetworkAgentDHCP or similar"}}
           imagePullPolicy: IfNotPresent
-          command: ["dumb-init", "neutron-dhcp-agent", "--config-file", "/etc/neutron/neutron.conf", "--config-dir", "/etc/neutron/secrets", "--config-file", "/etc/neutron/dhcp-agent.ini", "--config-file", "/etc/neutron/linux-bridge.ini", "--config-file", "/etc/neutron/az-{{ $az }}.conf"]
+          command: ["neutron-dhcp-agent", "--config-file", "/etc/neutron/neutron.conf", "--config-dir", "/etc/neutron/secrets", "--config-file", "/etc/neutron/dhcp-agent.ini", "--config-file", "/etc/neutron/linux-bridge.ini", "--config-file", "/etc/neutron/az-{{ $az }}.conf"]
           env:
             {{- include "utils.sentry_config" $ | nindent 12 }}
             - name: DEBUG_CONTAINER
@@ -131,7 +131,7 @@ spec:
         - name: neutron-linuxbridge-agent
           image: {{$.Values.global.registry}}/loci-neutron:{{$.Values.imageVersionNetworkAgentLinuxBridge | default $.Values.imageVersionNetworkAgent | default $.Values.imageVersion | required "Please set neutron.imageVersionNetworkAgentLinuxBridge or similar"}}
           imagePullPolicy: IfNotPresent
-          command: ["dumb-init", "neutron-linuxbridge-agent", "--config-file", "/etc/neutron/neutron.conf", "--config-dir", "/etc/neutron/secrets", "--config-file", "/etc/neutron/plugins/ml2/ml2_conf.ini", "--config-file", "/etc/neutron/linux-bridge.ini", "--config-file", "/etc/neutron/apod-{{ $apod }}.conf"]
+          command: ["neutron-linuxbridge-agent", "--config-file", "/etc/neutron/neutron.conf", "--config-dir", "/etc/neutron/secrets", "--config-file", "/etc/neutron/plugins/ml2/ml2_conf.ini", "--config-file", "/etc/neutron/linux-bridge.ini", "--config-file", "/etc/neutron/apod-{{ $apod }}.conf"]
           env:
             {{- include "utils.sentry_config" $ | nindent 12 }}
             - name: DEBUG_CONTAINER
@@ -170,7 +170,7 @@ spec:
         - name: neutron-metadata-agent
           image: {{$.Values.global.registry}}/loci-neutron:{{$.Values.imageVersionNetworkAgentMetadata | default $.Values.imageVersionNetworkAgent | default $.Values.imageVersion | required "Please set neutron.imageVersionNetworkAgentMetadata or similar"}}
           imagePullPolicy: IfNotPresent
-          command: ["dumb-init", "neutron-metadata-agent", "--config-file", "/etc/neutron/neutron.conf", "--config-dir", "/etc/neutron/secrets","--config-file", "/etc/neutron/metadata-agent.ini"]
+          command: ["neutron-metadata-agent", "--config-file", "/etc/neutron/neutron.conf", "--config-dir", "/etc/neutron/secrets","--config-file", "/etc/neutron/metadata-agent.ini"]
           env:
             {{- include "utils.sentry_config" $ | nindent 12 }}
             - name: PYTHONWARNINGS
