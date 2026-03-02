@@ -77,7 +77,6 @@ spec:
           image: "{{.Values.global.registry}}/loci-manila:{{.Values.loci.imageVersion}}"
           imagePullPolicy: IfNotPresent
           command:
-            - dumb-init
             {{- if .Values.pyreloader_enabled }}
             - pyreloader
             {{- end }}
