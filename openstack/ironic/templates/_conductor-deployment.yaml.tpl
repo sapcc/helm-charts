@@ -66,7 +66,6 @@ spec:
         {{- end }}
         command:
         {{- if not $conductor.debug }}
-        - dumb-init
         - ironic-conductor
         {{- else }}
         - sleep
