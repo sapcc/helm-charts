@@ -23,10 +23,10 @@ transform/consolidate_label:
   log_statements:
     - context: log
       statements:
-        - set(resource.attributes["k8s.namespace.name"], attributes["k8s.namespace.name"])
-        - set(resource.attributes["k8s.node.name"], attributes["k8s.node.name"])
-        - delete_key(attributes, "k8s.namespace.name") 
-        - delete_key(attributes, "k8s.node.name") 
+        - set(resource.attributes["k8s.namespace.name"], log.attributes["k8s.namespace.name"])
+        - set(resource.attributes["k8s.node.name"], log.attributes["k8s.node.name"])
+        - delete_key(log.attributes, "k8s.namespace.name")
+        - delete_key(log.attributes, "k8s.node.name")
 
 {{- end }}
 
@@ -34,5 +34,5 @@ transform/consolidate_label:
 logs/k8sevents:
   receivers: [k8s_events]
   processors: [attributes/k8sevents,transform/consolidate_label]
-  exporters: [forward]
+  exporters: [routing]
 {{- end }}
