@@ -7,7 +7,6 @@
 # The newly generated issuer key is in `/work/current-key.pem`.
 
 set -eou pipefail
-[[ ${DEBUG:-} != false ]] && set -x
 
 if [[ -f /keys/current-key.pem ]]; then
   cp /keys/current-key.pem /work/previous-key.pem
@@ -17,20 +16,9 @@ else
   cp /work/current-key.pem /work/previous-key.pem
 fi
 
-echo -n "
-  apiVersion: v1
-  kind: Secret
-  metadata:
-    name: $SECRET_NAME
-    ownerReferences:
-      - apiVersion: batch/v1
-        blockOwnerDeletion: true
-        kind: CronJob
-        name: $CRONJOB_NAME
-        uid: $(kubectl get cronjob "$CRONJOB_NAME" -o jsonpath='{.metadata.uid}')
-  data:
-    current-key.pem:  $(cat /work/current-key.pem  | base64 -w0)
-    previous-key.pem: $(cat /work/previous-key.pem | base64 -w0)
-" > /work/secret.yaml
+echo -n "data:
+  current-key.pem:  $(cat /work/current-key.pem  | base64 -w0)
+  previous-key.pem: $(cat /work/previous-key.pem | base64 -w0)
+" > /work/patch.yaml
 
-kubectl apply -f /work/secret.yaml
+kubectl patch secret "$SECRET_NAME" --patch-file=/work/patch.yaml

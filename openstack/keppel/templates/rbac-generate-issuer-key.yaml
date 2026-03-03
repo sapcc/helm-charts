@@ -14,25 +14,19 @@ rules:
   # The "keppel-generate-issuer-key" CronJob writes into this secret.
   - apiGroups: [ "" ]
     resources: [ secrets ]
-    verbs:     [ get, patch, update ]
+    verbs:     [ get, patch ]
     resourceNames: [ keppel-issuer-key ]
-
-  # "create" permission cannot be restricted to specific resourceNames
-  # Ref: <https://stackoverflow.com/a/65203104>
-  - apiGroups: [ "" ]
-    resources: [ secrets ]
-    verbs:     [ create ]
-
-  # need the UID of the cronjob to render an owner reference
-  - apiGroups: [ batch ]
-    resources: [ cronjobs ]
-    verbs:     [ get ]
-    resourceNames: [ keppel-generate-issuer-key ]
 
   # There is a post-install hook next to the CronJob that needs to be able to trigger it once.
   - apiGroups: [ batch ]
     resources: [ jobs ]
     verbs:     [ create ]
+
+  # need to read the CronJob to create a job from its template
+  - apiGroups: [ batch ]
+    resources: [ cronjobs ]
+    verbs:     [ get ]
+    resourceNames: [ keppel-generate-issuer-key ]
 
 ---
 
