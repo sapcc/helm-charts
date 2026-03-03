@@ -68,6 +68,11 @@ if [ "${DATA_STREAM_ENABLED}" = true ]; then
    echo "Datastream ism template creation"
    for e in ${DATA_STREAMS}; do
      export DS_ISM_TEMPLATE=ds-${e}-ism.json
+
+     if [ ! -f "${FILEPATH}/${DS_ISM_TEMPLATE}" ]; then
+        echo "${FILEPATH}/${DS_ISM_TEMPLATE} is missing."
+        exit 1
+     fi
      # we have to copy the template from the scripts secrets to a directory, where we can change the template.
      cp "/${FILEPATH}/${DS_ISM_TEMPLATE}" "${TMPPATH}/${DS_ISM_TEMPLATE}"
      echo "Applying ${TMPPATH}/${DS_ISM_TEMPLATE} to ${CLUSTER_HOST}"
@@ -93,7 +98,17 @@ if [ "${DATA_STREAM_ENABLED}" = true ]; then
            # Assign ISM policy to newly created datastream
            curl --header 'content-type: application/JSON' --silent --netrc-file "${NETRC_FILE}" -XPOST "${CLUSTER_HOST}/_plugins/_ism/add/.ds-${e}-datastream-000001" -d "{ \"policy_id\": \"ds-${e}-ism\" }"
         else
-           echo "No datastream creation return code was not 1 for datastream $e"
+           echo "Datastream already exists, validating if it is managed by ism policy"
+           export ISM_EXPLAIN_RESPONSE=$(curl -s --netrc-file "${NETRC_FILE}" -XGET "${CLUSTER_HOST}/_plugins/_ism/explain/.ds-${e}-datastream*")
+           export TOTAL_MANAGED_INDICES=$(echo ${ISM_EXPLAIN_RESPONSE} | jq .total_managed_indices)
+           export WRITE_INDEX=$(echo ${ISM_EXPLAIN_RESPONSE} | jq -r 'to_entries[] | select(.key != "total_managed_indices") | select(.value.rolled_over != true) | .key')
+           if [ "${TOTAL_MANAGED_INDICES}" -eq 0 ]; then
+              echo "There is no indices managed by ism policy"
+              echo "Assigning ds-${e}-ism policy to ${WRITE_INDEX} index"
+              curl --header 'content-type: application/JSON' --netrc-file "${NETRC_FILE}" -XPOST "${CLUSTER_HOST}/_plugins/_ism/add/${WRITE_INDEX}" -d "{ \"policy_id\": \"ds-${e}-ism\" }"
+           else
+              echo "Datastream is already managed by ism policy"
+           fi
         fi
      else
        # update of existing policy
