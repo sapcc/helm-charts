@@ -12,19 +12,19 @@
                     {
                         "state_name": "rollover",
                         "conditions": {
-                            "min_index_age": "{{ .Values.global.data_stream.alerts-sem.min_index_age }}"
+                            "min_index_age": "{{ .Values.global.data_stream.alerts_sem.min_index_age }}"
                         }
                     },
                     {
                         "state_name": "rollover",
                         "conditions": {
-                            "min_size": "{{ .Values.global.data_stream.alerts-sem.min_size }}"
+                            "min_size": "{{ .Values.global.data_stream.alerts_sem.min_size }}"
                         }
                     },
                     {
                         "state_name": "rollover",
                         "conditions": {
-                            "min_doc_count": "{{ .Values.global.data_stream.alerts-sem.min_doc_count }}"
+                            "min_doc_count": "{{ .Values.global.data_stream.alerts_sem.min_doc_count }}"
                         }
                     }
                 ]
