@@ -30,16 +30,24 @@ if [ "${DATA_STREAM_ENABLED}" = true ]; then
      export FILEPATH=/scripts
      export TMPPATH=/tmp
      export DS_TEMPLATE=ds.json
+     export DS_CUSTOM_TEMPLATE=ds-${e}.json
 
-     echo "creating file FILE=${TMPPATH}/${e}"
-     cp "/${FILEPATH}/${DS_TEMPLATE}" "${TMPPATH}/${e}-${DS_TEMPLATE}"
-     echo "Applying ${e}-${DS_TEMPLATE} to ${CLUSTER_HOST}"
-     sed -i "s/_DS_NAME_/${e}/g" "${TMPPATH}/${e}-${DS_TEMPLATE}"
-     if  grep -q "$e" "${TMPPATH}/${e}-${DS_TEMPLATE}" ; then
-         curl --netrc-file "${NETRC_FILE}" -H 'Content-Type: application/json' -XPUT "${CLUSTER_HOST}/_index_template/${e}-datastream" -d @"${TMPPATH}/${e}-${DS_TEMPLATE}"
+     if [ -s "${DS_CUSTOM_TEMPLATE}" ]; then
+         echo "creating custom file FILE=${TMPPATH}/${DS_CUSTOM_TEMPLATE}"
+         cp "/${FILEPATH}/${DS_CUSTOM_TEMPLATE}" "${TMPPATH}/${DS_CUSTOM_TEMPLATE}"
+         export DS_TEMPLATE_FINAL=${DS_CUSTOM_TEMPLATE}
+     else
+         echo "creating default file FILE=${TMPPATH}/${e}-${DS_TEMPLATE}"
+         cp "/${FILEPATH}/${DS_TEMPLATE}" "${TMPPATH}/${e}-${DS_TEMPLATE}"
+         export DS_TEMPLATE_FINAL=${e}-${DS_TEMPLATE}
+     fi
+     echo "Applying ${DS_TEMPLATE_FINAL} to ${CLUSTER_HOST}"
+     sed -i "s/_DS_NAME_/${e}/g" "${TMPPATH}/${DS_TEMPLATE_FINAL}"
+     if  grep -q "$e" "${TMPPATH}/${DS_TEMPLATE_FINAL}" ; then
+         curl --netrc-file "${NETRC_FILE}" -H 'Content-Type: application/json' -XPUT "${CLUSTER_HOST}/_index_template/${e}-datastream" -d @"${TMPPATH}/${DS_TEMPLATE_FINAL}"
          echo -e "\nUpload of ds template for datastream ${e} done"
      else
-       echo "\n${TMPPATH}/${e}-${DS_TEMPLATE} is missing or the replacement was not successful."
+       echo "\n${TMPPATH}/${DS_TEMPLATE_FINAL} is missing or the replacement was not successful."
        exit 1
      fi
    done;
