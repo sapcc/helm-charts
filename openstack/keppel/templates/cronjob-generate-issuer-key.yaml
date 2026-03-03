@@ -1,0 +1,89 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: keppel-generate-issuer-key
+
+# TODO (to be checked): Will we be alerted if the cronjob fails?
+
+spec:
+  concurrencyPolicy: Replace
+  schedule: '0 13 * * 1' # Monday 1 PM UTC (intentionally during business hours to have all hands on deck in case of errors)
+  successfulJobsHistoryLimit: 1
+  timeZone: Etc/UTC
+
+  jobTemplate:
+    metadata:
+      labels:
+        name: keppel-generate-issuer-key
+    spec:
+      template:
+        metadata:
+          labels:
+            name: keppel-generate-issuer-key
+          annotations:
+            # mTLS is irrelevant here because this pod only talks to the apiserver which has TLS,
+            # but it might cause problems if the job container is restarted on error after the linkerd container was already torn down
+            linkerd.io/inject: disabled
+        spec:
+          activeDeadlineSeconds: 300 # presume that the pod is dead if it has not finished within 5m
+          restartPolicy: Never # restart on job level only
+          serviceAccountName: keppel-generate-issuer-key # defined in templates/rbac-generate-issuer-key.yaml
+          volumes:
+            - name: keys
+              secret:
+                secretName: keppel-issuer-key
+                optional: true # secret will not exist on first run, and that's expected
+            - name: work
+              emptyDir: {}
+          initContainers:
+            - name: generate-secret
+              image: {{ include "shared-app-images.ref" (tuple $ "alpine-openssl" "latest") }}
+              command: [ ash, -c, 'openssl genpkey -algorithm ed25519 -out /work/current-key.pem' ]
+              volumeMounts:
+                - name: work
+                  mountPath: /work
+          containers:
+            - name: write-secret
+              image: {{ include "shared-app-images.ref" (tuple $ "alpine-kubectl" "latest") }}
+              command: [ ash, -c, {{ .Files.Get "files/write-issuer-key.sh" | quote }} ]
+              env:
+              - name: DEBUG
+                value: 'false'
+              - name: CRONJOB_NAME
+                value: keppel-generate-issuer-key
+              - name: SECRET_NAME
+                value: keppel-issuer-key
+              volumeMounts:
+                - name: keys
+                  mountPath: /keys
+                - name: work
+                  mountPath: /work
+
+---
+
+# When first installing Keppel in a new region, we should not have to wait for the CronJob to run,
+# so this hook job will trigger the CronJob once to run immediately and create the keppel-issuer-key secret.
+
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: keppel-generate-issuer-key-trigger
+  "helm.sh/hook": post-install
+  "helm.sh/hook-delete-policy": hook-succeeded
+spec:
+  template:
+    metadata:
+      labels:
+        name: keppel-generate-issuer-key-trigger
+      annotations:
+        # mTLS is irrelevant here because this pod only talks to the apiserver which has TLS,
+        # but it might cause problems if the job container is restarted on error after the linkerd container was already torn down
+        linkerd.io/inject: disabled
+    spec:
+      activeDeadlineSeconds: 300 # presume that the pod is dead if it has not finished within 5m
+      restartPolicy: Never # restart on job level only
+      serviceAccountName: keppel-generate-issuer-key # defined in templates/rbac-generate-issuer-key.yaml
+      containers:
+        - name: trigger-job
+          image: {{ include "shared-app-images.ref" (tuple $ "alpine-kubectl" "latest") }}
+          command: [ ash, -c, 'kubectl create job keppel-generate-issuer-key-immediately --from=cronjob/keppel-generate-issuer-key' ]
