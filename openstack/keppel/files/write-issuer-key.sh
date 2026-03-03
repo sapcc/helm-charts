@@ -33,4 +33,4 @@ echo -n "
     previous-key.pem: $(cat /work/previous-key.pem | base64 -w0)
 " > /work/secret.yaml
 
-kubectl create -f /work/secret.yaml
+kubectl apply -f /work/secret.yaml
