@@ -175,6 +175,15 @@ spec:
         mayReadHostPathVolumes: [ / ]
 
       - matchNamespace: kube-monitoring
+        matchRepository: ccloud-quay-mirror/prometheus/node-exporter
+        justification: |
+          The node-exporter requires node-level access and needs to inspect the host filesystem
+          in order to collect node metrics.
+        mayUseHostNetwork: true
+        mayUseHostPID: true
+        mayReadHostPathVolumes: [ / ]
+
+      - matchNamespace: kube-monitoring
         matchRepository: ccloud-quay-mirror/brancz/kube-rbac-proxy
         justification: |
           TODO
@@ -676,6 +685,12 @@ spec:
           TODO
         mayReadHostPathVolumes: [ /var/log ]
 
+      - matchNamespace: opensearch-logs
+        matchRepository: busybox
+        justification: |
+          TODO
+        mayBePrivileged: true
+
       ##########################################################################
       # Rules for openstack-compute
 
@@ -711,6 +726,12 @@ spec:
         mayBePrivileged: true
         mayUseHostPID: true
         mayWriteHostPathVolumes: [ / ]
+
+      - matchNamespace: ldap-named-user
+        matchRepository: ccloud-dockerhub-mirror/sapcc/pause-amd64
+        justification: |
+          TODO
+        mayUseHostPID: true
       
       - matchNamespace: monsoon3
         matchRepository: ccloud/loci-neutron
@@ -795,7 +816,7 @@ spec:
         - /sys
         - /var/lib/kubelet/plugins
         - /var/lib/kubelet/pods
-        - /var/lib/rook/rook-ceph.cephfs.csi.ceph.com/log/node-plugin
+        - /var/lib/rook/rook-ceph.cephfs.csi.ceph.com/log
 
       - matchNamespace: rook-ceph
         matchRepository: ccloud-registry-k8s-io-mirror/sig-storage/csi-node-driver-registrar
@@ -803,14 +824,19 @@ spec:
           TODO
         mayUseHostNetwork: true
         mayBePrivileged: true
-        mayWriteHostPathVolumes: [ /var/lib/kubelet/plugins/rook-ceph.cephfs.csi.ceph.com/, /var/lib/kubelet/plugins_registry/ ]
+        mayUseHostPID: true
+        mayWriteHostPathVolumes: 
+        - /var/lib/kubelet
 
       - matchNamespace: rook-ceph
         matchRepository: ccloud-quay-mirror/cephcsi/cephcsi
         justification: |
           TODO
         mayUseHostNetwork: true
-        mayWriteHostPathVolumes: [ /var/lib/rook/rook-ceph.cephfs.csi.ceph.com/log/node-plugin ]
+        mayUseHostPID: true
+        mayWriteHostPathVolumes: 
+        - /var/lib/rook/rook-ceph.cephfs.csi.ceph.com/log
+        - /var/lib/rook/rook-ceph.rbd.csi.ceph.com/log
 
       - matchNamespace: rook-ceph
         matchRepository: ccloud-quay-mirror/ceph/ceph
@@ -818,6 +844,7 @@ spec:
           TODO
         mayUseHostNetwork: true
         mayBePrivileged: true
+        mayReadHostPathVolumes: [ / ]
         mayWriteHostPathVolumes: 
         - /dev
         - /run/udev
