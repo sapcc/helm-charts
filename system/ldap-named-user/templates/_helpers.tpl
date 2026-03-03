@@ -69,10 +69,10 @@ This resolved secret could be put inside the single-quoted string inside yaml
 {{- define "ldap-named-user.resolve_vault_ref" -}}
     {{- $str := . -}}
     {{- if (hasPrefix "vault+kvv2" $str ) -}}
-        {{"{{"}} resolve "{{ $str }}" | replace "'" "''" {{"}}"}}
+        {{"{{"}} resolve "{{ $str }}" {{"}}"}}
     {{- else -}}
-        {{ $str | replace "'" "''" }}
-{{- end -}}
+        {{ $str }}
+    {{- end -}}
 {{- end -}}
 
 {{/*
@@ -87,4 +87,20 @@ Construct ldapPassword
 */}}
 {{- define "ldap-named-user.ldapPassResolved" -}}
     {{ include "ldap-named-user.resolve_vault_ref" (required ".Values.ldapBindPassword missing" .Values.ldapBindPassword) }}
+{{- end -}}
+
+
+{{/*
+Construct bind_dn, userSearchBase, groupSearchBase
+*/}}
+{{- define "ldap-named-user.bindDnBase" -}}
+    CN=Users,{{ required "ldapBaseOu must be set" .Values.ldapBaseOu }}
+{{- end -}}
+
+{{- define "ldap-named-user.userSearchBase" -}}
+    OU=Identities,{{ required "ldapBaseOu must be set" .Values.ldapBaseOu }}
+{{- end -}}
+
+{{- define "ldap-named-user.groupSearchBase" -}}
+    OU=CCloud,{{ required "ldapBaseOu must be set" .Values.ldapBaseOu }}
 {{- end -}}
