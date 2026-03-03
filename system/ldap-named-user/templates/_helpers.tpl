@@ -94,13 +94,45 @@ Construct ldapPassword
 Construct bind_dn, userSearchBase, groupSearchBase
 */}}
 {{- define "ldap-named-user.bindDnBase" -}}
-    CN=Users,{{ required "ldapBaseOu must be set" .Values.ldapBaseOu }}
+{{- $ou := required "ldapBaseOu must be set" .Values.ldapBaseOu -}}
+{{- if hasKey .Values "ldapBindDnBasePrefix" -}}
+    {{- $prefix := .Values.ldapBindDnBasePrefix -}}
+    {{- if $prefix -}}
+        {{- printf "%s,%s" $prefix $ou | trim -}}
+    {{- else -}}
+        {{- $ou | trim -}}
+    {{- end -}}
+{{- else -}}
+    {{- printf "CN=Users,%s" $ou | trim -}}
 {{- end -}}
+{{- end -}}
+
 
 {{- define "ldap-named-user.userSearchBase" -}}
-    OU=Identities,{{ required "ldapBaseOu must be set" .Values.ldapBaseOu }}
+{{- $ou := required "ldapBaseOu must be set" .Values.ldapBaseOu -}}
+{{- if hasKey .Values "ldapUserSearchBasePrefix" -}}
+    {{- $prefix := .Values.ldapUserSearchBasePrefix -}}
+    {{- if $prefix -}}
+        {{- printf "%s,%s" $prefix $ou | trim -}}
+    {{- else -}}
+        {{- $ou | trim -}}
+    {{- end -}}
+{{- else -}}
+    {{- printf "OU=Identities,%s" $ou | trim -}}
+{{- end -}}
 {{- end -}}
 
+
 {{- define "ldap-named-user.groupSearchBase" -}}
-    OU=CCloud,{{ required "ldapBaseOu must be set" .Values.ldapBaseOu }}
+{{- $ou := required "ldapBaseOu must be set" .Values.ldapBaseOu -}}
+{{- if hasKey .Values "ldapGroupSearchBasePrefix" -}}
+    {{- $prefix := .Values.ldapGroupSearchBasePrefix -}}
+    {{- if $prefix -}}
+        {{- printf "%s,%s" $prefix $ou | trim -}}
+    {{- else -}}
+        {{- $ou | trim -}}
+    {{- end -}}
+{{- else -}}
+    {{- printf "OU=CCloud,%s" $ou | trim -}}
+{{- end -}}
 {{- end -}}
