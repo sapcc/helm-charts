@@ -32,7 +32,7 @@ if [ "${DATA_STREAM_ENABLED}" = true ]; then
      export DS_TEMPLATE=ds.json
      export DS_CUSTOM_TEMPLATE=ds-${e}.json
 
-     if [ -s "${DS_CUSTOM_TEMPLATE}" ]; then
+     if [ -s "${FILEPATH}/${DS_CUSTOM_TEMPLATE}" ]; then
          echo "creating custom file FILE=${TMPPATH}/${DS_CUSTOM_TEMPLATE}"
          cp "/${FILEPATH}/${DS_CUSTOM_TEMPLATE}" "${TMPPATH}/${DS_CUSTOM_TEMPLATE}"
          export DS_TEMPLATE_FINAL=${DS_CUSTOM_TEMPLATE}
