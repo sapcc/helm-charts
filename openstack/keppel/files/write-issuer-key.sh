@@ -11,7 +11,7 @@ set -eou pipefail
 if [[ -f /keys/current-key.pem ]]; then
   cp /keys/current-key.pem /work/previous-key.pem
 else
-  # On first run, the secret does not exist yet, so we do not have a previous key.
+  # On first run, the secret is empty, so we do not have a previous key.
   # Putting the same key twice is a safe fallback that allows keeping the same secret structure in this case.
   cp /work/current-key.pem /work/previous-key.pem
 fi
