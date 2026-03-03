@@ -137,11 +137,14 @@ if [ "${DATA_STREAM_ENABLED}" = true ]; then
    ####
    ### Datastream ism policy verification
    ####
+   # we want to ensure that correct ism policy is applied to every datastream, if we cannot find any managed index that belong to datastream then we do the assigment
    echo "Datastream ism policy verification"
    for e in ${DATA_STREAMS}; do
-      export ISM_EXPLAIN_RESPONSE=$(curl -s --netrc-file "${NETRC_FILE}" -XGET "${CLUSTER_HOST}/_plugins/_ism/explain/.ds-${e}-datastream*")
-      export TOTAL_MANAGED_INDICES=$(echo ${ISM_EXPLAIN_RESPONSE} | jq .total_managed_indices)
-      export WRITE_INDEX=$(echo ${ISM_EXPLAIN_RESPONSE} | jq -r 'to_entries[] | select(.key != "total_managed_indices") | select(.value.rolled_over != true) | .key')
+      # we capture ism explain response because sometimes it's too big to process it in memory
+      export ISM_EXPLAIN_RESPONSE=${TMPPATH}/ism-explain-ds-${e}.json
+      curl -s --netrc-file "${NETRC_FILE}" -XGET "${CLUSTER_HOST}/_plugins/_ism/explain/.ds-${e}-datastream*" -o ${ISM_EXPLAIN_RESPONSE}
+      export TOTAL_MANAGED_INDICES=$(jq '.total_managed_indices' ${ISM_EXPLAIN_RESPONSE} )
+      export WRITE_INDEX=$(jq -r 'to_entries[] | select(.key != "total_managed_indices") | select(.value.rolled_over != true) | .key' ${ISM_EXPLAIN_RESPONSE})
       if [ "${TOTAL_MANAGED_INDICES}" -eq 0 ]; then
          echo "There is no indices managed by ds-${e}-ism policy"
          echo "Assigning ds-${e}-ism policy to ${WRITE_INDEX} index"
