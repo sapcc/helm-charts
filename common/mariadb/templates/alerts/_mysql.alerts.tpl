@@ -71,6 +71,7 @@
       severity: warning
       tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
       support_group: {{ required ".Values.alerts.support_group missing" .Values.alerts.support_group }}
+      playbook: 'docs/support/playbook/database/MariaDBBufferPool'
     annotations:
       description: >-
         {{ include "fullName" . }} InnoDB buffer pool has less than 10% free pages.
@@ -95,6 +96,7 @@
       severity: critical
       tier: {{ required ".Values.alerts.tier missing" .Values.alerts.tier }}
       support_group: {{ required ".Values.alerts.support_group missing" .Values.alerts.support_group }}
+      playbook: 'docs/support/playbook/database/MariaDBBufferPool'
     annotations:
       description: >-
         {{ include "fullName" . }} InnoDB buffer pool has less than 2.5% free pages and is effectively exhausted.
