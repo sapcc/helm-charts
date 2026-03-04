@@ -30,16 +30,24 @@ if [ "${DATA_STREAM_ENABLED}" = true ]; then
      export FILEPATH=/scripts
      export TMPPATH=/tmp
      export DS_TEMPLATE=ds.json
+     export DS_CUSTOM_TEMPLATE=ds-${e}.json
 
-     echo "creating file FILE=${TMPPATH}/${e}"
-     cp "/${FILEPATH}/${DS_TEMPLATE}" "${TMPPATH}/${e}-${DS_TEMPLATE}"
-     echo "Applying ${e}-${DS_TEMPLATE} to ${CLUSTER_HOST}"
-     sed -i "s/_DS_NAME_/${e}/g" "${TMPPATH}/${e}-${DS_TEMPLATE}"
-     if  grep -q "$e" "${TMPPATH}/${e}-${DS_TEMPLATE}" ; then
-         curl --netrc-file "${NETRC_FILE}" -H 'Content-Type: application/json' -XPUT "${CLUSTER_HOST}/_index_template/${e}-datastream" -d @"${TMPPATH}/${e}-${DS_TEMPLATE}"
+     if [ -s "${FILEPATH}/${DS_CUSTOM_TEMPLATE}" ]; then
+         echo "creating custom file FILE=${TMPPATH}/${DS_CUSTOM_TEMPLATE}"
+         cp "/${FILEPATH}/${DS_CUSTOM_TEMPLATE}" "${TMPPATH}/${DS_CUSTOM_TEMPLATE}"
+         export DS_TEMPLATE_FINAL=${DS_CUSTOM_TEMPLATE}
+     else
+         echo "creating default file FILE=${TMPPATH}/${e}-${DS_TEMPLATE}"
+         cp "/${FILEPATH}/${DS_TEMPLATE}" "${TMPPATH}/${e}-${DS_TEMPLATE}"
+         export DS_TEMPLATE_FINAL=${e}-${DS_TEMPLATE}
+     fi
+     echo "Applying ${DS_TEMPLATE_FINAL} to ${CLUSTER_HOST}"
+     sed -i "s/_DS_NAME_/${e}/g" "${TMPPATH}/${DS_TEMPLATE_FINAL}"
+     if  grep -q "$e" "${TMPPATH}/${DS_TEMPLATE_FINAL}" ; then
+         curl --netrc-file "${NETRC_FILE}" -H 'Content-Type: application/json' -XPUT "${CLUSTER_HOST}/_index_template/${e}-datastream" -d @"${TMPPATH}/${DS_TEMPLATE_FINAL}"
          echo -e "\nUpload of ds template for datastream ${e} done"
      else
-       echo "\n${TMPPATH}/${e}-${DS_TEMPLATE} is missing or the replacement was not successful."
+       echo "\n${TMPPATH}/${DS_TEMPLATE_FINAL} is missing or the replacement was not successful."
        exit 1
      fi
    done;
@@ -60,6 +68,11 @@ if [ "${DATA_STREAM_ENABLED}" = true ]; then
    echo "Datastream ism template creation"
    for e in ${DATA_STREAMS}; do
      export DS_ISM_TEMPLATE=ds-${e}-ism.json
+
+     if [ ! -f "${FILEPATH}/${DS_ISM_TEMPLATE}" ]; then
+        echo "${FILEPATH}/${DS_ISM_TEMPLATE} is missing."
+        exit 1
+     fi
      # we have to copy the template from the scripts secrets to a directory, where we can change the template.
      cp "/${FILEPATH}/${DS_ISM_TEMPLATE}" "${TMPPATH}/${DS_ISM_TEMPLATE}"
      echo "Applying ${TMPPATH}/${DS_ISM_TEMPLATE} to ${CLUSTER_HOST}"
@@ -118,6 +131,26 @@ if [ "${DATA_STREAM_ENABLED}" = true ]; then
        else
          echo "No changes, ism template is not updated. Increase the version number to upload a new ism template"
        fi
-    fi
-  done
+     fi
+   done
+
+   ####
+   ### Datastream ism policy verification
+   ####
+   # we want to ensure that correct ism policy is applied to every datastream, if we cannot find any managed index that belong to datastream then we do the assigment
+   echo "Datastream ism policy verification"
+   for e in ${DATA_STREAMS}; do
+      # we capture ism explain response because sometimes it's too big to process it in memory
+      export ISM_EXPLAIN_RESPONSE=${TMPPATH}/ism-explain-ds-${e}.json
+      curl -s --netrc-file "${NETRC_FILE}" -XGET "${CLUSTER_HOST}/_plugins/_ism/explain/.ds-${e}-datastream*" -o ${ISM_EXPLAIN_RESPONSE}
+      export TOTAL_MANAGED_INDICES=$(jq '.total_managed_indices' ${ISM_EXPLAIN_RESPONSE} )
+      export WRITE_INDEX=$(jq -r 'to_entries[] | select(.key != "total_managed_indices") | select(.value.rolled_over != true) | .key' ${ISM_EXPLAIN_RESPONSE})
+      if [ "${TOTAL_MANAGED_INDICES}" -eq 0 ]; then
+         echo "There is no indices managed by ds-${e}-ism policy"
+         echo "Assigning ds-${e}-ism policy to ${WRITE_INDEX} index"
+         curl --header 'content-type: application/JSON' --netrc-file "${NETRC_FILE}" -XPOST "${CLUSTER_HOST}/_plugins/_ism/add/${WRITE_INDEX}" -d "{ \"policy_id\": \"ds-${e}-ism\" }"
+      else
+         echo "Datastream is already managed by ds-${e}-ism policy"
+      fi
+   done
 fi
