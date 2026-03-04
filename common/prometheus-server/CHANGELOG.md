@@ -1,3 +1,7 @@
+## 8.0.10
+
+* use global repository instead of hardcoded single region
+
 ## 8.0.9
 
 * VPA container name was not always shown
