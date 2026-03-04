@@ -244,18 +244,21 @@ mysql_metrics:
     - name: openstack_designate_records
       help: "records count grouped by status"
       labels:
-        - "status"
         - "zone_id"
+        - "project_id"
+        - "status"
       values:
         - "count_gauge"
       query:  |
               SELECT
                 zone_id,
+                tenant_id AS project_id,
                 status,
                 count(id) AS count_gauge
               FROM records
               GROUP BY
                 zone_id,
+                project_id,
                 status
 
 cors:
