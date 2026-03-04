@@ -1,20 +1,16 @@
-{{- if .Values.nanny_enabled }}
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: {{ .Release.Name }}
-data:
-  nanny.yaml: |
-{{ toYaml .Values.designate_nanny.config | indent 4 }}
-{{- end }}
-{{- if .Values.nanny_oor_enabled }}
-{{/* out of region backup nanny user needs designate api access, but no swift access in this region */}}
+{{- if .Values.nannies }}
+{{- $release_name := .Release.Name }}
+{{- range $name, $settings := .Values.nannies }}
+{{- if $settings.enabled }}
+{{- $release := printf "%s-%s" $release_name $name }}
 ---
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ .Release.Name }}-oor
+  name: {{ $release }}
 data:
   nanny.yaml: |
-{{ toYaml .Values.designate_nanny_oor.config | indent 4 }}
+{{ toYaml $settings.config | indent 4 }}
+{{- end }}
+{{- end }}
 {{- end }}
