@@ -239,7 +239,7 @@
 # GET  /v3/domains
 # Intended scope(s): system
 #"identity:list_domains": "role:reader and system_scope:all"
-"identity:list_domains": "rule:cloud_reader or role:role_viewer"
+"identity:list_domains": "rule:cloud_reader"
 
 # Create domain.
 # POST  /v3/domains
