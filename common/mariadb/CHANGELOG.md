@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.33.0 - 2026/03/03
+* Add InnoDB buffer pool Prometheus alerts: `MariaDBBufferPoolNearlyFull` (warning, < 10% free) and `MariaDBBufferPoolExhausted` (critical, < 2.5% free)
+
 ## v0.32.0 - 2026/02/10
 * MariaDB version updated to [10.11.16](https://mariadb.com/docs/release-notes/community-server/10.11/10.11.16)
 * `maria-back-me-up` updated to `20260210150801`
