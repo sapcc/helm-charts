@@ -69,10 +69,10 @@ This resolved secret could be put inside the single-quoted string inside yaml
 {{- define "ldap-named-user.resolve_vault_ref" -}}
     {{- $str := . -}}
     {{- if (hasPrefix "vault+kvv2" $str ) -}}
-        {{"{{"}} resolve "{{ $str }}" | replace "'" "''" {{"}}"}}
+        {{"{{"}} resolve "{{ $str }}" {{"}}"}}
     {{- else -}}
-        {{ $str | replace "'" "''" }}
-{{- end -}}
+        {{ $str }}
+    {{- end -}}
 {{- end -}}
 
 {{/*
@@ -87,4 +87,52 @@ Construct ldapPassword
 */}}
 {{- define "ldap-named-user.ldapPassResolved" -}}
     {{ include "ldap-named-user.resolve_vault_ref" (required ".Values.ldapBindPassword missing" .Values.ldapBindPassword) }}
+{{- end -}}
+
+
+{{/*
+Construct bind_dn, userSearchBase, groupSearchBase
+*/}}
+{{- define "ldap-named-user.bindDnBase" -}}
+{{- $ou := required "ldapBaseOu must be set" .Values.ldapBaseOu -}}
+{{- if hasKey .Values "ldapBindDnBasePrefix" -}}
+    {{- $prefix := .Values.ldapBindDnBasePrefix -}}
+    {{- if $prefix -}}
+        {{- printf "%s,%s" $prefix $ou | trim -}}
+    {{- else -}}
+        {{- $ou | trim -}}
+    {{- end -}}
+{{- else -}}
+    {{- printf "CN=Users,%s" $ou | trim -}}
+{{- end -}}
+{{- end -}}
+
+
+{{- define "ldap-named-user.userSearchBase" -}}
+{{- $ou := required "ldapBaseOu must be set" .Values.ldapBaseOu -}}
+{{- if hasKey .Values "ldapUserSearchBasePrefix" -}}
+    {{- $prefix := .Values.ldapUserSearchBasePrefix -}}
+    {{- if $prefix -}}
+        {{- printf "%s,%s" $prefix $ou | trim -}}
+    {{- else -}}
+        {{- $ou | trim -}}
+    {{- end -}}
+{{- else -}}
+    {{- printf "OU=Identities,%s" $ou | trim -}}
+{{- end -}}
+{{- end -}}
+
+
+{{- define "ldap-named-user.groupSearchBase" -}}
+{{- $ou := required "ldapBaseOu must be set" .Values.ldapBaseOu -}}
+{{- if hasKey .Values "ldapGroupSearchBasePrefix" -}}
+    {{- $prefix := .Values.ldapGroupSearchBasePrefix -}}
+    {{- if $prefix -}}
+        {{- printf "%s,%s" $prefix $ou | trim -}}
+    {{- else -}}
+        {{- $ou | trim -}}
+    {{- end -}}
+{{- else -}}
+    {{- printf "OU=CCloud,%s" $ou | trim -}}
+{{- end -}}
 {{- end -}}
