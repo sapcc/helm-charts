@@ -1,0 +1,20 @@
+{{- $region := .Values.global.region | required ".Values.global.region missing" }}
+{{- $storageRequests := dict
+  "qa-de-1" "50Gi"
+}}
+{{- if hasKey $storageRequests $region }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: db-nova-cell3-pvc
+  labels:
+    ccloud/support-group: compute-storage-api
+    ccloud/service: nova
+spec:
+  accessModes:
+  - ReadWriteMany
+  resources:
+    requests:
+      storage: {{ get $storageRequests $region }}
+{{- end }}

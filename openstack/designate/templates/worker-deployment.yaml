@@ -9,8 +9,10 @@ metadata:
     application: designate
     type: backend
     component: worker
-  {{- if .Values.vpa.set_main_container }}
   annotations:
+    secret.reloader.stakater.com/reload: "{{ .Release.Name }}-secrets,{{ .Release.Name }}-secrets-rndc"
+    deployment.reloader.stakater.com/pause-period: "60s"
+  {{- if .Values.vpa.set_main_container }}
     vpa-butler.cloud.sap/main-container: designate-worker
   {{- end }}
 spec:
@@ -48,6 +50,9 @@ spec:
       {{- include "utils.proxysql.pod_settings" . | indent 6 }}
       initContainers:
       {{- tuple . (dict "service" (include "designate.rabbitmq_dependencies" . )) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 8 }}
+      {{- if .Values.proxysql.native_sidecar }}
+      {{- tuple . .Values.worker_workers | include "utils.proxysql.container" | indent 8 }}
+      {{- end }}
       containers:
         - name: designate-worker
           image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/loci-designate:{{ required ".Values.global.image_version_designate is missing" .Values.image_version_designate }}
@@ -97,7 +102,9 @@ spec:
               name: container-init
             {{- include "utils.proxysql.volume_mount" . | indent 12 }}
             {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
+        {{- if not .Values.proxysql.native_sidecar }}
         {{- tuple . .Values.worker_workers | include "utils.proxysql.container" | indent 8 }}
+        {{- end }}
       volumes:
         - name: designate-etc
           projected:

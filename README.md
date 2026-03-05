@@ -1,6 +1,6 @@
-# SAP Converged Charts
+# SAP Cloud Infrastructure 
 
-This repository contains Helm charts required by SAP Converged Cloud.
+This repository contains Helm charts required by SAP Cloud Infrastructure.
 
 ## Structure
 

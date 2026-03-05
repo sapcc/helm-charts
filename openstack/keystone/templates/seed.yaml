@@ -1,5 +1,7 @@
 {{- if and (hasKey $.Values "seed") (hasKey $.Values.seed "disabled") ($.Values.seed.disabled) }}
 {{- else }}
+{{/* seeding of global region only happens once */}}
+{{- if or (not .Values.global.is_global_region) (eq .Values.global.db_region "eu-de-2") (eq .Values.global.db_region "qa-de-1") }}
 apiVersion: "openstack.stable.sap.cc/v1"
 kind: "OpenstackSeed"
 metadata:
@@ -120,7 +122,7 @@ spec:
       region: {{ .Values.global.region }}
 {{- if .Values.global.clusterDomain }}
       url: http://keystone.{{.Release.Namespace}}.svc.{{.Values.global.clusterDomain}}:5000/v3
-{{- else if .Values.global_setup }}
+{{- else if .Values.global.is_global_region }}
       url: http://{{ .Values.global.keystone_internal_ip }}:5000/v3
 {{- else }}
       url: http://{{ .Release.Name }}.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}:5000/v3
@@ -169,4 +171,5 @@ spec:
       description: Administrator Project
     - name: service
       description: Services Project
+{{- end }}
 {{- end }}

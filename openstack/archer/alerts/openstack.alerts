@@ -1,0 +1,15 @@
+groups:
+- name: openstack.alerts
+  rules:
+  - alert: archer-failed-pending-sync
+    expr: sum by (cloud_sap_host)(rate(archer_pending_sync_loop_total{name="PendingSyncLoop",outcome="fail"}[5m])) > 0
+    for: 5m
+    labels:
+      context: availability
+      service: archer
+      severity: warning
+      tier: os
+      support_group: containers
+    annotations:
+      description: 'Archer agent for {{ $labels.cloud_sap_host }} has failed sync loops > 5m.'
+      summary: 'Archer agent for {{ $labels.cloud_sap_host }} has failed sync loops > 5m.'

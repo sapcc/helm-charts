@@ -17,86 +17,77 @@ data:
   postgresql.conf: |
     {{- include (print .Template.BasePath "/_postgresql.conf.tpl") . | nindent 4 }}
 
-{{- if (hasKey .Values "sqlOnCreate") }}
 ---
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: {{ template "postgres.fullname" . }}-sql-on-create
-data:
-  on-create.sql: |
-    {{ .Values.sqlOnCreate }}
+
+{{- $userNames := keys .Values.users | sortAlpha }}
+{{- if .Values.persistence.createBackupUser }}
+  {{- $userNames = append $userNames "backup" }}
+{{- end }}
+{{- if .Values.createMetricsUser }}
+  {{- $userNames = append $userNames "metrics" }}
 {{- end }}
 
----
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: {{ template "postgres.fullname" . }}-sql-on-startup
 data:
-  on-startup.sql: |
-    {{- if eq .Values.postgresDatabase "postgres" }}
-      {{- fail "postgresDatabase cannot be set to postgres because that is the name of an internal database!" }}
-    {{- end }}
-
-    {{- /* duplicated with the code in rbac because the templating is to limited in its features */}}
-    {{- $users := .Values.users }}
-    {{- if .Values.persistence.createBackupUser }}
-      {{- $users := merge $users (dict "backup" (dict)) }}
-    {{- end }}
-    {{- if .Values.createMetricsUser }}
-      {{- $users := merge $users (dict "metrics" (dict)) }}
-    {{- end }}
-
+  # first phase of SQL on startup: statements that are executed in the "postgres" database
+  phase1-system.sql: |
     {{- if hasKey .Values.extensions "pg_stat_statements" }}
     CREATE EXTENSION IF NOT EXISTS pg_stat_statements;
     {{- end }}
 
-    SET password_encryption = 'scram-sha-256';
+    -- create databases as needed
+    {{- range $dbName := keys .Values.databases | sortAlpha }}
+    SELECT 'CREATE DATABASE "{{ $dbName }}"' WHERE NOT EXISTS (SELECT datname FROM pg_database WHERE datname='{{ $dbName }}')\gexec
+    {{- end }}
 
     -- TODO: drop with next breaking update
-    SELECT 'REASSIGN OWNED BY poor_mans_pg_read_all_data TO pg_read_all_data' where exists (SELECT rolname FROM pg_roles WHERE rolname='poor_mans_pg_read_all_data')\gexec
-    SELECT 'DROP OWNED BY poor_mans_pg_read_all_data' where exists (SELECT rolname FROM pg_roles WHERE rolname='poor_mans_pg_read_all_data')\gexec
+    SELECT 'REASSIGN OWNED BY poor_mans_pg_read_all_data TO pg_read_all_data' WHERE EXISTS (SELECT rolname FROM pg_roles WHERE rolname='poor_mans_pg_read_all_data')\gexec
+    SELECT 'DROP OWNED BY poor_mans_pg_read_all_data' WHERE EXISTS (SELECT rolname FROM pg_roles WHERE rolname='poor_mans_pg_read_all_data')\gexec
     DROP ROLE IF EXISTS poor_mans_pg_read_all_data;
 
-    {{- range $user, $settings := $users }}
-    {{- /* prevent more suffering and pain by forgotten {} in users */}}
-    {{- $settings = $settings | default (dict) }}
-    SELECT 'CREATE ROLE "{{ $user }}" WITH PASSWORD ''%USER_PASSWORD_{{ $user | replace "-" "_" }}%'' LOGIN' where not exists (select rolname from pg_authid where rolname = '{{ $user }}')\gexec
-    {{- /* update password in case it changed or the password hashing format changed */}}
-    ALTER USER "{{ $user }}" WITH PASSWORD '%USER_PASSWORD_{{ $user | replace "-" "_" }}%';
-
-    {{- if not (eq $user "backup" "metrics") }}
-    -- https://www.postgresql.org/docs/current/ddl-priv.html
-    GRANT CREATE,CONNECT,TEMPORARY ON DATABASE "%PGDATABASE%" TO "{{ $user }}";
-    GRANT SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER ON ALL TABLES IN SCHEMA public TO "{{ $user }}";
+    -- create users and update passwords if rotated
+    SET password_encryption = 'scram-sha-256';
+    {{- range $userName := $userNames }}
+    SELECT 'CREATE ROLE "{{ $userName }}" WITH PASSWORD ''%USER_PASSWORD_{{ $userName | replace "-" "_" }}%'' LOGIN' WHERE NOT EXISTS (SELECT rolname FROM pg_authid WHERE rolname = '{{ $userName }}')\gexec
+    ALTER USER "{{ $userName }}" WITH PASSWORD '%USER_PASSWORD_{{ $userName | replace "-" "_" }}%';
     {{- end }}
 
-    {{- range $settings.grant }}
-    {{ . }} to "{{ $user }}";
-    {{- end }}
-
-    {{- if eq $user "backup" }}
-    GRANT CONNECT ON DATABASE "%PGDATABASE%" TO backup;
-
+    {{- if $userNames | has "backup" }}
+    -- maintain permissions for user "backup"
     GRANT pg_read_all_data to backup;
+    {{- range (keys .Values.databases | sortAlpha) }}
+    GRANT CONNECT ON DATABASE "{{ . }}" TO backup;
+    {{- end }}
     {{- end }}
 
-    {{- if eq $user "metrics" }}
+    {{- if $userNames | has "metrics" }}
+    -- maintain permissions for user "metrics" (pg_read_all_data is required for custom metrics)
     GRANT pg_monitor to metrics;
+    GRANT pg_read_all_data to metrics;
     {{- if ge ($.Values.postgresVersion | int) 16 }}
     GRANT pg_use_reserved_connections to metrics;
     {{- end }}
-    -- pg_read_all_data is required for custom metrics
-    GRANT pg_read_all_data to metrics;
-    {{- end }}
     {{- end }}
 
-    ALTER SCHEMA public OWNER TO "{{ .Values.tableOwner | required ".Values.tableOwner must be set to one user!" }}";
-    ALTER DATABASE "%PGDATABASE%" OWNER TO "{{ .Values.tableOwner }}";
-    SELECT format('ALTER TABLE %I.%I.%I OWNER TO %I;', table_catalog, table_schema, table_name, '{{ .Values.tableOwner }}')
+  # second phase of SQL on startup: statements that are executed in the respective payload databases
+  {{- range $dbName := keys .Values.databases | sortAlpha }}
+  {{- $settings := index $.Values.databases $dbName | default (dict) }}
+  phase2-{{ $dbName }}.sql: |
+    {{- $ownerName := $dbName }}
+    -- maintain permissions for database owner "{{ $ownerName }}"
+    ALTER DATABASE "{{ $dbName }}" OWNER TO "{{ $ownerName }}";
+    ALTER SCHEMA public OWNER TO "{{ $ownerName }}";
+    -- fixup ownership of individual objects (might be necessary when database ownership changes)
+    SELECT FORMAT('ALTER TABLE %I.%I.%I OWNER TO %I;', table_catalog, table_schema, table_name, '{{ $ownerName }}')
       FROM information_schema.tables WHERE table_schema = 'public'\gexec
-    SELECT FORMAT('ALTER TYPE %I.%I.%I OWNER TO %I;', current_database()::information_schema.sql_identifier, n.nspname, t.typname, '{{ .Values.tableOwner }}')
+    SELECT FORMAT('ALTER TYPE %I.%I.%I OWNER TO %I;', current_database()::information_schema.sql_identifier, n.nspname, t.typname, '{{ $ownerName }}')
       FROM pg_catalog.pg_type t JOIN pg_catalog.pg_namespace n ON n.oid = t.typnamespace WHERE t.typtype = 'e' AND n.nspname = 'public'\gexec
 
-    {{ .Values.sqlOnStartup }}
+    {{- if $settings.sqlOnStartup }}
+    -- application-specific startup code
+    {{- $settings.sqlOnStartup | nindent 4 }}
+    {{- end }}
+  {{- end }}

@@ -22,11 +22,18 @@ simulator:
   sesSecret: secretkey
   rhea:
     enabled: false
+    queueName: incoming
+    domainMode: false
   smtpPassword: smtppassword
   cacheRetention: 20s
   emailBodySize: 10000
   poller: # service that handles received emails 
     enabled: false
+    rhea:
+      enabled: false
+      queueName: incoming
+      domainMode: false
+      uri: rhea-uri
     prometheusPort: 2112
     prometheus: :2112
     charSet: UTF-8
@@ -60,8 +67,6 @@ simulator:
     errContainer: # container name in Swift to put messages, which cannot be processed for some reasons
       name: error
     prettyPrint: false # pretty print message events while uploading them to swift containers
-    certPem: {}
-    keyPem: {}
     sleepDuration: 60s
     sleepThreads: 60s
     loaderThreads: 1
@@ -76,9 +81,6 @@ simulator:
     retry: # retry settings for failed connections
       maxConnectionRetries: 5 # 5 retries per connection
       retryInterval: 0.5s # 500ms to wait after each try, e.g. in total 2.5 seconds
-    rhea: # rhea settings
-      queueName: incoming
-      domainMode: false
     endpoint: 
       enabled: false
       name: http://localhost:5000 # override cronus endpoint URL - REMOVE IF NOT NEEDED

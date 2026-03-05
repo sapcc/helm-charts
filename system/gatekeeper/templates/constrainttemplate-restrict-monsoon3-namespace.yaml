@@ -1,0 +1,43 @@
+apiVersion: templates.gatekeeper.sh/v1
+kind: ConstraintTemplate
+metadata:
+  name: gkrestrictmonsoon3namespace
+spec:
+  crd:
+    spec:
+      names:
+        kind: GkRestrictMonsoon3Namespace
+      validation:
+        openAPIV3Schema:
+          type: object
+          properties:
+            patterns:
+              type: object
+              properties:
+                monsoon3:
+                  type: string
+                monsoon3global:
+                  type: string
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      code:
+        - engine: Rego
+          source:
+            version: "v1"
+            rego: |
+              package restrictmonsoon3namespace
+
+              iro := input.review.object
+              n := iro.metadata.namespace
+
+              violation contains {"msg": msg} if {
+                  iro.kind == "Secret"
+                  pattern := input.parameters.patterns[n]
+
+                  matches := regex.find_all_string_submatch_n("^sh\\.helm\\.release\\.v1\\.(.*?)\\.v\\d+$", iro.metadata.name, 2)
+                  release_name = matches[0][1]
+
+                  not regex.match(pattern, release_name)
+
+                  msg := sprintf("helm release %q is not allowed in namespace %q", [release_name, n])
+              }

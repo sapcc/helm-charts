@@ -60,7 +60,7 @@ lunaclient ()
     echo "exit" >> /thales/safenet/lunaclient/config/$HOSTNAME-$NOW-02.txt
     /thales/safenet/lunaclient/bin/64/plink {{ .Values.lunaclient.conn.ip02 | include "resolve_secret" }} -ssh -l {{ .Values.lunaclient.conn.user | include "resolve_secret" }} -pw {{ .Values.lunaclient.conn.pwd | include "resolve_secret" }} -v < /thales/safenet/lunaclient/config/$HOSTNAME-$NOW-02.txt
     {{- end}}
-    
+
     cp /thales/safenet/lunaclient/config/Chrystoki.conf /etc/Chrystoki.conf
     }
 

@@ -12,8 +12,8 @@ set -eou pipefail
 
 cd "$(dirname "$0")"
 
-CONFIG_FILE=../rendered-chart/gatekeeper/doop-analyzer-config.yaml
-yq -r '.data["config.yaml"]' ../rendered-chart/gatekeeper/templates/configmap-doop-analyzer.yaml > "$CONFIG_FILE"
+CONFIG_FILE=../rendered-chart/gatekeeper/doop-analyzer-config.json
+yq -r '.data["config.json"]' ../rendered-chart/gatekeeper/templates/configmap-doop-analyzer.yaml > "$CONFIG_FILE"
 
 EXIT_CODE=0
 for INPUT_FILE in */input.json; do

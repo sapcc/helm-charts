@@ -29,7 +29,11 @@ spec:
           name: statsd-content-repo
       containers:
       - name: statsd
+        {{- if .Values.image_refs.statsd_exporter }}
+        image: {{ quote .Values.image_refs.statsd_exporter }}
+        {{- else }}
         image: {{$.Values.global.dockerHubMirror}}/prom/statsd-exporter:{{.Values.image_version_auxiliary_statsd_exporter}}
+        {{- end }}
         args: [ --statsd.mapping-config=/config/statsd-exporter.yaml ]
         securityContext:
           runAsNonRoot: true

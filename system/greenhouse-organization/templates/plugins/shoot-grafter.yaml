@@ -1,0 +1,31 @@
+{{/* 
+SPDX-FileCopyrightText: 2026 SAP SE or an SAP affiliate company and Greenhouse contributors
+SPDX-License-Identifier: Apache-2.0
+*/}}
+
+{{- if .Values.shootgrafter.enabled }}
+
+apiVersion: greenhouse.sap/v1alpha1
+kind: Plugin
+metadata:
+  name: shoot-grafter
+labels:
+    "greenhouse.sap/owned-by": "containers"
+    "greenhouse.sap/deployment-tool": "flux"
+spec:
+  displayName: Shoot Grafter
+  optionValues:
+  {{- if .Values.shootgrafter.registry }}
+  - name: image.registry
+    value: {{ .Values.shootgrafter.registry | quote }}
+  {{- end }}
+  {{- if .Values.shootgrafter.imageTag }}
+  - name: image.tag
+    value: {{ .Values.shootgrafter.imageTag | quote }}
+  {{- end }}
+  pluginDefinitionRef:
+    kind: ClusterPluginDefinition
+    name: shoot-grafter
+  releaseName: shoot-grafter
+  releaseNamespace: greenhouse
+{{ end }}

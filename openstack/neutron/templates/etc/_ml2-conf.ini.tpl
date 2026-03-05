@@ -60,10 +60,8 @@ enable_vxlan = false
 {{- if .Values.ovn.enabled }}
 
 [ovn]
-{{- $numIPs := len .Values.ovn.externalIPs }}
-{{- if le $numIPs 0 }}
-    {{- fail "Need at least one IP in ovn.externalIPs" }}
-{{- end}}
-ovn_nb_connection = tcp:{{ first .Values.ovn.externalIPs }}:{{ .Values.ovn.nbPort }}
-ovn_sb_connection = tcp:{{ first .Values.ovn.externalIPs }}:{{ .Values.ovn.sbPort }}
+{{- $ovsdb_nb := index (index .Values "ovsdb-nb") }}
+{{- $ovsdb_sb := index (index .Values "ovsdb-sb") }}
+ovn_nb_connection = tcp:{{ required "ovsdb-nb.EXTERNAL_IP required!" $ovsdb_nb.EXTERNAL_IP }}:{{ $ovsdb_nb.DB_PORT }}
+ovn_sb_connection = tcp:{{ required "ovsdb-sb.EXTERNAL_IP required!" $ovsdb_sb.EXTERNAL_IP }}:{{ $ovsdb_sb.DB_PORT }}
 {{- end }}

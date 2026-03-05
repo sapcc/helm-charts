@@ -44,6 +44,8 @@ spec:
           value: {{ $fullname }}
         - name: USERS
           value: 'default'
+        - name: ANNOTATE_FOR_RELOADER
+          value: {{ .Values.reloader.annotateGeneratedSecrets | quote }}
         command: [ ash, -c, {{ .Files.Get "bin/init-generate-secrets.sh" | quote }} ]
       {{- end }}
       containers:
@@ -99,7 +101,9 @@ spec:
         - name: redis-config
           mountPath: /etc/redis
       {{- end }}
+      {{- if not .Values.redisPassword }}
       serviceAccountName: {{ $fullname }}
+      {{- end }}
       volumes:
       - name: redis-data
       {{- if .Values.persistence.enabled }}

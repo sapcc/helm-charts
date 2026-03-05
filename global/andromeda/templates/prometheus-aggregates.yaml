@@ -1,0 +1,15 @@
+{{- range $path, $bytes := $.Files.Glob (printf "aggregates/*.rules") }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+
+metadata:
+  name: {{ $.Release.Name }}-{{ printf "%s" $path | trimSuffix ".rules" | replace "/" "-" }}
+  labels:
+    type: aggregation-rules
+    prometheus: {{ base $path | trimSuffix ".rules" | replace "/" "-" }}
+
+spec:
+{{ printf "%s" $bytes | indent 2 }}
+
+{{- end }}

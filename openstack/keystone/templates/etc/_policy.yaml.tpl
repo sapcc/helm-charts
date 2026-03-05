@@ -39,12 +39,15 @@
   'cloud_network_admin':%(target.role.name)s or
   'cloud_dns_admin':%(target.role.name)s or
   'cloud_dns_viewer':%(target.role.name)s or
+  'cloud_dns_backup':%(target.role.name)s or
   'dns_admin':%(target.role.name)s or
   'dns_hostmaster':%(target.role.name)s or
   'dns_zonemaster':%(target.role.name)s or
   'dns_mailmaster':%(target.role.name)s or
   'cloud_image_admin':%(target.role.name)s or
   'cloud_compute_admin':%(target.role.name)s or
+  'cloud_compute_viewer':%(target.role.name)s or
+  'cloud_compute_migrate':%(target.role.name)s or
   'cloud_keymanager_admin':%(target.role.name)s or
   'cloud_volume_admin':%(target.role.name)s or
   'cloud_sharedfilesystem_admin':%(target.role.name)s or
@@ -236,7 +239,7 @@
 # GET  /v3/domains
 # Intended scope(s): system
 #"identity:list_domains": "role:reader and system_scope:all"
-"identity:list_domains": "rule:cloud_reader or role:role_viewer"
+"identity:list_domains": "rule:cloud_reader"
 
 # Create domain.
 # POST  /v3/domains
@@ -340,6 +343,10 @@
 "identity:ec2_delete_credential": "rule:cloud_admin or user_id:%(target.credential.user_id)s"
 
 "identity:ec2_delete_credentials": "rule:identity:ec2_delete_credential"
+
+"identity:ec2tokens_validate": "rule:service_or_admin"
+"identity:s3tokens_validate": "rule:service_or_admin"
+
 # Show endpoint details.
 # GET  /v3/endpoints/{endpoint_id}
 # Intended scope(s): system
@@ -940,7 +947,7 @@
 # POST  /v3/projects
 # Intended scope(s): system, domain
 #"identity:create_project": "(role:admin and system_scope:all) or (role:admin and domain_id:%(target.project.domain_id)s)"
-"identity:create_project": ""
+"identity:create_project": "rule:cloud_admin or (role:admin and domain_id:%(target.project.domain_id)s) or (role:admin and project_id:%(target.project.parent_id)s) or user_domain_id:%(target.project.domain_id)s"
 
 # Update project.
 # PATCH  /v3/projects/{project_id}

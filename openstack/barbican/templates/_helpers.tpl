@@ -14,3 +14,11 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
 {{- $name := default .Chart.Name .Values.nameOverride -}}
 {{- printf "%s-%s" .Release.Name $name | trunc 63 | replace "_" "-" | trimSuffix "-" -}}
 {{- end -}}
+
+{{- define "barbican.db_service" }}
+  {{- include "utils.db_host" . }}
+{{- end }}
+
+{{- define "barbican.service_dependencies" }}
+  {{- template "barbican.db_service" . }}
+{{- end }}

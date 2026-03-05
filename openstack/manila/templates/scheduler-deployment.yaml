@@ -7,8 +7,10 @@ metadata:
     system: openstack
     type: backend
     component: manila
-  {{- if .Values.vpa.set_main_container }}
   annotations:
+    secret.reloader.stakater.com/reload: "{{ .Release.Name }}-secrets"
+    deployment.reloader.stakater.com/pause-period: "60s"
+  {{- if .Values.vpa.set_main_container }}
     vpa-butler.cloud.sap/main-container: manila-scheduler
   {{- end }}
 spec:
@@ -54,16 +56,18 @@ spec:
                   - {{ .Release.Name }}-scheduler
               topologyKey: "topology.kubernetes.io/zone"
       initContainers:
-        {{- tuple . (dict "jobs" (print .Release.Name "-migration") "service" (print .Release.Name "-mariadb," .Release.Name "-rabbitmq")) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 8 }}
-        - name: fetch-rabbitmqadmin
+        {{- tuple . (dict "jobs" (print .Release.Name "-migration") "service" (include "manila.service_dependencies" . )) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 8 }}
+        {{- if not .Values.api_backdoor }}
+        - name: create-guru-file
           image: {{.Values.global.dockerHubMirror}}/library/busybox
-          command: ["/scripts/fetch-rabbitmqadmin.sh"]
+          command: ["/bin/sh", "-c", "touch /shared/guru"]
           volumeMounts:
-            - name: manila-bin
-              mountPath: /scripts
-              readOnly: true
             - name: etcmanila
               mountPath: /shared
+        {{- end }}
+        {{- if .Values.proxysql.native_sidecar }}
+        {{- tuple . .Values.rpc_workers | include "utils.proxysql.container" | indent 8 }}
+        {{- end }}
       containers:
         - name: manila-scheduler
           image: {{.Values.global.registry}}/loci-manila:{{.Values.loci.imageVersion}}
@@ -128,7 +132,7 @@ spec:
           {{- end }}
         {{- if .Values.rpc_statsd_enabled }}
         - name: statsd
-          image: {{ required ".Values.global.dockerHubMirror is missing" .Values.global.dockerHubMirror}}/prom/statsd-exporter:v0.8.1
+          image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/{{ required ".Values.statsd.image is missing" .Values.statsd.image }}:{{ required ".Values.statsd.imageTag is missing" .Values.statsd.imageTag }}
           imagePullPolicy: IfNotPresent
           args: [ --statsd.mapping-config=/etc/statsd/statsd-rpc-exporter.yaml ]
           ports:
@@ -144,7 +148,9 @@ spec:
               readOnly: true
         {{- end }}
         {{- include "jaeger_agent_sidecar" . | indent 8 }}
+        {{- if not .Values.proxysql.native_sidecar }}
         {{- tuple . .Values.rpc_workers | include "utils.proxysql.container" | indent 8 }}
+        {{- end }}
       volumes:
         - name: etcmanila
           emptyDir: {}

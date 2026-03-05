@@ -2,6 +2,7 @@ global:
   region: regionOne
   domain: evil.corp
   registry: keppel.regionOne.cloud
+  registryAlternateRegion: other.docker.registry
   dockerHubMirrorAlternateRegion: dockerhubmirror.example.com
   tld: regionOne.cloud
 
@@ -11,14 +12,51 @@ global:
 
 imageVersion: myTag
 
+# databaseOverride: mariadb_api
+
 mariadb:
   enabled: false
-  backup:
-    enabled: false
+  name: placement  # can be changed
+  root_password: topRootSecret
+  users:
+    placement:
+      name: placement
+      password: topUserSecretPlacement
   backup_v2:
     enabled: false
 
+mariadb_api:
+  enabled: false
+  defaultUser: placement
+  name: nova-api  # can be changed
+  root_password: topRootSecret
+  users:
+    placement:
+      name: placement
+      password: topUserSecretAPI
+  backup_v2:
+    enabled: false
 
-api_db:
-  user: a_name
-  password: a_password
+pxc_db:
+  enabled: false
+  users:
+    placement:
+      password: topSecret!
+  system_users:
+    root:
+      password: topSecret!
+    xtrabackup:
+      password: topSecret!
+    monitor:
+      password: topSecret!
+    proxyadmin:
+      password: topSecret!
+    operator:
+      password: topSecret!
+    replication:
+      password: topSecret!
+  backup:
+    s3:
+      secrets:
+        aws_access_key_id: topSecret!
+        aws_secret_access_key: topSecret!

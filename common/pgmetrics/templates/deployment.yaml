@@ -1,12 +1,18 @@
 {{- $registry := .Values.global.registry | required "missing value for .Values.global.registry" -}}
-{{- $db_name  := .Values.db_name         | default .Release.Name -}}
 {{- $db_host  := .Values.db_host         | default (printf "%s-postgresql" .Release.Name) -}}
 {{- $db_host  = printf "%s.%s.svc" $db_host .Release.Namespace -}}
 
+{{- range $dbName := keys .Values.databases | sortAlpha }}
+{{- $dbSettings := index $.Values.databases $dbName }}
+---
 kind: Deployment
 apiVersion: apps/v1
 metadata:
-  name: {{ .Release.Name }}-pgmetrics
+  name: {{ $.Release.Name }}-pgmetrics-{{ $dbName }}
+  {{- if $.Values.reloader.enabled }}
+  annotations:
+    reloader.stakater.com/search: "true"
+  {{- end }}
 spec:
   replicas: 1
   revisionHistoryLimit: 3
@@ -14,43 +20,44 @@ spec:
     type: Recreate
   selector:
     matchLabels:
-      app: {{ .Release.Name }}-pgmetrics
+      name: {{ $.Release.Name }}-pgmetrics-{{ $dbName }}
   template:
     metadata:
       labels:
-        app: {{ .Release.Name }}-pgmetrics
-        component: {{ $db_name }}
+        name: {{ $.Release.Name }}-pgmetrics-{{ $dbName }}
+        app: {{ $.Release.Name }}-pgmetrics
+        component: {{ $dbName }}
         type: metrics
       annotations:
         kubectl.kubernetes.io/default-container: metrics
-        configmap-etc-hash: {{ include (print $.Template.BasePath "/configmap-etc.yaml") . | sha256sum }}
+        configmap-etc-hash: {{ include (print $.Template.BasePath "/configmap-etc.yaml") $ | sha256sum }}
         {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
         linkerd.io/inject: enabled
         {{- end }}
         prometheus.io/scrape: "true"
-        prometheus.io/targets: {{ quote .Values.alerts.prometheus }}
+        prometheus.io/targets: {{ quote $.Values.alerts.prometheus }}
     spec:
       containers:
       - name: metrics
-        image: "{{ $registry }}/{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        image: "{{ $registry }}/{{ $.Values.image.repository }}:{{ $.Values.image.tag }}"
         imagePullPolicy: IfNotPresent
         env:
         - name: DATA_SOURCE_URI
-          value: {{ $db_host }}:5432/{{ $db_name }}?sslmode=disable&application_name={{ .Release.Name }}-pgmetrics
+          value: {{ $db_host }}:5432/{{ $dbName }}?sslmode=disable&application_name={{ $.Release.Name }}-pgmetrics-{{ $dbName }}
         - name: DATA_SOURCE_USER
           value: metrics
         - name: DATA_SOURCE_PASS
           valueFrom:
             secretKeyRef:
-              name: {{ .Release.Name }}-pguser-metrics
+              name: {{ $.Release.Name }}-pguser-metrics
               key: postgres-password
         ports:
           - name: metrics
             containerPort: 9187
         args:
-          - "--extend.query-path=/conf/custom-metrics.yaml"
+          - "--extend.query-path=/conf/custom-metrics-{{ $dbName }}.yaml"
           - "--log.level=info"
-          {{- range $collector, $enabled := .Values.collectors }}
+          {{- range $collector, $enabled := $.Values.collectors }}
           - "--{{ if not $enabled }}no-{{- end }}collector.{{ $collector }}"
           {{- end }}
         volumeMounts:
@@ -59,17 +66,15 @@ spec:
             readOnly: true
         resources:
           limits:
-            cpu:    {{ quote .Values.resources.limits.cpu }}
-            memory: {{ quote .Values.resources.limits.memory }}
-          {{- if not (.Values.global.region | regexMatch "^qa-de-[2-6]$") }}
+            cpu:    {{ quote $.Values.resources.limits.cpu }}
+            memory: {{ quote $.Values.resources.limits.memory }}
+          {{- if not ($.Values.global.region | regexMatch "^qa-de-[2-6]$") }}
           requests:
-            cpu:    {{ quote .Values.resources.requests.cpu }}
-            memory: {{ quote .Values.resources.requests.memory }}
+            cpu:    {{ quote $.Values.resources.requests.cpu }}
+            memory: {{ quote $.Values.resources.requests.memory }}
           {{- end }}
       volumes:
       - name: custom-metrics
         configMap:
-          name: {{ .Release.Name }}-pgmetrics-etc
-          items:
-          - key: custom-metrics.yaml
-            path: custom-metrics.yaml
+          name: {{ $.Release.Name }}-pgmetrics-etc
+{{- end }}

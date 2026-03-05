@@ -28,7 +28,11 @@ spec:
           name: statsd
       containers:
       - name: statsd
+        {{- if .Values.image_refs.statsd_exporter }}
+        image: {{ quote .Values.image_refs.statsd_exporter }}
+        {{- else }}
         image: {{ .Values.global.dockerHubMirror | required ".Values.global.dockerHubMirror is missing" }}/prom/statsd-exporter:{{ .Values.statsd.exporter_image_version }}
+        {{- end }}
         args: [ --statsd.mapping-config=/etc/statsd/statsd-exporter.yaml ]
         securityContext:
           runAsNonRoot: true

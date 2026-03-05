@@ -1,0 +1,12 @@
+{{- if and .Values.sync.enabled .Values.sync.init.enabled }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  namespace: {{ .Release.Namespace }}
+  name: {{ include "fullName" . }}-sync-init-scripts
+  labels:
+    {{- include "mariadb.labels" (list $ "noversion" "database-sync" "cm" "init-script") | nindent 4 }}
+data:
+{{ tpl (.Files.Glob "scripts/mariadb-sync-init.py").AsConfig . | indent 2 }}
+{{- end }}

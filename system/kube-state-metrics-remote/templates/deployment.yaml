@@ -1,0 +1,96 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "kube-state-metrics-remote.fullname" . }}
+  labels:
+    app.kubernetes.io/component: exporter
+  {{- include "kube-state-metrics-remote.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.kubeStateMetrics.replicas }}
+  strategy:
+    type: {{ .Values.kubeStateMetrics.strategy.type | quote }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: kube-state-metrics-remote
+    {{- include "kube-state-metrics-remote.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/component: exporter
+        app.kubernetes.io/name: kube-state-metrics-remote
+        app.kubernetes.io/version: 2.15.0
+      {{- include "kube-state-metrics-remote.selectorLabels" . | nindent 8 }}
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: "/metrics"
+        prometheus.io/port: {{ with index .Values.kubeStateMetrics.ports 0 }}{{ .port | quote }}{{ end }}
+        greenhouse/scrape: "true"
+        greenhouse/target: {{ .Values.prometheusName | quote }}
+    spec:
+      automountServiceAccountToken: true
+      containers:
+      - env:
+        - name: ENABLE_WEBHOOKS
+          value: {{ quote .Values.kubeStateMetrics.kubeStateMetrics.env.enableWebhooks
+            }}
+        - name: KUBERNETES_SERVICE_HOST
+          value: {{ quote .Values.kubeStateMetrics.kubeStateMetrics.env.kubernetesServiceHost
+            }}
+        - name: KUBERNETES_CLUSTER_DOMAIN
+          value: {{ quote .Values.kubernetesClusterDomain }}
+        image: {{ .Values.kubeStateMetrics.kubeStateMetrics.image.repository }}:{{ .Values.kubeStateMetrics.kubeStateMetrics.image.tag
+          | default .Chart.AppVersion }}
+        commnad:
+        - /kube-state-metrics
+        args:
+        {{- toYaml .Values.kubeStateMetrics.kubeStateMetrics.args | nindent 8 }}
+        {{- if .Values.kubeStateMetrics.kubeStateMetrics.customResources }}
+        - --resources={{ .Values.kubeStateMetrics.kubeStateMetrics.customResources }}
+        {{- end }}
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /livez
+            port: metrics
+          initialDelaySeconds: 15
+          periodSeconds: 20
+          timeoutSeconds: 5
+        name: kube-state-metrics
+        ports:
+        - containerPort: {{ with index .Values.kubeStateMetrics.ports 0 }}{{ .port }}{{ end }}
+          name: metrics
+        - containerPort: {{ with index .Values.kubeStateMetrics.ports 1 }}{{ .port }}{{ end }}
+          name: telemetry
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /readyz
+            port: telemetry
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          timeoutSeconds: 5
+        resources: {}
+        securityContext: {{- toYaml .Values.kubeStateMetrics.kubeStateMetrics.containerSecurityContext
+          | nindent 10 }}
+        volumeMounts:
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: remote-kubeconfig
+          readOnly: true
+        - mountPath: /etc/config
+          name: config-volume
+          readOnly: true
+      hostNetwork: true
+      nodeSelector: {{- toYaml .Values.kubeStateMetrics.nodeSelector | nindent 8 }}
+      serviceAccountName: {{ include "kube-state-metrics-remote.fullname" . }}
+      volumes:
+      - name: remote-kubeconfig
+        secret:
+          items:
+          - key: token
+            path: token
+          - key: bundle.crt
+            path: ca.crt
+          secretName: {{ include "kube-state-metrics-remote.fullname" . }}-kubeconfig
+      - configMap:
+          name: {{ include "kube-state-metrics-remote.fullname" . }}-config
+        name: config-volume

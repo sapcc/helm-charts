@@ -1,10 +1,15 @@
+---
 # Default values for mariadb.
 # This is a YAML-formatted file.
 # Declare name/value pairs to be passed into your templates.
 # name: value
+global:
+  mariadb:
+    native_sidecar:
+      enabled: true
 
 name: null
-image: library/mariadb:10.5.28
+image: library/mariadb:10.11.16
 imagePullPolicy: IfNotPresent
 port_public: 3306
 max_connections: 1024
@@ -30,8 +35,6 @@ db_performance_schema_instrument: # Enabling performance schema instruments.
   enabled: false
 
 root_password: null
-initdb_secret: null
-custom_initdb_secret: null
 
 # if enabled create 'ccroot'@'127.0.0.1' with all privileges to allow passwordless local connections
 # if disabled, the user will be dropped from the DB if existing
@@ -111,15 +114,33 @@ job:
         # -- Define how much CPU the MariaDB maintenance job container will request
         # @default -- 0.5
         cpu:
-
-pre_change_hook:
-  image:
-    name: "shared-app-images/alpine-kubectl"
-    tag: "3.21-20250214202620"
+  renameCheckConstraints:
+    # -- Whether to enable the rename-check-constraints job
+    # @default -- false
+    enabled: false
+    # -- Define the rename-check-constraints job backoff limit
+    # @default -- 1
+    backoffLimit:
+    # -- Define how the rename-check-constraints job pod [will be restarted](https://kubernetes.io/docs/concepts/workloads/controllers/job/#handling-pod-and-container-failures) in case of an error.
+    # It can be on the same worker node or another
+    # @default -- OnFailure
+    jobRestartPolicy:
+    # -- Define the priority class for the maintenance job pod
+    # @default -- common-payload
+    priority_class:
+    resources:
+      requests:
+        # -- Define how much memory the MariaDB rename-check-constraintsjob container will request
+        # @default -- 64Mi
+        memory:
+        # -- Define how much CPU the MariaDB rename-check-constraints job container will request
+        # @default -- 0.5
+        cpu:
 
 # name of priorityClass to influence scheduling priority
 priority_class: "critical-infrastructure"
 priority_class_backup: "critical-infrastructure"
+priority_class_sync: "critical-infrastructure"
 
 persistence_claim:
   enabled: true
@@ -168,15 +189,20 @@ use_alternate_registry: false
 
 readiness:
   image: pod-readiness
-  image_version: "20250225131500"
+  image_version: "20260210104857"
   # set to true if backup_v2 is not enabled, but readiness sidecar is required
   useSidecar: false
+
+credentialUpdater:
+  image: 'shared-app-images/alpine-mariadb'
+  imageTag: 'python3.13-alpine3.23-20260207085008'
+  checkInterval: '10'
 
 backup_v2:
   enabled: false
   backup_dir: "./backup"
   image: maria-back-me-up
-  image_version: "20240708140352"
+  image_version: "20260210150801"
   full_backup_cron_schedule: "0 0 * * *"
   incremental_backup_in_minutes: 5
   purge_binlog_after_minutes: 60
@@ -184,7 +210,10 @@ backup_v2:
   verification:
     enabled: false
     run_after_inc_backups: 12
+  aws:
+    enabled: true
   swift:
+    enabled: true
     user_name: db_backup
     user_domain_name: Default
     project_name: master
@@ -199,13 +228,15 @@ backup_v2:
 metrics:
   enabled: true
   image: prom/mysqld-exporter
-  image_version: v0.17.1
+  image_version: v0.18.0
   port: "9104"
   flags:
     - collect.binlog_size
     - collect.info_schema.processlist
     - collect.info_schema.query_response_time
     - collect.info_schema.innodb_tablespaces
+    - collect.info_schema.userstats
+    - collect.mysql.user
   resources:
     enabled: true
     limits:
@@ -214,6 +245,30 @@ metrics:
     requests:
       cpu: 5m
       memory: 32Mi
+
+sync:
+  enabled: false
+  replicas: 1
+  init:
+    enabled: false
+    image: 'shared-app-images/alpine-mariadb'
+    imageTag: 'python3.13-alpine3.23-20260207085008'
+  image:
+    name: "go-maria-sync"
+    tag: "20260205163034"
+  backup:
+    service: null
+    swift:
+      password: null
+    s3: {}
+  source:
+    password: null
+  target:
+    password: null
+  databases: []
+  loglevel: info
+  serverID: 899
+  binlogMaxReconnectAttempts: 10
 
 # Default Prometheus alerts and rules.
 alerts:
@@ -233,6 +288,13 @@ alerts:
   # Configurable service label of the alerts. Defaults to `.Release.Name`.
   # service:
 
+  # InnoDB buffer pool alerts. Set buffer_pool_alerts_enabled to false to disable both alerts.
+  buffer_pool_alerts_enabled: true
+  # Ratio of free pages below which MariaDBBufferPoolNearlyFull (warning) fires.
+  buffer_pool_warning_threshold: 0.10
+  # Ratio of free pages below which MariaDBBufferPoolExhausted (critical) fires.
+  buffer_pool_critical_threshold: 0.025
+
 vpa:
   # https://github.com/sapcc/vpa_butler
   # The maximum available capacity is split evenly across containers specified in the Deployment, StatefulSet or DaemonSet to derive the upper recommendation bound. This does not work out for pods with a single resource-hungry container with several sidecar containers
@@ -240,12 +302,17 @@ vpa:
   set_main_container: false
 linkerd:
   mariadb:
-    #linkerd annotation for the MariaDB pod (true/false)
+    # linkerd annotation for the MariaDB pod (true/false)
     enabled: true
   backup:
-    #linkerd annotation for the backup pod (true/false)
+    # linkerd annotation for the backup pod (true/false)
     enabled: true
-global: {}
+  cronjob:
+    # linkerd annotation for the cronjob pods (true/false)
+    enabled: true
+  sync:
+    # linkerd annotation for the go-maria-sync pod (true/false)
+    enabled: true
 
 tcp_keepalive:
   # Timeout, in seconds, with no activity until the first TCP keep-alive packet is sent. If set to 0, a system dependent default is used https://mariadb.com/kb/en/server-system-variables/#tcp_keepalive_time
@@ -257,3 +324,7 @@ tcp_keepalive:
   # Time between retries of unacknowledged keepalive packets. If set to 0, the system dependent default is used https://mariadb.com/kb/en/server-system-variables/#tcp_keepalive_interval
   # default is 0
   interval:
+
+# -- Enable owner_info injector chart dependency to allow installation as stand-alone chart
+owner_info:
+  enabled: false

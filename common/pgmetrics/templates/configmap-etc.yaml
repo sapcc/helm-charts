@@ -1,7 +1,13 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ .Release.Name }}-pgmetrics-etc
+  name: {{ $.Release.Name }}-pgmetrics-etc
 data:
-  custom-metrics.yaml: |
-{{ toYaml .Values.customMetrics | indent 4}}
+{{- range $dbName := keys .Values.databases | sortAlpha }}
+{{- $dbSettings := index $.Values.databases $dbName }}
+  custom-metrics-{{ $dbName }}.yaml: |
+    {{- $.Values.customMetrics | toYaml | replace "%PGDATABASE" $dbName | nindent 4 }}
+    {{- if $dbSettings.customMetrics }}
+      {{- $dbSettings.customMetrics | toYaml | nindent 4 }}
+    {{- end }}
+{{- end }}

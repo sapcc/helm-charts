@@ -14,3 +14,7 @@ password = {{ .Values.global.manila_service_password | default "" | include "res
 
 
 {{ include "ini_sections.audit_middleware_notifications" . }}
+
+{{- if .Values.osprofiler.enabled }}
+{{- include "osprofiler" . }}
+{{- end }}

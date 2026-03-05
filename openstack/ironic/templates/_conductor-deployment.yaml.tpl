@@ -13,6 +13,9 @@ metadata:
     system: openstack
     type: conductor
     component: ironic
+  annotations:
+    secret.reloader.stakater.com/reload: "{{ .Release.Name }}-secrets"
+    deployment.reloader.stakater.com/pause-period: "60s"
 spec:
   replicas: 1
   revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revisionHistory }}
@@ -50,6 +53,9 @@ spec:
       {{- include "utils.proxysql.pod_settings" . | indent 6 }}
       initContainers:
       {{- tuple . (dict "service" "ironic-api,ironic-rabbitmq") | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
+      {{- if .Values.proxysql.native_sidecar }}
+      {{- include "utils.proxysql.container" . | indent 6 }}
+      {{- end }}
       containers:
       - name: ironic-conductor
         image: {{ .Values.global.registry }}/loci-ironic:{{ .Values.imageVersion }}
@@ -105,6 +111,7 @@ spec:
           name: etcironic
         - mountPath: /etc/ironic/netrc
           name: curl-netrc
+          subPath: netrc
         - mountPath: /etc/ironic/ironic.conf.d
           name: ironic-etc-confd
         - mountPath: /etc/ironic/ironic.conf
@@ -149,9 +156,11 @@ spec:
         {{- end }}
         {{- include "utils.proxysql.volume_mount" . | indent 8 }}
         {{- include "utils.trust_bundle.volume_mount" . | indent 8 }}
+      {{- if not .Values.proxysql.native_sidecar }}
       {{- include "utils.proxysql.container" . | indent 6 }}
+      {{- end }}
       - name: console
-        image: {{ .Values.global.dockerHubMirror }}/library/{{ .Values.imageVersionNginx | default "nginx:stable-alpine" }}
+        image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/{{ required ".Values.nginx.image is missing" .Values.nginx.image }}:{{ required ".Values.nginx.imageTag is missing" .Values.nginx.imageTag }}
         imagePullPolicy: IfNotPresent
         resources:
 {{ toYaml .Values.pod.resources.console | indent 10 }}
@@ -160,12 +169,14 @@ spec:
             protocol: TCP
             containerPort: 443
         volumeMounts:
-          - mountPath: /etc/nginx/nginx.conf
-            name: ironic-console-nginxconf
           - mountPath: /etc/nginx/conf.d
             name: nginx-confd
+          - mountPath: /etc/nginx/conf.d/default.conf
+            name: ironic-console-nginxconf
+            subPath: nginx.conf
           - mountPath: /etc/nginx/conf.d/dhparam.pem
             name: ironic-console-dhparam
+            subPath: dhparam.pem
           - mountPath: /shellinabox
             name: shellinabox
           - mountPath: /etc/nginx/certs
@@ -186,7 +197,7 @@ spec:
           periodSeconds: 3
       {{- if $conductor.default.statsd_enabled }}
       - name: oslo-exporter
-        image: {{ .Values.global.dockerHubMirror }}/prom/statsd-exporter
+        image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/{{ required ".Values.statsd.image is missing" .Values.statsd.image }}:{{ required ".Values.statsd.imageTag is missing" .Values.statsd.imageTag }}
         args:
         - --statsd.mapping-config=/etc/statsd/statsd-rpc-exporter.yaml
         ports:
@@ -237,8 +248,6 @@ spec:
           items:
           - key: nginx.conf
             path: nginx.conf
-        configMap:
-          name: ironic-console
       - name: ironic-console-dhparam
         secret:
           secretName: {{ .Release.Name }}-secrets

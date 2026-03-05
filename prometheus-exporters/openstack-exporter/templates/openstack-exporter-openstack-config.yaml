@@ -9,8 +9,6 @@ data:
       prometheus_port: {{ required ".Values.exporter.prometheus_port missing" .Values.exporter.prometheus_port | quote }}
     openstack:
       auth_url: https://{{include "keystone_api_endpoint_host_public" .}}/v3
-      username: {{ required ".Values.openstack.username missing" .Values.openstack.username }}
-      password: {{ required ".Values.global.openstack_exporter_master_password missing" .Values.global.openstack_exporter_master_password | quote }}
       user_domain_name: {{ required ".Values.openstack.user_domain_name missing" .Values.openstack.user_domain_name }}
       project_domain_name: {{ required ".Values.openstack.project_domain_name missing" .Values.openstack.project_domain_name }}
       project_name: {{ required ".Values.openstack.project_name missing" .Values.openstack.project_name }}
@@ -19,6 +17,8 @@ data:
       cinderbackend:
         collector: openstack_exporter.collectors.cinderbackend.CinderBackendCollector
         enabled: True
+        expected_sharding_backends: {{ .Values.collectors.cinderbackend.expected_sharding_backends }}
+        allow_unexpected_backends: {{ .Values.collectors.cinderbackend.set_allow_unexpected_backends }}
       novaservice:
         collector: openstack_exporter.collectors.novaservice.NovaServiceCollector
         enabled: True

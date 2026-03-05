@@ -30,10 +30,6 @@ sync_power_state_unexpected_call_stop = false
 
 prepare_empty_host_for_spawning_interval = 600
 
-{{- if (.Values.imageVersion | hasPrefix "rocky") }}
-dhcp_domain = openstack.{{ required ".Values.global.region is missing" .Values.global.region }}.{{ required ".Values.global.tld is missing" .Values.global.tld }}
-{{- end }}
-
 {{ template "utils.snippets.debug.eventlet_backdoor_ini" "nova" }}
 
 [database]
@@ -41,9 +37,7 @@ dhcp_domain = openstack.{{ required ".Values.global.region is missing" .Values.g
 
 [api]
 compute_link_prefix = https://{{include "nova_api_endpoint_host_public" .}}:{{.Values.global.novaApiPortPublic}}
-{{- if (.Values.imageVersion | hasPrefix "rocky" | not) }}
 dhcp_domain = openstack.{{ required ".Values.global.region is missing" .Values.global.region }}.{{ required ".Values.global.tld is missing" .Values.global.tld }}
-{{- end }}
 
 [quota]
 {{- range $k, $v := .Values.quota }}
@@ -55,8 +49,6 @@ dhcp_domain = openstack.{{ required ".Values.global.region is missing" .Values.g
 max_age = {{ .Values.usage_max_age | default 0 }}
 # count of reservations until usage is refreshed
 until_refresh = {{ .Values.usage_until_refresh | default 0 }}
-
-{{- include "osprofiler" . }}
 
 {{ include "ini_sections.oslo_messaging_rabbit" .}}
 
@@ -144,9 +136,6 @@ region_name = {{.Values.global.region}}
 
 [wsgi]
 default_pool_size = {{ .Values.wsgi_default_pool_size | default .Values.global.wsgi_default_pool_size | default 100 }}
-
-[workarounds]
-enable_live_migration_to_old_hypervisor = True
 
 [compute]
 initial_cpu_allocation_ratio = 1.0

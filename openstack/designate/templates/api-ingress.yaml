@@ -9,12 +9,12 @@ metadata:
     component: designate
   annotations:
     kubernetes.io/tls-acme: "true"
-    {{- if .Values.global_setup }}
+    {{- if .Values.global.is_global_region }}
     kubernetes.io/ingress.class: "nginx-external"
     {{- end }}
     {{- include "utils.linkerd.ingress_annotation" . | indent 4 }}
 spec:
-{{- if .Values.global_setup }}
+{{- if .Values.global.is_global_region }}
   ingressClassName: "nginx-external"
 {{- end }}
   tls:
@@ -37,15 +37,15 @@ spec:
           pathType: Prefix
           backend:
             service:
-              name: {{ if .Values.global_setup }}designate-global-api{{ else }}designate-api{{ end }}
+              name: {{ if .Values.global.is_global_region }}designate-global-api{{ else }}designate-api{{ end }}
               port:
                 number: {{.Values.global.designate_api_port_internal}}
-{{- if .Values.global_setup }}
+{{- if .Values.global.is_global_region }}
         - path: /test.html
           pathType: Exact
           backend:
             service:
-              name: {{ if .Values.global_setup }}designate-global-api{{ else }}designate-api{{ end }}
+              name: {{ if .Values.global.is_global_region }}designate-global-api{{ else }}designate-api{{ end }}
               port:
                 number: 80
 {{- end }}

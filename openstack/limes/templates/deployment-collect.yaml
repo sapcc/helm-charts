@@ -41,9 +41,11 @@ spec:
           imagePullPolicy: IfNotPresent
           args:
             - collect
-            - /etc/limes/limes.yaml
+            - /etc/limes/limes.json
           env:
             {{ include "limes_common_envvars" . | indent 12 }}
+            - name: LIMES_BLOCK_EXPIRY_NOTIFICATIONS
+              value: "false" # Enable or disable the limes mail functionality for expiring commitments.
             - name: LIMES_QUOTA_OVERRIDES_PATH
               value: "/etc/limes-auto-overrides/quota-overrides.json"
           livenessProbe:

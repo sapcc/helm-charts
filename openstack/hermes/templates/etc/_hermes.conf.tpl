@@ -1,10 +1,11 @@
 [hermes]
 PolicyFilePath = "/etc/hermes/policy.json"
+storage_driver = "opensearch"
 
 [API]
 ListenAddress = "0.0.0.0:80"
 
-[elasticsearch]
+[opensearch]
 url = "https://{{.Values.hermes_elasticsearch_host}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.hermes_elasticsearch_port}}"
 
 [keystone]

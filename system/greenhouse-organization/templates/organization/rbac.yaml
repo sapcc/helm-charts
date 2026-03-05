@@ -1,0 +1,79 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: greenhouse:cluster-admin
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+  # Bootstrap problem.
+  - apiGroup: rbac.authorization.k8s.io
+    kind: Group
+    name: {{ required ".Values.teams.admin.mappedIdPGroup missing" .Values.teams.admin.mappedIdPGroup }}
+  # After idproxy.
+  - apiGroup: rbac.authorization.k8s.io
+    kind: Group
+    name: role:{{ .Release.Namespace }}:admin
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: role:{{ .Release.Namespace }}:support
+  namespace: {{ .Release.Namespace }}
+rules:
+- apiGroups: [""]
+  resources: ["configmaps", "pods", "pods/log", "secrets"]
+  verbs: ["get", "list", "watch", "patch"]
+
+- apiGroups: ["apps"]
+  resources: ["replicasets", "deployments", "statefulsets", "daemonsets"]
+  verbs: ["get", "list", "watch", "patch"]
+
+- apiGroups: [""]
+  resources: ["services", "ingresses", "endpoints", "endpointslices"]
+  verbs: ["get", "list", "watch", "patch"]
+
+- apiGroups: ["batch"]
+  resources: ["cronjobs", "jobs"]
+  verbs: ["get", "list", "watch", "patch"]
+
+- apiGroups: ["monitoring.coreos.com"]
+  resources: ["*"]
+  verbs: ["get", "list", "watch", "patch"]
+
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["delete"]
+
+# Flux HelmRelease management
+- apiGroups: ["helm.toolkit.fluxcd.io"]
+  resources: ["helmreleases"]
+  verbs: ["get", "list", "watch", "update", "patch", "delete"]
+
+# Flux HelmRepository read access (to reference repositories)
+- apiGroups: ["source.toolkit.fluxcd.io"]
+  resources: ["helmrepositories"]
+  verbs: ["get", "list", "watch"]
+---
+
+{{- if and .Values.organization.enabled .Values.teams }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: role:{{ .Release.Namespace }}:support
+  namespace: {{ .Release.Namespace }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: role:{{ .Release.Namespace }}:support
+subjects:
+  {{- range $teamName, $team := .Values.teams }}
+    {{- if $team.supportRBAC }}
+    - apiGroup: rbac.authorization.k8s.io
+      kind: Group
+      name: team:{{ $teamName }}
+    {{- end }}
+  {{- end }}
+{{- end }}

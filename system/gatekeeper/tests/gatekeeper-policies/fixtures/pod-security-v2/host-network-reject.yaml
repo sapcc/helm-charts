@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: host-network-reject
+  namespace: foo
+spec:
+  containers:
+  # foo-container is allowed to use host network
+  # bar-container is not allowed to use host network
+  # since not all containers in the pod allow usage of host network --> reject
+  - name: foo-container
+    image: foo.image-registry.com/test-app/unprivileged:20250519150208
+  - name: bar-container
+    image: foo.image-registry.com/test-app/highly-privileged:20250519150208
+  hostNetwork: true

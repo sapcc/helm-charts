@@ -8,8 +8,6 @@ metadata:
     type: alerting-rules
     prometheus: openstack
 
-{{- $keystone_namespace := .Values.is_global | ternary "monsoon3global" "monsoon3" }}
-
 spec:
   groups:
   - name: openstack-billing-roleassignment.alerts
@@ -17,13 +15,13 @@ spec:
         # allowed role assignments for the `cloud_masterdata_admin` role:
         # - none yet
         - alert: CBRMasterdataUnexpectedCloudAdminRoleAssignments
-          expr: max(openstack_assignments_per_role{role_name="cloud_masterdata_admin",namespace="{{ $keystone_namespace }}"}) > 0
+          expr: max(openstack_assignments_per_role{role_name="cloud_masterdata_admin",namespace="{{ .Values.global.keystoneNamespace }}"}) > 0
           for: 10m
           labels:
             support_group: containers
             service: limes
             severity: info
-            playbook: 'docs/support/playbook/unexpected-role-assignments'
+            playbook: 'https://operations.global.cloud.sap/docs/support/playbook/unexpected-role-assignments'
             meta: 'Unexpected role assignments found for Keystone role "cloud_masterdata_admin"'
           annotations:
             summary: 'Unexpected role assignments'
@@ -34,13 +32,13 @@ spec:
         # - group CCADMIN_CLOUD_ADMINS@ccadmin in project cloud_admin@ccadmin
         # - used TCC_BILLING_001               in project cloud_admin@ccadmin (only in qa-de-1)
         - alert: CBRMasterdataUnexpectedCloudViewerRoleAssignments
-          expr: max(openstack_assignments_per_role{role_name="cloud_masterdata_viewer",namespace="{{ $keystone_namespace }}"}) > {{if and (not .Values.is_global) (eq .Values.global.region "qa-de-1")}}3{{else}}2{{end}}
+          expr: max(openstack_assignments_per_role{role_name="cloud_masterdata_viewer",namespace="{{ .Values.global.keystoneNamespace }}"}) > {{if eq .Values.global.region "qa-de-1"}}3{{else}}2{{end}}
           for: 10m
           labels:
             support_group: containers
             service: limes
             severity: info
-            playbook: 'docs/support/playbook/unexpected-role-assignments'
+            playbook: 'https://operations.global.cloud.sap/docs/support/playbook/unexpected-role-assignments'
             meta: 'Unexpected role assignments found for Keystone role "cloud_masterdata_viewer"'
           annotations:
             summary: 'Unexpected role assignments'

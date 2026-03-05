@@ -1,21 +1,20 @@
 input {
 
-{{ range $key, $value := .Values.hermes.rabbitmq.targets }}
-{{- $user := $value.user | default $.Values.hermes.rabbitmq.user }}
-{{- $host := printf "%s-rabbitmq.monsoon3.svc.kubernetes.%s.%s" $key $.Values.global.region $.Values.global.tld}}
+{{ range $replica_name, $replica := .Values.hermes.rabbitmq.targets }}
+{{- $host := printf "%s-rabbitmq.monsoon3.svc.kubernetes.%s.%s" $replica_name $.Values.global.region $.Values.global.tld}}
 rabbitmq {
-    id => "{{ printf "logstash_hermes_%s" $key }}"
-    host => "{{ $value.host | default (printf $.Values.hermes.rabbitmq.host_template $key) }}"
-    user => "{{ $user }}"
-    password => "{{ $value.password }}"
+    id => "{{ printf "logstash_hermes_%s" $replica_name }}"
+    host => "{{ $replica.host | default (printf $.Values.hermes.rabbitmq.host_template $replica_name) }}"
+    user => "${RABBITMQ_{{ upper $replica_name }}_USER}"
+    password => "${RABBITMQ_{{ upper $replica_name }}_PASSWORD}"
     port => {{ $.Values.hermes.rabbitmq.port }}
-    queue => "{{ $value.queue_name | default $.Values.hermes.rabbitmq.queue_name }}"
+    queue => "{{ $replica.queue_name | default $.Values.hermes.rabbitmq.queue_name }}"
     subscription_retry_interval_seconds => 60
     automatic_recovery => true
     connection_timeout => 1000
     heartbeat => 5
     connect_retry_interval => 60
-    durable => {{ $value.durable | default false }}
+    durable => {{ $replica.durable | default false }}
   }
 {{ end }}
 }
@@ -26,6 +25,12 @@ filter {
   # Barbican records reads, but has multiple events per read. 
   # This will keep it to one event per action 
   if ([action] == "read/list" or [action] == "read/get") {
+    drop { }
+  }
+
+  # Drop liveliness check events that serve no value
+  # Everything in audit-default adds no value, internal communication
+  if [initiator][domain_id] == "default" {
     drop { }
   }
 
@@ -63,7 +68,7 @@ filter {
        # use proper CADF taxonomy for actions
        "action", "created\.", "create/",
        "action", "deleted\.", "delete/",
-       "action", "updated\.", "create/",
+       "action", "updated\.", "update/",
        "action", "disabled\.", "disable/",
        "action", "\.", "/",
        # fix the eventTime format to be ISO8601
@@ -287,8 +292,8 @@ filter {
     ]
     staging_directory => "/tmp/logstash/jdbc_static/import_data"
     loader_schedule => "{{ .Values.logstash.jdbc.schedule }}"
-    jdbc_user => "{{ .Values.global.metis.user | default "default" }}"
-    jdbc_password => "{{ .Values.global.metis.password | default "default" }}"
+    jdbc_user => "${METIS_USER}"
+    jdbc_password => "${METIS_PASSWORD}"
     jdbc_driver_class => "com.mysql.cj.jdbc.Driver"
     jdbc_driver_library => ""
     jdbc_connection_string => "jdbc:mysql://{{ .Values.logstash.jdbc.service }}.{{ .Values.logstash.jdbc.namespace }}:3306/{{ .Values.logstash.jdbc.db }}"
@@ -473,85 +478,74 @@ filter {
     id => "f25_kv_source_to_underscore"
     }
 
+  # Build array of tenant IDs for document-level isolation
+  ruby {
+    id => "f26_build_tenant_ids_array"
+    code => "
+      tenant_ids = []
+
+      # Add primary tenant ID
+      primary_tenant = event.get('[@metadata][index]')
+      if !primary_tenant.nil? && primary_tenant != '' && primary_tenant != 'unavailable'
+        tenant_ids << primary_tenant
+      end
+
+      # Add secondary tenant ID if different
+      secondary_tenant = event.get('[@metadata][index2]')
+      if !secondary_tenant.nil? && secondary_tenant != '' && secondary_tenant != primary_tenant && secondary_tenant != 'unavailable'
+        tenant_ids << secondary_tenant
+      end
+
+      # Fallback to Default tenant if no valid tenants found
+      if tenant_ids.empty?
+        tenant_ids << 'Default'
+      end
+
+      # Set the tenant_ids field
+      event.set('tenant_ids', tenant_ids)
+    "
+  }
+
   # The following line will create 2 additional
   # copies of each document (i.e. including the
   # original, 3 in total).
   # Each copy will automatically have a "type" field added
   # corresponding to the name given in the array.
   clone {
-    id => "f26_clone_events_three_times"
-    clones => ['clone_for_audit', 'clone_for_swift', 'clone_for_cc', 'audit']
+    id => "f27_clone_events"
+    clones => ['clone_for_audit', 'clone_for_swift', 'audit']
   }
 }
 
 output {
   if [type] == 'clone_for_audit' {
-    if ([@metadata][index]) {
-      opensearch {
-          id => "output_opensearch_clone_for_audit_1"
-          index => "audit-%{[@metadata][index]}"
-          template => "/hermes-etc/audit.json"
-          template_name => "audit"
-          template_overwrite => true
-          hosts => ["https://{{.Values.hermes_elasticsearch_host}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.hermes_elasticsearch_port}}"]
-          auth_type => {
-            type => 'basic'
-            user => "{{.Values.users.audit.username}}"
-            password => "{{.Values.users.audit.password}}"
-          }
-          retry_max_interval => 10
-          validate_after_inactivity => 1000
-          ssl => true
-          ssl_certificate_verification => true
+    opensearch {
+      id => "output_opensearch_datastream"
+      index => "hermes"
+      action => "create"
+      manage_template => false
+      hosts => ["https://{{.Values.hermes_elasticsearch_host}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.hermes_elasticsearch_port}}"]
+      auth_type => {
+        type => 'basic'
+        user => "${OPENSEARCH_USER}"
+        password => "${OPENSEARCH_PASSWORD}"
       }
-    } else {
-      opensearch {
-          id => "output_opensearch_clone_for_audit_2"
-          index => "audit-default"
-          template => "/hermes-etc/audit.json"
-          template_name => "audit"
-          template_overwrite => true
-          hosts => ["https://{{.Values.hermes_elasticsearch_host}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.hermes_elasticsearch_port}}"]
-          retry_max_interval => 10
-          validate_after_inactivity => 1000
-          auth_type => {
-            type => 'basic'
-            user => "{{.Values.users.audit.username}}"
-            password => "{{.Values.users.audit.password}}"
-          }
-          ssl => true
-          ssl_certificate_verification => true
-        }
+      retry_max_interval => 10
+      validate_after_inactivity => 1000
+      ssl => true
+      ssl_certificate_verification => true
     }
   }
-  # cc the target tenant
-  if ([@metadata][index2] and [@metadata][index2] != [@metadata][index] and [type] == 'clone_for_cc') {
-    opensearch {
-        id => "output_opensearch_clone_for_cc"
-        index => "audit-%{[@metadata][index2]}"
-        template => "/hermes-etc/audit.json"
-        template_name => "audit"
-        template_overwrite => true
-        hosts => ["https://{{.Values.hermes_elasticsearch_host}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.hermes_elasticsearch_port}}"]
-        retry_max_interval => 10
-        validate_after_inactivity => 1000
-        auth_type => {
-          type => 'basic'
-          user => "{{.Values.users.audit.username}}"
-          password => "{{.Values.users.audit.password}}"
-        }
-        ssl => true
-        ssl_certificate_verification => true
-        }
-  }
+  # Multi-tenant access is now handled via tenant_ids array field
+  # No separate output needed for secondary tenants
 
   {{- if .Values.logstash.swift }}
   if [type] == 'clone_for_swift' {
     s3 {
       id => "output_s3_for_swift"
       endpoint => "{{.Values.logstash.endpoint}}"
-      access_key_id => "{{.Values.logstash.access_key_id_conf}}"
-      secret_access_key => "{{.Values.logstash.secret_access_key_conf}}"
+      access_key_id => "${SWIFT_ACCESS_KEY}"
+      secret_access_key => "${SWIFT_SECRET_KEY}"
       region => "{{.Values.logstash.region}}"
       bucket => "{{.Values.logstash.bucket}}"
       prefix => "{{.Values.logstash.prefix}}"

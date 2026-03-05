@@ -337,7 +337,7 @@ spec:
                     PATH=$PATH:/bin
                     
                     /usr/bin/mkdir --parent /run/metadata
-                    OUTPUT=/run/metadata/coreos
+                    OUTPUT=/run/metadata/metadata
 
                     # mount configdrive
                     mkdir /tmp/configdrive
@@ -347,7 +347,10 @@ spec:
                     # build envs from BaremetalHost CR and metadata
                     for s in $(cat $CONFIGDRIVE/meta_data.json | jq -r "to_entries|map(\"\(.key)=\(.value|tostring)\")|.[]" ); do
                       echo $s >> $OUTPUT
-                      export $s
+                      # Replace hyphens with underscores in variable names only (keys), not values
+                      key=$(echo "$s" | cut -d'=' -f1 | sed 's/-/_/g')
+                      value=$(echo "$s" | cut -d'=' -f2-)
+                      export $key="$value"
                     done
 
                     hostnamectl set-hostname $name_bmh

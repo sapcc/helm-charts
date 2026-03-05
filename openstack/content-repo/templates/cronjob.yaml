@@ -13,9 +13,8 @@ spec:
   concurrencyPolicy: Replace # restarting a hung s-h-i should be safe (Swift will not store objects if the upload connection resets)
   successfulJobsHistoryLimit: 3
   failedJobsHistoryLimit: 3
-  schedule: "TZ={{ $.Values.timezone }} {{ $config.schedule | default "59 23 * * *" }}"
-  # TODO: switch to when we have k8s 1.27 and remove TZ from schedule
-  # timeZone: {{ $.Values.timezone }}
+  schedule: "{{ $config.schedule | default "59 23 * * *" }}"
+  timeZone: {{ $.Values.timezone }}
   jobTemplate:
     spec:
       template:
@@ -38,7 +37,11 @@ spec:
               secretName: swift-http-import-certs
           containers:
           - name: swift-http-import
+            {{- if $.Values.image_refs.swift_http_import }}
+            image: {{ quote $.Values.image_refs.swift_http_import }}
+            {{- else }}
             image: {{ $.Values.global.registry }}/swift-http-import:{{ include "image_version" $.Values }}
+            {{- end }}
             imagePullPolicy: IfNotPresent
             args:
               - /etc/http-import/config/{{ $repo }}.yaml
@@ -66,13 +69,13 @@ spec:
             resources:
               # observed usage in qa-de-1: CPU = 300-400m, RAM = 200-1100 MiB
               # Note that we can live with the job running throttled since it's a background job anyway.
-              # We also have seen RAM spike as high as 1600 MiB if large repo indexes need to be held in memory.
+              # We also have seen RAM spike as high 2+ GiB if large repo indexes need to be held in memory.
               limits:
                 cpu: '300m'
-                memory: '2048Mi'
+                memory: '3072Mi'
               requests:
                 cpu: '150m'
-                memory: '2048Mi'
+                memory: '3072Mi'
 ---
 {{- end }}
 {{- end }}

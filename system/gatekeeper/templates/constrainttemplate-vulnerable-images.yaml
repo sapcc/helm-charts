@@ -28,85 +28,95 @@ spec:
 
   targets:
     - target: admission.k8s.gatekeeper.sh
-      libs:
-        - |
-          {{ .Files.Get "lib/add-support-labels.rego" | nindent 10 }}
-        - |
-          {{ .Files.Get "lib/image-check.rego" | nindent 10 }}
-        - |
-          {{ .Files.Get "lib/traversal.rego" | nindent 10 }}
-      rego: |
-        package vulnerableimages
-        import data.lib.add_support_labels
-        import data.lib.image_check
-        import data.lib.traversal
-        import future.keywords.in
+      code:
+        - engine: Rego
+          source:
+            version: "v1"
+            libs:
+              - |
+                {{ .Files.Get "lib/add-support-labels.rego" | nindent 16 }}
+              - |
+                {{ .Files.Get "lib/image-check.rego" | nindent 16 }}
+              - |
+                {{ .Files.Get "lib/traversal.rego" | nindent 16 }}
+            rego: |
+              package vulnerableimages
 
-        iro := input.review.object
-        phase := object.get(iro, ["status", "phase"], "Running") # only relevant for iro.kind == "Pod"
-        pod := traversal.find_pod(iro)
-        checks := __run_image_check()
+              import data.lib.add_support_labels
+              import data.lib.image_check
+              import data.lib.traversal
 
-        __run_image_check() = result {
-          input.parameters.reportingLevel == "pod"
-          phase != "Succeeded"
-          phase != "Failed"
-          result = image_check.for_pod(iro, input.parameters.doopImageCheckerURL)
-        }
-        __run_image_check() = result {
-          input.parameters.reportingLevel == "pod"
-          # ignore pods that have already finished running, but still exist
-          # as a k8s object (e.g. leftovers of completed or failed jobs)
-          phase in ["Succeeded", "Failed"]
-          result = []
-        }
+              iro := input.review.object
+              phase := object.get(iro, ["status", "phase"], "Running") # only relevant for iro.kind == "Pod"
+              pod := traversal.find_pod(iro)
+              checks := __run_image_check(phase)
 
-        __run_image_check() = result {
-          input.parameters.reportingLevel == "pod-owner"
-          pod.isFound
-          result = image_check.for_pod_template(pod, input.parameters.doopImageCheckerURL)
-        }
-        __run_image_check() = result {
-          input.parameters.reportingLevel == "pod-owner"
-          not pod.isFound
-          # ignore pod owners that are suppressed, e.g. ReplicaSets within Deployments
-          result = []
-        }
+              __run_image_check(phase) := result if {
+                  input.parameters.reportingLevel == "pod"
+                  phase != "Succeeded"
+                  phase != "Failed"
+                  result = image_check.for_pod(iro, input.parameters.doopImageCheckerURL)
+              }
 
-        violation[{"msg": check.error}] {
-          check := checks[_]
-          check.error != ""
-        }
+              __run_image_check(phase) := result if {
+                  input.parameters.reportingLevel == "pod"
 
-        violation[{"msg": add_support_labels.extra("status", status, add_support_labels_with_overrides(iro, check, msg))}] {
-          check := checks[_]
-          check.error == ""
-          status := trim_space(object.get(check.headers, input.parameters.vulnStatusHeader, "Unclear"))
+                  # ignore pods that have already finished running, but still exist
+                  # as a k8s object (e.g. leftovers of completed or failed jobs)
+                  phase in ["Succeeded", "Failed"]
+                  result = []
+              }
 
-          # report everything with a definite vulnerability
-          status != "Clean"
-          status != "Unknown"
+              __run_image_check(phase) := result if {
+                  input.parameters.reportingLevel == "pod-owner"
+                  pod.isFound
+                  result = image_check.for_pod_template(pod, input.parameters.doopImageCheckerURL)
+              }
 
-          msg := sprintf(
-            "image %s for container %q has \"%s: %s\"",
-            [check.containerImage, check.containerName, input.parameters.vulnStatusHeader, status]
-          )
-        }
+              __run_image_check(phase) := result if {
+                  input.parameters.reportingLevel == "pod-owner"
+                  not pod.isFound
 
-        # extend add_support_labels.from_k8s_object() with some special cases for this specific policy
-        add_support_labels_with_overrides(iro, check, msg) = result {
-          # default behavior
-          not is_linkerd_sidecar_pod(check)
-          result := add_support_labels.from_k8s_object(iro, msg)
-        }
-        add_support_labels_with_overrides(iro, check, msg) = result {
-          # vulns in linkerd sidecar pods are not actionable for the actual pod owner until linkerd is updated centrally
-          is_linkerd_sidecar_pod(check)
-          result := sprintf("{\"support_group\":\"containers\",\"service\":\"linkerd\"} >> %s", [msg])
-        }
+                  # ignore pod owners that are suppressed, e.g. ReplicaSets within Deployments
+                  result = []
+              }
 
-        default is_linkerd_sidecar_pod(check) = false
-        is_linkerd_sidecar_pod(check) = true {
-          regex.match("^keppel\\.[^/]*/ccloud/servicemesh/proxy", check.containerImage)
-          regex.match("^linkerd-", check.containerName)
-        }
+              violation contains {"msg": check.error} if {
+                  check := checks[_]
+                  check.error != ""
+              }
+
+              violation contains {"msg": add_support_labels.extra("status", status, add_support_labels_with_overrides(iro, check, msg))} if {
+                  check := checks[_]
+                  check.error == ""
+                  status := trim_space(object.get(check.headers, input.parameters.vulnStatusHeader, "Unclear"))
+
+                  # report everything with a definite vulnerability
+                  status != "Clean"
+                  status != "Unknown"
+
+                  msg := sprintf(
+                      "image %s for container %q has \"%s: %s\"",
+                      [check.containerImage, check.containerName, input.parameters.vulnStatusHeader, status],
+                  )
+              }
+
+              # extend add_support_labels.from_k8s_object() with some special cases for this specific policy
+              add_support_labels_with_overrides(iro, check, msg) := result if {
+                  # default behavior
+                  not is_linkerd_sidecar_pod(check)
+                  result := add_support_labels.from_k8s_object(iro, msg)
+              }
+
+              add_support_labels_with_overrides(iro, check, msg) := result if {
+                  # vulns in linkerd sidecar pods are not actionable for the actual pod owner until linkerd is updated centrally
+                  is_linkerd_sidecar_pod(check)
+                  result := sprintf("{\"support_group\":\"containers\",\"service\":\"linkerd\"} >> %s", [msg])
+              }
+
+              default is_linkerd_sidecar_pod(check) := false
+
+              is_linkerd_sidecar_pod(check) if {
+                  regex.match("^keppel\\.[^/]*/ccloud/servicemesh/proxy", check.containerImage)
+                  regex.match("^linkerd-", check.containerName)
+              }

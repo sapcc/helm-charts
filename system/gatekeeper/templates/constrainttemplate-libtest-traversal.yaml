@@ -12,38 +12,42 @@ spec:
 
   targets:
     - target: admission.k8s.gatekeeper.sh
-      libs:
-        - |
-          {{ .Files.Get "lib/traversal.rego" | nindent 10 }}
-      rego: |
-        package libtesttraversal
-        import data.lib.traversal
+      code:
+        - engine: Rego
+          source:
+            version: "v1"
+            libs:
+              - |
+                {{ .Files.Get "lib/traversal.rego" | nindent 16 }}
+            rego: |
+              package libtesttraversal
 
-        # This test takes any object that traversal.find_pod() and
-        # traversal.find_container_specs() work on. A single violation is
-        # generates that describes which pod and containers were found (or that
-        # no pod was found).
-        iro := input.review.object
-        pod := traversal.find_pod(iro)
-        container_specs := traversal.find_container_specs(iro)
-        container_names := concat(", ", sort([sprintf("%q", [c.name]) | c := container_specs[_]]))
+              import data.lib.traversal
 
-        violation[{"msg": msg}] {
-          not pod.isFound
-          count(container_specs) == 0
-          msg := "no relevant pod found"
-        }
+              # This test takes any object that traversal.find_pod() and
+              # traversal.find_container_specs() work on. A single violation is
+              # generates that describes which pod and containers were found (or that
+              # no pod was found).
+              iro := input.review.object
+              pod := traversal.find_pod(iro)
+              container_specs := traversal.find_container_specs(iro)
+              container_names := concat(", ", sort([sprintf("%q", [c.name]) | c := container_specs[_]]))
 
-        violation[{"msg": msg}] {
-          not pod.isFound
-          count(container_specs) > 0
-          msg := sprintf("no relevant pod found, but we found containers %s", [container_names])
-        }
+              violation contains {"msg": msg} if {
+                  not pod.isFound
+                  count(container_specs) == 0
+                  msg := "no relevant pod found"
+              }
 
-        violation[{"msg": msg}] {
-          pod.isFound
-          marker := object.get(pod, ["metadata", "labels", "marker"], "")
-          msg := sprintf("found a relevant pod with marker %q and containers %s", [marker, container_names])
-        }
+              violation contains {"msg": msg} if {
+                  not pod.isFound
+                  count(container_specs) > 0
+                  msg := sprintf("no relevant pod found, but we found containers %s", [container_names])
+              }
 
+              violation contains {"msg": msg} if {
+                  pod.isFound
+                  marker := object.get(pod, ["metadata", "labels", "marker"], "")
+                  msg := sprintf("found a relevant pod with marker %q and containers %s", [marker, container_names])
+              }
 {{- end -}}

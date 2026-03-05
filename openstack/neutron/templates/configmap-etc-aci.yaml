@@ -1,0 +1,28 @@
+{{- $char_limit := int .Values.aci.configmap_char_limit -}}
+{{- $config_data := include (print $.Template.BasePath "/etc/_ml2-conf-aci.ini.tpl") . -}}
+{{- $byte_count := 0 }}
+{{- $counter := 0 }}
+{{- range regexSplit "\n\\[" $config_data -1 }}
+{{- if or (eq $byte_count 0) (ge $byte_count $char_limit) }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: neutron-etc-aci-{{ printf "%03d" $counter }}
+  labels:
+    system: openstack
+    type: configuration
+    component: neutron
+data:
+  ml2-conf-aci.ini: |
+  {{- $counter = (add $counter 1) -}}
+  {{- $byte_count = 0 -}}
+{{- end -}}
+  {{- /* only the first block we ever encounter does not need an added [ */ -}}
+  {{- if or (ne $byte_count 0) (gt $counter 1) -}}
+    {{- printf "[%s" . | nindent 4 }}
+  {{- else }}
+    {{- . | nindent 4 }}
+  {{- end }}
+{{- $byte_count = (add $byte_count (len .)) }}
+{{- end }}

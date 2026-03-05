@@ -3,6 +3,10 @@ debug = {{.Values.debug}}
 insecure_debug = {{.Values.insecure_debug}}
 verbose = true
 
+{{- with .Values.max_db_limit }}
+max_db_limit = {{ . }}
+{{- end }}
+
 max_token_size = {{ .Values.api.token.max_token_size | default 255 }}
 
 log_config_append = /etc/keystone/logging.conf
@@ -29,7 +33,12 @@ default_tag = vc-{{ $az }}-0
 
 {{- if .Values.api.auth }}
 [auth]
-methods = {{ .Values.api.auth.methods | default "password,token,application_credential" }}
+{{- /*
+Note: the federation-related methods must be in the beginning of the list.
+This goes against the official keystone documentation.
+This allows them to work even if the "external" method is present.
+*/}}
+methods = {{ if .Values.federation.oidc.enabled }}openid,{{ end }}{{ .Values.api.auth.methods | default "password,token,application_credential" }}
 {{ if .Values.api.auth.external }}external = {{ .Values.api.auth.external }}{{ end }}
 {{ if .Values.api.auth.password }}password = {{ .Values.api.auth.password }}{{ end }}
 {{ if .Values.api.auth.totp }}totp = {{ .Values.api.auth.totp }}{{ end }}
@@ -61,13 +70,17 @@ access_token_duration = {{ .Values.api.oauth1.access_token_duration | default "0
 {{- end }}
 
 [cache]
+{{- if and .Values.memcached.auth.username .Values.memcached.auth.password }}
+backend = dogpile.cache.bmemcached
+{{- else }}
 backend = dogpile.cache.memcached
-{{- if .Values.global_setup }}
-memcached_servers = "{{ include "helm-toolkit.utils.joinListWithComma" .Values.memcached.server_ips_ports }}"
+{{- end }}
+{{- if .Values.global.is_global_region }}
+memcache_servers = "{{ include "helm-toolkit.utils.joinListWithComma" .Values.memcached.server_ips_ports }}"
 {{- else if .Values.memcached.host }}
 memcache_servers = {{ .Values.memcached.host }}:{{.Values.memcached.port | default 11211}}
 {{ else }}
-memcache_servers = {{ include "memcached_host" . }}:{{.Values.memcached.port | default 11211}}
+memcache_servers = {{ include "keystone.memcached_host" . }}:{{.Values.memcached.port | default 11211}}
 {{- end }}
 config_prefix = cache.keystone
 expiration_time = {{ .Values.cache.expiration_time | default 600 }}
@@ -151,7 +164,7 @@ enabled = {{ .Values.lifesaver.enabled }}
 {{- if .Values.memcached.host }}
 memcached = {{ .Values.memcached.host }}:{{ .Values.memcached.port | default 11211}}
 {{ else }}
-memcached = {{ include "memcached_host" . }}:{{ .Values.memcached.port | default 11211}}
+memcached = {{ include "keystone.memcached_host" . }}:{{ .Values.memcached.port | default 11211}}
 {{- end }}
 # deprecated
 domain_whitelist = {{ .Values.lifesaver.domain_allowlist | default "Default, tempest" }}
@@ -176,4 +189,9 @@ allowed_origin = {{ .Values.cors.allowed_origin | default "*"}}
 allow_credentials = true
 expose_headers = Content-Type,Cache-Control,Content-Language,Expires,Last-Modified,Pragma,X-Auth-Token,X-Openstack-Request-Id,X-Subject-Token
 allow_headers = Content-Type,Cache-Control,Content-Language,Expires,Last-Modified,Pragma,X-Auth-Token,X-Openstack-Request-Id,X-Subject-Token,X-Project-Id,X-Project-Name,X-Project-Domain-Id,X-Project-Domain-Name,X-Domain-Id,X-Domain-Name,X-User-Id,X-User-Name,X-User-Domain-name
+{{- end }}
+{{- if .Values.federation.oidc.enabled }}
+[federation]
+remote_id_attribute = HTTP_OIDC_ISS
+trusted_dashboard = https://dashboard.{{ .Values.global.region }}.cloud.sap/verify-auth-token
 {{- end }}

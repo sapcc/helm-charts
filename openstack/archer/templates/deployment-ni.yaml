@@ -1,6 +1,10 @@
 {{- range $name, $env := $.Values.agents.ni }}
 {{- range $az_long, $apods := $.Values.global.apods }}
+{{- if or (not $env.availability_zone) (eq $env.availability_zone $az_long) }}
 {{- $apod := first $apods }}
+{{- with $env.physical_network }}
+  {{- $apod = . }}
+{{- end }}
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -15,6 +19,8 @@ spec:
       {{- include "archer.selectorLabels" $ | nindent 6 }}
       app.kubernetes.io/component: agent
       cloud.sap/host: {{ $apod }}
+  strategy:
+    type: Recreate
   template:
     metadata:
       {{- with $.Values.podAnnotations }}
@@ -25,6 +31,7 @@ spec:
         kubectl.kubernetes.io/default-container: archer-agent-ni
         {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
         linkerd.io/inject: enabled
+        config.linkerd.io/skip-inbound-ports: "{{ range $env.service_ports }}{{ . }},{{ end }}"
         {{- end }}
         {{- toYaml . | nindent 8 }}
       {{- end }}
@@ -115,8 +122,6 @@ spec:
             - name: etc-archer
               mountPath: /etc/archer
               readOnly: true
-            - name: socat-proxy
-              mountPath: /var/run/socat-proxy
         - name: neutron-linuxbridge-agent
           image: "{{ $.Values.global.registry }}/loci-neutron:{{ $.Values.image.neutron_version | default "latest" }}"
           imagePullPolicy: IfNotPresent
@@ -160,20 +165,7 @@ spec:
               mountPath: /etc/sudoers
               subPath: sudoers
               readOnly: true
-        - name: socat
-          image: "{{ $.Values.global.dockerHubMirror }}/alpine/socat:{{ $.Values.image.socat_version | default "latest" }}"
-          imagePullPolicy: IfNotPresent
-          args:
-            - "UNIX-LISTEN:/var/run/socat-proxy/proxy.sock,fork,reuseaddr,unlink-early,user=nobody,group=nobody,mode=777"
-            - "TCP:{{ $env.cp_endpoint }}.{{ include "host_fqdn" $ }}:{{ $env.cp_port }}"
-          resources:
-            {{- toYaml $.Values.resources.socat | nindent 12 }}
-          volumeMounts:
-            - name: socat-proxy
-              mountPath: /var/run/socat-proxy
       volumes:
-        - name: socat-proxy
-          emptyDir: { }
         - name: modules
           hostPath:
             path: /lib/modules
@@ -216,5 +208,6 @@ spec:
                   items:
                     - key: ni.ini
                       path: ni.ini
+{{- end }}
 {{- end }}
 {{- end }}

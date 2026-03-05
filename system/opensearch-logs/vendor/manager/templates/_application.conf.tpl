@@ -1,6 +1,5 @@
 # Secret will be used to sign session cookies, CSRF tokens and for other encryption utilities.
-# It is highly recommended to change this value before running cerebro in production.
-secret="{{.Values.global.manager.secret}}"
+secret = "{{ (randAlphaNum 64) }}"
 
 # Application base path
 basePath = "/"
@@ -29,8 +28,12 @@ hosts = [
     host = "https://opensearch-logs-client.opensearch-logs:9200"
     name = "{{ .Values.global.cluster }} OpenSearch Logs Cluster"
     auth = {
-      username = "{{.Values.global.users.admin.name}}"
+      username = "{{.Values.global.users.admin.username}}"
       password = "{{.Values.global.users.admin.password}}"
+    }
+    auth2 = {
+      username = "{{.Values.global.users.admin2.username}}"
+      password = "{{.Values.global.users.admin2.password}}"
     }
   },
 {{- end }}

@@ -15,9 +15,6 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
 {{- printf "%s-%s" .Release.Name $name | trunc 63 | replace "_" "-" | trimSuffix "-" -}}
 {{- end -}}
 
-{{define "memcached_host"}}{{.Release.Name}}-memcached.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
-
-
 {{- define "job_name" }}
   {{- $name := index . 1 }}
   {{- with index . 0 }}
@@ -26,4 +23,16 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
     {{- $hash := empty .Values.proxysql.mode | ternary $bin $all | sha256sum }}
 {{- .Release.Name }}-{{ $name }}-{{ substr 0 4 $hash }}-{{ .Values.imageVersion | required "Please set glance.imageVersion or similar"}}
   {{- end }}
+{{- end }}
+
+{{- define "glance.service_dependencies" }}
+  {{- template "glance.db_service" . }},{{ template "glance.memcached_service" . }}
+{{- end }}
+
+{{- define "glance.db_service" }}
+  {{- include "utils.db_host" . }}
+{{- end }}
+
+{{- define "glance.memcached_service" }}
+  {{- .Release.Name }}-memcached
 {{- end }}

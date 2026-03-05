@@ -1,5 +1,6 @@
 {{- $envAll := . }}
-{{- range $name, $conf := .Values.agents.ni -}}
+{{ range $name, $conf := .Values.agents.ni }}
+---
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -11,7 +12,10 @@ data:
     [agent]
     create_service = {{ $conf.create_service }}
     service_name = {{ $name }}
-    service_port = {{ $conf.service_port }}
-    service_require_approval = {{ $conf.service_require_approval }}
-    service_upstream_host = {{ $conf.service_upstream_host }}
+    {{- range $conf.service_ports }}
+    service_ports[] = {{ . }}
     {{- end }}
+    service_require_approval = {{ $conf.service_require_approval }}
+    {{ with $conf.service_upstream_host }}service_upstream_host = {{ . }}{{ end }}
+    {{ with $conf.service_protocol }}service_protocol = {{ . }}{{ end }}
+{{- end }}

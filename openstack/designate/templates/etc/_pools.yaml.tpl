@@ -38,15 +38,17 @@
         clean_zonefile: {{ $pool.clean_zonefile | default "False" }}
     {{- end}}
 {{- end }}
-{{- range $pool := .Values.akamai_pools }}
+{{- range $pool := .Values.catz_pools }}
 - name: {{ $pool.name }}
-  description: Akamai Pool
+  description: Catz Pool
+  {{- if $pool.attributes}}
   attributes:
    {{- range $attr := $pool.attributes}}
     {{ $attr.tag }}
    {{- end }}
+  {{- end }}
   ns_records:
-    {{- range $idx, $srv := $pool.nameservers}}
+    {{- range $idx, $srv := $pool.ns_records}}
     - hostname: {{ $srv.hostname }}
       priority: {{ add1 $idx }}
     {{- end}}
@@ -55,32 +57,27 @@
     - host: {{ $srv.ip }}
       port: 53
     {{- end}}
-  {{- if $pool.also_notifies}}
   also_notifies:
-    {{- range $i, $notify := $pool.also_notifies}}
-    - host: {{ $notify.host }}
-      port: {{ $notify.port }}
+    {{- range $prio, $srv := $pool.nameservers}}
+    - host: {{ $srv.ip }}
+      port: 53
     {{- end}}
-  {{- end}}
   targets:
-    - type: akamai
-      description: Akamai API
-
-      # List out the designate-mdns servers from which Akamai servers should
-      # request zone transfers (AXFRs) from.
+    {{- range $idx, $srv := $pool.nameservers}}
+    - type: fake
+      description: Dummy Server {{ add1 $idx }}
       masters:
-        - host: {{ $.Values.global.designate_mdns_akamai_ip }}
-          port: 53
-
-      # Akamai Configuration options
+        - host: {{ $.Values.global.designate_mdns_external_ip }}
+          port: 5354
       options:
-        host: {{$pool.options.host}}
-        port: {{$pool.options.port}}
-        username: {{$pool.options.username}}
-        password: {{$pool.options.password}}
-        tsig_key_name: "{{$pool.options.tsig_key_name}}"
-        tsig_key_secret: "{{$pool.options.tsig_key_secret}}"
-        tsig_key_algorithm: "{{$pool.options.tsig_key_algorithm}}"
+        host: {{$srv.ip}}
+        port: 53
+    {{- end}}
+  catalog_zone:
+      catalog_zone_fqdn: catalog.pool.{{ $pool.name }}.
+      catalog_zone_refresh: 60
+      catalog_zone_tsig_key: {{ tpl $pool.tsigkey $ | include "resolve_secret" }}
+      catalog_zone_tsig_algorithm: {{ tpl ($pool.tsigkeyalgorithm | default "hmac-sha512") $ | include "resolve_secret" }}
 {{- end }}
 {{- range $pool := .Values.akamai_pools_v2 }}
 - name: {{ $pool.name }}
@@ -121,12 +118,12 @@
         host: {{ $pool.options.host }}
         port: {{ $pool.options.port }}
         akamai_host: {{ $pool.options.akamai_host }}
-        akamai_client_token: {{ $pool.options.akamai_client_token }}
-        akamai_access_token: {{ $pool.options.akamai_access_token }}
-        akamai_client_secret: {{ $pool.options.akamai_client_secret }}
-        akamai_contract_id: {{ $pool.options.akamai_contract_id }}
+        akamai_client_token: {{ $pool.options.akamai_client_token | include "resolve_secret" }}
+        akamai_access_token: {{ $pool.options.akamai_access_token | include "resolve_secret" }}
+        akamai_client_secret: {{ $pool.options.akamai_client_secret | include "resolve_secret" }}
+        akamai_contract_id: {{ $pool.options.akamai_contract_id | include "resolve_secret" }}
         akamai_gid: {{ $pool.options.akamai_gid }}
-        tsig_key_name: "{{$pool.options.tsig_key_name}}"
-        tsig_key_secret: "{{$pool.options.tsig_key_secret}}"
-        tsig_key_algorithm: "{{$pool.options.tsig_key_algorithm}}"
+        tsig_key_name: "{{ $pool.options.tsig_key_name }}"
+        tsig_key_secret: {{ $pool.options.tsig_key_secret | include "resolve_secret" }}
+        tsig_key_algorithm: "{{ $pool.options.tsig_key_algorithm }}"
 {{- end }}

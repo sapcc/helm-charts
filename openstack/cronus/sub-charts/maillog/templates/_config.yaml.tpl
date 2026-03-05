@@ -1,10 +1,16 @@
 {{- define "maillog-config" -}}
 maillog:
   debug: {{ .Values.debug }}
+  logLevel: {{ .Values.logLevel | default "INFO" }}
   storage:
     type: {{ .Values.storage.type | default "elasticsearch" }} # allowed: elasticsearch, opensearch
     uri: {{ .Values.storage.uri | quote }}
     username: {{ .Values.storage.username | quote }}
+    {{- if .Values.storage.failoverUser }}
+    failoverUser:
+      username: {{ .Values.storage.failoverUser.username | quote }}
+    panicOnAuthError: {{ .Values.storage.panicOnAuthError | default "false" }}
+    {{- end }}
     indexMgmt: {{ .Values.storage.indexMgmt | default false }}
     indexPrefix: {{ .Values.storage.indexPrefix | default "mailstate" | quote }}
     indexDateFormat: {{ .Values.storage.indexDateFormat | default "2006_02_01_15_04_05" | quote }}
@@ -54,5 +60,9 @@ maillog:
   autoTagging:
     enabled: {{ .Values.autoTagging.enabled }}
     delayedAfter: {{ .Values.autoTagging.delayedAfter | default "24h" }}
+{{- end }}
+{{- if .Values.compliance }}
+  compliance:
+    autoAnonymization: {{ .Values.compliance.autoAnonymization }}
 {{- end }}
 {{- end -}}

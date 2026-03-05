@@ -1,16 +1,13 @@
 kind: Deployment
 apiVersion: apps/v1
-
 metadata:
   name: neutron-aci-agent
   labels:
     system: openstack
     type: backend
     component: neutron
-  {{- if .Values.vpa.set_main_container }}
   annotations:
     vpa-butler.cloud.sap/main-container: neutron-aci-agent
-  {{- end }}
 spec:
   replicas: 1
   revisionHistoryLimit: 5
@@ -28,9 +25,10 @@ spec:
         name: neutron-aci-agent
 {{ tuple . "neutron" "aci-agent" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
       annotations:
+        kubectl.kubernetes.io/default-container: neutron-aci-agent
         pod.beta.kubernetes.io/hostname:  aci-agent-pet
         configmap-etc-hash: {{ include (print $.Template.BasePath "/configmap-etc.yaml") . | sha256sum }}
-        configmap-etc-region-hash: {{ include (print $.Template.BasePath "/configmap-etc-region.yaml") . | sha256sum }}
+        configmap-etc-aci-hash: {{ include (print $.Template.BasePath "/configmap-etc-aci.yaml") . | sha256sum }}
         configmap-etc-vendor-hash: {{ include (print $.Template.BasePath "/configmap-etc-vendor.yaml") . | sha256sum }}
         {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
     spec:
@@ -52,11 +50,7 @@ spec:
           env:
             - name: DEBUG_CONTAINER
               value: "false"
-            - name: SENTRY_DSN
-              valueFrom:
-                secretKeyRef:
-                  name: sentry
-                  key: neutron.DSN.python
+            {{- include "utils.sentry_config" . | nindent 12 }}
             {{- include "utils.trust_bundle.env" . | indent 12 }}
           volumeMounts:
             - mountPath: /neutron-etc
@@ -71,8 +65,8 @@ spec:
               readOnly: true
             - mountPath: /neutron-etc-vendor
               name: neutron-etc-vendor
-            - mountPath: /neutron-etc-region
-              name: neutron-etc-region
+            - mountPath: /neutron-etc-aci
+              name: neutron-etc-aci
             - mountPath: /container.init
               name: container-init
             {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
@@ -86,9 +80,16 @@ spec:
         - name: neutron-aci-secrets
           secret:
             secretName: neutron-aci-secrets
-        - name: neutron-etc-region
-          configMap:
-            name: neutron-etc-region
+        - name: neutron-etc-aci
+          projected:
+            sources:
+            {{- range until (int (include "neutron.aci_config_count" .)) }}
+            - configMap:
+                name: neutron-etc-aci-{{ printf "%03d" . }}
+                items:
+                - key: ml2-conf-aci.ini
+                  path: ml2-conf-aci-{{ printf "%03d" . }}.ini
+            {{- end }}
         - name: neutron-etc-vendor
           configMap:
             name: neutron-etc-vendor

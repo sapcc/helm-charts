@@ -28,3 +28,5 @@ swift_account = {{required "A valid .Values.swift_account required!" .Values.swi
 {{- end }}
 
 {{ include "ini_sections.audit_middleware_notifications" . }}
+
+{{- include "osprofiler" . }}

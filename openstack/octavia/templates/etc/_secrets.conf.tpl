@@ -11,7 +11,7 @@ username = {{ .Release.Name }}
 password = {{ .Values.global.octavia_service_password | replace "$" "" }}
 
 [database]
-connection = {{ include "db_url_mysql" . }}
+connection = {{ include "utils.db_url" . }}
 
 {{ if .Values.audit.enabled -}}
 [audit]
@@ -21,4 +21,9 @@ ignore_req_list = GET, HEAD
 record_payloads = {{ if .Values.audit.record_payloads -}}True{{- else -}}False{{- end }}
 metrics_enabled = {{ if .Values.audit.metrics_enabled -}}True{{- else -}}False{{- end }}
 {{- include "ini_sections.audit_middleware_notifications" . }}
+{{- end }}
+
+{{- if .Values.osprofiler.enabled }}
+# Tracing
+{{- include "osprofiler" . }}
 {{- end }}

@@ -8,6 +8,9 @@ metadata:
     {{- range $key, $value := .Values.cronus.ingressAnnotations }}
     {{ $key }}: {{ $value | quote }}
     {{- end }}
+    {{- if .Values.cronus.gateway }}
+    nginx.ingress.kubernetes.io/add-hosts: cronus.{{ .Values.global.region }}.cm.net.sap
+    {{- end }}
   labels:
     name: cronus
 spec:
@@ -22,9 +25,24 @@ spec:
                   name: http
             path: /
             pathType: Prefix
+    {{- if .Values.cronus.gateway }}
+    - host: cronus.{{ .Values.global.region }}.cm.net.sap
+      http:
+        paths:
+          - backend:
+              service:
+                name: cronus-gateway
+                port:
+                  name: http
+            path: /
+            pathType: Prefix
+    {{- end }}
   tls:
     - hosts:
       - cronus.{{ .Values.global.region }}.{{ .Values.global.tld }}
+      {{- if .Values.cronus.gateway }}
+      - cronus.{{ .Values.global.region }}.cm.net.sap
+      {{- end }}
       # .Values.cronus.tls.serverTlsName
       secretName: tls-secret-cronus
 {{- end -}}

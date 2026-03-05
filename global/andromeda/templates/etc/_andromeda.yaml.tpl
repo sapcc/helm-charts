@@ -44,3 +44,7 @@ audit_middleware_notifications:
 
 house_keeping:
   enabled: true
+
+{{- if .Values.f5.enabled }}
+f5_datacenters: {{- .Values.f5_datacenters | toYaml | nindent 2 }}
+{{- end }}

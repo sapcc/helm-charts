@@ -24,8 +24,14 @@ spec:
         kubectl.kubernetes.io/default-container: metal
         checksum/configmap-dnsmasq: {{ include (print $.Template.BasePath "/configmap-dnsmasq.yaml") . | sha256sum }}
     spec:
-      hostNetwork: true
+      hostNetwork: {{ .Values.dnsmasq.hostNetwork }}
       affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: node.kubernetes.io/exclude-from-external-load-balancers
+                operator: DoesNotExist
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
           - podAffinityTerm:
@@ -37,14 +43,31 @@ spec:
                   - metal-dnsmasq
               topologyKey: "kubernetes.io/hostname"
             weight: 10
+{{ if .Values.dnsmasq.service }}
+      initContainers:
+      - name: init
+        image: "{{ $.Values.dnsmasq.image.repository }}:{{ $.Values.dnsmasq.image.tag }}"
+        command:
+          - /opt/dnsmasq/dhcp-init.sh
+        env:
+        - name: DHCPSERVERIP
+          value: {{ .Values.dnsmasq.externalIP }}
+        securityContext:
+          privileged: true
+        volumeMounts:
+          - name: metal-dnsmasq
+            mountPath: /opt/dnsmasq
+{{ end }}
       containers:
       - command:
-        - /opt/dnsmasq/rundnsmasq
-        env:
-        - name: PROVISIONING_INTERFACE
-          value: "{{ .Values.dnsmasq.interface }}"
+        - /opt/dnsmasq/initdnsmasq.sh
         image: "{{ $.Values.dnsmasq.image.repository }}:{{ $.Values.dnsmasq.image.tag }}"
         imagePullPolicy: IfNotPresent
+{{ if .Values.dnsmasq.service }}
+        env:
+        - name: DHCPSERVERIP
+          value: {{ .Values.dnsmasq.externalIP }}
+{{ end }}
         ports:
         - containerPort: {{ .Values.dnsmasq.dhcpServerPort }}
           name: dhcp-{{ .Values.dnsmasq.dhcpServerPort }}
@@ -85,25 +108,17 @@ spec:
             - NET_RAW
             drop:
             - ALL
-          privileged: false
-          runAsGroup: 994
-          runAsUser: 997
         terminationMessagePath: /dev/termination-log
         terminationMessagePolicy: File
         volumeMounts:
         - mountPath: /opt/dnsmasq
-          name: dnsmasq
+          name: metal-dnsmasq
       dnsPolicy: ClusterFirst
       restartPolicy: Always
       schedulerName: default-scheduler
-      securityContext:
-        fsGroup: 994
-        runAsNonRoot: true
-        seccompProfile:
-          type: RuntimeDefault
       terminationGracePeriodSeconds: 30
       volumes:
       - configMap:
-          defaultMode: 511
+          defaultMode: 484
           name: metal-dnsmasq
-        name: dnsmasq
+        name: metal-dnsmasq

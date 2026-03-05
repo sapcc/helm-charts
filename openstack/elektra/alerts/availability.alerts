@@ -1,0 +1,31 @@
+groups:
+- name: availability.alerts
+  rules:
+  - alert: OpenstackElektraPodAvailabilityLow
+    expr: (sum(up{name="elektra", container="rails"}) BY (region) / count(up{name="elektra", container="rails"}) BY (region)) < 0.5
+    for: 3m
+    labels:
+      context: openstack
+      dashboard: elektra-details
+      service: elektra
+      severity: warning
+      tier: os
+      support_group: containers
+    annotations:
+      description:  |
+        📊 Elektra Pod Availability Alert - Region {{ $labels.region }}
+        
+        • Threshold: 50% minimum required
+        • Last Measured: {{ $value | humanizePercentage }} (at last evaluation)
+        • Evaluation Period: 3 minutes
+        
+        Alert Status:
+        🔴 RED alert = Currently below 50%
+        🟢 GREEN alert = Recovered above 50%
+        
+        Note: "Last Measured" may not reflect current state when resolved
+        
+        Quick Actions:
+        • Check pods: kubectl -n elektra get pods -l name=elektra
+        • View Dashboard: https://dashboard.{{ $labels.region }}.cloud.sap
+      summary: 'Elektra pod availability threshold alert - {{ $labels.region }}'

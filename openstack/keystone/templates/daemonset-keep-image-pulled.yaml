@@ -1,13 +1,24 @@
+{{- if not (.Values.global.region | hasPrefix "qa-") }}
+
 # Because Keppel depends on Keystone and the other way around the Docker images
 # for Keystone should be pre-pulled to able to start in case keppel is down.
 # This daemonset (through its existence) keeps required images permanently
 # pulled on all nodes.
+#
+# The condition above skips this daemonset on QA and lab regions, because high
+# availability is not a concern there. By omitting the daemonset there, the
+# Helm deployment will finish faster since it does not have to wait on it.
+# This also avoids wasting resources in small lab clusters.
 
 kind: DaemonSet
 apiVersion: apps/v1
 
 metadata:
   name: {{ .Release.Name }}-keep-image-pulled
+  annotations:
+    # This pod intentionally has extremely tight resource requests.
+    # The VerticalPodAutoscaler should never waste resources by increasing those.
+    vpa-butler.cloud.sap/update-mode: "Off"
 
 spec:
   updateStrategy:
@@ -85,3 +96,5 @@ spec:
               cpu: "1m"
               memory: "20Mi"
       terminationGracePeriodSeconds: 1
+
+{{- end }}

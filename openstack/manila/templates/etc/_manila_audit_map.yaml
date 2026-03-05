@@ -39,20 +39,27 @@ resources:
       detail: read/list/details
       extend: update/extend
       force_delete: delete/forced
-      # according to documentation this is a GET request (probably that is wrong and it is POST)
-      manage: deploy
+      manage: import
       # legacy migration API
       os-migrate_share: update/migrate
       migrate_share: update/migrate
-      # current migration API since 2.14
-      migrate-start: update/migrate
+      # current migration API since 2.15
+      migration_cancel: update/migration_cancel
+      migration_complete: update/migration_complete
+      migration_get_progress: null
+      migration_start: update/migration_start
       reset_status: update/set/status
+      reset_task_state: update/set/status
       revert: restore
       shrink: update/shrink
-      unmanage: undeploy
+      unmanage: unimport
     children:
       export-locations:
         api_name: export_locations
+      metadata:
+        singleton: true
+  share-access-rules:
+    children:
       metadata:
         singleton: true
   share-groups:
@@ -102,11 +109,20 @@ resources:
       export-locations:
         api_name: export_locations
   share-networks:
+    children:
+      subnets:
+        children:
+          metadata:
+            singleton: true
     custom_actions:
       # model details listing a action
       detail: read/list/details
       add_security_service: update/add/security-service
+      add_security_service_check: update/add/check/security-service
       remove_security_service: update/remove/security-service
+      reset_status: update/set/status
+      update_security_service: update/security-service
+      update_security_service_check: update/check/security-service
     custom_attributes:
       security_service_id: storage/share/security-service
   share-replicas:
@@ -120,8 +136,18 @@ resources:
       # put the share ID right into the event
       share_id: storage/share/share
   share-servers:
+    custom_actions:
       # model details listing a action
       detail: read/list/details
+      manage: import
+      migration_cancel: update/migration_cancel
+      migration_check: update/migration_check
+      migration_complete: update/migration_complete
+      migration_get_progress: null
+      migration_start: update/migration_start
+      reset_status: update/set/status
+      reset_task_state: update/set/status
+      unmanage: unimport
   snapshots:
     custom_actions:
       # model details listing a action

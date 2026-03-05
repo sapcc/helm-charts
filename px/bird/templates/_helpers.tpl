@@ -98,7 +98,7 @@ nodeAffinity:
     requiredDuringSchedulingIgnoredDuringExecution:
       nodeSelectorTerms:
       - matchExpressions:
-        - key: kubernetes.cloud.sap/apod
+        - key: {{ .top.Values.rackKey | quote }}
           operator: In
           values: 
           {{- range $site := keys .top.Values.apods | sortAlpha }}
@@ -107,13 +107,13 @@ nodeAffinity:
           {{- end }}
           {{- end }}
           {{- if .top.Values.prevent_hosts }}
-        - key: kubernetes.cloud.sap/host
+        - key: {{ .top.Values.nodeKey | quote}}
           operator: NotIn
           values: {{ .top.Values.prevent_hosts | toYaml | nindent  10 }}
           {{- end }}
 podAntiAffinity:
     requiredDuringSchedulingIgnoredDuringExecution:
-    - topologyKey: "kubernetes.cloud.sap/host"
+    - topologyKey: {{ .top.Values.nodeKey | quote}}
       labelSelector:
         matchExpressions:
         - key: px.cloud.sap/afi

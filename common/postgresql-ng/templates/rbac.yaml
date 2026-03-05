@@ -14,18 +14,15 @@ rules:
   # `$RELEASE-pguser-$USERNAME` secrets on first start.
   - apiGroups: [ "" ]
     resources: [ secrets ]
-    verbs:     [ get, delete ]
+    verbs:     [ get, delete, patch, update ]
     resourceNames:
-      # duplicated with the code in configmap because the templating is to limited in its features
-      {{- $users := .Values.users }}
       {{- if .Values.persistence.createBackupUser }}
-        {{- $users := merge $users (dict "backup" (dict)) }}
+      - {{ $.Release.Name }}-pguser-backup
       {{- end }}
       {{- if .Values.createMetricsUser }}
-        {{- $users := merge $users (dict "metrics" (dict)) }}
+      - {{ $.Release.Name }}-pguser-metrics
       {{- end }}
-
-      {{- range $user, $settings := $users }}
+      {{- range $user := keys .Values.users | sortAlpha }}
       - {{ $.Release.Name }}-pguser-{{ $user }}
       {{- end }}
 
@@ -53,3 +50,4 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: {{ template "postgres.fullname" . }}
+    namespace: {{ .Release.Namespace }}

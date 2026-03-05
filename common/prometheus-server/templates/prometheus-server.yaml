@@ -14,6 +14,8 @@ spec:
   replicas: 1
   shards: 1
 
+  priorityClassName: {{ default "important-payload" $.Values.priorityClassName }} 
+
   {{ if $.Values.rbac.create -}}
   serviceAccountName: {{ include "serviceAccount.name" (list $name $root) }}
   {{- end }}
@@ -54,6 +56,8 @@ spec:
   {{- if $.Values.serviceDiscoveries.probes.enabled }}
   probeNamespaceSelector: {}
   {{- end }}
+
+  nameValidationScheme: {{ default "Legacy" $.Values.nameValidationScheme }} 
 
   {{- if $.Values.remoteWriteTargets }}
   remoteWrite:

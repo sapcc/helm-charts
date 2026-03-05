@@ -15,6 +15,15 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
 {{- printf "%s-%s" .Release.Name $name | trunc 63 | replace "_" "-" | trimSuffix "-" -}}
 {{- end -}}
 
+{{- define "rabbitmq.resolve_secret_urlquery" -}}
+    {{- $str := . -}}
+    {{- if (hasPrefix "vault+kvv2" $str ) -}}
+        {{"{{"}} resolve "{{ $str }}" | urlquery {{"}}"}}
+    {{- else -}}
+        {{ $str }}
+{{- end -}}
+{{- end -}}
+
 {{define "rabbitmq.release_host"}}{{.Release.Name}}-rabbitmq.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}{{end}}
 
 {{- define "rabbitmq.transport_url" -}}{{ tuple . .Values.rabbitmq | include "rabbitmq._transport_url" }}{{- end}}
@@ -22,12 +31,17 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
 {{- define "rabbitmq._transport_url" -}}
 {{- $envAll := index . 0 -}}
 {{- $rabbitmq := index . 1 -}}
-rabbit://{{ default "" $envAll.Values.global.user_suffix | print $rabbitmq.users.default.user }}:{{ required "$rabbitmq.users.default.password missing" $rabbitmq.users.default.password }}@{{ include "rabbitmq.release_host" $envAll }}:{{ $rabbitmq.port | default 5672 }}{{ $rabbitmq.virtual_host | default "/" }}
+{{- $_prefix := default "" $envAll.Values.global.user_suffix -}}
+{{- $_username := include "rabbitmq.resolve_secret_urlquery" (required "$rabbitmq.users.default.user missing" $rabbitmq.users.default.user) -}}
+{{- $_password := include "rabbitmq.resolve_secret_urlquery" (required "$rabbitmq.users.default.password missing" $rabbitmq.users.default.password) -}}
+{{- $_rhost := include "rabbitmq.release_host" $envAll -}}
+rabbit://{{- $_prefix -}}{{- $_username -}}:{{- $_password -}}@{{- $_rhost -}}:{{ $rabbitmq.port | default 5672 }}{{ $rabbitmq.virtual_host | default "/" }}
 {{- end}}
 
-{{- define "rabbitmq.shell_quote" -}}
-"{{- replace `"` `\"`  . | replace `$` `\$` | replace "`" (print `\` "`") -}}"
-{{- end }}
+{{- define "rabbitmq.default_user" -}}
+default_user = {{ include "rabbitmq.resolve_secret_urlquery" .Values.users.default.user }}
+default_pass = {{ include "rabbitmq.resolve_secret_urlquery" .Values.users.default.password }}
+{{- end -}}
 
 {{/* Generate the service label for the templated Prometheus alerts. */}}
 {{- define "alerts.service" -}}

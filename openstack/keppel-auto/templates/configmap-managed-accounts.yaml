@@ -5,7 +5,7 @@ metadata:
   name: keppel-auto-managed-accounts
 
 data:
-  config.json: {{ include "build_managed_accounts" $ | fromYaml | toJson | quote }}
+  config.json: {{ include "build_managed_accounts" $ | fromYaml | toPrettyJson | quote }}
 
 {{- define "build_managed_accounts" }}
 # Keppel takes a JSON config here, but YAML is way easier to template,
@@ -44,6 +44,10 @@ accounts:
 
     {{- if $account.security_scan_policies }}
     security_scan_policies: {{ toJson $account.security_scan_policies }}
+    {{- end }}
+
+    {{- if and $is_primary $account.tag_policies }}
+    tag_policies: {{ toJson $account.tag_policies }}
     {{- end }}
 
     {{- if and $is_primary $account.validation }}

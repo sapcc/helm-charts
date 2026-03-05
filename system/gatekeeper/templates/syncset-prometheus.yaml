@@ -1,0 +1,17 @@
+{{/* The postfix clusters do not have prometheus-operator at the moment. */}}
+{{- if ne .Values.cluster_type "postfix" -}}
+
+# documentation reference for this object: <https://open-policy-agent.github.io/gatekeeper/website/docs/sync>
+
+apiVersion: syncset.gatekeeper.sh/v1alpha1
+kind: SyncSet
+metadata:
+  name: syncset-prometheus
+spec:
+  gvks:
+    # used by GkPrometheusScrapeAnnotations
+    - group: "monitoring.coreos.com"
+      version: "v1"
+      kind: "Prometheus"
+
+{{- end -}}

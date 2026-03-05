@@ -39,13 +39,23 @@ spec:
       spec:
         replicas: {{ $.Values.query.replicas }}
         template:
-          {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
           metadata:
             annotations:
+              vpa-butler.cloud.sap/update-mode: {{ $.Values.vpaMode | quote }}
+          {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
               linkerd.io/inject: enabled
               config.linkerd.io/proxy-ephemeral-storage-request: 10M
           {{- end }}
           spec:
+{{- with $.Values.affinity }}
+            affinity:
+              podAntiAffinity:
+                requiredDuringSchedulingIgnoredDuringExecution:
+                  - labelSelector:
+                      matchLabels:
+                        {{ toYaml .matchLabels  }}
+                    topologyKey: {{ .topologyKey }}
+{{- end }}
             containers:
             - image: {{ include "thanosimage" $root }}
               name: query
@@ -64,8 +74,11 @@ spec:
               - --grpc-client-tls-key=/etc/tls/client/tls.key
               - --grpc-client-tls-secure
               {{- end }}
-              - --store.sd-files=/conf/sd/servicediscovery.yaml
-              - --store.sd-interval={{ default "5m" $.Values.querySDInterval }}
+              - --endpoint.sd-config-file=/conf/sd/servicediscovery.yaml
+              - --endpoint.sd-config-reload-interval={{ default "5m" $.Values.querySDInterval }}
+              {{- if $.Values.query.requestLog.enabled }}
+              - --request.logging-config-file=/conf/query/request_log.yaml
+              {{- end }}
               {{- range $.Values.query.extraArgs}}
               - {{ . }}
               {{- end }}
@@ -80,6 +93,31 @@ spec:
               {{- end }}
               - name: sd-config
                 mountPath: /conf/sd
+              {{- if $.Values.query.requestLog.enabled }}
+              - name: requestlog
+                mountPath: /conf/query
+              {{- end }}
+              {{- if hasKey $.Values.query "resources" }}
+              resources:
+                {{- if hasKey $.Values.query.resources "requests" }}
+                requests:
+                  {{- if not (empty $.Values.query.resources.requests.cpu) }}
+                  cpu: {{ $.Values.query.resources.requests.cpu }}
+                  {{- end }}
+                  {{- if not (empty $.Values.query.resources.requests.memory) }}
+                  memory: {{ $.Values.query.resources.requests.memory }}
+                  {{- end }}
+                {{- end }}
+                {{- if hasKey $.Values.query.resources "limits" }}
+                limits:
+                  {{- if not (empty $.Values.query.resources.limits.cpu) }}
+                  cpu: {{ $.Values.query.resources.limits.cpu }}
+                  {{- end }}
+                  {{- if not (empty $.Values.query.resources.limits.memory) }}
+                  memory: {{ $.Values.query.resources.limits.memory }}
+                  {{- end }}
+                {{- end }}
+              {{- end }}
             securityContext:
               fsGroup: 0
               runAsGroup: 0
@@ -99,8 +137,36 @@ spec:
                 defaultMode: 420
                 name: {{ include "thanos.fullName" (list $name $root) }}-query-sd-configmap
               name: sd-config
+            {{- if $.Values.query.requestLog }}
+            - configMap:
+                defaultMode: 420
+                name: {{ include "thanos.fullName" (list $name $root) }}-query-requestlog-configmap
+              name: requestlog
+            {{- end }}
             {{- end }}
   {{- if $.Values.deployWholeThanos }}
+              args:
+              - query
+              - --grpc-address=0.0.0.0:10901
+              - --http-address=0.0.0.0:10902
+              - --log.level={{ default "info" $.Values.query.logLevel }}
+              - --query.auto-downsampling
+              - --query.replica-label=prometheus_replica
+              - --endpoint=thanos-{{ include "thanos.name" (list $name $root) }}-thanos-{{ include "thanos.name" (list $name $root) }}-store:10901
+              - --endpoint=prometheus-{{ include "thanos.name" (list $name $root) }}:10901
+              - --web.external-prefix=/thanos
+              - --web.route-prefix=/thanos
+{{- if $.Values.query.requestLog.enabled }}
+              - --request.logging-config-file=/conf/query/request_log.yaml
+              volumeMount:
+              - name: requestlog
+                mountPath: /conf/query
+            volume:
+            - configMap:
+                defaultMode: 420
+                name: {{ include "thanos.fullName" (list $name $root) }}-query-requestlog-configmap
+              name: requestlog
+{{- end }}
   storeGateway:
     logLevel: {{ $.Values.logLevel }}
     indexCacheSize: {{ required ".Values.store.indexCacheSize missing" $.Values.store.indexCacheSize }}
@@ -127,6 +193,9 @@ spec:
             containers:
             - image: {{ include "thanosimage" $root }}
               name: store
+              resources:
+                requests:
+                  ephemeral-storage: {{ $.Values.store.resources.requests.ephemeralStorage }}
             securityContext:
               fsGroup: 0
               runAsGroup: 0

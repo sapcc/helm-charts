@@ -9,6 +9,8 @@ metadata:
     app.kubernetes.io/managed-by: {{ .Release.Service }}
 spec:
   replicas: 1
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app.kubernetes.io/name: audit-poller
@@ -31,16 +33,26 @@ spec:
           containerPort: {{ .Values.metricsPort }}
           protocol: TCP
         env:
+          - name: TOKEN_USER
+            valueFrom:
+              secretKeyRef:
+                name: audit-poller-secrets
+                key: tokenUser
           - name: TOKEN_PASSWORD
             valueFrom:
               secretKeyRef:
                 name: audit-poller-secrets
-                key: tokenPassword
+                key: tokenPassword  
+          - name: CHANGELOG_USER
+            valueFrom:
+              secretKeyRef:
+                name: audit-poller-secrets
+                key: changelogUser
           - name: CHANGELOG_PASSWORD
             valueFrom:
               secretKeyRef:
                 name: audit-poller-secrets
-                key: changelogPassword
+                key: changelogPassword  
         volumeMounts:
           - name: audit-poller-etc
             mountPath: /config/config.yaml
@@ -86,5 +98,6 @@ spec:
           persistentVolumeClaim:
             claimName: audit-poller-pvc
           {{- else }}
-            emptyDir: {}
+          emptyDir:
+            sizeLimit: 50Mi
           {{- end }}

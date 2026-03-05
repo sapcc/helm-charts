@@ -6,15 +6,20 @@ metadata:
   labels:
     greenhouse.sap/cluster: {{ required "cluster key is missing for ingress plugin" $plugin.cluster }}
     greenhouse.sap/plugindefinition: ingress-nginx
+    greenhouse.sap/owned-by: containers
+{{- if $.Values.global.fluxEnabled }}
+    greenhouse.sap/deployment-tool: "flux"
+  annotations:
+    "greenhouse.sap/propagate-labels": "greenhouse.sap/owned-by,greenhouse.sap/deployment-tool"
+{{- else }}
+  annotations:
+    "greenhouse.sap/propagate-labels": "greenhouse.sap/owned-by"
+{{- end }}
   name: ingress-nginx-{{ $plugin.cluster }}
 spec:
   clusterName: {{ $plugin.cluster }}
   displayName: ingress nginx {{ $plugin.cluster }}
   optionValues:
-  - name: global.image.registry
-    value: keppel.global.cloud.sap/ccloud-registry-k8s-io-mirror
-  - name: controller.admissionWebhooks.patch.image.registry
-    value: keppel.global.cloud.sap/ccloud-registry-k8s-io-mirror
   - name: controller.ingressClassResource.default
     value: true
   - name: controller.scope.enabled
@@ -36,7 +41,19 @@ spec:
   - name: controller.config
     value:
       allow-cross-namespace-resources: true
-  pluginDefinition: ingress-nginx
+{{- if $plugin.overrideShootNetworkPolicy }}
+  - name: controller.labels
+    value:
+      networking.gardener.cloud/to-apiserver: allowed
+      networking.gardener.cloud/to-dns: allowed
+{{- end }}
+{{- if $plugin.affinity }}
+  - name: controller.affinity
+    value: {{ toYaml $plugin.affinity | nindent 6 }}
+{{- end }}
+  pluginDefinitionRef:
+    kind: PluginDefinition
+    name:  ingress-nginx
   releaseNamespace: kube-system
-
+  deletionPolicy: Retain
 {{- end}}

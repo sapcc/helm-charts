@@ -1,0 +1,62 @@
+kind: Deployment
+apiVersion: apps/v1
+
+metadata:
+  name: surveyor-frontend
+
+spec:
+  revisionHistoryLimit: 5
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      name: surveyor-frontend
+  template:
+    metadata:
+      labels:
+        name: surveyor-frontend
+        app.kubernetes.io/name: surveyor-frontend
+      annotations:
+        kubectl.kubernetes.io/default-container: frontend
+        prometheus.io/scrape: "true"
+        prometheus.io/targets: {{ .Values.prometheus.target }}
+    spec:
+      containers:
+        - name: frontend
+          image: {{ include "surveyor_image" . }}
+          imagePullPolicy: IfNotPresent
+          args: [ frontend ]
+          env: {{ include "surveyor_environment" . | indent 12 }}
+          securityContext:
+            runAsNonRoot: true
+          ports:
+            - name: metrics # this specific name is required for Prometheus scraping
+              containerPort: 8080
+          livenessProbe:
+            httpGet:
+              path: /healthcheck
+              port: 8080
+            timeoutSeconds: 10
+            periodSeconds: 60
+            initialDelaySeconds: 60
+          readinessProbe:
+            httpGet:
+              path: /healthcheck
+              port: 8080
+            timeoutSeconds: 5
+            periodSeconds: 5
+          resources:
+            # TODO: adjust once we have some operating experience
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "1"
+              memory: "128Mi"
+

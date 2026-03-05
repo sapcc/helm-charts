@@ -1,0 +1,14 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: maintenance-controller
+  {{- if .Values.serviceMonitor.extraLabels }}
+  labels:
+    {{- .Values.serviceMonitor.extraLabels | toYaml | nindent 4 }}
+  {{- end }}
+spec:
+  selector:
+    matchLabels:
+      app: maintenance-controller
+  endpoints:
+  - port: api

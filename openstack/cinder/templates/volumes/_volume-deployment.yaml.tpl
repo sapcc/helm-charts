@@ -10,6 +10,9 @@ metadata:
     system: openstack
     type: backend
     component: cinder
+  annotations:
+    secret.reloader.stakater.com/reload: "{{ .Release.Name }}-secrets,{{ .Release.Name }}-volume-{{ $name }}-secret"
+    deployment.reloader.stakater.com/pause-period: "60s"
 spec:
   replicas: 1
   revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revisionHistory }}
@@ -39,8 +42,12 @@ spec:
     spec:
       hostname: {{ .Release.Name }}-volume-{{ $name }}
 {{ include "utils.proxysql.pod_settings" . | indent 6 }}
+      initContainers:
+      {{- if .Values.proxysql.native_sidecar }}
+      {{- include "utils.proxysql.container" . | indent 8 }}
+      {{- end }}
       containers:
-      - name: cinder-volume
+      - name: cinder-volume-{{ $name }}
         image: {{required ".Values.global.registry is missing" .Values.global.registry}}/loci-cinder:{{.Values.imageVersionCinderVolume | default .Values.imageVersion | required "Please set cinder.imageVersion or similar" }}
         imagePullPolicy: IfNotPresent
         command:
@@ -57,6 +64,15 @@ spec:
         - name: PYTHONWARNINGS
           value: {{ or $volume.python_warnings .Values.python_warnings | quote }}
 {{- end }}
+        securityContext:
+          capabilities:
+            add:
+            - SYS_ADMIN
+            - NET_ADMIN
+            - FOWNER
+            - DAC_READ_SEARCH
+            - DAC_OVERRIDE
+            - CHOWN
         volumeMounts:
         - name: etccinder
           mountPath: /etc/cinder
@@ -64,6 +80,14 @@ spec:
           mountPath: /etc/cinder/cinder.conf
           subPath: cinder.conf
           readOnly: true
+        - name: cinder-etc
+          mountPath: /etc/cinder/rootwrap.conf
+          readOnly: true
+          subPath: rootwrap.conf
+        - name: cinder-etc
+          mountPath: /etc/cinder/rootwrap.d/volume.filters
+          readOnly: true
+          subPath: volume.filters
         - name: cinder-etc-confd
           mountPath: /etc/cinder/cinder.conf.d
         - name: cinder-etc
@@ -92,7 +116,9 @@ spec:
         {{- end }}
         {{- include "utils.coordination.volume_mount" . | indent 8 }}
         {{- include "utils.proxysql.volume_mount" . | indent 8 }}
+      {{- if not .Values.proxysql.native_sidecar }}
       {{- include "utils.proxysql.container" . | indent 6 }}
+      {{- end }}
       {{- include "jaeger_agent_sidecar" . | indent 6 }}
       volumes:
       - name: etccinder

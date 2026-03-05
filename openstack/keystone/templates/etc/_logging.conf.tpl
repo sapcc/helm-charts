@@ -2,11 +2,11 @@
 {{- if .Values.debug }}
 keys = root
 {{- else }}
-keys = root, warnings, keystone, cc, radius, keystonemiddleware, keystoneauth, ldap, ldappool, amqp, amqplib, oslo_messaging, oslo_policy, sqlalchemy {{ if .Values.sentry.enabled }}, raven{{ end }}
+keys = root, warnings, keystone, cc, radius, keystonemiddleware, keystoneauth, ldap, ldappool, amqp, amqplib, oslo_messaging, oslo_policy, sqlalchemy
 {{- end }}
 
 [handlers]
-keys = stderr, stdout, null{{ if .Values.sentry.enabled }}, sentry{{ end }}
+keys = stderr, stdout, null
 
 [formatters]
 keys = context, default
@@ -14,7 +14,7 @@ keys = context, default
 [logger_root]
 {{- if .Values.debug }}
 level = DEBUG
-handlers = stdout{{ if .Values.sentry.enabled }}, sentry{{ end }}
+handlers = stdout
 {{ else }}
 level = ERROR
 handlers = null
@@ -26,7 +26,7 @@ level = DEBUG
 handlers = null
 {{- else }}
 level = INFO
-handlers = stdout{{ if .Values.sentry.enabled }}, sentry{{ end }}
+handlers = stdout
 {{- end }}
 qualname = keystone
 
@@ -36,7 +36,7 @@ level = DEBUG
 handlers = null
 {{- else }}
 level = INFO
-handlers = stdout{{ if .Values.sentry.enabled }}, sentry{{ end }}
+handlers = stdout
 {{- end }}
 qualname = cc
 
@@ -46,7 +46,7 @@ level = DEBUG
 handlers = null
 {{- else }}
 level = INFO
-handlers = stdout{{ if .Values.sentry.enabled }}, sentry{{ end }}
+handlers = stdout
 {{- end }}
 qualname = radius
 
@@ -56,7 +56,7 @@ level = DEBUG
 handlers = null
 {{- else }}
 level = INFO
-handlers = stdout{{ if .Values.sentry.enabled }}, sentry{{ end }}
+handlers = stdout
 {{- end }}
 qualname = keystonemiddleware
 
@@ -66,7 +66,7 @@ level = DEBUG
 handlers = null
 {{- else }}
 level = INFO
-handlers = stdout{{ if .Values.sentry.enabled }}, sentry{{ end }}
+handlers = stdout
 {{- end }}
 qualname = keystoneauth1
 
@@ -76,7 +76,7 @@ level = DEBUG
 handlers = null
 {{- else }}
 level = INFO
-handlers = stdout{{ if .Values.sentry.enabled }}, sentry{{ end }}
+handlers = stdout
 {{- end }}
 qualname = oslo.messaging
 
@@ -86,7 +86,7 @@ level = DEBUG
 handlers = null
 {{- else }}
 level = INFO
-handlers = stdout{{ if .Values.sentry.enabled }}, sentry{{ end }}
+handlers = stdout
 {{- end }}
 qualname = oslo_policy
 
@@ -96,7 +96,7 @@ level = DEBUG
 handlers = null
 {{- else }}
 level = INFO
-handlers = stdout{{ if .Values.sentry.enabled }}, sentry{{ end }}
+handlers = stdout
 {{- end }}
 qualname = keystone.common.ldap.core
 
@@ -106,7 +106,7 @@ level = DEBUG
 handlers = null
 {{- else }}
 level = INFO
-handlers = stdout{{ if .Values.sentry.enabled }}, sentry{{ end }}
+handlers = stdout
 {{- end }}
 qualname = ldappool
 
@@ -116,7 +116,7 @@ level = DEBUG
 handlers = null
 {{- else }}
 level = INFO
-handlers = stdout{{ if .Values.sentry.enabled }}, sentry{{ end }}
+handlers = stdout
 {{- end }}
 qualname = amqp
 
@@ -126,7 +126,7 @@ level = DEBUG
 handlers = null
 {{- else }}
 level = INFO
-handlers = stdout{{ if .Values.sentry.enabled }}, sentry{{ end }}
+handlers = stdout
 {{- end }}
 qualname = amqplib
 
@@ -136,7 +136,7 @@ level = INFO
 handlers = null
 {{- else }}
 level = WARNING
-handlers = stdout{{ if .Values.sentry.enabled }}, sentry{{ end }}
+handlers = stdout
 {{- end }}
 qualname = sqlalchemy
 # "level = INFO" logs SQL queries.
@@ -148,7 +148,7 @@ level = INFO
 {{- if .Values.debug }}
 handlers = null
 {{- else }}
-handlers = stdout{{ if .Values.sentry.enabled }}, sentry{{ end }}
+handlers = stdout
 {{- end }}
 qualname = py.warnings
 
@@ -166,22 +166,6 @@ formatter = context
 class = logging.NullHandler
 formatter = default
 args = ()
-
-{{ if .Values.sentry.enabled }}
-[logger_raven]
-level = ERROR
-{{- if .Values.debug }}
-handlers = null
-{{- else }}
-handlers = stdout
-{{- end }}
-qualname = raven
-
-[handler_sentry]
-class=raven.handlers.logging.SentryHandler
-level=ERROR
-args=()
-{{ end }}
 
 [formatter_context]
 class = oslo_log.formatters.ContextFormatter

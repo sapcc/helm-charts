@@ -18,15 +18,15 @@ groups:
   # Additionally: this alert is not only scoped on the main cluster_types, since we can look at all clusters independently.
   - alert: ThanosGlobalNotFetchingAllStores
     expr: |
-      group by (thanos, cluster_type, region, namespace) (thanos_build_info{cluster=~"^(a|c|s|c|ci|ci2|ci3|v|k|i|gh-actions)-[a-z]{2}-[a-z]{2}-[0-9]{1}?|k-master|^[a-z]{2}-[a-z]{2}-[0-9]{1}?",container="store", pod!~"thanos-vmware.*", region!~"qa-de-2|qa-de-3"} offset 10d)
+      group by (thanos, cluster,cluster_type, region, namespace) (thanos_build_info{cluster=~"^(a|c|s|c|ci|ci2|ci3|v|k|i|gh-actions|st1)-[a-z]{2}-[a-z]{2}-[0-9]{1}?|k-master|^[a-z]{2}-[a-z]{2}-[0-9]{1}?",container="store", pod!~"thanos-vmware.*", region!~"qa-de-2|qa-de-3"} offset 10d)
       unless 
-      on (thanos, cluster_type, region, namespace) (thanos_build_info{cluster=~"^(a|c|s|c|ci|ci2|ci3|v|k|i|gh-actions)-[a-z]{2}-[a-z]{2}-[0-9]{1}?|k-master|^[a-z]{2}-[a-z]{2}-[0-9]{1}?",container="store", pod!~"thanos-vmware.*", region!~"qa-de-2|qa-de-3"})
+      on (thanos, cluster, cluster_type, region, namespace) (thanos_build_info{cluster=~"^(a|c|s|c|ci|ci2|ci3|v|k|i|gh-actions|st1)-[a-z]{2}-[a-z]{2}-[0-9]{1}?|k-master|^[a-z]{2}-[a-z]{2}-[0-9]{1}?",container="store", pod!~"thanos-vmware.*", region!~"qa-de-2|qa-de-3"})
     for: 10m
     labels:
       severity: warning
       service: metrics 
       support_group: observability
-      meta: Thanos global can't reach {{ $labels.region }}/{{ $labels.cluster_type }}/{{ $labels.namespace }}/{{ $labels.thanos }}.
+      meta: Thanos global can't reach {{ $labels.region }}/{{ $labels.cluster_type }}/{{ $labels.namespace }}/{{ $labels.thanos }} in {{ $labels.cluster }}.
       playbook: docs/support/playbook/prometheus/thanos_stores/#thanos-global-cant-reach-all-stores
     annotations:
       description: Investigate logs and check if respective Thanos is reachable.

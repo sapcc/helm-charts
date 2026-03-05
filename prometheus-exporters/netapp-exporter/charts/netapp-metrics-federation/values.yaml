@@ -1,0 +1,56 @@
+image:
+  repository: "keppel.eu-de-1.cloud.sap/ccloud/promquery-exporter"
+  pullPolicy: IfNotPresent
+  tag: "20250430085640"
+
+exporter:
+  port: "9547"
+  sourcePrometheus:
+    url: "https://metrics-internal.global.cloud.sap"
+    ssoCert: ""
+    ssoKey: ""
+
+# This is for setting Kubernetes Annotations to a Pod.
+# For more information checkout: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
+podAnnotations:
+  kubectl.kubernetes.io/default-container: exporter
+  prometheus.io/scrape: "true"
+  prometheus.io/targets: storage
+
+# This is for setting Kubernetes Labels to a Pod.
+# For more information checkout: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
+podLabels: {}
+
+resources: {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+# Additional volumes on the output Deployment definition.
+volumes: 
+- name: exporter-configs
+  configMap:
+    name: netapp-snapmirror-federation
+- name: prometheus-sso
+  secret:
+    secretName: prometheus-sso
+
+# Additional volumeMounts on the output Deployment definition.
+volumeMounts:
+- name: exporter-configs
+  mountPath: "/home/appuser/configs"
+  readOnly: true
+- name: prometheus-sso
+  mountPath: "home/appuser/sso"
+  readOnly: true
+
+# This is to override the chart name.
+nameOverride: ""
+fullnameOverride: "netapp-snapmirror-federation"

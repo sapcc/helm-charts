@@ -1,0 +1,27 @@
+{{ if .Values.extensions.calico.enabled -}}
+apiVersion: operator.gardener.cloud/v1alpha1
+kind: Extension
+metadata:
+  name: networking-calico
+spec:
+  resources:
+  - kind: Network
+    type: calico
+  deployment:
+    # admission:
+    extension:
+      values:
+        image:
+          tag: {{ (.Values.extensions.calico.values.image).tag | default .Values.extensions.calico.version }}
+          {{- if (.Values.extensions.calico.values.image).repository }}
+          repository: {{ .Values.extensions.calico.values.image.repository }}
+          {{- end }}
+{{- if and .Values.extensions.calico .Values.extensions.calico.imageVectorOverwrite }}
+        imageVectorOverwrite: | {{ toYaml .Values.extensions.calico.imageVectorOverwrite | nindent 10 }}
+{{- end }}
+      helm:
+        ociRepository:
+          tag: {{ (.Values.extensions.calico.helm.ociRepository).tag | default .Values.extensions.calico.version }}
+          repository: {{ .Values.extensions.calico.helm.ociRepository.repository }}
+      policy: OnDemand
+{{ end -}}

@@ -104,6 +104,8 @@ Default pod labels for linkerd
 linkerd.io/inject: "enabled"
 config.alpha.linkerd.io/proxy-enable-native-sidecar: "true"
 config.linkerd.io/opaque-ports: "3306,3307,3009,4444,4567,4568,33060,33062"
+config.linkerd.io/skip-outbound-ports: "4444,4567,4568"
+config.linkerd.io/skip-inbound-ports: "4444,4567,4568"
 {{- end }}
 {{- end -}}
 

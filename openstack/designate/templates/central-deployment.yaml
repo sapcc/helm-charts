@@ -8,8 +8,10 @@ metadata:
     application: designate
     type: backend
     component: central
-  {{- if .Values.vpa.set_main_container }}
   annotations:
+    secret.reloader.stakater.com/reload: "{{ .Release.Name }}-secrets,{{ .Release.Name }}-secrets-rndc"
+    deployment.reloader.stakater.com/pause-period: "60s"
+  {{- if .Values.vpa.set_main_container }}
     vpa-butler.cloud.sap/main-container: designate-central
   {{- end }}
 spec:
@@ -47,6 +49,9 @@ spec:
       {{- include "utils.proxysql.pod_settings" . | indent 6 }}
       initContainers:
       {{- tuple . (dict "service" (include "designate.service_dependencies" . ) "jobs" (include "migration_job_name" . )) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 8 }}
+      {{- if .Values.proxysql.native_sidecar }}
+      {{- tuple . .Values.central_workers | include "utils.proxysql.container" | indent 8 }}
+      {{- end }}
       containers:
         - name: designate-central
           image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/loci-designate:{{ required ".Values.global.image_version_designate is missing" .Values.image_version_designate }}
@@ -113,7 +118,9 @@ spec:
             {{- if .Values.coordination.central.enabled }}
             {{- include "utils.coordination.volume_mount" . | indent 12 }}
             {{- end }}
+        {{- if not .Values.proxysql.native_sidecar }}
         {{- tuple . .Values.central_workers | include "utils.proxysql.container" | indent 8 }}
+        {{- end }}
         {{- include "jaeger_agent_sidecar" . | indent 8 }}
       volumes:
         - name: designate-etc

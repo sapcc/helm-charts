@@ -3,7 +3,7 @@ kind: ValidatingWebhookConfiguration
 metadata:
   name: {{ include "bootstrap-kubeadm.fullname" . }}-validating-webhook-configuration
   annotations:
-    cert-manager.io/inject-ca-from: {{ .Release.Namespace }}/{{ include "bootstrap-kubeadm.fullname" . }}-serving-cert
+    cert-manager.io/inject-ca-from: {{ .Release.Namespace }}/capi-kubeadm-bootstrap-serving-cert
   labels:
   {{- include "bootstrap-kubeadm.labels" . | nindent 4 }}
 webhooks:
@@ -14,7 +14,7 @@ webhooks:
     service:
       name: '{{ include "bootstrap-kubeadm.fullname" . }}-webhook-service'
       namespace: '{{ .Release.Namespace }}'
-      path: /validate-bootstrap-cluster-x-k8s-io-v1beta1-kubeadmconfig
+      path: /validate-bootstrap-cluster-x-k8s-io-v1beta2-kubeadmconfig
   failurePolicy: Fail
   matchPolicy: Equivalent
   name: validation.kubeadmconfig.bootstrap.cluster.x-k8s.io
@@ -22,7 +22,7 @@ webhooks:
   - apiGroups:
     - bootstrap.cluster.x-k8s.io
     apiVersions:
-    - v1beta1
+    - v1beta2
     operations:
     - CREATE
     - UPDATE
@@ -36,7 +36,7 @@ webhooks:
     service:
       name: '{{ include "bootstrap-kubeadm.fullname" . }}-webhook-service'
       namespace: '{{ .Release.Namespace }}'
-      path: /validate-bootstrap-cluster-x-k8s-io-v1beta1-kubeadmconfigtemplate
+      path: /validate-bootstrap-cluster-x-k8s-io-v1beta2-kubeadmconfigtemplate
   failurePolicy: Fail
   matchPolicy: Equivalent
   name: validation.kubeadmconfigtemplate.bootstrap.cluster.x-k8s.io
@@ -44,7 +44,7 @@ webhooks:
   - apiGroups:
     - bootstrap.cluster.x-k8s.io
     apiVersions:
-    - v1beta1
+    - v1beta2
     operations:
     - CREATE
     - UPDATE

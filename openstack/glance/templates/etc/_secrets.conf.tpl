@@ -8,7 +8,7 @@ password = {{ required ".Values.global.glance_service_password is missing" .Valu
 
 {{- if .Values.swift.enabled }}
 {{- if .Values.swift.multi_tenant }}
-[glance_store]
+[swift]
 swift_store_user = service:{{ .Values.global.glance_service_user | default "glance" | replace "$" "$$"}}
 swift_store_key = {{ required ".Values.global.glance_service_password is missing" .Values.global.glance_service_password | include "resolve_secret" }}
 {{- end }}
@@ -18,4 +18,8 @@ swift_store_key = {{ required ".Values.global.glance_service_password is missing
 [swift-global]
 key = {{ required ".Values.global.glance_service_password is missing" .Values.global.glance_service_password }}
 user = {{ .Values.swift.projectName }}:{{ .Values.global.glance_service_user | default "glance" | replace "$" "$$"}}
+{{- end }}
+
+{{- if .Values.osprofiler.enabled }}
+{{- include "osprofiler" . }}
 {{- end }}

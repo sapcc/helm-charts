@@ -1,19 +1,10 @@
 [database]
 # Database connection string - MariaDB for regional setup
 # and Percona Cluster for inter-regional setup:
-{{ if .Values.percona_cluster.enabled -}}
-  {{/* in caase percona is active and we need to switch the connection string to mariadb-galera cluster without removing the percona cluster objects */}}
-  {{- if and .Values.mariadb_galera.enabled .Values.databaseKind (eq .Values.databaseKind "galera") -}}
-connection = mysql+pymysql://{{ .Values.mariadb_galera.mariadb.users.keystone.username }}:{{.Values.mariadb_galera.mariadb.users.keystone.password | include "resolve_secret_urlquery" }}@{{include "db_host" .}}/{{ .Values.mariadb_galera.mariadb.database_name_to_connect }}?charset=utf8
-  {{- else }}
+{{- if or .Values.percona_cluster.enabled (eq .Values.dbType "pxc-global") }}
 connection = {{ include "db_url_pxc" . }}
-  {{- end }}
-{{- else if .Values.global.clusterDomain -}}
-connection = mysql+pymysql://{{ default .Release.Name .Values.global.dbUser }}:{{.Values.global.dbPassword | include "resolve_secret_urlquery" }}@{{include "db_host" .}}/{{ default .Release.Name .Values.mariadb.name }}?charset=utf8
-{{- else if and .Values.mariadb_galera.enabled .Values.databaseKind (eq .Values.databaseKind "galera") -}}
-connection = mysql+pymysql://{{ .Values.mariadb_galera.mariadb.users.keystone.username }}:{{.Values.mariadb_galera.mariadb.users.keystone.password | include "resolve_secret_urlquery" }}@{{include "db_host" .}}/{{ .Values.mariadb_galera.mariadb.database_name_to_connect }}?charset=utf8
 {{- else }}
-connection = {{ include "db_url_mysql" . }}
+connection = {{ include "utils.db_url" . }}
 {{- end }}
 
 {{- if and .Values.memcached.auth.username .Values.memcached.auth.password }}
@@ -63,4 +54,11 @@ user_domain_name_header = {{ .Values.api.cc_external.user_domain_name_header | d
 trusted_key_header = {{ .Values.api.cc_external.trusted_key_header | default "HTTP_X_TRUSTED_KEY" }}
 trusted_key_value = {{ .Values.api.cc_external.trusted_key_value }}
 {{- end }}
+{{- end }}
+
+{{- if .Values.report_invalid_password_hash.enabled }}
+[security_compliance]
+report_invalid_password_hash = "event"
+invalid_password_hash_secret_key = {{ required "invalid_password_hash_secret_key value is required when .Values.report_invalid_password_hash.enabled is true" .Values.report_invalid_password_hash.invalid_password_hash_secret_key | include "resolve_secret" }}
+invalid_password_hash_max_chars = 5
 {{- end }}

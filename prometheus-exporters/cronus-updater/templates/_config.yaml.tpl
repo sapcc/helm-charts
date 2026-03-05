@@ -15,7 +15,7 @@ updaterConfig:
   websiteURL: {{ .Values.config.websiteURL }}
   notification:
     enabled: {{ .Values.secAttNotifier.enabled }}
-    ec2Access: {{ .Values.secAttNotifier.awsAccess }}
+    ec2Access: {{ .Values.secAttNotifier.ec2Access }}
     smtpHost: {{ .Values.secAttNotifier.smtpHost }}
     port: {{ .Values.secAttNotifier.port }}
   {{- if .Values.secAttNotifier.days }}

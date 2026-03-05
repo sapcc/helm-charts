@@ -7,37 +7,63 @@ registries:
   k8s: keppel.global.cloud.sap/ccloud-registry-k8s-io-mirror
 
 operator:
-  image: rook/ceph:v1.15.5
+  image: rook/ceph:v1.17.1
   logLevel: INFO # The logging level for the operator: ERROR | WARNING | INFO | DEBUG
   metricAddress: :8080
 
 csi:
   images:
-    csi: cephcsi/cephcsi:v3.12.2
-    registrar: sig-storage/csi-node-driver-registrar:v2.11.1
-    resizer: sig-storage/csi-resizer:v1.11.1
-    provisioner: sig-storage/csi-provisioner:v5.0.1
-    snapshotter: sig-storage/csi-snapshotter:v8.0.1
-    attacher: sig-storage/csi-attacher:v4.6.1
+    csi: cephcsi/cephcsi:v3.14.0
+    registrar: sig-storage/csi-node-driver-registrar:v2.13.0
+    resizer: sig-storage/csi-resizer:v1.13.1
+    provisioner: sig-storage/csi-provisioner:v5.1.0
+    snapshotter: sig-storage/csi-snapshotter:v8.2.0
+    attacher: sig-storage/csi-attacher:v4.8.0
   provisioner:
     replicas: 3
 
+cephConfig:
+  global:
+    mon_data_avail_warn: "10"
+    osd_op_queue: "wpq"
+    osd_pool_default_pg_autoscale_mode: "off"
+  mon:
+    ms_client_mode: "secure"
+    ms_cluster_mode: "secure"
+    ms_service_mode: "secure"
+    ms_mon_cluster_mode: "secure"
+    ms_mon_client_mode: "secure"
+    ms_mon_service_mode: "secure"
+    
 cluster:
-  image: ceph/ceph:v18.2.4
+  image: ceph/ceph:v19.2.2
   dashboard:
     enabled: false
   monitoring:
-    enabled: false
-  monCount: 3
-  mgrCount: 2
+    enabled: true
+  monCount: 5
+  mgrCount: 3
   storage:
-    #deviceFilter: sdb
+    defaultStorageClass: true
+    #useAllNodes: true
+    #useAllDevices: false
+    #deviceFilter: "nvme[1-7].*"
+    #nodes:
+    #- name: xyz
+    #  deviceFilter: ^nvme([0-9]|1[0-9])n1
     pvcs:
-      enabled: true # use pvcs instead of host volumes
-      count: 3
-      portable: true
-      storageClass: cinder-default
-      size: 100Gi
-      monSize: 10Gi
+      enabled: false # use pvcs instead of host volumes
+      #count: 3
+      #portable: true
+      #storageClass: cinder-default
+      #size: 100Gi
+      #monSize: 10Gi
+  redundancy:
+    replicas: 4
+    failureDomain: host
+    #subFailureDomain:
+    #topologyDomainLabel:
+    #customHostnameLabel:
+  
   toolbox:
     enabled: true

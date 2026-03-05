@@ -1,5 +1,60 @@
 # Changelog
 
+## v0.6.15 - 2026/01/26
+
+* memcached-exporter [version](https://github.com/prometheus/memcached_exporter/releases/tag/v0.15.5) bumped to `v0.15.5`
+* chart version bumped
+
+## v0.6.14 - 2026/01/15
+
+* memcached bumped to `1.6.40-alpine3.23`
+* chart version bumped
+
+## v0.6.13 - 2025/12/16
+
+* memcached bumped to `1.6.39-alpine3.23`
+* memcached-exporter [version](https://github.com/prometheus/memcached_exporter/releases/tag/v0.15.4) bumped to `v0.15.4`
+* chart version bumped
+
+## v0.6.12 - 2025/08/04
+
+* memcached [version](https://github.com/memcached/memcached/wiki/ReleaseNotes1639) bumped to `1.6.39-alpine3.22`
+  * TLS and proxy fixes
+* chart version bumped
+
+## v0.6.11 - 2025/07/23
+* Use `1.6.38-alpine3.22` image
+* SASL fixes:
+  * change data key name in `memcached-config` ConfigMap to `data`
+  * set pod hostname when SASL is enabled
+  * add newline to `sasl_pwdb` secret and pod hostname to the username
+
+## v0.6.10 - 2025/04/14
+* add option to set vpa main container
+
+## v0.6.9 - 2025/03/25
+
+* Set type: LoadBalancer in case of external IP
+* needed for global/calico rollout
+* chart version bumped
+
+## v0.6.8 - 2025/03/24
+
+* Set Service 'externalTrafficPolicy: Local' when using external IP.
+* needed for calico rollout
+* chart version bumped
+
+## v0.6.7 - 2025/03/21
+
+memcached [version](https://github.com/memcached/memcached/wiki/ReleaseNotes1638) bumped to `1.6.38-alpine3.21`
+  * mem leak fix and other small fixes
+* chart version bumped
+
+## v0.6.6 - 2025/03/04
+
+* memcached-exporter [version](https://github.com/prometheus/memcached_exporter/releases/tag/v0.15.1) bumped to `v0.15.1`
+* chart version bumped
+
 ## v0.6.5 - 2025/02/24
 
 * memcached [version](https://github.com/memcached/memcached/wiki/ReleaseNotes1637) bumped to `1.6.37-alpine3.21`

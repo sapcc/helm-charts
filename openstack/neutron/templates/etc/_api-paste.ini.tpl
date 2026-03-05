@@ -16,7 +16,7 @@ use = egg:Paste#urlmap
 {{- end }}
 
 {{- define "sentry_pipe" -}}
-{{- if .Values.sentry.enabled }} raven{{- end -}}
+{{- if .Values.sentry.enabled }} sapccsentry {{- end -}}
 {{- end }}
 
 {{- define "uwsgi_pipe" -}}
@@ -71,9 +71,8 @@ paste.filter_factory = osprofiler.web:WsgiMiddleware.factory
 paste.filter_factory = oslo_middleware:Debug.factory
 
 {{ if .Values.sentry.enabled -}}
-[filter:raven]
-use = egg:raven#raven
-level = ERROR
+[filter:sapccsentry]
+paste.filter_factory = sapcc_sentrylogger.paste:sapcc_sentry_filter_factory
 {{- end }}
 
 {{ if .Values.audit.enabled -}}
@@ -103,6 +102,7 @@ clock_accuracy = 1ns
 log_sleep_time_seconds: {{ .Values.rate_limit.log_sleep_time_seconds }}
 backend_host = {{ .Release.Name }}-api-ratelimit-redis
 backend_port = 6379
+backend_secret_file =  {{ .Values.rate_limit.backend_secret_file }}
 backend_timeout_seconds = {{ .Values.rate_limit.backend_timeout_seconds }}
 {{- end }}
 

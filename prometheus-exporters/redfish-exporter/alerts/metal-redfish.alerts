@@ -32,15 +32,15 @@ groups:
       summary: "Remote board connectivity error for server: {{ $labels.host }}"
 
   - alert: MetalRedfishCertInfo
-    expr: count(max_over_time(redfish_certificate_valid_days[10m]) < 10) by (host, not_after)
+    expr: count(max_over_time(redfish_certificate_valid_days[10m]) < 10)
     for: 1h
     labels:
       severity: info
       tier: metal
       service: baremetal
       support_group: foundation
-      context: "{{ $labels.host }}"
-      meta: "The certificate of the Remote Board of Server {{ $labels.host }} will expire on {{ $labels.not_after }}."
+      context: "{{ $labels.site }}"
+      meta: "Remote Board certificates are expired or will expire less than 10 days. Affected Remote Boards: {{ $value }}"
     annotations:
-      description: "The certificate of the Remote Board of Server {{ $labels.host }} will expire on {{ $labels.not_after }}."
-      summary: "Remote Board Certificate expiration for server {{ $labels.host }}."
+      description: "Remote Board certificates are expired or will expire less than 10 days. Affected Remote Boards: {{ $value }}"
+      summary: "Remote Board Certificates are expired."

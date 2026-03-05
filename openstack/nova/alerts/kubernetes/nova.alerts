@@ -1,0 +1,40 @@
+groups:
+- name: kubernetes-nova.alerts
+  rules:
+  - alert: OpenstackNovaNannyCronjobNotCompleting
+    # We need to cover two distinct scenarios. Jobs that consistently terminate
+    # with an error and a jobs that do not terminate. We rely on the following
+    # assumptions
+    # - cronjobs schedule multiple jobs per day
+    # - cronjobs have `concurrencyPolicy: Forbid`, i.e., no new jobs are
+    # scheduled while a previous job is still running
+    # We trigger an alert if all of the three following conditions hold true:
+    # 1) The cronjob was created at least 24h ago.
+    # 2) No job has terminated successfully within the last 24h.
+    # NOTE: `time() - kube_cronjob_status_last_successful_time` does not exist
+    # for a cronjob that has never terminated successfully. In this case, we
+    # use `kube_cronjob_status_last_schedule_time` as a default. This exists as
+    # soon as the first job is running and is always >= 24h since we directly
+    # use the timestamp instead of the timedelta.
+    # 3) A job has been scheduled within the last 24h OR at least one job is
+    # currently active.
+    # NOTE: This prevents the alert from firing if a cronjob is disabled. The
+    # first part holds true for jobs that are consistently failing. But if a job
+    # does not terminate, then new jobs were no longer scheduled. So we cover
+    # non-terminating jobs by the second part.
+    expr: >
+      time() - kube_cronjob_created{cronjob=~"nova-nanny-.*"} >= 24*60*60
+      and on(cronjob) (time() - kube_cronjob_status_last_successful_time{cronjob=~"nova-nanny-.*"}
+        or on(cronjob) kube_cronjob_status_last_schedule_time{cronjob=~"nova-nanny-.*"}) >= 24*60*60
+      and on(cronjob) (time() - kube_cronjob_status_last_schedule_time{cronjob=~"nova-nanny-.*"} < 24*60*60
+        or on(cronjob) kube_cronjob_status_active{cronjob=~"nova-nanny-.*"} >= 1)
+    labels:
+      service: nova
+      severity: info
+      support_group: compute-storage-api
+      tier: os
+      context: "Nova Nanny Cronjob {{ $labels.cronjob }}"
+      meta: "Nova Nanny Cronjob {{ $labels.cronjob }} has not successfully completed in the last 24h."
+    annotations:
+      description: "Nova Nanny Cronjob `{{ $labels.cronjob }}` has not successfully completed in the last 24h."
+      summary: "Openstack Nova Nanny Cronjob is not completing."

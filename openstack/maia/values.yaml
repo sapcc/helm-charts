@@ -6,8 +6,14 @@ global:
   clusterType: controlplane
   domain_seeds:
     skip_hcm_domain: false
+  # for openstack seeds
+  keystoneNamespace: monsoon3
+  globalKeystoneNamespace: monsoon3global
+  # Set to true for global regions
+  is_global_region: false
 
 linkerd-support:
+  enabled: true
   annotate_namespace: true
 
 maia:
@@ -34,6 +40,18 @@ maia:
     user_domain_name:    Default
     project_name:        service
     project_domain_name: Default
+
+  # Global Keystone configuration
+  global_keystone:
+    enabled: false  # Set to true in regions that should connect to global Keystone
+    auth_url: ""    # URL of the global Keystone service
+    # Defaults are used if not set and are required to connect properly
+    # username: "maia"  
+    # password: ""
+    # user_domain_name: "Default"
+    # project_name: "service"
+    # project_domain_name: "Default"
+
   resources:
     # reasonable defaults, should be reduced for small regions
     memory:
@@ -123,6 +141,11 @@ aggregations:
 cronus:
   enabled: false
 
+# This is for the global seed deployment.
+# This allows maia to be false, while seed is true only deploying the seed.
+seed:
+  enabled: false
+
 authentication:
   enabled: false
 
@@ -193,6 +216,12 @@ prometheus_ceph:
     - objectstore_write_ops_total
     - objectstore_capacity_usage_bytes
     - objectstore_usage_objects
+    - objectstore_client_io_latency_seconds_avg
+    - objectstore_upload_latency_milliseconds_avg
+    - objectstore_download_latency_milliseconds_avg
+    - objectstore_delete_latency_milliseconds_avg
+    - objectstore_client_error_rate
+    - objectstore_server_error_rate
 
 owner-info:
   service: maia

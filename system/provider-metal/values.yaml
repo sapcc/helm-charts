@@ -9,9 +9,11 @@ controllerManager:
       capabilities:
         drop:
           - ALL
+      runAsGroup: 65532
+      runAsUser: 65532
     image:
       repository: controller
-      tag: 62d325a558ce09c8d457fb76a13c1dca2bb3d565
+      tag: cf12acd520aa203db28f21a326a61fddc9720b95
     resources:
       limits:
         cpu: 500m
@@ -19,15 +21,25 @@ controllerManager:
       requests:
         cpu: 10m
         memory: 64Mi
+  nodeSelector: {}
+  podSecurityContext:
+    runAsNonRoot: true
+    seccompProfile:
+      type: RuntimeDefault
   replicas: 1
-  serviceAccount:
-    annotations: {}
+  tolerations: []
+  topologySpreadConstraints: []
 kubernetesClusterDomain: cluster.local
-metricsService:
+metrics:
   ports:
     - name: https
       port: 8443
       protocol: TCP
       targetPort: 8443
   type: ClusterIP
+serviceAccount:
+  annotations: {}
+  automount: true
+  create: true
+  name: ""
 fullnameOverride: provider-metal

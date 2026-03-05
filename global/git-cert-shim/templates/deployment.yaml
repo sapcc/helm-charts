@@ -22,6 +22,12 @@ spec:
       - name: git-cert-shim
         secret:
           secretName: git-cert-shim
+      - name: known-hosts
+        configMap: 
+          name: {{ .Release.Name }}-github-wdf-ssh-key
+          items:
+            - key: known_hosts
+              path: known_hosts
       containers:
       - name: manager
         image: {{ .Values.global.registry | required "need .Values.global.registry" }}/git-cert-shim:v{{ required ".Chart.AppVersion missing" .Chart.AppVersion }}
@@ -31,9 +37,10 @@ spec:
         - --default-issuer-name=digicert-issuer
         - --default-issuer-kind=DigicertIssuer
         - --default-issuer-group=certmanager.cloud.sap
-        - --git-push-certs=false
-        - --vault-push-certs=true
-        - --vault-kv-engine=secrets
+        - --git-push-certs={{ .Values.git.push_certs }}
+        - --vault-push-certs={{ .Values.vault.push_certs }}
+        - --vault-update-metadata={{ .Values.vault.update_metadata }}
+        - --vault-kv-engine={{ .Values.vault.kv_engine }}
         command:
         - /git-cert-shim
         env:
@@ -72,3 +79,6 @@ spec:
           name: git-cert-shim
           readOnly: true
           subPath: git-cert-shim.key
+        - mountPath: /root/.ssh/known_hosts
+          name: known-hosts
+          subPath: known_hosts

@@ -82,3 +82,19 @@ modules:
       method: GET
       fail_if_body_not_matches_regexp:
         - "Welcome to the SAP Converged Cloud classroom Training"
+
+  opensearch-dashboard:
+    prober: http
+    timeout: 10s
+    http:
+      valid_status_codes: [401]
+      method: GET
+      fail_if_body_not_matches_regexp:
+        - "Unauthorized"
+
+  opensearch-client:
+    prober: http
+    timeout: 10s
+    http:
+      valid_status_codes: [200]
+      method: GET

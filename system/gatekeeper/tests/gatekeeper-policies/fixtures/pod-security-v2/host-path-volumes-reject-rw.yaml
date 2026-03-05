@@ -1,0 +1,26 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: host-path-volumes-reject-rw
+  namespace: foo
+spec:
+  containers:
+  # foo-container is not allowed to read from /hostfs
+  # bar-container is allowed to write to /hostfs
+  # since not all containers in the pod are allowed mount their volumes --> reject
+  - name: foo-container
+    image: foo.image-registry.com/test-app/unprivileged:20250519150208
+    volumeMounts:
+    - mountPath: /hostfs
+      name: hostfs
+      readOnly: false
+  - name: bar-container
+    image: foo.image-registry.com/test-app/highly-privileged:20250519150208
+    volumeMounts:
+    - mountPath: /hostfs
+      name: hostfs
+      readOnly: true
+  volumes:
+  - name: hostfs
+    hostPath:
+      path: /

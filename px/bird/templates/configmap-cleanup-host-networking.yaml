@@ -1,0 +1,29 @@
+{{- if .Values.hostNetworking }}
+kind: ConfigMap
+apiVersion: v1
+metadata:
+    name: {{ printf "%s-cleanup-host-network" .Release.Name | quote }}
+data:
+    cleanup_vlan_interface.sh: |
+        #!/bin/sh -e
+
+        PX_INTERFACE=$(cat /var/run/bird/interface)
+        RS_IP=$(cat /var/run/bird/ip)
+
+        OTHER_IPS=$(ip -o addr show "$PX_INTERFACE" scope global | awk '{print $4}' | grep -v "$RS_IP" || true)
+
+        echo "Bringing all peerings down"
+        echo "disable all" | pxc
+
+        if [ -z "$OTHER_IPS" ]; then
+            echo "No other IP addresses found on $PX_INTERFACE, removing entire interface"
+            ip link set "$PX_INTERFACE" down || true
+            ip link delete "$PX_INTERFACE" || true
+            echo "VLAN interface $PX_INTERFACE removed completely"
+        else
+            echo "Other IPs on $PX_INTERFACE: $OTHER_IPS"
+            ip addr del "$RS_IP" dev "$PX_INTERFACE" || true
+        fi
+        
+        echo "VLAN interface cleanup completed"
+{{- end }}

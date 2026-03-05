@@ -1,0 +1,29 @@
+{{ if .Values.extensions.metal.enabled -}}
+apiVersion: operator.gardener.cloud/v1alpha1
+kind: Extension
+metadata:
+  name: provider-ironcore-metal
+spec:
+  resources:
+  - kind: ControlPlane
+    type: ironcore-metal
+  - kind: Infrastructure
+    type: ironcore-metal
+  - kind: Worker
+    type: ironcore-metal
+  deployment:
+    # admission:
+    extension:
+      values:
+        image:
+          repository: "{{required ".Values.extensions.metal.image.repository is missing" .Values.extensions.metal.image.repository }}"
+          tag: "{{required ".Values.extensions.metal.image.tag is missing" .Values.extensions.metal.image.tag }}"
+{{- if and .Values.extensions.metal .Values.extensions.metal.imageVectorOverwrite }}
+        imageVectorOverwrite: | {{ toYaml .Values.extensions.metal.imageVectorOverwrite | nindent 10 }}
+{{- end }}
+      helm:
+        ociRepository:
+          tag: "0.1.0"
+          repository: keppel.global.cloud.sap/ccloud-ghcr-io-mirror/ironcore-dev/charts/gardener-extension-provider-ironcore-metal
+      policy: OnDemand
+{{ end -}}

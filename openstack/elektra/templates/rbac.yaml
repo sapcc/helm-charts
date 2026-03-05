@@ -10,17 +10,18 @@ kind: Role
 metadata:
   name: elektra-token-secret
 rules:
-  # The init container of elektra generates the `elektra-token` secrets on first start.
   # "create" permission cannot be restricted to specific resourceNames
   # Ref: <https://stackoverflow.com/a/65203104>
   - apiGroups: [ "" ]
     resources: [ secrets ]
     verbs:     [ create ]
 
-  # add temporary permission to read the elektra secret until we switch to
+  # need to update the elektra-token secret
   - apiGroups: [ "" ]
     resources: [ secrets ]
-    verbs:     [ get, list ]
+    verbs:     [ get, patch ]
+    resourceNames:
+    - elektra-token
 
   # need the UID of the postgres deployment to render an owner reference
   - apiGroups: [ apps ]

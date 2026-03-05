@@ -1,6 +1,5 @@
 # Secret will be used to sign session cookies, CSRF tokens and for other encryption utilities.
-# It is highly recommended to change this value before running cerebro in production.
-secret="{{.Values.manager_secret}}"
+secret = "{{ (randAlphaNum 64) }}"
 
 # Application base path
 basePath = "/"
@@ -28,8 +27,16 @@ hosts = [
     host = "https://opensearch-hermes.hermes.svc.kubernetes.{{ .Values.global.region }}.{{ .Values.global.tld }}:9200"
     name = "OpenSearch Hermes cluster"
     auth = {
-      username = "{{.Values.global.users.admin.username}}"
-      password = "{{.Values.global.users.admin.password}}"
+      username = "{{.Values.global.users.admin2.username_resolve}}"
+      password = "{{.Values.global.users.admin2.password_resolve}}"
+    }
+  },
+  {
+    host = "https://opensearch-hermes.hermes.svc.cluster.local:9200"
+    name = "OpenSearch Hermes local cluster"
+    auth = {
+      username = "{{.Values.global.users.admin2.username_resolve}}"
+      password = "{{.Values.global.users.admin2.password_resolve}}"
     }
   }
 ]
@@ -54,10 +61,10 @@ auth = {
 play.ws.ssl {
   trustManager = {
     stores = [
-{{- if .Values.global.truststore.enabled }}
-      { type = "PKCS12", path = "/opt/cerebro/truststore", password = "{{.Values.global.truststore.cert_pw}}" }
-{{- else -}}
+{{- if .Values.global.sapcert.enabled }}
       { type = "PEM", path = "/opt/certs/tls.crt" }
+{{- else -}}
+      { type = "PEM", path = "/opt/certs/ca.crt" }
 {{- end }}
     ]
   }

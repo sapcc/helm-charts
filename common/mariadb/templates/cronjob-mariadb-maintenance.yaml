@@ -21,10 +21,11 @@ spec:
             app: {{ include "fullName" . }}-maint
             {{- include "mariadb.labels" (list $ "version" "mariadb" "cronjob" "maintenance") | indent 12 }}
           annotations:
-            {{- if and (and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested) $.Values.linkerd.mariadb.enabled }}
-            linkerd.io/inject: enabled
-            {{- end }}
+            kubectl.kubernetes.io/default-container: maintenance
             checksum/configmap: {{ include (print $.Template.BasePath "/configmap-mariadb-maintenance.yaml") $ | sha256sum }}
+{{- if $.Values.linkerd.cronjob.enabled }}
+            {{- include "mariadb.linkerdPodAnnotations" . | indent 12 }}
+{{- end }}
         spec:
           restartPolicy: {{ $.Values.job.maintenance.jobRestartPolicy | default "OnFailure" | quote }}
           securityContext:

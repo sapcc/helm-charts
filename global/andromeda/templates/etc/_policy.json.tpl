@@ -49,6 +49,7 @@
 
   "andromeda:service:get_all": "rule:cloud_admin",
   "andromeda:sync:post": "rule:cloud_admin",
+  "andromeda:cidr-blocks:get": "rule:context_is_viewer",
 
   "andromeda:quota:get_all": "rule:context_is_viewer",
   "andromeda:quota:get_all-global": "rule:cloud_admin",

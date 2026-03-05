@@ -5,7 +5,9 @@
 [composite:osapi_share]
 use = call:manila.api:root_app_factory
 /: apiversions
+{{- if .Values.api_v1_enabled }}
 /v1: openstack_share_api
+{{- end }}
 /v2: openstack_share_api_v2
 
 {{- define "audit_pipe" -}}
@@ -106,6 +108,7 @@ clock_accuracy = 1ns
 log_sleep_time_seconds = {{ .Values.api_rate_limit.log_sleep_time_seconds }}
 backend_host = {{ .Release.Name }}-api-ratelimit-redis
 backend_port = 6379
+backend_secret_file = {{ .Values.api_rate_limit.backend_secret_file }}
 backend_timeout_seconds = {{ .Values.api_rate_limit.backend_timeout_seconds }}
 {{- end }}
 

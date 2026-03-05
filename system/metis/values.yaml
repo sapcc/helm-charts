@@ -1,5 +1,3 @@
-namespace: metis
-
 global:
   dbUser: "metis"
   #dbPassword: <defined-in-secrets>
@@ -120,6 +118,136 @@ backup_v2:
     #   parse_schema: // bool flag
     #   databases: // list of schemas to replicate
     #     - "<schemaName>"
+
+mysql_metrics:
+  enabled: false
+  db_name: metis
+  db_user: metis
+  # connections: # Defined in region chart
+  vpa:
+    set_main_container: true
+  customMetrics:
+    - name: "openstack_vm_create_total"
+      help: "Nova VM create events"
+      values: ["count"]
+      labels: []
+      query: |
+        SELECT COUNT(*) as count FROM instances;
+
+    - name: "openstack_vm_migrate_request_total"
+      help: "Nova VM migrate events"
+      values: ["value"]
+      labels: []
+      query: |
+        SELECT
+            'nova_live_migration_started_total' AS metric,
+            COUNT(*) AS value
+        FROM instance_actions_events
+        WHERE event = 'conductor_live_migrate_instance';
+
+    - name: "openstack_vm_migrate_fail_total"
+      help: "Nova VM migrate events"
+      values: ["value"]
+      labels: []
+      query: |
+        SELECT
+            'nova_live_migration_failed_total' AS metric,
+            COUNT(*) AS value
+        FROM instance_actions_events
+        WHERE event = 'conductor_live_migrate_instance'
+            AND result = 'Error';
+
+    - name: "openstack_vm_migrate_success_ratio_30m"
+      help: "Nova VM migrate success ratio (30 minute)"
+      values: ["value"]
+      labels: []
+      query: |
+        SELECT
+            ROUND(
+                COALESCE(
+                    CAST(SUM(CASE WHEN result = 'Success' THEN 1 ELSE 0 END) AS FLOAT) / 
+                    NULLIF(COUNT(*), 0),
+                    0.0
+                ),
+                4
+            ) AS value
+        FROM instance_actions_events
+        WHERE event = 'conductor_live_migrate_instance'
+          AND created_at >= NOW() - INTERVAL 30 MINUTE;
+
+    - name: "openstack_vm_migrate_success_ratio_5m"
+      help: "Nova VM migrate success ratio (5 minutes)"
+      values: ["value"]
+      labels: []
+      query: |
+        SELECT 
+            ROUND(
+                COALESCE(
+                    CAST(SUM(CASE WHEN result = 'Success' THEN 1 ELSE 0 END) AS FLOAT) / 
+                    NULLIF(COUNT(*), 0),
+                    0.0
+                ),
+                4
+            ) AS value
+        FROM instance_actions_events
+        WHERE event = 'conductor_live_migrate_instance'
+          AND created_at >= NOW() - INTERVAL 5 MINUTE;
+
+
+    - name: "openstack_vm_migrate_success_ratio_1h"
+      help: "Nova VM migrate success ratio (1 hour)"
+      values: ["value"]
+      labels: []
+      query: |
+        SELECT
+            ROUND(
+                COALESCE(
+                    CAST(SUM(CASE WHEN result = 'Success' THEN 1 ELSE 0 END) AS FLOAT) / 
+                    NULLIF(COUNT(*), 0),
+                    0.0
+                ),
+                4
+            ) AS value
+        FROM instance_actions_events
+        WHERE event = 'conductor_live_migrate_instance'
+          AND created_at >= NOW() - INTERVAL 1 HOUR;
+
+    - name: "openstack_vm_migrate_success_ratio_1d"
+      help: "Nova VM migrate success ratio (1 day)"
+      values: ["value"]
+      labels: []
+      query: |
+        SELECT
+            ROUND(
+                COALESCE(
+                    CAST(SUM(CASE WHEN result = 'Success' THEN 1 ELSE 0 END) AS FLOAT) / 
+                    NULLIF(COUNT(*), 0),
+                    0.0
+                ),
+                4
+            ) AS value
+        FROM instance_actions_events
+        WHERE event = 'conductor_live_migrate_instance'
+          AND created_at >= NOW() - INTERVAL 1 DAY;
+
+
+    - name: "openstack_vm_migrate_success_ratio_total"
+      help: "Nova VM migrate success ratio (all time)"
+      values: ["value"]
+      labels: []
+      query: |
+        SELECT
+            ROUND(
+                COALESCE(
+                    CAST(SUM(CASE WHEN result = 'Success' THEN 1 ELSE 0 END) AS FLOAT) / 
+                    NULLIF(COUNT(*), 0),
+                    0.0
+                ),
+                4
+            ) AS value
+        FROM instance_actions_events
+        WHERE event = 'conductor_live_migrate_instance';
+
 
 metisSync:
   image: go-maria-sync

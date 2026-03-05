@@ -1,0 +1,14 @@
+{{ $dict := merge (dict "SERVICE_NAME" (include "ovsdb.fullname" .) "NAMESPACE" .Release.Namespace ) .Values }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "ovsdb.fullname" . }}
+  labels:
+    {{- include "ovsdb.labels" . | nindent 4 }}
+data:
+  setup.sh: |
+    {{ include (print .Template.BasePath "/bin/_setup.sh.tpl") $dict | nindent 4 }}
+  functions: |
+    {{ include (print .Template.BasePath "/bin/_functions.tpl") $dict | nindent 4 }}
+  cleanup.sh: |
+    {{ include (print .Template.BasePath "/bin/_cleanup.sh.tpl") $dict | nindent 4 }}

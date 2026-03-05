@@ -1,0 +1,29 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: security-nightmare
+  namespace: somewhere
+spec:
+  containers:
+  - name: mallory
+    image: foo.image-registry.com/test-app/unprivileged:20250519150208
+    securityContext:
+      allowPrivilegeEscalation: true
+      privileged: true
+      capabilities:
+        add: [ SYS_ADMIN ]
+    volumeMounts:
+    - mountPath: /etc/security-nightmare
+      name: config
+    - mountPath: /hostfs
+      name: hostfs
+  hostNetwork: true
+  hostPID: true
+  volumes:
+  - name: hostfs
+    hostPath:
+      path: /
+  - name: config
+    configMap:
+      defaultMode: 416
+      name: security-nightmare

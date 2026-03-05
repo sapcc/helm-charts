@@ -1,0 +1,13 @@
+# Image references are not stored here, but in `files/tags.json`, where they
+# cannot easily be accessed without the provided template functions. The reason
+# for that is that, if we were to put image references in here, and then an
+# image version falls out of support, references like
+#
+# ```
+# {{ index .Values "shared-app-images-tags" "alpine-busybox" "3.22" }}
+# ```
+#
+# would silently break and evaluate to an empty string, which will be accepted
+# by Helm, but then cause errors on Kubernetes level. To avoid this, we force
+# users to go through the provided template function API, which will provide a
+# more explicit error at Helm template evaluation time.

@@ -33,11 +33,10 @@ spec:
               name: swift-http-import
           containers:
           - name: swift-http-import
-            {{- $image_tag := $.Values.swift_http_import.image_tag | required ".Values.swift_http_import.image_tag not found" }}
-            {{- if $.Values.swift_http_import.image_repository }}
-            image: {{ $.Values.swift_http_import.image_repository }}:{{ $image_tag }}
+            {{- if $.Values.image_refs.swift_http_import }}
+            image: {{ quote $.Values.image_refs.swift_http_import }}
             {{- else }}
-            image: {{ $.Values.global.registry | required ".Values.global.registry not found" }}/swift-http-import:{{ $image_tag }}
+            image: {{ $.Values.global.registry | required ".Values.global.registry not found" }}/swift-http-import:{{ $.Values.swift_http_import.image_tag | required ".Values.swift_http_import.image_tag not found" }}
             {{- end }}
             imagePullPolicy: IfNotPresent
             args:

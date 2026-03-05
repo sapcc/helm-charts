@@ -1,0 +1,17 @@
+groups:
+  - name: apicfaults.alerts
+    rules:
+    - alert: NetworkAciBgpNeighborshipChange
+      expr: sum(network_apic_faults{code="F0299"} > 0) > 0
+      for: 5m
+      labels:
+        severity: critical
+        support_group: network-data
+        tier: net
+        service: apic
+        context: apic-health
+        meta: "ACI Fault {{ $labels.code }} - {{ $labels.cause }} has been raised in region {{ $labels.region }}"
+        playbook: 'docs/devops/alert/network/aci'
+      annotations:
+        description: ACI Fault {{ $labels.code }} - {{ $labels.cause }} has been raised in region {{ $labels.region }}"
+        summary: "ACI Fault {{ $labels.code }} - {{ $labels.cause }} has been raised in region {{ $labels.region }}"

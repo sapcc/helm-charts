@@ -26,6 +26,24 @@ spec:
     spec:
       tolerations:
       - operator: "Exists"
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: cloud.sap/deployment-state
+                operator: NotIn
+                values:
+                - reinstalling
+              - key: cloud.sap/esx-in-maintenance
+                operator: NotIn
+                values:
+                - alarm
+                - "true"
+              - key: cloud.sap/maintenance-state
+                operator: NotIn
+                values:
+                - in-maintenance
       volumes:
         - name: fluent-etc
           configMap:
@@ -35,7 +53,7 @@ spec:
             path: /var/log
       containers:
         - name: fluent-audit-systemd
-          image: {{.Values.global.registry}}/elk-fluent:{{.Values.image_version}}
+          image: "{{.Values.global.registry}}/elk-fluent:{{.Values.image_version}}"
           imagePullPolicy: IfNotPresent
           env:
             - name: NAMESPACE
