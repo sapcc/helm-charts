@@ -20,3 +20,19 @@ groups:
           description: The container {{ $labels.pod }}/{{ $labels.container }} is being CPU-throttled
             constantly. This is probably impacting performance, so check if we can increase the number
             of replicas or the resource requests/limits.
+
+  - alert: OpenstackKeppelIssuerKeyNotRotated
+    # The cronjob to rotate issuer keys should run once a week. We alert after
+    # 16 days of no successful run, which is still well below the PCI-mandated
+    # rotation timeline (which is on the order of months), but sufficiently
+    # lenient to not spam alerts when the rotation is skipped once.
+    expr: 'max(time() - kube_cronjob_status_last_successful_time{namespace="keppel",cronjob="keppel-generate-issuer-key"}) > 16 * 86400'
+    for: 5m
+    labels:
+      context: issuerkeyrotation
+      service: keppel
+      severity: warning
+      support_group: containers
+    annotations:
+      summary: "Issuer key is not being rotated"
+      description: 'The CronJob "keppel-generate-issuer-key" should be rotating the token issuer key once a week. However, there was no successful run for more than 16 days.'
