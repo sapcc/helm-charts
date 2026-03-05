@@ -1,3 +1,7 @@
+## 8.1.0
+
+* Enable native histogram support: add `convertClassicHistogramsToNHCB`, `scrapeClassicHistograms`, and `scrapeNativeHistograms` to the Prometheus CR spec (all enabled by default)
+
 ## 8.0.10
 
 * use global repository instead of hardcoded single region
