@@ -41,8 +41,11 @@
         {{- if and $dbConfig.users $dbConfig.databases }}
             {{- $db := first $dbConfig.databases }}
             {{- $defaultUser := default $db $dbConfig.defaultUser }}
-            {{- if and (hasKey .Values.global "db") (hasKey .Values.global.db "defaultUser") (hasKey $dbConfig "defaultUser") }}
-                {{- $defaultUser = coalesce .Values.global.db.defaultUser $dbConfig.defaultUser $db }}
+            {{- if hasKey $dbConfig "defaultUser" }}
+                {{- $globalDbDefaultUser := dig "global" "db" "defaultUser" "" .Values }}
+                {{- if $globalDbDefaultUser }}
+                    {{- $defaultUser = coalesce $globalDbDefaultUser $dbConfig.defaultUser $db }}
+                {{- end }}
             {{- end }}
             {{- $user := get $dbConfig.users $defaultUser | required (printf ".Values.%s.users.%s is required (selected via .Values.%s.defaultUser)" $dbType $defaultUser $dbType) }}
             {{- $user.name | required (printf ".Values.%s.users.%s.name is required!" $dbType $defaultUser) }}:{{ $user.password | required (printf ".Values.%s.users.%s.password is required!" $dbType $defaultUser) }}
@@ -176,8 +179,11 @@ Tuple example: tuple . .Values.apidbName .Values.apidbUser .Values.apidbPassword
             {{- $db := first .Values.mariadb.databases }}
             {{- $dbConfig := .Values.mariadb }}
             {{- $defaultUser := default $db $dbConfig.defaultUser }}
-            {{- if and (hasKey .Values.global "db") (hasKey .Values.global.db "defaultUser") (hasKey $dbConfig "defaultUser") }}
-                {{- $defaultUser = coalesce .Values.global.db.defaultUser $dbConfig.defaultUser $db }}
+            {{- if hasKey $dbConfig "defaultUser" }}
+                {{- $globalDbDefaultUser := dig "global" "db" "defaultUser" "" .Values }}
+                {{- if $globalDbDefaultUser }}
+                    {{- $defaultUser = coalesce $globalDbDefaultUser $dbConfig.defaultUser $db }}
+                {{- end }}
             {{- end }}
             {{- $user := get .Values.mariadb.users $defaultUser | required (printf ".Values.mariadb.users.%s is required (selected via .Values.mariadb.defaultUser)" $defaultUser) }}
             {{- tuple . $db $user.name (required (printf "User with key %v requires password" $defaultUser) $user.password) | include "utils._db_url_mariadb" }}
@@ -223,8 +229,11 @@ Tuple example: tuple . .Values.apidbName .Values.apidbUser .Values.apidbPassword
             {{- $db := first .Values.pxc_db.databases }}
             {{- $dbConfig := .Values.pxc_db }}
             {{- $defaultUser := default $db $dbConfig.defaultUser }}
-            {{- if and (hasKey .Values.global "db") (hasKey .Values.global.db "defaultUser") (hasKey $dbConfig "defaultUser") }}
-                {{- $defaultUser = coalesce .Values.global.db.defaultUser $dbConfig.defaultUser $db }}
+            {{- if hasKey $dbConfig "defaultUser" }}
+                {{- $globalDbDefaultUser := dig "global" "db" "defaultUser" "" .Values }}
+                {{- if $globalDbDefaultUser }}
+                    {{- $defaultUser = coalesce $globalDbDefaultUser $dbConfig.defaultUser $db }}
+                {{- end }}
             {{- end }}
             {{- $user := get .Values.pxc_db.users $defaultUser | required (printf ".Values.pxc_db.users.%s is required (selected via .Values.pxc_db.defaultUser)" $defaultUser) }}
             {{- tuple . $db $user.name (required (printf "User with key %v requires password" $defaultUser) $user.password) | include "utils._db_url_pxc_db" }}
