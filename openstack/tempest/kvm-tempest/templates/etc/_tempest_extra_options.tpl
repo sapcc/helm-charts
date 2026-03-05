@@ -6,11 +6,11 @@ rally_debug = True
 [auth]
 use_dynamic_credentials = False
 create_isolated_networks = False
-test_accounts_file = /{{ .Chart.Name }}-etc/tempest_accounts.yaml
+test_accounts_file = /{{ .Chart.Name }}-etc-secret/tempest_accounts.yaml
 default_credentials_domain_name = tempest
 admin_project_name = {{ default "neutron-tempest-admin1" (index .Values (print .Chart.Name | replace "-" "_")).tempest.admin_project_name }}
 admin_username = {{ default "neutron-tempest-admin1" (index .Values (print .Chart.Name | replace "-" "_")).tempest.admin_name }}
-admin_password = {{ required "A valid .Values.tempestAdminPassword required!" .Values.tempestAdminPassword }}
+admin_password = {{ required "A valid .Values.tempestAdminPassword required!" .Values.tempestAdminPassword | include "tempest-base.resolve_secret" }}
 admin_domain_name = tempest
 admin_domain_scope = True
 
