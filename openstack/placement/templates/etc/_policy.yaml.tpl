@@ -1,5 +1,79 @@
 # CCloud-specific admin identification
-"context_is_cloud_admin": "role:cloud_compute_admin"
+context_is_cloud_admin: role:cloud_compute_admin
+context_is_cloud_viewer: context_is_cloud_admin or role:cloud_compute_viewer
+
+### 
+# Grant read access to everything, but no write access, to the cloud_compte_viewer role
+###
+# List resource providers.
+# GET  /resource_providers
+# Intended scope(s): project
+placement:resource_providers:list: rule:context_is_cloud_viewer
+
+# Show resource provider.
+# GET  /resource_providers/{uuid}
+# Intended scope(s): project
+placement:resource_providers:show:  rule:context_is_cloud_viewer
+
+# List resource classes.
+# GET  /resource_classes
+# Intended scope(s): project
+placement:resource_classes:list: rule:context_is_cloud_viewer
+
+# Show resource class.
+# GET  /resource_classes/{name}
+# Intended scope(s): project
+placement:resource_classes:show: rule:context_is_cloud_viewer
+
+# List resource provider inventories.
+# GET  /resource_providers/{uuid}/inventories
+# Intended scope(s): project
+placement:resource_providers:inventories:list: rule:context_is_cloud_viewer
+
+# Show resource provider inventory.
+# GET  /resource_providers/{uuid}/inventories/{resource_class}
+# Intended scope(s): project
+placement:resource_providers:inventories:show: rule:context_is_cloud_viewer
+
+# List resource provider aggregates.
+# GET  /resource_providers/{uuid}/aggregates
+# Intended scope(s): project
+placement:resource_providers:aggregates:list: rule:context_is_cloud_viewer
+
+# List resource provider usages.
+# GET  /resource_providers/{uuid}/usages
+# Intended scope(s): project
+placement:resource_providers:usages: rule:context_is_cloud_viewer
+
+# List traits.
+# GET  /traits
+# Intended scope(s): project
+placement:traits:list: rule:context_is_cloud_viewer
+
+# Show trait.
+# GET  /traits/{name}
+# Intended scope(s): project
+placement:traits:show: rule:context_is_cloud_viewer
+
+# List resource provider traits.
+# GET  /resource_providers/{uuid}/traits
+# Intended scope(s): project
+placement:resource_providers:traits:list: rule:context_is_cloud_viewer
+
+# List allocations.
+# GET  /allocations/{consumer_uuid}
+# Intended scope(s): project
+placement:allocations:list: rule:context_is_cloud_viewer
+
+# List resource provider allocations.
+# GET  /resource_providers/{uuid}/allocations
+# Intended scope(s): project
+placement:resource_providers:allocations:list: rule:context_is_cloud_viewer
+
+# List allocation candidates.
+# GET  /allocation_candidates
+# Intended scope(s): project
+placement:allocation_candidates:list: rule:context_is_cloud_viewer
 
 ###
 # dalmatian changes to the policy
@@ -22,7 +96,7 @@
 # Intended scope(s): project
 # only used for /usages
 #"admin_or_project_reader_or_service_api": "role:admin or rule:project_reader_api or role:service"
-"admin_or_project_reader_or_service_api": "rule:context_is_cloud_admin or rule:project_reader_api"
+"admin_or_project_reader_or_service_api": "rule:context_is_cloud_admin or rule:project_reader_api or rule:context_is_cloud_viewer"
 
 ###
 # yoga-specific changes to the policy
