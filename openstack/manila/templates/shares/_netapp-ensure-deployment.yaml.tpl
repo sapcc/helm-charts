@@ -29,6 +29,8 @@ spec:
   template:
     metadata:
       labels:
+        application: manila
+        component: ensure
         name: {{ .Release.Name }}-share-netapp-{{$share.name}}-ensure
         alert-tier: os
         alert-service: manila
