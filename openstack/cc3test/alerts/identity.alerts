@@ -146,3 +146,108 @@ groups:
     annotations:
       description: 'SAP Exchange webservice is not healthy. Usually due to lacking internet connectivity. Password updates will fail.'
       summary: 'SAP https://autodiscover.sap.com/ews/healthcheck.htm reports down'
+
+  - alert: OpenstackIdentityCanaryOidcDiscoveryDown
+    expr: |
+        last_over_time(cc3test_status{service="keystone",
+        name=~"TestOIDCAuthFlow_test_oidc_discovery.+",phase="call"}[1h]) == 0
+    for: 3h
+    labels:
+      severity: warning
+      support_group: identity
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      meta: 'Openstack Identity Canary: {{ $labels.name }} is down, see report for more details'
+      dashboard: 'cc3test-canary-status?var-service={{ $labels.service }}'
+      playbook: 'docs/support/playbook/keystone/alerts/cc3test-alert-oidc/'
+      report: 'cc3test/admin/object-storage/swift/containers/cc3test/objects/{{ $labels.base64path }}'
+    annotations:
+      description: 'Openstack Identity Canary: {{ $labels.name }} is down, see report for more details'
+      summary: 'Openstack Identity Canary: {{ $labels.name }} is down, see report for more details'
+
+  - alert: OpenstackIdentityCanaryOidcDiscoveryFlapping
+    expr: changes(cc3test_status{service="keystone",name=~"TestOIDCAuthFlow_test_oidc_discovery.+", phase="call"}[2h]) > 8
+    labels:
+      severity: warning
+      support_group: identity
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      meta: 'Openstack Identity Canary is flapping for 2 hours, see last three reports for more details'
+      dashboard: 'cc3test-canary-status?var-service={{ $labels.service }}'
+      playbook: 'docs/support/playbook/keystone/alerts/cc3test-alert-oidc/'
+      report: 'cc3test/admin/object-storage/swift/containers/cc3test/objects/{{ $labels.base64path }}'
+    annotations:
+      description: 'Openstack Identity Canary is flapping for 2 hours, see last three reports for more details'
+      summary: 'Openstack Identity Canary is flapping for 2 hours, see last three reports for more details'
+
+  - alert: OpenstackIdentityCanaryOidcFederationAuthDown
+    expr: |
+        last_over_time(cc3test_status{service="keystone",
+        name=~"TestOIDCAuthFlow_test_keystone_federation_auth.+",phase="call"}[1h]) == 0
+    for: 3h
+    labels:
+      severity: warning
+      support_group: identity
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      meta: 'Openstack Identity Canary: {{ $labels.name }} is down, see report for more details'
+      dashboard: 'cc3test-canary-status?var-service={{ $labels.service }}'
+      playbook: 'docs/support/playbook/keystone/alerts/cc3test-alert-oidc/'
+      report: 'cc3test/admin/object-storage/swift/containers/cc3test/objects/{{ $labels.base64path }}'
+    annotations:
+      description: 'Openstack Identity Canary: {{ $labels.name }} is down, see report for more details'
+      summary: 'Openstack Identity Canary: {{ $labels.name }} is down, see report for more details'
+
+  - alert: OpenstackIdentityCanaryOidcFederationAuthFlapping
+    expr: changes(cc3test_status{service="keystone",name=~"TestOIDCAuthFlow_test_keystone_federation_auth.+", phase="call"}[2h]) > 8
+    labels:
+      severity: warning
+      support_group: identity
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      meta: 'Openstack Identity Canary is flapping for 2 hours, see last three reports for more details'
+      dashboard: 'cc3test-canary-status?var-service={{ $labels.service }}'
+      playbook: 'docs/support/playbook/keystone/alerts/cc3test-alert-oidc/'
+      report: 'cc3test/admin/object-storage/swift/containers/cc3test/objects/{{ $labels.base64path }}'
+    annotations:
+      description: 'Openstack Identity Canary is flapping for 2 hours, see last three reports for more details'
+      summary: 'Openstack Identity Canary is flapping for 2 hours, see last three reports for more details'
+
+  - alert: OpenstackIdentityCanaryOidcTokenValidationDown
+    expr: |
+        last_over_time(cc3test_status{service="keystone",
+        name=~"TestOIDCAuthFlow_test_token_validation.+",phase="call"}[1h]) == 0
+    for: 3h
+    labels:
+      severity: warning
+      support_group: identity
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      meta: 'Openstack Identity Canary: {{ $labels.name }} is down, see report for more details'
+      dashboard: 'cc3test-canary-status?var-service={{ $labels.service }}'
+      playbook: 'docs/support/playbook/keystone/alerts/cc3test-alert-oidc/'
+      report: 'cc3test/admin/object-storage/swift/containers/cc3test/objects/{{ $labels.base64path }}'
+    annotations:
+      description: 'Openstack Identity Canary: {{ $labels.name }} is down, see report for more details'
+      summary: 'Openstack Identity Canary: {{ $labels.name }} is down, see report for more details'
+
+  - alert: OpenstackIdentityCanaryOidcTokenValidationFlapping
+    expr: changes(cc3test_status{service="keystone",name=~"TestOIDCAuthFlow_test_token_validation.+", phase="call"}[2h]) > 8
+    labels:
+      severity: warning
+      support_group: identity
+      tier: os
+      service: '{{ $labels.service }}'
+      context: '{{ $labels.service }}'
+      meta: 'Openstack Identity Canary is flapping for 2 hours, see last three reports for more details'
+      dashboard: 'cc3test-canary-status?var-service={{ $labels.service }}'
+      playbook: 'docs/support/playbook/keystone/alerts/cc3test-alert-oidc/'
+      report: 'cc3test/admin/object-storage/swift/containers/cc3test/objects/{{ $labels.base64path }}'
+    annotations:
+      description: 'Openstack Identity Canary is flapping for 2 hours, see last three reports for more details'
+      summary: 'Openstack Identity Canary is flapping for 2 hours, see last three reports for more details'
