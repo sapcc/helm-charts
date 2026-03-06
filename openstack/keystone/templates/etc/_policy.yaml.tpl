@@ -257,7 +257,7 @@
 # DELETE  /v3/domains/{domain_id}
 # Intended scope(s): system
 #"identity:delete_domain": "role:admin and system_scope:all"
-"identity:delete_domain": "rule:cloud_admin"
+"identity:delete_domain": "!"
 
 # Create domain configuration.
 # PUT  /v3/domains/{domain_id}/config
@@ -1163,7 +1163,7 @@
 # DELETE  /v3/roles/{role_id}
 # Intended scope(s): system
 #"identity:delete_role": "role:admin and system_scope:all"
-"identity:delete_role": "rule:cloud_admin"
+"identity:delete_role": "!"
 
 # Show domain role.
 # GET  /v3/roles/{role_id}
