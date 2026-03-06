@@ -9,7 +9,8 @@ metadata:
   labels:
     system: openstack
     type: backend
-    component: manila
+    app.kubernetes.io/name: manila
+    app.kubernetes.io/component: share
   annotations:
     secret.reloader.stakater.com/reload: "{{ .Release.Name }}-secrets"
     deployment.reloader.stakater.com/pause-period: "600s"
@@ -34,6 +35,8 @@ spec:
         name: {{ .Release.Name }}-share-netapp-{{$share.name}}
         alert-tier: os
         alert-service: manila
+        app.kubernetes.io/name: manila
+        app.kubernetes.io/component: share
       annotations:
         {{- if or .Values.rpc_statsd_enabled .Values.proxysql.mode }}
         prometheus.io/scrape: "true"
