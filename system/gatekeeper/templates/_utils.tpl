@@ -40,3 +40,11 @@ constraint-source: 'https://github.com/sapcc/helm-charts/tree/master/system/gate
 {{- define "docstring" }}
 docstring: {{ (index . 0).Files.Get (printf "files/%s.md" (index . 1)) | toJson }}
 {{- end }}
+
+{{- define "doop_image_checker_url" -}}
+{{ $.Values.doop_image_checker_url | replace "$NAMESPACE" $.Release.Namespace }}
+{{- end -}}
+
+{{- define "helm_manifest_parser_url" -}}
+{{ $.Values.helm_manifest_parser_url | replace "$NAMESPACE" $.Release.Namespace }}
+{{- end -}}
