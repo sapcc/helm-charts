@@ -32,7 +32,7 @@ attributes/auditpoller:
 {{- define "auditpoller.pipelines" }}
 logs/auditpoller_logs:
   receivers: [filelog/auditpoller]
-  processors: [transform/auditpoller,attributes/auditpoller,k8sattributes,attributes/cluster]
-  exporters: [forward]
+  processors: [transform/auditpoller,attributes/auditpoller,k8sattributes,attributes/cluster,batch]
+  exporters: [failover]
 {{- end }}
 
