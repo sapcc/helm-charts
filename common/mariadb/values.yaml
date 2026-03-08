@@ -9,7 +9,7 @@ global:
       enabled: true
 
 name: null
-image: library/mariadb:10.11.16
+image: library/mariadb:11.4.10
 imagePullPolicy: IfNotPresent
 port_public: 3306
 max_connections: 1024
@@ -24,6 +24,11 @@ binlog_format: "MIXED"
 expire_logs_days: 10
 character_set_server: "utf8" # Should be utf8mb4, but we started with this
 collation_server: "utf8_general_ci"
+
+# -- MariaDB client TLS flag for job and maintenance scripts.
+# Use "--skip-ssl-verify-server-cert" (default), "--skip-ssl", or "" for full verification.
+# @default -- "--skip-ssl-verify-server-cert"
+client_tls_option: "--skip-ssl-verify-server-cert"
 
 db_performance_schema: # Enabling performance schema only (without enabling instruments for data collections).
   # Instrument can be enabled separately. Only Performance Schema Enablement does not cause any
@@ -189,7 +194,7 @@ use_alternate_registry: false
 
 readiness:
   image: pod-readiness
-  image_version: "20260210104857"
+  image_version: "20260302104719"
   # set to true if backup_v2 is not enabled, but readiness sidecar is required
   useSidecar: false
 
@@ -202,7 +207,7 @@ backup_v2:
   enabled: false
   backup_dir: "./backup"
   image: maria-back-me-up
-  image_version: "20260210150801"
+  image_version: "11.4-20260302101209"
   full_backup_cron_schedule: "0 0 * * *"
   incremental_backup_in_minutes: 5
   purge_binlog_after_minutes: 60

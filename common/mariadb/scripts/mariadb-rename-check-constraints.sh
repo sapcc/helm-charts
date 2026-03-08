@@ -19,13 +19,17 @@ fi
 
 export MYSQL_PWD="${MYSQL_PASSWORD}"
 
+mariadb_cmd() {
+    mariadb ${MARIADB_TLS_OPTION} -h"${MYSQL_ADDRESS}" -u"${MYSQL_USER}" "$@"
+}
+
 check_connection() {
     local max_attempts=12
     local wait_time=10
     local attempt=1
 
     while [[ $attempt -le "${max_attempts}" ]]; do
-        if mysql -h"${MYSQL_ADDRESS}" -u"${MYSQL_USER}" -e "SELECT 1" >/dev/null 2>&1; then
+        if mariadb_cmd -e "SELECT 1" >/dev/null 2>&1; then
             loginfo "check_connection" "Database connection successful on attempt ${attempt}"
             return 0
         else
@@ -44,7 +48,7 @@ if ! check_connection; then
 fi
 
 get_databases() {
-    mysql -h"${MYSQL_ADDRESS}" -u"${MYSQL_USER}" -N -e "
+    mariadb_cmd -N -e "
         SELECT SCHEMA_NAME
         FROM information_schema.SCHEMATA
         WHERE SCHEMA_NAME NOT IN ('information_schema', 'mysql', 'performance_schema', 'sys', 'innodb');"
@@ -52,7 +56,7 @@ get_databases() {
 
 get_constraints() {
     local db=$1
-    mysql -h"${MYSQL_ADDRESS}" -u"${MYSQL_USER}" "${db}" -N -e "
+    mariadb_cmd "${db}" -N -e "
         SELECT
             TABLE_NAME,
             CONSTRAINT_NAME,
@@ -89,7 +93,7 @@ execute_sql() {
     local sql_file=$1
     if [[ -s "${sql_file}" ]]; then
         loginfo "execute_sql" "Executing check constraint rename operations..."
-        if mysql -h"${MYSQL_ADDRESS}" -u"${MYSQL_USER}" < "${sql_file}"; then
+        if mariadb_cmd < "${sql_file}"; then
             loginfo "execute_sql" "Check constraint rename operations completed."
             return 0
         else

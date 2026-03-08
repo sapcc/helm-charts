@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.34.0 - 2026/03/04
+* MariaDB version updated to [11.4.10](https://mariadb.com/docs/release-notes/community-server/11.4/11.4.10)
+  * See https://mariadb.com/docs/release-notes/community-server/11.4/what-is-mariadb-114
+* sidecar images updated
+* `maria-back-me-up` updated to `11.4-20260302101209`, based on 11.4 mariadb image
+* chart version bumped
+
 ## v0.33.0 - 2026/03/03
 * Add InnoDB buffer pool Prometheus alerts: `MariaDBBufferPoolNearlyFull` (warning, < 10% free) and `MariaDBBufferPoolExhausted` (critical, < 2.5% free)
 
