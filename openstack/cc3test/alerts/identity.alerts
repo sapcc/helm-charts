@@ -147,107 +147,92 @@ groups:
       description: 'SAP Exchange webservice is not healthy. Usually due to lacking internet connectivity. Password updates will fail.'
       summary: 'SAP https://autodiscover.sap.com/ews/healthcheck.htm reports down'
 
-  - alert: OpenstackIdentityCanaryOidcDiscoveryDown
+  - alert: OidcDiscoveryDown
     expr: |
-        last_over_time(cc3test_status{service="keystone",
-        name=~"TestOIDCAuthFlow_test_oidc_discovery.+",phase="call"}[1h]) == 0
-    for: 3h
+        cc3test_status{service="keystone",
+        name=~"TestOIDCAuthFlow_oidc_discovery",phase="call"} == 0
+    for: 16m
     labels:
-      severity: warning
+      severity: info
+      support_group: identity
+      tier: os
+      service: 'keystone'
+      context: 'keystone'
+      meta: 'OIDC Discovery end point down'
+      dashboard: 'cc3test-api-status?var-service={{ $labels.service }}'
+      report: 'cc3test/admin/object-storage/swift/containers/cc3test/objects/{{ $labels.base64path }}'
+    annotations:
+      description: 'OIDC Discovery end point down'
+      summary: 'OIDC Discovery end point down'
+
+  - alert: OIDCTokenValidatonFailed
+    expr: | 
+        cc3test_status{service="keystone", 
+        name=~"TestOIDCAuthFlow_token_validation", phase="call"} == 0
+    for: 16m
+    labels:
+      severity: info
       support_group: identity
       tier: os
       service: '{{ $labels.service }}'
       context: '{{ $labels.service }}'
-      meta: 'Openstack Identity Canary: {{ $labels.name }} is down, see report for more details'
+      meta: 'Openstack OIDC token validation Failed'
       dashboard: 'cc3test-canary-status?var-service={{ $labels.service }}'
-      playbook: 'docs/support/playbook/keystone/alerts/cc3test-alert-oidc/'
       report: 'cc3test/admin/object-storage/swift/containers/cc3test/objects/{{ $labels.base64path }}'
     annotations:
-      description: 'Openstack Identity Canary: {{ $labels.name }} is down, see report for more details'
-      summary: 'Openstack Identity Canary: {{ $labels.name }} is down, see report for more details'
+      description: 'OIDC token Validation Failed'
+      summary: 'OIDC token Validation Failed'
 
-  - alert: OpenstackIdentityCanaryOidcDiscoveryFlapping
-    expr: changes(cc3test_status{service="keystone",name=~"TestOIDCAuthFlow_test_oidc_discovery.+", phase="call"}[2h]) > 8
-    labels:
-      severity: warning
-      support_group: identity
-      tier: os
-      service: '{{ $labels.service }}'
-      context: '{{ $labels.service }}'
-      meta: 'Openstack Identity Canary is flapping for 2 hours, see last three reports for more details'
-      dashboard: 'cc3test-canary-status?var-service={{ $labels.service }}'
-      playbook: 'docs/support/playbook/keystone/alerts/cc3test-alert-oidc/'
-      report: 'cc3test/admin/object-storage/swift/containers/cc3test/objects/{{ $labels.base64path }}'
-    annotations:
-      description: 'Openstack Identity Canary is flapping for 2 hours, see last three reports for more details'
-      summary: 'Openstack Identity Canary is flapping for 2 hours, see last three reports for more details'
-
-  - alert: OpenstackIdentityCanaryOidcFederationAuthDown
+  - alert: KeystoneFedertionAuthFailed
     expr: |
-        last_over_time(cc3test_status{service="keystone",
-        name=~"TestOIDCAuthFlow_test_keystone_federation_auth.+",phase="call"}[1h]) == 0
-    for: 3h
+        cc3test_status{service="keystone, 
+        name=~"TestOIDCAuthFlow_keystone_federation_auth", phase="call"} == 0
+    for: 16m
     labels:
-      severity: warning
+      severity: info
       support_group: identity
       tier: os
       service: '{{ $labels.service }}'
       context: '{{ $labels.service }}'
-      meta: 'Openstack Identity Canary: {{ $labels.name }} is down, see report for more details'
+      meta: 'Keystone federated authentication failed'
       dashboard: 'cc3test-canary-status?var-service={{ $labels.service }}'
-      playbook: 'docs/support/playbook/keystone/alerts/cc3test-alert-oidc/'
       report: 'cc3test/admin/object-storage/swift/containers/cc3test/objects/{{ $labels.base64path }}'
     annotations:
-      description: 'Openstack Identity Canary: {{ $labels.name }} is down, see report for more details'
-      summary: 'Openstack Identity Canary: {{ $labels.name }} is down, see report for more details'
+      description: 'Keystone federated authentication failed'
+      summary: 'Keystone federated authentication failed'
 
-  - alert: OpenstackIdentityCanaryOidcFederationAuthFlapping
-    expr: changes(cc3test_status{service="keystone",name=~"TestOIDCAuthFlow_test_keystone_federation_auth.+", phase="call"}[2h]) > 8
-    labels:
-      severity: warning
-      support_group: identity
-      tier: os
-      service: '{{ $labels.service }}'
-      context: '{{ $labels.service }}'
-      meta: 'Openstack Identity Canary is flapping for 2 hours, see last three reports for more details'
-      dashboard: 'cc3test-canary-status?var-service={{ $labels.service }}'
-      playbook: 'docs/support/playbook/keystone/alerts/cc3test-alert-oidc/'
-      report: 'cc3test/admin/object-storage/swift/containers/cc3test/objects/{{ $labels.base64path }}'
-    annotations:
-      description: 'Openstack Identity Canary is flapping for 2 hours, see last three reports for more details'
-      summary: 'Openstack Identity Canary is flapping for 2 hours, see last three reports for more details'
-
-  - alert: OpenstackIdentityCanaryOidcTokenValidationDown
+  - alert: OIDCAuthenticationCacheFailed
     expr: |
-        last_over_time(cc3test_status{service="keystone",
-        name=~"TestOIDCAuthFlow_test_token_validation.+",phase="call"}[1h]) == 0
-    for: 3h
+        cc3test_status{service="keystone", 
+        name=~"TestOIDCAuthFlow_authentication_with_cache", phase="call"} == 0
+    for: 16m
     labels:
-      severity: warning
+      severity: info
       support_group: identity
       tier: os
       service: '{{ $labels.service }}'
       context: '{{ $labels.service }}'
-      meta: 'Openstack Identity Canary: {{ $labels.name }} is down, see report for more details'
+      meta: 'OIDC Authentication Failed with Caching'
       dashboard: 'cc3test-canary-status?var-service={{ $labels.service }}'
-      playbook: 'docs/support/playbook/keystone/alerts/cc3test-alert-oidc/'
       report: 'cc3test/admin/object-storage/swift/containers/cc3test/objects/{{ $labels.base64path }}'
     annotations:
-      description: 'Openstack Identity Canary: {{ $labels.name }} is down, see report for more details'
-      summary: 'Openstack Identity Canary: {{ $labels.name }} is down, see report for more details'
+      description: 'OIDC Authentication Failed with Caching'
+      summary: 'OIDC Authentication Failed with Caching'
 
-  - alert: OpenstackIdentityCanaryOidcTokenValidationFlapping
-    expr: changes(cc3test_status{service="keystone",name=~"TestOIDCAuthFlow_test_token_validation.+", phase="call"}[2h]) > 8
+  - alert: OIDCAuthOpenstackAPIFailed
+    expr: |
+        cc3test_status{service="keystone", 
+        name=~"TestOIDCAuthIntegration_oidc_auth_with_openstack_api", phase="call"} == 0
+    for: 16m
     labels:
-      severity: warning
+      severity: info
       support_group: identity
       tier: os
       service: '{{ $labels.service }}'
       context: '{{ $labels.service }}'
-      meta: 'Openstack Identity Canary is flapping for 2 hours, see last three reports for more details'
+      meta: 'OIDC Authentication using openstack api failed'
       dashboard: 'cc3test-canary-status?var-service={{ $labels.service }}'
-      playbook: 'docs/support/playbook/keystone/alerts/cc3test-alert-oidc/'
       report: 'cc3test/admin/object-storage/swift/containers/cc3test/objects/{{ $labels.base64path }}'
     annotations:
-      description: 'Openstack Identity Canary is flapping for 2 hours, see last three reports for more details'
-      summary: 'Openstack Identity Canary is flapping for 2 hours, see last three reports for more details'
+      description: 'OIDC Authentication using openstack api failed'
+      summary: 'OIDC Authentication using openstack api failed'
