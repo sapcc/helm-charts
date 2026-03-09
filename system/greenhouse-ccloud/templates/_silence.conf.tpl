@@ -183,7 +183,6 @@
     alertname: "CephOSDDownHigh"
     support_group: "storage"
     service: "ceph"
-    severity: "high"
   editable_labels:
     - region
     - cluster
@@ -194,7 +193,6 @@
     alertname: "CephOSDHostDown"
     support_group: "storage"
     service: "ceph"
-    severity: "warning"
   editable_labels:
     - region
     - cluster
@@ -205,7 +203,6 @@
     alertname: "CephOSDDown"
     support_group: "storage"
     service: "ceph"
-    severity: "warning"
   editable_labels:
     - region
     - cluster
@@ -216,7 +213,6 @@
     alertname: "CephMonDown"
     support_group: "storage"
     service: "ceph"
-    severity: "warning"
   editable_labels:
     - region
     - cluster
@@ -227,7 +223,6 @@
     alertname: "KubernetesDeploymentReplicasMismatch"
     support_group: "storage"
     service: "ceph"
-    severity: "warning"
   editable_labels:
     - region
     - cluster
@@ -238,7 +233,6 @@
     alertname: "CephHealthWarning"
     support_group: "storage"
     service: "ceph"
-    severity: "warning"
   editable_labels:
     - region
     - cluster
