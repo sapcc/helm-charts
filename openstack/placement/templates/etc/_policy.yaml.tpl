@@ -1,6 +1,6 @@
 # CCloud-specific admin identification
 context_is_cloud_admin: role:cloud_compute_admin
-context_is_cloud_viewer: context_is_cloud_admin or role:cloud_compute_viewer
+context_is_cloud_viewer: rule:context_is_cloud_admin or role:cloud_compute_viewer
 
 ### 
 # Grant read access to everything, but no write access, to the cloud_compute_viewer role
