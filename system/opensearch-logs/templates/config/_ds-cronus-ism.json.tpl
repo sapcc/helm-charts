@@ -47,15 +47,39 @@
                 ],
                 "transitions": [
                     {
-                        "state_name": "delete",
+                        "state_name": "snapshot",
                         "conditions": {
-                            "min_index_age": "7d"
+                            "min_rollover_age": "{{ .Values.global.data_stream.cronus.min_index_age }}"
                         }
                     }
                 ]
             },
             {
-                "name": "delete",
+            "name": "snapshot",
+            "actions": [
+                {
+                    "retry": {
+                        "count": 3,
+                        "backoff": "exponential",
+                        "delay": "1m"
+                    },
+                    "snapshot": {
+                        "repository": "snapshots",
+                        "snapshot": "{{ctx.index}}"
+                    }
+                }
+            ],
+                "transitions": [
+                    {
+                        "state_name": "close",
+                        "conditions": {
+                        "min_doc_count": 5
+                        }
+                    }
+                ]
+            },
+            {
+                "name": "close",
                 "actions": [
                     {
                         "retry": {
@@ -63,7 +87,7 @@
                             "backoff": "exponential",
                             "delay": "1m"
                         },
-                        "delete": {}
+                        "close": {}
                     }
                 ],
                 "transitions": []
