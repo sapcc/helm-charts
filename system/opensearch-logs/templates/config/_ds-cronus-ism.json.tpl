@@ -64,8 +64,8 @@
                         "delay": "1m"
                     },
                     "snapshot": {
-                        "repository": "snapshots",
-                        "snapshot": "{{ctx.index}}"
+                        "repository": "{{ .Values.global.data_stream.cronus.snapshot_repository }}",
+                        "snapshot": "{{ .Values.global.data_stream.cronus.snapshot_name }}"
                     }
                 }
             ],
