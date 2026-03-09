@@ -44,8 +44,8 @@ function start_tempest_tests {
   rally deployment check
   RALLY_EXIT_CODE=$(($RALLY_EXIT_CODE + $?))
 
-  # create tempest verifier fetched from our repo
-  rally --debug verify create-verifier --type tempest --name {{ .Chart.Name }}-verifier --system-wide --source https://github.com/sapcc/tempest --version {{ default "ccloud-python3" .Values.tempest_branch }}
+  # create tempest verifier from pre-cloned local repo (cloned during docker build)
+  rally --debug verify create-verifier --type tempest --name {{ .Chart.Name }}-verifier --system-wide --source /opt/tempest-repo --version {{ default "ccloud-python3" .Values.tempest_branch }}
   RALLY_EXIT_CODE=$(($RALLY_EXIT_CODE + $?))
 
   # configure tempest verifier taking into account the auth section values provided in tempest_extra_options file
