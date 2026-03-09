@@ -16,9 +16,9 @@ function start_tempest_tests {
 
   echo -e "\n === PRE-CONFIG STEP  === \n"
 
-  export OS_USERNAME={{ default "admin" (index .Values (print .Chart.Name | replace "-" "_")).tempest.admin_name | quote }}
-  export OS_TENANT_NAME={{ default "admin" (index .Values (print .Chart.Name | replace "-" "_")).tempest.admin_project_name | quote }}
-  export OS_PROJECT_NAME={{ default "admin" (index .Values (print .Chart.Name | replace "-" "_")).tempest.admin_project_name | quote }}
+  export OS_USERNAME={{ default "admin" .Values.manila_tempest.tempest.admin_name | quote }}
+  export OS_TENANT_NAME={{ default "admin" .Values.manila_tempest.tempest.admin_project_name | quote }}
+  export OS_PROJECT_NAME={{ default "admin" .Values.manila_tempest.tempest.admin_project_name | quote }}
 
   echo -e "\n === CONFIGURING RALLY & TEMPEST === \n"
 
@@ -83,9 +83,9 @@ function cleanup_tempest_leftovers() {
 
   echo "Run cleanup"
 
-  share_network_id={{ (index .Values (print .Chart.Name | replace "-" "_")).tempest.share_network_id }}
-  alt_share_network_id={{ (index .Values (print .Chart.Name | replace "-" "_")).tempest.alt_share_network_id }}
-  admin_share_network_id={{ (index .Values (print .Chart.Name | replace "-" "_")).tempest.admin_share_network_id }}
+  share_network_id={{ .Values.manila_tempest.tempest.share_network_id }}
+  alt_share_network_id={{ .Values.manila_tempest.tempest.alt_share_network_id }}
+  admin_share_network_id={{ .Values.manila_tempest.tempest.admin_share_network_id }}
   pre_created_share_networks=("$share_network_id" "$alt_share_network_id" "$admin_share_network_id")
 
   # Helper function to run manila commands with error handling

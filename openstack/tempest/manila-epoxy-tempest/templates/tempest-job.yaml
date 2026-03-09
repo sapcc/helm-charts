@@ -1,4 +1,4 @@
-{{- if (index .Values (print .Chart.Name | replace "-" "_")).tempest.enabled}}
+{{- if .Values.manila_tempest.tempest.enabled}}
 apiVersion: v1
 kind: ServiceAccount
 metadata:
@@ -16,12 +16,12 @@ metadata:
     release: "{{ .Release.Name }}"
 spec:
   # Keep last 3 successful and 1 failed job for history
-  successfulJobsHistoryLimit: {{ default 3 (index .Values (print .Chart.Name | replace "-" "_")).tempest.successfulJobsHistoryLimit }}
-  failedJobsHistoryLimit: {{ default 1 (index .Values (print .Chart.Name | replace "-" "_")).tempest.failedJobsHistoryLimit }}
+  successfulJobsHistoryLimit: {{ default 3 .Values.manila_tempest.tempest.successfulJobsHistoryLimit }}
+  failedJobsHistoryLimit: {{ default 1 .Values.manila_tempest.tempest.failedJobsHistoryLimit }}
   # Auto-delete job after 24 hours
-  ttlSecondsAfterFinished: {{ default 86400 (index .Values (print .Chart.Name | replace "-" "_")).tempest.ttlSecondsAfterFinished }}
+  ttlSecondsAfterFinished: {{ default 86400 .Values.manila_tempest.tempest.ttlSecondsAfterFinished }}
   # Don't retry on failure - tempest tests should be manually retriggered
-  backoffLimit: {{ default 0 (index .Values (print .Chart.Name | replace "-" "_")).tempest.backoffLimit }}
+  backoffLimit: {{ default 0 .Values.manila_tempest.tempest.backoffLimit }}
   template:
     metadata:
       labels:

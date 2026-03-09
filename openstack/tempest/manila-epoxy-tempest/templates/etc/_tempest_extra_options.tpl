@@ -15,10 +15,10 @@ admin_domain_scope = True
 default_credentials_domain_name = tempest
 
 [share]
-share_network_id = {{ (index .Values (print .Chart.Name | replace "-" "_")).tempest.share_network_id }}
-alt_share_network_id = {{ (index .Values (print .Chart.Name | replace "-" "_")).tempest.alt_share_network_id }}
-admin_share_network_id = {{ (index .Values (print .Chart.Name | replace "-" "_")).tempest.admin_share_network_id }}
-run_revert_to_snapshot_tests = {{ default false (index .Values (print .Chart.Name | replace "-" "_")).tempest.run_revert_to_snapshot_tests }}
+share_network_id = {{ .Values.manila_tempest.tempest.share_network_id }}
+alt_share_network_id = {{ .Values.manila_tempest.tempest.alt_share_network_id }}
+admin_share_network_id = {{ .Values.manila_tempest.tempest.admin_share_network_id }}
+run_revert_to_snapshot_tests = {{ .Values.manila_tempest.tempest.run_revert_to_snapshot_tests | default false }}
 run_multiple_share_replicas_tests = True
 run_share_group_tests = False
 run_quota_tests = False
