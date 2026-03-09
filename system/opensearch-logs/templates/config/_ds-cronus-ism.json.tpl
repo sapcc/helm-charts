@@ -65,7 +65,7 @@
                     },
                     "snapshot": {
                         "repository": "{{ .Values.global.data_stream.cronus.snapshot_repository }}",
-                        "snapshot": "_SNAPSHOT_NAME_"
+                        "snapshot": "{{ .Values.global.data_stream.cronus.snapshot_name }}"
                     }
                 }
             ],
