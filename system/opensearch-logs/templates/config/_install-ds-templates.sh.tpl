@@ -78,9 +78,9 @@ if [ "${DATA_STREAM_ENABLED}" = true ]; then
      echo "Applying ${TMPPATH}/${DS_ISM_TEMPLATE} to ${CLUSTER_HOST}"
 
      # we have to replace snapshot name here because we're using a template reference but for ism plugin, not for helm chart
-     sed -i "s/_SNAPSHOT_NAME_/{ctx.index}/g" "${TMPPATH}/${DS_TEMPLATE_FINAL}"
-     if grep -q "_SNAPSHOT_NAME_" "${TMPPATH}/${DS_TEMPLATE_FINAL}" ; then
-       echo "\n${TMPPATH}/${DS_TEMPLATE_FINAL} replacement was not successful."
+     sed -i "s/_SNAPSHOT_NAME_/{ctx.index}/g" "${TMPPATH}/${DS_ISM_TEMPLATE}"
+     if grep -q "_SNAPSHOT_NAME_" "${TMPPATH}/${DS_ISM_TEMPLATE}" ; then
+       echo "\n${TMPPATH}/${DS_ISM_TEMPLATE} replacement was not successful."
        exit 1
      fi
 
