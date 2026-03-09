@@ -77,6 +77,13 @@ if [ "${DATA_STREAM_ENABLED}" = true ]; then
      cp "/${FILEPATH}/${DS_ISM_TEMPLATE}" "${TMPPATH}/${DS_ISM_TEMPLATE}"
      echo "Applying ${TMPPATH}/${DS_ISM_TEMPLATE} to ${CLUSTER_HOST}"
 
+     # we have to replace snapshot name here because we're using a template reference but for ism plugin, not for helm chart
+     sed -i "s/_SNAPSHOT_NAME_/{ctx.index}/g" "${TMPPATH}/${DS_TEMPLATE_FINAL}"
+     if grep -q "_SNAPSHOT_NAME_" "${TMPPATH}/${DS_TEMPLATE_FINAL}" ; then
+       echo "\n${TMPPATH}/${DS_TEMPLATE_FINAL} replacement was not successful."
+       exit 1
+     fi
+
      # initial upload or test if ism policy exists
      export POLICY_RETURN_CODE=$( curl -s -o /dev/null -s -w "%{http_code}\n" --netrc-file "${NETRC_FILE}" -XGET "${CLUSTER_HOST}/_plugins/_ism/policies/ds-${e}-ism")
      echo -e "\nReturn code is $POLICY_RETURN_CODE\n"
