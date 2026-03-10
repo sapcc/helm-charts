@@ -88,9 +88,9 @@
 - name:  KEPPEL_GUI_URI
   value: https://dashboard.{{ $region }}.cloud.sap/_/%AUTH_TENANT_ID%/keppel/#/repo/%ACCOUNT_NAME%/%REPO_NAME%
 - name:  KEPPEL_ISSUER_KEY
-  value: '/etc/keppel-keys/issuer-key.pem'
+  value: '/etc/keppel-issuer-key/current-key.pem'
 - name:  KEPPEL_PREVIOUS_ISSUER_KEY
-  value: '/etc/keppel-keys/previous-issuer-key.pem'
+  value: '/etc/keppel-keys/previous-issuer-key.pem' # TODO: switch to '/etc/keppel-issuer-key/previous-key.pem'
 - name:  KEPPEL_JANITOR_LISTEN_ADDRESS
   value: ':80'
 - name:  KEPPEL_PEERS
