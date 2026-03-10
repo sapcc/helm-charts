@@ -34,14 +34,14 @@ spec:
               emptyDir: {}
           initContainers:
             - name: generate-secret
-              image: {{ include "shared-app-images.ref" (tuple $ "alpine-openssl" "latest") }}
+              image: {{ include "shared-app-images.ref_using_alternate" (tuple $ "alpine-openssl" "latest") }}
               command: [ ash, -c, 'openssl genpkey -algorithm ed25519 -out /work/current-key.pem' ]
               volumeMounts:
                 - name: work
                   mountPath: /work
           containers:
             - name: write-secret
-              image: {{ include "shared-app-images.ref" (tuple $ "alpine-kubectl" "latest") }}
+              image: {{ include "shared-app-images.ref_using_alternate" (tuple $ "alpine-kubectl" "latest") }}
               command: [ ash, -c, {{ .Files.Get "files/write-issuer-key.sh" | quote }} ]
               env:
               - name: SECRET_NAME
@@ -79,5 +79,5 @@ spec:
       serviceAccountName: keppel-generate-issuer-key # defined in templates/rbac-generate-issuer-key.yaml
       containers:
         - name: trigger-job
-          image: {{ include "shared-app-images.ref" (tuple $ "alpine-kubectl" "latest") }}
+          image: {{ include "shared-app-images.ref_using_alternate" (tuple $ "alpine-kubectl" "latest") }}
           command: [ ash, -c, 'kubectl create job keppel-generate-issuer-key-immediately --from=cronjob/keppel-generate-issuer-key' ]
