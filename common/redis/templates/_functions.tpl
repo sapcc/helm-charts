@@ -3,7 +3,7 @@
   {{- $repo      := index . 1 -}}
   {{- $version   := index . 2 -}}
 
-  {{- $all_tags := $ctx.Files.Get "files/tags.json" | required "files/tags.json not found" | fromJson -}}
+  {{- $all_tags := include "redis.tags_json" $ctx | fromJson -}}
   {{- $repo_tags  := index $all_tags $repo | required (printf "unknown repo: %q" (printf "shared-app-images/%s" $repo)) -}}
   {{- index $repo_tags $version | required (printf "no such version in repo: %q" (printf "shared-app-images/%s:%s" $repo $version)) -}}
 {{- end -}}
@@ -21,4 +21,21 @@
     {{- $registry = $ctx.Values.global.registry | required "missing value for .Values.global.registry" -}}
   {{- end }}
   {{- printf "%s/shared-app-images/%s:%s" $registry $repo $tag -}}
+{{- end -}}
+
+{{- define "redis.tags_json" -}}
+{{/* Do not change these marker comments! They are required for the automation that updates this data. */}}
+{{/* -----BEGIN TAGS_JSON PAYLOAD----- */}}
+{
+  "alpine-kubectl": {
+    "latest": "latest-20260305150720"
+  },
+  "alpine-valkey": {
+    "9.0": "9.0-20260305142458"
+  },
+  "redis-exporter": {
+    "latest": "1.82.0-20260309103756"
+  }
+}
+{{/* -----END TAGS_JSON PAYLOAD----- */}}
 {{- end -}}
