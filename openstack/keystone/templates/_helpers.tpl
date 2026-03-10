@@ -70,7 +70,7 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
         {{- $ns := "prodel" -}}
 
         {{- if .Values.global.is_global_region -}}
-        {{- $ns = .Values.global.prodelNamespace | default "prodel-global" -}}
+        {{- $ns = .Values.prodel.prodelNamespace | default "prodel" -}}
         {{- end -}}
 
         {{- printf "http://prodel.%s.svc/check-delete_project/%%(project_id)s" $ns -}}
