@@ -813,6 +813,13 @@ mysql_metrics:
         GROUP BY task_state;
       values:
         - "gauge"
+    - help: Nova oldest soft deleted instance in days
+      name: openstack_compute_oldest_soft_deleted_instance
+      query: |
+        SELECT COALESCE(DATEDIFF(NOW(), MIN(deleted_at)), 0) AS age_of_oldest_instance_in_days
+        FROM instances;
+      values:
+        - "age_of_oldest_instance_in_days"
 
 
 db_name: nova
