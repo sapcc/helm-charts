@@ -38,17 +38,15 @@ function start_tempest_tests {
   # Install barbican-tempest-plugin for support HTTPS tests for octavia
   export SERVICE_NAME={{ .Chart.Name }}
   if [[ $SERVICE_NAME == "octavia-tempest" ]]; then
+    pip install jsonschema==3.2.0
     pip install git+https://github.com/sapcc/barbican-tempest-plugin.git@ccloud
   fi
   # check if we can reach openstack endpoints
-
+  pip install jsonschema==3.2.0
   rally deployment check
   RALLY_EXIT_CODE=$(($RALLY_EXIT_CODE + $?))
   # create tempest verifier fetched from our repo
-
-
-
-  rally --debug verify create-verifier --type tempest --name {{ .Chart.Name }}-verifier --system-wide --source https://github.com/sapcc/tempest --version {{ default "ccloud-python3" .Values.tempest_branch }}
+  rally --debug verify create-verifier --type tempest --name {{ .Chart.Name }}-verifier --source https://github.com/sapcc/tempest --version {{ default "ccloud-python3" .Values.tempest_branch }}
   RALLY_EXIT_CODE=$(($RALLY_EXIT_CODE + $?))
 
   # configure tempest verifier taking into account the auth section values provided in tempest_extra_options file
