@@ -90,7 +90,7 @@
 - name:  KEPPEL_ISSUER_KEY
   value: '/etc/keppel-issuer-key/current-key.pem'
 - name:  KEPPEL_PREVIOUS_ISSUER_KEY
-  value: '/etc/keppel-keys/previous-issuer-key.pem' # TODO: switch to '/etc/keppel-issuer-key/previous-key.pem'
+  value: '/etc/keppel-issuer-key/previous-key.pem'
 - name:  KEPPEL_JANITOR_LISTEN_ADDRESS
   value: ':80'
 - name:  KEPPEL_PEERS
