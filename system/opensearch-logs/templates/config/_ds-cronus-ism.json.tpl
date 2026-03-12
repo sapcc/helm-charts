@@ -87,7 +87,7 @@
                             "backoff": "exponential",
                             "delay": "1m"
                         },
-                        "close": {}
+                        "delete": {}
                     }
                 ],
                 "transitions": []
