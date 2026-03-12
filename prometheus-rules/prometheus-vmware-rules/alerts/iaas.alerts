@@ -3,7 +3,7 @@ groups:
 - name: iaas.alerts
   rules:
   - alert: IaasHostLicenseKey
-    expr: vrops_hostsystem_license_key{license_key!~"TM67X.*"} + on (hostsystem) group_right(license_key) vrops_hostsystem_hostgroups{hostgroups=~".*iaas.*"} > 0
+    expr: ( vrops_hostsystem_license_key{license_key!~"TM67X.*"} and on(vccluster) vrops_cluster_summary_custom_tag_openstack_nova_traits_external_customer_exclusive{vccluster!~"productionbb194|productionbb514"} == 1 ) > 0
     for: 30m
     labels:
       severity: warning
@@ -18,9 +18,9 @@ groups:
 
   - alert: IaasClusterWithoutFailoverHost
     expr: |
-      (count by (vccluster) (vrops_hostsystem_hostgroups{hostgroups=~".*iaas.*"}) > 0)
-      unless (count by (vccluster) (vrops_hostsystem_hostgroups{hostgroups=~".*iaas.*"}
-      and on(hostsystem) vrops_hostsystem_configuration_dasconfig_admissioncontrolpolicy_failoverhost{} == 1 ) > 0)
+      (vrops_cluster_summary_custom_tag_openstack_nova_traits_external_customer_exclusive{vccluster!~"productionbb194|productionbb514"} == 1
+      unless on(vccluster)
+      count by (vccluster) (vrops_hostsystem_configuration_dasconfig_admissioncontrolpolicy_failoverhost == 1) >= 2)
     for: 15m
     labels:
       severity: critical
@@ -35,14 +35,19 @@ groups:
 
   - alert: NonIaasVmOnIaasHost
     expr: |
-      count by (hostsystem) (
-        (
-          group by (project, hostsystem, virtualmachine)(vrops_virtualmachine_system_powered_on{}==1)
+      (
+        count by (hostsystem) (
+          group by (project, hostsystem, virtualmachine) (vrops_virtualmachine_system_powered_on{} == 1)
           and on(project)
           group by(project) (label_replace(limes_project_usage{domain!~"iaas-.*"}, "project", "$1", "project_id", "(.*)"))
         )
       )
-      and on(hostsystem) vrops_hostsystem_hostgroups{hostgroups=~".*iaas.*"}
+      * on(hostsystem) group_left(vccluster, vcenter, cluster, datacenter, region)
+      (
+        vrops_hostsystem_runtime_powerstate == 1
+        and on(vccluster, vcenter)
+        vrops_cluster_summary_custom_tag_openstack_nova_traits_external_customer_exclusive{vccluster!~"productionbb194|productionbb514"} == 1
+      )
     for: 30m
     labels:
       severity: warning
@@ -57,29 +62,17 @@ groups:
 
   - alert: IaasHostsAlmostOutOfMemory
     expr: |
-      count by (vccluster) (
-        (vrops_hostsystem_memory_usage_percentage > 75)
-        and on(hostsystem)
-        vrops_hostsystem_hostgroups{hostgroups=~".*iaas.*"}
-        unless on(hostsystem)
-        vrops_hostsystem_configuration_dasconfig_admissioncontrolpolicy_failoverhost{} == 1
-      )
-      == on(vccluster)
-      count by (vccluster) (
+      min by (vccluster, vcenter, datacenter, region) (
         vrops_hostsystem_memory_usage_percentage
         and on(hostsystem)
-        vrops_hostsystem_hostgroups{hostgroups=~".*iaas.*"}
+        (
+          vrops_hostsystem_runtime_powerstate == 1
+          and on(vccluster, vcenter)
+          vrops_cluster_summary_custom_tag_openstack_nova_traits_external_customer_exclusive{vccluster!~"productionbb194|productionbb514"} == 1
+        )
         unless on(hostsystem)
         vrops_hostsystem_configuration_dasconfig_admissioncontrolpolicy_failoverhost{} == 1
-      )
-      and on(vccluster)
-      count by (vccluster) (
-        vrops_hostsystem_memory_usage_percentage
-        and on(hostsystem)
-        vrops_hostsystem_hostgroups{hostgroups=~".*iaas.*"}
-        unless on(hostsystem)
-        vrops_hostsystem_configuration_dasconfig_admissioncontrolpolicy_failoverhost{} == 1
-      ) > 0
+      ) > 75
     for: 60m
     labels:
       severity: warning
@@ -91,3 +84,25 @@ groups:
     annotations:
       description: "All IaaS hosts in cluster {{ $labels.vccluster }} are above 75% memory"
       summary: "All IaaS hosts in cluster {{ $labels.vccluster }} are above 75% memory"
+
+  - alert: IaasVCenterHasMultipleGreyVMsCopy
+    expr: |
+      count by(vcenter)
+      ((vrops_virtualmachine_health == -1)
+      and on(hostsystem) (vrops_hostsystem_runtime_powerstate{state="Powered On"})
+      and on(hostsystem) (vrops_hostsystem_runtime_connectionstate{state="connected"})
+      and on(hostsystem) (vrops_hostsystem_runtime_maintenancestate{state="notInMaintenance"})
+      and on(hostsystem) (vrops_hostsystem_configuration_dasconfig_admissioncontrolpolicy_failoverhost{}) == 1
+      ) > 0
+    for: 15m
+    labels:
+      severity: warning
+      tier: vmware
+      service: compute
+      support_group: compute
+      context: "Shadow VMs {{ $labels.vcenter }}"
+      meta: "vCenter {{ $labels.vcenter }} has multiple greyed out VMs for a longer period. Check and reload these VMs."
+      playbook: docs/devops/alert/vcenter/#Inaccessible_Orphaned_Gray_instance_handling
+    annotations:
+      description: "vCenter {{ $labels.vcenter }} has multiple greyed out VMs for a longer period. This alert is handled by TARS. If TARS fails, check and reload these VMs."
+      summary: "vCenter {{ $labels.vcenter }} has multiple greyed out VMs for a longer period. This alert is handled by TARS. If TARS fails, check and reload these VMs."
