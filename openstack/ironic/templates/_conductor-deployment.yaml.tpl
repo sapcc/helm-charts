@@ -171,9 +171,9 @@ spec:
         volumeMounts:
           - mountPath: /etc/nginx/conf.d
             name: nginx-confd
-          - mountPath: /etc/nginx/conf.d/default.conf
+          - mountPath: /etc/nginx/http.d/nginx-ironic-console.conf
             name: ironic-console-nginxconf
-            subPath: nginx.conf
+            subPath: nginx-console.conf
           - mountPath: /etc/nginx/conf.d/dhparam.pem
             name: ironic-console-dhparam
             subPath: dhparam.pem
@@ -246,8 +246,8 @@ spec:
         secret:
           secretName: ironic-console-secret
           items:
-          - key: nginx.conf
-            path: nginx.conf
+          - key: nginx-console.conf
+            path: nginx-console.conf
       - name: ironic-console-dhparam
         secret:
           secretName: {{ .Release.Name }}-secrets
