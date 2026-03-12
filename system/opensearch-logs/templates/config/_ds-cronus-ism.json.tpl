@@ -71,7 +71,7 @@
             ],
                 "transitions": [
                     {
-                        "state_name": "close",
+                        "state_name": "delete",
                         "conditions": {
                         "min_doc_count": 5
                         }
@@ -79,7 +79,7 @@
                 ]
             },
             {
-                "name": "close",
+                "name": "delete",
                 "actions": [
                     {
                         "retry": {
