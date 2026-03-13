@@ -3,7 +3,7 @@
 {{- end }}
 
 {{- define "svc_fqdn" -}}
-{{ .Release.Namespace }}.svc.kubernetes.{{ include "host_fqdn" . }}
+{{ .Release.Namespace }}.svc.{{ .Values.global.clusterDNSSearchDomain }}
 {{- end }}
 
 {{- define "_resolve_secret" -}}
@@ -288,7 +288,7 @@ Custom DB URL for the global services using percona_cluster
 {{define "placement_api_endpoint_host_internal"}}nova-placement-api.{{ include "svc_fqdn" . }}{{end}}
 {{define "placement_api_endpoint_host_public"}}placement-3.{{ include "host_fqdn" . }}{{end}}
 
-{{define "internal_service"}}{{ $envAll := index . 0 }}{{ $service := index . 1 }}{{$service}}.{{$envAll.Release.Namespace}}.svc.kubernetes.{{$envAll.Values.global.region}}.{{$envAll.Values.global.tld}}{{ end }}
+{{define "internal_service"}}{{ $envAll := index . 0 }}{{ $service := index . 1 }}{{$service}}.{{$envAll.Release.Namespace}}.svc.{{$envAll.Values.global.clusterDNSSearchDomain}}{{ end }}
 
 {{- define "svc.password_for_user_and_service" }}
     {{- $envAll := index . 0 }}
