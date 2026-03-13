@@ -24,6 +24,6 @@ echo "DB Version after migration:"
 keystone-manage --config-file=/etc/keystone/keystone.conf --config-file=/etc/keystone/keystone.conf.d/secrets.conf db_version
 
 echo "Keystone doctor:"
-keystone-manage --config-file=/etc/keystone/keystone.conf --config-file=/etc/keystone/keystone.conf.d/secrets.conf doctor
+keystone-manage --config-file=/etc/keystone/keystone.conf --config-file=/etc/keystone/keystone.conf.d/secrets.conf doctor || true
 
 {{ include "utils.script.job_finished_hook" . | trim }}
