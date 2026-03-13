@@ -21,6 +21,22 @@ groups:
       description: 'CCloud Prometheus {{ $labels.name }} is down'
       summary: 'CCloud Prometheus {{ $labels.name }} is down'
 
+  - alert: CC3TestPrometheusCompletelyAbsent
+    expr: |
+      absent(count(cc3test_status{name=~"TestPrometheus_datapath.*"}))
+    for: 10m
+    labels:
+      severity: critical
+      support_group: observability
+      service: prometheus
+      context: prometheus
+      meta: 'Prometheus datapath tests are completely absent - cc3test monitoring system may be down'
+      dashboard: cc3test-datapath-status?var-service=prometheus
+      playbook: docs/support/playbook/prometheus/alerts/cc3test-complete-absence
+    annotations:
+      description: 'CC3test has not reported ANY Prometheus datapath test metrics for more than 10 minutes. This indicates a complete failure of the cc3test monitoring system itself, not individual Prometheus instances'
+      summary: 'CRITICAL: No Prometheus datapath metrics reported for 10+ minutes'
+
   - alert: CCloudPrometheusDown
     expr: |
         max_over_time(
@@ -113,4 +129,3 @@ groups:
     annotations:
       description: Certificate on {{ $labels.cert_name }} expires in less than 30 days
       summary: Certificate expires
-
