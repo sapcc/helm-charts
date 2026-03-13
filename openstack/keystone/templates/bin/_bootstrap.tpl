@@ -21,7 +21,7 @@ keystone-manage --config-file=/etc/keystone/keystone.conf --config-file=/etc/key
 {{- else if .Values.global.is_global_region }}
     --bootstrap-internal-url http://{{ .Values.global.keystone_internal_ip }}:5000/v3 \
 {{- else }}
-    --bootstrap-internal-url http://keystone.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}:5000/v3 \
+    --bootstrap-internal-url http://keystone.{{.Release.Namespace}}.svc.{{ required ".Values.global.clusterDNSSearchDomain" .Values.global.clusterDNSSearchDomain }}:5000/v3 \
 {{- end }}
     --bootstrap-region-id {{ .Values.global.region }}
 
