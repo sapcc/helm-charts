@@ -100,6 +100,15 @@ limes:
         - { key: 'instances_hana_.+_v2', value: {name: 'per_flavor_hana_sapphire_rapids', display_name: 'HANA Flavors (Sapphire Rapids)'} }
         - { key: 'instances_hana_.+', value: {name: 'per_flavor_hana_cascade_lake', display_name: 'HANA Flavors (Cascade Lake)'} }
 
+
+    designate:
+      prometheus_config:
+        api:
+          url: http://prometheus-openstack.prometheus-openstack.svc:9090
+        queries:
+          zones: count(openstack_designate_zones{project_id="{{.ProjectUUID}}",status!="DELETED"})
+          recordsets_per_zone: max(openstack_designate_recordsets{project_id="{{.ProjectUUID}}"})
+
   # Map with entries like:
   #
   #   cluster_id:
