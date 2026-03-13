@@ -24,14 +24,14 @@ Return the FQDN name of the database instance.
         {{- $db_namespace = .Values.db_namespace -}}
     {{- end -}}
     {{- if .Values.db_instance_name_literal -}}
-        {{ .Values.db_instance_name_literal }}.{{ $db_namespace }}.svc.kubernetes.{{ .Values.global.region }}.{{ .Values.global.tld }}
+        {{ .Values.db_instance_name_literal }}.{{ $db_namespace }}.svc.{{ .Values.global.clusterDNSSearchDomain }}
     {{- else -}}
         {{- if eq .Values.db_type "pxc" -}}
-        {{ .Release.Name }}-percona-pxc.{{ $db_namespace }}.svc.kubernetes.{{ .Values.global.db_region }}.{{ .Values.global.tld }}
+        {{ .Release.Name }}-percona-pxc.{{ $db_namespace }}.svc.{{ .Values.global.clusterDNSSearchDomain }}
         {{- else if eq .Values.db_type "pxc-db" -}}
-        {{ .Release.Name }}-db-haproxy.{{ $db_namespace }}.svc.kubernetes.{{ .Values.global.region }}.{{ .Values.global.tld }}
+        {{ .Release.Name }}-db-haproxy.{{ $db_namespace }}.svc.{{ .Values.global.clusterDNSSearchDomain }}
         {{- else -}}
-        {{ .Release.Name }}-mariadb.{{ $db_namespace }}.svc.kubernetes.{{ .Values.global.region }}.{{ .Values.global.tld }}
+        {{ .Release.Name }}-mariadb.{{ $db_namespace }}.svc.{{ .Values.global.clusterDNSSearchDomain }}
         {{- end -}}
     {{- end -}}
 {{- end }}
