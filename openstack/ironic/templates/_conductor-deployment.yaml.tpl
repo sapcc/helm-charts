@@ -169,8 +169,6 @@ spec:
             protocol: TCP
             containerPort: 443
         volumeMounts:
-          - mountPath: /etc/nginx/conf.d
-            name: nginx-confd
           - mountPath: /etc/nginx/http.d/nginx-ironic-console.conf
             name: ironic-console-nginxconf
             subPath: nginx-console.conf
@@ -240,8 +238,6 @@ spec:
         {{- else }}
           name: ironic-conductor-etc
         {{- end }}
-      - name: nginx-confd
-        emptyDir: {}
       - name: ironic-console-nginxconf
         secret:
           secretName: ironic-console-secret
