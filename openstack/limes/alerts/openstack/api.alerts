@@ -291,3 +291,18 @@ groups:
         The project {{ $labels.project_id }} contains Cinder volumes and/or snapshots whose volume types are not known to Limes (which usually means that they are private).
         This might be bad because payload without a known volume type is not billed.
         Please check the log of the liquid-cinder pod in the limes namespace to find out which volumes/snapshots are problematic and which volume types they are using.
+
+  - alert: OpenstackLimesFailedMailDeliveries
+    expr: sum(increase(limes_mail_deliveries{task_outcome="failure"}[5m])) > 0
+    for: 1h
+    labels:
+      context: failedmaildeliveries
+      service: limes
+      severity: warning
+      support_group: containers
+      tier: os
+    annotations:
+      description: Limes cannot send mails to recipients
+        for more than an hour.
+        The `kubectl logs` for campfire and limes-collect-ccloud contain additional info.
+      summary: Limes cannot send mails to recipients

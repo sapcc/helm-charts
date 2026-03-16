@@ -19,7 +19,7 @@ spec:
   provider:
     type: openstack
   kubernetes:
-    version: 1.32.6
+    version: {{ $.Values.kubernetes.version }}
     kubeAPIServer:
       featureGates:
         AnonymousAuthConfigurableEndpoints: true
@@ -41,7 +41,7 @@ spec:
       - http:
           url: {{ $.Values.auditing.url }}
           tls:
-            secretReferenceName: auditing-mtls
+            secretReferenceName: {{ default "auditing-mtls" $.Values.auditing.mtlsSecretName }}
   resources:
   - name: auditing-mtls
     resourceRef:
@@ -71,7 +71,8 @@ spec:
   provider:
     type: openstack
   kubernetes:
-    version: 1.32.6
+    version: {{ $region.kubernetes.version }}
+
     kubeAPIServer:
       featureGates:
         AnonymousAuthConfigurableEndpoints: true
@@ -89,7 +90,7 @@ spec:
         - bmcsecrets
         provider:
           type: aescbc
-  seedName: rt-{{ $regionName }}
+  seedName: {{ default (printf "rt-%s" $regionName) $region.seedName }}
   {{- if $region.auditing.enabled }}
   extensions:
   - type: auditing
@@ -100,7 +101,7 @@ spec:
       - http:
           url: {{ $region.auditing.url }}
           tls:
-            secretReferenceName: auditing-mtls
+            secretReferenceName: {{ default "auditing-mtls" $region.auditing.mtlsSecretName }}
   resources:
   - name: auditing-mtls
     resourceRef:

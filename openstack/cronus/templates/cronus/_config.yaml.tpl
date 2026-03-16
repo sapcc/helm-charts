@@ -13,6 +13,10 @@ cronus:
       - {{ $v | quote }}
     {{- end }}
 {{- end }}
+{{- if .Values.cronus.configuration }}
+  configuration:
+{{ toYaml .Values.cronus.configuration | indent 4 }}
+{{- end }}
 {{- if .Values.cronus.allowedNdrs }}
   allowedNdrs:
   {{- range $v := .Values.cronus.allowedNdrs }}

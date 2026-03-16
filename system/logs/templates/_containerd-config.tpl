@@ -52,5 +52,5 @@ filelog/containerd:
 logs/containerd:
   receivers: [filelog/containerd]
   processors: [k8sattributes,attributes/cluster,transform/ingress,transform/protocol,transform/perses]
-  exporters: [forward]
+  exporters: [routing]
 {{- end }}

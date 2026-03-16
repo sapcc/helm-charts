@@ -55,6 +55,9 @@ limes:
       with_snapshot_subresources: true
       ignore_public_volume_types: "tempest.+"
       manage_private_volume_types: "kvm-pilot"
+      category_display_names:
+        vmware: "Premium SSD"
+        standard_hdd: "Standard HDD"
 
     ironic:
       with_subcapacities: true
@@ -72,6 +75,10 @@ limes:
       prometheus_api_for_netapp_metrics:
         url: http://prometheus-storage.infra-monitoring.svc:9090
       share_types: [] # see regional values.yaml
+      category_display_names:
+        default: "Premium SSD"
+        hypervisor_storage: "Hypervisor Storage"
+        premium: "KVM Premium SSD"
 
     nova:
       with_subcapacities: true
@@ -89,6 +96,18 @@ limes:
         score_ignores_disk: true
         score_ignores_ram: true
       ignored_traits: [ CUSTOM_HW_SAPPHIRE_RAPIDS ]
+      category_for_split_flavor:
+        - { key: 'instances_hana_.+_v2', value: {name: 'per_flavor_hana_sapphire_rapids', display_name: 'HANA Flavors (Sapphire Rapids)'} }
+        - { key: 'instances_hana_.+', value: {name: 'per_flavor_hana_cascade_lake', display_name: 'HANA Flavors (Cascade Lake)'} }
+
+
+    designate:
+      prometheus_config:
+        api:
+          url: http://prometheus-openstack.prometheus-openstack.svc:9090
+        queries:
+          zones: count(openstack_designate_zones{project_id="{{.ProjectUUID}}",status!="DELETED"})
+          recordsets_per_zone: max(openstack_designate_recordsets{project_id="{{.ProjectUUID}}"})
 
   # Map with entries like:
   #

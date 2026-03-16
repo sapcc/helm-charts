@@ -7,7 +7,8 @@ metadata:
   name: {{ .Release.Name }}-share-netapp-{{$share.name}}-ensure
   labels:
     system: openstack
-    component: manila
+    app.kubernetes.io/name: manila
+    app.kubernetes.io/component: share-ensure
   annotations:
     secret.reloader.stakater.com/reload: "{{ .Release.Name }}-secrets"
     deployment.reloader.stakater.com/pause-period: "60s"
@@ -32,6 +33,8 @@ spec:
         name: {{ .Release.Name }}-share-netapp-{{$share.name}}-ensure
         alert-tier: os
         alert-service: manila
+        app.kubernetes.io/name: manila
+        app.kubernetes.io/component: share-ensure
       annotations:
         configmap-etc-hash: {{ include (print .Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
         configmap-netapp-hash: {{ list . $share | include "share_netapp_configmap" | sha256sum }}

@@ -21,14 +21,23 @@ spec:
     {{- range $level := $alertLevels }}
       - alert: IaasVmOnNonIaasHost
         expr: |
-          count by (hostsystem) (
-            (
+          (
+            count by (hostsystem, virtualmachine,project) (
               group by (project, hostsystem, virtualmachine)(vrops_virtualmachine_system_powered_on{}==1)
               and on(project)
-              group by(project) (label_replace(limes_project_usage{domain=~"iaas-.*"}, "project", "$1", "project_id", "(.*)"))
+              group by(project) (
+                label_replace(
+                  limes_project_usage{domain=~"iaas-45b91f|iaas-d3495f|iaas-90876f"},
+                  "project", "$1", "project_id", "(.*)"
+                )
+              )
             )
           )
-          and on(hostsystem) vrops_hostsystem_hostgroups{hostgroups!~".*iaas.*"}
+          unless on(hostsystem) (
+            vrops_hostsystem_runtime_powerstate == 1
+            and on(vccluster, vcenter)
+            vrops_cluster_summary_custom_tag_openstack_nova_traits_external_customer_exclusive{vccluster!="productionbb514"} == 1
+          )
         for: {{ $level.for }}
         labels:
           severity: {{$level.severity}}
@@ -48,7 +57,13 @@ spec:
 
     {{- range $level := $alertLevelsIaasHostMemoryUsage }}
       - alert: IaasHostMemoryUsage
-        expr: vrops_hostsystem_memory_usage_percentage > {{ $level.percentage }} and on (hostsystem) vrops_hostsystem_hostgroups{hostgroups=~".*iaas.*"}
+        expr: |
+          vrops_hostsystem_memory_usage_percentage > {{ $level.percentage }} and on(hostsystem) 
+          (
+            vrops_hostsystem_runtime_powerstate == 1
+            and on(vccluster, vcenter)
+            vrops_cluster_summary_custom_tag_openstack_nova_traits_external_customer_exclusive{vccluster!~"productionbb194|productionbb514"} == 1
+          )        
         for: {{ $level.for }}
         labels:
           severity: warning

@@ -9,8 +9,9 @@ metadata:
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
     system: openstack
-    component: manila
     type: api
+    app.kubernetes.io/name: manila
+    app.kubernetes.io/component: api
   annotations:
     secret.reloader.stakater.com/reload: "{{ .Release.Name }}-secrets"
     deployment.reloader.stakater.com/pause-period: "60s"
@@ -36,6 +37,8 @@ spec:
         name: {{ .Release.Name }}-api
         alert-tier: os
         alert-service: manila
+        app.kubernetes.io/name: manila
+        app.kubernetes.io/component: api
         {{- tuple . "manila" "api" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | nindent 8 }}
         {{- include "utils.topology.pod_label" . | indent 8 }}
       annotations:

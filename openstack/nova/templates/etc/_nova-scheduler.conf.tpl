@@ -45,3 +45,9 @@ external_scheduler_api_url = {{ .Values.scheduler.external_scheduler_api_url }}
 {{- if .Values.scheduler.external_scheduler_timeout }}
 external_scheduler_timeout = {{ .Values.scheduler.external_scheduler_timeout }}
 {{- end}}
+{{- if ne .Values.scheduler.external_scheduler_retries nil }}
+external_scheduler_retries = {{ .Values.scheduler.external_scheduler_retries }}
+{{- end }}
+{{- if ne .Values.scheduler.external_scheduler_retry_sleep_seconds nil }}
+external_scheduler_retry_sleep_seconds = {{ .Values.scheduler.external_scheduler_retry_sleep_seconds }}
+{{- end }}

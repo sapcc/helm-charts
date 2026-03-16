@@ -17,7 +17,7 @@ spec:
   enforcementAction: {{ if (eq .Values.cluster_type "baremetal" "cloudshell" "concourse" "gh-actions" "internet" "scaleout") }}deny{{ else }}dryrun{{ end }}
   match: {{ include "match_active_helm_releases" . | indent 4 }}
   parameters:
-    helmManifestParserURL: {{ quote .Values.helm_manifest_parser_url }}
+    helmManifestParserURL: {{ include "helm_manifest_parser_url" . | quote }}
     knownBrokenReleases:
       # This is a list of Helm releases (in the format "namespace/name") that
       # are TEMPORARILY exempted from the owner-info requirement because
@@ -34,6 +34,25 @@ spec:
       - owner-label-injector-staging/owner-label-injector-staging   # staging deployment of owner-label-injector
       - owner-label-injector-staging/test-chart-without-owner-info  # dummy chart for testing for owner-label-injector
       - owner-label-injector-staging/test-chart-with-owner-info     # dummy chart for testing for owner-label-injector
+      {{- end }}
+      # All of the following are Greenhouse Plugin Deployments.
+      # Until we have the full integration of Greenhouse Ownership, owner-label-injector and gatekeeper as GH Plugins we need these.
+      # Reference issue tracking the above: https://github.wdf.sap.corp/PlusOne/greenhouse/issues/899
+      {{- if eq .Values.cluster_name "eu-de-3" }}
+      - cert-manager/cert-manager
+      - digicert/digicert-issuer
+      - disco/disco
+      - go-pmtud/go-pmtud
+      - ingress-nginx/ingress-nginx
+      - kube-monitoring/kube-monitoring
+      - kube-monitoring/perses
+      - kube-monitoring/thanos
+      - ldap-named-user/ldap-named-user
+      - logs/logs
+      - opensearch-logs/opensearch
+      - priority-class/priority-class
+      - secrets-injector/secrets-injector
+      - controlplane-operations/controlplane-operations
       {{- end }}
 
 {{- end -}}

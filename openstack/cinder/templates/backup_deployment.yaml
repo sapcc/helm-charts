@@ -62,7 +62,7 @@ template: |
         {{- include "utils.proxysql.pod_settings" . | nindent 8 }}
         {{- tuple . "{= availability_zone =}" | include "utils.kubernetes_pod_az_affinity" | nindent 8 }}
         initContainers:
-        {{- tuple . (dict "service" (include "cinder.service_dependencies" . ) "jobs" (include "cinder.migration_job_name" .)) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 8 }}
+        {{- tuple . (dict "service" (include "cinder.service_dependencies" . ) "jobs" (tuple . "db-migrate" | include "job_name")) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 8 }}
         {{- if .Values.proxysql.native_sidecar }}
         {{- include "utils.proxysql.container" . | indent 8 }}
         {{- end }}

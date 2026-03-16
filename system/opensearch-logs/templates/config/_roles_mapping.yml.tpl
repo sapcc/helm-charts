@@ -113,11 +113,3 @@ storage:
   users:
   - "storage"
   - "storage2"
-
-{{- if .Values.qalogs.enabled }}
-otel:
-  reserved: false
-  users:
-  - "otel"
-  - "otel2"
-{{- end }}

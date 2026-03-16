@@ -196,6 +196,44 @@ spec:
             matchType: "="
             value: wsus
 
+      # greenhouse service alerts should not yet page and follow the common pattern of alerting. For now the only goal is to alert in slack and revisit this once paging becomes available. Note: continue is set to `false` to avoid further paging.
+      - receiver: slack_greenhouse_critical
+        continue: false
+        matchers:
+          - name: severity
+            matchType: "="
+            value: critical
+          - name: cluster
+            matchType: "=~"
+            value: "greenhouse-p-eu-de-1"
+
+      - receiver: slack_greenhouse_warning
+        continue: false
+        matchers:
+          - name: severity
+            matchType: "="
+            value: warning
+          - name: cluster
+            matchType: "=~"
+            value: greenhouse-p-eu-de-1
+
+      - receiver: slack_greenhouse_playground
+        continue: false
+        matchers:
+          - name: service
+            matchType: "="
+            value: greenhouse
+          - name: cluster
+            matchType: "=~"
+            value: greenhouse-playground
+
+      - receiver: slack_greenhouse_qa
+        continue: false
+        matchers:
+          - name: cluster
+            matchType: "=~"
+            value: greenhouse-qa
+
       - receiver: support_group_alerts_critical_compute
         continue: true
         matchers:
@@ -681,6 +719,38 @@ spec:
     - name: slack_wsus
       slackConfigs:
         - channel: '#cc-wsus'
+          apiURL:
+            name: alertmanager-{{ include "alertmanagerRelease.name" . }}-slack-secrets
+            key: slack_webhookURL
+          {{- include "slack.template" . | nindent 10 }}
+
+    - name: slack_greenhouse_critical
+      slackConfigs:
+        - channel: '#alert-greenhouse-critical'
+          apiURL:
+            name: alertmanager-{{ include "alertmanagerRelease.name" . }}-slack-secrets
+            key: slack_webhookURL
+          {{- include "slack.template" . | nindent 10 }}
+
+    - name: slack_greenhouse_warning
+      slackConfigs:
+        - channel: '#alert-greenhouse-warning'
+          apiURL:
+            name: alertmanager-{{ include "alertmanagerRelease.name" . }}-slack-secrets
+            key: slack_webhookURL
+          {{- include "slack.template" . | nindent 10 }}
+
+    - name: slack_greenhouse_playground
+      slackConfigs:
+        - channel: '#alert-greenhouse-playground'
+          apiURL:
+            name: alertmanager-{{ include "alertmanagerRelease.name" . }}-slack-secrets
+            key: slack_webhookURL
+          {{- include "slack.template" . | nindent 10 }}
+
+    - name: slack_greenhouse_qa
+      slackConfigs:
+        - channel: '#alert-greenhouse-qa'
           apiURL:
             name: alertmanager-{{ include "alertmanagerRelease.name" . }}-slack-secrets
             key: slack_webhookURL
