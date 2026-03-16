@@ -38,15 +38,75 @@ function start_tempest_tests {
   # Install barbican-tempest-plugin for support HTTPS tests for octavia
   export SERVICE_NAME={{ .Chart.Name }}
   if [[ $SERVICE_NAME == "octavia-tempest" ]]; then
-    pip install git+https://github.com/sapcc/barbican-tempest-plugin.git@ccloud
+    INSTALL_RC=1
+
+    for i in {1..5}; do
+      echo "Installing barbican-tempest-plugin (attempt $i)..."
+
+      pip install git+https://github.com/sapcc/barbican-tempest-plugin.git@ccloud && \
+      pip install jsonschema==3.2.0
+
+      INSTALL_RC=$?
+
+      if [ $INSTALL_RC -eq 0 ]; then
+        echo "Plugin installed successfully"
+        break
+      fi
+
+      echo "Install failed. Retrying in 15s..."
+      sleep 15
+    done
+
+    RALLY_EXIT_CODE=$(($RALLY_EXIT_CODE + INSTALL_RC))
+
+    if [ $INSTALL_RC -ne 0 ]; then
+      echo "ERROR: Failed to install barbican-tempest-plugin after retries"
+      exit $INSTALL_RC
+    fi
   fi
   # check if we can reach openstack endpoints
-
   rally deployment check
-  RALLY_EXIT_CODE=$(($RALLY_EXIT_CODE + $?))
-  # create tempest verifier fetched from our repo
-  rally --debug verify create-verifier --type tempest --name {{ .Chart.Name }}-verifier --system-wide --source https://github.com/sapcc/tempest --version {{ default "ccloud-python3" .Values.tempest_branch }}
-  RALLY_EXIT_CODE=$(($RALLY_EXIT_CODE + $?))
+  rc=$?
+  RALLY_EXIT_CODE=$(($RALLY_EXIT_CODE + rc))
+
+  if [ $rc -ne 0 ]; then
+    echo "ERROR: rally deployment check failed"
+    exit $rc
+  fi
+  # create tempest verifier with retry
+  VERIFY_RC=1
+
+  for i in {1..5}; do
+    echo "Creating tempest verifier (attempt $i)..."
+
+    rally verify delete {{ .Chart.Name }}-verifier >/dev/null 2>&1 || true
+
+    OUTPUT=$(rally --debug verify create-verifier \
+      --type tempest \
+      --name {{ .Chart.Name }}-verifier \
+      --system-wide \
+      --source https://github.com/sapcc/tempest \
+      --version {{ default "ccloud-python3" .Values.tempest_branch }} 2>&1)
+
+    VERIFY_RC=$?
+
+    echo "$OUTPUT"
+
+    if [ $VERIFY_RC -eq 0 ]; then
+      echo "Tempest verifier created successfully"
+      break
+    fi
+
+    echo "Failed to create verifier (probably git clone failed). Retrying in 15s..."
+    sleep 15
+  done
+
+  RALLY_EXIT_CODE=$(($RALLY_EXIT_CODE + VERIFY_RC))
+
+  if [ $VERIFY_RC -ne 0 ]; then
+    echo "ERROR: Failed to create tempest verifier after retries"
+    exit $VERIFY_RC
+  fi
 
   # configure tempest verifier taking into account the auth section values provided in tempest_extra_options file
   # use config file from PRE_CONFIG STEP from /tmp directory
