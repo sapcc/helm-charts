@@ -1,6 +1,22 @@
 groups:
 - name: virtualmachine.alerts
   rules:
+  - alert: NeoLBVirtualMachineMissingTag
+    expr: >
+      group by (vcenter,virtualmachine,vsphere_tags)(vrops_virtualmachine_vsphere_tags{virtualmachine=~".*neo.*-lb-.*" ,vsphere_tags!~".*NEO_LB.*"})
+    labels:
+      severity: info
+      tier: vmware
+      service: compute
+      support_group: compute
+      context: "{{ $labels.virtualmachine }}"
+      meta: "Virtual machine `{{ $labels.virtualmachine }}` is a NeoLB but is missing it's vCenter tag, this will cause downtime if migrated automatically. ({{ $labels.vcenter }})"
+      playbook: docs/devops/alert/vcenter/#NeoLBMissingTag
+      no_alert_on_absence: "true"
+    annotations:
+      description: "Virtual machine `{{ $labels.virtualmachine }}` is a NeoLB but is missing it's vCenter tag, this will cause downtime if migrated automatically. ({{ $labels.vcenter }})"
+      summary: "Virtual machine `{{ $labels.virtualmachine }}` is a NeoLB but is missing it's vCenter tag, this will cause downtime if migrated automatically. ({{ $labels.vcenter }})"
+
   - alert: VMHasMemoryContention
     expr: >
       vrops_virtualmachine_alert_info{alert_name="Virtual machine has memory contention due to memory compression, ballooning, or swapping", vccluster=~".*management.*"}

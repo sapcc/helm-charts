@@ -4,7 +4,7 @@ apiVersion: apps/v1
 metadata:
   name: keppel-api
   annotations:
-    secret.reloader.stakater.com/reload: keppel-keys,keppel-secret
+    secret.reloader.stakater.com/reload: keppel-issuer-key,keppel-keys,keppel-secret
 
 spec:
   revisionHistoryLimit: 5
@@ -49,6 +49,9 @@ spec:
         - name: keys
           secret:
             secretName: keppel-keys
+        - name: issuer-key
+          secret:
+            secretName: keppel-issuer-key
       containers:
         - name: api
           image: {{include "keppel_image" .}}
@@ -64,6 +67,8 @@ spec:
               name: config
             - mountPath: /etc/keppel-keys
               name: keys
+            - mountPath: /etc/keppel-issuer-key
+              name: issuer-key
           livenessProbe:
             httpGet:
               path: /healthcheck
