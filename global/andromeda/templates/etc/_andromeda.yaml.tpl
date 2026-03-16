@@ -15,11 +15,7 @@ api_settings:
   disable_cors: false
 
 service_auth:
-{{- if eq .Values.global.region "global" }}
-  auth_url: {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "andromeda_keystone_global_api_endpoint_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
-{{- else }}
   auth_url: {{ .Values.global.keystone_api_endpoint_protocol_public | default "https"}}://{{include "keystone_api_endpoint_host_public" .}}/v3
-{{- end }}
   username: {{ .Release.Name }}{{ .Values.global.user_suffix }}
   project_name: service
   project_domain_id: default
