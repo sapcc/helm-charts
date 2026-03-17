@@ -2,6 +2,11 @@
 
 This file is used to list changes made in each version of the common chart rabbitmq.
 
+## 0.22.1 - 2026/03/17
+
+- RabbitMQ [4.2.5 Release notes](https://github.com/rabbitmq/rabbitmq-server/releases/tag/v4.2.5)
+- Chart version bumped
+
 ## 0.22.0 - 2026/03/05
 
 - Enable SSL by default
