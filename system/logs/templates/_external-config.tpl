@@ -58,8 +58,12 @@ failover/opensearch_external_{{ toString . }}:
     - [logs/failover_a_external_{{ toString . }}]
     - [logs/failover_b_external_{{ toString . }}]
   retry_interval: 1h
-  retry_gap: 15m
-  max_retries: 0
+  sending_queue:
+    block_on_overflow: true
+    enabled: true
+    num_consumers: 2
+    queue_size: 10000
+    sizer: requests
 {{ end }}
 {{- end }}
 
