@@ -10,6 +10,14 @@ password = {{ required ".Values.global.barbican_service_password is missing" .Va
 {{ include "ini_sections.audit_middleware_notifications" . }}
 
 {{- if .Values.hsm.multistore.enabled }}
+[simple_crypto_plugin]
+{{- range .Values.simple_crypto.kek }}
+kek = {{ . | include "resolve_secret" }}
+{{- end }}
+{{- if .Values.simple_crypto.plugin_name }}
+plugin_name = {{ .Values.simple_crypto.plugin_name }}
+{{- end }}
+
 [p11_crypto_plugin]
 library_path = {{ .Values.lunaclient.conn.library_path }}
 login = {{ .Values.lunaclient.conn.login | include "resolve_secret" }}
