@@ -41,6 +41,16 @@ function start () {
     rm -f "$APACHE_PID_FILE"
   fi
 
+  {{- if .Values.federation.saml.enabled }}
+  # Ensure Shibboleth directories exist
+  mkdir -p /etc/shibboleth/metadata /etc/shibboleth/sp-keys /var/run/shibboleth /var/cache/shibboleth
+  # If shibd is available and we are running out-of-process, start it
+  if command -v shibd &> /dev/null; then
+    echo "Starting shibd daemon for SAML federation..."
+    shibd -t 2>/dev/null && shibd -f || echo "WARN: shibd not started, running mod_shib in-process mode"
+  fi
+  {{- end }}
+
   # Start Apache2
   exec apache2 -DFOREGROUND
 }
