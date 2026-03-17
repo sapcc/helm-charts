@@ -74,7 +74,7 @@ spec:
         - |
           set -euxo pipefail
           DIR=/var/lib/nova/instances
-          grep $DIR /proc/self/mounts || mount -t nfs -o {{ dig "config_file" "libvirt" "nfs_mount_options" "defaults" $hypervisor }} {{ .Values.defaults.hypervisor.kvm.instance_nfs_share }} "$DIR"
+          grep "{{ .Values.defaults.hypervisor.kvm.instance_nfs_share }} $DIR" /proc/self/mounts || mount -t nfs -o {{ dig "config_file" "libvirt" "nfs_mount_options" "defaults" $hypervisor }} {{ .Values.defaults.hypervisor.kvm.instance_nfs_share }} "$DIR"
           chgrp 64055 "$DIR"
           chown 42436 "$DIR"
         volumeMounts:
