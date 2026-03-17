@@ -5,32 +5,39 @@ metadata:
 spec:
   replicas: {{ default 3 .Values.controlplane.replicas }}
   version: {{ .Values.controlplane.version }}
-  rolloutStrategy:
-    rollingUpdate:
-      maxSurge: 0
-    type: RollingUpdate
+  rollout:
+    strategy:
+      rollingUpdate:
+        maxSurge: 0
+      type: RollingUpdate
   machineTemplate:
     {{- if .Values.maintenanceController.enabled }}
     metadata:
       labels:
         runtime-extension-maintenance-controller.cloud.sap/enabled: "true"
     {{- end }}
-    infrastructureRef:
-      kind: IroncoreMetalMachineTemplate
-      apiVersion: infrastructure.cluster.x-k8s.io/v1alpha1
-      name: controlplane-rt-{{ .Values.global.region }}
-    # to avoid "Node deletion timeout expired, continuing without Node deletion"
-    # https://github.com/kubernetes-sigs/cluster-api/pull/5608
-    nodeDeletionTimeout: "0"
-    nodeDrainTimeout: "0"
+    spec:
+      infrastructureRef:
+        kind: IroncoreMetalMachineTemplate
+        apiGroup: infrastructure.cluster.x-k8s.io
+        name: controlplane-rt-{{ .Values.global.region }}
+      deletion:
+        # to avoid "Node deletion timeout expired, continuing without Node deletion"
+        # https://github.com/kubernetes-sigs/cluster-api/pull/5608
+        nodeDeletionTimeoutSeconds: 0
+        nodeDrainTimeoutSeconds: 0
   kubeadmConfigSpec:
     initConfiguration:
+      timeouts:
+        controlPlaneComponentHealthCheckSeconds: 1200
       nodeRegistration:
         name: $${METAL_HOSTNAME}
         kubeletExtraArgs:
-          cloud-provider: external
+          - name: cloud-provider
+            value: external
           {{- if .Values.maintenanceController.profile }}
-          node-labels: cloud.sap/maintenance-profile={{ .Values.maintenanceController.profile }}
+          - name: node-labels
+            value: cloud.sap/maintenance-profile={{ .Values.maintenanceController.profile }}
           {{- end }}
         taints:
           - effect: "PreferNoSchedule"
@@ -39,15 +46,19 @@ spec:
       localAPIEndpoint:
         bindPort: {{ .Values.controlplane.port }}
     joinConfiguration:
+      timeouts:
+        controlPlaneComponentHealthCheckSeconds: 1200
       controlPlane:
         localAPIEndpoint:
           bindPort: {{ .Values.controlplane.port }}
       nodeRegistration:
         name: $${METAL_HOSTNAME}
         kubeletExtraArgs:
-          cloud-provider: external
+          - name: cloud-provider
+            value: external
           {{- if .Values.maintenanceController.profile }}
-          node-labels: cloud.sap/maintenance-profile={{ .Values.maintenanceController.profile }}
+          - name: node-labels
+            value: cloud.sap/maintenance-profile={{ .Values.maintenanceController.profile }}
           {{- end }}
         taints:
           - effect: "PreferNoSchedule"
@@ -56,11 +67,15 @@ spec:
     clusterConfiguration:
       apiServer:
         extraArgs:
-          cloud-provider: external
-          secure-port: {{ .Values.controlplane.port | quote }}
-          authentication-config: "/etc/kubernetes/authentication.yaml"
+          - name: cloud-provider
+            value: external
+          - name: secure-port
+            value: {{ .Values.controlplane.port | quote }}
+          - name: authentication-config
+            value: "/etc/kubernetes/authentication.yaml"
           {{- if .Values.etcd.useEncryption }}
-          encryption-provider-config: "/etc/kubernetes/enc/enc.yaml"
+          - name: encryption-provider-config
+            value: "/etc/kubernetes/enc/enc.yaml"
           {{- end }}
         extraVolumes:
           - name: "authentication-config"
@@ -75,11 +90,12 @@ spec:
             readOnly: true
             pathType: File
         {{- end }}
-        timeoutForControlPlane: 20m
       controllerManager:
         extraArgs:
-          cloud-provider: external
-          allocate-node-cidrs: "true"
+          - name: cloud-provider
+            value: external
+          - name: allocate-node-cidrs
+            value: "true"
       dns:
         imageRepository: {{ .Values.images.dns.repository }}
         imageTag: {{ .Values.images.dns.tag }}
