@@ -1,0 +1,21 @@
+{{- if .Values.federation.saml.enabled }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ .Release.Name }}-federation-saml
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    component: keystone
+    type: config
+type: Opaque
+data:
+  federation-saml.conf: |
+    {{ include "keystone.federation-saml.conf" . | b64enc | indent 4 }}
+  shibboleth2.xml: |
+    {{ include "keystone.shibboleth2.xml" . | b64enc | indent 4 }}
+  attribute-map.xml: |
+    {{ include "keystone.attribute-map.xml" . | b64enc | indent 4 }}
+{{- end }}
