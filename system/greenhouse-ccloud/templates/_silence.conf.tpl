@@ -237,6 +237,16 @@
     - region
     - cluster
 - status: "active"
+  title: "CEPH - Ceph Node Root Filesystem Full"
+  description: "CEPH - root volume is full alert silence"
+  fixed_labels:
+    alertname: "CephNodeRootFilesystemFull"
+    support_group: "storage"
+    service: "ceph"
+  editable_labels:
+    - region
+    - cluster
+- status: "active"
   title: "NetApp Storage - Maintenance Mode "
   description: "Set NetApp storage cluster in Maintenance Mode"
   fixed_labels:
