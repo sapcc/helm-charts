@@ -12,7 +12,7 @@ metadata:
     component: keystone
     type: api
   annotations:
-    secret.reloader.stakater.com/reload: "{{ .Release.Name }}-secrets,{{ .Release.Name }}-federation"
+    secret.reloader.stakater.com/reload: "{{ .Release.Name }}-secrets,{{ .Release.Name }}-federation{{- if .Values.federation.saml.enabled }},{{ .Release.Name }}-federation-saml,keystone-saml-sp{{- end }}"
     deployment.reloader.stakater.com/pause-period: "60s"
 spec:
   replicas: {{ .Values.api.replicas }}
@@ -47,6 +47,9 @@ spec:
         secrets-hash: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
         {{- if .Values.federation.oidc.enabled }}
         federation-hash: {{ include (print $.Template.BasePath "/federation.yaml") . | sha256sum }}
+        {{- end }}
+        {{- if .Values.federation.saml.enabled }}
+        federation-saml-hash: {{ include (print $.Template.BasePath "/federation-saml.yaml") . | sha256sum }}
         {{- end }}
         {{- if .Values.proxysql.mode }}
         prometheus.io/scrape: "true"
@@ -187,6 +190,28 @@ spec:
               subPath: federation-oidc.conf
               readOnly: true
             {{- end }}
+            {{- if .Values.federation.saml.enabled }}
+            - name: keystone-federation-saml
+              mountPath: /etc/apache2/conf-enabled/federation-saml.conf
+              subPath: federation-saml.conf
+              readOnly: true
+            - name: keystone-federation-saml
+              mountPath: /etc/shibboleth/shibboleth2.xml
+              subPath: shibboleth2.xml
+              readOnly: true
+            - name: keystone-federation-saml
+              mountPath: /etc/shibboleth/attribute-map.xml
+              subPath: attribute-map.xml
+              readOnly: true
+            - name: keystone-saml-sp-keys
+              mountPath: /etc/shibboleth/sp-keys
+              readOnly: true
+            {{- if .Values.federation.saml.idp.metadataConfigMap }}
+            - name: keystone-saml-idp-metadata
+              mountPath: /etc/shibboleth/metadata
+              readOnly: true
+            {{- end }}
+            {{- end }}
             - name: keystone-etc
               mountPath: /etc/apache2/mods-available/mpm_event.conf
               subPath: mpm_event.conf
@@ -256,6 +281,22 @@ spec:
           secret:
             secretName: {{ .Release.Name }}-federation
             defaultMode: 0444
+        {{- end }}
+        {{- if .Values.federation.saml.enabled }}
+        - name: keystone-federation-saml
+          secret:
+            secretName: {{ .Release.Name }}-federation-saml
+            defaultMode: 0444
+        - name: keystone-saml-sp-keys
+          secret:
+            secretName: keystone-saml-sp
+            defaultMode: 0440
+        {{- if .Values.federation.saml.idp.metadataConfigMap }}
+        - name: keystone-saml-idp-metadata
+          configMap:
+            name: {{ .Values.federation.saml.idp.metadataConfigMap }}
+            defaultMode: 0444
+        {{- end }}
         {{- end }}
         - name: keystone-bin
           projected:

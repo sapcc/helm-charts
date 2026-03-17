@@ -47,6 +47,26 @@ federation:
     client_id: ""
     client_secret: ""
     crypto_passphrase: ""
+  saml:
+    enabled: false
+    sp:
+      entityId: ""
+      # SP key and certificate are stored in the keystone-saml-sp K8s secret
+      # which is populated from Vault during deployment
+      privateKey: ""
+      certificate: ""
+    shibboleth:
+      signAuthnRequests: true
+      encryptionEnabled: true
+      sessionLifetime: 28800  # 8 hours, must not exceed api.token.expiration
+    idp:
+      # List of tenant IdPs; each entry needs: name, entityId
+      # Typically populated from the keystone-saml-federation chart ConfigMap
+      tenants: []
+      # Example:
+      # - name: mandant-a
+      #   entityId: "https://idp.mandant-a.example.com/saml2/metadata"
+    expiration: 28800
 
 api:
   image: "loci-keystone"

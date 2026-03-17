@@ -48,6 +48,14 @@ CustomLog /dev/stdout proxy env=forwarded
 
 {{- end }}
 
+{{- if .Values.federation.saml.enabled }}
+# SAML federation endpoints are protected by mod_shib via the
+# federation-saml.conf file mounted from the keystone-federation-saml secret.
+# The actual <Location> blocks are in that file, not here.
+# Include the SAML config if present:
+IncludeOptional /etc/apache2/conf-enabled/federation-saml.conf
+{{- end }}
+
 <VirtualHost *:5000>
     ServerName {{ .Values.services.public.host }}.{{ .Values.global.region }}.{{ .Values.global.tld }}
     WSGIDaemonProcess keystone-public processes=8 threads=4 user=keystone group=keystone display-name=%{GROUP}
