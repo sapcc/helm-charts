@@ -47,10 +47,12 @@ spec:
         {{- $hypervisor.pod.affinity | toYaml| nindent 8 }}
       {{- end }}
       hostAliases:
-      {{- range $ip := .Values.rabbitmq.externalIPs }}
+      {{- $activeCell := include "nova.helpers.get_active_cell" $ }}
+      {{- $rabbitmq := include "nova.helpers.get_rabbitmq_by_cell" (tuple $ $activeCell) | fromJson }}
+      {{- range $ip := $rabbitmq.externalIPs }}
       - ip: {{ $ip }}
         hostnames:
-        - {{ $.Values.rabbitmq.host }}
+          - {{ include "nova.helpers.cell_rabbitmq_host" (tuple $ $activeCell) }}
       {{- end }}
       initContainers:
       - name: nova-compute-init
