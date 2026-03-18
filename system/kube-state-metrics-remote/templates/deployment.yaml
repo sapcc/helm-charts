@@ -3,7 +3,6 @@ kind: Deployment
 metadata:
   name: {{ include "kube-state-metrics-remote.fullname" . }}
   labels:
-    app.kubernetes.io/component: exporter
   {{- include "kube-state-metrics-remote.labels" . | nindent 4 }}
 spec:
   replicas: {{ .Values.kubeStateMetrics.replicas }}
@@ -11,21 +10,17 @@ spec:
     type: {{ .Values.kubeStateMetrics.strategy.type | quote }}
   selector:
     matchLabels:
-      app.kubernetes.io/name: kube-state-metrics-remote
     {{- include "kube-state-metrics-remote.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       labels:
-        app.kubernetes.io/component: exporter
-        app.kubernetes.io/name: kube-state-metrics-remote
-        app.kubernetes.io/version: 2.15.0
       {{- include "kube-state-metrics-remote.selectorLabels" . | nindent 8 }}
       annotations:
         prometheus.io/scrape: "true"
         prometheus.io/path: "/metrics"
         prometheus.io/port: {{ with index .Values.kubeStateMetrics.ports 0 }}{{ .port | quote }}{{ end }}
         greenhouse/scrape: "true"
-        greenhouse/target: {{ .Values.prometheusName | quote }}
+        greenhouse/target: {{ .Values.greenhouseScrapeTarget | quote }}
     spec:
       automountServiceAccountToken: true
       containers:
@@ -44,9 +39,6 @@ spec:
         - /kube-state-metrics
         args:
         {{- toYaml .Values.kubeStateMetrics.kubeStateMetrics.args | nindent 8 }}
-        {{- if .Values.kubeStateMetrics.kubeStateMetrics.customResources }}
-        - --resources={{ .Values.kubeStateMetrics.kubeStateMetrics.customResources }}
-        {{- end }}
         livenessProbe:
           failureThreshold: 3
           httpGet:
