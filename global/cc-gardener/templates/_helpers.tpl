@@ -89,7 +89,10 @@ All other values pass through unchanged.
       {{- end -}}
     {{- end -}}
 
-    {{- $_ := set $result "image" $imageDict -}}
+    {{- /* Only set image if it has content */ -}}
+    {{- if $imageDict -}}
+      {{- $_ := set $result "image" $imageDict -}}
+    {{- end -}}
   {{- end -}}
 {{- else if or $parentRepo $parentTag $fallbackTag -}}
   {{- /* No image in values, create from fallbacks if available */ -}}

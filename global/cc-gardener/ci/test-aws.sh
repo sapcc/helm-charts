@@ -202,13 +202,14 @@ fi
 echo ""
 
 # Test 15: Verify default runtimeClusterValues when not set
-echo "Test 15: Verify default runtimeClusterValues when not set"
+echo "Test 15: Verify runtimeClusterValues with cascading from values"
 RUNTIME_REPLICA=$(echo "$OUTPUT2C" | yq '.spec.deployment.extension.runtimeClusterValues.replicaCount')
+RUNTIME_REPO=$(echo "$OUTPUT2C" | yq '.spec.deployment.extension.runtimeClusterValues.image.repository')
 RUNTIME_TAG=$(echo "$OUTPUT2C" | yq '.spec.deployment.extension.runtimeClusterValues.image.tag')
-if [ "$RUNTIME_REPLICA" = "1" ] && [ "$RUNTIME_TAG" = "v1.67.2" ]; then
-  echo "[PASS] Default runtimeClusterValues rendered correctly"
+if [ "$RUNTIME_REPLICA" = "1" ] && [ "$RUNTIME_REPO" = "custom-aws-repo/aws-controller" ] && [ "$RUNTIME_TAG" = "v1.67.3" ]; then
+  echo "[PASS] runtimeClusterValues cascades from values correctly"
 else
-  echo "[FAIL] Default runtimeClusterValues not correct (replica: $RUNTIME_REPLICA, tag: $RUNTIME_TAG)"
+  echo "[FAIL] runtimeClusterValues not correct (replica: $RUNTIME_REPLICA, repo: $RUNTIME_REPO, tag: $RUNTIME_TAG)"
   exit 1
 fi
 echo ""

@@ -1,4 +1,5 @@
 {{ if .Values.extensions.flatcar.enabled -}}
+{{- with .Values.extensions.flatcar -}}
 apiVersion: operator.gardener.cloud/v1alpha1
 kind: Extension
 metadata:
@@ -8,19 +9,38 @@ spec:
   - kind: OperatingSystemConfig
     type: flatcar
   deployment:
-    # admission:
-    extension:
+{{- if .admission }}
+    admission:
+{{- if .admission.values }}
       values:
-        replicaCount: 1
-        image:
-          tag: {{ (.Values.extensions.flatcar.values.image).tag | default .Values.extensions.flatcar.version }}
-          {{- if (.Values.extensions.flatcar.values.image).repository }}
-          repository: {{ .Values.extensions.flatcar.values.image.repository }}
-          {{- end }}
+{{ include "cc-gardener.extension.mergeValues" (dict "values" .admission.values "fallbackTag" .version) | indent 8 }}
+{{- end }}
+{{- if and .admission.runtimeCluster .admission.runtimeCluster.helm .admission.runtimeCluster.helm.ociRepository }}
+      runtimeCluster:
+        helm:
+          ociRepository:
+{{ include "cc-gardener.extension.ociRepository" (dict "ociRepository" .admission.runtimeCluster.helm.ociRepository "fallbackTag" .version) | indent 12 }}
+{{- end }}
+{{- if and .admission.virtualCluster .admission.virtualCluster.helm .admission.virtualCluster.helm.ociRepository }}
+      virtualCluster:
+        helm:
+          ociRepository:
+{{ include "cc-gardener.extension.ociRepository" (dict "ociRepository" .admission.virtualCluster.helm.ociRepository "fallbackTag" .version) | indent 12 }}
+{{- end }}
+{{- end }}
+    extension:
+{{- if .runtimeClusterValues }}
+      runtimeClusterValues:
+{{ include "cc-gardener.extension.mergeValues" (dict "values" .runtimeClusterValues "parentValues" .values "fallbackTag" .version) | indent 8 }}
+{{- end }}
+      values:
+{{- if .values }}
+{{ include "cc-gardener.extension.mergeValues" (dict "values" .values "fallbackTag" .version) | indent 8 }}
+{{- end }}
         nameOverride: gardener-extension-os-coreos
       helm:
         ociRepository:
-          tag: {{ (.Values.extensions.flatcar.helm.ociRepository).tag | default .Values.extensions.flatcar.version }}
-          repository: {{ .Values.extensions.flatcar.helm.ociRepository.repository }}
+{{ include "cc-gardener.extension.ociRepository" (dict "ociRepository" .helm.ociRepository "fallbackTag" .version) | indent 10 }}
       policy: OnDemand
-{{ end -}}
+{{- end }}
+{{- end }}
