@@ -1,4 +1,5 @@
 {{ if and .Values.extensions.auditing .Values.extensions.auditing.enabled -}}
+{{- with .Values.extensions.auditing -}}
 apiVersion: operator.gardener.cloud/v1alpha1
 kind: Extension
 metadata:
@@ -19,28 +20,30 @@ spec:
     - shoot
   deployment:
     admission:
+{{- if and .admission .admission.values }}
+      values:
+{{ include "cc-gardener.extension.mergeValues" (dict "values" .admission.values "fallbackTag" .version) | indent 8 }}
+{{- end }}
       runtimeCluster:
         helm:
           ociRepository:
-            tag: {{ (.Values.extensions.auditing.runtimeCluster.helm.ociRepository).tag | default .Values.extensions.auditing.version }}
-            {{- if (.Values.extensions.auditing.runtimeCluster.helm.ociRepository).repository }}
-            repository: {{ .Values.extensions.auditing.runtimeCluster.helm.ociRepository.repository }}
-            {{- end }}
+{{ include "cc-gardener.extension.ociRepository" (dict "ociRepository" ((.admission).runtimeCluster).helm.ociRepository "fallbackTag" .version) | indent 12 }}
       virtualCluster:
         helm:
           ociRepository:
-            tag: {{ (.Values.extensions.auditing.virtualCluster.helm.ociRepository).tag | default .Values.extensions.auditing.version }}
-            {{- if (.Values.extensions.auditing.virtualCluster.helm.ociRepository).repository }}
-            repository: {{ .Values.extensions.auditing.virtualCluster.helm.ociRepository.repository }}
-            {{- end }}
+{{ include "cc-gardener.extension.ociRepository" (dict "ociRepository" ((.admission).virtualCluster).helm.ociRepository "fallbackTag" .version) | indent 12 }}
     extension:
-{{- if .Values.extensions.auditing.imageVectorOverwrite }}
+{{- if .runtimeClusterValues }}
+      runtimeClusterValues:
+{{ include "cc-gardener.extension.mergeValues" (dict "values" .runtimeClusterValues "parentValues" .values "fallbackTag" .version) | indent 8 }}
+{{- end }}
+{{- if .values }}
       values:
-        imageVectorOverwrite: | {{ toYaml .Values.extensions.auditing.imageVectorOverwrite | nindent 10 }}
+{{ include "cc-gardener.extension.mergeValues" (dict "values" .values "fallbackTag" .version) | indent 8 }}
 {{- end }}
       helm:
         ociRepository:
-          tag: {{ (.Values.extensions.auditing.helm.ociRepository).tag | default .Values.extensions.auditing.version }}
-          repository: {{ .Values.extensions.auditing.helm.ociRepository.repository }}
+{{ include "cc-gardener.extension.ociRepository" (dict "ociRepository" .helm.ociRepository "fallbackTag" .version) | indent 10 }}
       policy: OnDemand
+{{- end }}
 {{ end -}}
