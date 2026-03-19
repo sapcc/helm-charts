@@ -19,19 +19,25 @@ spec:
     - garden
     - shoot
   deployment:
+{{- if .admission }}
     admission:
-{{- if and .admission .admission.values }}
+{{- if .admission.values }}
       values:
 {{ include "cc-gardener.extension.mergeValues" (dict "values" .admission.values "fallbackTag" .version) | indent 8 }}
 {{- end }}
+{{- if and .admission.runtimeCluster .admission.runtimeCluster.helm .admission.runtimeCluster.helm.ociRepository }}
       runtimeCluster:
         helm:
           ociRepository:
-{{ include "cc-gardener.extension.ociRepository" (dict "ociRepository" ((.admission).runtimeCluster).helm.ociRepository "fallbackTag" .version) | indent 12 }}
+{{ include "cc-gardener.extension.ociRepository" (dict "ociRepository" .admission.runtimeCluster.helm.ociRepository "fallbackTag" .version) | indent 12 }}
+{{- end }}
+{{- if and .admission.virtualCluster .admission.virtualCluster.helm .admission.virtualCluster.helm.ociRepository }}
       virtualCluster:
         helm:
           ociRepository:
-{{ include "cc-gardener.extension.ociRepository" (dict "ociRepository" ((.admission).virtualCluster).helm.ociRepository "fallbackTag" .version) | indent 12 }}
+{{ include "cc-gardener.extension.ociRepository" (dict "ociRepository" .admission.virtualCluster.helm.ociRepository "fallbackTag" .version) | indent 12 }}
+{{- end }}
+{{- end }}
     extension:
 {{- if .runtimeClusterValues }}
       runtimeClusterValues:
@@ -46,4 +52,4 @@ spec:
 {{ include "cc-gardener.extension.ociRepository" (dict "ociRepository" .helm.ociRepository "fallbackTag" .version) | indent 10 }}
       policy: OnDemand
 {{- end }}
-{{ end -}}
+{{- end }}

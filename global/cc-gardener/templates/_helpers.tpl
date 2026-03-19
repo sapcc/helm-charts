@@ -107,45 +107,82 @@ All other values pass through unchanged.
   {{- end -}}
 {{- end -}}
 
-{{- /* Handle images array (multiple image references) */ -}}
+{{- /* Handle images (array or dict of multiple image references) */ -}}
 {{- if hasKey $values "images" -}}
-  {{- $imagesArray := list -}}
-  {{- range $values.images -}}
-    {{- $imgDict := dict -}}
+  {{- if kindIs "slice" $values.images -}}
+    {{- /* images as array */ -}}
+    {{- $imagesArray := list -}}
+    {{- range $values.images -}}
+      {{- $imgDict := dict -}}
 
-    {{- /* Copy name */ -}}
-    {{- if hasKey . "name" -}}
-      {{- $_ := set $imgDict "name" .name -}}
-    {{- end -}}
-
-    {{- /* Priority 1: Complete reference */ -}}
-    {{- if hasKey . "ref" -}}
-      {{- $_ := set $imgDict "ref" .ref -}}
-    {{- else if hasKey . "imageRef" -}}
-      {{- $_ := set $imgDict "imageRef" .imageRef -}}
-    {{- else -}}
-      {{- /* Priority 2: Repository + Tag with fallback */ -}}
-      {{- if hasKey . "repository" -}}
-        {{- $_ := set $imgDict "repository" .repository -}}
+      {{- /* Copy name */ -}}
+      {{- if hasKey . "name" -}}
+        {{- $_ := set $imgDict "name" .name -}}
       {{- end -}}
 
-      {{- if hasKey . "tag" -}}
-        {{- $_ := set $imgDict "tag" .tag -}}
-      {{- else if $fallbackTag -}}
-        {{- $_ := set $imgDict "tag" $fallbackTag -}}
-      {{- end -}}
-    {{- end -}}
+      {{- /* Priority 1: Complete reference */ -}}
+      {{- if hasKey . "ref" -}}
+        {{- $_ := set $imgDict "ref" .ref -}}
+      {{- else if hasKey . "imageRef" -}}
+        {{- $_ := set $imgDict "imageRef" .imageRef -}}
+      {{- else -}}
+        {{- /* Priority 2: Repository + Tag with fallback */ -}}
+        {{- if hasKey . "repository" -}}
+          {{- $_ := set $imgDict "repository" .repository -}}
+        {{- end -}}
 
-    {{- /* Copy other properties */ -}}
-    {{- range $key, $val := . -}}
-      {{- if and (ne $key "name") (ne $key "repository") (ne $key "tag") (ne $key "ref") (ne $key "imageRef") -}}
-        {{- $_ := set $imgDict $key $val -}}
+        {{- if hasKey . "tag" -}}
+          {{- $_ := set $imgDict "tag" .tag -}}
+        {{- else if $fallbackTag -}}
+          {{- $_ := set $imgDict "tag" $fallbackTag -}}
+        {{- end -}}
       {{- end -}}
-    {{- end -}}
 
-    {{- $imagesArray = append $imagesArray $imgDict -}}
+      {{- /* Copy other properties */ -}}
+      {{- range $key, $val := . -}}
+        {{- if and (ne $key "name") (ne $key "repository") (ne $key "tag") (ne $key "ref") (ne $key "imageRef") -}}
+          {{- $_ := set $imgDict $key $val -}}
+        {{- end -}}
+      {{- end -}}
+
+      {{- $imagesArray = append $imagesArray $imgDict -}}
+    {{- end -}}
+    {{- $_ := set $result "images" $imagesArray -}}
+  {{- else if kindIs "map" $values.images -}}
+    {{- /* images as dict */ -}}
+    {{- $imagesDict := dict -}}
+    {{- range $name, $img := $values.images -}}
+      {{- $imgDict := dict -}}
+
+      {{- /* Priority 1: Complete reference */ -}}
+      {{- if hasKey $img "ref" -}}
+        {{- $_ := set $imgDict "ref" $img.ref -}}
+      {{- else if hasKey $img "imageRef" -}}
+        {{- $_ := set $imgDict "imageRef" $img.imageRef -}}
+      {{- else -}}
+        {{- /* Priority 2: Repository + Tag with fallback */ -}}
+        {{- if hasKey $img "repository" -}}
+          {{- $_ := set $imgDict "repository" $img.repository -}}
+        {{- end -}}
+
+        {{- if hasKey $img "tag" -}}
+          {{- $_ := set $imgDict "tag" $img.tag -}}
+        {{- else if $fallbackTag -}}
+          {{- $_ := set $imgDict "tag" $fallbackTag -}}
+        {{- end -}}
+      {{- end -}}
+
+      {{- /* Copy other properties */ -}}
+      {{- range $key, $val := $img -}}
+        {{- if and (ne $key "repository") (ne $key "tag") (ne $key "ref") (ne $key "imageRef") -}}
+          {{- $_ := set $imgDict $key $val -}}
+        {{- end -}}
+      {{- end -}}
+
+      {{- $_ := set $imagesDict $name $imgDict -}}
+    {{- end -}}
+    {{- $_ := set $result "images" $imagesDict -}}
   {{- end -}}
-  {{- $_ := set $result "images" $imagesArray -}}
 {{- end -}}
 
 {{- if $result -}}

@@ -1,5 +1,6 @@
 # The runtime values always need to be enabled to manage backups in s3 for the virtual garden.
 {{- if eq .Values.garden.backup.provider "aws" }}
+{{- with .Values.extensions.aws -}}
 apiVersion: operator.gardener.cloud/v1alpha1
 kind: Extension
 metadata:
@@ -21,29 +22,47 @@ spec:
   - kind: Worker
     type: aws
   deployment:
-    # admission:
+{{- if .admission }}
+    admission:
+{{- if .admission.values }}
+      values:
+{{ include "cc-gardener.extension.mergeValues" (dict "values" .admission.values "fallbackTag" .version) | indent 8 }}
+{{- end }}
+{{- if and .admission.runtimeCluster .admission.runtimeCluster.helm .admission.runtimeCluster.helm.ociRepository }}
+      runtimeCluster:
+        helm:
+          ociRepository:
+{{ include "cc-gardener.extension.ociRepository" (dict "ociRepository" .admission.runtimeCluster.helm.ociRepository "fallbackTag" .version) | indent 12 }}
+{{- end }}
+{{- if and .admission.virtualCluster .admission.virtualCluster.helm .admission.virtualCluster.helm.ociRepository }}
+      virtualCluster:
+        helm:
+          ociRepository:
+{{ include "cc-gardener.extension.ociRepository" (dict "ociRepository" .admission.virtualCluster.helm.ociRepository "fallbackTag" .version) | indent 12 }}
+{{- end }}
+{{- end }}
     extension:
+{{- if .runtimeClusterValues }}
       runtimeClusterValues:
-        replicaCount: 1
-        image:
-          tag: {{ (.Values.extensions.aws.runtimeClusterValues.image).tag | default .Values.extensions.aws.version }}
-          {{- if (.Values.extensions.aws.runtimeClusterValues.image).repository }}
-          repository: {{ .Values.extensions.aws.runtimeClusterValues.image.repository }}
-          {{- end }}
+{{ include "cc-gardener.extension.mergeValues" (dict "values" .runtimeClusterValues "parentValues" .values "fallbackTag" .version) | indent 8 }}
+{{- else }}
+      runtimeClusterValues:
+{{ include "cc-gardener.extension.mergeValues" (dict "values" (dict "replicaCount" 1) "fallbackTag" .version) | indent 8 }}
+{{- end }}
         config:
           etcd:
             storage:
-              provisioner: {{ .Values.extensions.storage.provisioner | quote }}
-              {{- if .Values.extensions.storage.parameters }}
-              parameters: {{ .Values.extensions.storage.parameters | toYaml | nindent 16 }}
+              provisioner: {{ $.Values.extensions.storage.provisioner | quote }}
+              {{- if $.Values.extensions.storage.parameters }}
+              parameters: {{ $.Values.extensions.storage.parameters | toYaml | nindent 16 }}
               {{- end }}
+{{- if .values }}
       values:
-{{- if and .Values.extensions.aws .Values.extensions.aws.imageVectorOverwrite }}
-        imageVectorOverwrite: | {{ toYaml .Values.extensions.aws.imageVectorOverwrite | nindent 10 }}
+{{ include "cc-gardener.extension.mergeValues" (dict "values" .values "fallbackTag" .version) | indent 8 }}
 {{- end }}
       helm:
         ociRepository:
-          tag: {{ (.Values.extensions.aws.helm.ociRepository).tag | default .Values.extensions.aws.version }}
-          repository: {{ .Values.extensions.aws.helm.ociRepository.repository }}
+{{ include "cc-gardener.extension.ociRepository" (dict "ociRepository" .helm.ociRepository "fallbackTag" .version) | indent 10 }}
       policy: OnDemand
+{{- end }}
 {{- end }}
