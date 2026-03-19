@@ -53,10 +53,15 @@ spec:
               {{- if $.Values.extensions.storage.parameters }}
               parameters: {{ $.Values.extensions.storage.parameters | toYaml | nindent 16 }}
               {{- end }}
-{{- if .values }}
       values:
-{{ include "cc-gardener.extension.mergeValues" (dict "values" .values "fallbackTag" .version) | indent 8 }}
-{{- end }}
+{{ include "cc-gardener.extension.mergeValues" (dict "values" .values "extensionContext" . "fallbackTag" .version) | indent 8 }}
+        config:
+          etcd:
+            storage:
+              provisioner: {{ $.Values.extensions.storage.provisioner | quote }}
+              {{- if $.Values.extensions.storage.parameters }}
+              parameters: {{ $.Values.extensions.storage.parameters | toYaml | nindent 16 }}
+              {{- end }}
       helm:
         ociRepository:
 {{ include "cc-gardener.extension.ociRepository" (dict "ociRepository" .helm.ociRepository "fallbackTag" .version) | indent 10 }}
