@@ -1,11 +1,6 @@
 {{- if .Values.metrics.enabled }}
 {{- $fullname := include "redis.fullname" . -}}
 
-{{- $registry := .Values.global.registry | required ".Values.global.registry missing" -}}
-{{- if .Values.useAlternateRegion -}}
-  {{- $registry = .Values.global.registryAlternateRegion | required ".Values.global.registryAlternateRegion missing" -}}
-{{- end -}}
-
 kind: Deployment
 apiVersion: apps/v1
 
@@ -39,7 +34,8 @@ spec:
     spec:
       containers:
         - name: metrics
-          image: {{ $registry }}/shared-app-images/redis-exporter:{{ .Values.metrics.image.tag }}
+          image: {{ include "redis.shared-app-images.ref" (tuple . "redis-exporter" "latest") }}
+          imagePullPolicy: IfNotPresent
           env:
             - name: REDIS_ADDR
               value: "{{ $fullname }}:6379"

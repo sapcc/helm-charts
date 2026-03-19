@@ -53,5 +53,5 @@ transform/journal:
 logs/journald:
   receivers: [journald]
   processors: [attributes/cluster,transform/journal]
-  exporters: [forward]
+  exporters: [routing]
 {{- end }}

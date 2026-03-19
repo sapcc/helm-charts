@@ -29,10 +29,20 @@ cell3:
 
 defaultUsersMariaDB:
   api: nova_api
-  cell0: nova_cell0
+  cell0: nova_api_cell0
   cell1: nova
   cell2: nova_cell2
   cell3: nova_cell3
+
+cell0dbTarget: api
+
+pod:
+  lifecycle:
+    upgrades:
+      deployments:
+        overrides:
+          scheduler:
+            podReplacementStrategy: Recreate
 
 imageVersion: my-tag
 imageVersionVspc: vspc-latest-tag
@@ -92,6 +102,9 @@ mysql_metrics:
 
 mariadb_api:
   enabled: true
+  databases:
+    - nova_api
+    - nova_cell0
   root_password: rootrootApi
   backup_v2:
     enabled: false
@@ -102,6 +115,9 @@ mariadb_api:
     nova_api:
       name: nova_api
       password: passwordApi
+    nova_api_cell0:
+      name: nova_api_cell0
+      password: passwordApiCell0
 
 mariadb:
   enabled: true

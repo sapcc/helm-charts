@@ -26,21 +26,6 @@ spec:
         kubectl.kubernetes.io/default-container: manager
     spec:
       containers:
-      - args: {{- toYaml .Values.controllerManager.kubeRbacProxy.args | nindent 8 }}
-        env:
-        - name: KUBERNETES_CLUSTER_DOMAIN
-          value: {{ quote .Values.kubernetesClusterDomain }}
-        image: {{ .Values.controllerManager.kubeRbacProxy.image.repository }}:{{ .Values.controllerManager.kubeRbacProxy.image.tag
-          | default .Chart.AppVersion }}
-        name: kube-rbac-proxy
-        ports:
-        - containerPort: 8443
-          name: https
-          protocol: TCP
-        resources: {{- toYaml .Values.controllerManager.kubeRbacProxy.resources | nindent
-          10 }}
-        securityContext: {{- toYaml .Values.controllerManager.kubeRbacProxy.containerSecurityContext
-          | nindent 10 }}
       - args: {{- toYaml .Values.controllerManager.manager.args | nindent 8 }}
         command:
         - /manager
@@ -66,7 +51,11 @@ spec:
           }}
         securityContext: {{- toYaml .Values.controllerManager.manager.containerSecurityContext
           | nindent 10 }}
+      nodeSelector: {{- toYaml .Values.controllerManager.nodeSelector | nindent 8 }}
       securityContext: {{- toYaml .Values.controllerManager.podSecurityContext | nindent
         8 }}
-      serviceAccountName: {{ include "provider-kubernikus.fullname" . }}-controller-manager
+      serviceAccountName: {{ include "provider-kubernikus.serviceAccountName" . }}
       terminationGracePeriodSeconds: 10
+      tolerations: {{- toYaml .Values.controllerManager.tolerations | nindent 8 }}
+      topologySpreadConstraints: {{- toYaml .Values.controllerManager.topologySpreadConstraints
+        | nindent 8 }}

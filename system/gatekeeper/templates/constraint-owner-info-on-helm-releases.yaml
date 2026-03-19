@@ -17,7 +17,7 @@ spec:
   enforcementAction: {{ if (eq .Values.cluster_type "baremetal" "cloudshell" "concourse" "gh-actions" "internet" "scaleout") }}deny{{ else }}dryrun{{ end }}
   match: {{ include "match_active_helm_releases" . | indent 4 }}
   parameters:
-    helmManifestParserURL: {{ quote .Values.helm_manifest_parser_url }}
+    helmManifestParserURL: {{ include "helm_manifest_parser_url" . | quote }}
     knownBrokenReleases:
       # This is a list of Helm releases (in the format "namespace/name") that
       # are TEMPORARILY exempted from the owner-info requirement because

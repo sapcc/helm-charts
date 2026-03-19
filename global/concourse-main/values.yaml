@@ -1,5 +1,7 @@
 global:
   registry: keppel.global.cloud.sap/ccloud
+  region: "qa-de-1"
+  vaultBaseURL: "https://vault.qa-de-1.cloud.sap"  
 
 owner-info:
   support-group: containers
@@ -15,7 +17,7 @@ worker:
 
 concourse:
   image: keppel.global.cloud.sap/ccloud-dockerhub-mirror/concourse/concourse
-  imageTag: "7.14.2"
+  imageTag: "8.0.2"
 
   concourse:
     web:
@@ -102,15 +104,17 @@ concourse:
     enabled: false
 
   secrets:
-    create: true
+    create: false
+    postgresUser: "concourse"    # Fix for strict template
+    postgresPassword: "password" # Fix for strict template
 
 webhookBroadcaster:
   image: keppel.global.cloud.sap/ccloud/concourse-webhook-broadcaster
   imageTag: 3713c78
   pullPolicy: IfNotPresent
   auth:
-    #username:
-    #password:
+    username: ""
+    password: ""
 
 # Deploy Concourse Prometheus alerts.
 alerts:

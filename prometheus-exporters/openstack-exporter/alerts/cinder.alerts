@@ -93,7 +93,7 @@ groups:
       summary: 'Cinder standard_hdd backend {{ $labels.shard }}/{{ $labels.backend }} has 1 or less datastores with > 30% free space left'
   - alert: CinderShardMaxVolumeSize
     expr: >
-      count by (shard, backend) (sum(cinder_available_capacity_gib) by (shard, backend, pool) * on (shard, backend, pool) cinder_pool_state_info{pool_state="up"}) - count by (shard, backend) (sum by(shard, backend, pool) (cinder_virtual_free_capacity_gib * on (shard, backend, pool) cinder_pool_state_info{pool_state="up"} ) - sum by(shard, backend, pool) (cinder_per_volume_gigabytes * on (shard, backend, pool) cinder_pool_state_info{pool_state="up"}) <=0) < 1
+      count by (shard, backend) (sum(cinder_available_capacity_gib{backend=~"standard_hdd|vmware|vmware_fcd"}) by (shard, backend, pool) * on (shard, backend, pool) cinder_pool_state_info{pool_state="up", backend=~"standard_hdd|vmware|vmware_fcd"}) - count by (shard, backend) (sum by(shard, backend, pool) (cinder_virtual_free_capacity_gib{backend=~"standard_hdd|vmware|vmware_fcd"} * on (shard, backend, pool) cinder_pool_state_info{pool_state="up", backend=~"standard_hdd|vmware|vmware_fcd"} ) - sum by(shard, backend, pool) (cinder_per_volume_gigabytes{backend=~"standard_hdd|vmware|vmware_fcd"} * on (shard, backend, pool) cinder_pool_state_info{pool_state="up", backend=~"standard_hdd|vmware|vmware_fcd"}) <=0) < 1
     for: 15m
     labels:
       severity: warning
@@ -108,7 +108,7 @@ groups:
       summary: "Cinder backend {{ $labels.shard }}/{{ $labels.backend }} has no datastores that can accept max volume size"
   - alert: CinderShardMaxVolumeSize
     expr: >
-      count by (shard, backend) (sum(cinder_available_capacity_gib) by (shard, backend, pool) * on (shard, backend, pool) cinder_pool_state_info{pool_state="up"}) - count by (shard, backend) (sum by(shard, backend, pool) (cinder_virtual_free_capacity_gib * on (shard, backend, pool) cinder_pool_state_info{pool_state="up"} ) - sum by(shard, backend, pool) (cinder_per_volume_gigabytes * on (shard, backend, pool) cinder_pool_state_info{pool_state="up"}) <=0) < 2
+      count by (shard, backend) (sum(cinder_available_capacity_gib{backend=~"standard_hdd|vmware|vmware_fcd"}) by (shard, backend, pool) * on (shard, backend, pool) cinder_pool_state_info{pool_state="up", backend=~"standard_hdd|vmware|vmware_fcd"}) - count by (shard, backend) (sum by(shard, backend, pool) (cinder_virtual_free_capacity_gib{backend=~"standard_hdd|vmware|vmware_fcd"} * on (shard, backend, pool) cinder_pool_state_info{pool_state="up", backend=~"standard_hdd|vmware|vmware_fcd"} ) - sum by(shard, backend, pool) (cinder_per_volume_gigabytes{backend=~"standard_hdd|vmware|vmware_fcd"} * on (shard, backend, pool) cinder_pool_state_info{pool_state="up", backend=~"standard_hdd|vmware|vmware_fcd"}) <=0) < 2
     for: 15m
     labels:
       severity: warning
@@ -123,7 +123,7 @@ groups:
       summary: "Cinder backend {{ $labels.shard }}/{{ $labels.backend }} less than 2 datastores that can accept max volume size"
   - alert: CinderBackendDown
     expr: >
-        cinder_backend_state_info{backend_state='down'}
+        cinder_backend_state_info{backend_state='down', backend=~"standard_hdd|vmware|vmware_fcd"}
     for: 15m
     labels:
       severity: warning
@@ -153,7 +153,7 @@ groups:
       summary: "Cinder pool {{ $labels.shard }}/{{ $labels.backend }}/{{ $labels.pool }} is overcommited"
   - alert: CinderPoolNetappFQDNNotSet
     expr: >
-        cinder_pool_netapp_fqdn_info{netapp_fqdn='None'}
+        cinder_pool_netapp_fqdn_info{netapp_fqdn='None', backend=~"standard_hdd|vmware|vmware_fcd"}
     for: 15m
     labels:
       severity: warning
