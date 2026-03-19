@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: "install-dashboards"
+  name: "import-dashboards"
   labels:
     app.kubernetes.io/managed-by: {{ .Release.Service | quote }}
     app.kubernetes.io/instance: {{ .Release.Name | quote }}
@@ -17,7 +17,7 @@ metadata:
 spec:
   template:
     metadata:
-      name: "install-dashboards"
+      name: "import-dashboards"
       labels:
         app.kubernetes.io/managed-by: {{ .Release.Service | quote }}
         app.kubernetes.io/instance: {{ .Release.Name | quote }}
@@ -34,7 +34,7 @@ spec:
                 - {{ .Values.global.nodepool }}
       restartPolicy: Never
       containers:
-      - name: install-dashboards 
+      - name: import-dashboards 
         image: "{{ .Values.global.registry }}/unified-kubernetes-toolbox:latest"
         command: ["/bin/bash", "/scripts/import-dashboards.sh"]
         env:
