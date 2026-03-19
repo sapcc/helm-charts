@@ -16,7 +16,7 @@ spec:
       labels:
       {{- include "kube-state-metrics-remote.selectorLabels" . | nindent 8 }}
         networking.gardener.cloud/to-dns: allowed
-        networking.gardener.cloud/to-public-networks: allowed
+        networking.resources.gardener.cloud/to-kube-apiserver-tcp-443: allowed
         networking.resources.gardener.cloud/to-virtual-garden-kube-apiserver-tcp-443: allowed
       annotations:
         prometheus.io/scrape: "true"
@@ -28,12 +28,8 @@ spec:
       automountServiceAccountToken: true
       containers:
       - env:
-        - name: ENABLE_WEBHOOKS
-          value: {{ quote .Values.kubeStateMetrics.container.env.enableWebhooks }}
         - name: KUBERNETES_SERVICE_HOST
           value: {{ quote .Values.kubeStateMetrics.container.env.kubernetesServiceHost }}
-        - name: KUBERNETES_CLUSTER_DOMAIN
-          value: {{ quote .Values.kubeStateMetrics.container.env.kubernetesClusterDomain }}
         image: {{ .Values.kubeStateMetrics.container.image.repository }}:{{ .Values.kubeStateMetrics.container.image.tag | default .Chart.AppVersion }}
         args:
         {{- toYaml .Values.kubeStateMetrics.container.args | nindent 8 }}
@@ -68,7 +64,6 @@ spec:
         - mountPath: /etc/config
           name: config-volume
           readOnly: true
-      hostNetwork: {{ .Values.kubeStateMetrics.hostNetwork }}
       nodeSelector: {{- toYaml .Values.kubeStateMetrics.nodeSelector | nindent 8 }}
       serviceAccountName: {{ include "kube-state-metrics-remote.fullname" . }}
       volumes:
