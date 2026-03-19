@@ -1,3 +1,7 @@
+## 8.1.2
+
+* fix helper referring to `thanos.baseImage` which is causes the image tag version to be missing 
+
 ## 8.1.1
 
 * `thanos.baseImage` is deprecated updating to `thanos.image`
