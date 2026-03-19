@@ -1,0 +1,17 @@
+{{ if ne .Release.Namespace "garden" -}}
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ .Release.Namespace }}
+  labels:
+    gardener.cloud/role: project
+    project.gardener.cloud/name: {{ $clusterType }}
+---
+apiVersion: core.gardener.cloud/v1beta1
+kind: Project
+metadata:
+  name: {{ $clusterType }}
+spec:
+  namespace: {{ .Release.Namespace }}
+{{- end }}
