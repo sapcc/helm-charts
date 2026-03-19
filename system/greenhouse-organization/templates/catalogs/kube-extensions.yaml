@@ -24,7 +24,11 @@ spec:
   sources:
   - repository: https://github.com/cloudoperators/greenhouse-extensions
     ref:
-    {{ toYaml .Values.catalogs.kubeExtensions.external.ref | nindent 6}}
+    {{- if .Values.catalogs.kubeExtensions.external.ref.sha }}
+      sha: {{ .Values.catalogs.kubeExtensions.external.ref.sha }}
+    {{- else if .Values.catalogs.kubeExtensions.external.ref.branch }}
+      branch: {{ .Values.catalogs.kubeExtensions.external.ref.branch }}
+    {{- end }}
     resources:
     - doop/plugindefinition.yaml
     - exposed-services/plugindefinition.yaml
@@ -61,7 +65,11 @@ spec:
 
   - repository: https://github.wdf.sap.corp/sap-cloud-infrastructure/greenhouse-extensions
     ref:
-    {{ toYaml .Values.catalogs.kubeExtensions.internal.ref | nindent 6}}
+    {{- if .Values.catalogs.kubeExtensions.internal.ref.sha }}
+      sha: {{ .Values.catalogs.kubeExtensions.internal.ref.sha }}
+    {{- else if .Values.catalogs.kubeExtensions.internal.ref.branch }}
+      branch: {{ .Values.catalogs.kubeExtensions.internal.ref.branch }}
+    {{- end }}
     resources:
     - secrets-injector/plugindefinition.yaml
     - ldap-named-user/plugindefinition.yaml
