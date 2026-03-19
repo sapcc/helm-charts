@@ -1,3 +1,7 @@
+## 8.1.1
+
+* `thanos.baseImage` is deprecated updating to `thanos.image`
+
 ## 8.1.0
 
 * Enable native histogram support: add `convertClassicHistogramsToNHCB`, `scrapeClassicHistograms`, and `scrapeNativeHistograms` to the Prometheus CR spec (all enabled by default)
