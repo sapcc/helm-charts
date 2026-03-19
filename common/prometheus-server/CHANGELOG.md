@@ -1,3 +1,7 @@
+## 8.1.3
+
+* Include version tag in `thanos.spec.image` since the Prometheus Operator's `BuildImagePath` returns the `image` field as-is, ignoring `version` for image construction
+
 ## 8.1.2
 
 * fix helper referring to `thanos.baseImage` which is causes the image tag version to be missing 
