@@ -11,12 +11,41 @@ echo "Target: $DASHBOARDS_URL"
 echo "API Base: $API_BASE (OpenSearch 3.5.0+)"
 echo "===================================="
 
+# Test which user credentials work
+echo "Testing user credentials..."
+OPENSEARCH_USERNAME=""
+OPENSEARCH_PASSWORD=""
+
+# Test ADMIN_USER first
+HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$DASHBOARDS_URL/api/status" -u ${ADMIN_USER}:${ADMIN_PASSWORD})
+if [ "$HTTP_CODE" = "200" ]; then
+  echo "✓ ADMIN_USER credentials are valid"
+  OPENSEARCH_USERNAME=${ADMIN_USER}
+  OPENSEARCH_PASSWORD=${ADMIN_PASSWORD}
+else
+  echo "✗ ADMIN_USER credentials failed (HTTP $HTTP_CODE)"
+
+  # Test ADMIN2_USER as fallback
+  HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$DASHBOARDS_URL/api/status" -u ${ADMIN2_USER}:${ADMIN2_PASSWORD})
+  if [ "$HTTP_CODE" = "200" ]; then
+    echo "✓ ADMIN2_USER credentials are valid"
+    OPENSEARCH_USERNAME=${ADMIN2_USER}
+    OPENSEARCH_PASSWORD=${ADMIN2_PASSWORD}
+  else
+    echo "✗ ADMIN2_USER credentials also failed (HTTP $HTTP_CODE)"
+    echo "ERROR: No valid credentials available"
+    exit 1
+  fi
+fi
+
+echo ""
+
 # Wait for OpenSearch Dashboards to be ready
 echo "Waiting for OpenSearch Dashboards..."
 RETRY=0
 MAX_RETRIES=60
 
-until curl -s -o /dev/null -w "%{http_code}" "$DASHBOARDS_URL/api/status" | grep -q 200; do
+until curl -s -o /dev/null -w "%{http_code}" "$DASHBOARDS_URL/api/status" -u ${OPENSEARCH_USERNAME}:${OPENSEARCH_PASSWORD} | grep -q 200; do
   RETRY=$((RETRY+1))
   if [ $RETRY -ge $MAX_RETRIES ]; then
     echo "ERROR: OpenSearch Dashboards did not become ready in time"
