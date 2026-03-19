@@ -30,6 +30,16 @@ OUTPUT2=$(helm template test "$CHART_DIR" \
 echo "[PASS] Renders with full configuration"
 echo ""
 
+# Test 2b: Configuration without admission
+echo "Test 2b: Configuration without admission"
+OUTPUT2B=$(helm template test "$CHART_DIR" \
+  -f "$CHART_DIR/values.yaml" \
+  -f "$CHART_DIR/ci/test-values.yaml" \
+  -f "$CHART_DIR/ci/test-auditing-no-admission-values.yaml" \
+  --show-only templates/extension-auditing.yaml)
+echo "[PASS] Renders without admission configuration"
+echo ""
+
 # Test 3: Validate YAML syntax
 echo "Test 3: Validate YAML syntax"
 echo "$OUTPUT2" | yq '.' > /dev/null && echo "[PASS] Valid YAML syntax"
@@ -113,6 +123,53 @@ if [ "$ADMISSION_IVO" != "null" ] && [ "$VALUES_IVO" != "null" ] && [ "$RUNTIME_
   echo "[PASS] imageVectorOverwrite present in admission.values, values, and runtimeClusterValues"
 else
   echo "[FAIL] imageVectorOverwrite not found in all contexts"
+  exit 1
+fi
+echo ""
+
+# Test 11: Verify admission runtimeCluster and virtualCluster present
+echo "Test 11: Verify admission runtimeCluster and virtualCluster present"
+RUNTIME_REPO=$(echo "$OUTPUT2" | yq '.spec.deployment.admission.runtimeCluster.helm.ociRepository.repository')
+VIRTUAL_REPO=$(echo "$OUTPUT2" | yq '.spec.deployment.admission.virtualCluster.helm.ociRepository.repository')
+if [ "$RUNTIME_REPO" = "keppel.example.com/auditing-admission-runtime" ] && [ "$VIRTUAL_REPO" = "keppel.example.com/auditing-admission-virtual" ]; then
+  echo "[PASS] admission clusters configured correctly"
+else
+  echo "[FAIL] admission clusters not configured (runtime: $RUNTIME_REPO, virtual: $VIRTUAL_REPO)"
+  exit 1
+fi
+echo ""
+
+# Test 12: Verify no admission section when admission is null
+echo "Test 12: Verify no admission section when admission is null"
+ADMISSION_SECTION=$(echo "$OUTPUT2B" | yq '.spec.deployment.admission')
+if [ "$ADMISSION_SECTION" = "null" ]; then
+  echo "[PASS] No admission section when admission is null"
+else
+  echo "[FAIL] admission section should not be present when unset"
+  exit 1
+fi
+echo ""
+
+# Test 13: Verify extension.values still works without admission
+echo "Test 13: Verify extension.values still works without admission"
+EXT_REPO=$(echo "$OUTPUT2B" | yq '.spec.deployment.extension.values.image.repository')
+EXT_TAG=$(echo "$OUTPUT2B" | yq '.spec.deployment.extension.values.image.tag')
+if [ "$EXT_REPO" = "custom-extension-repo/auditing-controller" ] && [ "$EXT_TAG" = "v0.4.0" ]; then
+  echo "[PASS] extension.values configured correctly without admission"
+else
+  echo "[FAIL] extension.values not correct (repo: $EXT_REPO, tag: $EXT_TAG)"
+  exit 1
+fi
+echo ""
+
+# Test 14: Verify helm.ociRepository still works without admission
+echo "Test 14: Verify helm.ociRepository still works without admission"
+HELM_REPO=$(echo "$OUTPUT2B" | yq '.spec.deployment.extension.helm.ociRepository.repository')
+HELM_TAG=$(echo "$OUTPUT2B" | yq '.spec.deployment.extension.helm.ociRepository.tag')
+if [ "$HELM_REPO" = "keppel.example.com/auditing-extension" ] && [ "$HELM_TAG" = "v0.2.1" ]; then
+  echo "[PASS] helm.ociRepository configured correctly without admission"
+else
+  echo "[FAIL] helm.ociRepository not correct (repo: $HELM_REPO, tag: $HELM_TAG)"
   exit 1
 fi
 echo ""
