@@ -19,20 +19,17 @@ OPENSEARCH_PASSWORD=""
 # Test ADMIN_USER first
 HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$DASHBOARDS_URL/api/status" -u ${ADMIN_USER}:${ADMIN_PASSWORD})
 if [ "$HTTP_CODE" = "200" ]; then
-  echo "✓ ADMIN_USER credentials are valid"
+  echo "✓ User credentials validated"
   OPENSEARCH_USERNAME=${ADMIN_USER}
   OPENSEARCH_PASSWORD=${ADMIN_PASSWORD}
 else
-  echo "✗ ADMIN_USER credentials failed (HTTP $HTTP_CODE)"
-
   # Test ADMIN2_USER as fallback
   HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$DASHBOARDS_URL/api/status" -u ${ADMIN2_USER}:${ADMIN2_PASSWORD})
   if [ "$HTTP_CODE" = "200" ]; then
-    echo "✓ ADMIN2_USER credentials are valid"
+    echo "✓ User credentials validated"
     OPENSEARCH_USERNAME=${ADMIN2_USER}
     OPENSEARCH_PASSWORD=${ADMIN2_PASSWORD}
   else
-    echo "✗ ADMIN2_USER credentials also failed (HTTP $HTTP_CODE)"
     echo "ERROR: No valid credentials available"
     exit 1
   fi

@@ -1,3 +1,4 @@
+{{- if ne .Values.global.region "qa-de-1" }}
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -34,7 +35,7 @@ spec:
                 - {{ .Values.global.nodepool }}
       restartPolicy: Never
       containers:
-      - name: import-dashboards 
+      - name: import-dashboards
         image: "{{ .Values.global.registry }}/unified-kubernetes-toolbox:latest"
         command: ["/bin/bash", "/scripts/import-dashboards.sh"]
         env:
@@ -80,3 +81,4 @@ spec:
         configMap:
           defaultMode: 420
           name: dashboards
+{{- end }}
