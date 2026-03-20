@@ -95,13 +95,15 @@ spec:
         command: ["sh", "-c"]
         args:
           - |
-            # Noop init container: copies SP key from K8s Secret mount to tmpfs.
+            # Noop init container: copies per-tenant SP keys from K8s Secret mount to tmpfs.
             # This follows the SF.Sem.2 pattern (init container -> tmpfs) so that
             # when Vault Transit + Kubernetes auth are available, this script is
             # replaced with a Transit decrypt call. The main container never has
             # direct access to the encryption backend.
-            cp /saml-sp-secret/sp-key.pem /saml-sp-keys/sp-key.pem
-            cp /saml-sp-secret/sp-cert.pem /saml-sp-keys/sp-cert.pem
+            {{- range $tenant := .Values.federation.saml.idp.tenants }}
+            cp /saml-sp-secret/{{ $tenant.name }}-sp-key.pem /saml-sp-keys/{{ $tenant.name }}-sp-key.pem
+            cp /saml-sp-secret/{{ $tenant.name }}-sp-cert.pem /saml-sp-keys/{{ $tenant.name }}-sp-cert.pem
+            {{- end }}
             chmod 0440 /saml-sp-keys/*
         volumeMounts:
           - name: keystone-saml-sp-keys
