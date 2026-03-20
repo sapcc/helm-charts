@@ -77,8 +77,6 @@ function start_tempest_tests {
   openstack object create reports/{{ index (split "-" .Chart.Name )._0 }} /tmp/report.json --name $(echo $OS_REGION_NAME)-epoxy-latest.json
 }
 
-{{- include "tempest-base.function_main" . }}
-
 function cleanup_tempest_leftovers() {
 
   echo "Run cleanup"
@@ -173,5 +171,6 @@ function cleanup_tempest_leftovers() {
 
 {{- include "tempest-base.function_main" . }}
 
+# Run cleanup before tests to ensure clean state
 cleanup_tempest_leftovers
 main
