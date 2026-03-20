@@ -18,7 +18,7 @@ metadata:
   labels:
     severity: 'debug'
 spec:
-  enforcementAction: dryrun
+  enforcementAction: {{ if eq .Values.global.region "eu-de-3" }}deny{{ else }}dryrun{{ end }}
   match: {{ include "match_pods_and_pod_owners" . | indent 4 }}
   parameters:
     allowlist:
@@ -816,6 +816,20 @@ spec:
         - NET_BIND_SERVICE
         - NET_RAW
         - SYS_ADMIN
+
+      - matchNamespace: kube-system # for ldap-named-user daemonset (running in kube-system in a-eu-de-3 for some reason)
+        matchRepository: ccloud-dockerhub-mirror/library/alpine
+        justification: |
+          TODO
+        mayBePrivileged: true
+        mayUseHostPID: true
+        mayWriteHostPathVolumes: [ / ]
+
+      - matchNamespace: kube-system # for ldap-named-user daemonset (running in kube-system in a-eu-de-3 for some reason)
+        matchRepository: ccloud-dockerhub-mirror/sapcc/pause-amd64
+        justification: |
+          TODO
+        mayUseHostPID: true
       {{- end }}
 
       ##########################################################################
