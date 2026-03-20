@@ -39,10 +39,10 @@
         <RequestMap>
             <Host name="{{ $.Values.services.public.host }}.{{ $.Values.global.region }}.{{ $.Values.global.tld }}">
                 {{- range $tenant := $.Values.federation.saml.idp.tenants }}
-                <Path name="v3/OS-FEDERATION/identity_providers/{{ $tenant.name }}/protocols/mapped/auth"
+                <Path name="v3/OS-FEDERATION/identity_providers/{{ $tenant.name }}/protocols/saml2/auth"
                       authType="shibboleth" requireSession="true"
                       applicationId="{{ $tenant.name }}"/>
-                <Path name="v3/auth/OS-FEDERATION/identity_providers/{{ $tenant.name }}/protocols/mapped/websso"
+                <Path name="v3/auth/OS-FEDERATION/identity_providers/{{ $tenant.name }}/protocols/saml2/websso"
                       authType="shibboleth" requireSession="true"
                       applicationId="{{ $tenant.name }}"/>
                 {{- end }}
