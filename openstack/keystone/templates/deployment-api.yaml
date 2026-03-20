@@ -89,6 +89,27 @@ spec:
       {{- if .Values.proxysql.native_sidecar }}
       {{- include "utils.proxysql.container" . | indent 6 }}
       {{- end }}
+      {{- if .Values.federation.saml.enabled }}
+      - name: saml-sp-decrypt
+        image: busybox:stable
+        command: ["sh", "-c"]
+        args:
+          - |
+            # Noop init container: copies SP key from K8s Secret mount to tmpfs.
+            # This follows the SF.Sem.2 pattern (init container -> tmpfs) so that
+            # when Vault Transit + Kubernetes auth are available, this script is
+            # replaced with a Transit decrypt call. The main container never has
+            # direct access to the encryption backend.
+            cp /saml-sp-secret/sp-key.pem /saml-sp-keys/sp-key.pem
+            cp /saml-sp-secret/sp-cert.pem /saml-sp-keys/sp-cert.pem
+            chmod 0440 /saml-sp-keys/*
+        volumeMounts:
+          - name: keystone-saml-sp-keys
+            mountPath: /saml-sp-secret
+            readOnly: true
+          - name: saml-sp-tmpfs
+            mountPath: /saml-sp-keys
+      {{- end }}
       containers:
         - name: keystone-api
           image: {{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{ .Values.api.image }}:{{ required ".Values.api.imageTag is missing" .Values.api.imageTag }}
@@ -203,7 +224,7 @@ spec:
               mountPath: /etc/shibboleth/attribute-map.xml
               subPath: attribute-map.xml
               readOnly: true
-            - name: keystone-saml-sp-keys
+            - name: saml-sp-tmpfs
               mountPath: /etc/shibboleth/sp-keys
               readOnly: true
             {{- if .Values.federation.saml.idp.metadataConfigMap }}
@@ -291,6 +312,10 @@ spec:
           secret:
             secretName: keystone-saml-sp
             defaultMode: 0440
+        - name: saml-sp-tmpfs
+          emptyDir:
+            medium: Memory
+            sizeLimit: 32Ki
         {{- if .Values.federation.saml.idp.metadataConfigMap }}
         - name: keystone-saml-idp-metadata
           configMap:
