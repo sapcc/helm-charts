@@ -1,0 +1,22 @@
+{{- if .Values.garden.dashboard }}
+{{- if .Values.garden.dashboard.enabled }}
+{{- if .Values.garden.dashboard.customIngress }}
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: gardener-dashboard-certificate
+spec:
+  secretName: gardener-dashboard-tls-secret-3
+  dnsNames:
+{{- if .Values.garden.domainOverride }}
+  - dashboard.runtime.{{ $.Values.garden.domainOverride }}.{{ required ".Values.global.region missing" .region }}.cloud.sap.
+{{- else }}
+  - dashboard.runtime-garden.{{ required ".Values.global.cluster missing" .cluster }}.{{ required ".Values.global.region missing" .region }}.cloud.sap.
+{{- end }}
+  issuerRef:
+    group: certmanager.cloud.sap
+    kind: ClusterIssuer
+    name: digicert-issuer
+{{- end }}
+{{- end }}
+{{- end }}
