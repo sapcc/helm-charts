@@ -113,3 +113,8 @@ storage:
   users:
   - "storage"
   - "storage2"
+
+security_analytics_full_access:
+  reserved: false
+  backend_roles:
+  - CC_IAS_OPERATIONS_UI_KIBANA_SUPPORT

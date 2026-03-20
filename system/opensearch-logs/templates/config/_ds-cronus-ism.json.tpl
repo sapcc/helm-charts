@@ -47,9 +47,33 @@
                 ],
                 "transitions": [
                     {
+                        "state_name": "snapshot",
+                        "conditions": {
+                            "min_rollover_age": "{{ .Values.global.data_stream.cronus.min_index_age }}"
+                        }
+                    }
+                ]
+            },
+            {
+            "name": "snapshot",
+            "actions": [
+                {
+                    "retry": {
+                        "count": 3,
+                        "backoff": "exponential",
+                        "delay": "1m"
+                    },
+                    "snapshot": {
+                        "repository": "{{ .Values.global.data_stream.cronus.snapshot_repository }}",
+                        "snapshot": "{_SNAPSHOT_NAME_}"
+                    }
+                }
+            ],
+                "transitions": [
+                    {
                         "state_name": "delete",
                         "conditions": {
-                            "min_index_age": "7d"
+                            "min_doc_count": 5
                         }
                     }
                 ]
