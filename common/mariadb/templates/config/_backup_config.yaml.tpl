@@ -31,25 +31,41 @@ database:
     - "{{$tl}}"
   {{- end }}
 storages:
-  {{- if .Values.backup_v2.aws.enabled }}
+  {{- if or .Values.backup_v2.aws.enabled .Values.backup_v2.ceph_s3.enabled }}
   s3:
+    {{- if .Values.backup_v2.aws.enabled }}
     - name: aws-{{ .Values.global.mariadb.backup_v2.aws.region }}
       aws_access_key_id: {{ include "mariadb.resolve_secret_squote" .Values.global.backup_v2.aws_access_key_id }}
       aws_secret_access_key: {{ include "mariadb.resolve_secret_squote" .Values.global.backup_v2.aws_secret_access_key }}
       region: {{ .Values.global.mariadb.backup_v2.aws.region }}
       bucket_name: "mariadb-backup-{{ .Values.global.region }}"
+      {{- if .Values.global.mariadb.backup_v2.aws.sse_customer_key }}
       sse_customer_algorithm: "AES256"
       sse_customer_key: {{ include "mariadb.resolve_secret_squote" .Values.global.mariadb.backup_v2.aws.sse_customer_key }}
+      {{- end }}
+    {{- end }}
+    {{- if .Values.backup_v2.ceph_s3.enabled }}
+    - name: ceph-{{ .Values.global.region }}
+      aws_access_key_id: {{ include "mariadb.resolve_secret_squote" .Values.global.backup_v2.ceph_s3_access_key_id }}
+      aws_secret_access_key: {{ include "mariadb.resolve_secret_squote" .Values.global.backup_v2.ceph_s3_secret_access_key }}
+      aws_endpoint: {{ .Values.global.mariadb.backup_v2.ceph_s3.endpoint | required "global.mariadb.backup_v2.ceph_s3.endpoint is required when ceph_s3 is enabled" | quote }}
+      s3_force_path_style: {{ .Values.backup_v2.ceph_s3.force_path_style }}
+      region: {{ .Values.global.mariadb.backup_v2.ceph_s3.region | default "default" }}
+      bucket_name: {{ .Values.global.mariadb.backup_v2.ceph_s3.bucket_name | default (printf "mariadb-backup-%s" .Values.global.region) | quote }}
+      {{- if .Values.backup_v2.ceph_s3.verify }}
+      verify: true
+      {{- end }}
+    {{- end }}
   {{- end }}
   {{- if .Values.backup_v2.swift.enabled }}
   swift:
     - name: swift-{{ .Values.global.region }}
-      auth_version: 3
+      auth_version: {{ .Values.backup_v2.swift.auth_version }}
       auth_url: "https://identity-3.{{ .Values.global.region }}.cloud.sap/v3"
-      user_name: db_backup
-      user_domain_name: Default
-      project_name: master
-      project_domain_name: ccadmin
+      user_name: {{ .Values.backup_v2.swift.user_name }}
+      user_domain_name: {{ .Values.backup_v2.swift.user_domain_name }}
+      project_name: {{ .Values.backup_v2.swift.project_name }}
+      project_domain_name: {{ .Values.backup_v2.swift.project_domain_name }}
       password: {{ include "mariadb.resolve_secret_squote" .Values.backup_v2.swift.password | required "Please set .Values.backup_v2.swift.password" }}
       region: {{ .Values.global.region }}
       container_name: "mariadb-backup-{{ .Values.global.region }}"

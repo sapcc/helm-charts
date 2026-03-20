@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.34.0 - 2026/03/13
+* Add Ceph S3 storage backend support for `maria-back-me-up` backup configuration
+  * new `backup_v2.ceph_s3` section with dedicated credential paths, custom endpoint, and path-style URL support
+  * enables Ceph-only, Ceph + AWS dual-write, and other flexible storage combinations
+* Make AWS SSE-C fields conditional. `sse_customer_algorithm` and `sse_customer_key` are only rendered when `sse_customer_key` is configured
+* Fix Swift template to use `values.yaml` fields instead of hardcoded values (`user_name`, `user_domain_name`, `project_name`, `project_domain_name`)
+
 ## v0.33.0 - 2026/03/03
 * Add InnoDB buffer pool Prometheus alerts: `MariaDBBufferPoolNearlyFull` (warning, < 10% free) and `MariaDBBufferPoolExhausted` (critical, < 2.5% free)
 
