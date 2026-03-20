@@ -1,0 +1,52 @@
+{{- if .Values.garden.dashboard }}
+{{- if .Values.garden.dashboard.enabled }}
+{{- if .Values.garden.dashboard.customIngress }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  labels:
+    app: gardener-dashboard
+  name: np-egress-to-gardener-dashboard-tcp-8080-from-ingress-controller
+spec:
+  egress:
+  - ports:
+    - port: 8080
+      protocol: TCP
+    to:
+    - podSelector:
+        matchLabels:
+          app: gardener
+          role: dashboard
+  podSelector:
+    matchLabels:
+      app: nginx-ingress
+      component: controller
+  policyTypes:
+  - Egress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  labels:
+    app: gardener-dashboard
+  name: np-ingress-to-gardener-dashboard-tcp-8080-from-ingress-controller
+spec:
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app: nginx-ingress
+          component: controller
+    ports:
+    - port: 8080
+      protocol: TCP
+  podSelector:
+    matchLabels:
+      app: gardener
+      role: dashboard
+  policyTypes:
+  - Ingress
+{{- end }}
+{{- end }}
+{{- end }}
