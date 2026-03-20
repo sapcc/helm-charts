@@ -113,14 +113,6 @@ fi
 
 echo "✓ All dashboard files are valid!"
 echo ""
-if [ $VALIDATION_FAILED -gt 0 ]; then
-  echo "ERROR: Dashboard validation failed for $VALIDATION_FAILED file(s)"
-  echo "Please fix the dashboard files before importing"
-  exit 1
-fi
-
-echo "✓ All dashboard files are valid!"
-echo ""
 
 # Check OpenSearch version
 echo "Checking OpenSearch Dashboards version..."
