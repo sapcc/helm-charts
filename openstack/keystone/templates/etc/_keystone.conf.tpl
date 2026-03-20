@@ -38,7 +38,7 @@ Note: the federation-related methods must be in the beginning of the list.
 This goes against the official keystone documentation.
 This allows them to work even if the "external" method is present.
 */}}
-methods = {{ if .Values.federation.oidc.enabled }}openid,{{ end }}{{ if .Values.federation.saml.enabled }}mapped,{{ end }}{{ .Values.api.auth.methods | default "password,token,application_credential" }}
+methods = {{ if .Values.federation.oidc.enabled }}openid,{{ end }}{{ if .Values.federation.saml.enabled }}saml2,{{ end }}{{ .Values.api.auth.methods | default "password,token,application_credential" }}
 {{ if .Values.api.auth.external }}external = {{ .Values.api.auth.external }}{{ end }}
 {{ if .Values.api.auth.password }}password = {{ .Values.api.auth.password }}{{ end }}
 {{ if .Values.api.auth.totp }}totp = {{ .Values.api.auth.totp }}{{ end }}
