@@ -144,7 +144,7 @@ main() {
   if [[ $RALLY_EXIT_CODE -eq 0 && $(rally verify show --uuid $(rally verify list | grep "tempest" | awk '{ print $2 }') --detailed | grep -E "Failures" | awk '{ print $4 }') -gt 0 ]]; then 
   	export TEMPEST_EXIT_CODE=1
   fi
-  cleanup_tempest_leftovers
+  # cleanup_tempest_leftovers
   export CLEANUP_EXIT_CODE=$?
   rally verify show --uuid $(rally verify list | grep "tempest" | awk '{ print $2 }')
   exit $(($RALLY_EXIT_CODE + $TEMPEST_EXIT_CODE + $CLEANUP_EXIT_CODE))
