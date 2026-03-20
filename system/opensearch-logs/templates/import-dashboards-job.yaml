@@ -39,8 +39,6 @@ spec:
         image: "{{ .Values.global.registry }}/unified-kubernetes-toolbox:latest"
         command: ["/bin/bash", "/scripts/import-dashboards.sh"]
         env:
-          - name: ISM_INDEXES
-            value: "{{ .Values.global.index.ism_indexes }}"
           - name: ADMIN_USER
             valueFrom:
               secretKeyRef:
@@ -63,10 +61,6 @@ spec:
                 key: ADMIN2_PASSWORD
           - name: CLUSTER_HOST
             value: "https://opensearch-logs-client.{{ .Values.global.clusterType }}.{{ .Values.global.region }}.{{ .Values.global.tld }}:{{ .Values.httpPort }}"
-          - name: RETENTION_NAME
-            value: "log"
-          - name: FILE_RETENTION_SCHEMA_VERSION
-            value: "{{ .Values.global.index.schema_version }}"
         volumeMounts:
         - mountPath: /scripts
           name: security-config
