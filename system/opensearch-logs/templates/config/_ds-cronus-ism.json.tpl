@@ -73,7 +73,7 @@
                     {
                         "state_name": "delete",
                         "conditions": {
-                        "min_doc_count": 5
+                            "min_doc_count": 5
                         }
                     }
                 ]
