@@ -21,7 +21,7 @@
 {{- range $tenant := $.Values.federation.saml.idp.tenants }}
 
 # Tenant: {{ $tenant.name }} (IdP: {{ $tenant.entityId }})
-<Location /v3/OS-FEDERATION/identity_providers/{{ $tenant.name }}/protocols/mapped/auth>
+<Location /v3/OS-FEDERATION/identity_providers/{{ $tenant.name }}/protocols/saml2/auth>
     AuthType shibboleth
     ShibRequestSetting requireSession 1
     ShibRequestSetting applicationId {{ $tenant.name }}
@@ -30,7 +30,7 @@
     Require valid-user
 </Location>
 
-<Location /v3/auth/OS-FEDERATION/identity_providers/{{ $tenant.name }}/protocols/mapped/websso>
+<Location /v3/auth/OS-FEDERATION/identity_providers/{{ $tenant.name }}/protocols/saml2/websso>
     AuthType shibboleth
     ShibRequestSetting requireSession 1
     ShibRequestSetting applicationId {{ $tenant.name }}
