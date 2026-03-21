@@ -60,6 +60,9 @@ CustomLog /dev/stdout proxy env=forwarded
 <VirtualHost *:5000>
     ServerName {{ .Values.services.public.host }}.{{ .Values.global.region }}.{{ .Values.global.tld }}
     WSGIDaemonProcess keystone-public processes=8 threads=1 user=keystone group=keystone display-name=%{GROUP}
+    {{- if .Values.federation.saml.enabled }}
+    UseCanonicalName On
+    {{- end }}
     WSGIProcessGroup keystone-public
     {{- if .Values.federation.saml.enabled }}
     # Federation auth paths: WSGIScriptAliasMatch takes priority over WSGIScriptAlias
