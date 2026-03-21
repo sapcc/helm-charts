@@ -70,11 +70,13 @@ CustomLog /dev/stdout proxy env=forwarded
     KeepAliveTimeout 61
 
     {{- if .Values.federation.saml.enabled }}
-    # Shibboleth handler for the ACS endpoint (/Shibboleth.sso/SAML2/POST)
-    # and session/status handlers.
-    <Location /Shibboleth.sso>
+    # Shibboleth handler — matches the default /Shibboleth.sso and all
+    # per-tenant handler URLs (/Shibboleth.sso/<tenant>/*).
+    # Each tenant's ApplicationOverride has its own handlerURL so the ACS
+    # endpoint is unique per tenant, ensuring correct applicationId routing.
+    <LocationMatch "^/Shibboleth\.sso(/|$)">
         SetHandler shib
-    </Location>
+    </LocationMatch>
 
     # Per-tenant auth endpoints (generated at runtime by generate-saml-config.py)
     IncludeOptional /etc/apache2/conf-enabled/federation-saml.conf
