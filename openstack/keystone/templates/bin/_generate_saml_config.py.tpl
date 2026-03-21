@@ -68,6 +68,25 @@ def generate_shibboleth_xml(tenants):
     # under the per-tenant handler path.
     app_overrides = ""
     for t in tenants:
+        # During key rotation (rotation: true in the region flag file),
+        # use a Chaining CredentialResolver with both current and next keys.
+        # Shibboleth tries each resolver in order for decryption/signing.
+        if t.get("rotation"):
+            cred_resolver = """
+            <CredentialResolver type="Chaining">
+                <CredentialResolver type="File"
+                    key="/etc/shibboleth/sp-keys/{name}-sp-key.pem"
+                    certificate="/etc/shibboleth/sp-keys/{name}-sp-cert.pem"/>
+                <CredentialResolver type="File"
+                    key="/etc/shibboleth/sp-keys/{name}-sp-next-key.pem"
+                    certificate="/etc/shibboleth/sp-keys/{name}-sp-next-cert.pem"/>
+            </CredentialResolver>""".format(name=t["name"])
+        else:
+            cred_resolver = """
+            <CredentialResolver type="File"
+                key="/etc/shibboleth/sp-keys/{name}-sp-key.pem"
+                certificate="/etc/shibboleth/sp-keys/{name}-sp-cert.pem"/>""".format(name=t["name"])
+
         app_overrides += """
         <ApplicationOverride id="{name}" entityID="{sp_entity_id}">
             <Sessions handlerURL="/Shibboleth.sso/{name}"
@@ -86,14 +105,12 @@ def generate_shibboleth_xml(tenants):
             </Sessions>
             <MetadataProvider type="XML"
                 path="/etc/shibboleth/metadata/{name}-metadata.xml"
-                reloadChanges="true"/>
-            <CredentialResolver type="File"
-                key="/etc/shibboleth/sp-keys/{name}-sp-key.pem"
-                certificate="/etc/shibboleth/sp-keys/{name}-sp-cert.pem"/>
+                reloadChanges="true"/>{cred_resolver}
         </ApplicationOverride>""".format(
             name=t["name"],
             sp_entity_id=SP_ENTITY_ID,
-            session_lifetime=SESSION_LIFETIME)
+            session_lifetime=SESSION_LIFETIME,
+            cred_resolver=cred_resolver)
 
     # RequestMapper: maps per-tenant handler URLs to the correct applicationId.
     # When a request arrives at /Shibboleth.sso/<tenant>/SAML2/POST (the ACS),
