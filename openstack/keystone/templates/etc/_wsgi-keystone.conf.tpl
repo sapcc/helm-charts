@@ -50,6 +50,9 @@ CustomLog /dev/stdout proxy env=forwarded
 
 <VirtualHost *:5000>
     ServerName {{ .Values.services.public.host }}.{{ .Values.global.region }}.{{ .Values.global.tld }}
+    {{- if .Values.federation.saml.enabled }}
+    UseCanonicalName On
+    {{- end }}
     WSGIDaemonProcess keystone-public processes=8 threads=1 user=keystone group=keystone display-name=%{GROUP}
     WSGIProcessGroup keystone-public
     {{- if .Values.federation.saml.enabled }}
