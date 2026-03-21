@@ -11,13 +11,20 @@
       as an attribute id directly.
     -->
 
-    <!-- NameID mappings (decoded to named IDs, not directly to REMOTE_USER) -->
-    <Attribute name="urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress"
-        id="email-nameid"/>
-    <Attribute name="urn:oasis:names:tc:SAML:2.0:nameid-format:persistent"
-        id="persistent-id"/>
-    <Attribute name="urn:oasis:names:tc:SAML:2.0:nameid-format:transient"
-        id="transient-id"/>
+    <!-- NameID extraction using NameIDAttributeDecoder.
+         In Shibboleth SP 3, NameID is NOT a regular SAML attribute — it's a
+         separate XML element. The NameIDAttributeDecoder extracts the NameID
+         value and exposes it as a regular attribute that REMOTE_USER can use.
+         formatter="$Name" extracts just the NameID value (e.g., the email). -->
+    <Attribute name="urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress" id="email-nameid">
+        <AttributeDecoder xsi:type="NameIDAttributeDecoder" formatter="$Name"/>
+    </Attribute>
+    <Attribute name="urn:oasis:names:tc:SAML:2.0:nameid-format:persistent" id="persistent-id">
+        <AttributeDecoder xsi:type="NameIDAttributeDecoder" formatter="$Name"/>
+    </Attribute>
+    <Attribute name="urn:oasis:names:tc:SAML:2.0:nameid-format:transient" id="transient-id">
+        <AttributeDecoder xsi:type="NameIDAttributeDecoder" formatter="$Name"/>
+    </Attribute>
 
     <!-- eduPerson attributes (common in enterprise/academic IdPs) -->
     <Attribute name="urn:oid:1.3.6.1.4.1.5923.1.1.1.6" id="eppn">
@@ -28,12 +35,19 @@
         <AttributeDecoder xsi:type="ScopedAttributeDecoder" caseSensitive="false"/>
     </Attribute>
 
-    <!-- Standard naming attributes -->
+    <!-- Standard naming attributes (OID format) -->
     <Attribute name="urn:oid:2.5.4.3" id="cn"/>
     <Attribute name="urn:oid:2.5.4.4" id="sn"/>
     <Attribute name="urn:oid:2.5.4.42" id="givenName"/>
     <Attribute name="urn:oid:0.9.2342.19200300.100.1.3" id="mail"/>
     <Attribute name="urn:oid:2.16.840.1.113730.3.1.241" id="displayName"/>
+
+    <!-- ADFS / SAP IAS claim URI format -->
+    <Attribute name="http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress" id="mail"/>
+    <Attribute name="http://schemas.xmlsoap.org/ws/2005/05/identity/claims/upn" id="upn"/>
+    <Attribute name="http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name" id="displayName"/>
+    <Attribute name="http://schemas.xmlsoap.org/ws/2005/05/identity/claims/givenname" id="givenName"/>
+    <Attribute name="http://schemas.xmlsoap.org/ws/2005/05/identity/claims/surname" id="sn"/>
 
     <!-- SAML 2.0 Subject Identifier attributes -->
     <Attribute name="urn:oasis:names:tc:SAML:attribute:subject-id" id="subject-id">
