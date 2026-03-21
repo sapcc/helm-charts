@@ -12,7 +12,10 @@ metadata:
     component: keystone
     type: api
   annotations:
-    secret.reloader.stakater.com/reload: "{{ .Release.Name }}-secrets,{{ .Release.Name }}-federation{{- if .Values.federation.saml.enabled }},{{ .Release.Name }}-federation-saml,keystone-saml-sp{{- end }}"
+    secret.reloader.stakater.com/reload: "{{ .Release.Name }}-secrets,{{ .Release.Name }}-federation{{- if .Values.federation.saml.enabled }},{{ .Release.Name }}-federation-saml,{{ .Values.federation.saml.idp.spKeySecretName | default "keystone-saml-sp" }}{{- end }}"
+    {{- if .Values.federation.saml.enabled }}
+    configmap.reloader.stakater.com/reload: "{{ .Values.federation.saml.idp.tenantListConfigMap }},{{ .Values.federation.saml.idp.metadataConfigMap }}"
+    {{- end }}
     deployment.reloader.stakater.com/pause-period: "60s"
 spec:
   replicas: {{ .Values.api.replicas }}
@@ -97,14 +100,19 @@ spec:
           - |
             # Noop init container: copies per-tenant SP keys from K8s Secret mount to tmpfs.
             # This follows the SF.Sem.2 pattern (init container -> tmpfs) so that
-            # when Vault Transit + Kubernetes auth are available, this script is
-            # replaced with a Transit decrypt call. The main container never has
-            # direct access to the encryption backend.
-            {{- range $tenant := .Values.federation.saml.idp.tenants }}
-            cp /saml-sp-secret/{{ $tenant.name }}-sp-key.pem /saml-sp-keys/{{ $tenant.name }}-sp-key.pem
-            cp /saml-sp-secret/{{ $tenant.name }}-sp-cert.pem /saml-sp-keys/{{ $tenant.name }}-sp-cert.pem
-            {{- end }}
-            chmod 0440 /saml-sp-keys/*
+            # when Vault Transit or TPM are available, this script is replaced with
+            # a decrypt call. The main container never has direct access to the
+            # encryption backend.
+            # Tenant names are read from the tenant-list JSON (from federation chart).
+            for keyfile in /saml-sp-secret/*-sp-key.pem; do
+              [ -f "$keyfile" ] || continue
+              cp "$keyfile" /saml-sp-keys/
+            done
+            for certfile in /saml-sp-secret/*-sp-cert.pem; do
+              [ -f "$certfile" ] || continue
+              cp "$certfile" /saml-sp-keys/
+            done
+            chmod 0440 /saml-sp-keys/* 2>/dev/null || true
         volumeMounts:
           - name: keystone-saml-sp-keys
             mountPath: /saml-sp-secret
@@ -215,14 +223,6 @@ spec:
             {{- end }}
             {{- if .Values.federation.saml.enabled }}
             - name: keystone-federation-saml
-              mountPath: /etc/apache2/conf-enabled/federation-saml.conf
-              subPath: federation-saml.conf
-              readOnly: true
-            - name: keystone-federation-saml
-              mountPath: /etc/shibboleth/shibboleth2.xml
-              subPath: shibboleth2.xml
-              readOnly: true
-            - name: keystone-federation-saml
               mountPath: /etc/shibboleth/attribute-map.xml
               subPath: attribute-map.xml
               readOnly: true
@@ -234,6 +234,15 @@ spec:
               mountPath: /etc/shibboleth/metadata
               readOnly: true
             {{- end }}
+            {{- if .Values.federation.saml.idp.tenantListConfigMap }}
+            - name: keystone-saml-tenant-list
+              mountPath: /etc/shibboleth/tenant-list
+              readOnly: true
+            {{- end }}
+            - name: keystone-bin
+              mountPath: /scripts/generate-saml-config.py
+              subPath: generate-saml-config.py
+              readOnly: true
             {{- end }}
             - name: keystone-etc
               mountPath: /etc/apache2/mods-available/mpm_event.conf
@@ -312,7 +321,7 @@ spec:
             defaultMode: 0444
         - name: keystone-saml-sp-keys
           secret:
-            secretName: keystone-saml-sp
+            secretName: {{ .Values.federation.saml.idp.spKeySecretName | default "keystone-saml-sp" }}
             defaultMode: 0440
         - name: saml-sp-tmpfs
           emptyDir:
@@ -322,6 +331,12 @@ spec:
         - name: keystone-saml-idp-metadata
           configMap:
             name: {{ .Values.federation.saml.idp.metadataConfigMap }}
+            defaultMode: 0444
+        {{- end }}
+        {{- if .Values.federation.saml.idp.tenantListConfigMap }}
+        - name: keystone-saml-tenant-list
+          configMap:
+            name: {{ .Values.federation.saml.idp.tenantListConfigMap }}
             defaultMode: 0444
         {{- end }}
         {{- end }}
