@@ -1,0 +1,38 @@
+{{- range $clusterName, $cluster := .Values.clusters }}
+{{- $regionName := include "cc-shoots-workerless.clusterRegion" (dict "clusterName" $clusterName "cluster" $cluster) }}
+{{- $clusterType := include "cc-shoots-workerless.clusterType" $ }}
+{{- $supportGroup := include "cc-shoots-workerless.supportGroup" $ }}
+---
+apiVersion: core.gardener.cloud/v1beta1
+kind: Shoot
+metadata:
+  name: {{ $clusterName }}
+  labels:
+    cluster-type: {{ $clusterType }}
+    greenhouse.sap/owned-by: {{ $supportGroup }}
+    greenhouse.sap/shoot-grafter-transport: {{ default "greenhouse-prod-sci" $.Values.greenhouseShootGrafter }}
+    metadata.greenhouse.sap/region: {{ $regionName }}
+spec:
+  cloudProfile:
+    kind: CloudProfile
+    name: openstack
+  region: {{ $regionName }}
+  networking:
+    services: 10.55.0.0/16
+  provider:
+    type: openstack
+  kubernetes:
+    version: {{ default $.Values.kubernetes.version $cluster.kubernetes.version }}
+
+    kubeAPIServer:
+      featureGates:
+        AnonymousAuthConfigurableEndpoints: true
+      structuredAuthentication:
+        configMapName: {{ printf "authentication-config-%s" $clusterType }}
+      encryptionConfig:
+        resources:
+        - configmaps
+        provider:
+          type: aescbc
+  seedName: {{ include "cc-shoots-workerless.seedName" (dict "clusterName" $clusterName "cluster" $cluster "regionName" $regionName "seedType" $.Values.cluster.seedType) }}
+{{- end }}
