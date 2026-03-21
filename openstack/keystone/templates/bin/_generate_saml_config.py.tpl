@@ -87,6 +87,14 @@ def generate_shibboleth_xml(tenants):
             sp_entity_id=SP_ENTITY_ID,
             session_lifetime=SESSION_LIFETIME)
 
+    # RequestMapper: maps per-tenant handler URLs to the correct applicationId.
+    # When a request arrives at /Shibboleth.sso/<tenant>/SAML2/POST (the ACS),
+    # the RequestMapper tells Shibboleth to use the <tenant> ApplicationOverride.
+    request_mapper_paths = ""
+    for t in tenants:
+        request_mapper_paths += """
+                <Path name="Shibboleth.sso/{name}" applicationId="{name}"/>""".format(name=t["name"])
+
     xml = """<SPConfig xmlns="urn:mace:shibboleth:3.0:native:sp:config"
     xmlns:conf="urn:mace:shibboleth:3.0:native:sp:config"
     clockSkew="180">
@@ -108,6 +116,13 @@ def generate_shibboleth_xml(tenants):
     <SessionCache type="StorageService" StorageService="mc" cacheAllowance="900"/>
     <ReplayCache StorageService="mc"/>
     <ArtifactMap StorageService="mc" artifactTTL="180"/>
+
+    <RequestMapper type="Native">
+        <RequestMap>
+            <Host name="{hostname}">{request_mapper_paths}
+            </Host>
+        </RequestMap>
+    </RequestMapper>
 
     <ApplicationDefaults entityID="{sp_entity_id}"
                          REMOTE_USER="email-nameid persistent-id transient-id eppn subject-id pairwise-id mail"
@@ -152,6 +167,8 @@ def generate_shibboleth_xml(tenants):
         sign_authn=SIGN_AUTHN,
         encryption=ENCRYPTION,
         session_lifetime=SESSION_LIFETIME,
+        hostname=SP_ENTITY_ID.replace("https://", "").replace("http://", "").split("/")[0],
+        request_mapper_paths=request_mapper_paths,
         app_overrides=app_overrides,
     )
 
