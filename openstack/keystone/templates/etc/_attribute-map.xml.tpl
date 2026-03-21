@@ -5,16 +5,19 @@
     <!--
       SAML attribute-to-environment-variable mapping for Keystone federation.
       Keystone's Mapped auth plugin reads REMOTE_USER from the environment.
-      mod_shib populates these env vars from the SAML assertion attributes.
+      mod_shib populates REMOTE_USER from whichever decoded attribute ID is
+      listed first in the REMOTE_USER setting of ApplicationDefaults.
+      Note: REMOTE_USER is a reserved name in Shibboleth and cannot be used
+      as an attribute id directly.
     -->
 
-    <!-- Standard NameID mapping to REMOTE_USER -->
+    <!-- NameID mappings (decoded to named IDs, not directly to REMOTE_USER) -->
     <Attribute name="urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress"
-        id="REMOTE_USER"/>
+        id="email-nameid"/>
     <Attribute name="urn:oasis:names:tc:SAML:2.0:nameid-format:persistent"
-        id="REMOTE_USER"/>
+        id="persistent-id"/>
     <Attribute name="urn:oasis:names:tc:SAML:2.0:nameid-format:transient"
-        id="REMOTE_USER"/>
+        id="transient-id"/>
 
     <!-- eduPerson attributes (common in enterprise/academic IdPs) -->
     <Attribute name="urn:oid:1.3.6.1.4.1.5923.1.1.1.6" id="eppn">
