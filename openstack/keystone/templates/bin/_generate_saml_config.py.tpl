@@ -52,40 +52,40 @@ def load_tenants():
 
 
 def generate_shibboleth_xml(tenants):
-    """Generate shibboleth2.xml with per-tenant ApplicationOverride blocks."""
+    """Generate shibboleth2.xml with per-tenant ApplicationOverride blocks.
 
-    # Default MetadataProviders (all tenants) — added to ApplicationDefaults
-    # so the ACS endpoint (/Shibboleth.sso/SAML2/POST) can validate assertions
-    # even if applicationId routing via relay state fails.
-    default_metadata = ""
-    for t in tenants:
-        default_metadata += """
-        <MetadataProvider type="XML"
-            path="/etc/shibboleth/metadata/{name}-metadata.xml"
-            reloadChanges="true"/>""".format(name=t["name"])
+    Each tenant gets its own handlerURL (/Shibboleth.sso/<tenant>) so that
+    the ACS endpoint is unique per tenant. This ensures Shibboleth resolves
+    the correct applicationId when the IdP posts the assertion back, without
+    relying on relay state to carry the applicationId.
+    """
 
-    # Default CredentialResolver (first tenant) — fallback for the ACS endpoint.
-    # Per-tenant ApplicationOverride blocks override this for their applicationId.
-    default_cred = ""
-    if tenants:
-        t = tenants[0]
-        default_cred = """
-        <CredentialResolver type="File"
-            key="/etc/shibboleth/sp-keys/{name}-sp-key.pem"
-            certificate="/etc/shibboleth/sp-keys/{name}-sp-cert.pem"/>""".format(name=t["name"])
-
-    # Per-tenant ApplicationOverride blocks
+    # Per-tenant ApplicationOverride blocks with per-tenant handlerURL
     app_overrides = ""
     for t in tenants:
         app_overrides += """
         <ApplicationOverride id="{name}" entityID="{sp_entity_id}">
+            <Sessions handlerURL="/Shibboleth.sso/{name}"
+                      lifetime="{session_lifetime}"
+                      timeout="3600"
+                      relayState="ss:mc"
+                      checkAddress="false"
+                      handlerSSL="false"
+                      cookieProps="https"
+                      redirectLimit="exact">
+                <SSO>SAML2</SSO>
+                <Logout>Local</Logout>
+            </Sessions>
             <MetadataProvider type="XML"
                 path="/etc/shibboleth/metadata/{name}-metadata.xml"
                 reloadChanges="true"/>
             <CredentialResolver type="File"
                 key="/etc/shibboleth/sp-keys/{name}-sp-key.pem"
                 certificate="/etc/shibboleth/sp-keys/{name}-sp-cert.pem"/>
-        </ApplicationOverride>""".format(name=t["name"], sp_entity_id=SP_ENTITY_ID)
+        </ApplicationOverride>""".format(
+            name=t["name"],
+            sp_entity_id=SP_ENTITY_ID,
+            session_lifetime=SESSION_LIFETIME)
 
     xml = """<SPConfig xmlns="urn:mace:shibboleth:3.0:native:sp:config"
     xmlns:conf="urn:mace:shibboleth:3.0:native:sp:config"
@@ -136,8 +136,6 @@ def generate_shibboleth_xml(tenants):
 
         <AttributeFilter type="XML" validate="true"
             path="/etc/shibboleth/attribute-policy.xml"/>
-{default_metadata}
-{default_cred}
 {app_overrides}
 
     </ApplicationDefaults>
@@ -154,8 +152,6 @@ def generate_shibboleth_xml(tenants):
         sign_authn=SIGN_AUTHN,
         encryption=ENCRYPTION,
         session_lifetime=SESSION_LIFETIME,
-        default_metadata=default_metadata,
-        default_cred=default_cred,
         app_overrides=app_overrides,
     )
 
