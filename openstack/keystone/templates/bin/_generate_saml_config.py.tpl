@@ -98,7 +98,7 @@ def generate_shibboleth_xml(tenants):
                   timeout="3600"
                   relayState="ss:mc"
                   checkAddress="false"
-                  handlerSSL="true"
+                  handlerSSL="false"
                   cookieProps="https"
                   redirectLimit="exact">
 
