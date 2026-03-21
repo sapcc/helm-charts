@@ -52,7 +52,11 @@ CustomLog /dev/stdout proxy env=forwarded
     ServerName {{ .Values.services.public.host }}.{{ .Values.global.region }}.{{ .Values.global.tld }}
     WSGIDaemonProcess keystone-public processes=8 threads=1 user=keystone group=keystone display-name=%{GROUP}
     WSGIProcessGroup keystone-public
+    {{- if .Values.federation.saml.enabled }}
+    WSGIScriptAliasMatch "^/(?!Shibboleth\.sso(/|$))" /var/www/cgi-bin/keystone/keystone-wsgi-public
+    {{- else }}
     WSGIScriptAlias / /var/www/cgi-bin/keystone/keystone-wsgi-public
+    {{- end }}
     WSGIApplicationGroup %{GLOBAL}
     WSGIPassAuthorization On
     LimitRequestBody 114688
