@@ -133,7 +133,7 @@ def generate_shibboleth_xml(tenants):
     </RequestMapper>
 
     <ApplicationDefaults entityID="{sp_entity_id}"
-                         REMOTE_USER="email-nameid persistent-id transient-id eppn subject-id pairwise-id mail"
+                         REMOTE_USER="unspecified-nameid email-nameid persistent-id transient-id eppn subject-id pairwise-id mail"
                          signing="{sign_authn}"
                          encryption="{encryption}">
 

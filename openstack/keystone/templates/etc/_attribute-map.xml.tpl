@@ -15,7 +15,13 @@
          In Shibboleth SP 3, NameID is NOT a regular SAML attribute — it's a
          separate XML element. The NameIDAttributeDecoder extracts the NameID
          value and exposes it as a regular attribute that REMOTE_USER can use.
-         formatter="$Name" extracts just the NameID value (e.g., the email). -->
+         formatter="$Name" extracts just the NameID value.
+         The NameID format depends on the IdP configuration and cannot be
+         deduced from IdP metadata. Add decoders for all formats the IdP
+         might use. -->
+    <Attribute name="urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified" id="unspecified-nameid">
+        <AttributeDecoder xsi:type="NameIDAttributeDecoder" formatter="$Name"/>
+    </Attribute>
     <Attribute name="urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress" id="email-nameid">
         <AttributeDecoder xsi:type="NameIDAttributeDecoder" formatter="$Name"/>
     </Attribute>
@@ -48,6 +54,12 @@
     <Attribute name="http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name" id="displayName"/>
     <Attribute name="http://schemas.xmlsoap.org/ws/2005/05/identity/claims/givenname" id="givenName"/>
     <Attribute name="http://schemas.xmlsoap.org/ws/2005/05/identity/claims/surname" id="sn"/>
+
+    <!-- SAP IAS plain-name attributes (sent with simple attribute names) -->
+    <Attribute name="mail" id="mail"/>
+    <Attribute name="first_name" id="givenName"/>
+    <Attribute name="last_name" id="sn"/>
+    <Attribute name="user_uuid" id="user_uuid"/>
 
     <!-- SAML 2.0 Subject Identifier attributes -->
     <Attribute name="urn:oasis:names:tc:SAML:attribute:subject-id" id="subject-id">
