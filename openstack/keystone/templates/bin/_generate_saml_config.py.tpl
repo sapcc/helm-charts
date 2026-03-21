@@ -146,8 +146,8 @@ def generate_apache_conf(tenants):
     conf = """#
 # Apache mod_shib configuration for SAML 2.0 federation
 # Generated at runtime from keystone-saml-tenant-list ConfigMap
-# Note: LoadModule and the /Shibboleth.sso handler are in the
-# VirtualHost config (wsgi-keystone.conf), not here.
+# Note: The /Shibboleth.sso handler is in the VirtualHost config
+# (wsgi-keystone.conf), not here.
 #
 """
 
