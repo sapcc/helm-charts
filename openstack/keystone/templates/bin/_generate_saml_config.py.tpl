@@ -54,17 +54,6 @@ def load_tenants():
 def generate_shibboleth_xml(tenants):
     """Generate shibboleth2.xml with per-tenant ApplicationOverride blocks."""
 
-    # Per-tenant RequestMapper paths
-    request_mapper_paths = ""
-    for t in tenants:
-        request_mapper_paths += """
-                <Path name="v3/OS-FEDERATION/identity_providers/{name}/protocols/saml2/auth"
-                      authType="shibboleth" requireSession="true"
-                      applicationId="{name}"/>
-                <Path name="v3/auth/OS-FEDERATION/identity_providers/{name}/protocols/saml2/websso"
-                      authType="shibboleth" requireSession="true"
-                      applicationId="{name}"/>""".format(name=t["name"])
-
     # Per-tenant ApplicationOverride blocks
     app_overrides = ""
     for t in tenants:
@@ -100,15 +89,8 @@ def generate_shibboleth_xml(tenants):
     <ReplayCache StorageService="mc"/>
     <ArtifactMap StorageService="mc" artifactTTL="180"/>
 
-    <RequestMapper type="Native">
-        <RequestMap>
-            <Host name="{hostname}">{request_mapper_paths}
-            </Host>
-        </RequestMap>
-    </RequestMapper>
-
     <ApplicationDefaults entityID="{sp_entity_id}"
-                         REMOTE_USER="eppn subject-id pairwise-id persistent-id"
+                         REMOTE_USER="email-nameid persistent-id transient-id eppn subject-id pairwise-id mail"
                          signing="{sign_authn}"
                          encryption="{encryption}">
 
@@ -123,7 +105,6 @@ def generate_shibboleth_xml(tenants):
             <SSO>SAML2</SSO>
             <Logout>Local</Logout>
 
-            <Handler type="MetadataGenerator" Location="/Metadata" signing="false"/>
             <Handler type="Status" Location="/Status" acl="127.0.0.1 ::1"/>
             <Handler type="Session" Location="/Session" showAttributeValues="false"/>
         </Sessions>
@@ -147,8 +128,6 @@ def generate_shibboleth_xml(tenants):
 
 </SPConfig>""".format(
         memcached_host=MEMCACHED_HOST,
-        hostname=SP_ENTITY_ID.replace("https://", "").split("/")[0],
-        request_mapper_paths=request_mapper_paths,
         sp_entity_id=SP_ENTITY_ID,
         sign_authn=SIGN_AUTHN,
         encryption=ENCRYPTION,
