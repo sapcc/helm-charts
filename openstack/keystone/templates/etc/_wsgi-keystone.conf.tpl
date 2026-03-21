@@ -70,8 +70,19 @@ CustomLog /dev/stdout proxy env=forwarded
     KeepAliveTimeout 61
 
     {{- if .Values.federation.saml.enabled }}
-    # SAML federation: mod_shib handler and per-tenant Location blocks.
-    # Generated at runtime by generate-saml-config.py.
+    # Load mod_shib if not already loaded
+    <IfModule !mod_shib>
+        LoadModule mod_shib /usr/lib/apache2/modules/mod_shib.so
+    </IfModule>
+
+    # Shibboleth handler — must be directly in the VirtualHost config.
+    # This handles the ACS endpoint (/Shibboleth.sso/SAML2/POST) where
+    # the IdP posts SAML assertions back, and the session/status handlers.
+    <Location /Shibboleth.sso>
+        SetHandler shib
+    </Location>
+
+    # Per-tenant auth endpoints (generated at runtime by generate-saml-config.py)
     IncludeOptional /etc/apache2/conf-enabled/federation-saml.conf
     {{- end }}
 </VirtualHost>
