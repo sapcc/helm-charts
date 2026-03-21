@@ -60,7 +60,12 @@ def generate_shibboleth_xml(tenants):
     relying on relay state to carry the applicationId.
     """
 
-    # Per-tenant ApplicationOverride blocks with per-tenant handlerURL
+    # Per-tenant ApplicationOverride blocks with per-tenant handlerURL.
+    # The <Sessions> block must be fully specified (not inherited) because
+    # Shibboleth SP 3.4 does not support handlerURL as an attribute of
+    # <ApplicationOverride>. The Sessions block must include all handlers
+    # (Status, Session, MetadataGenerator) or they won't be available
+    # under the per-tenant handler path.
     app_overrides = ""
     for t in tenants:
         app_overrides += """
@@ -75,6 +80,9 @@ def generate_shibboleth_xml(tenants):
                       redirectLimit="exact">
                 <SSO>SAML2</SSO>
                 <Logout>Local</Logout>
+                <Handler type="MetadataGenerator" Location="/Metadata" signing="false"/>
+                <Handler type="Status" Location="/Status" acl="127.0.0.1 ::1"/>
+                <Handler type="Session" Location="/Session" showAttributeValues="false"/>
             </Sessions>
             <MetadataProvider type="XML"
                 path="/etc/shibboleth/metadata/{name}-metadata.xml"
