@@ -50,18 +50,8 @@ CustomLog /dev/stdout proxy env=forwarded
 
 <VirtualHost *:5000>
     ServerName {{ .Values.services.public.host }}.{{ .Values.global.region }}.{{ .Values.global.tld }}
-    {{- if .Values.federation.saml.enabled }}
-    UseCanonicalName On
-    {{- end }}
     WSGIDaemonProcess keystone-public processes=8 threads=1 user=keystone group=keystone display-name=%{GROUP}
     WSGIProcessGroup keystone-public
-    {{- if .Values.federation.saml.enabled }}
-    # Federation auth paths: WSGIScriptAliasMatch takes priority over WSGIScriptAlias
-    # for these specific URLs, allowing mod_shib to intercept the auth phase.
-    # This follows the upstream Keystone devstack pattern (shib_apache_alias.txt).
-    WSGIScriptAliasMatch "^(/v3/OS-FEDERATION/identity_providers/.*?/protocols/.*?/auth)$" /var/www/cgi-bin/keystone/keystone-wsgi-public/$1
-    WSGIScriptAliasMatch "^(/v3/auth/OS-FEDERATION/identity_providers/.*?/protocols/.*?/websso)$" /var/www/cgi-bin/keystone/keystone-wsgi-public/$1
-    {{- end }}
     WSGIScriptAlias / /var/www/cgi-bin/keystone/keystone-wsgi-public
     WSGIApplicationGroup %{GLOBAL}
     WSGIPassAuthorization On
@@ -80,14 +70,8 @@ CustomLog /dev/stdout proxy env=forwarded
     KeepAliveTimeout 61
 
     {{- if .Values.federation.saml.enabled }}
-    # Load mod_shib if not already loaded
-    <IfModule !mod_shib>
-        LoadModule mod_shib /usr/lib/apache2/modules/mod_shib.so
-    </IfModule>
-
     # Shibboleth handler for the ACS endpoint (/Shibboleth.sso/SAML2/POST)
-    # and session/status handlers. SetHandler shib overrides WSGIScriptAlias
-    # for this path.
+    # and session/status handlers.
     <Location /Shibboleth.sso>
         SetHandler shib
     </Location>
