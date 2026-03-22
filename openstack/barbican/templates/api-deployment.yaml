@@ -58,7 +58,19 @@ spec:
           imagePullPolicy: IfNotPresent
           command:
           - dumb-init
-          - barbican-api
+          - bash
+          - -c
+          - |
+            set -ex
+            # Disable default Apache sites, use our custom config only
+            rm -f /etc/apache2/sites-enabled/*
+            # Remove stale PID file from previous runs
+            rm -f /var/run/apache2/apache2.pid
+            # Source Apache environment variables
+            if [ -f /etc/apache2/envvars ]; then
+              source /etc/apache2/envvars
+            fi
+            exec apache2 -DFOREGROUND
           env:
           {{- if .Values.sentry.enabled }}
           - name: SENTRY_DSN
@@ -120,6 +132,10 @@ spec:
             - name: barbican-etc
               mountPath: /etc/barbican/logging.ini
               subPath: logging.ini
+              readOnly: true
+            - name: barbican-etc
+              mountPath: /etc/apache2/sites-enabled/wsgi-barbican.conf
+              subPath: wsgi-barbican.conf
               readOnly: true
             - mountPath: /etc/barbican/barbican.conf.d
               name: barbican-etc-confd
