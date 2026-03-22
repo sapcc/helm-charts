@@ -1,0 +1,41 @@
+{{- if .Values.tls.enabled }}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ .Release.Name }}-tls-rotation
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    component: keystone
+    type: tls-rotation
+spec:
+  schedule: "0 3 * * 1"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: Never
+          serviceAccountName: {{ .Release.Name }}-tls-manager
+          containers:
+            - name: tls-rotation
+              image: {{ .Values.tls.lifecycle.image }}:{{ .Values.tls.lifecycle.imageTag }}
+              imagePullPolicy: IfNotPresent
+              args:
+                - --mode=rotation
+                - --namespace={{ .Release.Namespace }}
+                - --secret-name={{ .Values.tls.secretName | default "keystone-tls" }}
+                - --key-algorithm={{ .Values.tls.keyAlgorithm | default "ECDSAP256" }}
+                - --issuer-name={{ .Values.tls.issuerName | default "digicert-issuer" }}
+                - --issuer-kind={{ .Values.tls.issuerKind | default "ClusterDigicertIssuer" }}
+                - --issuer-group={{ .Values.tls.issuerGroup | default "certmanager.cloud.sap" }}
+                - --common-name={{ .Values.services.public.host }}.{{ .Values.global.region }}.{{ .Values.global.tld }}
+                - --san-dns={{ .Values.services.public.host }}.{{ .Values.global.region }}.{{ .Values.global.tld }}
+                - --renewal-threshold-days=30
+                - --deployment-name={{ .Release.Name }}-api
+                - --envelope-encryption={{ .Values.tls.envelopeEncryption | default "none" }}
+      backoffLimit: 3
+{{- end }}
