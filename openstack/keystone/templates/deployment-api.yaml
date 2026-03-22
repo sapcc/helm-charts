@@ -12,7 +12,7 @@ metadata:
     component: keystone
     type: api
   annotations:
-    secret.reloader.stakater.com/reload: "{{ .Release.Name }}-secrets,{{ .Release.Name }}-federation{{- if .Values.federation.saml.enabled }},{{ .Release.Name }}-federation-saml,{{ .Values.federation.saml.idp.spKeySecretName | default "keystone-saml-sp" }}{{- end }}"
+    secret.reloader.stakater.com/reload: "{{ .Release.Name }}-secrets,{{ .Release.Name }}-federation{{- if .Values.federation.saml.enabled }},{{ .Release.Name }}-federation-saml,{{ .Values.federation.saml.idp.spKeySecretName | default "keystone-saml-sp" }}{{- end }}{{- if .Values.tls.enabled }},{{ .Values.tls.secretName | default "keystone-tls" }}{{- end }}"
     {{- if .Values.federation.saml.enabled }}
     configmap.reloader.stakater.com/reload: "{{ .Values.federation.saml.idp.tenantListConfigMap }},{{ .Values.federation.saml.idp.metadataConfigMap }}"
     {{- end }}
@@ -53,6 +53,9 @@ spec:
         {{- end }}
         {{- if .Values.federation.saml.enabled }}
         federation-saml-hash: {{ include (print $.Template.BasePath "/federation-saml.yaml") . | sha256sum }}
+        {{- end }}
+        {{- if .Values.tls.enabled }}
+        tls-secret-hash: {{ .Values.tls.secretName | default "keystone-tls" }}
         {{- end }}
         {{- if .Values.proxysql.mode }}
         prometheus.io/scrape: "true"
@@ -102,6 +105,24 @@ spec:
           - name: saml-sp-tmpfs
             mountPath: /saml-sp-keys
       {{- end }}
+      {{- if .Values.tls.enabled }}
+      - name: tls-init
+        image: {{ required ".Values.global.dockerHubMirror is missing" .Values.global.dockerHubMirror }}/library/busybox
+        command: ["sh", "-c"]
+        args:
+          - |
+            cp /tls-input/tls.key /mnt/secrets/tls.key
+            cp /tls-input/tls.crt /mnt/secrets/tls.crt
+            chmod 0440 /mnt/secrets/tls.key
+            chmod 0444 /mnt/secrets/tls.crt
+            echo "TLS key material placed on tmpfs"
+        volumeMounts:
+          - name: tls-input
+            mountPath: /tls-input
+            readOnly: true
+          - name: tls-secrets
+            mountPath: /mnt/secrets
+      {{- end }}
       containers:
         - name: keystone-api
           image: {{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{ .Values.api.image }}:{{ required ".Values.api.imageTag is missing" .Values.api.imageTag }}
@@ -142,6 +163,10 @@ spec:
           ports:
             - name: public
               containerPort: 5000
+            {{- if .Values.tls.enabled }}
+            - name: public-tls
+              containerPort: 443
+            {{- end }}
           lifecycle:
             preStop:
               exec:
@@ -221,6 +246,15 @@ spec:
               mountPath: /etc/shibboleth/tenant-list
               readOnly: true
             {{- end }}
+            {{- end }}
+            {{- if .Values.tls.enabled }}
+            - name: tls-secrets
+              mountPath: /mnt/secrets
+              readOnly: true
+            - name: keystone-etc
+              mountPath: /etc/apache2/conf-enabled/tls-hardening.conf
+              subPath: tls-hardening.conf
+              readOnly: true
             {{- end }}
             - name: keystone-etc
               mountPath: /etc/apache2/mods-available/mpm_event.conf
@@ -343,3 +377,13 @@ spec:
             name: keystone-sentry-filter-rules
         {{- include "utils.proxysql.volumes" . | indent 8 }}
         {{- include "utils.trust_bundle.volumes" . | indent 8 }}
+        {{- if .Values.tls.enabled }}
+        - name: tls-input
+          secret:
+            secretName: {{ .Values.tls.secretName | default "keystone-tls" }}
+            defaultMode: 0440
+        - name: tls-secrets
+          emptyDir:
+            medium: Memory
+            sizeLimit: 1Mi
+        {{- end }}

@@ -48,6 +48,46 @@ CustomLog /dev/stdout proxy env=forwarded
 
 {{- end }}
 
+{{- if .Values.tls.enabled }}
+# External HTTPS endpoint (via Ingress TLS passthrough)
+Listen 0.0.0.0:443
+
+<VirtualHost *:443>
+    ServerName {{ .Values.services.public.host }}.{{ .Values.global.region }}.{{ .Values.global.tld }}
+
+    SSLEngine on
+    SSLCertificateFile /mnt/secrets/tls.crt
+    SSLCertificateKeyFile /mnt/secrets/tls.key
+    Include /etc/apache2/conf-enabled/tls-hardening.conf
+
+    WSGIDaemonProcess keystone-tls processes=8 threads=1 user=keystone group=keystone display-name=%{GROUP}
+    WSGIProcessGroup keystone-tls
+    WSGIScriptAlias / /var/www/cgi-bin/keystone/keystone-wsgi-public
+    WSGIApplicationGroup %{GLOBAL}
+    WSGIPassAuthorization On
+    LimitRequestBody 114688
+    LimitRequestFieldSize 16380
+    <IfVersion >= 2.4>
+      ErrorLogFormat "%{cu}t %M"
+    </IfVersion>
+    ErrorLog /dev/stdout
+
+    SetEnvIf X-Forwarded-For "^.*\..*\..*\..*" forwarded
+    CustomLog /dev/stdout combined env=!forwarded
+    CustomLog /dev/stdout proxy env=forwarded
+
+    KeepAliveTimeout 61
+
+    {{- if .Values.federation.saml.enabled }}
+    <LocationMatch "^/Shibboleth\.sso(/|$)">
+        SetHandler shib
+    </LocationMatch>
+    IncludeOptional /etc/apache2/conf-enabled/federation-saml.conf
+    {{- end }}
+</VirtualHost>
+{{- end }}
+
+# Internal HTTP endpoint (protected by Linkerd mTLS at the network layer)
 <VirtualHost *:5000>
     ServerName {{ .Values.services.public.host }}.{{ .Values.global.region }}.{{ .Values.global.tld }}
     WSGIDaemonProcess keystone-public processes=8 threads=4 user=keystone group=keystone display-name=%{GROUP}
