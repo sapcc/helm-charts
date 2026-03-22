@@ -449,6 +449,25 @@ sentry:
 
 tlsacme: true
 
+# Pod-level TLS termination in Apache
+tls:
+  enabled: false
+  # Name of the K8s Secret containing tls.key and tls.crt (created by TLS bootstrap Job)
+  secretName: barbican-tls
+  # Enable TLS passthrough on the ingress (sends encrypted stream directly to pod)
+  passthrough: false
+  # Envelope encryption mode for the private key: "none" (plaintext) or "vault-transit"
+  envelopeEncryption: none
+  # TLS lifecycle manager binary for bootstrap Job and rotation CronJob
+  lifecycle:
+    image: keppel.eu-de-1.cloud.sap/ccloud/tls-lifecycle-manager
+    imageTag: latest
+  # cert-manager issuer configuration
+  issuerName: digicert-issuer
+  issuerKind: ClusterDigicertIssuer
+  issuerGroup: certmanager.cloud.sap
+  keyAlgorithm: ECDSAP256
+
 # Apache mod_wsgi process configuration
 api:
   processes: 4
