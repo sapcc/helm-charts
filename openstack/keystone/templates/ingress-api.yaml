@@ -46,7 +46,12 @@ metadata:
     component: keystone
     type: api
   annotations:
-    {{- if or .Values.federation.oidc.enabled .Values.federation.saml.enabled }}
+    {{- if and .Values.tls.enabled .Values.tls.passthrough }}
+    nginx.ingress.kubernetes.io/ssl-passthrough: "true"
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+    config.linkerd.io/skip-inbound-ports: "443"
+    nginx.ingress.kubernetes.io/upstream-hash-by: "$remote_addr"
+    {{- else if or .Values.federation.oidc.enabled .Values.federation.saml.enabled }}
     # the affinity bits are required for federation; they do not affect the
     # cases when the API is used, but will affect browser-based workflows
     ingress.kubernetes.io/affinity: cookie
@@ -79,7 +84,7 @@ metadata:
     ingress.kubernetes.io/auth-tls-verify-depth: "3"
     nginx.ingress.kubernetes.io/auth-tls-verify-depth: "3"
     {{- end }}
-    {{- if .Values.services.ingress.tlsacme }}
+    {{- if and .Values.services.ingress.tlsacme (not (and .Values.tls.enabled .Values.tls.passthrough)) }}
     kubernetes.io/tls-acme: "true"
     {{- end }}
     {{- if .Values.global.is_global_region }}
@@ -123,5 +128,9 @@ spec:
             service:
               name: "{{if .Values.global.is_global_region }}keystone-global{{else}}keystone{{end}}"
               port:
+                {{- if and .Values.tls.enabled .Values.tls.passthrough }}
+                number: 443
+                {{- else }}
                 number: 5000
+                {{- end }}
 {{- end }}
