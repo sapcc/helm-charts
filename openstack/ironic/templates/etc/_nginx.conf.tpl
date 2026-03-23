@@ -1,6 +1,7 @@
 server {
 
-    listen 443 default_server ssl http2;
+    listen 443 default_server ssl;
+    http2 on;
     server_name  {{ include "ironic_console_endpoint_host_public" . }};
     ssl_certificate /etc/nginx/certs/tls.crt;
     ssl_certificate_key /etc/nginx/certs/tls.key;
