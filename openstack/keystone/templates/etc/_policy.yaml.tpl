@@ -627,7 +627,7 @@
 # DELETE  /v3/groups/{group_id}
 # Intended scope(s): system, domain
 #"identity:delete_group": "(role:admin and system_scope:all) or (role:admin and domain_id:%(target.group.domain_id)s)"
-"identity:delete_group": "rule:cloud_admin"
+"identity:delete_group": "rule:cloud_admin or (role:admin and domain_id:%(target.group.domain_id)s)"
 
 # List members of a specific group.
 # GET  /v3/groups/{group_id}/users
