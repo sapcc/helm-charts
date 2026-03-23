@@ -3,34 +3,10 @@
         "policy_id": "ds-storage-ism",
         "description": "Datastream (ds) ism policy for storage-ds",
         "schema_version": "{{ .Values.global.data_stream.schema_version }}",
-        "default_state": "initial",
+        "default_state": "hot",
         "states": [
             {
-                "name": "initial",
-                "actions": [],
-                "transitions": [
-                    {
-                        "state_name": "rollover",
-                        "conditions": {
-                            "min_index_age": "{{ .Values.global.data_stream.storage.min_index_age }}"
-                        }
-                    },
-                    {
-                        "state_name": "rollover",
-                        "conditions": {
-                            "min_size": "{{ .Values.global.data_stream.storage.min_size }}"
-                        }
-                    },
-                    {
-                        "state_name": "rollover",
-                        "conditions": {
-                            "min_doc_count": "{{ .Values.global.data_stream.storage.min_doc_count }}"
-                        }
-                    }
-                ]
-            },
-            {
-                "name": "rollover",
+                "name": "hot",
                 "actions": [
                     {
                         "retry": {
@@ -39,9 +15,8 @@
                             "delay": "1m"
                         },
                         "rollover": {
-                            "min_doc_count": 5,
-                            "min_index_age": "1d",
-                            "copy_alias": false
+                            "min_primary_shard_size": "25gb",
+                            "min_index_age": "7d"
                         }
                     }
                 ],
@@ -72,9 +47,9 @@
         "ism_template":
             {
                 "index_patterns": [
-                    "storage-datastream"
+                    ".ds-storage-datastream*"
                 ],
-                "priority": 2
+                "priority": 100
             }
     }
 }
