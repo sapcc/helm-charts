@@ -61,6 +61,17 @@ spec:
         mayUsePrivilegeEscalation: true
         mayUseCapabilities: [ NET_ADMIN, NET_RAW ]
 
+      # TODO: remove section when linkerd rollout to version edge-26.1.1 is completed
+      - matchNamespace: '*'
+        matchRepository: ccloud/servicemesh/proxy-init
+        justification: |
+          Linkerd adds a sidecar container to each relevant pod in order to connect the pod network to the service mesh.
+          CAP_NET_ADMIN is needed to modify network interfaces, routing tables, and packet filter rules.
+          CAP_NET_RAW is used to create raw network sockets.
+        mayBePrivileged: true
+        mayUsePrivilegeEscalation: true
+        mayUseCapabilities: [ NET_ADMIN, NET_RAW ]
+  
       ##########################################################################
       # Rules for ci-tooling
 
