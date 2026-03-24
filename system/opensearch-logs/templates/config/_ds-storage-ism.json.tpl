@@ -3,10 +3,10 @@
         "policy_id": "ds-storage-ism",
         "description": "Datastream (ds) ism policy for storage-ds",
         "schema_version": "{{ .Values.global.data_stream.schema_version }}",
-        "default_state": "hot",
+        "default_state": "initial",
         "states": [
             {
-                "name": "hot",
+                "name": "initial",
                 "actions": [
                     {
                         "retry": {
