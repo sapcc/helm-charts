@@ -1,7 +1,7 @@
 {
     "sm_policy": {
-        "name": "snapshot-audit-delete-policy",
-        "description": "Snapshot policy to remove old audit snapshots.",
+        "name": "snapshot-cronus-delete-policy",
+        "description": "Snapshot policy to remove old cronus snapshots.",
         "schema_version": "{{ .Values.snapshots.schema_version }}",
         "deletion": {
             "schedule": {
@@ -11,14 +11,14 @@
                 }
             },
             "condition": {
-                "max_age": "{{ .Values.snapshots.audit.retention }}",
+                "max_age": "{{ .Values.snapshots.cronus.retention }}",
                 "min_count": 1
             },
             "time_limit": "1h",
-            "snapshot_pattern": ".ds-audit-datastreamm*"
+            "snapshot_pattern": ".ds-cronus-datastreamm*"
         },
         "snapshot_config": {
-            "repository": "{{ .Values.global.data_stream.audit.snapshot_repository }}"
+            "repository": "{{ .Values.global.data_stream.cronus.snapshot_repository }}"
         },
         "enabled": true
     }
