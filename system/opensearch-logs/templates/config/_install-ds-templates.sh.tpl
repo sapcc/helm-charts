@@ -166,7 +166,25 @@ if [ "${DATA_STREAM_ENABLED}" = true ]; then
       else
          echo "Datastream has ${TOTAL_MANAGED_INDICES} indices managed by ds-${e}-ism policy"
 
-         # Check if any indices have outdated policy version or wrong state
+         # Check for indices WITHOUT any policy attached
+         export INDICES_WITHOUT_POLICY=$(jq -r \
+           'to_entries[] | select(.key != "total_managed_indices") |
+            select(.value.policy_id == null or .value.policy_id == "") |
+            .key' ${ISM_EXPLAIN_RESPONSE})
+
+         if [ -n "${INDICES_WITHOUT_POLICY}" ]; then
+            echo "Found indices without policy, assigning ds-${e}-ism:"
+            echo "${INDICES_WITHOUT_POLICY}"
+
+            for index in ${INDICES_WITHOUT_POLICY}; do
+               echo "Assigning policy to index: ${index}"
+               curl --header 'content-type: application/JSON' --netrc-file "${NETRC_FILE}" \
+                 -XPOST "${CLUSTER_HOST}/_plugins/_ism/add/${index}" \
+                 -d "{ \"policy_id\": \"ds-${e}-ism\" }"
+            done
+         fi
+
+         # Check if any indices have outdated policy version
          export INDICES_NEEDING_UPDATE=$(jq -r --arg schema_ver "${CLUSTER_POLICY_SCHEMA_VERSION}" \
            'to_entries[] | select(.key != "total_managed_indices") |
             select(.value.policy_id == "ds-'${e}'-ism") |
