@@ -44,12 +44,13 @@
                 "transitions": []
             }
         ],
-        "ism_template":
+        "ism_template": [
             {
                 "index_patterns": [
                     ".ds-logs-swift-datastream*"
                 ],
                 "priority": 100
             }
+        ]
     }
 }
