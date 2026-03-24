@@ -2,7 +2,6 @@
     "sm_policy": {
         "name": "snapshot-cronus-delete-policy",
         "description": "Snapshot policy to remove old cronus snapshots.",
-        "schema_version": "{{ .Values.snapshots.schema_version }}",
         "deletion": {
             "schedule": {
                 "cron": {

@@ -58,10 +58,10 @@ for e in ${DATA_STREAMS}; do
     export CLUSTER_RETENTION_RUN_PRIM_TERM=$(echo ${CLUSTER_RETENTION_RESPONSE} | jq ._primary_term?)
     export CLUSTER_RETENTION_SEQ_NUMBER=$(echo ${CLUSTER_RETENTION_RESPONSE} | jq ._seq_no?)
 
-    if [ -z "${FILE_ISM_SCHEMA_VERSION}" ]; then
-       echo -e "Variable FILE_ISM_SCHEMA_VERSION is empty or not existing\n"
+    if [ -z "${FILE_SCHEMA_VERSION}" ]; then
+       echo -e "Variable FILE_SCHEMA_VERSION is empty or not existing\n"
     else
-      echo -e "secret env variable schema_version: ${FILE_ISM_SCHEMA_VERSION}"
+      echo -e "secret env variable schema_version: ${FILE_SCHEMA_VERSION}"
     fi
     if [ -z "${CLUSTER_RETENTION_SCHEMA_VERSION}" ]; then
       echo -e "variable CLUSTER_RETENTION_SCHEMA_VERSION is empty or not existing\n"
@@ -69,7 +69,7 @@ for e in ${DATA_STREAMS}; do
       echo "secret database schema_version: ${CLUSTER_RETENTION_SCHEMA_VERSION}"
     fi
 
-    if [ "${FILE_ISM_SCHEMA_VERSION}" -gt "${CLUSTER_RETENTION_SCHEMA_VERSION}" ]; then
+    if [ "${FILE_SCHEMA_VERSION}" -gt "${CLUSTER_RETENTION_SCHEMA_VERSION}" ]; then
       echo -e "\nUpload of new ism template with primary number: ${CLUSTER_RETENTION_RUN_PRIM_TERM} and existing sequence number: ${CLUSTER_RETENTION_SEQ_NUMBER}\n"
       curl --netrc-file "${NETRC_FILE}" -XPUT "${CLUSTER_HOST}/_plugins/_ism/policies/remote-${e}-ism?if_seq_no=${CLUSTER_RETENTION_SEQ_NUMBER}&if_primary_term=${CLUSTER_RETENTION_RUN_PRIM_TERM}" -H 'Content-Type: application/json' -d @"${TMPPATH}/${ISM_TEMPLATE}"
       if [ $? -ne 0 ]; then
@@ -148,10 +148,10 @@ for e in ${DATA_STREAMS}; do
     export CLUSTER_RETENTION_RUN_PRIM_TERM=$(echo ${CLUSTER_RETENTION_RESPONSE} | jq ._primary_term?)
     export CLUSTER_RETENTION_SEQ_NUMBER=$(echo ${CLUSTER_RETENTION_RESPONSE} | jq ._seq_no?)
 
-    if [ -z "${FILE_SM_SCHEMA_VERSION}" ]; then
-       echo -e "Variable FILE_SM_SCHEMA_VERSION is empty or not existing\n"
+    if [ -z "${FILE_SCHEMA_VERSION}" ]; then
+       echo -e "Variable FILE_SCHEMA_VERSION is empty or not existing\n"
     else
-      echo -e "secret env variable schema_version: ${FILE_SM_SCHEMA_VERSION}"
+      echo -e "secret env variable schema_version: ${FILE_SCHEMA_VERSION}"
     fi
     if [ -z "${CLUSTER_RETENTION_SCHEMA_VERSION}" ]; then
       echo -e "variable CLUSTER_RETENTION_SCHEMA_VERSION is empty or not existing\n"
@@ -159,7 +159,7 @@ for e in ${DATA_STREAMS}; do
       echo "secret database schema_version: ${CLUSTER_RETENTION_SCHEMA_VERSION}"
     fi
 
-    if [ "${FILE_SM_SCHEMA_VERSION}" -gt "${CLUSTER_RETENTION_SCHEMA_VERSION}" ]; then
+    if [ "${FILE_SCHEMA_VERSION}" -gt "${CLUSTER_RETENTION_SCHEMA_VERSION}" ]; then
       echo -e "\nUpload of new ism template with primary number: ${CLUSTER_RETENTION_RUN_PRIM_TERM} and existing sequence number: ${CLUSTER_RETENTION_SEQ_NUMBER}\n"
       curl --netrc-file "${NETRC_FILE}" -XPUT "${CLUSTER_HOST}/_plugins/_sm/policies/snapshot-${e}-delete-policy?if_seq_no=${CLUSTER_RETENTION_SEQ_NUMBER}&if_primary_term=${CLUSTER_RETENTION_RUN_PRIM_TERM}" -H 'Content-Type: application/json' -d @"${TMPPATH}/${SM_TEMPLATE}"
       if [ $? -ne 0 ]; then
