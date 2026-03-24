@@ -169,8 +169,8 @@ if [ "${DATA_STREAM_ENABLED}" = true ]; then
          # Check if any indices have outdated policy version or wrong state
          export INDICES_NEEDING_UPDATE=$(jq -r --arg schema_ver "${CLUSTER_POLICY_SCHEMA_VERSION}" \
            'to_entries[] | select(.key != "total_managed_indices") |
-            select(.value.index.policy_id == "ds-'${e}'-ism") |
-            select(.value.policy_schema_version != ($schema_ver | tonumber)) |
+            select(.value.policy_id == "ds-'${e}'-ism") |
+            select((.value.policy_schema_version // 0) != ($schema_ver | tonumber)) |
             .key' ${ISM_EXPLAIN_RESPONSE})
 
          if [ -n "${INDICES_NEEDING_UPDATE}" ]; then
