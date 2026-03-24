@@ -198,9 +198,17 @@ if [ "${DATA_STREAM_ENABLED}" = true ]; then
             # Use change_policy API to update indices to the new policy version
             for index in ${INDICES_NEEDING_UPDATE}; do
                echo "Updating policy for index: ${index}"
+
+               # Get current state of the index
+               export CURRENT_STATE=$(jq -r --arg idx "${index}" \
+                 'to_entries[] | select(.key == $idx) | .value.state.name // "initial"' \
+                 ${ISM_EXPLAIN_RESPONSE})
+
+               echo "  Current state: ${CURRENT_STATE}"
+
                curl --header 'content-type: application/JSON' --netrc-file "${NETRC_FILE}" \
                  -XPOST "${CLUSTER_HOST}/_plugins/_ism/change_policy/${index}" \
-                 -d "{ \"policy_id\": \"ds-${e}-ism\", \"state\": \"initial\" }"
+                 -d "{ \"policy_id\": \"ds-${e}-ism\", \"state\": \"${CURRENT_STATE}\" }"
             done
          else
             echo "All managed indices are on current policy version ${CLUSTER_POLICY_SCHEMA_VERSION}"
