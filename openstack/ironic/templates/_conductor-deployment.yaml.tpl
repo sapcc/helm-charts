@@ -242,8 +242,8 @@ spec:
         secret:
           secretName: ironic-console-secret
           items:
-          - key: nginx-console.conf
-            path: nginx-console.conf
+          - key: default.conf
+            path: default.conf
       - name: ironic-console-dhparam
         secret:
           secretName: {{ .Release.Name }}-secrets

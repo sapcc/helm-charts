@@ -1,3 +1,8 @@
+map $http_upgrade $connection_upgrade {
+        default upgrade;
+        '' close;
+    }
+
 server {
 
     listen 443 default_server ssl;
