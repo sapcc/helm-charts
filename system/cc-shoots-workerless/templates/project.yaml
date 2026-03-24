@@ -1,0 +1,17 @@
+{{- if not (has .Release.Namespace (list "garden" "garden-compute" "garden-storage")) -}}
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ .Release.Namespace }}
+  labels:
+    gardener.cloud/role: project
+    project.gardener.cloud/name: {{ printf "garden-%s" (include "cc-shoots-workerless.supportGroup" .) }}
+---
+apiVersion: core.gardener.cloud/v1beta1
+kind: Project
+metadata:
+  name: {{ printf "garden-%s" (include "cc-shoots-workerless.supportGroup" .) }}
+spec:
+  namespace: {{ .Release.Namespace }}
+{{- end }}

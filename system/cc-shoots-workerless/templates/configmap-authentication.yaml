@@ -1,0 +1,18 @@
+{{- range $clusterName, $cluster := .Values.clusters }}
+{{- $regionName := include "cc-shoots-workerless.clusterRegion" (dict "clusterName" $clusterName "cluster" $cluster) }}
+{{- $clusterType := include "cc-shoots-workerless.clusterType" $ }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ printf "%s-auth-%s" $clusterType $regionName }}
+  annotations:
+    # We need this configmap to be present early because it is references in Shoot spec.
+    # Further management of structured auth configmap is done by shoot-grafter.
+    helm.sh/hook: pre-install
+    helm.sh/hook-delete-policy: "hook-succeeded,before-hook-creation"
+    helm.sh/hook-weight: "1"
+data:
+  config.yaml: |
+{{- toYaml $.Values.authenticationConfig | nindent 4 }}
+{{- end }}
