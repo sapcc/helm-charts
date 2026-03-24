@@ -2,7 +2,6 @@
     "sm_policy": {
         "name": "snapshot-audit-delete-policy",
         "description": "Snapshot policy to remove old audit snapshots.",
-        "schema_version": "{{ .Values.snapshots.schema_version }}",
         "deletion": {
             "schedule": {
                 "cron": {
