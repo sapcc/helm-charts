@@ -48,12 +48,13 @@
                 "transitions": []
             }
         ],
-        "ism_template":
+        "ism_template": [
             {
                 "index_patterns": [
-                    "alerts-sem-datastream"
+                    ".ds-alerts-sem-datastream*"
                 ],
-                "priority": 2
+                "priority": 100
             }
+        ]
     }
 }

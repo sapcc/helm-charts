@@ -69,12 +69,13 @@
                 "transitions": []
             }
         ],
-        "ism_template":
+        "ism_template": [
             {
                 "index_patterns": [
-                    "audit-datastream"
+                    ".ds-audit-datastream*"
                 ],
-                "priority": 2
+                "priority": 100
             }
+        ]
     }
 }
