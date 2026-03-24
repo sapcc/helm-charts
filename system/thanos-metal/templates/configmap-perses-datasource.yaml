@@ -1,0 +1,30 @@
+{{- if .Values.persesDatasource.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ printf "%s-%s" $.Release.Name "perses-datasource" }}
+  labels:
+    "perses.dev/resource": "true"
+data:
+  {{ printf "%s-%s" $.Release.Name "perses-datasource.json" }}: |
+    {
+      "kind": "GlobalDatasource",
+      "metadata": {
+        "name": "{{ printf "%s-%s" $.Release.Name "query" }}"
+      },
+      "spec": {
+        "default": true,
+        "plugin": {
+          "kind": "PrometheusDatasource",
+          "spec": {
+            "proxy": {
+              "kind": "HTTPProxy",
+              "spec": {
+                "url": "http://thanos-regional-query.thanos.svc:10902"
+              }
+            }
+          }
+        }
+      }
+    }
+{{- end }}
