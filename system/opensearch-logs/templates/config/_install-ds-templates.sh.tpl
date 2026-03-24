@@ -200,7 +200,7 @@ if [ "${DATA_STREAM_ENABLED}" = true ]; then
                echo "Updating policy for index: ${index}"
                curl --header 'content-type: application/JSON' --netrc-file "${NETRC_FILE}" \
                  -XPOST "${CLUSTER_HOST}/_plugins/_ism/change_policy/${index}" \
-                 -d "{ \"policy_id\": \"ds-${e}-ism\", \"state\": \"hot\" }"
+                 -d "{ \"policy_id\": \"ds-${e}-ism\", \"state\": \"initial\" }"
             done
          else
             echo "All managed indices are on current policy version ${CLUSTER_POLICY_SCHEMA_VERSION}"
