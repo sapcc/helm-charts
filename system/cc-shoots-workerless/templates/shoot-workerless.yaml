@@ -2,6 +2,7 @@
 {{- $regionName := include "cc-shoots-workerless.clusterRegion" (dict "clusterName" $clusterName "cluster" $cluster) }}
 {{- $clusterType := include "cc-shoots-workerless.clusterType" $ }}
 {{- $supportGroup := include "cc-shoots-workerless.supportGroup" $ }}
+{{- $clusterKubernetes := get $cluster "kubernetes" | default dict }}
 ---
 apiVersion: core.gardener.cloud/v1beta1
 kind: Shoot
@@ -22,7 +23,7 @@ spec:
   provider:
     type: openstack
   kubernetes:
-    version: {{ default $.Values.kubernetes.version $cluster.kubernetes.version }}
+    version: {{ default $.Values.kubernetes.version (get $clusterKubernetes "version") }}
 
     kubeAPIServer:
       featureGates:
