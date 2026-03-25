@@ -51,9 +51,9 @@
         "ism_template": [
             {
                 "index_patterns": [
-                    ".ds-deployments-datastream*"
+                    "deployments-datastream"
                 ],
-                "priority": 100
+                "priority": 2
             }
         ]
     }

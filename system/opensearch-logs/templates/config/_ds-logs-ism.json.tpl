@@ -47,9 +47,9 @@
         "ism_template": [
             {
                 "index_patterns": [
-                    ".ds-logs-datastream*"
+                    "logs-datastream"
                 ],
-                "priority": 100
+                "priority": 2
             }
         ]
     }

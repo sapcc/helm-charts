@@ -121,9 +121,9 @@
         "ism_template": [
             {
                 "index_patterns": [
-                    ".ds-audit-datastream*"
+                    "audit-datastream"
                 ],
-                "priority": 100
+                "priority": 2
             }
         ]
     }
