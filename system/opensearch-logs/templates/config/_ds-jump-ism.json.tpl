@@ -72,9 +72,9 @@
         "ism_template": [
             {
                 "index_patterns": [
-                    ".ds-jump-datastream*"
+                    "jump-datastream"
                 ],
-                "priority": 100
+                "priority": 2
             }
         ]
     }
