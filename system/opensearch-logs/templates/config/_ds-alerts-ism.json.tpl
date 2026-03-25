@@ -51,9 +51,9 @@
         "ism_template": [
             {
                 "index_patterns": [
-                    "alerts-datastream"
+                    ".ds-alerts-datastream*"
                 ],
-                "priority": 2
+                "priority": 100
             }
         ]
     }

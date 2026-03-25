@@ -47,9 +47,9 @@
         "ism_template": [
             {
                 "index_patterns": [
-                    "storage-datastream"
+                    ".ds-storage-datastream*"
                 ],
-                "priority": 2
+                "priority": 100
             }
         ]
     }
