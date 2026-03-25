@@ -115,10 +115,17 @@ def generate_shibboleth_xml(tenants):
     # RequestMapper: maps per-tenant handler URLs to the correct applicationId.
     # When a request arrives at /Shibboleth.sso/<tenant>/SAML2/POST (the ACS),
     # the RequestMapper tells Shibboleth to use the <tenant> ApplicationOverride.
-    request_mapper_paths = ""
+    # Paths must be NESTED (not flat with slashes) because Shibboleth parses
+    # path segments hierarchically. Flat "Shibboleth.sso/ajax" only matches
+    # the first tenant; nested <Path name="Shibboleth.sso"><Path name="ajax"/>
+    # correctly matches all tenants.
+    tenant_paths = ""
     for t in tenants:
-        request_mapper_paths += """
-                <Path name="Shibboleth.sso/{name}" applicationId="{name}"/>""".format(name=t["name"])
+        tenant_paths += """
+                        <Path name="{name}" applicationId="{name}"/>""".format(name=t["name"])
+    request_mapper_paths = """
+                    <Path name="Shibboleth.sso">{tenant_paths}
+                    </Path>""".format(tenant_paths=tenant_paths)
 
     xml = """<SPConfig xmlns="urn:mace:shibboleth:3.0:native:sp:config"
     xmlns:conf="urn:mace:shibboleth:3.0:native:sp:config"
