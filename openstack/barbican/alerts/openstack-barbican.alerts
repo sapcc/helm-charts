@@ -148,3 +148,17 @@ groups:
     annotations:
       description: All barbican-api server pods are down.
       summary: barbican is unavailable.
+
+  - alert: OpenstackBarbicanTLSRotationFailed
+    expr: kube_job_status_failed{job_name=~"barbican-tls-rotation.*"} > 0
+    for: 1h
+    labels:
+      context: security
+      dashboard: barbican
+      service: barbican
+      severity: critical
+      tier: os
+      support_group: identity
+    annotations:
+      description: The weekly TLS certificate rotation CronJob for Barbican has failed. If not resolved, the TLS certificate will expire and external HTTPS access will break. Check the CronJob logs.
+      summary: Barbican TLS certificate rotation failed

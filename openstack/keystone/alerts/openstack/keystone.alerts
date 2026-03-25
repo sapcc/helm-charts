@@ -104,3 +104,17 @@ groups:
     annotations:
       description: mod_shib rejected {{ $value }} SAML assertion(s) in the last 5 minutes. Check Apache error logs for signature, timing, or issuer validation failures.
       summary: SAML assertion validation failures detected in Keystone
+
+  - alert: OpenstackKeystoneTLSRotationFailed
+    expr: kube_job_status_failed{job_name=~"keystone-tls-rotation.*"} > 0
+    for: 1h
+    labels:
+      context: security
+      dashboard: keystone
+      service: keystone
+      severity: critical
+      tier: os
+      support_group: identity
+    annotations:
+      description: The weekly TLS certificate rotation CronJob for Keystone has failed. If not resolved, the TLS certificate will expire and external HTTPS access will break. Check the CronJob logs.
+      summary: Keystone TLS certificate rotation failed
