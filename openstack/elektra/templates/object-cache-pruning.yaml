@@ -2,18 +2,18 @@ kind: Deployment
 apiVersion: apps/v1
 
 metadata:
-  name: session-pruning
+  name: object-cache-pruning
 
 spec:
   selector:
     matchLabels:
-      name: session-pruning
+      name: object-cache-pruning
   revisionHistoryLimit: 5
   replicas: 1
   template:
     metadata:
       labels:
-        name: session-pruning
+        name: object-cache-pruning
     spec:
       containers:
         - name: pruning
@@ -24,9 +24,9 @@ spec:
             - -ec
             - |
               while true; do
-                if [ $(date '+%H%M') = '{{ .Values.session_cleanup_time }}' ]; then
-                  bin/rake sessions:cleanup object_cache:cleanup
-                  echo "bin/rake sessions:cleanup object_cache:cleanup"
+                if [ $(date '+%H%M') = '{{ .Values.cache_cleanup_time }}' ]; then
+                  bin/rake object_cache:cleanup
+                  echo "bin/rake object_cache:cleanup"
                 fi
                 sleep 55
               done
