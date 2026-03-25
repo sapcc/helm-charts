@@ -26,7 +26,7 @@ Listen 0.0.0.0:443
 
     Include /etc/apache2/conf-enabled/tls-hardening.conf
 
-    WSGIDaemonProcess barbican-api-tls processes={{ .Values.api.processes | default 4 }} threads=1 user=barbican group=barbican display-name=%{GROUP}
+    WSGIDaemonProcess barbican-api-tls processes={{ .Values.api.processes | default 1 }} threads=1 user=barbican group=barbican display-name=%{GROUP}
     WSGIProcessGroup barbican-api-tls
     WSGIScriptAlias / /var/lib/openstack/bin/barbican-wsgi-api
     WSGIApplicationGroup %{GLOBAL}
@@ -43,7 +43,7 @@ Listen 0.0.0.0:443
 
 # Internal HTTP endpoint (protected by Linkerd mTLS at the network layer)
 <VirtualHost *:{{ .Values.api_port_internal }}>
-    WSGIDaemonProcess barbican-api processes={{ .Values.api.processes | default 4 }} threads=1 user=barbican group=barbican display-name=%{GROUP}
+    WSGIDaemonProcess barbican-api processes={{ .Values.api.processes | default 1 }} threads=1 user=barbican group=barbican display-name=%{GROUP}
     WSGIProcessGroup barbican-api
     WSGIScriptAlias / /var/lib/openstack/bin/barbican-wsgi-api
     WSGIApplicationGroup %{GLOBAL}
