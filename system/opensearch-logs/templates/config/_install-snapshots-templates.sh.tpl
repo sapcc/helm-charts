@@ -160,15 +160,15 @@ for e in ${DATA_STREAMS}; do
     fi
 
     if [ "${FILE_SCHEMA_VERSION}" -gt "${CLUSTER_RETENTION_SCHEMA_VERSION}" ]; then
-      echo -e "\nUpload of new ism template with primary number: ${CLUSTER_RETENTION_RUN_PRIM_TERM} and existing sequence number: ${CLUSTER_RETENTION_SEQ_NUMBER}\n"
+      echo -e "\nUpload of new sm template with primary number: ${CLUSTER_RETENTION_RUN_PRIM_TERM} and existing sequence number: ${CLUSTER_RETENTION_SEQ_NUMBER}\n"
       curl --netrc-file "${NETRC_FILE}" -XPUT "${CLUSTER_HOST}/_plugins/_sm/policies/snapshot-${e}-delete-policy?if_seq_no=${CLUSTER_RETENTION_SEQ_NUMBER}&if_primary_term=${CLUSTER_RETENTION_RUN_PRIM_TERM}" -H 'Content-Type: application/json' -d @"${TMPPATH}/${SM_TEMPLATE}"
       if [ $? -ne 0 ]; then
         echo "Failed to upload ${TMPPATH}/${SM_TEMPLATE}!"
         exit 1
       fi
       cat "${TMPPATH}/${SM_TEMPLATE}"
-      export NEW_CLUSTER_RETENTION_SCHEMA_VERSION=$(curl -s --netrc-file "${NETRC_FILE}" -XGET "${CLUSTER_HOST}/_plugins/_ism/policies/snapshot-${e}-delete-policy"|jq .policy.schema_version?)
-      echo -e "\nNew schema_version is: ${NEW_CLUSTER_RETENTION_SCHEMA_VERSION}\n, increase this value by 1 to install new ism policy for snapshot-${e}-delete-policy\n" 
+      export NEW_CLUSTER_RETENTION_SCHEMA_VERSION=$(curl -s --netrc-file "${NETRC_FILE}" -XGET "${CLUSTER_HOST}/_plugins/_ism/policies/snapshot-${e}-delete-policy"|jq .sm_policy.schema_version?)
+      echo -e "\nNew schema_version is: ${NEW_CLUSTER_RETENTION_SCHEMA_VERSION}\n, increase this value by 1 to install new sm policy for snapshot-${e}-delete-policy\n" 
     else
       echo "No changes, sm template is not updated. Increase the version number to upload a new sm template"
     fi

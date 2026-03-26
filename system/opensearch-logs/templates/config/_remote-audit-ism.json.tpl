@@ -2,7 +2,6 @@
     "policy": {
         "policy_id": "remote-audit-ism",
         "description": "ISM policy for audit searchable snapshot.",
-        "schema_version": "{{ .Values.searchable_snapshots.schema_version }}",
         "default_state": "initial",
         "states": [
             {
