@@ -74,32 +74,25 @@ All other values pass through unchanged.
   {{- else if kindIs "map" $values.image -}}
     {{- $imageDict := dict -}}
 
-    {{- /* Priority 1: Complete reference (ref/imageRef) */ -}}
-    {{- if hasKey $values.image "ref" -}}
-      {{- $_ := set $imageDict "ref" $values.image.ref -}}
-    {{- else if hasKey $values.image "imageRef" -}}
-      {{- $_ := set $imageDict "imageRef" $values.image.imageRef -}}
-    {{- else -}}
-      {{- /* Priority 2: Repository with cascading fallback */ -}}
-      {{- if hasKey $values.image "repository" -}}
-        {{- $_ := set $imageDict "repository" $values.image.repository -}}
-      {{- else if $parentRepo -}}
-        {{- $_ := set $imageDict "repository" $parentRepo -}}
-      {{- end -}}
+    {{- /* Repository with cascading fallback */ -}}
+    {{- if hasKey $values.image "repository" -}}
+      {{- $_ := set $imageDict "repository" $values.image.repository -}}
+    {{- else if $parentRepo -}}
+      {{- $_ := set $imageDict "repository" $parentRepo -}}
+    {{- end -}}
 
-      {{- /* Priority 3: Tag with cascading fallback */ -}}
-      {{- if hasKey $values.image "tag" -}}
-        {{- $_ := set $imageDict "tag" $values.image.tag -}}
-      {{- else if $parentTag -}}
-        {{- $_ := set $imageDict "tag" $parentTag -}}
-      {{- else if $fallbackTag -}}
-        {{- $_ := set $imageDict "tag" $fallbackTag -}}
-      {{- end -}}
+    {{- /* Tag with cascading fallback */ -}}
+    {{- if hasKey $values.image "tag" -}}
+      {{- $_ := set $imageDict "tag" $values.image.tag -}}
+    {{- else if $parentTag -}}
+      {{- $_ := set $imageDict "tag" $parentTag -}}
+    {{- else if $fallbackTag -}}
+      {{- $_ := set $imageDict "tag" $fallbackTag -}}
     {{- end -}}
 
     {{- /* Copy other image properties (pullPolicy, etc) */ -}}
     {{- range $key, $val := $values.image -}}
-      {{- if and (ne $key "repository") (ne $key "tag") (ne $key "ref") (ne $key "imageRef") -}}
+      {{- if and (ne $key "repository") (ne $key "tag") -}}
         {{- $_ := set $imageDict $key $val -}}
       {{- end -}}
     {{- end -}}
@@ -138,27 +131,20 @@ All other values pass through unchanged.
         {{- $_ := set $imgDict "name" .name -}}
       {{- end -}}
 
-      {{- /* Priority 1: Complete reference */ -}}
-      {{- if hasKey . "ref" -}}
-        {{- $_ := set $imgDict "ref" .ref -}}
-      {{- else if hasKey . "imageRef" -}}
-        {{- $_ := set $imgDict "imageRef" .imageRef -}}
-      {{- else -}}
-        {{- /* Priority 2: Repository + Tag with fallback */ -}}
-        {{- if hasKey . "repository" -}}
-          {{- $_ := set $imgDict "repository" .repository -}}
-        {{- end -}}
+      {{- /* Repository + Tag with fallback */ -}}
+      {{- if hasKey . "repository" -}}
+        {{- $_ := set $imgDict "repository" .repository -}}
+      {{- end -}}
 
-        {{- if hasKey . "tag" -}}
-          {{- $_ := set $imgDict "tag" .tag -}}
-        {{- else if $fallbackTag -}}
-          {{- $_ := set $imgDict "tag" $fallbackTag -}}
-        {{- end -}}
+      {{- if hasKey . "tag" -}}
+        {{- $_ := set $imgDict "tag" .tag -}}
+      {{- else if $fallbackTag -}}
+        {{- $_ := set $imgDict "tag" $fallbackTag -}}
       {{- end -}}
 
       {{- /* Copy other properties */ -}}
       {{- range $key, $val := . -}}
-        {{- if and (ne $key "name") (ne $key "repository") (ne $key "tag") (ne $key "ref") (ne $key "imageRef") -}}
+        {{- if and (ne $key "name") (ne $key "repository") (ne $key "tag") -}}
           {{- $_ := set $imgDict $key $val -}}
         {{- end -}}
       {{- end -}}
@@ -172,27 +158,20 @@ All other values pass through unchanged.
     {{- range $name, $img := $values.images -}}
       {{- $imgDict := dict -}}
 
-      {{- /* Priority 1: Complete reference */ -}}
-      {{- if hasKey $img "ref" -}}
-        {{- $_ := set $imgDict "ref" $img.ref -}}
-      {{- else if hasKey $img "imageRef" -}}
-        {{- $_ := set $imgDict "imageRef" $img.imageRef -}}
-      {{- else -}}
-        {{- /* Priority 2: Repository + Tag with fallback */ -}}
-        {{- if hasKey $img "repository" -}}
-          {{- $_ := set $imgDict "repository" $img.repository -}}
-        {{- end -}}
+      {{- /* Repository + Tag with fallback */ -}}
+      {{- if hasKey $img "repository" -}}
+        {{- $_ := set $imgDict "repository" $img.repository -}}
+      {{- end -}}
 
-        {{- if hasKey $img "tag" -}}
-          {{- $_ := set $imgDict "tag" $img.tag -}}
-        {{- else if $fallbackTag -}}
-          {{- $_ := set $imgDict "tag" $fallbackTag -}}
-        {{- end -}}
+      {{- if hasKey $img "tag" -}}
+        {{- $_ := set $imgDict "tag" $img.tag -}}
+      {{- else if $fallbackTag -}}
+        {{- $_ := set $imgDict "tag" $fallbackTag -}}
       {{- end -}}
 
       {{- /* Copy other properties */ -}}
       {{- range $key, $val := $img -}}
-        {{- if and (ne $key "repository") (ne $key "tag") (ne $key "ref") (ne $key "imageRef") -}}
+        {{- if and (ne $key "repository") (ne $key "tag") -}}
           {{- $_ := set $imgDict $key $val -}}
         {{- end -}}
       {{- end -}}
@@ -226,7 +205,7 @@ imageVectorOverwrite: |
 {{- end -}}
 
 {{/*
-Render OCI repository with smart fallback logic for tag.
+Render OCI repository reference for helm charts with smart fallback logic for tag.
 
 Usage:
   {{ include "cc-gardener.extension.ociRepository" (dict "ociRepository" .helm.ociRepository "fallbackTag" .version) | indent 10 }}
@@ -236,34 +215,41 @@ Parameters:
   - fallbackTag: The tag to use if not specified (typically .version)
 
 Priority for references:
-  1. ref (complete reference including tag)
-  2. digest (SHA256 digest)
-  3. repository + tag (or fallbackTag if tag not specified)
+  1. ref (complete OCI reference including tag) - if defined, output ONLY this field
+  2. digest (SHA256 digest) - output with repository if both are present
+  3. repository + tag - output as separate fields (tag uses fallbackTag if not specified)
+
+Explicitly unsets conflicting fields to prevent Helm merge conflicts during upgrades:
+- When using ref: unsets repository and tag
+- When using repository/tag: unsets ref
 */}}
 {{- define "cc-gardener.extension.ociRepository" -}}
 {{- $ociRepo := .ociRepository | default dict -}}
 {{- $fallbackTag := .fallbackTag | default "" -}}
-{{- /* Priority 1: Complete ref */ -}}
+{{- /* Priority 1: ref for helm chart OCI repositories */ -}}
 {{- if hasKey $ociRepo "ref" -}}
 ref: {{ $ociRepo.ref }}
+repository: null
+tag: null
 {{- else -}}
-{{- /* Priority 2: Digest */ -}}
+{{- /* Priority 2: repository/tag - unset ref */ -}}
+ref: null
+{{- /* Digest (can coexist with repository) */ -}}
 {{- if hasKey $ociRepo "digest" -}}
 digest: {{ $ociRepo.digest }}
 {{- end -}}
-{{- /* Repository */ -}}
-{{- if hasKey $ociRepo "repository" -}}
+{{- /* Repository and Tag as separate fields */ -}}
+{{- if hasKey $ociRepo "repository" }}
 repository: {{ $ociRepo.repository }}
-{{ end -}}
-{{- /* Tag with fallback */ -}}
-{{- if hasKey $ociRepo "tag" -}}
+{{- end -}}
+{{- if hasKey $ociRepo "tag" }}
 tag: {{ $ociRepo.tag }}
-{{- else if $fallbackTag -}}
+{{- else if $fallbackTag }}
 tag: {{ $fallbackTag }}
 {{- end -}}
 {{- end -}}
 {{- /* pullSecretRef if present */ -}}
-{{- if hasKey $ociRepo "pullSecretRef" -}}
+{{- if hasKey $ociRepo "pullSecretRef" }}
 pullSecretRef:
 {{ toYaml $ociRepo.pullSecretRef | nindent 2 }}
 {{- end -}}
