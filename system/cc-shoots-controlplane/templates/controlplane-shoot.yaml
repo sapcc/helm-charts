@@ -4,6 +4,11 @@ apiVersion: core.gardener.cloud/v1beta1
 kind: Shoot
 metadata:
   name: {{ $key }}
+  labels:
+    cluster-type: sci-k8s-controlplane
+    greenhouse.sap/owned-by: containers
+    greenhouse.sap/shoot-grafter-transport: {{ default "greenhouse-prod-sci" $.Values.greenhouseShootGrafter }}
+    metadata.greenhouse.sap/region: {{ $key }}
 spec:
   cloudProfile:
     kind: CloudProfile
@@ -151,6 +156,8 @@ spec:
             name: gardenlinux
             version: {{ default $.Values.imageVersion $cluster.imageVersion }}
           type: baremetal
+        labels:
+          cloud.sap/maintenance-profile: metal
         minimum: {{ $worker.poolSize }}
         maximum: {{ $worker.poolSize }}
         maxSurge: 0
