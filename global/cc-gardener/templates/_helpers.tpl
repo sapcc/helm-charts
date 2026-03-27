@@ -209,8 +209,36 @@ All other values pass through unchanged.
 {{- end -}}
 
 {{- if $result -}}
-{{- /* Output all fields including imageVectorOverwrite */ -}}
+{{- /* Handle imageVectorOverwrite specially to always output with pipe style */ -}}
+{{- $imageVectorOverwrite := index $result "imageVectorOverwrite" | default nil -}}
+{{- if $imageVectorOverwrite -}}
+  {{- $_ := unset $result "imageVectorOverwrite" -}}
+{{- end -}}
+{{- /* Output all regular fields */ -}}
+{{- if $result -}}
 {{ toYaml $result -}}
+{{- end -}}
+{{- /* Output imageVectorOverwrite with pipe style (convert dict to string if needed) */ -}}
+{{- if $imageVectorOverwrite -}}
+{{- $hasContent := false -}}
+{{- if kindIs "string" $imageVectorOverwrite -}}
+  {{- if ne ($imageVectorOverwrite | trim) "" -}}
+    {{- $hasContent = true -}}
+  {{- end -}}
+{{- else if kindIs "map" $imageVectorOverwrite -}}
+  {{- if $imageVectorOverwrite -}}
+    {{- $hasContent = true -}}
+  {{- end -}}
+{{- end -}}
+{{- if $hasContent }}
+imageVectorOverwrite: |
+{{- if kindIs "string" $imageVectorOverwrite -}}
+{{ $imageVectorOverwrite | trim | nindent 2 -}}
+{{- else -}}
+{{ toYaml $imageVectorOverwrite | nindent 2 -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
 {{- end -}}
 {{- end -}}
 
