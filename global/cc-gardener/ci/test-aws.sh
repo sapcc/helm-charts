@@ -90,7 +90,7 @@ echo ""
 # Test 6: Verify image fallback to root version
 echo "Test 6: Verify image fallback to root version"
 TAG=$(echo "$OUTPUT1" | yq '.spec.deployment.extension.runtimeClusterValues.image.tag')
-if [ "$TAG" = "v1.67.2" ]; then
+if [ "$TAG" = "v1.67.4" ]; then
   echo "[PASS] Image tag falls back to root version"
 else
   echo "[FAIL] Image tag fallback not working (got: $TAG)"
