@@ -6,19 +6,27 @@ Usage:
   # For extension.values (automatically picks up root-level image/images/imageVectorOverwrite)
   {{ include "cc-gardener.extension.mergeValues" (dict "values" .values "extensionContext" . "fallbackTag" .version) | nindent 8 }}
 
-  # For runtimeClusterValues with cascading fallback from parent values
-  {{ include "cc-gardener.extension.mergeValues" (dict "values" .runtimeClusterValues "parentValues" .values "fallbackTag" .version) | nindent 8 }}
+  # For runtimeClusterValues with cascading fallback from parent values and root level
+  {{ include "cc-gardener.extension.mergeValues" (dict "values" .runtimeClusterValues "parentValues" .values "extensionContext" . "fallbackTag" .version) | nindent 8 }}
+
+  # For admission.values with cascading fallback from root level
+  {{ include "cc-gardener.extension.mergeValues" (dict "values" .admission.values "extensionContext" . "fallbackTag" .version) | nindent 8 }}
 
 Parameters:
   - values: The extension values dict (can be nil)
   - parentValues: Optional parent values dict for cascading fallback (for runtimeClusterValues)
-  - extensionContext: Optional full extension context (.) to auto-detect root-level image/images/imageVectorOverwrite
+  - extensionContext: Optional full extension context (.) to provide root-level imageVectorOverwrite fallback
   - fallbackTag: The tag to use if not specified in values (typically .version)
 
 Priority for image references:
   1. image.ref or imageRef (complete reference)
   2. image.repository + image.tag
   3. Fallback chain: values.image → parentValues.image → extensionContext.image → fallbackTag
+
+Priority for imageVectorOverwrite:
+  1. values.imageVectorOverwrite (if present in values)
+  2. parentValues.imageVectorOverwrite (if parentValues provided)
+  3. extensionContext.imageVectorOverwrite (root level, if extensionContext provided)
 
 If only repository is specified, tag defaults via fallback chain.
 All other values pass through unchanged.
@@ -30,27 +38,18 @@ All other values pass through unchanged.
 {{- $fallbackTag := .fallbackTag | default "" -}}
 {{- $result := dict -}}
 
-{{- /* First, copy root-level image/images/imageVectorOverwrite from extensionContext if present */ -}}
+{{- /* Determine fallbacks from extensionContext (root level) */ -}}
+{{- $rootImageVectorOverwrite := "" -}}
 {{- if $extensionContext -}}
-  {{- if and (hasKey $extensionContext "image") (not (hasKey $values "image")) -}}
-    {{- $_ := set $result "image" $extensionContext.image -}}
+  {{- if hasKey $extensionContext "imageVectorOverwrite" -}}
+    {{- $rootImageVectorOverwrite = $extensionContext.imageVectorOverwrite -}}
   {{- end -}}
-  {{- if and (hasKey $extensionContext "images") (not (hasKey $values "images")) -}}
-    {{- $_ := set $result "images" $extensionContext.images -}}
-  {{- end -}}
-  {{- if and (hasKey $extensionContext "imageVectorOverwrite") (not (hasKey $values "imageVectorOverwrite")) -}}
-    {{- $_ := set $result "imageVectorOverwrite" $extensionContext.imageVectorOverwrite -}}
-  {{- end -}}
-{{- end -}}
-
-{{- /* Copy all values (overrides extensionContext defaults) */ -}}
-{{- range $key, $val := $values -}}
-  {{- $_ := set $result $key $val -}}
 {{- end -}}
 
 {{- /* Determine fallbacks from parent values */ -}}
 {{- $parentTag := "" -}}
 {{- $parentRepo := "" -}}
+{{- $parentImageVectorOverwrite := "" -}}
 {{- if $parentValues -}}
   {{- if hasKey $parentValues "image" -}}
     {{- if kindIs "string" $parentValues.image -}}
@@ -64,6 +63,24 @@ All other values pass through unchanged.
       {{- end -}}
     {{- end -}}
   {{- end -}}
+  {{- if hasKey $parentValues "imageVectorOverwrite" -}}
+    {{- $parentImageVectorOverwrite = $parentValues.imageVectorOverwrite -}}
+  {{- end -}}
+{{- end -}}
+
+{{- /* First, copy root-level image/images/imageVectorOverwrite from extensionContext if present */ -}}
+{{- if $extensionContext -}}
+  {{- if and (hasKey $extensionContext "image") (not (hasKey $values "image")) -}}
+    {{- $_ := set $result "image" $extensionContext.image -}}
+  {{- end -}}
+  {{- if and (hasKey $extensionContext "images") (not (hasKey $values "images")) -}}
+    {{- $_ := set $result "images" $extensionContext.images -}}
+  {{- end -}}
+{{- end -}}
+
+{{- /* Copy all values (overrides extensionContext defaults) */ -}}
+{{- range $key, $val := $values -}}
+  {{- $_ := set $result $key $val -}}
 {{- end -}}
 
 {{- /* Smart handling of image references */ -}}
@@ -182,25 +199,18 @@ All other values pass through unchanged.
   {{- end -}}
 {{- end -}}
 
-{{- if $result -}}
-{{- /* Handle imageVectorOverwrite specially to always output with pipe style */ -}}
-{{- $imageVectorOverwrite := index $result "imageVectorOverwrite" | default nil -}}
-{{- if $imageVectorOverwrite -}}
-  {{- $_ := unset $result "imageVectorOverwrite" -}}
+{{- /* Handle imageVectorOverwrite with cascading fallback */ -}}
+{{- if not (hasKey $result "imageVectorOverwrite") -}}
+  {{- if $parentImageVectorOverwrite -}}
+    {{- $_ := set $result "imageVectorOverwrite" $parentImageVectorOverwrite -}}
+  {{- else if $rootImageVectorOverwrite -}}
+    {{- $_ := set $result "imageVectorOverwrite" $rootImageVectorOverwrite -}}
+  {{- end -}}
 {{- end -}}
-{{- /* Output all regular fields */ -}}
+
 {{- if $result -}}
+{{- /* Output all fields including imageVectorOverwrite */ -}}
 {{ toYaml $result -}}
-{{- end -}}
-{{- /* Output imageVectorOverwrite with pipe style (convert dict to string if needed) */ -}}
-{{- if $imageVectorOverwrite }}
-imageVectorOverwrite: |
-{{- if kindIs "string" $imageVectorOverwrite -}}
-{{ $imageVectorOverwrite | trim | nindent 2 -}}
-{{- else -}}
-{{ toYaml $imageVectorOverwrite | nindent 2 -}}
-{{- end -}}
-{{- end -}}
 {{- end -}}
 {{- end -}}
 
