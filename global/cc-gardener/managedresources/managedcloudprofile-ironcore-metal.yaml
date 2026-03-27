@@ -29,6 +29,16 @@ spec:
       machineImages: {{ toYaml .Values.extensions.metal.providerConfig.machineImages | nindent 6 }}
       {{- end }}
   {{- if .Values.extensions.metal.machineImageUpdates }}
-  machineImageUpdates: {{ toYaml .Values.extensions.metal.machineImageUpdates | nindent 4 }}
+  machineImageUpdates:
+  {{- range .Values.extensions.metal.machineImageUpdates }}
+  - imageName: {{ .imageName }}
+    source: {{ toYaml .source | nindent 6 }}
+    provider: {{ toYaml .provider | nindent 6 }}
+    {{- if and .garbageCollection .garbageCollection.enabled }}
+    garbageCollection:
+      enabled: {{ .garbageCollection.enabled }}
+      maxAge: {{ .garbageCollection.maxAge }}
+    {{- end }}
+  {{- end }}
   {{- end }}
 {{- end }}
