@@ -120,10 +120,14 @@ persesPlugin:
       failureThreshold: 5
 
     # -- Additional volumes on the output StatefulSet definition.
-    volumes: []
+    volumes:
+      - name: plugins
+        emptyDir: {}
 
     # -- Additional VolumeMounts on the output StatefulSet definition.
-    volumeMounts: []
+    volumeMounts:
+      - name: plugins
+        mountPath: /etc/perses/plugins
     # -- TLS configuration for mounting certificates from Kubernetes secrets
     tls:
       # -- Enable TLS certificate mounting
@@ -268,6 +272,8 @@ persesPlugin:
       # -- Security context for the PVC when persistence is enabled
       securityContext:
         fsGroup: 2000
+        runAsUser: 1000
+        runAsGroup: 1000
 
       # -- Labels for the PVC
       labels: {}
