@@ -36,6 +36,10 @@ All other values pass through unchanged.
 {{- $parentValues := .parentValues | default dict -}}
 {{- $extensionContext := .extensionContext | default dict -}}
 {{- $fallbackTag := .fallbackTag | default "" -}}
+{{- $usePipeStyle := true -}}
+{{- if hasKey . "usePipeStyle" -}}
+  {{- $usePipeStyle = .usePipeStyle -}}
+{{- end -}}
 {{- $result := dict -}}
 
 {{- /* Determine fallbacks from extensionContext (root level) */ -}}
@@ -209,6 +213,7 @@ All other values pass through unchanged.
 {{- end -}}
 
 {{- if $result -}}
+{{- if ne $usePipeStyle false -}}
 {{- /* Handle imageVectorOverwrite specially to always output with pipe style */ -}}
 {{- $imageVectorOverwrite := index $result "imageVectorOverwrite" | default nil -}}
 {{- if $imageVectorOverwrite -}}
@@ -238,6 +243,10 @@ imageVectorOverwrite: |
 {{ toYaml $imageVectorOverwrite | nindent 2 -}}
 {{- end -}}
 {{- end -}}
+{{- end -}}
+{{- else -}}
+{{- /* Output all fields including imageVectorOverwrite as regular YAML */ -}}
+{{ toYaml $result -}}
 {{- end -}}
 {{- end -}}
 {{- end -}}
