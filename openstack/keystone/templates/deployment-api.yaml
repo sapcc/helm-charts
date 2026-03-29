@@ -94,25 +94,7 @@ spec:
       {{- end }}
       {{- if .Values.federation.saml.enabled }}
       - name: saml-sp-decrypt
-        image: {{ required ".Values.global.dockerHubMirror is missing" .Values.global.dockerHubMirror }}/library/busybox
-        command: ["sh", "-c"]
-        args:
-          - |
-            # Noop init container: copies per-tenant SP keys from K8s Secret mount to tmpfs.
-            # This follows the SF.Sem.2 pattern (init container -> tmpfs) so that
-            # when Vault Transit or TPM are available, this script is replaced with
-            # a decrypt call. The main container never has direct access to the
-            # encryption backend.
-            # Tenant names are read from the tenant-list JSON (from federation chart).
-            for keyfile in /saml-sp-secret/*-sp-key.pem; do
-              [ -f "$keyfile" ] || continue
-              cp "$keyfile" /saml-sp-keys/
-            done
-            for certfile in /saml-sp-secret/*-sp-cert.pem; do
-              [ -f "$certfile" ] || continue
-              cp "$certfile" /saml-sp-keys/
-            done
-            chmod 0440 /saml-sp-keys/* 2>/dev/null || true
+        image: {{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{ .Values.federation.saml.spInit.image }}:{{ required ".Values.federation.saml.spInit.imageTag is missing" .Values.federation.saml.spInit.imageTag }}
         volumeMounts:
           - name: keystone-saml-sp-keys
             mountPath: /saml-sp-secret
