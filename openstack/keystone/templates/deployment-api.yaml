@@ -107,10 +107,12 @@ spec:
       {{- end }}
       {{- if .Values.tls.enabled }}
       - name: tls-init
-        image: {{ required ".Values.global.dockerHubMirror is missing" .Values.global.dockerHubMirror }}/library/busybox
-        command: ["sh", "-c"]
-        args:
+        image: {{required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion}}/loci-keystone:{{required ".Values.api.imageTag is missing" .Values.api.imageTag}}
+        command:
+          - bash
+          - -c
           - |
+            set -ex
             cp /tls-input/tls.key /mnt/secrets/tls.key
             cp /tls-input/tls.crt /mnt/secrets/tls.crt
             chmod 0440 /mnt/secrets/tls.key
