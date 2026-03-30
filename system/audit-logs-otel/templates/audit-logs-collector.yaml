@@ -267,11 +267,19 @@ spec:
             conditions:
               - resource.attributes["k8s.container.name"] == "keystone-api"
             statements:
-              - merge_maps(log.attributes, ExtractGrokPatterns(log.body, "^(?<timestamp_date>%{YEAR}-%{MONTHNUM}-%{MONTHDAY}) (?<timestamp_time>%{HOUR}:%{MINUTE}:%{SECOND})\\.(?<microseconds>%{INT}) %{INT} %{LOGLEVEL:log.level} %{NOTSPACE:component} \\[%{NOTSPACE:request.id} %{NOTSPACE:global.request.id} usr %{NOTSPACE:user.id} prj %{NOTSPACE:project.id} dom %{NOTSPACE:domain.id} usr-dom %{NOTSPACE:user.domain.id} prj-dom %{NOTSPACE:project.domain.id}\\]", true), "upsert")
+              - merge_maps(log.attributes, ExtractGrokPatterns(log.body, "^(?<timestamp_date>%{YEAR}-%{MONTHNUM}-%{MONTHDAY}) (?<timestamp_time>%{HOUR}:%{MINUTE}:%{SECOND})\\.(?<microseconds>%{INT}) %{INT} %{LOGLEVEL:log.level} %{NOTSPACE:component} \\[%{NOTSPACE:request.id} %{NOTSPACE:global.request.id} usr %{NOTSPACE:user.id} prj %{NOTSPACE:project.id} dom %{NOTSPACE:domain.id} usr-dom %{NOTSPACE:user.domain.id} prj-dom %{NOTSPACE:project.domain.id}\\] %{GREEDYDATA:message_tail}", true), "upsert")
+              - merge_maps(log.attributes, ExtractGrokPatterns(log.body, "^(?<timestamp_date>%{YEAR}-%{MONTHNUM}-%{MONTHDAY}) (?<timestamp_time>%{HOUR}:%{MINUTE}:%{SECOND})\\.(?<microseconds>%{INT}) %{INT} %{NOTSPACE:log.level} %{NOTSPACE:component} \\"%{NOTSPACE:request.id}\\" %{IP:ip} - - \\"%{NOTSPACE:request.method} %{URIPATH:uri}\\" %{NUMBER:response} %{NUMBER} %{NUMBER} \\"%{NOTSPACE:agent}\\" \\"%{WORD}", true), "upsert")
               - set(log.attributes["keystone_timestamp"], Concat([log.attributes["timestamp_date"], " ", log.attributes["timestamp_time"], ".", log.attributes["microseconds"]], "")) where log.attributes["timestamp_date"] != nil
               - set(log.time_unix_nano, UnixNano(Time(Concat([log.attributes["timestamp_date"], " ", log.attributes["timestamp_time"]], " "), "%Y-%m-%d %H:%M:%S")) + Int(log.attributes["microseconds"]) * 1000) where log.attributes["timestamp_date"] != nil
+              - set(log.attributes["log.kind"], "cadf_action") where IsMatch(log.attributes["message_tail"], "^\\s*cadf action for '")
+              - set(log.attributes["log.kind"], "target_type_uri") where IsMatch(log.attributes["message_tail"], "^\\s*target type URI of requests '")
+              - set(log.attributes["log.kind"], "authenticating") where IsMatch(log.attributes["message_tail"], "^\\s*Authenticating")
+              - merge_maps(log.attributes,ExtractGrokPatterns(log.attributes["message_tail"],"^\\s*cadf action for '%{NOTSPACE:request.method} %{URIPATH:uri}' is '%{NOTSPACE:action}' %{GREEDYDATA:msg}",true),"upsert") where log.attributes["log.kind"] == "cadf_action"
+              - merge_maps(log.attributes,ExtractGrokPatterns(log.attributes["message_tail"],"^\\s*target type URI of requests '%{NOTSPACE:request.method} %{URIPATH:uri}' is '%{NOTSPACE:target.type_uri}' %{GREEDYDATA:msg}",true),"upsert") where log.attributes["log.kind"] == "target_type_uri"
+              - merge_maps(log.attributes,ExtractGrokPatterns(log.attributes["message_tail"],"^\\s*Authenticating %{NOTSPACE:user.id}@%{NOTSPACE:project.domain.name}\\.\\.",true),"upsert") where log.attributes["log.kind"] == "authenticating"
               - delete_key(log.attributes, "timestamp_date")
               - delete_key(log.attributes, "timestamp_time")
+              - set(log.attributes["msg"], log.attributes["message_tail"]) where log.attributes["message_tail"] != nil and log.attributes["log.kind"] == nil
 
       transform/vault:
         error_mode: propagate
