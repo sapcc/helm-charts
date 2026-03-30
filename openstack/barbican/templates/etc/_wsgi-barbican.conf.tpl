@@ -16,6 +16,9 @@ CustomLog /dev/stdout combined env=!forwarded
 CustomLog /dev/stdout proxy env=forwarded
 
 {{- if .Values.tls.enabled }}
+# TLS hardening at server level (must be outside VirtualHost)
+Include /etc/apache2/conf-enabled/tls-hardening.conf
+
 # External HTTPS endpoint (via Ingress TLS passthrough)
 Listen 0.0.0.0:443
 
@@ -23,8 +26,6 @@ Listen 0.0.0.0:443
     SSLEngine on
     SSLCertificateFile /mnt/secrets/tls.crt
     SSLCertificateKeyFile /mnt/secrets/tls.key
-
-    Include /etc/apache2/conf-enabled/tls-hardening.conf
 
     WSGIDaemonProcess barbican-api-tls processes={{ .Values.api.processes | default 1 }} threads=1 user=barbican group=barbican display-name=%{GROUP}
     WSGIProcessGroup barbican-api-tls
