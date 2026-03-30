@@ -401,12 +401,12 @@ tests:
     object: fixtures/pod-security-v2/privilege-escalation-reject.yaml
     assertions:
     - violations: 1
-      message: '^\{"support_group":"none","service":"none"\} >> pod is not allowed to set spec.containers\["foo-container"].securityContext.allowPrivilegeEscalation = true$'
+      message: '^\{"support_group":"none","service":"none"\} >> pod is not allowed to set spec.containers\["foo-container"].securityContext.allowPrivilegeEscalation = true \(image = "test-app/unprivileged"\)$'
   - name: pod-security-v2-no-rule-for-privilege-escalation
     object: fixtures/pod-security-v2/privilege-escalation-no-rule.yaml
     assertions:
     - violations: 1
-      message: '^\{"support_group":"none","service":"none"\} >> pod is not allowed to set spec.containers\["foo-container"].securityContext.allowPrivilegeEscalation = true$'
+      message: '^\{"support_group":"none","service":"none"\} >> pod is not allowed to set spec.containers\["foo-container"].securityContext.allowPrivilegeEscalation = true \(image = "other/unknown"\)$'
   - name: pod-security-v2-allow-privilege-escalation
     object: fixtures/pod-security-v2/privilege-escalation-allow.yaml
     assertions:
@@ -415,12 +415,12 @@ tests:
     object: fixtures/pod-security-v2/is-privileged-reject.yaml
     assertions:
     - violations: 1
-      message: '^\{"support_group":"none","service":"none"\} >> pod is not allowed to set spec.containers\["foo-container"].securityContext.privileged = true$'
+      message: '^\{"support_group":"none","service":"none"\} >> pod is not allowed to set spec.containers\["foo-container"].securityContext.privileged = true \(image = "test-app/unprivileged"\)$'
   - name: pod-security-v2-no-rule-for-privileged
     object: fixtures/pod-security-v2/is-privileged-no-rule.yaml
     assertions:
     - violations: 1
-      message: '^\{"support_group":"none","service":"none"\} >> pod is not allowed to set spec.containers\["foo-container"].securityContext.privileged = true$'
+      message: '^\{"support_group":"none","service":"none"\} >> pod is not allowed to set spec.containers\["foo-container"].securityContext.privileged = true \(image = "other/unknown"\)$'
   - name: pod-security-v2-allow-privileged
     object: fixtures/pod-security-v2/is-privileged-allow.yaml
     assertions:
@@ -429,12 +429,12 @@ tests:
     object: fixtures/pod-security-v2/capabilities-reject.yaml
     assertions:
     - violations: 1
-      message: '^\{"support_group":"none","service":"none"\} >> pod is not allowed to set spec.containers\["foo-container"].securityContext.capabilities.add = \["SYS_ADMIN"]$'
+      message: '^\{"support_group":"none","service":"none"\} >> pod is not allowed to set spec.containers\["foo-container"].securityContext.capabilities.add = \["SYS_ADMIN"] \(image = "test-app/unprivileged"\)$'
   - name: pod-security-v2-no-rule-for-capabilities
     object: fixtures/pod-security-v2/capabilities-no-rule.yaml
     assertions:
     - violations: 1
-      message: '^\{"support_group":"none","service":"none"\} >> pod is not allowed to set spec.containers\["foo-container"].securityContext.capabilities.add = \["FOO"]$'
+      message: '^\{"support_group":"none","service":"none"\} >> pod is not allowed to set spec.containers\["foo-container"].securityContext.capabilities.add = \["FOO"] \(image = "other/unknown"\)$'
   - name: pod-security-v2-allow-capabilities
     object: fixtures/pod-security-v2/capabilities-allow.yaml
     assertions:
@@ -443,27 +443,27 @@ tests:
     object: fixtures/pod-security-v2/host-path-volumes-reject-r.yaml
     assertions:
     - violations: 1
-      message: '^\{"support_group":"none","service":"none"\} >> container \"foo-container\" in this pod is not allowed to mount hostPath volumes with path \"/\" \(readonly = true\)$'
+      message: '^\{"support_group":"none","service":"none"\} >> container \"foo-container\" in this pod is not allowed to mount hostPath volumes with path \"/\" \(readonly = true\) \(image = "test-app/unprivileged"\)$'
   - name: pod-security-v2-reject-host-path-volumes-rw
     object: fixtures/pod-security-v2/host-path-volumes-reject-rw.yaml
     assertions:
     - violations: 1
-      message: '^\{"support_group":"none","service":"none"\} >> container \"foo-container\" in this pod is not allowed to mount hostPath volumes with path \"/\" \(readonly = false\)$'
+      message: '^\{"support_group":"none","service":"none"\} >> container \"foo-container\" in this pod is not allowed to mount hostPath volumes with path \"/\" \(readonly = false\) \(image = "test-app/unprivileged"\)$'
   - name: pod-security-v2-reject-host-path-volumes-w
     object: fixtures/pod-security-v2/host-path-volumes-reject-w.yaml
     assertions:
     - violations: 1
-      message: '^\{"support_group":"none","service":"none"\} >> container \"foo-container\" in this pod is not allowed to mount hostPath volumes with path \"/\" \(readonly = false\)$'
+      message: '^\{"support_group":"none","service":"none"\} >> container \"foo-container\" in this pod is not allowed to mount hostPath volumes with path \"/\" \(readonly = false\) \(image = "test-app/unprivileged"\)$'
   - name: pod-security-v2-no-rule-for-host-path-volumes-r
     object: fixtures/pod-security-v2/host-path-volumes-no-rule-r.yaml
     assertions:
     - violations: 1
-      message: '^\{"support_group":"none","service":"none"\} >> container \"foo-container\" in this pod is not allowed to mount hostPath volumes with path \"/\" \(readonly = true\)$'
+      message: '^\{"support_group":"none","service":"none"\} >> container \"foo-container\" in this pod is not allowed to mount hostPath volumes with path \"/\" \(readonly = true\) \(image = "other/unknown"\)$'
   - name: pod-security-v2-no-rule-for-host-path-volumes-w
     object: fixtures/pod-security-v2/host-path-volumes-no-rule-w.yaml
     assertions:
     - violations: 1
-      message: '^\{"support_group":"none","service":"none"\} >> container \"foo-container\" in this pod is not allowed to mount hostPath volumes with path \"/\" \(readonly = false\)$'
+      message: '^\{"support_group":"none","service":"none"\} >> container \"foo-container\" in this pod is not allowed to mount hostPath volumes with path \"/\" \(readonly = false\) \(image = "other/unknown"\)$'
   - name: pod-security-v2-allow-host-path-volumes-r
     object: fixtures/pod-security-v2/host-path-volumes-allow-r.yaml
     assertions:
@@ -488,13 +488,13 @@ tests:
     - violations: 1
       message: '^\{"support_group":"none","service":"none"\} >> pod is not allowed to set spec.hostPID = true$'
     - violations: 1
-      message: '^\{"support_group":"none","service":"none"\} >> pod is not allowed to set spec.containers\["mallory"].securityContext.allowPrivilegeEscalation = true$'
+      message: '^\{"support_group":"none","service":"none"\} >> pod is not allowed to set spec.containers\["mallory"].securityContext.allowPrivilegeEscalation = true \(image = "test-app/unprivileged"\)$'
     - violations: 1
-      message: '^\{"support_group":"none","service":"none"\} >> pod is not allowed to set spec.containers\["mallory"].securityContext.privileged = true$'
+      message: '^\{"support_group":"none","service":"none"\} >> pod is not allowed to set spec.containers\["mallory"].securityContext.privileged = true \(image = "test-app/unprivileged"\)$'
     - violations: 1
-      message: '^\{"support_group":"none","service":"none"\} >> pod is not allowed to set spec.containers\["mallory"].securityContext.capabilities.add = \["SYS_ADMIN"]$'
+      message: '^\{"support_group":"none","service":"none"\} >> pod is not allowed to set spec.containers\["mallory"].securityContext.capabilities.add = \["SYS_ADMIN"] \(image = "test-app/unprivileged"\)$'
     - violations: 1
-      message: '^\{"support_group":"none","service":"none"\} >> container \"mallory\" in this pod is not allowed to mount hostPath volumes with path \"/\" \(readonly = false\)$'
+      message: '^\{"support_group":"none","service":"none"\} >> container \"mallory\" in this pod is not allowed to mount hostPath volumes with path \"/\" \(readonly = false\) \(image = "test-app/unprivileged"\)$'
 
 
 - name: prometheus-scrape-annotations
