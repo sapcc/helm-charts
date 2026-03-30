@@ -26,6 +26,10 @@ function start () {
 
   a2dismod status
 
+  {{- if .Values.tls.enabled }}
+  a2enmod ssl
+  {{- end }}
+
   if [ -f /etc/apache2/envvars ]; then
      # Loading Apache2 ENV variables
      source /etc/apache2/envvars
