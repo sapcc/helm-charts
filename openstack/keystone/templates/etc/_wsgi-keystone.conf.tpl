@@ -62,6 +62,19 @@ Include /etc/apache2/conf-enabled/tls-hardening.conf
     SSLCertificateFile /mnt/secrets/tls.crt
     SSLCertificateKeyFile /mnt/secrets/tls.key
 
+    {{- if .Values.services.ingress.x509.ca }}
+    # Client certificate verification (moved from ingress to Apache in passthrough mode)
+    SSLVerifyClient optional
+    SSLVerifyDepth 3
+    SSLCACertificateFile /etc/apache2/x509-ca/ca.crt
+
+    # Pass client cert info to WSGI app via request headers
+    # Replaces the headers that NGINX used to forward when it terminated TLS
+    RequestHeader set SSL_CLIENT_CERT "%{SSL_CLIENT_CERT}s"
+    RequestHeader set SSL_CLIENT_I_DN "%{SSL_CLIENT_I_DN}s"
+    RequestHeader set SSL_CLIENT_VERIFY "%{SSL_CLIENT_VERIFY}s"
+    {{- end }}
+
     WSGIDaemonProcess keystone-tls processes=8 threads=1 user=keystone group=keystone display-name=%{GROUP}
     WSGIProcessGroup keystone-tls
     WSGIScriptAlias / /var/www/cgi-bin/keystone/keystone-wsgi-public

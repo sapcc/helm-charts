@@ -257,6 +257,11 @@ spec:
               mountPath: /etc/apache2/conf-enabled/tls-hardening.conf
               subPath: tls-hardening.conf
               readOnly: true
+            {{- if .Values.services.ingress.x509.ca }}
+            - name: x509-ca
+              mountPath: /etc/apache2/x509-ca
+              readOnly: true
+            {{- end }}
             {{- end }}
             - name: keystone-etc
               mountPath: /etc/apache2/mods-available/mpm_event.conf
@@ -388,4 +393,10 @@ spec:
           emptyDir:
             medium: Memory
             sizeLimit: 1Mi
+        {{- if .Values.services.ingress.x509.ca }}
+        - name: x509-ca
+          secret:
+            secretName: {{ .Release.Name }}-x509-ca
+            defaultMode: 0444
+        {{- end }}
         {{- end }}
