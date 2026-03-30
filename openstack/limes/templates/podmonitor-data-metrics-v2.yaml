@@ -1,0 +1,48 @@
+{{- $region := .Values.global.region | required "missing value for .Values.global.region" -}}
+{{- if .Values.global.region | hasPrefix "qa" -}}
+
+# The data-metrics-v2 pod does not have the normal Prometheus annotations,
+# because then the centrally-defined default monitors (PodMonitor pod-sd or ServiceMonitor endpoint-sd)
+# would add a billion labels that clutter the metrics. This is a bad user experience when using these
+# metrics, and also adds tons of useless data to these very high-cardinality metric families.
+# By registering the pod with Prometheus through a custom PodMonitor, we can avoid this.
+
+kind: PodMonitor
+apiVersion: monitoring.coreos.com/v1
+
+metadata:
+  name: limitas-data-metrics
+  labels:
+    prometheus: {{ quote .Values.alerts.prometheus.openstack }}
+
+spec:
+  selector:
+    matchLabels:
+      name: limitas-data-metrics
+  podMetricsEndpoints:
+    - scheme: http
+      port: metrics
+      path: /metrics
+      interval: 60s
+      scrapeTimeout: 25s
+      relabelings:
+        # As explained in the top-of-file comment, we want to drop any and all
+        # predefined labels except for the one that we absolutely want.
+        #
+        # The only ones that we keep here are the ones that Prometheus needs
+        # to know where to scrape at all. We will delete those below on the
+        # metric level, thus retaining only the original labels.
+        #
+        # The pattern `__.*` is for temporary labels that are only used during
+        # subsequent relabeling steps and deleted afterwards. We need to keep
+        # those because those other steps are opaque to us here.
+        - action: labelkeep
+          regex: '__.*|endpoint|instance|job'
+      metricRelabelings:
+        - action: labeldrop
+          regex: 'endpoint|instance|job'
+        - action: replace
+          targetLabel: region
+          replacement: {{ quote $region }}
+
+{{- end }}
