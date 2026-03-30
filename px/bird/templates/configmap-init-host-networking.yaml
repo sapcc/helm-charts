@@ -1,4 +1,4 @@
-{{- if .Values.hostNetworking }}
+{{- if or .Values.hostNetworking .Values.hostNetworkDaemonSet.enabled }}
 kind: ConfigMap
 apiVersion: v1
 metadata:
@@ -59,7 +59,7 @@ data:
             exit 0
         fi
         
-        echo "Creating VLAN interface $VLAN_DEV on $BASE_DEV with VLAN ID $PX_VLAN"
+        echo "Creating VLAN interface $PX_INTERFACE on $PX_NATIVE_INTERFACE with VLAN ID $PX_VLAN"
         ip link add link "$PX_NATIVE_INTERFACE" name "$PX_INTERFACE" type vlan id "$PX_VLAN"
         ip link set "$PX_INTERFACE" up
         echo "VLAN interface $PX_INTERFACE created successfully"
