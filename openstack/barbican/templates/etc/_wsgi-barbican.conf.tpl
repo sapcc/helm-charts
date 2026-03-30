@@ -27,7 +27,7 @@ Listen 0.0.0.0:{{ .Values.api_port_internal }}
 Include /etc/apache2/conf-enabled/tls-hardening.conf
 
 # External HTTPS endpoint (via Ingress TLS passthrough)
-Listen 0.0.0.0:443
+# Note: Listen 443 is provided by /etc/apache2/ports.conf when mod_ssl is enabled
 
 # TLS hardening at server level (must be outside VirtualHost)
 Include /etc/apache2/conf-enabled/tls-hardening.conf
