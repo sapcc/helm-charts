@@ -255,6 +255,9 @@ persesPlugin:
           value: "true"
       # -- Enable secret access permissions in the cluster role. When enabled, the sidecar will have permissions to read secrets and use them.
       enableSecretAccess: false
+      securityContext:
+        # sidecar runs with escalated privelege as the metal clusters use NFS storage and fsGroup has no effect on them.
+        runAsUser: 0
 
     # -- Persistence parameters
     persistence:
@@ -272,8 +275,7 @@ persesPlugin:
       size: 8Gi
 
       # -- Security context for the PVC when persistence is enabled
-      securityContext:
-        runAsUser: 0
+      securityContext: {}
 
       # -- Labels for the PVC
       labels: {}
