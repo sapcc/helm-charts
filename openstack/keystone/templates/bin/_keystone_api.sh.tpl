@@ -28,6 +28,7 @@ function start () {
 
   {{- if .Values.tls.enabled }}
   a2enmod ssl
+  a2dissite 000-default
   {{- end }}
 
   if [ -f /etc/apache2/envvars ]; then
