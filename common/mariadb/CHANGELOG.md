@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.33.1 - 2026/03/27
+* updated sidecar image:
+  * `mysqld-exporter` image updated to `0.19.0`
+* chart version bumped
+
 ## v0.33.0 - 2026/03/03
 * Add InnoDB buffer pool Prometheus alerts: `MariaDBBufferPoolNearlyFull` (warning, < 10% free) and `MariaDBBufferPoolExhausted` (critical, < 2.5% free)
 
