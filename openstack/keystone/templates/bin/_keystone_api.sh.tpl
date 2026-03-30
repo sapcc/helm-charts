@@ -28,6 +28,7 @@ function start () {
 
   {{- if .Values.tls.enabled }}
   a2enmod ssl
+  a2enmod headers
   a2dissite 000-default
   {{- end }}
 

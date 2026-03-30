@@ -74,7 +74,7 @@ metadata:
     ingress.kubernetes.io/limit-connections: {{ .Values.services.ingress.limitConnections | quote }}
     nginx.ingress.kubernetes.io/limit-connections: {{ .Values.services.ingress.limitConnections | quote }}
     {{- end }}
-    {{- if .Values.services.ingress.x509.ca }}
+    {{- if and .Values.services.ingress.x509.ca (not (and .Values.tls.enabled .Values.tls.passthrough)) }}
     ingress.kubernetes.io/auth-tls-secret: {{ .Release.Namespace }}/{{ .Release.Name }}-x509-ca
     nginx.ingress.kubernetes.io/auth-tls-secret: {{ .Release.Namespace }}/{{ .Release.Name }}-x509-ca
     ingress.kubernetes.io/auth-tls-pass-certificate-to-upstream: "true"
