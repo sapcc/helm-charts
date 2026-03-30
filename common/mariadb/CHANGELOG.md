@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.34.0 - 2026/03/30
+* MariaDB version updated to [11.4.10](https://mariadb.com/docs/release-notes/community-server/11.4/11.4.10)
+  * See https://mariadb.com/docs/release-notes/community-server/11.4/what-is-mariadb-114
+* sidecar images updated
+* `maria-back-me-up` updated to `11.4-20260316115829`, based on 11.4 mariadb image
+* chart version bumped
+
 ## v0.33.1 - 2026/03/27
 * updated sidecar image:
   * `mysqld-exporter` image updated to `0.19.0`
