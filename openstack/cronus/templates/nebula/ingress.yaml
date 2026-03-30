@@ -8,6 +8,9 @@ metadata:
     {{- range $key, $value := .Values.nebula.ingressAnnotations }}
     {{ $key }}: {{ $value | quote }}
     {{- end }}
+    {{- if .Values.nebula.gateway.enabled }}
+    nginx.ingress.kubernetes.io/add-hosts: sc.nebula.{{ .Values.global.region }}.cm.net.sap
+    {{- end }}
   labels:
     app: nebula
 spec:
@@ -22,8 +25,23 @@ spec:
                   number: {{ .Values.nebula.http }}
             path: /
             pathType: Prefix
+  {{- if .Values.nebula.gateway.enabled }}
+    - host: sc.nebula.{{ .Values.global.region }}.cm.net.sap
+      http:
+        paths:
+          - backend:
+              service:
+                name: nebula-gateway
+                port:
+                  name: http
+            path: /
+            pathType: Prefix
+    {{- end }}
   tls:
     - hosts:
       - nebula.{{ .Values.global.region }}.{{ .Values.global.tld }}
+    {{- if .Values.nebula.gateway.enabled }}
+      - sc.nebula.{{ .Values.global.region }}.cm.net.sap
+    {{- end }}
       secretName: tls-secret-nebula
 {{- end -}}
