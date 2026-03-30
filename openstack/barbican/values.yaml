@@ -12,6 +12,42 @@ global:
     skip_hcm_domain: false
   linkerd_requested: false
 
+# BSI TLS Configuration (WP-1187, WP-1188, WP-1189, WP-1194, WP-1195, WP-1196, WP-1197)
+tls:
+  # Enable end-to-end TLS termination at Apache (instead of ingress)
+  enabled: false
+  # Enable TLS passthrough mode on ingress (required when tls.enabled=true)
+  passthrough: false
+  # HTTPS port for external traffic (when TLS is enabled)
+  httpsPort: 443
+  # Certificate configuration for TLS lifecycle manager
+  issuer:
+    name: digicert-issuer
+    kind: ClusterDigicertIssuer
+    group: certmanager.cloud.sap
+  # Envelope encryption for private keys (none, vault-transit)
+  # Note: TPM support deferred per WP-1203
+  envelopeEncryption: none
+  # TLS Lifecycle Manager image
+  lifecycleManager:
+    image: tls-lifecycle-manager
+    imageTag: latest
+  # Certificate rotation settings (WP-1195)
+  rotation:
+    enabled: true
+    # CronJob schedule (weekly on Sunday at 2am)
+    schedule: "0 2 * * 0"
+    # Renew certificate if expiring within this many days
+    renewalThresholdDays: 30
+  # TLS Protocol Hardening (WP-1196)
+  hardening:
+    # Minimum TLS version (TLSv1.2 or TLSv1.3)
+    minVersion: "TLSv1.2"
+    # TLS 1.3 cipher suites
+    cipherSuitesTLS13: "TLS_AES_256_GCM_SHA384:TLS_AES_128_GCM_SHA256:TLS_CHACHA20_POLY1305_SHA256"
+    # TLS 1.2 cipher suites (OpenSSL names, BSI-compliant)
+    cipherSuitesTLS12: "ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-CHACHA20-POLY1305"
+
 owner-info:
   support-group: identity
   service: barbican
@@ -32,6 +68,24 @@ pod:
 
 api_port_internal: '9311'
 debug: "True"
+
+# API configuration
+api:
+  # Number of replicas
+  replicas: 2
+  # Apache mod_wsgi processes (WP-1187)
+  processes: 4
+  # Apache mod_wsgi threads per process
+  threads: 1
+  # Resource limits
+  resources:
+    enabled: true
+    limits:
+      cpu: "2"
+      memory: "2Gi"
+    requests:
+      cpu: "500m"
+      memory: "1Gi"
 
 statsd:
   port: 9102

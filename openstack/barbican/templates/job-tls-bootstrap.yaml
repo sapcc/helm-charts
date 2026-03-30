@@ -1,0 +1,71 @@
+# TLS Bootstrap Job for Barbican
+# WP-1194: TLS Bootstrap Job (Helm hook)
+# This job runs as a pre-install/pre-upgrade hook to provision TLS certificates
+# before the Barbican API deployment starts.
+
+{{- if .Values.tls.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ .Release.Name }}-tls-bootstrap
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    system: openstack
+    component: barbican
+    type: tls-bootstrap
+  annotations:
+    # Run before deployment (pre-install, pre-upgrade)
+    "helm.sh/hook": pre-install,pre-upgrade
+    # Run before other hooks (weight -5)
+    "helm.sh/hook-weight": "-5"
+    # Delete job after successful completion
+    "helm.sh/hook-delete-policy": hook-succeeded
+spec:
+  # Fail-closed: deployment should not proceed if certificate provisioning fails
+  backoffLimit: 3
+  activeDeadlineSeconds: 300
+  template:
+    metadata:
+      labels:
+        app: {{ template "fullname" . }}
+        name: {{ .Release.Name }}-tls-bootstrap
+        system: openstack
+        component: barbican
+        type: tls-bootstrap
+    spec:
+      serviceAccountName: {{ .Release.Name }}-tls-manager
+      restartPolicy: Never
+      containers:
+        - name: tls-bootstrap
+          image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/{{ .Values.tls.lifecycleManager.image }}:{{ .Values.tls.lifecycleManager.imageTag }}
+          imagePullPolicy: IfNotPresent
+          args:
+            - --mode=bootstrap
+            - --namespace={{ .Release.Namespace }}
+            - --secret-name={{ .Release.Name }}-tls
+            - --issuer-name={{ .Values.tls.issuer.name }}
+            - --issuer-kind={{ .Values.tls.issuer.kind }}
+            - --issuer-group={{ .Values.tls.issuer.group }}
+            - --common-name={{ include "barbican_api_endpoint_host_public" . }}
+            - --san-dns={{ include "barbican_api_endpoint_host_public" . }}
+            - --envelope-encryption={{ .Values.tls.envelopeEncryption }}
+            {{- if eq .Values.tls.envelopeEncryption "vault-transit" }}
+            - --vault-addr={{ .Values.tls.vault.addr }}
+            - --vault-transit-path={{ .Values.tls.vault.transitPath }}
+            {{- end }}
+          env:
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+          resources:
+            limits:
+              cpu: "100m"
+              memory: "128Mi"
+            requests:
+              cpu: "50m"
+              memory: "64Mi"
+{{- end }}

@@ -15,6 +15,14 @@ data:
 {{ include (print .Template.BasePath "/etc/_barbican-policy.yaml.tpl") . | indent 4 }}
   logging.ini: |
 {{ include "loggerIni" .Values.logging | indent 4 }}
+  # Apache WSGI configuration (WP-1187)
+  wsgi-barbican.conf: |
+{{ include "wsgi_barbican_conf" . | indent 4 }}
+{{- if .Values.tls.enabled }}
+  # TLS hardening configuration (WP-1196)
+  tls-hardening.conf: |
+{{ include "tls_hardening_conf" . | indent 4 }}
+{{- end }}
 {{- if .Values.watcher.enabled }}
   watcher.yaml: |
 {{ include (print .Template.BasePath "/etc/_watcher.yaml.tpl") . | indent 4 }}
