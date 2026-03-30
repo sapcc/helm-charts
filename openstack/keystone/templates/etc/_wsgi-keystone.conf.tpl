@@ -53,7 +53,7 @@ CustomLog /dev/stdout proxy env=forwarded
 Include /etc/apache2/conf-enabled/tls-hardening.conf
 
 # External HTTPS endpoint (via Ingress TLS passthrough)
-Listen 0.0.0.0:443
+# Note: Listen 443 is provided by /etc/apache2/ports.conf when mod_ssl is enabled
 
 <VirtualHost *:443>
     ServerName {{ .Values.services.public.host }}.{{ .Values.global.region }}.{{ .Values.global.tld }}
