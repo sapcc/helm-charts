@@ -92,6 +92,10 @@ spec:
             rm -f /etc/apache2/sites-enabled/*
             # Remove stale PID file from previous runs
             rm -f /var/run/apache2/apache2.pid
+            {{- if .Values.tls.enabled }}
+            # Enable mod_ssl for TLS termination
+            a2enmod ssl
+            {{- end }}
             # Source Apache environment variables
             if [ -f /etc/apache2/envvars ]; then
               source /etc/apache2/envvars
