@@ -11,6 +11,8 @@ persesPlugin:
 
   contentSync:
     enabled: true
+    podAffinity:
+      enabled: false
     image:
       repository: "keppel.global.cloud.sap/ccloud-gcr-mirror/go-containerregistry/crane"
       tag: "debug"
@@ -229,7 +231,7 @@ persesPlugin:
       # ReadWriteMany: Multiple pods can mount simultaneously (required for CronJobs or multiple replicas)
       # Note: ReadWriteMany requires storage class that supports it (e.g., NFS, CephFS, Azure Files)
       accessModes:
-        - ReadWriteOnce
+        - ReadWriteMany
 
     # --  Sidecar configuration that watches for ConfigMaps with the specified label/labelValue and loads them into Perses provisioning
     sidecar:
@@ -271,9 +273,7 @@ persesPlugin:
 
       # -- Security context for the PVC when persistence is enabled
       securityContext:
-        fsGroup: 2000
-        runAsUser: 1000
-        runAsGroup: 1000
+        runAsUser: 0
 
       # -- Labels for the PVC
       labels: {}
