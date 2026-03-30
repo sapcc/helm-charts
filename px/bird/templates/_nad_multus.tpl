@@ -1,4 +1,8 @@
 {{- define "nad_multus" -}}
+{{- $master := printf "vlan_%d" (required "multus_vlan is required for every domain" .domain_config.multus_vlan) }}
+{{- if  .top.Values.hostNetworkDaemonSet.enabled }}
+  {{- $master = printf "vlan%v" (required "multus_vlan is required for every domain" .domain_config.multus_vlan) }}
+{{- end }}
 ---
 apiVersion: "k8s.cni.cncf.io/v1"
 kind: NetworkAttachmentDefinition
@@ -10,7 +14,7 @@ spec:
     {
         "cniVersion": "0.3.0",
         "type": "macvlan",
-        "master": "vlan_{{ required "multus_vlan is required for every domain" .domain_config.multus_vlan }}",
+        "master": "{{ $master }}",
         "mode": "bridge"
     }
 {{ end }}
