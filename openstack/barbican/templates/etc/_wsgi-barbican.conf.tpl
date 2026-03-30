@@ -23,6 +23,9 @@ WSGIDaemonProcess barbican-api processes={{ .Values.api.processes | default 1 }}
 Listen 0.0.0.0:{{ .Values.api_port_internal }}
 
 {{- if .Values.tls.enabled }}
+# TLS hardening at server level (must be outside VirtualHost)
+Include /etc/apache2/conf-enabled/tls-hardening.conf
+
 # External HTTPS endpoint (via Ingress TLS passthrough)
 Listen 0.0.0.0:443
 
