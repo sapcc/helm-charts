@@ -28,17 +28,19 @@ spec:
       {{- if .Values.extensions.metal.providerConfig.machineImages }}
       machineImages: {{ toYaml .Values.extensions.metal.providerConfig.machineImages | nindent 6 }}
       {{- end }}
-  {{- if .Values.extensions.metal.machineImageUpdates }}
   machineImageUpdates:
-  {{- range .Values.extensions.metal.machineImageUpdates }}
-  - imageName: {{ .imageName }}
-    source: {{ toYaml .source | nindent 6 }}
-    provider: {{ toYaml .provider | nindent 6 }}
-    {{- if and .garbageCollection .garbageCollection.enabled }}
-    garbageCollection:
-      enabled: {{ .garbageCollection.enabled }}
-      maxAge: {{ .garbageCollection.maxAge }}
-    {{- end }}
-  {{- end }}
+{{- range .Values.extensions.metal.machineImageUpdates | default (list) }}
+    - imageName: {{ .imageName | quote }}
+      {{- if .source }}
+      source: {{ toYaml .source | nindent 6 }}
+      {{- end }}
+      {{- if .provider }}
+      provider: {{ toYaml .provider | nindent 6 }}
+      {{- end }}
+{{- end }}
+  {{- if .Values.extensions.metal.machineImageUpdatesGarbageCollection }}
+  garbageCollection:
+    enabled: {{ .Values.extensions.metal.machineImageUpdatesGarbageCollection.enabled }}
+    maxAge: {{ .Values.extensions.metal.machineImageUpdatesGarbageCollection.maxAge | quote }}
   {{- end }}
 {{- end }}
