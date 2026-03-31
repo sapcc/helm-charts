@@ -55,3 +55,32 @@ data:
         }
       }
     }
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: thanos-scaleout-perses-datasource
+  labels:
+    "perses.dev/resource": "true"
+data:
+  thanos-scaleout-perses-datasource.json: |
+    {
+      "kind": "GlobalDatasource",
+      "metadata": {
+        "name": "thanos-scaleout-query"
+      },
+      "spec": {
+        "default": false,
+        "plugin": {
+          "kind": "PrometheusDatasource",
+          "spec": {
+            "proxy": {
+              "kind": "HTTPProxy",
+              "spec": {
+                "url": "https://thanos-scaleout.{{ .Values.global.region }}.cloud.sap/"
+              }
+            }
+          }
+        }
+      }
+    }
