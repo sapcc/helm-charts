@@ -1,0 +1,21 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "kube-state-metrics-remote.fullname" . }}
+  labels:
+  {{- include "kube-state-metrics-remote.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+    {{- include "kube-state-metrics-remote.selectorLabels" . | nindent 6 }}
+  ingress:
+  - ports:
+    - protocol: TCP
+      port: {{ with index .Values.kubeStateMetrics.ports 0 }}{{ .port | quote }}{{ end }}
+    from:
+    - namespaceSelector:
+        matchLabels:
+          name: kube-monitoring
+  policyTypes:
+  - Ingress
+  - Egress
