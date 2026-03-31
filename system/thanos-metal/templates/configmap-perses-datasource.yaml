@@ -2,15 +2,15 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ printf "%s-%s" $.Release.Name "perses-datasource" }}
+  name: thanos-regional-perses-datasource
   labels:
     "perses.dev/resource": "true"
 data:
-  {{ printf "%s-%s" $.Release.Name "perses-datasource.json" }}: |
+  thanos-regional-perses-datasource.json: |
     {
       "kind": "GlobalDatasource",
       "metadata": {
-        "name": "{{ printf "%s-%s" $.Release.Name "query" }}"
+        "name": "thanos-regional-query"
       },
       "spec": {
         "default": true,
@@ -21,6 +21,37 @@ data:
               "kind": "HTTPProxy",
               "spec": {
                 "url": "http://thanos-regional-query.thanos.svc:10902"
+              }
+            }
+          }
+        }
+      }
+    }
+{{- end }}
+---
+{{- if .Values.thanos.persesDatasource.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: thanos-metal-perses-datasource
+  labels:
+    "perses.dev/resource": "true"
+data:
+  thanos-metal-perses-datasource.json: |
+    {
+      "kind": "GlobalDatasource",
+      "metadata": {
+        "name": "thanos-metal-query"
+      },
+      "spec": {
+        "default": false,
+        "plugin": {
+          "kind": "PrometheusDatasource",
+          "spec": {
+            "proxy": {
+              "kind": "HTTPProxy",
+              "spec": {
+                "url": "http://thanos-metal-query.thanos.svc:10902"
               }
             }
           }
