@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.34.0 - 2026/04/01
+* remove unneeded privileges from the `backup` user
+* add `replace_grants` user option: when `true`, revokes all existing privileges before re-granting
+* add missing `serviceAccount` configuration for backup-v2 deployment
+* `maria-back-me-up` updated to `10.11-20260401122106`
+* chart version bumped
+
 ## v0.33.1 - 2026/03/27
 * updated sidecar image:
   * `mysqld-exporter` image updated to `0.19.0`
