@@ -38,9 +38,6 @@ spec:
         {{- include "utils.topology.pod_label" . | nindent 8 }}
       annotations:
         configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
-        {{- if .Values.tls.enabled }}
-        tls-secret-hash: {{ .Values.tls.secretName | default "barbican-tls" }}
-        {{- end }}
         {{- if .Values.proxysql.mode }}
         prometheus.io/scrape: "true"
         prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
