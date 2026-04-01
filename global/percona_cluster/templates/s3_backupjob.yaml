@@ -27,9 +27,9 @@ spec:
           - name: mysql-dump
             image: {{ required ".Values.global.dockerHubMirrorAlternateRegion is missing" .Values.global.dockerHubMirrorAlternateRegion }}/{{ .Values.backup.s3.image }}:{{ .Values.backup.s3.image_tag }}
             imagePullPolicy: IfNotPresent
+            command: ["/entrypoint"]
+            args: ["dump", "--debug", "--once"]
             env:
-              - name: RUN_ONCE
-                value: "true"
               - name: DB_SERVER
                 value: "{{ include "fullName" . }}"
               - name: DB_USER
