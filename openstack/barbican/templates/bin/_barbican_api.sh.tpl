@@ -35,6 +35,14 @@ function start () {
     source /etc/apache2/envvars
   fi
 
+  # Set default Apache environment variables if not set
+  # (required for images that don't have /etc/apache2/envvars)
+  export APACHE_RUN_DIR=${APACHE_RUN_DIR:-/var/run/apache2}
+  export APACHE_PID_FILE=${APACHE_PID_FILE:-${APACHE_RUN_DIR}/apache2.pid}
+  export APACHE_RUN_USER=${APACHE_RUN_USER:-www-data}
+  export APACHE_RUN_GROUP=${APACHE_RUN_GROUP:-www-data}
+  export APACHE_LOG_DIR=${APACHE_LOG_DIR:-/var/log/apache2}
+
   # Create Apache runtime directory if it doesn't exist
   if [ ! -d "$APACHE_RUN_DIR" ]; then
     mkdir -p "$APACHE_RUN_DIR"
