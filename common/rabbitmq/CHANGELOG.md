@@ -407,7 +407,7 @@ b.alkhateeb@sap.com
 ```
     metrics:
       port: 9150
-      enabled: false
+      enabled: true
       sidecar:
         enabled: false
 ```
