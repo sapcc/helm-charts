@@ -29,10 +29,8 @@ spec:
         checksum/etc: {{ include (print $.Template.BasePath  "/configmap.yaml") . | sha256sum }}
         {{- if or (not (hasKey .Values.global "linkerd_enabled")) (not (hasKey .Values.global "linkerd_requested")) }}
           {{- fail "global.linkerd_enabled plus global.linkerd_requested must be defined and the linkerd-support Helm chart must be added as chart dependency" }}
-        {{- else -}}
-          {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+        {{- else if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
         linkerd.io/inject: enabled
-          {{- end }}
         {{- end }}
     spec:
       affinity:
