@@ -8,14 +8,14 @@ groups:
 
     # sum available_bytes and logical_used_bytes when only space reporting is enabled
     # details see https://operations.global.cloud.sap/docs/operation/storage/manila/300-logical-space/
-    - record: netapp_volume_total_bytes:pre
+    - record: netapp_volume_total_bytes:manila
       expr: |
         label_replace((netapp_volume_size_available{app="netapp-harvest-exporter-manila"} + netapp_volume_space_logical_used)
         * on (app, host, svm, volume) group_left() netapp_volume_labels:manila{is_space_reporting_logical="true", is_space_enforcement_logical="false"}
         or netapp_volume_size_total{app="netapp-harvest-exporter-manila"}, "vserver", "$1", "svm", "(.*)")
 
     # use logical used bytes when logical space reporting is enabled
-    - record: netapp_volume_used_bytes:pre
+    - record: netapp_volume_used_bytes:manila
       expr: |
         label_replace(netapp_volume_space_logical_used{app="netapp-harvest-exporter-manila"}
         * on (app, host, svm, volume) group_left() netapp_volume_labels:manila{is_space_reporting_logical="true"}
