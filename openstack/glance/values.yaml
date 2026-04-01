@@ -15,7 +15,6 @@ global:
 
 # add 'file' store for the build-up
 stores: "swift"
-default_store: swift
 
 rpc_workers: 1
 workers: 4
@@ -44,6 +43,12 @@ swift:
   multi_tenant: true
   # store_large_object_size:
 
+ceph:
+  enabled: false
+
+ceph_s3:
+  enabled: false
+
 api_port_internal: '9292'
 
 replicas: 3
@@ -64,9 +69,8 @@ statsd:
     requests:
       cpu: 100m
       memory: 64Mi
-  image:
-    repository:  prom/statsd-exporter
-    tag: v0.26.0
+  image: 'shared-app-images/statsd-exporter'
+  imageTag: '0.28.0-latest'
 
 api:
   debug: false
@@ -354,6 +358,8 @@ alerts:
 # sapcc/openstack-rate-limit-middleware
 sapcc_rate_limit:
   enabled: true
+
+api-ratelimit-redis:
   persistence:
     enabled: false
   resources:

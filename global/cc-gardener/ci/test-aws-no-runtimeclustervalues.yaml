@@ -1,0 +1,50 @@
+# Test values for AWS extension without runtimeClusterValues
+# Tests: template works when runtimeClusterValues is explicitly null
+
+global:
+  registry: example.com
+  region: qa-de-1
+  cluster: test-cluster
+
+garden:
+  name: garden
+  backup:
+    provider: aws
+    accessKeyID: "test-access"
+    secretAccessKey: "test-secret"
+    region: "eu-central-1"
+    bucket: "test-bucket"
+  runtimeCluster:
+    zones: ["qa-de-1a"]
+    networking:
+      pods: ["10.42.0.0/16"]
+      services: ["10.43.0.0/16"]
+  virtualCluster:
+    version: "1.29.6"
+
+secretsInjector:
+  enabled: false
+
+extensions:
+  storage:
+    provisioner: "rancher.io/local-path"
+    parameters: {}
+
+  aws:
+    version: v1.67.2
+
+    # Explicitly unset runtimeClusterValues to test default behavior
+    # runtimeClusterValues: null
+
+    # Test extension.values only
+    values:
+      image:
+        repository: custom-aws-repo/aws-controller
+        tag: v1.67.3
+      replicaCount: 2
+
+    # Test helm.ociRepository
+    helm:
+      ociRepository:
+        repository: keppel.example.com/aws-extension
+        tag: v1.67.2

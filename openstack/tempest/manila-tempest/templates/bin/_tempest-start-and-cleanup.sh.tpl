@@ -10,34 +10,53 @@ function delete_share_network() {
         echo "Share network $share_network_id does not exist, skipping deletion."
         return
     fi
-    # Delete share network subnets if they exist
+
+    # Delete all share network subnets (can have multiple)
+    echo "Cleaning up subnets for share network: $share_network_id"
     subnets=$(openstack share network show "$share_network_id" -f value -c share_network_subnets)
     subnet_ids=$(echo "$subnets" | grep -oE "'id': '[^']+" | awk -F"'" '{print $4}')
-    if [ -n "$subnet_ids" ]; then
-        for subnet_id in $subnet_ids; do
-            if ! manila share-network-subnet-delete "$share_network_id" "$subnet_id"; then
-                echo "Failed to delete share network subnet: $subnet_id"
-                exit 1
-            fi
-        done
-    fi
+    for subnet_id in $subnet_ids; do
+        echo "Deleting subnet: $subnet_id from share network: $share_network_id"
+        manila share-network-subnet-delete "$share_network_id" "$subnet_id" || echo "Failed to delete subnet: $subnet_id"
+    done
+
+    # Delete the share network itself
     manila share-network-delete "$share_network_id" || echo "Failed to delete share network: $share_network_id"
 }
 
 function cleanup_project_resources() {
     local pre_created_share_networks=("$1" "$2" "$3")
     echo "Run cleanup project $OS_PROJECT_NAME"
-    for snap in $(manila snapshot-list | grep -E 'tempest' | awk '{ print $2 }'); do manila snapshot-delete ${snap}; done
-    for share in $(manila list | grep -E 'tempest|share' | awk '{ print $2 }'); do manila reset-state ${share} && manila delete ${share}; done
-    for share in $(manila list | grep -E 'tempest|share' | awk '{ print $2 }'); do manila reset-task-state ${share} && manila delete ${share}; done
-    for net in $(manila share-network-list | grep -E 'tempest|None' | awk '{ print $2 }')
-    do
+
+    # 1. Delete snapshots
+    for snap in $(manila snapshot-list | grep -E 'tempest' | awk '{ print $2 }'); do
+        echo "Deleting snapshot: $snap"
+        manila snapshot-delete ${snap} || true
+    done
+
+    # 2. Force delete shares (reset state first)
+    for share in $(manila list | grep -E 'tempest|share' | awk '{ print $2 }'); do
+        echo "Deleting share: $share"
+        manila reset-state ${share} || true
+        manila delete ${share} || manila force-delete ${share} || true
+    done
+
+    # Wait for shares to be deleted (othewise share networks can't be deleted)
+    sleep 30
+
+    # 3. Delete share networks (with subnets)
+    for net in $(manila share-network-list | grep -E 'tempest|None' | awk '{ print $2 }'); do
         # don't delete pre-created share networks
         if [[ ! " ${pre_created_share_networks[@]} " =~ " ${net} " ]]; then
             delete_share_network ${net}
         fi
     done
-    for ss in $(manila security-service-list --detailed 1 --columns "id,name,user"| grep -E 'tempest|None' | awk '{ print $2 }'); do manila security-service-delete ${ss}; done
+
+    # 4. Delete security services (last, after removal from networks)
+    for ss in $(manila security-service-list --detailed 1 --columns "id,name,user"| grep -E 'tempest|None' | awk '{ print $2 }'); do
+        echo "Deleting security service: $ss"
+        manila security-service-delete ${ss} || true
+    done
 }
 
 function cleanup_tempest_leftovers() {
@@ -63,8 +82,6 @@ function cleanup_tempest_leftovers() {
     for type in $(manila type-list | grep -E 'tempest' | awk '{ print $2 }'); do manila type-delete ${type}; done
 }
 
-
 {{- include "tempest-base.function_main" . }}
 
-cleanup_tempest_leftovers
 main

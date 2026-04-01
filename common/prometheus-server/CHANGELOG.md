@@ -1,3 +1,32 @@
+## 8.1.3
+
+* Include version tag in `thanos.spec.image` since the Prometheus Operator's `BuildImagePath` returns the `image` field as-is, ignoring `version` for image construction
+
+## 8.1.2
+
+* fix helper referring to `thanos.baseImage` which is causes the image tag version to be missing 
+
+## 8.1.1
+
+* `thanos.baseImage` is deprecated updating to `thanos.image`
+
+## 8.1.0
+
+* Enable native histogram support: add `convertClassicHistogramsToNHCB`, `scrapeClassicHistograms`, and `scrapeNativeHistograms` to the Prometheus CR spec (all enabled by default)
+
+## 8.0.10
+
+* use global repository instead of hardcoded single region
+
+## 8.0.9
+
+* VPA container name was not always shown
+
+## 8.0.8
+
+* Upgrade Prometheus to v3.6.0
+* add default priorityClass for better scheduling 
+
 ## 8.0.7
 
 * Upgrade Prometheus to v3.5.0

@@ -1,3 +1,3 @@
 [api_database]
-connection = {{ include "api_db_path" . }}
+connection = {{ include "nova.helpers.db_url" (tuple . "api") }}
 {{- include "ini_sections.database_options_mysql" . | indent 0 }}

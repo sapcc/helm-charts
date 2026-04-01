@@ -23,6 +23,7 @@ owner-info:
 
 debug: false
 insecure_debug: false
+# max_db_limit: 1000
 
 # run a db_sync to migrate the db schema ?
 run_db_migration: true
@@ -134,8 +135,8 @@ api:
     enabled: true
     port: "9102"
 
-    image: prom/statsd-exporter
-    imageTag: v0.20.1
+    image: 'shared-app-images/statsd-exporter'
+    imageTag: '0.28.0-latest'
     prefix: openstack
 
     resources:
@@ -152,7 +153,7 @@ api:
   resources:
     requests:
       memory: 2Gi
-      cpu: 1500m
+      cpu: 3000m
     limits:
       memory: 3Gi
 
@@ -201,6 +202,25 @@ tempest:
 
 sentry:
   enabled: true
+  debug_filtering:
+    enabled: false
+  # filter_rules:
+  #   rules:
+  #     # examples of filter rules to reduce noise from common, non-actionable events
+  #     sample_token_not_found: # rule name
+  #       exception_type: "TokenNotFound" # exception class name
+  #       sample_rate: 0.01 # sample 1% of these events
+  #     exclude_unauthorized:
+  #       exception_type: "Unauthorized"
+  #       rate_limit: # only report max 5 occurrences within 300 seconds
+  #         max_occurrences: 5 
+  #         time_window: 300 
+  #     invalid_credentials:
+  #       message_pattern: ".*length.*exceeded.*" # python regex match in the error message
+  #     ignore_jaeger_client:
+  #       exception_type: "CommandError"
+  #       message_contains: "jaeger-client" # substring match in the error message
+
 # dsn: put-your-sentry-dsn-here or leave it up to the sentry-operator to provide one in a k8s sentry secret
 
 services:
@@ -546,7 +566,14 @@ report_invalid_password_hash:
   resources: {}
   podAnnotations: {}
 
-prodel:
-  # This should be an endpoint implementing oslo.policy HTTPCheck
-  url: "http://prodel.prodel.svc/check-delete_project/%(project_id)s"
+prodel: {}
+  # # This should be an endpoint implementing oslo.policy HTTPCheck. Uses
+  # # calculated value provided by "prodel_url" template when not specified
+  # # (optionally, configured with `.Values.prodel.prodelNamespace`)
+  # url: "http://prodel.<prodelNamespace>.svc/check-delete_project/%(project_id)s"
+
+  # # the namespace where prodel is deployed - used for calculation of the value
+  # # of `.Values.prodel.url`, when provided, otherwise defaults to "prodel".
+  # prodelNamespace: "prodel"
+
 databaseKind: ""

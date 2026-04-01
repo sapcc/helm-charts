@@ -6,6 +6,8 @@ kind: Secret
 metadata:
   name: otel-basic-auth-users
   namespace: {{ $.Release.Namespace }}
+  labels:
+    "greenhouse.sap/owned-by": {{ .Values.openTelemetry.supportGroup | default .Values.global.supportGroup }}
 data:
   failover_username_a: {{ required ".Values.openTelemetry.openSearchLogs.failover_username_a missing" .Values.openTelemetry.openSearchLogs.failover_username_a | b64enc }}
   failover_password_a: {{ required ".Values.openTelemetry.openSearchLogs.failover_password_a missing" .Values.openTelemetry.openSearchLogs.failover_password_a | b64enc }}
@@ -21,8 +23,16 @@ metadata:
   labels:
     "greenhouse.sap/owned-by": {{ .Values.openTelemetry.supportGroup | default .Values.global.supportGroup }}
 spec:
-  pluginDefinition: logs
+  pluginDefinitionRef:
+    kind: PluginDefinition
+    name: logs
   disabled: false
+  ignoreDifferences:
+    - version: v1
+      kind: ServiceAccount
+      name: logs-collector
+      paths:
+        - /metadata/labels
   optionValues:
     - name: openTelemetry.prometheus.additionalLabels
       value:
@@ -78,7 +88,7 @@ spec:
   {{- if .Values.global.ghcrIoMirror }}
     - name: opentelemetry-operator.manager.image.repository
       value: {{ .Values.global.ghcrIoMirror }}/open-telemetry/opentelemetry-operator/opentelemetry-operator
-    - name: opentelemetry-operator.manager.collectorImage.repository
+    - name: openTelemetry.collectorImage.repository
       value: {{ .Values.global.ghcrIoMirror }}/cloudoperators/opentelemetry-collector-contrib
     - name: opentelemetry-operator.testFramework.image.repository
       value: {{ .Values.global.dockerHubMirror }}/library/busybox

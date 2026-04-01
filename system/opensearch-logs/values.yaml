@@ -3,6 +3,8 @@ global:
   linkerd_requested: true
   clusterType: local
   nodepool: "payload"
+  opensearchTools:
+    tag: "latest"
   users:
     admin:
       name: admin
@@ -14,18 +16,29 @@ global:
       min_index_age: "365d"
       min_size: "20gb"
       min_doc_count: 10000000
+    alerts_sem:
+      min_index_age: "7d"
+      min_size: "20gb"
+      min_doc_count: 10000000
     deployments:
       min_index_age: "365d"
       min_size: "30gb"
       min_doc_count: 50000000
     storage:
       min_index_age: "7d"
+      max_index_age: "14d"
       min_size: "80gb"
       min_doc_count: 100000000
     compute:
       min_index_age: "7d"
       min_size: "80gb"
       min_doc_count: 100000000
+    cronus:
+      min_index_age: "7d"
+      min_size: "20gb"
+      min_doc_count: 10000000
+      number_of_shards: 1
+      snapshot_repository: "snapshots"
     otel:
       min_index_age: "7d"
       min_size: "20gb"
@@ -62,6 +75,8 @@ qalogs:
   enabled: false
 scaleout:
   enabled: false
+s3:
+  enabled: false
 
 alerts:
   enabled: false
@@ -81,7 +96,7 @@ opensearch_master:
   nodeGroup: "master"
   masterService: "opensearch-logs-master"
   image:
-    tag: 2.19.2
+    tag: 3.5.0
   roles:
     - master
   replicas: 3
@@ -105,15 +120,17 @@ opensearch_master:
   extraEnvs:
     - name: DISABLE_INSTALL_DEMO_CONFIG
       value: "true"
+    - name: AWS_EC2_METADATA_DISABLED
+      value: "true"
   plugins:
     enabled: true
     installList:
-      - https://github.com/sapcc/prometheus-exporter-plugin-for-opensearch/releases/download/v2.19.2/prometheus-exporter-2.19.2.0.zip
+      - https://github.com/opensearch-project/opensearch-prometheus-exporter/releases/download/3.5.0.0/prometheus-exporter-3.5.0.0.zip
 
 opensearch_client:
   enabled: false
   image:
-    tag: 2.19.2
+    tag: 3.5.0
   replicas: 3
   nameOverride: "opensearch-logs-client"
   fullnameOverride: "opensearch-logs-client"
@@ -151,15 +168,17 @@ opensearch_client:
   extraEnvs:
     - name: DISABLE_INSTALL_DEMO_CONFIG
       value: "true"
+    - name: AWS_EC2_METADATA_DISABLED
+      value: "true"
   plugins:
     enabled: true
     installList:
-      - https://github.com/sapcc/prometheus-exporter-plugin-for-opensearch/releases/download/v2.19.2/prometheus-exporter-2.19.2.0.zip
+      - https://github.com/opensearch-project/opensearch-prometheus-exporter/releases/download/3.5.0.0/prometheus-exporter-3.5.0.0.zip
 
 opensearch_data:
   enabled: false
   image:
-    tag: 2.19.2
+    tag: 3.5.0
   nameOverride: "opensearch-logs-data"
   fullnameOverride: "opensearch-logs-data"
   nodeGroup: "data"
@@ -183,7 +202,7 @@ opensearch_data:
   plugins:
     enabled: true
     installList:
-      - https://github.com/sapcc/prometheus-exporter-plugin-for-opensearch/releases/download/v2.19.2/prometheus-exporter-2.19.2.0.zip
+      - https://github.com/opensearch-project/opensearch-prometheus-exporter/releases/download/3.5.0.0/prometheus-exporter-3.5.0.0.zip
   securityConfig:
     enabled: false
     path: "/usr/share/opensearch/config/opensearch-security"
@@ -192,11 +211,58 @@ opensearch_data:
   extraEnvs:
     - name: DISABLE_INSTALL_DEMO_CONFIG
       value: "true"
+    - name: AWS_EC2_METADATA_DISABLED
+      value: "true"
+opensearch_snapshots:
+  enabled: false
+  image:
+    tag: 3.5.0
+  replicas: 2
+  nameOverride: "opensearch-logs-snapshots"
+  fullnameOverride: "opensearch-logs-snapshots"
+  nodeGroup: "snapshots"
+  masterService: "opensearch-logs-master"
+  podAnnotations:
+    # manual versioning, raise if secrets change
+    versioning: "3"
+  roles:
+    - warm
+  opensearchJavaOpts: "-Dlog4j2.formatMsgNoLookups=true -XX:MaxRAM=5g -XX:MaxGCPauseMillis=5000 -Xms1g -Xmx1g"
+  secretMounts:
+    - name: opensearch-certificates
+      secretName: cert-manager
+      path: /usr/share/opensearch/config/certs/
+      defaultMode: 0700
+  persistence:
+    enabled: false
+    enableInitChown: false
+    image: "library/busybox"
+  ingress:
+    enabled: false
+  clusterName: "opensearch-logs"
+  securityConfig:
+    enabled: false
+    path: "/usr/share/opensearch/config/opensearch-security"
+    actionGroupsSecret: "security-config"
+    configSecret: "security-config"
+    internalUsersSecret: "security-config"
+    rolesSecret: "security-config"
+    rolesMappingSecret: "security-config"
+    tenantsSecret: "security-config"
+  extraEnvs:
+    - name: DISABLE_INSTALL_DEMO_CONFIG
+      value: "true"
+    - name: AWS_EC2_METADATA_DISABLED
+      value: "true"
+  plugins:
+    enabled: true
+    installList:
+      - https://github.com/opensearch-project/opensearch-prometheus-exporter/releases/download/3.5.0.0/prometheus-exporter-3.5.0.0.zip
 
 opensearch_ml:
   enabled: false
   image:
-    tag: 2.19.2
+    tag: 3.5.0
   replicas: 2
   nameOverride: "opensearch-logs-ml"
   fullnameOverride: "opensearch-logs-ml"
@@ -234,15 +300,17 @@ opensearch_ml:
   extraEnvs:
     - name: DISABLE_INSTALL_DEMO_CONFIG
       value: "true"
+    - name: AWS_EC2_METADATA_DISABLED
+      value: "true"
   plugins:
     enabled: true
     installList:
-      - https://github.com/sapcc/prometheus-exporter-plugin-for-opensearch/releases/download/v2.19.2/prometheus-exporter-2.19.2.0.zip
+      - https://github.com/opensearch-project/opensearch-prometheus-exporter/releases/download/3.5.0.0/prometheus-exporter-3.5.0.0.zip
 
 opensearch_dashboards:
   enabled: false
   image:
-    tag: "2.19.2"
+    tag: "3.5.0"
   fullnameOverride: opensearch-logs-dashboards
   nameOverride: opensearch-logs-dashboards
   serviceAccount:

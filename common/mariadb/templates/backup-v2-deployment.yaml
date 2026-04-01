@@ -28,8 +28,8 @@ spec:
         prometheus.io/scrape: "true"
         prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
 {{- end }}
-{{- if and (and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested) $.Values.linkerd.backup.enabled }}
-        linkerd.io/inject: enabled
+{{- if $.Values.linkerd.backup.enabled }}
+        {{- include "mariadb.linkerdPodAnnotations" . | indent 8 }}
 {{- end }}
     spec:
       affinity:

@@ -11,6 +11,9 @@ spec:
   mon:
     count: {{ .Values.mon.count }}
     allowMultiplePerNode: false
+    {{- if .Values.mon.failureDomainLabel }}
+    failureDomainLabel: {{ .Values.mon.failureDomainLabel  }}
+    {{- end }}
   mgr:
     count: 2
     allowMultiplePerNode: false
@@ -39,7 +42,7 @@ spec:
     interval: 30s
   labels:
     monitoring:
-      plugin: kube-monitoring-{{ .Values.global.cluster }}
+      plugin: kube-monitoring
   network:
     provider: host
   healthCheck:

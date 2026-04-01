@@ -1,3 +1,6 @@
+{{- $region := $.Values.global.region | required "missing value for .Values.global.region" -}}
+{{- $tld    := $.Values.global.tld    | required "missing value for .Values.global.tld"    -}}
+
 kind: Ingress
 apiVersion: networking.k8s.io/v1
 
@@ -17,10 +20,10 @@ spec:
   tls:
     - secretName: tls-keppel-api
       hosts:
-        - 'keppel.{{ .Values.global.region }}.{{ .Values.global.tld }}'
-        - '*.keppel.{{ .Values.global.region }}.{{ .Values.global.tld }}'
+        - 'keppel.{{ $region }}.{{ $tld }}'
+        - '*.keppel.{{ $region }}.{{ $tld }}'
   rules:
-    - host: 'keppel.{{ .Values.global.region }}.{{ .Values.global.tld }}'
+    - host: 'keppel.{{ $region }}.{{ $tld }}'
       http:
         paths:
           - path: /
@@ -37,7 +40,7 @@ spec:
                 name: keppel-health-monitor
                 port:
                   number: 8080
-    - host: '*.keppel.{{ .Values.global.region }}.{{ .Values.global.tld }}'
+    - host: '*.keppel.{{ $region }}.{{ $tld }}'
       http:
         paths:
           - path: /
@@ -48,7 +51,9 @@ spec:
                 port:
                   number: 80
 
-{{- if .Values.keppel.anycast_domain_name }}
+{{- $peer_group := index $.Values.keppel.peer_groups $.Values.keppel.peer_group -}}
+{{- $has_anycast := $peer_group.exclude_from_anycast | has $region | not -}}
+{{- if $has_anycast }}
 ---
 kind: Ingress
 apiVersion: networking.k8s.io/v1
@@ -63,11 +68,11 @@ spec:
   tls:
     - secretName: tls-keppel-api-san
       hosts:
-        - '{{ .Values.keppel.anycast_domain_name }}'
-        - '*.{{ .Values.keppel.anycast_domain_name }}'
+        - '{{ $peer_group.anycast_domain_name }}'
+        - '*.{{ $peer_group.anycast_domain_name }}'
   # TODO: remove
   rules:
-    - host: '{{ .Values.keppel.anycast_domain_name }}'
+    - host: '{{ $peer_group.anycast_domain_name }}'
       http:
         paths:
           - path: /
@@ -77,7 +82,7 @@ spec:
                 name: keppel-api
                 port:
                   number: 80
-    - host: '*.{{ .Values.keppel.anycast_domain_name }}'
+    - host: '*.{{ $peer_group.anycast_domain_name }}'
       http:
         paths:
           - path: /

@@ -1,0 +1,115 @@
+{{- if .Values.extensions.auditing.enabled }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: audit-policy-cp-virtual
+  namespace: garden
+data:
+  policy: |-
+    apiVersion: audit.k8s.io/v1
+    kind: Policy
+    metadata:
+      name: audit-policy-cp-virtual
+    omitStages:
+      - "RequestReceived"
+    rules:
+      - level: Metadata
+        verbs: ["create"]
+        resources:
+          - group: "authentication.k8s.io"
+            resources: ["tokenreviews"]
+          - group: "authorization.k8s.io"
+            resources: ["subjectaccessreviews"]
+      - level: Request
+        verbs: ["get", "list", "watch"]
+        resources:
+          - group: ""
+            resources: ["secrets"]
+      - level: Metadata
+        verbs: ["get", "list", "watch"]
+        resources:
+          - group: ""
+            resources: ["configmaps"]
+      - level: Metadata
+        resources:
+          - group: "apps"
+            resources: ["deployments", "daemonsets", "statefulsets"]
+          - group: ""
+            resources: ["pods"]
+      - level: Metadata
+        resources:
+          - group: "rbac.authorization.k8s.io"
+            resources:
+              - "roles"
+              - "rolebindings"
+              - "clusterroles"
+              - "clusterrolebindings"
+      - level: Metadata
+        resources:
+          - group: ""
+            resources: ["nodes", "secrets"]
+      - level: Metadata
+        verbs: ["create", "update", "patch", "delete"]
+      - level: None
+        users:
+        - cloud-config-downloader
+        - etcd-client
+        - gardener
+        - garden.sapcloud.io:system:cert-broker
+        - kubelet
+        - system:apiserver
+        - system:cloud-controller-manager
+        - system:cluster-autoscaler
+        - system:kube-addon-manager
+        - system:kube-aggregator
+        - system:kube-apiserver:kubelet
+        - system:kube-controller-manager
+        - system:kube-proxy
+        - system:kube-scheduler
+        - system:machine-controller-manager
+        - system:serviceaccount:default:app-hub-controller
+        - system:serviceaccount:kube-system:gardener-apiserver
+        - system:serviceaccount:kube-system:gardener-controller-manager
+        - system:serviceaccount:kube-system:gardener-dashboard
+        - system:serviceaccount:garden:gardener-extension-admission-gcp
+        - system:serviceaccount:garden:gardener-extension-validator-alicloud
+        - system:serviceaccount:garden:gardener-extension-validator-aws
+        - system:serviceaccount:garden:gardener-extension-validator-azure
+        - system:serviceaccount:garden:gardener-extension-validator-openstack
+        - system:serviceaccount:kube-system:gardener-scheduler
+        - system:serviceaccount:garden:secret-binding-distributor
+        - system:serviceaccount:kube-system:terminal-controller-manager
+        - system:serviceaccount:kube-system:landscape-setup-user
+        - virtual-garden:client:admin
+        - vpn-seed
+      - level: None
+        userGroups:
+        - gardener.cloud:system:seeds
+        - garden.sapcloud.io:monitoring
+        - system:nodes
+        - system:serviceaccounts:kube-system
+      - level: None
+        resources:
+        - group: ""
+          resources:
+          - configmaps
+          - events
+          - tokenreviews
+      - level: None
+        verbs:
+        - get
+        - list
+        - watch
+      - level: None
+        nonResourceURLs:
+        - /*
+      - level: None
+        resources:
+        - group: authorization.k8s.io
+          resources:
+          - localsubjectaccessreviews
+          - selfsubjectaccessreviews
+          - selfsubjectrulesreviews
+          - subjectaccessreviews
+{{- end }}

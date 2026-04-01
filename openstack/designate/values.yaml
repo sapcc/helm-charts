@@ -6,7 +6,6 @@
 debug: "True"
 
 tempest_enabled: false
-nanny_enabled: false
 
 dbType: "mariadb"
 
@@ -34,12 +33,15 @@ global:
   linkerd_requested: false
 
 pod:
+  pdb:
+    enabled: true
+    min_available: 1
   replicas:
     api: 3
     central: 3
     mdns: 2
     poolmanager: 1
-    producer: 4
+    producer: 2
     worker: 3
     sink: 1
   lifecycle:
@@ -242,19 +244,39 @@ mysql_metrics:
     - name: openstack_designate_records
       help: "records count grouped by status"
       labels:
-        - "status"
         - "zone_id"
+        - "project_id"
+        - "status"
       values:
         - "count_gauge"
       query:  |
               SELECT
                 zone_id,
+                tenant_id AS project_id,
                 status,
                 count(id) AS count_gauge
               FROM records
               GROUP BY
                 zone_id,
+                project_id,
                 status
+
+    - name: openstack_designate_recordsets
+      help: "recordsets count grouped by project and zone id"
+      labels:
+        - "zone_id"
+        - "project_id"
+      values:
+        - "count_gauge"
+      query:  |
+              SELECT
+                zone_id,
+                tenant_id AS project_id,
+                count(id) AS count_gauge
+              FROM recordsets
+              GROUP BY
+                zone_id,
+                project_id
 
 cors:
   enabled: false
@@ -518,3 +540,6 @@ rate_limit:
         - action: read/list
           limit: 100r/m
 
+statsd:
+  image: 'shared-app-images/statsd-exporter'
+  imageTag: '0.28.0-latest'

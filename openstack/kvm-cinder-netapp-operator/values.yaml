@@ -1,6 +1,3 @@
-
-global:
-  registry: 'set_registry_here'
 owner-info:
   support-group: compute-storage-api
   service: cinder
@@ -9,13 +6,21 @@ owner-info:
   - Jan-Eike Golenia
   helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/openstack/kvm-cinder-netapp-operator
 
+# Operator can be deployed in a different namespace than the managed resources.
+# Important: The cinder volume deployment needs to be deployed
+# into the same namespace as the managed_resources_namespace.
+# Currently, the netappfilerwatcher resource owns the netapfiler resources it creates and
+# the netappfiler owns the cinder volume deployments created by 
+# the operator. Ownership across namespaces is not supported by kubernetes.
+managed_resources_namespace: 'kvm-cinder-netapp-operator'
+
 volumeconfig:
   imageVersion: 'antelope-20250707185220'
 
 netapp:
+  watchers: []
   filers: []
-  volumeregextemplate: "(^cinder_|^nfs_{{FilerName}}_).*"
   secret:
     name: 'kvm-cinder-netapp-operator-secret'
-    username: "set_secrets_injector_reference_here" 
-    password: "set_secrets_injector_reference_here" 
+    username:
+    password:

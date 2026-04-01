@@ -29,8 +29,8 @@ some space for the name suffixes on replicasets and pods.
 {{- fail "postgres-ng: Changing the superuser away from postgres is no longer supported as it is required for updates. Please create extra users via the users value." }}
 {{- end }}
 
-{{- if lt ($.Values.postgresVersion | int) 15 }}
-{{- fail "postgres-ng: only postgres version 15 and up are supported by this chart version" }}
+{{- if lt ($.Values.postgresVersion | int) 16 }}
+{{- fail "postgres-ng: only postgres version 16 and up are supported by this chart version" }}
 {{- end }}
 
 {{/* Rationale: This is a simplification based on the observation that most downstream users have one DB and one user, both named the same (after the respective service). A similar naming convention is established in <https://github.com/NixOS/nixpkgs/commit/48459567>. */}}

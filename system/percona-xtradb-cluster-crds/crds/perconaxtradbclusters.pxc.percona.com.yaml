@@ -3,12 +3,12 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.16.3
+    controller-gen.kubebuilder.io/version: v0.19.0
   labels:
     app.kubernetes.io/component: crd
     app.kubernetes.io/name: percona-xtradb-cluster
     app.kubernetes.io/part-of: percona-xtradb-cluster-operator
-    app.kubernetes.io/version: v1.18.0
+    app.kubernetes.io/version: v1.19.0
   name: perconaxtradbclusters.pxc.percona.com
 spec:
   group: pxc.percona.com
@@ -399,6 +399,10 @@ spec:
                         timeoutSeconds:
                           type: number
                       type: object
+                    runningDeadlineSeconds:
+                      default: 1200
+                      format: int64
+                      type: integer
                     schedule:
                       items:
                         properties:
@@ -948,6 +952,23 @@ spec:
                                             - fieldPath
                                           type: object
                                           x-kubernetes-map-type: atomic
+                                        fileKeyRef:
+                                          properties:
+                                            key:
+                                              type: string
+                                            optional:
+                                              default: false
+                                              type: boolean
+                                            path:
+                                              type: string
+                                            volumeName:
+                                              type: string
+                                          required:
+                                            - key
+                                            - path
+                                            - volumeName
+                                          type: object
+                                          x-kubernetes-map-type: atomic
                                         resourceFieldRef:
                                           properties:
                                             containerName:
@@ -1183,6 +1204,19 @@ spec:
                             properties:
                               bucket:
                                 type: string
+                              caBundle:
+                                properties:
+                                  key:
+                                    type: string
+                                  name:
+                                    default: ""
+                                    type: string
+                                  optional:
+                                    type: boolean
+                                required:
+                                  - key
+                                type: object
+                                x-kubernetes-map-type: atomic
                               credentialsSecret:
                                 type: string
                               endpointUrl:
@@ -1381,6 +1415,9 @@ spec:
                       type: object
                     suspendedDeadlineSeconds:
                       format: int64
+                      type: integer
+                    ttlSecondsAfterFinished:
+                      format: int32
                       type: integer
                   type: object
                 crVersion:
@@ -1985,9 +2022,46 @@ spec:
                           rule: '!(has(self.loadBalancerClass)) || self.type == ''LoadBalancer'''
                     externalTrafficPolicy:
                       type: string
+                    extraPVCs:
+                      items:
+                        properties:
+                          claimName:
+                            minLength: 1
+                            type: string
+                          mountPath:
+                            minLength: 1
+                            type: string
+                          name:
+                            minLength: 1
+                            type: string
+                          readOnly:
+                            type: boolean
+                          subPath:
+                            type: string
+                        required:
+                          - claimName
+                          - mountPath
+                          - name
+                        type: object
+                      type: array
                     gracePeriod:
                       format: int64
                       type: integer
+                    healthCheck:
+                      properties:
+                        fall:
+                          format: int32
+                          minimum: 1
+                          type: integer
+                        interval:
+                          format: int32
+                          minimum: 1000
+                          type: integer
+                        rise:
+                          format: int32
+                          minimum: 1
+                          type: integer
+                      type: object
                     hookScript:
                       type: string
                     image:
@@ -2477,6 +2551,23 @@ spec:
                           kind:
                             type: string
                           metadata:
+                            properties:
+                              annotations:
+                                additionalProperties:
+                                  type: string
+                                type: object
+                              finalizers:
+                                items:
+                                  type: string
+                                type: array
+                              labels:
+                                additionalProperties:
+                                  type: string
+                                type: object
+                              name:
+                                type: string
+                              namespace:
+                                type: string
                             type: object
                           spec:
                             properties:
@@ -2871,6 +2962,23 @@ spec:
                               volumeClaimTemplate:
                                 properties:
                                   metadata:
+                                    properties:
+                                      annotations:
+                                        additionalProperties:
+                                          type: string
+                                        type: object
+                                      finalizers:
+                                        items:
+                                          type: string
+                                        type: array
+                                      labels:
+                                        additionalProperties:
+                                          type: string
+                                        type: object
+                                      name:
+                                        type: string
+                                      namespace:
+                                        type: string
                                     type: object
                                   spec:
                                     properties:
@@ -3262,6 +3370,29 @@ spec:
                                           type: array
                                           x-kubernetes-list-type: atomic
                                       type: object
+                                    podCertificate:
+                                      properties:
+                                        certificateChainPath:
+                                          type: string
+                                        credentialBundlePath:
+                                          type: string
+                                        keyPath:
+                                          type: string
+                                        keyType:
+                                          type: string
+                                        maxExpirationSeconds:
+                                          format: int32
+                                          type: integer
+                                        signerName:
+                                          type: string
+                                        userAnnotations:
+                                          additionalProperties:
+                                            type: string
+                                          type: object
+                                      required:
+                                        - keyType
+                                        - signerName
+                                      type: object
                                     secret:
                                       properties:
                                         items:
@@ -3492,6 +3623,23 @@ spec:
                                           type: string
                                       required:
                                         - fieldPath
+                                      type: object
+                                      x-kubernetes-map-type: atomic
+                                    fileKeyRef:
+                                      properties:
+                                        key:
+                                          type: string
+                                        optional:
+                                          default: false
+                                          type: boolean
+                                        path:
+                                          type: string
+                                        volumeName:
+                                          type: string
+                                      required:
+                                        - key
+                                        - path
+                                        - volumeName
                                       type: object
                                       x-kubernetes-map-type: atomic
                                     resourceFieldRef:
@@ -3922,6 +4070,29 @@ spec:
                             type: object
                           restartPolicy:
                             type: string
+                          restartPolicyRules:
+                            items:
+                              properties:
+                                action:
+                                  type: string
+                                exitCodes:
+                                  properties:
+                                    operator:
+                                      type: string
+                                    values:
+                                      items:
+                                        format: int32
+                                        type: integer
+                                      type: array
+                                      x-kubernetes-list-type: set
+                                  required:
+                                    - operator
+                                  type: object
+                              required:
+                                - action
+                              type: object
+                            type: array
+                            x-kubernetes-list-type: atomic
                           securityContext:
                             properties:
                               allowPrivilegeEscalation:
@@ -4564,6 +4735,29 @@ spec:
                     runtimeClassName:
                       type: string
                   type: object
+                passwordGenerationOptions:
+                  properties:
+                    maxLength:
+                      default: 20
+                      maximum: 32
+                      minimum: 8
+                      type: integer
+                    minLength:
+                      default: 16
+                      maximum: 32
+                      minimum: 8
+                      type: integer
+                    symbols:
+                      default: '!#$%&()*+,-.<=>?@[]^_{}~'
+                      maxLength: 32
+                      type: string
+                  required:
+                    - maxLength
+                    - minLength
+                    - symbols
+                  type: object
+                  x-kubernetes-validations:
+                    - rule: self.maxLength >= self.minLength
                 pause:
                   type: boolean
                 platform:
@@ -5418,6 +5612,28 @@ spec:
                           rule: '!(has(self.loadBalancerClass)) || self.type == ''LoadBalancer'''
                     externalTrafficPolicy:
                       type: string
+                    extraPVCs:
+                      items:
+                        properties:
+                          claimName:
+                            minLength: 1
+                            type: string
+                          mountPath:
+                            minLength: 1
+                            type: string
+                          name:
+                            minLength: 1
+                            type: string
+                          readOnly:
+                            type: boolean
+                          subPath:
+                            type: string
+                        required:
+                          - claimName
+                          - mountPath
+                          - name
+                        type: object
+                      type: array
                     gracePeriod:
                       format: int64
                       type: integer
@@ -5882,6 +6098,38 @@ spec:
                       type: object
                     runtimeClassName:
                       type: string
+                    scheduler:
+                      properties:
+                        checkTimeoutMilliseconds:
+                          default: 2000
+                          format: int32
+                          type: integer
+                        enabled:
+                          type: boolean
+                        failureThreshold:
+                          default: 3
+                          format: int32
+                          type: integer
+                        maxConnections:
+                          default: 1000
+                          format: int32
+                          type: integer
+                        nodeCheckIntervalMilliseconds:
+                          default: 2000
+                          format: int32
+                          type: integer
+                        pingTimeoutMilliseconds:
+                          default: 1000
+                          format: int32
+                          type: integer
+                        successThreshold:
+                          default: 1
+                          format: int32
+                          type: integer
+                        writerIsAlsoReader:
+                          default: true
+                          type: boolean
+                      type: object
                     schedulerName:
                       type: string
                     serviceAccountName:
@@ -5904,6 +6152,23 @@ spec:
                           kind:
                             type: string
                           metadata:
+                            properties:
+                              annotations:
+                                additionalProperties:
+                                  type: string
+                                type: object
+                              finalizers:
+                                items:
+                                  type: string
+                                type: array
+                              labels:
+                                additionalProperties:
+                                  type: string
+                                type: object
+                              name:
+                                type: string
+                              namespace:
+                                type: string
                             type: object
                           spec:
                             properties:
@@ -6298,6 +6563,23 @@ spec:
                               volumeClaimTemplate:
                                 properties:
                                   metadata:
+                                    properties:
+                                      annotations:
+                                        additionalProperties:
+                                          type: string
+                                        type: object
+                                      finalizers:
+                                        items:
+                                          type: string
+                                        type: array
+                                      labels:
+                                        additionalProperties:
+                                          type: string
+                                        type: object
+                                      name:
+                                        type: string
+                                      namespace:
+                                        type: string
                                     type: object
                                   spec:
                                     properties:
@@ -6689,6 +6971,29 @@ spec:
                                           type: array
                                           x-kubernetes-list-type: atomic
                                       type: object
+                                    podCertificate:
+                                      properties:
+                                        certificateChainPath:
+                                          type: string
+                                        credentialBundlePath:
+                                          type: string
+                                        keyPath:
+                                          type: string
+                                        keyType:
+                                          type: string
+                                        maxExpirationSeconds:
+                                          format: int32
+                                          type: integer
+                                        signerName:
+                                          type: string
+                                        userAnnotations:
+                                          additionalProperties:
+                                            type: string
+                                          type: object
+                                      required:
+                                        - keyType
+                                        - signerName
+                                      type: object
                                     secret:
                                       properties:
                                         items:
@@ -6919,6 +7224,23 @@ spec:
                                           type: string
                                       required:
                                         - fieldPath
+                                      type: object
+                                      x-kubernetes-map-type: atomic
+                                    fileKeyRef:
+                                      properties:
+                                        key:
+                                          type: string
+                                        optional:
+                                          default: false
+                                          type: boolean
+                                        path:
+                                          type: string
+                                        volumeName:
+                                          type: string
+                                      required:
+                                        - key
+                                        - path
+                                        - volumeName
                                       type: object
                                       x-kubernetes-map-type: atomic
                                     resourceFieldRef:
@@ -7349,6 +7671,29 @@ spec:
                             type: object
                           restartPolicy:
                             type: string
+                          restartPolicyRules:
+                            items:
+                              properties:
+                                action:
+                                  type: string
+                                exitCodes:
+                                  properties:
+                                    operator:
+                                      type: string
+                                    values:
+                                      items:
+                                        format: int32
+                                        type: integer
+                                      type: array
+                                      x-kubernetes-list-type: set
+                                  required:
+                                    - operator
+                                  type: object
+                              required:
+                                - action
+                              type: object
+                            type: array
+                            x-kubernetes-list-type: atomic
                           securityContext:
                             properties:
                               allowPrivilegeEscalation:
@@ -8313,6 +8658,28 @@ spec:
                           rule: '!(has(self.loadBalancerClass)) || self.type == ''LoadBalancer'''
                     externalTrafficPolicy:
                       type: string
+                    extraPVCs:
+                      items:
+                        properties:
+                          claimName:
+                            minLength: 1
+                            type: string
+                          mountPath:
+                            minLength: 1
+                            type: string
+                          name:
+                            minLength: 1
+                            type: string
+                          readOnly:
+                            type: boolean
+                          subPath:
+                            type: string
+                        required:
+                          - claimName
+                          - mountPath
+                          - name
+                        type: object
+                      type: array
                     gracePeriod:
                       format: int64
                       type: integer
@@ -8548,6 +8915,11 @@ spec:
                       items:
                         type: string
                       type: array
+                    mysqlAllocator:
+                      enum:
+                        - jemalloc
+                        - tcmalloc
+                      type: string
                     nodeSelector:
                       additionalProperties:
                         type: string
@@ -8832,6 +9204,23 @@ spec:
                           kind:
                             type: string
                           metadata:
+                            properties:
+                              annotations:
+                                additionalProperties:
+                                  type: string
+                                type: object
+                              finalizers:
+                                items:
+                                  type: string
+                                type: array
+                              labels:
+                                additionalProperties:
+                                  type: string
+                                type: object
+                              name:
+                                type: string
+                              namespace:
+                                type: string
                             type: object
                           spec:
                             properties:
@@ -9226,6 +9615,23 @@ spec:
                               volumeClaimTemplate:
                                 properties:
                                   metadata:
+                                    properties:
+                                      annotations:
+                                        additionalProperties:
+                                          type: string
+                                        type: object
+                                      finalizers:
+                                        items:
+                                          type: string
+                                        type: array
+                                      labels:
+                                        additionalProperties:
+                                          type: string
+                                        type: object
+                                      name:
+                                        type: string
+                                      namespace:
+                                        type: string
                                     type: object
                                   spec:
                                     properties:
@@ -9617,6 +10023,29 @@ spec:
                                           type: array
                                           x-kubernetes-list-type: atomic
                                       type: object
+                                    podCertificate:
+                                      properties:
+                                        certificateChainPath:
+                                          type: string
+                                        credentialBundlePath:
+                                          type: string
+                                        keyPath:
+                                          type: string
+                                        keyType:
+                                          type: string
+                                        maxExpirationSeconds:
+                                          format: int32
+                                          type: integer
+                                        signerName:
+                                          type: string
+                                        userAnnotations:
+                                          additionalProperties:
+                                            type: string
+                                          type: object
+                                      required:
+                                        - keyType
+                                        - signerName
+                                      type: object
                                     secret:
                                       properties:
                                         items:
@@ -9847,6 +10276,23 @@ spec:
                                           type: string
                                       required:
                                         - fieldPath
+                                      type: object
+                                      x-kubernetes-map-type: atomic
+                                    fileKeyRef:
+                                      properties:
+                                        key:
+                                          type: string
+                                        optional:
+                                          default: false
+                                          type: boolean
+                                        path:
+                                          type: string
+                                        volumeName:
+                                          type: string
+                                      required:
+                                        - key
+                                        - path
+                                        - volumeName
                                       type: object
                                       x-kubernetes-map-type: atomic
                                     resourceFieldRef:
@@ -10277,6 +10723,29 @@ spec:
                             type: object
                           restartPolicy:
                             type: string
+                          restartPolicyRules:
+                            items:
+                              properties:
+                                action:
+                                  type: string
+                                exitCodes:
+                                  properties:
+                                    operator:
+                                      type: string
+                                    values:
+                                      items:
+                                        format: int32
+                                        type: integer
+                                      type: array
+                                      x-kubernetes-list-type: set
+                                  required:
+                                    - operator
+                                  type: object
+                              required:
+                                - action
+                              type: object
+                            type: array
+                            x-kubernetes-list-type: atomic
                           securityContext:
                             properties:
                               allowPrivilegeEscalation:
@@ -10689,6 +11158,10 @@ spec:
                       items:
                         type: string
                       type: array
+                    caValidityDuration:
+                      type: string
+                    certValidityDuration:
+                      type: string
                     enabled:
                       type: boolean
                     issuerConf:

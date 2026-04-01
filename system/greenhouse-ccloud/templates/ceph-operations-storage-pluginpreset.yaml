@@ -24,15 +24,18 @@ spec:
       greenhouse.sap/pluginpreset: "true"
       cluster-type: "storage"
   plugin:
-    pluginDefinition: ceph-operations
+    pluginDefinitionRef:
+      kind: PluginDefinition
+      name:  ceph-operations
     releaseNamespace: rook-ceph
+    deletionPolicy: Retain
     optionValues:
       - name: prometheusRules.ruleSelectors
         value:
           - name: plugin
-            value: 'kube-monitoring-{{ "{{ .Values.global.greenhouse.clusterName }}" }}'
+            value: 'kube-monitoring'
       - name: prometheusRules.additionalRuleLabels
         value:
-          service: ceph
+          # service: ceph        # clashes with the same explicitly specified in ceph-operations chart
           support_group: storage
 {{- end -}}

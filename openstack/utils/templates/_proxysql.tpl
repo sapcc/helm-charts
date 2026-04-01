@@ -31,7 +31,7 @@
             {{ .Values.proxysql.imageRepository }}
         {{- else -}}
           {{ required ".Values.global.dockerHubMirror is missing" .Values.global.dockerHubMirror }}/{{ default "proxysql/proxysql" .Values.proxysql.image }}
-        {{- end }}:{{ .Values.proxysql.imageTag | default "2.7.1-debian" }}
+        {{- end }}:{{ .Values.proxysql.imageTag | default "3.0.3-debian" }}
   imagePullPolicy: IfNotPresent
   {{- if .Values.proxysql.native_sidecar }}
   restartPolicy: Always

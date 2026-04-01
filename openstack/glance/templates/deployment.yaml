@@ -140,6 +140,16 @@ spec:
           subPath: swift-store.conf
           readOnly: true
         {{- end }}
+        {{- if .Values.ceph.enabled }}
+        - name: glance-etc
+          mountPath: /etc/ceph/ceph.conf
+          subPath: ceph.conf
+          readOnly: true
+        - name: glance-etc
+          mountPath: /etc/ceph/ceph.client.glance.keyring
+          subPath: ceph.client.glance.keyring
+          readOnly: true
+        {{- end }}
         - name: glance-etc
           mountPath: /etc/glance/policy.yaml
           subPath: policy.yaml
@@ -267,11 +277,7 @@ spec:
       {{- end }}
       {{- if .Values.metrics.enabled }}
       - name: statsd
-        {{- if hasKey .Values.global "dockerHubMirror"}}
-        image: {{.Values.global.dockerHubMirror}}/{{ .Values.statsd.image.repository }}:{{ .Values.statsd.image.tag }}
-        {{- else }}
-        image: "{{ .Values.statsd.image.repository }}:{{ .Values.statsd.image.tag }}"
-        {{- end }}
+        image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/{{ required ".Values.statsd.image is missing" .Values.statsd.image }}:{{ required ".Values.statsd.imageTag is missing" .Values.statsd.imageTag }}
         imagePullPolicy: {{ .Values.metrics.imagePullPolicy | default "IfNotPresent" | quote }}
         args: [ --statsd.mapping-config=/etc/statsd/statsd-exporter.yaml ]
         ports:

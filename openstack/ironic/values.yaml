@@ -77,10 +77,9 @@ osprofiler:
   enabled: false
 
 statsd:
+  image: 'shared-app-images/statsd-exporter'
+  imageTag: '0.28.0-latest'
   port: 9102
-  image:
-    repository: prom/statsd-exporter
-    tag: v0.8.1
 
 hpa:
   enabled: false
@@ -212,7 +211,7 @@ conductor:
       uefi_pxe_bootfile_name: "ipxe.efi"
       uefi_ipxe_bootfile_name: "ipxe.efi"
     redfish:
-      swift_object_expiry_timeout: "5400"
+      use_swift: false
     conductor:
       conductor_always_validates_images: false # We only use the direct interface, so leave it to the agent
       permitted_image_formats: 'raw,qcow2,iso,vmdk'
@@ -456,7 +455,7 @@ logging:
       args: "(sys.stdout,)"
       formatter: context
     sentry:
-      class: raven.handlers.logging.SentryHandler
+      class: sapcc_sentrylogger.handler.SentryEventHandler
       level: ERROR
       args: "()"
   loggers:
@@ -516,8 +515,6 @@ utils:
   trust_bundle:
     enabled: true
 
-ironic-exporter:
-  enabled: true
-  notifications: false
-  image:
-    tag: cd8c3866
+nginx:
+  image: 'shared-app-images/alpine-nginx'
+  imageTag: 'mainline-slim-latest'

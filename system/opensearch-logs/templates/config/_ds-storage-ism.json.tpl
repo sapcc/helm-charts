@@ -49,7 +49,7 @@
                     {
                         "state_name": "delete",
                         "conditions": {
-                            "min_index_age": "{{ .Values.retention.ds }}"
+                            "min_index_age": "{{ .Values.global.data_stream.storage.max_index_age }}"
                         }
                     }
                 ]

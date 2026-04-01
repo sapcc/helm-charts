@@ -53,7 +53,10 @@ spec:
     overrides:
     - name: openTelemetry.prometheus.additionalLabels
       value:
-        plugin: 'kube-monitoring-{{ $r.cluster }}'
+        plugin: 'kube-monitoring'
+    - name: opentelemetry-operator.manager.serviceMonitor.extraLabels
+      value:
+        plugin: 'kube-monitoring'
     - name: openTelemetry.openSearchLogs.endpoint
       value: {{ $r.openSearchLogs.endpoint }}
     - name: openTelemetry.openSearchLogs.index
@@ -92,8 +95,17 @@ spec:
         support_group: observability
   {{ end -}}
   plugin:
-    pluginDefinition: logs
+    pluginDefinitionRef:
+      kind: PluginDefinition
+      name:  logs
     releaseNamespace: logs
+    deletionPolicy: Retain
+    ignoreDifferences:
+      - version: v1
+        kind: ServiceAccount
+        name: logs-collector
+        paths:
+          - "/metadata/labels"
     optionValues:
     - name: openTelemetry.logsCollector.enabled
       value: true
@@ -118,7 +130,7 @@ spec:
   {{- if .Values.global.ghcrIoMirror }}
     - name: opentelemetry-operator.manager.image.repository
       value: {{ .Values.global.ghcrIoMirror }}/open-telemetry/opentelemetry-operator/opentelemetry-operator
-    - name: opentelemetry-operator.manager.collectorImage.repository
+    - name: openTelemetry.collectorImage.repository
       value: {{ .Values.global.ghcrIoMirror }}/cloudoperators/opentelemetry-collector-contrib
     - name: opentelemetry-operator.testFramework.image.repository
       value: {{ .Values.global.dockerHubMirror }}/library/busybox

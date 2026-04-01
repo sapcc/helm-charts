@@ -1,0 +1,28 @@
+{{/*
+  Constraint objects cannot be included in the Helm manifest directly.
+  See templates/configmap-delayed-payloads.yaml and templates/job-apply-delayed-payloads.yaml for details.
+*/}}
+{{- define "prometheusrule-alert-labels" -}}
+
+{{/* The postfix clusters do not have prometheus-operator at the moment. */}}
+{{- if ne .Values.cluster_type "postfix" -}}
+
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: GkPrometheusruleAlertLabels
+metadata:
+  name: prometheusrule-alert-labels
+  annotations:
+    {{- include "sources" (tuple "prometheusrule-alert-labels" "prometheusrule-alert-labels") | indent 4 }}
+    {{- include "docstring" (tuple $ "GkPrometheusruleAlertLabels") | indent 4 }}
+  labels:
+    severity: 'info'
+spec:
+  enforcementAction: dryrun # change to "deny" to enforce
+  match:
+    kinds:
+      - apiGroups: ["monitoring.coreos.com"]
+        kinds: ["PrometheusRule"]
+
+{{- end -}}
+
+{{- end -}}

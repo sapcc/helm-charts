@@ -36,8 +36,17 @@ spec:
     value: {{ default $plugin.region $plugin.zoneNameRegion }}.cloud.sap.
   - name: record
     value: {{ $plugin.recordName }}
-  pluginDefinition: disco
+{{- if $plugin.overrideShootNetworkPolicy }}
+  - name: controllerLabels
+    value:
+      networking.gardener.cloud/to-apiserver: allowed
+      networking.gardener.cloud/to-dns: allowed
+{{- end }}
+  pluginDefinitionRef:
+    kind: PluginDefinition
+    name:  disco
   releaseNamespace: kube-system
+  deletionPolicy: Delete
 ---
 apiVersion: v1
 kind: Secret

@@ -8,6 +8,16 @@ linkerd-support:
   annotate_namespace: true
 
 persesPlugin:
+
+  contentSync:
+    enabled: true
+    podAffinity:
+      enabled: false
+    image:
+      repository: "keppel.global.cloud.sap/ccloud-gcr-mirror/go-containerregistry/crane"
+      tag: "debug"
+    ociImageRef: "keppel.global.cloud.sap/ccloud/perses-regional-content:latest"
+
   perses:
     # Default values for perses.
     # This is a YAML-formatted file.
@@ -21,8 +31,10 @@ persesPlugin:
 
     # -- Image of Perses
     image:
+
+      registry: "keppel.global.cloud.sap"
       # -- Perses image repository and name
-      name: "keppel.eu-de-1.cloud.sap/ccloud-dockerhub-mirror/persesdev/perses"
+      name: "ccloud-dockerhub-mirror/persesdev/perses"
 
       # -- Overrides the image tag whose default is the chart appVersion.
       version: ""
@@ -33,6 +45,7 @@ persesPlugin:
     additionalLabels:
       {}
       # app: perses
+
 
     # -- Service account for Perses to use.
     serviceAccount:
@@ -109,10 +122,14 @@ persesPlugin:
       failureThreshold: 5
 
     # -- Additional volumes on the output StatefulSet definition.
-    volumes: []
+    volumes:
+      - name: plugins
+        emptyDir: {}
 
     # -- Additional VolumeMounts on the output StatefulSet definition.
-    volumeMounts: []
+    volumeMounts:
+      - name: plugins
+        mountPath: /etc/perses/plugins
     # -- TLS configuration for mounting certificates from Kubernetes secrets
     tls:
       # -- Enable TLS certificate mounting
@@ -152,7 +169,7 @@ persesPlugin:
       annotations: {}
 
       # With this config, the Perses app will be served with the path <api_prefix>/api
-      api_prefix: "/perses"
+      api_prefix: ""
 
       security:
         # -- Configure Perses instance as readonly
@@ -194,14 +211,35 @@ persesPlugin:
       provisioning:
         folders:
           - /etc/perses/provisioning
-        # interval: 10m
+        interval: 1m
+
+    # -- Persistence configuration for Perses provisioning. 
+    # For more information on provisioning feature, see: https://perses.dev/perses/docs/configuration/provisioning/
+    # When enabled, a PersistentVolumeClaim (PVC) is created via StatefulSet volumeClaimTemplates.
+    # The PVC will be named: provisioning-<statefulset-name>-<ordinal>
+    # Examples:
+    #   - Release "perses-oci" → PVC: "provisioning-perses-oci-0"
+    #   - Release "my-app" → PVC: "provisioning-my-app-perses-0"
+    # This PVC can be referenced by other workloads (e.g., CronJobs) to write dashboards/datasources.
+    provisioningPersistence:
+      # -- enable persistent volume for provisioning
+      enabled: true
+      # -- storage class for provisioning PVC
+      storageClass: ""
+      # -- access modes for provisioning PVC
+      # ReadWriteOnce: Only one pod can mount (cheaper, single-node storage)
+      # ReadWriteMany: Multiple pods can mount simultaneously (required for CronJobs or multiple replicas)
+      # Note: ReadWriteMany requires storage class that supports it (e.g., NFS, CephFS, Azure Files)
+      accessModes:
+        - ReadWriteMany
 
     # --  Sidecar configuration that watches for ConfigMaps with the specified label/labelValue and loads them into Perses provisioning
     sidecar:
       # -- Enable the sidecar container for ConfigMap provisioning
       enabled: true
       image:
-        repository: "keppel.eu-de-1.cloud.sap/ccloud-dockerhub-mirror/kiwigrid/k8s-sidecar"
+        registry: "keppel.global.cloud.sap"
+        repository: "ccloud-dockerhub-mirror/kiwigrid/k8s-sidecar"
       # -- Label key to watch for ConfigMaps containing Perses resources
       label: "perses.dev/resource"
       # -- Label value to watch for ConfigMaps containing Perses resources
@@ -210,11 +248,16 @@ persesPlugin:
       allNamespaces: false
       # -- add additional environment variables to sidecar container. you can look at the k8s-sidecar documentation for more information - https://github.com/kiwigrid/k8s-sidecar
       extraEnvVars:
-        # -- This environment variable is required due to a bug in the upstream k8s-sidecar image. link to issue: https://github.com/kiwigrid/k8s-sidecar/issues/400
+        - name: NAMESPACE
+          value: "thanos"
+          # -- This environment variable is required due to a bug in the upstream k8s-sidecar image. link to issue: https://github.com/kiwigrid/k8s-sidecar/issues/400
         - name: SKIP_TLS_VERIFY
           value: "true"
       # -- Enable secret access permissions in the cluster role. When enabled, the sidecar will have permissions to read secrets and use them.
       enableSecretAccess: false
+      securityContext:
+        # sidecar runs with escalated privelege as the metal clusters use NFS storage and fsGroup has no effect on them.
+        runAsUser: 0
 
     # -- Persistence parameters
     persistence:
@@ -232,8 +275,7 @@ persesPlugin:
       size: 8Gi
 
       # -- Security context for the PVC when persistence is enabled
-      securityContext:
-        fsGroup: 2000
+      securityContext: {}
 
       # -- Labels for the PVC
       labels: {}
@@ -278,29 +320,13 @@ persesPlugin:
 
     # -- Labels to add to the PrometheusRules alerts.
     # @default -- <pre> alertLabels: \| <br>   support_group: "default" <br>   meta: "" </pre>
-    alertLabels: {}
+    alertLabels:
+      support_group: "observability"
+      service: "perses"
+      persesDashboard: "observability/dashboards/perses-overview"
 
 # -- All the SAP Cloud Infrastructure specific values should go here.
 sapCloudInfrastructure:
-  regionalDatasource:
-    enabled: true
-    URL: "http://thanos-regional-query.thanos.svc:10902"
-    name: "thanos-regional-query"
-    displayName: "Thanos Regional Query"
-    description: "Provides long-term metrics for this region."
-    # -- Set this datasource as the default datasource
-    default: true
-
-  globalDatasource:
-    enabled: false
-    URL: "http://thanos-global-query.thanos.svc:10902"
-    name: "thanos-global-query"
-    displayName: "Thanos Global Query"
-    description: "Thanos Global Query provides long-term aggregated metrics across all regions."
-    # -- Set this datasource as the default datasource
-    default: true
-    label: "perses.dev/global-resource"
-    labelValue: "true"
 
 owner-info:
   service: perses

@@ -22,6 +22,9 @@ spec:
                     type: string
                   matchRepository:
                     type: string
+                  # documentation
+                  justification:
+                    type: string
                   # pod-level properties
                   mayUseHostNetwork:
                     type: boolean
@@ -90,7 +93,8 @@ spec:
               # that are known to not contain credentials.
               isContainerAllowedToAccessHostPath(container, hostPath, readOnly) if {
                   readOnly
-                  hostPath in ["/etc/machine-id", "/lib/modules"]
+                  normalizedHostPath := normalize_path(hostPath)
+                  normalizedHostPath in ["/etc/machine-id", "/lib/modules"]
               }
 
               ########################################################################
@@ -115,14 +119,14 @@ spec:
                   container := containers[_]
                   object.get(container, ["securityContext", "allowPrivilegeEscalation"], false)
                   not isContainerAllowedToUsePrivilegeEscalation(container)
-                  msg := sprintf("pod is not allowed to set spec.containers[%q].securityContext.allowPrivilegeEscalation = true", [container.name])
+                  msg := sprintf("pod is not allowed to set spec.containers[%q].securityContext.allowPrivilegeEscalation = true (image = %q)", [container.name, extract_repository(container.image)])
               }
 
               violation contains {"msg": add_support_labels.from_k8s_object(iro, msg)} if {
                   container := containers[_]
                   object.get(container, ["securityContext", "privileged"], false)
                   not isContainerAllowedToBePrivileged(container)
-                  msg := sprintf("pod is not allowed to set spec.containers[%q].securityContext.privileged = true", [container.name])
+                  msg := sprintf("pod is not allowed to set spec.containers[%q].securityContext.privileged = true (image = %q)", [container.name, extract_repository(container.image)])
               }
 
               violation contains {"msg": add_support_labels.from_k8s_object(iro, msg)} if {
@@ -130,7 +134,7 @@ spec:
                   capabilities := object.get(container, ["securityContext", "capabilities", "add"], [])
                   capability := capabilities[_]
                   not isContainerAllowedToUseCapability(container, capability)
-                  msg := sprintf("pod is not allowed to set spec.containers[%q].securityContext.capabilities.add = [%q]", [container.name, capability])
+                  msg := sprintf("pod is not allowed to set spec.containers[%q].securityContext.capabilities.add = [%q] (image = %q)", [container.name, capability, extract_repository(container.image)])
               }
 
               violation contains {"msg": add_support_labels.from_k8s_object(iro, msg)} if {
@@ -148,7 +152,7 @@ spec:
 
                   # ...it needs to be allowed
                   not isContainerAllowedToAccessHostPath(container, hostPath, readOnly)
-                  msg := sprintf("container %q in this pod is not allowed to mount hostPath volumes with path %q (readonly = %s)", [container.name, hostPath, readOnly])
+                  msg := sprintf("container %q in this pod is not allowed to mount hostPath volumes with path %q (readonly = %s) (image = %q)", [container.name, hostPath, readOnly, extract_repository(container.image)])
               }
 
               ########################################################################
@@ -195,18 +199,56 @@ spec:
                   entry := input.parameters.allowlist[_]
                   isMatchingContainer(entry, container)
                   readOnly
-                  hostPath in entry.mayReadHostPathVolumes
+                  normalizedHostPath := normalize_path(hostPath)
+                  some allowedPath in entry.mayReadHostPathVolumes
+                  normalizedAllowedPath := normalize_path(allowedPath)
+                  is_path_prefix(normalizedAllowedPath, normalizedHostPath)
               }
 
               isContainerAllowedToAccessHostPath(container, hostPath, readOnly) if {
                   entry := input.parameters.allowlist[_]
                   isMatchingContainer(entry, container)
-                  not readOnly
-                  hostPath in entry.mayWriteHostPathVolumes
+                  normalizedHostPath := normalize_path(hostPath)
+                  some allowedPath in entry.mayWriteHostPathVolumes
+                  normalizedAllowedPath := normalize_path(allowedPath)
+                  is_path_prefix(normalizedAllowedPath, normalizedHostPath)
               }
 
               ########################################################################
               # helper functions
+
+              is_path_prefix(prefix, path) if {
+                  # root is a prefix of any path
+                  prefix == "/"
+              }
+
+              is_path_prefix(prefix, path) if {
+                  # a path is a prefix of itself
+                  path == prefix
+              }
+
+              is_path_prefix(prefix, path) if {
+                  prefix != "/"
+                  startswith(path, sprintf("%s/", [prefix]))
+              }
+
+              # Normalize path by removing trailing slash (except for root "/")
+              normalize_path(path) := result if {
+                  path == "/"
+                  result := path
+              }
+
+              normalize_path(path) := result if {
+                  path != "/"
+                  endswith(path, "/")
+                  result := substring(path, 0, count(path) - 1)
+              }
+
+              normalize_path(path) := result if {
+                  path != "/"
+                  not endswith(path, "/")
+                  result := path
+              }
 
               # Extract repository name from docker image name
               # i.e. keppel.REGION.cloud.sap/ccloud-dockerhub-mirror/cloudprober/cloudprober:v0.13.9
@@ -244,7 +286,7 @@ spec:
                   dot_index < slash_index
                   result := slash_index + 1
               }
-              
+
               end_position(colon_index, at_index, length) = result if {
                   colon_index != -1
                   at_index != -1
@@ -270,7 +312,15 @@ spec:
               }
 
               isMatchingContainer(entry, container) if {
+                  entry.matchNamespace != "*"
                   iro.metadata.namespace == entry.matchNamespace
+                  repo := extract_repository(container.image)
+                  repo == entry.matchRepository
+              }
+
+              isMatchingContainer(entry, container) if {
+                  # the special value `*` matches all namespaces (NOTE: this can be expanded into full glob matching later if required)
+                  entry.matchNamespace == "*"
                   repo := extract_repository(container.image)
                   repo == entry.matchRepository
               }

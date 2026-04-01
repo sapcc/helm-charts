@@ -1,0 +1,63 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ .Chart.Name }}
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+rules:
+  # Access to BarbicanOperator CRD (NEW)
+  - apiGroups:
+      - identity.cloud.sap
+    resources:
+      - barbicanoperators
+      - barbicanoperators/status
+      - barbicanoperators/finalizers
+    verbs:
+      - '*'
+
+  # (Optional but safe) Access to legacy Barbican CRD
+  - apiGroups:
+      - identity.cloud.sap
+    resources:
+      - barbicans
+      - barbicans/status
+      - barbicans/finalizers
+    verbs:
+      - '*'
+
+  # Core Kubernetes resources
+  - apiGroups:
+      - ""
+    resources:
+      - events
+      - secrets
+      - configmaps
+      - services
+      - serviceaccounts
+      - pods
+    verbs:
+      - '*'
+
+  # Workloads
+  - apiGroups:
+      - apps
+      - extensions
+    resources:
+      - deployments
+      - statefulsets
+      - daemonsets
+      - replicasets
+    verbs:
+      - '*'
+
+  # Batch resources
+  - apiGroups:
+      - batch
+    resources:
+      - jobs
+      - cronjobs
+    verbs:
+      - '*'

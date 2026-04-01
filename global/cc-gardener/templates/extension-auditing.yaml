@@ -1,0 +1,53 @@
+{{ if and .Values.extensions.auditing .Values.extensions.auditing.enabled -}}
+{{- with .Values.extensions.auditing -}}
+apiVersion: operator.gardener.cloud/v1alpha1
+kind: Extension
+metadata:
+  annotations:
+    security.gardener.cloud/pod-security-enforce: baseline
+  name: auditing
+spec:
+  resources:
+  - kind: Extension
+    type: auditing
+    workerlessSupported: true
+    lifecycle:
+      reconcile: BeforeKubeAPIServer
+      delete: AfterKubeAPIServer
+      migrate: AfterKubeAPIServer
+    clusterCompatibility:
+    - garden
+    - shoot
+  deployment:
+{{- if .admission }}
+    admission:
+{{- if .admission.values }}
+      values:
+{{ include "cc-gardener.extension.mergeValues" (dict "values" .admission.values "extensionContext" . "fallbackTag" .version "usePipeStyle" false) | indent 8 }}
+{{- end }}
+{{- if and .admission.runtimeCluster .admission.runtimeCluster.helm .admission.runtimeCluster.helm.ociRepository }}
+      runtimeCluster:
+        helm:
+          ociRepository:
+{{ include "cc-gardener.extension.ociRepository" (dict "ociRepository" .admission.runtimeCluster.helm.ociRepository "fallbackTag" .version) | indent 12 }}
+{{- end }}
+{{- if and .admission.virtualCluster .admission.virtualCluster.helm .admission.virtualCluster.helm.ociRepository }}
+      virtualCluster:
+        helm:
+          ociRepository:
+{{ include "cc-gardener.extension.ociRepository" (dict "ociRepository" .admission.virtualCluster.helm.ociRepository "fallbackTag" .version) | indent 12 }}
+{{- end }}
+{{- end }}
+    extension:
+{{- if .runtimeClusterValues }}
+      runtimeClusterValues:
+{{ include "cc-gardener.extension.mergeValues" (dict "values" .runtimeClusterValues "parentValues" .values "extensionContext" . "fallbackTag" .version "usePipeStyle" false) | indent 8 }}
+{{- end }}
+      values:
+{{ include "cc-gardener.extension.mergeValues" (dict "values" .values "extensionContext" . "fallbackTag" .version "usePipeStyle" false) | indent 8 }}
+      helm:
+        ociRepository:
+{{ include "cc-gardener.extension.ociRepository" (dict "ociRepository" .helm.ociRepository "fallbackTag" .version) | indent 10 }}
+      policy: OnDemand
+{{- end }}
+{{- end }}

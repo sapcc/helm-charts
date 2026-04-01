@@ -44,6 +44,20 @@ spec:
       value: {{  required "plugin digicert organization ID is missing" .Values.digicert.provisioner.organizationID | quote }}
     - name: provisioner.organizationUnits
       value: {{ required "plugin digicert organization units is missing" .Values.digicert.provisioner.organizationUnits | quote }}
-    pluginDefinition: digicert-issuer
+    pluginDefinitionRef:
+      kind: PluginDefinition
+      name:  digicert-issuer
     releaseNamespace: kube-system
+    deletionPolicy: Delete
+{{- if .Values.digicert.overrideShootNetworkPolicy }}
+    clusterOptionOverrides:
+{{- range $cluster := .Values.digicert.overrideShootNetworkPolicy }}
+      - clusterName: {{ $cluster }}
+        overrides:
+          - name: deploymentLabels
+            value:
+              networking.gardener.cloud/to-apiserver: allowed
+              networking.gardener.cloud/to-dns: allowed
+{{- end }}
+{{- end }}
 {{- end -}}

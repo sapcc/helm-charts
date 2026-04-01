@@ -35,7 +35,7 @@ spec:
       value: true
     - name: perses.serviceMonitor.labels
       value:
-        plugin: "kube-monitoring-{{ $plugin.cluster }}"
+        plugin: "kube-monitoring"
     - name: perses.serviceMonitor.selector.matchLabels
       value:
         plugin: "perses-{{ $plugin.cluster }}"
@@ -52,7 +52,10 @@ spec:
       - name: perses.testFramework.image.registry
         value: {{ .Values.global.ghcrIoMirror }}
       {{- end }}
-    pluginDefinition: perses
+    pluginDefinitionRef:
+      kind: PluginDefinition
+      name:  perses
     releaseNamespace: kube-monitoring
     releaseName: perses
+    deletionPolicy: Retain
 {{- end -}}

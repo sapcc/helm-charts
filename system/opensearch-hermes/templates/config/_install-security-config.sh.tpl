@@ -41,4 +41,4 @@ for i in $USER_NAME; do
   fi
 done
 
-$OPENSEARCH_BASE/plugins/opensearch-security/tools/securityadmin.sh -icl -nhnv -key $OPENSEARCH_BASE/config/certs/admin/tls.key -cert  $OPENSEARCH_BASE/config/certs/admin/tls.crt -cacert $OPENSEARCH_BASE/config/certs/tenant/ca.crt -cd $OPENSEARCH_BASE/config/security/ -h opensearch-hermes.hermes.svc.kubernetes.{{ .Values.global.region }}.{{ .Values.global.tld }}
+$OPENSEARCH_BASE/plugins/opensearch-security/tools/securityadmin.sh -icl -nhnv -key $OPENSEARCH_BASE/config/certs/admin/tls.key -cert  $OPENSEARCH_BASE/config/certs/admin/tls.crt -cacert $OPENSEARCH_BASE/config/certs/tenant/ca.crt -cd $OPENSEARCH_BASE/config/security/ -h opensearch-hermes.hermes.svc

@@ -1,4 +1,4 @@
-apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
+apiVersion: bootstrap.cluster.x-k8s.io/v1beta2
 kind: KubeadmConfigTemplate
 metadata:
   name: worker-rt-{{ .Values.global.region }}
@@ -9,14 +9,22 @@ spec:
         nodeRegistration:
           name: $${METAL_HOSTNAME}
           kubeletExtraArgs:
-            cloud-provider: external
-          taints: []
+            - name: cloud-provider
+              value: external
+            {{- if .Values.maintenanceController.profile }}
+            - name: node-labels
+              value: cloud.sap/maintenance-profile={{ .Values.maintenanceController.profile }}
+            {{- end }}
       joinConfiguration:
         nodeRegistration:
           name: $${METAL_HOSTNAME}
           kubeletExtraArgs:
-            cloud-provider: external
-          taints: []
+            - name: cloud-provider
+              value: external
+            {{- if .Values.maintenanceController.profile }}
+            - name: node-labels
+              value: cloud.sap/maintenance-profile={{ .Values.maintenanceController.profile }}
+            {{- end }}
       format: ignition
       ignition:
         containerLinuxConfig:

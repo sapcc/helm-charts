@@ -1,8 +1,9 @@
 {{- define "nova.cell_secret" }}
-{{- $name := index . 1 }}
-{{- $transport_url := index . 2 }}
-{{- $database_connection := index . 3 }}
-{{- with index . 0 }}
+{{- $envAll := index . 0 }}
+{{- $cellId := index . 1 }}
+{{- $name := include "nova.helpers.cell_name" (tuple $envAll $cellId) }}
+{{- $transport_url := include "nova.helpers.cell_rabbitmq_url" (tuple $envAll $cellId) }}
+{{- $database_connection := include "nova.helpers.db_url" (tuple $envAll $cellId) }}
 apiVersion: v1
 kind: Secret
 metadata:
@@ -12,9 +13,8 @@ metadata:
     type: nova-cell
     component: nova
 type: Opaque
-data: 
+data:
   name: {{ $name | b64enc }}
   database_connection: {{ $database_connection | b64enc }}
   transport_url: {{ $transport_url | b64enc }}
-{{- end }}
 {{- end }}

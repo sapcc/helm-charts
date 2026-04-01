@@ -7,7 +7,9 @@ metadata:
   labels:
     "greenhouse.sap/owned-by": {{ .Values.logshipping.supportGroup | default .Values.global.supportGroup }}
 spec:
-  pluginDefinition: logshipper
+  pluginDefinitionRef:
+    kind: PluginDefinition
+    name: logshipper
   disabled: false
   optionValues:
     - name: fluent-bit.parser
@@ -28,7 +30,7 @@ spec:
       value: |
         [INPUT]
             Name             tail
-            Path             /var/log/containers/greenhouse-controller-manager*.log
+            Path             /var/log/containers/greenhouse-webhook*.log
             Parser           cri
             Tag              audit
             Refresh_Interval 5

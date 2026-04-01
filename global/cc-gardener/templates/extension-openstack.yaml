@@ -1,5 +1,6 @@
 # The runtime values always need to be enabled to manage DNS records in designate + backups in swift.
 {{ if .Values.extensions.openstack.enabled -}}
+{{- with .Values.extensions.openstack -}}
 apiVersion: operator.gardener.cloud/v1alpha1
 kind: Extension
 metadata:
@@ -21,33 +22,49 @@ spec:
   - kind: Worker
     type: openstack
   deployment:
-    # admission:
-    extension:
+{{- if .admission }}
+    admission:
+{{- if .admission.values }}
       values:
-        replicaCount: 1
-        image:
-          tag: v1.47.0
-        config:
-          etcd:
-            storage:
-              provisioner: {{ .Values.extensions.storage.provisioner | quote }}
-              {{- if .Values.extensions.storage.parameters }}
-              parameters: {{ .Values.extensions.storage.parameters | toYaml | nindent 16 }}
-              {{- end }}
+{{ include "cc-gardener.extension.mergeValues" (dict "values" .admission.values "extensionContext" . "fallbackTag" .version) | indent 8 }}
+{{- end }}
+{{- if and .admission.runtimeCluster .admission.runtimeCluster.helm .admission.runtimeCluster.helm.ociRepository }}
+      runtimeCluster:
+        helm:
+          ociRepository:
+{{ include "cc-gardener.extension.ociRepository" (dict "ociRepository" .admission.runtimeCluster.helm.ociRepository "fallbackTag" .version) | indent 12 }}
+{{- end }}
+{{- if and .admission.virtualCluster .admission.virtualCluster.helm .admission.virtualCluster.helm.ociRepository }}
+      virtualCluster:
+        helm:
+          ociRepository:
+{{ include "cc-gardener.extension.ociRepository" (dict "ociRepository" .admission.virtualCluster.helm.ociRepository "fallbackTag" .version) | indent 12 }}
+{{- end }}
+{{- end }}
+    extension:
       runtimeClusterValues:
-        replicaCount: 1
-        image:
-          tag: v1.47.0
+{{- if .runtimeClusterValues }}
+{{ include "cc-gardener.extension.mergeValues" (dict "values" .runtimeClusterValues "parentValues" .values "extensionContext" . "fallbackTag" .version) | indent 8 }}
+{{- end }}
         config:
           etcd:
             storage:
-              provisioner: {{ .Values.extensions.storage.provisioner | quote }}
-              {{- if .Values.extensions.storage.parameters }}
-              parameters: {{ .Values.extensions.storage.parameters | toYaml | nindent 16 }}
+              provisioner: {{ $.Values.extensions.storage.provisioner | quote }}
+              {{- if $.Values.extensions.storage.parameters }}
+              parameters: {{ $.Values.extensions.storage.parameters | toYaml | nindent 16 }}
+              {{- end }}
+      values:
+{{ include "cc-gardener.extension.mergeValues" (dict "values" .values "extensionContext" . "fallbackTag" .version) | indent 8 }}
+        config:
+          etcd:
+            storage:
+              provisioner: {{ $.Values.extensions.storage.provisioner | quote }}
+              {{- if $.Values.extensions.storage.parameters }}
+              parameters: {{ $.Values.extensions.storage.parameters | toYaml | nindent 16 }}
               {{- end }}
       helm:
         ociRepository:
-          tag: 1.47.0
-          repository: keppel.eu-de-1.cloud.sap/ccloud-helm/gardener-extension-provider-openstack
+{{ include "cc-gardener.extension.ociRepository" (dict "ociRepository" .helm.ociRepository "fallbackTag" .version) | indent 10 }}
       policy: OnDemand
+{{- end }}
 {{- end }}

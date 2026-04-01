@@ -2,10 +2,8 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    app.kubernetes.io/component: exporter
-    app.kubernetes.io/name: kube-state-metrics-remote
-    app.kubernetes.io/version: 2.15.0
-  name: kube-state-metrics-remote
+  {{- include "kube-state-metrics-remote.labels" . | nindent 4 }}
+  name: {{ include "kube-state-metrics-remote.fullname" . }}
 rules:
 - apiGroups:
   - ""
@@ -137,25 +135,38 @@ rules:
   - argora.cloud.sap
   resources:
   - updates
+  - updates/status
+  - clusterimports
+  - clusterimports/status
   verbs:
-  - create
-  - delete
   - get
   - list
-  - patch
-  - update
   - watch
 - apiGroups:
-  - argora.cloud.sap
+  - ipam.cluster.x-k8s.io
   resources:
-  - updates/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - argora.cloud.sap
-  resources:
-  - updates/status
+  - ipaddresses
   verbs:
   - get
-  - patch
-  - update
+  - list
+  - watch
+- apiGroups:
+  - metal.ironcore.dev
+  resources:
+  - servers
+  - servers/status
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - core.gardener.cloud
+  resources:
+  - shoots
+  - shoots/status
+  - seeds
+  - seeds/status
+  verbs:
+  - get
+  - list
+  - watch

@@ -46,6 +46,8 @@
   'dns_mailmaster':%(target.role.name)s or
   'cloud_image_admin':%(target.role.name)s or
   'cloud_compute_admin':%(target.role.name)s or
+  'cloud_compute_viewer':%(target.role.name)s or
+  'cloud_compute_migrate':%(target.role.name)s or
   'cloud_keymanager_admin':%(target.role.name)s or
   'cloud_volume_admin':%(target.role.name)s or
   'cloud_sharedfilesystem_admin':%(target.role.name)s or
@@ -237,7 +239,7 @@
 # GET  /v3/domains
 # Intended scope(s): system
 #"identity:list_domains": "role:reader and system_scope:all"
-"identity:list_domains": "rule:cloud_reader or role:role_viewer"
+"identity:list_domains": "rule:cloud_reader"
 
 # Create domain.
 # POST  /v3/domains
@@ -255,7 +257,7 @@
 # DELETE  /v3/domains/{domain_id}
 # Intended scope(s): system
 #"identity:delete_domain": "role:admin and system_scope:all"
-"identity:delete_domain": "rule:cloud_admin"
+"identity:delete_domain": "!"
 
 # Create domain configuration.
 # PUT  /v3/domains/{domain_id}/config
@@ -341,6 +343,10 @@
 "identity:ec2_delete_credential": "rule:cloud_admin or user_id:%(target.credential.user_id)s"
 
 "identity:ec2_delete_credentials": "rule:identity:ec2_delete_credential"
+
+"identity:ec2tokens_validate": "rule:service_or_admin"
+"identity:s3tokens_validate": "rule:service_or_admin"
+
 # Show endpoint details.
 # GET  /v3/endpoints/{endpoint_id}
 # Intended scope(s): system
@@ -621,7 +627,7 @@
 # DELETE  /v3/groups/{group_id}
 # Intended scope(s): system, domain
 #"identity:delete_group": "(role:admin and system_scope:all) or (role:admin and domain_id:%(target.group.domain_id)s)"
-"identity:delete_group": "rule:cloud_admin"
+"identity:delete_group": "rule:cloud_admin or (role:admin and domain_id:%(target.group.domain_id)s)"
 
 # List members of a specific group.
 # GET  /v3/groups/{group_id}/users
@@ -954,7 +960,7 @@
 # Intended scope(s): system, domain
 #"identity:delete_project": "(role:admin and system_scope:all) or (role:admin and domain_id:%(target.project.domain_id)s)"
 # The corresponding `prodel` service details are available on GitHub under `cc/prodel`
-"identity:delete_project": "(rule:cloud_admin or (rule:admin_required and (project_id:%(project_id)s or project_id:%(target.project.parent_id)s))) and ({{- if .Values.tempest.enabled }}project_id:{{.Values.tempest.adminProjectId}} or {{ end }}{{ .Values.prodel.url }})"
+"identity:delete_project": "(rule:cloud_admin or (rule:admin_required and (project_id:%(project_id)s or project_id:%(target.project.parent_id)s))) and ({{- if .Values.tempest.enabled }}project_id:{{.Values.tempest.adminProjectId}} or {{ end }}{{ include "prodel_url" $ }})"
 
 # List tags for a project.
 # GET  /v3/projects/{project_id}/tags
@@ -1157,7 +1163,7 @@
 # DELETE  /v3/roles/{role_id}
 # Intended scope(s): system
 #"identity:delete_role": "role:admin and system_scope:all"
-"identity:delete_role": "rule:cloud_admin"
+"identity:delete_role": "!"
 
 # Show domain role.
 # GET  /v3/roles/{role_id}

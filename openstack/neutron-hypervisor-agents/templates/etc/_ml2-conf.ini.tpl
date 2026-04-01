@@ -41,7 +41,7 @@ supported_device_owners = network:f5listener,network:f5selfip,network:f5lbaasv2,
 {{- end }}
 
 [agent]
-polling_interval=5
+polling_interval=1
 prevent_arp_spoofing = False
 
 [vxlan]

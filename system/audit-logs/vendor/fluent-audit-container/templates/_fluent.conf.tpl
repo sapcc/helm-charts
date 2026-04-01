@@ -72,6 +72,30 @@
     </pattern>
   </parse>
 </source>
+
+<source>
+  @type tail
+  @id coredns-api-audit
+  path /var/log/containers/dns_coredns-api-*/audit/*.log
+  pos_file /var/log/dns_coredns-api-audit.log.pos
+  tag coredns-api.*
+  <parse>
+  @type multi_format
+    <pattern>
+      format regexp
+      expression /^(?<time>.+) (?<stream>stdout|stderr)( (?<logtag>.))? (?<log>.*)$/
+      time_key time
+      time_format '%Y-%m-%dT%H:%M:%S.%NZ'
+      keep_time_key true
+    </pattern>
+    <pattern>
+      format json
+      time_format '%Y-%m-%dT%H:%M:%S.%N%:z'
+      time_key time
+      keep_time_key true
+    </pattern>
+  </parse>
+</source>
 {{- end }}
 
 {{- if .Values.kubeAPIServer }}
@@ -80,7 +104,6 @@
   @type tail
   @id {{.}}kube-api
   path /var/log/containers/{{ . }}{{ $.Values.global.region }}-*-apiserver-*_kubernikus_fluentd-*.log
-  exclude_path /var/log/containers/fluent*
   pos_file /var/log/{{ . }}kube-api-octobus.log.pos
   tag kubeapi.{{ . }}{{ $.Values.global.region }}.*
   <parse>
@@ -142,7 +165,6 @@
   @type tail
   @id {{ .id }}
   path {{ .path }}
-  exclude_path /var/log/containers/fluent*
   pos_file /var/log/additional-containers-{{ .id }}-octobus.log.pos
   tag {{ .tag }}
   <parse>
@@ -246,7 +268,7 @@
 @include /fluentd/etc/prometheus.conf
 
 {{- if eq .Values.global.clusterType "metal" }}
-<filter keystone.** keystone-global.**>
+<filter keystone.** keystone-global.** coredns-api.**>
   @type kubernetes_metadata
   @id kubernetes
   bearer_token_file /var/run/secrets/kubernetes.io/serviceaccount/token
@@ -284,6 +306,14 @@
   </record>
 </filter>
 
+<filter coredns-api.**>
+  @type record_transformer
+  <record>
+    sap.cc.audit.source "coredns-api"
+    sap.cc.cluster "{{ .Values.global.cluster }}"
+    sap.cc.region "{{ .Values.global.region }}"
+  </record>
+</filter>
 {{- end }}
 
 <filter kubernetes.**>

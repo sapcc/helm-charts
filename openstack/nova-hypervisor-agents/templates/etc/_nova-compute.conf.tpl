@@ -37,3 +37,5 @@ valid_interfaces = public
 {{- end }}
 
 {{- tuple . "cell1" $hypervisor.vnc | include "console-novnc.conf" }}
+
+{{- tuple . "cell1" $hypervisor.serial | include "console-serial.conf" }}

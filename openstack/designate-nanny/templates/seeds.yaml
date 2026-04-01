@@ -1,0 +1,53 @@
+{{/* seeding of global region only happens once */}}
+{{- if or (not .Values.global.is_global_region) (eq .Values.global.db_region "eu-de-2") (eq .Values.global.db_region "qa-de-1") }}
+
+{{- /*
+      We are seeding all seed-enabled users from the users section here, not just the ones referenced by the nanny configs.
+      This is done to enable seeding additional users for remote access from other regions or to support password rotation schemes. */
+-}}
+
+{{- if and .Values.seed_users .Values.users }}
+---
+apiVersion: "openstack.stable.sap.cc/v1"
+kind: "OpenstackSeed"
+metadata:
+  name: {{ $.Release.Name }}-seed
+spec:
+  requires:
+  - monsoon3/domain-default-seed
+  - monsoon3/domain-ccadmin-seed
+{{- if $.Values.global.is_global_region }}
+  - monsoon3/designate-global-seed
+  - monsoon3/domain-global-seed
+{{- else}}
+  - monsoon3/designate-seed
+{{- end }}
+
+  domains:
+{{- /* Note: $userref is just a unique name to enable refering to the user definition _not_ a username! */}}
+{{- range $userref, $user := .Values.users }}
+{{- if $user.seed_enabled }}
+{{- $user_domain := required ( printf "Missing user_domain in .Values.user_seeds.%s" $userref) $user.user_domain }}
+  - name: '{{ $user_domain }}'
+    users:
+    - description: Designate Nanny user '{{ $userref }}'
+{{- /* we want to use the include here to be consistent and use the global helper function that handles edge cases and quoting for us */}}
+      name: '{{ required (printf "missing username in .Values.user_seeds.%s" $userref ) $user.username | include "resolve_secret" }}'
+      password: '{{ required (printf "missing password in .Values.user_seeds.%s" $userref ) $user.password | include "resolve_secret" }}'
+{{- range $domain, $pr_roles := required ( printf "Missing roles in .Values.user_seeds.%s" $userref) $user.roles }}
+  - name: '{{ $domain }}'
+    projects:
+{{- range $project, $roles := $pr_roles }}
+    - name: '{{ $project }}'
+      role_assignments:
+{{- range $role := $roles }}
+{{- /* we want to use the include here because the secret is only part of the string and the helper function handles all the neccessary quoting for us */}}
+      - user: '{{ $user.username | include "resolve_secret" }}@{{ $user_domain }}'
+        role: '{{ $role}}'
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}

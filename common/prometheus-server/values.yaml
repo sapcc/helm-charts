@@ -23,7 +23,7 @@ global:
 
 # The image for the Prometheus server. The tag equals the .Chart.appVersion.
 image:
-  repository: keppel.eu-de-1.cloud.sap/ccloud-dockerhub-mirror/prom/prometheus
+  repository: keppel.global.cloud.sap/ccloud-dockerhub-mirror/prom/prometheus
 
 # Mandatory name for a single Prometheus. To setup multiple, define a list of .Values.names or .Values.global.targets.
 # The name is used to find relevant aggregation and alerting rules.
@@ -54,6 +54,18 @@ additionalScrapeConfigs: {}
 
 # Interval between consecutive scrapes.
 scrapeInterval: "60s"
+
+# Convert all classic histograms to native histograms with custom buckets (NHCB).
+# This corresponds to the 'convert_classic_histograms_to_nhcb' field in Prometheus configuration.
+convertClassicHistogramsToNHCB: true
+
+# Enable scraping of classic histograms that are also exposed as native histograms.
+# This corresponds to the 'always_scrape_classic_histograms' field in Prometheus configuration.
+scrapeClassicHistograms: true
+
+# Enable scraping of native histograms.
+# This corresponds to the 'scrape_native_histograms' field in Prometheus configuration.
+scrapeNativeHistograms: true
 
 # List of configmaps in the same namespace as the Prometheus that should be mounted to /etc/prometheus/configmaps/<configmap-name>.
 # Can be used to add targets found by a custom service discovery.
@@ -229,7 +241,7 @@ thanos:
   # Specification for Thanos sidecar to Prometheus server.
   # See https://github.com/coreos/prometheus-operator/blob/master/Documentation/api.md#thanosspec .
   spec:
-    baseImage: keppel.eu-de-1.cloud.sap/ccloud-quay-mirror/thanos/thanos
+    image: keppel.global.cloud.sap/ccloud-quay-mirror/thanos/thanos:v0.37.2
     version: v0.37.2
 
   # Being one of debug, info, warn, error. Defaults to warn.
@@ -309,6 +321,10 @@ vpaResources:
 
 # If set to Auto, make sure to enable alerts.thanos.enabled and alerts.thanos.name if you are in any Prometheus but kubernetes and kubernikus. This will deploy needed alerts to Thanos Ruler.
 vpaUpdateMode: "Off"
+
+# One of the supported priorityClasses: common-payload, common-infrastructure, important-payload, important-infrastructure, critical-payload, critical-infrastructure
+# Defaults to important-payload
+priorityClass: ""
 
 # A security context defines privilege and access control settings for a Pod or Container.
 # See: https://kubernetes.io/docs/tasks/configure-pod-container/security-context .

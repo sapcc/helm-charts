@@ -47,7 +47,10 @@ sentry:
 
 port_metrics: 9102
 
-vmware_host_username: m3cinderapiuser@vsphere.local
+# Time in seconds between requests for usage statistics from the backend.
+# This is a [DEFAULT] section option, not a backend-specific option.
+backend_stats_polling_interval: 60
+
 backend_defaults:
   reserved_percentage: 20
   suppress_requests_ssl_warnings: True
@@ -63,8 +66,16 @@ backends:
   enabled: vmware,standard_hdd
   vmware:
     vmware_storage_profile: cinder-vvol
+    enable_image_cache: False
+  vmware_fcd:
+    enable_image_cache: False
   standard_hdd:
     vmware_storage_profile: cinder-standard-hdd
+    enable_image_cache: False
+  standard_hdd_fcd:
+    vmware_storage_profile: cinder-standard-hdd
+    enable_image_cache: False
+
 
 cinderApiPortPublic: 443
 cinderApiPortInternal: 8776
@@ -440,7 +451,7 @@ logging:
 
 # openstack-rate-limit-middleware
 api_rate_limit:
-  enabled: true
+  enabled: false
   backend_secret_file: /etc/cinder/ratelimit-backend-secret.conf
   rate_limit_by: "target_project_id"
   max_sleep_time_seconds: 15
@@ -448,6 +459,16 @@ api_rate_limit:
   backend_timeout_seconds: 15
   project_whitelist: []
 
+# Configuration for custom resource CinderNetappConfig used by
+# kvm-cinder-netapp-operator. Should be enabled only if operator is
+# deployed. The operator deploys the cinder-volume services for NetApp
+# backends and should use a cinder image identical to the one used by this 
+# helm chart.
+cindernetappconfig:
+  enabled: false
+  # template for matching volumes from netapp filer
+  volumeregextemplate: "(^cinder_|^nfs_{{FilerName}}_).*"
+  
 # openstack-watcher-middleware
 watcher:
   enabled: true
@@ -481,3 +502,9 @@ coordinationBackend: "file"
 api-ratelimit-redis:
   alerts:
     support_group: compute-storage-api
+
+manage_service_user_passwords: false
+
+statsd:
+  image: 'shared-app-images/statsd-exporter'
+  imageTag: '0.28.0-latest'

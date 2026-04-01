@@ -1,0 +1,69 @@
+{{- if .Values.backup.s3.enabled }}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "fullName" . }}-s3-backup
+  labels:
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+spec:
+  schedule: {{ .Values.backup.s3.schedule | quote }}
+  concurrencyPolicy: "Forbid"
+  failedJobsHistoryLimit: 3
+  successfulJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      activeDeadlineSeconds: 900
+      template:
+        metadata:
+            {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+            linkerd.io/inject: enabled
+            config.linkerd.io/opaque-ports: "3306"
+            config.alpha.linkerd.io/proxy-enable-native-sidecar: "true"
+            {{- end }}
+        spec:
+          restartPolicy: OnFailure
+          containers:
+          - name: mysql-dump
+            image: {{ required ".Values.global.dockerHubMirrorAlternateRegion is missing" .Values.global.dockerHubMirrorAlternateRegion }}/{{ .Values.backup.s3.image }}:{{ .Values.backup.s3.image_tag }}
+            imagePullPolicy: IfNotPresent
+            env:
+              - name: RUN_ONCE
+                value: "true"
+              - name: DB_SERVER
+                value: "{{ include "fullName" . }}"
+              - name: DB_USER
+                value: "xtrabackup"
+              - name: DB_PASS
+                valueFrom:
+                  secretKeyRef:
+                    name: {{ include "fullName" . }}
+                    key: xtrabackup-password
+              - name: DB_DUMP_TARGET
+                valueFrom:
+                  secretKeyRef:
+                    name: {{ include "fullName" . }}
+                    key: s3-destination
+              - name: AWS_ACCESS_KEY_ID
+                valueFrom:
+                  secretKeyRef:
+                    name: {{ include "fullName" . }}
+                    key: s3-accesskeyid
+              - name: AWS_SECRET_ACCESS_KEY
+                valueFrom:
+                  secretKeyRef:
+                    name: {{ include "fullName" . }}
+                    key: s3-accesskeysecret
+              - name: AWS_ENDPOINT_URL
+                valueFrom:
+                  secretKeyRef:
+                    name: {{ include "fullName" . }}
+                    key: s3-endpointurl
+              - name: AWS_DEFAULT_REGION
+                valueFrom:
+                  secretKeyRef:
+                    name: {{ include "fullName" . }}
+                    key: s3-defaultregion
+            resources:
+              {{- toYaml .Values.backup.resources | nindent 14 }}
+{{- end }}

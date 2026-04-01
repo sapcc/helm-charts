@@ -8,10 +8,12 @@ metadata:
     type: backend
     component: nova
 spec:
-  revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revision_history }}
+  revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.daemonsets.revisionHistory }}
   selector:
     matchLabels:
       name: {{ .Release.Name }}
+  updateStrategy:
+    {{- .Values.pod.lifecycle.upgrades.daemonsets.updateStrategy | toYaml | nindent 4 }}
   template:
     metadata:
       labels:
@@ -45,10 +47,12 @@ spec:
         {{- $hypervisor.pod.affinity | toYaml| nindent 8 }}
       {{- end }}
       hostAliases:
-      {{- range $ip := .Values.rabbitmq.externalIPs }}
+      {{- $activeCell := include "nova.helpers.get_active_cell" $ }}
+      {{- $rabbitmq := include "nova.helpers.get_rabbitmq_by_cell" (tuple $ $activeCell) | fromJson }}
+      {{- range $ip := $rabbitmq.externalIPs }}
       - ip: {{ $ip }}
         hostnames:
-        - {{ $.Values.rabbitmq.host }}
+          - {{ include "nova.helpers.cell_rabbitmq_host" (tuple $ $activeCell) }}
       {{- end }}
       initContainers:
       - name: nova-compute-init
@@ -72,7 +76,7 @@ spec:
         - |
           set -euxo pipefail
           DIR=/var/lib/nova/instances
-          mount -t nfs -o {{ dig "config_file" "libvirt" "nfs_mount_options" "defaults" $hypervisor }} {{ .Values.defaults.hypervisor.kvm.instance_nfs_share }} "$DIR"
+          grep "{{ .Values.defaults.hypervisor.kvm.instance_nfs_share }} $DIR" /proc/self/mounts || mount -t nfs -o {{ dig "config_file" "libvirt" "nfs_mount_options" "defaults" $hypervisor }} {{ .Values.defaults.hypervisor.kvm.instance_nfs_share }} "$DIR"
           chgrp 64055 "$DIR"
           chown 42436 "$DIR"
         volumeMounts:
@@ -111,23 +115,7 @@ spec:
           command:
           - "nova-compute"
           env:
-            - name: OS_LIBVIRT__LIVE_MIGRATION_INBOUND_ADDR
-              valueFrom:
-                fieldRef:
-                  fieldPath: status.hostIP
-            - name: OS_VNC__SERVER_LISTEN
-              valueFrom:
-                fieldRef:
-                  fieldPath: status.hostIP
-            - name: OS_VNC__SERVER_PROXYCLIENT_ADDRESS
-              valueFrom:
-                fieldRef:
-                  fieldPath: status.hostIP
-            - name: OS_SPICE__SERVER_LISTEN
-              valueFrom:
-                fieldRef:
-                  fieldPath: status.hostIP
-            - name: OS_SPICE__SERVER_PROXYCLIENT_ADDRESS
+            - name: OS_DEFAULT__MY_IP
               valueFrom:
                 fieldRef:
                   fieldPath: status.hostIP
@@ -348,14 +336,6 @@ spec:
                 path: nova.conf.d/cell.conf
               - key: keystoneauth-secrets.conf
                 path: nova.conf.d/keystoneauth-secrets.conf
-      - name: statsd-etc
-        projected:
-          sources:
-          - configMap:
-              name: {{ .Release.Name }}-etc
-              items:
-              - key:  statsd-exporter.yaml
-                path: statsd-exporter.yaml
       - name: bin
         configMap:
           name: {{ .Release.Name }}-bin

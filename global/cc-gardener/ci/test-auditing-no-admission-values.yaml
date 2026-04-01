@@ -1,0 +1,49 @@
+# Test values for auditing extension without admission configuration
+# Tests: template works when admission is not defined or empty
+
+global:
+  registry: example.com
+  region: qa-de-1
+  cluster: test-cluster
+
+garden:
+  name: garden
+  backup:
+    provider: aws
+    accessKeyID: "test-access"
+    secretAccessKey: "test-secret"
+    region: "eu-central-1"
+    bucket: "test-bucket"
+  runtimeCluster:
+    zones: ["qa-de-1a"]
+    networking:
+      pods: ["10.42.0.0/16"]
+      services: ["10.43.0.0/16"]
+  virtualCluster:
+    version: "1.29.6"
+
+secretsInjector:
+  enabled: false
+
+extensions:
+  auditing:
+    enabled: true
+    version: v0.2.0
+    url: "https://audit.example.com"
+
+    # Explicitly unset admission to test when it's not defined
+    admission: null
+
+    # Test extension.values only
+    values:
+      image:
+        repository: custom-extension-repo/auditing-controller
+        tag: v0.4.0
+      controllerConfig:
+        retries: 3
+
+    # Test extension helm.ociRepository
+    helm:
+      ociRepository:
+        repository: keppel.example.com/auditing-extension
+        tag: v0.2.1

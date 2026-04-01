@@ -40,6 +40,22 @@ cell2:
         statsd_enabled: true
       workarounds:
         skip_hypervisor_version_check_on_lm: true
+      conductor:
+        workers: 8
+
+cell3:
+  name: cell3
+  enabled: false
+  conductor:
+    config_file:
+      DEFAULT:
+        statsd_port: 9125
+        # enables collecting metrics for rpc calls
+        statsd_enabled: true
+      workarounds:
+        skip_hypervisor_version_check_on_lm: true
+      conductor:
+        workers: 8
 
 defaults:
   default:
@@ -77,6 +93,7 @@ pod:
         rollingUpdate:
           maxUnavailable: 0
           maxSurge: 1
+        overrides: {}  # e.g., { api: { podReplacementStrategy: Recreate } }
   debug:
     api: false
   resources:
@@ -120,21 +137,25 @@ debug: "True"
 defaultUsersRabbitMQ:
   cell1: default
   cell2: default
+  cell3: default
 
 defaultUsersMariaDB:
   api: nova_api
   cell0: nova_cell0
   cell1: nova
   cell2: null
+  cell3: null
 
-dbName: nova
+cell0dbType: mariadb
+cell1dbType: mariadb
+cell2dbType: mariadb
+cell3dbType: mariadb
+apidbType: mariadb
 
-cell0dbName: nova_cell0
-
-# cell2dbName should be the same as mariadb_cell2 backup_v2 DB name!
-cell2dbName: nova_cell2
-
-apidbName: nova_api
+# Target database instance for cell0
+# - "api": uses nova-api-mariadb (mariadb_api)
+# - "cell1": shares with cell1 on nova-mariadb (mariadb) [default]
+cell0dbTarget: "cell1"
 
 loci:
   nova: false
@@ -158,7 +179,7 @@ imageVersionNovaShellinaboxproxy: null
 imageVersionNovaSpicehtml5proxy: null
 imageVersionNovaScheduler: null
 imageVersionNovaNanny: null
-imageVersionBitnamiOpenResty: 1.21.4-1-debian-11-r57
+imageVersionOpenResty: 1.25.3.2-5-bookworm
 
 imageVersionVspc: null
 
@@ -230,6 +251,7 @@ consoles:
   serial:
     enabled: true
     portInternal: '6083'
+    args: "--web /var/lib/openstack/serialproxy-web/"
   shellinabox:
     enabled: true
     portInternal: '6084'
@@ -250,7 +272,7 @@ scheduler:
   # enables collecting metrics for RPC calls
   rpc_statsd_enabled: true
   default_filters: "ShardFilter, VolumeSizeSameShardResizeFilter, AggregateMultiTenancyIsolation, ComputeFilter, ComputeCapabilitiesFilter, HANAMemoryMaxUnitFilter, ResizeVcpuMaxUnitFilter, BigVmFlavorHostSizeFilter, VmSizeThresholdFilter, ImagePropertiesFilter, ServerGroupAntiAffinityFilter, ServerGroupAffinityFilter"
-  vm_size_threshold_vm_size_mb: "16385"
+  vm_size_threshold_vm_size_mb: "32769"
   vm_size_threshold_hv_size_mb: "819200"
   ram_weight_multiplier: 1.0
   cpu_weight_multiplier: 1.0
@@ -284,6 +306,12 @@ scheduler:
   aggregate_multi_tenancy_isolation_weight_multiplier: 50.0
 
   image_properties_default_architecture: "x86_64"
+  config:
+    scheduler:
+      enable_external_customer_exclusive_filter: true
+      forbidden_on_external_customer_hosts_ignored_domain_names: cc3test
+
+  external_scheduler_retries: 4
 
 compute:
   defaults:
@@ -308,8 +336,8 @@ compute:
       bigvm_deployment_free_host_hostgroup_name: "bigvm_free_host_antiaffinity_hostroup"
       clone_from_snapshot: false
       full_clone_snapshots: true
-      # maximum of vSphere 7.0u1c
-      default_hw_version: vmx-18
+      # maximum of vSphere 8
+      default_hw_version: vmx-21
       memory_reservation_cluster_hosts_max_fail: 2
       memory_reservation_max_ratio_fallback: 0.8
       # set this to (a little above) the maximum a flavor ever had in our env
@@ -718,20 +746,132 @@ mysql_metrics:
         UNION ALL SELECT 'i-uuid', 'im-uuid', 'None', 0;
       values:
         - "gauge"
+    - help: Retried migrations
+      name: openstack_compute_retried_migration_gauge
+      labels:
+        - "instance_uuid"
+        - "source_compute"
+        - "dest_compute"
+      query: |
+        SELECT
+          instance_uuid,
+          source_compute,
+          dest_compute,
+          count(*) AS gauge
+        FROM migrations
+        WHERE
+          deleted=0
+          AND updated_at > NOW() - INTERVAL 15 minute
+        GROUP BY instance_uuid, source_compute, dest_compute
+        HAVING gauge > 1
+        UNION ALL SELECT 'i-uuid', 'source', 'dest', 0;
+      values:
+        - "gauge"
+    - help: Multiple BDM Volume Attachments
+      name: openstack_compute_multiple_bdm_attachments_gauge
+      labels:
+        - "instance_uuid"
+        - "volume_id"
+      query: |
+        SELECT count(*) AS gauge, bdm.instance_uuid, bdm.volume_id
+        FROM
+          block_device_mapping AS bdm
+          JOIN instances AS i ON i.uuid=bdm.instance_uuid
+        WHERE
+          i.deleted=0
+          AND bdm.deleted=0
+          AND bdm.volume_id IS NOT NULL
+          AND (i.task_state IS NULL OR i.task_state NOT IN ('MIGRATING'))
+        GROUP BY bdm.instance_uuid, volume_id
+        HAVING gauge>1
+        UNION ALL SELECT 'i-uuid', 'v-uuid', 0;
+      values:
+        - "gauge"
+    - help: Compute nodes without service
+      labels:
+      - "uuid"
+      - "nova_host"
+      name: openstack_compute_nodes_no_valid_service
+      query: |
+        SELECT
+          cn.uuid AS uuid, cn.host AS nova_host, 1 AS gauge
+        FROM compute_nodes AS cn
+        LEFT OUTER JOIN services AS s ON s.id = cn.service_id
+        WHERE cn.deleted = 0 AND (s.id IS NULL OR s.deleted <> 0)
+        UNION ALL SELECT 'cn-uuid', 'cn-host', 0;
+      values:
+        - "gauge"
+    - help: Instance task states
+      name: openstack_compute_instances_task_state_gauge
+      labels:
+        - "task_state"
+      query: |
+        SELECT
+          COALESCE(task_state, 'None') AS task_state, count(*) AS gauge
+        FROM instances
+        WHERE deleted = 0
+        GROUP BY task_state;
+      values:
+        - "gauge"
+    - help: Nova oldest soft deleted instance in days
+      name: openstack_compute_oldest_soft_deleted_instance
+      query: |
+        SELECT COALESCE(DATEDIFF(NOW(), MIN(deleted_at)), 0) AS age_of_oldest_instance_in_days
+        FROM instances;
+      values:
+        - "age_of_oldest_instance_in_days"
 
-postgresql:
-  enabled: false
-
-postgresql_cell2:
-  enabled: false
 
 db_name: nova
 max_pool_size: 10
 max_overflow: 5
 
 proxysql:
-  mode: ""
   native_sidecar: true
+  ignore_users:
+    - backup
+    - metrics
+    - metis
+  imageRepository: keppel.global.cloud.sap/ccloud/shared-app-images/proxysql
+  connect_retries_delay: 1000
+  mode: host_alias
+  max_connections_per_proc: 15
+
+mariadb_api:
+  enabled: false
+  buffer_pool_size: "4096M"
+  log_file_size: "1024M"
+  name: nova-api
+  long_query_time: 8
+  vpa:
+    set_main_container: true
+  ccroot_user:
+    enabled: true
+  databases:
+  - nova_api
+  persistence_claim:
+    name: db-nova-api-pvc
+    size: "50Gi"
+  backup:
+    enabled: false
+  backup_v2:
+    enabled: true
+    databases:
+      - nova_api
+    verify_tables:
+      - nova_api.flavors
+      - nova_api.key_pairs
+    oauth:
+      client_id: "nova-api"
+  alerts:
+    support_group: compute-storage-api
+  job:
+    maintenance:
+      enabled: false
+      function:
+        analyzeTable:
+          enabled: true
+          allTables: true
 
 mariadb:
   enabled: false
@@ -773,43 +913,6 @@ mariadb:
           enabled: true
           allTables: true
 
-mariadb_api:
-  enabled: false
-  buffer_pool_size: "4096M"
-  log_file_size: "1024M"
-  name: nova-api
-  long_query_time: 8
-  vpa:
-    set_main_container: true
-  ccroot_user:
-    enabled: true
-  databases:
-  - nova_api
-  persistence_claim:
-    name: db-nova-api-pvc
-    size: "50Gi"
-  backup:
-    enabled: false
-  backup_v2:
-    enabled: true
-    databases:
-      - nova_api
-      - placement
-    verify_tables:
-      - nova_api.flavors
-      - nova_api.key_pairs
-    oauth:
-      client_id: "nova-api"
-  alerts:
-    support_group: compute-storage-api
-  job:
-    maintenance:
-      enabled: false
-      function:
-        analyzeTable:
-          enabled: true
-          allTables: true
-
 mariadb_cell2:
   enabled: false
   buffer_pool_size: "4096M"
@@ -838,27 +941,151 @@ mariadb_cell2:
           enabled: true
           allTables: true
 
-rabbitmq_cell2:
-  nameOverride: cell2-rabbitmq
-  persistence:
-    enabled: false
-  alerts:
-    # unacked/ready messages in rabbitmq
-    rabbit_queue_length: 50
-    unacknowledged_total_wait_for: 10m
-    ready_total_wait_for: 10m
-    support_group: compute-storage-api
-  metrics:
-    enabled: true
-    enableDetailedMetrics: true
-    enablePerObjectMetrics: true
-audit:
-  central_service:
-    user: rabbitmq
-    password: null
+mariadb_cell3:
   enabled: false
-  record_payloads: false
-  metrics_enabled: true
+  buffer_pool_size: "4096M"
+  log_file_size: "1024M"
+  long_query_time: 8
+  vpa:
+    set_main_container: true
+  ccroot_user:
+    enabled: true
+  persistence_claim:
+    name: db-nova-cell3-pvc
+    size: "50Gi"
+  backup:
+    enabled: false
+  backup_v2:
+    enabled: true
+    oauth:
+      client_id: "nova-cell3"
+  alerts:
+    support_group: compute-storage-api
+  job:
+    maintenance:
+      enabled: false
+      function:
+        analyzeTable:
+          enabled: true
+          allTables: true
+
+pxc_db_api:
+  enabled: false
+  name: nova-api
+  alerts:
+    support_group: "compute-storage-api"
+  ccroot_user:
+    enabled: true
+  databases:
+    - nova_api
+  users:
+    nova_api:
+      name: nova_api
+      grants:
+        - "ALL PRIVILEGES on nova_api.*"
+  pxc:
+    configuration:
+      options:
+        innodb_buffer_pool_size: "4096M"
+        innodb_log_file_size: "1024M"
+        long_query_time: "8"
+    persistence:
+      size: 50Gi
+  backup:
+    enabled: true
+    s3:
+      secrets:
+        aws_access_key_id: null
+        aws_secret_access_key: null
+    pitr:
+      enabled: true
+
+pxc_db:
+  enabled: false
+  name: nova
+  alerts:
+    support_group: "compute-storage-api"
+  ccroot_user:
+    enabled: true
+  databases:
+    - nova
+    - nova_cell0
+  users:
+    nova:
+      name: nova
+      grants:
+        - "ALL PRIVILEGES on nova.*"
+    nova_cell0:
+      name: nova_cell0
+      grants:
+        - "ALL PRIVILEGES on nova_cell0.*"
+  pxc:
+    configuration:
+      options:
+        max_connections: "2048"
+        innodb_buffer_pool_size: "4096M"
+        innodb_log_file_size: "1024M"
+        long_query_time: "8"
+    persistence:
+      size: 50Gi
+  backup:
+    enabled: true
+    s3:
+      secrets:
+        aws_access_key_id: null
+        aws_secret_access_key: null
+    pitr:
+      enabled: true
+
+pxc_db_cell2:
+  enabled: false
+  alerts:
+    support_group: "compute-storage-api"
+  ccroot_user:
+    enabled: true
+  databases: []
+  users: []
+  pxc:
+    configuration:
+      options:
+        innodb_buffer_pool_size: "4096M"
+        innodb_log_file_size: "1024M"
+        long_query_time: "8"
+    persistence:
+      size: 50Gi
+  backup:
+    enabled: true
+    s3:
+      secrets:
+        aws_access_key_id: null
+        aws_secret_access_key: null
+    pitr:
+      enabled: true
+
+pxc_db_cell3:
+  enabled: false
+  alerts:
+    support_group: "compute-storage-api"
+  ccroot_user:
+    enabled: true
+  databases: []
+  users: []
+  pxc:
+    configuration:
+      options:
+        innodb_buffer_pool_size: "4096M"
+        innodb_log_file_size: "1024M"
+        long_query_time: "8"
+    persistence:
+      size: 50Gi
+  backup:
+    enabled: true
+    s3:
+      secrets:
+        aws_access_key_id: null
+        aws_secret_access_key: null
+    pitr:
+      enabled: true
 
 rabbitmq:
   users:
@@ -876,13 +1103,50 @@ rabbitmq:
     requests:
       memory: 2Gi
       cpu: 1000m
-
   alerts:
     # unacked/ready messages in rabbitmq
     rabbit_queue_length: 50
     unacknowledged_total_wait_for: 10m
     ready_total_wait_for: 10m
     support_group: compute-storage-api
+
+rabbitmq_cell2:
+  nameOverride: cell2-rabbitmq
+  persistence:
+    enabled: false
+  alerts:
+    # unacked/ready messages in rabbitmq
+    rabbit_queue_length: 50
+    unacknowledged_total_wait_for: 10m
+    ready_total_wait_for: 10m
+    support_group: compute-storage-api
+  metrics:
+    enabled: true
+    enableDetailedMetrics: true
+    enablePerObjectMetrics: true
+
+rabbitmq_cell3:
+  nameOverride: cell3-rabbitmq
+  persistence:
+    enabled: false
+  alerts:
+    # unacked/ready messages in rabbitmq
+    rabbit_queue_length: 50
+    unacknowledged_total_wait_for: 10m
+    ready_total_wait_for: 10m
+    support_group: compute-storage-api
+  metrics:
+    enabled: true
+    enableDetailedMetrics: true
+    enablePerObjectMetrics: true
+
+audit:
+  central_service:
+    user: rabbitmq
+    password: null
+  enabled: false
+  record_payloads: false
+  metrics_enabled: true
 
 logging:
   formatters:
@@ -976,6 +1240,7 @@ default:
   rpc_ping_enabled: true
   # comma-separated list of prefixes for external domains
   external_customer_domain_name_prefixes: "iaas-"
+  instance_name_template: "instance-%(uuid)s"
 
 utils:
   trust_bundle:
@@ -996,6 +1261,7 @@ nanny:
   # Defaults for all nanny cronjobs
   default:
     enabled: true
+    add_cell0_conf: false
     add_cell1_conf: false
     resources:
       requests:
@@ -1008,6 +1274,16 @@ nanny:
     schedule: "0 * * * *"
     older_than: 21
     max_rows: 250
+  # Purge (with --purge flag) db rows from cell0 that were soft-deleted before
+  # more than older_than days. Cell0 contains instances that failed to get
+  # created. This job uses a shorter older_than to purge data sooner and handle
+  # the high volume of failed creations.
+  db_archive_deleted_rows_cell0:
+    # cron schedule (minute | hour | day of month | month | day of week)
+    schedule: "20 * * * *"
+    older_than: 3
+    max_rows: 1000
+    add_cell0_conf: true
   # Delete db rows soft-deleted before more than older_than days from shadow
   # tables.
   db_purge:
@@ -1079,3 +1355,11 @@ rate_limit:
           limit: 100r/m
 
 manage_service_user_passwords: false
+
+api-ratelimit-redis:
+  alerts:
+    support_group: compute-storage-api
+
+statsd:
+  image: 'shared-app-images/statsd-exporter'
+  imageTag: '0.28.0-latest'
