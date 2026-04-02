@@ -18,6 +18,12 @@ spec:
       labels:
         {{- include "chart.labels" . | nindent 8 }}
         etcd-kcp: backup
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: "/metrics"
+        prometheus.io/port: {{ required ".Values.deployment.container.port missing" .Values.deployment.container.port | quote }}
+        greenhouse/scrape: "true"
+        greenhouse/target: {{ required ".Values.greenhouseScrapeTarget missing" .Values.greenhouseScrapeTarget | quote }}
     spec:
       affinity:
         nodeAffinity:
@@ -95,8 +101,24 @@ spec:
             - '--storage-provider=S3'
           ports:
           - name: server
-            containerPort: 8080
+            containerPort: {{ required ".Values.deployment.container.port missing" .Values.deployment.container.port }}
             protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /metrics
+              port: server
+            initialDelaySeconds: 10
+            periodSeconds: 20
+            timeoutSeconds: 30
+            successThreshold: 1
+          readinessProbe:
+            httpGet:
+              path: /metrics
+              port: server
+            initialDelaySeconds: 10
+            periodSeconds: 20
+            timeoutSeconds: 30
+            successThreshold: 1
           env:
             - name: HOST_IP
               valueFrom:
