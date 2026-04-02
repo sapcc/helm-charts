@@ -8,7 +8,11 @@ spec:
   sources:
   - repository: https://github.com/cloudoperators/greenhouse-extensions
     ref:
-    {{ toYaml .Values.catalogs.obsExtensions.ref | nindent 6 }}
+    {{- if .Values.catalogs.obsExtensions.ref.sha }}
+      sha: {{ .Values.catalogs.obsExtensions.ref.sha }}
+    {{- else if .Values.catalogs.obsExtensions.ref.branch }}
+      branch: {{ .Values.catalogs.obsExtensions.ref.branch }}
+    {{- end }}
     resources:
       - alerts/plugindefinition.yaml
       - audit-logs/plugindefinition.yaml
