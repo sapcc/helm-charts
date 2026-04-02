@@ -8,11 +8,29 @@ metadata:
   {{ toYaml .Values.openTelemetryPlugin.auditLogs.customLabels | nindent 4 }}
   {{- end }}
 spec:
+{{- if .Values.openTelemetryPlugin.auditLogs.logsCollector.auditdConfig.enabled }}
+  hostPID: true
+  securityContext:
+    privileged: true
+    runAsUser: 0
+    capabilities:
+      add:
+        # Capabilities needed for auditd
+        - 'AUDIT_READ'
+        - 'AUDIT_WRITE'
+        - 'AUDIT_CONTROL'
+  {{- end }}
   mode: daemonset
   tolerations:
   - operator: Exists
   podAnnotations:
     kubectl.kubernetes.io/default-container: "otc-container"
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: "20%"
+  terminationGracePeriodSeconds: 10
   affinity:
     nodeAffinity:
       requiredDuringSchedulingIgnoredDuringExecution:
@@ -54,11 +72,18 @@ spec:
     - name: prometheus
       port: 9999
 {{- end }}
+
+{{- if .Values.openTelemetryPlugin.auditLogs.logsCollector.auditdConfig.enabled }}
+  initContainers:
+{{- include "auditd.initContainer" . | nindent 2 -}}
+{{- end }}
+
   image: "{{ .Values.openTelemetryPlugin.auditLogs.collectorImage.repository}}:{{ .Values.openTelemetryPlugin.auditLogs.collectorImage.tag}}"
   volumeMounts:
   - mountPath: /var/log
     name: varlog
     readOnly: true
+{{- if .Values.openTelemetryPlugin.auditLogs.logsCollector.auditdConfig.enabled }}
   - name: bin
     mountPath: /hostfs/bin
     readOnly: true
@@ -80,10 +105,12 @@ spec:
   - name: run-containerd
     mountPath: /run/containerd
     readOnly: true
+{{- end }}
   volumes:
   - name: varlog
     hostPath:
       path: /var/log
+{{- if .Values.openTelemetryPlugin.auditLogs.logsCollector.auditdConfig.enabled }}
   - name: bin
     hostPath:
       path: /bin
@@ -103,15 +130,35 @@ spec:
     hostPath:
       path: /run/containerd
       type: DirectoryOrCreate
+{{- end }}
 
   config:
     receivers:
       k8s_events:
         auth_type: serviceAccount
 
+      filelog/containerd:
+        include_file_path: true
+        include: [ /var/log/pods/*/keystone-api/*.log, /var/log/pods/dns_coredns-api*/audit/*.log, /var/log/pods/vault*/audit/*.log, /var/log/pods/kube-monitoring_kube-monitoring-metal-falco*/*/*.log ]
+        operators:
+          - id: container-parser
+            type: container
+          - id: parser-containerd
+            type: add
+            field: resource["container.runtime"]
+            value: "containerd"
+          - id: container-label
+            type: add
+            field: attributes["log.type"]
+            value: "containerd"
+
 {{- if .Values.openTelemetryPlugin.auditLogs.logsCollector.auditpollerConfig.enabled }}
   {{- include "auditpoller.receiver" . | nindent 6 -}}
 {{- end }}
+{{- if .Values.openTelemetryPlugin.auditLogs.logsCollector.auditdConfig.enabled }}
+  {{- include "auditd.receiver" . | nindent 6 -}}
+{{- end }}
+
 
     processors:
       batch:
@@ -119,9 +166,51 @@ spec:
         timeout: 5s
         send_batch_size : 100
 
+      transform/keystone_attributes:
+        error_mode: ignore
+        log_statements:
+          - context: log
+            conditions:
+              - resource.attributes["k8s.container.name"] == "keystone-api"
+            statements:
+              - set(log.attributes["sap.cc.audit.source"], "keystone-api")
+
+
+      transform/keystone_global_attributes:
+        error_mode: ignore
+        log_statements:
+          - context: log
+            conditions:
+              - resource.attributes["k8s.namespace.name"] == "monsoon3global"
+            statements:
+              - set(log.attributes["sap.cc.audit.source"], "keystone-global-api")
+
+      transform/vault_attributes:
+        error_mode: ignore
+        log_statements:
+          - context: log
+            conditions:
+              - resource.attributes["k8s.namespace.name"] == "vault"
+            statements:
+              - set(log.attributes["sap.cc.audit.source"], "vault")
+
+      transform/falco_attributes:
+        error_mode: ignore
+        log_statements:
+          - context: log
+            conditions:
+              - resource.attributes["k8s.container.name"] == "falco"
+            statements:
+              - set(log.attributes["sap.cc.audit.source"], "falco")
+
 {{- if .Values.openTelemetryPlugin.auditLogs.logsCollector.auditpollerConfig.enabled }}
   {{- include "auditpoller.processors" . | nindent 6 -}}
 {{- end }}
+
+{{- if .Values.openTelemetryPlugin.auditLogs.logsCollector.auditdConfig.enabled }}
+  {{- include "auditd.processors" . | nindent 6 -}}
+{{- end }}
+
 
 {{- if .Values.openTelemetryPlugin.auditLogs.prometheus.podMonitor.enabled }}
       attributes/prometheus:
@@ -171,15 +260,76 @@ spec:
             key: log.type
             value: "k8sevents"
 
+      transform/keystone_api:
+        error_mode: ignore
+        log_statements:
+          - context: log
+            conditions:
+              - resource.attributes["k8s.container.name"] == "keystone-api"
+            statements:
+              - merge_maps(log.attributes, ExtractGrokPatterns(log.body, "^(?<timestamp_date>%{YEAR}-%{MONTHNUM}-%{MONTHDAY}) (?<timestamp_time>%{HOUR}:%{MINUTE}:%{SECOND})\\.(?<microseconds>%{INT}) %{INT} %{LOGLEVEL:log.level} %{NOTSPACE:component} \\[%{NOTSPACE:request.id} %{NOTSPACE:global.request.id} usr %{NOTSPACE:user.id} prj %{NOTSPACE:project.id} dom %{NOTSPACE:domain.id} usr-dom %{NOTSPACE:user.domain.id} prj-dom %{NOTSPACE:project.domain.id}\\] %{GREEDYDATA:msg}", true), "upsert")
+              - merge_maps(log.attributes, ExtractGrokPatterns(log.body, "^(?<timestamp_date>%{YEAR}-%{MONTHNUM}-%{MONTHDAY}) (?<timestamp_time>%{HOUR}:%{MINUTE}:%{SECOND})\\.(?<microseconds>%{INT}) %{INT} %{NOTSPACE:log.level} %{NOTSPACE:component} \"%{NOTSPACE:request.id}\" %{NOTSPACE:ip} - - \"%{NOTSPACE:request.method} %{NOTSPACE:uri} %{NOTSPACE:httpversion}\" %{NUMBER:response} %{NUMBER} %{NUMBER} \"%{GREEDYDATA}\" \"%{NOTSPACE:agent}\"", true), "upsert")
+              - set(log.attributes["keystone_timestamp"], Concat([log.attributes["timestamp_date"], " ", log.attributes["timestamp_time"], ".", log.attributes["microseconds"]], "")) where log.attributes["timestamp_date"] != nil
+              - set(log.time_unix_nano, UnixNano(Time(Concat([log.attributes["timestamp_date"], " ", log.attributes["timestamp_time"]], " "), "%Y-%m-%d %H:%M:%S")) + Int(log.attributes["microseconds"]) * 1000) where log.attributes["timestamp_date"] != nil
+              - set(log.attributes["log.kind"], "cadf_action") where IsMatch(log.attributes["msg"], "^\\s*cadf action for '")
+              - set(log.attributes["log.kind"], "target_type_uri") where IsMatch(log.attributes["msg"], "^\\s*target type URI of requests '")
+              - set(log.attributes["log.kind"], "authentication") where IsMatch(log.attributes["msg"], "^\\s*Authenticating")
+              - merge_maps(log.attributes,ExtractGrokPatterns(log.attributes["msg"],"^\\s*cadf action for '%{NOTSPACE:request.method} %{URIPATH:uri}' is '%{NOTSPACE:action}' %{GREEDYDATA}",true),"upsert") where log.attributes["log.kind"] == "cadf_action"
+              - merge_maps(log.attributes,ExtractGrokPatterns(log.attributes["msg"],"^\\s*target type URI of requests '%{NOTSPACE:request.method} %{URIPATH:uri}' is '%{NOTSPACE:target.type_uri}' %{GREEDYDATA}",true),"upsert") where log.attributes["log.kind"] == "target_type_uri"
+              - merge_maps(log.attributes,ExtractGrokPatterns(log.attributes["msg"],"^\\s*Authenticating %{NOTSPACE:user.id}@%{NOTSPACE:project.domain.name}\\.\\.",true),"upsert") where log.attributes["log.kind"] == "authentication"
+              - delete_key(log.attributes, "timestamp_date")
+              - delete_key(log.attributes, "timestamp_time")
+
+      transform/vault:
+        error_mode: propagate
+        log_statements:
+          - context: log
+            conditions:
+              - resource.attributes["k8s.namespace.name"] == "vault"
+            statements:
+              - merge_maps(log.cache, ParseJSON(log.body), "upsert") where IsMatch(log.body, "^\\{")
+              - set(log.attributes["time"], log.cache["time"])
+              - set(log.attributes["type"], log.cache["type"])
+              - set(log.attributes["auth.accessor"], log.cache["auth"]["accessor"])
+              - set(log.attributes["auth.client_token"], log.cache["auth"]["client_token"])
+              - set(log.attributes["auth.display_name"], log.cache["auth"]["display_name"])
+              - set(log.attributes["auth.entity_id"], log.cache["auth"]["entity_id"])
+              - set(log.attributes["auth.metadata"], log.cache["auth"]["metadata"])
+              - set(log.attributes["auth.policy_results"], log.cache["auth"]["policy_results"])
+              - set(log.attributes["auth.metadata.role_name"], log.cache["auth"]["metadata.role_name"])
+              - set(log.attributes["auth.policies"], log.cache["auth"]["policies"])
+              - set(log.attributes["auth.policy_results.allowed"], log.cache["auth"]["policy_results"]["allowed"])
+              - set(log.attributes["auth.policy_results.granting_policies"], log.cache["auth"]["policy_results"]["granting_policies"])
+              - set(log.attributes["auth.token_policies"], log.cache["auth"]["token_policies"])
+              - set(log.attributes["auth.token_issue_time"], log.cache["auth"]["token_issue_time"])
+              - set(log.attributes["auth.token_ttl"], log.cache["auth"]["token_issue_time"])
+              - set(log.attributes["auth.token_type"], log.cache["auth"]["token_type"])
+              - set(log.attributes["auth.request.client_id"], log.cache["auth"]["client_id"])
+              - set(log.attributes["auth.request.client_token"], log.cache["auth"]["client_token"])
+              - set(log.attributes["auth.request.client_token_accessor"], log.cache["auth"]["client_token_accessor"])
+              - set(log.attributes["auth.request.headers.user-agent"], log.cache["auth"]["headers"][".user-agent"])
+              - set(log.attributes["auth.mount_class"], log.cache["auth"]["mount_class"])
+              - set(log.attributes["auth.mount_point"], log.cache["auth"]["mount_point"])
+              - set(log.attributes["auth.mount_running_version"], log.cache["auth"]["mount_running_version"])
+              - set(log.attributes["auth.mount_type"], log.cache["auth"]["mount_type"])
+              - set(log.attributes["auth.namespace.id"], log.cache["auth"]["namespace"]["id"])
+              - set(log.attributes["auth.operation"], log.cache["auth"]["operation"])
+              - set(log.attributes["auth.path"], log.cache["auth"]["path"])
+              - set(log.attributes["auth.remote_address"], log.cache["auth"]["remote_address"])
+              - set(log.attributes["auth.remote_port"], log.cache["auth"]["remote_port"])
+              - set(log.attributes["auth.request_uri"], log.cache["auth"]["request_uri"])
+
+
       attributes/failover_username_a:
         actions:
           - action: insert
             key: failover_username_opensearch
             value: ${failover_username_a}
-
-{{- if .Values.openTelemetryPlugin.auditLogs.openSearchLogs.failover.enabled }}
-  {{- include "failover.attributes" . | nindent 6 -}}
-{{- end }}
+      attributes/failover_username_b:
+        actions:
+          - action: insert
+            key: failover_username_opensearch
+            value: ${failover_username_b}
 
       transform/journal:
         error_mode: ignore
@@ -308,14 +458,18 @@ spec:
         spike_limit_percentage: 30
 
     exporters:
-      debug:
-        verbosity: basic
       opensearch/failover_a:
         http:
           auth:
             authenticator: basicauth/failover_a
           endpoint: {{ .Values.openTelemetryPlugin.auditLogs.openSearchLogs.endpoint }}
         logs_index: ${index}-datastream
+        retry_on_failure:
+          enabled: true
+          initial_interval: 500ms
+          max_interval: 2s
+          max_elapsed_time: 8s
+        timeout: 5s
 
       opensearch/failover_b:
         http:
@@ -323,10 +477,12 @@ spec:
             authenticator: basicauth/failover_b
           endpoint: {{ .Values.openTelemetryPlugin.auditLogs.openSearchLogs.endpoint }}
         logs_index: ${index}-datastream
-
-{{- if .Values.openTelemetryPlugin.auditLogs.openSearchLogs.failover.enabled }}
-  {{- include "failover.exporter" . | nindent 6 -}}
-{{- end }}
+        retry_on_failure:
+          enabled: true
+          initial_interval: 500ms
+          max_interval: 2s
+          max_elapsed_time: 8s
+        timeout: 5s
 
     extensions:
       basicauth/failover_a:
@@ -334,28 +490,34 @@ spec:
           username: ${failover_username_a}
           password: ${failover_password_a}
 
-{{- if .Values.openTelemetryPlugin.auditLogs.openSearchLogs.failover.enabled }}
-  {{- include "failover.extension" . | nindent 6 -}}
-{{- end }}
+      basicauth/failover_b:
+        client_auth:
+          username: ${failover_username_b}
+          password: ${failover_password_b}
 
 
     connectors:
-      forward: {}
       failover:
         priority_levels:
           - [logs/failover_a]
-{{- if .Values.openTelemetryPlugin.auditLogs.openSearchLogs.failover.enabled }}
           - [logs/failover_b]
-{{- end }}
         retry_interval: 20m
-        retry_gap: 5m
-        max_retries: 0
+        sending_queue:
+          block_on_overflow: true
+          enabled: true
+          num_consumers: 2
+          queue_size: 10000
+          sizer: requests
+        sending_queue:
+          block_on_overflow: true
+          enabled: true
+          num_consumers: 10
+          queue_size: 10000
+          sizer: requests
     service:
       extensions:
         - basicauth/failover_a
-{{- if .Values.openTelemetryPlugin.auditLogs.openSearchLogs.failover.enabled }}
         - basicauth/failover_b
-{{- end }}
 
 {{- if .Values.openTelemetryPlugin.auditLogs.prometheus.podMonitor.enabled }}
       telemetry:
@@ -379,9 +541,9 @@ spec:
 {{- end }}
 
       pipelines:
-        logs/forward:
-          receivers: [forward]
-          processors: [batch]
+        logs/containerd:
+          receivers: [filelog/containerd]
+          processors: [k8sattributes,attributes/cluster,transform/keystone_api,transform/keystone_attributes,transform/keystone_global_attributes,transform/vault,transform/vault_attributes,transform/falco_attributes,batch]
           exporters: [failover]
         logs/failover_a:
           receivers: [failover]
@@ -395,7 +557,6 @@ spec:
 {{- if .Values.openTelemetryPlugin.auditLogs.logsCollector.auditpollerConfig.enabled }}
   {{- include "auditpoller.pipelines" . | nindent 8 -}}
 {{- end }}
-
-{{- if .Values.openTelemetryPlugin.auditLogs.openSearchLogs.failover.enabled }}
-{{- include "failover.pipeline" . | nindent 8 -}}
+{{- if .Values.openTelemetryPlugin.auditLogs.logsCollector.auditdConfig.enabled }}
+  {{- include "auditd.pipelines" . | nindent 8 -}}
 {{- end }}
