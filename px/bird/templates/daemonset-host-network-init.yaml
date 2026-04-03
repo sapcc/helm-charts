@@ -1,0 +1,77 @@
+{{- if .Values.hostNetworkDaemonSet.enabled }}
+{{- range $service, $service_config := .Values.config -}}
+{{ if and (hasPrefix "service_" $service) (has $service $.Values.deploy) }}
+
+{{- range $domain, $domain_config := $service_config -}}
+{{ if and (hasPrefix "domain_" $domain) (has $domain $.Values.deploy) }}
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: {{ printf "%s-%s-%s-host-network-init" $.Release.Name $service $domain }}
+  labels:
+    app: {{ $.Release.Name }}-host-network-init
+    service: {{ $service }}
+    domain: {{ $domain }}
+    app.kubernetes.io/name: px-host-network-init
+    app.kubernetes.io/instance: {{ $.Release.Name }}
+spec:
+  selector:
+    matchLabels:
+      app: {{ $.Release.Name }}-host-network-init
+      service: {{ $service }}
+      domain: {{ $domain }}
+  template:
+    metadata:
+      labels:
+        app: {{ $.Release.Name }}-host-network-init
+        service: {{ $service }}
+        domain: {{ $domain }}
+        app.kubernetes.io/name: px-host-network-init
+        app.kubernetes.io/instance: {{ $.Release.Name }}
+    spec:
+{{- if $.Values.hostNetworkDaemonSet.nodeSelector }}
+      nodeSelector: {{ $.Values.hostNetworkDaemonSet.nodeSelector | toYaml | nindent 8 }}
+{{- end }}
+{{- if $.Values.hostNetworkDaemonSet.tolerations }}
+      tolerations: {{ $.Values.hostNetworkDaemonSet.tolerations | toYaml | nindent 8 }}
+{{- end }}
+      hostNetwork: true
+      priorityClassName: system-node-critical
+      initContainers:
+      - name: create-vlan-interface
+        image: keppel.{{ required "A registry must be set" $.Values.registry }}.cloud.sap/{{ required "A bird_image must be set" $.Values.bird_image }}
+        command: ["/px-init/create_vlan_interface.sh"]
+        securityContext:
+          privileged: true
+        env:
+        - name: PX_NATIVE_INTERFACE
+          value: {{ $domain_config.native_interface | required (printf "native_interface must be set for %s %s" $service $domain) }}
+        - name: PX_INTERFACE
+          value: {{ printf "vlan%s" ($domain_config.multus_vlan | toString) }}
+        - name: PX_VLAN
+          value: {{ $domain_config.multus_vlan | quote | required (printf "multus_vlan must be set for %s %s" $service $domain) }}
+        volumeMounts:
+          - name: init-host-network
+            mountPath: /px-init/
+      containers:
+      - name: pause
+        image: registry.k8s.io/pause:3.9
+        resources:
+          requests:
+            cpu: "10m"
+            memory: "16Mi"
+          limits:
+            cpu: "20m"
+            memory: "32Mi"
+      volumes:
+        - name: init-host-network
+          configMap:
+            name: {{ printf "%s-init-host-network" $.Release.Name | quote }}
+            defaultMode: 0500
+
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- end }}
