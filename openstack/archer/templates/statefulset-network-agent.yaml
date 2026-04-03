@@ -1,44 +1,57 @@
-{{- range $name, $env := $.Values.agents.ni }}
-{{- range $az_long, $apods := $.Values.global.apods }}
-{{- if or (not $env.availability_zone) (eq $env.availability_zone $az_long) }}
-{{- $apod := first $apods }}
-{{- with $env.physical_network }}
-  {{- $apod = . }}
-{{- end }}
+{{- $az_long := "" }}
+{{- $cp := "" }}
+{{- $apod := "" }}
+{{- range $agent := .Values.agents.cp }}
+  {{- range $az, $apods := $.Values.global.apods }}
+    {{- if has $agent.physical_network $apods }}
+      {{- $az_long = $az }}
+      {{- $apod = $agent.physical_network }}
+      {{- $cp = $agent.physical_network }}
+    {{- end }}
+  {{- end }}
+
+  {{- if not $apod }}
+    {{- $az_long = $.Values.global.default_availability_zone }}
+    {{- $cp = $agent.physical_network }}
+  {{- end }}
+
+  {{- $name := printf "archer-network-agent-%s" $cp }}
 ---
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
-  name: archer-agent-{{ $name }}-{{ $az_long }}
+  name: {{ $name }}
   labels:
     {{- include "archer.labels" $ | nindent 4 }}
 spec:
-  replicas: 1
+  updateStrategy:
+  {{- if or (eq $.Values.global.region "qa-de-1") (eq $.Values.global.region "qa-de-2") }}
+    type: RollingUpdate
+{{- else }}
+    type: OnDelete
+{{- end }}
+  replicas: {{ $agent.replicas }}
   selector:
     matchLabels:
       {{- include "archer.selectorLabels" $ | nindent 6 }}
       app.kubernetes.io/component: agent
-      cloud.sap/host: {{ $apod }}
-  strategy:
-    type: Recreate
+      name: {{ $name }}
   template:
     metadata:
       {{- with $.Values.podAnnotations }}
       annotations:
+        kubectl.kubernetes.io/default-container: archer-network-agent
         checksum/etc: {{ include (print $.Template.BasePath  "/configmap.yaml") $ | sha256sum }}
-        checksum/etc-ni: {{ include (print $.Template.BasePath  "/configmap-ni.yaml") $ | sha256sum }}
-        k8s.v1.cni.cncf.io/networks: '[{ "name": "cbr1-bridge", "interface":"{{ $.Values.cp_network_interface }}" }]'
-        kubectl.kubernetes.io/default-container: archer-agent-ni
-        {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
-        linkerd.io/inject: enabled
-        config.linkerd.io/skip-inbound-ports: "{{ range $env.service_ports }}{{ . }},{{ end }}"
-        {{- end }}
+        k8s.v1.cni.cncf.io/networks: '[{ "name": "cbr1-bridge", "interface":"{{ $agent.network_interface | default $.Values.cp_network_interface }}" }]'
+        {{- include "utils.linkerd.pod_and_service_annotation" $ | indent 8 }}
+        config.linkerd.io/skip-inbound-ports: "1-65535"
+        config.linkerd.io/skip-outbound-ports: "1-65535"
         {{- toYaml . | nindent 8 }}
       {{- end }}
       labels:
         {{- include "archer.labels" $ | nindent 8 }}
         app.kubernetes.io/component: agent
-        cloud.sap/host: {{ $apod }}
+        name: {{ $name }}
     spec:
       affinity:
         podAntiAffinity:
@@ -64,36 +77,37 @@ spec:
       nodeSelector:
         multus: bond1
         topology.kubernetes.io/zone: {{ $az_long }}
+        {{- with $apod }}
         kubernetes.cloud.sap/apod: {{ $apod }}
-      hostname: archer-agent-{{ $name }}-{{ $az_long }}
+        {{- end }}
       initContainers:
         - name: wait-for-server
           image: "{{ $.Values.global.registry }}/kubernetes-entrypoint:{{ $.Values.image.kubernetes_entrypoint_version }}"
           env:
             - name: NAMESPACE
-              value: "monsoon3"
+              value: {{ $.Release.Namespace }}
             - name: DEPENDENCY_SERVICE
               value: {{ include "archer.fullname" $ }}
             - name: COMMAND
               value: "true"
       containers:
-        - name: archer-agent-ni
+        - name: archer-network-agent
           securityContext:
             privileged: true
           image: "{{ $.Values.global.registry }}/archer:{{ $.Values.image.tag }}"
           command: ["/usr/bin/archer-ni-agent"]
-          args: ["--config-file=/etc/archer/archer.ini", "--config-file=/etc/archer/ni.ini"]
+          args: ["--config-file=/etc/archer/archer.ini"]
           imagePullPolicy: {{ $.Values.image.pullPolicy }}
           env:
             - name: GOMEMLIMIT
               valueFrom:
                 resourceFieldRef:
-                  containerName: archer-agent-ni
+                  containerName: archer-network-agent
                   resource: limits.memory
             - name: GOMAXPROCS
               valueFrom:
                 resourceFieldRef:
-                  containerName: archer-agent-ni
+                  containerName: archer-network-agent
                   resource: limits.cpu
             - name: SENTRY_DSN
               valueFrom:
@@ -102,6 +116,8 @@ spec:
                   key: archer.DSN
             - name: AVAILABILITY_ZONE
               value: {{ $az_long }}
+            - name: PHYSICAL_NETWORK
+              value: {{ $cp }}
             - name: PGPASSWORD
               valueFrom:
                 secretKeyRef:
@@ -135,9 +151,11 @@ spec:
             - name: PYTHONWARNINGS
               value: "ignore:Unverified HTTPS request"
             - name: OS_LINUX_BRIDGE__PHYSICAL_INTERFACE_MAPPINGS
-              value: {{ $apod }}:{{ required "A valid .Values.cp_network_interface required!" $.Values.cp_network_interface }}
+              value: {{ $cp }}:{{ required "A valid .Values.cp_network_interface required!" $.Values.cp_network_interface }}
             - name: OS_GLOBAL__HOST
-              value: archer-agent-{{ $name }}-{{ $az_long }}
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
           readinessProbe:
             exec:
               command: ["neutron-agent-liveness", "-config-file", "/etc/neutron/neutron.conf", "--config-file", "/etc/neutron/secrets/neutron-common-secrets.conf", "-agent-type", "Linux bridge agent"]
@@ -203,11 +221,4 @@ spec:
                   items:
                     - key: archer.ini
                       path: archer.ini
-              - configMap:
-                  name: archer-etc-{{ $name }}
-                  items:
-                    - key: ni.ini
-                      path: ni.ini
-{{- end }}
-{{- end }}
 {{- end }}
