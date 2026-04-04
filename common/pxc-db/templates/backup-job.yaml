@@ -1,0 +1,79 @@
+{{- if .Values.backup.dump.enabled }}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "pxc-db.clusterName" . }}-backup
+  labels:
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    system: openstack
+    type: backup
+    component: database
+{{ include "pxc-db.labels" . | indent 4 }}
+spec:
+  schedule: {{ .Values.backup.dump.schedule | quote }}
+  concurrencyPolicy: "Forbid"
+  failedJobsHistoryLimit: 3
+  successfulJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      activeDeadlineSeconds: 1200
+      template:
+        metadata:
+          annotations:
+            {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+            linkerd.io/inject: enabled
+            config.linkerd.io/opaque-ports: "3306,4444,4567,4568"
+            config.alpha.linkerd.io/proxy-enable-native-sidecar: "true"
+            {{- end }}
+        spec:
+          containers:
+          - name: backup
+            image: {{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{ .Values.backup.dump.image.name }}:{{ .Values.backup.dump.image.tag }}
+            imagePullPolicy: IfNotPresent
+            command:
+              - /bin/bash
+              - /backup-scripts/backup.sh
+            volumeMounts:
+            - name: backup-scripts
+              mountPath: /backup-scripts
+            env:
+            - name: PXC_NODE_NAME
+              value: {{ include "pxc-db.clusterName" . }}-pxc-{{ sub .Values.pxc.size 1 }}.{{ include "pxc-db.clusterName" . }}-pxc
+            - name: PXC_NODE_PORT
+              value: "33062"
+            - name: PXC_USERNAME
+              value: "xtrabackup"
+            - name: PXC_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: pxc-db-{{ .Values.name }}-secrets
+                  key: xtrabackup
+            - name: ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: {{ tpl (.Values.backup.s3.config.credentialsSecret) . | quote }}
+                  key: AWS_ACCESS_KEY_ID
+            - name: SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ tpl (.Values.backup.s3.config.credentialsSecret) . | quote }}
+                  key: AWS_SECRET_ACCESS_KEY
+            - name: PXC_SERVICE
+              value: {{ include "pxc-db.clusterName" . }}-pxc
+            - name: S3_BUCKET
+              value: {{ tpl (.Values.backup.dump.s3.config.bucket) . | quote }}
+            - name: S3_BUCKET_PATH
+              value: {{ tpl (.Values.backup.dump.s3.config.prefix) . | quote }}
+            - name: DEFAULT_REGION
+              value: {{ tpl (.Values.backup.s3.config.region) . | quote }}
+            - name: ENDPOINT
+              value: {{ tpl (.Values.backup.s3.config.endpointUrl) . | quote }}
+            - name: VERIFY_TLS
+              value: "false"
+          restartPolicy: OnFailure
+          volumes:
+          - name: backup-scripts
+            configMap:
+              name: pxc-db-{{ .Values.name }}-backup-scripts
+{{- end }}
