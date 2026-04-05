@@ -19,7 +19,7 @@ paste.app_factory = designate.api.versions:factory
 {{- end }}
 use = call:designate.api.middleware:auth_pipeline_factory
 noauth = http_proxy_to_wsgi cors request_id faultwrapper sentry validation_API_v2 {{- include "osprofiler_pipe" . }} noauthcontext {{ if .Values.watcher.enabled }}watcher {{ end }}maintenance normalizeuri {{ if .Values.audit.enabled }}audit {{ end }}osapi_dns_app_v2
-keystone = http_proxy_to_wsgi cors request_id faultwrapper sentry validation_API_v2 {{- include "osprofiler_pipe" . }} authtoken keystonecontext {{ if .Values.watcher.enabled }}watcher {{ end }}maintenance normalizeuri{{ if .Values.rate_limit.enabled }}{{- include "rate_limit_pipe" . }}{{ end }} {{ if .Values.audit.enabled }}audit {{ end }}osapi_dns_app_v2
+keystone = http_proxy_to_wsgi cors request_id faultwrapper sentry validation_API_v2 {{- include "osprofiler_pipe" . }} authtoken {{ if .Values.domain_resolver_from_token.enabled }}domain_resolver_from_token {{ end }} keystonecontext {{ if .Values.watcher.enabled }}watcher {{ end }}maintenance normalizeuri{{ if .Values.rate_limit.enabled }}{{- include "rate_limit_pipe" . }}{{ end }} {{ if .Values.audit.enabled }}audit {{ end }}osapi_dns_app_v2
 
 [app:healthcheck]
 paste.app_factory = oslo_middleware:Healthcheck.app_factory
@@ -105,4 +105,9 @@ backend_host = {{ .Release.Name }}-api-ratelimit-redis
 backend_port = 6379
 backend_secret_file = {{ .Values.rate_limit.backend_secret_file }}
 backend_timeout_seconds = {{ .Values.rate_limit.backend_timeout_seconds }}
+{{- end }}
+
+{{- if .Values.domain_resolver_from_token.enabled }}
+[filter:domain_resolver_from_token]
+paste.filter_factory = keystonemiddleware.domain_resolver_from_token:DomainResolverFromTokenMiddleware.factory
 {{- end }}
