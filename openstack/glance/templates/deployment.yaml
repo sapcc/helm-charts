@@ -184,6 +184,10 @@ spec:
           mountPath: /etc/glance/ratelimit.yaml
           subPath: ratelimit.yaml
           readOnly: true
+        - name: ratelimit-backend-secret
+          mountPath: /etc/glance/ratelimit-backend-secret.conf
+          subPath: password
+          readOnly: true
         {{- end }}
         {{- include "utils.proxysql.volume_mount" . | indent 8 }}
         {{- include "utils.trust_bundle.volume_mount" . | indent 8 }}
@@ -320,5 +324,13 @@ spec:
       - name: glance-etc-confd
         secret:
           secretName: {{ .Release.Name }}-secrets
+      {{- if .Values.sapcc_rate_limit.enabled }}
+      - name: ratelimit-backend-secret
+        secret:
+          secretName: {{ .Release.Name }}-api-ratelimit-redis-user-default
+          items:
+          - key: password
+            path: password
+      {{- end }}
       {{- include "utils.proxysql.volumes" . | indent 6 }}
       {{- include "utils.trust_bundle.volumes" . | indent 6 }}
