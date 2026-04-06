@@ -18,6 +18,15 @@ metadata:
     disco: "true"
   {{- end }}
   {{- include "utils.linkerd.ingress_annotation" . | indent 4 }}
+    # Return 404 for favicon.ico requests to prevent Pecan content-type errors
+    # Browsers automatically request /favicon.ico which triggers:
+    # "Controller 'on_get' does not support content_type 'image/vnd.microsoft.icon'"
+    nginx.ingress.kubernetes.io/server-snippet: |
+      location = /favicon.ico {
+        return 404;
+        access_log off;
+        log_not_found off;
+      }
 spec:
   tls:
      - secretName: tls-{{ include "barbican_api_endpoint_host_public" . | replace "." "-" }}
