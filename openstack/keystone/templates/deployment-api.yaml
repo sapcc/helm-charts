@@ -12,7 +12,10 @@ metadata:
     component: keystone
     type: api
   annotations:
-    secret.reloader.stakater.com/reload: "{{ .Release.Name }}-secrets,{{ .Release.Name }}-federation"
+    secret.reloader.stakater.com/reload: "{{ .Release.Name }}-secrets,{{ .Release.Name }}-federation{{- if .Values.federation.saml.enabled }},{{ .Release.Name }}-federation-saml,{{ .Values.federation.saml.idp.spKeySecretName | default "keystone-saml-sp" }}{{- end }}"
+    {{- if .Values.federation.saml.enabled }}
+    configmap.reloader.stakater.com/reload: "{{ .Values.federation.saml.idp.tenantListConfigMap }},{{ .Values.federation.saml.idp.metadataConfigMap }}"
+    {{- end }}
     deployment.reloader.stakater.com/pause-period: "60s"
 spec:
   replicas: {{ .Values.api.replicas }}
@@ -47,6 +50,9 @@ spec:
         secrets-hash: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
         {{- if .Values.federation.oidc.enabled }}
         federation-hash: {{ include (print $.Template.BasePath "/federation.yaml") . | sha256sum }}
+        {{- end }}
+        {{- if .Values.federation.saml.enabled }}
+        federation-saml-hash: {{ include (print $.Template.BasePath "/federation-saml.yaml") . | sha256sum }}
         {{- end }}
         {{- if .Values.proxysql.mode }}
         prometheus.io/scrape: "true"
@@ -85,6 +91,16 @@ spec:
           value: "true"
       {{- if .Values.proxysql.native_sidecar }}
       {{- include "utils.proxysql.container" . | indent 6 }}
+      {{- end }}
+      {{- if .Values.federation.saml.enabled }}
+      - name: saml-sp-decrypt
+        image: {{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{ .Values.federation.saml.spInit.image }}:{{ required ".Values.federation.saml.spInit.imageTag is missing" .Values.federation.saml.spInit.imageTag }}
+        volumeMounts:
+          - name: keystone-saml-sp-keys
+            mountPath: /saml-sp-secret
+            readOnly: true
+          - name: saml-sp-tmpfs
+            mountPath: /saml-sp-keys
       {{- end }}
       containers:
         - name: keystone-api
@@ -187,6 +203,25 @@ spec:
               subPath: federation-oidc.conf
               readOnly: true
             {{- end }}
+            {{- if .Values.federation.saml.enabled }}
+            - name: keystone-federation-saml
+              mountPath: /etc/shibboleth/attribute-map.xml
+              subPath: attribute-map.xml
+              readOnly: true
+            - name: saml-sp-tmpfs
+              mountPath: /etc/shibboleth/sp-keys
+              readOnly: true
+            {{- if .Values.federation.saml.idp.metadataConfigMap }}
+            - name: keystone-saml-idp-metadata
+              mountPath: /etc/shibboleth/metadata
+              readOnly: true
+            {{- end }}
+            {{- if .Values.federation.saml.idp.tenantListConfigMap }}
+            - name: keystone-saml-tenant-list
+              mountPath: /etc/shibboleth/tenant-list
+              readOnly: true
+            {{- end }}
+            {{- end }}
             - name: keystone-etc
               mountPath: /etc/apache2/mods-available/mpm_event.conf
               subPath: mpm_event.conf
@@ -256,6 +291,32 @@ spec:
           secret:
             secretName: {{ .Release.Name }}-federation
             defaultMode: 0444
+        {{- end }}
+        {{- if .Values.federation.saml.enabled }}
+        - name: keystone-federation-saml
+          secret:
+            secretName: {{ .Release.Name }}-federation-saml
+            defaultMode: 0444
+        - name: keystone-saml-sp-keys
+          secret:
+            secretName: {{ .Values.federation.saml.idp.spKeySecretName | default "keystone-saml-sp" }}
+            defaultMode: 0444
+        - name: saml-sp-tmpfs
+          emptyDir:
+            medium: Memory
+            sizeLimit: 32Ki
+        {{- if .Values.federation.saml.idp.metadataConfigMap }}
+        - name: keystone-saml-idp-metadata
+          configMap:
+            name: {{ .Values.federation.saml.idp.metadataConfigMap }}
+            defaultMode: 0444
+        {{- end }}
+        {{- if .Values.federation.saml.idp.tenantListConfigMap }}
+        - name: keystone-saml-tenant-list
+          configMap:
+            name: {{ .Values.federation.saml.idp.tenantListConfigMap }}
+            defaultMode: 0444
+        {{- end }}
         {{- end }}
         - name: keystone-bin
           projected:
