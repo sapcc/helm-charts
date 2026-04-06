@@ -1,0 +1,73 @@
+# TLS Rotation CronJob for Barbican
+# WP-1195: TLS Rotation CronJob
+# This CronJob periodically checks certificate expiration and rotates if needed.
+
+{{- if and .Values.tls.enabled .Values.tls.rotation.enabled }}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ .Release.Name }}-tls-rotation
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    system: openstack
+    component: barbican
+    type: tls-rotation
+spec:
+  # Schedule: Weekly on Sunday at 2am (configurable)
+  schedule: {{ .Values.tls.rotation.schedule | quote }}
+  # Don't allow concurrent runs
+  concurrencyPolicy: Forbid
+  # Keep last 3 successful and 1 failed job for debugging
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      activeDeadlineSeconds: 600
+      template:
+        metadata:
+          labels:
+            app: {{ template "fullname" . }}
+            name: {{ .Release.Name }}-tls-rotation
+            system: openstack
+            component: barbican
+            type: tls-rotation
+        spec:
+          serviceAccountName: {{ .Release.Name }}-tls-manager
+          restartPolicy: OnFailure
+          containers:
+            - name: tls-rotation
+              image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/{{ .Values.tls.lifecycleManager.image }}:{{ .Values.tls.lifecycleManager.imageTag }}
+              imagePullPolicy: IfNotPresent
+              args:
+                - --mode=rotation
+                - --namespace={{ .Release.Namespace }}
+                - --secret-name={{ .Release.Name }}-tls
+                - --deployment-name=barbican-api
+                - --renewal-threshold-days={{ .Values.tls.rotation.renewalThresholdDays }}
+                - --issuer-name={{ .Values.tls.issuer.name }}
+                - --issuer-kind={{ .Values.tls.issuer.kind }}
+                - --issuer-group={{ .Values.tls.issuer.group }}
+                - --common-name={{ include "barbican_api_endpoint_host_public" . }}
+                - --san-dns={{ include "barbican_api_endpoint_host_public" . }}
+                - --envelope-encryption={{ .Values.tls.envelopeEncryption }}
+                {{- if eq .Values.tls.envelopeEncryption "vault-transit" }}
+                - --vault-addr={{ .Values.tls.vault.addr }}
+                - --vault-transit-path={{ .Values.tls.vault.transitPath }}
+                {{- end }}
+              env:
+                - name: POD_NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.namespace
+              resources:
+                limits:
+                  cpu: "100m"
+                  memory: "128Mi"
+                requests:
+                  cpu: "50m"
+                  memory: "64Mi"
+{{- end }}

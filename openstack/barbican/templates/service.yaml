@@ -23,3 +23,9 @@ spec:
   ports:
     - name: barbican-api
       port: {{.Values.api_port_internal}}
+    {{- if .Values.tls.enabled }}
+    # WP-1188: HTTPS port for TLS termination at Apache
+    - name: barbican-https
+      port: {{ .Values.tls.httpsPort }}
+      targetPort: {{ .Values.tls.httpsPort }}
+    {{- end }}
