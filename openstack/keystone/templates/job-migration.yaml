@@ -1,4 +1,3 @@
-{{- if or .Values.run_db_migration .Release.IsInstall }}
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -14,6 +13,10 @@ metadata:
     # hooks are not annotated as belonging to the Helm release, so we cannot rely on owner-info injection
     ccloud/support-group: identity
     ccloud/service: keystone
+  annotations:
+    "helm.sh/hook": "post-install,pre-upgrade"
+    "helm.sh/hook-weight": "-1"
+    "helm.sh/hook-delete-policy": "before-hook-creation"
 spec:
   template:
     metadata:
@@ -28,8 +31,6 @@ spec:
         chart-version: {{.Chart.Version}}
         configmap-bin-hash: {{ include (print $.Template.BasePath "/configmap-bin.yaml") . | sha256sum }}
         configmap-etc-hash: {{ include (print $.Template.BasePath "/configmap-etc.yaml") . | sha256sum }}
-        # only run once
-        "helm.sh/hook": post-install, post-upgrade
 {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
     spec:
 {{- if .Values.rbac.enabled }}
@@ -127,4 +128,3 @@ spec:
             defaultMode: 0555
         {{- include "utils.proxysql.volumes" . | indent 8 }}
         {{- include "utils.trust_bundle.volumes" . | indent 8 }}
-{{ end -}}
