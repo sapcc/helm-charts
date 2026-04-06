@@ -40,6 +40,7 @@ spec:
         prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
         {{- end }}
     spec:
+      terminationGracePeriodSeconds: {{ .Values.pod.terminationGracePeriodSeconds.volume | default 30 }}
       hostname: {{ .Release.Name }}-volume-{{ $name }}
 {{ include "utils.proxysql.pod_settings" . | indent 6 }}
       initContainers:

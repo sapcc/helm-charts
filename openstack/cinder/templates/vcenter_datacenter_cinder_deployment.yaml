@@ -59,6 +59,7 @@ template: |
           uses-service-user: cinder
           {{- end }}
       spec:
+        terminationGracePeriodSeconds: {{ .Values.pod.terminationGracePeriodSeconds.volume | default 30 }}
         hostname: cinder-volume-vmware-{= name =}
         {{- tuple . "{= availability_zone =}" | include "utils.kubernetes_pod_az_affinity" | nindent 8 }}
         {{- include "utils.proxysql.pod_settings" . | nindent 8 }}
