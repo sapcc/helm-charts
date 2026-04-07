@@ -93,8 +93,25 @@ spec:
       {{- include "utils.proxysql.container" . | indent 6 }}
       {{- end }}
       {{- if .Values.federation.saml.enabled }}
-      - name: saml-sp-decrypt
+      {{- /* Validate required key lifecycle axes */}}
+      {{- if not .Values.federation.saml.spInit.keyGeneration }}
+        {{- fail "federation.saml.spInit.keyGeneration is required when SAML is enabled (e.g. go-crypto)" }}
+      {{- end }}
+      {{- if not .Values.federation.saml.spInit.keyWrapping }}
+        {{- fail "federation.saml.spInit.keyWrapping is required when SAML is enabled (e.g. none, vault-transit)" }}
+      {{- end }}
+      {{- if not .Values.federation.saml.spInit.keyStorage }}
+        {{- fail "federation.saml.spInit.keyStorage is required when SAML is enabled (e.g. vault-kv)" }}
+      {{- end }}
+      {{- /* Enforce forbidden combination: none + k8s-secret = plaintext key in etcd */}}
+      {{- if and (eq .Values.federation.saml.spInit.keyWrapping "none") (eq .Values.federation.saml.spInit.keyStorage "k8s-secret") (not .Values.federation.saml.spInit.allowInsecureStorage) }}
+        {{- fail "federation.saml.spInit: keyWrapping=none with keyStorage=k8s-secret stores a plaintext private key in a Kubernetes Secret. Set allowInsecureStorage: true to override (QA only)." }}
+      {{- end }}
+      - name: saml-sp-init
         image: {{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{ .Values.federation.saml.spInit.image }}:{{ required ".Values.federation.saml.spInit.imageTag is missing" .Values.federation.saml.spInit.imageTag }}
+        args:
+          - --mode=unwrap
+          - --key-wrapping={{ .Values.federation.saml.spInit.keyWrapping }}
         volumeMounts:
           - name: keystone-saml-sp-keys
             mountPath: /saml-sp-secret
