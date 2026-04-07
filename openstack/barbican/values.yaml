@@ -456,8 +456,13 @@ tls:
   secretName: barbican-tls
   # Enable TLS passthrough on the ingress (sends encrypted stream directly to pod)
   passthrough: false
-  # Envelope encryption mode for the private key: "none" (plaintext) or "vault-transit"
-  envelopeEncryption: none
+  # Per-region operator choices — all three are REQUIRED when tls.enabled: true.
+  # There are no defaults; the operator must make an explicit choice.
+  # keyGeneration: go-crypto | hsm-entropy | hsm-full | tpm-entropy
+  # keyWrapping: none | vault-transit | hsm | tpm
+  # keyStorage: k8s-secret | vault-secret
+  # Escape hatch: set allowInsecureStorage: true to allow wrapping=none + storage=k8s-secret
+  allowInsecureStorage: false
   # TLS lifecycle manager binary for bootstrap Job and rotation CronJob
   lifecycle:
     image: keppel.eu-de-1.cloud.sap/ccloud/tls-lifecycle-manager

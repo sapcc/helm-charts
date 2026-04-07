@@ -54,20 +54,13 @@ spec:
       {{- end }}
       {{- if .Values.tls.enabled }}
       - name: tls-init
-        image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/loci-barbican:{{ required "Values.imageVersionBarbicanApi is missing" .Values.imageVersionBarbicanApi }}
-        command:
-          - bash
-          - -c
-          - |
-            set -ex
-            # Copy TLS key material from K8s Secret to tmpfs
-            # In noop envelope-encryption mode, the key is plaintext in the Secret.
-            # When vault-transit or TPM is enabled, this step would decrypt first.
-            cp /tls-input/tls.key /mnt/secrets/tls.key
-            cp /tls-input/tls.crt /mnt/secrets/tls.crt
-            chmod 0440 /mnt/secrets/tls.key
-            chmod 0444 /mnt/secrets/tls.crt
-            echo "TLS key material placed on tmpfs"
+        image: {{ .Values.tls.lifecycle.image }}:{{ .Values.tls.lifecycle.imageTag }}
+        imagePullPolicy: IfNotPresent
+        args:
+          - --mode=unwrap
+          - --input-dir=/tls-input
+          - --output-dir=/mnt/secrets
+          - --key-wrapping={{ required "tls.keyWrapping is required" .Values.tls.keyWrapping }}
         volumeMounts:
           - name: tls-input
             mountPath: /tls-input

@@ -45,7 +45,13 @@ tls:
   enabled: false
   secretName: keystone-tls
   passthrough: false
-  envelopeEncryption: none
+  # Per-region operator choices — all three are REQUIRED when tls.enabled: true.
+  # There are no defaults; the operator must make an explicit choice.
+  # keyGeneration: go-crypto | hsm-entropy | hsm-full | tpm-entropy
+  # keyWrapping: none | vault-transit | hsm | tpm
+  # keyStorage: k8s-secret | vault-secret
+  # Escape hatch: set allowInsecureStorage: true to allow wrapping=none + storage=k8s-secret
+  allowInsecureStorage: false
   lifecycle:
     image: keppel.eu-de-1.cloud.sap/ccloud/tls-lifecycle-manager
     imageTag: latest
