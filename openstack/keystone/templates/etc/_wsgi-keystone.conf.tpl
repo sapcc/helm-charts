@@ -26,24 +26,24 @@ CustomLog /dev/stdout proxy env=forwarded
 {{- if .Values.federation.oidc.enabled }}
 <Location "/v3/auth/OS-FEDERATION/websso/openid">
     AuthType "openid-connect"
-    Require valid-user
+    Require claim sub~.+
 </Location>
 
 <Location "/v3/auth/OS-FEDERATION/identity_providers/sap-ias/protocols/openid/websso">
     AuthType "openid-connect"
-    Require valid-user
+    Require claim sub~.+
 </Location>
 
 <Location "/v3/auth/OS-FEDERATION/identity_providers/sap-ias/protocols/openid/auth">
     AuthType "openid-connect"
-    Require valid-user
+    Require claim sub~.+
 </Location>
 
 # Location a non-browser apps can communicate with
 <Location "/v3/OS-FEDERATION/identity_providers/sap-ias/protocols/openid/auth">
     # AuthType here is not "openid-connect" since apps going here do not support browser flow
     AuthType "auth-openidc"
-    Require valid-user
+    Require claim sub~.+
 </Location>
 
 {{- end }}
