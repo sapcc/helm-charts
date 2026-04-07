@@ -21,7 +21,7 @@ spec:
       annotations:
         prometheus.io/scrape: "true"
         prometheus.io/path: "/metrics"
-        prometheus.io/port: {{ required ".Values.deployment.container.port missing" .Values.deployment.container.port | quote }}
+        prometheus.io/port: {{ required ".Values.deployment.container.metricsPort missing" .Values.deployment.container.metricsPort | quote }}
         greenhouse/scrape: "true"
         greenhouse/target: {{ required ".Values.greenhouseScrapeTarget missing" .Values.greenhouseScrapeTarget | quote }}
     spec:
@@ -100,25 +100,24 @@ spec:
             - '--snapstore-temp-directory=/tmp/etcd/snapstore'
             - '--storage-provider=S3'
           ports:
-          - name: server
-            containerPort: {{ required ".Values.deployment.container.port missing" .Values.deployment.container.port }}
-            protocol: TCP
+          - name: metrics
+            containerPort: {{ required ".Values.deployment.container.metricsPort missing" .Values.deployment.container.metricsPort }}
           livenessProbe:
             httpGet:
               path: /metrics
-              port: server
-            initialDelaySeconds: 10
+              port: metrics
+            initialDelaySeconds: 15
             periodSeconds: 20
-            timeoutSeconds: 30
-            successThreshold: 1
+            timeoutSeconds: 5
+            failureThreshold: 3
           readinessProbe:
             httpGet:
               path: /metrics
-              port: server
-            initialDelaySeconds: 10
-            periodSeconds: 20
-            timeoutSeconds: 30
-            successThreshold: 1
+              port: metrics
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
           env:
             - name: HOST_IP
               valueFrom:
