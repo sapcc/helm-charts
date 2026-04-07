@@ -49,19 +49,19 @@ groups:
       summary: glance has reported issues to Sentry
 
   - alert: OpenstackGlanceRateLimitActionIsAbove50
-    expr: sum by(initiator_project_id, action, initiator_user_name) (rate(openstack_ratelimit_requests_ratelimit_total{service="key-manager", container="api"}[2m]) * 60) > 50
+    expr: sum by(initiator_project_id, action, initiator_user_name) (rate(openstack_requests_ratelimit_total{service="image", container="glance-api"}[2m]) * 60) > 50
     for: 5m
     labels:
       severity: info
       tier: os
-      service: '{{ $labels.service }}'
-      context: '{{ $labels.service }}'
+      service: glance
+      context: glance
       dashboard: glance
       no_alert_on_absence: "true"
       meta: 'Project {{ $labels.initiator_project_id }} has more than 50 {{ $labels.action }} operations'
       support_group: compute-storage-api
     annotations:
-      description: 'User {{ $labels.initiator_user_name }} has initiated more than 50 {{ $labels.action }} operations' 
+      description: 'User {{ $labels.initiator_user_name }} has initiated more than 50 {{ $labels.action }} operations'
       summary: 'Project {{ $labels.initiator_project_id }} has more than 50 {{ $labels.action }} operations'
 
   - alert: OpenstackGlanceContainerOOMKilled
