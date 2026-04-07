@@ -23,7 +23,7 @@ spec:
     admission:
 {{- if .admission.values }}
       values:
-{{ include "cc-gardener.extension.mergeValues" (dict "values" .admission.values "fallbackTag" .version) | indent 8 }}
+{{ include "cc-gardener.extension.mergeValues" (dict "values" .admission.values "extensionContext" . "fallbackTag" .version "usePipeStyle" false) | indent 8 }}
 {{- end }}
 {{- if and .admission.runtimeCluster .admission.runtimeCluster.helm .admission.runtimeCluster.helm.ociRepository }}
       runtimeCluster:
@@ -41,10 +41,10 @@ spec:
     extension:
 {{- if .runtimeClusterValues }}
       runtimeClusterValues:
-{{ include "cc-gardener.extension.mergeValues" (dict "values" .runtimeClusterValues "parentValues" .values "fallbackTag" .version) | indent 8 }}
+{{ include "cc-gardener.extension.mergeValues" (dict "values" .runtimeClusterValues "parentValues" .values "extensionContext" . "fallbackTag" .version "usePipeStyle" false) | indent 8 }}
 {{- end }}
       values:
-{{ include "cc-gardener.extension.mergeValues" (dict "values" .values "extensionContext" . "fallbackTag" .version) | indent 8 }}
+{{ include "cc-gardener.extension.mergeValues" (dict "values" .values "extensionContext" . "fallbackTag" .version "usePipeStyle" false) | indent 8 }}
       helm:
         ociRepository:
 {{ include "cc-gardener.extension.ociRepository" (dict "ociRepository" .helm.ociRepository "fallbackTag" .version) | indent 10 }}

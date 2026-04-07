@@ -25,7 +25,7 @@ spec:
         greenhouse/scrape: "true"
         greenhouse/target: {{ .Values.greenhouseScrapeTarget | quote }}
     spec:
-      automountServiceAccountToken: true
+      automountServiceAccountToken: false
       containers:
       - env:
         - name: KUBERNETES_SERVICE_HOST
@@ -33,6 +33,12 @@ spec:
         image: {{ .Values.kubeStateMetrics.container.image.repository }}:{{ .Values.kubeStateMetrics.container.image.tag | default .Chart.AppVersion }}
         args:
         {{- toYaml .Values.kubeStateMetrics.container.args | nindent 8 }}
+        name: kube-state-metrics
+        ports:
+        - containerPort: {{ with index .Values.kubeStateMetrics.ports 0 }}{{ .port }}{{ end }}
+          name: metrics
+        - containerPort: {{ with index .Values.kubeStateMetrics.ports 1 }}{{ .port }}{{ end }}
+          name: telemetry
         livenessProbe:
           failureThreshold: 3
           httpGet:
@@ -41,12 +47,6 @@ spec:
           initialDelaySeconds: 15
           periodSeconds: 20
           timeoutSeconds: 5
-        name: kube-state-metrics
-        ports:
-        - containerPort: {{ with index .Values.kubeStateMetrics.ports 0 }}{{ .port }}{{ end }}
-          name: metrics
-        - containerPort: {{ with index .Values.kubeStateMetrics.ports 1 }}{{ .port }}{{ end }}
-          name: telemetry
         readinessProbe:
           failureThreshold: 3
           httpGet:

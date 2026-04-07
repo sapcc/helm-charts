@@ -6,19 +6,27 @@ Usage:
   # For extension.values (automatically picks up root-level image/images/imageVectorOverwrite)
   {{ include "cc-gardener.extension.mergeValues" (dict "values" .values "extensionContext" . "fallbackTag" .version) | nindent 8 }}
 
-  # For runtimeClusterValues with cascading fallback from parent values
-  {{ include "cc-gardener.extension.mergeValues" (dict "values" .runtimeClusterValues "parentValues" .values "fallbackTag" .version) | nindent 8 }}
+  # For runtimeClusterValues with cascading fallback from parent values and root level
+  {{ include "cc-gardener.extension.mergeValues" (dict "values" .runtimeClusterValues "parentValues" .values "extensionContext" . "fallbackTag" .version) | nindent 8 }}
+
+  # For admission.values with cascading fallback from root level
+  {{ include "cc-gardener.extension.mergeValues" (dict "values" .admission.values "extensionContext" . "fallbackTag" .version) | nindent 8 }}
 
 Parameters:
   - values: The extension values dict (can be nil)
   - parentValues: Optional parent values dict for cascading fallback (for runtimeClusterValues)
-  - extensionContext: Optional full extension context (.) to auto-detect root-level image/images/imageVectorOverwrite
+  - extensionContext: Optional full extension context (.) to provide root-level imageVectorOverwrite fallback
   - fallbackTag: The tag to use if not specified in values (typically .version)
 
 Priority for image references:
   1. image.ref or imageRef (complete reference)
   2. image.repository + image.tag
   3. Fallback chain: values.image → parentValues.image → extensionContext.image → fallbackTag
+
+Priority for imageVectorOverwrite:
+  1. values.imageVectorOverwrite (if present in values)
+  2. parentValues.imageVectorOverwrite (if parentValues provided)
+  3. extensionContext.imageVectorOverwrite (root level, if extensionContext provided)
 
 If only repository is specified, tag defaults via fallback chain.
 All other values pass through unchanged.
@@ -28,29 +36,24 @@ All other values pass through unchanged.
 {{- $parentValues := .parentValues | default dict -}}
 {{- $extensionContext := .extensionContext | default dict -}}
 {{- $fallbackTag := .fallbackTag | default "" -}}
+{{- $usePipeStyle := true -}}
+{{- if hasKey . "usePipeStyle" -}}
+  {{- $usePipeStyle = .usePipeStyle -}}
+{{- end -}}
 {{- $result := dict -}}
 
-{{- /* First, copy root-level image/images/imageVectorOverwrite from extensionContext if present */ -}}
+{{- /* Determine fallbacks from extensionContext (root level) */ -}}
+{{- $rootImageVectorOverwrite := "" -}}
 {{- if $extensionContext -}}
-  {{- if and (hasKey $extensionContext "image") (not (hasKey $values "image")) -}}
-    {{- $_ := set $result "image" $extensionContext.image -}}
+  {{- if hasKey $extensionContext "imageVectorOverwrite" -}}
+    {{- $rootImageVectorOverwrite = $extensionContext.imageVectorOverwrite -}}
   {{- end -}}
-  {{- if and (hasKey $extensionContext "images") (not (hasKey $values "images")) -}}
-    {{- $_ := set $result "images" $extensionContext.images -}}
-  {{- end -}}
-  {{- if and (hasKey $extensionContext "imageVectorOverwrite") (not (hasKey $values "imageVectorOverwrite")) -}}
-    {{- $_ := set $result "imageVectorOverwrite" $extensionContext.imageVectorOverwrite -}}
-  {{- end -}}
-{{- end -}}
-
-{{- /* Copy all values (overrides extensionContext defaults) */ -}}
-{{- range $key, $val := $values -}}
-  {{- $_ := set $result $key $val -}}
 {{- end -}}
 
 {{- /* Determine fallbacks from parent values */ -}}
 {{- $parentTag := "" -}}
 {{- $parentRepo := "" -}}
+{{- $parentImageVectorOverwrite := "" -}}
 {{- if $parentValues -}}
   {{- if hasKey $parentValues "image" -}}
     {{- if kindIs "string" $parentValues.image -}}
@@ -64,6 +67,24 @@ All other values pass through unchanged.
       {{- end -}}
     {{- end -}}
   {{- end -}}
+  {{- if hasKey $parentValues "imageVectorOverwrite" -}}
+    {{- $parentImageVectorOverwrite = $parentValues.imageVectorOverwrite -}}
+  {{- end -}}
+{{- end -}}
+
+{{- /* First, copy root-level image/images/imageVectorOverwrite from extensionContext if present */ -}}
+{{- if $extensionContext -}}
+  {{- if and (hasKey $extensionContext "image") (not (hasKey $values "image")) -}}
+    {{- $_ := set $result "image" $extensionContext.image -}}
+  {{- end -}}
+  {{- if and (hasKey $extensionContext "images") (not (hasKey $values "images")) -}}
+    {{- $_ := set $result "images" $extensionContext.images -}}
+  {{- end -}}
+{{- end -}}
+
+{{- /* Copy all values (overrides extensionContext defaults) */ -}}
+{{- range $key, $val := $values -}}
+  {{- $_ := set $result $key $val -}}
 {{- end -}}
 
 {{- /* Smart handling of image references */ -}}
@@ -74,32 +95,25 @@ All other values pass through unchanged.
   {{- else if kindIs "map" $values.image -}}
     {{- $imageDict := dict -}}
 
-    {{- /* Priority 1: Complete reference (ref/imageRef) */ -}}
-    {{- if hasKey $values.image "ref" -}}
-      {{- $_ := set $imageDict "ref" $values.image.ref -}}
-    {{- else if hasKey $values.image "imageRef" -}}
-      {{- $_ := set $imageDict "imageRef" $values.image.imageRef -}}
-    {{- else -}}
-      {{- /* Priority 2: Repository with cascading fallback */ -}}
-      {{- if hasKey $values.image "repository" -}}
-        {{- $_ := set $imageDict "repository" $values.image.repository -}}
-      {{- else if $parentRepo -}}
-        {{- $_ := set $imageDict "repository" $parentRepo -}}
-      {{- end -}}
+    {{- /* Repository with cascading fallback */ -}}
+    {{- if hasKey $values.image "repository" -}}
+      {{- $_ := set $imageDict "repository" $values.image.repository -}}
+    {{- else if $parentRepo -}}
+      {{- $_ := set $imageDict "repository" $parentRepo -}}
+    {{- end -}}
 
-      {{- /* Priority 3: Tag with cascading fallback */ -}}
-      {{- if hasKey $values.image "tag" -}}
-        {{- $_ := set $imageDict "tag" $values.image.tag -}}
-      {{- else if $parentTag -}}
-        {{- $_ := set $imageDict "tag" $parentTag -}}
-      {{- else if $fallbackTag -}}
-        {{- $_ := set $imageDict "tag" $fallbackTag -}}
-      {{- end -}}
+    {{- /* Tag with cascading fallback */ -}}
+    {{- if hasKey $values.image "tag" -}}
+      {{- $_ := set $imageDict "tag" $values.image.tag -}}
+    {{- else if $parentTag -}}
+      {{- $_ := set $imageDict "tag" $parentTag -}}
+    {{- else if $fallbackTag -}}
+      {{- $_ := set $imageDict "tag" $fallbackTag -}}
     {{- end -}}
 
     {{- /* Copy other image properties (pullPolicy, etc) */ -}}
     {{- range $key, $val := $values.image -}}
-      {{- if and (ne $key "repository") (ne $key "tag") (ne $key "ref") (ne $key "imageRef") -}}
+      {{- if and (ne $key "repository") (ne $key "tag") -}}
         {{- $_ := set $imageDict $key $val -}}
       {{- end -}}
     {{- end -}}
@@ -138,27 +152,20 @@ All other values pass through unchanged.
         {{- $_ := set $imgDict "name" .name -}}
       {{- end -}}
 
-      {{- /* Priority 1: Complete reference */ -}}
-      {{- if hasKey . "ref" -}}
-        {{- $_ := set $imgDict "ref" .ref -}}
-      {{- else if hasKey . "imageRef" -}}
-        {{- $_ := set $imgDict "imageRef" .imageRef -}}
-      {{- else -}}
-        {{- /* Priority 2: Repository + Tag with fallback */ -}}
-        {{- if hasKey . "repository" -}}
-          {{- $_ := set $imgDict "repository" .repository -}}
-        {{- end -}}
+      {{- /* Repository + Tag with fallback */ -}}
+      {{- if hasKey . "repository" -}}
+        {{- $_ := set $imgDict "repository" .repository -}}
+      {{- end -}}
 
-        {{- if hasKey . "tag" -}}
-          {{- $_ := set $imgDict "tag" .tag -}}
-        {{- else if $fallbackTag -}}
-          {{- $_ := set $imgDict "tag" $fallbackTag -}}
-        {{- end -}}
+      {{- if hasKey . "tag" -}}
+        {{- $_ := set $imgDict "tag" .tag -}}
+      {{- else if $fallbackTag -}}
+        {{- $_ := set $imgDict "tag" $fallbackTag -}}
       {{- end -}}
 
       {{- /* Copy other properties */ -}}
       {{- range $key, $val := . -}}
-        {{- if and (ne $key "name") (ne $key "repository") (ne $key "tag") (ne $key "ref") (ne $key "imageRef") -}}
+        {{- if and (ne $key "name") (ne $key "repository") (ne $key "tag") -}}
           {{- $_ := set $imgDict $key $val -}}
         {{- end -}}
       {{- end -}}
@@ -172,27 +179,20 @@ All other values pass through unchanged.
     {{- range $name, $img := $values.images -}}
       {{- $imgDict := dict -}}
 
-      {{- /* Priority 1: Complete reference */ -}}
-      {{- if hasKey $img "ref" -}}
-        {{- $_ := set $imgDict "ref" $img.ref -}}
-      {{- else if hasKey $img "imageRef" -}}
-        {{- $_ := set $imgDict "imageRef" $img.imageRef -}}
-      {{- else -}}
-        {{- /* Priority 2: Repository + Tag with fallback */ -}}
-        {{- if hasKey $img "repository" -}}
-          {{- $_ := set $imgDict "repository" $img.repository -}}
-        {{- end -}}
+      {{- /* Repository + Tag with fallback */ -}}
+      {{- if hasKey $img "repository" -}}
+        {{- $_ := set $imgDict "repository" $img.repository -}}
+      {{- end -}}
 
-        {{- if hasKey $img "tag" -}}
-          {{- $_ := set $imgDict "tag" $img.tag -}}
-        {{- else if $fallbackTag -}}
-          {{- $_ := set $imgDict "tag" $fallbackTag -}}
-        {{- end -}}
+      {{- if hasKey $img "tag" -}}
+        {{- $_ := set $imgDict "tag" $img.tag -}}
+      {{- else if $fallbackTag -}}
+        {{- $_ := set $imgDict "tag" $fallbackTag -}}
       {{- end -}}
 
       {{- /* Copy other properties */ -}}
       {{- range $key, $val := $img -}}
-        {{- if and (ne $key "repository") (ne $key "tag") (ne $key "ref") (ne $key "imageRef") -}}
+        {{- if and (ne $key "repository") (ne $key "tag") -}}
           {{- $_ := set $imgDict $key $val -}}
         {{- end -}}
       {{- end -}}
@@ -203,7 +203,17 @@ All other values pass through unchanged.
   {{- end -}}
 {{- end -}}
 
+{{- /* Handle imageVectorOverwrite with cascading fallback */ -}}
+{{- if not (hasKey $result "imageVectorOverwrite") -}}
+  {{- if $parentImageVectorOverwrite -}}
+    {{- $_ := set $result "imageVectorOverwrite" $parentImageVectorOverwrite -}}
+  {{- else if $rootImageVectorOverwrite -}}
+    {{- $_ := set $result "imageVectorOverwrite" $rootImageVectorOverwrite -}}
+  {{- end -}}
+{{- end -}}
+
 {{- if $result -}}
+{{- if ne $usePipeStyle false -}}
 {{- /* Handle imageVectorOverwrite specially to always output with pipe style */ -}}
 {{- $imageVectorOverwrite := index $result "imageVectorOverwrite" | default nil -}}
 {{- if $imageVectorOverwrite -}}
@@ -214,7 +224,18 @@ All other values pass through unchanged.
 {{ toYaml $result -}}
 {{- end -}}
 {{- /* Output imageVectorOverwrite with pipe style (convert dict to string if needed) */ -}}
-{{- if $imageVectorOverwrite }}
+{{- if $imageVectorOverwrite -}}
+{{- $hasContent := false -}}
+{{- if kindIs "string" $imageVectorOverwrite -}}
+  {{- if ne ($imageVectorOverwrite | trim) "" -}}
+    {{- $hasContent = true -}}
+  {{- end -}}
+{{- else if kindIs "map" $imageVectorOverwrite -}}
+  {{- if $imageVectorOverwrite -}}
+    {{- $hasContent = true -}}
+  {{- end -}}
+{{- end -}}
+{{- if $hasContent }}
 imageVectorOverwrite: |
 {{- if kindIs "string" $imageVectorOverwrite -}}
 {{ $imageVectorOverwrite | trim | nindent 2 -}}
@@ -223,10 +244,15 @@ imageVectorOverwrite: |
 {{- end -}}
 {{- end -}}
 {{- end -}}
+{{- else -}}
+{{- /* Output all fields including imageVectorOverwrite as regular YAML */ -}}
+{{ toYaml $result -}}
+{{- end -}}
+{{- end -}}
 {{- end -}}
 
 {{/*
-Render OCI repository with smart fallback logic for tag.
+Render OCI repository reference for helm charts with smart fallback logic for tag.
 
 Usage:
   {{ include "cc-gardener.extension.ociRepository" (dict "ociRepository" .helm.ociRepository "fallbackTag" .version) | indent 10 }}
@@ -236,34 +262,41 @@ Parameters:
   - fallbackTag: The tag to use if not specified (typically .version)
 
 Priority for references:
-  1. ref (complete reference including tag)
-  2. digest (SHA256 digest)
-  3. repository + tag (or fallbackTag if tag not specified)
+  1. ref (complete OCI reference including tag) - if defined, output ONLY this field
+  2. digest (SHA256 digest) - output with repository if both are present
+  3. repository + tag - output as separate fields (tag uses fallbackTag if not specified)
+
+Explicitly unsets conflicting fields to prevent Helm merge conflicts during upgrades:
+- When using ref: unsets repository and tag
+- When using repository/tag: unsets ref
 */}}
 {{- define "cc-gardener.extension.ociRepository" -}}
 {{- $ociRepo := .ociRepository | default dict -}}
 {{- $fallbackTag := .fallbackTag | default "" -}}
-{{- /* Priority 1: Complete ref */ -}}
+{{- /* Priority 1: ref for helm chart OCI repositories */ -}}
 {{- if hasKey $ociRepo "ref" -}}
 ref: {{ $ociRepo.ref }}
+repository: null
+tag: null
 {{- else -}}
-{{- /* Priority 2: Digest */ -}}
+{{- /* Priority 2: repository/tag - unset ref */ -}}
+ref: null
+{{- /* Digest (can coexist with repository) */ -}}
 {{- if hasKey $ociRepo "digest" -}}
 digest: {{ $ociRepo.digest }}
 {{- end -}}
-{{- /* Repository */ -}}
-{{- if hasKey $ociRepo "repository" -}}
+{{- /* Repository and Tag as separate fields */ -}}
+{{- if hasKey $ociRepo "repository" }}
 repository: {{ $ociRepo.repository }}
-{{ end -}}
-{{- /* Tag with fallback */ -}}
-{{- if hasKey $ociRepo "tag" -}}
+{{- end -}}
+{{- if hasKey $ociRepo "tag" }}
 tag: {{ $ociRepo.tag }}
-{{- else if $fallbackTag -}}
+{{- else if $fallbackTag }}
 tag: {{ $fallbackTag }}
 {{- end -}}
 {{- end -}}
 {{- /* pullSecretRef if present */ -}}
-{{- if hasKey $ociRepo "pullSecretRef" -}}
+{{- if hasKey $ociRepo "pullSecretRef" }}
 pullSecretRef:
 {{ toYaml $ociRepo.pullSecretRef | nindent 2 }}
 {{- end -}}

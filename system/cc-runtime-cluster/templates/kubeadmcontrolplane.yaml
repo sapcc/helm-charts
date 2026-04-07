@@ -26,6 +26,10 @@ spec:
         # https://github.com/kubernetes-sigs/cluster-api/pull/5608
         nodeDeletionTimeoutSeconds: 0
         nodeDrainTimeoutSeconds: 0
+  remediation:
+    maxRetry: {{ .Values.controlplane.remediationStrategy.maxRetry }}
+    retryPeriodSeconds: {{ .Values.controlplane.remediationStrategy.retryPeriodSeconds }}
+    minHealthyPeriodSeconds: {{ .Values.controlplane.remediationStrategy.minHealthyPeriodSeconds }}
   kubeadmConfigSpec:
     initConfiguration:
       timeouts:
@@ -67,8 +71,6 @@ spec:
     clusterConfiguration:
       apiServer:
         extraArgs:
-          - name: cloud-provider
-            value: external
           - name: secure-port
             value: {{ .Values.controlplane.port | quote }}
           - name: authentication-config
@@ -77,6 +79,16 @@ spec:
           - name: encryption-provider-config
             value: "/etc/kubernetes/enc/enc.yaml"
           {{- end }}
+          - name: audit-log-path
+            value: "/var/log/kubernetes/audit/audit.log"
+          - name: audit-policy-file
+            value: "/etc/kubernetes/audit-policy.yaml"
+          - name: audit-log-maxage
+            value: "30"
+          - name: audit-log-maxbackup
+            value: "10"
+          - name: audit-log-maxsize
+            value: "100"
         extraVolumes:
           - name: "authentication-config"
             hostPath: "/etc/kubernetes/authentication.yaml"
@@ -90,6 +102,16 @@ spec:
             readOnly: true
             pathType: File
         {{- end }}
+          - name: audit-logs
+            hostPath: "/var/log/kubernetes/audit"
+            mountPath: "/var/log/kubernetes/audit"
+            readOnly: false
+            pathType: DirectoryOrCreate
+          - name: audit-policy
+            hostPath: "/etc/kubernetes/audit-policy.yaml"
+            mountPath: "/etc/kubernetes/audit-policy.yaml"
+            readOnly: true
+            pathType: FileOrCreate
       controllerManager:
         extraArgs:
           - name: cloud-provider
@@ -258,6 +280,34 @@ spec:
     - content: 127.0.0.1 localhost kubernetes
       owner: root:root
       path: /etc/kube-vip.hosts
+      permissions: "0644"
+
+    - content: |
+        apiVersion: audit.k8s.io/v1
+        kind: Policy
+        omitStages:
+          - "RequestReceived"
+        rules:
+          - level: None
+            nonResourceURLs:
+              - "/healthz*"
+              - "/livez*"
+              - "/readyz*"
+              - "/version"
+              - "/metrics"
+          - level: None
+            resources:
+              - group: "coordination.k8s.io"
+                resources: ["leases"]
+          - level: None
+            users: ["system:kube-proxy", "system:apiserver"]
+            verbs: ["watch", "get", "list"]
+          - level: None
+            users: ["system:serviceaccount:kube-system:horizontal-pod-autoscaler"]
+            verbs: ["get", "list", "watch"]
+          - level: Metadata
+      owner: root:root
+      path: /etc/kubernetes/audit-policy.yaml
       permissions: "0644"
 
     format: ignition

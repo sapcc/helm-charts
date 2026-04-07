@@ -92,7 +92,7 @@ groups:
       context: api
       dashboard: keppel-overview
       service: keppel
-      severity: info
+      severity: warning
       support_group: containers
       tier: os
       meta: 'Blob replication is taking a long time'
@@ -103,7 +103,10 @@ groups:
         than 15 minutes. This could indicate that the region interconnect is slow.
         Check the "pending_blobs" DB table to see which blobs are affected.
         Entries older than a few hours can usually be deleted safely in order
-        to allow another replication to take place.
+        to allow another replication attempt to take place.
+
+        This is a warning alert because stuck blob replications may block other
+        background tasks like vulnerability status checks.
 
   - alert: OpenstackKeppelDBConnectionPoolNearlyFull
     expr: max by (pod) (avg_over_time(go_sql_stats_connections_in_use{db_name="keppel"}[1h]) > 12)

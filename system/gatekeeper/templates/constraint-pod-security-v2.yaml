@@ -18,7 +18,7 @@ metadata:
   labels:
     severity: 'debug'
 spec:
-  enforcementAction: {{ if eq .Values.global.region "eu-de-3" }}deny{{ else }}dryrun{{ end }}
+  enforcementAction: {{ if eq .Values.cluster_layer "prod" }}deny{{ else }}dryrun{{ end }}
   match: {{ include "match_pods_and_pod_owners" . | indent 4 }}
   parameters:
     allowlist:
@@ -52,7 +52,7 @@ spec:
       # Global rules
 
       - matchNamespace: '*'
-        matchRepository: ccloud/servicemesh/proxy-init
+        matchRepository: ccloud/servicemesh/proxy
         justification: |
           Linkerd adds a sidecar container to each relevant pod in order to connect the pod network to the service mesh.
           CAP_NET_ADMIN is needed to modify network interfaces, routing tables, and packet filter rules.
@@ -61,6 +61,17 @@ spec:
         mayUsePrivilegeEscalation: true
         mayUseCapabilities: [ NET_ADMIN, NET_RAW ]
 
+      # TODO: remove section when linkerd rollout to version edge-26.1.1 is completed
+      - matchNamespace: '*'
+        matchRepository: ccloud/servicemesh/proxy-init
+        justification: |
+          Linkerd adds a sidecar container to each relevant pod in order to connect the pod network to the service mesh.
+          CAP_NET_ADMIN is needed to modify network interfaces, routing tables, and packet filter rules.
+          CAP_NET_RAW is used to create raw network sockets.
+        mayBePrivileged: true
+        mayUsePrivilegeEscalation: true
+        mayUseCapabilities: [ NET_ADMIN, NET_RAW ]
+  
       ##########################################################################
       # Rules for ci-tooling
 
@@ -632,6 +643,16 @@ spec:
         mayWriteHostPathVolumes: [ /var/lib/rancher/k3s/server/db/ ]
 
       ##########################################################################
+      # Rules for linkerd
+
+      - matchNamespace: linkerd
+        matchRepository: ccloud/shared-app-images/alpine-busybox
+        mayBePrivileged: true
+        mayUseHostPID: true
+        mayUseHostNetwork: true
+        justification: Node system config is moved out of proxy-init to sysctl daemonset
+
+      ##########################################################################
       # Rules for observability
 
       - matchNamespace: audit-logs
@@ -697,7 +718,7 @@ spec:
         mayBePrivileged: true
       {{- end }}
 
-      {{- if eq .Values.cluster_type "scaleout" }}
+      {{- if or (eq .Values.cluster_type "scaleout") (eq .Values.cluster_name "eu-de-3") }}
       - matchNamespace: opensearch-logs
         matchRepository: ccloud-dockerhub-mirror/library/busybox
         justification: |
@@ -779,7 +800,7 @@ spec:
         justification: |
           TODO
         mayUseHostPID: true
-      
+
       - matchNamespace: monsoon3
         matchRepository: ccloud/loci-neutron
         justification: |
@@ -816,8 +837,10 @@ spec:
         - NET_BIND_SERVICE
         - NET_RAW
         - SYS_ADMIN
+      {{- end }}
 
-      - matchNamespace: kube-system # for ldap-named-user daemonset (running in kube-system in a-eu-de-3 for some reason)
+      {{- if eq .Values.cluster_type "admin" "baremetal" }}
+      - matchNamespace: kube-system # for ldap-named-user daemonset (running in kube-system in a-eu-de-3 and legacy baremetal clusters for some reason)
         matchRepository: ccloud-dockerhub-mirror/library/alpine
         justification: |
           TODO
@@ -825,7 +848,7 @@ spec:
         mayUseHostPID: true
         mayWriteHostPathVolumes: [ / ]
 
-      - matchNamespace: kube-system # for ldap-named-user daemonset (running in kube-system in a-eu-de-3 for some reason)
+      - matchNamespace: kube-system # for ldap-named-user daemonset (running in kube-system in a-eu-de-3 and legacy baremetal clusters for some reason)
         matchRepository: ccloud-dockerhub-mirror/sapcc/pause-amd64
         justification: |
           TODO
@@ -930,6 +953,31 @@ spec:
         - /dev
         - /run/udev
         - /var/lib/rook
+      {{- end }}
+
+      {{- if eq .Values.cluster_type "baremetal" }}
+      - matchNamespace: trident
+        matchRepository: ccloud-dockerhub-mirror/netapp/trident
+        justification: |
+          Trident provisions persistent volumes for Kubernetes and requires
+          direct node access to mount filesystems for the kubelet.
+        mayUsePrivilegeEscalation: true
+        mayBePrivileged: true
+        mayUseHostNetwork: true
+        mayUseHostPID: true
+        mayUseCapabilities: [ SYS_ADMIN ]
+        mayReadHostPathVolumes: [ / ]
+        mayWriteHostPathVolumes: [ / ]
+
+      - matchNamespace: trident
+        matchRepository: ccloud-registry-k8s-io-mirror/sig-storage/csi-node-driver-registrar
+        justification: |
+          Trident provisions persistent volumes for Kubernetes and requires
+          direct node access to mount filesystems for the kubelet.
+        mayUseHostNetwork: true
+        mayUseHostPID: true
+        mayReadHostPathVolumes: [ / ]
+        mayWriteHostPathVolumes: [ /var/lib/kubelet/ ]
       {{- end }}
 
       ##########################################################################

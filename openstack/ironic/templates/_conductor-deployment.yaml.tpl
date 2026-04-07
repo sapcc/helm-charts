@@ -169,9 +169,9 @@ spec:
             protocol: TCP
             containerPort: 443
         volumeMounts:
-          - mountPath: /etc/nginx/http.d/nginx-ironic-console.conf
+          - mountPath: /etc/nginx/conf.d/default.conf
             name: ironic-console-nginxconf
-            subPath: nginx-console.conf
+            subPath: default.conf
           - mountPath: /etc/nginx/conf.d/dhparam.pem
             name: ironic-console-dhparam
             subPath: dhparam.pem
@@ -242,8 +242,8 @@ spec:
         secret:
           secretName: ironic-console-secret
           items:
-          - key: nginx-console.conf
-            path: nginx-console.conf
+          - key: default.conf
+            path: default.conf
       - name: ironic-console-dhparam
         secret:
           secretName: {{ .Release.Name }}-secrets

@@ -58,7 +58,7 @@ echo ""
 # Test 5: Verify image fallback logic
 echo "Test 5: Verify image fallback to root version"
 TAG=$(echo "$OUTPUT1" | yq '.spec.deployment.extension.helm.ociRepository.tag')
-if [ "$TAG" = "v0.2.0" ]; then
+if [ "$TAG" = "v0.3.0" ]; then
   echo "[PASS] Image tag falls back to root version"
 else
   echo "[FAIL] Image tag fallback not working (got: $TAG)"
