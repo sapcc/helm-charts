@@ -1,4 +1,5 @@
 {{- if .Values.tls.enabled }}
+{{- include "barbican.tls.validate" . }}
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -32,6 +33,8 @@ spec:
             - --issuer-group={{ .Values.tls.issuerGroup | default "certmanager.cloud.sap" }}
             - --common-name={{ include "barbican_api_endpoint_host_public" . }}
             - --san-dns={{ include "barbican_api_endpoint_host_public" . }}
-            - --envelope-encryption={{ .Values.tls.envelopeEncryption | default "none" }}
+            - --key-generation={{ required "tls.keyGeneration is required" .Values.tls.keyGeneration }}
+            - --key-wrapping={{ required "tls.keyWrapping is required" .Values.tls.keyWrapping }}
+            - --key-storage={{ required "tls.keyStorage is required" .Values.tls.keyStorage }}
   backoffLimit: 3
 {{- end }}
