@@ -95,18 +95,18 @@ All other values pass through unchanged.
   {{- else if kindIs "map" $values.image -}}
     {{- $imageDict := dict -}}
 
-    {{- /* Repository with cascading fallback */ -}}
-    {{- if and (hasKey $values.image "repository") $values.image.repository -}}
-      {{- $_ := set $imageDict "repository" $values.image.repository -}}
-    {{- else if $parentRepo -}}
+    {{- /* Repository with cascading fallback - prefer parent if available */ -}}
+    {{- if $parentRepo -}}
       {{- $_ := set $imageDict "repository" $parentRepo -}}
+    {{- else if and (hasKey $values.image "repository") $values.image.repository -}}
+      {{- $_ := set $imageDict "repository" $values.image.repository -}}
     {{- end -}}
 
-    {{- /* Tag with cascading fallback */ -}}
-    {{- if and (hasKey $values.image "tag") $values.image.tag -}}
-      {{- $_ := set $imageDict "tag" $values.image.tag -}}
-    {{- else if $parentTag -}}
+    {{- /* Tag with cascading fallback - prefer parent if available */ -}}
+    {{- if $parentTag -}}
       {{- $_ := set $imageDict "tag" $parentTag -}}
+    {{- else if and (hasKey $values.image "tag") $values.image.tag -}}
+      {{- $_ := set $imageDict "tag" $values.image.tag -}}
     {{- else if $fallbackTag -}}
       {{- $_ := set $imageDict "tag" $fallbackTag -}}
     {{- end -}}
