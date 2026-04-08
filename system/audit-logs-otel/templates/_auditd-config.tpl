@@ -14,17 +14,17 @@
       chroot /host systemctl status auditd
       echo "done"
   volumeMounts:
-    - name: host
-      mountPath: "/host"
+  - name: host
+    mountPath: /host
   env:
     - name: NODE
       valueFrom:
         fieldRef:
           fieldPath: spec.nodeName
   volumes:
-    - name: host
-      hostPath:
-        path: "/"
+  - name: host
+    hostPath:
+      path: "/"
 {{ end }}
 
 {{- define "auditd.receiver" }}
