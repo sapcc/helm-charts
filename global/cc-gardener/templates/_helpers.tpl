@@ -59,10 +59,10 @@ All other values pass through unchanged.
     {{- if kindIs "string" $parentValues.image -}}
       {{- $parentTag = $parentValues.image -}}
     {{- else if kindIs "map" $parentValues.image -}}
-      {{- if hasKey $parentValues.image "tag" -}}
+      {{- if and (hasKey $parentValues.image "tag") $parentValues.image.tag -}}
         {{- $parentTag = $parentValues.image.tag -}}
       {{- end -}}
-      {{- if hasKey $parentValues.image "repository" -}}
+      {{- if and (hasKey $parentValues.image "repository") $parentValues.image.repository -}}
         {{- $parentRepo = $parentValues.image.repository -}}
       {{- end -}}
     {{- end -}}
@@ -96,14 +96,14 @@ All other values pass through unchanged.
     {{- $imageDict := dict -}}
 
     {{- /* Repository with cascading fallback */ -}}
-    {{- if hasKey $values.image "repository" -}}
+    {{- if and (hasKey $values.image "repository") $values.image.repository -}}
       {{- $_ := set $imageDict "repository" $values.image.repository -}}
     {{- else if $parentRepo -}}
       {{- $_ := set $imageDict "repository" $parentRepo -}}
     {{- end -}}
 
     {{- /* Tag with cascading fallback */ -}}
-    {{- if hasKey $values.image "tag" -}}
+    {{- if and (hasKey $values.image "tag") $values.image.tag -}}
       {{- $_ := set $imageDict "tag" $values.image.tag -}}
     {{- else if $parentTag -}}
       {{- $_ := set $imageDict "tag" $parentTag -}}

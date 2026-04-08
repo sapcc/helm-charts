@@ -1,13 +1,19 @@
 #!/bin/bash
 set -e
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+CHART_DIR="$(dirname "$SCRIPT_DIR")"
+
+# Get auditing version from values.testvalues to avoid hardcoding
+AUDITING_VERSION=$(yq '.extensions.auditing.version' "$CHART_DIR/values.yaml")
+
 echo "Testing OCI Repository Helper"
 echo "=============================="
 echo ""
 
 # Test 1: ref is set (with conflicting repository/tag)
 echo "Test 1: ref is set (repository and tag should be null)"
-OUTPUT=$(helm template test . -f values.yaml -f ci/test-values.yaml -f ci/test-ocirepository-ref.yaml --show-only templates/extension-auditing.yaml 2>&1)
+OUTPUT=$(helm template test "$CHART_DIR" -f "$CHART_DIR/values.yaml" -f "$CHART_DIR/ci/test-values.yaml" -f "$CHART_DIR/ci/test-ocirepository-ref.testvalues" --show-only templates/extension-auditing.yaml 2>&1)
 
 # Check ref is rendered
 if echo "$OUTPUT" | yq '.spec.deployment.extension.helm.ociRepository.ref' | grep -q "keppel.example.com/auditing:v1.0.0-custom"; then
@@ -37,7 +43,7 @@ echo ""
 
 # Test 2: only repository is set (tag comes from version fallback)
 echo "Test 2: repository is set (tag should come from version, ref should be null)"
-OUTPUT=$(helm template test . -f values.yaml -f ci/test-values.yaml -f ci/test-ocirepository-repository.yaml --show-only templates/extension-auditing.yaml 2>&1)
+OUTPUT=$(helm template test "$CHART_DIR" -f "$CHART_DIR/values.yaml" -f "$CHART_DIR/ci/test-values.yaml" -f "$CHART_DIR/ci/test-ocirepository-repository.testvalues" --show-only templates/extension-auditing.yaml 2>&1)
 
 # Check ref is null
 if echo "$OUTPUT" | yq '.spec.deployment.extension.helm.ociRepository.ref' | grep -q "null"; then
@@ -56,10 +62,11 @@ else
 fi
 
 # Check tag comes from version fallback
-if echo "$OUTPUT" | yq '.spec.deployment.extension.helm.ociRepository.tag' | grep -q "v0.3.0"; then
-    echo "[PASS] tag comes from version fallback (v0.3.0)"
+if echo "$OUTPUT" | yq '.spec.deployment.extension.helm.ociRepository.tag' | grep -q "$AUDITING_VERSION"; then
+    echo "[PASS] tag comes from version fallback ($AUDITING_VERSION)"
 else
-    echo "[FAIL] tag does not come from version fallback"
+    ACTUAL_TAG=$(echo "$OUTPUT" | yq '.spec.deployment.extension.helm.ociRepository.tag')
+    echo "[FAIL] tag does not come from version fallback (expected: $AUDITING_VERSION, got: $ACTUAL_TAG)"
     exit 1
 fi
 
