@@ -24,7 +24,7 @@
   volumes:
   - name: host
     hostPath:
-      path: "/"
+      path: /
 {{- end }}
 {{ define "auditd.receiver" }}
 auditd/audit_logs:
