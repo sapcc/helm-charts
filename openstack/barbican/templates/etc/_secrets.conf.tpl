@@ -34,7 +34,7 @@ aes_gcm_generate_iv = {{ .Values.lunaclient.conn.aes_gcm_generate_iv }}
 {{- end }}
 
 {{- if .Values.hsm.utimaco_hsm.enabled }}
-[hsm_partition_crypto_plugin:utimaco_hsm]
+[utimaco_hsm_crypto]
 library_path = {{ .Values.utimaco_hsm.library_path | include "resolve_secret" }}
 login = {{ .Values.utimaco_hsm.login | include "resolve_secret" }}
 mkek_label = {{ .Values.utimaco_hsm.mkek_label | include "resolve_secret" }}
