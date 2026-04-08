@@ -21,12 +21,10 @@
       valueFrom:
         fieldRef:
           fieldPath: spec.nodeName
-{{ end }}
-
-{{- define "auditd.initContainerVolumes" }}
-- name: host
-  hostPath:
-    path: "/"
+  volumes:
+    - name: host
+      hostPath:
+      path: "/"
 {{ end }}
 
 {{- define "auditd.receiver" }}
