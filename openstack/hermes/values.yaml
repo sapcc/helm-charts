@@ -163,3 +163,58 @@ elasticsearch_hermes_kibana:
 
 opensearch_hermes:
   enabled: false
+
+logRouter:
+  enabled: false
+  image_tag: DEFINED_BY_PIPELINE
+  replicas: 2
+
+  debug: "false"
+  flush_interval: "30s"
+  shutdown_timeout: "30s"
+  ingest_channel_capacity: "10000"
+  max_concurrent_flushes: "100"
+
+  rabbitmq:
+    port: 5672
+    queue: "dataplane.audit"
+    exchange: ""
+    routing_key: "#"
+    prefetch: "10"
+    # user/password injected by deployment pipeline
+    # user:
+    # password:
+
+  s3:
+    endpoint: ""
+    region: ""
+    bucket: ""
+    prefix: ""
+    # access_key/secret_key injected by deployment pipeline
+    # access_key:
+    # secret_key:
+
+  wal:
+    storage: 10Gi
+
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "100m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
+
+log-router-postgresql:
+  postgresVersion: 18
+  databases:
+    log_router: {}
+  users:
+    log_router: {}
+  config:
+    max_connections: 64
+  persistence:
+    enabled: true
+    size: 10Gi
+  alerts:
+    support_group: observability

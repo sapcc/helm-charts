@@ -1,0 +1,40 @@
+{{- if .Values.logRouter.enabled }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: log-router-etc
+  namespace: hermes
+  labels:
+    system: openstack
+    service: audit
+    component: log-router
+data:
+  LOG_ROUTER_LISTEN_ADDRESS: ":8080"
+  LOG_ROUTER_WAL_DIR: "/data/wal"
+  LOG_ROUTER_DEBUG: {{ .Values.logRouter.debug | quote }}
+  LOG_ROUTER_FLUSH_INTERVAL: {{ .Values.logRouter.flush_interval | quote }}
+  LOG_ROUTER_SHUTDOWN_TIMEOUT: {{ .Values.logRouter.shutdown_timeout | quote }}
+  LOG_ROUTER_INGEST_CHANNEL_CAPACITY: {{ .Values.logRouter.ingest_channel_capacity | quote }}
+  LOG_ROUTER_MAX_CONCURRENT_FLUSHES: {{ .Values.logRouter.max_concurrent_flushes | quote }}
+  LOG_ROUTER_RABBITMQ_QUEUE: {{ .Values.logRouter.rabbitmq.queue | quote }}
+  LOG_ROUTER_RABBITMQ_EXCHANGE: {{ .Values.logRouter.rabbitmq.exchange | quote }}
+  LOG_ROUTER_RABBITMQ_ROUTING_KEY: {{ .Values.logRouter.rabbitmq.routing_key | quote }}
+  LOG_ROUTER_RABBITMQ_PREFETCH: {{ .Values.logRouter.rabbitmq.prefetch | quote }}
+  LOG_ROUTER_S3_ENDPOINT: {{ required ".Values.logRouter.s3.endpoint must be set" .Values.logRouter.s3.endpoint | quote }}
+  LOG_ROUTER_S3_REGION: {{ .Values.logRouter.s3.region | quote }}
+  LOG_ROUTER_S3_BUCKET: {{ required ".Values.logRouter.s3.bucket must be set" .Values.logRouter.s3.bucket | quote }}
+  LOG_ROUTER_S3_PREFIX: {{ .Values.logRouter.s3.prefix | quote }}
+  policy.json: |
+    {
+      "cluster_viewer": "project_domain_name:ccadmin and project_name:cloud_admin",
+      "cluster_admin": "project_domain_name:ccadmin and project_name:cloud_admin and (role:admin or role:audit_admin)",
+      "config:list": "rule:cluster_viewer",
+      "config:show": "rule:cluster_viewer",
+      "config:create": "rule:cluster_admin",
+      "config:update": "rule:cluster_admin",
+      "config:enable": "rule:cluster_admin",
+      "config:disable": "rule:cluster_admin",
+      "config:provision": "rule:cluster_admin"
+    }
+{{- end }}

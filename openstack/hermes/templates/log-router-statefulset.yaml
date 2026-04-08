@@ -1,0 +1,98 @@
+{{- if .Values.logRouter.enabled }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: log-router
+  namespace: hermes
+  labels:
+    system: openstack
+    service: audit
+    component: log-router
+spec:
+  replicas: {{ .Values.logRouter.replicas }}
+  serviceName: log-router-headless
+  podManagementPolicy: OrderedReady
+  selector:
+    matchLabels:
+      component: log-router
+  template:
+    metadata:
+      labels:
+        component: log-router
+      annotations:
+        {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+        linkerd.io/inject: enabled
+        {{- end }}
+        kubectl.kubernetes.io/default-container: "log-router"
+        configmap.reloader.stakater.com/reload: "log-router-etc"
+        secret.reloader.stakater.com/reload: "log-router-secret"
+        deployment.reloader.stakater.com/pause-period: "60s"
+    spec:
+      nodeSelector:
+        zone: farm
+      securityContext:
+        runAsUser: 4200
+        runAsGroup: 4200
+        fsGroup: 4200
+      volumes:
+        - name: log-router-etc
+          configMap:
+            name: log-router-etc
+            items:
+              - key: policy.json
+                path: policy.json
+      containers:
+        - name: log-router
+          image: {{ include "log_router_image" . }}
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          env:
+{{ include "log_router_common_envvars" . | indent 12 }}
+          volumeMounts:
+            - name: log-router-wal
+              mountPath: /data/wal
+            - name: log-router-etc
+              mountPath: /etc/log-router
+          livenessProbe:
+            httpGet:
+              path: /healthcheck
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+            successThreshold: 1
+          readinessProbe:
+            httpGet:
+              path: /healthcheck
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+            successThreshold: 1
+          resources:
+            requests:
+              memory: {{ required ".Values.logRouter.resources.requests.memory is missing" .Values.logRouter.resources.requests.memory }}
+              cpu: {{ required ".Values.logRouter.resources.requests.cpu is missing" .Values.logRouter.resources.requests.cpu }}
+            limits:
+              memory: {{ required ".Values.logRouter.resources.limits.memory is missing" .Values.logRouter.resources.limits.memory }}
+              cpu: {{ required ".Values.logRouter.resources.limits.cpu is missing" .Values.logRouter.resources.limits.cpu }}
+  volumeClaimTemplates:
+    - metadata:
+        name: log-router-wal
+        labels:
+          system: openstack
+          service: audit
+          component: log-router
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            # WARNING: Cannot be changed after initial deploy (StatefulSet volumeClaimTemplates are immutable).
+            storage: {{ required ".Values.logRouter.wal.storage is missing" .Values.logRouter.wal.storage }}
+{{- end }}

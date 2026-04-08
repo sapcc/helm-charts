@@ -20,6 +20,7 @@ spec:
 
   roles:
     - name: audit_viewer
+    - name: audit_admin
 
   services:
     - name:        hermes
@@ -79,6 +80,14 @@ spec:
           role: audit_viewer
         - group: CCADMIN_MONITORING_USERS
           role: audit_viewer
+      {{- if $.Values.logRouter.enabled }}
+      - name: cloud_admin
+        role_assignments:
+        - user: hermes@Default
+          role: audit_admin
+        - group: CCADMIN_CLOUD_ADMINS
+          role: audit_admin
+      {{- end }}
       {{- end }}
       groups:
       - name: {{ hasPrefix "iaas-" . | ternary . ( upper . ) }}_API_SUPPORT
