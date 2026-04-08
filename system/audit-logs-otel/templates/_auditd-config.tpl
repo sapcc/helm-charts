@@ -1,4 +1,4 @@
-{{- define "auditd.initContainer" }}
+{{- define "auditd.initContainer" -}}
 - name: init
   image: keppel.global.cloud.sap/ccloud-dockerhub-mirror/library/alpine:latest
   securityContext:
@@ -25,9 +25,8 @@
   - name: host
     hostPath:
       path: "/"
-{{ end }}
-
-{{- define "auditd.receiver" }}
+{{- end }}
+{{ define "auditd.receiver" }}
 auditd/audit_logs:
   rules:
     ## First rule - delete all
