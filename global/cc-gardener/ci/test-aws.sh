@@ -1,13 +1,16 @@
 #!/bin/bash
 set -e
 
-# Test script for extension-aws.yaml template
+# Test script for extension-aws.testvalues template
 # Usage: ./ci/test-aws.sh
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CHART_DIR="$(dirname "$SCRIPT_DIR")"
 
-echo "Testing extension-aws.yaml template..."
+# Get AWS version from values.testvalues to avoid hardcoding
+AWS_VERSION=$(yq '.extensions.aws.version' "$CHART_DIR/values.yaml")
+
+echo "Testing extension-aws.testvalues template..."
 echo "==========================================="
 echo ""
 
@@ -25,7 +28,7 @@ echo "Test 2: Full configuration with all features"
 OUTPUT2=$(helm template test "$CHART_DIR" \
   -f "$CHART_DIR/values.yaml" \
   -f "$CHART_DIR/ci/test-values.yaml" \
-  -f "$CHART_DIR/ci/test-aws-values.yaml" \
+  -f "$CHART_DIR/ci/test-aws-values.testvalues" \
   --show-only templates/extension-aws.yaml)
 echo "[PASS] Renders with full configuration"
 echo ""
@@ -35,7 +38,7 @@ echo "Test 2b: Configuration with admission"
 OUTPUT2B=$(helm template test "$CHART_DIR" \
   -f "$CHART_DIR/values.yaml" \
   -f "$CHART_DIR/ci/test-values.yaml" \
-  -f "$CHART_DIR/ci/test-aws-admission-values.yaml" \
+  -f "$CHART_DIR/ci/test-aws-admission-values.testvalues" \
   --show-only templates/extension-aws.yaml)
 echo "[PASS] Renders with admission configuration"
 echo ""
@@ -45,7 +48,7 @@ echo "Test 2c: Configuration without runtimeClusterValues"
 OUTPUT2C=$(helm template test "$CHART_DIR" \
   -f "$CHART_DIR/values.yaml" \
   -f "$CHART_DIR/ci/test-values.yaml" \
-  -f "$CHART_DIR/ci/test-aws-no-runtimeclustervalues.yaml" \
+  -f "$CHART_DIR/ci/test-aws-no-runtimeclustervalues.testvalues" \
   --show-only templates/extension-aws.yaml)
 echo "[PASS] Renders without runtimeClusterValues"
 echo ""
@@ -90,10 +93,10 @@ echo ""
 # Test 6: Verify image fallback to root version
 echo "Test 6: Verify image fallback to root version"
 TAG=$(echo "$OUTPUT1" | yq '.spec.deployment.extension.runtimeClusterValues.image.tag')
-if [ "$TAG" = "v1.67.4" ]; then
-  echo "[PASS] Image tag falls back to root version"
+if [ "$TAG" = "$AWS_VERSION" ]; then
+  echo "[PASS] Image tag falls back to root version ($AWS_VERSION)"
 else
-  echo "[FAIL] Image tag fallback not working (got: $TAG)"
+  echo "[FAIL] Image tag fallback not working (expected: $AWS_VERSION, got: $TAG)"
   exit 1
 fi
 echo ""
