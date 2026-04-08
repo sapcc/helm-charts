@@ -2,7 +2,7 @@
 webhookevent/external-alerts:
   endpoint: "0.0.0.0:{{.Values.openTelemetryPlugin.openTelemetry.logsCollector.externalConfig.alertmanager_port}}"
 
-tcplog/external-deployments:
+tcp_log/external-deployments:
   listen_address: "0.0.0.0:{{.Values.openTelemetryPlugin.openTelemetry.logsCollector.externalConfig.deployments_port}}"
   operators:
 #  - id: type
@@ -86,7 +86,7 @@ logs/external-alerts:
   exporters: [failover/opensearch_external_alerts]
 
 logs/external-deployments:
-  receivers: [tcplog/external-deployments]
+  receivers: [tcp_log/external-deployments]
   processors: [transform/external-deployments,batch]
   exporters: [failover/opensearch_external_deployments]
 {{- end }}
