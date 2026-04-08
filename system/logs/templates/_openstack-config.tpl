@@ -216,7 +216,7 @@ opensearch/swift_failover_b:
 {{- define "openstack.pipeline" }}
 logs/containerd:
   receivers: [filelog/containerd]
-  processors: [k8sattributes,attributes/cluster,transform/ingress,transform/neutron_agent,transform/neutron_errors,transform/openstack_api,transform/non_openstack,transform/network_generic_ssh_exporter,transform/snmp_exporter,transform/elektra,transform/keystone_api,transform/kvm-ha-service,transform/coredns_api,transform/perses,filter/hermes_logstash,transform/swift_proxy,attributes/swift_proxy]
+  processors: [k8s_ttributes,attributes/cluster,transform/ingress,transform/neutron_agent,transform/neutron_errors,transform/openstack_api,transform/non_openstack,transform/network_generic_ssh_exporter,transform/snmp_exporter,transform/elektra,transform/keystone_api,transform/kvm-ha-service,transform/coredns_api,transform/perses,filter/hermes_logstash,transform/swift_proxy,attributes/swift_proxy]
   exporters: [routing]
 
 logs/route_swift:
