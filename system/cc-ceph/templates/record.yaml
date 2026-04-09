@@ -1,6 +1,17 @@
+---
+{{- $externalIP := "" }}                                                                                                                                                                                         
+{{- if .Values.objectstore.service.externalIP }}                                                                                                                                                                 
+  {{- $externalIP = .Values.objectstore.service.externalIP }}                                                                                                                                                    
+{{- else if .Values.objectstore.service.annotations }}                                                                                                                                                           
+  {{- $annotationVal := index .Values.objectstore.service.annotations "projectcalico.org/loadBalancerIPs" }}                                                                                                     
+  {{- if $annotationVal }}                                                                                                                                                                                       
+    {{- $externalIP = index (fromJsonArray $annotationVal) 0 }}                                                                                                                                                  
+  {{- end }}                                                                                                                                                                                                     
+{{- end }}
+
 {{- range $key, $record := .Values.objectstore.gateway.dnsNames }}
 {{- if or (not $.Values.dnsNamesSkipRecord) (not (has $record $.Values.dnsNamesSkipRecord)) }}
-{{- if $.Values.objectstore.service.externalIP }}
+{{- if $externalIP }}
 ---
 apiVersion: disco.stable.sap.cc/v1
 kind: Record
@@ -8,7 +19,7 @@ metadata:
   name: "{{ $record }}"
 spec:
   type: A
-  record: {{ $.Values.objectstore.service.externalIP }}
+  record: {{ $externalIP }}
   hosts:
     - "{{ $record }}."
 {{- if or (not $.Values.dnsNamesSkipRecordWildcard) (not (has $record $.Values.dnsNamesSkipRecordWildcard)) }}
