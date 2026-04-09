@@ -33,6 +33,10 @@
   valueFrom: { secretKeyRef:    { name: elektra-secrets, key: app_cred_secret, optional: true } }
 - name: MONSOON_OPENSTACK_AUTH_API_DOMAIN
   value: {{ .Values.monsoon_openstack_auth_api_domain | quote }}
+- name: MONSOON_OPENSTACK_SSO_STRICT_MODE
+  value: {{ .Values.monsoon_openstack_sso_strict_mode | quote }}
+- name: MONSOON_OPENSTACK_PASSWORD_SYNC_ONLY
+  value: {{ .Values.monsoon_openstack_password_sync_only | quote }}
 - name: TWO_FACTOR_AUTHENTICATION
   value: {{ .Values.two_factor_authentication | quote }}
 - name: TWO_FACTOR_RADIUS_SERVERS
