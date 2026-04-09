@@ -46,16 +46,37 @@ users:
   backup:
     name: backup
     password: null
+    replace_grants: true
     limits:
       max_user_connections: 4
     grants:
-      - ALL PRIVILEGES ON *.*
+      - ALTER ON *.*                    # restore
+      - BINLOG ADMIN ON *.*             # backup; PURGE BINARY LOGS
+      - BINLOG MONITOR ON *.*           # backup; --master-data=1 (SHOW MASTER STATUS)
+      - BINLOG REPLAY ON *.*            # restore; replaying binary logs
+      - CREATE ON *.*                   # restore
+      - CREATE VIEW ON *.*              # restore
+      - DROP ON *.*                     # restore
+      - INDEX ON *.*                    # restore
+      - INSERT ON *.*                   # restore
+      - LOCK TABLES ON *.*              # backup & restore
+      - PROCESS ON *.*                  # backup
+      - REFERENCES ON *.*               # restore
+      - RELOAD ON *.*                   # backup
+      - REPLICATION SLAVE ADMIN ON *.*  # restore; CHANGE MASTER TO, RESET SLAVE
+      - REPLICATION SLAVE ON *.*        # backup; BinlogSyncer streams binlogs as a replica
+      - SELECT ON *.*                   # backup & restore
+      - SET USER ON *.*                 # restore; DEFINER= clauses (mysql.user view)
+      - SHOW VIEW ON *.*                # backup & restore
+      - SHUTDOWN ON *.*                 # restore
+      - TRIGGER ON *.*                  # backup & restore
 #  example:
 #    name: example1 # This looks repetitive, but the point is that they key is the name
 #                   # you refer to in your charts, while the field 'name' is the actual name
 #                   # used as credentials. It should be possible to change the latter,
 #                   # without having to change the first.
 #    password: null # Causes users not be be created, and even maybe to get locked
+#    replace_grants: false  # default; set to true to REVOKE ALL before re-granting
 #    grants:
 #    - ALL ON example.*
 
@@ -202,7 +223,7 @@ backup_v2:
   enabled: false
   backup_dir: "./backup"
   image: maria-back-me-up
-  image_version: "20260210150801"
+  image_version: "10.11-20260409091116"
   full_backup_cron_schedule: "0 0 * * *"
   incremental_backup_in_minutes: 5
   purge_binlog_after_minutes: 60
