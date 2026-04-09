@@ -47,7 +47,9 @@ curl -sL "https:/raw.githubusercontent.com/gardener/oidc-apps-controller/refs/ta
   yq -i '.extensions.oidcAppsController.imageVectorOverwrite = load("/dev/stdin")' "${VALUES_FILE}"
 
 # calico extension
-curl -sL "https:/raw.githubusercontent.com/gardener/gardener-extension-networking-calico/refs/tags/$(yq -r '.extensions.calico.version' "${VALUES_FILE}")/imagevector/images.yaml" | yq "${YQ_MAP_IMAGES}" |
+CALICO_VERSION="$(yq -r '.extensions.calico.version' "${VALUES_FILE}")"
+curl -sL "https:/raw.githubusercontent.com/gardener/gardener-extension-networking-calico/refs/tags/${CALICO_VERSION}/imagevector/images.yaml" | yq "${YQ_MAP_IMAGES}" |
+  yq ".images[] |= select(.name == \"cni-plugins\").tag = \"${CALICO_VERSION}\"" | # this is a workaround for https://github.com/gardener/gardener-extension-networking-calico/pull/778
   yq -i '.extensions.calico.imageVectorOverwrite = load("/dev/stdin")' "${VALUES_FILE}"
 
 # auditing extension
