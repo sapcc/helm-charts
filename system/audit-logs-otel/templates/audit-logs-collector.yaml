@@ -273,11 +273,11 @@ spec:
               - set(log.attributes["log.kind"], "cadf_action") where IsMatch(log.attributes["msg"], "^\\s*cadf action for '")
               - set(log.attributes["log.kind"], "target_type_uri") where IsMatch(log.attributes["msg"], "^\\s*target type URI of requests '")
               - set(log.attributes["log.kind"], "authentication") where IsMatch(log.attributes["msg"], "^\\s*Authenticating")
-              - set(log.attributes["log.kind"], "failed_authentication") where IsMatch(log.attributes["msg"], "^\\s*Authorization failed. The request you have made requires authentication. from %{NOTSPACE:ip}%{GREEDYDATA}")
+              - set(log.attributes["log.kind"], "failed_authentication") where IsMatch(log.attributes["msg"], "^\\s*Authorization failed. The request you have made requires authentication. from %{IP:ip}%{GREEDYDATA}")
               - merge_maps(log.attributes,ExtractGrokPatterns(log.attributes["msg"],"^\\s*cadf action for '%{NOTSPACE:request.method} %{URIPATH:uri}' is '%{NOTSPACE:action}' %{GREEDYDATA}",true),"upsert") where log.attributes["log.kind"] == "cadf_action"
               - merge_maps(log.attributes,ExtractGrokPatterns(log.attributes["msg"],"^\\s*target type URI of requests '%{NOTSPACE:request.method} %{URIPATH:uri}' is '%{NOTSPACE:target.type_uri}' %{GREEDYDATA}",true),"upsert") where log.attributes["log.kind"] == "target_type_uri"
               - merge_maps(log.attributes,ExtractGrokPatterns(log.attributes["msg"],"^\\s*Authenticating %{NOTSPACE:user.id}@%{NOTSPACE:project.domain.name}\\.\\.",true),"upsert") where log.attributes["log.kind"] == "authentication"
-              - merge_maps(log.attributes,ExtractGrokPatterns(log.attributes["msg"],"^\\s*Authorization failed. The request you have made requires authentication. from %{NOTSPACE:ip}%{GREEDYDATA}",true),"upsert") where log.attributes["log.kind"] == "failed_authentication"
+              - merge_maps(log.attributes,ExtractGrokPatterns(log.attributes["msg"],"^\\s*Authorization failed. The request you have made requires authentication. from %{IP:ip}%{GREEDYDATA}",true),"upsert") where log.attributes["log.kind"] == "failed_authentication"
               - delete_key(log.attributes, "timestamp_date")
               - delete_key(log.attributes, "timestamp_time")
 
