@@ -1,5 +1,12 @@
-{{- $region := .Values.global.region | required "missing value for .Values.global.region" -}}
-{{- if .Values.global.region | hasPrefix "qa" -}}
+{{- $region    := .Values.global.region    | required "missing value for .Values.global.region"    -}}
+{{- $db_region := .Values.global.db_region | required "missing value for .Values.global.db_region" -}}
+
+{{- if $db_region | hasPrefix "qa" -}}
+
+{{- $region_label := $region -}}
+{{- if and (eq $region "global") ($db_region | hasPrefix "qa") -}}
+  {{- $region_label = "global-qa" -}}
+{{- end -}}
 
 # The data-metrics-v2 pod does not have the normal Prometheus annotations,
 # because then the centrally-defined default monitors (PodMonitor pod-sd or ServiceMonitor endpoint-sd)
@@ -43,6 +50,6 @@ spec:
           regex: 'endpoint|instance|job'
         - action: replace
           targetLabel: region
-          replacement: {{ quote $region }}
+          replacement: {{ quote $region_label }}
 
 {{- end }}
