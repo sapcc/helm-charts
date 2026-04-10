@@ -279,18 +279,11 @@ spec:
               - merge_maps(log.attributes,ExtractGrokPatterns(log.attributes["msg"],"^\\s*target type URI of requests '%{NOTSPACE:request.method} %{URIPATH:uri}' is '%{NOTSPACE:target.type_uri}' %{GREEDYDATA}",true),"upsert") where log.attributes["log.kind"] == "target_type_uri"
               - merge_maps(log.attributes,ExtractGrokPatterns(log.attributes["msg"],"^\\s*Authenticating %{NOTSPACE:user.id}@%{NOTSPACE:project.domain.name}\\.\\.",true),"upsert") where log.attributes["log.kind"] == "authentication"
               - merge_maps(log.attributes,ExtractGrokPatterns(log.attributes["msg"],"^\\s*Authorization failed. The request you have made requires authentication. from %{IP:ip}%{GREEDYDATA}",true),"upsert") where log.attributes["log.kind"] == "failed_authentication"
+              - set(log.attributes["temp_msg"], log.attributes["msg"]) where log.attributes["log.kind"] == "keystone.exception.UserNotFound"
+              - set(log.attributes["user.id"], Substring(log.attributes["temp_msg"], 26, Len(log.attributes["temp_msg"]) - 27)) where log.attributes["log.kind"] == "keystone.exception.UserNotFound"
+              - delete_key(log.attributes, "temp_msg")
               - delete_key(log.attributes, "timestamp_date")
               - delete_key(log.attributes, "timestamp_time")
-
-      transform/keystone_user_not_found:
-        error_mode: ignore
-        log_statements:
-          - context: log
-            conditions:
-              - log.attributes["log.kind"] == "keystone.exception.UserNotFound"
-            statements:
-              - replace_pattern(log.attributes["msg"], "^.*Could not find user: ([^.]+)\\.", "$$1")
-              - set(log.attributes["user.id"], log.attributes["msg"])
 
       transform/vault:
         error_mode: propagate
@@ -555,7 +548,7 @@ spec:
       pipelines:
         logs/containerd:
           receivers: [filelog/containerd]
-          processors: [k8sattributes,attributes/cluster,transform/keystone_api,transform/keystone_user_not_found,transform/keystone_attributes,transform/keystone_global_attributes,transform/vault,transform/vault_attributes,transform/falco_attributes,batch]
+          processors: [k8sattributes,attributes/cluster,transform/keystone_api,transform/keystone_attributes,transform/keystone_global_attributes,transform/vault,transform/vault_attributes,transform/falco_attributes,batch]
           exporters: [failover]
         logs/failover_a:
           receivers: [failover]
