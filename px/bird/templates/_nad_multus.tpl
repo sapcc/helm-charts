@@ -1,5 +1,5 @@
 {{- define "nad_multus" -}}
-{{- $master := printf "vlan_%d" (required "multus_vlan is required for every domain" .domain_config.multus_vlan) }}
+{{- $master := printf "vlan_%v" (required "multus_vlan is required for every domain" .domain_config.multus_vlan) }}
 {{- if  .top.Values.hostNetworkDaemonSet.enabled }}
   {{- $master = printf "vlan%v" (required "multus_vlan is required for every domain" .domain_config.multus_vlan) }}
 {{- end }}
