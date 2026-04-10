@@ -3,9 +3,14 @@ kind: Service
 metadata:
   name: {{ .Values.objectstore.service.name }}
   namespace: {{ .Release.Namespace }}
-{{- if .Values.objectstore.service.annotations }}
+{{- if or .Values.objectstore.service.annotations .Values.objectstore.service.calicoExternalIP }}
   annotations:
+{{- if .Values.objectstore.service.calicoExternalIP }}
+    projectcalico.org/loadBalancerIPs: '["{{ .Values.objectstore.service.calicoExternalIP }}"]'
+{{- end }}
+{{- if .Values.objectstore.service.annotations }}
 {{ toYaml .Values.objectstore.service.annotations | indent 4 }}
+{{- end }}
 {{- end }}
 spec:
 {{- if .Values.objectstore.service.externalIP }}
