@@ -45,6 +45,7 @@
                         }
                     }
                 ],
+{{- if .Values.s3.enabled }}
                 "transitions": [
                     {
                         "state_name": "snapshot",
@@ -64,7 +65,7 @@
                             "delay": "1m"
                         },
                         "snapshot": {
-                            "repository": "{{ .Values.global.data_stream.audit.snapshot_repository }}",
+                            "repository": "{{ .Values.snapshots.audit.repository }}",
                             "snapshot": "{_SNAPSHOT_NAME_}"
                         }
                     } 
@@ -88,7 +89,7 @@
                           "delay": "1m"
                       },
                       "convert_index_to_remote": {
-                          "repository": "{{ .Values.global.data_stream.audit.snapshot_repository }}",
+                          "repository": "{{ .Values.snapshots.audit.repository }}",
                           "snapshot": "{_SNAPSHOT_NAME_}",
                           "rename_pattern": "remote_$1"
                       }
@@ -103,6 +104,17 @@
                     }
                 ]
             },
+{{- else }}
+                "transitions": [
+                    {
+                        "state_name": "delete",
+                        "conditions": {
+                            "min_index_age": "{{ .Values.retention.ds }}"
+                        }
+                    }
+                ]
+            },
+{{- end }}
             {
                 "name": "delete",
                 "actions": [

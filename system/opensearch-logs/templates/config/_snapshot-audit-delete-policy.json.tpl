@@ -14,10 +14,10 @@
                 "min_count": 1
             },
             "time_limit": "1h",
-            "snapshot_pattern": ".ds-audit-datastreamm*"
+            "snapshot_pattern": ".ds-audit-datastream*"
         },
         "snapshot_config": {
-            "repository": "{{ .Values.global.data_stream.audit.snapshot_repository }}"
+            "repository": "{{ .Values.snapshots.audit.repository }}"
         },
         "enabled": true
     }

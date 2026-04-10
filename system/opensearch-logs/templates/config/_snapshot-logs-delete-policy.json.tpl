@@ -1,7 +1,7 @@
 {
     "sm_policy": {
-        "name": "snapshot-cronus-delete-policy",
-        "description": "Snapshot policy to remove old cronus snapshots.",
+        "name": "snapshot-logs-delete-policy",
+        "description": "Snapshot policy to remove old logs snapshots.",
         "deletion": {
             "schedule": {
                 "cron": {
@@ -10,14 +10,14 @@
                 }
             },
             "condition": {
-                "max_age": "{{ .Values.snapshots.cronus.retention }}",
+                "max_age": "{{ .Values.snapshots.logs.retention }}",
                 "min_count": 1
             },
             "time_limit": "1h",
-            "snapshot_pattern": ".ds-cronus-datastream*"
+            "snapshot_pattern": ".ds-logs-datastream*"
         },
         "snapshot_config": {
-            "repository": "{{ .Values.snapshots.cronus.repository }}"
+            "repository": "{{ .Values.snapshots.logs.repository }}"
         },
         "enabled": true
     }
