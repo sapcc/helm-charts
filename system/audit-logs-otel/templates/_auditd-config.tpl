@@ -162,7 +162,7 @@ auditd/audit_logs:
 
     ## Make the configuration immutable - reboot is required to change audit rules
     #-e 2
-{{ end }}
+{{- end }}
 
 {{- define "auditd.processors" }}
 attributes/audit_logs:
@@ -170,7 +170,7 @@ attributes/audit_logs:
     - action: insert
       key: log.type
       value: "auditd"
-{{ end }}
+{{- end }}
 
 {{- define "auditd.pipelines" }}
 logs/auditd_logs:
