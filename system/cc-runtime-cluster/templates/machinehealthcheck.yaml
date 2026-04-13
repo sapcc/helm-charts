@@ -11,16 +11,6 @@ spec:
       kubernetes.metal.cloud.sap/role: server
   checks:
     nodeStartupTimeoutSeconds: {{ .Values.machineHealthCheck.nodeStartupTimeoutSeconds }}
-    unhealthyNodeConditions:
-      - type: Ready
-        status: Unknown
-        timeoutSeconds: {{ .Values.machineHealthCheck.worker.unhealthyNodeTimeoutSeconds }}
-      - type: Ready
-        status: "False"
-        timeoutSeconds: {{ .Values.machineHealthCheck.worker.unhealthyNodeTimeoutSeconds }}
-  remediation:
-    triggerIf:
-      unhealthyLessThanOrEqualTo: {{ .Values.machineHealthCheck.worker.maxUnhealthy }}
 
 ---
 apiVersion: cluster.x-k8s.io/v1beta2
@@ -34,14 +24,4 @@ spec:
       cluster.x-k8s.io/control-plane: ""
   checks:
     nodeStartupTimeoutSeconds: {{ .Values.machineHealthCheck.nodeStartupTimeoutSeconds }}
-    unhealthyNodeConditions:
-      - type: Ready
-        status: Unknown
-        timeoutSeconds: {{ .Values.machineHealthCheck.controlplane.unhealthyNodeTimeoutSeconds }}
-      - type: Ready
-        status: "False"
-        timeoutSeconds: {{ .Values.machineHealthCheck.controlplane.unhealthyNodeTimeoutSeconds }}
-  remediation:
-    triggerIf:
-      unhealthyLessThanOrEqualTo: {{ .Values.machineHealthCheck.controlplane.maxUnhealthy }}
 {{- end }}
