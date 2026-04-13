@@ -275,11 +275,11 @@ spec:
               - set(log.attributes["log.kind"], "cadf_action") where IsMatch(log.attributes["msg"], "^\\s*cadf action for '")
               - set(log.attributes["log.kind"], "target_type_uri") where IsMatch(log.attributes["msg"], "^\\s*target type URI of requests '")
               - set(log.attributes["log.kind"], "authentication") where IsMatch(log.attributes["msg"], "^\\s*Authenticating")
-              - set(log.attributes["log.kind"], "keystone.exception.UserNotFound") where IsMatch(log.attributes["msg"], "keystone\\.exception\\.UserNotFound")
+              - set(log.attributes["log.kind"], "keystone_exception_UserNotFound") where IsMatch(log.attributes["msg"], "keystone\\.exception\\.UserNotFound")
               - merge_maps(log.attributes,ExtractGrokPatterns(log.attributes["msg"],"^\\s*cadf action for '%{NOTSPACE:request.method} %{URIPATH:uri}' is '%{NOTSPACE:action}' %{GREEDYDATA}",true),"upsert") where log.attributes["log.kind"] == "cadf_action"
               - merge_maps(log.attributes,ExtractGrokPatterns(log.attributes["msg"],"^\\s*target type URI of requests '%{NOTSPACE:request.method} %{URIPATH:uri}' is '%{NOTSPACE:target.type_uri}' %{GREEDYDATA}",true),"upsert") where log.attributes["log.kind"] == "target_type_uri"
               - merge_maps(log.attributes,ExtractGrokPatterns(log.attributes["msg"],"^\\s*Authenticating %{NOTSPACE:user.id}@%{NOTSPACE:project.domain.name}\\.\\.",true),"upsert") where log.attributes["log.kind"] == "authentication"
-              - merge_maps(log.attributes,ExtractGrokPatterns(log.attributes["msg"],"^\\s*Could not find user: %{WORD:user.id}",true),"upsert") where log.attributes["log.kind"] == "keystone_exception_UserNotFound"
+              - merge_maps(log.attributes,ExtractGrokPatterns(log.attributes["msg"],"^\\s*Could not find user:[\\s]*%{WORD:user.id}",true),"upsert") where log.attributes["log.kind"] == "keystone_exception_UserNotFound"
               - delete_key(log.attributes, "timestamp_date")
               - delete_key(log.attributes, "timestamp_time")
 

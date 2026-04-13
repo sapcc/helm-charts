@@ -26,7 +26,7 @@
     hostPath:
       path: /
 {{- end }}
-{{ define "auditd.receiver" }}
+{{- define "auditd.receiver" }}
 auditd/audit_logs:
   rules:
     ## First rule - delete all
