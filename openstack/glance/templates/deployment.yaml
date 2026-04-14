@@ -200,7 +200,7 @@ spec:
         imagePullPolicy: IfNotPresent
         command:
         - dumb-init
-        - kubernetes-entrypoint
+        - glance-registry
         lifecycle:
           preStop:
             {{- include "utils.snippets.pre_stop_graceful_shutdown" . | indent 12 }}
@@ -211,12 +211,6 @@ spec:
           initialDelaySeconds: 20
           timeoutSeconds: 5
         env:
-        - name: COMMAND
-          value: "glance-registry"
-        - name: NAMESPACE
-          value: {{ .Release.Namespace }}
-        - name: DEPENDENCY_SERVICE
-          value: "glance"
         - name: DEBUG_CONTAINER
           value: "false"
         {{- if .Values.sentry.enabled }}
