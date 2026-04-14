@@ -27,14 +27,18 @@ data:
   LOG_ROUTER_S3_PREFIX: {{ .Values.logRouter.s3.prefix | quote }}
   policy.json: |
     {
+      "project_scope":  "project_id:%(project_id)s",
+      "domain_scope":   "domain_id:%(domain_id)s",
       "cluster_viewer": "project_domain_name:ccadmin and project_name:cloud_admin",
-      "cluster_admin": "project_domain_name:ccadmin and project_name:cloud_admin and (role:admin or role:audit_admin)",
-      "config:list": "rule:cluster_viewer",
-      "config:show": "rule:cluster_viewer",
-      "config:create": "rule:cluster_admin",
-      "config:update": "rule:cluster_admin",
-      "config:enable": "rule:cluster_admin",
-      "config:disable": "rule:cluster_admin",
+      "cluster_admin":  "project_domain_name:ccadmin and project_name:cloud_admin and (role:admin or role:audit_admin)",
+      "domain_admin":   "rule:domain_scope and role:audit_admin",
+      "project_admin":  "rule:project_scope and role:audit_admin",
+      "config:list":    "rule:project_admin or rule:domain_admin or rule:cluster_viewer",
+      "config:show":    "rule:project_admin or rule:domain_admin or rule:cluster_viewer",
+      "config:create":  "rule:project_admin or rule:domain_admin or rule:cluster_admin",
+      "config:update":  "rule:project_admin or rule:domain_admin or rule:cluster_admin",
+      "config:enable":  "rule:project_admin or rule:domain_admin or rule:cluster_admin",
+      "config:disable": "rule:project_admin or rule:domain_admin or rule:cluster_admin",
       "config:provision": "rule:cluster_admin"
     }
 {{- end }}
