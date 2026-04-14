@@ -1,0 +1,15 @@
+{{- range $name, $catalog := .Values.common.catalogs }}
+---
+apiVersion: greenhouse.sap/v1alpha1
+kind: Catalog
+metadata:
+  name: {{ $name }}
+  namespace: {{ $.Release.Namespace }}
+  {{- with $catalog.labels }}
+  labels:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  sources:
+  {{- toYaml $catalog.sources | nindent 2 }}
+{{- end }}
