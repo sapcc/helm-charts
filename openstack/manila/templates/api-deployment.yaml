@@ -83,29 +83,26 @@ spec:
           command:
           {{- if .Values.api_backdoor }}
             - dumb-init
-            - kubernetes-entrypoint
+            - manila-api
+            - --config-file
+            - /etc/manila/manila.conf
+            - --config-file
+            - /etc/manila/manila.conf.d/secrets.conf
           {{- else }}
             - /scripts/manila-api.sh
             - start
           {{- end }}
           env:
-          {{- if .Values.api_backdoor }}
-            - name: COMMAND
-              value: "manila-api --config-file /etc/manila/manila.conf --config-file /etc/manila/manila.conf.d/secrets.conf"
-          {{- else }}
+          {{- if not .Values.api_backdoor }}
             - name: OS_OSLO_MESSAGING_RABBIT__HEARTBEAT_IN_PTHREAD
               value: "true"
             - name: OS_OSLO_REPORTS__FILE_EVENT_HANDLER
               value: "/etc/manila/guru"
           {{- end }}
-            - name: NAMESPACE
-              value: {{ .Release.Namespace }}
             - name: STATSD_HOST
               value: localhost
             - name: STATSD_PORT
               value: "9125"
-            - name: DEPENDENCY_SERVICE
-              value: "{{ include "manila.api_service_dependencies" . }}"
             {{- if .Values.sentry.enabled }}
             - name: SENTRY_DSN_SSL
               valueFrom:
