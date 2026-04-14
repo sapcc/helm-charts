@@ -45,7 +45,7 @@
                         }
                     }
                 ],
-{{- if .Values.s3.enabled }}
+{{- if and .Values.s3.enabled .Values.global.data_stream.audit.snapshots.enabled }}
                 "transitions": [
                     {
                         "state_name": "snapshot",
@@ -65,7 +65,7 @@
                             "delay": "1m"
                         },
                         "snapshot": {
-                            "repository": "{{ .Values.snapshots.audit.repository }}",
+                            "repository": "{{ .Values.global.data_stream.audit.snapshots.repository }}",
                             "snapshot": "{_SNAPSHOT_NAME_}"
                         }
                     } 
@@ -89,7 +89,7 @@
                           "delay": "1m"
                       },
                       "convert_index_to_remote": {
-                          "repository": "{{ .Values.snapshots.audit.repository }}",
+                          "repository": "{{ .Values.global.data_stream.audit.snapshots.repository }}",
                           "snapshot": "{_SNAPSHOT_NAME_}",
                           "rename_pattern": "remote_$1"
                       }

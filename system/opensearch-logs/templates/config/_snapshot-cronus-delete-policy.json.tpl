@@ -10,14 +10,14 @@
                 }
             },
             "condition": {
-                "max_age": "{{ .Values.snapshots.cronus.retention }}",
+                "max_age": "{{ .Values.global.data_stream.cronus.snapshots.retention }}",
                 "min_count": 1
             },
             "time_limit": "1h",
             "snapshot_pattern": ".ds-cronus-datastream*"
         },
         "snapshot_config": {
-            "repository": "{{ .Values.snapshots.cronus.repository }}"
+            "repository": "{{ .Values.global.data_stream.cronus.snapshots.repository }}"
         },
         "enabled": true
     }

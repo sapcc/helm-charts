@@ -185,14 +185,13 @@ if [ "${DATA_STREAM_ENABLED}" = true ]; then
          fi
 
          # Check if any indices have outdated policy version
-         export INDICES_NEEDING_UPDATE=$(jq -r --arg schema_ver "${CLUSTER_POLICY_SCHEMA_VERSION}" \
+         export INDICES_NEEDING_UPDATE=$(jq -r \
            'to_entries[] | select(.key != "total_managed_indices") |
             select(.value.policy_id == "ds-'${e}'-ism") |
-            select((.value.policy_schema_version // 0) != ($schema_ver | tonumber)) |
             .key' ${ISM_EXPLAIN_RESPONSE})
 
          if [ -n "${INDICES_NEEDING_UPDATE}" ]; then
-            echo "Found indices with outdated policy version, updating to schema version ${CLUSTER_POLICY_SCHEMA_VERSION}:"
+            echo "Found managed indices needed to be updated with ism policy:"
             echo "${INDICES_NEEDING_UPDATE}"
 
             # Use change_policy API to update indices to the new policy version
@@ -211,7 +210,7 @@ if [ "${DATA_STREAM_ENABLED}" = true ]; then
                  -d "{ \"policy_id\": \"ds-${e}-ism\", \"state\": \"${CURRENT_STATE}\" }"
             done
          else
-            echo "All managed indices are on current policy version ${CLUSTER_POLICY_SCHEMA_VERSION}"
+            echo "No index managed by ds-${e}-ism was found"
          fi
       fi
    done

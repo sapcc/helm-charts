@@ -10,14 +10,14 @@
                 }
             },
             "condition": {
-                "max_age": "{{ .Values.snapshots.audit.retention }}",
+                "max_age": "{{ .Values.global.data_stream.audit.snapshots.retention }}",
                 "min_count": 1
             },
             "time_limit": "1h",
             "snapshot_pattern": ".ds-audit-datastream*"
         },
         "snapshot_config": {
-            "repository": "{{ .Values.snapshots.audit.repository }}"
+            "repository": "{{ .Values.global.data_stream.audit.snapshots.repository }}"
         },
         "enabled": true
     }

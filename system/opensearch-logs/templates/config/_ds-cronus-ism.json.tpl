@@ -45,7 +45,7 @@
                         }
                     }
                 ],
-{{- if .Values.s3.enabled }}
+{{- if and .Values.s3.enabled .Values.global.data_stream.cronus.snapshots.enabled  }}
                 "transitions": [
                     {
                         "state_name": "snapshot",
@@ -65,7 +65,7 @@
                         "delay": "1m"
                     },
                     "snapshot": {
-                        "repository": "{{ .Values.snapshots.cronus.repository }}",
+                        "repository": "{{ .Values.global.data_stream.cronus.snapshots.repository }}",
                         "snapshot": "{_SNAPSHOT_NAME_}"
                     }
                 }

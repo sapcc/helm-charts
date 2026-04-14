@@ -22,7 +22,7 @@
                     {
                         "state_name": "delete",
                         "conditions": {
-                            "min_index_age": "{{ .Values.searchable_snapshots.audit.retention }}"
+                            "min_index_age": "{{ .Values.global.data_stream.audit.searchable_snapshots.retention }}"
                         }
                     }
                 ]

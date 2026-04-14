@@ -10,14 +10,14 @@
                 }
             },
             "condition": {
-                "max_age": "{{ .Values.snapshots.logs.retention }}",
+                "max_age": "{{ .Values.global.data_stream.logs.snapshots.retention }}",
                 "min_count": 1
             },
             "time_limit": "1h",
             "snapshot_pattern": ".ds-logs-datastream*"
         },
         "snapshot_config": {
-            "repository": "{{ .Values.snapshots.logs.repository }}"
+            "repository": "{{ .Values.global.data_stream.logs.snapshots.repository }}"
         },
         "enabled": true
     }
