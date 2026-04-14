@@ -1,9 +1,8 @@
-{{- range $key, $cluster := .Values.persephoneShoots }}
-{{- if $cluster.oidcConfig.enabled }}
+{{- if .Values.oidcConfig.enabled }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: authentication-{{ $key }}{{ $cluster.landscapeName | substr 0 1 }}
+  name: authentication-{{ required "missing value for .Values.landscapeName" .Values.landscapeName }}
   namespace: garden
   annotations:
     argocd.argoproj.io/sync-wave: "0"
@@ -12,6 +11,5 @@ data:
     apiVersion: apiserver.config.k8s.io/v1beta1
     kind: AuthenticationConfiguration
     jwt:
-{{ toYaml $cluster.oidcConfig.jwt | indent 6 }}
-{{- end }}
+{{ toYaml .Values.oidcConfig.jwt | indent 6 }}
 {{- end }}
