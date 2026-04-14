@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.35.0 - 2026/04/14
+* add Ceph S3 storage backend support for backup-v2
+* fix Swift template to use `values.yaml` fields instead of hardcoded values
+* chart version bumped
+
 ## v0.34.0 - 2026/04/01
 * remove unneeded privileges from the `backup` user
 * add `replace_grants` user option: when `true`, revokes all existing privileges before re-granting
