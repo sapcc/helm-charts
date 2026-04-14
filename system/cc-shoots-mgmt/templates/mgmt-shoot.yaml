@@ -62,6 +62,10 @@ spec:
     autoUpdate:
       kubernetesVersion: false
       machineImageVersion: false
+  {{- if $cluster.tier }}
+    confineSpecUpdateRollout: true
+    {{- include "maintenanceWindow" $cluster.tier | nindent 4 }}
+  {{- end }}
   {{- if $cluster.auditing.enabled }}
   extensions:
   - type: auditing
