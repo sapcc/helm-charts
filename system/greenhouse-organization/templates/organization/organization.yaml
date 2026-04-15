@@ -30,10 +30,25 @@ metadata:
   name: registry-mirrors
 data:
   containerRegistryConfig: |
+{{- if and .Values.organization.registryAuth .Values.organization.registryAuth.secretName }}
+    secretName: {{ .Values.organization.registryAuth.secretName }}
+{{- end }}
     primaryMirror: {{ required ".Values.organization.primaryMirror is required" .Values.organization.primaryMirror }}
-    registryMirrors: 
-  {{- .Values.organization.registryMirrors | toYaml | nindent 6 }} 
+    registryMirrors:
+  {{- .Values.organization.registryMirrors | toYaml | nindent 6 }}
 {{ end }}
+---
+{{- if and .Values.organization.registryAuth .Values.organization.registryAuth.secretName }}
+apiVersion: v1
+data:
+  username: {{ required ".Values.organization.registryAuth.username is required when secretName is set" .Values.organization.registryAuth.username | b64enc  }}
+  password: {{ required ".Values.organization.registryAuth.password is required when secretName is set" .Values.organization.registryAuth.password | b64enc  }}
+kind: Secret
+metadata:
+  name: {{ .Values.organization.registryAuth.secretName }}
+  namespace: {{ .Release.Namespace }}
+type: Opaque
+{{- end }}
 ---
 {{ if .Values.organization.enabled }}
 apiVersion: greenhouse.sap/v1alpha1
