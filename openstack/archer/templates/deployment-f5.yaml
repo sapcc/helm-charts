@@ -31,15 +31,7 @@ spec:
         cloud.sap/host: {{ $host }}
     spec:
       initContainers:
-        - name: wait-for-migration
-          image: "{{ $.Values.global.registry }}/kubernetes-entrypoint:{{ $.Values.image.kubernetes_entrypoint_version }}"
-          env:
-            - name: NAMESPACE
-              value: "monsoon3"
-            - name: DEPENDENCY_JOBS
-              value: {{ include "archer.fullname" $ }}-migration-{{ $.Values.image.tag | required ".Values.image.tag is required" }}
-            - name: COMMAND
-              value: "true"
+        {{- include "utils.snippets.kubernetes_entrypoint_init_container" (list $ (dict "jobs" (printf "%s-migration-%s" (include "archer.fullname" $) ($.Values.image.tag | required ".Values.image.tag is required")))) | indent 8 }}
       containers:
         - name: {{ $.Chart.Name }}-agent-f5
           securityContext:
