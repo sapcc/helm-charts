@@ -27,17 +27,7 @@ spec:
       {{- include "utils.proxysql.job_pod_settings" . | nindent 6 }}
     {{- end }}
       initContainers:
-        - name: wait-for-dependencies
-          image: {{required ".Values.global.registry is missing" .Values.global.registry}}/loci-octavia:{{required "Values.imageVersion is missing" .Values.imageVersion}}
-          imagePullPolicy: IfNotPresent
-          command: ['dumb-init', 'kubernetes-entrypoint']
-          env:
-            - name: COMMAND
-              value: "true"
-            - name: DEPENDENCY_SERVICE
-              value: {{ include "octavia.db_service" . }}
-            - name: NAMESPACE
-              value: {{ .Release.Namespace }}
+        {{- include "utils.snippets.kubernetes_entrypoint_init_container" (list . (dict "service" (include "octavia.db_service" .))) | indent 8 }}
         {{- if .Values.proxysql.native_sidecar }}
         {{- include "utils.proxysql.container" . | indent 8 }}
         {{- end }}

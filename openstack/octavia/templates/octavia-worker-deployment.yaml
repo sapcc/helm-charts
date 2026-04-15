@@ -42,6 +42,7 @@ spec:
       priorityClassName: critical-payload
 {{ include "utils.proxysql.pod_settings" . | indent 6 }}
       initContainers:
+      {{- include "utils.snippets.kubernetes_entrypoint_init_container" (list . (dict "jobs" "octavia-migration")) | indent 6 }}
       {{- if .Values.proxysql.native_sidecar }}
       {{- include "utils.proxysql.container" . | indent 6 }}
       {{- end }}
@@ -49,7 +50,17 @@ spec:
         - name: octavia-worker
           image: {{required ".Values.global.registry is missing" .Values.global.registry}}/loci-octavia:{{required "Values.imageVersion is missing" .Values.imageVersion}}
           imagePullPolicy: IfNotPresent
-          command: ['dumb-init', 'kubernetes-entrypoint']
+          command:
+            - dumb-init
+            - octavia-worker
+            - --config-file
+            - /etc/octavia/octavia.conf
+            - --config-file
+            - /etc/octavia/octavia.conf.d/secrets.conf
+            - --config-file
+            - /etc/octavia/octavia-worker.conf
+            - --config-file
+            - /etc/octavia/octavia-worker-secret.conf
           ports:
             - name: metrics-worker
               containerPort: 8000
@@ -84,12 +95,6 @@ spec:
             {{- include "utils.proxysql.volume_mount" . | indent 12 }}
             {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
           env:
-            - name: COMMAND
-              value: "octavia-worker --config-file /etc/octavia/octavia.conf --config-file /etc/octavia/octavia.conf.d/secrets.conf --config-file /etc/octavia/octavia-worker.conf --config-file /etc/octavia/octavia-worker-secret.conf"
-            - name: DEPENDENCY_JOBS
-              value: octavia-migration
-            - name: NAMESPACE
-              value: {{ .Release.Namespace }}
             - name: PYTHONWARNINGS
               value: "ignore:Unverified HTTPS request"
             - name: REQUESTS_CA_BUNDLE
@@ -104,7 +109,17 @@ spec:
         - name: octavia-f5-status-manager
           image: {{required ".Values.global.registry is missing" .Values.global.registry}}/loci-octavia:{{required "Values.imageVersion is missing" .Values.imageVersion}}
           imagePullPolicy: IfNotPresent
-          command: ['dumb-init', 'kubernetes-entrypoint']
+          command:
+            - dumb-init
+            - octavia-f5-status-manager
+            - --config-file
+            - /etc/octavia/octavia.conf
+            - --config-file
+            - /etc/octavia/octavia.conf.d/secrets.conf
+            - --config-file
+            - /etc/octavia/octavia-worker.conf
+            - --config-file
+            - /etc/octavia/octavia-worker-secret.conf
           ports:
             - name: metrics-status
               containerPort: 8001
@@ -133,12 +148,6 @@ spec:
             {{- include "utils.proxysql.volume_mount" . | indent 12 }}
             {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
           env:
-            - name: COMMAND
-              value: "octavia-f5-status-manager --config-file /etc/octavia/octavia.conf --config-file /etc/octavia/octavia.conf.d/secrets.conf --config-file /etc/octavia/octavia-worker.conf --config-file /etc/octavia/octavia-worker-secret.conf"
-            - name: DEPENDENCY_JOBS
-              value: octavia-migration
-            - name: NAMESPACE
-              value: {{ .Release.Namespace }}
             - name: PYTHONWARNINGS
               value: "ignore:Unverified HTTPS request"
             - name: REQUESTS_CA_BUNDLE
