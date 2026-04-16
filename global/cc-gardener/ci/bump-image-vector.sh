@@ -5,21 +5,29 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 CHART_FILE="${SCRIPT_DIR}/../Chart.yaml"
 VALUES_FILE="${SCRIPT_DIR}/../values.yaml"
 
-YQ_MAP_IMAGES='{"images":
-  [.images[] |
+YQ_MAP_IMAGES='. | ... comments="" |
+.images |=
+  (map(
     {
-     "name": .name,
-     "repository": .repository
-    }
-  ] | unique_by(.name) | sort_by(.name) | map(.repository |= (
-        sub("^europe-docker.pkg.dev/", "keppel.global.cloud.sap/ccloud-europe-docker-pkg-dev-mirror/") |
-        sub("^registry.k8s.io/", "keppel.global.cloud.sap/ccloud-registry-k8s-io-mirror/") |
-        sub("^quay.io/","keppel.global.cloud.sap/ccloud-quay-mirror/") |
-        sub("^gcr.io/", "keppel.global.cloud.sap/ccloud-gcr-mirror/") |
-        sub("^ghcr.io/", "keppel.global.cloud.sap/ccloud-ghcr-io-mirror/") |
-        sub("/gardener-project/public/", "/gardener-project/releases/")
-    ))
-}'
+      "name": .name,
+      "repository": .repository,
+      "tag": .tag,
+      "targetVersion": .targetVersion
+    } | to_entries | map(select(.value != null)) | from_entries
+  ) |
+  unique_by([.name, .tag // "", .targetVersion // ""]) |
+  sort_by(.name) |
+  group_by(.name) |
+  map(sort_by(.tag) | reverse) |
+  flatten |
+  map(.repository |= (
+    sub("^europe-docker.pkg.dev/", "keppel.global.cloud.sap/ccloud-europe-docker-pkg-dev-mirror/") |
+    sub("^registry.k8s.io/", "keppel.global.cloud.sap/ccloud-registry-k8s-io-mirror/") |
+    sub("^quay.io/","keppel.global.cloud.sap/ccloud-quay-mirror/") |
+    sub("^gcr.io/", "keppel.global.cloud.sap/ccloud-gcr-mirror/") |
+    sub("^ghcr.io/", "keppel.global.cloud.sap/ccloud-ghcr-io-mirror/") |
+    sub("/gardener-project/public/", "/gardener-project/releases/")
+  )))'
 
 # TODO:
 # public.ecr.aws -> mirror
