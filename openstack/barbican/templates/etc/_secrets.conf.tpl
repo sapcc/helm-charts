@@ -31,6 +31,8 @@ encryption_mechanism = {{ .Values.lunaclient.conn.encryption_mechanism }}
 hmac_mechanism = {{ .Values.lunaclient.conn.hmac_mechanism }}
 key_wrap_mechanism = {{ .Values.lunaclient.conn.key_wrap_mechanism }}
 aes_gcm_generate_iv = {{ .Values.lunaclient.conn.aes_gcm_generate_iv }}
+pkek_cache_ttl = {{ .Values.lunaclient.conn.pkek_cache_ttl | default 900 }}
+pkek_cache_limit = {{ .Values.lunaclient.conn.pkek_cache_limit | default 500 }}
 {{- end }}
 
 {{- if .Values.hsm.utimaco_hsm.enabled }}
