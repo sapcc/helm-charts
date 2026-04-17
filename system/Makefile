@@ -142,13 +142,14 @@ build-metal-operator-remote:
 		metal-operator-remote/managedresources/crds-and-rbac.yaml
 	@helm template metal-operator metal-operator-remote/charts/metal-operator* \
 		-f metal-operator-remote/values-controller-manager.yaml |\
-		yq eval 'select(.kind != "ValidatingWebhookConfiguration" and .apiVersion != "cert-manager.io/v1") | del(.metadata.namespace) | del(.spec.template.spec.containers[0].args) | del(.spec.template.spec.containers[0].env)' |\
-		sed '/^[[:space:]]*image:[[:space:]]/i\
-          args:\
-          {{- .Values.controllerManager.args | toYaml | nindent 12 }}' |\
-		sed '/^[[:space:]]*image:[[:space:]]/i\
+		yq eval 'select(.kind != "ValidatingWebhookConfiguration" and .apiVersion != "cert-manager.io/v1") | del(.metadata.namespace) | del(.spec.template.spec.containers[0].args) | del(.spec.template.spec.containers[0].env)' - |\
+		yq eval '(. | select(.kind=="Deployment") | .spec.template.spec.volumes[] | select(.name=="webhook-cert")) = {"name":"webhook-cert","emptyDir":{}}' - |\
+		sed '/^[[:space:]]*image:[[:space:]]/a\
           env:\
-          {{- .Values.controllerManager.env | toYaml | nindent 12 }}' > metal-operator-remote/templates/controller-manager.yaml
+          {{- .Values.controllerManager.env | toYaml | nindent 12 }}' |\
+		sed '/^[[:space:]]*image:[[:space:]]/a\
+          args:\
+          {{- .Values.controllerManager.args | toYaml | nindent 12 }}' > metal-operator-remote/templates/controller-manager.yaml
 	@yq -i '.version = (.version | split(".") | .[2] = ((.[2] | tonumber) + 1 | tostring) | join("."))' metal-operator-remote/Chart.yaml
 
 build-boot-operator:
