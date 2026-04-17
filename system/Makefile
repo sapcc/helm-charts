@@ -147,10 +147,10 @@ build-metal-operator-remote:
 		yq eval '(. | select(.kind == "Deployment") | .spec.template.spec.volumes[] | select(.name=="webhook-cert")) = {"name":"webhook-cert","emptyDir":{}}' - |\
 		yq eval '(. | select(.kind == "Deployment") | .spec.template.spec.containers) += [load("metal-operator-remote/webhook-injector-sidecar.yaml")]' - |\
 		yq eval '(. | select(.kind == "Deployment") | .spec.template.spec.containers[1].image) = "{{ .Values.webhookInjector.image }}"' - |\
-		sed '/^[[:space:]]*image: '\''{{ \.Values\.controllerManager\.image }}'\''/a\
+		$(SED) '/^[[:space:]]*image: '\''{{ \.Values\.controllerManager\.image }}'\''/a\
           env:\
           {{- .Values.controllerManager.env | toYaml | nindent 12 }}' |\
-		sed '/^[[:space:]]*image: '\''{{ \.Values\.controllerManager\.image }}'\''/a\
+		$(SED) '/^[[:space:]]*image: '\''{{ \.Values\.controllerManager\.image }}'\''/a\
           args:\
           {{- .Values.controllerManager.args | toYaml | nindent 12 }}' > metal-operator-remote/templates/controller-manager.yaml
 	@helm template metal-operator metal-operator-remote/charts/metal-operator* \
