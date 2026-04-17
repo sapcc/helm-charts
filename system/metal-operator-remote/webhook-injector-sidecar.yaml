@@ -1,0 +1,49 @@
+name: webhook-injector
+image: webhook-injector:latest
+args:
+  - --webhook-config-name=webhook-config
+  - --namespace=$(POD_NAMESPACE)
+env:
+  - name: POD_NAMESPACE
+    valueFrom:
+      fieldRef:
+        fieldPath: metadata.namespace
+ports:
+  - name: metrics
+    containerPort: 8080
+  - name: health
+    containerPort: 8081
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  runAsNonRoot: true
+  runAsUser: 65534
+  capabilities:
+    drop:
+      - ALL
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 200m
+    memory: 256Mi
+livenessProbe:
+  httpGet:
+    path: /healthz
+    port: 8081
+  initialDelaySeconds: 15
+  periodSeconds: 20
+  timeoutSeconds: 5
+  failureThreshold: 3
+readinessProbe:
+  httpGet:
+    path: /readyz
+    port: 8081
+  initialDelaySeconds: 5
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+volumeMounts:
+  - name: webhook-certs
+    mountPath: /tmp/webhook-certs
