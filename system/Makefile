@@ -143,6 +143,7 @@ build-metal-operator-remote:
 	@helm template metal-operator metal-operator-remote/charts/metal-operator* \
 		-f metal-operator-remote/values-controller-manager.yaml |\
 		yq eval 'select(.kind != "ValidatingWebhookConfiguration" and .apiVersion != "cert-manager.io/v1") | del(.metadata.namespace) | del(.spec.template.spec.containers[0].args) | del(.spec.template.spec.containers[0].env)' - |\
+		yq eval '(. | select(.kind=="Deployment") | .spec.template.spec.containers[0].image) = "{{ .Values.controllerManager.image }}"' - |\
 		yq eval '(. | select(.kind=="Deployment") | .spec.template.spec.volumes[] | select(.name=="webhook-cert")) = {"name":"webhook-cert","emptyDir":{}}' - |\
 		sed '/^[[:space:]]*image:[[:space:]]/a\
           env:\
