@@ -153,10 +153,12 @@ build-metal-operator-remote:
 		sed '/^[[:space:]]*image: '\''{{ \.Values\.controllerManager\.image }}'\''/a\
           args:\
           {{- .Values.controllerManager.args | toYaml | nindent 12 }}' > metal-operator-remote/templates/controller-manager.yaml
-	@helm template metal-operator metal-operator-remote/charts/metal-operator* -n kube-system -f metal-operator-remote/values-managed-resources.yaml |\
+	@helm template metal-operator metal-operator-remote/charts/metal-operator* \
+	  -n kube-system \
+		-f metal-operator-remote/values-managed-resources.yaml |\
 		yq eval 'select(.kind == "ValidatingWebhookConfiguration")' - |\
 		yq eval '(. | .webhooks[].clientConfig | select(.service)) |= ({"url": "https://metal-operator-webhook-service:9443" + .service.path})' |\
-		yq eval -o=yaml '{"apiVersion": "v1","kind": "ConfigMap","metadata": {"name": "webhook-config"},"data": {"webhooks.yaml": (. | to_yaml)}}' - > metal-operator-remote/managedresources/webhooks.yaml
+		yq eval -o=yaml '{"apiVersion": "v1","kind": "ConfigMap","metadata": {"name": "webhook-config"},"data": {"webhooks.yaml": (. | to_yaml)}}' - > metal-operator-remote/managedresources/configmap-webhooks.yaml
 	@yq -i '.version = (.version | split(".") | .[2] = ((.[2] | tonumber) + 1 | tostring) | join("."))' metal-operator-remote/Chart.yaml
 
 build-boot-operator:
