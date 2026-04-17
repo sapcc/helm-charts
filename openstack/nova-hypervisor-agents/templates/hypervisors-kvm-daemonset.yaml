@@ -26,7 +26,6 @@ spec:
         configmap-etc-hash: {{ include (print .Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
         configmap-kvm-etc-hash: {{ include "kvm_configmap" . | sha256sum }}
     spec:
-      serviceAccountName: {{ .Values.hypervisorAgentsServiceAccountName | default .Release.name }}
       terminationGracePeriodSeconds: {{ $hypervisor.default.graceful_shutdown_timeout | default .Values.defaults.default.graceful_shutdown_timeout | add 5 }}
       hostNetwork: true
       hostPID: true
@@ -56,21 +55,6 @@ spec:
           - {{ include "nova.helpers.cell_rabbitmq_host" (tuple $ $activeCell) }}
       {{- end }}
       initContainers:
-      - name: kubernetes-entrypoint
-        image: {{ .Values.global.ghcrIoMirror }}/sapcc/kubernetes-entrypoint:{{ .Values.imageVersionKubernetesEntrypoint }}
-        command:
-        - kubernetes-entrypoint
-        env:
-        - name: COMMAND
-          value: "true"
-        - name: POD_NAME
-          valueFrom: {fieldRef: {fieldPath: metadata.name}}
-        - name: NAMESPACE
-          valueFrom: {fieldRef: {fieldPath: metadata.namespace}}
-        - name: NODE_NAME
-          valueFrom: {fieldRef: {fieldPath: spec.nodeName}}
-        - name: DEPENDENCY_CUSTOM_RESOURCE
-          value: '[{"apiVersion":"kvm.cloud.sap/v1","kind":"Hypervisor","name":"$(NODE_NAME)","fields":[{"key":".status.conditions[?(@.type==\"TLSCertificateInstalled\")].status","value":"True"}]}]'
       - name: nova-compute-init
         image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/{{ .Values.imageName }}:{{ .Values.imageVersion | required "Please set imageVersion similar" }}
         command: ["/container.init/nova-compute-init"]
