@@ -1,0 +1,128 @@
+---
+# Source: metal-operator/templates/webhook/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: metal-operator-webhook-service
+  labels:
+    helm.sh/chart: "0.4.0-crds"
+    app.kubernetes.io/name: metal-operator
+    app.kubernetes.io/instance: metal-operator
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  ports:
+    - port: 443
+      protocol: TCP
+      targetPort: 9443
+  selector:
+    control-plane: controller-manager
+---
+# Source: metal-operator/templates/manager/manager.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: metal-operator-controller-manager
+  labels:
+    control-plane: controller-manager
+    helm.sh/chart: "0.4.0-crds"
+    app.kubernetes.io/name: metal-operator
+    app.kubernetes.io/instance: metal-operator
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  replicas: 1
+  strategy:
+    type: "Recreate"
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: metal-operator
+      app.kubernetes.io/instance: metal-operator
+      control-plane: controller-manager
+  template:
+    metadata:
+      labels:
+        control-plane: controller-manager
+        helm.sh/chart: "0.4.0-crds"
+        app.kubernetes.io/name: metal-operator
+        app.kubernetes.io/instance: metal-operator
+        app.kubernetes.io/version: "0.1.0"
+        app.kubernetes.io/managed-by: Helm
+        networking.gardener.cloud/to-dns: allowed
+        networking.gardener.cloud/to-private-networks: allowed
+        networking.gardener.cloud/to-public-networks: allowed
+        networking.gardener.cloud/to-runtime-apiserver: allowed
+        networking.resources.gardener.cloud/to-all-istio-ingresses-istio-ingressgateway-tcp-9443: allowed
+        networking.resources.gardener.cloud/to-kube-apiserver-tcp-443: allowed
+      annotations:
+        kubectl.kubernetes.io/default-container: manager
+    spec:
+      containers:
+        - name: manager
+          command:
+            - /manager
+          image: ghcr.io/ironcore-dev/metal-operator-controller-manager:sha-4854c23
+          args:
+          {{- .Values.controllerManager.args | toYaml | nindent 12 }}
+          env:
+          {{- .Values.controllerManager.env | toYaml | nindent 12 }}
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8081
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 8081
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          ports:
+            - containerPort: 9443
+              name: webhook-server
+              protocol: TCP
+          resources:
+            limits:
+              cpu: 5000m
+              memory: 5120Mi
+            requests:
+              cpu: 300m
+              memory: 50Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - mountPath: /etc/macdb/
+              name: macdb
+            - name: webhook-cert
+              mountPath: /tmp/k8s-webhook-server/serving-certs
+              readOnly: true
+            - name: remote-kubeconfig
+              mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+              readOnly: true
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      serviceAccountName: default
+      hostNetwork: false
+      terminationGracePeriodSeconds: 10
+      volumes:
+        - name: macdb
+          secret:
+            secretName: macdb
+        - name: webhook-cert
+          emptyDir: {}
+        - name: remote-kubeconfig
+          secret:
+            items:
+              - key: token
+                path: token
+              - key: bundle.crt
+                path: ca.crt
+            secretName: metal-operator-remote-kubeconfig
+---
+
