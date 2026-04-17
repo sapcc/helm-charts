@@ -140,7 +140,16 @@ build-metal-operator-remote:
 		$(SED) 's/kind: Role/kind: ClusterRole/g' - |\
 		yq eval 'select(.kind != "Service" and .kind != "ValidatingWebhookConfiguration")' - >\
 		metal-operator-remote/managedresources/crds-and-rbac.yaml
-	yq -i '.version = (.version | split(".") | .[2] = ((.[2] | tonumber) + 1 | tostring) | join("."))' metal-operator-remote/Chart.yaml
+	@helm template metal-operator metal-operator-remote/charts/metal-operator* \
+		-f metal-operator-remote/values-controller-manager.yaml |\
+		yq eval 'select(.kind != "ValidatingWebhookConfiguration" and .apiVersion != "cert-manager.io/v1") | del(.metadata.namespace) | del(.spec.template.spec.containers[0].args) | del(.spec.template.spec.containers[0].env)' |\
+		sed '/^[[:space:]]*image:[[:space:]]/i\
+          args:\
+          {{- .Values.controllerManager.args | toYaml | nindent 12 }}' |\
+		sed '/^[[:space:]]*image:[[:space:]]/i\
+          env:\
+          {{- .Values.controllerManager.env | toYaml | nindent 12 }}' > metal-operator-remote/templates/controller-manager.yaml
+	@yq -i '.version = (.version | split(".") | .[2] = ((.[2] | tonumber) + 1 | tostring) | join("."))' metal-operator-remote/Chart.yaml
 
 build-boot-operator:
 	@helm dep up boot-operator
@@ -168,7 +177,7 @@ build-argora-operator-remote:
 		$(SED) 's/kind: Role/kind: ClusterRole/g' - |\
 		yq eval 'select(.kind != "Service" and .kind != "ValidatingWebhookConfiguration" and .kind != "ConfigMap" and .kind != "Secret")' - >\
 		argora-operator-remote/managedresources/crds-and-rbac.yaml
-		yq -i '.version = (.version | split(".") | .[2] = ((.[2] | tonumber) + 1 | tostring) | join("."))' argora-operator-remote/Chart.yaml
+	@yq -i '.version = (.version | split(".") | .[2] = ((.[2] | tonumber) + 1 | tostring) | join("."))' argora-operator-remote/Chart.yaml
 
 build-khalkeon-remote:
 	@helm dep up khalkeon-remote
