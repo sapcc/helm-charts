@@ -50,6 +50,7 @@ spec:
 {{ tuple . "neutron" "api" | include "kubernetes_pod_anti_affinity" | indent 6 }}
       {{- include "utils.proxysql.pod_settings" . | indent 6 }}
       initContainers:
+        {{- include "utils.snippets.kubernetes_entrypoint_init_container" (list . (dict "jobs" (include "neutron.migration_job_name" .) "service" (include "neutron.service_dependencies" .))) | indent 8 }}
 {{- if .Values.proxysql.native_sidecar }}
 {{- if not .Values.api.uwsgi }}
         {{- tuple . (add .Values.api_workers .Values.rpc_workers .Values.rpc_state_workers) | include "utils.proxysql.container" | indent 8 }}
@@ -81,14 +82,16 @@ spec:
             initialDelaySeconds: 15
             timeoutSeconds: 5
 {{- end }}
-          command: ['dumb-init', 'kubernetes-entrypoint']
-          env:
-            - name: COMMAND
+          command:
 {{- if .Values.api.uwsgi }}
-              value: "uwsgi --ini /etc/neutron/uwsgi.ini"
+            - dumb-init
+            - uwsgi
+            - --ini
+            - /etc/neutron/uwsgi.ini
 {{- else }}
-              value: "/container.init/neutron-server-start"
+            - /container.init/neutron-server-start
 {{- end }}
+          env:
             - name: DEBUG_CONTAINER
             {{- if .Values.pod.debug.server }}
               value: "true"
@@ -99,12 +102,6 @@ spec:
             - name: OS_OSLO_MESSAGING_RABBIT__HEARTBEAT_IN_PTHREAD
               value: "true"
 {{- end }}
-            - name: NAMESPACE
-              value: {{ .Release.Namespace }}
-            - name: DEPENDENCY_JOBS
-              value: "{{ include "neutron.migration_job_name" . }}"
-            - name: DEPENDENCY_SERVICE
-              value: "{{ include "neutron.service_dependencies" . }}"
             - name: STATSD_HOST
               value: "localhost"
             - name: STATSD_PORT
