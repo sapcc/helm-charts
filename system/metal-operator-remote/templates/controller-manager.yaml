@@ -1,175 +1,114 @@
----
-# Source: metal-operator/templates/webhook/service.yaml
-apiVersion: v1
-kind: Service
-metadata:
-  name: metal-operator-webhook-service
-  labels:
-    helm.sh/chart: "0.4.0-crds"
-    app.kubernetes.io/name: metal-operator
-    app.kubernetes.io/instance: metal-operator
-    app.kubernetes.io/version: "0.1.0"
-    app.kubernetes.io/managed-by: Helm
-spec:
-  ports:
-    - port: 443
-      protocol: TCP
-      targetPort: 9443
-  selector:
-    control-plane: controller-manager
----
-# Source: metal-operator/templates/manager/manager.yaml
+{{- if .Values.controllerManager.enable }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: metal-operator-controller-manager
   labels:
     control-plane: controller-manager
-    helm.sh/chart: "0.4.0-crds"
-    app.kubernetes.io/name: metal-operator
-    app.kubernetes.io/instance: metal-operator
-    app.kubernetes.io/version: "0.1.0"
-    app.kubernetes.io/managed-by: Helm
+    {{- include "chart.labels" . | nindent 4 }}
 spec:
-  replicas: 1
+  replicas: {{ .Values.controllerManager.replicas }}
   strategy:
-    type: "Recreate"
+    type: {{ .Values.controllerManager.strategy.type | quote }}
   selector:
     matchLabels:
-      app.kubernetes.io/name: metal-operator
-      app.kubernetes.io/instance: metal-operator
+      {{- include "chart.selectorLabels" . | nindent 6 }}
       control-plane: controller-manager
   template:
     metadata:
       labels:
         control-plane: controller-manager
-        helm.sh/chart: "0.4.0-crds"
-        app.kubernetes.io/name: metal-operator
-        app.kubernetes.io/instance: metal-operator
-        app.kubernetes.io/version: "0.1.0"
-        app.kubernetes.io/managed-by: Helm
-        networking.gardener.cloud/to-dns: allowed
-        networking.gardener.cloud/to-private-networks: allowed
-        networking.gardener.cloud/to-public-networks: allowed
-        networking.gardener.cloud/to-runtime-apiserver: allowed
-        networking.resources.gardener.cloud/to-all-istio-ingresses-istio-ingressgateway-tcp-9443: allowed
-        networking.resources.gardener.cloud/to-kube-apiserver-tcp-443: allowed
+        {{- include "chart.labels" . | nindent 8 }}
+        {{- if and .Values.controllerManager.pod .Values.controllerManager.pod.labels }}
+        {{- range $key, $value := .Values.controllerManager.pod.labels }}
+        {{ $key }}: {{ $value }}
+        {{- end }}
+        {{- end }}
       annotations:
         kubectl.kubernetes.io/default-container: manager
     spec:
       containers:
-        - name: manager
-          command:
-            - /manager
-          image: '{{ .Values.controllerManager.image }}'
-          args:
-          {{- .Values.controllerManager.args | toYaml | nindent 12 }}
-          env:
-          {{- .Values.controllerManager.env | toYaml | nindent 12 }}
-          livenessProbe:
-            httpGet:
-              path: /healthz
-              port: 8081
-            initialDelaySeconds: 15
-            periodSeconds: 20
-          readinessProbe:
-            httpGet:
-              path: /readyz
-              port: 8081
-            initialDelaySeconds: 5
-            periodSeconds: 10
-          ports:
-            - containerPort: 9443
-              name: webhook-server
-              protocol: TCP
-          resources:
-            limits:
-              cpu: 5000m
-              memory: 5120Mi
-            requests:
-              cpu: 300m
-              memory: 50Mi
-          securityContext:
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-                - ALL
-          volumeMounts:
-            - mountPath: /etc/macdb/
-              name: macdb
-            - name: webhook-cert
-              mountPath: /tmp/k8s-webhook-server/serving-certs
-              readOnly: true
-            - name: remote-kubeconfig
-              mountPath: /var/run/secrets/kubernetes.io/serviceaccount
-              readOnly: true
-        - name: webhook-injector
-          image: '{{ .Values.webhookInjector.image }}'
-          args:
-            - --webhook-config-name=webhook-config
-            - --namespace=kube-system
-          ports:
-            - name: metrics
-              containerPort: 8080
-            - name: health
-              containerPort: 8081
-          securityContext:
-            allowPrivilegeEscalation: false
-            readOnlyRootFilesystem: true
-            runAsNonRoot: true
-            runAsUser: 65534
-            capabilities:
-              drop:
-                - ALL
-          resources:
-            requests:
-              cpu: 50m
-              memory: 64Mi
-            limits:
-              cpu: 200m
-              memory: 256Mi
-          livenessProbe:
-            httpGet:
-              path: /healthz
-              port: 8081
-            initialDelaySeconds: 15
-            periodSeconds: 20
-            timeoutSeconds: 5
-            failureThreshold: 3
-          readinessProbe:
-            httpGet:
-              path: /readyz
-              port: 8081
-            initialDelaySeconds: 5
-            periodSeconds: 10
-            timeoutSeconds: 5
-            failureThreshold: 3
-          volumeMounts:
-            - name: webhook-certs
-              mountPath: /tmp/webhook-certs
-            - name: remote-kubeconfig
-              mountPath: /var/run/secrets/kubernetes.io/serviceaccount
-              readOnly: true
-      securityContext:
-        runAsNonRoot: true
-        seccompProfile:
-          type: RuntimeDefault
-      serviceAccountName: default
-      hostNetwork: false
-      terminationGracePeriodSeconds: 10
-      volumes:
-        - name: macdb
-          secret:
-            secretName: macdb
+      - name: manager
+        args:
+        {{- range .Values.controllerManager.manager.args }}
+        - {{ . }}
+        {{- end }}
+        command:
+        - /manager
+        image: {{ .Values.controllerManager.manager.image.repository }}:{{ .Values.controllerManager.manager.image.tag }}
+        {{- if .Values.controllerManager.manager.env }}
+        env:
+        {{- range $key, $value := .Values.controllerManager.manager.env }}
+        - name: {{ $key }}
+          value: {{ $value | quote}}
+        {{- end }}
+        {{- end }}
+        livenessProbe:
+          {{- toYaml .Values.controllerManager.manager.livenessProbe | nindent 10 }}
+        readinessProbe:
+          {{- toYaml .Values.controllerManager.manager.readinessProbe | nindent 10 }}
+        {{- if .Values.webhook.enable }}
+        ports:
+        - containerPort: 9443
+          name: webhook-server
+          protocol: TCP
+        {{- end }}
+        resources:
+          {{- toYaml .Values.controllerManager.manager.resources | nindent 10 }}
+        securityContext:
+          {{- toYaml .Values.controllerManager.manager.securityContext | nindent 10 }}
+        volumeMounts:
+        - mountPath: /etc/macdb/
+          name: macdb
+        {{- if .Values.controllerManager.dnsRecordTemplate.enabled }}
+        - mountPath: /etc/metal-operator/dns
+          name: dns-record-template
+          readOnly: true
+        {{- end }}
+        {{- if and .Values.webhook.enable .Values.certmanager.enable }}
         - name: webhook-cert
-          emptyDir: {}
-        - name: remote-kubeconfig
-          secret:
-            items:
-              - key: token
-                path: token
-              - key: bundle.crt
-                path: ca.crt
-            secretName: metal-operator-remote-kubeconfig
----
-
+          mountPath: /tmp/k8s-webhook-server/serving-certs
+          readOnly: true
+        {{- end }}
+        {{- if and .Values.metrics.enable .Values.certmanager.enable }}
+        - name: metrics-certs
+          mountPath: /tmp/k8s-metrics-server/metrics-certs
+          readOnly: true
+        {{- end }}
+        {{- range $volume := .Values.controllerManager.manager.volumes }}
+        - name: {{ $volume.name }}
+          mountPath: {{ $volume.mountPath }}
+          {{- if $volume.readOnly }}
+          readOnly: true
+          {{- end }}
+        {{- end }}
+      {{- include "metal-operator-remote.webhook-injector-sidecar" . | nindent 6 }}
+      securityContext:
+        {{- toYaml .Values.controllerManager.podSecurityContext | nindent 8 }}
+      serviceAccountName: {{ .Values.controllerManager.serviceAccountName }}
+      hostNetwork: {{ .Values.controllerManager.hostNetwork }}
+      terminationGracePeriodSeconds: {{ .Values.controllerManager.terminationGracePeriodSeconds }}
+      volumes:
+      - name: macdb
+        secret:
+          secretName: macdb
+      {{- if .Values.controllerManager.dnsRecordTemplate.enabled }}
+      - name: dns-record-template
+        configMap:
+          name: dns-record-template
+      {{- end }}
+      {{- if and .Values.webhook.enable .Values.certmanager.enable }}
+      - name: webhook-cert
+        secret:
+          secretName: webhook-server-cert
+      {{- end }}
+      {{- if and .Values.metrics.enable .Values.certmanager.enable }}
+      - name: metrics-certs
+        secret:
+          secretName: metrics-server-cert
+      {{- end }}
+      {{- range $volume := .Values.controllerManager.manager.volumes }}
+      - name: {{ $volume.name }}
+        {{- toYaml $volume.source | nindent 8 }}
+      {{- end }}
+{{- end }}
