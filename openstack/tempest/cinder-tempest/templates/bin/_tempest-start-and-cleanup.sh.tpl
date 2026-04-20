@@ -15,30 +15,35 @@ function cleanup_tempest_leftovers() {
 
   delete_dependencies() {
     for group_snap in $(openstack volume group snapshot list --os-volume-api-version 3.14 | grep -v -e ID -e '^+' | awk '{print $2;}'); do
+      echo "Deleting group snapshot: ${group_snap}"
       openstack volume group snapshot delete ${group_snap} --os-volume-api-version 3.14
     done
 
-    for backup in $(openstack volume backup list -f value -c Name --all | grep tempest); do
-      openstack volume backup delete ${backup}
+    for backup in $(openstack volume backup list --all -f value -c ID -c Name | grep tempest | awk '{print $1}'); do
+      echo "Deleting backup: ${backup}"
+      if ! openstack volume backup delete ${backup} 2>/dev/null; then
+        echo "Backup ${backup} stuck. Resetting state via OSC..."
+        openstack volume backup set --state error ${backup}
+        openstack volume backup delete ${backup}
+      fi
     done
 
-    for snapshot in $(openstack volume snapshot list -f value -c Name --all | grep tempest); do
-      openstack volume snapshot delete ${snapshot}
-      if [ "$?" != "0" ]; then
-        cinder group-snapshot-delete ${snapshot}
+    for snapshot in $(openstack volume snapshot list --all -f value -c ID -c Name | grep tempest | awk '{print $1}'); do
+      echo "Deleting snapshot: ${snapshot}"
+      if ! openstack volume snapshot delete ${snapshot} 2>/dev/null; then
+        echo "Snapshot ${snapshot} stuck. Resetting state via OSC..."
+        openstack volume snapshot set --state error ${snapshot}
+        openstack volume snapshot delete ${snapshot}
       fi
     done
   }
 
   delete_volumes() {
-    for volume in $(openstack volume list -f value -c Name --all | grep tempest); do
-      openstack volume delete ${volume}
-      if [ "$?" != "0" ]; then
-        # we try to delete again after setting the volume state to something
-        # that should be deletable
-        echo "Retrying to delete volume ${volume}"
+    for volume in $(openstack volume list --all -f value -c ID -c Name | grep tempest | awk '{print $1}'); do
+      echo "Deleting volume: ${volume}"
+      if ! openstack volume delete ${volume} 2>/dev/null; then
+        echo "Volume ${volume} stuck. Forcing error state and detaching..."
         openstack volume set --state error ${volume}
-        cinder reset-state --reset-migration-status ${volume}
         openstack volume set --detached ${volume}
         openstack volume delete ${volume}
       fi
@@ -60,13 +65,26 @@ function cleanup_tempest_leftovers() {
   }
 
   delete_volume_types() {
-    for volume_type in $(openstack volume type list -f value -c ID -c Name | grep -E 'tempest-|vol-type-for-' | awk '{print $1;}'); do
+    local vtypes=$(openstack volume type list -f value -c ID -c Name | grep -E 'tempest-|vol-type-for-' | awk '{print $1;}')
+    local all_vols_with_types=$(openstack volume list --all-projects --long -f value -c ID -c "Type")
+    for volume_type in $vtypes; do
+      echo "Checking dependencies for volume type: ${volume_type}"
+      local dependent_vols=$(echo "$all_vols_with_types" | grep "${volume_type}" | awk '{print $1}')
+
+      if [ -n "$dependent_vols" ]; then
+        for v_id in $dependent_vols; do
+          echo "Force cleaning volume ${v_id} linked to type ${volume_type}"
+          openstack volume set --state error ${v_id}
+          openstack volume delete ${v_id}
+        done
+        sleep 2
+      fi
       echo "Deleting volume type: ${volume_type}"
       openstack volume type delete ${volume_type}
     done
   }
 
-  echo "Cleanup groups, backups, snapshots"
+  echo "Step 1: Cleanup dependencies (backups, snapshots, groups)"
   for i in $(seq 1 18); do
     export OS_USERNAME=nova-tempestuser${i}
     export OS_PROJECT_NAME=nova-tempest${i}
@@ -81,13 +99,13 @@ function cleanup_tempest_leftovers() {
     delete_groups
   done
 
-  echo "Cleanup volumes, group types and volume types"
+  echo "Step 2: Cleanup volumes and volume types"
   for i in $(seq 1 18); do
     export OS_USERNAME=nova-tempestuser${i}
     export OS_PROJECT_NAME=nova-tempest${i}
     delete_volumes
   done
-  
+
   for i in $(seq 1 8); do
     export OS_USERNAME=nova-tempestadmin${i}
     export OS_PROJECT_NAME=nova-tempest-admin${i}
@@ -95,7 +113,7 @@ function cleanup_tempest_leftovers() {
     delete_group_types
     delete_volume_types
   done
-  
+
 }
 
 {{- include "tempest-base.function_main" . }}
