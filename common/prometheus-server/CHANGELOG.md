@@ -1,3 +1,8 @@
+## 8.2.0
+
+* bump Thanos sidecar to v0.41.0
+* bump Prometheus to v3.11.2
+
 ## 8.1.3
 
 * Include version tag in `thanos.spec.image` since the Prometheus Operator's `BuildImagePath` returns the `image` field as-is, ignoring `version` for image construction
