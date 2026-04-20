@@ -38,7 +38,7 @@ spec:
       {{- tuple . (dict "name" "nova-vspc") | include "utils.topology.constraints" | indent 6 }}
       containers:
         - name: vmware-vspc
-          image: {{ required ".Values.global.registry is missing" .Values.global.registry}}/vmware-vspc:{{ required ".Values.imageVersionVspc is missing" .Values.imageVersionVspc }}
+          image: {{ required ".Values.global.registry is missing" .Values.global.registry}}/vmware-vspc:{{ required ".Values.vspc.image.tag is missing" (coalesce .Values.vspc.image.tag .Values.imageVersionVspc) }}
           imagePullPolicy: IfNotPresent
           command: ['vmware-vspc', '--config-file', '/etc/vspc.conf']
           env:
