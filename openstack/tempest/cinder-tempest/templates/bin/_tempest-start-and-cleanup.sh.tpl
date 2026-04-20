@@ -60,7 +60,8 @@ function cleanup_tempest_leftovers() {
   }
 
   delete_volume_types() {
-    for volume_type in $(openstack volume type list -f value | grep tempest- | awk '{print $1;}'); do
+    for volume_type in $(openstack volume type list -f value -c ID -c Name | grep -E 'tempest-|vol-type-for-' | awk '{print $1;}'); do
+      echo "Deleting volume type: ${volume_type}"
       openstack volume type delete ${volume_type}
     done
   }
