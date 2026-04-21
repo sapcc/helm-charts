@@ -50,7 +50,7 @@
                     {
                         "state_name": "snapshot",
                         "conditions": {
-                            "min_doc_count": 5
+                            "min_index_age": "7d"
                         }
                     }
                 ]
