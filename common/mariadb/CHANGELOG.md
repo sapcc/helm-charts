@@ -1,5 +1,13 @@
 # Changelog
 
+
+## v0.36.0 - 2026/04/21
+* MariaDB version updated to [11.4.10](https://mariadb.com/docs/release-notes/community-server/11.4/11.4.10)
+  * See https://mariadb.com/docs/release-notes/community-server/11.4/what-is-mariadb-114
+* sidecar images updated
+* `maria-back-me-up` updated to `11.4-20260421101422`, based on 11.4 mariadb image
+* chart version bumped
+
 ## v0.35.0 - 2026/04/14
 * add Ceph S3 storage backend support for backup-v2
 * fix Swift template to use `values.yaml` fields instead of hardcoded values
