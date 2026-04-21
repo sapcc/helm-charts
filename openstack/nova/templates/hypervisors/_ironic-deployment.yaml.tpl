@@ -1,6 +1,7 @@
 {{- define "ironic_deployment" -}}
 {{- $hypervisor := index . 1 -}}
 {{- with index . 0 -}}
+{{- $cellName := include "nova.helpers.cell_name" (tuple . "cell1") }}
 kind: Deployment
 apiVersion: apps/v1
 metadata:
@@ -111,14 +112,14 @@ spec:
               name: nova-console
               items:
               {{- range $type := list "serial" "shellinabox" }}
-              - key: console-cell1-{{ $type }}.conf
-                path: nova.conf.d/console-cell1-{{ $type }}.conf
+              - key: console-{{ $cellName }}-{{ $type }}.conf
+                path: nova.conf.d/console-{{ $cellName }}-{{ $type }}.conf
               {{- end }}
           - secret:
               name: nova-etc
               items:
-              - key: cell1.conf
-                path: nova.conf.d/cell1-secrets.conf
+              - key: {{ $cellName }}.conf
+                path: nova.conf.d/{{ $cellName }}-secrets.conf
               - key: keystoneauth-secrets.conf
                 path: nova.conf.d/keystoneauth-secrets.conf
               {{- if .Values.osprofiler.enabled }}
