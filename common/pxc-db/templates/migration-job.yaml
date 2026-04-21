@@ -1,0 +1,72 @@
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: migrate-{{ .Values.name }}-db-maria-to-pxc
+  namespace: {{ .Release.Namespace }}
+  labels:
+{{ include "pxc-db.labels" . | indent 4 }}
+  annotations:
+{{- if and (and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested) $.Values.linkerd.enabled }}
+{{ include "pxc-db.linkerdPodAnnotations" . | indent 4 }}
+{{- end }}
+spec:
+  backoffLimit: 1
+  template:
+    spec:
+      restartPolicy: Never
+      initContainers:
+      - name: kubernetes-entrypoint
+        image: {{ required ".Values.global.registryAlternateRegion is missing" $.Values.global.registryAlternateRegion }}/{{ .Values.kubernetes_entrypoint.image.name }}:{{ .Values.kubernetes_entrypoint.image.tag }}
+        command:
+        - /kubernetes-entrypoint
+        env:
+        - name: COMMAND
+          value: "true"
+        - name: NAMESPACE
+          value: {{ .Release.Namespace }}
+        - name: DEPENDENCY_SERVICE
+          value: {{ .Values.name }}-db-haproxy
+      containers:
+      - name: db-migration
+        image: {{ required ".Values.global.dockerHubMirrorAlternateRegion is missing" .Values.global.dockerHubMirrorAlternateRegion }}/{{ .Values.job.migration.image.name }}:{{ .Values.job.migration.image.tag }}
+        command:
+          - /bin/bash
+          - -c
+          - |
+            /container.init/migrate-db.sh --migrate
+        env:
+          - name: TMPDIR
+            value: /tmp
+          - name: MYSQL_SOURCE_ADDRESS
+            value: {{ .Values.job.migration.source.host | default (printf "%s-mariadb" .Values.name) }}
+          - name: MYSQL_SOURCE_DATABASE
+            value: {{ .Values.name }}
+          - name: MYSQL_SOURCE_USERNAME
+            value: root
+          - name: MYSQL_SOURCE_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: migrate-{{ .Values.name }}-db-secrets
+                key: sourceDBPW
+          - name: MYSQLDUMP_FLAGS
+            value: "--extended-insert --single-transaction --skip-lock-tables --skip-add-locks --quick --max_allowed_packet=16M"
+          - name: MYSQL_DESTINATION_ADDRESS
+            value: {{ .Values.name }}-db-haproxy
+          - name: MYSQL_DESTINATION_DATABASE
+            value: {{ .Values.name }}
+          - name: MYSQL_DESTINATION_USERNAME
+            value: root
+          - name: MYSQL_DESTINATION_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: migrate-{{ .Values.name }}-db-secrets
+                key: targetDBPW
+        volumeMounts:
+          - name: migrate-db-configmap
+            mountPath: /container.init
+      volumes:
+        - name: migrate-db-configmap
+          configMap:
+            name: migrate-{{ .Values.name }}-db-maria-to-pxc
+            defaultMode: 0755
