@@ -1,0 +1,46 @@
+{{- if .Values.garden.dashboard }}
+{{- if .Values.garden.dashboard.enabled }}
+{{- if .Values.garden.dashboard.customIngress }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/use-port-in-redirects: "true"
+    nginx.ingress.kubernetes.io/proxy-buffer-size: 16k
+  labels:
+    app: gardener
+    role: dashboard
+  name: gardener-dashboard-ingress
+spec:
+  ingressClassName: nginx-ingress-gardener
+  rules:
+{{- if .Values.garden.domainOverride }}
+  - host: dashboard.runtime.{{ $.Values.garden.domainOverride }}.{{ required ".Values.global.region missing" .region }}.cloud.sap
+{{- else }}
+{{- with .Values.global }}
+  - host: dashboard.runtime-garden.{{ required ".Values.global.cluster missing" .cluster }}.{{ required ".Values.global.region missing" .region }}.cloud.sap
+{{- end }}
+{{- end }}
+    http:
+      paths:
+      - backend:
+          service:
+            name: gardener-dashboard
+            port:
+              number: 8080
+        path: /
+        pathType: Prefix
+  tls:
+  - hosts:
+{{- if .Values.garden.domainOverride }}
+    - dashboard.runtime.{{ $.Values.garden.domainOverride }}.{{ required ".Values.global.region missing" .region }}.cloud.sap.
+{{- else }}
+{{- with .Values.global }}
+    - dashboard.runtime-garden.{{ required ".Values.global.cluster missing" .cluster }}.{{ required ".Values.global.region missing" .region }}.cloud.sap
+{{- end }}
+{{- end }}
+    secretName: gardener-dashboard-tls-secret-3
+{{- end }}
+{{- end }}
+{{- end }}

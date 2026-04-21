@@ -2,8 +2,8 @@
 
 - setup operator CRDs
 ```sh
-k apply -f https://raw.githubusercontent.com/gardener/gardener/refs/tags/v1.135.1/charts/gardener/operator/templates/crd-extensions.yaml
-k apply -f https://raw.githubusercontent.com/gardener/gardener/refs/tags/v1.135.1/charts/gardener/operator/templates/crd-gardens.yaml
+k apply -f https://raw.githubusercontent.com/gardener/gardener/refs/tags/v1.137.5/charts/gardener/operator/templates/crd-extensions.yaml
+k apply -f https://raw.githubusercontent.com/gardener/gardener/refs/tags/v1.137.5/charts/gardener/operator/templates/crd-gardens.yaml
 k label crd gardens.operator.gardener.cloud extensions.operator.gardener.cloud app.kubernetes.io/managed-by=Helm
 k annotate crd gardens.operator.gardener.cloud extensions.operator.gardener.cloud meta.helm.sh/release-name=cc-gardener meta.helm.sh/release-namespace=garden
 ```
@@ -24,6 +24,7 @@ k annotate crd gardens.operator.gardener.cloud extensions.operator.gardener.clou
 - change `version`, `appVersion` and `version` of operator in `Chart.yaml`
 - change `.operator.image.tag` in `values.yaml`
 - `helm dep up`
+- run `./ci/bump-image-vector.sh` to update `.operator.imageVectorOverwrite` to the recent version
 
 # Upgrade Runtime Cluster Seeds
 - exluding any cluster where Gardener Operator is running

@@ -147,7 +147,28 @@ spec:
             configMapRef:
               name: audit-policy-cp-garden
         {{- end }}
-      gardenerDashboard: {}
+{{- if .Values.garden.dashboard }}
+{{- if .Values.garden.dashboard.enabled }}
+      gardenerDashboard:
+{{- if .Values.garden.dashboard.customIngress }}
+        ingress:
+          enabled: false
+{{- end }}
+        enableTokenLogin: {{ .Values.garden.dashboard.enableTokenLogin }}
+        logLevel: info
+{{- if .Values.garden.dashboard.oidc.enabled }}
+        oidcConfig:
+          additionalScopes:
+            - profile
+            - offline_access
+          clientIDPublic: {{ .Values.garden.dashboard.oidc.clientIDPublic }}
+          issuerURL: {{ .Values.garden.dashboard.oidc.issuerURL }}
+          secretRef:
+            name: gardener-dashboard-oidc
+          sessionLifetime: 12h0m0s
+{{- end }}
+{{- end }}
+{{- end }}
       gardenerDiscoveryServer: {}
 {{- if gt (len .Values.garden.virtualCluster.gardenerResourceManager.additionalTargetNamespaces) 0 }}
       gardenerResourceManager:

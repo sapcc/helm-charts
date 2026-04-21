@@ -7,18 +7,17 @@ global:
 osprofiler: {}
 sentry: {}
 
-rabbitmq:
-  host: "nova-rabbitmq"
-  users:
-    default:
-      user: rabbitmq
-  port: 5671 # See: https://github.com/sapcc/helm-charts/blob/master/openstack/utils/templates/_ini_sections.tpl#L14
+rabbitmq_ssl_client: true
 
 imageName: loci-nova
 imageVersion: null
+imageVersionKubernetesEntrypoint: "latest"
+
 hypervisor_on_host: true
 
 cross_az_attach: 'False'
+
+hypervisorAgentsServiceAccountName: null
 
 default:
   password_all_group_samples: 2
@@ -46,26 +45,27 @@ defaults:
         disk_allocation_ratio: "1.0"
         reserved_host_disk_mb: "0"
         default_ephemeral_format: "ext4"
+        block_device_allocate_retries: "2000"
       config_file:
         oslo_messaging_rabbit:
           ssl: true
     kvm:
       instance_nfs_share: null # NFS Share to mount as /var/lib/nova/instances
+      # DEFAULT section of nova-compute.conf
       default:
         compute_driver: libvirt.LibvirtDriver
         firewall_driver: nova.virt.firewall.NoopFirewallDriver
         resume_guests_state_on_host_boot: false # Setting that to true breaks evacuations
+        instance_build_timeout: 3600
+        reboot_timeout: 3600  # an hour
+        rescue_timeout: 259200 # three days
+        resize_confirm_window: 259200
+        use_cow_images: "false"
       vnc:
         enabled: true
       serial:
         enabled: true
       config_file:
-        default:
-          instance_build_timeout: 3600
-          reboot_timeout: 3600  # an hour
-          rescue_timeout: 259200 # three days
-          resize_confirm_window: 259200
-          use_cow_images: "false"
         libvirt:
           always_allocate_memory_immediately: true
           connection_uri: ch:///system
@@ -84,18 +84,21 @@ defaults:
           live_migration_scheme: "tls"
           live_migration_timeout_action: 'force_complete'
           live_migration_with_native_tls: 'true'
-          nfs_mount_options: "rw,bg,nfsvers=4.2,hard,nointr,proto=tcp,timeo=600,nconnect=8,retrans=2,rsize=262144,wsize=262144,noatime,actimeo=0"
+          nfs_mount_options: "rw,bg,nfsvers=4.2,hard,nointr,proto=tcp,timeo=600,nconnect=8,retrans=2,rsize=262144,wsize=262144,noatime,actimeo=0,lookupcache=pos"
           num_umount_retries: "30"
           rng_dev_path: /dev/random
           smbios_asset_tag: "SAP CCloud VM"
           umount_retry_delay: "1.0"
           volume_use_multipath: true
+          cpu_mode: "custom"
+          cpu_model: "sapphire-rapids"
         os_vif_ovs:
           ovsdb_connection: "unix:/run/openvswitch/db.sock"
         workarounds:
           libvirt_use_host_maxphysaddr: true
           skip_cpu_compare_at_startup: true
           skip_cpu_compare_on_dest: true
+          enable_chv_announce_self: true
       pod:
         tolerations:
           critical-components-not-ready:

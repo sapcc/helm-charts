@@ -141,6 +141,10 @@ spec:
               mountPath: /etc/barbican/ratelimit.yaml
               subPath: ratelimit.yaml
               readOnly: true
+            - name: ratelimit-backend-secret
+              mountPath: /etc/barbican/ratelimit-backend-secret.conf
+              subPath: password
+              readOnly: true
             {{- end }}
             {{- if .Values.hsm.utimaco_hsm.enabled }}
             - name: utimaco-volume
@@ -272,6 +276,14 @@ spec:
               path: barbican_utimaco.sh
         - name: utimaco-volume
           emptyDir: {}
+        {{- end }}
+        {{- if .Values.sapcc_rate_limit.enabled }}
+        - name: ratelimit-backend-secret
+          secret:
+            secretName: {{ .Release.Name }}-api-ratelimit-redis-user-default
+            items:
+            - key: password
+              path: password
         {{- end }}
         {{- include "utils.proxysql.volumes" . | indent 8 }}
         {{- include "utils.trust_bundle.volumes" . | indent 8 }}

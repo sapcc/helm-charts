@@ -1,7 +1,23 @@
+{{- if .Values.stShoots -}}
+{{- range $key, $cluster := .Values.stShoots }}
+{{- $region := regexReplaceAll "^st[0-9]+-" $key "" }}
+{{- $cmName := printf "sci-k8s-storage-auth-%s" $region }}
+{{- if not (lookup "v1" "ConfigMap" $.Release.Namespace $cmName) }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: authentication-config-storage
+  name: {{ $cmName }}
+  namespace: {{ $.Release.Namespace }}
+  annotations:
+    # We need this configmap to be present early because it is references in Shoot spec.
+    # Further management of structured auth configmap is done by shoot-grafter.
+    # Since CI runs helm upgrade --install, we need pre-upgrade hook.
+    helm.sh/hook: pre-install,pre-upgrade
+    helm.sh/hook-delete-policy: "before-hook-creation"
+    helm.sh/hook-weight: "1"
 data:
   config.yaml: |
 {{- toYaml $.Values.authenticationConfig | nindent 4 }}
+{{- end }}
+{{- end }}
+{{- end }}

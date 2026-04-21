@@ -1,36 +1,47 @@
 kind: KubeadmControlPlane
-apiVersion: controlplane.cluster.x-k8s.io/v1beta1
+apiVersion: controlplane.cluster.x-k8s.io/v1beta2
 metadata:
   name: kcp-rt-{{ .Values.global.region }}
 spec:
   replicas: {{ default 3 .Values.controlplane.replicas }}
   version: {{ .Values.controlplane.version }}
-  rolloutStrategy:
-    rollingUpdate:
-      maxSurge: 0
-    type: RollingUpdate
+  rollout:
+    strategy:
+      rollingUpdate:
+        maxSurge: 0
+      type: RollingUpdate
   machineTemplate:
     {{- if .Values.maintenanceController.enabled }}
     metadata:
       labels:
         runtime-extension-maintenance-controller.cloud.sap/enabled: "true"
     {{- end }}
-    infrastructureRef:
-      kind: IroncoreMetalMachineTemplate
-      apiVersion: infrastructure.cluster.x-k8s.io/v1alpha1
-      name: controlplane-rt-{{ .Values.global.region }}
-    # to avoid "Node deletion timeout expired, continuing without Node deletion"
-    # https://github.com/kubernetes-sigs/cluster-api/pull/5608
-    nodeDeletionTimeout: "0"
-    nodeDrainTimeout: "0"
+    spec:
+      infrastructureRef:
+        kind: IroncoreMetalMachineTemplate
+        apiGroup: infrastructure.cluster.x-k8s.io
+        name: controlplane-rt-{{ .Values.global.region }}
+      deletion:
+        # to avoid "Node deletion timeout expired, continuing without Node deletion"
+        # https://github.com/kubernetes-sigs/cluster-api/pull/5608
+        nodeDeletionTimeoutSeconds: 0
+        nodeDrainTimeoutSeconds: 0
+  remediation:
+    maxRetry: {{ .Values.controlplane.remediationStrategy.maxRetry }}
+    retryPeriodSeconds: {{ .Values.controlplane.remediationStrategy.retryPeriodSeconds }}
+    minHealthyPeriodSeconds: {{ .Values.controlplane.remediationStrategy.minHealthyPeriodSeconds }}
   kubeadmConfigSpec:
     initConfiguration:
+      timeouts:
+        controlPlaneComponentHealthCheckSeconds: 1200
       nodeRegistration:
         name: $${METAL_HOSTNAME}
         kubeletExtraArgs:
-          cloud-provider: external
+          - name: cloud-provider
+            value: external
           {{- if .Values.maintenanceController.profile }}
-          node-labels: cloud.sap/maintenance-profile={{ .Values.maintenanceController.profile }}
+          - name: node-labels
+            value: cloud.sap/maintenance-profile={{ .Values.maintenanceController.profile }}
           {{- end }}
         taints:
           - effect: "PreferNoSchedule"
@@ -39,15 +50,19 @@ spec:
       localAPIEndpoint:
         bindPort: {{ .Values.controlplane.port }}
     joinConfiguration:
+      timeouts:
+        controlPlaneComponentHealthCheckSeconds: 1200
       controlPlane:
         localAPIEndpoint:
           bindPort: {{ .Values.controlplane.port }}
       nodeRegistration:
         name: $${METAL_HOSTNAME}
         kubeletExtraArgs:
-          cloud-provider: external
+          - name: cloud-provider
+            value: external
           {{- if .Values.maintenanceController.profile }}
-          node-labels: cloud.sap/maintenance-profile={{ .Values.maintenanceController.profile }}
+          - name: node-labels
+            value: cloud.sap/maintenance-profile={{ .Values.maintenanceController.profile }}
           {{- end }}
         taints:
           - effect: "PreferNoSchedule"
@@ -56,12 +71,24 @@ spec:
     clusterConfiguration:
       apiServer:
         extraArgs:
-          cloud-provider: external
-          secure-port: {{ .Values.controlplane.port | quote }}
-          authentication-config: "/etc/kubernetes/authentication.yaml"
+          - name: secure-port
+            value: {{ .Values.controlplane.port | quote }}
+          - name: authentication-config
+            value: "/etc/kubernetes/authentication.yaml"
           {{- if .Values.etcd.useEncryption }}
-          encryption-provider-config: "/etc/kubernetes/enc/enc.yaml"
+          - name: encryption-provider-config
+            value: "/etc/kubernetes/enc/enc.yaml"
           {{- end }}
+          - name: audit-log-path
+            value: "/var/log/kubernetes/audit/audit.log"
+          - name: audit-policy-file
+            value: "/etc/kubernetes/audit-policy.yaml"
+          - name: audit-log-maxage
+            value: "30"
+          - name: audit-log-maxbackup
+            value: "10"
+          - name: audit-log-maxsize
+            value: "100"
         extraVolumes:
           - name: "authentication-config"
             hostPath: "/etc/kubernetes/authentication.yaml"
@@ -75,11 +102,22 @@ spec:
             readOnly: true
             pathType: File
         {{- end }}
-        timeoutForControlPlane: 20m
+          - name: audit-logs
+            hostPath: "/var/log/kubernetes/audit"
+            mountPath: "/var/log/kubernetes/audit"
+            readOnly: false
+            pathType: DirectoryOrCreate
+          - name: audit-policy
+            hostPath: "/etc/kubernetes/audit-policy.yaml"
+            mountPath: "/etc/kubernetes/audit-policy.yaml"
+            readOnly: true
+            pathType: FileOrCreate
       controllerManager:
         extraArgs:
-          cloud-provider: external
-          allocate-node-cidrs: "true"
+          - name: cloud-provider
+            value: external
+          - name: allocate-node-cidrs
+            value: "true"
       dns:
         imageRepository: {{ .Values.images.dns.repository }}
         imageTag: {{ .Values.images.dns.tag }}
@@ -242,6 +280,34 @@ spec:
     - content: 127.0.0.1 localhost kubernetes
       owner: root:root
       path: /etc/kube-vip.hosts
+      permissions: "0644"
+
+    - content: |
+        apiVersion: audit.k8s.io/v1
+        kind: Policy
+        omitStages:
+          - "RequestReceived"
+        rules:
+          - level: None
+            nonResourceURLs:
+              - "/healthz*"
+              - "/livez*"
+              - "/readyz*"
+              - "/version"
+              - "/metrics"
+          - level: None
+            resources:
+              - group: "coordination.k8s.io"
+                resources: ["leases"]
+          - level: None
+            users: ["system:kube-proxy", "system:apiserver"]
+            verbs: ["watch", "get", "list"]
+          - level: None
+            users: ["system:serviceaccount:kube-system:horizontal-pod-autoscaler"]
+            verbs: ["get", "list", "watch"]
+          - level: Metadata
+      owner: root:root
+      path: /etc/kubernetes/audit-policy.yaml
       permissions: "0644"
 
     format: ignition

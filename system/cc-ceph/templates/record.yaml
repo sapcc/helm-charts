@@ -1,6 +1,7 @@
 {{- range $key, $record := .Values.objectstore.gateway.dnsNames }}
 {{- if or (not $.Values.dnsNamesSkipRecord) (not (has $record $.Values.dnsNamesSkipRecord)) }}
-{{- if $.Values.objectstore.service.externalIP }}
+{{- $ipAddress := $.Values.objectstore.service.calicoExternalIP | default $.Values.objectstore.service.externalIP }}
+{{- if $ipAddress }}
 ---
 apiVersion: disco.stable.sap.cc/v1
 kind: Record
@@ -8,7 +9,7 @@ metadata:
   name: "{{ $record }}"
 spec:
   type: A
-  record: {{ $.Values.objectstore.service.externalIP }}
+  record: {{ $ipAddress }}
   hosts:
     - "{{ $record }}."
 {{- if or (not $.Values.dnsNamesSkipRecordWildcard) (not (has $record $.Values.dnsNamesSkipRecordWildcard)) }}

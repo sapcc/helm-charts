@@ -8,10 +8,8 @@ global:
     skip_hcm_domain: false
   linkerd_requested: false
 
-# The registry is deprecated, setting imageVersionGlanceRegistry will enable the deployment (but not the setting)
 # imageVersionGlance: null
 # imageVersionGlanceApi: null
-# imageVersionGlanceRegistry: null
 
 # add 'file' store for the build-up
 stores: "swift"
@@ -24,7 +22,7 @@ owner-info:
   service: glance
   maintainers:
     - Rajiv Mucheli
-    - Stefan Hipfel
+    - Sebastian Krott
   helm-chart-url: https://github.com/sapcc/helm-charts/tree/master/openstack/glance
 
 # set file store and persistence to 'true' for the build-up
@@ -83,17 +81,6 @@ api:
       memory: 2Gi
       cpu: 1
 
-registry:
-  debug: false
-  resources:
-    enabled: true
-    limits:
-      memory: 1Gi
-      cpu: 200m
-    requests:
-      memory: 500Mi
-      cpu: 100m
-
 services:
   type: ClusterIP
 #  externalip: "192.168.1.100"
@@ -142,6 +129,8 @@ mariadb:
     name: db-glance-pvclaim
   databases:
   - glance
+  ccroot_user:
+    enabled: true
   users:
     glance:
       name: glance
@@ -358,6 +347,7 @@ alerts:
 # sapcc/openstack-rate-limit-middleware
 sapcc_rate_limit:
   enabled: true
+  backend_secret_file: /etc/glance/ratelimit-backend-secret.conf
 
 api-ratelimit-redis:
   persistence:

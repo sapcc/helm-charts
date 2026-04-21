@@ -1,4 +1,5 @@
 {{ if and .Values.extensions.auditing .Values.extensions.auditing.enabled -}}
+{{- with .Values.extensions.auditing -}}
 apiVersion: operator.gardener.cloud/v1alpha1
 kind: Extension
 metadata:
@@ -18,29 +19,35 @@ spec:
     - garden
     - shoot
   deployment:
+{{- if .admission }}
     admission:
+{{- if .admission.values }}
+      values:
+{{ include "cc-gardener.extension.mergeValues" (dict "values" .admission.values "extensionContext" . "fallbackTag" .version "usePipeStyle" false) | indent 8 }}
+{{- end }}
+{{- if and .admission.runtimeCluster .admission.runtimeCluster.helm .admission.runtimeCluster.helm.ociRepository }}
       runtimeCluster:
         helm:
           ociRepository:
-            tag: {{ (.Values.extensions.auditing.runtimeCluster.helm.ociRepository).tag | default .Values.extensions.auditing.version }}
-            {{- if (.Values.extensions.auditing.runtimeCluster.helm.ociRepository).repository }}
-            repository: {{ .Values.extensions.auditing.runtimeCluster.helm.ociRepository.repository }}
-            {{- end }}
+{{ include "cc-gardener.extension.ociRepository" (dict "ociRepository" .admission.runtimeCluster.helm.ociRepository "fallbackTag" .version) | indent 12 }}
+{{- end }}
+{{- if and .admission.virtualCluster .admission.virtualCluster.helm .admission.virtualCluster.helm.ociRepository }}
       virtualCluster:
         helm:
           ociRepository:
-            tag: {{ (.Values.extensions.auditing.virtualCluster.helm.ociRepository).tag | default .Values.extensions.auditing.version }}
-            {{- if (.Values.extensions.auditing.virtualCluster.helm.ociRepository).repository }}
-            repository: {{ .Values.extensions.auditing.virtualCluster.helm.ociRepository.repository }}
-            {{- end }}
-    extension:
-{{- if .Values.extensions.auditing.imageVectorOverwrite }}
-      values:
-        imageVectorOverwrite: | {{ toYaml .Values.extensions.auditing.imageVectorOverwrite | nindent 10 }}
+{{ include "cc-gardener.extension.ociRepository" (dict "ociRepository" .admission.virtualCluster.helm.ociRepository "fallbackTag" .version) | indent 12 }}
 {{- end }}
+{{- end }}
+    extension:
+{{- if .runtimeClusterValues }}
+      runtimeClusterValues:
+{{ include "cc-gardener.extension.mergeValues" (dict "values" .runtimeClusterValues "parentValues" .values "extensionContext" . "fallbackTag" .version "usePipeStyle" false) | indent 8 }}
+{{- end }}
+      values:
+{{ include "cc-gardener.extension.mergeValues" (dict "values" .values "extensionContext" . "fallbackTag" .version "usePipeStyle" false) | indent 8 }}
       helm:
         ociRepository:
-          tag: {{ (.Values.extensions.auditing.helm.ociRepository).tag | default .Values.extensions.auditing.version }}
-          repository: {{ .Values.extensions.auditing.helm.ociRepository.repository }}
+{{ include "cc-gardener.extension.ociRepository" (dict "ociRepository" .helm.ociRepository "fallbackTag" .version) | indent 10 }}
       policy: OnDemand
-{{ end -}}
+{{- end }}
+{{- end }}

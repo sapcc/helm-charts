@@ -21,23 +21,14 @@ spec:
     metadata:
       annotations:
         kubectl.kubernetes.io/default-container: octavia-migration
+        {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
     spec:
       restartPolicy: OnFailure
     {{- if $proxysql }}
       {{- include "utils.proxysql.job_pod_settings" . | nindent 6 }}
     {{- end }}
       initContainers:
-        - name: wait-for-dependencies
-          image: {{required ".Values.global.registry is missing" .Values.global.registry}}/loci-octavia:{{required "Values.imageVersion is missing" .Values.imageVersion}}
-          imagePullPolicy: IfNotPresent
-          command: ['dumb-init', 'kubernetes-entrypoint']
-          env:
-            - name: COMMAND
-              value: "true"
-            - name: DEPENDENCY_SERVICE
-              value: {{ include "octavia.db_service" . }}
-            - name: NAMESPACE
-              value: {{ .Release.Namespace }}
+        {{- include "utils.snippets.kubernetes_entrypoint_init_container" (list . (dict "service" (include "octavia.db_service" .))) | indent 8 }}
         {{- if .Values.proxysql.native_sidecar }}
         {{- include "utils.proxysql.container" . | indent 8 }}
         {{- end }}
@@ -52,7 +43,7 @@ spec:
             - |
               set -euo pipefail
               octavia-db-manage upgrade head
-              {{ include "utils.proxysql.proxysql_signal_stop_script" . | trim }}
+              {{- include "utils.script.job_finished_hook" . | nindent 14 }}
           env:
             {{- if .Values.sentry.enabled }}
             - name: SENTRY_DSN

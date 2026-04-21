@@ -33,6 +33,7 @@ spec:
     spec:
 {{ include "utils.proxysql.pod_settings" . | indent 6 }}
       initContainers:
+      {{- include "utils.snippets.kubernetes_entrypoint_init_container" (list . (dict "jobs" "octavia-migration")) | indent 6 }}
       {{- if .Values.proxysql.native_sidecar }}
       {{- include "utils.proxysql.container" . | indent 6 }}
       {{- end }}
@@ -40,7 +41,11 @@ spec:
         - name: octavia-f5-housekeeping
           image: {{required ".Values.global.registry is missing" .Values.global.registry}}/loci-octavia:{{required "Values.imageVersion is missing" .Values.imageVersion}}
           imagePullPolicy: IfNotPresent
-          command: ['dumb-init', 'kubernetes-entrypoint']
+          command:
+            - dumb-init
+            - octavia-f5-housekeeping
+            - --config-file
+            - /etc/octavia/octavia.conf
           ports:
             - name: metrics
               containerPort: 8000
@@ -61,12 +66,6 @@ spec:
             {{- include "utils.proxysql.volume_mount" . | indent 12 }}
             {{- include "utils.trust_bundle.volume_mount" . | indent 12 }}
           env:
-            - name: COMMAND
-              value: "octavia-f5-housekeeping --config-file /etc/octavia/octavia.conf"
-            - name: DEPENDENCY_JOBS
-              value: octavia-migration
-            - name: NAMESPACE
-              value: {{ .Release.Namespace }}
             - name: PYTHONWARNINGS
               value: "ignore:Unverified HTTPS request"
             - name: REQUESTS_CA_BUNDLE

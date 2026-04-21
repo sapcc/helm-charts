@@ -15,14 +15,23 @@ spec:
 {{- end }}
   deployment:
     image:
+{{- if and $.Values.gardenlet.image $.Values.gardenlet.image.repository }}
+      repository: {{ $.Values.gardenlet.image.repository }}
+{{- end }}
+{{- if and $.Values.gardenlet.image $.Values.gardenlet.image.tag }}
+      tag: {{ $.Values.gardenlet.image.tag }}
+{{- else }}
       tag: {{ $.Chart.AppVersion }}
+{{- end }}
     imageVectorOverwrite: |
 {{ $.Values.operator.imageVectorOverwrite | indent 6 }}
+    componentImageVectorOverwrite: |
+{{ $.Values.operator.componentImageVectorOverwrites | indent 6 }}
     podLabels:
       networking.resources.gardener.cloud/to-virtual-garden-kube-apiserver-tcp-443: allowed
     helm:
       ociRepository:
-        ref: keppel.global.cloud.sap/ccloud-europe-docker-pkg-dev-mirror/gardener-project/releases/charts/gardener/gardenlet:{{ $.Chart.AppVersion }}
+{{ include "cc-gardener.extension.ociRepository" (dict "ociRepository" $.Values.gardenlet.helm.ociRepository "fallbackTag" $.Chart.AppVersion) | indent 8 }}
   config:
     gardenClientConnection:
       kubeconfigSecret:

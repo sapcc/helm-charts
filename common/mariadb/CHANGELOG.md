@@ -1,5 +1,22 @@
 # Changelog
 
+## v0.35.0 - 2026/04/14
+* add Ceph S3 storage backend support for backup-v2
+* fix Swift template to use `values.yaml` fields instead of hardcoded values
+* chart version bumped
+
+## v0.34.0 - 2026/04/01
+* remove unneeded privileges from the `backup` user
+* add `replace_grants` user option: when `true`, revokes all existing privileges before re-granting
+* add missing `serviceAccount` configuration for backup-v2 deployment
+* `maria-back-me-up` updated to `10.11-20260409091116`
+* chart version bumped
+
+## v0.33.1 - 2026/03/27
+* updated sidecar image:
+  * `mysqld-exporter` image updated to `0.19.0`
+* chart version bumped
+
 ## v0.33.0 - 2026/03/03
 * Add InnoDB buffer pool Prometheus alerts: `MariaDBBufferPoolNearlyFull` (warning, < 10% free) and `MariaDBBufferPoolExhausted` (critical, < 2.5% free)
 

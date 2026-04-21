@@ -102,6 +102,9 @@ pxc_db:
       enabled: true
 
 mysql_metrics:
+  resources:
+    limits:
+      memory: 512Mi
   db_name: barbican
   db_user: barbican
   customMetrics:
@@ -437,11 +440,11 @@ logging:
     barbican:
       handlers: stdout, sentry
       level: INFO
-    eventlet.wsgi.server:
-      handlers: stdout, sentry
-      level: INFO
     sqlalchemy.engine.base.Engine:
       handlers: stdout, sentry
+      level: WARNING
+    datadog.dogstatsd:
+      handlers: "null"
       level: WARNING
 
 sentry:
@@ -452,6 +455,7 @@ tlsacme: true
 # sapcc/openstack-rate-limit-middleware
 sapcc_rate_limit:
   enabled: true
+  backend_secret_file: /etc/barbican/ratelimit-backend-secret.conf
 
 api-ratelimit-redis:
   persistence:
@@ -476,6 +480,17 @@ alerts:
   enabled: true
   # Name of the Prometheus to which the alerts should be assigned to.
   prometheus: openstack
+
+# SimpleCrypto plugin configuration (software-based encryption)
+# Used as fallback when HSM is not available or for testing
+simple_crypto:
+  # Fernet Key-Encryption Keys (KEK) for SimpleCrypto plugin
+  # Multiple keys can be specified for key rotation (first key is used for new encryptions)
+  # Generate a key with: python3 -c 'from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())'
+  # IMPORTANT: Must be configured in region-specific values or secrets when multistore is enabled
+  kek: []
+  # Optional: Custom plugin name displayed in the UI
+  # plugin_name: "Software Only Crypto"
 
 # HSM-Barbican lunaclient
 hsm:

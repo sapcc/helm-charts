@@ -26,6 +26,7 @@ spec:
         configmap-etc-hash: {{ include (print .Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
         configmap-kvm-etc-hash: {{ include "kvm_configmap" . | sha256sum }}
     spec:
+      serviceAccountName: {{ .Values.hypervisorAgentsServiceAccountName | default .Release.Name }}
       terminationGracePeriodSeconds: {{ $hypervisor.default.graceful_shutdown_timeout | default .Values.defaults.default.graceful_shutdown_timeout | add 5 }}
       hostNetwork: true
       hostPID: true
@@ -47,12 +48,29 @@ spec:
         {{- $hypervisor.pod.affinity | toYaml| nindent 8 }}
       {{- end }}
       hostAliases:
-      {{- range $ip := .Values.rabbitmq.externalIPs }}
+      {{- $activeCell := include "nova.helpers.get_active_cell" $ }}
+      {{- $rabbitmq := include "nova.helpers.get_rabbitmq_by_cell" (tuple $ $activeCell) | fromJson }}
+      {{- range $ip := $rabbitmq.externalIPs }}
       - ip: {{ $ip }}
         hostnames:
-        - {{ $.Values.rabbitmq.host }}
+          - {{ include "nova.helpers.cell_rabbitmq_host" (tuple $ $activeCell) }}
       {{- end }}
       initContainers:
+      - name: kubernetes-entrypoint
+        image: {{ .Values.global.ghcrIoMirror }}/sapcc/kubernetes-entrypoint:{{ .Values.imageVersionKubernetesEntrypoint }}
+        command:
+        - kubernetes-entrypoint
+        env:
+        - name: COMMAND
+          value: "true"
+        - name: POD_NAME
+          valueFrom: {fieldRef: {fieldPath: metadata.name}}
+        - name: NAMESPACE
+          valueFrom: {fieldRef: {fieldPath: metadata.namespace}}
+        - name: NODE_NAME
+          valueFrom: {fieldRef: {fieldPath: spec.nodeName}}
+        - name: DEPENDENCY_CUSTOM_RESOURCE
+          value: '[{"apiVersion":"kvm.cloud.sap/v1","kind":"Hypervisor","name":"$(NODE_NAME)","fields":[{"key":".status.conditions[?(@.type==\"TLSCertificateInstalled\")].status","value":"True"}]}]'
       - name: nova-compute-init
         image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/{{ .Values.imageName }}:{{ .Values.imageVersion | required "Please set imageVersion similar" }}
         command: ["/container.init/nova-compute-init"]
@@ -74,7 +92,7 @@ spec:
         - |
           set -euxo pipefail
           DIR=/var/lib/nova/instances
-          mount -t nfs -o {{ dig "config_file" "libvirt" "nfs_mount_options" "defaults" $hypervisor }} {{ .Values.defaults.hypervisor.kvm.instance_nfs_share }} "$DIR"
+          grep "{{ .Values.defaults.hypervisor.kvm.instance_nfs_share }} $DIR" /proc/self/mounts || mount -t nfs -o {{ dig "config_file" "libvirt" "nfs_mount_options" "defaults" $hypervisor }} {{ .Values.defaults.hypervisor.kvm.instance_nfs_share }} "$DIR"
           chgrp 64055 "$DIR"
           chown 42436 "$DIR"
         volumeMounts:

@@ -36,7 +36,70 @@ pgmetrics:
   alerts:
     support_group: containers
   databases:
-    archer: {}
+    archer:
+      customMetrics:
+        archer_services:
+          query: >
+            SELECT
+              COALESCE(status, 'none') AS status,
+              COALESCE(provider, 'none') AS provider,
+              COALESCE(health_status, 'none') AS health_status,
+              COUNT(*) AS gauge
+            FROM service
+            GROUP BY status, provider, health_status
+            UNION SELECT 'none', 'none', 'none', 0
+          metrics:
+            - status:
+                usage: "LABEL"
+                description: "Service status"
+            - provider:
+                usage: "LABEL"
+                description: "Service provider (tenant/cp)"
+            - health_status:
+                usage: "LABEL"
+                description: "Service health status"
+            - gauge:
+                usage: "GAUGE"
+                description: "Total number of services"
+
+        archer_endpoints:
+          query: >
+            SELECT
+              COALESCE(status, 'none') AS status,
+              COUNT(*) AS gauge
+            FROM endpoint
+            GROUP BY status
+            UNION SELECT 'none', 0
+          metrics:
+            - status:
+                usage: "LABEL"
+                description: "Endpoint status"
+            - gauge:
+                usage: "GAUGE"
+                description: "Total number of endpoints"
+
+        archer_agents:
+          query: >
+            SELECT
+              COALESCE(host, 'none') AS host,
+              COALESCE(provider, 'none') AS provider,
+              enabled::text AS enabled,
+              COALESCE(EXTRACT(epoch FROM (now() - heartbeat_at)), 0) AS heartbeat_age_seconds
+            FROM agents
+            UNION SELECT 'none', 'none', 'false', 0
+          metrics:
+            - host:
+                usage: "LABEL"
+                description: "Agent host"
+            - provider:
+                usage: "LABEL"
+                description: "Agent provider"
+            - enabled:
+                usage: "LABEL"
+                description: "Agent enabled status"
+            - heartbeat_age_seconds:
+                usage: "GAUGE"
+                description: "Age in seconds since last agent heartbeat (for stale agent detection)"
 
 alerts:
   enabled: true

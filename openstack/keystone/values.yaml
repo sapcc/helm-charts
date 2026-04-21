@@ -29,7 +29,7 @@ insecure_debug: false
 run_db_migration: true
 
 # ignore invalid role assignments
-skipRepairRoleAssignments: false
+skipRepairRoleAssignments: true
 
 ## Affinity for pod assignment
 ## Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
@@ -153,7 +153,7 @@ api:
   resources:
     requests:
       memory: 2Gi
-      cpu: 1500m
+      cpu: 3000m
     limits:
       memory: 3Gi
 
@@ -173,7 +173,7 @@ cron:
   image: "loci-keystone"
   #imageTag: latest
 
-  cronSchedule: "0 * * * *"
+  cronSchedule: "0 3 * * *"
 
   replicas: 1
 
@@ -568,7 +568,12 @@ report_invalid_password_hash:
 
 prodel: {}
   # # This should be an endpoint implementing oslo.policy HTTPCheck. Uses
-  # # calculated value provided by "prodel_url" template when not specified.
-  # url: "http://prodel.prodel.svc/check-delete_project/%(project_id)s"
+  # # calculated value provided by "prodel_url" template when not specified
+  # # (optionally, configured with `.Values.prodel.prodelNamespace`)
+  # url: "http://prodel.<prodelNamespace>.svc/check-delete_project/%(project_id)s"
+
+  # # the namespace where prodel is deployed - used for calculation of the value
+  # # of `.Values.prodel.url`, when provided, otherwise defaults to "prodel".
+  # prodelNamespace: "prodel"
 
 databaseKind: ""
