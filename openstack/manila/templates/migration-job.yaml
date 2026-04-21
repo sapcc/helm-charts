@@ -35,7 +35,7 @@ spec:
       priorityClassName: {{ .Values.pod.priority_class.low }}
       initContainers:
       {{- tuple . (dict "service" (include "manila.db_service" .)) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
-      {{- if .Values.proxysql.native_sidecar }}
+      {{- if and $proxysql .Values.proxysql.native_sidecar }}
       {{- include "utils.proxysql.container" . | indent 6 }}
       {{- end }}
       containers:
