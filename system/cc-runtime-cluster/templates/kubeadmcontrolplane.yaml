@@ -299,12 +299,30 @@ spec:
             resources:
               - group: "coordination.k8s.io"
                 resources: ["leases"]
-          - level: None
-            users: ["system:kube-proxy", "system:apiserver"]
-            verbs: ["watch", "get", "list"]
-          - level: None
-            users: ["system:serviceaccount:kube-system:horizontal-pod-autoscaler"]
+
+          # Always log secrets read
+          - level: Metadata
+            resources:
+              - group: ""
+                resources: ["secrets", "configmaps", "tokenreviews"]
             verbs: ["get", "list", "watch"]
+
+          # Disable read logs from basic components
+          - level: None
+            users:
+              - "system:kube-proxy"
+              - "system:apiserver"
+              - "system:kube-controller-manager"
+              - "system:kube-scheduler"
+            verbs: ["watch", "get", "list"]
+
+          # Disable read logs from HPA, istiod, calico, prom, etc.
+          - level: None
+            userGroups:
+              - "system:serviceaccounts"
+              - "system:nodes"
+            verbs: ["get", "list", "watch"]
+
           - level: Metadata
       owner: root:root
       path: /etc/kubernetes/audit-policy.yaml
