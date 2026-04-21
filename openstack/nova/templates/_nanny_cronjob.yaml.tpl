@@ -53,10 +53,6 @@ spec:
                   - key: cell0.conf
                     path: nova.conf.d/cell0.conf
                   {{- end }}
-                  {{- if $values.add_cell1_conf }}
-                  - key: cell1.conf
-                    path: nova.conf.d/cell1.conf
-                  {{- end }}
           initContainers:
           {{- tuple . (dict "service" (include "nova.helpers.database_services" .)) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 10 }}
           containers:
