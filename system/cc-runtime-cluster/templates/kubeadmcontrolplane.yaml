@@ -288,6 +288,7 @@ spec:
         omitStages:
           - "RequestReceived"
         rules:
+          # DROP SYSTEM NOISE
           - level: None
             nonResourceURLs:
               - "/healthz*"
@@ -295,35 +296,50 @@ spec:
               - "/readyz*"
               - "/version"
               - "/metrics"
+              - "/openapi/*"
+              - "/swagger*"
+          # DROP HIGH-VOLUME RESOURCE NOISE
           - level: None
             resources:
               - group: "coordination.k8s.io"
                 resources: ["leases"]
-
-          # Always log secrets read
-          - level: Metadata
-            resources:
               - group: ""
-                resources: ["secrets", "configmaps", "tokenreviews"]
-            verbs: ["get", "list", "watch"]
-
-          # Disable read logs from basic components
-          - level: None
-            users:
-              - "system:kube-proxy"
-              - "system:apiserver"
-              - "system:kube-controller-manager"
-              - "system:kube-scheduler"
-            verbs: ["watch", "get", "list"]
-
-          # Disable read logs from HPA, istiod, calico, prom, etc.
+                resources: ["events"]
+          # SILENCE SYSTEM COMPONENTS
           - level: None
             userGroups:
-              - "system:serviceaccounts"
               - "system:nodes"
-            verbs: ["get", "list", "watch"]
-
+            users:
+              - "kubelet"
+              - "system:kube-controller-manager"
+              - "system:kube-scheduler"
+              - "system:kube-proxy"
+              - "system:apiserver"
+              - "system:serviceaccount:kube-system:generic-garbage-collector"
+              - "system:serviceaccount:kube-system:namespace-controller"
+          # Log full request bodies for any access to credentials or permission
+          - level: Request
+            resources:
+              - group: ""
+                resources: ["secrets"]
+              - group: "rbac.authorization.k8s.io"
+                resources: ["clusterroles", "clusterrolebindings", "roles", "rolebindings"]
+          # Log full request bodies for any access to pods
+          - level: Request
+            resources:
+              - group: ""
+                resources: ["pods/exec", "pods/attach", "pods/portforward", "pods/log"]
+          # Log who is looking at ConfigMaps or ServiceAccounts.
           - level: Metadata
+            verbs: ["get", "list", "watch"]
+            resources:
+              - group: ""
+                resources: ["configmaps", "serviceaccounts"]
+              - group: "authentication.k8s.io"
+                resources: ["tokenreviews"]
+          # catch all mutations
+          - level: Metadata
+            verbs: ["create", "update", "patch", "delete"]
       owner: root:root
       path: /etc/kubernetes/audit-policy.yaml
       permissions: "0644"
