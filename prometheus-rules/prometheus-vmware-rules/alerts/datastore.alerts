@@ -307,6 +307,21 @@ groups:
       description: "There is no Cinder tag present for the `{{ $labels.datastore }}` datastore in the *{{ $labels.datacenter }}* availability zone\nLink to the vCenter: --> <https://{{ $labels.vcenter }}|{{ $labels.vcenter }}>"
       summary: "There is no Cinder tag present for the `{{ $labels.datastore }}` datastore in the *{{ $labels.datacenter }}* availability zone\nLink to the vCenter: --> <https://{{ $labels.vcenter }}|{{ $labels.vcenter }}>"
 
+  - alert: CinderTagMissingForDatastoreNFS
+    expr: |
+      vrops_datastore_summary_tag{type="nfs", summary_tag!="[{\"category\":\"cinder\",\"name\":\"fcd\"}]"}
+    for: 1h
+    labels:
+      severity: warning
+      tier: vmware
+      service: storage
+      support_group: compute
+      meta: "There is no or incorrect Cinder tag present for the `{{ $labels.datastore }}` NFS datastore in the *{{ $labels.datacenter }}* availability zone\nLink to the vCenter: --> <https://{{ $labels.vcenter }}|{{ $labels.vcenter }}>"
+      playbook: docs/support/playbook/cinder/cinder-tag-missing
+    annotations:
+      description: "There is no or incorrect Cinder tag present for the `{{ $labels.datastore }}` NFS datastore in the *{{ $labels.datacenter }}* availability zone\nLink to the vCenter: --> <https://{{ $labels.vcenter }}|{{ $labels.vcenter }}>"
+      summary: "There is no or incorrect Cinder tag present for the `{{ $labels.datastore }}` NFS datastore in the *{{ $labels.datacenter }}* availability zone\nLink to the vCenter: --> <https://{{ $labels.vcenter }}|{{ $labels.vcenter }}>"
+
   - alert: CinderTagAddedForReservedDatastore
     expr: |
       vrops_datastore_summary_custom_tag_cinder_state{type=~"(vmfs_s_hdd|vmfs_p_ssd)", summary_custom_tag_cinder_state="reserved"} > 0
