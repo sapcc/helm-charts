@@ -94,3 +94,18 @@ groups:
     annotations:
       description: There is a connection problem to all Greenhouse Thanos stores. Most likely some configuration change messed this up.
       summary: Thanos global can't reach any of the onboarded Greenhouse stores.
+
+  - alert: CC3TestPrometheusRegionDown
+    expr: |
+      count by (region) (cc3test_status{name=~"TestPrometheus_datapath.*"} offset 2d ) unless on (region) (count by (region)(cc3test_status{name=~"TestPrometheus_datapath.*"}))
+    for: 10m
+    labels:
+      severity: critical
+      support_group: observability
+      service: metrics
+      meta: Prometheus in region {{ $labels.region }} is not reporting datapath test metrics
+      playbook: docs/support/playbook/prometheus/alerts/cc3test-region-down
+    annotations:
+      description: Region {{ $labels.region }} was reporting Prometheus datapath tests 2 days ago but is not sending metrics currently. This indicates the region is down or the monitoring is broken.
+      summary: Region {{ $labels.region }} Prometheus datapath tests are absent
+
