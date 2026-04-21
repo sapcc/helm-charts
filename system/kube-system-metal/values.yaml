@@ -82,10 +82,6 @@ ingress-nginx:
     # See https://github.com/kubernetes/ingress-nginx/issues/7837 .
     allowSnippetAnnotations: false
 
-    extraArgs:
-      # Required for ssl-passthrough ingress annotations to take effect.
-      enable-ssl-passthrough: true
-
     config:
       custom-http-errors: "495"
 
@@ -233,6 +229,30 @@ ingress-nginx-external:
                   operator: In
                   values:
                     - default-backend
+
+ingress-nginx-passthrough:
+  enabled: true
+  fullnameOverride: kube-system-ingress-nginx-passthrough
+  releaseLabelOverride: kube-system
+
+  rbac:
+    create: true
+
+  serviceAccount:
+    create: true
+
+  controller:
+    ingressClass: nginx-passthrough
+    electionID: passthrough-ingress-controller-leader
+
+    extraArgs:
+      # Required for ssl-passthrough ingress annotations to take effect.
+      # Deployed as a separate controller to avoid the performance penalty
+      # on all HTTPS traffic that --enable-ssl-passthrough introduces.
+      enable-ssl-passthrough: true
+
+    admissionWebhooks:
+      enabled: false
 
 # For now enabled via regional values.
 vertical-pod-autoscaler:
