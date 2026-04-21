@@ -119,14 +119,14 @@ spec:
                   container := containers[_]
                   object.get(container, ["securityContext", "allowPrivilegeEscalation"], false)
                   not isContainerAllowedToUsePrivilegeEscalation(container)
-                  msg := sprintf("pod is not allowed to set spec.containers[%q].securityContext.allowPrivilegeEscalation = true", [container.name])
+                  msg := sprintf("pod is not allowed to set spec.containers[%q].securityContext.allowPrivilegeEscalation = true (image = %q)", [container.name, extract_repository(container.image)])
               }
 
               violation contains {"msg": add_support_labels.from_k8s_object(iro, msg)} if {
                   container := containers[_]
                   object.get(container, ["securityContext", "privileged"], false)
                   not isContainerAllowedToBePrivileged(container)
-                  msg := sprintf("pod is not allowed to set spec.containers[%q].securityContext.privileged = true", [container.name])
+                  msg := sprintf("pod is not allowed to set spec.containers[%q].securityContext.privileged = true (image = %q)", [container.name, extract_repository(container.image)])
               }
 
               violation contains {"msg": add_support_labels.from_k8s_object(iro, msg)} if {
@@ -134,7 +134,7 @@ spec:
                   capabilities := object.get(container, ["securityContext", "capabilities", "add"], [])
                   capability := capabilities[_]
                   not isContainerAllowedToUseCapability(container, capability)
-                  msg := sprintf("pod is not allowed to set spec.containers[%q].securityContext.capabilities.add = [%q]", [container.name, capability])
+                  msg := sprintf("pod is not allowed to set spec.containers[%q].securityContext.capabilities.add = [%q] (image = %q)", [container.name, capability, extract_repository(container.image)])
               }
 
               violation contains {"msg": add_support_labels.from_k8s_object(iro, msg)} if {
@@ -152,7 +152,7 @@ spec:
 
                   # ...it needs to be allowed
                   not isContainerAllowedToAccessHostPath(container, hostPath, readOnly)
-                  msg := sprintf("container %q in this pod is not allowed to mount hostPath volumes with path %q (readonly = %s)", [container.name, hostPath, readOnly])
+                  msg := sprintf("container %q in this pod is not allowed to mount hostPath volumes with path %q (readonly = %s) (image = %q)", [container.name, hostPath, readOnly, extract_repository(container.image)])
               }
 
               ########################################################################

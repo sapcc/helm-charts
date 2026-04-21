@@ -103,6 +103,21 @@ spec:
         description: "Barbican Client License in {{`{{ $labels.devicename }}`}} is {{`{{ $value }}`}}"
         summary: "Barbican Client License in {{`{{ $labels.devicename }}`}} is {{`{{ $value }}`}}"
   
+    - alert: thalesHsmPartitionsFreeWarning
+      expr: snmp_thales_hsmPartitionsFree{hsmModel="Luna K7"} <= 3
+      for: 12h
+      labels:
+        severity: warning
+        service: barbican
+        context: thales
+        meta: "HSM {{`{{ $labels.devicename }}`}} has only {{`{{ $value }}`}} free partitions"
+        dashboard: thales
+        no_alert_on_absence: "true"
+        support_group: identity
+      annotations:
+        description: "HSM {{`{{ $labels.devicename }}`}} (Luna K7) has only {{`{{ $value }}`}} free partitions remaining. Only 3 more partitions can be created."
+        summary: "HSM {{`{{ $labels.devicename }}`}} has low free partitions ({{`{{ $value }}`}} remaining)"
+
     - alert: thalesDeviceIsUnReachable
       expr: count(up{job="scrapeConfig/infra-monitoring/snmp-exporter-thales"} == 0 or absent(up{job="scrapeConfig/infra-monitoring/snmp-exporter-thales"})) by (name, device_type)
       for: 5m

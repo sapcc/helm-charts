@@ -371,3 +371,98 @@ groups:
     annotations:
       description: "cinder_aggregate_id is not set for the `{{ $labels.datastore }}` NFS datastore in *{{ $labels.datacenter }}* availability zone.\nLink to the vCenter: --> <https://{{ $labels.vcenter }}|{{ $labels.vcenter }}>"
       summary: "cinder_aggregate_id is not set for the `{{ $labels.datastore }}` NFS datastore in *{{ $labels.datacenter }}* availability zone.\nLink to the vCenter: --> <https://{{ $labels.vcenter }}|{{ $labels.vcenter }}>"
+
+  - alert: NFSQtreeDatastoreCinderAggregateIDNotMatching
+    expr: |
+      # PART 1: Individual Validation (Wrong/Empty IDs)
+      (
+        max by (vcenter, datacenter, datastore, summary_custom_tag_cinder_aggregate_id) (
+          vrops_datastore_summary_custom_tag_cinder_aggregate_id{datastore=~"^nfs_.*_vc_[a-zA-Z]_[0-9]+$"}
+        )
+        unless 
+        max by (vcenter, datacenter, datastore, summary_custom_tag_cinder_aggregate_id) (
+          vrops_datastore_summary_custom_tag_cinder_aggregate_id{summary_custom_tag_cinder_aggregate_id=~"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"}
+        )
+      )
+      OR
+      # PART 2: Consistency Check (Grouped by name before the last _Y)
+      (
+        label_replace(
+          max by (vcenter, datacenter, datastore, summary_custom_tag_cinder_aggregate_id) (
+            vrops_datastore_summary_custom_tag_cinder_aggregate_id{datastore=~"^nfs_.*_vc_[a-zA-Z]_[0-9]+$"}
+          ),
+          "datastore_group", "$1", "datastore", "^(.*)_[0-9]+$"
+        )
+        and ON(vcenter, datacenter, datastore_group) (
+          count by (vcenter, datacenter, datastore_group) (
+            count by (vcenter, datacenter, datastore_group, summary_custom_tag_cinder_aggregate_id) (
+              label_replace(
+                max by (vcenter, datacenter, datastore, summary_custom_tag_cinder_aggregate_id) (
+                  vrops_datastore_summary_custom_tag_cinder_aggregate_id{datastore=~"^nfs_.*_vc_[a-zA-Z]_[0-9]+$"}
+                ),
+                "datastore_group", "$1", "datastore", "^(.*)_[0-9]+$"
+              )
+            )
+          ) > 1
+        )
+      )
+    for: 30m
+    labels:
+      severity: warning
+      tier: vmware
+      service: storage
+      support_group: compute
+      meta: "cinder_aggregate_id is not set for the `{{ $labels.datastore }}` NFS datastore in *{{ $labels.datacenter }}* availability zone.\nLink to the vCenter: --> <https://{{ $labels.vcenter }}|{{ $labels.vcenter }}>"
+      playbook: docs/support/playbook/cinder/cinder-fcd-operations/#NFSQtreeDatastoreCinderAggregateIDNotMatching
+    annotations:
+      description: "cinder_aggregate_id is not set for the `{{ $labels.datastore }}` NFS datastore in *{{ $labels.datacenter }}* availability zone.\nLink to the vCenter: --> <https://{{ $labels.vcenter }}|{{ $labels.vcenter }}>"
+      summary: "cinder_aggregate_id is not set for the `{{ $labels.datastore }}` NFS datastore in *{{ $labels.datacenter }}* availability zone.\nLink to the vCenter: --> <https://{{ $labels.vcenter }}|{{ $labels.vcenter }}>"
+
+  - alert: NFSDatastoreCinderAggregateIDNotMatching
+    expr: |
+      # PART 1: Format Validation (The 8-8-0000... pattern)
+      (
+        max by (vcenter, datacenter, datastore, summary_custom_tag_cinder_aggregate_id) (
+          vrops_datastore_summary_custom_tag_cinder_aggregate_id{
+            datastore=~"^nfs_.*", 
+            datastore!~".*_vc_[a-zA-Z]_[0-9]+$"
+          }
+        )
+        unless
+        max by (vcenter, datacenter, datastore, summary_custom_tag_cinder_aggregate_id) (
+          vrops_datastore_summary_custom_tag_cinder_aggregate_id{
+            summary_custom_tag_cinder_aggregate_id=~"^[0-9a-fA-F]{8}-[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+          }
+        )
+      )
+      OR
+      # PART 2: Global Consistency (Name must match ID everywhere)
+      (
+        max by (vcenter, datacenter, datastore, summary_custom_tag_cinder_aggregate_id) (
+          vrops_datastore_summary_custom_tag_cinder_aggregate_id{
+            datastore=~"^nfs_.*", 
+            datastore!~".*_vc_[a-zA-Z]_[0-9]+$"
+          }
+        )
+        and ON(datastore) (
+          count by (datastore) (
+            count by (datastore, summary_custom_tag_cinder_aggregate_id) (
+              vrops_datastore_summary_custom_tag_cinder_aggregate_id{
+                datastore=~"^nfs_.*", 
+                datastore!~".*_vc_[a-zA-Z]_[0-9]+$"
+              }
+            )
+          ) > 1
+        )
+      )
+    for: 30m
+    labels:
+      severity: warning
+      tier: vmware
+      service: storage
+      support_group: compute
+      meta: "cinder_aggregate_id is not set for the `{{ $labels.datastore }}` NFS datastore in *{{ $labels.datacenter }}* availability zone.\nLink to the vCenter: --> <https://{{ $labels.vcenter }}|{{ $labels.vcenter }}>"
+      playbook: docs/support/playbook/cinder/cinder-fcd-operations/#NFSDatastoreCinderAggregateIDNotMatching
+    annotations:
+      description: "cinder_aggregate_id is not set for the `{{ $labels.datastore }}` NFS datastore in *{{ $labels.datacenter }}* availability zone.\nLink to the vCenter: --> <https://{{ $labels.vcenter }}|{{ $labels.vcenter }}>"
+      summary: "cinder_aggregate_id is not set for the `{{ $labels.datastore }}` NFS datastore in *{{ $labels.datacenter }}* availability zone.\nLink to the vCenter: --> <https://{{ $labels.vcenter }}|{{ $labels.vcenter }}>"

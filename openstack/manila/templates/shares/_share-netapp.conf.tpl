@@ -107,7 +107,7 @@ reserved_share_percentage = {{ $share.reserved_share_percentage | default 30 }}
 {{- if eq 100 (int $share.reserved_share_extend_percentage)}}
 reserved_share_extend_percentage = 100
 {{- else }}
-reserved_share_extend_percentage = {{ $share.reserved_share_extend_percentage | default 25 }}
+reserved_share_extend_percentage = {{ $share.reserved_share_extend_percentage | default 20 }}
 {{- end }}
 
 {{- if eq 100 (int $share.reserved_share_from_snapshot_percentage)}}

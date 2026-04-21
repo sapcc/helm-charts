@@ -2,9 +2,9 @@
   {{- $envAll := index . 0 }}
   {{- $params := index . 1 }}
 - name: kubernetes-entrypoint
-  image: {{ $envAll.Values.global.registry }}/kubernetes-entrypoint:v0.3.1
+  image: {{ $envAll.Values.global.ghcrIoMirror }}/sapcc/kubernetes-entrypoint:{{ $envAll.Values.utils.kubernetesEntrypoint.imageVersion }}
   command:
-  - /kubernetes-entrypoint
+  - kubernetes-entrypoint
   env:
   - name: COMMAND
     value: "true"

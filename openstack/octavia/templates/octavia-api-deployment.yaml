@@ -46,6 +46,7 @@ spec:
       {{- include "utils.proxysql.pod_settings" . | nindent 6 }}
       {{- tuple . (dict "app.kubernetes.io/name" "octavia-api") | include "utils.topology.constraints" | indent 6 }}
       initContainers:
+      {{- include "utils.snippets.kubernetes_entrypoint_init_container" (list . (dict "jobs" "octavia-migration")) | indent 6 }}
       {{- if .Values.proxysql.native_sidecar }}
       {{- include "utils.proxysql.container" . | indent 6 }}
       {{- end }}
@@ -56,15 +57,13 @@ spec:
           {{- if .Values.api_backdoor }}
           command: ["/var/lib/openstack/bin/octavia-api"]
           {{- else }}
-          command: ['dumb-init', 'kubernetes-entrypoint']
+          command:
+            - dumb-init
+            - /usr/sbin/apachectl
+            - -D
+            - FOREGROUND
           {{- end }}
           env:
-            - name: COMMAND
-              value: "/usr/sbin/apachectl -D FOREGROUND"
-            - name: DEPENDENCY_JOBS
-              value: octavia-migration
-            - name: NAMESPACE
-              value: {{ .Release.Namespace }}
             - name: PYTHONWARNINGS
               value: "ignore:Unverified HTTPS request"
             - name: REQUESTS_CA_BUNDLE

@@ -49,7 +49,7 @@ spec:
       featureGates:
         AnonymousAuthConfigurableEndpoints: true
       structuredAuthentication:
-        configMapName: authentication-config-mgmt
+        configMapName: {{ printf "sci-k8s-management-auth-%s" $key }}
       {{- if $cluster.auditing.enabled }}
       auditConfig:
         auditPolicy:
@@ -62,6 +62,10 @@ spec:
     autoUpdate:
       kubernetesVersion: false
       machineImageVersion: false
+  {{- if $cluster.tier }}
+    confineSpecUpdateRollout: true
+    {{- include "maintenanceWindow" $cluster.tier | nindent 4 }}
+  {{- end }}
   {{- if $cluster.auditing.enabled }}
   extensions:
   - type: auditing
@@ -155,6 +159,8 @@ spec:
             name: gardenlinux
             version: {{ default $.Values.imageVersion $cluster.imageVersion }}
           type: baremetal
+        labels:
+          cloud.sap/maintenance-profile: metal
         minimum: {{ $worker.poolSize }}
         maximum: {{ $worker.poolSize }}
         maxSurge: 0

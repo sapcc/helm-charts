@@ -8,6 +8,16 @@ linkerd-support:
   annotate_namespace: true
 
 persesPlugin:
+
+  contentSync:
+    enabled: true
+    podAffinity:
+      enabled: false
+    image:
+      repository: "keppel.global.cloud.sap/ccloud-gcr-mirror/go-containerregistry/crane"
+      tag: "debug"
+    ociImageRef: "keppel.global.cloud.sap/ccloud/perses-regional-content:latest"
+
   perses:
     # Default values for perses.
     # This is a YAML-formatted file.
@@ -21,8 +31,10 @@ persesPlugin:
 
     # -- Image of Perses
     image:
+
+      registry: "keppel.global.cloud.sap"
       # -- Perses image repository and name
-      name: "keppel.eu-de-1.cloud.sap/ccloud-dockerhub-mirror/persesdev/perses"
+      name: "ccloud-dockerhub-mirror/persesdev/perses"
 
       # -- Overrides the image tag whose default is the chart appVersion.
       version: ""
@@ -33,6 +45,7 @@ persesPlugin:
     additionalLabels:
       {}
       # app: perses
+
 
     # -- Service account for Perses to use.
     serviceAccount:
@@ -109,10 +122,14 @@ persesPlugin:
       failureThreshold: 5
 
     # -- Additional volumes on the output StatefulSet definition.
-    volumes: []
+    volumes:
+      - name: plugins
+        emptyDir: {}
 
     # -- Additional VolumeMounts on the output StatefulSet definition.
-    volumeMounts: []
+    volumeMounts:
+      - name: plugins
+        mountPath: /etc/perses/plugins
     # -- TLS configuration for mounting certificates from Kubernetes secrets
     tls:
       # -- Enable TLS certificate mounting
@@ -219,9 +236,10 @@ persesPlugin:
     # --  Sidecar configuration that watches for ConfigMaps with the specified label/labelValue and loads them into Perses provisioning
     sidecar:
       # -- Enable the sidecar container for ConfigMap provisioning
-      enabled: false
+      enabled: true
       image:
-        repository: "keppel.eu-de-1.cloud.sap/ccloud-dockerhub-mirror/kiwigrid/k8s-sidecar"
+        registry: "keppel.global.cloud.sap"
+        repository: "ccloud-dockerhub-mirror/kiwigrid/k8s-sidecar"
       # -- Label key to watch for ConfigMaps containing Perses resources
       label: "perses.dev/resource"
       # -- Label value to watch for ConfigMaps containing Perses resources
@@ -230,11 +248,16 @@ persesPlugin:
       allNamespaces: false
       # -- add additional environment variables to sidecar container. you can look at the k8s-sidecar documentation for more information - https://github.com/kiwigrid/k8s-sidecar
       extraEnvVars:
-        # -- This environment variable is required due to a bug in the upstream k8s-sidecar image. link to issue: https://github.com/kiwigrid/k8s-sidecar/issues/400
+        - name: NAMESPACE
+          value: "thanos"
+          # -- This environment variable is required due to a bug in the upstream k8s-sidecar image. link to issue: https://github.com/kiwigrid/k8s-sidecar/issues/400
         - name: SKIP_TLS_VERIFY
           value: "true"
       # -- Enable secret access permissions in the cluster role. When enabled, the sidecar will have permissions to read secrets and use them.
       enableSecretAccess: false
+      securityContext:
+        # sidecar runs with escalated privelege as the metal clusters use NFS storage and fsGroup has no effect on them.
+        runAsUser: 0
 
     # -- Persistence parameters
     persistence:
@@ -252,8 +275,7 @@ persesPlugin:
       size: 8Gi
 
       # -- Security context for the PVC when persistence is enabled
-      securityContext:
-        fsGroup: 2000
+      securityContext: {}
 
       # -- Labels for the PVC
       labels: {}
@@ -305,29 +327,6 @@ persesPlugin:
 
 # -- All the SAP Cloud Infrastructure specific values should go here.
 sapCloudInfrastructure:
-
-  contentSync:
-    # -- Enable content sync CronJob that pulls Perses manifests from OCI artifact
-    enabled: true
-
-    # -- Cron schedule for content sync job (format: "minute hour day month weekday")
-    # Default: every 5 minutes.
-    schedule: "*/5 * * * *"
-
-    # -- Enable debug logging for the content sync CronJob
-    debug: false
-
-    crane:
-      # -- Image of crane OCI artifact tool
-      image: "keppel.eu-de-1.cloud.sap/ccloud-gcr-mirror/go-containerregistry/crane"
-      # -- Version of crane OCI artifact tool
-      version: "debug"
-
-    contentImage:
-      # -- OCI artifact image containing Perses manifests (projects, dashboards, etc.)
-      name: "keppel.eu-de-1.cloud.sap/ccloud/perses-regional-content"
-      # -- Version of the Perses content OCI artifact
-      version: "latest"
 
 owner-info:
   service: perses

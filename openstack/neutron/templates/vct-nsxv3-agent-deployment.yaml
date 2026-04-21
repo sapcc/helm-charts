@@ -45,6 +45,8 @@ template: |
     template:
       metadata:
         labels:
+          alert-tier: os
+          alert-service: neutron
 {{ tuple . "neutron" "nsxv3" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 10 }}
           name: neutron-nsxv3-agent-{= name =}
           vcenter: {= host =}
@@ -78,7 +80,7 @@ template: |
           livenessProbe:
             exec:
               command: ["neutron-agent-liveness", "--config-file", "/etc/neutron/neutron.conf", "--config-file", "/etc/neutron/secrets/neutron-common-secrets.conf", "--config-file", "/etc/neutron/plugins/ml2/ml2-nsxv3.ini", "--agent-type", "NSXv3 Agent"]
-            initialDelaySeconds: 90
+            initialDelaySeconds: 200
             periodSeconds: 30
             timeoutSeconds: 10
           resources:

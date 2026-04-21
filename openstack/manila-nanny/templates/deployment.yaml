@@ -49,6 +49,8 @@ spec:
         - name: secret-volume
           secret:
             secretName: manila-nanny-secret
+      initContainers:
+        {{- include "utils.snippets.kubernetes_entrypoint_init_container" (list . (dict "service" .Values.dependencyService)) | indent 8 }}
       containers:
 {{- if .Values.nannies.db_purge.enabled }}
         - name: db-consistency-and-purge
@@ -56,10 +58,14 @@ spec:
           imagePullPolicy: IfNotPresent
           command:
             - dumb-init
-            - kubernetes-entrypoint
+{{- if not .Values.debug }}
+            - /bin/bash
+            - /scripts/manila-db-consistency-and-purge.sh
+{{- else }}
+            - sleep
+            - inf
+{{- end }}
           env:
-            - name: COMMAND
-              value: {{ include "shellCommand" (merge (dict "script" "manila-db-consistency-and-purge.sh") .) | quote }}
             - name: MANILA_DB_PURGE_ENABLED
               value: {{ .Values.nannies.db_purge.enabled | quote }}
             - name: MANILA_DB_PURGE_OLDER_THAN
@@ -70,8 +76,6 @@ spec:
               value: {{ .Values.nannies.consistency.dry_run | quote }}
             - name: MANILA_NANNY_INTERVAL
               value: {{ .Values.nannies.db_purge.interval | default .Values.interval | quote }}
-            - {{ include "envNamespace" . |  nindent 14 | trim }}
-            - {{ include "envDependencyService" . | nindent 14 | trim }}
             {{- include "envSentry" . | nindent 12 }}
           volumeMounts:
             {{- include "mountManilaConfig" . | nindent 12 }}
@@ -85,10 +89,14 @@ spec:
           imagePullPolicy: IfNotPresent
           command:
             - dumb-init
-            - kubernetes-entrypoint
+{{- if not .Values.debug }}
+            - /bin/bash
+            - /scripts/manila-quota-sync.sh
+{{- else }}
+            - sleep
+            - inf
+{{- end }}
           env:
-            - name: COMMAND
-              value: {{ include "shellCommand" (merge (dict "script" "manila-quota-sync.sh") .) | quote }}
             - name: MANILA_QUOTA_SYNC_ENABLED
               value: {{ .Values.nannies.quota_sync.enabled | quote }}
             - name: MANILA_QUOTA_SYNC_DRY_RUN
@@ -99,8 +107,6 @@ spec:
               value: {{ .Values.nannies.quota_sync.prometheus_port | quote }}
             - name: PYTHONUNBUFFERED
               value: "1"
-            - {{ include "envNamespace" . | nindent 14 | trim  }}
-            - {{ include "envDependencyService" . | nindent 14 | trim }}
             {{- include "envSentry" . | nindent 12 }}
           volumeMounts:
             {{- include "mountManilaConfig" . | nindent 12 }}
@@ -114,10 +120,14 @@ spec:
           imagePullPolicy: IfNotPresent
           command:
             - dumb-init
-            - kubernetes-entrypoint
+{{- if not .Values.debug }}
+            - /bin/bash
+            - /scripts/manila-db-cleanup.sh
+{{- else }}
+            - sleep
+            - inf
+{{- end }}
           env:
-            - name: COMMAND
-              value: {{ include "shellCommand" (merge (dict "script" "manila-db-cleanup.sh") .) | quote }}
             - name: MANILA_DB_CLEANUP_ENABLED
               value: {{ .Values.nannies.db_cleanup.enabled | quote }}
             - name: MANILA_DB_CLEANUP_DRY_RUN
@@ -139,10 +149,14 @@ spec:
           imagePullPolicy: IfNotPresent
           command:
             - dumb-init
-            - kubernetes-entrypoint
+{{- if not .Values.debug }}
+            - /bin/bash
+            - /scripts/manila-share-sync.sh
+{{- else }}
+            - sleep
+            - inf
+{{- end }}
           env:
-            - name: COMMAND
-              value: {{ include "shellCommand" (merge (dict "script" "manila-share-sync.sh") .) | quote }}
             - name: MANILA_SHARE_SIZE_SYNC_ENABLED
               value: "true"
             - name: MANILA_SHARE_SIZE_SYNC_DRY_RUN
@@ -177,8 +191,6 @@ spec:
               value: {{ .Values.nannies.share_sync.task_share_state_dry_run | quote }}
             - name: PYTHONUNBUFFERED
               value: "1"
-            - {{ include "envNamespace" . | nindent 14 | trim }}
-            - {{ include "envDependencyService" . | nindent 14 | trim }}
             {{- include "envSentry" . | nindent 12 }}
           volumeMounts:
            {{- include "mountManilaConfig" . | nindent 12 }}
@@ -192,10 +204,14 @@ spec:
           imagePullPolicy: IfNotPresent
           command:
             - dumb-init
-            - kubernetes-entrypoint
+{{- if not .Values.debug }}
+            - /bin/bash
+            - /scripts/manila-share-server.sh
+{{- else }}
+            - sleep
+            - inf
+{{- end }}
           env:
-            - name: COMMAND
-              value: {{ include "shellCommand" (merge (dict "script" "manila-share-server.sh") .) | quote }}
             - name: MANILA_NANNY_INTERVAL
               value: {{ .Values.nannies.share_server.interval | default .Values.interval | quote }}
             - name: MANILA_NANNY_LISTEN_PORT
@@ -204,8 +220,6 @@ spec:
               value: {{ .Values.nannies.share_server.prometheus_port | quote }}
             - name: PYTHONUNBUFFERED
               value: "1"
-            - {{ include "envNamespace" . | nindent 14 | trim }}
-            - {{ include "envDependencyService" . | nindent 14 | trim }}
             {{- include "envSentry" . | nindent 12 }}
           volumeMounts:
             {{- include "mountManilaConfig" . | nindent 12 }}
@@ -219,10 +233,14 @@ spec:
           imagePullPolicy: IfNotPresent
           command:
             - dumb-init
-            - kubernetes-entrypoint
+{{- if not .Values.debug }}
+            - /bin/bash
+            - /scripts/manila-share-snapshot.sh
+{{- else }}
+            - sleep
+            - inf
+{{- end }}
           env:
-            - name: COMMAND
-              value: {{ include "shellCommand" (merge (dict "script" "manila-share-snapshot.sh") .) | quote }}
             - name: MANILA_NANNY_INTERVAL
               value: {{ .Values.nannies.snapshot.interval | default .Values.interval | quote }}
             - name: MANILA_NANNY_LISTEN_PORT
@@ -235,8 +253,6 @@ spec:
               value: {{ .Values.nannies.snapshot.task_share_snapshot_state_dry_run | quote }}
             - name: PYTHONUNBUFFERED
               value: "1"
-            - {{ include "envNamespace" . | indent 14 | trim }}
-            - {{ include "envDependencyService" . | indent 14 | trim  }}
             {{- include "envSentry" . | nindent 12 }}
           volumeMounts:
             {{- include "mountManilaConfig" . | nindent 12 }}
@@ -250,10 +266,14 @@ spec:
           imagePullPolicy: IfNotPresent
           command:
             - dumb-init
-            - kubernetes-entrypoint
+{{- if not .Values.debug }}
+            - /bin/bash
+            - /scripts/manila-missing-snapshot.sh
+{{- else }}
+            - sleep
+            - inf
+{{- end }}
           env:
-            - name: COMMAND
-              value: {{ include "shellCommand" (merge (dict "script" "manila-missing-snapshot.sh") .) | quote }}
             - name: MANILA_NANNY_INTERVAL
               value: {{ .Values.nannies.snapshot_missing.interval | default .Values.interval | quote }}
             - name: MANILA_NANNY_PROMETHEUS_PORT
@@ -270,8 +290,6 @@ spec:
                   key: manila_netapp_api_password
             - name: PYTHONUNBUFFERED
               value: "1"
-            - {{ include "envNamespace" . | nindent 14 | trim }}
-            - {{ include "envDependencyService" . | nindent 14 | trim }}
             {{- include "envSentry" . | nindent 12 }}
           volumeMounts:
             {{- include "mountManilaConfig" . | nindent 12 }}
@@ -287,18 +305,20 @@ spec:
           imagePullPolicy: IfNotPresent
           command:
             - dumb-init
-            - kubernetes-entrypoint
+{{- if not .Values.debug }}
+            - pyreloader
+            - /scripts/manila-check-affinity.py
+{{- else }}
+            - sleep
+            - inf
+{{- end }}
           env:
-            - name: COMMAND
-              value: "pyreloader /scripts/manila-check-affinity.py"
             - name: MANILA_NANNY_INTERVAL
               value: {{ .Values.nannies.affinity.interval | default .Values.interval | quote }}
             - name: MANILA_NANNY_PROMETHEUS_PORT
               value: {{ .Values.nannies.affinity.prometheus_port | quote }}
             - name: PYTHONUNBUFFERED
               value: "1"
-            - {{ include "envNamespace" . | indent 14 | trim }}
-            - {{ include "envDependencyService" . | indent 14 | trim  }}
             {{- include "envSentry" . | nindent 12 }}
           volumeMounts:
             {{- include "mountManilaConfig" . | nindent 12 }}

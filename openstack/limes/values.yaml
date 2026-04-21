@@ -83,6 +83,7 @@ limes:
     nova:
       with_subcapacities: true
       with_subresources: true
+      with_hw_version_resources: true # TODO: remove when Cortex integration goes live
       flavor_selection:
         required_extra_specs: { "vmware:hv_enabled" : "True" } # consider only VMware flavors
       hypervisor_selection:
@@ -99,6 +100,15 @@ limes:
       category_for_split_flavor:
         - { key: 'instances_hana_.+_v2', value: {name: 'per_flavor_hana_sapphire_rapids', display_name: 'HANA Flavors (Sapphire Rapids)'} }
         - { key: 'instances_hana_.+', value: {name: 'per_flavor_hana_cascade_lake', display_name: 'HANA Flavors (Cascade Lake)'} }
+
+
+    designate:
+      prometheus_config:
+        api:
+          url: http://prometheus-openstack.prometheus-openstack.svc:9090
+        queries:
+          zones: count(openstack_designate_zones{project_id="{{.ProjectUUID}}",status!="DELETED"})
+          recordsets_per_zone: max(openstack_designate_recordsets{project_id="{{.ProjectUUID}}"})
 
   # Map with entries like:
   #
