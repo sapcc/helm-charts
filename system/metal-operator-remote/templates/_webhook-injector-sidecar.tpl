@@ -1,6 +1,6 @@
 {{- define "metal-operator-remote.webhook-injector-sidecar" -}}
 - name: webhook-injector
-  image: {{ .Values.webhookInjector.image }}
+  image: {{ .Values.webhookInjector.repository }}:{{ .Values.webhookInjector.tag }}
   args:
     - --webhook-config-name=webhook-config
     - --namespace=kube-system
