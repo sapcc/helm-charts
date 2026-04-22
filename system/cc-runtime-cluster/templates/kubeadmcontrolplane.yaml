@@ -288,6 +288,7 @@ spec:
         omitStages:
           - "RequestReceived"
         rules:
+          # DROP SYSTEM NOISE
           - level: None
             nonResourceURLs:
               - "/healthz*"
@@ -295,17 +296,59 @@ spec:
               - "/readyz*"
               - "/version"
               - "/metrics"
+              - "/openapi/*"
+              - "/swagger*"
+          # DROP HIGH-VOLUME RESOURCE NOISE
           - level: None
             resources:
               - group: "coordination.k8s.io"
                 resources: ["leases"]
+              - group: ""
+                resources: ["events"]
+          # SILENCE SYSTEM COMPONENTS
           - level: None
-            users: ["system:kube-proxy", "system:apiserver"]
-            verbs: ["watch", "get", "list"]
+            userGroups:
+              - "system:nodes"
+            users:
+              - "kubelet"
+              - "system:kube-controller-manager"
+              - "system:kube-scheduler"
+              - "system:kube-proxy"
+              - "system:apiserver"
+              - "system:serviceaccount:kube-system:generic-garbage-collector"
+              - "system:serviceaccount:kube-system:namespace-controller"
+          # Silence maintenance-controller
           - level: None
-            users: ["system:serviceaccount:kube-system:horizontal-pod-autoscaler"]
-            verbs: ["get", "list", "watch"]
+            resources:
+              - group: ""
+                resources: ["configmaps"]
+                resourceNames: ["maintenance-controller-leader-election.cloud.sap"]
+              - group: "coordination.k8s.io"
+                resources: ["leases"]
+                resourceNames: ["maintenance-controller-leader-election.cloud.sap"]
+          # Log full request bodies for any access to credentials or permission
+          - level: Request
+            resources:
+              - group: ""
+                resources: ["secrets"]
+              - group: "rbac.authorization.k8s.io"
+                resources: ["clusterroles", "clusterrolebindings", "roles", "rolebindings"]
+          # Log full request bodies for any access to pods
+          - level: Request
+            resources:
+              - group: ""
+                resources: ["pods/exec", "pods/attach", "pods/portforward", "pods/log"]
+          # Log who is looking at ConfigMaps or ServiceAccounts.
           - level: Metadata
+            verbs: ["get", "list", "watch"]
+            resources:
+              - group: ""
+                resources: ["configmaps", "serviceaccounts"]
+              - group: "authentication.k8s.io"
+                resources: ["tokenreviews"]
+          # catch all mutations
+          - level: Metadata
+            verbs: ["create", "update", "patch", "delete"]
       owner: root:root
       path: /etc/kubernetes/audit-policy.yaml
       permissions: "0644"
