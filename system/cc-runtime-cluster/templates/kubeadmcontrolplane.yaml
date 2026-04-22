@@ -317,6 +317,15 @@ spec:
               - "system:apiserver"
               - "system:serviceaccount:kube-system:generic-garbage-collector"
               - "system:serviceaccount:kube-system:namespace-controller"
+          # Silence maintenance-controller
+          - level: None
+            resources:
+              - group: ""
+                resources: ["configmaps"]
+                resourceNames: ["maintenance-controller-leader-election.cloud.sap"]
+              - group: "coordination.k8s.io"
+                resources: ["leases"]
+                resourceNames: ["maintenance-controller-leader-election.cloud.sap"]
           # Log full request bodies for any access to credentials or permission
           - level: Request
             resources:
