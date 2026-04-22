@@ -1,0 +1,52 @@
+{{- if and .Values.global.data_stream.enabled .Values.s3.enabled }}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: add-ism-to-remote-indexes
+spec:
+  schedule: "30 0,12 * * *"
+  jobTemplate:
+    spec:
+      backoffLimit: 3
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+          - name: add-ism-to-remote-indexes
+            image: {{ .Values.global.registry }}/opensearch-tools:{{ .Values.global.opensearchTools.tag }}
+            imagePullPolicy: Always
+            command: ["/bin/bash", "/scripts/add-ism-to-remote-indexes.sh"]
+            env:
+            - name: DATA_STREAMS
+              value: "{{ .Values.global.data_stream.names }}"
+            - name: ADMIN_USER
+              valueFrom:
+                secretKeyRef:
+                  name: cron-secrets
+                  key: ADMIN_USER
+            - name: ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: cron-secrets
+                  key: ADMIN_PASSWORD
+            - name: ADMIN2_USER
+              valueFrom:
+                secretKeyRef:
+                  name: cron-secrets
+                  key: ADMIN2_USER
+            - name: ADMIN2_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: cron-secrets
+                  key: ADMIN2_PASSWORD
+            - name: CLUSTER_HOST
+              value: "https://opensearch-logs-client.{{ .Values.global.clusterType }}.{{ .Values.global.region }}.{{ .Values.global.tld }}:{{ .Values.httpPort }}"
+            volumeMounts:
+            - mountPath: /scripts
+              name: config
+          volumes:
+          - name: config
+            secret:
+              defaultMode: 420
+              secretName: security-config
+{{- end }}

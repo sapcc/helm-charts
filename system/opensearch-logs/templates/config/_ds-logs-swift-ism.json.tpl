@@ -7,30 +7,6 @@
         "states": [
             {
                 "name": "initial",
-                "actions": [],
-                "transitions": [
-                    {
-                        "state_name": "rollover",
-                        "conditions": {
-                            "min_index_age": "{{ .Values.global.data_stream.logs_swift.min_index_age }}"
-                        }
-                    },
-                    {
-                        "state_name": "rollover",
-                        "conditions": {
-                            "min_size": "{{ .Values.global.data_stream.logs_swift.min_size }}"
-                        }
-                    },
-                    {
-                        "state_name": "rollover",
-                        "conditions": {
-                            "min_doc_count": "{{ .Values.global.data_stream.logs_swift.min_doc_count }}"
-                        }
-                    }
-                ]
-            },
-            {
-                "name": "rollover",
                 "actions": [
                     {
                         "retry": {
@@ -39,9 +15,8 @@
                             "delay": "1m"
                         },
                         "rollover": {
-                            "min_doc_count": 5,
-                            "min_index_age": "1d",
-                            "copy_alias": false
+                            "min_primary_shard_size": "25gb",
+                            "min_index_age": "7d"
                         }
                     }
                 ],
@@ -69,12 +44,13 @@
                 "transitions": []
             }
         ],
-        "ism_template":
+        "ism_template": [
             {
                 "index_patterns": [
                     "logs-swift-datastream"
                 ],
                 "priority": 2
             }
+        ]
     }
 }

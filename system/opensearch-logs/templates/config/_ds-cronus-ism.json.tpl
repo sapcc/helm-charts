@@ -45,6 +45,7 @@
                         }
                     }
                 ],
+{{- if and .Values.s3.enabled .Values.global.data_stream.cronus.snapshots.enabled  }}
                 "transitions": [
                     {
                         "state_name": "snapshot",
@@ -64,7 +65,7 @@
                         "delay": "1m"
                     },
                     "snapshot": {
-                        "repository": "{{ .Values.global.data_stream.cronus.snapshot_repository }}",
+                        "repository": "{{ .Values.global.data_stream.cronus.snapshots.repository }}",
                         "snapshot": "{_SNAPSHOT_NAME_}"
                     }
                 }
@@ -78,6 +79,17 @@
                     }
                 ]
             },
+{{- else }}
+                "transitions": [
+                    {
+                        "state_name": "delete",
+                        "conditions": {
+                            "min_rollover_age": "{{ .Values.global.data_stream.cronus.min_index_age }}"
+                        }
+                    }
+                ]
+            },
+{{- end }}
             {
                 "name": "delete",
                 "actions": [

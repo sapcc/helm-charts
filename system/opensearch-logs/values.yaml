@@ -12,6 +12,7 @@ global:
     prometheus: infra-frontend
   data_stream:
     enabled: false
+    schema_version: "1"
     alerts:
       min_index_age: "365d"
       min_size: "20gb"
@@ -38,19 +39,31 @@ global:
       min_size: "20gb"
       min_doc_count: 10000000
       number_of_shards: 1
-      snapshot_repository: "snapshots"
-    otel:
-      min_index_age: "7d"
-      min_size: "20gb"
-      min_doc_count: 10000000
+      snapshots:
+        enabled: false
+        repository: "snapshots"
+        retention: "31d"
     audit:
       min_index_age: "7d"
       min_size: "20gb"
+      number_of_shards: 4
       min_doc_count: 10000000
+      snapshots:
+        enabled: false
+        repository: "cephlogssnapshots"
+        retention: "365d"
+      searchable_snapshots:
+        retention: "31d"
     logs:
       min_index_age: "7d"
       min_size: "80gb"
       min_doc_count: 100000000
+      snapshots:
+        enabled: false
+        repository: "snapshots"
+        retention: "31d"
+      searchable_snapshots:
+        retention: "31d"
     logs_swift:
       min_index_age: "14d"
       min_size: "120gb"
@@ -77,7 +90,8 @@ scaleout:
   enabled: false
 s3:
   enabled: false
-
+ceph:
+  enabled: false
 alerts:
   enabled: false
   prometheus: infra-frontend

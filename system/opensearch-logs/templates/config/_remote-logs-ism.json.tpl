@@ -1,8 +1,7 @@
 {
     "policy": {
-        "policy_id": "ds-storage-ism",
-        "description": "Datastream (ds) ism policy for storage-ds",
-        "schema_version": "{{ .Values.global.data_stream.schema_version }}",
+        "policy_id": "remote-logs-ism",
+        "description": "ISM policy for logs searchable snapshot.",
         "default_state": "initial",
         "states": [
             {
@@ -10,13 +9,12 @@
                 "actions": [
                     {
                         "retry": {
-                            "count": 5,
+                            "count": 3,
                             "backoff": "exponential",
                             "delay": "1m"
                         },
-                        "rollover": {
-                            "min_primary_shard_size": "25gb",
-                            "min_index_age": "7d"
+                        "replica_count": {
+                            "number_of_replicas": 0
                         }
                     }
                 ],
@@ -24,7 +22,7 @@
                     {
                         "state_name": "delete",
                         "conditions": {
-                            "min_index_age": "{{ .Values.global.data_stream.storage.max_index_age }}"
+                            "min_index_age": "{{ .Values.global.data_stream.logs.searchable_snapshots.retention }}"
                         }
                     }
                 ]
@@ -44,13 +42,11 @@
                 "transitions": []
             }
         ],
-        "ism_template": [
-            {
-                "index_patterns": [
-                    "storage-datastream"
-                ],
-                "priority": 2
-            }
-        ]
+        "ism_template":  {
+            "index_patterns": [
+                "remote_.ds-logs-datastream*"
+            ],
+            "priority": 2
+        }
     }
 }
