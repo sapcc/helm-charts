@@ -59,6 +59,9 @@ template: |
           uses-service-user: cinder
           {{- end }}
       spec:
+{{- if .Values.rbac.enabled }}
+        serviceAccountName: {{ .Release.Name }}
+{{- end }}
         terminationGracePeriodSeconds: {{ .Values.pod.terminationGracePeriodSeconds.volume }}
         hostname: cinder-volume-vmware-{= name =}
         {{- tuple . "{= availability_zone =}" | include "utils.kubernetes_pod_az_affinity" | nindent 8 }}

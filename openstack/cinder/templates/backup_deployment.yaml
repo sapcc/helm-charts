@@ -58,6 +58,9 @@ template: |
           uses-service-user: cinder
           {{- end }}
       spec:
+{{- if .Values.rbac.enabled }}
+        serviceAccountName: {{ .Release.Name }}
+{{- end }}
         terminationGracePeriodSeconds: {{ .Values.pod.terminationGracePeriodSeconds.backup }}
         hostname: cinder-volume-backup-vmware-{= name =}
         {{- include "utils.proxysql.pod_settings" . | nindent 8 }}
