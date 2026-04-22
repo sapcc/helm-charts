@@ -15,6 +15,9 @@ spec:
       {{- tuple . "db-online-migrate" | include "job_metadata" | indent 6 }}
     spec:
       restartPolicy: OnFailure
+      {{- if .Values.rbac.enabled }}
+      serviceAccountName: {{ .Release.Name }}
+      {{- end }}
       {{- include "utils.proxysql.job_pod_settings" . | indent 6 }}
       initContainers:
       {{- $dependencies := dict "jobs" (tuple . "db-migrate" | include "job_name") "service" (include "nova.helpers.database_services" .) }}

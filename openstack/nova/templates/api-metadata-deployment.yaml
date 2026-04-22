@@ -44,6 +44,9 @@ spec:
         {{- end }}
         {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
     spec:
+      {{- if .Values.rbac.enabled }}
+      serviceAccountName: {{ .Release.Name }}
+      {{- end }}
       {{- tuple . "nova" "api-metadata" | include "kubernetes_pod_anti_affinity" | nindent 6 }}
       {{- include "utils.proxysql.pod_settings" . | nindent 6 }}
       {{- tuple . (dict "name" "nova-api-metadata") | include "utils.topology.constraints" | indent 6 }}

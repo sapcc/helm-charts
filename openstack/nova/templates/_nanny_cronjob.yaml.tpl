@@ -24,6 +24,9 @@ spec:
         metadata:
           {{- tuple . (print "nanny-" $name) "nanny" | include "job_metadata" | indent 10 }}
         spec:
+          {{- if .Values.rbac.enabled }}
+          serviceAccountName: {{ .Release.Name }}
+          {{- end }}
           restartPolicy: OnFailure
           volumes:
           - name: container-init
