@@ -29,6 +29,9 @@ spec:
         {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
     spec:
       restartPolicy: OnFailure
+      {{- if .Values.rbac.enabled }}
+      serviceAccountName: {{ .Release.Name }}
+      {{- end }}
 {{- if $proxysql }}
       {{- include "utils.proxysql.job_pod_settings" . | indent 6 }}
 {{- end }}
