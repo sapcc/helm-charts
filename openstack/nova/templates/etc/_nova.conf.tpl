@@ -68,6 +68,7 @@ region_name = {{.Values.global.region}}
 project_name = {{.Values.global.keystone_service_project | default "service" }}
 project_domain_name = {{.Values.global.keystone_service_domain | default "Default" }}
 http_retries = {{.Values.cinder_http_retries}}
+catalog_info = volumev3::{{.Values.cinder_endpoint}}
 
 [neutron]
 service_metadata_proxy = true
