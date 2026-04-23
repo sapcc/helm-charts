@@ -1,5 +1,6 @@
 {{- range $pool := .Values.bind_pools }}
 - name: {{ $pool.name }}
+  domain_id: {{ $pool.domain_id }}
   description: Bind9 Pool
   {{- if $pool.attributes}}
   attributes:
