@@ -1,4 +1,4 @@
-{{- define "metal-operator-remote.webhook-injector-sidecar" -}}
+{{- define "chart.webhook-injector-sidecar" -}}
 - name: webhook-injector
   image: {{ .Values.webhookInjector.repository }}:{{ .Values.webhookInjector.tag }}
   args:

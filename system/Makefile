@@ -151,7 +151,7 @@ build-metal-operator-remote:
 	@tar -xzf metal-operator-remote/charts/metal-operator*.tgz -O metal-operator/templates/manager/manager.yaml |\
 		$(SED) \
 			-e '/namespace: {{ .Release.Namespace }}/d' \
-			-e '/^      securityContext:/i\      {{- include "metal-operator-remote.webhook-injector-sidecar" . | nindent 6 }}' \
+			-e '/^      securityContext:/i\      {{- include "chart.webhook-injector-sidecar" . | nindent 6 }}' \
 		> metal-operator-remote/templates/controller-manager.yaml
 	# Render webhook configurations and rewrite service refs to URL-based
 	@helm template metal-operator metal-operator-remote/charts/metal-operator* \
