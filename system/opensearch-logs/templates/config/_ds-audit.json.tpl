@@ -11,6 +11,14 @@
     },
     "aliases": {
       "_DS_NAME_-ds": {}
+    },
+    "mappings": {
+      "properties": {
+        "timestamp": {
+          "type": "alias",
+          "path": "@timestamp"
+        }
+      }
     }
   },
   "composed_of": [],
