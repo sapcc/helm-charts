@@ -38,6 +38,9 @@ controllerManager:
         source:
           configMap:
             name: remote-kubeconfig
+  podSecurityContext:
+    runAsUser: 65532 # ensure sidecar and main controller run as same user, so they can share generated tls certs via emptyDir volume 
+    runAsGroup: 65532
   pod:
     labels:
       networking.gardener.cloud/to-dns: allowed

@@ -4,24 +4,13 @@
   args:
     - --webhook-config-name=webhook-config
     - --target-kubeconfig=/var/run/remote-kubeconfig/kubeconfig
-  env:
-    - name: POD_NAMESPACE
-      valueFrom:
-        fieldRef:
-          fieldPath: metadata.namespace
   ports:
     - name: metrics
       containerPort: 8082
     - name: health
       containerPort: 8083
   securityContext:
-    allowPrivilegeEscalation: false
-    readOnlyRootFilesystem: true
-    runAsNonRoot: true
-    runAsUser: 65534
-    capabilities:
-      drop:
-        - ALL
+    {{- toYaml .Values.controllerManager.manager.podSecurityContext | nindent 4 }}
   resources:
     requests:
       cpu: 50m
