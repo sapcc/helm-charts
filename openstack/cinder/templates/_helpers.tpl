@@ -3,7 +3,7 @@
 {{- end }}
 
 {{- define "cinder.scheduler_service_dependencies" }}
-  {{- template "cinder.rabbitmq_service" . }},cinder-api
+  {{- template "cinder.rabbitmq_service" . }},cinder-api-external
 {{- end }}
 
 {{- define "cinder.db_service" }}
