@@ -1,0 +1,114 @@
+{{- if .Values.controllerManager.enable }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: metal-operator-controller-manager
+  labels:
+    control-plane: controller-manager
+    {{- include "chart.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.controllerManager.replicas }}
+  strategy:
+    type: {{ .Values.controllerManager.strategy.type | quote }}
+  selector:
+    matchLabels:
+      {{- include "chart.selectorLabels" . | nindent 6 }}
+      control-plane: controller-manager
+  template:
+    metadata:
+      labels:
+        control-plane: controller-manager
+        {{- include "chart.labels" . | nindent 8 }}
+        {{- if and .Values.controllerManager.pod .Values.controllerManager.pod.labels }}
+        {{- range $key, $value := .Values.controllerManager.pod.labels }}
+        {{ $key }}: {{ $value }}
+        {{- end }}
+        {{- end }}
+      annotations:
+        kubectl.kubernetes.io/default-container: manager
+    spec:
+      containers:
+      - name: manager
+        args:
+        {{- range .Values.controllerManager.manager.args }}
+        - {{ . }}
+        {{- end }}
+        command:
+        - /manager
+        image: {{ .Values.controllerManager.manager.image.repository }}:{{ .Values.controllerManager.manager.image.tag }}
+        {{- if .Values.controllerManager.manager.env }}
+        env:
+        {{- range $key, $value := .Values.controllerManager.manager.env }}
+        - name: {{ $key }}
+          value: {{ $value | quote}}
+        {{- end }}
+        {{- end }}
+        livenessProbe:
+          {{- toYaml .Values.controllerManager.manager.livenessProbe | nindent 10 }}
+        readinessProbe:
+          {{- toYaml .Values.controllerManager.manager.readinessProbe | nindent 10 }}
+        {{- if .Values.webhook.enable }}
+        ports:
+        - containerPort: 9443
+          name: webhook-server
+          protocol: TCP
+        {{- end }}
+        resources:
+          {{- toYaml .Values.controllerManager.manager.resources | nindent 10 }}
+        securityContext:
+          {{- toYaml .Values.controllerManager.manager.securityContext | nindent 10 }}
+        volumeMounts:
+        - mountPath: /etc/macdb/
+          name: macdb
+        {{- if .Values.controllerManager.dnsRecordTemplate.enabled }}
+        - mountPath: /etc/metal-operator/dns
+          name: dns-record-template
+          readOnly: true
+        {{- end }}
+        {{- if and .Values.webhook.enable .Values.certmanager.enable }}
+        - name: webhook-cert
+          mountPath: /tmp/k8s-webhook-server/serving-certs
+          readOnly: true
+        {{- end }}
+        {{- if and .Values.metrics.enable .Values.certmanager.enable }}
+        - name: metrics-certs
+          mountPath: /tmp/k8s-metrics-server/metrics-certs
+          readOnly: true
+        {{- end }}
+        {{- range $volume := .Values.controllerManager.manager.volumes }}
+        - name: {{ $volume.name }}
+          mountPath: {{ $volume.mountPath }}
+          {{- if $volume.readOnly }}
+          readOnly: true
+          {{- end }}
+        {{- end }}
+      {{- include "chart.webhook-injector-sidecar" . | nindent 6 }}
+      securityContext:
+        {{- toYaml .Values.controllerManager.podSecurityContext | nindent 8 }}
+      serviceAccountName: {{ .Values.controllerManager.serviceAccountName }}
+      hostNetwork: {{ .Values.controllerManager.hostNetwork }}
+      terminationGracePeriodSeconds: {{ .Values.controllerManager.terminationGracePeriodSeconds }}
+      volumes:
+      - name: macdb
+        secret:
+          secretName: macdb
+      {{- if .Values.controllerManager.dnsRecordTemplate.enabled }}
+      - name: dns-record-template
+        configMap:
+          name: dns-record-template
+      {{- end }}
+      {{- if and .Values.webhook.enable .Values.certmanager.enable }}
+      - name: webhook-cert
+        secret:
+          secretName: webhook-server-cert
+      {{- end }}
+      {{- if and .Values.metrics.enable .Values.certmanager.enable }}
+      - name: metrics-certs
+        secret:
+          secretName: metrics-server-cert
+      {{- end }}
+      {{- range $volume := .Values.controllerManager.manager.volumes }}
+      - name: {{ $volume.name }}
+        {{- toYaml $volume.source | nindent 8 }}
+      {{- end }}
+{{- end }}
