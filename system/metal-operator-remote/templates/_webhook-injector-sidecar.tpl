@@ -3,13 +3,17 @@
   image: {{ .Values.webhookInjector.repository }}:{{ .Values.webhookInjector.tag }}
   args:
     - --webhook-config-name=webhook-config
-    - --namespace=kube-system
     - --target-kubeconfig=/var/run/remote-kubeconfig/kubeconfig
+  env:
+    - name: POD_NAMESPACE
+      valueFrom:
+        fieldRef:
+          fieldPath: metadata.namespace
   ports:
     - name: metrics
-      containerPort: 8080
+      containerPort: 8082
     - name: health
-      containerPort: 8081
+      containerPort: 8083
   securityContext:
     allowPrivilegeEscalation: false
     readOnlyRootFilesystem: true
@@ -28,7 +32,7 @@
   livenessProbe:
     httpGet:
       path: /healthz
-      port: 8081
+      port: 8083
     initialDelaySeconds: 15
     periodSeconds: 20
     timeoutSeconds: 5
@@ -36,7 +40,7 @@
   readinessProbe:
     httpGet:
       path: /readyz
-      port: 8081
+      port: 8083
     initialDelaySeconds: 5
     periodSeconds: 10
     timeoutSeconds: 5
