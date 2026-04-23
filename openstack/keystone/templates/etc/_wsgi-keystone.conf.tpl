@@ -68,6 +68,19 @@ CustomLog /dev/stdout proxy env=forwarded
     CustomLog /dev/stdout proxy env=forwarded
 
     KeepAliveTimeout 61
+
+    {{- if .Values.federation.saml.enabled }}
+    # Shibboleth handler — matches the default /Shibboleth.sso and all
+    # per-tenant handler URLs (/Shibboleth.sso/<tenant>/*).
+    # Each tenant's ApplicationOverride has its own handlerURL so the ACS
+    # endpoint is unique per tenant, ensuring correct applicationId routing.
+    <LocationMatch "^/Shibboleth\.sso(/|$)">
+        SetHandler shib
+    </LocationMatch>
+
+    # Per-tenant auth endpoints (generated at runtime by generate-saml-config.py)
+    IncludeOptional /etc/apache2/conf-enabled/federation-saml.conf
+    {{- end }}
 </VirtualHost>
 
 Alias /identity /var/www/cgi-bin/keystone/keystone-wsgi-public
