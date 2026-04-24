@@ -60,3 +60,31 @@ groups:
       annotations:
         description: Calico-Node Pod is not Ready on all nodes.
         summary: Calico-Node is not healthy on all bare metal nodes that are Ready. Risk of stale BGP advertisement. Network datapath threatened!
+
+    - alert: CalicoBondDegraded
+          expr: node_bonding_slaves - node_bonding_active > 0
+          for: 5m
+          labels:
+            tier: k8s
+            service: {{ .Values.alerts.service }}
+            severity: warning
+            context: availability
+            support_group: {{ .Values.alerts.networkSupportGroup }}
+            playbook: "docs/support/playbook/kubernetes/k8s_bond_degraded"
+          annotations:
+            description: Bond {{`{{ $labels.master }}`}} on node {{`{{ $labels.node }}`}} has {{`{{ $value }}`}} inactive member(s). Network redundancy degraded.
+            summary: Bond {{`{{ $labels.master }}`}} degraded on node {{`{{ $labels.node }}`}}.
+
+    - alert: CalicoBondDown
+      expr: node_bonding_active == 0
+      for: 2m
+      labels:
+        tier: k8s
+        service: {{ .Values.alerts.service }}
+        severity: critical
+        context: availability
+        support_group: {{ .Values.alerts.networkSupportGroup }}
+        playbook: "docs/support/playbook/kubernetes/k8s_bond_degraded"
+      annotations:
+        description: Bond {{`{{ $labels.master }}`}} on node {{`{{ $labels.node }}`}} has no active members. All redundancy lost, network datapath at risk.
+        summary: Bond {{`{{ $labels.master }}`}} down on node {{`{{ $labels.node }}`}}.
