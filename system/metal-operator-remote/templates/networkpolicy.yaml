@@ -16,8 +16,7 @@ spec:
       protocol: TCP
   podSelector:
     matchLabels:
-      app.kubernetes.io/instance: metal-operator-remote
-      app.kubernetes.io/name: metal-operator-remote
+      {{- include "chart.selectorLabels" . | nindent 6 }}
       control-plane: controller-manager
   policyTypes:
   - Ingress
@@ -44,8 +43,7 @@ spec:
           kubernetes.io/metadata.name: ingress-nginx
   podSelector:
     matchLabels:
-      app.kubernetes.io/instance: metal-operator-remote
-      app.kubernetes.io/name: metal-operator-remote
+      {{- include "chart.selectorLabels" . | nindent 6 }}
       control-plane: controller-manager
   policyTypes:
   - Egress
@@ -66,8 +64,28 @@ spec:
           role: apiserver
   podSelector:
     matchLabels:
-      app.kubernetes.io/instance: metal-operator-remote
-      app.kubernetes.io/name: metal-operator-remote
+      {{- include "chart.selectorLabels" . | nindent 6 }}
       control-plane: controller-manager
   policyTypes:
   - Ingress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: kube-apiserver-egress-to-metalapi
+spec:
+  egress:
+  - ports:
+    - port: 9443
+      protocol: TCP
+    to:
+    - podSelector:
+        matchLabels:
+          {{- include "chart.selectorLabels" . | nindent 10 }}
+          control-plane: controller-manager
+  podSelector:
+    matchLabels:
+      app: kubernetes
+      role: apiserver
+  policyTypes:
+  - Egress
