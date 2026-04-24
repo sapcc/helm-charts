@@ -55,7 +55,7 @@ annotations:
   {{- $services := list }}
   {{- $services = append $services (include "nova.helpers.db_service" (tuple . "api")) }}
   {{- $services = append $services (include "nova.helpers.db_service" (tuple . "cell0")) }}
-  {{- $services = append $services (include "nova.helpers.cell_rabbitmq_service" (tuple . "cell1")) }}
+  {{- $services = append $services (include "nova.helpers.cell_rabbitmq_service" (tuple . "api")) }}
   {{- $services | join "," }}
 {{- end }}
 
@@ -255,8 +255,8 @@ Params:
   {{- $envAll := index . 0 }}
   {{- $cellId := index . 1 }}
   {{- $cellName := "" }}
-  {{- if has $cellId (list "cell0" "cell1") }}
-    {{- $cellName = $cellId }}
+  {{- if eq $cellId "cell0" }}
+    {{- $cellName = "cell0" }}
   {{- else }}
     {{- $msgNameReq := printf "'.Values.%s.name' is required for cell '%s'" $cellId $cellId }}
     {{- $cellValues := get $envAll.Values $cellId | required $msgNameReq }}
@@ -277,8 +277,15 @@ Params:
 {{- define "nova.helpers.cell_rabbitmq_chart_alias" }}
   {{- $envAll := index . 0 }}
   {{- $cellId := index . 1 }}
+  {{- if ne $envAll.Values.rabbitmq_api.enabled $envAll.Values.rabbitmq_cell1.enabled }}
+    {{- fail "rabbitmq_api.enabled and rabbitmq_cell1.enabled must both be true or both be false" }}
+  {{- end }}
   {{- $aliasSuffix := "" }}
-  {{- if not (has $cellId (list "cell0" "cell1")) }}
+  {{- if has $cellId (list "cell0" "api") }}
+    {{- $aliasSuffix = ternary "_api" "" $envAll.Values.rabbitmq_api.enabled }}
+  {{- else if eq $cellId "cell1" }}
+    {{- $aliasSuffix = ternary "_cell1" "" $envAll.Values.rabbitmq_cell1.enabled }}
+  {{- else }}
     {{- $aliasSuffix = printf "_%s" $cellId }}
   {{- end }}
   {{- $rmqChartAlias := printf "%s%s" "rabbitmq" $aliasSuffix }}
@@ -295,11 +302,22 @@ Params:
   {{- printf "%s-%s" $envAll.Release.Name $rmqName | trunc 63 | replace "_" "-" | trimSuffix "-" }}
 {{- end }}
 
+{{- define "nova.helpers.default_users_target" }}
+  {{- $envAll := index . 0 }}
+  {{- $cellId := index . 1 }}
+  {{- if and (eq $cellId "api") (not $envAll.Values.rabbitmq_api.enabled) }}
+    {{- printf "cell1" }}
+  {{- else }}
+    {{- $cellId }}
+  {{- end }}
+{{- end }}
+
 {{- define "nova.helpers.cell_rabbitmq_default_user" }}
   {{- $envAll := index . 0 }}
   {{- $cellId := index . 1 }}
   {{- $rmqValues := include "nova.helpers.cell_rabbitmq_chart_alias" . | get $envAll.Values }}
-  {{- $params := dict "target" $cellId "users" $rmqValues.users "defaultUsers" $envAll.Values.defaultUsersRabbitMQ "key" "user" }}
+  {{- $target := include "nova.helpers.default_users_target" . }}
+  {{- $params := dict "target" $target "users" $rmqValues.users "defaultUsers" $envAll.Values.defaultUsersRabbitMQ "key" "user" }}
   {{- include "nova.helpers.default_user_value" $params }}
 {{- end }}
 
@@ -307,7 +325,8 @@ Params:
   {{- $envAll := index . 0 }}
   {{- $cellId := index . 1 }}
   {{- $rmqValues := include "nova.helpers.cell_rabbitmq_chart_alias" . | get $envAll.Values }}
-  {{- $params := dict "target" $cellId "users" $rmqValues.users "defaultUsers" $envAll.Values.defaultUsersRabbitMQ "key" "password" }}
+  {{- $target := include "nova.helpers.default_users_target" . }}
+  {{- $params := dict "target" $target "users" $rmqValues.users "defaultUsers" $envAll.Values.defaultUsersRabbitMQ "key" "password" }}
   {{- include "nova.helpers.default_user_value" $params }}
 {{- end }}
 
