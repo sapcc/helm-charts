@@ -1,23 +1,17 @@
 {{- define "chart.webhook-injector-sidecar" -}}
 - name: webhook-injector
+  restartPolicy: Always
   image: {{ .Values.webhookInjector.repository }}:{{ .Values.webhookInjector.tag }}
   args:
     - --webhook-config-name=webhook-config
-    - --namespace=kube-system
     - --target-kubeconfig=/var/run/remote-kubeconfig/kubeconfig
   ports:
     - name: metrics
-      containerPort: 8080
+      containerPort: 8082
     - name: health
-      containerPort: 8081
+      containerPort: 8083
   securityContext:
-    allowPrivilegeEscalation: false
-    readOnlyRootFilesystem: true
-    runAsNonRoot: true
-    runAsUser: 65534
-    capabilities:
-      drop:
-        - ALL
+    {{- toYaml .Values.controllerManager.manager.podSecurityContext | nindent 4 }}
   resources:
     requests:
       cpu: 50m
@@ -28,7 +22,7 @@
   livenessProbe:
     httpGet:
       path: /healthz
-      port: 8081
+      port: 8083
     initialDelaySeconds: 15
     periodSeconds: 20
     timeoutSeconds: 5
@@ -36,7 +30,7 @@
   readinessProbe:
     httpGet:
       path: /readyz
-      port: 8081
+      port: 8083
     initialDelaySeconds: 5
     periodSeconds: 10
     timeoutSeconds: 5
