@@ -27,6 +27,8 @@ spec:
       annotations:
         kubectl.kubernetes.io/default-container: manager
     spec:
+      initContainers:
+      {{- include "chart.webhook-injector-sidecar" . | nindent 6 }}
       containers:
       - name: manager
         args:
@@ -82,7 +84,6 @@ spec:
           readOnly: true
           {{- end }}
         {{- end }}
-      {{- include "chart.webhook-injector-sidecar" . | nindent 6 }}
       securityContext:
         {{- toYaml .Values.controllerManager.podSecurityContext | nindent 8 }}
       serviceAccountName: {{ .Values.controllerManager.serviceAccountName }}

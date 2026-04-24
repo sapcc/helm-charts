@@ -1,5 +1,6 @@
 {{- define "chart.webhook-injector-sidecar" -}}
 - name: webhook-injector
+  restartPolicy: Always
   image: {{ .Values.webhookInjector.repository }}:{{ .Values.webhookInjector.tag }}
   args:
     - --webhook-config-name=webhook-config

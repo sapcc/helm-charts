@@ -147,11 +147,11 @@ build-metal-operator-remote:
 		$(SED) 's/kind: Role/kind: ClusterRole/g' - |\
 		yq eval 'select(.kind != "Service" and .kind != "ValidatingWebhookConfiguration" and .kind != "MutatingWebhookConfiguration")' - >\
 		metal-operator-remote/managedresources/crds-and-rbac.yaml
-	# Extract upstream Deployment template and inject webhook-injector sidecar
+	# Extract upstream Deployment template and inject webhook-injector as native sidecar (initContainer)
 	@tar -xzf metal-operator-remote/charts/metal-operator*.tgz -O metal-operator/templates/manager/manager.yaml |\
 		$(SED) \
 			-e '/namespace: {{ .Release.Namespace }}/d' \
-			-e '/^      securityContext:/i\      {{- include "chart.webhook-injector-sidecar" . | nindent 6 }}' \
+			-e '/^      containers:/i\      initContainers:\n      {{- include "chart.webhook-injector-sidecar" . | nindent 6 }}' \
 		> metal-operator-remote/templates/controller-manager.yaml
 	# Render webhook configurations and rewrite service refs to URL-based
 	@helm template metal-operator metal-operator-remote/charts/metal-operator* \
