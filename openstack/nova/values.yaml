@@ -32,6 +32,19 @@ auto_assign_aggregates: 'dry_run'
 
 use_tls_acme: true
 
+cell1:
+  name: cell1
+  conductor:
+    config_file:
+      DEFAULT:
+        statsd_port: 9125
+        # enables collecting metrics for rpc calls
+        statsd_enabled: true
+      workarounds:
+        skip_hypervisor_version_check_on_lm: true
+      conductor:
+        workers: 8
+
 cell2:
   name: cell2
   enabled: false
@@ -910,6 +923,34 @@ mariadb:
           enabled: true
           allTables: true
 
+mariadb_cell1:
+  enabled: false
+  buffer_pool_size: "4096M"
+  log_file_size: "1024M"
+  long_query_time: 8
+  vpa:
+    set_main_container: true
+  ccroot_user:
+    enabled: true
+  persistence_claim:
+    name: db-nova-cell1-pvc
+    size: "50Gi"
+  backup:
+    enabled: false
+  backup_v2:
+    enabled: true
+    oauth:
+      client_id: "nova-cell1"
+  alerts:
+    support_group: compute-storage-api
+  job:
+    maintenance:
+      enabled: false
+      function:
+        analyzeTable:
+          enabled: true
+          allTables: true
+
 mariadb_cell2:
   enabled: false
   buffer_pool_size: "4096M"
@@ -1085,6 +1126,7 @@ pxc_db_cell3:
       enabled: true
 
 rabbitmq:
+  enabled: true
   users:
     default:
       password: null
@@ -1106,6 +1148,38 @@ rabbitmq:
     unacknowledged_total_wait_for: 10m
     ready_total_wait_for: 10m
     support_group: compute-storage-api
+
+rabbitmq_api:
+  enabled: false
+  nameOverride: api-rabbitmq
+  persistence:
+    enabled: false
+  alerts:
+    # unacked/ready messages in rabbitmq
+    rabbit_queue_length: 50
+    unacknowledged_total_wait_for: 10m
+    ready_total_wait_for: 10m
+    support_group: compute-storage-api
+  metrics:
+    enabled: true
+    enableDetailedMetrics: true
+    enablePerObjectMetrics: true
+
+rabbitmq_cell1:
+  enabled: false
+  nameOverride: cell1-rabbitmq
+  persistence:
+    enabled: false
+  alerts:
+    # unacked/ready messages in rabbitmq
+    rabbit_queue_length: 50
+    unacknowledged_total_wait_for: 10m
+    ready_total_wait_for: 10m
+    support_group: compute-storage-api
+  metrics:
+    enabled: true
+    enableDetailedMetrics: true
+    enablePerObjectMetrics: true
 
 rabbitmq_cell2:
   nameOverride: cell2-rabbitmq
