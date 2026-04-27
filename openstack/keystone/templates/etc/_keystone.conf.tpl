@@ -1,6 +1,7 @@
 [DEFAULT]
 debug = {{.Values.debug}}
 insecure_debug = {{.Values.insecure_debug}}
+use_json = {{.Values.use_json | default false}}
 verbose = true
 
 {{- with .Values.max_db_limit }}
