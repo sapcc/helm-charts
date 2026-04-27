@@ -116,5 +116,7 @@ storage:
 
 security_analytics_full_access:
   reserved: false
+  users:
+  - "securityanalytics"
   backend_roles:
   - CC_IAS_OPERATIONS_UI_KIBANA_SUPPORT

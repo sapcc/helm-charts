@@ -147,6 +147,10 @@ storage2:
   backend_roles:
   - "storage"
 
+securityanalytics:
+  hash: "{{ .Values.users.securityanalytics.nohash }}"
+  reserved: true
+
 {{- if .Values.qalogs.enabled }}
 ronly:
   hash: "{{ .Values.users.ronly.nohash }}"
