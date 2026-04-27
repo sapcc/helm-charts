@@ -88,3 +88,20 @@ groups:
       annotations:
         description: Bond {{`{{ $labels.master }}`}} on node {{`{{ $labels.node }}`}} has no active members. All redundancy lost, network datapath at risk.
         summary: Bond {{`{{ $labels.master }}`}} down on node {{`{{ $labels.node }}`}}.
+
+    - alert: CalicoNodeInterfaceErrors
+      expr: |
+        rate(node_network_receive_errs_total{device!~"cali.*|lo|tunl.*|vxlan.*"}[5m]) > 1
+        or
+        rate(node_network_transmit_errs_total{device!~"cali.*|lo|tunl.*|vxlan.*"}[5m]) > 1
+      for: 10m
+      labels:
+        tier: k8s
+        service: {{ .Values.alerts.service }}
+        severity: warning
+        context: availability
+        support_group: {{ .Values.alerts.networkSupportGroup }}
+        playbook: "docs/support/playbook/kubernetes/k8s_node_interface_down"
+      annotations:
+        description: Interface {{`{{ $labels.device }}`}} on node {{`{{ $labels.node }}`}} is dropping or erroring more than 1 packet/sec sustained over 10m.
+        summary: Network interface errors on {{`{{ $labels.device }}`}} ({{`{{ $labels.node }}`}}).
