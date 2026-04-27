@@ -5,6 +5,7 @@ metadata:
   name: aurora
   annotations:
     kubernetes.io/tls-acme: "true"
+    # create dns record for dashboard
     dns-manager: "true"
     dns-manager/zone-name: "dashboard-aurora.{{.Values.global.region}}.{{ .Values.global.tld }}"
 spec:
@@ -13,13 +14,13 @@ spec:
       # prettier-ignore
       hosts: [{{ .Values.ingress.host }}]
   rules:
-    - host: "{{ .Values.ingress.host }}"
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: aurora
-                port:
-                  number: 3000
+  - host: "{{ .Values.ingress.host }}"
+    http:
+      paths:
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: aurora
+              port:
+                number: 3000
