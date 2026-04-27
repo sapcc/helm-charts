@@ -1,0 +1,31 @@
+{{- if and .Values.scaleout.enabled .Values.opensearch_data.vpa }}
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: opensearch-logs-data-statefulset
+  labels:
+    app.kubernetes.io/managed-by: {{ .Release.Service | quote }}
+    app.kubernetes.io/instance: {{ .Release.Name | quote }}
+    app.kubernetes.io/version: {{ .Chart.AppVersion }}
+    helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    ccloud/service: logs
+    ccloud/support-group: observability
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: StatefulSet
+    name: opensearch-logs-data
+  updatePolicy:
+    updateMode: "Initial"
+  resourcePolicy:
+    containerPolicies:
+    - containerName: "*"
+      controlledValues: RequestsOnly
+      maxAllowed:
+{{- if .Values.opensearch_data.vpa.maxAllowed.cpu }}
+        cpu: {{ .Values.opensearch_data.vpa.maxAllowed.cpu }}
+{{- end }}
+{{- if .Values.opensearch_data.vpa.maxAllowed.memory }}
+        memory: {{ .Values.opensearch_data.vpa.maxAllowed.memory }}
+{{- end }}
+{{- end }}
