@@ -2,6 +2,11 @@
 
 This file is used to list changes made in each version of the common chart rabbitmq.
 
+## 0.23.0 - 2026/04/27
+
+- RabbitMQ [4.3.0 Release notes](https://github.com/rabbitmq/rabbitmq-server/releases/tag/v4.3.0)
+- Chart version bumped
+
 ## 0.22.2 - 2026/04/08
 
 - Fix erlang cookie file permissions in StatefulSet init container
