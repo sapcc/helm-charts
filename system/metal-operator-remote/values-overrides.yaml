@@ -1,0 +1,53 @@
+controllerManager:
+  manager:
+    args:
+      - --mac-prefixes-file=/etc/macdb/macdb.yaml
+      - --probe-image=keppel.global.cloud.sap/ccloud-ghcr-io-mirror/ironcore-dev/metalprobe:latest
+      - --probe-os-image=ghcr.io/ironcore-dev/os-images/gardenlinux:1443.3
+      - --insecure=false
+      - --registry-url=http://[2a10:afc0:e013:d002::]:30010
+      - --manager-namespace=metal-operator-system
+    env:
+      KUBERNETES_SERVICE_HOST: "apiserver-url"
+      KUBERNETES_CLUSTER_DOMAIN: "cluster.local"
+      KUBECONFIG: "/var/run/remote-kubeconfig/kubeconfig"
+    resources:
+      limits:
+        cpu: "5000m"
+        memory: "5120Mi"
+    volumes:
+      - name: webhook-certs
+        mountPath: /tmp/k8s-webhook-server/serving-certs
+        readOnly: true
+        source:
+          emptyDir: {}
+      - name: remote-serviceaccount
+        mountPath: /var/run/secrets/kubernetes.io/remote-serviceaccount
+        readOnly: true
+        source:
+          secret:
+            secretName: metal-operator-remote-kubeconfig
+            items:
+              - key: token
+                path: token
+              - key: bundle.crt
+                path: ca.crt
+      - name: remote-kubeconfig
+        mountPath: /var/run/remote-kubeconfig
+        readOnly: true
+        source:
+          configMap:
+            name: remote-kubeconfig
+  podSecurityContext:
+    runAsUser: 65532 # ensure sidecar and main controller run as same user, so they can share generated tls certs via emptyDir volume 
+    runAsGroup: 65532
+  pod:
+    labels:
+      networking.gardener.cloud/to-dns: allowed
+      networking.gardener.cloud/to-private-networks: allowed
+      networking.gardener.cloud/to-public-networks: allowed
+      networking.gardener.cloud/to-runtime-apiserver: allowed
+      networking.resources.gardener.cloud/to-all-istio-ingresses-istio-ingressgateway-tcp-9443: allowed
+      networking.resources.gardener.cloud/to-kube-apiserver-tcp-443: allowed
+  serviceAccountName: metal-operator-webhook-injector
+  hostNetwork: false

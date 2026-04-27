@@ -134,13 +134,34 @@ build-metal-operator:
 
 build-metal-operator-remote:
 	@helm dep up metal-operator-remote
+	# Merge upstream controllerManager defaults with our overrides into values.yaml
+	@yq eval-all \
+		'select(fileIndex == 0).controllerManager * select(fileIndex == 1).controllerManager | {"controllerManager": .}' \
+		<(tar -xzf metal-operator-remote/charts/metal-operator*.tgz -O metal-operator/values.yaml) \
+		metal-operator-remote/values-overrides.yaml |\
+		yq eval -i '. *= load("/dev/stdin")' metal-operator-remote/values.yaml
+	# Render CRDs and RBAC into managed resources for the shoot cluster
 	@helm template metal-operator metal-operator-remote/charts/metal-operator* \
 		-n kube-system \
 		-f metal-operator-remote/values-managed-resources.yaml |\
 		$(SED) 's/kind: Role/kind: ClusterRole/g' - |\
-		yq eval 'select(.kind != "Service" and .kind != "ValidatingWebhookConfiguration")' - >\
+		yq eval 'select(.kind != "Service" and .kind != "ValidatingWebhookConfiguration" and .kind != "MutatingWebhookConfiguration")' - >\
 		metal-operator-remote/managedresources/crds-and-rbac.yaml
-	yq -i '.version = (.version | split(".") | .[2] = ((.[2] | tonumber) + 1 | tostring) | join("."))' metal-operator-remote/Chart.yaml
+	# Extract upstream Deployment template and inject webhook-injector as native sidecar (initContainer)
+	@tar -xzf metal-operator-remote/charts/metal-operator*.tgz -O metal-operator/templates/manager/manager.yaml |\
+		$(SED) \
+			-e '/namespace: {{ .Release.Namespace }}/d' \
+			-e '/^      containers:/i\      initContainers:\n      {{- include "chart.webhook-injector-sidecar" . | nindent 6 }}' \
+		> metal-operator-remote/templates/controller-manager.yaml
+	# Render webhook configurations and rewrite service refs to URL-based
+	@helm template metal-operator metal-operator-remote/charts/metal-operator* \
+	  -n kube-system \
+		-f metal-operator-remote/values-managed-resources.yaml |\
+		yq eval 'select(.kind == "ValidatingWebhookConfiguration" or .kind == "MutatingWebhookConfiguration")' - |\
+		yq eval '(. | .webhooks[].clientConfig | select(.service)) |= ({"url": "https://metal-operator-webhook-service:443" + .service.path})' - \
+		> metal-operator-remote/webhooks.yaml
+	# Bump patch version
+	@yq -i '.version = (.version | split(".") | .[2] = ((.[2] | tonumber) + 1 | tostring) | join("."))' metal-operator-remote/Chart.yaml
 
 build-boot-operator:
 	@helm dep up boot-operator
@@ -154,7 +175,7 @@ build-boot-operator-remote:
 		$(SED) 's/kind: Role/kind: ClusterRole/g' - |\
 		yq eval 'select(.kind != "Service" and .kind != "ValidatingWebhookConfiguration")' - >\
 		boot-operator-remote/managedresources/crds-and-rbac.yaml
-	yq -i '.version = (.version | split(".") | .[2] = ((.[2] | tonumber) + 1 | tostring) | join("."))' boot-operator-remote/Chart.yaml
+	@yq -i '.version = (.version | split(".") | .[2] = ((.[2] | tonumber) + 1 | tostring) | join("."))' boot-operator-remote/Chart.yaml
 
 build-argora-operator:
 	@helm dep up argora-operator
@@ -168,7 +189,7 @@ build-argora-operator-remote:
 		$(SED) 's/kind: Role/kind: ClusterRole/g' - |\
 		yq eval 'select(.kind != "Service" and .kind != "ValidatingWebhookConfiguration" and .kind != "ConfigMap" and .kind != "Secret")' - >\
 		argora-operator-remote/managedresources/crds-and-rbac.yaml
-		yq -i '.version = (.version | split(".") | .[2] = ((.[2] | tonumber) + 1 | tostring) | join("."))' argora-operator-remote/Chart.yaml
+	@yq -i '.version = (.version | split(".") | .[2] = ((.[2] | tonumber) + 1 | tostring) | join("."))' argora-operator-remote/Chart.yaml
 
 build-khalkeon-remote:
 	@helm dep up khalkeon-remote

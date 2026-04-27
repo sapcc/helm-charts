@@ -42,6 +42,9 @@ spec:
         configmap-scheduler-etc-hash: {{ include (print $.Template.BasePath "/scheduler-etc-configmap.yaml") . | sha256sum }}
         secret-etc-hash: {{ include (print $.Template.BasePath "/etc-secret.yaml") . | sha256sum }}
     spec:
+      {{- if .Values.rbac.enabled }}
+      serviceAccountName: {{ .Release.Name }}
+      {{- end }}
       {{- tuple . "nova" "scheduler" | include "kubernetes_pod_anti_affinity" | nindent 6 }}
       {{- include "utils.proxysql.pod_settings" . | nindent 6 }}
       terminationGracePeriodSeconds: {{ .Values.defaults.default.graceful_shutdown_timeout | add 5 }}
@@ -120,8 +123,10 @@ spec:
               items:
               - key:  api-db.conf
                 path: nova.conf.d/api-db.conf
-              - key: cell1.conf
-                path: nova.conf.d/cell1.conf
+              - key:  api-rpc.conf
+                path: nova.conf.d/api-rpc.conf
+              - key:  cell0.conf
+                path: nova.conf.d/cell0.conf
               - key: keystoneauth-secrets.conf
                 path: nova.conf.d/keystoneauth-secrets.conf
               {{- if .Values.osprofiler.enabled }}
