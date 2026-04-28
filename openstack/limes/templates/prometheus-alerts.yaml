@@ -92,4 +92,20 @@ spec:
             summary: 'Unexpected role assignments'
             description: 'The Keystone role "cloud_resource_viewer" is assigned to more users/groups than expected.'
 
+        # allowed role assignments for the `cloud_resource_validator` role:
+        # - user limes-validation@Default in project service
+        - alert: OpenstackLimesUnexpectedValidatorRoleAssignments
+          expr: max(openstack_assignments_per_role{role_name="cloud_resource_validator",namespace="{{ .Values.global.keystoneNamespace }}"}) > 1
+          for: 10m
+          labels:
+            support_group: containers
+            tier: os
+            service: limes
+            severity: info
+            playbook: 'https://operations.global.cloud.sap/docs/support/playbook/unexpected-role-assignments'
+            meta: 'Unexpected role assignments found for Keystone role "cloud_resource_validator"'
+          annotations:
+            summary: 'Unexpected role assignments'
+            description: 'The Keystone role "cloud_resource_validator" is assigned to more users/groups than expected.'
+
 {{- end }}
