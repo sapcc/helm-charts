@@ -105,3 +105,34 @@ groups:
       annotations:
         description: Interface {{`{{ $labels.device }}`}} on node {{`{{ $labels.node }}`}} is dropping or erroring more than 1 packet/sec sustained over 10m.
         summary: Network interface errors on {{`{{ $labels.device }}`}} ({{`{{ $labels.node }}`}}).
+
+    - alert: CalicoBgpMeshNoRoutesExported
+      expr: |
+        bird_protocol_prefix_export_count{proto="BGP", name=~"Mesh_.*"} == 0
+        and on(node, name)
+        bird_protocol_up{proto="BGP", state="Established", name=~"Mesh_.*"} == 1
+      for: 15m
+      labels:
+        tier: k8s
+        service: {{ .Values.alerts.service }}
+        severity: warning
+        context: availability
+        support_group: {{ .Values.alerts.networkSupportGroup }}
+        playbook: "docs/support/playbook/kubernetes/k8s_node_bgp_neighbor"
+      annotations:
+        description: BGP mesh session on node {{`{{ $labels.node }}`}} to peer {{`{{ $labels.name }}`}} is Established but exporting zero routes. Pod traffic between this node and peer may be silently broken.
+        summary: BGP mesh session up but no routes exported on {{`{{ $labels.node }}`}}.
+
+    - alert: CalicoDataplaneFailures
+      expr: rate(felix_int_dataplane_failures[5m]) > 0
+      for: 10m
+      labels:
+        tier: k8s
+        service: {{ .Values.alerts.service }}
+        severity: warning
+        context: availability
+        support_group: {{ .Values.alerts.networkSupportGroup }}
+        playbook: "docs/support/playbook/kubernetes/k8s_path_mtu"
+      annotations:
+        description: Felix on node {{`{{ $labels.node }}`}} (pod {{`{{ $labels.pod }}`}}) is failing to apply dataplane changes. Overlay routing, iptables, or tunnel configuration may be broken. Pod-to-pod traffic across nodes may be affected.
+        summary: Calico dataplane failures on node {{`{{ $labels.node }}`}}.
