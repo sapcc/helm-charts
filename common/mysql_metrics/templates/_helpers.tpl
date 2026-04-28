@@ -9,7 +9,6 @@ Expand the name of the chart.
 {{/*
 Generate the service DNS domain
 */}}
-{{/*- printf "%s.svc.%s" $.db_namespace ( $.Values.global.clusterDNSSearchDomain | required "missing value for .Values.global.clusterDNSSearchDomain" ) -*/}}
 {{- define "svc_dns_domain" -}}
 {{ $.db_namespace }}.svc.{{ $.Values.global.clusterDNSSearchDomain | required "missing value for .Values.global.clusterDNSSearchDomain" }}
 {{- end -}}
