@@ -231,7 +231,7 @@ region_name = {{.Values.global.region}}
 {{- if .Values.global.is_global_region }}
 memcached_servers = {{.Release.Name}}-memcached.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.db_region}}.{{.Values.global.tld}}:{{.Values.global.memcached_port_public | default 11211}}
 {{- else }}
-memcached_servers = {{.Release.Name}}-memcached.{{.Release.Namespace}}.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.global.memcached_port_public | default 11211}}
+memcached_servers = {{.Release.Name}}-memcached.{{ include "svc_fqdn" . }}:{{.Values.global.memcached_port_public | default 11211}}
 {{- end }}
 {{- if .Values.global.is_global_region }}
 insecure = False
