@@ -1,0 +1,82 @@
+# RBAC for TLS Lifecycle Manager
+# Required for WP-1194 (TLS Bootstrap Job) and WP-1195 (TLS Rotation CronJob)
+
+{{- if .Values.tls.enabled }}
+---
+# ServiceAccount for TLS manager jobs
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ .Release.Name }}-tls-manager
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    system: openstack
+    component: barbican
+    type: tls-manager
+
+---
+# Role for TLS manager operations
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ .Release.Name }}-tls-manager
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    system: openstack
+    component: barbican
+    type: tls-manager
+rules:
+  # Manage TLS secrets
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+    resourceNames: ["{{ .Release.Name }}-tls"]
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["create"]
+  
+  # Trigger rolling restart of deployment (via annotation patch)
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    verbs: ["get", "patch"]
+    resourceNames: ["barbican-api"]
+  
+  # Create and manage CertificateRequest resources (cert-manager)
+  - apiGroups: ["cert-manager.io"]
+    resources: ["certificaterequests"]
+    verbs: ["get", "list", "watch", "create", "delete"]
+  
+  # Access custom certificate issuers (e.g., ClusterDigicertIssuer)
+  - apiGroups: ["certmanager.cloud.sap"]
+    resources: ["clusterdigicertissuers"]
+    verbs: ["get", "list"]
+
+---
+# RoleBinding for TLS manager
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ .Release.Name }}-tls-manager
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    system: openstack
+    component: barbican
+    type: tls-manager
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ .Release.Name }}-tls-manager
+subjects:
+  - kind: ServiceAccount
+    name: {{ .Release.Name }}-tls-manager
+    namespace: {{ .Release.Namespace }}
+{{- end }}

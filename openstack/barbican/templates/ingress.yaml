@@ -13,12 +13,34 @@ metadata:
     type: api
     component: barbican
   annotations:
-  {{- if .Values.tlsacme }}
+  {{- if and .Values.tls.enabled .Values.tls.passthrough }}
+    # WP-1189: TLS Passthrough mode - TLS terminates at Apache, not ingress
+    nginx.ingress.kubernetes.io/ssl-passthrough: "true"
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+    disco: "true"
+  {{- else if .Values.tlsacme }}
     kubernetes.io/tls-acme: "true"
     disco: "true"
   {{- end }}
   {{- include "utils.linkerd.ingress_annotation" . | indent 4 }}
 spec:
+  {{- if and .Values.tls.enabled .Values.tls.passthrough }}
+  # WP-1189: TLS Passthrough - no TLS termination at ingress level
+  # Traffic passes through encrypted to the backend (Apache)
+  ingressClassName: nginx
+  rules:
+    - host: {{include "barbican_api_endpoint_host_public" .}}
+      http:
+        paths:
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: barbican-api
+              port:
+                number: {{ .Values.tls.httpsPort }}
+  {{- else }}
+  # Standard TLS termination at ingress
   tls:
      - secretName: tls-{{ include "barbican_api_endpoint_host_public" . | replace "." "-" }}
        hosts: [{{include "barbican_api_endpoint_host_public" .}}]
@@ -33,3 +55,4 @@ spec:
               name: barbican-api
               port:
                 number: {{.Values.api_port_internal}}
+  {{- end }}

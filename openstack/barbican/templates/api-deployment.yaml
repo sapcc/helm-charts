@@ -12,7 +12,7 @@ metadata:
     type: api
     component: barbican
   annotations:
-    secret.reloader.stakater.com/reload: "{{ .Release.Name }}-secrets"
+    secret.reloader.stakater.com/reload: "{{ .Release.Name }}-secrets{{- if .Values.tls.enabled }},{{ .Release.Name }}-tls{{- end }}"
     deployment.reloader.stakater.com/pause-period: "60s"
 spec:
   replicas: {{ required ".Values.api.replicas is missing" .Values.api.replicas }}
@@ -38,11 +38,16 @@ spec:
         {{- include "utils.topology.pod_label" . | nindent 8 }}
       annotations:
         configmap-etc-hash: {{ include (print $.Template.BasePath "/etc-configmap.yaml") . | sha256sum }}
+        configmap-bin-hash: {{ include (print $.Template.BasePath "/configmap-bin.yaml") . | sha256sum }}
         {{- if .Values.proxysql.mode }}
         prometheus.io/scrape: "true"
         prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
         {{- end }}
         {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
+        {{- /* WP-1197: Linkerd mTLS Enforcement - Skip inbound port 443 for TLS passthrough */}}
+        {{- if .Values.tls.enabled }}
+        config.linkerd.io/skip-inbound-ports: "{{ .Values.tls.httpsPort }}"
+        {{- end }}
     spec:
       {{ tuple . "barbican" "api" | include "kubernetes_pod_anti_affinity" | nindent 6 }}
       {{- include "utils.proxysql.pod_settings" . | indent 6 }}
@@ -56,9 +61,10 @@ spec:
         - name: barbican-api
           image: {{required ".Values.global.registry is missing" .Values.global.registry }}/loci-barbican:{{required "Values.imageVersionBarbicanApi is missing" .Values.imageVersionBarbicanApi}}
           imagePullPolicy: IfNotPresent
+          # WP-1187: Migrate to Apache+mod_wsgi (Keystone-style startup script)
           command:
-          - dumb-init
-          - barbican-api
+            - /scripts/barbican-api.sh
+            - start
           env:
           {{- if .Values.sentry.enabled }}
           - name: SENTRY_DSN
@@ -86,7 +92,10 @@ spec:
           {{- end }}
           lifecycle:
             preStop:
-              {{- include "utils.snippets.pre_stop_graceful_shutdown" . | indent 14 }}
+              exec:
+                command:
+                  - /scripts/barbican-api.sh
+                  - stop
           livenessProbe:
             httpGet:
               path: /
@@ -102,6 +111,11 @@ spec:
           ports:
             - name: barbican-api
               containerPort: {{.Values.api_port_internal}}
+            {{- if .Values.tls.enabled }}
+            # WP-1188: HTTPS port for TLS termination at Apache
+            - name: barbican-https
+              containerPort: {{ .Values.tls.httpsPort }}
+            {{- end }}
           volumeMounts:
             - name: etcbarbican
               mountPath: /etc/barbican
@@ -124,6 +138,28 @@ spec:
             - mountPath: /etc/barbican/barbican.conf.d
               name: barbican-etc-confd
               readOnly: true
+            # WP-1187: Apache WSGI configuration
+            - name: barbican-etc
+              mountPath: /etc/apache2/conf-enabled/wsgi-barbican.conf
+              subPath: wsgi-barbican.conf
+              readOnly: true
+            {{- if .Values.tls.enabled }}
+            # WP-1196: TLS hardening configuration
+            - name: barbican-etc
+              mountPath: /etc/apache2/conf-enabled/tls-hardening.conf
+              subPath: tls-hardening.conf
+              readOnly: true
+            # WP-1188: TLS certificate and key
+            - name: tls-certs
+              mountPath: /etc/barbican/tls
+              readOnly: true
+            {{- end }}
+            # WSGI script directory (Keystone-style path)
+            - name: wsgi-barbican
+              mountPath: /var/www/cgi-bin/barbican
+            # Startup scripts
+            - name: barbican-bin
+              mountPath: /scripts
             {{- if .Values.watcher.enabled }}
             - name: barbican-etc
               mountPath: /etc/barbican/watcher.yaml
@@ -255,6 +291,21 @@ spec:
               path: secrets.conf
         - name: etcbarbican
           emptyDir: {}
+        # WP-1187: WSGI script directory (Keystone-style path)
+        - name: wsgi-barbican
+          emptyDir: {}
+        # Startup scripts (like Keystone's keystone-bin)
+        - name: barbican-bin
+          configMap:
+            name: barbican-bin
+            defaultMode: 0555
+        {{- if .Values.tls.enabled }}
+        # WP-1188: TLS certificates from TLS bootstrap job
+        - name: tls-certs
+          secret:
+            secretName: {{ .Release.Name }}-tls
+            defaultMode: 0400
+        {{- end }}
         {{- if .Values.hsm.enabled }}
         - name: hsm
           secret:
