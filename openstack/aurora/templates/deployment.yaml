@@ -9,6 +9,7 @@ spec:
     matchLabels:
       name: aurora
   revisionHistoryLimit: 5
+  # prettier-ignore
   replicas: {{ .Values.replica_count }}
   strategy:
     type: RollingUpdate
@@ -23,21 +24,22 @@ spec:
       affinity:
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
-          - weight: 100
-            podAffinityTerm:
-              topologyKey: kubernetes.io/hostname
-              labelSelector:
-                matchExpressions:
-                - key: name
-                  operator: In
-                  values:
-                  - aurora
+            - weight: 100
+              podAffinityTerm:
+                topologyKey: kubernetes.io/hostname
+                labelSelector:
+                  matchExpressions:
+                    - key: name
+                      operator: In
+                      values:
+                        - aurora
       # The preStop hook below sleeps 30 seconds, extend the gracePeriod accordingly
       terminationGracePeriodSeconds: 60
       containers:
         - name: server
           image: "{{.Values.global.registry}}/aurora:{{.Values.image.tag}}"
-          imagePullPolicy: {{.Values.image.pullPolicy}}
+          # prettier-ignore
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
             - name: server
               containerPort: 3000
@@ -45,7 +47,7 @@ spec:
             - name: PORT
               value: "3000"
             - name: IDENTITY_ENDPOINT
-              value: {{.Values.identity_endpoint}}    
+              value: "http://keystone.monsoon3.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}:5000/v3"
           livenessProbe:
             httpGet:
               path: /
@@ -67,4 +69,4 @@ spec:
               memory: "800Mi"
             limits:
               cpu: "2000m"
-              memory: "2Gi"                
+              memory: "2Gi"
