@@ -2,6 +2,13 @@
 
 This file is used to list changes made in each version of the common chart rabbitmq.
 
+## 0.24.0 - 2026/04/28
+
+- Use `clusterDNSSearchDomain` to generate the certificate default common name and SAN
+  - Used to be the hardcoded `<fullname>.<namespace>.svc.kubernetes.<region>.<tld>`
+  - Now it's `<fullname>.<namespace>.svc.<clusterDNSSearchDomain>`
+- Chart version bumped
+
 ## 0.23.0 - 2026/04/27
 
 - RabbitMQ [4.3.0 Release notes](https://github.com/rabbitmq/rabbitmq-server/releases/tag/v4.3.0)
