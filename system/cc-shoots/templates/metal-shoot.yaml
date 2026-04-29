@@ -1,12 +1,13 @@
 {{- range $regionName, $region := .Values.regions }}
 {{- $shootName := default (printf "m-%s" $regionName) $region.shootName }}
+{{- $clusterType := include "cc-shoots.clusterType" $ }}
 ---
 apiVersion: core.gardener.cloud/v1beta1
 kind: Shoot
 metadata:
   name: {{ $shootName }}
   labels:
-    cluster-type: sci-k8s-metalapi
+    cluster-type: {{ $clusterType }}
     greenhouse.sap/owned-by: containers
     greenhouse.sap/shoot-grafter-transport: {{ default "greenhouse-prod-sci" $.Values.greenhouseShootGrafter }}
     metadata.greenhouse.sap/region: {{ $regionName }}
@@ -26,7 +27,7 @@ spec:
       featureGates:
         AnonymousAuthConfigurableEndpoints: true
       structuredAuthentication:
-        configMapName: authentication-config-met-op
+        configMapName: {{ printf "%s-auth-%s" $clusterType $regionName }}
       {{- if $region.auditing.enabled }}
       auditConfig:
         auditPolicy:
