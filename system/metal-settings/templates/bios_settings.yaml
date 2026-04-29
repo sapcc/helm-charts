@@ -1,3 +1,4 @@
+{{- if .Values.biosSettings.enabled }}
 {{- range $path, $_  := $.Files.Glob "bios_settings/**" }}
 {{- $name := base (dir $path) }}
 {{- if eq (len (splitList "/" $path)) 5 -}}
@@ -10,6 +11,24 @@
 {{- $version := replace "_" "-" $version}}
 {{- $version := replace ".yaml" "" $version}}
 
+{{/* Vendor filtering */}}
+{{- $vendorIncluded := or (not $.Values.biosSettings.filters.vendors.included) (has $vendor $.Values.biosSettings.filters.vendors.included) }}
+{{- $vendorExcluded := and $.Values.biosSettings.filters.vendors.excluded (has $vendor $.Values.biosSettings.filters.vendors.excluded) }}
+
+{{/* Model filtering */}}
+{{- $modelIncluded := or (not $.Values.biosSettings.filters.models.included) (has $model $.Values.biosSettings.filters.models.included) }}
+{{- $modelExcluded := and $.Values.biosSettings.filters.models.excluded (has $model $.Values.biosSettings.filters.models.excluded) }}
+
+{{/* ClusterType filtering */}}
+{{- $clusterTypeIncluded := or (not $.Values.biosSettings.filters.clusterTypes.included) (has $clusterType $.Values.biosSettings.filters.clusterTypes.included) }}
+{{- $clusterTypeExcluded := and $.Values.biosSettings.filters.clusterTypes.excluded (has $clusterType $.Values.biosSettings.filters.clusterTypes.excluded) }}
+
+{{/* Version filtering */}}
+{{- $versionIncluded := or (not $.Values.biosSettings.filters.versions.included) (has $version $.Values.biosSettings.filters.versions.included) }}
+{{- $versionExcluded := and $.Values.biosSettings.filters.versions.excluded (has $version $.Values.biosSettings.filters.versions.excluded) }}
+
+{{/* Apply all filters */}}
+{{- if and $vendorIncluded (not $vendorExcluded) $modelIncluded (not $modelExcluded) $clusterTypeIncluded (not $clusterTypeExcluded) $versionIncluded (not $versionExcluded) }}
 {{ range $path, $_ := $.Files.Glob (printf "bios_settings/%s/%s/%s/*.yaml" $vendor $model $clusterType) -}}
 apiVersion: metal.ironcore.dev/v1alpha1
 kind: BIOSSettingsSet
@@ -34,6 +53,8 @@ spec:
 {{ $.Files.Get $path | trim | indent 4 }}
 {{- end }}
 ---
+{{- end -}}
+{{- end -}}
 {{- end -}}
 {{- end -}}
 {{- end -}}

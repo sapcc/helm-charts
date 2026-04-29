@@ -1,0 +1,157 @@
+suite: bmc_versions
+templates:
+  - bmc_versions.yaml
+tests:
+  #############################################################################
+  # BASELINE TESTS - Verify current behavior (deploy everything)
+  #############################################################################
+
+  - it: should render BMCVersionSet resources by default
+    asserts:
+      - hasDocuments:
+          count: 26
+      - isKind:
+          of: BMCVersionSet
+
+  - it: should render Dell resources
+    asserts:
+      - containsDocument:
+          kind: BMCVersionSet
+          apiVersion: metal.ironcore.dev/v1alpha1
+          name: dell-poweredge-r7615-7-20-60-50
+          any: true
+
+  - it: should render HPE resources
+    asserts:
+      - containsDocument:
+          kind: BMCVersionSet
+          apiVersion: metal.ironcore.dev/v1alpha1
+          name: hpe-proliant-dl560-gen11-ilo6-1-68
+          any: true
+
+  - it: should render Lenovo resources
+    asserts:
+      - containsDocument:
+          kind: BMCVersionSet
+          apiVersion: metal.ironcore.dev/v1alpha1
+          name: lenovo-thinksystem-sr850p-tei3e4d-4-12
+          any: true
+
+  - it: should set correct bmcSelector labels
+    documentSelector:
+      path: metadata.name
+      value: dell-poweredge-r7615-7-20-60-50
+    asserts:
+      - equal:
+          path: spec.bmcSelector.matchLabels["kubernetes.metal.cloud.sap/type"]
+          value: poweredge-r7615
+
+  - it: should set serverMaintenancePolicy to OwnerApproval
+    documentSelector:
+      path: metadata.name
+      value: dell-poweredge-r7615-7-20-60-50
+    asserts:
+      - equal:
+          path: spec.bmcVersionTemplate.serverMaintenancePolicy
+          value: OwnerApproval
+
+  #############################################################################
+  # FILTERING TESTS
+  #############################################################################
+
+  # UC1: Filter by vendor
+  - it: should only render Dell resources when vendors.included is set
+    set:
+      bmcVersions.filters.vendors.included: [dell]
+    asserts:
+      - containsDocument:
+          kind: BMCVersionSet
+          apiVersion: metal.ironcore.dev/v1alpha1
+          name: dell-poweredge-r7615-7-20-60-50
+          any: true
+      - not: true
+        containsDocument:
+          kind: BMCVersionSet
+          apiVersion: metal.ironcore.dev/v1alpha1
+          name: hpe-proliant-dl560-gen11-ilo6-1-68
+          any: true
+      - not: true
+        containsDocument:
+          kind: BMCVersionSet
+          apiVersion: metal.ironcore.dev/v1alpha1
+          name: lenovo-thinksystem-sr850p-tei3e4d-4-12
+          any: true
+
+  # UC2: Filter by model
+  - it: should only render specific model when models.included is set
+    set:
+      bmcVersions.filters.models.included: [poweredge-r7615]
+    asserts:
+      - containsDocument:
+          kind: BMCVersionSet
+          apiVersion: metal.ironcore.dev/v1alpha1
+          name: dell-poweredge-r7615-7-20-60-50
+          any: true
+      - not: true
+        containsDocument:
+          kind: BMCVersionSet
+          apiVersion: metal.ironcore.dev/v1alpha1
+          name: dell-poweredge-r660-7-20-60-50
+          any: true
+
+  # UC3: Combination filter
+  - it: should filter by vendor and model combination
+    set:
+      bmcVersions.filters.vendors.included: [dell]
+      bmcVersions.filters.models.included: [poweredge-r7615]
+    asserts:
+      - hasDocuments:
+          count: 1
+      - containsDocument:
+          kind: BMCVersionSet
+          apiVersion: metal.ironcore.dev/v1alpha1
+          name: dell-poweredge-r7615-7-20-60-50
+          any: true
+
+  # UC4: Disable entirely
+  - it: should render no resources when enabled is false
+    set:
+      bmcVersions.enabled: false
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  # UC5: Exclude model
+  - it: should exclude specific model when models.excluded is set
+    set:
+      bmcVersions.filters.vendors.included: [dell]
+      bmcVersions.filters.models.excluded: [poweredge-r7615]
+    asserts:
+      - not: true
+        containsDocument:
+          kind: BMCVersionSet
+          apiVersion: metal.ironcore.dev/v1alpha1
+          name: dell-poweredge-r7615-7-20-60-50
+          any: true
+      - containsDocument:
+          kind: BMCVersionSet
+          apiVersion: metal.ironcore.dev/v1alpha1
+          name: dell-poweredge-r660-7-20-60-50
+          any: true
+
+  # UC6: Exclude vendor
+  - it: should exclude vendor when vendors.excluded is set
+    set:
+      bmcVersions.filters.vendors.excluded: [hpe]
+    asserts:
+      - containsDocument:
+          kind: BMCVersionSet
+          apiVersion: metal.ironcore.dev/v1alpha1
+          name: dell-poweredge-r7615-7-20-60-50
+          any: true
+      - not: true
+        containsDocument:
+          kind: BMCVersionSet
+          apiVersion: metal.ironcore.dev/v1alpha1
+          name: hpe-proliant-dl560-gen11-ilo6-1-68
+          any: true

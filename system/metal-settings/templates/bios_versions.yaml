@@ -1,3 +1,4 @@
+{{- if .Values.biosVersions.enabled }}
 {{- range $path, $_  := $.Files.Glob "bios_versions/**" }}
 {{- $name := base (dir $path) }}
 {{- if eq (len (splitList "/" $path)) 4 -}}
@@ -9,6 +10,20 @@
 {{- $version := replace "_" "-" $version}}
 {{- $version := replace ".yaml" "" $version}}
 
+{{/* Vendor filtering */}}
+{{- $vendorIncluded := or (not $.Values.biosVersions.filters.vendors.included) (has $vendor $.Values.biosVersions.filters.vendors.included) }}
+{{- $vendorExcluded := and $.Values.biosVersions.filters.vendors.excluded (has $vendor $.Values.biosVersions.filters.vendors.excluded) }}
+
+{{/* Model filtering */}}
+{{- $modelIncluded := or (not $.Values.biosVersions.filters.models.included) (has $model $.Values.biosVersions.filters.models.included) }}
+{{- $modelExcluded := and $.Values.biosVersions.filters.models.excluded (has $model $.Values.biosVersions.filters.models.excluded) }}
+
+{{/* Version filtering */}}
+{{- $versionIncluded := or (not $.Values.biosVersions.filters.versions.included) (has $version $.Values.biosVersions.filters.versions.included) }}
+{{- $versionExcluded := and $.Values.biosVersions.filters.versions.excluded (has $version $.Values.biosVersions.filters.versions.excluded) }}
+
+{{/* Apply all filters */}}
+{{- if and $vendorIncluded (not $vendorExcluded) $modelIncluded (not $modelExcluded) $versionIncluded (not $versionExcluded) }}
 {{ range $path, $_ := $.Files.Glob (printf "bios_versions/%s/%s/*.yaml" $vendor $model) -}}
 apiVersion: metal.ironcore.dev/v1alpha1
 kind: BIOSVersionSet
@@ -27,6 +42,8 @@ spec:
 {{ $.Files.Get $path | trim | indent 4 }}
 {{- end }}
 ---
+{{- end -}}
+{{- end -}}
 {{- end -}}
 {{- end -}}
 {{- end -}}
