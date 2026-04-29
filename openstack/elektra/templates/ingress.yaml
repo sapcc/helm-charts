@@ -34,6 +34,7 @@ metadata:
     ingress.kubernetes.io/service-upstream: "true"
     nginx.ingress.kubernetes.io/service-upstream: "true"
     {{- end }}
+    # create dns CNAME record for dashboard
     disco: "true"
     kubernetes.io/tls-acme: {{ default false .Values.ingress.vice_president | quote }}
     prometheus.io/probe: {{ default false .Values.ingress.probe | quote }}
@@ -47,9 +48,6 @@ metadata:
     ingress.kubernetes.io/auth-response-headers: "Authorization, X-Auth-Request-Email, X-Auth-Request-User, X-Forwarded-Access-Token"
     nginx.ingress.kubernetes.io/auth-response-headers: "Authorization, X-Auth-Request-Email, X-Auth-Request-User, X-Forwarded-Access-Token"
     {{- end }}
-    # create dns record for dashboard
-    dns-manager: "true"
-    dns-manager/zone-name: "dashboard.{{.Values.global.region}}.{{ .Values.global.tld }}"
 spec:
   tls:
     - secretName: {{ .Release.Name }}-tls
@@ -92,12 +90,10 @@ metadata:
     ingress.kubernetes.io/service-upstream: "true"
     nginx.ingress.kubernetes.io/service-upstream: "true"
     {{- end }}
+    # create dns CNAME record for dashboard-e2e
     disco: "true"
     kubernetes.io/tls-acme: {{ default false .Values.ingress.vice_president | quote }}
     prometheus.io/probe: {{ default false .Values.ingress.probe | quote }}
-    # create dns record for dashboard-e2e
-    dns-manager: "true"
-    dns-manager/zone-name: "dashboard-e2e.{{.Values.global.region}}.{{ .Values.global.tld }}"
 spec:
   tls:
     - secretName: elektra-e2e
