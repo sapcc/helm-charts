@@ -1,35 +1,31 @@
 {{- if .Values.biosSettings.enabled }}
-{{- range $path, $_  := $.Files.Glob "bios_settings/**" }}
-{{- $name := base (dir $path) }}
-{{- if eq (len (splitList "/" $path)) 5 -}}
-
-{{- $folders := splitList "/" $path }}
-{{- $version := index $folders 4}}
-{{- $vendor := index $folders 1 }}
-{{- $model := index $folders 2 }}
-{{- $clusterType := index $folders 3 }}
-{{- $version := replace "_" "-" $version}}
-{{- $version := replace ".yaml" "" $version}}
+{{- range $vendor, $entries := .Values.biosSettings.items }}
 
 {{/* Vendor filtering */}}
 {{- $vendorIncluded := or (not $.Values.biosSettings.filters.vendors.included) (has $vendor $.Values.biosSettings.filters.vendors.included) }}
 {{- $vendorExcluded := and $.Values.biosSettings.filters.vendors.excluded (has $vendor $.Values.biosSettings.filters.vendors.excluded) }}
 
+{{- if and $vendorIncluded (not $vendorExcluded) }}
+{{- range $entry := $entries }}
+{{- $model := $entry.model }}
+{{- $version := $entry.version }}
+
 {{/* Model filtering */}}
 {{- $modelIncluded := or (not $.Values.biosSettings.filters.models.included) (has $model $.Values.biosSettings.filters.models.included) }}
 {{- $modelExcluded := and $.Values.biosSettings.filters.models.excluded (has $model $.Values.biosSettings.filters.models.excluded) }}
-
-{{/* ClusterType filtering */}}
-{{- $clusterTypeIncluded := or (not $.Values.biosSettings.filters.clusterTypes.included) (has $clusterType $.Values.biosSettings.filters.clusterTypes.included) }}
-{{- $clusterTypeExcluded := and $.Values.biosSettings.filters.clusterTypes.excluded (has $clusterType $.Values.biosSettings.filters.clusterTypes.excluded) }}
 
 {{/* Version filtering */}}
 {{- $versionIncluded := or (not $.Values.biosSettings.filters.versions.included) (has $version $.Values.biosSettings.filters.versions.included) }}
 {{- $versionExcluded := and $.Values.biosSettings.filters.versions.excluded (has $version $.Values.biosSettings.filters.versions.excluded) }}
 
-{{/* Apply all filters */}}
-{{- if and $vendorIncluded (not $vendorExcluded) $modelIncluded (not $modelExcluded) $clusterTypeIncluded (not $clusterTypeExcluded) $versionIncluded (not $versionExcluded) }}
-{{ range $path, $_ := $.Files.Glob (printf "bios_settings/%s/%s/%s/*.yaml" $vendor $model $clusterType) -}}
+{{- if and $modelIncluded (not $modelExcluded) $versionIncluded (not $versionExcluded) }}
+{{- range $clusterType := $entry.clusterTypes }}
+
+{{/* ClusterType filtering */}}
+{{- $clusterTypeIncluded := or (not $.Values.biosSettings.filters.clusterTypes.included) (has $clusterType $.Values.biosSettings.filters.clusterTypes.included) }}
+{{- $clusterTypeExcluded := and $.Values.biosSettings.filters.clusterTypes.excluded (has $clusterType $.Values.biosSettings.filters.clusterTypes.excluded) }}
+
+{{- if and $clusterTypeIncluded (not $clusterTypeExcluded) }}
 apiVersion: metal.ironcore.dev/v1alpha1
 kind: BIOSSettingsSet
 metadata:
@@ -41,20 +37,14 @@ spec:
       kubernetes.metal.cloud.sap/cluster-type: {{ $clusterType }}
   biosSettingsTemplate:
     serverMaintenancePolicy: OwnerApproval
-{{- if lt (len ($.Files.Lines $path)) 3 }}
-{{- $modelDefault := printf "bios_settings/%s/%s/default.yaml" $vendor $model }}
-{{- if $.Files.Get $modelDefault }}
-{{ $.Files.Get $modelDefault | trim | indent 4 }}
-{{- else }}
-{{ $.Files.Get (printf "bios_settings/%s/default.yaml" $vendor) | trim | indent 4 }}
-{{- end }}
-{{ $.Files.Get $path | trim | indent 4 }}
-{{- else }}
-{{ $.Files.Get $path | trim | indent 4 }}
-{{- end }}
+{{ $.Files.Get (printf "bios_settings/%s" $entry.settingsFileName) | trim | indent 4 }}
+    version: {{ $version | quote }}
 ---
-{{- end -}}
-{{- end -}}
-{{- end -}}
-{{- end -}}
-{{- end -}}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
+

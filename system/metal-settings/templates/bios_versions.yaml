@@ -1,18 +1,14 @@
 {{- if .Values.biosVersions.enabled }}
-{{- range $path, $_  := $.Files.Glob "bios_versions/**" }}
-{{- $name := base (dir $path) }}
-{{- if eq (len (splitList "/" $path)) 4 -}}
-
-{{- $folders := splitList "/" $path }}
-{{- $version := index $folders 3}}
-{{- $vendor := index $folders 1 }}
-{{- $model := index $folders 2 }}
-{{- $version := replace "_" "-" $version}}
-{{- $version := replace ".yaml" "" $version}}
+{{- range $vendor, $entries := .Values.biosVersions.items }}
 
 {{/* Vendor filtering */}}
 {{- $vendorIncluded := or (not $.Values.biosVersions.filters.vendors.included) (has $vendor $.Values.biosVersions.filters.vendors.included) }}
 {{- $vendorExcluded := and $.Values.biosVersions.filters.vendors.excluded (has $vendor $.Values.biosVersions.filters.vendors.excluded) }}
+
+{{- if and $vendorIncluded (not $vendorExcluded) }}
+{{- range $entry := $entries }}
+{{- $model := $entry.model }}
+{{- $version := $entry.version }}
 
 {{/* Model filtering */}}
 {{- $modelIncluded := or (not $.Values.biosVersions.filters.models.included) (has $model $.Values.biosVersions.filters.models.included) }}
@@ -22,28 +18,24 @@
 {{- $versionIncluded := or (not $.Values.biosVersions.filters.versions.included) (has $version $.Values.biosVersions.filters.versions.included) }}
 {{- $versionExcluded := and $.Values.biosVersions.filters.versions.excluded (has $version $.Values.biosVersions.filters.versions.excluded) }}
 
-{{/* Apply all filters */}}
-{{- if and $vendorIncluded (not $vendorExcluded) $modelIncluded (not $modelExcluded) $versionIncluded (not $versionExcluded) }}
-{{ range $path, $_ := $.Files.Glob (printf "bios_versions/%s/%s/*.yaml" $vendor $model) -}}
+{{- if and $modelIncluded (not $modelExcluded) $versionIncluded (not $versionExcluded) }}
 apiVersion: metal.ironcore.dev/v1alpha1
 kind: BIOSVersionSet
 metadata:
-  name: {{ lower $vendor }}-{{ lower $model }}-{{ lower $version }}
+  name: {{ lower $vendor }}-{{ lower $model }}
 spec:
   serverSelector:
     matchLabels:
       kubernetes.metal.cloud.sap/type: {{ $model }}
   biosVersionTemplate:
     serverMaintenancePolicy: OwnerApproval
-{{- if $.Files.Lines $path | len | eq 2 }}
-{{ $.Files.Get (printf "bios_versions/%s/default.yaml" $vendor) | trim | indent 4 }}
-{{ $.Files.Get $path | trim | indent 4 }}
-{{- else }}
-{{ $.Files.Get $path | trim | indent 4 }}
-{{- end }}
+    version: {{ $version | quote }}
+    image:
+      URI: {{ $entry.imageURI | quote }}
+      transferProtocol: "HTTPS"
 ---
-{{- end -}}
-{{- end -}}
-{{- end -}}
-{{- end -}}
-{{- end -}}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
