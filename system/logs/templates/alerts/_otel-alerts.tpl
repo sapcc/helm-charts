@@ -45,7 +45,7 @@ groups:
       service: logs
       severity: info
       support_group: observability
-       no_alert_on_absence: "true" # OTel will not expose the metric otelcol_exporter_send_failed_log_records_total if null 
+      no_alert_on_absence: "true" # OTel will not expose the metric otelcol_exporter_send_failed_log_records_total if null 
       playbook: 'docs/support/playbook/logs/otel-logs-exporting-failed'
     annotations:
       description: 'OTel Collectors on {{`{{ $labels.k8s_cluster_name }}`}} are exporting logs below 90%. Please check.'
