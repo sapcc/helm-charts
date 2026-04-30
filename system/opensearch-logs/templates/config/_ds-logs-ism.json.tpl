@@ -25,7 +25,7 @@
                     {
                         "state_name": "snapshot",
                         "conditions": {
-                            "min_index_age": "7d"
+                            "min_index_age": "{{ .Values.global.data_stream.logs.min_index_age }}"
                         }
                     }
                 ]

@@ -20,6 +20,72 @@
                         }
                     }
                 ],
+{{- if and .Values.s3.enabled .Values.global.data_stream.logs_swift.snapshots.enabled }}
+                "transitions": [
+                    {
+                        "state_name": "snapshot",
+                        "conditions": {
+                            "min_index_age": "{{ .Values.global.data_stream.logs_swift.min_index_age }}"
+                        }
+                    }
+                ]
+            },
+            {
+                "name": "snapshot",
+                "actions": [
+                    {
+                        "retry": {
+                            "count": 3,
+                            "backoff": "exponential",
+                            "delay": "1m"
+                        },
+                        "snapshot": {
+                            "repository": "{{ .Values.global.data_stream.logs_swift.snapshots.repository }}",
+                            "snapshot": "{_SNAPSHOT_NAME_}"
+                        }
+                    }
+                ],
+                "transitions": [
+                    {
+{{- if .Values.global.data_stream.logs_swift.searchable_snapshots.enabled }}
+                        "state_name": "link_snapshot",
+{{- else }}
+                        "state_name": "delete",
+{{- end }}
+                        "conditions": {
+                            "min_doc_count": 5
+                        }
+                    }
+                ]
+            },
+{{- if .Values.global.data_stream.logs_swift.searchable_snapshots.enabled }}
+            {
+                "name": "link_snapshot",
+                "actions": [
+                    {
+                      "retry": {
+                          "count": 3,
+                          "backoff": "exponential",
+                          "delay": "1m"
+                      },
+                      "convert_index_to_remote": {
+                          "repository": "{{ .Values.global.data_stream.logs_swift.snapshots.repository }}",
+                          "snapshot": "{_SNAPSHOT_NAME_}",
+                          "rename_pattern": "remote_$1"
+                      }
+                    }
+                ],
+                "transitions": [
+                    {
+                        "state_name": "delete",
+                        "conditions": {
+                            "min_doc_count": 5
+                        }
+                    }
+                ]
+            },
+{{- end }}
+{{- else }}
                 "transitions": [
                     {
                         "state_name": "delete",
@@ -29,6 +95,7 @@
                     }
                 ]
             },
+{{- end }}
             {
                 "name": "delete",
                 "actions": [
