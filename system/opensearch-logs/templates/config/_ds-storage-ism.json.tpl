@@ -47,13 +47,18 @@
                 ],
                 "transitions": [
                     {
+{{- if .Values.global.data_stream.storage.searchable_snapshots.enabled }}
                         "state_name": "link_snapshot",
+{{- else }}
+                        "state_name": "delete",
+{{- end }}
                         "conditions": {
                             "min_doc_count": 5
                         }
                     }
                 ]
             },
+{{- if .Values.global.data_stream.storage.searchable_snapshots.enabled }}
             {
                 "name": "link_snapshot",
                 "actions": [
@@ -79,6 +84,7 @@
                     }
                 ]
             },
+{{- end }}
 {{- else }}
                 "transitions": [
                     {

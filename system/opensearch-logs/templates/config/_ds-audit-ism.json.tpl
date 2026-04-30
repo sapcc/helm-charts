@@ -68,17 +68,22 @@
                             "repository": "{{ .Values.global.data_stream.audit.snapshots.repository }}",
                             "snapshot": "{_SNAPSHOT_NAME_}"
                         }
-                    } 
+                    }
                 ],
                 "transitions": [
                     {
+{{- if .Values.global.data_stream.audit.searchable_snapshots.enabled }}
                         "state_name": "link_snapshot",
+{{- else }}
+                        "state_name": "delete",
+{{- end }}
                         "conditions": {
                             "min_doc_count": 5
                         }
                     }
                 ]
             },
+{{- if .Values.global.data_stream.audit.searchable_snapshots.enabled }}
             {
                 "name": "link_snapshot",
                 "actions": [
@@ -94,7 +99,7 @@
                           "rename_pattern": "remote_$1"
                       }
                     }
-                ],  
+                ],
                 "transitions": [
                     {
                         "state_name": "delete",
@@ -104,6 +109,7 @@
                     }
                 ]
             },
+{{- end }}
 {{- else }}
                 "transitions": [
                     {
