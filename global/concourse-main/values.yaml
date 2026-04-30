@@ -149,47 +149,6 @@ gitResourceProxy:
   podAnnotations:
     linkerd.io/inject: "enabled"
 
-kubernetes-ingress:
-  controller:
-    kind: Deployment
-    replicaCount: 1
-    image:
-      repository: keppel.global.cloud.sap/ccloud-dockerhub-mirror/haproxytech/kubernetes-ingress
-    ingressClass: git-proxy
-    ingressClassResource:
-      name: git-proxy
-    service:
-      enabled: false
-      type: ClusterIP
-      sessionAffinity: None
-      ports:
-        http: 8080
-      targetPorts:
-        http: 80
-      enablePorts:
-        https: false
-        stat: false
-    publishService:
-      enabled: false
-    extraArgs:
-      - --disable-ipv6
-      - --namespace-whitelist=concourse
-    config:
-      http-connection-mode: "httpclose"
-      timeout-client: "5m"
-      timeout-server: "5m"
-      load-balance: "leastconn"
-    logging:
-      level: info
-      traffic:
-        address:  "stdout"
-        format:   "raw"
-        facility: "daemon"
-    defaultTLSSecret:
-      enabled: false
-  defaultBackend:
-    enabled: false
-
 postgresql-ng:
   alerts:
     support_group: containers
