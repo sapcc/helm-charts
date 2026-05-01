@@ -64,6 +64,8 @@ concourse:
     replicas: 3
     deploymentAnnotations:
       secret.reloader.stakater.com/reload: "concourse-main-web,concourse-ci2-web,concourse-ci3-web"
+    annotations:
+      linkerd.io/inject: "enabled"
     service:
       annotations:
         prometheus.io/targets: "kubernetes"
@@ -142,47 +144,8 @@ gitResourceProxy:
   image: keppel.global.cloud.sap/ccloud/concourse-git-resource-proxy
   imageTag: 0.9.0
   imagePullPolicy: IfNotPresent
-
-kubernetes-ingress:
-  controller:
-    kind: Deployment
-    replicaCount: 1
-    image:
-      repository: keppel.global.cloud.sap/ccloud-dockerhub-mirror/haproxytech/kubernetes-ingress
-    ingressClass: git-proxy
-    ingressClassResource:
-      name: git-proxy
-    service:
-      enabled: false
-      type: ClusterIP
-      sessionAffinity: None
-      ports:
-        http: 8080
-      targetPorts:
-        http: 80
-      enablePorts:
-        https: false
-        stat: false
-    publishService:
-      enabled: false
-    extraArgs:
-      - --disable-ipv6
-      - --namespace-whitelist=concourse
-    config:
-      http-connection-mode: "httpclose"
-      timeout-client: "5m"
-      timeout-server: "5m"
-      load-balance: "leastconn"
-    logging:
-      level: info
-      traffic:
-        address:  "stdout"
-        format:   "raw"
-        facility: "daemon"
-    defaultTLSSecret:
-      enabled: false
-  defaultBackend:
-    enabled: false
+  podAnnotations:
+    linkerd.io/inject: "enabled"
 
 postgresql-ng:
   alerts:
