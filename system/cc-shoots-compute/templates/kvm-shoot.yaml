@@ -155,13 +155,18 @@ spec:
     workers:
     {{- range $workerkey, $worker := $cluster.workers }}
       {{- $workerChannel := coalesce $worker.channel $cluster.channel "release" }}
-      {{- $imageVersion:= "unset" }}
-      {{- if eq $workerChannel "preRelease" }}
-      {{- $imageVersion = coalesce $worker.preReleaseImageVersion $cluster.preReleaseImageVersion $.Values.preReleaseImageVersion }}
-      {{- else if eq $workerChannel "release" }}
-      {{- $imageVersion = coalesce $worker.imageVersion $cluster.imageVersion $.Values.imageVersion }}
+      {{- $imageVersion := index $.Values.imageVersions $workerChannel }}
+      {{- if not $imageVersion }}
+      {{- if hasSuffix "-dev" $workerChannel }}
+      {{- $baseChannel := trimSuffix "-dev" $workerChannel }}
+      {{- $baseVersion := index $.Values.imageVersions $baseChannel }}
+      {{- if not $baseVersion }}
+      {{- fail (printf "worker %s: channel '%s' and base channel '%s' not found in .Values.imageVersions" $workerkey $workerChannel $baseChannel) }}
+      {{- end }}
+      {{- $imageVersion = replace "usi" "usidev" $baseVersion }}
       {{- else }}
-      {{- fail (printf "worker %s has invalid channel '%s': must be either 'release' or 'preRelease'" $workerkey $workerChannel) }}
+      {{- fail (printf "worker %s: channel '%s' not found in .Values.imageVersions" $workerkey $workerChannel) }}
+      {{- end }}
       {{- end }}
       - name: {{ $workerkey }}
         machine:
@@ -225,12 +230,12 @@ spec:
             raw: |
               storage:
                 files:
-                {{- if eq $workerChannel "preRelease" }}
+                {{- if eq $workerChannel "prerelease" }}
                 {{- if and $worker.extraIgnitionFiles ( typeIs "string" $worker.extraIgnitionFiles ) }}
                 {{- $worker.extraIgnitionFiles | nindent 16 }}
                 {{- end }}
                 {{- end }}
-                {{- if and ( eq $workerChannel "preRelease" ) $worker.defaultIgnitionFiles ( typeIs "string" $worker.defaultIgnitionFiles ) }}
+                {{- if and ( eq $workerChannel "prerelease" ) $worker.defaultIgnitionFiles ( typeIs "string" $worker.defaultIgnitionFiles ) }}
                 {{- $worker.defaultIgnitionFiles | nindent 16 }}
                 {{- else }}
 
@@ -347,12 +352,12 @@ spec:
 
               systemd:
                 units:
-                {{- if eq $workerChannel "preRelease" }}
+                {{- if eq $workerChannel "prerelease" }}
                 {{- if and $worker.extraIgnitionSystemdUnits ( typeIs "string" $worker.extraIgnitionSystemdUnits ) }}
                 {{- $worker.extraIgnitionSystemdUnits | nindent 16 }}
                 {{- end }}
                 {{- end }}
-                {{- if and ( eq $workerChannel "preRelease" ) $worker.defaultIgnitionSystemdUnits ( typeIs "string" $worker.defaultIgnitionSystemdUnits ) }}
+                {{- if and ( eq $workerChannel "prerelease" ) $worker.defaultIgnitionSystemdUnits ( typeIs "string" $worker.defaultIgnitionSystemdUnits ) }}
                 {{- $worker.defaultIgnitionSystemdUnits | nindent 16 }}
                 {{- else }}
                 - name: ovsdb-server.service
