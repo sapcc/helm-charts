@@ -230,6 +230,30 @@ ingress-nginx-external:
                   values:
                     - default-backend
 
+ingress-nginx-passthrough:
+  enabled: true
+  fullnameOverride: kube-system-ingress-nginx-passthrough
+  releaseLabelOverride: kube-system
+
+  rbac:
+    create: true
+
+  serviceAccount:
+    create: true
+
+  controller:
+    ingressClass: nginx-passthrough
+    electionID: passthrough-ingress-controller-leader
+
+    extraArgs:
+      # Required for ssl-passthrough ingress annotations to take effect.
+      # Deployed as a separate controller to avoid the performance penalty
+      # on all HTTPS traffic that --enable-ssl-passthrough introduces.
+      enable-ssl-passthrough: true
+
+    admissionWebhooks:
+      enabled: false
+
 # For now enabled via regional values.
 vertical-pod-autoscaler:
   enabled: false
