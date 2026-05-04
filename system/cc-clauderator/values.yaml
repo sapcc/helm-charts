@@ -1,1 +1,44 @@
 name: clauderator
+
+# rbacProfile: must be set via --set rbacProfile=<profile>
+# Available profiles are defined in rbacProfiles below.
+# This is intentionally left unset to force explicit selection at install time.
+
+rbacProfiles:
+  # Management cluster - machine controller resources
+  management:
+    - apiGroups: [""]
+      resources:
+        - namespaces
+        - pods
+        - services
+        - events
+      verbs: ["get", "list", "watch"]
+    - apiGroups: [""]
+      resources:
+        - pods/log
+      verbs: ["get"]
+    - apiGroups: ["apps"]
+      resources:
+        - deployments
+        - replicasets
+        - daemonsets
+        - statefulsets
+      verbs: ["get", "list", "watch"]
+    - apiGroups: ["machine.sapcloud.io"]
+      resources:
+        - machineclasses
+        - machinedeployments
+        - machinesets
+        - machines
+      verbs: ["get", "list", "watch"]
+
+  # Greenhouse cluster - plugin and catalog resources
+  greenhouse:
+    - apiGroups: ["greenhouse.sap"]
+      resources:
+        - plugins
+        - pluginpresets
+        - plugindefinitions
+        - catalogs
+      verbs: ["get", "list", "watch"]
