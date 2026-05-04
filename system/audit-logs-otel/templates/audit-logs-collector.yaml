@@ -268,8 +268,10 @@ spec:
             conditions:
               - resource.attributes["k8s.container.name"] == "keystone-api"
             statements:
-              - merge_maps(log.attributes, ExtractGrokPatterns(log.body, "^(?<timestamp_date>%{YEAR}-%{MONTHNUM}-%{MONTHDAY}) (?<timestamp_time>%{HOUR}:%{MINUTE}:%{SECOND})\\.(?<microseconds>%{INT}) %{INT} %{LOGLEVEL:log.level} %{NOTSPACE:component} \\[%{NOTSPACE:request.id} %{NOTSPACE:global.request.id} usr %{NOTSPACE:user.id} prj %{NOTSPACE:project.id} dom %{NOTSPACE:domain.id} usr-dom %{NOTSPACE:user.domain.id} prj-dom %{NOTSPACE:project.domain.id}\\] %{GREEDYDATA:msg}", true), "upsert")
-              - merge_maps(log.attributes, ExtractGrokPatterns(log.body, "^(?<timestamp_date>%{YEAR}-%{MONTHNUM}-%{MONTHDAY}) (?<timestamp_time>%{HOUR}:%{MINUTE}:%{SECOND})\\.(?<microseconds>%{INT}) %{INT} %{NOTSPACE:log.level} %{NOTSPACE:component} \"%{NOTSPACE:global.request.id}\" %{NOTSPACE:ip} - - \"%{NOTSPACE:request.method} %{NOTSPACE:uri} %{NOTSPACE:httpversion}\" %{NUMBER:response} %{GREEDYDATA} \"%{GREEDYDATA}\" \"%{GREEDYDATA:agent}\"", true), "upsert")
+              - merge_maps(log.attributes, ExtractGrokPatterns(log.body, "^(?<timestamp_date>%{YEAR}-%{MONTHNUM}-%{MONTHDAY}) (?<timestamp_time>%{HOUR}:%{MINUTE}:%{SECOND})\\.(?<microseconds>%{INT}) %{INT} %{LOGLEVEL:log.level} %{NOTSPACE:component} \\[%{NOTSPACE:request.id} %{NOTSPACE:global.request.id} usr %{NOTSPACE:user.id} prj %{NOTSPACE:project.id} dom %{NOTSPACE} usr-dom %{NOTSPACE:user.domain} prj-dom %{NOTSPACE:project.domain}\\] %{GREEDYDATA:msg}", true), "upsert")
+              - merge_maps(log.attributes, ExtractGrokPatterns(log.body, "^(?<timestamp_date>%{YEAR}-%{MONTHNUM}-%{MONTHDAY}) (?<timestamp_time>%{HOUR}:%{MINUTE}:%{SECOND})\\.(?<microseconds>%{INT}) %{INT} %{NOTSPACE:log.level} %{NOTSPACE:component} \"%{NOTSPACE:global.request.id}\" %{NOTSPACE:client.address} - - \"%{NOTSPACE:request.method} %{NOTSPACE:uri} %{NOTSPACE:httpversion}\" %{NUMBER:response} %{GREEDYDATA} \"%{GREEDYDATA}\" \"%{GREEDYDATA:agent}\"", true), "upsert")
+              - set(log.severity.text, log.attributes["log.level"]) where log.attributes["log.level"] != nil
+              - set(log.resource.k8s.container.component.name, log.attributes["component"]) where log.attributes["component"] != nil
               - set(log.attributes["keystone_timestamp"], Concat([log.attributes["timestamp_date"], " ", log.attributes["timestamp_time"], ".", log.attributes["microseconds"]], "")) where log.attributes["timestamp_date"] != nil
               - set(log.time_unix_nano, UnixNano(Time(Concat([log.attributes["timestamp_date"], " ", log.attributes["timestamp_time"]], " "), "%Y-%m-%d %H:%M:%S")) + Int(log.attributes["microseconds"]) * 1000) where log.attributes["timestamp_date"] != nil
               - set(log.attributes["log.kind"], "cadf_action") where IsMatch(log.attributes["msg"], "^\\s*cadf action for '")
@@ -278,14 +280,15 @@ spec:
               - set(log.attributes["log.kind"], "keystone_exception_UserNotFound") where IsMatch(log.attributes["msg"], "keystone\\.exception\\.UserNotFound|_handle_keystone_exception")
               - set(log.attributes["log.kind"], "keystone_middleware_lifesaver") where log.attributes["component"] == "cc.keystone.middleware.lifesaver" and IsMatch(log.attributes["msg"], "has a remaining credit of")
               - set(log.attributes["log.kind"], "keystone_exception_Unauthorized") where IsMatch(log.attributes["msg"], "keystone\\.exception\\.Unauthorized")
-              - merge_maps(log.attributes,ExtractGrokPatterns(log.attributes["msg"],"^\\s*cadf action for '%{NOTSPACE:request.method} %{URIPATH:uri}' is '%{NOTSPACE:action}' %{GREEDYDATA}",true),"upsert") where log.attributes["log.kind"] == "cadf_action"
+              - merge_maps(log.attributes,ExtractGrokPatterns(log.attributes["msg"],"^\\s*cadf action for '%{NOTSPACE:http.request.method} %{URIPATH:url.path}' is' %{GREEDYDATA}",true),"upsert") where log.attributes["log.kind"] == "cadf_action"
               - merge_maps(log.attributes,ExtractGrokPatterns(log.attributes["msg"],"^\\s*target type URI of requests '%{NOTSPACE:request.method} %{URIPATH:uri}' is '%{NOTSPACE:target.type_uri}' %{GREEDYDATA}",true),"upsert") where log.attributes["log.kind"] == "target_type_uri"
-              - merge_maps(log.attributes,ExtractGrokPatterns(log.attributes["msg"],"^\\s*Authenticating %{NOTSPACE:user.id}@%{NOTSPACE:project.domain.name}\\.\\.",true),"upsert") where log.attributes["log.kind"] == "authentication"
+              - merge_maps(log.attributes,ExtractGrokPatterns(log.attributes["msg"],"^\\s*Authenticating %{NOTSPACE:user.id}@%{NOTSPACE:project.domain}\\.\\.",true),"upsert") where log.attributes["log.kind"] == "authentication"
               - merge_maps(log.attributes,ExtractGrokPatterns(log.attributes["msg"],"^\\s*Could not find user:[\\s]+%{NOTSPACE:user.id}\\.",true),"upsert") where log.attributes["log.kind"] == "keystone_exception_UserNotFound"
               - merge_maps(log.attributes,ExtractGrokPatterns(log.attributes["msg"],"^\\s*User b'%{DATA:user.id}' b'%{DATA:project.domain.name}'\\s+%{GREEDYDATA}",true),"upsert") where log.attributes["log.kind"] == "keystone_middleware_lifesaver"
-              - merge_maps(log.attributes,ExtractGrokPatterns(log.attributes["msg"], "Authorization failed. The request you have made requires authentication. from %{IP:ip}:%{GREEDYDATA}",true),"upsert") where log.attributes["log.kind"] == "keystone_exception_Unauthorized"
+              - merge_maps(log.attributes,ExtractGrokPatterns(log.attributes["msg"], "Authorization failed. The request you have made requires authentication. from %{IP:client.address}:%{GREEDYDATA}",true),"upsert") where log.attributes["log.kind"] == "keystone_exception_Unauthorized"
               - delete_key(log.attributes, "timestamp_date")
               - delete_key(log.attributes, "timestamp_time")
+              - delete_key(log.attributes, "msg")
 
       transform/vault:
         error_mode: propagate
