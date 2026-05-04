@@ -1,0 +1,22 @@
+{{- if .Values.netboxImport }}
+apiVersion: dnsmasq.kvaps.cf/v1beta1
+kind: DhcpPool
+metadata:
+  name: {{ .Values.netboxImport.clusterName }}-discovery
+  namespace: {{ .Release.Namespace }}
+spec:
+  controller: ""
+  netboxImport:
+    netboxURL: {{ .Values.netboxImport.netboxURL }}
+    tokenSecretRef:
+      name: netbox-token
+      key: token
+    clusterType: {{ .Values.netboxImport.clusterType }}
+    clusterName: {{ .Values.netboxImport.clusterName }}
+    region: {{ .Values.netboxImport.region }}
+    syncInterval: {{ .Values.netboxImport.syncInterval | default "5m" }}
+    leaseTime: {{ .Values.netboxImport.leaseTime | default "10m" }}
+    roles:
+    {{- toYaml .Values.netboxImport.roles | nindent 6 }}
+  pools: []
+{{- end }}
