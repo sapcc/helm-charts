@@ -33,7 +33,7 @@ transform/journal:
         - set(log.attributes["cmdline"], log.cache["_CMDLINE"])
         - set(log.attributes["exe"], log.cache["_EXE"])
         - set(log.attributes["gid"], log.cache["_GID"])
-        - set(log.attributes["hostname"], log.cache["_HOSTNAME"])
+        - set(resource.attributes["host.name"], log.cache["_HOSTNAME"])
         - set(log.attributes["machine_id"], log.cache["_MACHINE_ID"])
         - set(log.attributes["pid"], log.cache["_PID"])
         - set(log.attributes["runtime_scope"], log.cache["_RUNTIME_SCOPE"])
