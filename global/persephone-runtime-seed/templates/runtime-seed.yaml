@@ -1,4 +1,5 @@
 {{- range $key, $cluster := .Values.persephoneShoots }}
+{{- $infraCredsName := default "openstack-infra-creds-seed" $cluster.infraCredentialsSecretName }}
 ---
 apiVersion: core.gardener.cloud/v1beta1
 kind: Shoot
@@ -12,7 +13,7 @@ spec:
     kind: CloudProfile
     name: openstack
   region: {{ required "missing value for $cluster.region" $cluster.region }}
-  credentialsBindingName: openstack-infra-creds-seed
+  credentialsBindingName: {{ $infraCredsName }}
 {{- if $cluster.highAvailability.enabled }}
   controlPlane:
     highAvailability:

@@ -1,4 +1,5 @@
 {{- range $key, $cluster := .Values.persephoneShoots }}
+{{- $infraCredsName := default "openstack-infra-creds-seed" $cluster.infraCredentialsSecretName }}
 ---
 apiVersion: seedmanagement.gardener.cloud/v1alpha1
 kind: ManagedSeed
@@ -32,7 +33,7 @@ spec:
             - credentialsRef:
                 apiVersion: v1
                 kind: Secret
-                name: openstack-infra-creds-seed
+                name: {{ $infraCredsName }}
                 namespace: garden
               type: openstack-designate
               domain: external.{{ $cluster.landscapeName }}.persephone.{{ $cluster.region }}.cloud.sap
@@ -40,13 +41,13 @@ spec:
               credentialsRef:
                 apiVersion: v1
                 kind: Secret
-                name: openstack-infra-creds-seed
+                name: {{ $infraCredsName }}
                 namespace: garden
               type: openstack-designate
               domain: internal.{{ $cluster.landscapeName }}.persephone.{{ $cluster.region }}.cloud.sap
             provider:
               secretRef:
-                name: openstack-infra-creds-seed
+                name: {{ $infraCredsName }}
                 namespace: garden
               type: openstack-designate
           settings:
