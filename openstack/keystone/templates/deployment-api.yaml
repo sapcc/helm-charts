@@ -61,28 +61,7 @@ spec:
       terminationGracePeriodSeconds: {{ .Values.api.terminationGracePeriodSeconds | default "30" }}
 {{ include "utils.proxysql.pod_settings" . | indent 6 }}
       initContainers:
-      - name: kubernetes-entrypoint
-        #image: quay.io/stackanetes/kubernetes-entrypoint:v0.3.1
-        image: {{ required ".Values.global.registryAlternateRegion is missing" .Values.global.registryAlternateRegion }}/{{ .Values.api.image }}:{{ required ".Values.api.imageTag is missing" .Values.api.imageTag }}
-        imagePullPolicy: {{ .Values.api.imagePullPolicy | default "IfNotPresent" | quote }}
-        command:
-          - kubernetes-entrypoint
-        env:
-        - name: NAMESPACE
-          value: {{ .Release.Namespace }}
-{{- if .Release.IsInstall }}
-        - name: DEPENDENCY_JOBS
-          value: "{{ tuple . "job-migration" | include "job_name" }},{{ tuple . "job-bootstrap" | include "job_name" }}"
-{{- else }}
-  {{- if or .Values.run_db_migration }}
-        - name: DEPENDENCY_JOBS
-          value: "{{ tuple . "job-migration" | include "job_name" }}"
-  {{- end }}
-{{- end }}
-        - name: DEPENDENCY_SERVICE
-          value: {{ include "keystone.service_dependencies" . | quote }}
-        - name: COMMAND
-          value: "true"
+      {{- tuple . (dict "SERVICE" (include "keystone.service_dependencies" .) "JOBS" (include "keystone.job_dependencies" .)) | include "keystone.kubernetes_entrypoint_init_container" | indent 6 }}
       {{- if .Values.proxysql.native_sidecar }}
       {{- include "utils.proxysql.container" . | indent 6 }}
       {{- end }}
