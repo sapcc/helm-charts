@@ -282,7 +282,7 @@ spec:
               - merge_maps(log.attributes,ExtractGrokPatterns(log.attributes["msg"],"^\\s*target type URI of requests '%{NOTSPACE:request.method} %{URIPATH:uri}' is '%{NOTSPACE:target.type_uri}' %{GREEDYDATA}",true),"upsert") where log.attributes["log.kind"] == "target_type_uri"
               - merge_maps(log.attributes,ExtractGrokPatterns(log.attributes["msg"],"^\\s*Authenticating %{NOTSPACE:user.id}@%{NOTSPACE:project.domain}\\.\\.",true),"upsert") where log.attributes["log.kind"] == "authentication"
               - merge_maps(log.attributes,ExtractGrokPatterns(log.attributes["msg"],"^\\s*Could not find user:[\\s]+%{NOTSPACE:user.id}\\.",true),"upsert") where log.attributes["log.kind"] == "keystone_exception_UserNotFound"
-              - merge_maps(log.attributes,ExtractGrokPatterns(log.attributes["msg"],"^\\s*User b'%{DATA:user.id}' b'%{DATA:project.domain.name}'\\s+%{GREEDYDATA}",true),"upsert") where log.attributes["log.kind"] == "keystone_middleware_lifesaver"
+              - merge_maps(log.attributes,ExtractGrokPatterns(log.attributes["msg"],"^\\s*User b'%{DATA:user.id}' b'%{DATA:project.domain}'\\s+%{GREEDYDATA}",true),"upsert") where log.attributes["log.kind"] == "keystone_middleware_lifesaver"
               - merge_maps(log.attributes,ExtractGrokPatterns(log.attributes["msg"], "Authorization failed. The request you have made requires authentication. from %{IP:client.address}:%{GREEDYDATA}",true),"upsert") where log.attributes["log.kind"] == "keystone_exception_Unauthorized"
               - delete_key(log.attributes, "timestamp_date")
               - delete_key(log.attributes, "timestamp_time")
