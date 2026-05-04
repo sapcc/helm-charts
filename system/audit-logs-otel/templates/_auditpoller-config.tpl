@@ -10,10 +10,9 @@ filelog/auditpoller:
       type: add
       field: resource["container.runtime"]
       value: "containerd"
-{{ end }}
+{{- end }}
 
 {{- define "auditpoller.processors" }}
-
 transform/auditpoller:
   error_mode: ignore
   log_statements:
@@ -27,12 +26,12 @@ attributes/auditpoller:
     - action: insert
       key: log.type
       value: "auditpoller"
-{{ end }}
+{{- end }}
 
 {{- define "auditpoller.pipelines" }}
 logs/auditpoller_logs:
   receivers: [filelog/auditpoller]
-  processors: [transform/auditpoller,attributes/auditpoller,k8sattributes,attributes/cluster]
-  exporters: [forward]
+  processors: [transform/auditpoller,attributes/auditpoller,k8sattributes,attributes/cluster,batch]
+  exporters: [failover]
 {{- end }}
 
