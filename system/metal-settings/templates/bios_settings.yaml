@@ -1,14 +1,16 @@
 {{- if .Values.biosSettings.enabled }}
-{{- range $vendor, $entries := .Values.biosSettings.items }}
+{{- range $vendor, $vendorConfig := .Values.machines }}
+{{- if $vendorConfig }}
 
 {{/* Vendor filtering */}}
 {{- $vendorIncluded := or (not $.Values.biosSettings.filters.vendors.included) (has $vendor $.Values.biosSettings.filters.vendors.included) }}
 {{- $vendorExcluded := and $.Values.biosSettings.filters.vendors.excluded (has $vendor $.Values.biosSettings.filters.vendors.excluded) }}
 
 {{- if and $vendorIncluded (not $vendorExcluded) }}
-{{- range $entry := $entries }}
+{{- range $entry := $vendorConfig.models }}
+{{- if and $entry.clusterTypes $entry.bios $entry.bios.settingsFileName }}
 {{- $model := $entry.model }}
-{{- $version := $entry.version }}
+{{- $version := $entry.bios.version }}
 
 {{/* Model filtering */}}
 {{- $modelIncluded := or (not $.Values.biosSettings.filters.models.included) (has $model $.Values.biosSettings.filters.models.included) }}
@@ -37,9 +39,11 @@ spec:
       kubernetes.metal.cloud.sap/cluster-type: {{ $clusterType }}
   biosSettingsTemplate:
     serverMaintenancePolicy: OwnerApproval
-{{ $.Files.Get (printf "bios_settings/%s" $entry.settingsFileName) | trim | indent 4 }}
+{{ $.Files.Get (printf "bios_settings/%s" $entry.bios.settingsFileName) | trim | indent 4 }}
     version: {{ $version | quote }}
 ---
+{{- end }}
+{{- end }}
 {{- end }}
 {{- end }}
 {{- end }}

@@ -1,14 +1,22 @@
 {{- if .Values.bmcVersions.enabled }}
-{{- range $vendor, $entries := .Values.bmcVersions.items }}
+{{- range $vendor, $vendorConfig := .Values.machines }}
+{{- if $vendorConfig }}
 
 {{/* Vendor filtering */}}
 {{- $vendorIncluded := or (not $.Values.bmcVersions.filters.vendors.included) (has $vendor $.Values.bmcVersions.filters.vendors.included) }}
 {{- $vendorExcluded := and $.Values.bmcVersions.filters.vendors.excluded (has $vendor $.Values.bmcVersions.filters.vendors.excluded) }}
 
 {{- if and $vendorIncluded (not $vendorExcluded) }}
-{{- range $entry := $entries }}
+{{- $processedModels := dict }}
+{{- range $entry := $vendorConfig.models }}
+{{- if $entry.bmc }}
 {{- $model := $entry.model }}
-{{- $version := $entry.version }}
+{{- $version := $entry.bmc.version }}
+{{- $modelKey := printf "%s-%s" $model $version }}
+
+{{/* Skip if we've already processed this model-version combination */}}
+{{- if not (hasKey $processedModels $modelKey) }}
+{{- $_ := set $processedModels $modelKey true }}
 
 {{/* Model filtering */}}
 {{- $modelIncluded := or (not $.Values.bmcVersions.filters.models.included) (has $model $.Values.bmcVersions.filters.models.included) }}
@@ -31,9 +39,12 @@ spec:
     serverMaintenancePolicy: OwnerApproval
     version: {{ $version | quote }}
     image:
-      URI: {{ $entry.imageURI | quote }}
+      URI: {{ $entry.bmc.imageURI | quote }}
       transferProtocol: "HTTPS"
 ---
+{{- end }}
+{{- end }}
+{{- end }}
 {{- end }}
 {{- end }}
 {{- end }}
