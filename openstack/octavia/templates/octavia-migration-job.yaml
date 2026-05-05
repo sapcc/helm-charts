@@ -1,4 +1,5 @@
 {{- $proxysql := lookup "v1" "Secret" .Release.Namespace (print .Release.Name "-proxysql-etc") -}}
+{{- $serviceaccount := lookup "v1" "ServiceAccount" .Release.Namespace .Release.Name -}}
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -23,6 +24,9 @@ spec:
         kubectl.kubernetes.io/default-container: octavia-migration
         {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
     spec:
+      {{- if $serviceaccount }}
+      serviceAccountName: {{ .Release.Name }}
+      {{- end }}
       restartPolicy: OnFailure
     {{- if $proxysql }}
       {{- include "utils.proxysql.job_pod_settings" . | nindent 6 }}
