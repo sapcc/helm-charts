@@ -1,0 +1,28 @@
+{{- if .Values.computeWorkloadRBAC.enabled }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: compute-workload-reader
+  namespace: {{ .Values.computeWorkloadRBAC.namespace }}
+rules:
+  - apiGroups: ["apps"]
+    resources: ["daemonsets", "deployments", "statefulsets"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["configmaps", "secrets"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: compute-workload-reader
+  namespace: {{ .Values.computeWorkloadRBAC.namespace }}
+subjects:
+  - kind: Group
+    name: {{ .Values.computeWorkloadRBAC.group }}
+    apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: Role
+  name: compute-workload-reader
+  apiGroup: rbac.authorization.k8s.io
+{{- end }}
