@@ -200,6 +200,8 @@ cross_az_attach: 'False'
 cinder_http_retries: 10
 neutron_http_retries: 10
 neutron_timeout: 600
+rpc_response_timeout: 300
+rabbit_transient_queues_ttl: 190
 
 api:
   config_file:
@@ -344,6 +346,9 @@ compute:
       # additionally, the sap-seeds chart contains the flavors we currently have
       resource_disk_gb_max_unit_limit: 700
       serial_port_connected_default: false
+      min_disk_size_kb: 4000
+      mirror_instance_logs_to_syslog: true
+      special_spawning_vm_group: ''
   vmware:
     vnc:
       enabled: false
@@ -819,9 +824,8 @@ mysql_metrics:
         - "age_of_oldest_instance_in_days"
 
 
-db_name: nova
-max_pool_size: 10
-max_overflow: 5
+max_pool_size: 50
+max_overflow: -1
 
 proxysql:
   native_sidecar: true
@@ -1209,7 +1213,7 @@ alerts:
 sentry:
   enabled: true
 
-nova_bigvm_enabled: true
+nova_bigvm_enabled: false
 
 cors:
   enabled: true
@@ -1350,7 +1354,7 @@ rate_limit:
         - action: create
           limit: 100r/m
 
-manage_service_user_passwords: false
+manage_service_user_passwords: true
 
 api-ratelimit-redis:
   alerts:
