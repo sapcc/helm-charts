@@ -28,12 +28,6 @@ sync_power_state_unexpected_call_stop = false
 
 {{ template "utils.snippets.debug.eventlet_backdoor_ini" "nova" }}
 
-# usage refreshes on new reservations, 0 means disabled
-# number of seconds between subsequent usage refreshes
-max_age = {{ .Values.usage_max_age | default 0 }}
-# count of reservations until usage is refreshed
-until_refresh = {{ .Values.usage_until_refresh | default 0 }}
-
 {{- include "osprofiler" . }}
 
 [oslo_concurrency]
