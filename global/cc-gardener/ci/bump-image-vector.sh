@@ -57,6 +57,7 @@ curl -sL "https:/raw.githubusercontent.com/gardener/oidc-apps-controller/refs/ta
 # calico extension
 CALICO_VERSION="$(yq -r '.extensions.calico.version' "${VALUES_FILE}")"
 curl -sL "https:/raw.githubusercontent.com/gardener/gardener-extension-networking-calico/refs/tags/${CALICO_VERSION}/imagevector/images.yaml" | yq "${YQ_MAP_IMAGES}" |
+  yq ".images[] |= select(.name == \"cni-plugins\").tag = \"${CALICO_VERSION}\"" | # this is a workaround for https://github.com/gardener/gardener-extension-networking-calico/pull/778 and for garden-pcr which doesn't know the current extension version/tag
   yq -i '.extensions.calico.imageVectorOverwrite = load("/dev/stdin")' "${VALUES_FILE}"
 
 # auditing extension
