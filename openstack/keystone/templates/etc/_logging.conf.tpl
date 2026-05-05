@@ -168,7 +168,11 @@ formatter = default
 args = ()
 
 [formatter_context]
+{{- if .Values.use_json }}
+class = oslo_log.formatters.JSONFormatter
+{{- else }}
 class = oslo_log.formatters.ContextFormatter
+{{- end }}
 
 [formatter_default]
 format = %(message)s
