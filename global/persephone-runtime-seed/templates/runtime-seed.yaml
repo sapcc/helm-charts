@@ -1,5 +1,5 @@
 {{- range $key, $cluster := .Values.persephoneShoots }}
-{{- $infraCredsName := default "openstack-infra-creds-seed" $cluster.infraCredentialsSecretName }}
+{{- $infraCredsName := required (printf "missing infraCredentialsSecretName for %s" $key) $cluster.infraCredentialsSecretName }}
 ---
 apiVersion: core.gardener.cloud/v1beta1
 kind: Shoot
@@ -45,7 +45,9 @@ spec:
     version: {{ required "missing value for $cluster.kubernetes.version" $cluster.kubernetes.version }}
 {{- if $cluster.oidcConfig.enabled }}
     kubeAPIServer:
+{{- if semverCompare "<1.35.0-0" (toString $cluster.kubernetes.version) }}
       enableAnonymousAuthentication: true
+{{- end }}
       structuredAuthentication:
         configMapName: authentication-{{ $key }}{{ $cluster.landscapeName | substr 0 1 }}
 {{- end }}
