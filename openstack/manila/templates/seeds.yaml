@@ -1,3 +1,5 @@
+{{- $vbase   := .Values.global.vaultBaseURL | required "missing value for .Values.global.vaultBaseURL" -}}
+{{- $region  := .Values.global.region       | required "missing value for .Values.global.region"       -}}
 {{- $cdomains := .Values.global.domain_seeds.customer_domains | required "missing value for .Values.global.domain_seeds.customer_domains" -}}
 {{- $domains  := concat (list "Default" "ccadmin") $cdomains -}}
 {{- $cdomainsWithoutSupportProjects := .Values.global.domain_seeds.customer_domains_without_support_projects | required "missing value for .Values.global.domain_seeds.customer_domains_without_support_projects" -}}
@@ -81,9 +83,9 @@ spec:
         role: cloud_sharedfilesystem_admin
       - project: admin
         role: cloud_sharedfilesystem_admin
-    - name: '{{.Values.global.manila_service_username | include "resolve_secret"}}'
+    - name: {{ printf "%s/%s/manila/keystone-user/service/username" $vbase $region | quote }} # service user for the manila API
       description: Manila Service
-      password: '{{.Values.global.manila_service_password | include "resolve_secret"}}'
+      password: {{ printf "%s/%s/manila/keystone-user/service/password" $vbase $region | quote }}
       role_assignments:
       - project: service
         role: service
@@ -91,9 +93,9 @@ spec:
         role: cloud_network_admin
       - project: service
         role: cloud_sharedfilesystem_admin
-    - name: '{{.Values.global.manila_network_username | include "resolve_secret"}}'
+    - name: {{ printf "%s/%s/manila/keystone-user/network/username" $vbase $region | quote }} # service user for manila network operations
       description: Manila Network
-      password: '{{.Values.global.manila_network_password | include "resolve_secret"}}'
+      password: {{ printf "%s/%s/manila/keystone-user/network/password" $vbase $region | quote }}
       role_assignments:
       - project: service
         role: service
