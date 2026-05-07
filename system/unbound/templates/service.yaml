@@ -8,6 +8,9 @@ metadata:
   annotations:
     parrot.sap.cc/announce: 'true'
     service.alpha.kubernetes.io/reject-traffic-on-external-ip: "false"
+{{- if $.Values.calicoLoadBalancer }}
+    projectcalico.org/loadBalancerIPs: '{{ $.Values.unbound.externalIPs | toJson }}'
+{{- end }}
 spec:
   type: LoadBalancer
   externalTrafficPolicy: Local
@@ -20,6 +23,8 @@ spec:
       protocol: {{ $proto | upper }}
       port: {{.}}
 {{- end }}
+{{- if (not $.Values.calicoLoadBalancer) }}
   externalIPs:
     {{- required "A valid $.Values.unbound.externalIPs required!" $.Values.unbound.externalIPs | toYaml | nindent 2 }}
+{{- end }}
 {{- end }}
