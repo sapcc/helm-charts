@@ -4,6 +4,7 @@ global:
   cluster: some-cluster
   clusterIdentity: local
 garden:
+  managedresources: true
   name: garden
   dns:
     region: dns-1
@@ -70,31 +71,56 @@ extensions:
     additionalNamespaces: ["garden-compute", "garden-storage"]
 gardenlet:
   enabled: true
-  namePrefix: test
+  namePrefix: a
   seedRegions:
-  - name: "ab-cd-1"
-    taints:
-    - key: dont.schedule/here
-    backup:
-      provider: aws
-      region: eu-central-1
-    networks:
-      nodes: 1.2.3.0/26
-      pods: 1.2.3.0/16
-      services: 1.2.3.0/16
-    zones:
-    - "ab-cd-1a"
-    - "ab-cd-1b"
-  - name: "ef-gh-2"
-    altRegion: "ab-cd-2"
-    backup:
-      provider: openstack
-    networks:
-      nodes: 1.2.3.0/26
-      pods: 1.2.3.0/16
-      services: 1.2.3.0/16
-    zones:
-    - "ab-cd-2a"
-  loadBalancerServices:
-    annotations:
-      foo: bar
+    - name: qa-de-1
+      seedName: qa-de-200
+      externalDomain: external.a-qa-de-200.soil-garden.qa-de-1.cloud.sap
+      internalDomain: internal.a-qa-de-200.soil-garden.qa-de-1.cloud.sap
+      ingressDomain: a-qa-de-200.soil-garden.qa-de-1.cloud.sap
+      backup:
+        provider: openstack
+      networks:
+        nodes: "10.246.83.178/32"
+        pods: "10.42.0.0/16"
+        services: "10.43.0.0/16"
+      zones:
+        - "qa-de-1a"
+      loadBalancerServices:
+        zonalIngress:
+          enabled: false
+  image:
+    repository: keppel.global.cloud.sap/gardener-releases/gardener-project/releases/gardener/gardenlet
+    tag: sha256:06b2db4d2bc0018f5371ad9cb3aecdc28b5fc154a858965d7745238453f3dcaa
+
+
+# gardenlet:
+#   enabled: true
+#   namePrefix: test
+#   seedRegions:
+#   - name: "ab-cd-1"
+#     taints:
+#     - key: dont.schedule/here
+#     backup:
+#       provider: aws
+#       region: eu-central-1
+#     networks:
+#       nodes: 1.2.3.0/26
+#       pods: 1.2.3.0/16
+#       services: 1.2.3.0/16
+#     zones:
+#     - "ab-cd-1a"
+#     - "ab-cd-1b"
+#   - name: "ef-gh-2"
+#     altRegion: "ab-cd-2"
+#     backup:
+#       provider: openstack
+#     networks:
+#       nodes: 1.2.3.0/26
+#       pods: 1.2.3.0/16
+#       services: 1.2.3.0/16
+#     zones:
+#     - "ab-cd-2a"
+#   loadBalancerServices:
+#     annotations:
+#       foo: bar
