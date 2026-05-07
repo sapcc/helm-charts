@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.35.1 - 2026/05/06
+* fixed pvc storage_class templating
+* chart version bumped
+
 ## v0.35.0 - 2026/04/14
 * add Ceph S3 storage backend support for backup-v2
 * fix Swift template to use `values.yaml` fields instead of hardcoded values
