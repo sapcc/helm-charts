@@ -1,0 +1,23 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - https://github.com/ironcore-dev/metal-operator//config/crd?ref=v0.4.0
+patches:
+  # Strip conversion webhooks that reference an in-cluster webhook service unavailable
+  # in the remote (shoot) cluster. webhook-injector manages webhook configs separately.
+  - target:
+      group: apiextensions.k8s.io
+      version: v1
+      kind: CustomResourceDefinition
+      name: bmcs.metal.ironcore.dev
+    patch: |-
+      - op: remove
+        path: /spec/conversion
+  - target:
+      group: apiextensions.k8s.io
+      version: v1
+      kind: CustomResourceDefinition
+      name: serverclaims.metal.ironcore.dev
+    patch: |-
+      - op: remove
+        path: /spec/conversion

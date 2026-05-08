@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: controller-manager
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/default-container: manager
+      labels:
+        networking.gardener.cloud/to-dns: allowed
+        networking.gardener.cloud/to-private-networks: allowed
+        networking.gardener.cloud/to-public-networks: allowed
+        networking.gardener.cloud/to-runtime-apiserver: allowed
+        networking.resources.gardener.cloud/to-all-istio-ingresses-istio-ingressgateway-tcp-9443: allowed
+        networking.resources.gardener.cloud/to-kube-apiserver-tcp-443: allowed
+    spec:
+      serviceAccountName: metal-operator-webhook-injector
+      terminationGracePeriodSeconds: 10
+      hostNetwork: false
+      securityContext:
+        runAsUser: 65532
+        runAsGroup: 65532
+      initContainers:
+        - name: webhook-injector
+          # Override ConfigMap name to include the namePrefix applied by this overlay.
+          args:
+            - --webhook-config-name=metal-operator-webhook-config
+            - --target-kubeconfig=/var/run/remote-kubeconfig/kubeconfig
+      containers:
+        - name: manager
+          image: ghcr.io/ironcore-dev/metal-operator-controller-manager:sha-4854c23
+          args:
+            - --mac-prefixes-file=/etc/macdb/macdb.yaml
+            - --probe-image=keppel.global.cloud.sap/ccloud-ghcr-io-mirror/ironcore-dev/metalprobe:latest
+            - --probe-os-image=ghcr.io/ironcore-dev/os-images/gardenlinux:1443.3
+            - --insecure=false
+            - --registry-url=http://[2a10:afc0:e013:d002::]:30010
+            - --manager-namespace=metal-operator-system
+          env:
+            - name: KUBERNETES_SERVICE_HOST
+              value: "apiserver-url"
+            - name: KUBERNETES_CLUSTER_DOMAIN
+              value: "cluster.local"
+            - name: KUBECONFIG
+              value: "/var/run/remote-kubeconfig/kubeconfig"
+          resources:
+            limits:
+              cpu: "5000m"
+              memory: "5120Mi"
+            requests:
+              cpu: 300m
+              memory: 50Mi
+          volumeMounts:
+            - name: macdb
+              mountPath: /etc/macdb/
+      volumes:
+        - name: macdb
+          secret:
+            secretName: macdb

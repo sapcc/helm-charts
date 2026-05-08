@@ -1,0 +1,85 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: controller-manager
+spec:
+  template:
+    spec:
+      # webhook-injector runs as a native sidecar (restartPolicy: Always) so it starts before
+      # the manager and keeps TLS certs synced. It applies URL-based webhook configs to the
+      # remote (shoot) cluster using --target-kubeconfig, injecting the caBundle at runtime.
+      initContainers:
+        - name: webhook-injector
+          restartPolicy: Always
+          image: keppel.global.cloud.sap/ccloud-ghcr-io-mirror/SAP-cloud-infrastructure/webhook-injector:latest
+          args:
+            - --webhook-config-name=webhook-config
+            - --target-kubeconfig=/var/run/remote-kubeconfig/kubeconfig
+          ports:
+            - name: metrics
+              containerPort: 8082
+            - name: health
+              containerPort: 8083
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 256Mi
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8083
+            initialDelaySeconds: 15
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 8083
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          volumeMounts:
+            - name: webhook-certs
+              mountPath: /tmp/webhook-certs
+            - name: remote-serviceaccount
+              mountPath: /var/run/secrets/kubernetes.io/remote-serviceaccount
+              readOnly: true
+            - name: remote-kubeconfig
+              mountPath: /var/run/remote-kubeconfig
+              readOnly: true
+      containers:
+        - name: manager
+          volumeMounts:
+            - name: webhook-certs
+              mountPath: /tmp/k8s-webhook-server/serving-certs
+              readOnly: true
+            - name: remote-serviceaccount
+              mountPath: /var/run/secrets/kubernetes.io/remote-serviceaccount
+              readOnly: true
+            - name: remote-kubeconfig
+              mountPath: /var/run/remote-kubeconfig
+              readOnly: true
+      volumes:
+        - name: webhook-certs
+          emptyDir: {}
+        - name: remote-serviceaccount
+          secret:
+            secretName: metal-operator-remote-kubeconfig
+            items:
+              - key: token
+                path: token
+              - key: bundle.crt
+                path: ca.crt
+        - name: remote-kubeconfig
+          configMap:
+            name: remote-kubeconfig

@@ -1,0 +1,23 @@
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+# Converts Role→ClusterRole and RoleBinding→ClusterRoleBinding.
+# Required because the operator runs in GRM where namespace-scoped Roles cannot be used.
+# Targets the pre-namePrefix resource names; kustomize processes components before transformers.
+patches:
+  - target:
+      kind: Role
+      name: leader-election-role
+    patch: |-
+      - op: replace
+        path: /kind
+        value: ClusterRole
+  - target:
+      kind: RoleBinding
+      name: leader-election-rolebinding
+    patch: |-
+      - op: replace
+        path: /kind
+        value: ClusterRoleBinding
+      - op: replace
+        path: /roleRef/kind
+        value: ClusterRole
