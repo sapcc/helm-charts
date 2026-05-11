@@ -1,4 +1,5 @@
 defaults:
+  availability_zone:
   network:
     ovs:
       pod:
@@ -9,6 +10,7 @@ defaults:
         nodeSelector:
           neutron.openstack.cloud.sap/ml2-mechanism-driver: ovn
     linuxbridge:
+      deploy_dhcp_agent: false
       pod:
         nodeSelector:
           neutron.openstack.cloud.sap/ml2-mechanism-driver: linuxbridge
@@ -43,11 +45,16 @@ rabbitmq:
     default:
       user: rabbitmq
 securitygroup:
-  enable_anti_spoofing_rules: False
+  enable_anti_spoofing_rules: false
 
 ovsOnHost: true
 agent:
   rootwrap_daemon: false
+
+dnsmasq:
+  conf:
+    no-negcache: true
+
 osprofiler: {}
 ovn:
   external_ids: {}
@@ -58,7 +65,7 @@ cc_fabric: {}
 vpods_conf:
   ovs:
     # bridge_mappings: "{{ segment }}:br-ex" Set dynamically script
-    enable_tunneling: False
+    enable_tunneling: false
     ovsdb_connection: "unix:/var/run/openvswitch/db.sock"
 
 pod:
@@ -70,6 +77,14 @@ pod:
           rollingUpdate:
             maxUnavailable: "10%"
   tolerations: {}
+  resources:
+    dhcp_agent:
+      requests:
+        cpu: "1000m"
+        memory: "1Gi"
+      limits:
+        cpu: "4000m"
+        memory: "2.5Gi"
 
 memcached:
   memcached: {}
