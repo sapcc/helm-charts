@@ -57,21 +57,16 @@
     - host: {{ $srv.ip }}
       port: 53
     {{- end}}
-  also_notifies:
-    {{- range $prio, $srv := $pool.nameservers}}
-    - host: {{ $srv.ip }}
-      port: 53
-    {{- end}}
   targets:
     {{- range $idx, $srv := $pool.nameservers}}
-    - type: fake
-      description: Dummy Server {{ add1 $idx }}
+    - type: bind9
       masters:
         - host: {{ $.Values.global.designate_mdns_external_ip }}
           port: 5354
       options:
         host: {{$srv.ip}}
         port: 53
+        rndc_key_file: {{ $pool.rndc_key_file }}
     {{- end}}
   catalog_zone:
       catalog_zone_fqdn: catalog.pool.{{ $pool.name }}.
