@@ -1,0 +1,146 @@
+## ADDED Requirements
+
+### Requirement: Host base overlay produces all seed cluster resources
+
+The `host/base/` kustomize overlay SHALL produce all resources needed in the seed cluster: the Deployment (from upstream base + patches), plus all custom local resources (Services, Ingress, NetworkPolicy, ConfigMaps, Secrets, RBAC).
+
+#### Scenario: Build host base overlay
+
+- **WHEN** `kustomize build host/base/` is executed
+- **THEN** the output SHALL contain a Deployment named `controller-manager`
+- **THEN** the output SHALL contain a Service named `metal-operator-webhook-service` (port 443→9443)
+- **THEN** the output SHALL contain a Service for metal-registry (port 10000)
+- **THEN** the output SHALL contain an Ingress for metal-registry
+- **THEN** the output SHALL contain a NetworkPolicy
+- **THEN** the output SHALL contain a ConfigMap named `webhook-config`
+- **THEN** the output SHALL contain a ConfigMap named `remote-kubeconfig`
+- **THEN** the output SHALL contain Secrets for remote-serviceaccount, macdb, and rotate-kubeconfig
+- **THEN** the output SHALL contain ServiceAccount, Role, and RoleBinding for webhook-injector
+
+#### Scenario: Namespace resource excluded from upstream
+
+- **WHEN** `kustomize build host/base/` is executed
+- **THEN** the output SHALL NOT contain a Namespace resource (the upstream `config/manager/manager.yaml` includes one that must be excluded)
+
+#### Scenario: Upstream version pinning
+
+- **WHEN** the kustomization.yaml references `?ref=v0.4.0`
+- **THEN** the output SHALL be reproducible across builds (same tag produces same output)
+
+---
+
+### Requirement: Host overlays parameterize per-environment values
+
+Per-environment overlays in `host/overlays/<cluster-name>/` SHALL patch the base with cluster-specific values, enabling the same base to be deployed to different environments.
+
+#### Scenario: Overlay patches environment-specific values
+
+- **WHEN** `kustomize build host/overlays/<cluster-name>/` is executed
+- **THEN** the Ingress SHALL have the correct domain for that cluster (region, clusterType, tld)
+- **THEN** the remote-kubeconfig ConfigMap SHALL have the correct apiserver URL
+- **THEN** the macdb Secret SHALL have the correct macdb content for that environment
+- **THEN** the rotate-kubeconfig Secret SHALL have the correct remote CA
+- **THEN** the Deployment image tags SHALL match the environment-specific versions
+
+#### Scenario: Overlay inherits all base resources
+
+- **WHEN** `kustomize build host/overlays/<cluster-name>/` is executed
+- **THEN** the output SHALL contain all resources from the base plus the overlay patches applied
+
+---
+
+### Requirement: Remote overlay produces CRDs and RBAC from upstream base
+
+The `remote/crds-and-rbac/` kustomize overlay SHALL produce CRDs and RBAC resources by referencing the upstream `config/crd` and `config/rbac` directories at a pinned git tag.
+
+#### Scenario: Build remote CRDs and RBAC overlay
+
+- **WHEN** `kustomize build remote/crds-and-rbac/` is executed
+- **THEN** the output SHALL contain CustomResourceDefinition resources for all metal-operator CRDs
+- **THEN** the output SHALL contain ClusterRole and ClusterRoleBinding resources
+
+#### Scenario: Role to ClusterRole conversion
+
+- **WHEN** the upstream `config/rbac/` contains resources with `kind: Role`
+- **THEN** the output SHALL convert them to `kind: ClusterRole`
+- **THEN** the output SHALL convert corresponding `kind: RoleBinding` to `kind: ClusterRoleBinding`
+
+#### Scenario: All RBAC included
+
+- **WHEN** `kustomize build remote/crds-and-rbac/` is executed
+- **THEN** the output SHALL include all RBAC resources from `config/rbac/` (leader election, metrics, manager role, per-resource roles)
+- **THEN** no RBAC resources SHALL be excluded (matching current Makefile behavior)
+
+#### Scenario: Service resources excluded
+
+- **WHEN** `kustomize build remote/crds-and-rbac/` is executed
+- **THEN** the output SHALL NOT contain any Service resources
+
+---
+
+### Requirement: Remote resources pre-rendered as ManagedResource wrappers
+
+The remote resources SHALL be pre-rendered and wrapped into Gardener ManagedResource+Secret pairs, committed to git, and deployable without running kustomize at deploy time.
+
+#### Scenario: ManagedResource wrapping format
+
+- **WHEN** examining `remote/crds-and-rbac/managedresources.yaml`
+- **THEN** each resource SHALL be wrapped in a `ManagedResource` (apiVersion: `resources.gardener.cloud/v1alpha1`) paired with a `Secret` containing the base64-encoded resource in `data.objects.yaml`
+
+#### Scenario: Pre-rendered output deployable without kustomize
+
+- **WHEN** the pre-rendered `managedresources.yaml` files are applied to a seed cluster
+- **THEN** they SHALL be valid Kubernetes resources deployable via `kubectl apply` or Flux without running `kustomize build`
+
+---
+
+### Requirement: Host and remote produce equivalent output to current Helm chart
+
+The kustomize overlays SHALL produce resource sets functionally equivalent to the current `metal-operator-remote` Helm chart rendered output.
+
+#### Scenario: Host resources equivalence
+
+- **WHEN** comparing `kustomize build host/overlays/<test>/` with `helm template metal-operator-remote` using equivalent values
+- **THEN** the resource set SHALL be functionally equivalent (same kinds, names, specs)
+
+#### Scenario: Remote CRDs and RBAC equivalence
+
+- **WHEN** comparing `kustomize build remote/crds-and-rbac/` output with the current `metal-operator-remote/managedresources/crds-and-rbac.yaml`
+- **THEN** the resource set SHALL contain the same CRDs, ClusterRoles, ClusterRoleBindings, and ServiceAccount
+
+---
+
+### Requirement: Directory structure separates host and remote
+
+The kustomize overlay directory structure SHALL explicitly separate resources by their deployment target.
+
+#### Scenario: Host directory contains seed resources
+
+- **WHEN** examining `system/kustomize/metal-operator-remote/host/`
+- **THEN** it SHALL contain only resources deployed to the seed cluster
+
+#### Scenario: Remote directory contains shoot resources
+
+- **WHEN** examining `system/kustomize/metal-operator-remote/remote/`
+- **THEN** it SHALL contain only resources deployed to the shoot cluster (via ManagedResource)
+
+---
+
+### Requirement: No Flux blockers introduced
+
+The kustomize overlays SHALL NOT introduce any blockers for future Flux integration.
+
+#### Scenario: No custom KRM function plugins
+
+- **WHEN** examining all `kustomization.yaml` files in the overlay
+- **THEN** none SHALL reference custom KRM function plugins (generators or transformers requiring external binaries)
+
+#### Scenario: Host overlays buildable by Flux
+
+- **WHEN** Flux's kustomize-controller points at `host/overlays/<cluster>/`
+- **THEN** `kustomize build` SHALL succeed without requiring external tools
+
+#### Scenario: Remote pre-rendered files deployable by Flux
+
+- **WHEN** Flux points at the pre-rendered `managedresources.yaml` files
+- **THEN** they SHALL be deployable as plain YAML without any kustomize processing
