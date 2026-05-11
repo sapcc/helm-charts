@@ -28,12 +28,6 @@ filter {
     drop { }
   }
 
-  # Drop liveliness check events that serve no value
-  # Everything in audit-default adds no value, internal communication
-  if [initiator][domain_id] == "default" {
-    drop { }
-  }
-
   # unwrap messagingv2 envelope
   if [oslo.message] {
     json {
@@ -183,24 +177,12 @@ filter {
      }
   }
 
-  # Enrich keystone events with domain mapping from Metis
+  # SIEM dependency: The Octobus forwarding condition requires [initiator][domain]
+  # which is only available via JDBC domain lookup from Metis. This enrichment must
+  # remain until the SIEM integration is replaced with one that does not require
+  # domain name resolution at ingestion time.
+  # TODO: Remove jdbc_static entirely once SIEM replacement is complete.
   {{- if .Values.logstash.audit }}
-  # Fill in lookup fields with "unavailable" to provide the lookup with a field so it doesn't error
-  # pipeline shutsdown if a lookup field is not available.
-
-  if ![initiator][project_id] {
-    mutate {
-      add_field => { "[initiator][project_id]" => "unavailable" }
-      id => "f14_add_initiator_project_id_unavailable"
-    }
-  }
-
-  if ![target][project_id] {
-    mutate {
-     add_field => { "[target][project_id]" => "unavailable" }
-     id => "f15_add_target_project_id_unavailable"
-    }
-  }
 
   if ![initiator][id] {
     mutate {
@@ -225,42 +207,22 @@ filter {
     '
   }
 
-
-  # With several different event types using jdbc_static, not sure an if makes sense.
-  # we will have to handle several events that don't match a query
-
   jdbc_static {
-    id => "jdbc_project_id"
+    id => "jdbc_domain_lookup"
     loaders => [
       {
-        id  => "17a_keystone_project_domain"
-        query => "select project.name as project_name, project.id as project_id, domain.name as domain_name, domain.id as domain_id from keystone.project join keystone.project domain on project.domain_id = domain.id"
-        local_table => "project_domain_mapping"
-      },
-      {
         id  => "17b_keystone_user_domain"
-        query => "select u.id as user_id, CONCAT_WS('', m.local_id, lu.name) as user_name, p.id as domain_id, p.name as domain_name  from keystone.user as u left join keystone.id_mapping m on m.public_id = u.id left join keystone.local_user lu on lu.user_id = u.id left join keystone.project as p on p.id = u.domain_id where p.name <> 'kubernikus'"
+        query => "select u.id as user_id, p.id as domain_id, p.name as domain_name  from keystone.user as u left join keystone.project as p on p.id = u.domain_id where p.name <> 'kubernikus'"
         local_table => "user_domain_mapping"
       }
     ]
 
     local_db_objects => [
       {
-        name => "project_domain_mapping"
-        index_columns => ["project_id"]
-        columns => [
-          ["project_name", "varchar(64)"],
-          ["project_id", "varchar(64)"],
-          ["domain_name", "varchar(64)"],
-          ["domain_id", "varchar(64)"]
-        ]
-      },
-      {
         name => "user_domain_mapping"
         index_columns => ["user_id"]
         columns => [
           ["user_id", "varchar(64)"],
-          ["user_name", "varchar(64)"],
           ["domain_id", "varchar(64)"],
           ["domain_name", "varchar(64)"]
         ]
@@ -269,22 +231,8 @@ filter {
 
     local_lookups => [
       {
-        id => "f17c_project_name_lookup"
-        query => "select project_name, domain_id, domain_name from project_domain_mapping where project_id = ?"
-        prepared_parameters => ["[initiator][project_id]"]
-        target => "project_mapping"
-        tag_on_failure => ["Project_Mapping"]
-      },
-      {
-        id => "f17d_target_project_name_lookup"
-        query => "select project_name, domain_id, domain_name from project_domain_mapping where project_id = ?"
-        prepared_parameters => ["[target][project_id]"]
-        target => "target_project_mapping"
-        tag_on_failure => ["Target_Project_Mapping"]
-      },
-      {
         id => "f17e_domain_lookup"
-        query => "select user_name, domain_id, domain_name from user_domain_mapping where user_id = ?"
+        query => "select domain_id, domain_name from user_domain_mapping where user_id = ?"
         prepared_parameters => ["[initiator][id]"]
         target => "domain_mapping"
         tag_on_failure => ["Domain_Mapping"]
@@ -299,84 +247,11 @@ filter {
     jdbc_connection_string => "jdbc:mysql://{{ .Values.logstash.jdbc.service }}.{{ .Values.logstash.jdbc.namespace }}:3306/{{ .Values.logstash.jdbc.db }}"
   }
 
-  if [project_mapping] and [project_mapping][0]{
-    # Add Fields to audit events, checking if the field exists first to not overwrite.
-    if ![initiator][project_name] {
-      mutate {
-        id => "f18a_initiator_project_name_adding_initiator_project_name"
-        add_field => {
-            "[initiator][project_name]" => "%{[project_mapping][0][project_name]}"
-        }
-      }
-    }
-    if ![initiator][domain_id] {
-      mutate {
-        id => "f18b_initiator_project_name_adding_initiator_domain_id"
-        add_field => {
-            "[initiator][domain_id]" => "%{[project_mapping][0][domain_id]}"
-        }
-      }
-    }
-    if ![initiator][project_domain_name] {
-      mutate {
-        id => "f18c_initiator_project_name_adding_project_domain_name"
-        add_field => {
-            "[initiator][project_domain_name]" => "%{[project_mapping][0][domain_name]}"
-        }
-      }
-    }
 
-    # Cleanup
-    mutate {
-      id => "f18d_remove_field_project_mapping"
-      remove_field => ["[project_mapping]"]
-    }
-  }
-
-  if [target_project_mapping] and [target_project_mapping][0]{
-    # Add Fields to audit events, checking if the field exists first to not overwrite.
-    if ![target][project_name] {
-      mutate {
-        id => "f19a_adding_target_project_name"
-        add_field => {
-            "[target][project_name]" => "%{[target_project_mapping][0][project_name]}"
-        }
-      }
-    }
-    if ![target][domain_id] {
-      mutate {
-        id => "f19b_adding_target_domain_id"
-        add_field => {
-            "[target][domain_id]" => "%{[target_project_mapping][0][domain_id]}"
-        }
-      }
-    }
-    if ![target][project_domain_name] {
-      mutate {
-        id => "f19c_adding_target_domain_name"
-        add_field => {
-            "[target][project_domain_name]" => "%{[target_project_mapping][0][domain_name]}"
-        }
-      }
-    }
-
-    # Cleanup
-    mutate {
-      id => "f19d_removing_target_project_mapping"
-      remove_field => ["[target_project_mapping]"]
-    }
-  }
 
   if [domain_mapping] and [domain_mapping][0]{
-    # Add Fields to audit events, checking if the field exists so it doesn't create an array.
-    if ![initiator][name] {
-      mutate {
-        id => "f20a_initiator_name_adding_initiator_name"
-        add_field => {
-            "[initiator][name]" => "%{[domain_mapping][0][user_name]}"
-        }
-      }
-    }
+    # Populate initiator domain fields for SIEM forwarding (Octobus).
+    # NOTE: initiator.name (user_name/I-number) intentionally NOT populated — PII.
     if ![initiator][domain_id] {
       mutate {
         id => "f20b_initiator_name_adding_initiator_domain_id"
@@ -401,21 +276,7 @@ filter {
     }
   }
 
-  # Cleanup unavailable entries
-  if [initiator][project_id] == "unavailable" {
-    mutate {
-      id => "f20e_removing_initiator_project_id"
-      remove_field => ["[initiator][project_id]"]
-    }
-  }
-
-  if [target][project_id] == "unavailable" {
-    mutate {
-      id => "f20f_removing_target_project_id"
-      remove_field => ["[target][project_id]"]
-    }
-  }
-
+  # Cleanup unavailable entry used for domain lookup
   if [initiator][id] == "unavailable" {
     mutate {
       id => "f20g_removing_initiator_id"
@@ -561,8 +422,11 @@ output {
   {{- end}}
 
   {{- if .Values.logstash.audit }}
+  # SIEM forwarding to Octobus — forwards security-relevant audit events.
+  # NOTE: [initiator][domain] depends on jdbc_static domain lookup above.
+  # TODO: Replace domain-name matching with domain_id once SIEM supports it.
   if [type] == 'audit' {
-    if (([initiator][domain] == 'Default' and [initiator][name] == 'admin') or [initiator][domain] == 'ccadmin' or [target][project_domain_name] == 'ccadmin' or [initiator][project_domain_name] == 'ccadmin') or ([observer][typeURI] == 'service/security' and [action] == "authenticate" and [outcome] == 'failure') or ([observer][typeURI] == 'service/security' and ([action] == 'create/user') or [action] == 'delete/user') or [observer][typeURI] == 'service/data/security/keymanager' or [target][typeURI] ==  'data/security/project' {
+    if ([initiator][domain] == 'Default' or [initiator][domain] == 'ccadmin') or ([observer][typeURI] == 'service/security' and [action] == "authenticate" and [outcome] == 'failure') or ([observer][typeURI] == 'service/security' and ([action] == 'create/user') or [action] == 'delete/user') or [observer][typeURI] == 'service/data/security/keymanager' or [target][typeURI] == 'data/security/project' {
       http {
         id => "output_octobus_audit"
         ssl_certificate_authorities => "/usr/share/logstash/config/ca.pem"
