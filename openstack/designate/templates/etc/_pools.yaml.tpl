@@ -66,7 +66,6 @@
       options:
         host: {{$srv.ip}}
         port: 53
-        rndc_key_file: {{ $pool.rndc_key_file }}
     {{- end}}
   catalog_zone:
       catalog_zone_fqdn: catalog.pool.{{ $pool.name }}.
