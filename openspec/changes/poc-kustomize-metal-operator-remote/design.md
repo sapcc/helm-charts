@@ -409,25 +409,32 @@ When Flux integration is tackled later:
 
 ### Makefile targets
 
+The regeneration targets live in the root `system/Makefile` alongside the existing `build-*` targets:
+
 ```makefile
-.PHONY: regen regen-remote-crds regen-remote-webhooks
+# In system/Makefile
 
-KUSTOMIZE_DIR := system/kustomize/metal-operator-remote
+METAL_OPERATOR_VERSION ?= v0.4.0
+KUSTOMIZE_METAL_OPERATOR_REMOTE := kustomize/metal-operator-remote
 
-regen: regen-remote-crds regen-remote-webhooks
+regen-metal-operator-remote: regen-metal-operator-remote-crds regen-metal-operator-remote-webhooks
 
-regen-remote-crds:
-	@kustomize build $(KUSTOMIZE_DIR)/remote/upstream/crds-and-rbac | \
-		scripts/wrap-managedresources.sh > $(KUSTOMIZE_DIR)/remote/upstream/crds-and-rbac/managedresources.yaml
+regen-metal-operator-remote-crds:
+	@kustomize build $(KUSTOMIZE_METAL_OPERATOR_REMOTE)/remote/upstream/crds-and-rbac | \
+		./$(KUSTOMIZE_METAL_OPERATOR_REMOTE)/scripts/wrap-managedresources.sh \
+		> $(KUSTOMIZE_METAL_OPERATOR_REMOTE)/remote/upstream/crds-and-rbac/managedresources.yaml
+	@echo "Generated $(KUSTOMIZE_METAL_OPERATOR_REMOTE)/remote/upstream/crds-and-rbac/managedresources.yaml"
 
-regen-remote-webhooks:
-	@kustomize build $(KUSTOMIZE_DIR)/remote/upstream/webhooks/source | \
-		yq '(.webhooks[].clientConfig | select(.service)) |= \
-		{"url": "https://metal-operator-webhook-service:443" + .service.path}' | \
+regen-metal-operator-remote-webhooks:
+	@kustomize build $(KUSTOMIZE_METAL_OPERATOR_REMOTE)/remote/upstream/webhooks/source | \
+		yq 'select(.kind == "ValidatingWebhookConfiguration" or .kind == "MutatingWebhookConfiguration")' | \
+		yq '(.webhooks[].clientConfig | select(.service)) |= {"url": "https://metal-operator-webhook-service:443" + .service.path}' | \
 		yq 'del(.webhooks[].clientConfig.service)' \
-		> $(KUSTOMIZE_DIR)/remote/upstream/webhooks/manifests-url-based.yaml
-	@kustomize build $(KUSTOMIZE_DIR)/remote/upstream/webhooks | \
-		scripts/wrap-managedresources.sh > $(KUSTOMIZE_DIR)/remote/upstream/webhooks/managedresources.yaml
+		> $(KUSTOMIZE_METAL_OPERATOR_REMOTE)/remote/upstream/webhooks/manifests-url-based.yaml
+	@kustomize build $(KUSTOMIZE_METAL_OPERATOR_REMOTE)/remote/upstream/webhooks | \
+		./$(KUSTOMIZE_METAL_OPERATOR_REMOTE)/scripts/wrap-managedresources.sh \
+		> $(KUSTOMIZE_METAL_OPERATOR_REMOTE)/remote/upstream/webhooks/managedresources.yaml
+	@echo "Generated $(KUSTOMIZE_METAL_OPERATOR_REMOTE)/remote/upstream/webhooks/ manifests"
 ```
 
 Note: Host resources and remote custom resources are NOT pre-rendered — Flux builds their overlays at deploy time.

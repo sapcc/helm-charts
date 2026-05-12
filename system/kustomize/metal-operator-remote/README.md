@@ -25,8 +25,11 @@ Kustomize-based deployment of the metal-operator in a split host/remote cluster 
 │       └── overlays/
 ├── components/
 │   └── webhook-injector/  # Reusable sidecar Component
-└── Makefile
+└── scripts/
+    └── wrap-managedresources.sh  # ManagedResource wrapping helper
 ```
+
+Note: The Makefile targets for regeneration live in `system/Makefile` (not a local Makefile).
 
 ## Common Tasks
 
@@ -41,8 +44,8 @@ When a new version of `ironcore-dev/metal-operator` is released:
 #    - remote/upstream/crds-and-rbac/kustomization.yaml
 #    - remote/upstream/webhooks/source/kustomization.yaml
 
-# 2. Regenerate pre-rendered remote resources
-make regen
+# 2. Regenerate pre-rendered remote resources (from system/ directory)
+make regen-metal-operator-remote
 
 # 3. Review changes
 git diff remote/upstream/
@@ -56,10 +59,10 @@ git add -A && git commit -m "chore: bump metal-operator to v0.5.0"
 
 ### Regenerate remote resources
 
-Run after any change to upstream refs or kustomize patches in `remote/upstream/`:
+Run from `system/` directory after any change to upstream refs or kustomize patches in `remote/upstream/`:
 
 ```bash
-make regen
+make regen-metal-operator-remote
 ```
 
 This rebuilds:

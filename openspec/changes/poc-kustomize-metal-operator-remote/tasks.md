@@ -48,8 +48,8 @@
 
 ## 8. Makefile integration
 
-- [x] 8.1 Create `system/kustomize/metal-operator-remote/Makefile` with `regen`, `regen-remote-crds`, `regen-remote-webhooks` targets
-- [x] 8.2 Verify `make regen` regenerates all pre-rendered files correctly
+- [x] 8.1 Add `regen-metal-operator-remote`, `regen-metal-operator-remote-crds`, `regen-metal-operator-remote-webhooks` targets to `system/Makefile`
+- [x] 8.2 Verify `make regen-metal-operator-remote` regenerates all pre-rendered files correctly
 
 ## 9. Equivalence verification
 

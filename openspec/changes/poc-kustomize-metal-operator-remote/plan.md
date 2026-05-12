@@ -525,40 +525,43 @@ git commit -m "feat: add wrap-managedresources.sh for ManagedResource generation
 ## Task 8: Makefile and Pre-rendering
 
 **Files:**
-- Create: `system/kustomize/metal-operator-remote/Makefile`
+- Modify: `system/Makefile` (add regen targets)
 
-- [ ] **Step 1: Create the Makefile**
+- [ ] **Step 1: Add targets to system/Makefile**
 
 ```makefile
-# system/kustomize/metal-operator-remote/Makefile
-.PHONY: regen regen-remote-crds regen-remote-webhooks
+# Add to system/Makefile alongside existing build-* targets
 
-regen: regen-remote-crds regen-remote-webhooks
+METAL_OPERATOR_VERSION ?= v0.4.0
+KUSTOMIZE_METAL_OPERATOR_REMOTE := kustomize/metal-operator-remote
 
-regen-remote-crds:
-	@kustomize build remote/upstream/crds-and-rbac | \
-		./scripts/wrap-managedresources.sh > remote/upstream/crds-and-rbac/managedresources.yaml
-	@echo "Generated remote/upstream/crds-and-rbac/managedresources.yaml"
+regen-metal-operator-remote: regen-metal-operator-remote-crds regen-metal-operator-remote-webhooks
 
-regen-remote-webhooks:
-	@kustomize build remote/upstream/webhooks/source | \
+regen-metal-operator-remote-crds:
+	@kustomize build $(KUSTOMIZE_METAL_OPERATOR_REMOTE)/remote/upstream/crds-and-rbac | \
+		./$(KUSTOMIZE_METAL_OPERATOR_REMOTE)/scripts/wrap-managedresources.sh \
+		> $(KUSTOMIZE_METAL_OPERATOR_REMOTE)/remote/upstream/crds-and-rbac/managedresources.yaml
+	@echo "Generated $(KUSTOMIZE_METAL_OPERATOR_REMOTE)/remote/upstream/crds-and-rbac/managedresources.yaml"
+
+regen-metal-operator-remote-webhooks:
+	@kustomize build $(KUSTOMIZE_METAL_OPERATOR_REMOTE)/remote/upstream/webhooks/source | \
 		yq 'select(.kind == "ValidatingWebhookConfiguration" or .kind == "MutatingWebhookConfiguration")' | \
 		yq '(.webhooks[].clientConfig | select(.service)) |= {"url": "https://metal-operator-webhook-service:443" + .service.path}' | \
 		yq 'del(.webhooks[].clientConfig.service)' \
-		> remote/upstream/webhooks/manifests-url-based.yaml
-	@kustomize build remote/upstream/webhooks | \
-		./scripts/wrap-managedresources.sh > remote/upstream/webhooks/managedresources.yaml
-	@echo "Generated remote/upstream/webhooks/manifests-url-based.yaml"
-	@echo "Generated remote/upstream/webhooks/managedresources.yaml"
+		> $(KUSTOMIZE_METAL_OPERATOR_REMOTE)/remote/upstream/webhooks/manifests-url-based.yaml
+	@kustomize build $(KUSTOMIZE_METAL_OPERATOR_REMOTE)/remote/upstream/webhooks | \
+		./$(KUSTOMIZE_METAL_OPERATOR_REMOTE)/scripts/wrap-managedresources.sh \
+		> $(KUSTOMIZE_METAL_OPERATOR_REMOTE)/remote/upstream/webhooks/managedresources.yaml
+	@echo "Generated $(KUSTOMIZE_METAL_OPERATOR_REMOTE)/remote/upstream/webhooks/ manifests"
 ```
 
-- [ ] **Step 2: Run make regen and verify output**
+- [ ] **Step 2: Run make regen-metal-operator-remote and verify output**
 
 ```bash
-make regen
-ls -la remote/upstream/crds-and-rbac/managedresources.yaml
-ls -la remote/upstream/webhooks/managedresources.yaml
-ls -la remote/upstream/webhooks/manifests-url-based.yaml
+make regen-metal-operator-remote
+ls -la kustomize/metal-operator-remote/remote/upstream/crds-and-rbac/managedresources.yaml
+ls -la kustomize/metal-operator-remote/remote/upstream/webhooks/managedresources.yaml
+ls -la kustomize/metal-operator-remote/remote/upstream/webhooks/manifests-url-based.yaml
 ```
 
 All three files should exist and contain valid YAML.
