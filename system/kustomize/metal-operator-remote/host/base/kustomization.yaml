@@ -1,0 +1,36 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  # Upstream Deployment base
+  - https://github.com/ironcore-dev/metal-operator//config/manager?ref=v0.4.0
+  # Local host resources
+  - webhook-service.yaml
+  - metal-registry-service.yaml
+  - ingress.yaml
+  - networkpolicy.yaml
+  - webhook-injector-rbac.yaml
+  - webhook-config.yaml
+  - remote-kubeconfig-configmap.yaml
+  - remote-serviceaccount-secret.yaml
+  - macdb-secret.yaml
+  - rotate-kubeconfig-secret.yaml
+components:
+  - ../../components/webhook-injector
+patches:
+  # Remove the Namespace resource from upstream config/manager
+  - target:
+      kind: Namespace
+    patch: |
+      $patch: delete
+      apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: system
+  # Patch Deployment for remote cluster operation
+  - path: manager-remote-patch.yaml
+  # Patch Deployment for webhook serving
+  - path: manager-webhook-patch.yaml
+images:
+  - name: controller
+    newName: ghcr.io/ironcore-dev/metal-operator-controller-manager
+    newTag: PLACEHOLDER

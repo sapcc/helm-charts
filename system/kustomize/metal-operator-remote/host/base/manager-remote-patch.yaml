@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: controller-manager
+  namespace: system
+spec:
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        networking.gardener.cloud/to-dns: allowed
+        networking.gardener.cloud/to-private-networks: allowed
+        networking.gardener.cloud/to-public-networks: allowed
+        networking.gardener.cloud/to-runtime-apiserver: allowed
+        networking.resources.gardener.cloud/to-all-istio-ingresses-istio-ingressgateway-tcp-9443: allowed
+        networking.resources.gardener.cloud/to-kube-apiserver-tcp-443: allowed
+    spec:
+      serviceAccountName: metal-operator-webhook-injector
+      hostNetwork: false
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+        runAsUser: 65532
+        runAsGroup: 65532
+      containers:
+        - name: manager
+          env:
+            - name: KUBERNETES_SERVICE_HOST
+              value: "APISERVER_URL_PLACEHOLDER"
+            - name: KUBERNETES_CLUSTER_DOMAIN
+              value: "cluster.local"
+            - name: KUBECONFIG
+              value: "/var/run/remote-kubeconfig/kubeconfig"
+          volumeMounts:
+            - name: remote-serviceaccount
+              mountPath: /var/run/secrets/kubernetes.io/remote-serviceaccount
+              readOnly: true
+            - name: remote-kubeconfig
+              mountPath: /var/run/remote-kubeconfig
+              readOnly: true
+      volumes:
+        - name: remote-serviceaccount
+          secret:
+            secretName: metal-operator-remote-kubeconfig
+            items:
+              - key: token
+                path: token
+              - key: bundle.crt
+                path: ca.crt
+        - name: remote-kubeconfig
+          configMap:
+            name: remote-kubeconfig

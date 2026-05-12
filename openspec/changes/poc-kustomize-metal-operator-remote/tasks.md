@@ -19,25 +19,25 @@
 
 ## 4. Host base resources
 
-- [ ] 4.1 Create `host/base/kustomization.yaml` referencing upstream `config/manager`, components, patches, and all local resources
-- [ ] 4.2 Create `host/base/manager-remote-patch.yaml` (env vars, volumes, pod labels, strategy, serviceAccountName, securityContext)
-- [ ] 4.3 Create `host/base/manager-webhook-patch.yaml` (webhook port, certs emptyDir, macdb volume)
-- [ ] 4.4 Create local resource files: `webhook-service.yaml`, `metal-registry-service.yaml`, `networkpolicy.yaml`, `webhook-injector-rbac.yaml`
-- [ ] 4.5 Create local resource files: `ingress.yaml`, `remote-kubeconfig-configmap.yaml`, `remote-serviceaccount-secret.yaml`, `macdb-secret.yaml`, `rotate-kubeconfig-secret.yaml`, `webhook-config.yaml`
-- [ ] 4.6 Verify `kustomize build host/base/` succeeds and produces all expected resource kinds (Deployment, Services, Ingress, NetworkPolicy, ConfigMaps, Secrets, SA, Role, RoleBinding)
+- [x] 4.1 Create `host/base/kustomization.yaml` referencing upstream `config/manager`, components, patches, and all local resources
+- [x] 4.2 Create `host/base/manager-remote-patch.yaml` (env vars, volumes, pod labels, strategy, serviceAccountName, securityContext)
+- [x] 4.3 Create `host/base/manager-webhook-patch.yaml` (webhook port, certs emptyDir, macdb volume)
+- [x] 4.4 Create local resource files: `webhook-service.yaml`, `metal-registry-service.yaml`, `networkpolicy.yaml`, `webhook-injector-rbac.yaml`
+- [x] 4.5 Create local resource files: `ingress.yaml`, `remote-kubeconfig-configmap.yaml`, `remote-serviceaccount-secret.yaml`, `macdb-secret.yaml`, `rotate-kubeconfig-secret.yaml`, `webhook-config.yaml`
+- [x] 4.6 Verify `kustomize build host/base/` succeeds and produces all expected resource kinds (Deployment, Services, Ingress, NetworkPolicy, ConfigMaps, Secrets, SA, Role, RoleBinding)
 
 ## 5. Host overlay example
 
-- [ ] 5.1 Create `host/overlays/rt-eu-de-1/kustomization.yaml` with patches for ingress domain, apiserver URL, macdb, remote CA, image tags, and controller args
-- [ ] 5.2 Verify `kustomize build host/overlays/rt-eu-de-1/` succeeds and renders correct environment-specific values
+- [x] 5.1 Create `host/overlays/rt-eu-de-1/kustomization.yaml` with patches for ingress domain, apiserver URL, macdb, remote CA, image tags, and controller args
+- [x] 5.2 Verify `kustomize build host/overlays/rt-eu-de-1/` succeeds and renders correct environment-specific values
 
 ## 6. Remote custom resources
 
-- [ ] 6.1 Create `remote/custom/base/kustomization.yaml` with `namespace.yaml` and `rbac.yaml`
-- [ ] 6.2 Create `remote/custom/base/namespace.yaml` (Namespace: metal-servers)
-- [ ] 6.3 Create `remote/custom/base/rbac.yaml` with placeholder values for IAS groups and LDAP users
-- [ ] 6.4 Create `remote/custom/overlays/rt-eu-de-1/kustomization.yaml` with patches for IAS group names and LDAP admin users
-- [ ] 6.5 Verify `kustomize build remote/custom/overlays/rt-eu-de-1/` succeeds
+- [x] 6.1 Create `remote/custom/base/kustomization.yaml` with `namespace.yaml` and `rbac.yaml`
+- [x] 6.2 Create `remote/custom/base/namespace.yaml` (Namespace: metal-servers)
+- [x] 6.3 Create `remote/custom/base/rbac.yaml` with placeholder values for IAS groups and LDAP users
+- [x] 6.4 Create `remote/custom/overlays/rt-eu-de-1/kustomization.yaml` with patches for IAS group names and LDAP admin users
+- [x] 6.5 Verify `kustomize build remote/custom/overlays/rt-eu-de-1/` succeeds
 
 ## 7. ManagedResource wrapping
 
