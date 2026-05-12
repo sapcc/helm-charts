@@ -109,10 +109,10 @@
 - name: LOG_ROUTER_DB_PASSWORD
   valueFrom:
     secretKeyRef:
-      name: '{{ $.Release.Name }}-pguser-log_router'
+      name: '{{ $.Release.Name }}-pguser-log-router'
       key: postgres-password
 - name: LOG_ROUTER_DB_URL
-  value: "postgres://log_router:$(LOG_ROUTER_DB_PASSWORD)@{{ $.Release.Name }}-postgresql.{{ $.Release.Namespace }}.svc:5432/log_router?sslmode=disable"
+  value: "postgres://log-router:$(LOG_ROUTER_DB_PASSWORD)@{{ $.Release.Name }}-postgresql.{{ $.Release.Namespace }}.svc:5432/log-router?sslmode=disable"
 - name: OS_AUTH_URL
   value: "{{ $.Values.hermes.auth_url }}"
 - name: OS_USERNAME
