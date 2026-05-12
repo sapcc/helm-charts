@@ -316,6 +316,9 @@ listen = 0.0.0.0:5354
 # Enforce all incoming queries (including AXFR) are TSIG signed
 query_enforce_tsig = {{ .Values.query_enforce_tsig }}
 
+# restrict non-TSIG signed AXFR queries (comma-separated)
+allow_axfr_ips = {{ .Values.allow_axfr_ips | default "127.0.0.1" }}
+
 # Send all traffic over TCP
 #all_tcp = False
 
