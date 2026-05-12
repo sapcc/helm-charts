@@ -1,21 +1,21 @@
 ## 1. Project scaffolding
 
-- [ ] 1.1 Create directory structure: `system/kustomize/metal-operator-remote/{host/base,host/overlays,remote/upstream/crds-and-rbac,remote/upstream/webhooks/source,remote/custom/base,remote/custom/overlays,components/webhook-injector}`
-- [ ] 1.2 Create `remote/upstream/crds-and-rbac/kustomization.yaml` referencing upstream `config/crd` + `config/rbac` at pinned tag with Role→ClusterRole patches
-- [ ] 1.3 Create `remote/upstream/webhooks/source/kustomization.yaml` referencing upstream `config/webhook` at pinned tag
-- [ ] 1.4 Verify `kustomize build remote/upstream/crds-and-rbac/` succeeds and produces expected CRDs + RBAC
+- [x] 1.1 Create directory structure: `system/kustomize/metal-operator-remote/{host/base,host/overlays,remote/upstream/crds-and-rbac,remote/upstream/webhooks/source,remote/custom/base,remote/custom/overlays,components/webhook-injector}`
+- [x] 1.2 Create `remote/upstream/crds-and-rbac/kustomization.yaml` referencing upstream `config/crd` + `config/rbac` at pinned tag with Role→ClusterRole patches
+- [x] 1.3 Create `remote/upstream/webhooks/source/kustomization.yaml` referencing upstream `config/webhook` at pinned tag
+- [x] 1.4 Verify `kustomize build remote/upstream/crds-and-rbac/` succeeds and produces expected CRDs + RBAC
 
 ## 2. Webhook URL rendering
 
-- [ ] 2.1 Create `remote/upstream/webhooks/kustomization.yaml` referencing `manifests-url-based.yaml`
-- [ ] 2.2 Write the `yq` command to transform service→URL and generate `manifests-url-based.yaml`
-- [ ] 2.3 Verify generated webhook manifests match current `metal-operator-remote/webhooks.yaml` content
+- [x] 2.1 Create `remote/upstream/webhooks/kustomization.yaml` referencing `manifests-url-based.yaml`
+- [x] 2.2 Write the `yq` command to transform service→URL and generate `manifests-url-based.yaml`
+- [x] 2.3 Verify generated webhook manifests match current `metal-operator-remote/webhooks.yaml` content
 
 ## 3. Webhook-injector Component
 
-- [ ] 3.1 Create `components/webhook-injector/kustomization.yaml` (kind: Component)
-- [ ] 3.2 Create `components/webhook-injector/sidecar.yaml` with full initContainer spec (image, args, ports, probes, resources, volumeMounts)
-- [ ] 3.3 Verify Component can be included by a test kustomization and produces correct initContainer in output
+- [x] 3.1 Create `components/webhook-injector/kustomization.yaml` (kind: Component)
+- [x] 3.2 Create `components/webhook-injector/sidecar.yaml` with full initContainer spec (image, args, ports, probes, resources, volumeMounts)
+- [x] 3.3 Verify Component can be included by a test kustomization and produces correct initContainer in output
 
 ## 4. Host base resources
 
