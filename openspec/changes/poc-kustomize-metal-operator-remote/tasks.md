@@ -53,10 +53,10 @@
 
 ## 9. Equivalence verification
 
-- [ ] 9.1 Compare `kustomize build host/overlays/rt-eu-de-1/` output against `helm template metal-operator-remote` with equivalent values — document differences
-- [ ] 9.2 Compare `kustomize build remote/upstream/crds-and-rbac/` output against current `managedresources/crds-and-rbac.yaml` — document differences
-- [ ] 9.3 Compare webhook output against current `webhooks.yaml` — document differences
-- [ ] 9.4 Write findings summary: what works, what doesn't, blockers identified
+- [x] 9.1 Compare `kustomize build host/overlays/rt-eu-de-1/` output against `helm template metal-operator-remote` with equivalent values — document differences
+- [x] 9.2 Compare `kustomize build remote/upstream/crds-and-rbac/` output against current `managedresources/crds-and-rbac.yaml` — document differences
+- [x] 9.3 Compare webhook output against current `webhooks.yaml` — document differences
+- [x] 9.4 Write findings summary: what works, what doesn't, blockers identified
 
 ## 10. Documentation
 
