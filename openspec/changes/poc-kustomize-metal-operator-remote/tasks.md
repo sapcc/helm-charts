@@ -57,3 +57,7 @@
 - [ ] 9.2 Compare `kustomize build remote/upstream/crds-and-rbac/` output against current `managedresources/crds-and-rbac.yaml` — document differences
 - [ ] 9.3 Compare webhook output against current `webhooks.yaml` — document differences
 - [ ] 9.4 Write findings summary: what works, what doesn't, blockers identified
+
+## 10. Documentation
+
+- [ ] 10.1 Create `system/kustomize/metal-operator-remote/README.md` — operator guide covering: prerequisites, upgrading upstream version, regenerating remote resources, adding a new environment overlay, deploying, and troubleshooting
