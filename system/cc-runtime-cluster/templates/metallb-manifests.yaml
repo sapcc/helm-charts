@@ -1,7 +1,10 @@
+{{- range $cluster := .Values.clusters }}
+---
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: metallb-manifests
+  namespace: {{ $cluster.namespace }}
 data:
   data: |-
     apiVersion: metallb.io/v1beta1
@@ -9,7 +12,26 @@ data:
     metadata:
       name: l2adv
       namespace: metallb-system
-{{- if .Values.metallb }}
+{{- if $cluster.metallb }}
+{{- /* MetalLB pool IPs come from the CC Kubernetes Runtime Transit role (/26 prefixes).
+       The first /27 of each prefix is reserved for LB purposes.
+       baseAddress is the first usable IP of the LB /27 (network address + 10).
+       Example: for prefix 10.20.30.64/26 the LB /27 is 10.20.30.64/27,
+                so baseAddress is 10.20.30.74 (64 + 10).
+
+       From baseAddress we derive two pools:
+       - metallb-pool-manual: baseAddress to baseAddress+4  (5 IPs, manual assignment)
+       - metallb-pool:        baseAddress+5 to baseAddress+20 (16 IPs, auto assignment)
+
+       Set per cluster in values:
+         clusters:
+           - name: rt-eu-de-1
+             metallb:
+               baseAddress: "10.20.30.74"
+*/ -}}
+{{- $parts := splitList "." $cluster.metallb.baseAddress }}
+{{- $prefix := printf "%s.%s.%s" (index $parts 0) (index $parts 1) (index $parts 2) }}
+{{- $base := index $parts 3 | atoi }}
     ---
     apiVersion: metallb.io/v1beta1
     kind: IPAddressPool
@@ -18,7 +40,7 @@ data:
       namespace: metallb-system
     spec:
       addresses:
-    {{- toYaml .Values.metallb.l2pools.addresses | nindent 6 }}
+      - {{ $prefix }}.{{ add $base 5 }}-{{ $prefix }}.{{ add $base 20 }}
     ---
     apiVersion: metallb.io/v1beta1
     kind: IPAddressPool
@@ -27,6 +49,7 @@ data:
       namespace: metallb-system
     spec:
       addresses:
-    {{- toYaml .Values.metallb.l2poolsManual.addresses | nindent 6 }}
+      - {{ $prefix }}.{{ $base }}-{{ $prefix }}.{{ add $base 4 }}
       autoAssign: false
-{{ end}}
+{{- end }}
+{{- end }}
