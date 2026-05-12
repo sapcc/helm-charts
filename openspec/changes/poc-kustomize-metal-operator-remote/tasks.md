@@ -41,15 +41,15 @@
 
 ## 7. ManagedResource wrapping
 
-- [ ] 7.1 Write `scripts/wrap-managedresources.sh` that takes multi-document YAML on stdin and produces ManagedResource+Secret pairs
-- [ ] 7.2 Generate `remote/upstream/crds-and-rbac/managedresources.yaml` using the script
-- [ ] 7.3 Generate `remote/upstream/webhooks/managedresources.yaml` using the script
-- [ ] 7.4 Verify generated ManagedResource format matches current `templates/managedresource.yaml` output
+- [x] 7.1 Write `scripts/wrap-managedresources.sh` that takes multi-document YAML on stdin and produces ManagedResource+Secret pairs
+- [x] 7.2 Generate `remote/upstream/crds-and-rbac/managedresources.yaml` using the script
+- [x] 7.3 Generate `remote/upstream/webhooks/managedresources.yaml` using the script
+- [x] 7.4 Verify generated ManagedResource format matches current `templates/managedresource.yaml` output
 
 ## 8. Makefile integration
 
-- [ ] 8.1 Create `system/kustomize/metal-operator-remote/Makefile` with `regen`, `regen-remote-crds`, `regen-remote-webhooks` targets
-- [ ] 8.2 Verify `make regen` regenerates all pre-rendered files correctly
+- [x] 8.1 Create `system/kustomize/metal-operator-remote/Makefile` with `regen`, `regen-remote-crds`, `regen-remote-webhooks` targets
+- [x] 8.2 Verify `make regen` regenerates all pre-rendered files correctly
 
 ## 9. Equivalence verification
 
@@ -60,4 +60,4 @@
 
 ## 10. Documentation
 
-- [ ] 10.1 Create `system/kustomize/metal-operator-remote/README.md` — operator guide covering: prerequisites, upgrading upstream version, regenerating remote resources, adding a new environment overlay, deploying, and troubleshooting
+- [x] 10.1 Create `system/kustomize/metal-operator-remote/README.md` — operator guide covering: prerequisites, upgrading upstream version, regenerating remote resources, adding a new environment overlay, deploying, and troubleshooting
