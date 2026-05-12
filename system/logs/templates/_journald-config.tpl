@@ -21,7 +21,7 @@ transform/journal:
         - set(log.attributes["code_file"], log.cache["CODE_FILE"])
         - set(log.attributes["code_func"], log.cache["CODE_FUNC"])
         - set(log.attributes["code_line"], log.cache["CODE_LINE"])
-        - set(log.attributes["incovation_id"], log.cache["INVOCATION_ID"])
+        - set(log.attributes["invocation_id"], log.cache["INVOCATION_ID"])
         - set(log.attributes["message_id"], log.cache["MESSAGE_ID"])
         - set(log.attributes["priority"], log.cache["PRIORITY"])
         - set(log.attributes["syslog_facility"], log.cache["SYSLOG_FACILITY"])
