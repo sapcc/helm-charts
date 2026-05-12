@@ -2,7 +2,7 @@
   {{- if contains "DEFINED" $.Values.logRouter.image_tag -}}
     {{ required "This release should be installed by the deployment pipeline!" "" }}
   {{- else -}}
-    {{$.Values.global.registry}}/log-router:{{$.Values.logRouter.image_tag}}
+    {{$.Values.global.registry}}/hermes-logrouter:{{$.Values.logRouter.image_tag}}
   {{- end -}}
 {{- end -}}
 
