@@ -87,6 +87,7 @@ system/kustomize/metal-operator-remote/
 - Regenerates `remote/` pre-rendered files only
 - Remote resources are static, environment-independent (same CRDs/RBAC/webhooks for all clusters)
 - Output committed to git
+- Future possibility: a GitHub Action that automatically runs `make regen` when upstream refs are bumped in a PR, commits the regenerated files, and validates equivalence — eliminating manual build steps entirely
 
 **Deploy time** (Flux `Kustomization` per cluster):
 - Host resources: Flux points at `host/overlays/<cluster-name>/` → runs `kustomize build` → deploys to seed
