@@ -54,13 +54,13 @@ addressed with additional patches if strict name-equivalence is required.
 - ✓ Same securityContext (runAsUser: 65532, runAsGroup: 65532)
 - ✓ Same pod labels (Gardener network policies)
 - ✓ Same serviceAccountName
+- ✓ Same resource requests/limits (cpu: 300m/5000m, memory: 50Mi/5120Mi)
 
 **Differences:**
 
 | Aspect | Kustomize | Helm (current) | Impact |
 |--------|-----------|----------------|--------|
 | Deployment name | `controller-manager` | `metal-operator-controller-manager` | Naming (from upstream vs Helm fullname) |
-| Resource requests/limits | Upstream defaults | Custom values from values.yaml | Need to add resource patch in overlay |
 | dnsRecordTemplate volume | Not included | Conditional (disabled by default) | Can add if needed |
 
 ## ManagedResource Format
@@ -87,12 +87,9 @@ structure as the Helm template (`templates/managedresource.yaml`):
 1. **Accept upstream names** for RBAC resources instead of adding `metal-operator-` prefix.
    This is simpler and follows upstream conventions. Document the name change for migration.
 
-2. **Add resource limits** to the host overlay patches (currently inherits upstream defaults
-   which are lower than production requirements).
-
-3. **Webhook ConfigMap name** should be patched to `metal-operator-validating-webhook-configuration`
+2. **Webhook ConfigMap name** should be patched to `metal-operator-validating-webhook-configuration`
    if webhook-injector expects that exact name, or update webhook-injector config to use the
    upstream name.
 
-4. **Consider automated `make regen`** via GitHub Action on PRs that modify upstream refs
+3. **Consider automated `make regen`** via GitHub Action on PRs that modify upstream refs
    (future enhancement, not a blocker).

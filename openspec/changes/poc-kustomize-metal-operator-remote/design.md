@@ -228,6 +228,7 @@ images:
 Strategic merge patch for remote-cluster operation:
 - Sets `strategy.type: Recreate`
 - Adds env vars: `KUBERNETES_SERVICE_HOST`, `KUBERNETES_CLUSTER_DOMAIN`, `KUBECONFIG`
+- Sets default resource limits (cpu: 5000m/300m, memory: 5120Mi/50Mi)
 - Mounts `remote-serviceaccount` secret and `remote-kubeconfig` configmap
 - Adds Gardener network policy pod labels
 - Sets `serviceAccountName: metal-operator-webhook-injector`

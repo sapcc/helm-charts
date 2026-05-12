@@ -27,13 +27,7 @@ None.
 
 ### SUGGESTION Issues
 
-1. **Resource requests/limits not set in base Deployment patch**
-   - The upstream Deployment has minimal resource defaults (cpu: 10m/500m, memory: 64Mi/128Mi)
-   - Production values (cpu: 300m/5000m, memory: 50Mi/5120Mi) should be in the overlay
-   - Current rt-eu-de-1 overlay doesn't patch resources
-   - **Recommendation:** Add resource patch to `host/overlays/rt-eu-de-1/kustomization.yaml`
-
-2. **Missing `.gitignore` for generated files**
+1. **Missing `.gitignore` for generated files**
    - The `managedresources.yaml` files are generated but should still be committed (they're deployment artifacts)
    - Consider adding a comment at the top of generated files: `# GENERATED - DO NOT EDIT. Run 'make regen' to regenerate.`
    - **Recommendation:** Add generation comments to `scripts/wrap-managedresources.sh` output
