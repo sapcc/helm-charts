@@ -1,7 +1,10 @@
+{{- range $cluster := .Values.clusters }}
+---
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: metallb-manifests
+  namespace: {{ $cluster.namespace }}
 data:
   data: |-
     apiVersion: metallb.io/v1beta1
@@ -9,7 +12,7 @@ data:
     metadata:
       name: l2adv
       namespace: metallb-system
-{{- if .Values.metallb }}
+{{- if $.Values.metallb }}
     ---
     apiVersion: metallb.io/v1beta1
     kind: IPAddressPool
@@ -18,7 +21,7 @@ data:
       namespace: metallb-system
     spec:
       addresses:
-    {{- toYaml .Values.metallb.l2pools.addresses | nindent 6 }}
+    {{- toYaml $.Values.metallb.l2pools.addresses | nindent 6 }}
     ---
     apiVersion: metallb.io/v1beta1
     kind: IPAddressPool
@@ -27,6 +30,7 @@ data:
       namespace: metallb-system
     spec:
       addresses:
-    {{- toYaml .Values.metallb.l2poolsManual.addresses | nindent 6 }}
+    {{- toYaml $.Values.metallb.l2poolsManual.addresses | nindent 6 }}
       autoAssign: false
-{{ end}}
+{{- end }}
+{{- end }}
