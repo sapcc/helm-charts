@@ -60,6 +60,30 @@ Per-environment overlays in `host/overlays/<cluster-name>/` SHALL patch the base
 
 ---
 
+### Requirement: Remote custom RBAC uses Components for environment-variant values
+
+The remote custom RBAC base SHALL use invalid placeholder values for fields that differ between environment types (e.g., QA vs prod OIDC group names). Kustomize Components SHALL provide the correct values per environment type, and each overlay SHALL include the appropriate component.
+
+#### Scenario: Base uses invalid placeholders for OIDC group names
+
+- **WHEN** examining `remote/custom/base/rbac.yaml`
+- **THEN** OIDC group subject names SHALL use obviously-invalid placeholders (e.g., `MUST_BE_SET_IN_OVERLAY`) that cannot be deployed without being overridden
+
+#### Scenario: Prod component patches correct group names
+
+- **WHEN** a prod overlay includes `remote/custom/components/prod`
+- **THEN** the rendered ClusterRoleBindings SHALL have subjects with `CC_IAS_CONTROLPLANE_PROD_ADMIN` and `CC_IAS_CONTROLPLANE_PROD_DEVELOPER`
+
+#### Scenario: QA component patches correct group names
+
+- **WHEN** a QA overlay includes `remote/custom/components/qa`
+- **THEN** the rendered ClusterRoleBindings SHALL have subjects with `CC_IAS_CONTROLPLANE_QA_ADMIN` and `CC_IAS_CONTROLPLANE_QA_DEVELOPER`
+
+#### Scenario: Overlay without component fails visibly
+
+- **WHEN** an overlay does not include either the `prod` or `qa` component
+- **THEN** the rendered output SHALL contain the invalid placeholder values, which will fail at apply time
+
 ### Requirement: Remote overlay produces CRDs and RBAC from upstream base
 
 The `remote/crds-and-rbac/` kustomize overlay SHALL produce CRDs and RBAC resources by referencing the upstream `config/crd` and `config/rbac` directories at a pinned git tag.
