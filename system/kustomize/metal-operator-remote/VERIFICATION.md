@@ -3,7 +3,8 @@
 ## Summary
 
 The kustomize POC successfully produces functionally equivalent resources to the current
-Helm-based `metal-operator-remote` chart. Key differences are documented below.
+Helm-based `metal-operator-remote` chart. The rt-eu-de-1 overlay output matches the live
+cluster deployment exactly.
 
 **Verdict:** The approach works. Differences are cosmetic (naming, labels) and can be
 addressed with additional patches if strict name-equivalence is required.
@@ -18,17 +19,12 @@ addressed with additional patches if strict name-equivalence is required.
 
 | Aspect | Kustomize | Helm (current) | Impact |
 |--------|-----------|----------------|--------|
-| RBAC name prefix | `manager-role`, `leader-election-role` | `metal-operator-manager-role`, `metal-operator-leader-election-role` | Naming only. Can add per-resource name patches or accept new names. |
-| Per-CRD roles prefix | `biossettings-admin-role` | `biossettings-admin-role` (no prefix) | **Same** — Helm doesn't prefix these either |
-| ServiceAccount name | `controller-manager` | `metal-operator-controller-manager` | Naming difference. Needs patch or accept new name. |
-| Labels | Standard kustomize labels | Helm-specific labels (helm.sh/chart, app.kubernetes.io/managed-by: Helm) | Cosmetic. Kustomize uses `app.kubernetes.io/managed-by: kustomize` |
+| Core RBAC name prefix | `manager-role`, `leader-election-role` | `metal-operator-manager-role`, `metal-operator-leader-election-role` | Naming only. Can add per-resource name patches or accept new names. |
+| Per-CRD roles | `biossettings-admin-role` (no prefix) | `biossettings-admin-role` (no prefix) | **Identical** |
+| ServiceAccount name | `controller-manager` | `metal-operator-controller-manager` | Naming difference |
+| CRD names | All 16 CRDs | All 16 CRDs | **Identical** |
 
-**Resolution options for naming:**
-1. Accept the upstream names (simpler, less maintenance)
-2. Add targeted JSON patches to rename the 4 core RBAC resources to match Helm convention
-3. Use `namePrefix: metal-operator-` (but this over-prefixes per-CRD roles)
-
-**Recommendation:** Accept upstream names. The current `metal-operator-` prefix was a Helm artifact, not a requirement. Document the name change for migration.
+**Recommendation:** Accept upstream names. The `metal-operator-` prefix was a Helm artifact, not a requirement.
 
 ## Webhooks
 
@@ -38,30 +34,56 @@ addressed with additional patches if strict name-equivalence is required.
 
 | Aspect | Kustomize | Helm (current) | Impact |
 |--------|-----------|----------------|--------|
-| Resource name | `validating-webhook-configuration` | `metal-operator-validating-webhook-configuration` | Naming. Same resource, different metadata name. |
-| Namespace field | Not set | `namespace: kube-system` | Kustomize can add via namespace transformer |
+| Resource name | `validating-webhook-configuration` | `metal-operator-validating-webhook-configuration` | Naming only |
 | Labels | kustomize-managed | Helm-managed (chart version, etc.) | Cosmetic |
 
-## Host Deployment
+## Host Deployment (rt-eu-de-1)
 
-**Functional equivalence:** The kustomize overlay produces a Deployment with:
-- ✓ Same container image and tag
-- ✓ Same args (leader-elect + operator-specific)
-- ✓ Same env vars (KUBERNETES_SERVICE_HOST, KUBERNETES_CLUSTER_DOMAIN, KUBECONFIG)
-- ✓ Same volume mounts (webhook-certs, remote-serviceaccount, remote-kubeconfig, macdb)
-- ✓ Same initContainer (webhook-injector with correct args, probes, resources)
-- ✓ Same strategy (Recreate)
-- ✓ Same securityContext (runAsUser: 65532, runAsGroup: 65532)
-- ✓ Same pod labels (Gardener network policies)
-- ✓ Same serviceAccountName
-- ✓ Same resource requests/limits (cpu: 300m/5000m, memory: 50Mi/5120Mi)
+**Matches live cluster exactly:**
+- ✓ Container image: `keppel.global.cloud.sap/ccloud-ghcr-io-mirror/ironcore-dev/metal-operator-controller-manager:sha-4854c23`
+- ✓ Args: 8 args matching live (`--enforce-first-boot`, `--enforce-power-off`, correct probe images)
+- ✓ Env vars: `ENABLE_WEBHOOKS=false`, `KUBERNETES_CLUSTER_DOMAIN`, `KUBERNETES_SERVICE_HOST` (no stale `KUBECONFIG` var)
+- ✓ Volume mounts: only `macdb` + `remote-kubeconfig` (no webhook-certs, no remote-serviceaccount)
+- ✓ Volumes: `macdb` (secret) + `remote-kubeconfig` (secret with token/ca.crt items)
+- ✓ initContainers: empty (webhook-injector removed)
+- ✓ Strategy: Recreate
+- ✓ Pod labels: all 6 Gardener networking labels
+- ✓ Resource limits: cpu 5, memory 5Gi / requests cpu 300m, memory 50Mi
+- ✓ serviceAccountName: default
 
-**Differences:**
+**Kustomize technique:** Overlays that need to fully replace arrays (volumes, volumeMounts, env)
+must use JSON patch (`op: replace` on the full array path) instead of strategic merge, which
+merges arrays by element `name` and causes duplicates.
 
-| Aspect | Kustomize | Helm (current) | Impact |
-|--------|-----------|----------------|--------|
-| Deployment name | `controller-manager` | `metal-operator-controller-manager` | Naming (from upstream vs Helm fullname) |
-| dnsRecordTemplate volume | Not included | Conditional (disabled by default) | Can add if needed |
+## Other Host Resources (rt-eu-de-1)
+
+| Resource | Status | Value |
+|----------|--------|-------|
+| Ingress host | ✓ | `metal-operator-remote.runtime.eu-de-1.cloud.sap` |
+| Service | ✓ | `metal-operator-metal-registry-service` port 10000 |
+| NetworkPolicy | ✓ | Correct pod selector and ingress rules |
+| Secrets | ✓ | macdb, metal-operator-remote-kubeconfig, metal-token-rotate-kubeconfig |
+| ConfigMap | ✓ | remote-kubeconfig with correct apiserver URL |
+| Webhook resources | ✓ removed | No webhook-service, no webhook-injector RBAC, no webhook-config |
+
+## Remote Custom Resources (rt-eu-de-1)
+
+| Resource | Status | Value |
+|----------|--------|-------|
+| Namespace | ✓ | `metal-servers` |
+| OIDC IAS admin | ✓ | `CC_IAS_CONTROLPLANE_PROD_ADMIN` (via prod Component) |
+| OIDC IAS viewer/editor | ✓ | `CC_IAS_CONTROLPLANE_PROD_DEVELOPER` (via prod Component) |
+| metal-token-rotate | ✓ | SA + ClusterRole + ClusterRoleBinding + Role + RoleBinding |
+| metal-api-viewer | ✓ | ClusterRole with correct rules |
+| webhook-injector remote RBAC | ✓ | ClusterRole + ClusterRoleBinding |
+| Base without component | ✓ | Shows `MUST_BE_SET_IN_OVERLAY` (prevents silent misconfiguration) |
+
+## Top-Level Overlay
+
+`kubectl apply -k overlays/rt-eu-de-1/` produces 167 resources in a single output:
+- 1 Deployment, 1 Service, 1 Ingress, 1 NetworkPolicy, 1 ConfigMap, 3 Secrets
+- 73 ManagedResources + 76 Secrets (remote upstream)
+- 13 remote custom resources (Namespace, RBAC)
 
 ## ManagedResource Format
 
@@ -93,3 +115,7 @@ structure as the Helm template (`templates/managedresource.yaml`):
 
 3. **Consider automated `make regen`** via GitHub Action on PRs that modify upstream refs
    (future enhancement, not a blocker).
+
+4. **JSON patch for array replacement** — document in README that overlays overriding
+   volumes/volumeMounts/env must use JSON patch (`op: replace`) not strategic merge to
+   avoid array merging issues.
