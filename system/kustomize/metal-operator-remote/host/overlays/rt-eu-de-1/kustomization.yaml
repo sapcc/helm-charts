@@ -72,7 +72,7 @@ patches:
           - name: metal-token-rotate
             user:
               token: ""
-  # Patch Deployment with environment-specific args and apiserver URL
+  # Override Deployment: disable webhooks, use direct SA mount instead of KUBECONFIG
   - target:
       kind: Deployment
       name: controller-manager
@@ -84,6 +84,13 @@ patches:
       spec:
         template:
           spec:
+            serviceAccountName: default
+            securityContext:
+              runAsNonRoot: true
+              seccompProfile:
+                type: RuntimeDefault
+              runAsUser: null
+              runAsGroup: null
             containers:
               - name: manager
                 args:
@@ -102,6 +109,87 @@ patches:
                     value: "cluster.local"
                   - name: KUBERNETES_SERVICE_HOST
                     value: "api.m-eu-de-1.cp.external.rt-eu-de-1.soil-garden.eu-de-1.cloud.sap"
+                volumeMounts:
+                  - name: macdb
+                    mountPath: /etc/macdb/
+                  - name: remote-kubeconfig
+                    mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+                    readOnly: true
+            volumes:
+              - name: macdb
+                secret:
+                  secretName: macdb
+              - name: remote-kubeconfig
+                secret:
+                  secretName: metal-operator-remote-kubeconfig
+                  items:
+                    - key: token
+                      path: token
+                    - key: bundle.crt
+                      path: ca.crt
+  # Remove webhook-injector initContainer (webhooks disabled on this cluster)
+  - target:
+      kind: Deployment
+      name: controller-manager
+    patch: |
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: controller-manager
+      spec:
+        template:
+          spec:
+            initContainers:
+              - $patch: delete
+                name: webhook-injector
+  # Remove webhook-service (not needed when webhooks disabled)
+  - target:
+      kind: Service
+      name: metal-operator-webhook-service
+    patch: |
+      $patch: delete
+      apiVersion: v1
+      kind: Service
+      metadata:
+        name: metal-operator-webhook-service
+  # Remove webhook-injector RBAC (not needed when webhooks disabled)
+  - target:
+      kind: ServiceAccount
+      name: metal-operator-webhook-injector
+    patch: |
+      $patch: delete
+      apiVersion: v1
+      kind: ServiceAccount
+      metadata:
+        name: metal-operator-webhook-injector
+  - target:
+      kind: Role
+      name: metal-operator-webhook-injector
+    patch: |
+      $patch: delete
+      apiVersion: rbac.authorization.k8s.io/v1
+      kind: Role
+      metadata:
+        name: metal-operator-webhook-injector
+  - target:
+      kind: RoleBinding
+      name: metal-operator-webhook-injector
+    patch: |
+      $patch: delete
+      apiVersion: rbac.authorization.k8s.io/v1
+      kind: RoleBinding
+      metadata:
+        name: metal-operator-webhook-injector
+  # Remove webhook-config ConfigMap (not needed when webhooks disabled)
+  - target:
+      kind: ConfigMap
+      name: webhook-config
+    patch: |
+      $patch: delete
+      apiVersion: v1
+      kind: ConfigMap
+      metadata:
+        name: webhook-config
 images:
   - name: ghcr.io/ironcore-dev/metal-operator-controller-manager
     newName: keppel.global.cloud.sap/ccloud-ghcr-io-mirror/ironcore-dev/metal-operator-controller-manager

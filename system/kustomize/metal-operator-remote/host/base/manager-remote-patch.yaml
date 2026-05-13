@@ -16,10 +16,14 @@ spec:
         networking.resources.gardener.cloud/to-all-istio-ingresses-istio-ingressgateway-tcp-9443: allowed
         networking.resources.gardener.cloud/to-kube-apiserver-tcp-443: allowed
     spec:
+      serviceAccountName: metal-operator-webhook-injector
+      hostNetwork: false
       securityContext:
         runAsNonRoot: true
         seccompProfile:
           type: RuntimeDefault
+        runAsUser: 65532
+        runAsGroup: 65532
       containers:
         - name: manager
           env:
@@ -27,6 +31,8 @@ spec:
               value: "APISERVER_URL_PLACEHOLDER"
             - name: KUBERNETES_CLUSTER_DOMAIN
               value: "cluster.local"
+            - name: KUBECONFIG
+              value: "/var/run/remote-kubeconfig/kubeconfig"
           resources:
             limits:
               cpu: "5"
@@ -35,16 +41,14 @@ spec:
               cpu: 300m
               memory: 50Mi
           volumeMounts:
-            - name: macdb
-              mountPath: /etc/macdb/
+            - name: remote-serviceaccount
+              mountPath: /var/run/secrets/kubernetes.io/remote-serviceaccount
+              readOnly: true
             - name: remote-kubeconfig
-              mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+              mountPath: /var/run/remote-kubeconfig
               readOnly: true
       volumes:
-        - name: macdb
-          secret:
-            secretName: macdb
-        - name: remote-kubeconfig
+        - name: remote-serviceaccount
           secret:
             secretName: metal-operator-remote-kubeconfig
             items:
@@ -52,3 +56,6 @@ spec:
                 path: token
               - key: bundle.crt
                 path: ca.crt
+        - name: remote-kubeconfig
+          configMap:
+            name: remote-kubeconfig

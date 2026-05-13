@@ -53,3 +53,20 @@ The webhook-injector image tag SHALL be overridable without modifying the Compon
 
 - **WHEN** no image override is specified in the consuming overlay
 - **THEN** the rendered output SHALL use the tag defined in the Component's `kustomization.yaml`
+
+---
+
+### Requirement: Webhook-injector sidecar removable per environment
+
+The webhook-injector sidecar is included in the base (for clusters with webhooks enabled) but SHALL be removable by per-environment overlays where webhooks are disabled.
+
+#### Scenario: Overlay removes sidecar when webhooks disabled
+
+- **WHEN** an environment has `ENABLE_WEBHOOKS=false`
+- **THEN** the overlay SHALL remove the webhook-injector initContainer via a `$patch: delete` on the initContainers array entry
+- **THEN** the rendered Deployment output SHALL have no initContainers
+
+#### Scenario: Base includes sidecar by default
+
+- **WHEN** `kustomize build host/base/` is executed without overlay modifications
+- **THEN** the Deployment SHALL include the webhook-injector initContainer (webhooks enabled is the default)

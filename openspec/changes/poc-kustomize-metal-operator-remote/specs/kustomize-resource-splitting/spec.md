@@ -42,10 +42,21 @@ Per-environment overlays in `host/overlays/<cluster-name>/` SHALL patch the base
 - **THEN** the rotate-kubeconfig Secret SHALL have the correct remote CA
 - **THEN** the Deployment image tags SHALL match the environment-specific versions
 
-#### Scenario: Overlay inherits all base resources
+#### Scenario: Overlay can remove base resources not needed for the environment
+
+- **WHEN** a feature is disabled for a specific cluster (e.g., webhooks disabled)
+- **THEN** the overlay SHALL be able to remove base resources via `$patch: delete` (e.g., webhook-service, webhook-injector RBAC, webhook-config ConfigMap)
+- **THEN** the overlay SHALL be able to remove the webhook-injector initContainer from the Deployment
+
+#### Scenario: Overlay can override Deployment volumes and mounts
+
+- **WHEN** a cluster uses a different volume mounting strategy (e.g., mounting remote-kubeconfig at `/var/run/secrets/kubernetes.io/serviceaccount` instead of a custom path with `KUBECONFIG` env var)
+- **THEN** the overlay SHALL be able to replace the Deployment's volumes and volumeMounts entirely
+
+#### Scenario: Overlay inherits all base resources unless explicitly removed
 
 - **WHEN** `kustomize build host/overlays/<cluster-name>/` is executed
-- **THEN** the output SHALL contain all resources from the base plus the overlay patches applied
+- **THEN** the output SHALL contain all resources from the base except those explicitly removed by the overlay via `$patch: delete`
 
 ---
 
