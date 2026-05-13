@@ -45,6 +45,20 @@ spec:
                 path: policy.json
         - name: log-router-secrets
           emptyDir: {}
+      initContainers:
+        - name: fix-permissions
+          image: keppel.eu-de-1.cloud.sap/ccloud/shared-app-images/alpine-busybox:3.23-20260415235512
+          command:
+            - sh
+            - -c
+            - |
+              chown -R 4200:4200 /data/wal
+              chmod 755 /data/wal
+          volumeMounts:
+            - name: log-router-wal
+              mountPath: /data/wal
+          securityContext:
+            runAsUser: 0
       containers:
         - name: log-router
           image: {{ include "log_router_image" . }}
