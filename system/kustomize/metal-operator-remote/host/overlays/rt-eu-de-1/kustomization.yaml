@@ -89,8 +89,6 @@ patches:
               runAsNonRoot: true
               seccompProfile:
                 type: RuntimeDefault
-              runAsUser: null
-              runAsGroup: null
             containers:
               - name: manager
                 args:
@@ -102,31 +100,52 @@ patches:
                   - --registry-url=https://metal-operator-remote.runtime.eu-de-1.cloud.sap
                   - --enforce-first-boot
                   - --enforce-power-off
-                env:
-                  - name: ENABLE_WEBHOOKS
-                    value: "false"
-                  - name: KUBERNETES_CLUSTER_DOMAIN
-                    value: "cluster.local"
-                  - name: KUBERNETES_SERVICE_HOST
-                    value: "api.m-eu-de-1.cp.external.rt-eu-de-1.soil-garden.eu-de-1.cloud.sap"
-                volumeMounts:
-                  - name: macdb
-                    mountPath: /etc/macdb/
-                  - name: remote-kubeconfig
-                    mountPath: /var/run/secrets/kubernetes.io/serviceaccount
-                    readOnly: true
-            volumes:
-              - name: macdb
-                secret:
-                  secretName: macdb
-              - name: remote-kubeconfig
-                secret:
-                  secretName: metal-operator-remote-kubeconfig
-                  items:
-                    - key: token
-                      path: token
-                    - key: bundle.crt
-                      path: ca.crt
+  # Replace env vars entirely (removes base KUBECONFIG which this cluster doesn't use)
+  - target:
+      kind: Deployment
+      name: controller-manager
+    patch: |
+      - op: replace
+        path: /spec/template/spec/containers/0/env
+        value:
+          - name: ENABLE_WEBHOOKS
+            value: "false"
+          - name: KUBERNETES_CLUSTER_DOMAIN
+            value: "cluster.local"
+          - name: KUBERNETES_SERVICE_HOST
+            value: "api.m-eu-de-1.cp.external.rt-eu-de-1.soil-garden.eu-de-1.cloud.sap"
+  # Replace volumeMounts entirely (removes base webhook-certs, remote-serviceaccount, remote-kubeconfig mounts)
+  - target:
+      kind: Deployment
+      name: controller-manager
+    patch: |
+      - op: replace
+        path: /spec/template/spec/containers/0/volumeMounts
+        value:
+          - name: macdb
+            mountPath: /etc/macdb/
+          - name: remote-kubeconfig
+            mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+            readOnly: true
+  # Replace volumes entirely (removes base webhook-certs, remote-serviceaccount, remote-kubeconfig configmap)
+  - target:
+      kind: Deployment
+      name: controller-manager
+    patch: |
+      - op: replace
+        path: /spec/template/spec/volumes
+        value:
+          - name: macdb
+            secret:
+              secretName: macdb
+          - name: remote-kubeconfig
+            secret:
+              secretName: metal-operator-remote-kubeconfig
+              items:
+                - key: token
+                  path: token
+                - key: bundle.crt
+                  path: ca.crt
   # Remove webhook-injector initContainer (webhooks disabled on this cluster)
   - target:
       kind: Deployment
