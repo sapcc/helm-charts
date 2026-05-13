@@ -152,14 +152,58 @@ images:
 
 ```
 Host (seed) cluster:
-  Flux Kustomization → kustomize build host/overlays/<cluster>/ → applies directly
+  kubectl apply -k overlays/<cluster>/  → applies everything in one command
+
+  Or via Flux:
+  Flux Kustomization → kustomize build overlays/<cluster>/ → applies to seed
 
 Remote (virtual cluster) API server:
-  Flux deploys remote/upstream/*/managedresources.yaml → GRM applies to remote
-  Flux Kustomization → kustomize build remote/custom/overlays/<cluster>/ → GRM applies to remote
+  ManagedResources in seed → GRM controller applies CRDs/RBAC/webhooks to remote API server
 ```
 
 The remote cluster is a workerless virtual cluster (API server only). The metal-operator controller runs in the seed and reconciles resources in the remote API server. Webhooks use URL-based clientConfig that routes admission requests back to the seed's webhook service.
+
+## Why `make regen` Is Needed (Kustomize Limitations)
+
+Two transformations cannot be expressed in pure kustomize and require scripting:
+
+### 1. ManagedResource wrapping (base64 encoding)
+
+Kustomize cannot take a rendered resource, base64-encode its YAML, and embed it into a
+Secret's `data.objects.yaml` field. This is a meta-transformation (turning resources into
+data payloads inside other resources). Kustomize has no concept of self-referencing — its
+output cannot feed back as input to another resource.
+
+`scripts/wrap-managedresources.sh` handles this.
+
+### 2. Webhook URL composition (string interpolation)
+
+The upstream webhook config uses service-based clientConfig:
+```yaml
+clientConfig:
+  service:
+    name: webhook-service
+    path: /validate-metal-ironcore-dev-v1alpha1-biossettings
+```
+
+We need to compose a URL: `https://metal-operator-webhook-service:443` + the path value.
+Kustomize's `replacements` can copy field values but cannot **concatenate strings** or
+compose new values from parts of existing values. JSON patches can set static values but
+cannot compute them dynamically from other fields. Since each webhook has a different path,
+you'd need one patch per webhook (tightly coupled, breaks on upstream changes).
+
+`yq` handles this generically for any number of webhooks.
+
+### Summary of kustomize gaps
+
+| Transformation | Why kustomize can't | Tool used |
+|---|---|---|
+| Resource → base64 data in Secret | No meta-transformation (resource as payload) | `wrap-managedresources.sh` |
+| Compose URL from prefix + field value | No string concatenation in replacements | `yq` |
+| Apply transform to N array items generically | No iteration with computed values | `yq` with selector |
+
+These are intentional design limitations — kustomize is declarative configuration patching,
+not a general-purpose templating engine.
 
 ## Troubleshooting
 
