@@ -37,7 +37,7 @@ complex-role:
   reserved: false
   hidden: false
   backend_roles:
-  - SCI_OPENSEARCH_UNSCOPED_USER
+  - CC_IAS_OPERATIONS_UI_KIBANA_SUPPORT
 
 compute:
   reserved: false
@@ -78,7 +78,7 @@ kibana_server:
 kibana_user:
   reserved: false
   backend_roles:
-  - SCI_OPENSEARCH_UNSCOPED_USER
+  - CC_IAS_OPERATIONS_UI_KIBANA_SUPPORT
 
 maillog:
   reserved: false
@@ -101,7 +101,7 @@ promrole:
   - "ronly2"
 {{- end }}
   backend_roles:
-  - SCI_OPENSEARCH_UNSCOPED_USER
+  - CC_IAS_OPERATIONS_UI_KIBANA_SUPPORT
 
 readall:
   reserved: false
@@ -119,4 +119,4 @@ security_analytics_full_access:
   users:
   - "securityanalytics"
   backend_roles:
-  - SCI_OPENSEARCH_UNSCOPED_USER
+  - CC_IAS_OPERATIONS_UI_KIBANA_SUPPORT
