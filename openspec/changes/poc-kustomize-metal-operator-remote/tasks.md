@@ -67,3 +67,12 @@
 ## 10. Documentation
 
 - [x] 10.1 Create `system/kustomize/metal-operator-remote/README.md` — operator guide covering: prerequisites, upgrading upstream version, regenerating remote resources, adding a new environment overlay, deploying, and troubleshooting
+
+## 11. Remote custom RBAC prod/qa Components
+
+- [ ] 11.1 Update `remote/custom/base/rbac.yaml` to use `MUST_BE_SET_IN_OVERLAY` placeholder for OIDC group names in ClusterRoleBinding subjects
+- [ ] 11.2 Create `remote/custom/components/prod/kustomization.yaml` (kind: Component) that patches group names to `CC_IAS_CONTROLPLANE_PROD_ADMIN` and `CC_IAS_CONTROLPLANE_PROD_DEVELOPER`
+- [ ] 11.3 Create `remote/custom/components/qa/kustomization.yaml` (kind: Component) that patches group names to `CC_IAS_CONTROLPLANE_QA_ADMIN` and `CC_IAS_CONTROLPLANE_QA_DEVELOPER`
+- [ ] 11.4 Update `remote/custom/overlays/rt-eu-de-1/kustomization.yaml` to include `components/prod`
+- [ ] 11.5 Verify `kustomize build remote/custom/overlays/rt-eu-de-1/` produces correct prod group names
+- [ ] 11.6 Verify that building without a component leaves the invalid placeholder in output

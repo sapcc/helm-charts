@@ -643,3 +643,90 @@ Use the operator guide from `openspec/changes/poc-kustomize-metal-operator-remot
 git add README.md
 git commit -m "docs: add operator guide for kustomize metal-operator-remote"
 ```
+
+---
+
+## Task 11: Remote Custom RBAC prod/qa Components
+
+**Files:**
+- Modify: `system/kustomize/metal-operator-remote/remote/custom/base/rbac.yaml`
+- Create: `system/kustomize/metal-operator-remote/remote/custom/components/prod/kustomization.yaml`
+- Create: `system/kustomize/metal-operator-remote/remote/custom/components/qa/kustomization.yaml`
+- Modify: `system/kustomize/metal-operator-remote/remote/custom/overlays/rt-eu-de-1/kustomization.yaml`
+
+- [ ] **Step 1: Update rbac.yaml to use invalid placeholders for OIDC group names**
+
+Replace all occurrences of `CC_IAS_CONTROLPLANE_PROD_ADMIN` and `CC_IAS_CONTROLPLANE_PROD_DEVELOPER` with `MUST_BE_SET_IN_OVERLAY` in `remote/custom/base/rbac.yaml`.
+
+- [ ] **Step 2: Create remote/custom/components/prod/kustomization.yaml**
+
+```yaml
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+patches:
+  - target:
+      kind: ClusterRoleBinding
+      name: cc:oidc-ias-admin
+    patch: |
+      - op: replace
+        path: /subjects/0/name
+        value: CC_IAS_CONTROLPLANE_PROD_ADMIN
+  - target:
+      kind: ClusterRoleBinding
+      name: cc:oidc-ias-viewer
+    patch: |
+      - op: replace
+        path: /subjects/0/name
+        value: CC_IAS_CONTROLPLANE_PROD_DEVELOPER
+  - target:
+      kind: ClusterRoleBinding
+      name: cc:oidc-ias-metal-viewer
+    patch: |
+      - op: replace
+        path: /subjects/0/name
+        value: CC_IAS_CONTROLPLANE_PROD_DEVELOPER
+  - target:
+      kind: ClusterRoleBinding
+      name: cc:oidc-ias-servermaintenance-editor
+    patch: |
+      - op: replace
+        path: /subjects/0/name
+        value: CC_IAS_CONTROLPLANE_PROD_DEVELOPER
+```
+
+- [ ] **Step 3: Create remote/custom/components/qa/kustomization.yaml**
+
+Same structure as prod but with `CC_IAS_CONTROLPLANE_QA_ADMIN` and `CC_IAS_CONTROLPLANE_QA_DEVELOPER`.
+
+- [ ] **Step 4: Update remote/custom/overlays/rt-eu-de-1/kustomization.yaml**
+
+Add `components: [../../components/prod]` to include the prod component.
+
+- [ ] **Step 5: Verify prod overlay produces correct group names**
+
+```bash
+kustomize build remote/custom/overlays/rt-eu-de-1/ | \
+  yq 'select(.kind == "ClusterRoleBinding" and .metadata.name == "cc:oidc-ias-admin") | .subjects[0].name'
+```
+
+Expected: `CC_IAS_CONTROLPLANE_PROD_ADMIN`
+
+- [ ] **Step 6: Verify base without component has placeholder**
+
+```bash
+kustomize build remote/custom/base/ | \
+  yq 'select(.kind == "ClusterRoleBinding" and .metadata.name == "cc:oidc-ias-admin") | .subjects[0].name'
+```
+
+Expected: `MUST_BE_SET_IN_OVERLAY`
+
+- [ ] **Step 7: Commit**
+
+```bash
+git add remote/custom/
+git commit -m "feat: add prod/qa Components for remote RBAC OIDC group names
+
+Base uses MUST_BE_SET_IN_OVERLAY placeholder for IAS group names.
+Overlays include components/prod or components/qa to patch correct values.
+Prevents silent misconfiguration on new cluster overlays."
+```
