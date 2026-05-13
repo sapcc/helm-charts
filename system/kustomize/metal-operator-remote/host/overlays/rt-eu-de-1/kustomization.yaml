@@ -14,7 +14,7 @@ patches:
       - op: replace
         path: /spec/rules/0/host
         value: metal-operator-remote.runtime.eu-de-1.cloud.sap
-  # Patch remote-kubeconfig with actual apiserver URL
+  # Patch remote-kubeconfig ConfigMap with actual apiserver URL
   - target:
       kind: ConfigMap
       name: remote-kubeconfig
@@ -30,7 +30,7 @@ patches:
           clusters:
           - cluster:
               certificate-authority: /var/run/secrets/kubernetes.io/remote-serviceaccount/ca.crt
-              server: https://kube-apiserver.metal-operator-system.svc.cluster.local
+              server: https://api.m-eu-de-1.cp.external.rt-eu-de-1.soil-garden.eu-de-1.cloud.sap
             name: remote
           contexts:
           - context:
@@ -42,23 +42,7 @@ patches:
           - name: sa
             user:
               tokenFile: /var/run/secrets/kubernetes.io/remote-serviceaccount/token
-  # Patch macdb with actual MAC prefix database
-  - target:
-      kind: Secret
-      name: macdb
-    patch: |
-      apiVersion: v1
-      kind: Secret
-      metadata:
-        name: macdb
-      stringData:
-        macdb.yaml: |
-          prefixes:
-            - prefix: "00:50:56"
-              vendor: "VMware"
-            - prefix: "00:25:90"
-              vendor: "SuperMicro"
-  # Patch rotate-kubeconfig with actual CA and namespace
+  # Patch rotate-kubeconfig with actual server URL
   - target:
       kind: Secret
       name: metal-token-rotate-kubeconfig
@@ -72,8 +56,8 @@ patches:
           apiVersion: v1
           clusters:
           - cluster:
-              certificate-authority-data: LS0tLS1CRUdJTi...PLACEHOLDER...
-              server: https://kube-apiserver.metal-operator-system.svc.cluster.local:443
+              certificate-authority-data: ""
+              server: https://kube-apiserver.shoot--cp--m-eu-de-1.svc.cluster.local:443
             name: remote-cluster
           contexts:
           - context:
@@ -103,22 +87,22 @@ patches:
             containers:
               - name: manager
                 args:
-                  - --leader-elect
                   - --mac-prefixes-file=/etc/macdb/macdb.yaml
-                  - --probe-image=keppel.global.cloud.sap/ccloud-ghcr-io-mirror/ironcore-dev/metalprobe:latest
-                  - --probe-os-image=ghcr.io/ironcore-dev/os-images/gardenlinux:1443.3
+                  - --probe-image=keppel.global.cloud.sap/ccloud-ghcr-io-mirror/ironcore-dev/metalprobe:v0.1.0
+                  - --probe-os-image=keppel.global.cloud.sap/ccloud-ghcr-io-mirror/gardenlinux/gardenlinux:1770.0
+                  - --manager-namespace=metal-servers
                   - --insecure=false
-                  - --registry-url=http://[2a10:afc0:e013:d002::]:30010
-                  - --manager-namespace=metal-operator-system
+                  - --registry-url=https://metal-operator-remote.runtime.eu-de-1.cloud.sap
+                  - --enforce-first-boot
+                  - --enforce-power-off
                 env:
-                  - name: KUBERNETES_SERVICE_HOST
-                    value: "kube-apiserver.metal-operator-system.svc.cluster.local"
+                  - name: ENABLE_WEBHOOKS
+                    value: "false"
                   - name: KUBERNETES_CLUSTER_DOMAIN
                     value: "cluster.local"
-                  - name: KUBECONFIG
-                    value: "/var/run/remote-kubeconfig/kubeconfig"
+                  - name: KUBERNETES_SERVICE_HOST
+                    value: "api.m-eu-de-1.cp.external.rt-eu-de-1.soil-garden.eu-de-1.cloud.sap"
 images:
   - name: ghcr.io/ironcore-dev/metal-operator-controller-manager
+    newName: keppel.global.cloud.sap/ccloud-ghcr-io-mirror/ironcore-dev/metal-operator-controller-manager
     newTag: sha-4854c23
-  - name: keppel.global.cloud.sap/ccloud-ghcr-io-mirror/SAP-cloud-infrastructure/webhook-injector
-    newTag: v0.3.1
