@@ -95,11 +95,11 @@ def generate_shibboleth_xml(tenants):
                       relayState="ss:mc"
                       checkAddress="false"
                       handlerSSL="false"
-                      cookieProps="https"
+                      cookieProps="; path=/; secure; HttpOnly; SameSite=None"
                       redirectLimit="exact">
                 <SSO>SAML2</SSO>
                 <Logout>Local</Logout>
-                <Handler type="MetadataGenerator" Location="/Metadata" signing="false"/>
+                <Handler type="MetadataGenerator" Location="/Metadata" signing="true"/>
                 <Handler type="Status" Location="/Status" acl="127.0.0.1 ::1"/>
                 <Handler type="Session" Location="/Session" showAttributeValues="false"/>
             </Sessions>
@@ -159,14 +159,15 @@ def generate_shibboleth_xml(tenants):
     <ApplicationDefaults entityID="{sp_entity_id}"
                          REMOTE_USER="unspecified-nameid email-nameid persistent-id transient-id eppn subject-id pairwise-id mail"
                          signing="{sign_authn}"
-                         encryption="{encryption}">
+                         encryption="{encryption}"
+                         requireSignedAssertions="true">
 
         <Sessions lifetime="{session_lifetime}"
                   timeout="3600"
                   relayState="ss:mc"
                   checkAddress="false"
                   handlerSSL="false"
-                  cookieProps="https"
+                  cookieProps="; path=/; secure; HttpOnly; SameSite=None"
                   redirectLimit="exact">
 
             <SSO>SAML2</SSO>
