@@ -14,7 +14,7 @@ Kustomize-based deployment of the metal-operator in a split host/remote cluster 
 .
 ├── host/
 │   ├── base/              # Shared resources for all environments
-│   └── overlays/          # Per-cluster values (one dir per environment)
+│   └── overlays/          # Per-cluster host-specific values
 │       └── rt-eu-de-1/
 ├── remote/
 │   ├── upstream/          # Generated from upstream ironcore-dev/metal-operator
@@ -25,6 +25,8 @@ Kustomize-based deployment of the metal-operator in a split host/remote cluster 
 │       └── overlays/
 ├── components/
 │   └── webhook-injector/  # Reusable sidecar Component
+├── overlays/              # TOP-LEVEL entry point per environment
+│   └── rt-eu-de-1/       # Single kustomization combining host + remote
 └── scripts/
     └── wrap-managedresources.sh  # ManagedResource wrapping helper
 ```
@@ -32,6 +34,23 @@ Kustomize-based deployment of the metal-operator in a split host/remote cluster 
 Note: The Makefile targets for regeneration live in `system/Makefile` (not a local Makefile).
 
 ## Common Tasks
+
+### Deploy to a cluster
+
+Deploy all resources (host + remote) in a single command:
+
+```bash
+kubectl apply -k overlays/rt-eu-de-1/
+```
+
+Or preview the rendered output first:
+
+```bash
+kustomize build overlays/rt-eu-de-1/
+```
+
+This renders all host resources (Deployment, Services, Ingress, etc.) and all remote
+ManagedResources (CRDs, RBAC, webhooks) in one output.
 
 ### Upgrade upstream metal-operator version
 

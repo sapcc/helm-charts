@@ -144,3 +144,27 @@ The kustomize overlays SHALL NOT introduce any blockers for future Flux integrat
 
 - **WHEN** Flux points at the pre-rendered `managedresources.yaml` files
 - **THEN** they SHALL be deployable as plain YAML without any kustomize processing
+
+---
+
+### Requirement: Top-level per-environment kustomization renders all resources
+
+A per-environment top-level `kustomization.yaml` SHALL exist that combines host resources, remote upstream ManagedResources, and remote custom ManagedResources into a single renderable output, enabling deployment via `kubectl apply -k`.
+
+#### Scenario: Single-command deployment via kubectl
+
+- **WHEN** `kubectl apply -k overlays/<cluster-name>/` is executed from the `system/kustomize/metal-operator-remote/` directory
+- **THEN** all resources SHALL be applied to the seed cluster in one operation (host resources directly, remote resources as ManagedResources that GRM applies to the virtual cluster)
+
+#### Scenario: Top-level overlay includes all resource categories
+
+- **WHEN** `kustomize build overlays/<cluster-name>/` is executed
+- **THEN** the output SHALL contain host resources (Deployment, Services, Ingress, NetworkPolicy, ConfigMaps, Secrets, RBAC)
+- **THEN** the output SHALL contain remote upstream ManagedResource+Secret pairs (CRDs, RBAC, webhooks)
+- **THEN** the output SHALL contain remote custom resources (Namespace, custom RBAC) wrapped as ManagedResources
+
+#### Scenario: Overlay inherits per-environment values
+
+- **WHEN** `kustomize build overlays/rt-eu-de-1/` is executed
+- **THEN** host resources SHALL have rt-eu-de-1 specific values (domain, apiserver URL, images, macdb)
+- **THEN** remote custom resources SHALL have rt-eu-de-1 specific values (IAS groups)

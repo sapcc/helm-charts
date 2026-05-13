@@ -1,0 +1,22 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: kube-system
+resources:
+  - https://github.com/ironcore-dev/metal-operator//config/crd?ref=v0.4.0
+  - https://github.com/ironcore-dev/metal-operator//config/rbac?ref=v0.4.0
+patches:
+  # Convert namespace-scoped Role → ClusterRole
+  # All remote resources must be cluster-scoped (virtual cluster has no namespace management)
+  - target:
+      kind: Role
+    patch: |
+      - op: replace
+        path: /kind
+        value: ClusterRole
+  # Convert namespace-scoped RoleBinding → ClusterRoleBinding
+  - target:
+      kind: RoleBinding
+    patch: |
+      - op: replace
+        path: /kind
+        value: ClusterRoleBinding

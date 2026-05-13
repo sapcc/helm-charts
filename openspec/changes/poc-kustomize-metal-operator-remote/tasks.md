@@ -51,6 +51,12 @@
 - [x] 8.1 Add `regen-metal-operator-remote`, `regen-metal-operator-remote-crds`, `regen-metal-operator-remote-webhooks` targets to `system/Makefile`
 - [x] 8.2 Verify `make regen-metal-operator-remote` regenerates all pre-rendered files correctly
 
+## 8b. Top-level per-environment overlay
+
+- [x] 8b.1 Create `overlays/rt-eu-de-1/kustomization.yaml` combining host overlay + remote upstream ManagedResources + remote custom overlay
+- [x] 8b.2 Verify `kustomize build overlays/rt-eu-de-1/` produces all resources (host + remote ManagedResources) in a single output
+- [x] 8b.3 Verify `kubectl apply -k overlays/rt-eu-de-1/ --dry-run=client` succeeds
+
 ## 9. Equivalence verification
 
 - [x] 9.1 Compare `kustomize build host/overlays/rt-eu-de-1/` output against `helm template metal-operator-remote` with equivalent values — document differences

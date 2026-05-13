@@ -88,7 +88,35 @@ system/kustomize/metal-operator-remote/
 │   └── webhook-injector/
 │       ├── kustomization.yaml                  # kind: Component
 │       └── sidecar.yaml                        # initContainer strategic merge patch
-└── Makefile                                     # regen remote resources only
+├── overlays/                                    # TOP-LEVEL per-env entry point (kubectl apply -k)
+│   └── <cluster-name>/
+│       └── kustomization.yaml                  # combines host + remote into single deployable output
+└── scripts/
+    └── wrap-managedresources.sh                 # ManagedResource wrapping helper
+```
+
+### Top-level overlay (deployment entry point)
+
+Each environment gets a top-level overlay at `overlays/<cluster-name>/kustomization.yaml`
+that combines all resources into a single `kubectl apply -k` target:
+
+```yaml
+# overlays/rt-eu-de-1/kustomization.yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  # Host resources (Deployment, Services, Ingress, etc.)
+  - ../../host/overlays/rt-eu-de-1
+  # Remote upstream ManagedResources (pre-rendered, static)
+  - ../../remote/upstream/crds-and-rbac/managedresources.yaml
+  - ../../remote/upstream/webhooks/managedresources.yaml
+  # Remote custom ManagedResources (parameterized per-env)
+  - ../../remote/custom/overlays/rt-eu-de-1
+```
+
+This enables:
+```bash
+kubectl apply -k overlays/rt-eu-de-1/    # deploys everything to seed in one command
 ```
 
 ### Two-tier model: Build time vs. Deploy time
@@ -99,10 +127,11 @@ system/kustomize/metal-operator-remote/
 - Output committed to git
 - Future possibility: a GitHub Action that automatically runs `make regen` when upstream refs are bumped in a PR, commits the regenerated files, and validates equivalence — eliminating manual build steps entirely
 
-**Deploy time** (Flux `Kustomization` per cluster):
-- Host resources: Flux points at `host/overlays/<cluster-name>/` → runs `kustomize build` → deploys to seed
-- Remote upstream resources: Flux points at `remote/upstream/` pre-rendered ManagedResource files → deploys to seed (GRM applies to remote API server). These are static/env-independent.
-- Remote custom resources: Flux points at `remote/custom/overlays/<cluster-name>/` → runs `kustomize build` → deploys to seed (GRM applies to remote API server). These are parameterized per-env.
+**Deploy time** (`kubectl apply -k` or Flux `Kustomization` per cluster):
+- Single entry point: `kubectl apply -k overlays/<cluster-name>/` deploys everything to the seed cluster
+- Alternatively, Flux `Kustomization` points at `overlays/<cluster-name>/` → renders all resources in one pass
+- Host resources are applied directly to seed
+- Remote ManagedResources are applied to seed, GRM applies them to the remote API server
 
 ### Resource Flow
 
