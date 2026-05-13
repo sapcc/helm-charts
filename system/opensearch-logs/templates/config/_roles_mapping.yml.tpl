@@ -119,4 +119,4 @@ security_analytics_full_access:
   users:
   - "securityanalytics"
   backend_roles:
-  - CC_IAS_OPERATIONS_UI_KIBANA_SUPPORT
+  - VAULT_QA_ROLE_CYBER-SECURITY_METADATA_READ
