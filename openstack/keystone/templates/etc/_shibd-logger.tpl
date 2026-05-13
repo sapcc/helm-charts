@@ -34,11 +34,12 @@ log4j.appender.shibd_log.maxBackupIndex=10
 log4j.appender.shibd_log.layout=org.apache.log4j.PatternLayout
 log4j.appender.shibd_log.layout.ConversionPattern=%d{%Y-%m-%d %H:%M:%S} %p %c %x: %m%n
 
-# [FIX L-01] maxFileSize increased from 1 MB to 10 MB.
-log4j.appender.warn_log=org.apache.log4j.RollingFileAppender
-log4j.appender.warn_log.fileName=/var/log/shibboleth/shibd_warn.log
-log4j.appender.warn_log.maxFileSize=10485760
-log4j.appender.warn_log.maxBackupIndex=10
+# [FIX L-01] WARN+ messages forwarded to container stdout via /proc/1/fd/1
+#   (PID 1 = Apache after exec). This enables the central log pipeline to
+#   pick up SAML assertion validation failures without a sidecar container.
+#   Satisfies BSI SF.FAS.6 (failed assertion checks logged as security events).
+log4j.appender.warn_log=org.apache.log4j.FileAppender
+log4j.appender.warn_log.fileName=/proc/1/fd/1
 log4j.appender.warn_log.layout=org.apache.log4j.PatternLayout
 log4j.appender.warn_log.layout.ConversionPattern=%d{%Y-%m-%d %H:%M:%S} %p %c %x: %m%n
 log4j.appender.warn_log.threshold=WARN

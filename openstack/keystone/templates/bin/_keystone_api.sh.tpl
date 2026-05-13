@@ -51,7 +51,7 @@ function start () {
   # If shibd is available and we are running out-of-process, start it
   if command -v shibd &> /dev/null; then
     echo "Starting shibd daemon for SAML federation..."
-    shibd -t 2>/dev/null && shibd -f || echo "WARN: shibd not started, running mod_shib in-process mode"
+    shibd -t && shibd -f || echo "WARN: shibd config validation failed or daemon not started, check logs above"
   fi
   {{- end }}
 
