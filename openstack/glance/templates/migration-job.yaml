@@ -11,6 +11,13 @@ metadata:
     release: "{{ .Release.Name }}"
     heritage: "{{ .Release.Service }}"
     component: glance
+    # hooks are not annotated as belonging to the Helm release, so we cannot rely on owner-info injection
+    ccloud/support-group: containers
+    ccloud/service: glance
+  annotations:
+    "helm.sh/hook": "post-install,pre-upgrade"
+    "helm.sh/hook-weight": "-1"
+    "helm.sh/hook-delete-policy": "before-hook-creation"
 spec:
   template:
     metadata:
