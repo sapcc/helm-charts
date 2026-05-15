@@ -41,6 +41,8 @@ Per-environment overlays in `host/overlays/<cluster-name>/` SHALL patch the base
 - **THEN** the macdb Secret SHALL have the correct macdb content for that environment
 - **THEN** the rotate-kubeconfig Secret SHALL have the correct remote CA
 - **THEN** the Deployment image tags SHALL match the environment-specific versions
+- **THEN** the webhook-config ConfigMap name SHALL be overridable per environment (e.g., `metal-operator-remote-webhook-config`)
+- **THEN** the webhook-injector sidecar args SHALL be overridable per environment (e.g., `--leader-election-id`)
 
 #### Scenario: Overlay can remove base resources not needed for the environment
 

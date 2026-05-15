@@ -4,21 +4,26 @@
 
 The webhook-injector sidecar SHALL be injected into the controller Deployment as a native sidecar (initContainer with `restartPolicy: Always`) using a kustomize Component.
 
-#### Scenario: Sidecar present in host overlay output
+#### Scenario: Sidecar present in host base output
 
-- **WHEN** `kustomize build host/` is executed (with the webhook-injector component included)
+- **WHEN** `kustomize build host/base/` is executed (with the webhook-injector component included)
 - **THEN** the Deployment output SHALL contain an initContainer named `webhook-injector`
 - **THEN** the initContainer SHALL have `restartPolicy: Always` (native sidecar)
 
 #### Scenario: Sidecar image is correct
 
-- **WHEN** `kustomize build host/` is executed
+- **WHEN** `kustomize build host/base/` is executed
 - **THEN** the webhook-injector initContainer image SHALL be `keppel.global.cloud.sap/ccloud-ghcr-io-mirror/SAP-cloud-infrastructure/webhook-injector`
 
 #### Scenario: Sidecar args match current configuration
 
-- **WHEN** `kustomize build host/` is executed
+- **WHEN** `kustomize build host/base/` is executed
 - **THEN** the webhook-injector initContainer SHALL have args `--webhook-config-name=webhook-config` and `--target-kubeconfig=/var/run/remote-kubeconfig/kubeconfig`
+
+#### Scenario: Sidecar args overridable per environment
+
+- **WHEN** an overlay patches the webhook-injector initContainer args
+- **THEN** the rendered output SHALL use the overridden args (e.g., `--webhook-config-name=metal-operator-remote-webhook-config`, `--leader-election-id=...`)
 
 #### Scenario: Sidecar volume mounts correct
 
