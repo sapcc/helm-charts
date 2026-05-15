@@ -142,22 +142,76 @@ if [ "${DATA_STREAM_ENABLED}" = true ]; then
    done
 
    ####
-   ### Datastream ism policy verification
+   ### Datastream ism policy verification and update
    ####
-   # we want to ensure that correct ism policy is applied to every datastream, if we cannot find any managed index that belong to datastream then we do the assigment
-   echo "Datastream ism policy verification"
+   # Ensure correct ism policy is applied to every datastream backing index
+   # This section handles:
+   # 1. Indices with no policy attached (new datastreams)
+   # 2. Indices with an old version of the policy (policy updates)
+   echo "Datastream ism policy verification and update"
    for e in ${DATA_STREAMS}; do
-      # we capture ism explain response because sometimes it's too big to process it in memory
+      # Capture ism explain response because sometimes it's too big to process in memory
       export ISM_EXPLAIN_RESPONSE=${TMPPATH}/ism-explain-ds-${e}.json
       curl -s --netrc-file "${NETRC_FILE}" -XGET "${CLUSTER_HOST}/_plugins/_ism/explain/.ds-${e}-datastream*" -o ${ISM_EXPLAIN_RESPONSE}
       export TOTAL_MANAGED_INDICES=$(jq '.total_managed_indices' ${ISM_EXPLAIN_RESPONSE} )
       export WRITE_INDEX=$(jq -r 'to_entries[] | select(.key != "total_managed_indices") | select(.value.rolled_over != true) | .key' ${ISM_EXPLAIN_RESPONSE})
+
+      # Get the current policy schema version from the cluster
+      export CLUSTER_POLICY_SCHEMA_VERSION=$(curl -s --netrc-file "${NETRC_FILE}" -XGET "${CLUSTER_HOST}/_plugins/_ism/policies/ds-${e}-ism" | jq -r '.policy.schema_version')
+
       if [ "${TOTAL_MANAGED_INDICES}" -eq 0 ]; then
-         echo "There is no indices managed by ds-${e}-ism policy"
+         echo "There are no indices managed by ds-${e}-ism policy"
          echo "Assigning ds-${e}-ism policy to ${WRITE_INDEX} index"
          curl --header 'content-type: application/JSON' --netrc-file "${NETRC_FILE}" -XPOST "${CLUSTER_HOST}/_plugins/_ism/add/${WRITE_INDEX}" -d "{ \"policy_id\": \"ds-${e}-ism\" }"
       else
-         echo "Datastream is already managed by ds-${e}-ism policy"
+         echo "Datastream has ${TOTAL_MANAGED_INDICES} indices managed by ds-${e}-ism policy"
+
+         # Check for indices WITHOUT any policy attached
+         export INDICES_WITHOUT_POLICY=$(jq -r \
+           'to_entries[] | select(.key != "total_managed_indices") |
+            select(.value.policy_id == null or .value.policy_id == "") |
+            .key' ${ISM_EXPLAIN_RESPONSE})
+
+         if [ -n "${INDICES_WITHOUT_POLICY}" ]; then
+            echo "Found indices without policy, assigning ds-${e}-ism:"
+            echo "${INDICES_WITHOUT_POLICY}"
+
+            for index in ${INDICES_WITHOUT_POLICY}; do
+               echo "Assigning policy to index: ${index}"
+               curl --header 'content-type: application/JSON' --netrc-file "${NETRC_FILE}" \
+                 -XPOST "${CLUSTER_HOST}/_plugins/_ism/add/${index}" \
+                 -d "{ \"policy_id\": \"ds-${e}-ism\" }"
+            done
+         fi
+
+         # Check if any indices have outdated policy version
+         export INDICES_NEEDING_UPDATE=$(jq -r \
+           'to_entries[] | select(.key != "total_managed_indices") |
+            select(.value.policy_id == "ds-'${e}'-ism") |
+            .key' ${ISM_EXPLAIN_RESPONSE})
+
+         if [ -n "${INDICES_NEEDING_UPDATE}" ]; then
+            echo "Found managed indices needed to be updated with ism policy:"
+            echo "${INDICES_NEEDING_UPDATE}"
+
+            # Use change_policy API to update indices to the new policy version
+            for index in ${INDICES_NEEDING_UPDATE}; do
+               echo "Updating policy for index: ${index}"
+
+               # Get current state of the index
+               export CURRENT_STATE=$(jq -r --arg idx "${index}" \
+                 'to_entries[] | select(.key == $idx) | .value.state.name // "initial"' \
+                 ${ISM_EXPLAIN_RESPONSE})
+
+               echo "  Current state: ${CURRENT_STATE}"
+
+               curl --header 'content-type: application/JSON' --netrc-file "${NETRC_FILE}" \
+                 -XPOST "${CLUSTER_HOST}/_plugins/_ism/change_policy/${index}" \
+                 -d "{ \"policy_id\": \"ds-${e}-ism\", \"state\": \"${CURRENT_STATE}\" }"
+            done
+         else
+            echo "No index managed by ds-${e}-ism was found"
+         fi
       fi
    done
 fi

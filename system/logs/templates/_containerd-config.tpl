@@ -51,6 +51,6 @@ filelog/containerd:
 {{- define "containerd.pipeline" }}
 logs/containerd:
   receivers: [filelog/containerd]
-  processors: [k8sattributes,attributes/cluster,transform/ingress,transform/protocol,transform/perses]
+  processors: [k8s_attributes,attributes/cluster,transform/ingress,transform/protocol,transform/perses]
   exporters: [routing]
 {{- end }}

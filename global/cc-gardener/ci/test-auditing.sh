@@ -1,13 +1,16 @@
 #!/bin/bash
 set -e
 
-# Test script for extension-auditing.yaml template
+# Test script for extension-auditing.testvalues template
 # Usage: ./ci/test-auditing.sh
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CHART_DIR="$(dirname "$SCRIPT_DIR")"
 
-echo "Testing extension-auditing.yaml template..."
+# Get auditing version from values.testvalues to avoid hardcoding
+AUDITING_VERSION=$(yq '.extensions.auditing.version' "$CHART_DIR/values.yaml")
+
+echo "Testing extension-auditing.testvalues template..."
 echo "==========================================="
 echo ""
 
@@ -25,7 +28,7 @@ echo "Test 2: Full configuration with all features"
 OUTPUT2=$(helm template test "$CHART_DIR" \
   -f "$CHART_DIR/values.yaml" \
   -f "$CHART_DIR/ci/test-values.yaml" \
-  -f "$CHART_DIR/ci/test-auditing-values.yaml" \
+  -f "$CHART_DIR/ci/test-auditing-values.testvalues" \
   --show-only templates/extension-auditing.yaml)
 echo "[PASS] Renders with full configuration"
 echo ""
@@ -35,7 +38,7 @@ echo "Test 2b: Configuration without admission"
 OUTPUT2B=$(helm template test "$CHART_DIR" \
   -f "$CHART_DIR/values.yaml" \
   -f "$CHART_DIR/ci/test-values.yaml" \
-  -f "$CHART_DIR/ci/test-auditing-no-admission-values.yaml" \
+  -f "$CHART_DIR/ci/test-auditing-no-admission-values.testvalues" \
   --show-only templates/extension-auditing.yaml)
 echo "[PASS] Renders without admission configuration"
 echo ""
@@ -58,10 +61,10 @@ echo ""
 # Test 5: Verify image fallback logic
 echo "Test 5: Verify image fallback to root version"
 TAG=$(echo "$OUTPUT1" | yq '.spec.deployment.extension.helm.ociRepository.tag')
-if [ "$TAG" = "v0.3.0" ]; then
-  echo "[PASS] Image tag falls back to root version"
+if [ "$TAG" = "$AUDITING_VERSION" ]; then
+  echo "[PASS] Image tag falls back to root version ($AUDITING_VERSION)"
 else
-  echo "[FAIL] Image tag fallback not working (got: $TAG)"
+  echo "[FAIL] Image tag fallback not working (expected: $AUDITING_VERSION, got: $TAG)"
   exit 1
 fi
 echo ""

@@ -5,6 +5,7 @@
      so this script can still work with the previous setting.
 */}}
 {{- $proxysql := lookup "v1" "Secret" .Release.Namespace (print .Release.Name "-proxysql-etc") -}}
+{{- $serviceaccount := lookup "v1" "ServiceAccount" .Release.Namespace .Release.Name -}}
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -29,13 +30,16 @@ spec:
         {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
     spec:
       restartPolicy: OnFailure
+      {{- if $serviceaccount }}
+      serviceAccountName: {{ .Release.Name }}
+      {{- end }}
 {{- if $proxysql }}
       {{- include "utils.proxysql.job_pod_settings" . | indent 6 }}
 {{- end }}
       priorityClassName: {{ .Values.pod.priority_class.low }}
       initContainers:
       {{- tuple . (dict "service" (include "manila.db_service" .)) | include "utils.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
-      {{- if .Values.proxysql.native_sidecar }}
+      {{- if and $proxysql .Values.proxysql.native_sidecar }}
       {{- include "utils.proxysql.container" . | indent 6 }}
       {{- end }}
       containers:

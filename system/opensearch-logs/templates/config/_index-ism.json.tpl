@@ -73,7 +73,7 @@
                     "compute-*"
                 ],
                 "priority": 1
-            }
+            },
             {
                 "index_patterns": [
                     "storage-*"

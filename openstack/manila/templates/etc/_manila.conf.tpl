@@ -92,6 +92,22 @@ project_domain_name = {{.Values.global.keystone_service_domain | default "Defaul
 endpoint_type = internalURL
 insecure = True
 
+{{- if .Values.designate.enabled }}
+[designate]
+enabled = true
+zone_id = {{ .Values.designate.zone_id }}
+ttl = {{ .Values.designate.ttl | default 300 }}
+endpoint_type = {{ .Values.designate.endpoint_type | default "publicURL" }}
+region_name = {{ .Values.designate.region_name | default .Values.global.region }}
+auth_type = v3password
+auth_url = {{.Values.global.keystone_api_endpoint_protocol_internal | default "http"}}://{{include "keystone_api_endpoint_host_internal" .}}:{{ .Values.global.keystone_api_port_internal | default 5000}}/v3
+user_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}
+project_name = {{.Values.global.keystone_service_project | default "service"}}
+project_domain_name = {{.Values.global.keystone_service_domain | default "Default"}}
+insecure = True
+{{- end }}
+
+
 [oslo_policy]
 policy_file = /etc/manila/policy.yaml
 

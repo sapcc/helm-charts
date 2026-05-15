@@ -42,6 +42,9 @@ spec:
         {{- end }}
         {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
     spec:
+      {{- if .Values.rbac.enabled }}
+      serviceAccountName: {{ .Release.Name }}
+      {{- end }}
       terminationGracePeriodSeconds: {{ .Values.defaults.default.graceful_shutdown_timeout | add 5 }}
       {{- tuple . (dict "name" "nova-api") | include "utils.topology.constraints" | indent 6 }}
       {{- if .Values.pod.debug.api }}
@@ -171,8 +174,10 @@ spec:
               items:
               - key: api-db.conf
                 path: nova.conf.d/api-db.conf
-              - key: cell1.conf
-                path: nova.conf.d/cell1.conf
+              - key: api-rpc.conf
+                path: nova.conf.d/api-rpc.conf
+              - key: cell0.conf
+                path: nova.conf.d/cell0.conf
               - key: keystoneauth-secrets.conf
                 path: nova.conf.d/keystoneauth-secrets.conf
               {{- if .Values.audit.enabled }}

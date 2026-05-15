@@ -43,6 +43,9 @@ spec:
         secrets-hash: {{ include (print .Template.BasePath "/secrets.yaml") . | sha256sum }}
         {{- include "utils.linkerd.pod_and_service_annotation" . | indent 8 }}
     spec:
+      {{- if .Values.rbac.enabled }}
+      serviceAccountName: {{ .Release.Name }}
+      {{- end }}
       affinity:
         podAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:

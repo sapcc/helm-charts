@@ -24,6 +24,7 @@ k annotate crd gardens.operator.gardener.cloud extensions.operator.gardener.clou
 - change `version`, `appVersion` and `version` of operator in `Chart.yaml`
 - change `.operator.image.tag` in `values.yaml`
 - `helm dep up`
+- run `./ci/bump-image-vector.sh` to update `.operator.imageVectorOverwrite` to the recent version
 
 # Upgrade Runtime Cluster Seeds
 - exluding any cluster where Gardener Operator is running

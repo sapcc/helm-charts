@@ -16,6 +16,23 @@ worker:
       node-role.kubernetes.io/worker: ""
 
 additionalConfig:
+  authenticationConfig: |
+    - path: /etc/kubernetes/authentication.yaml
+      filesystem: root
+      mode: 0644
+      contents:
+        inline: |
+          apiVersion: apiserver.config.k8s.io/v1beta1
+          kind: AuthenticationConfiguration
+          jwt:
+            - issuer:
+                url: https://example.com
+                audiences:
+                - test-audience
+              claimMappings:
+                username:
+                  claim: 'name'
+                  prefix: ''
   secrets: |
     - path: /etc/kubernetes/enc/enc.yaml
       filesystem: root

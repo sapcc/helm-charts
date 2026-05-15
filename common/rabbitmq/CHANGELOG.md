@@ -2,6 +2,37 @@
 
 This file is used to list changes made in each version of the common chart rabbitmq.
 
+## 0.25.0 - 2026/05/12
+
+- Allow not adding `rabbitmq.serviceName` to the certificate's dnsNames
+  - If enabled, `externalNames` is a required setting
+  - Makes most sense together with also setting `certificate.commonName`
+
+## 0.24.1 - 2026/04/30
+- Enable transient_nonexcl_queues option, as it's in use by some services
+- Chart version bumped
+
+## 0.24.0 - 2026/04/28
+
+- Use `clusterDNSSearchDomain` to generate the certificate default common name and SAN
+  - Used to be the hardcoded `<fullname>.<namespace>.svc.kubernetes.<region>.<tld>`
+  - Now it's `<fullname>.<namespace>.svc.<clusterDNSSearchDomain>`
+- Chart version bumped
+
+## 0.23.0 - 2026/04/27
+
+- RabbitMQ [4.3.0 Release notes](https://github.com/rabbitmq/rabbitmq-server/releases/tag/v4.3.0)
+- Chart version bumped
+
+## 0.22.2 - 2026/04/08
+
+- Fix erlang cookie file permissions in StatefulSet init container
+  - Remove short-circuit check in `volume-permissions` init container that skipped `chown` when uid was already 999
+  - Always run `chown -R 999:999 /var/lib/rabbitmq` and `chmod 400 .erlang.cookie` to ensure correct permissions
+  - RabbitMQ 3.11+ requires `.erlang.cookie` to be exactly `0400`; Kubernetes `fsGroup` can set it to `0440`, causing crashloops
+- Add `fsGroupChangePolicy: "OnRootMismatch"` to StatefulSet pod securityContext (already present in Deployment template)
+- Chart version bumped
+
 ## 0.22.1 - 2026/03/17
 
 - RabbitMQ [4.2.5 Release notes](https://github.com/rabbitmq/rabbitmq-server/releases/tag/v4.2.5)

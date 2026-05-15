@@ -1,4 +1,6 @@
 {{- if not (has .Release.Namespace (list "garden" "garden-compute" "garden-storage")) -}}
+{{- $clusterValues := (get .Values "cluster" | default dict) -}}
+{{- $projectName := (get $clusterValues "gardenerProject" | default (include "cc-shoots-workerless.supportGroup" .)) -}}
 ---
 apiVersion: v1
 kind: Namespace
@@ -6,12 +8,12 @@ metadata:
   name: {{ .Release.Namespace }}
   labels:
     gardener.cloud/role: project
-    project.gardener.cloud/name: {{ printf "garden-%s" (include "cc-shoots-workerless.supportGroup" .) }}
+    project.gardener.cloud/name: {{ $projectName }}
 ---
 apiVersion: core.gardener.cloud/v1beta1
 kind: Project
 metadata:
-  name: {{ printf "garden-%s" (include "cc-shoots-workerless.supportGroup" .) }}
+  name: {{ $projectName }}
 spec:
   namespace: {{ .Release.Namespace }}
 {{- end }}

@@ -31,10 +31,10 @@ spec:
     endpoints:
     - interface: admin
       region: {{ .Values.global.region }}
-      url: http://ironic-api.{{ .Release.Namespace }}.svc.kubernetes.{{ .Values.global.region }}.{{ .Values.global.tld }}:6385
+      url: http://{{ include "ironic_api_endpoint_host_admin" . }}:6385
     - interface: internal
       region: {{ .Values.global.region }}
-      url: http://ironic-api.{{ .Release.Namespace }}.svc.kubernetes.{{ .Values.global.region }}.{{ .Values.global.tld }}:6385
+      url: http://{{ include "ironic_api_endpoint_host_internal" . }}:6385
     - interface: public
       region: {{ .Values.global.region }}
       url: https://{{ include "ironic_api_endpoint_host_public" .}}
@@ -44,10 +44,10 @@ spec:
     endpoints:
     - interface: admin
       region: {{ .Values.global.region }}
-      url: http://ironic-inspector.{{ .Release.Namespace }}.svc.kubernetes.{{ .Values.global.region }}.{{ .Values.global.tld }}:{{ .Values.inspector.port_internal }}
+      url: http://{{ include "ironic_inspector_endpoint_host_admin" . }}:{{ .Values.inspector.port_internal }}
     - interface: internal
       region: {{ .Values.global.region }}
-      url: http://ironic-inspector.{{ .Release.Namespace }}.svc.kubernetes.{{ .Values.global.region }}.{{ .Values.global.tld }}:{{ .Values.inspector.port_internal }}
+      url: http://{{ include "ironic_inspector_endpoint_host_internal" . }}:{{ .Values.inspector.port_internal }}
     - interface: public
       region: {{ .Values.global.region }}
       url: https://{{ include "ironic_inspector_endpoint_host_public" .}}
@@ -614,6 +614,18 @@ spec:
     extra_specs:
       "catalog:description": GPU Baremetal 2 Socket AMD Epyc 6x Nvidia RTX6000
       "resources:CUSTOM_BG_S2_C96_M1536_V1": "1"
+      {{- tuple . "baremetal" | include "ironic.helpers.extra_specs" | indent 6 }}
+
+  # GPU Nodes Lenovo ThinkSystem SR680a V3 with Nvidia HGX B200
+  - name: "bg_s2_c48_m2048_v1"
+    id: "2047"
+    vcpus: 96
+    ram: 2097152
+    disk: 960
+    is_public: true
+    extra_specs:
+      "catalog:description": GPU Baremetal 2 Socket Intel Xeon Platinum 8568Y Nvidia HGX B200
+      "resources:CUSTOM_BG_S2_C48_M2048_V1": "1"
       {{- tuple . "baremetal" | include "ironic.helpers.extra_specs" | indent 6 }}
 
   # Default are special

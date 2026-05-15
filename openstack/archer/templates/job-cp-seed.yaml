@@ -1,0 +1,51 @@
+# templates/job-cp-seed.yaml
+{{- if .Values.agents.ni }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "archer.fullname" . }}-cp-seed-{{ .Values.image.tag | required ".Values.image.tag is required" }}
+  labels:
+    {{- include "archer.labels" . | nindent 4 }}
+spec:
+  backoffLimit: 32
+  template:
+    metadata:
+      annotations:
+        {{- if and $.Values.global.linkerd_enabled $.Values.global.linkerd_requested }}
+        linkerd.io/inject: enabled
+        {{- end }}
+      labels:
+        {{- include "archer.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: cp-seed
+    spec:
+      restartPolicy: OnFailure
+      initContainers:
+        - name: wait-for-server
+          image: "{{ $.Values.global.registry }}/kubernetes-entrypoint:{{ $.Values.image.kubernetes_entrypoint_version }}"
+          env:
+            - name: NAMESPACE
+              value: {{ $.Release.Namespace }}
+            - name: DEPENDENCY_SERVICE
+              value: {{ include "archer.fullname" $ }}
+            - name: COMMAND
+              value: "true"
+      containers:
+        - name: cp-seed
+          image: "{{ $.Values.global.registry }}/archer:{{ $.Values.image.tag }}"
+          command: ["/bin/sh", "/scripts/manage-services.sh"]
+          env:
+            - name: OS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: archer-secret
+                  key: service_user_password
+          volumeMounts:
+            - name: scripts
+              mountPath: /scripts
+              readOnly: true
+      volumes:
+        - name: scripts
+          configMap:
+            name: {{ include "archer.fullname" . }}-cp-seed
+            defaultMode: 0755
+{{- end }}

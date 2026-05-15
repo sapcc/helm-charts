@@ -150,8 +150,6 @@ function start_tempest_tests {
   export STATUS=$(jq -r '.verifications."'${VERIFICIATION_ID}'".status' /tmp/report.json)
   export FAILED=$(jq -r '.verifications."'${VERIFICIATION_ID}'".failures' /tmp/report.json)
   export SUCCESS=$(jq -r '.verifications."'${VERIFICIATION_ID}'".success' /tmp/report.json)
-  export SLACK_URL={{ .Values.tempest_slack_webhook_url.tempest_tests | quote }}
-  export CC_SLACK_URL={{ (index .Values.tempest_slack_webhook_url (index (split "-" .Chart.Name)._0)) }}
   export COLOR="#36a64f"
 
   if [[ "$FAILED" != "0" ]]; then

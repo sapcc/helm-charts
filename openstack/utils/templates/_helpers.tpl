@@ -78,6 +78,7 @@ trace_sqlalchemy = {{ .Values.global.osprofiler.trace_sqlalchemy }}
 {{- end }}
 
 {{- define "utils.sentry_config" -}}
+{{- if .Values.sentry.enabled }}
 - name: SENTRY_DSN
   valueFrom:
     secretKeyRef:
@@ -86,5 +87,6 @@ trace_sqlalchemy = {{ .Values.global.osprofiler.trace_sqlalchemy }}
 {{- if .Values.sentry.release }}
 - name: SENTRY_RELEASE
   value: {{ .Values.sentry.release }}
+{{- end -}}
 {{- end -}}
 {{- end -}}

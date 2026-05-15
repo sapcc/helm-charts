@@ -31,6 +31,9 @@ ALTER USER {{ include "mariadb.resolve_secret_squote" $username }} IDENTIFIED BY
     {{ $k | upper }} {{ $v }}
 {{- end }}
 {{- end }};
+        {{- if $values.replace_grants }}
+REVOKE ALL PRIVILEGES, GRANT OPTION FROM {{ include "mariadb.resolve_secret_squote" $username }}@'%';
+        {{- end }}
         {{- range $values.grants }}
 GRANT {{ . }} TO {{ include "mariadb.resolve_secret_squote" $username }};
         {{- end }}

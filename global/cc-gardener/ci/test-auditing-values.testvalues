@@ -1,0 +1,94 @@
+# Test values for auditing extension with full configuration
+# Tests: admission.values, extension.values, runtimeClusterValues, all image/ociRepository references
+
+global:
+  registry: example.com
+  region: qa-de-1
+  cluster: test-cluster
+
+garden:
+  name: garden
+  backup:
+    provider: aws
+    accessKeyID: "test-access"
+    secretAccessKey: "test-secret"
+    region: "eu-central-1"
+    bucket: "test-bucket"
+  runtimeCluster:
+    zones: ["qa-de-1a"]
+    networking:
+      pods: ["10.42.0.0/16"]
+      services: ["10.43.0.0/16"]
+  virtualCluster:
+    version: "1.29.6"
+
+secretsInjector:
+  enabled: false
+
+extensions:
+  auditing:
+    enabled: true
+    version: v0.2.0
+    url: "https://audit.example.com"
+
+    # Test admission.values with image and custom values
+    admission:
+      values:
+        image:
+          repository: custom-admission-repo/auditing-admission
+          tag: v0.3.0-custom
+        replicaCount: 2
+        resources:
+          limits:
+            memory: "512Mi"
+        customAdmissionValue: test123
+        imageVectorOverwrite:
+          images:
+            - name: webhook
+              repository: custom-repo/webhook
+              tag: v1.0.0
+
+      runtimeCluster:
+        helm:
+          ociRepository:
+            repository: keppel.example.com/auditing-admission-runtime
+            tag: v0.2.1-runtime
+
+      virtualCluster:
+        helm:
+          ociRepository:
+            repository: keppel.example.com/auditing-admission-virtual
+            # tag omitted - should fallback to version v0.2.0
+
+    # Test extension.values with image
+    values:
+      image:
+        repository: custom-extension-repo/auditing-controller
+        tag: v0.4.0
+      controllerConfig:
+        retries: 3
+        timeout: 30s
+      imageVectorOverwrite:
+        images:
+          - name: sidecar
+            repository: custom-repo/sidecar
+            tag: v2.0.0
+
+    # Test runtimeClusterValues with cascading fallback
+    runtimeClusterValues:
+      image:
+        # repository explicitly null - should fallback to values.image.repository
+        repository: null
+        tag: v0.4.1-runtime
+      replicaCount: 3
+      imageVectorOverwrite:
+        images:
+          - name: runtime-helper
+            repository: custom-repo/runtime-helper
+            tag: v1.5.0
+
+    # Test extension helm.ociRepository
+    helm:
+      ociRepository:
+        repository: keppel.example.com/auditing-extension
+        # tag omitted - should fallback to version v0.2.0

@@ -4,19 +4,23 @@ apiVersion: networking.k8s.io/v1
 metadata:
   name: aurora
   annotations:
+    # ssl cert
     kubernetes.io/tls-acme: "true"
+    # create dns CNAME record for dashboard
+    disco: "true"
 spec:
   tls:
     - secretName: aurora-ingress-tls
-      hosts: [{{ .Values.ingress.host }}]
+      # prettier-ignore
+      hosts: ["dashboard-aurora.{{.Values.global.region}}.{{ .Values.global.tld }}"]
   rules:
-  - host: "{{ .Values.ingress.host }}"
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: aurora
-            port:
-              number: 3000
+    - host: "dashboard-aurora.{{.Values.global.region}}.{{ .Values.global.tld }}"
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: aurora
+                port:
+                  number: 3000

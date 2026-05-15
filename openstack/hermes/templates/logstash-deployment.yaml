@@ -31,8 +31,6 @@ spec:
         secret.reloader.stakater.com/reload: "logstash-secret"
         deployment.reloader.stakater.com/pause-period: "60s"
     spec:
-      nodeSelector:
-        zone: farm
       volumes:
         - name: hermes-etc
           projected:
@@ -86,7 +84,7 @@ spec:
                   name: logstash-secret
                   key: "RABBITMQ_{{ upper $key }}_PASSWORD"
             {{- end }}
-
+            {{- if .Values.logstash.audit }}
             # Metis / DB
             - name: METIS_USER
               valueFrom:
@@ -99,7 +97,8 @@ spec:
                 secretKeyRef:
                   name: logstash-secret
                   key: METIS_PASSWORD
-
+            {{- end }}
+            {{- if .Values.logstash.swift }}
             # Swift / S3
             - name: SWIFT_ACCESS_KEY
               valueFrom:
@@ -112,7 +111,7 @@ spec:
                 secretKeyRef:
                   name: logstash-secret
                   key: SWIFT_SECRET_KEY
-
+            {{- end }}
             # OpenSearch
             - name: OPENSEARCH_USER
               valueFrom:

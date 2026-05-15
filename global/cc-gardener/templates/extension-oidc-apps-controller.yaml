@@ -1,0 +1,136 @@
+{{ if .Values.extensions.oidcAppsController.enabled -}}
+{{- with .Values.extensions.oidcAppsController -}}
+apiVersion: operator.gardener.cloud/v1alpha1
+kind: Extension
+metadata:
+  name: oidc-apps-controller
+spec:
+  deployment:
+    extension:
+      helm:
+        ociRepository:
+{{ include "cc-gardener.extension.ociRepository" (dict "ociRepository" .helm.ociRepository "fallbackTag" .version) | indent 10 }}
+      policy: OnDemand
+      values:
+{{ include "cc-gardener.extension.mergeValues" (dict "values" .values "extensionContext" . "fallbackTag" .version) | indent 8 }}
+        cacheSelectorStr: observability.gardener.cloud/app in (plutono, prometheus-shoot,
+          alertmanager-seed, alertmanager-shoot)
+        clients:
+        - clientId: {{ $.Values.garden.dashboard.oidc.clientIDPublic }}
+          name: oidc-apps-controller-users
+        global:
+          oauth2Proxy:
+            insecureOidcSkipIssuerVerification: false
+            insecureOidcSkipNonce: false
+            oidcIssuerUrl: {{ $.Values.garden.dashboard.oidc.issuerURL }}
+            scope: openid email groups
+            sslInsecureSkipVerify: false
+        priorityClass:
+          name: gardener-system-500
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+        targets:
+        - ingress:
+            create: true
+            ingressClassName: nginx-ingress-gardener
+            labels:
+              endpoint.shoot.gardener.cloud/advertise: "true"
+              endpoint.shoot.gardener.cloud/application: credativ--plutono
+# TODO: Clarify wildcard TLS secret deployment
+#            tlsSecretRef:
+#              name: ingress-wildcard-cert
+          labelSelector:
+            matchLabels:
+              component: plutono
+          name: shoot--plutono
+          namespaceSelector:
+            matchLabels:
+              gardener.cloud/role: shoot
+          targetPort: 3000
+        - ingress:
+            annotations:
+              nginx.ingress.kubernetes.io/server-snippet: |-
+                location /-/reload {
+                  return 403;
+                }
+                location /-/quit {
+                  return 403;
+                }
+                location /api/v1/targets {
+                  return 403;
+                }
+            create: true
+            ingressClassName: nginx-ingress-gardener
+            labels:
+              endpoint.shoot.gardener.cloud/advertise: "true"
+              endpoint.shoot.gardener.cloud/application: prometheus--prometheus
+#            tlsSecretRef:
+#              name: ingress-wildcard-cert
+          labelSelector:
+            matchLabels:
+              app: prometheus
+          name: shoot--prometheus
+          namespaceSelector:
+            matchLabels:
+              gardener.cloud/role: shoot
+          targetPort: 9090
+        - ingress:
+            create: true
+            ingressClassName: nginx-ingress-gardener
+            labels:
+              endpoint.shoot.gardener.cloud/advertise: "true"
+              endpoint.shoot.gardener.cloud/application: prometheus--alertmanager
+#            tlsSecretRef:
+#              name: ingress-wildcard-cert
+          labelSelector:
+            matchLabels:
+              component: alertmanager
+          name: shoot--alertmanager
+          namespaceSelector:
+            matchLabels:
+              gardener.cloud/role: shoot
+          targetPort: 9093
+        - ingress:
+            create: true
+            ingressClassName: nginx-ingress-gardener
+#            tlsSecretRef:
+#              name: ingress-wildcard-cert
+#              namespace: garden
+          labelSelector:
+            matchLabels:
+              component: plutono
+          name: garden--plutono
+          namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: garden
+          targetPort: 3000
+        - ingress:
+            create: true
+            ingressClassName: nginx-ingress-gardener
+#            tlsSecretRef:
+#              name: ingress-wildcard-cert
+#              namespace: garden
+          labelSelector:
+            matchLabels:
+              component: alertmanager
+              role: monitoring
+          name: garden--alertmanager
+          namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: garden
+          targetPort: 9093
+        webhook:
+          objectSelector:
+            matchExpressions:
+            - key: observability.gardener.cloud/app
+              operator: In
+              values:
+              - plutono
+              - prometheus-shoot
+              - alertmanager-seed
+              - alertmanager-shoot
+{{- end }}
+{{- end }}

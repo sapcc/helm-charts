@@ -1,10 +1,11 @@
 {{- $serviceDependencies := printf "%s,%s" (include "nova.helpers.db_service" (tuple . "api")) (include "nova.helpers.cell_services" (tuple . "cell1")) }}
+{{- $cellName := include "nova.helpers.cell_name" (tuple . "cell1") }}
 {{- $conductorArgs := dict
   "name" "nova-conductor"
   "replicas" .Values.pod.replicas.conductor
   "config_file" .Values.conductor.config_file
   "dependencies" (dict "service" $serviceDependencies)
   "config_map_key" "nova-conductor.conf"
-  "secret_key" "cell1.conf"
+  "secret_key" (printf "%s.conf" $cellName)
 }}
 {{ include "nova.conductor_deployment" (tuple . $conductorArgs) }}

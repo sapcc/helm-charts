@@ -13,3 +13,29 @@ groups:
     annotations:
       description: 'Archer agent for {{ $labels.cloud_sap_host }} has failed sync loops > 5m.'
       summary: 'Archer agent for {{ $labels.cloud_sap_host }} has failed sync loops > 5m.'
+
+  - alert: archer-agent-stale
+    expr: archer_agents_heartbeat_age_seconds{enabled="true"} > 300
+    for: 5m
+    labels:
+      context: availability
+      service: archer
+      severity: warning
+      tier: os
+      support_group: containers
+    annotations:
+      description: 'Archer agent {{ $labels.host }} has not sent a heartbeat for more than 5 minutes.'
+      summary: 'Archer agent {{ $labels.host }} is stale.'
+
+  - alert: archer-health-scrape-failures
+    expr: sum by (cloud_sap_host)(rate(archer_job_processed{name="HealthScrapeLoop",outcome="fail"}[5m])) > 0
+    for: 5m
+    labels:
+      context: availability
+      service: archer
+      severity: warning
+      tier: os
+      support_group: containers
+    annotations:
+      description: 'Archer agent for {{ $labels.cloud_sap_host }} has failed health scrape loops > 5m.'
+      summary: 'Archer agent for {{ $labels.cloud_sap_host }} has health scrape failures.'
