@@ -125,7 +125,7 @@
 - name: OS_USER_DOMAIN_NAME
   value: "Default"
 - name: OS_PROJECT_NAME
-  value: "cloud_admin"
+  value: "service"
 - name: OS_PROJECT_DOMAIN_NAME
-  value: "ccadmin"
+  value: "Default"
 {{- end -}}
