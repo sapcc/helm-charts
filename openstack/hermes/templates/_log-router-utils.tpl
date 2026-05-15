@@ -123,9 +123,9 @@
       name: log-router-secret
       key: OS_PASSWORD
 - name: OS_USER_DOMAIN_NAME
-  value: "Default"
+  value: "monsoon3"
 - name: OS_PROJECT_NAME
-  value: "service"
+  value: "cc-demo"
 - name: OS_PROJECT_DOMAIN_NAME
-  value: "Default"
+  value: "monsoon3"
 {{- end -}}
