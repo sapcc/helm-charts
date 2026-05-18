@@ -1,5 +1,5 @@
 groups:
-- name: octavia.alerts
+- name: openstack-octavia.alerts
   rules:
   - alert: OpenstackOctaviaAgentNotSchedulable
     expr: octavia_agent_schedulable == 0
@@ -16,6 +16,7 @@ groups:
     annotations:
       description: 'The active Octavia Agent `{{ $labels.agent }}` is not scheduable'
       summary: Openstack Octavia Metric to check agent availability
+
   - alert: OpenstackOctaviaMonitorAgentHeartbeat
     expr: octavia_monitor_agents_heartbeat_seconds  > 120
     for: 10m
@@ -31,6 +32,7 @@ groups:
     annotations:
       description: Agent Heartbeat is above 120secs in {{ $labels.octavia_host }}
       summary: Openstack Octavia Metric to monitor Agents Heartbeat
+
   - alert: OpenstackOctaviaWorkerConnectionError
     expr: rate(octavia_as3_failover_total{job="pods"}[5m]) > 0
     for: 5m
@@ -45,6 +47,7 @@ groups:
     annotations:
       description: 'Forced failover for AS3 target {{ $labels.app_kubernetes_io_name }} due to connection error'
       summary: Openstack Octavia Metric to monitor connection errors and AS3 targets
+
   - alert: OpenstackOctaviaFailoverEvent
     expr: rate(octavia_status_failover_total[5m]) > 0
     for: 5m
@@ -59,6 +62,7 @@ groups:
     annotations:
       description: 'Failover detected for agent {{ $labels.app_kubernetes_io_name }}, AS3 target will be changed to active device.'
       summary: Openstack Octavia Metric to monitor F5 Worker Agent failover events
+
   - alert: OpenstackOctaviaLoadbalancerErrored
     expr: sum(rate(octavia_loadbalancers_count_gauge{loadbalancer_status="ERROR"}[5m])) > 0
     for: 10m
@@ -73,6 +77,7 @@ groups:
     annotations:
       description: Loadbalancers in {{ $labels.loadbalancer_host }} gone to ERROR state
       summary: Openstack Octavia Metric to monitor erroneous loadbalancers
+
   - alert: OctaviaLoadBalancerStuckInPendingKubeServices
     expr: octavia_seconds_since_last_nonpending_status{loadbalancer_name=~"kube_service_e2e.*|kube_service_shoot.*"} > 30 * 60
     labels:
@@ -89,6 +94,7 @@ groups:
     annotations:
       description: 'The Load Balancer `{{ $labels.loadbalancer_name }} ({{ $labels.loadbalancer_id }})` of agent `{{ $labels.loadbalancer_host }}` stuck in {{ $labels.loadbalancer_status }} state (<https://dashboard.{{ $externalLabels.region }}.cloud.sap/ccadmin/cloud_admin/cloudops#/universal-search/?searchTerm={{ $labels.loadbalancer_id }}&type=loadbalancer|Dashboard>)'
       summary: Octavia Load-Balancer stuck in PENDING_*_KubeServices state
+
   - alert: OctaviaLoadBalancerStuckInPendingcc3test
     expr: octavia_seconds_since_last_nonpending_status{loadbalancer_name=~"cc3test.*"} > 30 * 60
     labels:
@@ -105,6 +111,7 @@ groups:
     annotations:
       description: 'The Load Balancer `{{ $labels.loadbalancer_name }} ({{ $labels.loadbalancer_id }})` of agent `{{ $labels.loadbalancer_host }}` stuck in {{ $labels.loadbalancer_status }} state (<https://dashboard.{{ $externalLabels.region }}.cloud.sap/ccadmin/cloud_admin/cloudops#/universal-search/?searchTerm={{ $labels.loadbalancer_id }}&type=loadbalancer|Dashboard>)'
       summary: Octavia Load-Balancer stuck in PENDING_*_c3test state
+
   - alert: OctaviaLoadBalancerStuckInPending
     expr: octavia_seconds_since_last_nonpending_status{loadbalancer_name!~"kube_service_e2e.*|kube_service_shoot.*|cc3test.*"} > 30 * 60 
     labels:
@@ -121,6 +128,7 @@ groups:
     annotations:
       description: 'The Load Balancer `{{ $labels.loadbalancer_name }} ({{ $labels.loadbalancer_id }})` of agent `{{ $labels.loadbalancer_host }}` stuck in {{ $labels.loadbalancer_status }} state (<https://dashboard.{{ $externalLabels.region }}.cloud.sap/ccadmin/cloud_admin/cloudops#/universal-search/?searchTerm={{ $labels.loadbalancer_id }}&type=loadbalancer|Dashboard>)'
       summary: Octavia Load-Balancer stuck in PENDING_* state
+
   - alert: OctaviaApiFailing
     expr: max(openstack_watcher_api_requests_duration_seconds{status=~"5.*",service="loadbalancer"})
     labels:
@@ -136,33 +144,3 @@ groups:
     annotations:
       description: 'There was at least one HTTP {{ $labels.status }} error in Octavia API pod {{ $labels.kubernetes_pod_name }} in the last 10 minutes for target type URI {{ $labels.target_type_uri }}'
       summary: HTTP 5XX in Octavia API
-  - alert: OpenstackOctaviaPodOOMKilled
-    expr: sum(rate(klog_pod_oomkill{pod_name=~"octavia-.+"}[30m])) by (pod_name) > 0
-    for: 5m
-    labels:
-      tier: os
-      service: octavia
-      dashboard: kubernetes-container-resources
-      severity: info
-      context: memory
-      meta: "{{ $labels.pod_name }}"
-      no_alert_on_absence: "true" # the underlying metric is only generated after the first oomkill
-      support_group: network-api
-    annotations:
-      summary: Pod was oomkilled
-      description: The pod {{ $labels.pod_name }} was oomkilled recently
-  - alert: OpenstackOctaviaPodOOMExceedingLimits
-    # NOTE: `container_memory_saturation_ratio` ranges from 0 to 1, so 0.7 = 70% and 1.0 = 100%
-    expr: container_memory_saturation_ratio{pod_name=~"octavia-.+",container_name=~"octavia-.+"} > 0.7 AND predict_linear(container_memory_saturation_ratio{pod_name=~"octavia-.+",container_name=~"octavia-.+"}[1h], 7*3600) > 1.0
-    for: 30m
-    labels:
-      support_group: network-api
-      tier: os
-      service: octavia
-      severity: info
-      context: memory
-      dashboard: kubernetes-container-resources
-      meta: "{{ $labels.pod_name }}"
-    annotations:
-      summary: Exceeding memory limits in 8h
-      description: The pod {{ $labels.pod_name }} will exceed its memory limit in 8h.
