@@ -7,16 +7,10 @@
 {{- $vendorExcluded := and $.Values.bmcSettings.filters.vendors.excluded (has $vendor $.Values.bmcSettings.filters.vendors.excluded) }}
 
 {{- if and $vendorIncluded (not $vendorExcluded) }}
-{{- $processedModels := dict }}
 {{- range $entry := $vendorConfig.models }}
-{{- if and $entry.bmc $entry.bmc.settingsFileName }}
+{{- if and $entry.clusterTypes $entry.bmc $entry.bmc.settingsFileName }}
 {{- $model := $entry.model }}
 {{- $version := $entry.bmc.version }}
-{{- $modelKey := printf "%s-%s" $model $version }}
-
-{{/* Skip if we've already processed this model-version combination */}}
-{{- if not (hasKey $processedModels $modelKey) }}
-{{- $_ := set $processedModels $modelKey true }}
 
 {{/* Model filtering */}}
 {{- $modelIncluded := or (not $.Values.bmcSettings.filters.models.included) (has $model $.Values.bmcSettings.filters.models.included) }}
@@ -27,19 +21,28 @@
 {{- $versionExcluded := and $.Values.bmcSettings.filters.versions.excluded (has $version $.Values.bmcSettings.filters.versions.excluded) }}
 
 {{- if and $modelIncluded (not $modelExcluded) $versionIncluded (not $versionExcluded) }}
+{{- range $clusterType := $entry.clusterTypes }}
+
+{{/* ClusterType filtering */}}
+{{- $clusterTypeIncluded := or (not $.Values.bmcSettings.filters.clusterTypes.included) (has $clusterType $.Values.bmcSettings.filters.clusterTypes.included) }}
+{{- $clusterTypeExcluded := and $.Values.bmcSettings.filters.clusterTypes.excluded (has $clusterType $.Values.bmcSettings.filters.clusterTypes.excluded) }}
+
+{{- if and $clusterTypeIncluded (not $clusterTypeExcluded) }}
 apiVersion: metal.ironcore.dev/v1alpha1
 kind: BMCSettingsSet
 metadata:
-  name: {{ lower $vendor }}-{{ lower $model }}
+  name: {{ lower $vendor }}-{{ lower $model }}-{{ lower $clusterType }}
 spec:
   bmcSelector:
     matchLabels:
       kubernetes.metal.cloud.sap/type: {{ $model }}
+      kubernetes.metal.cloud.sap/cluster-type: {{ $clusterType }}
   bmcSettingsTemplate:
     serverMaintenancePolicy: OwnerApproval
     version: {{ $version | quote }}
 {{ tpl ($.Files.Get (printf "bmc_settings/%s" $entry.bmc.settingsFileName)) $ | trim | indent 4 }}
 ---
+{{- end }}
 {{- end }}
 {{- end }}
 {{- end }}
