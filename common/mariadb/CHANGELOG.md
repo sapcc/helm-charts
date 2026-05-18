@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.36.0 - 2026/05/11
+* default binary log format changed from MIXED to ROW
+* chart version bumped
+
 ## v0.35.1 - 2026/05/06
 * fixed pvc storage_class templating
 * chart version bumped
