@@ -3,7 +3,12 @@
 # make sure to update iptables-init script to keep commands aligned
 
 nflog_group=( {{ .Values.iptables.nflogGroup }} )
-INTERFACE=$(/sbin/ip route | grep -v cbr | awk '/default/ { print $5 }')
+INTERFACE=$(/sbin/ip route | grep -v cbr | awk '/default/ { print $5; exit }')
+
+if [ -z "${INTERFACE}" ]; then
+  echo "No default route found, nothing to stop" >&2
+  exit 0
+fi
 
 echo "Outgoing inteface is ${INTERFACE}"
 
