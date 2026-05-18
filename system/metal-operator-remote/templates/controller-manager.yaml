@@ -65,6 +65,10 @@ spec:
         {{- if .Values.controllerManager.dnsRecordTemplate.enabled }}
         - mountPath: /etc/metal-operator/dns
           name: dns-record-template
+        {{- end }}
+        {{- if .Values.ignition.override }}
+        - name: ignition-template
+          mountPath: /etc/metal-operator
           readOnly: true
         {{- end }}
         {{- if and .Values.webhook.enable .Values.certmanager.enable }}
@@ -97,6 +101,11 @@ spec:
       - name: dns-record-template
         configMap:
           name: dns-record-template
+      {{- end }}
+      {{- if .Values.ignition.override }}
+      - name: ignition-template
+        configMap:
+          name: {{ include "chart.name" . }}-ignition-template
       {{- end }}
       {{- if and .Values.webhook.enable .Values.certmanager.enable }}
       - name: webhook-cert
