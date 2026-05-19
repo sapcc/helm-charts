@@ -1,15 +1,26 @@
 {{- if .Values.enabled }}
+{{- if .Values.global.apods }}
+{{- $root := . }}
+{{- range $azLong, $apods := .Values.global.apods }}
+{{- range $apods }}
+{{- $apod := . }}
+{{- $cfg := index $root.Values.apodConfig $apod | default dict }}
+{{- $iface := $cfg.interface | default $root.Values.interface }}
+{{- $bridge := $cfg.bridge | default $root.Values.bridge }}
+---
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
-  name: bridge-attach
+  name: bridge-attach-{{ $apod }}
   namespace: kube-system
   labels:
     app.kubernetes.io/name: bridge-attach
+    apod: {{ $apod }}
 spec:
   selector:
     matchLabels:
       app.kubernetes.io/name: bridge-attach
+      apod: {{ $apod }}
   updateStrategy:
     rollingUpdate:
       maxUnavailable: '10%'
@@ -18,14 +29,18 @@ spec:
     metadata:
       labels:
         app.kubernetes.io/name: bridge-attach
+        apod: {{ $apod }}
     spec:
       hostNetwork: true
       hostPID: true
       priorityClassName: system-node-critical
       terminationGracePeriodSeconds: 5
+      nodeSelector:
+        topology.kubernetes.io/zone: {{ $azLong }}
+        {{ $root.Values.apodLabel }}: {{ $apod }}
       containers:
         - name: bridge-attach
-          image: "{{ required ".Values.images.bridgeAttach.image is missing" .Values.images.bridgeAttach.image }}:{{ required ".Values.images.bridgeAttach.tag is missing" .Values.images.bridgeAttach.tag }}"
+          image: "{{ required ".Values.images.bridgeAttach.image is missing" $root.Values.images.bridgeAttach.image }}:{{ required ".Values.images.bridgeAttach.tag is missing" $root.Values.images.bridgeAttach.tag }}"
           imagePullPolicy: IfNotPresent
           command:
             - /bin/bash
@@ -36,9 +51,9 @@ spec:
               sleep infinity
           env:
             - name: IFACE
-              value: {{ required ".Values.interface is missing" .Values.interface | quote }}
+              value: {{ $iface | quote }}
             - name: BRIDGE
-              value: {{ required ".Values.bridge is missing" .Values.bridge | quote }}
+              value: {{ $bridge | quote }}
           securityContext:
             privileged: true
             capabilities:
@@ -46,7 +61,7 @@ spec:
                 - NET_ADMIN
                 - SYS_ADMIN
           resources:
-{{ toYaml .Values.resources | indent 12 }}
+{{ toYaml $root.Values.resources | indent 12 }}
           volumeMounts:
             - name: script
               mountPath: /scripts
@@ -55,16 +70,11 @@ spec:
           configMap:
             name: bridge-attach-script
             defaultMode: 0755
-      {{- with .Values.nodeSelector }}
-      nodeSelector:
-      {{- toYaml . | nindent 8 }}
-      {{- end }}
-      {{- with .Values.affinity }}
-      affinity:
-      {{- toYaml . | nindent 8 }}
-      {{- end }}
-      {{- with .Values.tolerations }}
+      {{- with $root.Values.tolerations }}
       tolerations:
       {{- toYaml . | nindent 8 }}
       {{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
 {{- end }}
