@@ -89,3 +89,50 @@ rabbitmq_notifications:
 
   metrics:
     enabled: false
+
+logRouter:
+  enabled: true
+  image_tag: "v0.1.0"
+  replicas: 1
+
+  rabbitmq:
+    port: 5672
+    queue: "dataplane.audit"
+    exchange: ""
+    routing_key: "#"
+    prefetch: "10"
+    user: test
+    password: test
+
+  s3:
+    endpoint: "https://ceph.qa.example.com"
+    region: "qa"
+    bucket: "audit-qa"
+    prefix: "dataplane/"
+    access_key: test
+    secret_key: test
+
+  wal:
+    storage: 1Gi
+
+  resources:
+    requests:
+      memory: "64Mi"
+      cpu: "10m"
+    limits:
+      memory: "128Mi"
+      cpu: "100m"
+
+log-router-postgresql:
+  postgresVersion: 18
+  databases:
+    log_router: {}
+  users:
+    log_router: {}
+  config:
+    max_connections: 16
+  persistence:
+    enabled: false
+    size: 1Gi
+  alerts:
+    support_group: observability
