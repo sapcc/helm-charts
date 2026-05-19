@@ -272,6 +272,7 @@ promrole:
     - "alerts-sem-datastream"
     - "alerts-datastream"
     - "maillog-*"
+    - "remote_.ds-logs-datastream*"
     allowed_actions:
     - "indices:monitor/stats"
     - "indices:admin/mappings/get"
