@@ -1,5 +1,5 @@
 {{- if .Values.enabled }}
-{{- if .Values.global.apods }}
+{{- if and .Values.global .Values.global.apods }}
 {{- $root := . }}
 {{- range $azLong, $apods := .Values.global.apods }}
 {{- range $apods }}
@@ -55,11 +55,9 @@ spec:
             - name: BRIDGE
               value: {{ $bridge | quote }}
           securityContext:
-            privileged: true
             capabilities:
               add:
                 - NET_ADMIN
-                - SYS_ADMIN
           resources:
 {{ toYaml $root.Values.resources | indent 12 }}
           volumeMounts:
