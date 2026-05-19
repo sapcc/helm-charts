@@ -79,6 +79,64 @@ auth:
 retention:
   ds: "365d"
 
+# OpenSearch security-plugin audit logging.
+#
+# Compliance scope: PCI-DSS 4.0 Req. 10.2, BSI IT-Grundschutz APP.4.6 / OPS.1.2.5
+# / ORP.4.A23, BSI C5 (KRITIS B3S Cloud Computing). The category set kept ON
+# below is the intersection of those baselines. Anything not required by a
+# baseline is OFF to keep volume and retention cost down.
+#
+# Operational model: only the hermes service and named admins may bypass the
+# API. Service accounts are added to ignore_users to drop legitimate
+# high-volume traffic; everything else (including admin CLI access via
+# securityadmin.sh, dashboards probes, manual queries) is recorded.
+#
+# Default state is disabled. Regions opt in via their region values file.
+audit:
+  enabled: false
+  enable_rest: false
+  enable_transport: false
+
+  # Categories the security plugin will NOT audit. The compliance-required set
+  # (FAILED_LOGIN, MISSING_PRIVILEGES, GRANTED_PRIVILEGES, AUTHENTICATED,
+  # BAD_HEADERS, SSL_EXCEPTION) is deliberately absent from this list.
+  # INDEX_EVENT and OPENDISTRO_SECURITY_INDEX_ATTEMPT are noisy and not
+  # required by any baseline.
+  disabled_rest_categories:
+    - INDEX_EVENT
+    - OPENDISTRO_SECURITY_INDEX_ATTEMPT
+  disabled_transport_categories:
+    - INDEX_EVENT
+    - OPENDISTRO_SECURITY_INDEX_ATTEMPT
+
+  # Service accounts that legitimately bypass the Hermes API. Anything
+  # outside this list will be audited, including admin actions.
+  ignore_users:
+    - kibanaserver
+    - hermes
+  ignore_requests: []
+
+  resolve_bulk_requests: false
+  log_request_body: true
+  resolve_indices: true
+  # Required by PCI-DSS to keep bearer tokens out of the audit log.
+  exclude_sensitive_headers: true
+
+  compliance:
+    enabled: true
+    # BSI ORP.4.A23: log security configuration changes.
+    internal_config: true
+    external_config: false
+    read_metadata_only: true
+    read_watched_fields: {}
+    read_ignore_users:
+      - kibanaserver
+    write_metadata_only: true
+    write_log_diffs: false
+    write_watched_indices: []
+    write_ignore_users:
+      - kibanaserver
+
 owner-info:
   support-group: observability
   service: hermes
@@ -139,6 +197,14 @@ opensearch_hermes:
     enabled: true
     config:
       securityConfigSecret: "security-config"
+  # Route OpenSearch security-plugin audit logs to a distinct index family.
+  # The default ("audit-YYYY.MM.dd") collides with the Hermes "audit-*" role
+  # grant in roles.yml, which would let cloud-audit consumers read OpenSearch
+  # infrastructure-audit. The "opensearch-security-audit-*" prefix is unique
+  # to the security plugin and is not granted to any non-admin role.
+  config:
+    opensearch.yml: |
+      plugins.security.audit.config.index: "opensearch-security-audit-%{+YYYY.MM.dd}"
   extraEnvs:
     - name: DISABLE_INSTALL_DEMO_CONFIG
       value: "true"
@@ -181,6 +247,11 @@ opensearch_hermes_master:
     enabled: true
     config:
       securityConfigSecret: "security-config"
+  # Master nodes also run the security plugin and need the same audit-index
+  # override to keep behavior consistent across the cluster.
+  config:
+    opensearch.yml: |
+      plugins.security.audit.config.index: "opensearch-security-audit-%{+YYYY.MM.dd}"
   extraEnvs:
     - name: DISABLE_INSTALL_DEMO_CONFIG
       value: "true"
