@@ -169,6 +169,27 @@ build-metal-operator-remote:
 	# Bump patch version
 	@yq -i '.version = (.version | split(".") | .[2] = ((.[2] | tonumber) + 1 | tostring) | join("."))' metal-operator-remote/Chart.yaml
 
+KUSTOMIZE_METAL_OPERATOR_REMOTE := kustomize/metal-operator-remote
+
+regen-metal-operator-remote: regen-metal-operator-remote-crds regen-metal-operator-remote-webhooks
+
+regen-metal-operator-remote-crds:
+	@kustomize build $(KUSTOMIZE_METAL_OPERATOR_REMOTE)/remote/upstream/crds-and-rbac/source | \
+		./$(KUSTOMIZE_METAL_OPERATOR_REMOTE)/scripts/wrap-managedresources.sh \
+		> $(KUSTOMIZE_METAL_OPERATOR_REMOTE)/remote/upstream/crds-and-rbac/managedresources.yaml
+	@echo "Generated $(KUSTOMIZE_METAL_OPERATOR_REMOTE)/remote/upstream/crds-and-rbac/managedresources.yaml"
+
+regen-metal-operator-remote-webhooks:
+	@kustomize build $(KUSTOMIZE_METAL_OPERATOR_REMOTE)/remote/upstream/webhooks/source | \
+		yq 'select(.kind == "ValidatingWebhookConfiguration" or .kind == "MutatingWebhookConfiguration")' | \
+		yq '(.webhooks[].clientConfig | select(.service)) |= {"url": "https://metal-operator-webhook-service:443" + .service.path}' | \
+		yq 'del(.webhooks[].clientConfig.service)' \
+		> $(KUSTOMIZE_METAL_OPERATOR_REMOTE)/remote/upstream/webhooks/manifests-url-based.yaml
+	@cat $(KUSTOMIZE_METAL_OPERATOR_REMOTE)/remote/upstream/webhooks/manifests-url-based.yaml | \
+		./$(KUSTOMIZE_METAL_OPERATOR_REMOTE)/scripts/wrap-managedresources.sh \
+		> $(KUSTOMIZE_METAL_OPERATOR_REMOTE)/remote/upstream/webhooks/managedresources.yaml
+	@echo "Generated $(KUSTOMIZE_METAL_OPERATOR_REMOTE)/remote/upstream/webhooks/ manifests"
+
 build-boot-operator:
 	@helm dep up boot-operator
 	@yq -i '.version = (.version | split(".") | .[2] = ((.[2] | tonumber) + 1 | tostring) | join("."))' boot-operator/Chart.yaml
