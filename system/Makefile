@@ -76,6 +76,7 @@ build-provider-ipam:
 	@yq -i '.fullnameOverride="capi-capi-provider-ipam"' provider-ipam/values.yaml
 
 build-ipam-capi-remote:
+	@CHART_VERSION=$$(yq '.version | split(".") | .[2] = ((.[2] | tonumber) + 1 | tostring) | join(".")' ipam-capi-remote/Chart.yaml 2>/dev/null || echo "0.1.0")
 	@rm -rf ipam-capi-remote
 	@cat kustomize/ipam-capi-remote/manager/kustomization.yaml > kustomization.yaml
 	@kubectl kustomize | helmify -crd-dir ipam-capi-remote
@@ -92,7 +93,7 @@ build-ipam-capi-remote:
 	@yq eval-all '. as $$item ireduce ({}; . * $$item)' ipam-capi-remote/values.yaml kustomize/ipam-capi-remote/values-override.yaml |\
 		yq eval -i '. *= load("/dev/stdin")' ipam-capi-remote/values.yaml
 	@yq -i '.controllerManager.manager.image.tag="$(PROVIDER_IPAM_VERSION)"' ipam-capi-remote/values.yaml
-	@yq -i '.version="1.2.8"' ipam-capi-remote/Chart.yaml
+	@yq -i ".version=\"$$CHART_VERSION\"" ipam-capi-remote/Chart.yaml
 	@$(SED) -i 's/serviceAccountName.*$$/serviceAccountName: {{ .Values.controllerManager.serviceAccountName }}/g' ipam-capi-remote/templates/deployment.yaml
 	@$(SED) -i 's/kind: Role/kind: ClusterRole/g' ipam-capi-remote/managedresources/crds-and-rbac.yaml
 

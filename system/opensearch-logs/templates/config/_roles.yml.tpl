@@ -225,7 +225,15 @@ complex-role:
   - "cluster:admin/opensearch/ppl"
   index_permissions:
   - index_patterns:
-    - "*"
+    - "logs-datastream"
+    - "storage-datastream"
+    - "logs-swift-datastream"
+    - "jump-datastream"
+    - "deployments-datastream"
+    - "cronus-datastream"
+    - "alerts-sem-datastream"
+    - "alerts-datastream"
+    - "maillog-*"
     allowed_actions:
     - "search"
     - "read"
@@ -255,7 +263,15 @@ promrole:
   - "indices:data/read/msearch"
   index_permissions:
   - index_patterns:
-    - "*"
+    - "logs-datastream"
+    - "storage-datastream"
+    - "logs-swift-datastream"
+    - "jump-datastream"
+    - "deployments-datastream"
+    - "cronus-datastream"
+    - "alerts-sem-datastream"
+    - "alerts-datastream"
+    - "maillog-*"
     allowed_actions:
     - "indices:monitor/stats"
     - "indices:admin/mappings/get"

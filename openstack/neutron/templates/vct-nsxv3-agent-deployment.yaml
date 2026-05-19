@@ -76,12 +76,14 @@ template: |
           ports:
             - name: metrics-agent
               containerPort: 8000
+          {{- if .Values.global.agent_liveness_probe_enabled }}
           livenessProbe:
             exec:
               command: ["neutron-agent-liveness", "--config-file", "/etc/neutron/neutron.conf", "--config-file", "/etc/neutron/secrets/neutron-common-secrets.conf", "--config-file", "/etc/neutron/plugins/ml2/ml2-nsxv3.ini", "--agent-type", "NSXv3 Agent"]
             initialDelaySeconds: 200
             periodSeconds: 30
             timeoutSeconds: 10
+          {{- end }}
           resources:
 {{ toYaml .Values.pod.resources.nsxv3_agent | indent 12 }}
           volumeMounts:
