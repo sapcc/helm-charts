@@ -121,10 +121,6 @@ spec:
           name: ironic-etc
           subPath: ironic.conf
           readOnly: {{ not $conductor.debug }}
-        - mountPath: /etc/ironic/policy.json
-          name: ironic-etc
-          subPath: policy.json
-          readOnly: {{ not $conductor.debug }}
         - mountPath: /etc/ironic/rootwrap.conf
           name: ironic-etc
           subPath: rootwrap.conf
