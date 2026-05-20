@@ -317,35 +317,72 @@ cd "$KS_TEST" && git log -1 --format='%h %s'
 
 - [ ] **Step 4B.2: Rewrite github.com URL refs to local helm-charts path**
 
+> **Note (recipe correction, learned at execution time):** an earlier draft of this step used a `perl -i -pe` substitution that produced **absolute** filesystem paths (e.g., `/Users/.../helm-charts/system/...`). kustomize rejects absolute paths in `resources:` entries with `new root '<path>' cannot be absolute`. The corrected recipe below uses **relative** paths via Python `os.path.relpath`, with `os.path.realpath` for both endpoints to handle macOS `/tmp -> /private/tmp` symlink expansion (off-by-one `..` count otherwise), and builds with `--load-restrictor=LoadRestrictionsNone` to allow path traversal outside the kustomization root. The original perl recipe is left in place ONLY in the historical context of `tasks.md` Step 4B.2 (annotated as defective) so reviewers can see why the change was made.
+
 ```bash
 HC_LOCAL=/Users/D065300/IdeaProjects/sapcc/helm-charts
 # helm-charts must be on poc/kustomize-metal-operator-remote with all deletions applied (Tasks 2 + 3 done)
 
-# Use perl for portable in-place edit (works on macOS BSD and Linux GNU)
-find "$KS_TEST/values/kustomize" -name 'kustomization.yaml' -print0 | while IFS= read -r -d '' f; do
-  perl -i -pe "s|https://github.com/sapcc/helm-charts.git//(.+?)\\?ref=[^\\s\"']*|$HC_LOCAL/\\1|g" "$f"
-done
+python3 - <<'PYEOF'
+import os, re, glob, sys
 
-# Verify the rewrite — github.com refs should be gone, replaced by local paths.
-echo "=== Remaining github.com refs (should be empty) ==="
-grep -rn "github.com/sapcc/helm-charts" "$KS_TEST/values/kustomize/" || echo "OK: none remaining"
+# Use realpath for BOTH endpoints — macOS /tmp is a symlink to /private/tmp,
+# and kustomize resolves to the realpath when interpreting relative-path resources.
+# Computing the relative path against the un-resolved path gives an off-by-one
+# `..` count and the build fails with `evalsymlink failure on /private/Users`.
+KS_TEST  = os.path.realpath('/tmp/ks-pr-validation')
+HC_LOCAL = os.path.realpath(os.environ.get('HC_LOCAL', '/Users/D065300/IdeaProjects/sapcc/helm-charts'))
 
-echo "=== Local-path refs (sample) ==="
-grep -rn "$HC_LOCAL" "$KS_TEST/values/kustomize/" | head -10
+pattern = re.compile(r'https://github\.com/sapcc/helm-charts\.git//(.+?)\?ref=\S+')
+
+files = glob.glob(f'{KS_TEST}/values/kustomize/**/kustomization.yaml', recursive=True)
+total = 0
+for f in files:
+    parent = os.path.dirname(f)
+    rel = os.path.relpath(HC_LOCAL, parent)   # produces correct ../../../... prefix per file depth
+    with open(f) as fh:
+        txt = fh.read()
+    new, n = pattern.subn(lambda m: f'{rel}/{m.group(1)}', txt)
+    if n:
+        with open(f, 'w') as fh:
+            fh.write(new)
+        total += n
+print(f'Rewrote {total} refs in {len(files)} files', file=sys.stderr)
+PYEOF
+
+# Verify the rewrite — github.com refs should be gone from kustomization.yaml files.
+echo "=== Remaining github.com refs in kustomization.yaml (should be empty) ==="
+grep -rn --include='kustomization.yaml' "github.com/sapcc/helm-charts" "$KS_TEST/values/kustomize/" || echo "OK: none remaining"
+# README.md and other docs may still reference github.com; that is expected and harmless.
+
+echo "=== Sample relative-path refs (each per-file prefix length differs) ==="
+grep -rn --include='kustomization.yaml' '\.\./' "$KS_TEST/values/kustomize/" | head -10
 ```
 
-If `grep -rn "github.com/sapcc/helm-charts"` still finds matches after the rewrite, the perl regex didn't match those particular forms. Inspect those lines and adjust the regex. Common variants:
+If the `grep --include='kustomization.yaml' "github.com/sapcc/helm-charts"` step still finds matches, the regex did not match those particular forms. Inspect and adjust. Common variants the regex handles:
 - `https://github.com/sapcc/helm-charts.git//path?ref=master`
 - `https://github.com/sapcc/helm-charts.git//path?ref=feature-branch`
-- `https://github.com/sapcc/helm-charts.git//path` (no ref — uncommon, but possible)
+
+Variants the regex does **not** handle (rare but possible):
+- `https://github.com/sapcc/helm-charts.git//path` (no `?ref=` at all)
+- HTTP (non-HTTPS) form
+
+For those, extend the pattern.
 
 - [ ] **Step 4B.3: Run kustomize build**
 
 ```bash
-kustomize build "$KS_TEST/values/kustomize/runtime/eu-de-1/rt-eu-de-1/metal-operator-remote/" > /tmp/rt-eu-de-1.kustomize.yaml 2>&1
+# --load-restrictor=LoadRestrictionsNone is REQUIRED: relative paths from kube-secrets
+# overlays traverse outside their kustomization root into the helm-charts checkout.
+# Without this flag, kustomize aborts with `security; file ... is not in or below ...`.
+kustomize build --load-restrictor=LoadRestrictionsNone \
+  "$KS_TEST/values/kustomize/runtime/eu-de-1/rt-eu-de-1/metal-operator-remote/" \
+  > /tmp/rt-eu-de-1.kustomize.yaml 2>&1
 echo "rt-eu-de-1 exit: $?"
 
-kustomize build "$KS_TEST/values/kustomize/admin-k3s/qa-de-1/a-qa-de-200/metal-operator-remote/" > /tmp/a-qa-de-200.kustomize.yaml 2>&1
+kustomize build --load-restrictor=LoadRestrictionsNone \
+  "$KS_TEST/values/kustomize/admin-k3s/qa-de-1/a-qa-de-200/metal-operator-remote/" \
+  > /tmp/a-qa-de-200.kustomize.yaml 2>&1
 echo "a-qa-de-200 exit: $?"
 ```
 
