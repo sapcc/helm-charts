@@ -1,35 +1,35 @@
 ## 1. Pre-flight verification
 
-- [ ] 1.1 Determine the **state of the kube-secrets companion change** and select the corresponding validation method for Task 4:
+- [x] 1.1 Determine the **state of the kube-secrets companion change** and select the corresponding validation method for Task 4:
   - **State A — kube-secrets companion has MERGED to kube-secrets master.** Use validation method 4A (direct kustomize build with `?ref=master`).
   - **State B — kube-secrets companion is on a feature branch (not yet merged).** Use validation method 4B (local-path rewrite of a temporary kube-secrets clone, building against this repo's local helm-charts checkout). This allows validating the helm-charts PR before kube-secrets has merged — required for normal coordinated review where both PRs are reviewed together.
   Record the chosen state and method in `verify.scratch.md` along with the kube-secrets PR number / branch name (State B) or merge SHA (State A).
-- [ ] 1.2 Verify the kube-secrets companion change has the expected overlay paths regardless of state:
+- [x] 1.2 Verify the kube-secrets companion change has the expected overlay paths regardless of state:
   ```
   # State A (master): clone or fetch master.
   # State B (branch): clone or fetch the PR's HEAD ref.
   test -f <kube-secrets-checkout>/values/kustomize/runtime/eu-de-1/rt-eu-de-1/metal-operator-remote/kustomization.yaml && echo "rt-eu-de-1 OK"
   test -f <kube-secrets-checkout>/values/kustomize/admin-k3s/qa-de-1/a-qa-de-200/metal-operator-remote/kustomization.yaml && echo "a-qa-de-200 OK"
   ```
-- [ ] 1.3 Verify each kube-secrets overlay's `kustomization.yaml` references helm-charts via `?ref=master` (State A) — for State B (branch), the overlays may reference `?ref=<feature-branch>` with `# TEST-PHASE: tracking <branch>` comments during development; these MUST be reverted to `?ref=master` before the kube-secrets PR merges (enforced by kube-secrets's own `cluster-overlay-layout` spec). For State B validation, the local-path rewrite in Task 4B substitutes whatever ref is present, so this is non-blocking for the helm-charts PR — but flag any non-master refs in `verify.scratch.md` for the kube-secrets author's attention.
-- [ ] 1.4 Confirm helm-charts working tree is on the existing `poc/kustomize-metal-operator-remote` branch (per user instruction, this change combines with the existing PR there, not a new branch). `git branch --show-current` should output `poc/kustomize-metal-operator-remote`.
-- [ ] 1.5 Global grep for any in-repo references to the about-to-be-deleted overlay paths (Makefile targets, scripts, docs, archived examples, CI configs):
+- [x] 1.3 Verify each kube-secrets overlay's `kustomization.yaml` references helm-charts via `?ref=master` (State A) — for State B (branch), the overlays may reference `?ref=<feature-branch>` with `# TEST-PHASE: tracking <branch>` comments during development; these MUST be reverted to `?ref=master` before the kube-secrets PR merges (enforced by kube-secrets's own `cluster-overlay-layout` spec). For State B validation, the local-path rewrite in Task 4B substitutes whatever ref is present, so this is non-blocking for the helm-charts PR — but flag any non-master refs in `verify.scratch.md` for the kube-secrets author's attention.
+- [x] 1.4 Confirm helm-charts working tree is on the existing `poc/kustomize-metal-operator-remote` branch (per user instruction, this change combines with the existing PR there, not a new branch). `git branch --show-current` should output `poc/kustomize-metal-operator-remote`.
+- [x] 1.5 Global grep for any in-repo references to the about-to-be-deleted overlay paths (Makefile targets, scripts, docs, archived examples, CI configs):
   ```
   grep -rn -E 'host/overlays/(rt-eu-de-1|a-qa-de-200)|remote/custom/overlays/(rt-eu-de-1|a-qa-de-200)|overlays/(rt-eu-de-1|a-qa-de-200)' \
     --include='*.{yaml,yml,md,sh,rb,Makefile,mk}' \
     /Users/D065300/IdeaProjects/sapcc/helm-charts
   ```
   Expected matches: only the to-be-deleted files themselves, the openspec change directory artifacts, the archived change `2026-05-13-poc-kustomize-metal-operator-remote/` examples (must NOT be modified — archived), and possibly the Makefile if it references these paths. Document each match; categorize as (a) target-of-deletion, (b) archived (preserve), (c) needs follow-up edit.
-- [ ] 1.6 Confirm the legacy Helm chart at `system/metal-operator-remote/` does NOT depend on any of the to-be-deleted kustomize overlay paths. Read `system/metal-operator-remote/Chart.yaml`, `Chart.lock`, `templates/`, and the chart's Makefile (if any). Expected: zero references to `system/kustomize/metal-operator-remote/.../overlays/`.
+- [x] 1.6 Confirm the legacy Helm chart at `system/metal-operator-remote/` does NOT depend on any of the to-be-deleted kustomize overlay paths. Read `system/metal-operator-remote/Chart.yaml`, `Chart.lock`, `templates/`, and the chart's Makefile (if any). Expected: zero references to `system/kustomize/metal-operator-remote/.../overlays/`.
 
 ## 2. Delete per-cluster overlays for `rt-eu-de-1`
 
-- [ ] 2.1 Delete `system/kustomize/metal-operator-remote/host/overlays/rt-eu-de-1/` (entire directory).
-- [ ] 2.2 Delete `system/kustomize/metal-operator-remote/remote/custom/overlays/rt-eu-de-1/` (entire directory).
-- [ ] 2.3 Delete `system/kustomize/metal-operator-remote/overlays/rt-eu-de-1/` (entire directory).
-- [ ] 2.4 Verify deletions: `find system/kustomize/metal-operator-remote -type d -name 'rt-eu-de-1'` should return no results.
-- [ ] 2.5 Run `kustomize build system/kustomize/metal-operator-remote/host/base/` — must succeed (bases unaffected).
-- [ ] 2.6 Run `kustomize build system/kustomize/metal-operator-remote/remote/custom/base/` — must succeed.
+- [x] 2.1 Delete `system/kustomize/metal-operator-remote/host/overlays/rt-eu-de-1/` (entire directory).
+- [x] 2.2 Delete `system/kustomize/metal-operator-remote/remote/custom/overlays/rt-eu-de-1/` (entire directory).
+- [x] 2.3 Delete `system/kustomize/metal-operator-remote/overlays/rt-eu-de-1/` (entire directory).
+- [x] 2.4 Verify deletions: `find system/kustomize/metal-operator-remote -type d -name 'rt-eu-de-1'` should return no results.
+- [x] 2.5 Run `kustomize build system/kustomize/metal-operator-remote/host/base/` — must succeed (bases unaffected).
+- [x] 2.6 Run `kustomize build system/kustomize/metal-operator-remote/remote/custom/base/` — must succeed.
 
 ## 3. Delete per-cluster overlays for `a-qa-de-200`
 
