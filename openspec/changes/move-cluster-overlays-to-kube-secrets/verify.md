@@ -1,170 +1,204 @@
 # Verification Report
 
-> This is a **PRE-APPLY BASELINE** snapshot taken at the end of the planning phase.
-> The actual verification — task completion, implementation signal, and final
-> archive readiness — will be re-recorded after the apply phase completes.
-> The verify artifact is required for the OpenSpec workflow to reach 7/7
-> artifacts; this baseline documents the planning state as the starting
-> condition for apply.
-
 **Change**: `move-cluster-overlays-to-kube-secrets` (helm-charts side)
-**Verified at**: 2026-05-19 (planning baseline; apply phase not yet started)
-**Verifier**: planning-phase author (`@d065300` + assistant)
-**Phase**: PRE-APPLY BASELINE
-**Branch**: `poc/kustomize-metal-operator-remote` (combines with existing open PR)
+**Verified at**: 2026-05-20 (post-implementation, pre-push, pre-merge)
+**Verifier**: `/opsx-apply` workflow Step 4 (`openspec-verify-change`)
+**Phase**: POST-IMPLEMENTATION (commits local on `poc/kustomize-metal-operator-remote`, not yet pushed)
+**Branch**: `poc/kustomize-metal-operator-remote` (combines with existing open PR; per user instruction)
+
+> **History:** A pre-apply baseline of this file existed (recorded planning state at 2026-05-19, 0% task completion). It has been replaced by this post-implementation snapshot per the schema's apply Step 4. Git history retains the prior version.
 
 ---
 
-## 1. Structural Validation (`openspec validate --all --json`)
+## Summary scorecard
 
-- [x] All items return `"valid": true`
+| Dimension | Status | Notes |
+|---|---|---|
+| **Completeness** | 32/51 tasks done; remaining 19 all post-implementation phase | All implementation tasks complete; pending tasks are push/merge/archive/hand-off |
+| **Correctness** | 5/5 spec requirements implemented and verified | ADDED: 1, MODIFIED: 2, REMOVED: 2 (both sidecar + resource-splitting deltas covered) |
+| **Coherence** | Aligned; 1 plan defect found and corrected | perl recipe replaced with Python relpath in commit `8d000ce8ce` |
 
-**Result** (4/4 valid):
+---
 
-```json
-{
-  "items": [
-    { "id": "kustomize-resource-splitting",          "type": "spec",   "valid": true, "issues": [] },
-    { "id": "kustomize-sidecar-injection",           "type": "spec",   "valid": true, "issues": [] },
-    { "id": "move-cluster-overlays-to-kube-secrets", "type": "change", "valid": true, "issues": [] },
-    { "id": "webhook-url-rendering",                 "type": "spec",   "valid": true, "issues": [] }
-  ],
-  "summary": {
-    "totals": { "items": 4, "passed": 4, "failed": 0 },
-    "byType": {
-      "change": { "items": 1, "passed": 1, "failed": 0 },
-      "spec":   { "items": 3, "passed": 3, "failed": 0 }
-    }
-  }
-}
+## 1. Structural validation (`openspec validate --all --strict`)
+
+All four items pass (exit 0):
+
+```
+✓ spec/kustomize-resource-splitting
+✓ spec/kustomize-sidecar-injection
+✓ change/move-cluster-overlays-to-kube-secrets
+✓ spec/webhook-url-rendering
+Totals: 4 passed, 0 failed (4 items)
 ```
 
-**Notes:**
-- Three existing capability specs validate clean: `kustomize-resource-splitting`, `kustomize-sidecar-injection`, `webhook-url-rendering`.
-- The change with its delta specs validates clean.
-- Re-run after apply (post-archive) will validate the synced specs (the deltas applied to the live spec files).
+---
+
+## 2. Task completion
+
+`tasks.md`: **32 / 51** complete (62.7%).
+
+`openspec list --json`: same — `completedTasks: 32, totalTasks: 51, status: in-progress`.
+
+### Completed task groups (commits in parentheses)
+
+| Tasks | Commit | Description |
+|---|---|---|
+| `1.1`–`1.6` | `c0b5988475` (scaffold) + this verification | Pre-flight: kube-secrets state detection, branch confirmation, grep, Helm chart isolation |
+| `2.1`–`2.6` | `432b70ae24` | Delete `rt-eu-de-1` overlays + base build sanity |
+| `3.1`–`3.5` | `940c25a8af` | Delete `a-qa-de-200` overlays + parent-dir cleanup |
+| `4A.1`–`4A.3` | (N/A — Method 4A skipped per State B) | Annotated as N/A with cross-reference to Method 4B + URL-fetch alternative |
+| `4B.1`–`4B.5`, `4.6` | `5f32a3b543` | Cross-repo render via local-path rewrite + URL-fetch comparison (byte-identical) |
+| `5.1`–`5.3` | `129832e0f1` | README rewrite for kube-secrets overlay home |
+| `6.1`–`6.2` | `ecc7c4d083` | `openspec validate --strict` clean |
+| `8.1`–`8.4` | `ecc7c4d083` | Pre-merge final checks (deletions confirmed, bases intact, kube-secrets re-render byte-identical) |
+| Review fixes | `8d000ce8ce` | README dedup + plan.md Step 4B.2 perl→Python recipe correction (per code-reviewer findings) |
+
+### Remaining incomplete tasks (intentional — sequenced for later phases)
+
+| Task | Reason still `[ ]` | Phase |
+|---|---|---|
+| `7.1`–`7.5` | PR push / description / approvals — Step 6 of schema apply | Finishing |
+| `9.1`–`9.2` | PR merge — human action | Post-review |
+| `10.1`–`10.4` | `openspec archive` after merge — runs on master | Post-merge |
+| `11.1`–`11.5` | Hand-off, branch cleanup, follow-up docs (incl. new `11.4` post-push URL re-validation and `11.5` kube-secrets recipe doc) | Post-archive |
+
+**No CRITICAL incomplete-task issues.** All implementation work is done.
+
+> **Note on plan.md checkboxes:** plan.md still shows 0/51 because plan.md is a prescriptive narrative authored before apply began; it was not amended task-by-task during execution (tasks.md is the canonical checkbox source per the schema). This mirror-update is captured as a SUGGESTION below.
 
 ---
 
-## 2. Task Completion (`tasks.md` and `plan.md`)
+## 3. Spec coverage and correctness
 
-- [ ] All `- [ ]` have been changed to `- [x]`
+### `kustomize-resource-splitting` capability
 
-**Pre-apply baseline (expected: 0% complete):**
-
-| File | Total checkboxes | Completed (`- [x]`) | Incomplete (`- [ ]`) |
+| Requirement | Type | Implementation evidence | Status |
 |---|---|---|---|
-| `tasks.md` | 44 | 0 | 44 |
-| `plan.md`  | 46 | 0 | 46 |
+| Per-cluster overlay placement delegated to kube-secrets capability | ADDED | All `host/overlays/<cluster>/`, `remote/custom/overlays/<cluster>/`, `overlays/<cluster>/` dirs deleted in commits `432b70ae24` + `940c25a8af`. README rewritten to point readers at kube-secrets. `find` confirms no matching dirs survive (Step 8.3). | ✓ Implemented |
+| Host and remote produce equivalent output | MODIFIED | kube-secrets overlay renders byte-identical to pre-deletion github.com URL fetch (Task 4.6 / `verify.scratch.md`). 167 / 172 resources, all expected kinds. Bases produce byte-identical output before vs after deletion (Task 8.4). | ✓ Implemented |
+| Host overlays parameterize per-environment values | REMOVED | Six overlay directories deleted (Tasks 2, 3). Reason and Migration text in the delta. | ✓ Removed |
+| Top-level per-environment kustomization renders all resources | REMOVED | Top-level `overlays/<cluster>/` directories deleted; empty parent removed by `git rm`. Reason and Migration in delta. | ✓ Removed |
 
-This is the expected state pre-apply. **Re-run this section after apply phase completes.**
+### `kustomize-sidecar-injection` capability
 
-**Incomplete tasks** (deferred to apply):
+| Requirement | Type | Implementation evidence | Status |
+|---|---|---|---|
+| Webhook-injector sidecar removable per environment | MODIFIED | `components/webhook-injector/` unchanged. The kube-secrets `a-qa-de-200` overlay's qa component exercises `$patch:delete` semantics — verified by Task 4B render (172 resources, no broken references). The host/base build still produces a Deployment with the webhook-injector initContainer (default-on). | ✓ Implemented |
 
-| Task | Reason incomplete | Blocks archive? |
+### `webhook-url-rendering` capability
+
+| Requirement | Type | Notes |
 |---|---|---|
-| All tasks 1.x – 11.x in `tasks.md` | Apply phase not yet started | Yes (must complete before archive) |
-| All steps 1.x – 11.x in `plan.md` | Apply phase not yet started | Yes |
+| (no delta) | — | Spec untouched by this change. Re-validated clean by `openspec validate --strict`. |
 
-**Coordination prerequisite (NOT blocking pre-apply work):** Task 1.1 detects whether the kube-secrets companion change is in **State A** (merged to master) or **State B** (still on a feature branch). Both states are supported — Task 4 has matching validation methods (4A for State A, 4B local-path rewrite for State B). The helm-charts apply phase can proceed in either state; the only gate is that the validation in Task 4 must succeed before Task 9 (merge).
+### Scenario coverage
+
+All scenarios in the two delta specs are exercised by the implementation and / or the cross-repo render in Task 4B:
+
+- **Per-cluster overlay creation goes to kube-secrets** — README (`## Per-cluster overlays` + `### Adding a new cluster`) directs readers; design.md "Cross-reference, not absorption" decision aligned.
+- **No per-cluster overlay directories exist in this repo** — Step 8.3 confirms `test ! -d` for all six paths.
+- **Host resources equivalence** — Task 4B render produces the expected Deployment / Service / ConfigMap / Ingress / etc.
+- **Remote CRDs and RBAC equivalence** — Task 4B render contains the ClusterRoles, ClusterRoleBindings, ServiceAccounts (3 / 6 / 1+ in rt-eu-de-1; 3 / 6 / 2 in a-qa-de-200).
+- **Component supports removal via `$patch:delete`** — `a-qa-de-200` overlay (172 resources, 5 more than rt-eu-de-1's 167) exercises the qa component path; render is structurally valid.
+- **Base includes sidecar by default** — `kustomize build host/base/` (381 lines, byte-identical to pre-deletion baseline) includes the webhook-injector initContainer.
 
 ---
 
-## 3. Delta Spec Sync State
+## 4. Design / specs coherence
 
-For each capability directory under `openspec/changes/move-cluster-overlays-to-kube-secrets/specs/`, compare against the corresponding `openspec/specs/<capability>/spec.md`:
-
-| Capability | Sync status | Notes |
+| design.md decision | Implementation evidence | Coherence |
 |---|---|---|
-| `kustomize-resource-splitting` | **Needs sync (will happen at archive)** | Delta spec at `openspec/changes/move-cluster-overlays-to-kube-secrets/specs/kustomize-resource-splitting/spec.md` contains: 1 ADDED requirement, 1 MODIFIED requirement, 2 REMOVED requirements (each with Reason + Migration). Target file at `openspec/specs/kustomize-resource-splitting/spec.md` exists (212 lines, current state). `openspec archive` will apply RENAMED → REMOVED → MODIFIED → ADDED in that order. |
-| `kustomize-sidecar-injection` | **Needs sync (will happen at archive)** | Delta spec at `openspec/changes/move-cluster-overlays-to-kube-secrets/specs/kustomize-sidecar-injection/spec.md` contains: 1 MODIFIED requirement (the "Webhook-injector sidecar removable per environment" requirement is reframed from overlay-action to Component-capability semantics). Target file at `openspec/specs/kustomize-sidecar-injection/spec.md` exists (82 lines). `openspec archive` will apply the MODIFIED. |
-| `webhook-url-rendering` | **N/A (no delta)** | Spec is unchanged by this change. No delta in the change directory. |
+| Pure deletion + spec deltas (no in-tree reference example) | Diffstat shows only README + openspec change-dir + 6 deleted overlay files. No in-tree reference example added. | ✓ Aligned |
+| Two spec deltas, one no-change | `kustomize-resource-splitting` (4 reqs) + `kustomize-sidecar-injection` (1 req) deltas; `webhook-url-rendering` untouched. | ✓ Aligned |
+| Cross-reference, not absorption | ADDED requirement explicitly cross-references `cluster-overlay-layout` in cc/kube-secrets; README `## Per-cluster overlays` section points at the kube-secrets repo URL. | ✓ Aligned |
+| Land via existing PR on `poc/kustomize-metal-operator-remote` | All commits land on this branch; no new branch created. | ✓ Aligned (verified by `git branch --show-current`) |
+| Apply order: helm-charts SECOND | kube-secrets companion still on PR branch (State B detected at Step 1.1); validation method chosen accordingly (4B). | ✓ Aligned |
+| README at `system/kustomize/metal-operator-remote/` updated | Commit `129832e0f1` rewrites the README. Commit `8d000ce8ce` removes accidental dedup. | ✓ Aligned |
+| Validation gate before merge (kustomize build kube-secrets overlays) | Tasks 4B + 8.2 both pass; URL-fetch comparison in 4.6 confirms byte-identical render. | ✓ Aligned |
+| Helm chart untouched | Step 1.6 (`grep -rn 'kustomize/metal-operator-remote' system/metal-operator-remote/`) returns 0 matches; diffstat confirms `system/metal-operator-remote/` not touched. | ✓ Aligned |
 
-**Pre-apply expectation:** sync targets exist (these are MODIFIED specs, not new). Sync happens at archive time, post-merge.
+**Plan defects found and corrected during apply:**
 
-**Post-apply expectation:** after `openspec archive move-cluster-overlays-to-kube-secrets`:
-- `kustomize-resource-splitting/spec.md` reflects the new ADDED requirement, the MODIFIED requirement, and the two REMOVED requirements are gone.
-- `kustomize-sidecar-injection/spec.md` reflects the MODIFIED requirement.
-- `webhook-url-rendering/spec.md` unchanged.
-
----
-
-## 4. Design / Specs Coherence Spot Check
-
-Sample check that `design.md` decisions are reflected in the spec deltas:
-
-| design.md decision | spec delta counterpart | Coherence |
-|---|---|---|
-| Pure deletion + spec deltas (Decision: "Pure deletion + spec deltas, no in-tree reference example") | `kustomize-resource-splitting` delta has 2 REMOVED requirements + 1 ADDED + 1 MODIFIED; `kustomize-sidecar-injection` delta has 1 MODIFIED | ✓ Aligned |
-| Two spec deltas, one no-change (Decision: "Two spec deltas, one no-change") | Two delta files exist; `webhook-url-rendering` not touched | ✓ Aligned |
-| Cross-reference, not absorption (Decision: "Cross-reference, not absorption") | New ADDED Requirement "Per-cluster overlay placement delegated to kube-secrets capability" explicitly cross-references `cluster-overlay-layout` in cc/kube-secrets | ✓ Aligned |
-| Land via existing PR on poc/kustomize-metal-operator-remote (Decision: "Land via existing PR ...") | Captured in tasks.md Tasks 7.x and plan.md Tasks 7.x; not specced (operational, not normative) | ✓ Acceptable (operational) |
-| Apply order is helm-charts SECOND (Decision: "Apply order is helm-charts SECOND") | Captured in tasks.md Task 1.1 (HARD prerequisite) and plan.md Step 1.1; design.md Migration Plan documents T+0/T+1/T+2 sequencing | ✓ Aligned |
-| README update at system/kustomize/metal-operator-remote/ (Decision: "README in system/kustomize/metal-operator-remote/ updated") | Tasks 5.x in both tasks.md and plan.md | ✓ Aligned |
-| Validation gate before merge (Decision: kustomize build kube-secrets overlays) | Tasks 4.x in both tasks.md and plan.md | ✓ Aligned |
-| Helm chart untouched (Goal: "Non-Goal: Touching the legacy Helm chart") | Plan Task 1.7 explicitly verifies independence; no task modifies `system/metal-operator-remote/` | ✓ Aligned |
-
-**Drift warnings:** None. All design decisions either map to a spec delta or are operational concerns tracked in tasks/plan.
+1. **Step 4B.2 perl recipe produced absolute paths** — kustomize rejects with `new root cannot be absolute`. **Fix:** replaced with Python `os.path.relpath` + `os.path.realpath` for both endpoints (handles macOS `/tmp -> /private/tmp` symlink), built with `--load-restrictor=LoadRestrictionsNone`. Plan.md normative text updated in commit `8d000ce8ce`. Historical perl recipe annotated in tasks.md Step 4B.2 (per code reviewer feedback, kept for traceability).
 
 ---
 
-## 5. Implementation Signal
+## 5. Implementation signal
 
-- [ ] No unstaged files in worktree
-- [ ] All relevant commits pushed
+### Worktree state
 
-**Pre-apply state:**
-- Worktree status (`git status --short`):
-  ```
-  ?? .opencode/
-  ?? docs/
-  ?? openspec/changes/move-cluster-overlays-to-kube-secrets/
-  ```
-- Three untracked items (expected pre-apply):
-  - `.opencode/` — local tooling, gitignored or out-of-scope.
-  - `docs/` — contains the DRAFT design doc (`docs/superpowers/specs/2026-05-18-move-cluster-overlays-to-kube-secrets-design.md`); will be either removed or kept as historical context per Task 11.3.
-  - `openspec/changes/move-cluster-overlays-to-kube-secrets/` — the planning artifacts written by this brainstorming + OpenSpec workflow. Will be staged and committed during apply (Task 7.1 in plan.md).
-- Commit range: **N/A pre-apply.** Will be populated after apply phase.
+```
+$ git status --short
+?? .opencode/
+?? docs/
+```
 
-**Post-apply expectation:**
-- Working tree clean (every artifact + every deletion committed).
-- Commit range: 4 commits (Task 2 deletion of rt-eu-de-1, Task 3 deletion of a-qa-de-200, Task 5 README update, Task 7 commit of openspec planning artifacts) plus the merge commit and the post-archive commit.
+- `.opencode/` and `docs/` are pre-existing untracked items unrelated to this change. They are intentionally NOT included in any commit (no `git add -A` was used). Both will be addressed separately.
+- No staged or unstaged changes from this change remain.
 
----
+### Commit range and progression
 
-## Overall Decision
+- BASE: `26aed706129dd20399edccec1ad330402967647b` (origin/poc/kustomize-metal-operator-remote at apply start; pre-deletion HEAD)
+- HEAD (local): `8d000ce8ce41…` (after review fixes)
+- Commits ahead of origin: **8**
 
-- [ ] PASS — ready to proceed to docs gate and finishing-a-development-branch
-- [ ] PASS WITH WARNINGS
-- [ ] FAIL
-- [x] **PRE-APPLY BASELINE** — planning artifacts complete and validated; apply phase not yet started
+```
+8d000ce8ce fix(review): address holistic code review findings
+ecc7c4d083 docs(openspec): mark tasks 6 and 8 complete
+129832e0f1 docs(kustomize): update metal-operator-remote README for kube-secrets overlay home
+5f32a3b543 docs(openspec): record kube-secrets cross-repo validation results
+940c25a8af feat(kustomize): remove a-qa-de-200 per-cluster overlays
+432b70ae24 feat(kustomize): remove rt-eu-de-1 per-cluster overlays
+c0b5988475 docs(openspec): scaffold move-cluster-overlays-to-kube-secrets change
+```
 
-**Next step:**
+(Above are 7 commits; the 8th is this `verify.md` regeneration, committed in the next step.)
 
-Apply phase. The kube-secrets companion change may be in either state when apply begins:
-- **State A**: kube-secrets companion has merged to master → use Task 4A validation (direct kustomize build against `?ref=master`).
-- **State B**: kube-secrets companion is on a feature branch → use Task 4B validation (local-path rewrite of a temporary kube-secrets clone, building against the local helm-charts checkout). **This is the normal review-time scenario.**
+### Push status
 
-In a fresh session, run `/opsx-apply` (or invoke `superpowers:subagent-driven-development` per the plan's REQUIRED SUB-SKILL header) in this repository working directory (`/Users/D065300/IdeaProjects/sapcc/helm-charts`). Execute tasks per `plan.md` task-by-task on the existing `poc/kustomize-metal-operator-remote` branch (per user instruction — combines with existing open PR). Plan Task 1.1 detects the kube-secrets state and selects the validation method automatically.
-
-After apply completes (and BEFORE merge to master), re-generate this verify.md by re-running the 5 checks above:
-1. `openspec validate --all --json` → all 4 items still valid.
-2. `tasks.md` and `plan.md` checkboxes all `- [x]`.
-3. Spec sync state still "Needs sync" (sync happens at archive, post-merge).
-4. Design / specs coherence still aligned (re-spot-check after any task-driven amendments).
-5. Implementation signal: deleted directories confirmed (Task 8.3); bases / components / upstream intact (Task 8.4); commits pushed; PR description updated (Task 7.4).
-
-After the helm-charts PR merges and `openspec archive` runs (plan.md Task 10), a final post-archive verify will record:
-1. Validation across the synced specs (kustomize-resource-splitting, kustomize-sidecar-injection now reflect deltas).
-2. All tasks `- [x]`.
-3. Spec sync state: "Synced".
-4. Coherence spot-check post-sync.
-5. Commit range on master: `<merge-base..post-archive-commit>`.
+**Not yet pushed.** Will happen at Step 6 (Finishing) → plan Task 7.3.
 
 ---
 
-## Companion Change Reference
+## 6. Issues by priority
 
-This change has a companion in `cc/kube-secrets`: `openspec/changes/move-cluster-overlays-to-kube-secrets/` (7/7 artifacts complete and validated). That change must be merged FIRST (apply order: kube-secrets → helm-charts).
+### CRITICAL (must fix before archive)
 
-Tracking issue: [`cc/unified-kubernetes#1169`](https://github.wdf.sap.corp/cc/unified-kubernetes/issues/1169).
+**None.** All implementation tasks complete; spec deltas implemented and verified; cross-repo render byte-identical to pre-deletion remote.
+
+### WARNING (should consider)
+
+1. **plan.md checkboxes not synced with tasks.md** — plan.md still shows 0/51 done. Tasks.md is the canonical checkbox source per the schema, so this does not block validation. However, divergence between plan and tasks may confuse future readers. **Recommendation:** mirror tasks.md checkboxes into plan.md (or add a header to plan.md noting "task tracking lives in `tasks.md`"). Defer to docs subagent or post-archive cleanup.
+
+### SUGGESTION (nice to fix)
+
+1. **Method 4A tasks marked done with N/A annotation** — clearer than leaving them `[ ]` but slightly unusual. Alternative: add a single `4A.0 SKIPPED: State B detected; using 4B` marker line and remove the per-step annotations. Cosmetic only.
+
+2. **`docs/superpowers/specs/2026-05-18-...-design.md` disposition** — already tracked as Task 11.3, just noting it remains untracked in the worktree.
+
+---
+
+## 7. Final assessment
+
+**PASS.**
+
+- 0 CRITICAL issues
+- 1 WARNING (plan.md/tasks.md checkbox sync, non-blocking)
+- 2 SUGGESTIONS (cosmetic)
+
+The change is **ready to proceed to docs gate (Step 5) and finishing-a-development-branch (Step 6)**.
+
+Implementation is complete and validated. The cross-repo render byte-identity proof is the strongest possible pre-merge signal that this deletion is safe for kube-secrets consumers.
+
+Pre-merge gate: Task 8 (final checks) all pass. Re-runs of Tasks 4 and 6 succeed.
+
+Coordination prerequisite: kube-secrets companion change (PR branch `openspec/move-cluster-overlays-to-kube-secrets`, HEAD `a2754a0d9`) must merge to its master before this PR merges. This ordering is enforced by humans at PR review time; the verify here only confirms the helm-charts side is complete.
+
+---
+
+## Companion change reference
+
+Companion in `cc/kube-secrets`: `openspec/changes/move-cluster-overlays-to-kube-secrets/` (per the kube-secrets repo's own openspec workflow). State at apply time: PR branch `openspec/move-cluster-overlays-to-kube-secrets`, HEAD `a2754a0d9`. Apply order: kube-secrets → helm-charts.
+
+Tracking: [`cc/unified-kubernetes#1169`](https://github.wdf.sap.corp/cc/unified-kubernetes/issues/1169).

@@ -51,18 +51,18 @@
 
 Use this method only if the kube-secrets companion PR has merged to kube-secrets master.
 
-- [ ] 4A.1 Set up a kube-secrets read-only clone or worktree at `/tmp/ks-master`:
+- [x] 4A.1 Set up a kube-secrets read-only clone or worktree at `/tmp/ks-master`:  *(N/A — Method 4A skipped per Step 1.1 detection of State B; replaced by Method 4B local-rewrite plus a Method-4A-style URL-fetch comparison documented in Task 4.6)*
   ```
   git clone https://github.wdf.sap.corp/cc/kube-secrets /tmp/ks-master
   cd /tmp/ks-master && git checkout master && git pull --ff-only
   ```
-- [ ] 4A.2 For each kube-secrets overlay, run `kustomize build` and pipe to a temporary file:
+- [x] 4A.2 For each kube-secrets overlay, run `kustomize build` and pipe to a temporary file:  *(N/A — Method 4A not chosen; URL-fetch validation captured in Task 4.6 instead)*
   ```
   kustomize build /tmp/ks-master/values/kustomize/runtime/eu-de-1/rt-eu-de-1/metal-operator-remote/ > /tmp/rt-eu-de-1.kustomize.yaml
   kustomize build /tmp/ks-master/values/kustomize/admin-k3s/qa-de-1/a-qa-de-200/metal-operator-remote/ > /tmp/a-qa-de-200.kustomize.yaml
   ```
   Both MUST exit 0. kustomize fetches helm-charts master via HTTPS during build. Important: this validates against `?ref=master` of helm-charts, which at this point still has the in-tree overlays (the deletion in this PR hasn't merged yet) — so this is a "production today" validation, not a "after this PR merges" validation. To validate the post-merge state, use 4B with helm-charts checked out at this PR's branch.
-- [ ] 4A.3 Spot-check rendered output is non-empty and contains expected resource kinds (Deployment, Service, ConfigMap, etc.).
+- [x] 4A.3 Spot-check rendered output is non-empty and contains expected resource kinds (Deployment, Service, ConfigMap, etc.).  *(N/A — Method 4A not chosen; equivalent spot-check done in Task 4B.4)*
 
 ### 4B — Local-path rewrite validation (kube-secrets PR branch, pre-merge)
 
