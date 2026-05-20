@@ -112,8 +112,8 @@ The method substitutes `https://github.com/sapcc/helm-charts.git//<path>?ref=mas
 
 ## 5. Update README
 
-- [ ] 5.1 Read the current `system/kustomize/metal-operator-remote/README.md` and identify sections that reference the deleted overlay paths (`host/overlays/<cluster>/`, `remote/custom/overlays/<cluster>/`, `overlays/<cluster>/`). The exploration noted these around lines 92–116 ("Add a new environment overlay" section).
-- [ ] 5.2 Replace those sections with a new "Per-cluster overlays" section pointing at kube-secrets:
+- [x] 5.1 Read the current `system/kustomize/metal-operator-remote/README.md` and identify sections that reference the deleted overlay paths (`host/overlays/<cluster>/`, `remote/custom/overlays/<cluster>/`, `overlays/<cluster>/`). The exploration noted these around lines 92–116 ("Add a new environment overlay" section).
+- [x] 5.2 Replace those sections with a new "Per-cluster overlays" section pointing at kube-secrets:
   ```markdown
   ## Per-cluster overlays
 
@@ -139,7 +139,7 @@ The method substitutes `https://github.com/sapcc/helm-charts.git//<path>?ref=mas
 
   Tracking: cc/unified-kubernetes#1169
   ```
-- [ ] 5.3 Verify markdown renders cleanly. Optional: lint via `markdownlint` if available.
+- [x] 5.3 Verify markdown renders cleanly. Optional: lint via `markdownlint` if available.
 
 ## 6. OpenSpec validation
 
