@@ -30,12 +30,13 @@ config:
 
     # Users to be excluded from auditing. Wildcard patterns are supported.
     # Excluding service accounts here is the volume-control knob. Per the
-    # security model, only the hermes service and admins should bypass the API,
-    # so the hermes ingest user is the only legitimate high-volume bypass and
-    # is excluded by default. kibanaserver is excluded to prevent dashboard
-    # polling from drowning the audit log.
+    # security model, only the hermes service and admins should bypass the
+    # API; everything else (admin CLI actions, human queries, failed logins,
+    # privilege probes) is audited. Defaults cover the four legitimate
+    # service-account categories: dashboards (kibanaserver*), Hermes-API
+    # (hermes), CADF writer (audit*), and metrics scrape (promuser*).
     ignore_users:
-{{- range .Values.audit.ignore_users | default (list "kibanaserver" "hermes") }}
+{{- range .Values.audit.ignore_users | default (list "kibanaserver" "kibanaserver2" "hermes" "audit" "audit2" "promuser" "promuser2") }}
       - {{ . }}
 {{- end }}
 
