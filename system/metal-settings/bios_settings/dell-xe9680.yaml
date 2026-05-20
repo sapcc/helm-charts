@@ -1,0 +1,43 @@
+# SPDX-FileCopyrightText: 2024 SAP SE or an SAP affiliate company and IronCore contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+# BIOS settings for Dell PowerEdge XE9680 (GPU server).
+#
+# Key differences from dell-default.yaml:
+#   - IntegratedNetwork1 and EmbNic1Nic2 Enabled we do not know what is used for PXE boot.
+#   - TpmSecurity: On (GPU servers ship with TPM enabled).
+#   - No MemFrequency: xe9680 BIOS attribute registry does not expose this setting.
+#   - PxeDev interfaces intentionally unset here — they reference add-in NIC FQDDs
+#     (e.g. NIC.Slot.X-1-1) that vary by install. Configure per-host if required.
+#
+# Values sourced from:
+#   baremetal-config/dell/poweredge-xe9680/bios/defaultsettings.yml
+#   baremetal-config/dell/poweredge-xe9680/bios/1.3.6-settings.yml
+settingsFlow:
+- name: enableIntegratedNIC
+  priority: 10
+  settings:
+    # xe9680 has both embedded NIC controllers for PXE boot we do not know yet which one will be used for PXE, so enable both.
+    EmbNic1Nic2: Enabled
+    IntegratedNetwork1: Enabled
+- name: enablePxeDevs
+  priority: 15
+  settings:
+    PxeDev1EnDis: Enabled
+    PxeDev2EnDis: Enabled
+    PxeDev3EnDis: Enabled
+    PxeDev4EnDis: Enabled
+- name: generalSettings
+  priority: 20
+  settings:
+    AcPwrRcvry: Last
+    AcPwrRcvryDelay: Random
+    AdddcSetting: Disabled
+    BootMode: Uefi
+    CECriticalSEL: Enabled
+    IscsiDev1EnDis: Disabled
+    MemOpMode: OptimizerMode
+    PPROnUCE: Enabled
+    PwrButton: Disabled
+    SysProfile: PerfOptimized
+    TpmSecurity: "On"

@@ -1,0 +1,25 @@
+# SPDX-FileCopyrightText: 2024 SAP SE or an SAP affiliate company and IronCore contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+# BIOS settings for HPE ProLiant DL380 Gen12 (iLO 7).
+#
+# NOTE: baremetal-config uses a two-phase approach for this model — it first applies
+# WorkloadProfile "Virtualization-MaxPerformance" as a preset so that dependent settings
+# are populated, then overrides with WorkloadProfile "Custom" and the settings below.
+# Metal-operator does NOT support the same key appearing in two flow steps (duplicate-key
+# validation fails the BIOSSettings object). Therefore only the final custom values are
+# applied here. If dependent settings from the preset are required, they must be added
+# explicitly to this file once known.
+#
+# Values sourced from: baremetal-config/hpe/proliant-dl380-gen12/bios/defaultsettings.yml
+settingsFlow:
+- name: customerWorkProfile
+  priority: 10
+  settings:
+    WorkloadProfile: Custom
+- name: customSettings
+  priority: 20
+  settings:
+    FanFailPolicy: Allow
+    SubNumaClustering: Disabled
+    ThermalConfig: IncreasedCooling
