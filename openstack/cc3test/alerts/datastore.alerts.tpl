@@ -15,7 +15,7 @@ groups:
 # TODO - we first will have to bring the mounted tests into one of the dashboards
 #      dashboard: cc3test-api-status?var-service={{`{{ $labels.service }}`}}
       playbook: "docs/support/playbook/cinder/alerts/cc3test-alert-datastore-host-not-accessible/"
-      awx: '#/templates/job_template/2943"
+      awx: "#/templates/job_template/2943"
     annotations:
       description: "Datastore {{`{{ $labels.vc_ds }}`}} not accessible from host {{`{{ $labels.vc_hs }}`}} of cluster {{`{{ $labels.vc_cs }}`}}"
       summary: "Datastore not accessible from host"

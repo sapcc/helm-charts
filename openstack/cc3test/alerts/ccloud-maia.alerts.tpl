@@ -52,7 +52,7 @@ groups:
       report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
     annotations:
       description: "Maia is missing metric {{`{{ $labels.name }}`}}"
-      summary: Maia is missing metric
+      summary: "Maia is missing metric"
 
   - alert: CCloudMaiaFlappingMetrics
     expr: |
@@ -70,4 +70,4 @@ groups:
       report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
     annotations:
       description: "Maia has flapping metric {{`{{ $labels.name }}`}}"
-      summary: Maia has flapping metric
+      summary: "Maia has flapping metric"

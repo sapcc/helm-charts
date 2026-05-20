@@ -102,8 +102,8 @@ groups:
       dashboard: cc3test-certificate-status?var-service=prometheus
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-certificate-status?var-service=prometheus"
     annotations:
-      description: Certificate on {{`{{ $labels.cert_name }}`}} expires in less than 15 days
-      summary: Certificate expires
+      description: "Certificate on {{`{{ $labels.cert_name }}`}} expires in less than 15 days"
+      summary: "Certificate expires"
 
   - alert: PrometheusSSOCertificateExpiresInLessThan4Week
     expr: last_over_time(cc3test_cert_expires_in_days{type="prometheus-sso"}[1d]) < 30
@@ -118,5 +118,5 @@ groups:
       dashboard: cc3test-certificate-status?var-service=prometheus
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-certificate-status?var-service=prometheus"
     annotations:
-      description: Certificate on {{`{{ $labels.cert_name }}`}} expires in less than 30 days
-      summary: Certificate expires
+      description: "Certificate on {{`{{ $labels.cert_name }}`}} expires in less than 30 days"
+      summary: "Certificate expires"

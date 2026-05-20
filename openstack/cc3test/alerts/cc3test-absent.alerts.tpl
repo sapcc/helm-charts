@@ -43,3 +43,4 @@ groups:
       meta: "purge metrics for {{`{{ $labels.type }}`}}/{{`{{ $labels.name }}`}} are absent for more than 30 minutes"
     annotations:
       description: "purge metrics for {{`{{ $labels.type }}`}}/{{`{{ $labels.name }}`}} are absent for more than 30 minutes"
+      summary: "purge metrics for {{`{{ $labels.type }}`}}/{{`{{ $labels.name }}`}} are absent"
