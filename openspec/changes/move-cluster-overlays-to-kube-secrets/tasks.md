@@ -33,11 +33,11 @@
 
 ## 3. Delete per-cluster overlays for `a-qa-de-200`
 
-- [ ] 3.1 Delete `system/kustomize/metal-operator-remote/host/overlays/a-qa-de-200/`.
-- [ ] 3.2 Delete `system/kustomize/metal-operator-remote/remote/custom/overlays/a-qa-de-200/`.
-- [ ] 3.3 Delete `system/kustomize/metal-operator-remote/overlays/a-qa-de-200/`.
-- [ ] 3.4 Verify deletions: `find system/kustomize/metal-operator-remote -type d -name 'a-qa-de-200'` should return no results.
-- [ ] 3.5 Verify NO `host/overlays/`, `remote/custom/overlays/`, or top-level `overlays/` directories with cluster-named subdirectories remain (the parent overlay directories may exist as empty if other clusters were once there — they should be empty or removed):
+- [x] 3.1 Delete `system/kustomize/metal-operator-remote/host/overlays/a-qa-de-200/`.
+- [x] 3.2 Delete `system/kustomize/metal-operator-remote/remote/custom/overlays/a-qa-de-200/`.
+- [x] 3.3 Delete `system/kustomize/metal-operator-remote/overlays/a-qa-de-200/`.
+- [x] 3.4 Verify deletions: `find system/kustomize/metal-operator-remote -type d -name 'a-qa-de-200'` should return no results.
+- [x] 3.5 Verify NO `host/overlays/`, `remote/custom/overlays/`, or top-level `overlays/` directories with cluster-named subdirectories remain (the parent overlay directories may exist as empty if other clusters were once there — they should be empty or removed):
   ```
   find system/kustomize/metal-operator-remote -type d -name overlays -exec ls -la {} \;
   ```
