@@ -97,7 +97,7 @@ groups:
       context: "{{`{{ $labels.type }}`}}"
       meta: "Cinder create snapshot test fails"
       dashboard: "cc3test-canary-status?var-service={{`{{ $labels.service }}`}}"
-      persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/ccc3test-canary-status?var-service={{`{{ $labels.service }}`}}"
+      persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/cc3test-canary-status?var-service={{`{{ $labels.service }}`}}"
       playbook: "docs/support/playbook/cinder/alerts/cc3test-alert-create-snapshot/"
       report: "cc3test/admin/object-storage/swift/containers/cc3test/objects/{{`{{ $labels.base64path }}`}}"
     annotations:
