@@ -143,8 +143,8 @@ The method substitutes `https://github.com/sapcc/helm-charts.git//<path>?ref=mas
 
 ## 6. OpenSpec validation
 
-- [ ] 6.1 Run `openspec validate move-cluster-overlays-to-kube-secrets --strict` from this repo. Expected: `Change 'move-cluster-overlays-to-kube-secrets' is valid`.
-- [ ] 6.2 If validation fails, fix the offending artifact (most likely `specs/kustomize-resource-splitting/spec.md` or `specs/kustomize-sidecar-injection/spec.md` if their headers don't exactly match the existing specs) and re-run.
+- [x] 6.1 Run `openspec validate move-cluster-overlays-to-kube-secrets --strict` from this repo. Expected: `Change 'move-cluster-overlays-to-kube-secrets' is valid`.
+- [x] 6.2 If validation fails, fix the offending artifact (most likely `specs/kustomize-resource-splitting/spec.md` or `specs/kustomize-sidecar-injection/spec.md` if their headers don't exactly match the existing specs) and re-run.
 
 ## 7. Combine with existing PR on `poc/kustomize-metal-operator-remote`
 
@@ -193,14 +193,14 @@ The method substitutes `https://github.com/sapcc/helm-charts.git//<path>?ref=mas
 
 ## 8. Pre-merge final checks
 
-- [ ] 8.1 Re-run validation:
+- [x] 8.1 Re-run validation:
   ```
   cd /Users/D065300/IdeaProjects/sapcc/helm-charts
   openspec validate move-cluster-overlays-to-kube-secrets --strict
   ```
   Expected: clean.
-- [ ] 8.2 Re-run kube-secrets overlay builds against this branch (Task 4.2). Both must succeed.
-- [ ] 8.3 Confirm the deleted paths are still deleted in the working tree (no accidental restore during rebase / conflict resolution):
+- [x] 8.2 Re-run kube-secrets overlay builds against this branch (Task 4.2). Both must succeed.
+- [x] 8.3 Confirm the deleted paths are still deleted in the working tree (no accidental restore during rebase / conflict resolution):
   ```
   test ! -d system/kustomize/metal-operator-remote/host/overlays/rt-eu-de-1 && echo OK
   test ! -d system/kustomize/metal-operator-remote/host/overlays/a-qa-de-200 && echo OK
@@ -210,7 +210,7 @@ The method substitutes `https://github.com/sapcc/helm-charts.git//<path>?ref=mas
   test ! -d system/kustomize/metal-operator-remote/overlays/a-qa-de-200 && echo OK
   ```
   All six checks must print `OK`.
-- [ ] 8.4 Confirm bases / components / upstream are still present:
+- [x] 8.4 Confirm bases / components / upstream are still present:
   ```
   test -d system/kustomize/metal-operator-remote/host/base && echo OK
   test -d system/kustomize/metal-operator-remote/remote/custom/base && echo OK
