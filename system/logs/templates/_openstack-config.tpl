@@ -160,6 +160,32 @@ transform/keystone_api:
       statements:
         - merge_maps(log.attributes, ExtractGrokPatterns(log.body, "%{DATE_EU} %{TIME} %{NUMBER} %{NOTSPACE:log.level} %{NOTSPACE:component} \\[%{NOTSPACE:request.id} %{NOTSPACE:global.request.id} usr %{NOTSPACE:user.id} prj %{NOTSPACE:project.id} dom %{NOTSPACE:domain.id} usr-dom %{NOTSPACE:user.domain.id} prj-dom %{NOTSPACE:project.domain.id}\\] %{GREEDYDATA}'%{WORD:request.method} %{URIPATH:uri}' %{WORD:action}", true), "upsert")
 
+transform/keystone_api_json:
+  error_mode: ignore
+  log_statements:
+    - context: log
+      conditions:
+        - resource.attributes["k8s.container.name"] == "keystone-api"
+        - resource.attributes["k8s.cluster.name"] == "qa-de-2"
+      statements:
+        - merge_maps(log.cache, ParseJSON(log.body), "upsert") where IsMatch(log.body, "^\\{")
+        - set(log.attributes["msg"], log.cache["msg"])
+        - set(log.severity["text"], log.cache["levelname"])
+        - set(log.attributes["infra.container.component"], log.cache["name"])
+        - set(log.attributes["infra.request.id"], log.cache["request_id"])
+        - set(log.attributes["infra.global.request.id"], log.cache["global_request_id"])
+        - set(log.attributes["user.id"], log.cache["user"])
+        - set(log.attributes["user.id"], log.cache["user_identity"])
+        - set(log.attributes["domain.project.id"], log.cache["project_id"])
+        - set(log.attributes["http.client.address"], log.cache["client_ip"])
+        - set(log.attributes["http.client.address"], log.cache["remote_addr"]) where log.attributes["http.client.address"] == nil
+        - set(log.attributes["http.request.method"], log.cache["method"])
+        - set(log.attributes["http.url.path"], log.cache["uri"])
+        - set(log.attributes["httpversion"], log.cache["protocol"])
+        - set(log.attributes["http.response.status_code"], log.cache["status"])
+        - set(log.attributes["http.user_agent.original"], log.cache["user_agent"])
+        - merge_maps(log.attributes, ExtractGrokPatterns(log.attributes["msg"], "(?:AC-)%{NOTSPACE:user.id}\\s+has a remaining credit of %{NUMBER} - request %{WORD:http.request.method} %{NOTSPACE:http.url.path} returned %{NUMBER:http.response.status_code:int}", true), "upsert") where log.attributes["msg"] != nil
+
 filter/hermes_logstash:
   error_mode: ignore
   logs:
@@ -216,7 +242,7 @@ opensearch/swift_failover_b:
 {{- define "openstack.pipeline" }}
 logs/containerd:
   receivers: [filelog/containerd]
-  processors: [k8s_attributes,attributes/cluster,transform/ingress,transform/neutron_agent,transform/neutron_errors,transform/openstack_api,transform/non_openstack,transform/network_generic_ssh_exporter,transform/snmp_exporter,transform/elektra,transform/keystone_api,transform/kvm-ha-service,transform/coredns_api,transform/perses,filter/hermes_logstash,transform/swift_proxy,attributes/swift_proxy]
+  processors: [k8s_attributes,attributes/cluster,transform/ingress,transform/neutron_agent,transform/neutron_errors,transform/openstack_api,transform/non_openstack,transform/network_generic_ssh_exporter,transform/snmp_exporter,transform/elektra,transform/keystone_api,transform/keystone_api_json,transform/kvm-ha-service,transform/coredns_api,transform/perses,filter/hermes_logstash,transform/swift_proxy,attributes/swift_proxy]
   exporters: [routing]
 
 logs/route_swift:
