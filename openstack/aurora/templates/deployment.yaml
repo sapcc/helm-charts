@@ -47,7 +47,7 @@ spec:
             - name: PORT
               value: "3000"
             - name: IDENTITY_ENDPOINT
-              value: "http://keystone.monsoon3.svc.kubernetes.{{.Values.global.region}}.{{.Values.global.tld}}:5000/v3"
+              value: {{ .Values.identity_endpoint | default (printf "http://keystone.monsoon3.svc.kubernetes.%s.%s:5000/v3" .Values.global.region .Values.global.tld) | quote }}
           livenessProbe:
             httpGet:
               path: /
