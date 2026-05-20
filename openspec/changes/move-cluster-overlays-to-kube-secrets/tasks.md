@@ -148,13 +148,13 @@ The method substitutes `https://github.com/sapcc/helm-charts.git//<path>?ref=mas
 
 ## 7. Combine with existing PR on `poc/kustomize-metal-operator-remote`
 
-- [ ] 7.1 Stage all the changes from Tasks 2–5:
+- [x] 7.1 Stage all the changes from Tasks 2–5:
   ```
   git status --short
   git add -A system/kustomize/metal-operator-remote/
   git add openspec/changes/move-cluster-overlays-to-kube-secrets/
   ```
-- [ ] 7.2 Commit with a clear message that this is the move-overlays portion of the combined PR:
+- [x] 7.2 Commit with a clear message that this is the move-overlays portion of the combined PR:
   ```
   git commit -m "feat(kustomize): move per-cluster overlays to cc/kube-secrets
 
@@ -170,11 +170,11 @@ The method substitutes `https://github.com/sapcc/helm-charts.git//<path>?ref=mas
   Companion change merged: cc/kube-secrets@<sha-from-task-1.1>
   Tracking: cc/unified-kubernetes#1169"
   ```
-- [ ] 7.3 Push to the existing `poc/kustomize-metal-operator-remote` branch:
+- [x] 7.3 Push to the existing `poc/kustomize-metal-operator-remote` branch:
   ```
   git push origin poc/kustomize-metal-operator-remote
   ```
-- [ ] 7.4 Update the existing PR description on github.com/sapcc/helm-charts to reflect the combined scope. Example structure:
+- [x] 7.4 Update the existing PR description on github.com/sapcc/helm-charts to reflect the combined scope. Example structure:
   ```
   ## Summary
   This PR contains two distinct changes that landed on the same branch:
@@ -259,7 +259,7 @@ The method substitutes `https://github.com/sapcc/helm-charts.git//<path>?ref=mas
 - [ ] 11.1 Notify operators (in coordination with the kube-secrets companion change author): the helm-charts side of the move is complete. Per-cluster overlays for `rt-eu-de-1` and `a-qa-de-200` now live exclusively in `cc/kube-secrets`. The new kustomize-based pipelines in kube-secrets remain in `-OFF` state until cutover (separate activity).
 - [ ] 11.2 Note the branch `poc/kustomize-metal-operator-remote` is now obsolete and can be deleted from the remote (and locally). It served two changes (the POC + the move-overlays); both are merged.
 - [ ] 11.3 The DRAFT design doc at `docs/superpowers/specs/2026-05-18-move-cluster-overlays-to-kube-secrets-design.md` becomes historical context. Either delete it (the OpenSpec change archive is the authoritative record now) or convert it to an ADR-style record. Leave decision to the maintainer.
-- [ ] 11.4 **Post-push URL re-validation (deferred from Task 4.6).** After Step 7.3 (push to `origin/poc/kustomize-metal-operator-remote`) and before merging, re-run Method 4A against the post-deletion remote HEAD to confirm the URL-fetch render is **still byte-identical** to the local-rewrite render captured during Task 4B:
+- [x] 11.4 **Post-push URL re-validation (deferred from Task 4.6).** After Step 7.3 (push to `origin/poc/kustomize-metal-operator-remote`) and before merging, re-run Method 4A against the post-deletion remote HEAD to confirm the URL-fetch render is **still byte-identical** to the local-rewrite render captured during Task 4B:
   ```
   KS_TEST=/tmp/ks-pr-validation-postpush
   rm -rf "$KS_TEST"

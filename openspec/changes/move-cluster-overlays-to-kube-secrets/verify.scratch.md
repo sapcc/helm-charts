@@ -122,3 +122,24 @@ Per user request, also validated by leaving the kube-secrets PR refs as-is (`?re
 This is the strongest possible pre-merge proof of safety: the deletion removed only paths that kube-secrets does **not** reference — both renders agree because the bases / components / upstream that survive the deletion are unchanged. Equivalently, the deletion is a render-level no-op for kube-secrets consumers.
 
 A follow-up run of the github.com URL build *after* pushing the deletion commits (Step 7.3 of plan) would resolve `?ref=poc/kustomize-metal-operator-remote` against the post-deletion HEAD and produce the same render — included as an explicit Step 11.x check below to be safe.
+
+## Task 7 — Push & PR description update
+
+Pushed `poc/kustomize-metal-operator-remote` to `origin`:
+- BASE: `26aed706129dd20399edccec1ad330402967647b` (pre-push remote HEAD)
+- HEAD: `71fb900041f1ead75744f19d165502d8894c7ffe` (post-push remote HEAD)
+- 9 commits published.
+
+PR #11633 description updated to reflect the augmented two-scope structure (Original POC + Move-overlays). Explanatory comment posted: <https://github.com/sapcc/helm-charts/pull/11633#issuecomment-4497717556>.
+
+## Task 11.4 — Post-push URL re-validation
+
+Confirms the post-deletion remote produces the same render as both Method 4B (local-rewrite, post-deletion local) and the pre-push URL fetch (pre-deletion remote):
+
+| Method | helm-charts source | Exit | Stdout lines | Diff vs. Task 4 baseline |
+|---|---|---|---|---|
+| 4A pre-push  | github.com `?ref=poc/...` (HEAD `26aed7061`, pre-deletion)  | 0 / 0 | 1609 / 1751 | byte-identical |
+| 4B local-rewrite | local checkout, post-deletion (HEAD `940c25a8af`) | 0 / 0 | 1609 / 1751 | (baseline) |
+| 4A post-push | github.com `?ref=poc/...` (HEAD `71fb900041`, post-deletion) | 0 / 0 | 1609 / 1751 | byte-identical |
+
+Triple validation: **pre-deletion remote ≡ post-deletion remote ≡ post-deletion local** for both kube-secrets overlays. The deletion is provably a render-level no-op for kube-secrets consumers, both before and after the push.
