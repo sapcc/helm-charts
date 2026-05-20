@@ -113,6 +113,13 @@ spec:
         volumeMounts:
         - mountPath: /opt/dnsmasq
           name: metal-dnsmasq
+        {{- if .Values.bootScripts }}
+        {{- range $filename, $_ := .Values.bootScripts }}
+        - mountPath: /shared/tftpboot/{{ $filename }}
+          name: metal-bootscripts
+          subPath: {{ $filename }}
+        {{- end }}
+        {{- end }}
       dnsPolicy: ClusterFirst
       restartPolicy: Always
       schedulerName: default-scheduler
@@ -122,3 +129,9 @@ spec:
           defaultMode: 484
           name: metal-dnsmasq
         name: metal-dnsmasq
+      {{- if .Values.bootScripts }}
+      - configMap:
+          defaultMode: 484
+          name: metal-bootscripts
+        name: metal-bootscripts
+      {{- end }}

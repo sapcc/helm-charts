@@ -2,6 +2,16 @@
 
 This file is used to list changes made in each version of the common chart rabbitmq.
 
+## 0.25.0 - 2026/05/12
+
+- Allow not adding `rabbitmq.serviceName` to the certificate's dnsNames
+  - If enabled, `externalNames` is a required setting
+  - Makes most sense together with also setting `certificate.commonName`
+
+## 0.24.1 - 2026/04/30
+- Enable transient_nonexcl_queues option, as it's in use by some services
+- Chart version bumped
+
 ## 0.24.0 - 2026/04/28
 
 - Use `clusterDNSSearchDomain` to generate the certificate default common name and SAN
