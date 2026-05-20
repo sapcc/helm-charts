@@ -67,3 +67,58 @@ Six overlay directories slated for deletion, each with exactly one `kustomizatio
 - `host/overlays/{rt-eu-de-1,a-qa-de-200}/`
 - `remote/custom/overlays/{rt-eu-de-1,a-qa-de-200}/`
 - `overlays/{rt-eu-de-1,a-qa-de-200}/`
+
+## Task 2 — rt-eu-de-1 deletion (commit 432b70ae24)
+
+- 3 directories removed via `git rm -r`
+- `kustomize build host/base/` and `kustomize build remote/custom/base/` produce **byte-identical** output before vs after deletion (`diff` returns 0)
+- Bases / components / upstream / scripts unchanged
+
+## Task 3 — a-qa-de-200 deletion (commit 940c25a8af)
+
+- 3 directories removed via `git rm -r`
+- `git rm` automatically removed the now-empty `host/overlays/`, `remote/custom/overlays/`, and `overlays/` parent directories (no manual `rmdir` needed)
+- `kustomize build` of bases continues to succeed with byte-identical output
+- Final tree contains only `host/base`, `remote/custom/base`, `remote/custom/components/{prod,qa}`, `remote/upstream/{crds-and-rbac,webhooks}`, `components/webhook-injector`, `scripts`
+
+## Task 4B — Cross-repo validation (kube-secrets PR branch)
+
+**Outcome:** ✓ Both kube-secrets overlays build successfully against the local helm-charts checkout with the deletions applied (the post-merge equivalent state).
+
+| overlay | exit | resources | kinds |
+|---|---|---|---|
+| `runtime/eu-de-1/rt-eu-de-1/metal-operator-remote/` | 0 | 167 | Deployment, Service, ConfigMap, Namespace, ClusterRole, ClusterRoleBinding, ServiceAccount, Role, RoleBinding, Ingress, NetworkPolicy, Secret (76), ManagedResource (73) |
+| `admin-k3s/qa-de-1/a-qa-de-200/metal-operator-remote/` | 0 | 172 | (same kinds; qa-de-200 has 2 of ServiceAccount/Service/Role/RoleBinding/ConfigMap due to the qa component) |
+
+This confirms kube-secrets overlays reference only bases/components/upstream paths that survive the deletion — no accidentally-deleted dependency.
+
+### Plan defect found and worked around
+
+The plan's Step 4B.2 instructs a `perl -i -pe` rewrite that produces **absolute** filesystem paths (e.g., `/Users/.../helm-charts/system/...`). kustomize rejects absolute paths in `resources:` entries with `new root '<path>' cannot be absolute`.
+
+Workaround used: rewrote refs to **relative** paths via Python (`os.path.relpath`), using `os.path.realpath` for both endpoints to handle macOS `/tmp -> /private/tmp` symlink correctly. Built with `kustomize build --load-restrictor=LoadRestrictionsNone` to allow path traversal outside each kustomization's root.
+
+The relative-path / realpath approach should be the corrected recipe in the kustomize-resource-splitting capability spec or in the kube-secrets `cluster-overlay-layout` README, since validators on other workstations will hit the same issue. (See Step 11 follow-up.)
+
+### State-B-only caveat (informational)
+
+Because this validation was against the kube-secrets PR branch (State B), the `?ref=poc/kustomize-metal-operator-remote` URLs were rewritten to local paths — they were never resolved over the network. The validation confirms **structural compatibility** of helm-charts (with deletions) against kube-secrets's expected base/component/upstream paths.
+
+The post-merge "production today" validation (Method 4A — `?ref=master` against actual github.com URLs) cannot run until both PRs merge to their respective masters. This is the standard chicken-and-egg of two-repo coordinated changes; the State-B render here is the closest we can get pre-merge.
+
+### Additional Method-4A-style validation (URL fetch, current remote state)
+
+Per user request, also validated by leaving the kube-secrets PR refs as-is (`?ref=poc/kustomize-metal-operator-remote`) and letting kustomize fetch helm-charts directly from github.com:
+
+| overlay | exit | stdout lines | wall time |
+|---|---|---|---|
+| `runtime/eu-de-1/rt-eu-de-1/metal-operator-remote/` | 0 | 1609 | ~19 s |
+| `admin-k3s/qa-de-1/a-qa-de-200/metal-operator-remote/` | 0 | 1751 | ~18 s |
+
+`origin/poc/kustomize-metal-operator-remote` HEAD at validation time: `26aed7061` (the **pre-deletion** state — the deletion commits `432b70ae24` and `940c25a8af` are still local).
+
+**Crucial finding: the URL-fetch render (pre-deletion remote) and the local-rewrite render (post-deletion local) are byte-identical (`diff` returns 0 for both overlays).**
+
+This is the strongest possible pre-merge proof of safety: the deletion removed only paths that kube-secrets does **not** reference — both renders agree because the bases / components / upstream that survive the deletion are unchanged. Equivalently, the deletion is a render-level no-op for kube-secrets consumers.
+
+A follow-up run of the github.com URL build *after* pushing the deletion commits (Step 7.3 of plan) would resolve `?ref=poc/kustomize-metal-operator-remote` against the post-deletion HEAD and produce the same render — included as an explicit Step 11.x check below to be safe.

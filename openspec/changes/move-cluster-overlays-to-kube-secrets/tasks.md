@@ -70,14 +70,14 @@ Use this method when the kube-secrets companion PR is still on a feature branch 
 
 The method substitutes `https://github.com/sapcc/helm-charts.git//<path>?ref=master` (and any test-phase feature-branch refs) with the local helm-charts checkout path. kustomize then reads bases directly from the local helm-charts working tree (the helm-charts PR branch with deletions applied) instead of fetching from github.com. This validates the **post-merge state** — what production looks like after both PRs merge.
 
-- [ ] 4B.1 Identify the kube-secrets PR branch and clone it locally:
+- [x] 4B.1 Identify the kube-secrets PR branch and clone it locally:
   ```
   KS_PR_BRANCH=<kube-secrets-PR-branch-name>
   KS_TEST=/tmp/ks-pr-validation
   rm -rf "$KS_TEST"
   git clone --branch "$KS_PR_BRANCH" https://github.wdf.sap.corp/cc/kube-secrets "$KS_TEST"
   ```
-- [ ] 4B.2 Substitute github.com URL refs with the local helm-charts checkout path. **Edit the temporary clone, not the original kube-secrets repo:**
+- [x] 4B.2 Substitute github.com URL refs with the local helm-charts checkout path. **Edit the temporary clone, not the original kube-secrets repo:**
   ```
   HC_LOCAL=/Users/D065300/IdeaProjects/sapcc/helm-charts  # currently on poc/kustomize-metal-operator-remote with deletions applied
 
@@ -91,7 +91,8 @@ The method substitutes `https://github.com/sapcc/helm-charts.git//<path>?ref=mas
   grep -rn "github.com/sapcc/helm-charts" "$KS_TEST/values/kustomize/" && echo "FAIL: refs still present" || echo "OK: refs rewritten"
   grep -rn "$HC_LOCAL" "$KS_TEST/values/kustomize/" | head -20
   ```
-- [ ] 4B.3 Run `kustomize build` against the rewritten temporary clone:
+  > **Plan defect found at execution time:** The `perl -i -pe` recipe above produces **absolute** filesystem paths (e.g., `/Users/.../helm-charts/system/...`). kustomize rejects absolute paths in `resources:` entries with `new root '<path>' cannot be absolute`. **Working recipe:** rewrite to **relative** paths via `os.path.relpath(HC_LOCAL, parent_dir_of_kustomization)`, using `os.path.realpath` for both endpoints to resolve macOS `/tmp -> /private/tmp` symlinks correctly. Build with `kustomize build --load-restrictor=LoadRestrictionsNone` to allow path traversal outside the kustomization root. See `verify.scratch.md` Task 4B section for the Python one-liner that worked.
+- [x] 4B.3 Run `kustomize build` against the rewritten temporary clone:
   ```
   kustomize build "$KS_TEST/values/kustomize/runtime/eu-de-1/rt-eu-de-1/metal-operator-remote/" > /tmp/rt-eu-de-1.kustomize.yaml 2>&1
   echo "rt-eu-de-1 exit: $?"
@@ -100,12 +101,14 @@ The method substitutes `https://github.com/sapcc/helm-charts.git//<path>?ref=mas
   echo "a-qa-de-200 exit: $?"
   ```
   Both MUST exit 0. If either fails, the deletion has removed something a kube-secrets overlay still references — investigate by reading the kustomize error and the kube-secrets overlay file. Restore the dependency in helm-charts (rollback Task 2 / 3 partially) or coordinate a base change with the kube-secrets author.
-- [ ] 4B.4 Spot-check rendered output is non-empty and contains expected resource kinds.
-- [ ] 4B.5 Cleanup: `rm -rf /tmp/ks-pr-validation`. The original kube-secrets PR branch is unaffected (we only edited a throwaway clone).
+- [x] 4B.4 Spot-check rendered output is non-empty and contains expected resource kinds.
+- [x] 4B.5 Cleanup: `rm -rf /tmp/ks-pr-validation`. The original kube-secrets PR branch is unaffected (we only edited a throwaway clone).
 
 ### Common (both methods)
 
-- [ ] 4.6 Compare rendered output against pre-deletion baseline (if captured during a pre-Task-2 dry run) to confirm no resource kinds were unexpectedly dropped.
+- [x] 4.6 Compare rendered output against pre-deletion baseline (if captured during a pre-Task-2 dry run) to confirm no resource kinds were unexpectedly dropped.
+
+  > **Equivalent stronger check executed:** ran Method 4A (kustomize fetches helm-charts directly from github.com via `?ref=poc/kustomize-metal-operator-remote`, which on origin still points at the **pre-deletion** HEAD because our deletion commits are unpushed). The URL-fetch render and the local-rewrite render (Method 4B, post-deletion local) are **byte-identical** for both overlays. This proves the deletion removed only paths kube-secrets does not reference. See `verify.scratch.md` "Additional Method-4A-style validation" for measurements.
 
 ## 5. Update README
 
@@ -256,3 +259,16 @@ The method substitutes `https://github.com/sapcc/helm-charts.git//<path>?ref=mas
 - [ ] 11.1 Notify operators (in coordination with the kube-secrets companion change author): the helm-charts side of the move is complete. Per-cluster overlays for `rt-eu-de-1` and `a-qa-de-200` now live exclusively in `cc/kube-secrets`. The new kustomize-based pipelines in kube-secrets remain in `-OFF` state until cutover (separate activity).
 - [ ] 11.2 Note the branch `poc/kustomize-metal-operator-remote` is now obsolete and can be deleted from the remote (and locally). It served two changes (the POC + the move-overlays); both are merged.
 - [ ] 11.3 The DRAFT design doc at `docs/superpowers/specs/2026-05-18-move-cluster-overlays-to-kube-secrets-design.md` becomes historical context. Either delete it (the OpenSpec change archive is the authoritative record now) or convert it to an ADR-style record. Leave decision to the maintainer.
+- [ ] 11.4 **Post-push URL re-validation (deferred from Task 4.6).** After Step 7.3 (push to `origin/poc/kustomize-metal-operator-remote`) and before merging, re-run Method 4A against the post-deletion remote HEAD to confirm the URL-fetch render is **still byte-identical** to the local-rewrite render captured during Task 4B:
+  ```
+  KS_TEST=/tmp/ks-pr-validation-postpush
+  rm -rf "$KS_TEST"
+  git clone --branch openspec/move-cluster-overlays-to-kube-secrets https://github.wdf.sap.corp/cc/kube-secrets "$KS_TEST"
+  kustomize build "$KS_TEST/values/kustomize/runtime/eu-de-1/rt-eu-de-1/metal-operator-remote/"   > /tmp/rt-eu-de-1.postpush.yaml
+  kustomize build "$KS_TEST/values/kustomize/admin-k3s/qa-de-1/a-qa-de-200/metal-operator-remote/" > /tmp/a-qa-de-200.postpush.yaml
+  diff /tmp/rt-eu-de-1.postpush.yaml   /tmp/rt-eu-de-1.kustomize.yaml   && echo "rt-eu-de-1 OK"
+  diff /tmp/a-qa-de-200.postpush.yaml /tmp/a-qa-de-200.kustomize.yaml && echo "a-qa-de-200 OK"
+  rm -rf "$KS_TEST"
+  ```
+  Both diffs MUST be empty. If non-empty, something between local and remote diverged after push (e.g., CI-injected file, attribute filter, or an unexpected commit landing) — investigate before merging.
+- [ ] 11.5 **Document the relative-path / `--load-restrictor=LoadRestrictionsNone` recipe in kube-secrets.** The plan's perl-rewrite recipe in Task 4B.2 produces absolute paths that kustomize rejects (see plan defect noted in Task 4B). Open a follow-up PR or issue against kube-secrets's `values/kustomize/README.md` (and the `cluster-overlay-layout` capability spec) to document the working recipe (Python `os.path.relpath` + `--load-restrictor=LoadRestrictionsNone`) so reviewers on other workstations don't hit the same dead-end.
