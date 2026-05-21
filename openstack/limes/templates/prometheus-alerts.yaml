@@ -1,5 +1,5 @@
 {{- $values := .Values }}
-{{- if $values.alerts.enabled }}
+{{- if and $values.alerts.enabled (eq .Release.Namespace "limes") }}{{/* <- the alerts deployed into namespace limes are written to also work for namespace limes-global */}}
 {{- range $target, $unused := $values.alerts.prometheus }}
 {{- range $path, $bytes := $.Files.Glob (printf "alerts/%s/*.alerts" $target) }}
 ---

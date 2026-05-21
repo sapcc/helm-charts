@@ -89,3 +89,22 @@ spec:
       role: apiserver
   policyTypes:
   - Egress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: metalapi-ingress-from-kube-monitoring
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "chart.selectorLabels" . | nindent 6 }}
+      control-plane: controller-manager
+  ingress:
+  - ports:
+    - protocol: TCP
+      port: 8082
+    - namespaceSelector:
+        matchLabels:
+          name: kube-monitoring
+  policyTypes:
+  - Ingress

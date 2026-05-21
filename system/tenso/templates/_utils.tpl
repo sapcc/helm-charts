@@ -79,4 +79,14 @@
     configMapKeyRef:
       name: tenso-auto
       key: helm_deployment_cluster_regex
+- name: TENSO_REGION_REGEX
+  valueFrom:
+    configMapKeyRef:
+      name: tenso-auto
+      key: region_regex
+- name: TENSO_AWX_WORKFLOW_AZ_REGEX
+  valueFrom:
+    configMapKeyRef:
+      name: tenso-auto
+      key: awx_workflow_az_regex
 {{- end -}}

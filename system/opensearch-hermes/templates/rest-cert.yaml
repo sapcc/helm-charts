@@ -1,3 +1,59 @@
+{{- if .Values.global.gardener.enabled }}
+# Self-signed issuer to bootstrap the CA
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: selfsigned-issuer
+  namespace: hermes
+spec:
+  selfSigned: {}
+---
+# CA certificate
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: ca-certs
+  namespace: hermes
+spec:
+  isCA: true
+  commonName: opensearch-hermes-ca
+  secretName: opensearch-hermes-ca-secret
+  issuerRef:
+    name: selfsigned-issuer
+    kind: Issuer
+---
+# CA-backed issuer
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: opensearch-hermes-ca-issuer
+  namespace: hermes
+spec:
+  ca:
+    secretName: opensearch-hermes-ca-secret
+---
+# Actual service cert with internal SANs
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: rest-cert
+  namespace: hermes
+spec:
+  secretName: rest-cert
+  issuerRef:
+    name: opensearch-hermes-ca-issuer
+    kind: Issuer
+  dnsNames:
+    - opensearch-hermes
+    - opensearch-hermes.hermes
+    - opensearch-hermes.hermes.svc
+    - opensearch-hermes.hermes.svc.cluster.local
+  privateKey:
+    algorithm: RSA
+    encoding: PKCS8
+    size: 2048
+{{ else }}
+# FQDN cert for all regions
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
@@ -5,10 +61,10 @@ metadata:
   namespace: hermes
 spec:
   dnsNames:
-  - 'opensearch-hermes.{{ .Values.global.region }}.cloud.sap'
-  - 'opensearch-hermes.hermes.svc.kubernetes.{{ .Values.global.region }}.cloud.sap'
+  - 'opensearch-hermes.{{ .Values.global.region }}.{{ .Values.global.tld }}'
+  - 'opensearch-hermes.hermes.svc.kubernetes.{{ .Values.global.region }}.{{ .Values.global.tld }}'
   issuerRef:
-    group: certmanager.cloud.sap
+    group: certmanager.{{ .Values.global.tld }}
     kind: DigicertIssuer
     name: digicert-issuer
   secretName: rest-cert
@@ -16,3 +72,4 @@ spec:
     algorithm: RSA
     encoding: PKCS8
     size: 2048
+{{- end }}

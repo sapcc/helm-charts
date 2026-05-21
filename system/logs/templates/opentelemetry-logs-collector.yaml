@@ -58,10 +58,18 @@ spec:
   envFrom:
     - secretRef:
          name: otel-basic-auth
-{{- if .Values.openTelemetryPlugin.openTelemetry.prometheus.podMonitor.enabled }}
   ports:
+{{- if .Values.openTelemetryPlugin.openTelemetry.prometheus.podMonitor.enabled }}
     - name: prometheus
       port: 8888
+{{- end }}
+{{- if .Values.openTelemetryPlugin.openTelemetry.logsCollector.tracesConfig.enabled }}
+    - name: otlp-grpc
+      port: {{ .Values.openTelemetryPlugin.openTelemetry.logsCollector.tracesConfig.otlp_grpc_port }}
+      protocol: TCP
+    - name: otlp-http
+      port: {{ .Values.openTelemetryPlugin.openTelemetry.logsCollector.tracesConfig.otlp_http_port }}
+      protocol: TCP
 {{- end }}
   image: {{ index .Values "openTelemetryPlugin" "opentelemetry-operator" "manager" "collectorImage" "repository" }}:{{ index .Values "openTelemetryPlugin" "opentelemetry-operator" "manager" "collectorImage" "tag" }}
   volumeMounts:
@@ -89,6 +97,9 @@ spec:
 {{- end }}
 {{- if .Values.openTelemetryPlugin.openTelemetry.logsCollector.externalConfig.enabled }}
     {{- include "external.receiver" . | nindent 6 -}}
+{{- end }}
+{{- if .Values.openTelemetryPlugin.openTelemetry.logsCollector.tracesConfig.enabled }}
+    {{- include "traces.receiver" . | nindent 6 -}}
 {{- end }}
 
     processors:
@@ -283,6 +294,9 @@ spec:
 {{- if .Values.openTelemetryPlugin.openTelemetry.logsCollector.externalConfig.enabled }}
     {{- include "external.exporter" . | nindent 6 -}}
 {{- end }}
+{{- if .Values.openTelemetryPlugin.openTelemetry.logsCollector.tracesConfig.enabled }}
+    {{- include "traces.exporter" . | nindent 6 -}}
+{{- end }}
 
     extensions:
       file_storage/journald:
@@ -349,6 +363,9 @@ spec:
 
 {{- if .Values.openTelemetryPlugin.openTelemetry.logsCollector.externalConfig.enabled }}
     {{- include "external.connectors" . | nindent 6 -}}
+{{- end }}
+{{- if .Values.openTelemetryPlugin.openTelemetry.logsCollector.tracesConfig.enabled }}
+    {{- include "traces.connectors" . | nindent 6 -}}
 {{- end }}
 
     service:
@@ -421,4 +438,7 @@ spec:
 {{- end }}
 {{- if .Values.openTelemetryPlugin.openTelemetry.logsCollector.externalConfig.enabled }}
     {{- include "external.pipeline" . | nindent 8 -}}
+{{- end }}
+{{- if .Values.openTelemetryPlugin.openTelemetry.logsCollector.tracesConfig.enabled }}
+    {{- include "traces.pipeline" . | nindent 8 -}}
 {{- end }}

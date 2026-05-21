@@ -2,12 +2,13 @@ groups:
   - name: netapp-snapmirror
     rules:
     # NOTE:
-    # netapp_snapmirror_labels: destinations only in LOCAL region (from 'snapmirror show' - rich snapmirror details).
-    # netapp_snapmirror_endpoint_labels: destinations in LOCAL and REMOTE regions (from 'snapmirror list-destinations' - endpoints only no details).
- 
-    # Enrich netapp_snapmirror_labels within a region.
+    # netapp_snapmirror_detailed_labels: destinations only in LOCAL region (from 'snapmirror show' - rich details: policy, status, lag_time, health).
+    # netapp_snapmirror_endpoint_labels: destinations in LOCAL and REMOTE regions (from 'snapmirror list-destinations' - endpoints only, no details).
+    # :enhanced suffix (on both): raw metric enriched with OpenStack labels (project_id, share_id, share_name) joined from netapp_volume_labels:manila on the source filer.
+
+    # Enrich netapp_snapmirror_detailed_labels within a region.
     # First with share_id, share_name and project_id, then with destination_cluster.
-    - record: netapp_snapmirror_labels:enhanced
+    - record: netapp_snapmirror_detailed_labels:enhanced
       expr: |
         netapp_snapmirror_labels * on (app, source_vserver, source_volume)
         group_left(project_id, share_id, share_name, source_availability_zone, reason)
@@ -29,9 +30,9 @@ groups:
           "destination_cluster", "$1", "filer", "(.*)"),
           "destination_volume", "$1", "volume", "(.*)")
 
-    # Enrich netapp_snapmirror_labels for cross-region setup.
+    # Enrich netapp_snapmirror_detailed_labels for cross-region setup.
     # They have no share and project labels.
-    - record: netapp_snapmirror_labels:enhanced
+    - record: netapp_snapmirror_detailed_labels:enhanced
       expr: |
         (netapp_snapmirror_labels unless on (source_cluster)
           label_replace(netapp_volume_labels:manila, "source_cluster", "$1", "filer", "(.*)"))
@@ -66,12 +67,45 @@ groups:
           "source_cluster", "$1", "filer", "(.*)"),
           "destination_vserver", "$1", "destination_vserver", "(.*_[BD])\\.[1-9]")
 
-    # Add destination_cluster label, which is the filer label from harvester. 
-    - record: netapp_snapmirror_lag_time:enhanced
-      expr: label_replace(netapp_snapmirror_lag_time, "destination_cluster", "$1", "filer", "(.*)")
+    # Local snapmirror relationships where source is a known Manila share.
+    # Covers all setups (backup targets, replicas, etc.) — no destination filter applied.
+    - record: netapp_snapmirror_labels:local
+      expr: netapp_snapmirror_detailed_labels:enhanced{project_id!="", share_id!=""}
 
-    - record: netapp_snapmirror_last_transfer_duration:enhanced
-      expr: label_replace(netapp_snapmirror_last_transfer_duration, "destination_cluster", "$1", "filer", "(.*)")
+    - record: netapp_snapmirror_lag_time:local
+      expr: |
+        netapp_snapmirror_detailed_labels:enhanced{project_id!="", share_id!=""}
+          * on (filer, source_vserver, source_volume, destination_vserver, destination_volume)
+          group_left() label_replace(netapp_snapmirror_lag_time, "destination_cluster", "$1", "filer", "(.*)")
 
-    - record: netapp_snapmirror_last_transfer_size:enhanced
-      expr: label_replace(netapp_snapmirror_last_transfer_size, "destination_cluster", "$1", "filer", "(.*)")
+    - record: netapp_snapmirror_last_transfer_duration:local
+      expr: |
+        netapp_snapmirror_detailed_labels:enhanced{project_id!="", share_id!=""}
+          * on (filer, source_vserver, source_volume, destination_vserver, destination_volume)
+          group_left() label_replace(netapp_snapmirror_last_transfer_duration, "destination_cluster", "$1", "filer", "(.*)")
+
+    - record: netapp_snapmirror_last_transfer_size:local
+      expr: |
+        netapp_snapmirror_detailed_labels:enhanced{project_id!="", share_id!=""}
+          * on (filer, source_vserver, source_volume, destination_vserver, destination_volume)
+          group_left() label_replace(netapp_snapmirror_last_transfer_size, "destination_cluster", "$1", "filer", "(.*)")
+
+    - record: netapp_snapmirror_source_snapshot_count:local
+      expr: |
+        netapp_snapmirror_detailed_labels:enhanced{project_id!="", share_id!=""}
+          * on (source_cluster, source_vserver, source_volume) group_left()
+          label_replace(label_replace(label_replace(
+            max by (filer, svm, volume) (netapp_volume_snapshot_count),
+            "source_cluster", "$1", "filer", "(.*)"),
+            "source_vserver", "$1", "svm", "(.*)"),
+            "source_volume", "$1", "volume", "(.*)")
+
+    - record: netapp_snapmirror_destination_snapshot_count:local
+      expr: |
+        netapp_snapmirror_detailed_labels:enhanced{project_id!="", share_id!=""}
+          * on (destination_cluster, destination_vserver, destination_volume) group_left()
+          label_replace(label_replace(label_replace(
+            max by (filer, svm, volume) (netapp_volume_snapshot_count),
+            "destination_cluster", "$1", "filer", "(.*)"),
+            "destination_vserver", "$1", "svm", "(.*)"),
+            "destination_volume", "$1", "volume", "(.*)")
