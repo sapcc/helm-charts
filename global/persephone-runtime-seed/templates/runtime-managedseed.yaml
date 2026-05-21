@@ -1,7 +1,7 @@
 {{- range $key, $cluster := .Values.persephoneShoots }}
 {{- $defaultInfraCredsName := printf "openstack-infra-creds-seed-%s" $key | trunc 63 | trimSuffix "-" }}
 {{- $infraCredsName := default $defaultInfraCredsName $cluster.infraCredentialsSecretName }}
-{{- $gardenRegion := default $cluster.region $.Values.appset.region }}
+{{- $gardenRegion := default $cluster.region (dig "appset" "region" "" $.Values) }}
 ---
 apiVersion: seedmanagement.gardener.cloud/v1alpha1
 kind: ManagedSeed
