@@ -65,7 +65,11 @@ Create the name of the service account to use
 */}}
 {{- define "persephone-liquid-apiserver.serviceAccountName" -}}
 {{- if .Values.serviceAccount.create }}
-{{- default (include "persephone-liquid-apiserver.fullname" .) .Values.serviceAccount.name }}
+{{- if .Values.serviceAccount.name }}
+{{- .Values.serviceAccount.name }}
+{{- else }}
+{{- printf "%s-%s-persephone-liquid-apiserver" .Values.region .Values.landscape | trunc 63 | trimSuffix "-" }}
+{{- end }}
 {{- else }}
 {{- default "default" .Values.serviceAccount.name }}
 {{- end }}
