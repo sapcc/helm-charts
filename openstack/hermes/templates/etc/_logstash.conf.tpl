@@ -533,7 +533,7 @@ output {
       retry_max_interval => 10
       validate_after_inactivity => 1000
       ssl => true
-      {{- if .Values.logstash.gardener }}
+      {{- if .Values.global.gardener.enabled }}
       ssl_certificate_authorities => ["/etc/logstash/certs/ca.crt"]
       {{- end}}
       ssl_certificate_verification => true
