@@ -508,3 +508,4 @@ security_analytics_full_access:
     - "indices:data/read/search"
     - "indices:data/read/get"
     - "indices:data/read/field_caps"
+    - "indices:data/write/delete/byquery"
