@@ -75,10 +75,12 @@ spec:
                       values:
                         - agent
       nodeSelector:
-        multus: bond1
+        {{- with $.Values.multusSelector }}
+        multusSelector: {{ . }}
+        {{- end }}
         topology.kubernetes.io/zone: {{ $az_long }}
         {{- with $apod }}
-        kubernetes.cloud.sap/apod: {{ $apod }}
+        {{ $.Values.nodeSeclectorKey | default "kubernetes.cloud.sap/apod" }}: {{ $apod }}
         {{- end }}
       initContainers:
         - name: wait-for-server
