@@ -100,6 +100,9 @@ data:
 
     echo "Outgoing inteface is ${INTERFACE}"
 
+    # Load conntrack helper for TFTP so the kernel tracks ephemeral data ports
+    modprobe nf_conntrack_tftp
+
     echo "Adding rule for SNAT DHCP Reply to correct server IP address"
 
     if iptables-nft -t nat -C POSTROUTING -p udp --sport 67 --dport 67 -j SNAT --to-source ${DHCPSERVERIP} 2>/dev/null; then
@@ -109,11 +112,12 @@ data:
       iptables-nft -t nat -I POSTROUTING 1 -p udp --sport 67 --dport 67 -j SNAT --to-source ${DHCPSERVERIP}
     fi
 
-    if iptables-nft -t nat -C POSTROUTING -p udp --sport 69 --dport 69 -j SNAT --to-source ${DHCPSERVERIP} 2>/dev/null; then
+    # SNAT all TFTP-related traffic (initial + data transfer on ephemeral ports)
+    if iptables-nft -t nat -C POSTROUTING -p udp -m conntrack --ctorigdstport 69 -j SNAT --to-source ${DHCPSERVERIP} 2>/dev/null; then
       echo "Rule for SNAT TFTP Reply already present - skipping"
     else
       echo "Rule for SNAT TFTP Reply not present - creating rule"
-      iptables-nft -t nat -I POSTROUTING 1 -p udp --sport 69 --dport 69 -j SNAT --to-source ${DHCPSERVERIP}
+      iptables-nft -t nat -I POSTROUTING 1 -p udp -m conntrack --ctorigdstport 69 -j SNAT --to-source ${DHCPSERVERIP}
     fi
   dhcp-stop.sh: |
     #!/usr/bin/env bash
@@ -124,4 +128,4 @@ data:
     iptables-nft -t nat -D POSTROUTING -p udp --sport 67 --dport 67 -j SNAT --to-source ${DHCPSERVERIP}
 
     echo "Deleting rule for SNAT TFTP Reply"
-    iptables-nft -t nat -D POSTROUTING -p udp --sport 69 --dport 69 -j SNAT --to-source ${DHCPSERVERIP}
+    iptables-nft -t nat -D POSTROUTING -p udp -m conntrack --ctorigdstport 69 -j SNAT --to-source ${DHCPSERVERIP}
