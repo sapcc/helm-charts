@@ -1,6 +1,8 @@
 {{- range $key, $cluster := .Values.persephoneShoots }}
 {{- $defaultInfraCredsName := printf "openstack-infra-creds-seed-%s" $key | trunc 63 | trimSuffix "-" }}
 {{- $infraCredsName := default $defaultInfraCredsName $cluster.infraCredentialsSecretName }}
+{{- $appset := get $.Values "appset" | default dict }}
+{{- $gardenRegion := default $cluster.region (get $appset "region") }}
 ---
 apiVersion: seedmanagement.gardener.cloud/v1alpha1
 kind: ManagedSeed
@@ -17,7 +19,7 @@ spec:
       apiVersion: gardenlet.config.gardener.cloud/v1alpha1
       kind: GardenletConfiguration
       gardenClientConnection:
-        gardenClusterAddress: https://api.virtual.{{ $cluster.landscapeName }}.persephone.{{ $cluster.region }}.cloud.sap
+        gardenClusterAddress: https://api.virtual.{{ $cluster.landscapeName }}.persephone.{{ $gardenRegion }}.cloud.sap
       logging:
         enabled: true
       seedConfig:
