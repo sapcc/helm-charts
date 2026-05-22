@@ -92,8 +92,6 @@
     secretKeyRef:
       name: log-router-secret
       key: AWS_SECRET_ACCESS_KEY
-- name: LOG_ROUTER_POLICY_FILE
-  value: /etc/log-router/policy.json
 - name: RABBITMQ_USER
   valueFrom:
     secretKeyRef:
@@ -113,19 +111,4 @@
       key: postgres-password
 - name: LOG_ROUTER_DB_URL
   value: "postgres://log-router:$(LOG_ROUTER_DB_PASSWORD)@{{ $.Release.Name }}-postgresql.{{ $.Release.Namespace }}.svc:5432/log-router?sslmode=disable"
-- name: OS_AUTH_URL
-  value: "{{ $.Values.hermes.auth_url }}"
-- name: OS_USERNAME
-  value: "{{ $.Values.hermes.username }}"
-- name: OS_PASSWORD
-  valueFrom:
-    secretKeyRef:
-      name: log-router-secret
-      key: OS_PASSWORD
-- name: OS_USER_DOMAIN_NAME
-  value: "monsoon3"
-- name: OS_PROJECT_NAME
-  value: "cc-demo"
-- name: OS_PROJECT_DOMAIN_NAME
-  value: "monsoon3"
 {{- end -}}
