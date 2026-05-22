@@ -169,7 +169,9 @@ Params:
     {{- if eq $target "api" }}
       {{- $aliasSuffix = "_api" }}
     {{- end }}
-  {{- else if not (has $dbId (list "cell1")) }}
+  {{- else if eq $dbId "cell1" }}
+    {{- $aliasSuffix = ternary "_cell1" "" $envAll.Values.mariadb_cell1.enabled }}
+  {{- else }}
     {{- $aliasSuffix = printf "_%s" $dbId }}
   {{- end }}
   {{- $dbChartAlias := printf "%s%s" (replace "-" "_" $dbType) $aliasSuffix }}
