@@ -81,4 +81,4 @@ groups:
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/health-opensearch?var-cluster=opensearch-logs"
     annotations:
       description: "The index {{`{{ $labels.index }}`}} has exceeded 200 GB in size. Please check the rollover status."
-      summary: "Index size of ({{ $labels.index }}) has exceeeded the threshold."
+      summary: "Index size of ({{`{{ $labels.index }}`}}) has exceeeded the threshold."

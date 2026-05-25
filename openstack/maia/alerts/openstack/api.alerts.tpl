@@ -15,7 +15,7 @@ groups:
       tier: os
       meta: 'Maia exporters lagging'
     annotations:
-      description: Maia exporter {{ $labels.component }} is predicted to break the 60s limit for data collection 7 days from now.
+      description: "Maia exporter {{`{{ $labels.component }}`}} is predicted to break the 60s limit for data collection 7 days from now."
       summary: Maia exporters lagging
 
   - alert: OpenstackMaiaResponsiveness

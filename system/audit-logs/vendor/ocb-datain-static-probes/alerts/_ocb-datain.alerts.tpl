@@ -13,5 +13,5 @@ groups:
       dashboard: 'audit-log-shipping'
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/audit-log-shipping"
     annotations:
-      description: "*{{`{{ $labels.region }}`}}/{{`{{ $labels.clusterType }}`}} * cannot reach Octobus endpoint: {{`{{$labels.instance}}`}}"
+      description: "*{{`{{ $labels.region }}`}}/{{`{{ $labels.clusterType }}`}}* cannot reach Octobus endpoint: {{`{{ $labels.instance }}`}}"
       summary:  Cannot reach Octobus data input

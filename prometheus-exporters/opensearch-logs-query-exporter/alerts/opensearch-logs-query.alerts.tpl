@@ -12,8 +12,8 @@ groups:
       support_group: observability
       playbook: docs/operation/monitor/opensearch_query
     annotations:
-      description: 'opensearch-logs-query-exporter in {{ $labels.region }} is missing.'
-      summary: 'opensearch-logs-query-exporter in {{ $labels.region }} is missing.'
+      description: "opensearch-logs-query-exporter in {{`{{ $labels.region }}`}} is missing."
+      summary: "opensearch-logs-query-exporter in {{`{{ $labels.region }}`}} is missing."
   - alert: OctobusQueryExporterError
     expr: opensearch_logs_octobus_exporter_error_hits > 0
     labels:
@@ -46,11 +46,11 @@ groups:
       support_group: observability
       tier: os
       playbook: docs/operation/monitor/opensearch_query
-      dashboard: health-opensearch?var-cluster={{ $labels.elastic_cluster }}
-      persesDashboard: observability/dashboards/health-opensearch?var-cluster={{ $labels.elastic_cluster }}
+      dashboard: "health-opensearch?var-cluster={{`{{ $labels.elastic_cluster }}`}}"
+      persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/health-opensearch?var-cluster={{`{{ $labels.elastic_cluster }}`}}"
     annotations:
-      description: 'cluster *{{ $labels.elastic_cluster }}* opensearch-logs-query-exporter in `{{ $labels.region }}` is missing.'
-      summary: 'cluster: *{{ $labels.elastic_cluster }}* opensearch-logs-query-exporter in `{{ $labels.region }}` is missing.'
+      description: "cluster *{{`{{ $labels.elastic_cluster }}`}}* opensearch-logs-query-exporter in {{`{{ $labels.region }}`}} is missing."
+      summary: "cluster: *{{`{{ $labels.elastic_cluster }}`}}* opensearch-logs-query-exporter in {{`{{ $labels.region }}`}} is missing."
 
   - alert: SrcSiemRulesUpdaterLogError
     expr: opensearch_siem_error_doc_count > 0
@@ -90,8 +90,8 @@ groups:
       tier: os
       support_group: email
     annotations:
-      description: 'Cronus logs older than 30 days found in {{ $labels.region }}.'
-      summary: 'Cronus logs compliance violation'
+      description: "Cronus logs older than 30 days found in {{`{{ $labels.region }}`}}."
+      summary: "Cronus logs compliance violation"
 
   - alert: MaillogComplianceViolation
     expr: opensearch_logs_maillog_old_logs_hits > 0
@@ -103,5 +103,5 @@ groups:
       tier: os
       support_group: email
     annotations:
-      description: 'Maillog entries older than 30 days found in {{ $labels.region }}.'
-      summary: 'Maillog compliance violation'
+      description: "Maillog entries older than 30 days found in {{`{{ $labels.region }}`}}."
+      summary: "Maillog compliance violation"
