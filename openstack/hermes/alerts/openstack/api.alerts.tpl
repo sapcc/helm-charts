@@ -15,8 +15,8 @@ groups:
       support_group: observability
       tier: os
     annotations:
-      description: "{{ $labels.kubernetes_name }} is producing HTTP responses with 5xx status codes."
-      summary: Server errors on {{ $labels.kubernetes_name }}
+      description: "{{`{{ $labels.kubernetes_name }}`}} is producing HTTP responses with 5xx status codes."
+      summary: "Server errors on {{`{{ $labels.kubernetes_name }}`}}"
 
   - alert: OpenstackHermesKeystoneAvail
     expr: sum(rate(hermes_logon_errors_count[10m])) > 0
@@ -57,11 +57,11 @@ groups:
       support_group: observability
       service: hermes
       dashboard: rabbitmq
-      meta: '{{ $labels.service }} {{ $labels.check }} has over 10000 unacknowledged messages in {{ $labels.kubernetes_name }}. Logstash has disconnected from the RabbitMQ.'
-      playbook: 'docs/devops/alert/hermes/#{{ $labels.check }}'
+      meta: "{{`{{ $labels.service }}`}} {{`{{ $labels.check }}`}} has over 10000 unacknowledged messages in {{`{{ $labels.kubernetes_name }}`}}. Logstash has disconnected from the RabbitMQ."
+      playbook: "docs/devops/alert/hermes/#{{`{{ $labels.check }}`}}"
     annotations:
-      description: '{{ $labels.service }} {{ $labels.check }} has over 10000 unacknowledged messages in {{ $labels.kubernetes_name }}. Logstash has disconnected from the RabbitMQ.'
-      summary: 'RabbitMQ unacknowledged messages count'
+      description: "{{`{{ $labels.service }}`}} {{`{{ $labels.check }}`}} has over 10000 unacknowledged messages in {{`{{ $labels.kubernetes_name }}`}}. Logstash has disconnected from the RabbitMQ."
+      summary: "RabbitMQ unacknowledged messages count"
 
   - alert: OpenstackHermesRabbitMQReady
     expr: sum(rabbitmq_queue_messages_ready{kubernetes_name=~".*rabbitmq-notifications"}) by (kubernetes_name) > 10000
@@ -72,11 +72,11 @@ groups:
       support_group: observability
       service: hermes
       dashboard: rabbitmq
-      meta: '{{ $labels.service }} {{ $labels.check }} has over 10000 ready messages in {{ $labels.kubernetes_name }}. Logstash has disconnected from the RabbitMQ.'
-      playbook: 'docs/devops/alert/rabbitmq/#ready'
+      meta: "{{`{{ $labels.service }}`}} {{`{{ $labels.check }}`}} has over 10000 ready messages in {{`{{ $labels.kubernetes_name }}`}}. Logstash has disconnected from the RabbitMQ."
+      playbook: "docs/devops/alert/rabbitmq/#ready"
     annotations:
-      description: '{{ $labels.service }} {{ $labels.check }} has over 10000 ready messages in {{ $labels.kubernetes_name }}. Logstash has disconnected from the RabbitMQ.'
-      summary: 'RabbitMQ unacknowledged messages count'
+      description: "{{`{{ $labels.service }}`}} {{`{{ $labels.check }}`}} has over 10000 ready messages in {{`{{ $labels.kubernetes_name }}`}}. Logstash has disconnected from the RabbitMQ."
+      summary: "RabbitMQ unacknowledged messages count"
 
   - alert: OpenstackHermesLogstashPlugins
     expr: sum(increase(logstash_node_plugin_events_out_total[30m])) <= 0
@@ -88,11 +88,11 @@ groups:
       service: hermes
       dashboard: hermes-logstash-metrics
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/hermes-logstash-metrics"
-      meta: 'Hermes logstash plugin {{`{{ $labels.plugin }}`}} has stopped transmitting data'
-      playbook: 'docs/devops/alert/hermes'
+      meta: "Hermes logstash plugin {{`{{ $labels.plugin }}`}} has stopped transmitting data"
+      playbook: "docs/devops/alert/hermes"
     annotations:
-      description: 'Hermes logstash plugin {{ $labels.plugin }} has stopped transmitting data'
-      summary: 'Hermes logstash plugin {{ $labels.plugin }} has stopped transmitting data'
+      description: "Hermes logstash plugin {{`{{ $labels.plugin }}`}} has stopped transmitting data"
+      summary: "Hermes logstash plugin {{`{{ $labels.plugin }}`}} has stopped transmitting data"
 
   - alert: OpenstackHermesLogstashPluginsJDBCStaticFailure
     expr: sum(rate(logstash_node_plugin_failures_total{namespace=~"hermes",plugin="jdbc_static"}[10m])) > 0
@@ -104,11 +104,11 @@ groups:
       service: hermes
       dashboard: hermes-logstash-metrics
       persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/hermes-logstash-metrics"
-      meta: 'Hermes logstash plugin {{`{{ $labels.plugin }}`}} has failed enriching data with Metis'
-      playbook: 'docs/devops/alert/hermes'
+      meta: "Hermes logstash plugin {{`{{ $labels.plugin }}`}} has failed enriching data with Metis"
+      playbook: "docs/devops/alert/hermes"
     annotations:
-      description: 'Hermes logstash plugin {{ $labels.plugin }} has failed enriching data with Metis'
-      summary: 'Hermes logstash plugin {{ $labels.plugin }} has failed enriching data with Metis'
+      description: "Hermes logstash plugin {{`{{ $labels.plugin }}`}} has failed enriching data with Metis"
+      summary: "Hermes logstash plugin {{`{{ $labels.plugin }}`}} has failed enriching data with Metis"
       
   - alert: OpenstackHermesUp
     expr: up{component="hermes",namespace="hermes"} < 1
@@ -123,7 +123,7 @@ groups:
       tier: os
       support_group: observability
       meta: "Hermes is not available"
-      playbook: 'docs/devops/alert/hermes'
+      playbook: "docs/devops/alert/hermes"
     annotations:
       description: Hermes monitoring endpoint is down => Hermes is down
       summary: Hermes API is not available, check pod logs
