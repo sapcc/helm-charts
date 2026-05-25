@@ -44,12 +44,6 @@ dhcp_domain = openstack.{{ required ".Values.global.region is missing" .Values.g
 {{ $k }} = {{ $v }}
 {{- end }}
 
-# usage refreshes on new reservations, 0 means disabled
-# number of seconds between subsequent usage refreshes
-max_age = {{ .Values.usage_max_age | default 0 }}
-# count of reservations until usage is refreshed
-until_refresh = {{ .Values.usage_until_refresh | default 0 }}
-
 {{ include "ini_sections.oslo_messaging_rabbit" .}}
 
 [oslo_concurrency]
