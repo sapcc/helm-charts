@@ -12,7 +12,7 @@ groups:
       support_group: observability
       playbook: 'docs/support/playbook/opensearch/generic/lowdiskspace-alert'
       dashboard: health-opensearch?var-cluster=opensearch-hermes&var-datasource=prometheus-openstack
-      persesDashboard: observability/dashboards/health-opensearch?var-cluster=opensearch-hermes
+      persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/health-opensearch?var-cluster=opensearch-hermes"
     annotations:
       description: 'OpenSearch-logs cluster more than 70 % full.
                    Please consider adding more nodes to opensearch-hermes.'
@@ -29,7 +29,7 @@ groups:
       tier: os
       playbook: 'docs/support/playbook/opensearch/generic/lowdiskspace-alert'
       dashboard: health-opensearch?var-cluster=opensearch-hermes&var-datasource=prometheus-openstack
-      persesDashboard: observability/dashboards/health-opensearch?var-cluster=opensearch-hermes
+      persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/health-opensearch?var-cluster=opensearch-hermes"
     annotations:
       description: 'opensearch-hermes cluster 80 % is more than 80 % full.
                    Please consider adding more data nodes to opensearch-hermes.'
@@ -46,7 +46,7 @@ groups:
       tier: os
       playbook: 'docs/support/playbook/opensearch/generic/cluster-red'
       dashboard: health-opensearch?var-cluster=opensearch-hermes&var-datasource=prometheus-openstack
-      persesDashboard: observability/dashboards/health-opensearch?var-cluster=opensearch-hermes
+      persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/health-opensearch?var-cluster=opensearch-hermes"
     annotations:
       description: 'Opensearch cluster *opensearch-hermes* is RED. Please check all nodes.'
       summary: '*opensearch-hermes* cluster is RED'
@@ -62,7 +62,7 @@ groups:
       tier: os
       playbook: 'docs/support/playbook/opensearch/generic/cluster-yellow-no-resync'
       dashboard: health-opensearch?var-cluster=opensearch-hermes&var-datasource=prometheus-openstack
-      persesDashboard: observability/dashboards/health-opensearch?var-cluster=opensearch-hermes
+      persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/health-opensearch?var-cluster=opensearch-hermes"
     annotations:
       description: 'Opensearch cluster *opensearch-hermes* is YELLOW. Please check all nodes.
         nodes one or more are missing.'

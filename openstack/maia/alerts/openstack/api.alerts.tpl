@@ -5,10 +5,10 @@ groups:
     expr: predict_linear(scrape_duration_seconds{service="metrics"}[1h], 7 * 24 * 60 * 60) > 60
     for: 1h
     labels:
-      component: '{{ $labels.component }}'
+      component: '{{`{{ $labels.component }}`}}'
       context: latency
       dashboard: maia-details
-      persesDashboard: observability/dashboards/maia-details
+      persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/maia-details"
       service: maia
       severity: warning
       support_group: observability
@@ -22,10 +22,10 @@ groups:
     expr: maia_request_duration_seconds{quantile="0.99",namespace="maia"} > 3
     for: 1h
     labels:
-      component: '{{ $labels.component }}'
+      component: '{{`{{ $labels.component }}`}}'
       context: latency
       dashboard: maia-details
-      persesDashboard: observability/dashboards/maia-details
+      persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/maia-details"
       service: maia
       severity: warning
       tier: os
@@ -40,10 +40,10 @@ groups:
     expr: rate(maia_tsdb_errors_count{namespace="maia"}[10m]) > 0
     for: 15m
     labels:
-      component: '{{ $labels.component }}'
+      component: '{{`{{ $labels.component }}`}}'
       context: availability
       dashboard: maia-details
-      persesDashboard: observability/dashboards/maia-details
+      persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/maia-details"
       service: maia
       severity: warning
       tier: os
@@ -57,10 +57,10 @@ groups:
     expr: rate(maia_logon_errors_count{namespace="maia"}[5m]) > 0
     for: 15m
     labels:
-      component: '{{ $labels.component }}'
+      component: '{{`{{ $labels.component }}`}}'
       context: availability
       dashboard: maia-details
-      persesDashboard: observability/dashboards/maia-details
+      persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/maia-details"
       service: maia
       severity: warning
       tier: os
@@ -74,10 +74,10 @@ groups:
     expr: up{component="maia",namespace="maia"} < 1
     for: 10m
     labels:
-      component: '{{ $labels.component }}'
+      component: '{{`{{ $labels.component }}`}}'
       context: availability
       dashboard: maia-details
-      persesDashboard: observability/dashboards/maia-details
+      persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/maia-details"
       service: maia
       severity: critical
       tier: os

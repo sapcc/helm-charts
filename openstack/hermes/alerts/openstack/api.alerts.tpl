@@ -9,7 +9,7 @@ groups:
     labels:
       context: api
       dashboard: hermes-overview
-      persesDashboard: observability/dashboards/hermes-overview
+      persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/hermes-overview"
       service: hermes
       severity: info
       support_group: observability
@@ -24,7 +24,7 @@ groups:
     labels:
       context: availability
       dashboard: hermes-overview
-      persesDashboard: observability/dashboards/hermes-overview
+      persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/hermes-overview"
       service: hermes
       severity: warning
       tier: os
@@ -39,7 +39,7 @@ groups:
     labels:
       context: availability
       dashboard: hermes-overview
-      persesDashboard: observability/dashboards/hermes-overview
+      persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/hermes-overview"
       service: hermes
       severity: warning
       tier: os
@@ -87,8 +87,8 @@ groups:
       support_group: observability
       service: hermes
       dashboard: hermes-logstash-metrics
-      persesDashboard: observability/dashboards/hermes-logstash-metrics
-      meta: 'Hermes logstash plugin {{ $labels.plugin }} has stopped transmitting data'
+      persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/hermes-logstash-metrics"
+      meta: 'Hermes logstash plugin {{`{{ $labels.plugin }}`}} has stopped transmitting data'
       playbook: 'docs/devops/alert/hermes'
     annotations:
       description: 'Hermes logstash plugin {{ $labels.plugin }} has stopped transmitting data'
@@ -103,8 +103,8 @@ groups:
       support_group: observability
       service: hermes
       dashboard: hermes-logstash-metrics
-      persesDashboard: observability/dashboards/hermes-logstash-metrics
-      meta: 'Hermes logstash plugin {{ $labels.plugin }} has failed enriching data with Metis'
+      persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/hermes-logstash-metrics"
+      meta: 'Hermes logstash plugin {{`{{ $labels.plugin }}`}} has failed enriching data with Metis'
       playbook: 'docs/devops/alert/hermes'
     annotations:
       description: 'Hermes logstash plugin {{ $labels.plugin }} has failed enriching data with Metis'
@@ -114,10 +114,10 @@ groups:
     expr: up{component="hermes",namespace="hermes"} < 1
     for: 15m
     labels:
-      component: '{{ $labels.component }}'
+      component: '{{`{{ $labels.component }}`}}'
       context: availability
       dashboard: hermes-overview
-      persesDashboard: observability/dashboards/hermes-overview
+      persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/hermes-overview"
       service: hermes
       severity: critical
       tier: os

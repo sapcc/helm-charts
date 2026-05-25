@@ -14,8 +14,8 @@ groups:
           severity: info
           context: cpu
           dashboard: maia-details
-          persesDashboard: observability/dashboards/maia-details
-          meta: "{{ $labels.pod }}/{{ $labels.container }}"
+          persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/maia-details"
+          meta: "{{`{{ $labels.pod }}`}}/{{`{{ $labels.container }}`}}"
         annotations:
           summary: Container is constantly CPU-throttled
           description: The container {{ $labels.pod }}/{{ $labels.container }} is being CPU-throttled
@@ -32,8 +32,8 @@ groups:
           service: maia
           context: memory
           dashboard: maia-details
-          persesDashboard: observability/dashboards/maia-details
-          meta: "{{ $labels.pod_name }}"
+          persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/maia-details"
+          meta: "{{`{{ $labels.pod_name }}`}}"
           no_alert_on_absence: "true" # the underlying metric is only generated when scheduling fails
         annotations:
           summary: Scheduling failed due to insufficient memory
@@ -49,8 +49,8 @@ groups:
           severity: info
           context: memory
           dashboard: maia-details
-          persesDashboard: observability/dashboards/maia-details
-          meta: "{{ $labels.pod_name }}"
+          persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/maia-details"
+          meta: "{{`{{ $labels.pod_name }}`}}"
           no_alert_on_absence: "true" # the underlying metric is only generated after the first oomkill
         annotations:
           summary: Pod was oomkilled
@@ -67,8 +67,8 @@ groups:
           severity: info
           context: memory
           dashboard: maia-details
-          persesDashboard: observability/dashboards/maia-details
-          meta: "{{ $labels.pod_name }}"
+          persesDashboard: "https://perses.{{ .Values.global.region }}.{{ .Values.global.tld }}/projects/observability/dashboards/maia-details"
+          meta: "{{`{{ $labels.pod_name }}`}}"
         annotations:
           summary: Exceeding memory limits in 8h
           description: The pod {{ $labels.pod_name }} will exceed its memory limit in 8h.
