@@ -116,6 +116,30 @@ port_setup_delay = {{ .Values.neutron_port_setup_delay }}
 [oslo_middleware]
 enable_proxy_headers_parsing = True
 
+[oslo_policy]
+# This option controls whether or not to enforce scope when
+# evaluating policies. If ``True``, the scope of the token
+# used in the request is compared to the ``scope_types`` of
+# the policy being enforced. If the scopes do not match, an
+# ``InvalidScope`` exception will be raised. If ``False``, a
+# message will be logged informing operators that policies are
+# being invoked with mismatching scope. (boolean value)
+enforce_scope = false
+
+# This option controls whether or not to use old deprecated
+# defaults when evaluating policies. If ``True``, the old
+# deprecated defaults are not going to be evaluated. This
+# means if any existing token is allowed for old defaults but
+# is disallowed for new defaults, it will be disallowed. It is
+# encouraged to enable this flag along with the
+# ``enforce_scope`` flag so that you can get the benefits of
+# new defaults and ``scope_type`` together. If ``False``, the
+# deprecated policy check string is logically OR'd with the
+# new policy check string, allowing for a graceful upgrade
+# experience between releases with new policies, which is the
+# default behavior. (boolean value)
+enforce_new_defaults = false
+
 {{ if .Values.audit.enabled -}}
 [audit]
 enabled = True
