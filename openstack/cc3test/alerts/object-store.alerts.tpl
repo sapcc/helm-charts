@@ -41,7 +41,7 @@ groups:
         cc3test_status{service="ceph", type="ceph_api", phase="call"} == 0
     for: 2m
     labels:
-      severity: warning
+      severity: critical
       support_group: storage
       service: "{{`{{ $labels.service }}`}}"
       context: "{{`{{ $labels.service }}`}}"
