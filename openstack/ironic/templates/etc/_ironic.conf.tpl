@@ -10,7 +10,9 @@ notification_level = {{ .Values.notification_level }}
 versioned_notifications_topics = {{ .Values.versioned_notifications_topics  | default "ironic_versioned_notifications" | quote }}
 {{- end }}
 
-
+# Name of the project where the service users are located. This is inside the default domain
+# this is the default value, but this makes this transparent
+rbac_service_project_name = service
 
 rpc_response_timeout = {{ .Values.rpc_response_timeout | default .Values.global.rpc_response_timeout | default 100 }}
 executor_thread_pool_size = {{ .Values.rpc_workers | default .Values.global.rpc_workers | default 64 }}
