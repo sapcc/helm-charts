@@ -1,3 +1,7 @@
+## 6.7.4
+
+* Fix PrometheusMultiplePodScrapes alert failing with many-to-many matching error when pods share the same name across namespaces
+
 ## 6.7.3 
 
 * Prometheus bump to v2.55.1
