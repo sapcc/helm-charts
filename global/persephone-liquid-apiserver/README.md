@@ -100,7 +100,8 @@ garden:
               - persephone-liquid
           claimMappings:
             username:
-              expression: '"system:serviceaccount:" + claims.namespace + ":" + claims["kubernetes.io"]["serviceaccount"]["name"]'
+              claim: "sub"
+              prefix: "liquid-apiserver:"
             groups:
               expression: 'claims["kubernetes.io"]["serviceaccount"]["groups"] + ["persephone:liquid-apiserver"]'
         # ... repeat for all 15 regions
