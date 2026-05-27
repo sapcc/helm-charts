@@ -7,14 +7,14 @@ This Helm chart deploys the Persephone Liquid API Server, which implements the [
 The liquid-apiserver runs in each OpenStack region and provides:
 - Quota management for Gardener shoot clusters via the Liquid API
 - Direct validation of Keystone tokens from incoming Limes requests (no application credentials needed)
-- Access to the Virtual Garden API for managing ResourceQuotas
+- Access to the Virtual Garden API for managing ResourceQuotas in shoot namespaces
 
 ## Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                    Virtual Garden Cluster                    │
-│  - Shoot resources                                           │
+│  - Shoot namespaces                                          │
 │  - ResourceQuota objects (shoot cluster quotas)              │
 │  - RBAC for liquid-apiserver                                 │
 └──────────────────────────┬──────────────────────────────────┘
@@ -127,7 +127,7 @@ kubectl apply -f rbac-virtual-garden.yaml \
 ```
 
 This creates:
-- ClusterRole: `persephone-liquid-apiserver` (read Shoots/Namespaces, manage ResourceQuotas)
+- ClusterRole: `persephone-liquid-apiserver` (read Namespaces, manage ResourceQuotas)
 - ClusterRoleBinding: Grants permissions to service accounts from all regional installations
 
 ### 3. Deploy to Regional Clusters
