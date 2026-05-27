@@ -20,7 +20,6 @@ spec:
     metadata:
       annotations:
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
-        checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
         {{- with .Values.podAnnotations }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
@@ -57,16 +56,6 @@ spec:
         # OpenStack Keystone configuration
         - name: OS_AUTH_URL
           value: {{ required "openstack.authURL is required" .Values.openstack.authURL | quote }}
-        - name: OS_APPLICATION_CREDENTIAL_ID
-          valueFrom:
-            secretKeyRef:
-              name: {{ include "persephone-liquid-apiserver.fullname" . }}
-              key: applicationCredentialID
-        - name: OS_APPLICATION_CREDENTIAL_SECRET
-          valueFrom:
-            secretKeyRef:
-              name: {{ include "persephone-liquid-apiserver.fullname" . }}
-              key: applicationCredentialSecret
         # Liquid policy configuration
         - name: LIQUID_POLICY_PATH
           value: "/etc/liquid/policy.json"

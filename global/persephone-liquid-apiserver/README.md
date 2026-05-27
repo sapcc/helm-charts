@@ -6,7 +6,7 @@ This Helm chart deploys the Persephone Liquid API Server, which implements the [
 
 The liquid-apiserver runs in each OpenStack region and provides:
 - Quota management for Gardener shoot clusters via the Liquid API
-- Integration with OpenStack Keystone for authentication (validates incoming Limes requests)
+- Direct validation of Keystone tokens from incoming Limes requests (no application credentials needed)
 - Access to the Virtual Garden API for managing ResourceQuotas
 
 ## Architecture
@@ -80,28 +80,11 @@ Both installations coexist in the same namespace with unique resource names:
 
 1. **Regional Kubernetes Clusters**: One cluster per OpenStack region
 2. **Virtual Garden OIDC Configuration**: One issuer per region (see RBAC setup below)
-3. **OpenStack Credentials**: Application credentials stored in Vault
-4. **RBAC in Virtual Garden**: ClusterRole and ClusterRoleBinding (see RBAC setup below)
+3. **RBAC in Virtual Garden**: ClusterRole and ClusterRoleBinding (see RBAC setup below)
 
 ## Installation
 
-### 1. Create Vault Secrets
-
-For each region and landscape, create OpenStack application credentials:
-
-```bash
-# Example for eu-de-1 canary
-# Create Keystone user: persephone-canary-liquid
-# Create application credential for that user
-# Store in Vault at:
-#   secrets/eu-de-1/persephone/keystone-application-credential/persephone-canary-liquid/eu-de-1
-```
-
-The OpenStack credentials are used to:
-- Validate incoming Keystone tokens from Limes (X-Auth-Token header)
-- Check authorization for API operations
-
-### 2. Configure Virtual Garden OIDC
+### 1. Configure Virtual Garden OIDC
 
 Add ONE OIDC issuer per region to the Virtual Garden's AuthenticationConfiguration:
 
@@ -128,7 +111,7 @@ garden:
 - The issuer URL is the regional Kubernetes cluster's API server
 - Same issuer configuration in both canary and prod Virtual Gardens
 
-### 3. Deploy RBAC to Virtual Garden
+### 2. Deploy RBAC to Virtual Garden
 
 The `rbac-virtual-garden.yaml` file contains RBAC resources that must be deployed to the Virtual Garden cluster:
 
@@ -146,7 +129,7 @@ This creates:
 - ClusterRole: `persephone-liquid-apiserver` (read Shoots/Namespaces, manage ResourceQuotas)
 - ClusterRoleBinding: Grants permissions to service accounts from all regional installations
 
-### 4. Deploy to Regional Clusters
+### 3. Deploy to Regional Clusters
 
 Deploy both canary and prod to each regional cluster in the `persephone` namespace:
 
@@ -162,9 +145,7 @@ helm install liquid-canary . \
   --set region=${REGION} \
   --set landscape=canary \
   --set virtualGarden.apiServerURL=https://api.garden.canary.k8s.ondemand.com \
-  --set openstack.authURL=https://identity-3.${REGION}.cloud.sap/v3 \
-  --set openstack.applicationCredential.idVaultPath="vault+kvv2:///secrets/${REGION}/persephone/keystone-application-credential/persephone-canary-liquid/${REGION}#application_credential_id" \
-  --set openstack.applicationCredential.secretVaultPath="vault+kvv2:///secrets/${REGION}/persephone/keystone-application-credential/persephone-canary-liquid/${REGION}#application_credential_secret"
+  --set openstack.authURL=https://identity-3.${REGION}.cloud.sap/v3
 
 # Deploy prod
 helm install liquid-prod . \
@@ -172,9 +153,7 @@ helm install liquid-prod . \
   --set region=${REGION} \
   --set landscape=prod \
   --set virtualGarden.apiServerURL=https://api.garden.live.k8s.ondemand.com \
-  --set openstack.authURL=https://identity-3.${REGION}.cloud.sap/v3 \
-  --set openstack.applicationCredential.idVaultPath="vault+kvv2:///secrets/${REGION}/persephone/keystone-application-credential/persephone-prod-liquid/${REGION}#application_credential_id" \
-  --set openstack.applicationCredential.secretVaultPath="vault+kvv2:///secrets/${REGION}/persephone/keystone-application-credential/persephone-prod-liquid/${REGION}#application_credential_secret"
+  --set openstack.authURL=https://identity-3.${REGION}.cloud.sap/v3
 ```
 
 **Note**: Landscape-specific values files with all regions configured are maintained in the `cc/kube-secrets` repository.
@@ -189,9 +168,7 @@ helm install liquid-prod . \
 | `landscape` | Landscape name (canary or prod) | Yes |
 | `virtualGarden.apiServerURL` | Virtual Garden API URL | Yes |
 | `virtualGarden.oidc.audience` | Token audience (default: persephone-liquid) | Yes |
-| `openstack.authURL` | Keystone auth URL for the region | Yes |
-| `openstack.applicationCredential.idVaultPath` | Vault path for app credential ID | Yes |
-| `openstack.applicationCredential.secretVaultPath` | Vault path for app credential secret | Yes |
+| `openstack.authURL` | Keystone auth URL for direct token validation | Yes |
 
 ### Default Values
 
@@ -209,11 +186,9 @@ helm install liquid-prod . \
 # Port-forward to the canary service
 kubectl port-forward -n persephone svc/liquid-canary-persephone-liquid-apiserver 8080:80
 
-# Get a Keystone token (requires application credentials)
-TOKEN=$(curl -s -i -X POST "https://identity-3.eu-de-1.cloud.sap/v3/auth/tokens" \
-  -H "Content-Type: application/json" \
-  -d '{"auth":{"identity":{"methods":["application_credential"],"application_credential":{"id":"YOUR_ID","secret":"YOUR_SECRET"}}}}' \
-  | grep -i "x-subject-token:" | awk '{print $2}' | tr -d '\r')
+# Get a Keystone token (use your existing authentication method)
+# The liquid-apiserver will validate the token directly with Keystone
+TOKEN="your-keystone-token"
 
 # Test the info endpoint
 curl -s -H "X-Auth-Token: $TOKEN" http://localhost:8080/v1/info | jq .
@@ -254,35 +229,23 @@ kubectl get deployments -n persephone -l app=persephone,role=liquid-apiserver
 3. Verify token audience: `persephone-liquid`
 4. Check RBAC permissions in Virtual Garden
 
-### OpenStack Authentication Errors
+### Token Validation Errors
 
-**Symptom**: 401 from Keystone when Limes makes requests
+**Symptom**: 401 when Limes makes requests with X-Auth-Token
 
 **Solution**:
-1. Verify application credentials exist in Vault
-2. Check Vault paths in values
-3. Ensure credentials haven't expired
+1. Verify the provided Keystone token is valid
+2. Check that OS_AUTH_URL is correctly set to the regional Keystone endpoint
+3. Ensure the token has proper project/domain scope
 4. Verify Keystone URL is correct for the region
 
 ## Maintenance
-
-### Updating Credentials
-
-When rotating OpenStack application credentials:
-
-```bash
-# Update Vault secrets
-# Then restart pods to reload
-kubectl rollout restart -n persephone deployment/liquid-canary-persephone-liquid-apiserver
-kubectl rollout restart -n persephone deployment/liquid-prod-persephone-liquid-apiserver
-```
 
 ### Adding a New Region
 
 1. Add OIDC issuer to Virtual Garden AuthenticationConfiguration
 2. Update RBAC in Virtual Garden (if region list is hardcoded)
-3. Create Vault secrets for the new region (canary and prod)
-4. Deploy canary and prod installations to the new regional cluster
+3. Deploy canary and prod installations to the new regional cluster
 
 ## Security
 
