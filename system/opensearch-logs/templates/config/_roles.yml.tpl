@@ -501,6 +501,7 @@ security_analytics_full_access:
     allowed_actions:
     - "indices:admin/get"
     - "indices:admin/aliases/get"
+    - "indices:admin/aliases" # Required for opensearch_index resources that declare aliases in the PUT body (e.g. sci-cyber-security-alerts-bootstrap)
     - "indices:admin/resolve/index"
     - "indices:admin/mapping/put"
     - "indices:admin/mappings/get"
@@ -510,6 +511,8 @@ security_analytics_full_access:
     - "indices:data/read/search"
     - "indices:data/read/get"
     - "indices:data/read/field_caps"
+    - "indices:admin/create"
+    - "indices:data/write/bulk*" # Required for alerting plugin (DocLevelMonitorQueries) bulk-writing percolate queries into .opensearch-alerting-queries-*
   - index_patterns:
     - "audit-ds*"
     - ".opensearch-sap-*"
