@@ -1,22 +1,21 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "kmip.fullname" . }}-barbican
+  name: {{ include "kmip.fullname" . }}
   labels:
     {{- include "kmip.labels" . | nindent 4 }}
-    app: {{ include "kmip.fullname" . }}-barbican
+    app: {{ include "kmip.fullname" . }}
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
     release: "{{ .Release.Name }}"
     heritage: "{{ .Release.Service }}"
     system: openstack
-    type: api
-    component: barbican
+    type: backend
+    component: kmip
   annotations:
     secret.reloader.stakater.com/reload: "kmip-secrets,kmip-barbican-etc"
     deployment.reloader.stakater.com/pause-period: "60s"
 spec:
   replicas: {{ .Values.replicaCount }}
-
   revisionHistoryLimit: {{ .Values.pod.lifecycle.upgrades.deployments.revisionHistory }}
   strategy:
     type: {{ .Values.pod.lifecycle.upgrades.deployments.podReplacementStrategy }}
@@ -27,99 +26,24 @@ spec:
     {{- end }}
   selector:
     matchLabels:
-      {{- include "kmip.selectorLabels" . | nindent 6 }}
+      app: {{ include "kmip.fullname" . }}
   template:
     metadata:
       labels:
         {{- include "kmip.labels" . | nindent 8 }}
-        app: {{ include "kmip.fullname" . }}-barbican
-        name: {{ include "kmip.fullname" . }}-barbican
+        app: {{ include "kmip.fullname" . }}
+        name: {{ include "kmip.fullname" . }}
         alert-tier: os
-        alert-service: barbican
-        {{- with .Values.podLabels }}
-        {{- toYaml . | nindent 8 }}
-        {{- end }}
+        alert-service: kmip
       annotations:
         secrets-etc-hash: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
-        {{- if .Values.proxysql.mode }}
-        prometheus.io/scrape: "true"
-        prometheus.io/targets: {{ required ".Values.alerts.prometheus missing" .Values.alerts.prometheus | quote }}
-        {{- end }}
     spec:
       serviceAccountName: {{ include "kmip.serviceAccountName" . }}-barbican
       containers:
-        - name: kmip-restapi
-          securityContext:
-            {{- toYaml .Values.securityContext | nindent 12 }}
-          image: {{required ".Values.global.registry is missing" .Values.global.registry }}/loci-barbican:{{required "Values.kmip.restapi_image is missing" .Values.kmip.restapi_image }}
-          imagePullPolicy: {{ .Values.kmip.pullPolicy }}
-          env:
-            - name: KMIP_MARIADB_SERVICE_HOST
-              value: "kmip-mariadb"
-            - name: KMIP_MARIADB_SERVICE_PORT
-              value: "3306"
-            - name: KMIP_MARIADB_SERVICE_USER
-              valueFrom:
-                secretKeyRef:
-                  name: kmip-secrets
-                  key: mariadb_user
-            - name: KMIP_MARIADB_SERVICE_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: kmip-secrets
-                  key: mariadb_password
-            - name: KMIP_MARIADB_NAME
-              value: "kmip"
-            - name: BARBICAN_MARIADB_SERVICE_HOST
-              value: "barbican-mariadb"
-            - name: BARBICAN_MARIADB_SERVICE_PORT
-              value: "3306"
-            - name: BARBICAN_MARIADB_SERVICE_USER
-              valueFrom:
-                secretKeyRef:
-                  name: kmip-secrets
-                  key: barbican_mariadb_service_user
-            - name: BARBICAN_MARIADB_SERVICE_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: kmip-secrets
-                  key: barbican_mariadb_service_password
-            - name: BARBICAN_MARIADB_NAME
-              value: "barbican"
-          command: ["sh", "-c"]
-          args:
-          - |
-            echo "Sleeping for 15 seconds before starting the application...";
-            sleep 15;
-            echo "Starting the application...";
-            python /app/app.py;
-            echo "Application exited. Keeping container alive...";
-            tail -f /dev/null
-          resources:
-            requests:
-              memory: 0
-              cpu: 0
-          volumeMounts:
-            - name: kmip-barbican-etc
-              mountPath: /etc/pykmip/server.conf
-              subPath: kmip-server.conf
-              readOnly: true
-            - name: kmip-acme-certificates
-              mountPath: /etc/pykmip/certs/server.crt
-              subPath: tls.crt
-              readOnly: true
-            - name: kmip-acme-certificates
-              mountPath: /etc/pykmip/certs/server.key
-              subPath: tls.key
-              readOnly: true
-            - name: kmip-ca-certificates
-              mountPath: /etc/pykmip/certs/ca.crt
-              subPath: ca.crt
-              readOnly: true
         - name: kmip-core
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
-          image: {{required ".Values.global.registry is missing" .Values.global.registry }}/loci-barbican:{{required "Values.kmip.image is missing" .Values.kmip.image }}
+          image: {{ required ".Values.global.registry is missing" .Values.global.registry }}/loci-barbican:{{ required "Values.kmip.image is missing" .Values.kmip.image }}
           imagePullPolicy: {{ .Values.kmip.pullPolicy }}
           env:
             - name: OS_AUTH_URL
@@ -134,11 +58,6 @@ spec:
                 secretKeyRef:
                   name: kmip-secrets
                   key: os_password
-            - name: OS_PROJECT_ID
-              valueFrom:
-                secretKeyRef:
-                  name: kmip-secrets
-                  key: os_project_id
             - name: OS_AUTH_TYPE
               value: "v3password"
             - name: OS_REGION_NAME
@@ -167,9 +86,13 @@ spec:
                   name: kmip-secrets
                   key: os_user_domain_name
           ports:
-            - name: http
+            - name: kmip
               containerPort: {{ .Values.service.ports.port }}
               protocol: TCP
+          livenessProbe:
+            {{- toYaml .Values.livenessProbe | nindent 12 }}
+          readinessProbe:
+            {{- toYaml .Values.readinessProbe | nindent 12 }}
           resources:
             requests:
               memory: 0
