@@ -1,0 +1,231 @@
+suite: bmc_settings
+templates:
+  - bmc_settings.yaml
+tests:
+  #############################################################################
+  # BASELINE TESTS - Verify current behavior (deploy everything)
+  #############################################################################
+
+  - it: should render BMCSettingsSet resources when enabled
+    set:
+      bmcSettings.enabled: true
+    asserts:
+      - hasDocuments:
+          count: 126
+      - isKind:
+          of: BMCSettingsSet
+
+  - it: should render Dell resources
+    set:
+      bmcSettings.enabled: true
+    asserts:
+      - containsDocument:
+          kind: BMCSettingsSet
+          apiVersion: metal.ironcore.dev/v1alpha1
+          name: dell-poweredge-r660-sci-k8s-controlplane
+          any: true
+
+  - it: should render HPE resources
+    set:
+      bmcSettings.enabled: true
+    asserts:
+      - containsDocument:
+          kind: BMCSettingsSet
+          apiVersion: metal.ironcore.dev/v1alpha1
+          name: hpe-proliant-dl380-gen11-sci-k8s-controlplane
+          any: true
+
+  - it: should render Lenovo resources
+    set:
+      bmcSettings.enabled: true
+    asserts:
+      - containsDocument:
+          kind: BMCSettingsSet
+          apiVersion: metal.ironcore.dev/v1alpha1
+          name: lenovo-thinksystem-sr650-sci-k8s-controlplane
+          any: true
+
+  - it: should set correct bmcSelector labels including cluster-type
+    set:
+      bmcSettings.enabled: true
+    documentSelector:
+      path: metadata.name
+      value: dell-poweredge-r660-sci-k8s-controlplane
+    asserts:
+      - equal:
+          path: spec.bmcSelector.matchLabels["kubernetes.metal.cloud.sap/type"]
+          value: poweredge-r660
+      - equal:
+          path: spec.bmcSelector.matchLabels["kubernetes.metal.cloud.sap/cluster-type"]
+          value: sci-k8s-controlplane
+
+  - it: should set serverMaintenancePolicy to OwnerApproval
+    set:
+      bmcSettings.enabled: true
+    documentSelector:
+      path: metadata.name
+      value: dell-poweredge-r660-sci-k8s-controlplane
+    asserts:
+      - equal:
+          path: spec.bmcSettingsTemplate.serverMaintenancePolicy
+          value: OwnerApproval
+
+  #############################################################################
+  # FILTERING TESTS
+  #############################################################################
+
+  # UC1: Filter by vendor
+  - it: should only render Dell resources when vendors.included is set
+    set:
+      bmcSettings.enabled: true
+      bmcSettings.filters.vendors.included: [dell]
+    asserts:
+      - containsDocument:
+          kind: BMCSettingsSet
+          apiVersion: metal.ironcore.dev/v1alpha1
+          name: dell-poweredge-r660-sci-k8s-controlplane
+          any: true
+      - not: true
+        containsDocument:
+          kind: BMCSettingsSet
+          apiVersion: metal.ironcore.dev/v1alpha1
+          name: hpe-proliant-dl380-gen11-sci-k8s-controlplane
+          any: true
+      - not: true
+        containsDocument:
+          kind: BMCSettingsSet
+          apiVersion: metal.ironcore.dev/v1alpha1
+          name: lenovo-thinksystem-sr650-sci-k8s-controlplane
+          any: true
+
+  # UC2: Filter by model
+  - it: should only render specific model when models.included is set
+    set:
+      bmcSettings.enabled: true
+      bmcSettings.filters.models.included: [poweredge-r660]
+    asserts:
+      - containsDocument:
+          kind: BMCSettingsSet
+          apiVersion: metal.ironcore.dev/v1alpha1
+          name: dell-poweredge-r660-sci-k8s-controlplane
+          any: true
+      - not: true
+        containsDocument:
+          kind: BMCSettingsSet
+          apiVersion: metal.ironcore.dev/v1alpha1
+          name: dell-poweredge-r640-sci-k8s-controlplane
+          any: true
+      - not: true
+        containsDocument:
+          kind: BMCSettingsSet
+          apiVersion: metal.ironcore.dev/v1alpha1
+          name: hpe-proliant-dl380-gen11-sci-k8s-controlplane
+          any: true
+
+  # UC3: Filter by clusterType
+  - it: should only render specific clusterType when clusterTypes.included is set
+    set:
+      bmcSettings.enabled: true
+      bmcSettings.filters.clusterTypes.included: [sci-k8s-controlplane]
+    asserts:
+      - containsDocument:
+          kind: BMCSettingsSet
+          apiVersion: metal.ironcore.dev/v1alpha1
+          name: dell-poweredge-r660-sci-k8s-controlplane
+          any: true
+      - not: true
+        containsDocument:
+          kind: BMCSettingsSet
+          apiVersion: metal.ironcore.dev/v1alpha1
+          name: dell-poweredge-r660-cc-kvm-compute
+          any: true
+      - not: true
+        containsDocument:
+          kind: BMCSettingsSet
+          apiVersion: metal.ironcore.dev/v1alpha1
+          name: dell-poweredge-r660-sci-k8s-management
+          any: true
+
+  # UC4: Combination filter
+  - it: should filter by vendor and model and clusterType combination
+    set:
+      bmcSettings.enabled: true
+      bmcSettings.filters.vendors.included: [dell]
+      bmcSettings.filters.models.included: [poweredge-r660]
+      bmcSettings.filters.clusterTypes.included: [sci-k8s-controlplane]
+    asserts:
+      - hasDocuments:
+          count: 1
+      - containsDocument:
+          kind: BMCSettingsSet
+          apiVersion: metal.ironcore.dev/v1alpha1
+          name: dell-poweredge-r660-sci-k8s-controlplane
+          any: true
+
+  # UC5: Disable entirely
+  - it: should render no resources when enabled is false
+    set:
+      bmcSettings.enabled: false
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  # UC6: Exclude model
+  - it: should exclude specific model when models.excluded is set
+    set:
+      bmcSettings.enabled: true
+      bmcSettings.filters.vendors.included: [dell]
+      bmcSettings.filters.models.excluded: [poweredge-r660]
+    asserts:
+      - not: true
+        containsDocument:
+          kind: BMCSettingsSet
+          apiVersion: metal.ironcore.dev/v1alpha1
+          name: dell-poweredge-r660-sci-k8s-controlplane
+          any: true
+      - containsDocument:
+          kind: BMCSettingsSet
+          apiVersion: metal.ironcore.dev/v1alpha1
+          name: dell-poweredge-r640-sci-k8s-controlplane
+          any: true
+
+  # UC7: Exclude vendor
+  - it: should exclude vendor when vendors.excluded is set
+    set:
+      bmcSettings.enabled: true
+      bmcSettings.filters.vendors.excluded: [hpe]
+    asserts:
+      - containsDocument:
+          kind: BMCSettingsSet
+          apiVersion: metal.ironcore.dev/v1alpha1
+          name: dell-poweredge-r660-sci-k8s-controlplane
+          any: true
+      - containsDocument:
+          kind: BMCSettingsSet
+          apiVersion: metal.ironcore.dev/v1alpha1
+          name: lenovo-thinksystem-sr650-sci-k8s-controlplane
+          any: true
+      - not: true
+        containsDocument:
+          kind: BMCSettingsSet
+          apiVersion: metal.ironcore.dev/v1alpha1
+          name: hpe-proliant-dl380-gen11-sci-k8s-controlplane
+          any: true
+
+  # UC8: Exclude clusterType
+  - it: should exclude clusterType when clusterTypes.excluded is set
+    set:
+      bmcSettings.enabled: true
+      bmcSettings.filters.clusterTypes.excluded: [cc-kvm-compute]
+    asserts:
+      - containsDocument:
+          kind: BMCSettingsSet
+          apiVersion: metal.ironcore.dev/v1alpha1
+          name: dell-poweredge-r660-sci-k8s-controlplane
+          any: true
+      - not: true
+        containsDocument:
+          kind: BMCSettingsSet
+          apiVersion: metal.ironcore.dev/v1alpha1
+          name: dell-poweredge-r660-cc-kvm-compute
+          any: true

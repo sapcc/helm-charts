@@ -472,13 +472,21 @@ security_analytics_full_access:
   - "cluster:admin/opendistro/ism/managedindex/explain"
   - "cluster:monitor/tasks/lists"
   - "cluster:monitor/remote/info"
+  - "cluster:monitor/main" # Required for OpenSearch terraform provider health check
   - "cluster:admin/opendistro/ism/policy/search"
+  - "indices:admin/index_template/get"
   index_permissions:
   - index_patterns:
     - "*"
     allowed_actions:
+    - "indices:admin/get"
+    - "indices:admin/aliases/get"
+    - "indices:admin/resolve/index"
     - "indices:admin/mapping/put"
     - "indices:admin/mappings/get"
     - "indices:admin/template/get"
     - "indices:admin/data_stream/get"
     - "indices:monitor/recovery"
+    - "indices:data/read/search"
+    - "indices:data/read/get"
+    - "indices:data/read/field_caps"

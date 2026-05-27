@@ -154,7 +154,7 @@ pgmetrics:
           metrics:
             - count:
                 usage: "GAUGE"
-                description: "Total number of accounts managed by Keppel"
+                description: "Total number of accounts that exist in Keppel"
             - min_next_blob_sweep_at:
                 usage: "GAUGE"
                 description: "UNIX timestamp of next scheduled blob sweep, or 0 if no accounts have ever been sweeped"
@@ -167,6 +167,13 @@ pgmetrics:
             - min_next_federation_announcement_at:
                 usage: "GAUGE"
                 description: "UNIX timestamp of next scheduled federation announcement, or 0 if no accounts have ever been announced to federation"
+        keppel_managed_accounts:
+          query: >
+            SELECT COUNT(*) AS count FROM accounts WHERE is_managed
+          metrics:
+            - count:
+                usage: "GAUGE"
+                description: "Total number of managed accounts that exist in Keppel"
         keppel_blobs:
           query: "SELECT COUNT(*) AS count, COALESCE(EXTRACT(epoch FROM MIN(can_be_deleted_at)), 0) AS min_can_be_deleted_at, EXTRACT(epoch FROM MIN(next_validation_at)) AS min_next_validation_at, SUM(CASE WHEN validation_error_message = '' THEN 0 ELSE 1 END) AS validation_errors FROM blobs WHERE storage_id != ''"
           metrics:

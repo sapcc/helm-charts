@@ -19,6 +19,9 @@ spec:
   template:
     spec:
       restartPolicy: OnFailure
+      {{- if .Values.rbac.enabled }}
+      serviceAccountName: {{ .Release.Name }}
+      {{- end }}
 {{ include "utils.proxysql.job_pod_settings" . | indent 6 }}
       initContainers:
         - name: dependencies
