@@ -80,7 +80,7 @@
   static_configs:
     - targets: ['prometheus-openstack.prometheus-openstack:9090']
   metric_relabel_configs:
-    - regex: "instance|job|kubernetes_namespace|kubernetes_pod_name|kubernetes_name|pod_template_hash|exported_instance|exported_job|type|name|component|app|system|alert_tier|alert_service"
+    - regex: "cluster|cluster_type|instance|job|kubernetes_namespace|kubernetes_pod_name|kubernetes_name|pod_template_hash|exported_instance|exported_job|type|name|component|app|system|thanos_cluster|thanos_cluster_type|thanos_region|alert_tier|alert_service"
       action: labeldrop
   metrics_path: '/federate'
   params:
