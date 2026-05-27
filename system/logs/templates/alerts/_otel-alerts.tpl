@@ -8,6 +8,7 @@ groups:
       context: logshipping
       service: logs
       severity: warning
+      no_alert_on_absence: "true" # OTel will not expose the metric if null 
       support_group: observability
       playbook: 'docs/support/playbook/logs/otel-logs-missing'
     annotations:
@@ -20,6 +21,7 @@ groups:
       context: logshipping
       service: logs
       severity: info
+      no_alert_on_absence: "true" # OTel will not expose the metric if null 
       support_group: observability
       playbook: 'docs/support/playbook/logs/otel-logs-increasing'
     annotations:
@@ -32,6 +34,7 @@ groups:
       context: logshipping
       service: logs
       severity: info
+      no_alert_on_absence: "true" # OTel will not expose the metric if null 
       support_group: observability
       playbook: 'docs/support/playbook/logs/otel-logs-decreasing'
     annotations:
@@ -44,6 +47,7 @@ groups:
       context: logshipping
       service: logs
       severity: info
+      no_alert_on_absence: "true" # OTel will not expose the metric if null 
       support_group: observability
       no_alert_on_absence: "true" # OTel will not expose the metric otelcol_exporter_send_failed_log_records_total if null 
       playbook: 'docs/support/playbook/logs/otel-logs-exporting-failed'
