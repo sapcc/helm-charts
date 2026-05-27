@@ -127,7 +127,7 @@ kubectl apply -f rbac-virtual-garden.yaml \
 ```
 
 This creates:
-- ClusterRole: `persephone-liquid-apiserver` (read Namespaces, manage ResourceQuotas)
+- ClusterRole: `persephone-liquid-apiserver` (manage ResourceQuotas)
 - ClusterRoleBinding: Grants permissions to service accounts from all regional installations
 
 ### 3. Deploy to Regional Clusters
