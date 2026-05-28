@@ -1,0 +1,298 @@
+## ADDED Requirements
+
+### Requirement: Two cluster-targeted kustomize roots produce direct-apply YAML
+
+The `system/kustomize/metal-operator-remote/` tree SHALL provide two cluster-targeted kustomize roots, `host/` and `remote/`, each producing plain Kubernetes YAML applicable directly via `kubectl apply -k` (or a Flux `Kustomization` CR) WITHOUT any `ManagedResource` or `Secret`-wrapping transformation. Neither root SHALL produce `ManagedResource` resources or base64-encoded `Secret`-wrapped resource payloads.
+
+#### Scenario: Build host root produces plain manifests
+
+- **WHEN** `kustomize build system/kustomize/metal-operator-remote/host/base/` is executed
+- **THEN** the output SHALL NOT contain any resource of `kind: ManagedResource`
+- **AND** the output SHALL NOT contain any `Secret` whose `data.objects.yaml` field is a base64-encoded Kubernetes manifest
+
+#### Scenario: Build remote root produces plain manifests
+
+- **WHEN** `kustomize build system/kustomize/metal-operator-remote/remote/` is executed
+- **THEN** the output SHALL NOT contain any resource of `kind: ManagedResource`
+- **AND** the output SHALL contain plain `CustomResourceDefinition`, `ClusterRole`, `ClusterRoleBinding`, `ServiceAccount`, `Namespace`, `ValidatingWebhookConfiguration`, and `Service` resources directly
+
+---
+
+### Requirement: Apply pipeline targets kube-secrets per-cluster overlays
+
+The deployment pipeline (Concourse short-term, Flux mid-term) SHALL apply per-cluster overlays from `cc/kube-secrets` (which reference this repository's `host/` and `remote/` kustomize trees as bases via Git URL ref), NOT this repository's `host/` or `remote/` directories directly. The pipeline SHALL invoke separate `kubectl apply -k` runs (or separate Flux `Kustomization` CRs) against the host kubeconfig and the workerless kubeconfig respectively. **Strict apply ordering is NOT required for correctness** — components are designed to retry on missing dependencies and converge to a working state regardless of apply order. The pipeline MAY enforce a remote-then-host ordering as an operational optimization to reduce alert noise during bootstrap.
+
+#### Scenario: Pipeline applies host kustomize via kube-secrets overlay
+
+- **WHEN** the deployment pipeline applies host-cluster resources
+- **THEN** the apply target SHALL be `<kube-secrets-checkout>/values/kustomize/<clusterType>/<region>/<clusterName>/metal-operator-remote/host/` (NOT this repository's `system/kustomize/metal-operator-remote/host/` directly)
+- **AND** the kubeconfig SHALL be the host cluster's kubeconfig
+
+#### Scenario: Pipeline applies remote kustomize via kube-secrets overlay
+
+- **WHEN** the deployment pipeline applies workerless-cluster resources
+- **THEN** the apply target SHALL be `<kube-secrets-checkout>/values/kustomize/<clusterType>/<region>/<clusterName>/metal-operator-remote/remote/` (NOT this repository's `system/kustomize/metal-operator-remote/remote/` directly)
+- **AND** the kubeconfig SHALL be the workerless cluster's kubeconfig
+
+#### Scenario: helm-charts directories are bases not deploy targets
+
+- **WHEN** examining the deployment pipeline definition
+- **THEN** the apply target SHALL NOT be `system/kustomize/metal-operator-remote/host/` or `system/kustomize/metal-operator-remote/remote/` from this repository directly
+- **AND** the helm-charts kustomize trees SHALL be consumed only as bases referenced by per-cluster kube-secrets overlays via Git URL ref (`https://github.com/sapcc/helm-charts.git//system/kustomize/metal-operator-remote/<base-path>?ref=master`)
+
+---
+
+### Requirement: System converges to working admission validation regardless of apply order
+
+The combination of `host/` and `remote/` kustomize roots SHALL deploy a system that converges to working webhook admission validation once both have been applied (in any order, possibly concurrently). The components SHALL rely on Kubernetes-native retry behavior (controller restart on missing CRDs, sidecar reconcile loop for caBundle patching, API server webhook retry on connection failure) to handle transient inconsistencies during bootstrap. The kustomize tree SHALL NOT introduce hard dependencies that require strict apply ordering for correctness — Flux mid-term migration depends on independent reconciliation of the two `Kustomization` CRs.
+
+#### Scenario: Controller pod recovers when remote applied after host
+
+- **WHEN** the host kustomize root is applied first and the controller pod starts before CRDs exist on the workerless cluster
+- **THEN** the controller pod SHALL crashloop or back off
+- **AND** SHALL recover automatically once the remote kustomize root is applied and CRDs become available
+- **AND** SHALL NOT require manual intervention or pod restart
+
+#### Scenario: Webhook callback fails open during bootstrap window
+
+- **WHEN** the remote kustomize root is applied first and a metal-operator CR is written to the workerless cluster before the host kustomize root is applied (i.e., before `metal-operator-webhook-service` exists on the host cluster)
+- **THEN** the webhook callback SHALL fail (TCP connection failure or DNS resolution failure)
+- **AND** the workerless API server SHALL reject the write per `failurePolicy: Fail`
+- **AND** SHALL NOT cause permanent damage (the rejection is transient; the write succeeds on retry once the host cluster's webhook service is up)
+
+#### Scenario: Sidecar populates caBundle once both kustomize roots are applied
+
+- **WHEN** both kustomize roots have been applied (in any order) and the webhook-injector sidecar pod is running
+- **THEN** the workerless `ValidatingWebhookConfiguration`'s `webhooks[*].clientConfig.caBundle` field SHALL eventually contain a valid CA bundle matching the TLS cert served by the host cluster's webhook service
+- **AND** the time-to-converge SHALL be bounded by the binary's reconcile interval (binary-internal; out of scope for this spec)
+
+#### Scenario: Two independent Flux Kustomization CRs reconcile without ordering dependencies
+
+- **WHEN** Flux is configured with two `Kustomization` CRs — one targeting the kube-secrets overlay's `host/` subpath, one targeting the `remote/` subpath
+- **THEN** neither CR SHALL require a `dependsOn:` reference to the other
+- **AND** independent reconciliation SHALL converge to working admission validation without manual coordination
+
+---
+
+### Requirement: Build via kustomize Git URL ref consumes upstream live
+
+The kustomize roots SHALL consume upstream metal-operator content (`config/manager`, `config/crd`, `config/rbac`, `config/webhook`) via kustomize Git URL references at build time, NOT via committed pre-rendered files. Upstream version bumps SHALL propagate by updating the `?ref=<tag>` query parameter; no manual `regen + commit` cycle SHALL be required for upstream version updates.
+
+#### Scenario: Host base references upstream config/manager via Git URL
+
+- **WHEN** examining `system/kustomize/metal-operator-remote/host/base/kustomization.yaml`
+- **THEN** the `resources:` field SHALL contain an entry of the form `https://github.com/ironcore-dev/metal-operator//config/manager?ref=<tag>`
+
+#### Scenario: Remote upstream/crds-and-rbac references upstream via Git URL
+
+- **WHEN** examining `system/kustomize/metal-operator-remote/remote/upstream/crds-and-rbac/kustomization.yaml`
+- **THEN** the `resources:` field SHALL contain Git URL refs to upstream `config/crd` and `config/rbac` directories at a pinned tag
+
+#### Scenario: No committed pre-rendered files in the repo
+
+- **WHEN** examining `system/kustomize/metal-operator-remote/`
+- **THEN** there SHALL be no file named `managedresources.yaml`
+- **AND** there SHALL be no file named `manifests-url-based.yaml`
+- **AND** there SHALL be no file named `wrap-managedresources.sh` under `scripts/`
+
+---
+
+### Requirement: Upstream RBAC applied verbatim
+
+The `remote/upstream/crds-and-rbac/` kustomization SHALL apply upstream RBAC resources verbatim, preserving the upstream `kind` of each Role/RoleBinding. Roles SHALL NOT be converted to ClusterRoles, and RoleBindings SHALL NOT be converted to ClusterRoleBindings, by this kustomization tree.
+
+#### Scenario: No Role-to-ClusterRole conversion patch
+
+- **WHEN** examining `system/kustomize/metal-operator-remote/remote/upstream/crds-and-rbac/kustomization.yaml`
+- **THEN** the `patches:` field SHALL NOT contain any patch with target `kind: Role` that converts to `kind: ClusterRole`
+- **AND** the `patches:` field SHALL NOT contain any patch with target `kind: RoleBinding` that converts to `kind: ClusterRoleBinding`
+
+#### Scenario: Upstream Role and RoleBinding preserved in build output
+
+- **WHEN** `kustomize build remote/upstream/crds-and-rbac/` is executed and upstream `config/rbac/` contains resources of `kind: Role`
+- **THEN** the build output SHALL contain those resources with their original `kind: Role`
+- **AND** the build output SHALL contain corresponding `kind: RoleBinding` resources unchanged
+
+---
+
+### Requirement: Workerless cluster receives system namespace and webhook-service ExternalName
+
+The `remote/upstream/webhooks/` kustomize tree SHALL produce two additional resources on the workerless cluster: (a) a `Namespace` named `system`, and (b) a `Service` named `webhook-service` in namespace `system` with `spec.type: ExternalName` and `spec.externalName: metal-operator-webhook-service`. These resources bridge upstream's `clientConfig.service: webhook-service/system` reference to the host cluster's actual `metal-operator-webhook-service` via the API server pod's DNS search paths, eliminating the need for any URL rewrite of the webhook configuration.
+
+#### Scenario: System namespace landed on workerless
+
+- **WHEN** the kube-secrets per-cluster overlay's `remote/` subpath is applied to the workerless cluster
+- **THEN** the workerless cluster SHALL contain a `Namespace` named `system`
+
+#### Scenario: webhook-service ExternalName Service landed on workerless
+
+- **WHEN** the kube-secrets per-cluster overlay's `remote/` subpath is applied to the workerless cluster
+- **THEN** the workerless cluster SHALL contain a `Service` named `webhook-service` in namespace `system`
+- **AND** that Service SHALL have `spec.type: ExternalName`
+- **AND** that Service SHALL have `spec.externalName: metal-operator-webhook-service`
+
+#### Scenario: ExternalName value identical for all clusters
+
+- **WHEN** comparing the `spec.externalName` value across `kustomize build` outputs of any per-cluster kube-secrets overlay's `remote/` subpath
+- **THEN** the `spec.externalName` value SHALL be `metal-operator-webhook-service` for every cluster
+- **AND** no per-cluster overlay SHALL be required to patch the `externalName` field
+
+---
+
+### Requirement: Webhook delivery via ExternalName routing
+
+Webhook callbacks from the workerless API server to the host cluster's webhook server SHALL be routed via the `webhook-service` ExternalName Service in the workerless cluster's `system` namespace. The workerless `ValidatingWebhookConfiguration` SHALL use `clientConfig.service: { name: webhook-service, namespace: system, path: /<…> }` form (matching upstream's verbatim configuration). NO `clientConfig.url` rewrite SHALL be performed at any layer (build time, deploy time, or runtime). NO local `webhook-config` ConfigMap SHALL be deployed on the host cluster.
+
+#### Scenario: Workerless ValidatingWebhookConfiguration uses service form
+
+- **WHEN** examining the `ValidatingWebhookConfiguration` produced by `kustomize build remote/`
+- **THEN** every `webhooks[*].clientConfig` SHALL contain a `service: { name, namespace, path }` field
+- **AND** no `webhooks[*].clientConfig` SHALL contain a `url` field
+
+#### Scenario: No local webhook-config ConfigMap on host
+
+- **WHEN** examining the output of `kustomize build host/base/`
+- **THEN** the output SHALL NOT contain a `ConfigMap` named `webhook-config`
+
+#### Scenario: Webhook callback resolves via ExternalName CNAME
+
+- **WHEN** the workerless API server invokes a webhook with `clientConfig.service: webhook-service/system`
+- **THEN** the API server SHALL look up the Service in the workerless cluster's etcd
+- **AND** finding the ExternalName Service, SHALL resolve `metal-operator-webhook-service` via the API server pod's `/etc/resolv.conf` search paths to the host cluster's `metal-operator-webhook-service` ClusterIP
+- **AND** SHALL successfully connect to the host cluster's webhook server
+
+---
+
+## MODIFIED Requirements
+
+### Requirement: Host base overlay produces all seed cluster resources
+
+The `host/base/` kustomize overlay SHALL produce all resources needed in the seed cluster (= host cluster, = workload cluster): the Deployment (from upstream `config/manager` base + the consolidated `manager-patch.yaml`), plus all custom local resources (Services, Ingress, NetworkPolicy, ConfigMaps, Secrets, RBAC). The local `webhook-config` ConfigMap is no longer produced (the webhook content is delivered directly to the workerless cluster via the `remote/` kustomize root with ExternalName routing).
+
+#### Scenario: Build host base overlay
+
+- **WHEN** `kustomize build host/base/` is executed
+- **THEN** the output SHALL contain a Deployment named `controller-manager`
+- **THEN** the output SHALL contain a Service named `metal-operator-webhook-service` (port 443→9443)
+- **THEN** the output SHALL contain a Service for metal-registry (port 10000)
+- **THEN** the output SHALL contain an Ingress for metal-registry
+- **THEN** the output SHALL contain a NetworkPolicy
+- **THEN** the output SHALL contain a ConfigMap named `remote-kubeconfig`
+- **THEN** the output SHALL contain Secrets for remote-serviceaccount, macdb, and rotate-kubeconfig
+- **THEN** the output SHALL contain ServiceAccount, Role, and RoleBinding for webhook-injector
+- **THEN** the output SHALL NOT contain a ConfigMap named `webhook-config`
+
+#### Scenario: Namespace resource excluded from upstream
+
+- **WHEN** `kustomize build host/base/` is executed
+- **THEN** the output SHALL NOT contain a Namespace resource (the upstream `config/manager/manager.yaml` includes one that must be excluded)
+
+#### Scenario: Upstream version pinning
+
+- **WHEN** the kustomization.yaml references `?ref=<tag>` for any upstream Git URL
+- **THEN** the output SHALL be reproducible across builds (same tag produces same output)
+
+#### Scenario: Manager Deployment customizations consolidated
+
+- **WHEN** examining `host/base/`
+- **THEN** the SAP-specific manager `args` (`--mac-prefixes-file`, `--probe-image`, `--probe-os-image`, `--insecure`, `--registry-url`, `--manager-namespace`) SHALL be present in the rendered Deployment
+- **AND** all controller-manager Deployment customizations (env vars, args, volumes, volumeMounts, ports, securityContext, network labels, serviceAccountName, hostNetwork, resources) SHALL live in a single patch file `host/base/manager-patch.yaml`
+
+---
+
+### Requirement: Remote overlay produces CRDs and RBAC from upstream base
+
+The `remote/upstream/crds-and-rbac/` kustomize overlay SHALL produce CRDs and RBAC resources by referencing the upstream `config/crd` and `config/rbac` directories at a pinned git tag. The output SHALL be consumed by per-cluster overlays in `cc/kube-secrets` via Git URL ref and applied directly to the workerless cluster via `kubectl apply -k <kube-secrets-overlay>/remote/` (NOT wrapped in `ManagedResource`).
+
+#### Scenario: Build remote CRDs and RBAC overlay
+
+- **WHEN** `kustomize build remote/upstream/crds-and-rbac/` is executed
+- **THEN** the output SHALL contain CustomResourceDefinition resources for all metal-operator CRDs
+- **THEN** the output SHALL contain ClusterRole and ClusterRoleBinding resources from upstream `config/rbac/`
+
+#### Scenario: All RBAC included
+
+- **WHEN** `kustomize build remote/upstream/crds-and-rbac/` is executed
+- **THEN** the output SHALL include all RBAC resources from upstream `config/rbac/` (leader election, metrics, manager role, per-resource roles)
+- **THEN** no RBAC resources SHALL be excluded
+
+#### Scenario: Service resources excluded
+
+- **WHEN** `kustomize build remote/upstream/crds-and-rbac/` is executed
+- **THEN** the output SHALL NOT contain any Service resources (the metrics Service from upstream is not needed on the workerless cluster)
+
+#### Scenario: No ManagedResource wrapping
+
+- **WHEN** `kustomize build remote/upstream/crds-and-rbac/` is executed
+- **THEN** the output SHALL NOT contain any resource of `kind: ManagedResource`
+- **AND** the output SHALL NOT contain any `Secret` wrapping the CRDs/RBAC as base64-encoded payloads
+
+---
+
+### Requirement: Host and remote produce equivalent output to current Helm chart
+
+The kustomize overlays (located in `cc/kube-secrets` per the `cluster-overlay-layout` capability) SHALL produce resource sets functionally equivalent to the current `metal-operator-remote` Helm chart rendered output, when both are rendered with equivalent cluster-specific values, with the explicit exception that the kustomize tree produces plain Kubernetes resources directly applied to host and workerless clusters whereas the helm chart produces `ManagedResource`-wrapped resources for workerless delivery.
+
+#### Scenario: Host resources equivalence
+
+- **WHEN** comparing `kustomize build` of a kube-secrets overlay's `host/` subpath (e.g., `cc/kube-secrets/values/kustomize/<clusterType>/<region>/<clusterName>/metal-operator-remote/host/`) with `helm template metal-operator-remote <this-repo>/system/metal-operator-remote --values <kube-secrets-helm-values-for-the-same-cluster>` filtered to host-cluster resources only
+- **THEN** the resource set SHALL be functionally equivalent (same kinds, names, specs) modulo expected chart-structural differences (e.g., resource ordering, generated label keys, Deployment name `controller-manager` vs `metal-operator-controller-manager`)
+
+#### Scenario: Remote resources equivalence
+
+- **WHEN** comparing `kustomize build` of a kube-secrets overlay's `remote/` subpath with the unwrapped contents of the helm chart's `managedresources/` directory (CRDs, RBAC, Namespace) plus the helm chart's pushed `ValidatingWebhookConfiguration`
+- **THEN** the resource set SHALL contain the same CRDs, ClusterRoles, ClusterRoleBindings, ServiceAccount, custom RBAC, and Namespace
+- **AND** the kustomize-produced `ValidatingWebhookConfiguration` SHALL match the upstream definition with `clientConfig.service` (whereas the helm-deployed version uses `clientConfig.url`)
+
+---
+
+### Requirement: Directory structure separates host and remote
+
+The kustomize overlay directory structure SHALL explicitly separate resources by their deployment target. Each top-level directory SHALL be a self-contained kustomize root consumable by exactly one `kubectl apply -k` invocation (or one Flux `Kustomization` CR).
+
+#### Scenario: Host directory contains workload-cluster resources only
+
+- **WHEN** examining `system/kustomize/metal-operator-remote/host/`
+- **THEN** it SHALL contain only resources deployed to the host cluster (= workload cluster, where the controller pod runs)
+
+#### Scenario: Remote directory contains workerless-cluster resources only
+
+- **WHEN** examining `system/kustomize/metal-operator-remote/remote/`
+- **THEN** it SHALL contain only resources deployed to the workerless cluster (CRDs, RBAC, ServiceAccount, Namespace, custom RBAC, `system` Namespace, `webhook-service` ExternalName Service, `ValidatingWebhookConfiguration`)
+
+#### Scenario: Each top-level directory is a kustomize root
+
+- **WHEN** examining `host/base/kustomization.yaml` and `remote/kustomization.yaml`
+- **THEN** each SHALL be a valid kustomize root (containing all needed `resources:`, `patches:`, etc. without depending on a sibling root)
+- **AND** `kustomize build host/base/` and `kustomize build remote/` SHALL each succeed independently
+
+---
+
+### Requirement: No Flux blockers introduced
+
+The kustomize overlays SHALL NOT introduce any blockers for Flux integration. Each leaf kustomize root SHALL be consumable by a Flux `Kustomization` CR without restructuring or external preprocessing.
+
+#### Scenario: No custom KRM function plugins
+
+- **WHEN** examining all `kustomization.yaml` files in the overlay
+- **THEN** none SHALL reference custom KRM function plugins (generators or transformers requiring external binaries)
+
+#### Scenario: Host root buildable by Flux kustomize-controller
+
+- **WHEN** Flux's `kustomize-controller` points at `host/` (consuming a kube-secrets overlay's host subpath)
+- **THEN** `kustomize build` SHALL succeed without requiring external tools
+
+#### Scenario: Remote root buildable by Flux kustomize-controller
+
+- **WHEN** Flux's `kustomize-controller` points at `remote/` (consuming a kube-secrets overlay's remote subpath)
+- **THEN** `kustomize build` SHALL succeed without requiring external tools
+
+---
+
+## REMOVED Requirements
+
+### Requirement: Remote resources pre-rendered as ManagedResource wrappers
+
+**Reason**: This change replaces the `ManagedResource` delivery pipeline with direct `kubectl apply -k` against the workerless cluster. Pre-rendered `ManagedResource` + `Secret` files (`remote/upstream/crds-and-rbac/managedresources.yaml`, `remote/upstream/webhooks/managedresources.yaml`) and the `wrap-managedresources.sh` wrapping script are deleted; the `regen-metal-operator-remote-{crds,webhooks}` Makefile targets are removed. Workerless-cluster resources are produced as plain Kubernetes manifests by `kustomize build remote/` consuming upstream content via Git URL refs at build time.
+
+**Migration**: Per-cluster overlays in `cc/kube-secrets` adopt the new dual-subpath layout (`host/` + `remote/` under `metal-operator-remote/`). The Concourse pipeline (and mid-term Flux Kustomization CRs) executes two independent applies — `kubectl apply -k …/remote/` against the workerless kubeconfig, and `kubectl apply -k …/host/` against the host kubeconfig. Apply ordering is NOT required for correctness; the pipeline MAY apply concurrently or in either order, with components retrying on transient inconsistencies. Remote-then-host ordering is RECOMMENDED as an operational optimization to reduce alert noise during bootstrap. The webhook-injector sidecar narrows to caBundle-rotation-only mode (governed by the `kustomize-sidecar-injection` capability spec). All resources that previously shipped via `ManagedResource` now arrive on the workerless cluster as plain `kubectl apply` output.
