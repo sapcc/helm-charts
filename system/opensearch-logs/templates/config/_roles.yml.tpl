@@ -495,9 +495,9 @@ security_analytics_full_access:
   - "cluster:admin/opendistro/ism/policy/search"
   - "indices:admin/index_template/get"
   - "indices:admin/index_template/put" # Required for opensearch_index_template resources (cluster-level only, cannot be index-scoped)
-  - "indices:data/write/bulk" # Required for bulk API — must be granted at cluster level AND index level per OpenSearch docs
-  - "indices:data/write/bulk*" # Required for bulk API — must be granted at cluster level AND index level per OpenSearch docs
   - "indices:monitor/settings/get" # Required for Terraform provider index settings read (cluster-level scope)
+  - "indices:data/write/bulk" # Required for bulk API at cluster level per OpenSearch docs
+  - "indices:data/write/bulk*" # Required for bulk API at cluster level per OpenSearch docs
   index_permissions:
   - index_patterns:
     - "*"
@@ -522,6 +522,7 @@ security_analytics_full_access:
     - ".opensearch-sap-*"
     allowed_actions:
     - "indices:admin/create"
+    - "indices:admin/delete"
     - "indices:admin/template/get"
     - "indices:admin/template/put"
     - "indices:admin/mapping/put"
@@ -529,7 +530,8 @@ security_analytics_full_access:
     - "indices:data/read/search"
     - "indices:data/read/get"
     - "indices:data/write/index"
-    - "indices:data/write/bulk*"
+    - "indices:data/write/bulk" # Required for bulk API — must be granted at cluster level AND index level per OpenSearch docs
+    - "indices:data/write/bulk*" # Required for bulk API — must be granted at cluster level AND index level per OpenSearch docs
     - "indices:monitor/stats"
     - "indices:monitor/settings/get"
     - "indices:data/write/delete/byquery"
