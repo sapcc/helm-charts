@@ -31,7 +31,7 @@
 - [x] 4.3 Update `system/kustomize/metal-operator-remote/host/base/kustomization.yaml` `patches:` field to reference only `manager-patch.yaml` (remove `manager-remote-patch.yaml` and `manager-webhook-patch.yaml` entries).
 - [x] 4.4 Delete the now-unused `system/kustomize/metal-operator-remote/host/base/manager-remote-patch.yaml` and `system/kustomize/metal-operator-remote/host/base/manager-webhook-patch.yaml`.
 - [x] 4.5 Verify host base build: `kustomize build host/base/` produces a `Deployment` named `controller-manager` with all 6 SAP args + `--leader-elect` ABSENT (or whatever upstream sets, but at minimum the 6 SAP args present); env vars `KUBERNETES_SERVICE_HOST`, `KUBERNETES_CLUSTER_DOMAIN`, `KUBECONFIG`; volumes for `webhook-certs`, `remote-serviceaccount`, `remote-kubeconfig`, `macdb`; the webhook server port 9443.
-- [ ] 4.6 Verify host base build does NOT produce a `ConfigMap` named `webhook-config`: `kustomize build host/base/ | yq 'select(.kind == "ConfigMap" and .metadata.name == "webhook-config")'` returns empty.
+- [x] 4.6 Verify host base build does NOT produce a `ConfigMap` named `webhook-config`: `kustomize build host/base/ | yq 'select(.kind == "ConfigMap" and .metadata.name == "webhook-config")'` returns empty.
 
 ## 5. Webhook-injector sidecar configuration for caBundle-rotation mode
 
@@ -42,12 +42,12 @@
 
 ## 6. Delete obsolete pre-render machinery
 
-- [ ] 6.1 Delete `system/kustomize/metal-operator-remote/remote/upstream/crds-and-rbac/managedresources.yaml`.
-- [ ] 6.2 Delete `system/kustomize/metal-operator-remote/remote/upstream/webhooks/managedresources.yaml` (if not already deleted by Section 2's restructure).
-- [ ] 6.3 Delete `system/kustomize/metal-operator-remote/remote/upstream/webhooks/manifests-url-based.yaml` (if not already deleted by Section 2's restructure).
-- [ ] 6.4 Delete `system/kustomize/metal-operator-remote/host/base/webhook-config.yaml`.
-- [ ] 6.5 Delete `system/kustomize/metal-operator-remote/scripts/wrap-managedresources.sh`. If `scripts/` becomes empty, delete the directory.
-- [ ] 6.6 Edit `system/Makefile`: delete the `regen-metal-operator-remote`, `regen-metal-operator-remote-crds`, `regen-metal-operator-remote-webhooks` targets and the `KUSTOMIZE_METAL_OPERATOR_REMOTE` variable. Verify `make help` (or equivalent) still lists other operators' regen targets.
+- [x] 6.1 Delete `system/kustomize/metal-operator-remote/remote/upstream/crds-and-rbac/managedresources.yaml`.
+- [x] 6.2 Delete `system/kustomize/metal-operator-remote/remote/upstream/webhooks/managedresources.yaml` (if not already deleted by Section 2's restructure).
+- [x] 6.3 Delete `system/kustomize/metal-operator-remote/remote/upstream/webhooks/manifests-url-based.yaml` (if not already deleted by Section 2's restructure).
+- [x] 6.4 Delete `system/kustomize/metal-operator-remote/host/base/webhook-config.yaml`.
+- [x] 6.5 Delete `system/kustomize/metal-operator-remote/scripts/wrap-managedresources.sh`. If `scripts/` becomes empty, delete the directory.
+- [x] 6.6 Edit `system/Makefile`: delete the `regen-metal-operator-remote`, `regen-metal-operator-remote-crds`, `regen-metal-operator-remote-webhooks` targets and the `KUSTOMIZE_METAL_OPERATOR_REMOTE` variable. Verify `make help` (or equivalent) still lists other operators' regen targets.
 - [ ] 6.7 Update `system/kustomize/metal-operator-remote/VERIFICATION.md` to reflect the new structure (or note it's historical and out of scope per Open Question in brainstorm).
 
 ## 7. README and documentation
