@@ -7,14 +7,14 @@
 
 ## 2. Webhook delivery restructure (two-layer kustomize)
 
-- [ ] 2.1 Create the inner-layer subdirectory `system/kustomize/metal-operator-remote/remote/upstream/webhooks/upstream-no-svc/`.
-- [ ] 2.2 Write `upstream-no-svc/kustomization.yaml`: `resources:` references `https://github.com/ironcore-dev/metal-operator//config/webhook?ref=v0.4.0`; `patches:` contains a `$patch: delete` for the `Service` named `webhook-service` in namespace `system`.
-- [ ] 2.3 Verify inner layer build: `kustomize build system/kustomize/metal-operator-remote/remote/upstream/webhooks/upstream-no-svc/` outputs ONLY a `ValidatingWebhookConfiguration` (no Service). Use `yq '.kind' | sort | uniq -c` to confirm.
-- [ ] 2.4 Create `system/kustomize/metal-operator-remote/remote/upstream/webhooks/system-namespace.yaml` defining a `Namespace` named `system`.
-- [ ] 2.5 Create `system/kustomize/metal-operator-remote/remote/upstream/webhooks/webhook-service-stub.yaml` defining a `Service` named `webhook-service` in namespace `system` with `spec.type: ExternalName` and `spec.externalName: metal-operator-webhook-service`.
-- [ ] 2.6 Rewrite the outer `system/kustomize/metal-operator-remote/remote/upstream/webhooks/kustomization.yaml`: `resources:` lists `upstream-no-svc/`, `system-namespace.yaml`, `webhook-service-stub.yaml`. Remove any `patches:` / `replacements:` / Makefile-related scaffolding.
-- [ ] 2.7 Verify outer layer build: `kustomize build system/kustomize/metal-operator-remote/remote/upstream/webhooks/` outputs `Namespace system`, `Service webhook-service` (ExternalName), and `ValidatingWebhookConfiguration` (with `clientConfig.service` form, no `caBundle`).
-- [ ] 2.8 Verify the caBundle invariant: `kustomize build .../webhooks/ | yq '.. | select(.caBundle? // "missing")'` returns empty.
+- [x] 2.1 Create the inner-layer subdirectory `system/kustomize/metal-operator-remote/remote/upstream/webhooks/upstream-no-svc/`.
+- [x] 2.2 Write `upstream-no-svc/kustomization.yaml`: `resources:` references `https://github.com/ironcore-dev/metal-operator//config/webhook?ref=v0.4.0`; `patches:` contains a `$patch: delete` for the `Service` named `webhook-service` in namespace `system`.
+- [x] 2.3 Verify inner layer build: `kustomize build system/kustomize/metal-operator-remote/remote/upstream/webhooks/upstream-no-svc/` outputs ONLY a `ValidatingWebhookConfiguration` (no Service). Use `yq '.kind' | sort | uniq -c` to confirm.
+- [x] 2.4 Create `system/kustomize/metal-operator-remote/remote/upstream/webhooks/system-namespace.yaml` defining a `Namespace` named `system`.
+- [x] 2.5 Create `system/kustomize/metal-operator-remote/remote/upstream/webhooks/webhook-service-stub.yaml` defining a `Service` named `webhook-service` in namespace `system` with `spec.type: ExternalName` and `spec.externalName: metal-operator-webhook-service`.
+- [x] 2.6 Rewrite the outer `system/kustomize/metal-operator-remote/remote/upstream/webhooks/kustomization.yaml`: `resources:` lists `upstream-no-svc/`, `system-namespace.yaml`, `webhook-service-stub.yaml`. Remove any `patches:` / `replacements:` / Makefile-related scaffolding.
+- [x] 2.7 Verify outer layer build: `kustomize build system/kustomize/metal-operator-remote/remote/upstream/webhooks/` outputs `Namespace system`, `Service webhook-service` (ExternalName), and `ValidatingWebhookConfiguration` (with `clientConfig.service` form, no `caBundle`).
+- [x] 2.8 Verify the caBundle invariant: `kustomize build .../webhooks/ | yq '.. | select(.caBundle? // "missing")'` returns empty.
 
 ## 3. Remote root composition
 
