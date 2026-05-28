@@ -1,0 +1,16 @@
+# ExternalName Service in the workerless cluster's `system` namespace.
+# When the workerless API server resolves clientConfig.service:
+#   { name: webhook-service, namespace: system }
+# it finds this ExternalName Service, reads the externalName field, and
+# resolves "metal-operator-webhook-service" via the API server pod's
+# /etc/resolv.conf search paths to the host cluster's actual Service.
+# The short name (no namespace suffix) is identical for all clusters —
+# mirrors today's pre-rendered URL "https://metal-operator-webhook-service:443/...".
+apiVersion: v1
+kind: Service
+metadata:
+  name: webhook-service
+  namespace: system
+spec:
+  type: ExternalName
+  externalName: metal-operator-webhook-service
