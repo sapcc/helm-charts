@@ -162,3 +162,30 @@ The existing PR [`sapcc/helm-charts#11633`](https://github.com/sapcc/helm-charts
 - [ ] 13.5 Track follow-up: extract reusable scaffolding for boot/ipam/argora/khalkeon operators that share the same dual-host/remote pattern (per epic `cc/unified-kubernetes#831`). Whichever operator is tackled second should consider whether to publish a kustomize Component or a templated tree to avoid copy-paste.
 - [ ] 13.6 Track follow-up: structured-auth migration (replacing Gardener-managed `serviceaccount.resources.gardener.cloud/*` annotations on `remote-serviceaccount-secret.yaml` and `rotate-kubeconfig-secret.yaml`). This is a separate workstream tracked in epic `cc/unified-kubernetes#831`'s "Solved" section.
 - [ ] 13.7 Track follow-up: verify-phase Open Questions from the brainstorm (Deployment name mismatch helm vs kustomize, behavior under network partitions, cluster teardown procedure documentation). Decide whether each becomes a verify-phase test or a follow-up runbook addition.
+
+## 14. Post-PR-push refactor: encapsulate sidecar-coupled resources in webhook-injector Component
+
+This refactor was identified during PR [#11633](https://github.com/sapcc/helm-charts/pull/11633) review. Re-examining the provenance of the `metal-operator-webhook-injector` ServiceAccount confirms it was introduced FOR the sidecar feature in commit `9ffb1dc0c3` (Fabian Ruff, 2026-04-20: *"Add RBAC and service account for the webhook-injector sidecar"*). The Pod's `serviceAccountName` override on the manager Deployment exists only because the Pod hosts the sidecar — upstream's manager-only Deployment uses upstream's `controller-manager` SA. All sidecar-introduced host-side resources (SA + Role + RoleBinding + Pod-level SA assignment) SHALL therefore live inside `components/webhook-injector/` so that enabling/disabling the Component is an atomic toggle.
+
+Chronology: this section runs AFTER Section 9 (PR prep, already complete) and BEFORE Section 11 (Merge). The new ADDED requirement in `specs/kustomize-sidecar-injection/spec.md` ("Webhook-injector Component encapsulates all sidecar-introduced resources") governs the end state.
+
+- [x] 14.1 `git mv system/kustomize/metal-operator-remote/host/base/webhook-injector-rbac.yaml system/kustomize/metal-operator-remote/components/webhook-injector/webhook-injector-rbac.yaml`. Preserves git history.
+- [x] 14.2 Edit `system/kustomize/metal-operator-remote/components/webhook-injector/kustomization.yaml`: add a `resources:` block listing `webhook-injector-rbac.yaml`. Component shape becomes: `resources` (the SA + Role + RoleBinding) + `patches` (the existing sidecar patch) + `images` (the existing image override).
+- [x] 14.3 Edit `system/kustomize/metal-operator-remote/components/webhook-injector/sidecar.yaml`: add `spec.template.spec.serviceAccountName: metal-operator-webhook-injector` to the existing patch. The patch already targets the `controller-manager` Deployment to inject the initContainer; the SA-name override fits in the same hierarchy. No new patch file needed.
+- [x] 14.4 Edit `system/kustomize/metal-operator-remote/host/base/manager-patch.yaml`: remove the `serviceAccountName: metal-operator-webhook-injector` line (currently at line 19, under `spec.template.spec`). All other fields (env, args, volumes, volumeMounts, ports, securityContext, network labels, hostNetwork, resources, strategy) MUST remain unchanged.
+- [x] 14.5 Edit `system/kustomize/metal-operator-remote/host/base/kustomization.yaml`: remove `webhook-injector-rbac.yaml` from the `resources:` list. The `components: [../../components/webhook-injector]` line ensures the Component (and its now-resident SA + Role + RoleBinding) is still composed.
+- [x] 14.6 Verify build equivalence:
+  ```bash
+  kustomize build system/kustomize/metal-operator-remote/host/base/ > /tmp/host-base-post-refactor.yaml
+  diff <(yq -s '.' /tmp/host-base-pre-refactor.yaml | jq -S '. | sort_by(.kind, .metadata.name)') \
+       <(yq -s '.' /tmp/host-base-post-refactor.yaml | jq -S '. | sort_by(.kind, .metadata.name)')
+  ```
+  Expected: empty diff (resource set is identical; only the source file location of webhook-injector-rbac changed).
+- [x] 14.7 Verify `metal-operator-webhook-injector` no longer appears in any file under `host/`:
+  ```bash
+  grep -r "metal-operator-webhook-injector" system/kustomize/metal-operator-remote/host/ && echo "FAIL: should be empty" || echo "OK: no host-side references"
+  ```
+- [x] 14.8 Run `openspec validate replace-managedresource-with-dual-kustomize --strict`. Expected: clean (the new ADDED requirement in `kustomize-sidecar-injection/spec.md` covers the new file layout).
+- [ ] 14.9 Commit on `poc/kustomize-metal-operator-remote`. Use `git add` for the specific paths only (specs + kustomize tree files); no `git add -A`. Suggested message: `refactor(metal-operator-remote): encapsulate sidecar-coupled resources in webhook-injector Component`.
+- [ ] 14.10 Push to origin: `git push origin poc/kustomize-metal-operator-remote`.
+- [ ] 14.11 Update PR #11633 description's Scope 3 section with a 1–2 line note about the encapsulation refactor (the final structure: the Component owns ALL sidecar-introduced resources, atomic enable/disable). Apply via `gh pr edit 11633 --body-file ...`.

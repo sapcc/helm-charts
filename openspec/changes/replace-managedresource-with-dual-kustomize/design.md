@@ -143,12 +143,12 @@ system/kustomize/metal-operator-remote/
 │       ├── metal-registry-service.yaml
 │       ├── webhook-service.yaml                # metal-operator-webhook-service ClusterIP — selects controller pod's webhook server
 │       ├── networkpolicy.yaml                  # 5 Gardener NetworkPolicies
-│       ├── webhook-injector-rbac.yaml          # NARROWED scope: SA + Role (read TLS Secret on host, NO ConfigMap read) + RoleBinding for the sidecar
 │       ├── remote-kubeconfig-configmap.yaml
 │       ├── remote-serviceaccount-secret.yaml   # gardener-managed token Secret
 │       ├── rotate-kubeconfig-secret.yaml       # gardener-managed Secret
 │       └── macdb-secret.yaml
 │       # NOTE: webhook-config.yaml DELETED — sidecar no longer reads webhook content from a local ConfigMap
+│       # NOTE: webhook-injector-rbac.yaml MOVED into components/webhook-injector/ (see § "Webhook-injector Component encapsulation" + Section 14 of tasks.md). All sidecar-introduced host-side resources (SA + Role + RoleBinding + Pod-level serviceAccountName) live there now.
 ├── remote/                                     # APPLIED TO REMOTE (Step 1)
 │   ├── kustomization.yaml                      # combines upstream/crds-and-rbac + upstream/webhooks + custom + prod|qa component
 │   ├── upstream/
@@ -157,7 +157,7 @@ system/kustomize/metal-operator-remote/
 │   │   └── webhooks/
 │   │       ├── kustomization.yaml              # OUTER LAYER: references upstream-no-svc/ + system-namespace.yaml + webhook-service-stub.yaml. Composes the final webhook delivery for workerless.
 │   │       ├── upstream-no-svc/                # INNER LAYER (subdirectory)
-│   │       │   └── kustomization.yaml          # references upstream config/webhook directory via Git URL ref + $patch: delete on the regular Service. Output: ValidatingWebhookConfiguration only (Service removed). Two-layer structure required because kustomize loads resources before applying patches \u2014 a single-layer naive pull-and-replace would conflict on duplicate Service identifier.
+│   │       │   └── kustomization.yaml          # references upstream config/webhook directory via Git URL ref + $patch: delete on the regular Service. Output: ValidatingWebhookConfiguration only (Service removed). Two-layer structure required because kustomize loads resources before applying patches — a single-layer naive pull-and-replace would conflict on duplicate Service identifier.
 │   │       ├── system-namespace.yaml           # creates Namespace "system" on the workerless cluster
 │   │       └── webhook-service-stub.yaml       # ExternalName Service "webhook-service" in namespace "system" pointing to metal-operator-webhook-service (short name; identical for all clusters)
 │   └── custom/
@@ -168,7 +168,10 @@ system/kustomize/metal-operator-remote/
 │           ├── prod/                           # patches OIDC group names to PROD values
 │           └── qa/                             # patches OIDC group names to QA values
 └── components/
-    └── webhook-injector/                       # NARROWED to caBundle-rotation-only role (see § 4)
+    └── webhook-injector/                       # NARROWED to caBundle-rotation-only role (see § 4) AND now owns ALL sidecar-introduced host-side resources (see Section 14 of tasks.md)
+        ├── kustomization.yaml                  # Component header + resources list (webhook-injector-rbac.yaml) + patches list (sidecar.yaml) + image override
+        ├── sidecar.yaml                        # initContainer patch (caBundle-rotation mode env + args, volume mounts, probes) AND serviceAccountName override on the controller-manager Deployment (single patch, since both are sidecar-driven)
+        └── webhook-injector-rbac.yaml          # SA + Role (events/secrets/leases at namespace scope) + RoleBinding for the manager Pod's SA. Originated with the sidecar feature in commit 9ffb1dc0c3 (Fabian Ruff, 2026-04-20). Encapsulating it in the Component makes enable/disable atomic.
 ```
 
 ### Removed

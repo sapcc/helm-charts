@@ -69,6 +69,43 @@ The kustomize-build output of the `remote/` root SHALL NOT include any `caBundle
 
 ---
 
+### Requirement: Webhook-injector Component encapsulates all sidecar-introduced resources
+
+The kustomize Component `components/webhook-injector/` SHALL own ALL host-side resources whose existence originated with the webhook-injector sidecar feature. Specifically, the Component SHALL contain:
+
+1. The sidecar container injection patch (existing — `sidecar.yaml`).
+2. The host-side `metal-operator-webhook-injector` ServiceAccount, its host-side Role (events, secrets, leases at namespace scope), and the corresponding RoleBinding.
+3. The `serviceAccountName: metal-operator-webhook-injector` override on the controller-manager Deployment (folded into the Component's existing Deployment patch, since the override only exists because the Pod hosts the sidecar — the upstream manager-only Deployment uses upstream's `controller-manager` SA).
+
+Including the Component SHALL atomically introduce all of the above into the build output. Excluding the Component SHALL atomically remove all of the above from the build output. No host-side file outside `components/webhook-injector/` SHALL define or reference the `metal-operator-webhook-injector` SA name.
+
+This Component is effectively mandatory for the metal-operator-remote topology (vanilla metal-operator without webhook-injector is a separate use case served by the upstream chart). Consumers excluding the Component would need to additionally provide upstream's `controller-manager` ServiceAccount via `config/rbac/service_account.yaml`; this trade-off is documented in `design.md` and is out of scope for this requirement.
+
+#### Scenario: Component-included build contains all sidecar-coupled resources
+
+- **WHEN** `kustomize build host/base/` is executed with the Component included via `components: [../../components/webhook-injector]`
+- **THEN** the output SHALL contain a ServiceAccount named `metal-operator-webhook-injector`
+- **AND** the output SHALL contain a Role named `metal-operator-webhook-injector` granting events (`create,patch,update`), secrets (`get,list,watch,create,update,patch`), and leases (`get,create,update`)
+- **AND** the output SHALL contain a RoleBinding named `metal-operator-webhook-injector` binding the Role to the SA
+- **AND** the controller-manager Deployment SHALL have `spec.template.spec.serviceAccountName: metal-operator-webhook-injector`
+- **AND** the controller-manager Deployment SHALL contain a webhook-injector initContainer with `restartPolicy: Always`
+
+#### Scenario: Component-excluded build atomically removes all sidecar resources
+
+- **WHEN** a hypothetical kustomization composes `host/base/` resources but omits the `components: [../../components/webhook-injector]` line
+- **THEN** the output SHALL NOT contain any ServiceAccount, Role, or RoleBinding named `metal-operator-webhook-injector`
+- **AND** the controller-manager Deployment SHALL NOT contain a webhook-injector initContainer
+- **AND** the controller-manager Deployment SHALL NOT carry a `spec.template.spec.serviceAccountName` override (the upstream Deployment's default `controller-manager` SA reference is preserved)
+
+#### Scenario: No host-side file outside the Component references the SA name
+
+- **WHEN** examining all files under `system/kustomize/metal-operator-remote/host/`
+- **THEN** the string `metal-operator-webhook-injector` SHALL NOT appear in any file
+- **AND** the file `host/base/webhook-injector-rbac.yaml` SHALL NOT exist (it has been moved into `components/webhook-injector/webhook-injector-rbac.yaml`)
+- **AND** `host/base/manager-patch.yaml` SHALL NOT contain a `serviceAccountName:` line under `spec.template.spec` (the override has been moved into the Component's `sidecar.yaml` patch)
+
+---
+
 ## MODIFIED Requirements
 
 ### Requirement: Webhook-injector sidecar injected via kustomize Component

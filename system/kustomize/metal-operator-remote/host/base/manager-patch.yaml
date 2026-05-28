@@ -16,7 +16,11 @@ spec:
         networking.resources.gardener.cloud/to-all-istio-ingresses-istio-ingressgateway-tcp-9443: allowed
         networking.resources.gardener.cloud/to-kube-apiserver-tcp-443: allowed
     spec:
-      serviceAccountName: metal-operator-webhook-injector
+      # Pod-level serviceAccountName is set by the webhook-injector Component
+      # (components/webhook-injector/sidecar.yaml). It lives there because the
+      # SA + Role + RoleBinding it references were introduced for the sidecar
+      # feature; encapsulating them together makes the Component the single
+      # source-of-truth for sidecar-related Pod customization.
       hostNetwork: false
       securityContext:
         runAsNonRoot: true

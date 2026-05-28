@@ -1142,10 +1142,18 @@ Tracking: cc/unified-kubernetes#831"
 
   **Restructured: `system/kustomize/metal-operator-remote/host/base/`**
 
-  - Two patch files (`manager-remote-patch.yaml`, `manager-webhook-patch.yaml`) consolidated into a single `manager-patch.yaml` — all controller-manager Deployment customizations (env, args, volumes, ports, securityContext, network labels, serviceAccountName, hostNetwork, resources) in one reviewable place.
+  - Two patch files (`manager-remote-patch.yaml`, `manager-webhook-patch.yaml`) consolidated into a single `manager-patch.yaml` — all controller-manager Deployment customizations (env, args, volumes, ports, securityContext, network labels, hostNetwork, resources) in one reviewable place. The Pod-level `serviceAccountName` override lives in the webhook-injector Component now (see "Component encapsulation" below).
   - **Restored 6 SAP-specific manager args** missed by the kustomize POC (only `--leader-elect` from upstream was present). Now includes: `--mac-prefixes-file`, `--probe-image`, `--probe-os-image`, `--insecure`, `--registry-url`, `--manager-namespace`.
   - `webhook-config.yaml` ConfigMap **deleted** — no longer needed because the workerless `remote/` kustomize root is the source-of-truth for the `ValidatingWebhookConfiguration`.
-  - `webhook-injector-rbac.yaml` Role narrowed: drops ConfigMap access (no longer needed); keeps events/secrets/leases.
+  - `webhook-injector-rbac.yaml` Role narrowed (drops ConfigMap access; keeps events/secrets/leases) AND moved into the webhook-injector Component (see "Component encapsulation" below).
+
+  **Component encapsulation: `system/kustomize/metal-operator-remote/components/webhook-injector/`**
+
+  - The webhook-injector Component now owns ALL host-side resources whose existence originated with the sidecar feature in commit `9ffb1dc0c3`. The Component contents:
+    - `sidecar.yaml` — initContainer patch (caBundle-rotation mode env + args, volume mounts, probes) AND `serviceAccountName` override on the controller-manager Deployment (single patch).
+    - `webhook-injector-rbac.yaml` — moved here from `host/base/`. SA + Role (events/secrets/leases) + RoleBinding for the manager Pod's SA.
+    - `kustomization.yaml` — Component header + `resources: [webhook-injector-rbac.yaml]` + `patches: [sidecar.yaml]` + image override.
+  - Including the Component atomically introduces all sidecar prerequisites; excluding the Component atomically removes them. The Component is effectively mandatory for the metal-operator-remote topology.
 
   **Sidecar configuration: `system/kustomize/metal-operator-remote/components/webhook-injector/sidecar.yaml`**
 
@@ -1171,7 +1179,7 @@ Tracking: cc/unified-kubernetes#831"
   ### Spec deltas (applied at archive)
 
   - `kustomize-resource-splitting`: 7 ADDED, 5 MODIFIED, 1 REMOVED (`Remote resources pre-rendered as ManagedResource wrappers`).
-  - `kustomize-sidecar-injection`: 4 ADDED, 1 MODIFIED.
+  - `kustomize-sidecar-injection`: 5 ADDED (including `Webhook-injector Component encapsulates all sidecar-introduced resources` added during PR review), 1 MODIFIED.
   - `webhook-url-rendering`: 3 REMOVED (entire capability becomes empty — follow-up change to clean up).
 
   ### Validation (Scope 3)
