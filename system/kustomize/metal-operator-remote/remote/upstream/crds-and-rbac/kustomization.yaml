@@ -1,4 +1,23 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
+# Direct apply to the workerless cluster (no ManagedResource wrapping).
+# Upstream RBAC applied verbatim: Roles stay Roles, RoleBindings stay
+# RoleBindings — the Role→ClusterRole conversion was a GRM-era workaround
+# that the helm chart's bundled managedresources/crds-and-rbac.yaml proves
+# un-converted Roles work in production.
+namespace: kube-system
 resources:
-  - managedresources.yaml
+  - https://github.com/ironcore-dev/metal-operator//config/crd?ref=v0.4.0
+  - https://github.com/ironcore-dev/metal-operator//config/rbac?ref=v0.4.0
+patches:
+  # Exclude the metrics Service from upstream config/rbac/. The workerless
+  # cluster has no kube-proxy and no metrics scraping; this Service has no
+  # use there.
+  - target:
+      kind: Service
+    patch: |
+      $patch: delete
+      apiVersion: v1
+      kind: Service
+      metadata:
+        name: $any
