@@ -129,11 +129,14 @@ running alongside the controller pod, in `ca-rotation` mode.
 The host-side controller `Deployment` includes a `webhook-injector` sidecar
 (see `components/webhook-injector/`). In `ca-rotation` mode, the sidecar:
 
-- watches the cert-manager-issued certificate Secret on the host cluster,
+- manages a self-signed TLS serving cert/CA for `metal-operator-webhook-service`
+  on the host cluster (cert-manager is explicitly out of scope — the sidecar
+  remains the self-signed cert/CA source),
 - patches `spec.webhooks[*].clientConfig.caBundle` on the workerless cluster's
   `ValidatingWebhookConfiguration` whenever the cert rotates,
-- uses RBAC scoped to `get` and `patch` on
-  `validatingwebhookconfigurations.admissionregistration.k8s.io` only.
+- uses RBAC scoped to `get`, `list`, `watch`, and `patch` on both
+  `validatingwebhookconfigurations` and `mutatingwebhookconfigurations`
+  in `admissionregistration.k8s.io` (no `create` or `update`).
 
 Cross-reference:
 [SAP-cloud-infrastructure/webhook-injector#9](https://github.com/SAP-cloud-infrastructure/webhook-injector/issues/9).
