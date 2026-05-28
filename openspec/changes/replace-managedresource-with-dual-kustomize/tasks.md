@@ -52,9 +52,9 @@
 
 ## 7. README and documentation
 
-- [ ] 7.1 Update `system/kustomize/metal-operator-remote/README.md`: document the `host` ≡ workload-cluster, `remote` ≡ workerless-cluster mapping; describe the dual-kustomize apply model; describe the new two-layer `remote/upstream/webhooks/` structure; note that the deployment pipeline lives in `cc/kube-secrets` (not in this repo).
-- [ ] 7.2 Add a "Removed in <date>" section to the README documenting what was removed in this change (Makefile targets, pre-rendered files, wrap script) and where the new mechanisms live (kustomize Git URL refs, ExternalName Service on workerless).
-- [ ] 7.3 Ensure the README's "Upgrade upstream metal-operator version" section reflects the new workflow: edit `?ref=` in three `kustomization.yaml` files (`host/base/`, `remote/upstream/crds-and-rbac/`, `remote/upstream/webhooks/upstream-no-svc/`), then `kubectl apply` (no regen step).
+- [x] 7.1 Update `system/kustomize/metal-operator-remote/README.md`: document the `host` ≡ workload-cluster, `remote` ≡ workerless-cluster mapping; describe the dual-kustomize apply model; describe the new two-layer `remote/upstream/webhooks/` structure; note that the deployment pipeline lives in `cc/kube-secrets` (not in this repo).
+- [x] 7.2 Add a "Removed in <date>" section to the README documenting what was removed in this change (Makefile targets, pre-rendered files, wrap script) and where the new mechanisms live (kustomize Git URL refs, ExternalName Service on workerless).
+- [x] 7.3 Ensure the README's "Upgrade upstream metal-operator version" section reflects the new workflow: edit `?ref=` in three `kustomization.yaml` files (`host/base/`, `remote/upstream/crds-and-rbac/`, `remote/upstream/webhooks/upstream-no-svc/`), then `kubectl apply` (no regen step).
 
 ## 8. End-to-end validation against expected behavior
 
