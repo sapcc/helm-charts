@@ -1,4 +1,4 @@
-# Self-signed issuer to bootstrap the CA
+# Self-signed issuer to bootstrap the CA (all regions)
 apiVersion: cert-manager.io/v1
 kind: Issuer
 metadata:
@@ -7,7 +7,7 @@ metadata:
 spec:
   selfSigned: {}
 ---
-# CA certificate
+# CA certificate (all regions)
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
@@ -23,7 +23,7 @@ spec:
     name: selfsigned-issuer
     kind: Issuer
 ---
-# CA-backed issuer
+# CA-backed issuer (all regions)
 apiVersion: cert-manager.io/v1
 kind: Issuer
 metadata:
@@ -33,7 +33,8 @@ spec:
   ca:
     secretName: opensearch-hermes-ca-secret
 ---
-# Actual service cert with internal SANs
+{{- if .Values.global.gardener.enabled }}
+# Self-signed REST cert for Gardener regions (no Digicert issuer available)
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
@@ -55,3 +56,26 @@ spec:
     algorithm: RSA
     encoding: PKCS8
     size: 2048
+{{- else }}
+# Digicert REST cert for standard regions
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: rest-cert
+  namespace: hermes
+spec:
+  dnsNames:
+  - 'opensearch-hermes.{{ .Values.global.region }}.{{ .Values.global.tld }}'
+  - 'opensearch-hermes.hermes.svc.kubernetes.{{ .Values.global.region }}.{{ .Values.global.tld }}'
+  issuerRef:
+    group: certmanager.{{ .Values.global.tld }}
+    kind: DigicertIssuer
+    name: digicert-issuer
+  secretName: rest-cert
+  duration: 8760h
+  renewBefore: 720h
+  privateKey:
+    algorithm: RSA
+    encoding: PKCS8
+    size: 2048
+{{- end }}
