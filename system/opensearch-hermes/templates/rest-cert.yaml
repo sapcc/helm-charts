@@ -1,4 +1,3 @@
-{{- if .Values.global.gardener.enabled }}
 # Self-signed issuer to bootstrap the CA
 apiVersion: cert-manager.io/v1
 kind: Issuer
@@ -18,6 +17,8 @@ spec:
   isCA: true
   commonName: opensearch-hermes-ca
   secretName: opensearch-hermes-ca-secret
+  duration: 87600h
+  renewBefore: 2880h
   issuerRef:
     name: selfsigned-issuer
     kind: Issuer
@@ -54,24 +55,3 @@ spec:
     algorithm: RSA
     encoding: PKCS8
     size: 2048
-{{ else }}
-# FQDN cert for all regions
-apiVersion: cert-manager.io/v1
-kind: Certificate
-metadata:
-  name: rest-cert
-  namespace: hermes
-spec:
-  dnsNames:
-  - 'opensearch-hermes.{{ .Values.global.region }}.{{ .Values.global.tld }}'
-  - 'opensearch-hermes.hermes.svc.kubernetes.{{ .Values.global.region }}.{{ .Values.global.tld }}'
-  issuerRef:
-    group: certmanager.{{ .Values.global.tld }}
-    kind: DigicertIssuer
-    name: digicert-issuer
-  secretName: rest-cert
-  privateKey:
-    algorithm: RSA
-    encoding: PKCS8
-    size: 2048
-{{- end }}
