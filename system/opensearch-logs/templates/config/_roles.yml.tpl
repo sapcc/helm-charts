@@ -517,6 +517,7 @@ security_analytics_full_access:
     - "indices:admin/create"
     - "indices:data/write/bulk*" # Required for alerting plugin (DocLevelMonitorQueries) bulk-writing percolate queries into .opensearch-alerting-queries-*
     - "indices:monitor/settings/get" # Required for Terraform provider to read index settings on sa_alerts_bootstrap and other managed indices
+    - "indices:admin/delete"
   - index_patterns:
     - "audit-ds*"
     - ".opensearch-sap-*"
