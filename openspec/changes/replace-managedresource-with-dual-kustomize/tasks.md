@@ -18,11 +18,11 @@
 
 ## 3. Remote root composition
 
-- [ ] 3.1 Create or update `system/kustomize/metal-operator-remote/remote/kustomization.yaml` to compose `upstream/crds-and-rbac/`, `upstream/webhooks/`, and `custom/`. Confirm it produces a single self-contained kustomize root.
-- [ ] 3.2 Edit `system/kustomize/metal-operator-remote/remote/upstream/crds-and-rbac/kustomization.yaml` to remove the `Role → ClusterRole` and `RoleBinding → ClusterRoleBinding` conversion patches. Keep only the upstream Git URL ref + the Service exclusion patch.
-- [ ] 3.3 Verify CRDs+RBAC build: `kustomize build remote/upstream/crds-and-rbac/` produces upstream Roles as `kind: Role` (not ClusterRole). Use `yq 'select(.kind == "Role" or .kind == "RoleBinding") | .kind' | sort | uniq -c` to confirm.
-- [ ] 3.4 Verify full remote root build: `kustomize build remote/` produces 16 CRDs + 55 ClusterRoles + 10 ClusterRoleBindings + 2 ServiceAccounts + 1 Role + 1 RoleBinding (per upstream count) + Namespace `metal-servers` + Namespace `system` + Service `webhook-service` (ExternalName) + ValidatingWebhookConfiguration + custom Namespace + custom RBAC.
-- [ ] 3.5 Verify NO `kind: ManagedResource` or wrapping `Secret` in `kustomize build remote/` output: `yq '.kind' | grep -c ManagedResource` returns 0.
+- [x] 3.1 Create or update `system/kustomize/metal-operator-remote/remote/kustomization.yaml` to compose `upstream/crds-and-rbac/`, `upstream/webhooks/`, and `custom/`. Confirm it produces a single self-contained kustomize root.
+- [x] 3.2 Edit `system/kustomize/metal-operator-remote/remote/upstream/crds-and-rbac/kustomization.yaml` to remove the `Role → ClusterRole` and `RoleBinding → ClusterRoleBinding` conversion patches. Keep only the upstream Git URL ref + the Service exclusion patch.
+- [x] 3.3 Verify CRDs+RBAC build: `kustomize build remote/upstream/crds-and-rbac/` produces upstream Roles as `kind: Role` (not ClusterRole). Use `yq 'select(.kind == "Role" or .kind == "RoleBinding") | .kind' | sort | uniq -c` to confirm.
+- [x] 3.4 Verify full remote root build: `kustomize build remote/` produces 16 CRDs + 55 ClusterRoles + 10 ClusterRoleBindings + 2 ServiceAccounts + 1 Role + 1 RoleBinding (per upstream count) + Namespace `metal-servers` + Namespace `system` + Service `webhook-service` (ExternalName) + ValidatingWebhookConfiguration + custom Namespace + custom RBAC.
+- [x] 3.5 Verify NO `kind: ManagedResource` or wrapping `Secret` in `kustomize build remote/` output: `yq '.kind' | grep -c ManagedResource` returns 0.
 
 ## 4. Host root: consolidate manager patches and restore args
 
