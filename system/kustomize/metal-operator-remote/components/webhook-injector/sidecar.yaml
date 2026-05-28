@@ -10,8 +10,23 @@ spec:
         - name: webhook-injector
           restartPolicy: Always
           image: keppel.global.cloud.sap/ccloud-ghcr-io-mirror/SAP-cloud-infrastructure/webhook-injector:latest
+          # caBundle-rotation mode: the sidecar reads the existing workerless
+          # ValidatingWebhookConfiguration (named below) and patches its
+          # caBundle field. Does NOT read a local webhook-config ConfigMap;
+          # does NOT push the WebhookConfiguration content (the workerless
+          # remote/ kustomize root delivers the WebhookConfiguration directly).
+          #
+          # Tracked in SAP-cloud-infrastructure/webhook-injector#9 — the
+          # binary must support this mode before production cutover.
+          env:
+            - name: WEBHOOK_INJECTOR_MODE
+              value: ca-rotation
           args:
-            - --webhook-config-name=webhook-config
+            # In ca-rotation mode, --webhook-config-name names the workerless
+            # ValidatingWebhookConfiguration to patch caBundle into (NOT a
+            # local ConfigMap on host). "validating-webhook-configuration" is
+            # the name from upstream's config/webhook/manifests.yaml.
+            - --webhook-config-name=validating-webhook-configuration
             - --target-kubeconfig=/var/run/remote-kubeconfig/kubeconfig
           ports:
             - name: metrics
