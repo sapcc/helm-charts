@@ -58,25 +58,25 @@
 
 ## 8. End-to-end validation against expected behavior
 
-- [ ] 8.1 Run `openspec validate replace-managedresource-with-dual-kustomize --strict`. Expected: clean.
-- [ ] 8.2 Build both roots independently:
+- [x] 8.1 Run `openspec validate replace-managedresource-with-dual-kustomize --strict`. Expected: clean.
+- [x] 8.2 Build both roots independently:
   ```
   kustomize build system/kustomize/metal-operator-remote/host/base/ > /tmp/host.yaml
   kustomize build system/kustomize/metal-operator-remote/remote/ > /tmp/remote.yaml
   ```
   Both must succeed without errors.
-- [ ] 8.3 Resource categorization sanity check on `/tmp/host.yaml`: `yq '.kind' | sort | uniq -c` should show Deployment, Service (×2), Ingress, NetworkPolicy, ConfigMap, Secret (×3), ServiceAccount, Role, RoleBinding. NO ManagedResource, no `webhook-config` ConfigMap.
-- [ ] 8.4 Resource categorization sanity check on `/tmp/remote.yaml`: should show CustomResourceDefinition (×16), ClusterRole, ClusterRoleBinding, ServiceAccount, Role (≥1, un-converted), RoleBinding (≥1, un-converted), Namespace (×2: `metal-servers` + `system`), Service (×1: `webhook-service` ExternalName), ValidatingWebhookConfiguration. NO ManagedResource. NO `caBundle` field anywhere.
-- [ ] 8.5 caBundle absence check: `yq '.. | select(has("caBundle")) // empty' /tmp/remote.yaml` returns empty.
-- [ ] 8.6 ExternalName Service shape check: `yq 'select(.kind == "Service" and .metadata.namespace == "system")' /tmp/remote.yaml` shows `spec.type: ExternalName` and `spec.externalName: metal-operator-webhook-service`.
-- [ ] 8.7 Build a per-cluster overlay (against the in-flight kube-secrets coordinated change's branch) end-to-end:
+- [x] 8.3 Resource categorization sanity check on `/tmp/host.yaml`: `yq '.kind' | sort | uniq -c` should show Deployment, Service (×2), Ingress, NetworkPolicy, ConfigMap, Secret (×3), ServiceAccount, Role, RoleBinding. NO ManagedResource, no `webhook-config` ConfigMap.
+- [x] 8.4 Resource categorization sanity check on `/tmp/remote.yaml`: should show CustomResourceDefinition (×16), ClusterRole, ClusterRoleBinding, ServiceAccount, Role (≥1, un-converted), RoleBinding (≥1, un-converted), Namespace (×2: `metal-servers` + `system`), Service (×1: `webhook-service` ExternalName), ValidatingWebhookConfiguration. NO ManagedResource. NO `caBundle` field anywhere.
+- [x] 8.5 caBundle absence check: `yq '.. | select(has("caBundle")) // empty' /tmp/remote.yaml` returns empty.
+- [x] 8.6 ExternalName Service shape check: `yq 'select(.kind == "Service" and .metadata.namespace == "system")' /tmp/remote.yaml` shows `spec.type: ExternalName` and `spec.externalName: metal-operator-webhook-service`.
+- [x] 8.7 Build a per-cluster overlay (against the in-flight kube-secrets coordinated change's branch) end-to-end:
   ```
   kustomize build <kube-secrets-branch>/values/kustomize/<test-cluster>/metal-operator-remote/host/  > /tmp/host-cluster.yaml
   kustomize build <kube-secrets-branch>/values/kustomize/<test-cluster>/metal-operator-remote/remote/ > /tmp/remote-cluster.yaml
   ```
   Both must succeed and incorporate per-cluster patches (image tags, OIDC group component, NetworkPolicy CIDRs).
-- [ ] 8.8 Compare host output against the helm-rendered output of the same cluster: `helm template metal-operator-remote system/metal-operator-remote --values <kube-secrets-helm-values-for-the-same-cluster>` filtered to host-cluster resources only. Expect functional equivalence (same kinds, names, specs) modulo Deployment name (`controller-manager` vs `metal-operator-controller-manager`) and minor structural differences. Document any divergence.
-- [ ] 8.9 Compare remote output against the helm-rendered ManagedResources unwrapped: workerless cluster should receive equivalent CRDs + RBAC + Namespace + ValidatingWebhookConfiguration content. The kustomize version uses `clientConfig.service` form whereas helm uses `clientConfig.url`; this is expected.
+- [x] 8.8 Compare host output against the helm-rendered output of the same cluster: `helm template metal-operator-remote system/metal-operator-remote --values <kube-secrets-helm-values-for-the-same-cluster>` filtered to host-cluster resources only. Expect functional equivalence (same kinds, names, specs) modulo Deployment name (`controller-manager` vs `metal-operator-controller-manager`) and minor structural differences. Document any divergence.
+- [x] 8.9 Compare remote output against the helm-rendered ManagedResources unwrapped: workerless cluster should receive equivalent CRDs + RBAC + Namespace + ValidatingWebhookConfiguration content. The kustomize version uses `clientConfig.service` form whereas helm uses `clientConfig.url`; this is expected.
 
 ## 9. Pull request preparation (REUSE existing PR [#11633](https://github.com/sapcc/helm-charts/pull/11633))
 
