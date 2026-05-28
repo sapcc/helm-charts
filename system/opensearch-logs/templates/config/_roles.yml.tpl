@@ -523,7 +523,6 @@ security_analytics_full_access:
     - ".opensearch-sap-*"
     allowed_actions:
     - "indices:admin/create"
-    - "indices:admin/delete"
     - "indices:admin/template/get"
     - "indices:admin/template/put"
     - "indices:admin/mapping/put"
