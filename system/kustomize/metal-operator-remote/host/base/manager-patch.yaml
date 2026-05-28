@@ -26,6 +26,13 @@ spec:
         runAsGroup: 65532
       containers:
         - name: manager
+          args:
+            - --mac-prefixes-file=/etc/macdb/macdb.yaml
+            - --probe-image=keppel.global.cloud.sap/ccloud-ghcr-io-mirror/ironcore-dev/metalprobe:latest
+            - --probe-os-image=ghcr.io/ironcore-dev/os-images/gardenlinux:1443.3
+            - --insecure=false
+            - --registry-url=http://[2a10:afc0:e013:d002::]:30010
+            - --manager-namespace=metal-operator-system
           env:
             - name: KUBERNETES_SERVICE_HOST
               value: "APISERVER_URL_PLACEHOLDER"
@@ -33,6 +40,10 @@ spec:
               value: "cluster.local"
             - name: KUBECONFIG
               value: "/var/run/remote-kubeconfig/kubeconfig"
+          ports:
+            - containerPort: 9443
+              name: webhook-server
+              protocol: TCP
           resources:
             limits:
               cpu: "5"
@@ -41,6 +52,11 @@ spec:
               cpu: 300m
               memory: 50Mi
           volumeMounts:
+            - name: webhook-certs
+              mountPath: /tmp/k8s-webhook-server/serving-certs
+              readOnly: true
+            - name: macdb
+              mountPath: /etc/macdb
             - name: remote-serviceaccount
               mountPath: /var/run/secrets/kubernetes.io/remote-serviceaccount
               readOnly: true
@@ -48,6 +64,11 @@ spec:
               mountPath: /var/run/remote-kubeconfig
               readOnly: true
       volumes:
+        - name: webhook-certs
+          emptyDir: {}
+        - name: macdb
+          secret:
+            secretName: macdb
         - name: remote-serviceaccount
           secret:
             secretName: metal-operator-remote-kubeconfig
