@@ -44,5 +44,5 @@ done
 {{- if .Values.global.gardener.enabled }}
 $OPENSEARCH_BASE/plugins/opensearch-security/tools/securityadmin.sh -icl -key $OPENSEARCH_BASE/config/certs/admin/tls.key -cert $OPENSEARCH_BASE/config/certs/admin/tls.crt -cacert $OPENSEARCH_BASE/config/certs/ca/ca.crt -cd $OPENSEARCH_BASE/config/security/ -h opensearch-hermes.hermes.svc
 {{- else }}
-$OPENSEARCH_BASE/plugins/opensearch-security/tools/securityadmin.sh -icl -nhnv -key $OPENSEARCH_BASE/config/certs/admin/tls.key -cert $OPENSEARCH_BASE/config/certs/admin/tls.crt -cacert $OPENSEARCH_BASE/config/certs/ca/ca.crt -cd $OPENSEARCH_BASE/config/security/ -h opensearch-hermes.hermes.svc
+$OPENSEARCH_BASE/plugins/opensearch-security/tools/securityadmin.sh -icl -key $OPENSEARCH_BASE/config/certs/admin/tls.key -cert $OPENSEARCH_BASE/config/certs/admin/tls.crt -cacert $OPENSEARCH_BASE/config/certs/rest/ca.crt -cd $OPENSEARCH_BASE/config/security/ -h opensearch-hermes.{{ .Values.global.region }}.{{ .Values.global.tld }}
 {{- end }}
