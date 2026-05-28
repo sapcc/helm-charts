@@ -1,9 +1,9 @@
 ## 1. Pre-flight: dependency tracking and coordination
 
-- [ ] 1.1 Verify [SAP-cloud-infrastructure/webhook-injector#9](https://github.com/SAP-cloud-infrastructure/webhook-injector/issues/9) status — has the `ca-rotation` mode been released? If not, this change can land in `master` but cannot be cut over to production until the new image is available. Document the gating in the PR description.
-- [ ] 1.2 Confirm with the parallel `cc/kube-secrets` OpenSpec change author (the kube-secrets-side coordinated change) that the per-cluster overlay restructure (`metal-operator-remote/host/` + `metal-operator-remote/remote/` subpaths) and the Concourse pipeline definition for the dual-step apply are tracked there. Cross-reference the OpenSpec change name in the kube-secrets repo.
-- [ ] 1.3 Verify webhook-injector is already deployed for all production `metal-operator-remote` clusters (`rt-eu-de-1`, `a-qa-de-200`, others if any). If a legacy non-sidecar deployment path exists for any cluster, plan an additional migration step before this change can ship.
-- [ ] 1.4 Audit the current kustomize tree for any GRM-era patches/transforms beyond the `Role → ClusterRole` conversion (e.g., resource-name munging, label injection in `wrap-managedresources.sh`). Document findings — they may need to be removed in this change too.
+- [x] 1.1 Verify [SAP-cloud-infrastructure/webhook-injector#9](https://github.com/SAP-cloud-infrastructure/webhook-injector/issues/9) status — has the `ca-rotation` mode been released? If not, this change can land in `master` but cannot be cut over to production until the new image is available. Document the gating in the PR description.
+- [x] 1.2 Confirm with the parallel `cc/kube-secrets` OpenSpec change author (the kube-secrets-side coordinated change) that the per-cluster overlay restructure (`metal-operator-remote/host/` + `metal-operator-remote/remote/` subpaths) and the Concourse pipeline definition for the dual-step apply are tracked there. Cross-reference the OpenSpec change name in the kube-secrets repo.
+- [x] 1.3 Verify webhook-injector is already deployed for all production `metal-operator-remote` clusters (`rt-eu-de-1`, `a-qa-de-200`, others if any). If a legacy non-sidecar deployment path exists for any cluster, plan an additional migration step before this change can ship.
+- [x] 1.4 Audit the current kustomize tree for any GRM-era patches/transforms beyond the `Role → ClusterRole` conversion (e.g., resource-name munging, label injection in `wrap-managedresources.sh`). Document findings — they may need to be removed in this change too.
 
 ## 2. Webhook delivery restructure (two-layer kustomize)
 
