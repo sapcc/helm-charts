@@ -27,7 +27,7 @@ host/base/   →  kubectl apply --kubeconfig=<workload-cluster>   → Deployment
 remote/      →  kubectl apply --kubeconfig=<workerless-cluster> → CRDs, RBAC, Namespaces, ValidatingWebhookConfiguration, ExternalName Service
 ```
 
-The deployment pipeline (a two-step Concourse pipeline that applies the host root then the remote root with the matching kubeconfig for each cluster) lives in [`cc/kube-secrets`](https://github.wdf.sap.corp/cc/kube-secrets), not in this repository.
+The deployment pipeline (two independent `kubectl apply -k` invocations against the matching kubeconfig for each cluster) lives in [`cc/kube-secrets`](https://github.wdf.sap.corp/cc/kube-secrets), not in this repository. **Strict apply ordering is NOT required for correctness** — components are designed to retry on missing dependencies and converge to a working state regardless of order. Operationally the pipeline commonly applies remote-then-host as an optimization to reduce alert noise during initial deploy (the controller pod doesn't crashloop when CRDs are pre-installed on the workerless cluster), but this is recommendation, not contract.
 
 ## Prerequisites
 
