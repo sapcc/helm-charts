@@ -5,19 +5,13 @@ kind: Kustomization
 # RoleBindings — the Role→ClusterRole conversion was a GRM-era workaround
 # that the helm chart's bundled managedresources/crds-and-rbac.yaml proves
 # un-converted Roles work in production.
+#
+# No Service-exclusion patch needed: upstream config/rbac/ ships only
+# ServiceAccount/Role/RoleBinding (verified at v0.4.0); the metrics Service
+# lives in upstream config/default/, which we do not reference. If a future
+# upstream release adds a Service to config/rbac/, add an exclusion patch
+# at that time with a specific resource name.
 namespace: kube-system
 resources:
   - https://github.com/ironcore-dev/metal-operator//config/crd?ref=v0.4.0
   - https://github.com/ironcore-dev/metal-operator//config/rbac?ref=v0.4.0
-patches:
-  # Exclude the metrics Service from upstream config/rbac/. The workerless
-  # cluster has no kube-proxy and no metrics scraping; this Service has no
-  # use there.
-  - target:
-      kind: Service
-    patch: |
-      $patch: delete
-      apiVersion: v1
-      kind: Service
-      metadata:
-        name: $any
