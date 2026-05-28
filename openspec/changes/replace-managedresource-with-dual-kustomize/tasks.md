@@ -186,6 +186,6 @@ Chronology: this section runs AFTER Section 9 (PR prep, already complete) and BE
   grep -r "metal-operator-webhook-injector" system/kustomize/metal-operator-remote/host/ && echo "FAIL: should be empty" || echo "OK: no host-side references"
   ```
 - [x] 14.8 Run `openspec validate replace-managedresource-with-dual-kustomize --strict`. Expected: clean (the new ADDED requirement in `kustomize-sidecar-injection/spec.md` covers the new file layout).
-- [ ] 14.9 Commit on `poc/kustomize-metal-operator-remote`. Use `git add` for the specific paths only (specs + kustomize tree files); no `git add -A`. Suggested message: `refactor(metal-operator-remote): encapsulate sidecar-coupled resources in webhook-injector Component`.
-- [ ] 14.10 Push to origin: `git push origin poc/kustomize-metal-operator-remote`.
-- [ ] 14.11 Update PR #11633 description's Scope 3 section with a 1–2 line note about the encapsulation refactor (the final structure: the Component owns ALL sidecar-introduced resources, atomic enable/disable). Apply via `gh pr edit 11633 --body-file ...`.
+- [x] 14.9 Commit on `poc/kustomize-metal-operator-remote`. Use `git add` for the specific paths only (specs + kustomize tree files); no `git add -A`. Suggested message: `refactor(metal-operator-remote): encapsulate sidecar-coupled resources in webhook-injector Component`.
+- [x] 14.10 Push to origin: `git push origin poc/kustomize-metal-operator-remote`.
+- [x] 14.11 Update PR #11633 description's Scope 3 section with a 1–2 line note about the encapsulation refactor (the final structure: the Component owns ALL sidecar-introduced resources, atomic enable/disable). Apply via `gh pr edit 11633 --body-file ...`.
