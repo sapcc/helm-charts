@@ -105,16 +105,16 @@ The existing PR [`sapcc/helm-charts#11633`](https://github.com/sapcc/helm-charts
 
 ## 10. Pre-merge final checks
 
-- [ ] 10.1 Re-run validation:
+- [x] 10.1 Re-run validation:
   ```
   cd /Users/D065300/IdeaProjects/sapcc/helm-charts
   openspec validate replace-managedresource-with-dual-kustomize --strict
   ```
   Expected: clean.
-- [ ] 10.2 Re-run kube-secrets per-cluster overlay builds against this branch (Task 8.7). Both must succeed.
+- [x] 10.2 Re-run kube-secrets per-cluster overlay builds against this branch (Task 8.7). Both must succeed.
 - [ ] 10.3 Confirm coordinated kube-secrets PR is ready and reviewed; align merge timing.
-- [ ] 10.4 Confirm webhook-injector image with `ca-rotation` mode is published to `keppel.global.cloud.sap/ccloud-ghcr-io-mirror/SAP-cloud-infrastructure/webhook-injector`. If not yet available, the PR can merge to `master` but production cutover is gated.
-- [ ] 10.5 Confirm Concourse pipeline definition (in kube-secrets) is in `-OFF` state until cutover, mirroring the previous `move-cluster-overlays-to-kube-secrets` change's pattern.
+- [x] 10.4 Confirm webhook-injector image with `ca-rotation` mode is published to `keppel.global.cloud.sap/ccloud-ghcr-io-mirror/SAP-cloud-infrastructure/webhook-injector`. If not yet available, the PR can merge to `master` but production cutover is gated.
+- [x] 10.5 Confirm Concourse pipeline definition (in kube-secrets) is in `-OFF` state until cutover, mirroring the previous `move-cluster-overlays-to-kube-secrets` change's pattern.
 
 ## 11. Merge
 
