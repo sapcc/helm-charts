@@ -68,13 +68,13 @@ The webhook-injector image tag SHALL be overridable without modifying the Compon
 
 ### Requirement: Webhook-injector sidecar removable per environment
 
-The webhook-injector sidecar is included in the base (for clusters with webhooks enabled) but SHALL be removable by per-environment overlays where webhooks are disabled.
+The webhook-injector sidecar is included in the base (for clusters with webhooks enabled) but the Component SHALL be designed such that consuming overlays (located in any repository — see `cluster-overlay-layout` capability in `cc/kube-secrets`) can remove it via `$patch: delete` on the initContainers array entry. The Component MUST NOT have implicit dependencies (e.g., other base resources that assume the webhook-injector is always present) that would break when the sidecar is removed.
 
-#### Scenario: Overlay removes sidecar when webhooks disabled
+#### Scenario: Component supports removal via $patch:delete
 
-- **WHEN** an environment has `ENABLE_WEBHOOKS=false`
-- **THEN** the overlay SHALL remove the webhook-injector initContainer via a `$patch: delete` on the initContainers array entry
+- **WHEN** a consuming kustomization patches the initContainer array entry with `$patch: delete`
 - **THEN** the rendered Deployment output SHALL have no initContainers
+- **AND** the rendered Deployment SHALL still be valid (no dangling references to the removed initContainer in volumeMounts, env, args, etc.)
 
 #### Scenario: Base includes sidecar by default
 

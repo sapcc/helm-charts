@@ -34,36 +34,21 @@ The `host/base/` kustomize overlay SHALL produce all resources needed in the see
 
 ---
 
-### Requirement: Host overlays parameterize per-environment values
+### Requirement: Per-cluster overlay placement delegated to kube-secrets capability
 
-Per-environment overlays in `host/overlays/<cluster-name>/` SHALL patch the base with cluster-specific values, enabling the same base to be deployed to different environments.
+Per-cluster overlay placement, naming, and lifecycle SHALL be governed by the `cluster-overlay-layout` capability in `cc/kube-secrets`. Implementations using `system/kustomize/metal-operator-remote/` bases MUST consume them from per-cluster overlays in `cc/kube-secrets` via kustomize Git URL refs (`https://github.com/sapcc/helm-charts.git//system/kustomize/metal-operator-remote/<base-path>?ref=master`). This repository SHALL NOT host per-cluster overlays under `system/kustomize/metal-operator-remote/{host,remote/custom}/overlays/<cluster>/` or `system/kustomize/metal-operator-remote/overlays/<cluster>/`.
 
-#### Scenario: Overlay patches environment-specific values
+#### Scenario: Per-cluster overlay creation goes to kube-secrets
 
-- **WHEN** `kustomize build host/overlays/<cluster-name>/` is executed
-- **THEN** the Ingress SHALL have the correct domain for that cluster (region, clusterType, tld)
-- **THEN** the remote-kubeconfig ConfigMap SHALL have the correct apiserver URL
-- **THEN** the macdb Secret SHALL have the correct macdb content for that environment
-- **THEN** the rotate-kubeconfig Secret SHALL have the correct remote CA
-- **THEN** the Deployment image tags SHALL match the environment-specific versions
-- **THEN** the webhook-config ConfigMap name SHALL be overridable per environment (e.g., `metal-operator-remote-webhook-config`)
-- **THEN** the webhook-injector sidecar args SHALL be overridable per environment (e.g., `--leader-election-id`)
+- **WHEN** a per-cluster overlay needs to be created or modified for `metal-operator-remote`
+- **THEN** the work SHALL happen in `cc/kube-secrets` under `values/kustomize/<clusterType>/<region>/<clusterName>/metal-operator-remote/` per the `cluster-overlay-layout` capability
+- **AND** SHALL NOT be added to this repository
 
-#### Scenario: Overlay can remove base resources not needed for the environment
+#### Scenario: No per-cluster overlay directories exist in this repo
 
-- **WHEN** a feature is disabled for a specific cluster (e.g., webhooks disabled)
-- **THEN** the overlay SHALL be able to remove base resources via `$patch: delete` (e.g., webhook-service, webhook-injector RBAC, webhook-config ConfigMap)
-- **THEN** the overlay SHALL be able to remove the webhook-injector initContainer from the Deployment
-
-#### Scenario: Overlay can override Deployment volumes and mounts
-
-- **WHEN** a cluster uses a different volume mounting strategy (e.g., mounting remote-kubeconfig at `/var/run/secrets/kubernetes.io/serviceaccount` instead of a custom path with `KUBECONFIG` env var)
-- **THEN** the overlay SHALL be able to replace the Deployment's volumes and volumeMounts entirely
-
-#### Scenario: Overlay inherits all base resources unless explicitly removed
-
-- **WHEN** `kustomize build host/overlays/<cluster-name>/` is executed
-- **THEN** the output SHALL contain all resources from the base except those explicitly removed by the overlay via `$patch: delete`
+- **WHEN** examining `system/kustomize/metal-operator-remote/` in this repository at any commit on or after this change
+- **THEN** there SHALL be no directories matching `host/overlays/<cluster>/`, `remote/custom/overlays/<cluster>/`, or `overlays/<cluster>/`
+- **AND** the bases (`host/base/`, `remote/custom/base/`, `remote/upstream/`) and components (`remote/custom/components/{prod,qa}/`, `components/webhook-injector/`) SHALL remain present and consumable via kustomize Git URL refs
 
 ---
 
@@ -138,12 +123,12 @@ The remote resources SHALL be pre-rendered and wrapped into Gardener ManagedReso
 
 ### Requirement: Host and remote produce equivalent output to current Helm chart
 
-The kustomize overlays SHALL produce resource sets functionally equivalent to the current `metal-operator-remote` Helm chart rendered output.
+The kustomize overlays (located in `cc/kube-secrets` per the `cluster-overlay-layout` capability) SHALL produce resource sets functionally equivalent to the current `metal-operator-remote` Helm chart rendered output, when both are rendered with equivalent cluster-specific values.
 
 #### Scenario: Host resources equivalence
 
-- **WHEN** comparing `kustomize build host/overlays/<test>/` with `helm template metal-operator-remote` using equivalent values
-- **THEN** the resource set SHALL be functionally equivalent (same kinds, names, specs)
+- **WHEN** comparing `kustomize build` of a kube-secrets overlay (e.g., `cc/kube-secrets/values/kustomize/<clusterType>/<region>/<clusterName>/metal-operator-remote/`) with `helm template metal-operator-remote <this-repo>/system/metal-operator-remote --values <kube-secrets-helm-values-for-the-same-cluster>`
+- **THEN** the resource set SHALL be functionally equivalent (same kinds, names, specs) modulo expected chart-structural differences (e.g., resource ordering, generated label keys)
 
 #### Scenario: Remote CRDs and RBAC equivalence
 
@@ -186,27 +171,3 @@ The kustomize overlays SHALL NOT introduce any blockers for future Flux integrat
 
 - **WHEN** Flux points at the pre-rendered `managedresources.yaml` files
 - **THEN** they SHALL be deployable as plain YAML without any kustomize processing
-
----
-
-### Requirement: Top-level per-environment kustomization renders all resources
-
-A per-environment top-level `kustomization.yaml` SHALL exist that combines host resources, remote upstream ManagedResources, and remote custom ManagedResources into a single renderable output, enabling deployment via `kubectl apply -k`.
-
-#### Scenario: Single-command deployment via kubectl
-
-- **WHEN** `kubectl apply -k overlays/<cluster-name>/` is executed from the `system/kustomize/metal-operator-remote/` directory
-- **THEN** all resources SHALL be applied to the seed cluster in one operation (host resources directly, remote resources as ManagedResources that GRM applies to the virtual cluster)
-
-#### Scenario: Top-level overlay includes all resource categories
-
-- **WHEN** `kustomize build overlays/<cluster-name>/` is executed
-- **THEN** the output SHALL contain host resources (Deployment, Services, Ingress, NetworkPolicy, ConfigMaps, Secrets, RBAC)
-- **THEN** the output SHALL contain remote upstream ManagedResource+Secret pairs (CRDs, RBAC, webhooks)
-- **THEN** the output SHALL contain remote custom resources (Namespace, custom RBAC) wrapped as ManagedResources
-
-#### Scenario: Overlay inherits per-environment values
-
-- **WHEN** `kustomize build overlays/rt-eu-de-1/` is executed
-- **THEN** host resources SHALL have rt-eu-de-1 specific values (domain, apiserver URL, images, macdb)
-- **THEN** remote custom resources SHALL have rt-eu-de-1 specific values (IAS groups)
