@@ -35,10 +35,10 @@
 
 ## 5. Webhook-injector sidecar configuration for caBundle-rotation mode
 
-- [ ] 5.1 Edit `system/kustomize/metal-operator-remote/components/webhook-injector/sidecar.yaml` (or equivalent) to set `WEBHOOK_INJECTOR_MODE=ca-rotation` env var (or the equivalent flag agreed with the binary maintainers in [webhook-injector#9](https://github.com/SAP-cloud-infrastructure/webhook-injector/issues/9)). Add a comment cross-referencing the issue.
-- [ ] 5.2 Update the sidecar's `--webhook-config-name` argument to point at the workerless `ValidatingWebhookConfiguration` name (`validating-webhook-configuration` per upstream). Add a comment noting that in `ca-rotation` mode this references the workerless resource (not a host-side ConfigMap).
-- [ ] 5.3 Update `system/kustomize/metal-operator-remote/host/base/webhook-injector-rbac.yaml`: narrow the host-side Role's verbs (drop ConfigMap read on `webhook-config` if present); ensure remote-cluster RBAC delivered via remote-kubeconfig is scoped to `get` and `patch` on `validatingwebhookconfigurations.admissionregistration.k8s.io` only (no broader verbs).
-- [ ] 5.4 Verify sidecar args in build output: `kustomize build host/base/ | yq 'select(.kind == "Deployment") | .spec.template.spec.initContainers[] | select(.name == "webhook-injector") | .env, .args'` shows `WEBHOOK_INJECTOR_MODE=ca-rotation` and the workerless WebhookConfiguration name.
+- [x] 5.1 Edit `system/kustomize/metal-operator-remote/components/webhook-injector/sidecar.yaml` (or equivalent) to set `WEBHOOK_INJECTOR_MODE=ca-rotation` env var (or the equivalent flag agreed with the binary maintainers in [webhook-injector#9](https://github.com/SAP-cloud-infrastructure/webhook-injector/issues/9)). Add a comment cross-referencing the issue.
+- [x] 5.2 Update the sidecar's `--webhook-config-name` argument to point at the workerless `ValidatingWebhookConfiguration` name (`validating-webhook-configuration` per upstream). Add a comment noting that in `ca-rotation` mode this references the workerless resource (not a host-side ConfigMap).
+- [x] 5.3 Update `system/kustomize/metal-operator-remote/host/base/webhook-injector-rbac.yaml`: narrow the host-side Role's verbs (drop ConfigMap read on `webhook-config` if present); ensure remote-cluster RBAC delivered via remote-kubeconfig is scoped to `get` and `patch` on `validatingwebhookconfigurations.admissionregistration.k8s.io` only (no broader verbs).
+- [x] 5.4 Verify sidecar args in build output: `kustomize build host/base/ | yq 'select(.kind == "Deployment") | .spec.template.spec.initContainers[] | select(.name == "webhook-injector") | .env, .args'` shows `WEBHOOK_INJECTOR_MODE=ca-rotation` and the workerless WebhookConfiguration name.
 
 ## 6. Delete obsolete pre-render machinery
 
