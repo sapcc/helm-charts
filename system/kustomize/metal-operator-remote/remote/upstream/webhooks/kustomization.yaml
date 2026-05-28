@@ -1,4 +1,10 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
+# Outer layer: composes the inner upstream-no-svc/ output (the
+# ValidatingWebhookConfiguration with upstream's regular Service removed)
+# plus the `system` Namespace and our ExternalName Service stub.
+# Applied directly to the workerless cluster via `kubectl apply -k remote/`.
 resources:
-  - managedresources.yaml
+  - upstream-no-svc/
+  - system-namespace.yaml
+  - webhook-service-stub.yaml

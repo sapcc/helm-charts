@@ -1,82 +1,82 @@
 ## 1. Pre-flight: dependency tracking and coordination
 
-- [ ] 1.1 Verify [SAP-cloud-infrastructure/webhook-injector#9](https://github.com/SAP-cloud-infrastructure/webhook-injector/issues/9) status — has the `ca-rotation` mode been released? If not, this change can land in `master` but cannot be cut over to production until the new image is available. Document the gating in the PR description.
-- [ ] 1.2 Confirm with the parallel `cc/kube-secrets` OpenSpec change author (the kube-secrets-side coordinated change) that the per-cluster overlay restructure (`metal-operator-remote/host/` + `metal-operator-remote/remote/` subpaths) and the Concourse pipeline definition for the dual-step apply are tracked there. Cross-reference the OpenSpec change name in the kube-secrets repo.
-- [ ] 1.3 Verify webhook-injector is already deployed for all production `metal-operator-remote` clusters (`rt-eu-de-1`, `a-qa-de-200`, others if any). If a legacy non-sidecar deployment path exists for any cluster, plan an additional migration step before this change can ship.
-- [ ] 1.4 Audit the current kustomize tree for any GRM-era patches/transforms beyond the `Role → ClusterRole` conversion (e.g., resource-name munging, label injection in `wrap-managedresources.sh`). Document findings — they may need to be removed in this change too.
+- [x] 1.1 Verify [SAP-cloud-infrastructure/webhook-injector#9](https://github.com/SAP-cloud-infrastructure/webhook-injector/issues/9) status — has the `ca-rotation` mode been released? If not, this change can land in `master` but cannot be cut over to production until the new image is available. Document the gating in the PR description.
+- [x] 1.2 Confirm with the parallel `cc/kube-secrets` OpenSpec change author (the kube-secrets-side coordinated change) that the per-cluster overlay restructure (`metal-operator-remote/host/` + `metal-operator-remote/remote/` subpaths) and the Concourse pipeline definition for the dual-step apply are tracked there. Cross-reference the OpenSpec change name in the kube-secrets repo.
+- [x] 1.3 Verify webhook-injector is already deployed for all production `metal-operator-remote` clusters (`rt-eu-de-1`, `a-qa-de-200`, others if any). If a legacy non-sidecar deployment path exists for any cluster, plan an additional migration step before this change can ship.
+- [x] 1.4 Audit the current kustomize tree for any GRM-era patches/transforms beyond the `Role → ClusterRole` conversion (e.g., resource-name munging, label injection in `wrap-managedresources.sh`). Document findings — they may need to be removed in this change too.
 
 ## 2. Webhook delivery restructure (two-layer kustomize)
 
-- [ ] 2.1 Create the inner-layer subdirectory `system/kustomize/metal-operator-remote/remote/upstream/webhooks/upstream-no-svc/`.
-- [ ] 2.2 Write `upstream-no-svc/kustomization.yaml`: `resources:` references `https://github.com/ironcore-dev/metal-operator//config/webhook?ref=v0.4.0`; `patches:` contains a `$patch: delete` for the `Service` named `webhook-service` in namespace `system`.
-- [ ] 2.3 Verify inner layer build: `kustomize build system/kustomize/metal-operator-remote/remote/upstream/webhooks/upstream-no-svc/` outputs ONLY a `ValidatingWebhookConfiguration` (no Service). Use `yq '.kind' | sort | uniq -c` to confirm.
-- [ ] 2.4 Create `system/kustomize/metal-operator-remote/remote/upstream/webhooks/system-namespace.yaml` defining a `Namespace` named `system`.
-- [ ] 2.5 Create `system/kustomize/metal-operator-remote/remote/upstream/webhooks/webhook-service-stub.yaml` defining a `Service` named `webhook-service` in namespace `system` with `spec.type: ExternalName` and `spec.externalName: metal-operator-webhook-service`.
-- [ ] 2.6 Rewrite the outer `system/kustomize/metal-operator-remote/remote/upstream/webhooks/kustomization.yaml`: `resources:` lists `upstream-no-svc/`, `system-namespace.yaml`, `webhook-service-stub.yaml`. Remove any `patches:` / `replacements:` / Makefile-related scaffolding.
-- [ ] 2.7 Verify outer layer build: `kustomize build system/kustomize/metal-operator-remote/remote/upstream/webhooks/` outputs `Namespace system`, `Service webhook-service` (ExternalName), and `ValidatingWebhookConfiguration` (with `clientConfig.service` form, no `caBundle`).
-- [ ] 2.8 Verify the caBundle invariant: `kustomize build .../webhooks/ | yq '.. | select(.caBundle? // "missing")'` returns empty.
+- [x] 2.1 Create the inner-layer subdirectory `system/kustomize/metal-operator-remote/remote/upstream/webhooks/upstream-no-svc/`.
+- [x] 2.2 Write `upstream-no-svc/kustomization.yaml`: `resources:` references `https://github.com/ironcore-dev/metal-operator//config/webhook?ref=v0.4.0`; `patches:` contains a `$patch: delete` for the `Service` named `webhook-service` in namespace `system`.
+- [x] 2.3 Verify inner layer build: `kustomize build system/kustomize/metal-operator-remote/remote/upstream/webhooks/upstream-no-svc/` outputs ONLY a `ValidatingWebhookConfiguration` (no Service). Use `yq '.kind' | sort | uniq -c` to confirm.
+- [x] 2.4 Create `system/kustomize/metal-operator-remote/remote/upstream/webhooks/system-namespace.yaml` defining a `Namespace` named `system`.
+- [x] 2.5 Create `system/kustomize/metal-operator-remote/remote/upstream/webhooks/webhook-service-stub.yaml` defining a `Service` named `webhook-service` in namespace `system` with `spec.type: ExternalName` and `spec.externalName: metal-operator-webhook-service`.
+- [x] 2.6 Rewrite the outer `system/kustomize/metal-operator-remote/remote/upstream/webhooks/kustomization.yaml`: `resources:` lists `upstream-no-svc/`, `system-namespace.yaml`, `webhook-service-stub.yaml`. Remove any `patches:` / `replacements:` / Makefile-related scaffolding.
+- [x] 2.7 Verify outer layer build: `kustomize build system/kustomize/metal-operator-remote/remote/upstream/webhooks/` outputs `Namespace system`, `Service webhook-service` (ExternalName), and `ValidatingWebhookConfiguration` (with `clientConfig.service` form, no `caBundle`).
+- [x] 2.8 Verify the caBundle invariant: `kustomize build .../webhooks/ | yq '.. | select(.caBundle? // "missing")'` returns empty.
 
 ## 3. Remote root composition
 
-- [ ] 3.1 Create or update `system/kustomize/metal-operator-remote/remote/kustomization.yaml` to compose `upstream/crds-and-rbac/`, `upstream/webhooks/`, and `custom/`. Confirm it produces a single self-contained kustomize root.
-- [ ] 3.2 Edit `system/kustomize/metal-operator-remote/remote/upstream/crds-and-rbac/kustomization.yaml` to remove the `Role → ClusterRole` and `RoleBinding → ClusterRoleBinding` conversion patches. Keep only the upstream Git URL ref + the Service exclusion patch.
-- [ ] 3.3 Verify CRDs+RBAC build: `kustomize build remote/upstream/crds-and-rbac/` produces upstream Roles as `kind: Role` (not ClusterRole). Use `yq 'select(.kind == "Role" or .kind == "RoleBinding") | .kind' | sort | uniq -c` to confirm.
-- [ ] 3.4 Verify full remote root build: `kustomize build remote/` produces 16 CRDs + 55 ClusterRoles + 10 ClusterRoleBindings + 2 ServiceAccounts + 1 Role + 1 RoleBinding (per upstream count) + Namespace `metal-servers` + Namespace `system` + Service `webhook-service` (ExternalName) + ValidatingWebhookConfiguration + custom Namespace + custom RBAC.
-- [ ] 3.5 Verify NO `kind: ManagedResource` or wrapping `Secret` in `kustomize build remote/` output: `yq '.kind' | grep -c ManagedResource` returns 0.
+- [x] 3.1 Create or update `system/kustomize/metal-operator-remote/remote/kustomization.yaml` to compose `upstream/crds-and-rbac/`, `upstream/webhooks/`, and `custom/`. Confirm it produces a single self-contained kustomize root.
+- [x] 3.2 Edit `system/kustomize/metal-operator-remote/remote/upstream/crds-and-rbac/kustomization.yaml` to remove the `Role → ClusterRole` and `RoleBinding → ClusterRoleBinding` conversion patches. Keep only the upstream Git URL ref + the Service exclusion patch.
+- [x] 3.3 Verify CRDs+RBAC build: `kustomize build remote/upstream/crds-and-rbac/` produces upstream Roles as `kind: Role` (not ClusterRole). Use `yq 'select(.kind == "Role" or .kind == "RoleBinding") | .kind' | sort | uniq -c` to confirm.
+- [x] 3.4 Verify full remote root build: `kustomize build remote/` produces 16 CRDs + 55 ClusterRoles + 10 ClusterRoleBindings + 2 ServiceAccounts + 1 Role + 1 RoleBinding (per upstream count) + Namespace `metal-servers` + Namespace `system` + Service `webhook-service` (ExternalName) + ValidatingWebhookConfiguration + custom Namespace + custom RBAC.
+- [x] 3.5 Verify NO `kind: ManagedResource` or wrapping `Secret` in `kustomize build remote/` output: `yq '.kind' | grep -c ManagedResource` returns 0.
 
 ## 4. Host root: consolidate manager patches and restore args
 
-- [ ] 4.1 Create `system/kustomize/metal-operator-remote/host/base/manager-patch.yaml` consolidating the contents of the existing `manager-remote-patch.yaml` and `manager-webhook-patch.yaml`. Verify line-by-line that no field is dropped (env vars, volumes, volumeMounts, ports, securityContext, network labels, serviceAccountName, hostNetwork, resources).
-- [ ] 4.2 Add the 6 SAP-specific manager `args` to `manager-patch.yaml` (`--mac-prefixes-file=/etc/macdb/macdb.yaml`, `--probe-image=keppel.global.cloud.sap/ccloud-ghcr-io-mirror/ironcore-dev/metalprobe:latest`, `--probe-os-image=ghcr.io/ironcore-dev/os-images/gardenlinux:1443.3`, `--insecure=false`, `--registry-url=http://[2a10:afc0:e013:d002::]:30010`, `--manager-namespace=metal-operator-system`). Use `op: replace` on `/spec/template/spec/containers/0/args` semantic.
-- [ ] 4.3 Update `system/kustomize/metal-operator-remote/host/base/kustomization.yaml` `patches:` field to reference only `manager-patch.yaml` (remove `manager-remote-patch.yaml` and `manager-webhook-patch.yaml` entries).
-- [ ] 4.4 Delete the now-unused `system/kustomize/metal-operator-remote/host/base/manager-remote-patch.yaml` and `system/kustomize/metal-operator-remote/host/base/manager-webhook-patch.yaml`.
-- [ ] 4.5 Verify host base build: `kustomize build host/base/` produces a `Deployment` named `controller-manager` with all 6 SAP args + `--leader-elect` ABSENT (or whatever upstream sets, but at minimum the 6 SAP args present); env vars `KUBERNETES_SERVICE_HOST`, `KUBERNETES_CLUSTER_DOMAIN`, `KUBECONFIG`; volumes for `webhook-certs`, `remote-serviceaccount`, `remote-kubeconfig`, `macdb`; the webhook server port 9443.
-- [ ] 4.6 Verify host base build does NOT produce a `ConfigMap` named `webhook-config`: `kustomize build host/base/ | yq 'select(.kind == "ConfigMap" and .metadata.name == "webhook-config")'` returns empty.
+- [x] 4.1 Create `system/kustomize/metal-operator-remote/host/base/manager-patch.yaml` consolidating the contents of the existing `manager-remote-patch.yaml` and `manager-webhook-patch.yaml`. Verify line-by-line that no field is dropped (env vars, volumes, volumeMounts, ports, securityContext, network labels, serviceAccountName, hostNetwork, resources).
+- [x] 4.2 Add the 6 SAP-specific manager `args` to `manager-patch.yaml` (`--mac-prefixes-file=/etc/macdb/macdb.yaml`, `--probe-image=keppel.global.cloud.sap/ccloud-ghcr-io-mirror/ironcore-dev/metalprobe:latest`, `--probe-os-image=ghcr.io/ironcore-dev/os-images/gardenlinux:1443.3`, `--insecure=false`, `--registry-url=http://[2a10:afc0:e013:d002::]:30010`, `--manager-namespace=metal-operator-system`). Use `op: replace` on `/spec/template/spec/containers/0/args` semantic.
+- [x] 4.3 Update `system/kustomize/metal-operator-remote/host/base/kustomization.yaml` `patches:` field to reference only `manager-patch.yaml` (remove `manager-remote-patch.yaml` and `manager-webhook-patch.yaml` entries).
+- [x] 4.4 Delete the now-unused `system/kustomize/metal-operator-remote/host/base/manager-remote-patch.yaml` and `system/kustomize/metal-operator-remote/host/base/manager-webhook-patch.yaml`.
+- [x] 4.5 Verify host base build: `kustomize build host/base/` produces a `Deployment` named `controller-manager` with all 6 SAP args + `--leader-elect` ABSENT (or whatever upstream sets, but at minimum the 6 SAP args present); env vars `KUBERNETES_SERVICE_HOST`, `KUBERNETES_CLUSTER_DOMAIN`, `KUBECONFIG`; volumes for `webhook-certs`, `remote-serviceaccount`, `remote-kubeconfig`, `macdb`; the webhook server port 9443.
+- [x] 4.6 Verify host base build does NOT produce a `ConfigMap` named `webhook-config`: `kustomize build host/base/ | yq 'select(.kind == "ConfigMap" and .metadata.name == "webhook-config")'` returns empty.
 
 ## 5. Webhook-injector sidecar configuration for caBundle-rotation mode
 
-- [ ] 5.1 Edit `system/kustomize/metal-operator-remote/components/webhook-injector/sidecar.yaml` (or equivalent) to set `WEBHOOK_INJECTOR_MODE=ca-rotation` env var (or the equivalent flag agreed with the binary maintainers in [webhook-injector#9](https://github.com/SAP-cloud-infrastructure/webhook-injector/issues/9)). Add a comment cross-referencing the issue.
-- [ ] 5.2 Update the sidecar's `--webhook-config-name` argument to point at the workerless `ValidatingWebhookConfiguration` name (`validating-webhook-configuration` per upstream). Add a comment noting that in `ca-rotation` mode this references the workerless resource (not a host-side ConfigMap).
-- [ ] 5.3 Update `system/kustomize/metal-operator-remote/host/base/webhook-injector-rbac.yaml`: narrow the host-side Role's verbs (drop ConfigMap read on `webhook-config` if present); ensure remote-cluster RBAC delivered via remote-kubeconfig is scoped to `get` and `patch` on `validatingwebhookconfigurations.admissionregistration.k8s.io` only (no broader verbs).
-- [ ] 5.4 Verify sidecar args in build output: `kustomize build host/base/ | yq 'select(.kind == "Deployment") | .spec.template.spec.initContainers[] | select(.name == "webhook-injector") | .env, .args'` shows `WEBHOOK_INJECTOR_MODE=ca-rotation` and the workerless WebhookConfiguration name.
+- [x] 5.1 Edit `system/kustomize/metal-operator-remote/components/webhook-injector/sidecar.yaml` (or equivalent) to set `WEBHOOK_INJECTOR_MODE=ca-rotation` env var (or the equivalent flag agreed with the binary maintainers in [webhook-injector#9](https://github.com/SAP-cloud-infrastructure/webhook-injector/issues/9)). Add a comment cross-referencing the issue.
+- [x] 5.2 Update the sidecar's `--webhook-config-name` argument to point at the workerless `ValidatingWebhookConfiguration` name (`validating-webhook-configuration` per upstream). Add a comment noting that in `ca-rotation` mode this references the workerless resource (not a host-side ConfigMap).
+- [x] 5.3 Update `system/kustomize/metal-operator-remote/host/base/webhook-injector-rbac.yaml`: narrow the host-side Role's verbs (drop ConfigMap read on `webhook-config` if present); ensure remote-cluster RBAC delivered via remote-kubeconfig is scoped to `get` and `patch` on `validatingwebhookconfigurations.admissionregistration.k8s.io` only (no broader verbs).
+- [x] 5.4 Verify sidecar args in build output: `kustomize build host/base/ | yq 'select(.kind == "Deployment") | .spec.template.spec.initContainers[] | select(.name == "webhook-injector") | .env, .args'` shows `WEBHOOK_INJECTOR_MODE=ca-rotation` and the workerless WebhookConfiguration name.
 
 ## 6. Delete obsolete pre-render machinery
 
-- [ ] 6.1 Delete `system/kustomize/metal-operator-remote/remote/upstream/crds-and-rbac/managedresources.yaml`.
-- [ ] 6.2 Delete `system/kustomize/metal-operator-remote/remote/upstream/webhooks/managedresources.yaml` (if not already deleted by Section 2's restructure).
-- [ ] 6.3 Delete `system/kustomize/metal-operator-remote/remote/upstream/webhooks/manifests-url-based.yaml` (if not already deleted by Section 2's restructure).
-- [ ] 6.4 Delete `system/kustomize/metal-operator-remote/host/base/webhook-config.yaml`.
-- [ ] 6.5 Delete `system/kustomize/metal-operator-remote/scripts/wrap-managedresources.sh`. If `scripts/` becomes empty, delete the directory.
-- [ ] 6.6 Edit `system/Makefile`: delete the `regen-metal-operator-remote`, `regen-metal-operator-remote-crds`, `regen-metal-operator-remote-webhooks` targets and the `KUSTOMIZE_METAL_OPERATOR_REMOTE` variable. Verify `make help` (or equivalent) still lists other operators' regen targets.
+- [x] 6.1 Delete `system/kustomize/metal-operator-remote/remote/upstream/crds-and-rbac/managedresources.yaml`.
+- [x] 6.2 Delete `system/kustomize/metal-operator-remote/remote/upstream/webhooks/managedresources.yaml` (if not already deleted by Section 2's restructure).
+- [x] 6.3 Delete `system/kustomize/metal-operator-remote/remote/upstream/webhooks/manifests-url-based.yaml` (if not already deleted by Section 2's restructure).
+- [x] 6.4 Delete `system/kustomize/metal-operator-remote/host/base/webhook-config.yaml`.
+- [x] 6.5 Delete `system/kustomize/metal-operator-remote/scripts/wrap-managedresources.sh`. If `scripts/` becomes empty, delete the directory.
+- [x] 6.6 Edit `system/Makefile`: delete the `regen-metal-operator-remote`, `regen-metal-operator-remote-crds`, `regen-metal-operator-remote-webhooks` targets and the `KUSTOMIZE_METAL_OPERATOR_REMOTE` variable. Verify `make help` (or equivalent) still lists other operators' regen targets.
 - [ ] 6.7 Update `system/kustomize/metal-operator-remote/VERIFICATION.md` to reflect the new structure (or note it's historical and out of scope per Open Question in brainstorm).
 
 ## 7. README and documentation
 
-- [ ] 7.1 Update `system/kustomize/metal-operator-remote/README.md`: document the `host` ≡ workload-cluster, `remote` ≡ workerless-cluster mapping; describe the dual-kustomize apply model; describe the new two-layer `remote/upstream/webhooks/` structure; note that the deployment pipeline lives in `cc/kube-secrets` (not in this repo).
-- [ ] 7.2 Add a "Removed in <date>" section to the README documenting what was removed in this change (Makefile targets, pre-rendered files, wrap script) and where the new mechanisms live (kustomize Git URL refs, ExternalName Service on workerless).
-- [ ] 7.3 Ensure the README's "Upgrade upstream metal-operator version" section reflects the new workflow: edit `?ref=` in three `kustomization.yaml` files (`host/base/`, `remote/upstream/crds-and-rbac/`, `remote/upstream/webhooks/upstream-no-svc/`), then `kubectl apply` (no regen step).
+- [x] 7.1 Update `system/kustomize/metal-operator-remote/README.md`: document the `host` ≡ workload-cluster, `remote` ≡ workerless-cluster mapping; describe the dual-kustomize apply model; describe the new two-layer `remote/upstream/webhooks/` structure; note that the deployment pipeline lives in `cc/kube-secrets` (not in this repo).
+- [x] 7.2 Add a "Removed in <date>" section to the README documenting what was removed in this change (Makefile targets, pre-rendered files, wrap script) and where the new mechanisms live (kustomize Git URL refs, ExternalName Service on workerless).
+- [x] 7.3 Ensure the README's "Upgrade upstream metal-operator version" section reflects the new workflow: edit `?ref=` in three `kustomization.yaml` files (`host/base/`, `remote/upstream/crds-and-rbac/`, `remote/upstream/webhooks/upstream-no-svc/`), then `kubectl apply` (no regen step).
 
 ## 8. End-to-end validation against expected behavior
 
-- [ ] 8.1 Run `openspec validate replace-managedresource-with-dual-kustomize --strict`. Expected: clean.
-- [ ] 8.2 Build both roots independently:
+- [x] 8.1 Run `openspec validate replace-managedresource-with-dual-kustomize --strict`. Expected: clean.
+- [x] 8.2 Build both roots independently:
   ```
   kustomize build system/kustomize/metal-operator-remote/host/base/ > /tmp/host.yaml
   kustomize build system/kustomize/metal-operator-remote/remote/ > /tmp/remote.yaml
   ```
   Both must succeed without errors.
-- [ ] 8.3 Resource categorization sanity check on `/tmp/host.yaml`: `yq '.kind' | sort | uniq -c` should show Deployment, Service (×2), Ingress, NetworkPolicy, ConfigMap, Secret (×3), ServiceAccount, Role, RoleBinding. NO ManagedResource, no `webhook-config` ConfigMap.
-- [ ] 8.4 Resource categorization sanity check on `/tmp/remote.yaml`: should show CustomResourceDefinition (×16), ClusterRole, ClusterRoleBinding, ServiceAccount, Role (≥1, un-converted), RoleBinding (≥1, un-converted), Namespace (×2: `metal-servers` + `system`), Service (×1: `webhook-service` ExternalName), ValidatingWebhookConfiguration. NO ManagedResource. NO `caBundle` field anywhere.
-- [ ] 8.5 caBundle absence check: `yq '.. | select(has("caBundle")) // empty' /tmp/remote.yaml` returns empty.
-- [ ] 8.6 ExternalName Service shape check: `yq 'select(.kind == "Service" and .metadata.namespace == "system")' /tmp/remote.yaml` shows `spec.type: ExternalName` and `spec.externalName: metal-operator-webhook-service`.
-- [ ] 8.7 Build a per-cluster overlay (against the in-flight kube-secrets coordinated change's branch) end-to-end:
+- [x] 8.3 Resource categorization sanity check on `/tmp/host.yaml`: `yq '.kind' | sort | uniq -c` should show Deployment, Service (×2), Ingress, NetworkPolicy, ConfigMap, Secret (×3), ServiceAccount, Role, RoleBinding. NO ManagedResource, no `webhook-config` ConfigMap.
+- [x] 8.4 Resource categorization sanity check on `/tmp/remote.yaml`: should show CustomResourceDefinition (×16), ClusterRole, ClusterRoleBinding, ServiceAccount, Role (≥1, un-converted), RoleBinding (≥1, un-converted), Namespace (×2: `metal-servers` + `system`), Service (×1: `webhook-service` ExternalName), ValidatingWebhookConfiguration. NO ManagedResource. NO `caBundle` field anywhere.
+- [x] 8.5 caBundle absence check: `yq '.. | select(has("caBundle")) // empty' /tmp/remote.yaml` returns empty.
+- [x] 8.6 ExternalName Service shape check: `yq 'select(.kind == "Service" and .metadata.namespace == "system")' /tmp/remote.yaml` shows `spec.type: ExternalName` and `spec.externalName: metal-operator-webhook-service`.
+- [x] 8.7 Build a per-cluster overlay (against the in-flight kube-secrets coordinated change's branch) end-to-end:
   ```
   kustomize build <kube-secrets-branch>/values/kustomize/<test-cluster>/metal-operator-remote/host/  > /tmp/host-cluster.yaml
   kustomize build <kube-secrets-branch>/values/kustomize/<test-cluster>/metal-operator-remote/remote/ > /tmp/remote-cluster.yaml
   ```
   Both must succeed and incorporate per-cluster patches (image tags, OIDC group component, NetworkPolicy CIDRs).
-- [ ] 8.8 Compare host output against the helm-rendered output of the same cluster: `helm template metal-operator-remote system/metal-operator-remote --values <kube-secrets-helm-values-for-the-same-cluster>` filtered to host-cluster resources only. Expect functional equivalence (same kinds, names, specs) modulo Deployment name (`controller-manager` vs `metal-operator-controller-manager`) and minor structural differences. Document any divergence.
-- [ ] 8.9 Compare remote output against the helm-rendered ManagedResources unwrapped: workerless cluster should receive equivalent CRDs + RBAC + Namespace + ValidatingWebhookConfiguration content. The kustomize version uses `clientConfig.service` form whereas helm uses `clientConfig.url`; this is expected.
+- [x] 8.8 Compare host output against the helm-rendered output of the same cluster: `helm template metal-operator-remote system/metal-operator-remote --values <kube-secrets-helm-values-for-the-same-cluster>` filtered to host-cluster resources only. Expect functional equivalence (same kinds, names, specs) modulo Deployment name (`controller-manager` vs `metal-operator-controller-manager`) and minor structural differences. Document any divergence.
+- [x] 8.9 Compare remote output against the helm-rendered ManagedResources unwrapped: workerless cluster should receive equivalent CRDs + RBAC + Namespace + ValidatingWebhookConfiguration content. The kustomize version uses `clientConfig.service` form whereas helm uses `clientConfig.url`; this is expected.
 
 ## 9. Pull request preparation (REUSE existing PR [#11633](https://github.com/sapcc/helm-charts/pull/11633))
 
@@ -105,16 +105,16 @@ The existing PR [`sapcc/helm-charts#11633`](https://github.com/sapcc/helm-charts
 
 ## 10. Pre-merge final checks
 
-- [ ] 10.1 Re-run validation:
+- [x] 10.1 Re-run validation:
   ```
   cd /Users/D065300/IdeaProjects/sapcc/helm-charts
   openspec validate replace-managedresource-with-dual-kustomize --strict
   ```
   Expected: clean.
-- [ ] 10.2 Re-run kube-secrets per-cluster overlay builds against this branch (Task 8.7). Both must succeed.
+- [x] 10.2 Re-run kube-secrets per-cluster overlay builds against this branch (Task 8.7). Both must succeed.
 - [ ] 10.3 Confirm coordinated kube-secrets PR is ready and reviewed; align merge timing.
-- [ ] 10.4 Confirm webhook-injector image with `ca-rotation` mode is published to `keppel.global.cloud.sap/ccloud-ghcr-io-mirror/SAP-cloud-infrastructure/webhook-injector`. If not yet available, the PR can merge to `master` but production cutover is gated.
-- [ ] 10.5 Confirm Concourse pipeline definition (in kube-secrets) is in `-OFF` state until cutover, mirroring the previous `move-cluster-overlays-to-kube-secrets` change's pattern.
+- [x] 10.4 Confirm webhook-injector image with `ca-rotation` mode is published to `keppel.global.cloud.sap/ccloud-ghcr-io-mirror/SAP-cloud-infrastructure/webhook-injector`. If not yet available, the PR can merge to `master` but production cutover is gated.
+- [x] 10.5 Confirm Concourse pipeline definition (in kube-secrets) is in `-OFF` state until cutover, mirroring the previous `move-cluster-overlays-to-kube-secrets` change's pattern.
 
 ## 11. Merge
 

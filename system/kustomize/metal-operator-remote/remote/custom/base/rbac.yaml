@@ -161,10 +161,15 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   name: metal-operator-webhook-injector
+# Narrowed scope per the kustomize-sidecar-injection spec: in caBundle-rotation
+# mode the sidecar only needs to get + patch the caBundle field of named
+# Validating/MutatingWebhookConfigurations on the workerless cluster. It does
+# NOT create or replace WebhookConfigurations (they are applied directly by the
+# remote/ kustomize root). Tracked in SAP-cloud-infrastructure/webhook-injector#9.
 rules:
   - apiGroups: ["admissionregistration.k8s.io"]
     resources: ["mutatingwebhookconfigurations", "validatingwebhookconfigurations"]
-    verbs: ["get", "list", "watch", "create", "update", "patch"]
+    verbs: ["get", "list", "watch", "patch"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
