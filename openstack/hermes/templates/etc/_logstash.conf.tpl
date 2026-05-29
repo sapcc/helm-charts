@@ -532,7 +532,7 @@ output {
       validate_after_inactivity => 1000
       ssl => true
       {{- if .Values.global.gardener.enabled }}
-      ssl_certificate_authorities => ["/etc/logstash/certs/ca.crt"]
+      cacert => ["/etc/logstash/certs/ca.crt"]
       {{- end}}
       ssl_certificate_verification => true
     }
