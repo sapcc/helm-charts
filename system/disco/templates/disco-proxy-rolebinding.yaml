@@ -9,6 +9,11 @@ roleRef:
   name: disco-proxy-role
 subjects:
 - kind: ServiceAccount
+  {{- if .Values.remote.enabled }}
+  name: {{ .Values.remote.clusterRoleBindings.subjectName | default .Values.serviceAccount.name }}
+  namespace: {{ .Values.remote.clusterRoleBindings.subjectNamespace | default .Release.Namespace }}
+  {{- else }}
   name: {{ .Values.serviceAccount.name }}
   namespace: {{ .Release.Namespace }}
+  {{- end }}
 {{- end }}

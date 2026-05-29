@@ -5,14 +5,30 @@ image:
 # Remote Kubernetes cluster configuration (for Gardener token-requestor)
 remote:
   # Enable remote kubeconfig mounting for connecting to a remote Kubernetes cluster
-  enable: false
-  # API server host for the remote cluster (required when enable: true)
+  enabled: false
+  # API server host for the remote cluster (required when enabled: true)
   # Example: api.my-shoot.cp.internal.garden.example.com
   apiServerHost: ""
   # API server port for the remote cluster (defaults to 443)
   apiServerPort: "443"
   # Namespace for leader election on the remote cluster (where RBAC is configured)
   leaderElectionNamespace: kube-system
+  # Namespace and subject overrides for RBAC resources (only applied when enabled: true)
+  serviceAccount:
+    # Override metadata.namespace for the ServiceAccount (defaults to Release.Namespace)
+    namespace: ""
+  role:
+    # Override metadata.namespace for the leader-election Role and RoleBinding (defaults to Release.Namespace)
+    namespace: ""
+    # Override subjects[].name in the leader-election RoleBinding (defaults to serviceAccount.name)
+    subjectName: ""
+    # Override subjects[].namespace in the leader-election RoleBinding (defaults to role.namespace then Release.Namespace)
+    subjectNamespace: ""
+  clusterRoleBindings:
+    # Override subjects[].name in ClusterRoleBindings (defaults to serviceAccount.name)
+    subjectName: ""
+    # Override subjects[].namespace in ClusterRoleBindings (defaults to Release.Namespace)
+    subjectNamespace: ""
 
 # These labels will be set on the DISCO controller manager
 controllerLabels: {}
@@ -49,7 +65,7 @@ metrics:
   # Create the metrics service
   enabled: true
   # Port to expose metrics on.
-  port: 9091
+  port: 8080
   # Name of the Prometheis by which the metrics will be scraped.
   # Can be a comma (,) separated list.
   prometheus: kubernetes
@@ -57,6 +73,11 @@ metrics:
 # Reload the controller manager when the disco-config secret changes.
 reloader:
   enabled: true
+
+# Annotations for the Deployment metadata.
+# By default, triggers a rolling restart when the disco-config secret changes.
+deploymentAnnotations:
+  secret.reloader.stakater.com/reload: "disco-config"
 
 # Credentials of the service user who creates the recordsets in OpenStack Designate.
 openstack: {}

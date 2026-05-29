@@ -7,9 +7,9 @@ tests:
       - hasDocuments:
           count: 0
 
-  - it: should render remote kubeconfig Secret when remote.enable is true
+  - it: should render remote kubeconfig Secret when remote.enabled is true
     set:
-      remote.enable: true
+      remote.enabled: true
       remote.apiServerHost: api.example.garden.cloud
     asserts:
       - hasDocuments:
@@ -25,3 +25,12 @@ tests:
       - equal:
           path: metadata.labels["resources.gardener.cloud/class"]
           value: shoot
+
+  - it: should use remote.serviceAccount.namespace in Gardener SA annotation
+    set:
+      remote.enabled: true
+      remote.serviceAccount.namespace: kube-system
+    asserts:
+      - equal:
+          path: metadata.annotations["serviceaccount.resources.gardener.cloud/namespace"]
+          value: kube-system

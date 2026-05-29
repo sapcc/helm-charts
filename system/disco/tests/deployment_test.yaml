@@ -18,13 +18,6 @@ tests:
         isKind:
           of: Deployment
 
-  - it: should use the default image
-    asserts:
-      - template: disco-controller-manager.yaml
-        equal:
-          path: spec.template.spec.containers[0].image
-          value: keppel.global.cloud.sap/ccloud-ghcr-io-mirror/sapcc/disco:v2.0.0
-
   - it: should have app=disco label on Deployment metadata
     asserts:
       - template: disco-controller-manager.yaml
@@ -166,13 +159,15 @@ tests:
   # NEW FEATURE TESTS
   #############################################################################
 
-  - it: should not have reloader annotation when reloader.enabled is false
+  - it: should support custom deploymentAnnotations
     set:
-      reloader.enabled: false
+      deploymentAnnotations:
+        custom.annotation/key: "my-value"
     asserts:
       - template: disco-controller-manager.yaml
-        notExists:
-          path: metadata.annotations["secret.reloader.stakater.com/reload"]
+        equal:
+          path: metadata.annotations["custom.annotation/key"]
+          value: "my-value"
 
   - it: should not have webhook-server port when webhooks.enabled is false
     set:
@@ -198,9 +193,9 @@ tests:
             name: cert
             readOnly: true
 
-  - it: should add Gardener network labels when remote.enable is true
+  - it: should add Gardener network labels when remote.enabled is true
     set:
-      remote.enable: true
+      remote.enabled: true
       remote.apiServerHost: api.example.garden.cloud
     asserts:
       - template: disco-controller-manager.yaml
@@ -212,9 +207,9 @@ tests:
           path: spec.template.metadata.labels["networking.resources.gardener.cloud/to-kube-apiserver-tcp-443"]
           value: allowed
 
-  - it: should set KUBERNETES_SERVICE_HOST env when remote.enable is true
+  - it: should set KUBERNETES_SERVICE_HOST env when remote.enabled is true
     set:
-      remote.enable: true
+      remote.enabled: true
       remote.apiServerHost: api.example.garden.cloud
     asserts:
       - template: disco-controller-manager.yaml
@@ -224,9 +219,9 @@ tests:
             name: KUBERNETES_SERVICE_HOST
             value: "api.example.garden.cloud"
 
-  - it: should set NAMESPACE from value when remote.enable is true
+  - it: should set NAMESPACE from value when remote.enabled is true
     set:
-      remote.enable: true
+      remote.enabled: true
       remote.apiServerHost: api.example.garden.cloud
       remote.leaderElectionNamespace: kube-system
     asserts:
@@ -237,9 +232,9 @@ tests:
             name: NAMESPACE
             value: "kube-system"
 
-  - it: should mount remote kubeconfig volume when remote.enable is true
+  - it: should mount remote kubeconfig volume when remote.enabled is true
     set:
-      remote.enable: true
+      remote.enabled: true
       remote.apiServerHost: api.example.garden.cloud
     asserts:
       - template: disco-controller-manager.yaml

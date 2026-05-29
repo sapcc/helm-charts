@@ -25,13 +25,25 @@ tests:
           path: metadata.annotations["prometheus.io/targets"]
           value: kubernetes
 
-  - it: should expose port 8080 targeting https
+  - it: should expose metrics.port targeting https
     asserts:
       - contains:
           path: spec.ports
           content:
             name: metrics
             port: 8080
+            protocol: TCP
+            targetPort: https
+
+  - it: should use custom metrics.port when set
+    set:
+      metrics.port: 9092
+    asserts:
+      - contains:
+          path: spec.ports
+          content:
+            name: metrics
+            port: 9092
             protocol: TCP
             targetPort: https
 
