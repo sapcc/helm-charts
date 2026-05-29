@@ -32,6 +32,26 @@ biosSettings:
       included: []
       excluded: []
 
+bmcSettings:
+  enabled: false
+  filters:
+    # Filter by vendor (dell, hpe, lenovo)
+    vendors:
+      included: [] # Empty = include all. E.g., [dell, hpe]
+      excluded: [] # E.g., [lenovo] to exclude Lenovo
+    # Filter by model (e.g., poweredge-r7615, proliant-dl560-gen11)
+    models:
+      included: []
+      excluded: []
+    # Filter by cluster type (e.g., sci-k8s-controlplane, cc-kvm-compute)
+    clusterTypes:
+      included: []
+      excluded: []
+    # Filter by version
+    versions:
+      included: []
+      excluded: []
+
 biosVersions:
   enabled: true
   filters:
@@ -58,6 +78,22 @@ bmcVersions:
       included: []
       excluded: []
 
+# Cluster-specific values injected into the metal-bmc-settings ConfigMap.
+# These are region/cluster-level overrides consumed by BMCSettings variables at reconcile time.
+clusterConfig:
+  # Name of the ConfigMap created by this chart and referenced by BMCSettings variables.
+  configMapName: ""
+  syslogServer: ""   # e.g. "remotesyslog.cc.qa-de-1.cloud.sap"
+  # Name of the Secret holding the HPE iLO license key (key: licenseKey).
+  hpeLicenseSecretName: ""   # e.g. "hpe-ilo-license"
+  # The actual HPE iLO license key value — stored in the Secret above.
+  # In production, override via external secret management (Vault, SealedSecrets, etc.).
+  hpeLicenseKey: ""
+
+  managedNamespace: "metal-servers"   # Namespace where BMCSettingsSets related resources are deployed
+
+
+
 machines:
   dell:
     models:
@@ -69,6 +105,7 @@ machines:
           imageURI: "https://repo.eu-de-1.cloud.sap/hw-firmware/dell/poweredge-r640/BIOS_F8GPH_WN64_2.22.2.EXE"
         bmc:
           version: "7.00.00.183"
+          settingsFileName: dell-default.yaml
           imageURI: "https://repo.eu-de-1.cloud.sap/hw-firmware/dell/poweredge-r640/iDRAC-with-Lifecycle-Controller_Firmware_VP556_WN64_7.00.00.183_A00.EXE"
 
       - model: poweredge-r660
@@ -79,6 +116,7 @@ machines:
           imageURI: "https://repo.eu-de-1.cloud.sap/hw-firmware/dell/poweredge-r660/BIOS_PJYMD_WN64_2.4.4_02.EXE"
         bmc:
           version: "7.20.60.50"
+          settingsFileName: dell-default.yaml
           imageURI: "https://repo.eu-de-1.cloud.sap/hw-firmware/dell/poweredge-r660/iDRAC-with-Lifecycle-Controller_Firmware_6CKFT_WN64_7.20.60.50_A00.EXE"
 
       - model: poweredge-r6715
@@ -89,6 +127,7 @@ machines:
           imageURI: "https://repo.eu-de-1.cloud.sap/hw-firmware/dell/poweredge-r6715/BIOS_N2K66_WN64_1.3.3_01.EXE"
         bmc:
           version: "1.20.60.50"
+          settingsFileName: dell-default.yaml
           imageURI: "https://repo.eu-de-1.cloud.sap/hw-firmware/dell/poweredge-r6715/iDRAC-with-Lifecycle-Controller_Firmware_63M5X_WN64_1.20.60.50_A00.EXE"
 
       - model: poweredge-r740
@@ -99,6 +138,7 @@ machines:
           imageURI: "https://repo.eu-de-1.cloud.sap/hw-firmware/dell/poweredge-r740/BIOS_F8GPH_WN64_2.22.2.EXE"
         bmc:
           version: "7.00.00.183"
+          settingsFileName: dell-default.yaml
           imageURI: "https://repo.eu-de-1.cloud.sap/hw-firmware/dell/poweredge-r740/iDRAC-with-Lifecycle-Controller_Firmware_VP556_WN64_7.00.00.183_A00.EXE"
 
       - model: poweredge-r740xd
@@ -109,6 +149,7 @@ machines:
           imageURI: "https://repo.eu-de-1.cloud.sap/hw-firmware/dell/poweredge-r740xd/BIOS_F8GPH_WN64_2.22.2.EXE"
         bmc:
           version: "7.00.00.183"
+          settingsFileName: dell-default.yaml
           imageURI: "https://repo.eu-de-1.cloud.sap/hw-firmware/dell/poweredge-r740xd/iDRAC-with-Lifecycle-Controller_Firmware_VP556_WN64_7.00.00.183_A00.EXE"
 
       - model: poweredge-r760
@@ -119,6 +160,7 @@ machines:
           imageURI: "https://repo.eu-de-1.cloud.sap/hw-firmware/dell/poweredge-r760/BIOS_PJYMD_WN64_2.4.4_02.EXE"
         bmc:
           version: "7.20.60.50"
+          settingsFileName: dell-default.yaml
           imageURI: "https://repo.eu-de-1.cloud.sap/hw-firmware/dell/poweredge-r760/iDRAC-with-Lifecycle-Controller_Firmware_6CKFT_WN64_7.20.60.50_A00.EXE"
 
       - model: poweredge-r7615
@@ -129,6 +171,7 @@ machines:
           imageURI: "https://repo.eu-de-1.cloud.sap/hw-firmware/dell/poweredge-r7615/BIOS_5MVJG_WN64_1.11.2.EXE"
         bmc:
           version: "7.20.60.50"
+          settingsFileName: dell-default.yaml
           imageURI: "https://repo.eu-de-1.cloud.sap/hw-firmware/dell/poweredge-r7615/iDRAC-with-Lifecycle-Controller_Firmware_6CKFT_WN64_7.20.60.50_A00.EXE"
 
       - model: poweredge-r770
@@ -139,6 +182,7 @@ machines:
           imageURI: "https://repo.eu-de-1.cloud.sap/hw-firmware/dell/poweredge-r770/BIOS_7J20R_WN64_1.4.4.EXE"
         bmc:
           version: "1.20.60.50"
+          settingsFileName: dell-default.yaml
           imageURI: "https://repo.eu-de-1.cloud.sap/hw-firmware/dell/poweredge-r770/iDRAC-with-Lifecycle-Controller_Firmware_63M5X_WN64_1.20.60.50_A00.EXE"
 
       - model: poweredge-r7715
@@ -149,6 +193,7 @@ machines:
           imageURI: "https://repo.eu-de-1.cloud.sap/hw-firmware/dell/poweredge-r7715/BIOS_N2K66_WN64_1.3.3_01.EXE"
         bmc:
           version: "1.20.60.50"
+          settingsFileName: dell-default.yaml
           imageURI: "https://repo.eu-de-1.cloud.sap/hw-firmware/dell/poweredge-r7715/iDRAC-with-Lifecycle-Controller_Firmware_63M5X_WN64_1.20.60.50_A00.EXE"
 
       - model: poweredge-r840
@@ -159,6 +204,7 @@ machines:
           imageURI: "https://repo.eu-de-1.cloud.sap/hw-firmware/dell/poweredge-r840/BIOS_5T6CY_WN64_2.22.1.EXE"
         bmc:
           version: "7.00.00.183"
+          settingsFileName: dell-default.yaml
           imageURI: "https://repo.eu-de-1.cloud.sap/hw-firmware/dell/poweredge-r840/iDRAC-with-Lifecycle-Controller_Firmware_VP556_WN64_7.00.00.183_A00.EXE"
 
       - model: poweredge-r860
@@ -169,6 +215,7 @@ machines:
           imageURI: "https://repo.eu-de-1.cloud.sap/hw-firmware/dell/poweredge-r860/BIOS_PJYMD_WN64_2.4.4_02.EXE"
         bmc:
           version: "7.20.60.50"
+          settingsFileName: dell-default.yaml
           imageURI: "https://repo.eu-de-1.cloud.sap/hw-firmware/dell/poweredge-r860/iDRAC-with-Lifecycle-Controller_Firmware_6CKFT_WN64_7.20.60.50_A00.EXE"
 
       - model: poweredge-xe9680
@@ -179,6 +226,7 @@ machines:
           imageURI: "https://repo.eu-de-1.cloud.sap/hw-firmware/dell/poweredge-xe9680/BIOS_PJYMD_WN64_2.4.4_02.EXE"
         bmc:
           version: "7.20.60.50"
+          settingsFileName: dell-default.yaml
           imageURI: "https://repo.eu-de-1.cloud.sap/hw-firmware/dell/poweredge-xe9680/iDRAC-with-Lifecycle-Controller_Firmware_6CKFT_WN64_7.20.60.50_A00.EXE"
 
   hpe:
@@ -192,6 +240,7 @@ machines:
           imageURI: "https://repo.eu-de-1.cloud.sap/hw-firmware/hpe/proliant-dl380-gen11/U54_2.50_04_22_2025.fwpkg"
         bmc:
           version: "iLO 6 v1.68"
+          settingsFileName: hpe-default.yaml
           imageURI: "https://repo.eu-de-1.cloud.sap/hw-firmware/hpe/proliant-dl380-gen11/ilo6_168.fwpkg"
 
       # dl560-gen11: cc-kvm-compute uses AdvancedEcc; sci-k8s-* uses FastFaultTolerantADDDC
@@ -204,6 +253,7 @@ machines:
           imageURI: "https://repo.eu-de-1.cloud.sap/hw-firmware/hpe/proliant-dl560-gen11/U59_2.50_04_22_2025.fwpkg"
         bmc:
           version: "iLO 6 v1.68"
+          settingsFileName: hpe-default.yaml
           imageURI: "https://repo.eu-de-1.cloud.sap/hw-firmware/hpe/proliant-dl560-gen11/ilo6_168.fwpkg"
 
       - model: proliant-dl560-gen11
@@ -221,6 +271,7 @@ machines:
           imageURI: "https://repo.eu-de-1.cloud.sap/hw-firmware/hpe/proliant-dl560-gen11/U59_2.50_04_22_2025.fwpkg"
         bmc:
           version: "iLO 6 v1.68"
+          settingsFileName: hpe-default.yaml
           imageURI: "https://repo.eu-de-1.cloud.sap/hw-firmware/hpe/proliant-dl560-gen11/ilo6_168.fwpkg"
 
       # Models with firmware only (no biosSettings)
@@ -230,6 +281,7 @@ machines:
           imageURI: "https://repo.eu-de-1.cloud.sap/hw-firmware/hpe/proliant-dl320-gen11/U63_2.50_04_22_2025.fwpkg"
         bmc:
           version: "iLO 6 v1.68"
+          settingsFileName: hpe-default.yaml
           imageURI: "https://repo.eu-de-1.cloud.sap/hw-firmware/hpe/proliant-dl320-gen11/ilo6_168.fwpkg"
 
       - model: proliant-dl345-gen11
@@ -238,6 +290,7 @@ machines:
           imageURI: "https://repo.eu-de-1.cloud.sap/hw-firmware/hpe/proliant-dl345-gen11/A56_2.50_05_16_2025.fwpkg"
         bmc:
           version: "iLO 6 v1.68"
+          settingsFileName: hpe-default.yaml
           imageURI: "https://repo.eu-de-1.cloud.sap/hw-firmware/hpe/proliant-dl345-gen11/ilo6_168.fwpkg"
 
       - model: proliant-dl360-gen10
@@ -246,6 +299,7 @@ machines:
           imageURI: "https://repo.eu-de-1.cloud.sap/hw-firmware/hpe/proliant-dl360-gen10/U32_3.50_04_17_2025.fwpkg"
         bmc:
           version: "iLO 5 v3.13"
+          settingsFileName: hpe-default.yaml
           imageURI: "https://repo.eu-de-1.cloud.sap/hw-firmware/hpe/proliant-dl360-gen10/ilo5_313.fwpkg"
 
       - model: proliant-dl380-gen12
@@ -254,6 +308,7 @@ machines:
           imageURI: "https://repo.eu-de-1.cloud.sap/hw-firmware/hpe/proliant-dl380-gen12/U68_1.52_10_03_2025.fwpkg"
         bmc:
           version: "1.18.00 Oct 09 2025"
+          settingsFileName: hpe-default.yaml
           imageURI: "https://repo.eu-de-1.cloud.sap/hw-firmware/hpe/proliant-dl380-gen12/ilo7_1.18.00.fwpkg"
 
       - model: proliant-dl560-gen10
@@ -262,6 +317,7 @@ machines:
           imageURI: "https://repo.eu-de-1.cloud.sap/hw-firmware/hpe/proliant-dl560-gen10/U34_3.50_04_17_2025.fwpkg"
         bmc:
           version: "iLO 5 v3.13"
+          settingsFileName: hpe-default.yaml
           imageURI: "https://repo.eu-de-1.cloud.sap/hw-firmware/hpe/proliant-dl560-gen10/ilo5_313.fwpkg"
 
   lenovo:
@@ -274,6 +330,7 @@ machines:
           imageURI: "https://repo.eu-de-1.cloud.sap/hw-firmware/lenovo/thinksystem-sr650/lnvgy_fw_uefi_ive184h-4.13_anyos_32-64.uxz"
         bmc:
           version: "CDI3B4E 9.98 2024-07-31"
+          settingsFileName: lenovo-default.yaml
           imageURI: "https://repo.eu-de-1.cloud.sap/hw-firmware/lenovo/thinksystem-sr650/lnvgy_fw_xcc_cdi3b4e-9.98_anyos_noarch.uxz"
 
       - model: thinksystem-sr650-v3
@@ -284,6 +341,7 @@ machines:
           imageURI: "https://repo.eu-de-1.cloud.sap/hw-firmware/lenovo/thinksystem-sr650-v3/lnvgy_fw_uefi_ese130e-3.40_anyos_comp.uxz"
         bmc:
           version: "ESX338T 6.00 2024-11-15"
+          settingsFileName: lenovo-default.yaml
           imageURI: "https://repo.eu-de-1.cloud.sap/hw-firmware/lenovo/thinksystem-sr650-v3/lnvgy_fw_xcc_esx338t-6.00_anyos_comp.uxz"
 
       - model: thinksystem-sr655-v3
@@ -294,6 +352,7 @@ machines:
           imageURI: "https://repo.eu-de-1.cloud.sap/hw-firmware/lenovo/thinksystem-sr655-v3/lnvgy_fw_uefi_kae140f-5.70_anyos_comp.uxz"
         bmc:
           version: "KAX364U 5.80 2025-09-12"
+          settingsFileName: lenovo-default.yaml
           imageURI: "https://repo.eu-de-1.cloud.sap/hw-firmware/lenovo/thinksystem-sr655-v3/lnvgy_fw_xcc_kax364u-5.80_anyos_comp.uxz"
 
       - model: thinksystem-sr850p
@@ -304,6 +363,7 @@ machines:
           imageURI: "https://repo.eu-de-1.cloud.sap/hw-firmware/lenovo/thinksystem-sr850p/lnvgy_fw_uefi_tee184h-4.13_anyos_32-64.uxz"
         bmc:
           version: "TEI3E4D 4.12 2024-07-26"
+          settingsFileName: lenovo-default.yaml
           imageURI: "https://repo.eu-de-1.cloud.sap/hw-firmware/lenovo/thinksystem-sr850p/lnvgy_fw_xcc_tei3e4d-4.12_anyos_noarch.uxz"
 
       - model: thinksystem-sr850-v3
@@ -314,6 +374,7 @@ machines:
           imageURI: "https://repo.eu-de-1.cloud.sap/hw-firmware/lenovo/thinksystem-sr850-v3/lnvgy_fw_uefi_rse124g-8.30_anyos_comp.uxz"
         bmc:
           version: "RSX316L 6.10 2024-11-17"
+          settingsFileName: lenovo-default.yaml
           imageURI: "https://repo.eu-de-1.cloud.sap/hw-firmware/lenovo/thinksystem-sr850-v3/lnvgy_fw_xcc_rsx316l-6.10_anyos_comp.uxz"
 
       - model: thinksystem-sr950
@@ -324,6 +385,7 @@ machines:
           imageURI: "https://repo.eu-de-1.cloud.sap/hw-firmware/lenovo/thinksystem-sr950/lnvgy_fw_uefi_pse150g-2.90_anyos_32-64.uxz"
         bmc:
           version: "PSI356B 3.20 2024-07-30"
+          settingsFileName: lenovo-default.yaml
           imageURI: "https://repo.eu-de-1.cloud.sap/hw-firmware/lenovo/thinksystem-sr950/lnvgy_fw_xcc_psi356b-3.20_anyos_noarch.uxz"
 
       - model: thinksystem-sr950-v3
@@ -334,4 +396,5 @@ machines:
           imageURI: "https://repo.eu-de-1.cloud.sap/hw-firmware/lenovo/thinksystem-sr950-v3/lnvgy_fw_uefi_ebe114g-6.10_anyos_comp.uxz"
         bmc:
           version: "EBX312L 5.10 2024-11-18"
+          settingsFileName: lenovo-default.yaml
           imageURI: "https://repo.eu-de-1.cloud.sap/hw-firmware/lenovo/thinksystem-sr950-v3/lnvgy_fw_xcc_ebx312l-5.10_anyos_comp.uxz"

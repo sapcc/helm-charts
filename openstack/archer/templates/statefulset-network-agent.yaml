@@ -53,6 +53,7 @@ spec:
         app.kubernetes.io/component: agent
         name: {{ $name }}
     spec:
+      serviceAccountName: {{ include "archer.serviceAccountName" $ }}
       affinity:
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
@@ -75,10 +76,12 @@ spec:
                       values:
                         - agent
       nodeSelector:
-        multus: bond1
+        {{- with $.Values.multusSelector }}
+        {{ $.Values.multusSelectorKey | default "multus" }}: {{ . }}
+        {{- end }}
         topology.kubernetes.io/zone: {{ $az_long }}
         {{- with $apod }}
-        kubernetes.cloud.sap/apod: {{ $apod }}
+        {{ $.Values.nodeSeclectorKey | default "kubernetes.cloud.sap/apod" }}: {{ $apod }}
         {{- end }}
       initContainers:
         - name: wait-for-server

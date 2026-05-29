@@ -1,2 +1,2 @@
 [DEFAULT]
-transport_url = {{ include "nova.helpers.cell_rabbitmq_url" (tuple . "cell1") }}
+transport_url = {{ include "nova.helpers.cell_rabbitmq_url" (tuple . "api") }}

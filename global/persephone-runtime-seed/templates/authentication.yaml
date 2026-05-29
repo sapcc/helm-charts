@@ -1,10 +1,11 @@
 {{- range $key, $cluster := .Values.persephoneShoots }}
+{{- $defaultAuthConfigName := printf "authentication-seed-%s" $key | trunc 63 | trimSuffix "-" }}
 {{- if $cluster.oidcConfig.enabled }}
 ---
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: authentication-{{ $key }}{{ $cluster.landscapeName | substr 0 1 }}
+  name: {{ $defaultAuthConfigName }}
   namespace: garden
   annotations:
     argocd.argoproj.io/sync-wave: "0"

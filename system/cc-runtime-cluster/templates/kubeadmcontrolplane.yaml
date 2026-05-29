@@ -326,11 +326,14 @@ spec:
               - group: "coordination.k8s.io"
                 resources: ["leases"]
                 resourceNames: ["maintenance-controller-leader-election.cloud.sap"]
-          # Log full request bodies for any access to credentials or permission
-          - level: Request
+          # Log metadata only for secrets to prevent credential leaks in request bodies
+          - level: Metadata
             resources:
               - group: ""
                 resources: ["secrets"]
+          # Log full request bodies for any access to credentials or permission
+          - level: Request
+            resources:
               - group: "rbac.authorization.k8s.io"
                 resources: ["clusterroles", "clusterrolebindings", "roles", "rolebindings"]
           # Log full request bodies for any access to pods

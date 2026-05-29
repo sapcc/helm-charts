@@ -1,3 +1,7 @@
+## 8.2.1
+
+* Fix PrometheusMultiplePodScrapes alert failing with many-to-many matching error when pods share the same name across namespaces
+
 ## 8.2.0
 
 * bump Thanos sidecar to v0.41.0

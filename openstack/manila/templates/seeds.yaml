@@ -101,6 +101,16 @@ spec:
         role: service
       - project: service
         role: cloud_network_admin
+    {{- if .Values.designate.enabled }}
+    - name: '{{.Values.global.manila_dns_username | include "resolve_secret"}}'
+      description: Manila DNS
+      password: '{{.Values.global.manila_dns_password | include "resolve_secret"}}'
+      role_assignments:
+        - project: service
+          role: service
+        - project: service
+          role: cloud_dns_admin
+    {{- end }}
     {{- if .Values.seeds.backup_user.enabled }}
     - name: {{ .Values.seeds.backup_user.username }}
       description: Manila Backup Service

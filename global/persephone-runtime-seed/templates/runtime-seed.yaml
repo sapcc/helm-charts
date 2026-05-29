@@ -1,5 +1,8 @@
 {{- range $key, $cluster := .Values.persephoneShoots }}
-{{- $infraCredsName := default "openstack-infra-creds-seed" $cluster.infraCredentialsSecretName }}
+{{- $defaultInfraCredsName := printf "openstack-infra-creds-seed-%s" $key | trunc 63 | trimSuffix "-" }}
+{{- $infraCredsName := default $defaultInfraCredsName $cluster.infraCredentialsSecretName }}
+{{- $defaultAuthConfigName := printf "authentication-seed-%s" $key | trunc 63 | trimSuffix "-" }}
+{{- $seedShootName := printf "%s%s" $key ($cluster.landscapeName | substr 0 1) }}
 ---
 apiVersion: core.gardener.cloud/v1beta1
 kind: Shoot
@@ -22,7 +25,19 @@ spec:
 {{- end }}
 {{- if $cluster.seedName }}
   seedName: {{ $cluster.seedName }}
+  purpose: {{ default "infrastructure" $cluster.purpose }}
 {{- end }}
+  dns:
+    domain: {{ $seedShootName }}.garden.external.{{ $cluster.landscapeName }}.persephone.{{ $cluster.region }}.cloud.sap
+    providers:
+    - type: openstack-designate
+      credentialsRef: 
+        apiVersion: v1
+        kind: Secret
+        name: {{ $infraCredsName }}
+      domains:
+        include:
+        - {{ $cluster.landscapeName }}.persephone.{{ $cluster.region }}.cloud.sap
   provider:
     type: openstack
     infrastructureConfig:
@@ -45,9 +60,8 @@ spec:
     version: {{ required "missing value for $cluster.kubernetes.version" $cluster.kubernetes.version }}
 {{- if $cluster.oidcConfig.enabled }}
     kubeAPIServer:
-      enableAnonymousAuthentication: true
       structuredAuthentication:
-        configMapName: authentication-{{ $key }}{{ $cluster.landscapeName | substr 0 1 }}
+        configMapName: {{ $defaultAuthConfigName }}
 {{- end }}
     verticalPodAutoscaler:
       enabled: {{ $cluster.kubernetes.verticalPodAutoscaler.enabled }}
