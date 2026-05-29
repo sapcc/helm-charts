@@ -24,12 +24,26 @@ data:
         sleep "$sleep_secs"
     done
 
-    if ip link show "$iface" master "$bridge" >/dev/null 2>&1; then
+    if [[ ! -e "/sys/class/net/$iface" ]]; then
+        echo "Interface '$iface' not found." >&2
+        exit 1
+    fi
+
+    current_master=""
+    if [[ -L "/sys/class/net/$iface/master" ]]; then
+        current_master=$(basename "$(readlink "/sys/class/net/$iface/master")")
+    fi
+
+    if [[ "$current_master" == "$bridge" ]]; then
         echo "Interface '$iface' is already attached to bridge '$bridge'."
         exit 0
     fi
 
-    echo "Adding interface '$iface' to bridge '$bridge'..."
+    if [[ -n "$current_master" ]]; then
+        echo "Interface '$iface' is currently attached to '$current_master', moving to '$bridge'..."
+    else
+        echo "Adding interface '$iface' to bridge '$bridge'..."
+    fi
     ip link set "$iface" master "$bridge"
     echo "Done."
 {{- end }}
