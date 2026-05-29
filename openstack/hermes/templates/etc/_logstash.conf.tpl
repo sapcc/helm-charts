@@ -518,7 +518,11 @@ output {
       index => "hermes"
       action => "create"
       manage_template => false
+      {{- if .Values.global.gardener.enabled }}
+      hosts => ["https://opensearch-hermes.hermes.svc.cluster.local:{{.Values.hermes_elasticsearch_port}}"]
+      {{- else}}
       hosts => ["https://{{.Values.hermes_elasticsearch_host}}.{{.Values.global.region}}.{{.Values.global.tld}}:{{.Values.hermes_elasticsearch_port}}"]
+      {{- end}}
       auth_type => {
         type => 'basic'
         user => "${OPENSEARCH_USER}"
@@ -527,6 +531,9 @@ output {
       retry_max_interval => 10
       validate_after_inactivity => 1000
       ssl => true
+      {{- if .Values.global.gardener.enabled }}
+      ssl_certificate_authorities => ["/etc/logstash/certs/ca.crt"]
+      {{- end}}
       ssl_certificate_verification => true
     }
   }
