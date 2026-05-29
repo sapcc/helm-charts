@@ -22,8 +22,8 @@ rabbitmq {
 
 filter {
   # Drop events with action "read/list"
-  # Barbican records reads, but has multiple events per read. 
-  # This will keep it to one event per action 
+  # Barbican records reads, but has multiple events per read.
+  # This will keep it to one event per action
   if ([action] == "read/list" or [action] == "read/get") {
     drop { }
   }
