@@ -22,8 +22,8 @@ rabbitmq {
 
 filter {
   # Drop events with action "read/list"
-  # Barbican records reads, but has multiple events per read. 
-  # This will keep it to one event per action 
+  # Barbican records reads, but has multiple events per read.
+  # This will keep it to one event per action
   if ([action] == "read/list" or [action] == "read/get") {
     drop { }
   }
@@ -532,7 +532,7 @@ output {
       validate_after_inactivity => 1000
       ssl => true
       {{- if .Values.global.gardener.enabled }}
-      ssl_certificate_authorities => ["/etc/logstash/certs/ca.crt"]
+      cacert => ["/etc/logstash/certs/ca.crt"]
       {{- end}}
       ssl_certificate_verification => true
     }
