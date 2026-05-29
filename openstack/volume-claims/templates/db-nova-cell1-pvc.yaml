@@ -1,13 +1,13 @@
 {{- $region := .Values.global.region | required ".Values.global.region missing" }}
-{{- $ignoreRegions := list
-  "eu-de-3"
+{{- $storageRequests := dict
+  "eu-de-3" "100Gi"
 }}
-{{- if not (has $region $ignoreRegions) }}
+{{- if hasKey $storageRequests $region }}
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: db-nova-pvc
+  name: db-nova-cell1-pvc
   labels:
     ccloud/support-group: compute-storage-api
     ccloud/service: nova
@@ -16,6 +16,5 @@ spec:
   - {{ include "volume-claims.accessMode" . }}
   resources:
     requests:
-      {{- $region := .Values.global.region | required ".Values.global.region missing" }}
-      storage: {{ if $region | regexMatch "^(?:ap-au-1|eu-de-[12]|eu-nl-1|na-us-1)$" -}} 100Gi {{- else -}} 50Gi {{- end }}
+      storage: {{ get $storageRequests $region }}
 {{- end }}
