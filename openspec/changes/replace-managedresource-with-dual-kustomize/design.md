@@ -357,3 +357,28 @@ This change is the **first half** of a two-repo coordinated change (parallel to 
 - Update to the `cluster-overlay-layout` capability spec in kube-secrets to formalize the dual-subpath structure
 
 Additionally, the SAP-internal **webhook-injector binary** must be updated to expose a caBundle-rotation-only mode (`WEBHOOK_INJECTOR_MODE=ca-rotation` env var or equivalent flag). This is an out-of-repo coordinated dependency tracked at [SAP-cloud-infrastructure/webhook-injector#9](https://github.com/SAP-cloud-infrastructure/webhook-injector/issues/9) (and surfaced in this change's brainstorm Open Questions OQ2).
+
+## Known divergences from production helm output
+
+A direct comparison of `kustomize build remote/` against the helm chart's `system/metal-operator-remote/build-metal-operator-remote` Makefile pipeline (see `system/metal-operator-remote/managedresources/crds-and-rbac.yaml` for the helm-rendered output) surfaces two cosmetic divergences. **Both are deferred to cutover testing for resolution** — neither is expected to be functionally consequential, but neither has been verified live.
+
+### Divergence 1: `Role` → `ClusterRole` conversion
+
+| Aspect | Helm chart (production today) | Our kustomize tree |
+|---|---|---|
+| `leader-election-role` (upstream `config/rbac/leader_election_role.yaml`) | Converted to `ClusterRole` via `sed 's/kind: Role/kind: ClusterRole/g'` | Kept as `Role` (namespace-scoped, `kube-system`) |
+| `leader-election-rolebinding` | Converted to `ClusterRoleBinding` (sed catches the `kind: Role` prefix in `kind: RoleBinding`) | Kept as `RoleBinding` (`kube-system`) |
+| Subject of binding | `controller-manager` SA in `system` namespace (upstream verbatim — does not match our actual SA `metal-operator-controller-manager` in `kube-system`) | Same (upstream verbatim) |
+
+**Why probably benign**: the upstream `leader-election-rolebinding` subject doesn't match our actual SA (`metal-operator-controller-manager`) on either side, so the binding is functionally inert regardless of conversion. The manager runs without `--leader-elect` (helm's deep-merge of `values-overrides.yaml` replaces upstream args entirely with the 6 SAP args), with `replicas: 1` and `strategy: Recreate`, so leader election doesn't happen anyway. The Role/ClusterRole choice should not affect runtime behavior.
+
+**Why kept as-is**: the design originally claimed the helm chart's bundled `managedresources/crds-and-rbac.yaml` "proves un-converted Roles work in production". On post-implementation re-inspection that file actually contains zero un-converted Roles — they're all converted. The real reason un-converted is acceptable is the binding-subject mismatch above. **Cutover testing is the verification gate.**
+
+### Divergence 2: Webhook `clientConfig` form (URL vs Service)
+
+| Aspect | Helm chart | Our kustomize tree |
+|---|---|---|
+| `webhooks[*].clientConfig` form | `url: https://metal-operator-webhook-service:443<path>` | `service: { name: webhook-service, namespace: system, path: <path> }` + ExternalName Service in `system` namespace pointing at `metal-operator-webhook-service` |
+| Workerless API server resolves via | URL DNS (workerless API server pod's `/etc/resolv.conf`) | Service object (workerless API server queries its own etcd, then resolves `externalName` via the same `/etc/resolv.conf`) |
+
+This is a **deliberate design choice** (not a bug) — see "Why no per-cluster customization for the externalName" above. Both forms reduce to the same DNS resolution. Service form is more idiomatic Kubernetes. Verified at design time; final cluster-specific verification belongs to cutover testing.
