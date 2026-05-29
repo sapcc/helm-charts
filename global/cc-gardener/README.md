@@ -20,7 +20,6 @@ k annotate crd gardens.operator.gardener.cloud extensions.operator.gardener.clou
 # Upgrade
 - read [the changelog](https://github.com/gardener/gardener/releases)
 - update crd links in readme
-    - apply CRDs when there are changes
 - change `version`, `appVersion` and `version` of operator in `Chart.yaml`
 - change `.operator.image.tag` in `values.yaml`
 - `helm dep up`

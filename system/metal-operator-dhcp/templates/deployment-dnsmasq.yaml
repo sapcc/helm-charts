@@ -57,6 +57,9 @@ spec:
         volumeMounts:
           - name: metal-dnsmasq
             mountPath: /opt/dnsmasq
+          - name: lib-modules
+            mountPath: /lib/modules
+            readOnly: true
 {{ end }}
       containers:
       - command:
@@ -125,6 +128,10 @@ spec:
       schedulerName: default-scheduler
       terminationGracePeriodSeconds: 30
       volumes:
+      - name: lib-modules
+        hostPath:
+          path: /lib/modules
+          type: Directory
       - configMap:
           defaultMode: 484
           name: metal-dnsmasq
